@@ -106,8 +106,12 @@ export function draftDrops(cues: DraftCue[], locked: string[] = []): number[] {
   )
 }
 
-export function draftPoints(state: CueDraft, ctx: DraftContext): number[] {
-  return flowDrops(flowById(ctx, state.generatedBy), {
+export function draftPoints(
+  state: CueDraft,
+  ctx: DraftContext,
+  flowId: string = state.generatedBy,
+): number[] {
+  return flowDrops(flowById(ctx, flowId), {
     beats: ctx.beats,
     strong: ctx.strong,
     phrases: ctx.phrases,

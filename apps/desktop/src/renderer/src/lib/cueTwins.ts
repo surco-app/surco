@@ -16,12 +16,16 @@ import {
 import { unsavedCueTracks } from './cueSession'
 import { quantizePoints } from './cueWave'
 
+export interface CarriedBreaks {
+  flowId: string
+  points: number[]
+}
+
 export interface TwinSource {
   contentId: string
   path: string
   label: string
-  flowId: string
-  points: number[]
+  breaks: CarriedBreaks[]
 }
 
 export interface TwinSettings {
@@ -59,12 +63,26 @@ const wanted = (library: CueLibrary, settings: TwinSettings): boolean =>
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
 
-// The breaks the DJ marked with a flow since the cues were last saved: the flow's points in
-// the draft that a cue the flow placed sits on. Cues read back from a library carry no
-// origin, so neither saved breaks nor CALLs placed by hand count.
-export function carriedPoints(draft: CueDraft, ctx: DraftContext): number[] {
+// The breaks the DJ marked with a flow since the cues were last saved, each with the flow
+// that placed it: a flow's points in the draft that a cue that flow placed sits on. The DJ
+// can switch flows between breaks, so the flow the draft was opened with says nothing about
+// a break. Cues read back from a library carry no origin, so neither saved breaks nor CALLs
+// placed by hand count.
+export function carriedBreaks(draft: CueDraft, ctx: DraftContext): CarriedBreaks[] {
   const placed = draft.cues.filter((c) => draft.origin[c.key])
-  return draftPoints(draft, ctx).filter((p) => placed.some((c) => near(c.ms, p)))
+  const flowIds = [...new Set(placed.map((c) => draft.origin[c.key]))]
+  const taken: number[] = []
+  const breaks: CarriedBreaks[] = []
+  for (const flowId of flowIds) {
+    const points = draftPoints(draft, ctx, flowId).filter(
+      (p) =>
+        !taken.some((t) => near(t, p)) &&
+        placed.some((c) => draft.origin[c.key] === flowId && near(c.ms, p)),
+    )
+    taken.push(...points)
+    if (points.length > 0) breaks.push({ flowId, points })
+  }
+  return breaks
 }
 
 // A break lands on the other program's nearest beat, never its nearest bar: the programs can
@@ -98,13 +116,17 @@ async function planOne(
   const ctx = contextOf(read, library, settings)
   const start = startDraft(
     baseline,
-    source.flowId,
+    source.breaks[0].flowId,
     read.cues.filter((c) => c.loop).map((c) => c.id),
   )
-  const placed = reduceDraft(
-    reduceDraft(start, { type: 'use-flow', flowId: source.flowId }, ctx),
-    { type: 'batch', actions: source.points.map((ms) => ({ type: 'mark-drop' as const, ms })) },
-    ctx,
+  const placed = source.breaks.reduce(
+    (draft, { flowId, points }) =>
+      reduceDraft(
+        reduceDraft(draft, { type: 'use-flow', flowId }, ctx),
+        { type: 'batch', actions: points.map((ms) => ({ type: 'mark-drop' as const, ms })) },
+        ctx,
+      ),
+    start,
   )
   const result = wantedOfDraft(placed.cues)
   const added = result.filter(
@@ -138,7 +160,7 @@ export async function twinPlans(
   settings: TwinSettings,
   overwrite: ReadonlySet<string> = new Set(),
 ): Promise<TwinPlan[]> {
-  if (source.points.length === 0) return []
+  if (source.breaks.length === 0) return []
   const own = libraryOf(source.contentId)
   const twins = await client
     .fetchQuery({
@@ -182,8 +204,8 @@ export async function twinPlansOf(
   for (const { contentId, path, label, draft } of drafts) {
     const read = await client.fetchQuery(trackCuesQuery(contentId)).catch(() => null)
     if (!read?.analysed || read.grid.length === 0) continue
-    const points = carriedPoints(draft, contextOf(read, libraryOf(contentId), settings))
-    const source = { contentId, path, label, flowId: draft.generatedBy, points }
+    const breaks = carriedBreaks(draft, contextOf(read, libraryOf(contentId), settings))
+    const source = { contentId, path, label, breaks }
     for (const plan of await twinPlans(client, source, settings, overwrite)) {
       if (saving.has(plan.contentId)) continue
       saving.add(plan.contentId)

@@ -614,7 +614,7 @@ function Editing({
       cue.contentId,
       cue.path,
       wanted,
-      state.generatedBy,
+      state.origin,
       [...unsavedSet].sort(),
       [...overwrite],
       settings.cueFlowToRekordbox,
