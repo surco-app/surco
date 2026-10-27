@@ -1133,6 +1133,47 @@ describe('CuesSection on a track rekordbox has not analysed', () => {
     expect(reqs[0].provisional).toBe(true)
   })
 
+  // rekordbox analysing the track changes its grid, not its cues, so the draft the DJ set on
+  // Surco's grid stays open. Its save must still ask for the move onto rekordbox's beats, or
+  // the cues would stay off rekordbox's grid without a word.
+  it("still moves the cues onto rekordbox's grid when rekordbox analyses the track before the save", async () => {
+    const { saveRekordboxCues, rekordboxTrackCues, client } = setup(UNANALYSED, null, undefined, {
+      rekordboxSurcoGrid: surcoGrid(),
+    })
+    await ready()
+    markAt(bar(64))
+    rekordboxTrackCues.mockResolvedValue(READ)
+    await client.invalidateQueries({ queryKey: ['rekordbox-track-cues'] })
+    await waitFor(() => expect(screen.queryByTestId('cues-provisional')).toBeNull())
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    const [[reqs]] = saveRekordboxCues.mock.calls
+    expect(reqs[0].wanted?.some((c) => c.kind === 0 && c.ms === 128037)).toBe(true)
+    expect(reqs[0].provisional).toBe(true)
+  })
+
+  it('still moves them when the DJ comes back to the track after rekordbox analysed it', async () => {
+    const { saveRekordboxCues, rekordboxTrackCues, changeTrack, client } = setup(
+      UNANALYSED,
+      null,
+      undefined,
+      { rekordboxSurcoGrid: surcoGrid() },
+    )
+    await ready()
+    markAt(bar(64))
+    rekordboxTrackCues.mockResolvedValue(READ)
+    changeTrack({ contentId: '104', path: '/m/h.wav', label: 'Other' })
+    await ready()
+    client.removeQueries({ queryKey: ['rekordbox-track-cues', '103'] })
+    changeTrack({ contentId: '103', path: '/m/g.wav', label: 'Gowan' })
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    const [[reqs]] = saveRekordboxCues.mock.calls
+    expect(reqs[0].wanted?.some((c) => c.kind === 0 && c.ms === 128037)).toBe(true)
+    expect(reqs[0].provisional).toBe(true)
+  })
+
   it("says the grid is Surco's and shows the tempo it measured", async () => {
     setup(UNANALYSED, null, undefined, { rekordboxSurcoGrid: surcoGrid() })
     await ready()

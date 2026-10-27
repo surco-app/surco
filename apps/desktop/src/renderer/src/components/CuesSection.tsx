@@ -78,6 +78,7 @@ import {
   keepPlayhead,
   keptDraftOn,
   keptDrafts,
+  keptOnSurcoGrid,
   keptPlayhead,
   settleCueFocus,
   useCueFocus,
@@ -440,6 +441,13 @@ function Editing({
         read.cues.filter((c) => c.loop).map((c) => c.id),
       ),
   )
+  // A draft set on Surco's grid stays on it when rekordbox analyses the track meanwhile, so
+  // its save still asks main to move the cues onto rekordbox's beats.
+  const [onSurcoGrid] = useState(
+    () =>
+      provisional !== undefined ||
+      (keptDraftOn(cue.contentId, read, queued) !== undefined && keptOnSurcoGrid(cue.contentId)),
+  )
   const [menu, setMenu] = useState<{ ms: number; x: number; y: number } | null>(null)
   const [markMenu, setMarkMenu] = useState<{
     key: string
@@ -641,7 +649,7 @@ function Editing({
           path: cue.path,
           label: cue.label,
           fingerprint: read.fingerprint,
-          ...(provisional ? { provisional: true as const } : {}),
+          ...(onSurcoGrid ? { provisional: true as const } : {}),
         },
         fresh ? queued : null,
       )
@@ -653,7 +661,7 @@ function Editing({
     draftKey,
     state,
     unchanged,
-    provisional,
+    onSurcoGrid,
     fresh,
     queued,
   ])
@@ -861,7 +869,7 @@ function Editing({
         label: cue.label,
         wanted,
         fingerprint: read.fingerprint,
-        ...(provisional ? { provisional: true as const } : {}),
+        ...(onSurcoGrid ? { provisional: true as const } : {}),
       },
       ...(flowMarked ? await twinRequests([own]) : []),
     ])

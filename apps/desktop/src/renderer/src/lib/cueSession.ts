@@ -74,6 +74,10 @@ export function keepDraft(
   if (fresh) changed()
 }
 
+export function keptOnSurcoGrid(contentId: string): boolean {
+  return drafts.get(contentId)?.target.provisional === true
+}
+
 // The id the library gave each cue of a queued save once it wrote it, or null when what the
 // library holds is not exactly that save.
 function writtenIds(wanted: WantedCue[], rows: TrackCueRow[]): string[] | null {
