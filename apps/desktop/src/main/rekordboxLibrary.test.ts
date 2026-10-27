@@ -57,8 +57,12 @@ async function makeDb(): Promise<string> {
     FileType INTEGER,
     FileSize INTEGER,
     OrgFolderPath VARCHAR(255),
-    rb_local_deleted TINYINT(1) DEFAULT 0
+    rb_local_deleted TINYINT(1) DEFAULT 0,
+    rb_local_usn BIGINT,
+    updated_at DATETIME
   )`)
+  db.exec(`CREATE TABLE agentRegistry (registry_id VARCHAR(255), int_1 BIGINT, updated_at DATETIME)`)
+  db.prepare(`INSERT INTO agentRegistry VALUES ('localUpdateCount', 10, NULL)`).run()
   db.exec(`CREATE TABLE djmdSongPlaylist (
     ID VARCHAR(255) PRIMARY KEY, PlaylistID VARCHAR(255), ContentID VARCHAR(255)
   )`)
@@ -114,16 +118,10 @@ function addMetadataTables(path: string): void {
     db.exec(`ALTER TABLE djmdContent ADD COLUMN ${column} VARCHAR(255)`)
   for (const column of ['Commnt TEXT', 'ReleaseYear INTEGER', 'TrackNo INTEGER', 'DiscNo INTEGER'])
     db.exec(`ALTER TABLE djmdContent ADD COLUMN ${column}`)
-  db.exec('ALTER TABLE djmdContent ADD COLUMN rb_local_usn BIGINT')
-  db.exec('ALTER TABLE djmdContent ADD COLUMN updated_at DATETIME')
   db.exec(`CREATE TABLE djmdArtist (ID VARCHAR(255) PRIMARY KEY, Name VARCHAR(255),
     UUID VARCHAR(255), rb_data_status INTEGER, rb_local_data_status INTEGER,
     rb_local_deleted TINYINT(1), rb_local_synced TINYINT(1), usn BIGINT, rb_local_usn BIGINT,
     created_at DATETIME, updated_at DATETIME)`)
-  db.exec(
-    `CREATE TABLE agentRegistry (registry_id VARCHAR(255), int_1 BIGINT, updated_at DATETIME)`,
-  )
-  db.prepare(`INSERT INTO agentRegistry VALUES ('localUpdateCount', 10, NULL)`).run()
   db.close()
 }
 
@@ -286,6 +284,30 @@ describe('repointTrack', () => {
   // OrgFolderPath records where the track originally came from. In the real collection
   // 846 rows already disagree with the live path and rekordbox runs fine, so it is
   // history, not a second address to keep in step.
+  // rekordbox numbers every local change and stamps the row with it; its Cloud Library Sync
+  // uploads rows by that number. A move left unstamped never reaches the cloud, and the next
+  // edit of the track on another computer brings the old path back over it, so the track
+  // shows as missing. Every other write Surco makes already stamps its rows.
+  it('stamps the moved entry as a local change, as rekordbox does', async () => {
+    const output = join(audioDir, '02 Everybody.wav')
+    await writeFile(output, Buffer.alloc(5000))
+
+    await repointTrack(dbPath, { from: MP3, to: output })
+
+    const db = openRekordboxDb(dbPath)
+    if (!db) throw new Error('could not reopen the collection')
+    const row = db
+      .prepare(`SELECT rb_local_usn, updated_at FROM djmdContent WHERE ID = '900001'`)
+      .get() as { rb_local_usn: number; updated_at: string | null }
+    const counter = db
+      .prepare(`SELECT int_1 FROM agentRegistry WHERE registry_id = 'localUpdateCount'`)
+      .get() as { int_1: number }
+    db.close()
+    expect(row.rb_local_usn).toBe(11)
+    expect(counter.int_1).toBe(11)
+    expect(row.updated_at).toEqual(expect.any(String))
+  })
+
   it('leaves the original-path column alone', async () => {
     const output = join(audioDir, '02 Everybody.wav')
     await writeFile(output, Buffer.alloc(5000))
@@ -642,18 +664,12 @@ describe('a repoint whose audio was rewritten', () => {
       'Analysed INTEGER',
       'AnalysisUpdated INTEGER',
       'CueUpdated VARCHAR(255)',
-      'rb_local_usn BIGINT',
-      'updated_at DATETIME',
     ])
       db.exec(`ALTER TABLE djmdContent ADD COLUMN ${column}`)
     db.exec(
       `CREATE TABLE contentCue (ID VARCHAR(255), ContentID VARCHAR(255), Cues TEXT,
         rb_local_usn BIGINT, updated_at DATETIME)`,
     )
-    db.exec(
-      `CREATE TABLE agentRegistry (registry_id VARCHAR(255), int_1 BIGINT, updated_at DATETIME)`,
-    )
-    db.prepare(`INSERT INTO agentRegistry VALUES ('localUpdateCount', 10, NULL)`).run()
     db.prepare(
       `UPDATE djmdContent SET AnalysisDataPath = '/PIONEER/USBANLZ/167/710bc/ANLZ0000.DAT',
          Analysed = 105, AnalysisUpdated = 1 WHERE ID = '900001'`,
