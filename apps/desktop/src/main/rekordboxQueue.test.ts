@@ -215,6 +215,46 @@ describe('rekordbox queue', () => {
     expect(log.warn).toHaveBeenCalledWith(expect.stringContaining('1 repoint'))
   })
 
+  // The DJ only sees "could not save" on screen: the log line naming the collection and the
+  // reason is what tells a report from a user's machine apart from the next one.
+  it('logs why a run was refused and for which collection', async () => {
+    const d = deps({ collection: () => '/t/collection.nml' })
+    d.applyBatch.mockResolvedValueOnce({ ok: false, reason: 'unreadable' })
+    const q = createRekordboxQueue(d)
+    q.enqueue([track('a', '/m/a.wav')])
+    vi.mocked(log.warn).mockClear()
+    await q.apply(closed)
+    expect(log.warn).toHaveBeenCalledWith(expect.stringMatching(/\/t\/collection\.nml.*unreadable/))
+  })
+
+  it('logs a run refused before reaching any collection', async () => {
+    let at = '/t/collection.nml'
+    const q = createRekordboxQueue(deps({ collection: () => at }))
+    q.enqueue([track('a', '/m/a.wav')])
+    at = ''
+    vi.mocked(log.warn).mockClear()
+    await q.apply(closed)
+    expect(log.warn).toHaveBeenCalledWith(expect.stringContaining('unreadable'))
+  })
+
+  it('logs the notices a run hands back, the cues it could not keep among them', async () => {
+    const d = deps()
+    d.applyBatch.mockImplementationOnce(async (_c, ops) => ({
+      ok: true,
+      wrote: true,
+      outcomes: ops.map((o) => ({
+        id: o.id,
+        applied: true,
+        notices: [{ code: 'cues-slot-dropped' as const, track: 'Maniac' }],
+      })),
+    }))
+    const q = createRekordboxQueue(d)
+    q.enqueue([track('a', '/m/a.wav')])
+    vi.mocked(log.warn).mockClear()
+    await q.apply(closed)
+    expect(log.warn).toHaveBeenCalledWith(expect.stringMatching(/cues-slot-dropped.*Maniac/))
+  })
+
   it('does not call a queue held while no collection is found one for another collection', () => {
     let at = '/real/master.db'
     const q = createRekordboxQueue(deps({ collection: () => at }))

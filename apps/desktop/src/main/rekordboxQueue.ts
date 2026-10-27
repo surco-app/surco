@@ -11,6 +11,7 @@ import type {
 import type { LibraryRepointResult } from './libraryRepointFlush'
 import type { RekordboxRepoint } from './rekordboxBatch'
 import type { BatchResult, CuesOp, OpOutcome, QueueOp } from './rekordboxQueueOps'
+import { stillWaiting } from './rekordboxQueueWatch'
 
 interface QueueFile<R extends QueuedRepoint = RekordboxRepoint> {
   version: 1
@@ -176,6 +177,16 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
 
   const refused = (reason: RekordboxEditRefusal): QueueApply => ({ status: 'refused', reason })
 
+  const logResult = (result: QueueApply): void => {
+    const at = deps.collection() || 'no collection'
+    if (result.status === 'refused') {
+      if (stillWaiting(result)) log.info(`library queue for ${at} waits: ${result.reason}`)
+      else log.warn(`library queue for ${at} refused: ${result.reason}`)
+    }
+    if (result.status === 'applied' && result.notices.length > 0)
+      log.warn(`library queue for ${at} notices: ${JSON.stringify(result.notices)}`)
+  }
+
   const run = async (
     ensureClosed: () => Promise<boolean>,
     manual: boolean,
@@ -323,6 +334,10 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
       pending += 1
       const next = chain
         .then(() => run(ensureClosed, opts?.manual ?? false))
+        .then((result) => {
+          logResult(result)
+          return result
+        })
         .finally(() => {
           pending -= 1
         })
