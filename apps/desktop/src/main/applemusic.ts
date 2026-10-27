@@ -397,6 +397,55 @@ export async function transferPlaylists(
   ).trim()
 }
 
+// The replace path's half of a swap: before the superseded entry is deleted, what the DJ
+// built on it moves to the freshly added one, or the delete would take it along. Smart
+// playlists are skipped for the same -54 as above and refill from their rules anyway; a
+// computed rating is Music's album average, not stars anyone gave, so it stays behind.
+// The new entry lands at the end of each playlist, Music offers no insert at a position.
+// Nothing is wrapped in a try: one refused step fails the whole script, and the caller
+// keeps the old entry, so the worst case is both copies in Music with nothing lost.
+export function buildCarryOverScript(
+  fromPid: string,
+  toPid: string,
+  expectedLabel: string,
+): string {
+  return [
+    'tell application "Music"',
+    `  set srcs to (every track of library playlist 1 whose persistent ID is ${appleScriptString(fromPid)})`,
+    '  if (count of srcs) is 0 then return "missing"',
+    '  set src to item 1 of srcs',
+    `  if (artist of src) & " - " & (name of src) is not ${appleScriptString(expectedLabel)} then return "mismatch"`,
+    `  set dst to item 1 of (every track of library playlist 1 whose persistent ID is ${appleScriptString(toPid)})`,
+    '  set played count of dst to (played count of src)',
+    '  if (played date of src) is not missing value then',
+    '    set played date of dst to (played date of src)',
+    '  end if',
+    '  if (rating kind of src) is user then set rating of dst to (rating of src)',
+    '  set favorited of dst to (favorited of src)',
+    '  set moved to 0',
+    '  repeat with p in (every user playlist whose smart is false and special kind is none)',
+    `    if (exists (some track of p whose persistent ID is ${appleScriptString(fromPid)})) and not (exists (some track of p whose persistent ID is ${appleScriptString(toPid)})) then`,
+    '      duplicate dst to (contents of p)',
+    '      set moved to moved + 1',
+    '    end if',
+    '  end repeat',
+    '  return "carried" & tab & (moved as text)',
+    'end tell',
+  ].join('\n')
+}
+
+export async function carryOverToAppleMusicCopy(
+  fromPid: string,
+  toPid: string,
+  expectedLabel: string,
+  run: typeof runOsascript = runOsascript,
+): Promise<'carried' | 'missing' | 'mismatch'> {
+  const answer = (await run(buildCarryOverScript(fromPid, toPid, expectedLabel))).trim()
+  if (answer === 'missing' || answer === 'mismatch') return answer
+  if (/^carried\t\d+$/.test(answer)) return 'carried'
+  throw new Error(`unexpected Music answer: ${answer}`)
+}
+
 // osascript and the Music AppleScript bridge only exist on macOS, so this gates
 // the whole feature on the platform. Apple Music for Windows exposes no
 // automation, so a track simply finishes in the output folder there. FLAC is
