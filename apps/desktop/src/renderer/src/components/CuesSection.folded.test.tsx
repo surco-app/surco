@@ -20,11 +20,19 @@ import { resolveBindings } from '../../../shared/shortcutDefaults'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import type { Command } from '../lib/commands'
+import { ghostOf } from '../lib/cueDraft'
 import { resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { runKeyClaim } from '../lib/spaceClaim'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
+
+// Passed through untouched, only counted: working out the place ghost runs the whole draft
+// reducer, the cost the playing playhead must not pay on every frame.
+vi.mock('../lib/cueDraft', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../lib/cueDraft')>()
+  return { ...real, ghostOf: vi.fn(real.ghostOf) }
+})
 
 const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32]
 const GRID = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
@@ -350,6 +358,27 @@ describe('CuesSection folded', () => {
     expect(screen.getByTestId('cues-play')).toHaveAccessibleName('Pause')
     changeTrack({ contentId: '104', path: '/m/h.wav', label: 'Other' })
     expect(pause).toHaveBeenCalled()
+  })
+
+  // While the preview plays the playhead moves every frame, but the ghost of what a place
+  // would add only changes when the playhead crosses to another beat. Working it out per
+  // frame ran the draft reducer sixty times a second for the same answer.
+  it('works out the place ghost once per beat while playing, not on every frame', async () => {
+    stubSound()
+    const frames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => frames.push(cb))
+    setup()
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-play'))
+    await act(async () => audios[0].onloadedmetadata?.())
+    const shown = position()
+    const before = vi.mocked(ghostOf).mock.calls.length
+    for (const sec of [64.01, 64.05, 64.1, 64.15, 64.2]) {
+      audios[0].currentTime = sec
+      await act(async () => frames.shift()?.(0))
+    }
+    expect(position()).not.toBe(shown)
+    expect(vi.mocked(ghostOf).mock.calls.length - before).toBeLessThanOrEqual(1)
   })
 
   it('lets Space stop the folded preview while it plays, instead of starting the mini-player over it, and gives Space back once stopped', async () => {

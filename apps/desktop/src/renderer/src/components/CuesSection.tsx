@@ -376,9 +376,13 @@ function Editing({
     manual ? { type: 'remove', key } : { type: 'remove-point', key }
   const moveOf = (key: string, ms: number): DraftAction =>
     manual ? { type: 'move', key, ms } : { type: 'move-point', key, ms }
+  // A drop lands on the nearest beat, so the ghost only changes when the playhead crosses
+  // to another one; keyed on the beat it is not worked out again on every playing frame.
+  const playheadBeatMs =
+    ctx.snapTo.length > 0 ? ctx.snapTo[nearestBeat(ctx.snapTo, playheadMs)] : playheadMs
   const playheadGhost = useMemo<DraftGhost | null>(
-    () => (placing ? ghostOf(state, { type: 'mark-drop', ms: playheadMs }, ctx) : null),
-    [placing, playheadMs, state, ctx],
+    () => (placing ? ghostOf(state, { type: 'mark-drop', ms: playheadBeatMs }, ctx) : null),
+    [placing, playheadBeatMs, state, ctx],
   )
   const [hoverMs, setHoverMs] = useState<number | null>(null)
   useEffect(() => {
