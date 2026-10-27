@@ -983,6 +983,25 @@ describe('TrimSection', () => {
     expect(onChange).toHaveBeenCalledWith({ startSec: 12.345, endSec: 90.3 })
   })
 
+  // Every other readout of the cut speaks the app language's decimal mark; the field alone
+  // showed "9.700" next to "9,7 s", and a Spanish user editing it typed into a format the
+  // rest of the panel never used. It shows the comma and takes it back.
+  it('shows the cut time in the app language and takes its decimal mark', async () => {
+    const before = i18n.language
+    await act(() => i18n.changeLanguage('es'))
+    try {
+      const onChange = vi.fn()
+      render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+      const start = await screen.findByTestId('trim-cut-time-start', undefined, { timeout: 3000 })
+      expect(start).toHaveValue('9,700')
+      fireEvent.change(start, { target: { value: '12,345' } })
+      fireEvent.keyDown(start, { key: 'Enter' })
+      expect(onChange).toHaveBeenCalledWith({ startSec: 12.345, endSec: 90.3 })
+    } finally {
+      await act(() => i18n.changeLanguage(before))
+    }
+  })
+
   // Mid-typing, the arrows are text keys: ← to fix a digit moved the cut instead, and the
   // typed text then committed on blur over the nudge. Escape gives the value back.
   it('lets the arrows move the caret while a time is being typed', async () => {

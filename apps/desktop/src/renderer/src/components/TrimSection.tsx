@@ -342,7 +342,7 @@ function Lane({
             type="text"
             inputMode="decimal"
             aria-label={tr(side === 'start' ? 'trim.handleStartTime' : 'trim.handleEndTime')}
-            value={timeText ?? `${cut.toFixed(3)}`}
+            value={timeText ?? formatFixed(cut, 3, i18n.language)}
             onChange={(e) => setTimeText(e.target.value)}
             onBlur={commitTime}
             onKeyDown={(e) => {
