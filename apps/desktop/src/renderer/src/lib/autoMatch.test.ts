@@ -862,6 +862,27 @@ describe('acceptReviewPatch', () => {
     expect(acceptReviewPatch(t, undefined, undefined, true)?.meta?.year).toBe('2001-03-12')
   })
 
+  // The sweep may have applied a wrong release before the user accepts the right one; the
+  // label and Discogs id that wrong release wrote must not survive the accept.
+  it('takes back what the previously applied release wrote', () => {
+    const t = track({
+      meta: { title: 'One', artist: 'A', publisher: 'Wrong Records', discogsReleaseId: '111' },
+      appliedRelease: {
+        before: { publisher: 'Own Label', discogsReleaseId: '' },
+        wrote: { publisher: 'Wrong Records', discogsReleaseId: '111' },
+      },
+      reviewMatch: {
+        release: release(2, { provider: 'bandcamp' }),
+        track: { position: '1', title: 'One' },
+        result: searchResult(2),
+      },
+    } as Partial<TrackItem>)
+    const patch = acceptReviewPatch(t)
+    expect(patch?.meta?.publisher).toBe('Own Label')
+    expect(patch?.meta?.discogsReleaseId).toBe('')
+    expect(patch?.appliedRelease?.before.publisher).toBeUndefined()
+  })
+
   // No pending suggestion → nothing to accept, so the command that calls this stays a no-op
   // (and its shortcut/enabled gate reads the same undefined).
   it('returns undefined when the track has no review suggestion', () => {

@@ -2803,6 +2803,25 @@ describe('Editor Discogs apply', () => {
     expect(onChange).toHaveBeenCalled()
   })
 
+  // A wrong release applied earlier (often by the sweep) must not leave its label behind
+  // when the DJ picks the right one, which carries none.
+  it('takes back the label the previously applied release wrote', async () => {
+    withDiscogs()
+    const { onChange } = renderEditor({
+      id: 'a',
+      meta: { title: 'Track One', publisher: 'Wrong Records' },
+      appliedRelease: { before: { publisher: 'Own Label' }, wrote: { publisher: 'Wrong Records' } },
+    })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith(
+        expect.objectContaining({ meta: expect.objectContaining({ publisher: 'Own Label' }) }),
+      ),
+    )
+  })
+
   // Applying a release is the cue to verify the tags, so focus jumps to the first field —
   // the keyboard flow continues ⌘2 → pick → Enter → edit without a manual ⌘3.
   it('moves focus to the first field after a track is applied', async () => {

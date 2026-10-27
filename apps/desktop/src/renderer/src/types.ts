@@ -1,4 +1,5 @@
 import type {
+  AppliedRelease,
   DeclickConfig,
   ForeignTag,
   MusicReviewField,
@@ -129,6 +130,9 @@ export interface TrackItem {
   // apply), so the list can filter matches by source. Cleared with `matched` when the
   // metadata is cleared.
   matchProvider?: SearchProviderId
+  // What the last applied release wrote over the track's own values, so the next release
+  // applied takes back what nobody touched since (see buildReleaseMeta).
+  appliedRelease?: AppliedRelease
   // Whether another loaded row shares this track's folded artist+title — the same song
   // as two files. Merged in at the App boundary (like spectrum/inLibrary) from a
   // whole-list scan, so the duplicates filter is a plain per-track predicate.

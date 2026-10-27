@@ -101,6 +101,7 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
             importFields,
             genrePresets,
             fullReleaseDate,
+            file.appliedRelease,
           ),
         },
       ]
