@@ -108,7 +108,7 @@ function decideLossyReencode(
 
 interface Params {
   settings: Settings | null
-  removeTrack: (id: string, everywhere?: boolean) => void
+  removeTracks: (ids: string[], everywhere?: boolean) => void
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   // Empties the given rows: App routes the whole-list case to clearTracks (start over, drops
   // the folder watch) and the filtered-visible subset to removeTracks, so a format filter never
@@ -249,7 +249,7 @@ function confirmsPermanent(keepsTrash: boolean, settings: Settings | null): bool
 
 export function useConfirmFlows({
   settings,
-  removeTrack,
+  removeTracks,
   updateTrack,
   emptyTracks,
   deriveTracks,
@@ -285,14 +285,25 @@ export function useConfirmFlows({
       confirmLabel: tr(copy.confirm),
       destructive: true,
       onConfirm: () => {
-        for (const [i, track] of targets.entries()) {
+        const trashed = targets.map((track, i) =>
           window.api
             .trashFile(track.inputPath, confirmsPermanent(keeps[i], settings))
-            .then(() => removeTrack(track.id, true))
+            .then(() => track.id)
             // The user confirmed a destructive dialog; a silent failure here reads
             // as "the file is in the trash" when it isn't.
-            .catch(() => reportTrashFailure(track.fileName))
-        }
+            .catch(() => {
+              reportTrashFailure(track.fileName)
+              return null
+            }),
+        )
+        // The rows leave together once every file has settled, so a cover the selection
+        // shared is freed against the rows that remain (see App's onRemove).
+        void Promise.all(trashed).then((ids) =>
+          removeTracks(
+            ids.filter((id) => id !== null),
+            true,
+          ),
+        )
       },
     })
   }
@@ -426,8 +437,10 @@ export function useConfirmFlows({
   // through with nothing to say it had anything on it. A clean row still goes in one
   // click, whether it is one or one of many.
   function askRemoveFromList(targets: TrackItem[]): void {
-    if (targets.length <= 1 && !targets.some(hasStagedEdits)) {
-      for (const t of targets) removeTrack(t.id)
+    if (targets.length === 0) return
+    const ids = targets.map((t) => t.id)
+    if (targets.length === 1 && !targets.some(hasStagedEdits)) {
+      removeTracks(ids)
       return
     }
     openConfirm({
@@ -435,9 +448,7 @@ export function useConfirmFlows({
       message: tr('confirm.removeFromListMessage', { count: targets.length }),
       confirmLabel: tr('confirm.removeFromListConfirm'),
       destructive: true,
-      onConfirm: () => {
-        for (const t of targets) removeTrack(t.id)
-      },
+      onConfirm: () => removeTracks(ids),
     })
   }
 

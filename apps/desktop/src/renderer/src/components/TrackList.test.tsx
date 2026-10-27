@@ -2045,4 +2045,36 @@ describe('TrackList row waves', () => {
     await vi.waitFor(() => expect(rowWaves).toHaveBeenCalledTimes(2))
     expect(rowWaves.mock.calls[1][0].map((r) => r.path)).toEqual([tracks[30].inputPath])
   })
+
+  // A row a filter or search takes off the list never scrolls out of view: it just goes.
+  // Without a last "not visible" report the auto-match sweep kept treating it as on screen
+  // and probed it ahead of the rows the user is actually looking at.
+  it('reports a row that leaves the list as no longer visible', () => {
+    Object.assign(window, { api: { ...api, rowWaves: vi.fn<Api['rowWaves']>(async () => ({})) } })
+    const onVisible = vi.fn()
+    const tracks = [track({ id: 'a' }), track({ id: 'b' })]
+    const list = (shown: typeof tracks) => (
+      <TrackList
+        tracks={shown}
+        selectedId={null}
+        selectedIds={new Set()}
+        outputFormat="aiff"
+        bindings={bindings}
+        onSelect={vi.fn()}
+        onActivate={vi.fn()}
+        onRemove={vi.fn()}
+        onSwipeRemove={vi.fn()}
+        onAcceptReview={vi.fn()}
+        onPrefetch={vi.fn()}
+        onVisible={onVisible}
+        renderMenu={() => null}
+      />
+    )
+    const { rerender } = render(list(tracks))
+    show(observed.slice(0, 2))
+
+    rerender(list([tracks[1]]))
+
+    expect(onVisible).toHaveBeenLastCalledWith('a', false)
+  })
 })

@@ -29,17 +29,17 @@ function setup(
     onOldMusicCopyRemoved?: ReturnType<typeof vi.fn<() => void>>
     reportOldCopyRemoveFailure?: ReturnType<typeof vi.fn<(mismatch: boolean) => void>>
     updateTrack?: ReturnType<typeof vi.fn<(id: string, patch: Partial<TrackItem>) => void>>
-    removeTrack?: ReturnType<typeof vi.fn<(id: string) => void>>
+    removeTracks?: ReturnType<typeof vi.fn<(ids: string[], everywhere?: boolean) => void>>
     reportTrashFailure?: ReturnType<typeof vi.fn<(fileName: string) => void>>
     settings?: Settings | null
   } = {},
 ) {
   const opened: ConfirmModal[] = []
-  const removeTrack = extra.removeTrack ?? vi.fn()
+  const removeTracks = extra.removeTracks ?? vi.fn()
   const { result } = renderHook(() =>
     useConfirmFlows({
       settings: extra.settings ?? null,
-      removeTrack,
+      removeTracks,
       updateTrack: extra.updateTrack ?? vi.fn(),
       emptyTracks: vi.fn(),
       deriveTracks: vi.fn(),
@@ -51,7 +51,7 @@ function setup(
       tracksRef: { current: allTracks },
     }),
   )
-  return { flows: result.current, opened, removeTrack }
+  return { flows: result.current, opened, removeTracks }
 }
 
 // A track carries staged edits when its live state has diverged from what the file on
@@ -70,24 +70,37 @@ function edited(id: string): TrackItem {
 describe('useConfirmFlows removing tracks from the list', () => {
   it('removes a single untouched track without asking', () => {
     const t = track('a')
-    const { flows, opened, removeTrack } = setup([t])
+    const { flows, opened, removeTracks } = setup([t])
 
     flows.askRemoveFromList([t])
 
     expect(opened).toHaveLength(0)
-    expect(removeTrack).toHaveBeenCalledWith('a')
+    expect(removeTracks).toHaveBeenCalledWith(['a'])
   })
 
   it('asks before discarding a single track that carries staged edits', () => {
     const t = edited('a')
-    const { flows, opened, removeTrack } = setup([t])
+    const { flows, opened, removeTracks } = setup([t])
 
     flows.askRemoveFromList([t])
 
     expect(opened).toHaveLength(1)
-    expect(removeTrack).not.toHaveBeenCalled()
+    expect(removeTracks).not.toHaveBeenCalled()
     opened[0].onConfirm?.()
-    expect(removeTrack).toHaveBeenCalledWith('a')
+    expect(removeTracks).toHaveBeenCalledWith(['a'])
+  })
+
+  // Same batch rule as the trash: the selection leaves in one removal, so a cover shared
+  // by those rows is weighed against what is left, not against its own doomed siblings.
+  it('removes a confirmed selection in one batch', () => {
+    const tracks = [track('a'), track('b'), track('c')]
+    const { flows, opened, removeTracks } = setup(tracks)
+
+    flows.askRemoveFromList(tracks)
+    opened[0].onConfirm?.()
+
+    expect(removeTracks).toHaveBeenCalledTimes(1)
+    expect(removeTracks).toHaveBeenCalledWith(['a', 'b', 'c'])
   })
 
   // The strings were written for the many-rows case only. Now that one row can raise the
@@ -217,10 +230,28 @@ describe('useConfirmFlows trashed row', () => {
   it('drops a trashed file’s row from every list, a playlist that listed it included', async () => {
     installApi({ trashFile: vi.fn<Api['trashFile']>().mockResolvedValue(undefined) })
     const a = track('a')
-    const { flows, opened, removeTrack } = setup([a])
+    const { flows, opened, removeTracks } = setup([a])
     await flows.askTrash([a])
     opened[0].onConfirm()
-    await waitFor(() => expect(removeTrack).toHaveBeenCalledWith('a', true))
+    await waitFor(() => expect(removeTracks).toHaveBeenCalledWith(['a'], true))
+  })
+
+  // One batch for the whole trashed selection: removed row by row, each removal judged a
+  // cover shared by the selection against siblings still in the list, so its blob was never
+  // freed, and every row cost a pass over the whole crate.
+  it('drops every trashed row in one batch, leaving out the files that failed', async () => {
+    installApi({
+      trashFile: vi.fn<Api['trashFile']>((path) =>
+        path === '/b.wav' ? Promise.reject(new Error('busy')) : Promise.resolve(undefined),
+      ),
+    })
+    const tracks = [track('a'), track('b'), track('c')]
+    const { flows, opened, removeTracks } = setup(tracks)
+    await flows.askTrash(tracks)
+    opened[0].onConfirm()
+    await waitFor(() => expect(removeTracks).toHaveBeenCalled())
+    expect(removeTracks).toHaveBeenCalledTimes(1)
+    expect(removeTracks).toHaveBeenCalledWith(['a', 'c'], true)
   })
 })
 

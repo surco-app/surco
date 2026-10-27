@@ -176,6 +176,7 @@ import {
   type ClickMods,
   clickSelect,
   editScope,
+  pruneToVisible,
   reanchorToVisible,
   type Selection,
 } from './lib/selection'
@@ -1422,7 +1423,7 @@ export default function App(): React.JSX.Element {
     askConvertOne,
   } = useConfirmFlows({
     settings,
-    removeTrack,
+    removeTracks,
     updateTrack,
     emptyTracks,
     deriveTracks: deriveTracksUndoable,
@@ -1665,24 +1666,40 @@ export default function App(): React.JSX.Element {
   // to show. The rows themselves stay memoized either way; this drops the reconciliation.
   const prevVisibleTracks = useRef<TrackItem[]>([])
   const heldOrder = useRef<{ view: string; selected: string | null }>({ view: '', selected: null })
-  const [listHovered, setListHovered] = useState(false)
-  const visibleTracks = useMemo(() => {
+  // A ref, not state: entering or leaving the list must not re-render App. Leaving only
+  // renders when a pick made under the pointer is still waiting for the order to catch up.
+  const listHovered = useRef(false)
+  const [heldRelease, setHeldRelease] = useState(0)
+  const filterKey = [
+    filterSelection.quality,
+    filterSelection.conversion,
+    filterSelection.library,
+    filterSelection.duplicates,
+    filterSelection.format,
+  ]
+    .map((axis) => axis ?? '')
+    .join('|')
+  // Filtering and sorting the crate depend on neither the selection nor the pointer, so
+  // they run apart from the hold below: picking a row must not pay for sorting every row.
+  const sortedTracks = useMemo(() => {
     // Reset the pinned set the moment any filter axis changes, so each filter session
     // starts from the live verdicts; within a session filterWithSticky keeps already-shown
     // rows put even after their verdict flips under the user.
-    const { quality, conversion, library, duplicates, format } = filterSelection
-    const key = `${quality ?? ''}|${conversion ?? ''}|${library ?? ''}|${duplicates ?? ''}|${format ?? ''}`
-    if (stickyFilter.current !== key) {
-      stickyFilter.current = key
+    if (stickyFilter.current !== filterKey) {
+      stickyFilter.current = filterKey
       stickyIds.current = new Set()
     }
-    const sorted = sortTracks(
+    return sortTracks(
       filterWithSticky(scopeTracks, filterSelection, stickyIds.current).filter(
         searchMatcher(deferredSearch),
       ),
       sortBy,
       sortDir,
     )
+  }, [scopeTracks, filterSelection, filterKey, deferredSearch, sortBy, sortDir])
+  const viewKey = `${filterKey}|${deferredSearch}|${sortBy}|${sortDir}|${openPlaylistId}|${playlistOrder}`
+  // biome-ignore lint/correctness/useExhaustiveDependencies: heldRelease is the re-run trigger for the pointer leaving the list; the hover itself is read from its ref.
+  const visibleTracks = useMemo(() => {
     // While the same track stays selected under the same view, edits re-sort nothing: the
     // row the user is correcting (or one a background match rewrites) keeps its place, and
     // the list catches up when the user picks another track or changes the sort.
@@ -1691,25 +1708,14 @@ export default function App(): React.JSX.Element {
     // double-click lands on whatever slid into place. The order catches up when it leaves.
     // The open playlist is part of the view: another playlist with the same tracks in its
     // own order must show that order, or its separators land between the wrong rows.
-    const viewKey = `${key}|${deferredSearch}|${sortBy}|${sortDir}|${openPlaylistId}|${playlistOrder}`
     const hold =
       heldOrder.current.view === viewKey &&
-      (heldOrder.current.selected === selectedId || listHovered)
-    const next = hold ? holdOrder(prevVisibleTracks.current, sorted) : sorted
+      (heldOrder.current.selected === selectedId || listHovered.current)
+    const next = hold ? holdOrder(prevVisibleTracks.current, sortedTracks) : sortedTracks
     if (!hold) heldOrder.current = { view: viewKey, selected: selectedId }
     if (!sameTracks(prevVisibleTracks.current, next)) prevVisibleTracks.current = next
     return prevVisibleTracks.current
-  }, [
-    scopeTracks,
-    filterSelection,
-    deferredSearch,
-    sortBy,
-    sortDir,
-    openPlaylistId,
-    playlistOrder,
-    selectedId,
-    listHovered,
-  ])
+  }, [sortedTracks, viewKey, selectedId, heldRelease])
   // The display order a Shift-click ranges over, read by the (ref-stable) select callback
   // so a range spans the rows the user actually sees — not the import order, which would
   // sweep in tracks hidden by the active filter, sort or search.
@@ -1774,14 +1780,25 @@ export default function App(): React.JSX.Element {
   // selection used to leave the list with no visible row selected. Scoped to the filters —
   // not search, which changes per keystroke and would thrash the editor's per-track fetches;
   // sort only reorders, never hides.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: react to filter changes only; visibleTracks and selectedId are read from the latest render.
+  // Selected rows the new filter hides leave the selection too, so the next trash or remove
+  // acts only on rows the user can see.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: react to filter changes only; visibleTracks and selection are read from the latest render.
   useEffect(() => {
-    const next = reanchorToVisible(
-      visibleTracks.map((t) => t.id),
-      selectedId,
-    )
+    const ids = visibleTracks.map((t) => t.id)
+    const next = pruneToVisible(ids, selection) ?? reanchorToVisible(ids, selectedId)
     if (next) setSelection(next)
   }, [filterSelection])
+  // A search hides rows too, and an action on the selection must not reach them. Only the
+  // hidden extras of a selection go: when no selected row is left on screen the selection
+  // stays, so typing does not jump the editor from track to track on every keystroke.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: react to search changes only; visibleTracks and selection are read from the latest render.
+  useEffect(() => {
+    const next = pruneToVisible(
+      visibleTracks.map((t) => t.id),
+      selection,
+    )
+    if (next) setSelection(next)
+  }, [deferredSearch])
   // Drives the toolbar auto-match button: how many visible tracks are still worth a probe, so
   // it disables once every shown track is matched, and changing the filter to reveal unmatched
   // rows re-enables it. Scoped to the visible set because the sweep matches only those.
@@ -2923,8 +2940,13 @@ export default function App(): React.JSX.Element {
                     <div
                       ref={listScrollRef}
                       data-testid="track-list-scroll"
-                      onPointerEnter={() => setListHovered(true)}
-                      onPointerLeave={() => setListHovered(false)}
+                      onPointerEnter={() => {
+                        listHovered.current = true
+                      }}
+                      onPointerLeave={() => {
+                        listHovered.current = false
+                        if (heldOrder.current.selected !== selectedId) setHeldRelease((n) => n + 1)
+                      }}
                       className={`min-h-0 flex-1 ${review !== null ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}
                     >
                       {review !== null ? (

@@ -1173,6 +1173,9 @@ export const TrackList = memo(function TrackList({
       rowVisibility.current.set(el, report)
       rowObserver.current.observe(el)
       return () => {
+        // A row that leaves the list (filtered, searched or removed) never scrolls out of
+        // view, so the observer never says so: report it gone before letting it go.
+        report(false)
         rowVisibility.current.delete(el)
         rowObserver.current?.unobserve(el)
       }

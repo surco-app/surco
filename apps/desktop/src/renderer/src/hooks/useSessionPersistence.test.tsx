@@ -88,6 +88,42 @@ describe('useSessionPersistence', () => {
     expect(saveLastSession).toHaveBeenCalledWith(['/music/files.wav'], {})
   })
 
+  // Quitting inside the one-second debounce used to drop the last edits on the floor: the
+  // timer died with the window and nothing wrote them. The page going away flushes the
+  // pending save, through a call that finishes before the renderer is gone.
+  it('writes the pending session when the window goes away inside the debounce', async () => {
+    vi.useFakeTimers()
+    const saveLastSession = vi.fn<Api['saveLastSession']>().mockResolvedValue(undefined)
+    const saveLastSessionSync = vi.fn<Api['saveLastSessionSync']>()
+    ;(window as unknown as { api: Partial<Api> }).api = {
+      getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
+      saveLastSession,
+      saveLastSessionSync,
+    }
+    const tracks = [
+      { id: 'a', inputPath: '/music/a.wav', inFiles: true, meta: emptyMetadata() } as TrackItem,
+    ]
+    renderHook(() =>
+      useSessionPersistence({
+        tracks,
+        tracksRef: { current: tracks },
+        addPaths: vi.fn(),
+        seedRestoredEdits: vi.fn(),
+        store: createAppStore(),
+        withdrawOffer: false,
+      }),
+    )
+
+    window.dispatchEvent(new Event('pagehide'))
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000)
+    })
+    vi.useRealTimers()
+
+    expect(saveLastSessionSync).toHaveBeenCalledWith(['/music/a.wav'], {})
+    expect(saveLastSession).not.toHaveBeenCalled()
+  })
+
   it('keeps offering Files back while only a source playlist has rows', async () => {
     ;(window as unknown as { api: Partial<Api> }).api = {
       getLastSession: vi

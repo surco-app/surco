@@ -128,6 +128,18 @@ export function useSessionPersistence({
   const SESSION_SAVE_DEBOUNCE_MS = 1_000
   const savedSessionSig = useRef<string | null>(null)
   const sessionSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const writeSettled = useStableCallback(
+    (save: (paths: string[], edits: Record<string, SessionEdit>) => void): void => {
+      const settled = tracksRef.current.filter((t) => t.inFiles)
+      if (settled.some((t) => t.loadingMeta)) return
+      const paths = settled.map((t) => t.inputPath)
+      const edits = sessionEdits(settled)
+      const sig = JSON.stringify({ paths, edits })
+      if (sig === savedSessionSig.current) return
+      savedSessionSig.current = sig
+      save(paths, edits)
+    },
+  )
   // biome-ignore lint/correctness/useExhaustiveDependencies: tracksRef is read inside the debounced timer, on purpose — the write must snapshot the list as it SETTLES, not as it looked when the burst began. `tracks` stays the trigger; declaring the ref as a dependency would re-run the effect on every mutation, which is the per-render work this indirection exists to shed.
   useEffect(() => {
     // Rows whose metadata read is still in flight would snapshot half-loaded state —
@@ -147,20 +159,23 @@ export function useSessionPersistence({
     if (sessionSaveTimer.current) clearTimeout(sessionSaveTimer.current)
     sessionSaveTimer.current = setTimeout(() => {
       sessionSaveTimer.current = null
-      const settled = tracksRef.current.filter((t) => t.inFiles)
-      if (settled.some((t) => t.loadingMeta)) return
-      const paths = settled.map((t) => t.inputPath)
-      const edits = sessionEdits(settled)
-      const sig = JSON.stringify({ paths, edits })
-      if (sig === savedSessionSig.current) return
-      savedSessionSig.current = sig
-      void window.api.saveLastSession(paths, edits)
+      writeSettled((paths, edits) => void window.api.saveLastSession(paths, edits))
     }, SESSION_SAVE_DEBOUNCE_MS)
   }, [tracks])
-  useEffect(
-    () => () => {
+  // A quit or a closed window inside the debounce kills the timer with the page, losing
+  // the last second of edits. The page going away writes the pending save at once, and
+  // synchronously: an async IPC sent from a dying page is not sure to reach main.
+  useEffect(() => {
+    const flush = (): void => {
+      if (!sessionSaveTimer.current) return
+      clearTimeout(sessionSaveTimer.current)
+      sessionSaveTimer.current = null
+      writeSettled(window.api.saveLastSessionSync)
+    }
+    window.addEventListener('pagehide', flush)
+    return () => {
+      window.removeEventListener('pagehide', flush)
       if (sessionSaveTimer.current) clearTimeout(sessionSaveTimer.current)
-    },
-    [],
-  )
+    }
+  }, [writeSettled])
 }

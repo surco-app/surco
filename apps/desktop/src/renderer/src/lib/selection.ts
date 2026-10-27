@@ -69,6 +69,19 @@ export function reanchorToVisible(visibleIds: string[], anchor: string | null): 
   return first ? { ids: [first], anchor: first } : { ids: [], anchor: null }
 }
 
+// After the view narrows (a filter or a search), drops the selected rows it no longer shows,
+// so trashing, removing or editing "the selection" never reaches rows the user cannot see.
+// A hidden anchor moves onto the last still-visible selected row. Returns null when nothing
+// selected was hidden, and also when nothing selected is still visible: that case is the
+// caller's call (a filter falls to the first visible track, a search keeps the editor open).
+export function pruneToVisible(visibleIds: string[], state: Selection): Selection | null {
+  const visible = new Set(visibleIds)
+  const ids = state.ids.filter((id) => visible.has(id))
+  if (ids.length === state.ids.length || ids.length === 0) return null
+  const anchor = state.anchor && visible.has(state.anchor) ? state.anchor : ids[ids.length - 1]
+  return { ids, anchor }
+}
+
 // The rows an edit acts on: the multi-selection, or the single selected row, or nothing.
 //
 // Deliberately not the same rule as the bulk scope (App's `bulkTracks`), which falls back to

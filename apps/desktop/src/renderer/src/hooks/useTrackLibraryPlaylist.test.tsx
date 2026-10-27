@@ -1020,6 +1020,25 @@ describe('Files and the source playlists keep their own tracks', () => {
     expect(onRemove).toHaveBeenCalledTimes(1)
   })
 
+  // A trashed selection leaves in one batch, and its files are gone from disk: a playlist
+  // that listed them must not keep a row pointing at nothing.
+  it('drops a batch from everywhere when asked to, rows a playlist lists included', async () => {
+    const onRemove = vi.fn()
+    const { result } = setup({}, { onRemove, filesOpen: true })
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff']), 'rekordbox')
+      await result.current.addPaths(['/m/a.aiff', '/m/b.aiff'])
+    })
+    act(() =>
+      result.current.removeTracks(
+        result.current.tracks.map((t) => t.id),
+        true,
+      ),
+    )
+    expect(result.current.tracks).toHaveLength(0)
+    expect(onRemove).toHaveBeenCalledTimes(1)
+  })
+
   it('removes a row from a source view as before, Files included', async () => {
     const { result } = setup({}, { filesOpen: false })
     await act(async () => {

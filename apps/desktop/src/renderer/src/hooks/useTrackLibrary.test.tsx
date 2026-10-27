@@ -176,6 +176,7 @@ describe('useTrackLibrary cancelling an import', () => {
   function setupSlowReads(): {
     result: { current: ReturnType<typeof useTrackLibrary> }
     release: () => void
+    releaseOne: () => void
     readCount: () => number
   } {
     const pending: (() => void)[] = []
@@ -207,6 +208,7 @@ describe('useTrackLibrary cancelling an import', () => {
       release: () => {
         for (const r of pending.splice(0)) r()
       },
+      releaseOne: () => pending.shift()?.(),
       readCount: () => reads,
     }
   }
@@ -281,6 +283,72 @@ describe('useTrackLibrary cancelling an import', () => {
       await Promise.resolve()
     })
 
+    expect(result.current.importProgress).toBeNull()
+  })
+
+  // A cancel must stay a cancel when another import starts right after it (a second drop,
+  // or the next batch of a folder walk): the cancelled queue used to wake up and read the
+  // whole crate the user had just stopped.
+  it('does not resume a cancelled import when the next one starts', async () => {
+    const { result, release, readCount } = setupSlowReads()
+    const paths = Array.from({ length: 40 }, (_, i) => `/m/${i}.wav`)
+    await act(async () => {
+      void result.current.addPaths(paths)
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    const startedBeforeCancel = readCount()
+
+    act(() => result.current.cancelImport())
+    await act(async () => {
+      void result.current.addPaths(['/other/new.wav'])
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    for (let round = 0; round < 3; round++) {
+      await act(async () => {
+        release()
+        await new Promise((r) => setTimeout(r, 0))
+      })
+    }
+
+    expect(readCount()).toBe(startedBeforeCancel + 1)
+    expect(result.current.tracks.map((t) => t.inputPath)).toContain('/other/new.wav')
+    expect(result.current.tracks.length).toBe(startedBeforeCancel + 1)
+  })
+
+  // The progress pill of the import that follows a cancel describes that import alone:
+  // the cancelled reads still landing must not count toward it, or it ends (and reports
+  // its failures) while its own files are still being read.
+  it('keeps the cancelled reads out of the next import progress', async () => {
+    const { result, release, releaseOne } = setupSlowReads()
+    const paths = Array.from({ length: 40 }, (_, i) => `/m/${i}.wav`)
+    await act(async () => {
+      void result.current.addPaths(paths)
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    act(() => result.current.cancelImport())
+    await act(async () => {
+      void result.current.addPaths(['/other/one.wav', '/other/two.wav'])
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(result.current.importProgress).toEqual({ done: 0, total: 2 })
+
+    await act(async () => {
+      release()
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(result.current.importProgress).toEqual({ done: 0, total: 2 })
+
+    await act(async () => {
+      releaseOne()
+      // Past the window the read results are written in, which the count rides.
+      await new Promise((r) => setTimeout(r, 60))
+    })
+    expect(result.current.importProgress).toEqual({ done: 1, total: 2 })
+
+    await act(async () => {
+      release()
+      await new Promise((r) => setTimeout(r, 0))
+    })
     expect(result.current.importProgress).toBeNull()
   })
 })
@@ -536,6 +604,57 @@ describe('useTrackLibrary import batching', () => {
     // per-file path cost. A generous ceiling still fails hard on the O(n²) regression while
     // leaving headroom for however the concurrency workers interleave their resolutions.
     expect(bigMapVisits).toBeLessThan(N * 10)
+  })
+})
+
+describe('useTrackLibrary read coalescing across IPC replies', () => {
+  // Each IPC reply lands in its own task, so a microtask flush wrote the crate (and
+  // re-rendered the whole App) once per file while a big import loaded. Replies arriving
+  // close together must share one write.
+  it('renders once for reads that land in separate tasks moments apart', async () => {
+    const pending: (() => void)[] = []
+    setApi({
+      readMeta: vi.fn<Api['readMeta']>(
+        () =>
+          new Promise((resolve) => {
+            pending.push(() =>
+              resolve({ tags: emptyMetadata(), duration: 180, cover: null, foreignTags: [] }),
+            )
+          }),
+      ),
+    })
+    let renders = 0
+    const { result } = renderHook(() => {
+      renders++
+      return useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      })
+    })
+    await act(async () => {
+      void result.current.addPaths(Array.from({ length: 6 }, (_, i) => `/m/${i}.wav`))
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    const tracksBefore = renders
+
+    // Outside act on purpose: act holds every update until its scope ends, which would
+    // fold the renders together whatever the hook does. Real IPC replies get no such help.
+    for (const release of pending.splice(0)) {
+      release()
+      await new Promise((r) => setTimeout(r, 0))
+    }
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 100))
+    })
+
+    expect(result.current.tracks.every((t) => !t.loadingMeta)).toBe(true)
+    expect(renders - tracksBefore).toBeLessThanOrEqual(2)
   })
 })
 
@@ -1619,5 +1738,54 @@ describe('rereadTrackMeta', () => {
     })
     expect(ok).toBe(false)
     expect(result.current.tracks[0].metaReadFailed).toBe(true)
+  })
+})
+
+describe('useTrackLibrary metadata-loaded callback', () => {
+  // App's onMetaLoaded reads the live settings (auto-match, auto-analyze). An import that
+  // outlives a settings change must answer to the settings the user has now: turning
+  // auto-match off mid-import has to stop the rest of the crate from being enqueued, and
+  // files opened at launch (before settings load) must still auto-match once they do.
+  it('reports each finished read to the latest callback, not the one the import started with', async () => {
+    const pending: (() => void)[] = []
+    setApi({
+      readMeta: vi.fn<Api['readMeta']>(
+        () =>
+          new Promise((resolve) => {
+            pending.push(() =>
+              resolve({ tags: emptyMetadata(), duration: 180, cover: null, foreignTags: [] }),
+            )
+          }),
+      ),
+    })
+    const first = vi.fn()
+    const latest = vi.fn()
+    const { result, rerender } = renderHook(
+      ({ onMetaLoaded }) =>
+        useTrackLibrary({
+          setSelection: vi.fn(),
+          onForget: vi.fn(),
+          onRemove: vi.fn(),
+          onClear: vi.fn(),
+          onMetaLoaded,
+          onDuplicatesSkipped: vi.fn(),
+          onNoAudioFound: vi.fn(),
+          onMetaReadFailed: vi.fn(),
+        }),
+      { initialProps: { onMetaLoaded: first } },
+    )
+    await act(async () => {
+      void result.current.addPaths(['/m/a.wav'])
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+    rerender({ onMetaLoaded: latest })
+    await act(async () => {
+      for (const r of pending.splice(0)) r()
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+    expect(first).not.toHaveBeenCalled()
+    expect(latest).toHaveBeenCalledTimes(1)
   })
 })

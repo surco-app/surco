@@ -60,11 +60,18 @@ export interface DuplicateRanks {
 export function useDuplicateRanks(tracks: TrackItem[]): DuplicateRanks {
   // Every progress tick hands over a new tracks array; only these fields decide the groups
   // and the probes, so an unrelated change keeps every memo below.
-  const signature = tracks
-    .map((t) =>
-      [t.id, t.meta.artist ?? '', t.meta.title ?? '', t.duration ?? '', t.inputPath].join(FIELD),
-    )
-    .join(ROW)
+  // Memoized on the array too: App re-renders far more often than the list changes.
+  const signature = useMemo(
+    () =>
+      tracks
+        .map((t) =>
+          [t.id, t.meta.artist ?? '', t.meta.title ?? '', t.duration ?? '', t.inputPath].join(
+            FIELD,
+          ),
+        )
+        .join(ROW),
+    [tracks],
+  )
   const { allGroups, pathById } = useMemo(() => {
     const rows = signature ? signature.split(ROW).map((r) => r.split(FIELD)) : []
     return {

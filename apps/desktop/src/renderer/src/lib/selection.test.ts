@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackItem } from '../types'
-import { clickSelect, deselect, editScope, reanchorToVisible, type Selection } from './selection'
+import {
+  clickSelect,
+  deselect,
+  editScope,
+  pruneToVisible,
+  reanchorToVisible,
+  type Selection,
+} from './selection'
 
 const ORDER = ['a', 'b', 'c', 'd']
 const empty: Selection = { ids: [], anchor: null }
@@ -105,6 +112,34 @@ describe('reanchorToVisible', () => {
 
   it('does nothing when there was no selection to begin with', () => {
     expect(reanchorToVisible(['a', 'b'], null)).toBeNull()
+  })
+})
+
+describe('pruneToVisible', () => {
+  // A selected row the view hides must leave the selection, or the next trash or remove
+  // takes it along without the user seeing it.
+  it('drops the selected rows the view no longer shows', () => {
+    expect(pruneToVisible(['a', 'c'], { ids: ['a', 'b', 'c'], anchor: 'a' })).toEqual({
+      ids: ['a', 'c'],
+      anchor: 'a',
+    })
+  })
+
+  it('moves a hidden anchor onto a selected row still on screen', () => {
+    expect(pruneToVisible(['b', 'c'], { ids: ['a', 'b', 'c'], anchor: 'a' })).toEqual({
+      ids: ['b', 'c'],
+      anchor: 'c',
+    })
+  })
+
+  it('leaves the selection alone when every selected row is still visible', () => {
+    expect(pruneToVisible(['a', 'b', 'c'], { ids: ['a', 'b'], anchor: 'a' })).toBeNull()
+  })
+
+  // Nothing selected is on screen: whether to clear or keep the editor open is the
+  // caller's decision, so this must not pick one silently.
+  it('leaves the decision to the caller when no selected row is visible', () => {
+    expect(pruneToVisible(['c'], { ids: ['a', 'b'], anchor: 'a' })).toBeNull()
   })
 })
 
