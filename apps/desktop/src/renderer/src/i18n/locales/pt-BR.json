@@ -43,7 +43,7 @@
     "analyzeQualityLabel": "Analisar",
     "analyzingCount": "Analisando qualidade… {{done}}/{{total}}",
     "convertingCount": "Convertendo… {{done}}/{{total}}",
-    "convertAll_one": "Converter 1 faixa",
+    "convertAll_one": "Converter {{count}} faixa",
     "convertAll_other": "Converter {{count}} faixas",
     "convertNone": "Converter",
     "convertSome": "Converter {{ready}} de {{total}}",
@@ -456,7 +456,7 @@
       "trashWin": "Mover para a Lixeira"
     },
     "progress": "{{percent}}% concluído",
-    "playlists_one": "Em 1 playlist do rekordbox: {{names}}",
+    "playlists_one": "Em {{count}} playlist do rekordbox: {{names}}",
     "playlists_other": "Em {{count}} playlists do rekordbox: {{names}}",
     "playlistsPending": "Mudanças de playlists ainda não gravadas"
   },
@@ -1498,7 +1498,7 @@
     "syncEngineDjHint": "Ao converter uma faixa que está na sua biblioteca do Engine DJ, a entrada dela passa a apontar para o arquivo novo e mantém as playlists e os cue points. Usa a biblioteca escolhida no destino Engine DJ. Antes de gravar, o Surco guarda ao lado da biblioteca uma cópia de segurança da leva inteira, mais uma de cada gravação, e nunca grava com o Engine DJ aberto.",
     "completeCues": "Ao fechar o rekordbox, aplicar seu fluxo ativo nas faixas com CALL e sem hot cues",
     "completeCuesHint": "Grava na sua coleção, inclusive em faixas que você não viu no Surco. Desligado, seus cues só são salvos pela seção Cues.",
-    "completeCuesCount_one": "1 faixa será completada ao fechar o rekordbox.",
+    "completeCuesCount_one": "{{count}} faixa será completada ao fechar o rekordbox.",
     "completeCuesCount_other": "{{count}} faixas serão completadas ao fechar o rekordbox.",
     "completeCuesYes": "Ligar",
     "completeCuesNo": "Cancelar",
@@ -1550,7 +1550,7 @@
       "bars_one": "{{count}} compasso",
       "bars_other": "{{count}} compassos",
       "barsZero": "no mesmo tempo",
-      "repeat_one": "1 vez",
+      "repeat_one": "uma vez",
       "repeat_other": "{{count}} vezes",
       "repeatEdge": "até a borda",
       "when": {
@@ -1711,7 +1711,7 @@
   },
   "confirm": {
     "fillTitle": "Preencher as tags a partir do nome?",
-    "fillMessage_one": "Lê o título, o artista e o nº da faixa do nome do arquivo e sobrescreve esses campos em 1 faixa. As outras tags não são tocadas.",
+    "fillMessage_one": "Lê o título, o artista e o nº da faixa do nome do arquivo e sobrescreve esses campos em {{count}} faixa. As outras tags não são tocadas.",
     "fillMessage_other": "Lê o título, o artista e o nº da faixa do nome de cada arquivo e sobrescreve esses campos em {{count}} faixas. As outras tags não são tocadas.",
     "fillMessageFiltered_one": "Lê o título, o artista e o nº da faixa do nome do arquivo e sobrescreve esses campos na única faixa visível. As que o filtro oculta ficam como estão.",
     "fillMessageFiltered_other": "Lê o título, o artista e o nº da faixa do nome de cada arquivo e sobrescreve esses campos nas {{count}} faixas visíveis. As que o filtro oculta ficam como estão.",
@@ -2055,9 +2055,9 @@
       "deletePlaylist": "Apagar a playlist “{{name}}”? As faixas continuam na coleção.",
       "deleteFolder": "Apagar a pasta “{{name}}” e o que tem dentro? {{contents}}. As faixas continuam na coleção.",
       "deleteFolderEmpty": "Apagar a pasta “{{name}}”? As faixas continuam na coleção.",
-      "playlists_one": "1 playlist",
+      "playlists_one": "{{count}} playlist",
       "playlists_other": "{{count}} playlists",
-      "folders_one": "1 pasta",
+      "folders_one": "{{count}} pasta",
       "folders_other": "{{count}} pastas",
       "and": " e "
     },
@@ -2477,13 +2477,13 @@
     }
   },
   "rekordboxQueue": {
-    "pillTracks_one": "1 faixa espera você fechar o rekordbox",
+    "pillTracks_one": "{{count}} faixa espera você fechar o rekordbox",
     "pillTracks_other": "{{count}} faixas esperam você fechar o rekordbox",
-    "pillChanges_one": "1 mudança espera você fechar o rekordbox",
+    "pillChanges_one": "{{count}} mudança espera você fechar o rekordbox",
     "pillChanges_other": "{{count}} mudanças esperam você fechar o rekordbox",
-    "applied_one": "Pronto no rekordbox · 1 faixa",
+    "applied_one": "Pronto no rekordbox · {{count}} faixa",
     "applied_other": "Pronto no rekordbox · {{count}} faixas",
-    "appliedChanges_one": "Pronto no rekordbox · 1 mudança",
+    "appliedChanges_one": "Pronto no rekordbox · {{count}} mudança",
     "appliedChanges_other": "Pronto no rekordbox · {{count}} mudanças",
     "backupFailed": "Não foi possível fazer a cópia do rekordbox. O Surco tentará de novo ao fechá-lo",
     "notice": {
@@ -2496,7 +2496,7 @@
       "cuesChanged": "Os cues de {{track}} mudaram no rekordbox. Marque-os de novo",
       "cuesTooMany": "{{track}} precisaria de mais de 8 hot cues. Tire uma marca",
       "cuesInvalid": "Os cues de {{track}} não foram salvos. O Surco não conseguiu lê-los como cues",
-      "cuesAdjusted_one": "O rekordbox já analisou {{track}}. 1 cue ajustado à grade dele, {{maxMs}} ms",
+      "cuesAdjusted_one": "O rekordbox já analisou {{track}}. {{count}} cue ajustado à grade dele, {{maxMs}} ms",
       "cuesAdjusted_other": "O rekordbox já analisou {{track}}. {{count}} cues ajustados à grade dele, o mais distante {{maxMs}} ms",
       "cuesUnfit_one": "Um cue de {{track}} cai longe das batidas do rekordbox e ficou onde estava. Confira",
       "cuesUnfit_other": "{{count}} cues de {{track}} caem longe das batidas do rekordbox e ficaram onde estavam. Confira",
@@ -2529,13 +2529,13 @@
     "elsewhere": "Isto foi preparado para outra coleção do rekordbox. O Surco não vai aplicá-lo à que você usa agora"
   },
   "engineQueue": {
-    "pillTracks_one": "1 faixa espera você fechar o Engine DJ",
+    "pillTracks_one": "{{count}} faixa espera você fechar o Engine DJ",
     "pillTracks_other": "{{count}} faixas esperam você fechar o Engine DJ",
-    "pillChanges_one": "1 mudança espera você fechar o Engine DJ",
+    "pillChanges_one": "{{count}} mudança espera você fechar o Engine DJ",
     "pillChanges_other": "{{count}} mudanças esperam você fechar o Engine DJ",
-    "applied_one": "Pronto no Engine DJ · 1 faixa",
+    "applied_one": "Pronto no Engine DJ · {{count}} faixa",
     "applied_other": "Pronto no Engine DJ · {{count}} faixas",
-    "appliedChanges_one": "Pronto no Engine DJ · 1 mudança",
+    "appliedChanges_one": "Pronto no Engine DJ · {{count}} mudança",
     "appliedChanges_other": "Pronto no Engine DJ · {{count}} mudanças",
     "backupFailed": "Não foi possível fazer a cópia do Engine DJ. O Surco tentará de novo ao fechá-lo",
     "unreadable": "O Surco não consegue ler a biblioteca do Engine DJ agora e nada mudou",
@@ -2543,7 +2543,7 @@
     "otherLibrary": "O que espera é de outra biblioteca do Engine DJ, então nada foi alterado. Volte para essa biblioteca ou descarte o que espera",
     "notice": {
       "cuesChanged": "Os cues de {{track}} mudaram no Engine DJ. Marque-os de novo",
-      "callsDropped_one": "1 CALL de {{track}} não foi salvo ({{times}}). O Engine DJ só guarda hot cues",
+      "callsDropped_one": "{{count}} CALL de {{track}} não foi salvo ({{times}}). O Engine DJ só guarda hot cues",
       "callsDropped_other": "{{count}} CALLs de {{track}} não foram salvos ({{times}}). O Engine DJ só guarda hot cues"
     },
     "discardConfirm": "Descartar o que espera? Os cues voltam ao que o Engine DJ tem",
@@ -2553,13 +2553,13 @@
     "elsewhere": "Isto foi preparado para outra biblioteca do Engine DJ. O Surco não vai aplicá-lo à que você usa agora"
   },
   "traktorQueue": {
-    "pillTracks_one": "1 faixa espera você fechar o Traktor",
+    "pillTracks_one": "{{count}} faixa espera você fechar o Traktor",
     "pillTracks_other": "{{count}} faixas esperam você fechar o Traktor",
-    "pillChanges_one": "1 mudança espera você fechar o Traktor",
+    "pillChanges_one": "{{count}} mudança espera você fechar o Traktor",
     "pillChanges_other": "{{count}} mudanças esperam você fechar o Traktor",
-    "applied_one": "Pronto no Traktor · 1 faixa",
+    "applied_one": "Pronto no Traktor · {{count}} faixa",
     "applied_other": "Pronto no Traktor · {{count}} faixas",
-    "appliedChanges_one": "Pronto no Traktor · 1 mudança",
+    "appliedChanges_one": "Pronto no Traktor · {{count}} mudança",
     "appliedChanges_other": "Pronto no Traktor · {{count}} mudanças",
     "backupFailed": "Não foi possível fazer a cópia do Traktor. O Surco tentará de novo ao fechá-lo",
     "unreadable": "O Surco não consegue ler a coleção do Traktor agora e nada mudou",

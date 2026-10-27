@@ -43,7 +43,7 @@
     "analyzeQualityLabel": "Analyser",
     "analyzingCount": "Analyse de la qualité… {{done}}/{{total}}",
     "convertingCount": "Conversion… {{done}}/{{total}}",
-    "convertAll_one": "Convertir 1 piste",
+    "convertAll_one": "Convertir {{count}} piste",
     "convertAll_other": "Convertir {{count}} pistes",
     "convertNone": "Convertir",
     "convertSome": "Convertir {{ready}} sur {{total}}",
@@ -456,7 +456,7 @@
       "trashWin": "Mettre à la corbeille"
     },
     "progress": "{{percent}} % terminé",
-    "playlists_one": "Dans 1 playlist rekordbox : {{names}}",
+    "playlists_one": "Dans {{count}} playlist rekordbox : {{names}}",
     "playlists_other": "Dans {{count}} playlists rekordbox : {{names}}",
     "playlistsPending": "Changements de playlists pas encore écrits"
   },
@@ -1498,7 +1498,7 @@
     "syncEngineDjHint": "Quand tu convertis un morceau présent dans ta bibliothèque Engine DJ, son entrée suit le nouveau fichier et conserve ses playlists et ses cue points. C'est la bibliothèque choisie pour la destination Engine DJ qui est utilisée. Avant d'écrire, Surco enregistre à côté de la bibliothèque une sauvegarde de toute la série, plus une par écriture, et n'écrit jamais quand Engine DJ est ouvert.",
     "completeCues": "À la fermeture de rekordbox, appliquer votre flux actif aux morceaux avec des CALL et sans hot cues",
     "completeCuesHint": "Écrit dans ta collection, y compris sur des morceaux que tu n'as pas regardés dans Surco. Désactivé, tes cues ne s'enregistrent que depuis la section Cues.",
-    "completeCuesCount_one": "1 morceau sera complété à la fermeture de rekordbox.",
+    "completeCuesCount_one": "{{count}} morceau sera complété à la fermeture de rekordbox.",
     "completeCuesCount_other": "{{count}} morceaux seront complétés à la fermeture de rekordbox.",
     "completeCuesYes": "Activer",
     "completeCuesNo": "Annuler",
@@ -1550,7 +1550,7 @@
       "bars_one": "{{count}} mesure",
       "bars_other": "{{count}} mesures",
       "barsZero": "sur le même temps",
-      "repeat_one": "1 fois",
+      "repeat_one": "une fois",
       "repeat_other": "{{count}} fois",
       "repeatEdge": "jusqu’au bord",
       "when": {
@@ -1711,7 +1711,7 @@
   },
   "confirm": {
     "fillTitle": "Remplir les tags depuis les noms de fichiers ?",
-    "fillMessage_one": "Lit le titre, l'artiste et le n° de piste depuis le nom du fichier et écrase ces champs dans 1 morceau. Les autres tags ne sont pas touchés.",
+    "fillMessage_one": "Lit le titre, l'artiste et le n° de piste depuis le nom du fichier et écrase ces champs dans {{count}} morceau. Les autres tags ne sont pas touchés.",
     "fillMessage_other": "Lit le titre, l'artiste et le n° de piste depuis le nom de chaque fichier et écrase ces champs dans {{count}} morceaux. Les autres tags ne sont pas touchés.",
     "fillMessageFiltered_one": "Lit le titre, l'artiste et le n° de piste depuis le nom du fichier et écrase ces champs dans le seul morceau visible. Les morceaux masqués par le filtre ne sont pas touchés.",
     "fillMessageFiltered_other": "Lit le titre, l'artiste et le n° de piste depuis le nom de chaque fichier et écrase ces champs dans les {{count}} morceaux visibles. Les morceaux masqués par le filtre ne sont pas touchés.",
@@ -2055,9 +2055,9 @@
       "deletePlaylist": "Supprimer la playlist « {{name}} » ? Les morceaux restent dans la collection.",
       "deleteFolder": "Supprimer le dossier « {{name}} » et son contenu ? {{contents}}. Les morceaux restent dans la collection.",
       "deleteFolderEmpty": "Supprimer le dossier « {{name}} » ? Les morceaux restent dans la collection.",
-      "playlists_one": "1 playlist",
+      "playlists_one": "{{count}} playlist",
       "playlists_other": "{{count}} playlists",
-      "folders_one": "1 dossier",
+      "folders_one": "{{count}} dossier",
       "folders_other": "{{count}} dossiers",
       "and": " et "
     },
@@ -2477,13 +2477,13 @@
     }
   },
   "rekordboxQueue": {
-    "pillTracks_one": "1 morceau attend que vous fermiez rekordbox",
+    "pillTracks_one": "{{count}} morceau attend que vous fermiez rekordbox",
     "pillTracks_other": "{{count}} morceaux attendent que vous fermiez rekordbox",
-    "pillChanges_one": "1 changement attend que vous fermiez rekordbox",
+    "pillChanges_one": "{{count}} changement attend que vous fermiez rekordbox",
     "pillChanges_other": "{{count}} changements attendent que vous fermiez rekordbox",
-    "applied_one": "Fait dans rekordbox · 1 morceau",
+    "applied_one": "Fait dans rekordbox · {{count}} morceau",
     "applied_other": "Fait dans rekordbox · {{count}} morceaux",
-    "appliedChanges_one": "Fait dans rekordbox · 1 changement",
+    "appliedChanges_one": "Fait dans rekordbox · {{count}} changement",
     "appliedChanges_other": "Fait dans rekordbox · {{count}} changements",
     "backupFailed": "Impossible de sauvegarder rekordbox. Surco réessaiera à sa prochaine fermeture",
     "notice": {
@@ -2496,7 +2496,7 @@
       "cuesChanged": "Les cues de {{track}} ont changé dans rekordbox. Marque-les à nouveau",
       "cuesTooMany": "{{track}} aurait besoin de plus de 8 hot cues. Retirez une marque",
       "cuesInvalid": "Les cues de {{track}} n'ont pas été enregistrés. Surco n'a pas pu les lire comme des cues",
-      "cuesAdjusted_one": "rekordbox a analysé {{track}}. 1 cue calé sur sa grille, {{maxMs}} ms",
+      "cuesAdjusted_one": "rekordbox a analysé {{track}}. {{count}} cue calé sur sa grille, {{maxMs}} ms",
       "cuesAdjusted_other": "rekordbox a analysé {{track}}. {{count}} cues calés sur sa grille, le plus éloigné de {{maxMs}} ms",
       "cuesUnfit_one": "Un cue de {{track}} tombe loin des temps de rekordbox et a été laissé en place. Vérifiez-le",
       "cuesUnfit_other": "{{count}} cues de {{track}} tombent loin des temps de rekordbox et ont été laissés en place. Vérifiez-les",
@@ -2529,13 +2529,13 @@
     "elsewhere": "Ceci a été préparé pour une autre collection rekordbox. Surco ne l’appliquera pas à celle que tu utilises maintenant"
   },
   "engineQueue": {
-    "pillTracks_one": "1 morceau attend que vous fermiez Engine DJ",
+    "pillTracks_one": "{{count}} morceau attend que vous fermiez Engine DJ",
     "pillTracks_other": "{{count}} morceaux attendent que vous fermiez Engine DJ",
-    "pillChanges_one": "1 changement attend que vous fermiez Engine DJ",
+    "pillChanges_one": "{{count}} changement attend que vous fermiez Engine DJ",
     "pillChanges_other": "{{count}} changements attendent que vous fermiez Engine DJ",
-    "applied_one": "Fait dans Engine DJ · 1 morceau",
+    "applied_one": "Fait dans Engine DJ · {{count}} morceau",
     "applied_other": "Fait dans Engine DJ · {{count}} morceaux",
-    "appliedChanges_one": "Fait dans Engine DJ · 1 changement",
+    "appliedChanges_one": "Fait dans Engine DJ · {{count}} changement",
     "appliedChanges_other": "Fait dans Engine DJ · {{count}} changements",
     "backupFailed": "Impossible de sauvegarder Engine DJ. Surco réessaiera à sa prochaine fermeture",
     "unreadable": "Surco ne peut pas lire la bibliothèque Engine DJ pour le moment, rien n’a changé",
@@ -2543,7 +2543,7 @@
     "otherLibrary": "Ce qui attend appartient à une autre bibliothèque Engine DJ, rien n’a donc été modifié. Reviens à cette bibliothèque ou abandonne ce qui attend",
     "notice": {
       "cuesChanged": "Les cues de {{track}} ont changé dans Engine DJ. Marque-les à nouveau",
-      "callsDropped_one": "1 CALL de {{track}} n’a pas été enregistré ({{times}}). Engine DJ ne garde que les hot cues",
+      "callsDropped_one": "{{count}} CALL de {{track}} n’a pas été enregistré ({{times}}). Engine DJ ne garde que les hot cues",
       "callsDropped_other": "{{count}} CALL de {{track}} n’ont pas été enregistrés ({{times}}). Engine DJ ne garde que les hot cues"
     },
     "discardConfirm": "Abandonner ce qui attend ? Les cues reviennent à ce qu’a Engine DJ",
@@ -2553,13 +2553,13 @@
     "elsewhere": "Ceci a été préparé pour une autre bibliothèque Engine DJ. Surco ne l’appliquera pas à celle que tu utilises maintenant"
   },
   "traktorQueue": {
-    "pillTracks_one": "1 morceau attend que vous fermiez Traktor",
+    "pillTracks_one": "{{count}} morceau attend que vous fermiez Traktor",
     "pillTracks_other": "{{count}} morceaux attendent que vous fermiez Traktor",
-    "pillChanges_one": "1 changement attend que vous fermiez Traktor",
+    "pillChanges_one": "{{count}} changement attend que vous fermiez Traktor",
     "pillChanges_other": "{{count}} changements attendent que vous fermiez Traktor",
-    "applied_one": "Fait dans Traktor · 1 morceau",
+    "applied_one": "Fait dans Traktor · {{count}} morceau",
     "applied_other": "Fait dans Traktor · {{count}} morceaux",
-    "appliedChanges_one": "Fait dans Traktor · 1 changement",
+    "appliedChanges_one": "Fait dans Traktor · {{count}} changement",
     "appliedChanges_other": "Fait dans Traktor · {{count}} changements",
     "backupFailed": "Impossible de sauvegarder Traktor. Surco réessaiera à sa prochaine fermeture",
     "unreadable": "Surco ne peut pas lire la collection Traktor pour le moment, rien n’a changé",
