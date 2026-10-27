@@ -26,6 +26,19 @@ describe('rekordbox queue text', () => {
     expect(pillText(tr, { tracks: 0, changes: 0, items: [] })).toBeNull()
   })
 
+  // rekordbox was closed and the pill still asked to close it: the wait was for the drive.
+  it('says what waits for a collection on a disconnected drive waits for the drive', () => {
+    expect(pillText(tr, { tracks: 1, changes: 0, items: [], unplugged: true })).toBe(
+      '1 track waits for you to connect the rekordbox drive',
+    )
+    expect(pillText(tr, { tracks: 0, changes: 2, items: [], unplugged: true })).toBe(
+      '2 changes wait for you to connect the rekordbox drive',
+    )
+    expect(
+      pillText(tr, { tracks: 1, changes: 0, items: [], unplugged: true }, TRAKTOR_QUEUE_WORDS),
+    ).toBe('1 track waits for you to connect the Traktor drive')
+  })
+
   it('says the queue is on hold after a write left the collection unknown, whatever waits', () => {
     expect(pillText(tr, { tracks: 3, changes: 0, items: [], halted: true })).toBe(
       'rekordbox changes on hold',

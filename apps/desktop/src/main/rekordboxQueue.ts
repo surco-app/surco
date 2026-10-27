@@ -214,7 +214,10 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
         const s = stateOf(q, 0)
         return sum + s.tracks + s.changes
       }, 0)
-    return stateOf(own, elsewhere)
+    const waiting = stateOf(own, elsewhere)
+    const unplugged =
+      !deps.collection() && !!deps.configured?.() && waiting.tracks + waiting.changes > 0
+    return unplugged ? { ...waiting, unplugged: true } : waiting
   }
 
   const save = (): void => {

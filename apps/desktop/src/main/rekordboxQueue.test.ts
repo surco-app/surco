@@ -374,6 +374,19 @@ describe('rekordbox queue', () => {
     ])
   })
 
+  // The pill read "waits for you to close rekordbox" with rekordbox closed: what it waits
+  // for is the drive, so the state says so and the pill can name it.
+  it('says what waits is held for a collection whose drive is not connected', () => {
+    let at = ''
+    const q = createRekordboxQueue(
+      deps({ collection: () => at, configured: () => '/Volumes/Disco/master.db' }),
+    )
+    q.enqueue([], [{ from: '/m/b.mp3', to: '/m/b.flac' }])
+    expect(q.state().unplugged).toBe(true)
+    at = '/Volumes/Disco/master.db'
+    expect(q.state().unplugged).toBeUndefined()
+  })
+
   it('does not call a queue held while no collection is found one for another collection', () => {
     let at = '/real/master.db'
     const q = createRekordboxQueue(deps({ collection: () => at }))

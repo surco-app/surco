@@ -1702,6 +1702,8 @@ export interface RekordboxQueueState {
   items: RekordboxQueueItem[]
   halted?: true
   elsewhere?: number
+  // What waits is for the collection the settings name, on a drive that is not connected.
+  unplugged?: true
 }
 
 export interface RekordboxQueueWritten {

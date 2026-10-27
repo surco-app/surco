@@ -12,6 +12,8 @@ import { refusalKey } from './playlistEdits'
 export interface QueueWords {
   pillTracks: string
   pillChanges: string
+  pillTracksUnplugged: string
+  pillChangesUnplugged: string
   pillHalted: string
   pillElsewhere: string
   halted: string
@@ -27,6 +29,8 @@ export interface QueueWords {
 export const REKORDBOX_QUEUE_WORDS: QueueWords = {
   pillTracks: 'rekordboxQueue.pillTracks',
   pillChanges: 'rekordboxQueue.pillChanges',
+  pillTracksUnplugged: 'rekordboxQueue.pillTracksUnplugged',
+  pillChangesUnplugged: 'rekordboxQueue.pillChangesUnplugged',
   pillHalted: 'rekordboxQueue.pillHalted',
   pillElsewhere: 'rekordboxQueue.pillElsewhere',
   halted: 'rekordboxQueue.halted',
@@ -56,6 +60,8 @@ export const REKORDBOX_QUEUE_WORDS: QueueWords = {
 export const ENGINE_QUEUE_WORDS: QueueWords = {
   pillTracks: 'engineQueue.pillTracks',
   pillChanges: 'engineQueue.pillChanges',
+  pillTracksUnplugged: 'engineQueue.pillTracksUnplugged',
+  pillChangesUnplugged: 'engineQueue.pillChangesUnplugged',
   pillHalted: 'engineQueue.pillHalted',
   pillElsewhere: 'engineQueue.pillElsewhere',
   halted: 'engineQueue.halted',
@@ -75,6 +81,8 @@ export const ENGINE_QUEUE_WORDS: QueueWords = {
 export const TRAKTOR_QUEUE_WORDS: QueueWords = {
   pillTracks: 'traktorQueue.pillTracks',
   pillChanges: 'traktorQueue.pillChanges',
+  pillTracksUnplugged: 'traktorQueue.pillTracksUnplugged',
+  pillChangesUnplugged: 'traktorQueue.pillChangesUnplugged',
   pillHalted: 'traktorQueue.pillHalted',
   pillElsewhere: 'traktorQueue.pillElsewhere',
   halted: 'traktorQueue.halted',
@@ -114,8 +122,10 @@ export function pillText(
   words: QueueWords = REKORDBOX_QUEUE_WORDS,
 ): string | null {
   if (state.halted) return tr(words.pillHalted)
-  if (state.tracks > 0) return tr(words.pillTracks, { count: state.tracks })
-  if (state.changes > 0) return tr(words.pillChanges, { count: state.changes })
+  const tracks = state.unplugged ? words.pillTracksUnplugged : words.pillTracks
+  const changes = state.unplugged ? words.pillChangesUnplugged : words.pillChanges
+  if (state.tracks > 0) return tr(tracks, { count: state.tracks })
+  if (state.changes > 0) return tr(changes, { count: state.changes })
   if (state.elsewhere) return tr(words.pillElsewhere)
   return null
 }
