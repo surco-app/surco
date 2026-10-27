@@ -129,6 +129,6 @@ describe('createActiveConversions', () => {
 
   it('stops the conversions when the user confirms closing the window, not only on quit', () => {
     const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
-    expect(source).toMatch(/if \(quit\) \{\s*activeConversions\.killAll\(\)\s*win\.close\(\)/)
+    expect(source).toMatch(/handleGuardedClose\(event, \{[^}]*killAll: activeConversions\.killAll,/)
   })
 })

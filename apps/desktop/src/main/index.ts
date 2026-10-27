@@ -14,6 +14,7 @@ import { join } from 'node:path'
 import { Readable } from 'node:stream'
 import {
   app,
+  autoUpdater,
   BrowserWindow,
   dialog,
   ipcMain,
@@ -67,6 +68,7 @@ import { cachedBeatGrid } from './beatGridCache'
 import { setBeatportSession } from './beatport'
 import { beatportSession, connectBeatport, disconnectBeatport } from './beatportCredentials'
 import { clipboardHasImage, readClipboardImage, writeClipboardImage } from './clipboardImage'
+import { createQuitIntent, handleGuardedClose } from './closeToQuit'
 import type { CoverSource } from './cover'
 import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
 import { downloadCover, imageExt } from './coverDownload'
@@ -216,6 +218,7 @@ const outputReservations = createOutputReservations()
 // Lets process:cancel reach an encode already in flight, not just ones not yet
 // started — module-scoped for the same reason as outputReservations above.
 const activeConversions = createActiveConversions()
+const quitIntent = createQuitIntent()
 let unsavedCueTracks = 0
 // A file-name conflict prompts once per collision, so a batch of similarly-named rips used
 // to interrupt N times. When the user ticks "apply to the rest", that decision is remembered
@@ -703,18 +706,14 @@ function createWindow(): BrowserWindow {
       return response === 0
     },
   })
-  win.on('close', (event) => {
-    // The decision is async and 'close' is not, so the event is always prevented first
-    // and the window closed again once the user has answered.
-    if (!quitGuard.mustAsk()) return
-    event.preventDefault()
-    quitGuard.ask().then((quit) => {
-      if (quit) {
-        activeConversions.killAll()
-        win.close()
-      }
-    })
-  })
+  win.on('close', (event) =>
+    handleGuardedClose(event, {
+      guard: quitGuard,
+      intent: quitIntent,
+      killAll: activeConversions.killAll,
+      close: () => win.close(),
+    }),
+  )
   // Let the renderer pause its background analyze sweep while the window is hidden,
   // so it stops spawning ffmpeg in the background, and resume it on focus.
   win.on('blur', () => win.webContents.send('window:focus', false))
@@ -1908,6 +1907,14 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
+
+// What the window's close guard resumes after the user confirms: a prevented close cancels
+// the quit that raised it. An update's quitAndInstall closes the windows before before-quit
+// on macOS, so it announces itself through before-quit-for-update instead.
+app.on('before-quit', () => quitIntent.started(() => app.quit()))
+autoUpdater.on('before-quit-for-update', () =>
+  quitIntent.started(() => electronUpdater.autoUpdater.quitAndInstall()),
+)
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
