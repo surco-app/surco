@@ -5,10 +5,19 @@ import {
   readdirSync,
   readFileSync,
   realpathSync,
-  unlinkSync,
   writeFileSync,
 } from 'node:fs'
-import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import {
+  access,
+  copyFile,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  stat,
+  unlink,
+  writeFile,
+} from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Readable } from 'node:stream'
@@ -395,7 +404,12 @@ const tmpManifest = createTmpManifest(join(app.getPath('userData'), 'pending-tmp
   readFileSync: (p) => readFileSync(p, 'utf8'),
   writeFileSync,
   existsSync,
-  unlinkSync,
+  unlink,
+  pathExists: (p) =>
+    access(p).then(
+      () => true,
+      () => false,
+    ),
 })
 // Surco's own trash: every original a conversion replaces or renames away, and every
 // delete on a volume with no OS Trash, kept for a while (see surcoTrash.ts). Local disk
@@ -1759,9 +1773,6 @@ app.whenReady().then(() => {
   // Storing a thumbnail waits for this, so no URL handed out can be pruned afterwards.
   void pruneCoverThumbs()
   setInterval(() => void pruneAnalysisCache(), 30 * 60 * 1000)
-  // Deletes any .tmp-* conversions left behind by a crash or force-quit in the
-  // previous run, before any new conversion can add to the manifest.
-  tmpManifest.sweepOrphans()
   // Drops what the trash no longer keeps (older than the retention, past the size cap).
   void surcoTrash.sweep().catch((err) => log.warn('trash sweep failed', String(err)))
   // Serve the local audio file ourselves with real HTTP range support: the
@@ -1824,7 +1835,12 @@ app.whenReady().then(() => {
   migrateBackupLimits()
   migrateMixInBars()
   migrateImportFields()
-  createWindow()
+  // Deletes any .tmp-* conversions left behind by a crash or force-quit in the previous
+  // run. Once the window is up and in the background: those temps sit in the user's own
+  // folders, and a stale NAS mount there used to hold the launch on a black screen.
+  createWindow().once('show', () => {
+    tmpManifest.sweepOrphans().catch((err) => log.warn('tmp manifest sweep failed', String(err)))
+  })
 
   // Downloads a newer version in the background, then tells the renderer so it can
   // show a "restart to update" toast (which calls quitAndInstall via update:install).
