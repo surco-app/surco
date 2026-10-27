@@ -1,38 +1,41 @@
 import { describe, expect, it } from 'vitest'
-import { suggestsEnglish } from './useAutoLanguage'
+import { suggestedLanguage } from './useAutoLanguage'
 
 // Googlebot renders with an English browser and no saved choice. When that visit was
 // redirected to /en, the Spanish pages read as redirects and fell out of the index, so
-// the English offer is now a suggestion the visitor accepts, never a navigation.
-describe('suggestsEnglish', () => {
+// the offer is now a suggestion the visitor accepts, never a navigation. Search lands
+// visitors on the Spanish pages; the offer is how they learn their language exists.
+describe('suggestedLanguage', () => {
   it('offers English to an English browser on a Spanish page', () => {
-    expect(suggestsEnglish(null, '/funciones', 'en-US')).toBe(true)
+    expect(suggestedLanguage(null, '/funciones', 'en-US')).toBe('en')
   })
 
   it('stays quiet for a Spanish browser', () => {
-    expect(suggestsEnglish(null, '/', 'es-ES')).toBe(false)
+    expect(suggestedLanguage(null, '/', 'es-ES')).toBeNull()
   })
 
-  it('does not offer English to a Japanese browser on the Spanish page', () => {
-    expect(suggestsEnglish(null, '/', 'ja-JP')).toBe(false)
+  it('offers Japanese to a Japanese browser on the Spanish page', () => {
+    expect(suggestedLanguage(null, '/', 'ja-JP')).toBe('ja')
+    expect(suggestedLanguage(null, '/guia', 'ja')).toBe('ja')
   })
 
-  it('keeps offering English to other non-Spanish browsers', () => {
-    expect(suggestsEnglish(null, '/', 'fr-FR')).toBe(true)
-    expect(suggestsEnglish(null, '/guia', 'de-DE')).toBe(true)
+  it('offers English to browsers in a language the site does not have', () => {
+    expect(suggestedLanguage(null, '/', 'fr-FR')).toBe('en')
+    expect(suggestedLanguage(null, '/guia', 'de-DE')).toBe('en')
   })
 
   it('stays quiet on the English pages, where the visitor already is', () => {
-    expect(suggestsEnglish(null, '/en/guide', 'en-US')).toBe(false)
+    expect(suggestedLanguage(null, '/en/guide', 'en-US')).toBeNull()
   })
 
-  it('never offers English on Japanese pages', () => {
-    expect(suggestsEnglish(null, '/ja', 'en-US')).toBe(false)
-    expect(suggestsEnglish(null, '/ja/guide', 'en-US')).toBe(false)
-    expect(suggestsEnglish(null, '/ja/use-cases', 'ja-JP')).toBe(false)
+  it('never offers anything on Japanese pages', () => {
+    expect(suggestedLanguage(null, '/ja', 'en-US')).toBeNull()
+    expect(suggestedLanguage(null, '/ja/guide', 'en-US')).toBeNull()
+    expect(suggestedLanguage(null, '/ja/use-cases', 'ja-JP')).toBeNull()
   })
 
   it('never overrides a language the visitor picked or dismissed', () => {
-    expect(suggestsEnglish('es', '/', 'en-US')).toBe(false)
+    expect(suggestedLanguage('es', '/', 'en-US')).toBeNull()
+    expect(suggestedLanguage('es', '/', 'ja-JP')).toBeNull()
   })
 })

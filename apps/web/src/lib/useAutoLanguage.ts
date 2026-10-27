@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import type { Language } from '../i18n'
 
-// First-visit language suggestion for the marketing site. With no saved choice, an
-// English-preferring browser on a Spanish page is offered the English one. It is an
+// First-visit language suggestion for the marketing site. With no saved choice, a
+// browser in another language on a Spanish page is offered that language when the
+// site has it, and English otherwise. It is an
 // offer, not a redirect: search crawlers render with an English browser, and sending
 // them to /en made every Spanish page look like a redirect. A manual choice persisted
 // via rememberLanguage (switching, or dismissing the offer) silences it for good.
@@ -16,15 +17,19 @@ export function rememberLanguage(lang: Language): void {
   }
 }
 
-export function suggestsEnglish(saved: string | null, pathname: string, language: string): boolean {
-  if (saved) return false
-  const onSpanish = !/^\/(en|ja)(\/|$)/.test(pathname)
-  const prefersEn = !/^(es|ja)(-|$)/i.test(language)
-  return onSpanish && prefersEn
+export function suggestedLanguage(
+  saved: string | null,
+  pathname: string,
+  language: string,
+): Language | null {
+  if (saved) return null
+  if (/^\/(en|ja)(\/|$)/.test(pathname)) return null
+  if (/^es(-|$)/i.test(language)) return null
+  return /^ja(-|$)/i.test(language) ? 'ja' : 'en'
 }
 
-export function useAutoLanguage(): [boolean, () => void] {
-  const [suggest, setSuggest] = useState(false)
+export function useAutoLanguage(): [Language | null, () => void] {
+  const [suggest, setSuggest] = useState<Language | null>(null)
   useEffect(() => {
     let saved: string | null
     try {
@@ -32,11 +37,11 @@ export function useAutoLanguage(): [boolean, () => void] {
     } catch {
       return
     }
-    setSuggest(suggestsEnglish(saved, window.location.pathname, navigator.language))
+    setSuggest(suggestedLanguage(saved, window.location.pathname, navigator.language))
   }, [])
   const dismiss = () => {
     rememberLanguage('es')
-    setSuggest(false)
+    setSuggest(null)
   }
   return [suggest, dismiss]
 }
