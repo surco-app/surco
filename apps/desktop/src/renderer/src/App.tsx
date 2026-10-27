@@ -106,6 +106,7 @@ import { type AppError, type AppStore, createAppStore, useAppStore } from './lib
 import { activeCleanups, cleanupPatcher, planAutoClean } from './lib/autoClean'
 import {
   acceptReviewOf,
+  clearedTrackPatch,
   holdsAutoMatch,
   type MatchCleanup,
   searchHintsFor,
@@ -2480,21 +2481,7 @@ export default function App(): React.JSX.Element {
     if (selectedTracks.length > 1) {
       updateTracksMeta(selectedIds, emptyMetadata())
       onClearExtras(selectedIds)
-    } else
-      updateTrack(selected.id, {
-        meta: emptyMetadata(),
-        matched: false,
-        matchReview: false,
-        reviewMatch: undefined,
-        matchProvider: undefined,
-        inLibraryResolved: false,
-        coverRemoved: true,
-        // Off the preview too, exactly as clearAllMeta does: coverRemoved promises the
-        // conversion drops the artwork, and leaving the image up read as "the clear
-        // missed the cover".
-        coverUrl: undefined,
-        metaCleared: true,
-      })
+    } else updateTrack(selected.id, clearedTrackPatch(selected))
   })
   const deriveTags = useStableCallback(() => {
     const targets = editScope(selectedTracks, selected)

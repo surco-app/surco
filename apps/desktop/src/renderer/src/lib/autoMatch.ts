@@ -1,4 +1,4 @@
-import { searchHintsOf } from '../../../shared/metadata'
+import { emptyMetadata, searchHintsOf } from '../../../shared/metadata'
 import { bareAlbumTitle, cleanMatchTitle, stripIgnoredWords } from '../../../shared/searchClean'
 import { yearFromDate } from '../../../shared/tagFields'
 import type {
@@ -155,6 +155,27 @@ export function acceptReviewPatch(
     matchProvider: rm.release.provider,
     matchReview: false,
     reviewMatch: undefined,
+  }
+}
+
+// "Clear all" on one track, the editor's eraser and the ⌘K palette alike. Every field
+// empty, the artwork off the preview and the next export, the rating and the file's own
+// third-party tags wiped (metaCleared, foreignRemoved). It also un-matches the track, the
+// sweep's own flag included, so a retag is probed afresh: a pending review flag dropped,
+// and the Discogs-proven owned verdict re-resolved against whatever the retag matches.
+export function clearedTrackPatch(track: TrackItem): Partial<TrackItem> {
+  return {
+    meta: emptyMetadata(),
+    matched: false,
+    autoMatched: false,
+    matchReview: false,
+    reviewMatch: undefined,
+    matchProvider: undefined,
+    inLibraryResolved: false,
+    coverRemoved: true,
+    coverUrl: undefined,
+    metaCleared: true,
+    foreignRemoved: (track.foreignTags ?? []).map((t) => t.name),
   }
 }
 
