@@ -683,6 +683,14 @@ describe('lookup cache persistence across sessions', () => {
     // Flush the debounced disk write before "restarting".
     await vi.runAllTimersAsync()
     vi.useRealTimers()
+    // The debounced write is asynchronous: wait for it to land before "restarting".
+    const { readFileSync } = require('node:fs')
+    const { join } = require('node:path')
+    await vi.waitFor(() =>
+      expect(readFileSync(join(discogsCacheDir, 'discogs-lookup-cache.json'), 'utf-8')).toContain(
+        'persisted across sessions',
+      ),
+    )
 
     vi.resetModules()
     const restarted = await import('./discogs')

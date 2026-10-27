@@ -1,4 +1,5 @@
 import { readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { rename, unlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app } from 'electron'
 
@@ -35,6 +36,8 @@ export interface LookupCacheStore<S, R> {
   hasRelease(key: string | number): boolean
   getRelease(key: string | number): R | undefined
   setRelease(key: string | number, value: R): void
+  // Settles once the debounced writes started so far have landed (or failed).
+  whenSaved(): Promise<void>
 }
 
 interface Persisted<S, R> {
@@ -97,17 +100,41 @@ function load<S, R>(name: string): { search: Map<string, S>; release: Map<string
 // Write-then-rename so a crash mid-write leaves the previous file intact, never a
 // truncated one — same pattern as appleMusicLibraryCache.ts. Best-effort: a failed
 // write must not disturb the in-memory cache the session is still serving from.
+function serialize<S, R>(search: Map<string, S>, release: Map<string, R>): string {
+  const payload: Persisted<S, R> = {
+    search: [...search.entries()],
+    release: [...release.entries()],
+  }
+  return JSON.stringify(payload)
+}
+
 function save<S, R>(name: string, search: Map<string, S>, release: Map<string, R>): void {
   try {
-    const payload: Persisted<S, R> = {
-      search: [...search.entries()],
-      release: [...release.entries()],
-    }
     const tmp = `${cachePath(name)}.tmp`
-    writeFileSync(tmp, JSON.stringify(payload))
+    writeFileSync(tmp, serialize(search, release))
     renameSync(tmp, cachePath(name))
   } catch {
     return
+  }
+}
+
+// The debounced save, off the main thread's synchronous path: these files run to megabytes
+// and a writeFileSync froze IPC and the audio stream for as long as the disk took. Its own
+// temp name, so the synchronous quit flush never writes into the same file. `stale` lets a
+// newer synchronous save win over this one landing late.
+async function saveAsync<S, R>(
+  name: string,
+  search: Map<string, S>,
+  release: Map<string, R>,
+  stale: () => boolean,
+): Promise<void> {
+  const tmp = `${cachePath(name)}.saving.tmp`
+  try {
+    await writeFile(tmp, serialize(search, release))
+    if (stale()) await unlink(tmp)
+    else await rename(tmp, cachePath(name))
+  } catch {
+    await unlink(tmp).catch(() => undefined)
   }
 }
 
@@ -142,17 +169,29 @@ export function createLookupCacheStore<S, R>(
   }
 
   let saveTimer: ReturnType<typeof setTimeout> | null = null
+  let writing: Promise<void> = Promise.resolve()
+  let syncSaves = 0
   const flush = (): void => {
     if (!loaded) return
     if (saveTimer) {
       clearTimeout(saveTimer)
       saveTimer = null
     }
+    syncSaves++
     save(name, loaded.search, loaded.release)
+  }
+  const flushAsync = (): void => {
+    saveTimer = null
+    const state = loaded
+    if (!state) return
+    const startedAt = syncSaves
+    writing = writing.then(() =>
+      saveAsync(name, state.search, state.release, () => syncSaves !== startedAt),
+    )
   }
   const scheduleSave = (): void => {
     if (saveTimer) clearTimeout(saveTimer)
-    saveTimer = setTimeout(flush, SAVE_DEBOUNCE_MS)
+    saveTimer = setTimeout(flushAsync, SAVE_DEBOUNCE_MS)
   }
 
   // A pending debounced write must not be lost if the app quits before the timer
@@ -181,6 +220,7 @@ export function createLookupCacheStore<S, R>(
       emptySearchExpiry.delete(key)
       return false
     },
+    whenSaved: () => writing,
     hasRelease: (key) => ensureLoaded().release.has(releaseKey(key)),
     getRelease: (key) => ensureLoaded().release.get(releaseKey(key)),
     setRelease: (key, value) => {
