@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
-import { mkdir, mkdtemp, rm } from 'node:fs/promises'
+import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { access, mkdir, mkdtemp, rm, unlink } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, renderHook, waitFor } from '@testing-library/react'
@@ -143,7 +143,13 @@ function processTrackInMain(
     readFileSync: (p) => readFileSync(p, 'utf8'),
     writeFileSync,
     existsSync,
-    unlinkSync,
+    renameSync,
+    unlink,
+    pathExists: (p) =>
+      access(p).then(
+        () => true,
+        () => false,
+      ),
   })
   return runProcessTrack(job, {
     settings: getSettings(),
