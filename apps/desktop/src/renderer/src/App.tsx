@@ -1412,7 +1412,7 @@ export default function App(): React.JSX.Element {
     askConvertOne,
   } = useConfirmFlows({
     settings,
-    removeTrack,
+    removeTracks,
     updateTrack,
     emptyTracks,
     deriveTracks: deriveTracksUndoable,

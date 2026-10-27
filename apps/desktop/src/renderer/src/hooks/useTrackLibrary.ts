@@ -171,7 +171,7 @@ interface TrackLibrary {
   // and their disk snapshot moves with them, so the fix is not left looking like an edit.
   patchReviewedFields: (path: string, fields: LibraryTagUpdate['fields']) => void
   removeTrack: (id: string, everywhere?: boolean) => void
-  removeTracks: (ids: string[]) => void
+  removeTracks: (ids: string[], everywhere?: boolean) => void
   clearTracks: () => void
 }
 
@@ -1057,11 +1057,11 @@ export function useTrackLibrary({
   // FLAC/WAV rows survive. Unlike clearTracks this keeps the folder watcher: tracks
   // remain, so a later added file should still show up.
   const removeTracks = useCallback(
-    (ids: string[]): void => {
+    (ids: string[], everywhere = false): void => {
       const drop = new Set(ids)
       const leaving = tracksRef.current.filter((t) => drop.has(t.id))
       const stays = new Set(
-        filesOpenRef.current
+        !everywhere && filesOpenRef.current
           ? leaving.filter((t) => listedIn(listedBySource.current, t)).map((t) => t.id)
           : [],
       )
