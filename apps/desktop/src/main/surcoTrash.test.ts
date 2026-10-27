@@ -183,6 +183,23 @@ describe('restoring', () => {
     expect(readdirSync(music)).toEqual(['Track.aiff'])
   })
 
+  // The copy back landed, but the stored copy would not go (an antivirus holding it on
+  // Windows). Undoing the move then deleted the file just restored, leaving the library
+  // path empty after its occupant had already gone to the backups. The restored file stays;
+  // the stored copy, no longer listed, is cleared by the sweep of unnamed files.
+  it('keeps the restored file when the stored copy cannot be removed', async () => {
+    const original = song('Track.aiff')
+    const entry = await trash.stash(original, 'deleted')
+    volumes.apart = true
+    volumes.held = entry?.storedPath as string
+
+    const result = await trash.restore(entry?.id as string)
+
+    expect(result.restoredTo).toBe(original)
+    expect(readFileSync(original).length).toBe(100)
+    expect(await trash.list()).toEqual([])
+  })
+
   it('rejects an id it does not know', async () => {
     await expect(trash.restore('nope')).rejects.toThrow()
   })
