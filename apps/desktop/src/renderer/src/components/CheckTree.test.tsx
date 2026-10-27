@@ -71,6 +71,25 @@ describe('CheckTree', () => {
     expect([...onChange.mock.calls[0][0]]).toEqual(['house'])
   })
 
+  // Every tick elsewhere used to reopen each folder holding a ticked playlist, so a folder
+  // the user had just closed sprang open again. Only a newly ticked playlist opens its way.
+  it('keeps a folder the user closed shut when another playlist is ticked', () => {
+    const { rerender } = render(
+      <CheckTree nodes={NODES} checked={new Set(['todas'])} onChange={() => {}} />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'BASES' }))
+    expect(screen.queryByTestId('check-node-todas')).toBeNull()
+    rerender(<CheckTree nodes={NODES} checked={new Set(['todas', 'house'])} onChange={() => {}} />)
+    expect(screen.queryByTestId('check-node-todas')).toBeNull()
+  })
+
+  it('opens the way to a playlist ticked while its folder was closed', () => {
+    const { rerender } = render(<CheckTree nodes={NODES} checked={new Set()} onChange={() => {}} />)
+    expect(screen.queryByTestId('check-node-mak')).toBeNull()
+    rerender(<CheckTree nodes={NODES} checked={new Set(['mak'])} onChange={() => {}} />)
+    expect(screen.getByTestId('check-node-mak')).toBeChecked()
+  })
+
   // A stick's remembered playlists must be visible when the chooser opens, not hidden in
   // closed folders.
   it('opens the folders that hold ticked playlists', () => {
