@@ -175,7 +175,11 @@ import { createTmpManifest } from './tmpManifest'
 import { registerTraktorCueQueueIpc } from './traktorCueQueueIpc'
 import { applyTraktorBatch } from './traktorCuesWrite'
 import { bootVolumeName, syncCollection, traktorSessionBackup } from './traktorNmlLibrary'
-import { detectTraktorNmlPaths } from './traktorNmlPath'
+import {
+  collectionsTraktorUses,
+  collectionTraktorUses,
+  detectTraktorNmlPaths,
+} from './traktorNmlPath'
 import { type QueuedNmlPatch, syncQueuedPatches } from './traktorPatchQueue'
 import { registerTraktorPlaylistEditIpc } from './traktorPlaylistEditIpc'
 import { nmlPath } from './traktorPlaylists'
@@ -1124,16 +1128,39 @@ function registerIpc(): void {
   // are worth offering, since the version folder itself is what changes on every
   // Traktor update — an ipcMain.handle can't take fs as a dependency, so existsSync
   // is applied here rather than inside the pure detector.
-  ipcMain.handle('traktor:detectNmlPath', () => {
-    const candidates = detectTraktorNmlPaths(app.getPath('home'), (dir) => {
+  const traktorCandidates = (): string[] =>
+    detectTraktorNmlPaths(app.getPath('home'), (dir) => {
       try {
         return readdirSync(dir)
       } catch {
         return []
       }
     })
-    return candidates.find((path) => existsSync(path)) ?? null
+  const traktorInUse = (): string[] =>
+    collectionsTraktorUses(
+      traktorCandidates(),
+      (path) => {
+        try {
+          return readFileSync(path, 'utf8')
+        } catch {
+          return null
+        }
+      },
+      existsSync,
+      bootVolumeName(),
+    )
+  // The Root Dir of an installed Traktor first: that is where Traktor reads its collection,
+  // and an updated Traktor can keep the folder of an older version.
+  ipcMain.handle('traktor:detectNmlPath', () => {
+    return traktorInUse()[0] ?? traktorCandidates().find((path) => existsSync(path)) ?? null
   })
+  // Saved into a collection no Traktor reads, nothing ever reached Traktor and nothing said
+  // so: Settings and the cue editor name the collection Traktor uses instead.
+  ipcMain.handle('traktor:collectionInUse', (_e, path: string) =>
+    collectionTraktorUses(path, traktorInUse(), (a, b) =>
+      process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b,
+    ),
+  )
 
   // The rekordbox counterpart, and deliberately simpler: its collection lives in one
   // fixed place per platform, so there is nothing to propose and accept — Settings only

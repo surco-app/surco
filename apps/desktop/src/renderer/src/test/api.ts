@@ -158,6 +158,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     pickTraktorNmlPath: async () => null,
     pickRekordboxDbPath: async () => null,
     detectTraktorNmlPath: async () => null,
+    traktorCollectionInUse: async () => null,
     rekordboxCollection: async () => '',
     appleMusicEntryLocation: async () => '',
     appleMusicEntryMeta: async () => null,

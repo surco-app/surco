@@ -75,9 +75,9 @@ interface Props {
   // neither surface reimplements the round-trip.
   onChangeEngineDir: (dir: string) => void
   onChangeTraktorNmlPath: () => void
-  // A candidate collection.nml autodetection found — null while unresolved or once
-  // traktorNmlPath is already set (see SettingsModal). Never applied on its own; the
-  // user accepts it explicitly via onAcceptDetectedNmlPath.
+  // A candidate collection.nml autodetection found while none is set, or, once one is,
+  // the collection Traktor uses when it is another (see SettingsModal); null otherwise.
+  // Never applied on its own; the user accepts it explicitly via onAcceptDetectedNmlPath.
   detectedNmlPath: string | null
   onAcceptDetectedNmlPath: () => void
   // Where rekordbox keeps its collection on this machine, or '' when none was found.
@@ -315,6 +315,28 @@ export function DestinationTab({
               className="press shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
             >
               {tr('settings.traktorNmlPathUseDetected')}
+            </button>
+          </div>
+        )}
+        {local.traktorNmlPath && detectedNmlPath && detectedNmlPath !== local.traktorNmlPath && (
+          <div
+            data-testid="settings-traktor-nml-mismatch"
+            className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] px-3 py-2"
+          >
+            <div className="min-w-0">
+              <p className="flex items-center gap-1.5 text-sm text-warn">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                {tr('settings.traktorNmlPathOther')}
+              </p>
+              <p className="truncate text-sm">{detectedNmlPath}</p>
+            </div>
+            <button
+              type="button"
+              data-testid="settings-traktor-nml-use-traktor"
+              onClick={onAcceptDetectedNmlPath}
+              className="press shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+            >
+              {tr('settings.traktorNmlPathUseTraktor')}
             </button>
           </div>
         )}

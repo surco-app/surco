@@ -405,6 +405,11 @@ function Editing({
   })
   const savable = (contentId: string) => canSave || !isTraktorContent(contentId)
   const blocked = traktor && !canSave
+  const { data: otherCollection = null } = useQuery({
+    queryKey: ['traktor-collection-in-use', settings.traktorNmlPath],
+    queryFn: () => window.api.traktorCollectionInUse(settings.traktorNmlPath),
+    enabled: traktor && settings.traktorNmlPath !== '',
+  })
   const [readingAudio, setReadingAudio] = useState(false)
   const [proposed, setProposed] = useState<number[] | null>(() => {
     const kept = autoMarkOf(cue.contentId)
@@ -1352,6 +1357,11 @@ function Editing({
       {blocked && (
         <p data-testid="cues-traktor-no-collection" className="mt-2 text-xs text-warn">
           {tr('editor.cues.traktor.noCollection')}
+        </p>
+      )}
+      {otherCollection && (
+        <p data-testid="cues-traktor-other-collection" className="mt-2 text-xs text-warn">
+          {tr('editor.cues.traktor.otherCollection', { path: otherCollection })}
         </p>
       )}
       {traktor && state.cues.some((c) => c.kind === 0) && (

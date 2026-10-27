@@ -305,6 +305,33 @@ describe('DestinationTab Traktor collection', () => {
     expect(screen.queryByTestId('settings-traktor-nml-detected')).not.toBeInTheDocument()
   })
 
+  // A Traktor 4.4.0 kept its Root Dir in the 4.0.2 folder: Surco saved into 4.4.0 and not
+  // one cue ever reached Traktor, with nothing on screen saying why.
+  it('warns when Traktor uses another collection and switches to it on request', () => {
+    const onAcceptDetectedNmlPath = vi.fn()
+    const traktorUses = '/Users/dj/Documents/Native Instruments/Traktor 4.0.2/collection.nml'
+    render(
+      <DestinationTab
+        synced={synced}
+        local={{
+          ...local,
+          traktorNmlPath: '/Users/dj/Documents/Native Instruments/Traktor 4.4.0/collection.nml',
+        }}
+        patch={vi.fn()}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath={traktorUses}
+        onAcceptDetectedNmlPath={onAcceptDetectedNmlPath}
+        rekordboxCollection=""
+        onChangeRekordboxDbPath={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('settings-traktor-nml-mismatch')).toHaveTextContent(traktorUses)
+    fireEvent.click(screen.getByTestId('settings-traktor-nml-use-traktor'))
+    expect(onAcceptDetectedNmlPath).toHaveBeenCalled()
+  })
+
   // Accepting the proposal is the only way it ever reaches the draft — clicking
   // "Use this" must call back into the modal rather than writing the path itself.
   it('stages the detected path only when the user accepts it', () => {

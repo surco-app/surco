@@ -163,12 +163,18 @@ export function SettingsModal({
   // Autodetection only ever PROPOSES: the path varies by Traktor version and the
   // target user's real collection isn't even in the standard folder (his Documents
   // are in iCloud), so this never writes traktorNmlPath itself — only offers a
-  // value the Traktor tab can show next to an "use this" action. Skipped once a
-  // path is already set, staged or saved: a returning user who picked (or cleared)
-  // one deliberately must not see a stale proposal resurface.
+  // value the Traktor tab can show next to an "use this" action. Not proposed again once
+  // a path is set, staged or saved: a returning user who picked one deliberately must not
+  // see a stale proposal resurface.
+  // With a path set, the proposal turns into the collection Traktor reads when it is not
+  // that one (a Root Dir left on another version's folder): saved there, nothing would
+  // ever reach Traktor.
   const [detectedNmlPath, setDetectedNmlPath] = useState<string | null>(null)
   useEffect(() => {
-    if (local.traktorNmlPath) return
+    if (local.traktorNmlPath) {
+      window.api.traktorCollectionInUse(local.traktorNmlPath).then(setDetectedNmlPath)
+      return
+    }
     window.api.detectTraktorNmlPath().then(setDetectedNmlPath)
   }, [local.traktorNmlPath])
 

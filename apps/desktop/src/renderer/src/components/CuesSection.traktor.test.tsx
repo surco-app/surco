@@ -130,6 +130,36 @@ describe('CuesSection on a Traktor track', () => {
     expect(screen.getByTestId('cues-save')).toBeDisabled()
   })
 
+  // Where the DJ is when a save goes nowhere: a Traktor 4.4.0 reading the 4.0.2 folder never
+  // saw one cue, and the editor said nothing. It names the collection Traktor uses.
+  it('says when Traktor uses another collection than the one Surco saves to', async () => {
+    const chosen = '/Users/dj/Traktor 4.4.0/collection.nml'
+    const other = '/Users/dj/Traktor 4.0.2/collection.nml'
+    const asked = vi.fn(async (path: string) => (path === chosen ? other : null))
+    installApi({
+      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => READ),
+      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
+      traktorCanSave: async () => true,
+      traktorCollectionInUse: asked,
+    })
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <SettingsProvider
+          settings={{ cueFlows: KEPT, activeCueFlow: 'mine', traktorNmlPath: chosen }}
+        >
+          <CuesSection
+            cue={{ contentId: 'traktor:HD/:m/:e.wav', path: '/m/e.wav', label: 'Tengo' }}
+            open
+            onToggle={vi.fn()}
+          />
+        </SettingsProvider>
+      </QueryClientProvider>,
+    )
+    expect(await screen.findByTestId('cues-traktor-other-collection')).toHaveTextContent(other)
+  })
+
   it('lets the DJ save as soon as the collection is confirmed in Settings, without restarting', async () => {
     let confirmed = false
     installApi({
