@@ -90,3 +90,22 @@ export function collectionsTraktorUses(
   }
   return found
 }
+
+// Whether two paths name the same collection: compared as the file system resolves them,
+// since a Root Dir can come back under /Volumes/<boot disk>, a link to /. Windows ignores
+// capitals; a path that cannot be resolved is compared as written.
+export function sameCollection(
+  a: string,
+  b: string,
+  realpath: (path: string) => string,
+  platform: NodeJS.Platform,
+): boolean {
+  const canonical = (path: string): string => {
+    let resolved = path
+    try {
+      resolved = realpath(path)
+    } catch {}
+    return platform === 'win32' ? resolved.toLowerCase() : resolved
+  }
+  return canonical(a) === canonical(b)
+}
