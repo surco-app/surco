@@ -109,6 +109,41 @@ describe('convertAudio — cancelled outside the encode', () => {
     expect(existsSync(out)).toBe(false)
     expect(readdirSync(dir).filter((f) => f.includes('.tmp-'))).toEqual([])
   }, 30000)
+
+  // A cancel during the loudness measure used to let the full encode run anyway, only to
+  // throw its output away at the end: minutes of a core on a long mix the user had stopped.
+  it('never starts the encode once the job was cancelled before it', async () => {
+    const onChild = vi.fn()
+    const promise = convertAudio(
+      src,
+      join(dir, 'cancelled-before-encode.flac'),
+      'flac',
+      meta,
+      undefined,
+      {
+        mode: 'loudness',
+        targetLufs: -9,
+        truePeakDb: -1,
+        peakDb: -1,
+        removeDcOffset: false,
+        peakPerChannel: false,
+      },
+      undefined,
+      undefined,
+      onChild,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      () => true,
+    )
+
+    await expect(promise).rejects.toThrow('conversionCancelled')
+    expect(onChild).not.toHaveBeenCalled()
+  }, 30000)
 })
 
 describe('convertAudio — encode killed by a cancel', () => {

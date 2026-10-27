@@ -161,4 +161,40 @@ describe('createWorkerClient', () => {
     await expect(inFlight).rejects.toThrow('worker crashed')
     await expect(queued).rejects.toThrow('worker crashed')
   })
+
+  // Stopping a browsed-past track's channel scan used to ride the job queue behind the
+  // very scan it meant to stop, so the decode ran to completion holding its core. The
+  // kill has to reach the busy thread right away, beside the job it is carrying.
+  it('posts a broadcast straight to the busy worker instead of queueing it', () => {
+    const w = fakeWorker()
+    const client = createWorkerClient(() => w as unknown as Worker)
+    client.run(job)
+    client.broadcast({ type: 'killChannelScan', input: '/a.flac' })
+    expect(w.postMessage).toHaveBeenCalledTimes(2)
+    expect(w.postMessage.mock.calls[1][0]).toEqual({
+      control: { type: 'killChannelScan', input: '/a.flac' },
+    })
+  })
+
+  // No thread means nothing is running, so a broadcast must not spawn one just to deliver
+  // a kill to an empty registry.
+  it('does not spawn a worker to deliver a broadcast', () => {
+    const spawn = vi.fn(() => fakeWorker() as unknown as Worker)
+    createWorkerClient(spawn).broadcast({ type: 'killChannelScan', input: '/a.flac' })
+    expect(spawn).not.toHaveBeenCalled()
+  })
+
+  // A scan still waiting in the queue when every consumer left would otherwise start a
+  // full native decode nobody is waiting for once the worker frees up.
+  it('drops matching queued jobs without ever posting them', async () => {
+    const w = fakeWorker()
+    const client = createWorkerClient(() => w as unknown as Worker)
+    const inFlight = client.run(job)
+    const stale = client.run({ ...job, sampleRate: 2 })
+    client.dropQueued((queued) => queued.type === 'bpm' && queued.sampleRate === 2)
+    await expect(stale).rejects.toMatchObject({ name: 'AbortError' })
+    w.emit('message', { id: w.postMessage.mock.calls[0][0].id, ok: true, result: 1 })
+    await inFlight
+    expect(w.postMessage).toHaveBeenCalledTimes(1)
+  })
 })

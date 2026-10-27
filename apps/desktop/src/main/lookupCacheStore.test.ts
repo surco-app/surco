@@ -68,6 +68,7 @@ describe('createLookupCacheStore', () => {
     first.setRelease(7001, { title: 'Selected Ambient Works' })
     // Flush the debounced write synchronously instead of waiting out the debounce.
     await vi.runAllTimersAsync()
+    await first.whenSaved()
 
     const second = createLookupCacheStore<{ id: number }, { title: string }>('test-provider')
     expect(second.getSearch('aphex twin')).toEqual({ id: 1 })
@@ -102,6 +103,7 @@ describe('createLookupCacheStore', () => {
     store.setSearch('b', 2)
     store.setSearch('c', 3)
     await vi.runAllTimersAsync()
+    await store.whenSaved()
 
     expect(store.hasSearch('a')).toBe(false)
     expect(store.hasSearch('b')).toBe(true)
@@ -115,6 +117,7 @@ describe('createLookupCacheStore', () => {
     store.setRelease(2, 20)
     store.setRelease(3, 30)
     await vi.runAllTimersAsync()
+    await store.whenSaved()
 
     expect(store.hasRelease(1)).toBe(false)
     expect(store.hasRelease(2)).toBe(true)
@@ -131,6 +134,7 @@ describe('createLookupCacheStore', () => {
     store.setSearch('b', 2)
     store.setSearch('a', 99)
     await vi.runAllTimersAsync()
+    await store.whenSaved()
 
     expect(store.getSearch('a')).toBe(99)
     expect(store.hasSearch('b')).toBe(true)
@@ -151,12 +155,44 @@ describe('createLookupCacheStore', () => {
     expect(existsSync(cacheFile('test-provider'))).toBe(false)
 
     await vi.runAllTimersAsync()
+    await store.whenSaved()
     expect(existsSync(cacheFile('test-provider'))).toBe(true)
 
     const restarted = createLookupCacheStore<number, never>('test-provider')
     expect(restarted.getSearch('a')).toBe(1)
     expect(restarted.getSearch('b')).toBe(2)
     expect(restarted.getSearch('c')).toBe(3)
+  })
+
+  // A provider cache runs to megabytes, and the debounced save wrote it with writeFileSync
+  // on the main process: every few seconds of searching froze IPC and the audio stream for
+  // as long as the disk (or a synced userData folder) took. The write itself is async now.
+  it('writes the debounced save asynchronously, never inside the timer tick', async () => {
+    const { existsSync } = require('node:fs')
+    vi.useFakeTimers()
+    const store = createLookupCacheStore<number, never>('test-provider')
+    store.setSearch('a', 1)
+    vi.advanceTimersByTime(SAVE_DEBOUNCE_MS)
+    expect(existsSync(cacheFile('test-provider'))).toBe(false)
+
+    await store.whenSaved()
+    expect(createLookupCacheStore<number, never>('test-provider').getSearch('a')).toBe(1)
+  })
+
+  // The quit flush is the newest state; a debounced write still in flight carries an older
+  // one and must not land over it.
+  it('never lets a debounced write in flight overwrite the quit flush', async () => {
+    vi.useFakeTimers()
+    const store = createLookupCacheStore<number, never>('test-provider')
+    store.setSearch('a', 1)
+    vi.advanceTimersByTime(SAVE_DEBOUNCE_MS)
+    await Promise.resolve()
+    await Promise.resolve()
+    store.setSearch('b', 2)
+    ;(app as unknown as { __emit: (e: string) => void }).__emit('before-quit')
+    await store.whenSaved()
+
+    expect(createLookupCacheStore<number, never>('test-provider').getSearch('b')).toBe(2)
   })
 
   // The app quitting must not lose the last (debounced, not-yet-flushed) burst of writes:
@@ -183,6 +219,7 @@ describe('createLookupCacheStore', () => {
     const store = createLookupCacheStore<number, never>('test-provider')
     store.setSearch('a', 1)
     await vi.runAllTimersAsync()
+    await store.whenSaved()
     expect(store.getSearch('a')).toBe(1)
     rmdirSync(cacheFile('test-provider'))
   })
@@ -222,6 +259,7 @@ describe('empty search memo', () => {
     cacheIfUsable(store, 'unknown artist', [])
     cacheIfUsable(store, 'known artist', [1])
     await vi.runAllTimersAsync()
+    await store.whenSaved()
 
     const restarted = createLookupCacheStore<number[], never>('test-provider')
     expect(cachedSearch(restarted, 'unknown artist')).toBeUndefined()

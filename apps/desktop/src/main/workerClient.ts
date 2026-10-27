@@ -20,6 +20,25 @@ interface WorkerResponse {
 
 export interface WorkerClient {
   run: (job: WorkerJob, transfer?: readonly Transferable[]) => Promise<WorkerJobResult>
+  // Out-of-band: posted to every live thread at once, never queued and never answered.
+  // A kill riding the job queue waited behind the very scan it meant to stop.
+  broadcast: (job: WorkerJob) => void
+  // Rejects (AbortError) the jobs still waiting that nobody wants any more.
+  dropQueued: (match: (job: WorkerJob) => boolean) => void
+}
+
+function abortError(): Error {
+  const err = new Error('worker job dropped')
+  err.name = 'AbortError'
+  return err
+}
+
+function dropFrom(queue: Queued[], match: (job: WorkerJob) => boolean): void {
+  for (let i = queue.length - 1; i >= 0; i--) {
+    if (!match(queue[i].job)) continue
+    const [dropped] = queue.splice(i, 1)
+    dropped.reject(abortError())
+  }
 }
 
 // Correlates jobs to responses over a single reused worker: spawning a thread costs
@@ -92,6 +111,12 @@ export function createWorkerClient(spawn: () => Worker): WorkerClient {
         pump()
       })
     },
+    broadcast(job) {
+      worker?.postMessage({ control: job })
+    },
+    dropQueued(match) {
+      dropFrom(queue, match)
+    },
   }
 }
 
@@ -136,6 +161,12 @@ export function createWorkerPool(spawn: () => Worker, size: number): WorkerClien
         queue.push({ job, transfer, resolve, reject })
         dispatch()
       })
+    },
+    broadcast(job) {
+      for (const slot of slots) slot.client.broadcast(job)
+    },
+    dropQueued(match) {
+      dropFrom(queue, match)
     },
   }
 }

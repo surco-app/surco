@@ -17,6 +17,7 @@ import {
   FINGERPRINT_NAMESPACE,
   LOUDNESS_NAMESPACE,
   peekAnalysis,
+  peekVerdict,
   WAVEFORM_NAMESPACE,
 } from './analysisCache'
 import { analysisCancels, isAbortError } from './analysisCancel'
@@ -503,20 +504,20 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   handleAudio('audio:cached-batch', async (_e, paths: string[]) => {
     const entries = await Promise.all(
       paths.map(async (path) => {
-        const [spectrogram, waveformScan] = await Promise.all([
-          peekAnalysis<SpectrumResult>(spectrogramNamespace(path), path),
-          peekAnalysis<WaveformScan>(CHANNELSCAN_NAMESPACE, path),
+        // Through peekVerdict: the whole entry is parsed once, then only its projection.
+        const [spectrogram, scanVerdict] = await Promise.all([
+          peekVerdict<SpectrumResult & { cutoffFailed?: boolean }, SpectrumVerdict>(
+            spectrogramNamespace(path),
+            path,
+            ({ cutoffFailed: _cutoffFailed, image: _image, ...entry }) => entry,
+          ),
+          peekVerdict<WaveformScan, ScanVerdict>(CHANNELSCAN_NAMESPACE, path, (scan) => ({
+            clipping: scan.clipped.some(Boolean),
+          })),
         ])
         const hit: { spectrogram?: SpectrumVerdict; scanVerdict?: ScanVerdict } = {}
-        if (spectrogram) {
-          const {
-            cutoffFailed: _cutoffFailed,
-            image: _image,
-            ...entry
-          } = spectrogram as SpectrumResult & { cutoffFailed?: boolean }
-          hit.spectrogram = entry
-        }
-        if (waveformScan) hit.scanVerdict = { clipping: waveformScan.clipped.some(Boolean) }
+        if (spectrogram) hit.spectrogram = spectrogram
+        if (scanVerdict) hit.scanVerdict = scanVerdict
         return [path, hit] as const
       }),
     )

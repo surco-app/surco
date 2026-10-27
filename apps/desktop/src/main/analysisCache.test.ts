@@ -21,6 +21,7 @@ import {
   clearAnalysisCache,
   dropAnalysis,
   peekAnalysis,
+  peekVerdict,
   pruneAnalysisCache,
 } from './analysisCache'
 
@@ -189,6 +190,48 @@ describe('peekAnalysis', () => {
     await utimes(file, later, later)
 
     expect(await peekAnalysis('demo', file)).toBeNull()
+  })
+})
+
+// The track list only needs a verdict per row, but its hydration parsed each whole entry
+// (a spectrogram with its image, a channel scan with its lanes: hundreds of KB a track)
+// on every open of a big library. The projection is kept beside the entry after the
+// first read, so later opens parse a few hundred bytes instead.
+describe('peekVerdict', () => {
+  beforeEach(() => {
+    rmSync(join(app.getPath('userData'), 'analysis-cache'), { recursive: true, force: true })
+  })
+
+  it('projects the entry once and then serves the projection without reading the entry', async () => {
+    const file = await makeFile()
+    await cachedAnalysis('demo', file, vi.fn().mockResolvedValue({ big: 'x'.repeat(1000), v: 7 }))
+    const project = vi.fn((entry: { v: number }) => ({ v: entry.v }))
+
+    expect(await peekVerdict('demo', file, project)).toEqual({ v: 7 })
+    const dirPath = join(app.getPath('userData'), 'analysis-cache')
+    for (const name of await readdir(dirPath))
+      if (!name.endsWith('.verdict.json')) await writeFile(join(dirPath, name), 'corrupt')
+
+    expect(await peekVerdict('demo', file, project)).toEqual({ v: 7 })
+    expect(project).toHaveBeenCalledTimes(1)
+  })
+
+  it('is null for a cold entry, like peekAnalysis', async () => {
+    const file = await makeFile()
+    expect(await peekVerdict('demo', file, (e) => e)).toBeNull()
+  })
+
+  // A recomputed entry (the old one dropped or evicted) must never be shadowed by the
+  // verdict projected from the one before it.
+  it('never serves a projection of the entry that was replaced', async () => {
+    const file = await makeFile()
+    const compute = vi.fn().mockResolvedValueOnce({ v: 1 }).mockResolvedValueOnce({ v: 2 })
+    await cachedAnalysis('demo', file, compute)
+    expect(await peekVerdict('demo', file, (e: { v: number }) => e.v)).toBe(1)
+    await dropAnalysis('demo', file)
+    await cachedAnalysis('demo', file, compute)
+
+    expect(await peekVerdict('demo', file, (e: { v: number }) => e.v)).toBe(2)
   })
 })
 

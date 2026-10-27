@@ -109,6 +109,19 @@ describe('runProcessTrack — plain conversion', () => {
     })
   })
 
+  // The stats write is the settings file, which can be locked on Windows or sit in a synced
+  // folder. It runs after the file landed and the original was removed, so failing the job
+  // there reported a finished conversion as failed with the source already gone.
+  it('still reports success when recording the stats fails', async () => {
+    const deps = makeDeps({
+      recordConversion: vi.fn(() => {
+        throw new Error('EPERM: operation not permitted')
+      }),
+    })
+    const result = await runProcessTrack(job(), deps)
+    expect(result.outputPath).toBe('/out/Artist - Title.aiff')
+  })
+
   it('skips the cover stage when the job names no artwork', async () => {
     const deps = makeDeps({ hasCoverSource: vi.fn(() => false) })
     await runProcessTrack(job(), deps)

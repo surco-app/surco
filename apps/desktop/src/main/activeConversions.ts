@@ -35,7 +35,12 @@ export function createActiveConversions(): ActiveConversions {
   const running = new Set<string>()
   const cancelled = new Set<string>()
   return {
-    register: (jobId, kill) => kills.set(jobId, kill),
+    // A child that appears after the cancel (the encode after a measure, a ceiling
+    // re-encode) has nobody left to stop it, so it dies the moment it registers.
+    register: (jobId, kill) => {
+      if (cancelled.has(jobId)) kill('SIGTERM')
+      else kills.set(jobId, kill)
+    },
     unregister: (jobId) => kills.delete(jobId),
     beginJob: (jobId) => {
       running.add(jobId)

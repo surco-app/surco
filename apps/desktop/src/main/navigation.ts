@@ -56,11 +56,16 @@ export function isBlockedFetchUrl(url: string): boolean {
 
 // Whether a navigation target stays on the app's own origin. The SPA never
 // navigates the top frame itself, so anything off-origin is unexpected and gets
-// blocked. file:// URLs have an opaque ('null') origin that compares equal to
-// itself, so the packaged build's index.html still counts as internal.
+// blocked. file:// URLs all share the opaque ('null') origin, so any local HTML
+// would pass that check and load with the preload: for file: only the app's own
+// index.html (any hash) counts as internal.
 export function isInternalNavigation(target: string, appUrl: string): boolean {
   try {
-    return new URL(target).origin === new URL(appUrl).origin
+    const to = new URL(target)
+    const app = new URL(appUrl)
+    if (app.protocol === 'file:' || to.protocol === 'file:')
+      return to.protocol === app.protocol && to.pathname === app.pathname
+    return to.origin === app.origin
   } catch {
     return false
   }

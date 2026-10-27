@@ -1,4 +1,5 @@
-import { diffSnapshots, snapshotTags } from './tagSnapshot'
+import { diffSnapshots } from './tagSnapshot'
+import { runInWorker } from './worker'
 
 // What a conversion did to the file's tags, in the terms the activity panel shows: how
 // many fields it changed, how many it left as they were, and which ones changed. A user
@@ -51,12 +52,9 @@ export function tagChangeDetail(
   }
 }
 
-// A snapshot that never throws: a file TagLib cannot open (or that is gone, as a replaced
-// original is) yields null, and tagChangeDetail then stays silent.
-export function snapshotTagsOrNull(file: string): string[] | null {
-  try {
-    return snapshotTags(file)
-  } catch {
-    return null
-  }
+// The snapshot (see snapshotTagsOrNull) read in the worker: TagLib parses the whole tag
+// synchronously, and a conversion takes one before and one after, so on main a slow NAS
+// file stalled the UI twice per track.
+export function snapshotTagsInWorker(file: string): Promise<string[] | null> {
+  return runInWorker<string[] | null>({ type: 'tagSnapshot', file })
 }

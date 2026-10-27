@@ -6,15 +6,25 @@ import {
   readFileSync,
   realpathSync,
   renameSync,
-  unlinkSync,
   writeFileSync,
 } from 'node:fs'
-import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import {
+  access,
+  copyFile,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  stat,
+  unlink,
+  writeFile,
+} from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Readable } from 'node:stream'
 import {
   app,
+  autoUpdater,
   BrowserWindow,
   dialog,
   ipcMain,
@@ -68,6 +78,7 @@ import { cachedBeatGrid } from './beatGridCache'
 import { setBeatportSession } from './beatport'
 import { beatportSession, connectBeatport, disconnectBeatport } from './beatportCredentials'
 import { clipboardHasImage, readClipboardImage, writeClipboardImage } from './clipboardImage'
+import { createQuitIntent, handleGuardedClose } from './closeToQuit'
 import type { CoverSource } from './cover'
 import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
 import { downloadCover, imageExt } from './coverDownload'
@@ -109,7 +120,7 @@ import { isIssuedPair } from './musicDuplicates'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { abandonNmlBatch, beginNmlBatch } from './nmlBatch'
-import { routeOpenedFile } from './openedFiles'
+import { filesFromArgv, routeOpenedFile } from './openedFiles'
 import { configureBackupStore } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
 import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
@@ -158,7 +169,7 @@ import { sharedPrompt } from './sharedPrompt'
 import { registerShellIpc } from './shellIpc'
 import { createStickyConflict } from './stickyConflict'
 import { createSurcoTrash } from './surcoTrash'
-import { snapshotTagsOrNull, tagChangeDetail } from './tagChanges'
+import { snapshotTagsInWorker, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
 import { registerTraktorCueQueueIpc } from './traktorCueQueueIpc'
 import { applyTraktorBatch } from './traktorCuesWrite'
@@ -182,7 +193,8 @@ import { dirRoots, FolderWatcher } from './watcher'
 installCrashGuards(process, log)
 
 if (!app.requestSingleInstanceLock()) app.exit(0)
-app.on('second-instance', () => {
+app.on('second-instance', (_event, argv) => {
+  openFilesFromArgv(argv)
   const win = BrowserWindow.getAllWindows()[0]
   if (!win) return
   if (win.isMinimized()) win.restore()
@@ -217,6 +229,7 @@ const outputReservations = createOutputReservations()
 // Lets process:cancel reach an encode already in flight, not just ones not yet
 // started — module-scoped for the same reason as outputReservations above.
 const activeConversions = createActiveConversions()
+const quitIntent = createQuitIntent()
 let unsavedCueTracks = 0
 // A file-name conflict prompts once per collision, so a batch of similarly-named rips used
 // to interrupt N times. When the user ticks "apply to the rest", that decision is remembered
@@ -392,8 +405,13 @@ const tmpManifest = createTmpManifest(join(app.getPath('userData'), 'pending-tmp
   readFileSync: (p) => readFileSync(p, 'utf8'),
   writeFileSync,
   existsSync,
-  unlinkSync,
   renameSync,
+  unlink,
+  pathExists: (p) =>
+    access(p).then(
+      () => true,
+      () => false,
+    ),
 })
 // Surco's own trash: every original a conversion replaces or renames away, and every
 // delete on a volume with no OS Trash, kept for a while (see surcoTrash.ts). Local disk
@@ -402,8 +420,7 @@ const surcoTrash = createSurcoTrash(join(app.getPath('userData'), 'trash'), () =
   trashLimits(getSettings()),
 )
 configureBackupStore(surcoTrash, () => getSettings().backupPolicy, trashWithoutRoom)
-app.on('open-file', (event, path) => {
-  event.preventDefault()
+function openFile(path: string): void {
   mediaAccess.allow(path)
   const win = BrowserWindow.getAllWindows()[0]
   routeOpenedFile(path, {
@@ -413,7 +430,18 @@ app.on('open-file', (event, path) => {
     send: (paths) => win?.webContents.send('open-files', paths),
     pending: pendingFiles,
   })
+}
+app.on('open-file', (event, path) => {
+  event.preventDefault()
+  openFile(path)
 })
+// Windows has no open-file: "Open with Surco" arrives as argv, on a cold launch here and
+// to the running instance through second-instance above.
+function openFilesFromArgv(argv: string[]): void {
+  if (process.platform !== 'win32') return
+  for (const path of filesFromArgv(argv, existsSync)) openFile(path)
+}
+openFilesFromArgv(process.argv)
 
 // A single flat file name (the cover-export .jpg): slashes are illegal characters here
 // and become dashes. Deliberately different from inplace.ts's sanitizeOutputName, where
@@ -705,18 +733,14 @@ function createWindow(): BrowserWindow {
       return response === 0
     },
   })
-  win.on('close', (event) => {
-    // The decision is async and 'close' is not, so the event is always prevented first
-    // and the window closed again once the user has answered.
-    if (!quitGuard.mustAsk()) return
-    event.preventDefault()
-    quitGuard.ask().then((quit) => {
-      if (quit) {
-        activeConversions.killAll()
-        win.close()
-      }
-    })
-  })
+  win.on('close', (event) =>
+    handleGuardedClose(event, {
+      guard: quitGuard,
+      intent: quitIntent,
+      killAll: activeConversions.killAll,
+      close: () => win.close(),
+    }),
+  )
   // Let the renderer pause its background analyze sweep while the window is hidden,
   // so it stops spawning ffmpeg in the background, and resume it on focus.
   win.on('blur', () => win.webContents.send('window:focus', false))
@@ -1346,7 +1370,7 @@ function registerIpc(): void {
       endJob: activeConversions.endJob,
       trackTmp: tmpManifest.track,
       untrackTmp: tmpManifest.untrack,
-      convertAudio: (
+      convertAudio: async (
         input,
         output,
         format,
@@ -1374,7 +1398,8 @@ function registerIpc(): void {
         const s = getSettings()
         // Read before the conversion: with "replace the original" the input is gone once
         // the job lands, and the comparison the panel shows is against what the file was.
-        const tagsBefore = snapshotTagsOrNull(input)
+        const tagsBefore = await snapshotTagsInWorker(input)
+        let tagsAfter: string[] | null = null
         return activity.track(
           'convert',
           'activity.convert',
@@ -1406,13 +1431,16 @@ function registerIpc(): void {
               replacesPath,
               () => activeConversions.isCancelled(job.id),
               keepOverwritten,
-            ),
+            ).then(async (result) => {
+              tagsAfter = await snapshotTagsInWorker(output)
+              return result
+            }),
           {
             labelParams: { track },
             // The before/after the user did by hand in mp3tag, on every conversion: which
             // fields changed and how many stayed, so a field renamed, invented or lost
             // shows in the panel the moment it happens rather than in a bug report.
-            summary: () => tagChangeDetail(tagsBefore, snapshotTagsOrNull(output)) ?? {},
+            summary: () => tagChangeDetail(tagsBefore, tagsAfter) ?? {},
           },
         )
       },
@@ -1749,9 +1777,6 @@ app.whenReady().then(() => {
   // Storing a thumbnail waits for this, so no URL handed out can be pruned afterwards.
   void pruneCoverThumbs()
   setInterval(() => void pruneAnalysisCache(), 30 * 60 * 1000)
-  // Deletes any .tmp-* conversions left behind by a crash or force-quit in the
-  // previous run, before any new conversion can add to the manifest.
-  tmpManifest.sweepOrphans()
   // Drops what the trash no longer keeps (older than the retention, past the size cap).
   void surcoTrash.sweep().catch((err) => log.warn('trash sweep failed', String(err)))
   // Serve the local audio file ourselves with real HTTP range support: the
@@ -1814,7 +1839,12 @@ app.whenReady().then(() => {
   migrateBackupLimits()
   migrateMixInBars()
   migrateImportFields()
-  createWindow()
+  // Deletes any .tmp-* conversions left behind by a crash or force-quit in the previous
+  // run. Once the window is up and in the background: those temps sit in the user's own
+  // folders, and a stale NAS mount there used to hold the launch on a black screen.
+  createWindow().once('show', () => {
+    tmpManifest.sweepOrphans().catch((err) => log.warn('tmp manifest sweep failed', String(err)))
+  })
 
   // Downloads a newer version in the background, then tells the renderer so it can
   // show a "restart to update" toast (which calls quitAndInstall via update:install).
@@ -1912,6 +1942,14 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
+
+// What the window's close guard resumes after the user confirms: a prevented close cancels
+// the quit that raised it. An update's quitAndInstall closes the windows before before-quit
+// on macOS, so it announces itself through before-quit-for-update instead.
+app.on('before-quit', () => quitIntent.started(() => app.quit()))
+autoUpdater.on('before-quit-for-update', () =>
+  quitIntent.started(() => electronUpdater.autoUpdater.quitAndInstall()),
+)
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()

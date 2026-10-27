@@ -31,6 +31,40 @@ export function imageExt(buf: Buffer): 'jpg' | 'png' | 'gif' | 'webp' | undefine
   return undefined
 }
 
+// Far past any real artwork; the cap only stops a renderer-named URL that points at a huge
+// file from being buffered whole into the main process.
+const MAX_COVER_BYTES = 20 * 1024 * 1024
+const MAX_REDIRECTS = 5
+
+// Redirects are followed by hand so every hop passes the SSRF check: fetch following them
+// itself let a public URL bounce the main process onto a loopback or metadata address.
+async function fetchChecked(url: string): Promise<Response> {
+  let current = url
+  for (let hop = 0; ; hop++) {
+    const res = await fetch(current, {
+      headers: { 'User-Agent': USER_AGENT },
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      redirect: 'manual',
+    })
+    const location = res.status >= 300 && res.status < 400 ? res.headers.get('location') : null
+    if (!location) return res
+    if (hop === MAX_REDIRECTS) throw errorWithKey('coverDownloadFailed', String(res.status))
+    current = new URL(location, current).toString()
+    if (isBlockedFetchUrl(current)) throw errorWithKey('coverUrlBlocked', current)
+  }
+}
+
+async function readCapped(res: Response): Promise<Buffer> {
+  const chunks: Buffer[] = []
+  let total = 0
+  for await (const chunk of res.body ?? []) {
+    total += chunk.length
+    if (total > MAX_COVER_BYTES) throw errorWithKey('coverDownloadFailed', 'too large')
+    chunks.push(Buffer.from(chunk))
+  }
+  return Buffer.concat(chunks)
+}
+
 export async function downloadCover(url: string): Promise<string> {
   // The renderer names this URL, so refuse the SSRF-shaped ones (loopback, cloud
   // metadata, private ranges) before the trusted main process ever connects.
@@ -39,12 +73,9 @@ export async function downloadCover(url: string): Promise<string> {
     'cover',
     'activity.downloadCover',
     async () => {
-      const res = await fetch(url, {
-        headers: { 'User-Agent': USER_AGENT },
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      })
+      const res = await fetchChecked(url)
       if (!res.ok) throw errorWithKey('coverDownloadFailed', String(res.status))
-      const buf = Buffer.from(await res.arrayBuffer())
+      const buf = await readCapped(res)
       // Trust the bytes, not the extension: a URL that resolves to an HTML page (the common
       // outcome of a link dragged from a browser) would otherwise be saved as .jpg and only
       // blow up later inside ffmpeg with an inscrutable "No JPEG data found".

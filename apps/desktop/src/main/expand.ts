@@ -5,7 +5,7 @@ import { isMissing, sourceStat } from './sourceStat'
 // Beyond the four output formats, ffmpeg also decodes AAC/ALAC (.m4a/.mp4/.aac — what
 // Apple Music libraries are made of) and Ogg Vorbis/Opus (.ogg/.oga/.opus — Bandcamp and
 // the like). None match an output, so they always transcode rather than stream-copy.
-const AUDIO_EXTS = new Set([
+export const AUDIO_EXTS = new Set([
   '.wav',
   '.flac',
   '.aif',

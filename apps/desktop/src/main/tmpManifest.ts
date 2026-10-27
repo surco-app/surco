@@ -11,8 +11,11 @@ export interface FsAdapter {
   readFileSync: (path: string) => string
   writeFileSync: (path: string, data: string) => void
   existsSync: (path: string) => boolean
-  unlinkSync: (path: string) => void
   renameSync: (from: string, to: string) => void
+  // The sweep's own reach into the user's folders, async: a stale NAS mount answering
+  // slowly must never hold the main process.
+  unlink: (path: string) => Promise<void>
+  pathExists: (path: string) => Promise<boolean>
 }
 
 export interface TmpManifest {
@@ -21,8 +24,8 @@ export interface TmpManifest {
   // Deletes every path left over from a run that never got to untrack them
   // (crash, force-quit), then clears the manifest of everything it managed to
   // remove — a path it could not delete stays listed for the next sweep. Call
-  // once at launch, before any new conversion starts.
-  sweepOrphans: () => void
+  // once at launch; paths tracked while it runs are kept.
+  sweepOrphans: () => Promise<void>
 }
 
 function readPaths(manifestPath: string, fs: FsAdapter): string[] {
@@ -58,28 +61,39 @@ export function createTmpManifest(manifestPath: string, fs: FsAdapter): TmpManif
       const paths = readPaths(manifestPath, fs).filter((p) => p !== path)
       writePaths(manifestPath, fs, paths)
     },
-    sweepOrphans: () => {
+    sweepOrphans: async () => {
       const paths = readPaths(manifestPath, fs)
-      // Paths still on disk after this pass. A delete that fails for anything other
+      // Paths done with after this pass. A delete that fails for anything other
       // than "already gone" means the file is still there — a network volume holding
       // the handle, or a Windows scanner — and the manifest is the only thing that
       // will ever lead a later sweep back to it. Clearing it regardless was what left
       // half-written temps parked in the user's own folder with no record anywhere.
-      const kept: string[] = []
+      const done = new Set<string>()
       for (const path of paths) {
         try {
-          fs.unlinkSync(path)
+          await fs.unlink(path)
+          done.add(path)
         } catch (e) {
           // ENOENT is the sweep succeeding by other means (user deleted it, or the
           // crash happened before ffmpeg created it): nothing to chase next time.
           // Unless the folder itself is missing: a NAS or external disk not mounted
           // yet at launch answers ENOENT for every path under it, and dropping those
           // left the temps in the share with no record anywhere.
-          if ((e as NodeJS.ErrnoException)?.code !== 'ENOENT' || !fs.existsSync(dirname(path)))
-            kept.push(path)
+          if (
+            (e as NodeJS.ErrnoException)?.code === 'ENOENT' &&
+            (await fs.pathExists(dirname(path)))
+          )
+            done.add(path)
         }
       }
-      if (paths.length) writePaths(manifestPath, fs, kept)
+      // Re-read rather than overwrite: conversions started while the sweep ran have
+      // tracked their own temps in the meantime.
+      if (paths.length)
+        writePaths(
+          manifestPath,
+          fs,
+          readPaths(manifestPath, fs).filter((p) => !done.has(p)),
+        )
     },
   }
 }

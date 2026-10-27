@@ -387,7 +387,13 @@ export async function runProcessTrack(
         log.warn('process:track kept the original it could not retire', job.inputPath, e)
         originalKept = true
       })
-    deps.recordConversion()
+    // The file has landed and the original may be gone: a stats write that fails (a locked
+    // or synced settings file) must not turn a finished conversion into a failed one.
+    try {
+      deps.recordConversion()
+    } catch (e) {
+      log.warn('process:track could not record the conversion stats', e)
+    }
 
     // A track that already has a library copy (musicPersistentId from a previous
     // add) gets its metadata and artwork synced onto that copy instead of being
