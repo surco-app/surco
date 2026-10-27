@@ -1,5 +1,44 @@
 [
   {
+    "version": "1.14",
+    "date": "October 27, 2026",
+    "title": "Nothing left behind",
+    "items": [
+      {
+        "text": "Surco in Japanese. The app can now be used in Japanese, as well as Spanish, English, German, French and Portuguese.",
+        "in": "1.14.0"
+      },
+      {
+        "text": "When you replace a track in Apple Music, say an MP3 with its AIFF, the new one keeps its playlists, its play count, your rating and its favorite. If anything can't move over, the old one stays in Music and nothing is lost.",
+        "in": "1.14.0"
+      },
+      {
+        "text": "Pending changes for your collections are no longer lost. If you switch collections or yours is on a disconnected drive, Surco keeps them, tells you what they're waiting for and applies them when you go back to it or plug the drive in.",
+        "in": "1.14.0"
+      },
+      {
+        "text": "The flow you mark reaches your other programs the way you marked it. Each drop carries the flow you picked for it, lands on the same beat of the music even when each program counts the bar its own way, and the cues you already had there are left alone.",
+        "in": "1.14.0"
+      },
+      {
+        "text": "If you apply a wrong release and then the right one, the first one's label, catalog number, country and artwork no longer stay behind. What you edited yourself is kept.",
+        "in": "1.14.0"
+      },
+      {
+        "text": "Updating a track in place keeps its name even with characters like ? or quotes, so it is no longer renamed or dropped from rekordbox or Traktor.",
+        "in": "1.14.0"
+      },
+      {
+        "text": "The cue editor no longer loses your tweaks when what you saved with rekordbox open gets applied, and closing rekordbox no longer writes over what you haven't saved.",
+        "in": "1.14.0"
+      },
+      {
+        "text": "More fixes when converting, in custom fields, in Auto-match, in Traktor playlists, on Engine DJ USB drives and, on Windows, when converting the track you are listening to.",
+        "in": "1.14.0"
+      }
+    ]
+  },
+  {
     "version": "1.13",
     "date": "October 27, 2026",
     "title": "One flow for all your programs",

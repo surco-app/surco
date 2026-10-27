@@ -1,5 +1,44 @@
 [
   {
+    "version": "1.14",
+    "date": "27 de octubre de 2026",
+    "title": "Nada se queda por el camino",
+    "items": [
+      {
+        "text": "Surco en japonés. La app ya se puede usar en japonés, además de en español, inglés, alemán, francés y portugués.",
+        "in": "1.14.0"
+      },
+      {
+        "text": "Al sustituir una pista en Apple Music, por ejemplo un MP3 por su AIFF, la nueva conserva sus playlists, sus reproducciones, tu valoración y el favorito. Si algo no se puede pasar, la antigua se queda en Music y no se pierde nada.",
+        "in": "1.14.0"
+      },
+      {
+        "text": "Los cambios pendientes para tus colecciones ya no se pierden. Si cambias de colección o la tuya está en un disco desconectado, Surco los guarda, te dice a qué esperan y los aplica cuando vuelves a ella o conectas el disco.",
+        "in": "1.14.0"
+      },
+      {
+        "text": "El flujo que marcas llega a los demás programas como lo marcaste. Cada drop va con el flujo que elegiste para él, cae en el mismo golpe de la música aunque cada programa cuente el compás a su manera, y las cues que ya tenías allí no se tocan.",
+        "in": "1.14.0"
+      },
+      {
+        "text": "Si aplicas un lanzamiento equivocado y luego el bueno, ya no se quedan el sello, el catálogo, el país ni la carátula del primero. Lo que editaste tú se respeta.",
+        "in": "1.14.0"
+      },
+      {
+        "text": "Actualizar una pista en su sitio respeta su nombre aunque lleve signos como ? o comillas, así que ya no se renombra ni desaparece de rekordbox o Traktor.",
+        "in": "1.14.0"
+      },
+      {
+        "text": "El editor de cues ya no pierde tus retoques cuando se aplica lo que guardaste con rekordbox abierto, y cerrar rekordbox no escribe encima de lo que tienes sin guardar.",
+        "in": "1.14.0"
+      },
+      {
+        "text": "Más arreglos al convertir, en los campos propios, en Auto-emparejar, en las playlists de Traktor, en el USB de Engine DJ y, en Windows, al convertir la pista que estás escuchando.",
+        "in": "1.14.0"
+      }
+    ]
+  },
+  {
     "version": "1.13",
     "date": "27 de octubre de 2026",
     "title": "Un flujo para todos tus programas",
