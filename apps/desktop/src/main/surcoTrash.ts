@@ -161,6 +161,9 @@ export function createSurcoTrash(
     return dropped
   }
 
+  // Aged from when the file came into the trash. A move keeps the file's own creation
+  // date, years old for a track bought long ago, while the change time is set by the move
+  // itself (and by the copy, a new file).
   const sweepUnnamed = async (now: number): Promise<void> => {
     const named = new Set(read().map((e) => e.storedPath))
     const { retentionMs } = limits()
@@ -168,7 +171,8 @@ export function createSurcoTrash(
       const path = join(items, name)
       if (named.has(path)) continue
       const info = await stat(path).catch(() => null)
-      if (info && now - info.birthtimeMs > retentionMs) await unlink(path).catch(() => {})
+      if (info && now - Math.max(info.birthtimeMs, info.ctimeMs) > retentionMs)
+        await unlink(path).catch(() => {})
     }
   }
 
