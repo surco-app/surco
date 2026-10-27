@@ -381,6 +381,15 @@ describe('engine USB export', () => {
   })
 })
 
+async function convertPlayToAiff(w: Awaited<ReturnType<typeof world>>) {
+  await writeFile(join(w.libraryDir, '../Tracks/play.aiff'), Buffer.alloc(2600, 8))
+  const desktop = new Database(join(w.libraryDir, 'Database2', 'm.db'))
+  desktop
+    .prepare("UPDATE Track SET path = '../Tracks/play.aiff', filename = 'play.aiff' WHERE id = 2")
+    .run()
+  desktop.close()
+}
+
 describe('engine USB export onto a drive Surco exported to before', () => {
   async function exported(w: Awaited<ReturnType<typeof world>>, ids: string[]) {
     w.events.length = 0
@@ -512,6 +521,41 @@ describe('engine USB export onto a drive Surco exported to before', () => {
     expect(
       (await readFile(join(engineDir(w.usb), 'Music', 'play.aiff'))).equals(Buffer.alloc(2600, 8)),
     ).toBe(true)
+  })
+
+  // The converted track's old copy stayed in Music under its old name, a whole track's
+  // bytes no library on the drive leads to any more.
+  it('removes the copy a converted track left under its old name once the new library is on the drive, and nothing else', async () => {
+    const w = await world()
+    await exported(w, ['1'])
+    await writeFile(join(engineDir(w.usb), 'Music', 'mine.mp3'), 'put here by hand')
+    await convertPlayToAiff(w)
+    expect(await exported(w, ['1'])).toMatchObject({ outcome: 'done' })
+    expect((await readdir(join(engineDir(w.usb), 'Music'))).sort()).toEqual([
+      'mine.mp3',
+      'night.aiff',
+      'play.aiff',
+    ])
+  })
+
+  it('keeps the old copy while the drive still holds the library that leads to it', async () => {
+    const w = await world()
+    await exported(w, ['1'])
+    await convertPlayToAiff(w)
+    swap.fails = true
+    try {
+      expect(await exported(w, ['1'])).toMatchObject({ outcome: 'error' })
+    } finally {
+      swap.fails = false
+    }
+    const db = usbDb(w.usb)
+    expect(db.prepare('SELECT path FROM Track WHERE originTrackId = 2').pluck().get()).toBe(
+      'Music/play.mp3',
+    )
+    db.close()
+    expect(await readFile(join(engineDir(w.usb), 'Music', 'play.mp3'))).toEqual(
+      Buffer.alloc(2000, 2),
+    )
   })
 
   it('treats a library whose database Surco did not write as someone else’s, even with Surco’s note beside it', async () => {

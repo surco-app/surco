@@ -58,6 +58,7 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     confirmConflict: vi.fn(async () => 'overwrite' as const),
     appleMusicEntryLocation: vi.fn(async () => '/Users/me/Music/Media/f.aiff'),
     deleteAppleMusic: vi.fn(async () => {}),
+    carryAppleMusicHistory: vi.fn(async () => 'carried' as const),
     isPathReserved: vi.fn(() => false),
     reservePath: vi.fn(),
     releasePath: vi.fn(),
@@ -1139,6 +1140,55 @@ describe('runProcessTrack — Apple Music only copy verification', () => {
     expect(result.addedToMusicOnly).toBe(true)
     expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
   })
+
+  const replacement = job({
+    meta: { artist: 'Artist', title: 'Title' } as TrackMetadata,
+    addToAppleMusic: true,
+    musicPersistentId: 'old-id',
+    replacesPath: '/m/old.mp3',
+    replacesLabel: 'Old Artist - Old Title',
+  })
+
+  // The check used to run after the swap: the old entry was already deleted when the new
+  // one, pointing at a temp file about to vanish, was rolled back too, and the track left
+  // Music altogether. Only the new entry may be undone, and the DJ must hear that the old
+  // copy is still there.
+  it('rolls back only the new entry and keeps the old one when Music referenced the temp file', async () => {
+    const deps = musicOnly()
+    deps.appleMusicEntryLocation = vi.fn(async () => '/tmp/surco-abc/Artist - Title.aiff')
+
+    await expect(runProcessTrack(replacement, deps)).rejects.toThrow('appleMusicNoMediaCopyKept')
+
+    expect(deps.deleteAppleMusic).toHaveBeenCalledOnce()
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('added-id', 'Artist - Title')
+    expect(deps.carryAppleMusicHistory).not.toHaveBeenCalled()
+  })
+
+  // Copying the playlists onto an entry that is about to be rolled back would be wasted at
+  // best; deleting the old one before knowing the new one plays is the bug above.
+  it('checks where the new entry points before carrying anything over or deleting the old one', async () => {
+    const calls: string[] = []
+    const deps = musicOnly()
+    deps.addToAppleMusic = vi.fn(async () => {
+      calls.push('add')
+      return 'added-id'
+    })
+    deps.appleMusicEntryLocation = vi.fn(async () => {
+      calls.push('locate')
+      return '/Users/me/Music/Media/Artist - Title.aiff'
+    })
+    deps.carryAppleMusicHistory = vi.fn(async () => {
+      calls.push('carry')
+      return 'carried' as const
+    })
+    deps.deleteAppleMusic = vi.fn(async (pid: string) => {
+      calls.push(`delete ${pid}`)
+    })
+
+    await runProcessTrack(replacement, deps)
+
+    expect(calls).toEqual(['add', 'locate', 'carry', 'delete old-id'])
+  })
 })
 
 describe('runProcessTrack — pinned overwrite', () => {
@@ -1328,6 +1378,14 @@ describe('runProcessTrack — Apple Music', () => {
     expect(deps.addToAppleMusic).toHaveBeenCalledWith('/in/Artist - Title.aiff', {}, undefined)
     expect(deps.deleteAppleMusic).toHaveBeenCalledWith('lib-9', 'A - Old')
     expect(result.musicPersistentId).toBe('added-id')
+  })
+
+  it("carries the renamed file's playlists, play count and rating onto its new Music entry", async () => {
+    const deps = mac({ overwriteOriginal: true })
+    deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    await runProcessTrack(job(), deps)
+
+    expect(deps.carryAppleMusicHistory).toHaveBeenCalledWith('lib-9', 'added-id', 'A - Old')
   })
 
   it('adds as before when Music holds no entry for the file', async () => {
@@ -1732,6 +1790,47 @@ describe('runProcessTrack — replacing a library copy', () => {
     expect(result.oldMusicCopyKept).toBe('error')
   })
 
+  // The delete takes the old entry's normal playlists, play count, rating and favorite with
+  // it, and a DJ's hand-made crates are exactly what must survive swapping an MP3 for its
+  // AIFF. The copy has to land on the entry just added, checked against the old one's own
+  // name like the delete.
+  it('replacing keeps the track in its normal playlists and keeps its play count and rating', async () => {
+    const deps = replacing()
+
+    await runProcessTrack(job(replaceJob), deps)
+
+    expect(deps.carryAppleMusicHistory).toHaveBeenCalledWith(
+      'old-id',
+      'added-id',
+      'Old Artist - Old Title',
+    )
+  })
+
+  // Deleting after a failed copy would lose the playlists the copy did not reach. Keeping
+  // the old entry leaves two copies in Music and nothing lost, and the DJ is told.
+  it('keeps the old entry and says so when its playlists could not be carried over', async () => {
+    const deps = replacing({
+      carryAppleMusicHistory: vi.fn(async () => {
+        throw new Error('Music got an error: -54')
+      }),
+    })
+
+    const result = await runProcessTrack(job(replaceJob), deps)
+
+    expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
+    expect(result.musicPersistentId).toBe('added-id')
+    expect(result.oldMusicCopyKept).toBe('carry')
+  })
+
+  it('keeps the old entry when it no longer carries the name the DJ confirmed', async () => {
+    const deps = replacing({ carryAppleMusicHistory: vi.fn(async () => 'mismatch' as const) })
+
+    const result = await runProcessTrack(job(replaceJob), deps)
+
+    expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
+    expect(result.oldMusicCopyKept).toBe('mismatch')
+  })
+
   it('reports nothing kept when the old entry was retired', async () => {
     const result = await runProcessTrack(job(replaceJob), replacing())
 
@@ -1747,6 +1846,10 @@ describe('runProcessTrack — replacing a library copy', () => {
         calls.push('add')
         return 'added-id'
       }),
+      carryAppleMusicHistory: vi.fn(async () => {
+        calls.push('carry')
+        return 'carried' as const
+      }),
       deleteAppleMusic: vi.fn(async () => {
         calls.push('delete')
       }),
@@ -1754,7 +1857,7 @@ describe('runProcessTrack — replacing a library copy', () => {
 
     await runProcessTrack(job(replaceJob), deps)
 
-    expect(calls).toEqual(['add', 'delete'])
+    expect(calls).toEqual(['add', 'carry', 'delete'])
   })
 
   // Measured from the user's own log 15/09, after three runs that reported only

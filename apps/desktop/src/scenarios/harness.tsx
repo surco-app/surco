@@ -247,6 +247,8 @@ function processTrackInMain(
       musicIsFake ? appleMusic.appleMusicEntryLocation(pid) : noMusic(),
     deleteAppleMusic: (pid, label) =>
       musicIsFake ? appleMusic.deleteFromAppleMusic(pid, label) : noMusic(),
+    carryAppleMusicHistory: (fromPid, toPid, label) =>
+      musicIsFake ? appleMusic.carryOverToAppleMusicCopy(fromPid, toPid, label) : noMusic(),
     redirectRepoint: redirectRekordboxRepoint,
   })
 }

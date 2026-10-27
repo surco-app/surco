@@ -1276,8 +1276,9 @@ export interface ProcessResult {
   outputIdentity?: string
   // Set when the conversion replaced a library copy and the new entry went in but the old
   // one could not be retired, so Music holds both. 'mismatch' means Music refused because
-  // the live entry no longer carries the offered name; 'error' that the delete failed.
-  oldMusicCopyKept?: 'mismatch' | 'error'
+  // the live entry no longer carries the offered name; 'error' that the delete failed;
+  // 'carry' that its playlists, play count and rating could not be copied, so it stayed.
+  oldMusicCopyKept?: 'mismatch' | 'error' | 'carry'
   appleMusicFailed?: true
   // Set when the converted file landed but the original it replaced in a format change
   // could not be retired, so both are in the folder.

@@ -318,6 +318,18 @@ export function appleMusicModule(real: AppleMusic): AppleMusic {
       state.transfers.push({ from: fromPid, to: toPid, answer })
       return answer
     },
+    carryOverToAppleMusicCopy: async (fromPid, toPid, expectedLabel) => {
+      const src = live(fromPid)
+      const dst = live(toPid)
+      if (!src) return 'missing'
+      if (!sameIgnoringCase(label(src), expectedLabel)) return 'mismatch'
+      if (!dst) throw new Error('Can’t get item 1 of {}. (-1728)')
+      if (src.ratingKind === 'user') Object.assign(dst, { rating: src.rating, ratingKind: 'user' })
+      for (const p of state.playlists)
+        if (!p.smart && p.entries.includes(fromPid) && !p.entries.includes(toPid))
+          p.entries.push(toPid)
+      return 'carried'
+    },
     dumpAppleMusicLibrary: async () => real.parseLibraryDump(libraryDump()),
     dumpMusicReview: async () => real.parseReviewDump(reviewDump()),
     musicFileEntries: (candidates, launch) => real.musicFileEntries(candidates, launch, run),

@@ -67,6 +67,7 @@ import {
   addToAppleMusic,
   appleMusicEntryLocation,
   appleMusicLimiter,
+  carryOverToAppleMusicCopy,
   deleteFromAppleMusic,
   musicEntryForFile,
   updateInAppleMusic,
@@ -1649,6 +1650,8 @@ function registerIpc(): void {
         }),
       appleMusicEntryLocation,
       deleteAppleMusic: deleteFromAppleMusic,
+      carryAppleMusicHistory: (fromPid, toPid, label) =>
+        appleMusicLimiter.run(() => carryOverToAppleMusicCopy(fromPid, toPid, label)),
       redirectRepoint: redirectRekordboxRepoint,
     }),
   )
