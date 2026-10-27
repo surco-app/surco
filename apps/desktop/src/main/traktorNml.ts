@@ -39,12 +39,16 @@ export function withAttr(fragment: string, name: string, value: string): string 
 // Traktor XML-escapes attribute values on write (escapeAttr below is the same
 // table in reverse), so a FILE/DIR/VOLUME read back raw would never match a
 // patch built from the real filesystem name once it contains &, <, > or ".
+// &apos; and numeric references are decoded too, for collections another tool
+// wrote. One pass, so an escaped "&amp;lt;" stays the text "&lt;".
+const ENTITIES: Record<string, string> = { quot: '"', lt: '<', gt: '>', amp: '&', apos: "'" }
+
 function unescapeAttr(value: string): string {
-  return value
-    .replace(/&quot;/g, '"')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&')
+  return value.replace(/&(#x[0-9a-fA-F]+|#[0-9]+|[a-z]+);/g, (whole, ref: string) => {
+    if (ref[0] !== '#') return ENTITIES[ref] ?? whole
+    const code = ref[1] === 'x' ? Number.parseInt(ref.slice(2), 16) : Number(ref.slice(1))
+    return code <= 0x10ffff ? String.fromCodePoint(code) : whole
+  })
 }
 
 export function findEntries(nml: string): NmlEntry[] {

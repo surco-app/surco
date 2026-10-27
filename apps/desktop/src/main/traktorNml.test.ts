@@ -743,6 +743,33 @@ describe('applyPatches', () => {
     expect(out).toContain('FILE="uno&amp;dos.flac"')
   })
 
+  // Traktor only writes the four entities above, but a collection that went through
+  // another tool (Rekordbox exports, a script, a text editor) can carry &apos; or a
+  // numeric reference for the same character. Read raw, that entry would never match
+  // the real file name and its conversion would silently miss the collection.
+  it('matches a file name written with &apos; or numeric character references', () => {
+    const encoded = NML.replace('FILE="uno.aiff"', 'FILE="it&apos;s &#38; caf&#xE9;.aiff"')
+
+    expect(findEntries(encoded)[0].file).toBe("it's & café.aiff")
+    const out = applyPatches(encoded, [
+      {
+        volume: 'Macintosh HD',
+        dir: '/:Musica/:',
+        file: "it's & café.aiff",
+        newFile: "it's & café.flac",
+      },
+    ])
+    expect(out).toContain('FILE="it\'s &amp; café.flac"')
+  })
+
+  // A literal "&amp;#38;" is the text "&#38;", not an ampersand: decoding in one pass
+  // keeps an escaped reference from being decoded twice.
+  it('decodes an escaped character reference only once', () => {
+    const encoded = NML.replace('FILE="uno.aiff"', 'FILE="a&amp;#38;b.aiff"')
+
+    expect(findEntries(encoded)[0].file).toBe('a&#38;b.aiff')
+  })
+
   // String.replace expande $&, $`, $' y $n dentro del texto de reemplazo, así que un
   // nombre de fichero con un dólar empalmaría texto del propio documento dentro del
   // atributo y escribiría XML inválido en la colección del DJ. El '$' es legal en los
