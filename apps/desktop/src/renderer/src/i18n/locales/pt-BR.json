@@ -885,6 +885,11 @@
         "marked": "Você já tem um CALL em cada lugar onde o Surco acha que a faixa explode",
         "selected": "Marcar automático nas selecionadas"
       },
+      "batch": {
+        "mark_one": "Marcar automático em {{count}} faixa",
+        "mark_other": "Marcar automático em {{count}} faixas",
+        "withProposals": "Com propostas"
+      },
       "engine": {
         "save": "Salvar no Engine DJ",
         "unanalysed": "O Engine DJ ainda não analisou esta faixa",

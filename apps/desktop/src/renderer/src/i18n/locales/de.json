@@ -885,6 +885,11 @@
         "marked": "Du hast schon überall ein CALL, wo Surco meint, dass der Titel losbricht",
         "selected": "Auswahl auto-markieren"
       },
+      "batch": {
+        "mark_one": "{{count}} Track auto-markieren",
+        "mark_other": "{{count}} Tracks auto-markieren",
+        "withProposals": "Mit Vorschlägen"
+      },
       "engine": {
         "save": "In Engine DJ speichern",
         "unanalysed": "Engine DJ hat diesen Titel noch nicht analysiert",

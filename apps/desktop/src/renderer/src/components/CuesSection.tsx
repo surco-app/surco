@@ -155,7 +155,7 @@ const copyOf = (contentId: string) =>
       ? ENGINE_COPY
       : REKORDBOX_COPY
 
-function saveAllKey(unsaved: ReadonlySet<string>): string {
+export function saveAllKey(unsaved: ReadonlySet<string>): string {
   const traktor = [...unsaved].filter(isTraktorContent).length
   if (traktor > 0)
     return traktor === unsaved.size ? 'editor.cues.traktor.saveAll' : 'editor.cues.saveAllMixed'

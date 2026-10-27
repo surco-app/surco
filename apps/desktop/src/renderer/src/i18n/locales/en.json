@@ -885,6 +885,11 @@
         "marked": "You already have a CALL everywhere Surco thinks the track breaks",
         "selected": "Auto mark the selected"
       },
+      "batch": {
+        "mark_one": "Auto mark {{count}} track",
+        "mark_other": "Auto mark {{count}} tracks",
+        "withProposals": "With proposals"
+      },
       "engine": {
         "save": "Save to Engine DJ",
         "unanalysed": "Engine DJ has not analysed this track yet",

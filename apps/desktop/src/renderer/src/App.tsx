@@ -2262,6 +2262,14 @@ export default function App(): React.JSX.Element {
     }
     return byId
   }, [cuesOpen, playlistScope, autoMarks])
+  const cueTargets = useMemo(
+    () =>
+      selectedTracks.flatMap((t) => {
+        const contentId = playlistScope?.contentOf.get(t.id)
+        return contentId ? [{ contentId, path: t.inputPath, label: t.listLabel }] : []
+      }),
+    [selectedTracks, playlistScope],
+  )
   const autoMarkSelected = useStableCallback(() => {
     const ids = selectedTracks.flatMap((t) => {
       const contentId = playlistScope?.contentOf.get(t.id)
@@ -3215,6 +3223,7 @@ export default function App(): React.JSX.Element {
                           onCueQuantize={onCueQuantize}
                           onCueFlow={onCueFlow}
                           onCueAutoMarkAll={cuesOpen ? autoMarkSelected : undefined}
+                          cueTargets={cueTargets}
                           cueActionsRef={cueActionsRef}
                           libraryIndex={libraryIndex}
                           searchInputRef={searchInputRef}

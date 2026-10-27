@@ -2,12 +2,21 @@
 import { QueryClient } from '@tanstack/react-query'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
+import { MIX_IN, MIX_IN_32, normalizeCueFlows } from '../../../shared/cueFlows'
 import type { DropInput } from '../../../shared/dropDetect'
 import type { QueuedCues, TrackCues } from '../../../shared/types'
 import { installApi } from '../test/api'
-import { autoMarkTracks } from './cueAutoMark'
-import { startDraft } from './cueDraft'
-import { autoMarkOf, cueDraftKey, keepDraft, resetCueSession, unsavedCueTracks } from './cueSession'
+import { acceptAutoMarks, autoMarkTracks } from './cueAutoMark'
+import { reduceDraft, startDraft, wantedOfDraft } from './cueDraft'
+import {
+  autoMarkOf,
+  cueDraftKey,
+  draftsToSave,
+  keepDraft,
+  resetCueSession,
+  unsavedCueTracks,
+} from './cueSession'
+import { quantizePoints } from './cueWave'
 
 const detectDrops = vi.hoisted(() => vi.fn<(input: DropInput) => number[]>())
 vi.mock('../../../shared/dropDetect', async (importOriginal) => ({
@@ -146,6 +155,83 @@ describe('Auto marcar over several tracks', () => {
     setTimeout(() => order.push('ui'), 0)
     await running
     expect(order).toEqual(['detect', 'ui', 'detect'])
+  })
+})
+
+describe('accepting Auto marcar over several tracks', () => {
+  const flows = normalizeCueFlows(undefined)
+  const settings = (flowId: string) => ({
+    cueFlows: flows,
+    activeCueFlow: flowId,
+    cueQuantize: 'beat' as const,
+    cueLettersByTime: false,
+  })
+  const target = (contentId: string) => ({
+    contentId,
+    path: `/m/${contentId}.wav`,
+    label: contentId,
+  })
+  const editorAccept = (flowId: string, drops: number[]) =>
+    wantedOfDraft(
+      reduceDraft(
+        startDraft([], flowId),
+        { type: 'batch', actions: drops.map((ms) => ({ type: 'mark-drop' as const, ms })) },
+        {
+          beats: GRID.map((b) => b.ms),
+          snapTo: quantizePoints(GRID, 'beat'),
+          strong: READ.strong,
+          phrases: READ.phrases,
+          flows,
+          lettersByTime: false,
+        },
+      ).cues,
+    )
+
+  // The whole point of accepting from the list: thirteen tracks marked with one click instead
+  // of opening each. What each track gets must be exactly what accepting its proposals in the
+  // editor would give it, with the flow the DJ picked, and it stays a draft to save later.
+  it('leaves every proposed track the cues the editor would place with the chosen flow, unsaved', async () => {
+    detectDrops.mockReturnValueOnce([bar(64)]).mockReturnValueOnce([bar(32), bar(96)])
+    const { api, client } = setup()
+    await autoMarkTracks(client, ['103', '104'])
+
+    const accepted = await acceptAutoMarks(
+      client,
+      [target('103'), target('104')],
+      settings(MIX_IN.id),
+    )
+
+    expect(accepted).toBe(2)
+    expect([...unsavedCueTracks()]).toEqual(['103', '104'])
+    const saved = Object.fromEntries(draftsToSave().map((r) => [r.contentId, r]))
+    expect(saved['103'].wanted).toEqual(editorAccept(MIX_IN.id, [bar(64)]))
+    expect(saved['104'].wanted).toEqual(editorAccept(MIX_IN.id, [bar(32), bar(96)]))
+    expect(saved['103']).toMatchObject({ path: '/m/103.wav', label: '103', fingerprint: 'f0' })
+    expect(autoMarkOf('103')).toBeUndefined()
+    expect(api.saveRekordboxCues).not.toHaveBeenCalled()
+  })
+
+  it('places the cues of the flow picked for the batch, not a fixed one', async () => {
+    detectDrops.mockReturnValue([bar(64)])
+    const { client } = setup()
+    await autoMarkTracks(client, ['103'])
+
+    await acceptAutoMarks(client, [target('103')], settings(MIX_IN_32.id))
+
+    expect(draftsToSave()[0].wanted).toEqual(editorAccept(MIX_IN_32.id, [bar(64)]))
+    expect(editorAccept(MIX_IN_32.id, [bar(64)])).not.toEqual(editorAccept(MIX_IN.id, [bar(64)]))
+  })
+
+  it('leaves alone the tracks with nothing proposed', async () => {
+    const call = (ms: number) => ({ id: `c${ms}`, ms, kind: 0, color: null })
+    const { client } = setup({
+      reads: { '104': { ...READ, contentId: '104', cues: [call(bar(64)), call(bar(128))] } },
+    })
+    await autoMarkTracks(client, ['104'])
+
+    expect(await acceptAutoMarks(client, [target('104')], settings(MIX_IN.id))).toBe(0)
+    expect([...unsavedCueTracks()]).toEqual([])
+    expect(autoMarkOf('104')).toEqual({ kind: 'marked' })
   })
 })
 

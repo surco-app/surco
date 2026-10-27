@@ -1,15 +1,28 @@
 import type { QueryClient } from '@tanstack/react-query'
-import { nearestBeat } from '../../../shared/cueRules'
+import type { CueFlow } from '../../../shared/cueFlows'
+import { MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
+import type { CueQuantize } from '../../../shared/cueQuantize'
+import { ALL_SLOTS, nearestBeat } from '../../../shared/cueRules'
 import { type DropInput, detectDrops } from '../../../shared/dropDetect'
 import { isEngineContent } from '../../../shared/engineContent'
-import { isTraktorContent } from '../../../shared/traktorContent'
+import { isTraktorContent, TRAKTOR_SLOTS } from '../../../shared/traktorContent'
 import {
   cueDropInputQuery,
   cueWaveDetailQuery,
   queuedCuesQuery,
   trackCuesQuery,
 } from '../hooks/useTrackCues'
-import { type AutoMark, cueDraftKey, keepAutoMark, keptDraft } from './cueSession'
+import { type DraftAction, reduceDraft, startDraft, wantedOfDraft } from './cueDraft'
+import {
+  type AutoMark,
+  autoMarkOf,
+  cueDraftKey,
+  forgetAutoMark,
+  keepAutoMark,
+  keepDraft,
+  keptDraft,
+} from './cueSession'
+import { quantizePoints } from './cueWave'
 
 export function withoutCallInBar(
   proposed: number[],
@@ -59,4 +72,80 @@ export async function autoMarkTracks(client: QueryClient, contentIds: string[]):
     if (i > 0) await new Promise((resolve) => setTimeout(resolve, 0))
     keepAutoMark(contentId, await autoMarkOne(client, contentId))
   }
+}
+
+export interface AutoMarkTarget {
+  contentId: string
+  path: string
+  label: string
+}
+
+export interface AutoMarkSettings {
+  cueFlows: CueFlow[]
+  activeCueFlow: string
+  cueQuantize: CueQuantize
+  cueLettersByTime: boolean
+}
+
+// Accepting every proposal from the list does to each track what the editor's accept does:
+// start from the unsaved draft or what the library holds, keep the DJ's loops locked, place
+// the chosen flow on each break, and leave the result as an unsaved draft for Save.
+async function acceptOne(
+  client: QueryClient,
+  target: AutoMarkTarget,
+  settings: AutoMarkSettings,
+): Promise<boolean> {
+  const mark = autoMarkOf(target.contentId)
+  if (mark?.kind !== 'proposed') return false
+  const read = await client.fetchQuery(trackCuesQuery(target.contentId)).catch(() => null)
+  if (!read?.analysed || read.grid.length === 0) return false
+  const queued = await client.fetchQuery(queuedCuesQuery(target.contentId))
+  const baseline =
+    queued && queued.fingerprint === read.fingerprint
+      ? queued.wanted
+      : read.cues.map(({ id, ms, kind, color }) => ({ id, ms, kind, color }))
+  const draftKey = cueDraftKey(target.contentId, read.fingerprint, queued)
+  const manual = settings.activeCueFlow === MANUAL_CUE_FLOW
+  const ctx = {
+    beats: read.grid.map((b) => b.ms),
+    snapTo: quantizePoints(read.grid, settings.cueQuantize),
+    strong: read.strong,
+    phrases: read.phrases,
+    flows: settings.cueFlows,
+    lettersByTime: settings.cueLettersByTime,
+    slots: isTraktorContent(target.contentId) ? TRAKTOR_SLOTS : ALL_SLOTS,
+  }
+  const kept =
+    keptDraft(target.contentId, draftKey) ??
+    startDraft(
+      baseline,
+      settings.activeCueFlow,
+      read.cues.filter((c) => c.loop).map((c) => c.id),
+    )
+  const flowed = manual
+    ? kept
+    : reduceDraft(kept, { type: 'use-flow', flowId: settings.activeCueFlow }, ctx)
+  const open = withoutCallInBar(mark.ms, flowed.cues, read.grid)
+  const actions: DraftAction[] = open.map((ms) =>
+    manual ? { type: 'add-call', ms } : { type: 'mark-drop', ms },
+  )
+  const accepted = reduceDraft(flowed, { type: 'batch', actions }, ctx)
+  forgetAutoMark(target.contentId)
+  if (JSON.stringify(wantedOfDraft(accepted.cues)) === JSON.stringify(baseline)) return false
+  keepDraft(target.contentId, draftKey, accepted, {
+    path: target.path,
+    label: target.label,
+    fingerprint: read.fingerprint,
+  })
+  return true
+}
+
+export async function acceptAutoMarks(
+  client: QueryClient,
+  targets: AutoMarkTarget[],
+  settings: AutoMarkSettings,
+): Promise<number> {
+  let accepted = 0
+  for (const target of targets) if (await acceptOne(client, target, settings)) accepted += 1
+  return accepted
 }
