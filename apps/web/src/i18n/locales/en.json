@@ -272,7 +272,7 @@
           },
           {
             "t": "rekordbox cues",
-            "d": "Hot cues A to H and CALLs, on rekordbox's waveform and grid. Drag them, they snap to the bar or the beat, and you can undo. Pick a flow, like Mix in 64, Mix in 32 or one of your own built from blocks or learned from your collection, and hovering over the waveform shows a ghost of what it would place. One click places it and tells you what doesn't fit. Auto mark suggests where each track drops, on several at once too. And if you mark the CALLs in rekordbox, Surco places your flow's hot cues when you close it. On a track rekordbox hasn't analyzed yet you work on Surco's grid, and once rekordbox analyzes it, your cues move onto its own. Letters follow track order, and if each letter is a fixed pad for you, turn it off in Settings. Written to rekordbox after a backup."
+            "d": "Hot cues A to H and CALLs, on rekordbox's waveform and grid. Drag them, they snap to the bar or the beat, and you can undo. Pick a flow, like Mix in 64, Mix in 32 or one of your own built from blocks or learned from your collection, and hovering over the waveform shows a ghost of what it would place. One click places it and tells you what doesn't fit. Auto mark suggests where each track drops, on several at once too. And if you mark the CALLs in rekordbox, Surco places your flow's hot cues when you close it. On a track rekordbox hasn't analyzed yet you work on Surco's grid, and once rekordbox analyzes it, your cues move onto its own. Letters follow track order, and if each letter is a fixed pad for you, turn it off in Settings. If the same track is in Traktor or Engine DJ, saving places the flow there too, on its grid and around its cues. Written to rekordbox after a backup."
           },
           {
             "t": "A USB stick for your CDJs",
@@ -923,7 +923,8 @@
           "With several tracks selected, «Auto mark the selected» prepares them all and «Save N tracks to rekordbox» saves them in one go.",
           "If rekordbox hasn’t analyzed the track yet, Surco measures the grid and you can set the cues anyway. Once rekordbox analyzes it, they move onto its grid.",
           "Auto mark suggests, it doesn’t decide. Its suggestions aren’t always right, so nothing is saved until you accept them.",
-          "The same works with Engine DJ and Traktor playlists, which get the hot cues only. In Traktor they show in blue and on buttons 2 to 8, since button 1 is for its grid."
+          "The same works with Engine DJ and Traktor playlists, which get the hot cues only. In Traktor they show in blue and on buttons 2 to 8, since button 1 is for its grid.",
+          "A flow marked in one program reaches the same track in the others when you save, each on its own grid and around the cues it already had. Before saving, the editor tells you what each program will get, and in Settings › Cues you choose which ones it reaches."
         ],
         "shot": "rekordbox-en.webp",
         "shotCaption": "Auto mark suggests where the track drops, with your flow ready to accept."

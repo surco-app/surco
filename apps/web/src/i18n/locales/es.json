@@ -272,7 +272,7 @@
           },
           {
             "t": "Cues de rekordbox",
-            "d": "Hot cues de la A a la H y CALL, sobre la onda y la rejilla de rekordbox. Las arrastras, se ajustan al compás o al golpe y puedes deshacer. Eliges un flujo, como Mix in 64, Mix in 32 o uno tuyo hecho por bloques o aprendido de tu colección, y al pasar el ratón por la onda ves en transparente lo que pondría. Un clic lo coloca y te dice lo que no cabe. Auto marcar te propone dónde rompe cada pista, también en varias a la vez. Y si marcas los CALL en rekordbox, Surco pone las hot cues de tu flujo al cerrarlo. En una pista que rekordbox aún no ha analizado trabajas sobre la rejilla de Surco, y cuando rekordbox la analiza, tus cues se ajustan a la suya. Las letras siguen el orden de la pista, y si cada letra es un pad fijo para ti, lo apagas en Ajustes. Se escriben en rekordbox con copia de seguridad antes."
+            "d": "Hot cues de la A a la H y CALL, sobre la onda y la rejilla de rekordbox. Las arrastras, se ajustan al compás o al golpe y puedes deshacer. Eliges un flujo, como Mix in 64, Mix in 32 o uno tuyo hecho por bloques o aprendido de tu colección, y al pasar el ratón por la onda ves en transparente lo que pondría. Un clic lo coloca y te dice lo que no cabe. Auto marcar te propone dónde rompe cada pista, también en varias a la vez. Y si marcas los CALL en rekordbox, Surco pone las hot cues de tu flujo al cerrarlo. En una pista que rekordbox aún no ha analizado trabajas sobre la rejilla de Surco, y cuando rekordbox la analiza, tus cues se ajustan a la suya. Las letras siguen el orden de la pista, y si cada letra es un pad fijo para ti, lo apagas en Ajustes. Si la misma pista está en Traktor o Engine DJ, al guardar el flujo llega también allí, puesto con su rejilla y sus cues. Se escriben en rekordbox con copia de seguridad antes."
           },
           {
             "t": "Un USB para tus CDJ",
@@ -923,7 +923,8 @@
           "Con varias pistas seleccionadas, «Auto marcar las seleccionadas» las prepara todas y «Guardar N pistas en rekordbox» las guarda de una vez.",
           "Si rekordbox aún no ha analizado la pista, Surco calcula la rejilla y puedes poner las cues igual. Cuando rekordbox la analiza, se ajustan a su rejilla.",
           "Auto marcar propone, no decide. Sus propuestas no siempre aciertan, así que no se guarda nada hasta que las aceptas.",
-          "Lo mismo con las playlists de Engine DJ y Traktor, que reciben solo los hot cues. En Traktor salen en azul y en los botones 2 a 8, porque el 1 es para su rejilla."
+          "Lo mismo con las playlists de Engine DJ y Traktor, que reciben solo los hot cues. En Traktor salen en azul y en los botones 2 a 8, porque el 1 es para su rejilla.",
+          "Un flujo marcado en un programa llega al guardar a la misma pista en los demás, cada uno con su rejilla y las cues que ya tenía. Antes de guardar, el editor dice qué recibirá cada programa, y en Ajustes › Cues eliges a cuáles llega."
         ],
         "shot": "rekordbox-es.webp",
         "shotCaption": "Auto marcar propone dónde rompe la pista, con tu flujo listo para aceptar."
