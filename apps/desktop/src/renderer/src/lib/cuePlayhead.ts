@@ -58,8 +58,8 @@ export function wholeBars(bars: number): number {
 }
 
 export function zoomStep(bars: number, dir: 'in' | 'out'): number {
-  const found = ZOOM_BARS.findIndex((z) => z === bars)
-  const at = found === -1 ? ZOOM_BARS.findIndex((z) => z === DEFAULT_ZOOM_BARS) : found
+  const found = (ZOOM_BARS as readonly number[]).indexOf(bars)
+  const at = found === -1 ? ZOOM_BARS.indexOf(DEFAULT_ZOOM_BARS) : found
   const next = Math.min(ZOOM_BARS.length - 1, Math.max(0, at + (dir === 'in' ? -1 : 1)))
   return ZOOM_BARS[next]
 }
