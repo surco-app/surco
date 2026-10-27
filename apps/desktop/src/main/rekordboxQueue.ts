@@ -87,6 +87,8 @@ export type QueueApply =
 export interface RekordboxQueue<R extends QueuedRepoint = RekordboxRepoint> {
   enqueue: (ops: QueueOp[], repoints?: R[]) => void
   state: () => RekordboxQueueState
+  // Tells the window the state again: the collection in use changed, not the queue.
+  announce: () => void
   isEmpty: () => boolean
   discard: () => void
   drop: (id: string) => void
@@ -343,6 +345,9 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
   }
 
   return {
+    announce() {
+      deps.onChange(state())
+    },
     enqueue(ops, repoints = []) {
       const at = here()
       let q = queueFor(at)
