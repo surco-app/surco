@@ -115,6 +115,7 @@ export function GeneralTab({
               onChange={(id) => patch('language', id)}
               testidPrefix="settings-language"
               compact
+              fill
               label={tr('settings.language')}
               labelFor={(id) => (id === 'ja' ? '日本語' : tr(`settings.languages.${id}`))}
             />

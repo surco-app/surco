@@ -299,4 +299,35 @@ describe('SegmentedControl in a narrow panel', () => {
     expect(screen.getByRole('group', { name: 'Preset' })).toHaveAttribute('data-layout', 'row')
     restore()
   })
+  // A short row left a dead strip to its right in a wide panel (the language row in
+  // Settings). Asked to fill, it stretches its segments across the panel, and still
+  // falls back to two rows when even the natural widths don't fit.
+  const fourFilling = () =>
+    render(
+      <div>
+        <SegmentedControl
+          options={['a', 'b', 'c', 'd'] as const}
+          value="a"
+          onChange={vi.fn()}
+          testidPrefix="seg"
+          labelFor={(id) => id}
+          label="Preset"
+          fill
+        />
+      </div>,
+    )
+
+  it('stretches across the panel when asked to fill and it fits', () => {
+    const restore = withWidths(300, 353)
+    fourFilling()
+    expect(screen.getByRole('group', { name: 'Preset' })).toHaveAttribute('data-layout', 'fill')
+    restore()
+  })
+
+  it('still sets two rows when asked to fill but one row would not fit', () => {
+    const restore = withWidths(445, 353)
+    fourFilling()
+    expect(screen.getByRole('group', { name: 'Preset' })).toHaveAttribute('data-layout', 'grid')
+    restore()
+  })
 })
