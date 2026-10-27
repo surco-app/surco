@@ -885,6 +885,11 @@
         "marked": "Vous avez déjà un CALL partout où Surco pense que le morceau décolle",
         "selected": "Marquage auto de la sélection"
       },
+      "batch": {
+        "mark_one": "Marquage auto de {{count}} morceau",
+        "mark_other": "Marquage auto de {{count}} morceaux",
+        "withProposals": "Avec propositions"
+      },
       "engine": {
         "save": "Enregistrer dans Engine DJ",
         "unanalysed": "Engine DJ n’a pas encore analysé ce morceau",

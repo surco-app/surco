@@ -6,7 +6,6 @@ import {
   Music,
   RefreshCw,
   Scissors,
-  Sparkle,
   Tag,
   TriangleAlert,
   Type,
@@ -60,6 +59,7 @@ import { baseName } from '../lib/baseName'
 import { compareCopies } from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
 import type { CueActions } from '../lib/commands'
+import type { AutoMarkTarget } from '../lib/cueAutoMark'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
@@ -109,6 +109,7 @@ import { stripParentheticals } from '../lib/textClean'
 import type { FieldCleanup, TrackItem } from '../types'
 import { ConvertFooter } from './ConvertFooter'
 import { CopyComparison } from './CopyComparison'
+import { CuesBatchSection } from './CuesBatchSection'
 import { CuesSection } from './CuesSection'
 import { DeclickSection } from './DeclickSection'
 import { DiscogsPanel } from './DiscogsPanel'
@@ -214,6 +215,7 @@ interface Props {
   onCueQuantize?: (unit: CueQuantize) => void
   onCueFlow?: (id: string) => void
   onCueAutoMarkAll?: () => void
+  cueTargets?: AutoMarkTarget[]
   cueActionsRef?: { current: CueActions | null }
   onHideEditorHints: () => void
   // Opens the output-name pattern builder for this track (App owns the modal so the
@@ -288,6 +290,7 @@ export const Editor = memo(function Editor({
   onCueQuantize,
   onCueFlow,
   onCueAutoMarkAll,
+  cueTargets,
   cueActionsRef,
   onHideEditorHints,
   onOpenRename,
@@ -1523,14 +1526,11 @@ export const Editor = memo(function Editor({
                       if (!rekordboxCue) return false
                       if (isMulti && onCueAutoMarkAll)
                         return (
-                          <BulkActionSection
+                          <CuesBatchSection
                             key={id}
-                            testid="cues-multi"
-                            buttonTestid="cues-auto-mark-all"
-                            title={tr('editor.cues.title')}
-                            label={tr('editor.cues.auto.selected')}
-                            icon={Sparkle}
-                            onClick={onCueAutoMarkAll}
+                            targets={cueTargets ?? []}
+                            onMark={onCueAutoMarkAll}
+                            onFlow={(flowId) => onCueFlow?.(flowId)}
                           />
                         )
                       if (isMulti) return singleTrackOnly(id, tr('editor.cues.title'))

@@ -885,6 +885,11 @@
         "marked": "Ya tienes un CALL en cada sitio donde Surco cree que rompe",
         "selected": "Auto marcar las seleccionadas"
       },
+      "batch": {
+        "mark_one": "Auto marcar {{count}} pista",
+        "mark_other": "Auto marcar {{count}} pistas",
+        "withProposals": "Con propuestas"
+      },
       "engine": {
         "save": "Guardar en Engine DJ",
         "unanalysed": "Engine DJ aún no ha analizado esta pista",

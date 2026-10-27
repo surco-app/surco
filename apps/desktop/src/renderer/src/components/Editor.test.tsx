@@ -1415,6 +1415,7 @@ describe('Editor multi-select', () => {
       customFields?: Settings['customFields']
       rekordboxCue?: React.ComponentProps<typeof Editor>['rekordboxCue']
       onCueAutoMarkAll?: () => void
+      cueTargets?: React.ComponentProps<typeof Editor>['cueTargets']
     } = {},
   ) {
     if (opts.platform)
@@ -1447,6 +1448,7 @@ describe('Editor multi-select', () => {
         libraryIndex={null}
         rekordboxCue={opts.rekordboxCue}
         onCueAutoMarkAll={opts.onCueAutoMarkAll}
+        cueTargets={opts.cueTargets}
         searchInputRef={createRef<HTMLInputElement>()}
         onExportCollection={vi.fn()}
         readFullTrack={async () => undefined}
@@ -1595,10 +1597,14 @@ describe('Editor multi-select', () => {
     renderMulti({
       rekordboxCue: { contentId: '103', path: '/music/a.wav', label: 'a' },
       onCueAutoMarkAll,
+      cueTargets: [
+        { contentId: '103', path: '/music/a.wav', label: 'a' },
+        { contentId: '104', path: '/music/b.wav', label: 'b' },
+      ],
     })
     expect(screen.queryByTestId('cues-single-only')).toBeNull()
     const button = within(screen.getByTestId('cues-multi')).getByTestId('cues-auto-mark-all')
-    expect(button).toHaveTextContent(i18n.t('editor.cues.auto.selected'))
+    expect(button).toHaveTextContent(i18n.t('editor.cues.batch.mark', { count: 2 }))
     fireEvent.click(button)
     expect(onCueAutoMarkAll).toHaveBeenCalledTimes(1)
   })
