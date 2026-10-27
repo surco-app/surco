@@ -4517,6 +4517,57 @@ describe('App keyboard shortcuts', () => {
     await waitFor(() => expect(screen.queryByTestId('palette-input')).toBeNull())
   })
 
+  // Type a title, ⌘⏎: the field holds the text for a 200 ms pause before committing, so the
+  // conversion read the old title, the selection moved on and the unmount threw the typed
+  // text away. The keystroke that converts has to convert what is on screen, keep it on the
+  // track it was typed into, and leave the next track's own title alone.
+  it('converts the text just typed when ⌘⏎ lands inside the typing pause', async () => {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/o/a.aiff', inPlace: false })
+    setApi({
+      readTags: vi.fn(async (path: string) => ({
+        title: path.endsWith('a.wav') ? 'Alpha' : 'Bravo',
+        artist: 'DJ',
+      })),
+      processTrack,
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha'))
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'Typed Name' } })
+    fireEvent.keyDown(screen.getByTestId('field-title'), { key: 'Enter', ctrlKey: true })
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+    expect(processTrack.mock.calls[0][0].meta.title).toBe('Typed Name')
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Typed Name'))
+  })
+
+  // The selection can move without the field ever blurring. The text still in its pause
+  // belongs to the track it was typed into: dropped, the edit was lost; committed as the
+  // field unmounted, it landed on the track just opened and replaced its tags.
+  it('keeps text typed into one track on that track when the selection moves', async () => {
+    setApi({
+      readTags: vi.fn(async (path: string) => ({
+        title: path.endsWith('a.wav') ? 'Alpha' : 'Bravo',
+        artist: 'DJ',
+      })),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha'))
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'Typed Name' } })
+    fireEvent.click(rows[1])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Typed Name'))
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
+  })
+
   // The palette button is a bare glyph, so its hover hint is the only place the bar shows
   // its shortcut. ⌘K is a fixed menu accelerator outside the rebindable table, and the hint
   // read only that table, so the tooltip said "Command palette" with no keys at all.

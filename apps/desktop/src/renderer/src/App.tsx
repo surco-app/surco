@@ -142,6 +142,7 @@ import { listReviewSource } from './lib/listReviewSource'
 import { OpenSettingsProvider } from './lib/openSettingsContext'
 import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
+import { flushPendingEdits } from './lib/pendingEdits'
 import { isMacOS } from './lib/platform'
 import { playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
@@ -253,7 +254,13 @@ export default function App(): React.JSX.Element {
   useEffect(() => {
     document.documentElement.lang = i18n.language
   }, [i18n.language])
-  const [selection, setSelection] = useState<Selection>({ ids: [], anchor: null })
+  const [selection, setSelectionState] = useState<Selection>({ ids: [], anchor: null })
+  // Text still in a field's typing pause is committed before the selection moves, while
+  // the editor still points at the track it was typed into.
+  const setSelection = useCallback((next: React.SetStateAction<Selection>): void => {
+    flushPendingEdits()
+    setSelectionState(next)
+  }, [])
   const selectedId = selection.anchor
   const selectedIds = selection.ids
   // A Set for the list's per-row membership test, so the parent's "is this row selected?"
@@ -1066,10 +1073,13 @@ export default function App(): React.JSX.Element {
     [store],
   )
 
-  const onSelectTrack = useCallback((id: string, mods: ClickMods): void => {
-    const order = visibleTracksRef.current.map((t) => t.id)
-    setSelection((s) => clickSelect(s, order, id, mods))
-  }, [])
+  const onSelectTrack = useCallback(
+    (id: string, mods: ClickMods): void => {
+      const order = visibleTracksRef.current.map((t) => t.id)
+      setSelection((s) => clickSelect(s, order, id, mods))
+    },
+    [setSelection],
+  )
 
   async function onDrop(e: React.DragEvent): Promise<void> {
     e.preventDefault()
@@ -1579,7 +1589,7 @@ export default function App(): React.JSX.Element {
         ? current
         : { ids, anchor }
     })
-  }, [playlistScope])
+  }, [playlistScope, setSelection])
   // Keyed on the playlist once its rows are applied, not when it is picked: while its
   // entries load the list is empty, and the order must follow on arrival.
   const openPlaylistId = playlistScope ? (browser.playlist?.id ?? '') : ''
@@ -2641,7 +2651,7 @@ export default function App(): React.JSX.Element {
       setMaximized('cues')
       setRevealing(null)
     } else if (step.do === 'give-up') setRevealing(null)
-  }, [revealing, browser, playlistScope, selectSource, selectPlaylist, setMaximized])
+  }, [revealing, browser, playlistScope, selectSource, selectPlaylist, setMaximized, setSelection])
   function onEscape(): void {
     if (activeModal) {
       if (activeModal.type === 'onboarding') return
