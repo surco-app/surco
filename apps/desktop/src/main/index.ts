@@ -159,7 +159,7 @@ import { sharedPrompt } from './sharedPrompt'
 import { registerShellIpc } from './shellIpc'
 import { createStickyConflict } from './stickyConflict'
 import { createSurcoTrash } from './surcoTrash'
-import { snapshotTagsOrNull, tagChangeDetail } from './tagChanges'
+import { snapshotTagsInWorker, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
 import { registerTraktorCueQueueIpc } from './traktorCueQueueIpc'
 import { applyTraktorBatch } from './traktorCuesWrite'
@@ -1343,7 +1343,7 @@ function registerIpc(): void {
       endJob: activeConversions.endJob,
       trackTmp: tmpManifest.track,
       untrackTmp: tmpManifest.untrack,
-      convertAudio: (
+      convertAudio: async (
         input,
         output,
         format,
@@ -1370,7 +1370,8 @@ function registerIpc(): void {
         const s = getSettings()
         // Read before the conversion: with "replace the original" the input is gone once
         // the job lands, and the comparison the panel shows is against what the file was.
-        const tagsBefore = snapshotTagsOrNull(input)
+        const tagsBefore = await snapshotTagsInWorker(input)
+        let tagsAfter: string[] | null = null
         return activity.track(
           'convert',
           'activity.convert',
@@ -1401,13 +1402,16 @@ function registerIpc(): void {
               foreignRemoved,
               replacesPath,
               () => activeConversions.isCancelled(job.id),
-            ),
+            ).then(async (result) => {
+              tagsAfter = await snapshotTagsInWorker(output)
+              return result
+            }),
           {
             labelParams: { track },
             // The before/after the user did by hand in mp3tag, on every conversion: which
             // fields changed and how many stayed, so a field renamed, invented or lost
             // shows in the panel the moment it happens rather than in a bug report.
-            summary: () => tagChangeDetail(tagsBefore, snapshotTagsOrNull(output)) ?? {},
+            summary: () => tagChangeDetail(tagsBefore, tagsAfter) ?? {},
           },
         )
       },

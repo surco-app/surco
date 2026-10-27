@@ -57,6 +57,16 @@ export function snapshotTags(file: string): string[] {
   return lines.sort()
 }
 
+// A snapshot that never throws: a file TagLib cannot open (or that is gone, as a replaced
+// original is) yields null, and tagChangeDetail then stays silent.
+export function snapshotTagsOrNull(file: string): string[] | null {
+  try {
+    return snapshotTags(file)
+  } catch {
+    return null
+  }
+}
+
 // The lines in `after` that are not in `before` (added) and the reverse (removed), for a
 // failure message that names the exact field.
 export function diffSnapshots(
