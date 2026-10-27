@@ -1578,8 +1578,10 @@ rekordbox. Sin las opciones propias de rekordbox (My Settings, sincronización).
 
 ### Tu propia copia de rekordbox
 
-Cada escritura en la colección deja las copias `.surco-session` y `.surco-backup` junto a
-`master.db`. El changelog de v1.9.0 aconseja además hacer la propia copia de la biblioteca
+Cada escritura en la colección deja las copias `.surco-session` y `.surco-backup` en la
+carpeta de copias de Surco (`backups/` dentro de sus datos, `libraryBackups.ts`), no junto a
+`master.db`. Se abre desde Ajustes → General → Copias de las colecciones. Lo mismo vale para
+Engine DJ y Traktor. El changelog de v1.9.0 aconseja además hacer la propia copia de la biblioteca
 desde rekordbox antes de que Surco escriba. Ese consejo no aparece dentro de la app.
 
 ### Sustituir la copia de la biblioteca
