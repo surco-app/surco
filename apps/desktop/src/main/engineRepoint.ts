@@ -4,6 +4,7 @@ import log from 'electron-log/main'
 import type { Database } from 'sql.js'
 import { loadSqlJs } from './engine'
 import { assertEngineClosed, withEngineDatabase } from './engineLibrary'
+import { backupOf } from './libraryBackups'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
 import { writeBackup } from './rekordboxSessionBackup'
 import { renameWithRetry } from './renameRetry'
@@ -18,7 +19,6 @@ import { renameWithRetry } from './renameRetry'
 // nothing here throws to its caller. Every failure path returns a reason instead.
 
 // The same fixed backup name engineLibrary.ts writes before its own changes.
-const BACKUP_SUFFIX = '.surco-backup'
 
 export type EngineRepointResult =
   | { written: true; id: string }
@@ -157,7 +157,7 @@ export async function writeEngineRepoints(
 
     try {
       await options.sessionBackup?.(dbPath)
-      await writeBackup(dbPath, `${dbPath}${BACKUP_SUFFIX}`)
+      await writeBackup(dbPath, backupOf(dbPath, 'backup'))
     } catch (e) {
       log.warn(`Engine DJ repoint: backup failed: ${(e as Error).message}`)
       return results.map((r) =>

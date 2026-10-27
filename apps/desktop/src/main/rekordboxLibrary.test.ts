@@ -1,3 +1,4 @@
+import { mkdirSync } from 'node:fs'
 import {
   chmod,
   copyFile,
@@ -35,6 +36,7 @@ vi.mock('electron', () => ({
   },
 }))
 
+import { backupOf } from './libraryBackups'
 import { isRekordboxRunning } from './rekordboxProcess'
 
 const MP3 = '/Volumes/Public/Music/Acid/02 Everybody.mp3'
@@ -328,7 +330,7 @@ describe('repointTrack', () => {
 
     await repointTrack(dbPath, { from: MP3, to: output })
 
-    expect(await readFile(`${dbPath}.surco-backup`)).toEqual(before)
+    expect(await readFile(backupOf(dbPath, 'backup'))).toEqual(before)
   })
 
   // A copy keeps the mode of what it copied: a read-only file left a read-only backup, and
@@ -337,13 +339,14 @@ describe('repointTrack', () => {
     const output = join(audioDir, '02 Everybody.wav')
     await writeFile(output, Buffer.alloc(5000))
     const before = await readFile(dbPath)
-    await writeFile(`${dbPath}.surco-backup`, 'stale')
-    await chmod(`${dbPath}.surco-backup`, 0o444)
+    mkdirSync(dirname(backupOf(dbPath, 'backup')), { recursive: true })
+    await writeFile(backupOf(dbPath, 'backup'), 'stale')
+    await chmod(backupOf(dbPath, 'backup'), 0o444)
 
     const result = await repointTrack(dbPath, { from: MP3, to: output })
 
     expect(result.written).toBe(true)
-    expect(await readFile(`${dbPath}.surco-backup`)).toEqual(before)
+    expect(await readFile(backupOf(dbPath, 'backup'))).toEqual(before)
   })
 
   // The per-write backup below is overwritten before every track, so after a long run it
@@ -442,7 +445,7 @@ describe('repointTrack', () => {
     const result = await repointTrack(dbPath, { from: '/elsewhere/Other.mp3', to: output })
 
     expect(result).toEqual({ written: false, reason: 'no-match' })
-    await expect(stat(`${dbPath}.surco-backup`)).rejects.toThrow()
+    await expect(stat(backupOf(dbPath, 'backup'))).rejects.toThrow()
   })
 
   // 35 files in the real collection have two rows apiece and 67 of those rows are in
@@ -561,7 +564,7 @@ describe('repointTrack', () => {
       other.close()
     }
 
-    expect(songPlaylistIds(`${dbPath}.surco-backup`)).toEqual(['1', '2', 'w1'])
+    expect(songPlaylistIds(backupOf(dbPath, 'backup'))).toEqual(['1', '2', 'w1'])
   })
 })
 
@@ -596,7 +599,10 @@ describe('repointTracks', () => {
     const [a, b, c] = await outputs('a.wav', 'b.wav', 'c.wav')
     vi.mocked(isRekordboxRunning).mockClear()
     const opens = vi.spyOn(rekordboxDb, 'openRekordboxDb')
-    const backup = vi.fn(async (from: string, to: string) => copyFile(from, to))
+    const backup = vi.fn(async (from: string, to: string) => {
+      mkdirSync(dirname(to), { recursive: true })
+      await copyFile(from, to)
+    })
 
     const results = await repointTracks(
       dbPath,

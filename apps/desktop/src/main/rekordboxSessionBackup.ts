@@ -1,15 +1,16 @@
 import { existsSync } from 'node:fs'
-import { chmod, copyFile, rm, stat } from 'node:fs/promises'
+import { chmod, copyFile, mkdir, rm, stat } from 'node:fs/promises'
+import { dirname } from 'node:path'
 import log from 'electron-log/main'
+import { backupOf } from './libraryBackups'
 import { openRekordboxDb } from './rekordboxDb'
-
-const BACKUP_SUFFIX = '.surco-backup'
 
 // A copy keeps the mode of what it copied, and rekordbox can leave its files read-only.
 // Copied over in place, last time's read-only copy refused the next one, and with it every
 // write after the first. Removed first and left owner-writable, a copy never blocks the
 // next.
 export async function writeBackup(from: string, to: string): Promise<void> {
+  await mkdir(dirname(to), { recursive: true })
   await rm(to, { force: true })
   await copyFile(from, to)
   await chmod(to, (await stat(to)).mode | 0o200)
@@ -26,10 +27,8 @@ export async function writeBackup(from: string, to: string): Promise<void> {
 // was a mistake needs this one.
 //
 // Overwritten on each new run rather than dated: the user's collection is 56 MB, and a
-// dated copy per run would pile up in their own folder for something they want as a
+// dated copy per run would pile up on disk for something they want as a
 // safety net, not an archive. rekordbox keeps its own three rotating backups besides.
-const SESSION_SUFFIX = '.surco-session'
-
 export interface SessionBackup {
   // Copies the collection if this run has not already done so. Throws if the copy fails —
   // the caller must not write without one.
@@ -50,7 +49,7 @@ export function createSessionBackup(deps: {
       if (done.has(collectionPath)) return
       // Recorded only after the copy lands, so a failure leaves the next track trying
       // again rather than writing into a collection with nothing behind it.
-      await copy(collectionPath, `${collectionPath}${SESSION_SUFFIX}`)
+      await copy(collectionPath, backupOf(collectionPath, 'session'))
       done.add(collectionPath)
     },
     reset(): void {
@@ -97,12 +96,12 @@ export async function restoreCollection(collectionPath: string): Promise<boolean
   const wal = `${collectionPath}-wal`
   if (existsSync(wal) && (await stat(wal)).size > 0) {
     log.error(
-      `rekordbox ${collectionPath} not restored: its -wal still holds frames; the backups ${BACKUP_SUFFIX} and .surco-session are intact`,
+      `rekordbox ${collectionPath} not restored: its -wal still holds frames; the backups in ${dirname(backupOf(collectionPath, 'backup'))} are intact`,
     )
     return false
   }
   try {
-    await copyFile(`${collectionPath}${BACKUP_SUFFIX}`, collectionPath)
+    await copyFile(backupOf(collectionPath, 'backup'), collectionPath)
     return true
   } catch (err) {
     log.error(`rekordbox ${collectionPath} could not be restored: ${String(err)}`)

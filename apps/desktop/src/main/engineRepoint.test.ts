@@ -1,14 +1,15 @@
-import { realpathSync } from 'node:fs'
+import { mkdirSync, realpathSync } from 'node:fs'
 import { chmod, mkdir, mkdtemp, readFile, stat, symlink, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import initSqlJs, { type Database, type SqlJsStatic } from 'sql.js'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildEngineDatabase } from './engine'
 import { ENGINE_3_SCHEMA } from './engine3Fixture'
 import { isEngineDjRunning } from './engineProcess'
 import { repointEngineTracks } from './engineRepoint'
+import { backupOf } from './libraryBackups'
 
 // The real probe shells out to pgrep/tasklist; tests pin it so they never depend on what
 // happens to be running on the machine (Engine DJ itself, for instance).
@@ -229,7 +230,7 @@ describe.each(['2.18', '3.0.2'] as const)('repointEngineTracks on a %s library',
     const original = await readFile(lib.dbPath)
     const sessionBackup = vi.fn(async () => {})
     await repointEngineTracks(lib.dir, [{ from: lib.oldFile, to: lib.newFile }], { sessionBackup })
-    expect(await readFile(`${lib.dbPath}.surco-backup`)).toEqual(original)
+    expect(await readFile(backupOf(lib.dbPath, 'backup'))).toEqual(original)
     expect(sessionBackup).toHaveBeenCalledWith(lib.dbPath)
   })
 
@@ -238,11 +239,12 @@ describe.each(['2.18', '3.0.2'] as const)('repointEngineTracks on a %s library',
   it('replaces a read-only backup left by an earlier write', async () => {
     const lib = await library(schema)
     const original = await readFile(lib.dbPath)
-    await writeFile(`${lib.dbPath}.surco-backup`, 'stale')
-    await chmod(`${lib.dbPath}.surco-backup`, 0o444)
+    mkdirSync(dirname(backupOf(lib.dbPath, 'backup')), { recursive: true })
+    await writeFile(backupOf(lib.dbPath, 'backup'), 'stale')
+    await chmod(backupOf(lib.dbPath, 'backup'), 0o444)
     const [result] = await repointEngineTracks(lib.dir, [{ from: lib.oldFile, to: lib.newFile }])
     expect(result.written).toBe(true)
-    expect(await readFile(`${lib.dbPath}.surco-backup`)).toEqual(original)
+    expect(await readFile(backupOf(lib.dbPath, 'backup'))).toEqual(original)
   })
 
   it('reports a new file that is no longer there', async () => {

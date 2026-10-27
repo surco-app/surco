@@ -98,6 +98,7 @@ import { registerFeedbackIpc } from './feedback'
 import { convertAudio, readMeta } from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { isSameFile, removeRenamedOriginal } from './inplace'
+import { setLibraryBackupRoot } from './libraryBackups'
 import { libraryCopyInfo } from './libraryFileUse'
 import {
   currentLibraryStatus,
@@ -174,8 +175,8 @@ import { createTmpManifest } from './tmpManifest'
 import { registerTraktorCueQueueIpc } from './traktorCueQueueIpc'
 import { applyTraktorBatch } from './traktorCuesWrite'
 import { bootVolumeName, syncCollection, traktorSessionBackup } from './traktorNmlLibrary'
-import { type QueuedNmlPatch, syncQueuedPatches } from './traktorPatchQueue'
 import { detectTraktorNmlPaths } from './traktorNmlPath'
+import { type QueuedNmlPatch, syncQueuedPatches } from './traktorPatchQueue'
 import { registerTraktorPlaylistEditIpc } from './traktorPlaylistEditIpc'
 import { nmlPath } from './traktorPlaylists'
 import { registerTraktorPlaylistsIpc } from './traktorPlaylistsIpc'
@@ -193,6 +194,7 @@ import { dirRoots, FolderWatcher } from './watcher'
 // At module load so even a throw during startup leaves a trace in the log file.
 installCrashGuards(process, log)
 logHandlerFailures(ipcMain, log)
+setLibraryBackupRoot(join(app.getPath('userData'), 'backups'))
 
 if (!app.requestSingleInstanceLock()) app.exit(0)
 app.on('second-instance', (_event, argv) => {

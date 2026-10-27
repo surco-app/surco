@@ -1,6 +1,7 @@
+import { mkdirSync } from 'node:fs'
 import { access, chmod, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { openRekordboxDb, REKORDBOX_KEY } from './rekordboxDb'
@@ -8,6 +9,7 @@ import { updateRekordboxTags } from './rekordboxTags'
 
 vi.mock('./rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
 
+import { backupOf } from './libraryBackups'
 import { isRekordboxRunning } from './rekordboxProcess'
 
 const TRACK = '/m/c.mp3'
@@ -195,7 +197,7 @@ describe('updateRekordboxTags', () => {
       { path: '/m/none.mp3', fields: { title: { from: 'a', to: 'b' } } },
     ])
     expect(r).toEqual({ written: false, reason: 'no-match' })
-    await expect(access(`${dbPath}.surco-backup`)).rejects.toThrow()
+    await expect(access(backupOf(dbPath, 'backup'))).rejects.toThrow()
   })
 
   it('refuses the whole run while rekordbox is open', async () => {
@@ -211,7 +213,7 @@ describe('updateRekordboxTags', () => {
     const order: string[] = []
     const sessionBackup = vi.fn(async () => {
       order.push('session')
-      await expect(access(`${dbPath}.surco-backup`)).rejects.toThrow()
+      await expect(access(backupOf(dbPath, 'backup'))).rejects.toThrow()
     })
     await updateRekordboxTags(
       dbPath,
@@ -219,7 +221,7 @@ describe('updateRekordboxTags', () => {
       { sessionBackup },
     )
     expect(sessionBackup).toHaveBeenCalledWith(dbPath)
-    const backup = `${dbPath}.surco-backup`
+    const backup = backupOf(dbPath, 'backup')
     await access(backup)
     const live = dbPath
     dbPath = backup
@@ -232,14 +234,15 @@ describe('updateRekordboxTags', () => {
   // A copy keeps the mode of what it copied: a read-only file left a read-only backup, and
   // copying the next one over it was refused, blocking every later write.
   it('replaces a read-only backup left by an earlier write', async () => {
-    await writeFile(`${dbPath}.surco-backup`, 'stale')
-    await chmod(`${dbPath}.surco-backup`, 0o444)
+    mkdirSync(dirname(backupOf(dbPath, 'backup')), { recursive: true })
+    await writeFile(backupOf(dbPath, 'backup'), 'stale')
+    await chmod(backupOf(dbPath, 'backup'), 0o444)
     const [result] = await updateRekordboxTags(dbPath, [
       { path: TRACK, fields: { title: { from: 'Old Title', to: 'New Title' } } },
     ])
     expect(result.written).toBe(true)
     const live = dbPath
-    dbPath = `${live}.surco-backup`
+    dbPath = backupOf(live, 'backup')
     expect(track().Title).toBe('Old Title')
     dbPath = live
   })
@@ -312,6 +315,6 @@ describe('updateRekordboxTags', () => {
     expect(r).toEqual({ written: false, reason: 'no-match' })
     expect(track().rb_local_usn).toBeNull()
     expect(counter()).toBe(100)
-    await expect(access(`${dbPath}.surco-backup`)).rejects.toThrow()
+    await expect(access(backupOf(dbPath, 'backup'))).rejects.toThrow()
   })
 })

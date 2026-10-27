@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import log from 'electron-log/main'
+import { setLibraryBackupRoot } from './main/libraryBackups'
 
 const HOUR_MS = 60 * 60 * 1000
 
@@ -28,3 +29,4 @@ for (const name of readdirSync(runs)) {
 const runDir = mkdtempSync(join(runs, 'run-'))
 process.env.TMPDIR = runDir
 log.transports.file.resolvePathFn = () => join(runDir, 'main.log')
+setLibraryBackupRoot(join(runDir, 'backups'))

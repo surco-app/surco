@@ -15,6 +15,7 @@ import {
   trackRow,
 } from './engine'
 import { isEngineDjRunning } from './engineProcess'
+import { backupOf } from './libraryBackups'
 import { pathKey } from './libraryPathKey'
 import { writeBackup } from './rekordboxSessionBackup'
 import { renameWithRetry } from './renameRetry'
@@ -220,9 +221,9 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
   // Track table anyway. An empty file is no library, so it takes the rebuild path.
   if ((await fileSize(dbPath)) > 0) {
     // Keep the pre-write database around: this file is the user's real library, and a
-    // backup next to it is the recovery path if a write ever goes wrong.
+    // backup in Surco folder is the recovery path if a write ever goes wrong.
     for (const backup of new Set(adds.map((add) => add.sessionBackup))) await backup?.(dbPath)
-    await writeBackup(dbPath, join(database2, 'm.db.surco-backup'))
+    await writeBackup(dbPath, backupOf(dbPath, 'backup'))
     db = new SQL.Database(await readFile(dbPath))
   } else {
     await mkdir(database2, { recursive: true })

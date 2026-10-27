@@ -15,6 +15,7 @@ import { analysedTrack, MAIN_CUE_TAIL, quickCuesRaw } from './enginePerformanceF
 import { openEngineDb } from './enginePlaylists'
 import { writeEngineLibraryFixture } from './enginePlaylistsFixture'
 import { isEngineDjRunning } from './engineProcess'
+import { backupOf } from './libraryBackups'
 import type { CuesOp } from './rekordboxQueueOps'
 
 vi.mock('./engineProcess', () => ({ isEngineDjRunning: vi.fn(async () => false) }))
@@ -223,7 +224,7 @@ describe('applyEngineCuesBatch', () => {
     const d = deps()
     await applyEngineCuesBatch(dir, [op(dir, [UNTOUCHED])], d)
     expect(d.sessionBackup).toHaveBeenCalledWith(dbFile(dir))
-    expect(readFileSync(`${dbFile(dir)}.surco-backup`)).toEqual(original)
+    expect(readFileSync(backupOf(dbFile(dir), 'backup'))).toEqual(original)
   })
 
   it('refuses a save made on pads that changed in Engine since, so the DJ’s newer cues are never overwritten', async () => {
@@ -240,7 +241,7 @@ describe('applyEngineCuesBatch', () => {
       outcomes: [{ id: 'op1', applied: false, notices: [{ code: 'cues-changed', track: 'a' }] }],
     })
     expect(readFileSync(dbFile(dir))).toEqual(original)
-    expect(existsSync(`${dbFile(dir)}.surco-backup`)).toBe(false)
+    expect(existsSync(backupOf(dbFile(dir), 'backup'))).toBe(false)
   })
 
   it('reads the library again after Engine DJ quits, so what Engine saved on quitting is kept', async () => {

@@ -1,7 +1,7 @@
-import { existsSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { chmod, mkdir, mkdtemp, readFile, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RekordboxPlaylistEdit } from '../shared/types'
@@ -23,6 +23,7 @@ vi.mock('./rekordboxPlaylistEdit', async (importOriginal) => {
   return { ...actual, randomPlaylistId: vi.fn(actual.randomPlaylistId) }
 })
 
+import { backupOf } from './libraryBackups'
 import { randomPlaylistId } from './rekordboxPlaylistEdit'
 import { applyRekordboxBatch, editRekordboxPlaylist, replaceFile } from './rekordboxPlaylistWrite'
 import { isRekordboxRunning } from './rekordboxProcess'
@@ -94,7 +95,7 @@ const FACTORY = ['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7']
 // by SQLite or by copying a file back over the user's collection.
 function spoilBackups(path: string): void {
   for (const file of [path, join(path, '..', 'masterPlaylists6.xml')]) {
-    if (existsSync(`${file}.surco-backup`)) writeFileSync(`${file}.surco-backup`, 'spoiled')
+    if (existsSync(backupOf(file, 'backup'))) writeFileSync(backupOf(file, 'backup'), 'spoiled')
   }
 }
 
@@ -138,7 +139,7 @@ describe('editRekordboxPlaylist', () => {
       report: { added: 0, already: 0, notInCollection: 1, ambiguous: 0 },
     })
     expect(d.ensureClosed).not.toHaveBeenCalled()
-    expect(existsSync(`${path}.surco-backup`)).toBe(false)
+    expect(existsSync(backupOf(path, 'backup'))).toBe(false)
   })
 
   it('asks nothing for an edit whose row is already gone', async () => {
@@ -162,7 +163,7 @@ describe('editRekordboxPlaylist', () => {
     )
     expect(result).toEqual({ applied: false, reason: 'cancelled' })
     expect(linkIds(path, '2000')).toEqual(FACTORY)
-    expect(existsSync(`${path}.surco-backup`)).toBe(false)
+    expect(existsSync(backupOf(path, 'backup'))).toBe(false)
   })
 
   // Dropping a row onto its own place, or onto the place it already holds, is a gesture
@@ -177,7 +178,7 @@ describe('editRekordboxPlaylist', () => {
     expect(await editRekordboxPlaylist(path, edit, d)).toEqual({ applied: true })
     expect(d.ensureClosed).not.toHaveBeenCalled()
     expect(d.sessionBackup).not.toHaveBeenCalled()
-    expect(existsSync(`${path}.surco-backup`)).toBe(false)
+    expect(existsSync(backupOf(path, 'backup'))).toBe(false)
     expect(linkIds(path, '2000')).toEqual(FACTORY)
   })
 
@@ -197,7 +198,7 @@ describe('editRekordboxPlaylist', () => {
     const d = deps()
     expect(await editRekordboxPlaylist(path, MOVE, d)).toEqual({ applied: true })
     expect(d.sessionBackup).toHaveBeenCalledWith(path)
-    expect(linkIds(`${path}.surco-backup`, '2000')).toEqual(FACTORY)
+    expect(linkIds(backupOf(path, 'backup'), '2000')).toEqual(FACTORY)
     expect(linkIds(path, '2000')).toEqual(['f6', 'f1', 'f2', 'f3', 'f4', 'f5', 'f7'])
   })
 
@@ -209,10 +210,12 @@ describe('editRekordboxPlaylist', () => {
     const xmlPath = join(path, '..', 'masterPlaylists6.xml')
     const session = createSessionBackup({})
     for (const file of [path, xmlPath]) {
-      await writeFile(`${file}.surco-backup`, 'last edit')
-      await writeFile(`${file}.surco-session`, 'last run')
-      await chmod(`${file}.surco-backup`, 0o444)
-      await chmod(`${file}.surco-session`, 0o444)
+      mkdirSync(dirname(backupOf(file, 'backup')), { recursive: true })
+      await writeFile(backupOf(file, 'backup'), 'last edit')
+      mkdirSync(dirname(backupOf(file, 'session')), { recursive: true })
+      await writeFile(backupOf(file, 'session'), 'last run')
+      await chmod(backupOf(file, 'backup'), 0o444)
+      await chmod(backupOf(file, 'session'), 0o444)
     }
     const result = await editRekordboxPlaylist(
       path,
@@ -220,8 +223,8 @@ describe('editRekordboxPlaylist', () => {
       deps({ sessionBackup: (p: string) => session.ensure(p) }),
     )
     expect(result.applied).toBe(true)
-    expect(linkIds(`${path}.surco-backup`, '2000')).toEqual(FACTORY)
-    expect(await readFile(`${xmlPath}.surco-session`, 'utf8')).not.toBe('last run')
+    expect(linkIds(backupOf(path, 'backup'), '2000')).toEqual(FACTORY)
+    expect(await readFile(backupOf(xmlPath, 'session'), 'utf8')).not.toBe('last run')
   })
 
   // The source itself read-only: its copies must still be replaceable by the next edit.
@@ -298,7 +301,7 @@ describe('editRekordboxPlaylist', () => {
       MOVE,
       deps({
         onWrite: () => {
-          rmSync(`${path}.surco-backup`)
+          rmSync(backupOf(path, 'backup'))
           throw new Error('disk gone')
         },
         onRollback: () => {
@@ -324,7 +327,7 @@ describe('editRekordboxPlaylist', () => {
       `<NODE Id="${hex}" ParentId="0" Attribute="0" Timestamp="1792087200000" Lib_Type="0" CheckType="0"/>`,
     )
     expect(d.sessionBackup).toHaveBeenCalledWith(xmlPath)
-    expect(existsSync(`${xmlPath}.surco-backup`)).toBe(true)
+    expect(existsSync(backupOf(xmlPath, 'backup'))).toBe(true)
   })
 
   // The XML can hold a node the table no longer has; giving a new playlist that ID would
@@ -463,7 +466,7 @@ describe('editRekordboxPlaylist', () => {
       reason: 'unreadable',
     })
     expect(d.ensureClosed).not.toHaveBeenCalled()
-    expect(existsSync(`${path}.surco-backup`)).toBe(false)
+    expect(existsSync(backupOf(path, 'backup'))).toBe(false)
     expect(playlistNamed(path, 'Bolo')).toBeUndefined()
   })
 
@@ -475,7 +478,7 @@ describe('editRekordboxPlaylist', () => {
     expect(await readFile(xmlPath, 'utf8')).toBe(
       before.replace(/(<NODE Id="7D0" [^>]*Timestamp=")\d+/, `$1${NOW.getTime()}`),
     )
-    expect(existsSync(`${xmlPath}.surco-backup`)).toBe(true)
+    expect(existsSync(backupOf(xmlPath, 'backup'))).toBe(true)
   })
 
   // rekordbox keeps the collection in WAL mode: committed changes can still be in the -wal
@@ -497,7 +500,7 @@ describe('editRekordboxPlaylist', () => {
     } finally {
       other.close()
     }
-    expect(linkIds(`${path}.surco-backup`, '3000')).toEqual(['h1', 'h2', 'w1'])
+    expect(linkIds(backupOf(path, 'backup'), '3000')).toEqual(['h1', 'h2', 'w1'])
   })
 
   // A reader holding an older snapshot keeps the checkpoint from folding the WAL, and
@@ -528,7 +531,7 @@ describe('editRekordboxPlaylist', () => {
       writer.close()
     }
     expect(d.sessionBackup).not.toHaveBeenCalled()
-    expect(existsSync(`${path}.surco-backup`)).toBe(false)
+    expect(existsSync(backupOf(path, 'backup'))).toBe(false)
     expect(linkIds(path, '2000')).toEqual(FACTORY)
   }, 30_000)
 
@@ -611,7 +614,8 @@ describe('restoreCollection', () => {
   async function files(wal?: string): Promise<string> {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbrestore-')), 'master.db')
     await writeFile(path, 'live')
-    await writeFile(`${path}.surco-backup`, 'copy')
+    mkdirSync(dirname(backupOf(path, 'backup')), { recursive: true })
+    await writeFile(backupOf(path, 'backup'), 'copy')
     if (wal !== undefined) await writeFile(`${path}-wal`, wal)
     return path
   }
@@ -632,7 +636,7 @@ describe('restoreCollection', () => {
     const path = await files('frames')
     expect(await restoreCollection(path)).toBe(false)
     expect(await readFile(path, 'utf8')).toBe('live')
-    expect(await readFile(`${path}.surco-backup`, 'utf8')).toBe('copy')
+    expect(await readFile(backupOf(path, 'backup'), 'utf8')).toBe('copy')
   })
 })
 
@@ -789,7 +793,7 @@ describe('applyRekordboxBatch', () => {
     expect(await readFile(xmlPath, 'utf8')).toBe(
       before.replace(/(<NODE Id="BB8" [^>]*Timestamp=")\d+/, `$1${NOW.getTime()}`),
     )
-    expect(existsSync(`${xmlPath}.surco-backup`)).toBe(true)
+    expect(existsSync(backupOf(xmlPath, 'backup'))).toBe(true)
   })
 
   it('applies links before deletes whatever order the queue holds them in', async () => {

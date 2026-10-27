@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { backupOf } from './libraryBackups'
 import { createSessionBackup } from './rekordboxSessionBackup'
 
 // One copy of the collection per run, taken before the first write and never touched
@@ -13,7 +14,7 @@ describe('createSessionBackup', () => {
 
     await backup.ensure('/dj/master.db')
 
-    expect(copy).toHaveBeenCalledWith('/dj/master.db', '/dj/master.db.surco-session')
+    expect(copy).toHaveBeenCalledWith('/dj/master.db', backupOf('/dj/master.db', 'session'))
   })
 
   // The whole point. Copying again on track 2 would overwrite the pre-run state with a

@@ -1,5 +1,6 @@
 import log from 'electron-log/main'
 import type { DuplicatePair } from '../shared/types'
+import { backupOf } from './libraryBackups'
 import { type FindOptions, findTrackByPath, isAmbiguous, openRekordboxDb } from './rekordboxDb'
 import { repointTracks } from './rekordboxLibrary'
 import { isRekordboxRunning } from './rekordboxProcess'
@@ -16,7 +17,6 @@ import { nextUsn, stamp } from './rekordboxTags'
 
 type Db = NonNullable<ReturnType<typeof openRekordboxDb>>
 
-const BACKUP_SUFFIX = '.surco-backup'
 const LIVE = '(rb_local_deleted IS NULL OR rb_local_deleted = 0)'
 
 export type DuplicateReplaceResult =
@@ -140,7 +140,7 @@ async function writeReplaces(
   try {
     checkpointCollection(collectionPath)
     await options.sessionBackup?.(collectionPath)
-    await writeBackup(collectionPath, `${collectionPath}${BACKUP_SUFFIX}`)
+    await writeBackup(collectionPath, backupOf(collectionPath, 'backup'))
   } catch {
     return 'backup-failed'
   }

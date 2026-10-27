@@ -19,6 +19,7 @@ import type {
   RekordboxQueueNotice,
   TrackCues,
 } from '../shared/types'
+import { backupOf } from './libraryBackups'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { type ContentFacts, insertContent } from './rekordboxContentAdd'
 import { applyCueChanges, readTrackCues } from './rekordboxCues'
@@ -74,8 +75,6 @@ import { checkpointCollection, restoreCollection, writeBackup } from './rekordbo
 // rollback, not by copying files over the user's: only an XML already written goes back
 // from its copy, and master.db is copied back only when its state is unknown.
 
-const BACKUP_SUFFIX = '.surco-backup'
-
 export interface PlaylistWriteDeps extends FindOptions {
   // Asks the user to close rekordbox when it is open; false means it is still open.
   ensureClosed: () => Promise<boolean>
@@ -130,9 +129,11 @@ async function xmlTakesNode(xmlPath: string): Promise<boolean> {
 // and a copy onto it is refused.
 async function restoreFile(path: string): Promise<void> {
   try {
-    await replaceFile(path, await readFile(`${path}${BACKUP_SUFFIX}`, 'utf8'))
+    await replaceFile(path, await readFile(backupOf(path, 'backup'), 'utf8'))
   } catch (err) {
-    log.error(`rekordbox ${path} could not be restored from ${BACKUP_SUFFIX}: ${String(err)}`)
+    log.error(
+      `rekordbox ${path} could not be restored from ${backupOf(path, 'backup')}: ${String(err)}`,
+    )
   }
 }
 
@@ -473,7 +474,7 @@ export async function applyRekordboxBatch(
     checkpointCollection(collectionPath)
     for (const path of touched) {
       await deps.sessionBackup(path)
-      await writeBackup(path, `${path}${BACKUP_SUFFIX}`)
+      await writeBackup(path, backupOf(path, 'backup'))
     }
     if (hasXml) xml = await readFile(xmlPath, 'utf8')
   } catch (err) {
