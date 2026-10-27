@@ -42,13 +42,22 @@ export interface SurcoTrash {
 const DAY_MS = 24 * 60 * 60 * 1000
 
 // A rename fails across volumes (a NAS or an external disk into userData): copy and
-// unlink then, which costs a read of the file but keeps the promise.
+// unlink then, which costs a read of the file but keeps the promise. The copy goes to a
+// hidden sibling first and is renamed into place, so a share that drops mid-copy leaves
+// no truncated file under the real name.
 async function move(from: string, to: string): Promise<void> {
   try {
     await rename(from, to)
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code !== 'EXDEV') throw err
-    await copyFile(from, to)
+    const partial = join(dirname(to), `.${basename(to)}.tmp-${randomUUID().slice(0, 8)}`)
+    try {
+      await copyFile(from, partial)
+      await rename(partial, to)
+    } catch (copyErr) {
+      await unlink(partial).catch(() => {})
+      throw copyErr
+    }
     await unlink(from)
   }
 }
