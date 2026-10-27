@@ -376,7 +376,13 @@ export async function runProcessTrack(
     if (job.rekordboxPlaylists)
       deps.attachRekordboxPlaylists?.(target, job.rekordboxPlaylists, job.rekordboxPlaylistsBase)
     if (inPlace) await deps.removeRenamedOriginal(job.inputPath, target)
-    deps.recordConversion()
+    // The file has landed and the original may be gone: a stats write that fails (a locked
+    // or synced settings file) must not turn a finished conversion into a failed one.
+    try {
+      deps.recordConversion()
+    } catch (e) {
+      log.warn('process:track could not record the conversion stats', e)
+    }
 
     // A track that already has a library copy (musicPersistentId from a previous
     // add) gets its metadata and artwork synced onto that copy instead of being
