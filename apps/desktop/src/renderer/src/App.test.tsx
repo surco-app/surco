@@ -3585,6 +3585,65 @@ describe('App multi-select removal', () => {
     expect(trashFile.mock.calls.map((c) => c[0]).sort()).toEqual(['/music/a.wav', '/music/b.wav'])
   })
 
+  // A search narrows what the user sees; the selection must narrow with it. Trashing "the
+  // selection" after searching used to also send the selected rows the search was hiding to
+  // the OS trash, files the user could not see when they confirmed.
+  it('trashes only the selected rows the search still shows', async () => {
+    const trashFile = vi.fn().mockResolvedValue(undefined)
+    setApi({
+      pickFiles: vi
+        .fn()
+        .mockResolvedValue(['/music/kick.wav', '/music/snare.wav', '/music/kick2.wav']),
+      trashFile,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(rows[2], { metaKey: true })
+
+    fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'kick' } })
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(screen.getByTestId('track-menu-trash'))
+    fireEvent.click(await screen.findByTestId('confirm-ok'))
+
+    await waitFor(() => expect(trashFile).toHaveBeenCalledTimes(2))
+    expect(trashFile.mock.calls.map((c) => c[0]).sort()).toEqual([
+      '/music/kick.wav',
+      '/music/kick2.wav',
+    ])
+  })
+
+  // Same rule for a filter: narrowing to MP3 and trashing the selection must not take the
+  // selected WAV the filter is hiding.
+  it('trashes only the selected rows the format filter still shows', async () => {
+    const trashFile = vi.fn().mockResolvedValue(undefined)
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.mp3', '/music/b.wav', '/music/c.mp3']),
+      trashFile,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(rows[2], { metaKey: true })
+
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(screen.getByTestId('track-menu-trash'))
+    fireEvent.click(await screen.findByTestId('confirm-ok'))
+
+    await waitFor(() => expect(trashFile).toHaveBeenCalledTimes(2))
+    expect(trashFile.mock.calls.map((c) => c[0]).sort()).toEqual(['/music/a.mp3', '/music/c.mp3'])
+  })
+
   // The toolbar trash mirrors what's on screen, not the selection: with no filter every row is
   // visible, so it empties the whole list even when only some rows are multi-selected. Removing
   // just a few rows is the right-click "Remove from list"; this button is not selection-scoped.
