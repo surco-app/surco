@@ -225,6 +225,10 @@ export function useTrackLibrary({
   // registry-cleanup callback is recreated every render; the ref bridges the two.
   const onRemoveRef = useRef(onRemove)
   onRemoveRef.current = onRemove
+  // Same bridge for the read callback: an import's workers outlive the render that
+  // started them, and App's callback gates on the settings of the render it came from.
+  const onMetaLoadedRef = useRef(onMetaLoaded)
+  onMetaLoadedRef.current = onMetaLoaded
 
   // Staged edits from the reopened session, waiting for their track's metadata read
   // to land so the restore can be overlaid on top of the fresh file read. Keyed by
@@ -560,7 +564,7 @@ export function useTrackLibrary({
         ...(failed ? { metaReadFailed: true } : t.metaReadFailed ? { metaReadFailed: false } : {}),
         meta: mergeReadMeta(base.meta, t.meta, finalMeta),
       }))
-      onMetaLoaded({ ...base, ...patch, meta: finalMeta })
+      onMetaLoadedRef.current({ ...base, ...patch, meta: finalMeta })
       // Reported like a thrown failure so the batch's aggregate notice counts it: the
       // read degraded, whether or not it raised on the way.
       return !failed

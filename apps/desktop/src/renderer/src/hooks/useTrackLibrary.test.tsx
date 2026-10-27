@@ -1621,3 +1621,52 @@ describe('rereadTrackMeta', () => {
     expect(result.current.tracks[0].metaReadFailed).toBe(true)
   })
 })
+
+describe('useTrackLibrary metadata-loaded callback', () => {
+  // App's onMetaLoaded reads the live settings (auto-match, auto-analyze). An import that
+  // outlives a settings change must answer to the settings the user has now: turning
+  // auto-match off mid-import has to stop the rest of the crate from being enqueued, and
+  // files opened at launch (before settings load) must still auto-match once they do.
+  it('reports each finished read to the latest callback, not the one the import started with', async () => {
+    const pending: (() => void)[] = []
+    setApi({
+      readMeta: vi.fn<Api['readMeta']>(
+        () =>
+          new Promise((resolve) => {
+            pending.push(() =>
+              resolve({ tags: emptyMetadata(), duration: 180, cover: null, foreignTags: [] }),
+            )
+          }),
+      ),
+    })
+    const first = vi.fn()
+    const latest = vi.fn()
+    const { result, rerender } = renderHook(
+      ({ onMetaLoaded }) =>
+        useTrackLibrary({
+          setSelection: vi.fn(),
+          onForget: vi.fn(),
+          onRemove: vi.fn(),
+          onClear: vi.fn(),
+          onMetaLoaded,
+          onDuplicatesSkipped: vi.fn(),
+          onNoAudioFound: vi.fn(),
+          onMetaReadFailed: vi.fn(),
+        }),
+      { initialProps: { onMetaLoaded: first } },
+    )
+    await act(async () => {
+      void result.current.addPaths(['/m/a.wav'])
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+    rerender({ onMetaLoaded: latest })
+    await act(async () => {
+      for (const r of pending.splice(0)) r()
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+    expect(first).not.toHaveBeenCalled()
+    expect(latest).toHaveBeenCalledTimes(1)
+  })
+})
