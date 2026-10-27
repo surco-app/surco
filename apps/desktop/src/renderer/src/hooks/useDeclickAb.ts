@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { mediaUrl } from '../../../shared/media'
+import { holdForAudition } from '../lib/auditionHolds'
 
 type AbSide = 'original' | 'repaired'
 
@@ -110,7 +111,7 @@ export function useDeclickAb(originalPath: string, repairedPath: string | null):
     }
     original.onloadedmetadata = onLoad
     repaired.onloadedmetadata = onLoad
-    return () => {
+    const silence = (): void => {
       if (frame.current !== null) cancelAnimationFrame(frame.current)
       frame.current = null
       pinRef.current = null
@@ -120,6 +121,20 @@ export function useDeclickAb(originalPath: string, repairedPath: string | null):
       repairedRef.current = null
       setReady(false)
       setPlaying(false)
+    }
+    // The original stays open for the whole life of the section, playing or not, and on
+    // Windows that stream blocks a conversion's rename of the file. Both legs let go, since
+    // with nothing to repair the second one plays the original too.
+    const unhold = holdForAudition(originalPath, () => {
+      silence()
+      for (const leg of [original, repaired]) {
+        leg.removeAttribute('src')
+        leg.load()
+      }
+    })
+    return () => {
+      unhold()
+      silence()
       setSide('repaired')
     }
   }, [originalPath, repairedPath])
