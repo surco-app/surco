@@ -1689,7 +1689,11 @@
     "hint": "Type something to find across all tracks’ tags.",
     "invalidRegex": "Invalid regular expression",
     "noMatches": "No matches in any track.",
-    "summary": "{{fields}} fields in {{tracks}} tracks",
+    "summary": "{{fields}} in {{tracks}}",
+    "fieldCount_one": "{{count}} field",
+    "fieldCount_other": "{{count}} fields",
+    "trackCount_one": "{{count}} track",
+    "trackCount_other": "{{count}} tracks",
     "apply": "Replace in {{count}}"
   },
   "stripNumbering": {

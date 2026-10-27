@@ -1689,7 +1689,11 @@
     "hint": "Escribe algo para buscar en los tags de todas las pistas.",
     "invalidRegex": "Expresión regular no válida",
     "noMatches": "Sin coincidencias en ninguna pista.",
-    "summary": "{{fields}} campos en {{tracks}} pistas",
+    "summary": "{{fields}} en {{tracks}}",
+    "fieldCount_one": "{{count}} campo",
+    "fieldCount_other": "{{count}} campos",
+    "trackCount_one": "{{count}} pista",
+    "trackCount_other": "{{count}} pistas",
     "apply": "Reemplazar en {{count}}"
   },
   "stripNumbering": {

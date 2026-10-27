@@ -1689,7 +1689,11 @@
     "hint": "Digite algo para buscar nas tags de todas as faixas.",
     "invalidRegex": "Expressão regular inválida",
     "noMatches": "Nenhuma correspondência em faixa alguma.",
-    "summary": "{{fields}} campos em {{tracks}} faixas",
+    "summary": "{{fields}} em {{tracks}}",
+    "fieldCount_one": "{{count}} campo",
+    "fieldCount_other": "{{count}} campos",
+    "trackCount_one": "{{count}} faixa",
+    "trackCount_other": "{{count}} faixas",
     "apply": "Substituir em {{count}}"
   },
   "stripNumbering": {

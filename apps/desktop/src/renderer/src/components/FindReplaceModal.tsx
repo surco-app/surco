@@ -227,7 +227,10 @@ export function FindReplaceModal({
         ) : (
           <>
             <p className="mb-1.5 text-fg-dim">
-              {tr('findReplace.summary', { fields: changedFields, tracks: patches.length })}
+              {tr('findReplace.summary', {
+                fields: tr('findReplace.fieldCount', { count: changedFields }),
+                tracks: tr('findReplace.trackCount', { count: patches.length }),
+              })}
             </p>
             <ul className="flex flex-col gap-1">
               {examples.map((ex) => (
