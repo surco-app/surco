@@ -1631,7 +1631,15 @@
       "lettersByTimeHint": "A ist immer der erste Cue des Titels. Schalte es aus, wenn jeder Buchstabe für dich ein fester Pad ist.",
       "markPoint": "Einen CALL an deine Markierung setzen",
       "traktorColours": "In Traktor erscheinen diese Cues blau, denn Traktor färbt jeden Cue nach seinem Typ",
-      "callsOnlyRekordbox": "CALLs gibt es nur in rekordbox. Engine DJ und Traktor bekommen nur die Hot Cues"
+      "callsOnlyRekordbox": "CALLs gibt es nur in rekordbox. Engine DJ und Traktor bekommen nur die Hot Cues",
+      "targets": {
+        "title": "Abläufe auch setzen in",
+        "hint": "Das Programm, in dem du markierst, bekommt die Cues immer. Surco sucht denselben Track in den anderen über seine Datei und setzt den Ablauf auf das Grid und die Cues, die er dort schon hat. Cues, die du von Hand setzt, bleiben in dem Programm, in dem du sie setzt.",
+        "rekordbox": "Hot Cues und CALLs",
+        "traktor": "Nur Hot Cues, in Blau, von A bis G. Traktor liest seine Sammlung beim Start, deshalb bittet Surco dich beim Speichern, es zu schließen.",
+        "engine": "Nur Hot Cues. Engine DJ hat keine CALLs.",
+        "missing": "Surco findet {{program}} auf diesem Computer nicht"
+      }
     }
   },
   "errorBoundary": {

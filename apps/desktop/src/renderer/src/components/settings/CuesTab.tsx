@@ -474,6 +474,37 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
         </>
       )}
       <div className="flex flex-col gap-2">
+        <h3 className={HEADING}>{tr('settings.cueFlows.targets.title')}</h3>
+        <SettingsHint>{tr('settings.cueFlows.targets.hint')}</SettingsHint>
+        <div data-testid="cue-flow-targets" className={`${GROUP} text-sm`}>
+          {(
+            [
+              ['rekordbox', 'rekordbox', 'cueFlowToRekordbox', rekordboxCollection !== ''],
+              ['traktor', 'Traktor', 'cueFlowToTraktor', traktorFound],
+              ['engine', 'Engine DJ', 'cueFlowToEngine', engineFound],
+            ] as const
+          ).map(([library, name, key, found]) => (
+            <div key={library} className="px-3.5 py-2.5">
+              <CheckboxRow
+                testid={`settings-cue-flow-to-${library}`}
+                checked={synced[key]}
+                onChange={(v) => patch(key, v)}
+                label={name}
+                disabled={!found}
+              />
+              <SettingsHint
+                data-testid={found ? undefined : `settings-cue-flow-to-${library}-missing`}
+                className="mt-1 pl-7"
+              >
+                {found
+                  ? tr(`settings.cueFlows.targets.${library}`)
+                  : tr('settings.cueFlows.targets.missing', { program: name })}
+              </SettingsHint>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex flex-col gap-2">
         <h3 className={HEADING}>{tr('settings.cueFlows.manual.title')}</h3>
         <div data-testid="cue-manual" className={`${GROUP} text-sm`}>
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3.5 py-2.5">
