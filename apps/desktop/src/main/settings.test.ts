@@ -1148,6 +1148,37 @@ describe('cue flows', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
+  it('places a flow in every DJ program for a settings file from before the choice', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    const s = getSettings()
+    expect([s.cueFlowToRekordbox, s.cueFlowToTraktor, s.cueFlowToEngine]).toEqual([
+      true,
+      true,
+      true,
+    ])
+  })
+
+  it('keeps a program the DJ took out of the flows, and repairs a value that is not a boolean', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ cueFlowToTraktor: false, cueFlowToEngine: 'no' }),
+    )
+    expect(getSettings().cueFlowToTraktor).toBe(false)
+    expect(getSettings().cueFlowToEngine).toBe(true)
+  })
+
+  it('carries which programs get the flows to another Mac with the flows', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({}))
+    setConfigDir(dir)
+    saveSettings({ cueFlowToEngine: false })
+    const synced = JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf-8'))
+    expect(synced.cueFlowToEngine).toBe(false)
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   it('shows every source for a settings file from before sources could be hidden', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
     expect(getSettings().hiddenSources).toEqual([])

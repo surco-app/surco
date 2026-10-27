@@ -232,6 +232,10 @@ export interface Settings {
   cueJumpBars: CueJumpBars
   cueQuantize: CueQuantize
   cueLettersByTime: boolean
+  // Where a flow placed in one program's cue editor is placed too, on the same file.
+  cueFlowToRekordbox: boolean
+  cueFlowToTraktor: boolean
+  cueFlowToEngine: boolean
   hiddenSources: PlaylistSource[]
   rekordboxPlaylistsFieldOffered: boolean
   syncEngineDj: boolean

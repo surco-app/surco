@@ -52,6 +52,9 @@ function Harness({
     cueJumpBars: 16 as CueJumpBars,
     cueQuantize: 'bar' as CueQuantize,
     cueLettersByTime: true,
+    cueFlowToRekordbox: true,
+    cueFlowToTraktor: true,
+    cueFlowToEngine: true,
   })
   last = draft
   return (
