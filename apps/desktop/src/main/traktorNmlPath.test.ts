@@ -3,6 +3,7 @@ import {
   collectionsTraktorUses,
   collectionTraktorUses,
   detectTraktorNmlPaths,
+  sameCollection,
   traktorRootDir,
 } from './traktorNmlPath'
 
@@ -130,5 +131,39 @@ describe('collectionsTraktorUses', () => {
         'Macintosh HD',
       ),
     ).toEqual([`${ni}/Traktor 4.0.2/collection.nml`])
+  })
+})
+
+describe('sameCollection', () => {
+  // When the boot disk name cannot be read, a Root Dir comes back under /Volumes/<disk>,
+  // which macOS links to /: the same folder, and no reason to warn the DJ.
+  it('treats two paths to the same file as one collection', () => {
+    const real = (p: string) => p.replace('/Volumes/Mac_Os_Tahoe', '')
+    expect(
+      sameCollection(
+        '/Volumes/Mac_Os_Tahoe/Users/djotas/Documents/Native Instruments/Traktor 4.5.1/collection.nml',
+        '/Users/djotas/Documents/Native Instruments/Traktor 4.5.1/collection.nml',
+        real,
+        'darwin',
+      ),
+    ).toBe(true)
+  })
+
+  it('keeps two different collections apart', () => {
+    expect(sameCollection('/a/collection.nml', '/b/collection.nml', (p) => p, 'darwin')).toBe(false)
+  })
+
+  // Windows does not tell capitals apart: C:\Users and c:\users are one folder.
+  it('ignores capitals on Windows', () => {
+    expect(
+      sameCollection('C:/Users/X/collection.nml', 'c:/users/x/collection.nml', (p) => p, 'win32'),
+    ).toBe(true)
+  })
+
+  it('compares the paths as written when the file cannot be resolved', () => {
+    const missing = () => {
+      throw new Error('ENOENT')
+    }
+    expect(sameCollection('/a/collection.nml', '/a/collection.nml', missing, 'darwin')).toBe(true)
   })
 })

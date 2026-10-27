@@ -179,6 +179,7 @@ import {
   collectionsTraktorUses,
   collectionTraktorUses,
   detectTraktorNmlPaths,
+  sameCollection,
 } from './traktorNmlPath'
 import { type QueuedNmlPatch, syncQueuedPatches } from './traktorPatchQueue'
 import { registerTraktorPlaylistEditIpc } from './traktorPlaylistEditIpc'
@@ -1158,7 +1159,7 @@ function registerIpc(): void {
   // so: Settings and the cue editor name the collection Traktor uses instead.
   ipcMain.handle('traktor:collectionInUse', (_e, path: string) =>
     collectionTraktorUses(path, traktorInUse(), (a, b) =>
-      process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b,
+      sameCollection(a, b, realpathSync.native, process.platform),
     ),
   )
 
