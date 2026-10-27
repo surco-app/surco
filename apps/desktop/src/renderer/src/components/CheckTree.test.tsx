@@ -90,6 +90,14 @@ describe('CheckTree', () => {
     expect(screen.getByTestId('check-node-mak')).toBeChecked()
   })
 
+  // A search with no hits left the list blank, which reads as the tree failing to load.
+  it('says so when the search matches no playlist', () => {
+    render(<CheckTree nodes={NODES} checked={new Set()} onChange={() => {}} />)
+    expect(screen.queryByTestId('check-tree-no-match')).toBeNull()
+    fireEvent.change(screen.getByTestId('check-tree-search'), { target: { value: 'zzz' } })
+    expect(screen.getByTestId('check-tree-no-match')).toHaveTextContent(i18n.t('sources.noMatch'))
+  })
+
   // A stick's remembered playlists must be visible when the chooser opens, not hidden in
   // closed folders.
   it('opens the folders that hold ticked playlists', () => {

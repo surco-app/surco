@@ -140,6 +140,11 @@ export function CheckTree({
         />
       </label>
       <ul className="min-h-0 flex-1 overflow-y-auto">
+        {hits?.length === 0 && (
+          <li data-testid="check-tree-no-match" className="px-2 text-xs text-fg-faint">
+            {tr('sources.noMatch')}
+          </li>
+        )}
         {hits
           ? hits.map((h) => row(h.node, 0, h.folders.join(' › ')))
           : nodes.map((n) => row(n, 0))}
