@@ -771,6 +771,30 @@ describe('writeTags', () => {
     expect(readFileSync(file).includes(Buffer.from('TRAKTOR4'))).toBe(false)
   })
 
+  // djotas 27/10: "Empty every field", then a release match refilling the form, then
+  // Update. The clear stays armed on purpose (so a partial refill still drops the junk),
+  // but the wipe ran after the managed fields were set, so the file kept only the TXXX
+  // extras: no title, artist, album, year or genre. Mp3tag showed exactly that. The wipe
+  // must drop what the file carried before, never what this same save writes.
+  it('keeps the refilled fields when clearExtras is set, dropping only what was there before', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+    addForeignFrame(file, 'NOTES', 'Medieval CUE Splitter (www.medieval.it)')
+
+    writeTags(file, meta, undefined, false, undefined, undefined, true)
+
+    const f = TagFile.createFromPath(file)
+    expect(f.tag.title).toBe('Till I Come')
+    expect(f.tag.performers).toEqual(['ATB'])
+    expect(f.tag.album).toBe('Movin Melodies')
+    expect(f.tag.year).toBe(1999)
+    expect(f.tag.genres).toEqual(['Trance'])
+    expect(f.tag.track).toBe(2)
+    expect(f.tag.publisher).toBe('Kontor')
+    expect(userText(f.getTag(TagTypes.Id3v2, false) as Id3v2Tag, 'NOTES')).toBeUndefined()
+    f.dispose()
+  })
+
   // A foreign frame is not metadata the user asked to change on a normal convert, so a
   // plain write (clearExtras off) must leave it alone — only "Empty every field" wipes it.
   it('keeps a foreign frame on a normal write when clearExtras is off', () => {
