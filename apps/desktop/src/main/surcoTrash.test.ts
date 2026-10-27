@@ -14,13 +14,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const unlinkGate = vi.hoisted(() => ({ hold: null as Promise<void> | null, calls: 0 }))
 // Two folders stand in for two volumes: a rename between them fails as it does from
 // userData to a NAS, and the copy can be cut halfway like a share dropping mid-transfer.
-const volumes = vi.hoisted(() => ({ apart: false, cutCopy: false }))
+const volumes = vi.hoisted(() => ({ apart: false, cutCopy: false, held: '' }))
 vi.mock('node:fs/promises', async (importOriginal) => {
   const real = await importOriginal<typeof import('node:fs/promises')>()
   const { dirname } = await import('node:path')
   const unlink: typeof real.unlink = async (path) => {
     unlinkGate.calls++
     if (unlinkGate.hold) await unlinkGate.hold
+    if (path === volumes.held)
+      throw Object.assign(new Error('EBUSY: resource busy or locked, unlink'), { code: 'EBUSY' })
     return real.unlink(path)
   }
   const rename: typeof real.rename = async (from, to) => {
@@ -49,6 +51,7 @@ let trash: SurcoTrash
 beforeEach(() => {
   volumes.apart = false
   volumes.cutCopy = false
+  volumes.held = ''
   root = mkdtempSync(join(tmpdir(), 'surco-trash-'))
   music = join(root, 'music')
   mkdirSync(music)
@@ -94,6 +97,22 @@ describe('stashing a replaced original', () => {
     expect(a?.storedPath).not.toBe(b?.storedPath)
     expect(readFileSync(a?.storedPath as string).length).toBe(100)
     expect(readFileSync(b?.storedPath as string).length).toBe(100)
+  })
+})
+
+// A format change moves the old original into the trash, which from a NAS is a copy and
+// an unlink. When Windows refuses the unlink, the original is still where it was; the
+// copy already made would sit in the trash with no entry naming it, a duplicate the user
+// can neither see nor restore and the cap does not count.
+describe('an original that cannot leave its folder', () => {
+  it('keeps no unrecorded copy when the move cannot remove the original', async () => {
+    const original = song('Track.wav')
+    volumes.apart = true
+    volumes.held = original
+    await expect(trash.stash(original, 'renamed')).rejects.toThrow('EBUSY')
+    expect(readFileSync(original).length).toBe(100)
+    expect(readdirSync(join(root, 'trash', 'items'))).toEqual([])
+    expect(await trash.list()).toEqual([])
   })
 })
 

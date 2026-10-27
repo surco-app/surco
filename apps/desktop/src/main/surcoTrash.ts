@@ -58,7 +58,12 @@ async function move(from: string, to: string): Promise<void> {
       await unlink(partial).catch(() => {})
       throw copyErr
     }
-    await unlink(from)
+    // A source that will not go (a Windows lock) means the move did not happen: drop the
+    // copy, or it stays behind under a name no manifest entry points at.
+    await unlink(from).catch(async (unlinkErr) => {
+      await unlink(to).catch(() => {})
+      throw unlinkErr
+    })
   }
 }
 
