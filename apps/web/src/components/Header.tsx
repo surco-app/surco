@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DONATE_URL } from '../config'
-import { LANGUAGES, type Language } from '../i18n'
+import { LANGUAGE_NAMES, LANGUAGES, type Language } from '../i18n'
 import { trackDonate } from '../lib/analytics'
 import { isCondensed } from '../lib/header'
 import { HEADER_SECTIONS, HOME, PAGES, type Page } from '../lib/nav'
@@ -19,6 +19,8 @@ export default function Header({
   const { t, i18n } = useTranslation()
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const [languageOpen, setLanguageOpen] = useState(false)
+  const languageRef = useRef<HTMLDivElement>(null)
   const [offerOther, dismissOffer] = useAutoLanguage()
   const lang = i18n.language as Language
   const otherCode = lang === 'es' ? 'en' : 'es'
@@ -46,6 +48,22 @@ export default function Header({
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  useEffect(() => {
+    if (!languageOpen) return
+    const onPointer = (e: PointerEvent) => {
+      if (!languageRef.current?.contains(e.target as Node)) setLanguageOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLanguageOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointer)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onPointer)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [languageOpen])
 
   useEffect(() => {
     if (!open) return
@@ -159,18 +177,88 @@ export default function Header({
               {t('nav.donar')}
             </a>
           </nav>
-          <div className="flex items-center gap-1">
-            {LANGUAGES.filter((code) => code !== lang).map((code) => (
-              <a
-                key={code}
-                href={languageHref(code)}
-                hrefLang={code}
-                onClick={switchLanguage(code)}
-                className="inline-flex items-center rounded-full border border-line px-3 py-2 font-mono text-xs text-muted transition-colors hover:border-blue/50 hover:text-fg"
+          {/* The menu stays mounted while closed so its links ship in the prerendered
+              HTML: crawlers and readers without scripts still reach every language. */}
+          <div ref={languageRef} className="relative">
+            <button
+              type="button"
+              data-testid="language-menu-toggle"
+              aria-expanded={languageOpen}
+              aria-controls="language-menu"
+              onClick={() => setLanguageOpen((v) => !v)}
+              className="inline-flex items-center gap-1.5 py-2 text-sm text-muted transition-colors hover:text-fg"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
               >
-                {code.toUpperCase()}
-              </a>
-            ))}
+                <circle cx="12" cy="12" r="9" />
+                <path d="M3 12h18M12 3c2.6 2.6 3.8 5.6 3.8 9s-1.2 6.4-3.8 9c-2.6-2.6-3.8-5.6-3.8-9s1.2-6.4 3.8-9z" />
+              </svg>
+              <span className="sr-only">{t('nav.language')} </span>
+              <span lang={lang}>{LANGUAGE_NAMES[lang]}</span>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className={`transition-transform duration-200 ${languageOpen ? 'rotate-180' : ''}`}
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+            <ul
+              id="language-menu"
+              className={`absolute top-full right-0 z-50 mt-2 w-44 rounded-xl border border-line bg-surface2 p-1.5 shadow-[0_16px_40px_rgba(12,14,20,0.6)] transition-[opacity,translate,visibility] duration-150 ease-out ${
+                languageOpen ? 'opacity-100' : 'invisible -translate-y-1 opacity-0'
+              }`}
+            >
+              {LANGUAGES.map((code) => (
+                <li key={code}>
+                  <a
+                    href={languageHref(code)}
+                    hrefLang={code}
+                    lang={code}
+                    data-testid={`language-menu-${code}`}
+                    aria-current={code === lang ? 'true' : undefined}
+                    onClick={switchLanguage(code)}
+                    className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-surface hover:text-fg ${
+                      code === lang ? 'bg-surface text-fg' : 'text-muted'
+                    }`}
+                  >
+                    {LANGUAGE_NAMES[code]}
+                    {code === lang && (
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                        className="text-blue"
+                      >
+                        <path d="M5 12l5 5 9-10" />
+                      </svg>
+                    )}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
           <button
             type="button"

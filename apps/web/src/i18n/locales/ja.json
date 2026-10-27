@@ -27,6 +27,7 @@
     "closeMenu": "メニューを閉じる",
     "cambios": "最新情報",
     "donar": "寄付",
+    "language": "言語",
     "languageOffer": {
       "text": "このページは英語でもご覧いただけます。",
       "switch": "英語で読む",
@@ -2430,9 +2431,7 @@
         "slug": "music-on-a-nas",
         "group": "go",
         "title": "NAS上の音楽",
-        "body": [
-          "ネットワークドライブに音楽を保存し、SurcoでMacまたはWindowsから操作します。"
-        ],
+        "body": ["ネットワークドライブに音楽を保存し、SurcoでMacまたはWindowsから操作します。"],
         "keywords": "ネットワークSMBサーバードライブWindows",
         "settings": [
           {
