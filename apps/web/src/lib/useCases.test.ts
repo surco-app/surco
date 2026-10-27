@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import appEn from '../../../desktop/src/renderer/src/i18n/locales/en.json'
 import appEs from '../../../desktop/src/renderer/src/i18n/locales/es.json'
+import appJa from '../../../desktop/src/renderer/src/i18n/locales/ja.json'
 import { spellingGroups } from '../../../desktop/src/renderer/src/lib/musicSpelling'
 import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
@@ -45,6 +46,7 @@ describe('use case settings name what the app shows', () => {
   for (const [name, web, app] of [
     ['es', es, appEs],
     ['en', en, appEn],
+    ['ja', ja, appJa],
   ] as const) {
     const tabs = Object.values(app.settings.tabs)
     const labels = strings(app)
