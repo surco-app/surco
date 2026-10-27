@@ -107,6 +107,7 @@
       "duplicates": "Duplicadas",
       "silence": "Silencio por recortar",
       "clipping": "Clipping",
+      "noCues": "Sin cues",
       "trashSuspects_one": "Mover el archivo dudoso a la papelera",
       "trashSuspects_other": "Mover los {{count}} archivos dudosos a la papelera",
       "current": "Filtro: {{filter}} {{count}}"

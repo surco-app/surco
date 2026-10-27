@@ -209,6 +209,7 @@ describe('matchesFilter / qualityCounts', () => {
       duplicates: 0,
       silence: 0,
       clipping: 0,
+      noCues: 0,
     })
   })
 })
@@ -243,6 +244,30 @@ describe('attention filter (silence to trim, clipping)', () => {
         (x) => x.id,
       ),
     ).toEqual(['quiet-tail', 'both'])
+  })
+})
+
+describe('no cues filter', () => {
+  const row = (id: string, cues?: number[]): TrackItem =>
+    ({
+      id,
+      status: 'idle',
+      ...(cues && {
+        sourcePreview: {
+          title: id,
+          artist: '',
+          durationSec: 300,
+          cues: cues.map((ms) => ({ ms, kind: 1, color: null })),
+        },
+      }),
+    }) as TrackItem
+  const tracks = [row('marked', [1000, 64000]), row('bare', []), row('loose-file')]
+
+  // djotas 27/10: going through a Traktor playlist, he wants the tracks still waiting for
+  // their cues. A loose file has no DJ library to read cues from, so it is not one of them.
+  it('isolates the library tracks that carry no cue and leaves loose files out', () => {
+    expect(by(tracks, { attention: 'noCues' }).map((x) => x.id)).toEqual(['bare'])
+    expect(qualityCounts(tracks).noCues).toBe(1)
   })
 })
 
