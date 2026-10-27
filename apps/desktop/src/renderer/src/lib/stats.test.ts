@@ -114,7 +114,9 @@ describe('timeSavedText', () => {
 
   it('groups the thousands of the workdays with the language separator', () => {
     expect(timeSavedText(esTr, 29215, 'es').headline).toBe('Has ahorrado unos 243 días de trabajo')
-    expect(timeSavedText(esTr, 150000, 'es').headline).toBe('Has ahorrado unos 1.250 días de trabajo')
+    expect(timeSavedText(esTr, 150000, 'es').headline).toBe(
+      'Has ahorrado unos 1.250 días de trabajo',
+    )
   })
 })
 
