@@ -1326,6 +1326,7 @@ export default function App(): React.JSX.Element {
     // single-track convert (the editor button, ⌘⏎) has no summary to show it in.
     onFormatSkipped: (name) => setNotice(tr('notices.formatSkipped', { name })),
     onKeptAsIs: (name) => setNotice(tr('notices.keptAsIs', { name })),
+    onOriginalKept: (name) => setNotice(tr('notices.originalKept', { name })),
     rereadTrackMeta,
     completeTrackMeta,
     // Keyed so a bulk run failing on every track (e.g. Engine DJ open) raises one

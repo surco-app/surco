@@ -1249,6 +1249,9 @@ export interface ProcessResult {
   // the live entry no longer carries the offered name; 'error' that the delete failed.
   oldMusicCopyKept?: 'mismatch' | 'error'
   appleMusicFailed?: true
+  // Set when the converted file landed but the original it replaced in a format change
+  // could not be retired, so both are in the folder.
+  originalKept?: true
 }
 
 // A fixed-length envelope of max-abs peaks (each 0..1) for drawing the track's

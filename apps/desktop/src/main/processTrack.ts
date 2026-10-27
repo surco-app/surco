@@ -375,7 +375,15 @@ export async function runProcessTrack(
     }
     if (job.rekordboxPlaylists)
       deps.attachRekordboxPlaylists?.(target, job.rekordboxPlaylists, job.rekordboxPlaylistsBase)
-    if (inPlace) await deps.removeRenamedOriginal(job.inputPath, target)
+    // The new file has landed by now, so failing to retire the old one (a Windows lock
+    // on the unlink that ends a copy into the trash) must not fail the job: the user
+    // keeps both files and is told so.
+    let originalKept: true | undefined
+    if (inPlace)
+      await deps.removeRenamedOriginal(job.inputPath, target).catch((e) => {
+        log.warn('process:track kept the original it could not retire', job.inputPath, e)
+        originalKept = true
+      })
     deps.recordConversion()
 
     // A track that already has a library copy (musicPersistentId from a previous
@@ -497,6 +505,7 @@ export async function runProcessTrack(
         normalizeSkipped,
         declickedSamples,
         oldMusicCopyKept,
+        originalKept,
       }
 
     // The conversion wrote a real file the renderer may play next — directly, or
@@ -511,6 +520,7 @@ export async function runProcessTrack(
       addedToEngineDj,
       oldMusicCopyKept,
       appleMusicFailed,
+      originalKept,
     }
   } catch (e) {
     // The toast is all the user sees and it is gone once dismissed; the log is what a

@@ -867,6 +867,28 @@ describe('runProcessTrack — Engine DJ open before the write', () => {
 })
 
 describe('runProcessTrack — in-place rewrite', () => {
+  // Retiring the old-format original is the last, cheapest step, and on Windows it can
+  // fail after the new file has landed (an EBUSY on the unlink that ends a copy into the
+  // trash on another volume). Thrown, it reported a finished conversion as failed and
+  // skipped Apple Music and Engine DJ for a file that is already in place.
+  it('finishes the job and says the original stayed when it cannot be retired', async () => {
+    const warn = vi.spyOn(log, 'warn').mockImplementation(() => {})
+    const deps = makeDeps({
+      settings: settings({ overwriteOriginal: true }),
+      removeRenamedOriginal: vi.fn(async () => {
+        throw Object.assign(new Error('EBUSY: resource busy or locked, unlink'), { code: 'EBUSY' })
+      }),
+    })
+    const result = await runProcessTrack(job({ addToEngineDj: true }), deps)
+
+    expect(result).toMatchObject({ outputPath: '/in/Artist - Title.aiff', inPlace: true })
+    expect(result.originalKept).toBe(true)
+    expect(deps.recordConversion).toHaveBeenCalledOnce()
+    expect(deps.addToEngineDj).toHaveBeenCalled()
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
   it('rewrites the source, removes the renamed original and never prompts when the renamed target is free', async () => {
     const deps = makeDeps({
       settings: settings({ overwriteOriginal: true }),

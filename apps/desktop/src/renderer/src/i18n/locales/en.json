@@ -224,6 +224,7 @@
     "noAudioFound": "No audio found in what you dropped — check the folder is readable and holds supported formats.",
     "normalizeSkipped": "Couldn't measure the loudness of “{{name}}” — converted without normalization.",
     "keptAsIs": "“{{name}}” stays as it is because “Keep MP3 and M4A files as they are” is on with “Next to the original”.",
+    "originalKept": "“{{name}}” was converted, but the original could not be removed and is still in its folder.",
     "formatSkipped": "“{{name}}” has no equivalent output format for Same as source — skipped.",
     "appleMusicFailedAfterConvert": "“{{name}}” was converted, but Apple Music could not be updated. Try adding it to Apple Music again.",
     "convertFailed": "Couldn't convert “{{name}}”: {{reason}}",
