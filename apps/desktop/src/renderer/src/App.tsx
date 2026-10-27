@@ -301,6 +301,21 @@ export default function App(): React.JSX.Element {
     () => ({
       reportError: (message: string) =>
         void pushToast(store, { key: 'app-error', tone: 'danger', message, testid: 'app-error' }),
+      reportUndo: (message: string, onUndo: () => void) => {
+        const id = pushToast(store, {
+          tone: 'neutral',
+          message,
+          duration: 6000,
+          testid: 'app-notice',
+          action: {
+            label: { key: 'notices.undo' },
+            onAction: () => {
+              dismissToast(store, id)
+              onUndo()
+            },
+          },
+        })
+      },
     }),
     [store],
   )

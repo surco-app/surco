@@ -6215,6 +6215,25 @@ describe('App Music review', () => {
     expect(await screen.findByTestId('add-files')).toBeInTheDocument()
   })
 
+  // Ignoring is saved for good, so the toast right after it is the only way back from a
+  // misclick; pressing its Undo returns the group to the review and retires the toast.
+  it('brings an ignored group back from the toast Undo', async () => {
+    vi.resetModules()
+    reviewApi(spellingFixture())
+    await renderApp()
+    runMenu('music-review')
+    const detail = await screen.findByTestId('music-review-detail')
+    await waitFor(() => expect(detail).toHaveTextContent('DJ Lara'))
+    fireEvent.click(screen.getByTestId('music-review-more'))
+    fireEvent.click(screen.getByTestId('music-review-ignore'))
+    await waitFor(() => expect(screen.queryAllByTestId('music-review-row')).toHaveLength(0))
+
+    fireEvent.click(await screen.findByTestId('app-notice-action'))
+
+    expect(await screen.findAllByTestId('music-review-row')).toHaveLength(1)
+    await waitFor(() => expect(screen.queryByTestId('app-notice')).toBeNull())
+  })
+
   // The review's batch is the screen's main action while it is open, so it takes the
   // toolbar's main button the way converting does for the list.
   it('puts Apply in the toolbar in place of Convert while the review is open', async () => {

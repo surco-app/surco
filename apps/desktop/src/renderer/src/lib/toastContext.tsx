@@ -16,6 +16,8 @@ export interface ToastReporter {
   // A failed action the user took, said in their language. Persistent and red: they should
   // see it before it goes.
   reportError: (message: string) => void
+  // A quiet notice for something the user just did, with Undo to take it back.
+  reportUndo: (message: string, onUndo: () => void) => void
 }
 
 // Outside a provider the report still goes SOMEWHERE — the console — rather than throwing.
@@ -25,6 +27,7 @@ export interface ToastReporter {
 // test file having to mount the provider just to render a button.
 const FALLBACK: ToastReporter = {
   reportError: (message) => console.error(message),
+  reportUndo: () => {},
 }
 
 const ToastContext = createContext<ToastReporter>(FALLBACK)
