@@ -1,10 +1,11 @@
 // The native menu bar is built in the main process, which can't reach the
 // renderer's i18next instance. These strings mirror the renderer's language
 // detection (navigator.language vs app.getLocale()) so the menu matches the
-// rest of the UI. Items backed by an Electron `role` are localized by the OS
-// automatically; only the app's custom labels live here.
+// rest of the UI. Items backed by an Electron `role` stay in the OS language,
+// even when the app preference is pinned; only custom labels can follow this locale.
+import ja from './locales/ja.json'
 
-export type MenuLang = 'es' | 'en' | 'de' | 'fr' | 'pt-BR'
+export type MenuLang = 'es' | 'en' | 'de' | 'fr' | 'pt-BR' | 'ja'
 
 interface MenuStrings {
   settings: string
@@ -106,6 +107,7 @@ interface MenuStrings {
 }
 
 const strings: Record<MenuLang, MenuStrings> = {
+  ja,
   es: {
     settings: 'Ajustes…',
     feedback: 'Enviar comentarios…',
@@ -676,6 +678,7 @@ const MENU_PREFIXES: [string, MenuLang][] = [
   ['de', 'de'],
   ['fr', 'fr'],
   ['pt', 'pt-BR'],
+  ['ja', 'ja'],
 ]
 export function pickMenuLang(locale: string): MenuLang {
   const tag = locale.toLowerCase()

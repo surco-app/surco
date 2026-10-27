@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import en from './locales/en.json'
 import es from './locales/es.json'
+import ja from './locales/ja.json'
 
 // Every visible string is keyed; a missing key silently falls back to the other
 // language and ships an untranslated page. Flattening both trees and comparing
@@ -18,8 +19,46 @@ function keys(obj: unknown, prefix = ''): string[] {
 }
 
 describe('locale parity', () => {
-  it('es and en expose the exact same keys', () => {
+  it('es, en and ja expose the exact same keys', () => {
     expect(keys(en).sort()).toEqual(keys(es).sort())
+    expect(keys(ja).sort()).toEqual(keys(en).sort())
+  })
+
+  it('declares Japanese document and structured-data language', () => {
+    expect(ja.meta.htmlLang).toBe('ja')
+    expect(ja.meta.ogLocale).toBe('ja_JP')
+    expect(ja.meta.inLanguage).toBe('ja')
+  })
+
+  it('keeps interpolation placeholders aligned in every language', () => {
+    const placeholders = (value: unknown): string[] =>
+      typeof value === 'string'
+        ? [...value.matchAll(/\{\{\s*([^,}\s]+)[^}]*\}\}/g)].map((match) => match[1]).sort()
+        : Array.isArray(value)
+          ? value.flatMap(placeholders)
+          : value && typeof value === 'object'
+            ? Object.values(value).flatMap(placeholders)
+            : []
+    for (const locale of [es, ja]) {
+      const visit = (reference: unknown, translation: unknown, path = ''): void => {
+        if (typeof reference === 'string') {
+          expect(placeholders(translation), path).toEqual(placeholders(reference))
+        } else if (Array.isArray(reference)) {
+          reference.forEach((entry, index) => {
+            visit(entry, (translation as unknown[])[index], `${path}[${index}]`)
+          })
+        } else if (reference && typeof reference === 'object') {
+          for (const [key, value] of Object.entries(reference)) {
+            visit(
+              value,
+              (translation as Record<string, unknown>)[key],
+              path ? `${path}.${key}` : key,
+            )
+          }
+        }
+      }
+      visit(en, locale)
+    }
   })
 })
 
@@ -46,8 +85,12 @@ describe('guide screenshots', () => {
     })
   }
 
-  it('ships a screenshot for every step of both walkthroughs', () => {
+  it('ships English screenshots for every Japanese walkthrough step', () => {
     expect(shots(en).length).toBeGreaterThan(0)
     expect(shots(en)).toHaveLength(shots(es).length)
+    expect(shots(en)).toHaveLength(shots(ja).length)
+    expect(ja.guide.sections.map((section) => section.id)).toEqual(
+      en.guide.sections.map((section) => section.id),
+    )
   })
 })

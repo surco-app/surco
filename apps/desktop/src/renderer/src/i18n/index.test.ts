@@ -25,6 +25,16 @@ describe('i18n lazy locale loading', () => {
     expect(i18n.hasResourceBundle('de', 'translation')).toBe(false)
     expect(i18n.hasResourceBundle('fr', 'translation')).toBe(false)
     expect(i18n.hasResourceBundle('pt-BR', 'translation')).toBe(false)
+    expect(i18n.hasResourceBundle('ja', 'translation')).toBe(false)
+  })
+
+  it('loads and registers the Japanese bundle before changeLanguage resolves', async () => {
+    const i18n = (await import('./index')).default
+    await i18n.changeLanguage('ja')
+    expect(i18n.hasResourceBundle('ja', 'translation')).toBe(true)
+    expect(i18n.language).toBe('ja')
+    expect(i18n.t('common.cancel')).not.toBe('common.cancel')
+    expect(i18n.t('common.cancel')).not.toBe(i18n.getFixedT('en')('common.cancel'))
   })
 
   it('loads and registers a locale bundle before changeLanguage resolves', async () => {

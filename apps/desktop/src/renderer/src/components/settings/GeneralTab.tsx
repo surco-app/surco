@@ -17,7 +17,7 @@ import {
 } from './SettingsPrimitives'
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
-const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR']
+const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR', 'ja']
 const SOURCES: PlaylistSource[] = ['appleMusic', 'rekordbox', 'engine', 'traktor']
 
 interface Props {
@@ -116,7 +116,7 @@ export function GeneralTab({
               testidPrefix="settings-language"
               compact
               label={tr('settings.language')}
-              labelFor={(id) => tr(`settings.languages.${id}`)}
+              labelFor={(id) => (id === 'ja' ? '日本語' : tr(`settings.languages.${id}`))}
             />
           </SettingsField>
 

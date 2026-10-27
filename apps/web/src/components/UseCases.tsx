@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ISSUES_URL } from '../config'
+import type { Language } from '../i18n'
 import { trackUseCaseSearch } from '../lib/analytics'
 import {
   filtersFromSearch,
   matchesUseCase,
-  recipePath,
   recipePathForAnchor,
+  recipePathForId,
   searchForFilters,
   USE_CASE_SOURCES,
   type UseCaseFilters,
@@ -19,7 +20,7 @@ import { type Group, MacBadge, type UseCase, UseCaseOutro } from './UseCase'
 
 export default function UseCases() {
   const { t, i18n } = useTranslation()
-  const lang = i18n.language === 'en' ? 'en' : 'es'
+  const lang = i18n.language as Language
   const cases = t('useCases.cases', { returnObjects: true }) as UseCase[]
   const groups = t('useCases.groups', { returnObjects: true }) as Group[]
   const [{ query, source }, setFilters] = useState<UseCaseFilters>({ query: '', source: null })
@@ -170,7 +171,7 @@ export default function UseCases() {
                           {items.map((c) => (
                             <li key={c.id}>
                               <a
-                                href={recipePath(lang, c.slug)}
+                                href={recipePathForId(lang, c.id)}
                                 data-testid="use-case-toc-item"
                                 className="group flex items-start gap-4 bg-surface2/40 px-4 py-3.5 transition-colors hover:bg-surface2"
                               >
