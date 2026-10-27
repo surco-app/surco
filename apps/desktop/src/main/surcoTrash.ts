@@ -233,11 +233,22 @@ export function createSurcoTrash(
       await discard(entry)
       write(read().filter((e) => e.id !== id))
     },
+    // Each copy is settled on its own: one held open must not leave the ones already deleted
+    // listed, pointing at files that are gone. The first failure is reported once the list
+    // says what is really left.
     empty: async () => {
-      const entries = read()
-      for (const entry of entries) await discard(entry)
-      const gone = new Set(entries.map((e) => e.id))
+      const gone = new Set<string>()
+      let failure: unknown = null
+      for (const entry of read()) {
+        try {
+          await discard(entry)
+          gone.add(entry.id)
+        } catch (err) {
+          failure ??= err
+        }
+      }
       write(read().filter((e) => !gone.has(e.id)))
+      if (failure) throw failure
     },
     sweep: async (now = Date.now()) => {
       const dropped = await prune(now, limits().maxBytes)

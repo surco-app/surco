@@ -202,6 +202,21 @@ describe('removing and emptying', () => {
     await trash.empty()
     expect(await trash.list()).toEqual([])
   })
+
+  // One copy that cannot be deleted (a file still held open on Windows) stopped the loop
+  // before the list was written: the copies already deleted stayed listed, pointing at files
+  // that were gone, and Restore on them failed. Each copy is settled on its own, the list
+  // keeps exactly the ones still on disk, and the failure is still reported.
+  it('lists only the copies it could not delete when one of them is held open', async () => {
+    const a = await trash.stash(song('A.wav'), 'deleted')
+    const b = await trash.stash(song('B.wav'), 'deleted')
+    volumes.held = a?.storedPath as string
+
+    await expect(trash.empty()).rejects.toThrow('EBUSY')
+
+    expect((await trash.list()).map((e) => e.id)).toEqual([a?.id])
+    expect(existsSync(b?.storedPath as string)).toBe(false)
+  })
 })
 
 // A DJ replacing a whole crate of AIFFs would fill a disk if the trash kept everything
