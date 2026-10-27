@@ -205,6 +205,9 @@ export interface TrackItem {
   // (see resolveJobFormat), the same way the file's own tags win over what Music holds.
   // Distinct from musicPersistentId, which a track also earns by being ADDED to Music.
   fromAppleMusic?: boolean
+  // Music already filled the gaps the file left, once, when the editor first showed the
+  // track (see useAppleMusicFill). An empty field after that is the DJ's own choice.
+  appleMusicFilled?: boolean
   fromRekordbox?: boolean
   fromEngine?: boolean
   fromTraktor?: boolean

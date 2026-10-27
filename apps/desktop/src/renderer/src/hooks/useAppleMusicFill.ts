@@ -18,13 +18,19 @@ interface Params {
 //
 // Once per track: the match reruns on every keystroke in title or artist, and each ask is
 // an osascript. The answer is applied to the row as it is when Music replies, so a field
-// typed meanwhile is kept.
+// typed meanwhile is kept. The row remembers it was asked, since the editor remounts for
+// every track it shows: asking again on the next visit put back a field the DJ had cleared.
+// Nor after "Clear all", whose promise is a file that comes out empty.
 export function useAppleMusicFill({ item, candidates, onChange }: Params): void {
   const apply = useStableCallback((from: Parameters<typeof appleMusicFillPatch>[1]) => {
-    const patch = appleMusicFillPatch(item, from)
-    if (patch) onChange(patch)
+    onChange({ ...appleMusicFillPatch(item, from), appleMusicFilled: true })
   })
-  const ready = !item.loadingMeta && !item.fromAppleMusic && candidates.length > 0
+  const ready =
+    !item.loadingMeta &&
+    !item.fromAppleMusic &&
+    !item.appleMusicFilled &&
+    !item.metaCleared &&
+    candidates.length > 0
   const path = item.inputPath
   // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the track and on whether it is ready, not on the candidate list, which is a fresh array each render.
   useEffect(() => {
