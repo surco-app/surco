@@ -3,6 +3,7 @@ import { mkdir, readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { app } from 'electron'
+import { appleScriptString } from './applemusic'
 import { coverThumbUrlForBytes } from './coverThumbs'
 
 // Which imported tracks still need their cover, and fetching it from Apple Music.
@@ -72,17 +73,14 @@ export async function fetchAppleMusicArtwork(
 // Each track gets its own try block, so one whose artwork vanished between the listing and
 // the fetch costs its own cover and not the rest of the batch.
 export function buildArtworkScript(jobs: { persistentId: string; outPath: string }[]): string {
-  // A quote would close the string and turn the rest of the path into code — the same
-  // class of bug as a dollar sign in a Traktor file name.
-  const quote = (value: string): string => `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
   const body = jobs.flatMap(({ persistentId, outPath }) => [
     '  try',
-    `    set theMatches to (every track of library playlist 1 whose persistent ID is ${quote(persistentId)})`,
+    `    set theMatches to (every track of library playlist 1 whose persistent ID is ${appleScriptString(persistentId)})`,
     '    if (count of theMatches) > 0 then',
     '      set theTrack to item 1 of theMatches',
     '      if (count of artworks of theTrack) > 0 then',
     '        set theData to raw data of artwork 1 of theTrack',
-    `        set theFile to (open for access ${quote(outPath)} with write permission)`,
+    `        set theFile to (open for access ${appleScriptString(outPath)} with write permission)`,
     '        set eof theFile to 0',
     '        write theData to theFile',
     '        close access theFile',
