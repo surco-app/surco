@@ -620,7 +620,6 @@ function Editing({
       settings.cueFlowToRekordbox,
       settings.cueFlowToTraktor,
       settings.cueFlowToEngine,
-      settings.cueQuantize,
     ],
     queryFn: () => twinPlansOf(queryClient, [own], settings, overwrite),
     enabled: flowMarked,

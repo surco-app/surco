@@ -71,7 +71,6 @@ export function CuesBatchSection({
       settings.cueFlowToRekordbox,
       settings.cueFlowToTraktor,
       settings.cueFlowToEngine,
-      settings.cueQuantize,
     ],
     queryFn: () => twinPlansOf(queryClient, drafts, settings),
     enabled: drafts.length > 0,

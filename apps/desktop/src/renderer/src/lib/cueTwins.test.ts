@@ -31,7 +31,6 @@ const ALL: LibraryTracks = { rekordbox: '103', traktor: TRAKTOR, engine: ENGINE 
 const flows = normalizeCueFlows(undefined)
 const settings = (over: Partial<Record<string, boolean>> = {}) => ({
   cueFlows: flows,
-  cueQuantize: 'beat' as const,
   cueLettersByTime: false,
   cueFlowToRekordbox: true,
   cueFlowToTraktor: true,
@@ -117,6 +116,18 @@ describe('placing a flow in the other DJ programs', () => {
     const { client } = setup(ALL, { [TRAKTOR]: { ...READ, contentId: TRAKTOR, cues: full } })
     const plans = await twinPlans(client, SOURCE, settings())
     expect(plans.map((p) => p.contentId)).toEqual([ENGINE])
+  })
+
+  // Measured on a real library: on 2 of 19 shared tracks Engine DJ counts rekordbox's beat 1
+  // as beat 4. Snapping the break to Engine's nearest bar would move every cue a beat.
+  it('places the flow on the same beat when the other program counts the bar from another beat', async () => {
+    const shifted = GRID.map((b) => ({ ms: b.ms, beat: (b.beat % 4) + 1 }))
+    const { client } = setup(ALL, { [ENGINE]: { ...READ, contentId: ENGINE, grid: shifted } })
+    const plans = await twinPlans(client, SOURCE, settings())
+    const engine = plans.find((p) => p.contentId === ENGINE)
+    expect(engine?.status === 'planned' && engine.request.wanted.map((c) => c.ms)).toEqual(
+      wantedOfDraft(placed([bar(64)]).cues).map((c) => c.ms),
+    )
   })
 
   it('leaves out a program the DJ took out of the flows', async () => {
