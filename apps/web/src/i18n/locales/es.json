@@ -241,7 +241,7 @@
           },
           {
             "t": "Sustituye lo que ya tienes",
-            "d": "Cargas otra copia de un tema que ya tienes, en cualquier formato y también en el mismo, y ocupa su sitio en Apple Music y en rekordbox, en vez de acabar con dos. La pista sigue en sus playlists, sin volver a meterla a mano en cada una. La marca de Apple Music dice en qué formato está tu copia, para que sepas si merece la pena."
+            "d": "Cargas otra copia de un tema que ya tienes, en cualquier formato y también en el mismo, y ocupa su sitio en Apple Music y en rekordbox, en vez de acabar con dos. La pista sigue en sus playlists, sin volver a meterla a mano en cada una, y en Apple Music conserva sus reproducciones y tu valoración. La marca de Apple Music dice en qué formato está tu copia, para que sepas si merece la pena."
           },
           {
             "t": "Erratas y duplicados de tu biblioteca",
@@ -595,7 +595,7 @@
           "No hace falta crear cuenta ni suscribirte. Surco se actualiza solo, así que siempre tendrás la última versión sin volver a descargar, y al abrirlo después de una actualización te enseña qué ha cambiado."
         ],
         "points": [
-          "Disponible para macOS (Apple Silicon e Intel, notarizado por Apple), Windows y Linux (en Linux como AppImage), en cinco idiomas.",
+          "Disponible para macOS (Apple Silicon e Intel, notarizado por Apple), Windows y Linux (en Linux como AppImage), en seis idiomas.",
           "El asistente de bienvenida son solo cuatro pasos (cinco si Surco encuentra tu colección de rekordbox, Engine DJ o Traktor); el nombrado, los géneros y los campos del editor te esperan en Ajustes.",
           "¿Lo despachaste rápido? Puedes volver a abrirlo cuando quieras desde el menú Ayuda o ⌘K: arranca con tus ajustes actuales y solo cambia lo que toques.",
           "De serie ya viene con lo importante encendido: analiza la calidad al importar y busca en Discogs, Bandcamp, Deezer y MusicBrainz sin que configures nada.",
@@ -887,7 +887,7 @@
           "Engine DJ y Traktor tienen que estar cerrados para escribir en su biblioteca; Surco se ofrece a cerrarlos y hace copia de seguridad antes de tocar nada.",
           "Surco te avisa si una pista ya está en tu biblioteca, mirando la que corresponda a tu destino. Es un indicio muy afinado, no una garantía.",
           "Si editas una pista después, Surco actualiza su copia de Apple Music en vez de duplicarla, y si ya había una copia antigua te ofrece eliminarla.",
-          "Puedes sustituir una pista que ya tengas: carga otra copia de un tema que esté en tu biblioteca, en cualquier formato y también en el mismo (de un MP3 a un AIFF, o de un MP3 de 128 a uno de 320), y el botón pasa a decir «Sustituir». La entrada de Apple Music y la ficha de rekordbox pasan a apuntar al archivo nuevo, con sus playlists y sus cue points. rekordbox puede recalcular el beatgrid al ver un archivo distinto, así que revisa la rejilla. Al terminar, Surco te ofrece mandar el archivo viejo a la papelera.",
+          "Puedes sustituir una pista que ya tengas: carga otra copia de un tema que esté en tu biblioteca, en cualquier formato y también en el mismo (de un MP3 a un AIFF, o de un MP3 de 128 a uno de 320), y el botón pasa a decir «Sustituir». La entrada de Apple Music y la ficha de rekordbox pasan a apuntar al archivo nuevo, con sus playlists y sus cue points, y en Apple Music también con sus reproducciones, tu valoración y el favorito. rekordbox puede recalcular el beatgrid al ver un archivo distinto, así que revisa la rejilla. Al terminar, Surco te ofrece mandar el archivo viejo a la papelera.",
           "Con «Actualizar la colección de rekordbox al convertir» activado (Ajustes › Destino), la ficha de rekordbox recibe también el título, el artista, el álbum, el género, el sello, el remixer, el comentario, el año, los números de pista y disco y la carátula, tanto al convertir como al actualizar solo las etiquetas. El BPM, la tonalidad y los cue points se quedan como los tenga rekordbox, y un campo que dejas vacío en Surco no borra el suyo. rekordbox tiene que estar cerrado, y Surco se ofrece a cerrarlo.",
           "A Apple Music no llegan la tonalidad, el sello, el catálogo ni el remixer (solo viven en el tag del archivo) y los FLAC no se envían nunca, porque Music no puede con ellos."
         ],
