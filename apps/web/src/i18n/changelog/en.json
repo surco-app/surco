@@ -59,6 +59,10 @@
       {
         "text": "If you clear a track's metadata and fill it in again, updating now keeps everything you entered. Until now the title, artist, album, year and genre got lost along the way.",
         "in": "1.12.2"
+      },
+      {
+        "text": "Auto mark several tracks at once, from start to finish. With several selected you pick the flow, mark them, see a summary of how it went and accept every proposal with one click. They stay unsaved so you can adjust any of them, then you save them all together.",
+        "in": "1.12.3"
       }
     ]
   },

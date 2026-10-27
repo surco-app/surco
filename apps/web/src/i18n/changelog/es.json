@@ -59,6 +59,10 @@
       {
         "text": "Si vacías los metadatos de una pista y la vuelves a rellenar, al actualizar se guarda todo lo que has puesto. Hasta ahora el título, el artista, el álbum, el año y el género se perdían por el camino.",
         "in": "1.12.2"
+      },
+      {
+        "text": "Auto marcar varias pistas de una vez, de principio a fin. Con varias seleccionadas eliges el flujo, las marcas, ves un resumen de cómo ha ido y aceptas todas las propuestas con un clic. Quedan sin guardar para que puedas retocar cualquiera, y luego las guardas todas juntas.",
+        "in": "1.12.3"
       }
     ]
   },
