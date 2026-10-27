@@ -11,7 +11,7 @@ vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 import type { TrackMetadata } from '../shared/types'
 import { convertAudio } from './ffmpeg'
 import { removeRenamedOriginal } from './inplace'
-import { configureOriginalKeeper } from './originalKeeper'
+import { configureOriginalKeeper, policyKeeper } from './originalKeeper'
 import { createSurcoTrash } from './surcoTrash'
 
 const FF = ffmpegStatic as unknown as string
@@ -83,6 +83,47 @@ describe('a conversion that lands on its own source', () => {
     const { displaced } = await trash.restore(kept?.id as string)
     expect(readFileSync(src).equals(originalBytes)).toBe(true)
     expect(displaced?.reason).toBe('restored-over')
+  })
+})
+
+// "Overwrite" in the conflict prompt lands the conversion on a file that is not its
+// source: another track that happened to resolve to the same name. That file was renamed
+// over with no copy anywhere, the one overwrite in the app with no way back.
+describe('a conversion that overwrites a different file', () => {
+  it('keeps the file it lands on in the trash', async () => {
+    const src = encode('incoming.mp3')
+    const victim = encode('already-there.mp3')
+    const victimBytes = readFileSync(victim)
+    await convertAudio(src, victim, 'mp3', meta)
+
+    const kept = (await trash.list()).filter((e) => e.originalPath === victim)
+    expect(kept).toHaveLength(1)
+    expect(kept[0]).toMatchObject({ reason: 'replaced', outputPath: victim })
+    expect(readFileSync(kept[0].storedPath).equals(victimBytes)).toBe(true)
+    expect(existsSync(src)).toBe(true)
+  })
+
+  it('keeps one copy, not two, when the file it lands on is its own source', async () => {
+    const src = encode('once.mp3')
+    await convertAudio(src, src, 'mp3', meta)
+    expect((await trash.list()).filter((e) => e.originalPath === src)).toHaveLength(1)
+  })
+
+  it('keeps nothing when the user turned backups off', async () => {
+    const src = encode('incoming-never.mp3')
+    const victim = encode('already-there-never.mp3')
+    configureOriginalKeeper(
+      policyKeeper(
+        () => 'never',
+        (path, reason, outputPath) => trash.stash(path, reason, outputPath),
+      ),
+    )
+    try {
+      await convertAudio(src, victim, 'mp3', meta)
+    } finally {
+      configureOriginalKeeper((path, reason, outputPath) => trash.stash(path, reason, outputPath))
+    }
+    expect((await trash.list()).filter((e) => e.originalPath === victim)).toEqual([])
   })
 })
 

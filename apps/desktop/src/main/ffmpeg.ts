@@ -2272,6 +2272,11 @@ export async function convertAudio(
     // 'copy' exactly when the audio passes through untouched — so that rides along.
     if (await isSameFile(input, output))
       archived = await keepOriginal(input, 'replaced', output, { reencodes: codec !== 'copy' })
+    // A different file already at the destination ("Overwrite" in the conflict prompt) is
+    // not this source's audio in any form, so nothing re-run could bring it back: kept
+    // like a file with no encode to judge, which only 'never' skips.
+    else if (await stat(output).catch(() => null))
+      archived = await keepOriginal(output, 'replaced', output)
     // Logged because this failure only reproduces on Windows machines we cannot
     // attach a debugger to: when a user reports "another program is using the file",
     // these lines are the whole evidence — whether the destination was still held,
