@@ -782,6 +782,24 @@ describe('failed filter', () => {
   it('tallies the failed tracks for its filter badge', () => {
     expect(qualityCounts(tracks).failed).toBe(2)
   })
+
+  // A file Surco could not read or measure only ever showed up as a count in a notice
+  // ("12 could not be analyzed"), which names none of them. They are failures to retry
+  // just like a broken conversion, so they belong in the same bucket.
+  it('also holds the tracks that could not be read or analysed', () => {
+    const more = [
+      ...tracks,
+      { ...t('unreadable', 'idle'), metaReadFailed: true },
+      { ...t('unmeasured', 'done'), analyzeFailed: true },
+    ]
+    expect(by(more, { conversion: 'failed' }).map((x) => x.id)).toEqual([
+      'broke',
+      'broke2',
+      'unreadable',
+      'unmeasured',
+    ])
+    expect(qualityCounts(more).failed).toBe(4)
+  })
 })
 
 describe('match-provider filter', () => {

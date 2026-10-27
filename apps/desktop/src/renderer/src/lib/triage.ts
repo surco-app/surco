@@ -133,6 +133,13 @@ export function suspectTracks(tracks: TrackItem[]): TrackItem[] {
   return tracks.filter((t) => matchesQuality(t, 'suspect'))
 }
 
+// Narrower than 'unconverted' on purpose: that one means "not done", which covers every
+// track never attempted. This one is only what was tried and broke: a conversion, the read
+// of its tags, or the quality analysis.
+function hasFailed(track: TrackItem): boolean {
+  return track.status === 'error' || Boolean(track.metaReadFailed || track.analyzeFailed)
+}
+
 function matchesConversion(
   track: TrackItem,
   filter: ConversionFilter,
@@ -140,9 +147,7 @@ function matchesConversion(
 ): boolean {
   if (filter === 'unsaved') return facts.unsaved(track)
   if (filter === 'unconverted') return track.status !== 'done'
-  // Narrower than 'unconverted' on purpose: that one means "not done", which covers
-  // every track never attempted. This one is only the ones that were tried and broke.
-  if (filter === 'failed') return track.status === 'error'
+  if (filter === 'failed') return hasFailed(track)
   if (filter === 'matchReview') return Boolean(track.matchReview)
   if (filter === 'matchedDiscogs') return track.matchProvider === 'discogs'
   if (filter === 'matchedBandcamp') return track.matchProvider === 'bandcamp'
@@ -415,7 +420,7 @@ export function qualityCounts(
     else if (q === 'good') good += 1
     else unanalyzed += 1
     if (t.status !== 'done') unconverted += 1
-    if (t.status === 'error') failed += 1
+    if (hasFailed(t)) failed += 1
     if (t.autoMatched) automatched += 1
     if (t.matchReview) matchReview += 1
     if (t.matchProvider === 'discogs') matchedDiscogs += 1
