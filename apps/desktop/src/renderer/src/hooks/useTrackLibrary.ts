@@ -266,6 +266,10 @@ export function useTrackLibrary({
   // The import pill's count rides the same flush: bumped once per finished read, it
   // re-rendered the whole App per file just as the per-file patch did.
   const progressPending = useRef(false)
+  // The reads to announce through onMetaLoaded, held until their patch is in tracksRef: the
+  // auto-match sweep it feeds reads the row back by id, and before the flush it found the
+  // file-name guess, probed with it and then discarded the verdict as stale.
+  const loadedPending = useRef<TrackItem[]>([])
   const flushMetaPatches = useCallback((): void => {
     if (metaFlushTimer.current) clearTimeout(metaFlushTimer.current)
     metaFlushTimer.current = null
@@ -290,6 +294,9 @@ export function useTrackLibrary({
     }
     tracksRef.current = patched
     setTracks((prev) => prev.map((t) => appliers.get(t.id)?.(t) ?? t))
+    const loaded = loadedPending.current
+    loadedPending.current = []
+    for (const t of loaded) onMetaLoadedRef.current(t)
   }, [])
   // At most one write per window. The first read after a quiet spell flushes in a
   // microtask, so a lone read (or a batch resolving in the same tick) lands as before and
@@ -587,6 +594,7 @@ export function useTrackLibrary({
       // a field the user typed into meanwhile keeps the user's value, and the read
       // fills only what was left untouched. Queued into the shared flush rather than
       // written on its own, so a batch of reads costs one array rewrite, not one each.
+      loadedPending.current.push({ ...base, ...patch, meta: finalMeta })
       enqueueMetaPatch(base.id, (t) => ({
         ...t,
         ...patch,
@@ -595,7 +603,6 @@ export function useTrackLibrary({
         ...(failed ? { metaReadFailed: true } : t.metaReadFailed ? { metaReadFailed: false } : {}),
         meta: mergeReadMeta(base.meta, t.meta, finalMeta),
       }))
-      onMetaLoadedRef.current({ ...base, ...patch, meta: finalMeta })
       // Reported like a thrown failure so the batch's aggregate notice counts it: the
       // read degraded, whether or not it raised on the way.
       return !failed

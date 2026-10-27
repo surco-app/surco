@@ -1789,3 +1789,42 @@ describe('useTrackLibrary metadata-loaded callback', () => {
     expect(latest).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('useTrackLibrary announcing a finished read', () => {
+  // onMetaLoaded is what queues an import for the auto-match sweep, and the sweep reads the
+  // row back from tracksRef by id. Announced before the read's patch was published there,
+  // it probed with the file-name guess and then threw the verdict away because the row's
+  // meta had changed under it; the track left the queue counted as done and was never
+  // probed again.
+  it('publishes the read to tracksRef before announcing it', async () => {
+    setApi({
+      readMeta: vi.fn<Api['readMeta']>().mockResolvedValue({
+        tags: { ...emptyMetadata(), title: 'Real Title', artist: 'Real Artist' },
+        duration: 180,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+    const seen: string[] = []
+    const ref: { current: ReturnType<typeof useTrackLibrary> | null } = { current: null }
+    const { result } = renderHook(() => {
+      const library = useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: (t) =>
+          seen.push(ref.current?.tracksRef.current.find((x) => x.id === t.id)?.meta.title ?? ''),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      })
+      ref.current = library
+      return library
+    })
+
+    await act(() => result.current.addPaths(['/m/a.wav']))
+
+    expect(seen).toEqual(['Real Title'])
+  })
+})
