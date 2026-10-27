@@ -2429,12 +2429,7 @@ export default function App(): React.JSX.Element {
       onRemove: () => {
         const targets = menuTargets(track.id)
         const remove = () =>
-          removeFromRekordbox(
-            targets.flatMap((t) => {
-              const link = playlistScope?.linkOf.get(t.id)
-              return link ? [link] : []
-            }),
-          )
+          removeFromRekordbox(targets.flatMap((t) => playlistScope?.linksOf.get(t.id) ?? []))
         if (targets.length <= 1 || !playlist) return remove()
         overlays.openConfirm({
           title: tr('confirm.removeFromPlaylistTitle', {
