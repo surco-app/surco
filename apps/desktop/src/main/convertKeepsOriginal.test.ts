@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -169,5 +169,84 @@ describe('the original an in-place rename leaves behind', () => {
     expect(existsSync(src)).toBe(false)
     const kept = (await trash.list()).find((e) => e.originalPath === src)
     expect(kept).toMatchObject({ reason: 'renamed', outputPath: renamed })
+  })
+})
+
+// Serato's and Mixed In Key's cue objects sit as GEOB frames in a WAV's ID3 chunk, and the
+// update drops them: TagLib cannot write them back without failing the whole save. Until
+// they can be kept, a same-format WAV update that loses them is no "tags only" change, so
+// the original is kept even when the backups are set to keep only audio changes.
+describe('a WAV update that drops foreign cue objects', () => {
+  const frame = (id: string, body: Buffer) => {
+    const head = Buffer.alloc(10)
+    head.write(id, 0, 'latin1')
+    head.writeUInt32BE(body.length, 4)
+    return Buffer.concat([head, body])
+  }
+  const id3 = (...frames: Buffer[]) => {
+    const body = Buffer.concat(frames)
+    const size = Buffer.from([
+      (body.length >> 21) & 0x7f,
+      (body.length >> 14) & 0x7f,
+      (body.length >> 7) & 0x7f,
+      body.length & 0x7f,
+    ])
+    return Buffer.concat([Buffer.from([0x49, 0x44, 0x33, 3, 0, 0]), size, body])
+  }
+  const wav = (name: string, withSerato: boolean): string => {
+    const out = join(dir, name)
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=1',
+      '-c:a',
+      'pcm_s16le',
+      out,
+    ])
+    if (!withSerato) return out
+    const tag = id3(
+      frame('TIT2', Buffer.concat([Buffer.from([0]), Buffer.from('Old', 'latin1')])),
+      frame(
+        'GEOB',
+        Buffer.concat([
+          Buffer.from([0]),
+          Buffer.from('application/octet-stream\0\0Serato Markers2\0', 'latin1'),
+          Buffer.alloc(300, 0x41),
+        ]),
+      ),
+    )
+    const head = Buffer.alloc(8)
+    head.write('id3 ', 0, 'latin1')
+    head.writeUInt32LE(tag.length, 4)
+    const file = Buffer.concat([readFileSync(out), head, tag, Buffer.alloc(tag.length & 1)])
+    file.writeUInt32LE(file.length - 8, 4)
+    writeFileSync(out, file)
+    return out
+  }
+  const updated = async (src: string) => {
+    configureOriginalKeeper(
+      policyKeeper(
+        () => 'audioChanges',
+        (path, reason, outputPath) => trash.stash(path, reason, outputPath),
+      ),
+    )
+    try {
+      await convertAudio(src, src, 'wav', meta)
+    } finally {
+      configureOriginalKeeper((path, reason, outputPath) => trash.stash(path, reason, outputPath))
+    }
+    return (await trash.list()).filter((e) => e.originalPath === src)
+  }
+
+  it('keeps the original when the update loses Serato markers', async () => {
+    expect(await updated(wav('serato.wav', true))).toHaveLength(1)
+  })
+
+  it('keeps nothing for a WAV with no such objects, as only its tags change', async () => {
+    expect(await updated(wav('plain.wav', false))).toEqual([])
   })
 })
