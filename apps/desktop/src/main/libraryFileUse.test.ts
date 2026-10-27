@@ -9,7 +9,18 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
-import { libraryCopyInfo, usedByDjLibrary } from './libraryFileUse'
+// Records every file read, so a test can assert a library was loaded once per run.
+const { reads } = vi.hoisted(() => ({ reads: [] as string[] }))
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const real = await importOriginal<typeof import('node:fs/promises')>()
+  const readFile = ((...args: Parameters<typeof real.readFile>) => {
+    reads.push(String(args[0]))
+    return real.readFile(...args)
+  }) as typeof real.readFile
+  return { ...real, readFile }
+})
+
+import { djLibraryFileUse, libraryCopyInfo, usedByDjLibrary } from './libraryFileUse'
 import * as rekordboxDb from './rekordboxDb'
 import { REKORDBOX_KEY } from './rekordboxDb'
 
@@ -77,7 +88,7 @@ describe('usedByDjLibrary', () => {
     const collection = await rekordbox('/Volumes/M/a.mp3')
     const open = vi.spyOn(rekordboxDb, 'openRekordboxDb')
     await usedByDjLibrary('/Volumes/M/a.mp3', { ...OFF, rekordbox: collection })
-    expect(open).toHaveBeenCalledWith(collection, { readonly: true })
+    expect(open).toHaveBeenCalledWith(collection, expect.objectContaining({ readonly: true }))
     open.mockRestore()
   })
 
@@ -120,6 +131,28 @@ describe('usedByDjLibrary', () => {
   it('finds a boot-disk file whatever volume name Traktor gave it', async () => {
     const nml = await traktor('Macintosh HD', '/:Users/:me/:Music/:', 'a.mp3')
     expect(await usedByDjLibrary('/Users/me/Music/a.mp3', { ...OFF, traktor: nml })).toBe(true)
+  })
+
+  // A duplicate replace asks once per removed copy. Reading the Engine database and the
+  // whole collection.nml again for every copy, and deriving the rekordbox key again (a
+  // 256000-round PBKDF2) on every open, made a review of hundreds of copies crawl.
+  it('reads each library once for a whole run of files', async () => {
+    const dir = await engine('../../music/a.mp3')
+    const nml = await traktor('M', '/:Music/:', 'a.mp3')
+    const collection = await rekordbox('/Volumes/M/a.mp3')
+    const used = djLibraryFileUse({ rekordbox: collection, engine: dir, traktor: nml })
+    reads.length = 0
+    const open = vi.spyOn(rekordboxDb, 'openRekordboxDb')
+
+    for (const name of ['b.mp3', 'c.mp3', 'd.mp3'])
+      expect(await used(`/Volumes/M/${name}`)).toBe(false)
+    expect(await used('/Volumes/M/a.mp3')).toBe(true)
+
+    expect(reads.filter((p) => p.endsWith('m.db'))).toHaveLength(1)
+    expect(reads.filter((p) => p === nml)).toHaveLength(1)
+    for (const call of open.mock.calls)
+      expect(call).toEqual([collection, { readonly: true, key: expect.stringMatching(/^x'/) }])
+    open.mockRestore()
   })
 
   // A library that cannot be read may still use the file.
@@ -242,7 +275,7 @@ describe('libraryCopyInfo', () => {
     const collection = await richRekordbox()
     const open = vi.spyOn(rekordboxDb, 'openRekordboxDb')
     await libraryCopyInfo(['/m/a.aiff'], { ...OFF, rekordbox: collection })
-    expect(open).toHaveBeenCalledWith(collection, { readonly: true })
+    expect(open).toHaveBeenCalledWith(collection, expect.objectContaining({ readonly: true }))
     expect(open.mock.results[0].value?.readonly).toBe(true)
     open.mockRestore()
   })

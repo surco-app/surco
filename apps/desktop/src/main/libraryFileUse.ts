@@ -5,8 +5,8 @@ import { loadSqlJs } from './engine'
 import { engineRowFinder } from './engineRepoint'
 import { toNmlLocation } from './ffmpeg'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
-import { findTrackByPath, isAmbiguous, openRekordboxDb } from './rekordboxDb'
-import { findEntries, nmlCopyInfo } from './traktorNml'
+import { findTrackByPath, isAmbiguous, openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
+import { findEntries, type NmlEntry, nmlCopyInfo } from './traktorNml'
 
 // Each library's location, or '' when its sync is off.
 export interface SyncedLibraries {
@@ -17,46 +17,70 @@ export interface SyncedLibraries {
 
 // Read only, and it throws when a library it should look in cannot be read: the caller
 // keeps the file then, since that library may still use it.
-export async function usedByDjLibrary(
+export function usedByDjLibrary(
   path: string,
   libraries: SyncedLibraries,
   options: PathMatchOptions = {},
 ): Promise<boolean> {
-  if (libraries.rekordbox) {
-    const db = openRekordboxDb(libraries.rekordbox, { readonly: true })
-    if (!db) throw new Error(`rekordbox collection unreadable: ${libraries.rekordbox}`)
-    try {
-      if (findTrackByPath(db, path, options) !== null) return true
-    } finally {
-      db.close()
+  return djLibraryFileUse(libraries, options)(path)
+}
+
+// The same check for a whole run of files. Each library is read once, when the first file
+// reaches it, and the rekordbox key is derived once: a duplicate replace asks per removed
+// copy, after it has settled every library, so nothing changes them between two files.
+export function djLibraryFileUse(
+  libraries: SyncedLibraries,
+  options: PathMatchOptions = {},
+): (path: string) => Promise<boolean> {
+  const key = pathKey(options)
+  let rekordboxKey: Promise<string> | undefined
+  let engineRows: ReturnType<typeof readEngineRows> | undefined
+  let nmlEntries: Promise<NmlEntry[]> | undefined
+  return async (path) => {
+    if (libraries.rekordbox) {
+      rekordboxKey ??= rekordboxRawKey(libraries.rekordbox)
+      const db = openRekordboxDb(libraries.rekordbox, { readonly: true, key: await rekordboxKey })
+      if (!db) throw new Error(`rekordbox collection unreadable: ${libraries.rekordbox}`)
+      try {
+        if (findTrackByPath(db, path, options) !== null) return true
+      } finally {
+        db.close()
+      }
     }
-  }
-  if (libraries.engine) {
-    const SQL = await loadSqlJs()
-    const db = new SQL.Database(await readFile(join(libraries.engine, 'Database2', 'm.db')))
-    try {
-      const rows = (db.exec('SELECT path FROM Track')[0]?.values ?? []).map(([stored]) => ({
-        path: String(stored),
-      }))
-      if (engineRowFinder(libraries.engine, rows)(path, pathKey(options)).length > 0) return true
-    } finally {
-      db.close()
+    if (libraries.engine) {
+      engineRows ??= readEngineRows(libraries.engine)
+      if ((await engineRows)(path, key).length > 0) return true
     }
-  }
-  if (libraries.traktor) {
-    const nml = await readFile(libraries.traktor, 'utf8')
-    const at = toNmlLocation(path)
-    const same = (a: string, b: string) => a.normalize('NFC') === b.normalize('NFC')
-    // An empty volume is the boot disk, which Traktor stores under its own name.
-    if (
-      findEntries(nml).some(
-        (e) =>
-          same(e.dir, at.dir) && same(e.file, at.file) && (!at.volume || same(e.volume, at.volume)),
+    if (libraries.traktor) {
+      nmlEntries ??= readFile(libraries.traktor, 'utf8').then(findEntries)
+      const at = toNmlLocation(path)
+      const same = (a: string, b: string) => a.normalize('NFC') === b.normalize('NFC')
+      // An empty volume is the boot disk, which Traktor stores under its own name.
+      if (
+        (await nmlEntries).some(
+          (e) =>
+            same(e.dir, at.dir) &&
+            same(e.file, at.file) &&
+            (!at.volume || same(e.volume, at.volume)),
+        )
       )
-    )
-      return true
+        return true
+    }
+    return false
   }
-  return false
+}
+
+async function readEngineRows(libraryDir: string) {
+  const SQL = await loadSqlJs()
+  const db = new SQL.Database(await readFile(join(libraryDir, 'Database2', 'm.db')))
+  try {
+    const rows = (db.exec('SELECT path FROM Track')[0]?.values ?? []).map(([stored]) => ({
+      path: String(stored),
+    }))
+    return engineRowFinder(libraryDir, rows)
+  } finally {
+    db.close()
+  }
 }
 
 const LIVE = '(rb_local_deleted IS NULL OR rb_local_deleted = 0)'

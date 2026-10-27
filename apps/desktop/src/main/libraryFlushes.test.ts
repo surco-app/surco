@@ -40,6 +40,12 @@ vi.mock('./rekordboxDuplicates', () => ({
   replaceRekordboxDuplicates: WRITERS.replaceRekordboxDuplicates,
 }))
 
+const FILE_USE = vi.hoisted(() => {
+  const check = vi.fn(async (_path: string) => false)
+  return { check, open: vi.fn(() => check) }
+})
+vi.mock('./libraryFileUse', () => ({ djLibraryFileUse: FILE_USE.open }))
+
 import {
   duplicateLibraryDeps,
   flushConversionBatch,
@@ -123,5 +129,18 @@ describe('rekordbox writes while the queue is held after a write left the collec
       { held: () => boolean },
     ]
     expect(options.held()).toBe(true)
+  })
+})
+
+describe('duplicateLibraryDeps', () => {
+  // The check runs once per removed copy; opening the libraries afresh for each one
+  // re-read Engine's database and the whole collection.nml every time.
+  it('checks every removed copy against the libraries loaded once for the run', async () => {
+    FILE_USE.open.mockClear()
+    const deps = duplicateLibraryDeps(host(), sessions)
+    await deps.usedByLibrary('/m/a.mp3')
+    await deps.usedByLibrary('/m/b.mp3')
+    expect(FILE_USE.open).toHaveBeenCalledTimes(1)
+    expect(FILE_USE.check.mock.calls).toEqual([['/m/a.mp3'], ['/m/b.mp3']])
   })
 })

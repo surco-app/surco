@@ -12,7 +12,7 @@ import { repointEngineTracks } from './engineRepoint'
 import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
 import { updateEngineTags } from './engineTags'
 import { probeDuration, probeProperties, toNmlLocation } from './ffmpeg'
-import { usedByDjLibrary } from './libraryFileUse'
+import { djLibraryFileUse } from './libraryFileUse'
 import { flushLibraryRepoints } from './libraryRepointFlush'
 import { libraryStatus } from './libraryStatus'
 import { nmlTagPatches } from './libraryTagPatches'
@@ -321,16 +321,14 @@ export function duplicateLibraryDeps(
           }),
       }),
     },
-    usedByLibrary: (path) =>
-      usedByDjLibrary(
-        path,
-        {
-          rekordbox: rekordbox.collectionPath,
-          engine: engine.collectionPath,
-          traktor: traktor.traktorNmlPath,
-        },
-        { realPath },
-      ),
+    usedByLibrary: djLibraryFileUse(
+      {
+        rekordbox: rekordbox.collectionPath,
+        engine: engine.collectionPath,
+        traktor: traktor.traktorNmlPath,
+      },
+      { realPath },
+    ),
     serial: serialLibraryFlush,
     warn: (message, error) => log.warn(message, error),
   }
