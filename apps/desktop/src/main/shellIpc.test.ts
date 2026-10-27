@@ -25,6 +25,7 @@ import { existsSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ipcMain } from 'electron'
+import { setLibraryBackupRoot } from './libraryBackups'
 import type { MediaAccess } from './mediaAccess'
 import { configureBackupStore, configureOriginalKeeper } from './originalKeeper'
 import { registerShellIpc } from './shellIpc'
@@ -117,5 +118,18 @@ describe('registerShellIpc — a delete for good', () => {
     await handlerFor('shell:trash')({}, file, true)
     expect(existsSync(file)).toBe(false)
     expect(trashItem).not.toHaveBeenCalled()
+  })
+})
+
+describe('backups:reveal', () => {
+  // A DJ who never had a write go wrong has no copies yet: the button still opens the
+  // folder rather than failing on one that does not exist.
+  it('opens the library backups folder, creating it when there is none yet', async () => {
+    const root = join(mkdtempSync(join(tmpdir(), 'surco-reveal-')), 'backups')
+    setLibraryBackupRoot(root)
+    registerShellIpc(fakeMediaAccess([]))
+    await handlerFor('backups:reveal')({})
+    expect(existsSync(root)).toBe(true)
+    expect(openPath).toHaveBeenCalledWith(root)
   })
 })

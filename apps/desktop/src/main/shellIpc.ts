@@ -1,6 +1,8 @@
+import { mkdir } from 'node:fs/promises'
 import { clipboard, ipcMain, shell } from 'electron'
 import log from 'electron-log/main'
 import { errorWithKey } from '../shared/errorKeys'
+import { libraryBackupRoot } from './libraryBackups'
 import type { MediaAccess } from './mediaAccess'
 import { trashAsConfirmed } from './recoverableTrash'
 import { volumeKeepsTrash } from './trashSupport'
@@ -39,4 +41,9 @@ export function registerShellIpc(mediaAccess: MediaAccess): void {
   // The log path is resolved here (not sent by the renderer) so this can't be
   // used to reveal arbitrary files.
   ipcMain.handle('log:reveal', () => shell.showItemInFolder(log.transports.file.getFile().path))
+  ipcMain.handle('backups:reveal', async () => {
+    const root = libraryBackupRoot()
+    await mkdir(root, { recursive: true })
+    return shell.openPath(root)
+  })
 }

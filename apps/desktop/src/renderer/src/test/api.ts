@@ -294,6 +294,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     copyText: async () => {},
     logError: noop,
     revealLog: async () => {},
+    revealBackups: async () => '',
     openFeedback: async () => {},
     // No null to fall back on (SpectrumResult is a required shape), so the inert value is
     // an empty render: no image, and a null cutoff, which the UI already reads as "no
