@@ -968,10 +968,7 @@ function Editing({
   )
   const toCall = barsToNextCall(ctx.beats, pointMs, playheadMs)
   const flowControl = (
-    <span
-      data-testid="cues-flow-menu"
-      className="flex min-w-0 items-center gap-2 [&_button:focus-visible]:shadow-none"
-    >
+    <span data-testid="cues-flow-menu" className="flex min-w-0 items-center gap-2">
       <Select
         testid="cues-flow"
         portal

@@ -185,6 +185,17 @@ describe('CuesSection folded', () => {
     expect(screen.getByTestId('cue-wave-view')).toBeInTheDocument()
   })
 
+  // The flow menu and the auto-mark buttons are reached with Tab like any other control.
+  // Their ring was switched off, so a keyboard user tabbing through the header could not
+  // see which of them had the focus.
+  it('keeps the keyboard focus ring on the flow menu and the auto-mark buttons', async () => {
+    setup()
+    await ready()
+    const header = screen.getByTestId('cues-flow-menu')
+    expect(header).toContainElement(screen.getByTestId('cues-flow'))
+    expect(header.className).not.toContain('focus-visible]:shadow-none')
+  })
+
   it('says the bars to the point in the short form in the row, so the count of what does not fit has room beside it', async () => {
     setup()
     await ready()
