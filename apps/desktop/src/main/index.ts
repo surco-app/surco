@@ -1366,6 +1366,7 @@ function registerIpc(): void {
         // Measured from the user's log 15/09: from= named the FLAC and the lookup found
         // zero rows.
         replacesPath,
+        keepOverwritten,
       ) => {
         const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
         // The quality knobs are global preferences, so they're read here (at job time)
@@ -1404,6 +1405,7 @@ function registerIpc(): void {
               foreignRemoved,
               replacesPath,
               () => activeConversions.isCancelled(job.id),
+              keepOverwritten,
             ),
           {
             labelParams: { track },

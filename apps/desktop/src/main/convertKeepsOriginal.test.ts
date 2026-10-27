@@ -90,11 +90,33 @@ describe('a conversion that lands on its own source', () => {
 // source: another track that happened to resolve to the same name. That file was renamed
 // over with no copy anywhere, the one overwrite in the app with no way back.
 describe('a conversion that overwrites a different file', () => {
+  const overwrite = (src: string, dest: string) =>
+    convertAudio(
+      src,
+      dest,
+      'mp3',
+      meta,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true,
+    )
+
   it('keeps the file it lands on in the trash', async () => {
     const src = encode('incoming.mp3')
     const victim = encode('already-there.mp3')
     const victimBytes = readFileSync(victim)
-    await convertAudio(src, victim, 'mp3', meta)
+    await overwrite(src, victim)
 
     const kept = (await trash.list()).filter((e) => e.originalPath === victim)
     expect(kept).toHaveLength(1)
@@ -105,7 +127,7 @@ describe('a conversion that overwrites a different file', () => {
 
   it('keeps one copy, not two, when the file it lands on is its own source', async () => {
     const src = encode('once.mp3')
-    await convertAudio(src, src, 'mp3', meta)
+    await overwrite(src, src)
     expect((await trash.list()).filter((e) => e.originalPath === src)).toHaveLength(1)
   })
 
@@ -119,11 +141,21 @@ describe('a conversion that overwrites a different file', () => {
       ),
     )
     try {
-      await convertAudio(src, victim, 'mp3', meta)
+      await overwrite(src, victim)
     } finally {
       configureOriginalKeeper((path, reason, outputPath) => trash.stash(path, reason, outputPath))
     }
     expect((await trash.list()).filter((e) => e.originalPath === victim)).toEqual([])
+  })
+
+  // A re-export lands on the track's own previous output with no prompt: that file is this
+  // source's audio, made again in a moment, and keeping one per re-export filled the trash
+  // with copies nobody asked for. Only the user's "Overwrite" earns the copy.
+  it('keeps nothing when no overwrite was chosen, as when re-exporting over its own output', async () => {
+    const src = encode('reexport.mp3')
+    const previous = encode('reexport-previous.mp3')
+    await convertAudio(src, previous, 'mp3', meta)
+    expect((await trash.list()).filter((e) => e.originalPath === previous)).toEqual([])
   })
 })
 

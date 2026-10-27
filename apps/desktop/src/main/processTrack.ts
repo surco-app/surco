@@ -55,6 +55,7 @@ export interface ProcessTrackDeps {
     clearExtras?: boolean,
     foreignRemoved?: string[],
     replacesPath?: string,
+    keepOverwritten?: boolean,
   ) => Promise<{ normalizeSkipped: boolean; declickedSamples?: number }>
   // Lets a cancel reach the encode already in flight for this job, not just ones
   // not yet started. Registered around the convertAudio call and unregistered in
@@ -264,6 +265,7 @@ export async function runProcessTrack(
     // beside branch does: with the wait between that read and reservePath, two in-place
     // jobs of one run (Song.flac and Song.wav, both becoming Song.aiff) each read the name
     // as free, both wrote it, and the folder kept one recording of the two.
+    let keepOverwritten = false
     const outputIsInput =
       !musicOnly && !besideOriginal && inPlace && (await deps.isSameFile(job.inputPath, outputPath))
     // musicOnly writes to a private tmpDir unique per job (via mkdtemp below), so it
@@ -319,7 +321,7 @@ export async function runProcessTrack(
       ) {
         target = uniqueOutputPath(outputPath, (p) => deps.existsSync(p) || deps.isPathReserved(p))
         inPlace = false
-      }
+      } else if (choice === 'overwrite') keepOverwritten = true
     }
     if (addToEngineDj && deps.ensureEngineDjClosed && !(await deps.ensureEngineDjClosed()))
       throw errorWithKey('engineDjOpen')
@@ -356,6 +358,7 @@ export async function runProcessTrack(
         job.clearExtras,
         job.foreignRemoved,
         job.replacesPath,
+        keepOverwritten,
       ))
     } catch (e) {
       // convertAudio deletes the temp on failure and says so when it couldn't: that is

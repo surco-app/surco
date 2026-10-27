@@ -1900,6 +1900,8 @@ export async function convertAudio(
   // rekordbox indexes that path, not the one being converted.
   replacesPath?: string,
   isCancelled?: () => boolean,
+  // The user answered "Overwrite" for a different file already at the destination.
+  keepOverwritten?: boolean,
 ): Promise<{ normalizeSkipped: boolean; declickedSamples?: number }> {
   const meta = composeMeta(sourceMeta)
   // We always write to a temp file and rename it over the target, so
@@ -2291,8 +2293,9 @@ export async function convertAudio(
       archived = await keepOriginal(input, 'replaced', output, { reencodes: codec !== 'copy' })
     // A different file already at the destination ("Overwrite" in the conflict prompt) is
     // not this source's audio in any form, so nothing re-run could bring it back: kept
-    // like a file with no encode to judge, which only 'never' skips.
-    else if (await stat(output).catch(() => null))
+    // like a file with no encode to judge, which only 'never' skips. A re-export over the
+    // track's own previous output never asks, and keeps nothing.
+    else if (keepOverwritten && (await stat(output).catch(() => null)))
       archived = await keepOriginal(output, 'replaced', output)
     // Logged because this failure only reproduces on Windows machines we cannot
     // attach a debugger to: when a user reports "another program is using the file",
