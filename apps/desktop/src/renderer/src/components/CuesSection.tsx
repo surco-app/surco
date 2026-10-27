@@ -851,15 +851,16 @@ function Editing({
   const [saveFailed, setSaveFailed] = useState<SaveCuesOutcome | 'failed' | null>(null)
   const send = async (reqs: SaveCuesRequest[]): Promise<boolean> => {
     const outcome = await window.api.saveRekordboxCues(reqs).catch(() => 'failed' as const)
-    if (outcome !== 'queued') {
+    if (outcome === 'failed' || outcome === 'other-collection') {
       setSaveFailed(outcome)
       return false
     }
-    setSaveFailed(null)
+    const queued = outcome === 'queued' ? reqs.map((r) => r.contentId) : outcome.queued
+    setSaveFailed(outcome === 'queued' ? null : outcome)
     setOverwrite(new Set())
-    for (const req of reqs) forgetDraft(req.contentId)
+    for (const contentId of queued) forgetDraft(contentId)
     await refreshQueued()
-    return true
+    return queued.includes(cue.contentId)
   }
   const save = async () => {
     const saved = await send([
@@ -1490,7 +1491,11 @@ function Editing({
       )}
       {saveFailed !== null && (
         <p data-testid="cues-save-failed" className="mt-2 text-xs text-warn">
-          {tr(saveFailed === 'other-collection' ? copy.otherLibrary : copy.saveFailed)}
+          {typeof saveFailed === 'object'
+            ? tr('editor.cues.savedExcept', {
+                programs: saveFailed.refused.map((l) => LIBRARY_NAME[l]).join(', '),
+              })
+            : tr(saveFailed === 'other-collection' ? copy.otherLibrary : copy.saveFailed)}
         </p>
       )}
       {blocked && (

@@ -738,6 +738,26 @@ describe('registerRekordboxCuesIpc for Engine DJ tracks', () => {
     expect(applyEngine).not.toHaveBeenCalled()
   })
 
+  // rekordbox's part is already queued when Engine refuses its own: calling the whole save a
+  // failure would keep the rekordbox draft open and save it a second time.
+  it('says which tracks were queued and which program refused, when only part of a save goes through', async () => {
+    const engine = queue({ enqueue: vi.fn<RekordboxQueue['enqueue']>(() => false) })
+    const rekordbox = queue()
+    const { applyRekordbox } = register(await engineLibrary(), rekordbox, engine)
+    const req = (contentId: string) => ({
+      contentId,
+      path: `/m/${contentId}.wav`,
+      label: contentId,
+      wanted: [],
+      fingerprint: 'F',
+    })
+    expect(await handler('rekordbox:saveCues')({}, [req('103'), req('engine:4')])).toEqual({
+      queued: ['103'],
+      refused: ['engine'],
+    })
+    expect(applyRekordbox).toHaveBeenCalled()
+  })
+
   it('shows and takes back an Engine save from the Engine queue', async () => {
     const drop = vi.fn<RekordboxQueue['drop']>()
     const wanted = [{ id: '0', ms: 8000, kind: 1, color: 22 }]

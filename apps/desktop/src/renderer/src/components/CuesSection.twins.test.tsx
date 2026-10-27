@@ -10,7 +10,7 @@ import type { LibraryTracks, Settings, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import { reduceDraft, startDraft } from '../lib/cueDraft'
-import { cueDraftKey, keepDraft, resetCueSession } from '../lib/cueSession'
+import { cueDraftKey, keepDraft, resetCueSession, unsavedCueTracks } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
@@ -186,5 +186,29 @@ describe('a flow placed in the cue editor reaches the other DJ programs', () => 
     expect(savedIds(saveRekordboxCues).sort()).toEqual(
       ['103', '104', TRAKTOR, 'traktor:M/:Music/:h.wav'].sort(),
     )
+  })
+})
+
+describe('a save that only goes through in some programs', () => {
+  // rekordbox queued its part while Traktor's queue held another collection: the rekordbox
+  // draft is saved and must go, the Traktor work is not and must stay, and the DJ is told
+  // which program was left out instead of being told nothing was saved.
+  it('forgets only what was queued and names the program that refused', async () => {
+    keepDraft(TRAKTOR, 'k', startDraft([{ ms: bar(8), kind: 1, color: 1 }], 'mine'), {
+      path: '/m/g.wav',
+      label: 'Gowan',
+      fingerprint: 'f0',
+    })
+    const { saveRekordboxCues } = setup()
+    saveRekordboxCues.mockResolvedValue({ queued: ['103'], refused: ['traktor'] })
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(await screen.findByTestId('cues-twin-traktor-overwrite'))
+    await screen.findByTestId('cues-twin-traktor')
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(screen.getByTestId('cues-save-failed')).toBeInTheDocument())
+    expect(screen.getByTestId('cues-save-failed')).toHaveTextContent('Traktor')
+    expect(screen.getByTestId('cues-save-failed')).not.toHaveTextContent('Could not save')
+    expect([...unsavedCueTracks()]).toEqual([TRAKTOR])
   })
 })

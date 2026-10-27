@@ -853,6 +853,7 @@
       "resetColour": "Réinitialiser",
       "saveShort": "Enregistrer",
       "saveFailed": "Impossible d’enregistrer dans rekordbox. Les cues ne sont toujours pas enregistrés",
+      "savedExcept": "Enregistré, sauf dans {{programs}}. Ce qui y attend appartient à une autre collection, rien n’y a été modifié",
       "saveAll_one": "Enregistrer {{count}} morceau dans rekordbox",
       "saveAll_other": "Enregistrer {{count}} morceaux dans rekordbox",
       "saveAllBoth_one": "Enregistrer {{count}} morceau dans rekordbox et Engine DJ",

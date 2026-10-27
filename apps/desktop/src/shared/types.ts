@@ -1734,7 +1734,10 @@ export interface QueuedCues {
   fingerprint: string
 }
 
-export type SaveCuesOutcome = 'queued' | 'other-collection'
+export type SaveCuesOutcome =
+  | 'queued'
+  | 'other-collection'
+  | { queued: string[]; refused: CueLibrary[] }
 
 export interface SaveCuesRequest {
   contentId: string
