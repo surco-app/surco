@@ -41,6 +41,10 @@
         "in": "1.12.0"
       },
       {
+        "text": "New list filters to find what is left to do. See at a glance the tracks with no cues, no artwork or small artwork, no BPM or no key, the ones with required fields empty, the ones with unsaved changes and the ones rekordbox or Engine DJ has not analysed yet. “Failed” now also holds the tracks that could not be read or analysed.",
+        "in": "1.12.1"
+      },
+      {
         "text": "FLAC covers show in Finder wherever the files go, because they now travel inside the file itself. Traktor keeps accepting those tracks in its collection.",
         "in": "1.12.1"
       },

@@ -41,6 +41,10 @@
         "in": "1.12.0"
       },
       {
+        "text": "Filtros nuevos en la lista para encontrar lo que te queda por hacer. Ves de golpe las pistas sin cues, sin carátula o con una carátula pequeña, sin BPM o sin tonalidad, las que tienen campos obligatorios vacíos, las que tienen cambios sin guardar y las que rekordbox o Engine DJ aún no han analizado. «Con error» incluye también las pistas que no se pudieron leer ni analizar.",
+        "in": "1.12.1"
+      },
+      {
         "text": "Las carátulas de los FLAC se ven en el Finder vayan donde vayan, porque ahora viajan dentro del propio archivo. Traktor sigue aceptando esas pistas en su colección.",
         "in": "1.12.1"
       },
