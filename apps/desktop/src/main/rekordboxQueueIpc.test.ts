@@ -27,6 +27,7 @@ const APPLIED: QueueApply = {
 function queue(result: QueueApply = APPLIED) {
   return {
     enqueue: vi.fn(),
+    announce: vi.fn(),
     state: vi.fn(() => ({ tracks: 1, changes: 0, items: [] })),
     isEmpty: vi.fn(() => false),
     discard: vi.fn(),

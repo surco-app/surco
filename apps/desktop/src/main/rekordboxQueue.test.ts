@@ -387,6 +387,19 @@ describe('rekordbox queue', () => {
     expect(q.state().unplugged).toBeUndefined()
   })
 
+  // Pointing Surco at another collection in Settings left the pill on the old one's state
+  // until a restart: nothing in the queue changed, so nothing told the window.
+  it('tells the window its state again when asked, as it reads for the collection now in use', () => {
+    let at = '/Volumes/Disco/master.db'
+    const d = deps({ collection: () => at })
+    const q = createRekordboxQueue(d)
+    q.enqueue([], [{ from: '/m/b.mp3', to: '/m/b.flac' }])
+    at = '/copy/master.db'
+    vi.mocked(d.onChange).mockClear()
+    q.announce()
+    expect(d.onChange).toHaveBeenCalledWith(expect.objectContaining({ tracks: 0, elsewhere: 1 }))
+  })
+
   it('does not call a queue held while no collection is found one for another collection', () => {
     let at = '/real/master.db'
     const q = createRekordboxQueue(deps({ collection: () => at }))

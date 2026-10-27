@@ -951,6 +951,9 @@ function registerIpc(): void {
       if (win) buildAppMenu(win)
     }
     if (patch.completeCuesOnClose !== undefined) rekordboxQueueWatch.poke()
+    if (patch.rekordboxDbPath !== undefined) rekordboxQueue.announce()
+    if (patch.engineLibraryDir !== undefined) engineCueQueue.announce()
+    if (patch.traktorNmlPath !== undefined) traktorCueQueue.announce()
     return settingsForRenderer(next)
   })
 
