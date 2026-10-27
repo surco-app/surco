@@ -592,6 +592,8 @@ describe('Editor clear metadata', () => {
         discogsUrl: '',
       },
       matched: false,
+      // The sweep's own flag too, or an auto-matched track never re-entered it.
+      autoMatched: false,
       // Clearing the tags also drops any pending review flag, so a retag is probed afresh.
       matchReview: false,
       matchProvider: undefined,

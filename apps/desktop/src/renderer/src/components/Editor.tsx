@@ -54,7 +54,7 @@ import { useTrackProperties } from '../hooks/useTrackProperties'
 import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
 import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
-import { matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
+import { clearedTrackPatch, matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
 import { baseName } from '../lib/baseName'
 import { compareCopies } from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
@@ -893,24 +893,11 @@ export const Editor = memo(function Editor({
       onChangeAllMeta?.(blank)
       onClearExtras?.((selectedTracks ?? []).map((t) => t.id))
     }
-    // Clearing the tags un-matches the track, so the sweep may fill it again — including
-    // dropping any pending review flag so a retag is probed afresh, and the Discogs-proven
-    // owned verdict so it re-resolves against whatever the retag matches.
-    else
-      onChange({
-        meta: blank,
-        matched: false,
-        matchReview: false,
-        matchProvider: undefined,
-        inLibraryResolved: false,
-        coverRemoved: true,
-        // Off the preview too, not just off the next export: coverRemoved is a promise
-        // about the conversion, and leaving the image on screen read as "clear didn't
-        // touch the artwork" — sending users to delete by hand what was already staged.
-        coverUrl: undefined,
-        metaCleared: true,
-        foreignRemoved: (item.foreignTags ?? []).map((t) => t.name),
-      })
+    // Clearing the tags un-matches the track, so the sweep may fill it again. The ⌘K
+    // palette's clear runs the same patch. The cover goes off the preview too, not just
+    // off the next export: coverRemoved is a promise about the conversion, and leaving
+    // the image on screen read as "clear didn't touch the artwork".
+    else onChange(clearedTrackPatch(item))
   }
 
   // Dialing a different normalization is an edit like any other: the file on disk

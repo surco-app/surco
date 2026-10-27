@@ -110,4 +110,46 @@ describe('useAppleMusicFill', () => {
     await Promise.resolve()
     expect(onChange).not.toHaveBeenCalled()
   })
+
+  // The editor remounts for every track it shows, and the fill only looks for an empty
+  // field. A grouping the DJ cleared was empty again on the next visit, so Music put it
+  // back each time the track was opened and the clear could never reach the file.
+  it('does not fill again a field the DJ cleared after the first fill', async () => {
+    const entryMeta = vi.fn<Api['appleMusicEntryMeta']>().mockResolvedValue({ grouping: 'Bases' })
+    setApi(entryMeta)
+    const first = vi.fn()
+    const { unmount } = renderHook(() =>
+      useAppleMusicFill({ item: track(), candidates: ['PID1'], onChange: first }),
+    )
+    await waitFor(() => expect(first).toHaveBeenCalled())
+    unmount()
+    const patch = first.mock.calls[0][0] as Partial<TrackItem>
+    const cleared = track({ ...patch, meta: { ...track().meta, grouping: '' } })
+
+    const again = vi.fn()
+    renderHook(() => useAppleMusicFill({ item: cleared, candidates: ['PID1'], onChange: again }))
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(again).not.toHaveBeenCalled()
+  })
+
+  // "Clear all" is a promise that the file comes out empty. Filling the emptied fields from
+  // Music the moment the track is opened broke it without the DJ touching anything.
+  it('leaves a track whose metadata was cleared empty', async () => {
+    const entryMeta = vi.fn<Api['appleMusicEntryMeta']>().mockResolvedValue({ grouping: 'Bases' })
+    setApi(entryMeta)
+    const onChange = vi.fn()
+    renderHook(() =>
+      useAppleMusicFill({
+        item: track({ metaCleared: true, meta: emptyMetadata() }),
+        candidates: ['PID1'],
+        onChange,
+      }),
+    )
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(onChange).not.toHaveBeenCalled()
+  })
 })

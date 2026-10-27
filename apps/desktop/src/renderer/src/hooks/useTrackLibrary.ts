@@ -266,6 +266,10 @@ export function useTrackLibrary({
   // The import pill's count rides the same flush: bumped once per finished read, it
   // re-rendered the whole App per file just as the per-file patch did.
   const progressPending = useRef(false)
+  // The reads to announce through onMetaLoaded, held until their patch is in tracksRef: the
+  // auto-match sweep it feeds reads the row back by id, and before the flush it found the
+  // file-name guess, probed with it and then discarded the verdict as stale.
+  const loadedPending = useRef<TrackItem[]>([])
   const flushMetaPatches = useCallback((): void => {
     if (metaFlushTimer.current) clearTimeout(metaFlushTimer.current)
     metaFlushTimer.current = null
@@ -290,6 +294,9 @@ export function useTrackLibrary({
     }
     tracksRef.current = patched
     setTracks((prev) => prev.map((t) => appliers.get(t.id)?.(t) ?? t))
+    const loaded = loadedPending.current
+    loadedPending.current = []
+    for (const t of loaded) onMetaLoadedRef.current(t)
   }, [])
   // At most one write per window. The first read after a quiet spell flushes in a
   // microtask, so a lone read (or a batch resolving in the same tick) lands as before and
@@ -587,6 +594,7 @@ export function useTrackLibrary({
       // a field the user typed into meanwhile keeps the user's value, and the read
       // fills only what was left untouched. Queued into the shared flush rather than
       // written on its own, so a batch of reads costs one array rewrite, not one each.
+      loadedPending.current.push({ ...base, ...patch, meta: finalMeta })
       enqueueMetaPatch(base.id, (t) => ({
         ...t,
         ...patch,
@@ -595,7 +603,6 @@ export function useTrackLibrary({
         ...(failed ? { metaReadFailed: true } : t.metaReadFailed ? { metaReadFailed: false } : {}),
         meta: mergeReadMeta(base.meta, t.meta, finalMeta),
       }))
-      onMetaLoadedRef.current({ ...base, ...patch, meta: finalMeta })
       // Reported like a thrown failure so the batch's aggregate notice counts it: the
       // read degraded, whether or not it raised on the way.
       return !failed
@@ -1015,25 +1022,31 @@ export function useTrackLibrary({
 
   // Writes a shared-field edit (or a dropped cover) onto every selected track at once —
   // the multi-select write path behind the editor's common-field form.
-  const updateTracksMeta = useCallback((ids: string[], metaPatch: Partial<TrackMetadata>): void => {
-    const targets = new Set(ids)
-    setTracks((prev) =>
-      prev.map((t) => (targets.has(t.id) ? { ...t, meta: { ...t.meta, ...metaPatch } } : t)),
-    )
-  }, [])
+  // Through mapTracks like the rest: ⌘⏎ right after the edit converts from tracksRef in
+  // the same tick, and the first rows went out with the value the DJ had just replaced.
+  const updateTracksMeta = useCallback(
+    (ids: string[], metaPatch: Partial<TrackMetadata>): void => {
+      const targets = new Set(ids)
+      mapTracks((t) => (targets.has(t.id) ? { ...t, meta: { ...t.meta, ...metaPatch } } : t))
+    },
+    [mapTracks],
+  )
 
-  const patchTracks = useCallback((ids: string[], patch: Partial<TrackItem>): void => {
-    const targets = new Set(ids)
-    setTracks((prev) => prev.map((t) => (targets.has(t.id) ? { ...t, ...patch } : t)))
-  }, [])
+  const patchTracks = useCallback(
+    (ids: string[], patch: Partial<TrackItem>): void => {
+      const targets = new Set(ids)
+      mapTracks((t) => (targets.has(t.id) ? { ...t, ...patch } : t))
+    },
+    [mapTracks],
+  )
 
   // Bulk "clear everything": unlike patchTracks' flat patch, foreignRemoved must be
   // each track's OWN foreign tag names, so this reads t.foreignTags per row instead
   // of taking a shared patch.
-  const clearExtrasTracks = useCallback((ids: string[]): void => {
-    const targets = new Set(ids)
-    setTracks((prev) =>
-      prev.map((t) =>
+  const clearExtrasTracks = useCallback(
+    (ids: string[]): void => {
+      const targets = new Set(ids)
+      mapTracks((t) =>
         targets.has(t.id)
           ? {
               ...t,
@@ -1045,20 +1058,19 @@ export function useTrackLibrary({
               foreignRemoved: (t.foreignTags ?? []).map((tag) => tag.name),
             }
           : t,
-      ),
-    )
-  }, [])
+      )
+    },
+    [mapTracks],
+  )
 
   // Merges each track's own filename-derived tags into its metadata (one patch per id),
   // leaving fields the pattern didn't match untouched.
   const deriveTracks = useCallback(
     (patches: { id: string; meta: Partial<TrackMetadata> }[]): void => {
       const byId = new Map(patches.map((p) => [p.id, p.meta]))
-      setTracks((prev) =>
-        prev.map((t) => (byId.has(t.id) ? { ...t, meta: { ...t.meta, ...byId.get(t.id) } } : t)),
-      )
+      mapTracks((t) => (byId.has(t.id) ? { ...t, meta: { ...t.meta, ...byId.get(t.id) } } : t))
     },
-    [],
+    [mapTracks],
   )
 
   // Stable identity so the memoized TrackRow only re-renders the row that

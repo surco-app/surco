@@ -5,6 +5,7 @@ import {
   acceptReviewOf,
   acceptReviewPatch,
   autoMatchRelease,
+  clearedTrackPatch,
   holdsAutoMatch,
   MAX_AUTO_PROBE,
   matchActivityReport,
@@ -1058,5 +1059,41 @@ describe('holdsAutoMatch', () => {
         row({ loadingMeta: true }),
       ]),
     ).toBe(false)
+  })
+})
+
+describe('clearedTrackPatch', () => {
+  const matchedTrack: TrackItem = {
+    id: 'a',
+    inputPath: '/m/a.wav',
+    fileName: 'a.wav',
+    listLabel: 'a',
+    query: 'artist song',
+    status: 'idle',
+    meta: { title: 'Song', artist: 'Artist' } as TrackItem['meta'],
+    matched: true,
+    autoMatched: true,
+    foreignTags: [
+      { name: 'SERATO_MARKERS_V2', value: 'x' },
+      { name: 'TRAKTOR4', value: 'y' },
+    ],
+  }
+
+  // "Clear all" is how a DJ retags a badly matched file from scratch, and the editor
+  // promises the cleared track goes back to the sweep. The flag the sweep itself left kept
+  // it out for good, so the retyped title was never matched again.
+  it('lets the sweep match the track again once a title is typed back', () => {
+    const cleared = { ...matchedTrack, ...clearedTrackPatch(matchedTrack) }
+    const retyped = { ...cleared, meta: { ...cleared.meta, title: 'Song' } }
+    expect(tracksToAutoMatch([retyped])).toEqual([retyped])
+  })
+
+  // The ⌘K palette and the editor's eraser are the same action, so both must strip the
+  // third-party tags too: the palette's clear left the Serato and Traktor cues in the file.
+  it('marks every third-party tag of the file for removal', () => {
+    expect(clearedTrackPatch(matchedTrack).foreignRemoved).toEqual([
+      'SERATO_MARKERS_V2',
+      'TRAKTOR4',
+    ])
   })
 })

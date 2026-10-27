@@ -983,7 +983,9 @@ export function writeTags(
       // Foreign tags the user marked in the inspector: same "----" freeform route
       // TagLib itself uses to write every managed atom it doesn't have a dedicated
       // box for (ReplayGain, MusicBrainz ids…), under the MEAN every tagger writes.
-      // Applies always, like the ID3 route below — independent of clearExtras.
+      // Applies always, like the ID3 route below — independent of clearExtras. Ahead of
+      // the writes, as there: names match regardless of case, so clearing VinylCondition
+      // after writing a custom field's VINYLCONDITION erased it.
       // The rating is the one extra that stays behind: it lives in a POPM frame, an ID3
       // structure MP4 has no counterpart for, and the reader on the other side (readMeta)
       // only ever looks for POPM. Armoring it into a freeform atom would write bytes
@@ -991,9 +993,9 @@ export function writeTags(
       const apple = f.tag as Mpeg4AppleTag
       const date = fullDateOf(meta.year)
       if (date) apple.setQuickTimeString(Mpeg4BoxType.DAY, date)
+      for (const name of foreignRemoved) apple.setItunesStrings('com.apple.iTunes', name)
       for (const [name, value] of extendedFields(meta)) setItunesText(apple, name, value)
       for (const [, name, value] of creditFields(meta)) setItunesText(apple, name, value)
-      for (const name of foreignRemoved) apple.setItunesStrings('com.apple.iTunes', name)
       f.save()
       return
     }

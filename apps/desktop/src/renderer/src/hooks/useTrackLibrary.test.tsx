@@ -1789,3 +1789,73 @@ describe('useTrackLibrary metadata-loaded callback', () => {
     expect(latest).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('useTrackLibrary announcing a finished read', () => {
+  // onMetaLoaded is what queues an import for the auto-match sweep, and the sweep reads the
+  // row back from tracksRef by id. Announced before the read's patch was published there,
+  // it probed with the file-name guess and then threw the verdict away because the row's
+  // meta had changed under it; the track left the queue counted as done and was never
+  // probed again.
+  it('publishes the read to tracksRef before announcing it', async () => {
+    setApi({
+      readMeta: vi.fn<Api['readMeta']>().mockResolvedValue({
+        tags: { ...emptyMetadata(), title: 'Real Title', artist: 'Real Artist' },
+        duration: 180,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+    const seen: string[] = []
+    const ref: { current: ReturnType<typeof useTrackLibrary> | null } = { current: null }
+    const { result } = renderHook(() => {
+      const library = useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: (t) =>
+          seen.push(ref.current?.tracksRef.current.find((x) => x.id === t.id)?.meta.title ?? ''),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      })
+      ref.current = library
+      return library
+    })
+
+    await act(() => result.current.addPaths(['/m/a.wav']))
+
+    expect(seen).toEqual(['Real Title'])
+  })
+})
+
+describe('useTrackLibrary bulk edits', () => {
+  // ⌘⏎ right after a multi-track edit flushes the edit and starts the batch in the same
+  // tick, and each conversion reads its row from tracksRef. An edit that only reached
+  // React state converted the first tracks with the value the DJ had just replaced.
+  it('publishes every bulk edit to tracksRef at once', async () => {
+    const { result } = setupWithTracks()
+    await act(() => result.current.addPaths(['/m/a.wav', '/m/b.wav']))
+    const ids = result.current.tracks.map((t) => t.id)
+    const genres = (): string[] => result.current.tracksRef.current.map((t) => t.meta.genre)
+    const seen: Record<string, string[] | boolean[]> = {}
+
+    act(() => {
+      result.current.updateTracksMeta(ids, { genre: 'House' })
+      seen.updateTracksMeta = genres()
+      result.current.deriveTracks(ids.map((id) => ({ id, meta: { genre: 'Techno' } })))
+      seen.deriveTracks = genres()
+      result.current.patchTracks(ids, { outputName: 'x' })
+      seen.patchTracks = result.current.tracksRef.current.map((t) => t.outputName === 'x')
+      result.current.clearExtrasTracks(ids)
+      seen.clearExtrasTracks = result.current.tracksRef.current.map((t) => !!t.metaCleared)
+    })
+
+    expect(seen).toEqual({
+      updateTracksMeta: ['House', 'House'],
+      deriveTracks: ['Techno', 'Techno'],
+      patchTracks: [true, true],
+      clearExtrasTracks: [true, true],
+    })
+  })
+})
