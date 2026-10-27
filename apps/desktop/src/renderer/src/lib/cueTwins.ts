@@ -1,6 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { CueFlow } from '../../../shared/cueFlows'
-import type { CueQuantize } from '../../../shared/cueQuantize'
 import { ALL_SLOTS, SAME_POSITION_MS } from '../../../shared/cueRules'
 import { isEngineContent } from '../../../shared/engineContent'
 import { isTraktorContent, TRAKTOR_SLOTS } from '../../../shared/traktorContent'
@@ -27,7 +26,6 @@ export interface TwinSource {
 
 export interface TwinSettings {
   cueFlows: CueFlow[]
-  cueQuantize: CueQuantize
   cueLettersByTime: boolean
   cueFlowToRekordbox: boolean
   cueFlowToTraktor: boolean
@@ -69,10 +67,12 @@ export function carriedPoints(draft: CueDraft, ctx: DraftContext): number[] {
   return draftPoints(draft, ctx).filter((p) => placed.some((c) => near(c.ms, p)))
 }
 
+// A break lands on the other program's nearest beat, never its nearest bar: the programs can
+// count the bar from different beats, and the bar would move every cue by a beat or more.
 function contextOf(read: TrackCues, library: CueLibrary, settings: TwinSettings): DraftContext {
   return {
     beats: read.grid.map((b) => b.ms),
-    snapTo: quantizePoints(read.grid, settings.cueQuantize),
+    snapTo: quantizePoints(read.grid, 'beat'),
     strong: read.strong,
     phrases: read.phrases,
     flows: settings.cueFlows,
