@@ -703,10 +703,12 @@ export function visibleGroups(
   return { spelling, duplicates }
 }
 
-export const visibleKeys = (review: Review, search: string, sort: ReviewSort) => {
-  const { spelling, duplicates } = visibleGroups(review, search, sort)
-  return [...spelling.map((g) => g.key), ...duplicates.map((c) => c.group.key)]
-}
+export type VisibleGroups = ReturnType<typeof visibleGroups>
+
+export const visibleKeys = ({ spelling, duplicates }: VisibleGroups) => [
+  ...spelling.map((g) => g.key),
+  ...duplicates.map((c) => c.group.key),
+]
 
 const RISKY_KINDS = new Set(['typo', 'version'])
 
@@ -786,6 +788,7 @@ export function MusicReview({
   onSelect,
   onClose,
   busy = false,
+  visible,
   search,
   onSearch,
   sort,
@@ -795,6 +798,8 @@ export function MusicReview({
   scopeName,
 }: {
   review: Review
+  // The groups the search and sort leave, filtered once by the selection above.
+  visible: VisibleGroups
   selectedKey: string | null
   onSelect: (key: string) => void
   onClose: () => void
@@ -818,8 +823,7 @@ export function MusicReview({
     spelling: review.spelling.length,
     duplicates: review.duplicates.length,
   }
-  const visible = visibleGroups(review, search, sort)
-  const keys = visibleKeys(review, search, sort)
+  const keys = visibleKeys(visible)
   const at = selectedKey === null ? -1 : keys.indexOf(selectedKey)
   const nothing = review.status === 'ready' && counts.all === 0
   useEffect(() => {

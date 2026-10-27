@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { Api } from '../../../preload/api'
@@ -10,7 +10,13 @@ import type { LibraryTagSyncReport } from '../../../shared/types'
 import type { MusicReview as Review, ReviewRun } from '../hooks/useMusicReview'
 import { createQueryClient } from '../lib/queryClient'
 import { stubApi } from '../test/api'
-import { MusicReview, MusicReviewAction, MusicReviewProgress, type ReviewSort } from './MusicReview'
+import {
+  MusicReview,
+  MusicReviewAction,
+  MusicReviewProgress,
+  type ReviewSort,
+  visibleGroups,
+} from './MusicReview'
 import { useReviewSelection } from './MusicReviewColumn'
 import { MusicReviewDetail, type ReviewSync } from './MusicReviewDetail'
 
@@ -110,26 +116,31 @@ function Panes({
   onClose?: () => void
 }) {
   const [staged, setStaged] = useState(base.staged)
-  const r: Review = {
-    ...base,
-    staged,
-    toggleStaged: (key) => {
-      base.toggleStaged(key)
-      setStaged((s) => {
-        const next = new Set(s)
-        if (!next.delete(key)) next.add(key)
-        return next
-      })
-    },
-  }
+  // Stable between renders like the real hook's value, so memos keyed on it hold.
+  const r: Review = useMemo(
+    () => ({
+      ...base,
+      staged,
+      toggleStaged: (key) => {
+        base.toggleStaged(key)
+        setStaged((s) => {
+          const next = new Set(s)
+          if (!next.delete(key)) next.add(key)
+          return next
+        })
+      },
+    }),
+    [base, staged],
+  )
   const [search, setSearch] = useState('')
   const [confirming, setConfirming] = useState(false)
   const [sort, setSort] = useState<ReviewSort>('default')
-  const { selectedKey, select } = useReviewSelection(r, search, sort)
+  const { selectedKey, select, visible } = useReviewSelection(r, search, sort)
   return (
     <>
       <MusicReview
         review={r}
+        visible={visible}
         selectedKey={selectedKey}
         onSelect={select}
         onClose={onClose}
@@ -166,6 +177,27 @@ const ignoreFromMenu = () => {
   fireEvent.click(screen.getByTestId('music-review-more'))
   fireEvent.click(screen.getByTestId('music-review-ignore'))
 }
+
+// The search folds accents and invisible characters out of every name in the review, on a
+// library of thousands of groups. It ran three times per render (the column, its keys and
+// the selection each filtered again) on every keystroke; one pass per search is the budget.
+describe('MusicReview search cost', () => {
+  it('filters the groups once per search, not once per consumer', async () => {
+    const many = Array.from({ length: 40 }, (_, i) => ({ ...group, key: `artist||case|g${i}` }))
+    const base = review({ spelling: many })
+    render(<Panes review={base} />)
+    const normalize = vi.spyOn(String.prototype, 'normalize')
+    await act(async () => {
+      fireEvent.change(screen.getByTestId('music-review-search'), { target: { value: 'lara' } })
+    })
+    const perKeystroke = normalize.mock.calls.length
+    normalize.mockClear()
+    visibleGroups(base, 'lara', 'default')
+    const onePass = normalize.mock.calls.length
+    normalize.mockRestore()
+    expect(perKeystroke).toBe(onePass)
+  })
+})
 
 describe('MusicReview', () => {
   // The column is for finding a group; deciding happens in the detail beside it, so a
@@ -1993,6 +2025,7 @@ describe('MusicReview', () => {
 describe('list review', () => {
   const listReview = (over: Partial<Review> = {}) => review({ kind: 'list', ...over })
   const columnProps = {
+    visible: { spelling: [], duplicates: [] },
     selectedKey: null,
     onSelect: vi.fn(),
     onClose: vi.fn(),
