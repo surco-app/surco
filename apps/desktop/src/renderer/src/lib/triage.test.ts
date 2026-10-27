@@ -213,6 +213,10 @@ describe('matchesFilter / qualityCounts', () => {
       noCues: 0,
       unanalysedRekordbox: 0,
       unanalysedEngine: 0,
+      noCover: 5,
+      smallCover: 0,
+      noBpm: 5,
+      noKey: 5,
     })
   })
 })
@@ -302,6 +306,55 @@ describe('unanalysed in a DJ library filter', () => {
   })
 })
 
+describe('tags filter', () => {
+  const t = (
+    id: string,
+    over: Partial<TrackItem> = {},
+    meta: Partial<TrackMetadata> = {},
+  ): TrackItem =>
+    ({
+      id,
+      status: 'idle',
+      meta: { bpm: '128', key: '8A', ...meta },
+      coverUrl: 'data:cover',
+      embeddedCover: 'data:cover',
+      embeddedCoverDims: { w: 1400, h: 1400 },
+      ...over,
+    }) as TrackItem
+  const tracks = [
+    t('complete'),
+    t('bare', { coverUrl: undefined, embeddedCover: undefined, embeddedCoverDims: undefined }),
+    t('library-art', {
+      coverUrl: undefined,
+      embeddedCover: undefined,
+      embeddedCoverDims: undefined,
+      sourcePreview: { title: '', artist: '', durationSec: 300, cues: [], coverUrl: 'thumb:1' },
+    }),
+    t('thumbnail', { embeddedCoverDims: { w: 300, h: 300 } }),
+    t('thumbnail-replaced', { embeddedCoverDims: { w: 300, h: 300 }, coverUrl: 'https://big' }),
+    t('no-tempo', {}, { bpm: ' ' }),
+    t('no-key', {}, { key: '' }),
+    t(
+      'still-reading',
+      { loadingMeta: true, coverUrl: undefined, embeddedCover: undefined },
+      { bpm: '', key: '' },
+    ),
+  ]
+
+  // The tag work a DJ notices on the player's screen: no artwork, artwork too soft for a
+  // CDJ, or no tempo or key to mix by. Each is something matching a release fixes, so the
+  // filter hands over exactly the rows that need it. A row still being read has no tags
+  // yet and belongs to none of them.
+  it('buckets the tracks whose artwork, tempo or key still needs work', () => {
+    const ids = (tags: FilterSelection['tags']) => by(tracks, { tags }).map((x) => x.id)
+    expect(ids('noCover')).toEqual(['bare'])
+    expect(ids('smallCover')).toEqual(['thumbnail'])
+    expect(ids('noBpm')).toEqual(['no-tempo'])
+    expect(ids('noKey')).toEqual(['no-key'])
+    expect(qualityCounts(tracks)).toMatchObject({ noCover: 1, smallCover: 1, noBpm: 1, noKey: 1 })
+  })
+})
+
 describe('filterSessionKey', () => {
   // The list keeps every row a filter has shown until the filter changes, and this key is
   // how it notices the change. Switching from silence to clipping kept the silence rows on
@@ -314,6 +367,8 @@ describe('filterSessionKey', () => {
       { duplicates: 'duplicates' },
       { attention: 'silence' },
       { attention: 'clipping' },
+      { tags: 'noCover' },
+      { tags: 'noBpm' },
       { format: 'WAV' },
     ]
     const keys = [EMPTY_FILTER, ...picks.map((p) => ({ ...EMPTY_FILTER, ...p }))].map(

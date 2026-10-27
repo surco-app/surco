@@ -26,6 +26,10 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   noCues: 0,
   unanalysedRekordbox: 0,
   unanalysedEngine: 0,
+  noCover: 0,
+  smallCover: 0,
+  noBpm: 0,
+  noKey: 0,
   inLibrary: 0,
   notInLibrary: 0,
   duplicates: 0,
@@ -189,6 +193,14 @@ describe('QualityFilterBar', () => {
     expect(screen.queryByTestId('quality-filter-unanalysedRekordbox')).toBeNull()
     fireEvent.click(screen.getByTestId('quality-filter-unanalysedEngine'))
     expect(onChange).toHaveBeenCalledWith(sel({ attention: 'unanalysedEngine' }))
+  })
+
+  it('lists the tag buckets that hold tracks and filters the tags axis', () => {
+    const { onChange } = renderBar({ tally: tally({ noCover: 3, noKey: 2 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.queryByTestId('quality-filter-noBpm')).toBeNull()
+    fireEvent.click(screen.getByTestId('quality-filter-noKey'))
+    expect(onChange).toHaveBeenCalledWith(sel({ tags: 'noKey' }))
   })
 
   it('picking a provider bucket filters the conversion axis', () => {

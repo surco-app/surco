@@ -110,6 +110,10 @@
       "noCues": "Sans cues",
       "unanalysedRekordbox": "Non analysées dans rekordbox",
       "unanalysedEngine": "Non analysées dans Engine DJ",
+      "noCover": "Sans pochette",
+      "smallCover": "Petite pochette",
+      "noBpm": "Sans BPM",
+      "noKey": "Sans tonalité",
       "trashSuspects_one": "Mettre le fichier douteux à la corbeille",
       "trashSuspects_other": "Mettre les {{count}} fichiers douteux à la corbeille",
       "current": "Filtre : {{filter}} {{count}}"

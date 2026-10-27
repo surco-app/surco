@@ -1,6 +1,6 @@
 import type { TrackItem } from '../types'
 import { foldText } from './normalizeText'
-import { gradedExt, isTranscode, qualityVerdict, type Verdict } from './quality'
+import { gradedExt, isLowResCover, isTranscode, qualityVerdict, type Verdict } from './quality'
 
 // The per-track quality verdict surfaced as a row badge, so a whole dropped folder
 // can be triaged at a glance instead of opening each track. 'unanalyzed' covers both
@@ -70,6 +70,10 @@ export type AttentionFilter =
   | 'noCues'
   | 'unanalysedRekordbox'
   | 'unanalysedEngine'
+// The tag work matching a release fixes: no artwork, artwork too small for a CDJ screen
+// (the editor's own low-res rule), no tempo, no key. A row still being read has no tags
+// yet, so it belongs to none of them.
+export type TagsFilter = 'noCover' | 'smallCover' | 'noBpm' | 'noKey'
 
 // One selection per dimension, all combined with AND. `format` is the source container
 // ('WAV', 'FLAC'…, see formatBuckets / sourceFormat); like the rest, null means "any".
@@ -79,6 +83,7 @@ export interface FilterSelection {
   library: LibraryFilter | null
   duplicates: DuplicatesFilter | null
   attention: AttentionFilter | null
+  tags: TagsFilter | null
   format: string | null
 }
 
@@ -86,6 +91,7 @@ export const EMPTY_FILTER: FilterSelection = {
   quality: null,
   conversion: null,
   attention: null,
+  tags: null,
   library: null,
   duplicates: null,
   format: null,
@@ -145,12 +151,25 @@ export function matchesFilter(track: TrackItem, sel: FilterSelection): boolean {
   if (sel.attention === 'noCues' && !hasNoCues(track)) return false
   if (sel.attention === 'unanalysedRekordbox' && unanalysedIn(track) !== 'rekordbox') return false
   if (sel.attention === 'unanalysedEngine' && unanalysedIn(track) !== 'engine') return false
+  if (sel.tags && !matchesTags(track, sel.tags)) return false
   if (sel.format && sourceFormat(track) !== sel.format) return false
   return true
 }
 
 function hasNoCues(track: TrackItem): boolean {
   return track.sourcePreview?.cues.length === 0
+}
+
+function matchesTags(track: TrackItem, filter: TagsFilter): boolean {
+  if (track.loadingMeta) return false
+  if (filter === 'noCover') return !track.coverUrl && !track.sourcePreview?.coverUrl
+  if (filter === 'smallCover') {
+    const original = Boolean(track.coverUrl) && track.coverUrl === track.embeddedCover
+    const dims = track.embeddedCoverDims
+    return original && dims !== undefined && isLowResCover(dims.w, dims.h)
+  }
+  if (filter === 'noBpm') return !track.meta?.bpm?.trim()
+  return !track.meta?.key?.trim()
 }
 
 // The DJ program still to analyse this row. rekordbox ships no wave file for a track it has
@@ -330,6 +349,10 @@ export function qualityCounts(tracks: TrackItem[]): {
   noCues: number
   unanalysedRekordbox: number
   unanalysedEngine: number
+  noCover: number
+  smallCover: number
+  noBpm: number
+  noKey: number
 } {
   let suspect = 0
   let good = 0
@@ -348,6 +371,10 @@ export function qualityCounts(tracks: TrackItem[]): {
   let noCues = 0
   let unanalysedRekordbox = 0
   let unanalysedEngine = 0
+  let noCover = 0
+  let smallCover = 0
+  let noBpm = 0
+  let noKey = 0
   for (const t of tracks) {
     const q = trackQuality(t)
     if (q === 'warn' || q === 'bad' || q === 'processed' || q === 'transcoded') suspect += 1
@@ -368,6 +395,10 @@ export function qualityCounts(tracks: TrackItem[]): {
     const waitingOn = unanalysedIn(t)
     if (waitingOn === 'rekordbox') unanalysedRekordbox += 1
     else if (waitingOn === 'engine') unanalysedEngine += 1
+    if (matchesTags(t, 'noCover')) noCover += 1
+    if (matchesTags(t, 'smallCover')) smallCover += 1
+    if (matchesTags(t, 'noBpm')) noBpm += 1
+    if (matchesTags(t, 'noKey')) noKey += 1
   }
   return {
     suspect,
@@ -387,6 +418,10 @@ export function qualityCounts(tracks: TrackItem[]): {
     noCues,
     unanalysedRekordbox,
     unanalysedEngine,
+    noCover,
+    smallCover,
+    noBpm,
+    noKey,
   }
 }
 

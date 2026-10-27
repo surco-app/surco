@@ -8,7 +8,11 @@ import {
   Eye,
   FileAudio,
   FlagOff,
+  Gauge,
   Hourglass,
+  ImageMinus,
+  ImageOff,
+  KeyRound,
   List,
   type LucideIcon,
   Plus,
@@ -41,7 +45,8 @@ type ConversionMode =
 type LibraryMode = 'inLibrary' | 'notInLibrary'
 type DuplicatesMode = 'duplicates'
 type AttentionMode = 'silence' | 'clipping' | 'noCues' | 'unanalysedRekordbox' | 'unanalysedEngine'
-type Mode = QualityMode | ConversionMode | LibraryMode | DuplicatesMode | AttentionMode
+type TagsMode = 'noCover' | 'smallCover' | 'noBpm' | 'noKey'
+type Mode = QualityMode | ConversionMode | LibraryMode | DuplicatesMode | AttentionMode | TagsMode
 
 const QUALITY_MODES: QualityMode[] = ['unanalyzed', 'suspect', 'good']
 const CONVERSION_MODES: ConversionMode[] = [
@@ -52,6 +57,7 @@ const CONVERSION_MODES: ConversionMode[] = [
   'matchedDiscogs',
   'matchedBandcamp',
 ]
+const TAGS_MODES: TagsMode[] = ['noCover', 'smallCover', 'noBpm', 'noKey']
 const LIBRARY_MODES: LibraryMode[] = ['notInLibrary', 'inLibrary']
 const DUPLICATES_MODES: DuplicatesMode[] = ['duplicates']
 const ATTENTION_MODES: AttentionMode[] = [
@@ -83,6 +89,10 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   noCues: FlagOff,
   unanalysedRekordbox: Hourglass,
   unanalysedEngine: Hourglass,
+  noCover: ImageOff,
+  smallCover: ImageMinus,
+  noBpm: Gauge,
+  noKey: KeyRound,
 }
 
 type Tally = ReturnType<typeof qualityCounts>
@@ -94,6 +104,7 @@ function axisOf(mode: Mode): keyof Omit<FilterSelection, 'format'> {
   if ((CONVERSION_MODES as string[]).includes(mode)) return 'conversion'
   if (mode === 'duplicates') return 'duplicates'
   if ((ATTENTION_MODES as string[]).includes(mode)) return 'attention'
+  if ((TAGS_MODES as string[]).includes(mode)) return 'tags'
   return 'library'
 }
 
@@ -203,6 +214,9 @@ export function QualityFilterBar({
     ...(ATTENTION_MODES.some((m) => tally[m] > 0)
       ? [ATTENTION_MODES.filter((m) => tally[m] > 0)]
       : []),
+    // The tag work matching a release fixes, on its own axis so it stacks with the retouch
+    // buckets: artwork missing or too soft, no tempo, no key. Listed per bucket like those.
+    ...(TAGS_MODES.some((m) => tally[m] > 0) ? [TAGS_MODES.filter((m) => tally[m] > 0)] : []),
     // Apple Music library buckets, listed only once the snapshot has resolved a verdict
     // for at least one track — which also keeps them off Windows, where there is no
     // library to read. "Not in library" leads: it's the actionable bucket.
@@ -221,6 +235,7 @@ export function QualityFilterBar({
     !value.library &&
     !value.duplicates &&
     !value.attention &&
+    !value.tags &&
     !value.format
 
   // Focus an active option when the menu opens (the first set axis, or "All" when nothing
@@ -231,6 +246,7 @@ export function QualityFilterBar({
     value.library ??
     value.duplicates ??
     value.attention ??
+    value.tags ??
     'all'
   // Toggle one axis and close, like a native select. The axes are still independent — the
   // reopened menu shows the current ticks — so layering a second axis is one reopen away,
@@ -288,6 +304,12 @@ export function QualityFilterBar({
       Icon: FILTER_ICONS[value.attention],
       label: tr(`sidebar.filter.${value.attention}`),
       count: countOf(value.attention),
+    })
+  if (value.tags)
+    activeChips.push({
+      Icon: FILTER_ICONS[value.tags],
+      label: tr(`sidebar.filter.${value.tags}`),
+      count: countOf(value.tags),
     })
   if (value.format)
     activeChips.push({

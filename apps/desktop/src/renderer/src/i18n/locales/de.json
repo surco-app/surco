@@ -110,6 +110,10 @@
       "noCues": "Ohne Cues",
       "unanalysedRekordbox": "In rekordbox nicht analysiert",
       "unanalysedEngine": "In Engine DJ nicht analysiert",
+      "noCover": "Ohne Cover",
+      "smallCover": "Kleines Cover",
+      "noBpm": "Ohne BPM",
+      "noKey": "Ohne Tonart",
       "trashSuspects_one": "Die zweifelhafte Datei in den Papierkorb legen",
       "trashSuspects_other": "Die {{count}} zweifelhaften Dateien in den Papierkorb legen",
       "current": "Filter: {{filter}} {{count}}"
