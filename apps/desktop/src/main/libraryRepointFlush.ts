@@ -38,6 +38,7 @@ export interface RepointKeys {
   writeFailed: string
   runningReason: string
   collectionMissing: string
+  collectionUnplugged: string
 }
 
 export interface FlushLibraryDeps<T = RekordboxRepoint> {
@@ -46,6 +47,9 @@ export interface FlushLibraryDeps<T = RekordboxRepoint> {
   // The library is switched on but its collection is not on disk. Told apart from an empty
   // path so the run says so instead of looking like it worked.
   collectionMissing?: boolean
+  // …because the drive it lives on is not mounted, and the caller keeps the run's changes
+  // in its queue until the drive is back.
+  unplugged?: boolean
   // Closes this run's begin/end pair and returns what it accumulated — empty when this
   // end was nested inside a still-open outer batch, which flushes later.
   endBatch: () => T[]
@@ -103,8 +107,10 @@ function blockedKey(keys: RepointKeys, reason: string): string {
 function summaryOf(
   keys: RepointKeys,
   result: FlushResult,
+  unplugged?: boolean,
 ): { detailKey: string; detailParams?: { count: number } } {
-  if (result.blocked === 'collection-missing') return { detailKey: keys.collectionMissing }
+  if (result.blocked === 'collection-missing')
+    return { detailKey: unplugged ? keys.collectionUnplugged : keys.collectionMissing }
   if (result.blocked) return { detailKey: blockedKey(keys, result.blocked) }
   if (result.written > 0) {
     return { detailKey: keys.written, detailParams: { count: result.written } }
@@ -128,7 +134,7 @@ export async function flushLibraryRepoints<T = RekordboxRepoint>(
     const missing: FlushResult = { written: 0, skipped: [], blocked: 'collection-missing' }
     if (!deps.track) return missing
     return deps.track('export', keys.step, async () => missing, {
-      summary: (result: FlushResult) => summaryOf(keys, result),
+      summary: (result: FlushResult) => summaryOf(keys, result, deps.unplugged),
     })
   }
   // Wrapped only once there is real work: a run whose tracks the library never had would

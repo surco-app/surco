@@ -1952,6 +1952,9 @@
     "rekordboxCollectionMissing": "Ignoré, la collection rekordbox est introuvable",
     "engineCollectionMissing": "Ignoré, la bibliothèque Engine DJ est introuvable",
     "traktorSyncCollectionMissing": "Ignoré, collection.nml est introuvable",
+    "rekordboxCollectionUnplugged": "Sera appliqué quand le disque sera connecté",
+    "engineCollectionUnplugged": "Sera appliqué quand le disque sera connecté",
+    "traktorSyncCollectionUnplugged": "Sera appliqué quand le disque sera connecté",
     "reviewRun_one": "Revue de Music, {{count}} morceau",
     "reviewRun_other": "Revue de Music, {{count}} morceaux",
     "reviewFix": {

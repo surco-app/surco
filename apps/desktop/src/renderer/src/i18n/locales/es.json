@@ -1952,6 +1952,9 @@
     "rekordboxCollectionMissing": "Omitido, no se encuentra la colección de rekordbox",
     "engineCollectionMissing": "Omitido, no se encuentra la biblioteca de Engine DJ",
     "traktorSyncCollectionMissing": "Omitido, no se encuentra collection.nml",
+    "rekordboxCollectionUnplugged": "Se aplicará al conectar el disco",
+    "engineCollectionUnplugged": "Se aplicará al conectar el disco",
+    "traktorSyncCollectionUnplugged": "Se aplicará al conectar el disco",
     "reviewRun_one": "Revisión de Music, {{count}} pista",
     "reviewRun_other": "Revisión de Music, {{count}} pistas",
     "reviewFix": {

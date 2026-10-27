@@ -60,10 +60,15 @@ export async function flushTraktorSync(deps: FlushTraktorSyncDeps): Promise<Libr
   if (patches.length === 0) return { outcome: 'nothing' }
   if (!deps.traktorNmlPath) {
     if (!deps.collectionMissing) return { outcome: 'nothing' }
+    const kept = deps.unplugged && deps.queue !== undefined
     await deps.track('export', 'activity.traktorSync', async () => ({ written: false }), {
-      summary: () => ({ detailKey: 'activity.traktorSyncCollectionMissing' }),
+      summary: () => ({
+        detailKey: kept
+          ? 'activity.traktorSyncCollectionUnplugged'
+          : 'activity.traktorSyncCollectionMissing',
+      }),
     })
-    if (deps.unplugged) await deps.queue?.hold(patches, deps.traktorNmlPath)
+    if (kept) await deps.queue?.hold(patches, deps.traktorNmlPath)
     return { outcome: 'missing' }
   }
   if (!(await deps.ensureTraktorClosed())) {

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import type { ActivityEvent } from '../shared/types'
 
 vi.mock('electron', () => ({ app: { getPath: () => '/tmp' } }))
 
@@ -47,6 +48,7 @@ const FILE_USE = vi.hoisted(() => {
 })
 vi.mock('./libraryFileUse', () => ({ djLibraryFileUse: FILE_USE.open }))
 
+import { activity } from './activity'
 import {
   duplicateLibraryDeps,
   flushConversionBatch,
@@ -96,6 +98,26 @@ describe('flushConversionBatch with master.db on an unplugged drive', () => {
       STATUS.rekordbox = { enabled: true, found: true }
     }
   })
+
+  it('tells the DJ in Activity the changes land when the drive is connected', async () => {
+    Object.assign(SETTINGS, { rekordboxDbPath: '/Volumes/Surco Desconectado/master.db' })
+    STATUS.rekordbox = { enabled: true, found: false }
+    const events: ActivityEvent[] = []
+    const stop = activity.subscribe((event) => events.push(event))
+    try {
+      await flushConversionBatch(host(), sessions, { enqueue: vi.fn(), applyQuietly: vi.fn() })
+    } finally {
+      stop()
+      Object.assign(SETTINGS, { rekordboxDbPath: '/c/master.db' })
+      STATUS.rekordbox = { enabled: true, found: true }
+    }
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        labelKey: 'activity.rekordboxSync',
+        detailKey: 'activity.rekordboxCollectionUnplugged',
+      }),
+    )
+  })
 })
 
 // Engine DJ abierto al acabar una conversión en su sitio: el aviso pedía volver a convertir,
@@ -141,6 +163,33 @@ describe('flushConversionBatch with Engine DJ open', () => {
     } finally {
       Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
     }
+  })
+
+  it('tells the DJ in Activity the Engine changes land when the drive is connected', async () => {
+    Object.assign(SETTINGS, {
+      syncEngineDj: true,
+      engineLibraryDir: '/Volumes/Surco Desconectado/Engine Library',
+    })
+    const events: ActivityEvent[] = []
+    const stop = activity.subscribe((event) => events.push(event))
+    try {
+      await flushConversionBatch(
+        host(),
+        sessions,
+        { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        undefined,
+        { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      )
+    } finally {
+      stop()
+      Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
+    }
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        labelKey: 'activity.engineSync',
+        detailKey: 'activity.engineCollectionUnplugged',
+      }),
+    )
   })
 
   // La cola solo guarda los cambios cuando la razón es la suya de "app abierta". Con la de

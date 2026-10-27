@@ -1952,6 +1952,9 @@
     "rekordboxCollectionMissing": "Skipped, the rekordbox collection was not found",
     "engineCollectionMissing": "Skipped, the Engine DJ library was not found",
     "traktorSyncCollectionMissing": "Skipped, collection.nml was not found",
+    "rekordboxCollectionUnplugged": "Will be applied when the drive is connected",
+    "engineCollectionUnplugged": "Will be applied when the drive is connected",
+    "traktorSyncCollectionUnplugged": "Will be applied when the drive is connected",
     "reviewRun_one": "Music review, {{count}} track",
     "reviewRun_other": "Music review, {{count}} tracks",
     "reviewFix": {

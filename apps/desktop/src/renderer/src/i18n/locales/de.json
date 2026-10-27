@@ -1952,6 +1952,9 @@
     "rekordboxCollectionMissing": "Übersprungen, die rekordbox-Sammlung wurde nicht gefunden",
     "engineCollectionMissing": "Übersprungen, die Engine-DJ-Bibliothek wurde nicht gefunden",
     "traktorSyncCollectionMissing": "Übersprungen, collection.nml wurde nicht gefunden",
+    "rekordboxCollectionUnplugged": "Wird angewendet, sobald das Laufwerk angeschlossen ist",
+    "engineCollectionUnplugged": "Wird angewendet, sobald das Laufwerk angeschlossen ist",
+    "traktorSyncCollectionUnplugged": "Wird angewendet, sobald das Laufwerk angeschlossen ist",
     "reviewRun_one": "Music-Prüfung, {{count}} Titel",
     "reviewRun_other": "Music-Prüfung, {{count}} Titel",
     "reviewFix": {

@@ -13,6 +13,7 @@ const KEYS: RepointKeys = {
   writeFailed: 'writeFailed',
   runningReason: 'app-running',
   collectionMissing: 'collectionMissing',
+  collectionUnplugged: 'collectionUnplugged',
 }
 
 describe('flushLibraryRepoints', () => {
@@ -33,13 +34,17 @@ describe('flushLibraryRepoints', () => {
   // Reported 08/10: a configured rekordbox path to a deleted copy made the flush return
   // early with nothing, so the review applied everywhere else and rekordbox looked fine.
   describe('a library that is on but whose collection is not there', () => {
-    const missing = async (track?: Parameters<typeof flushLibraryRepoints>[0]['track']) => {
+    const missing = async (
+      track?: Parameters<typeof flushLibraryRepoints>[0]['track'],
+      unplugged?: boolean,
+    ) => {
       let detail: unknown
       const repointTracks = vi.fn(async () => [])
       const result = await flushLibraryRepoints(
         {
           collectionPath: '',
           collectionMissing: true,
+          unplugged,
           endBatch: () => [{ path: '/m/a.mp3' }],
           repointTracks,
           track:
@@ -60,6 +65,13 @@ describe('flushLibraryRepoints', () => {
       expect(result).toEqual({ written: 0, skipped: [], blocked: 'collection-missing' })
       expect(detail).toEqual({ detailKey: 'collectionMissing' })
       expect(repointTracks).not.toHaveBeenCalled()
+    })
+
+    // An unplugged drive is not a lost collection: the run's changes wait in the queue for
+    // it, and a row saying "Skipped" read as if they had been thrown away.
+    it('says the changes land when the drive is connected, for a collection on an unplugged drive', async () => {
+      const { detail } = await missing(undefined, true)
+      expect(detail).toEqual({ detailKey: 'collectionUnplugged' })
     })
 
     it('stays quiet when there was nothing to repoint', async () => {

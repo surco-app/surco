@@ -21,6 +21,7 @@ export const REKORDBOX_KEYS = {
   writeFailed: 'activity.rekordboxSyncWriteFailed',
   runningReason: 'rekordbox-running',
   collectionMissing: 'activity.rekordboxCollectionMissing',
+  collectionUnplugged: 'activity.rekordboxCollectionUnplugged',
 }
 
 export function flushRekordboxSync(deps: FlushRekordboxDeps): Promise<FlushResult> {

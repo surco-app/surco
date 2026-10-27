@@ -173,13 +173,15 @@ export async function flushConversionBatch(
   // one being open or unwritable must not stop the other from being updated.
   const rekordbox = rekordboxWriteDeps(host)
   const collectionPath = rekordboxCollectionPath()
+  const rekordboxUnplugged = onUnpluggedDrive(getSettings().rekordboxDbPath)
   await queueConversionRun(repoints, {
     collectionPath,
     held: rekordbox.held,
-    unplugged: onUnpluggedDrive(getSettings().rekordboxDbPath),
+    unplugged: rekordboxUnplugged,
     flushRepoints: async (list) => {
       const result = await flushRekordboxSync({
         ...rekordbox,
+        unplugged: rekordboxUnplugged,
         showBlockedDialog: () => {},
         endBatch: () => list,
         repointTracks: (path, items) => repointRekordbox(path, items, sessions),
@@ -200,16 +202,15 @@ export async function flushConversionBatch(
   // writes to. With Engine open the run waits in its queue, as rekordbox's does: the dialog
   // asked to convert again, which an in-place conversion cannot, its source being gone.
   const engineRepoints = repoints.filter((repoint) => repoint.from !== repoint.to)
+  const engineUnplugged = onUnpluggedDrive(getSettings().engineLibraryDir)
   const engineResult = await flushEngineSync({
     ...engineFlushDeps(host),
-    ...(engineQueue && { showBlockedDialog: () => {} }),
+    ...(engineQueue && { showBlockedDialog: () => {}, unplugged: engineUnplugged }),
     endBatch: () => engineRepoints,
     repointTracks: (libraryDir, list) => repointEngine(libraryDir, list, sessions),
   })
   logLibraryFlush('Engine DJ repoint', engineResult)
-  const unplugged =
-    engineResult.blocked === 'collection-missing' &&
-    onUnpluggedDrive(getSettings().engineLibraryDir)
+  const unplugged = engineResult.blocked === 'collection-missing' && engineUnplugged
   if (engineQueue && (engineResult.blocked === ENGINE_KEYS.runningReason || unplugged)) {
     engineQueue.enqueue([], engineRepoints)
     engineQueue.applyQuietly()
