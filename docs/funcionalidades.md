@@ -1554,9 +1554,15 @@ se propaga. Una pista con cambios sin guardar en el otro programa no se toca, sa
 pida con «Ponerlo también ahí y perder esos cambios». Si la colección no tiene la pista, o la
 tiene dos veces, se omite sin decir nada. Se elige a qué programas llega en Ajustes → Cues
 (`cueFlowToRekordbox`, `cueFlowToTraktor`, `cueFlowToEngine`, encendidos, `settings.ts:86`).
-Probado con copias de una colección real, de rekordbox a Engine DJ con AIFF. Las cues de Engine
-caen en el golpe 1 de su propia rejilla, y el punto coincide con el de rekordbox a menos de
-1 ms. Con Traktor y con MP3 no se ha medido.
+El punto se ajusta al golpe más cercano del otro programa, nunca a su compás
+(`contextOf`, `lib/cueTwins.ts`). Medido sobre 19 pistas que una colección real tiene en
+rekordbox y en Engine DJ (AIFF): las rejillas coinciden a menos de 13 ms en 16 de ellas y a
+26 ms en otra, pero en 2 Engine llama golpe 4 al golpe 1 de rekordbox, y en 1 su rejilla se
+separa hasta 230 ms a lo largo de la pista. Ajustar al compás movía esas cues un golpe.
+Probado con copias de esa colección: las cues de Engine caen a 16, 32 y 48 compases exactos
+del punto y a 1 ms del golpe de rekordbox, también en una pista con el compás desplazado.
+Con Traktor y con MP3 no se ha medido; un desfase de MP3 de decenas de ms lo absorbe el
+ajuste al golpe, que solo fallaría pasado medio golpe (unos 230 ms a 128 BPM).
 
 **Letras en orden de la pista** (`cueLettersByTime`, encendido por defecto,
 `settings.ts:85`). Al poner o quitar cues las letras se reasignan por tiempo, así que la A
