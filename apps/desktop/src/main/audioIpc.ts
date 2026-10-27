@@ -567,6 +567,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     // it invalidates rather than racing it, so the audio that lands always matches the
     // dials the user is looking at.
     declickRender?.kill('SIGKILL')
+    let mine: typeof declickRender = null
     try {
       const out = await renderDeclickRepaired(
         inputPath,
@@ -576,6 +577,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
           if (!e.sender.isDestroyed()) e.sender.send('audio:declickPreviewProgress', done)
         },
         (child) => {
+          mine = child
           declickRender = child
         },
       )
@@ -585,7 +587,9 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       log.error('audio:declickPreview failed', err)
       return null
     } finally {
-      declickRender = null
+      // A superseded render winds down after its successor started: clearing the handle
+      // then would leave the running render with no way to be cancelled.
+      if (declickRender === mine) declickRender = null
     }
   })
 
