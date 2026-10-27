@@ -5,6 +5,7 @@ import type { CueQuantize } from '../../../shared/cueQuantize'
 import { nearestBeat } from '../../../shared/cueRules'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import type { CueWaveColumn } from '../../../shared/types'
+import { useThemeRgb } from '../hooks/useThemeRgb'
 import { paintWave, waveColumns } from '../lib/cueDetail'
 import {
   type CueGhost,
@@ -125,6 +126,10 @@ export function CueWave({
   }, [seeking, seekAt])
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const waveHeight = slim ? SLIM_WAVE_HEIGHT : WAVE_HEIGHT
+  // The canvas reads its colours as it paints, so a theme switch has to repaint it.
+  const accent = useThemeRgb('--color-accent')
+  const faint = useThemeRgb('--color-fg-faint')
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `accent` and `faint` are the theme trigger; the paint reads the same tokens off the canvas.
   useLayoutEffect(() => {
     const canvas = canvasRef.current
     const g = canvas?.getContext('2d')
@@ -141,7 +146,7 @@ export function CueWave({
       peak: style.getPropertyValue('--color-fg-faint').trim(),
       body: style.getPropertyValue('--color-accent').trim(),
     })
-  }, [detail, stripPx, durationMs, waveHeight])
+  }, [detail, stripPx, durationMs, waveHeight, accent, faint])
   const waveSvg = useMemo(
     () =>
       detail ? (

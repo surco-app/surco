@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
@@ -363,6 +363,29 @@ describe('CueWave', () => {
     expect(new Set(fillRect.mock.calls.map(([x]) => x)).size).toBe(canvas.width)
     expect(fillRect.mock.calls.every(([, , w]) => w === 1)).toBe(true)
     vi.unstubAllGlobals()
+  })
+
+  // The canvas cannot follow CSS variables, so the colours are read when it paints. Read
+  // only on new data or a resize, a theme switch left the overview in the old theme's
+  // colours until the next track.
+  it('repaints the overview in the new colours when the theme switches', async () => {
+    const clearRect = vi.fn()
+    const fake = { clearRect, fillRect: vi.fn(), setTransform: vi.fn(), fillStyle: '' }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
+    const root = document.documentElement
+    root.style.setProperty('--color-accent', '#7aa2f7')
+    try {
+      setup({ detail: new Uint16Array(12000).fill((7 << 13) | (20 << 2)) })
+      const painted = clearRect.mock.calls.length
+      await act(async () => {
+        root.style.setProperty('--color-accent', '#2959aa')
+        root.setAttribute('data-theme', 'light')
+      })
+      expect(clearRect.mock.calls.length).toBeGreaterThan(painted)
+    } finally {
+      root.style.removeProperty('--color-accent')
+      root.removeAttribute('data-theme')
+    }
   })
 
   it('keeps the light overview bars until the detailed wave arrives', () => {
