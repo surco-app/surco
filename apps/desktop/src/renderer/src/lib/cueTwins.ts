@@ -1,6 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { CueFlow } from '../../../shared/cueFlows'
-import { ALL_SLOTS, SAME_POSITION_MS } from '../../../shared/cueRules'
+import { ALL_SLOTS, HOT_KINDS, SAME_POSITION_MS, type WantedCue } from '../../../shared/cueRules'
 import { isEngineContent } from '../../../shared/engineContent'
 import { isTraktorContent, TRAKTOR_SLOTS } from '../../../shared/traktorContent'
 import type { CueLibrary, LibraryTracks, SaveCuesRequest, TrackCues } from '../../../shared/types'
@@ -99,6 +99,25 @@ function contextOf(read: TrackCues, library: CueLibrary, settings: TwinSettings)
   }
 }
 
+// In the other program a flow only adds: every cue already there stays exactly as it was,
+// since the DJ may have set it up by hand in that program, and what the flow placed takes
+// the letters left free, in track order, as far as they go. A CALL that only paired a hot
+// cue left without a letter goes with it.
+function onlyAdded(baseline: WantedCue[], placed: WantedCue[], kinds: number[]): WantedCue[] {
+  const fresh = placed.filter(
+    (c) => !baseline.some((b) => (b.kind === 0) === (c.kind === 0) && near(b.ms, c.ms)),
+  )
+  const free = kinds.filter((k) => !baseline.some((b) => b.kind === k))
+  const hot = fresh.filter((c) => c.kind !== 0).sort((a, b) => a.ms - b.ms)
+  const letter = new Map(hot.slice(0, free.length).map((c, i) => [c, free[i]]))
+  const left = hot.slice(free.length)
+  const added = fresh.flatMap((c): WantedCue[] => {
+    if (c.kind !== 0) return letter.has(c) ? [{ ...c, kind: letter.get(c) as number }] : []
+    return left.some((h) => near(h.ms, c.ms)) ? [] : [c]
+  })
+  return [...baseline, ...added]
+}
+
 async function planOne(
   client: QueryClient,
   source: TwinSource,
@@ -128,10 +147,8 @@ async function planOne(
       ),
     start,
   )
-  const result = wantedOfDraft(placed.cues)
-  const added = result.filter(
-    (c) => !baseline.some((b) => (b.kind === 0) === (c.kind === 0) && near(b.ms, c.ms)),
-  )
+  const result = onlyAdded(baseline, wantedOfDraft(placed.cues), ctx.slots?.kinds ?? HOT_KINDS)
+  const added = result.slice(baseline.length)
   const hot = added.filter((c) => c.kind !== 0).length
   const calls = library === 'rekordbox' ? added.length - hot : 0
   if (hot + calls === 0) return null

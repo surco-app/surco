@@ -286,3 +286,34 @@ describe('the flow a break travels with', () => {
     expect(hotMs(plans)).toEqual([[bar(56)]])
   })
 })
+
+describe('what a flow does to the cues already in the other program', () => {
+  const ENGINE_ONLY: LibraryTracks = { engine: ENGINE }
+  const savedDrop = { id: 'm1', ms: bar(64), kind: 0, color: null }
+  const wantedThere = async (cues: TrackCues['cues'], points: number[]) => {
+    const { client } = setup(ENGINE_ONLY, { [ENGINE]: { ...READ, contentId: ENGINE, cues } })
+    const plans = await twinPlans(
+      client,
+      { ...SOURCE, breaks: [{ flowId: MIX_IN.id, points }] },
+      settings(),
+    )
+    return plans[0]?.status === 'planned' ? plans[0].request.wanted : null
+  }
+
+  // The DJ set those cues up in that program by hand: a flow carried from another program
+  // only adds what fits around them, it never takes one away or changes it.
+  it('keeps a hot cue there that the new break leaves without room', async () => {
+    const hand = { id: 'h1', ms: bar(48), kind: 1, color: 5 }
+    const wanted = await wantedThere([savedDrop, hand], [bar(60)])
+    expect(wanted).toEqual(expect.arrayContaining([savedDrop, hand]))
+    expect(wanted?.some((c) => c.kind !== 0 && c.ms === bar(44))).toBe(true)
+  })
+
+  it('keeps the colour and letter of a cue there that sits where the flow would place one', async () => {
+    const hand = { id: 'h1', ms: bar(48), kind: 3, color: 5 }
+    const wanted = await wantedThere([savedDrop, hand], [bar(128)])
+    expect(wanted).toEqual(expect.arrayContaining([savedDrop, hand]))
+    const added = wanted?.filter((c) => c.kind !== 0 && c.id === undefined)
+    expect(added?.map((c) => [c.ms, c.kind])).toEqual([[bar(112), 1]])
+  })
+})
