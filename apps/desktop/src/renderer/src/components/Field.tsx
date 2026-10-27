@@ -1,10 +1,12 @@
 import type React from 'react'
 import { memo, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useLatest } from '../hooks/useLatest'
 import type { TagList } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
 import type { FieldCleanedNote } from '../lib/fieldSpecs'
 import type { FieldWidth } from '../lib/fields'
+import { holdPendingEdit } from '../lib/pendingEdits'
 import { CleanSpark } from './CleanSpark'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
 import { SuggestionChips } from './SuggestionChips'
@@ -102,8 +104,10 @@ export const Field = memo(function Field({
     setDraft(next)
     onChange(next)
   }
+  const typed = useRef(value)
   function onType(next: string): void {
     dirty.current = true
+    typed.current = next
     setDraft(next)
     clearTimeout(timer.current)
     timer.current = setTimeout(() => commit(next), COMMIT_DEBOUNCE_MS)
@@ -132,9 +136,20 @@ export const Field = memo(function Field({
     const next = fields[fields.indexOf(e.currentTarget) + 1]
     next?.focus()
   }
-  // A late debounce firing after the field unmounts (track deselected mid-edit) would
-  // commit into a gone editor; clear it on unmount. Blur already flushes the common case.
-  useEffect(() => () => clearTimeout(timer.current), [])
+  // Text still in its pause is committed when a command or a selection change asks for it,
+  // and when the field goes away. The selection flushes before it moves, so by the time a
+  // track switch unmounts the field it is clean and nothing lands on the next track.
+  const latestCommit = useLatest(commit)
+  useEffect(() => {
+    const flush = () => {
+      if (dirty.current) latestCommit.current(typed.current)
+    }
+    const release = holdPendingEdit(flush)
+    return () => {
+      release()
+      flush()
+    }
+  }, [latestCommit])
   // A field never offers itself, and an empty field has nothing to insert.
   const insertable = (insertSources ?? []).filter((s) => s.key !== name && s.value.trim() !== '')
   // The menu also formats the field's own text and can offer a "without version"

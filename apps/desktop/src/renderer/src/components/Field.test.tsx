@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import { GENRE_TAGS } from '../lib/bulkEdit'
+import { flushPendingEdits } from '../lib/pendingEdits'
 import { Field } from './Field'
 
 afterEach(cleanup)
@@ -87,6 +88,34 @@ describe('Field committing', () => {
     rerender(<Field name="title" label="Title" value="Matched Title" onChange={onChange} />)
 
     expect(input.value).toBe('Hand Typed')
+  })
+
+  // ⌘⏎ converts the open track and moves on in the same keystroke, inside the typing pause.
+  // The command asks for pending text first, or the file is written with the old value.
+  it('commits text still in its pause when a command asks for it', () => {
+    const onChange = vi.fn()
+    render(<Field name="title" label="Title" value="" onChange={onChange} />)
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'Typed' } })
+
+    flushPendingEdits()
+
+    expect(onChange).toHaveBeenCalledWith('Typed')
+    vi.runAllTimers()
+    expect(onChange).toHaveBeenCalledTimes(1)
+  })
+
+  // A field that goes away mid-pause (its section hidden, the editor closing) keeps what
+  // was typed instead of silently dropping it.
+  it('commits text still in its pause when the field unmounts', () => {
+    const onChange = vi.fn()
+    const { unmount } = render(<Field name="title" label="Title" value="" onChange={onChange} />)
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'Typed' } })
+
+    unmount()
+
+    expect(onChange).toHaveBeenCalledWith('Typed')
+    vi.runAllTimers()
+    expect(onChange).toHaveBeenCalledTimes(1)
   })
 })
 

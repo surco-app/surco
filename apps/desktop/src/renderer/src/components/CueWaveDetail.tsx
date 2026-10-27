@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { nearestBeat } from '../../../shared/cueRules'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
+import { useThemeRgb } from '../hooks/useThemeRgb'
 import { type DetailSource, paintWave, waveColumns } from '../lib/cueDetail'
 import {
   type CueGhost,
@@ -257,8 +258,11 @@ export function CueWaveDetail({
     stage.addEventListener('wheel', onWheel, { passive: false })
     return () => stage.removeEventListener('wheel', onWheel)
   }, [])
+  // The strip reads its colours as it paints, so a theme switch has to repaint it.
+  const theme = `${useThemeRgb('--color-accent')} ${useThemeRgb('--color-fg-faint')}`
   const strip = useRef<{
     data: unknown
+    theme: string
     fromMs: number
     toMs: number
     span: number
@@ -280,6 +284,7 @@ export function CueWaveDetail({
       force ||
       !was ||
       was.data !== data ||
+      was.theme !== theme ||
       was.width !== width ||
       was.height !== height ||
       was.dpr !== dpr ||
@@ -295,6 +300,7 @@ export function CueWaveDetail({
       const reach = ((STRIP_WINDOWS - 1) / 2) * span
       strip.current = {
         data,
+        theme,
         fromMs: fromMs - reach,
         toMs: toMs + reach,
         span,

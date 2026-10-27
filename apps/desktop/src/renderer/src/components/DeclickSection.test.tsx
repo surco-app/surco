@@ -754,6 +754,51 @@ describe('DeclickSection', () => {
     expect(screen.getByTestId('declick-render')).toBeInTheDocument()
   })
 
+  // Cancel kills the render and main answers the dead render with no audio. That answer is
+  // the cancel the user asked for, not a failure: reporting it as one told them the repair
+  // had broken on a track it never finished trying.
+  it('does not report a render the user abandoned as failed', async () => {
+    let answer: (out: { path: string } | null) => void = () => {}
+    ;(window.api.declickPreview as ReturnType<typeof vi.fn>).mockReturnValue(
+      new Promise((r) => {
+        answer = r
+      }),
+    )
+    render(section({ value: { mode: 'standard', noise: 'off' } }))
+    await act(async () => {
+      fireEvent.click(await screen.findByTestId('declick-render'))
+    })
+    fireEvent.click(screen.getByTestId('declick-cancel'))
+    await act(async () => answer(null))
+    expect(screen.queryByTestId('declick-failed')).not.toBeInTheDocument()
+    expect(screen.getByTestId('declick-render')).toBeInTheDocument()
+  })
+
+  // Standard is rendering, the user switches to Strong and renders again. The Standard
+  // render landing late must not take the place of Strong's: the A/B would play Standard
+  // under the Strong dials, the one lie this preview cannot tell.
+  it('keeps the current preset audio when an older render lands late', async () => {
+    const answers: ((out: { path: string } | null) => void)[] = []
+    ;(window.api.declickPreview as ReturnType<typeof vi.fn>).mockImplementation(
+      () =>
+        new Promise((r) => {
+          answers.push(r)
+        }),
+    )
+    const { rerender } = render(section({ value: { mode: 'standard', noise: 'off' } }))
+    await act(async () => {
+      fireEvent.click(await screen.findByTestId('declick-render'))
+    })
+    rerender(section({ value: { mode: 'strong', noise: 'off' } }))
+    await act(async () => {
+      fireEvent.click(await screen.findByTestId('declick-render'))
+    })
+    await act(async () => answers[1]({ path: '/tmp/strong.wav' }))
+    await act(async () => answers[0]({ path: '/tmp/standard.wav' }))
+    expect(elements.some((el) => el.src.includes('standard.wav'))).toBe(false)
+    expect(elements.some((el) => el.src.includes('strong.wav'))).toBe(true)
+  })
+
   it('surfaces a failed render instead of staying silent', async () => {
     ;(window.api.declickPreview as ReturnType<typeof vi.fn>).mockResolvedValue(null)
     render(section({ value: { mode: 'standard', noise: 'off' } }))

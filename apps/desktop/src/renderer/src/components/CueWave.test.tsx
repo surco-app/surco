@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
@@ -255,9 +255,28 @@ describe('CueWave', () => {
   it('draws no focus ring once Space is pressed on it, since the global keyboard ring of a focusable element showed as a blue line under the strip', () => {
     setup({ slim: true, onSeek: vi.fn() })
     const strip = screen.getByTestId('cue-wave')
-    expect(strip).toHaveAttribute('tabindex', '0')
     expect(strip.className).toContain('outline-none')
     expect(strip.className).toContain('focus-visible:shadow-none')
+  })
+
+  // The strip answers no key of its own: the cue editor around it owns the keyboard. As a
+  // Tab stop it was a ringless stop where nothing happened; a click still focuses it.
+  it('is no Tab stop of its own, since the cue editor around it handles the keys', () => {
+    setup({ slim: true, onSeek: vi.fn() })
+    expect(screen.getByTestId('cue-wave')).toHaveAttribute('tabindex', '-1')
+  })
+
+  // Every memory cue button read just "CALL", so a screen reader listing the strip heard
+  // the same word once per cue with nothing to tell them apart. Each one names its time.
+  it('names each memory cue by its time', () => {
+    setup({
+      cues: [
+        { key: 'p', ms: 16000, kind: 0, color: null, pending: false },
+        { key: 'q', ms: 64000, kind: 0, color: null, pending: false },
+      ],
+    })
+    expect(screen.getByTestId('cue-wave-call-16000')).toHaveAccessibleName('CALL at 0:16')
+    expect(screen.getByTestId('cue-wave-call-64000')).toHaveAccessibleName('CALL at 1:04')
   })
 
   it('draws as a slim strip without its own card when it shares a surface with the zoomed wave, its marks in a lane above the bars so none is cut', () => {
@@ -363,6 +382,29 @@ describe('CueWave', () => {
     expect(new Set(fillRect.mock.calls.map(([x]) => x)).size).toBe(canvas.width)
     expect(fillRect.mock.calls.every(([, , w]) => w === 1)).toBe(true)
     vi.unstubAllGlobals()
+  })
+
+  // The canvas cannot follow CSS variables, so the colours are read when it paints. Read
+  // only on new data or a resize, a theme switch left the overview in the old theme's
+  // colours until the next track.
+  it('repaints the overview in the new colours when the theme switches', async () => {
+    const clearRect = vi.fn()
+    const fake = { clearRect, fillRect: vi.fn(), setTransform: vi.fn(), fillStyle: '' }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
+    const root = document.documentElement
+    root.style.setProperty('--color-accent', '#7aa2f7')
+    try {
+      setup({ detail: new Uint16Array(12000).fill((7 << 13) | (20 << 2)) })
+      const painted = clearRect.mock.calls.length
+      await act(async () => {
+        root.style.setProperty('--color-accent', '#2959aa')
+        root.setAttribute('data-theme', 'light')
+      })
+      expect(clearRect.mock.calls.length).toBeGreaterThan(painted)
+    } finally {
+      root.style.removeProperty('--color-accent')
+      root.removeAttribute('data-theme')
+    }
   })
 
   it('keeps the light overview bars until the detailed wave arrives', () => {

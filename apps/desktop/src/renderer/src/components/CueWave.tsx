@@ -5,6 +5,7 @@ import type { CueQuantize } from '../../../shared/cueQuantize'
 import { nearestBeat } from '../../../shared/cueRules'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import type { CueWaveColumn } from '../../../shared/types'
+import { useThemeRgb } from '../hooks/useThemeRgb'
 import { paintWave, waveColumns } from '../lib/cueDetail'
 import {
   type CueGhost,
@@ -18,6 +19,7 @@ import {
 } from '../lib/cueMarks'
 import { snapToBeat } from '../lib/cuePlayhead'
 import { barLines, peakBars, quantizePoints } from '../lib/cueWave'
+import { formatTime } from '../lib/duration'
 import { WaveBars } from './WaveBars'
 
 export interface WaveCue {
@@ -125,6 +127,10 @@ export function CueWave({
   }, [seeking, seekAt])
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const waveHeight = slim ? SLIM_WAVE_HEIGHT : WAVE_HEIGHT
+  // The canvas reads its colours as it paints, so a theme switch has to repaint it.
+  const accent = useThemeRgb('--color-accent')
+  const faint = useThemeRgb('--color-fg-faint')
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `accent` and `faint` are the theme trigger; the paint reads the same tokens off the canvas.
   useLayoutEffect(() => {
     const canvas = canvasRef.current
     const g = canvas?.getContext('2d')
@@ -141,7 +147,7 @@ export function CueWave({
       peak: style.getPropertyValue('--color-fg-faint').trim(),
       body: style.getPropertyValue('--color-accent').trim(),
     })
-  }, [detail, stripPx, durationMs, waveHeight])
+  }, [detail, stripPx, durationMs, waveHeight, accent, faint])
   const waveSvg = useMemo(
     () =>
       detail ? (
@@ -222,7 +228,7 @@ export function CueWave({
       data-testid="cue-wave"
       role="application"
       aria-label={t('cueWave.label')}
-      tabIndex={readOnly ? -1 : 0}
+      tabIndex={-1}
       onMouseDown={(e) => {
         if (readOnly || !onSeek || e.button !== 0 || e.ctrlKey) return
         sought.current = seekAt(e.clientX)
@@ -309,7 +315,7 @@ export function CueWave({
           <button
             key={`c${c.key}`}
             type="button"
-            aria-label={t('cueWave.call')}
+            aria-label={t('cueWave.call', { time: formatTime(c.ms / 1000) })}
             onClick={(e) => selectMark(c.key, e)}
             onContextMenu={(e) => markMenu(c.key, e)}
             {...common}

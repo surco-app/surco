@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import type React from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import { RotateCcw, Search } from 'lucide-react'
 import { hotCueColor, MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
@@ -11,6 +11,9 @@ import { CueWaveDetail, CueZoom } from './CueWaveDetail'
 
 const GRID = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
 const bar = (n: number) => n * 2000
+
+// A spy left on getComputedStyle by one test froze the theme for every test after it.
+afterEach(() => vi.restoreAllMocks())
 
 beforeEach(() => {
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
@@ -459,6 +462,28 @@ describe('CueWaveDetail', () => {
     const words = new Uint16Array(45000).fill((7 << 13) | (31 << 2))
     setup({ source: { words }, playheadMs: 150000 })
     expect(styles).toEqual(['#838bb2', '#7aa2f7'])
+  })
+
+  // The strip is painted once and slid while the playhead moves, so its colours were read
+  // only on new data or a resize: a theme switch left the wave in the old theme's colours.
+  it('repaints the strip when the theme switches', async () => {
+    const clearRect = vi.fn()
+    const fake = { clearRect, fillRect: vi.fn(), setTransform: vi.fn(), fillStyle: '' }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
+    const root = document.documentElement
+    root.style.setProperty('--color-accent', '#7aa2f7')
+    try {
+      setup({ source: { words: new Uint16Array(45000).fill((7 << 13) | (31 << 2)) } })
+      const painted = clearRect.mock.calls.length
+      await act(async () => {
+        root.style.setProperty('--color-accent', '#2959aa')
+        root.setAttribute('data-theme', 'light')
+      })
+      expect(clearRect.mock.calls.length).toBeGreaterThan(painted)
+    } finally {
+      root.style.removeProperty('--color-accent')
+      root.removeAttribute('data-theme')
+    }
   })
 
   it('neither resizes nor repaints the canvas while only the playhead moves, it slides the strip it already drew, since repainting every frame made the playing wave flicker and cost frames', () => {

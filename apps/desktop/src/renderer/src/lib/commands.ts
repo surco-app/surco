@@ -13,6 +13,7 @@ import { canAddToAppleMusic } from './appleMusic'
 import type { Destination } from './destination'
 import { DONATE_URL } from './donate'
 import { openFeedback } from './feedback'
+import { flushPendingEdits } from './pendingEdits'
 import { suspectTracks } from './triage'
 
 // The palette's section for a command, Raycast-style: a fixed set of buckets so 47
@@ -119,7 +120,9 @@ export function guideUrl(language: string): string {
 
 export function runCommand(commands: Command[], id: string): void {
   const c = commands.find((c) => c.id === id)
-  if (c?.enabled) c.run()
+  if (!c?.enabled) return
+  flushPendingEdits()
+  c.run()
 }
 
 // Everything the command registry reads or triggers, supplied by App per render so

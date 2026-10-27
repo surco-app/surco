@@ -42,7 +42,11 @@ function musicOnlyWave(): WaveformResult {
 
 const play = vi.fn()
 const pause = vi.fn()
-const audios: { onloadedmetadata: (() => void) | null; currentTime: number }[] = []
+const audios: {
+  onloadedmetadata: (() => void) | null
+  ontimeupdate: (() => void) | null
+  currentTime: number
+}[] = []
 
 let client: QueryClient
 beforeEach(() => {
@@ -61,6 +65,8 @@ beforeEach(() => {
       currentTime = 0
       play = play
       pause = pause
+      removeAttribute = vi.fn()
+      load = vi.fn()
       constructor() {
         audios.push(this)
       }
@@ -851,6 +857,40 @@ describe('TrimSection', () => {
     expect(pause).toHaveBeenCalledOnce()
   })
 
+  // The cut is judged by ear, so it has to be the only thing sounding: the mini-player
+  // carried on under the audition and the boundary was heard through another track.
+  it('pauses the mini-player while a cut is auditioned', async () => {
+    const shared = document.body.appendChild(document.createElement('audio'))
+    const pauseShared = vi.fn()
+    shared.pause = pauseShared
+    try {
+      render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+      fireEvent.click(
+        await screen.findByTestId('trim-audition-start', undefined, { timeout: 3000 }),
+      )
+      expect(pauseShared).toHaveBeenCalled()
+    } finally {
+      shared.remove()
+    }
+  })
+
+  // Stopping, or jumping to the other cut, before the file had loaded left the first element
+  // alive: it started playing on its own once loaded and ran to the end of the track,
+  // and its clock, reaching its own stop point, cut the audition the user was hearing.
+  it('silences an audition dropped before its file loaded', async () => {
+    render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+    const start = await screen.findByTestId('trim-audition-start', undefined, { timeout: 3000 })
+    fireEvent.click(start)
+    fireEvent.click(screen.getByTestId('trim-audition-end'))
+    const orphan = audios[0]
+    act(() => orphan?.onloadedmetadata?.())
+    expect(play).not.toHaveBeenCalled()
+    pause.mockClear()
+    if (orphan) orphan.currentTime = 99
+    act(() => orphan?.ontimeupdate?.())
+    expect(pause).not.toHaveBeenCalled()
+  })
+
   // The detection proposes a cut; hearing it before taking it is the whole judgement. The
   // listen and nudge buttons were dead until the cut was staged, so the user had to apply,
   // listen, and undo — while the keys already worked on the suggested line.
@@ -941,6 +981,25 @@ describe('TrimSection', () => {
     expect(onChange).not.toHaveBeenCalled()
     fireEvent.keyDown(start, { key: 'Enter' })
     expect(onChange).toHaveBeenCalledWith({ startSec: 12.345, endSec: 90.3 })
+  })
+
+  // Every other readout of the cut speaks the app language's decimal mark; the field alone
+  // showed "9.700" next to "9,7 s", and a Spanish user editing it typed into a format the
+  // rest of the panel never used. It shows the comma and takes it back.
+  it('shows the cut time in the app language and takes its decimal mark', async () => {
+    const before = i18n.language
+    await act(() => i18n.changeLanguage('es'))
+    try {
+      const onChange = vi.fn()
+      render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+      const start = await screen.findByTestId('trim-cut-time-start', undefined, { timeout: 3000 })
+      expect(start).toHaveValue('9,700')
+      fireEvent.change(start, { target: { value: '12,345' } })
+      fireEvent.keyDown(start, { key: 'Enter' })
+      expect(onChange).toHaveBeenCalledWith({ startSec: 12.345, endSec: 90.3 })
+    } finally {
+      await act(() => i18n.changeLanguage(before))
+    }
   })
 
   // Mid-typing, the arrows are text keys: ← to fix a digit moved the cut instead, and the

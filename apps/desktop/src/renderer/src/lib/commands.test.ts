@@ -14,6 +14,7 @@ import {
   trackLabel,
 } from './commands'
 import { DONATE_URL } from './donate'
+import { holdPendingEdit } from './pendingEdits'
 import { isClaimable } from './spaceClaim'
 
 function cmd(id: string, title: string): Command {
@@ -283,6 +284,22 @@ describe('buildCommands new playlist', () => {
     expect(c.enabled).toBe(true)
     c.run()
     expect(run).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('runCommand pending field text', () => {
+  // A command can read or write the open track in the same keystroke that a field is still
+  // holding typed text for its pause; the text has to reach the track before the command
+  // looks at it, or ⌘⏎ converts the old title.
+  it('commits text still being typed before the command runs', () => {
+    const order: string[] = []
+    const release = holdPendingEdit(() => order.push('flush'))
+    try {
+      runCommand([{ ...cmd('x', 'X'), run: () => order.push('run') }], 'x')
+    } finally {
+      release()
+    }
+    expect(order).toEqual(['flush', 'run'])
   })
 })
 

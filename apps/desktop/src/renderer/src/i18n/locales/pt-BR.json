@@ -2576,7 +2576,7 @@
   "cueWave": {
     "notAnalysed": "Esta faixa não foi analisada no rekordbox. Analise lá para colocar cues",
     "hotCue": "Hot cue {{letter}}",
-    "call": "CALL",
+    "call": "CALL em {{time}}",
     "label": "Forma de onda dos cues"
   },
   "cueFlows": {

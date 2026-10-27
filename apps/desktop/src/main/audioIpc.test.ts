@@ -75,6 +75,7 @@ import {
   probeProperties,
   readMeta,
   readTags,
+  renderDeclickRepaired,
 } from './ffmpeg'
 import { getSettings } from './settings'
 
@@ -484,5 +485,36 @@ describe('the spectrogram cache of an .m4a', () => {
     await cachedWithoutCodec(file)
     await handlerFor('audio:spectrogram')({}, file)
     expect(buildSpectrum).not.toHaveBeenCalled()
+  })
+})
+
+describe('audio:declickPreview', () => {
+  // A new render kills the one it supersedes, and that killed render winds down after the
+  // new one has started. Its cleanup used to clear the shared handle, so the running render
+  // could no longer be cancelled: a preset change or Cancel left it encoding to the end.
+  it('can still cancel the running render after the superseded one winds down', async () => {
+    const killed: number[] = []
+    const settle: ((out: { path: string } | null) => void)[] = []
+    vi.mocked(renderDeclickRepaired).mockImplementation(
+      (_input, _output, _mode, _onProgress, onChild) =>
+        new Promise((resolve) => {
+          const n = settle.length
+          onChild?.({ kill: () => killed.push(n) })
+          settle.push(resolve)
+        }),
+    )
+    const preview = handlerFor('audio:declickPreview')
+    const e = { sender: { isDestroyed: () => false, send: vi.fn() } }
+    const first = preview(e, '/in/a.wav', { mode: 'standard', noise: 'off' })
+    const second = preview(e, '/in/a.wav', { mode: 'strong', noise: 'off' })
+    settle[0](null)
+    await first
+    killed.length = 0
+
+    await handlerFor('audio:cancelDeclickPreview')(e)
+
+    expect(killed).toEqual([1])
+    settle[1](null)
+    await second
   })
 })
