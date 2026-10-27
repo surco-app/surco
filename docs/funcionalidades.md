@@ -1626,6 +1626,16 @@ Apple Music, o el repunte apuntaría al fichero del que se quería salir; y en M
 **añade antes de borrar**, para que el peor caso sean dos copias visibles y no una pista
 fuera de la biblioteca.
 
+**La entrada nueva hereda lo que el DJ construyó sobre la vieja** (`applemusic.ts`,
+`buildCarryOverScript`). Antes de borrar, Surco copia de la entrada vieja las reproducciones,
+la fecha de la última escucha, la valoración (solo si la puso el usuario, no la calculada del
+álbum) y el favorito, y mete la entrada nueva en cada lista normal donde estaba la vieja. Las
+listas inteligentes no se tocan, porque Music responde -54 y se rellenan solas con sus
+reglas; tampoco la biblioteca, las carpetas ni las listas de Music. La pista entra **al final
+de cada lista**, no en la posición que tenía, porque Music no deja insertar en un punto
+concreto. Si cualquier paso falla, la entrada vieja no se borra y se avisa
+(`editor.removeOldCopyCarry`). Quedan las dos copias en Music y no se pierde nada.
+
 **Avisa de la pérdida de calidad, nunca bloquea** (`replaceWarning.ts`): sin pérdida que
 pasa a con pérdida, corte de frecuencias peor entre dos con pérdida, o lossless falso. El
 margen para llamar «peor» a un corte son 2100 Hz, la dispersión medida sobre 39
@@ -1870,8 +1880,8 @@ Recopilado de los cinco informes. Cada punto está verificado.
    Engine DJ (solo hot cues) y en la colección de Traktor (`collection.nml`, solo hot cues,
    siete botones, en azul), nunca en el fichero ni en Serato.
 2. **Apple Music:** solo macOS, nunca FLAC. Clave, sello, catálogo y remixer no
-   llegan a la biblioteca, ni los campos propios. No se transfiere rating ni se
-   crean playlists.
+   llegan a la biblioteca, ni los campos propios. Al añadir no se transfiere rating
+   ni se crean playlists. Al sustituir sí pasan de la entrada vieja a la nueva (punto 6).
 3. **Engine DJ como destino de conversión:** no lleva cue points ni beatgrid. Exige Engine
    cerrado. Los cues solo llegan a Engine desde el editor de cues, desde su pestaña o con un
    flujo marcado en otro programa (v1.13.0), y solo los hot cues.
@@ -1887,7 +1897,11 @@ Recopilado de los cinco informes. Cada punto está verificado.
     ha probado con la sincronización en la nube de rekordbox.
 6. **Sustituir no mueve el fichero en Apple Music:** Music no deja escribir la
     ubicación de una pista, así que por debajo es añadir y borrar. El aviso de
-    pérdida de calidad informa, nunca bloquea.
+    pérdida de calidad informa, nunca bloquea. Las listas normales, las
+    reproducciones, la valoración y el favorito pasan a la entrada nueva, pero la
+    pista queda al final de cada lista y no en su posición. Si la copia falla, la
+    entrada vieja se queda y hay dos en Music. No se ha probado aún contra una
+    biblioteca real.
 7. **No hay detección de estéreo falso.**
 8. **El hi-res falso** solo se detecta en el muro de 22.05 kHz, no en 48→96.
 9. **«Ya está en tu biblioteca»** es un indicio puntuado, no una garantía.
