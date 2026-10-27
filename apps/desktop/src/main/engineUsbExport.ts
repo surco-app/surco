@@ -213,6 +213,29 @@ async function libraryOnDrive(
   }
 }
 
+// A player writes to the drive's library through SQLite's WAL, and a drive pulled from a
+// player can keep those writes only in the -wal file. The export swaps its own database in
+// and clears the -wal and -shm beside it (a stale -wal would be replayed over the new file),
+// so the writes are folded into m.db first: a drive pulled between the clear and the swap
+// then still holds them. Refused rather than half done, since the clear would drop the rest.
+async function foldDriveWal(lib: string): Promise<void> {
+  const file = engineDatabasePath(lib)
+  if (!(await exists(`${file}-wal`))) return
+  const db = new Database(file, { fileMustExist: true })
+  try {
+    db.pragma('busy_timeout = 250')
+    const [result] = db.pragma('wal_checkpoint(TRUNCATE)') as {
+      busy: number
+      log: number
+      checkpointed: number
+    }[]
+    if (result.busy !== 0 || result.log !== result.checkpointed)
+      throw new Error('the Engine Library on the drive could not fold its WAL')
+  } finally {
+    db.close()
+  }
+}
+
 function loadLibrary(lib: string): Database.Database {
   const db = openEngineDb(lib)
   if (!db) throw new Error('the Engine Library on the drive is gone')
@@ -465,6 +488,7 @@ export function createEngineUsbExporter(deps: EngineUsbExporterDeps) {
     let bytes: Buffer
     let uuid: string
     try {
+      if (p.existing) await foldDriveWal(p.lib)
       const usb = p.existing ? loadLibrary(p.lib) : createEngineUsbDb(desktop)
       try {
         uuid = libraryUuid(usb)

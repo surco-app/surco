@@ -20,6 +20,7 @@ import {
 } from './rekordboxDb'
 import { applyRekordboxMeta, type RekordboxMeta } from './rekordboxMetadata'
 import { isRekordboxRunning } from './rekordboxProcess'
+import { rekordboxStamp, takeLocalUsn } from './rekordboxRows'
 import { foldWal, restoreCollection, writeBackup } from './rekordboxSessionBackup'
 
 // Moves an existing collection entry onto the file a conversion just produced, so the
@@ -214,17 +215,28 @@ export async function repointTracks(
     // FolderPath, FileNameL, FileType and FileSize are the four columns a format change
     // invalidates. OrgFolderPath is deliberately not among them: it records where the
     // track originally came from, and in the real collection 846 rows already disagree
-    // with the live path while rekordbox runs fine.
+    // with the live path while rekordbox runs fine. The row is stamped with rekordbox's
+    // change counter like every other write, so its cloud sync sees the move.
     const update = write.prepare(
       `UPDATE djmdContent
-          SET FolderPath = ?, FileNameL = ?, FileType = ?, FileSize = ?
+          SET FolderPath = ?, FileNameL = ?, FileType = ?, FileSize = ?,
+              rb_local_usn = ?, updated_at = ?
         WHERE ID = ?`,
     )
     const now = new Date()
+    const stamp = rekordboxStamp(now)
     write.transaction(() => {
       for (const w of writes) {
         const { to, meta, audio, onWrite } = repoints[w.index]
-        update.run(rekordboxStoredPath(to), basename(to), w.fileType, w.size, w.id)
+        update.run(
+          rekordboxStoredPath(to),
+          basename(to),
+          w.fileType,
+          w.size,
+          takeLocalUsn(write, stamp),
+          stamp,
+          w.id,
+        )
         if (meta) applyRekordboxMeta(write, w.id, meta, { imagePath: staged.get(w.id)?.imagePath })
         if (audio) {
           shiftCues(write, w.id, audio.cueShiftMs, { now })

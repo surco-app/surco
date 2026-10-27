@@ -7,12 +7,14 @@ import {
   attr,
   cuesToXml,
   detachedOutputPaths,
+  entryStates,
   escapeAttr,
   findEntries,
   matchedPatchCount,
   type NmlPatch,
   refreshedCoverIds,
   replaceDuplicateInNml,
+  spareEditedEntries,
 } from './traktorNml'
 
 const NML = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -975,40 +977,81 @@ describe('applyPatches', () => {
     expect(out).not.toContain('NAME="First"')
   })
 
-  // Caso minimizado del re-review: dos patches pueden casar la misma ENTRY, uno por
-  // nombre base y otro exacto. La regla es "gana el último del array", no "gana el
-  // tipo de match más fuerte": el índice por mapas tiene que respetarlo o el orden en
-  // que el caller construyó el batch deja de importar en silencio.
-  it('prefers the latest patch in array order over a stronger match kind earlier in the array', () => {
+  // Un patch que casa la ENTRY por su fichero exacto habla de esa pista; el nombre base es
+  // solo el respaldo de una ENTRY que aún apunta al fichero anterior. Si el orden del array
+  // decidiera, un patch de otra pista con el mismo nombre base (x&y.aiff junto a x&y.mp3)
+  // se llevaría la ENTRY de x&y.mp3 a su fichero.
+  it('prefers the exact match over a base-name match, wherever each sits in the array', () => {
     const nml =
       '<NML VERSION="19"><COLLECTION ENTRIES="1">' +
       '<ENTRY TITLE="X"><LOCATION DIR="/:M/:" FILE="x&amp;y.mp3" VOLUME="HD"></LOCATION></ENTRY>' +
       '</COLLECTION></NML>'
 
-    const out = applyPatches(nml, [
-      { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', refreshCoverArt: true },
-      { volume: 'HD', dir: '/:M/:', file: 'x&y.aiff', newFile: 'FROM_A.flac' },
-    ])
-
-    expect(out).toContain('FILE="FROM_A.flac"')
+    for (const patches of [
+      [
+        { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', refreshCoverArt: true },
+        { volume: 'HD', dir: '/:M/:', file: 'x&y.aiff', newFile: 'FROM_A.flac' },
+      ],
+      [
+        { volume: 'HD', dir: '/:M/:', file: 'x&y.aiff', newFile: 'FROM_A.flac' },
+        { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', refreshCoverArt: true },
+      ],
+    ]) {
+      const out = applyPatches(nml, patches)
+      expect(out).not.toContain('FILE="FROM_A.flac"')
+      expect(out).toContain('FILE="x&amp;y.mp3"')
+    }
   })
 
-  // Mismo par de patches, orden invertido: ahora el match exacto va último en el
-  // array y debe ganar. Confirma que el resultado depende del orden del array, no
-  // de qué mapa (byFile vs byBaseName) resolvió el match.
-  it('prefers the exact match when it is latest in array order', () => {
+  // Convertida en su sitio (A.aiff a A.flac) y actualizada después en el mismo formato
+  // (A.flac, sin cambio de nombre): el segundo patch casa la ENTRY solo por nombre base.
+  // Si ganara, la ENTRY se quedaría en A.aiff, un fichero que ya no existe.
+  it('moves the entry to the converted file when a later update of that file follows', () => {
     const nml =
       '<NML VERSION="19"><COLLECTION ENTRIES="1">' +
-      '<ENTRY TITLE="X"><LOCATION DIR="/:M/:" FILE="x&amp;y.mp3" VOLUME="HD"></LOCATION></ENTRY>' +
+      '<ENTRY TITLE="A"><LOCATION DIR="/:M/:" FILE="A.aiff" VOLUME="HD"></LOCATION></ENTRY>' +
       '</COLLECTION></NML>'
 
     const out = applyPatches(nml, [
-      { volume: 'HD', dir: '/:M/:', file: 'x&y.aiff', newFile: 'FROM_A.flac' },
-      { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', refreshCoverArt: true },
+      { volume: 'HD', dir: '/:M/:', file: 'A.aiff', newFile: 'A.flac' },
+      { volume: 'HD', dir: '/:M/:', file: 'A.flac', refreshCoverArt: true },
     ])
 
-    expect(out).not.toContain('FILE="FROM_A.flac"')
-    expect(out).toContain('FILE="x&amp;y.mp3"')
+    expect(out).toContain('FILE="A.flac"')
+  })
+
+  // Song.aiff y Song.mp3 son dos pistas en Traktor. Convertidas las dos, cada ENTRY va a su
+  // propio fichero: el patch de una, que ya tiene su ENTRY exacta, no puede llevarse la
+  // otra por nombre base y dejar dos ENTRY en el mismo fichero.
+  it('keeps two tracks that share a base name on their own converted files', () => {
+    const nml =
+      '<NML VERSION="19"><COLLECTION ENTRIES="2">' +
+      '<ENTRY TITLE="S1"><LOCATION DIR="/:M/:" FILE="Song.aiff" VOLUME="HD"></LOCATION></ENTRY>' +
+      '<ENTRY TITLE="S2"><LOCATION DIR="/:M/:" FILE="Song.mp3" VOLUME="HD"></LOCATION></ENTRY>' +
+      '</COLLECTION></NML>'
+
+    const out = applyPatches(nml, [
+      { volume: 'HD', dir: '/:M/:', file: 'Song.aiff', newFile: 'Song.flac' },
+      { volume: 'HD', dir: '/:M/:', file: 'Song.mp3', newFile: 'Song (2).flac' },
+    ])
+
+    expect(out).toMatch(/TITLE="S1"><LOCATION[^>]*FILE="Song\.flac"/)
+    expect(out).toMatch(/TITLE="S2"><LOCATION[^>]*FILE="Song \(2\)\.flac"/)
+  })
+
+  // El respaldo sigue: una ENTRY que aún apunta al AIFF recibe el patch del FLAC que lo
+  // sustituyó cuando ninguna otra ENTRY es ese FLAC.
+  it('still reaches an entry left on the old file by base name', () => {
+    const nml =
+      '<NML VERSION="19"><COLLECTION ENTRIES="1">' +
+      '<ENTRY TITLE="A"><LOCATION DIR="/:M/:" FILE="A.aiff" VOLUME="HD"></LOCATION></ENTRY>' +
+      '</COLLECTION></NML>'
+
+    const out = applyPatches(nml, [
+      { volume: 'HD', dir: '/:M/:', file: 'A.flac', newFile: 'A (edit).flac' },
+    ])
+
+    expect(out).toContain('FILE="A (edit).flac"')
   })
 })
 
@@ -1073,8 +1116,8 @@ describe('refreshedCoverIds', () => {
 })
 
 describe('matchedPatchCount', () => {
-  // Dos patches contendiendo por la misma ENTRY sólo aplican uno (el último en el
-  // array): el conteo tiene que reflejar eso, no "cuántos patches podrían casar".
+  // Dos patches contendiendo por la misma ENTRY sólo aplican uno (el exacto): el conteo
+  // tiene que reflejar eso, no "cuántos patches podrían casar".
   it('counts one match when two patches contend for the same entry', () => {
     const nml =
       '<NML VERSION="19"><COLLECTION ENTRIES="1">' +
@@ -1082,7 +1125,7 @@ describe('matchedPatchCount', () => {
       '</COLLECTION></NML>'
 
     const count = matchedPatchCount(nml, [
-      { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', refreshCoverArt: true },
+      { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', newFile: 'x&y.flac' },
       { volume: 'HD', dir: '/:M/:', file: 'x&y.aiff', newFile: 'FROM_A.flac' },
     ])
 
@@ -1339,5 +1382,68 @@ describe('attr', () => {
 
   it('never takes a longer attribute name that ends in the one asked for', () => {
     expect(attr('<INFO MUSICAL_KEY="7" KEY="8A">', 'KEY')).toBe('8A')
+  })
+})
+
+// A conversion's patch can wait in the queue while Traktor stays open, and the DJ keeps
+// working: new hot cues, a changed rating, another cover. Written later as it was taken,
+// the patch put the conversion's cues and stars back over that work. What the patch can
+// overwrite is noted when it is held; if the entry no longer reads the same when it is
+// written, only the move to the converted file goes in.
+describe('patches written after the DJ edited the entry', () => {
+  const entryWith = (cue: string, ranking: string) =>
+    '<NML VERSION="19"><COLLECTION ENTRIES="1">' +
+    '<ENTRY TITLE="Uno"><LOCATION DIR="/:Musica/:" FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION>' +
+    `<INFO RANKING="${ranking}"></INFO>` +
+    `<CUE_V2 NAME="${cue}" DISPL_ORDER="0" TYPE="0" START="500" LEN="0" REPEATS="-1" HOTCUE="0"></CUE_V2>` +
+    '</ENTRY></COLLECTION></NML>'
+  const converted = (): NmlPatch => ({
+    volume: 'Macintosh HD',
+    dir: '/:Musica/:',
+    file: 'uno.aiff',
+    newFile: 'uno.flac',
+    ranking: 51,
+    cueTree: buildTraktorTree([traktorCue('Converted', 0, 1000, 1)]),
+  })
+
+  it('writes the whole patch while the entry is as it was when held', () => {
+    const held = entryWith('Mine', '153')
+    const states = entryStates(held, [converted()])
+
+    const out = applyPatches(held, spareEditedEntries(held, [converted()], states))
+
+    expect(out).toContain('FILE="uno.flac"')
+    expect(out).toContain('NAME="Converted"')
+    expect(out).toContain('RANKING="51"')
+  })
+
+  it('only moves the entry once the DJ changed its cues or stars', () => {
+    const states = entryStates(entryWith('Mine', '153'), [converted()])
+    const edited = entryWith('Set at the gig', '255')
+
+    const out = applyPatches(edited, spareEditedEntries(edited, [converted()], states))
+
+    expect(out).toContain('FILE="uno.flac"')
+    expect(out).toContain('NAME="Set at the gig"')
+    expect(out).toContain('RANKING="255"')
+    expect(out).not.toContain('NAME="Converted"')
+  })
+
+  // A crash between the write and the queue clearing replays the patch: the entry already
+  // carries its cues, so they are not shifted or replaced a second time.
+  it('does not shift the cues twice when a patch is replayed', () => {
+    const shifted: NmlPatch = {
+      volume: 'Macintosh HD',
+      dir: '/:Musica/:',
+      file: 'uno.aiff',
+      newFile: 'uno.flac',
+      cueShift: { shiftMs: -51 },
+    }
+    const held = entryWith('Mine', '153')
+    const states = entryStates(held, [shifted])
+    const once = applyPatches(held, spareEditedEntries(held, [shifted], states))
+    expect(once).toContain('START="551')
+
+    expect(applyPatches(once, spareEditedEntries(once, [shifted], states))).toBe(once)
   })
 })

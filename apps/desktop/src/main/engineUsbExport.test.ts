@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readdir, readFile, stat, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
@@ -14,6 +14,20 @@ import {
 } from './engineUsbExport'
 import { createMenuT } from './i18n'
 import { createUsbMemory } from './usbExportMemory'
+
+// The drive can be pulled at any instant. Failing the one rename that swaps the new database
+// in stands for that instant, the last one before the drive holds the new library.
+const swap = vi.hoisted(() => ({ fails: false }))
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const fs = await importOriginal<typeof import('node:fs/promises')>()
+  return {
+    ...fs,
+    rename: (from: string, to: string) =>
+      swap.fails && to.endsWith('m.db')
+        ? Promise.reject(new Error('EIO: drive gone'))
+        : fs.rename(from, to),
+  }
+})
 
 const UUID = 'B10C96EF-51C2-344E-B78D-DAFC319D973E'
 const HASH = Buffer.from('f8a7dcaa49e456914f24038b5a9f36c5fcf921b7', 'hex')
@@ -373,6 +387,41 @@ describe('engine USB export onto a drive Surco exported to before', () => {
     expect(await w.exporter.start(request(ids))).toEqual({ ok: true })
     return finished(w.events)
   }
+
+  // A player writes to the drive's library through SQLite's WAL, and a drive pulled from a
+  // player can keep those writes only in the -wal file. The export reads them, but it used to
+  // delete the -wal before swapping its database in: a drive pulled between the two kept the
+  // old database without its WAL, and what the player wrote was gone.
+  it('keeps what a player wrote to the drive when the drive goes before the new library lands', async () => {
+    const w = await world()
+    await exported(w, ['1'])
+    const file = join(engineDir(w.usb), 'Database2', 'm.db')
+    const player = new Database(file)
+    player.pragma('journal_mode = WAL')
+    player.pragma('wal_autocheckpoint = 0')
+    player
+      .prepare(`UPDATE Track SET title = 'Played on the CDJ' WHERE path = 'Music/play.mp3'`)
+      .run()
+    const [db, wal] = [await readFile(file), await readFile(`${file}-wal`)]
+    player.close()
+    await writeFile(file, db)
+    await writeFile(`${file}-wal`, wal)
+
+    swap.fails = true
+    try {
+      await exported(w, ['4'])
+    } finally {
+      swap.fails = false
+    }
+
+    await rm(`${file}-wal`, { force: true })
+    await rm(`${file}-shm`, { force: true })
+    const left = usbDb(w.usb)
+    expect(
+      left.prepare(`SELECT title FROM Track WHERE path = 'Music/play.mp3'`).pluck().get(),
+    ).toBe('Played on the CDJ')
+    left.close()
+  })
 
   it('copies nothing again and adds no track twice when the same playlist goes again', async () => {
     const w = await world()

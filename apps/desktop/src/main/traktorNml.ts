@@ -129,33 +129,35 @@ const key = (volume: string, dir: string, file: string): string =>
 // A real collection can be tens of thousands of ENTRY blocks; scanning every patch
 // for every entry is O(entries × patches) with an expensive normalize() on each side
 // of each comparison. Two lookup tables — exact file, and base name for the
-// AIFF→FLAC fallback — turn that into one O(1) lookup per entry instead. The latest
-// patch in array order wins, regardless of which rule matched it: converting one track
-// twice in a batch must leave the collection on the last file produced, as the
-// rekordbox batch does. So each map entry carries its patch's original index, and any
-// collision (same key within one map, or an exact match and a base-name match both hit
-// for one entry) keeps whichever index is higher.
-function indexPatches(patches: NmlPatch[]): {
-  byFile: Map<string, [number, NmlPatch]>
-  byBaseName: Map<string, [number, NmlPatch]>
-} {
-  const byFile = new Map<string, [number, NmlPatch]>()
-  const byBaseName = new Map<string, [number, NmlPatch]>()
-  patches.forEach((patch, i) => {
-    byFile.set(key(patch.volume, patch.dir, patch.file), [i, patch])
-    byBaseName.set(key(patch.volume, patch.dir, baseName(patch.file)), [i, patch])
-  })
+// AIFF→FLAC fallback — turn that into one O(1) lookup per entry instead.
+//
+// A patch whose file is an entry's own file speaks for that entry, so the exact match always
+// wins and the base name is only the fallback for an entry still left on the file the patch
+// replaced. A patch that has an entry of its own is never also taken by base name: Song.aiff
+// and Song.mp3 are two tracks, and lending one's patch to the other left both entries on the
+// same file. Within one table the latest patch wins, so converting a track twice in a batch
+// leaves the collection on the last file produced, as the rekordbox batch does.
+interface PatchIndex {
+  byFile: Map<string, NmlPatch>
+  byBaseName: Map<string, NmlPatch>
+}
+
+function indexPatches(patches: NmlPatch[], entries: NmlEntry[]): PatchIndex {
+  const byFile = new Map<string, NmlPatch>()
+  for (const patch of patches) byFile.set(key(patch.volume, patch.dir, patch.file), patch)
+  const owned = new Set(entries.map((e) => key(e.volume, e.dir, e.file)))
+  const byBaseName = new Map<string, NmlPatch>()
+  for (const patch of patches)
+    if (!owned.has(key(patch.volume, patch.dir, patch.file)))
+      byBaseName.set(key(patch.volume, patch.dir, baseName(patch.file)), patch)
   return { byFile, byBaseName }
 }
 
-function matchPatch(
-  entry: NmlEntry,
-  index: { byFile: Map<string, [number, NmlPatch]>; byBaseName: Map<string, [number, NmlPatch]> },
-): NmlPatch | undefined {
-  const exact = index.byFile.get(key(entry.volume, entry.dir, entry.file))
-  const byBase = index.byBaseName.get(key(entry.volume, entry.dir, baseName(entry.file)))
-  if (exact && byBase) return (exact[0] >= byBase[0] ? exact : byBase)[1]
-  return (exact ?? byBase)?.[1]
+function matchPatch(entry: NmlEntry, index: PatchIndex): NmlPatch | undefined {
+  return (
+    index.byFile.get(key(entry.volume, entry.dir, entry.file)) ??
+    index.byBaseName.get(key(entry.volume, entry.dir, baseName(entry.file)))
+  )
 }
 
 // Traktor writes COVERARTID only on <INFO>, so the read is anchored there rather than
@@ -176,7 +178,7 @@ export interface CoverRefresh {
 // under the id it already has (see traktorCoverCache.ts).
 export function refreshedCoverIds(nml: string, patches: NmlPatch[]): CoverRefresh[] {
   const entries = findEntries(nml)
-  const index = indexPatches(patches)
+  const index = indexPatches(patches, entries)
   // The id read below comes from the entry the patch MATCHED, which is the source's. For a
   // coexisting conversion that id is still the source's own and its cache files still hold
   // the source's artwork, so rendering the converted cover into it would repaint a track
@@ -220,7 +222,7 @@ function sharedCoverSubstitutions(
   const ids = entries.map((e) => nml.slice(e.start, e.end).match(COVER_ID_RE)?.[1])
   const counts = new Map<string, number>()
   for (const id of ids) if (id) counts.set(id, (counts.get(id) ?? 0) + 1)
-  const index = indexPatches(patches)
+  const index = indexPatches(patches, entries)
   const detached = new Set(coexistingOutputs(entries, patches).values())
   const out = new Map<string, NmlPatch>()
   entries.forEach((entry, i) => {
@@ -538,7 +540,7 @@ const LOCATION_FILE_RE = /<LOCATION\b[^>]*\bFILE="([^"]*)"/
 
 export function applyPatches(nml: string, patches: NmlPatch[]): string {
   const entries = findEntries(nml)
-  const index = indexPatches(patches)
+  const index = indexPatches(patches, entries)
   const coexisting = coexistingOutputs(entries, patches)
   const sharedCover = sharedCoverSubstitutions(nml, entries, patches)
   const produced = producedOutputs(patches)
@@ -570,6 +572,51 @@ export function applyPatches(nml: string, patches: NmlPatch[]): string {
   return rewritePlaylists(out, moves)
 }
 
+// What a patch can overwrite in the entry it matches: the cues, the stars and the cover.
+// Tags are left out, since each tag change already applies only while the entry still says
+// what the change was read from.
+function editableState(block: string): string {
+  const info = block.match(/<INFO\b[^>]*>/)?.[0] ?? ''
+  return JSON.stringify([
+    block.match(CUE_V2_RE) ?? [],
+    info.match(/\sRANKING="([^"]*)"/)?.[1] ?? null,
+    info.match(/\sCOVERARTID="([^"]*)"/)?.[1] ?? null,
+  ])
+}
+
+// The state of the entry each patch matches when it is held, to be compared when it is
+// written (see spareEditedEntries). Undefined for a patch no entry matches.
+export function entryStates(nml: string, patches: NmlPatch[]): (string | undefined)[] {
+  const entries = findEntries(nml)
+  const index = indexPatches(patches, entries)
+  const states = new Map<NmlPatch, string>()
+  for (const entry of entries) {
+    const patch = matchPatch(entry, index)
+    if (patch && !states.has(patch))
+      states.set(patch, editableState(nml.slice(entry.start, entry.end)))
+  }
+  return patches.map((p) => states.get(p))
+}
+
+// A patch held while Traktor stayed open is written once it closes, and by then the DJ may
+// have set new cues, changed the stars or the cover. Written whole, the patch put the
+// conversion's back over that work, and a patch replayed after a crash shifted the cues a
+// second time. An entry that no longer reads as it did when held gets only the move to the
+// converted file, which is what keeps it from showing as missing.
+export function spareEditedEntries(
+  nml: string,
+  patches: NmlPatch[],
+  states: (string | undefined)[],
+): NmlPatch[] {
+  const now = entryStates(nml, patches)
+  return patches.map((patch, i) => {
+    const held = states[i]
+    if (held === undefined || now[i] === undefined || now[i] === held) return patch
+    const { volume, dir, file, newFile, outputPath, outputVolume, outputDir, outputFile } = patch
+    return { volume, dir, file, newFile, outputPath, outputVolume, outputDir, outputFile }
+  })
+}
+
 // Same matching rules as applyPatches, in one pass over the entries instead of
 // one applyPatches (itself a full sweep) per patch — a caller that ran the
 // per-patch version against a real collection (tens of thousands of entries,
@@ -582,7 +629,7 @@ export function applyPatches(nml: string, patches: NmlPatch[]): string {
 // or the caller would claim a write that never happened.
 export function matchedPatchCount(nml: string, patches: NmlPatch[]): number {
   const entries = findEntries(nml)
-  const index = indexPatches(patches)
+  const index = indexPatches(patches, entries)
   const produced = producedOutputs(patches)
   const matched = new Set<NmlPatch>()
   for (const entry of entries) {

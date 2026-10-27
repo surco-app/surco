@@ -161,14 +161,17 @@ describe('flushTraktorSync', () => {
   // open. Returning without them left an in-place AIFF to FLAC pointing at the AIFF: the
   // track showed as missing, its cues and playlists cut off, with no later write coming.
   describe('patches the collection cannot take now', () => {
-    const queue = (waiting = false) => ({ waiting: vi.fn(() => waiting), hold: vi.fn() })
+    const queue = (waiting = false) => ({
+      waiting: vi.fn(() => waiting),
+      hold: vi.fn(async () => {}),
+    })
     const failing = (reason: SyncResult['reason']) =>
       vi.fn(async () => ({ written: false, matched: 0, reason }) as SyncResult)
 
     it('keeps them for a later write when the user keeps Traktor open', async () => {
       const q = queue()
       await flushTraktorSync(makeDeps({ queue: q, ensureTraktorClosed: vi.fn(async () => false) }))
-      expect(q.hold).toHaveBeenCalledWith([patch()])
+      expect(q.hold).toHaveBeenCalledWith([patch()], expect.any(String))
     })
 
     it.each(['traktor-running', 'backup-failed', 'unreadable', 'write-failed'] as const)(
@@ -176,7 +179,7 @@ describe('flushTraktorSync', () => {
       async (reason) => {
         const q = queue()
         await flushTraktorSync(makeDeps({ queue: q, syncCollection: failing(reason) }))
-        expect(q.hold).toHaveBeenCalledWith([patch()])
+        expect(q.hold).toHaveBeenCalledWith([patch()], expect.any(String))
       },
     )
 
@@ -200,7 +203,7 @@ describe('flushTraktorSync', () => {
       const deps = makeDeps({ queue: q })
       await flushTraktorSync(deps)
       expect(deps.syncCollection).not.toHaveBeenCalled()
-      expect(q.hold).toHaveBeenCalledWith([patch()])
+      expect(q.hold).toHaveBeenCalledWith([patch()], expect.any(String))
     })
   })
 
