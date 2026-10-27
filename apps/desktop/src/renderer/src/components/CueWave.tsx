@@ -228,7 +228,7 @@ export function CueWave({
       data-testid="cue-wave"
       role="application"
       aria-label={t('cueWave.label')}
-      tabIndex={readOnly ? -1 : 0}
+      tabIndex={-1}
       onMouseDown={(e) => {
         if (readOnly || !onSeek || e.button !== 0 || e.ctrlKey) return
         sought.current = seekAt(e.clientX)

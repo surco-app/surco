@@ -255,9 +255,15 @@ describe('CueWave', () => {
   it('draws no focus ring once Space is pressed on it, since the global keyboard ring of a focusable element showed as a blue line under the strip', () => {
     setup({ slim: true, onSeek: vi.fn() })
     const strip = screen.getByTestId('cue-wave')
-    expect(strip).toHaveAttribute('tabindex', '0')
     expect(strip.className).toContain('outline-none')
     expect(strip.className).toContain('focus-visible:shadow-none')
+  })
+
+  // The strip answers no key of its own: the cue editor around it owns the keyboard. As a
+  // Tab stop it was a ringless stop where nothing happened; a click still focuses it.
+  it('is no Tab stop of its own, since the cue editor around it handles the keys', () => {
+    setup({ slim: true, onSeek: vi.fn() })
+    expect(screen.getByTestId('cue-wave')).toHaveAttribute('tabindex', '-1')
   })
 
   // Every memory cue button read just "CALL", so a screen reader listing the strip heard
