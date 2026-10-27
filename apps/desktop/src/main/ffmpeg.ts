@@ -65,6 +65,7 @@ import { declickRepairedArgs, parseDeclickedSamples, parseProgressSeconds } from
 import { isPcmOverrun, slimDecodeError } from './decodeError'
 import { fft } from './fft'
 import { measureBands } from './fftBands'
+import { carryFlacBlocks } from './flacCarry'
 import { setFinderIcon } from './flacFinderCover'
 import {
   detectFftKnee,
@@ -2231,6 +2232,10 @@ export async function convertAudio(
                 shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
               },
         )
+      // The cue sheet and application blocks ffmpeg leaves out of a FLAC it rewrites
+      // (see flacCarry.ts), on the same terms as a WAV's chunks above.
+      if (codec === 'copy' && !clearExtras && ext === '.flac' && FLAC_INPUT.test(input))
+        await carryFlacBlocks(input, tmp)
     }
     // Set on the temp so the icon rides the same atomic landing: the rename keeps the
     // extended attributes it lives in. Only when there's a cover to show.
