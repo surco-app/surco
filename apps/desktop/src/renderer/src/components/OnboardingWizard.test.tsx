@@ -271,6 +271,25 @@ describe('OnboardingWizard destination', () => {
     )
   })
 
+  // Detection is a nicety: a library probe that fails (an unreadable rekordbox folder) used
+  // to reject unhandled, which the app reports as a red error over the very first screen.
+  // A failed probe just means no collections step.
+  it('treats a failed library detection as no collections found', async () => {
+    const api = window as unknown as { api: { engineAvailable: () => Promise<boolean> } }
+    const unhandled = vi.fn()
+    process.on('unhandledRejection', unhandled)
+    api.api.engineAvailable = () => Promise.reject(new Error('EACCES'))
+    try {
+      render(<OnboardingWizard settings={settings} onFinish={vi.fn()} />)
+      await new Promise((r) => setTimeout(r, 0))
+      expect(unhandled).not.toHaveBeenCalled()
+      expect(screen.getByText(i18n.t('onboarding.step', { current: 1, total: 4 }))).toBeVisible()
+    } finally {
+      api.api.engineAvailable = async () => false
+      process.off('unhandledRejection', unhandled)
+    }
+  })
+
   // A DJ finished setup without ever hearing that Surco can keep their collection in step
   // with what it converts — the thing that saves them rebuilding playlists by hand. The
   // step only appears for a collection actually found, so it costs nothing to anyone else.

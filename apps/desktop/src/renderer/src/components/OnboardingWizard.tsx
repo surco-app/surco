@@ -65,15 +65,17 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
       window.api.rekordboxCollection(),
       window.api.engineAvailable(),
       window.api.detectTraktorNmlPath(),
-    ]).then(([rekordbox, engine, traktor]) =>
-      setDjLibraries(
+    ])
+      .then(([rekordbox, engine, traktor]) =>
         detectedDjLibraries({
           rekordbox,
           engine: engine ? settings.engineLibraryDir : '',
           traktor: traktor ?? '',
         }),
-      ),
-    )
+      )
+      // A probe that fails only means there is no collections step to offer.
+      .catch((): DetectedDjLibrary[] => [])
+      .then(setDjLibraries)
   }, [settings.engineLibraryDir])
   const STEPS: readonly Step[] =
     djLibraries.length > 0 ? [...BASE_STEPS, 'djLibraries'] : BASE_STEPS
