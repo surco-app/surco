@@ -24,14 +24,10 @@ export interface StickNode {
   folder: boolean
 }
 
-// rekordbox deletes nothing else on a stick before rewriting its library; a WAL left beside
-// a new exportLibrary.db would replay rekordbox's pages onto it (16/10).
-export const STALE_STICK_FILES: readonly string[] = [
-  'exportLibrary.db-wal',
-  'exportLibrary.db-shm',
-  'sync.temp',
-  'sync.devlibplus.temp',
-]
+// rekordbox deletes nothing else on a stick before rewriting its library (16/10). The WAL of
+// exportLibrary.db is not among them: baken clears it only as it replaces the database, so
+// a run cancelled before that keeps rekordbox's last writes to the old one.
+export const STALE_STICK_FILES: readonly string[] = ['sync.temp', 'sync.devlibplus.temp']
 export const SYNC_FILES: readonly string[] = ['playlists3.sync', 'playlists3Plus.sync']
 
 const CHUNK = 500

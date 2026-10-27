@@ -491,6 +491,29 @@ describe('engine USB export onto a drive Surco exported to before', () => {
     db.close()
   })
 
+  // A conversion to another format repoints the same Engine track to a new file. Reusing
+  // the drive's path put the AIFF's bytes under play.mp3, and a player picks the decoder
+  // by the extension.
+  it('gives a track converted to another format a path with its new extension', async () => {
+    const w = await world()
+    await exported(w, ['1'])
+    await writeFile(join(w.libraryDir, '../Tracks/play.aiff'), Buffer.alloc(2600, 8))
+    const desktop = new Database(join(w.libraryDir, 'Database2', 'm.db'))
+    desktop
+      .prepare("UPDATE Track SET path = '../Tracks/play.aiff', filename = 'play.aiff' WHERE id = 2")
+      .run()
+    desktop.close()
+    await exported(w, ['1'])
+    const db = usbDb(w.usb)
+    const row = db.prepare('SELECT path, filename FROM Track WHERE originTrackId = 2').get()
+    expect(db.prepare('SELECT count(*) FROM Track').pluck().get()).toBe(2)
+    db.close()
+    expect(row).toEqual({ path: 'Music/play.aiff', filename: 'play.aiff' })
+    expect(
+      (await readFile(join(engineDir(w.usb), 'Music', 'play.aiff'))).equals(Buffer.alloc(2600, 8)),
+    ).toBe(true)
+  })
+
   it('treats a library whose database Surco did not write as someone else’s, even with Surco’s note beside it', async () => {
     const w = await world()
     await exported(w, ['1'])

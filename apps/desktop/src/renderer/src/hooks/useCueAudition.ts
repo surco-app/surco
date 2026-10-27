@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { mediaUrl } from '../../../shared/media'
+import { holdForAudition } from '../lib/auditionHolds'
 
 export interface CueAudition {
   playing: boolean
@@ -24,11 +25,14 @@ export function useCueAudition(
   latest.current = onPosition
   const lead = useRef(leadMs)
   lead.current = leadMs
+  const unhold = useRef<(() => void) | null>(null)
   const [playing, setPlaying] = useState(false)
 
   const stop = useCallback((): void => {
     if (frame.current !== null) cancelAnimationFrame(frame.current)
     frame.current = null
+    unhold.current?.()
+    unhold.current = null
     const audio = audioRef.current
     audioRef.current = null
     if (audio) {
@@ -57,6 +61,7 @@ export function useCueAudition(
       for (const other of document.querySelectorAll('audio')) other.pause()
       const audio = new Audio(mediaUrl(path))
       audioRef.current = audio
+      unhold.current = holdForAudition(path, stop)
       soundingPath.current = path
       wantedMs.current = fromMs
       audio.onloadedmetadata = () => {

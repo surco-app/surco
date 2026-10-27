@@ -2949,6 +2949,25 @@ describe('App source playlists', () => {
     )
   })
 
+  // The row stands for every row the track has in the playlist. Traktor deletes only the
+  // rows it is named, so naming the first left the track in the playlist, shown again on
+  // the re-read as if the remove had failed.
+  it('removes every row of a track the playlist holds twice', async () => {
+    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({
+      editRekordboxPlaylist: edit,
+      loadRekordboxPlaylist: vi
+        .fn<Api['loadRekordboxPlaylist']>()
+        .mockResolvedValue([...FACTORY_ENTRIES, linked('/m/a.wav', 'l4')]),
+    })
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(await screen.findByTestId('track-menu-remove-from'))
+    expect(edit).toHaveBeenCalledWith(
+      { kind: 'remove', playlistId: 'f', linkIds: ['l1', 'l4'] },
+      'Factory',
+    )
+  })
+
   // The record of a drag-out can outlive it (an OS drag that ended elsewhere tells this
   // window nothing). A Finder drop that finds it must still add its own files.
   it('adds the dropped Finder files, not rows left from an earlier drag-out', async () => {

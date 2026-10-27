@@ -496,6 +496,7 @@ export default function App(): React.JSX.Element {
   // below the conversion hook that has to call it — a conversion rewriting the file
   // the player streams must drop that handle first (see usePlayer's releaseFile).
   const releaseFileRef = useRef<(path: string) => Promise<void>>(async () => {})
+  const reclaimFileRef = useRef<(path: string) => void>(() => {})
   // The rows pinned into the current filter view, so a verdict that flips while the user
   // works the list (an accepted suggestion, a finished analysis, a background auto-match)
   // can't drop a row out from under them (see filterWithSticky). Tied to the filter it was built for: switching filter (or
@@ -1348,6 +1349,7 @@ export default function App(): React.JSX.Element {
     updateTrack,
     refreshTrackFromDisk,
     releaseFile: (path) => releaseFileRef.current(path),
+    reclaimFile: (path) => reclaimFileRef.current(path),
     onConversion: () => {
       maybeShowDonateNudge()
       void refreshTrash()
@@ -1532,12 +1534,14 @@ export default function App(): React.JSX.Element {
     toggleTrack,
     closePlayer,
     releaseFile,
+    reclaimFile,
   } = usePlayer({
     tracks,
     selected,
     selectedId,
   })
   releaseFileRef.current = releaseFile
+  reclaimFileRef.current = reclaimFile
   const player = useExitPresence(playerVisible && !!playerTrack, PLAYER_LEAVE_MS)
   const shownPlayerTrack = useRef(playerTrack)
   if (playerTrack) shownPlayerTrack.current = playerTrack
@@ -2426,12 +2430,7 @@ export default function App(): React.JSX.Element {
       onRemove: () => {
         const targets = menuTargets(track.id)
         const remove = () =>
-          removeFromRekordbox(
-            targets.flatMap((t) => {
-              const link = playlistScope?.linkOf.get(t.id)
-              return link ? [link] : []
-            }),
-          )
+          removeFromRekordbox(targets.flatMap((t) => playlistScope?.linksOf.get(t.id) ?? []))
         if (targets.length <= 1 || !playlist) return remove()
         overlays.openConfirm({
           title: tr('confirm.removeFromPlaylistTitle', {

@@ -540,8 +540,7 @@ export function createUsbExporter(deps: UsbExporterDeps) {
       // The dry run takes a while: a stick swapped meanwhile must not get the real run.
       const still = await volumeAt(p, req, dev)
       if (typeof still === 'string') return refuse(still)
-      // Only now, on the stick just checked: a WAL left beside the new exportLibrary.db
-      // would replay rekordbox's pages onto it. These four names and nothing else.
+      // Only now, on the stick just checked. These two names and nothing else.
       for (const name of STALE_STICK_FILES) await deps.removeFile(stickFile(p, name))
       return launch(p, req, args, dev, state)
     } catch (err) {

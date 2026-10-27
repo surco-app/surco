@@ -13,6 +13,7 @@ import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { isRecoveryUrl, mediaPathFromUrl, mediaUrl } from '../../../shared/media'
 import type { TrackMetadata } from '../../../shared/types'
+import { holdForAudition } from '../lib/auditionHolds'
 import type { TrackItem } from '../types'
 import { usePlayer } from './usePlayer'
 
@@ -175,6 +176,24 @@ describe('usePlayer releaseFile', () => {
     await waitFor(() => expect(window.api.releasePlayingFile).toHaveBeenCalledWith('/m/a.mp3'))
   })
 
+  // A cue or trim audition streams the file through its own element, and its descriptor
+  // blocked the rename just like the player's: the conversion failed blaming "another
+  // program", which was Surco. The release has to stop it and close its stream in main.
+  it('stops an audition of the file and asks main to close its stream', async () => {
+    const audio = playing('/m/a.mp3', '/m/cued.mp3')
+    const stopAudition = vi.fn()
+    const unhold = holdForAudition('/m/cued.mp3', stopAudition)
+    try {
+      fireEvent.click(screen.getByTestId('release'))
+
+      expect(stopAudition).toHaveBeenCalled()
+      await waitFor(() => expect(window.api.releasePlayingFile).toHaveBeenCalledWith('/m/cued.mp3'))
+      expect(audio.pause).not.toHaveBeenCalled()
+    } finally {
+      unhold()
+    }
+  })
+
   // Releasing an unrelated file must not reach main either: destroying another track's
   // stream would stop the audition the DJ is listening to.
   it('does not ask main to close a file the player is not holding', () => {
@@ -183,6 +202,89 @@ describe('usePlayer releaseFile', () => {
     fireEvent.click(screen.getByTestId('release'))
 
     expect(window.api.releasePlayingFile).not.toHaveBeenCalled()
+  })
+})
+
+// The release silences the player before a conversion, but only an in-place export that
+// moves the file gives the watcher a new path to restart from. Converting elsewhere, an
+// update under the same name, a declined overwrite or a failed job left the card open and
+// mute with no source; handing the file back must resume it where the DJ was.
+describe('usePlayer reclaimFile', () => {
+  beforeEach(() => {
+    ;(window as unknown as { api: { platform: string } }).api.platform = 'win32'
+  })
+
+  function ReclaimHarness({ tracks }: { tracks: TrackItem[] }): React.JSX.Element {
+    const { audioRef, togglePlay, releaseFile, reclaimFile } = usePlayer({
+      tracks,
+      selected: tracks[0] ?? null,
+      selectedId: tracks[0]?.id ?? null,
+    })
+    return (
+      <>
+        {/* biome-ignore lint/a11y/useMediaCaption: silent test fixture */}
+        <audio ref={audioRef} data-testid="audio" />
+        <button type="button" data-testid="toggle" onClick={togglePlay} />
+        <button type="button" data-testid="release" onClick={() => releaseFile('/m/a.mp3')} />
+        <button type="button" data-testid="reclaim" onClick={() => reclaimFile('/m/a.mp3')} />
+      </>
+    )
+  }
+
+  function playing(): HTMLAudioElement {
+    render(<ReclaimHarness tracks={[track('a', '/m/a.mp3')]} />)
+    const audio = screen.getByTestId('audio') as HTMLAudioElement
+    audio.play = vi.fn().mockResolvedValue(undefined)
+    audio.pause = vi.fn()
+    audio.load = vi.fn()
+    fireEvent.click(screen.getByTestId('toggle'))
+    return audio
+  }
+
+  it('reloads the released file and plays on from where it was', () => {
+    const audio = playing()
+    Object.defineProperty(audio, 'paused', { configurable: true, get: () => false })
+    audio.currentTime = 42
+    fireEvent.click(screen.getByTestId('release'))
+    expect(audio.getAttribute('src')).toBeNull()
+
+    fireEvent.click(screen.getByTestId('reclaim'))
+
+    expect(mediaPathFromUrl(audio.src)).toBe('/m/a.mp3')
+    expect(audio.currentTime).toBe(42)
+    expect(audio.play).toHaveBeenCalledTimes(2)
+  })
+
+  it('reloads a paused track without starting it', () => {
+    const audio = playing()
+    Object.defineProperty(audio, 'paused', { configurable: true, get: () => true })
+    fireEvent.click(screen.getByTestId('release'))
+
+    fireEvent.click(screen.getByTestId('reclaim'))
+
+    expect(mediaPathFromUrl(audio.src)).toBe('/m/a.mp3')
+    expect(audio.play).toHaveBeenCalledTimes(1)
+  })
+
+  // A player closed while the job ran must stay closed.
+  it('leaves a player closed meanwhile alone', () => {
+    const audio = playing()
+    fireEvent.click(screen.getByTestId('release'))
+    fireEvent.click(screen.getByTestId('toggle'))
+
+    fireEvent.click(screen.getByTestId('reclaim'))
+
+    expect(audio.getAttribute('src')).toBeNull()
+    expect(audio.play).toHaveBeenCalledTimes(1)
+  })
+
+  it('does nothing for a file it never released', () => {
+    const audio = playing()
+
+    fireEvent.click(screen.getByTestId('reclaim'))
+
+    expect(audio.load).not.toHaveBeenCalled()
+    expect(audio.play).toHaveBeenCalledTimes(1)
   })
 })
 

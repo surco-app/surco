@@ -934,9 +934,8 @@ describe('sharing the stick with rekordbox', () => {
     expect(sent).toContainEqual({ type: 'cancelling' })
   })
 
-  // A stale WAL beside the new exportLibrary.db would replay rekordbox's pages onto it.
-  // Those four names, on the stick that was checked, and only for a run that writes.
-  it('removes only the four stale files, before baken, and only on a real run', async () => {
+  // Those two names, on the stick that was checked, and only for a run that writes.
+  it('removes only the two stale files, before baken, and only on a real run', async () => {
     let idAts = 0
     const at: { idAts: number; realRuns: number }[] = []
     const ex = createUsbExporter(
@@ -958,6 +957,26 @@ describe('sharing the stick with rekordbox', () => {
     expect(removed).toEqual(STALE_STICK_FILES.map((f) => `${STICK_DIR}/${f}`))
     // After every check before the run; the one left is the check before the .sync files.
     expect(at.every((a) => a.idAts === idAts - 1 && a.realRuns === 0)).toBe(true)
+  })
+
+  // A cancelled run leaves the old export.pdb and exportLibrary.db; rekordbox's last writes
+  // to the latter may live only in its WAL, so the WAL stays until baken replaces the
+  // database, which it clears beside it itself.
+  it('leaves the WAL of exportLibrary.db for baken to clear when it rewrites it', async () => {
+    const ex = createUsbExporter(
+      deps(async (emit, cancelled) => {
+        emit(PLAN)
+        emit({ event: 'start', index: 0, usbPath: '/Contents/A/UnknownAlbum/101.wav', size: 70 })
+        await cancelled
+        emit({ ...REPORT, cancelled: true } as BakenEvent)
+      }),
+    )
+    await ex.start(REQ)
+    await tick()
+    ex.cancel()
+    expect(await finished()).toEqual({ type: 'finished', outcome: 'cancelled' })
+    expect(removed).not.toContain(`${STICK_DIR}/exportLibrary.db-wal`)
+    expect(removed).not.toContain(`${STICK_DIR}/exportLibrary.db-shm`)
   })
 
   it('removes nothing when the stick changed before the real run', async () => {

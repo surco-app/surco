@@ -190,6 +190,18 @@ export function stampOf(node: ModelNode): number {
     : hash(`${node.name}\n${node.rows.map((r) => r.key).join('\n')}`)
 }
 
+// The stamps of a node and of everything below it, for a delete that takes them all.
+export function traktorSubtreeStamps(nml: string, id: string): Record<string, number> {
+  const out: Record<string, number> = {}
+  const walk = (node: ModelNode): void => {
+    out[node.id] = stampOf(node)
+    node.children.forEach(walk)
+  }
+  const node = nodeById(parsePlaylists(nml), id)
+  if (node) walk(node)
+  return out
+}
+
 export function traktorStamps(nml: string): Record<string, number> {
   const model = parsePlaylists(nml)
   const out: Record<string, number> = {}

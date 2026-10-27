@@ -13,7 +13,7 @@ import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
 import type { EditOp, QueueOp } from './rekordboxQueueOps'
 import { registerTraktorPlaylistEditIpc } from './traktorPlaylistEditIpc'
 import { PLAYLISTS_SAMPLE } from './traktorPlaylistFixture'
-import { traktorStamps } from './traktorPlaylistModel'
+import { traktorStamps, traktorSubtreeStamps } from './traktorPlaylistModel'
 
 function handler(channel: string): (...args: unknown[]) => unknown {
   const call = [...vi.mocked(ipcMain.handle).mock.calls].reverse().find(([n]) => n === channel)
@@ -68,6 +68,16 @@ describe('registerTraktorPlaylistEditIpc', () => {
     expect(await handler('traktor:edit')({ sender: {} }, edit, 'Friday')).toEqual({ applied: true })
     expect((queued[0] as EditOp).stamps).toEqual({ fri: traktorStamps(PLAYLISTS_SAMPLE).fri })
     expect(host.ensureClosed).toHaveBeenCalledWith('window')
+  })
+
+  // The delete takes everything below the folder, so a change anywhere in it must catch it.
+  it('stamps a folder delete with every node it would take', async () => {
+    const file = await collection()
+    const { queued } = setup(file, applied)
+    await handler('traktor:edit')({ sender: {} }, { kind: 'delete', playlistId: 'folder:Sets#2' })
+    const stamps = (queued[0] as EditOp).stamps
+    expect(Object.keys(stamps).sort()).toEqual(['folder:Sets#2', 'folder:Sets#2/Old'])
+    expect(stamps).toEqual(traktorSubtreeStamps(PLAYLISTS_SAMPLE, 'folder:Sets#2'))
   })
 
   it('keeps an edit waiting while Traktor stays open and wakes the watcher', async () => {
