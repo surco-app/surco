@@ -116,7 +116,7 @@ import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
 import { WAVEFORM_BUCKETS, WAVEFORM_SAMPLE_RATE } from './waveform'
 import { isMalformedInputError, repairWav } from './wavRepair'
-import { runInWorker } from './worker'
+import { runInWorker, signalWorkers } from './worker'
 
 // Re-exported so the existing main-process imports (index.ts, tests) keep their
 // path; the canonical definition lives in shared/ so the renderer can use it too.
@@ -3531,7 +3531,10 @@ async function scanChannels(input: string): Promise<FullScan & { sampleRateHz: n
 // outlives every consumer but the last (see sharedScan.ts): the two probes abort
 // independently, and honouring the first would strand the one still on screen.
 const sharedScan = createSharedScan(scanChannels, (input: string) => {
-  void runInWorker({ type: 'killChannelScan', input })
+  void signalWorkers(
+    { type: 'killChannelScan', input },
+    (queued) => queued.type === 'channelScan' && queued.input === input,
+  )
 })
 
 export async function measureWaveform(

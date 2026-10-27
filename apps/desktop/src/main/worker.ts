@@ -41,3 +41,18 @@ export async function runInWorker<T extends WorkerJobResult>(
   if (!client) return (await import('./workerJobs')).runWorkerJob(job) as T
   return (await client.run(job, transfer)) as T
 }
+
+// Delivers a control job (a scan kill) to every live worker at once, skipping the job
+// queue, and drops the queued jobs `drop` matches. Inline (no worker) it just runs here.
+export async function signalWorkers(
+  job: WorkerJob,
+  drop: (queued: WorkerJob) => boolean,
+): Promise<void> {
+  const client = await getClient()
+  if (!client) {
+    ;(await import('./workerJobs')).runWorkerJob(job)
+    return
+  }
+  client.dropQueued(drop)
+  client.broadcast(job)
+}

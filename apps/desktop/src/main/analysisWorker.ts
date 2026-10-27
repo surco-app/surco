@@ -15,10 +15,19 @@ process.on('exit', killCueWaveWords)
 // both the synchronous DSP jobs (which return a value straight through) and the channel
 // scan (which returns a promise while it spawns ffmpeg and streams the native decode) —
 // so the scan's ~32M-sample reduction runs here, off the main process's event loop.
-parentPort?.on('message', async ({ id, job }: { id: number; job: WorkerJob }) => {
-  try {
-    parentPort?.postMessage({ id, ok: true, result: await runWorkerJob(job) })
-  } catch (e) {
-    parentPort?.postMessage({ id, ok: false, error: e instanceof Error ? e.message : String(e) })
-  }
-})
+parentPort?.on(
+  'message',
+  async ({ id, job, control }: { id: number; job: WorkerJob; control?: WorkerJob }) => {
+    // A control message (a scan kill) runs at once beside whatever job is in flight and
+    // gets no reply: the client never queued it, so nothing waits on an id.
+    if (control) {
+      runWorkerJob(control)
+      return
+    }
+    try {
+      parentPort?.postMessage({ id, ok: true, result: await runWorkerJob(job) })
+    } catch (e) {
+      parentPort?.postMessage({ id, ok: false, error: e instanceof Error ? e.message : String(e) })
+    }
+  },
+)

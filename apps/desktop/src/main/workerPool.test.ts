@@ -106,4 +106,44 @@ describe('createWorkerPool', () => {
     expect(w.postMessage).toHaveBeenCalledTimes(1)
     expect(spawn).toHaveBeenCalledTimes(1)
   })
+
+  // The kill for a browsed-past scan must reach whichever thread is decoding it, even when
+  // every slot is busy: queued behind the pool it would wait for the scan itself to end.
+  it('broadcasts to every spawned worker while all of them are busy', async () => {
+    const workers = [fakeWorker(), fakeWorker()]
+    let i = 0
+    const pool = createWorkerPool(() => workers[i++] as unknown as Worker, 2)
+    pool.run({ ...job, sampleRate: 1 })
+    pool.run({ ...job, sampleRate: 2 })
+    await flush()
+
+    pool.broadcast({ type: 'killChannelScan', input: '/a.flac' })
+
+    for (const w of workers) {
+      expect(w.postMessage).toHaveBeenCalledTimes(2)
+      expect(w.postMessage.mock.calls[1][0]).toEqual({
+        control: { type: 'killChannelScan', input: '/a.flac' },
+      })
+    }
+  })
+
+  // Overflow waits at the pool level, so that is where an abandoned scan must be dropped
+  // before it claims a worker for a decode nobody is waiting on.
+  it('drops matching jobs from the pool queue', async () => {
+    const workers = [fakeWorker(), fakeWorker()]
+    let i = 0
+    const pool = createWorkerPool(() => workers[i++] as unknown as Worker, 2)
+    const a = pool.run({ ...job, sampleRate: 1 })
+    pool.run({ ...job, sampleRate: 2 })
+    const stale = pool.run({ ...job, sampleRate: 3 })
+    await flush()
+
+    pool.dropQueued((queued) => queued.type === 'bpm' && queued.sampleRate === 3)
+    await expect(stale).rejects.toMatchObject({ name: 'AbortError' })
+
+    reply(workers[0], 0, 1)
+    await a
+    await flush()
+    expect(workers[0].postMessage).toHaveBeenCalledTimes(1)
+  })
 })
