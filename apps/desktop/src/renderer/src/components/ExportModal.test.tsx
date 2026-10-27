@@ -139,4 +139,12 @@ describe('ExportModal', () => {
     render(<ExportModal tracks={[{ ...track(), outputPath: '/out/a.aiff' }]} onClose={vi.fn()} />)
     expect(screen.queryByTestId('export-unconverted')).toBeNull()
   })
+
+  // Nothing in scope (a filter hides every row) would save an empty collection file that
+  // the DJ software then imports as nothing, so no target can be picked.
+  it('disables every target when there is nothing to export', () => {
+    render(<ExportModal tracks={[]} onClose={vi.fn()} />)
+    for (const id of ['rekordbox', 'traktor', 'serato', 'm3u'])
+      expect(screen.getByTestId(`export-${id}`)).toBeDisabled()
+  })
 })

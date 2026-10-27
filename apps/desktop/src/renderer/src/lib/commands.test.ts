@@ -817,6 +817,15 @@ describe('buildCommands editor + theme entries', () => {
     expect(openStripNumbering).toHaveBeenCalledOnce()
   })
 
+  // Export writes the bulk scope, not the whole list. With a filter hiding every row the
+  // palette offered an export that saved an empty collection file.
+  it('gates export on a non-empty bulk scope, not on the loaded tracks', () => {
+    const hidden = makeDeps({ tracks: [track()], bulkTracks: [] })
+    expect(commandById(hidden, 'export').enabled).toBe(false)
+    const inScope = makeDeps({ tracks: [track()], bulkTracks: [track()] })
+    expect(commandById(inScope, 'export').enabled).toBe(true)
+  })
+
   // Undo is only offered while there is something recorded to roll back — a dead entry
   // in the palette would promise a recovery that can't happen.
   it('gates undo-meta on a non-empty undo stack and runs it', () => {

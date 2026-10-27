@@ -854,7 +854,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       group: 'convert',
       title: tr('commands.export'),
       hint: hintFor('export'),
-      enabled: tracks.length > 0,
+      enabled: bulkTracks.length > 0,
       run: openExport,
     },
     {

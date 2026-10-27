@@ -83,6 +83,7 @@ export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
             key={t.id}
             type="button"
             data-testid={`export-${t.id}`}
+            disabled={tracks.length === 0}
             onClick={() => {
               // Close only once the write lands: a disk-full or permission failure
               // keeps the modal open and says so, instead of closing as if the file
@@ -91,7 +92,7 @@ export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
                 .then(onClose)
                 .catch((e: unknown) => setError(mainErrorMessage(e, tr, String(e))))
             }}
-            className="press block rounded-lg border border-[var(--color-line)] px-4 py-3 text-left hover:bg-[var(--color-hover)]"
+            className="press block rounded-lg border border-[var(--color-line)] px-4 py-3 text-left enabled:hover:bg-[var(--color-hover)] disabled:opacity-50"
           >
             <span className="flex items-center justify-between">
               <span className="text-sm font-medium">{t.label}</span>
