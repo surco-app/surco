@@ -2575,7 +2575,7 @@
   "cueWave": {
     "notAnalysed": "This track is not analysed in rekordbox. Analyse it there to set cues",
     "hotCue": "Hot cue {{letter}}",
-    "call": "CALL",
+    "call": "CALL at {{time}}",
     "label": "Cue waveform"
   },
   "cueFlows": {

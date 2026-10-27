@@ -2575,7 +2575,7 @@
   "cueWave": {
     "notAnalysed": "Dieser Track ist in rekordbox nicht analysiert. Analysiere ihn dort, um Cues zu setzen",
     "hotCue": "Hot Cue {{letter}}",
-    "call": "CALL",
+    "call": "CALL bei {{time}}",
     "label": "Cue-Wellenform"
   },
   "cueFlows": {

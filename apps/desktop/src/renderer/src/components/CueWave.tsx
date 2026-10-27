@@ -19,6 +19,7 @@ import {
 } from '../lib/cueMarks'
 import { snapToBeat } from '../lib/cuePlayhead'
 import { barLines, peakBars, quantizePoints } from '../lib/cueWave'
+import { formatTime } from '../lib/duration'
 import { WaveBars } from './WaveBars'
 
 export interface WaveCue {
@@ -314,7 +315,7 @@ export function CueWave({
           <button
             key={`c${c.key}`}
             type="button"
-            aria-label={t('cueWave.call')}
+            aria-label={t('cueWave.call', { time: formatTime(c.ms / 1000) })}
             onClick={(e) => selectMark(c.key, e)}
             onContextMenu={(e) => markMenu(c.key, e)}
             {...common}

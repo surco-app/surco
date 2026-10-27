@@ -260,6 +260,19 @@ describe('CueWave', () => {
     expect(strip.className).toContain('focus-visible:shadow-none')
   })
 
+  // Every memory cue button read just "CALL", so a screen reader listing the strip heard
+  // the same word once per cue with nothing to tell them apart. Each one names its time.
+  it('names each memory cue by its time', () => {
+    setup({
+      cues: [
+        { key: 'p', ms: 16000, kind: 0, color: null, pending: false },
+        { key: 'q', ms: 64000, kind: 0, color: null, pending: false },
+      ],
+    })
+    expect(screen.getByTestId('cue-wave-call-16000')).toHaveAccessibleName('CALL at 0:16')
+    expect(screen.getByTestId('cue-wave-call-64000')).toHaveAccessibleName('CALL at 1:04')
+  })
+
   it('draws as a slim strip without its own card when it shares a surface with the zoomed wave, its marks in a lane above the bars so none is cut', () => {
     setup({ slim: true })
     expect(screen.getByTestId('cue-wave').className).toContain('h-[44px]')
