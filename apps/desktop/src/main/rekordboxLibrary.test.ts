@@ -11,6 +11,7 @@ import {
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
+import log from 'electron-log/main'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { emptyMetadata } from '../shared/metadata'
 import * as rekordboxDb from './rekordboxDb'
@@ -20,6 +21,7 @@ import { rekordboxMetaFrom } from './rekordboxMetadata'
 
 // The probe shells out to pgrep/tasklist; pinned so the suite never depends on whether
 // rekordbox happens to be open on the machine running it.
+vi.mock('electron-log/main', () => ({ default: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }))
 vi.mock('./rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
 
 vi.mock('electron', () => ({
@@ -357,6 +359,22 @@ describe('repointTrack', () => {
 
     expect(sessionBackup).toHaveBeenCalledWith(dbPath)
     expect(readRow(dbPath).FolderPath).toBe(output)
+  })
+
+  it('logs why the backup could not be made', async () => {
+    const output = join(audioDir, '02 Everybody.wav')
+    await writeFile(output, Buffer.alloc(5000))
+    vi.mocked(log.warn).mockClear()
+
+    await repointTrack(dbPath, {
+      from: MP3,
+      to: output,
+      sessionBackup: async () => {
+        throw new Error('disk full')
+      },
+    })
+
+    expect(log.warn).toHaveBeenCalledWith(expect.stringMatching(/backup.*disk full/))
   })
 
   it('refuses to write when the session copy cannot be made', async () => {

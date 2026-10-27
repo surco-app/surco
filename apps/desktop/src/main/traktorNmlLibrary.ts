@@ -1,5 +1,6 @@
 import { type Dirent, readdirSync, readlinkSync } from 'node:fs'
 import { readFile, stat, unlink, utimes, writeFile } from 'node:fs/promises'
+import log from 'electron-log/main'
 import { createSessionBackup, writeBackup } from './rekordboxSessionBackup'
 import { renameWithRetry } from './renameRetry'
 import { readEmbeddedCover } from './tags'
@@ -117,7 +118,8 @@ export async function writeCollection(
   try {
     await traktorSessionBackup.ensure(nmlPath)
     await writeBackup(nmlPath, `${nmlPath}${BACKUP_SUFFIX}`)
-  } catch {
+  } catch (e) {
+    log.warn(`Traktor collection: backup of ${nmlPath} failed: ${(e as Error).message}`)
     // No backup, no write. A write without a recoverable copy next to it is the one
     // outcome this whole module exists to rule out.
     return 'backup-failed'
@@ -137,7 +139,8 @@ export async function writeCollection(
   try {
     await writeFile(tmp, patched)
     await renameWithRetry(tmp, nmlPath)
-  } catch {
+  } catch (e) {
+    log.warn(`Traktor collection: write of ${nmlPath} failed: ${(e as Error).message}`)
     // The backup taken above is what actually protects the collection; the leftover
     // tmp file is not — left behind, it would keep shadowing every later sync at the
     // same path, so clear it before reporting the failure. Best-effort: if even the

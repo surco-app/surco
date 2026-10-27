@@ -199,7 +199,8 @@ export async function repointTracks(
     // run. Then the copy the rollback below restores.
     await batch.sessionBackup?.(collectionPath)
     await copy(collectionPath, `${collectionPath}${BACKUP_SUFFIX}`)
-  } catch {
+  } catch (e) {
+    log.warn(`rekordbox collection: backup of ${collectionPath} failed: ${(e as Error).message}`)
     // No backup, no write.
     return settle({ written: false, reason: 'backup-failed' })
   }

@@ -12,8 +12,10 @@ import {
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import log from 'electron-log/main'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+vi.mock('electron-log/main', () => ({ default: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }))
 vi.mock('./traktorProcess', () => ({ isTraktorRunning: vi.fn().mockResolvedValue(false) }))
 
 // Only `rename`/`copyFile` are faked, and only for the tests that need one
@@ -252,6 +254,26 @@ describe('syncCollection', () => {
   // fallar copyFile (el directorio sigue escribible) para que esto pruebe el guard en
   // sí — con el directorio de sólo lectura, la escritura habría fallado igual y el
   // test habría pasado aunque el guard no existiera.
+  // The DJ only sees "No se pudo hacer la copia de Traktor": on a user's Windows machine the
+  // reason (a folder Windows protects, a read-only file) was nowhere, so the log has to say it.
+  it('logs why the backup could not be written', async () => {
+    copyFileShouldFail.value = true
+    vi.mocked(log.warn).mockClear()
+
+    await syncCollection(nmlPath, [patch])
+
+    expect(log.warn).toHaveBeenCalledWith(expect.stringMatching(/backup.*EACCES/))
+  })
+
+  it('logs why the collection could not be written', async () => {
+    renameShouldFail.value = true
+    vi.mocked(log.warn).mockClear()
+
+    await syncCollection(nmlPath, [patch])
+
+    expect(log.warn).toHaveBeenCalledWith(expect.stringMatching(/write.*ENOSPC/))
+  })
+
   it('leaves the collection untouched when the backup cannot be written', async () => {
     copyFileShouldFail.value = true
 
