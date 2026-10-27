@@ -3,7 +3,7 @@ import { stat } from 'node:fs/promises'
 import { basename, extname } from 'node:path'
 import type Database from 'better-sqlite3-multiple-ciphers'
 import type { TrackProperties } from '../shared/types'
-import { FILE_TYPES } from './rekordboxDb'
+import { FILE_TYPES, rekordboxStoredPath } from './rekordboxDb'
 import { applyRekordboxMeta, type RekordboxMeta } from './rekordboxMetadata'
 import { randomPlaylistId } from './rekordboxPlaylistEdit'
 import { localDate, rekordboxStamp, takeLocalUsn, unusedRowId } from './rekordboxRows'
@@ -76,7 +76,7 @@ export function insertContent(
     | undefined
   if (!device) throw new Error('rekordbox collection has no djmdDevice row')
   const id = unusedRowId(db, 'djmdContent', ctx.newContentId ?? randomPlaylistId)
-  const folderPath = facts.path.normalize('NFC')
+  const folderPath = rekordboxStoredPath(facts.path.normalize('NFC'))
   const fileName = basename(folderPath)
   const row: Record<string, string | number | null> = {
     ID: id,
