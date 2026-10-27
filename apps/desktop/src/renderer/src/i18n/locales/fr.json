@@ -26,7 +26,8 @@
     "traktorHint": "Dans Traktor : File → Import Collection → choisis ce fichier.",
     "seratoHint": "Dans Serato : dépose le fichier enregistré dans ton dossier _Serato_/Subcrates, puis relance Serato — tes morceaux apparaissent dans la barre latérale.",
     "m3uHint": "Une playlist standard pour tout le reste — lecteurs, autoradios, autres outils.",
-    "unconverted": "{{count}} morceau(x) pas encore converti(s) — ils seront exportés comme fichiers d'origine.",
+    "unconverted_one": "{{count}} morceau pas encore converti. Il sera exporté comme fichier d'origine.",
+    "unconverted_other": "{{count}} morceaux pas encore convertis. Ils seront exportés comme fichiers d'origine.",
     "failed": "Échec de l'export : {{error}}",
     "cancelWhile": "{{stage}} Appuyer pour annuler"
   },

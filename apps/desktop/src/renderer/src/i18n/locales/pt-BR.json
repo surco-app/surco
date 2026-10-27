@@ -26,7 +26,8 @@
     "traktorHint": "No Traktor: File → Import Collection → escolha este arquivo.",
     "seratoHint": "No Serato: coloque o arquivo salvo na sua pasta _Serato_/Subcrates e reinicie o Serato — suas faixas aparecem na barra lateral.",
     "m3uHint": "Uma playlist comum para todo o resto — players, som do carro, outras ferramentas.",
-    "unconverted": "{{count}} faixa(s) ainda sem converter — serão exportadas como os arquivos originais.",
+    "unconverted_one": "{{count}} faixa ainda sem converter. Será exportada como o arquivo original.",
+    "unconverted_other": "{{count}} faixas ainda sem converter. Serão exportadas como os arquivos originais.",
     "failed": "Falha ao exportar: {{error}}",
     "cancelWhile": "{{stage}} Pressione para cancelar"
   },

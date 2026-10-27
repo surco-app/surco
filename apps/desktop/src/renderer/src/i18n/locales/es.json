@@ -26,7 +26,8 @@
     "traktorHint": "En Traktor: File → Import Collection → elige este fichero.",
     "seratoHint": "En Serato: pon el fichero guardado en tu carpeta _Serato_/Subcrates y reinicia Serato — tus pistas aparecen en la barra lateral.",
     "m3uHint": "Una lista de reproducción estándar para todo lo demás — reproductores, equipos de coche, otras herramientas.",
-    "unconverted": "{{count}} pista(s) aún sin convertir — se exportarán como sus archivos originales.",
+    "unconverted_one": "{{count}} pista aún sin convertir. Se exportará como su archivo original.",
+    "unconverted_other": "{{count}} pistas aún sin convertir. Se exportarán como sus archivos originales.",
     "failed": "Error al exportar: {{error}}",
     "cancelWhile": "{{stage}} Pulsa para cancelar"
   },
