@@ -114,12 +114,18 @@ export function DeclickSection({
 
   useEffect(() => window.api.onDeclickPreviewProgress(setProgress), [])
 
+  // Bumped by every render, cancel and preset change: an answer that comes back to an older
+  // generation was cancelled or superseded, so it neither fails the section nor replaces
+  // the audio of the preset now on screen.
+  const renderGen = useRef(0)
+
   // A preset change (or a new track) invalidates the render: the audio no longer matches
   // the dials, and playing on would tell the user Gentle sounds exactly like Strong. Kills
   // an in-flight render too — nobody should wait on audio they no longer asked for.
   // biome-ignore lint/correctness/useExhaustiveDependencies: `value`'s fields are deliberately the trigger — a mode change is what invalidates the render.
   useEffect(() => {
     return () => {
+      renderGen.current++
       void window.api.cancelDeclickPreview()
       setPreview(null)
       setHearOriginal(false)
@@ -133,10 +139,12 @@ export function DeclickSection({
   // On demand, never on open: this is a full-length encode (tens of seconds on a long
   // side), and most tracks are never auditioned at all.
   const render = useCallback(async (): Promise<void> => {
+    const gen = ++renderGen.current
     setRendering(true)
     setFailed(false)
     setProgress(0)
     const out = await window.api.declickPreview(inputPath, value)
+    if (gen !== renderGen.current) return
     setRendering(false)
     if (!out) {
       setFailed(true)
@@ -146,6 +154,7 @@ export function DeclickSection({
   }, [inputPath, value])
 
   const cancel = useCallback((): void => {
+    renderGen.current++
     void window.api.cancelDeclickPreview()
     setRendering(false)
     setProgress(0)
