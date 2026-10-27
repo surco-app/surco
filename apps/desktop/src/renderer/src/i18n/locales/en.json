@@ -1147,6 +1147,8 @@
       "unbound": "Unassigned",
       "reset": "Reset to default",
       "resetAll": "Reset all ({{count}})",
+      "resetAllConfirm_one": "Reset {{count}} shortcut?",
+      "resetAllConfirm_other": "Reset {{count}} shortcuts?",
       "conflict": "Two commands share a shortcut. Resolve it to save.",
       "conflictWith": "Same keys as {{command}}. Change one to save.",
       "conflictElsewhere": "Two commands share a shortcut. Fix it in Shortcuts to save.",

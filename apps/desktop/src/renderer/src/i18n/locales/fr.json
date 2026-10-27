@@ -1147,6 +1147,8 @@
       "unbound": "Non assigné",
       "reset": "Rétablir la valeur par défaut",
       "resetAll": "Tout réinitialiser ({{count}})",
+      "resetAllConfirm_one": "Réinitialiser {{count}} raccourci ?",
+      "resetAllConfirm_other": "Réinitialiser {{count}} raccourcis ?",
       "conflict": "Deux commandes partagent un raccourci. Résous-le pour enregistrer.",
       "conflictWith": "Mêmes touches que {{command}}. Changes-en un pour enregistrer.",
       "conflictElsewhere": "Deux commandes partagent un raccourci. Corrige-le dans Raccourcis pour enregistrer.",

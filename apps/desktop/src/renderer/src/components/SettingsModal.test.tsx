@@ -861,11 +861,16 @@ describe('SettingsModal shortcuts', () => {
     expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⌘O')
   })
 
-  it('reset all clears every override', () => {
+  // Reset all throws away every key the user recorded, one by one, so it asks in place
+  // first, and the second click of a double-click is not the answer.
+  it('reset all asks first and only then clears every override', () => {
     const onSave = vi.fn()
     openShortcuts(onSave)
     record('add', { key: 'x', metaKey: true, shiftKey: true })
-    fireEvent.click(screen.getByTestId('shortcuts-reset-all'))
+    fireEvent.click(screen.getByTestId('shortcuts-reset-all'), { detail: 1 })
+    fireEvent.click(screen.getByTestId('shortcuts-reset-all-confirm'), { detail: 2 })
+    expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⌘⇧X')
+    fireEvent.click(screen.getByTestId('shortcuts-reset-all-confirm'), { detail: 1 })
     expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⌘O')
     fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ shortcutOverrides: {} }))

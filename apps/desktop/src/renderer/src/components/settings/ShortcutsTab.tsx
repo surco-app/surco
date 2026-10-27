@@ -56,6 +56,7 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
   const { t: tr } = useTranslation()
   // The command whose next keystroke is being recorded, or null when idle.
   const [recording, setRecording] = useState<string | null>(null)
+  const [confirmResetAll, setConfirmResetAll] = useState(false)
   // For each clashing command, the one it collides with, named on its row.
   const clashWith = new Map(
     findConflicts(bindings).flatMap((ids) =>
@@ -156,18 +157,36 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
     <div className="min-h-[280px]">
       <div className="mb-2 flex items-center justify-between">
         <p className="text-xs text-fg-dim">{tr('settings.shortcuts.intro')}</p>
-        {Object.keys(synced.shortcutOverrides).length > 0 && (
-          <button
-            type="button"
-            data-testid="shortcuts-reset-all"
-            onClick={() => patch('shortcutOverrides', {})}
-            className="press shrink-0 text-xs text-fg-muted hover:text-fg"
-          >
-            {tr('settings.shortcuts.resetAll', {
-              count: Object.keys(synced.shortcutOverrides).length,
-            })}
-          </button>
-        )}
+        {Object.keys(synced.shortcutOverrides).length > 0 &&
+          (confirmResetAll ? (
+            <button
+              type="button"
+              data-testid="shortcuts-reset-all-confirm"
+              onClick={(e) => {
+                // The confirm takes the armed button's place, so a double-click's second
+                // click lands on it; only a fresh click confirms.
+                if (e.detail > 1) return
+                setConfirmResetAll(false)
+                patch('shortcutOverrides', {})
+              }}
+              className="press shrink-0 rounded-md bg-danger px-2 py-1 text-xs font-medium text-[var(--color-on-accent)]"
+            >
+              {tr('settings.shortcuts.resetAllConfirm', {
+                count: Object.keys(synced.shortcutOverrides).length,
+              })}
+            </button>
+          ) : (
+            <button
+              type="button"
+              data-testid="shortcuts-reset-all"
+              onClick={() => setConfirmResetAll(true)}
+              className="press shrink-0 text-xs text-fg-muted hover:text-fg"
+            >
+              {tr('settings.shortcuts.resetAll', {
+                count: Object.keys(synced.shortcutOverrides).length,
+              })}
+            </button>
+          ))}
       </div>
       {conflictIds.size > 0 && (
         <p data-testid="shortcuts-conflict" className="mt-3 text-xs text-danger">

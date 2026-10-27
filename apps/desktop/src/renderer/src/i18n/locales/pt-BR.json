@@ -1147,6 +1147,8 @@
       "unbound": "Sem atribuição",
       "reset": "Restaurar o padrão",
       "resetAll": "Redefinir tudo ({{count}})",
+      "resetAllConfirm_one": "Restaurar {{count}} atalho?",
+      "resetAllConfirm_other": "Restaurar {{count}} atalhos?",
       "conflict": "Dois comandos compartilham um atalho. Resolva para salvar.",
       "conflictWith": "Mesmas teclas de {{command}}. Mude um deles para salvar.",
       "conflictElsewhere": "Dois comandos compartilham um atalho. Corrija em Atalhos para salvar.",

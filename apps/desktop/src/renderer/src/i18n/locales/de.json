@@ -1147,6 +1147,8 @@
       "unbound": "Nicht belegt",
       "reset": "Auf Standard zurücksetzen",
       "resetAll": "Alle zurücksetzen ({{count}})",
+      "resetAllConfirm_one": "{{count}} Kürzel zurücksetzen?",
+      "resetAllConfirm_other": "{{count}} Kürzel zurücksetzen?",
       "conflict": "Zwei Befehle teilen sich ein Kürzel. Lös den Konflikt, um zu speichern.",
       "conflictWith": "Gleiche Tasten wie {{command}}. Ändere eines, um zu speichern.",
       "conflictElsewhere": "Zwei Befehle teilen sich ein Tastenkürzel. Behebe es unter Tastenkürzel, um zu speichern.",
