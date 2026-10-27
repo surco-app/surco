@@ -126,6 +126,9 @@ export interface Api {
   // Proposes a collection.nml to offer in Settings; the caller must have the user
   // confirm it before saving — see traktorNmlPath.ts.
   detectTraktorNmlPath: () => Promise<string | null>
+  // The collection an installed Traktor uses when none uses this one, so a save there
+  // would never reach Traktor; null when it is in use or nothing could be read.
+  traktorCollectionInUse: (path: string) => Promise<string | null>
   // The rekordbox collection on this machine, or '' when there is none.
   rekordboxCollection: () => Promise<string>
   // Where a library copy's file lives, so a replacement can tell rekordbox which path it

@@ -318,6 +318,34 @@ describe('SettingsModal Traktor collection', () => {
   })
 })
 
+describe('SettingsModal Traktor collection in use', () => {
+  // Checked against the collection being edited, not the saved one: picking another file
+  // has to clear or raise the warning before Settings closes.
+  it('asks which collection Traktor uses for the chosen one and warns when it is another', async () => {
+    const chosen = '/Users/test/Documents/Native Instruments/Traktor 4.4.0/collection.nml'
+    const inUse = '/Users/test/Documents/Native Instruments/Traktor 4.0.2/collection.nml'
+    const api = (globalThis.window as unknown as { api: Record<string, unknown> }).api
+    const previous = api.traktorCollectionInUse
+    const asked = vi.fn(async (path: string) => (path === chosen ? inUse : null))
+    api.traktorCollectionInUse = asked
+
+    render(
+      <SettingsModal
+        settings={{ ...settings, traktorNmlPath: chosen }}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    fireEvent.click(await screen.findByTestId('settings-tab-destination'))
+
+    expect(await screen.findByTestId('settings-traktor-nml-mismatch')).toHaveTextContent(inUse)
+    expect(asked).toHaveBeenCalledWith(chosen)
+    api.traktorCollectionInUse = previous
+  })
+})
+
 describe('SettingsModal applies changes as they are made', () => {
   function renderModal(over: { onSave?: () => void; onClose?: () => void } = {}) {
     render(

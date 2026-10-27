@@ -914,7 +914,8 @@
         "saveAll_other": "Salvar {{count}} faixas no Traktor",
         "noCollection": "Escolha seu collection.nml em Ajustes → Saída → Traktor para que o Surco possa salvar",
         "colours": "O Traktor colore cada cue pelo tipo. O Surco os salva como cues normais, em azul, e deixa o botão 1 para o AutoGrid do Traktor",
-        "calls": "O Traktor não tem CALL, então eles não são salvos. Só os hot cues chegam ao Traktor"
+        "calls": "O Traktor não tem CALL, então eles não são salvos. Só os hot cues chegam ao Traktor",
+        "otherCollection": "O Traktor usa outra coleção, {{path}}. O que você salvar aqui não vai chegar até ele. Troque em Ajustes → Saída → Traktor"
       },
       "provisional": {
         "chip": "Grade do Surco · {{bpm}} BPM",
@@ -1394,6 +1395,8 @@
     "traktorNmlPathHint": "A coleção do Traktor em que gravar. Você pode trocar quando quiser.",
     "traktorNmlPathDetectedHint": "Encontrado automaticamente; não é aplicado até você escolher usá-lo.",
     "traktorNmlPathUseDetected": "Usar este",
+    "traktorNmlPathOther": "O Traktor usa outra coleção, então o que o Surco salvar nesta não vai chegar até ele",
+    "traktorNmlPathUseTraktor": "Usar a do Traktor",
     "traktorCueOffset": "Ajuste dos cue points",
     "traktorCueQuestion": "No Traktor, onde caem os cues de uma faixa convertida?",
     "traktorCueStay": "Onde eu deixei",

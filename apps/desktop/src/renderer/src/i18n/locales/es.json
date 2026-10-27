@@ -914,7 +914,8 @@
         "saveAll_other": "Guardar {{count}} pistas en Traktor",
         "noCollection": "Elige tu collection.nml en Ajustes → Destino → Traktor para que Surco pueda guardar",
         "colours": "Traktor colorea cada cue según su tipo. Surco las guarda como cues normales, en azul, y deja el botón 1 para el AutoGrid de Traktor",
-        "calls": "Traktor no tiene CALL, así que no se guardan. Solo llegan a Traktor los hot cues"
+        "calls": "Traktor no tiene CALL, así que no se guardan. Solo llegan a Traktor los hot cues",
+        "otherCollection": "Traktor usa otra colección, {{path}}. Lo que guardes aquí no le llegará. Cámbiala en Ajustes → Destino → Traktor"
       },
       "provisional": {
         "chip": "Rejilla de Surco · {{bpm}} BPM",
@@ -1394,6 +1395,8 @@
     "traktorNmlPathHint": "La colección de Traktor en la que escribir. Puedes cambiarla cuando quieras.",
     "traktorNmlPathDetectedHint": "Encontrado automáticamente; no se aplica hasta que elijas usarlo.",
     "traktorNmlPathUseDetected": "Usar este",
+    "traktorNmlPathOther": "Traktor usa otra colección, así que lo que Surco guarde en esta no le llegará",
+    "traktorNmlPathUseTraktor": "Usar la de Traktor",
     "traktorCueOffset": "Ajuste de los cue points",
     "traktorCueQuestion": "En Traktor, ¿dónde te caen los cues de una pista convertida?",
     "traktorCueStay": "Donde los dejé",

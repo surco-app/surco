@@ -914,7 +914,8 @@
         "saveAll_other": "Save {{count}} tracks to Traktor",
         "noCollection": "Choose your collection.nml in Settings → Output → Traktor so Surco can save",
         "colours": "Traktor colours each cue by its type. Surco saves them as normal cues, in blue, and leaves button 1 to Traktor's AutoGrid",
-        "calls": "Traktor has no CALLs, so they are not saved. Only the hot cues reach Traktor"
+        "calls": "Traktor has no CALLs, so they are not saved. Only the hot cues reach Traktor",
+        "otherCollection": "Traktor uses another collection, {{path}}. What you save here will not reach it. Change it in Settings → Output → Traktor"
       },
       "provisional": {
         "chip": "Surco grid · {{bpm}} BPM",
@@ -1394,6 +1395,8 @@
     "traktorNmlPathHint": "The Traktor collection to write into. You can change it at any time.",
     "traktorNmlPathDetectedHint": "Found automatically; not applied until you choose to use it.",
     "traktorNmlPathUseDetected": "Use this",
+    "traktorNmlPathOther": "Traktor uses another collection, so what Surco saves in this one will not reach it",
+    "traktorNmlPathUseTraktor": "Use Traktor’s",
     "traktorCueOffset": "Cue point adjustment",
     "traktorCueQuestion": "In Traktor, where do the cues of a converted track land?",
     "traktorCueStay": "Where I left them",

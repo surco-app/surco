@@ -914,7 +914,8 @@
         "saveAll_other": "Enregistrer {{count}} morceaux dans Traktor",
         "noCollection": "Choisissez votre collection.nml dans Réglages → Sortie → Traktor pour que Surco puisse enregistrer",
         "colours": "Traktor colore chaque cue selon son type. Surco les enregistre comme des cues normaux, en bleu, et laisse le bouton 1 à l’AutoGrid de Traktor",
-        "calls": "Traktor n’a pas de CALL, ils ne sont donc pas enregistrés. Seuls les hot cues arrivent dans Traktor"
+        "calls": "Traktor n’a pas de CALL, ils ne sont donc pas enregistrés. Seuls les hot cues arrivent dans Traktor",
+        "otherCollection": "Traktor utilise une autre collection, {{path}}. Ce que tu enregistres ici ne lui parviendra pas. Change-la dans Réglages → Sortie → Traktor"
       },
       "provisional": {
         "chip": "Grille de Surco · {{bpm}} BPM",
@@ -1394,6 +1395,8 @@
     "traktorNmlPathHint": "La collection Traktor dans laquelle écrire. Tu peux la changer quand tu veux.",
     "traktorNmlPathDetectedHint": "Trouvé automatiquement ; non appliqué tant que tu ne choisis pas de l'utiliser.",
     "traktorNmlPathUseDetected": "Utiliser celui-ci",
+    "traktorNmlPathOther": "Traktor utilise une autre collection, donc ce que Surco enregistre dans celle-ci ne lui parviendra pas",
+    "traktorNmlPathUseTraktor": "Utiliser celle de Traktor",
     "traktorCueOffset": "Ajustement des points de repère",
     "traktorCueQuestion": "Dans Traktor, où tombent les cues d’un morceau converti ?",
     "traktorCueStay": "Là où je les ai laissés",
