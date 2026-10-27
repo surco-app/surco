@@ -57,12 +57,17 @@ describe('locale parity', () => {
 
   // A translation that drops or renames a {{placeholder}} renders the raw braces (or
   // nothing) at runtime; comparing per-key placeholder sets against English catches it.
+  // A singular form may leave {{count}} out ("el CALL"): i18next always passes the count,
+  // so leaving it unsaid renders no braces, and only languages that read 0 as singular
+  // need the number spelled.
   it.each(LOCALES)('%s keeps every interpolation placeholder en uses', (_, locale) => {
     const reference = new Map(leaves(en))
+    const compared = (key: string, text: string) =>
+      placeholders(text).filter((ph) => !(key.endsWith('_one') && ph === 'count'))
     for (const [key, text] of leaves(locale)) {
       const enText = reference.get(key)
       if (enText === undefined) continue
-      expect({ key, ph: placeholders(text) }).toEqual({ key, ph: placeholders(enText) })
+      expect({ key, ph: compared(key, text) }).toEqual({ key, ph: compared(key, enText) })
     }
   })
 })

@@ -2558,7 +2558,7 @@
     "otherLibrary": "Lo que espera es de otra biblioteca de Engine DJ y no se ha cambiado nada. Vuelve a esa biblioteca o descarta lo que espera",
     "notice": {
       "cuesChanged": "Las cues de {{track}} cambiaron en Engine DJ. Vuelve a marcarlas",
-      "callsDropped_one": "No se guardó {{count}} CALL de {{track}} ({{times}}). Engine DJ solo guarda hot cues",
+      "callsDropped_one": "No se guardó el CALL de {{track}} ({{times}}). Engine DJ solo guarda hot cues",
       "callsDropped_other": "No se guardaron los {{count}} CALL de {{track}} ({{times}}). Engine DJ solo guarda hot cues"
     },
     "discardConfirm": "¿Descartar lo que espera? Las cues vuelven a lo que dice Engine DJ",
