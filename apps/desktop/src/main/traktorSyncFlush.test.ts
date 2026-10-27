@@ -157,6 +157,53 @@ describe('flushTraktorSync', () => {
     expect(summaryDetail).not.toEqual({ detailKey: 'activity.traktorSyncUnreadable' })
   })
 
+  // endNmlBatch has already drained the run's patches by the time Traktor turns out to be
+  // open. Returning without them left an in-place AIFF to FLAC pointing at the AIFF: the
+  // track showed as missing, its cues and playlists cut off, with no later write coming.
+  describe('patches the collection cannot take now', () => {
+    const queue = (waiting = false) => ({ waiting: vi.fn(() => waiting), hold: vi.fn() })
+    const failing = (reason: SyncResult['reason']) =>
+      vi.fn(async () => ({ written: false, matched: 0, reason }) as SyncResult)
+
+    it('keeps them for a later write when the user keeps Traktor open', async () => {
+      const q = queue()
+      await flushTraktorSync(makeDeps({ queue: q, ensureTraktorClosed: vi.fn(async () => false) }))
+      expect(q.hold).toHaveBeenCalledWith([patch()])
+    })
+
+    it.each(['traktor-running', 'backup-failed', 'unreadable', 'write-failed'] as const)(
+      'keeps them when the sync stops with %s',
+      async (reason) => {
+        const q = queue()
+        await flushTraktorSync(makeDeps({ queue: q, syncCollection: failing(reason) }))
+        expect(q.hold).toHaveBeenCalledWith([patch()])
+      },
+    )
+
+    // No track to update is a finished answer, not one to try again.
+    it('lets them go when no track in the collection matched', async () => {
+      const q = queue()
+      await flushTraktorSync(makeDeps({ queue: q, syncCollection: failing('no-matches') }))
+      expect(q.hold).not.toHaveBeenCalled()
+    })
+
+    it('keeps nothing once they are written', async () => {
+      const q = queue()
+      await flushTraktorSync(makeDeps({ queue: q }))
+      expect(q.hold).not.toHaveBeenCalled()
+    })
+
+    // Patches from an earlier run still waiting would be written after this run's and
+    // undo them, so this run's patches wait behind them and go out in the same write.
+    it('queues them behind patches already waiting instead of writing ahead', async () => {
+      const q = queue(true)
+      const deps = makeDeps({ queue: q })
+      await flushTraktorSync(deps)
+      expect(deps.syncCollection).not.toHaveBeenCalled()
+      expect(q.hold).toHaveBeenCalledWith([patch()])
+    })
+  })
+
   // What the review's done sheet shows on Traktor's row.
   describe('the outcome it returns', () => {
     it.each([

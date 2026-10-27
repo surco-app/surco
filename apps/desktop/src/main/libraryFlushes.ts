@@ -30,6 +30,7 @@ import { updateRekordboxTags } from './rekordboxTags'
 import { getSettings } from './settings'
 import { readEmbeddedCover } from './tags'
 import { replaceDuplicatesInCollection, syncCollection } from './traktorNmlLibrary'
+import { holdInQueue } from './traktorPatchQueue'
 import { flushTraktorSync } from './traktorSyncFlush'
 
 export type SyncBlockedKey = 'traktorSyncBlocked' | 'rekordboxSyncBlocked' | 'engineSyncBlocked'
@@ -148,8 +149,13 @@ export async function flushConversionBatch(
   host: LibraryHost,
   sessions: { rekordbox: SessionBackup; engine: SessionBackup },
   queue: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void },
+  traktorQueue?: Parameters<typeof holdInQueue>[0],
 ): Promise<void> {
-  await flushTraktorSync({ ...traktorFlushDeps(host), endNmlBatch })
+  await flushTraktorSync({
+    ...traktorFlushDeps(host),
+    endNmlBatch,
+    queue: traktorQueue && holdInQueue(traktorQueue),
+  })
   // The run's repoints, taken once: rekordbox and Engine DJ each apply the same list to
   // their own library, and closing the batch twice would hand the second one nothing.
   const repoints = endRekordboxBatch()
