@@ -498,6 +498,15 @@ export interface TrackMetadata {
 // its key with this.
 export type MetaTextKey = Exclude<keyof TrackMetadata, 'custom'>
 
+// What the last release applied to a track wrote over what it found, field by field, so
+// the next release can take back what nobody touched since instead of leaving the first
+// one's label, catalog number or Discogs id behind. Only the fields it changed are kept.
+export interface AppliedRelease {
+  before: Partial<Record<MetaTextKey, string>>
+  wrote: Partial<Record<MetaTextKey, string>>
+  cover?: { before: { url?: string; path?: string }; wrote: { url?: string; path?: string } }
+}
+
 // One track's editable state, persisted alongside the session paths so a crash or
 // forced quit never loses metadata the user staged but hadn't converted yet. Keyed
 // by the track's source path in the session file and overlaid onto the fresh file
