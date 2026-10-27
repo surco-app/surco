@@ -3,6 +3,7 @@ import { type BeatGridFit, fitBeatGrid } from './beatGrid'
 import { type FullScan, killScansFor, runChannelScan } from './channelScan'
 import { detectClicks } from './clickDetect'
 import { runCueWaveWords } from './cueWaveWords'
+import { prependFlacId3 } from './flacFinderCover'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
 import { type FieldWrite, setTagFields, type TagFieldChange } from './tagFieldSet'
@@ -66,6 +67,9 @@ export type WorkerJob =
   // which is another TagLib rewrite and so belongs off the main process too.
   | { type: 'copyCuesToFlac'; source: string; dest: string; shift?: CueShift }
   | { type: 'copyCuesFromFlac'; source: string; dest: string; shift?: CueShift }
+  // The Finder-covers ID3 prepend rewrites the whole FLAC synchronously, so it runs
+  // off the main process's event loop like the other TagLib passes.
+  | { type: 'prependFlacId3'; file: string; meta: TrackMetadata; coverPath: string }
   // The native-rate clip/channel scan: spawns ffmpeg and streams ~32M samples through a
   // per-block reducer. ffmpegPath and channels ride the job as data because the worker has
   // no `app`/binaries to resolve them; running it here keeps that reduction off the main
@@ -155,5 +159,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return readTagLibFields(job.file)
     case 'tagSnapshot':
       return snapshotTagsOrNull(job.file)
+    case 'prependFlacId3':
+      prependFlacId3(job.file, job.meta, job.coverPath)
+      return null
   }
 }

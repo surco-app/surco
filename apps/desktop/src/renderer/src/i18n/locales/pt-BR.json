@@ -1418,7 +1418,7 @@
     "replaceLowRes": "Substituir capas de baixa resolução ao aplicar um release",
     "replaceLowResHint": "Quando desativado, a capa do próprio arquivo é sempre mantida; uma de baixa resolução só é sinalizada, nunca trocada pela imagem do release.",
     "flacFinderCovers": "Mostrar capas de FLAC no Finder",
-    "flacFinderCoversHint": "O Finder não lê a capa dentro dos FLAC, então mostra um ícone genérico. Esta opção usa a capa como ícone do arquivo ao converter ou atualizar, sem mexer no áudio nem nas tags, então o Traktor e os outros programas continuam aceitando o arquivo.",
+    "flacFinderCoversHint": "O Finder não lê a capa dentro dos FLAC, então mostra um ícone genérico. Esta opção contorna isso nos arquivos convertidos colocando um cabeçalho ID3 no início. A reprodução não é afetada e o Traktor os mantém na coleção.",
     "showSpectrum": "Análise de qualidade de áudio",
     "showSpectrumHint": "Mostra o espectro e a verificação de qualidade ao editar uma faixa. Se desativar, a análise é pulada por completo.",
     "autoAnalyze": "Analisar tudo ao importar",

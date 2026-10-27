@@ -16,7 +16,7 @@ export const TRAKTOR_TYPE_COLOR: Record<number, string> = {
   0: TRAKTOR_CUE_HEX,
   1: '#ff8c00',
   2: '#ff8c00',
-  3: '#ffd200',
+  3: '#c3af04',
   4: '#ffffff',
   5: '#3ceb50',
 }

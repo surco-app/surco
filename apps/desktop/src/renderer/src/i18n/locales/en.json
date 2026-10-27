@@ -1418,7 +1418,7 @@
     "replaceLowRes": "Replace low-res covers when applying a release",
     "replaceLowResHint": "When off, your file's own cover is always kept; a low-res one is only flagged, never swapped for the release image.",
     "flacFinderCovers": "Show FLAC covers in Finder",
-    "flacFinderCoversHint": "Finder can't read the artwork inside FLAC files, so they get a generic icon. This sets the artwork as the file's icon when converting or updating it, without touching the audio or the tags, so Traktor and every other app still accept it.",
+    "flacFinderCoversHint": "Finder can't read the artwork inside FLAC files, so they get a generic icon. This works around it on converted files by putting an ID3 header in front. Playback isn't affected and Traktor keeps them in its collection.",
     "showSpectrum": "Audio quality analysis",
     "showSpectrumHint": "Shows the spectrum and quality check while editing a track. When off, the analysis is skipped entirely.",
     "autoAnalyze": "Analyze everything on import",

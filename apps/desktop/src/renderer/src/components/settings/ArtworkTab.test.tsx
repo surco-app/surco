@@ -21,10 +21,11 @@ const synced = {
 } as unknown as SyncedDraft
 
 describe('ArtworkTab', () => {
-  // The option used to prepend an ID3 header that Traktor rejects, so it was switched off
-  // for anyone syncing to Traktor. It now sets a Finder icon and leaves the FLAC untouched,
-  // so the DJs who sync to Traktor, who are the ones asking for it, must be able to tick it.
-  it('offers the option while Traktor sync is on', () => {
+  // The 07/09 FLAC that went missing from a DJ's collection was blamed on this header,
+  // so the option was locked while syncing to Traktor. On 27/10 the same DJ loaded a FLAC
+  // carrying Surco's header into Traktor, closed it and found the track still there:
+  // Traktor even rewrites the header with its own tags. The lock only took the covers away.
+  it('offers the option with its usual hint while Traktor sync is on', () => {
     render(<ArtworkTab synced={{ ...synced, syncTraktor: true }} patch={vi.fn()} />)
 
     expect(screen.getByTestId('settings-flac-finder-covers')).toBeEnabled()
