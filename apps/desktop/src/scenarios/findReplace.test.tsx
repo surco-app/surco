@@ -40,7 +40,12 @@ describe('Clean up the titles of hundreds of tracks at once', () => {
   }, 60_000)
 
   it('says how many tracks change before replacing', () => {
-    expect(promoPreview).toContain(i18n.t('findReplace.summary', { fields: 2, tracks: 1 }))
+    expect(promoPreview).toContain(
+      i18n.t('findReplace.summary', {
+        fields: i18n.t('findReplace.fieldCount', { count: 2 }),
+        tracks: i18n.t('findReplace.trackCount', { count: 1 }),
+      }),
+    )
   })
 
   it('leaves the files alone until the tags are saved', () => {
