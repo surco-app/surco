@@ -4935,6 +4935,32 @@ describe('App derived list stability', () => {
     expect(sortRuns.count).toBe(before)
   })
 
+  // Picking a row and moving the pointer over the list are the most frequent things a DJ
+  // does while auditioning a crate. Neither changes what the list holds or how it sorts, so
+  // neither may pay for filtering and sorting the whole crate again.
+  it('does not re-run the list sort when the selection changes or the pointer crosses the list', async () => {
+    await renderApp()
+    await addTwoTracks()
+    // Each row's first pick loads its analyses, which do change what the list sorts on;
+    // visit both first so the measured picks change nothing but the selection.
+    const pick = async (i: number): Promise<void> => {
+      fireEvent.click(screen.getAllByTestId('track-row')[i])
+      await waitFor(() =>
+        expect(screen.getAllByTestId('track-row')[i]).toHaveAttribute('aria-selected', 'true'),
+      )
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, 50))
+      })
+    }
+    await pick(1)
+    await pick(0)
+    const before = sortRuns.count
+    await pick(1)
+    fireEvent.pointerEnter(screen.getByTestId('track-list-scroll'))
+    fireEvent.pointerLeave(screen.getByTestId('track-list-scroll'))
+    expect(sortRuns.count).toBe(before)
+  })
+
   // TrackList itself is memo'd (see TrackList.tsx), which only pays off if every
   // prop App hands it — onRemove/onTrash included, both built from menuTargets —
   // keeps one identity across an unrelated render. A find/replace modal touches
