@@ -1952,7 +1952,6 @@
     "rekordboxCollectionMissing": "Skipped, the rekordbox collection was not found",
     "engineCollectionMissing": "Skipped, the Engine DJ library was not found",
     "traktorSyncCollectionMissing": "Skipped, collection.nml was not found",
-    "syncHeldElsewhere": "Not kept for later, because what is waiting belongs to another collection. Go back to that collection or discard what is waiting",
     "reviewRun_one": "Music review, {{count}} track",
     "reviewRun_other": "Music review, {{count}} tracks",
     "reviewFix": {
@@ -2585,7 +2584,8 @@
     "pillHalted": "rekordbox changes on hold",
     "halted": "The last change could not be saved or undone. Surco will not touch the collection until you choose Apply now or Discard. Apply now replaces the backup copy master.db.surco-backup, so if anything looks wrong, restore from it first. You will find it in Settings → General → Collection backups",
     "pillElsewhere": "Waiting for another rekordbox collection",
-    "elsewhere": "This was prepared for another rekordbox collection. Surco will not apply it to the one you use now"
+    "elsewhere_one": "{{count}} change waits for another rekordbox collection. It will be applied when you go back to it",
+    "elsewhere_other": "{{count}} changes wait for another rekordbox collection. They will be applied when you go back to it"
   },
   "engineQueue": {
     "pillTracks_one": "{{count}} track waits for you to close Engine DJ",
@@ -2609,7 +2609,8 @@
     "pillHalted": "Engine DJ changes on hold",
     "halted": "The last change could not be saved or undone. Surco will not touch the library until you choose Apply now or Discard. Apply now replaces the backup copy m.db.surco-backup, so if anything looks wrong, restore from it first. You will find it in Settings → General → Collection backups",
     "pillElsewhere": "Waiting for another Engine DJ library",
-    "elsewhere": "This was prepared for another Engine DJ library. Surco will not apply it to the one you use now"
+    "elsewhere_one": "{{count}} change waits for another Engine DJ library. It will be applied when you go back to it",
+    "elsewhere_other": "{{count}} changes wait for another Engine DJ library. They will be applied when you go back to it"
   },
   "traktorQueue": {
     "pillTracks_one": "{{count}} track waits for you to close Traktor",
@@ -2633,7 +2634,8 @@
     "pillHalted": "Traktor changes on hold",
     "halted": "The last change could not be saved or undone. Surco will not touch the collection until you choose Apply now or Discard. Apply now replaces the backup copy collection.nml.surco-backup, so if anything looks wrong, restore from it first. You will find it in Settings → General → Collection backups",
     "pillElsewhere": "Waiting for another Traktor collection",
-    "elsewhere": "This was prepared for another Traktor collection. Surco will not apply it to the one you use now"
+    "elsewhere_one": "{{count}} change waits for another Traktor collection. It will be applied when you go back to it",
+    "elsewhere_other": "{{count}} changes wait for another Traktor collection. They will be applied when you go back to it"
   },
   "cueWave": {
     "notAnalysed": "This track is not analysed in rekordbox. Analyse it there to set cues",

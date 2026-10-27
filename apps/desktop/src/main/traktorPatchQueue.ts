@@ -46,7 +46,7 @@ export function nmlPatchOf(queued: QueuedNmlPatch): NmlPatch {
 // apply, which waits for Traktor to close instead of asking again: the user has just
 // declined. Only a conversion patch counts as waiting; saved cues in the same queue are
 // checked against the collection when written and do not depend on a run's order, and
-// patches held for another collection can never be written to this one.
+// patches held for another collection wait in that collection's own queue.
 export function holdInQueue(queue: {
   enqueue: RekordboxQueue<QueuedNmlPatch>['enqueue']
   state: () => RekordboxQueueState
@@ -54,8 +54,7 @@ export function holdInQueue(queue: {
 }): { waiting: () => boolean; hold: (patches: NmlPatch[], nmlPath: string) => Promise<void> } {
   return {
     waiting: () => {
-      const state = queue.state()
-      return !state.elsewhere && state.items.some((i) => i.parts.some((p) => p.kind === 'repoint'))
+      return queue.state().items.some((i) => i.parts.some((p) => p.kind === 'repoint'))
     },
     hold: async (patches, nmlPath) => {
       const nml = await readCollection(nmlPath)

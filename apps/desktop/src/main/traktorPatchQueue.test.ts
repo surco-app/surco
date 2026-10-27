@@ -247,20 +247,29 @@ describe('a held patch and the DJ’s edits in Traktor', () => {
     expect(write.mock.calls[0][1]).toEqual([patch()])
   })
 
-  // Patches held for one collection cannot be written to another. Counting them as waiting
-  // after the user pointed Surco at a different collection held every new run behind them,
-  // and the queue refused those runs, so they were lost.
+  // Patches held for one collection cannot be written to another, and wait in that
+  // collection's own queue. Counted as waiting, they held every run made in this one behind
+  // them.
   it('does not hold a run behind patches waiting for another collection', () => {
+    const queue = {
+      enqueue: vi.fn(() => true),
+      applyQuietly: vi.fn(),
+      state: () => ({ tracks: 0, changes: 0, elsewhere: 1, items: [] }),
+    }
+    expect(holdInQueue(queue).waiting()).toBe(false)
+  })
+
+  it('holds a run behind patches waiting for this collection while another collection waits too', () => {
     const queue = {
       enqueue: vi.fn(() => true),
       applyQuietly: vi.fn(),
       state: () => ({
         tracks: 1,
         changes: 0,
-        elsewhere: true as const,
+        elsewhere: 1,
         items: [{ key: 'track:0', label: '', parts: [{ kind: 'repoint' as const }] }],
       }),
     }
-    expect(holdInQueue(queue).waiting()).toBe(false)
+    expect(holdInQueue(queue).waiting()).toBe(true)
   })
 })

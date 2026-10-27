@@ -49,9 +49,17 @@ describe('rekordbox queue text', () => {
     expect(es.rekordboxQueue.pillElsewhere).toBe('Pendiente de otra colección de rekordbox')
   })
 
-  it('says the queue waits for another collection rather than for rekordbox to close', () => {
-    expect(pillText(tr, { tracks: 1, changes: 0, items: [], elsewhere: true })).toBe(
+  it('says the queue waits for another collection when nothing waits for this one', () => {
+    expect(pillText(tr, { tracks: 0, changes: 0, items: [], elsewhere: 2 })).toBe(
       'Waiting for another rekordbox collection',
+    )
+  })
+
+  // Each collection keeps its own queue: what waits for this one is what closing rekordbox
+  // now applies, so the pill counts it and leaves the other collection to the panel.
+  it('counts what waits for this collection even while another collection waits too', () => {
+    expect(pillText(tr, { tracks: 1, changes: 0, items: [], elsewhere: 2 })).toBe(
+      '1 track waits for you to close rekordbox',
     )
   })
 

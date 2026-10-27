@@ -13,12 +13,21 @@ import type { RekordboxRepoint } from './rekordboxBatch'
 import type { BatchResult, CuesOp, OpOutcome, QueueOp } from './rekordboxQueueOps'
 import { stillWaiting } from './rekordboxQueueWatch'
 
-interface QueueFile<R extends QueuedRepoint = RekordboxRepoint> {
-  version: 1
+// What waits for one collection. Each collection keeps its own, so pointing Surco at
+// another one never throws away what waits for the first, and a queue is only ever applied
+// to the collection it was made for.
+interface CollectionQueue<R extends QueuedRepoint = RekordboxRepoint> {
   repoints: R[]
   ops: QueueOp[]
   halted?: true
   collection?: string
+}
+
+// Version 1 held a single collection's queue at the top level: it is read as that
+// collection's queue.
+interface QueueFile<R extends QueuedRepoint = RekordboxRepoint> {
+  version: 2
+  queues: CollectionQueue<R>[]
 }
 
 export interface QueueStore {
@@ -101,24 +110,37 @@ export function keyOf(op: QueueOp): string {
   return `edit:${op.id}`
 }
 
+const isQueue = (q: CollectionQueue<QueuedRepoint> | undefined): boolean =>
+  Array.isArray(q?.ops) && Array.isArray(q?.repoints)
+
+const isEmptyQueue = (q: CollectionQueue<QueuedRepoint>): boolean =>
+  q.repoints.length === 0 && q.ops.length === 0
+
 function load<R extends QueuedRepoint>(store: QueueStore): QueueFile<R> {
-  const empty: QueueFile<R> = { version: 1, repoints: [], ops: [] }
+  const empty: QueueFile<R> = { version: 2, queues: [] }
   const text = store.read()
   if (text === null) return empty
-  let parsed: QueueFile<R> | null
+  let parsed: (CollectionQueue<R> & { version: 1 }) | QueueFile<R> | null
   try {
-    parsed = JSON.parse(text) as QueueFile<R>
+    parsed = JSON.parse(text)
   } catch {
     parsed = null
   }
-  if (parsed?.version === 1 && Array.isArray(parsed.ops) && Array.isArray(parsed.repoints))
+  if (parsed?.version === 1 && isQueue(parsed)) {
+    const { version: _, ...queue } = parsed
+    return { version: 2, queues: [queue] }
+  }
+  if (parsed?.version === 2 && Array.isArray(parsed.queues) && parsed.queues.every(isQueue))
     return parsed
   log.warn('rekordbox queue file unreadable, set aside as .unreadable')
   store.setAside()
   return empty
 }
 
-function stateOf(q: QueueFile<QueuedRepoint>, collection: string): RekordboxQueueState {
+function stateOf(
+  q: CollectionQueue<QueuedRepoint> | undefined,
+  elsewhere: number,
+): RekordboxQueueState {
   const items = new Map<string, RekordboxQueueItem>()
   const item = (key: string, label: string): RekordboxQueueItem => {
     const found = items.get(key)
@@ -127,8 +149,9 @@ function stateOf(q: QueueFile<QueuedRepoint>, collection: string): RekordboxQueu
     items.set(key, made)
     return made
   }
-  for (const r of q.repoints) item(`track:${r.to}`, basename(r.to)).parts.push({ kind: 'repoint' })
-  for (const op of q.ops) {
+  for (const r of q?.repoints ?? [])
+    item(`track:${r.to}`, basename(r.to)).parts.push({ kind: 'repoint' })
+  for (const op of q?.ops ?? []) {
     if (op.kind === 'edit') {
       item(keyOf(op), op.label ?? '').parts.push({ kind: 'tree', edit: op.edit.kind })
       continue
@@ -148,8 +171,8 @@ function stateOf(q: QueueFile<QueuedRepoint>, collection: string): RekordboxQueu
     tracks,
     changes: all.length - tracks,
     items: all,
-    ...(q.halted ? { halted: true } : {}),
-    ...(collection && q.collection && q.collection !== collection ? { elsewhere: true } : {}),
+    ...(q?.halted ? { halted: true } : {}),
+    ...(elsewhere > 0 ? { elsewhere } : {}),
   }
 }
 
@@ -169,13 +192,35 @@ export function withoutOp(result: Applied, id: string): Applied {
 export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>(
   deps: QueueDeps<R>,
 ): RekordboxQueue<R> {
-  const q = load<R>(deps.store)
+  const file = load<R>(deps.store)
   let chain: Promise<unknown> = Promise.resolve()
   let pending = 0
 
+  // The collection in use, or the one the settings name while its drive is unplugged. A
+  // queue made while no collection was known belongs to whichever is found.
+  const here = (): string => deps.collection() || deps.configured?.() || ''
+  const queueFor = (collection: string): CollectionQueue<R> | undefined =>
+    file.queues.find((q) => (q.collection ?? '') === collection) ??
+    file.queues.find((q) => !q.collection)
+  // With no collection at all there is no other one either: what waits is shown as is.
+  const shown = (): CollectionQueue<R> | undefined =>
+    queueFor(here()) ?? (here() ? undefined : file.queues[0])
+
+  const state = (): RekordboxQueueState => {
+    const own = shown()
+    const elsewhere = file.queues
+      .filter((q) => q !== own)
+      .reduce((sum, q) => {
+        const s = stateOf(q, 0)
+        return sum + s.tracks + s.changes
+      }, 0)
+    return stateOf(own, elsewhere)
+  }
+
   const save = (): void => {
-    deps.store.write(JSON.stringify(q))
-    deps.onChange(stateOf(q, deps.collection()))
+    file.queues = file.queues.filter((q) => !isEmptyQueue(q) || q.halted)
+    deps.store.write(JSON.stringify(file))
+    deps.onChange(state())
   }
 
   const refused = (reason: RekordboxEditRefusal): QueueApply => ({ status: 'refused', reason })
@@ -194,11 +239,12 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
     ensureClosed: () => Promise<boolean>,
     manual: boolean,
   ): Promise<QueueApply> => {
-    if (q.repoints.length === 0 && q.ops.length === 0) return { status: 'empty' }
-    if (q.halted && !manual) return refused('write-unknown')
+    if (file.queues.every(isEmptyQueue)) return { status: 'empty' }
     const collectionPath = deps.collection()
     if (!collectionPath) return refused('unreadable')
-    if (q.collection && q.collection !== collectionPath) return refused('other-collection')
+    const q = queueFor(collectionPath)
+    if (!q || isEmptyQueue(q)) return { status: 'empty' }
+    if (q.halted && !manual) return refused('write-unknown')
     const repoints = [...q.repoints]
     let askBatch = ensureClosed
     const repointedTo = new Set<string>()
@@ -295,15 +341,13 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
 
   return {
     enqueue(ops, repoints = []) {
-      const here = deps.collection() || deps.configured?.() || ''
-      if (q.repoints.length === 0 && q.ops.length === 0) q.collection = here || undefined
-      else if (q.collection && q.collection !== here) {
-        if (ops.length > 0 || repoints.length > 0)
-          log.warn(
-            `rekordbox queue held for ${q.collection}, left out ${ops.length} operation(s) and ${repoints.length} repoint(s) read from ${here || 'no collection'}`,
-          )
-        return false
+      const at = here()
+      let q = queueFor(at)
+      if (!q) {
+        q = { repoints: [], ops: [] }
+        file.queues.push(q)
       }
+      if (isEmptyQueue(q)) q.collection = at || undefined
       for (const r of repoints) {
         const at = q.repoints.findIndex((x) => x.from === r.from)
         if (at === -1) q.repoints.push(r)
@@ -317,20 +361,25 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
       save()
       return true
     },
-    state: () => stateOf(q, deps.collection()),
-    isEmpty: () => q.repoints.length === 0 && q.ops.length === 0,
+    state,
+    isEmpty: () => file.queues.every(isEmptyQueue),
     discard() {
-      q.repoints = []
-      q.ops = []
-      delete q.halted
+      const own = shown()
+      const gone = own && (!isEmptyQueue(own) || own.halted) ? [own] : file.queues
+      for (const q of gone) {
+        q.repoints = []
+        q.ops = []
+        delete q.halted
+      }
       save()
     },
     drop(id) {
-      q.ops = q.ops.filter((o) => o.id !== id)
+      const q = shown()
+      if (q) q.ops = q.ops.filter((o) => o.id !== id)
       save()
     },
     cuesOp: (contentId) =>
-      q.ops.find((o): o is CuesOp => o.kind === 'cues' && o.contentId === contentId),
+      shown()?.ops.find((o): o is CuesOp => o.kind === 'cues' && o.contentId === contentId),
     busy: () => pending > 0,
     settled: () => chain.then(() => undefined),
     apply(ensureClosed, opts) {

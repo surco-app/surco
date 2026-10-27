@@ -1689,7 +1689,7 @@ export interface RekordboxQueueState {
   changes: number
   items: RekordboxQueueItem[]
   halted?: true
-  elsewhere?: true
+  elsewhere?: number
 }
 
 export interface RekordboxQueueWritten {

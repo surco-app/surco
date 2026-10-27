@@ -26,6 +26,11 @@ function memoryStore(
   return store
 }
 
+function savedQueue<T>(store: { text: string | null }): { ops: T[] } {
+  const saved = JSON.parse(store.text ?? '{}') as { queues: { ops: T[] }[] }
+  return saved.queues[0]
+}
+
 const track = (id: string, path: string, over: Partial<TrackOp> = {}): TrackOp => ({
   id,
   kind: 'track',
@@ -175,44 +180,141 @@ describe('rekordbox queue', () => {
     expect(q.state().halted).toBeUndefined()
   })
 
-  it('never applies what was queued for one collection to another, and says the queue belongs elsewhere', async () => {
+  it('never applies what was queued for one collection to another, and counts it as waiting elsewhere', async () => {
     let at = '/copy/master.db'
     const d = deps({ collection: () => at })
     const q = createRekordboxQueue(d)
     q.enqueue([rename], [{ from: '/m/b.mp3', to: '/m/b.wav' }])
     at = '/real/master.db'
     const again = createRekordboxQueue({ ...d, onChange: vi.fn() })
-    expect(again.state().elsewhere).toBe(true)
-    expect(await again.apply(closed)).toEqual({ status: 'refused', reason: 'other-collection' })
+    expect(again.state()).toEqual({ tracks: 0, changes: 0, items: [], elsewhere: 2 })
+    expect(await again.apply(closed)).toEqual({ status: 'empty' })
     expect(d.repoint).not.toHaveBeenCalled()
     expect(d.applyBatch).not.toHaveBeenCalled()
   })
 
-  it('does not mix operations read from this collection into a queue held for another', () => {
+  // Pointing Surco at a copy of the collection used to throw away every change made there
+  // while the queue still held the original's. Each collection keeps its own now.
+  it('keeps the changes read from this collection in its own queue while another collection waits', () => {
+    let at = '/copy/master.db'
+    const q = createRekordboxQueue(deps({ collection: () => at }))
+    q.enqueue([rename])
+    at = '/real/master.db'
+    expect(q.enqueue([track('a', '/m/a.wav')])).toBe(true)
+    expect(q.state().items.map((i) => i.key)).toEqual(['track:/m/a.wav'])
+    expect(q.state().elsewhere).toBe(1)
+  })
+
+  it('applies each collection only what was queued for it, once it is the one in use', async () => {
+    let at = '/copy/master.db'
+    const d = deps({ collection: () => at })
+    const q = createRekordboxQueue(d)
+    q.enqueue([rename])
+    at = '/real/master.db'
+    q.enqueue([track('a', '/m/a.wav')])
+    expect(await q.apply(closed)).toMatchObject({ status: 'applied', tracks: 1, changes: 0 })
+    expect(d.applyBatch).toHaveBeenLastCalledWith(
+      '/real/master.db',
+      [track('a', '/m/a.wav')],
+      expect.any(Function),
+      expect.any(Function),
+    )
+    expect(q.isEmpty()).toBe(false)
+    at = '/copy/master.db'
+    expect(await q.apply(closed)).toMatchObject({ status: 'applied', tracks: 0, changes: 1 })
+    expect(d.applyBatch).toHaveBeenLastCalledWith(
+      '/copy/master.db',
+      [rename],
+      expect.any(Function),
+      expect.any(Function),
+    )
+    expect(q.isEmpty()).toBe(true)
+  })
+
+  it('survives a restart with the queues of two collections', () => {
+    let at = '/copy/master.db'
+    const d = deps({ collection: () => at })
+    const q = createRekordboxQueue(d)
+    q.enqueue([rename])
+    at = '/real/master.db'
+    q.enqueue([track('a', '/m/a.wav')])
+    const again = createRekordboxQueue({ ...d, onChange: vi.fn() })
+    expect(again.state().items.map((i) => i.key)).toEqual(['track:/m/a.wav'])
+    at = '/copy/master.db'
+    expect(again.state().items.map((i) => i.key)).toEqual(['edit:e1'])
+  })
+
+  // The file written before there was a queue per collection holds one collection's changes.
+  // They stay that collection's, and are applied to it and to no other.
+  it('keeps a queue file from before as the queue of the collection it was made for', async () => {
+    const store = memoryStore(
+      JSON.stringify({ version: 1, repoints: [], ops: [rename], collection: '/a/master.db' }),
+    )
+    let at = '/b/master.db'
+    const d = deps({ store, collection: () => at })
+    const q = createRekordboxQueue(d)
+    expect(q.state().elsewhere).toBe(1)
+    q.enqueue([track('b', '/m/b.wav')])
+    at = '/a/master.db'
+    expect(q.state().items.map((i) => i.key)).toEqual(['edit:e1'])
+    expect(await q.apply(closed)).toMatchObject({ status: 'applied', changes: 1 })
+    expect(d.applyBatch).toHaveBeenCalledWith(
+      '/a/master.db',
+      [rename],
+      expect.any(Function),
+      expect.any(Function),
+    )
+    expect(store.aside).toBe(false)
+  })
+
+  it('discards only what waits for the collection in use', () => {
     let at = '/copy/master.db'
     const q = createRekordboxQueue(deps({ collection: () => at }))
     q.enqueue([rename])
     at = '/real/master.db'
     q.enqueue([track('a', '/m/a.wav')])
-    expect(q.state().items.map((i) => i.key)).toEqual(['edit:e1'])
+    q.discard()
+    expect(q.state()).toEqual({ tracks: 0, changes: 0, items: [], elsewhere: 1 })
   })
 
-  it('tells the caller when it leaves operations out of a queue held for another collection, so a save is never taken as done', () => {
-    let at = '/copy/master.db'
-    const q = createRekordboxQueue(deps({ collection: () => at }))
-    expect(q.enqueue([rename])).toBe(true)
-    at = '/real/master.db'
-    expect(q.enqueue([track('a', '/m/a.wav')])).toBe(false)
-  })
-
-  it('logs the run it leaves out of a queue held for another collection, so a lost repoint can be traced', () => {
+  // With nothing waiting for this collection, the pill shows only what waits for another,
+  // and Discard is how the DJ lets go of a collection that is not coming back.
+  it('discards what waits for other collections when nothing waits for this one', () => {
     let at = '/copy/master.db'
     const q = createRekordboxQueue(deps({ collection: () => at }))
     q.enqueue([rename])
     at = '/real/master.db'
-    vi.mocked(log.warn).mockClear()
-    q.enqueue([track('a', '/m/a.wav')], [{ from: '/m/b.mp3', to: '/m/b.wav' }])
-    expect(log.warn).toHaveBeenCalledWith(expect.stringContaining('1 repoint'))
+    q.discard()
+    expect(q.isEmpty()).toBe(true)
+  })
+
+  it('lifts the hold on this collection without discarding what waits for another', async () => {
+    let at = '/copy/master.db'
+    const d = deps({ collection: () => at })
+    const q = createRekordboxQueue(d)
+    q.enqueue([rename])
+    at = '/real/master.db'
+    d.applyBatch.mockResolvedValueOnce({ ok: false, reason: 'write-unknown' })
+    q.enqueue([track('a', '/m/a.wav')])
+    await q.apply(closed)
+    q.drop('a')
+    q.discard()
+    expect(q.state()).toEqual({ tracks: 0, changes: 0, items: [], elsewhere: 1 })
+  })
+
+  it('holds only the collection a write left unknown', async () => {
+    let at = '/copy/master.db'
+    const d = deps({ collection: () => at })
+    d.applyBatch.mockResolvedValueOnce({ ok: false, reason: 'write-unknown' })
+    const q = createRekordboxQueue(d)
+    q.enqueue([rename])
+    await q.apply(closed)
+    at = '/real/master.db'
+    q.enqueue([track('a', '/m/a.wav')])
+    expect(q.state().halted).toBeUndefined()
+    expect(await q.apply(closed)).toMatchObject({ status: 'applied', tracks: 1 })
+    at = '/copy/master.db'
+    expect(q.state().halted).toBe(true)
   })
 
   // The DJ only sees "could not save" on screen: the log line naming the collection and the
@@ -263,7 +365,8 @@ describe('rekordbox queue', () => {
     const q = createRekordboxQueue(d)
     expect(q.enqueue([], [{ from: '/m/b.mp3', to: '/m/b.flac' }])).toBe(true)
     at = '/Volumes/Otro/master.db'
-    expect(await q.apply(closed)).toEqual({ status: 'refused', reason: 'other-collection' })
+    expect(await q.apply(closed)).toEqual({ status: 'empty' })
+    expect(d.repoint).not.toHaveBeenCalled()
     at = '/Volumes/Disco/master.db'
     expect(await q.apply(closed)).toMatchObject({ status: 'applied' })
     expect(d.repoint).toHaveBeenCalledWith('/Volumes/Disco/master.db', [
@@ -498,7 +601,7 @@ describe('rekordbox queue', () => {
       return applied(ops)
     })
     await q.apply(closed)
-    const saved = JSON.parse(store.text ?? '{}') as { ops: TrackOp[] }
+    const saved = savedQueue<TrackOp>(store)
     expect(saved.ops.map((o) => o.stamps)).toEqual([{ '3000': 200, '3001': 50 }, { '3000': 90 }])
   })
 
@@ -520,7 +623,7 @@ describe('rekordbox queue', () => {
       return batch(ops)
     })
     const result = await q.apply(closed)
-    const saved = JSON.parse(store.text ?? '{}') as { ops: TrackOp[] }
+    const saved = savedQueue<TrackOp>(store)
     return { result, saved }
   }
 
@@ -593,7 +696,7 @@ describe('cues in the queue', () => {
     const q = createRekordboxQueue(deps({ store }))
     q.enqueue([track('t', '/m/a.wav', { contentId: '103' }), cues('c1', [1000])])
     q.enqueue([cues('c2', [2000])])
-    const saved = JSON.parse(store.text ?? '{}') as { ops: QueueOp[] }
+    const saved = savedQueue<QueueOp>(store)
     expect(saved.ops.filter((o) => o.kind === 'cues')).toEqual([cues('c2', [2000])])
     expect(q.state()).toEqual({
       tracks: 1,
@@ -638,7 +741,7 @@ describe('cues in the queue', () => {
       return applied(ops)
     })
     expect(await q.apply(closed)).toMatchObject({ status: 'applied', tracks: 1 })
-    const saved = JSON.parse(store.text ?? '{}') as { ops: QueueOp[] }
+    const saved = savedQueue<QueueOp>(store)
     expect(saved.ops).toEqual([
       cues('c1', [1000]),
       track('b', '/m/b.wav', { stamps: { '3000': 200 } }),
@@ -651,7 +754,7 @@ describe('cues in the queue', () => {
     const q = createRekordboxQueue(d)
     q.enqueue([cues('c1', [1000])])
     at = '/real/master.db'
-    expect(await q.apply(closed)).toEqual({ status: 'refused', reason: 'other-collection' })
+    expect(await q.apply(closed)).toEqual({ status: 'empty' })
     expect(d.applyBatch).not.toHaveBeenCalled()
   })
 

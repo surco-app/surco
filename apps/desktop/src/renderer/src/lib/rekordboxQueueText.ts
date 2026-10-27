@@ -122,9 +122,9 @@ export function pillText(
   words: QueueWords = REKORDBOX_QUEUE_WORDS,
 ): string | null {
   if (state.halted) return tr(words.pillHalted)
-  if (state.elsewhere) return tr(words.pillElsewhere)
   if (state.tracks > 0) return tr(words.pillTracks, { count: state.tracks })
   if (state.changes > 0) return tr(words.pillChanges, { count: state.changes })
+  if (state.elsewhere) return tr(words.pillElsewhere)
   return null
 }
 

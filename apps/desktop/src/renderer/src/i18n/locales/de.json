@@ -1952,7 +1952,6 @@
     "rekordboxCollectionMissing": "Übersprungen, die rekordbox-Sammlung wurde nicht gefunden",
     "engineCollectionMissing": "Übersprungen, die Engine-DJ-Bibliothek wurde nicht gefunden",
     "traktorSyncCollectionMissing": "Übersprungen, collection.nml wurde nicht gefunden",
-    "syncHeldElsewhere": "Nicht für später aufbewahrt, weil das, was wartet, zu einer anderen Sammlung gehört. Wechsle zurück zu dieser Sammlung oder verwirf, was wartet",
     "reviewRun_one": "Music-Prüfung, {{count}} Titel",
     "reviewRun_other": "Music-Prüfung, {{count}} Titel",
     "reviewFix": {
@@ -2585,7 +2584,8 @@
     "pillHalted": "rekordbox-Änderungen angehalten",
     "halted": "Die letzte Änderung konnte weder gespeichert noch rückgängig gemacht werden. Surco rührt die Sammlung nicht an, bis du Jetzt anwenden oder Verwerfen wählst. Jetzt anwenden ersetzt die Sicherungskopie master.db.surco-backup. Wenn etwas nicht stimmt, stelle die Sammlung zuerst daraus wieder her. Du findest sie unter Einstellungen → Allgemein → Sicherungen der Sammlungen",
     "pillElsewhere": "Wartet auf eine andere rekordbox-Sammlung",
-    "elsewhere": "Das wurde für eine andere rekordbox-Sammlung vorbereitet. Surco wendet es nicht auf die jetzt verwendete an"
+    "elsewhere_one": "{{count}} Änderung wartet auf eine andere rekordbox-Sammlung. Sie wird angewendet, wenn du zu ihr zurückkehrst",
+    "elsewhere_other": "{{count}} Änderungen warten auf eine andere rekordbox-Sammlung. Sie werden angewendet, wenn du zu ihr zurückkehrst"
   },
   "engineQueue": {
     "pillTracks_one": "{{count}} Titel wartet, bis du Engine DJ schließt",
@@ -2609,7 +2609,8 @@
     "pillHalted": "Engine-DJ-Änderungen angehalten",
     "halted": "Die letzte Änderung konnte weder gespeichert noch rückgängig gemacht werden. Surco rührt die Bibliothek nicht an, bis du Jetzt anwenden oder Verwerfen wählst. Jetzt anwenden ersetzt die Sicherungskopie m.db.surco-backup. Wenn etwas nicht stimmt, stelle die Bibliothek zuerst daraus wieder her. Du findest sie unter Einstellungen → Allgemein → Sicherungen der Sammlungen",
     "pillElsewhere": "Wartet auf eine andere Engine-DJ-Bibliothek",
-    "elsewhere": "Das wurde für eine andere Engine-DJ-Bibliothek vorbereitet. Surco wendet es nicht auf die jetzt verwendete an"
+    "elsewhere_one": "{{count}} Änderung wartet auf eine andere Engine-DJ-Bibliothek. Sie wird angewendet, wenn du zu ihr zurückkehrst",
+    "elsewhere_other": "{{count}} Änderungen warten auf eine andere Engine-DJ-Bibliothek. Sie werden angewendet, wenn du zu ihr zurückkehrst"
   },
   "traktorQueue": {
     "pillTracks_one": "{{count}} Titel wartet, bis du Traktor schließt",
@@ -2633,7 +2634,8 @@
     "pillHalted": "Engine-DJ-Änderungen angehalten",
     "halted": "Die letzte Änderung konnte weder gespeichert noch rückgängig gemacht werden. Surco rührt die Collection nicht an, bis du Jetzt anwenden oder Verwerfen wählst. Jetzt anwenden ersetzt die Sicherungskopie collection.nml.surco-backup. Wenn etwas nicht stimmt, stelle die Collection zuerst daraus wieder her. Du findest sie unter Einstellungen → Allgemein → Sicherungen der Sammlungen",
     "pillElsewhere": "Wartet auf eine andere Engine-DJ-Collection",
-    "elsewhere": "Das wurde für eine andere Engine-DJ-Collection vorbereitet. Surco wendet es nicht auf die jetzt verwendete an"
+    "elsewhere_one": "{{count}} Änderung wartet auf eine andere Traktor-Sammlung. Sie wird angewendet, wenn du zu ihr zurückkehrst",
+    "elsewhere_other": "{{count}} Änderungen warten auf eine andere Traktor-Sammlung. Sie werden angewendet, wenn du zu ihr zurückkehrst"
   },
   "cueWave": {
     "notAnalysed": "Dieser Track ist in rekordbox nicht analysiert. Analysiere ihn dort, um Cues zu setzen",

@@ -1952,7 +1952,6 @@
     "rekordboxCollectionMissing": "Omitido, no se encuentra la colección de rekordbox",
     "engineCollectionMissing": "Omitido, no se encuentra la biblioteca de Engine DJ",
     "traktorSyncCollectionMissing": "Omitido, no se encuentra collection.nml",
-    "syncHeldElsewhere": "No se guardó para más tarde porque lo que espera es de otra colección. Vuelve a esa colección o descarta lo que espera",
     "reviewRun_one": "Revisión de Music, {{count}} pista",
     "reviewRun_other": "Revisión de Music, {{count}} pistas",
     "reviewFix": {
@@ -2585,7 +2584,8 @@
     "pillHalted": "Cambios de rekordbox en pausa",
     "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la colección hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia master.db.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → General → Copias de las colecciones",
     "pillElsewhere": "Pendiente de otra colección de rekordbox",
-    "elsewhere": "Esto se preparó para otra colección de rekordbox. Surco no lo aplicará a la que usas ahora"
+    "elsewhere_one": "Hay {{count}} cambio pendiente de otra colección de rekordbox. Se aplicará cuando vuelvas a ella",
+    "elsewhere_other": "Hay {{count}} cambios pendientes de otra colección de rekordbox. Se aplicarán cuando vuelvas a ella"
   },
   "engineQueue": {
     "pillTracks_one": "{{count}} pista espera a que cierres Engine DJ",
@@ -2609,7 +2609,8 @@
     "pillHalted": "Cambios de Engine DJ en pausa",
     "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la biblioteca hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia m.db.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → General → Copias de las colecciones",
     "pillElsewhere": "Pendiente de otra biblioteca de Engine DJ",
-    "elsewhere": "Esto se preparó para otra biblioteca de Engine DJ. Surco no lo aplicará a la que usas ahora"
+    "elsewhere_one": "Hay {{count}} cambio pendiente de otra biblioteca de Engine DJ. Se aplicará cuando vuelvas a ella",
+    "elsewhere_other": "Hay {{count}} cambios pendientes de otra biblioteca de Engine DJ. Se aplicarán cuando vuelvas a ella"
   },
   "traktorQueue": {
     "pillTracks_one": "{{count}} pista espera a que cierres Traktor",
@@ -2633,7 +2634,8 @@
     "pillHalted": "Cambios de Traktor en pausa",
     "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la colección hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia collection.nml.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → General → Copias de las colecciones",
     "pillElsewhere": "Pendiente de otra colección de Traktor",
-    "elsewhere": "Esto se preparó para otra colección de Traktor. Surco no lo aplicará a la que usas ahora"
+    "elsewhere_one": "Hay {{count}} cambio pendiente de otra colección de Traktor. Se aplicará cuando vuelvas a ella",
+    "elsewhere_other": "Hay {{count}} cambios pendientes de otra colección de Traktor. Se aplicarán cuando vuelvas a ella"
   },
   "cueWave": {
     "notAnalysed": "Esta pista no está analizada en rekordbox. Analízala allí para poner cues",

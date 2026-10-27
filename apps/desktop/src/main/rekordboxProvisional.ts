@@ -153,7 +153,7 @@ export function adjustProvisional(deps: {
   unsaved?: () => ReadonlySet<string>
 }): void {
   const state = deps.queue.state()
-  if (state.halted || state.elsewhere) return
+  if (state.halted) return
   const entries = deps.list
     .all()
     .filter((e) => !deps.queue.cuesOp(e.contentId) && !deps.unsaved?.().has(e.contentId))
