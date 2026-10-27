@@ -23,12 +23,7 @@ describe('downloadCover timeout', () => {
 
 describe('downloadCover image validation', () => {
   function mockBytes(bytes: number[]): ReturnType<typeof vi.fn> {
-    const fn = vi.fn(async () => ({
-      ok: true,
-      status: 200,
-      headers: { get: () => null },
-      arrayBuffer: async () => new Uint8Array(bytes).buffer,
-    }))
+    const fn = vi.fn(async () => new Response(new Uint8Array(bytes), { status: 200 }))
     vi.stubGlobal('fetch', fn)
     return fn
   }
@@ -60,5 +55,62 @@ describe('downloadCover image validation', () => {
       /SURCO_ERR:coverUrlBlocked/,
     )
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('downloadCover redirects and size', () => {
+  const jpeg = () => new Response(new Uint8Array([0xff, 0xd8, 0xff, 0xe0]), { status: 200 })
+  const redirect = (location: string) => new Response(null, { status: 302, headers: { location } })
+
+  // fetch followed redirects on its own, so a public URL answering 302 to the cloud
+  // metadata address or a loopback service walked straight past the SSRF check, which
+  // only ever saw the first URL. Every hop has to pass it.
+  it('refuses a redirect to a blocked address without fetching it', async () => {
+    const fn = vi.fn(async () => redirect('http://169.254.169.254/latest/meta-data/'))
+    vi.stubGlobal('fetch', fn)
+    await expect(downloadCover('https://img.example/cover.jpg')).rejects.toThrow(
+      /SURCO_ERR:coverUrlBlocked/,
+    )
+    expect(fn).toHaveBeenCalledTimes(1)
+  })
+
+  // CDNs redirect artwork all the time; checking each hop must not break the ordinary case.
+  it('follows a redirect to a public host', async () => {
+    const fn = vi
+      .fn()
+      .mockResolvedValueOnce(redirect('/real/cover.jpg'))
+      .mockResolvedValueOnce(jpeg())
+    vi.stubGlobal('fetch', fn)
+    await expect(downloadCover('https://img.example/cover')).resolves.toMatch(/\.jpg$/)
+    expect(fn.mock.calls[1][0]).toBe('https://img.example/real/cover.jpg')
+  })
+
+  it('gives up on a redirect loop', async () => {
+    const fn = vi.fn(async () => redirect('https://img.example/again'))
+    vi.stubGlobal('fetch', fn)
+    await expect(downloadCover('https://img.example/again')).rejects.toThrow(
+      /SURCO_ERR:coverDownloadFailed/,
+    )
+    expect(fn.mock.calls.length).toBeLessThan(10)
+  })
+
+  // The renderer names the URL and the whole body used to be buffered in the main process:
+  // a link to a multi-GB file would have filled memory before the image check ever ran.
+  it('stops reading a body past the size cap', async () => {
+    let pulled = 0
+    const endless = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled++
+        controller.enqueue(new Uint8Array(1024 * 1024).fill(0xff))
+      },
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(endless, { status: 200 })),
+    )
+    await expect(downloadCover('https://img.example/huge.jpg')).rejects.toThrow(
+      /SURCO_ERR:coverDownloadFailed/,
+    )
+    expect(pulled).toBeLessThan(30)
   })
 })
