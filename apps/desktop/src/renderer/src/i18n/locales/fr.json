@@ -202,6 +202,7 @@
     "close": "Fermer",
     "restored": "« {{name}} » restauré dans son dossier",
     "restoreFailed": "Impossible de restaurer « {{name}} » : {{reason}}",
+    "removeFailed": "Impossible de supprimer « {{name}} ». {{reason}}",
     "filters": {
       "all": "Tout",
       "replaced": "Remplacés",

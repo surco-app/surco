@@ -202,6 +202,7 @@
     "close": "Schließen",
     "restored": "„{{name}}“ in seinem Ordner wiederhergestellt",
     "restoreFailed": "„{{name}}“ konnte nicht wiederhergestellt werden: {{reason}}",
+    "removeFailed": "„{{name}}“ konnte nicht gelöscht werden. {{reason}}",
     "filters": {
       "all": "Alle",
       "replaced": "Ersetzt",

@@ -202,6 +202,7 @@
     "close": "Fechar",
     "restored": "“{{name}}” restaurado na sua pasta",
     "restoreFailed": "Não foi possível restaurar “{{name}}”: {{reason}}",
+    "removeFailed": "Não foi possível apagar “{{name}}”. {{reason}}",
     "filters": {
       "all": "Tudo",
       "replaced": "Substituídos",

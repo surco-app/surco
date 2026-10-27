@@ -1873,7 +1873,16 @@ export default function App(): React.JSX.Element {
     },
   )
   const onRemoveFromTrash = useStableCallback(async (entry: TrashEntry): Promise<void> => {
-    await window.api.trashRemove(entry.id).catch(() => undefined)
+    try {
+      await window.api.trashRemove(entry.id)
+    } catch (e) {
+      setNotice(
+        tr('trash.removeFailed', {
+          name: entry.name,
+          reason: mainErrorMessage(e, tr, tr('errors.unexpected', { detail: '' })),
+        }),
+      )
+    }
     await refreshTrash()
   })
   const onEmptyTrash = useStableCallback(async (): Promise<void> => {

@@ -7349,6 +7349,30 @@ describe('App Originals panel', () => {
     expect(screen.queryByTestId('trash-panel')).toBeNull()
     expect(first).toHaveAttribute('aria-selected', 'true')
   })
+  // Deleting a backup for good that fails (the file is locked, the disk went away) used to
+  // close the confirm and do nothing, so the user believed the copy was gone.
+  it('says so when deleting one backup for good fails', async () => {
+    setApi({
+      trashList: vi.fn().mockResolvedValue([
+        {
+          id: 'e1',
+          name: 'a.wav',
+          originalPath: '/music/a.wav',
+          storedPath: '/ud/trash/items/e1-a.wav',
+          bytes: 1024,
+          trashedAt: Date.now(),
+          reason: 'replaced',
+        },
+      ]),
+      trashRemove: vi.fn().mockRejectedValue(new Error('EBUSY')),
+    })
+    await renderApp()
+    act(() => menuListener?.('backups'))
+    fireEvent.click(await screen.findByTestId('trash-remove'))
+    fireEvent.click(screen.getByTestId('trash-remove-confirm'))
+
+    expect(await screen.findByTestId('app-notice')).toHaveTextContent('a.wav')
+  })
 })
 
 describe('App list header', () => {
