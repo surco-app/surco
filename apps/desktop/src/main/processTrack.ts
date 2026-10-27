@@ -276,7 +276,10 @@ export async function runProcessTrack(
     // Awaited before the conflict check reads the disk and the sibling claims, as the
     // beside branch does: with the wait between that read and reservePath, two in-place
     // jobs of one run (Song.flac and Song.wav, both becoming Song.aiff) each read the name
-    // as free, both wrote it, and the folder kept one recording of the two.
+    // as free, both wrote it, and the folder kept one recording of the two. The wait for
+    // Engine DJ to close is held here for the same reason.
+    if (addToEngineDj && deps.ensureEngineDjClosed && !(await deps.ensureEngineDjClosed()))
+      throw errorWithKey('engineDjOpen')
     let keepOverwritten = false
     const outputIsInput =
       !musicOnly && !besideOriginal && inPlace && (await deps.isSameFile(job.inputPath, outputPath))
@@ -335,8 +338,6 @@ export async function runProcessTrack(
         inPlace = false
       } else if (choice === 'overwrite') keepOverwritten = true
     }
-    if (addToEngineDj && deps.ensureEngineDjClosed && !(await deps.ensureEngineDjClosed()))
-      throw errorWithKey('engineDjOpen')
     // Claimed for the rest of the job — including the convertAudio write, which is
     // exactly the window existsSync can't see yet (temp file + rename). Released in
     // finally so a thrown error still frees it for the next job or retry.

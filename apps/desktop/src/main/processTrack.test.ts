@@ -520,6 +520,35 @@ describe('runProcessTrack — output conflict', () => {
     expect(outputs).toEqual(['/in/Song.aiff', '/in/Song (2).aiff'])
   })
 
+  // With "Add to Engine DJ" on, each job waits to learn Engine is closed. Waited between
+  // reading the name as free and claiming it, both jobs of a run read it free, both wrote
+  // it, and the batch said 2 converted with one file left in the folder.
+  it('never lets two jobs land on the same name while they wait for Engine DJ to close', async () => {
+    const reservations = createOutputReservations(false)
+    const release: Array<() => void> = []
+    const deps = makeDeps({
+      settings: settings({ addToEngineDj: true }),
+      ensureEngineDjClosed: vi.fn(async () => true),
+      isPathReserved: reservations.isReserved,
+      reservePath: reservations.reserve,
+      releasePath: reservations.release,
+      convertAudio: vi.fn(
+        () =>
+          new Promise<{ normalizeSkipped: boolean }>((resolve) =>
+            release.push(() => resolve({ normalizeSkipped: false })),
+          ),
+      ),
+    })
+
+    const first = runProcessTrack(job({ id: 'a' }), deps)
+    const second = runProcessTrack(job({ id: 'b', inputPath: '/in/other.wav' }), deps)
+    await vi.waitFor(() => expect(release).toHaveLength(2))
+    for (const done of release) done()
+    const outputs = [(await first).outputPath, (await second).outputPath]
+
+    expect(outputs).toEqual(['/out/Artist - Title.aiff', '/out/Artist - Title (2).aiff'])
+  })
+
   // The prompt is what the user consents on. A claim by another job in the run has no file
   // behind it yet, so a prompt reading "already exists in the destination folder" asked
   // about a file that was not there; the prompt is told which of the two it is facing.
