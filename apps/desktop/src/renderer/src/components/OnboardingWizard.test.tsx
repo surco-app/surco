@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // OnboardingWizard's tree reads window.api.platform at module load, so stub it first.
@@ -269,6 +269,49 @@ describe('OnboardingWizard destination', () => {
     expect(onFinish).toHaveBeenCalledWith(
       expect.objectContaining({ addToEngineDj: true, engineLibraryDir: '/dj/Engine Library' }),
     )
+  })
+
+  // Detection is a nicety: a library probe that fails (an unreadable rekordbox folder) used
+  // to reject unhandled, which the app reports as a red error over the very first screen.
+  // A failed probe just means no collections step.
+  it('treats a failed library detection as no collections found', async () => {
+    const api = window as unknown as { api: { engineAvailable: () => Promise<boolean> } }
+    const unhandled = vi.fn()
+    process.on('unhandledRejection', unhandled)
+    api.api.engineAvailable = () => Promise.reject(new Error('EACCES'))
+    try {
+      render(<OnboardingWizard settings={settings} onFinish={vi.fn()} />)
+      await new Promise((r) => setTimeout(r, 0))
+      expect(unhandled).not.toHaveBeenCalled()
+      expect(screen.getByText(i18n.t('onboarding.step', { current: 1, total: 4 }))).toBeVisible()
+    } finally {
+      api.api.engineAvailable = async () => false
+      process.off('unhandledRejection', unhandled)
+    }
+  })
+
+  // A slow detection that landed after the user moved on grew the wizard under them: the
+  // count jumped from 4 to 5 and the Finish they were about to press became Next. Once the
+  // user has left the first step the length is fixed.
+  it('keeps the step count it showed once the user has moved past the first step', async () => {
+    const api = window as unknown as { api: { rekordboxCollection: () => Promise<string> } }
+    let land: (path: string) => void = () => {}
+    api.api.rekordboxCollection = () =>
+      new Promise<string>((resolve) => {
+        land = resolve
+      })
+    try {
+      const onFinish = vi.fn()
+      render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+      fireEvent.click(screen.getByTestId('onboarding-next'))
+      await act(async () => land('/Users/dj/Library/Pioneer/rekordbox/master.db'))
+      expect(screen.getByText(i18n.t('onboarding.step', { current: 2, total: 4 }))).toBeVisible()
+      for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+      fireEvent.click(screen.getByTestId('onboarding-next'))
+      expect(onFinish).toHaveBeenCalledTimes(1)
+    } finally {
+      api.api.rekordboxCollection = async () => ''
+    }
   })
 
   // A DJ finished setup without ever hearing that Surco can keep their collection in step

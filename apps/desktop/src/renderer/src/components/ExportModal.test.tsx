@@ -133,10 +133,38 @@ describe('ExportModal', () => {
     expect(screen.getByTestId('export-unconverted')).toHaveTextContent('1')
   })
 
+  // "1 track(s) aren't converted" reads as a template leaking through; the warning is the
+  // one line the user must take seriously before exporting originals.
+  it('words the warning in the singular for one track and the plural for several', () => {
+    render(<ExportModal tracks={[track()]} onClose={vi.fn()} />)
+    expect(screen.getByTestId('export-unconverted')).toHaveTextContent(
+      i18n.t('export.unconverted', { count: 1 }),
+    )
+    expect(screen.getByTestId('export-unconverted').textContent).not.toContain('(s)')
+    expect(i18n.t('export.unconverted', { count: 1 })).not.toBe(
+      i18n.t('export.unconverted', { count: 2 }).replace('2', '1'),
+    )
+  })
+
   // Every track converted: the export points at the good copies, so there's nothing to warn
   // about and the notice stays out of the way.
   it('shows no warning when every track has been converted', () => {
     render(<ExportModal tracks={[{ ...track(), outputPath: '/out/a.aiff' }]} onClose={vi.fn()} />)
     expect(screen.queryByTestId('export-unconverted')).toBeNull()
+  })
+
+  // Nothing in scope (a filter hides every row) would save an empty collection file that
+  // the DJ software then imports as nothing, so no target can be picked.
+  it('disables every target when there is nothing to export', () => {
+    render(<ExportModal tracks={[]} onClose={vi.fn()} />)
+    for (const id of ['rekordbox', 'traktor', 'serato', 'm3u'])
+      expect(screen.getByTestId(`export-${id}`)).toBeDisabled()
+  })
+
+  // The export saves the selection when there is one, else the visible rows; the modal
+  // says which and how many, so a filtered list is not mistaken for the whole collection.
+  it('names the tracks it will export', () => {
+    render(<ExportModal tracks={[track(), track()]} scope="selected" onClose={vi.fn()} />)
+    expect(screen.getByTestId('export-scope')).toHaveTextContent('Applies to the 2 selected tracks')
   })
 })

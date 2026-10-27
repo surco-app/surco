@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type {
   DuplicateReplaceOutcome,
   LibraryStatus,
@@ -28,7 +29,9 @@ import {
   type ReviewRemovalRun,
   type ReviewSource,
 } from '../lib/reviewSource'
+import { useToast } from '../lib/toastContext'
 import type { TrackItem } from '../types'
+import { useLatest } from './useLatest'
 
 export type ReviewFilter = 'all' | 'spelling' | 'duplicates'
 
@@ -245,6 +248,8 @@ export function useMusicReview({
   saveIgnored: (keys: string[]) => void
   onFilesChanged: (updates: LibraryTagUpdate[]) => void
 }): MusicReview {
+  const { t } = useTranslation()
+  const { reportUndo } = useToast()
   const [status, setStatus] = useState<MusicReview['status']>('loading')
   const [entries, setEntries] = useState<ReviewEntry[]>([])
   const [filter, setFilter] = useState<ReviewFilter>(initialFilter)
@@ -427,10 +432,16 @@ export function useMusicReview({
     [choice, choices, spelling, dupGroups, locations, staged, release],
   )
 
+  // Undo runs from a toast some renders later, so it reads the hidden set of that moment
+  // (a later ignore must stay hidden), not the one it closed over.
+  const latestIgnored = useLatest({ hidden, saveIgnored })
   const ignore = useCallback(
     (key: string) => {
       const next = new Set(hidden)
-      for (const part of spelling.find((g) => g.key === key)?.parts ?? [{ key }]) next.add(part.key)
+      const added = (spelling.find((g) => g.key === key)?.parts ?? [{ key }])
+        .map((part) => part.key)
+        .filter((k) => !hidden.has(k))
+      for (const k of added) next.add(k)
       setHidden(next)
       saveIgnored([...next])
       release([key])
@@ -439,8 +450,14 @@ export function useMusicReview({
         copy.delete(key)
         return copy
       })
+      reportUndo(t('musicReview.ignored'), () => {
+        const { hidden: now, saveIgnored: save } = latestIgnored.current
+        const back = new Set([...now].filter((k) => !added.includes(k)))
+        setHidden(back)
+        save([...back])
+      })
     },
-    [hidden, saveIgnored, spelling, release],
+    [hidden, saveIgnored, spelling, release, reportUndo, t, latestIgnored],
   )
 
   const removals = useMemo<ReviewRemoval[]>(

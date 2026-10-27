@@ -445,7 +445,7 @@ describe('QualitySection verdict caption', () => {
     }
     render(
       <QueryClientProvider client={createQueryClient()}>
-        <ToastProvider value={{ reportError }}>
+        <ToastProvider value={{ reportError, reportUndo: vi.fn() }}>
           <QualitySection
             item={track('/m/a.flac')}
             showSpectrum

@@ -6,6 +6,7 @@ import { emptyMetadata } from '../../../shared/metadata'
 import type { MusicReviewEntry, RemoveCopyResult } from '../../../shared/types'
 import { trackSignature } from '../lib/dirty'
 import { listReviewSource } from '../lib/listReviewSource'
+import { ToastProvider } from '../lib/toastContext'
 import type { TrackItem } from '../types'
 import { type MusicReview, useMusicReview } from './useMusicReview'
 
@@ -129,6 +130,35 @@ describe('useMusicReview', () => {
     act(() => result.current.ignore(key))
     expect(saveIgnored).toHaveBeenCalledWith([key])
     expect(result.current.spelling).toEqual([])
+  })
+
+  // Ignoring is saved for good and the group leaves the list at once, so a misclick on
+  // "Not the same" lost a real fix with no way back. The toast's Undo brings back only that
+  // group: one ignored after it (or before the review opened) stays hidden.
+  it('offers to undo an ignore and brings back only that group', async () => {
+    setApi({ loadMusicReview: vi.fn().mockResolvedValue([...LIB, ...DUPS]) })
+    const saveIgnored = vi.fn()
+    const reportUndo = vi.fn()
+    const hook = renderHook(() => useMusicReview(props({ saveIgnored, ignored: ['older'] })), {
+      wrapper: ({ children }) => (
+        <ToastProvider value={{ reportError: vi.fn(), reportUndo }}>{children}</ToastProvider>
+      ),
+    })
+    await waitFor(() => expect(hook.result.current.status).toBe('ready'))
+    const { result } = hook
+    const spellingKey = result.current.spelling[0].key
+    const dupKey = result.current.duplicates[0].group.key
+    act(() => result.current.ignore(spellingKey))
+    expect(reportUndo).toHaveBeenCalledTimes(1)
+    const [message, undo] = reportUndo.mock.calls[0]
+    expect(message).toEqual(expect.any(String))
+    act(() => result.current.ignore(dupKey))
+
+    act(() => undo())
+
+    expect(result.current.spelling.map((g) => g.key)).toEqual([spellingKey])
+    expect(result.current.duplicates).toEqual([])
+    expect(saveIgnored).toHaveBeenLastCalledWith(['older', dupKey])
   })
 
   // A corrupt settings.json can hold anything; the review must still open.

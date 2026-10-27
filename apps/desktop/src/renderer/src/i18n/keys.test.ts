@@ -131,6 +131,15 @@ describe('skipped library activity lines', () => {
   })
 })
 
+// The owner's writing rule for every visible string: no em dash. A sentence split by one
+// reads as an aside bolted on; each language says the same with a period, a comma or
+// parentheses.
+describe('em dashes', () => {
+  it.each([['en', en], ...LOCALES])('%s has none in any string', (_, locale) => {
+    expect(leaves(locale).filter(([, text]) => text.includes('\u2014'))).toEqual([])
+  })
+})
+
 describe('cue editor copy', () => {
   it('never says donde rompe, since a flow is placed on any point and not every DJ marks the drop, except Auto marcar, whose detector looks for where the track breaks', () => {
     const autoMark = ['editor.cues.auto.ask', 'editor.cues.auto.none', 'editor.cues.auto.marked']

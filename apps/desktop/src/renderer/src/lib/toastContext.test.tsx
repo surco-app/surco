@@ -22,7 +22,7 @@ describe('useToast', () => {
   it('reports through the provider it is given', () => {
     const reportError = vi.fn()
     render(
-      <ToastProvider value={{ reportError }}>
+      <ToastProvider value={{ reportError, reportUndo: vi.fn() }}>
         <Boom />
       </ToastProvider>,
     )

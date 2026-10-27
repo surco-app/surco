@@ -71,6 +71,33 @@ describe('CheckTree', () => {
     expect([...onChange.mock.calls[0][0]]).toEqual(['house'])
   })
 
+  // Every tick elsewhere used to reopen each folder holding a ticked playlist, so a folder
+  // the user had just closed sprang open again. Only a newly ticked playlist opens its way.
+  it('keeps a folder the user closed shut when another playlist is ticked', () => {
+    const { rerender } = render(
+      <CheckTree nodes={NODES} checked={new Set(['todas'])} onChange={() => {}} />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'BASES' }))
+    expect(screen.queryByTestId('check-node-todas')).toBeNull()
+    rerender(<CheckTree nodes={NODES} checked={new Set(['todas', 'house'])} onChange={() => {}} />)
+    expect(screen.queryByTestId('check-node-todas')).toBeNull()
+  })
+
+  it('opens the way to a playlist ticked while its folder was closed', () => {
+    const { rerender } = render(<CheckTree nodes={NODES} checked={new Set()} onChange={() => {}} />)
+    expect(screen.queryByTestId('check-node-mak')).toBeNull()
+    rerender(<CheckTree nodes={NODES} checked={new Set(['mak'])} onChange={() => {}} />)
+    expect(screen.getByTestId('check-node-mak')).toBeChecked()
+  })
+
+  // A search with no hits left the list blank, which reads as the tree failing to load.
+  it('says so when the search matches no playlist', () => {
+    render(<CheckTree nodes={NODES} checked={new Set()} onChange={() => {}} />)
+    expect(screen.queryByTestId('check-tree-no-match')).toBeNull()
+    fireEvent.change(screen.getByTestId('check-tree-search'), { target: { value: 'zzz' } })
+    expect(screen.getByTestId('check-tree-no-match')).toHaveTextContent(i18n.t('sources.noMatch'))
+  })
+
   // A stick's remembered playlists must be visible when the chooser opens, not hidden in
   // closed folders.
   it('opens the folders that hold ticked playlists', () => {

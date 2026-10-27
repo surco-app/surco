@@ -60,20 +60,28 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   // the wizard's length is decided by what was found rather than fixed — a user with no DJ
   // software still finishes at step 4 of 4, with no empty step and no gap in the count.
   const [djLibraries, setDjLibraries] = useState<DetectedDjLibrary[]>([])
+  // A detection landing after the user moved on would grow the wizard under them (the
+  // count jumps and Finish turns into Next), so from the second step on the length holds.
+  const movedOn = useRef(false)
+  if (step > 0) movedOn.current = true
   useEffect(() => {
     Promise.all([
       window.api.rekordboxCollection(),
       window.api.engineAvailable(),
       window.api.detectTraktorNmlPath(),
-    ]).then(([rekordbox, engine, traktor]) =>
-      setDjLibraries(
+    ])
+      .then(([rekordbox, engine, traktor]) =>
         detectedDjLibraries({
           rekordbox,
           engine: engine ? settings.engineLibraryDir : '',
           traktor: traktor ?? '',
         }),
-      ),
-    )
+      )
+      // A probe that fails only means there is no collections step to offer.
+      .catch((): DetectedDjLibrary[] => [])
+      .then((found) => {
+        if (!movedOn.current) setDjLibraries(found)
+      })
   }, [settings.engineLibraryDir])
   const STEPS: readonly Step[] =
     djLibraries.length > 0 ? [...BASE_STEPS, 'djLibraries'] : BASE_STEPS

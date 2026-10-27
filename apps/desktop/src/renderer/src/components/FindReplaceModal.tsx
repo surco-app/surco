@@ -12,6 +12,8 @@ import { ModalShell } from './ModalShell'
 interface Props {
   tracks: TrackItem[]
   customFields?: readonly CustomField[]
+  // Which rows `tracks` is, so the modal can say what it will rewrite.
+  scope?: 'selected' | 'visible'
   onApply: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   onClose: () => void
 }
@@ -28,6 +30,7 @@ const NO_CUSTOM_FIELDS: readonly CustomField[] = []
 export function FindReplaceModal({
   tracks,
   customFields = NO_CUSTOM_FIELDS,
+  scope = 'visible',
   onApply,
   onClose,
 }: Props): React.JSX.Element {
@@ -145,6 +148,11 @@ export function FindReplaceModal({
       </div>
 
       <div className="flex flex-col gap-3">
+        <p data-testid="find-replace-scope" className="text-xs text-fg-dim">
+          {scope === 'selected'
+            ? tr('common.scopeSelected', { count: tracks.length })
+            : tr('common.scopeVisible', { count: tracks.length })}
+        </p>
         <label className="block">
           <span className="mb-1 block text-xs font-medium text-fg-dim">
             {tr('findReplace.find')}
@@ -227,7 +235,10 @@ export function FindReplaceModal({
         ) : (
           <>
             <p className="mb-1.5 text-fg-dim">
-              {tr('findReplace.summary', { fields: changedFields, tracks: patches.length })}
+              {tr('findReplace.summary', {
+                fields: tr('findReplace.fieldCount', { count: changedFields }),
+                tracks: tr('findReplace.trackCount', { count: patches.length }),
+              })}
             </p>
             <ul className="flex flex-col gap-1">
               {examples.map((ex) => (

@@ -105,12 +105,16 @@ function Confirm({
   const { tracks, byField, duplicates } = review.summary
   const noMusic = review.kind === 'list' && review.musicConsulted === undefined
   const applyRef = useRef<HTMLButtonElement>(null)
+  const cancelRef = useRef<HTMLButtonElement>(null)
+  // Duplicates go to the Trash with no undo, so a reflex Enter lands on Cancel, as in
+  // the app's destructive ConfirmDialog.
+  const destructive = duplicates > 0
   return (
     <Sheet
       testId="music-review-confirm"
       titleId="music-review-confirm-title"
       onClose={onCancel}
-      primaryRef={applyRef}
+      primaryRef={destructive ? cancelRef : applyRef}
     >
       <h3 id="music-review-confirm-title" className="text-base font-semibold">
         {t('musicReview.confirm.title', { count: tracks + duplicates })}
@@ -156,6 +160,7 @@ function Confirm({
         <button
           type="button"
           data-testid="music-review-confirm-cancel"
+          ref={cancelRef}
           className={DIALOG_CANCEL}
           onClick={onCancel}
         >
@@ -165,7 +170,9 @@ function Confirm({
           type="button"
           data-testid="music-review-confirm-apply"
           ref={applyRef}
-          className={OK}
+          className={
+            destructive ? `${DIALOG_BUTTON} bg-[var(--color-danger)] hover:brightness-110` : OK
+          }
           disabled={busy}
           onClick={() => {
             onCancel()
@@ -696,10 +703,12 @@ export function visibleGroups(
   return { spelling, duplicates }
 }
 
-export const visibleKeys = (review: Review, search: string, sort: ReviewSort) => {
-  const { spelling, duplicates } = visibleGroups(review, search, sort)
-  return [...spelling.map((g) => g.key), ...duplicates.map((c) => c.group.key)]
-}
+export type VisibleGroups = ReturnType<typeof visibleGroups>
+
+export const visibleKeys = ({ spelling, duplicates }: VisibleGroups) => [
+  ...spelling.map((g) => g.key),
+  ...duplicates.map((c) => c.group.key),
+]
 
 const RISKY_KINDS = new Set(['typo', 'version'])
 
@@ -779,6 +788,7 @@ export function MusicReview({
   onSelect,
   onClose,
   busy = false,
+  visible,
   search,
   onSearch,
   sort,
@@ -788,6 +798,8 @@ export function MusicReview({
   scopeName,
 }: {
   review: Review
+  // The groups the search and sort leave, filtered once by the selection above.
+  visible: VisibleGroups
   selectedKey: string | null
   onSelect: (key: string) => void
   onClose: () => void
@@ -811,8 +823,7 @@ export function MusicReview({
     spelling: review.spelling.length,
     duplicates: review.duplicates.length,
   }
-  const visible = visibleGroups(review, search, sort)
-  const keys = visibleKeys(review, search, sort)
+  const keys = visibleKeys(visible)
   const at = selectedKey === null ? -1 : keys.indexOf(selectedKey)
   const nothing = review.status === 'ready' && counts.all === 0
   useEffect(() => {

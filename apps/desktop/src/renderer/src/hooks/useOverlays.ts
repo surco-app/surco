@@ -79,9 +79,15 @@ export function useOverlays(): Overlays {
   const openRename = useCallback(() => setActiveModal({ type: 'rename' }), [])
   const openInfo = useCallback((track: TrackItem) => setActiveModal({ type: 'info', track }), [])
   const openExport = useCallback(() => setActiveModal({ type: 'export' }), [])
-  const openPalette = useCallback(() => setActiveModal({ type: 'palette' }), [])
+  // The palette only opens over nothing. Replacing another modal would drop the wizard
+  // (which ignores Escape on purpose), a pending confirm or text typed in find & replace.
+  const openPalette = useCallback(
+    () => setActiveModal((m) => (m === null ? { type: 'palette' } : m)),
+    [],
+  )
   const togglePalette = useCallback(
-    () => setActiveModal((m) => (m?.type === 'palette' ? null : { type: 'palette' })),
+    () =>
+      setActiveModal((m) => (m === null ? { type: 'palette' } : m.type === 'palette' ? null : m)),
     [],
   )
   const openConfirm = useCallback(

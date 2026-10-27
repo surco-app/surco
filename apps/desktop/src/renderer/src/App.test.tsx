@@ -5030,6 +5030,30 @@ describe('App derived list stability', () => {
   })
 })
 
+describe('App bulk scope in Find & Replace', () => {
+  // Overlays derives the scope from which list App handed it; a multi-selection must read
+  // as "selected", or the modal claims the visible list while rewriting only two rows.
+  it('says it acts on the selection when several tracks are selected', async () => {
+    await renderApp()
+    const [first, second] = await addTwoTracks()
+    fireEvent.click(first)
+    fireEvent.click(second, { metaKey: true })
+    runMenu('find-replace')
+    expect(await screen.findByTestId('find-replace-scope')).toHaveTextContent(
+      'Applies to the 2 selected tracks',
+    )
+  })
+
+  it('says it acts on the visible tracks with one or no track selected', async () => {
+    await renderApp()
+    await addTwoTracks()
+    runMenu('find-replace')
+    expect(await screen.findByTestId('find-replace-scope')).toHaveTextContent(
+      'Applies to the 2 visible tracks',
+    )
+  })
+})
+
 describe('App sort direction', () => {
   // An album dropped in file-name order is out of its running order; artexjay asked to read
   // the list as the record plays.
@@ -6351,6 +6375,25 @@ describe('App Music review', () => {
     expect(await screen.findByTestId('add-files')).toBeInTheDocument()
   })
 
+  // Ignoring is saved for good, so the toast right after it is the only way back from a
+  // misclick; pressing its Undo returns the group to the review and retires the toast.
+  it('brings an ignored group back from the toast Undo', async () => {
+    vi.resetModules()
+    reviewApi(spellingFixture())
+    await renderApp()
+    runMenu('music-review')
+    const detail = await screen.findByTestId('music-review-detail')
+    await waitFor(() => expect(detail).toHaveTextContent('DJ Lara'))
+    fireEvent.click(screen.getByTestId('music-review-more'))
+    fireEvent.click(screen.getByTestId('music-review-ignore'))
+    await waitFor(() => expect(screen.queryAllByTestId('music-review-row')).toHaveLength(0))
+
+    fireEvent.click(await screen.findByTestId('app-notice-action'))
+
+    expect(await screen.findAllByTestId('music-review-row')).toHaveLength(1)
+    await waitFor(() => expect(screen.queryByTestId('app-notice')).toBeNull())
+  })
+
   // The review's batch is the screen's main action while it is open, so it takes the
   // toolbar's main button the way converting does for the list.
   it('puts Apply in the toolbar in place of Convert while the review is open', async () => {
@@ -7484,6 +7527,30 @@ describe('App Originals panel', () => {
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(screen.queryByTestId('trash-panel')).toBeNull()
     expect(first).toHaveAttribute('aria-selected', 'true')
+  })
+  // Deleting a backup for good that fails (the file is locked, the disk went away) used to
+  // close the confirm and do nothing, so the user believed the copy was gone.
+  it('says so when deleting one backup for good fails', async () => {
+    setApi({
+      trashList: vi.fn().mockResolvedValue([
+        {
+          id: 'e1',
+          name: 'a.wav',
+          originalPath: '/music/a.wav',
+          storedPath: '/ud/trash/items/e1-a.wav',
+          bytes: 1024,
+          trashedAt: Date.now(),
+          reason: 'replaced',
+        },
+      ]),
+      trashRemove: vi.fn().mockRejectedValue(new Error('EBUSY')),
+    })
+    await renderApp()
+    act(() => menuListener?.('backups'))
+    fireEvent.click(await screen.findByTestId('trash-remove'))
+    fireEvent.click(screen.getByTestId('trash-remove-confirm'))
+
+    expect(await screen.findByTestId('app-notice')).toHaveTextContent('a.wav')
   })
 })
 

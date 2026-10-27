@@ -1,5 +1,14 @@
 import type React from 'react'
-import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import {
+  createContext,
+  useContext,
+  useDeferredValue,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import type { LibraryTagUpdate } from '../../../shared/types'
 import {
   type MusicReview as Review,
@@ -12,6 +21,8 @@ import {
   MusicReviewAction,
   MusicReviewProgress,
   type ReviewSort,
+  type VisibleGroups,
+  visibleGroups,
   visibleKeys,
 } from './MusicReview'
 import { MusicReviewDetail, type ReviewSync } from './MusicReviewDetail'
@@ -26,6 +37,7 @@ interface Shared {
   setSort: (sort: ReviewSort) => void
   confirming: boolean
   setConfirming: (open: boolean) => void
+  visible: VisibleGroups
 }
 
 const ReviewContext = createContext<Shared | null>(null)
@@ -35,7 +47,14 @@ const ReviewContext = createContext<Shared | null>(null)
 function useSelection(review: Review | null, search: string, sort: ReviewSort) {
   const [picked, select] = useState<string | null>(null)
   const seen = useRef<string[]>([])
-  const keys = review ? visibleKeys(review, search, sort) : []
+  // Filtering folds every name in the review, so it runs once per search (deferred, so
+  // typing stays responsive on a big library) and the column reads the same result.
+  const query = useDeferredValue(search)
+  const visible = useMemo(
+    () => (review ? visibleGroups(review, query, sort) : { spelling: [], duplicates: [] }),
+    [review, query, sort],
+  )
+  const keys = useMemo(() => visibleKeys(visible), [visible])
   let selectedKey: string | null = keys[0] ?? null
   if (picked !== null && keys.includes(picked)) selectedKey = picked
   else if (picked !== null) {
@@ -53,7 +72,7 @@ function useSelection(review: Review | null, search: string, sort: ReviewSort) {
     if (review && selectedKey !== picked) select(selectedKey)
     if (!review && picked !== null) select(null)
   })
-  return { selectedKey, select }
+  return { selectedKey, select, visible }
 }
 
 export function useReviewSelection(review: Review, search: string, sort: ReviewSort) {
@@ -93,7 +112,7 @@ function Gate({
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<ReviewSort>('default')
   const [confirming, setConfirming] = useState(false)
-  const { selectedKey, select } = useSelection(review, search, sort)
+  const { selectedKey, select, visible } = useSelection(review, search, sort)
   // Switching to the other review swaps the Owner in one commit, so the review is never
   // null in between: the kind has to start the reset too.
   const scope = review === null ? null : kind
@@ -119,6 +138,7 @@ function Gate({
           setSort,
           confirming,
           setConfirming,
+          visible,
         }
       }
     >
@@ -161,6 +181,7 @@ export function MusicReviewColumn({
   return (
     <MusicReview
       review={shared.review}
+      visible={shared.visible}
       selectedKey={shared.selectedKey}
       onSelect={shared.select}
       onClose={onClose}

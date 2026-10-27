@@ -43,13 +43,18 @@ export function CheckTree({
   const [query, setQuery] = useState('')
   const [opened, setOpened] = useState<ReadonlySet<string>>(new Set())
   // The folders holding something ticked open on their own (a stick's remembered selection
-  // must be visible), once per change of the ticked set and during render, so it never draws
-  // closed for a frame. The user can still close them afterwards.
+  // must be visible), during render, so it never draws closed for a frame. After the first
+  // pass only newly ticked playlists open their way: a folder the user closed stays closed
+  // when something elsewhere is ticked.
   const tickedKey = [...checked].sort().join('\n')
-  const [openedFor, setOpenedFor] = useState<string | null>(null)
-  if (openedFor !== tickedKey && nodes.length > 0) {
-    setOpenedFor(tickedKey)
-    const holding = foldersHolding(nodes, checked)
+  const [openedFor, setOpenedFor] = useState<{
+    key: string
+    ids: ReadonlySet<string>
+  } | null>(null)
+  if (openedFor?.key !== tickedKey && nodes.length > 0) {
+    const fresh = openedFor ? new Set([...checked].filter((id) => !openedFor.ids.has(id))) : checked
+    setOpenedFor({ key: tickedKey, ids: checked })
+    const holding = foldersHolding(nodes, fresh)
     if (holding.some((id) => !opened.has(id))) setOpened((prev) => new Set([...prev, ...holding]))
   }
   const hits = useMemo(() => {
@@ -135,6 +140,11 @@ export function CheckTree({
         />
       </label>
       <ul className="min-h-0 flex-1 overflow-y-auto">
+        {hits?.length === 0 && (
+          <li data-testid="check-tree-no-match" className="px-2 text-xs text-fg-faint">
+            {tr('sources.noMatch')}
+          </li>
+        )}
         {hits
           ? hits.map((h) => row(h.node, 0, h.folders.join(' › ')))
           : nodes.map((n) => row(n, 0))}

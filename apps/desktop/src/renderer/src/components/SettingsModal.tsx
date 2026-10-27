@@ -6,6 +6,7 @@ import { findConflicts, resolveBindings } from '../../../shared/shortcutDefaults
 import type { Settings, ThemePref } from '../../../shared/types'
 import { useScrollAffordance } from '../hooks/useScrollAffordance'
 import { DONATE_URL } from '../lib/donate'
+import { mainErrorMessage } from '../lib/ipcError'
 import {
   buildSettingsPatch,
   type LocalDraft,
@@ -220,21 +221,28 @@ export function SettingsModal({
     if (dir) await moveConfigDir(dir)
   }
 
+  // Said beside the backup buttons, as ExportModal does: without it the click rejects
+  // into the void and no file was written.
+  const [settingsFileError, setSettingsFileError] = useState('')
   async function exportSettings(): Promise<void> {
+    setSettingsFileError('')
     try {
       await window.api.exportSettings()
     } catch (e) {
-      // Same surface a failed import uses: without it the click rejects into the void
-      // and no file was written.
-      window.alert(e instanceof Error ? e.message : String(e))
+      setSettingsFileError(
+        tr('settings.exportFailed', { reason: mainErrorMessage(e, tr, String(e)) }),
+      )
     }
   }
 
   async function importSettings(): Promise<void> {
+    setSettingsFileError('')
     const result = await window.api.importSettings()
     if (!result) return
     if (!result.ok) {
-      window.alert(result.error)
+      // main's reason is the JSON parser's English; the user needs to know only that this
+      // file is not usable and nothing changed.
+      setSettingsFileError(tr('settings.importFailed'))
       return
     }
     onSettingsReplaced(result.settings)
@@ -357,6 +365,7 @@ export function SettingsModal({
                 onResetConfigDir={() => moveConfigDir(null)}
                 onExportSettings={exportSettings}
                 onImportSettings={importSettings}
+                settingsFileError={settingsFileError}
               />
             )}
             {tab === 'search' && (

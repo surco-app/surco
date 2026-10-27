@@ -171,7 +171,8 @@ describe('SettingsModal sidebar indicator', () => {
 
 describe('SettingsModal settings export', () => {
   // A failed export used to reject into the void: the click did nothing visible and no
-  // file was written. It reports through the same alert path a failed import already uses.
+  // file was written. It says so beside the buttons, in the user's language, not in a
+  // system alert carrying main's raw English.
   it('reports an export failure instead of failing silently', async () => {
     ;(window.api as unknown as { exportSettings: () => Promise<string | null> }).exportSettings = vi
       .fn()
@@ -187,7 +188,10 @@ describe('SettingsModal settings export', () => {
       />,
     )
     fireEvent.click(screen.getByTestId('settings-export'))
-    await waitFor(() => expect(alert).toHaveBeenCalledWith(expect.stringContaining('disk full')))
+    expect(await screen.findByTestId('settings-file-error')).toHaveTextContent(
+      i18n.t('settings.exportFailed', { reason: 'disk full' }),
+    )
+    expect(alert).not.toHaveBeenCalled()
     alert.mockRestore()
   })
 })
@@ -861,11 +865,16 @@ describe('SettingsModal shortcuts', () => {
     expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⌘O')
   })
 
-  it('reset all clears every override', () => {
+  // Reset all throws away every key the user recorded, one by one, so it asks in place
+  // first, and the second click of a double-click is not the answer.
+  it('reset all asks first and only then clears every override', () => {
     const onSave = vi.fn()
     openShortcuts(onSave)
     record('add', { key: 'x', metaKey: true, shiftKey: true })
-    fireEvent.click(screen.getByTestId('shortcuts-reset-all'))
+    fireEvent.click(screen.getByTestId('shortcuts-reset-all'), { detail: 1 })
+    fireEvent.click(screen.getByTestId('shortcuts-reset-all-confirm'), { detail: 2 })
+    expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⌘⇧X')
+    fireEvent.click(screen.getByTestId('shortcuts-reset-all-confirm'), { detail: 1 })
     expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⌘O')
     fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ shortcutOverrides: {} }))
@@ -883,6 +892,27 @@ describe('SettingsModal shortcuts', () => {
     fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ theme: 'dark' }))
     expect(onSave.mock.calls.at(-1)?.[0]).not.toHaveProperty('shortcutOverrides')
+  })
+
+  // The clash used to be named only under the last group, out of view from the row the
+  // user just recorded, so the new keys were silently not saved. Each clashing row now says
+  // which command it collides with, and the summary sits above the groups.
+  it('names the clash on the rows involved and above the list', () => {
+    openShortcuts()
+    record('add', { key: 'r', metaKey: true })
+    const revealTitle = within(screen.getByTestId('shortcut-row-reveal')).getByTestId(
+      'shortcut-title-reveal',
+    ).textContent
+    expect(screen.getByTestId('shortcut-conflict-add')).toHaveTextContent(revealTitle ?? '')
+    expect(
+      within(screen.getByTestId('shortcut-row-add')).getByTestId('shortcut-conflict-add'),
+    ).toBeInTheDocument()
+    expect(screen.getByTestId('shortcut-conflict-reveal')).toBeInTheDocument()
+    const firstGroup = screen.getAllByTestId(/^shortcut-group-/)[0]
+    expect(
+      screen.getByTestId('shortcuts-conflict').compareDocumentPosition(firstGroup) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   })
 
   // From any other tab the unsaved clash would be invisible, so it is named there too
@@ -1155,8 +1185,9 @@ describe('SettingsModal backup', () => {
   })
 
   // A failed import (corrupt/incompatible file) must surface the error instead of
-  // silently discarding the user's current settings.
-  it('alerts on a failed import and leaves settings untouched', async () => {
+  // silently discarding the user's current settings, translated and inline rather than
+  // main's raw English parser message in a system alert.
+  it('says inline that an import failed and leaves settings untouched', async () => {
     const api = window.api as unknown as Record<string, unknown>
     api.importSettings = vi.fn(async () => ({ ok: false, error: 'Invalid file' }))
     vi.spyOn(window, 'confirm').mockReturnValue(true)
@@ -1172,8 +1203,10 @@ describe('SettingsModal backup', () => {
       />,
     )
     fireEvent.click(screen.getByTestId('settings-import'))
-    await Promise.resolve()
-    expect(alertSpy).toHaveBeenCalledWith('Invalid file')
+    expect(await screen.findByTestId('settings-file-error')).toHaveTextContent(
+      i18n.t('settings.importFailed'),
+    )
+    expect(alertSpy).not.toHaveBeenCalled()
     expect(onSettingsReplaced).not.toHaveBeenCalled()
   })
 

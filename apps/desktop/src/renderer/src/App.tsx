@@ -309,6 +309,21 @@ export default function App(): React.JSX.Element {
     () => ({
       reportError: (message: string) =>
         void pushToast(store, { key: 'app-error', tone: 'danger', message, testid: 'app-error' }),
+      reportUndo: (message: string, onUndo: () => void) => {
+        const id = pushToast(store, {
+          tone: 'neutral',
+          message,
+          duration: 6000,
+          testid: 'app-notice',
+          action: {
+            label: { key: 'notices.undo' },
+            onAction: () => {
+              dismissToast(store, id)
+              onUndo()
+            },
+          },
+        })
+      },
     }),
     [store],
   )
@@ -1901,7 +1916,16 @@ export default function App(): React.JSX.Element {
     },
   )
   const onRemoveFromTrash = useStableCallback(async (entry: TrashEntry): Promise<void> => {
-    await window.api.trashRemove(entry.id).catch(() => undefined)
+    try {
+      await window.api.trashRemove(entry.id)
+    } catch (e) {
+      setNotice(
+        tr('trash.removeFailed', {
+          name: entry.name,
+          reason: mainErrorMessage(e, tr, tr('errors.unexpected', { detail: '' })),
+        }),
+      )
+    }
     await refreshTrash()
   })
   const onEmptyTrash = useStableCallback(async (): Promise<void> => {
@@ -2701,6 +2725,7 @@ export default function App(): React.JSX.Element {
   useKeyboardShortcuts({
     isMac,
     overlayOpen,
+    paletteOpen: activeModal?.type === 'palette',
     bindings,
     getCommands,
     onTogglePalette: overlays.togglePalette,

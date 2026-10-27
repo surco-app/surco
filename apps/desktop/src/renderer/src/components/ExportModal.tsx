@@ -10,6 +10,8 @@ import { ModalShell } from './ModalShell'
 
 interface Props {
   tracks: TrackItem[]
+  // Which rows `tracks` is, so the modal can say what it will export.
+  scope?: 'selected' | 'visible'
   onClose: () => void
 }
 
@@ -17,7 +19,7 @@ interface Props {
 // file (rekordbox .xml / Traktor .nml) and writes it via the matching IPC. Both are
 // import bridges — the user points their software at the saved file. Serato etc. slot
 // in here later as new rows.
-export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
+export function ExportModal({ tracks, scope = 'visible', onClose }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [error, setError] = useState('')
   // A track with no converted copy exports its original source path, so the saved collection
@@ -72,6 +74,11 @@ export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
         {tr('export.title')}
       </h2>
       <p className="mt-1 text-sm text-fg-dim">{tr('export.subtitle')}</p>
+      <p data-testid="export-scope" className="mt-3 text-xs text-fg-dim">
+        {scope === 'selected'
+          ? tr('common.scopeSelected', { count: tracks.length })
+          : tr('common.scopeVisible', { count: tracks.length })}
+      </p>
       {unconverted > 0 && (
         <p data-testid="export-unconverted" className="mt-3 text-xs text-warn">
           {tr('export.unconverted', { count: unconverted })}
@@ -83,6 +90,7 @@ export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
             key={t.id}
             type="button"
             data-testid={`export-${t.id}`}
+            disabled={tracks.length === 0}
             onClick={() => {
               // Close only once the write lands: a disk-full or permission failure
               // keeps the modal open and says so, instead of closing as if the file
@@ -91,7 +99,7 @@ export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
                 .then(onClose)
                 .catch((e: unknown) => setError(mainErrorMessage(e, tr, String(e))))
             }}
-            className="press block rounded-lg border border-[var(--color-line)] px-4 py-3 text-left hover:bg-[var(--color-hover)]"
+            className="press block rounded-lg border border-[var(--color-line)] px-4 py-3 text-left enabled:hover:bg-[var(--color-hover)] disabled:opacity-50"
           >
             <span className="flex items-center justify-between">
               <span className="text-sm font-medium">{t.label}</span>
