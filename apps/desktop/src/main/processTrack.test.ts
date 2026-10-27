@@ -935,6 +935,29 @@ describe('runProcessTrack — in-place rewrite', () => {
     expect(deps.removeRenamedOriginal).toHaveBeenCalledWith('/in/Aux.aiff', '/in/Aux.aiff')
   })
 
+  // A name with "?" or accents is already on this disk, so the update has nothing to fix
+  // in it. Changed, the rename sent the original to the backups and every DJ library that
+  // was not synced lost the track, which Apple Music then replaced as a new entry.
+  it('keeps an in-place update on its own name even with "?" or accents in it', async () => {
+    const deps = makeDeps({
+      settings: settings({ overwriteOriginal: true, asciiFileNames: true }),
+      isSameFile: vi.fn(async (a: string, b: string) => a === b),
+    })
+    await runProcessTrack(
+      job({ inputPath: "/in/Where's Your Head At?.aiff", outputName: "Where's Your Head At?" }),
+      deps,
+    )
+    await runProcessTrack(
+      job({ inputPath: '/in/Röyksopp - Fiësta.aiff', outputName: 'Röyksopp - Fiësta' }),
+      deps,
+    )
+
+    expect(vi.mocked(deps.convertAudio).mock.calls.map((c) => c[1])).toEqual([
+      "/in/Where's Your Head At?.aiff",
+      '/in/Röyksopp - Fiësta.aiff',
+    ])
+  })
+
   it('rewrites the source, removes the renamed original and never prompts when the renamed target is free', async () => {
     const deps = makeDeps({
       settings: settings({ overwriteOriginal: true }),
@@ -1687,6 +1710,26 @@ describe('runProcessTrack: file names without accents', () => {
     const deps = makeDeps({ settings: settings({ asciiFileNames: true }) })
     const result = await runProcessTrack(job({ outputName: 'Röyksopp - Fiësta' }), deps)
     expect(result.outputPath).toBe('/out/Royksopp - Fiesta.aiff')
+  })
+
+  // The source's own name only stands for the folder it lives in: the output folder can be
+  // the very disk that fails with accents, which is why the setting exists.
+  it('folds a name into the output folder even when the source already carries it', async () => {
+    const deps = makeDeps({ settings: settings({ asciiFileNames: true }) })
+    const result = await runProcessTrack(
+      job({ inputPath: '/in/Röyksopp - Fiësta.wav', outputName: 'Röyksopp - Fiësta' }),
+      deps,
+    )
+    expect(result.outputPath).toBe('/out/Royksopp - Fiesta.aiff')
+
+    const beside = makeDeps({
+      settings: settings({ asciiFileNames: true, convertBesideOriginal: true }),
+    })
+    const besideResult = await runProcessTrack(
+      job({ inputPath: '/in/Röyksopp - Fiësta.wav', outputName: 'Röyksopp - Fiësta' }),
+      beside,
+    )
+    expect(besideResult.outputPath).toBe('/in/Royksopp - Fiesta.aiff')
   })
 
   it('keeps the accents by default, since most users want the name exactly as tagged', async () => {

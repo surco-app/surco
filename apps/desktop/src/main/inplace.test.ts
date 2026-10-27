@@ -70,6 +70,18 @@ describe('sanitizeOutputName', () => {
     expect(sanitizeOutputName('Aux', 'Song')).toBe('Aux_')
   })
 
+  // The base rules too: "?" and a double space were fine on the disk that holds the file,
+  // yet "Where's Your Head At?" came back "Where's Your Head At-", a new name, so the
+  // update moved the original to the backups and rekordbox and Traktor lost the track.
+  it('keeps the characters and spacing of a name the file already has', () => {
+    expect(sanitizeOutputName("Where's Your Head At?", "Where's Your Head At?")).toBe(
+      "Where's Your Head At?",
+    )
+    expect(sanitizeOutputName('Basement  Jaxx: Red Alert', 'Basement  Jaxx: Red Alert')).toBe(
+      'Basement  Jaxx: Red Alert',
+    )
+  })
+
   // CON, NUL, COM1… name devices on Windows, with or without an extension: a track
   // titled "Con" cannot be written there at all, and "nul.aiff" is swallowed.
   it('steps around the device names Windows reserves, in any case', () => {

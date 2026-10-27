@@ -3,7 +3,7 @@ import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
 import { errorWithKey } from '../shared/errorKeys'
 import { foldAccents } from '../shared/foldAccents'
-import { resolveJobFormat } from '../shared/format'
+import { editsInPlace, resolveJobFormat } from '../shared/format'
 import type {
   DeclickConfig,
   NormalizeConfig,
@@ -228,16 +228,27 @@ export async function runProcessTrack(
     // the two spellings are different files: the rename over the source failed with
     // EEXIST or -83, and a temp named in NFC could not be found again to rename or
     // delete. APFS treats both as one name, so this changes nothing on a local disk.
+    //
+    // A name the source already has is kept untouched only when the write lands in the
+    // source's own folder, the disk known to hold it: the output folder can be the very
+    // disk the plain spelling is for. Its accents are kept only when the file itself keeps
+    // the name (in place); a new file beside it is spelled the way the setting asks.
+    const overwriteOriginal = job.overwriteOriginal ?? settings.overwriteOriginal
+    const inPlaceWrite = !besideOriginal && editsInPlace(format, job.inputPath, overwriteOriginal)
+    const currentName =
+      besideOriginal || inPlaceWrite ? basename(job.inputPath, extname(job.inputPath)) : undefined
+    const keepsName =
+      inPlaceWrite && currentName?.normalize('NFC') === job.outputName.normalize('NFC')
     const outputName = sanitizeOutputName(
-      settings.asciiFileNames ? foldAccents(job.outputName) : job.outputName,
-      basename(job.inputPath, extname(job.inputPath)),
+      settings.asciiFileNames && !keepsName ? foldAccents(job.outputName) : job.outputName,
+      currentName,
     )
     const resolved = resolveOutputTarget(
       job.inputPath,
       deps.platform === 'darwin' ? outputName.normalize('NFD') : outputName,
       format,
       settings.outputDir,
-      job.overwriteOriginal ?? settings.overwriteOriginal,
+      overwriteOriginal,
       besideOriginal,
     )
     const outputPath = resolved.outputPath
