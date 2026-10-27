@@ -661,7 +661,7 @@
     "reexportAs": "再度 {{format}} に変換",
     "exportCollection": "DJ アプリへエクスポート…",
     "cleanUpPrevious_one": "前のファイルをクリーンアップ",
-    "cleanUpPrevious_other": "{{count}} 前のファイルをクリーンアップ",
+    "cleanUpPrevious_other": "前のファイル {{count}} 件をクリーンアップ",
     "appleMusicAdd": "Apple Musicに追加",
     "appleMusicAdding": "Apple Musicに追加中…",
     "appleMusicAdded": "Apple Music ライブラリにあります",
@@ -1527,7 +1527,7 @@
     "originalBackupPolicies": {
       "always": "常に",
       "audioChanges": "オーディオが変更されたときだけ",
-      "never": "決して"
+      "never": "しない"
     },
     "originalBackupAlwaysHint": "タグのみを編集しても、ファイルのフルコピーが保持されます。",
     "originalBackupAudioChangesHint": "変換または正規化はコピーを保持しますが、タグのみを編集する場合は保持しません。",

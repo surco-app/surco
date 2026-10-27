@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import en from '../i18n/locales/en.json'
 import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
@@ -76,7 +75,7 @@ function GuideShot({
 }
 
 export default function Guide() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
 
   const sections = t('guide.sections', { returnObjects: true }) as Section[]
   const placeholder = t('guide.shotPlaceholder')
@@ -155,9 +154,9 @@ export default function Guide() {
                   ))}
                 </ul>
               )}
-              {(i18n.language === 'ja' ? en.guide.sections[i]?.shot : s.shot) && (
+              {s.shot && (
                 <GuideShot
-                  src={`/guide/${i18n.language === 'ja' ? en.guide.sections[i].shot : s.shot}`}
+                  src={`/guide/${s.shot}`}
                   caption={s.shotCaption}
                   placeholder={placeholder}
                   onZoom={(shot) => {

@@ -75,6 +75,7 @@ describe('guide screenshots', () => {
   for (const [name, locale] of [
     ['en', en],
     ['es', es],
+    ['ja', ja],
   ] as const) {
     it(`${name} references only files that exist in public/guide`, () => {
       const missing = shots(locale).filter(
@@ -83,10 +84,16 @@ describe('guide screenshots', () => {
       )
       expect(missing).toEqual([])
     })
+
+    // The walkthrough tells the reader which button to press by the name on it, so the
+    // screen beside the text must show the app in the reader's language.
+    it(`${name} shows every step in its own language`, () => {
+      expect(shots(locale).length).toBeGreaterThan(0)
+      expect(shots(locale).filter((shot) => !shot.endsWith(`-${name}.webp`))).toEqual([])
+    })
   }
 
-  it('ships English screenshots for every Japanese walkthrough step', () => {
-    expect(shots(en).length).toBeGreaterThan(0)
+  it('gives every language the same walkthrough steps', () => {
     expect(shots(en)).toHaveLength(shots(es).length)
     expect(shots(en)).toHaveLength(shots(ja).length)
     expect(ja.guide.sections.map((section) => section.id)).toEqual(

@@ -21,13 +21,11 @@ export default function Header({
   const [open, setOpen] = useState(false)
   const [languageOpen, setLanguageOpen] = useState(false)
   const languageRef = useRef<HTMLDivElement>(null)
-  const [offerOther, dismissOffer] = useAutoLanguage()
+  const [offered, dismissOffer] = useAutoLanguage()
   const lang = i18n.language as Language
-  const otherCode = lang === 'es' ? 'en' : 'es'
   const home = HOME[lang]
   const languageHref = (code: Language) =>
     alternates?.[code] ?? (page ? PAGES[page][code] : HOME[code])
-  const otherHref = languageHref(otherCode)
   // A manual choice persists, and landing-page section ids survive the switch.
   const switchLanguage = (code: Language) => (e: React.MouseEvent) => {
     rememberLanguage(code)
@@ -94,21 +92,21 @@ export default function Header({
       >
         {t('nav.skipToContent')}
       </a>
-      {offerOther && (
+      {offered && (
         <div
           data-testid="language-offer"
-          lang={otherCode}
+          lang={offered}
           className="border-b border-line/70 bg-bg/95 text-sm text-muted"
         >
           <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-1 px-6 py-2">
-            <span>{t('nav.languageOffer.text', { lng: otherCode })}</span>
+            <span>{t('nav.languageOffer.text', { lng: offered })}</span>
             <a
               data-testid="language-offer-switch"
-              href={otherHref}
-              onClick={switchLanguage(otherCode)}
+              href={languageHref(offered)}
+              onClick={switchLanguage(offered)}
               className="font-semibold text-blue transition-colors hover:text-cyan"
             >
-              {t('nav.languageOffer.switch', { lng: otherCode })}
+              {t('nav.languageOffer.switch', { lng: offered })}
             </a>
             <button
               type="button"
@@ -116,7 +114,7 @@ export default function Header({
               onClick={dismissOffer}
               className="text-muted underline-offset-4 transition-colors hover:text-fg hover:underline"
             >
-              {t('nav.languageOffer.dismiss', { lng: otherCode })}
+              {t('nav.languageOffer.dismiss', { lng: offered })}
             </button>
           </div>
         </div>

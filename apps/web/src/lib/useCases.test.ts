@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import appEn from '../../../desktop/src/renderer/src/i18n/locales/en.json'
 import appEs from '../../../desktop/src/renderer/src/i18n/locales/es.json'
+import appJa from '../../../desktop/src/renderer/src/i18n/locales/ja.json'
 import { spellingGroups } from '../../../desktop/src/renderer/src/lib/musicSpelling'
 import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
@@ -45,6 +46,7 @@ describe('use case settings name what the app shows', () => {
   for (const [name, web, app] of [
     ['es', es, appEs],
     ['en', en, appEn],
+    ['ja', ja, appJa],
   ] as const) {
     const tabs = Object.values(app.settings.tabs)
     const labels = strings(app)
@@ -299,6 +301,12 @@ describe('use case settings by tab', () => {
 
   it('names each capture after the recipe, the tab position and the language', () => {
     expect(settingShot('es', 'replace', 0)).toBe('replace-1-es.webp')
+  })
+
+  // The numbers sit on the controls the recipe names, so a Japanese reader needs the
+  // Japanese app on screen: an English capture marks labels the text never mentions.
+  it('shows Japanese readers the Japanese app', () => {
+    expect(settingShot('ja', 'replace', 0)).toBe('replace-1-ja.webp')
   })
 
   // A recipe whose tab has no capture shows a broken image right where the reader is
