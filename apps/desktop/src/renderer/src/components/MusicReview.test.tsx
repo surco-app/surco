@@ -1350,6 +1350,31 @@ describe('MusicReview', () => {
     expect(r.apply).not.toHaveBeenCalled()
   })
 
+  // Duplicates go to the Trash and the review cannot undo that, so a reflex Enter on the
+  // sheet must not run it. Same convention as the app's destructive ConfirmDialog.
+  it('focuses Cancel and paints Apply as dangerous when duplicates will be removed', () => {
+    const r = review({
+      staged: new Set([group.key]),
+      summary: { tracks: 1, byField: { artist: 1 }, duplicates: 2 },
+    })
+    render(<Panes review={r} />)
+    fireEvent.click(screen.getByTestId('music-review-apply'))
+    expect(screen.getByTestId('music-review-confirm-cancel')).toHaveFocus()
+    expect(screen.getByTestId('music-review-confirm-apply').className).toContain('--color-danger')
+  })
+
+  it('keeps Apply as the ordinary default when nothing is removed', () => {
+    const r = review({
+      staged: new Set([group.key]),
+      summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0 },
+    })
+    render(<Panes review={r} />)
+    fireEvent.click(screen.getByTestId('music-review-apply'))
+    expect(screen.getByTestId('music-review-confirm-apply').className).not.toContain(
+      '--color-danger',
+    )
+  })
+
   it('names the done sheet by its title and Escape keeps reviewing', () => {
     render(<Panes review={done(run({ outcomes: [written] }))} />)
     expect(screen.getByRole('dialog', { name: 'Library reviewed' })).toBeVisible()

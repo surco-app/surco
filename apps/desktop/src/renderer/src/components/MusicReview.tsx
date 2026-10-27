@@ -105,12 +105,16 @@ function Confirm({
   const { tracks, byField, duplicates } = review.summary
   const noMusic = review.kind === 'list' && review.musicConsulted === undefined
   const applyRef = useRef<HTMLButtonElement>(null)
+  const cancelRef = useRef<HTMLButtonElement>(null)
+  // Duplicates go to the Trash with no undo, so a reflex Enter lands on Cancel, as in
+  // the app's destructive ConfirmDialog.
+  const destructive = duplicates > 0
   return (
     <Sheet
       testId="music-review-confirm"
       titleId="music-review-confirm-title"
       onClose={onCancel}
-      primaryRef={applyRef}
+      primaryRef={destructive ? cancelRef : applyRef}
     >
       <h3 id="music-review-confirm-title" className="text-base font-semibold">
         {t('musicReview.confirm.title', { count: tracks + duplicates })}
@@ -156,6 +160,7 @@ function Confirm({
         <button
           type="button"
           data-testid="music-review-confirm-cancel"
+          ref={cancelRef}
           className={DIALOG_CANCEL}
           onClick={onCancel}
         >
@@ -165,7 +170,9 @@ function Confirm({
           type="button"
           data-testid="music-review-confirm-apply"
           ref={applyRef}
-          className={OK}
+          className={
+            destructive ? `${DIALOG_BUTTON} bg-[var(--color-danger)] hover:brightness-110` : OK
+          }
           disabled={busy}
           onClick={() => {
             onCancel()
