@@ -1358,7 +1358,15 @@ export default function App(): React.JSX.Element {
     // Only when the repair actually touched samples: a clean track reporting "0
     // clicks" on every convert would train the user to ignore the notice.
     onDeclicked: (name, count) => setNotice(tr('notices.declicked', { name, count })),
-    onOldMusicCopyKept: (reason) => reportOldCopyRemoveFailure(reason === 'mismatch'),
+    onOldMusicCopyKept: (reason) =>
+      reason === 'carry'
+        ? pushToast(store, {
+            key: 'old-copy-error',
+            tone: 'danger',
+            message: tr('editor.removeOldCopyCarry'),
+            testid: 'old-copy-error',
+          })
+        : reportOldCopyRemoveFailure(reason === 'mismatch'),
     onAppleMusicFailed: (name) =>
       pushToast(store, {
         key: 'music-after-convert',

@@ -3,6 +3,7 @@ import type { TrackMetadata } from '../shared/types'
 import {
   appleScriptString,
   buildAddScript,
+  buildCarryOverScript,
   buildDeleteScript,
   buildFileLocationsScript,
   buildFileNamesScript,
@@ -14,6 +15,7 @@ import {
   buildReviewDumpScript,
   buildSetFieldScript,
   buildUpdateScript,
+  carryOverToAppleMusicCopy,
   entriesForPaths,
   isAppleMusicOnly,
   musicEntryForFile,
@@ -703,6 +705,90 @@ describe('buildPlaylistTransferScript', () => {
     )
     expect(s).not.toContain('get location')
     expect(s).not.toContain('considering')
+  })
+})
+
+describe('buildCarryOverScript', () => {
+  const s = buildCarryOverScript('OLD0000000000000', 'NEW0000000000000', 'A - B')
+
+  // Replacing an MP3 with its AIFF deletes the old entry, and Music deletes with it what the
+  // DJ built on it: the hand-made crates, how often it was played and the stars. Only smart
+  // playlists refill on their own, so the rest has to be copied before the delete.
+  it('replacing keeps the track in its normal playlists and keeps its play count and rating', () => {
+    expect(s).toContain('set played count of dst to (played count of src)')
+    expect(s).toContain('if (played date of src) is not missing value then')
+    expect(s).toContain('set played date of dst to (played date of src)')
+    expect(s).toContain('if (rating kind of src) is user then set rating of dst to (rating of src)')
+    expect(s).toContain('set favorited of dst to (favorited of src)')
+    expect(s).toContain(
+      'if (exists (some track of p whose persistent ID is "OLD0000000000000")) and not (exists (some track of p whose persistent ID is "NEW0000000000000")) then',
+    )
+    expect(s).toContain('duplicate dst to (contents of p)')
+  })
+
+  // A computed rating is Music's average of the album, not stars the DJ gave: copying it
+  // would turn a guess into a user rating on the new entry.
+  it('copies only a rating the DJ set', () => {
+    expect(s).not.toMatch(/^\s*set rating of dst/m)
+  })
+
+  // Smart playlists answer -54 to a manual add and refill from their rules anyway, and the
+  // library, folders and Music's own lists are not the DJ's crates.
+  it('leaves smart playlists, folders and the library untouched', () => {
+    expect(s).toContain(
+      'repeat with p in (every user playlist whose smart is false and special kind is none)',
+    )
+    expect(s).not.toContain('library playlist 1 whose smart')
+    expect(s.match(/duplicate /g)).toHaveLength(1)
+  })
+
+  // The delete after this checks the same label; a misaligned snapshot must not graft one
+  // song's history onto another.
+  it('checks the old entry by its own label before copying anything', () => {
+    const check = s.indexOf(
+      'if (artist of src) & " - " & (name of src) is not "A - B" then return "mismatch"',
+    )
+    expect(check).toBeGreaterThan(-1)
+    expect(check).toBeLessThan(s.indexOf('set played count'))
+  })
+
+  // No try anywhere: a playlist Music refuses must fail the whole script, so the caller keeps
+  // the old entry instead of deleting it with that playlist still pointing at it.
+  it('lets any failure stop the script instead of swallowing it', () => {
+    expect(s).not.toContain('try')
+  })
+
+  // Playlist names never enter the script; the only text from the user is the label, and a
+  // quote in it would otherwise close the string and break (or rewrite) the script.
+  it('escapes quotes and backslashes in the label', () => {
+    const q = buildCarryOverScript('OLD0000000000000', 'NEW0000000000000', 'Mr "Big" \\ Co - "Hit"')
+    expect(q).toContain('is not "Mr \\"Big\\" \\\\ Co - \\"Hit\\"" then return "mismatch"')
+  })
+})
+
+describe('carryOverToAppleMusicCopy', () => {
+  it('reads how many playlists got the new entry', async () => {
+    const run = vi.fn(async () => 'carried\t2\n')
+    await expect(carryOverToAppleMusicCopy('OLD', 'NEW', 'A - B', run)).resolves.toBe('carried')
+    expect(run).toHaveBeenCalledWith(buildCarryOverScript('OLD', 'NEW', 'A - B'))
+  })
+
+  it('passes the old entry being gone or renamed back to the caller', async () => {
+    await expect(
+      carryOverToAppleMusicCopy('OLD', 'NEW', 'A - B', async () => 'missing\n'),
+    ).resolves.toBe('missing')
+    await expect(
+      carryOverToAppleMusicCopy('OLD', 'NEW', 'A - B', async () => 'mismatch\n'),
+    ).resolves.toBe('mismatch')
+  })
+
+  it('fails on anything else, so the old entry is not deleted on a guess', async () => {
+    await expect(carryOverToAppleMusicCopy('OLD', 'NEW', 'A - B', async () => '')).rejects.toThrow()
+    await expect(
+      carryOverToAppleMusicCopy('OLD', 'NEW', 'A - B', async () => {
+        throw new Error('Music got an error: -54')
+      }),
+    ).rejects.toThrow('-54')
   })
 })
 

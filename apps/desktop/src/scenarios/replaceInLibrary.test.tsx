@@ -102,8 +102,8 @@ describe.skipIf(process.platform !== 'darwin')(
       expect(existsSync(row.path)).toBe(true)
     })
 
-    it('leaves a plain Music playlist without the track, as the recipe warns', () => {
-      expect(music.playlist(warmUp)?.entries).toEqual([])
+    it('keeps the track in its plain Music playlist, now as the new AIFF', () => {
+      expect(music.playlist(warmUp)?.entries).toEqual([music.state.added[0].persistentId])
     })
 
     it('offers to send the old file to the Trash when it is done', () => {

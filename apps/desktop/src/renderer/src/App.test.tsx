@@ -3463,6 +3463,27 @@ describe('App per-track format pick', () => {
     expect(screen.queryByTestId('app-error')).not.toBeInTheDocument()
   })
 
+  // The old entry stays when its playlists, play count and rating could not move to the new
+  // one. Without saying why, the DJ sees two copies in Music and deletes the wrong one.
+  it('says both copies stayed in Apple Music when the old one could not hand over its playlists', async () => {
+    const processTrack = vi.fn<Api['processTrack']>().mockResolvedValue({
+      outputPath: '/music/a.aiff',
+      inPlace: false,
+      oldMusicCopyKept: 'carry',
+    })
+    setApi({
+      readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+      processTrack,
+    })
+    await renderApp()
+    const [a] = await addTwoTracks()
+    fireEvent.click(a)
+    fireEvent.click(await screen.findByTestId('process-btn'))
+    expect(await screen.findByTestId('old-copy-error')).toHaveTextContent(
+      i18n.t('editor.removeOldCopyCarry'),
+    )
+  })
+
   // Widening to several tracks and back to one kept "Convert to FLAC" on the button while
   // the convert itself fell back to the Settings format.
   it('converts in the picked format after the selection widens and narrows back', async () => {
