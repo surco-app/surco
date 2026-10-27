@@ -67,7 +67,7 @@ function setup({
     rekordboxCueDropInput: vi.fn<Api['rekordboxCueDropInput']>(
       async (id) => dropInputs[id] ?? null,
     ),
-    saveRekordboxCues: vi.fn<Api['saveRekordboxCues']>(async () => 'queued'),
+    saveRekordboxCues: vi.fn<Api['saveRekordboxCues']>(async () => {}),
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return { api, client }

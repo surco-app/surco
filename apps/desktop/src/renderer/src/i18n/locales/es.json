@@ -855,7 +855,6 @@
       "resetColour": "Restablecer",
       "saveShort": "Guardar",
       "saveFailed": "No se pudo guardar en rekordbox. Las cues siguen sin guardar",
-      "savedExcept": "Guardado, salvo en {{programs}}. Lo que espera allí es de otra colección y allí no se ha cambiado nada",
       "saveAll_one": "Guardar {{count}} pista en rekordbox",
       "saveAll_other": "Guardar {{count}} pistas en rekordbox",
       "saveAllBoth_one": "Guardar {{count}} pista en rekordbox y Engine DJ",
@@ -1954,7 +1953,9 @@
     "rekordboxCollectionMissing": "Omitido, no se encuentra la colección de rekordbox",
     "engineCollectionMissing": "Omitido, no se encuentra la biblioteca de Engine DJ",
     "traktorSyncCollectionMissing": "Omitido, no se encuentra collection.nml",
-    "syncHeldElsewhere": "No se guardó para más tarde porque lo que espera es de otra colección. Vuelve a esa colección o descarta lo que espera",
+    "rekordboxCollectionUnplugged": "Se aplicará al conectar el disco",
+    "engineCollectionUnplugged": "Se aplicará al conectar el disco",
+    "traktorSyncCollectionUnplugged": "Se aplicará al conectar el disco",
     "reviewRun_one": "Revisión de Music, {{count}} pista",
     "reviewRun_other": "Revisión de Music, {{count}} pistas",
     "reviewFix": {
@@ -2073,8 +2074,7 @@
         "readOnly": "La colección de rekordbox es de solo lectura y no se cambió nada",
         "stale": "La playlist cambió en rekordbox. Revísala y vuelve a intentarlo",
         "noSeparator": "Tu colección no tiene ningún separador que copiar",
-        "writeUnknown": "No se pudo guardar el cambio ni deshacerlo, así que la colección puede haber cambiado. Antes de abrir rekordbox, saca master.db-wal y master.db-shm de su carpeta y después sustituye master.db por la copia master.db.surco-backup que tienes en Ajustes → General → Copias de las colecciones",
-        "otherCollection": "Lo que espera es de otra colección de rekordbox, así que no se cambió nada. Vuelve a esa colección o descarta lo que espera"
+        "writeUnknown": "No se pudo guardar el cambio ni deshacerlo, así que la colección puede haber cambiado. Antes de abrir rekordbox, saca master.db-wal y master.db-shm de su carpeta y después sustituye master.db por la copia master.db.surco-backup que tienes en Ajustes → General → Copias de las colecciones"
       }
     },
     "editTraktor": {
@@ -2096,8 +2096,7 @@
         "readOnly": "La colección de Traktor es de solo lectura y no se cambió nada",
         "stale": "La playlist cambió en Traktor. Revísala y vuelve a intentarlo",
         "noSeparator": "Tu colección no tiene ningún separador que copiar",
-        "writeUnknown": "No se pudo guardar ni deshacer el cambio, así que la colección puede haber cambiado. Antes de abrir Traktor, sustituye collection.nml por la copia collection.nml.surco-backup que tienes en Ajustes → General → Copias de las colecciones",
-        "otherCollection": "Lo que espera es de otra colección de Traktor, así que no se cambió nada. Vuelve a esa colección o descarta lo que espera"
+        "writeUnknown": "No se pudo guardar ni deshacer el cambio, así que la colección puede haber cambiado. Antes de abrir Traktor, sustituye collection.nml por la copia collection.nml.surco-backup que tienes en Ajustes → General → Copias de las colecciones"
       }
     },
     "tree": {
@@ -2587,7 +2586,8 @@
     "pillHalted": "Cambios de rekordbox en pausa",
     "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la colección hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia master.db.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → General → Copias de las colecciones",
     "pillElsewhere": "Pendiente de otra colección de rekordbox",
-    "elsewhere": "Esto se preparó para otra colección de rekordbox. Surco no lo aplicará a la que usas ahora"
+    "elsewhere_one": "Hay {{count}} cambio pendiente de otra colección de rekordbox. Se aplicará cuando vuelvas a ella",
+    "elsewhere_other": "Hay {{count}} cambios pendientes de otra colección de rekordbox. Se aplicarán cuando vuelvas a ella"
   },
   "engineQueue": {
     "pillTracks_one": "{{count}} pista espera a que cierres Engine DJ",
@@ -2601,7 +2601,6 @@
     "backupFailed": "No se pudo hacer la copia de Engine DJ. Se intentará al cerrarlo otra vez",
     "unreadable": "Surco no puede leer ahora la biblioteca de Engine DJ y no ha cambiado nada",
     "writeFailed": "No se pudieron guardar las cues en Engine DJ. La biblioteca sigue como estaba",
-    "otherLibrary": "Lo que espera es de otra biblioteca de Engine DJ y no se ha cambiado nada. Vuelve a esa biblioteca o descarta lo que espera",
     "notice": {
       "cuesChanged": "Las cues de {{track}} cambiaron en Engine DJ. Vuelve a marcarlas",
       "callsDropped_one": "No se guardó el CALL de {{track}} ({{times}}). Engine DJ solo guarda hot cues",
@@ -2611,7 +2610,8 @@
     "pillHalted": "Cambios de Engine DJ en pausa",
     "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la biblioteca hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia m.db.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → General → Copias de las colecciones",
     "pillElsewhere": "Pendiente de otra biblioteca de Engine DJ",
-    "elsewhere": "Esto se preparó para otra biblioteca de Engine DJ. Surco no lo aplicará a la que usas ahora"
+    "elsewhere_one": "Hay {{count}} cambio pendiente de otra biblioteca de Engine DJ. Se aplicará cuando vuelvas a ella",
+    "elsewhere_other": "Hay {{count}} cambios pendientes de otra biblioteca de Engine DJ. Se aplicarán cuando vuelvas a ella"
   },
   "traktorQueue": {
     "pillTracks_one": "{{count}} pista espera a que cierres Traktor",
@@ -2625,7 +2625,6 @@
     "backupFailed": "No se pudo hacer la copia de Traktor. Se intentará al cerrarlo otra vez",
     "unreadable": "Surco no puede leer ahora la colección de Traktor y no ha cambiado nada",
     "writeFailed": "No se pudieron guardar los cambios en Traktor. La colección sigue como estaba",
-    "otherLibrary": "Lo que espera es de otra colección de Traktor y no se ha cambiado nada. Vuelve a esa colección o descarta lo que espera",
     "notice": {
       "cuesChanged": "Las cues de {{track}} cambiaron en Traktor. Vuelve a marcarlas",
       "slotDropped": "Traktor tiene 7 botones para las cues de Surco, así que la cue H de {{track}} no se guardó",
@@ -2635,7 +2634,8 @@
     "pillHalted": "Cambios de Traktor en pausa",
     "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la colección hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia collection.nml.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → General → Copias de las colecciones",
     "pillElsewhere": "Pendiente de otra colección de Traktor",
-    "elsewhere": "Esto se preparó para otra colección de Traktor. Surco no lo aplicará a la que usas ahora"
+    "elsewhere_one": "Hay {{count}} cambio pendiente de otra colección de Traktor. Se aplicará cuando vuelvas a ella",
+    "elsewhere_other": "Hay {{count}} cambios pendientes de otra colección de Traktor. Se aplicarán cuando vuelvas a ella"
   },
   "cueWave": {
     "notAnalysed": "Esta pista no está analizada en rekordbox. Analízala allí para poner cues",

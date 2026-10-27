@@ -236,11 +236,13 @@ describe('completeOnClose', () => {
     expect(q.enqueue).not.toHaveBeenCalled()
   })
 
-  it('adds nothing to a queue held for another collection', async () => {
+  // What waits for another collection stays in that collection's own queue, so it no longer
+  // keeps this one from being completed.
+  it('completes the collection in use while another collection has changes waiting', async () => {
     const path = await collection()
-    const q = queue({ ...EMPTY, elsewhere: true })
+    const q = queue({ ...EMPTY, elsewhere: 3 })
     completeOnClose({ enabled: () => true, collection: () => path, queue: q, flow: () => MY_FLOW })
-    expect(q.enqueue).not.toHaveBeenCalled()
+    expect(q.enqueue).toHaveBeenCalledWith([expect.objectContaining({ contentId: '101' })])
   })
 
   it('does nothing when the option is off, which is the default', async () => {

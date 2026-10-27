@@ -47,7 +47,6 @@ const REFUSED: Record<Exclude<RekordboxEditRefusal, 'nothing-to-add'>, string> =
   'read-only': 'sources.edit.refused.readOnly',
   stale: 'sources.edit.refused.stale',
   'no-separator': 'sources.edit.refused.noSeparator',
-  'other-collection': 'sources.edit.refused.otherCollection',
 }
 
 const WAITING: ReadonlySet<RekordboxEditRefusal> = new Set(['cancelled', 'rekordbox-running'])

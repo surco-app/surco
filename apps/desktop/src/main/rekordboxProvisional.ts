@@ -153,7 +153,7 @@ export function adjustProvisional(deps: {
   unsaved?: () => ReadonlySet<string>
 }): void {
   const state = deps.queue.state()
-  if (state.halted || state.elsewhere) return
+  if (state.halted) return
   const entries = deps.list
     .all()
     .filter((e) => !deps.queue.cuesOp(e.contentId) && !deps.unsaved?.().has(e.contentId))
@@ -165,7 +165,7 @@ export function adjustProvisional(deps: {
       (db) => adjustmentOps(db, rekordboxShareDir(path), entries, deps.newId),
       { ops: [], settled: [] },
     )
-    if (ops.length > 0 && !deps.queue.enqueue(ops)) return
+    if (ops.length > 0) deps.queue.enqueue(ops)
     deps.list.settle(settled)
   } catch (err) {
     log.warn(`rekordbox provisional adjustment skipped: ${String(err)}`)

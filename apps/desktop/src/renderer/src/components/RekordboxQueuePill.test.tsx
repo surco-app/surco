@@ -49,12 +49,23 @@ describe('RekordboxQueuePill', () => {
     expect(screen.getByTestId('rekordbox-queue-discard')).toBeInTheDocument()
   })
 
-  it('explains a queue prepared for another collection', () => {
-    setup({ ...STATE, elsewhere: true })
+  it('counts what waits for another collection apart from what this one will get', () => {
+    setup({ ...STATE, elsewhere: 2 })
     fireEvent.click(screen.getByTestId('rekordbox-queue-pill'))
     expect(screen.getByTestId('rekordbox-queue-elsewhere')).toHaveTextContent(
-      'This was prepared for another rekordbox collection. Surco will not apply it to the one you use now',
+      '2 changes wait for another rekordbox collection. They will be applied when you go back to it',
     )
+    expect(screen.getByTestId('rekordbox-queue-item-edit:e1')).toBeInTheDocument()
+  })
+
+  it('shows what waits for another collection when nothing waits for this one, so it can be discarded', () => {
+    setup({ tracks: 0, changes: 0, items: [], elsewhere: 1 })
+    fireEvent.click(screen.getByTestId('rekordbox-queue-pill'))
+    expect(screen.getByTestId('rekordbox-queue-elsewhere')).toHaveTextContent(
+      '1 change waits for another rekordbox collection. It will be applied when you go back to it',
+    )
+    expect(screen.queryByTestId('rekordbox-queue-apply')).toBeNull()
+    expect(screen.getByTestId('rekordbox-queue-discard')).toBeInTheDocument()
   })
 
   it('counts the waiting tracks', () => {

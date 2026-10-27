@@ -1139,7 +1139,6 @@ export type RekordboxEditRefusal =
   | 'stale'
   | 'no-separator'
   | 'nothing-to-add'
-  | 'other-collection'
 
 // What an add did with each track it was given.
 export interface PlaylistAddReport {
@@ -1702,7 +1701,7 @@ export interface RekordboxQueueState {
   changes: number
   items: RekordboxQueueItem[]
   halted?: true
-  elsewhere?: true
+  elsewhere?: number
 }
 
 export interface RekordboxQueueWritten {
@@ -1755,11 +1754,6 @@ export interface QueuedCues {
   wanted: WantedCue[]
   fingerprint: string
 }
-
-export type SaveCuesOutcome =
-  | 'queued'
-  | 'other-collection'
-  | { queued: string[]; refused: CueLibrary[] }
 
 export interface SaveCuesRequest {
   contentId: string

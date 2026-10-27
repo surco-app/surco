@@ -75,7 +75,7 @@ export function completeOnClose(deps: {
   const path = deps.collection()
   if (!path) return
   const state = deps.queue.state()
-  if (state.halted || state.elsewhere) return
+  if (state.halted) return
   try {
     const ops = withCollection(
       path,

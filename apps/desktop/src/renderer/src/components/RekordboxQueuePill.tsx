@@ -79,9 +79,9 @@ export function RekordboxQueuePill({
               {tr(words.halted)}
             </p>
           )}
-          {state.elsewhere && (
-            <p data-testid={`${testid}-elsewhere`} className="mb-2 px-1.5 text-xs text-danger">
-              {tr(words.elsewhere)}
+          {state.elsewhere !== undefined && (
+            <p data-testid={`${testid}-elsewhere`} className="mb-2 px-1.5 text-xs text-fg-muted">
+              {tr(words.elsewhere, { count: state.elsewhere })}
             </p>
           )}
           <ul className="max-h-64 space-y-1 overflow-auto">

@@ -855,7 +855,6 @@
       "resetColour": "Reset",
       "saveShort": "Save",
       "saveFailed": "Could not save to rekordbox. The cues are still not saved",
-      "savedExcept": "Saved, except in {{programs}}. What is waiting there belongs to another collection, so nothing changed there",
       "saveAll_one": "Save {{count}} track to rekordbox",
       "saveAll_other": "Save {{count}} tracks to rekordbox",
       "saveAllBoth_one": "Save {{count}} track to rekordbox and Engine DJ",
@@ -1954,7 +1953,9 @@
     "rekordboxCollectionMissing": "Skipped, the rekordbox collection was not found",
     "engineCollectionMissing": "Skipped, the Engine DJ library was not found",
     "traktorSyncCollectionMissing": "Skipped, collection.nml was not found",
-    "syncHeldElsewhere": "Not kept for later, because what is waiting belongs to another collection. Go back to that collection or discard what is waiting",
+    "rekordboxCollectionUnplugged": "Will be applied when the drive is connected",
+    "engineCollectionUnplugged": "Will be applied when the drive is connected",
+    "traktorSyncCollectionUnplugged": "Will be applied when the drive is connected",
     "reviewRun_one": "Music review, {{count}} track",
     "reviewRun_other": "Music review, {{count}} tracks",
     "reviewFix": {
@@ -2073,8 +2074,7 @@
         "readOnly": "The rekordbox collection is read-only, so nothing changed",
         "stale": "The playlist changed in rekordbox. Check it and try again",
         "noSeparator": "Your collection has no separator to copy",
-        "writeUnknown": "The change could not be saved or undone, so the collection may have changed. Before opening rekordbox, move master.db-wal and master.db-shm out of its folder and then replace master.db with the copy master.db.surco-backup you will find in Settings → General → Collection backups",
-        "otherCollection": "What is waiting belongs to another rekordbox collection, so nothing was changed. Go back to that collection or discard what is waiting"
+        "writeUnknown": "The change could not be saved or undone, so the collection may have changed. Before opening rekordbox, move master.db-wal and master.db-shm out of its folder and then replace master.db with the copy master.db.surco-backup you will find in Settings → General → Collection backups"
       }
     },
     "editTraktor": {
@@ -2096,8 +2096,7 @@
         "readOnly": "The Traktor collection is read-only, so nothing changed",
         "stale": "The playlist changed in Traktor. Check it and try again",
         "noSeparator": "Your collection has no separator to copy",
-        "writeUnknown": "The change could not be saved or undone, so the collection may have changed. Before opening Traktor, replace collection.nml with the copy collection.nml.surco-backup you will find in Settings → General → Collection backups",
-        "otherCollection": "What is waiting belongs to another Traktor collection, so nothing was changed. Go back to that collection or discard what is waiting"
+        "writeUnknown": "The change could not be saved or undone, so the collection may have changed. Before opening Traktor, replace collection.nml with the copy collection.nml.surco-backup you will find in Settings → General → Collection backups"
       }
     },
     "tree": {
@@ -2587,7 +2586,8 @@
     "pillHalted": "rekordbox changes on hold",
     "halted": "The last change could not be saved or undone. Surco will not touch the collection until you choose Apply now or Discard. Apply now replaces the backup copy master.db.surco-backup, so if anything looks wrong, restore from it first. You will find it in Settings → General → Collection backups",
     "pillElsewhere": "Waiting for another rekordbox collection",
-    "elsewhere": "This was prepared for another rekordbox collection. Surco will not apply it to the one you use now"
+    "elsewhere_one": "{{count}} change waits for another rekordbox collection. It will be applied when you go back to it",
+    "elsewhere_other": "{{count}} changes wait for another rekordbox collection. They will be applied when you go back to it"
   },
   "engineQueue": {
     "pillTracks_one": "{{count}} track waits for you to close Engine DJ",
@@ -2601,7 +2601,6 @@
     "backupFailed": "Could not back up Engine DJ. Surco will try again when you close it",
     "unreadable": "Surco can't read the Engine DJ library right now, so nothing changed",
     "writeFailed": "Couldn't save the cues to Engine DJ. The library is as it was",
-    "otherLibrary": "What is waiting belongs to another Engine DJ library, so nothing was changed. Go back to that library or discard what is waiting",
     "notice": {
       "cuesChanged": "The cues of {{track}} changed in Engine DJ. Mark them again",
       "callsDropped_one": "{{count}} CALL of {{track}} was not saved ({{times}}). Engine DJ only keeps hot cues",
@@ -2611,7 +2610,8 @@
     "pillHalted": "Engine DJ changes on hold",
     "halted": "The last change could not be saved or undone. Surco will not touch the library until you choose Apply now or Discard. Apply now replaces the backup copy m.db.surco-backup, so if anything looks wrong, restore from it first. You will find it in Settings → General → Collection backups",
     "pillElsewhere": "Waiting for another Engine DJ library",
-    "elsewhere": "This was prepared for another Engine DJ library. Surco will not apply it to the one you use now"
+    "elsewhere_one": "{{count}} change waits for another Engine DJ library. It will be applied when you go back to it",
+    "elsewhere_other": "{{count}} changes wait for another Engine DJ library. They will be applied when you go back to it"
   },
   "traktorQueue": {
     "pillTracks_one": "{{count}} track waits for you to close Traktor",
@@ -2625,7 +2625,6 @@
     "backupFailed": "Could not back up Traktor. Surco will try again when you close it",
     "unreadable": "Surco can't read the Traktor collection right now, so nothing changed",
     "writeFailed": "Couldn't save the changes to Traktor. The collection is as it was",
-    "otherLibrary": "What is waiting belongs to another Traktor collection, so nothing was changed. Go back to that collection or discard what is waiting",
     "notice": {
       "cuesChanged": "The cues of {{track}} changed in Traktor. Mark them again",
       "slotDropped": "Traktor has 7 buttons for Surco's cues, so cue H of {{track}} was not saved",
@@ -2635,7 +2634,8 @@
     "pillHalted": "Traktor changes on hold",
     "halted": "The last change could not be saved or undone. Surco will not touch the collection until you choose Apply now or Discard. Apply now replaces the backup copy collection.nml.surco-backup, so if anything looks wrong, restore from it first. You will find it in Settings → General → Collection backups",
     "pillElsewhere": "Waiting for another Traktor collection",
-    "elsewhere": "This was prepared for another Traktor collection. Surco will not apply it to the one you use now"
+    "elsewhere_one": "{{count}} change waits for another Traktor collection. It will be applied when you go back to it",
+    "elsewhere_other": "{{count}} changes wait for another Traktor collection. They will be applied when you go back to it"
   },
   "cueWave": {
     "notAnalysed": "This track is not analysed in rekordbox. Analyse it there to set cues",

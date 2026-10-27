@@ -314,7 +314,7 @@ function scenarioApi(
     rowWaves: async () => ({}),
     rekordboxCountCompletable: async () => 0,
     rekordboxLearnFlow: async () => null,
-    saveRekordboxCues: async () => 'queued',
+    saveRekordboxCues: async () => {},
     rekordboxQueuedCues: async () => null,
     undoRekordboxCues: async () => {},
     rekordboxMembership: async () => ({}),

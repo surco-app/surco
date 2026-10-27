@@ -85,28 +85,6 @@ describe('flushConversionBatch with rekordbox open', () => {
   })
 })
 
-// La cola guarda una sola colección. Con cambios pendientes de otra, los de esta conversión
-// no caben y se perdían sin decir nada, mientras el diálogo daba a entender que se aplicarían.
-describe('flushConversionBatch with the queue held for another collection', () => {
-  it('tells the DJ in Activity that the run was not kept for later', async () => {
-    const events: ActivityEvent[] = []
-    const stop = activity.subscribe((event) => events.push(event))
-    try {
-      const queue = { enqueue: vi.fn(() => false), applyQuietly: vi.fn() }
-      await flushConversionBatch(host(), sessions, queue)
-    } finally {
-      stop()
-    }
-    expect(events).toContainEqual(
-      expect.objectContaining({
-        labelKey: 'activity.rekordboxSync',
-        phase: 'warn',
-        detailKey: 'activity.syncHeldElsewhere',
-      }),
-    )
-  })
-})
-
 describe('flushConversionBatch with master.db on an unplugged drive', () => {
   it('queues the repoints for when the drive is back instead of letting them go', async () => {
     Object.assign(SETTINGS, { rekordboxDbPath: '/Volumes/Surco Desconectado/master.db' })
@@ -119,6 +97,26 @@ describe('flushConversionBatch with master.db on an unplugged drive', () => {
       Object.assign(SETTINGS, { rekordboxDbPath: '/c/master.db' })
       STATUS.rekordbox = { enabled: true, found: true }
     }
+  })
+
+  it('tells the DJ in Activity the changes land when the drive is connected', async () => {
+    Object.assign(SETTINGS, { rekordboxDbPath: '/Volumes/Surco Desconectado/master.db' })
+    STATUS.rekordbox = { enabled: true, found: false }
+    const events: ActivityEvent[] = []
+    const stop = activity.subscribe((event) => events.push(event))
+    try {
+      await flushConversionBatch(host(), sessions, { enqueue: vi.fn(), applyQuietly: vi.fn() })
+    } finally {
+      stop()
+      Object.assign(SETTINGS, { rekordboxDbPath: '/c/master.db' })
+      STATUS.rekordbox = { enabled: true, found: true }
+    }
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        labelKey: 'activity.rekordboxSync',
+        detailKey: 'activity.rekordboxCollectionUnplugged',
+      }),
+    )
   })
 })
 
@@ -165,6 +163,33 @@ describe('flushConversionBatch with Engine DJ open', () => {
     } finally {
       Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
     }
+  })
+
+  it('tells the DJ in Activity the Engine changes land when the drive is connected', async () => {
+    Object.assign(SETTINGS, {
+      syncEngineDj: true,
+      engineLibraryDir: '/Volumes/Surco Desconectado/Engine Library',
+    })
+    const events: ActivityEvent[] = []
+    const stop = activity.subscribe((event) => events.push(event))
+    try {
+      await flushConversionBatch(
+        host(),
+        sessions,
+        { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        undefined,
+        { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      )
+    } finally {
+      stop()
+      Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
+    }
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        labelKey: 'activity.engineSync',
+        detailKey: 'activity.engineCollectionUnplugged',
+      }),
+    )
   })
 
   // La cola solo guarda los cambios cuando la razón es la suya de "app abierta". Con la de

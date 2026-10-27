@@ -245,4 +245,16 @@ describe('adjustProvisional', () => {
     expect(queue.enqueue).not.toHaveBeenCalled()
     expect(list.all()).toEqual([entry()])
   })
+
+  it('adjusts the collection in use while another collection has changes waiting in its own queue', async () => {
+    const path = await collection(true)
+    const list = createProvisionalList(memoryStore())
+    list.add(entry())
+    const queue = queueOf({
+      state: vi.fn(() => ({ tracks: 0, changes: 0, items: [], elsewhere: 2 })),
+    })
+    adjustProvisional({ list, collection: () => path, queue, newId: () => 'op' })
+    expect(queue.enqueue).toHaveBeenCalledWith([expect.objectContaining({ contentId: '103' })])
+    expect(list.all()).toEqual([])
+  })
 })

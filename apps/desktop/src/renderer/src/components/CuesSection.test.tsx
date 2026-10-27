@@ -57,7 +57,7 @@ function setup(
 ) {
   const logError = vi.fn<Api['logError']>()
   const onFlow = vi.fn<(id: string) => void>()
-  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => 'queued')
+  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
   const undoRekordboxCues = vi.fn<Api['undoRekordboxCues']>(async () => {})
   const rekordboxTrackCues = vi.fn<Api['rekordboxTrackCues']>(async () => {
     if (read instanceof Error) throw read

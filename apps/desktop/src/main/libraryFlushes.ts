@@ -23,7 +23,7 @@ import { replaceRekordboxDuplicates } from './rekordboxDuplicates'
 import { type FlushResult, flushRekordboxSync, REKORDBOX_KEYS } from './rekordboxFlush'
 import { repointTracks } from './rekordboxLibrary'
 import { findRekordboxCollection } from './rekordboxPath'
-import type { QueuedRepoint, RekordboxQueue } from './rekordboxQueue'
+import type { RekordboxQueue } from './rekordboxQueue'
 import { queueConversionRun, trackOpsFromRun } from './rekordboxQueueFromRun'
 import type { createSessionBackup } from './rekordboxSessionBackup'
 import { updateRekordboxTags } from './rekordboxTags'
@@ -149,22 +149,6 @@ export function logLibraryFlush(label: string, result: FlushResult): void {
   }
 }
 
-// The queue keeps one collection's changes at a time. Held for another, it takes none of
-// this run's, which were let go in silence while the run said they would apply later.
-function saidWhenLeftOut<R extends QueuedRepoint>(
-  enqueue: RekordboxQueue<R>['enqueue'],
-  step: string,
-): RekordboxQueue<R>['enqueue'] {
-  return (ops, repoints) => {
-    const kept = enqueue(ops, repoints)
-    if (!kept)
-      void activity.track('export', step, async () => undefined, {
-        summary: () => ({ detailKey: 'activity.syncHeldElsewhere', status: 'warn' }),
-      })
-    return kept
-  }
-}
-
 // A convert-all run ends (however it ended — finished, cancelled, or failed, the
 // renderer calls this from its finally block): flush whatever Traktor cue patches the
 // batch recorded into collection.nml in one write. A failure here must never surface as
@@ -180,12 +164,7 @@ export async function flushConversionBatch(
   await flushTraktorSync({
     ...traktorFlushDeps(host),
     endNmlBatch,
-    queue:
-      traktorQueue &&
-      holdInQueue({
-        ...traktorQueue,
-        enqueue: saidWhenLeftOut(traktorQueue.enqueue, 'activity.traktorSync'),
-      }),
+    queue: traktorQueue && holdInQueue(traktorQueue),
   })
   // The run's repoints, taken once: rekordbox and Engine DJ each apply the same list to
   // their own library, and closing the batch twice would hand the second one nothing.
@@ -194,13 +173,15 @@ export async function flushConversionBatch(
   // one being open or unwritable must not stop the other from being updated.
   const rekordbox = rekordboxWriteDeps(host)
   const collectionPath = rekordboxCollectionPath()
+  const rekordboxUnplugged = onUnpluggedDrive(getSettings().rekordboxDbPath)
   await queueConversionRun(repoints, {
     collectionPath,
     held: rekordbox.held,
-    unplugged: onUnpluggedDrive(getSettings().rekordboxDbPath),
+    unplugged: rekordboxUnplugged,
     flushRepoints: async (list) => {
       const result = await flushRekordboxSync({
         ...rekordbox,
+        unplugged: rekordboxUnplugged,
         showBlockedDialog: () => {},
         endBatch: () => list,
         repointTracks: (path, items) => repointRekordbox(path, items, sessions),
@@ -214,25 +195,24 @@ export async function flushConversionBatch(
         probe: { properties: probeProperties, duration: (p) => probeDuration(p) },
         find: { realPath: (p: string) => realpathSync(p) },
       }),
-    enqueue: saidWhenLeftOut(queue.enqueue, 'activity.rekordboxSync'),
+    enqueue: queue.enqueue,
     apply: queue.applyQuietly,
   })
   // Engine DJ last, again independently. Its library is the one the Engine destination
   // writes to. With Engine open the run waits in its queue, as rekordbox's does: the dialog
   // asked to convert again, which an in-place conversion cannot, its source being gone.
   const engineRepoints = repoints.filter((repoint) => repoint.from !== repoint.to)
+  const engineUnplugged = onUnpluggedDrive(getSettings().engineLibraryDir)
   const engineResult = await flushEngineSync({
     ...engineFlushDeps(host),
-    ...(engineQueue && { showBlockedDialog: () => {} }),
+    ...(engineQueue && { showBlockedDialog: () => {}, unplugged: engineUnplugged }),
     endBatch: () => engineRepoints,
     repointTracks: (libraryDir, list) => repointEngine(libraryDir, list, sessions),
   })
   logLibraryFlush('Engine DJ repoint', engineResult)
-  const unplugged =
-    engineResult.blocked === 'collection-missing' &&
-    onUnpluggedDrive(getSettings().engineLibraryDir)
+  const unplugged = engineResult.blocked === 'collection-missing' && engineUnplugged
   if (engineQueue && (engineResult.blocked === ENGINE_KEYS.runningReason || unplugged)) {
-    saidWhenLeftOut(engineQueue.enqueue, ENGINE_KEYS.step)([], engineRepoints)
+    engineQueue.enqueue([], engineRepoints)
     engineQueue.applyQuietly()
   }
 }

@@ -44,6 +44,38 @@ describe('flushTraktorSync', () => {
     expect(deps.syncCollection).not.toHaveBeenCalled()
   })
 
+  describe('with collection.nml on an unplugged drive', () => {
+    const detailOf = async (overrides: Partial<FlushTraktorSyncDeps>) => {
+      let summaryDetail: unknown
+      await flushTraktorSync(
+        makeDeps({
+          traktorNmlPath: '',
+          collectionMissing: true,
+          unplugged: true,
+          track: vi.fn(async (_kind, _labelKey, task, opts) => {
+            const result = await task()
+            summaryDetail = opts?.summary?.(result)
+            return result
+          }),
+          ...overrides,
+        }),
+      )
+      return summaryDetail
+    }
+
+    // The patches wait in the queue for the drive, so "Skipped" read as if they were gone.
+    it('says they will be applied when the drive is connected', async () => {
+      const queue = { waiting: () => false, hold: vi.fn(async () => {}) }
+      expect(await detailOf({ queue })).toEqual({
+        detailKey: 'activity.traktorSyncCollectionUnplugged',
+      })
+    })
+
+    it('says they were skipped when nothing keeps them for later', async () => {
+      expect(await detailOf({})).toEqual({ detailKey: 'activity.traktorSyncCollectionMissing' })
+    })
+  })
+
   it('does nothing when no collection.nml path is configured', async () => {
     const deps = makeDeps({ traktorNmlPath: '' })
     await flushTraktorSync(deps)
