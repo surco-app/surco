@@ -16,20 +16,21 @@ const REPOINTS = vi.hoisted(() => [
 
 vi.mock('./settings', () => ({ getSettings: () => SETTINGS }))
 vi.mock('./rekordboxPath', () => ({ findRekordboxCollection: () => '/c/master.db' }))
-vi.mock('./libraryStatus', () => ({
-  libraryStatus: () => ({
-    rekordbox: { enabled: true, found: true },
-    engine: { enabled: false, found: false },
-    traktor: { enabled: false, found: false },
-  }),
+const STATUS = vi.hoisted(() => ({
+  rekordbox: { enabled: true, found: true },
+  engine: { enabled: false, found: false },
+  traktor: { enabled: false, found: false },
 }))
+vi.mock('./libraryStatus', () => ({ libraryStatus: () => STATUS }))
 vi.mock('./rekordboxBatch', () => ({ endRekordboxBatch: () => REPOINTS }))
 const WRITERS = vi.hoisted(() => ({
   trackOpsFromRun: vi.fn(async () => []),
   repointTracks: vi.fn(async () => [{ written: true }]),
   updateRekordboxTags: vi.fn(async () => [{ written: true }]),
   replaceRekordboxDuplicates: vi.fn(async () => [{ written: true, outcome: 'replaced' }]),
+  repointEngineTracks: vi.fn(async () => [{ written: true, id: '1' }]),
 }))
+vi.mock('./engineRepoint', () => ({ repointEngineTracks: WRITERS.repointEngineTracks }))
 vi.mock('./rekordboxQueueFromRun', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./rekordboxQueueFromRun')>()),
   trackOpsFromRun: WRITERS.trackOpsFromRun,
@@ -50,6 +51,7 @@ import {
   duplicateLibraryDeps,
   flushConversionBatch,
   type LibraryHost,
+  repointEngineQueued,
   syncTagsInLibraries,
 } from './libraryFlushes'
 
@@ -78,6 +80,42 @@ describe('flushConversionBatch with rekordbox open', () => {
     expect(h.showBlockedDialog).not.toHaveBeenCalled()
     expect(queue.enqueue).toHaveBeenCalledWith([], REPOINTS)
     expect(queue.applyQuietly).toHaveBeenCalled()
+  })
+})
+
+// Engine DJ abierto al acabar una conversión en su sitio: el aviso pedía volver a convertir,
+// y el MP3 ya no existe. La biblioteca se queda en la cola y apunta al FLAC al cerrar Engine.
+describe('flushConversionBatch with Engine DJ open', () => {
+  it('queues the repoints for when Engine DJ closes instead of asking to convert again', async () => {
+    Object.assign(SETTINGS, { syncEngineDj: true, engineLibraryDir: '/e/Engine Library' })
+    STATUS.engine = { enabled: true, found: true }
+    try {
+      const h = host({ ensureEngineDjClosed: vi.fn(async () => false) })
+      const engine = { enqueue: vi.fn(), applyQuietly: vi.fn() }
+      await flushConversionBatch(
+        h,
+        sessions,
+        { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        undefined,
+        engine,
+      )
+      expect(h.showBlockedDialog).not.toHaveBeenCalledWith('engineSyncBlocked')
+      expect(engine.enqueue).toHaveBeenCalledWith([], REPOINTS)
+      expect(engine.applyQuietly).toHaveBeenCalled()
+    } finally {
+      Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
+      STATUS.engine = { enabled: false, found: false }
+    }
+  })
+
+  // La cola solo guarda los cambios cuando la razón es la suya de "app abierta". Con la de
+  // Engine tal cual, un Engine abierto justo antes de escribir tiraba la cola entera.
+  it('names Engine DJ being open the way the queue keeps waiting on', async () => {
+    WRITERS.repointEngineTracks.mockResolvedValueOnce([
+      { written: false, reason: 'engine-running' },
+    ] as never)
+    const results = await repointEngineQueued('/e/Engine Library', REPOINTS, sessions)
+    expect(results).toEqual([{ written: false, reason: 'rekordbox-running' }])
   })
 })
 

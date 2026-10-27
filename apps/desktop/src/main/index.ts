@@ -108,6 +108,7 @@ import {
   type LibraryHost,
   rekordboxCollectionPath,
   rekordboxFlushDeps,
+  repointEngineQueued,
   repointRekordbox,
   syncTagsInLibraries,
   traktorFlushDeps,
@@ -327,7 +328,7 @@ const engineCueQueue = createRekordboxQueue({
       ensureClosed,
       sessionBackup: (path) => sessions.engine.ensure(path),
     }),
-  repoint: async () => [],
+  repoint: (libraryDir, list) => repointEngineQueued(libraryDir, list, sessions),
   nodeStamps: async () => ({}),
   onChange: (state) => broadcast('engine:cueQueueChanged', state),
 })
@@ -1357,6 +1358,7 @@ function registerIpc(): void {
           state: traktorCueQueue.state,
           applyQuietly: applyTraktorCueQueueQuietly,
         },
+        { enqueue: engineCueQueue.enqueue, applyQuietly: applyEngineCueQueueQuietly },
       ),
     ),
   )

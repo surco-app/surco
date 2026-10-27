@@ -13,7 +13,7 @@ import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
 import { updateEngineTags } from './engineTags'
 import { probeDuration, probeProperties, toNmlLocation } from './ffmpeg'
 import { djLibraryFileUse } from './libraryFileUse'
-import { flushLibraryRepoints } from './libraryRepointFlush'
+import { flushLibraryRepoints, type LibraryRepointResult } from './libraryRepointFlush'
 import { libraryStatus } from './libraryStatus'
 import { nmlTagPatches } from './libraryTagPatches'
 import { serialLibraryFlush, syncLibraryTags, tagSyncOf } from './libraryTagSync'
@@ -150,6 +150,7 @@ export async function flushConversionBatch(
   sessions: { rekordbox: SessionBackup; engine: SessionBackup },
   queue: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void },
   traktorQueue?: Parameters<typeof holdInQueue>[0],
+  engineQueue?: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void },
 ): Promise<void> {
   await flushTraktorSync({
     ...traktorFlushDeps(host),
@@ -186,18 +187,47 @@ export async function flushConversionBatch(
     apply: queue.applyQuietly,
   })
   // Engine DJ last, again independently. Its library is the one the Engine destination
-  // writes to.
+  // writes to. With Engine open the run waits in its queue, as rekordbox's does: the dialog
+  // asked to convert again, which an in-place conversion cannot, its source being gone.
+  const engineRepoints = repoints.filter((repoint) => repoint.from !== repoint.to)
   const engineResult = await flushEngineSync({
     ...engineFlushDeps(host),
-    endBatch: () => repoints.filter((repoint) => repoint.from !== repoint.to),
-    repointTracks: (libraryDir, list) =>
-      repointEngineTracks(
-        libraryDir,
-        list.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
-        { sessionBackup: (path) => sessions.engine.ensure(path) },
-      ),
+    ...(engineQueue && { showBlockedDialog: () => {} }),
+    endBatch: () => engineRepoints,
+    repointTracks: (libraryDir, list) => repointEngine(libraryDir, list, sessions),
   })
   logLibraryFlush('Engine DJ repoint', engineResult)
+  if (engineQueue && engineResult.blocked === ENGINE_KEYS.runningReason) {
+    engineQueue.enqueue([], engineRepoints)
+    engineQueue.applyQuietly()
+  }
+}
+
+function repointEngine(
+  libraryDir: string,
+  list: RekordboxRepoint[],
+  sessions: Pick<Sessions, 'engine'>,
+) {
+  return repointEngineTracks(
+    libraryDir,
+    list.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
+    { sessionBackup: (path) => sessions.engine.ensure(path) },
+  )
+}
+
+// The queue knows one reason for the app being open, the name it got from rekordbox, and
+// keeps the repoints only for that one.
+export async function repointEngineQueued(
+  libraryDir: string,
+  list: RekordboxRepoint[],
+  sessions: Pick<Sessions, 'engine'>,
+): Promise<LibraryRepointResult[]> {
+  const results = await repointEngine(libraryDir, list, sessions)
+  return results.map((result) =>
+    !result.written && result.reason === ENGINE_KEYS.runningReason
+      ? { written: false, reason: 'rekordbox-running' }
+      : result,
+  )
 }
 
 // The names a metadata review fixed (or undid) follow the file into each library the way
