@@ -3,6 +3,10 @@
     "trackActions": "Actions sur la piste",
     "trackList": "Pistes",
     "cancel": "Annuler",
+    "scopeSelected_one": "S'applique à {{count}} morceau sélectionné",
+    "scopeSelected_other": "S'applique aux {{count}} morceaux sélectionnés",
+    "scopeVisible_one": "S'applique à {{count}} morceau visible",
+    "scopeVisible_other": "S'applique aux {{count}} morceaux visibles",
     "change": "Changer",
     "close": "Fermer",
     "copy": "Copier"

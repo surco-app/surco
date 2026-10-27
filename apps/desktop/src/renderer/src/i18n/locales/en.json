@@ -3,6 +3,10 @@
     "trackActions": "Track actions",
     "trackList": "Tracks",
     "cancel": "Cancel",
+    "scopeSelected_one": "Applies to the {{count}} selected track",
+    "scopeSelected_other": "Applies to the {{count}} selected tracks",
+    "scopeVisible_one": "Applies to the {{count}} visible track",
+    "scopeVisible_other": "Applies to the {{count}} visible tracks",
     "change": "Change",
     "close": "Close",
     "copy": "Copy"

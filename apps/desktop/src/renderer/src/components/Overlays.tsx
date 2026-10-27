@@ -94,6 +94,8 @@ export function Overlays({
   revealSelection,
   rekordboxField,
 }: Props): React.JSX.Element {
+  // App hands over the visible list itself when nothing is multi-selected.
+  const bulkScope = bulkTracks === visibleTracks ? 'visible' : 'selected'
   // Each run bumps its command's counter, so the palette can float the user's habits up the
   // filtered list. It lived inline in the JSX prop below — a state write dressed as markup.
   const recordCommandRun = (id: string): void =>
@@ -141,6 +143,7 @@ export function Overlays({
       {activeModal?.type === 'findReplace' && (
         <FindReplaceModal
           tracks={bulkTracks}
+          scope={bulkScope}
           customFields={settings?.customFields}
           onApply={deriveTracksUndoable}
           onClose={close}
@@ -169,7 +172,9 @@ export function Overlays({
         />
       )}
       {activeModal?.type === 'info' && <InfoModal track={activeModal.track} onClose={close} />}
-      {activeModal?.type === 'export' && <ExportModal tracks={bulkTracks} onClose={close} />}
+      {activeModal?.type === 'export' && (
+        <ExportModal tracks={bulkTracks} scope={bulkScope} onClose={close} />
+      )}
       {activeModal?.type === 'confirm' && (
         <ConfirmDialog
           title={activeModal.confirm.title}

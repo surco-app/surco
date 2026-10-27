@@ -3,6 +3,10 @@
     "trackActions": "Acciones de la pista",
     "trackList": "Pistas",
     "cancel": "Cancelar",
+    "scopeSelected_one": "Se aplica a {{count}} pista seleccionada",
+    "scopeSelected_other": "Se aplica a las {{count}} pistas seleccionadas",
+    "scopeVisible_one": "Se aplica a {{count}} pista visible",
+    "scopeVisible_other": "Se aplica a las {{count}} pistas visibles",
     "change": "Cambiar",
     "close": "Cerrar",
     "copy": "Copiar"

@@ -3,6 +3,10 @@
     "trackActions": "Ações da faixa",
     "trackList": "Faixas",
     "cancel": "Cancelar",
+    "scopeSelected_one": "Vale para {{count}} faixa selecionada",
+    "scopeSelected_other": "Vale para as {{count}} faixas selecionadas",
+    "scopeVisible_one": "Vale para {{count}} faixa visível",
+    "scopeVisible_other": "Vale para as {{count}} faixas visíveis",
     "change": "Alterar",
     "close": "Fechar",
     "copy": "Copiar"

@@ -3,6 +3,10 @@
     "trackActions": "Titelaktionen",
     "trackList": "Titel",
     "cancel": "Abbrechen",
+    "scopeSelected_one": "Gilt für {{count}} ausgewählten Track",
+    "scopeSelected_other": "Gilt für die {{count}} ausgewählten Tracks",
+    "scopeVisible_one": "Gilt für {{count}} sichtbaren Track",
+    "scopeVisible_other": "Gilt für die {{count}} sichtbaren Tracks",
     "change": "Ändern",
     "close": "Schließen",
     "copy": "Kopieren"

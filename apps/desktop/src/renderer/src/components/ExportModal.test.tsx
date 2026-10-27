@@ -147,4 +147,11 @@ describe('ExportModal', () => {
     for (const id of ['rekordbox', 'traktor', 'serato', 'm3u'])
       expect(screen.getByTestId(`export-${id}`)).toBeDisabled()
   })
+
+  // The export saves the selection when there is one, else the visible rows; the modal
+  // says which and how many, so a filtered list is not mistaken for the whole collection.
+  it('names the tracks it will export', () => {
+    render(<ExportModal tracks={[track(), track()]} scope="selected" onClose={vi.fn()} />)
+    expect(screen.getByTestId('export-scope')).toHaveTextContent('Applies to the 2 selected tracks')
+  })
 })

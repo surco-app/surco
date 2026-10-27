@@ -224,3 +224,36 @@ describe('FindReplaceModal summary', () => {
     expect(screen.getByTestId('find-replace-preview')).toHaveTextContent('3 fields in 2 tracks')
   })
 })
+
+// Find & Replace rewrites tags on the selection when there is one, else on every visible
+// row. Without saying which, a user with two rows selected expected the whole list (or the
+// other way round) and only found out after applying.
+describe('FindReplaceModal scope', () => {
+  it('names the selected tracks it will act on', () => {
+    render(
+      <FindReplaceModal
+        tracks={[track('1', {}), track('2', {})]}
+        scope="selected"
+        onApply={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('find-replace-scope')).toHaveTextContent(
+      'Applies to the 2 selected tracks',
+    )
+  })
+
+  it('names the visible tracks when nothing is selected', () => {
+    render(
+      <FindReplaceModal
+        tracks={[track('1', {})]}
+        scope="visible"
+        onApply={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('find-replace-scope')).toHaveTextContent(
+      'Applies to the 1 visible track',
+    )
+  })
+})

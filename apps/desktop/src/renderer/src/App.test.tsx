@@ -4894,6 +4894,30 @@ describe('App derived list stability', () => {
   })
 })
 
+describe('App bulk scope in Find & Replace', () => {
+  // Overlays derives the scope from which list App handed it; a multi-selection must read
+  // as "selected", or the modal claims the visible list while rewriting only two rows.
+  it('says it acts on the selection when several tracks are selected', async () => {
+    await renderApp()
+    const [first, second] = await addTwoTracks()
+    fireEvent.click(first)
+    fireEvent.click(second, { metaKey: true })
+    runMenu('find-replace')
+    expect(await screen.findByTestId('find-replace-scope')).toHaveTextContent(
+      'Applies to the 2 selected tracks',
+    )
+  })
+
+  it('says it acts on the visible tracks with one or no track selected', async () => {
+    await renderApp()
+    await addTwoTracks()
+    runMenu('find-replace')
+    expect(await screen.findByTestId('find-replace-scope')).toHaveTextContent(
+      'Applies to the 2 visible tracks',
+    )
+  })
+})
+
 describe('App sort direction', () => {
   // An album dropped in file-name order is out of its running order; artexjay asked to read
   // the list as the record plays.
