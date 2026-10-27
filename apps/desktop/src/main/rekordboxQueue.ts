@@ -12,9 +12,9 @@ import type { LibraryRepointResult } from './libraryRepointFlush'
 import type { RekordboxRepoint } from './rekordboxBatch'
 import type { BatchResult, CuesOp, OpOutcome, QueueOp } from './rekordboxQueueOps'
 
-interface QueueFile {
+interface QueueFile<R extends QueuedRepoint = RekordboxRepoint> {
   version: 1
-  repoints: RekordboxRepoint[]
+  repoints: R[]
   ops: QueueOp[]
   halted?: true
   collection?: string
@@ -37,7 +37,15 @@ export function fileStore(path: string): QueueStore {
   }
 }
 
-export interface QueueDeps {
+// What the queue keeps of a conversion it could not write yet: the file the library names
+// now and the one it should name. rekordbox keeps its repoints, Traktor its collection
+// patches (traktorPatchQueue.ts).
+export interface QueuedRepoint {
+  from: string
+  to: string
+}
+
+export interface QueueDeps<R extends QueuedRepoint = RekordboxRepoint> {
   store: QueueStore
   collection: () => string
   applyBatch: (
@@ -46,7 +54,7 @@ export interface QueueDeps {
     ensureClosed: () => Promise<boolean>,
     stillQueued: (id: string) => boolean,
   ) => Promise<BatchResult>
-  repoint: (collectionPath: string, repoints: RekordboxRepoint[]) => Promise<LibraryRepointResult[]>
+  repoint: (collectionPath: string, repoints: R[]) => Promise<LibraryRepointResult[]>
   nodeStamps: (collectionPath: string) => Promise<Record<string, number>>
   onChange: (state: RekordboxQueueState) => void
 }
@@ -63,8 +71,8 @@ export type QueueApply =
       outcomes: OpOutcome[]
     }
 
-export interface RekordboxQueue {
-  enqueue: (ops: QueueOp[], repoints?: RekordboxRepoint[]) => boolean
+export interface RekordboxQueue<R extends QueuedRepoint = RekordboxRepoint> {
+  enqueue: (ops: QueueOp[], repoints?: R[]) => boolean
   state: () => RekordboxQueueState
   isEmpty: () => boolean
   discard: () => void
@@ -89,13 +97,13 @@ export function keyOf(op: QueueOp): string {
   return `edit:${op.id}`
 }
 
-function load(store: QueueStore): QueueFile {
-  const empty: QueueFile = { version: 1, repoints: [], ops: [] }
+function load<R extends QueuedRepoint>(store: QueueStore): QueueFile<R> {
+  const empty: QueueFile<R> = { version: 1, repoints: [], ops: [] }
   const text = store.read()
   if (text === null) return empty
-  let parsed: QueueFile | null
+  let parsed: QueueFile<R> | null
   try {
-    parsed = JSON.parse(text) as QueueFile
+    parsed = JSON.parse(text) as QueueFile<R>
   } catch {
     parsed = null
   }
@@ -106,7 +114,7 @@ function load(store: QueueStore): QueueFile {
   return empty
 }
 
-function stateOf(q: QueueFile, collection: string): RekordboxQueueState {
+function stateOf(q: QueueFile<QueuedRepoint>, collection: string): RekordboxQueueState {
   const items = new Map<string, RekordboxQueueItem>()
   const item = (key: string, label: string): RekordboxQueueItem => {
     const found = items.get(key)
@@ -154,8 +162,10 @@ export function withoutOp(result: Applied, id: string): Applied {
   }
 }
 
-export function createRekordboxQueue(deps: QueueDeps): RekordboxQueue {
-  const q = load(deps.store)
+export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>(
+  deps: QueueDeps<R>,
+): RekordboxQueue<R> {
+  const q = load<R>(deps.store)
   let chain: Promise<unknown> = Promise.resolve()
   let pending = 0
 

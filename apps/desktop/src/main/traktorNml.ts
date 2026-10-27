@@ -3,6 +3,7 @@
 // cambio de tres atributos en un diff de toda la colección del usuario. Aquí cada
 // ENTRY se localiza por posición y sólo se sustituyen los tramos que cambian.
 import type { TagChange } from '../shared/types'
+import { stripXmlIllegal } from '../shared/xml'
 import { readTraktorMarkers, shiftCueStart, type TraktorMarker } from './traktor4'
 
 export interface NmlEntry {
@@ -39,12 +40,16 @@ export function withAttr(fragment: string, name: string, value: string): string 
 // Traktor XML-escapes attribute values on write (escapeAttr below is the same
 // table in reverse), so a FILE/DIR/VOLUME read back raw would never match a
 // patch built from the real filesystem name once it contains &, <, > or ".
+// &apos; and numeric references are decoded too, for collections another tool
+// wrote. One pass, so an escaped "&amp;lt;" stays the text "&lt;".
+const ENTITIES: Record<string, string> = { quot: '"', lt: '<', gt: '>', amp: '&', apos: "'" }
+
 function unescapeAttr(value: string): string {
-  return value
-    .replace(/&quot;/g, '"')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&')
+  return value.replace(/&(#x[0-9a-fA-F]+|#[0-9]+|[a-z]+);/g, (whole, ref: string) => {
+    if (ref[0] !== '#') return ENTITIES[ref] ?? whole
+    const code = ref[1] === 'x' ? Number.parseInt(ref.slice(2), 16) : Number(ref.slice(1))
+    return code <= 0x10ffff ? String.fromCodePoint(code) : whole
+  })
 }
 
 export function findEntries(nml: string): NmlEntry[] {
@@ -64,7 +69,7 @@ export function findEntries(nml: string): NmlEntry[] {
 }
 
 export function escapeAttr(value: string): string {
-  return value
+  return stripXmlIllegal(value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -124,13 +129,12 @@ const key = (volume: string, dir: string, file: string): string =>
 // A real collection can be tens of thousands of ENTRY blocks; scanning every patch
 // for every entry is O(entries × patches) with an expensive normalize() on each side
 // of each comparison. Two lookup tables — exact file, and base name for the
-// AIFF→FLAC fallback — turn that into one O(1) lookup per entry instead. The old
-// scan (`patches.find(p => matches(entry, p))`) picked the first patch in array
-// order, regardless of which rule matched it — so each map entry carries its
-// patch's original index, and any collision (same key within one map, or an exact
-// match and a base-name match both hit for one entry) keeps whichever index is
-// lower. Without the index, either kind of collision could let a later patch win
-// over an earlier one, reordering which patch actually applies.
+// AIFF→FLAC fallback — turn that into one O(1) lookup per entry instead. The latest
+// patch in array order wins, regardless of which rule matched it: converting one track
+// twice in a batch must leave the collection on the last file produced, as the
+// rekordbox batch does. So each map entry carries its patch's original index, and any
+// collision (same key within one map, or an exact match and a base-name match both hit
+// for one entry) keeps whichever index is higher.
 function indexPatches(patches: NmlPatch[]): {
   byFile: Map<string, [number, NmlPatch]>
   byBaseName: Map<string, [number, NmlPatch]>
@@ -138,20 +142,10 @@ function indexPatches(patches: NmlPatch[]): {
   const byFile = new Map<string, [number, NmlPatch]>()
   const byBaseName = new Map<string, [number, NmlPatch]>()
   patches.forEach((patch, i) => {
-    setIfEarlier(byFile, key(patch.volume, patch.dir, patch.file), i, patch)
-    setIfEarlier(byBaseName, key(patch.volume, patch.dir, baseName(patch.file)), i, patch)
+    byFile.set(key(patch.volume, patch.dir, patch.file), [i, patch])
+    byBaseName.set(key(patch.volume, patch.dir, baseName(patch.file)), [i, patch])
   })
   return { byFile, byBaseName }
-}
-
-function setIfEarlier(
-  map: Map<string, [number, NmlPatch]>,
-  k: string,
-  i: number,
-  patch: NmlPatch,
-): void {
-  const existing = map.get(k)
-  if (!existing || i < existing[0]) map.set(k, [i, patch])
 }
 
 function matchPatch(
@@ -160,7 +154,7 @@ function matchPatch(
 ): NmlPatch | undefined {
   const exact = index.byFile.get(key(entry.volume, entry.dir, entry.file))
   const byBase = index.byBaseName.get(key(entry.volume, entry.dir, baseName(entry.file)))
-  if (exact && byBase) return (exact[0] <= byBase[0] ? exact : byBase)[1]
+  if (exact && byBase) return (exact[0] >= byBase[0] ? exact : byBase)[1]
   return (exact ?? byBase)?.[1]
 }
 

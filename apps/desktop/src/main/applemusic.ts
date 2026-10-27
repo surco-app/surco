@@ -47,6 +47,26 @@ export async function runOsascript(
   }
 }
 
+// A string literal AppleScript can compile. JSON.stringify looks close but writes control
+// bytes as \u0001, \b or \f and lone surrogates as \ud800, none of which AppleScript reads:
+// one such byte in a tag failed the whole script with -2741. AppleScript only knows \\, \",
+// \n, \r and \t, so every other C0 byte and any unpaired surrogate is dropped.
+const APPLESCRIPT_ESCAPES: Record<string, string> = {
+  '\\': '\\\\',
+  '"': '\\"',
+  '\n': '\\n',
+  '\r': '\\r',
+  '\t': '\\t',
+}
+
+export function appleScriptString(value: string): string {
+  const body = value
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: dropping them is the point
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]|\p{Cs}/gu, '')
+    .replace(/[\\"\n\r\t]/g, (ch) => APPLESCRIPT_ESCAPES[ch])
+  return `"${body}"`
+}
+
 // Apple Music imports one file at a time internally, and each add's osascript sits in a
 // retry loop (up to 60s) waiting for that import to settle. Bulk conversions now run their
 // ffmpeg in parallel, so several could reach the add at once and pile concurrent osascripts
@@ -94,7 +114,7 @@ export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?
   const sets: string[] = []
 
   for (const [prop, value] of textFields(meta)) {
-    if (value.trim()) sets.push(`      set ${prop} of theTrack to ${JSON.stringify(value)}`)
+    if (value.trim()) sets.push(`      set ${prop} of theTrack to ${appleScriptString(value)}`)
   }
 
   for (const [prop, value] of numericFields(meta)) {
@@ -108,7 +128,7 @@ export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?
   // inside the retry loop so a -50 raised mid-import does not drop it.
   if (coverPath?.trim()) {
     sets.push(
-      `      set data of artwork 1 of theTrack to (read (POSIX file ${JSON.stringify(coverPath)}) as picture)`,
+      `      set data of artwork 1 of theTrack to (read (POSIX file ${appleScriptString(coverPath)}) as picture)`,
     )
   }
 
@@ -129,7 +149,7 @@ export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?
     ? [
         '    if not gotTrack then',
         '      repeat 20 times',
-        `        set theMatches to (every track of library playlist 1 whose name is ${JSON.stringify(meta.title)} and artist is ${JSON.stringify(meta.artist)} and date added is greater than or equal to importStarted)`,
+        `        set theMatches to (every track of library playlist 1 whose name is ${appleScriptString(meta.title)} and artist is ${appleScriptString(meta.artist)} and date added is greater than or equal to importStarted)`,
         '        if (count of theMatches) > 0 then',
         '          set theTrack to item 1 of theMatches',
         '          set gotTrack to true',
@@ -151,7 +171,7 @@ export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?
     // Two seconds of slack: date added has second resolution, and an import that
     // races the clock edge must still fall inside the recovery window.
     ...(canRecover ? ['    set importStarted to (current date) - 2'] : []),
-    `    set theTrack to add POSIX file ${JSON.stringify(filePath)}`,
+    `    set theTrack to add POSIX file ${appleScriptString(filePath)}`,
     '    set gotTrack to true',
     '    try',
     '      if theTrack is missing value then set gotTrack to false',
@@ -196,7 +216,7 @@ export function buildUpdateScript(
   const sets: string[] = []
 
   for (const [prop, value] of textFields(meta)) {
-    sets.push(`  set ${prop} of theTrack to ${JSON.stringify(value.trim())}`)
+    sets.push(`  set ${prop} of theTrack to ${appleScriptString(value.trim())}`)
   }
 
   for (const [prop, value] of numericFields(meta)) {
@@ -206,13 +226,13 @@ export function buildUpdateScript(
 
   if (coverPath?.trim()) {
     sets.push(
-      `  set data of artwork 1 of theTrack to (read (POSIX file ${JSON.stringify(coverPath)}) as picture)`,
+      `  set data of artwork 1 of theTrack to (read (POSIX file ${appleScriptString(coverPath)}) as picture)`,
     )
   }
 
   return [
     'tell application "Music"',
-    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(persistentId)})`,
+    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${appleScriptString(persistentId)})`,
     '  if (count of theMatches) is 0 then return "missing"',
     '  set theTrack to item 1 of theMatches',
     ...sets,
@@ -234,7 +254,7 @@ export function buildLocationScript(persistentId: string): string {
   return [
     'set theLocation to missing value',
     'tell application "Music"',
-    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(persistentId)})`,
+    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${appleScriptString(persistentId)})`,
     '  if (count of theMatches) is not 0 then',
     '    try',
     '      set theLocation to location of item 1 of theMatches',
@@ -258,7 +278,7 @@ export async function appleMusicEntryLocation(persistentId: string): Promise<str
 export function buildRevealScript(persistentId: string): string {
   return [
     'tell application "Music"',
-    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(persistentId)})`,
+    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${appleScriptString(persistentId)})`,
     '  if (count of theMatches) is 0 then error "La pista ya no está en tu biblioteca de Apple Music."',
     '  reveal item 1 of theMatches',
     '  activate',
@@ -289,10 +309,10 @@ export function buildDeleteScript(
 ): string {
   return [
     'tell application "Music"',
-    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(persistentId)})`,
+    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${appleScriptString(persistentId)})`,
     '  if (count of theMatches) is 0 then return "missing"',
     '  set theTrack to item 1 of theMatches',
-    `  if (artist of theTrack) & " - " & (name of theTrack) is not ${JSON.stringify(expectedLabel)} then return "mismatch"`,
+    `  if (artist of theTrack) & " - " & (name of theTrack) is not ${appleScriptString(expectedLabel)} then return "mismatch"`,
     '  set loc to ""',
     '  try',
     '    set loc to POSIX path of (get location of theTrack)',
@@ -301,7 +321,7 @@ export function buildDeleteScript(
       ? []
       : [
           '  considering case, diacriticals, hyphens, punctuation and white space',
-          `    if loc is not ${JSON.stringify(location)} then return "mismatch"`,
+          `    if loc is not ${appleScriptString(location)} then return "mismatch"`,
           '  end considering',
         ]),
     '  delete theTrack',
@@ -323,13 +343,13 @@ export function buildPlaylistTransferScript(
 ): string {
   return [
     'tell application "Music"',
-    `  set srcs to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(fromPid)})`,
-    `  set dsts to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(toPid)})`,
+    `  set srcs to (every track of library playlist 1 whose persistent ID is ${appleScriptString(fromPid)})`,
+    `  set dsts to (every track of library playlist 1 whose persistent ID is ${appleScriptString(toPid)})`,
     '  if (count of srcs) is 0 or (count of dsts) is 0 then return "missing"',
     '  set src to item 1 of srcs',
     '  set dst to item 1 of dsts',
-    `  if (artist of src) & " - " & (name of src) is not ${JSON.stringify(expectedLabel)} then return "mismatch"`,
-    `  if (artist of dst) & " - " & (name of dst) is not ${JSON.stringify(keepLabel)} then return "mismatch"`,
+    `  if (artist of src) & " - " & (name of src) is not ${appleScriptString(expectedLabel)} then return "mismatch"`,
+    `  if (artist of dst) & " - " & (name of dst) is not ${appleScriptString(keepLabel)} then return "mismatch"`,
     ...(locations === undefined
       ? []
       : [
@@ -342,15 +362,15 @@ export function buildPlaylistTransferScript(
           '    set dstLoc to POSIX path of (get location of dst)',
           '  end try',
           '  considering case, diacriticals, hyphens, punctuation and white space',
-          `    if srcLoc is not ${JSON.stringify(locations.from)} then return "mismatch"`,
-          `    if dstLoc is not ${JSON.stringify(locations.to)} then return "mismatch"`,
+          `    if srcLoc is not ${appleScriptString(locations.from)} then return "mismatch"`,
+          `    if dstLoc is not ${appleScriptString(locations.to)} then return "mismatch"`,
           '  end considering',
         ]),
     '  set moved to 0',
     '  set failed to 0',
     '  repeat with p in (every user playlist whose smart is false and special kind is none)',
     '    try',
-    `      if (exists (some track of p whose persistent ID is ${JSON.stringify(fromPid)})) and not (exists (some track of p whose persistent ID is ${JSON.stringify(toPid)})) then`,
+    `      if (exists (some track of p whose persistent ID is ${appleScriptString(fromPid)})) and not (exists (some track of p whose persistent ID is ${appleScriptString(toPid)})) then`,
     '        duplicate dst to (contents of p)',
     '        set moved to moved + 1',
     '      end if',
@@ -629,7 +649,7 @@ export function buildFileNamesScript(): string {
 // buildLocationScript). The wanted IDs are checked against the live list in the same pass,
 // so a track added or removed since the names were read cannot shift the match.
 export function buildFileLocationsScript(persistentIds: string[]): string {
-  const wanted = `{${persistentIds.map((id) => JSON.stringify(id)).join(', ')}}`
+  const wanted = `{${persistentIds.map((id) => appleScriptString(id)).join(', ')}}`
   return [
     `set wanted to ${wanted}`,
     'set theLocs to {}',
@@ -826,7 +846,7 @@ export function buildSetFieldScript(
   const prop = MUSIC_PROPERTY[field]
   return [
     'tell application "Music"',
-    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(persistentId)})`,
+    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${appleScriptString(persistentId)})`,
     '  if (count of theMatches) is 0 then return "missing"',
     '  set theTrack to item 1 of theMatches',
     ...(location === undefined
@@ -840,10 +860,10 @@ export function buildSetFieldScript(
     '  considering case, diacriticals, hyphens, punctuation and white space',
     ...(location === undefined
       ? []
-      : [`    if theLoc is not ${JSON.stringify(location)} then return "mismatch"`]),
-    `    if (${prop} of theTrack) is not ${JSON.stringify(from)} then return "mismatch"`,
+      : [`    if theLoc is not ${appleScriptString(location)} then return "mismatch"`]),
+    `    if (${prop} of theTrack) is not ${appleScriptString(from)} then return "mismatch"`,
     '  end considering',
-    `  set ${prop} of theTrack to ${JSON.stringify(to)}`,
+    `  set ${prop} of theTrack to ${appleScriptString(to)}`,
     '  return "set"',
     'end tell',
   ].join('\n')

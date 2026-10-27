@@ -176,6 +176,20 @@ describe('insertContent', () => {
     db.close()
   })
 
+  // Windows hands Surco backslashes, but rekordbox stores C:/... and every lookup and
+  // repoint compares against that form. A row written raw would never be found again:
+  // the next conversion would add the track a second time instead of repointing it.
+  it('stores a Windows path with forward slashes and only the file name in FileNameL', async () => {
+    const db = await open()
+    const id = insertContent(db, facts({ path: 'C:\\Users\\dj\\Music\\Last Night.wav' }), {
+      now: NOW,
+    })
+    expect(
+      db.prepare('SELECT FolderPath, FileNameL FROM djmdContent WHERE ID = ?').get(id),
+    ).toEqual({ FolderPath: 'C:/Users/dj/Music/Last Night.wav', FileNameL: 'Last Night.wav' })
+    db.close()
+  })
+
   it('lands first in Recently added, though the file itself is months old', async () => {
     const db = await open()
     const id = insertContent(db, facts(), { now: NOW })

@@ -45,6 +45,32 @@ export function absolute(libraryDir: string, stored: string): string {
   return resolve(libraryDir, stored).normalize('NFC')
 }
 
+// The rows whose stored path resolves to a file. Resolving pays an lstat per path
+// component, on a NAS hundreds of ms per hundred rows, and the library holds every track
+// the DJ owns. The links a library is reached through are folders, so a file keeps its
+// name through them: only rows of the same name, compared case-insensitively as pathKey
+// does, are resolved at all, the narrowing rekordbox's candidateRows makes by FileNameL.
+export function engineRowFinder<T extends { path: string }>(
+  libraryDir: string,
+  rows: T[],
+): (file: string, key: (path: string) => string) => T[] {
+  const byName = new Map<string, { row: T; at: string }[]>()
+  for (const row of rows) {
+    const at = absolute(libraryDir, row.path)
+    const name = basename(at).toLowerCase()
+    const same = byName.get(name)
+    if (same) same.push({ row, at })
+    else byName.set(name, [{ row, at }])
+  }
+  return (file, key) => {
+    const nfc = file.normalize('NFC')
+    const target = key(nfc)
+    return (byName.get(basename(nfc).toLowerCase()) ?? [])
+      .filter((c) => key(c.at) === target)
+      .map((c) => c.row)
+  }
+}
+
 function relativeTo(libraryDir: string, file: string): string {
   return relative(libraryDir, file).split('\\').join('/')
 }
@@ -106,12 +132,12 @@ export async function writeEngineRepoints(
         path: String(path),
       }),
     )
+    const find = engineRowFinder(libraryDir, stored)
     const updates: { id: string; to: string; size: number }[] = []
     for (const [i, repoint] of repoints.entries()) {
       if (results[i]) continue
       const key = pathKey(repoint)
-      const target = key(repoint.from.normalize('NFC'))
-      const matches = stored.filter((row) => key(absolute(libraryDir, row.path)) === target)
+      const matches = find(repoint.from, key)
       if (matches.length === 0) {
         results[i] = { written: false, reason: 'no-match' }
         continue
@@ -120,12 +146,7 @@ export async function writeEngineRepoints(
         results[i] = { written: false, reason: 'ambiguous', ids: matches.map((m) => m.id) }
         continue
       }
-      const newKey = key(repoint.to.normalize('NFC'))
-      if (
-        stored.some(
-          (row) => row.id !== matches[0].id && key(absolute(libraryDir, row.path)) === newKey,
-        )
-      ) {
+      if (find(repoint.to, key).some((row) => row.id !== matches[0].id)) {
         results[i] = { written: false, reason: 'occupied' }
         continue
       }

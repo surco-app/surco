@@ -7,7 +7,7 @@ import type {
   AppleMusicPlaylistTracks,
   AppleMusicTrackMeta,
 } from '../shared/types'
-import { runOsascript } from './applemusic'
+import { appleScriptString, runOsascript } from './applemusic'
 
 export function buildPlaylistDumpScript(): string {
   return [
@@ -80,7 +80,7 @@ export async function dumpAppleMusicPlaylists(): Promise<AppleMusicPlaylist[]> {
 export function buildPlaylistTracksScript(persistentId: string): string {
   return [
     'tell application "Music"',
-    `  set theLists to (every user playlist whose persistent ID is ${JSON.stringify(persistentId)})`,
+    `  set theLists to (every user playlist whose persistent ID is ${appleScriptString(persistentId)})`,
     '  if (count of theLists) is 0 then return ""',
     '  set theList to item 1 of theLists',
     '  if (count of every track of theList) is 0 then return ""',
@@ -227,7 +227,7 @@ export async function readAppleMusicPlaylist(
 export function buildEntriesScript(persistentIds: string[]): string {
   const lookups = persistentIds.flatMap((persistentId) => [
     '  try',
-    `    set theMatches to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(persistentId)})`,
+    `    set theMatches to (every track of library playlist 1 whose persistent ID is ${appleScriptString(persistentId)})`,
     '    if (count of theMatches) > 0 then',
     '      set theTrack to item 1 of theMatches',
     '      set end of found to {location of theTrack, persistent ID of theTrack, grouping of theTrack, year of theTrack, comment of theTrack, track number of theTrack, disc number of theTrack, bpm of theTrack, rating of theTrack, rating kind of theTrack}',

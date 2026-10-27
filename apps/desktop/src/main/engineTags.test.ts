@@ -162,6 +162,23 @@ describe('updateEngineTags', () => {
     expect(result).toEqual({ written: false, reason: 'ambiguous' })
   })
 
+  // Each resolve pays an lstat per path component, on a NAS library too: resolving every
+  // row for every reviewed track made the sync grow with library size times batch size.
+  it('resolves only the rows that share the file name', async () => {
+    const lib = await library([
+      '../music/c.mp3',
+      ...Array.from({ length: 40 }, (_, i) => `../music/other-${i}.mp3`),
+    ])
+    const resolved: string[] = []
+    const realPath = (p: string) => {
+      resolved.push(p)
+      return realpathSync(p)
+    }
+    const [result] = await updateEngineTags(lib.dir, [{ ...artist(lib.file), realPath }])
+    expect(result).toEqual({ written: true })
+    expect(resolved.filter((p) => p.includes('other-'))).toEqual([])
+  })
+
   it('finds a row stored through a symlinked folder', async () => {
     const lib = await library(['../link/c.mp3'])
     await symlink(lib.music, join(lib.dir, '..', 'link'))

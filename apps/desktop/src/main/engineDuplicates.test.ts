@@ -127,6 +127,22 @@ describe('replaceEngineDuplicates with both copies in the library', () => {
     ])
   })
 
+  // Each resolve pays an lstat per path component, on a NAS library too: resolving every
+  // row for both copies of every pair grew with library size times the pairs replaced.
+  it('resolves only the rows that share a file name with the pair', async () => {
+    const lib = await library()
+    const resolved: string[] = []
+    const realPath = (p: string) => {
+      resolved.push(p)
+      return p
+    }
+    const [r] = await replaceEngineDuplicates(lib.dir, [{ from: lib.from, to: lib.to }], {
+      realPath,
+    })
+    expect(r).toEqual({ written: true, outcome: 'replaced' })
+    expect(resolved.filter((p) => p.endsWith('x.aiff'))).toEqual([])
+  })
+
   it('leaves the entries that belong to another database of the library alone', async () => {
     const lib = await library()
     const db = new SQL.Database(await readFile(lib.dbPath))

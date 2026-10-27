@@ -197,6 +197,24 @@ describe.each(['2.18', '3.0.2'] as const)('repointEngineTracks on a %s library',
     expect(result).toEqual({ written: true, id: '1' })
   })
 
+  // Resolving a stored path pays an lstat per path component, which on the NAS a library
+  // lives on is hundreds of ms per hundred rows. Resolving every row of the library for
+  // every converted track made a batch's flush grow with library size times batch size.
+  it('resolves only the rows that share the file name', async () => {
+    const others = Array.from({ length: 40 }, (_, i) => `../music/other-${i}.mp3`)
+    const lib = await library(schema, ['../music/old.mp3', ...others])
+    const resolved: string[] = []
+    const realPath = (p: string) => {
+      resolved.push(p)
+      return realpathSync(p)
+    }
+    const [result] = await repointEngineTracks(lib.dir, [
+      { from: lib.oldFile, to: lib.newFile, realPath },
+    ])
+    expect(result).toEqual({ written: true, id: '1' })
+    expect(resolved.filter((p) => p.includes('other-'))).toEqual([])
+  })
+
   // The new file already has a row of its own (added by hand, or by an earlier convert).
   // Folding the old row onto it would collide on Engine's unique path, and picking which
   // one keeps the cues is the user's call, not ours.

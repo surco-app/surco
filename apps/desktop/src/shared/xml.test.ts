@@ -19,6 +19,15 @@ describe('escapeXml', () => {
     expect(escapeXml('&lt;')).toBe('&amp;lt;')
   })
 
+  // A tag can hold bytes XML 1.0 cannot represent at all, not even as a reference: C0
+  // controls other than tab and newlines, U+FFFE/U+FFFF and unpaired surrogates. One of
+  // them makes the exported document ill-formed, and the DJ app rejects all of it.
+  it('drops characters XML 1.0 forbids and keeps the ones it allows', () => {
+    expect(escapeXml('a\u0000b\u0008c\u000Bd\u000Ce\u001Ff\uFFFEg\uFFFFh')).toBe('abcdefgh')
+    expect(escapeXml('x\uD800y\uDC00z')).toBe('xyz')
+    expect(escapeXml('tab\there\nline\rend 😀 é')).toBe('tab\there\nline\rend 😀 é')
+  })
+
   it('leaves text with nothing to escape untouched', () => {
     expect(escapeXml('Strobe (Original Mix)')).toBe('Strobe (Original Mix)')
     expect(escapeXml('')).toBe('')

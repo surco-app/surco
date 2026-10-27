@@ -11,6 +11,17 @@ vi.mock('node:fs/promises', async (importOriginal) => {
   return { ...real, readFile }
 })
 
+// Records every path resolved, so a test can assert which library rows were looked up.
+const { resolvedPaths } = vi.hoisted(() => ({ resolvedPaths: [] as string[] }))
+vi.mock('node:fs', async (importOriginal) => {
+  const real = await importOriginal<typeof import('node:fs')>()
+  const realpathSync = ((path: string) => {
+    resolvedPaths.push(String(path))
+    return real.realpathSync(path)
+  }) as typeof real.realpathSync
+  return { ...real, realpathSync }
+})
+
 // Flipped by the test that needs the database swap to fail after the staged file has
 // really been written — the one window where a leftover tmp can be observed.
 const { swap } = vi.hoisted(() => ({ swap: { fails: false } }))
@@ -320,6 +331,26 @@ describe('addToEngineLibrary', () => {
       },
     ])
     db.close()
+  })
+
+  // Each resolve pays an lstat per path component, on a NAS library too, and a batch
+  // runs this lookup once per converted file: resolving every row of the library each
+  // time grew with library size times batch size.
+  it('resolves only the rows that share the replaced file name', async () => {
+    const lib = join(root, 'replace-narrow', 'Engine Library')
+    const old = await makeFile(root, 'narrow.mp3')
+    await addToEngineLibrary(lib, old, meta({ title: 'Old' }), 'Surco')
+    for (let i = 0; i < 5; i++)
+      await addToEngineLibrary(lib, await makeFile(root, `other-${i}.mp3`), meta(), 'Surco')
+    resolvedPaths.length = 0
+
+    const file = await makeFile(root, 'narrow.aiff')
+    await addToEngineLibrary(lib, file, meta({ title: 'New' }), 'Surco', undefined, old)
+
+    const db = await open(join(lib, 'Database2', 'm.db'))
+    expect(rows(db, "SELECT id FROM Track WHERE path LIKE '%narrow%'")).toEqual([{ id: 1 }])
+    db.close()
+    expect(resolvedPaths.filter((p) => p.includes('other-'))).toEqual([])
   })
 
   // Engine fills Track.length (and the analyzed BPM) when IT analyzes the file; Surco

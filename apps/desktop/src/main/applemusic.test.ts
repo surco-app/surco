@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
 import {
+  appleScriptString,
   buildAddScript,
   buildDeleteScript,
   buildFileLocationsScript,
@@ -42,6 +43,33 @@ const base: TrackMetadata = {
   catalogNumber: '',
   remixArtist: '',
 }
+
+describe('appleScriptString', () => {
+  const ctl = (code: number) => String.fromCharCode(code)
+
+  // Tags come from files and can hold anything. JSON.stringify writes control bytes as
+  // \u0001, \b or \f, escapes AppleScript does not have: the whole script then fails to
+  // compile (-2741) and the add or update is lost, not just the odd character.
+  it('keeps the escapes AppleScript understands and drops the control bytes it cannot read', () => {
+    expect(appleScriptString('a\\b"c')).toBe('"a\\\\b\\"c"')
+    expect(appleScriptString('line\nnext\rret\ttab')).toBe('"line\\nnext\\rret\\ttab"')
+    expect(appleScriptString(`x${ctl(1)}${ctl(8)}${ctl(12)}${ctl(0)}${ctl(0x1f)}y`)).toBe('"xy"')
+  })
+
+  // A lone UTF-16 half (a tag cut mid-character) has no encoding AppleScript can read
+  // either, while a real pair is one character and must survive untouched.
+  it('drops unpaired surrogates and keeps characters outside the BMP', () => {
+    expect(appleScriptString(`a${ctl(0xd800)}b${ctl(0xdc00)}c`)).toBe('"abc"')
+    expect(appleScriptString('Beyoncé 😀')).toBe('"Beyoncé 😀"')
+  })
+
+  it('never emits a JSON-only escape when a tag carries a control byte', () => {
+    const script = buildAddScript('/x.aiff', { ...base, title: `Drop${ctl(1)}${ctl(8)}Mix` })
+
+    expect(script).toContain('set name of theTrack to "DropMix"')
+    expect(script).not.toMatch(/\\u00|\\b|\\f/)
+  })
+})
 
 describe('buildAddScript', () => {
   it('retries property writes so the paramErr (-50) raised while Apple Music is still importing does not abort the add', () => {

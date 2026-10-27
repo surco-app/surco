@@ -173,7 +173,8 @@ import { snapshotTagsInWorker, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
 import { registerTraktorCueQueueIpc } from './traktorCueQueueIpc'
 import { applyTraktorBatch } from './traktorCuesWrite'
-import { bootVolumeName, traktorSessionBackup } from './traktorNmlLibrary'
+import { bootVolumeName, syncCollection, traktorSessionBackup } from './traktorNmlLibrary'
+import { type QueuedNmlPatch, syncQueuedPatches } from './traktorPatchQueue'
 import { detectTraktorNmlPaths } from './traktorNmlPath'
 import { registerTraktorPlaylistEditIpc } from './traktorPlaylistEditIpc'
 import { nmlPath } from './traktorPlaylists'
@@ -361,11 +362,11 @@ const traktorWritePath = (): string => {
   const path = getSettings().traktorNmlPath
   return path && existsSync(path) ? path : ''
 }
-const traktorCueQueue = createRekordboxQueue({
+const traktorCueQueue = createRekordboxQueue<QueuedNmlPatch>({
   store: fileStore(join(app.getPath('userData'), 'traktor-cue-queue.json')),
   collection: traktorWritePath,
   applyBatch: (nml, ops, ensureClosed) => applyTraktorBatch(nml, ops, { ensureClosed }),
-  repoint: async () => [],
+  repoint: (nml, patches) => syncQueuedPatches(nml, patches, syncCollection),
   nodeStamps: async () => ({}),
   onChange: (state) => broadcast('traktor:cueQueueChanged', state),
 })
@@ -387,6 +388,16 @@ const traktorCueQueueWatch = watchRekordboxQueue({
 const applyTraktorCueQueueAsking = (win: BrowserWindow | null): void => {
   void serialLibraryFlush(() =>
     traktorCueQueue.apply(() => ensureTraktorClosed(win, 'traktorQuitDetailCues')),
+  ).then((result) => {
+    announceTraktorApplied(result)
+    if (stillWaiting(result)) traktorCueQueueWatch.poke()
+  })
+}
+// A conversion run's collection patches held because Traktor stayed open or the write
+// failed: written as soon as Traktor is closed, without asking again.
+const applyTraktorCueQueueQuietly = (): void => {
+  void serialLibraryFlush(() =>
+    traktorCueQueue.apply(async () => !(await isTraktorRunning())),
   ).then((result) => {
     announceTraktorApplied(result)
     if (stillWaiting(result)) traktorCueQueueWatch.poke()
@@ -1287,10 +1298,16 @@ function registerIpc(): void {
   // Queued behind any review sync still writing, and the other way round.
   ipcMain.on('process:batch-end', (e) =>
     serialLibraryFlush(() =>
-      flushConversionBatch(hostFor(BrowserWindow.fromWebContents(e.sender), e.sender), sessions, {
-        enqueue: rekordboxQueue.enqueue,
-        applyQuietly: applyRekordboxQueueQuietly,
-      }),
+      flushConversionBatch(
+        hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
+        sessions,
+        { enqueue: rekordboxQueue.enqueue, applyQuietly: applyRekordboxQueueQuietly },
+        {
+          enqueue: traktorCueQueue.enqueue,
+          state: traktorCueQueue.state,
+          applyQuietly: applyTraktorCueQueueQuietly,
+        },
+      ),
     ),
   )
 

@@ -17,12 +17,13 @@ import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
 import { queuedWanted } from './rekordboxPlaylistWrite'
 import type { ProvisionalList } from './rekordboxProvisional'
 import type { RekordboxQueue } from './rekordboxQueue'
+import type { QueueOp } from './rekordboxQueueOps'
 import { rekordboxLeadOfFile, rekordboxShiftOfFile } from './rekordboxTimeline'
 import { readTraktorTrackCues, traktorEntryBlock } from './traktorCues'
 import { traktorDropInput } from './traktorDropInput'
 import { traktorFileOf } from './traktorPlaylists'
 
-type CueQueue = Pick<RekordboxQueue, 'enqueue' | 'cuesOp' | 'drop'>
+type CueQueue = Pick<RekordboxQueue, 'cuesOp' | 'drop'> & { enqueue: (ops: QueueOp[]) => boolean }
 
 const WORDS_PER_SECOND = 150
 

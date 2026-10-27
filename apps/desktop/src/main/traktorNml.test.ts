@@ -7,6 +7,7 @@ import {
   attr,
   cuesToXml,
   detachedOutputPaths,
+  escapeAttr,
   findEntries,
   matchedPatchCount,
   type NmlPatch,
@@ -58,6 +59,16 @@ describe('cuesToXml', () => {
     expect(xml).toContain('NAME="Drop"')
     expect(xml).toContain('HOTCUE="1"')
     expect(xml).toContain('START="79672.640000"')
+  })
+
+  // A cue name comes from the file, where a stray control byte or a broken UTF-16 pair is
+  // just data. In the collection it would make the whole document ill-formed XML 1.0, and
+  // a collection Traktor refuses to parse loses every track, not one cue name.
+  it('drops characters XML 1.0 forbids from a cue name', () => {
+    const tree = buildTraktorTree([traktorCue('D\u0001r\u000Bo\u001Fp', 0, 1000, 1)])
+
+    expect(cuesToXml(tree)).toContain('NAME="Drop"')
+    expect(escapeAttr('a\uFFFEb\uFFFFc\uD800d & e')).toBe('abcd &amp; e')
   })
 
   // Un árbol sin marcadores no debe producir un CUE_V2 vacío que Traktor luego lea
@@ -743,6 +754,33 @@ describe('applyPatches', () => {
     expect(out).toContain('FILE="uno&amp;dos.flac"')
   })
 
+  // Traktor only writes the four entities above, but a collection that went through
+  // another tool (Rekordbox exports, a script, a text editor) can carry &apos; or a
+  // numeric reference for the same character. Read raw, that entry would never match
+  // the real file name and its conversion would silently miss the collection.
+  it('matches a file name written with &apos; or numeric character references', () => {
+    const encoded = NML.replace('FILE="uno.aiff"', 'FILE="it&apos;s &#38; caf&#xE9;.aiff"')
+
+    expect(findEntries(encoded)[0].file).toBe("it's & café.aiff")
+    const out = applyPatches(encoded, [
+      {
+        volume: 'Macintosh HD',
+        dir: '/:Musica/:',
+        file: "it's & café.aiff",
+        newFile: "it's & café.flac",
+      },
+    ])
+    expect(out).toContain('FILE="it\'s &amp; café.flac"')
+  })
+
+  // A literal "&amp;#38;" is the text "&#38;", not an ampersand: decoding in one pass
+  // keeps an escaped reference from being decoded twice.
+  it('decodes an escaped character reference only once', () => {
+    const encoded = NML.replace('FILE="uno.aiff"', 'FILE="a&amp;#38;b.aiff"')
+
+    expect(findEntries(encoded)[0].file).toBe('a&#38;b.aiff')
+  })
+
   // String.replace expande $&, $`, $' y $n dentro del texto de reemplazo, así que un
   // nombre de fichero con un dólar empalmaría texto del propio documento dentro del
   // atributo y escribiría XML inválido en la colección del DJ. El '$' es legal en los
@@ -911,36 +949,62 @@ describe('applyPatches', () => {
     expect(out).toContain('NAME="Drop"')
   })
 
+  // Converting one track twice in a batch (a retry, an edit followed by a convert)
+  // records two patches for the same source. The collection has to end on the last file
+  // produced and its cues, as rekordbox does, not on the first attempt's leftovers.
+  it('applies the latest of two patches for the same source', () => {
+    const out = applyPatches(NML, [
+      {
+        volume: 'Macintosh HD',
+        dir: '/:Musica/:',
+        file: 'uno.aiff',
+        newFile: 'uno.mp3',
+        cueTree: buildTraktorTree([traktorCue('First', 0, 1000, 1)]),
+      },
+      {
+        volume: 'Macintosh HD',
+        dir: '/:Musica/:',
+        file: 'uno.aiff',
+        newFile: 'uno.flac',
+        cueTree: buildTraktorTree([traktorCue('Second', 0, 2000, 1)]),
+      },
+    ])
+
+    expect(out).toContain('FILE="uno.flac"')
+    expect(out).toContain('NAME="Second"')
+    expect(out).not.toContain('NAME="First"')
+  })
+
   // Caso minimizado del re-review: dos patches pueden casar la misma ENTRY, uno por
-  // nombre base y otro exacto. La regla siempre fue "gana el primero del array", no
-  // "gana el tipo de match más fuerte" — el índice por mapas tiene que preservar eso
-  // o el orden en que el caller construyó el batch deja de importar en silencio.
-  it('prefers the first patch in array order over a stronger match kind later in the array', () => {
+  // nombre base y otro exacto. La regla es "gana el último del array", no "gana el
+  // tipo de match más fuerte": el índice por mapas tiene que respetarlo o el orden en
+  // que el caller construyó el batch deja de importar en silencio.
+  it('prefers the latest patch in array order over a stronger match kind earlier in the array', () => {
     const nml =
       '<NML VERSION="19"><COLLECTION ENTRIES="1">' +
       '<ENTRY TITLE="X"><LOCATION DIR="/:M/:" FILE="x&amp;y.mp3" VOLUME="HD"></LOCATION></ENTRY>' +
       '</COLLECTION></NML>'
 
     const out = applyPatches(nml, [
-      { volume: 'HD', dir: '/:M/:', file: 'x&y.aiff', newFile: 'FROM_A.flac' },
       { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', refreshCoverArt: true },
+      { volume: 'HD', dir: '/:M/:', file: 'x&y.aiff', newFile: 'FROM_A.flac' },
     ])
 
     expect(out).toContain('FILE="FROM_A.flac"')
   })
 
-  // Mismo par de patches, orden invertido: ahora el match exacto va primero en el
-  // array y debe ganar — confirma que el resultado depende del orden del array, no
+  // Mismo par de patches, orden invertido: ahora el match exacto va último en el
+  // array y debe ganar. Confirma que el resultado depende del orden del array, no
   // de qué mapa (byFile vs byBaseName) resolvió el match.
-  it('prefers the exact match when it is first in array order', () => {
+  it('prefers the exact match when it is latest in array order', () => {
     const nml =
       '<NML VERSION="19"><COLLECTION ENTRIES="1">' +
       '<ENTRY TITLE="X"><LOCATION DIR="/:M/:" FILE="x&amp;y.mp3" VOLUME="HD"></LOCATION></ENTRY>' +
       '</COLLECTION></NML>'
 
     const out = applyPatches(nml, [
-      { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', refreshCoverArt: true },
       { volume: 'HD', dir: '/:M/:', file: 'x&y.aiff', newFile: 'FROM_A.flac' },
+      { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', refreshCoverArt: true },
     ])
 
     expect(out).not.toContain('FILE="FROM_A.flac"')
@@ -1009,7 +1073,7 @@ describe('refreshedCoverIds', () => {
 })
 
 describe('matchedPatchCount', () => {
-  // Dos patches contendiendo por la misma ENTRY sólo aplican uno (el primero en el
+  // Dos patches contendiendo por la misma ENTRY sólo aplican uno (el último en el
   // array): el conteo tiene que reflejar eso, no "cuántos patches podrían casar".
   it('counts one match when two patches contend for the same entry', () => {
     const nml =
@@ -1018,8 +1082,8 @@ describe('matchedPatchCount', () => {
       '</COLLECTION></NML>'
 
     const count = matchedPatchCount(nml, [
-      { volume: 'HD', dir: '/:M/:', file: 'x&y.aiff', newFile: 'FROM_A.flac' },
       { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', refreshCoverArt: true },
+      { volume: 'HD', dir: '/:M/:', file: 'x&y.aiff', newFile: 'FROM_A.flac' },
     ])
 
     expect(count).toBe(1)
