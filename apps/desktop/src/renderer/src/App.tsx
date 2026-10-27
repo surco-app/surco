@@ -133,7 +133,7 @@ import {
 import { deriveTagPatches } from './lib/deriveTags'
 import type { Destination } from './lib/destination'
 import { createDragDepth } from './lib/dragDepth'
-import { DEFAULT_REQUIRED_FIELDS } from './lib/fields'
+import { DEFAULT_REQUIRED_FIELDS, missingRequiredOf } from './lib/fields'
 import { pushImportNotice } from './lib/importNotices'
 import { mainErrorMessage } from './lib/ipcError'
 import { columnOf, isTypingTarget, nextColumn } from './lib/keymap'
@@ -180,6 +180,7 @@ import {
   reanchorToVisible,
   type Selection,
 } from './lib/selection'
+import { hasStagedEdits } from './lib/sessionEdits'
 import { SettingsProvider } from './lib/settingsContext'
 import { formatShortcut } from './lib/shortcuts'
 import { matchStatKey } from './lib/stats'
@@ -188,6 +189,8 @@ import { dismissToast, dismissToastByExpiry, dismissToastByUser, pushToast } fro
 import { latestBackupByPath } from './lib/trashView'
 import {
   EMPTY_FILTER,
+  type FilterFacts,
+  filterSessionKey,
   filterWithSticky,
   formatBuckets,
   holdOrder,
@@ -1672,7 +1675,28 @@ export default function App(): React.JSX.Element {
   // match's canonical metadata (the sweep reads .current at apply time, not at render).
   libraryIndexRef.current = libraryIndex
 
-  const qualityTally = useMemo(() => qualityCounts(scopeTracks), [scopeTracks])
+  const unsavedCues = useUnsavedCueTracks()
+  // What the filter asks about a row that the row does not carry: the fields Settings
+  // require (the same rule that keeps Convert all off it) and the open playlist's cue drafts.
+  const filterFacts = useMemo<FilterFacts>(
+    () => ({
+      incomplete: (t) =>
+        missingRequiredOf(
+          t,
+          settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+          settings?.customFields ?? [],
+        ).length > 0,
+      unsaved: (t) => {
+        const contentId = playlistScope?.contentOf.get(t.id)
+        return hasStagedEdits(t) || (contentId !== undefined && unsavedCues.has(contentId))
+      },
+    }),
+    [settings?.requiredFields, settings?.customFields, playlistScope, unsavedCues],
+  )
+  const qualityTally = useMemo(
+    () => qualityCounts(scopeTracks, filterFacts),
+    [scopeTracks, filterFacts],
+  )
   const formatTally = useMemo(() => formatBuckets(scopeTracks), [scopeTracks])
   // The format filter is tied to the crate's contents (unlike the deliberately-sticky
   // Apple Music buckets): once its format is no longer present — the last MP3 removed, or
@@ -1697,15 +1721,7 @@ export default function App(): React.JSX.Element {
   // renders when a pick made under the pointer is still waiting for the order to catch up.
   const listHovered = useRef(false)
   const [heldRelease, setHeldRelease] = useState(0)
-  const filterKey = [
-    filterSelection.quality,
-    filterSelection.conversion,
-    filterSelection.library,
-    filterSelection.duplicates,
-    filterSelection.format,
-  ]
-    .map((axis) => axis ?? '')
-    .join('|')
+  const filterKey = filterSessionKey(filterSelection)
   // Filtering and sorting the crate depend on neither the selection nor the pointer, so
   // they run apart from the hold below: picking a row must not pay for sorting every row.
   const sortedTracks = useMemo(() => {
@@ -1717,13 +1733,13 @@ export default function App(): React.JSX.Element {
       stickyIds.current = new Set()
     }
     return sortTracks(
-      filterWithSticky(scopeTracks, filterSelection, stickyIds.current).filter(
+      filterWithSticky(scopeTracks, filterSelection, stickyIds.current, filterFacts).filter(
         searchMatcher(deferredSearch),
       ),
       sortBy,
       sortDir,
     )
-  }, [scopeTracks, filterSelection, filterKey, deferredSearch, sortBy, sortDir])
+  }, [scopeTracks, filterSelection, filterKey, filterFacts, deferredSearch, sortBy, sortDir])
   const viewKey = `${filterKey}|${deferredSearch}|${sortBy}|${sortDir}|${openPlaylistId}|${playlistOrder}`
   // biome-ignore lint/correctness/useExhaustiveDependencies: heldRelease is the re-run trigger for the pointer leaving the list; the hover itself is read from its ref.
   const visibleTracks = useMemo(() => {
@@ -1748,8 +1764,8 @@ export default function App(): React.JSX.Element {
   // sweep in tracks hidden by the active filter, sort or search.
   visibleTracksRef.current = visibleTracks
   const outsideFilterIds = useMemo(
-    () => outsideFilter(visibleTracks, filterSelection),
-    [visibleTracks, filterSelection],
+    () => outsideFilter(visibleTracks, filterSelection, filterFacts),
+    [visibleTracks, filterSelection, filterFacts],
   )
   // Find & Replace overwrites text tags across many rows, so it obeys the same rule as the
   // other bulk actions: a deliberate multi-selection when there is one, else the visible
@@ -2228,7 +2244,6 @@ export default function App(): React.JSX.Element {
   useCueSessionFor(settings?.rekordboxDbPath)
   useCueSessionFor(settings?.engineLibraryDir)
   useCueSessionFor(settings?.traktorNmlPath)
-  const unsavedCues = useUnsavedCueTracks()
   useEffect(() => window.api.reportUnsavedCues(unsavedCues.size), [unsavedCues])
   const unsavedCueIds = useMemo(() => {
     const ids = new Set<string>()

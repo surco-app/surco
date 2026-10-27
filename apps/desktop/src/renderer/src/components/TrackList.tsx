@@ -45,7 +45,7 @@ import {
 } from '../lib/reorderDrag'
 import { rowDisplay } from '../lib/rowDisplay'
 import type { ClickMods } from '../lib/selection'
-import { sourceFormat, type TrackQuality, trackQuality } from '../lib/triage'
+import { sourceFormat, type TrackQuality, trackQuality, unanalysedIn } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { CleanSpark } from './CleanSpark'
 import {
@@ -480,12 +480,7 @@ const TrackRow = memo(function TrackRow({
   const stage = t.status === 'processing' ? t.stage : undefined
   const converting = stage !== undefined
   const shown = rowDisplay(t)
-  const unanalyzed =
-    t.fromRekordbox && t.sourcePreview && !t.sourcePreview.analysisPath
-      ? 'rekordbox'
-      : t.fromEngine && t.sourcePreview?.unanalysed
-        ? 'engine'
-        : undefined
+  const unanalyzed = unanalysedIn(t)
   // Shared by each mark's hover tooltip and its sr-only twin, so what a screen reader
   // hears is the same sentence the pointer reveals.
   const statusLabel = tr(stale ? 'trackList.status.stale' : `trackList.status.${t.status}`)

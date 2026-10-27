@@ -8,6 +8,7 @@ import type {
   LibraryFilter,
   QualityFilter,
   SortDir,
+  TagsFilter,
   TrackSort,
 } from './triage'
 
@@ -40,6 +41,7 @@ interface AppState {
   libraryFilter: LibraryFilter | null
   duplicatesFilter: DuplicatesFilter | null
   attentionFilter: AttentionFilter | null
+  tagsFilter: TagsFilter | null
   formatFilter: string | null
   // True while a file drag is hovering the window, for the drop overlay.
   dragging: boolean
@@ -67,6 +69,7 @@ const INITIAL: AppState = {
   libraryFilter: null,
   duplicatesFilter: null,
   attentionFilter: null,
+  tagsFilter: null,
   formatFilter: null,
   dragging: false,
   toasts: [],

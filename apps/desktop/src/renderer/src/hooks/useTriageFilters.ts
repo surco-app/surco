@@ -3,7 +3,7 @@ import { type AppStore, useAppStore } from '../lib/appStore'
 import type { FilterSelection } from '../lib/triage'
 
 interface TriageFilters {
-  // The six axes bundled for the filter bar, which toggles one per click.
+  // The seven axes bundled for the filter bar, which toggles one per click.
   filterSelection: FilterSelection
   filterActive: boolean
   // The format axis alone: the header's tally needs to clear it when the last track
@@ -22,6 +22,7 @@ export function useTriageFilters(store: AppStore): TriageFilters {
   const libraryFilter = useAppStore(store, (s) => s.libraryFilter)
   const duplicatesFilter = useAppStore(store, (s) => s.duplicatesFilter)
   const attentionFilter = useAppStore(store, (s) => s.attentionFilter)
+  const tagsFilter = useAppStore(store, (s) => s.tagsFilter)
   const formatFilter = useAppStore(store, (s) => s.formatFilter)
   const filterSelection = useMemo<FilterSelection>(
     () => ({
@@ -30,6 +31,7 @@ export function useTriageFilters(store: AppStore): TriageFilters {
       library: libraryFilter,
       duplicates: duplicatesFilter,
       attention: attentionFilter,
+      tags: tagsFilter,
       format: formatFilter,
     }),
     [
@@ -38,6 +40,7 @@ export function useTriageFilters(store: AppStore): TriageFilters {
       libraryFilter,
       duplicatesFilter,
       attentionFilter,
+      tagsFilter,
       formatFilter,
     ],
   )
@@ -47,6 +50,7 @@ export function useTriageFilters(store: AppStore): TriageFilters {
     libraryFilter !== null ||
     duplicatesFilter !== null ||
     attentionFilter !== null ||
+    tagsFilter !== null ||
     formatFilter !== null
   const setFilterSelection = useCallback(
     (next: FilterSelection) =>
@@ -56,6 +60,7 @@ export function useTriageFilters(store: AppStore): TriageFilters {
         libraryFilter: next.library,
         duplicatesFilter: next.duplicates,
         attentionFilter: next.attention,
+        tagsFilter: next.tags,
         formatFilter: next.format,
       }),
     [store],

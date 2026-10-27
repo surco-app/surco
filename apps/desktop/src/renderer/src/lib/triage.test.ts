@@ -4,7 +4,9 @@ import type { TrackItem, TrackStatus } from '../types'
 import * as normalizeText from './normalizeText'
 import {
   EMPTY_FILTER,
+  type FilterFacts,
   type FilterSelection,
+  filterSessionKey,
   filterWithSticky,
   formatBuckets,
   holdOrder,
@@ -210,6 +212,14 @@ describe('matchesFilter / qualityCounts', () => {
       silence: 0,
       clipping: 0,
       noCues: 0,
+      unanalysedRekordbox: 0,
+      unanalysedEngine: 0,
+      noCover: 5,
+      smallCover: 0,
+      noBpm: 5,
+      noKey: 5,
+      missingRequired: 0,
+      unsaved: 0,
     })
   })
 })
@@ -268,6 +278,142 @@ describe('no cues filter', () => {
   it('isolates the library tracks that carry no cue and leaves loose files out', () => {
     expect(by(tracks, { attention: 'noCues' }).map((x) => x.id)).toEqual(['bare'])
     expect(qualityCounts(tracks).noCues).toBe(1)
+  })
+})
+
+describe('unanalysed in a DJ library filter', () => {
+  const preview = (extra: object) => ({
+    title: '',
+    artist: '',
+    durationSec: 300,
+    cues: [],
+    ...extra,
+  })
+  const tracks = [
+    { id: 'rb-analysed', fromRekordbox: true, sourcePreview: preview({ analysisPath: '/a.DAT' }) },
+    { id: 'rb-bare', fromRekordbox: true, sourcePreview: preview({}) },
+    { id: 'engine-bare', fromEngine: true, sourcePreview: preview({ unanalysed: true }) },
+    { id: 'engine-analysed', fromEngine: true, sourcePreview: preview({}) },
+    { id: 'loose-file' },
+  ] as TrackItem[]
+
+  // Cues set on a track the DJ program has not analysed wait for its beat grid, so these
+  // are the tracks to open in that program first. The rule is the one the row's own
+  // "not analysed" mark uses, so the filter and the mark never disagree.
+  it('buckets the tracks each program has not analysed under that program', () => {
+    expect(by(tracks, { attention: 'unanalysedRekordbox' }).map((x) => x.id)).toEqual(['rb-bare'])
+    expect(by(tracks, { attention: 'unanalysedEngine' }).map((x) => x.id)).toEqual(['engine-bare'])
+    const counts = qualityCounts(tracks)
+    expect(counts.unanalysedRekordbox).toBe(1)
+    expect(counts.unanalysedEngine).toBe(1)
+  })
+})
+
+describe('tags filter', () => {
+  const t = (
+    id: string,
+    over: Partial<TrackItem> = {},
+    meta: Partial<TrackMetadata> = {},
+  ): TrackItem =>
+    ({
+      id,
+      status: 'idle',
+      meta: { bpm: '128', key: '8A', ...meta },
+      coverUrl: 'data:cover',
+      embeddedCover: 'data:cover',
+      embeddedCoverDims: { w: 1400, h: 1400 },
+      ...over,
+    }) as TrackItem
+  const tracks = [
+    t('complete'),
+    t('bare', { coverUrl: undefined, embeddedCover: undefined, embeddedCoverDims: undefined }),
+    t('library-art', {
+      coverUrl: undefined,
+      embeddedCover: undefined,
+      embeddedCoverDims: undefined,
+      sourcePreview: { title: '', artist: '', durationSec: 300, cues: [], coverUrl: 'thumb:1' },
+    }),
+    t('thumbnail', { embeddedCoverDims: { w: 300, h: 300 } }),
+    t('thumbnail-replaced', { embeddedCoverDims: { w: 300, h: 300 }, coverUrl: 'https://big' }),
+    t('no-tempo', {}, { bpm: ' ' }),
+    t('no-key', {}, { key: '' }),
+    t(
+      'still-reading',
+      { loadingMeta: true, coverUrl: undefined, embeddedCover: undefined },
+      { bpm: '', key: '' },
+    ),
+  ]
+
+  // The tag work a DJ notices on the player's screen: no artwork, artwork too soft for a
+  // CDJ, or no tempo or key to mix by. Each is something matching a release fixes, so the
+  // filter hands over exactly the rows that need it. A row still being read has no tags
+  // yet and belongs to none of them.
+  it('buckets the tracks whose artwork, tempo or key still needs work', () => {
+    const ids = (tags: FilterSelection['tags']) => by(tracks, { tags }).map((x) => x.id)
+    expect(ids('noCover')).toEqual(['bare'])
+    expect(ids('smallCover')).toEqual(['thumbnail'])
+    expect(ids('noBpm')).toEqual(['no-tempo'])
+    expect(ids('noKey')).toEqual(['no-key'])
+    expect(qualityCounts(tracks)).toMatchObject({ noCover: 1, smallCover: 1, noBpm: 1, noKey: 1 })
+  })
+})
+
+describe('filters that read what App knows about a row', () => {
+  const tracks = [{ id: 'a' }, { id: 'b' }, { id: 'c' }] as TrackItem[]
+  const facts: FilterFacts = {
+    incomplete: (t) => t.id === 'a',
+    unsaved: (t) => t.id !== 'a',
+  }
+
+  // Which fields are required is a setting, and unsaved cues live in the cue editor's
+  // drafts, so neither is on the row. App answers both and the filter only asks: the
+  // same rule that keeps Convert all off a track decides that it is missing fields.
+  it('asks App which rows miss required fields and which hold changes not yet saved', () => {
+    expect(
+      tracks
+        .filter((t) => matchesFilter(t, { ...EMPTY_FILTER, tags: 'missingRequired' }, facts))
+        .map((t) => t.id),
+    ).toEqual(['a'])
+    expect(
+      tracks
+        .filter((t) => matchesFilter(t, { ...EMPTY_FILTER, conversion: 'unsaved' }, facts))
+        .map((t) => t.id),
+    ).toEqual(['b', 'c'])
+    expect(qualityCounts(tracks, facts)).toMatchObject({ missingRequired: 1, unsaved: 2 })
+  })
+
+  it('keeps the rows App flags while the filter session lasts, like any other bucket', () => {
+    const sticky = new Set<string>()
+    const sel = { ...EMPTY_FILTER, conversion: 'unsaved' as const }
+    expect(filterWithSticky(tracks, sel, sticky, facts).map((t) => t.id)).toEqual(['b', 'c'])
+    expect(outsideFilter(tracks, sel, { ...facts, unsaved: () => false })).toEqual(
+      new Set(['a', 'b', 'c']),
+    )
+  })
+})
+
+describe('filterSessionKey', () => {
+  // The list keeps every row a filter has shown until the filter changes, and this key is
+  // how it notices the change. Switching from silence to clipping kept the silence rows on
+  // screen because the attention axis was missing from the hand-written list of axes.
+  it('changes with every axis, so any new pick starts a fresh filter session', () => {
+    const picks: Partial<FilterSelection>[] = [
+      { quality: 'suspect' },
+      { conversion: 'failed' },
+      { library: 'inLibrary' },
+      { duplicates: 'duplicates' },
+      { attention: 'silence' },
+      { attention: 'clipping' },
+      { tags: 'noCover' },
+      { tags: 'noBpm' },
+      { tags: 'missingRequired' },
+      { conversion: 'unsaved' },
+      { format: 'WAV' },
+    ]
+    const keys = [EMPTY_FILTER, ...picks.map((p) => ({ ...EMPTY_FILTER, ...p }))].map(
+      filterSessionKey,
+    )
+    expect(new Set(keys).size).toBe(keys.length)
   })
 })
 
@@ -635,6 +781,24 @@ describe('failed filter', () => {
 
   it('tallies the failed tracks for its filter badge', () => {
     expect(qualityCounts(tracks).failed).toBe(2)
+  })
+
+  // A file Surco could not read or measure only ever showed up as a count in a notice
+  // ("12 could not be analyzed"), which names none of them. They are failures to retry
+  // just like a broken conversion, so they belong in the same bucket.
+  it('also holds the tracks that could not be read or analysed', () => {
+    const more = [
+      ...tracks,
+      { ...t('unreadable', 'idle'), metaReadFailed: true },
+      { ...t('unmeasured', 'done'), analyzeFailed: true },
+    ]
+    expect(by(more, { conversion: 'failed' }).map((x) => x.id)).toEqual([
+      'broke',
+      'broke2',
+      'unreadable',
+      'unmeasured',
+    ])
+    expect(qualityCounts(more).failed).toBe(4)
   })
 })
 
