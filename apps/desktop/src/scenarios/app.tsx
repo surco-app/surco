@@ -60,6 +60,7 @@ function shellApi(errors: string[], openFiles: { current?: (paths: string[]) => 
     saveSettings: async (patch) => settingsForRenderer(saveSettings(sanitizeSettingsPatch(patch))),
     getLastSession: loadLastSession,
     saveLastSession: async (paths, edits) => saveLastSession(paths, edits),
+    saveLastSessionSync: saveLastSession,
     logError: (message, stack) => errors.push(`renderer: ${message}${stack ? `\n${stack}` : ''}`),
     onOpenFiles: (cb) => {
       openFiles.current = cb

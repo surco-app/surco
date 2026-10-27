@@ -101,6 +101,9 @@ export interface Api {
   // save records the current list and edits.
   getLastSession: () => Promise<SessionData>
   saveLastSession: (paths: string[], edits: Record<string, SessionEdit>) => Promise<void>
+  // The same write, blocking until main has it on disk: for the page going away, when an
+  // async message might never be handled.
+  saveLastSessionSync: (paths: string[], edits: Record<string, SessionEdit>) => void
   getSettings: () => Promise<Settings>
   saveSettings: (patch: Partial<Settings>) => Promise<Settings>
   beatportConnect: (username: string, password: string) => Promise<Settings>

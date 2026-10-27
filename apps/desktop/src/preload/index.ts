@@ -92,6 +92,9 @@ const api: Api = {
   getLastSession: (): Promise<SessionData> => ipcRenderer.invoke('session:get'),
   saveLastSession: (paths: string[], edits: Record<string, SessionEdit>): Promise<void> =>
     ipcRenderer.invoke('session:set', paths, edits),
+  saveLastSessionSync: (paths: string[], edits: Record<string, SessionEdit>): void => {
+    ipcRenderer.sendSync('session:set-sync', paths, edits)
+  },
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
   beatportConnect: (username, password) =>

@@ -140,6 +140,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     unwatchFolders: async () => {},
     getLastSession: async () => ({ paths: [], edits: {} }),
     saveLastSession: async () => {},
+    saveLastSessionSync: () => {},
     getSettings: async () => testSettings,
     saveSettings: async () => testSettings,
     beatportConnect: async () => testSettings,

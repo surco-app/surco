@@ -929,6 +929,15 @@ function registerIpc(): void {
   ipcMain.handle('session:set', (_e, paths: string[], edits: Record<string, SessionEdit>) =>
     saveLastSession(paths, edits),
   )
+  // The renderer's last write as its page goes away. The reply is set even when the write
+  // throws, or the blocked renderer would never be let go.
+  ipcMain.on('session:set-sync', (e, paths: string[], edits: Record<string, SessionEdit>) => {
+    try {
+      saveLastSession(paths, edits)
+    } finally {
+      e.returnValue = null
+    }
+  })
 
   ipcMain.handle('settings:getConfigDir', () => getConfigDir())
   ipcMain.handle('settings:defaultConfigDir', () => defaultConfigDir())
