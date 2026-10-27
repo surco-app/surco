@@ -5,7 +5,7 @@ import type { Database } from 'sql.js'
 import type { DuplicatePair } from '../shared/types'
 import { loadSqlJs } from './engine'
 import { assertEngineClosed, withEngineDatabase } from './engineLibrary'
-import { absolute, writeEngineRepoints } from './engineRepoint'
+import { engineRowFinder, writeEngineRepoints } from './engineRepoint'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
 import type { DuplicateReplaceResult } from './rekordboxDuplicates'
 import { writeBackup } from './rekordboxSessionBackup'
@@ -95,10 +95,8 @@ async function writeEngineDuplicates(
       ([id, path]) => ({ id: Number(id), path: String(path) }),
     )
     const key = pathKey(options)
-    const find = (path: string) => {
-      const target = key(path.normalize('NFC'))
-      return stored.filter((row) => key(absolute(libraryDir, row.path)) === target)
-    }
+    const rowsOf = engineRowFinder(libraryDir, stored)
+    const find = (path: string) => rowsOf(path, key)
     const replaces: { index: number; fromId: number; toId: number }[] = []
     for (const [index, { from, to }] of pairs.entries()) {
       const source = find(from)

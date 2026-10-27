@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { LibraryCopyInfo, LibraryCopyPresence } from '../shared/types'
 import { loadSqlJs } from './engine'
-import { absolute } from './engineRepoint'
+import { engineRowFinder } from './engineRepoint'
 import { toNmlLocation } from './ffmpeg'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
 import { findTrackByPath, isAmbiguous, openRekordboxDb } from './rekordboxDb'
@@ -35,11 +35,10 @@ export async function usedByDjLibrary(
     const SQL = await loadSqlJs()
     const db = new SQL.Database(await readFile(join(libraries.engine, 'Database2', 'm.db')))
     try {
-      const key = pathKey(options)
-      const target = key(path.normalize('NFC'))
-      const rows = db.exec('SELECT path FROM Track')[0]?.values ?? []
-      if (rows.some(([stored]) => key(absolute(libraries.engine, String(stored))) === target))
-        return true
+      const rows = (db.exec('SELECT path FROM Track')[0]?.values ?? []).map(([stored]) => ({
+        path: String(stored),
+      }))
+      if (engineRowFinder(libraries.engine, rows)(path, pathKey(options)).length > 0) return true
     } finally {
       db.close()
     }
@@ -98,11 +97,11 @@ async function engineInfo(
     const uuid = String(db.exec('SELECT uuid FROM Information')[0].values[0][0])
     const rows = (db.exec('SELECT id, path FROM Track')[0]?.values ?? []).map(([id, stored]) => ({
       id: Number(id),
-      key: key(absolute(libraryDir, String(stored))),
+      path: String(stored),
     }))
+    const find = engineRowFinder(libraryDir, rows)
     return paths.map((path) => {
-      const target = key(path.normalize('NFC'))
-      const found = rows.filter((r) => r.key === target)
+      const found = find(path, key)
       if (found.length !== 1) return null
       const lists = db.exec(
         'SELECT count(DISTINCT listId) FROM PlaylistEntity WHERE trackId = ? AND databaseUuid = ?',

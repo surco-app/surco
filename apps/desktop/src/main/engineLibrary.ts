@@ -373,7 +373,9 @@ function addToPlaylist(db: Database, title: string, trackId: number, uuid: strin
 // The row of the file a conversion replaces, matched on the resolved path the way
 // engineRepoint.ts matches (a library stores whatever spelling the file was imported
 // under). Two rows for one file match nothing: guessing would split the track's playlists,
-// so the conversion then adds a row of its own as it always did.
+// so the conversion then adds a row of its own as it always did. Only rows of the same
+// file name are resolved, as engineRowFinder narrows them: each resolve pays an lstat per
+// path component and this runs once per converted file.
 function rowOfReplaced(
   libraryDir: string,
   existingByPath: Map<string, number>,
@@ -381,7 +383,9 @@ function rowOfReplaced(
 ): number | undefined {
   const key = pathKey({ realPath: realpathSync })
   const target = key(replaces.normalize('NFC'))
+  const name = basename(replaces.normalize('NFC')).toLowerCase()
   const ids = [...existingByPath]
+    .filter(([p]) => basename(p).toLowerCase() === name)
     .filter(([p]) => key(resolvePath(libraryDir, p).normalize('NFC')) === target)
     .map(([, id]) => id)
   return ids.length === 1 ? ids[0] : undefined

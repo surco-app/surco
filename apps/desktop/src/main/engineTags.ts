@@ -5,7 +5,7 @@ import type { Database } from 'sql.js'
 import type { LibraryTagUpdate, TagChange } from '../shared/types'
 import { loadSqlJs } from './engine'
 import { assertEngineClosed, withEngineDatabase } from './engineLibrary'
-import { absolute } from './engineRepoint'
+import { engineRowFinder } from './engineRepoint'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
 import type { LibraryRepointResult } from './libraryRepointFlush'
 import { writeBackup } from './rekordboxSessionBackup'
@@ -77,6 +77,7 @@ async function writeEngineTags(
       album,
       genre,
     }))
+    const find = engineRowFinder(libraryDir, rows)
     const writes: { index: number; id: number; set: [EngineField, TagChange][] }[] = []
     for (const [index, update] of updates.entries()) {
       const set = Object.entries(update.fields).filter(
@@ -86,9 +87,7 @@ async function writeEngineTags(
         results[index] = { written: false, reason: 'no-match' }
         continue
       }
-      const key = pathKey(update)
-      const target = key(update.path.normalize('NFC'))
-      const matches = rows.filter((row) => key(absolute(libraryDir, row.path)) === target)
+      const matches = find(update.path, pathKey(update))
       if (matches.length === 0) results[index] = { written: false, reason: 'no-match' }
       else if (matches.length > 1) results[index] = { written: false, reason: 'ambiguous' }
       else if (!set.every(([field, change]) => sameText(matches[0][field], change.from)))

@@ -37,7 +37,7 @@ async function rekordbox(folderPath: string): Promise<string> {
   return path
 }
 
-async function engine(stored: string): Promise<string> {
+async function engine(stored: string, ...more: string[]): Promise<string> {
   const require = createRequire(import.meta.url)
   const buf = await readFile(require.resolve('sql.js/dist/sql-wasm.wasm'))
   const SQL = await initSqlJs({
@@ -48,6 +48,7 @@ async function engine(stored: string): Promise<string> {
   const db = new SQL.Database()
   db.run('CREATE TABLE Track (id INTEGER PRIMARY KEY, path TEXT)')
   db.run('INSERT INTO Track (id, path) VALUES (1, ?)', [stored])
+  for (const path of more) db.run('INSERT INTO Track (path) VALUES (?)', [path])
   await writeFile(join(dir, 'Database2', 'm.db'), db.export())
   return dir
 }
@@ -85,6 +86,27 @@ describe('usedByDjLibrary', () => {
     const file = join(dir, '..', '..', 'music', 'a.mp3')
     expect(await usedByDjLibrary(file, { ...OFF, engine: dir })).toBe(true)
     expect(await usedByDjLibrary(`${file}.flac`, { ...OFF, engine: dir })).toBe(false)
+  })
+
+  // Asked once per file a duplicate replace is about to trash. Each resolve pays an lstat
+  // per path component, so resolving every row of the library for each file made the
+  // check grow with library size times the files trashed.
+  it('resolves only the Engine DJ rows that share the file name', async () => {
+    const others = Array.from({ length: 40 }, (_, i) => `../../music/other-${i}.mp3`)
+    const dir = await engine('../../music/a.mp3', ...others)
+    const resolved: string[] = []
+    const realPath = (p: string) => {
+      resolved.push(p)
+      return p
+    }
+    const music = join(dir, '..', '..', 'music')
+    expect(await usedByDjLibrary(join(music, 'a.mp3'), { ...OFF, engine: dir }, { realPath })).toBe(
+      true,
+    )
+    expect(await usedByDjLibrary(join(music, 'b.mp3'), { ...OFF, engine: dir }, { realPath })).toBe(
+      false,
+    )
+    expect(resolved.filter((p) => p.includes('other-'))).toEqual([])
   })
 
   it('finds the file in a Traktor collection by its location', async () => {
