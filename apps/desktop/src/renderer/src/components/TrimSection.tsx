@@ -841,6 +841,7 @@ export function TrimSection({
       return
     }
     stopAudition()
+    for (const other of document.querySelectorAll('audio')) other.pause()
     const audio = new Audio(mediaUrl(inputPath))
     audioRef.current = audio
     // With nothing staged yet the line on screen is the suggestion, so that is what plays:

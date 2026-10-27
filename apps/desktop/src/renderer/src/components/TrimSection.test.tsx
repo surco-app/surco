@@ -857,6 +857,23 @@ describe('TrimSection', () => {
     expect(pause).toHaveBeenCalledOnce()
   })
 
+  // The cut is judged by ear, so it has to be the only thing sounding: the mini-player
+  // carried on under the audition and the boundary was heard through another track.
+  it('pauses the mini-player while a cut is auditioned', async () => {
+    const shared = document.body.appendChild(document.createElement('audio'))
+    const pauseShared = vi.fn()
+    shared.pause = pauseShared
+    try {
+      render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+      fireEvent.click(
+        await screen.findByTestId('trim-audition-start', undefined, { timeout: 3000 }),
+      )
+      expect(pauseShared).toHaveBeenCalled()
+    } finally {
+      shared.remove()
+    }
+  })
+
   // Stopping, or jumping to the other cut, before the file had loaded left the first element
   // alive: it started playing on its own once loaded and ran to the end of the track,
   // and its clock, reaching its own stop point, cut the audition the user was hearing.
