@@ -18,6 +18,30 @@ export function installCrashGuards(proc: ProcessEvents, logger: CrashLogger): vo
   proc.on('unhandledRejection', (reason) => logger.error('unhandledRejection', reason))
 }
 
+interface HandlerRegistry<E, A extends unknown[]> {
+  handle(channel: string, cb: (event: E, ...args: A) => unknown): void
+}
+
+// A throw inside an ipcMain.handle never reaches uncaughtException: Electron turns it into
+// a rejection for the renderer and prints it to the console, and screens that catch it
+// show a generic error. Wrapping every handler once puts each failure, with its channel,
+// in the log file a user can send.
+export function logHandlerFailures<E, A extends unknown[]>(
+  ipc: HandlerRegistry<E, A>,
+  logger: CrashLogger,
+): void {
+  const handle = ipc.handle.bind(ipc)
+  ipc.handle = (channel, cb) =>
+    handle(channel, async (event: E, ...args: A) => {
+      try {
+        return await cb(event, ...args)
+      } catch (err) {
+        logger.error(`ipc ${channel} failed`, err)
+        throw err
+      }
+    })
+}
+
 // Normal teardowns the recovery must not fight: closing the window ('clean-exit')
 // or the OS/user killing the process on purpose ('killed').
 const EXPECTED_EXITS = new Set(['clean-exit', 'killed'])

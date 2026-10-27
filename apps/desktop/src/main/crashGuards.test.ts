@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { installCrashGuards, wireRendererRecovery } from './crashGuards'
+import { installCrashGuards, logHandlerFailures, wireRendererRecovery } from './crashGuards'
 
 function fakeEmitter(): {
   on: (event: string, cb: (...args: never[]) => void) => void
@@ -56,5 +56,51 @@ describe('wireRendererRecovery', () => {
     contents.fire('render-process-gone', {}, { reason })
     expect(logger.error).not.toHaveBeenCalled()
     expect(contents.reload).not.toHaveBeenCalled()
+  })
+})
+
+describe('logHandlerFailures', () => {
+  type Handler = (event: unknown, ...args: unknown[]) => unknown
+  function fakeIpc() {
+    const handlers = new Map<string, Handler>()
+    return {
+      handle: (channel: string, cb: Handler) => {
+        handlers.set(channel, cb)
+      },
+      call: (channel: string, ...args: unknown[]) => handlers.get(channel)?.({}, ...args),
+    }
+  }
+
+  // A handler that throws only rejects the renderer's promise: Electron prints it to a
+  // console nobody sees and the screen that catches it shows a generic error, so a user's
+  // log came back empty for a cue save that failed (Traktor, 27/10).
+  it('logs a failing handler with its channel and still rejects the caller', async () => {
+    const ipc = fakeIpc()
+    const logger = { error: vi.fn() }
+    logHandlerFailures(ipc, logger)
+    const boom = new Error('boom')
+    ipc.handle('rekordbox:saveCues', () => {
+      throw boom
+    })
+    await expect(ipc.call('rekordbox:saveCues')).rejects.toBe(boom)
+    expect(logger.error).toHaveBeenCalledWith('ipc rekordbox:saveCues failed', boom)
+  })
+
+  it('logs an async handler that rejects', async () => {
+    const ipc = fakeIpc()
+    const logger = { error: vi.fn() }
+    logHandlerFailures(ipc, logger)
+    ipc.handle('traktor:canSave', async () => Promise.reject('offline'))
+    await expect(ipc.call('traktor:canSave')).rejects.toBe('offline')
+    expect(logger.error).toHaveBeenCalledWith('ipc traktor:canSave failed', 'offline')
+  })
+
+  it('passes arguments and results through untouched', async () => {
+    const ipc = fakeIpc()
+    const logger = { error: vi.fn() }
+    logHandlerFailures(ipc, logger)
+    ipc.handle('sum', (_e, a, b) => (a as number) + (b as number))
+    expect(await ipc.call('sum', 2, 3)).toBe(5)
+    expect(logger.error).not.toHaveBeenCalled()
   })
 })

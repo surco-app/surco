@@ -83,7 +83,7 @@ import type { CoverSource } from './cover'
 import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
 import { downloadCover, imageExt } from './coverDownload'
 import { coverThumbPathOf, pruneCoverThumbs } from './coverThumbs'
-import { installCrashGuards, wireRendererRecovery } from './crashGuards'
+import { installCrashGuards, logHandlerFailures, wireRendererRecovery } from './crashGuards'
 import { cachedCueWaveWords } from './cueWaveWordsCache'
 import { parseDockFrames } from './dockFrames'
 import { type ReplacePair, replaceDuplicates } from './duplicateReplace'
@@ -192,6 +192,7 @@ import { dirRoots, FolderWatcher } from './watcher'
 
 // At module load so even a throw during startup leaves a trace in the log file.
 installCrashGuards(process, log)
+logHandlerFailures(ipcMain, log)
 
 if (!app.requestSingleInstanceLock()) app.exit(0)
 app.on('second-instance', (_event, argv) => {
