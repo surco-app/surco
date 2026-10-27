@@ -412,8 +412,9 @@ export async function runProcessTrack(
         // — so the upgrade reported 14/09 left the library on the MP3 while claiming
         // success. The new file therefore has to be imported and the old entry retired.
         //
-        // Add first and delete last: a failing add then destroys nothing, and the crates are
-        // replayed in between so the successor is equivalent before anything is retired.
+        // Add first and delete last: a failing add then destroys nothing. Nothing is carried
+        // across in between (see replaceAppleMusicCopy): the retired entry takes its normal
+        // playlists, play count and rating with it, and only smart playlists refill.
         if (job.replacesPath) {
           const replaced = await replaceAppleMusicCopy(job, target, coverPath, deps)
           musicPersistentId = replaced.added
