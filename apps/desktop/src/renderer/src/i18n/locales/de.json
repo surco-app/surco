@@ -21,11 +21,11 @@
   },
   "export": {
     "title": "Sammlung exportieren",
-    "subtitle": "Surco speichert eine Sammlungsdatei. Deine DJ-Software liest sie als Importquelle — nichts landet automatisch in ihrer Bibliothek; du importierst die Tracks von dort.",
+    "subtitle": "Surco speichert eine Sammlungsdatei. Deine DJ-Software liest sie als Importquelle. Nichts landet automatisch in ihrer Bibliothek; du importierst die Tracks von dort.",
     "rekordboxHint": "In rekordbox: Voreinstellungen → Erweitert → rekordbox xml → diese Datei wählen, dann über den Knoten „rekordbox xml“ importieren.",
     "traktorHint": "In Traktor: File → Import Collection → diese Datei wählen.",
-    "seratoHint": "In Serato: Leg die gespeicherte Datei in deinen Ordner _Serato_/Subcrates und starte Serato neu — deine Tracks erscheinen in der Seitenleiste.",
-    "m3uHint": "Eine einfache Playlist für alles andere — Player, Autoradios, andere Bibliothekstools.",
+    "seratoHint": "In Serato: Leg die gespeicherte Datei in deinen Ordner _Serato_/Subcrates und starte Serato neu. Deine Tracks erscheinen in der Seitenleiste.",
+    "m3uHint": "Eine einfache Playlist für alles andere (Player, Autoradios, andere Bibliothekstools).",
     "unconverted_one": "{{count}} Track ist noch nicht konvertiert. Er wird als Originaldatei exportiert.",
     "unconverted_other": "{{count}} Tracks sind noch nicht konvertiert. Sie werden als Originaldateien exportiert.",
     "failed": "Export fehlgeschlagen: {{error}}",
@@ -140,7 +140,7 @@
   },
   "errors": {
     "unexpected": "Etwas ist schiefgelaufen: {{detail}}",
-    "settingsLoad": "Deine Einstellungen konnten nicht geladen werden — für diese Sitzung gelten die Standardwerte.",
+    "settingsLoad": "Deine Einstellungen konnten nicht geladen werden. Für diese Sitzung gelten die Standardwerte.",
     "settingsSave": "Deine Einstellungen konnten nicht gespeichert werden.",
     "trash": "{{detail}} konnte nicht in den Papierkorb gelegt werden.",
     "qualityReport": "Der Qualitätsbericht konnte nicht gespeichert werden.",
@@ -228,15 +228,15 @@
   },
   "notices": {
     "duplicatesSkipped": "Schon in der Liste, übersprungen: {{count}}",
-    "noAudioFound": "Kein Audio im abgelegten Inhalt gefunden — prüfe, ob der Ordner lesbar ist und unterstützte Formate enthält.",
+    "noAudioFound": "Kein Audio im abgelegten Inhalt gefunden. Prüfe, ob der Ordner lesbar ist und unterstützte Formate enthält.",
     "normalizeSkipped": "Die Lautheit von „{{name}}“ konnte nicht gemessen werden: ohne Normalisierung konvertiert.",
     "keptAsIs": "„{{name}}“ bleibt, wie es ist, weil „MP3- und M4A-Dateien behalten“ mit „Neben dem Original“ aktiv ist.",
-    "formatSkipped": "„{{name}}“ hat kein passendes Ausgabeformat für Wie die Quelle — übersprungen.",
+    "formatSkipped": "„{{name}}“ hat kein passendes Ausgabeformat für Wie die Quelle und wurde übersprungen.",
     "appleMusicFailedAfterConvert": "„{{name}}“ wurde konvertiert, aber Apple Music konnte nicht aktualisiert werden. Versuche, den Titel erneut zu Apple Music hinzuzufügen.",
     "convertFailed": "„{{name}}“ konnte nicht konvertiert werden: {{reason}}",
     "convertFailedMany": "„{{name}}“ und {{count}} weitere konnten nicht konvertiert werden: {{reason}}",
     "declicked": "Klicks in {{count}} Samples von „{{name}}“ repariert.",
-    "qualityErrors": "{{count}} Datei(en) konnten nicht analysiert werden — bleiben ungemessen.",
+    "qualityErrors": "{{count}} Datei(en) konnten nicht analysiert werden und bleiben ungemessen.",
     "copiedMeta": "Metadaten kopiert",
     "pastedMeta": "Metadaten eingefügt",
     "numberedTracks_one": "{{count}} Track nummeriert",
@@ -246,8 +246,8 @@
     "titleFormatMissing_other": "{{fields}} ist bei diesen Tracks leer",
     "titleFormatApplied_one": "Das Format ist bereits angewendet",
     "titleFormatApplied_other": "Das Format ist bereits auf alle Tracks angewendet",
-    "titleFormattedPartial_one": "{{count}} Titel formatiert — {{skipped}} unverändert (leeres Feld oder schon formatiert)",
-    "titleFormattedPartial_other": "{{count}} Titel formatiert — {{skipped}} unverändert (leeres Feld oder schon formatiert)",
+    "titleFormattedPartial_one": "{{count}} Titel formatiert, {{skipped}} unverändert (leeres Feld oder schon formatiert)",
+    "titleFormattedPartial_other": "{{count}} Titel formatiert, {{skipped}} unverändert (leeres Feld oder schon formatiert)",
     "titleFormatted_one": "{{count}} Titel formatiert",
     "copiedPath": "Pfad kopiert",
     "copiedActivity": "Aktivität kopiert",
@@ -264,8 +264,8 @@
     "undo": "Rückgängig",
     "undoneMeta_one": "Metadaten in {{count}} Track wiederhergestellt",
     "undoneMeta_other": "Metadaten in {{count}} Tracks wiederhergestellt",
-    "metaReadFailed_one": "Die Tags von {{count}} Datei konnten nicht gelesen werden — es wird nur ihr Dateiname angezeigt.",
-    "metaReadFailed_other": "Die Tags von {{count}} Dateien konnten nicht gelesen werden — es werden nur ihre Dateinamen angezeigt."
+    "metaReadFailed_one": "Die Tags von {{count}} Datei konnten nicht gelesen werden, daher wird nur ihr Dateiname angezeigt.",
+    "metaReadFailed_other": "Die Tags von {{count}} Dateien konnten nicht gelesen werden, daher werden nur ihre Dateinamen angezeigt."
   },
   "newTracks": {
     "prompt_one": "{{count}} neuer Track in „{{folder}}“",
@@ -291,7 +291,7 @@
     "continuous": "Fortlaufende Wiedergabe",
     "continuousHelp": "Fortlaufende Wiedergabe: Wenn ein Track endet, spielt automatisch der nächste aus der Liste.",
     "waveform": "Wellenform",
-    "waveformHelp": "Die Wellenform anzeigen. Ausblenden überspringt die Wellenform-Analyse — nützlich bei großen Dateien oder Netzlaufwerken.",
+    "waveformHelp": "Die Wellenform anzeigen. Ausblenden überspringt die Wellenform-Analyse, das hilft bei großen Dateien oder Netzlaufwerken.",
     "seek": "Spulen",
     "seekValue": "{{current}} von {{total}}",
     "volume": "Lautstärke",
@@ -429,7 +429,7 @@
       "crest": "diese ist weniger dynamisch"
     },
     "matchReview": "Treffer zu bestätigen",
-    "metaReadFailed": "Die Tags dieser Datei konnten nicht gelesen werden — es werden nur Daten aus dem Dateinamen angezeigt",
+    "metaReadFailed": "Die Tags dieser Datei konnten nicht gelesen werden, daher werden nur Daten aus dem Dateinamen angezeigt",
     "remove": "Entfernen",
     "status": {
       "idle": "Nicht konvertiert",
@@ -468,7 +468,7 @@
   "editor": {
     "searchPlaceholder": "Deine Quellen durchsuchen oder eine Discogs-Release-ID einfügen…",
     "searchClear": "Suche leeren",
-    "tokenTip": "Die Suche funktioniert ohne Einrichtung. Füg in den <0>Einstellungen</0> deinen eigenen Discogs-Token hinzu — für ein höheres, privates Limit.",
+    "tokenTip": "Die Suche funktioniert ohne Einrichtung. Füg in den <0>Einstellungen</0> deinen eigenen Discogs-Token hinzu, um ein höheres, privates Limit zu bekommen.",
     "matchSuggested": "Vorgeschlagen",
     "chooseAlbumHint": "Wähl ein Album aus der Liste, um seine Tracks zu sehen.",
     "noResults": "Keine Alben passen zu deiner Suche.",
@@ -557,7 +557,7 @@
     "qualityConvertRate": "{{from}} → {{to}}",
     "qualityConvertRateSub": "Wird mit 44,1 kHz geschrieben, der echten Rate des Audios.",
     "saveQualityReport": "Bericht speichern…",
-    "reportFooter": "Analysiert mit Surco — getsurco.app",
+    "reportFooter": "Analysiert mit Surco · getsurco.app",
     "qualityCaptionGenuine": "Kein Codec-Schnitt erkannt; Höhen bis ~{{cutoff}}.",
     "qualityCaptionTranscode": "Codec-Schnitt bei ~{{cutoff}}: die Quelle war verlustbehaftet.",
     "qualityCaptionLossy": "Codec-Schnitt bei ~{{cutoff}}, normal für eine verlustbehaftete Datei.",
@@ -571,16 +571,16 @@
     "loudnessPeakLabel": "Peak",
     "loudnessRangeLabel": "Range",
     "loudnessLufsHint": "Integrierte Lautheit (LUFS): wie laut der Track insgesamt klingt",
-    "loudnessPeakHint": "True Peak (dBTP) — der lauteste Moment des Signals",
+    "loudnessPeakHint": "True Peak (dBTP). Der lauteste Moment des Signals",
     "loudnessRangeHint": "Lautheitsbereich (LU): der Abstand zwischen leisen und lauten Passagen",
     "loudnessGroupLoudness": "Lautheit",
     "loudnessGroupSignal": "Signal",
     "loudnessCrestLabel": "Dynamik",
-    "loudnessCrestHint": "Crest-Faktor (dB) — der Punch zwischen den Peaks und dem Durchschnittspegel",
+    "loudnessCrestHint": "Crest-Faktor (dB). Der Punch zwischen den Peaks und dem Durchschnittspegel",
     "loudnessBalanceLabel": "Balance",
-    "loudnessBalanceHint": "Kanalbalance (dB) — der Pegelunterschied zwischen links und rechts",
+    "loudnessBalanceHint": "Kanalbalance (dB). Der Pegelunterschied zwischen links und rechts",
     "loudnessDcLabel": "DC-Offset",
-    "loudnessDcHint": "DC-Offset — ein konstanter Versatz, der die Wellenform aus der Mitte schiebt",
+    "loudnessDcHint": "DC-Offset. Ein konstanter Versatz, der die Wellenform aus der Mitte schiebt",
     "loudnessNoiseLabel": "Grundrauschen",
     "loudnessNoiseHint": "Grundrauschen (dB): Pegel der leisesten Stelle des Tracks; je niedriger, desto sauberer",
     "loudnessHelpTitle": "Was bedeuten die Werte?",
@@ -598,11 +598,11 @@
     "waveformViewOverlay": "Überlagert",
     "waveformFade": "Zwischen Vorher und Nachher überblenden",
     "loudnessLufsHelp": "(LUFS): wie laut der Track insgesamt klingt. Zu niedrig, und er klingt leiser als deine anderen Tracks; zu hoch, und er ist wahrscheinlich stark komprimiert.",
-    "loudnessPeakHelp": "(dBTP) — der lauteste Moment des Signals. Über 0 kann er beim Konvertieren oder Abspielen verzerren (Clipping).",
+    "loudnessPeakHelp": "(dBTP) ist der lauteste Moment des Signals. Über 0 kann er beim Konvertieren oder Abspielen verzerren (Clipping).",
     "loudnessRangeHelp": "(LU): wie stark sich leise und laute Passagen unterscheiden. Ein sehr niedriger Wert deutet meist auf starke Kompression hin (der Loudness War).",
     "loudnessCrestHelp": "(dB): der Abstand zwischen den Peaks und dem Durchschnittspegel, also der Punch. Ein niedriger Wert deutet meist auf starke Kompression hin.",
     "loudnessBalanceHelp": "(L/R): der Pegelunterschied zwischen linkem und rechtem Kanal. Ein paar dB heißen, eine Seite ist schwächer.",
-    "loudnessDcHelp": "— ein konstanter Versatz, der die ganze Wellenform aus der Mitte schiebt. Er kostet Headroom und kann Klicks verursachen; nahe 0 % ist gesund.",
+    "loudnessDcHelp": "ist ein konstanter Versatz, der die ganze Wellenform aus der Mitte schiebt. Er kostet Headroom und kann Klicks verursachen; nahe 0 % ist gesund.",
     "loudnessNoiseHelp": "(dB): Pegel der leisesten Stelle des Tracks; je niedriger, desto sauberer.",
     "loudnessGradeGood": "Gut",
     "loudnessGradeWarn": "Mittel",
@@ -613,12 +613,12 @@
     "spectrumHighs": "Höhen bis ~{{cutoff}}",
     "spectrumHighsCap": "Höhen ≥ {{cutoff}}",
     "outputName": "Dateiname",
-    "outputNameHintInPlace": "Gleiches Format wie die Quelle: Die Originaldatei wird direkt aktualisiert und umbenannt — es landet keine Kopie im Ausgabeordner.",
+    "outputNameHintInPlace": "Gleiches Format wie die Quelle: Die Originaldatei wird direkt aktualisiert und umbenannt. Es landet keine Kopie im Ausgabeordner.",
     "outputNameFolder": "Wird im Ordner „{{folder}}“ gespeichert, weil der Schrägstrich Ordner trennt.",
     "overwriteTitle": "Überschreibt das Original",
     "overwriteHint": "Die Quelldatei wird direkt überschrieben und behält ihren Namen. Keine Kopie im Ausgabeordner. Abschaltbar unter Einstellungen → Ausgabe.",
     "overwriteAlacHint": "ALAC ersetzt das Original nicht: Eine neue Datei wird in den Ausgabeordner geschrieben und das Original bleibt erhalten.",
-    "overwriteLossyHint": "Das verlustfreie Original wird direkt durch eine 320-kbps-MP3 ersetzt — das Master ist verloren und nicht wiederherstellbar. Abschaltbar unter Einstellungen → Ausgabe.",
+    "overwriteLossyHint": "Das verlustfreie Original wird direkt durch eine 320-kbps-MP3 ersetzt. Das Master ist verloren und nicht wiederherstellbar. Abschaltbar unter Einstellungen → Ausgabe.",
     "overwriteLossyHintBackup": "Das verlustfreie Original wird direkt durch eine 320-kbps-MP3 ersetzt. Vorher legt Surco eine Sicherungskopie des Originals an, die du über den Titel wiederherstellen kannst.",
     "regenerate": "Dateinamen aus den Metadaten neu erzeugen",
     "regenerateAll_other": "{{count}} Dateinamen aus den Metadaten neu erzeugen",
@@ -659,7 +659,7 @@
     "appleMusicError": "Konnte nicht zu Apple Music hinzugefügt werden",
     "oldCopyRemoved": "Alte Kopie aus Apple Music entfernt; ihre Datei liegt im Papierkorb",
     "removeOldCopyError": "Die alte Kopie in Apple Music konnte nicht entfernt werden",
-    "removeOldCopyMismatch": "Die Kopie in Apple Music entspricht nicht mehr der erwarteten — es wurde nichts entfernt",
+    "removeOldCopyMismatch": "Die Kopie in Apple Music entspricht nicht mehr der erwarteten, daher wurde nichts entfernt",
     "searchError": "Suche fehlgeschlagen",
     "releaseError": "Das Release konnte nicht geladen werden",
     "analyzeError": "Das Audio konnte nicht analysiert werden",
@@ -988,7 +988,7 @@
     "estimatePill": "~{{count}} Klicks",
     "estimateNonePill": "Keine Klicks",
     "waveTitle": "Gefundene Klicks",
-    "markLabel": "Klick bei {{sec}} s — hierher springen",
+    "markLabel": "Zum Klick bei {{sec}} s springen",
     "playheadLabel": "Wiedergabeposition",
     "unscanned": "Die ersten {{minutes}} Minuten wurden analysiert; spätere Klicks werden nicht markiert.",
     "preview": "Ergebnis anhören",
@@ -1000,7 +1000,7 @@
     "pause": "Pause",
     "hearingRepaired": "Zu hören: repariert",
     "hearingOriginal": "Zu hören: Original",
-    "abHint": "Wechselt zwischen Original und repariertem Titel, ohne den Ton anzuhalten — so hörst du, ob die Reparatur die Klicks entfernt und ob sie die Musik dumpf gemacht hat.",
+    "abHint": "Wechselt zwischen Original und repariertem Titel, ohne den Ton anzuhalten. So hörst du, ob die Reparatur die Klicks entfernt und ob sie die Musik dumpf gemacht hat.",
     "nextClick": "Nächster Klick",
     "appliesToSelection": "Diese Einstellung gilt für alle {{count}} ausgewählten Titel.",
     "row": {
@@ -1624,7 +1624,7 @@
     "welcomeBody": "Richten wir das Wichtigste ein. Dauert keine Minute, und alles lässt sich später in den Einstellungen ändern.",
     "formatBody": "Wähl das Format, in das Surco deine Tracks exportiert.",
     "audioTitle": "Was machst du mit deinen Tracks?",
-    "audioBody": "Surco zeigt nur die Editor-Bereiche, die dein Workflow braucht. Wähl, was passt — du kannst es jederzeit in den Einstellungen ändern.",
+    "audioBody": "Surco zeigt nur die Editor-Bereiche, die dein Workflow braucht. Wähl, was passt. Du kannst es jederzeit in den Einstellungen ändern.",
     "intent": {
       "metadata": "Metadaten richtig setzen",
       "metadataBody": "Tags, Cover und der Abgleich mit Discogs, Bandcamp, Deezer, Beatport und MusicBrainz. Immer an: Dafür ist Surco da.",
@@ -1657,7 +1657,7 @@
     "items": {
       "token": {
         "q": "Brauche ich einen Discogs-Token?",
-        "a": "Nein. Surco durchsucht Discogs ohne Einrichtung mit eigenen App-Zugangsdaten, du kannst also sofort mit dem Taggen loslegen.\n\nDiese geteilten Zugangsdaten haben ein gemeinsames Limit (60 Anfragen pro Minute über alle Surco-Nutzer), deshalb kann eine Suche in Stoßzeiten gelegentlich mit der Meldung „Limit erreicht“ fehlschlagen — warte ein paar Sekunden und versuch es erneut.\n\nWenn du viel taggst, erstell dir kostenlos einen persönlichen Token auf discogs.com/settings/developers und füg ihn unter Einstellungen → Suche ein. Dein Token bekommt ein eigenes privates Limit, die Suchen bleiben also schnell, egal wie viel bei Surco los ist."
+        "a": "Nein. Surco durchsucht Discogs ohne Einrichtung mit eigenen App-Zugangsdaten, du kannst also sofort mit dem Taggen loslegen.\n\nDiese geteilten Zugangsdaten haben ein gemeinsames Limit (60 Anfragen pro Minute über alle Surco-Nutzer), deshalb kann eine Suche in Stoßzeiten gelegentlich mit der Meldung „Limit erreicht“ fehlschlagen. Warte ein paar Sekunden und versuch es erneut.\n\nWenn du viel taggst, erstell dir kostenlos einen persönlichen Token auf discogs.com/settings/developers und füg ihn unter Einstellungen → Suche ein. Dein Token bekommt ein eigenes privates Limit, die Suchen bleiben also schnell, egal wie viel bei Surco los ist."
       },
       "quality": {
         "q": "Warum ist ein Track als „Zweifelhaft“ markiert?",
@@ -1665,15 +1665,15 @@
       },
       "format": {
         "q": "Welches Ausgabeformat soll ich wählen?",
-        "a": "AIFF und WAV sind verlustfrei — sie behalten die exakte Originalqualität und tragen Tags sauber, ideal zum Auflegen. AIFF geht auf Apple-Plattformen meist am besten mit Metadaten und Cover um.\n\nMP3 (320 kbps) ist verlustbehaftet, braucht aber deutlich weniger Platz — praktisch, wenn Speicher oder USB-Größe zählen.\n\nEgal was du wählst: Eine Datei, die schon in dem Format vorliegt, wird ohne Neucodierung kopiert, du verlierst also nie Qualität durch eine unnötige Konvertierung."
+        "a": "AIFF und WAV sind verlustfrei. Sie behalten die exakte Originalqualität und tragen Tags sauber, ideal zum Auflegen. AIFF geht auf Apple-Plattformen meist am besten mit Metadaten und Cover um.\n\nMP3 (320 kbps) ist verlustbehaftet, braucht aber deutlich weniger Platz, praktisch, wenn Speicher oder USB-Größe zählen.\n\nEgal was du wählst: Eine Datei, die schon in dem Format vorliegt, wird ohne Neucodierung kopiert, du verlierst also nie Qualität durch eine unnötige Konvertierung."
       },
       "appleMusic": {
         "q": "Was macht „Zu Apple Music hinzufügen“?",
-        "a": "Wenn aktiviert (nur macOS), importiert Surco jeden konvertierten Track direkt nach der Konvertierung automatisch in deine Apple Music-Bibliothek — deine frisch getaggten Dateien landen dort ohne manuelles Hineinziehen.\n\nBeim Bearbeiten prüft Surco außerdem, ob ein Track schon in deiner Bibliothek ist, und zeigt ein kleines Abzeichen, damit keine Duplikate entstehen. Das automatische Hinzufügen lässt sich jederzeit unter Einstellungen → Ausgabe abschalten."
+        "a": "Wenn aktiviert (nur macOS), importiert Surco jeden konvertierten Track direkt nach der Konvertierung automatisch in deine Apple Music-Bibliothek, und deine frisch getaggten Dateien landen dort ohne manuelles Hineinziehen.\n\nBeim Bearbeiten prüft Surco außerdem, ob ein Track schon in deiner Bibliothek ist, und zeigt ein kleines Abzeichen, damit keine Duplikate entstehen. Das automatische Hinzufügen lässt sich jederzeit unter Einstellungen → Ausgabe abschalten."
       },
       "windows": {
         "q": "Gibt es Unterschiede unter Windows?",
-        "a": "Fast alles funktioniert genau gleich: Konvertierung, Tagging, die Suche auf Discogs, Bandcamp, Deezer, Beatport und MusicBrainz, die Qualitätsanalyse und der Export zu rekordbox, Traktor, Serato und Engine DJ.\n\nDas Einzige, was es unter Windows nicht gibt, ist die Apple Music-Integration. Surco steuert Apples Musik-App über AppleScript, eine Automatisierungsbrücke, die nur unter macOS existiert — die Apple Music-App für Windows bietet nichts Vergleichbares —, deshalb erscheinen das Apple Music-Ziel, die Buttons und das Bibliotheks-Abzeichen einfach nicht.\n\nEine WAV-Eigenheit, die man kennen sollte: Surco speichert WAV-Tags im standardmäßigen ID3-Chunk, den DJ-Apps und Tag-Editoren wie Mp3tag problemlos lesen, den der Windows-Explorer aber nicht anzeigen kann — eine konvertierte WAV kann in einem Ordner ungetaggt wirken, obwohl alle Tags da sind. Bei MP3 oder FLAC zeigt der Explorer sie ganz normal an."
+        "a": "Fast alles funktioniert genau gleich: Konvertierung, Tagging, die Suche auf Discogs, Bandcamp, Deezer, Beatport und MusicBrainz, die Qualitätsanalyse und der Export zu rekordbox, Traktor, Serato und Engine DJ.\n\nDas Einzige, was es unter Windows nicht gibt, ist die Apple Music-Integration. Surco steuert Apples Musik-App über AppleScript, eine Automatisierungsbrücke, die nur unter macOS existiert (die Apple Music-App für Windows bietet nichts Vergleichbares), deshalb erscheinen das Apple Music-Ziel, die Buttons und das Bibliotheks-Abzeichen einfach nicht.\n\nEine WAV-Eigenheit, die man kennen sollte: Surco speichert WAV-Tags im standardmäßigen ID3-Chunk, den DJ-Apps und Tag-Editoren wie Mp3tag problemlos lesen, den der Windows-Explorer aber nicht anzeigen kann. Eine konvertierte WAV kann in einem Ordner ungetaggt wirken, obwohl alle Tags da sind. Bei MP3 oder FLAC zeigt der Explorer sie ganz normal an."
       }
     }
   },
@@ -1731,8 +1731,8 @@
     "clearTitle": "Liste leeren?",
     "clearMessage_one": "Entfernt den einzigen Track aus der Liste. Die Datei auf der Festplatte wird nicht gelöscht.",
     "clearMessage_other": "Entfernt alle {{count}} Tracks aus der Liste. Die Dateien auf der Festplatte werden nicht gelöscht.",
-    "clearMessageFiltered_one": "Entfernt den einzigen sichtbaren Track aus der Liste — vom Filter ausgeblendete bleiben. Die Datei auf der Festplatte wird nicht gelöscht.",
-    "clearMessageFiltered_other": "Entfernt die {{count}} sichtbaren Tracks aus der Liste — vom Filter ausgeblendete bleiben. Die Dateien auf der Festplatte werden nicht gelöscht.",
+    "clearMessageFiltered_one": "Entfernt den einzigen sichtbaren Track aus der Liste. Vom Filter ausgeblendete bleiben. Die Datei auf der Festplatte wird nicht gelöscht.",
+    "clearMessageFiltered_other": "Entfernt die {{count}} sichtbaren Tracks aus der Liste. Vom Filter ausgeblendete bleiben. Die Dateien auf der Festplatte werden nicht gelöscht.",
     "clearConfirm": "Leeren",
     "removeFromListTitle_one": "Diesen Titel aus der Liste entfernen?",
     "removeFromListTitle_other": "{{count}} Titel aus der Liste entfernen?",

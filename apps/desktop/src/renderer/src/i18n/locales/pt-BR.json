@@ -21,11 +21,11 @@
   },
   "export": {
     "title": "Exportar coleção",
-    "subtitle": "O Surco salva um arquivo de coleção. Seu software de DJ o lê como fonte de importação — nada é adicionado à biblioteca dele automaticamente; você importa as faixas a partir daí.",
+    "subtitle": "O Surco salva um arquivo de coleção. Seu software de DJ o lê como fonte de importação. Nada é adicionado à biblioteca dele automaticamente; você importa as faixas a partir daí.",
     "rekordboxHint": "No rekordbox: Preferências → Avançado → rekordbox xml → escolha este arquivo e depois importe a partir do nó “rekordbox xml”.",
     "traktorHint": "No Traktor: File → Import Collection → escolha este arquivo.",
-    "seratoHint": "No Serato: coloque o arquivo salvo na sua pasta _Serato_/Subcrates e reinicie o Serato — suas faixas aparecem na barra lateral.",
-    "m3uHint": "Uma playlist comum para todo o resto — players, som do carro, outras ferramentas.",
+    "seratoHint": "No Serato: coloque o arquivo salvo na sua pasta _Serato_/Subcrates e reinicie o Serato. Suas faixas aparecem na barra lateral.",
+    "m3uHint": "Uma playlist comum para todo o resto (players, som do carro, outras ferramentas).",
     "unconverted_one": "{{count}} faixa ainda sem converter. Será exportada como o arquivo original.",
     "unconverted_other": "{{count}} faixas ainda sem converter. Serão exportadas como os arquivos originais.",
     "failed": "Falha ao exportar: {{error}}",
@@ -140,7 +140,7 @@
   },
   "errors": {
     "unexpected": "Algo deu errado: {{detail}}",
-    "settingsLoad": "Não foi possível carregar suas configurações — os padrões estão em uso nesta sessão.",
+    "settingsLoad": "Não foi possível carregar suas configurações. Os padrões estão em uso nesta sessão.",
     "settingsSave": "Não foi possível salvar suas configurações.",
     "trash": "Não foi possível mover {{detail}} para a Lixeira.",
     "qualityReport": "Não foi possível salvar o relatório de qualidade.",
@@ -228,15 +228,15 @@
   },
   "notices": {
     "duplicatesSkipped": "Já estavam na lista, ignoradas: {{count}}",
-    "noAudioFound": "Nenhum áudio encontrado no que você soltou — verifique se a pasta pode ser lida e tem formatos compatíveis.",
+    "noAudioFound": "Nenhum áudio encontrado no que você soltou. Verifique se a pasta pode ser lida e tem formatos compatíveis.",
     "normalizeSkipped": "Não foi possível medir o volume de “{{name}}”: convertida sem normalização.",
     "keptAsIs": "“{{name}}” fica como está porque “Manter arquivos MP3 e M4A como estão” está ativo com “Ao lado do original”.",
-    "formatSkipped": "“{{name}}” não tem formato de saída equivalente para Igual à origem — pulada.",
+    "formatSkipped": "“{{name}}” não tem formato de saída equivalente para Igual à origem, então foi pulada.",
     "appleMusicFailedAfterConvert": "“{{name}}” foi convertida, mas não foi possível atualizar o Apple Music. Tente adicioná-la ao Apple Music de novo.",
     "convertFailed": "Não foi possível converter “{{name}}”: {{reason}}",
     "convertFailedMany": "Não foi possível converter “{{name}}” e mais {{count}}: {{reason}}",
     "declicked": "Clicks reparados em {{count}} amostras de “{{name}}”.",
-    "qualityErrors": "Não foi possível analisar {{count}} arquivo(s) — ficaram sem medição.",
+    "qualityErrors": "Não foi possível analisar {{count}} arquivo(s) e ficaram sem medição.",
     "copiedMeta": "Metadados copiados",
     "pastedMeta": "Metadados colados",
     "numberedTracks_one": "{{count}} faixa numerada",
@@ -246,8 +246,8 @@
     "titleFormatMissing_other": "{{fields}} está vazio nessas faixas",
     "titleFormatApplied_one": "O formato já está aplicado",
     "titleFormatApplied_other": "O formato já está aplicado em todas as faixas",
-    "titleFormattedPartial_one": "{{count}} título formatado — {{skipped}} sem alterações (campo vazio ou já formatado)",
-    "titleFormattedPartial_other": "{{count}} títulos formatados — {{skipped}} sem alterações (campo vazio ou já formatado)",
+    "titleFormattedPartial_one": "{{count}} título formatado, {{skipped}} sem alterações (campo vazio ou já formatado)",
+    "titleFormattedPartial_other": "{{count}} títulos formatados, {{skipped}} sem alterações (campo vazio ou já formatado)",
     "titleFormatted_one": "{{count}} título formatado",
     "copiedPath": "Caminho copiado",
     "copiedActivity": "Atividade copiada",
@@ -264,8 +264,8 @@
     "undo": "Desfazer",
     "undoneMeta_one": "Metadados restaurados em {{count}} faixa",
     "undoneMeta_other": "Metadados restaurados em {{count}} faixas",
-    "metaReadFailed_one": "Não foi possível ler as tags de {{count}} arquivo — mostrando só o nome dele.",
-    "metaReadFailed_other": "Não foi possível ler as tags de {{count}} arquivos — mostrando só os nomes deles."
+    "metaReadFailed_one": "Não foi possível ler as tags de {{count}} arquivo, então só o nome dele aparece.",
+    "metaReadFailed_other": "Não foi possível ler as tags de {{count}} arquivos, então só os nomes deles aparecem."
   },
   "newTracks": {
     "prompt_one": "{{count}} faixa nova em “{{folder}}”",
@@ -291,7 +291,7 @@
     "continuous": "Reprodução contínua",
     "continuousHelp": "Reprodução contínua: quando uma faixa termina, a próxima da lista toca automaticamente.",
     "waveform": "Forma de onda",
-    "waveformHelp": "Mostrar a forma de onda. Ocultá-la pula a análise da forma de onda — útil para arquivos grandes ou discos de rede.",
+    "waveformHelp": "Mostrar a forma de onda. Ocultá-la pula a análise da forma de onda, o que ajuda com arquivos grandes ou discos de rede.",
     "seek": "Ir para posição",
     "seekValue": "{{current}} de {{total}}",
     "volume": "Volume",
@@ -429,7 +429,7 @@
       "crest": "esta é menos dinâmica"
     },
     "matchReview": "Correspondência a confirmar",
-    "metaReadFailed": "Não foi possível ler as tags deste arquivo — mostrando só os dados do nome",
+    "metaReadFailed": "Não foi possível ler as tags deste arquivo, então só os dados do nome aparecem",
     "remove": "Remover",
     "status": {
       "idle": "Sem converter",
@@ -557,7 +557,7 @@
     "qualityConvertRate": "{{from}} → {{to}}",
     "qualityConvertRateSub": "Será gravado a 44,1 kHz, a taxa real do áudio.",
     "saveQualityReport": "Salvar relatório…",
-    "reportFooter": "Analisado com Surco — getsurco.app",
+    "reportFooter": "Analisado com Surco · getsurco.app",
     "qualityCaptionGenuine": "Nenhum corte de codec detectado; agudos até ~{{cutoff}}.",
     "qualityCaptionTranscode": "Corte de codec em ~{{cutoff}}: a origem era com perdas.",
     "qualityCaptionLossy": "Corte do codec em ~{{cutoff}}, normal em um arquivo com perdas.",
@@ -602,7 +602,7 @@
     "loudnessRangeHelp": "(LU): o quanto as partes suaves e as fortes diferem. Uma variação muito baixa costuma indicar muita compressão (a guerra do volume).",
     "loudnessCrestHelp": "(dB): a distância entre os picos e o nível médio, ou seja, o punch. Um valor baixo costuma indicar muita compressão.",
     "loudnessBalanceHelp": "(E/D): a diferença de nível entre os canais esquerdo e direito. Alguns dB indicam que um lado soa mais fraco.",
-    "loudnessDcHelp": "— um desvio constante que descentraliza toda a onda. Desperdiça headroom e pode gerar cliques; perto de 0% é o saudável.",
+    "loudnessDcHelp": "é um desvio constante que descentraliza toda a onda. Desperdiça headroom e pode gerar cliques; perto de 0% é o saudável.",
     "loudnessNoiseHelp": "(dB): nível do trecho mais silencioso da faixa; quanto mais baixo, mais limpo.",
     "loudnessGradeGood": "Bom",
     "loudnessGradeWarn": "Regular",
@@ -613,12 +613,12 @@
     "spectrumHighs": "agudos até ~{{cutoff}}",
     "spectrumHighsCap": "agudos ≥ {{cutoff}}",
     "outputName": "Nome do arquivo",
-    "outputNameHintInPlace": "Mesmo formato do original: atualiza o arquivo original no lugar e o renomeia — nenhuma cópia é criada na pasta de saída.",
+    "outputNameHintInPlace": "Mesmo formato do original: atualiza o arquivo original no lugar e o renomeia. Nenhuma cópia é criada na pasta de saída.",
     "outputNameFolder": "Será salvo dentro da pasta “{{folder}}”, porque a barra separa pastas.",
     "overwriteTitle": "Sobrescreve o original",
     "overwriteHint": "Reescreve o arquivo de origem no lugar, mantendo o nome. Nenhuma cópia vai para a pasta de saída. Desative em Ajustes → Saída.",
     "overwriteAlacHint": "ALAC não substitui o original: um arquivo novo é criado na pasta de saída e o original é mantido.",
-    "overwriteLossyHint": "Substitui o original sem perdas por um MP3 de 320 kbps no lugar — o master se perde e não pode ser recuperado. Desative em Ajustes → Saída.",
+    "overwriteLossyHint": "Substitui o original sem perdas por um MP3 de 320 kbps no lugar. O master se perde e não pode ser recuperado. Desative em Ajustes → Saída.",
     "overwriteLossyHintBackup": "Substitui o original sem perdas por um MP3 de 320 kbps no lugar. Antes, o Surco guarda uma cópia de segurança do original, que você pode restaurar a partir da faixa.",
     "regenerate": "Regenerar nome do arquivo com os metadados",
     "regenerateAll_other": "Regenerar {{count}} nomes de arquivo com os metadados",
@@ -659,7 +659,7 @@
     "appleMusicError": "Não foi possível adicionar ao Apple Music",
     "oldCopyRemoved": "Cópia antiga removida do Apple Music; o arquivo dela está na Lixeira",
     "removeOldCopyError": "Não foi possível remover a cópia antiga do Apple Music",
-    "removeOldCopyMismatch": "A cópia no Apple Music já não corresponde à esperada — nada foi removido",
+    "removeOldCopyMismatch": "A cópia no Apple Music já não corresponde à esperada, então nada foi removido",
     "searchError": "Falha na busca",
     "releaseError": "Não foi possível carregar o release",
     "analyzeError": "Não foi possível analisar o áudio",
@@ -988,7 +988,7 @@
     "estimatePill": "~{{count}} clicks",
     "estimateNonePill": "Sem clicks",
     "waveTitle": "Cliques encontrados",
-    "markLabel": "Clique em {{sec}} s — ir para cá",
+    "markLabel": "Ir para o clique em {{sec}} s",
     "playheadLabel": "Posição de reprodução",
     "unscanned": "Analisados os primeiros {{minutes}} minutos; cliques posteriores não são marcados.",
     "preview": "Ouvir o resultado",
@@ -1000,7 +1000,7 @@
     "pause": "Pausar",
     "hearingRepaired": "Ouvindo: reparada",
     "hearingOriginal": "Ouvindo: original",
-    "abHint": "Alterna entre a original e a reparada sem interromper o áudio, para você ouvir se o reparo removeu os cliques — e se abafou a música.",
+    "abHint": "Alterna entre a original e a reparada sem interromper o áudio, para você ouvir se o reparo removeu os cliques, e se abafou a música.",
     "nextClick": "Próximo clique",
     "appliesToSelection": "Este ajuste se aplica às {{count}} faixas selecionadas.",
     "row": {
@@ -1624,7 +1624,7 @@
     "welcomeBody": "Vamos configurar o essencial. Leva menos de um minuto e você pode mudar tudo depois em Ajustes.",
     "formatBody": "Escolha para qual formato o Surco exporta suas faixas.",
     "audioTitle": "O que você faz com suas faixas?",
-    "audioBody": "O Surco mostra só as seções do editor que seu fluxo precisa. Escolha o que se encaixa — você pode mudar isso quando quiser em Ajustes.",
+    "audioBody": "O Surco mostra só as seções do editor que seu fluxo precisa. Escolha o que se encaixa. Você pode mudar isso quando quiser em Ajustes.",
     "intent": {
       "metadata": "Acertar os metadados",
       "metadataBody": "Tags, capa e o pareamento com Discogs, Bandcamp, Deezer, Beatport e MusicBrainz. Sempre ativo: é para isso que o Surco serve.",
@@ -1665,7 +1665,7 @@
       },
       "format": {
         "q": "Qual formato de saída escolher?",
-        "a": "AIFF e WAV são sem perdas: mantêm a qualidade original exata e carregam as tags direitinho, ideal para tocar. O AIFF costuma lidar melhor com metadados e capa nas plataformas Apple.\n\nMP3 (320 kbps) tem perdas, mas ocupa bem menos espaço — útil quando o armazenamento ou o tamanho do USB importa.\n\nSeja qual for a escolha, um arquivo que já está nesse formato é copiado sem recodificar, então você nunca perde qualidade com uma conversão desnecessária."
+        "a": "AIFF e WAV são sem perdas: mantêm a qualidade original exata e carregam as tags direitinho, ideal para tocar. O AIFF costuma lidar melhor com metadados e capa nas plataformas Apple.\n\nMP3 (320 kbps) tem perdas, mas ocupa bem menos espaço, útil quando o armazenamento ou o tamanho do USB importa.\n\nSeja qual for a escolha, um arquivo que já está nesse formato é copiado sem recodificar, então você nunca perde qualidade com uma conversão desnecessária."
       },
       "appleMusic": {
         "q": "O que faz “Adicionar ao Apple Music”?",
@@ -1673,7 +1673,7 @@
       },
       "windows": {
         "q": "Tem algo diferente no Windows?",
-        "a": "Quase tudo funciona exatamente igual: a conversão, a etiquetagem, a busca no Discogs, no Bandcamp, no Deezer, no Beatport e no MusicBrainz, a análise de qualidade e a exportação para rekordbox, Traktor, Serato e Engine DJ.\n\nA única coisa que não existe no Windows é a integração com o Apple Music. O Surco controla o app Música da Apple via AppleScript, uma ponte de automação que só existe no macOS — o app do Apple Music para Windows não oferece nada equivalente —, então o destino, os botões e o selo de biblioteca do Apple Music simplesmente não aparecem.\n\nUm detalhe dos WAV que vale saber: o Surco grava as etiquetas dos WAV no chunk ID3 padrão, que os apps de DJ e editores como o Mp3tag leem sem problema, mas que o Explorador de Arquivos do Windows não consegue mostrar — um WAV convertido pode parecer sem etiquetas em uma pasta mesmo com todas elas lá. Com MP3 ou FLAC, o Explorador as mostra normalmente."
+        "a": "Quase tudo funciona exatamente igual: a conversão, a etiquetagem, a busca no Discogs, no Bandcamp, no Deezer, no Beatport e no MusicBrainz, a análise de qualidade e a exportação para rekordbox, Traktor, Serato e Engine DJ.\n\nA única coisa que não existe no Windows é a integração com o Apple Music. O Surco controla o app Música da Apple via AppleScript, uma ponte de automação que só existe no macOS (o app do Apple Music para Windows não oferece nada equivalente), então o destino, os botões e o selo de biblioteca do Apple Music simplesmente não aparecem.\n\nUm detalhe dos WAV que vale saber: o Surco grava as etiquetas dos WAV no chunk ID3 padrão, que os apps de DJ e editores como o Mp3tag leem sem problema, mas que o Explorador de Arquivos do Windows não consegue mostrar. Um WAV convertido pode parecer sem etiquetas em uma pasta mesmo com todas elas lá. Com MP3 ou FLAC, o Explorador as mostra normalmente."
       }
     }
   },
@@ -1731,8 +1731,8 @@
     "clearTitle": "Limpar a lista?",
     "clearMessage_one": "Remove a única faixa da lista. O arquivo no disco não é apagado.",
     "clearMessage_other": "Remove todas as {{count}} faixas da lista. Os arquivos no disco não são apagados.",
-    "clearMessageFiltered_one": "Remove a única faixa visível da lista — as que o filtro oculta ficam. O arquivo no disco não é apagado.",
-    "clearMessageFiltered_other": "Remove as {{count}} faixas visíveis da lista — as que o filtro oculta ficam. Os arquivos no disco não são apagados.",
+    "clearMessageFiltered_one": "Remove a única faixa visível da lista. As que o filtro oculta ficam. O arquivo no disco não é apagado.",
+    "clearMessageFiltered_other": "Remove as {{count}} faixas visíveis da lista. As que o filtro oculta ficam. Os arquivos no disco não são apagados.",
     "clearConfirm": "Limpar",
     "removeFromListTitle_one": "Remover esta faixa da lista?",
     "removeFromListTitle_other": "Remover {{count}} faixas da lista?",
