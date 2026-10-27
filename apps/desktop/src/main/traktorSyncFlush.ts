@@ -41,7 +41,7 @@ export interface FlushTraktorSyncDeps {
   queue?: {
     // Patches from an earlier run are still waiting.
     waiting: () => boolean
-    hold: (patches: NmlPatch[]) => void
+    hold: (patches: NmlPatch[], nmlPath: string) => Promise<void>
   }
 }
 
@@ -65,13 +65,13 @@ export async function flushTraktorSync(deps: FlushTraktorSyncDeps): Promise<Libr
   if (!(await deps.ensureTraktorClosed())) {
     deps.showBlockedDialog()
     await logKeptOpen(deps.track)
-    deps.queue?.hold(patches)
+    await deps.queue?.hold(patches, deps.traktorNmlPath)
     return { outcome: 'open' }
   }
   // Written now, these would land before the earlier run's patches, which would then undo
   // them. They join the queue instead, which writes everything in one go, oldest first.
   if (deps.queue?.waiting()) {
-    deps.queue.hold(patches)
+    await deps.queue.hold(patches, deps.traktorNmlPath)
     return { outcome: 'nothing' }
   }
   const result = await deps.track(
@@ -96,7 +96,7 @@ export async function flushTraktorSync(deps: FlushTraktorSyncDeps): Promise<Libr
     },
   )
   if (result.written) return { outcome: 'updated', count: result.matched }
-  if (HELD_REASONS.has(result.reason)) deps.queue?.hold(patches)
+  if (HELD_REASONS.has(result.reason)) await deps.queue?.hold(patches, deps.traktorNmlPath)
   if (result.reason === 'traktor-running') return { outcome: 'open' }
   if (result.reason === 'no-matches') return { outcome: 'nothing' }
   return { outcome: 'failed' }

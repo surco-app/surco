@@ -1,7 +1,8 @@
+import { readFile } from 'node:fs/promises'
 import type { RekordboxQueueState } from '../shared/types'
 import type { LibraryRepointResult } from './libraryRepointFlush'
 import type { RekordboxQueue } from './rekordboxQueue'
-import type { NmlPatch } from './traktorNml'
+import { entryStates, type NmlPatch, spareEditedEntries } from './traktorNml'
 import type { SyncResult } from './traktorNmlLibrary'
 
 // A conversion's collection patch kept in the Traktor queue (traktor-cue-queue.json) when
@@ -16,16 +17,23 @@ export interface QueuedNmlPatch {
   // The cue tree as base64: JSON has no bytes, and a Uint8Array written as is reads back
   // as an object of numbered keys.
   patch: Omit<NmlPatch, 'cueTree'> & { cueTree?: string }
+  // The cues, stars and cover of the matched entry when the patch was held (see
+  // spareEditedEntries): the DJ keeps working in Traktor while it waits.
+  entryState?: string
 }
 
-export function queuedNmlPatch(patch: NmlPatch): QueuedNmlPatch {
+export function queuedNmlPatch(patch: NmlPatch, entryState?: string): QueuedNmlPatch {
   const { cueTree, ...rest } = patch
   return {
     from: [patch.volume, patch.dir, patch.file].map((s) => s.normalize('NFC')).join('\0'),
     to: patch.outputFile ?? patch.newFile ?? patch.file,
     patch: cueTree ? { ...rest, cueTree: Buffer.from(cueTree).toString('base64') } : rest,
+    ...(entryState === undefined ? {} : { entryState }),
   }
 }
+
+const readCollection = (path: string): Promise<string | null> =>
+  readFile(path, 'utf8').catch(() => null)
 
 export function nmlPatchOf(queued: QueuedNmlPatch): NmlPatch {
   const { cueTree, ...rest } = queued.patch
@@ -37,16 +45,25 @@ export function nmlPatchOf(queued: QueuedNmlPatch): NmlPatch {
 // The queue as flushTraktorSync uses it. Held patches go out on the queue's next quiet
 // apply, which waits for Traktor to close instead of asking again: the user has just
 // declined. Only a conversion patch counts as waiting; saved cues in the same queue are
-// checked against the collection when written and do not depend on a run's order.
+// checked against the collection when written and do not depend on a run's order, and
+// patches held for another collection can never be written to this one.
 export function holdInQueue(queue: {
   enqueue: RekordboxQueue<QueuedNmlPatch>['enqueue']
   state: () => RekordboxQueueState
   applyQuietly: () => void
-}): { waiting: () => boolean; hold: (patches: NmlPatch[]) => void } {
+}): { waiting: () => boolean; hold: (patches: NmlPatch[], nmlPath: string) => Promise<void> } {
   return {
-    waiting: () => queue.state().items.some((i) => i.parts.some((p) => p.kind === 'repoint')),
-    hold: (patches) => {
-      queue.enqueue([], patches.map(queuedNmlPatch))
+    waiting: () => {
+      const state = queue.state()
+      return !state.elsewhere && state.items.some((i) => i.parts.some((p) => p.kind === 'repoint'))
+    },
+    hold: async (patches, nmlPath) => {
+      const nml = await readCollection(nmlPath)
+      const states = nml === null ? [] : entryStates(nml, patches)
+      queue.enqueue(
+        [],
+        patches.map((p, i) => queuedNmlPatch(p, states[i])),
+      )
       queue.applyQuietly()
     },
   }
@@ -68,7 +85,18 @@ export async function syncQueuedPatches(
   queued: QueuedNmlPatch[],
   sync: (nmlPath: string, patches: NmlPatch[]) => Promise<SyncResult>,
 ): Promise<LibraryRepointResult[]> {
-  const result = await sync(nmlPath, queued.map(nmlPatchOf))
+  const patches = queued.map(nmlPatchOf)
+  const nml = await readCollection(nmlPath)
+  const result = await sync(
+    nmlPath,
+    nml === null
+      ? patches
+      : spareEditedEntries(
+          nml,
+          patches,
+          queued.map((q) => q.entryState),
+        ),
+  )
   return queued.map(() =>
     result.written
       ? { written: true }
