@@ -145,11 +145,13 @@ export function acceptReviewPatch(
     importFields,
     genrePresets,
     fullReleaseDate,
+    track.appliedRelease,
   )
   return {
     meta: patch.meta,
     coverUrl: patch.coverUrl,
     coverPath: patch.coverPath,
+    appliedRelease: patch.appliedRelease,
     matched: true,
     autoMatched: true,
     matchProvider: rm.release.provider,

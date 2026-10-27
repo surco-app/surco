@@ -179,6 +179,19 @@ describe('session store', () => {
     expect(bad.declick).toBeUndefined()
   })
 
+  // The next release applied reads it field by field, so a hand-edited value that is not
+  // the known shape reads as "no release remembered" rather than breaking that apply.
+  it('round-trips what the applied release wrote and drops a malformed one', async () => {
+    const dir = app.getPath('userData')
+    const kept = join(dir, 'kept.wav')
+    writeFileSync(kept, 'x')
+    const appliedRelease = { before: { publisher: '' }, wrote: { publisher: 'Wrong Records' } }
+    saveLastSession([kept], { [kept]: edit({ appliedRelease }) })
+    expect((await loadLastSession()).edits[kept].appliedRelease).toEqual(appliedRelease)
+    saveLastSession([kept], { [kept]: edit({ appliedRelease: { before: {} } as never }) })
+    expect((await loadLastSession()).edits[kept].appliedRelease).toBeUndefined()
+  })
+
   // Every session saved before the noise ladder stores the repair as a bare mode string;
   // reopening one must keep the intensity the user dialled, not reset the track.
   it('upgrades a click repair saved as a bare mode by an older version', async () => {

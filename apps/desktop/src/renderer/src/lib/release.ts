@@ -2,6 +2,7 @@ import { METADATA_KEYS } from '../../../shared/metadata'
 import { bareAlbumTitle } from '../../../shared/searchClean'
 import { fullDateOf } from '../../../shared/tagFields'
 import type {
+  AppliedRelease,
   MetaTextKey,
   Release,
   ReleaseTrack,
@@ -551,6 +552,7 @@ export interface ReleaseMetaPatch {
   coverUrl: string | undefined
   coverPath: string | undefined
   meta: TrackMetadata
+  appliedRelease: AppliedRelease
 }
 
 // The writing credits for a track: its own first, then the release-wide ones.
@@ -572,7 +574,8 @@ function composerOf(rel: Release, track: ReleaseTrack | undefined): string {
 // it (cover.keep) so the user's good art isn't replaced by Discogs' often-smaller
 // image; only a missing or low-res cover is filled from the release. Either way
 // the release's images stay reachable through the cover picker. Fields the release
-// doesn't carry keep their current value.
+// doesn't carry keep their current value — except what the previous release wrote and
+// nobody touched since, which goes back to the value it had before that release.
 export function buildReleaseMeta(
   current: TrackMetadata,
   rel: Release,
@@ -581,7 +584,15 @@ export function buildReleaseMeta(
   importFields?: readonly MetaTextKey[],
   genrePresets: readonly string[] = [],
   fullReleaseDate = false,
+  previous?: AppliedRelease,
 ): ReleaseMetaPatch {
+  const base = withoutPrevious(current, previous)
+  const shown =
+    previous?.cover &&
+    cover.url === previous.cover.wrote.url &&
+    cover.path === previous.cover.wrote.path
+      ? { ...previous.cover.before, keep: false }
+      : cover
   const albumArtist = joinArtists(rel.artists)
   // Discogs classifies twice: a broad genre ("Electronic") and finer styles ("House",
   // "Deep House"). Both used to be crushed into `genre` with the style winning, which
@@ -603,41 +614,41 @@ export function buildReleaseMeta(
   const catno = label?.catno?.trim() ?? ''
   const catalogNumber = catno && catno.toLowerCase() !== 'none' ? catno : ''
   const pos = track ? splitPosition(track.position) : undefined
-  const keepCover = cover.keep && !!cover.url
+  const keepCover = shown.keep && !!shown.url
   const imported: TrackMetadata = {
-    ...current,
-    title: track ? titleWithMix(track) : current.title,
-    trackNumber: pos ? pos.track : current.trackNumber,
-    discNumber: pos ? pos.disc : current.discNumber,
+    ...base,
+    title: track ? titleWithMix(track) : base.title,
+    trackNumber: pos ? pos.track : base.trackNumber,
+    discNumber: pos ? pos.disc : base.discNumber,
     album: rel.title,
     albumArtist,
     // Like every other field, the artist applies from the release: the track's own
     // artist (compilations) first, then the album artist — overwriting a wrong existing
     // value rather than keeping it. The current value stands only if Discogs has none.
-    artist: trackArtist || albumArtist || current.artist,
+    artist: trackArtist || albumArtist || base.artist,
     year:
       (fullReleaseDate && fullDateOf(rel.released ?? '')) ||
-      (rel.year ? String(rel.year) : current.year),
+      (rel.year ? String(rel.year) : base.year),
     // Falls back like every other field below: a release with neither genres nor styles
     // knows nothing about the genre, so it must not blank one the DJ typed by hand. This
     // was the one field that overwrote unconditionally, wiping it with nothing to show.
-    genre: genre || current.genre || '',
+    genre: genre || base.genre || '',
     // Defaulted to '' rather than left undefined: these fields reach a tag writer, and
     // an absent value has to mean "empty tag", never the string "undefined".
-    style: style || current.style || '',
-    country: country || current.country || '',
-    mediaType: mediaType || current.mediaType || '',
-    publisher: publisher || current.publisher,
-    catalogNumber: catalogNumber || current.catalogNumber,
-    composer: composerOf(rel, track) || current.composer,
-    bpm: track?.bpm || current.bpm,
-    key: track?.key || current.key,
-    mixName: track?.mixName || current.mixName || '',
-    isrc: track?.isrc || current.isrc || '',
+    style: style || base.style || '',
+    country: country || base.country || '',
+    mediaType: mediaType || base.mediaType || '',
+    publisher: publisher || base.publisher,
+    catalogNumber: catalogNumber || base.catalogNumber,
+    composer: composerOf(rel, track) || base.composer,
+    bpm: track?.bpm || base.bpm,
+    key: track?.key || base.key,
+    mixName: track?.mixName || base.mixName || '',
+    isrc: track?.isrc || base.isrc || '',
     // Provenance is Discogs-specific: a Bandcamp match must not stamp its id into the
     // Discogs field (it gates auto-match's "skip already-matched" and the release link),
     // so a non-Discogs apply leaves whatever was there untouched.
-    discogsReleaseId: rel.provider === 'discogs' ? String(rel.id) : current.discogsReleaseId,
+    discogsReleaseId: rel.provider === 'discogs' ? String(rel.id) : base.discogsReleaseId,
     // Same provenance rule as the id above: a Bandcamp match must not stamp a
     // discogs.com address onto the track. The API returns `uri`; falling back to the
     // canonical /release/<id> form covers releases whose response omits it.
@@ -647,13 +658,49 @@ export function buildReleaseMeta(
     discogsUrl:
       rel.provider === 'discogs'
         ? rel.uri?.trim() || `https://www.discogs.com/release/${rel.id}`
-        : current.discogsUrl,
+        : base.discogsUrl,
   }
+  const meta = importFields ? onlyImported(current, imported, importFields) : imported
+  const coverUrl = keepCover ? shown.url : coverOf(rel, shown.url)
+  const coverPath = keepCover ? shown.path : undefined
   return {
-    coverUrl: keepCover ? cover.url : coverOf(rel, cover.url),
-    coverPath: keepCover ? cover.path : undefined,
-    meta: importFields ? onlyImported(current, imported, importFields) : imported,
+    coverUrl,
+    coverPath,
+    meta,
+    appliedRelease: appliedOver(base, meta, shown, { url: coverUrl, path: coverPath }),
   }
+}
+
+// The track as it stood before the previous release: every field that release wrote and
+// that still holds exactly what it wrote goes back to its earlier value. A field the DJ
+// changed since keeps the DJ's value.
+function withoutPrevious(current: TrackMetadata, previous?: AppliedRelease): TrackMetadata {
+  const base = { ...current }
+  for (const key of METADATA_KEYS) {
+    if (previous && key in previous.wrote && (current[key] ?? '') === previous.wrote[key])
+      base[key] = previous.before[key] ?? ''
+  }
+  return base
+}
+
+function appliedOver(
+  base: TrackMetadata,
+  meta: TrackMetadata,
+  coverBefore: { url?: string; path?: string },
+  coverAfter: { url?: string; path?: string },
+): AppliedRelease {
+  const applied: AppliedRelease = { before: {}, wrote: {} }
+  for (const key of METADATA_KEYS) {
+    if ((base[key] ?? '') === (meta[key] ?? '')) continue
+    applied.before[key] = base[key] ?? ''
+    applied.wrote[key] = meta[key] ?? ''
+  }
+  if (coverBefore.url !== coverAfter.url || coverBefore.path !== coverAfter.path)
+    applied.cover = {
+      before: { url: coverBefore.url, path: coverBefore.path },
+      wrote: coverAfter,
+    }
+  return applied
 }
 
 // Restores every field the user left out of the import list to the value the file already

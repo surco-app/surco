@@ -1496,3 +1496,89 @@ describe('buildReleaseMeta', () => {
     expect(patch.meta.country).toBe('Spain')
   })
 })
+
+// A wrong release applied first (often by the sweep) used to leave its traces behind when
+// the DJ then applied the right one from a source that lacks those fields: Bandcamp and
+// Deezer bring no label, catalog number or Discogs id, so the track kept the wrong
+// release's, and a later sweep even "re-confirmed" it from that stale id. Each apply now
+// remembers what it wrote, and the next one takes back what nobody touched since.
+describe('buildReleaseMeta over a previously applied release', () => {
+  const own = meta({ title: 'mine', publisher: 'Own Label', catalogNumber: '' })
+  const wrong = release({
+    id: 111,
+    title: 'Wrong LP',
+    uri: 'https://www.discogs.com/release/111',
+    country: 'UK',
+    labels: [{ name: 'Wrong Records', catno: 'WR001' }],
+    extraartists: [{ name: 'Ghost Writer', role: 'Written-By' }],
+    images: [{ uri: 'wrong.jpg', type: 'primary', resource_url: '' }],
+  })
+  const right = release({ provider: 'bandcamp', id: 222, title: 'Right LP' })
+  const track: ReleaseTrack = { position: '1', title: 'Song' }
+
+  function applyAfter(
+    first: ReturnType<typeof buildReleaseMeta>,
+    rel: Release,
+    current: TrackMetadata = first.meta,
+    coverUrl: string | undefined = first.coverUrl,
+  ): ReturnType<typeof buildReleaseMeta> {
+    return buildReleaseMeta(
+      current,
+      rel,
+      track,
+      { url: coverUrl, keep: !!coverUrl },
+      undefined,
+      [],
+      false,
+      first.appliedRelease,
+    )
+  }
+
+  it('takes back the label, catalog, country, composer and Discogs link the wrong release wrote', () => {
+    const b = applyAfter(buildReleaseMeta(own, wrong, track), right).meta
+    expect(b.album).toBe('Right LP')
+    expect([b.publisher, b.catalogNumber, b.country, b.composer]).toEqual(['Own Label', '', '', ''])
+    expect(b.discogsReleaseId ?? '').toBe('')
+    expect(b.discogsUrl ?? '').toBe('')
+  })
+
+  // The DJ's own correction is the one thing the memory must never undo.
+  it('keeps a field the DJ edited after the first release', () => {
+    const a = buildReleaseMeta(own, wrong, track)
+    const b = applyAfter(a, right, { ...a.meta, publisher: 'Typed By Hand' }).meta
+    expect(b.publisher).toBe('Typed By Hand')
+    expect(b.catalogNumber).toBe('')
+  })
+
+  it('takes back the cover the wrong release brought when the right one has none', () => {
+    const a = buildReleaseMeta(own, wrong, track)
+    expect(a.coverUrl).toBe('wrong.jpg')
+    expect(applyAfter(a, right).coverUrl).toBeUndefined()
+  })
+
+  it('brings back the file cover the wrong release replaced', () => {
+    const a = buildReleaseMeta(own, wrong, track, { url: 'file.jpg', keep: false })
+    expect(applyAfter(a, right).coverUrl).toBe('file.jpg')
+  })
+
+  it('keeps a cover the DJ picked after the first release', () => {
+    const a = buildReleaseMeta(own, wrong, track)
+    expect(applyAfter(a, right, a.meta, 'picked.jpg').coverUrl).toBe('picked.jpg')
+  })
+
+  it('still falls back to the file own values on a first application', () => {
+    const b = buildReleaseMeta(own, right, track).meta
+    expect(b.publisher).toBe('Own Label')
+    expect(b.title).toBe('Song')
+  })
+
+  // Re-applying the same release (a second click, the editor's auto-apply after a sweep)
+  // must land on the same tags, and still remember the file's own values underneath.
+  it('is stable when the same release is applied twice', () => {
+    const a = buildReleaseMeta(own, wrong, track)
+    const again = applyAfter(a, wrong)
+    expect(again.meta).toEqual(a.meta)
+    expect(again.coverUrl).toBe(a.coverUrl)
+    expect(applyAfter(again, right).meta.publisher).toBe('Own Label')
+  })
+})

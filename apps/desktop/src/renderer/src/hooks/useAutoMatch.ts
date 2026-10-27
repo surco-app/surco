@@ -206,6 +206,7 @@ export function useAutoMatch({
         importFieldsRef.current,
         genrePresetsRef.current,
         fullReleaseDateRef.current,
+        live.appliedRelease,
       )
       // Re-check ownership against the release's canonical title/artist — the editor's second
       // attempt, run here for the whole crate so the filter agrees without opening each row.
@@ -225,6 +226,7 @@ export function useAutoMatch({
         meta: patch.meta,
         coverUrl: patch.coverUrl,
         coverPath: patch.coverPath,
+        appliedRelease: patch.appliedRelease,
         autoMatched: true,
         matched: true,
         matchConfidence: m.confidence,

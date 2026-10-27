@@ -50,6 +50,7 @@ function sessionEdit(track: TrackItem): SessionEdit {
   if (track.autoMatched) edit.autoMatched = true
   if (track.matchConfidence !== undefined) edit.matchConfidence = track.matchConfidence
   if (track.matchProvider) edit.matchProvider = track.matchProvider
+  if (track.appliedRelease) edit.appliedRelease = track.appliedRelease
   if (track.trim) edit.trim = track.trim
   if (track.normalize) edit.normalize = track.normalize
   if (track.declick) edit.declick = track.declick

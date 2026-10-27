@@ -157,6 +157,21 @@ describe('useAutoMatch', () => {
     expect(patch.meta.year).toBe('2001-03-12')
   })
 
+  // The sweep is the path most likely to apply a wrong release first, so it has to leave
+  // behind what it wrote for the DJ's later pick to take back.
+  it('remembers what the applied release wrote over the file own tags', async () => {
+    setApi()
+    const tracks = [track('a')]
+    const { result, updateTrack } = setup(tracks)
+
+    act(() => result.current.enqueueAutoMatch(tracks))
+
+    await waitFor(() => expect(updateTrack).toHaveBeenCalledTimes(1))
+    const patch = updateTrack.mock.calls[0][1] as Partial<TrackItem>
+    expect(patch.appliedRelease?.wrote.album).toBe('Album')
+    expect(patch.appliedRelease?.before.album).toBe('')
+  })
+
   // A field buffers its text and only commits to the track array on pause/blur, so while
   // the user types the edit isn't in the live meta yet and the meta-identity guard can't
   // see it. If a match landed in that window it would overwrite the row being typed into.

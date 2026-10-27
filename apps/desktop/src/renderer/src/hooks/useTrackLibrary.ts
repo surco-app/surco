@@ -509,6 +509,7 @@ export function useTrackLibrary({
     if (saved.autoMatched) patch.autoMatched = true
     if (saved.matchConfidence !== undefined) patch.matchConfidence = saved.matchConfidence
     if (saved.matchProvider) patch.matchProvider = saved.matchProvider
+    if (saved.appliedRelease) patch.appliedRelease = saved.appliedRelease
     if (saved.trim) patch.trim = saved.trim
     if (saved.rekordboxPlaylists) patch.rekordboxPlaylists = saved.rekordboxPlaylists
     if (saved.rekordboxPlaylistsBase) patch.rekordboxPlaylistsBase = saved.rekordboxPlaylistsBase

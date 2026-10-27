@@ -163,6 +163,20 @@ describe('AlbumMatchRows', () => {
     expect(patches.find((p) => p.id === 'long')?.patch.meta.title).toBe('Extended Mix')
   })
 
+  // The album path applies to many files at once, so a wrong release applied to them
+  // earlier must lose its label here just as it does in the single-track editor.
+  it('takes back the label the previously applied release wrote', async () => {
+    const file = {
+      ...track('short', 'radio edit', 181),
+      appliedRelease: { before: { publisher: '' }, wrote: { publisher: 'Wrong Records' } },
+    }
+    file.meta = { ...file.meta, publisher: 'Wrong Records' }
+    const { onApply } = renderRows([file])
+    await screen.findAllByTestId('match-row')
+    fireEvent.click(screen.getByTestId('match-apply'))
+    expect(onApply.mock.calls[0][0][0].patch.meta.publisher).toBe('')
+  })
+
   it('acknowledges the apply by flashing the button to "Applied"', async () => {
     renderRows([track('short', 'radio edit', 181)])
     await screen.findAllByTestId('match-row')
