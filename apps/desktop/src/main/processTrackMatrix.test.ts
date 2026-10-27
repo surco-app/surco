@@ -113,6 +113,7 @@ describe('runProcessTrack — in-place x Apple Music', () => {
       undefined,
       undefined,
       undefined,
+      false,
     )
     expect(deps.addToAppleMusic).toHaveBeenCalledWith('/in/Artist - Title.aiff', {}, undefined)
     expect(result.addedToMusicOnly).toBeUndefined()
@@ -211,6 +212,7 @@ describe('runProcessTrack — overwrite x ALAC', () => {
       undefined,
       undefined,
       undefined,
+      false,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
   })
@@ -247,6 +249,7 @@ describe('runProcessTrack — beside the original x filters', () => {
       undefined,
       undefined,
       undefined,
+      false,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
   })
