@@ -46,6 +46,12 @@ function measured(filter: string, prefilter?: string): string {
 // target either way. loudnorm's target_offset is not needed in linear mode: offset 0
 // reached −14.0 for a −14 target on all three. The same pass is what the editor's
 // loudness section runs, so without a prefilter the two share one cache entry.
+//
+// framelog=verbose moves the per-frame lines (one per 100 ms, 104 KB of stderr a minute)
+// below the info level the run prints, leaving only the Summary that is read: with them
+// a mix past ~160 minutes overflowed the 16 MB stderr buffer and could not be measured.
+export const EBUR128_SUMMARY = 'ebur128=peak=true:framelog=verbose'
+
 export function ebur128MeasureArgs(input: string, prefilter?: string): string[] {
   return [
     '-hide_banner',
@@ -54,7 +60,7 @@ export function ebur128MeasureArgs(input: string, prefilter?: string): string[] 
     '-i',
     input,
     '-af',
-    measured('ebur128=peak=true', prefilter),
+    measured(EBUR128_SUMMARY, prefilter),
     '-f',
     'null',
     '-',

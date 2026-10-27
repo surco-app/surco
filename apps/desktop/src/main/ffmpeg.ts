@@ -80,6 +80,7 @@ import { recordNmlPatch } from './nmlBatch'
 import {
   astatsArgs,
   dcRemovalFilter,
+  EBUR128_SUMMARY,
   ebur128MeasureArgs,
   limitedLoudnormFilter,
   limitsPeaks,
@@ -3143,7 +3144,7 @@ export async function measureLoudness(
       },
     )
   const [peakPass, statsPass] = await Promise.all([
-    pass('ebur128=peak=true'),
+    pass(EBUR128_SUMMARY),
     pass('astats=metadata=1:reset=0'),
   ])
   const loud = parseLoudness(peakPass.stderr)
