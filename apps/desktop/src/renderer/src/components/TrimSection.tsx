@@ -84,6 +84,18 @@ interface Props {
   durationSec?: number
 }
 
+// A dropped audition must not come back: its handlers go and its download stops, so a
+// file that finishes loading later can neither start playing nor stop the next one.
+function silence(audio: HTMLAudioElement | null): void {
+  if (!audio) return
+  audio.onloadedmetadata = null
+  audio.ontimeupdate = null
+  audio.onended = null
+  audio.pause()
+  audio.removeAttribute('src')
+  audio.load()
+}
+
 function cutSeconds(seconds: number, language: string): string {
   return `${formatFixed(seconds, 1, language)} s`
 }
@@ -802,7 +814,7 @@ export function TrimSection({
   const stopTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   function stopAudition(): void {
     clearTimeout(stopTimer.current)
-    audioRef.current?.pause()
+    silence(audioRef.current)
     audioRef.current = null
     setAuditing(null)
   }
@@ -810,7 +822,7 @@ export function TrimSection({
   useEffect(() => {
     return () => {
       clearTimeout(stopTimer.current)
-      audioRef.current?.pause()
+      silence(audioRef.current)
       audioRef.current = null
       setAuditing(null)
     }
@@ -843,6 +855,7 @@ export function TrimSection({
     // the cut, which is exactly what the end check is judging. A timer from the moment
     // playback starts stops it on the line; the clock check stays as the backstop.
     audio.onloadedmetadata = () => {
+      if (audioRef.current !== audio) return
       audio.currentTime = from
       audio
         .play()
@@ -850,12 +863,16 @@ export function TrimSection({
           if (audioRef.current !== audio) return
           stopTimer.current = setTimeout(stopAudition, (until - from) * 1000)
         })
-        .catch(() => stopAudition())
+        .catch(() => {
+          if (audioRef.current === audio) stopAudition()
+        })
     }
     audio.ontimeupdate = () => {
-      if (audio.currentTime >= until) stopAudition()
+      if (audioRef.current === audio && audio.currentTime >= until) stopAudition()
     }
-    audio.onended = () => stopAudition()
+    audio.onended = () => {
+      if (audioRef.current === audio) stopAudition()
+    }
     setAuditing(which)
   }
   // A click lands in a LANE, so the second it means is read off that lane's window.

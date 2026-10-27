@@ -42,7 +42,11 @@ function musicOnlyWave(): WaveformResult {
 
 const play = vi.fn()
 const pause = vi.fn()
-const audios: { onloadedmetadata: (() => void) | null; currentTime: number }[] = []
+const audios: {
+  onloadedmetadata: (() => void) | null
+  ontimeupdate: (() => void) | null
+  currentTime: number
+}[] = []
 
 let client: QueryClient
 beforeEach(() => {
@@ -61,6 +65,8 @@ beforeEach(() => {
       currentTime = 0
       play = play
       pause = pause
+      removeAttribute = vi.fn()
+      load = vi.fn()
       constructor() {
         audios.push(this)
       }
@@ -849,6 +855,23 @@ describe('TrimSection', () => {
     expect(play).toHaveBeenCalledOnce()
     fireEvent.click(btn)
     expect(pause).toHaveBeenCalledOnce()
+  })
+
+  // Stopping, or jumping to the other cut, before the file had loaded left the first element
+  // alive: it started playing on its own once loaded and ran to the end of the track,
+  // and its clock, reaching its own stop point, cut the audition the user was hearing.
+  it('silences an audition dropped before its file loaded', async () => {
+    render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+    const start = await screen.findByTestId('trim-audition-start', undefined, { timeout: 3000 })
+    fireEvent.click(start)
+    fireEvent.click(screen.getByTestId('trim-audition-end'))
+    const orphan = audios[0]
+    act(() => orphan?.onloadedmetadata?.())
+    expect(play).not.toHaveBeenCalled()
+    pause.mockClear()
+    if (orphan) orphan.currentTime = 99
+    act(() => orphan?.ontimeupdate?.())
+    expect(pause).not.toHaveBeenCalled()
   })
 
   // The detection proposes a cut; hearing it before taking it is the whole judgement. The
