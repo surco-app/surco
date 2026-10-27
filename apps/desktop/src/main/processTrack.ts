@@ -1,5 +1,5 @@
 import { tmpdir } from 'node:os'
-import { basename, dirname, join } from 'node:path'
+import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
 import { errorWithKey } from '../shared/errorKeys'
 import { foldAccents } from '../shared/foldAccents'
@@ -230,6 +230,7 @@ export async function runProcessTrack(
     // delete. APFS treats both as one name, so this changes nothing on a local disk.
     const outputName = sanitizeOutputName(
       settings.asciiFileNames ? foldAccents(job.outputName) : job.outputName,
+      basename(job.inputPath, extname(job.inputPath)),
     )
     const resolved = resolveOutputTarget(
       job.inputPath,

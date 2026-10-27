@@ -677,6 +677,13 @@ function removeCueFrames(tag: Id3v2Tag): void {
 // the source's GEOB frames (opaque blobs TagLib's attachment parser can choke on,
 // so never parsed) plus the PRIV "TRAKTOR4" frame real Traktor MP3s carry.
 // Best-effort like the copy itself — an unreadable source yields no cues.
+// Whether an update that carries the source's cue frames over would drop some: a GEOB from
+// Serato or Mixed In Key cannot be saved through TagLib (see isSafeCue). The conversion keeps
+// a copy of the original then, since the update loses data even when the audio is copied.
+export function dropsForeignCues(source: string): boolean {
+  return readCueFrames(source).some((frame) => !isSafeCue(frame))
+}
+
 function readCueFrames(source: string): Id3v2Frame[] {
   try {
     const src = TagFile.createFromPath(source)

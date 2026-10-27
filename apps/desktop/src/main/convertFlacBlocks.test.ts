@@ -143,6 +143,20 @@ describe('a FLAC tag update', () => {
     expect((await readMeta(src)).tags.title).toBe('New Title')
   })
 
+  // flac --keep-foreign-metadata stores a WAV or AIFF's own header as a run of application
+  // blocks that all share one id ("riff", "aiff"), and it needs every one of them to rebuild
+  // the original file. Taking one per id kept the first and dropped the rest.
+  it('keeps every block of a run that shares one application id', async () => {
+    const run = [0, 1, 2].map((i) => ({
+      type: APPLICATION,
+      body: Buffer.concat([Buffer.from('riff', 'latin1'), Buffer.alloc(30 + i, 0x30 + i)]),
+    }))
+    const src = sourceWith('foreign.flac', run)
+    await convertAudio(src, src, 'flac', meta)
+
+    expect(bodyOf(src, APPLICATION)).toEqual(run.map((b) => b.body))
+  })
+
   it('does not double a block on a second update', async () => {
     const src = sourceWith('twice.flac', [
       { type: APPLICATION, body: application('Srco', 40) },

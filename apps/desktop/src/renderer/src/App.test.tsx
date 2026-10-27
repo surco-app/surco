@@ -7528,6 +7528,58 @@ describe('App Originals panel', () => {
     expect(screen.queryByTestId('trash-panel')).toBeNull()
     expect(first).toHaveAttribute('aria-selected', 'true')
   })
+  // Emptying Originals with one copy held open used to close the confirm and say nothing,
+  // so the user believed every copy was gone while some still took the space.
+  it('says so when emptying the backups fails', async () => {
+    setApi({
+      trashList: vi.fn().mockResolvedValue([
+        {
+          id: 'e1',
+          name: 'a.wav',
+          originalPath: '/music/a.wav',
+          storedPath: '/ud/trash/items/e1-a.wav',
+          bytes: 1024,
+          trashedAt: Date.now(),
+          reason: 'replaced',
+        },
+      ]),
+      trashEmpty: vi.fn().mockRejectedValue(new Error('EBUSY')),
+    })
+    await renderApp()
+    act(() => menuListener?.('backups'))
+    fireEvent.click(await screen.findByTestId('trash-empty-button'))
+    fireEvent.click(await screen.findByTestId('trash-empty-confirm'))
+
+    const { default: i18n } = await import('./i18n')
+    expect(await screen.findByTestId('app-notice')).toHaveTextContent(
+      i18n.t('trash.emptyFailed', { reason: '' }).trim(),
+    )
+  })
+
+  // The keys behind a panel were already off, but the menu bar still reached the list: Convert
+  // all from the menu while Originals or a review is open ran a batch under it, two writers on
+  // the same files and libraries. The menu now waits for the panel like the keyboard does.
+  it('runs no track command from the menu bar while the panel is open', async () => {
+    const processTrack = vi.fn(async () => ({ outputPath: '/out/x.aiff', inPlace: false }))
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3']),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+      trashList: vi.fn().mockResolvedValue([]),
+      processTrack,
+    })
+    await renderApp()
+    await addTwoTracks()
+    act(() => menuListener?.('backups'))
+    await screen.findByTestId('trash-panel')
+
+    runMenu('process-all')
+    await act(async () => {})
+    expect(processTrack).not.toHaveBeenCalled()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    runMenu('process-all')
+    await waitFor(() => expect(processTrack).toHaveBeenCalled())
+  })
   // Deleting a backup for good that fails (the file is locked, the disk went away) used to
   // close the confirm and do nothing, so the user believed the copy was gone.
   it('says so when deleting one backup for good fails', async () => {

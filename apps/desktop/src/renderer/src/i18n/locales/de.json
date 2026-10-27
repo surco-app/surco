@@ -208,6 +208,7 @@
     "restored": "„{{name}}“ in seinem Ordner wiederhergestellt",
     "restoreFailed": "„{{name}}“ konnte nicht wiederhergestellt werden: {{reason}}",
     "removeFailed": "„{{name}}“ konnte nicht gelöscht werden. {{reason}}",
+    "emptyFailed": "Einige Kopien konnten nicht gelöscht werden und sind noch in Sicherungskopien. {{reason}}",
     "filters": {
       "all": "Alle",
       "replaced": "Ersetzt",
@@ -1697,7 +1698,7 @@
     "replace": "Ersetzen durch",
     "caseSensitive": "Groß-/Kleinschreibung beachten",
     "regex": "Regex",
-    "hint": "Tipp etwas ein, um in den Tags aller Tracks zu suchen.",
+    "hint": "Tipp etwas ein, um in ihren Tags zu suchen.",
     "invalidRegex": "Ungültiger regulärer Ausdruck",
     "noMatches": "Keine Treffer in irgendeinem Track.",
     "summary": "{{fields}} in {{tracks}}",

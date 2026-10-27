@@ -208,6 +208,7 @@
     "restored": "“{{name}}” restaurado na sua pasta",
     "restoreFailed": "Não foi possível restaurar “{{name}}”: {{reason}}",
     "removeFailed": "Não foi possível apagar “{{name}}”. {{reason}}",
+    "emptyFailed": "Algumas cópias não puderam ser apagadas e continuam em Cópias de segurança. {{reason}}",
     "filters": {
       "all": "Tudo",
       "replaced": "Substituídos",
@@ -1697,7 +1698,7 @@
     "replace": "Substituir por",
     "caseSensitive": "Diferenciar maiúsculas",
     "regex": "Regex",
-    "hint": "Digite algo para buscar nas tags de todas as faixas.",
+    "hint": "Digite algo para buscar nas tags delas.",
     "invalidRegex": "Expressão regular inválida",
     "noMatches": "Nenhuma correspondência em faixa alguma.",
     "summary": "{{fields}} em {{tracks}}",

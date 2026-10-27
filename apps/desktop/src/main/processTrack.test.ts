@@ -921,6 +921,20 @@ describe('runProcessTrack — in-place rewrite', () => {
     warn.mockRestore()
   })
 
+  // Updating a file in place under its own name must land on that name. "Aux" is a device
+  // name to Windows, but a file already called Aux.aiff lives on this disk: renaming it to
+  // Aux_.aiff moved the original to the backups and broke every library path to it.
+  it('keeps the file on its own name when an in-place update asks for that name', async () => {
+    const deps = makeDeps({
+      settings: settings({ overwriteOriginal: true }),
+      isSameFile: vi.fn(async (a: string, b: string) => a === b),
+    })
+    await runProcessTrack(job({ inputPath: '/in/Aux.aiff', outputName: 'Aux' }), deps)
+
+    expect(vi.mocked(deps.convertAudio).mock.calls[0][1]).toBe('/in/Aux.aiff')
+    expect(deps.removeRenamedOriginal).toHaveBeenCalledWith('/in/Aux.aiff', '/in/Aux.aiff')
+  })
+
   it('rewrites the source, removes the renamed original and never prompts when the renamed target is free', async () => {
     const deps = makeDeps({
       settings: settings({ overwriteOriginal: true }),

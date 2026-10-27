@@ -38,22 +38,28 @@ function capBytes(segment: string): string {
   return out
 }
 
-export function sanitizeOutputName(name: string): string {
+const baseRules = (segment: string): string =>
+  segment
+    .replace(/[\\:*?"<>|]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+// `current` is the name the file has now, without its extension. Asked for again (an
+// update that keeps the name), it is a name already on this disk, so only the base rules
+// apply: the Windows ones renamed "Aux.wav" to "Aux_.wav" or cut a long name short, and
+// the original went to the backups with every library path still pointing at it.
+export function sanitizeOutputName(name: string, current?: string): string {
   const segments = name.split('/')
+  const unchanged = current !== undefined && name.normalize('NFC') === current.normalize('NFC')
   return segments
     .map((segment, i) =>
-      capBytes(
-        [
-          ...segment
-            .replace(/[\\:*?"<>|]/g, '-')
-            .replace(/\s+/g, ' ')
-            .trim(),
-        ]
-          .map((ch) => (ch.charCodeAt(0) < 0x20 ? '-' : ch))
-          .join(''),
-      )
-        .replace(i === segments.length - 1 ? / +$/ : /[. ]+$/, '')
-        .replace(WINDOWS_DEVICE, '$1_'),
+      unchanged
+        ? baseRules(segment)
+        : capBytes(
+            [...baseRules(segment)].map((ch) => (ch.charCodeAt(0) < 0x20 ? '-' : ch)).join(''),
+          )
+            .replace(i === segments.length - 1 ? / +$/ : /[. ]+$/, '')
+            .replace(WINDOWS_DEVICE, '$1_'),
     )
     .filter((segment) => segment && segment !== '.' && segment !== '..')
     .join('/')

@@ -45,7 +45,15 @@ const DAY_MS = 24 * 60 * 60 * 1000
 // unlink then, which costs a read of the file but keeps the promise. The copy goes to a
 // hidden sibling first and is renamed into place, so a share that drops mid-copy leaves
 // no truncated file under the real name.
-async function move(from: string, to: string): Promise<void> {
+// `stuckSource` says what a source that will not go after the copy means. Into the trash,
+// the move did not happen: the copy is dropped and the original stays where it was. Out of
+// it (a restore), the copy IS the user's file back in place: it stays, and the stored copy,
+// no longer listed, is left to the sweep of unnamed files.
+async function move(
+  from: string,
+  to: string,
+  stuckSource: 'undo' | 'leave' = 'undo',
+): Promise<void> {
   try {
     await rename(from, to)
   } catch (err) {
@@ -61,6 +69,7 @@ async function move(from: string, to: string): Promise<void> {
     // A source that will not go (a Windows lock) means the move did not happen: drop the
     // copy, or it stays behind under a name no manifest entry points at.
     await unlink(from).catch(async (unlinkErr) => {
+      if (stuckSource === 'leave') return
       await unlink(to).catch(() => {})
       throw unlinkErr
     })
@@ -223,7 +232,7 @@ export function createSurcoTrash(
       await mkdir(dirname(entry.originalPath), { recursive: true })
       const occupant = await stat(entry.originalPath).catch(() => null)
       const displaced = occupant ? await keep(entry.originalPath, 'restored-over') : null
-      await move(entry.storedPath, entry.originalPath)
+      await move(entry.storedPath, entry.originalPath, 'leave')
       write(read().filter((e) => e.id !== id))
       return { restoredTo: entry.originalPath, displaced }
     },
@@ -233,11 +242,22 @@ export function createSurcoTrash(
       await discard(entry)
       write(read().filter((e) => e.id !== id))
     },
+    // Each copy is settled on its own: one held open must not leave the ones already deleted
+    // listed, pointing at files that are gone. The first failure is reported once the list
+    // says what is really left.
     empty: async () => {
-      const entries = read()
-      for (const entry of entries) await discard(entry)
-      const gone = new Set(entries.map((e) => e.id))
+      const gone = new Set<string>()
+      let failure: unknown = null
+      for (const entry of read()) {
+        try {
+          await discard(entry)
+          gone.add(entry.id)
+        } catch (err) {
+          failure ??= err
+        }
+      }
       write(read().filter((e) => !gone.has(e.id)))
+      if (failure) throw failure
     },
     sweep: async (now = Date.now()) => {
       const dropped = await prune(now, limits().maxBytes)

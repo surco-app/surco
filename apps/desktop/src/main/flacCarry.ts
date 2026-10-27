@@ -69,7 +69,10 @@ function header(blocks: { type: number; body: Buffer }[]): Buffer {
 
 export async function carryFlacBlocks(source: string, dest: string): Promise<void> {
   const src = await open(source, 'r')
-  const out = await open(dest, 'r+')
+  const out = await open(dest, 'r+').catch(async (err) => {
+    await src.close()
+    throw err
+  })
   try {
     const [from, have] = await Promise.all([metadataBlocks(src), metadataBlocks(out)])
     if (!from || !have) return
@@ -77,7 +80,9 @@ export async function carryFlacBlocks(source: string, dest: string): Promise<voi
     for (const block of have.blocks)
       if (block.type !== PADDING) kept.push({ type: block.type, body: await bodyOf(out, block) })
     // An application block is identified by its four-byte id, so one the update already
-    // wrote is not written twice.
+    // wrote is not written twice. Only the output's ids count: a run of blocks sharing one
+    // id in the source (flac --keep-foreign-metadata's "riff" header) is carried whole. A
+    // FLAC holds at most one cue sheet, so only the first is taken.
     const ids = new Set(
       kept.map((b) =>
         b.type === APPLICATION ? `2/${b.body.toString('latin1', 0, 4)}` : `${b.type}`,
@@ -89,7 +94,7 @@ export async function carryFlacBlocks(source: string, dest: string): Promise<voi
       const body = await bodyOf(src, block)
       const id = block.type === APPLICATION ? `2/${body.toString('latin1', 0, 4)}` : `${block.type}`
       if (ids.has(id)) continue
-      ids.add(id)
+      if (block.type === CUESHEET) ids.add(id)
       carried.push({ type: block.type, body })
     }
     if (carried.length === 0) return

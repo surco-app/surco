@@ -183,6 +183,23 @@ describe('restoring', () => {
     expect(readdirSync(music)).toEqual(['Track.aiff'])
   })
 
+  // The copy back landed, but the stored copy would not go (an antivirus holding it on
+  // Windows). Undoing the move then deleted the file just restored, leaving the library
+  // path empty after its occupant had already gone to the backups. The restored file stays;
+  // the stored copy, no longer listed, is cleared by the sweep of unnamed files.
+  it('keeps the restored file when the stored copy cannot be removed', async () => {
+    const original = song('Track.aiff')
+    const entry = await trash.stash(original, 'deleted')
+    volumes.apart = true
+    volumes.held = entry?.storedPath as string
+
+    const result = await trash.restore(entry?.id as string)
+
+    expect(result.restoredTo).toBe(original)
+    expect(readFileSync(original).length).toBe(100)
+    expect(await trash.list()).toEqual([])
+  })
+
   it('rejects an id it does not know', async () => {
     await expect(trash.restore('nope')).rejects.toThrow()
   })
@@ -201,6 +218,21 @@ describe('removing and emptying', () => {
     await trash.stash(song('B.wav'), 'deleted')
     await trash.empty()
     expect(await trash.list()).toEqual([])
+  })
+
+  // One copy that cannot be deleted (a file still held open on Windows) stopped the loop
+  // before the list was written: the copies already deleted stayed listed, pointing at files
+  // that were gone, and Restore on them failed. Each copy is settled on its own, the list
+  // keeps exactly the ones still on disk, and the failure is still reported.
+  it('lists only the copies it could not delete when one of them is held open', async () => {
+    const a = await trash.stash(song('A.wav'), 'deleted')
+    const b = await trash.stash(song('B.wav'), 'deleted')
+    volumes.held = a?.storedPath as string
+
+    await expect(trash.empty()).rejects.toThrow('EBUSY')
+
+    expect((await trash.list()).map((e) => e.id)).toEqual([a?.id])
+    expect(existsSync(b?.storedPath as string)).toBe(false)
   })
 })
 

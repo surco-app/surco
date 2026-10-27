@@ -208,6 +208,7 @@
     "restored": "Restored “{{name}}” to its folder",
     "restoreFailed": "Could not restore “{{name}}”: {{reason}}",
     "removeFailed": "Could not delete “{{name}}”. {{reason}}",
+    "emptyFailed": "Some copies could not be deleted and are still in Backups. {{reason}}",
     "filters": {
       "all": "All",
       "replaced": "Replaced",
@@ -1697,7 +1698,7 @@
     "replace": "Replace with",
     "caseSensitive": "Match case",
     "regex": "Regex",
-    "hint": "Type something to find across all tracks’ tags.",
+    "hint": "Type something to find in their tags.",
     "invalidRegex": "Invalid regular expression",
     "noMatches": "No matches in any track.",
     "summary": "{{fields}} in {{tracks}}",

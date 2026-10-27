@@ -59,6 +59,17 @@ describe('sanitizeOutputName', () => {
     expect(sanitizeOutputName('Dr. Dre/Still D.R.E.')).toBe('Dr. Dre/Still D.R.E.')
   })
 
+  // An update that keeps the file's name asks for the name it already has: that name is
+  // on disk, so it is not one to fix. Applied anyway, the rules renamed it ("Aux.wav" to
+  // "Aux_.wav", a long Japanese name cut short) and moved the original to the backups,
+  // breaking the path every DJ library and playlist held for it.
+  it('leaves the name a file already has alone', () => {
+    const japanese = 'ガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポ'.repeat(3)
+    expect(sanitizeOutputName('Aux', 'Aux')).toBe('Aux')
+    expect(sanitizeOutputName(japanese, japanese.normalize('NFD'))).toBe(japanese)
+    expect(sanitizeOutputName('Aux', 'Song')).toBe('Aux_')
+  })
+
   // CON, NUL, COM1… name devices on Windows, with or without an extension: a track
   // titled "Con" cannot be written there at all, and "nul.aiff" is swallowed.
   it('steps around the device names Windows reserves, in any case', () => {

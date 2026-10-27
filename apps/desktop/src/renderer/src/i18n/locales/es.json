@@ -208,6 +208,7 @@
     "restored": "Restaurado «{{name}}» en su carpeta",
     "restoreFailed": "No se pudo restaurar «{{name}}»: {{reason}}",
     "removeFailed": "No se pudo eliminar «{{name}}». {{reason}}",
+    "emptyFailed": "Algunas copias no se pudieron eliminar y siguen en Copias de seguridad. {{reason}}",
     "filters": {
       "all": "Todo",
       "replaced": "Sustituidos",
@@ -1697,7 +1698,7 @@
     "replace": "Reemplazar por",
     "caseSensitive": "Distinguir mayúsculas",
     "regex": "Regex",
-    "hint": "Escribe algo para buscar en los tags de todas las pistas.",
+    "hint": "Escribe algo para buscar en sus tags.",
     "invalidRegex": "Expresión regular no válida",
     "noMatches": "Sin coincidencias en ninguna pista.",
     "summary": "{{fields}} en {{tracks}}",
