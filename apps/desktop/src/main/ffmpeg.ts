@@ -2295,8 +2295,7 @@ export async function convertAudio(
     if (await isSameFile(input, output))
       archived = await keepOriginal(input, 'replaced', output, {
         reencodes:
-          codec !== 'copy' ||
-          (extname(output).toLowerCase() === '.wav' && dropsForeignCues(input)),
+          codec !== 'copy' || (extname(output).toLowerCase() === '.wav' && dropsForeignCues(input)),
       })
     // A different file already at the destination ("Overwrite" in the conflict prompt) is
     // not this source's audio in any form, so nothing re-run could bring it back: kept

@@ -61,7 +61,9 @@ async function makeDb(): Promise<string> {
     rb_local_usn BIGINT,
     updated_at DATETIME
   )`)
-  db.exec(`CREATE TABLE agentRegistry (registry_id VARCHAR(255), int_1 BIGINT, updated_at DATETIME)`)
+  db.exec(
+    `CREATE TABLE agentRegistry (registry_id VARCHAR(255), int_1 BIGINT, updated_at DATETIME)`,
+  )
   db.prepare(`INSERT INTO agentRegistry VALUES ('localUpdateCount', 10, NULL)`).run()
   db.exec(`CREATE TABLE djmdSongPlaylist (
     ID VARCHAR(255) PRIMARY KEY, PlaylistID VARCHAR(255), ContentID VARCHAR(255)
