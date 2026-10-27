@@ -194,6 +194,7 @@
     },
     "restore": "Wiederherstellen",
     "remove": "Endgültig löschen",
+    "removeConfirm": "Endgültig löschen?",
     "empty": "Alle löschen",
     "emptyConfirm_one": "{{count}} Datei endgültig löschen?",
     "emptyConfirm_other": "{{count}} Dateien endgültig löschen?",

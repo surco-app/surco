@@ -74,6 +74,7 @@ export function TrashPanel({
   const { t: tr, i18n } = useTranslation()
   const lng = i18n.language
   const [confirmEmpty, setConfirmEmpty] = useState(false)
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
   const [filter, setFilter] = useState<TrashFilter>('all')
   const [query, setQuery] = useState(initialQuery)
   const total = entries.reduce((sum, e) => sum + e.bytes, 0)
@@ -264,15 +265,31 @@ export function TrashPanel({
                       <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                       {tr('trash.restore')}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => onRemove(entry)}
-                      data-testid="trash-remove"
-                      aria-label={tr('trash.remove')}
-                      className="press flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-faint hover:bg-[var(--color-hover)] hover:text-danger"
-                    >
-                      <X className="h-4 w-4" aria-hidden="true" />
-                    </button>
+                    {confirmRemove === entry.id ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          // Same guard as Delete all: the confirm takes the X's place.
+                          if (e.detail > 1) return
+                          setConfirmRemove(null)
+                          onRemove(entry)
+                        }}
+                        data-testid="trash-remove-confirm"
+                        className="press shrink-0 rounded-lg bg-danger px-2.5 py-1.5 text-xs font-medium text-[var(--color-on-accent)]"
+                      >
+                        {tr('trash.removeConfirm')}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmRemove(entry.id)}
+                        data-testid="trash-remove"
+                        aria-label={tr('trash.remove')}
+                        className="press flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-faint hover:bg-[var(--color-hover)] hover:text-danger"
+                      >
+                        <X className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    )}
                   </li>
                 )
               })}

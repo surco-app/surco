@@ -194,6 +194,7 @@
     },
     "restore": "Restaurar",
     "remove": "Eliminar definitivamente",
+    "removeConfirm": "¿Eliminar para siempre?",
     "empty": "Eliminar todos",
     "emptyConfirm_one": "¿Eliminar {{count}} archivo para siempre?",
     "emptyConfirm_other": "¿Eliminar {{count}} archivos para siempre?",

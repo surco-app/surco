@@ -181,10 +181,28 @@ describe('TrashPanel', () => {
     expect(screen.getByTestId('trash-empty-confirm')).toBeInTheDocument()
   })
 
-  it('removes one entry and reveals the folder', () => {
-    const props = renderPanel([entry()])
-    fireEvent.click(screen.getByTestId('trash-remove'))
+  // Deleting one backup is as irreversible as emptying them all, and the X sits right
+  // beside Restore, so a stray click must not destroy the only copy of an original.
+  it('removes one entry only after an inline confirmation on that row', () => {
+    const props = renderPanel([entry(), entry({ id: 'e2', name: 'Other.aiff' })])
+    fireEvent.click(screen.getAllByTestId('trash-remove')[0])
+    expect(props.onRemove).not.toHaveBeenCalled()
+    expect(screen.getAllByTestId('trash-remove-confirm')).toHaveLength(1)
+    fireEvent.click(screen.getByTestId('trash-remove-confirm'))
+    expect(props.onRemove).toHaveBeenCalledTimes(1)
     expect(props.onRemove).toHaveBeenCalledWith(expect.objectContaining({ id: 'e1' }))
+  })
+
+  // The confirm takes the X's place, so a double-click on the X must not fire it.
+  it('does not remove an entry on the second click of a double-click', () => {
+    const props = renderPanel([entry()])
+    fireEvent.click(screen.getByTestId('trash-remove'), { detail: 1 })
+    fireEvent.click(screen.getByTestId('trash-remove-confirm'), { detail: 2 })
+    expect(props.onRemove).not.toHaveBeenCalled()
+  })
+
+  it('reveals the folder', () => {
+    const props = renderPanel([entry()])
     fireEvent.click(screen.getByTestId('trash-reveal'))
     expect(props.onReveal).toHaveBeenCalledTimes(1)
   })

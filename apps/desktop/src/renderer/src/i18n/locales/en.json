@@ -194,6 +194,7 @@
     },
     "restore": "Restore",
     "remove": "Delete permanently",
+    "removeConfirm": "Delete for good?",
     "empty": "Delete all",
     "emptyConfirm_one": "Delete {{count}} file for good?",
     "emptyConfirm_other": "Delete {{count}} files for good?",
