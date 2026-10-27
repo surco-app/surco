@@ -7,12 +7,14 @@ import { uniqueOutputPath } from './inplace'
 // holder is usually not the user's doing: an antivirus scanning the file Surco just
 // wrote, the search indexer, a player with the track loaded. The block lasts as long
 // as that scan, so the codes below mean "try again in a moment", not "this will never
-// work". POSIX renames over an open file happily, so this never triggers there.
+// work". POSIX renames over an open file happily, so there EPERM and EACCES mean a
+// locked file or a read-only share that no wait will free, and only EBUSY is retried.
 const IN_USE_CODES = new Set(['EPERM', 'EBUSY', 'EACCES'])
 
 export function isFileInUseError(err: unknown): boolean {
   const code = (err as NodeJS.ErrnoException | null)?.code
-  return typeof code === 'string' && IN_USE_CODES.has(code)
+  if (typeof code !== 'string') return false
+  return process.platform === 'win32' ? IN_USE_CODES.has(code) : code === 'EBUSY'
 }
 
 // Doubling waits rather than a busy loop: the holder is doing work (a virus scan on a
