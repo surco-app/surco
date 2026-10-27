@@ -83,6 +83,21 @@ describe('flushConversionBatch with rekordbox open', () => {
   })
 })
 
+describe('flushConversionBatch with master.db on an unplugged drive', () => {
+  it('queues the repoints for when the drive is back instead of letting them go', async () => {
+    Object.assign(SETTINGS, { rekordboxDbPath: '/Volumes/Surco Desconectado/master.db' })
+    STATUS.rekordbox = { enabled: true, found: false }
+    try {
+      const queue = { enqueue: vi.fn(), applyQuietly: vi.fn() }
+      await flushConversionBatch(host(), sessions, queue)
+      expect(queue.enqueue).toHaveBeenCalledWith([], REPOINTS)
+    } finally {
+      Object.assign(SETTINGS, { rekordboxDbPath: '/c/master.db' })
+      STATUS.rekordbox = { enabled: true, found: true }
+    }
+  })
+})
+
 // Engine DJ abierto al acabar una conversión en su sitio: el aviso pedía volver a convertir,
 // y el MP3 ya no existe. La biblioteca se queda en la cola y apunta al FLAC al cerrar Engine.
 describe('flushConversionBatch with Engine DJ open', () => {
@@ -105,6 +120,26 @@ describe('flushConversionBatch with Engine DJ open', () => {
     } finally {
       Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
       STATUS.engine = { enabled: false, found: false }
+    }
+  })
+
+  it('queues the repoints while the Engine library is on an unplugged drive', async () => {
+    Object.assign(SETTINGS, {
+      syncEngineDj: true,
+      engineLibraryDir: '/Volumes/Surco Desconectado/Engine Library',
+    })
+    try {
+      const engine = { enqueue: vi.fn(), applyQuietly: vi.fn() }
+      await flushConversionBatch(
+        host(),
+        sessions,
+        { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        undefined,
+        engine,
+      )
+      expect(engine.enqueue).toHaveBeenCalledWith([], REPOINTS)
+    } finally {
+      Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
     }
   })
 

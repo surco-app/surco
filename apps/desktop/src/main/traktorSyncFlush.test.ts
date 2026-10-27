@@ -190,6 +190,22 @@ describe('flushTraktorSync', () => {
       expect(q.hold).not.toHaveBeenCalled()
     })
 
+    // collection.nml en un disco desconectado: al volver, las pistas convertidas en su sitio
+    // aparecían perdidas en Traktor porque sus patches se habían tirado.
+    it('keeps them while collection.nml is on a drive that is unplugged', async () => {
+      const q = queue()
+      await flushTraktorSync(
+        makeDeps({ queue: q, traktorNmlPath: '', collectionMissing: true, unplugged: true }),
+      )
+      expect(q.hold).toHaveBeenCalledWith([patch()], expect.any(String))
+    })
+
+    it('lets them go when collection.nml is gone from a drive that is there', async () => {
+      const q = queue()
+      await flushTraktorSync(makeDeps({ queue: q, traktorNmlPath: '', collectionMissing: true }))
+      expect(q.hold).not.toHaveBeenCalled()
+    })
+
     it('keeps nothing once they are written', async () => {
       const q = queue()
       await flushTraktorSync(makeDeps({ queue: q }))

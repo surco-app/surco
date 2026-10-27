@@ -49,6 +49,9 @@ export interface QueuedRepoint {
 export interface QueueDeps<R extends QueuedRepoint = RekordboxRepoint> {
   store: QueueStore
   collection: () => string
+  // The collection the settings name, read when it is not there now: what waits for an
+  // unplugged drive belongs to the collection on it, and to no other mounted meanwhile.
+  configured?: () => string
   applyBatch: (
     collectionPath: string,
     ops: QueueOp[],
@@ -292,7 +295,7 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
 
   return {
     enqueue(ops, repoints = []) {
-      const here = deps.collection()
+      const here = deps.collection() || deps.configured?.() || ''
       if (q.repoints.length === 0 && q.ops.length === 0) q.collection = here || undefined
       else if (q.collection && q.collection !== here) {
         if (ops.length > 0 || repoints.length > 0)

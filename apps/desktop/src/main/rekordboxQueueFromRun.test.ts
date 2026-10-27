@@ -167,6 +167,36 @@ describe('queueConversionRun', () => {
     expect(d.enqueue).toHaveBeenCalledWith([], [repoint])
   })
 
+  // master.db en un disco desconectado: sin cola, las pistas convertidas en su sitio salían
+  // perdidas en rekordbox al volver a montarlo.
+  it('queues the repoints while the collection is on an unplugged drive', async () => {
+    const d = deps({
+      collectionPath: '',
+      unplugged: true,
+      flushRepoints: vi.fn<RunQueueDeps['flushRepoints']>(async () => ({
+        written: 0,
+        skipped: [],
+        blocked: 'collection-missing',
+      })),
+    })
+    await queueConversionRun([repoint], d)
+    expect(d.enqueue).toHaveBeenCalledWith([], [repoint])
+    expect(d.apply).toHaveBeenCalled()
+  })
+
+  it('lets the repoints go when the collection is gone from a drive that is there', async () => {
+    const d = deps({
+      collectionPath: '',
+      flushRepoints: vi.fn<RunQueueDeps['flushRepoints']>(async () => ({
+        written: 0,
+        skipped: [],
+        blocked: 'collection-missing',
+      })),
+    })
+    await queueConversionRun([repoint], d)
+    expect(d.enqueue).not.toHaveBeenCalled()
+  })
+
   it('queues the run playlists whatever the repoint did', async () => {
     const op = {
       id: 'x',

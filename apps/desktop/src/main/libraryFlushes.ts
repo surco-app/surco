@@ -32,6 +32,7 @@ import { readEmbeddedCover } from './tags'
 import { replaceDuplicatesInCollection, syncCollection } from './traktorNmlLibrary'
 import { holdInQueue } from './traktorPatchQueue'
 import { flushTraktorSync } from './traktorSyncFlush'
+import { sourceRoot } from './usbExport'
 
 export type SyncBlockedKey = 'traktorSyncBlocked' | 'rekordboxSyncBlocked' | 'engineSyncBlocked'
 
@@ -49,6 +50,13 @@ export interface LibraryHost {
 
 type SessionBackup = ReturnType<typeof createSessionBackup>
 export type Sessions = { rekordbox: SessionBackup; engine: SessionBackup }
+
+// A collection can live on an external drive. Gone because that drive is not mounted, it
+// comes back when the drive does, unlike one deleted from a disk that is there.
+function onUnpluggedDrive(path: string): boolean {
+  const root = path ? sourceRoot(path, process.platform) : null
+  return root !== null && !existsSync(root)
+}
 
 export function currentLibraryStatus(): LibraryStatus {
   return libraryStatus(getSettings(), existsSync)
@@ -85,6 +93,7 @@ export function traktorFlushDeps(host: LibraryHost) {
         ? getSettings().traktorNmlPath
         : '',
     collectionMissing: getSettings().syncTraktor && !currentLibraryStatus().traktor.found,
+    unplugged: onUnpluggedDrive(getSettings().traktorNmlPath),
     ensureTraktorClosed: host.ensureTraktorClosed,
     showBlockedDialog: () => host.showBlockedDialog('traktorSyncBlocked'),
     syncCollection,
@@ -167,6 +176,7 @@ export async function flushConversionBatch(
   await queueConversionRun(repoints, {
     collectionPath,
     held: rekordbox.held,
+    unplugged: onUnpluggedDrive(getSettings().rekordboxDbPath),
     flushRepoints: async (list) => {
       const result = await flushRekordboxSync({
         ...rekordbox,
@@ -197,7 +207,10 @@ export async function flushConversionBatch(
     repointTracks: (libraryDir, list) => repointEngine(libraryDir, list, sessions),
   })
   logLibraryFlush('Engine DJ repoint', engineResult)
-  if (engineQueue && engineResult.blocked === ENGINE_KEYS.runningReason) {
+  const unplugged =
+    engineResult.blocked === 'collection-missing' &&
+    onUnpluggedDrive(getSettings().engineLibraryDir)
+  if (engineQueue && (engineResult.blocked === ENGINE_KEYS.runningReason || unplugged)) {
     engineQueue.enqueue([], engineRepoints)
     engineQueue.applyQuietly()
   }

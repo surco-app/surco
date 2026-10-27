@@ -255,6 +255,22 @@ describe('rekordbox queue', () => {
     expect(log.warn).toHaveBeenCalledWith(expect.stringMatching(/cues-slot-dropped.*Maniac/))
   })
 
+  // La colección vive en un disco desconectado. Lo que espera se ata a ella y se aplica al
+  // volver el disco, no en otra colección que el DJ tenga montada mientras tanto.
+  it('binds what waits for an unplugged collection to it, so it lands there when the drive is back', async () => {
+    let at = ''
+    const d = deps({ collection: () => at, configured: () => '/Volumes/Disco/master.db' })
+    const q = createRekordboxQueue(d)
+    expect(q.enqueue([], [{ from: '/m/b.mp3', to: '/m/b.flac' }])).toBe(true)
+    at = '/Volumes/Otro/master.db'
+    expect(await q.apply(closed)).toEqual({ status: 'refused', reason: 'other-collection' })
+    at = '/Volumes/Disco/master.db'
+    expect(await q.apply(closed)).toMatchObject({ status: 'applied' })
+    expect(d.repoint).toHaveBeenCalledWith('/Volumes/Disco/master.db', [
+      { from: '/m/b.mp3', to: '/m/b.flac' },
+    ])
+  })
+
   it('does not call a queue held while no collection is found one for another collection', () => {
     let at = '/real/master.db'
     const q = createRekordboxQueue(deps({ collection: () => at }))
