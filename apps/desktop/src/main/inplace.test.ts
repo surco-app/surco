@@ -43,6 +43,42 @@ describe('sanitizeOutputName', () => {
   it('strips a bare "." segment too, same as an empty one', () => {
     expect(sanitizeOutputName('./Artist/./Title')).toBe('Artist/Title')
   })
+
+  // Libraries live on NAS shares that Windows and macOS machines both open, so a name
+  // has to be one Windows can hold whichever system wrote it. Windows silently drops a
+  // trailing dot or space, so "Vol." written from a Mac shows up mangled there, and the
+  // rename into "Vol." on Windows lands on "Vol" instead, a different file.
+  it('drops trailing dots and spaces from every segment', () => {
+    expect(sanitizeOutputName('Mr. Oizo./Vol. 2 ./Flat Beat..')).toBe('Mr. Oizo/Vol. 2/Flat Beat')
+  })
+
+  // CON, NUL, COM1… name devices on Windows, with or without an extension: a track
+  // titled "Con" cannot be written there at all, and "nul.aiff" is swallowed.
+  it('steps around the device names Windows reserves, in any case', () => {
+    expect(sanitizeOutputName('Con')).toBe('Con_')
+    expect(sanitizeOutputName('AUX/nul.remix')).toBe('AUX_/nul_.remix')
+    expect(sanitizeOutputName('com1/LPT9')).toBe('com1_/LPT9_')
+    expect(sanitizeOutputName('Console/Nullset/COM10')).toBe('Console/Nullset/COM10')
+  })
+
+  // Control characters are illegal in Windows names and invisible everywhere else; a
+  // pasted tag can carry them. Whitespace ones still read as a space.
+  it('replaces control characters', () => {
+    expect(sanitizeOutputName(`A${String.fromCharCode(0)}B${String.fromCharCode(31)}C\tD`)).toBe(
+      'A-B-C D',
+    )
+  })
+
+  // 255 bytes is the most a name can hold, and the temp the conversion writes first is
+  // the name plus a dot, ".tmp-xxxxxxxx" and the extension. Measured decomposed, since
+  // macOS spells accents that way on disk and each one then takes a byte more.
+  it('caps a segment so its temp name still fits in 255 bytes', () => {
+    const long = sanitizeOutputName(`${'é'.repeat(200)}/${'a'.repeat(300)}`)
+    const [dir, file] = long.split('/')
+    expect(Buffer.byteLength(dir.normalize('NFD'))).toBeLessThanOrEqual(230)
+    expect(Buffer.byteLength(file)).toBeLessThanOrEqual(230)
+    expect(Buffer.byteLength(`.${file}.tmp-a1b2c3d4.aiff`)).toBeLessThanOrEqual(255)
+  })
 })
 
 describe('resolveOutputTarget', () => {
