@@ -1698,7 +1698,7 @@
     "replace": "Remplacer par",
     "caseSensitive": "Respecter la casse",
     "regex": "Regex",
-    "hint": "Tape quelque chose à chercher dans les tags de tous les morceaux.",
+    "hint": "Tape quelque chose à chercher dans leurs tags.",
     "invalidRegex": "Expression régulière invalide",
     "noMatches": "Aucune correspondance dans aucun morceau.",
     "summary": "{{fields}} dans {{tracks}}",

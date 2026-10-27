@@ -1698,7 +1698,7 @@
     "replace": "Reemplazar por",
     "caseSensitive": "Distinguir mayúsculas",
     "regex": "Regex",
-    "hint": "Escribe algo para buscar en los tags de todas las pistas.",
+    "hint": "Escribe algo para buscar en sus tags.",
     "invalidRegex": "Expresión regular no válida",
     "noMatches": "Sin coincidencias en ninguna pista.",
     "summary": "{{fields}} en {{tracks}}",
