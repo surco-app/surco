@@ -1,5 +1,24 @@
 [
   {
+    "version": "1.13",
+    "date": "October 27, 2026",
+    "title": "One flow for all your programs",
+    "items": [
+      {
+        "text": "Mark a drop once and, when you save, the flow reaches the same track in rekordbox, Traktor and Engine DJ too. Each program places it on its own grid and keeps the cues it already has there, and the editor tells you before saving what each one will get. If that track has unsaved changes in another program, Surco leaves them alone. Choose which programs it reaches in Settings, Cues.",
+        "in": "1.13.0"
+      },
+      {
+        "text": "The backups of your rekordbox, Engine DJ and Traktor collections now live in Surco's own folder instead of next to each collection. Open them from Settings, General, Collection backups.",
+        "in": "1.13.0"
+      },
+      {
+        "text": "If Traktor is using a different collection from the one Surco writes to, Surco warns you and lets you switch to Traktor's in one click, so what you save really reaches Traktor.",
+        "in": "1.13.0"
+      }
+    ]
+  },
+  {
     "version": "1.12",
     "date": "October 27, 2026",
     "title": "Traktor, like rekordbox",

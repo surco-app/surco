@@ -1,5 +1,24 @@
 [
   {
+    "version": "1.13",
+    "date": "27 de octubre de 2026",
+    "title": "Un flujo para todos tus programas",
+    "items": [
+      {
+        "text": "Marcas un drop una vez y, al guardar, el flujo llega también a la misma pista en rekordbox, Traktor y Engine DJ. Cada programa lo pone con su propia rejilla y respeta las cues que ya tiene allí, y el editor te dice antes de guardar qué recibirá cada uno. Si esa pista tiene cambios sin guardar en otro programa, Surco no los toca. Eliges a qué programas llega en Ajustes, Cues.",
+        "in": "1.13.0"
+      },
+      {
+        "text": "Las copias de seguridad de tus colecciones de rekordbox, Engine DJ y Traktor se guardan en la carpeta de Surco en lugar de junto a cada colección. Las tienes a mano en Ajustes, General, Copias de las colecciones.",
+        "in": "1.13.0"
+      },
+      {
+        "text": "Si Traktor está usando otra colección distinta de la que Surco escribe, Surco te avisa y te deja cambiar a la de Traktor con un clic, para que lo que guardes llegue de verdad a Traktor.",
+        "in": "1.13.0"
+      }
+    ]
+  },
+  {
     "version": "1.12",
     "date": "27 de octubre de 2026",
     "title": "Traktor, como rekordbox",
