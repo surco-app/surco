@@ -1448,7 +1448,7 @@ function registerIpc(): void {
               onTmp,
               // Resolved here like the quality knobs, with the platform folded in:
               // the setting can ride a synced settings folder onto a non-Mac, where
-              // there is no Finder to show the icon.
+              // the Finder header would be pure downside.
               s.flacFinderCovers && process.platform === 'darwin',
               declick,
               trim,

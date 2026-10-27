@@ -66,7 +66,6 @@ import { isPcmOverrun, slimDecodeError } from './decodeError'
 import { fft } from './fft'
 import { measureBands } from './fftBands'
 import { carryFlacBlocks } from './flacCarry'
-import { setFinderIcon } from './flacFinderCover'
 import {
   detectFftKnee,
   detectFlatShelf,
@@ -1881,8 +1880,8 @@ export async function convertAudio(
   // the caller records it so a crash or force-quit before the rename/cleanup
   // below still leaves a trail the next launch can sweep (see tmpManifest.ts).
   onTmp?: (path: string) => void,
-  // macOS-only opt-in (Settings → Artwork): set the cover as the Finder icon of a
-  // FLAC output (see flacFinderCover.ts). The caller
+  // macOS-only opt-in (Settings → Artwork): prepend the ID3v2 header that makes
+  // Finder show the cover on a FLAC output (see flacFinderCover.ts). The caller
   // resolves the setting and the platform; this only sees the final verdict.
   finderCovers?: boolean,
   // Vinyl click repair, applied ahead of the normalize/dither stages so any gain
@@ -2242,20 +2241,25 @@ export async function convertAudio(
       if (codec === 'copy' && !clearExtras && ext === '.flac' && FLAC_INPUT.test(input))
         await carryFlacBlocks(input, tmp)
     }
-    // Set on the temp so the icon rides the same atomic landing: the rename keeps the
-    // extended attributes it lives in. Only when there's a cover to show.
+    // Last touch before the rename so the header rides the same atomic landing.
+    // Only when there's a cover to show — the header exists solely for Finder's
+    // thumbnail, so a coverless (or cover-removed) FLAC stays fully standard.
     //
     // The art can come from either side: a cover being applied now (coverPath), or one
     // the file already carried. Requiring the former meant that merely fixing tags on a
-    // FLAC that already had art left it blank in Finder — users then ran their own tools
-    // to bolt it on, which is the chore this option exists to remove. Extracted from
-    // `input`, not from the output: convertArgs maps only `0:a`, so the encode never
-    // carries a picture across unless one is being applied. Returns null on a file with
-    // no art, the same "nothing to show" case as before.
-    if (finderCovers && ext === '.flac' && !removeCover) {
+    // FLAC that already had art left it without the header and blank in Finder — users
+    // then ran their own tools to bolt it on, which is the chore this option exists to
+    // remove. Extracted from `input`, not from the output: convertArgs maps only `0:a`,
+    // so the encode never carries a picture across unless one is being applied. Returns
+    // null on a file with no art, the same "nothing to show" case as before, which
+    // leaves the FLAC standard.
+    //
+    // Never with Traktor sync on: Traktor does not recognise a FLAC that starts with ID3
+    // and drops its ENTRY from the collection the next time it saves.
+    if (finderCovers && ext === '.flac' && !removeCover && !getSettings().syncTraktor) {
       const headerCover = coverPath ?? (await extractCoverFile(input))
       if (headerCover) {
-        await setFinderIcon(tmp, headerCover)
+        await runInWorker({ type: 'prependFlacId3', file: tmp, meta, coverPath: headerCover })
         // Only the extracted copy is ours to delete; a caller-supplied coverPath is
         // owned by whoever passed it in.
         if (!coverPath) await unlink(headerCover).catch(() => {})

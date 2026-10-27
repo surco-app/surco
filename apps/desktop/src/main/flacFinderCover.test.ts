@@ -10,8 +10,9 @@ vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '', syncTra
 
 import ffmpegStatic from 'ffmpeg-static'
 import type { TrackMetadata } from '../shared/types'
-import { convertAudio } from './ffmpeg'
-import { setFinderIcon } from './flacFinderCover'
+import { convertAudio, readTags } from './ffmpeg'
+import { prependFlacId3 } from './flacFinderCover'
+import { leadingId3v2Size } from './id3Header'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-findercover-'))
@@ -35,38 +36,6 @@ const meta: TrackMetadata = {
   catalogNumber: '',
   remixArtist: '',
 }
-
-const ICON_CENTER = `ObjC.import('AppKit')
-function run(argv) {
-  const icon = $.NSWorkspace.sharedWorkspace.iconForFile(argv[0])
-  const rep = $.NSBitmapImageRep.imageRepWithData(icon.TIFFRepresentation)
-  const c = rep.colorAtXY(rep.pixelsWide / 2, rep.pixelsHigh / 2)
-  return [c.redComponent, c.greenComponent, c.blueComponent].map((v) => Math.round(v * 255)).join(',')
-}`
-
-const showsCoverInFinder = (file: string): boolean => {
-  const [r, g, b] = execFileSync('osascript', ['-l', 'JavaScript', '-e', ICON_CENTER, file])
-    .toString()
-    .trim()
-    .split(',')
-    .map(Number)
-  return r > 200 && g < 50 && b < 50
-}
-
-const convertWithFinderCovers = (input: string, out: string, coverPath?: string) =>
-  convertAudio(
-    input,
-    out,
-    'flac',
-    meta,
-    coverPath,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    true,
-  )
 
 beforeAll(() => {
   execFileSync(FF, [
@@ -95,53 +64,125 @@ beforeAll(() => {
   ])
 })
 
-// Finder never reads FLAC's own PICTURE block. Surco used to prepend an ID3 tag carrying
-// the cover, which Finder does read, but a FLAC that no longer starts with "fLaC" is one
-// Traktor rejects and drops from its collection. A custom Finder icon lives in the file's
-// extended attributes, so the cover shows without a single byte of the audio file changing.
-describe.runIf(process.platform === 'darwin')('setFinderIcon', () => {
-  it('shows the cover in Finder and leaves the FLAC byte for byte as it was', async () => {
+// macOS Finder/QuickLook never read FLAC's own PICTURE block, so a FLAC with
+// perfectly good embedded art shows a generic icon. Finder does read ID3v2, and
+// players skip a leading ID3 header on FLAC, so prepending one with the cover is
+// the one way to get thumbnails without breaking playback.
+describe('prependFlacId3', () => {
+  it('prepends an ID3v2.3 header carrying the cover, with the FLAC stream intact right after it', () => {
     const p = join(dir, 'direct.flac')
     copyFileSync(flac, p)
-    await setFinderIcon(p, cover)
-    expect(readFileSync(p).equals(readFileSync(flac))).toBe(true)
-    expect(showsCoverInFinder(p)).toBe(true)
+    prependFlacId3(p, meta, cover)
+    const buf = readFileSync(p)
+    expect(buf.toString('latin1', 0, 3)).toBe('ID3')
+    // v2.3, matching every other ID3 tag Surco writes (v2.4 trips older readers).
+    expect(buf[3]).toBe(3)
+    const skip = leadingId3v2Size(buf)
+    expect(skip).toBeGreaterThan(10)
+    expect(buf.toString('latin1', skip, skip + 4)).toBe('fLaC')
+    expect(buf.subarray(0, skip).includes('APIC')).toBe(true)
+  })
+
+  it('stays readable to ffmpeg, so import/analysis/playback still see the tags through the header', async () => {
+    const p = join(dir, 'readable.flac')
+    copyFileSync(flac, p)
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-i',
+      flac,
+      '-metadata',
+      'title=Elastic Pump',
+      '-metadata',
+      'artist=Javi Soria',
+      p,
+    ])
+    prependFlacId3(p, meta, cover)
+    const tags = await readTags(p)
+    expect(tags.title).toBe('Elastic Pump')
+    expect(tags.artist).toBe('Javi Soria')
   })
 })
 
-describe.runIf(process.platform === 'darwin')('convertAudio with Finder covers enabled', () => {
-  it('shows the cover in Finder on a FLAC that still starts with fLaC', async () => {
+describe('convertAudio with Finder covers enabled', () => {
+  it('writes the ID3 header on a FLAC output when asked', async () => {
     const out = join(dir, 'out-finder.flac')
-    await convertWithFinderCovers(flac, out, cover)
-    expect(readFileSync(out).toString('latin1', 0, 4)).toBe('fLaC')
-    expect(showsCoverInFinder(out)).toBe(true)
+    await convertAudio(
+      flac,
+      out,
+      'flac',
+      meta,
+      cover,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true,
+    )
+    const buf = readFileSync(out)
+    expect(buf.toString('latin1', 0, 3)).toBe('ID3')
+    expect(buf.toString('latin1', leadingId3v2Size(buf), leadingId3v2Size(buf) + 4)).toBe('fLaC')
   })
 
-  // The ID3 prefix had to be switched off for anyone syncing to Traktor, which is most
-  // of the DJs who asked for this option. The icon never touches the file, so there is
-  // nothing for Traktor to reject and nothing to switch off.
-  it('shows the cover in Finder while Traktor sync is on too', async () => {
+  // Traktor does not recognise a FLAC that starts with an ID3 header and drops its ENTRY
+  // the next time it writes the collection: a DJ's collection went from two entries to
+  // one, and the one gone was the prefixed FLAC. With Traktor sync on the file is known
+  // to live in that collection, so the Finder icon is never worth that loss.
+  it('leaves a standard FLAC while Traktor sync is on, even when asked', async () => {
     const out = join(dir, 'out-traktor.flac')
     syncTraktor = true
     try {
-      await convertWithFinderCovers(flac, out, cover)
+      await convertAudio(
+        flac,
+        out,
+        'flac',
+        meta,
+        cover,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        true,
+      )
     } finally {
       syncTraktor = false
     }
     expect(readFileSync(out).toString('latin1', 0, 4)).toBe('fLaC')
-    expect(showsCoverInFinder(out)).toBe(true)
   })
 
-  it('leaves the generic icon when the option is off', async () => {
+  it('leaves a standard FLAC when the option is off', async () => {
     const out = join(dir, 'out-plain.flac')
     await convertAudio(flac, out, 'flac', meta, cover)
-    expect(showsCoverInFinder(out)).toBe(false)
+    expect(readFileSync(out).toString('latin1', 0, 4)).toBe('fLaC')
   })
 
-  // Fixing tags on a FLAC that already carries art is the usual case, with no new cover
-  // applied; requiring one left those files blank in Finder and users bolting the cover
-  // on by hand afterwards, which is the chore this option exists to spare them.
-  it('shows art the file already carries, with no new cover applied', async () => {
+  it('skips the header when there is no cover to show', async () => {
+    const out = join(dir, 'out-nocover.flac')
+    await convertAudio(
+      flac,
+      out,
+      'flac',
+      meta,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true,
+    )
+    expect(readFileSync(out).toString('latin1', 0, 4)).toBe('fLaC')
+  })
+
+  // The gap this closes: the header was written only when a NEW cover was being applied,
+  // so a FLAC that already carried perfectly good art — the usual case when you are only
+  // fixing tags — came out with no header and stayed a blank icon in Finder. Users were
+  // running their own tools afterwards to bolt the header on by hand, which is precisely
+  // what this option exists to spare them.
+  it('writes the header for art the file already carries, with no new cover applied', async () => {
     const withArt = join(dir, 'has-art.flac')
     execFileSync(FF, [
       '-y',
@@ -164,30 +205,21 @@ describe.runIf(process.platform === 'darwin')('convertAudio with Finder covers e
       withArt,
     ])
     const out = join(dir, 'out-existing-art.flac')
-    await convertWithFinderCovers(withArt, out)
-    expect(showsCoverInFinder(out)).toBe(true)
-  })
-
-  // Actualizar rewrites the file in place through the same conversion, so a cover changed
-  // since the last run must replace the icon instead of leaving the old one up.
-  it('replaces the icon with the new cover when a file is updated in place', async () => {
-    const p = join(dir, 'in-place.flac')
-    copyFileSync(flac, p)
-    const blue = join(dir, 'blue.jpg')
-    execFileSync(FF, [
-      '-y',
-      '-loglevel',
-      'error',
-      '-f',
-      'lavfi',
-      '-i',
-      'color=c=blue:s=300x300:d=1',
-      '-frames:v',
-      '1',
-      blue,
-    ])
-    await setFinderIcon(p, blue)
-    await convertWithFinderCovers(p, p, cover)
-    expect(showsCoverInFinder(p)).toBe(true)
+    await convertAudio(
+      withArt,
+      out,
+      'flac',
+      meta,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true,
+    )
+    const buf = readFileSync(out)
+    expect(buf.toString('latin1', 0, 3)).toBe('ID3')
+    expect(buf.toString('latin1', leadingId3v2Size(buf), leadingId3v2Size(buf) + 4)).toBe('fLaC')
   })
 })
