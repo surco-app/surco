@@ -819,6 +819,10 @@ export type LibraryCopyInfo = Partial<
   Record<'rekordbox' | 'engine' | 'traktor', LibraryCopyPresence>
 >
 
+export type CueLibrary = 'rekordbox' | 'engine' | 'traktor'
+
+export type LibraryTracks = Partial<Record<CueLibrary, string>>
+
 export type LibraryReplaceOutcome = 'repointed' | 'replaced' | 'none' | 'skipped' | 'failed'
 
 export interface DuplicateReplaceOutcome {
