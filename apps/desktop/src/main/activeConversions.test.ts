@@ -113,6 +113,21 @@ describe('createActiveConversions', () => {
     expect(conversions.isCancelled('measuring')).toBe(false)
   })
 
+  // A cancel during the loudness measure or a probe found no child to kill, and the encode
+  // that registered next ran its full length on a job the user had already cancelled.
+  // Every ceiling re-encode registers again, so each must die the moment it appears.
+  it('kills a child registered after its job was cancelled', () => {
+    const conversions = createActiveConversions()
+    conversions.beginJob('measuring')
+    conversions.cancel('measuring')
+    const kill = vi.fn()
+    conversions.register('measuring', kill)
+    expect(kill).toHaveBeenCalledWith('SIGTERM')
+    const reencode = vi.fn()
+    conversions.register('measuring', reencode)
+    expect(reencode).toHaveBeenCalledWith('SIGTERM')
+  })
+
   it('ignores a cancel for a job that is not running', () => {
     const conversions = createActiveConversions()
     conversions.cancel('done')

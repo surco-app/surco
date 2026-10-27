@@ -1977,6 +1977,8 @@ export async function convertAudio(
   let archived: TrashEntry | null = null
 
   try {
+    // A cancel during the measures and probes above has no child to kill yet.
+    if (isCancelled?.()) throw errorWithKey('conversionCancelled')
     if (copiedVerbatim) {
       // Source already in the target format: copy the bytes verbatim and edit the
       // tag in place (see tags.ts) instead of re-muxing through ffmpeg, which
