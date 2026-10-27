@@ -39,6 +39,18 @@
       {
         "text": "Las estadísticas se leen mejor, con las cifras separadas por miles y el tiempo ahorrado en días de trabajo en lugar de miles de horas.",
         "in": "1.12.0"
+      },
+      {
+        "text": "Las carátulas de los FLAC se ven en el Finder vayan donde vayan, porque ahora viajan dentro del propio archivo. Traktor sigue aceptando esas pistas en su colección.",
+        "in": "1.12.1"
+      },
+      {
+        "text": "Los cues Load que marcaste en Traktor salen en amarillo en Surco, el mismo color que les da Traktor.",
+        "in": "1.12.1"
+      },
+      {
+        "text": "Más arreglos de estabilidad al convertir, al restaurar originales y al escribir en tus bibliotecas DJ.",
+        "in": "1.12.1"
       }
     ]
   },

@@ -39,6 +39,18 @@
       {
         "text": "Stats are easier to read, with thousands separators and the time saved shown in workdays instead of thousands of hours.",
         "in": "1.12.0"
+      },
+      {
+        "text": "FLAC covers show in Finder wherever the files go, because they now travel inside the file itself. Traktor keeps accepting those tracks in its collection.",
+        "in": "1.12.1"
+      },
+      {
+        "text": "Load cues you set in Traktor show in yellow in Surco, the same colour Traktor gives them.",
+        "in": "1.12.1"
+      },
+      {
+        "text": "More stability fixes when converting, restoring originals and writing to your DJ libraries.",
+        "in": "1.12.1"
       }
     ]
   },
