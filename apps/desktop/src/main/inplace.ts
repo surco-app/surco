@@ -122,9 +122,14 @@ export function uniqueOutputPath(outputPath: string, exists: (p: string) => bool
 // string, because a case-only difference (Song.WAV vs song.wav) is one file on the
 // case-insensitive macOS/Windows volumes Surco runs on. Missing files are never
 // "the same" — the conflict check that calls this cares about a target that exists.
+// Bigint because NTFS file ids are 64-bit: as numbers, two neighbours whose ids differ
+// only past 2^53 round to the same value and would read as one file.
 export async function isSameFile(a: string, b: string): Promise<boolean> {
   if (a === b) return true
-  const [aStat, bStat] = await Promise.all([stat(a).catch(() => null), stat(b).catch(() => null)])
+  const [aStat, bStat] = await Promise.all([
+    stat(a, { bigint: true }).catch(() => null),
+    stat(b, { bigint: true }).catch(() => null),
+  ])
   return !!aStat && !!bStat && aStat.ino === bStat.ino && aStat.dev === bStat.dev
 }
 
@@ -136,7 +141,10 @@ export async function isSameFile(a: string, b: string): Promise<boolean> {
 // there would delete the file we just wrote.
 export async function removeRenamedOriginal(input: string, output: string): Promise<void> {
   if (input === output) return
-  const [inStat, outStat] = await Promise.all([stat(input).catch(() => null), stat(output)])
+  const [inStat, outStat] = await Promise.all([
+    stat(input, { bigint: true }).catch(() => null),
+    stat(output, { bigint: true }),
+  ])
   if (inStat && (inStat.ino !== outStat.ino || inStat.dev !== outStat.dev)) {
     // Into Surco's trash when one is configured (see originalKeeper.ts), or the system
     // trash when that has no room for it, so the user can get the old file back; a plain
