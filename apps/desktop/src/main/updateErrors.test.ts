@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classifyUpdateError, summarizeUpdateError } from './updateErrors'
+import { classifyUpdateError, isFeedStillUploading, summarizeUpdateError } from './updateErrors'
 
 // electron-updater's HttpError carries the response status as `statusCode`.
 function httpError(statusCode: number): Error {
@@ -64,6 +64,27 @@ describe('classifyUpdateError', () => {
       status: null,
     })
     expect(classifyUpdateError('boom')).toEqual({ kind: 'fatal', status: null })
+  })
+})
+
+// While a release is mid-upload the newest version the user can actually install is
+// the one they run: a manual check in that window must answer "up to date", not
+// blame the network with a red toast they can do nothing about.
+describe('isFeedStillUploading', () => {
+  it('recognizes the missing channel file of a release still being uploaded', () => {
+    const err = Object.assign(
+      new Error(
+        'Cannot find latest-mac.yml in the latest release artifacts (https://…): HttpError: 404',
+      ),
+      { code: 'ERR_UPDATER_CHANNEL_FILE_NOT_FOUND' },
+    )
+    expect(isFeedStillUploading(err)).toBe(true)
+  })
+
+  it('leaves real failures to the error path', () => {
+    expect(isFeedStillUploading(Object.assign(new Error('x'), { statusCode: 404 }))).toBe(false)
+    expect(isFeedStillUploading(Object.assign(new Error('x'), { code: 'ETIMEDOUT' }))).toBe(false)
+    expect(isFeedStillUploading('boom')).toBe(false)
   })
 })
 
