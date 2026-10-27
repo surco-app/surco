@@ -1,4 +1,4 @@
-import { type Dirent, readdirSync, readlinkSync } from 'node:fs'
+import { type Dirent, existsSync, readdirSync, readlinkSync } from 'node:fs'
 import { readFile, stat, unlink, utimes, writeFile } from 'node:fs/promises'
 import log from 'electron-log/main'
 import { backupOf } from './libraryBackups'
@@ -13,9 +13,11 @@ import {
   type NmlLocation,
   type NmlPatch,
   type NmlReplaceOutcome,
+  type OnDisk,
   refreshedCoverIds,
   replaceDuplicateInNml,
 } from './traktorNml'
+import { traktorFileOf } from './traktorPlaylists'
 import { isTraktorRunning } from './traktorProcess'
 
 // Writes converted tracks back into the user's real collection.nml — the whole Traktor
@@ -66,7 +68,9 @@ export async function syncCollection(
   }
 
   const located = patches.map((p) => (p.volume ? p : { ...p, volume: bootVolume }))
-  const patched = applyPatches(original, located)
+  const onDisk: OnDisk = (entry) =>
+    existsSync(traktorFileOf(original.slice(entry.start, entry.end), bootVolume))
+  const patched = applyPatches(original, located, onDisk)
   if (patched === original) {
     // A patch that matched nothing is the normal "Traktor doesn't have this track"
     // case, not a failure — no backup, no write, disk untouched.
@@ -82,7 +86,7 @@ export async function syncCollection(
   // COVERARTID would only send it back to the same stale cache (see
   // traktorCoverCache.ts). Read off `original`, which still has the ids, and after the
   // rename so a sync that never landed leaves a matching cache alone.
-  refreshCachedCoverArt(nmlPath, refreshedCoverIds(original, located), readEmbeddedCover)
+  refreshCachedCoverArt(nmlPath, refreshedCoverIds(original, located, onDisk), readEmbeddedCover)
 
   // A conversion that coexists with its source just had the inherited AUDIO_ID and
   // COVERARTID stripped, so Traktor knows no artwork for it and has nothing cached to
@@ -96,7 +100,7 @@ export async function syncCollection(
   try {
     const writtenAt = (await stat(nmlPath)).mtimeMs
     const newer = new Date(Math.max(Date.now(), writtenAt) + MTIME_LEAD_MS)
-    for (const file of detachedOutputPaths(original, patches)) {
+    for (const file of detachedOutputPaths(original, patches, onDisk)) {
       // Per file: a read-only or missing output must not stop the rest from being
       // touched, and the collection on disk is already correct either way.
       await utimes(file, newer, newer).catch(() => {})
@@ -106,7 +110,7 @@ export async function syncCollection(
     // only postpones Traktor noticing the new cover; it must not report the sync failed.
   }
 
-  return { written: true, matched: matchedPatchCount(original, patches) }
+  return { written: true, matched: matchedPatchCount(original, patches, onDisk) }
 }
 
 // The backup, the second check that Traktor is closed and the write-then-rename every
