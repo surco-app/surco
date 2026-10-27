@@ -36,6 +36,8 @@ export function useDeclickAb(originalPath: string, repairedPath: string | null):
   // The frame loop's body, published by the effect that owns the pair so play() can
   // start it without re-creating the elements.
   const pinRef = useRef<(() => void) | null>(null)
+  // Reloads the legs a conversion made let go of, published like pinRef for play().
+  const rearmRef = useRef<(() => void) | null>(null)
   const [side, setSide] = useState<AbSide>('repaired')
   const [playing, setPlaying] = useState(false)
   const [at, setAt] = useState(0)
@@ -58,9 +60,12 @@ export function useDeclickAb(originalPath: string, repairedPath: string | null):
     // silent but running, so switching to it is instant.
     original.volume = 0
     repaired.volume = 1
+    let released = false
     // The repaired element drives the clock: one source of truth, so the two can never
     // fight over the playhead.
-    repaired.ontimeupdate = () => setAt(repaired.currentTime)
+    repaired.ontimeupdate = () => {
+      if (!released) setAt(repaired.currentTime)
+    }
     // And the silent leg is pinned to the AUDIBLE one on every frame. Two elements buffer
     // and schedule independently, so play() on both does not start them together —
     // measured ~450 ms apart in the real app. Correcting only on timeupdate left ~44 ms
@@ -114,27 +119,38 @@ export function useDeclickAb(originalPath: string, repairedPath: string | null):
     const silence = (): void => {
       if (frame.current !== null) cancelAnimationFrame(frame.current)
       frame.current = null
-      pinRef.current = null
       original.pause()
       repaired.pause()
-      originalRef.current = null
-      repairedRef.current = null
-      setReady(false)
       setPlaying(false)
     }
     // The original stays open for the whole life of the section, playing or not, and on
     // Windows that stream blocks a conversion's rename of the file. Both legs let go, since
-    // with nothing to repair the second one plays the original too.
+    // with nothing to repair the second one plays the original too. The pair stays ready
+    // and the next play reloads them: rebuilding it here would reopen the file mid-rename,
+    // and a conversion that leaves the path as it was would never rebuild it at all.
     const unhold = holdForAudition(originalPath, () => {
       silence()
+      released = true
       for (const leg of [original, repaired]) {
         leg.removeAttribute('src')
         leg.load()
       }
     })
+    rearmRef.current = () => {
+      if (!released) return
+      released = false
+      loaded = 0
+      original.src = mediaUrl(originalPath)
+      repaired.src = mediaUrl(repairedPath)
+    }
     return () => {
       unhold()
       silence()
+      pinRef.current = null
+      rearmRef.current = null
+      originalRef.current = null
+      repairedRef.current = null
+      setReady(false)
       setSide('repaired')
     }
   }, [originalPath, repairedPath])
@@ -154,6 +170,7 @@ export function useDeclickAb(originalPath: string, repairedPath: string | null):
     const original = originalRef.current
     const repaired = repairedRef.current
     if (!original || !repaired) return
+    rearmRef.current?.()
     // Re-align before rolling: a paused pair can drift if one leg was still buffering
     // when the other stopped, and an A/B comparing two different instants is a lie.
     original.currentTime = repaired.currentTime

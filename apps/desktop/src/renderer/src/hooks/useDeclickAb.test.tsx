@@ -21,9 +21,15 @@ class FakeAudio {
   pause = vi.fn(() => {
     this.paused = true
   })
-  load = vi.fn<() => void>()
-  removeAttribute = vi.fn<(name: string) => void>()
-  constructor() {
+  load = vi.fn(() => {
+    if (this.currentTime === 0) return
+    this.currentTime = 0
+    this.ontimeupdate?.()
+  })
+  removeAttribute = vi.fn((name: string) => {
+    if (name === 'src') this.src = ''
+  })
+  constructor(public src: string) {
     created.push(this)
   }
 }
@@ -136,7 +142,33 @@ describe('useDeclickAb', () => {
     expect(original.removeAttribute).toHaveBeenCalledWith('src')
     expect(original.load).toHaveBeenCalled()
     expect(result.current.playing).toBe(false)
-    expect(result.current.ready).toBe(false)
+  })
+
+  // A conversion that leaves the file where it was keeps the same paths, so nothing would
+  // rebuild the pair and its play button did nothing until the section was reopened.
+  it('reloads both legs on the next play after a release, from where the cursor was', async () => {
+    const { result } = renderHook(() => useDeclickAb('/music/a.wav', '/tmp/repaired.wav'))
+    act(() => {
+      for (const a of created) a.onloadedmetadata?.()
+    })
+    act(() => result.current.seek(30))
+    act(() => {
+      stopAuditionsOf('/music/a.wav')
+    })
+    expect(result.current.ready).toBe(true)
+    expect(result.current.at).toBe(30)
+    const [original, repaired] = created
+    await act(async () => {
+      result.current.play()
+    })
+    expect(original.src).toContain('a.wav')
+    expect(repaired.src).toContain('repaired.wav')
+    act(() => {
+      for (const a of created) a.onloadedmetadata?.()
+    })
+    expect([original.currentTime, repaired.currentTime]).toEqual([30, 30])
+    expect(repaired.play).toHaveBeenCalled()
+    expect(result.current.playing).toBe(true)
   })
 
   it('lets go of both legs when nothing is repaired and both play the original', () => {
