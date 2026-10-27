@@ -1636,6 +1636,12 @@ de cada lista**, no en la posición que tenía, porque Music no deja insertar en
 concreto. Si cualquier paso falla, la entrada vieja no se borra y se avisa
 (`editor.removeOldCopyCarry`). Quedan las dos copias en Music y no se pierde nada.
 
+**Con «Solo Apple Music» se comprueba la entrada nueva antes que nada.** El orden es añadir,
+comprobar que la nueva apunta a la carpeta multimedia de Music y no al temporal, copiar listas
+y reproducciones, y solo entonces borrar la vieja. Si Music dejó la nueva sobre el temporal, se
+deshace solo la nueva y la vieja queda intacta (`errors.appleMusicNoMediaCopyKept`). Antes la
+comprobación iba después del borrado y la pista desaparecía de Music.
+
 **Avisa de la pérdida de calidad, nunca bloquea** (`replaceWarning.ts`): sin pérdida que
 pasa a con pérdida, corte de frecuencias peor entre dos con pérdida, o lossless falso. El
 margen para llamar «peor» a un corte son 2100 Hz, la dispersión medida sobre 39

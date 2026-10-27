@@ -1140,6 +1140,55 @@ describe('runProcessTrack — Apple Music only copy verification', () => {
     expect(result.addedToMusicOnly).toBe(true)
     expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
   })
+
+  const replacement = job({
+    meta: { artist: 'Artist', title: 'Title' } as TrackMetadata,
+    addToAppleMusic: true,
+    musicPersistentId: 'old-id',
+    replacesPath: '/m/old.mp3',
+    replacesLabel: 'Old Artist - Old Title',
+  })
+
+  // The check used to run after the swap: the old entry was already deleted when the new
+  // one, pointing at a temp file about to vanish, was rolled back too, and the track left
+  // Music altogether. Only the new entry may be undone, and the DJ must hear that the old
+  // copy is still there.
+  it('rolls back only the new entry and keeps the old one when Music referenced the temp file', async () => {
+    const deps = musicOnly()
+    deps.appleMusicEntryLocation = vi.fn(async () => '/tmp/surco-abc/Artist - Title.aiff')
+
+    await expect(runProcessTrack(replacement, deps)).rejects.toThrow('appleMusicNoMediaCopyKept')
+
+    expect(deps.deleteAppleMusic).toHaveBeenCalledOnce()
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('added-id', 'Artist - Title')
+    expect(deps.carryAppleMusicHistory).not.toHaveBeenCalled()
+  })
+
+  // Copying the playlists onto an entry that is about to be rolled back would be wasted at
+  // best; deleting the old one before knowing the new one plays is the bug above.
+  it('checks where the new entry points before carrying anything over or deleting the old one', async () => {
+    const calls: string[] = []
+    const deps = musicOnly()
+    deps.addToAppleMusic = vi.fn(async () => {
+      calls.push('add')
+      return 'added-id'
+    })
+    deps.appleMusicEntryLocation = vi.fn(async () => {
+      calls.push('locate')
+      return '/Users/me/Music/Media/Artist - Title.aiff'
+    })
+    deps.carryAppleMusicHistory = vi.fn(async () => {
+      calls.push('carry')
+      return 'carried' as const
+    })
+    deps.deleteAppleMusic = vi.fn(async (pid: string) => {
+      calls.push(`delete ${pid}`)
+    })
+
+    await runProcessTrack(replacement, deps)
+
+    expect(calls).toEqual(['add', 'locate', 'carry', 'delete old-id'])
+  })
 })
 
 describe('runProcessTrack — pinned overwrite', () => {
