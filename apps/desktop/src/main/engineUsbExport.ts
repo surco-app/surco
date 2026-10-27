@@ -321,8 +321,13 @@ async function prepare(
     found.flatMap((f) => artworkFileName(f.track.artHash) ?? []),
   )
   const planned: Planned[] = []
+  // The drive's copy keeps its path only while it is the same kind of file: a conversion to
+  // another format repoints the track, and a player picks the decoder by the extension.
+  const extOf = (name: string): string => posix.extname(usbFileName(name)).toLowerCase()
   for (const f of found) {
-    const dest = onDrive?.byOrigin.get(f.track.id)?.path ?? allocate(basename(f.source), taken)
+    const kept = onDrive?.byOrigin.get(f.track.id)?.path
+    const dest =
+      kept && extOf(kept) === extOf(basename(f.source)) ? kept : allocate(basename(f.source), taken)
     const name = artworkFileName(f.track.artHash)
     planned.push({
       ...f,
