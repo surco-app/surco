@@ -39,6 +39,17 @@ const TRANSIENT_CODES = [
 // the file appears minutes later on its own.
 const CHANNEL_FILE_MISSING = 'ERR_UPDATER_CHANNEL_FILE_NOT_FOUND'
 
+function errorText(err: unknown): string {
+  const code = (err as { code?: unknown } | null)?.code
+  return `${typeof code === 'string' ? code : ''} ${err instanceof Error ? err.message : String(err)}`
+}
+
+// A release whose feed has not landed yet cannot be installed, so for the user nothing
+// new exists: a manual check answers "up to date" instead of reporting a failure.
+export function isFeedStillUploading(err: unknown): boolean {
+  return errorText(err).includes(CHANNEL_FILE_MISSING)
+}
+
 // Sorts an updater failure into the retry loop (transient/offline) or the
 // tell-the-user-now path (fatal). electron-updater's HttpError exposes the response
 // as `statusCode`; Node and Chromium network failures only leave a code, either in
@@ -49,8 +60,7 @@ export function classifyUpdateError(err: unknown): UpdateErrorInfo {
     const retryable = statusCode >= 500 || statusCode === 429
     return { kind: retryable ? 'transient' : 'fatal', status: statusCode }
   }
-  const code = (err as { code?: unknown } | null)?.code
-  const text = `${typeof code === 'string' ? code : ''} ${err instanceof Error ? err.message : String(err)}`
+  const text = errorText(err)
   if (text.includes(CHANNEL_FILE_MISSING)) return { kind: 'transient', status: null }
   if (OFFLINE_CODES.some((c) => text.includes(c))) return { kind: 'offline', status: null }
   if (TRANSIENT_CODES.some((c) => text.includes(c))) return { kind: 'transient', status: null }

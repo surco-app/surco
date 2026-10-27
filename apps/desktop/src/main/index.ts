@@ -188,7 +188,7 @@ import { registerTraktorPlaylistsIpc } from './traktorPlaylistsIpc'
 import { isTraktorRunning, quitTraktor } from './traktorProcess'
 import { registerTrashIpc } from './trashIpc'
 import { wireUpdateDelivery } from './updateDelivery'
-import { classifyUpdateError, summarizeUpdateError } from './updateErrors'
+import { classifyUpdateError, isFeedStillUploading, summarizeUpdateError } from './updateErrors'
 import { updateMode } from './updateMode'
 import { armUpdateRecheck } from './updateRecheck'
 import { createUpdateRetry } from './updateRetry'
@@ -1940,13 +1940,16 @@ app.whenReady().then(() => {
         newWin.webContents.once('did-finish-load', () => cb(newWin)),
       ),
     )
-    updater.on('update-not-available', () => {
-      if (!manualUpdateCheck) return
-      manualUpdateCheck = false
+    const showUpToDate = (): void => {
       const target = liveWindow()
       const opts = { type: 'info' as const, message: createMenuT(menuLocale())('upToDate') }
       if (target) dialog.showMessageBox(target, opts)
       else dialog.showMessageBox(opts)
+    }
+    updater.on('update-not-available', () => {
+      if (!manualUpdateCheck) return
+      manualUpdateCheck = false
+      showUpToDate()
     })
     // A manual check that finds an update never clears the flag on its own path; without
     // this it stays armed and misroutes the next background failure as manual.
@@ -1961,7 +1964,8 @@ app.whenReady().then(() => {
       const { kind, status } = classifyUpdateError(err)
       if (manualUpdateCheck) {
         manualUpdateCheck = false
-        liveWindow()?.webContents.send('update:check-failed', status)
+        if (isFeedStillUploading(err)) showUpToDate()
+        else liveWindow()?.webContents.send('update:check-failed', status)
       } else if (kind === 'fatal') {
         liveWindow()?.webContents.send('update:error', summarizeUpdateError(err))
       } else {
