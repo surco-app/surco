@@ -8,6 +8,7 @@ import {
   Eye,
   FileAudio,
   FlagOff,
+  Hourglass,
   List,
   type LucideIcon,
   Plus,
@@ -39,7 +40,7 @@ type ConversionMode =
   | 'matchedBandcamp'
 type LibraryMode = 'inLibrary' | 'notInLibrary'
 type DuplicatesMode = 'duplicates'
-type AttentionMode = 'silence' | 'clipping' | 'noCues'
+type AttentionMode = 'silence' | 'clipping' | 'noCues' | 'unanalysedRekordbox' | 'unanalysedEngine'
 type Mode = QualityMode | ConversionMode | LibraryMode | DuplicatesMode | AttentionMode
 
 const QUALITY_MODES: QualityMode[] = ['unanalyzed', 'suspect', 'good']
@@ -53,7 +54,13 @@ const CONVERSION_MODES: ConversionMode[] = [
 ]
 const LIBRARY_MODES: LibraryMode[] = ['notInLibrary', 'inLibrary']
 const DUPLICATES_MODES: DuplicatesMode[] = ['duplicates']
-const ATTENTION_MODES: AttentionMode[] = ['silence', 'clipping', 'noCues']
+const ATTENTION_MODES: AttentionMode[] = [
+  'silence',
+  'clipping',
+  'noCues',
+  'unanalysedRekordbox',
+  'unanalysedEngine',
+]
 
 // One Lucide glyph per quality/provenance/library bucket, kept consistent with the toolbar.
 // Per-format buckets are a separate axis and all share the audio-file glyph.
@@ -74,6 +81,8 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   silence: Scissors,
   clipping: Zap,
   noCues: FlagOff,
+  unanalysedRekordbox: Hourglass,
+  unanalysedEngine: Hourglass,
 }
 
 type Tally = ReturnType<typeof qualityCounts>
@@ -191,7 +200,7 @@ export function QualityFilterBar({
     // The retouch buckets (silence left to trim, true clipping, cues left to mark), each
     // listed only once some track is actually in it — permanently-empty rows would just
     // pad the menu, and the facts only exist once waves are decoded or a library is read.
-    ...(tally.silence > 0 || tally.clipping > 0 || tally.noCues > 0
+    ...(ATTENTION_MODES.some((m) => tally[m] > 0)
       ? [ATTENTION_MODES.filter((m) => tally[m] > 0)]
       : []),
     // Apple Music library buckets, listed only once the snapshot has resolved a verdict

@@ -108,6 +108,8 @@
       "silence": "Stille zum Kürzen",
       "clipping": "Clipping",
       "noCues": "Ohne Cues",
+      "unanalysedRekordbox": "In rekordbox nicht analysiert",
+      "unanalysedEngine": "In Engine DJ nicht analysiert",
       "trashSuspects_one": "Die zweifelhafte Datei in den Papierkorb legen",
       "trashSuspects_other": "Die {{count}} zweifelhaften Dateien in den Papierkorb legen",
       "current": "Filter: {{filter}} {{count}}"

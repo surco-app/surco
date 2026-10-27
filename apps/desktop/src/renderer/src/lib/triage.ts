@@ -62,7 +62,14 @@ export type DuplicatesFilter = 'duplicates'
 // a track with no wave decoded yet belongs to neither (like 'unanalyzed'). 'noCues' is the
 // marking left to do: a DJ library row whose cues came back empty. A loose file has no
 // library to read cues from, so it never lands there.
-export type AttentionFilter = 'silence' | 'clipping' | 'noCues'
+// 'unanalysedRekordbox' and 'unanalysedEngine' are the rows that program has not analysed
+// yet, read the way the row's own mark reads them (see unanalysedIn).
+export type AttentionFilter =
+  | 'silence'
+  | 'clipping'
+  | 'noCues'
+  | 'unanalysedRekordbox'
+  | 'unanalysedEngine'
 
 // One selection per dimension, all combined with AND. `format` is the source container
 // ('WAV', 'FLAC'…, see formatBuckets / sourceFormat); like the rest, null means "any".
@@ -136,12 +143,23 @@ export function matchesFilter(track: TrackItem, sel: FilterSelection): boolean {
   if (sel.attention === 'silence' && track.audioIssues?.silence !== true) return false
   if (sel.attention === 'clipping' && track.audioIssues?.clipping !== true) return false
   if (sel.attention === 'noCues' && !hasNoCues(track)) return false
+  if (sel.attention === 'unanalysedRekordbox' && unanalysedIn(track) !== 'rekordbox') return false
+  if (sel.attention === 'unanalysedEngine' && unanalysedIn(track) !== 'engine') return false
   if (sel.format && sourceFormat(track) !== sel.format) return false
   return true
 }
 
 function hasNoCues(track: TrackItem): boolean {
   return track.sourcePreview?.cues.length === 0
+}
+
+// The DJ program still to analyse this row. rekordbox ships no wave file for a track it has
+// not analysed; Engine DJ says so in the row it reads. Traktor's rows carry neither.
+export function unanalysedIn(track: TrackItem): 'rekordbox' | 'engine' | undefined {
+  if (track.fromRekordbox && track.sourcePreview && !track.sourcePreview.analysisPath)
+    return 'rekordbox'
+  if (track.fromEngine && track.sourcePreview?.unanalysed) return 'engine'
+  return undefined
 }
 
 // Read off EMPTY_FILTER's keys rather than a hand-kept list, so an axis added to the
@@ -310,6 +328,8 @@ export function qualityCounts(tracks: TrackItem[]): {
   silence: number
   clipping: number
   noCues: number
+  unanalysedRekordbox: number
+  unanalysedEngine: number
 } {
   let suspect = 0
   let good = 0
@@ -326,6 +346,8 @@ export function qualityCounts(tracks: TrackItem[]): {
   let silence = 0
   let clipping = 0
   let noCues = 0
+  let unanalysedRekordbox = 0
+  let unanalysedEngine = 0
   for (const t of tracks) {
     const q = trackQuality(t)
     if (q === 'warn' || q === 'bad' || q === 'processed' || q === 'transcoded') suspect += 1
@@ -343,6 +365,9 @@ export function qualityCounts(tracks: TrackItem[]): {
     if (t.audioIssues?.silence) silence += 1
     if (t.audioIssues?.clipping) clipping += 1
     if (hasNoCues(t)) noCues += 1
+    const waitingOn = unanalysedIn(t)
+    if (waitingOn === 'rekordbox') unanalysedRekordbox += 1
+    else if (waitingOn === 'engine') unanalysedEngine += 1
   }
   return {
     suspect,
@@ -360,6 +385,8 @@ export function qualityCounts(tracks: TrackItem[]): {
     silence,
     clipping,
     noCues,
+    unanalysedRekordbox,
+    unanalysedEngine,
   }
 }
 

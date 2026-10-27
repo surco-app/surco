@@ -211,6 +211,8 @@ describe('matchesFilter / qualityCounts', () => {
       silence: 0,
       clipping: 0,
       noCues: 0,
+      unanalysedRekordbox: 0,
+      unanalysedEngine: 0,
     })
   })
 })
@@ -269,6 +271,34 @@ describe('no cues filter', () => {
   it('isolates the library tracks that carry no cue and leaves loose files out', () => {
     expect(by(tracks, { attention: 'noCues' }).map((x) => x.id)).toEqual(['bare'])
     expect(qualityCounts(tracks).noCues).toBe(1)
+  })
+})
+
+describe('unanalysed in a DJ library filter', () => {
+  const preview = (extra: object) => ({
+    title: '',
+    artist: '',
+    durationSec: 300,
+    cues: [],
+    ...extra,
+  })
+  const tracks = [
+    { id: 'rb-analysed', fromRekordbox: true, sourcePreview: preview({ analysisPath: '/a.DAT' }) },
+    { id: 'rb-bare', fromRekordbox: true, sourcePreview: preview({}) },
+    { id: 'engine-bare', fromEngine: true, sourcePreview: preview({ unanalysed: true }) },
+    { id: 'engine-analysed', fromEngine: true, sourcePreview: preview({}) },
+    { id: 'loose-file' },
+  ] as TrackItem[]
+
+  // Cues set on a track the DJ program has not analysed wait for its beat grid, so these
+  // are the tracks to open in that program first. The rule is the one the row's own
+  // "not analysed" mark uses, so the filter and the mark never disagree.
+  it('buckets the tracks each program has not analysed under that program', () => {
+    expect(by(tracks, { attention: 'unanalysedRekordbox' }).map((x) => x.id)).toEqual(['rb-bare'])
+    expect(by(tracks, { attention: 'unanalysedEngine' }).map((x) => x.id)).toEqual(['engine-bare'])
+    const counts = qualityCounts(tracks)
+    expect(counts.unanalysedRekordbox).toBe(1)
+    expect(counts.unanalysedEngine).toBe(1)
   })
 })
 

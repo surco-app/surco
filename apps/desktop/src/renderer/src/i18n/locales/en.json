@@ -108,6 +108,8 @@
       "silence": "Silence to trim",
       "clipping": "Clipping",
       "noCues": "No cues",
+      "unanalysedRekordbox": "Not analyzed in rekordbox",
+      "unanalysedEngine": "Not analyzed in Engine DJ",
       "trashSuspects_one": "Move the doubtful file to Trash",
       "trashSuspects_other": "Move the {{count}} doubtful files to Trash",
       "current": "Filter: {{filter}} {{count}}"

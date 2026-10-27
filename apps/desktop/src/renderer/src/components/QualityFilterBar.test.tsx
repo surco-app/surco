@@ -24,6 +24,8 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   silence: 0,
   clipping: 0,
   noCues: 0,
+  unanalysedRekordbox: 0,
+  unanalysedEngine: 0,
   inLibrary: 0,
   notInLibrary: 0,
   duplicates: 0,
@@ -176,6 +178,17 @@ describe('QualityFilterBar', () => {
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-noCues'))
     expect(onChange).toHaveBeenCalledWith(sel({ attention: 'noCues' }))
+  })
+
+  it('names the DJ program a track is waiting on in its unanalysed bucket', () => {
+    const { onChange } = renderBar({ tally: tally({ unanalysedEngine: 5 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByTestId('quality-filter-unanalysedEngine')).toHaveTextContent(
+      i18n.t('sidebar.filter.unanalysedEngine'),
+    )
+    expect(screen.queryByTestId('quality-filter-unanalysedRekordbox')).toBeNull()
+    fireEvent.click(screen.getByTestId('quality-filter-unanalysedEngine'))
+    expect(onChange).toHaveBeenCalledWith(sel({ attention: 'unanalysedEngine' }))
   })
 
   it('picking a provider bucket filters the conversion axis', () => {
