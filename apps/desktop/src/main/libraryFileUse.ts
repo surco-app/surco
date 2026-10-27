@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { LibraryCopyInfo, LibraryCopyPresence } from '../shared/types'
+import { engineContentId } from '../shared/engineContent'
+import { traktorContentId } from '../shared/traktorContent'
+import type { LibraryCopyInfo, LibraryCopyPresence, LibraryTracks } from '../shared/types'
 import { loadSqlJs } from './engine'
 import { engineRowFinder } from './engineRepoint'
 import { toNmlLocation } from './ffmpeg'
@@ -170,4 +172,59 @@ export async function libraryCopyInfo(
     } catch {}
   }
   return info
+}
+
+// Read only: the id each library gives the file, for the cue editor to place a flow on the
+// same track everywhere. A library that cannot be read, lacks the file or holds it twice is
+// left out, since there is then no one track to write to.
+export async function libraryTracksOf(
+  path: string,
+  libraries: SyncedLibraries,
+  options: PathMatchOptions = {},
+): Promise<LibraryTracks> {
+  const out: LibraryTracks = {}
+  if (libraries.rekordbox) {
+    try {
+      const db = openRekordboxDb(libraries.rekordbox, {
+        readonly: true,
+        key: await rekordboxRawKey(libraries.rekordbox),
+      })
+      if (db)
+        try {
+          const match = findTrackByPath(db, path, { ...options, quiet: true })
+          if (match !== null && !isAmbiguous(match)) out.rekordbox = match.id
+        } finally {
+          db.close()
+        }
+    } catch {}
+  }
+  if (libraries.engine) {
+    try {
+      const SQL = await loadSqlJs()
+      const db = new SQL.Database(await readFile(join(libraries.engine, 'Database2', 'm.db')))
+      try {
+        const rows = (db.exec('SELECT id, path FROM Track')[0]?.values ?? []).map(
+          ([id, stored]) => ({ id: Number(id), path: String(stored) }),
+        )
+        const found = engineRowFinder(libraries.engine, rows)(path, pathKey(options))
+        if (found.length === 1) out.engine = engineContentId(found[0].id)
+      } finally {
+        db.close()
+      }
+    } catch {}
+  }
+  if (libraries.traktor) {
+    try {
+      const entries = findEntries(await readFile(libraries.traktor, 'utf8'))
+      const at = toNmlLocation(path)
+      const same = (a: string, b: string) => a.normalize('NFC') === b.normalize('NFC')
+      const found = entries.filter(
+        (e) =>
+          same(e.dir, at.dir) && same(e.file, at.file) && (!at.volume || same(e.volume, at.volume)),
+      )
+      if (found.length === 1)
+        out.traktor = traktorContentId(`${found[0].volume}${found[0].dir}${found[0].file}`)
+    } catch {}
+  }
+  return out
 }

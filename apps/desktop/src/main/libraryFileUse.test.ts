@@ -20,7 +20,12 @@ vi.mock('node:fs/promises', async (importOriginal) => {
   return { ...real, readFile }
 })
 
-import { djLibraryFileUse, libraryCopyInfo, usedByDjLibrary } from './libraryFileUse'
+import {
+  djLibraryFileUse,
+  libraryCopyInfo,
+  libraryTracksOf,
+  usedByDjLibrary,
+} from './libraryFileUse'
 import * as rekordboxDb from './rekordboxDb'
 import { REKORDBOX_KEY } from './rekordboxDb'
 
@@ -278,5 +283,51 @@ describe('libraryCopyInfo', () => {
     expect(open).toHaveBeenCalledWith(collection, expect.objectContaining({ readonly: true }))
     expect(open.mock.results[0].value?.readonly).toBe(true)
     open.mockRestore()
+  })
+})
+
+// A flow applied in one program reaches the same file in the others: each program names
+// the track its own way, so the cue editor needs every library's id for the one file.
+describe('libraryTracksOf', () => {
+  it('names the track each library holds for the file', async () => {
+    const collection = await rekordbox('/Volumes/M/Music/a.mp3')
+    const dir = await engine('../Music/other.mp3', '/Volumes/M/Music/a.mp3')
+    const nml = await traktor('M', '/:Music/:', 'a.mp3')
+    expect(
+      await libraryTracksOf('/Volumes/M/Music/a.mp3', {
+        rekordbox: collection,
+        engine: dir,
+        traktor: nml,
+      }),
+    ).toEqual({ rekordbox: '1', engine: 'engine:2', traktor: 'traktor:M/:Music/:a.mp3' })
+  })
+
+  it('leaves out a library that does not have the file', async () => {
+    const collection = await rekordbox('/Volumes/M/Music/a.mp3')
+    const nml = await traktor('M', '/:Music/:', 'b.mp3')
+    expect(
+      await libraryTracksOf('/Volumes/M/Music/a.mp3', {
+        ...OFF,
+        rekordbox: collection,
+        traktor: nml,
+      }),
+    ).toEqual({ rekordbox: '1' })
+  })
+
+  // Two rows for one file leave no way to tell which one the DJ plays, so neither is touched.
+  it('leaves out a library that holds the file twice', async () => {
+    const dir = await engine('/Volumes/M/Music/a.mp3', '/Volumes/M/Music/a.mp3')
+    expect(await libraryTracksOf('/Volumes/M/Music/a.mp3', { ...OFF, engine: dir })).toEqual({})
+  })
+
+  it('leaves out a library it cannot read and keeps the others', async () => {
+    const collection = await rekordbox('/Volumes/M/Music/a.mp3')
+    expect(
+      await libraryTracksOf('/Volumes/M/Music/a.mp3', {
+        rekordbox: collection,
+        engine: join(root, 'no-engine'),
+        traktor: join(root, 'missing.nml'),
+      }),
+    ).toEqual({ rekordbox: '1' })
   })
 })

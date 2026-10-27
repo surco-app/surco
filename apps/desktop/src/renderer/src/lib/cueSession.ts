@@ -76,6 +76,20 @@ export function draftsToSave(): SaveCuesRequest[] {
   }))
 }
 
+export function keptDrafts(): {
+  contentId: string
+  path: string
+  label: string
+  draft: CueDraft
+}[] {
+  return [...drafts].map(([contentId, { value, target }]) => ({
+    contentId,
+    path: target.path,
+    label: target.label,
+    draft: value,
+  }))
+}
+
 export function forgetDraft(contentId: string): void {
   if (drafts.delete(contentId)) changed()
 }

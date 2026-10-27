@@ -25,6 +25,7 @@ import type {
   LibraryStatus,
   LibraryTagSyncReport,
   LibraryTagUpdate,
+  LibraryTracks,
   LifetimeStats,
   LimiterGlimpse,
   ListFixRequest,
@@ -235,6 +236,7 @@ export interface Api {
   rekordboxTrackCues: (contentId: string) => Promise<TrackCues | null>
   rekordboxCueWaveDetail: (contentId: string) => Promise<Uint16Array | null>
   rekordboxCueDropInput: (contentId: string) => Promise<DropInput | null>
+  rekordboxCueTwins: (file: string) => Promise<LibraryTracks>
   rekordboxAuditionLead: (contentId: string) => Promise<number>
   rekordboxSurcoGrid: (contentId: string) => Promise<SurcoGrid | null>
   rowWaves: (requests: RowWaveRequest[]) => Promise<Record<string, number[]>>

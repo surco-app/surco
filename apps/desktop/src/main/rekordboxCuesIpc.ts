@@ -4,7 +4,13 @@ import { BrowserWindow, ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
 import { isEngineContent } from '../shared/engineContent'
 import { isTraktorContent, traktorKey } from '../shared/traktorContent'
-import type { QueuedCues, SaveCuesOutcome, SaveCuesRequest, SurcoGrid } from '../shared/types'
+import type {
+  LibraryTracks,
+  QueuedCues,
+  SaveCuesOutcome,
+  SaveCuesRequest,
+  SurcoGrid,
+} from '../shared/types'
 import { type BeatGridFit, provisionalGrid } from './beatGrid'
 import { readEngineTrackCues } from './engineCues'
 import { engineDropInput } from './engineDropInput'
@@ -42,6 +48,8 @@ export function registerRekordboxCuesIpc(host: {
   beatGrid: (file: string) => Promise<BeatGridFit | null>
   words: (file: string) => Promise<Uint16Array | null>
   provisional: Pick<ProvisionalList, 'add'>
+  // The same file in each program the editor writes cues to, for a flow to reach them all.
+  twins: (file: string) => Promise<LibraryTracks>
   engine?: {
     libraryDir: () => string
     queue: CueQueue
@@ -127,6 +135,7 @@ export function registerRekordboxCuesIpc(host: {
       words: engine.words,
     })
   })
+  ipcMain.handle('rekordbox:cueTwins', (_e, file: string) => host.twins(file))
   ipcMain.handle('rekordbox:auditionLead', async (_e, contentId: string) => {
     const path = host.collection()
     const file = withCollection(

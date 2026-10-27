@@ -888,7 +888,10 @@
       "batch": {
         "mark_one": "Marquage auto de {{count}} morceau",
         "mark_other": "Marquage auto de {{count}} morceaux",
-        "withProposals": "Avec propositions"
+        "withProposals": "Avec propositions",
+        "twinsTitle": "Où le flux est placé",
+        "twinsUnsaved_one": "{{count}} avec des modifications non enregistrées, laissé tel quel",
+        "twinsUnsaved_other": "{{count}} avec des modifications non enregistrées, laissés tels quels"
       },
       "engine": {
         "save": "Enregistrer dans Engine DJ",
@@ -922,6 +925,16 @@
         "help": "rekordbox n’a pas encore analysé ce morceau. Surco a mesuré le tempo et la grille, vous pouvez donc placer les cues dès maintenant. Quand rekordbox l’analysera, Surco les calera sur sa grille.",
         "measuring": "Mesure de la grille…",
         "auto": "Le marquage auto a besoin de l’analyse de rekordbox"
+      },
+      "twins": {
+        "title": "En enregistrant, le flux est aussi placé dans",
+        "hot_one": "{{count}} hot cue",
+        "hot_other": "{{count}} hot cues",
+        "calls_one": "{{count}} CALL",
+        "calls_other": "{{count}} CALL",
+        "both": "{{hot}} et {{calls}}",
+        "unsaved": "Vous avez des modifications non enregistrées dans {{program}} pour ce morceau. Elles restent telles quelles.",
+        "overwrite": "Le placer là aussi et perdre ces modifications"
       }
     }
   },
@@ -1621,7 +1634,15 @@
       "lettersByTimeHint": "A est toujours le premier cue du morceau. Désactivez-le si chaque lettre est un pad fixe pour vous.",
       "markPoint": "Mettre un CALL là où vous marquez",
       "traktorColours": "Dans Traktor ces cues s’affichent en bleu, car Traktor colore chaque cue selon son type",
-      "callsOnlyRekordbox": "Les CALL n’existent que dans rekordbox. Engine DJ et Traktor ne reçoivent que les hot cues"
+      "callsOnlyRekordbox": "Les CALL n’existent que dans rekordbox. Engine DJ et Traktor ne reçoivent que les hot cues",
+      "targets": {
+        "title": "Appliquer aussi les flux dans",
+        "hint": "Le logiciel dans lequel vous marquez reçoit toujours les cues. Surco cherche le même morceau dans les autres par son fichier et y place le flux avec la grille et les cues qu’il a déjà. Les cues placés à la main restent dans le logiciel où vous les placez.",
+        "rekordbox": "Hot cues et CALL",
+        "traktor": "Hot cues seulement, en bleu, de A à G. Traktor lit sa collection au démarrage, donc Surco vous demandera de le fermer à l’enregistrement.",
+        "engine": "Hot cues seulement. Engine DJ n’a pas de CALL.",
+        "missing": "Surco ne trouve pas {{program}} sur cet ordinateur"
+      }
     }
   },
   "errorBoundary": {

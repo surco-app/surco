@@ -65,3 +65,30 @@ describe('letter order as the renderer resolves it', () => {
     expect(screen.getByTestId('letters').textContent).toBe('false')
   })
 })
+
+function FlowTargets(): React.JSX.Element {
+  const s = useAppSettings()
+  return (
+    <p data-testid="targets">
+      {[s.cueFlowToRekordbox, s.cueFlowToTraktor, s.cueFlowToEngine].map(String).join(',')}
+    </p>
+  )
+}
+
+describe('the programs a flow reaches as the renderer resolves them', () => {
+  it('reaches every program before the stored settings arrive and keeps one the DJ took out', () => {
+    render(
+      <SettingsProvider settings={null}>
+        <FlowTargets />
+      </SettingsProvider>,
+    )
+    expect(screen.getByTestId('targets').textContent).toBe('true,true,true')
+    cleanup()
+    render(
+      <SettingsProvider settings={{ cueFlowToTraktor: false }}>
+        <FlowTargets />
+      </SettingsProvider>,
+    )
+    expect(screen.getByTestId('targets').textContent).toBe('true,false,true')
+  })
+})

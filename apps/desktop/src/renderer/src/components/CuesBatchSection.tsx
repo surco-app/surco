@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { activeCueFlow, MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
 import { isTraktorContent } from '../../../shared/traktorContent'
+import type { CueLibrary } from '../../../shared/types'
 import { type AutoMarkTarget, acceptAutoMarks } from '../lib/cueAutoMark'
 import { forgetStaleDrafts } from '../lib/cueDrafts'
 import { flowName } from '../lib/cueFlowName'
@@ -12,12 +13,21 @@ import {
   draftsToSave,
   forgetAutoMark,
   forgetDraft,
+  keptDrafts,
   useAutoMarks,
   useUnsavedCueTracks,
 } from '../lib/cueSession'
+import { libraryOf, twinPlansOf } from '../lib/cueTwins'
 import { useAppSettings } from '../lib/settingsContext'
 import { saveAllKey } from './CuesSection'
 import { Select } from './Select'
+
+const LIBRARIES: CueLibrary[] = ['rekordbox', 'traktor', 'engine']
+const LIBRARY_NAME: Record<CueLibrary, string> = {
+  rekordbox: 'rekordbox',
+  traktor: 'Traktor',
+  engine: 'Engine DJ',
+}
 
 const BUTTON =
   'press inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg disabled:opacity-40'
@@ -52,6 +62,29 @@ export function CuesBatchSection({
   })
   const savable = (contentId: string) => canSave || !isTraktorContent(contentId)
   const unsaved = new Set(ids.filter((id) => unsavedAll.has(id) && savable(id)))
+  const drafts = keptDrafts().filter((d) => unsaved.has(d.contentId))
+  const { data: plans = [] } = useQuery({
+    queryKey: [
+      'cue-twin-plans-batch',
+      drafts.map((d) => [d.contentId, d.draft.cues]),
+      [...unsavedAll].sort(),
+      settings.cueFlowToRekordbox,
+      settings.cueFlowToTraktor,
+      settings.cueFlowToEngine,
+      settings.cueQuantize,
+    ],
+    queryFn: () => twinPlansOf(queryClient, drafts, settings),
+    enabled: drafts.length > 0,
+  })
+  const twins = drafts.length > 0 ? plans.filter((p) => savable(p.contentId)) : []
+  const reach = LIBRARIES.map((library) => ({
+    library,
+    tracks:
+      [...unsaved].filter((id) => libraryOf(id) === library).length +
+      twins.filter((p) => p.library === library && p.status === 'planned').length,
+    kept: twins.filter((p) => p.library === library && p.status === 'unsaved').length,
+  })).filter((r) => r.tracks + r.kept > 0)
+  const reachesOthers = twins.length > 0
   const ofKind = (kind: string) => ids.filter((id) => marks.get(id)?.kind === kind).length
   const proposals = ids.reduce((sum, id) => {
     const mark = marks.get(id)
@@ -84,8 +117,19 @@ export function CuesBatchSection({
     setBusy(true)
     try {
       await forgetStaleDrafts(queryClient)
-      const reqs = draftsToSave().filter((r) => ids.includes(r.contentId) && savable(r.contentId))
-      if (reqs.length === 0) return
+      const mine = draftsToSave().filter((r) => ids.includes(r.contentId) && savable(r.contentId))
+      if (mine.length === 0) return
+      const others = await twinPlansOf(
+        queryClient,
+        keptDrafts().filter((d) => mine.some((r) => r.contentId === d.contentId)),
+        settings,
+      )
+      const reqs = [
+        ...mine,
+        ...others.flatMap((p) =>
+          p.status === 'planned' && savable(p.contentId) ? [p.request] : [],
+        ),
+      ]
       const outcome = await window.api.saveRekordboxCues(reqs).catch(() => 'failed' as const)
       setSaveFailed(outcome !== 'queued')
       if (outcome !== 'queued') return
@@ -146,6 +190,29 @@ export function CuesBatchSection({
           </button>
         </div>
       )}
+      {reachesOthers && (
+        <div
+          data-testid="cues-batch-twins"
+          className="mt-3 rounded-lg border border-[var(--color-line)] text-xs"
+        >
+          <p className="px-3 pt-2.5 pb-1.5 text-fg-dim">{tr('editor.cues.batch.twinsTitle')}</p>
+          <dl>
+            {reach.map(({ library, tracks, kept }) => (
+              <div
+                key={library}
+                data-testid={`cues-batch-twin-${library}`}
+                className="grid grid-cols-[5.5rem_3rem_minmax(0,1fr)] items-baseline gap-2 border-t border-[var(--color-line)] px-3 py-2"
+              >
+                <dt className="text-fg">{LIBRARY_NAME[library]}</dt>
+                <dd className="tabular-nums text-fg">{tracks}</dd>
+                <dd className="text-warn">
+                  {kept > 0 && tr('editor.cues.batch.twinsUnsaved', { count: kept })}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
       {unsaved.size > 0 && (
         <div className="mt-3 grid gap-2">
           <button
@@ -155,7 +222,9 @@ export function CuesBatchSection({
             onClick={() => void save()}
             className={PRIMARY}
           >
-            {tr(saveAllKey(unsaved), { count: unsaved.size })}
+            {tr(reachesOthers ? 'editor.cues.saveAllMixed' : saveAllKey(unsaved), {
+              count: unsaved.size,
+            })}
           </button>
           {saveFailed && (
             <p data-testid="cues-batch-save-failed" className="text-xs text-warn">

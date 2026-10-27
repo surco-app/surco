@@ -1,5 +1,15 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Keyboard, Minimize2, Pause, Play, Trash2, Undo2, X } from 'lucide-react'
+import {
+  Check,
+  CircleAlert,
+  Keyboard,
+  Minimize2,
+  Pause,
+  Play,
+  Trash2,
+  Undo2,
+  X,
+} from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -67,11 +77,13 @@ import {
   keepDraft,
   keepPlayhead,
   keptDraft,
+  keptDrafts,
   keptPlayhead,
   settleCueFocus,
   useCueFocus,
   useUnsavedCueTracks,
 } from '../lib/cueSession'
+import { type TwinPlan, twinPlansOf } from '../lib/cueTwins'
 import { quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
 import { isTypingTarget } from '../lib/keymap'
@@ -275,6 +287,84 @@ function CueKeys({
         </ul>
       )}
     </div>
+  )
+}
+
+const LIBRARY_NAME: Record<TwinPlan['library'], string> = {
+  rekordbox: 'rekordbox',
+  traktor: 'Traktor',
+  engine: 'Engine DJ',
+}
+
+// Where saving also places the flow: one line per other program holding the same file,
+// with what it gets there, and the programs where the DJ left work unsaved, kept as it is.
+function TwinRows({
+  plans,
+  onOverwrite,
+}: {
+  plans: TwinPlan[]
+  onOverwrite: (contentId: string) => void
+}): React.JSX.Element | null {
+  const { t: tr } = useTranslation()
+  if (plans.length === 0) return null
+  return (
+    <section
+      data-testid="cues-twins"
+      aria-label={tr('editor.cues.twins.title')}
+      className="mt-3 shrink-0 rounded-lg border border-[var(--color-line)] px-3 py-2.5 text-xs"
+    >
+      <p className="text-fg-dim">{tr('editor.cues.twins.title')}</p>
+      <ul className="mt-2 grid gap-1.5">
+        {plans.map((plan) => {
+          const name = LIBRARY_NAME[plan.library]
+          if (plan.status === 'unsaved')
+            return (
+              <li
+                key={plan.contentId}
+                data-testid={`cues-twin-${plan.library}-unsaved`}
+                className="flex items-start gap-2"
+              >
+                <CircleAlert className="mt-px h-3.5 w-3.5 shrink-0 text-warn" aria-hidden="true" />
+                <span className="w-20 shrink-0 text-fg">{name}</span>
+                <span className="grid gap-1 text-fg-muted">
+                  <span>{tr('editor.cues.twins.unsaved', { program: name })}</span>
+                  <button
+                    type="button"
+                    data-testid={`cues-twin-${plan.library}-overwrite`}
+                    onClick={() => onOverwrite(plan.contentId)}
+                    className="press justify-self-start text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
+                  >
+                    {tr('editor.cues.twins.overwrite')}
+                  </button>
+                </span>
+              </li>
+            )
+          const hot = tr('editor.cues.twins.hot', { count: plan.hot })
+          return (
+            <li
+              key={plan.contentId}
+              data-testid={`cues-twin-${plan.library}`}
+              className="flex items-center gap-2"
+            >
+              <Check
+                className="h-3.5 w-3.5 shrink-0 text-good"
+                strokeWidth={3}
+                aria-hidden="true"
+              />
+              <span className="w-20 shrink-0 text-fg">{name}</span>
+              <span className="text-fg-dim">
+                {plan.calls > 0
+                  ? tr('editor.cues.twins.both', {
+                      hot,
+                      calls: tr('editor.cues.twins.calls', { count: plan.calls }),
+                    })
+                  : hot}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
   )
 }
 
@@ -515,6 +605,32 @@ function Editing({
   const wanted = wantedOfDraft(state.cues)
   const clearable = state.cues.some((c) => !state.locked.includes(c.key))
   const unchanged = JSON.stringify(wanted) === JSON.stringify(baseline)
+  const [overwrite, setOverwrite] = useState<ReadonlySet<string>>(new Set())
+  const own = { contentId: cue.contentId, path: cue.path, label: cue.label, draft: state }
+  const flowMarked = !provisional && !unchanged && Object.keys(state.origin).length > 0
+  const { data: twinData = [] } = useQuery({
+    queryKey: [
+      'cue-twin-plans',
+      cue.contentId,
+      cue.path,
+      wanted,
+      state.generatedBy,
+      [...unsavedSet].sort(),
+      [...overwrite],
+      settings.cueFlowToRekordbox,
+      settings.cueFlowToTraktor,
+      settings.cueFlowToEngine,
+      settings.cueQuantize,
+    ],
+    queryFn: () => twinPlansOf(queryClient, [own], settings, overwrite),
+    enabled: flowMarked,
+  })
+  const twins = flowMarked ? twinData : []
+  const overwriteTwin = (contentId: string) => setOverwrite(new Set([...overwrite, contentId]))
+  const twinRequests = async (drafts: Parameters<typeof twinPlansOf>[1]) =>
+    (await twinPlansOf(queryClient, drafts, settings, overwrite)).flatMap((p) =>
+      p.status === 'planned' && savable(p.contentId) ? [p.request] : [],
+    )
   useEffect(() => {
     if (unchanged) forgetDraft(cue.contentId)
     else
@@ -725,6 +841,7 @@ function Editing({
       return false
     }
     setSaveFailed(null)
+    setOverwrite(new Set())
     for (const req of reqs) forgetDraft(req.contentId)
     await refreshQueued()
     return true
@@ -739,6 +856,7 @@ function Editing({
         fingerprint: read.fingerprint,
         ...(provisional ? { provisional: true as const } : {}),
       },
+      ...(flowMarked ? await twinRequests([own]) : []),
     ])
     if (saved) setProposed(null)
   }
@@ -749,7 +867,11 @@ function Editing({
     setSavingAll(true)
     try {
       await forgetStaleDrafts(queryClient)
-      await send(draftsToSave().filter((r) => savable(r.contentId)))
+      const mine = draftsToSave().filter((r) => savable(r.contentId))
+      await send([
+        ...mine,
+        ...(await twinRequests(keptDrafts().filter((d) => savable(d.contentId)))),
+      ])
     } finally {
       setSavingAll(false)
     }
@@ -1179,6 +1301,7 @@ function Editing({
             <CuePhraseBand sections={read.sections ?? []} durationMs={read.durationMs} />
           </div>
           {detail}
+          <TwinRows plans={twins} onOverwrite={overwriteTwin} />
         </>
       ) : (
         <>
@@ -1190,6 +1313,7 @@ function Editing({
             {detail}
           </div>
           {foldedRow}
+          <TwinRows plans={twins} onOverwrite={overwriteTwin} />
           {saveAllButton && <div className="mt-2 flex justify-end">{saveAllButton}</div>}
         </>
       )}

@@ -176,6 +176,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     const words = (await handler('rekordbox:cueWaveDetail')({}, '101')) as Uint16Array
     expect([...words]).toEqual([(7 << 13) | (31 << 2), (7 << 7) | (16 << 2)])
@@ -203,6 +204,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     expect(await handler('rekordbox:cueWaveDetail')({}, '101')).toBeNull()
   })
@@ -217,6 +219,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     expect(await handler('rekordbox:cueWaveDetail')({}, '101')).toBeNull()
     expect(await handler('rekordbox:cueWaveDetail')({}, '999')).toBeNull()
@@ -228,6 +231,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     expect(await handler('rekordbox:cueWaveDetail')({}, '101')).toBeNull()
   })
@@ -244,6 +248,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     const learned = await handler('rekordbox:learnFlow')({})
     expect(learned).toEqual({
@@ -264,6 +269,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     expect(await handler('rekordbox:learnFlow')({})).toBeNull()
   })
@@ -278,6 +284,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     registerRekordboxCuesIpc(host(() => MY_FLOW))
     expect(await handler('rekordbox:countCompletable')({})).toBe(1)
@@ -296,6 +303,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     const req = {
       contentId: '103',
@@ -319,6 +327,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     const req = {
       contentId: '103',
@@ -342,6 +351,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     const req = (contentId: string) => ({
       contentId,
@@ -368,6 +378,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     expect(await handler('rekordbox:auditionLead')({}, '101')).toBeCloseTo((1152 / 44100) * 1000, 3)
   })
@@ -382,6 +393,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     expect(await handler('rekordbox:auditionLead')({}, '101')).toBe(0)
   })
@@ -396,6 +408,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     expect(await handler('rekordbox:auditionLead')({}, '999')).toBe(0)
   })
@@ -411,6 +424,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid,
       words: async () => Uint16Array.from([7, 8, 9]),
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     const out = (await handler('rekordbox:surcoGrid')({}, '101')) as {
       bpm: number
@@ -435,6 +449,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => ({ bpm: 120, firstMs: 100 }),
       words: async () => Uint16Array.from([7, 8, 9]),
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     const out = (await handler('rekordbox:surcoGrid')({}, '101')) as { words: Uint16Array }
     const lead = Math.round((((1152 + 576 + 529) / 44100) * 1000 * 150) / 1000)
@@ -451,6 +466,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     expect(await handler('rekordbox:surcoGrid')({}, '101')).toBeNull()
   })
@@ -466,6 +482,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     expect(await handler('rekordbox:surcoGrid')({}, '999')).toBeNull()
     expect(beatGrid).not.toHaveBeenCalled()
@@ -481,6 +498,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add },
+      twins: async () => ({}),
     })
     const wanted = [{ ms: 1000, kind: 0, color: null }]
     handler('rekordbox:saveCues')({}, [
@@ -507,6 +525,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     expect(await handler('rekordbox:trackCues')({}, '103')).toBeNull()
     expect(handler('rekordbox:countCompletable')({})).toBe(0)
@@ -524,6 +543,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     return Promise.all([
       expect(handler('rekordbox:queuedCues')({}, '103')).resolves.toEqual({
@@ -544,6 +564,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     registerRekordboxCuesIpc(host(() => undefined))
     const read = (await handler('rekordbox:trackCues')({}, '101')) as TrackCues
@@ -580,6 +601,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     expect(await handler('rekordbox:queuedCues')({}, '103')).toBeNull()
   })
@@ -594,6 +616,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     handler('rekordbox:undoCues')({}, '103')
     expect(drop).toHaveBeenCalledWith('c1')
@@ -609,6 +632,7 @@ describe('registerRekordboxCuesIpc', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
     })
     handler('rekordbox:undoCues')({}, '103')
     expect(drop).not.toHaveBeenCalled()
@@ -643,6 +667,7 @@ describe('registerRekordboxCuesIpc for Engine DJ tracks', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
       engine: { libraryDir: () => dir, queue: engine, applyQuietly: applyEngine, words },
     })
     return { applyRekordbox, applyEngine, words }
@@ -755,6 +780,7 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
       beatGrid: async () => null,
       words: async () => null,
       provisional: { add: vi.fn() },
+      twins: async () => ({}),
       traktor: {
         nml: () => nml,
         bootVolume: () => 'HD',
@@ -812,5 +838,26 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
     expect(await handler('rekordbox:queuedCues')({}, ID)).toEqual({ wanted, fingerprint: 'F1' })
     handler('rekordbox:undoCues')({}, ID)
     expect(drop).toHaveBeenCalledWith('c1')
+  })
+})
+
+describe('rekordbox:cueTwins', () => {
+  it('answers with the same file in each program the cue editor writes to', async () => {
+    const twins = vi.fn(async (_file: string) => ({ rekordbox: '101', traktor: 'traktor:k' }))
+    registerRekordboxCuesIpc({
+      collection: () => '',
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins,
+    })
+    expect(await handler('rekordbox:cueTwins')({}, '/m/a.aiff')).toEqual({
+      rekordbox: '101',
+      traktor: 'traktor:k',
+    })
+    expect(twins).toHaveBeenCalledWith('/m/a.aiff')
   })
 })

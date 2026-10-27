@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../../preload/api'
@@ -32,7 +32,14 @@ afterEach(async () => {
 
 let last: Pick<
   SyncedDraft,
-  'cueFlows' | 'activeCueFlow' | 'cueJumpBars' | 'cueQuantize' | 'cueLettersByTime'
+  | 'cueFlows'
+  | 'activeCueFlow'
+  | 'cueJumpBars'
+  | 'cueQuantize'
+  | 'cueLettersByTime'
+  | 'cueFlowToRekordbox'
+  | 'cueFlowToTraktor'
+  | 'cueFlowToEngine'
 > | null = null
 
 const KEPT: CueFlow[] = [MIX_IN, MY_FLOW, ONE_AT_32, CALLS_ONLY]
@@ -52,6 +59,9 @@ function Harness({
     cueJumpBars: 16 as CueJumpBars,
     cueQuantize: 'bar' as CueQuantize,
     cueLettersByTime: true,
+    cueFlowToRekordbox: true,
+    cueFlowToTraktor: true,
+    cueFlowToEngine: true,
   })
   last = draft
   return (
@@ -600,5 +610,19 @@ describe('CuesTab', () => {
       expect(await screen.findByTestId('cue-learn-failed')).toBeInTheDocument()
       expect(screen.queryByTestId('cue-learn-spinner')).toBeNull()
     })
+  })
+
+  // A flow placed in one program goes to the same file in the others the DJ keeps here.
+  it('lets the DJ choose which programs a flow also reaches, each one always shown', async () => {
+    installApi({ traktorAvailable: async () => true, engineAvailable: async () => false })
+    render(<Harness collection="/c/master.db" />)
+    const traktor = screen.getByTestId('settings-cue-flow-to-traktor')
+    await waitFor(() => expect(traktor).toBeEnabled())
+    expect(screen.getByTestId('settings-cue-flow-to-rekordbox')).toBeEnabled()
+    expect(screen.getByTestId('settings-cue-flow-to-engine')).toBeDisabled()
+    expect(screen.getByTestId('settings-cue-flow-to-engine-missing')).toBeInTheDocument()
+    fireEvent.click(traktor)
+    expect(last?.cueFlowToTraktor).toBe(false)
+    expect(last?.cueFlowToRekordbox).toBe(true)
   })
 })

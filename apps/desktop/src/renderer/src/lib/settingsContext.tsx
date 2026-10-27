@@ -99,6 +99,9 @@ interface ResolvedSettings {
   cueJumpBars: CueJumpBars
   cueQuantize: CueQuantize
   cueLettersByTime: boolean
+  cueFlowToRekordbox: boolean
+  cueFlowToTraktor: boolean
+  cueFlowToEngine: boolean
   hiddenSources: PlaylistSource[]
   // The collection.nml the DJ confirmed, the only one Traktor cues are written to.
   traktorNmlPath: string
@@ -149,6 +152,9 @@ const DEFAULTS: ResolvedSettings = {
   cueJumpBars: DEFAULT_CUE_JUMP_BARS,
   cueQuantize: DEFAULT_CUE_QUANTIZE,
   cueLettersByTime: true,
+  cueFlowToRekordbox: true,
+  cueFlowToTraktor: true,
+  cueFlowToEngine: true,
   hiddenSources: [],
   traktorNmlPath: '',
 }
@@ -199,6 +205,9 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     cueJumpBars: normalizeCueJumpBars(settings.cueJumpBars),
     cueQuantize: normalizeCueQuantize(settings.cueQuantize),
     cueLettersByTime: settings.cueLettersByTime !== false,
+    cueFlowToRekordbox: settings.cueFlowToRekordbox !== false,
+    cueFlowToTraktor: settings.cueFlowToTraktor !== false,
+    cueFlowToEngine: settings.cueFlowToEngine !== false,
     hiddenSources: normalizeHiddenSources(settings.hiddenSources),
     traktorNmlPath: settings.traktorNmlPath ?? DEFAULTS.traktorNmlPath,
   }

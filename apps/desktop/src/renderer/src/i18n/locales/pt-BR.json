@@ -888,7 +888,10 @@
       "batch": {
         "mark_one": "Marcar automático em {{count}} faixa",
         "mark_other": "Marcar automático em {{count}} faixas",
-        "withProposals": "Com propostas"
+        "withProposals": "Com propostas",
+        "twinsTitle": "Onde o fluxo é colocado",
+        "twinsUnsaved_one": "{{count}} com alterações não salvas, não é tocada",
+        "twinsUnsaved_other": "{{count}} com alterações não salvas, não são tocadas"
       },
       "engine": {
         "save": "Salvar no Engine DJ",
@@ -922,6 +925,16 @@
         "help": "O rekordbox ainda não analisou esta faixa. O Surco mediu o andamento e a grade, então você já pode colocar os cues. Quando o rekordbox analisar, o Surco vai ajustá-los à grade dele.",
         "measuring": "Medindo a grade…",
         "auto": "A marcação automática precisa da análise do rekordbox"
+      },
+      "twins": {
+        "title": "Ao salvar, o fluxo também é colocado em",
+        "hot_one": "{{count}} hot cue",
+        "hot_other": "{{count}} hot cues",
+        "calls_one": "{{count}} CALL",
+        "calls_other": "{{count}} CALL",
+        "both": "{{hot}} e {{calls}}",
+        "unsaved": "Você tem alterações não salvas no {{program}} para esta faixa. Elas ficam como estão.",
+        "overwrite": "Colocar lá também e perder essas alterações"
       }
     }
   },
@@ -1621,7 +1634,15 @@
       "lettersByTimeHint": "A é sempre o primeiro cue da faixa. Desligue se cada letra for um pad fixo para você.",
       "markPoint": "Pôr um CALL onde você marca",
       "traktorColours": "No Traktor estes cues aparecem em azul, porque o Traktor colore cada cue pelo tipo",
-      "callsOnlyRekordbox": "Os CALL só existem no rekordbox. O Engine DJ e o Traktor recebem só os hot cues"
+      "callsOnlyRekordbox": "Os CALL só existem no rekordbox. O Engine DJ e o Traktor recebem só os hot cues",
+      "targets": {
+        "title": "Aplicar os fluxos também em",
+        "hint": "O programa em que você marca sempre recebe os cues. O Surco procura a mesma faixa nos outros pelo arquivo e coloca o fluxo com o grid e os cues que ela já tem lá. Os cues que você coloca à mão ficam no programa onde você os marca.",
+        "rekordbox": "Hot cues e CALL",
+        "traktor": "Só hot cues, em azul, de A a G. O Traktor lê a coleção ao abrir, então ao salvar o Surco vai pedir que você o feche.",
+        "engine": "Só hot cues. O Engine DJ não tem CALL.",
+        "missing": "O Surco não encontra o {{program}} neste computador"
+      }
     }
   },
   "errorBoundary": {

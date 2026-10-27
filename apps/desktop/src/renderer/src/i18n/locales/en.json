@@ -888,7 +888,10 @@
       "batch": {
         "mark_one": "Auto mark {{count}} track",
         "mark_other": "Auto mark {{count}} tracks",
-        "withProposals": "With proposals"
+        "withProposals": "With proposals",
+        "twinsTitle": "Where the flow goes",
+        "twinsUnsaved_one": "{{count}} with unsaved changes, left as it is",
+        "twinsUnsaved_other": "{{count}} with unsaved changes, left as they are"
       },
       "engine": {
         "save": "Save to Engine DJ",
@@ -922,6 +925,16 @@
         "help": "rekordbox has not analysed this track yet. Surco measured the tempo and the grid, so you can set the cues now. Once rekordbox analyses it, Surco moves them onto its grid.",
         "measuring": "Measuring the beat grid…",
         "auto": "Auto mark needs rekordbox’s analysis"
+      },
+      "twins": {
+        "title": "Saving also places the flow in",
+        "hot_one": "{{count}} hot cue",
+        "hot_other": "{{count}} hot cues",
+        "calls_one": "{{count}} CALL",
+        "calls_other": "{{count}} CALLs",
+        "both": "{{hot}} and {{calls}}",
+        "unsaved": "You have unsaved changes in {{program}} for this track. They are left as they are.",
+        "overwrite": "Place it there too and lose those changes"
       }
     }
   },
@@ -1621,7 +1634,15 @@
       "lettersByTimeHint": "A is always the first cue of the track. Turn it off if each letter is a fixed pad for you.",
       "markPoint": "Put a CALL where you mark",
       "traktorColours": "In Traktor these cues show in blue, since Traktor colours each cue by its type",
-      "callsOnlyRekordbox": "CALLs only exist in rekordbox. Engine DJ and Traktor get the hot cues only"
+      "callsOnlyRekordbox": "CALLs only exist in rekordbox. Engine DJ and Traktor get the hot cues only",
+      "targets": {
+        "title": "Also place the flows in",
+        "hint": "The program you mark in always gets the cues. Surco finds the same track in the others by its file and places the flow on the grid and cues it already has there. Cues you place by hand stay in the program where you place them.",
+        "rekordbox": "Hot cues and CALLs",
+        "traktor": "Hot cues only, in blue, from A to G. Traktor reads its collection when it starts, so Surco will ask you to close it when you save.",
+        "engine": "Hot cues only. Engine DJ has no CALLs.",
+        "missing": "Surco cannot find {{program}} on this computer"
+      }
     }
   },
   "errorBoundary": {

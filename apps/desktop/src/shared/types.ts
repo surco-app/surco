@@ -232,6 +232,10 @@ export interface Settings {
   cueJumpBars: CueJumpBars
   cueQuantize: CueQuantize
   cueLettersByTime: boolean
+  // Where a flow placed in one program's cue editor is placed too, on the same file.
+  cueFlowToRekordbox: boolean
+  cueFlowToTraktor: boolean
+  cueFlowToEngine: boolean
   hiddenSources: PlaylistSource[]
   rekordboxPlaylistsFieldOffered: boolean
   syncEngineDj: boolean
@@ -818,6 +822,10 @@ export type LibraryCopyPresence = { cues?: number; playlists?: number } | null
 export type LibraryCopyInfo = Partial<
   Record<'rekordbox' | 'engine' | 'traktor', LibraryCopyPresence>
 >
+
+export type CueLibrary = 'rekordbox' | 'engine' | 'traktor'
+
+export type LibraryTracks = Partial<Record<CueLibrary, string>>
 
 export type LibraryReplaceOutcome = 'repointed' | 'replaced' | 'none' | 'skipped' | 'failed'
 

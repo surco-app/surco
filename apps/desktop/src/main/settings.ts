@@ -83,6 +83,9 @@ export const defaults: Settings = {
   cueJumpBars: DEFAULT_CUE_JUMP_BARS,
   cueQuantize: DEFAULT_CUE_QUANTIZE,
   cueLettersByTime: true,
+  cueFlowToRekordbox: true,
+  cueFlowToTraktor: true,
+  cueFlowToEngine: true,
   hiddenSources: [],
   rekordboxPlaylistsFieldOffered: false,
   syncEngineDj: false,
@@ -334,6 +337,9 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
     cueJumpBars: normalizeCueJumpBars(patch.cueJumpBars ?? base.cueJumpBars),
     cueQuantize: normalizeCueQuantize(patch.cueQuantize ?? base.cueQuantize),
     cueLettersByTime: (patch.cueLettersByTime ?? base.cueLettersByTime) !== false,
+    cueFlowToRekordbox: (patch.cueFlowToRekordbox ?? base.cueFlowToRekordbox) !== false,
+    cueFlowToTraktor: (patch.cueFlowToTraktor ?? base.cueFlowToTraktor) !== false,
+    cueFlowToEngine: (patch.cueFlowToEngine ?? base.cueFlowToEngine) !== false,
     hiddenSources: normalizeHiddenSources(patch.hiddenSources ?? base.hiddenSources),
   }
 }

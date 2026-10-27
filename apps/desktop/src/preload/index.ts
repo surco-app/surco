@@ -11,6 +11,7 @@ import type {
   BpmResult,
   DockIconFrames,
   KeyResult,
+  LibraryTracks,
   LimiterGlimpse,
   ListFixRequest,
   ListRemoval,
@@ -218,6 +219,8 @@ const api: Api = {
     ipcRenderer.invoke('rekordbox:cueWaveDetail', contentId),
   rekordboxCueDropInput: (contentId: string): Promise<DropInput | null> =>
     ipcRenderer.invoke('rekordbox:cueDropInput', contentId),
+  rekordboxCueTwins: (file: string): Promise<LibraryTracks> =>
+    ipcRenderer.invoke('rekordbox:cueTwins', file),
   rekordboxAuditionLead: (contentId: string): Promise<number> =>
     ipcRenderer.invoke('rekordbox:auditionLead', contentId),
   rekordboxSurcoGrid: (contentId: string): Promise<SurcoGrid | null> =>
