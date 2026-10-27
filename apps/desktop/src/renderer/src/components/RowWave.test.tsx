@@ -9,7 +9,10 @@ import { RowWave } from './RowWave'
 
 beforeEach(() => {
   ;(window as unknown as { api: Partial<Api> }).api = {
-    rowWaves: vi.fn<Api['rowWaves']>(async () => ({ '/a.DAT': Array(100).fill(0.5) })),
+    rowWaves: vi.fn<Api['rowWaves']>(async () => ({
+      '/a.DAT': Array(100).fill(0.5),
+      '/m/new.aiff': Array(100).fill(0.4),
+    })),
   }
 })
 afterEach(() => {
@@ -37,6 +40,72 @@ describe('RowWave', () => {
       />,
     )
     expect(screen.getByTestId('track-unanalyzed')).toHaveTextContent('Not analyzed in rekordbox')
+  })
+
+  // Cues set by hand on a track rekordbox has not analysed were drawn over the note that
+  // stood in for the wave, letters on top of words. Surco measured the wave when those
+  // cues were set, so the row draws it under them as any row does, in faint ink because it
+  // is Surco's and not rekordbox's, and a dashed ring says what is missing.
+  it('draws Surco’s own wave in faint ink under cues set on a track rekordbox has not analysed', async () => {
+    render(
+      <RowWave
+        request={{ path: '/m/new.aiff' }}
+        cues={cues}
+        durationSec={128}
+        pending={false}
+        active
+        unanalyzed="rekordbox"
+      />,
+    )
+    const bars = await screen.findByTestId('track-wave-bars')
+    expect(bars.querySelector('path')).toHaveAttribute('fill', 'var(--color-fg-faint)')
+    expect(screen.queryByTestId('track-unanalyzed')).not.toBeInTheDocument()
+    expect(screen.getByTestId('track-unanalyzed-mark')).toBeInTheDocument()
+    expect(screen.getByTestId('track-wave')).toHaveAccessibleName(
+      '2 hot cues. Not analyzed in rekordbox',
+    )
+  })
+
+  it('never writes the note under cues, even before Surco’s wave arrives', () => {
+    ;(window as unknown as { api: Partial<Api> }).api = {
+      rowWaves: vi.fn<Api['rowWaves']>(async () => ({})),
+    }
+    render(
+      <RowWave
+        request={{ path: '/m/new.aiff' }}
+        cues={cues}
+        durationSec={128}
+        pending={false}
+        active
+        unanalyzed="rekordbox"
+      />,
+    )
+    expect(screen.queryByTestId('track-unanalyzed')).not.toBeInTheDocument()
+    expect(screen.getByTestId('track-unanalyzed-mark')).toBeInTheDocument()
+  })
+
+  it('keeps the note, and no wave, while the track has no cues', async () => {
+    render(
+      <RowWave
+        request={{ path: '/m/new.aiff' }}
+        cues={[]}
+        durationSec={128}
+        pending={false}
+        active
+        unanalyzed="rekordbox"
+      />,
+    )
+    await new Promise((r) => setTimeout(r, 30))
+    expect(screen.getByTestId('track-unanalyzed')).toBeInTheDocument()
+    expect(screen.queryByTestId('track-wave-bars')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('track-unanalyzed-mark')).not.toBeInTheDocument()
+  })
+
+  it('draws an analysed track’s wave in the accent', async () => {
+    render(<RowWave request={request} cues={cues} durationSec={128} pending={false} active />)
+    const bars = await screen.findByTestId('track-wave-bars')
+    expect(bars.querySelector('path')).toHaveAttribute('fill', 'var(--color-accent)')
+    expect(screen.queryByTestId('track-unanalyzed-mark')).not.toBeInTheDocument()
   })
 
   it('stays quiet about analysis for a track rekordbox has analysed', async () => {
