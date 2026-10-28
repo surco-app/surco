@@ -25,19 +25,16 @@ export default function SceneLayout({
 }) {
   if (wide) {
     return (
-      <section
-        id={id}
-        className="scroll-mt-12 border-b border-line/50 py-10 last:border-b-0 sm:py-12"
-      >
+      <section id={id} className="scroll-mt-12 py-16 sm:py-24">
         <Reveal>
           <p className="font-mono text-xs tracking-wider text-blue uppercase">{step}</p>
-          <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+          <h2 className="group/title mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
             {title}
             <AnchorLink id={id} />
           </h2>
           <div className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">{children}</div>
         </Reveal>
-        <Reveal delay={120} className="mt-7">
+        <Reveal delay={120} className="mt-10">
           <Replayable>{app}</Replayable>
         </Reveal>
       </section>

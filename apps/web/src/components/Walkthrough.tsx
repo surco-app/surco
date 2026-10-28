@@ -40,7 +40,7 @@ export default function Walkthrough() {
             <div className="flex justify-center">
               <Kicker>{t('home.walkthrough.kicker')}</Kicker>
             </div>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
               {t('home.walkthrough.title')}
             </h2>
             <p className="mx-auto mt-3 max-w-xl leading-relaxed text-pretty text-muted">
@@ -86,15 +86,12 @@ export default function Walkthrough() {
           its own, which spent three screens of scroll on the part of the flow the page
           itself calls "and while it's at it": the tagging and the fake-lossless verdict are
           what a visitor comes for, and they were being crowded out by their own footnotes. */}
-      <section
-        id={SCENE_ANCHORS.audio}
-        className="scroll-mt-12 border-b border-line/50 py-10 sm:py-12"
-      >
+      <section id={SCENE_ANCHORS.audio} className="scroll-mt-12 py-16 sm:py-24">
         <Reveal>
           <p className="font-mono text-xs tracking-wider text-blue uppercase">
             {t('home.audioGroup.step')}
           </p>
-          <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+          <h2 className="group/title mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
             {t('home.audioGroup.title')}
             <AnchorLink id={SCENE_ANCHORS.audio} />
           </h2>
@@ -102,7 +99,7 @@ export default function Walkthrough() {
             {t('home.audioGroup.lede')}
           </div>
         </Reveal>
-        <Reveal delay={120} className="mt-7">
+        <Reveal delay={120} className="mt-10">
           <div className="grid gap-5 lg:grid-cols-3">
             <div id={SCENE_ANCHORS.declick} className="scroll-mt-24">
               <Replayable>
@@ -110,7 +107,7 @@ export default function Walkthrough() {
                   <DeclickScene />
                 </div>
               </Replayable>
-              <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
+              <p className="group/title mt-3 text-sm leading-relaxed text-pretty text-muted">
                 {t('home.declick.short')}
                 <AnchorLink id={SCENE_ANCHORS.declick} />
               </p>
@@ -121,7 +118,7 @@ export default function Walkthrough() {
                   <TrimScene />
                 </div>
               </Replayable>
-              <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
+              <p className="group/title mt-3 text-sm leading-relaxed text-pretty text-muted">
                 {t('home.trim.short')}
                 <AnchorLink id={SCENE_ANCHORS.trim} />
               </p>
@@ -132,7 +129,7 @@ export default function Walkthrough() {
                   <NormalizeScene />
                 </div>
               </Replayable>
-              <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
+              <p className="group/title mt-3 text-sm leading-relaxed text-pretty text-muted">
                 {t('home.normalize.short')}
                 <AnchorLink id={SCENE_ANCHORS.normalize} />
               </p>
