@@ -275,12 +275,7 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
           existingByPath.set(track.relativePath.normalize('NFC'), trackId)
         }
       } else {
-        const cols = TRACK_COLUMNS.filter((c) => live.has(c))
-        db.run(
-          `INSERT INTO Track (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`,
-          cols.map((c) => row.get(c) ?? null),
-        )
-        trackId = lastId(db)
+        trackId = insertEngineTrack(db, track, live, epoch)
         existingByPath.set(track.relativePath.normalize('NFC'), trackId)
       }
       // Engine renders artwork from its own AlbumArt blobs, never from the file's
@@ -324,6 +319,10 @@ async function ensureAlbumArt(db: Database, coverPath: string): Promise<number |
   } catch {
     return null
   }
+  return albumArtId(db, bytes)
+}
+
+export function albumArtId(db: Database, bytes: Buffer): number {
   const hash = createHash('sha1').update(bytes).digest('hex')
   const found = db.exec('SELECT id FROM AlbumArt WHERE hash = ?', [hash])
   if (found.length) return found[0].values[0][0] as number
@@ -402,32 +401,62 @@ function rowOfReplaced(
 }
 
 async function resolveTrack(libraryDir: string, add: PendingAdd): Promise<EngineTrack> {
-  const bpm = Number.parseFloat(add.meta.bpm)
-  const year = Number.parseInt(add.meta.year, 10)
   let fileBytes: number | null = null
   try {
     fileBytes = (await stat(add.filePath)).size
   } catch {
     // The conversion just wrote this file; losing a race here only loses the size.
   }
+  return engineTrackFor(libraryDir, add.filePath, add.meta, fileBytes)
+}
+
+export type EngineTrackMeta = Pick<
+  TrackMetadata,
+  'title' | 'artist' | 'album' | 'genre' | 'comment' | 'year'
+> &
+  Partial<Pick<TrackMetadata, 'bpm' | 'rating'>>
+
+export function engineTrackFor(
+  libraryDir: string,
+  filePath: string,
+  meta: EngineTrackMeta,
+  fileBytes: number | null,
+): EngineTrack {
+  const bpm = Number.parseFloat(meta.bpm ?? '')
+  const year = Number.parseInt(meta.year, 10)
   return {
     // Engine stores the path relative to the Engine Library dir, forward-slashed.
-    relativePath: relative(libraryDir, add.filePath).split('\\').join('/'),
-    filename: basename(add.filePath),
-    fileType: extname(add.filePath).slice(1).toLowerCase(),
+    relativePath: relative(libraryDir, filePath).split('\\').join('/'),
+    filename: basename(filePath),
+    fileType: extname(filePath).slice(1).toLowerCase(),
     fileBytes,
-    title: add.meta.title,
-    artist: add.meta.artist,
-    album: add.meta.album,
-    genre: add.meta.genre,
-    comment: add.meta.comment,
+    title: meta.title,
+    artist: meta.artist,
+    album: meta.album,
+    genre: meta.genre,
+    comment: meta.comment,
     bpm: Number.isFinite(bpm) ? Math.round(bpm) : null,
     bpmAnalyzed: Number.isFinite(bpm) ? bpm : null,
     year: Number.isFinite(year) ? year : null,
     // Unknown at conversion time; Engine fills the length when it analyzes the file.
     durationSec: null,
-    rating: starsTagToEngineRating(add.meta.rating ?? ''),
+    rating: starsTagToEngineRating(meta.rating ?? ''),
   }
+}
+
+export function insertEngineTrack(
+  db: Database,
+  track: EngineTrack,
+  live: ReadonlySet<string>,
+  epoch: number,
+): number {
+  const values = trackRow(track, epoch)
+  const cols = TRACK_COLUMNS.filter((c) => live.has(c))
+  db.run(
+    `INSERT INTO Track (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`,
+    cols.map((c) => values[TRACK_COLUMNS.indexOf(c)] ?? null),
+  )
+  return lastId(db)
 }
 
 export async function assertEngineClosed(dbPath: string): Promise<void> {
