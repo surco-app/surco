@@ -978,7 +978,6 @@
   "changelog": {
     "metaTitle": "Surco の変更履歴、各リリースの新機能",
     "metaDescription": "各 Surco リリースの新機能：Discogs 自動マッチ、rekordbox と Traktor エクスポート、ラウドネス分析、マルチトラック編集など。",
-    "kicker": "最新情報",
     "title": "最新情報",
     "lede": "ノイズのない各リリースのハイライト。バージョンごとに音楽の準備方法を変える機能。",
     "beta": {
@@ -2480,7 +2479,6 @@
   "privacy": {
     "metaTitle": "プライバシー · Surco",
     "metaDescription": "Surcoの使用時にコンピュータから送信されるデータ、その送信先のサービス、このウェブサイトが計測する内容。",
-    "kicker": "プライバシー",
     "title": "プライバシー",
     "lede": "Surcoにはアカウントもテレメトリーもありません。アプリの使用時にコンピュータから送信されるすべてのデータと、このウェブサイトが計測する内容を説明します。",
     "privacyHeading": "アプリ",

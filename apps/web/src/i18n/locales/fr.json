@@ -978,7 +978,6 @@
   "changelog": {
     "metaTitle": "Historique de Surco, les nouveautés de chaque version",
     "metaDescription": "Les nouveautés de chaque version de Surco : association automatique Discogs, export rekordbox et Traktor, analyse du loudness, édition de plusieurs morceaux et plus encore.",
-    "kicker": "Nouveautés",
     "title": "Nouveautés",
     "lede": "L'essentiel de chaque version, sans le bruit. Les fonctions qui changent ta façon de préparer ta musique, version après version.",
     "beta": {
@@ -2482,7 +2481,6 @@
   "privacy": {
     "metaTitle": "Confidentialité · Surco",
     "metaDescription": "Quelles données quittent ton ordinateur quand tu utilises Surco, vers quels services elles vont et ce que mesure ce site.",
-    "kicker": "Confidentialité",
     "title": "Confidentialité",
     "lede": "Surco n'a ni compte ni télémétrie. Voici tout ce qui quitte ton ordinateur quand tu utilises l'appli, et ce que mesure ce site.",
     "privacyHeading": "L'appli",

@@ -978,7 +978,6 @@
   "changelog": {
     "metaTitle": "Novedades de Surco, Historial de versiones",
     "metaDescription": "Qué hay de nuevo en cada versión de Surco: auto-match de Discogs, export a rekordbox y Traktor, análisis de sonoridad, edición multi-pista y más.",
-    "kicker": "Novedades",
     "title": "Novedades",
     "lede": "Lo importante de cada versión, sin ruido. Las funciones que cambian cómo preparas tu música, versión a versión.",
     "beta": {
@@ -2482,7 +2481,6 @@
   "privacy": {
     "metaTitle": "Privacidad · Surco",
     "metaDescription": "Qué datos salen de tu ordenador cuando usas Surco, a qué servicios van y qué mide esta web.",
-    "kicker": "Privacidad",
     "title": "Privacidad",
     "lede": "Surco no tiene cuenta ni telemetría. Esto es todo lo que sale de tu ordenador cuando usas la app, y lo que mide esta web.",
     "privacyHeading": "La app",

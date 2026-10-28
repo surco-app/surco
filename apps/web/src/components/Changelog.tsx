@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next'
 import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
-import Kicker from './Kicker'
 import Reveal from './Reveal'
 import ScrollProgress from './ScrollProgress'
 
@@ -83,8 +82,7 @@ export default function Changelog() {
       <main id="main" className="relative mx-auto max-w-3xl px-6 sm:px-10">
         <section className="pt-12 pb-4 sm:pt-16">
           <Reveal eager>
-            <Kicker>{t('changelog.kicker')}</Kicker>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
+            <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
               {t('changelog.title')}
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">

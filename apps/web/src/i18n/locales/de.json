@@ -978,7 +978,6 @@
   "changelog": {
     "metaTitle": "Surco-Änderungsprotokoll: Was ist neu in jeder Version",
     "metaDescription": "Was in jeder Surco-Version neu ist: automatischer Discogs-Abgleich, Export nach rekordbox und Traktor, Lautheitsanalyse, Bearbeitung mehrerer Tracks und mehr.",
-    "kicker": "Neuigkeiten",
     "title": "Neuigkeiten",
     "lede": "Das Wichtigste jeder Version, ohne Rauschen. Die Funktionen, die verändern, wie du deine Musik vorbereitest, Version für Version.",
     "beta": {
@@ -2482,7 +2481,6 @@
   "privacy": {
     "metaTitle": "Datenschutz · Surco",
     "metaDescription": "Welche Daten deinen Computer verlassen, wenn du Surco nutzt, an welche Dienste sie gehen und was diese Website misst.",
-    "kicker": "Datenschutz",
     "title": "Datenschutz",
     "lede": "Surco hat kein Konto und keine Telemetrie. Hier steht alles, was deinen Computer verlässt, wenn du die App nutzt, und was diese Website misst.",
     "privacyHeading": "Die App",
