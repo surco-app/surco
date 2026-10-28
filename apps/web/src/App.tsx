@@ -67,7 +67,9 @@ export default function App() {
             </p>
           </Reveal>
           <Reveal eager delay={150}>
-            <DownloadButton location="hero" note={t('home.heroFree')} center />
+            <div id="hero-download">
+              <DownloadButton location="hero" note={t('home.heroFree')} center />
+            </div>
           </Reveal>
           <Reveal eager delay={220}>
             <div className="relative isolate mx-auto mt-12 max-w-5xl text-left">
@@ -112,7 +114,10 @@ export default function App() {
         {/* pb is smaller than pt: the footer brings its own py-14, and the two
             together left about 150px of empty background between the last link on
             the page and the first line of the footer. */}
-        <section className="mx-auto max-w-6xl px-6 pt-20 pb-12 sm:pt-28 sm:pb-16">
+        <section
+          id="instalar"
+          className="mx-auto max-w-6xl scroll-mt-8 px-6 pt-20 pb-12 sm:pt-28 sm:pb-16"
+        >
           <SectionView location="home-closing" />
           <Reveal>
             <div className="text-center">

@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { DONATE_URL } from '../config'
 import { LANGUAGE_NAMES, LANGUAGES, type Language } from '../i18n'
 import { trackDonate } from '../lib/analytics'
-import { isCondensed } from '../lib/header'
+import { isCondensed, showsHeaderDownload } from '../lib/header'
 import { HEADER_SECTIONS, HOME, PAGES, type Page } from '../lib/nav'
+import { btnPrimary } from '../lib/ui'
 import { rememberLanguage, useAutoLanguage } from '../lib/useAutoLanguage'
 
 // `page` marks which standalone page renders the header; section links then
@@ -18,6 +19,7 @@ export default function Header({
 }) {
   const { t, i18n } = useTranslation()
   const [scrolled, setScrolled] = useState(false)
+  const [heroCtaPassed, setHeroCtaPassed] = useState(false)
   const [open, setOpen] = useState(false)
   const [languageOpen, setLanguageOpen] = useState(false)
   const languageRef = useRef<HTMLDivElement>(null)
@@ -45,6 +47,21 @@ export default function Header({
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    const heroCta = document.getElementById('hero-download')
+    if (!heroCta) return
+    const io = new IntersectionObserver(([entry]) =>
+      setHeroCtaPassed(
+        showsHeaderDownload({
+          isIntersecting: entry.isIntersecting,
+          top: entry.boundingClientRect.top,
+        }),
+      ),
+    )
+    io.observe(heroCta)
+    return () => io.disconnect()
   }, [])
 
   useEffect(() => {
@@ -258,6 +275,17 @@ export default function Header({
               ))}
             </ul>
           </div>
+          <a
+            href="#instalar"
+            data-testid="header-download"
+            aria-hidden={heroCtaPassed ? undefined : true}
+            tabIndex={heroCtaPassed ? undefined : -1}
+            className={`hidden ${btnPrimary} px-4 py-1.5 text-sm sm:inline-flex ${
+              heroCtaPassed ? '' : 'pointer-events-none invisible translate-y-1 opacity-0'
+            }`}
+          >
+            {t('nav.download')}
+          </a>
           <button
             type="button"
             aria-label={open ? t('nav.closeMenu') : t('nav.openMenu')}

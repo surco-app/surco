@@ -12,3 +12,7 @@ export function isCondensed(scrollY: number, current: boolean): boolean {
   if (scrollY < EXPAND_AT) return false
   return current
 }
+
+export function showsHeaderDownload(heroCta: { isIntersecting: boolean; top: number }): boolean {
+  return !heroCta.isIntersecting && heroCta.top < 0
+}
