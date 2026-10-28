@@ -447,6 +447,7 @@ export default function App(): React.JSX.Element {
   // sidebar auto-fit look rows up here instead of querying test ids out of the DOM —
   // a runtime dependency on DOM order that would break silently under virtualization.
   const rowEls = useRef(new Map<string, HTMLButtonElement>())
+  const revealRowRef = useRef<((id: string) => void) | null>(null)
   // The list's sticky filter header, measured when paging the scroll position.
   const qualityFilterRef = useRef<HTMLDivElement>(null)
   // Refs so the prefetch callback can stay stable (memoized rows depend on it)
@@ -1855,6 +1856,7 @@ export default function App(): React.JSX.Element {
     rowEls,
     listScrollRef,
     qualityFilterRef,
+    revealRowRef,
   })
   // 1-based position of the selected row within the current view, for the "54/200" pill —
   // so a DJ auditioning a crate one by one sees how far along they are. Null when nothing
@@ -3216,6 +3218,7 @@ export default function App(): React.JSX.Element {
                               outsideFilter={outsideFilterIds}
                               onVisible={onListRowVisible}
                               rowRegistry={rowEls}
+                              revealRowRef={revealRowRef}
                               backupAtByPath={backupAtByPath}
                               pendingCuePaths={pendingCuePaths}
                               unsavedCueIds={unsavedCueIds}

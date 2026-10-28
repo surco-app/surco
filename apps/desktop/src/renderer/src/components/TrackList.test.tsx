@@ -2089,3 +2089,135 @@ describe('TrackList row waves', () => {
     expect(onVisible).toHaveBeenLastCalledWith('a', false)
   })
 })
+
+describe('TrackList past a few hundred rows', () => {
+  const ROW_PX = 80
+  const VIEW_PX = 400
+  const many = (n: number) => Array.from({ length: n }, (_, i) => track({ id: `t${i}` }))
+  const realOffsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')
+  const realRect = Element.prototype.getBoundingClientRect
+  beforeEach(() => {
+    Element.prototype.getBoundingClientRect = function (this: Element) {
+      const rect = realRect.call(this)
+      if ((this as HTMLElement).dataset?.testid !== 'track-list-window') return rect
+      const scroller = this.closest<HTMLElement>('[data-testid="scroller"]')
+      return { ...rect, top: -(scroller?.scrollTop ?? 0) } as DOMRect
+    }
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+      configurable: true,
+      get(this: HTMLElement) {
+        if (this.dataset.testid === 'scroller') return VIEW_PX
+        return this.hasAttribute('data-index') ? ROW_PX : 0
+      },
+    })
+  })
+  afterEach(() => {
+    Element.prototype.getBoundingClientRect = realRect
+    if (realOffsetHeight)
+      Object.defineProperty(HTMLElement.prototype, 'offsetHeight', realOffsetHeight)
+  })
+
+  function renderScrolled(
+    tracks: TrackItem[],
+    extra: { separatorBefore?: ReadonlyMap<string, readonly string[]> } = {},
+  ) {
+    const scrollRootRef = { current: null as HTMLDivElement | null }
+    const revealRowRef = { current: null as ((id: string) => void) | null }
+    const rowRegistry = { current: new Map<string, HTMLButtonElement>() }
+    render(
+      <div
+        data-testid="scroller"
+        ref={(el) => {
+          scrollRootRef.current = el
+          if (el) Object.defineProperty(el, 'clientHeight', { configurable: true, value: VIEW_PX })
+          if (el)
+            Object.defineProperty(el, 'scrollHeight', {
+              configurable: true,
+              value: tracks.length * ROW_PX,
+            })
+          if (el)
+            el.scrollTo = ((opts: ScrollToOptions) => {
+              el.scrollTop = opts.top ?? 0
+              fireEvent.scroll(el)
+            }) as typeof el.scrollTo
+        }}
+      >
+        <TrackList
+          tracks={tracks}
+          selectedId={null}
+          selectedIds={new Set()}
+          outputFormat="aiff"
+          bindings={bindings}
+          onSelect={vi.fn()}
+          onActivate={vi.fn()}
+          onRemove={vi.fn()}
+          onSwipeRemove={vi.fn()}
+          onAcceptReview={vi.fn()}
+          onPrefetch={vi.fn()}
+          renderMenu={() => null}
+          scrollRootRef={scrollRootRef}
+          rowRegistry={rowRegistry}
+          revealRowRef={revealRowRef}
+          separatorBefore={extra.separatorBefore}
+        />
+      </div>,
+    )
+    const scroller = screen.getByTestId('scroller')
+    const scrollTo = (top: number) =>
+      act(() => {
+        scroller.scrollTop = top
+        fireEvent.scroll(scroller)
+      })
+    return { scroller, scrollTo, revealRowRef, rowRegistry }
+  }
+
+  it('mounts only the rows around the viewport, since 8,250 mounted rows scrolled at 13 fps', () => {
+    renderScrolled(many(8250))
+    const mounted = screen.getAllByTestId('track-row').length
+    expect(mounted).toBeGreaterThan(0)
+    expect(mounted).toBeLessThan(40)
+  })
+
+  it('keeps every row of a smaller list mounted, the way it always scrolled smoothly', () => {
+    renderScrolled(many(300))
+    expect(screen.getAllByTestId('track-row')).toHaveLength(300)
+  })
+
+  it('mounts the rows the list is scrolled to', () => {
+    const { scrollTo } = renderScrolled(many(1000))
+    expect(screen.queryByTestId('track-drag-t500')).toBeNull()
+    scrollTo(500 * ROW_PX)
+    expect(screen.getByTestId('track-drag-t500')).toBeInTheDocument()
+    expect(screen.queryByTestId('track-drag-t0')).toBeNull()
+  })
+
+  it('numbers a row by its place in the whole list, not among the rows mounted', () => {
+    const { scrollTo } = renderScrolled(many(1000))
+    scrollTo(500 * ROW_PX)
+    const row = within(screen.getByTestId('track-drag-t500')).getByTestId('track-row')
+    expect(row).toHaveAttribute('aria-posinset', '501')
+    expect(row).toHaveAttribute('aria-setsize', '1000')
+  })
+
+  it('draws a playlist separator above the row it breaks before', () => {
+    const { scrollTo } = renderScrolled(many(1000), {
+      separatorBefore: new Map([['t500', ['s1']]]),
+    })
+    scrollTo(500 * ROW_PX)
+    expect(
+      wrapperOf('s1').compareDocumentPosition(wrapperOf('t500')) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('brings a row that is not mounted into view, so the keyboard can reach any track', () => {
+    const { revealRowRef, rowRegistry } = renderScrolled(many(1000))
+    expect(rowRegistry.current.has('t900')).toBe(false)
+    act(() => revealRowRef.current?.('t900'))
+    expect(rowRegistry.current.get('t900')).toBeInTheDocument()
+  })
+
+  it('offers no reveal on a smaller list, where every row is already mounted', () => {
+    const { revealRowRef } = renderScrolled(many(300))
+    expect(revealRowRef.current).toBeNull()
+  })
+})

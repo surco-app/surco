@@ -20,6 +20,7 @@ interface Params {
   rowEls: RefObject<Map<string, HTMLButtonElement>>
   listScrollRef: RefObject<HTMLDivElement | null>
   qualityFilterRef: RefObject<HTMLDivElement | null>
+  revealRowRef?: RefObject<((id: string) => void) | null>
 }
 
 interface ListNavigation {
@@ -51,6 +52,7 @@ export function useListNavigation({
   rowEls,
   listScrollRef,
   qualityFilterRef,
+  revealRowRef,
 }: Params): ListNavigation {
   // Select the row at `next`, follow it with DOM focus, and page the scroll pane to keep
   // it in view. `delta` is the travel direction (sign) so paging eases toward the row from
@@ -62,8 +64,13 @@ export function useListNavigation({
     // keyboard instead of staying on the last clicked row, which left two rows
     // looking highlighted at once. preventScroll: we page the list ourselves below
     // rather than let the browser nudge the row flush to the margin.
-    const row = rowEls.current.get(visibleTracks[next].id)
-    if (!row) return
+    const id = visibleTracks[next].id
+    const row = rowEls.current.get(id)
+    if (!row) {
+      revealRowRef?.current?.(id)
+      requestAnimationFrame(() => rowEls.current.get(id)?.focus({ preventScroll: true }))
+      return
+    }
     row.focus({ preventScroll: true })
     const container = listScrollRef.current
     if (!container) return
@@ -100,7 +107,9 @@ export function useListNavigation({
   function pageSelection(dir: -1 | 1): void {
     // A page is the rows that fit in the scroll pane; measure a real row (the selected one,
     // or the first rendered) so it tracks the row height instead of a guessed constant.
-    const sample = rowEls.current.get(selectedId ?? visibleTracks[0]?.id ?? '')
+    const sample =
+      rowEls.current.get(selectedId ?? visibleTracks[0]?.id ?? '') ??
+      rowEls.current.values().next().value
     const rowStep = sample ? sample.getBoundingClientRect().height + 4 : 0
     const viewport = listScrollRef.current?.clientHeight ?? 0
     moveSelection(dir * pageSize(viewport, rowStep))
@@ -121,8 +130,12 @@ export function useListNavigation({
   function scrollToSelected(): void {
     if (!selectedId) return
     const row = rowEls.current.get(selectedId)
+    if (!row) {
+      revealRowRef?.current?.(selectedId)
+      return
+    }
     const container = listScrollRef.current
-    if (!row || !container) return
+    if (!container) return
     const cRect = container.getBoundingClientRect()
     const rRect = row.getBoundingClientRect()
     const headerH = qualityFilterRef.current?.offsetHeight ?? 0

@@ -55,6 +55,7 @@
   },
   "dependencies": {
     "@ffprobe-installer/ffprobe": "^2.1.2",
+    "@tanstack/react-virtual": "^3.14.13",
     "better-sqlite3-multiple-ciphers": "^13.0.3",
     "electron-log": "^5.4.4",
     "electron-updater": "^6.8.9",
