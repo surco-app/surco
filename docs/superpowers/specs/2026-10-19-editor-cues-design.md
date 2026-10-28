@@ -210,3 +210,23 @@ Lejos del 99 %. Por qué, medido sobre las pistas de aprender.
 Para ir más allá haría falta mirar el audio y no solo la onda resumida (entrada de voz o del sintetizador principal, el redoble y el silencio justo antes), o pedirle a él que confirme el primer donde rompe en las pistas dudosas. Con lo que da rekordbox, el techo práctico ronda el 70 % de recall con 70 % de precisión.
 
 No está conectado a la interfaz.
+
+## Medido: tu forma de marcar (28/10/2026)
+
+Copia de su colección del 28/10, solo lectura, 1580 pistas con donde rompe marcado y onda en color, 467 apartadas por el mismo hash que la medición de la detección. Comando: `SURCO_AUTO_TASTE_DB=<copia> vitest run --reporter=default --silent=false src/main/autoMarkTasteMeasure.test.ts`.
+
+Segura o dudosa. Lo que separa una propuesta buena de una mala es la puntuación de los árboles, no el parón de grave antes. Con el parón, tras 8 compases o más acierta el 72 % de las propuestas y tras uno solo el 61 %, casi lo mismo. Con la puntuación, 1 o más acierta el 85 % (el 43 % de las propuestas) y por debajo el 55 %. Segura es puntuación 1 o más. El parón se enseña como lo que se oyó antes, no como la razón de la seguridad.
+
+Ajustar Auto a cada DJ. Se siguen entrenando 30 árboles sobre los 150 de serie con las marcas del DJ y se eligen de nuevo el umbral, la separación y el máximo de propuestas. El 30 % de sus pistas queda aparte, y el ajuste solo se adopta si allí acierta más que el modelo de serie (F1). Como la colección de serie es la de Vicent, se simulan otros gustos con sus mismas pistas.
+
+| DJ | Pistas para aprender | F1 de serie | F1 ajustado | Se adopta |
+|---|---|---|---|---|
+| Vicent | 30 a 1113 | 0,680 | 0,678 a 0,680 | casi nunca |
+| Solo el primer donde rompe | 30 | 0,336 | 0,516 | sí |
+| Solo el primer donde rompe | 1113 | 0,336 | 0,563 | sí |
+| Solo el último donde rompe | 30 | 0,379 | 0,625 | sí |
+| Solo el último donde rompe | 300 | 0,379 | 0,694 | sí |
+
+Con 30 pistas ya mejora mucho a quien marca distinto, y a Vicent no le cambia nada. Entrenar tarda de 0,15 s con 30 pistas a 5 s con 1113, en un hilo aparte, con un máximo de 600 pistas. Falta medirlo con la colección de otro DJ de verdad.
+
+De dónde aprende. rekordbox, de las pistas con CALL (el CALL suelto es donde rompe). Traktor y Engine DJ no tienen CALL, así que de ellos aprende solo de lo que el DJ guarda en el editor de Surco, donde el CALL sigue como marca de trabajo. Cada guardado se apunta con las barras candidatas y donde marcó, la misma pista cuenta una vez (gana lo guardado sobre la colección) y, si el DJ lo deja, Surco vuelve a aprender solo cada 10 guardados.
