@@ -23,6 +23,7 @@ import { cleanIpcError, errorKeyOf, isFileInUseMessage, mainErrorMessage } from 
 import { autoNamesFile, renderOutputName } from '../lib/outputName'
 import { declickFor, declickForJob, jobAudio, normalizeFor, normalizeForJob } from '../lib/reapply'
 import type { TrackItem } from '../types'
+import { withMusicCover } from './useAppleMusicArtwork'
 import { useStableCallback } from './useStableCallback'
 
 // How many tracks convert at once in a bulk run. All logical cores but one (min 2): the
@@ -350,6 +351,7 @@ export function useTrackProcessing({
       // called this without waiting and users still hit the error — just intermittently,
       // "it works on the third or fourth try", which is what a lost race looks like.
       await releaseFile?.(track.inputPath)
+      const withCover = await withMusicCover(track, updateTrack)
       let moved = false
       try {
         const result = await window.api.processTrack({
@@ -357,7 +359,7 @@ export function useTrackProcessing({
           inputPath: track.inputPath,
           outputName,
           meta,
-          ...coverSourceOf(track),
+          ...coverSourceOf(withCover),
           removeCover: track.coverRemoved,
           clearExtras: track.metaCleared,
           foreignRemoved:

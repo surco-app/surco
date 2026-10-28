@@ -48,6 +48,20 @@ vi.mock('./cover', () => ({ hasCoverSource: () => false, prepareProcessedCover: 
 vi.mock('./i18n', () => ({ createMenuT: () => (k: string) => k }))
 vi.mock('./settings', () => ({ getSettings: () => ({}) }))
 
+const readMeta = vi.fn()
+vi.mock('./ffmpeg', () => ({ readMeta: (...args: unknown[]) => readMeta(...args) }))
+const fetchAppleMusicArtwork = vi.fn()
+vi.mock('./appleMusicArtwork', () => ({
+  artworkDir: async () => '/tmp/art',
+  fetchAppleMusicArtwork: (...args: unknown[]) => fetchAppleMusicArtwork(...args),
+}))
+const readAppleMusicPlaylist = vi.fn()
+vi.mock('./appleMusicPlaylists', () => ({
+  dumpAppleMusicPlaylists: vi.fn(),
+  readAppleMusicEntry: vi.fn(),
+  readAppleMusicPlaylist: (...args: unknown[]) => readAppleMusicPlaylist(...args),
+}))
+
 const JOB = {
   outputPath: '/music/Castion - El Consentido.aiff',
   meta: { title: 'El Consentido', artist: 'Castion' },
@@ -160,5 +174,61 @@ describe('applemusic:setField', () => {
       'Dj Lara',
       '/m/c.aiff',
     )
+  })
+})
+
+describe('applemusic:playlistTracks', () => {
+  beforeEach(async () => {
+    handlers.clear()
+    readMeta.mockReset()
+    fetchAppleMusicArtwork.mockReset()
+    readAppleMusicPlaylist.mockReset()
+    vi.stubGlobal('process', { ...process, platform: 'darwin' })
+    const { registerAppleMusicIpc } = await import('./appleMusicIpc')
+    registerAppleMusicIpc()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  // Reading every file of a 406-track playlist on a NAS, then asking Music for the covers
+  // they lacked, kept the list empty for over a minute; the rows come from Music alone.
+  it('answers with Music’s rows without reading a file or fetching a cover first', async () => {
+    const tracks = {
+      paths: ['/m/a.wav', '/m/b.wav'],
+      persistentIds: { '/m/a.wav': 'PA', '/m/b.wav': 'PB' },
+      meta: {},
+      missing: 0,
+    }
+    readAppleMusicPlaylist.mockResolvedValue(tracks)
+    const out = await handlers.get('applemusic:playlistTracks')?.({}, 'P1')
+    expect(out).toEqual(tracks)
+    expect(readMeta).not.toHaveBeenCalled()
+    expect(fetchAppleMusicArtwork).not.toHaveBeenCalled()
+  })
+})
+
+describe('applemusic:artwork', () => {
+  beforeEach(async () => {
+    handlers.clear()
+    fetchAppleMusicArtwork.mockReset()
+    vi.stubGlobal('process', { ...process, platform: 'darwin' })
+    const { registerAppleMusicIpc } = await import('./appleMusicIpc')
+    registerAppleMusicIpc()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('hands back the covers Music held, by entry, and nothing for one without', async () => {
+    fetchAppleMusicArtwork.mockResolvedValue([{ path: '/tmp/art/PB.jpg', url: 'thumb://pb' }])
+    const out = await handlers.get('applemusic:artwork')?.({}, ['PA', 'PB'])
+    expect(fetchAppleMusicArtwork).toHaveBeenCalledWith([
+      { persistentId: 'PA', outPath: '/tmp/art/PA.jpg' },
+      { persistentId: 'PB', outPath: '/tmp/art/PB.jpg' },
+    ])
+    expect(out).toEqual({ PB: { coverPath: '/tmp/art/PB.jpg', coverUrl: 'thumb://pb' } })
   })
 })

@@ -188,6 +188,10 @@ const api: Api = {
     ipcRenderer.invoke('applemusic:playlists'),
   loadAppleMusicPlaylistTracks: (persistentId: string): Promise<AppleMusicPlaylistTracks> =>
     ipcRenderer.invoke('applemusic:playlistTracks', persistentId),
+  appleMusicArtwork: (
+    persistentIds: string[],
+  ): Promise<Record<string, { coverPath: string; coverUrl: string }>> =>
+    ipcRenderer.invoke('applemusic:artwork', persistentIds),
   rekordboxAvailable: (): Promise<boolean> => ipcRenderer.invoke('rekordbox:available'),
   loadRekordboxTree: (): Promise<SourceNode[]> => ipcRenderer.invoke('rekordbox:tree'),
   rekordboxRecentCount: (): Promise<number> => ipcRenderer.invoke('rekordbox:recentCount'),

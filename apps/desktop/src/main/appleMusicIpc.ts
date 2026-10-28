@@ -1,4 +1,5 @@
 import { access, realpath } from 'node:fs/promises'
+import { join } from 'node:path'
 import { app, ipcMain } from 'electron'
 import log from 'electron-log/main'
 import type {
@@ -199,16 +200,7 @@ export function registerAppleMusicIpc(
       ? activity.track(
           'applemusic',
           'activity.appleMusicPlaylistTracks',
-          async () => {
-            const tracks = await readAppleMusicPlaylist(persistentId)
-            // Music holds artwork for files that carry none — over half a real library,
-            // almost all WAVs — and those rows used to import with an empty cover slot.
-            return attachMissingArtwork(tracks, {
-              hasEmbedded: async (path) => Boolean((await readMeta(path)).cover),
-              fetchArtwork: fetchAppleMusicArtwork,
-              outDir: artworkDir,
-            })
-          },
+          () => readAppleMusicPlaylist(persistentId),
           {
             summary: (out) => ({
               detailKey: 'activity.trackCount',
@@ -218,6 +210,22 @@ export function registerAppleMusicIpc(
         )
       : { paths: [], missing: 0 },
   )
+
+  ipcMain.handle('applemusic:artwork', async (_e, persistentIds: string[]) => {
+    if (process.platform !== 'darwin') return {}
+    const dir = await artworkDir()
+    const jobs = persistentIds.map((persistentId) => ({
+      persistentId,
+      outPath: join(dir, `${persistentId}.jpg`),
+    }))
+    const landed = new Map((await fetchAppleMusicArtwork(jobs)).map((c) => [c.path, c.url]))
+    const covers: Record<string, { coverPath: string; coverUrl: string }> = {}
+    for (const { persistentId, outPath } of jobs) {
+      const url = landed.get(outPath)
+      if (url) covers[persistentId] = { coverPath: outPath, coverUrl: url }
+    }
+    return covers
+  })
 
   // What Music holds for a file loaded on its own rather than imported from a playlist:
   // the same fill and the same missing artwork the import gives, for the candidate entries
