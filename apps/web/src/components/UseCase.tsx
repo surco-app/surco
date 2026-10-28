@@ -7,6 +7,7 @@ import { recipePages, settingGroups, settingShot, USE_CASE_SHOTS } from '../lib/
 import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
+import Kicker from './Kicker'
 import Lightbox from './Lightbox'
 import Reveal from './Reveal'
 import ScrollProgress from './ScrollProgress'
@@ -67,7 +68,7 @@ export function UseCaseOutro() {
 export function MacBadge() {
   const { t } = useTranslation()
   return (
-    <span className="inline-flex flex-none rounded-full border border-line px-2 py-0.5 font-mono text-[10px] tracking-wider whitespace-nowrap text-faint uppercase">
+    <span className="inline-flex flex-none rounded-full border border-line px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-faint">
       {t('useCases.macOnly')}
     </span>
   )
@@ -102,7 +103,7 @@ function SettingRow({ s }: { s: Setting & { n: number } }) {
             {s.value ?? t('useCases.on')}
           </span>
           {s.optional && (
-            <span className="rounded-full border border-line px-2 font-mono text-[10px] tracking-wider text-faint uppercase">
+            <span className="rounded-full border border-line px-2 text-[11px] font-medium text-faint">
               {t('useCases.optional')}
             </span>
           )}
@@ -149,9 +150,9 @@ export default function UseCasePage({ id }: { id: string }) {
             >
               ‹ {t('useCases.backLabel')}
             </a>
-            <p className="mt-8 font-mono text-xs tracking-wider text-blue uppercase">
-              {group?.title}
-            </p>
+            <div className="mt-8">
+              <Kicker>{group?.title}</Kicker>
+            </div>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-balance sm:text-5xl">
               {c.title}
             </h1>
@@ -169,9 +170,7 @@ export default function UseCasePage({ id }: { id: string }) {
             {c.settings.length > 0 && (
               <div className="mt-8 overflow-hidden rounded-2xl border border-line">
                 <div className="bg-surface2 px-5 py-3">
-                  <p className="font-mono text-xs tracking-wider text-faint uppercase">
-                    {t('useCases.settingsLabel')}
-                  </p>
+                  <p className="text-sm font-medium text-faint">{t('useCases.settingsLabel')}</p>
                   <p className="mt-1 text-sm text-muted">{t('useCases.settingsHint')}</p>
                 </div>
                 {settingGroups(c.settings).map((group, i) => {
@@ -209,9 +208,7 @@ export default function UseCasePage({ id }: { id: string }) {
               </div>
             )}
 
-            <p className="mt-10 font-mono text-xs tracking-wider text-faint uppercase">
-              {t('useCases.stepsLabel')}
-            </p>
+            <p className="mt-10 text-sm font-medium text-faint">{t('useCases.stepsLabel')}</p>
             <ol className="mt-4 space-y-5">
               {c.steps.map((step, i) => (
                 <li key={step.title} data-testid="use-case-step" className="flex gap-4">

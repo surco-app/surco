@@ -81,7 +81,7 @@ export default function Features() {
                     <Icon name={FEATURE_ICONS[i]} className="size-4.5" />
                   </div>
                   <h2 className="text-lg font-semibold text-fg">{g.title}</h2>
-                  <p className="mt-1 font-mono text-xs text-faint">{g.replaces}</p>
+                  <p className="mt-1 text-sm text-faint">{g.replaces}</p>
                   <ul className="mt-4 space-y-3">
                     {g.items.map((it) => (
                       <li key={it.t} className="flex gap-2.5 text-sm leading-relaxed">
@@ -141,7 +141,7 @@ export default function Features() {
           <Reveal>
             <div className="flex flex-col items-center gap-4">
               <DownloadButton location="features" />
-              <p className="font-mono text-xs text-faint">{t('home.closeNote')}</p>
+              <p className="text-sm text-faint">{t('home.closeNote')}</p>
             </div>
           </Reveal>
         </section>

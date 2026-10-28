@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
+import Kicker from './Kicker'
 import Lightbox from './Lightbox'
 import Reveal from './Reveal'
 import ScrollProgress from './ScrollProgress'
@@ -67,7 +68,7 @@ function GuideShot({
           />
         </button>
       )}
-      <figcaption className="border-t border-line/60 px-4 py-2.5 font-mono text-xs text-muted">
+      <figcaption className="border-t border-line/60 px-4 py-2.5 text-sm text-muted">
         {caption}
       </figcaption>
     </figure>
@@ -101,9 +102,7 @@ export default function Guide() {
             index used to sit in about 150px of empty background. */}
         <section className="pt-12 pb-4 sm:pt-16">
           <Reveal eager>
-            <p className="font-mono text-xs tracking-wider text-blue uppercase">
-              {t('guide.kicker')}
-            </p>
+            <Kicker>{t('guide.kicker')}</Kicker>
             <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
               {t('guide.title')}
             </h1>
@@ -112,9 +111,7 @@ export default function Guide() {
 
           <Reveal eager delay={120}>
             <nav className="mt-10 rounded-2xl border border-line bg-surface2/40 p-6">
-              <p className="font-mono text-xs tracking-wider text-faint uppercase">
-                {t('guide.tocLabel')}
-              </p>
+              <p className="text-sm font-medium text-faint">{t('guide.tocLabel')}</p>
               <ol className="mt-4 grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
                 {sections.map((s, i) => (
                   <li key={s.id}>

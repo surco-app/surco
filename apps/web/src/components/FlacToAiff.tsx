@@ -88,7 +88,7 @@ export default function FlacToAiff() {
         <section className="grid items-center gap-10 pt-12 pb-16 sm:pt-16 lg:grid-cols-[1.1fr_1fr]">
           <Reveal eager>
             <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl">
-              {t('flacToAiff.h1a')} <span className="text-grad">{t('flacToAiff.h1b')}</span>
+              {t('flacToAiff.h1a')} {t('flacToAiff.h1b')}
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
               {t('flacToAiff.lede')}
@@ -134,7 +134,7 @@ export default function FlacToAiff() {
             <div className="mt-8 overflow-x-auto">
               <table className="w-full border-collapse text-left text-sm">
                 <thead>
-                  <tr className="border-b border-line font-mono text-[11px] tracking-wider text-faint uppercase">
+                  <tr className="border-b border-line text-xs text-faint">
                     <th className="py-3 pr-4 font-medium">{t('flacToAiff.carry.head.what')}</th>
                     <th className="hidden py-3 pr-4 font-medium sm:table-cell">
                       {t('flacToAiff.carry.head.result')}

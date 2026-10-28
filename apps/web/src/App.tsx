@@ -137,9 +137,7 @@ export default function App() {
                 at 513px inside a 342px column and the page clipped them off the right. */}
             <div className="mx-auto mt-10 grid max-w-3xl gap-5 sm:grid-cols-2">
               <div className="inset-shadow-edge min-w-0 rounded-2xl border border-blue/30 bg-gradient-to-b from-blue/[0.07] to-transparent p-5 sm:p-6">
-                <p className="font-mono text-xs tracking-wider text-faint uppercase">
-                  {t('home.closeDirect')}
-                </p>
+                <p className="text-sm font-medium text-faint">{t('home.closeDirect')}</p>
                 <DownloadButton location="home-closing" />
               </div>
               <BrewCommand

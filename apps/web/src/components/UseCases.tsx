@@ -14,6 +14,7 @@ import {
 } from '../lib/useCases'
 import Footer from './Footer'
 import Header from './Header'
+import Kicker from './Kicker'
 import Reveal from './Reveal'
 import ScrollProgress from './ScrollProgress'
 import { type Group, MacBadge, type UseCase, UseCaseOutro } from './UseCase'
@@ -62,9 +63,7 @@ export default function UseCases() {
       <main id="main" className="relative mx-auto max-w-3xl px-6">
         <section className="pt-12 pb-4 sm:pt-16">
           <Reveal eager>
-            <p className="font-mono text-xs tracking-wider text-blue uppercase">
-              {t('useCases.kicker')}
-            </p>
+            <Kicker>{t('useCases.kicker')}</Kicker>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-balance sm:text-5xl">
               {t('useCases.title')}
             </h1>
@@ -164,9 +163,7 @@ export default function UseCases() {
                     if (items.length === 0) return null
                     return (
                       <div key={group.id}>
-                        <p className="font-mono text-xs tracking-wider text-faint uppercase">
-                          {group.title}
-                        </p>
+                        <p className="text-sm font-medium text-faint">{group.title}</p>
                         <ul className="mt-3 divide-y divide-line overflow-hidden rounded-xl border border-line">
                           {items.map((c) => (
                             <li key={c.id}>

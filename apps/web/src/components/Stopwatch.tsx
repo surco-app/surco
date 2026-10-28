@@ -160,7 +160,7 @@ export default function Stopwatch() {
         <button
           type="button"
           onClick={replay}
-          className="rounded-lg border border-line bg-surface2/60 px-3 py-1.5 font-mono text-xs text-muted transition-[color,border-color,scale] duration-200 hover:border-blue/40 hover:text-fg active:scale-[0.96]"
+          className="rounded-lg border border-line bg-surface2/60 px-3 py-1.5 text-xs font-medium text-muted transition-[color,border-color,scale] duration-200 hover:border-blue/40 hover:text-fg active:scale-[0.96]"
         >
           {t('stopwatch.replay')}
         </button>
@@ -226,7 +226,7 @@ export default function Stopwatch() {
         </div>
       </Reveal>
 
-      <p className="mt-4 font-mono text-[11px] text-faint">{t('stopwatch.footnote')}</p>
+      <p className="mt-4 text-xs text-faint">{t('stopwatch.footnote')}</p>
     </section>
   )
 }

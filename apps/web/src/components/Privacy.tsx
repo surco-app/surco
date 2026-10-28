@@ -55,9 +55,7 @@ export default function Privacy() {
       <main id="main" className="relative mx-auto max-w-3xl px-6">
         <section className="pt-12 pb-10 sm:pt-16">
           <Reveal eager>
-            <p className="font-mono text-xs tracking-wider text-blue uppercase">
-              {t('privacy.kicker')}
-            </p>
+            <Kicker>{t('privacy.kicker')}</Kicker>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-balance sm:text-5xl">
               {t('privacy.title')}
             </h1>
