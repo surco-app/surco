@@ -897,7 +897,14 @@
         "withProposals": "Avec propositions",
         "twinsTitle": "Où le flux est placé",
         "twinsUnsaved_one": "{{count}} avec des modifications non enregistrées, laissé tel quel",
-        "twinsUnsaved_other": "{{count}} avec des modifications non enregistrées, laissés tels quels"
+        "twinsUnsaved_other": "{{count}} avec des modifications non enregistrées, laissés tels quels",
+        "acceptSure_one": "Accepter la sûre",
+        "acceptSure_other": "Accepter les {{count}} sûres",
+        "confidence": "{{sure}}, {{doubtful}}",
+        "sure_one": "{{count}} sûre",
+        "sure_other": "{{count}} sûres",
+        "doubtful_one": "{{count}} douteuse",
+        "doubtful_other": "{{count}} douteuses"
       },
       "engine": {
         "save": "Enregistrer dans Engine DJ",

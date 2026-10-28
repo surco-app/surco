@@ -108,6 +108,45 @@ describe('Cues over several selected tracks', () => {
     expect(saveRekordboxCues).not.toHaveBeenCalled()
   })
 
+  it('accepts only the sure proposals on request and leaves the doubtful ones to review by hand', async () => {
+    setup()
+    act(() => {
+      keepAutoMark('103', {
+        kind: 'proposed',
+        proposals: [
+          { ms: bar(64), sure: true, quietBars: 8 },
+          { ms: bar(128), sure: false, quietBars: 1 },
+        ],
+      })
+      keepAutoMark('104', {
+        kind: 'proposed',
+        proposals: [{ ms: bar(32), sure: false, quietBars: 0 }],
+      })
+    })
+    expect(screen.getByTestId('cues-batch-confidence')).toHaveTextContent('1 sure, 2 doubtful')
+    expect(screen.getByTestId('cues-batch-accept-sure')).toHaveTextContent(
+      i18n.t('editor.cues.batch.acceptSure', { count: 1 }),
+    )
+    fireEvent.click(screen.getByTestId('cues-batch-accept-sure'))
+    await waitFor(() => expect([...unsavedCueTracks()]).toEqual(['103']))
+    expect(autoMarkOf('103')).toEqual({
+      kind: 'proposed',
+      proposals: [{ ms: bar(128), sure: false, quietBars: 1 }],
+    })
+  })
+
+  it('offers no separate accept for the sure ones when every proposal is sure', () => {
+    setup()
+    act(() => {
+      keepAutoMark('103', {
+        kind: 'proposed',
+        proposals: [{ ms: bar(64), sure: true, quietBars: 8 }],
+      })
+    })
+    expect(screen.queryByTestId('cues-batch-accept-sure')).toBeNull()
+    expect(screen.queryByTestId('cues-batch-confidence')).toBeNull()
+  })
+
   it('names the accept button by the proposals it accepts', () => {
     setup()
     act(() => {

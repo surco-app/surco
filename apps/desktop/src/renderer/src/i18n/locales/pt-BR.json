@@ -897,7 +897,14 @@
         "withProposals": "Com propostas",
         "twinsTitle": "Onde o fluxo é colocado",
         "twinsUnsaved_one": "{{count}} com alterações não salvas, não é tocada",
-        "twinsUnsaved_other": "{{count}} com alterações não salvas, não são tocadas"
+        "twinsUnsaved_other": "{{count}} com alterações não salvas, não são tocadas",
+        "acceptSure_one": "Aceitar a certa",
+        "acceptSure_other": "Aceitar as {{count}} certas",
+        "confidence": "{{sure}}, {{doubtful}}",
+        "sure_one": "{{count}} certa",
+        "sure_other": "{{count}} certas",
+        "doubtful_one": "{{count}} duvidosa",
+        "doubtful_other": "{{count}} duvidosas"
       },
       "engine": {
         "save": "Salvar no Engine DJ",

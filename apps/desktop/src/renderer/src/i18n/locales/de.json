@@ -897,7 +897,14 @@
         "withProposals": "Mit Vorschlägen",
         "twinsTitle": "Wohin der Ablauf kommt",
         "twinsUnsaved_one": "{{count}} mit ungespeicherten Änderungen, bleibt unverändert",
-        "twinsUnsaved_other": "{{count}} mit ungespeicherten Änderungen, bleiben unverändert"
+        "twinsUnsaved_other": "{{count}} mit ungespeicherten Änderungen, bleiben unverändert",
+        "acceptSure_one": "Den sicheren übernehmen",
+        "acceptSure_other": "Die {{count}} sicheren übernehmen",
+        "confidence": "{{sure}}, {{doubtful}}",
+        "sure_one": "{{count}} sicher",
+        "sure_other": "{{count}} sicher",
+        "doubtful_one": "{{count}} unsicher",
+        "doubtful_other": "{{count}} unsicher"
       },
       "engine": {
         "save": "In Engine DJ speichern",

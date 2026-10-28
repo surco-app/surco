@@ -102,10 +102,19 @@ export function CuesBatchSection({
     ...settings.cueFlows.map((f) => ({ value: f.id, label: flowName(f, tr) })),
     { value: MANUAL_CUE_FLOW, label: tr('editor.cues.manualMode'), divided: true },
   ]
-  const accept = async () => {
+  const confidence = ids.reduce(
+    (sum, id) => {
+      const mark = marks.get(id)
+      if (mark?.kind !== 'proposed') return sum
+      const sure = mark.proposals.filter((p) => p.sure).length
+      return { sure: sum.sure + sure, doubtful: sum.doubtful + mark.proposals.length - sure }
+    },
+    { sure: 0, doubtful: 0 },
+  )
+  const accept = async (onlySure = false) => {
     setBusy(true)
     try {
-      await acceptAutoMarks(queryClient, targets, settings)
+      await acceptAutoMarks(queryClient, targets, settings, { onlySure })
     } finally {
       setBusy(false)
     }
@@ -178,6 +187,14 @@ export function CuesBatchSection({
             ))}
         </dl>
       )}
+      {confidence.sure > 0 && confidence.doubtful > 0 && (
+        <p data-testid="cues-batch-confidence" className="mt-2 text-xs text-fg-dim">
+          {tr('editor.cues.batch.confidence', {
+            sure: tr('editor.cues.batch.sure', { count: confidence.sure }),
+            doubtful: tr('editor.cues.batch.doubtful', { count: confidence.doubtful }),
+          })}
+        </p>
+      )}
       {proposals > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button
@@ -189,6 +206,17 @@ export function CuesBatchSection({
           >
             {tr('editor.cues.auto.accept', { count: proposals })}
           </button>
+          {confidence.sure > 0 && confidence.doubtful > 0 && (
+            <button
+              type="button"
+              data-testid="cues-batch-accept-sure"
+              disabled={busy}
+              onClick={() => void accept(true)}
+              className="press rounded-lg border border-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] disabled:opacity-40"
+            >
+              {tr('editor.cues.batch.acceptSure', { count: confidence.sure })}
+            </button>
+          )}
           <button
             type="button"
             data-testid="cues-batch-discard"

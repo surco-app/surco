@@ -897,7 +897,14 @@
         "withProposals": "提案あり",
         "twinsTitle": "フローの配置先",
         "twinsUnsaved_one": "{{count}} 件は未保存の変更があるため、そのままにします",
-        "twinsUnsaved_other": "{{count}} 件は未保存の変更があるため、そのままにします"
+        "twinsUnsaved_other": "{{count}} 件は未保存の変更があるため、そのままにします",
+        "acceptSure_one": "確実な提案を採用",
+        "acceptSure_other": "確実な {{count}} 件を採用",
+        "confidence": "{{sure}}、{{doubtful}}",
+        "sure_one": "確実 {{count}} 件",
+        "sure_other": "確実 {{count}} 件",
+        "doubtful_one": "不確か {{count}} 件",
+        "doubtful_other": "不確か {{count}} 件"
       },
       "engine": {
         "save": "Engine DJ に保存",

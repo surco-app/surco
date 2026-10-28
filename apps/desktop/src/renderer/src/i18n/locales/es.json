@@ -897,7 +897,14 @@
         "withProposals": "Con propuestas",
         "twinsTitle": "Dónde se pone el flujo",
         "twinsUnsaved_one": "{{count}} con cambios sin guardar, no se toca",
-        "twinsUnsaved_other": "{{count}} con cambios sin guardar, no se tocan"
+        "twinsUnsaved_other": "{{count}} con cambios sin guardar, no se tocan",
+        "acceptSure_one": "Aceptar la segura",
+        "acceptSure_other": "Aceptar las {{count}} seguras",
+        "confidence": "{{sure}}, {{doubtful}}",
+        "sure_one": "{{count}} segura",
+        "sure_other": "{{count}} seguras",
+        "doubtful_one": "{{count}} dudosa",
+        "doubtful_other": "{{count}} dudosas"
       },
       "engine": {
         "save": "Guardar en Engine DJ",

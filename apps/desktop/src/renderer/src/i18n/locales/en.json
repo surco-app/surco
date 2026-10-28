@@ -897,7 +897,14 @@
         "withProposals": "With proposals",
         "twinsTitle": "Where the flow goes",
         "twinsUnsaved_one": "{{count}} with unsaved changes, left as it is",
-        "twinsUnsaved_other": "{{count}} with unsaved changes, left as they are"
+        "twinsUnsaved_other": "{{count}} with unsaved changes, left as they are",
+        "acceptSure_one": "Accept the sure one",
+        "acceptSure_other": "Accept the {{count}} sure ones",
+        "confidence": "{{sure}}, {{doubtful}}",
+        "sure_one": "{{count}} sure",
+        "sure_other": "{{count}} sure",
+        "doubtful_one": "{{count}} doubtful",
+        "doubtful_other": "{{count}} doubtful"
       },
       "engine": {
         "save": "Save to Engine DJ",
