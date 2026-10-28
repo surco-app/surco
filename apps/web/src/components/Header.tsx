@@ -51,7 +51,10 @@ export default function Header({
 
   useEffect(() => {
     const heroCta = document.getElementById('hero-download')
-    if (!heroCta) return
+    if (!heroCta) {
+      setHeroCtaPassed(showsHeaderDownload(null))
+      return
+    }
     const io = new IntersectionObserver(([entry]) =>
       setHeroCtaPassed(
         showsHeaderDownload({
@@ -274,7 +277,7 @@ export default function Header({
             </ul>
           </div>
           <a
-            href="#instalar"
+            href={page ? `${home}#instalar` : '#instalar'}
             data-testid="header-download"
             aria-hidden={heroCtaPassed ? undefined : true}
             tabIndex={heroCtaPassed ? undefined : -1}

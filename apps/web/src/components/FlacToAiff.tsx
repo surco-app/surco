@@ -94,7 +94,9 @@ export default function FlacToAiff() {
               {t('flacToAiff.lede')}
             </p>
             <div className="mt-2 flex flex-col items-start">
-              <DownloadButton location="convert-hero" note={t('flacToAiff.note')} />
+              <div id="hero-download">
+                <DownloadButton location="convert-hero" note={t('flacToAiff.note')} />
+              </div>
             </div>
           </Reveal>
           <Reveal eager delay={120}>
