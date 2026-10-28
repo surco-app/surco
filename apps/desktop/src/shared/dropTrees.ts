@@ -61,7 +61,9 @@ export function trainTrees(rows: number[][], labels: number[], options: TreesOpt
   const positive = labels.reduce((a, b) => a + b, 0) / n
   const base = options.from?.base ?? round(Math.log(positive / (1 - positive)))
   const from = options.from
-  const score = from ? Float64Array.from(rows, (r) => predictTrees(from, r)) : new Float64Array(n).fill(base)
+  const score = from
+    ? Float64Array.from(rows, (r) => predictTrees(from, r))
+    : new Float64Array(n).fill(base)
   const g = new Float64Array(n)
   const h = new Float64Array(n)
   const trees: TreeNode[][] = [...(from?.trees ?? [])]
