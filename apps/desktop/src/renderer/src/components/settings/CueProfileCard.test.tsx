@@ -30,6 +30,13 @@ const PROFILE: CueProfile = {
   start: { open: 322, withStart: 44 },
 }
 
+const PROFILE_CHECK = {
+  tracks: 1618,
+  checked: 480,
+  before: { found: 0.68, right: 0.68 },
+  after: { found: 0.68, right: 0.68 },
+}
+
 const read = (over: Partial<CueProfileRead> = {}): CueProfileRead => ({
   profile: null,
   edits: { count: 0, sinceLearn: 0 },
@@ -77,6 +84,13 @@ describe('CueProfileCard', () => {
     expect(screen.getByTestId('cue-profile-source-rekordbox')).toHaveTextContent('1,576')
     expect(screen.getByTestId('cue-profile-source-edits')).toHaveTextContent('3')
     expect(screen.getByTestId('cue-profile-learn')).toBeEnabled()
+  })
+
+  it('says it learned from every marked track it read, rekordbox and saved together, whatever it tuned Auto on', async () => {
+    setup(read({ profile: { ...PROFILE, check: { ...PROFILE_CHECK, tracks: 600 } } }))
+    expect(await screen.findByTestId('cue-profile-summary')).toHaveTextContent('1,618 tracks')
+    expect(screen.getByTestId('cue-profile-source-rekordbox')).toHaveTextContent('1,576')
+    expect(screen.getByTestId('cue-profile-source-edits')).toHaveTextContent('42')
   })
 
   it('leaves out a source with nothing in it', async () => {

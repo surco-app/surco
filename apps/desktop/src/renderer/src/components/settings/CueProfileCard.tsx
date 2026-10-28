@@ -118,20 +118,23 @@ export function CueProfileCard({ synced, patch, onAdopt }: Props): React.JSX.Ele
     patch('activeCueFlow', made.id)
     onAdopt(made.id)
   }
+  const tracks = profile ? profile.sources.rekordbox + profile.sources.edits : 0
+  const rekordboxTracks = profile ? profile.sources.rekordbox : read.marked
+  const savedTracks = profile ? profile.sources.edits : read.edits.count
   const sources = (
     <div className="flex flex-wrap gap-2">
-      {read.marked > 0 && (
+      {rekordboxTracks > 0 && (
         <span data-testid="cue-profile-source-rekordbox" className={CHIP}>
           {'rekordbox '}
-          <b className="font-semibold text-fg tabular-nums">{count(read.marked)}</b>{' '}
-          {tr('settings.cueProfile.tracks', { count: read.marked })}
+          <b className="font-semibold text-fg tabular-nums">{count(rekordboxTracks)}</b>{' '}
+          {tr('settings.cueProfile.tracks', { count: rekordboxTracks })}
         </span>
       )}
-      {read.edits.count > 0 && (
+      {savedTracks > 0 && (
         <span data-testid="cue-profile-source-edits" className={CHIP}>
           {`${tr('settings.cueProfile.saved')} `}
-          <b className="font-semibold text-fg tabular-nums">{count(read.edits.count)}</b>{' '}
-          {tr('settings.cueProfile.tracks', { count: read.edits.count })}
+          <b className="font-semibold text-fg tabular-nums">{count(savedTracks)}</b>{' '}
+          {tr('settings.cueProfile.tracks', { count: savedTracks })}
         </span>
       )}
     </div>
@@ -169,7 +172,6 @@ export function CueProfileCard({ synced, patch, onAdopt }: Props): React.JSX.Ele
   const learnedFlow = profile?.flow ?? null
   const offered = learnedFlow && !synced.cueFlows.some((f) => sameRules(f, learnedFlow))
   const check = profile?.check ?? null
-  const tracks = check?.tracks ?? profile?.sources.rekordbox ?? 0
   return (
     <section
       data-testid="cue-profile"
@@ -206,7 +208,7 @@ export function CueProfileCard({ synced, patch, onAdopt }: Props): React.JSX.Ele
         </p>
       )}
       {profile && (
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-px overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-line)]">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-px overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-line)]">
           <Fact
             testid="cue-profile-auto"
             label={tr('editor.cues.auto.button')}
