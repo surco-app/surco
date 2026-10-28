@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import type { Language } from '../i18n'
+import { LANGUAGES, type Language } from '../i18n'
+import { HOME } from './nav'
 
 // First-visit language suggestion for the marketing site. With no saved choice, a
 // browser in another language on a Spanish page is offered that language when the
@@ -23,9 +24,12 @@ export function suggestedLanguage(
   language: string,
 ): Language | null {
   if (saved) return null
-  if (/^\/(en|ja)(\/|$)/.test(pathname)) return null
-  if (/^es(-|$)/i.test(language)) return null
-  return /^ja(-|$)/i.test(language) ? 'ja' : 'en'
+  const onOther = (lng: Language) =>
+    lng !== 'es' && (pathname === HOME[lng] || pathname.startsWith(`${HOME[lng]}/`))
+  if (LANGUAGES.some(onOther)) return null
+  const base = language.toLowerCase().split('-')[0]
+  if (base === 'es') return null
+  return LANGUAGES.find((lng) => lng.toLowerCase().split('-')[0] === base) ?? 'en'
 }
 
 export function useAutoLanguage(): [Language | null, () => void] {

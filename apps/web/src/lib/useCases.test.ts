@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest'
+import appDe from '../../../desktop/src/renderer/src/i18n/locales/de.json'
 import appEn from '../../../desktop/src/renderer/src/i18n/locales/en.json'
 import appEs from '../../../desktop/src/renderer/src/i18n/locales/es.json'
+import appFr from '../../../desktop/src/renderer/src/i18n/locales/fr.json'
 import appJa from '../../../desktop/src/renderer/src/i18n/locales/ja.json'
+import appPtBR from '../../../desktop/src/renderer/src/i18n/locales/pt-BR.json'
 import { spellingGroups } from '../../../desktop/src/renderer/src/lib/musicSpelling'
+import de from '../i18n/locales/de.json'
 import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
+import fr from '../i18n/locales/fr.json'
 import ja from '../i18n/locales/ja.json'
+import ptBR from '../i18n/locales/pt-BR.json'
 import {
   filtersFromSearch,
   matchesUseCase,
@@ -19,6 +25,15 @@ import {
   USE_CASE_SOURCES_BY_CASE,
   type UseCaseSource,
 } from './useCases'
+
+const SITE_LANGUAGES = [
+  ['es', es, appEs],
+  ['en', en, appEn],
+  ['de', de, appDe],
+  ['fr', fr, appFr],
+  ['pt-BR', ptBR, appPtBR],
+  ['ja', ja, appJa],
+] as const
 
 type Setting = { tab: string; section?: string; setting: string; value?: string }
 type Case = { id: string; group: string; settings: Setting[] }
@@ -43,11 +58,7 @@ function groups(locale: unknown): Group[] {
 // sends people hunting for a word that no longer exists, and the readers this page is
 // for are exactly the ones who give up at that point.
 describe('use case settings name what the app shows', () => {
-  for (const [name, web, app] of [
-    ['es', es, appEs],
-    ['en', en, appEn],
-    ['ja', ja, appJa],
-  ] as const) {
+  for (const [name, web, app] of SITE_LANGUAGES) {
     const tabs = Object.values(app.settings.tabs)
     const labels = strings(app)
 
@@ -67,14 +78,14 @@ describe('use case settings name what the app shows', () => {
   }
 
   it('gives every case the same anchor in all languages', () => {
-    expect(cases(en).map((c) => c.id)).toEqual(cases(es).map((c) => c.id))
-    expect(cases(ja).map((c) => c.id)).toEqual(cases(en).map((c) => c.id))
+    for (const [, web] of SITE_LANGUAGES)
+      expect(cases(web).map((c) => c.id)).toEqual(cases(en).map((c) => c.id))
   })
 
   // The index is built from the groups, so a recipe filed under a group the page does not
   // define never appears in it: the reader scanning the index would not know it exists.
   it('files every case under a group the page defines', () => {
-    for (const locale of [es, en, ja]) {
+    for (const [, locale] of SITE_LANGUAGES) {
       const ids = groups(locale).map((g) => g.id)
       expect(ids.length).toBeGreaterThan(0)
       expect(cases(locale).filter((c) => !ids.includes(c.group))).toEqual([])
@@ -82,10 +93,10 @@ describe('use case settings name what the app shows', () => {
   })
 
   it('gives all languages the same groups in the same order', () => {
-    expect(groups(en).map((g) => g.id)).toEqual(groups(es).map((g) => g.id))
-    expect(groups(ja).map((g) => g.id)).toEqual(groups(en).map((g) => g.id))
-    expect(cases(en).map((c) => c.group)).toEqual(cases(es).map((c) => c.group))
-    expect(cases(ja).map((c) => c.group)).toEqual(cases(en).map((c) => c.group))
+    for (const [, locale] of SITE_LANGUAGES) {
+      expect(groups(locale).map((g) => g.id)).toEqual(groups(en).map((g) => g.id))
+      expect(cases(locale).map((c) => c.group)).toEqual(cases(en).map((c) => c.group))
+    }
   })
 })
 
@@ -170,8 +181,8 @@ describe('finding a use case', () => {
     for (const source of USE_CASE_SOURCES) expect(found(es, '', source).length).toBeGreaterThan(0)
   })
 
-  it('names every source in both languages', () => {
-    for (const locale of [es, en]) {
+  it('names every source in every language', () => {
+    for (const [, locale] of SITE_LANGUAGES) {
       const labels = (locale.useCases as { sources: Record<string, string> }).sources
       expect(USE_CASE_SOURCES.filter((s) => !labels[s])).toEqual([])
     }
@@ -195,7 +206,7 @@ describe('use case pages', () => {
 
   it('puts every recipe under the use cases page of its language', () => {
     const pages = recipePages()
-    expect(pages).toHaveLength(findable(es).length * 3)
+    expect(pages).toHaveLength(findable(es).length * SITE_LANGUAGES.length)
     expect(pages.find((p) => p.id === 'duplicates' && p.lang === 'es')?.path).toBe(
       '/casos-de-uso/quitar-duplicados-apple-music',
     )
@@ -205,6 +216,9 @@ describe('use case pages', () => {
     expect(pages.find((p) => p.id === 'duplicates' && p.lang === 'ja')?.path).toBe(
       '/ja/use-cases/remove-apple-music-duplicates',
     )
+    expect(pages.find((p) => p.id === 'duplicates' && p.lang === 'pt-BR')?.path).toBe(
+      '/pt/use-cases/remove-apple-music-duplicates',
+    )
   })
 
   // The language switch and hreflang must land on the same recipe, not on the index.
@@ -213,6 +227,9 @@ describe('use case pages', () => {
     expect(page?.alternates).toEqual({
       es: '/casos-de-uso/musica-en-un-nas',
       en: '/en/use-cases/music-on-a-nas',
+      de: '/de/use-cases/music-on-a-nas',
+      fr: '/fr/use-cases/music-on-a-nas',
+      'pt-BR': '/pt/use-cases/music-on-a-nas',
       ja: '/ja/use-cases/music-on-a-nas',
     })
   })
@@ -312,11 +329,7 @@ describe('use case settings by tab', () => {
   // A recipe whose tab has no capture shows a broken image right where the reader is
   // stuck, and a capture with no size makes the page jump as it loads.
   it('has a sized capture for every tab every recipe visits, in every language', () => {
-    for (const [lang, locale] of [
-      ['es', es],
-      ['en', en],
-      ['ja', ja],
-    ] as const) {
+    for (const [lang, locale] of SITE_LANGUAGES) {
       const wanted = (locale.useCases.cases as { id: string; settings: Setting[] }[]).flatMap((c) =>
         settingGroups(c.settings).map((_, i) => settingShot(lang, c.id, i)),
       )

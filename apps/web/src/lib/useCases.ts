@@ -1,4 +1,4 @@
-import type { Language } from '../i18n'
+import { LANGUAGES, type Language } from '../i18n'
 import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
 import { PAGES } from './nav'
@@ -83,11 +83,14 @@ export function matchesUseCase(c: Searchable, query: string, source: UseCaseSour
 
 type PagedCase = { id: string; slug: string }
 
-const CASES: Record<Language, PagedCase[]> = {
-  es: es.useCases.cases,
-  en: en.useCases.cases,
-  ja: en.useCases.cases,
-}
+// Spanish recipes carry Spanish slugs; every other language is served under the English
+// ones, so a link keeps working whichever language it is opened in.
+const CASES = Object.fromEntries(
+  LANGUAGES.map((lng): [Language, PagedCase[]] => [
+    lng,
+    lng === 'es' ? es.useCases.cases : en.useCases.cases,
+  ]),
+) as Record<Language, PagedCase[]>
 
 export const recipePath = (lang: Language, slug: string) => `${PAGES.useCases[lang]}/${slug}`
 export const recipePathForId = (lang: Language, id: string) => {
@@ -106,13 +109,14 @@ export type RecipePage = {
 }
 
 export function recipePages(): RecipePage[] {
-  return (['es', 'en', 'ja'] as const).flatMap((lang) =>
+  return LANGUAGES.flatMap((lang) =>
     CASES[lang].map((c) => {
-      const alternates = {
-        es: pathOf('es', CASES.es.find((o) => o.id === c.id) ?? c),
-        en: pathOf('en', CASES.en.find((o) => o.id === c.id) ?? c),
-        ja: pathOf('ja', CASES.ja.find((o) => o.id === c.id) ?? c),
-      }
+      const alternates = Object.fromEntries(
+        LANGUAGES.map((other) => [
+          other,
+          pathOf(other, CASES[other].find((o) => o.id === c.id) ?? c),
+        ]),
+      ) as Record<Language, string>
       return { id: c.id, lang, path: alternates[lang], alternates }
     }),
   )

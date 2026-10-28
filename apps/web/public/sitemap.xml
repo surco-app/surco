@@ -7,10 +7,34 @@
     <loc>https://getsurco.app/en</loc>
   </url>
   <url>
+    <loc>https://getsurco.app/de</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/ja</loc>
+  </url>
+  <url>
     <loc>https://getsurco.app/funciones</loc>
   </url>
   <url>
     <loc>https://getsurco.app/en/features</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/features</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/features</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/features</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/ja/features</loc>
   </url>
   <url>
     <loc>https://getsurco.app/guia</loc>
@@ -19,10 +43,34 @@
     <loc>https://getsurco.app/en/guide</loc>
   </url>
   <url>
+    <loc>https://getsurco.app/de/guide</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/guide</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/guide</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/ja/guide</loc>
+  </url>
+  <url>
     <loc>https://getsurco.app/casos-de-uso</loc>
   </url>
   <url>
     <loc>https://getsurco.app/en/use-cases</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/use-cases</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/ja/use-cases</loc>
   </url>
   <url>
     <loc>https://getsurco.app/cambios</loc>
@@ -31,16 +79,52 @@
     <loc>https://getsurco.app/en/changelog</loc>
   </url>
   <url>
+    <loc>https://getsurco.app/de/changelog</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/changelog</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/changelog</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/ja/changelog</loc>
+  </url>
+  <url>
     <loc>https://getsurco.app/convertir/flac-a-aiff</loc>
   </url>
   <url>
     <loc>https://getsurco.app/en/convert/flac-to-aiff</loc>
   </url>
   <url>
+    <loc>https://getsurco.app/de/convert/flac-to-aiff</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/convert/flac-to-aiff</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/convert/flac-to-aiff</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/ja/convert/flac-to-aiff</loc>
+  </url>
+  <url>
     <loc>https://getsurco.app/privacidad</loc>
   </url>
   <url>
     <loc>https://getsurco.app/en/privacy</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/privacy</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/privacy</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/privacy</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/ja/privacy</loc>
   </url>
   <url>
     <loc>https://getsurco.app/casos-de-uso/etiquetar-carpeta-entera</loc>
@@ -151,25 +235,166 @@
     <loc>https://getsurco.app/en/use-cases/music-on-a-nas</loc>
   </url>
   <url>
-    <loc>https://getsurco.app/ja</loc>
+    <loc>https://getsurco.app/de/use-cases/tag-a-whole-folder</loc>
   </url>
   <url>
-    <loc>https://getsurco.app/ja/features</loc>
+    <loc>https://getsurco.app/de/use-cases/replace-track-with-better-copy</loc>
   </url>
   <url>
-    <loc>https://getsurco.app/ja/guide</loc>
+    <loc>https://getsurco.app/de/use-cases/apple-music-and-rekordbox</loc>
   </url>
   <url>
-    <loc>https://getsurco.app/ja/use-cases</loc>
+    <loc>https://getsurco.app/de/use-cases/convert-to-aiff-keeping-cue-points</loc>
   </url>
   <url>
-    <loc>https://getsurco.app/ja/changelog</loc>
+    <loc>https://getsurco.app/de/use-cases/check-audio-quality</loc>
   </url>
   <url>
-    <loc>https://getsurco.app/ja/convert/flac-to-aiff</loc>
+    <loc>https://getsurco.app/de/use-cases/digitize-vinyl</loc>
   </url>
   <url>
-    <loc>https://getsurco.app/ja/privacy</loc>
+    <loc>https://getsurco.app/de/use-cases/prepare-usb-for-the-club</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/use-cases/unify-apple-music-spellings</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/use-cases/remove-apple-music-duplicates</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/use-cases/review-folder-before-import</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/use-cases/clean-up-titles-in-bulk</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/use-cases/bpm-and-key-from-beatport</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/use-cases/auto-tag-downloads</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/use-cases/even-out-loudness</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/use-cases/send-tracks-to-engine-dj</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/use-cases/set-up-rekordbox-cues-with-your-flow</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/use-cases/set-from-apple-music-playlist</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/use-cases/music-on-a-nas</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/tag-a-whole-folder</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/replace-track-with-better-copy</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/apple-music-and-rekordbox</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/convert-to-aiff-keeping-cue-points</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/check-audio-quality</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/digitize-vinyl</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/prepare-usb-for-the-club</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/unify-apple-music-spellings</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/remove-apple-music-duplicates</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/review-folder-before-import</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/clean-up-titles-in-bulk</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/bpm-and-key-from-beatport</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/auto-tag-downloads</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/even-out-loudness</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/send-tracks-to-engine-dj</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/set-up-rekordbox-cues-with-your-flow</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/set-from-apple-music-playlist</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/music-on-a-nas</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/tag-a-whole-folder</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/replace-track-with-better-copy</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/apple-music-and-rekordbox</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/convert-to-aiff-keeping-cue-points</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/check-audio-quality</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/digitize-vinyl</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/prepare-usb-for-the-club</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/unify-apple-music-spellings</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/remove-apple-music-duplicates</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/review-folder-before-import</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/clean-up-titles-in-bulk</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/bpm-and-key-from-beatport</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/auto-tag-downloads</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/even-out-loudness</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/send-tracks-to-engine-dj</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/set-up-rekordbox-cues-with-your-flow</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/set-from-apple-music-playlist</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/music-on-a-nas</loc>
   </url>
   <url>
     <loc>https://getsurco.app/ja/use-cases/tag-a-whole-folder</loc>

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { routes } from '../routes'
 import { PAGES } from './nav'
 import { INDEXABLE_PATHS, SITE } from './sitemap'
 
@@ -31,10 +32,7 @@ describe('sitemap', () => {
   // The guard that keeps the two in step: every path routes.tsx serves must be either
   // declared indexable or deliberately excluded, so a new page cannot be forgotten.
   it('accounts for every path routes.tsx serves', () => {
-    const served = [...routesSrc.matchAll(/\bpath: '([^']+)'/g)]
-      .map((m) => m[1])
-      .filter((p) => p !== '/')
-      .map((p) => `/${p}`)
+    const served = (routes[0].children ?? []).map((r) => (r.index ? '/' : `/${r.path}`))
     const indexable: readonly string[] = INDEXABLE_PATHS
     const unaccounted = served.filter((p) => !indexable.includes(p) && !EXCLUDED.includes(p))
     expect(unaccounted).toEqual([])
@@ -58,7 +56,7 @@ describe('sitemap', () => {
 
   it('lists every page the header and footer link to', () => {
     const indexable: readonly string[] = INDEXABLE_PATHS
-    const linked = Object.values(PAGES).flatMap((page) => [page.es, page.en, page.ja])
+    const linked = Object.values(PAGES).flatMap((page) => Object.values(page))
     expect(linked.filter((p) => !indexable.includes(p))).toEqual([])
   })
 

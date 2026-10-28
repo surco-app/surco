@@ -26,6 +26,21 @@ describe('donation return page hydration', () => {
         Component === DonateCancel ? 'Your donation was cancelled' : 'Thank you so much!',
       ],
       [
+        'de-AT',
+        '/de',
+        Component === DonateCancel ? 'Deine Spende wurde abgebrochen' : 'Von Herzen danke!',
+      ],
+      [
+        'fr-CA',
+        '/fr',
+        Component === DonateCancel ? 'Ton don n’a pas abouti' : 'Merci du fond du cœur !',
+      ],
+      [
+        'pt-PT',
+        '/pt',
+        Component === DonateCancel ? 'A doação não foi concluída' : 'Muito obrigado, de coração!',
+      ],
+      [
         'es-ES',
         '/',
         Component === DonateCancel ? 'No se ha completado la donación' : '¡Gracias de corazón!',

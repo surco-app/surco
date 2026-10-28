@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import de from './changelog/de.json'
 import en from './changelog/en.json'
 import es from './changelog/es.json'
+import fr from './changelog/fr.json'
 import ja from './changelog/ja.json'
+import ptBR from './changelog/pt-BR.json'
 import { resources } from './index'
 import enLocale from './locales/en.json'
 import esLocale from './locales/es.json'
@@ -9,22 +12,29 @@ import esLocale from './locales/es.json'
 type Item = string | { text: string; in: string }
 type Release = { version: string; date: string; title: string; items: Item[] }
 
-// The Japanese history is a translation of the English one, release by release: a
-// missing or extra item, or a stamp that differs, would show Japanese readers a different
+// Every history but Spanish is a translation of the English one, release by release: a
+// missing or extra item, or a stamp that differs, would show those readers a different
 // set of changes, and the desktop popup would pick other items for the same update.
-describe('Japanese release history', () => {
-  it('serves the Japanese page its own releases', () => {
-    expect(resources.ja.translation.changelog.releases).toBe(ja)
+const TRANSLATED = [
+  ['de', de],
+  ['fr', fr],
+  ['pt-BR', ptBR],
+  ['ja', ja],
+] as const
+
+describe.each(TRANSLATED)('%s release history', (lng, releases) => {
+  it('serves its page its own releases', () => {
+    expect(resources[lng].translation.changelog.releases).toBe(releases)
   })
 
   it('mirrors every English release, item for item', () => {
-    const shape = (releases: Release[]) =>
-      releases.map((r) => ({
+    const shape = (list: Release[]) =>
+      list.map((r) => ({
         version: r.version,
         date: r.date,
         items: r.items.map((item) => (typeof item === 'string' ? null : item.in)),
       }))
-    expect(shape(ja as Release[])).toEqual(shape(en as Release[]))
+    expect(shape(releases as Release[])).toEqual(shape(en as Release[]))
   })
 })
 
@@ -34,10 +44,10 @@ describe('Japanese release history', () => {
 // feed the desktop "what's new" popup, which filters by the exact version an
 // item shipped in — a stamp outside its own minor entry would surface the item
 // under the wrong release or never at all.
-describe.each([
+describe.each<[string, Release[]]>([
   ['es', es as Release[]],
   ['en', en as Release[]],
-  ['ja', ja as Release[]],
+  ...TRANSLATED.map(([lng, releases]): [string, Release[]] => [lng, releases as Release[]]),
 ])('%s changelog releases', (_lng, releases) => {
   it('has at least one release and every release lists features', () => {
     expect(releases.length).toBeGreaterThan(0)
