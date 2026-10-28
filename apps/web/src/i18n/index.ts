@@ -2,6 +2,7 @@ import { createInstance, type i18n } from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import changelogEn from './changelog/en.json'
 import changelogEs from './changelog/es.json'
+import changelogJa from './changelog/ja.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
 import ja from './locales/ja.json'
@@ -19,7 +20,7 @@ export const LANGUAGE_NAMES: Record<Language, string> = {
 export const resources = {
   es: { translation: { ...es, changelog: { ...es.changelog, releases: changelogEs } } },
   en: { translation: { ...en, changelog: { ...en.changelog, releases: changelogEn } } },
-  ja: { translation: { ...ja, changelog: { ...ja.changelog, releases: changelogEn } } },
+  ja: { translation: { ...ja, changelog: { ...ja.changelog, releases: changelogJa } } },
 } as const
 
 // A fresh instance per language keeps prerendered routes isolated: all locale
