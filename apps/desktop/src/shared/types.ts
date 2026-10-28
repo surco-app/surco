@@ -236,6 +236,8 @@ export interface Settings {
   cueFlowToRekordbox: boolean
   cueFlowToTraktor: boolean
   cueFlowToEngine: boolean
+  // Whether the cues the DJ saves teach Auto marcar, learning again after every few.
+  cueLearnFromEdits: boolean
   hiddenSources: PlaylistSource[]
   rekordboxPlaylistsFieldOffered: boolean
   syncEngineDj: boolean

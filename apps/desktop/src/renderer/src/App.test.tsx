@@ -128,6 +128,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     cueFlowToRekordbox: true,
     cueFlowToTraktor: true,
     cueFlowToEngine: true,
+    cueLearnFromEdits: true,
     hiddenSources: [],
     language: 'system',
     discogsToken: '',

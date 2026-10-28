@@ -35,6 +35,7 @@ const settings = (over: Partial<Record<string, boolean>> = {}) => ({
   cueFlowToRekordbox: true,
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
+  cueLearnFromEdits: true,
   ...over,
 })
 const SOURCE = {

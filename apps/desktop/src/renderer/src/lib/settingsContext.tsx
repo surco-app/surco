@@ -102,6 +102,7 @@ interface ResolvedSettings {
   cueFlowToRekordbox: boolean
   cueFlowToTraktor: boolean
   cueFlowToEngine: boolean
+  cueLearnFromEdits: boolean
   hiddenSources: PlaylistSource[]
   // The collection.nml the DJ confirmed, the only one Traktor cues are written to.
   traktorNmlPath: string
@@ -155,6 +156,7 @@ const DEFAULTS: ResolvedSettings = {
   cueFlowToRekordbox: true,
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
+  cueLearnFromEdits: true,
   hiddenSources: [],
   traktorNmlPath: '',
 }
@@ -208,6 +210,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     cueFlowToRekordbox: settings.cueFlowToRekordbox !== false,
     cueFlowToTraktor: settings.cueFlowToTraktor !== false,
     cueFlowToEngine: settings.cueFlowToEngine !== false,
+    cueLearnFromEdits: settings.cueLearnFromEdits !== false,
     hiddenSources: normalizeHiddenSources(settings.hiddenSources),
     traktorNmlPath: settings.traktorNmlPath ?? DEFAULTS.traktorNmlPath,
   }

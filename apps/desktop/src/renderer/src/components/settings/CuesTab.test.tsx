@@ -62,6 +62,7 @@ function Harness({
     cueFlowToRekordbox: true,
     cueFlowToTraktor: true,
     cueFlowToEngine: true,
+    cueLearnFromEdits: true,
   })
   last = draft
   return (

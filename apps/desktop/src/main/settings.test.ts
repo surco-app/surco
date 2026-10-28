@@ -1179,6 +1179,18 @@ describe('cue flows', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
+  it('lets Auto learn from the DJ’s corrections unless they turned it off, a value that is not a boolean counting as on', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    expect(getSettings().cueLearnFromEdits).toBe(true)
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ cueLearnFromEdits: 'no' }),
+    )
+    expect(getSettings().cueLearnFromEdits).toBe(true)
+    saveSettings({ cueLearnFromEdits: false })
+    expect(getSettings().cueLearnFromEdits).toBe(false)
+  })
+
   it('shows every source for a settings file from before sources could be hidden', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
     expect(getSettings().hiddenSources).toEqual([])

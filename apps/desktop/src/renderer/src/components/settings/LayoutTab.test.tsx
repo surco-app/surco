@@ -20,6 +20,7 @@ const synced: SyncedDraft = {
   cueFlowToRekordbox: true,
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
+  cueLearnFromEdits: true,
   hiddenSources: [],
   language: 'system',
   outputFormat: 'aiff',
