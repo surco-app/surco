@@ -45,6 +45,8 @@ export function revealTrackStep(
 
 const PICKED: Partial<Record<PlaylistSource, (track: TrackItem) => boolean>> = {
   rekordbox: (t) => (t.rekordboxPlaylists?.length ?? 0) > 0,
+  engine: (t) => (t.enginePlaylists?.length ?? 0) > 0,
+  traktor: (t) => (t.traktorPlaylists?.length ?? 0) > 0,
 }
 
 export function revealableIn(

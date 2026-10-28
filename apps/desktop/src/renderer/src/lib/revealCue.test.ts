@@ -158,4 +158,24 @@ describe('revealableIn', () => {
     expect(revealableIn(track({ rekordboxPlaylists: undefined }), recent)).toEqual([])
     expect(revealableIn(track({ rekordboxPlaylists: [] }), recent)).toEqual([])
   })
+
+  it('offers Engine DJ and Traktor by the same rule, each by its own playlists field', () => {
+    const recent = {
+      rekordbox: [entry('/out/Love Ya.aiff')],
+      engine: [entry('/out/Love Ya.aiff')],
+      traktor: [entry('/out/Love Ya.aiff')],
+    }
+    const picked = [{ id: 'x', name: 'Friday' }]
+    expect(
+      revealableIn(track({ rekordboxPlaylists: undefined, enginePlaylists: picked }), recent),
+    ).toEqual(['engine'])
+    expect(
+      revealableIn(track({ rekordboxPlaylists: undefined, traktorPlaylists: picked }), recent),
+    ).toEqual(['traktor'])
+    expect(
+      revealableIn(track({ enginePlaylists: picked, traktorPlaylists: picked }), {
+        traktor: recent.traktor,
+      }),
+    ).toEqual(['traktor'])
+  })
 })
