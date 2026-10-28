@@ -91,9 +91,7 @@ export default function App() {
         <Reveal eager delay={300}>
           <section className="mx-auto max-w-6xl px-6 pb-4">
             <div className="flex flex-col gap-3 border-y border-line py-5 sm:flex-row sm:items-center sm:gap-6">
-              <p className="font-mono text-xs tracking-wider text-faint uppercase">
-                {t('home.worksWith')}
-              </p>
+              <p className="text-sm text-faint">{t('home.worksWith')}</p>
               <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted">
                 {INTEGRATIONS.map((name) => (
                   <li key={name}>{name}</li>

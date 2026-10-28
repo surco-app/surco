@@ -1001,7 +1001,7 @@
       "lede": "Sieben Schritte, ein Fenster. Unterwegs erfährst du, welche deiner FLACs in Wahrheit MP3s sind."
     },
     "drop": {
-      "step": "01 · drin",
+      "step": "Schritt 1 · Drin",
       "title": "Reinziehen, und sie sind drin.",
       "lede": "Ganze Ordner. Surco liest Tags, Länge und Cover sofort ein und fügt nie denselben Track zweimal hinzu.",
       "emptyTitle": "Zieh deine Tracks hierher",
@@ -1010,7 +1010,7 @@
       "reading": "Lese {{read}}/{{total}}"
     },
     "quality": {
-      "step": "03 · geprüft",
+      "step": "Schritt 3 · Geprüft",
       "title": "Dieses FLAC war ein MP3.",
       "lede": "Verlustfrei gekauft heißt nicht, dass es verlustfrei ist. Hat jemand ein MP3 in FLAC umgewandelt, ist die Datei genauso groß, aber das Spektrum zeigt die Wand. Surco markiert es, bevor der Track das Haus verlässt.",
       "goodAlt": "Spektrum eines echten FLAC: Die Energie reicht ohne Abschnitt bis ganz nach oben",
@@ -1027,12 +1027,12 @@
       "fakeBadge": "● Falsch verlustfrei"
     },
     "audioGroup": {
-      "step": "04 · 05 · 06 · der Feinschliff",
+      "step": "Schritte 4 bis 6 · Der Feinschliff",
       "title": "Und nebenbei besserer Sound.",
       "lede": "Drei Korrekturen, die Surco am selben Track vornimmt: Es entfernt Knackser und Rauschen von Vinyl, schneidet die Stille am Ende ab und bringt jeden Track auf dieselbe Lautstärke."
     },
     "tag": {
-      "step": "02 · getaggt",
+      "step": "Schritt 2 · Getaggt",
       "title": "Die Tags von Discogs, mit einem Klick.",
       "lede": "Discogs für Labels, Bandcamp für Eigenveröffentlichungen, Deezer für die Charts, Beatport für den Club, MusicBrainz für alles andere. Ein Klick füllt alles aus: Künstler, Label, Jahr, BPM und Cover.",
       "all": "Alle ({{count}})"
@@ -1079,7 +1079,7 @@
       "explain": "Der Track bewegt sich um {{gain}} dB auf {{target}} LUFS, mit einer konstanten Verstärkung. Nichts wird limitiert oder komprimiert; die Dynamik bleibt unangetastet."
     },
     "batch": {
-      "step": "07 · raus",
+      "step": "Schritt 7 · Raus",
       "title": "Und er landet in deinem Apple Music.",
       "lede": "Wähl ein Format und ein Ziel und konvertiere den ganzen Ordner. Bei Apple Music und Engine DJ importierst du nichts: Der Track erscheint mit Cover in deiner Bibliothek, und in Engine DJ mit Bewertung und Playlist. Alle anderen bekommen die Datei, die sie erwarten.",
       "stage": "Wird in AIFF konvertiert…",
@@ -1150,10 +1150,10 @@
       "intact": "unverändert",
       "inPlace": "an Ort und Stelle",
       "fieldYear": "Jahr",
-      "step": "und später · ersetzt"
+      "step": "Später · Ersetzt"
     },
     "cues": {
-      "step": "und in deiner App · mit Cues",
+      "step": "In deiner App · Mit Cues",
       "title": "Deine Cues für rekordbox, Engine DJ und Traktor, mit einem Klick.",
       "lede": "Klick dorthin, wo der Track droppt, oder lass dir die Stelle von Auto-Markieren vorschlagen. Dein Ablauf setzt die übrigen Cues, und Surco speichert sie in rekordbox, Engine DJ oder Traktor. Engine DJ und Traktor übernehmen nur die Hot Cues.",
       "unsaved": "Nicht gespeichert",

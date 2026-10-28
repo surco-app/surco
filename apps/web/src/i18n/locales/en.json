@@ -1001,7 +1001,7 @@
       "lede": "Seven steps, one window. Along the way you'll find out which of your FLACs are really MP3s."
     },
     "drop": {
-      "step": "01 · in",
+      "step": "Step 1 · In",
       "title": "Drop them and they're in.",
       "lede": "Whole folders. Surco reads tags, length and artwork on the fly, and never adds the same track twice.",
       "emptyTitle": "Drop your tracks here",
@@ -1010,7 +1010,7 @@
       "reading": "Reading {{read}}/{{total}}"
     },
     "quality": {
-      "step": "03 · checked",
+      "step": "Step 3 · Checked",
       "title": "That FLAC was an MP3.",
       "lede": "Buying lossless is no guarantee it is. If someone converted an MP3 to FLAC, the file weighs the same but the spectrum shows the wall. Surco flags it before the track ever leaves the house.",
       "goodAlt": "Spectrum of a genuine FLAC: energy reaches the top with no cutoff",
@@ -1027,12 +1027,12 @@
       "fakeBadge": "● Fake lossless"
     },
     "audioGroup": {
-      "step": "04 · 05 · 06 · the polish",
+      "step": "Steps 4 to 6 · The polish",
       "title": "And better audio while it does.",
       "lede": "Three fixes Surco makes to the same track: it cleans the clicks and noise off vinyl, trims the silence off the end and levels every track to the same volume."
     },
     "tag": {
-      "step": "02 · tagged",
+      "step": "Step 2 · Tagged",
       "title": "The tags, from Discogs, in one click.",
       "lede": "Discogs for labels, Bandcamp for self-released, Deezer for the charts, Beatport for the club, MusicBrainz for everything else. One click fills it all in: artist, label, year, BPM and artwork.",
       "all": "All ({{count}})"
@@ -1079,7 +1079,7 @@
       "explain": "It will move {{gain}} dB to {{target}} LUFS with one constant gain. Nothing is limited or compressed; the dynamics stay intact."
     },
     "batch": {
-      "step": "07 · out",
+      "step": "Step 7 · Out",
       "title": "And it lands in your Apple Music.",
       "lede": "Pick a format and a destination and convert the whole folder. With Apple Music and Engine DJ you import nothing: the track shows up in your library with its artwork on, and on Engine DJ, with rating and playlist. Everything else gets the file it expects.",
       "stage": "Converting to AIFF…",
@@ -1150,10 +1150,10 @@
       "intact": "untouched",
       "inPlace": "in place",
       "fieldYear": "Year",
-      "step": "and later · replaced"
+      "step": "Later · Replaced"
     },
     "cues": {
-      "step": "and in your app · cued",
+      "step": "In your app · Cued",
       "title": "Your rekordbox, Engine DJ and Traktor cues, in one click.",
       "lede": "Click where the track drops, or let Auto mark suggest it. Your flow places the rest of the cues and Surco saves them to rekordbox, Engine DJ or Traktor. Engine DJ and Traktor take the hot cues only.",
       "unsaved": "Not saved",
