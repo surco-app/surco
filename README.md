@@ -5,7 +5,7 @@
 <h1 align="center">Surco</h1>
 
 <p align="center">
-  Free, open-source track organizer for DJs — macOS &amp; Windows.
+  Open-source track organizer for DJs, for macOS and Windows.
 </p>
 
 <p align="center">
@@ -14,26 +14,29 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="GPL-3.0" /></a>
 </p>
 
-Drop your tracks in. Surco finds the right metadata on Discogs, Bandcamp, Deezer, Beatport and MusicBrainz, checks that your files really are lossless, detects BPM and key, converts them, and hands everything to your DJ software or Apple Music.
+Drop your tracks in. Surco finds the right metadata, checks that your files really are lossless, converts them and marks their cues. Then it keeps your rekordbox, Traktor, Engine DJ and Apple Music libraries up to date, so a track stays the same track everywhere you play it.
 
 <p align="center">
-  <img src="apps/web/public/app-en-1024.webp" width="800" alt="Surco — track list, editor and Discogs search" />
+  <img src="apps/web/public/hero-app-en.webp" width="800" alt="Surco with the track list, the editor and the cue editor" />
 </p>
 
 ## What it does
 
-- **Auto-tagging** — searches Discogs, Bandcamp, Deezer, Beatport and MusicBrainz and matches whole imports automatically: title, duration, artist and catalog number have to agree before anything is written, and uncertain matches are flagged for a one-click review instead of applied.
-- **Fake-lossless detection** — a spectrogram plus an automatic verdict that flags a 320 kbps re-encode sold as FLAC/WAV, upsampled audio and other quality lies. No more squinting at spectra.
-- **BPM & musical key** — detected locally, shown in Camelot or classic notation.
-- **Conversion** — AIFF, MP3 (320/V0), WAV, FLAC and ALAC, with optional loudness normalization (integrated LUFS target + true-peak limiter) or peak normalization.
-- **Plays well with your gear** — export to rekordbox, Traktor, Serato and Engine DJ; add straight to Apple Music; M3U8 playlists.
-- **Built for batches** — duplicate detection, watched folders, multi-track editing, undo, keyboard-first navigation.
+- **Auto-tagging.** Searches Discogs, Bandcamp, Deezer, Beatport and MusicBrainz and matches whole imports on its own. Title, duration, artist and catalog number have to agree before anything is written, and uncertain matches wait for a one-click review instead of being applied.
+- **Fake-lossless detection.** A spectrogram and a verdict that explains itself with the numbers it measured. It flags a 320 kbps re-encode sold as FLAC or WAV, upsampled audio and other quality lies.
+- **Cue editor.** Hot cues and CALLs on the rekordbox wave and grid. Pick a flow such as Mix in 64 or one of your own, click where the track drops and the rest of the cues land counting back.
+- **Auto mark.** Suggests where each track drops, on one track or a whole selection, and tells sure suggestions from doubtful ones. It learns how you mark from the cues you already placed and the ones you save.
+- **Your libraries, inside Surco.** Opens your rekordbox, Traktor, Engine DJ and Apple Music playlists with their folders and order. rekordbox and Traktor playlists can be created, renamed, reordered and filled from Surco, and the cues you save reach the same track in rekordbox, Traktor and Engine DJ.
+- **Conversion that keeps the track.** AIFF, MP3 (320/V0), WAV, FLAC and ALAC, with optional loudness or peak normalization. Convert a track your DJ software already knows and it keeps its playlists and cues there.
+- **USB sticks for your players.** Writes a stick for Pioneer DJ and AlphaTheta players, or one with an Engine DJ library.
+- **BPM and key.** Detected on your machine, shown in Camelot or classic notation.
+- **Built for batches.** Duplicate detection, metadata review for Apple Music, watched folders, multi-track editing, undo, backups of everything it replaces and keyboard-first navigation.
 
-Everything runs on your machine: no account, no telemetry.
+Everything runs on your machine. No account, no subscription, no telemetry. The app speaks English, Spanish, German, French, Portuguese and Japanese.
 
 ## Install
 
-**[Download from getsurco.app](https://www.getsurco.app/en)** — notarized macOS builds (Apple Silicon &amp; Intel) and a Windows installer, with automatic updates.
+**[Download from getsurco.app](https://getsurco.app/en)**. Notarized macOS builds for Apple Silicon and Intel and a Windows installer, with automatic updates.
 
 macOS via Homebrew:
 
@@ -45,20 +48,20 @@ All builds are published at [surco-app/surco-releases](https://github.com/surco-
 
 ## Learn more
 
-- [Guide](https://www.getsurco.app/en/guide) — every feature, with screenshots.
-- [Changelog](https://www.getsurco.app/en/changelog) — what shipped in each release.
-- También disponible en español: [getsurco.app](https://www.getsurco.app/).
+- [Guide](https://getsurco.app/en/guide), every feature with screenshots.
+- [Changelog](https://getsurco.app/en/changelog), what shipped in each release.
+- The site in [Spanish](https://getsurco.app/), [German](https://getsurco.app/de), [French](https://getsurco.app/fr), [Portuguese](https://getsurco.app/pt) and [Japanese](https://getsurco.app/ja). This README in [Japanese](README_ja.md).
 
 ## Develop
 
-Monorepo with npm workspaces: `apps/desktop` (Electron + React + TypeScript) and `apps/web` (Vite + React + Tailwind).
+Monorepo with npm workspaces: `apps/desktop` (Electron, React and TypeScript) and `apps/web` (Vite, React and Tailwind).
 
 ```bash
 npm install            # install all workspaces
 
 npm run dev:desktop    # Electron app in development
 npm run dev:web        # website in development
-npm test               # desktop test suite
+npm test               # desktop and website test suites
 npm run build:desktop  # production build
 npm run build:web      # website build
 npm run dist:desktop   # package the installer
@@ -66,7 +69,7 @@ npm run dist:desktop   # package the installer
 
 ## Contributing
 
-Issues and pull requests are welcome. Surco is GPL-3.0: improvements stay open for everyone.
+Issues and pull requests are welcome. Surco is GPL-3.0, so improvements stay open for everyone.
 
 ## Third-party software
 
@@ -76,4 +79,4 @@ Surco bundles [baken](https://github.com/M-Igashi/baken) by Masanari Higashi (MI
 
 Copyright (C) 2026 Vicent Gozalbes.
 
-Surco is free software under the [GPL-3.0-or-later](LICENSE): you can redistribute it and modify it, but any derivative work must be published under the same license, with its source code and this copyright notice.
+Surco is free software under the [GPL-3.0-or-later](LICENSE). You can redistribute it and modify it, but any derivative work must be published under the same license, with its source code and this copyright notice.
