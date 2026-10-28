@@ -282,7 +282,7 @@
           },
           {
             "t": "Deine Engine-DJ-Playlists",
-            "d": "Öffne sie in Surco und setze Hot Cues auf ihren Tracks mit demselben Editor, Auto-Markieren inklusive. Keine CALL-Punkte, denn Engine DJ speichert nur Hot Cues. Und exportiere sie mit ihrer Engine-Bibliothek auf ein USB-Laufwerk, bereit für den Player."
+            "d": "Öffne sie in Surco und setze Hot Cues auf ihren Tracks mit demselben Editor, Auto-Markieren inklusive. Keine CALL-Punkte, denn Engine DJ speichert nur Hot Cues. Und exportiere sie mit ihrer Engine-Bibliothek auf ein USB-Laufwerk, bereit für den Player. Im Editor wählst du, in welche Playlists jeder Track kommt, und fehlt er in Engine DJ, nimmt Surco ihn beim Konvertieren in deine Bibliothek auf."
           },
           {
             "t": "Deine Traktor-Playlists",
@@ -2311,7 +2311,8 @@
         "points": [
           "Daten, Bewertung und Cover kommen in Engine an.",
           "Cue-Points und Beatgrid nicht. Die ermittelt Engine, wenn du den Track lädst.",
-          "Bevor es schreibt, legt Surco eine Sicherung der Bibliothek an."
+          "Bevor es schreibt, legt Surco eine Sicherung der Bibliothek an.",
+          "Im Editor wählst du im Feld „Playlists“ von Engine DJ, in welche Playlists jeder Track kommt, auch wenn Engine ihn noch nicht hat. Surco nimmt ihn beim Konvertieren auf. Danach bringt dich das Engine-DJ-Symbol neben dem Ergebnis zum Track, mit seinen Cues offen."
         ],
         "related": [
           {
@@ -2375,7 +2376,8 @@
           "Wenn rekordbox schließt, ergänzt Surco nur Tracks, die rekordbox schon analysiert hat, mit einem CALL und ohne Hot Cues. Ein Track, der schon Hot Cues hat, bleibt also, wie er ist. Surco muss offen sein, wenn du rekordbox schließt.",
           "rekordbox nimmt höchstens 8 Hot Cues, A bis H. Passt einer nicht, sagt Surco es dir.",
           "Reicht dir ein Cue, gibt es zwei fertige Abläufe. Mix in 64 setzt einen Hot Cue 16 Takte vor dem Punkt und Mix in 32 einen 8 Takte davor.",
-          "Die Cues werden in deiner rekordbox-Sammlung gespeichert, nicht in der Datei. Bevor Surco hineinschreibt, mach in rekordbox selbst eine Sicherung der Bibliothek. Surco macht auch eine."
+          "Die Cues werden in deiner rekordbox-Sammlung gespeichert, nicht in der Datei. Bevor Surco hineinschreibt, mach in rekordbox selbst eine Sicherung der Bibliothek. Surco macht auch eine.",
+          "Hast du den Track gerade konvertiert und in rekordbox-Playlists geschickt, bringt dich das rekordbox-Symbol neben dem Ergebnis zu ihm in „Zuletzt hinzugefügt“, mit seinen Cues offen."
         ],
         "related": []
       },

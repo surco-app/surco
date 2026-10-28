@@ -282,7 +282,7 @@
           },
           {
             "t": "Tus playlists de Engine DJ",
-            "d": "Las abres en Surco y pones hot cues a sus pistas con el mismo editor, Auto marcar incluido. Los CALL no, porque Engine DJ solo guarda hot cues. Y las exportas a un USB con su biblioteca de Engine, lista para el reproductor."
+            "d": "Las abres en Surco y pones hot cues a sus pistas con el mismo editor, Auto marcar incluido. Los CALL no, porque Engine DJ solo guarda hot cues. Y las exportas a un USB con su biblioteca de Engine, lista para el reproductor. En el editor eliges en qué playlists va cada pista, y si Engine DJ no la tenía, Surco la añade a tu biblioteca al convertirla."
           },
           {
             "t": "Tus playlists de Traktor",
@@ -2311,7 +2311,8 @@
         "points": [
           "A Engine llegan los datos, la valoración y la carátula.",
           "Los cue points y la rejilla no. Engine los calcula al cargar la pista.",
-          "Antes de escribir, Surco guarda una copia de seguridad de la biblioteca."
+          "Antes de escribir, Surco guarda una copia de seguridad de la biblioteca.",
+          "En el editor, el campo «Playlists» de Engine DJ elige en qué playlists entra cada pista, también si Engine aún no la tiene. Surco la añade al convertirla. Al terminar, el icono de Engine DJ junto al resultado te lleva a la pista con sus cues abiertas."
         ],
         "related": [
           {
@@ -2375,7 +2376,8 @@
           "Al cerrar rekordbox, Surco solo completa pistas que rekordbox ya ha analizado, con algún CALL y ninguna hot cue, así que una pista que ya tiene hot cues se queda como está. Surco tiene que estar abierto cuando cierras rekordbox.",
           "rekordbox admite como mucho 8 hot cues, de la A a la H. Si una no cabe, Surco te lo dice.",
           "Si te basta una cue, vienen dos flujos hechos. Mix in 64 pone una hot cue 16 compases antes del punto y Mix in 32, 8 compases antes.",
-          "Las cues se guardan en tu colección de rekordbox, no en el archivo. Antes de que Surco escriba en ella, haz tu propia copia de seguridad de la biblioteca desde rekordbox. Surco hace también la suya."
+          "Las cues se guardan en tu colección de rekordbox, no en el archivo. Antes de que Surco escriba en ella, haz tu propia copia de seguridad de la biblioteca desde rekordbox. Surco hace también la suya.",
+          "Si acabas de convertir la pista y la mandaste a playlists de rekordbox, el icono de rekordbox junto al resultado te lleva a ella en «Añadidas recientemente» con sus cues abiertas."
         ],
         "related": []
       },

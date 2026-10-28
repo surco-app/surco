@@ -282,7 +282,7 @@
           },
           {
             "t": "Tes playlists Engine DJ",
-            "d": "Ouvre-les dans Surco et place des hot cues sur leurs morceaux avec le même éditeur, marquage auto compris. Pas de CALL, puisqu'Engine DJ ne garde que les hot cues. Et exporte-les sur une clé USB avec sa bibliothèque Engine, prêtes pour le lecteur."
+            "d": "Ouvre-les dans Surco et place des hot cues sur leurs morceaux avec le même éditeur, marquage auto compris. Pas de CALL, puisqu'Engine DJ ne garde que les hot cues. Et exporte-les sur une clé USB avec sa bibliothèque Engine, prêtes pour le lecteur. Dans l'éditeur, tu choisis dans quelles playlists va chaque morceau, et si Engine DJ ne l'avait pas, Surco l'ajoute à ta bibliothèque en le convertissant."
           },
           {
             "t": "Tes playlists Traktor",
@@ -2311,7 +2311,8 @@
         "points": [
           "Les infos, la note et la pochette arrivent dans Engine.",
           "Les cue points et la grille, non. Engine les calcule quand tu charges le morceau.",
-          "Avant d'écrire, Surco garde une sauvegarde de la bibliothèque."
+          "Avant d'écrire, Surco garde une sauvegarde de la bibliothèque.",
+          "Dans l'éditeur, le champ « Playlists » d'Engine DJ choisit dans quelles playlists va chaque morceau, même si Engine ne l'a pas encore. Surco l'ajoute en le convertissant. Une fois fini, l'icône Engine DJ à côté du résultat t'amène au morceau avec ses cues ouverts."
         ],
         "related": [
           {
@@ -2375,7 +2376,8 @@
           "À la fermeture de rekordbox, Surco ne complète que les morceaux déjà analysés par rekordbox, avec un CALL et sans hot cues, donc un morceau qui a déjà des hot cues reste tel quel. Surco doit être ouvert quand tu fermes rekordbox.",
           "rekordbox accepte au plus 8 hot cues, de A à H. Si l'un ne rentre pas, Surco te le dit.",
           "Si un seul cue te suffit, deux flux sont prêts à l'emploi. Mix in 64 place un hot cue 16 mesures avant le point et Mix in 32, 8 mesures avant.",
-          "Les cues sont enregistrés dans ta collection rekordbox, pas dans le fichier. Avant que Surco y écrive, fais ta propre sauvegarde de la bibliothèque depuis rekordbox. Surco en fait une aussi."
+          "Les cues sont enregistrés dans ta collection rekordbox, pas dans le fichier. Avant que Surco y écrive, fais ta propre sauvegarde de la bibliothèque depuis rekordbox. Surco en fait une aussi.",
+          "Si tu viens de convertir le morceau et de l'envoyer dans des playlists rekordbox, l'icône rekordbox à côté du résultat t'y amène dans « Ajoutées récemment » avec ses cues ouverts."
         ],
         "related": []
       },

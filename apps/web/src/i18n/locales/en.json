@@ -282,7 +282,7 @@
           },
           {
             "t": "Your Engine DJ playlists",
-            "d": "Open them in Surco and set hot cues on their tracks with the same editor, Auto mark included. Not CALL points, since Engine DJ keeps only hot cues. And export them to a USB drive with its Engine library, ready for the player."
+            "d": "Open them in Surco and set hot cues on their tracks with the same editor, Auto mark included. Not CALL points, since Engine DJ keeps only hot cues. And export them to a USB drive with its Engine library, ready for the player. In the editor you pick which playlists each track goes in, and if Engine DJ didn't have it, Surco adds it to your library when you convert it."
           },
           {
             "t": "Your Traktor playlists",
@@ -2311,7 +2311,8 @@
         "points": [
           "Details, rating and artwork reach Engine.",
           "Cue points and beatgrid don't. Engine works them out when you load the track.",
-          "Before writing, Surco keeps a backup of the library."
+          "Before writing, Surco keeps a backup of the library.",
+          "In the editor, the Engine DJ “Playlists” field picks which playlists each track goes in, even if Engine doesn't have it yet. Surco adds it when you convert it. When it's done, the Engine DJ icon next to the result takes you to the track with its cues open."
         ],
         "related": [
           {
@@ -2375,7 +2376,8 @@
           "When rekordbox closes, Surco only completes tracks rekordbox has already analyzed, with a CALL and no hot cues, so a track that already has hot cues stays as it is. Surco has to be open when you close rekordbox.",
           "rekordbox takes at most 8 hot cues, A to H. If one doesn't fit, Surco tells you.",
           "If one cue is enough, two flows come ready-made. Mix in 64 places a hot cue 16 bars before the point and Mix in 32, 8 bars before.",
-          "The cues are saved to your rekordbox collection, not to the file. Before Surco writes to it, make your own backup of the library from rekordbox. Surco makes one too."
+          "The cues are saved to your rekordbox collection, not to the file. Before Surco writes to it, make your own backup of the library from rekordbox. Surco makes one too.",
+          "If you just converted the track and sent it to rekordbox playlists, the rekordbox icon next to the result takes you to it in “Recently added” with its cues open."
         ],
         "related": []
       },
