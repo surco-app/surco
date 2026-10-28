@@ -67,7 +67,9 @@ export default function App() {
             </p>
           </Reveal>
           <Reveal eager delay={150}>
-            <DownloadButton location="hero" note={t('home.heroFree')} center />
+            <div id="hero-download">
+              <DownloadButton location="hero" note={t('home.heroFree')} center />
+            </div>
           </Reveal>
           <Reveal eager delay={220}>
             <div className="relative isolate mx-auto mt-12 max-w-5xl text-left">
@@ -89,9 +91,7 @@ export default function App() {
         <Reveal eager delay={300}>
           <section className="mx-auto max-w-6xl px-6 pb-4">
             <div className="flex flex-col gap-3 border-y border-line py-5 sm:flex-row sm:items-center sm:gap-6">
-              <p className="font-mono text-xs tracking-wider text-faint uppercase">
-                {t('home.worksWith')}
-              </p>
+              <p className="text-sm text-faint">{t('home.worksWith')}</p>
               <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted">
                 {INTEGRATIONS.map((name) => (
                   <li key={name}>{name}</li>
@@ -112,7 +112,10 @@ export default function App() {
         {/* pb is smaller than pt: the footer brings its own py-14, and the two
             together left about 150px of empty background between the last link on
             the page and the first line of the footer. */}
-        <section className="mx-auto max-w-6xl px-6 pt-20 pb-12 sm:pt-28 sm:pb-16">
+        <section
+          id="instalar"
+          className="mx-auto max-w-6xl scroll-mt-8 px-6 pt-20 pb-12 sm:pt-28 sm:pb-16"
+        >
           <SectionView location="home-closing" />
           <Reveal>
             <div className="text-center">

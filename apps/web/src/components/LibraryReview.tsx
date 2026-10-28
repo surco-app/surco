@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import { SCENE_ANCHORS } from '../lib/sceneAnchors'
-import Kicker from './Kicker'
 import Reveal from './Reveal'
 import { AnchorLink, Replayable } from './scenes/Replay'
 import ReviewScene from './scenes/ReviewScene'
+import { STEP_LABEL } from './scenes/SceneLayout'
 
 const POINTS = ['spelling', 'typo', 'duplicate', 'everywhere'] as const
 
@@ -13,13 +13,13 @@ export default function LibraryReview() {
   return (
     <section className="pt-24">
       <Reveal>
-        <div id={SCENE_ANCHORS.review} className="scroll-mt-8">
-          <Kicker>{t('home.review.kicker')}</Kicker>
-          <h2 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+        <div id={SCENE_ANCHORS.review} className="scroll-mt-8 text-center">
+          <p className={STEP_LABEL}>{t('home.review.kicker')}</p>
+          <h2 className="group/title mx-auto mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
             {t('home.review.title')}
             <AnchorLink id={SCENE_ANCHORS.review} />
           </h2>
-          <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">
+          <p className="mx-auto mt-3 max-w-2xl leading-relaxed text-pretty text-muted">
             {t('home.review.lede')}
           </p>
         </div>

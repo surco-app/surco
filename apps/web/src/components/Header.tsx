@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { DONATE_URL } from '../config'
 import { LANGUAGE_NAMES, LANGUAGES, type Language } from '../i18n'
 import { trackDonate } from '../lib/analytics'
-import { isCondensed } from '../lib/header'
+import { isCondensed, showsHeaderDownload } from '../lib/header'
 import { HEADER_SECTIONS, HOME, PAGES, type Page } from '../lib/nav'
+import { btnPrimary } from '../lib/ui'
 import { rememberLanguage, useAutoLanguage } from '../lib/useAutoLanguage'
 
 // `page` marks which standalone page renders the header; section links then
@@ -18,6 +19,7 @@ export default function Header({
 }) {
   const { t, i18n } = useTranslation()
   const [scrolled, setScrolled] = useState(false)
+  const [heroCtaPassed, setHeroCtaPassed] = useState(false)
   const [open, setOpen] = useState(false)
   const [languageOpen, setLanguageOpen] = useState(false)
   const languageRef = useRef<HTMLDivElement>(null)
@@ -45,6 +47,21 @@ export default function Header({
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    const heroCta = document.getElementById('hero-download')
+    if (!heroCta) return
+    const io = new IntersectionObserver(([entry]) =>
+      setHeroCtaPassed(
+        showsHeaderDownload({
+          isIntersecting: entry.isIntersecting,
+          top: entry.boundingClientRect.top,
+        }),
+      ),
+    )
+    io.observe(heroCta)
+    return () => io.disconnect()
   }, [])
 
   useEffect(() => {
@@ -98,7 +115,7 @@ export default function Header({
           lang={offered}
           className="border-b border-line/70 bg-bg/95 text-sm text-muted"
         >
-          <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-1 px-6 py-2">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-4 gap-y-1 px-6 py-2">
             <span>{t('nav.languageOffer.text', { lng: offered })}</span>
             <a
               data-testid="language-offer-switch"
@@ -121,12 +138,10 @@ export default function Header({
       )}
       {/* Fixed height, always. The header used to animate its own padding, which
           shortened the document as it condensed — near the threshold that fed back
-          into the scroll position and flickered between both sizes. Only the inner
-          row scales now, so the space the header occupies never changes. */}
-      <div
-        className="mx-auto flex h-20 max-w-5xl items-center justify-between px-6 transition-transform duration-300"
-        style={{ transform: scrolled ? 'scale(0.92)' : 'scale(1)' }}
-      >
+          into the scroll position and flickered between both sizes. The row doesn't
+          scale either: shrinking it about its centre pulled the logo off the page's
+          left edge. Only the background changes on scroll. */}
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <a href={page ? home : '#top'} className="flex items-center gap-2">
           {/* The disc cropped to its rim, not the app icon: the icon keeps the margin macOS
               asks of a Dock tile, which held the disc to 36 of these 48px, and its dark rim
@@ -258,6 +273,17 @@ export default function Header({
               ))}
             </ul>
           </div>
+          <a
+            href="#instalar"
+            data-testid="header-download"
+            aria-hidden={heroCtaPassed ? undefined : true}
+            tabIndex={heroCtaPassed ? undefined : -1}
+            className={`hidden ${btnPrimary} px-4 py-1.5 text-sm sm:inline-flex ${
+              heroCtaPassed ? '' : 'pointer-events-none invisible translate-y-1 opacity-0'
+            }`}
+          >
+            {t('nav.download')}
+          </a>
           <button
             type="button"
             aria-label={open ? t('nav.closeMenu') : t('nav.openMenu')}
@@ -310,7 +336,7 @@ export default function Header({
             : 'invisible -translate-y-2 border-transparent opacity-0'
         }`}
       >
-        <div className="mx-auto max-w-5xl px-6 py-2">
+        <div className="mx-auto max-w-6xl px-6 py-2">
           {HEADER_SECTIONS.map((id) => (
             <a
               key={id}

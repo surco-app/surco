@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isCondensed } from './header'
+import { isCondensed, showsHeaderDownload } from './header'
 
 // The header used to shrink its own padding past a single 12px threshold. Because
 // it also shortens the document, a scroll position sitting near that threshold could
@@ -31,5 +31,22 @@ describe('isCondensed', () => {
 
   it('treats a rubber-banded negative offset as the top', () => {
     expect(isCondensed(-30, true)).toBe(false)
+  })
+})
+
+// The header's own download button stands in for the hero's once a visitor has
+// scrolled past it, so the page never has two at once and is never without one.
+describe('showsHeaderDownload', () => {
+  it('stays hidden while the hero download is on screen', () => {
+    expect(showsHeaderDownload({ isIntersecting: true, top: 300 })).toBe(false)
+  })
+
+  it('appears once the hero download has scrolled off the top', () => {
+    expect(showsHeaderDownload({ isIntersecting: false, top: -120 })).toBe(true)
+  })
+
+  it('stays hidden when the hero download is below the fold, not past it', () => {
+    // On a short window the hero button starts below the fold; nobody has passed it yet.
+    expect(showsHeaderDownload({ isIntersecting: false, top: 900 })).toBe(false)
   })
 })

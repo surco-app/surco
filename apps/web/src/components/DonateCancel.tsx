@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { DONATE_URL, PAYPAL_ME_LABEL, PAYPAL_ME_URL } from '../config'
-import { trackDonate } from '../lib/analytics'
 import { LANGUAGES, type Language } from '../i18n'
+import { trackDonate } from '../lib/analytics'
 import { HOME } from '../lib/nav'
 
 // PayPal sends donors here when they back out of the donate flow. Thank them for

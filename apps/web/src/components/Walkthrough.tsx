@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next'
 import type { Language } from '../i18n'
 import { PAGES } from '../lib/nav'
 import { SCENE_ANCHORS } from '../lib/sceneAnchors'
-import Kicker from './Kicker'
 import Reveal from './Reveal'
 import BatchScene from './scenes/BatchScene'
 import CuesScene from './scenes/CuesScene'
@@ -12,7 +11,7 @@ import NormalizeScene from './scenes/NormalizeScene'
 import QualityScene from './scenes/QualityScene'
 import ReplaceScene from './scenes/ReplaceScene'
 import { AnchorLink, Replayable } from './scenes/Replay'
-import SceneLayout from './scenes/SceneLayout'
+import SceneLayout, { STEP_LABEL } from './scenes/SceneLayout'
 import TagScene from './scenes/TagScene'
 import TrimScene from './scenes/TrimScene'
 
@@ -37,10 +36,8 @@ export default function Walkthrough() {
             edge, on the one link whose job is to show what the app does. */}
         <div className="pt-24">
           <div id="como" className="scroll-mt-8 text-center">
-            <div className="flex justify-center">
-              <Kicker>{t('home.walkthrough.kicker')}</Kicker>
-            </div>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            <p className={STEP_LABEL}>{t('home.walkthrough.kicker')}</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
               {t('home.walkthrough.title')}
             </h2>
             <p className="mx-auto mt-3 max-w-xl leading-relaxed text-pretty text-muted">
@@ -59,11 +56,7 @@ export default function Walkthrough() {
         {t('home.drop.lede')}
       </SceneLayout>
 
-      {/* Wide, like the quality scene: the editor is a form, and a form needs the width
-          for its values. In the half-width column every value — the title, the label,
-          even "Ken Laszlo" — was truncated to a couple of characters and an ellipsis. */}
       <SceneLayout
-        wide
         id={SCENE_ANCHORS.tag}
         step={t('home.tag.step')}
         title={t('home.tag.title')}
@@ -73,7 +66,6 @@ export default function Walkthrough() {
       </SceneLayout>
 
       <SceneLayout
-        wide
         id={SCENE_ANCHORS.quality}
         step={t('home.quality.step')}
         title={t('home.quality.title')}
@@ -86,15 +78,10 @@ export default function Walkthrough() {
           its own, which spent three screens of scroll on the part of the flow the page
           itself calls "and while it's at it": the tagging and the fake-lossless verdict are
           what a visitor comes for, and they were being crowded out by their own footnotes. */}
-      <section
-        id={SCENE_ANCHORS.audio}
-        className="scroll-mt-12 border-b border-line/50 py-10 sm:py-12"
-      >
+      <section id={SCENE_ANCHORS.audio} className="scroll-mt-12 py-16 sm:py-24">
         <Reveal>
-          <p className="font-mono text-xs tracking-wider text-blue uppercase">
-            {t('home.audioGroup.step')}
-          </p>
-          <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+          <p className={STEP_LABEL}>{t('home.audioGroup.step')}</p>
+          <h2 className="group/title mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
             {t('home.audioGroup.title')}
             <AnchorLink id={SCENE_ANCHORS.audio} />
           </h2>
@@ -102,7 +89,7 @@ export default function Walkthrough() {
             {t('home.audioGroup.lede')}
           </div>
         </Reveal>
-        <Reveal delay={120} className="mt-7">
+        <Reveal delay={120} className="mt-10">
           <div className="grid gap-5 lg:grid-cols-3">
             <div id={SCENE_ANCHORS.declick} className="scroll-mt-24">
               <Replayable>
@@ -110,7 +97,7 @@ export default function Walkthrough() {
                   <DeclickScene />
                 </div>
               </Replayable>
-              <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
+              <p className="group/title mt-3 text-sm leading-relaxed text-pretty text-muted">
                 {t('home.declick.short')}
                 <AnchorLink id={SCENE_ANCHORS.declick} />
               </p>
@@ -121,7 +108,7 @@ export default function Walkthrough() {
                   <TrimScene />
                 </div>
               </Replayable>
-              <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
+              <p className="group/title mt-3 text-sm leading-relaxed text-pretty text-muted">
                 {t('home.trim.short')}
                 <AnchorLink id={SCENE_ANCHORS.trim} />
               </p>
@@ -132,7 +119,7 @@ export default function Walkthrough() {
                   <NormalizeScene />
                 </div>
               </Replayable>
-              <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
+              <p className="group/title mt-3 text-sm leading-relaxed text-pretty text-muted">
                 {t('home.normalize.short')}
                 <AnchorLink id={SCENE_ANCHORS.normalize} />
               </p>
@@ -142,7 +129,6 @@ export default function Walkthrough() {
       </section>
 
       <SceneLayout
-        wide
         id={SCENE_ANCHORS.batch}
         step={t('home.batch.step')}
         title={t('home.batch.title')}
@@ -154,7 +140,6 @@ export default function Walkthrough() {
       {/* After the flow, because it comes after it in the work: the track is already in
           the library when a better file turns up. */}
       <SceneLayout
-        wide
         id={SCENE_ANCHORS.replace}
         step={t('home.replace.step')}
         title={t('home.replace.title')}
@@ -164,7 +149,6 @@ export default function Walkthrough() {
       </SceneLayout>
 
       <SceneLayout
-        wide
         id={SCENE_ANCHORS.cues}
         step={t('home.cues.step')}
         title={t('home.cues.title')}

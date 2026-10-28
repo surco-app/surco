@@ -27,6 +27,7 @@
     "closeMenu": "Fermer le menu",
     "cambios": "Nouveautés",
     "donar": "Faire un don",
+    "download": "Télécharger",
     "language": "Langue",
     "languageOffer": {
       "text": "Cette page existe aussi en français.",
@@ -1000,7 +1001,7 @@
       "lede": "Sept étapes, une seule fenêtre. En chemin, tu découvriras lesquels de tes FLAC sont en réalité des MP3."
     },
     "drop": {
-      "step": "01 · importés",
+      "step": "Étape 1 · Importés",
       "title": "Tu les déposes, ils sont là.",
       "lede": "Des dossiers entiers. Surco lit les tags, la durée et la pochette à la volée, et n'ajoute jamais deux fois le même morceau.",
       "emptyTitle": "Dépose tes morceaux ici",
@@ -1009,7 +1010,7 @@
       "reading": "Lecture {{read}}/{{total}}"
     },
     "quality": {
-      "step": "03 · vérifiés",
+      "step": "Étape 3 · Vérifiés",
       "title": "Ce FLAC était un MP3.",
       "lede": "Acheter en sans perte ne garantit pas que ça le soit. Si quelqu'un a converti un MP3 en FLAC, le fichier pèse pareil mais le spectre montre le mur. Surco le signale avant même que le morceau sorte de chez toi.",
       "goodAlt": "Spectre d'un vrai FLAC : l'énergie monte jusqu'en haut sans coupure",
@@ -1026,12 +1027,12 @@
       "fakeBadge": "● Faux sans perte"
     },
     "audioGroup": {
-      "step": "04 · 05 · 06 · la finition",
+      "step": "Étapes 4 à 6 · La finition",
       "title": "Et un meilleur son au passage.",
       "lede": "Trois corrections que Surco apporte au même morceau : il nettoie les clics et le bruit du vinyle, rogne le silence de la fin et met tous les morceaux au même volume."
     },
     "tag": {
-      "step": "02 · tagués",
+      "step": "Étape 2 · Tagués",
       "title": "Les tags, depuis Discogs, en un clic.",
       "lede": "Discogs pour les labels, Bandcamp pour l'autoproduction, Deezer pour les charts, Beatport pour le club, MusicBrainz pour tout le reste. Un clic remplit tout : artiste, label, année, BPM et pochette.",
       "all": "Toutes ({{count}})"
@@ -1078,7 +1079,7 @@
       "explain": "Il va bouger de {{gain}} dB vers {{target}} LUFS avec un gain constant. Rien n'est limité ni compressé ; la dynamique reste intacte."
     },
     "batch": {
-      "step": "07 · exportés",
+      "step": "Étape 7 · Exportés",
       "title": "Et il atterrit dans ton Apple Music.",
       "lede": "Choisis un format et une destination et convertis tout le dossier. Avec Apple Music et Engine DJ, tu n'importes rien : le morceau apparaît dans ta bibliothèque avec sa pochette, et dans Engine DJ, avec sa note et sa playlist. Pour le reste, chacun reçoit le fichier qu'il attend.",
       "stage": "Conversion en AIFF…",
@@ -1149,10 +1150,10 @@
       "intact": "intacts",
       "inPlace": "en place",
       "fieldYear": "Année",
-      "step": "et plus tard · remplacé"
+      "step": "Plus tard · Remplacé"
     },
     "cues": {
-      "step": "et dans ton logiciel · cues posés",
+      "step": "Dans ton logiciel · Cues posés",
       "title": "Tes cues rekordbox, Engine DJ et Traktor, en un clic.",
       "lede": "Clique là où le morceau décolle, ou laisse Marquage auto te le proposer. Ton flux place le reste des cues et Surco les enregistre dans rekordbox, Engine DJ ou Traktor. Engine DJ et Traktor ne prennent que les hot cues.",
       "unsaved": "Non enregistré",
