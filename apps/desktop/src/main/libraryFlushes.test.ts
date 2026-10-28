@@ -266,3 +266,46 @@ describe('duplicateLibraryDeps', () => {
     expect(FILE_USE.check.mock.calls).toEqual([['/m/a.mp3'], ['/m/b.mp3']])
   })
 })
+
+// Los campos de playlists de Traktor y Engine DJ escriben por la cola de cada programa, que
+// espera a que esté cerrado, tenga o no activado el reapuntado de esa biblioteca.
+describe('flushConversionBatch with playlists chosen for Traktor and Engine DJ', () => {
+  it('queues each library its own track ops and applies them quietly', async () => {
+    Object.assign(REPOINTS[0], {
+      traktorPlaylists: { wanted: [{ id: 'fri', name: 'Friday' }], base: [] },
+      enginePlaylists: { wanted: [], base: ['7'] },
+    })
+    try {
+      const traktor = {
+        enqueue: vi.fn(),
+        applyQuietly: vi.fn(),
+        state: () => ({ tracks: 0, changes: 0, items: [] }),
+      }
+      const engine = { enqueue: vi.fn(), applyQuietly: vi.fn() }
+      await flushConversionBatch(
+        host(),
+        sessions,
+        { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        traktor,
+        engine,
+      )
+      expect(traktor.enqueue).toHaveBeenCalledWith([
+        expect.objectContaining({
+          kind: 'track',
+          path: '/m/a.flac',
+          from: '/m/a.mp3',
+          wanted: [{ id: 'fri', name: 'Friday' }],
+        }),
+      ])
+      expect(traktor.applyQuietly).toHaveBeenCalled()
+      expect(engine.enqueue).toHaveBeenCalledWith([
+        expect.objectContaining({ kind: 'track', path: '/m/a.flac', known: ['7'] }),
+      ])
+      expect(engine.applyQuietly).toHaveBeenCalled()
+    } finally {
+      const first = REPOINTS[0] as Record<string, unknown>
+      delete first.traktorPlaylists
+      delete first.enginePlaylists
+    }
+  })
+})

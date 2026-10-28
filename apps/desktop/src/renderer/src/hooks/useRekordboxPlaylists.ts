@@ -1,59 +1,155 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef } from 'react'
-import type { Settings, SourceNode } from '../../../shared/types'
-import { withRekordboxField } from '../lib/fields'
-import { type Membership, type PlaylistOption, playlistOptions } from '../lib/rekordboxPlaylists'
+import type { PlaylistLibrary, Settings, SourceNode } from '../../../shared/types'
+import type { PlaylistsSpec } from '../lib/fieldSpecs'
+import { PLAYLIST_FIELDS, withPlaylistField } from '../lib/fields'
+import {
+  bulkPlaylistState,
+  effectivePlaylists,
+  type Membership,
+  type PlaylistOption,
+  type PlaylistsEdit,
+  playlistOptions,
+  playlistsEdit,
+  rekordboxPathOf,
+  withTarget,
+} from '../lib/rekordboxPlaylists'
+import type { TrackItem } from '../types'
 
-export function useRekordboxAvailable(): boolean {
+const READ = {
+  rekordbox: {
+    available: () => window.api.rekordboxAvailable(),
+    tree: () => window.api.loadRekordboxTree(),
+    membership: (paths: string[]) => window.api.rekordboxMembership(paths),
+  },
+  traktor: {
+    available: () => window.api.traktorAvailable(),
+    tree: () => window.api.loadTraktorTree(),
+    membership: (paths: string[]) => window.api.traktorMembership(paths),
+  },
+  engine: {
+    available: () => window.api.engineAvailable(),
+    tree: () => window.api.loadEngineTree(),
+    membership: (paths: string[]) => window.api.engineMembership(paths),
+  },
+}
+
+const OFFERED = {
+  rekordbox: 'rekordboxPlaylistsFieldOffered',
+  traktor: 'traktorPlaylistsFieldOffered',
+  engine: 'enginePlaylistsFieldOffered',
+} as const
+
+export function useLibraryAvailable(library: PlaylistLibrary): boolean {
   const { data = false } = useQuery({
-    queryKey: ['source-available', 'rekordbox'],
-    queryFn: () => window.api.rekordboxAvailable(),
+    queryKey: ['source-available', library],
+    queryFn: READ[library].available,
     staleTime: Number.POSITIVE_INFINITY,
   })
   return data
 }
 
-export function useRekordboxPlaylistTree(enabled: boolean): SourceNode[] | undefined {
+export function useRekordboxAvailable(): boolean {
+  return useLibraryAvailable('rekordbox')
+}
+
+export function useRekordboxPlaylistTree(
+  enabled: boolean,
+  library: PlaylistLibrary = 'rekordbox',
+): SourceNode[] | undefined {
   const { data } = useQuery({
-    queryKey: ['source-tree', 'rekordbox'],
-    queryFn: () => window.api.loadRekordboxTree(),
+    queryKey: ['source-tree', library],
+    queryFn: READ[library].tree,
     enabled,
     staleTime: Number.POSITIVE_INFINITY,
   })
   return data
 }
 
-export function useRekordboxPlaylistOptions(enabled: boolean): PlaylistOption[] | undefined {
-  const data = useRekordboxPlaylistTree(enabled)
+export function useRekordboxPlaylistOptions(
+  enabled: boolean,
+  library: PlaylistLibrary = 'rekordbox',
+): PlaylistOption[] | undefined {
+  const data = useRekordboxPlaylistTree(enabled, library)
   return useMemo(() => (data ? playlistOptions(data) : undefined), [data])
 }
 
-export function useRekordboxMembership(paths: string[], enabled: boolean): Membership | undefined {
+export function useRekordboxMembership(
+  paths: string[],
+  enabled: boolean,
+  library: PlaylistLibrary = 'rekordbox',
+): Membership | undefined {
   const key = [...new Set(paths)].sort()
   const { data } = useQuery({
-    queryKey: ['rekordbox-membership', key],
-    queryFn: () => window.api.rekordboxMembership(key),
+    queryKey: [`${library}-membership`, key],
+    queryFn: () => READ[library].membership(key),
     enabled: enabled && key.length > 0,
     staleTime: Number.POSITIVE_INFINITY,
   })
   return data
 }
 
-export function useOfferRekordboxField(
+export function useOfferPlaylistFields(
   settings: Settings | null,
-  available: boolean,
+  available: Record<PlaylistLibrary, boolean>,
   save: (patch: Partial<Settings>) => void,
 ): void {
-  const tried = useRef(false)
+  const tried = useRef(new Set<PlaylistLibrary>())
   useEffect(() => {
-    if (!settings || tried.current) return
-    const next = withRekordboxField(
-      settings.visibleFields,
-      settings.rekordboxPlaylistsFieldOffered,
-      available,
-    )
-    if (!next) return
-    tried.current = true
-    save({ visibleFields: next, rekordboxPlaylistsFieldOffered: true })
+    if (!settings) return
+    let visibleFields = settings.visibleFields
+    const patch: Partial<Settings> = {}
+    for (const library of ['rekordbox', 'traktor', 'engine'] as const) {
+      if (tried.current.has(library)) continue
+      const next = withPlaylistField(
+        visibleFields,
+        PLAYLIST_FIELDS[library],
+        settings[OFFERED[library]] === true,
+        available[library],
+      )
+      if (!next) continue
+      tried.current.add(library)
+      visibleFields = next
+      patch[OFFERED[library]] = true
+    }
+    if (Object.keys(patch).length > 0) save({ visibleFields, ...patch })
   }, [settings, available, save])
+}
+
+export function usePlaylistsSpec(
+  library: PlaylistLibrary,
+  opts: {
+    shown: boolean
+    item: TrackItem
+    tracks: TrackItem[]
+    onChange: (patch: Partial<TrackItem>) => void
+    onChangeTracks?: (patches: ({ id: string } & PlaylistsEdit)[]) => void
+  },
+): PlaylistsSpec | undefined {
+  const { item, tracks, onChange, onChangeTracks } = opts
+  const shown = useLibraryAvailable(library) && opts.shown
+  const tree = useRekordboxPlaylistTree(shown, library)
+  const options = useRekordboxPlaylistOptions(shown, library)
+  const membership = useRekordboxMembership(tracks.map(rekordboxPathOf), shown, library)
+  return useMemo(() => {
+    if (!shown || !tree || !options || !membership) return undefined
+    const held = (t: TrackItem) => library === 'rekordbox' || rekordboxPathOf(t) in membership
+    return {
+      library,
+      disabled: !tracks.some(held),
+      tree,
+      options,
+      single: {
+        value: effectivePlaylists(item, membership, options, library) ?? [],
+        onChange: (next) => onChange(playlistsEdit(item, membership, next, library)),
+      },
+      bulk: {
+        states: bulkPlaylistState(tracks.filter(held), membership, options, library) ?? [],
+        onToggle: (target, on) => {
+          const patches = withTarget(tracks, membership, options, target, on, library)
+          if (patches) onChangeTracks?.(patches)
+        },
+      },
+    }
+  }, [library, shown, tree, options, membership, item, tracks, onChange, onChangeTracks])
 }

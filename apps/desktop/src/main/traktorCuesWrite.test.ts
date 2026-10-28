@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { HOT_KINDS, type WantedCue } from '../shared/cueRules'
 import { traktorContentId } from '../shared/traktorContent'
-import type { CuesOp, EditOp } from './rekordboxQueueOps'
+import type { CuesOp, EditOp, TrackOp } from './rekordboxQueueOps'
 import { readTraktorTrackCues, traktorEntryBlock } from './traktorCues'
 import { applyTraktorBatch, withTraktorCues } from './traktorCuesWrite'
 
@@ -284,6 +284,30 @@ describe('applyTraktorBatch', () => {
     const after = await readFile(file, 'utf8')
     expect(after).not.toContain('START="92674.606740"')
     expect(after).toContain(`KEY="${KEY}"`)
+  })
+
+  it('writes the playlists the editor chose for a converted track', async () => {
+    const withList = doc.replace(
+      '</COLLECTION></NML>',
+      '</COLLECTION><PLAYLISTS><NODE TYPE="FOLDER" NAME="$ROOT"><SUBNODES COUNT="1"><NODE TYPE="PLAYLIST" NAME="Friday"><PLAYLIST ENTRIES="0" TYPE="LIST" UUID="fri"></PLAYLIST></NODE></SUBNODES></NODE></PLAYLISTS></NML>',
+    )
+    const file = await onDisk(withList)
+    const track: TrackOp = {
+      id: 't1',
+      kind: 'track',
+      path: '/Users/dj/Music/power.flac',
+      label: 'The Power',
+      facts: null,
+      wanted: [{ id: 'fri', name: 'Friday' }],
+      known: [],
+      stamps: {},
+    }
+    const result = await applyTraktorBatch(file, [track], {
+      ensureClosed: async () => true,
+      bootVolume: 'Macintosh HD',
+    })
+    expect(result).toMatchObject({ ok: true, wrote: true, outcomes: [{ id: 't1', applied: true }] })
+    expect(await readFile(file, 'utf8')).toContain(`KEY="${KEY}"`)
   })
 
   it('reads the collection again after Traktor quits, so what Traktor saved on quitting is kept and a set it changed is refused', async () => {

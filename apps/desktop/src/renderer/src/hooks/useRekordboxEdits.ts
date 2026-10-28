@@ -44,6 +44,7 @@ export function useRekordboxEdits(
         queryClient.invalidateQueries({ queryKey: ['source-playlist'] }),
         queryClient.invalidateQueries({ queryKey: ['source-separator'] }),
         queryClient.invalidateQueries({ queryKey: ['rekordbox-membership'] }),
+        queryClient.invalidateQueries({ queryKey: ['traktor-membership'] }),
       ])
       const message = editMessage(tr, edit, result, playlistName, source)
       if (message) notify(message.text, message.tone)

@@ -247,6 +247,10 @@ const api: Api = {
     ipcRenderer.invoke('rekordbox:saveCues', reqs),
   rekordboxMembership: (paths: string[]): Promise<Record<string, string[]>> =>
     ipcRenderer.invoke('rekordbox:membership', paths),
+  traktorMembership: (paths: string[]): Promise<Record<string, string[]>> =>
+    ipcRenderer.invoke('traktor:membership', paths),
+  engineMembership: (paths: string[]): Promise<Record<string, string[]>> =>
+    ipcRenderer.invoke('engine:membership', paths),
   onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => {
     const listener = (_e: unknown, state: RekordboxQueueState): void => cb(state)
     ipcRenderer.on('rekordbox:queueChanged', listener)

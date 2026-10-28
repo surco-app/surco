@@ -13,12 +13,14 @@ import {
   FIELD_GROUPS,
   groupOfField,
   IMPORTABLE_FIELDS,
+  isPlaylistField,
   labeledFields,
   missingRequired,
   moveItem,
+  PLAYLIST_FIELDS,
   REKORDBOX_PLAYLISTS_FIELD,
   sortFieldsByGroup,
-  withRekordboxField,
+  withPlaylistField,
 } from './fields'
 
 const meta: TrackMetadata = {
@@ -206,26 +208,33 @@ describe('field labels', () => {
   })
 })
 
-describe('the rekordbox Playlists field', () => {
+describe('the Playlists field of each library', () => {
   it('is appended once when a collection is first found', () => {
-    expect(withRekordboxField(['title', 'artist'], false, true)).toEqual([
+    expect(withPlaylistField(['title', 'artist'], REKORDBOX_PLAYLISTS_FIELD, false, true)).toEqual([
       'title',
       'artist',
       REKORDBOX_PLAYLISTS_FIELD,
     ])
+    expect(withPlaylistField(['title'], PLAYLIST_FIELDS.traktor, false, true)).toEqual([
+      'title',
+      'traktorPlaylists',
+    ])
   })
 
   it('is never added again once offered, nor without a collection, so a field the user hid stays hidden', () => {
-    expect(withRekordboxField(['title'], true, true)).toBeNull()
-    expect(withRekordboxField(['title'], false, false)).toBeNull()
+    expect(withPlaylistField(['title'], REKORDBOX_PLAYLISTS_FIELD, true, true)).toBeNull()
+    expect(withPlaylistField(['title'], REKORDBOX_PLAYLISTS_FIELD, false, false)).toBeNull()
   })
 
   it('is a labelled field only where the caller asks for it, because it is not a tag for names or find and replace', () => {
     const tr = (k: string) => k
-    expect(labeledFields([], tr).some((f) => f.key === REKORDBOX_PLAYLISTS_FIELD)).toBe(false)
-    expect(labeledFields([], tr, true)).toContainEqual({
-      key: REKORDBOX_PLAYLISTS_FIELD,
-      label: 'fields.rekordboxPlaylists',
-    })
+    expect(labeledFields([], tr).some((f) => isPlaylistField(f.key))).toBe(false)
+    expect(labeledFields([], tr, ['rekordbox', 'engine'])).toEqual(
+      expect.arrayContaining([
+        { key: REKORDBOX_PLAYLISTS_FIELD, label: 'fields.rekordboxPlaylists' },
+        { key: 'enginePlaylists', label: 'fields.enginePlaylists' },
+      ]),
+    )
+    expect(labeledFields([], tr, ['engine']).some((f) => f.key === 'traktorPlaylists')).toBe(false)
   })
 })

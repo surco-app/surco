@@ -513,6 +513,10 @@ export function useTrackLibrary({
     if (saved.trim) patch.trim = saved.trim
     if (saved.rekordboxPlaylists) patch.rekordboxPlaylists = saved.rekordboxPlaylists
     if (saved.rekordboxPlaylistsBase) patch.rekordboxPlaylistsBase = saved.rekordboxPlaylistsBase
+    if (saved.traktorPlaylists) patch.traktorPlaylists = saved.traktorPlaylists
+    if (saved.traktorPlaylistsBase) patch.traktorPlaylistsBase = saved.traktorPlaylistsBase
+    if (saved.enginePlaylists) patch.enginePlaylists = saved.enginePlaylists
+    if (saved.enginePlaylistsBase) patch.enginePlaylistsBase = saved.enginePlaylistsBase
     if (saved.normalize) patch.normalize = saved.normalize
     if (saved.declick) patch.declick = saved.declick
     return patch

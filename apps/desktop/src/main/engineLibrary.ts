@@ -335,23 +335,26 @@ async function ensureAlbumArt(db: Database, coverPath: string): Promise<number |
 // inbox — creating the playlist on first use. Membership is deduplicated, so a
 // re-convert never lists the track twice.
 function addToPlaylist(db: Database, title: string, trackId: number, uuid: string): void {
+  appendToList(db, rootListId(db, title), trackId, uuid)
+}
+
+export function rootListId(db: Database, title: string): number {
   const found = db.exec('SELECT id FROM Playlist WHERE title = ? AND parentListId = 0', [title])
-  let listId: number
-  if (found.length) {
-    listId = found[0].values[0][0] as number
-  } else {
-    // Playlist dates are formatted strings (unlike Track dates, which are epoch seconds).
-    // Inserting with nextListId = 0 appends at the sibling tail: the schema's
-    // before/after-insert triggers rechain whichever root playlist used to end the list.
-    const now = new Date()
-    const pad = (n: number): string => String(n).padStart(2, '0')
-    const lastEdit = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
-    db.run(
-      'INSERT INTO Playlist (title, parentListId, isPersisted, nextListId, lastEditTime, isExplicitlyExported) VALUES (?, 0, 1, 0, ?, 1)',
-      [title, lastEdit],
-    )
-    listId = lastId(db)
-  }
+  if (found.length) return found[0].values[0][0] as number
+  // Playlist dates are formatted strings (unlike Track dates, which are epoch seconds).
+  // Inserting with nextListId = 0 appends at the sibling tail: the schema's
+  // before/after-insert triggers rechain whichever root playlist used to end the list.
+  const now = new Date()
+  const pad = (n: number): string => String(n).padStart(2, '0')
+  const lastEdit = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
+  db.run(
+    'INSERT INTO Playlist (title, parentListId, isPersisted, nextListId, lastEditTime, isExplicitlyExported) VALUES (?, 0, 1, 0, ?, 1)',
+    [title, lastEdit],
+  )
+  return lastId(db)
+}
+
+export function appendToList(db: Database, listId: number, trackId: number, uuid: string): void {
   const member = db.exec(
     'SELECT id FROM PlaylistEntity WHERE listId = ? AND trackId = ? AND databaseUuid = ?',
     [listId, trackId, uuid],

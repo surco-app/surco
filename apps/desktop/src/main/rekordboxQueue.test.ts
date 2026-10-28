@@ -94,6 +94,12 @@ describe('rekordbox queue', () => {
     ])
   })
 
+  it('names no collection entry for a queue that never adds tracks, as Traktor and Engine DJ only file what they have', () => {
+    const q = createRekordboxQueue({ ...deps(), addsTracks: false })
+    q.enqueue([track('a', '/m/a.wav', { wanted: [{ name: 'Cierre' }] })])
+    expect(q.state().items[0].parts).toEqual([{ kind: 'playlists', names: ['Cierre'] }])
+  })
+
   it('counts tracks apart from tree changes, and names what happens to each', () => {
     const q = createRekordboxQueue(deps())
     const repoint: RekordboxRepoint = { from: '/m/b.mp3', to: '/m/b.wav' }

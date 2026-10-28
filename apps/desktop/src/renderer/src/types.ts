@@ -225,6 +225,10 @@ export interface TrackItem {
   replacesLabel?: string
   rekordboxPlaylists?: RekordboxPlaylistTarget[]
   rekordboxPlaylistsBase?: string[]
+  traktorPlaylists?: RekordboxPlaylistTarget[]
+  traktorPlaylistsBase?: string[]
+  enginePlaylists?: RekordboxPlaylistTarget[]
+  enginePlaylistsBase?: string[]
   // Set when a conversion registered this track in the Engine DJ library — the Engine
   // counterpart of musicPersistentId's "Surco itself added it, owned by definition",
   // so the row reads in-library before the Engine snapshot refreshes.

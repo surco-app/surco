@@ -1,5 +1,10 @@
 import { effectiveMeta, fieldValue } from '../../../shared/customFields'
-import type { CustomField, MetaTextKey, TrackMetadata } from '../../../shared/types'
+import type {
+  CustomField,
+  MetaTextKey,
+  PlaylistLibrary,
+  TrackMetadata,
+} from '../../../shared/types'
 
 // A field whose tag holds a bounded value gets a box sized to it: 'short' fits a year, a
 // BPM with a decimal, a Camelot key or a track number; 'medium' an ISRC or a Discogs id.
@@ -125,29 +130,38 @@ export {
 export function labeledFields(
   customFields: readonly CustomField[],
   tr: (key: string) => string,
-  rekordbox = false,
+  libraries: readonly PlaylistLibrary[] = [],
 ): { key: string; label: string }[] {
   return [
     ...FIELD_DEFS.map((d) => ({ key: d.key as string, label: tr(`fields.${d.key}`) })),
     ...customFields.map((f) => ({ key: f.key, label: f.label })),
-    ...(rekordbox
-      ? [{ key: REKORDBOX_PLAYLISTS_FIELD, label: tr('fields.rekordboxPlaylists') }]
-      : []),
+    ...libraries.map((l) => ({
+      key: PLAYLIST_FIELDS[l],
+      label: tr(`fields.${PLAYLIST_FIELDS[l]}`),
+    })),
   ]
 }
 
 export const REKORDBOX_PLAYLISTS_FIELD = 'rekordboxPlaylists'
 
-export function withRekordboxField(
+export const PLAYLIST_FIELDS: Record<PlaylistLibrary, string> = {
+  rekordbox: REKORDBOX_PLAYLISTS_FIELD,
+  traktor: 'traktorPlaylists',
+  engine: 'enginePlaylists',
+}
+
+export function isPlaylistField(key: string): boolean {
+  return Object.values(PLAYLIST_FIELDS).includes(key)
+}
+
+export function withPlaylistField(
   visibleFields: string[],
+  field: string,
   offered: boolean,
   available: boolean,
 ): string[] | null {
   if (!available || offered) return null
-  return [
-    ...visibleFields.filter((k) => k !== REKORDBOX_PLAYLISTS_FIELD),
-    REKORDBOX_PLAYLISTS_FIELD,
-  ]
+  return [...visibleFields.filter((k) => k !== field), field]
 }
 
 export function missingRequired(meta: TrackMetadata, requiredFields: string[]): string[] {

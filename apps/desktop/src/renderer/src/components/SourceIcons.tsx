@@ -68,3 +68,5 @@ export function TraktorIcon({ size, ...rest }: IconProps): React.JSX.Element {
     </svg>
   )
 }
+
+export const LIBRARY_ICON = { rekordbox: RekordboxIcon, traktor: TraktorIcon, engine: EngineIcon }

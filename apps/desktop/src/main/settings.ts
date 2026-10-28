@@ -89,6 +89,8 @@ export const defaults: Settings = {
   cueLearnFromEdits: true,
   hiddenSources: [],
   rekordboxPlaylistsFieldOffered: false,
+  traktorPlaylistsFieldOffered: false,
+  enginePlaylistsFieldOffered: false,
   syncEngineDj: false,
   // Empty means "look where rekordbox keeps it", which is one fixed place per platform —
   // unlike Traktor's collection, whose folder varies by version and user preference and

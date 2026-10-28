@@ -194,9 +194,19 @@ it('keeps the wanted rekordbox playlists of a staged track, so switching source 
     diskSignature: 'x',
     rekordboxPlaylists: [{ name: 'Cierre' }],
     rekordboxPlaylistsBase: ['3000'],
+    traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
+    traktorPlaylistsBase: ['old'],
+    enginePlaylists: [],
+    enginePlaylistsBase: ['7'],
   })
   expect(sessionEdits([t])['/m/a.wav'].rekordboxPlaylists).toEqual([{ name: 'Cierre' }])
   expect(sessionEdits([t])['/m/a.wav'].rekordboxPlaylistsBase).toEqual(['3000'])
+  expect(sessionEdits([t])['/m/a.wav']).toMatchObject({
+    traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
+    traktorPlaylistsBase: ['old'],
+    enginePlaylists: [],
+    enginePlaylistsBase: ['7'],
+  })
 })
 
 // Without it a relaunch between a wrong release and the right one leaves the wrong

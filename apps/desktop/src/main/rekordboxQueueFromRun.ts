@@ -71,6 +71,30 @@ export async function trackOpsFromRun(
   return ops
 }
 
+export function libraryTrackOps(
+  repoints: RekordboxRepoint[],
+  library: 'traktor' | 'engine',
+  newId: () => string = randomUUID,
+): TrackOp[] {
+  return repoints.flatMap((r) => {
+    const choice = library === 'traktor' ? r.traktorPlaylists : r.enginePlaylists
+    if (!choice) return []
+    return [
+      {
+        id: newId(),
+        kind: 'track',
+        path: r.to,
+        ...(r.from !== r.to ? { from: r.from } : {}),
+        label: labelOf(r),
+        facts: null,
+        wanted: choice.wanted,
+        known: choice.base,
+        stamps: {},
+      },
+    ]
+  })
+}
+
 export interface RunQueueDeps {
   collectionPath: string
   held?: boolean

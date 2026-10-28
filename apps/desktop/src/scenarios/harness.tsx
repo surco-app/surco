@@ -324,6 +324,8 @@ function scenarioApi(
     rekordboxQueuedCues: async () => null,
     undoRekordboxCues: async () => {},
     rekordboxMembership: async () => ({}),
+    traktorMembership: async () => ({}),
+    engineMembership: async () => ({}),
     onRekordboxQueueChanged: () => () => {},
     onRekordboxQueueApplied: () => () => {},
     engineCueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),

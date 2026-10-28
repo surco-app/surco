@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { TRAKTOR_BUILT_IN, TRAKTOR_HISTORY, traktorKey } from '../shared/traktorContent'
 import type { PlaylistAddReport, RekordboxEditRefusal } from '../shared/types'
-import { type EditOp, type OpOutcome, opRank } from './rekordboxQueueOps'
+import { type EditOp, type OpOutcome, opRank, type TrackOp } from './rekordboxQueueOps'
 import { escapeAttr, withAttr } from './traktorNml'
 import {
   type ModelNode,
@@ -184,14 +184,75 @@ function apply(r: Resolved, src: Sources): OpOutcome {
   return done()
 }
 
+function keyOfTrack(op: TrackOp, index: Sources['index']): string | null {
+  const byId = op.contentId ? traktorKey(op.contentId) : null
+  if (byId && index.keys.has(byId)) return byId
+  for (const path of [op.path, ...(op.from ? [op.from] : [])]) {
+    const found = index.byPath.get(path.normalize('NFC')) ?? []
+    if (found.length === 1) return found[0]
+  }
+  return null
+}
+
+function playlistsOf(model: PlaylistModel | null): ModelNode[] {
+  const out: ModelNode[] = []
+  const walk = (node: ModelNode): void => {
+    if (node.kind === 'playlist' && !history(node)) out.push(node)
+    node.children.forEach(walk)
+  }
+  if (model) walk(model.root)
+  return out
+}
+
+function applyTrack(op: TrackOp, model: PlaylistModel | null, src: Sources): OpOutcome {
+  const key = keyOfTrack(op, src.index)
+  if (!key || !model)
+    return { id: op.id, applied: false, notices: [{ code: 'not-in-library', track: op.label }] }
+  const notices: OpOutcome['notices'] = []
+  const lists = playlistsOf(model)
+  const holding = lists.filter((l) => l.rows.some((r) => r.key === key))
+  const wantedIds = new Set<string>()
+  for (const target of op.wanted) {
+    const name = target.name.trim()
+    let node = target.id
+      ? lists.find((l) => l.id === target.id)
+      : lists.find((l) => l.parent === model.root && l.name === name)
+    if (!node && !target.id && name !== '') {
+      node = newNode(model.root, name, false)
+      model.root.children.push(node)
+      model.root.dirty = true
+      lists.push(node)
+    }
+    if (!node) {
+      notices.push({ code: 'playlist-gone', track: op.label, playlist: target.name })
+      continue
+    }
+    wantedIds.add(node.id)
+    if (holding.includes(node)) continue
+    node.rows.push({ key, text: rowText(key, src.eol) })
+    node.dirty = true
+  }
+  for (const node of holding) {
+    if (wantedIds.has(node.id)) continue
+    if (!op.known.includes(node.id)) {
+      notices.push({ code: 'playlist-changed', track: op.label, playlist: node.name })
+      continue
+    }
+    node.rows = node.rows.filter((r) => r.key !== key)
+    node.dirty = true
+  }
+  return { id: op.id, applied: true, notices }
+}
+
 export function applyTraktorEdits(
   nml: string,
-  ops: EditOp[],
+  allOps: (EditOp | TrackOp)[],
   bootVolume: string,
 ): { nml: string; outcomes: Map<string, OpOutcome> } {
   const model = parsePlaylists(nml)
   const outcomes = new Map<string, OpOutcome>()
   const resolved: Resolved[] = []
+  const ops = allOps.filter((op): op is EditOp => op.kind === 'edit')
   for (const op of ops) {
     const changed = stale(op, model)
     const r = changed ? null : resolve(model, op)
@@ -206,5 +267,6 @@ export function applyTraktorEdits(
   }
   for (const r of [...resolved].sort((a, b) => opRank(a.op) - opRank(b.op)))
     outcomes.set(r.op.id, apply(r, src))
+  for (const op of allOps) if (op.kind === 'track') outcomes.set(op.id, applyTrack(op, model, src))
   return { nml: serializePlaylists(nml, model), outcomes }
 }

@@ -7,7 +7,8 @@ import type { Api } from '../../../preload/api'
 import type { Settings } from '../../../shared/types'
 import { installApi } from '../test/api'
 import {
-  useOfferRekordboxField,
+  useLibraryAvailable,
+  useOfferPlaylistFields,
   useRekordboxMembership,
   useRekordboxPlaylistOptions,
   useRekordboxPlaylistTree,
@@ -84,14 +85,20 @@ describe('useRekordboxPlaylists', () => {
   it('offers the field once, when a collection is there', () => {
     const save = vi.fn()
     const settings = { visibleFields: ['title'], rekordboxPlaylistsFieldOffered: false } as Settings
-    renderHook(() => useOfferRekordboxField(settings, true, save))
+    renderHook(() =>
+      useOfferPlaylistFields(settings, { rekordbox: true, traktor: false, engine: false }, save),
+    )
     expect(save).toHaveBeenCalledWith({
       visibleFields: ['title', 'rekordboxPlaylists'],
       rekordboxPlaylistsFieldOffered: true,
     })
     save.mockClear()
     renderHook(() =>
-      useOfferRekordboxField({ ...settings, rekordboxPlaylistsFieldOffered: true }, true, save),
+      useOfferPlaylistFields(
+        { ...settings, rekordboxPlaylistsFieldOffered: true },
+        { rekordbox: true, traktor: false, engine: false },
+        save,
+      ),
     )
     expect(save).not.toHaveBeenCalled()
   })
@@ -99,11 +106,78 @@ describe('useRekordboxPlaylists', () => {
   it('tries the offer once per session even if the save is rolled back', () => {
     const save = vi.fn()
     const settings = { visibleFields: ['title'], rekordboxPlaylistsFieldOffered: false } as Settings
-    const { rerender } = renderHook(({ current }) => useOfferRekordboxField(current, true, save), {
-      initialProps: { current: settings },
-    })
+    const { rerender } = renderHook(
+      ({ current }) =>
+        useOfferPlaylistFields(current, { rekordbox: true, traktor: false, engine: false }, save),
+      {
+        initialProps: { current: settings },
+      },
+    )
     rerender({ current: { ...settings } })
     rerender({ current: { ...settings } })
     expect(save).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('the Traktor and Engine DJ playlists', () => {
+  it('reads each library from its own app', async () => {
+    const loadTraktorTree = vi.fn<Api['loadTraktorTree']>(async () => [
+      { id: 'fri', name: 'Friday', kind: 'playlist', count: 1 },
+    ])
+    const engineMembership = vi.fn<Api['engineMembership']>(async () => ({ '/m/a.wav': ['7'] }))
+    const traktorAvailable = vi.fn<Api['traktorAvailable']>(async () => true)
+    installApi({ loadTraktorTree, engineMembership, traktorAvailable })
+    const options = renderHook(() => useRekordboxPlaylistOptions(true, 'traktor'), { wrapper })
+    const membership = renderHook(() => useRekordboxMembership(['/m/a.wav'], true, 'engine'), {
+      wrapper,
+    })
+    const available = renderHook(() => useLibraryAvailable('traktor'), { wrapper })
+    await waitFor(() =>
+      expect(options.result.current).toEqual([{ id: 'fri', name: 'Friday', path: '' }]),
+    )
+    await waitFor(() => expect(membership.result.current).toEqual({ '/m/a.wav': ['7'] }))
+    await waitFor(() => expect(available.result.current).toBe(true))
+  })
+
+  it('offers every library found in one save, so one offer never undoes another', () => {
+    const save = vi.fn()
+    const settings = {
+      visibleFields: ['title'],
+      rekordboxPlaylistsFieldOffered: true,
+      traktorPlaylistsFieldOffered: false,
+      enginePlaylistsFieldOffered: false,
+    } as Settings
+    renderHook(() =>
+      useOfferPlaylistFields(settings, { rekordbox: true, traktor: true, engine: true }, save),
+    )
+    expect(save).toHaveBeenCalledTimes(1)
+    expect(save).toHaveBeenCalledWith({
+      visibleFields: ['title', 'traktorPlaylists', 'enginePlaylists'],
+      traktorPlaylistsFieldOffered: true,
+      enginePlaylistsFieldOffered: true,
+    })
+  })
+
+  it('offers a library found later on its own, once', () => {
+    const save = vi.fn()
+    const settings = {
+      visibleFields: ['title'],
+      rekordboxPlaylistsFieldOffered: true,
+      traktorPlaylistsFieldOffered: false,
+      enginePlaylistsFieldOffered: false,
+    } as Settings
+    const { rerender } = renderHook(
+      ({ engine }) =>
+        useOfferPlaylistFields(settings, { rekordbox: false, traktor: false, engine }, save),
+      { initialProps: { engine: false } },
+    )
+    expect(save).not.toHaveBeenCalled()
+    rerender({ engine: true })
+    rerender({ engine: true })
+    expect(save).toHaveBeenCalledTimes(1)
+    expect(save).toHaveBeenCalledWith({
+      visibleFields: ['title', 'enginePlaylists'],
+      enginePlaylistsFieldOffered: true,
+    })
   })
 })

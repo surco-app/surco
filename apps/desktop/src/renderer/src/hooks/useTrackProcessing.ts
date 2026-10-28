@@ -381,6 +381,10 @@ export function useTrackProcessing({
           replacesLabel: track.replacesLabel,
           rekordboxPlaylists: track.rekordboxPlaylists,
           rekordboxPlaylistsBase: track.rekordboxPlaylistsBase,
+          traktorPlaylists: track.traktorPlaylists,
+          traktorPlaylistsBase: track.traktorPlaylistsBase,
+          enginePlaylists: track.enginePlaylists,
+          enginePlaylistsBase: track.enginePlaylistsBase,
         })
         // The user declined to overwrite a conflicting file: nothing was written, so
         // leave the track convertible (idle) rather than marking it done or failed.

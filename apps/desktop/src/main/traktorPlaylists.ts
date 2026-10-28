@@ -1,7 +1,12 @@
 import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { HOT_KINDS } from '../shared/cueRules'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
-import { TRAKTOR_CUE_HEX, TRAKTOR_HOT_OFFSET, traktorContentId } from '../shared/traktorContent'
+import {
+  TRAKTOR_CUE_HEX,
+  TRAKTOR_HISTORY,
+  TRAKTOR_HOT_OFFSET,
+  traktorContentId,
+} from '../shared/traktorContent'
 import type { AppleMusicTrackMeta, RowCue, SourceNode, SourcePlaylistEntry } from '../shared/types'
 import { attr, findEntries } from './traktorNml'
 import { rekordboxColorOf } from './traktorNmlCues'
@@ -218,4 +223,27 @@ export function readTraktorPlaylist(
     ...(separators.has(row.key) && { separator: true }),
     linkId: rowLinkId(list, i),
   }))
+}
+
+export function readTraktorMembership(
+  nml: string,
+  paths: string[],
+  bootVolume: string,
+): Record<string, string[]> {
+  const { byPath } = traktorCollectionIndex(nml, bootVolume)
+  const lists: ModelNode[] = []
+  const walk = (node: ModelNode): void => {
+    if (node.kind === 'playlist' && !(node.parent?.id === 'root' && node.name === TRAKTOR_HISTORY))
+      lists.push(node)
+    node.children.forEach(walk)
+  }
+  const model = parsePlaylists(nml)
+  if (model) walk(model.root)
+  const out: Record<string, string[]> = {}
+  for (const path of paths) {
+    const keys = byPath.get(path.normalize('NFC')) ?? []
+    if (keys.length !== 1) continue
+    out[path] = lists.filter((l) => l.rows.some((r) => r.key === keys[0])).map((l) => l.id)
+  }
+  return out
 }

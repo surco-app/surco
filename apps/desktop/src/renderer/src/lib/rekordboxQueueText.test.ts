@@ -249,3 +249,28 @@ describe('Traktor queue text', () => {
     )
   })
 })
+
+describe('playlist notices from the Traktor and Engine DJ queues', () => {
+  it('name the app that holds the playlists, never rekordbox', () => {
+    expect(
+      noticeText(
+        tr,
+        { code: 'playlist-changed', track: 'Tengo', playlist: 'Friday' },
+        TRAKTOR_QUEUE_WORDS,
+      ),
+    ).toBe('Tengo was not changed in Friday. It changed in Traktor')
+    expect(
+      noticeText(
+        tr,
+        { code: 'playlist-gone', track: 'Tengo', playlist: 'House' },
+        ENGINE_QUEUE_WORDS,
+      ),
+    ).toBe('House is no longer in Engine DJ. Tengo was not added')
+    expect(noticeText(tr, { code: 'not-in-library', track: 'Tengo' }, ENGINE_QUEUE_WORDS)).toBe(
+      'Tengo is no longer in Engine DJ. Its playlists were not changed',
+    )
+    expect(noticeText(tr, { code: 'not-in-library', track: 'Tengo' }, TRAKTOR_QUEUE_WORDS)).toBe(
+      'Tengo is no longer in Traktor. Its playlists were not changed',
+    )
+  })
+})

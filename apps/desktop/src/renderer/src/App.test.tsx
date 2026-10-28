@@ -160,6 +160,8 @@ function settings(over: Partial<Settings> = {}): Settings {
     syncRekordbox: false,
     completeCuesOnClose: false,
     rekordboxPlaylistsFieldOffered: true,
+    traktorPlaylistsFieldOffered: true,
+    enginePlaylistsFieldOffered: true,
     syncEngineDj: false,
     betaUpdates: false,
     traktorCueOffsetMs: 0,

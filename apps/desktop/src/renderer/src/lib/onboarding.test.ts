@@ -60,6 +60,8 @@ const settings: Settings = {
   syncRekordbox: false,
   completeCuesOnClose: false,
   rekordboxPlaylistsFieldOffered: false,
+  traktorPlaylistsFieldOffered: false,
+  enginePlaylistsFieldOffered: false,
   syncEngineDj: false,
   betaUpdates: false,
   traktorCueOffsetMs: 0,

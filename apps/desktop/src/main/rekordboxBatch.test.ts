@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { emptyMetadata } from '../shared/metadata'
 import {
   abandonRekordboxBatch,
+  attachLibraryPlaylists,
   attachRekordboxPlaylists,
   beginRekordboxBatch,
   endRekordboxBatch,
@@ -223,6 +224,23 @@ describe('playlists on a repoint', () => {
     attachRekordboxPlaylists('/m/one.wav', [{ id: '3000', name: 'Makina' }], ['3000'])
     expect(endRekordboxBatch()).toEqual([
       { ...a, playlists: [{ id: '3000', name: 'Makina' }], playlistsBase: ['3000'] },
+    ])
+  })
+
+  it('carries the Traktor and Engine DJ choices beside the rekordbox one, each for its own queue', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint(a)
+    attachRekordboxPlaylists('/m/one.wav', [{ id: '3000', name: 'Makina' }])
+    attachLibraryPlaylists('/m/one.wav', 'traktor', { wanted: [{ name: 'Friday' }], base: [] })
+    attachLibraryPlaylists('/m/one.wav', 'engine', { wanted: [], base: ['7'] })
+    attachLibraryPlaylists('/m/elsewhere.wav', 'engine', { wanted: [], base: [] })
+    expect(endRekordboxBatch()).toEqual([
+      {
+        ...a,
+        playlists: [{ id: '3000', name: 'Makina' }],
+        traktorPlaylists: { wanted: [{ name: 'Friday' }], base: [] },
+        enginePlaylists: { wanted: [], base: ['7'] },
+      },
     ])
   })
 

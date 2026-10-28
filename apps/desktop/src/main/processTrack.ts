@@ -6,6 +6,7 @@ import { foldAccents } from '../shared/foldAccents'
 import { editsInPlace, resolveJobFormat } from '../shared/format'
 import type {
   DeclickConfig,
+  LibraryPlaylistChoice,
   NormalizeConfig,
   OutputFormat,
   ProcessJob,
@@ -104,6 +105,11 @@ export interface ProcessTrackDeps {
     to: string,
     playlists: RekordboxPlaylistTarget[],
     playlistsBase?: string[],
+  ) => void
+  attachLibraryPlaylists?: (
+    to: string,
+    library: 'traktor' | 'engine',
+    choice: LibraryPlaylistChoice,
   ) => void
   existsSync: (path: string) => boolean
   // Device+inode identity, so an in-place edit can tell "the target is the source
@@ -454,6 +460,16 @@ export async function runProcessTrack(
     const outputIdentity = musicOnly ? undefined : await deps.fileIdentity(target)
     if (job.rekordboxPlaylists)
       deps.attachRekordboxPlaylists?.(target, job.rekordboxPlaylists, job.rekordboxPlaylistsBase)
+    if (job.traktorPlaylists)
+      deps.attachLibraryPlaylists?.(target, 'traktor', {
+        wanted: job.traktorPlaylists,
+        base: job.traktorPlaylistsBase ?? [],
+      })
+    if (job.enginePlaylists)
+      deps.attachLibraryPlaylists?.(target, 'engine', {
+        wanted: job.enginePlaylists,
+        base: job.enginePlaylistsBase ?? [],
+      })
     // The new file has landed by now, so failing to retire the old one (a Windows lock
     // on the unlink that ends a copy into the trash) must not fail the job: the user
     // keeps both files and is told so.

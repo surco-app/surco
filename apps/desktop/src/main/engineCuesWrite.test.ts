@@ -1,22 +1,23 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WantedCue } from '../shared/cueRules'
 import { hotCueArgb } from '../shared/rekordboxCueColors'
 import { buildEngineDatabase, loadSqlJs } from './engine'
+import { ENGINE_3_SCHEMA } from './engine3Fixture'
 import { decodeQuickCues, inflateEngineBlob } from './engineBlobs'
 import { readEngineTrackCues } from './engineCues'
 import { applyEngineCuesBatch } from './engineCuesWrite'
 import { withEngineDatabase } from './engineLibrary'
 import { analysedTrack, MAIN_CUE_TAIL, quickCuesRaw } from './enginePerformanceFixture'
-import { openEngineDb } from './enginePlaylists'
+import { openEngineDb, readEnginePlaylist, readEngineTree } from './enginePlaylists'
 import { writeEngineLibraryFixture } from './enginePlaylistsFixture'
 import { isEngineDjRunning } from './engineProcess'
 import { backupOf } from './libraryBackups'
-import type { CuesOp } from './rekordboxQueueOps'
+import type { CuesOp, TrackOp } from './rekordboxQueueOps'
 
 vi.mock('./engineProcess', () => ({ isEngineDjRunning: vi.fn(async () => false) }))
 beforeEach(() => vi.mocked(isEngineDjRunning).mockResolvedValue(false))
@@ -393,5 +394,147 @@ describe('applyEngineCuesBatch alongside another write to the same library', () 
     db.close()
     expect(paths).toEqual(['../Music/a.mp3', '../Music/b.mp3'])
     expect(slotsOf(dir).slots[1].cue?.label).toBe('')
+  })
+})
+
+describe('playlists chosen in the editor for a track, written to Engine DJ', () => {
+  async function crates(): Promise<string> {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-enginelists-'))
+    const db = writeEngineLibraryFixture(dir, {
+      tracks: [
+        { id: 1, path: '../Music/a.mp3', title: 'a' },
+        { id: 2, path: '../Music/b.mp3', title: 'b' },
+      ],
+      playlists: [
+        { id: 1, title: 'Bases', parentListId: 0, nextListId: 2 },
+        { id: 2, title: 'House', parentListId: 0, nextListId: 0 },
+      ],
+      entities: [
+        { id: 1, listId: 1, trackId: 2, nextEntityId: 2 },
+        { id: 2, listId: 1, trackId: 1, nextEntityId: 0 },
+        { id: 3, listId: 2, trackId: 2, nextEntityId: 0 },
+      ],
+    })
+    for (const trigger of ENGINE_3_SCHEMA.match(
+      /CREATE TRIGGER trigger_(before|after)_insert_List [\s\S]*?END;/g,
+    ) ?? [])
+      db.exec(trigger)
+    db.close()
+    return dir
+  }
+  const track = (dir: string, over: Partial<TrackOp> = {}): TrackOp => ({
+    id: 't1',
+    kind: 'track',
+    path: resolve(dir, '../Music/a.mp3'),
+    label: 'a',
+    facts: null,
+    wanted: [],
+    known: [],
+    stamps: {},
+    ...over,
+  })
+  const listed = (dir: string, title: string) => {
+    const db = openEngineDb(dir)
+    if (!db) throw new Error('library did not open')
+    try {
+      const id = (
+        db.prepare('SELECT id FROM Playlist WHERE title = ?').get(title) as { id: number }
+      ).id
+      return readEnginePlaylist(db, dir, String(id), join(dir, 'art')).map((e) => e.preview?.title)
+    } finally {
+      db.close()
+    }
+  }
+
+  it('adds the track at the end of a list the DJ picked and takes it out of one the DJ dropped, keeping both lists in order', async () => {
+    const dir = await crates()
+    const result = await applyEngineCuesBatch(
+      dir,
+      [track(dir, { wanted: [{ id: '2', name: 'House' }], known: ['1'] })],
+      deps(),
+    )
+    expect(result).toMatchObject({
+      ok: true,
+      wrote: true,
+      outcomes: [{ applied: true, notices: [] }],
+    })
+    expect(listed(dir, 'House')).toEqual(['b', 'a'])
+    expect(listed(dir, 'Bases')).toEqual(['b'])
+  })
+
+  it('keeps a list the DJ put the track in from Engine after opening it in Surco, and says so', async () => {
+    const dir = await crates()
+    const result = await applyEngineCuesBatch(dir, [track(dir)], deps())
+    expect(result).toMatchObject({
+      ok: true,
+      wrote: false,
+      outcomes: [{ notices: [{ code: 'playlist-changed', track: 'a', playlist: 'Bases' }] }],
+    })
+    expect(listed(dir, 'Bases')).toEqual(['b', 'a'])
+  })
+
+  it('finds the track by the file it was converted from while Engine still names that one', async () => {
+    const dir = await crates()
+    await applyEngineCuesBatch(
+      dir,
+      [
+        track(dir, {
+          path: resolve(dir, '../Music/a.flac'),
+          from: resolve(dir, '../Music/a.mp3'),
+          wanted: [
+            { id: '1', name: 'Bases' },
+            { id: '2', name: 'House' },
+          ],
+          known: ['1'],
+        }),
+      ],
+      deps(),
+    )
+    expect(listed(dir, 'House')).toEqual(['b', 'a'])
+  })
+
+  it('creates a list the DJ typed at the top of the tree and puts the track in it', async () => {
+    const dir = await crates()
+    await applyEngineCuesBatch(dir, [track(dir, { wanted: [{ name: 'Nueva' }] })], deps())
+    expect(listed(dir, 'Nueva')).toEqual(['a'])
+    const db = openEngineDb(dir)
+    expect(db && readEngineTree(db).map((n) => n.name)).toEqual(['Bases', 'House', 'Nueva'])
+    db?.close()
+  })
+
+  it('says a list is gone instead of adding the track to nothing', async () => {
+    const dir = await crates()
+    const result = await applyEngineCuesBatch(
+      dir,
+      [
+        track(dir, {
+          wanted: [
+            { id: '1', name: 'Bases' },
+            { id: '9', name: 'Old' },
+          ],
+          known: ['1'],
+        }),
+      ],
+      deps(),
+    )
+    expect(result).toMatchObject({
+      outcomes: [{ notices: [{ code: 'playlist-gone', track: 'a', playlist: 'Old' }] }],
+    })
+  })
+
+  it('writes nothing for a track Engine does not have, and says so', async () => {
+    const dir = await crates()
+    const ensureClosed = vi.fn(async () => true)
+    const result = await applyEngineCuesBatch(
+      dir,
+      [track(dir, { path: resolve(dir, '../Music/z.mp3'), wanted: [{ id: '2', name: 'House' }] })],
+      deps({ ensureClosed }),
+    )
+    expect(result).toMatchObject({
+      ok: true,
+      wrote: false,
+      outcomes: [{ applied: false, notices: [{ code: 'not-in-library', track: 'a' }] }],
+    })
+    expect(ensureClosed).not.toHaveBeenCalled()
   })
 })

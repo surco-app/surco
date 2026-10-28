@@ -800,7 +800,8 @@
       "create": "Create playlist “{{name}}”",
       "pending": "Created when the track is written",
       "some": "Only on some tracks. Click to add it to all",
-      "options": "rekordbox playlists"
+      "options": "{{app}} playlists",
+      "notIn": "Not in {{app}}"
     },
     "cues": {
       "title": "Cues",
@@ -998,7 +999,9 @@
     "rowHide": "Hide {{name}}",
     "rowShow": "Show {{name}}",
     "rowToken": "Internal name {{token}}",
-    "rekordboxPlaylists": "Playlists"
+    "rekordboxPlaylists": "Playlists",
+    "traktorPlaylists": "Playlists",
+    "enginePlaylists": "Playlists"
   },
   "declick": {
     "cueWarning": "ALAC does not keep Traktor cues or the beatgrid: converting loses them.",
@@ -2602,7 +2605,8 @@
       "cuesAdjusted_other": "rekordbox has analysed {{track}}. {{count}} cues moved onto its grid, the furthest {{maxMs}} ms",
       "cuesUnfit_one": "One cue of {{track}} sits far from rekordbox’s beats and was left where it was. Check it",
       "cuesUnfit_other": "{{count}} cues of {{track}} sit far from rekordbox’s beats and were left where they were. Check them",
-      "goToCue": "Go to cue"
+      "goToCue": "Go to cue",
+      "notInLibrary": "{{track}} is no longer in rekordbox. Its playlists were not changed"
     },
     "part": {
       "repoint": "new path",
@@ -2646,13 +2650,16 @@
     "appliedChanges_other": "Done in Engine DJ · {{count}} changes",
     "backupFailed": "Could not back up Engine DJ. Surco will try again when you close it",
     "unreadable": "Surco can't read the Engine DJ library right now, so nothing changed",
-    "writeFailed": "Couldn't save the cues to Engine DJ. The library is as it was",
+    "writeFailed": "Couldn't save the changes to Engine DJ. The library is as it was",
     "notice": {
       "cuesChanged": "The cues of {{track}} changed in Engine DJ. Mark them again",
       "callsDropped_one": "{{count}} CALL of {{track}} was not saved ({{times}}). Engine DJ only keeps hot cues",
-      "callsDropped_other": "{{count}} CALLs of {{track}} were not saved ({{times}}). Engine DJ only keeps hot cues"
+      "callsDropped_other": "{{count}} CALLs of {{track}} were not saved ({{times}}). Engine DJ only keeps hot cues",
+      "playlistChanged": "{{track}} was not changed in {{playlist}}. It changed in Engine DJ",
+      "playlistGone": "{{playlist}} is no longer in Engine DJ. {{track}} was not added",
+      "notInLibrary": "{{track}} is no longer in Engine DJ. Its playlists were not changed"
     },
-    "discardConfirm": "Discard what is waiting? The cues go back to what Engine DJ has",
+    "discardConfirm": "Discard what is waiting? Your Engine DJ playlists and cues stay as Engine DJ has them",
     "pillHalted": "Engine DJ changes on hold",
     "halted": "The last change could not be saved or undone. Surco will not touch the library until you choose Apply now or Discard. Apply now replaces the backup copy m.db.surco-backup, so if anything looks wrong, restore from it first. You will find it in Settings → General → Collection backups",
     "pillElsewhere": "Waiting for another Engine DJ library",
@@ -2678,7 +2685,10 @@
     "notice": {
       "cuesChanged": "The cues of {{track}} changed in Traktor. Mark them again",
       "slotDropped": "Traktor has 7 buttons for Surco's cues, so cue H of {{track}} was not saved",
-      "editChanged": "{{playlist}} was not changed. It changed in Traktor"
+      "editChanged": "{{playlist}} was not changed. It changed in Traktor",
+      "playlistChanged": "{{track}} was not changed in {{playlist}}. It changed in Traktor",
+      "playlistGone": "{{playlist}} is no longer in Traktor. {{track}} was not added",
+      "notInLibrary": "{{track}} is no longer in Traktor. Its playlists were not changed"
     },
     "discardConfirm": "Discard what is waiting? Your Traktor playlists and cues stay as Traktor has them",
     "pillHalted": "Traktor changes on hold",

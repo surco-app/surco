@@ -10,7 +10,12 @@ import {
   TWIN_PATHS,
   writeRekordboxPlaylistFixture,
 } from './rekordboxPlaylistsFixture'
-import { queueConversionRun, type RunQueueDeps, trackOpsFromRun } from './rekordboxQueueFromRun'
+import {
+  libraryTrackOps,
+  queueConversionRun,
+  type RunQueueDeps,
+  trackOpsFromRun,
+} from './rekordboxQueueFromRun'
 
 const META = rekordboxMetaFrom({ ...emptyMetadata(), artist: 'Sister Nancy', title: 'Bam Bam' })
 const probe = {
@@ -128,6 +133,45 @@ describe('trackOpsFromRun', () => {
         newId,
       }),
     ).toEqual([])
+  })
+})
+
+describe('libraryTrackOps', () => {
+  it('turns the choice made for one library into a track op that finds the file by either path', () => {
+    const repoints: RekordboxRepoint[] = [
+      {
+        from: '/m/a.mp3',
+        to: '/m/a.flac',
+        meta: META,
+        traktorPlaylists: { wanted: [{ id: 'fri', name: 'Friday' }], base: ['old'] },
+      },
+      { from: '/m/b.wav', to: '/m/b.wav', enginePlaylists: { wanted: [], base: ['7'] } },
+    ]
+    expect(libraryTrackOps(repoints, 'traktor', () => 'id1')).toEqual([
+      {
+        id: 'id1',
+        kind: 'track',
+        path: '/m/a.flac',
+        from: '/m/a.mp3',
+        label: 'Sister Nancy - Bam Bam',
+        facts: null,
+        wanted: [{ id: 'fri', name: 'Friday' }],
+        known: ['old'],
+        stamps: {},
+      },
+    ])
+    expect(libraryTrackOps(repoints, 'engine', () => 'id2')).toEqual([
+      {
+        id: 'id2',
+        kind: 'track',
+        path: '/m/b.wav',
+        label: 'b.wav',
+        facts: null,
+        wanted: [],
+        known: ['7'],
+        stamps: {},
+      },
+    ])
   })
 })
 

@@ -296,3 +296,63 @@ describe('clearWrittenPlaylists', () => {
     expect(out[0]).toBe(rows[0])
   })
 })
+
+describe('each library keeps its own playlist edit', () => {
+  const options = [
+    { id: 'fri', name: 'Friday', path: '' },
+    { id: '7', name: 'House', path: '' },
+  ]
+
+  it('reads and writes the Traktor field without touching the rekordbox one', () => {
+    const t = track({
+      id: 'a',
+      inputPath: '/m/a.wav',
+      rekordboxPlaylists: [{ id: '3000', name: 'Makina' }],
+    })
+    expect(effectivePlaylists(t, { '/m/a.wav': ['fri'] }, options, 'traktor')).toEqual([
+      { id: 'fri', name: 'Friday' },
+    ])
+    expect(playlistsEdit(t, { '/m/a.wav': ['fri'] }, [], 'traktor')).toEqual({
+      traktorPlaylists: [],
+      traktorPlaylistsBase: ['fri'],
+    })
+  })
+
+  it('toggles a list for a selection in Engine DJ only, leaving out the tracks Engine does not have', () => {
+    const a = track({ id: 'a', inputPath: '/m/a.wav' })
+    const b = track({ id: 'b', inputPath: '/m/b.wav' })
+    expect(
+      withTarget([a, b], { '/m/a.wav': [] }, options, { id: '7', name: 'House' }, true, 'engine'),
+    ).toEqual([{ id: 'a', enginePlaylists: [{ id: '7', name: 'House' }], enginePlaylistsBase: [] }])
+  })
+
+  it('discards and clears only the library whose queue answered', () => {
+    const base = track({
+      id: 'a',
+      outputPath: '/out/a.aiff',
+      rekordboxPlaylists: [{ name: 'A' }],
+      traktorPlaylists: [{ name: 'A' }],
+      enginePlaylists: [{ name: 'A' }],
+    })
+    const [discarded] = discardPlaylistEdits([base], ['/out/a.aiff'], 'traktor')
+    expect(discarded.traktorPlaylists).toBeUndefined()
+    expect(discarded.rekordboxPlaylists).toEqual([{ name: 'A' }])
+    const [cleared] = clearWrittenPlaylists(
+      [base],
+      [{ path: '/out/a.aiff', wanted: [{ name: 'A' }] }],
+      'engine',
+    )
+    expect(cleared.enginePlaylists).toBeUndefined()
+    expect(cleared.traktorPlaylists).toEqual([{ name: 'A' }])
+  })
+
+  it('makes the row stale when a Traktor or Engine DJ choice changes, so Update writes it', () => {
+    const saved = track({ id: 'a' })
+    const signature = trackSignature(saved)
+    expect(trackSignature({ ...saved, traktorPlaylists: [{ name: 'A' }] })).not.toBe(signature)
+    expect(trackSignature({ ...saved, enginePlaylists: [{ name: 'A' }] })).not.toBe(signature)
+    expect(trackSignature({ ...saved, traktorPlaylists: [{ name: 'A' }] })).not.toBe(
+      trackSignature({ ...saved, enginePlaylists: [{ name: 'A' }] }),
+    )
+  })
+})

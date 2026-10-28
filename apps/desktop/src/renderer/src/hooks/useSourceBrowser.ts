@@ -177,6 +177,8 @@ export function useSourceBrowser({
     queryClient.invalidateQueries({ queryKey: ['source-playlist'] })
     queryClient.invalidateQueries({ queryKey: ['source-separator'] })
     queryClient.invalidateQueries({ queryKey: ['rekordbox-membership'] })
+    queryClient.invalidateQueries({ queryKey: ['traktor-membership'] })
+    queryClient.invalidateQueries({ queryKey: ['engine-membership'] })
   })
 
   return {

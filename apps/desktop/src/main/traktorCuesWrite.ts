@@ -3,7 +3,7 @@ import log from 'electron-log/main'
 import { HOT_KINDS, validWantedSet, type WantedCue } from '../shared/cueRules'
 import { TRAKTOR_HOT_OFFSET, traktorKey } from '../shared/traktorContent'
 import type { RekordboxEditRefusal, RekordboxQueueNotice } from '../shared/types'
-import type { BatchResult, EditOp, OpOutcome, QueueOp } from './rekordboxQueueOps'
+import type { BatchResult, CuesOp, OpOutcome, QueueOp } from './rekordboxQueueOps'
 import {
   readTraktorTrackCues,
   traktorCueElements,
@@ -79,7 +79,7 @@ function planBatch(
 ): { nml: string; outcomes: OpOutcome[] } {
   const edits = applyTraktorEdits(
     text,
-    ops.filter((op): op is EditOp => op.kind === 'edit'),
+    ops.filter((op): op is Exclude<QueueOp, CuesOp> => op.kind !== 'cues'),
     bootVolume,
   )
   let nml = edits.nml

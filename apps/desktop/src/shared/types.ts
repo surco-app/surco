@@ -239,6 +239,8 @@ export interface Settings {
   cueLearnFromEdits: boolean
   hiddenSources: PlaylistSource[]
   rekordboxPlaylistsFieldOffered: boolean
+  traktorPlaylistsFieldOffered: boolean
+  enginePlaylistsFieldOffered: boolean
   syncEngineDj: boolean
   // Override for the rekordbox collection; empty means the standard location is used.
   rekordboxDbPath: string
@@ -552,6 +554,10 @@ export interface SessionEdit {
   declick?: DeclickConfig
   rekordboxPlaylists?: RekordboxPlaylistTarget[]
   rekordboxPlaylistsBase?: string[]
+  traktorPlaylists?: RekordboxPlaylistTarget[]
+  traktorPlaylistsBase?: string[]
+  enginePlaylists?: RekordboxPlaylistTarget[]
+  enginePlaylistsBase?: string[]
 }
 
 // What the session store round-trips: the loaded source paths (the reopen offer)
@@ -747,6 +753,10 @@ export interface ProcessJob {
   replacesLabel?: string
   rekordboxPlaylists?: RekordboxPlaylistTarget[]
   rekordboxPlaylistsBase?: string[]
+  traktorPlaylists?: RekordboxPlaylistTarget[]
+  traktorPlaylistsBase?: string[]
+  enginePlaylists?: RekordboxPlaylistTarget[]
+  enginePlaylistsBase?: string[]
 }
 
 export interface CoverExportJob {
@@ -1163,6 +1173,7 @@ export type RekordboxQueueNotice =
         | 'cues-too-many'
         | 'cues-invalid'
         | 'cues-slot-dropped'
+        | 'not-in-library'
       track: string
     }
   | { code: 'playlist-changed' | 'playlist-gone'; track: string; playlist: string }
@@ -1682,6 +1693,13 @@ export type UsbExportEvent =
 export interface RekordboxPlaylistTarget {
   id?: string
   name: string
+}
+
+export type PlaylistLibrary = 'rekordbox' | 'traktor' | 'engine'
+
+export interface LibraryPlaylistChoice {
+  wanted: RekordboxPlaylistTarget[]
+  base: string[]
 }
 
 export type RekordboxQueuePart =

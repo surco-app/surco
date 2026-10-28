@@ -1,6 +1,6 @@
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { ipcMain } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -39,6 +39,16 @@ async function library(): Promise<string> {
 }
 
 describe('registerEnginePlaylistsIpc', () => {
+  it('answers which lists hold each file, and nothing without a library, so the field can fill in', async () => {
+    const dir = await library()
+    let configured = ''
+    registerEnginePlaylistsIpc(() => configured, { artDir: () => join(dir, 'art') })
+    const a = resolve(dir, '../Music/a.mp3')
+    expect(handler('engine:membership')({}, [a])).toEqual({})
+    configured = dir
+    expect(handler('engine:membership')({}, [a])).toEqual({ [a]: ['7'] })
+  })
+
   it('says the library is there only when its database is, so the tab can explain where to set it', async () => {
     const dir = await library()
     let configured = dir

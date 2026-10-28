@@ -98,6 +98,8 @@ export function useRekordboxQueue(
     () =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: ['rekordbox-membership'] }),
+        queryClient.invalidateQueries({ queryKey: ['traktor-membership'] }),
+        queryClient.invalidateQueries({ queryKey: ['engine-membership'] }),
         queryClient.invalidateQueries({ queryKey: ['source-tree'] }),
         queryClient.invalidateQueries({ queryKey: ['source-playlist'] }),
         queryClient.invalidateQueries({ queryKey: ['rekordbox-track-cues'] }),

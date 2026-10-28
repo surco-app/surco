@@ -26,6 +26,7 @@ import type {
   FormatSetting,
   NormalizeConfig,
   OutputFormat,
+  PlaylistLibrary,
   PlaylistSource,
   ReleaseTrack,
   SearchProviderId,
@@ -43,12 +44,7 @@ import { useKey } from '../hooks/useKey'
 import { useLatest } from '../hooks/useLatest'
 import { useLibraryReveals } from '../hooks/useLibraryReveals'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
-import {
-  useRekordboxAvailable,
-  useRekordboxMembership,
-  useRekordboxPlaylistOptions,
-  useRekordboxPlaylistTree,
-} from '../hooks/useRekordboxPlaylists'
+import { usePlaylistsSpec } from '../hooks/useRekordboxPlaylists'
 import { useSectionNavigation } from '../hooks/useSectionNavigation'
 import { useCachedSpectrum } from '../hooks/useSpectrogram'
 import { useStableCallback } from '../hooks/useStableCallback'
@@ -66,13 +62,13 @@ import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
 import { editorPlace } from '../lib/editorPlace'
-import { buildFieldSpecs, type PlaylistsSpec } from '../lib/fieldSpecs'
+import { buildFieldSpecs } from '../lib/fieldSpecs'
 import {
   FIELD_DEFS,
   labeledFields,
   missingRequired,
   missingRequiredOf,
-  REKORDBOX_PLAYLISTS_FIELD,
+  PLAYLIST_FIELDS,
 } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
 import { isTypingTarget } from '../lib/keymap'
@@ -84,14 +80,7 @@ import { splitPosition } from '../lib/position'
 import { fileExtension, libraryCopyFormat } from '../lib/properties'
 import { isLowResCover } from '../lib/quality'
 import { jobAudio } from '../lib/reapply'
-import {
-  bulkPlaylistState,
-  effectivePlaylists,
-  type PlaylistsEdit,
-  playlistsEdit,
-  rekordboxPathOf,
-  withTarget,
-} from '../lib/rekordboxPlaylists'
+import type { PlaylistsEdit } from '../lib/rekordboxPlaylists'
 import {
   bestMatch,
   buildReleaseMeta,
@@ -1054,42 +1043,24 @@ export const Editor = memo(function Editor({
     [isMulti, item.meta, item.cleaned, tr, onChange],
   )
 
-  const rekordboxAvailable = useRekordboxAvailable()
-  const showPlaylists = rekordboxAvailable && visibleFields.includes(REKORDBOX_PLAYLISTS_FIELD)
-  const rekordboxTree = useRekordboxPlaylistTree(showPlaylists)
-  const rekordboxOptions = useRekordboxPlaylistOptions(showPlaylists)
   const playlistTracks = useMemo(
     () => (isMulti && selectedTracks ? selectedTracks : [item]),
     [isMulti, selectedTracks, item],
   )
-  const membership = useRekordboxMembership(playlistTracks.map(rekordboxPathOf), showPlaylists)
-  const playlistsSpec = useMemo<PlaylistsSpec | undefined>(() => {
-    if (!showPlaylists || !rekordboxTree || !rekordboxOptions || !membership) return undefined
-    return {
-      tree: rekordboxTree,
-      options: rekordboxOptions,
-      single: {
-        value: effectivePlaylists(item, membership, rekordboxOptions) ?? [],
-        onChange: (next) => onChange(playlistsEdit(item, membership, next)),
-      },
-      bulk: {
-        states: bulkPlaylistState(playlistTracks, membership, rekordboxOptions) ?? [],
-        onToggle: (target, on) => {
-          const patches = withTarget(playlistTracks, membership, rekordboxOptions, target, on)
-          if (patches) onChangeTracksPlaylists?.(patches)
-        },
-      },
-    }
-  }, [
-    showPlaylists,
-    rekordboxTree,
-    rekordboxOptions,
+  const playlistsOf = (library: PlaylistLibrary) => ({
+    shown: visibleFields.includes(PLAYLIST_FIELDS[library]),
     item,
-    membership,
-    playlistTracks,
+    tracks: playlistTracks,
     onChange,
-    onChangeTracksPlaylists,
-  ])
+    onChangeTracks: onChangeTracksPlaylists,
+  })
+  const rekordboxPlaylists = usePlaylistsSpec('rekordbox', playlistsOf('rekordbox'))
+  const traktorPlaylists = usePlaylistsSpec('traktor', playlistsOf('traktor'))
+  const enginePlaylists = usePlaylistsSpec('engine', playlistsOf('engine'))
+  const playlistsSpec = useMemo(
+    () => ({ rekordbox: rekordboxPlaylists, traktor: traktorPlaylists, engine: enginePlaylists }),
+    [rekordboxPlaylists, traktorPlaylists, enginePlaylists],
+  )
 
   // Built once per real input change. setField and tr are identity-stable, so a
   // keystroke only rebuilds the specs because item.meta changed — and the form's

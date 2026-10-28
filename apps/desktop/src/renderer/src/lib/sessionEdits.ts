@@ -56,5 +56,9 @@ function sessionEdit(track: TrackItem): SessionEdit {
   if (track.declick) edit.declick = track.declick
   if (track.rekordboxPlaylists) edit.rekordboxPlaylists = track.rekordboxPlaylists
   if (track.rekordboxPlaylistsBase) edit.rekordboxPlaylistsBase = track.rekordboxPlaylistsBase
+  if (track.traktorPlaylists) edit.traktorPlaylists = track.traktorPlaylists
+  if (track.traktorPlaylistsBase) edit.traktorPlaylistsBase = track.traktorPlaylistsBase
+  if (track.enginePlaylists) edit.enginePlaylists = track.enginePlaylists
+  if (track.enginePlaylistsBase) edit.enginePlaylistsBase = track.enginePlaylistsBase
   return edit
 }

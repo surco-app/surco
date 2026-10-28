@@ -70,6 +70,7 @@ export interface QueueDeps<R extends QueuedRepoint = RekordboxRepoint> {
   repoint: (collectionPath: string, repoints: R[]) => Promise<LibraryRepointResult[]>
   nodeStamps: (collectionPath: string) => Promise<Record<string, number>>
   onChange: (state: RekordboxQueueState) => void
+  addsTracks?: boolean
 }
 
 export type QueueApply =
@@ -142,6 +143,7 @@ function load<R extends QueuedRepoint>(store: QueueStore): QueueFile<R> {
 function stateOf(
   q: CollectionQueue<QueuedRepoint> | undefined,
   elsewhere: number,
+  addsTracks: boolean,
 ): RekordboxQueueState {
   const items = new Map<string, RekordboxQueueItem>()
   const item = (key: string, label: string): RekordboxQueueItem => {
@@ -164,7 +166,7 @@ function stateOf(
       continue
     }
     it.label = op.label
-    if (!op.contentId) it.parts.push({ kind: 'collection' })
+    if (!op.contentId && addsTracks) it.parts.push({ kind: 'collection' })
     it.parts.push({ kind: 'playlists', names: op.wanted.map((t) => t.name) })
   }
   const all = [...items.values()]
@@ -213,10 +215,10 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
     const elsewhere = file.queues
       .filter((q) => q !== own)
       .reduce((sum, q) => {
-        const s = stateOf(q, 0)
+        const s = stateOf(q, 0, deps.addsTracks ?? true)
         return sum + s.tracks + s.changes
       }, 0)
-    const waiting = stateOf(own, elsewhere)
+    const waiting = stateOf(own, elsewhere, deps.addsTracks ?? true)
     const unplugged =
       !deps.collection() && !!deps.configured?.() && waiting.tracks + waiting.changes > 0
     return unplugged ? { ...waiting, unplugged: true } : waiting

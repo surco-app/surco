@@ -2270,6 +2270,10 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
           id: 'a',
           rekordboxPlaylists: [{ name: 'Cierre' }],
           rekordboxPlaylistsBase: ['3000'],
+          traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
+          traktorPlaylistsBase: ['old'],
+          enginePlaylists: [],
+          enginePlaylistsBase: ['7'],
         }),
       ],
     }
@@ -2290,6 +2294,10 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
       expect.objectContaining({
         rekordboxPlaylists: [{ name: 'Cierre' }],
         rekordboxPlaylistsBase: ['3000'],
+        traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
+        traktorPlaylistsBase: ['old'],
+        enginePlaylists: [],
+        enginePlaylistsBase: ['7'],
       }),
     )
   })
