@@ -3115,10 +3115,10 @@
   {
     "version": "0.8",
     "date": "June 10, 2026",
-    "title": "BPM, key detection and free forever",
+    "title": "BPM, key detection and no more licenses",
     "items": [
       "BPM and key detection: Surco analyzes every track and suggests the tempo and key as one-click chips, in the key notation you prefer.",
-      "Surco is now free forever: licensing and limits are gone. If it saves you hours, you can support it with a donation from the Stats tab.",
+      "Licensing and limits are gone. Surco is free and complete, and if it saves you hours you can support it with a donation from the Stats tab.",
       "New conversion destination that overwrites the original file, with a confirmation before a batch.",
       "Text search and sorting in the track list, with album-art thumbnails on every row.",
       "The settings folder is configurable: point it at iCloud Drive or Dropbox to share your preferences across Macs.",
