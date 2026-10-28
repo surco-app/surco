@@ -92,8 +92,6 @@ export type WorkerJob =
   | { type: 'tagLibRead'; file: string }
   // The activity panel's before/after tag snapshot, a full synchronous TagLib parse.
   | { type: 'tagSnapshot'; file: string }
-  // Tuning Auto marcar to a DJ's marks trains boosted trees over every candidate bar of up to
-  // 600 tracks, a few seconds of CPU.
   | { type: 'tuneDrops'; tracks: TasteTrack[] }
 
 export type WorkerJobResult =
