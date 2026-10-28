@@ -14,6 +14,7 @@ export interface TreesOptions {
   rate?: number
   lambda?: number
   bins?: number
+  from?: TreesModel
 }
 
 const round = (x: number): number => Number(x.toPrecision(6))
@@ -58,11 +59,12 @@ export function trainTrees(rows: number[][], labels: number[], options: TreesOpt
   const edges = Array.from({ length: features }, (_, j) => edgesOf(rows, j, bins))
   const binned = edges.map((e, j) => Uint8Array.from(rows, (r) => binOf(e, r[j])))
   const positive = labels.reduce((a, b) => a + b, 0) / n
-  const base = round(Math.log(positive / (1 - positive)))
-  const score = new Float64Array(n).fill(base)
+  const base = options.from?.base ?? round(Math.log(positive / (1 - positive)))
+  const from = options.from
+  const score = from ? Float64Array.from(rows, (r) => predictTrees(from, r)) : new Float64Array(n).fill(base)
   const g = new Float64Array(n)
   const h = new Float64Array(n)
-  const trees: TreeNode[][] = []
+  const trees: TreeNode[][] = [...(from?.trees ?? [])]
   for (let t = 0; t < options.trees; t++) {
     for (let i = 0; i < n; i++) {
       const p = 1 / (1 + Math.exp(-score[i]))
