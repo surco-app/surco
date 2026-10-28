@@ -1626,13 +1626,8 @@
         "fixed": "eine Farbe",
         "each": "eine Farbe pro Wiederholung"
       },
-      "learn": "Aus meiner Sammlung lernen",
       "learnedName": "Aus meiner Sammlung gelernt",
-      "discard": "Verwerfen",
-      "learnNone": "Deine Sammlung hat kein klares Muster",
       "learnFailed": "Die rekordbox-Sammlung konnte nicht gelesen werden",
-      "learnedCoverage_one": "Passt zu {{matching}} von {{marked}} Track",
-      "learnedCoverage_other": "Passt zu {{matching}} von {{marked}} Tracks",
       "sentence": {
         "every": "alle",
         "put": "setze"
@@ -1656,6 +1651,36 @@
         "engine": "Nur Hot Cues. Engine DJ hat keine CALLs.",
         "missing": "Surco findet {{program}} auf diesem Computer nicht"
       }
+    },
+    "cueProfile": {
+      "title": "Wie du markierst",
+      "firstTitle": "Zeig Surco, wie du markierst",
+      "firstHint": "Liest die Cues, die du schon gesetzt hast, und passt Auto-Markieren und den Ablauf an dich an. Es liest nur und ändert nichts.",
+      "nothing": "Noch keine markierten Tracks zum Lernen. Auto-Markieren nutzt das allgemeine Modell und lernt aus den Cues, die du speicherst.",
+      "learn": "Aus meinen Tracks lernen",
+      "relearn": "Neu lernen",
+      "learning": "Lernt…",
+      "summary_one": "Gelernt aus {{tracks}} Track, den du schon markiert hast",
+      "summary_other": "Gelernt aus {{tracks}} Tracks, die du schon markiert hast",
+      "tracks_one": "Track",
+      "tracks_other": "Tracks",
+      "saved": "In Surco gespeichert",
+      "autoFound": "Findet {{found}} von 10 Stellen, die du markierst",
+      "autoTuned": "An dich angepasst. Vorher fand es {{before}} von 10",
+      "autoGeneral": "Das allgemeine Modell passt schon zu deiner Art zu markieren",
+      "autoFew": "Noch zu wenige Tracks, um es an dich anzupassen",
+      "autoFewHint": "Es braucht {{count}} markierte Tracks",
+      "countdown": "Countdown",
+      "distances_one": "{{bars}} Takt",
+      "distances_other": "{{bars}} Takte",
+      "paired": "Mit CALL darunter in {{share}} %",
+      "start": "Start-Cue",
+      "startYes": "Setzt du meistens",
+      "startNo": "Setzt du meistens nicht",
+      "startShare": "{{with}} von {{open}} Tracks, in die er passen würde",
+      "useFlow": "Als Ablauf verwenden",
+      "fromEdits": "Beim Korrigieren lernen",
+      "fromEditsHint": "Jeder Track, den du im Editor speicherst, fließt ins Gelernte ein, und Surco lernt alle 10 neu."
     }
   },
   "errorBoundary": {

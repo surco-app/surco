@@ -1626,13 +1626,8 @@
         "fixed": "uma cor",
         "each": "uma cor por repetição"
       },
-      "learn": "Aprender com minha coleção",
       "learnedName": "Aprendido com minha coleção",
-      "discard": "Descartar",
-      "learnNone": "Sua coleção não tem um padrão claro",
       "learnFailed": "Não foi possível ler a coleção do rekordbox",
-      "learnedCoverage_one": "Combina com {{matching}} de {{marked}} faixa",
-      "learnedCoverage_other": "Combina com {{matching}} de {{marked}} faixas",
       "sentence": {
         "every": "a cada",
         "put": "coloque"
@@ -1656,6 +1651,36 @@
         "engine": "Só hot cues. O Engine DJ não tem CALL.",
         "missing": "O Surco não encontra o {{program}} neste computador"
       }
+    },
+    "cueProfile": {
+      "title": "Seu jeito de marcar",
+      "firstTitle": "Ensine ao Surco seu jeito de marcar",
+      "firstHint": "Lê os cues que você já colocou e ajusta a marcação automática e o fluxo a você. Só lê, não muda nada.",
+      "nothing": "Ainda não há faixas marcadas para aprender. A marcação automática usa o modelo geral e vai aprender com os cues que você salvar.",
+      "learn": "Aprender com minhas faixas",
+      "relearn": "Aprender de novo",
+      "learning": "Aprendendo…",
+      "summary_one": "Aprendido de {{tracks}} faixa que você já marcou",
+      "summary_other": "Aprendido de {{tracks}} faixas que você já marcou",
+      "tracks_one": "faixa",
+      "tracks_other": "faixas",
+      "saved": "Salvas no Surco",
+      "autoFound": "Encontra {{found}} de cada 10 lugares onde você marca",
+      "autoTuned": "Ajustado a você. Sem ajuste encontrava {{before}} de cada 10",
+      "autoGeneral": "O modelo geral já combina com seu jeito de marcar",
+      "autoFew": "Ainda poucas faixas para ajustá-lo a você",
+      "autoFewHint": "São necessárias {{count}} faixas marcadas",
+      "countdown": "Contagem regressiva",
+      "distances_one": "{{bars}} compasso",
+      "distances_other": "{{bars}} compassos",
+      "paired": "Com o CALL embaixo em {{share}} %",
+      "start": "Cue de início",
+      "startYes": "Você costuma colocar",
+      "startNo": "Você não costuma colocar",
+      "startShare": "{{with}} de {{open}} faixas onde caberia",
+      "useFlow": "Usar como fluxo",
+      "fromEdits": "Aprender enquanto você corrige",
+      "fromEditsHint": "Cada faixa que você salva no editor soma ao que foi aprendido, e o Surco aprende de novo a cada 10."
     }
   },
   "errorBoundary": {
