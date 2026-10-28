@@ -33,7 +33,7 @@ const BLOCK_LABEL: Record<Block, string> = {
 }
 
 const TOKEN_CLASS =
-  'press rounded-[5px] bg-[var(--color-accent)]/15 px-1.5 leading-6 text-fg hover:bg-[var(--color-accent)]/25'
+  'press rounded-[3px] leading-6 text-[var(--color-accent)] underline decoration-[var(--color-accent)]/50 decoration-dotted underline-offset-4 hover:decoration-solid aria-expanded:decoration-solid'
 const MENU_CLASS =
   'absolute left-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 text-xs leading-normal shadow-[var(--shadow-float)]'
 const ITEM_CLASS =
