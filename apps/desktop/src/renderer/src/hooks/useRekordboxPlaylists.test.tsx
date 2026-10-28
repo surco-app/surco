@@ -212,4 +212,10 @@ describe('usePlaylistsSpec', () => {
     await waitFor(() => expect(hook.result.current).toBeDefined())
     expect(hook.result.current?.disabled).toBeUndefined()
   })
+
+  it('lets a track Traktor does not have yet be sent to its playlists too', async () => {
+    const hook = spec('traktor')
+    await waitFor(() => expect(hook.result.current).toBeDefined())
+    expect(hook.result.current?.disabled).toBeUndefined()
+  })
 })

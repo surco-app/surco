@@ -138,15 +138,9 @@ export function usePlaylistsSpec(
   })
   return useMemo(() => {
     if (!shown || !tree || !options || !membership) return undefined
-    const held = (t: TrackItem) => library !== 'traktor' || rekordboxPathOf(t) in membership
     return {
       library,
-      disabled:
-        library === 'traktor' && canSave === false
-          ? 'unconfirmed'
-          : tracks.some(held)
-            ? undefined
-            : 'not-in-library',
+      disabled: library === 'traktor' && canSave === false ? 'unconfirmed' : undefined,
       tree,
       options,
       single: {
@@ -154,7 +148,7 @@ export function usePlaylistsSpec(
         onChange: (next) => onChange(playlistsEdit(item, membership, next, library)),
       },
       bulk: {
-        states: bulkPlaylistState(tracks.filter(held), membership, options, library) ?? [],
+        states: bulkPlaylistState(tracks, membership, options, library) ?? [],
         onToggle: (target, on) => {
           const patches = withTarget(tracks, membership, options, target, on, library)
           if (patches) onChangeTracks?.(patches)

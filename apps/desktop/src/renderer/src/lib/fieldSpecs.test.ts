@@ -485,8 +485,8 @@ describe('the Playlists field of each library', () => {
   it('draws each library where the user put it, single and in bulk, and leaves out a library not found', () => {
     const all = {
       ...playlists,
-      traktor: { ...spec, library: 'traktor' as const },
-      engine: { ...spec, library: 'engine' as const, disabled: 'not-in-library' as const },
+      traktor: { ...spec, library: 'traktor' as const, disabled: 'unconfirmed' as const },
+      engine: { ...spec, library: 'engine' as const },
     }
     const visibleFields = ['enginePlaylists', 'title', 'traktorPlaylists', 'rekordboxPlaylists']
     expect(buildFieldSpecs(params({ visibleFields, playlists: all })).map((s) => s.key)).toEqual(
@@ -501,8 +501,8 @@ describe('the Playlists field of each library', () => {
       }),
     )
     expect(bulk.map((s) => [s.key, s.label, s.playlists?.disabled])).toEqual([
-      ['enginePlaylists', 'fields.enginePlaylists', 'not-in-library'],
-      ['traktorPlaylists', 'fields.traktorPlaylists', undefined],
+      ['enginePlaylists', 'fields.enginePlaylists', undefined],
+      ['traktorPlaylists', 'fields.traktorPlaylists', 'unconfirmed'],
     ])
   })
 })

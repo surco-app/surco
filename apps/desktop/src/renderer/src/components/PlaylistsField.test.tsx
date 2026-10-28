@@ -87,11 +87,11 @@ describe('PlaylistsField for Traktor and Engine DJ', () => {
     expect(screen.getByTestId('playlists-popover')).toHaveAccessibleName('Traktor playlists')
   })
 
-  it('stays in place but disabled for a track the library does not have, and says so', () => {
+  it('stays in place but disabled until the Traktor collection is confirmed, and says where', () => {
     render(
       <PlaylistsField
-        library="engine"
-        disabled="not-in-library"
+        library="traktor"
+        disabled="unconfirmed"
         label="Playlists"
         tree={TREE}
         options={OPTIONS}
@@ -100,7 +100,7 @@ describe('PlaylistsField for Traktor and Engine DJ', () => {
       />,
     )
     expect(summary()).toBeDisabled()
-    expect(summary()).toHaveTextContent('Not in Engine DJ')
+    expect(summary()).toHaveTextContent('Choose the collection in Settings')
     fireEvent.click(summary())
     expect(screen.queryByTestId('playlists-popover')).toBeNull()
   })

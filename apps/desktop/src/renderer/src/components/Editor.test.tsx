@@ -732,15 +732,16 @@ describe('Editor Traktor and Engine DJ Playlists fields', () => {
     })
   })
 
-  it('is shown disabled for a track the library does not have, instead of offering a write it cannot do', async () => {
+  it('is offered for a track the library does not have yet, since converting adds it to the collection', async () => {
     librariesWith(
       vi.fn<Api['traktorMembership']>().mockResolvedValue({}),
       vi.fn<Api['engineMembership']>().mockResolvedValue({}),
     )
-    renderEditor({ id: 'a' }, 'wav', { visibleFields: ['traktorPlaylists'] })
-    const field = await screen.findByTestId('traktor-playlists-field')
-    expect(within(field).getByTestId('playlists-summary')).toBeDisabled()
-    expect(field).toHaveTextContent('Not in Traktor')
+    renderEditor({ id: 'a' }, 'wav', { visibleFields: ['traktorPlaylists', 'enginePlaylists'] })
+    for (const id of ['traktor-playlists-field', 'engine-playlists-field']) {
+      const field = await screen.findByTestId(id)
+      await waitFor(() => expect(within(field).getByTestId('playlists-summary')).not.toBeDisabled())
+    }
   })
 })
 

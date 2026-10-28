@@ -383,9 +383,7 @@ function TreeField({
         >
           {disabled ? (
             <span id={countId} className="min-w-0 flex-1 truncate text-fg-faint">
-              {disabled === 'unconfirmed'
-                ? tr('editor.playlists.unconfirmed')
-                : tr('editor.playlists.notIn', { app })}
+              {tr('editor.playlists.unconfirmed')}
             </span>
           ) : tokens.length > 0 ? (
             <>

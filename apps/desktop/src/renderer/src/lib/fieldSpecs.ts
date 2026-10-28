@@ -23,7 +23,7 @@ export interface InsertSource {
   value: string
 }
 
-export type PlaylistsDisabled = 'not-in-library' | 'unconfirmed'
+export type PlaylistsDisabled = 'unconfirmed'
 
 export interface PlaylistsSpec {
   library: PlaylistLibrary

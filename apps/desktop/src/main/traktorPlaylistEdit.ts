@@ -1,8 +1,10 @@
 import { randomBytes } from 'node:crypto'
+import { statSync } from 'node:fs'
 import { TRAKTOR_BUILT_IN, TRAKTOR_HISTORY, traktorKey } from '../shared/traktorContent'
 import type { PlaylistAddReport, RekordboxEditRefusal } from '../shared/types'
+import type { RekordboxMeta } from './rekordboxMetadata'
 import { type EditOp, type OpOutcome, opRank, type TrackOp } from './rekordboxQueueOps'
-import { escapeAttr, withAttr } from './traktorNml'
+import { attr, escapeAttr, withAttr } from './traktorNml'
 import {
   type ModelNode,
   type ModelRow,
@@ -244,11 +246,107 @@ function applyTrack(op: TrackOp, model: PlaylistModel | null, src: Sources): OpO
   return { id: op.id, applied: true, notices }
 }
 
-export function applyTraktorEdits(
+function locationOf(path: string): { volume: string | null; dir: string; file: string } {
+  const drive = path.match(/^([A-Za-z]:)[\\/]/)
+  const mounted = path.match(/^\/Volumes\/([^/]+)\//)
+  const volume = drive ? drive[1] : mounted ? mounted[1] : null
+  const rest = drive || mounted ? path.slice((drive ?? mounted)?.[0].length) : path
+  const parts = rest.split(/[\\/]/).filter(Boolean)
+  const file = parts.pop() ?? ''
+  return { volume, dir: `/:${parts.map((p) => `${p}/:`).join('')}`, file }
+}
+
+function volumeOf(
   nml: string,
+  volume: string | null,
+  bootVolume: string,
+): { volume: string; id: string } | null {
+  const collection = nml.match(/<COLLECTION\b[^>]*>[\s\S]*?<\/COLLECTION>/)?.[0] ?? ''
+  for (const [tag] of collection.matchAll(/<LOCATION\b[^>]*>/g)) {
+    const name = attr(tag, 'VOLUME')
+    const id = attr(tag, 'VOLUMEID')
+    if (!id) continue
+    const same =
+      volume === null
+        ? name === '' || name === bootVolume
+        : /^[A-Za-z]:$/.test(volume)
+          ? name.toUpperCase() === volume.toUpperCase()
+          : name.normalize('NFC') === volume.normalize('NFC')
+    if (same) return { volume: name, id }
+  }
+  return null
+}
+
+function attrs(pairs: [string, string][]): string {
+  return pairs
+    .filter(([, value]) => value !== '')
+    .map(([name, value]) => ` ${name}="${escapeAttr(value)}"`)
+    .join('')
+}
+
+function withCollectionEntry(
+  nml: string,
+  path: string,
+  meta: RekordboxMeta,
+  bootVolume: string,
+  now: Date,
+): string | null {
+  const loc = locationOf(path)
+  const disk = volumeOf(nml, loc.volume, bootVolume)
+  const close = nml.indexOf('</COLLECTION>')
+  if (!disk || !loc.file || close < 0) return null
+  const eol = nml.includes('\r\n') ? '\r\n' : '\n'
+  const date = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`
+  const seconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()
+  let kb = ''
+  try {
+    kb = String(Math.round(statSync(path).size / 1024))
+  } catch {}
+  const year = Number.parseInt(meta.year, 10)
+  const block = [
+    `<ENTRY${attrs([
+      ['MODIFIED_DATE', date],
+      ['MODIFIED_TIME', String(seconds)],
+      ['TITLE', meta.title],
+      ['ARTIST', meta.artist],
+    ])}><LOCATION${attrs([
+      ['DIR', loc.dir],
+      ['FILE', loc.file],
+      ['VOLUME', disk.volume],
+      ['VOLUMEID', disk.id],
+    ])}></LOCATION>`,
+    ...(meta.album ? [`<ALBUM${attrs([['TITLE', meta.album]])}></ALBUM>`] : []),
+    '<MODIFICATION_INFO AUTHOR_TYPE="user"></MODIFICATION_INFO>',
+    `<INFO${attrs([
+      ['GENRE', meta.genre],
+      ['LABEL', meta.label],
+      ['COMMENT', meta.comment],
+      ['REMIXER', meta.remixer],
+      ['RELEASE_DATE', Number.isFinite(year) ? `${year}/1/1` : ''],
+      ['IMPORT_DATE', date],
+      ['FILESIZE', kb],
+    ])}></INFO>`,
+    '</ENTRY>',
+  ].join(eol)
+  const lead = /\n$/.test(nml.slice(0, close)) ? '' : eol
+  const added = `${nml.slice(0, close)}${lead}${block}${eol}${nml.slice(close)}`
+  return added.replace(/<COLLECTION\b[^>]*>/, (open) =>
+    open.replace(/(\sENTRIES=")(\d+)(")/, (_m, a, n, b) => `${a}${Number(n) + 1}${b}`),
+  )
+}
+
+export function applyTraktorEdits(
+  read: string,
   allOps: (EditOp | TrackOp)[],
   bootVolume: string,
+  now: Date = new Date(),
 ): { nml: string; outcomes: Map<string, OpOutcome> } {
+  let nml = read
+  for (const op of allOps) {
+    if (op.kind !== 'track' || !op.meta || !parsePlaylists(nml)) continue
+    if (keyOfTrack(op, traktorCollectionIndex(nml, bootVolume))) continue
+    nml = withCollectionEntry(nml, op.path, op.meta, bootVolume, now) ?? nml
+  }
   const model = parsePlaylists(nml)
   const outcomes = new Map<string, OpOutcome>()
   const resolved: Resolved[] = []

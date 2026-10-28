@@ -1,5 +1,10 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { emptyMetadata } from '../shared/metadata'
+import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import type { RekordboxPlaylistEdit } from '../shared/types'
+import { rekordboxMetaFrom } from './rekordboxMetadata'
 import type { EditOp, TrackOp } from './rekordboxQueueOps'
 import { applyTraktorEdits } from './traktorPlaylistEdit'
 import { PLAYLISTS_SAMPLE } from './traktorPlaylistFixture'
@@ -279,6 +284,141 @@ describe('playlists chosen in the editor for a track', () => {
     expect(outcome(outcomes)).toMatchObject({
       notices: [{ code: 'playlist-gone', track: 'B', playlist: 'Old set' }],
     })
+  })
+
+  const now = new Date(2026, 9, 28, 19, 30)
+  const loveYa = rekordboxMetaFrom({
+    ...emptyMetadata(),
+    artist: 'Danny Gibson',
+    title: 'Love Ya',
+    album: 'Love Ya',
+  })
+
+  it('adds a converted track Traktor does not have yet and puts it in the playlist the DJ picked, as rekordbox does', () => {
+    const { nml, outcomes } = applyTraktorEdits(
+      DOC,
+      [track({ path: '/m/z.flac', meta: loveYa, wanted: [{ id: 'dnb', name: 'Drum & Bass' }] })],
+      'HD',
+      now,
+    )
+    expect(outcome(outcomes)).toMatchObject({ applied: true, notices: [] })
+    expect(rows(nml, 'dnb')).toEqual(['z.flac'])
+    expect(nml).toContain('<COLLECTION ENTRIES="5">')
+    const recent = readTraktorPlaylist(nml, RECENTLY_ADDED_ID, 'HD', now)
+    expect(recent.map((e) => [e.path, e.preview?.title, e.preview?.artist])).toContainEqual([
+      '/m/z.flac',
+      'Love Ya',
+      'Danny Gibson',
+    ])
+  })
+
+  it('names the disk the way Traktor already does for the tracks next to it, VOLUMEID included, since only Traktor can work one out', () => {
+    const { nml } = applyTraktorEdits(
+      DOC,
+      [track({ path: '/m/z.flac', meta: loveYa, wanted: [{ id: 'dnb', name: 'Drum & Bass' }] })],
+      'HD',
+      now,
+    )
+    expect(nml).toContain(
+      '<LOCATION DIR="/:m/:" FILE="z.flac" VOLUME="HD" VOLUMEID="v"></LOCATION>',
+    )
+  })
+
+  it('keeps a title with XML in it a title, not markup that would break the collection', () => {
+    const meta = rekordboxMetaFrom({ ...emptyMetadata(), title: 'Drum & "Bass" <VIP>' })
+    const { nml } = applyTraktorEdits(
+      DOC,
+      [track({ path: '/m/z.flac', meta, wanted: [{ id: 'dnb', name: 'Drum & Bass' }] })],
+      'HD',
+      now,
+    )
+    expect(readTraktorPlaylist(nml, 'dnb', 'HD').map((e) => e.preview?.title)).toEqual([
+      'Drum & "Bass" <VIP>',
+    ])
+  })
+
+  it('adds nothing on a disk the collection has no track on, since Traktor would not know where it is', () => {
+    const { nml, outcomes } = applyTraktorEdits(
+      DOC,
+      [
+        track({
+          path: '/Volumes/USB/z.flac',
+          meta: loveYa,
+          wanted: [{ id: 'dnb', name: 'Drum & Bass' }],
+        }),
+      ],
+      'HD',
+      now,
+    )
+    expect(nml).toBe(DOC)
+    expect(outcome(outcomes)).toMatchObject({
+      applied: false,
+      notices: [{ code: 'not-in-library', track: 'B' }],
+    })
+  })
+
+  it('adds a track on a Windows drive under that drive letter', () => {
+    const doc = DOC.replace(/VOLUME="HD" VOLUMEID="v"/g, 'VOLUME="X:" VOLUMEID="w"').replace(
+      /HD\/:m/g,
+      'X:/:m',
+    )
+    const { nml } = applyTraktorEdits(
+      doc,
+      [
+        track({
+          path: 'X:\\m\\z.flac',
+          meta: loveYa,
+          wanted: [{ id: 'dnb', name: 'Drum & Bass' }],
+        }),
+      ],
+      'HD',
+      now,
+    )
+    expect(nml).toContain(
+      '<LOCATION DIR="/:m/:" FILE="z.flac" VOLUME="X:" VOLUMEID="w"></LOCATION>',
+    )
+    expect(readTraktorPlaylist(nml, 'dnb', 'HD').map((e) => e.path)).toEqual(['X:\\m\\z.flac'])
+  })
+
+  it('adds the entry after the ones a real Traktor Pro 4 collection holds, leaving theirs as they were', () => {
+    const real = readFileSync(
+      join(import.meta.dirname, 'fixtures', 'traktor-pro-4-collection.nml'),
+      'utf8',
+    )
+    const doc = real.replace(
+      '</NML>',
+      '<PLAYLISTS><NODE TYPE="FOLDER" NAME="$ROOT"><SUBNODES COUNT="1">\n<NODE TYPE="PLAYLIST" NAME="Bases"><PLAYLIST ENTRIES="0" TYPE="LIST" UUID="bases"></PLAYLIST>\n</NODE>\n</SUBNODES>\n</NODE>\n</PLAYLISTS>\n</NML>',
+    )
+    const { nml, outcomes } = applyTraktorEdits(
+      doc,
+      [
+        track({
+          path: 'X:\\Music Library\\Love Ya.flac',
+          meta: loveYa,
+          wanted: [{ id: 'bases', name: 'Bases' }],
+        }),
+      ],
+      'Macintosh HD',
+      now,
+    )
+    expect(outcome(outcomes)).toMatchObject({ applied: true })
+    const before = doc.slice(doc.indexOf('<ENTRY'), doc.indexOf('</COLLECTION>'))
+    expect(nml).toContain(before)
+    expect(nml).toContain('<COLLECTION ENTRIES="6">')
+    expect(readTraktorPlaylist(nml, 'bases', 'Macintosh HD').map((e) => e.path)).toEqual([
+      'X:\\Music Library\\Love Ya.flac',
+    ])
+  })
+
+  it('adds no entry to a collection with no playlist tree, since the track could go in no playlist', () => {
+    const bare = DOC.slice(0, DOC.indexOf('<PLAYLISTS>')) + DOC.slice(DOC.indexOf('<INDEXING>'))
+    const { nml } = applyTraktorEdits(
+      bare,
+      [track({ path: '/m/z.flac', meta: loveYa, wanted: [{ name: 'Nueva' }] })],
+      'HD',
+      now,
+    )
+    expect(nml).toBe(bare)
   })
 
   it('writes nothing for a track Traktor does not have, and says so', () => {
