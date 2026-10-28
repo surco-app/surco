@@ -56,7 +56,7 @@ function DocumentHead({ lng }: { lng: Language }) {
     operatingSystem: 'macOS, Windows, Linux',
     url,
     image: `${SITE}/og.png`,
-    screenshot: `${SITE}/hero-app.webp`,
+    screenshot: `${SITE}/hero-app-${lng}.webp`,
     inLanguage: t('meta.inLanguage'),
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
     description: t('meta.jsonLdDescription'),

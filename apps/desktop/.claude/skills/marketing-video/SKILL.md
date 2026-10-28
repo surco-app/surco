@@ -29,6 +29,15 @@ The MP4 lands in `$SURCO_VIDEO_DIR/out/surco-<case>.mp4`.
 Prerequisites: the app built in `apps/desktop/out/` (the main checkout's build is used
 when the current tree has none) and `playwright-core` installed in `run-desktop`.
 
+## The home hero loop
+
+`node hero.mjs [--lang es,en]` records the muted loop under the home headline (and on
+/funciones) in every app language: the folder `SURCO_HERO_DIR` (default
+`/Volumes/Public/Musica/FLAC/bases buenas`) opened, one track picked, its Discogs match
+applied and the track converted. No cursor, no voice. It writes
+`apps/web/public/hero-app-<lang>.{webm,mp4,webp}`; the still is the clip's first frame.
+The conversion goes to a throwaway profile.
+
 ## A case
 
 - `lines.json`: one entry per step. `say` is what the voice reads (spell it
