@@ -5,7 +5,6 @@
 import type { PeekableAnalyses } from '../shared/audioIpcContract'
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
 import type { DropInput } from '../shared/dropDetect'
-import type { LearnedFlow } from '../shared/learnFlow'
 import type {
   ActivityEvent,
   AppleMusicAddJob,
@@ -241,7 +240,6 @@ export interface Api {
   rekordboxSurcoGrid: (contentId: string) => Promise<SurcoGrid | null>
   rowWaves: (requests: RowWaveRequest[]) => Promise<Record<string, number[]>>
   rekordboxCountCompletable: () => Promise<number>
-  rekordboxLearnFlow: () => Promise<LearnedFlow | null>
   cueProfile: () => Promise<CueProfileRead>
   learnCueProfile: () => Promise<CueProfile>
   recordCueEdit: (track: TasteTrack) => Promise<void>

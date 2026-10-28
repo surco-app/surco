@@ -1,7 +1,7 @@
 import type Database from 'better-sqlite3-multiple-ciphers'
 import { findDrops } from '../shared/cueRules'
 import { type TasteTrack, tasteTrackOf } from '../shared/dropTaste'
-import { type LearnedFlow, type LearnTrack, learnFlow } from '../shared/learnFlow'
+import type { LearnTrack } from '../shared/learnFlow'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
 import { openRekordboxDb } from './rekordboxDb'
@@ -103,12 +103,4 @@ export function readLearnTracks(db: Db, shareDir: string): LearnRead {
       })
   }
   return out
-}
-
-export function collectionLearnTracks(db: Db, shareDir: string): LearnTrack[] {
-  return readLearnTracks(db, shareDir).tracks.map((t) => t.track)
-}
-
-export function learnFromCollection(db: Db, shareDir: string): LearnedFlow | null {
-  return learnFlow(collectionLearnTracks(db, shareDir))
 }

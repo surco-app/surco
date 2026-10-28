@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -93,10 +93,12 @@ describe('markedTracks', () => {
 })
 
 describe('readCollectionMarksAt', () => {
-  it('opens the collection read-only and reads its marks', async () => {
+  it('opens the collection read-only and reads its marks, leaving the file as it was', async () => {
     const { path } = await collectionAt([{ ID: 'd', InMsec: 16000, Kind: 0 }])
+    const before = readFileSync(path)
     const marks = await readCollectionMarksAt(path)
     expect(marks?.taste.map((t) => t.key)).toEqual(['103'])
+    expect(readFileSync(path).equals(before)).toBe(true)
   })
 
   it('reads nothing without a collection', async () => {

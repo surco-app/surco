@@ -5,12 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
-import {
-  DROP_MODEL,
-  type DropInput,
-  type DropModel,
-  type DropProposal,
-} from '../../../shared/dropDetect'
+import type { DropInput, DropModel, DropProposal } from '../../../shared/dropDetect'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import { TRAKTOR_CUE_COLOR } from '../../../shared/traktorContent'
 import type { TrackCues } from '../../../shared/types'
