@@ -91,7 +91,7 @@ describe('PlaylistsField for Traktor and Engine DJ', () => {
     render(
       <PlaylistsField
         library="engine"
-        disabled
+        disabled="not-in-library"
         label="Playlists"
         tree={TREE}
         options={OPTIONS}

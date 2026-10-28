@@ -709,6 +709,7 @@ describe('Editor Traktor and Engine DJ Playlists fields', () => {
         .fn<Api['loadEngineTree']>()
         .mockResolvedValue([{ id: '7', name: 'House', kind: 'playlist', count: 1 }]),
       engineMembership: engine,
+      traktorCanSave: vi.fn<Api['traktorCanSave']>().mockResolvedValue(true),
     })
   }
 
@@ -740,6 +741,27 @@ describe('Editor Traktor and Engine DJ Playlists fields', () => {
     const field = await screen.findByTestId('traktor-playlists-field')
     expect(within(field).getByTestId('playlists-summary')).toBeDisabled()
     expect(field).toHaveTextContent('Not in Traktor')
+  })
+})
+
+describe('Editor Traktor Playlists field without a confirmed collection', () => {
+  it('stays disabled and says where to choose the collection, since Surco writes only to that one', async () => {
+    Object.assign(window.api, {
+      traktorAvailable: vi.fn<Api['traktorAvailable']>().mockResolvedValue(true),
+      loadTraktorTree: vi
+        .fn<Api['loadTraktorTree']>()
+        .mockResolvedValue([{ id: 'fri', name: 'Friday', kind: 'playlist', count: 1 }]),
+      traktorMembership: vi
+        .fn<Api['traktorMembership']>()
+        .mockResolvedValue({ '/music/a.wav': ['fri'] }),
+      traktorCanSave: vi.fn<Api['traktorCanSave']>().mockResolvedValue(false),
+    })
+    renderEditor({ id: 'a' }, 'wav', { visibleFields: ['traktorPlaylists'] })
+    const field = await screen.findByTestId('traktor-playlists-field')
+    await waitFor(() =>
+      expect(field).toHaveTextContent('Choose the collection in Settings → Output → Traktor'),
+    )
+    expect(within(field).getByTestId('playlists-summary')).toBeDisabled()
   })
 })
 

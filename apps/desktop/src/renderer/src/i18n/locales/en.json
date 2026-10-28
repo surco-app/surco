@@ -801,7 +801,8 @@
       "pending": "Created when the track is written",
       "some": "Only on some tracks. Click to add it to all",
       "options": "{{app}} playlists",
-      "notIn": "Not in {{app}}"
+      "notIn": "Not in {{app}}",
+      "unconfirmed": "Choose the collection in Settings → Output → Traktor"
     },
     "cues": {
       "title": "Cues",

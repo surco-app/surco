@@ -801,7 +801,8 @@
       "pending": "Será criada ao gravar a faixa",
       "some": "Só em algumas faixas. Clique para colocá-la em todas",
       "options": "Playlists do {{app}}",
-      "notIn": "Não está no {{app}}"
+      "notIn": "Não está no {{app}}",
+      "unconfirmed": "Escolha a coleção em Ajustes → Saída → Traktor"
     },
     "cues": {
       "title": "Cues",

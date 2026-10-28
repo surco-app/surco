@@ -801,7 +801,8 @@
       "pending": "Se creará al escribir la pista",
       "some": "Solo en algunas pistas. Haz clic para ponerla en todas",
       "options": "Playlists de {{app}}",
-      "notIn": "No está en {{app}}"
+      "notIn": "No está en {{app}}",
+      "unconfirmed": "Elige la colección en Ajustes → Destino → Traktor"
     },
     "cues": {
       "title": "Cues",

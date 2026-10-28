@@ -131,12 +131,22 @@ export function usePlaylistsSpec(
   const tree = useRekordboxPlaylistTree(shown, library)
   const options = useRekordboxPlaylistOptions(shown, library)
   const membership = useRekordboxMembership(tracks.map(rekordboxPathOf), shown, library)
+  const { data: canSave } = useQuery({
+    queryKey: ['traktor-can-save', 'field'],
+    queryFn: () => window.api.traktorCanSave(),
+    enabled: shown && library === 'traktor',
+  })
   return useMemo(() => {
     if (!shown || !tree || !options || !membership) return undefined
     const held = (t: TrackItem) => library === 'rekordbox' || rekordboxPathOf(t) in membership
     return {
       library,
-      disabled: !tracks.some(held),
+      disabled:
+        library === 'traktor' && canSave === false
+          ? 'unconfirmed'
+          : tracks.some(held)
+            ? undefined
+            : 'not-in-library',
       tree,
       options,
       single: {
@@ -151,5 +161,5 @@ export function usePlaylistsSpec(
         },
       },
     }
-  }, [library, shown, tree, options, membership, item, tracks, onChange, onChangeTracks])
+  }, [library, shown, tree, options, membership, canSave, item, tracks, onChange, onChangeTracks])
 }

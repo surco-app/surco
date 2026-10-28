@@ -486,7 +486,7 @@ describe('the Playlists field of each library', () => {
     const all = {
       ...playlists,
       traktor: { ...spec, library: 'traktor' as const },
-      engine: { ...spec, library: 'engine' as const, disabled: true },
+      engine: { ...spec, library: 'engine' as const, disabled: 'not-in-library' as const },
     }
     const visibleFields = ['enginePlaylists', 'title', 'traktorPlaylists', 'rekordboxPlaylists']
     expect(buildFieldSpecs(params({ visibleFields, playlists: all })).map((s) => s.key)).toEqual(
@@ -501,7 +501,7 @@ describe('the Playlists field of each library', () => {
       }),
     )
     expect(bulk.map((s) => [s.key, s.label, s.playlists?.disabled])).toEqual([
-      ['enginePlaylists', 'fields.enginePlaylists', true],
+      ['enginePlaylists', 'fields.enginePlaylists', 'not-in-library'],
       ['traktorPlaylists', 'fields.traktorPlaylists', undefined],
     ])
   })
