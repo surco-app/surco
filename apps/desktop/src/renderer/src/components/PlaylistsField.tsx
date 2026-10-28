@@ -3,6 +3,7 @@ import type React from 'react'
 import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistLibrary, RekordboxPlaylistTarget, SourceNode } from '../../../shared/types'
+import type { PlaylistsDisabled } from '../lib/fieldSpecs'
 import { type PopoverPlacement, popoverPlacement } from '../lib/popoverPlacement'
 import {
   canCreate,
@@ -327,7 +328,7 @@ function TreeField({
   onToggle,
 }: {
   library: PlaylistLibrary
-  disabled: boolean
+  disabled?: PlaylistsDisabled
   label: string
   testId: string
   tree: readonly SourceNode[]
@@ -374,7 +375,7 @@ function TreeField({
           aria-expanded={open}
           aria-haspopup="dialog"
           aria-describedby={tokens.length > 0 ? `${countId} ${whereId}` : countId}
-          disabled={disabled}
+          disabled={disabled !== undefined}
           onClick={() => setOpen((v) => !v)}
           className={`flex h-[34px] w-full items-center gap-2 rounded-lg border bg-[var(--color-panel-2)]/30 px-3 text-left text-sm outline-none focus-visible:border-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-50 ${
             open ? 'border-[var(--color-accent)]' : 'border-[var(--color-line-strong)]'
@@ -382,7 +383,9 @@ function TreeField({
         >
           {disabled ? (
             <span id={countId} className="min-w-0 flex-1 truncate text-fg-faint">
-              {tr('editor.playlists.notIn', { app })}
+              {disabled === 'unconfirmed'
+                ? tr('editor.playlists.unconfirmed')
+                : tr('editor.playlists.notIn', { app })}
             </span>
           ) : tokens.length > 0 ? (
             <>
@@ -444,7 +447,7 @@ function TreeField({
 
 export function PlaylistsField({
   library = 'rekordbox',
-  disabled = false,
+  disabled,
   label,
   tree,
   options,
@@ -452,7 +455,7 @@ export function PlaylistsField({
   onChange,
 }: {
   library?: PlaylistLibrary
-  disabled?: boolean
+  disabled?: PlaylistsDisabled
   label: string
   tree: SourceNode[]
   options: PlaylistOption[]
@@ -477,7 +480,7 @@ export function PlaylistsField({
 
 export function PlaylistsBulkField({
   library = 'rekordbox',
-  disabled = false,
+  disabled,
   label,
   tree,
   options,
@@ -485,7 +488,7 @@ export function PlaylistsBulkField({
   onToggle,
 }: {
   library?: PlaylistLibrary
-  disabled?: boolean
+  disabled?: PlaylistsDisabled
   label: string
   tree: SourceNode[]
   options: PlaylistOption[]

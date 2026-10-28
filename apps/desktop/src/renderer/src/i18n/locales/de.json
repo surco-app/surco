@@ -801,7 +801,8 @@
       "pending": "Wird beim Schreiben des Titels erstellt",
       "some": "Nur bei einigen Titeln. Klicken, um sie allen hinzuzufügen",
       "options": "{{app}}-Playlists",
-      "notIn": "Nicht in {{app}}"
+      "notIn": "Nicht in {{app}}",
+      "unconfirmed": "Wähle die Sammlung unter Einstellungen → Ausgabe → Traktor"
     },
     "cues": {
       "title": "Cues",

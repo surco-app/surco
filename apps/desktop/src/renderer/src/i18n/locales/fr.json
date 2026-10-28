@@ -801,7 +801,8 @@
       "pending": "Créée à l’écriture du morceau",
       "some": "Seulement sur certains morceaux. Cliquez pour l’ajouter à tous",
       "options": "Playlists {{app}}",
-      "notIn": "Absent de {{app}}"
+      "notIn": "Absent de {{app}}",
+      "unconfirmed": "Choisis la collection dans Réglages → Sortie → Traktor"
     },
     "cues": {
       "title": "Cues",

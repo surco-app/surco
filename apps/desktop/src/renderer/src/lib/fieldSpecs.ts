@@ -23,9 +23,11 @@ export interface InsertSource {
   value: string
 }
 
+export type PlaylistsDisabled = 'not-in-library' | 'unconfirmed'
+
 export interface PlaylistsSpec {
   library: PlaylistLibrary
-  disabled?: boolean
+  disabled?: PlaylistsDisabled
   tree: SourceNode[]
   options: PlaylistOption[]
   single: {
