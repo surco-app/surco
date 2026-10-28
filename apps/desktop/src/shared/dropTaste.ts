@@ -7,7 +7,7 @@ import {
   dropCandidates,
   pickDrops,
 } from './dropDetect'
-import { predictTrees, type TreeNode, trainTrees } from './dropTrees'
+import { predictTrees, type TreeNode, type TreesModel, trainTrees } from './dropTrees'
 
 export const MIN_TASTE_TRACKS = 30
 const MAX_TASTE_TRACKS = 600
@@ -74,7 +74,7 @@ export function tasteTrackOf(key: string, input: DropInput, drops: number[]): Ta
 
 type Scored = { drops: number[]; scored: { bar: number; ms: number; score: number }[] }
 
-const scoredOf = (tracks: TasteTrack[], model: DropModel): Scored[] =>
+const scoredOf = (tracks: TasteTrack[], model: TreesModel): Scored[] =>
   tracks.map((t) => ({
     drops: t.drops,
     scored: t.candidates.map((c) => ({
