@@ -5,6 +5,8 @@ import { join, resolve } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WantedCue } from '../shared/cueRules'
+import { emptyMetadata } from '../shared/metadata'
+import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import { hotCueArgb } from '../shared/rekordboxCueColors'
 import { buildEngineDatabase, loadSqlJs } from './engine'
 import { ENGINE_3_SCHEMA } from './engine3Fixture'
@@ -17,10 +19,17 @@ import { openEngineDb, readEnginePlaylist, readEngineTree } from './enginePlayli
 import { writeEngineLibraryFixture } from './enginePlaylistsFixture'
 import { isEngineDjRunning } from './engineProcess'
 import { backupOf } from './libraryBackups'
+import { rekordboxMetaFrom } from './rekordboxMetadata'
 import type { CuesOp, TrackOp } from './rekordboxQueueOps'
+import { readEmbeddedCover } from './tags'
 
 vi.mock('./engineProcess', () => ({ isEngineDjRunning: vi.fn(async () => false) }))
+vi.mock('./tags', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./tags')>()),
+  readEmbeddedCover: vi.fn(() => null),
+}))
 beforeEach(() => vi.mocked(isEngineDjRunning).mockResolvedValue(false))
+beforeEach(() => vi.mocked(readEmbeddedCover).mockReturnValue(null))
 
 const SLOTS = [
   { label: 'Cue 1', sample: 44100 * 8, argb: 0xfff4d338 },
@@ -520,6 +529,66 @@ describe('playlists chosen in the editor for a track, written to Engine DJ', () 
     expect(result).toMatchObject({
       outcomes: [{ notices: [{ code: 'playlist-gone', track: 'a', playlist: 'Old' }] }],
     })
+  })
+
+  it('adds a converted track Engine does not have yet and puts it in the list the DJ picked, as rekordbox does', async () => {
+    const dir = await crates()
+    vi.mocked(readEmbeddedCover).mockReturnValue(Buffer.from('cover'))
+    const meta = rekordboxMetaFrom({ ...emptyMetadata(), artist: 'Danny Gibson', title: 'Love Ya' })
+    const result = await applyEngineCuesBatch(
+      dir,
+      [
+        track(dir, {
+          path: resolve(dir, '../Music/z.flac'),
+          label: 'Danny Gibson - Love Ya',
+          meta,
+          wanted: [{ id: '2', name: 'House' }],
+        }),
+      ],
+      deps(),
+    )
+    expect(result).toMatchObject({ ok: true, wrote: true, outcomes: [{ applied: true }] })
+    expect(listed(dir, 'House')).toEqual(['b', 'Love Ya'])
+    const db = openEngineDb(dir)
+    if (!db) throw new Error('library did not open')
+    try {
+      const row = db
+        .prepare(
+          'SELECT t.path, t.artist, a.albumArt FROM Track t JOIN AlbumArt a ON a.id = t.albumArtId WHERE t.title = ?',
+        )
+        .get('Love Ya') as { path: string; artist: string; albumArt: Buffer }
+      expect(row).toMatchObject({ path: '../Music/z.flac', artist: 'Danny Gibson' })
+      expect(Buffer.from(row.albumArt).toString()).toBe('cover')
+      expect(
+        readEnginePlaylist(db, dir, RECENTLY_ADDED_ID, join(dir, 'art')).map((e) => e.path),
+      ).toContain(resolve(dir, '../Music/z.flac'))
+    } finally {
+      db.close()
+    }
+  })
+
+  it('adds the track only once when it goes to two lists', async () => {
+    const dir = await crates()
+    const meta = rekordboxMetaFrom({ ...emptyMetadata(), title: 'Love Ya' })
+    await applyEngineCuesBatch(
+      dir,
+      [
+        track(dir, {
+          path: resolve(dir, '../Music/z.flac'),
+          meta,
+          wanted: [
+            { id: '1', name: 'Bases' },
+            { id: '2', name: 'House' },
+          ],
+        }),
+      ],
+      deps(),
+    )
+    expect(listed(dir, 'Bases')).toEqual(['b', 'a', 'Love Ya'])
+    expect(listed(dir, 'House')).toEqual(['b', 'Love Ya'])
+    const db = openEngineDb(dir)
+    expect(db?.prepare('SELECT count(*) AS n FROM Track').get()).toEqual({ n: 3 })
+    db?.close()
   })
 
   it('writes nothing for a track Engine does not have, and says so', async () => {

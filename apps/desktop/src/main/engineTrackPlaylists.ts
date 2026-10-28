@@ -1,9 +1,18 @@
+import { statSync } from 'node:fs'
 import type { Database } from 'sql.js'
 import { engineTrackId } from '../shared/engineContent'
 import type { RekordboxQueueNotice } from '../shared/types'
-import { appendToList, rootListId } from './engineLibrary'
+import {
+  albumArtId,
+  appendToList,
+  engineTrackFor,
+  insertEngineTrack,
+  rootListId,
+} from './engineLibrary'
 import { engineRowFinder } from './engineRepoint'
+import type { RekordboxMeta } from './rekordboxMetadata'
 import type { TrackOp } from './rekordboxQueueOps'
+import { readEmbeddedCover } from './tags'
 
 interface List {
   id: number
@@ -28,6 +37,24 @@ function trackOf(
     if (found.length === 1) return found[0].id
   }
   return null
+}
+
+function addTrack(db: Database, libraryDir: string, path: string, meta: RekordboxMeta): number {
+  const live = new Set(db.exec('PRAGMA table_info(Track)')[0].values.map((row) => String(row[1])))
+  let fileBytes: number | null = null
+  try {
+    fileBytes = statSync(path).size
+  } catch {}
+  const trackId = insertEngineTrack(
+    db,
+    engineTrackFor(libraryDir, path, meta, fileBytes),
+    live,
+    Math.floor(Date.now() / 1000),
+  )
+  const cover = readEmbeddedCover(path)
+  if (cover)
+    db.run('UPDATE Track SET albumArtId = ? WHERE id = ?', [albumArtId(db, cover), trackId])
+  return trackId
 }
 
 function parentOf(db: Database, listId: number): number {
@@ -78,19 +105,21 @@ export function planEngineTrackPlaylists(
   op: TrackOp,
   key: (path: string) => string,
 ): { notices: RekordboxQueueNotice[]; write: ((db: Database) => void) | null } | null {
-  const trackId = trackOf(db, libraryDir, op, key)
-  if (trackId === null) return null
+  const found = trackOf(db, libraryDir, op, key)
+  const meta = op.meta
+  if (found === null && !meta) return null
   const lists: List[] = (
     db.exec('SELECT id, title, parentListId FROM Playlist WHERE coalesce(isPersisted, 1) = 1')[0]
       ?.values ?? []
   ).map(([id, title, parent]) => ({ id: Number(id), title: String(title), parent: Number(parent) }))
   const holding = new Set(
-    (
-      db.exec(
-        `SELECT DISTINCT e.listId FROM PlaylistEntity e WHERE e.trackId = ? AND e.membershipReference = 0
+    (found === null
+      ? []
+      : (db.exec(
+          `SELECT DISTINCT e.listId FROM PlaylistEntity e WHERE e.trackId = ? AND e.membershipReference = 0
            AND NOT EXISTS (SELECT 1 FROM Playlist c WHERE c.parentListId = e.listId)`,
-        [trackId],
-      )[0]?.values ?? []
+          [found],
+        )[0]?.values ?? [])
     ).map(([id]) => Number(id)),
   )
   const notices: RekordboxQueueNotice[] = []
@@ -126,6 +155,7 @@ export function planEngineTrackPlaylists(
   return {
     notices,
     write: (target) => {
+      const trackId = found ?? addTrack(target, libraryDir, op.path, meta as RekordboxMeta)
       const uuid = String(target.exec('SELECT uuid FROM Information')[0].values[0][0])
       for (const id of adds) appendToList(target, id, trackId, uuid)
       for (const name of names) appendToList(target, rootListId(target, name), trackId, uuid)

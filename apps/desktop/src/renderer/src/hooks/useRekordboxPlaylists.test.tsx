@@ -6,9 +6,11 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import type { Settings } from '../../../shared/types'
 import { installApi } from '../test/api'
+import type { TrackItem } from '../types'
 import {
   useLibraryAvailable,
   useOfferPlaylistFields,
+  usePlaylistsSpec,
   useRekordboxMembership,
   useRekordboxPlaylistOptions,
   useRekordboxPlaylistTree,
@@ -179,5 +181,35 @@ describe('the Traktor and Engine DJ playlists', () => {
       visibleFields: ['title', 'enginePlaylists'],
       enginePlaylistsFieldOffered: true,
     })
+  })
+})
+
+describe('usePlaylistsSpec', () => {
+  const fresh = { id: 't1', inputPath: '/m/new.flac', meta: {} } as TrackItem
+  function spec(library: 'engine' | 'traktor') {
+    installApi({
+      engineAvailable: vi.fn<Api['engineAvailable']>(async () => true),
+      traktorAvailable: vi.fn<Api['traktorAvailable']>(async () => true),
+      traktorCanSave: vi.fn<Api['traktorCanSave']>(async () => true),
+      loadEngineTree: vi.fn<Api['loadEngineTree']>(async () => [
+        { id: '7', name: 'Friday', kind: 'playlist', count: 1 },
+      ]),
+      loadTraktorTree: vi.fn<Api['loadTraktorTree']>(async () => [
+        { id: 'u1', name: 'Friday', kind: 'playlist', count: 1 },
+      ]),
+      engineMembership: vi.fn<Api['engineMembership']>(async () => ({})),
+      traktorMembership: vi.fn<Api['traktorMembership']>(async () => ({})),
+    })
+    return renderHook(
+      () =>
+        usePlaylistsSpec(library, { shown: true, item: fresh, tracks: [fresh], onChange: vi.fn() }),
+      { wrapper },
+    )
+  }
+
+  it('lets a track Engine DJ does not have yet be sent to its playlists, since converting adds it to the collection', async () => {
+    const hook = spec('engine')
+    await waitFor(() => expect(hook.result.current).toBeDefined())
+    expect(hook.result.current?.disabled).toBeUndefined()
   })
 })

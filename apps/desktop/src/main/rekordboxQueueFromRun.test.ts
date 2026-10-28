@@ -155,6 +155,7 @@ describe('libraryTrackOps', () => {
         from: '/m/a.mp3',
         label: 'Sister Nancy - Bam Bam',
         facts: null,
+        meta: META,
         wanted: [{ id: 'fri', name: 'Friday' }],
         known: ['old'],
         stamps: {},

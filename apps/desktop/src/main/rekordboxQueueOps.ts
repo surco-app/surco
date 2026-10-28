@@ -10,6 +10,7 @@ import type {
 } from '../shared/types'
 import type { ContentFacts } from './rekordboxContentAdd'
 import { withNodeTimestamp } from './rekordboxMasterXml'
+import type { RekordboxMeta } from './rekordboxMetadata'
 
 export interface EditOp {
   id: string
@@ -27,6 +28,7 @@ export interface TrackOp {
   label: string
   contentId?: string
   facts: ContentFacts | null
+  meta?: RekordboxMeta
   wanted: RekordboxPlaylistTarget[]
   known: string[]
   stamps: Record<string, number>

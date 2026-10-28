@@ -138,7 +138,7 @@ export function usePlaylistsSpec(
   })
   return useMemo(() => {
     if (!shown || !tree || !options || !membership) return undefined
-    const held = (t: TrackItem) => library === 'rekordbox' || rekordboxPathOf(t) in membership
+    const held = (t: TrackItem) => library !== 'traktor' || rekordboxPathOf(t) in membership
     return {
       library,
       disabled:

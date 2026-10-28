@@ -87,6 +87,7 @@ export function libraryTrackOps(
         ...(r.from !== r.to ? { from: r.from } : {}),
         label: labelOf(r),
         facts: null,
+        ...(r.meta ? { meta: r.meta } : {}),
         wanted: choice.wanted,
         known: choice.base,
         stamps: {},
