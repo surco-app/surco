@@ -279,8 +279,6 @@ export default function Header({
           <a
             href={page ? `${home}#instalar` : '#instalar'}
             data-testid="header-download"
-            aria-hidden={heroCtaPassed ? undefined : true}
-            tabIndex={heroCtaPassed ? undefined : -1}
             className={`hidden ${btnPrimary} px-4 py-1.5 text-sm sm:inline-flex ${
               heroCtaPassed ? '' : 'pointer-events-none invisible translate-y-1 opacity-0'
             }`}
