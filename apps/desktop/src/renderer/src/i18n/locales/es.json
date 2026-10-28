@@ -885,7 +885,11 @@
         "unanalysed": "Sin análisis de rekordbox",
         "none": "Surco no encuentra dónde rompe en esta pista",
         "marked": "Ya tienes un CALL en cada sitio donde Surco cree que rompe",
-        "selected": "Auto marcar las seleccionadas"
+        "selected": "Auto marcar las seleccionadas",
+        "sure": "Rompe aquí {{time}}",
+        "why_one": "tras {{count}} compás con poco grave",
+        "why_other": "tras {{count}} compases con poco grave",
+        "whyNone": "sin parón de grave antes"
       },
       "batch": {
         "mark_one": "Auto marcar {{count}} pista",
@@ -893,7 +897,14 @@
         "withProposals": "Con propuestas",
         "twinsTitle": "Dónde se pone el flujo",
         "twinsUnsaved_one": "{{count}} con cambios sin guardar, no se toca",
-        "twinsUnsaved_other": "{{count}} con cambios sin guardar, no se tocan"
+        "twinsUnsaved_other": "{{count}} con cambios sin guardar, no se tocan",
+        "acceptSure_one": "Aceptar la segura",
+        "acceptSure_other": "Aceptar las {{count}} seguras",
+        "confidence": "{{sure}}, {{doubtful}}",
+        "sure_one": "{{count}} segura",
+        "sure_other": "{{count}} seguras",
+        "doubtful_one": "{{count}} dudosa",
+        "doubtful_other": "{{count}} dudosas"
       },
       "engine": {
         "save": "Guardar en Engine DJ",
@@ -1615,13 +1626,8 @@
         "fixed": "un color",
         "each": "un color por repetición"
       },
-      "learn": "Aprender de mi colección",
       "learnedName": "Aprendido de mi colección",
-      "discard": "Descartar",
-      "learnNone": "Tu colección no tiene un patrón claro",
       "learnFailed": "No se pudo leer la colección de rekordbox",
-      "learnedCoverage_one": "Encaja con {{matching}} de {{marked}} pista",
-      "learnedCoverage_other": "Encaja con {{matching}} de {{marked}} pistas",
       "sentence": {
         "every": "cada",
         "put": "pon"
@@ -1645,6 +1651,36 @@
         "engine": "Solo hot cues. Engine DJ no tiene CALL.",
         "missing": "Surco no encuentra {{program}} en este ordenador"
       }
+    },
+    "cueProfile": {
+      "title": "Tu forma de marcar",
+      "firstTitle": "Enseña a Surco tu forma de marcar",
+      "firstHint": "Lee las cues que ya pusiste y ajusta Auto marcar y el flujo a ti. Solo lee, no cambia nada.",
+      "nothing": "Aún no hay pistas marcadas de las que aprender. Auto marcar usa el modelo general y aprenderá de las cues que guardes.",
+      "learn": "Aprender de mis pistas",
+      "relearn": "Volver a aprender",
+      "learning": "Aprendiendo…",
+      "summary_one": "Aprendido de {{tracks}} pista que ya marcaste",
+      "summary_other": "Aprendido de {{tracks}} pistas que ya marcaste",
+      "tracks_one": "pista",
+      "tracks_other": "pistas",
+      "saved": "Guardadas en Surco",
+      "autoFound": "Encuentra {{found}} de cada 10 sitios donde marcas",
+      "autoTuned": "Ajustado a ti. Sin ajustar encontraba {{before}} de cada 10",
+      "autoGeneral": "El modelo general ya encaja con tu forma de marcar",
+      "autoFew": "Aún pocas pistas para ajustarlo a ti",
+      "autoFewHint": "Hacen falta {{count}} pistas marcadas",
+      "countdown": "Cuenta atrás",
+      "distances_one": "{{bars}} compás",
+      "distances_other": "{{bars}} compases",
+      "paired": "Con su CALL debajo en el {{share}} %",
+      "start": "Cue de inicio",
+      "startYes": "La sueles poner",
+      "startNo": "No la sueles poner",
+      "startShare": "{{with}} de {{open}} pistas donde cabría",
+      "useFlow": "Usar como flujo",
+      "fromEdits": "Aprender mientras corriges",
+      "fromEditsHint": "Cada pista que guardas en el editor se suma a lo aprendido, y Surco vuelve a aprender cada 10."
     }
   },
   "errorBoundary": {

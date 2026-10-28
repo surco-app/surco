@@ -1,3 +1,4 @@
+import { type TasteTrack, type TunedTaste, tuneDropTaste } from '../shared/dropTaste'
 import type { BpmResult, KeyResult, TrackMetadata } from '../shared/types'
 import { type BeatGridFit, fitBeatGrid } from './beatGrid'
 import { type FullScan, killScansFor, runChannelScan } from './channelScan'
@@ -91,6 +92,7 @@ export type WorkerJob =
   | { type: 'tagLibRead'; file: string }
   // The activity panel's before/after tag snapshot, a full synchronous TagLib parse.
   | { type: 'tagSnapshot'; file: string }
+  | { type: 'tuneDrops'; tracks: TasteTrack[] }
 
 export type WorkerJobResult =
   | BpmResult
@@ -103,6 +105,7 @@ export type WorkerJobResult =
   | FullScan
   | Uint16Array
   | TagLibRead
+  | TunedTaste
   | null
 
 export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJobResult> {
@@ -159,6 +162,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return readTagLibFields(job.file)
     case 'tagSnapshot':
       return snapshotTagsOrNull(job.file)
+    case 'tuneDrops':
+      return tuneDropTaste(job.tracks)
     case 'prependFlacId3':
       prependFlacId3(job.file, job.meta, job.coverPath)
       return null

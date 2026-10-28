@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { FlowPhrase, PhraseKind } from './cueFlows'
-import { type DropInput, detectDrops, dropCandidates, pickDrops } from './dropDetect'
+import {
+  type DropInput,
+  type DropModel,
+  detectDrops,
+  dropCandidates,
+  dropProposals,
+  pickDrops,
+  SURE_SCORE,
+} from './dropDetect'
 
 const BAR_MS = 2000
 const ENTRIES_PER_BAR = (BAR_MS * 150) / 1000
@@ -109,5 +117,33 @@ describe('pickDrops', () => {
 
   it('still offers the best guess when nothing clears the bar, because every track breaks somewhere', () => {
     expect(pickDrops(scored, { threshold: 5, spacingBars: 16, maxDrops: 4 })).toEqual([64000])
+  })
+})
+
+describe('dropProposals', () => {
+  const input = track([
+    [16, ...INTRO],
+    [32, ...FULL],
+    [12, ...BREAK],
+    [32, ...FULL],
+  ])
+  const flat = (score: number): DropModel => ({
+    base: score,
+    trees: [],
+    picking: { threshold: -5, spacingBars: 16, maxDrops: 4 },
+  })
+
+  it('proposes where detectDrops does, so the confidence never changes what Auto finds', () => {
+    expect(dropProposals(input).map((p) => p.ms)).toEqual(detectDrops(input))
+  })
+
+  it('calls a proposal sure only from the detector’s score, the one thing that separated right from wrong on held-out tracks', () => {
+    expect(dropProposals(input, flat(SURE_SCORE)).every((p) => p.sure)).toBe(true)
+    expect(dropProposals(input, flat(SURE_SCORE - 0.01)).some((p) => p.sure)).toBe(false)
+  })
+
+  it('counts the bars of weak bass right before, so the editor can say what it heard', () => {
+    const back = dropProposals(input, flat(0)).find((p) => p.ms === 60 * BAR_MS)
+    expect(back?.quietBars).toBe(12)
   })
 })

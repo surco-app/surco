@@ -1,4 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
+import type { CueProfileRead } from '../../../shared/cueProfile'
 import type { QueuedCues, SurcoGrid, TrackCues } from '../../../shared/types'
 
 export const trackCuesQuery = (contentId: string) => ({
@@ -30,6 +32,24 @@ export const cueDropInputQuery = (contentId: string) => ({
   queryFn: () => window.api.rekordboxCueDropInput(contentId),
   staleTime: Number.POSITIVE_INFINITY,
 })
+
+export const cueProfileQuery = {
+  queryKey: ['cue-profile'],
+  queryFn: () => window.api.cueProfile(),
+  staleTime: Number.POSITIVE_INFINITY,
+}
+
+export function useCueProfile(): CueProfileRead | undefined {
+  const client = useQueryClient()
+  useEffect(
+    () =>
+      window.api.onCueProfileChanged(() => {
+        void client.invalidateQueries({ queryKey: cueProfileQuery.queryKey })
+      }),
+    [client],
+  )
+  return useQuery(cueProfileQuery).data
+}
 
 export function useTrackCues(contentId: string | undefined): {
   data: TrackCues | null | undefined

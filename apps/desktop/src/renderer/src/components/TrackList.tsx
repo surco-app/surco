@@ -860,7 +860,11 @@ const TrackRow = memo(function TrackRow({
                       pending={cuesPending}
                       active={seen}
                       unanalyzed={unanalyzed}
-                      proposals={autoMark?.kind === 'proposed' ? autoMark.ms : undefined}
+                      proposals={
+                        autoMark?.kind === 'proposed'
+                          ? autoMark.proposals.map((p) => p.ms)
+                          : undefined
+                      }
                     />
                     {cuesUnsaved && (
                       <span
@@ -887,7 +891,7 @@ const TrackRow = memo(function TrackRow({
                       }`}
                     >
                       {autoMark.kind === 'proposed'
-                        ? tr('trackList.autoMark.proposed', { count: autoMark.ms.length })
+                        ? tr('trackList.autoMark.proposed', { count: autoMark.proposals.length })
                         : tr(`trackList.autoMark.${autoMark.kind}`)}
                     </span>
                   )}

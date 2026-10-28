@@ -39,6 +39,7 @@ const settings: Settings = {
   cueFlowToRekordbox: true,
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
+  cueLearnFromEdits: true,
   hiddenSources: [],
   language: 'system',
   discogsToken: '',

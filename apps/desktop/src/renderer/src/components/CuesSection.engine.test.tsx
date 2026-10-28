@@ -5,7 +5,12 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
-import type { DropInput } from '../../../shared/dropDetect'
+import {
+  DROP_MODEL,
+  type DropInput,
+  type DropModel,
+  type DropProposal,
+} from '../../../shared/dropDetect'
 import type { TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
@@ -15,10 +20,12 @@ import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
 
-const detectDrops = vi.hoisted(() => vi.fn<(input: DropInput) => number[]>())
+const dropProposals = vi.hoisted(() =>
+  vi.fn<(input: DropInput, model?: DropModel) => DropProposal[]>(),
+)
 vi.mock('../../../shared/dropDetect', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../../shared/dropDetect')>()),
-  detectDrops,
+  dropProposals,
 }))
 
 afterEach(cleanup)
@@ -112,12 +119,17 @@ describe('CuesSection on an Engine DJ track', () => {
       phrases: [{ ms: bar(56) - 30, kind: 'up' }],
       words: new Uint16Array(3000),
     }
-    detectDrops.mockReset().mockReturnValue([bar(64) - 30])
+    dropProposals.mockReset().mockReturnValue([{ ms: bar(64) - 30, sure: true, quietBars: 8 }])
     setup(READ, 'engine:4', async () => input)
     await ready()
     fireEvent.click(screen.getByTestId('cues-auto-mark'))
-    await waitFor(() => expect(autoMarkOf('engine:4')).toEqual({ kind: 'proposed', ms: [bar(64)] }))
-    expect(detectDrops).toHaveBeenCalledWith(input)
+    await waitFor(() =>
+      expect(autoMarkOf('engine:4')).toEqual({
+        kind: 'proposed',
+        proposals: [{ ms: bar(64), sure: true, quietBars: 8 }],
+      }),
+    )
+    expect(dropProposals).toHaveBeenCalledWith(input, DROP_MODEL)
   })
 
   it('says it is reading the track while the audio is decoded, since that can take a few seconds', async () => {

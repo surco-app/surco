@@ -885,7 +885,11 @@
         "unanalysed": "rekordbox の解析なし",
         "none": "Surco はこのトラックのブレイク位置を見つけられません",
         "marked": "Surco がブレイクと判断した位置には、すべて CALL がすでにあります",
-        "selected": "選択したトラックを自動マーク"
+        "selected": "選択したトラックを自動マーク",
+        "sure": "ここでブレイク {{time}}",
+        "why_one": "低音の弱い {{count}} 小節のあと",
+        "why_other": "低音の弱い {{count}} 小節のあと",
+        "whyNone": "直前に低音の休みなし"
       },
       "batch": {
         "mark_one": "{{count}} トラックを自動マーク",
@@ -893,7 +897,14 @@
         "withProposals": "提案あり",
         "twinsTitle": "フローの配置先",
         "twinsUnsaved_one": "{{count}} 件は未保存の変更があるため、そのままにします",
-        "twinsUnsaved_other": "{{count}} 件は未保存の変更があるため、そのままにします"
+        "twinsUnsaved_other": "{{count}} 件は未保存の変更があるため、そのままにします",
+        "acceptSure_one": "確実な提案を採用",
+        "acceptSure_other": "確実な {{count}} 件を採用",
+        "confidence": "{{sure}}、{{doubtful}}",
+        "sure_one": "確実 {{count}} 件",
+        "sure_other": "確実 {{count}} 件",
+        "doubtful_one": "不確か {{count}} 件",
+        "doubtful_other": "不確か {{count}} 件"
       },
       "engine": {
         "save": "Engine DJ に保存",
@@ -1615,13 +1626,8 @@
         "fixed": "単色",
         "each": "繰り返しごとに色を変える"
       },
-      "learn": "コレクションから学習",
       "learnedName": "コレクションから学習",
-      "discard": "破棄",
-      "learnNone": "コレクションに明確なパターンがありません",
       "learnFailed": "rekordbox コレクションを読み込めませんでした",
-      "learnedCoverage_one": "{{marked}} トラック中 {{matching}} 件に一致",
-      "learnedCoverage_other": "{{marked}} トラック中 {{matching}} 件に一致",
       "sentence": {
         "every": "毎",
         "put": "配置"
@@ -1645,6 +1651,36 @@
         "engine": "ホットキューのみ。Engine DJ には CALL がありません。",
         "missing": "このコンピュータで {{program}} が見つかりません"
       }
+    },
+    "cueProfile": {
+      "title": "あなたのマークの付け方",
+      "firstTitle": "マークの付け方を Surco に教える",
+      "firstHint": "すでに置いた CUE を読み取り、自動マークとフローをあなたに合わせます。読み取るだけで何も変更しません。",
+      "nothing": "学習できるマーク済みトラックはまだありません。自動マークは汎用モデルを使い、保存した CUE から学習します。",
+      "learn": "自分のトラックから学習",
+      "relearn": "もう一度学習",
+      "learning": "学習中…",
+      "summary_one": "マーク済みの {{tracks}} トラックから学習",
+      "summary_other": "マーク済みの {{tracks}} トラックから学習",
+      "tracks_one": "トラック",
+      "tracks_other": "トラック",
+      "saved": "Surco で保存",
+      "autoFound": "あなたがマークする位置の 10 か所中 {{found}} か所を検出",
+      "autoTuned": "あなたに調整済み。調整前は 10 か所中 {{before}} か所",
+      "autoGeneral": "汎用モデルがすでにあなたのマークの付け方に合っています",
+      "autoFew": "調整するにはまだトラックが足りません",
+      "autoFewHint": "マーク済みトラックが {{count}} 必要です",
+      "countdown": "カウントダウン",
+      "distances_one": "{{bars}} 小節",
+      "distances_other": "{{bars}} 小節",
+      "paired": "{{share}}% で下に CALL あり",
+      "start": "スタート CUE",
+      "startYes": "よく置いています",
+      "startNo": "あまり置いていません",
+      "startShare": "置ける {{open}} トラック中 {{with}}",
+      "useFlow": "フローとして使う",
+      "fromEdits": "修正しながら学習",
+      "fromEditsHint": "エディタで保存したトラックは学習内容に加わり、10 件ごとに Surco が学習し直します。"
     }
   },
   "errorBoundary": {

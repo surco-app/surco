@@ -3,6 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useTranslation } from 'react-i18next'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { nearestBeat } from '../../../shared/cueRules'
+import type { DropProposal } from '../../../shared/dropDetect'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import type { CueWaveColumn } from '../../../shared/types'
 import { useThemeRgb } from '../hooks/useThemeRgb'
@@ -64,7 +65,7 @@ export function CueWave({
   durationMs: number
   cues: WaveCue[]
   selected?: string | null
-  proposals?: number[]
+  proposals?: DropProposal[]
   trimmed?: number[]
   readOnly?: boolean
   onSelect?: (key: string | null) => void
@@ -282,13 +283,16 @@ export function CueWave({
         />
       ))}
       {!readOnly &&
-        (proposals ?? []).map((ms) => (
+        (proposals ?? []).map(({ ms, sure }) => (
           <span
             key={`p${ms}`}
             data-testid={`cue-wave-proposal-${ms}`}
+            data-sure={sure ? 'true' : 'false'}
             aria-hidden="true"
             style={{ left: pct(ms) }}
-            className="pointer-events-none absolute top-0 bottom-0 border-l border-dashed border-[var(--color-accent)]"
+            className={`pointer-events-none absolute top-0 bottom-0 border-l border-[var(--color-accent)] ${
+              sure ? '' : 'border-dashed'
+            }`}
           />
         ))}
       {calls.map((c) => {

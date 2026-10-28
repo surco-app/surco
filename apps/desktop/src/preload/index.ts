@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { AudioAnalysisIpc, PeekableAnalyses } from '../shared/audioIpcContract'
+import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
 import type { DropInput } from '../shared/dropDetect'
-import type { LearnedFlow } from '../shared/learnFlow'
 import type {
   ActivityEvent,
   AppleMusicLookupCandidate,
@@ -228,7 +228,14 @@ const api: Api = {
     ipcRenderer.invoke('list:rowWaves', requests),
   rekordboxCountCompletable: (): Promise<number> =>
     ipcRenderer.invoke('rekordbox:countCompletable'),
-  rekordboxLearnFlow: (): Promise<LearnedFlow | null> => ipcRenderer.invoke('rekordbox:learnFlow'),
+  cueProfile: (): Promise<CueProfileRead> => ipcRenderer.invoke('cues:profile'),
+  learnCueProfile: (): Promise<CueProfile> => ipcRenderer.invoke('cues:learn'),
+  recordCueEdit: (track: TasteTrack): Promise<void> => ipcRenderer.invoke('cues:recordEdit', track),
+  onCueProfileChanged: (cb: () => void) => {
+    const listener = (): void => cb()
+    ipcRenderer.on('cues:profileChanged', listener)
+    return () => ipcRenderer.removeListener('cues:profileChanged', listener)
+  },
   rekordboxQueuedCues: (contentId: string): Promise<QueuedCues | null> =>
     ipcRenderer.invoke('rekordbox:queuedCues', contentId),
   undoRekordboxCues: (contentId: string): Promise<void> =>

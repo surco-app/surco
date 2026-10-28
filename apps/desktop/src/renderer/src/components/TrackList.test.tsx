@@ -553,7 +553,13 @@ describe('TrackList', () => {
       [],
       {
         autoMarkById: new Map<string, AutoMark>([
-          ['a', { kind: 'proposed', ms: [50000, 100000] }],
+          [
+            'a',
+            {
+              kind: 'proposed',
+              proposals: [50000, 100000].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+            },
+          ],
           ['b', { kind: 'unanalysed' }],
           ['c', { kind: 'marked' }],
           ['d', { kind: 'none' }],
@@ -573,7 +579,12 @@ describe('TrackList', () => {
   it('keeps the unsaved dot next to the chip once some proposals are accepted', () => {
     renderList([track({ id: 'a', duration: 200 })], null, [], {
       unsavedCueIds: new Set(['a']),
-      autoMarkById: new Map<string, AutoMark>([['a', { kind: 'proposed', ms: [50000] }]]),
+      autoMarkById: new Map<string, AutoMark>([
+        [
+          'a',
+          { kind: 'proposed', proposals: [50000].map((ms) => ({ ms, sure: true, quietBars: 8 })) },
+        ],
+      ]),
     })
     const row = screen.getByTestId('track-wave-line')
     expect(within(row).getByTestId('track-cues-unsaved')).toBeInTheDocument()

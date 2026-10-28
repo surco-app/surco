@@ -885,7 +885,11 @@
         "unanalysed": "No rekordbox analysis",
         "none": "Surco can’t find where this track breaks",
         "marked": "You already have a CALL everywhere Surco thinks the track breaks",
-        "selected": "Auto mark the selected"
+        "selected": "Auto mark the selected",
+        "sure": "Breaks here {{time}}",
+        "why_one": "after {{count}} bar of weak bass",
+        "why_other": "after {{count}} bars of weak bass",
+        "whyNone": "no bass break before"
       },
       "batch": {
         "mark_one": "Auto mark {{count}} track",
@@ -893,7 +897,14 @@
         "withProposals": "With proposals",
         "twinsTitle": "Where the flow goes",
         "twinsUnsaved_one": "{{count}} with unsaved changes, left as it is",
-        "twinsUnsaved_other": "{{count}} with unsaved changes, left as they are"
+        "twinsUnsaved_other": "{{count}} with unsaved changes, left as they are",
+        "acceptSure_one": "Accept the sure one",
+        "acceptSure_other": "Accept the {{count}} sure ones",
+        "confidence": "{{sure}}, {{doubtful}}",
+        "sure_one": "{{count}} sure",
+        "sure_other": "{{count}} sure",
+        "doubtful_one": "{{count}} doubtful",
+        "doubtful_other": "{{count}} doubtful"
       },
       "engine": {
         "save": "Save to Engine DJ",
@@ -1615,13 +1626,8 @@
         "fixed": "one colour",
         "each": "a colour per repeat"
       },
-      "learn": "Learn from my collection",
       "learnedName": "Learned from my collection",
-      "discard": "Discard",
-      "learnNone": "Your collection has no clear pattern",
       "learnFailed": "The rekordbox collection could not be read",
-      "learnedCoverage_one": "Fits {{matching}} of {{marked}} track",
-      "learnedCoverage_other": "Fits {{matching}} of {{marked}} tracks",
       "sentence": {
         "every": "every",
         "put": "place"
@@ -1645,6 +1651,36 @@
         "engine": "Hot cues only. Engine DJ has no CALLs.",
         "missing": "Surco cannot find {{program}} on this computer"
       }
+    },
+    "cueProfile": {
+      "title": "How you mark",
+      "firstTitle": "Teach Surco how you mark",
+      "firstHint": "Reads the cues you already placed and tunes Auto mark and the flow to you. It only reads and changes nothing.",
+      "nothing": "There are no marked tracks to learn from yet. Auto mark uses the general model and will learn from the cues you save.",
+      "learn": "Learn from my tracks",
+      "relearn": "Learn again",
+      "learning": "Learning…",
+      "summary_one": "Learned from {{tracks}} track you already marked",
+      "summary_other": "Learned from {{tracks}} tracks you already marked",
+      "tracks_one": "track",
+      "tracks_other": "tracks",
+      "saved": "Saved in Surco",
+      "autoFound": "Finds {{found}} in 10 of the places you mark",
+      "autoTuned": "Tuned to you. Untuned it found {{before}} in 10",
+      "autoGeneral": "The general model already fits how you mark",
+      "autoFew": "Too few tracks yet to tune it to you",
+      "autoFewHint": "It needs {{count}} marked tracks",
+      "countdown": "Countdown",
+      "distances_one": "{{bars}} bar",
+      "distances_other": "{{bars}} bars",
+      "paired": "With its CALL under it in {{share}}%",
+      "start": "Start cue",
+      "startYes": "You usually place it",
+      "startNo": "You don't usually place it",
+      "startShare": "{{with}} of {{open}} tracks where it would fit",
+      "useFlow": "Use as a flow",
+      "fromEdits": "Learn while you correct",
+      "fromEditsHint": "Every track you save in the editor adds to what Surco learned, and it learns again every 10."
     }
   },
   "errorBoundary": {

@@ -4,6 +4,7 @@ import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 
 import { useTranslation } from 'react-i18next'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { nearestBeat } from '../../../shared/cueRules'
+import type { DropProposal } from '../../../shared/dropDetect'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import { useThemeRgb } from '../hooks/useThemeRgb'
 import { type DetailSource, paintWave, waveColumns } from '../lib/cueDetail'
@@ -135,7 +136,7 @@ export function CueWaveDetail({
   movable?: string[]
   onMoveMark?: (key: string, ms: number) => void
   onMarkDrag?: (dragging: boolean) => void
-  proposals?: number[]
+  proposals?: DropProposal[]
   onAcceptProposal?: (ms: number) => void
   onDropProposal?: (ms: number) => void
 }): React.JSX.Element {
@@ -555,18 +556,22 @@ export function CueWaveDetail({
               />
             ))}
           {(proposals ?? [])
-            .filter((ms) => ms >= fromMs && ms <= toMs)
-            .map((ms) => (
+            .filter(({ ms }) => ms >= fromMs && ms <= toMs)
+            .map(({ ms, sure, quietBars }) => (
               <Fragment key={`p${ms}`}>
                 <span
                   data-testid={`cue-detail-proposal-${ms}`}
+                  data-sure={sure ? 'true' : 'false'}
                   aria-hidden="true"
                   style={{ left: pct(ms), top: `${WAVE_MARK_LANE_PX}px` }}
-                  className="pointer-events-none absolute bottom-0 border-l border-dashed border-[var(--color-accent)]"
+                  className={`pointer-events-none absolute bottom-0 border-l border-[var(--color-accent)] ${
+                    sure ? '' : 'border-dashed'
+                  }`}
                 />
                 <span
                   role="toolbar"
                   data-testid={`cue-proposal-${ms}`}
+                  data-sure={sure ? 'true' : 'false'}
                   onMouseDown={(e) => e.stopPropagation()}
                   onMouseMove={(e) => e.stopPropagation()}
                   onMouseEnter={() => onHover?.(null)}
@@ -576,11 +581,24 @@ export function CueWaveDetail({
                       : { left: pct(ms) }),
                     top: `${WAVE_MARK_LANE_PX + 4}px`,
                   }}
-                  className={`absolute z-20 flex cursor-default items-center gap-1 whitespace-nowrap rounded-full border border-dashed border-[var(--color-accent)] bg-[var(--color-panel)] py-0.5 pr-0.5 pl-2 text-[11px] font-semibold text-[var(--color-accent)] ${
-                    ms - fromMs > span / 2 ? 'mr-1.5' : 'ml-1.5'
-                  }`}
+                  className={`absolute z-20 flex cursor-default items-center gap-1 whitespace-nowrap rounded-full border border-[var(--color-accent)] bg-[var(--color-panel)] py-0.5 pr-0.5 pl-2 text-[11px] font-semibold text-[var(--color-accent)] ${
+                    sure ? '' : 'border-dashed'
+                  } ${ms - fromMs > span / 2 ? 'mr-1.5' : 'ml-1.5'}`}
                 >
-                  {t('editor.cues.auto.ask', { time: formatTime(ms / 1000) })}
+                  {t(sure ? 'editor.cues.auto.sure' : 'editor.cues.auto.ask', {
+                    time: formatTime(ms / 1000),
+                  })}
+                  {!compact && (
+                    <span
+                      data-testid={`cue-proposal-why-${ms}`}
+                      className="font-normal text-fg-dim"
+                    >
+                      ·{' '}
+                      {quietBars > 0
+                        ? t('editor.cues.auto.why', { count: quietBars })
+                        : t('editor.cues.auto.whyNone')}
+                    </span>
+                  )}
                   <button
                     type="button"
                     data-testid={`cue-proposal-accept-${ms}`}

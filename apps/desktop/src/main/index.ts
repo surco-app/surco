@@ -40,6 +40,7 @@ import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
 import { trashLimits } from '../shared/backupPolicy'
 import { activeCueFlow } from '../shared/cueFlows'
+import type { TunedTaste } from '../shared/dropTaste'
 import { errorWithKey } from '../shared/errorKeys'
 import {
   isRecoveryUrl,
@@ -85,6 +86,8 @@ import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
 import { downloadCover, imageExt } from './coverDownload'
 import { coverThumbPathOf, pruneCoverThumbs } from './coverThumbs'
 import { installCrashGuards, logHandlerFailures, wireRendererRecovery } from './crashGuards'
+import { createCueTaste } from './cueTaste'
+import { registerCueTasteIpc } from './cueTasteIpc'
 import { cachedCueWaveWords } from './cueWaveWordsCache'
 import { parseDockFrames } from './dockFrames'
 import { type ReplacePair, replaceDuplicates } from './duplicateReplace'
@@ -140,9 +143,10 @@ import {
 } from './rekordboxBatch'
 import { completeOnClose } from './rekordboxCompleteOnClose'
 import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
+import { markedTracks, readCollectionMarksAt } from './rekordboxLearnFlow'
 import { readNodeStamps } from './rekordboxMasterXml'
 import { findRekordboxCollection } from './rekordboxPath'
-import { registerRekordboxPlaylistsIpc } from './rekordboxPlaylistsIpc'
+import { keyOf, registerRekordboxPlaylistsIpc } from './rekordboxPlaylistsIpc'
 import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
 import { isRekordboxRunning, quitRekordbox } from './rekordboxProcess'
 import { adjustProvisional, createProvisionalList } from './rekordboxProvisional'
@@ -197,6 +201,7 @@ import { createUpdateRetry } from './updateRetry'
 import { registerUsbExportIpc } from './usbExportIpc'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
+import { runInWorker } from './worker'
 
 // At module load so even a throw during startup leaves a trace in the log file.
 installCrashGuards(process, log)
@@ -278,6 +283,11 @@ const provisionalCues = createProvisionalList(
   fileStore(join(app.getPath('userData'), 'rekordbox-provisional.json')),
   () => rekordboxQueueWatch.poke(),
 )
+const cueTaste = createCueTaste(fileStore(join(app.getPath('userData'), 'cue-taste.json')), {
+  readCollection: () => readCollectionMarksAt(rekordboxCollectionPath()),
+  tune: (tracks) => runInWorker<TunedTaste | null>({ type: 'tuneDrops', tracks }),
+  onLearned: () => broadcast('cues:profileChanged', null),
+})
 const adjustProvisionalCues = (): void =>
   adjustProvisional({
     list: provisionalCues,
@@ -1275,6 +1285,12 @@ function registerIpc(): void {
       applyQuietly: applyTraktorCueQueueAsking,
       words: cachedCueWaveWords,
     },
+  })
+  registerCueTasteIpc({
+    taste: cueTaste,
+    marked: async () =>
+      markedTracks(rekordboxCollectionPath(), await keyOf(rekordboxCollectionPath())),
+    learnFromEdits: () => getSettings().cueLearnFromEdits,
   })
   registerEngineCueQueueIpc(engineCueQueue, {
     ensureClosed: (win) => ensureEngineDjClosed(win, 'engineQuitDetailCues'),

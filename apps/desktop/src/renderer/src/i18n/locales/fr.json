@@ -885,7 +885,11 @@
         "unanalysed": "Pas d’analyse rekordbox",
         "none": "Surco ne trouve pas où ce morceau décolle",
         "marked": "Tu as déjà un CALL partout où Surco pense que le morceau décolle",
-        "selected": "Marquage auto de la sélection"
+        "selected": "Marquage auto de la sélection",
+        "sure": "Ça décolle ici {{time}}",
+        "why_one": "après {{count}} mesure avec peu de basses",
+        "why_other": "après {{count}} mesures avec peu de basses",
+        "whyNone": "sans pause de basses avant"
       },
       "batch": {
         "mark_one": "Marquage auto de {{count}} morceau",
@@ -893,7 +897,14 @@
         "withProposals": "Avec propositions",
         "twinsTitle": "Où le flux est placé",
         "twinsUnsaved_one": "{{count}} avec des modifications non enregistrées, laissé tel quel",
-        "twinsUnsaved_other": "{{count}} avec des modifications non enregistrées, laissés tels quels"
+        "twinsUnsaved_other": "{{count}} avec des modifications non enregistrées, laissés tels quels",
+        "acceptSure_one": "Accepter la sûre",
+        "acceptSure_other": "Accepter les {{count}} sûres",
+        "confidence": "{{sure}}, {{doubtful}}",
+        "sure_one": "{{count}} sûre",
+        "sure_other": "{{count}} sûres",
+        "doubtful_one": "{{count}} douteuse",
+        "doubtful_other": "{{count}} douteuses"
       },
       "engine": {
         "save": "Enregistrer dans Engine DJ",
@@ -1615,13 +1626,8 @@
         "fixed": "une couleur",
         "each": "une couleur par répétition"
       },
-      "learn": "Apprendre de ma collection",
       "learnedName": "Appris de ma collection",
-      "discard": "Ignorer",
-      "learnNone": "Ta collection n’a pas de schéma clair",
       "learnFailed": "Impossible de lire la collection rekordbox",
-      "learnedCoverage_one": "Correspond à {{matching}} piste sur {{marked}}",
-      "learnedCoverage_other": "Correspond à {{matching}} pistes sur {{marked}}",
       "sentence": {
         "every": "toutes les",
         "put": "placez"
@@ -1645,6 +1651,36 @@
         "engine": "Hot cues seulement. Engine DJ n’a pas de CALL.",
         "missing": "Surco ne trouve pas {{program}} sur cet ordinateur"
       }
+    },
+    "cueProfile": {
+      "title": "Ta façon de marquer",
+      "firstTitle": "Apprends à Surco ta façon de marquer",
+      "firstHint": "Lit les cues que tu as déjà posés et adapte le marquage auto et le flux à toi. Il lit seulement et ne change rien.",
+      "nothing": "Pas encore de morceaux marqués pour apprendre. Le marquage auto utilise le modèle général et apprendra des cues que tu enregistres.",
+      "learn": "Apprendre de mes morceaux",
+      "relearn": "Réapprendre",
+      "learning": "Apprentissage…",
+      "summary_one": "Appris de {{tracks}} morceau que tu as déjà marqué",
+      "summary_other": "Appris de {{tracks}} morceaux que tu as déjà marqués",
+      "tracks_one": "morceau",
+      "tracks_other": "morceaux",
+      "saved": "Enregistrés dans Surco",
+      "autoFound": "Trouve {{found}} sur 10 des endroits que tu marques",
+      "autoTuned": "Adapté à toi. Avant, il en trouvait {{before}} sur 10",
+      "autoGeneral": "Le modèle général correspond déjà à ta façon de marquer",
+      "autoFew": "Encore trop peu de morceaux pour l’adapter à toi",
+      "autoFewHint": "Il faut {{count}} morceaux marqués",
+      "countdown": "Compte à rebours",
+      "distances_one": "{{bars}} mesure",
+      "distances_other": "{{bars}} mesures",
+      "paired": "Avec son CALL dessous dans {{share}} %",
+      "start": "Cue de départ",
+      "startYes": "Tu le poses en général",
+      "startNo": "Tu ne le poses pas en général",
+      "startShare": "{{with}} sur {{open}} morceaux où il tiendrait",
+      "useFlow": "Utiliser comme flux",
+      "fromEdits": "Apprendre pendant que tu corriges",
+      "fromEditsHint": "Chaque morceau que tu enregistres dans l’éditeur s’ajoute à ce qui est appris, et Surco réapprend tous les 10."
     }
   },
   "errorBoundary": {

@@ -12,7 +12,14 @@ export interface DropInput {
 export interface DropCandidate {
   bar: number
   ms: number
+  quietBars: number
   features: number[]
+}
+
+export interface DropProposal {
+  ms: number
+  sure: boolean
+  quietBars: number
 }
 
 export interface DropPicking {
@@ -26,6 +33,8 @@ export interface DropModel extends TreesModel {
 }
 
 export const DROP_MODEL = dropModel as DropModel
+
+export const SURE_SCORE = 1
 
 const ENTRIES_PER_MS = 150 / 1000
 const KINDS: PhraseKind[] = ['chorus', 'up', 'down', 'intro', 'outro']
@@ -56,10 +65,14 @@ function mean(values: number[], from: number, to: number): number {
   return count ? sum / count : 0
 }
 
-function runBelow(values: number[], bar: number, level: number): number {
+function quietRun(values: number[], bar: number, level: number): number {
   let run = 0
   for (let j = bar - 1; j >= 0 && values[j] < level; j--) run++
-  return Math.log1p(Math.min(LONGEST_RUN, run))
+  return Math.min(LONGEST_RUN, run)
+}
+
+function runBelow(values: number[], bar: number, level: number): number {
+  return Math.log1p(quietRun(values, bar, level))
 }
 
 function measure(words: Uint16Array, from: number, to: number): number[] {
@@ -191,7 +204,7 @@ export function dropCandidates(input: DropInput): DropCandidate[] {
         ...quartersOf(bars[k]),
         ...loudness.flatMap((of) => of(k)),
       ]
-      out.push({ bar: k, ms: downbeats[k], features })
+      out.push({ bar: k, ms: downbeats[k], quietBars: quietRun(low.values, k, QUIET), features })
     }
     if (mean(low.values, k, k + 4) > 0.7) heardBass = true
   }
@@ -213,11 +226,19 @@ export function pickDrops(
   return picked.map((p) => p.ms)
 }
 
-export function detectDrops(input: DropInput, model: DropModel = DROP_MODEL): number[] {
+export function dropProposals(input: DropInput, model: DropModel = DROP_MODEL): DropProposal[] {
   const scored = dropCandidates(input).map((c) => ({
     bar: c.bar,
     ms: c.ms,
+    quietBars: c.quietBars,
     score: predictTrees(model, c.features),
   }))
-  return pickDrops(scored, model.picking)
+  return pickDrops(scored, model.picking).map((ms) => {
+    const c = scored.find((s) => s.ms === ms) as (typeof scored)[number]
+    return { ms, sure: c.score >= SURE_SCORE, quietBars: c.quietBars }
+  })
+}
+
+export function detectDrops(input: DropInput, model: DropModel = DROP_MODEL): number[] {
+  return dropProposals(input, model).map((p) => p.ms)
 }

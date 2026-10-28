@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Ellipsis, Loader2, Plus } from 'lucide-react'
+import { Check, ChevronDown, Ellipsis, Info, Plus } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -13,7 +13,6 @@ import {
 } from '../../../../shared/cueFlows'
 import { CUE_JUMP_BARS } from '../../../../shared/cueJump'
 import { CUE_QUANTIZE } from '../../../../shared/cueQuantize'
-import type { LearnedFlow } from '../../../../shared/learnFlow'
 import { flowName } from '../../lib/cueFlowName'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
@@ -21,7 +20,9 @@ import { CueFlowPreview } from '../CueFlowPreview'
 import { CueRuleRow } from '../CueRuleRow'
 import { SegmentedControl } from '../SegmentedControl'
 import { SPLIT_ITEM, useSplitMenu } from '../SplitButton'
+import { Tooltip } from '../Tooltip'
 import { CheckboxRow } from './CheckboxRow'
+import { CueProfileCard } from './CueProfileCard'
 import { SettingsHint } from './SettingsPrimitives'
 
 interface Props {
@@ -29,8 +30,6 @@ interface Props {
   patch: PatchSynced
   rekordboxCollection: string
 }
-
-type Learning = LearnedFlow | 'idle' | 'none' | 'failed'
 
 const NEW_RULE: CueRule = {
   from: 'drop',
@@ -42,8 +41,6 @@ const NEW_RULE: CueRule = {
   color: { fixed: 1 },
 }
 
-const BUTTON_CLASS =
-  'press rounded-md border border-[var(--color-line)] px-2.5 py-1 text-xs hover:bg-[var(--color-field)]'
 const HEADING = 'text-[13px] font-semibold text-fg-muted'
 const ICON_BUTTON =
   'press flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-line-strong)] aria-expanded:bg-[var(--color-accent-soft)] aria-expanded:text-[var(--color-accent)]'
@@ -54,14 +51,10 @@ const GROUP = 'divide-y divide-[var(--color-line)] rounded-lg border border-[var
 export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [current, setCurrent] = useState(synced.activeCueFlow)
-  const [learning, setLearning] = useState<Learning>('idle')
-  const [reading, setReading] = useState(false)
-  const request = useRef(0)
   const [removals, setRemovals] = useState(0)
   const [typed, setTyped] = useState<string | null>(null)
   const [renaming, setRenaming] = useState(false)
   const picker = useSplitMenu()
-  const adder = useSplitMenu()
   const more = useSplitMenu()
   const nameRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
@@ -112,38 +105,6 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
   const select = (id: string) => {
     setCurrent(id)
     endRename()
-    setLearning('idle')
-    request.current++
-  }
-
-  const learn = () => {
-    const asked = ++request.current
-    const fresh = () => asked === request.current
-    setLearning('idle')
-    setReading(true)
-    window.api
-      .rekordboxLearnFlow()
-      .then((found) => {
-        if (fresh()) setLearning(found ?? 'none')
-      })
-      .catch((e: unknown) => {
-        window.api.logError(
-          `rekordbox cues: learning the flow failed (${e instanceof Error ? e.message : String(e)})`,
-        )
-        if (fresh()) setLearning('failed')
-      })
-      .finally(() => setReading(false))
-  }
-
-  const adopt = (found: LearnedFlow) => {
-    const made: CueFlow = {
-      ...found.flow,
-      id: crypto.randomUUID(),
-      name: tr('settings.cueFlows.learnedName'),
-    }
-    patch('cueFlows', [...flows, made])
-    patch('activeCueFlow', made.id)
-    select(made.id)
   }
 
   const remove = () => {
@@ -158,6 +119,7 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
   const inUse = synced.activeCueFlow === MANUAL_CUE_FLOW ? null : activeCueFlow(synced).id
   return (
     <div className="flex flex-col gap-5">
+      <CueProfileCard synced={synced} patch={patch} onAdopt={select} />
       <div className="flex flex-col gap-2">
         <h3 className={HEADING}>{tr('settings.cueFlows.flows')}</h3>
         <div className="flex items-center gap-2">
@@ -240,63 +202,16 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
               )}
             </div>
           )}
-          <div ref={adder.ref} className="relative">
-            <button
-              type="button"
-              data-testid="cue-flow-add"
-              ref={adder.toggleRef}
-              aria-label={tr('settings.cueFlows.addFlow')}
-              aria-haspopup="menu"
-              aria-expanded={adder.open}
-              onClick={() => adder.setOpen((v) => !v)}
-              className={ICON_BUTTON}
-            >
-              {reading ? (
-                <Loader2
-                  data-testid="cue-learn-spinner"
-                  className="h-3.5 w-3.5 animate-spin"
-                  aria-hidden="true"
-                />
-              ) : (
-                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-              )}
-            </button>
-            {adder.open && (
-              <div
-                ref={adder.menuRef}
-                role="menu"
-                aria-label={tr('settings.cueFlows.addFlow')}
-                onKeyDown={adder.onMenuKeyDown}
-                className={`${DROP_MENU} right-0 w-60`}
-              >
-                <button
-                  type="button"
-                  role="menuitem"
-                  data-testid="cue-flow-new"
-                  onClick={() => {
-                    adder.setOpen(false)
-                    create()
-                  }}
-                  className={SPLIT_ITEM}
-                >
-                  {tr('settings.cueFlows.newFlow')}
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  data-testid="cue-learn"
-                  disabled={!rekordboxCollection || reading}
-                  onClick={() => {
-                    adder.setOpen(false)
-                    learn()
-                  }}
-                  className={`${SPLIT_ITEM} disabled:cursor-not-allowed disabled:opacity-50`}
-                >
-                  {tr('settings.cueFlows.learn')}
-                </button>
-              </div>
-            )}
-          </div>
+          <button
+            type="button"
+            data-testid="cue-flow-add"
+            aria-label={tr('settings.cueFlows.newFlow')}
+            title={tr('settings.cueFlows.newFlow')}
+            onClick={create}
+            className={ICON_BUTTON}
+          >
+            <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
           <div ref={more.ref} className="relative">
             <button
               type="button"
@@ -375,107 +290,72 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
           </div>
         </div>
       </div>
-      {learning === 'none' && (
-        <p data-testid="cue-learn-none" className="text-xs text-fg-dim">
-          {tr('settings.cueFlows.learnNone')}
-        </p>
-      )}
-      {learning === 'failed' && (
-        <p data-testid="cue-learn-failed" className="text-xs text-warn">
-          {tr('settings.cueFlows.learnFailed')}
-        </p>
-      )}
-      {typeof learning === 'object' ? (
-        <div data-testid="cue-learned" className="flex min-w-0 flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="min-w-0 flex-1 text-sm text-fg">
-              {tr('settings.cueFlows.learnedName')}
-            </h3>
-            <button
-              type="button"
-              data-testid="cue-learned-use"
-              onClick={() => adopt(learning)}
-              className={BUTTON_CLASS}
-            >
-              {tr('settings.cueFlows.use')}
-            </button>
-            <button
-              type="button"
-              data-testid="cue-learned-discard"
-              onClick={() => setLearning('idle')}
-              className={BUTTON_CLASS}
-            >
-              {tr('settings.cueFlows.discard')}
-            </button>
-          </div>
-          <p data-testid="cue-learned-coverage" className="text-xs text-fg-dim">
-            {tr('settings.cueFlows.learnedCoverage', {
-              ...learning.coverage,
-              count: learning.coverage.marked,
-            })}
-          </p>
-          <CueFlowPreview flow={learning.flow} />
-        </div>
-      ) : (
-        <>
-          <section aria-label={tr('settings.cueFlows.preview')}>
-            <CueFlowPreview flow={flow} />
-          </section>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-baseline justify-between gap-3">
-              <h3 className={HEADING}>{tr('settings.cueFlows.rules')}</h3>
-              <button
-                type="button"
-                data-testid="cue-rule-add"
-                onClick={() => setRules([...flow.rules, NEW_RULE])}
-                className="press text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
-              >
-                {`+ ${tr('settings.cueFlows.addRule')}`}
-              </button>
-            </div>
-            <div className={GROUP}>
-              {rows.map(({ rule, position }) => (
-                <CueRuleRow
-                  key={`${flow.id}-${removals}-${position}`}
-                  rule={rule}
-                  index={position}
-                  onChange={(next) =>
-                    setRules(flow.rules.map((r, j) => (j === position ? next : r)))
-                  }
-                  onRemove={() => {
-                    setRules(flow.rules.filter((_, j) => j !== position))
-                    setRemovals(removals + 1)
-                  }}
-                />
-              ))}
-              {flow.rules.length === 0 && (
-                <p data-testid="cue-flow-no-rules" className="px-3.5 py-3 text-xs text-fg-dim">
-                  {tr('settings.cueFlows.noRules')}
-                </p>
-              )}
-              <div className="px-3.5 py-2.5 text-sm">
-                <CheckboxRow
-                  testid="cue-flow-mark-point"
-                  checked={flow.markPoint}
-                  onChange={(markPoint) => put({ ...flow, markPoint })}
-                  label={tr('settings.cueFlows.markPoint')}
-                />
-              </div>
-            </div>
-            {(engineFound || traktorFound) && (
-              <SettingsHint data-testid="cue-flow-library-note">
-                {[
-                  tr('settings.cueFlows.callsOnlyRekordbox'),
-                  ...(traktorFound ? [tr('settings.cueFlows.traktorColours')] : []),
-                ].join('. ')}
-              </SettingsHint>
-            )}
-          </div>
-        </>
-      )}
+
+      <section aria-label={tr('settings.cueFlows.preview')}>
+        <CueFlowPreview flow={flow} />
+      </section>
       <div className="flex flex-col gap-2">
-        <h3 className={HEADING}>{tr('settings.cueFlows.targets.title')}</h3>
-        <SettingsHint>{tr('settings.cueFlows.targets.hint')}</SettingsHint>
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 className={HEADING}>{tr('settings.cueFlows.rules')}</h3>
+          <button
+            type="button"
+            data-testid="cue-rule-add"
+            onClick={() => setRules([...flow.rules, NEW_RULE])}
+            className="press text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
+          >
+            {`+ ${tr('settings.cueFlows.addRule')}`}
+          </button>
+        </div>
+        <div className={GROUP}>
+          {rows.map(({ rule, position }) => (
+            <CueRuleRow
+              key={`${flow.id}-${removals}-${position}`}
+              rule={rule}
+              index={position}
+              onChange={(next) => setRules(flow.rules.map((r, j) => (j === position ? next : r)))}
+              onRemove={() => {
+                setRules(flow.rules.filter((_, j) => j !== position))
+                setRemovals(removals + 1)
+              }}
+            />
+          ))}
+          {flow.rules.length === 0 && (
+            <p data-testid="cue-flow-no-rules" className="px-3.5 py-3 text-xs text-fg-dim">
+              {tr('settings.cueFlows.noRules')}
+            </p>
+          )}
+          <div className="px-3.5 py-2.5 text-sm">
+            <CheckboxRow
+              testid="cue-flow-mark-point"
+              checked={flow.markPoint}
+              onChange={(markPoint) => put({ ...flow, markPoint })}
+              label={tr('settings.cueFlows.markPoint')}
+            />
+          </div>
+        </div>
+        {(engineFound || traktorFound) && (
+          <SettingsHint data-testid="cue-flow-library-note">
+            {[
+              tr('settings.cueFlows.callsOnlyRekordbox'),
+              ...(traktorFound ? [tr('settings.cueFlows.traktorColours')] : []),
+            ].join('. ')}
+          </SettingsHint>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <h3 className={`${HEADING} flex items-center gap-1.5`}>
+          {tr('settings.cueFlows.targets.title')}
+          <span
+            data-testid="cue-flow-targets-help"
+            role="note"
+            className="relative flex h-5 w-5 items-center justify-center text-fg-dim hover:text-fg-muted"
+          >
+            <Info className="h-3 w-3" aria-hidden="true" />
+            <span className="sr-only">{tr('settings.cueFlows.targets.hint')}</span>
+            <Tooltip label={tr('settings.cueFlows.targets.hint')} />
+          </span>
+        </h3>
         <div data-testid="cue-flow-targets" className={`${GROUP} text-sm`}>
           {(
             [
@@ -487,7 +367,7 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
             <div key={library} className="px-3.5 py-2.5">
               <CheckboxRow
                 testid={`settings-cue-flow-to-${library}`}
-                checked={synced[key]}
+                checked={found && synced[key]}
                 onChange={(v) => patch(key, v)}
                 label={name}
                 disabled={!found}

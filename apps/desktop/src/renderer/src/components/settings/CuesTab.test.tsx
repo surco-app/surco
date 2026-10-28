@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../../preload/api'
@@ -15,7 +15,6 @@ import {
 } from '../../../../shared/cueFlows'
 import type { CueJumpBars } from '../../../../shared/cueJump'
 import type { CueQuantize } from '../../../../shared/cueQuantize'
-import type { LearnedFlow } from '../../../../shared/learnFlow'
 import i18n from '../../i18n'
 import { EXAMPLE_DROP } from '../../lib/cueExample'
 import type { SyncedDraft } from '../../lib/settingsDraft'
@@ -62,6 +61,7 @@ function Harness({
     cueFlowToRekordbox: true,
     cueFlowToTraktor: true,
     cueFlowToEngine: true,
+    cueLearnFromEdits: true,
   })
   last = draft
   return (
@@ -315,7 +315,6 @@ describe('CuesTab', () => {
   it('creates a flow straight into naming it, the way a new folder opens in Finder, and makes it the one in use', () => {
     render(<Harness />)
     openAdd()
-    fireEvent.click(screen.getByTestId('cue-flow-new'))
     expect(screen.getByTestId('cue-flow-name')).toHaveFocus()
     fireEvent.change(screen.getByTestId('cue-flow-name'), { target: { value: 'Mis 64' } })
     fireEvent.keyDown(screen.getByTestId('cue-flow-name'), { key: 'Enter' })
@@ -336,7 +335,6 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('cue-flow-name')).toHaveValue('Mi set')
     fireEvent.blur(screen.getByTestId('cue-flow-name'))
     openAdd()
-    fireEvent.click(screen.getByTestId('cue-flow-new'))
     fireEvent.change(screen.getByTestId('cue-flow-name'), { target: { value: 'Otro' } })
     expect(screen.getByTestId('cue-flow-name')).toHaveValue('Otro')
     expect(last?.cueFlows.at(-1)?.name).toBe('Otro')
@@ -485,131 +483,57 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('cue-quantize-beat')).toHaveTextContent('Golpe')
   })
 
-  describe('Aprender de mi colección', () => {
-    const LEARNED: LearnedFlow = {
+  it('opens with what Surco learned of the DJ’s marking above the flows, and + only makes a new flow', async () => {
+    installApi()
+    render(<Harness collection="/rb/master.db" />)
+    const card = await screen.findByTestId('cue-profile')
+    const flows = screen.getByTestId('cue-flow-picker')
+    expect(card.compareDocumentPosition(flows) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    openAdd()
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(screen.getByTestId('cue-flow-name')).toHaveFocus()
+  })
+
+  it('selects the flow made from what was learned, so the DJ sees it right away', async () => {
+    const profile = {
+      learnedAt: '2026-10-28T10:00:00.000Z',
+      sources: { rekordbox: 40, edits: 0 },
+      taste: null,
+      check: null,
       flow: { id: 'learned', name: '', markPoint: true, rules: ONE_AT_32.rules },
-      coverage: { matching: 18, marked: 20 },
+      coverage: { matching: 30, marked: 40 },
+      paired: 1,
+      start: null,
     }
-
-    function learnable(result: Promise<LearnedFlow | null>) {
-      const rekordboxLearnFlow = vi.fn<Api['rekordboxLearnFlow']>(() => result)
-      installApi({ rekordboxLearnFlow })
-      render(<Harness collection="/rb/master.db" />)
-      return rekordboxLearnFlow
-    }
-
-    it('stays visible but disabled without a rekordbox collection, since there is nothing to learn from', () => {
-      installApi()
-      render(<Harness />)
-      openAdd()
-      expect(screen.getByTestId('cue-learn')).toBeDisabled()
+    installApi({
+      cueProfile: vi.fn<Api['cueProfile']>(async () => ({
+        profile,
+        edits: { count: 0, sinceLearn: 0 },
+        marked: 40,
+      })),
     })
+    render(<Harness collection="/rb/master.db" flows={[MIX_IN]} active={MIX_IN.id} />)
+    await i18n.changeLanguage('es')
+    afterTest = () => i18n.changeLanguage('en')
+    fireEvent.click(await screen.findByTestId('cue-profile-use-flow'))
+    expect(screen.getByTestId('cue-flow-picker')).toHaveTextContent('Aprendido de mi colección')
+  })
 
-    it('spins while the collection is read and shows the proposal with its coverage', async () => {
-      await i18n.changeLanguage('es')
-      afterTest = () => i18n.changeLanguage('en')
-      let finish: (value: LearnedFlow | null) => void = () => {}
-      learnable(
-        new Promise((done) => {
-          finish = done
-        }),
-      )
-      openAdd()
-      fireEvent.click(screen.getByTestId('cue-learn'))
-      expect(screen.getByTestId('cue-learn-spinner')).toBeInTheDocument()
-      openAdd()
-      expect(screen.getByTestId('cue-learn')).toBeDisabled()
-      await act(async () => finish(LEARNED))
-      expect(screen.queryByTestId('cue-learn-spinner')).toBeNull()
-      const proposal = screen.getByTestId('cue-learned')
-      expect(proposal).toHaveTextContent('Aprendido de mi colección')
-      expect(proposal).toHaveTextContent('Encaja con 18 de 20 pistas')
-      expect(within(proposal).getByTestId('cue-flow-preview')).toBeInTheDocument()
-      expect(last?.cueFlows).toEqual(KEPT)
-      expect(last?.activeCueFlow).toBe('mine')
-    })
+  it('explains once where the flows also go, behind the (i) of the heading', () => {
+    installApi()
+    render(<Harness collection="/c/master.db" />)
+    expect(screen.getByTestId('cue-flow-targets-help')).toHaveAttribute('role', 'note')
+    expect(screen.getByTestId('cue-flow-targets-help')).toHaveTextContent(
+      i18n.t('settings.cueFlows.targets.hint'),
+    )
+  })
 
-    it('saves the proposal as a new default flow only on "Poner por defecto"', async () => {
-      await i18n.changeLanguage('es')
-      afterTest = () => i18n.changeLanguage('en')
-      learnable(Promise.resolve(LEARNED))
-      openAdd()
-      fireEvent.click(screen.getByTestId('cue-learn'))
-      fireEvent.click(await screen.findByTestId('cue-learned-use'))
-      const made = last?.cueFlows.find((f) => !KEPT.some((b) => b.id === f.id))
-      expect(made).toEqual({
-        id: expect.any(String),
-        name: 'Aprendido de mi colección',
-        markPoint: true,
-        rules: ONE_AT_32.rules,
-      })
-      expect(made?.id).not.toBe('learned')
-      expect(last?.cueFlows.slice(0, KEPT.length)).toEqual(KEPT)
-      expect(last?.activeCueFlow).toBe(made?.id)
-      expect(screen.queryByTestId('cue-learned')).toBeNull()
-    })
-
-    it('says pista in the singular when a single track is marked', async () => {
-      await i18n.changeLanguage('es')
-      afterTest = () => i18n.changeLanguage('en')
-      learnable(Promise.resolve({ ...LEARNED, coverage: { matching: 1, marked: 1 } }))
-      openAdd()
-      fireEvent.click(screen.getByTestId('cue-learn'))
-      expect(await screen.findByTestId('cue-learned-coverage')).toHaveTextContent(
-        'Encaja con 1 de 1 pista',
-      )
-      expect(screen.getByTestId('cue-learned-coverage')).not.toHaveTextContent('pistas')
-    })
-
-    it('discards the proposal without touching the flows', async () => {
-      learnable(Promise.resolve(LEARNED))
-      openAdd()
-      fireEvent.click(screen.getByTestId('cue-learn'))
-      fireEvent.click(await screen.findByTestId('cue-learned-discard'))
-      expect(screen.queryByTestId('cue-learned')).toBeNull()
-      expect(last?.cueFlows).toEqual(KEPT)
-      expect(last?.activeCueFlow).toBe('mine')
-    })
-
-    it('says the collection has no clear pattern when nothing is learned', async () => {
-      await i18n.changeLanguage('es')
-      afterTest = () => i18n.changeLanguage('en')
-      learnable(Promise.resolve(null))
-      openAdd()
-      fireEvent.click(screen.getByTestId('cue-learn'))
-      expect(await screen.findByTestId('cue-learn-none')).toHaveTextContent(
-        'Tu colección no tiene un patrón claro',
-      )
-      expect(last?.cueFlows).toEqual(KEPT)
-    })
-
-    it('drops a result that arrives after the DJ moved to another flow and keeps the button busy until it does', async () => {
-      let finish: (value: LearnedFlow | null) => void = () => {}
-      const rekordboxLearnFlow = learnable(
-        new Promise((done) => {
-          finish = done
-        }),
-      )
-      openAdd()
-      fireEvent.click(screen.getByTestId('cue-learn'))
-      pick('one-at-32')
-      openAdd()
-      expect(screen.getByTestId('cue-learn')).toBeDisabled()
-      fireEvent.click(screen.getByTestId('cue-learn'))
-      expect(rekordboxLearnFlow).toHaveBeenCalledTimes(1)
-      await act(async () => finish(LEARNED))
-      expect(screen.queryByTestId('cue-learned')).toBeNull()
-      expect(screen.getByTestId('cue-flow-picker')).toHaveTextContent('One cue at 32')
-      expect(screen.getByTestId('cue-learn')).toBeEnabled()
-    })
-
-    it('says the collection could not be read instead of spinning forever', async () => {
-      learnable(Promise.reject(new Error('locked')))
-      openAdd()
-      fireEvent.click(screen.getByTestId('cue-learn'))
-      expect(await screen.findByTestId('cue-learn-failed')).toBeInTheDocument()
-      expect(screen.queryByTestId('cue-learn-spinner')).toBeNull()
-    })
+  it('shows a program missing on this Mac unticked as well as off, since nothing goes there', async () => {
+    installApi({ traktorAvailable: async () => false, engineAvailable: async () => false })
+    render(<Harness collection="/c/master.db" />)
+    expect(screen.getByTestId('settings-cue-flow-to-traktor')).toBeDisabled()
+    expect(screen.getByTestId('settings-cue-flow-to-traktor')).not.toBeChecked()
+    expect(last?.cueFlowToTraktor).toBe(true)
   })
 
   // A flow placed in one program goes to the same file in the others the DJ keeps here.

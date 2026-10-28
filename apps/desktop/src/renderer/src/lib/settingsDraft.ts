@@ -34,6 +34,7 @@ export interface SyncedDraft {
   cueFlowToRekordbox: boolean
   cueFlowToTraktor: boolean
   cueFlowToEngine: boolean
+  cueLearnFromEdits: boolean
   hiddenSources: PlaylistSource[]
   syncEngineDj: boolean
   engineDjPlaylist: string
@@ -141,6 +142,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     cueFlowToRekordbox: s.cueFlowToRekordbox,
     cueFlowToTraktor: s.cueFlowToTraktor,
     cueFlowToEngine: s.cueFlowToEngine,
+    cueLearnFromEdits: s.cueLearnFromEdits,
     hiddenSources: s.hiddenSources,
     syncEngineDj: s.syncEngineDj,
     engineDjPlaylist: s.engineDjPlaylist,
