@@ -1,3 +1,4 @@
+import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { HOT_KINDS } from '../shared/cueRules'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import { TRAKTOR_CUE_HEX, TRAKTOR_HOT_OFFSET, traktorContentId } from '../shared/traktorContent'
@@ -59,15 +60,17 @@ function importedAt(date: string): number {
 }
 
 function collection(nml: string): Track[] {
-  return findEntries(nml).map((e) => {
-    const block = nml.slice(e.start, e.end)
-    const info = block.match(/<INFO\b[^>]*>/)?.[0] ?? ''
-    return {
-      key: `${e.volume}${e.dir}${e.file}`,
-      block,
-      imported: importedAt(attr(info, 'IMPORT_DATE')),
-    }
-  })
+  return findEntries(nml)
+    .filter((e) => e.file)
+    .map((e) => {
+      const block = nml.slice(e.start, e.end)
+      const info = block.match(/<INFO\b[^>]*>/)?.[0] ?? ''
+      return {
+        key: `${e.volume}${e.dir}${e.file}`,
+        block,
+        imported: importedAt(attr(info, 'IMPORT_DATE')),
+      }
+    })
 }
 
 // Traktor stores a path as VOLUME + DIR ("/:Users/:dj/:") + FILE. A drive letter is
@@ -173,17 +176,28 @@ function recentSince(now: Date): number {
 
 // Traktor dates an import to the day only; within a day the later ENTRY is the later
 // import, since Traktor appends new tracks to the end of the collection.
-function recentTracks(nml: string, now: Date): Track[] {
-  const since = recentSince(now)
-  return collection(nml)
+function newestFirst(tracks: Track[]): Track[] {
+  return tracks
     .map((t, order) => ({ t, order }))
-    .filter(({ t }) => t.imported >= since)
     .sort((a, b) => b.t.imported - a.t.imported || b.order - a.order)
     .map(({ t }) => t)
 }
 
+function recentTracks(nml: string, now: Date): Track[] {
+  const since = recentSince(now)
+  return newestFirst(collection(nml).filter((t) => t.imported >= since))
+}
+
 export function readTraktorRecentCount(nml: string, now: Date = new Date()): number {
   return recentTracks(nml, now).length
+}
+
+function allTracks(nml: string): Track[] {
+  return newestFirst(collection(nml).filter((t) => !isSeparator(t)))
+}
+
+export function readTraktorTrackCount(nml: string): number {
+  return allTracks(nml).length
 }
 
 export function readTraktorPlaylist(
@@ -193,6 +207,7 @@ export function readTraktorPlaylist(
   now: Date = new Date(),
 ): SourcePlaylistEntry[] {
   if (id === RECENTLY_ADDED_ID) return recentTracks(nml, now).map((t) => entryOf(t, bootVolume))
+  if (id === ALL_TRACKS_ID) return allTracks(nml).map((t) => entryOf(t, bootVolume))
   const list = nodeById(parsePlaylists(nml), id)
   if (list?.kind !== 'playlist') return []
   const tracks = collection(nml)

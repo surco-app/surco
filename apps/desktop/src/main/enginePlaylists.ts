@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
+import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { engineContentId } from '../shared/engineContent'
 import { mediaUrl } from '../shared/media'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
@@ -189,6 +190,20 @@ export function readEngineRecentCount(db: EngineDb, now: Date = new Date()): num
   return row.n
 }
 
+function readAllRows(db: EngineDb): EntityRow[] {
+  return db
+    .prepare(
+      `SELECT t.id, 0 AS next, ${ROW_FIELDS} FROM Track t
+        ORDER BY t.dateAdded DESC, t.id DESC`,
+    )
+    .all() as EntityRow[]
+}
+
+export function readEngineTrackCount(db: EngineDb): number {
+  const row = db.prepare('SELECT count(*) AS n FROM Track').get() as { n: number }
+  return row.n
+}
+
 function readPlaylistRows(db: EngineDb, id: string): EntityRow[] {
   return chainOrder(
     db
@@ -208,7 +223,12 @@ export function readEnginePlaylist(
   artDir: string,
   now: Date = new Date(),
 ): SourcePlaylistEntry[] {
-  const rows = id === RECENTLY_ADDED_ID ? readRecentRows(db, now) : readPlaylistRows(db, id)
+  const rows =
+    id === RECENTLY_ADDED_ID
+      ? readRecentRows(db, now)
+      : id === ALL_TRACKS_ID
+        ? readAllRows(db)
+        : readPlaylistRows(db, id)
   const covers = coverFiles(
     db,
     libraryDir,

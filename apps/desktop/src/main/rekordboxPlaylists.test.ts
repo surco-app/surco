@@ -2,6 +2,7 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, posix, win32 } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { mediaUrl } from '../shared/media'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import { openRekordboxDb } from './rekordboxDb'
@@ -11,6 +12,7 @@ import {
   readRecentlyAddedCount,
   readRekordboxPlaylist,
   readRekordboxPlaylistWithPreview,
+  readRekordboxTrackCount,
   readRekordboxTree,
 } from './rekordboxPlaylists'
 import { writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
@@ -371,6 +373,16 @@ describe('the recently added list', () => {
 
   it('counts what the list will show, so the tree number matches its rows', () => {
     expect(readRecentlyAddedCount(rdb, now)).toBe(4)
+  })
+
+  it('lists the whole collection for the tracks no playlist holds, newest first, the undated last', () => {
+    const rows = readRekordboxPlaylistWithPreview(rdb, share, ALL_TRACKS_ID, () => false, now)
+    expect(rows.map((r) => r.contentId)).toEqual(['c2', 'c1', 'c3', 'edge', 'old', 'undated'])
+    expect(rows[0]?.preview?.cues).toEqual([{ ms: 1000, kind: 1, color: 1 }])
+  })
+
+  it('counts the whole collection, so the tree number matches the rows', () => {
+    expect(readRekordboxTrackCount(rdb)).toBe(6)
   })
 
   it('gives its rows what any playlist row has, so they open, play and show cues alike', () => {

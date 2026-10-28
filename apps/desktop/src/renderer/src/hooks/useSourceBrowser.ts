@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { PlaylistSource, SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import { distinctTracks, musicEntries, musicTree, withReadCounts } from '../lib/appleMusicSource'
@@ -37,6 +38,11 @@ function readTree(source: PlaylistSource): Promise<SourceNode[]> {
 function readRecentCount(source: PlaylistSource): Promise<number> {
   if (source === 'traktor') return window.api.traktorRecentCount()
   return source === 'engine' ? window.api.engineRecentCount() : window.api.rekordboxRecentCount()
+}
+
+function readTrackCount(source: PlaylistSource): Promise<number> {
+  if (source === 'traktor') return window.api.traktorTrackCount()
+  return source === 'engine' ? window.api.engineTrackCount() : window.api.rekordboxTrackCount()
 }
 
 function readPlaylist(source: PlaylistSource, id: string): Promise<SourcePlaylistEntry[]> {
@@ -103,20 +109,40 @@ export function useSourceBrowser({
     enabled: hasRecent,
     staleTime: Number.POSITIVE_INFINITY,
   })
+  const all = useQuery({
+    queryKey: ['source-tree', source, 'all'],
+    queryFn: () => readTrackCount(source as PlaylistSource),
+    enabled: hasRecent,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
   const shownTree = useMemo(
     () =>
-      hasRecent && tree.data && recent.data !== undefined
+      hasRecent && tree.data
         ? [
-            {
-              id: RECENTLY_ADDED_ID,
-              name: tr('sources.recentlyAdded'),
-              kind: 'playlist' as const,
-              count: recent.data,
-            },
+            ...(all.data !== undefined
+              ? [
+                  {
+                    id: ALL_TRACKS_ID,
+                    name: tr('sources.allTracks'),
+                    kind: 'playlist' as const,
+                    count: all.data,
+                  },
+                ]
+              : []),
+            ...(recent.data !== undefined
+              ? [
+                  {
+                    id: RECENTLY_ADDED_ID,
+                    name: tr('sources.recentlyAdded'),
+                    kind: 'playlist' as const,
+                    count: recent.data,
+                  },
+                ]
+              : []),
             ...tree.data,
           ]
         : tree.data,
-    [hasRecent, tree.data, recent.data, tr],
+    [hasRecent, tree.data, all.data, recent.data, tr],
   )
   const entries = useQuery({
     queryKey: ['source-playlist', source, playlist?.id],

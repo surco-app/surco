@@ -8,6 +8,7 @@ import {
   openEngineDb,
   readEnginePlaylist,
   readEngineRecentCount,
+  readEngineTrackCount,
   readEngineTree,
 } from './enginePlaylists'
 
@@ -44,6 +45,9 @@ export function registerEnginePlaylistsIpc(
   ipcMain.handle('engine:tree', () => withEngineLibrary(libraryDir(), readEngineTree, []))
   ipcMain.handle('engine:recentCount', () =>
     withEngineLibrary(libraryDir(), (db) => readEngineRecentCount(db), 0),
+  )
+  ipcMain.handle('engine:trackCount', () =>
+    withEngineLibrary(libraryDir(), readEngineTrackCount, 0),
   )
   ipcMain.handle('engine:playlist', (_e, id: string) => {
     const dir = libraryDir()

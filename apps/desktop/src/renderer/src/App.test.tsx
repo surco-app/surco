@@ -15,6 +15,7 @@ import {
 import type React from 'react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../preload/api'
+import { ALL_TRACKS_ID } from '../../shared/allTracks'
 import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
@@ -2631,6 +2632,7 @@ describe('App source playlists', () => {
           .fn<Api['loadEngineTree']>()
           .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 3 }]),
         engineRecentCount: vi.fn<Api['engineRecentCount']>().mockResolvedValue(2),
+        engineTrackCount: vi.fn<Api['engineTrackCount']>().mockResolvedValue(40),
         loadEnginePlaylist: vi
           .fn<Api['loadEnginePlaylist']>()
           .mockImplementation(async (id) => (id === RECENTLY_ADDED_ID ? RECENT_ENTRIES : [])),
@@ -2638,10 +2640,14 @@ describe('App source playlists', () => {
       })
       await renderApp()
       fireEvent.click(await screen.findByTestId('source-rail-engine'))
+      const all = await screen.findByTestId(`source-node-${ALL_TRACKS_ID}`)
       const recent = await screen.findByTestId(`source-node-${RECENTLY_ADDED_ID}`)
-      expect(screen.getAllByTestId(/^source-node-/).filter((n) => n.tagName === 'BUTTON')[0]).toBe(
-        recent,
-      )
+      expect(
+        screen
+          .getAllByTestId(/^source-node-/)
+          .filter((n) => n.tagName === 'BUTTON')
+          .slice(0, 2),
+      ).toEqual([all, recent])
       expect(within(recent).getByTestId('source-node-recent-icon')).toBeInTheDocument()
       fireEvent.click(recent)
       await waitFor(() =>
@@ -2656,6 +2662,50 @@ describe('App source playlists', () => {
       await screen.findByTestId('track-menu')
       expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
       expect(screen.queryByTestId('track-menu-insert-separator')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('All tracks', () => {
+    const ALL_ENTRIES = [
+      { path: '/m/c.wav', separator: false, meta: {}, linkId: 'r3', contentId: 'r3' },
+      { path: '/m/a.wav', separator: false, meta: {}, linkId: 'r1', contentId: 'r1' },
+    ]
+
+    // A track in no playlist is found only here, and the rows it lists are the collection
+    // itself: a reorder, removal or separator would name a playlist rekordbox does not have.
+    it('opens the whole collection with no reorder, removal or separator on its rows', async () => {
+      await openFactory({
+        rekordboxTrackCount: vi.fn<Api['rekordboxTrackCount']>().mockResolvedValue(2078),
+        loadRekordboxPlaylist: vi
+          .fn<Api['loadRekordboxPlaylist']>()
+          .mockImplementation(async (id) => (id === ALL_TRACKS_ID ? ALL_ENTRIES : FACTORY_ENTRIES)),
+      })
+      const all = screen.getByTestId(`source-node-${ALL_TRACKS_ID}`)
+      expect(all).toHaveTextContent('2078')
+      fireEvent.click(all)
+      await waitFor(() =>
+        expect(titles()).toEqual([
+          expect.stringContaining('Charlie'),
+          expect.stringContaining('Alpha'),
+        ]),
+      )
+      expect(screen.queryByTestId('reorder-hint')).not.toBeInTheDocument()
+      expectNoReorderLine()
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      await screen.findByTestId('track-menu-add-to')
+      expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('track-menu-insert-separator')).not.toBeInTheDocument()
+    })
+
+    it('is never offered as a playlist to add tracks to', async () => {
+      await openFactory({
+        rekordboxTrackCount: vi.fn<Api['rekordboxTrackCount']>().mockResolvedValue(2078),
+      })
+      await screen.findByTestId(`source-node-${ALL_TRACKS_ID}`)
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('track-menu-add-to'))
+      expect(screen.getByTestId('track-menu-playlist-h')).toBeInTheDocument()
+      expect(screen.queryByTestId(`track-menu-playlist-${ALL_TRACKS_ID}`)).not.toBeInTheDocument()
     })
   })
 

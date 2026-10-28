@@ -191,16 +191,19 @@ const api: Api = {
   rekordboxAvailable: (): Promise<boolean> => ipcRenderer.invoke('rekordbox:available'),
   loadRekordboxTree: (): Promise<SourceNode[]> => ipcRenderer.invoke('rekordbox:tree'),
   rekordboxRecentCount: (): Promise<number> => ipcRenderer.invoke('rekordbox:recentCount'),
+  rekordboxTrackCount: (): Promise<number> => ipcRenderer.invoke('rekordbox:trackCount'),
   loadRekordboxPlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
     ipcRenderer.invoke('rekordbox:playlist', id),
   engineAvailable: (): Promise<boolean> => ipcRenderer.invoke('engine:available'),
   loadEngineTree: (): Promise<SourceNode[]> => ipcRenderer.invoke('engine:tree'),
   engineRecentCount: (): Promise<number> => ipcRenderer.invoke('engine:recentCount'),
+  engineTrackCount: (): Promise<number> => ipcRenderer.invoke('engine:trackCount'),
   loadEnginePlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
     ipcRenderer.invoke('engine:playlist', id),
   traktorAvailable: (): Promise<boolean> => ipcRenderer.invoke('traktor:available'),
   loadTraktorTree: (): Promise<SourceNode[]> => ipcRenderer.invoke('traktor:tree'),
   traktorRecentCount: (): Promise<number> => ipcRenderer.invoke('traktor:recentCount'),
+  traktorTrackCount: (): Promise<number> => ipcRenderer.invoke('traktor:trackCount'),
   loadTraktorPlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
     ipcRenderer.invoke('traktor:playlist', id),
   editRekordboxPlaylist: (

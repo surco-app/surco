@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
 import { useRekordboxMembership } from './useRekordboxPlaylists'
@@ -313,16 +314,57 @@ describe('useSourceBrowser', () => {
     expect(result.current.tree?.[1].id).toBe('house')
   })
 
+  // A track in no playlist has no other way into the tab, so the whole collection sits on
+  // top, counted in full like the library's own All Tracks.
+  it.each([
+    ['rekordbox', 'rekordboxTrackCount', 'loadRekordboxPlaylist'],
+    ['engine', 'engineTrackCount', 'loadEnginePlaylist'],
+    ['traktor', 'traktorTrackCount', 'loadTraktorPlaylist'],
+  ] as const)(
+    'puts All tracks first in %s, above Recently added, with the whole collection counted',
+    async (source, count, load) => {
+      const { result } = setup({
+        traktorAvailable: vi.fn().mockResolvedValue(true),
+        rekordboxRecentCount: vi.fn().mockResolvedValue(3),
+        engineRecentCount: vi.fn().mockResolvedValue(3),
+        [count]: vi.fn().mockResolvedValue(2078),
+      })
+      act(() => result.current.selectSource(source))
+      await waitFor(() => expect(result.current.tree).toHaveLength(3))
+      expect(result.current.tree?.[0]).toEqual({
+        id: ALL_TRACKS_ID,
+        name: 'sources.allTracks',
+        kind: 'playlist',
+        count: 2078,
+      })
+      expect(result.current.tree?.[1].id).toBe(RECENTLY_ADDED_ID)
+      act(() => result.current.selectPlaylist(result.current.tree?.[0] as SourceNode, []))
+      await waitFor(() => expect(result.current.entries).toHaveLength(1))
+      expect(window.api[load]).toHaveBeenCalledWith(ALL_TRACKS_ID)
+    },
+  )
+
+  it('re-counts All tracks whenever the tree is re-read, so a track just added shows up', async () => {
+    const rekordboxTrackCount = vi.fn().mockResolvedValueOnce(1).mockResolvedValue(2)
+    const { result, focus } = setup({ rekordboxTrackCount })
+    act(() => result.current.selectSource('rekordbox'))
+    await waitFor(() => expect(result.current.tree?.[0].count).toBe(1))
+    act(() => focus())
+    await waitFor(() => expect(result.current.tree?.[0].count).toBe(2))
+  })
+
   it('leaves Recently added out of Music, which has its own', async () => {
     const rekordboxRecentCount = vi.fn().mockResolvedValue(12)
     const loadAppleMusicPlaylists = vi
       .fn()
       .mockResolvedValue([{ persistentId: 'P1', name: 'Friday', count: 4 }])
-    const { result } = setup({ rekordboxRecentCount, loadAppleMusicPlaylists })
+    const rekordboxTrackCount = vi.fn().mockResolvedValue(2078)
+    const { result } = setup({ rekordboxRecentCount, rekordboxTrackCount, loadAppleMusicPlaylists })
     act(() => result.current.selectSource('appleMusic'))
     await waitFor(() => expect(result.current.tree).toHaveLength(1))
     expect(result.current.tree?.[0].id).toBe('P1')
     expect(rekordboxRecentCount).not.toHaveBeenCalled()
+    expect(rekordboxTrackCount).not.toHaveBeenCalled()
   })
 
   it('opens Recently added through the playlist read, so its rows behave like any playlist', async () => {

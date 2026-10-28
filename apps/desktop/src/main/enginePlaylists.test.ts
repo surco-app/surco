@@ -3,6 +3,7 @@ import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { mediaPathFromUrl } from '../shared/media'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import { analysedTrack } from './enginePerformanceFixture'
@@ -11,6 +12,7 @@ import {
   openEngineDb,
   readEnginePlaylist,
   readEngineRecentCount,
+  readEngineTrackCount,
   readEngineTree,
 } from './enginePlaylists'
 import {
@@ -345,6 +347,27 @@ describe('the recently added list', () => {
   it('counts what the list will show, so the tree number matches its rows', async () => {
     const db = opened(await recentLibrary())
     expect(readEngineRecentCount(db, now)).toBe(4)
+    db.close()
+  })
+
+  it('lists the whole library for the tracks no playlist holds, newest first, the undated last', async () => {
+    const dir = await recentLibrary()
+    const db = opened(dir)
+    const rows = readEnginePlaylist(db, dir, ALL_TRACKS_ID, join(dir, 'art'), now)
+    expect(rows.map((r) => r.preview?.title ?? null)).toEqual([
+      'Play',
+      'Night',
+      null,
+      'Edge',
+      'Old',
+      'Undated',
+    ])
+    db.close()
+  })
+
+  it('counts the whole library, so the tree number matches the rows', async () => {
+    const db = opened(await recentLibrary())
+    expect(readEngineTrackCount(db)).toBe(6)
     db.close()
   })
 

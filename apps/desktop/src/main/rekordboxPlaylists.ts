@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs'
 import path, { resolve } from 'node:path'
+import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { mediaUrl } from '../shared/media'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import type {
@@ -125,22 +126,23 @@ function entryOf(row: EntryRow): SourcePlaylistEntry {
   return { path: entryPath(row.FolderPath), separator: false, meta: metaOf(row), ...ids }
 }
 
-const RECENT = `coalesce(c.rb_local_deleted, 0) = 0 AND NOT ${IS_SEPARATOR} AND c.StockDate >= ?`
+const ALL = `coalesce(c.rb_local_deleted, 0) = 0 AND NOT ${IS_SEPARATOR}`
+const RECENT = `${ALL} AND c.StockDate >= ?`
 
 function recentSince(now: Date): string {
   return localDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30))
 }
 
-function readRecentlyAdded(db: RekordboxDb, now: Date): SourcePlaylistEntry[] {
+function readContent(db: RekordboxDb, where: string, params: string[]): SourcePlaylistEntry[] {
   const rows = db
     .prepare(
       `SELECT c.ID AS linkId, c.ID AS contentId, c.FolderPath, c.FileType, c.BPM, c.Rating, k.ScaleName, 0 AS sep
          FROM djmdContent c
          LEFT JOIN djmdKey k ON k.ID = c.KeyID
-        WHERE ${RECENT}
+        WHERE ${where}
         ORDER BY c.StockDate DESC, c.created_at DESC`,
     )
-    .all(recentSince(now)) as EntryRow[]
+    .all(...params) as EntryRow[]
   return rows.map(entryOf)
 }
 
@@ -148,6 +150,13 @@ export function readRecentlyAddedCount(db: RekordboxDb, now: Date = new Date()):
   const row = db
     .prepare(`SELECT count(*) AS n FROM djmdContent c WHERE ${RECENT}`)
     .get(recentSince(now)) as { n: number }
+  return row.n
+}
+
+export function readRekordboxTrackCount(db: RekordboxDb): number {
+  const row = db.prepare(`SELECT count(*) AS n FROM djmdContent c WHERE ${ALL}`).get() as {
+    n: number
+  }
   return row.n
 }
 
@@ -195,24 +204,33 @@ export function readRekordboxPlaylistWithPreview(
   exists: (p: string) => boolean = existsSync,
   now: Date = new Date(),
 ): SourcePlaylistEntry[] {
-  const recent = id === RECENTLY_ADDED_ID
-  const entries = recent ? readRecentlyAdded(db, now) : readRekordboxPlaylist(db, id)
-  const contentIds = recent ? `SELECT c.ID FROM djmdContent c WHERE ${RECENT}` : PLAYLIST_CONTENT
-  const param = recent ? recentSince(now) : id
+  const content =
+    id === RECENTLY_ADDED_ID
+      ? { where: RECENT, params: [recentSince(now)] }
+      : id === ALL_TRACKS_ID
+        ? { where: ALL, params: [] }
+        : null
+  const entries = content
+    ? readContent(db, content.where, content.params)
+    : readRekordboxPlaylist(db, id)
+  const contentIds = content
+    ? `SELECT c.ID FROM djmdContent c WHERE ${content.where}`
+    : PLAYLIST_CONTENT
+  const params = content ? content.params : [id]
   const rows = db
     .prepare(
       `SELECT c.ID AS contentId, c.Title, a.Name AS Artist, c.Length, c.ImagePath, c.AnalysisDataPath
          FROM djmdContent c LEFT JOIN djmdArtist a ON a.ID = c.ArtistID
         WHERE c.ID IN (${contentIds})`,
     )
-    .all(param) as PreviewRow[]
+    .all(...params) as PreviewRow[]
   const cueRows = db
     .prepare(
       `SELECT ContentID AS contentId, InMsec, Kind, ColorTableIndex FROM djmdCue
         WHERE coalesce(rb_local_deleted, 0) = 0 AND ContentID IN (${contentIds})
         ORDER BY InMsec`,
     )
-    .all(param) as CueRow[]
+    .all(...params) as CueRow[]
   const cues = new Map<string, RowCue[]>()
   for (const c of cueRows) {
     const list = cues.get(String(c.contentId)) ?? []

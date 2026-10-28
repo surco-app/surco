@@ -297,6 +297,7 @@ function scenarioApi(
     traktorAvailable: async () => false,
     loadRekordboxTree: async () => [],
     rekordboxRecentCount: async () => 0,
+    rekordboxTrackCount: async () => 0,
     loadRekordboxPlaylist: async () => [],
     rekordboxHasSeparator: async () => false,
     traktorHasSeparator: async () => false,

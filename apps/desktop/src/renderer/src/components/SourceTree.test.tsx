@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { useEffect, useState } from 'react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { SourceNode } from '../../../shared/types'
 import i18n from '../i18n'
@@ -691,6 +692,42 @@ describe('SourceTree Recently added', () => {
   // go, and it must not fall through to the window import either.
   it('takes no drop and keeps it from reaching the window import', () => {
     const { edit, onOuterDrop } = setup(null, true, [RECENT, ...NODES])
+    const dt = files('a.wav')
+    fireEvent.dragOver(node(), { dataTransfer: dt })
+    expect(node()).not.toHaveAttribute('data-drop-target')
+    fireEvent.drop(node(), { dataTransfer: dt })
+    expect(edit.onDropTracks).not.toHaveBeenCalled()
+    expect(onOuterDrop).not.toHaveBeenCalled()
+  })
+})
+
+describe('SourceTree All tracks', () => {
+  const ALL: SourceNode = { id: ALL_TRACKS_ID, name: 'All tracks', kind: 'playlist', count: 2078 }
+  const node = () => screen.getByTestId(`source-node-${ALL_TRACKS_ID}`)
+
+  it('marks it with its own icon, so it reads as the whole collection and not a playlist', () => {
+    setup(null, true, [ALL, ...NODES])
+    expect(within(node()).getByTestId('source-node-all-icon')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-node-recent-icon')).not.toBeInTheDocument()
+  })
+
+  it('shows the whole collection’s count', () => {
+    setup(null, true, [ALL, ...NODES])
+    expect(node()).toHaveTextContent('2078')
+  })
+
+  // It is the collection, not a playlist in it: a rename or delete would be sent to a
+  // playlist that does not exist.
+  it('offers no rename or delete', () => {
+    setup(null, true, [ALL, ...NODES])
+    fireEvent.contextMenu(node(), { clientX: 10, clientY: 10 })
+    expect(screen.queryByTestId('source-tree-menu')).not.toBeInTheDocument()
+  })
+
+  // Everything in the collection is already in it, so a drop has nowhere to go, and it must
+  // not fall through to the window import either.
+  it('takes no drop and keeps it from reaching the window import', () => {
+    const { edit, onOuterDrop } = setup(null, true, [ALL, ...NODES])
     const dt = files('a.wav')
     fireEvent.dragOver(node(), { dataTransfer: dt })
     expect(node()).not.toHaveAttribute('data-drop-target')

@@ -11,6 +11,7 @@ import {
   useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ALL_TRACKS_ID } from '../../shared/allTracks'
 import { autoMatchAvailable, usableProviders } from '../../shared/autoMatch'
 import { trashLimits } from '../../shared/backupPolicy'
 import type { CueJumpBars } from '../../shared/cueJump'
@@ -2236,7 +2237,10 @@ export default function App(): React.JSX.Element {
     ((browser.source === 'engine' || browser.source === 'traktor') &&
       browser.playlist !== null &&
       playlistScope !== null)
-  const crateOpen = editableOpen && browser.playlist?.id !== RECENTLY_ADDED_ID
+  const crateOpen =
+    editableOpen &&
+    browser.playlist?.id !== RECENTLY_ADDED_ID &&
+    browser.playlist?.id !== ALL_TRACKS_ID
   const pendingCuePaths = useMemo(
     () =>
       new Set(
@@ -2411,6 +2415,7 @@ export default function App(): React.JSX.Element {
         (h) =>
           h.node.id !== playlist?.id &&
           h.node.id !== RECENTLY_ADDED_ID &&
+          h.node.id !== ALL_TRACKS_ID &&
           (browser.source !== 'traktor' || traktorFixed(h.node) !== 'locked'),
       ),
       openName: crateOpen && playlist ? playlist.name : null,

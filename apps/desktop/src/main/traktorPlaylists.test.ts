@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { HOT_KINDS } from '../shared/cueRules'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import { traktorContentId } from '../shared/traktorContent'
@@ -9,6 +10,7 @@ import {
   nmlPath,
   readTraktorPlaylist,
   readTraktorRecentCount,
+  readTraktorTrackCount,
   readTraktorTree,
   TRAKTOR_TYPE_COLOR,
   traktorSeparatorKey,
@@ -240,6 +242,29 @@ describe('recently added', () => {
       '/Users/dj/Music/d.mp3',
       '/Users/dj/Music/a.mp3',
       '/Users/dj/Music/b.flac',
+    ])
+  })
+})
+
+describe('all tracks', () => {
+  const separator: Track = { file: 'sep.mp3', title: '', playtime: '1' }
+  const tracks: Track[] = [
+    { ...A, imported: '2019/3/1' },
+    { ...B, imported: '2024/5/2' },
+    separator,
+    { ...C, imported: '2024/5/2' },
+  ]
+  const doc = nml(tracks, [playlist('Fri', 'fri', [A])])
+
+  it('counts the whole collection, so a track in no playlist can still be found', () => {
+    expect(readTraktorTrackCount(doc)).toBe(3)
+  })
+
+  it('lists every track newest first and leaves the separator files out', () => {
+    expect(readTraktorPlaylist(doc, ALL_TRACKS_ID, 'Macintosh HD').map((e) => e.path)).toEqual([
+      '/Volumes/Stick/Sets/c.aiff',
+      '/Users/dj/Music/b.flac',
+      '/Users/dj/Music/a.mp3',
     ])
   })
 })

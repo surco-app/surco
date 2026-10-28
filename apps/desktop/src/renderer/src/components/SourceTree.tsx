@@ -1,7 +1,17 @@
-import { ChevronDown, ChevronRight, Clock, FolderPlus, ListPlus, Search, Usb } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  FolderPlus,
+  Library,
+  ListPlus,
+  Search,
+  Usb,
+} from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
 import type { NewPlaylist } from '../lib/commands'
@@ -229,7 +239,8 @@ export function SourceTree({
   ): React.JSX.Element => {
     const isFolder = node.kind === 'folder'
     const recent = node.id === RECENTLY_ADDED_ID
-    const nodeEdit = recent ? undefined : edit
+    const all = node.id === ALL_TRACKS_ID
+    const nodeEdit = recent || all ? undefined : edit
     const fixedAs = fixed?.(node) ?? null
     const dropEdit = fixedAs === 'locked' ? undefined : nodeEdit
     const menuEdit = fixedAs === null ? nodeEdit : undefined
@@ -304,6 +315,14 @@ export function SourceTree({
               <Clock
                 size={13}
                 data-testid="source-node-recent-icon"
+                className="shrink-0 text-fg-faint"
+                aria-hidden="true"
+              />
+            )}
+            {all && (
+              <Library
+                size={13}
+                data-testid="source-node-all-icon"
                 className="shrink-0 text-fg-faint"
                 aria-hidden="true"
               />
