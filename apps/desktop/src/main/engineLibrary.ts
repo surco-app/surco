@@ -354,7 +354,13 @@ export function rootListId(db: Database, title: string): number {
   return lastId(db)
 }
 
-export function appendToList(db: Database, listId: number, trackId: number, uuid: string): void {
+export function appendToList(
+  db: Database,
+  listId: number,
+  trackId: number,
+  uuid: string,
+  ref = 0,
+): void {
   const member = db.exec(
     'SELECT id FROM PlaylistEntity WHERE listId = ? AND trackId = ? AND databaseUuid = ?',
     [listId, trackId, uuid],
@@ -364,8 +370,8 @@ export function appendToList(db: Database, listId: number, trackId: number, uuid
   // entity as the tail, then point the previous tail at it so Engine reads the
   // playlist back in add order.
   db.run(
-    'INSERT INTO PlaylistEntity (listId, trackId, databaseUuid, nextEntityId, membershipReference) VALUES (?, ?, ?, 0, 0)',
-    [listId, trackId, uuid],
+    'INSERT INTO PlaylistEntity (listId, trackId, databaseUuid, nextEntityId, membershipReference) VALUES (?, ?, ?, 0, ?)',
+    [listId, trackId, uuid, ref],
   )
   const entityId = lastId(db)
   db.run(

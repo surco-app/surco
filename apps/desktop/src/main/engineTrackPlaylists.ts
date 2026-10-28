@@ -30,6 +30,48 @@ function trackOf(
   return null
 }
 
+function parentOf(db: Database, listId: number): number {
+  return Number(
+    db.exec('SELECT parentListId FROM Playlist WHERE id = ?', [listId])[0]?.values[0][0] ?? 0,
+  )
+}
+
+// Every folder above the lists, deepest first, so a folder is counted after the ones in it.
+function foldersAbove(db: Database, lists: number[]): number[] {
+  const depth = new Map<number, number>()
+  for (const list of lists) {
+    const chain: number[] = []
+    for (let at = parentOf(db, list); at !== 0 && !chain.includes(at); at = parentOf(db, at))
+      chain.push(at)
+    for (const [i, folder] of chain.entries())
+      depth.set(folder, Math.max(depth.get(folder) ?? 0, chain.length - i))
+  }
+  return [...depth].sort((a, b) => b[1] - a[1]).map(([folder]) => folder)
+}
+
+// Engine DJ files a track in each folder above its lists too, with membershipReference
+// counting how many of the folder's lists hold it: the same count the USB export keeps.
+function recountFolder(db: Database, folder: number, trackId: number, uuid: string): void {
+  const ref = Number(
+    db.exec(
+      `SELECT count(*) FROM Playlist c WHERE c.parentListId = ? AND EXISTS
+         (SELECT 1 FROM PlaylistEntity e WHERE e.listId = c.id AND e.trackId = ?)`,
+      [folder, trackId],
+    )[0].values[0][0],
+  )
+  const counted = db.exec(
+    'SELECT id FROM PlaylistEntity WHERE listId = ? AND trackId = ? AND membershipReference > 0',
+    [folder, trackId],
+  )[0]?.values[0][0]
+  if (ref === 0) {
+    if (counted !== undefined) db.run('DELETE FROM PlaylistEntity WHERE id = ?', [counted])
+    return
+  }
+  if (counted !== undefined)
+    db.run('UPDATE PlaylistEntity SET membershipReference = ? WHERE id = ?', [ref, counted])
+  else appendToList(db, folder, trackId, uuid, ref)
+}
+
 export function planEngineTrackPlaylists(
   db: Database,
   libraryDir: string,
@@ -44,8 +86,11 @@ export function planEngineTrackPlaylists(
   ).map(([id, title, parent]) => ({ id: Number(id), title: String(title), parent: Number(parent) }))
   const holding = new Set(
     (
-      db.exec('SELECT DISTINCT listId FROM PlaylistEntity WHERE trackId = ?', [trackId])[0]
-        ?.values ?? []
+      db.exec(
+        `SELECT DISTINCT e.listId FROM PlaylistEntity e WHERE e.trackId = ? AND e.membershipReference = 0
+           AND NOT EXISTS (SELECT 1 FROM Playlist c WHERE c.parentListId = e.listId)`,
+        [trackId],
+      )[0]?.values ?? []
     ).map(([id]) => Number(id)),
   )
   const notices: RekordboxQueueNotice[] = []
@@ -85,7 +130,12 @@ export function planEngineTrackPlaylists(
       for (const id of adds) appendToList(target, id, trackId, uuid)
       for (const name of names) appendToList(target, rootListId(target, name), trackId, uuid)
       for (const id of removes)
-        target.run('DELETE FROM PlaylistEntity WHERE listId = ? AND trackId = ?', [id, trackId])
+        target.run(
+          'DELETE FROM PlaylistEntity WHERE listId = ? AND trackId = ? AND membershipReference = 0',
+          [id, trackId],
+        )
+      for (const folder of foldersAbove(target, [...adds, ...removes]))
+        recountFolder(target, folder, trackId, uuid)
     },
   }
 }

@@ -488,3 +488,27 @@ describe('readEngineMembership', () => {
     db.close()
   })
 })
+
+// Engine DJ keeps an entry in each parent list counting how many of its children hold the
+// track (membershipReference). That entry is Engine's bookkeeping, not a list the DJ chose.
+describe('readEngineMembership under a folder', () => {
+  it('names only the lists the track was put in, never the folder that counts them', async () => {
+    const dir = await library({
+      tracks: TRACKS,
+      playlists: [
+        { id: 2, title: 'Bases', parentListId: 0, nextListId: 0 },
+        { id: 4, title: '24', parentListId: 2, nextListId: 8 },
+        { id: 8, title: 'All', parentListId: 2, nextListId: 0 },
+      ],
+      entities: [
+        { id: 1, listId: 2, trackId: 1, nextEntityId: 0, ref: 2 },
+        { id: 2, listId: 4, trackId: 1, nextEntityId: 0 },
+        { id: 3, listId: 8, trackId: 1, nextEntityId: 0 },
+      ],
+    })
+    const at = resolve(dir, '../Music/Rebel Vision/Night Train.aiff')
+    const db = opened(dir)
+    expect(readEngineMembership(db, dir, [at], (p) => p)).toEqual({ [at]: ['4', '8'] })
+    db.close()
+  })
+})
