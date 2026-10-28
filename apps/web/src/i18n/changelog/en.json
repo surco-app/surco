@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.15",
+    "date": "October 28, 2026",
+    "title": "Auto mark learns from you",
+    "items": [
+      {
+        "text": "Auto mark learns how you mark. In Settings › Cues, “Learn from my tracks” reads the cues you already placed in rekordbox and tunes Auto to you. It only keeps the tuning if it finds your marks better on tracks it sets aside to check, and it tells you how many of every 10 places you mark it finds.",
+        "in": "1.15.0"
+      },
+      {
+        "text": "With “Learn while you correct”, every track you save in the cue editor adds to what Surco learned, Traktor and Engine DJ tracks too, and Surco learns again on its own every 10.",
+        "in": "1.15.0"
+      },
+      {
+        "text": "Auto mark tells sure from doubtful. Sure proposals show a solid line and doubtful ones a dashed line and a question mark, and in full screen each one says how many bars of weak bass came before it. With several tracks, “Accept the N sure ones” leaves only the doubtful ones to review by hand.",
+        "in": "1.15.0"
+      },
+      {
+        "text": "The “How you mark” card also shows your countdown, how often you put the CALL under it and whether you usually place a start cue, and “Use as a flow” turns it into a flow.",
+        "in": "1.15.0"
+      }
+    ]
+  },
+  {
     "version": "1.14",
     "date": "October 27, 2026",
     "title": "Nothing left behind",

@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.15",
+    "date": "October 28, 2026",
+    "title": "Auto-Markieren lernt von dir",
+    "items": [
+      {
+        "text": "Auto-Markieren lernt, wie du markierst. Unter Einstellungen › Cues liest „Aus meinen Tracks lernen“ die Cues, die du schon in rekordbox gesetzt hast, und passt Auto an dich an. Es behält die Anpassung nur, wenn es deine Markierungen in Tracks, die es zum Prüfen beiseitelegt, besser findet, und sagt dir, wie viele von 10 Stellen, die du markierst, es findet.",
+        "in": "1.15.0"
+      },
+      {
+        "text": "Mit „Beim Korrigieren lernen“ fließt jeder Track, den du im Cue-Editor speicherst, ins Gelernte ein, auch Tracks aus Traktor und Engine DJ, und Surco lernt alle 10 von selbst neu.",
+        "in": "1.15.0"
+      },
+      {
+        "text": "Auto-Markieren unterscheidet Sicheres von Unsicherem. Sichere Vorschläge zeigen eine durchgehende Linie, unsichere eine gestrichelte mit Fragezeichen, und im Vollbild sagt jeder, wie viele Takte mit wenig Bass davor kamen. Bei mehreren Tracks lässt „Die N sicheren übernehmen“ nur die unsicheren zum Prüfen von Hand übrig.",
+        "in": "1.15.0"
+      },
+      {
+        "text": "Die Karte „Wie du markierst“ zeigt auch deinen Countdown, wie oft du den CALL darunter setzt und ob du meistens einen Start-Cue setzt, und „Als Ablauf verwenden“ macht daraus einen Ablauf.",
+        "in": "1.15.0"
+      }
+    ]
+  },
+  {
     "version": "1.14",
     "date": "October 27, 2026",
     "title": "Nichts bleibt zurück",

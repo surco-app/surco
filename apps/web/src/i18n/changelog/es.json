@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.15",
+    "date": "28 de octubre de 2026",
+    "title": "Auto marcar aprende de ti",
+    "items": [
+      {
+        "text": "Auto marcar aprende tu forma de marcar. En Ajustes › Cues, «Aprender de mis pistas» lee las cues que ya pusiste en rekordbox y ajusta Auto a ti. Solo se queda con el ajuste si encuentra mejor tus marcas en pistas que aparta para comprobarlo, y te dice cuántos de cada 10 sitios donde marcas encuentra.",
+        "in": "1.15.0"
+      },
+      {
+        "text": "Con «Aprender mientras corriges», cada pista que guardas en el editor de cues se suma a lo aprendido, también las de Traktor y Engine DJ, y Surco vuelve a aprender solo cada 10.",
+        "in": "1.15.0"
+      },
+      {
+        "text": "Auto marcar distingue lo seguro de lo dudoso. Las propuestas seguras se ven con línea continua y las dudosas discontinuas y con interrogación, y a pantalla completa cada una dice cuántos compases con poco grave había antes. Con varias pistas, «Aceptar las N seguras» deja solo las dudosas para revisar a mano.",
+        "in": "1.15.0"
+      },
+      {
+        "text": "La tarjeta «Tu forma de marcar» enseña también tu cuenta atrás, cuántas veces pones el CALL debajo y si sueles poner cue de inicio, y con «Usar como flujo» la conviertes en un flujo.",
+        "in": "1.15.0"
+      }
+    ]
+  },
+  {
     "version": "1.14",
     "date": "27 de octubre de 2026",
     "title": "Nada se queda por el camino",

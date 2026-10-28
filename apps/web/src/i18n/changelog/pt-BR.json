@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.15",
+    "date": "October 28, 2026",
+    "title": "A marcação automática aprende com você",
+    "items": [
+      {
+        "text": "A marcação automática aprende seu jeito de marcar. Em Ajustes › Cues, “Aprender com minhas faixas” lê os cues que você já colocou no rekordbox e ajusta o Marcar automático a você. Ele só fica com o ajuste se encontrar melhor suas marcas em faixas que separa para conferir, e diz quantos de cada 10 lugares onde você marca ele encontra.",
+        "in": "1.15.0"
+      },
+      {
+        "text": "Com “Aprender enquanto você corrige”, cada faixa que você salva no editor de cues soma ao que foi aprendido, também as do Traktor e do Engine DJ, e o Surco aprende de novo sozinho a cada 10.",
+        "in": "1.15.0"
+      },
+      {
+        "text": "A marcação automática separa o certo do duvidoso. As propostas certas aparecem com linha contínua e as duvidosas tracejadas e com interrogação, e em tela cheia cada uma diz quantos compassos com pouco grave vieram antes. Com várias faixas, “Aceitar as N certas” deixa só as duvidosas para revisar à mão.",
+        "in": "1.15.0"
+      },
+      {
+        "text": "O cartão “Seu jeito de marcar” mostra também sua contagem regressiva, quantas vezes você põe o CALL embaixo e se costuma colocar cue de início, e “Usar como fluxo” transforma isso num fluxo.",
+        "in": "1.15.0"
+      }
+    ]
+  },
+  {
     "version": "1.14",
     "date": "October 27, 2026",
     "title": "Nada fica para trás",

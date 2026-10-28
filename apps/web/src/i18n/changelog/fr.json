@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.15",
+    "date": "October 28, 2026",
+    "title": "Le marquage auto apprend de toi",
+    "items": [
+      {
+        "text": "Le marquage auto apprend ta façon de marquer. Dans Réglages › Cues, « Apprendre de mes morceaux » lit les cues que tu as déjà posés dans rekordbox et adapte le marquage auto à toi. Il ne garde l’ajustement que s’il trouve mieux tes marques sur des morceaux qu’il met de côté pour vérifier, et il te dit combien d’endroits sur 10 que tu marques il trouve.",
+        "in": "1.15.0"
+      },
+      {
+        "text": "Avec « Apprendre pendant que tu corriges », chaque morceau que tu enregistres dans l’éditeur de cues s’ajoute à ce qui est appris, ceux de Traktor et d’Engine DJ aussi, et Surco réapprend tout seul tous les 10.",
+        "in": "1.15.0"
+      },
+      {
+        "text": "Le marquage auto distingue le sûr du douteux. Les propositions sûres ont une ligne continue et les douteuses une ligne pointillée avec un point d’interrogation, et en plein écran chacune dit combien de mesures avec peu de basses la précédaient. Avec plusieurs morceaux, « Accepter les N sûres » ne laisse que les douteuses à vérifier à la main.",
+        "in": "1.15.0"
+      },
+      {
+        "text": "La carte « Ta façon de marquer » montre aussi ton compte à rebours, combien de fois tu mets le CALL dessous et si tu poses en général un cue de départ, et « Utiliser comme flux » en fait un flux.",
+        "in": "1.15.0"
+      }
+    ]
+  },
+  {
     "version": "1.14",
     "date": "October 27, 2026",
     "title": "Rien ne reste en route",
