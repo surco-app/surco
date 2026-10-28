@@ -56,8 +56,9 @@ vi.mock('./appleMusicArtwork', () => ({
   fetchAppleMusicArtwork: (...args: unknown[]) => fetchAppleMusicArtwork(...args),
 }))
 const readAppleMusicPlaylist = vi.fn()
+const dumpAppleMusicPlaylists = vi.fn()
 vi.mock('./appleMusicPlaylists', () => ({
-  dumpAppleMusicPlaylists: vi.fn(),
+  dumpAppleMusicPlaylists: (...args: unknown[]) => dumpAppleMusicPlaylists(...args),
   readAppleMusicEntry: vi.fn(),
   readAppleMusicPlaylist: (...args: unknown[]) => readAppleMusicPlaylist(...args),
 }))
@@ -230,5 +231,91 @@ describe('applemusic:artwork', () => {
       { persistentId: 'PB', outPath: '/tmp/art/PB.jpg' },
     ])
     expect(out).toEqual({ PB: { coverPath: '/tmp/art/PB.jpg', coverUrl: 'thumb://pb' } })
+  })
+})
+
+describe('reading Apple Music', () => {
+  const deferred = <T>() => {
+    let resolve: (value: T) => void = () => {}
+    const promise = new Promise<T>((r) => {
+      resolve = r
+    })
+    return { promise, resolve }
+  }
+  const empty = { paths: [], persistentIds: {}, meta: {}, missing: 0 }
+  const settle = () => new Promise((r) => setTimeout(r, 0))
+  const invoke = (channel: string, ...args: unknown[]) =>
+    handlers.get(channel)?.({}, ...args) as Promise<unknown>
+
+  beforeEach(async () => {
+    handlers.clear()
+    vi.resetModules()
+    readAppleMusicPlaylist.mockReset()
+    dumpAppleMusicPlaylists.mockReset()
+    fetchAppleMusicArtwork.mockReset()
+    vi.stubGlobal('process', { ...process, platform: 'darwin' })
+    const { registerAppleMusicIpc } = await import('./appleMusicIpc')
+    registerAppleMusicIpc()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  // Music answers one AppleEvent at a time; fifteen sent together queued inside Music until
+  // all of them timed out, and no playlist opened at all.
+  it('sends Music one read at a time', async () => {
+    const first = deferred<typeof empty>()
+    readAppleMusicPlaylist.mockReturnValueOnce(first.promise).mockResolvedValue(empty)
+    const a = invoke('applemusic:playlistTracks', 'A')
+    await settle()
+    const b = invoke('applemusic:playlistTracks', 'B')
+    await settle()
+    expect(readAppleMusicPlaylist).toHaveBeenCalledTimes(1)
+    first.resolve(empty)
+    await a
+    await b
+    expect(readAppleMusicPlaylist).toHaveBeenLastCalledWith('B')
+  })
+
+  it('drops a playlist still waiting its turn once another is opened, since nobody is looking at it', async () => {
+    const first = deferred<typeof empty>()
+    readAppleMusicPlaylist.mockReturnValueOnce(first.promise).mockResolvedValue(empty)
+    const a = invoke('applemusic:playlistTracks', 'A')
+    await settle()
+    const b = invoke('applemusic:playlistTracks', 'B')
+    await settle()
+    const c = invoke('applemusic:playlistTracks', 'C')
+    await expect(b).rejects.toThrow()
+    first.resolve(empty)
+    await a
+    await c
+    expect(readAppleMusicPlaylist.mock.calls.map(([id]) => id)).toEqual(['A', 'C'])
+  })
+
+  it('shares one listing of the playlists among the asks made while it runs', async () => {
+    const listing = deferred<unknown[]>()
+    dumpAppleMusicPlaylists.mockReturnValue(listing.promise)
+    const a = invoke('applemusic:playlists')
+    const b = invoke('applemusic:playlists')
+    listing.resolve([{ persistentId: 'p1', name: 'Friday', count: 1 }])
+    expect(await a).toEqual(await b)
+    expect(dumpAppleMusicPlaylists).toHaveBeenCalledTimes(1)
+  })
+
+  it('opens a playlist ahead of the covers still waiting', async () => {
+    const first = deferred<typeof empty>()
+    readAppleMusicPlaylist.mockReturnValueOnce(first.promise).mockResolvedValue(empty)
+    fetchAppleMusicArtwork.mockResolvedValue([])
+    const order: string[] = []
+    const a = invoke('applemusic:playlistTracks', 'A')
+    await settle()
+    const covers = invoke('applemusic:artwork', ['PX']).then(() => order.push('covers'))
+    await settle()
+    const b = invoke('applemusic:playlistTracks', 'B').then(() => order.push('B'))
+    await settle()
+    first.resolve(empty)
+    await Promise.all([a, covers, b])
+    expect(order).toEqual(['B', 'covers'])
   })
 })
