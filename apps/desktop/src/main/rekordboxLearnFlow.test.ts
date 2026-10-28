@@ -5,13 +5,13 @@ import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { anlzFile, pqtzSection, pssiSection, pwavSection, pwv5Section } from './anlzFixture'
 import { openRekordboxDb } from './rekordboxDb'
-import { readCollectionMarks } from './rekordboxLearnFlow'
+import { markedTracks, readCollectionMarks, readCollectionMarksAt } from './rekordboxLearnFlow'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 
 const ANLZ = '/PIONEER/USBANLZ/219/e40e4/ANLZ0000.DAT'
 const BEATS = Array.from({ length: 64 }, (_, i) => i * 500)
 
-async function collection(cueRows: { ID: string; InMsec: number; Kind: number }[]) {
+async function collectionAt(cueRows: { ID: string; InMsec: number; Kind: number }[]) {
   const dir = await mkdtemp(join(tmpdir(), 'surco-rblearn-'))
   const path = join(dir, 'master.db')
   writeRekordboxPlaylistFixture(path, {
@@ -38,6 +38,11 @@ async function collection(cueRows: { ID: string; InMsec: number; Kind: number }[
       pwv5Section(Array.from({ length: 4800 }, () => ({ r: 7, g: 7, b: 7, h: 31 }))),
     ),
   )
+  return { path, share }
+}
+
+async function collection(cueRows: { ID: string; InMsec: number; Kind: number }[]) {
+  const { path, share } = await collectionAt(cueRows)
   const db = openRekordboxDb(path, { readonly: true })
   if (!db) throw new Error('did not open')
   return { db, share }
@@ -69,5 +74,32 @@ describe('readCollectionMarks', () => {
     const pause = vi.fn(async () => {})
     await readCollectionMarks(db, share, pause)
     expect(pause).toHaveBeenCalled()
+  })
+})
+
+describe('markedTracks', () => {
+  it('counts the tracks with a CALL, the ones Surco can learn from, before the DJ asks it to', async () => {
+    const { path } = await collectionAt([
+      { ID: 'h', InMsec: 8000, Kind: 1 },
+      { ID: 'd', InMsec: 16000, Kind: 0 },
+      { ID: 'e', InMsec: 20000, Kind: 0 },
+    ])
+    expect(markedTracks(path)).toBe(1)
+  })
+
+  it('counts nothing without a collection', () => {
+    expect(markedTracks('')).toBe(0)
+  })
+})
+
+describe('readCollectionMarksAt', () => {
+  it('opens the collection read-only and reads its marks', async () => {
+    const { path } = await collectionAt([{ ID: 'd', InMsec: 16000, Kind: 0 }])
+    const marks = await readCollectionMarksAt(path)
+    expect(marks?.taste.map((t) => t.key)).toEqual(['103'])
+  })
+
+  it('reads nothing without a collection', async () => {
+    expect(await readCollectionMarksAt('')).toBeNull()
   })
 })
