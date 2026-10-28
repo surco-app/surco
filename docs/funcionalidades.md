@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 27 de octubre de 2026** (v1.14.0, japonés, cola por colección y Apple Music conserva playlists). Levantado por primera vez el
+**Última revisión: 28 de octubre de 2026** (v1.15.0, Auto marcar aprende de cada DJ, seguras y dudosas). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -1544,9 +1544,9 @@ desde dónde cuenta (el punto, el primer o último golpe, o cada intro, subida, 
 estribillo u outro del análisis de frases de rekordbox), el sentido, la distancia en compases,
 cuántas veces repite, una condición (siempre, si cabe, si no hay otra cue en ese compás, si no
 hay otra antes del punto), si pone hot cue, CALL o ambos, y el color. Los flujos propios se
-crean en Ajustes → Cues, con una vista previa sobre una pista de ejemplo a 128 BPM, y
-**«Aprender de mi colección»** propone uno a partir de los cues que ya tiene la colección y
-dice con cuántas pistas encaja (`rekordboxLearnFlow.ts:45`, `shared/learnFlow.ts:306`).
+crean en Ajustes → Cues, con una vista previa sobre una pista de ejemplo a 128 BPM. La
+cuenta atrás aprendida de la colección se puede convertir en flujo desde la tarjeta «Tu forma
+de marcar» (abajo).
 
 **Vista previa y clic.** Al pasar el ratón por la onda se ve en transparente lo que pondría el
 flujo (`CueFlowPreview.tsx`) y un clic lo coloca en ese punto; lo que no cabe se dice en vez de
@@ -1561,6 +1561,29 @@ en una, y no se guarda nada hasta aceptarlas. Con varias filas seleccionadas de 
 vez las revisadas. Medido sobre pistas apartadas de una colección real con los drops que
 marcó su DJ: encuentra en torno al 68 % de los drops y en torno al 70 % de sus propuestas son
 drops (`dropDetectMeasure.test.ts`). Necesita el análisis de rekordbox.
+
+**Seguras y dudosas** (nuevo en v1.15.0). Cada propuesta es segura o dudosa según la
+puntuación del detector (`SURE_SCORE`, `shared/dropDetect.ts:37`): las seguras se dibujan con
+línea continua y las dudosas discontinuas y con «¿Rompe aquí?». A pantalla completa cada una
+dice cuántos compases con poco grave había antes; es lo que se oyó, no la razón de la
+seguridad. Medido en pistas apartadas: aciertan el 85 % de las seguras y el 55 % de las
+dudosas (`autoMarkTasteMeasure.test.ts`). Con varias pistas, «Aceptar las N seguras» acepta
+solo esas y deja las dudosas propuestas (`acceptAutoMarks`, `lib/cueAutoMark.ts:111`).
+
+**Tu forma de marcar** (nuevo en v1.15.0). Arriba de Ajustes → Cues, una tarjeta
+(`CueProfileCard.tsx:65`) con «Aprender de mis pistas» lee la colección de rekordbox en solo
+lectura, las pistas con CALL (`readCollectionMarks`, `main/rekordboxLearnFlow.ts:35`), y junta
+lo que el DJ ha guardado en el editor de cues de Surco. Con eso:
+- ajusta Auto marcar a ese DJ entrenando sobre el detector de serie, y **solo se queda con el
+  ajuste si encuentra mejor sus marcas en el 30 % de pistas que aparta para comprobarlo**;
+  hacen falta 30 pistas marcadas (`tuneDropTaste`, `shared/dropTaste.ts:128`);
+- enseña cuántos de cada 10 sitios donde marca encuentra Auto en esas pistas apartadas, la
+  cuenta atrás aprendida, cuántas veces lleva su CALL debajo y si suele poner cue de inicio, y
+  ofrece «Usar como flujo».
+Traktor y Engine DJ no tienen CALL, así que de ellos solo aprende lo que el DJ guarda en
+Surco. «Aprender mientras corriges» (activado por defecto) suma cada pista guardada
+(`recordCueEdits`, `lib/cueTasteEdits.ts:18`) y vuelve a aprender solo cada 10
+(`RELEARN_EVERY`, `main/cueTaste.ts:8`). Todo se queda en el Mac del usuario.
 
 **En todos los programas** (nuevo en v1.13.0). Al guardar, los puntos marcados con un flujo
 llegan también a la misma pista en rekordbox, Traktor y Engine DJ. Surco busca el mismo
@@ -2019,7 +2042,9 @@ Recopilado de los cinco informes. Cada punto está verificado.
     un duplicado quitado en la revisión va a Copias de seguridad.
 34. **Auto marcar propone, no decide.** Encuentra en torno al 68 % de los drops y en torno
     al 70 % de sus propuestas aciertan; el usuario acepta o quita cada una. No decir «pone los
-    cues solo» ni «detecta el drop». Necesita el análisis de rekordbox.
+    cues solo» ni «detecta el drop». Necesita el análisis de rekordbox. Del ajuste a cada DJ
+    (v1.15.0) no prometer una mejora concreta: solo está medido con gustos simulados sobre una
+    colección; lo cierto es que nunca se adopta si no acierta más en sus propias pistas.
 35. **Las cues sin análisis de rekordbox van sobre una rejilla aproximada.** Cae a 10 ms o
     menos del golpe de rekordbox en el 83 % de las pistas medidas, no en todas, y no sabe dónde
     empieza el compás. El ajuste a la rejilla de rekordbox solo ocurre cuando Surco se abre (o
