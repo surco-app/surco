@@ -140,7 +140,7 @@ export default function UseCasePage({ id }: { id: string }) {
 
       <Header page="useCases" alternates={alternates} />
 
-      <main id="main" className="relative mx-auto max-w-3xl px-6">
+      <main id="main" className="relative mx-auto max-w-3xl px-6 sm:px-10">
         <article data-testid="use-case" className="pt-12 pb-12 sm:pt-16">
           <Reveal eager>
             <a

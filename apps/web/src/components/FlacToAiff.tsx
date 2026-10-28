@@ -84,7 +84,7 @@ export default function FlacToAiff() {
 
       <Header page="flacToAiff" />
 
-      <main id="main" className="relative mx-auto max-w-6xl px-6">
+      <main id="main" className="relative mx-auto max-w-6xl px-6 sm:px-10">
         <section className="grid items-center gap-10 pt-12 pb-16 sm:pt-16 lg:grid-cols-[1.1fr_1fr]">
           <Reveal eager>
             <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl">

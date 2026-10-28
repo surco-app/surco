@@ -48,7 +48,7 @@ export default function App() {
             running off the right edge; the crop cut the form and the convert button, the part
             that shows what Surco does. The three anchors follow the window, where they
             confirm what the picture just showed instead of queueing under the button. */}
-        <section className="mx-auto max-w-6xl px-6 pt-10 pb-12 text-center sm:pt-14 lg:pt-16 lg:pb-16">
+        <section className="mx-auto max-w-6xl px-6 sm:px-10 pt-10 pb-12 text-center sm:pt-14 lg:pt-16 lg:pb-16">
           <Reveal eager>
             <div className="mb-6 flex h-8 items-center justify-center">
               <LatestRelease />
@@ -89,7 +89,7 @@ export default function App() {
             rest of the hero, because the row sits right on the fold and a scroll-triggered
             reveal would hold that context back until the visitor had already decided. */}
         <Reveal eager delay={300}>
-          <section className="mx-auto max-w-6xl px-6 pb-4">
+          <section className="mx-auto max-w-6xl px-6 sm:px-10 pb-4">
             <div className="flex flex-col gap-3 border-y border-line py-5 sm:flex-row sm:items-center sm:gap-6">
               <p className="text-sm text-faint">{t('home.worksWith')}</p>
               <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted">
@@ -104,7 +104,7 @@ export default function App() {
         {/* One measure from the hero down through the walkthrough. The page used to
             step from a 1152px hero to a 1024px body, and the seam landed exactly on
             the heading that introduces the steps. */}
-        <div className="mx-auto max-w-6xl px-6">
+        <div className="mx-auto max-w-6xl px-6 sm:px-10">
           <Walkthrough />
           <LibraryReview />
         </div>
@@ -114,7 +114,7 @@ export default function App() {
             the page and the first line of the footer. */}
         <section
           id="instalar"
-          className="mx-auto max-w-6xl scroll-mt-8 px-6 pt-20 pb-12 sm:pt-28 sm:pb-16"
+          className="mx-auto max-w-6xl scroll-mt-8 px-6 sm:px-10 pt-20 pb-12 sm:pt-28 sm:pb-16"
         >
           <SectionView location="home-closing" />
           <Reveal>

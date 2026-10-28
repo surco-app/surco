@@ -97,7 +97,7 @@ export default function Guide() {
 
       <Header page="guide" />
 
-      <main id="main" className="relative mx-auto max-w-3xl px-6">
+      <main id="main" className="relative mx-auto max-w-3xl px-6 sm:px-10">
         {/* pb smaller than pt: each section below brings its own py-12, so the
             index used to sit in about 150px of empty background. */}
         <section className="pt-12 pb-4 sm:pt-16">

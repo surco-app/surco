@@ -51,7 +51,7 @@ export default function Features() {
 
       {/* Same measure as the home. The two pages sit one click apart in the nav and
           the body used to step from 1152px to 1024px on the way over. */}
-      <main id="main" className="relative mx-auto max-w-6xl px-6">
+      <main id="main" className="relative mx-auto max-w-6xl px-6 sm:px-10">
         <section className="pt-16 pb-8 sm:pt-24">
           <Reveal eager>
             <Kicker>{t('features.kicker')}</Kicker>

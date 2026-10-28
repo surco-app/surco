@@ -118,7 +118,7 @@ export default function Header({
           lang={offered}
           className="border-b border-line/70 bg-bg/95 text-sm text-muted"
         >
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-4 gap-y-1 px-6 py-2">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-4 gap-y-1 px-6 sm:px-10 py-2">
             <span>{t('nav.languageOffer.text', { lng: offered })}</span>
             <a
               data-testid="language-offer-switch"
@@ -144,7 +144,7 @@ export default function Header({
           into the scroll position and flickered between both sizes. The row doesn't
           scale either: shrinking it about its centre pulled the logo off the page's
           left edge. Only the background changes on scroll. */}
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 sm:px-10">
         <a href={page ? home : '#top'} className="flex items-center gap-2">
           {/* The disc cropped to its rim, not the app icon: the icon keeps the margin macOS
               asks of a Dock tile, which held the disc to 36 of these 48px, and its dark rim
@@ -337,7 +337,7 @@ export default function Header({
             : 'invisible -translate-y-2 border-transparent opacity-0'
         }`}
       >
-        <div className="mx-auto max-w-6xl px-6 py-2">
+        <div className="mx-auto max-w-6xl px-6 sm:px-10 py-2">
           {HEADER_SECTIONS.map((id) => (
             <a
               key={id}

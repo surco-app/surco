@@ -52,7 +52,7 @@ export default function Privacy() {
 
       <Header page="privacy" />
 
-      <main id="main" className="relative mx-auto max-w-3xl px-6">
+      <main id="main" className="relative mx-auto max-w-3xl px-6 sm:px-10">
         <section className="pt-12 pb-10 sm:pt-16">
           <Reveal eager>
             <Kicker>{t('privacy.kicker')}</Kicker>

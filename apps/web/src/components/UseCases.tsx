@@ -60,7 +60,7 @@ export default function UseCases() {
 
       <Header page="useCases" />
 
-      <main id="main" className="relative mx-auto max-w-3xl px-6">
+      <main id="main" className="relative mx-auto max-w-3xl px-6 sm:px-10">
         <section className="pt-12 pb-4 sm:pt-16">
           <Reveal eager>
             <Kicker>{t('useCases.kicker')}</Kicker>
