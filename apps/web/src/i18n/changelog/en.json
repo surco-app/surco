@@ -35,6 +35,10 @@
       {
         "text": "More fixes when converting, in custom fields, in Auto-match, in Traktor playlists, on Engine DJ USB drives and, on Windows, when converting the track you are listening to.",
         "in": "1.14.0"
+      },
+      {
+        "text": "What's new in each version, in the app and on the website, now also in German, French, Portuguese and Japanese.",
+        "in": "1.14.1"
       }
     ]
   },
