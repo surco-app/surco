@@ -1,9 +1,20 @@
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
+import fr from './locales/fr.json'
 import ja from './locales/ja.json'
+import ptBR from './locales/pt-BR.json'
+
+const TRANSLATIONS = [
+  ['es', es],
+  ['de', de],
+  ['fr', fr],
+  ['pt-BR', ptBR],
+  ['ja', ja],
+] as const
 
 // Every visible string is keyed; a missing key silently falls back to the other
 // language and ships an untranslated page. Flattening both trees and comparing
@@ -19,15 +30,21 @@ function keys(obj: unknown, prefix = ''): string[] {
 }
 
 describe('locale parity', () => {
-  it('es, en and ja expose the exact same keys', () => {
-    expect(keys(en).sort()).toEqual(keys(es).sort())
-    expect(keys(ja).sort()).toEqual(keys(en).sort())
+  it.each(TRANSLATIONS)('%s exposes the exact same keys as en', (_, locale) => {
+    expect(keys(locale).sort()).toEqual(keys(en).sort())
   })
 
-  it('declares Japanese document and structured-data language', () => {
-    expect(ja.meta.htmlLang).toBe('ja')
-    expect(ja.meta.ogLocale).toBe('ja_JP')
-    expect(ja.meta.inLanguage).toBe('ja')
+  // Search engines and screen readers take the page's language from these, not from
+  // the text: a German page declaring itself English is indexed and read as English.
+  it.each([
+    ['de', de, 'de_DE'],
+    ['fr', fr, 'fr_FR'],
+    ['pt-BR', ptBR, 'pt_BR'],
+    ['ja', ja, 'ja_JP'],
+  ] as const)('declares %s as the document and structured-data language', (lang, locale, og) => {
+    expect(locale.meta.htmlLang).toBe(lang)
+    expect(locale.meta.ogLocale).toBe(og)
+    expect(locale.meta.inLanguage).toBe(lang)
   })
 
   it('keeps interpolation placeholders aligned in every language', () => {
@@ -39,7 +56,7 @@ describe('locale parity', () => {
           : value && typeof value === 'object'
             ? Object.values(value).flatMap(placeholders)
             : []
-    for (const locale of [es, ja]) {
+    for (const [, locale] of TRANSLATIONS) {
       const visit = (reference: unknown, translation: unknown, path = ''): void => {
         if (typeof reference === 'string') {
           expect(placeholders(translation), path).toEqual(placeholders(reference))
@@ -72,11 +89,7 @@ function shots(locale: unknown): string[] {
 }
 
 describe('guide screenshots', () => {
-  for (const [name, locale] of [
-    ['en', en],
-    ['es', es],
-    ['ja', ja],
-  ] as const) {
+  for (const [name, locale] of [['en', en], ...TRANSLATIONS] as const) {
     it(`${name} references only files that exist in public/guide`, () => {
       const missing = shots(locale).filter(
         (shot) =>
@@ -93,10 +106,9 @@ describe('guide screenshots', () => {
     })
   }
 
-  it('gives every language the same walkthrough steps', () => {
-    expect(shots(en)).toHaveLength(shots(es).length)
-    expect(shots(en)).toHaveLength(shots(ja).length)
-    expect(ja.guide.sections.map((section) => section.id)).toEqual(
+  it.each(TRANSLATIONS)('gives %s the same walkthrough steps as en', (_, locale) => {
+    expect(shots(locale)).toHaveLength(shots(en).length)
+    expect(locale.guide.sections.map((section) => section.id)).toEqual(
       en.guide.sections.map((section) => section.id),
     )
   })

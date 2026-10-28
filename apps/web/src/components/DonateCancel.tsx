@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { DONATE_URL, PAYPAL_ME_LABEL, PAYPAL_ME_URL } from '../config'
 import { trackDonate } from '../lib/analytics'
+import { LANGUAGES, type Language } from '../i18n'
 import { HOME } from '../lib/nav'
 
 // PayPal sends donors here when they back out of the donate flow. Thank them for
@@ -21,6 +22,27 @@ const COPY = {
     paypalMe: 'Or fee-free, as a friend:',
     home: 'Back to home',
   },
+  de: {
+    title: 'Deine Spende wurde abgebrochen',
+    body: 'Kein Problem, danke, dass du darüber nachgedacht hast. Surco ist kostenlos, und Spenden halten seine Entwicklung am Laufen. Wenn es dir eines Tages ein paar Stunden spart, ist der Button immer noch hier.',
+    retry: 'Mit PayPal spenden',
+    paypalMe: 'Oder ohne Gebühren, unter Freunden:',
+    home: 'Zur Startseite',
+  },
+  fr: {
+    title: 'Ton don n’a pas abouti',
+    body: 'Pas de souci, merci d’y avoir pensé. Surco est gratuit, et ce sont les dons qui font avancer son développement. Si un jour il te fait gagner quelques heures, le bouton sera toujours là.',
+    retry: 'Faire un don avec PayPal',
+    paypalMe: 'Ou sans frais, entre amis :',
+    home: 'Retour à l’accueil',
+  },
+  'pt-BR': {
+    title: 'A doação não foi concluída',
+    body: 'Tudo bem, obrigado por ter pensado nisso. O Surco é gratuito, e são as doações que mantêm o desenvolvimento ativo. Se um dia ele te poupar algumas horas, o botão continuará aqui.',
+    retry: 'Doar com PayPal',
+    paypalMe: 'Ou sem taxas, entre amigos:',
+    home: 'Voltar ao início',
+  },
   ja: {
     title: '寄付がキャンセルされました',
     body: 'お気になさらないでください。ご検討いただきありがとうございます。Surco は無料で、皆さまの寄付が開発を支えています。いつか数時間の節約に役立ったときには、いつでもこのボタンからご支援いただけます。',
@@ -32,11 +54,11 @@ const COPY = {
 
 // Detected after hydration: Node ≥21 defines a global navigator, so a render-time
 // check would leak the build machine's language into the prerendered HTML.
-function useLang(): keyof typeof COPY {
-  const [lng, setLng] = useState<keyof typeof COPY>('es')
+function useLang(): Language {
+  const [lng, setLng] = useState<Language>('es')
   useEffect(() => {
-    if (navigator.language.toLowerCase().startsWith('en')) setLng('en')
-    if (navigator.language.toLowerCase().startsWith('ja')) setLng('ja')
+    const base = navigator.language.toLowerCase().split('-')[0]
+    setLng(LANGUAGES.find((l) => l.toLowerCase().split('-')[0] === base) ?? 'es')
   }, [])
   return lng
 }

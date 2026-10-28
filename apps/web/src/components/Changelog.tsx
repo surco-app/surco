@@ -49,12 +49,14 @@ function ItemList({ items }: { items: Item[] }) {
 
 export default function Changelog() {
   const { t, i18n } = useTranslation()
+  // Only the Spanish and English histories write their dates out; every other language
+  // keeps the English date and shows it the way its readers write dates.
   const releaseDate = (date: string) =>
-    i18n.language === 'ja'
-      ? new Intl.DateTimeFormat('ja-JP', { dateStyle: 'long', timeZone: 'UTC' }).format(
+    i18n.language === 'es' || i18n.language === 'en'
+      ? date
+      : new Intl.DateTimeFormat(i18n.language, { dateStyle: 'long', timeZone: 'UTC' }).format(
           new Date(`${date} UTC`),
         )
-      : date
 
   const releases = t('changelog.releases', { returnObjects: true }) as Release[]
   // What the current beta carries, kept apart from the releases (see changelog.test.ts):

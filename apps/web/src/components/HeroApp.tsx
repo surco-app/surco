@@ -6,12 +6,12 @@ import { useTranslation } from 'react-i18next'
 // window is there at first paint; the loop, when present, fades over it once it can
 // actually play, and never on a connection or a preference that shouldn't carry it.
 export default function HeroApp({ video }: { video?: boolean }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   // The still is the video's own first frame, so the loop starts without the image
-  // jumping to a different state underneath it. One capture serves both languages:
-  // it shows the current build, and the older per-language shots were a version
-  // behind. Swap in a Spanish recording when there is one.
-  const shot = '/hero-app.webp'
+  // jumping to a different state underneath it. Each language has its own recording
+  // (marketing-video's hero.mjs), so the app on screen speaks the page's language.
+  const base = `/hero-app-${i18n.language}`
+  const shot = `${base}.webp`
   const ref = useRef<HTMLVideoElement>(null)
   const [playing, setPlaying] = useState(false)
 
@@ -63,8 +63,8 @@ export default function HeroApp({ video }: { video?: boolean }) {
                 playing ? 'opacity-100' : 'opacity-0'
               }`}
             >
-              <source src="/hero-app.webm" type="video/webm" />
-              <source src="/hero-app.mp4" type="video/mp4" />
+              <source src={`${base}.webm`} type="video/webm" />
+              <source src={`${base}.mp4`} type="video/mp4" />
             </video>
           )}
         </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { LANGUAGES, type Language } from '../i18n'
 import { HOME } from '../lib/nav'
 
 // PayPal sends donors here after a completed donation. Thank them properly and
@@ -16,6 +17,21 @@ const COPY = {
     body: 'Your donation is what keeps Surco alive: development hours, new features and zero subscriptions. May it save you many booth hours.',
     home: 'Back to home',
   },
+  de: {
+    title: 'Von Herzen danke!',
+    body: 'Deine Spende hält Surco am Leben, mit Stunden an Entwicklung, neuen Funktionen und ganz ohne Abo. Möge es dir viele Stunden am DJ-Pult sparen.',
+    home: 'Zur Startseite',
+  },
+  fr: {
+    title: 'Merci du fond du cœur !',
+    body: 'Ton don fait vivre Surco, avec des heures de développement, de nouvelles fonctions et zéro abonnement. Qu’il te fasse gagner de nombreuses heures en cabine.',
+    home: 'Retour à l’accueil',
+  },
+  'pt-BR': {
+    title: 'Muito obrigado, de coração!',
+    body: 'Sua doação é o que mantém o Surco vivo, com horas de desenvolvimento, novos recursos e zero assinaturas. Que ele te poupe muitas horas de cabine.',
+    home: 'Voltar ao início',
+  },
   ja: {
     title: '本当にありがとうございます！',
     body: '皆さまの寄付が Surco を支えています。開発に取り組む時間も、新機能も、サブスクリプションなしでの提供も、そのおかげです。DJ ブースでの作業時間をたくさん節約できますように。',
@@ -25,11 +41,11 @@ const COPY = {
 
 // Detected after hydration: Node ≥21 defines a global navigator, so a render-time
 // check would leak the build machine's language into the prerendered HTML.
-function useLang(): keyof typeof COPY {
-  const [lng, setLng] = useState<keyof typeof COPY>('es')
+function useLang(): Language {
+  const [lng, setLng] = useState<Language>('es')
   useEffect(() => {
-    if (navigator.language.toLowerCase().startsWith('en')) setLng('en')
-    if (navigator.language.toLowerCase().startsWith('ja')) setLng('ja')
+    const base = navigator.language.toLowerCase().split('-')[0]
+    setLng(LANGUAGES.find((l) => l.toLowerCase().split('-')[0] === base) ?? 'es')
   }, [])
   return lng
 }

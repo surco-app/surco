@@ -19,13 +19,26 @@ describe('suggestedLanguage', () => {
     expect(suggestedLanguage(null, '/guia', 'ja')).toBe('ja')
   })
 
+  it('offers German, French and Portuguese browsers their own site', () => {
+    expect(suggestedLanguage(null, '/', 'de-DE')).toBe('de')
+    expect(suggestedLanguage(null, '/guia', 'fr-CA')).toBe('fr')
+    expect(suggestedLanguage(null, '/', 'pt-PT')).toBe('pt-BR')
+    expect(suggestedLanguage(null, '/', 'pt')).toBe('pt-BR')
+  })
+
   it('offers English to browsers in a language the site does not have', () => {
-    expect(suggestedLanguage(null, '/', 'fr-FR')).toBe('en')
-    expect(suggestedLanguage(null, '/guia', 'de-DE')).toBe('en')
+    expect(suggestedLanguage(null, '/', 'it-IT')).toBe('en')
+    expect(suggestedLanguage(null, '/guia', 'nl-NL')).toBe('en')
   })
 
   it('stays quiet on the English pages, where the visitor already is', () => {
     expect(suggestedLanguage(null, '/en/guide', 'en-US')).toBeNull()
+  })
+
+  it('never offers anything on the German, French or Portuguese pages', () => {
+    expect(suggestedLanguage(null, '/de', 'en-US')).toBeNull()
+    expect(suggestedLanguage(null, '/fr/guide', 'es-ES')).toBeNull()
+    expect(suggestedLanguage(null, '/pt/use-cases', 'ja-JP')).toBeNull()
   })
 
   it('never offers anything on Japanese pages', () => {
