@@ -28,6 +28,9 @@ import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
 
+const recordCueEdits = vi.hoisted(() => vi.fn())
+vi.mock('../lib/cueTasteEdits', () => ({ recordCueEdits }))
+
 const dropProposals = vi.hoisted(() =>
   vi.fn<(input: DropInput, model?: DropModel) => DropProposal[]>(),
 )
@@ -480,6 +483,26 @@ describe('accepting Auto marcar', () => {
     fireEvent.click(screen.getByTestId('cues-auto-accept'))
     expect(calls()).toEqual([`cue-wave-call-${bar(64)}`, `cue-wave-call-${bar(128)}`])
     expect(hots()).toHaveLength(0)
+  })
+
+  it('teaches Auto from what the DJ saves, the proposals they kept and the ones they left', async () => {
+    recordCueEdits.mockClear()
+    const { saveRekordboxCues } = setup()
+    await ready()
+    await autoMark()
+    seekStrip(bar(64))
+    fireEvent.click(screen.getByTestId(`cue-proposal-accept-${bar(64)}`))
+    expect(recordCueEdits).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    await waitFor(() => expect(recordCueEdits).toHaveBeenCalledTimes(1))
+    const [, saved] = recordCueEdits.mock.calls[0]
+    expect(saved.map((s: { contentId: string }) => s.contentId)).toEqual(['103'])
+    expect(
+      saved[0].draft.cues.some(
+        (c: { ms: number; kind: number }) => c.kind === 0 && c.ms === bar(64),
+      ),
+    ).toBe(true)
   })
 
   it('forgets what is still proposed once the cues are saved', async () => {

@@ -79,6 +79,7 @@ import {
   useCueFocus,
   useUnsavedCueTracks,
 } from '../lib/cueSession'
+import { recordCueEdits } from '../lib/cueTasteEdits'
 import { type TwinPlan, twinPlansOf } from '../lib/cueTwins'
 import { quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
@@ -850,6 +851,16 @@ function Editing({
     setSaveFailed(!saved)
     if (!saved) return false
     setOverwrite(new Set())
+    recordCueEdits(
+      queryClient,
+      reqs.flatMap(({ contentId }) => {
+        const draft =
+          contentId === cue.contentId
+            ? state
+            : keptDrafts().find((d) => d.contentId === contentId)?.draft
+        return draft ? [{ contentId, draft }] : []
+      }),
+    )
     for (const req of reqs) forgetDraft(req.contentId)
     await refreshQueued()
     return true

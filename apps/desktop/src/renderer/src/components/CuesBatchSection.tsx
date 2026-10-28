@@ -17,6 +17,7 @@ import {
   useAutoMarks,
   useUnsavedCueTracks,
 } from '../lib/cueSession'
+import { recordCueEdits } from '../lib/cueTasteEdits'
 import { libraryOf, twinPlansOf } from '../lib/cueTwins'
 import { useAppSettings } from '../lib/settingsContext'
 import { saveAllKey } from './CuesSection'
@@ -135,6 +136,12 @@ export function CuesBatchSection({
       )
       setSaveFailed(!saved)
       if (!saved) return
+      recordCueEdits(
+        queryClient,
+        keptDrafts()
+          .filter((d) => mine.some((r) => r.contentId === d.contentId))
+          .map(({ contentId, draft }) => ({ contentId, draft })),
+      )
       for (const req of reqs) forgetDraft(req.contentId)
       await queryClient.invalidateQueries({ queryKey: ['rekordbox-queued-cues'] })
     } finally {

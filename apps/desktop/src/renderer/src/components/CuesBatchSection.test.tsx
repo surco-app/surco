@@ -20,6 +20,9 @@ import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { CuesBatchSection } from './CuesBatchSection'
 
+const recordCueEdits = vi.hoisted(() => vi.fn())
+vi.mock('../lib/cueTasteEdits', () => ({ recordCueEdits }))
+
 const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32]
 const GRID = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
 const bar = (n: number) => n * 2000
@@ -172,6 +175,26 @@ describe('Cues over several selected tracks', () => {
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
     expect(saveRekordboxCues.mock.calls[0][0].map((r) => r.contentId)).toEqual(['103'])
     await waitFor(() => expect([...unsavedCueTracks()]).toEqual(['999']))
+  })
+
+  it('teaches Auto from the marks of the tracks it saved, and only once they are saved', async () => {
+    recordCueEdits.mockClear()
+    const { saveRekordboxCues } = setup()
+    const marked = startDraft([{ ms: bar(64), kind: 0, color: null }], 'mine')
+    act(() => {
+      keepDraft('103', cueDraftKey('103', 'f0', null), marked, {
+        path: '/m/103.wav',
+        label: '103',
+        fingerprint: 'f0',
+      })
+    })
+    saveRekordboxCues.mockRejectedValueOnce(new Error('closed'))
+    fireEvent.click(screen.getByTestId('cues-batch-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
+    expect(recordCueEdits).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByTestId('cues-batch-save'))
+    await waitFor(() => expect(recordCueEdits).toHaveBeenCalledTimes(1))
+    expect(recordCueEdits.mock.calls[0][1]).toEqual([{ contentId: '103', draft: marked }])
   })
 
   // Marking thirteen tracks from rekordbox's list reaches Traktor and Engine DJ too, so the
