@@ -5,13 +5,14 @@ import type {
   KeyNotation,
   KeyResult,
   MetaTextKey,
+  PlaylistLibrary,
   RekordboxPlaylistTarget,
   SourceNode,
   TrackMetadata,
 } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { BULK_FIELDS, commonValue, type TagList } from './bulkEdit'
-import { FIELD_DEFS, type FieldWidth, REKORDBOX_PLAYLISTS_FIELD } from './fields'
+import { FIELD_DEFS, type FieldWidth, isPlaylistField, PLAYLIST_FIELDS } from './fields'
 import type { PlaylistOption } from './rekordboxPlaylists'
 
 // One value offered by a field's { } insert menu — another field's literal value, so
@@ -23,6 +24,8 @@ export interface InsertSource {
 }
 
 export interface PlaylistsSpec {
+  library: PlaylistLibrary
+  disabled?: boolean
   tree: SourceNode[]
   options: PlaylistOption[]
   single: {
@@ -134,7 +137,7 @@ export interface BuildFieldSpecsParams {
   // Year holds a whole release date, which needs a wider box than a year.
   fullReleaseDate: boolean
   cleanedNotes?: Partial<Record<string, FieldCleanedNote>>
-  playlists?: PlaylistsSpec
+  playlists?: Partial<Record<PlaylistLibrary, PlaylistsSpec>>
 }
 
 // The fields whose chips add a tag rather than replace the value.
@@ -153,13 +156,21 @@ function playlistsField(
   multi: boolean,
   tr: (key: string) => string,
 ): FieldSpec {
+  const key = PLAYLIST_FIELDS[playlists.library]
   return {
-    key: REKORDBOX_PLAYLISTS_FIELD,
-    label: tr('fields.rekordboxPlaylists'),
+    key,
+    label: tr(`fields.${key}`),
     value: '',
     onChange: () => {},
     playlists: { ...playlists, multi },
   }
+}
+
+function playlistsFor(
+  playlists: BuildFieldSpecsParams['playlists'],
+  key: string,
+): PlaylistsSpec | undefined {
+  return Object.values(playlists ?? {}).find((p) => p && PLAYLIST_FIELDS[p.library] === key)
 }
 
 // The bulk and single forms render the same tree; only where a field's value comes
@@ -250,13 +261,16 @@ export function buildFieldSpecs({
               onChange: customBulkOnChange.get(f.key) ?? (() => {}),
             }
           }),
-        ...(playlists && visibleFields.includes(REKORDBOX_PLAYLISTS_FIELD)
-          ? [playlistsField(playlists, true, tr)]
-          : []),
+        ...visibleFields.flatMap((key) => {
+          const spec = playlistsFor(playlists, key)
+          return spec ? [playlistsField(spec, true, tr)] : []
+        }),
       ]
     : visibleFields.flatMap((key) => {
-        if (key === REKORDBOX_PLAYLISTS_FIELD)
-          return playlists ? [playlistsField(playlists, false, tr)] : []
+        if (isPlaylistField(key)) {
+          const spec = playlistsFor(playlists, key)
+          return spec ? [playlistsField(spec, false, tr)] : []
+        }
         const def = FIELD_DEFS.find((d) => d.key === key)
         if (!def) {
           // A field the user added: no chips or menus of its own, just its name, value and

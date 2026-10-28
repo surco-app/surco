@@ -87,7 +87,7 @@ import { type SettingsTab, useOverlays } from './hooks/useOverlays'
 import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useRekordboxEdits } from './hooks/useRekordboxEdits'
-import { useOfferRekordboxField, useRekordboxAvailable } from './hooks/useRekordboxPlaylists'
+import { useLibraryAvailable, useOfferPlaylistFields } from './hooks/useRekordboxPlaylists'
 import { ENGINE_CUE_QUEUE, TRAKTOR_CUE_QUEUE, useRekordboxQueue } from './hooks/useRekordboxQueue'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
 import { useSettings } from './hooks/useSettings'
@@ -213,7 +213,6 @@ import type { CopiedTags, TrackItem } from './types'
 const NO_HIDDEN_SOURCES: PlaylistSource[] = []
 const PREFETCH_HOVER_MS = 150
 const PLAYER_LEAVE_MS = 200
-const ignoreQueued = (): void => {}
 
 const inFiles = (t: TrackItem): boolean => !!t.inFiles
 
@@ -381,11 +380,18 @@ export default function App(): React.JSX.Element {
     onLoadError: () => setAppError({ kind: 'settingsLoad' }),
     onSaveError: () => setAppError({ kind: 'settingsSave' }),
   })
-  const rekordboxAvailable = useRekordboxAvailable()
+  const playlistLibrariesFound = {
+    rekordbox: useLibraryAvailable('rekordbox'),
+    traktor: useLibraryAvailable('traktor'),
+    engine: useLibraryAvailable('engine'),
+  }
+  const playlistLibraries = (['rekordbox', 'traktor', 'engine'] as const).filter(
+    (l) => playlistLibrariesFound[l],
+  )
   const saveSettingsStable = useStableCallback(saveSettings)
-  useOfferRekordboxField(
+  useOfferPlaylistFields(
     settings?.hasSeenOnboarding && !settingsOpen ? settings : null,
-    rekordboxAvailable,
+    playlistLibrariesFound,
     saveSettingsStable,
   )
   const { decideOnLoad, maybeShowDonateNudge, finishOnboarding } = useLaunchModals({
@@ -760,12 +766,29 @@ export default function App(): React.JSX.Element {
   )
   const rekordboxQueue = useRekordboxQueue(notifyEdit, dropDiscardedPlaylists, dropWrittenPlaylists)
   const { applyNow: applyQueueNow, discard: discardQueue } = rekordboxQueue
-  const engineCueQueue = useRekordboxQueue(notifyEdit, ignoreQueued, ignoreQueued, ENGINE_CUE_QUEUE)
+  const dropDiscardedEngine = useStableCallback((paths: string[]) =>
+    setTracks((prev) => discardPlaylistEdits(prev, paths, 'engine')),
+  )
+  const dropWrittenEngine = useStableCallback((written: RekordboxQueueWritten[]) =>
+    setTracks((prev) => clearWrittenPlaylists(prev, written, 'engine')),
+  )
+  const engineCueQueue = useRekordboxQueue(
+    notifyEdit,
+    dropDiscardedEngine,
+    dropWrittenEngine,
+    ENGINE_CUE_QUEUE,
+  )
   const { applyNow: applyEngineQueueNow, discard: discardEngineQueue } = engineCueQueue
+  const dropDiscardedTraktor = useStableCallback((paths: string[]) =>
+    setTracks((prev) => discardPlaylistEdits(prev, paths, 'traktor')),
+  )
+  const dropWrittenTraktor = useStableCallback((written: RekordboxQueueWritten[]) =>
+    setTracks((prev) => clearWrittenPlaylists(prev, written, 'traktor')),
+  )
   const traktorCueQueue = useRekordboxQueue(
     notifyEdit,
-    ignoreQueued,
-    ignoreQueued,
+    dropDiscardedTraktor,
+    dropWrittenTraktor,
     TRAKTOR_CUE_QUEUE,
   )
   const { applyNow: applyTraktorQueueNow, discard: discardTraktorQueue } = traktorCueQueue
@@ -3387,7 +3410,7 @@ export default function App(): React.JSX.Element {
               deriveTracksUndoable={deriveTracksUndoable}
               updateTrack={updateTrack}
               revealSelection={revealSelection}
-              rekordboxField={rekordboxAvailable}
+              playlistLibraries={playlistLibraries}
             />
 
             <ToastStack toasts={toasts} onExpire={expireToast} onClose={closeToast} />

@@ -2,7 +2,7 @@ import { ChevronDown, ChevronRight, Plus, Search } from 'lucide-react'
 import type React from 'react'
 import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { RekordboxPlaylistTarget, SourceNode } from '../../../shared/types'
+import type { PlaylistLibrary, RekordboxPlaylistTarget, SourceNode } from '../../../shared/types'
 import { type PopoverPlacement, popoverPlacement } from '../lib/popoverPlacement'
 import {
   canCreate,
@@ -11,7 +11,10 @@ import {
   targetKey,
 } from '../lib/rekordboxPlaylists'
 import { foldersHolding, playlistIdsUnder } from './CheckTree'
-import { RekordboxIcon } from './SourceIcons'
+import { LIBRARY_ICON } from './SourceIcons'
+
+const fieldTestId = (library: PlaylistLibrary, testId: string): string =>
+  library === 'rekordbox' ? testId : `${library}-${testId}`
 
 interface Token {
   target: RekordboxPlaylistTarget
@@ -88,12 +91,14 @@ function whereParts(
 }
 
 function TreePopover({
+  app,
   tree,
   options,
   tokens,
   onToggle,
   onClose,
 }: {
+  app: string
   tree: readonly SourceNode[]
   options: readonly PlaylistOption[]
   tokens: readonly Token[]
@@ -282,7 +287,7 @@ function TreePopover({
       data-testid="playlists-popover"
       data-side={place?.side ?? 'down'}
       role="dialog"
-      aria-label={tr('editor.playlists.options')}
+      aria-label={tr('editor.playlists.options', { app })}
       onKeyDown={onKeyDown}
       style={{ maxHeight: place?.maxHeight }}
       className={`absolute right-0 left-0 z-20 flex flex-col overflow-hidden rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] shadow-[var(--shadow-float)] ${
@@ -312,6 +317,8 @@ function TreePopover({
 }
 
 function TreeField({
+  library,
+  disabled,
   label,
   testId,
   tree,
@@ -319,6 +326,8 @@ function TreeField({
   tokens,
   onToggle,
 }: {
+  library: PlaylistLibrary
+  disabled: boolean
   label: string
   testId: string
   tree: readonly SourceNode[]
@@ -344,14 +353,17 @@ function TreeField({
   }, [open])
 
   const parts = whereParts(tree, tokens)
+  const app = tr(`sources.${library}`)
+  const Icon = LIBRARY_ICON[library]
   return (
-    <div data-testid={testId} className="group block @[24rem]:contents">
+    <div data-testid={fieldTestId(library, testId)} className="group block @[24rem]:contents">
       <label
         htmlFor={buttonId}
         className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-fg-dim @[24rem]:col-start-1 @[24rem]:mb-0 @[24rem]:min-h-[34px] @[24rem]:max-w-32 @[24rem]:flex-row-reverse @[24rem]:justify-start @[24rem]:text-right"
       >
         {label}
-        <RekordboxIcon size={12} />
+        <Icon size={12} />
+        <span className="sr-only">{app}</span>
       </label>
       <div ref={rootRef} className="relative min-w-0 @[24rem]:col-start-2">
         <button
@@ -362,12 +374,17 @@ function TreeField({
           aria-expanded={open}
           aria-haspopup="dialog"
           aria-describedby={tokens.length > 0 ? `${countId} ${whereId}` : countId}
+          disabled={disabled}
           onClick={() => setOpen((v) => !v)}
-          className={`flex h-[34px] w-full items-center gap-2 rounded-lg border bg-[var(--color-panel-2)]/30 px-3 text-left text-sm outline-none focus-visible:border-[var(--color-accent)] ${
+          className={`flex h-[34px] w-full items-center gap-2 rounded-lg border bg-[var(--color-panel-2)]/30 px-3 text-left text-sm outline-none focus-visible:border-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-50 ${
             open ? 'border-[var(--color-accent)]' : 'border-[var(--color-line-strong)]'
           }`}
         >
-          {tokens.length > 0 ? (
+          {disabled ? (
+            <span id={countId} className="min-w-0 flex-1 truncate text-fg-faint">
+              {tr('editor.playlists.notIn', { app })}
+            </span>
+          ) : tokens.length > 0 ? (
             <>
               <span
                 id={countId}
@@ -409,6 +426,7 @@ function TreeField({
         </button>
         {open && (
           <TreePopover
+            app={app}
             tree={tree}
             options={options}
             tokens={tokens}
@@ -425,12 +443,16 @@ function TreeField({
 }
 
 export function PlaylistsField({
+  library = 'rekordbox',
+  disabled = false,
   label,
   tree,
   options,
   value,
   onChange,
 }: {
+  library?: PlaylistLibrary
+  disabled?: boolean
   label: string
   tree: SourceNode[]
   options: PlaylistOption[]
@@ -439,6 +461,8 @@ export function PlaylistsField({
 }): React.JSX.Element {
   return (
     <TreeField
+      library={library}
+      disabled={disabled}
       label={label}
       testId="playlists-field"
       tree={tree}
@@ -452,12 +476,16 @@ export function PlaylistsField({
 }
 
 export function PlaylistsBulkField({
+  library = 'rekordbox',
+  disabled = false,
   label,
   tree,
   options,
   states,
   onToggle,
 }: {
+  library?: PlaylistLibrary
+  disabled?: boolean
   label: string
   tree: SourceNode[]
   options: PlaylistOption[]
@@ -466,6 +494,8 @@ export function PlaylistsBulkField({
 }): React.JSX.Element {
   return (
     <TreeField
+      library={library}
+      disabled={disabled}
       label={label}
       testId="playlists-bulk"
       tree={tree}

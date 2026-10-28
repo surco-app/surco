@@ -3,7 +3,7 @@ import type React from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { findConflicts, resolveBindings } from '../../../shared/shortcutDefaults'
-import type { Settings, ThemePref } from '../../../shared/types'
+import type { PlaylistLibrary, Settings, ThemePref } from '../../../shared/types'
 import { useScrollAffordance } from '../hooks/useScrollAffordance'
 import { DONATE_URL } from '../lib/donate'
 import { mainErrorMessage } from '../lib/ipcError'
@@ -48,7 +48,7 @@ interface Props {
   // prefs, so the app's settings state is replaced outside the Save flow.
   onSettingsReplaced: (next: Settings) => void
   initialTab?: SettingsTab
-  rekordboxField?: boolean
+  playlistLibraries?: PlaylistLibrary[]
 }
 
 export function SettingsModal({
@@ -58,7 +58,7 @@ export function SettingsModal({
   onPreviewTheme,
   onSettingsReplaced,
   initialTab,
-  rekordboxField,
+  playlistLibraries,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [tab, setTab] = useState<SettingsTab>(initialTab ?? 'general')
@@ -423,7 +423,7 @@ export function SettingsModal({
                 onChangeSeparator={(key, separator) =>
                   patch(key === 'genre' ? 'genreSeparator' : 'groupingSeparator', separator)
                 }
-                rekordboxField={rekordboxField}
+                playlistLibraries={playlistLibraries}
               />
             )}
             {tab === 'shortcuts' && (

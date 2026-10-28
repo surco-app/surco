@@ -12,9 +12,11 @@ export interface RekordboxRepoint {
   audio?: { cueShiftMs: number }
   playlists?: RekordboxPlaylistTarget[]
   playlistsBase?: string[]
+  traktorPlaylists?: LibraryPlaylistChoice
+  enginePlaylists?: LibraryPlaylistChoice
 }
 
-import type { RekordboxPlaylistTarget } from '../shared/types'
+import type { LibraryPlaylistChoice, RekordboxPlaylistTarget } from '../shared/types'
 import type { RekordboxMeta } from './rekordboxMetadata'
 
 let repoints: RekordboxRepoint[] = []
@@ -110,4 +112,13 @@ export function attachRekordboxPlaylists(
   const index = repoints.findIndex((r) => r.to === to)
   if (index !== -1)
     repoints[index] = { ...repoints[index], playlists, ...(playlistsBase ? { playlistsBase } : {}) }
+}
+
+export function attachLibraryPlaylists(
+  to: string,
+  library: 'traktor' | 'engine',
+  choice: LibraryPlaylistChoice,
+): void {
+  const index = repoints.findIndex((r) => r.to === to)
+  if (index !== -1) repoints[index] = { ...repoints[index], [`${library}Playlists`]: choice }
 }

@@ -800,7 +800,8 @@
       "create": "Crear playlist «{{name}}»",
       "pending": "Se creará al escribir la pista",
       "some": "Solo en algunas pistas. Haz clic para ponerla en todas",
-      "options": "Playlists de rekordbox"
+      "options": "Playlists de {{app}}",
+      "notIn": "No está en {{app}}"
     },
     "cues": {
       "title": "Cues",
@@ -998,7 +999,9 @@
     "rowHide": "Ocultar {{name}}",
     "rowShow": "Mostrar {{name}}",
     "rowToken": "Nombre interno {{token}}",
-    "rekordboxPlaylists": "Playlists"
+    "rekordboxPlaylists": "Playlists",
+    "traktorPlaylists": "Playlists",
+    "enginePlaylists": "Playlists"
   },
   "declick": {
     "cueWarning": "ALAC no guarda los cues ni el beatgrid de Traktor: se pierden al convertir.",
@@ -2602,7 +2605,8 @@
       "cuesAdjusted_other": "rekordbox ya ha analizado {{track}}. {{count}} cues ajustados a su rejilla, el que más {{maxMs}} ms",
       "cuesUnfit_one": "Un cue de {{track}} cae lejos de los golpes de rekordbox y se ha dejado donde estaba. Revísalo",
       "cuesUnfit_other": "{{count}} cues de {{track}} caen lejos de los golpes de rekordbox y se han dejado donde estaban. Revísalos",
-      "goToCue": "Ir al cue"
+      "goToCue": "Ir al cue",
+      "notInLibrary": "{{track}} ya no está en rekordbox. Sus playlists no se cambiaron"
     },
     "part": {
       "repoint": "nueva ruta",
@@ -2646,13 +2650,16 @@
     "appliedChanges_other": "Listo en Engine DJ · {{count}} cambios",
     "backupFailed": "No se pudo hacer la copia de Engine DJ. Se intentará al cerrarlo otra vez",
     "unreadable": "Surco no puede leer ahora la biblioteca de Engine DJ y no ha cambiado nada",
-    "writeFailed": "No se pudieron guardar las cues en Engine DJ. La biblioteca sigue como estaba",
+    "writeFailed": "No se pudieron guardar los cambios en Engine DJ. La biblioteca sigue como estaba",
     "notice": {
       "cuesChanged": "Las cues de {{track}} cambiaron en Engine DJ. Vuelve a marcarlas",
       "callsDropped_one": "No se guardó el CALL de {{track}} ({{times}}). Engine DJ solo guarda hot cues",
-      "callsDropped_other": "No se guardaron los {{count}} CALL de {{track}} ({{times}}). Engine DJ solo guarda hot cues"
+      "callsDropped_other": "No se guardaron los {{count}} CALL de {{track}} ({{times}}). Engine DJ solo guarda hot cues",
+      "playlistChanged": "No se cambió {{track}} en {{playlist}}. Cambió en Engine DJ",
+      "playlistGone": "{{playlist}} ya no está en Engine DJ. {{track}} no se añadió",
+      "notInLibrary": "{{track}} ya no está en Engine DJ. Sus playlists no se cambiaron"
     },
-    "discardConfirm": "¿Descartar lo que espera? Las cues vuelven a lo que dice Engine DJ",
+    "discardConfirm": "¿Descartar lo que espera? Tus playlists y cues de Engine DJ se quedan como las tiene Engine DJ",
     "pillHalted": "Cambios de Engine DJ en pausa",
     "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la biblioteca hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia m.db.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → General → Copias de las colecciones",
     "pillElsewhere": "Pendiente de otra biblioteca de Engine DJ",
@@ -2678,7 +2685,10 @@
     "notice": {
       "cuesChanged": "Las cues de {{track}} cambiaron en Traktor. Vuelve a marcarlas",
       "slotDropped": "Traktor tiene 7 botones para las cues de Surco, así que la cue H de {{track}} no se guardó",
-      "editChanged": "{{playlist}} no se cambió. Cambió en Traktor"
+      "editChanged": "{{playlist}} no se cambió. Cambió en Traktor",
+      "playlistChanged": "No se cambió {{track}} en {{playlist}}. Cambió en Traktor",
+      "playlistGone": "{{playlist}} ya no está en Traktor. {{track}} no se añadió",
+      "notInLibrary": "{{track}} ya no está en Traktor. Sus playlists no se cambiaron"
     },
     "discardConfirm": "¿Descartar lo que espera? Tus playlists y cues de Traktor se quedan como las tiene Traktor",
     "pillHalted": "Cambios de Traktor en pausa",

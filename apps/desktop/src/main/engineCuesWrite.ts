@@ -1,4 +1,6 @@
+import { realpathSync } from 'node:fs'
 import { readFile, unlink, writeFile } from 'node:fs/promises'
+import { dirname } from 'node:path'
 import log from 'electron-log/main'
 import type { Database } from 'sql.js'
 import { HOT_KINDS, validWantedSet, type WantedCue } from '../shared/cueRules'
@@ -17,8 +19,10 @@ import {
 import { type EnginePerformance, engineCuesOf } from './engineCues'
 import { assertEngineClosed, withEngineDatabase } from './engineLibrary'
 import { engineDatabasePath } from './enginePlaylists'
+import { planEngineTrackPlaylists } from './engineTrackPlaylists'
 import { backupOf } from './libraryBackups'
-import type { BatchResult, CuesOp, OpOutcome, QueueOp } from './rekordboxQueueOps'
+import { pathKey } from './libraryPathKey'
+import type { BatchResult, OpOutcome, QueueOp } from './rekordboxQueueOps'
 import { writeBackup } from './rekordboxSessionBackup'
 import { renameWithRetry } from './renameRetry'
 
@@ -68,9 +72,8 @@ function withHotCues(
 }
 
 interface Planned {
-  op: CuesOp
-  trackId: number
-  quickCues: Buffer
+  op: QueueOp
+  write: (db: Database) => void
   notices: RekordboxQueueNotice[]
 }
 
@@ -89,7 +92,21 @@ function row(db: Database, trackId: number): EnginePerformance | null {
   }
 }
 
-function plan(db: Database, op: QueueOp): Plan {
+function plan(db: Database, op: QueueOp, libraryDir: string): Plan {
+  if (op.kind === 'track') {
+    const key = pathKey({ realPath: (p: string) => realpathSync(p) })
+    const lists = planEngineTrackPlaylists(db, libraryDir, op, key)
+    if (!lists)
+      return {
+        outcome: {
+          id: op.id,
+          applied: false,
+          notices: [{ code: 'not-in-library', track: op.label }],
+        },
+      }
+    if (!lists.write) return { outcome: { id: op.id, applied: true, notices: lists.notices } }
+    return { op, write: lists.write, notices: lists.notices }
+  }
   const refused = (code: 'cues-changed' | 'cues-invalid'): Plan => ({
     outcome: {
       id: op.id,
@@ -121,7 +138,16 @@ function plan(db: Database, op: QueueOp): Plan {
   )
   if (perf.quickCues && next.equals(before))
     return { outcome: { id: op.id, applied: true, notices } }
-  return { op, trackId, quickCues: deflateEngineBlob(next), notices }
+  const quickCues = deflateEngineBlob(next)
+  return {
+    op,
+    write: (target) =>
+      target.run('UPDATE PerformanceData SET quickCues = ? WHERE trackId = ?', [
+        quickCues,
+        trackId,
+      ]),
+    notices,
+  }
 }
 
 function sampleRateOf(perf: EnginePerformance): number {
@@ -154,7 +180,7 @@ async function openPlanned(
   const outcomes = new Map<string, OpOutcome>()
   const planned: Planned[] = []
   for (const op of ops) {
-    const p = plan(db, op)
+    const p = plan(db, op, dirname(dirname(dbPath)))
     if ('outcome' in p) outcomes.set(op.id, p.outcome)
     else planned.push(p)
   }
@@ -195,8 +221,7 @@ async function writeEngineCuesBatch(
       log.warn(`Engine DJ cues: backup failed: ${(e as Error).message}`)
       return { ok: false, reason: 'backup-failed' }
     }
-    for (const p of planned)
-      db.run('UPDATE PerformanceData SET quickCues = ? WHERE trackId = ?', [p.quickCues, p.trackId])
+    for (const p of planned) p.write(db)
     try {
       await assertEngineClosed(dbPath)
     } catch {

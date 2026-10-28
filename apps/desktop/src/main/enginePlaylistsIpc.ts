@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, realpathSync } from 'node:fs'
 import { ipcMain } from 'electron'
 import log from 'electron-log/main'
 import { mediaPathFromUrl } from '../shared/media'
@@ -6,11 +6,13 @@ import {
   type EngineDb,
   engineDatabasePath,
   openEngineDb,
+  readEngineMembership,
   readEnginePlaylist,
   readEngineRecentCount,
   readEngineTrackCount,
   readEngineTree,
 } from './enginePlaylists'
+import { pathKey } from './libraryPathKey'
 
 export function withEngineLibrary<T>(
   libraryDir: string,
@@ -63,5 +65,10 @@ export function registerEnginePlaylistsIpc(
       ]),
     )
     return entries
+  })
+  ipcMain.handle('engine:membership', (_e, paths: string[]) => {
+    const dir = libraryDir()
+    const key = pathKey({ realPath: (p: string) => realpathSync(p) })
+    return withEngineLibrary(dir, (db) => readEngineMembership(db, dir, paths, key), {})
   })
 }

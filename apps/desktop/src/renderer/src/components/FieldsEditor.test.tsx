@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
-import type { CustomField } from '../../../shared/types'
+import type { CustomField, PlaylistLibrary } from '../../../shared/types'
 import { FIELD_DEFS } from '../lib/fields'
 import { FieldsEditor } from './FieldsEditor'
 
@@ -16,7 +16,7 @@ function setup(
     importFields?: string[]
     customFields?: CustomField[]
     separators?: { genre: string; grouping: string }
-    rekordboxField?: boolean
+    playlistLibraries?: PlaylistLibrary[]
   } = {},
 ) {
   const onChangeVisible = vi.fn()
@@ -36,7 +36,7 @@ function setup(
       onChangeCustom={onChangeCustom}
       separators={over.separators}
       onChangeSeparator={onChangeSeparator}
-      rekordboxField={over.rekordboxField}
+      playlistLibraries={over.playlistLibraries}
     />,
   )
   return { onChangeVisible, onChangeRequired, onChangeImport, onChangeCustom, onChangeSeparator }
@@ -539,9 +539,32 @@ describe('FieldsEditor tag separators', () => {
   })
 })
 
+describe('the Playlists rows of Traktor and Engine DJ', () => {
+  it('names the library of each Playlists row, so the three read apart', () => {
+    setup({
+      visibleFields: ['title', 'traktorPlaylists', 'enginePlaylists'],
+      playlistLibraries: ['traktor', 'engine'],
+    })
+    expect(screen.getByTestId('field-row-traktorPlaylists')).toHaveTextContent('PlaylistsTraktor')
+    expect(screen.getByTestId('field-row-enginePlaylists')).toHaveTextContent('PlaylistsEngine DJ')
+    expect(screen.queryByTestId('field-required-traktorPlaylists')).toBeNull()
+  })
+
+  it('keeps a library not found out of the list but in the saved order', () => {
+    const { onChangeVisible } = setup({
+      visibleFields: ['title', 'enginePlaylists', 'artist'],
+      playlistLibraries: ['traktor'],
+    })
+    expect(screen.queryByTestId('field-row-enginePlaylists')).toBeNull()
+    expect(screen.getByTestId('hidden-field-traktorPlaylists')).toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText('Move Title down'))
+    expect(onChangeVisible).toHaveBeenCalledWith(['artist', 'title', 'enginePlaylists'])
+  })
+})
+
 describe('the rekordbox Playlists row', () => {
   it('lists the field with no Required toggle when there is a collection, since it is not a tag', () => {
-    setup({ visibleFields: ['title', 'rekordboxPlaylists'], rekordboxField: true })
+    setup({ visibleFields: ['title', 'rekordboxPlaylists'], playlistLibraries: ['rekordbox'] })
     expect(screen.getByTestId('field-row-rekordboxPlaylists')).toBeInTheDocument()
     expect(screen.queryByTestId('field-required-rekordboxPlaylists')).toBeNull()
   })
@@ -553,7 +576,7 @@ describe('the rekordbox Playlists row', () => {
   })
 
   it('offers it among the hidden fields when the user hid it', () => {
-    setup({ visibleFields: ['title'], rekordboxField: true })
+    setup({ visibleFields: ['title'], playlistLibraries: ['rekordbox'] })
     expect(screen.getByTestId('hidden-field-rekordboxPlaylists')).toBeInTheDocument()
   })
 

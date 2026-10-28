@@ -69,6 +69,43 @@ const open = () => fireEvent.click(summary())
 const visiblePlaylists = () =>
   screen.queryAllByTestId(/^playlists-check-/).map((el) => el.getAttribute('data-testid'))
 
+describe('PlaylistsField for Traktor and Engine DJ', () => {
+  it('names its library beside the label, so three Playlists fields read apart', () => {
+    render(
+      <PlaylistsField
+        library="traktor"
+        label="Playlists"
+        tree={TREE}
+        options={OPTIONS}
+        value={[]}
+        onChange={vi.fn()}
+      />,
+    )
+    const field = screen.getByTestId('traktor-playlists-field')
+    expect(within(field).getByTestId('playlists-summary')).toHaveAccessibleName('Playlists Traktor')
+    fireEvent.click(within(field).getByTestId('playlists-summary'))
+    expect(screen.getByTestId('playlists-popover')).toHaveAccessibleName('Traktor playlists')
+  })
+
+  it('stays in place but disabled for a track the library does not have, and says so', () => {
+    render(
+      <PlaylistsField
+        library="engine"
+        disabled
+        label="Playlists"
+        tree={TREE}
+        options={OPTIONS}
+        value={[]}
+        onChange={vi.fn()}
+      />,
+    )
+    expect(summary()).toBeDisabled()
+    expect(summary()).toHaveTextContent('Not in Engine DJ')
+    fireEvent.click(summary())
+    expect(screen.queryByTestId('playlists-popover')).toBeNull()
+  })
+})
+
 describe('PlaylistsField closed', () => {
   it('fits nine playlists on one line by counting them and naming each top folder once', () => {
     render(<Harness />)
@@ -79,7 +116,7 @@ describe('PlaylistsField closed', () => {
 
   it('reads the count and where to a screen reader, since the label alone only names the field', () => {
     render(<Harness />)
-    expect(summary()).toHaveAccessibleName('Playlists')
+    expect(summary()).toHaveAccessibleName('Playlists rekordbox')
     expect(summary()).toHaveAccessibleDescription('In 7 playlists BOLOS (5) · CANTADITAS · House')
     cleanup()
     render(<Harness initial={[]} />)

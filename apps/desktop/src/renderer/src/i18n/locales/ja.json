@@ -800,7 +800,8 @@
       "create": "プレイリスト“{{name}}”を作成",
       "pending": "トラックの書き込み時に作成されます",
       "some": "一部のトラックのみ。クリックするとすべてに追加します",
-      "options": "rekordbox プレイリスト"
+      "options": "{{app}} プレイリスト",
+      "notIn": "{{app}} にありません"
     },
     "cues": {
       "title": "キュー",
@@ -998,7 +999,9 @@
     "rowHide": "{{name}} を非表示",
     "rowShow": "{{name}} を表示",
     "rowToken": "内部名 {{token}}",
-    "rekordboxPlaylists": "プレイリスト"
+    "rekordboxPlaylists": "プレイリスト",
+    "traktorPlaylists": "プレイリスト",
+    "enginePlaylists": "プレイリスト"
   },
   "declick": {
     "cueWarning": "ALACはTraktorのキューやビートグリッドを保持しません：変換すると失われます。",
@@ -2602,7 +2605,8 @@
       "cuesAdjusted_other": "rekordbox が {{track}} を解析しました。{{count}} 個のキューをグリッドに合わせて移動しました（最大 {{maxMs}} ms）",
       "cuesUnfit_one": "{{track}} のキュー 1 個が rekordbox のビートから離れているため、そのままにしました。確認してください",
       "cuesUnfit_other": "{{track}} のキュー {{count}} 個が rekordbox のビートから離れているため、そのままにしました。確認してください",
-      "goToCue": "キューへ移動"
+      "goToCue": "キューへ移動",
+      "notInLibrary": "{{track}} はもう rekordbox にありません。プレイリストは変更されませんでした"
     },
     "part": {
       "repoint": "新しいパス",
@@ -2646,13 +2650,16 @@
     "appliedChanges_other": "Engine DJ に反映しました · {{count}} 件の変更",
     "backupFailed": "Engine DJ をバックアップできませんでした。終了時に Surco が再試行します",
     "unreadable": "Surco は現在 Engine DJ のライブラリを読み取れないため、何も変更していません",
-    "writeFailed": "Engine DJ にキューを保存できませんでした。ライブラリは元のままです",
+    "writeFailed": "Engine DJ に変更を保存できませんでした。ライブラリは元のままです",
     "notice": {
       "cuesChanged": "{{track}} のキューが Engine DJ で変更されました。もう一度マークしてください",
       "callsDropped_one": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。Engine DJ はホットキューしか保持しません",
-      "callsDropped_other": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。Engine DJ はホットキューしか保持しません"
+      "callsDropped_other": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。Engine DJ はホットキューしか保持しません",
+      "playlistChanged": "{{playlist}} の {{track}} は変更されませんでした。Engine DJ 側で変更されています",
+      "playlistGone": "{{playlist}} はもう Engine DJ にありません。{{track}} は追加されませんでした",
+      "notInLibrary": "{{track}} はもう Engine DJ にありません。プレイリストは変更されませんでした"
     },
-    "discardConfirm": "待機中の内容を破棄しますか？キューは Engine DJ の状態に戻ります",
+    "discardConfirm": "待機中の内容を破棄しますか？Engine DJ のプレイリストとキューは Engine DJ の状態のままです",
     "pillHalted": "Engine DJ の変更を保留中",
     "halted": "最後の変更を保存も取り消しもできませんでした。「今すぐ適用」か「破棄」を選ぶまで、Surco はライブラリに触れません。「今すぐ適用」はバックアップコピー m.db.surco-backup を置き換えるため、何かおかしい場合は先にそこから復元してください。設定 → 一般 → コレクションのバックアップにあります",
     "pillElsewhere": "別の Engine DJ ライブラリを待っています",
@@ -2678,7 +2685,10 @@
     "notice": {
       "cuesChanged": "{{track}} のキューが Traktor で変更されました。もう一度マークしてください",
       "slotDropped": "Traktor には Surco のキュー用のボタンが 7 つしかないため、{{track}} のキュー H は保存されませんでした",
-      "editChanged": "{{playlist}} は変更されませんでした。Traktor 側で変更されています"
+      "editChanged": "{{playlist}} は変更されませんでした。Traktor 側で変更されています",
+      "playlistChanged": "{{playlist}} の {{track}} は変更されませんでした。Traktor 側で変更されています",
+      "playlistGone": "{{playlist}} はもう Traktor にありません。{{track}} は追加されませんでした",
+      "notInLibrary": "{{track}} はもう Traktor にありません。プレイリストは変更されませんでした"
     },
     "discardConfirm": "待機中の内容を破棄しますか？Traktor のプレイリストとキューは Traktor の状態のままです",
     "pillHalted": "Traktor の変更を保留中",

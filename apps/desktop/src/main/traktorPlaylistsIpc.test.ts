@@ -56,6 +56,15 @@ describe('registerTraktorPlaylistsIpc', () => {
     expect(handler('traktor:recentCount')({})).toBe(1)
   })
 
+  it('answers which playlists hold each file, and nothing without a collection, so the field can fill in', async () => {
+    const file = await collection()
+    let found = ''
+    registerTraktorPlaylistsIpc(() => found, { bootVolume: () => 'HD' })
+    expect(handler('traktor:membership')({}, ['/Music/a.mp3'])).toEqual({})
+    found = file
+    expect(handler('traktor:membership')({}, ['/Music/a.mp3'])).toEqual({ '/Music/a.mp3': ['u1'] })
+  })
+
   it('fails on a collection it cannot read, so the tab says so instead of showing no playlists', async () => {
     registerTraktorPlaylistsIpc(() => '/nowhere/collection.nml', { bootVolume: () => 'HD' })
     expect(() => handler('traktor:tree')({})).toThrow()

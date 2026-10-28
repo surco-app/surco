@@ -2,7 +2,13 @@ import type React from 'react'
 import { lazy, Suspense } from 'react'
 import { effectiveMeta } from '../../../shared/customFields'
 import { formatExtension, resolveJobFormat } from '../../../shared/format'
-import type { FormatSetting, Settings, ThemePref, TrackMetadata } from '../../../shared/types'
+import type {
+  FormatSetting,
+  PlaylistLibrary,
+  Settings,
+  ThemePref,
+  TrackMetadata,
+} from '../../../shared/types'
 import type { ActiveModal } from '../hooks/useOverlays'
 import type { Command } from '../lib/commands'
 import type { TrackItem } from '../types'
@@ -68,7 +74,7 @@ interface Props {
   deriveTracksUndoable: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   revealSelection: (id: string) => void
-  rekordboxField?: boolean
+  playlistLibraries?: PlaylistLibrary[]
 }
 
 // Every overlay the app can raise, and the one place that decides which is up. Split out of
@@ -92,7 +98,7 @@ export function Overlays({
   deriveTracksUndoable,
   updateTrack,
   revealSelection,
-  rekordboxField,
+  playlistLibraries,
 }: Props): React.JSX.Element {
   // App hands over the visible list itself when nothing is multi-selected.
   const bulkScope = bulkTracks === visibleTracks ? 'visible' : 'selected'
@@ -116,7 +122,7 @@ export function Overlays({
           onPreviewTheme={setThemePreview}
           onSettingsReplaced={setSettings}
           initialTab={activeModal.tab}
-          rekordboxField={rekordboxField}
+          playlistLibraries={playlistLibraries}
         />
       )}
 

@@ -217,6 +217,7 @@ describe('MetadataForm', () => {
 
 describe('the rekordbox Playlists field', () => {
   const playlists = {
+    library: 'rekordbox' as const,
     tree: [],
     options: [],
     single: { value: [], onChange: vi.fn() },

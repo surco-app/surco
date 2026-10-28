@@ -8,6 +8,7 @@ import { traktorContentId } from '../shared/traktorContent'
 import { rekordboxColorOf } from './traktorNmlCues'
 import {
   nmlPath,
+  readTraktorMembership,
   readTraktorPlaylist,
   readTraktorRecentCount,
   readTraktorTrackCount,
@@ -282,5 +283,34 @@ describe('nmlPath', () => {
       nmlPath('/gone.nml', ['/docs/4.5/collection.nml', '/docs/4.4/collection.nml'], exists),
     ).toBe('/docs/4.4/collection.nml')
     expect(nmlPath('', [], exists)).toBe('')
+  })
+})
+
+describe('readTraktorMembership', () => {
+  const doc = nml(
+    [A, B, C],
+    [
+      playlist('HISTORY', 'hist', [A]),
+      folder('Sets', [playlist('Friday', 'fri', [A, B, A])]),
+      playlist('Warmup', 'warm', [A]),
+    ],
+  )
+
+  it('names each playlist holding the file once, so the field shows the chips the DJ set in Traktor', () => {
+    expect(
+      readTraktorMembership(
+        doc,
+        ['/Users/dj/Music/a.mp3', '/Users/dj/Music/b.flac', '/Volumes/Stick/Sets/c.aiff'],
+        'Macintosh HD',
+      ),
+    ).toEqual({
+      '/Users/dj/Music/a.mp3': ['fri', 'warm'],
+      '/Users/dj/Music/b.flac': ['fri'],
+      '/Volumes/Stick/Sets/c.aiff': [],
+    })
+  })
+
+  it('leaves out a file Traktor does not have, so the field can say it is not in Traktor', () => {
+    expect(readTraktorMembership(doc, ['/Users/dj/Music/z.mp3'], 'Macintosh HD')).toEqual({})
   })
 })

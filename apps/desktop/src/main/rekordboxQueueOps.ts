@@ -23,6 +23,7 @@ export interface TrackOp {
   id: string
   kind: 'track'
   path: string
+  from?: string
   label: string
   contentId?: string
   facts: ContentFacts | null

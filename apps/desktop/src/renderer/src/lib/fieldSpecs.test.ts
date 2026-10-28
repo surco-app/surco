@@ -447,20 +447,21 @@ describe('buildFieldSpecs (bulk mode)', () => {
   })
 })
 
-describe('the rekordbox Playlists field', () => {
-  const playlists = {
+describe('the Playlists field of each library', () => {
+  const spec = {
     tree: [],
     options: [{ id: '3000', name: 'Makina', path: '' }],
     single: { value: [{ id: '3000', name: 'Makina' }], onChange: vi.fn() },
     bulk: { states: [], onToggle: vi.fn() },
   }
+  const playlists = { rekordbox: { ...spec, library: 'rekordbox' as const } }
 
   it('takes its place among the shown fields in the user order from Campos', () => {
     const specs = buildFieldSpecs(
       params({ visibleFields: ['title', 'rekordboxPlaylists', 'genre'], playlists }),
     )
     expect(specs.map((s) => s.key)).toEqual(['title', 'rekordboxPlaylists', 'genre'])
-    expect(specs[1].playlists).toMatchObject({ multi: false, options: playlists.options })
+    expect(specs[1].playlists).toMatchObject({ multi: false, options: spec.options })
     expect(specs[1].required).toBeUndefined()
   })
 
@@ -479,5 +480,29 @@ describe('the rekordbox Playlists field', () => {
       }),
     )
     expect(specs.at(-1)).toMatchObject({ key: 'rekordboxPlaylists', playlists: { multi: true } })
+  })
+
+  it('draws each library where the user put it, single and in bulk, and leaves out a library not found', () => {
+    const all = {
+      ...playlists,
+      traktor: { ...spec, library: 'traktor' as const },
+      engine: { ...spec, library: 'engine' as const, disabled: true },
+    }
+    const visibleFields = ['enginePlaylists', 'title', 'traktorPlaylists', 'rekordboxPlaylists']
+    expect(buildFieldSpecs(params({ visibleFields, playlists: all })).map((s) => s.key)).toEqual(
+      visibleFields,
+    )
+    const bulk = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [track('a'), track('b')],
+        visibleFields,
+        playlists: { traktor: all.traktor, engine: all.engine },
+      }),
+    )
+    expect(bulk.map((s) => [s.key, s.label, s.playlists?.disabled])).toEqual([
+      ['enginePlaylists', 'fields.enginePlaylists', true],
+      ['traktorPlaylists', 'fields.traktorPlaylists', undefined],
+    ])
   })
 })

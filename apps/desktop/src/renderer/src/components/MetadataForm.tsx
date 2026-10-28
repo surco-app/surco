@@ -26,6 +26,8 @@ function renderField(
   if (f.playlists) {
     return f.playlists.multi ? (
       <PlaylistsBulkField
+        library={f.playlists.library}
+        disabled={f.playlists.disabled}
         label={f.label}
         tree={f.playlists.tree}
         options={f.playlists.options}
@@ -34,6 +36,8 @@ function renderField(
       />
     ) : (
       <PlaylistsField
+        library={f.playlists.library}
+        disabled={f.playlists.disabled}
         label={f.label}
         tree={f.playlists.tree}
         options={f.playlists.options}

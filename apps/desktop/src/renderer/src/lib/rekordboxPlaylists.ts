@@ -1,4 +1,5 @@
 import type {
+  PlaylistLibrary,
   RekordboxPlaylistTarget,
   RekordboxQueueWritten,
   SourceNode,
@@ -13,6 +14,17 @@ export interface PlaylistOption {
 }
 
 export type Membership = Record<string, string[]>
+
+const EDIT_KEYS = {
+  rekordbox: { wanted: 'rekordboxPlaylists', base: 'rekordboxPlaylistsBase' },
+  traktor: { wanted: 'traktorPlaylists', base: 'traktorPlaylistsBase' },
+  engine: { wanted: 'enginePlaylists', base: 'enginePlaylistsBase' },
+} as const
+
+type EditKey = (typeof EDIT_KEYS)[PlaylistLibrary]['wanted' | 'base']
+
+const wantedOf = (t: TrackItem, library: PlaylistLibrary) => t[EDIT_KEYS[library].wanted]
+const baseOf = (t: TrackItem, library: PlaylistLibrary) => t[EDIT_KEYS[library].base]
 
 export function playlistOptions(tree: readonly SourceNode[]): PlaylistOption[] {
   const out: PlaylistOption[] = []
@@ -96,10 +108,11 @@ export function effectivePlaylists(
   track: TrackItem,
   membership: Membership | undefined,
   options: readonly PlaylistOption[] | undefined,
+  library: PlaylistLibrary = 'rekordbox',
 ): RekordboxPlaylistTarget[] | undefined {
   if (!membership || !options) return undefined
-  if (track.rekordboxPlaylists)
-    return track.rekordboxPlaylists.map((t) => resolveTarget(t, options))
+  const wanted = wantedOf(track, library)
+  if (wanted) return wanted.map((t) => resolveTarget(t, options))
   const byId = namesOf(options)
   return (membership[rekordboxPathOf(track)] ?? []).flatMap((id) => {
     const name = byId.get(id)
@@ -111,11 +124,12 @@ export function bulkPlaylistState(
   tracks: readonly TrackItem[],
   membership: Membership | undefined,
   options: readonly PlaylistOption[] | undefined,
+  library: PlaylistLibrary = 'rekordbox',
 ): { target: RekordboxPlaylistTarget; state: 'all' | 'some' }[] | undefined {
   if (!membership || !options) return undefined
   const seen = new Map<string, { target: RekordboxPlaylistTarget; n: number }>()
   for (const t of tracks) {
-    for (const target of effectivePlaylists(t, membership, options) ?? []) {
+    for (const target of effectivePlaylists(t, membership, options, library) ?? []) {
       const entry = seen.get(targetKey(target)) ?? { target, n: 0 }
       entry.n += 1
       seen.set(targetKey(target), entry)
@@ -127,20 +141,18 @@ export function bulkPlaylistState(
   }))
 }
 
-export interface PlaylistsEdit {
-  rekordboxPlaylists: RekordboxPlaylistTarget[]
-  rekordboxPlaylistsBase: string[]
-}
+export type PlaylistsEdit = Partial<Pick<TrackItem, EditKey>>
 
 export function playlistsEdit(
   track: TrackItem,
   membership: Membership,
   next: RekordboxPlaylistTarget[],
+  library: PlaylistLibrary = 'rekordbox',
 ): PlaylistsEdit {
+  const keys = EDIT_KEYS[library]
   return {
-    rekordboxPlaylists: next,
-    rekordboxPlaylistsBase:
-      track.rekordboxPlaylistsBase ?? membership[rekordboxPathOf(track)] ?? [],
+    [keys.wanted]: next,
+    [keys.base]: baseOf(track, library) ?? membership[rekordboxPathOf(track)] ?? [],
   }
 }
 
@@ -150,22 +162,28 @@ export function withTarget(
   options: readonly PlaylistOption[] | undefined,
   target: RekordboxPlaylistTarget,
   on: boolean,
+  library: PlaylistLibrary = 'rekordbox',
 ): ({ id: string } & PlaylistsEdit)[] | undefined {
   if (!membership || !options) return undefined
-  return tracks.map((t) => {
-    const rest = (effectivePlaylists(t, membership, options) ?? []).filter(
-      (x) => targetKey(x) !== targetKey(target),
-    )
-    return { id: t.id, ...playlistsEdit(t, membership, on ? [...rest, target] : rest) }
-  })
+  return tracks
+    .filter((t) => library === 'rekordbox' || rekordboxPathOf(t) in membership)
+    .map((t) => {
+      const rest = (effectivePlaylists(t, membership, options, library) ?? []).filter(
+        (x) => targetKey(x) !== targetKey(target),
+      )
+      return {
+        id: t.id,
+        ...playlistsEdit(t, membership, on ? [...rest, target] : rest, library),
+      }
+    })
 }
 
-function withoutPlaylistEdit(t: TrackItem): TrackItem {
+function withoutPlaylistEdit(t: TrackItem, library: PlaylistLibrary): TrackItem {
   const before = trackSignature(t)
   const cleared: TrackItem = {
     ...t,
-    rekordboxPlaylists: undefined,
-    rekordboxPlaylistsBase: undefined,
+    [EDIT_KEYS[library].wanted]: undefined,
+    [EDIT_KEYS[library].base]: undefined,
   }
   const after = trackSignature(cleared)
   return {
@@ -175,10 +193,16 @@ function withoutPlaylistEdit(t: TrackItem): TrackItem {
   }
 }
 
-export function discardPlaylistEdits(tracks: TrackItem[], paths: string[]): TrackItem[] {
+export function discardPlaylistEdits(
+  tracks: TrackItem[],
+  paths: string[],
+  library: PlaylistLibrary = 'rekordbox',
+): TrackItem[] {
   const discarded = new Set(paths)
   return tracks.map((t) =>
-    !t.rekordboxPlaylists || !discarded.has(rekordboxPathOf(t)) ? t : withoutPlaylistEdit(t),
+    !wantedOf(t, library) || !discarded.has(rekordboxPathOf(t))
+      ? t
+      : withoutPlaylistEdit(t, library),
   )
 }
 
@@ -190,12 +214,12 @@ function sameTargets(a: RekordboxPlaylistTarget[], b: RekordboxPlaylistTarget[])
 export function clearWrittenPlaylists(
   tracks: TrackItem[],
   written: RekordboxQueueWritten[],
+  library: PlaylistLibrary = 'rekordbox',
 ): TrackItem[] {
   const wantedBy = new Map(written.map((w) => [w.path, w.wanted]))
   return tracks.map((t) => {
     const wanted = wantedBy.get(rekordboxPathOf(t))
-    return t.rekordboxPlaylists && wanted && sameTargets(t.rekordboxPlaylists, wanted)
-      ? withoutPlaylistEdit(t)
-      : t
+    const staged = wantedOf(t, library)
+    return staged && wanted && sameTargets(staged, wanted) ? withoutPlaylistEdit(t, library) : t
   })
 }

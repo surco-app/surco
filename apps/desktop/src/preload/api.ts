@@ -251,6 +251,8 @@ export interface Api {
   rekordboxQueuedCues: (contentId: string) => Promise<QueuedCues | null>
   undoRekordboxCues: (contentId: string) => Promise<void>
   rekordboxMembership: (paths: string[]) => Promise<Record<string, string[]>>
+  traktorMembership: (paths: string[]) => Promise<Record<string, string[]>>
+  engineMembership: (paths: string[]) => Promise<Record<string, string[]>>
   onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
   onRekordboxQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
   // Whether the collection has a separator track that can be copied into a playlist.

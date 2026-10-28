@@ -205,10 +205,32 @@ describe('runProcessTrack — plain conversion', () => {
     )
   })
 
+  it('attaches the Traktor and Engine DJ playlists with the membership they were edited against', async () => {
+    const attachLibraryPlaylists = vi.fn()
+    const result = await runProcessTrack(
+      job({
+        traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
+        traktorPlaylistsBase: ['old'],
+        enginePlaylists: [{ id: '7', name: 'House' }],
+      }),
+      makeDeps({ attachLibraryPlaylists }),
+    )
+    expect(attachLibraryPlaylists).toHaveBeenCalledWith(result.outputPath, 'traktor', {
+      wanted: [{ id: 'fri', name: 'Friday' }],
+      base: ['old'],
+    })
+    expect(attachLibraryPlaylists).toHaveBeenCalledWith(result.outputPath, 'engine', {
+      wanted: [{ id: '7', name: 'House' }],
+      base: [],
+    })
+  })
+
   it('attaches nothing when the field was never touched', async () => {
     const attachRekordboxPlaylists = vi.fn()
-    await runProcessTrack(job(), makeDeps({ attachRekordboxPlaylists }))
+    const attachLibraryPlaylists = vi.fn()
+    await runProcessTrack(job(), makeDeps({ attachRekordboxPlaylists, attachLibraryPlaylists }))
     expect(attachRekordboxPlaylists).not.toHaveBeenCalled()
+    expect(attachLibraryPlaylists).not.toHaveBeenCalled()
   })
 })
 

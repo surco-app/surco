@@ -18,12 +18,13 @@ import {
   customKeyProblem,
   suggestCustomKey,
 } from '../../../shared/customFields'
-import type { CustomField, MetaTextKey } from '../../../shared/types'
+import type { CustomField, MetaTextKey, PlaylistLibrary } from '../../../shared/types'
 import {
   IMPORTABLE_FIELDS,
+  isPlaylistField,
   labeledFields,
   moveItem,
-  REKORDBOX_PLAYLISTS_FIELD,
+  PLAYLIST_FIELDS,
   sortFieldsByGroup,
 } from '../lib/fields'
 import {
@@ -34,6 +35,7 @@ import {
   TOGGLE_ON,
 } from '../lib/settingsRows'
 import { Select } from './Select'
+import { LIBRARY_ICON } from './SourceIcons'
 import { Tooltip } from './Tooltip'
 
 // How long the auto-organize button holds its "done" confirmation before reverting.
@@ -92,7 +94,7 @@ interface Props {
   // leaves them out and its rows show none.
   separators?: Record<TagListKey, string>
   onChangeSeparator?: (key: TagListKey, separator: string) => void
-  rekordboxField?: boolean
+  playlistLibraries?: PlaylistLibrary[]
 }
 
 // The editor's field list: which tags show (and in what order) and which must be filled
@@ -109,12 +111,14 @@ export function FieldsEditor({
   onChangeCustom,
   separators,
   onChangeSeparator,
-  rekordboxField = false,
+  playlistLibraries = [],
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // Other stays picked while its box is empty, before the user has typed a separator.
   const [otherOpen, setOtherOpen] = useState<Partial<Record<TagListKey, boolean>>>({})
-  const fields = labeledFields(customFields, tr, rekordboxField)
+  const fields = labeledFields(customFields, tr, playlistLibraries)
+  const libraryOf = (key: string): PlaylistLibrary | undefined =>
+    playlistLibraries.find((l) => PLAYLIST_FIELDS[l] === key)
   const labelOf = (key: string): string => fields.find((f) => f.key === key)?.label ?? key
   const hidden = fields
     .filter((f) => !visibleFields.includes(f.key))
@@ -144,12 +148,24 @@ export function FieldsEditor({
     ) : null
   // A row's name with its {key} hint, the hint kept off the Delete button beside it. The
   // tooltip only answers a pointer, so the token is also there in words for a screen reader.
+  const libraryIcon = (key: string): React.JSX.Element | null => {
+    const library = libraryOf(key)
+    if (!library) return null
+    const Icon = LIBRARY_ICON[library]
+    return (
+      <>
+        <Icon size={12} />
+        <span className="sr-only">{tr(`sources.${library}`)}</span>
+      </>
+    )
+  }
   const nameCell = (key: string): React.JSX.Element => (
     <>
       <span>
         {labelOf(key)}
         <Tooltip label={`{${key}}`} />
       </span>
+      {libraryIcon(key)}
       <span className="sr-only">{tr('fields.rowToken', { token: `{${key}}` })}</span>
       {deleteButton(key)}
       {separatorPicker(key)}
@@ -250,12 +266,8 @@ export function FieldsEditor({
     listRef.current?.querySelector<HTMLElement>(`[data-arrow="${refocusArrow.current}"]`)?.focus()
     refocusArrow.current = null
   }, [visibleFields])
-  const hiddenOfferedKey = rekordboxField
-    ? []
-    : visibleFields.filter((k) => k === REKORDBOX_PLAYLISTS_FIELD)
-  const shownFields = rekordboxField
-    ? visibleFields
-    : visibleFields.filter((k) => k !== REKORDBOX_PLAYLISTS_FIELD)
+  const hiddenOfferedKey = visibleFields.filter((k) => isPlaylistField(k) && !libraryOf(k))
+  const shownFields = visibleFields.filter((k) => !isPlaylistField(k) || libraryOf(k))
   function move(i: number, delta: -1 | 1): void {
     const to = i + delta
     if (to === 0) refocusArrow.current = `down-${shownFields[i]}`
@@ -379,7 +391,7 @@ export function FieldsEditor({
                 {nameCell(key)}
               </span>
               {autoToggle(key)}
-              {key === REKORDBOX_PLAYLISTS_FIELD ? (
+              {isPlaylistField(key) ? (
                 <span aria-hidden="true" />
               ) : (
                 <button

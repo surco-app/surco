@@ -1035,12 +1035,22 @@ describe('useTrackLibrary foreign tags', () => {
           meta: { title: 'Restored' } as never,
           rekordboxPlaylists: [{ name: 'Fijas' }],
           rekordboxPlaylistsBase: ['3000'],
+          traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
+          traktorPlaylistsBase: ['old'],
+          enginePlaylists: [],
+          enginePlaylistsBase: ['7'],
         },
       }),
     )
 
     expect(result.current.tracks[0]?.rekordboxPlaylists).toEqual([{ name: 'Fijas' }])
     expect(result.current.tracks[0]?.rekordboxPlaylistsBase).toEqual(['3000'])
+    expect(result.current.tracks[0]).toMatchObject({
+      traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
+      traktorPlaylistsBase: ['old'],
+      enginePlaylists: [],
+      enginePlaylistsBase: ['7'],
+    })
   })
 
   it('restores what the applied release wrote', async () => {

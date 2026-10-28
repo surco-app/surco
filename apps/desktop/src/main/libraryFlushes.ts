@@ -24,7 +24,7 @@ import { type FlushResult, flushRekordboxSync, REKORDBOX_KEYS } from './rekordbo
 import { repointTracks } from './rekordboxLibrary'
 import { findRekordboxCollection } from './rekordboxPath'
 import type { RekordboxQueue } from './rekordboxQueue'
-import { queueConversionRun, trackOpsFromRun } from './rekordboxQueueFromRun'
+import { libraryTrackOps, queueConversionRun, trackOpsFromRun } from './rekordboxQueueFromRun'
 import type { createSessionBackup } from './rekordboxSessionBackup'
 import { updateRekordboxTags } from './rekordboxTags'
 import { getSettings } from './settings'
@@ -169,6 +169,11 @@ export async function flushConversionBatch(
   // The run's repoints, taken once: rekordbox and Engine DJ each apply the same list to
   // their own library, and closing the batch twice would hand the second one nothing.
   const repoints = endRekordboxBatch()
+  const traktorOps = libraryTrackOps(repoints, 'traktor')
+  if (traktorQueue && traktorOps.length > 0) {
+    traktorQueue.enqueue(traktorOps)
+    traktorQueue.applyQuietly()
+  }
   // rekordbox next, and independently: the two collections are separate libraries, so
   // one being open or unwritable must not stop the other from being updated.
   const rekordbox = rekordboxWriteDeps(host)
@@ -213,6 +218,11 @@ export async function flushConversionBatch(
   const unplugged = engineResult.blocked === 'collection-missing' && engineUnplugged
   if (engineQueue && (engineResult.blocked === ENGINE_KEYS.runningReason || unplugged)) {
     engineQueue.enqueue([], engineRepoints)
+    engineQueue.applyQuietly()
+  }
+  const engineOps = libraryTrackOps(repoints, 'engine')
+  if (engineQueue && engineOps.length > 0) {
+    engineQueue.enqueue(engineOps)
     engineQueue.applyQuietly()
   }
 }

@@ -696,6 +696,53 @@ describe('Editor rekordbox Playlists field', () => {
   })
 })
 
+describe('Editor Traktor and Engine DJ Playlists fields', () => {
+  function librariesWith(traktor: Api['traktorMembership'], engine: Api['engineMembership']) {
+    Object.assign(window.api, {
+      traktorAvailable: vi.fn<Api['traktorAvailable']>().mockResolvedValue(true),
+      loadTraktorTree: vi
+        .fn<Api['loadTraktorTree']>()
+        .mockResolvedValue([{ id: 'fri', name: 'Friday', kind: 'playlist', count: 1 }]),
+      traktorMembership: traktor,
+      engineAvailable: vi.fn<Api['engineAvailable']>().mockResolvedValue(true),
+      loadEngineTree: vi
+        .fn<Api['loadEngineTree']>()
+        .mockResolvedValue([{ id: '7', name: 'House', kind: 'playlist', count: 1 }]),
+      engineMembership: engine,
+    })
+  }
+
+  it('writes a pick to that library alone, as the membership it was edited against', async () => {
+    librariesWith(
+      vi.fn<Api['traktorMembership']>().mockResolvedValue({ '/music/a.wav': [] }),
+      vi.fn<Api['engineMembership']>().mockResolvedValue({ '/music/a.wav': ['7'] }),
+    )
+    const { onChange } = renderEditor({ id: 'a' }, 'wav', {
+      visibleFields: ['traktorPlaylists', 'enginePlaylists'],
+    })
+    const traktor = await screen.findByTestId('traktor-playlists-field')
+    const engine = await screen.findByTestId('engine-playlists-field')
+    expect(within(engine).getByTestId('playlists-where')).toHaveTextContent('House')
+    fireEvent.click(within(traktor).getByTestId('playlists-summary'))
+    fireEvent.click(screen.getByTestId('playlists-check-fri'))
+    expect(onChange).toHaveBeenCalledWith({
+      traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
+      traktorPlaylistsBase: [],
+    })
+  })
+
+  it('is shown disabled for a track the library does not have, instead of offering a write it cannot do', async () => {
+    librariesWith(
+      vi.fn<Api['traktorMembership']>().mockResolvedValue({}),
+      vi.fn<Api['engineMembership']>().mockResolvedValue({}),
+    )
+    renderEditor({ id: 'a' }, 'wav', { visibleFields: ['traktorPlaylists'] })
+    const field = await screen.findByTestId('traktor-playlists-field')
+    expect(within(field).getByTestId('playlists-summary')).toBeDisabled()
+    expect(field).toHaveTextContent('Not in Traktor')
+  })
+})
+
 describe('Editor compilation field', () => {
   // A compilation is a yes/no fact, not free text: a checkbox writes the exact
   // '1' the TCMP/COMPILATION tag needs, where a text field would invite junk.

@@ -136,6 +136,7 @@ import { createQuitGuard } from './quitGuard'
 import { trashRecoverably, trashWithoutRoom } from './recoverableTrash'
 import {
   abandonRekordboxBatch,
+  attachLibraryPlaylists,
   attachRekordboxPlaylists,
   beginRekordboxBatch,
   redirectRekordboxRepoint,
@@ -350,6 +351,7 @@ const engineCueQueue = createRekordboxQueue({
   repoint: (libraryDir, list) => repointEngineQueued(libraryDir, list, sessions),
   nodeStamps: async () => ({}),
   onChange: (state) => broadcast('engine:cueQueueChanged', state),
+  addsTracks: false,
 })
 const announceEngineApplied = (result: QueueApply): void => {
   const notice = appliedNotice(result)
@@ -402,6 +404,7 @@ const traktorCueQueue = createRekordboxQueue<QueuedNmlPatch>({
   repoint: (nml, patches) => syncQueuedPatches(nml, patches, syncCollection),
   nodeStamps: async () => ({}),
   onChange: (state) => broadcast('traktor:cueQueueChanged', state),
+  addsTracks: false,
 })
 const announceTraktorApplied = (result: QueueApply): void => {
   const notice = appliedNotice(result)
@@ -1635,6 +1638,7 @@ function registerIpc(): void {
       },
       allowMedia: (path) => mediaAccess.allow(path),
       attachRekordboxPlaylists,
+      attachLibraryPlaylists,
       existsSync,
       isSameFile,
       fileIdentity,

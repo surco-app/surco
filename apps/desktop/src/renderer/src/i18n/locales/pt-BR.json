@@ -800,7 +800,8 @@
       "create": "Criar playlist “{{name}}”",
       "pending": "Será criada ao gravar a faixa",
       "some": "Só em algumas faixas. Clique para colocá-la em todas",
-      "options": "Playlists do rekordbox"
+      "options": "Playlists do {{app}}",
+      "notIn": "Não está no {{app}}"
     },
     "cues": {
       "title": "Cues",
@@ -998,7 +999,9 @@
     "rowHide": "Ocultar {{name}}",
     "rowShow": "Mostrar {{name}}",
     "rowToken": "Nome interno {{token}}",
-    "rekordboxPlaylists": "Playlists"
+    "rekordboxPlaylists": "Playlists",
+    "traktorPlaylists": "Playlists",
+    "enginePlaylists": "Playlists"
   },
   "declick": {
     "cueWarning": "ALAC não guarda os cues nem o beatgrid do Traktor: eles se perdem ao converter.",
@@ -2602,7 +2605,8 @@
       "cuesAdjusted_other": "O rekordbox já analisou {{track}}. {{count}} cues ajustados à grade dele, o mais distante {{maxMs}} ms",
       "cuesUnfit_one": "Um cue de {{track}} cai longe das batidas do rekordbox e ficou onde estava. Confira",
       "cuesUnfit_other": "{{count}} cues de {{track}} caem longe das batidas do rekordbox e ficaram onde estavam. Confira",
-      "goToCue": "Ir ao cue"
+      "goToCue": "Ir ao cue",
+      "notInLibrary": "{{track}} não está mais no rekordbox. As playlists dela não mudaram"
     },
     "part": {
       "repoint": "novo caminho",
@@ -2646,13 +2650,16 @@
     "appliedChanges_other": "Pronto no Engine DJ · {{count}} mudanças",
     "backupFailed": "Não foi possível fazer a cópia do Engine DJ. O Surco tentará de novo ao fechá-lo",
     "unreadable": "O Surco não consegue ler a biblioteca do Engine DJ agora e nada mudou",
-    "writeFailed": "Não foi possível salvar os cues no Engine DJ. A biblioteca continua como estava",
+    "writeFailed": "Não foi possível salvar as alterações no Engine DJ. A biblioteca continua como estava",
     "notice": {
       "cuesChanged": "Os cues de {{track}} mudaram no Engine DJ. Marque-os de novo",
       "callsDropped_one": "{{count}} CALL de {{track}} não foi salvo ({{times}}). O Engine DJ só guarda hot cues",
-      "callsDropped_other": "{{count}} CALLs de {{track}} não foram salvos ({{times}}). O Engine DJ só guarda hot cues"
+      "callsDropped_other": "{{count}} CALLs de {{track}} não foram salvos ({{times}}). O Engine DJ só guarda hot cues",
+      "playlistChanged": "{{track}} não mudou em {{playlist}}. Ela mudou no Engine DJ",
+      "playlistGone": "{{playlist}} não existe mais no Engine DJ. {{track}} não foi adicionada",
+      "notInLibrary": "{{track}} não está mais no Engine DJ. As playlists dela não mudaram"
     },
-    "discardConfirm": "Descartar o que espera? Os cues voltam ao que o Engine DJ tem",
+    "discardConfirm": "Descartar o que está esperando? Suas playlists e cues do Engine DJ ficam como o Engine DJ as tem",
     "pillHalted": "Mudanças do Engine DJ em pausa",
     "halted": "A última mudança não pôde ser salva nem desfeita. O Surco não vai mexer na biblioteca até você escolher Aplicar agora ou Descartar. Aplicar agora substitui a cópia de segurança m.db.surco-backup, então se algo parecer errado, restaure a partir dela antes. Você a encontra em Ajustes → Geral → Cópias das coleções",
     "pillElsewhere": "Pendente de outra biblioteca do Engine DJ",
@@ -2678,7 +2685,10 @@
     "notice": {
       "cuesChanged": "Os cues de {{track}} mudaram no Traktor. Marque-os de novo",
       "slotDropped": "O Traktor tem 7 botões para os cues do Surco, então o cue H de {{track}} não foi salvo",
-      "editChanged": "{{playlist}} não foi alterada. Ela mudou no Traktor"
+      "editChanged": "{{playlist}} não foi alterada. Ela mudou no Traktor",
+      "playlistChanged": "{{track}} não mudou em {{playlist}}. Ela mudou no Traktor",
+      "playlistGone": "{{playlist}} não existe mais no Traktor. {{track}} não foi adicionada",
+      "notInLibrary": "{{track}} não está mais no Traktor. As playlists dela não mudaram"
     },
     "discardConfirm": "Descartar o que está esperando? Suas playlists e cues do Traktor ficam como o Traktor as tem",
     "pillHalted": "Mudanças do Traktor em pausa",

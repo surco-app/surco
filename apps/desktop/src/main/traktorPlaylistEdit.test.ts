@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { RekordboxPlaylistEdit } from '../shared/types'
-import type { EditOp } from './rekordboxQueueOps'
+import type { EditOp, TrackOp } from './rekordboxQueueOps'
 import { applyTraktorEdits } from './traktorPlaylistEdit'
 import { PLAYLISTS_SAMPLE } from './traktorPlaylistFixture'
 import {
@@ -207,5 +207,90 @@ describe('applyTraktorEdits', () => {
     )
     expect(nml).toBe(DOC)
     expect([...outcomes.values()][0]).toMatchObject({ applied: false, reason: 'stale' })
+  })
+})
+
+describe('playlists chosen in the editor for a track', () => {
+  const track = (over: Partial<TrackOp>): TrackOp => ({
+    id: `t${++n}`,
+    kind: 'track',
+    path: '/m/b.mp3',
+    label: 'B',
+    facts: null,
+    wanted: [],
+    known: [],
+    stamps: {},
+    ...over,
+  })
+  const outcome = (o: Map<string, unknown>) => [...o.values()][0]
+
+  it('adds the track to the playlists the DJ picked and takes it out of the ones the DJ dropped', () => {
+    const { nml, outcomes } = applyTraktorEdits(
+      DOC,
+      [track({ path: '/m/a.mp3', wanted: [{ id: 'dnb', name: 'Drum & Bass' }], known: ['fri'] })],
+      'HD',
+    )
+    expect(rows(nml, 'dnb')).toEqual(['a.mp3'])
+    expect(rows(nml, 'fri')).toEqual(['|'])
+    expect(outcome(outcomes)).toMatchObject({ applied: true, notices: [] })
+  })
+
+  it('keeps a playlist the DJ added in Traktor after opening the track, and says so', () => {
+    const { nml, outcomes } = applyTraktorEdits(
+      DOC,
+      [track({ path: '/m/a.mp3', wanted: [], known: [] })],
+      'HD',
+    )
+    expect(rows(nml, 'fri')).toEqual(['a.mp3', '|', 'a.mp3'])
+    expect(outcome(outcomes)).toMatchObject({
+      notices: [{ code: 'playlist-changed', track: 'B', playlist: 'Friday' }],
+    })
+  })
+
+  it('finds the track by the file it was converted from while Traktor still names that one', () => {
+    const { nml } = applyTraktorEdits(
+      DOC,
+      [
+        track({
+          path: '/m/b.flac',
+          from: '/m/b.mp3',
+          wanted: [{ id: 'dnb', name: 'Drum & Bass' }],
+        }),
+      ],
+      'HD',
+    )
+    expect(rows(nml, 'dnb')).toEqual(['b.mp3'])
+  })
+
+  it('creates a playlist the DJ typed, at the top of the tree, and puts the track in it', () => {
+    const { nml } = applyTraktorEdits(DOC, [track({ wanted: [{ name: 'Nueva' }] })], 'HD')
+    const made = readTraktorTree(nml).find((n) => n.name === 'Nueva')
+    expect(made?.kind).toBe('playlist')
+    expect(rows(nml, made?.id ?? '')).toEqual(['b.mp3'])
+  })
+
+  it('says a playlist is gone instead of adding the track to nothing', () => {
+    const { nml, outcomes } = applyTraktorEdits(
+      DOC,
+      [track({ wanted: [{ id: 'nope', name: 'Old set' }] })],
+      'HD',
+    )
+    expect(nml).toBe(DOC)
+    expect(outcome(outcomes)).toMatchObject({
+      notices: [{ code: 'playlist-gone', track: 'B', playlist: 'Old set' }],
+    })
+  })
+
+  it('writes nothing for a track Traktor does not have, and says so', () => {
+    const { nml, outcomes } = applyTraktorEdits(
+      DOC,
+      [track({ path: '/m/z.mp3', wanted: [{ id: 'dnb', name: 'Drum & Bass' }] })],
+      'HD',
+    )
+    expect(nml).toBe(DOC)
+    expect(outcome(outcomes)).toMatchObject({
+      applied: false,
+      notices: [{ code: 'not-in-library', track: 'B' }],
+    })
   })
 })

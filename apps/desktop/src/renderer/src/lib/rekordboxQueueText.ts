@@ -54,6 +54,7 @@ export const REKORDBOX_QUEUE_WORDS: QueueWords = {
     'cues-slot-dropped': 'traktorQueue.notice.slotDropped',
     'cues-adjusted': 'rekordboxQueue.notice.cuesAdjusted',
     'cues-unfit': 'rekordboxQueue.notice.cuesUnfit',
+    'not-in-library': 'rekordboxQueue.notice.notInLibrary',
   },
 }
 
@@ -75,6 +76,9 @@ export const ENGINE_QUEUE_WORDS: QueueWords = {
   notices: {
     ...REKORDBOX_QUEUE_WORDS.notices,
     'cues-changed': 'engineQueue.notice.cuesChanged',
+    'playlist-changed': 'engineQueue.notice.playlistChanged',
+    'playlist-gone': 'engineQueue.notice.playlistGone',
+    'not-in-library': 'engineQueue.notice.notInLibrary',
   },
 }
 
@@ -97,6 +101,9 @@ export const TRAKTOR_QUEUE_WORDS: QueueWords = {
     ...REKORDBOX_QUEUE_WORDS.notices,
     'cues-changed': 'traktorQueue.notice.cuesChanged',
     'edit-changed': 'traktorQueue.notice.editChanged',
+    'playlist-changed': 'traktorQueue.notice.playlistChanged',
+    'playlist-gone': 'traktorQueue.notice.playlistGone',
+    'not-in-library': 'traktorQueue.notice.notInLibrary',
   },
 }
 

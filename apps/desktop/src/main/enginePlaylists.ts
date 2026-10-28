@@ -13,6 +13,7 @@ import type {
   SourcePreview,
 } from '../shared/types'
 import { engineCuesOf, readEnginePerformance } from './engineCues'
+import { engineRowFinder } from './engineRepoint'
 
 export type EngineDb = Database.Database
 
@@ -257,4 +258,28 @@ export function readEnginePlaylist(
       preview,
     }
   })
+}
+
+export function readEngineMembership(
+  db: EngineDb,
+  libraryDir: string,
+  paths: string[],
+  key: (path: string) => string,
+): Record<string, string[]> {
+  const rows = db.prepare('SELECT id, path FROM Track WHERE path IS NOT NULL').all() as {
+    id: number
+    path: string
+  }[]
+  const find = engineRowFinder(libraryDir, rows)
+  const lists = db.prepare(
+    `SELECT DISTINCT e.listId AS id FROM PlaylistEntity e JOIN Playlist p ON p.id = e.listId
+      WHERE e.trackId = ? AND coalesce(p.isPersisted, 1) = 1 ORDER BY e.listId`,
+  )
+  const out: Record<string, string[]> = {}
+  for (const path of paths) {
+    const found = find(path, key)
+    if (found.length !== 1) continue
+    out[path] = (lists.all(found[0].id) as { id: number }[]).map((l) => String(l.id))
+  }
+  return out
 }

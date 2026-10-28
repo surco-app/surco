@@ -11,6 +11,8 @@ type SignatureFields = Pick<
   | 'trim'
   | 'foreignRemoved'
   | 'rekordboxPlaylists'
+  | 'traktorPlaylists'
+  | 'enginePlaylists'
 >
 
 // A change-detecting proxy for the cover, never the cover itself. An embedded cover is a
@@ -41,6 +43,8 @@ export function trackSignature(track: SignatureFields): string {
     // identically, like the trim above.
     track.foreignRemoved ?? [],
     ...(track.rekordboxPlaylists ? [track.rekordboxPlaylists] : []),
+    ...(track.traktorPlaylists ? [['traktor', track.traktorPlaylists]] : []),
+    ...(track.enginePlaylists ? [['engine', track.enginePlaylists]] : []),
   ])
 }
 

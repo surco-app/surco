@@ -800,7 +800,8 @@
       "create": "Playlist „{{name}}“ erstellen",
       "pending": "Wird beim Schreiben des Titels erstellt",
       "some": "Nur bei einigen Titeln. Klicken, um sie allen hinzuzufügen",
-      "options": "rekordbox-Playlists"
+      "options": "{{app}}-Playlists",
+      "notIn": "Nicht in {{app}}"
     },
     "cues": {
       "title": "Cues",
@@ -998,7 +999,9 @@
     "rowHide": "{{name}} ausblenden",
     "rowShow": "{{name}} anzeigen",
     "rowToken": "Interner Name {{token}}",
-    "rekordboxPlaylists": "Playlists"
+    "rekordboxPlaylists": "Playlists",
+    "traktorPlaylists": "Playlists",
+    "enginePlaylists": "Playlists"
   },
   "declick": {
     "cueWarning": "ALAC speichert keine Traktor-Cues und kein Beatgrid: Beim Konvertieren gehen sie verloren.",
@@ -2602,7 +2605,8 @@
       "cuesAdjusted_other": "rekordbox hat {{track}} analysiert. {{count}} Cues auf sein Raster gerückt, der weiteste {{maxMs}} ms",
       "cuesUnfit_one": "Ein Cue von {{track}} liegt weit von den Schlägen in rekordbox und blieb, wo er war. Prüf ihn",
       "cuesUnfit_other": "{{count}} Cues von {{track}} liegen weit von den Schlägen in rekordbox und blieben, wo sie waren. Prüf sie",
-      "goToCue": "Zum Cue"
+      "goToCue": "Zum Cue",
+      "notInLibrary": "{{track}} gibt es in rekordbox nicht mehr. Ihre Playlists wurden nicht geändert"
     },
     "part": {
       "repoint": "neuer Pfad",
@@ -2646,13 +2650,16 @@
     "appliedChanges_other": "Fertig in Engine DJ · {{count}} Änderungen",
     "backupFailed": "Engine DJ konnte nicht gesichert werden. Surco versucht es beim nächsten Schließen erneut",
     "unreadable": "Surco kann die Engine-DJ-Bibliothek gerade nicht lesen, nichts geändert",
-    "writeFailed": "Die Cues konnten nicht in Engine DJ gespeichert werden. Die Bibliothek ist unverändert",
+    "writeFailed": "Die Änderungen konnten nicht in Engine DJ gespeichert werden. Die Bibliothek ist unverändert",
     "notice": {
       "cuesChanged": "Die Cues von {{track}} haben sich in Engine DJ geändert. Markiere sie erneut",
       "callsDropped_one": "{{count}} CALL von {{track}} wurde nicht gespeichert ({{times}}). Engine DJ speichert nur Hot Cues",
-      "callsDropped_other": "{{count}} CALLs von {{track}} wurden nicht gespeichert ({{times}}). Engine DJ speichert nur Hot Cues"
+      "callsDropped_other": "{{count}} CALLs von {{track}} wurden nicht gespeichert ({{times}}). Engine DJ speichert nur Hot Cues",
+      "playlistChanged": "{{track}} wurde in {{playlist}} nicht geändert. Sie hat sich in Engine DJ geändert",
+      "playlistGone": "{{playlist}} gibt es in Engine DJ nicht mehr. {{track}} wurde nicht hinzugefügt",
+      "notInLibrary": "{{track}} gibt es in Engine DJ nicht mehr. Ihre Playlists wurden nicht geändert"
     },
-    "discardConfirm": "Wartende Änderungen verwerfen? Die Cues zeigen wieder, was Engine DJ hat",
+    "discardConfirm": "Wartendes verwerfen? Deine Engine-DJ-Playlists und Cues bleiben, wie Engine DJ sie hat",
     "pillHalted": "Engine-DJ-Änderungen angehalten",
     "halted": "Die letzte Änderung konnte weder gespeichert noch rückgängig gemacht werden. Surco rührt die Bibliothek nicht an, bis du Jetzt anwenden oder Verwerfen wählst. Jetzt anwenden ersetzt die Sicherungskopie m.db.surco-backup. Wenn etwas nicht stimmt, stelle die Bibliothek zuerst daraus wieder her. Du findest sie unter Einstellungen → Allgemein → Sicherungen der Sammlungen",
     "pillElsewhere": "Wartet auf eine andere Engine-DJ-Bibliothek",
@@ -2678,7 +2685,10 @@
     "notice": {
       "cuesChanged": "Die Cues von {{track}} haben sich in Traktor geändert. Markiere sie erneut",
       "slotDropped": "Traktor hat 7 Tasten für die Cues von Surco, daher wurde Cue H von {{track}} nicht gespeichert",
-      "editChanged": "{{playlist}} wurde nicht geändert. Sie hat sich in Traktor geändert"
+      "editChanged": "{{playlist}} wurde nicht geändert. Sie hat sich in Traktor geändert",
+      "playlistChanged": "{{track}} wurde in {{playlist}} nicht geändert. Sie hat sich in Traktor geändert",
+      "playlistGone": "{{playlist}} gibt es in Traktor nicht mehr. {{track}} wurde nicht hinzugefügt",
+      "notInLibrary": "{{track}} gibt es in Traktor nicht mehr. Ihre Playlists wurden nicht geändert"
     },
     "discardConfirm": "Wartendes verwerfen? Deine Traktor-Playlists und Cues bleiben, wie Traktor sie hat",
     "pillHalted": "Traktor-Änderungen angehalten",

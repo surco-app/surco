@@ -10,6 +10,7 @@ import { analysedTrack } from './enginePerformanceFixture'
 import {
   artworkFileName,
   openEngineDb,
+  readEngineMembership,
   readEnginePlaylist,
   readEngineRecentCount,
   readEngineTrackCount,
@@ -446,5 +447,44 @@ describe('artworkFileName', () => {
   it('has no name for a cover kept inside the database, as older libraries store it', () => {
     expect(artworkFileName('3f786850e387550fdab836ed7e6dc881de23001b')).toBeNull()
     expect(artworkFileName(null)).toBeNull()
+  })
+})
+
+describe('readEngineMembership', () => {
+  it('names the saved lists holding each file, so the field shows the chips the DJ set in Engine', async () => {
+    const dir = await library({
+      tracks: TRACKS,
+      playlists: [
+        { id: 1, title: 'Bases', parentListId: 0, nextListId: 2 },
+        { id: 2, title: 'House', parentListId: 0, nextListId: 3 },
+        { id: 3, title: 'Hidden', parentListId: 0, nextListId: 0, isPersisted: 0 },
+      ],
+      entities: [
+        { id: 1, listId: 1, trackId: 1, nextEntityId: 0 },
+        { id: 2, listId: 2, trackId: 1, nextEntityId: 3 },
+        { id: 3, listId: 2, trackId: 2, nextEntityId: 0 },
+        { id: 4, listId: 3, trackId: 2, nextEntityId: 0 },
+      ],
+    })
+    const at = (rel: string) => resolve(dir, rel)
+    const db = opened(dir)
+    expect(
+      readEngineMembership(
+        db,
+        dir,
+        [
+          at('../Music/Rebel Vision/Night Train.aiff'),
+          at('../Music/Play.mp3'),
+          at('../Music/Third.flac'),
+        ],
+        (p) => p,
+      ),
+    ).toEqual({
+      [at('../Music/Rebel Vision/Night Train.aiff')]: ['1', '2'],
+      [at('../Music/Play.mp3')]: ['2'],
+      [at('../Music/Third.flac')]: [],
+    })
+    expect(readEngineMembership(db, dir, [at('../Music/None.mp3')], (p) => p)).toEqual({})
+    db.close()
   })
 })
