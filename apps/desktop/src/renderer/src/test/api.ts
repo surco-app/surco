@@ -42,6 +42,7 @@ export const testSettings: Settings = {
   cueFlowToRekordbox: true,
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
+  cueLearnFromEdits: true,
   hiddenSources: [],
   rekordboxPlaylistsFieldOffered: false,
   syncEngineDj: false,
@@ -223,6 +224,12 @@ export function stubApi(over: Partial<Api> = {}): Api {
     rowWaves: async () => ({}),
     rekordboxCountCompletable: async () => 0,
     rekordboxLearnFlow: async () => null,
+    cueProfile: async () => ({ profile: null, edits: { count: 0, sinceLearn: 0 }, marked: 0 }),
+    learnCueProfile: async () => {
+      throw new Error('no collection to learn from')
+    },
+    recordCueEdit: async () => {},
+    onCueProfileChanged: () => () => {},
     saveRekordboxCues: async () => {},
     rekordboxQueuedCues: async () => null,
     undoRekordboxCues: async () => {},

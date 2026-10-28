@@ -6,7 +6,12 @@ import type { CollectionMarks } from './rekordboxLearnFlow'
 
 function memoryStore(text: string | null = null) {
   let saved = text
-  return { read: () => saved, write: (t: string) => void (saved = t), text: () => saved }
+  return {
+    read: () => saved,
+    write: (t: string) => {
+      saved = t
+    },
+  }
 }
 
 const track = (key: string, drops = [8]): TasteTrack => ({
@@ -102,7 +107,12 @@ describe('createCueTaste', () => {
 
   it('runs one learning at a time when the button and the edits ask together', async () => {
     let finish: (t: TunedTaste) => void = () => {}
-    const tune = vi.fn(() => new Promise<TunedTaste>((r) => (finish = r)))
+    const tune = vi.fn(
+      () =>
+        new Promise<TunedTaste>((r) => {
+          finish = r
+        }),
+    )
     const taste = createCueTaste(memoryStore(), deps({ tune }))
     const a = taste.learn()
     const b = taste.learn()

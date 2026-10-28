@@ -1,23 +1,12 @@
 import log from 'electron-log/main'
-import type { CueFlow } from '../shared/cueFlows'
-import type { DropTaste, TasteCheck, TasteTrack, TunedTaste } from '../shared/dropTaste'
+import type { CueProfile } from '../shared/cueProfile'
+import type { TasteTrack, TunedTaste } from '../shared/dropTaste'
 import { diagnoseLearnFlow, learnFlow } from '../shared/learnFlow'
 import type { CollectionMarks } from './rekordboxLearnFlow'
 import type { QueueStore } from './rekordboxQueue'
 
 export const RELEARN_EVERY = 10
 const MAX_EDITS = 1000
-
-export interface CueProfile {
-  learnedAt: string
-  sources: { rekordbox: number; edits: number }
-  taste: DropTaste | null
-  check: TasteCheck | null
-  flow: CueFlow | null
-  coverage: { matching: number; marked: number } | null
-  paired: number | null
-  start: { open: number; withStart: number } | null
-}
 
 export interface CueTasteDeps {
   readCollection: () => Promise<CollectionMarks | null>
