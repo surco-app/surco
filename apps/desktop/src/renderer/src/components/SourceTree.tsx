@@ -431,7 +431,7 @@ export function SourceTree({
           className="min-w-0 flex-1 bg-transparent outline-none"
         />
       </label>
-      <div className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-2">{body}</div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-1.5 pt-0.5 pb-2">{body}</div>
       {menu && (
         <div className="fixed inset-0 z-50">
           <button
