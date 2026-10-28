@@ -123,6 +123,12 @@ describe('strong parts', () => {
     ])
   })
 
+  it('cue where a strong part begins is kept because the phrase start is where a DJ mixes in, and the countdown stops there', () => {
+    expect(planCues([beat(64)], grid(200), [{ start: beat(48), end: beat(56) }])).toEqual([
+      cue(beat(48), 16),
+    ])
+  })
+
   it('chorus kind depends on rekordbox mood', () => {
     const beats = grid(200)
     expect(
