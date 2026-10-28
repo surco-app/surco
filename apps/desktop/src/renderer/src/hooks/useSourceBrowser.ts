@@ -45,7 +45,7 @@ function readTrackCount(source: PlaylistSource): Promise<number> {
   return source === 'engine' ? window.api.engineTrackCount() : window.api.rekordboxTrackCount()
 }
 
-function readPlaylist(source: PlaylistSource, id: string): Promise<SourcePlaylistEntry[]> {
+export function readPlaylist(source: PlaylistSource, id: string): Promise<SourcePlaylistEntry[]> {
   if (source === 'engine') return window.api.loadEnginePlaylist(id)
   if (source === 'traktor') return window.api.loadTraktorPlaylist(id)
   return source === 'rekordbox'

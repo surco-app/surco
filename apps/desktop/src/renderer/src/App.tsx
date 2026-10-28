@@ -164,7 +164,7 @@ import {
   ownRowsDropped,
 } from './lib/reorderDrag'
 import { contentDeficit } from './lib/resize'
-import { revealStep } from './lib/revealCue'
+import { revealStep, revealTrackStep } from './lib/revealCue'
 import { scopedMusicSource } from './lib/reviewSource'
 import {
   duplicatesDetail,
@@ -2736,6 +2736,39 @@ export default function App(): React.JSX.Element {
       setRevealing(null)
     } else if (step.do === 'give-up') setRevealing(null)
   }, [revealing, browser, playlistScope, selectSource, selectPlaylist, setMaximized, setSelection])
+  const [revealingTrack, setRevealingTrack] = useState<{
+    source: PlaylistSource
+    trackId: string
+  } | null>(null)
+  useEffect(() => {
+    if (!revealingTrack) return
+    const step = revealTrackStep(revealingTrack.source, revealingTrack.trackId, {
+      source: browser.source,
+      playlistId: browser.playlist?.id ?? null,
+      loading: browser.entriesLoading,
+      shown: playlistScope?.tracks.map((t) => t.id),
+    })
+    if (step.do === 'source') selectSource(revealingTrack.source)
+    else if (step.do === 'playlist') {
+      const recent = browser.tree?.find((n) => n.id === RECENTLY_ADDED_ID)
+      if (recent) selectPlaylist(recent, [])
+    } else if (step.do === 'select') {
+      setSelection({ ids: [step.id], anchor: step.id })
+      setMaximized('cues')
+      setRevealingTrack(null)
+    } else if (step.do === 'give-up') setRevealingTrack(null)
+  }, [
+    revealingTrack,
+    browser,
+    playlistScope,
+    selectSource,
+    selectPlaylist,
+    setMaximized,
+    setSelection,
+  ])
+  const onRevealIn = useStableCallback((source: PlaylistSource) => {
+    if (selected) setRevealingTrack({ source, trackId: selected.id })
+  })
   function onEscape(): void {
     if (activeModal) {
       if (activeModal.type === 'onboarding') return
@@ -3264,6 +3297,8 @@ export default function App(): React.JSX.Element {
                           onSearchWeb={onSearchWeb}
                           onExportCollection={onOpenExport}
                           readFullTrack={readFullTrack}
+                          librarySources={browser.sources}
+                          onRevealIn={onRevealIn}
                         />
                       </Suspense>
                     </ErrorBoundary>

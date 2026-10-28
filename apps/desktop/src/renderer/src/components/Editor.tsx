@@ -26,6 +26,7 @@ import type {
   FormatSetting,
   NormalizeConfig,
   OutputFormat,
+  PlaylistSource,
   ReleaseTrack,
   SearchProviderId,
   TrackMetadata,
@@ -40,6 +41,7 @@ import type { RememberedPick } from '../hooks/useEditorPicks'
 import { useEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
 import { useKey } from '../hooks/useKey'
 import { useLatest } from '../hooks/useLatest'
+import { useLibraryReveals } from '../hooks/useLibraryReveals'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
 import {
   useRekordboxAvailable,
@@ -237,6 +239,8 @@ interface Props {
   // post-conversion step that used to live on the toolbar. App owns the modal.
   onExportCollection: () => void
   readFullTrack: (id: string) => Promise<TrackItem | undefined>
+  librarySources?: readonly PlaylistSource[]
+  onRevealIn?: (source: PlaylistSource) => void
   // source; the trim section's own onKeyDown reads it to resolve its five commands.
 }
 
@@ -300,6 +304,8 @@ export const Editor = memo(function Editor({
   onSearchWeb,
   onExportCollection,
   readFullTrack,
+  librarySources = [],
+  onRevealIn,
 }: Props): React.JSX.Element {
   // Every Settings-derived value the editor reads comes from the shared context in one
   // pull — this used to be a 17-prop wall App re-plumbed for each field (see
@@ -347,6 +353,7 @@ export const Editor = memo(function Editor({
   } = useAppSettings()
   const showTokenTip = discogsToken === '' && searchProviders.includes('discogs')
   const isMulti = (selectedTracks?.length ?? 0) > 1
+  const revealIn = useLibraryReveals(item, isMulti ? [] : librarySources)
   const scrollRef = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = editorPlace.scrollTop
@@ -1818,6 +1825,8 @@ export const Editor = memo(function Editor({
             onDestinationChange?.(d, true)
           }}
           onExportCollection={onExportCollection}
+          revealIn={revealIn}
+          onRevealIn={onRevealIn}
           // Single-select's menu never offers 'source' (format stays a real OutputFormat
           // there), so onProcess only ever sees one at runtime — the cast just satisfies
           // the shared FormatSetting signature ConvertFooter needs for the multi branch.

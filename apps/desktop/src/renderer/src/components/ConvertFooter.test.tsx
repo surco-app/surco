@@ -372,3 +372,21 @@ describe('ConvertFooter normalize note', () => {
     }
   })
 })
+
+describe('ConvertFooter library reveal', () => {
+  // The DJ picked rekordbox playlists for the track to set its cues there next; once the
+  // track has reached rekordbox, the footer takes them to it instead of a hunt through tabs.
+  it('takes the DJ to each library the track reached, named for the library', () => {
+    const onRevealIn = vi.fn()
+    render(cloneElement(footer(true), { revealIn: ['rekordbox'], onRevealIn }))
+    const reveal = within(screen.getByTestId('done-outcome')).getByTestId('reveal-in-rekordbox')
+    expect(reveal).toHaveAccessibleName('Show in rekordbox')
+    fireEvent.click(reveal)
+    expect(onRevealIn).toHaveBeenCalledWith('rekordbox')
+  })
+
+  it('offers no library the track has not reached', () => {
+    render(cloneElement(footer(true), { revealIn: [], onRevealIn: vi.fn() }))
+    expect(screen.queryByTestId('reveal-in-rekordbox')).toBeNull()
+  })
+})
