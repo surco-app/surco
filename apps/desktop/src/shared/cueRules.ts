@@ -132,7 +132,7 @@ function misfit(
   if (rule.direction === 'forward')
     return next === null || ms < next - SAME_POSITION_MS ? null : 'point'
   if (previous !== null && ms <= previous + SAME_POSITION_MS) return 'point'
-  return strong.some((s) => s.start <= ms && ms < s.end) ? 'strong' : null
+  return strong.some((s) => s.start + SAME_POSITION_MS < ms && ms < s.end) ? 'strong' : null
 }
 
 function beatMsAt(beats: number[], at: number): number {
@@ -232,6 +232,14 @@ function walkFlow(
           break
         }
         if (allowed(rule, ms, placed, drops, beats)) add(ms, k)
+        if (
+          rule.when === 'fits' &&
+          rule.direction === 'back' &&
+          track.strong.some((s) => near(s.start, ms))
+        ) {
+          if (last !== null) reject(start, step, k + 1, last, 'strong')
+          break
+        }
       }
     })
     placed.push(...own)
