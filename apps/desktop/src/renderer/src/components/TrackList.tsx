@@ -1,3 +1,4 @@
+import { useVirtualizer } from '@tanstack/react-virtual'
 import {
   Check,
   CircleAlert,
@@ -18,6 +19,7 @@ import {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
 } from 'react'
@@ -96,6 +98,7 @@ interface Props {
   // Row buttons by track id, kept current as rows mount/unmount, so App can focus
   // and measure rows without querying the DOM by test id.
   rowRegistry?: RefObject<Map<string, HTMLButtonElement>>
+  revealRowRef?: RefObject<((id: string) => void) | null>
   // When each file was last backed up (lib/trashView latestBackupByPath), so a row can
   // mark a track Surco keeps a backup of, and what clicking that mark opens.
   backupAtByPath?: ReadonlyMap<string, number>
@@ -129,6 +132,9 @@ export type MenuState = { track: TrackItem; x: number; y: number }
 // row wrapper): a small crate scrolls over already-rasterized content instead of paying
 // each row's first paint mid-scroll. Past it, skipping off-screen work wins again.
 const DEFER_PAINT_MIN_ROWS = 150
+
+const VIRTUALIZE_MIN_ROWS = 500
+const ESTIMATED_ROW_PX = 82
 
 // Two-finger swipe to remove, the way Mail deletes. A trackpad sends the swipe as wheel
 // events with deltaX and keeps sending momentum after the fingers lift. Once the row has
@@ -995,6 +1001,7 @@ export const TrackList = memo(function TrackList({
   scrollRootRef,
   onVisible,
   rowRegistry,
+  revealRowRef,
   backupAtByPath,
   pendingCuePaths,
   unsavedCueIds,
@@ -1212,13 +1219,88 @@ export const TrackList = memo(function TrackList({
   // onto the options rather than passed as props: the size changes with every import batch,
   // and as a prop it re-rendered every memoized row on each one.
   const listRef = useRef<HTMLDivElement>(null)
+  const windowRef = useRef<HTMLDivElement>(null)
+  const virtual = !!scrollRootRef && tracks.length >= VIRTUALIZE_MIN_ROWS
+  const [scrollMargin, setScrollMargin] = useState(0)
+  const virtualizer = useVirtualizer({
+    count: virtual ? tracks.length : 0,
+    enabled: virtual,
+    getScrollElement: () => scrollRootRef?.current ?? null,
+    estimateSize: () => ESTIMATED_ROW_PX,
+    getItemKey: (i) => tracks[i]?.id ?? i,
+    overscan: 8,
+    scrollMargin,
+  })
+  const windowed = virtual ? virtualizer.getVirtualItems() : null
+  const [, remeasure] = useReducer((n: number) => n + 1, 0)
+  useEffect(() => {
+    if (virtual) remeasure()
+  }, [virtual])
+  useLayoutEffect(() => {
+    const root = scrollRootRef?.current
+    const top = windowRef.current
+    if (!root || !top) return
+    const margin =
+      top.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop
+    if (margin !== scrollMargin) setScrollMargin(margin)
+  })
+  useEffect(() => {
+    if (!revealRowRef) return
+    revealRowRef.current = virtual
+      ? (id) => {
+          const i = tracks.findIndex((t) => t.id === id)
+          if (i !== -1) virtualizer.scrollToIndex(i, { align: 'center' })
+        }
+      : null
+    return () => {
+      revealRowRef.current = null
+    }
+  }, [revealRowRef, virtual, tracks, virtualizer])
   useLayoutEffect(() => {
     const options = listRef.current?.querySelectorAll('[role="option"]') ?? []
     options.forEach((option, i) => {
+      const at = windowed ? Number(option.closest('[data-index]')?.getAttribute('data-index')) : i
       option.setAttribute('aria-setsize', String(tracks.length))
-      option.setAttribute('aria-posinset', String(i + 1))
+      option.setAttribute('aria-posinset', String(at + 1))
     })
-  }, [tracks])
+  }, [tracks, windowed])
+  const rowFor = (t: TrackItem, i: number): React.JSX.Element => (
+    <Fragment key={t.id}>
+      {separatorBefore?.get(t.id)?.map(separatorLine)}
+      {dropBefore === t.id && insertionLine}
+      <TrackRow
+        track={t}
+        bindings={bindings}
+        selected={selectedIds.has(t.id)}
+        primary={t.id === selectedId}
+        // The selection owns the single tab stop; with nothing selected the first row
+        // holds it so the list stays reachable by Tab.
+        tabbable={t.id === selectedId || (selectedId === null && i === 0)}
+        deferPaint={!virtual && tracks.length >= DEFER_PAINT_MIN_ROWS}
+        outputFormat={outputFormat}
+        onSelect={onSelect}
+        onActivate={onActivate}
+        onSwipeRemove={removeBySwipe}
+        onSwipeRemoveStart={startSwipeRemove}
+        onAcceptReview={onAcceptReview}
+        onRemoveKey={removeViaKeyboard}
+        onExtendKey={extendViaKeyboard}
+        onPrefetch={onPrefetch}
+        onOpenMenu={openMenu}
+        onDragOut={startDragOut}
+        observeRow={observeRow}
+        onVisible={onVisible}
+        rowRegistry={rowRegistry}
+        backupAt={backupAtByPath?.get(t.inputPath)}
+        cuesPending={pendingCuePaths?.has(t.inputPath) ?? false}
+        cuesUnsaved={unsavedCueIds?.has(t.id) ?? false}
+        autoMark={autoMarkById?.get(t.id)}
+        onOpenBackup={onOpenBackup}
+        duplicate={duplicateRankById?.get(t.id)}
+        outsideFilter={outsideFilter?.has(t.id) ?? false}
+      />
+    </Fragment>
+  )
   return (
     <>
       <div
@@ -1240,43 +1322,31 @@ export const TrackList = memo(function TrackList({
           waitOutSwipeTail()
         }}
       >
-        {tracks.map((t, i) => (
-          <Fragment key={t.id}>
-            {separatorBefore?.get(t.id)?.map(separatorLine)}
-            {dropBefore === t.id && insertionLine}
-            <TrackRow
-              track={t}
-              bindings={bindings}
-              selected={selectedIds.has(t.id)}
-              primary={t.id === selectedId}
-              // The selection owns the single tab stop; with nothing selected the first row
-              // holds it so the list stays reachable by Tab.
-              tabbable={t.id === selectedId || (selectedId === null && i === 0)}
-              deferPaint={tracks.length >= DEFER_PAINT_MIN_ROWS}
-              outputFormat={outputFormat}
-              onSelect={onSelect}
-              onActivate={onActivate}
-              onSwipeRemove={removeBySwipe}
-              onSwipeRemoveStart={startSwipeRemove}
-              onAcceptReview={onAcceptReview}
-              onRemoveKey={removeViaKeyboard}
-              onExtendKey={extendViaKeyboard}
-              onPrefetch={onPrefetch}
-              onOpenMenu={openMenu}
-              onDragOut={startDragOut}
-              observeRow={observeRow}
-              onVisible={onVisible}
-              rowRegistry={rowRegistry}
-              backupAt={backupAtByPath?.get(t.inputPath)}
-              cuesPending={pendingCuePaths?.has(t.inputPath) ?? false}
-              cuesUnsaved={unsavedCueIds?.has(t.id) ?? false}
-              autoMark={autoMarkById?.get(t.id)}
-              onOpenBackup={onOpenBackup}
-              duplicate={duplicateRankById?.get(t.id)}
-              outsideFilter={outsideFilter?.has(t.id) ?? false}
-            />
-          </Fragment>
-        ))}
+        {windowed ? (
+          <div
+            ref={windowRef}
+            data-testid="track-list-window"
+            className="relative w-full"
+            style={{ height: virtualizer.getTotalSize() }}
+          >
+            {windowed.map((item) => {
+              const t = tracks[item.index]
+              return (
+                <div
+                  key={t.id}
+                  data-index={item.index}
+                  ref={virtualizer.measureElement}
+                  className="absolute top-0 left-0 flex w-full flex-col gap-0.5 pb-0.5"
+                  style={{ transform: `translateY(${item.start - scrollMargin}px)` }}
+                >
+                  {rowFor(t, item.index)}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          tracks.map(rowFor)
+        )}
         {trailingSeparators?.map(separatorLine)}
         {dropBefore === null && insertionLine}
       </div>
