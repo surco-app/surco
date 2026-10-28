@@ -147,6 +147,15 @@ describe('em dashes', () => {
   })
 })
 
+// Surco speaks to its user as a friend in every language: tú, du, você, tu. French
+// had drifted into a mix, "vous" on one control and "tu" on the next, which reads as two
+// different apps.
+describe('French form of address', () => {
+  it('addresses the user as tu, never vous', () => {
+    expect(leaves(fr).filter(([, text]) => /\b(vous|votre|vos)\b/i.test(text))).toEqual([])
+  })
+})
+
 describe('cue editor copy', () => {
   it('never says donde rompe, since a flow is placed on any point and not every DJ marks the drop, except Auto marcar, whose detector looks for where the track breaks', () => {
     const autoMark = ['editor.cues.auto.ask', 'editor.cues.auto.none', 'editor.cues.auto.marked']

@@ -2334,7 +2334,7 @@
           {
             "tab": "Cues",
             "section": "Nouveau flux",
-            "setting": "Mettre un CALL là où vous marquez",
+            "setting": "Mettre un CALL là où tu marques",
             "note": "Donne un nom à ton flux, par exemple Subidón. Sa règle compte déjà à rebours depuis l'endroit où tu marques, toutes les 16 mesures, et place hot cue + CALL. Passe « une fois » à « 3 fois » et choisis « une couleur par répétition » avec bleu, vert et rouge. Cette case, cochée par défaut, ajoute le CALL au point."
           },
           {
@@ -2345,7 +2345,7 @@
           {
             "tab": "Sortie",
             "section": "Collection rekordbox",
-            "setting": "À la fermeture de rekordbox, appliquer votre flux actif aux morceaux avec des CALL et sans hot cues",
+            "setting": "À la fermeture de rekordbox, appliquer ton flux actif aux morceaux avec des CALL et sans hot cues",
             "optional": true,
             "note": "Pour marquer le point dans rekordbox plutôt que dans Surco. Tu poses un CALL là où le morceau décolle pendant ta préparation et, quand tu fermes rekordbox, Surco ajoute les hot cues de ton flux. En l'activant, il te dit combien de morceaux il va compléter."
           }
