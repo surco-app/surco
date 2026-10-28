@@ -134,7 +134,7 @@ export default function Changelog() {
         ))}
 
         {older.length > 0 && (
-          <section className="border-t border-line/60 py-12">
+          <section className="py-16 sm:py-20">
             <Reveal>
               <h2 className="text-lg font-semibold tracking-tight text-faint">
                 {t('changelog.olderTitle')}
@@ -165,9 +165,9 @@ export default function Changelog() {
           </section>
         )}
 
-        <section className="border-t border-line/60 py-16 text-center">
+        <section className="py-20 text-center sm:py-24">
           <Reveal>
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
               {t('changelog.outroTitle')}
             </h2>
             <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">

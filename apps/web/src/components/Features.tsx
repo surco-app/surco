@@ -108,7 +108,7 @@ export default function Features() {
             <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-start">
               <div>
                 <Kicker>{t('shortcuts.kicker')}</Kicker>
-                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
                   {t('shortcuts.title')}
                 </h2>
                 <p className="mt-3 leading-relaxed text-pretty text-muted">{t('shortcuts.lede')}</p>

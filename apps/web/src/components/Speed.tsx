@@ -122,7 +122,7 @@ export default function Speed() {
     <section id="velocidad" className="scroll-mt-24 pt-12 pb-24">
       <Reveal>
         <Kicker>{t('speed.kicker')}</Kicker>
-        <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+        <h2 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
           {t('speed.title')}
         </h2>
         <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">{t('speed.lede')}</p>

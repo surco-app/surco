@@ -84,7 +84,7 @@ export default function FlacToAiff() {
 
       <Header page="flacToAiff" />
 
-      <main id="main" className="relative mx-auto max-w-5xl px-6">
+      <main id="main" className="relative mx-auto max-w-6xl px-6">
         <section className="grid items-center gap-10 pt-12 pb-16 sm:pt-16 lg:grid-cols-[1.1fr_1fr]">
           <Reveal eager>
             <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl">
@@ -122,10 +122,10 @@ export default function FlacToAiff() {
           </Reveal>
         </section>
 
-        <section className="border-t border-line/60 py-14">
+        <section className="py-16 sm:py-20">
           <Reveal>
             <Kicker>{t('flacToAiff.carry.kicker')}</Kicker>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
               {t('flacToAiff.carry.title')}
             </h2>
             <p className="mt-4 max-w-2xl leading-relaxed text-muted">
@@ -163,10 +163,10 @@ export default function FlacToAiff() {
           </Reveal>
         </section>
 
-        <section className="border-t border-line/60 py-14">
+        <section className="py-16 sm:py-20">
           <Reveal>
             <Kicker>{t('flacToAiff.why.kicker')}</Kicker>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
               {t('flacToAiff.why.title')}
             </h2>
             <div className="mt-8 grid gap-8 md:grid-cols-3">
@@ -180,10 +180,10 @@ export default function FlacToAiff() {
           </Reveal>
         </section>
 
-        <section className="border-t border-line/60 py-14">
+        <section className="py-16 sm:py-20">
           <Reveal>
             <Kicker>{t('flacToAiff.steps.kicker')}</Kicker>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
               {t('flacToAiff.steps.title')}
             </h2>
             <ol className="mt-8 grid gap-5 md:grid-cols-3">
@@ -206,10 +206,10 @@ export default function FlacToAiff() {
           </Reveal>
         </section>
 
-        <section className="border-t border-line/60 py-14">
+        <section className="py-16 sm:py-20">
           <Reveal>
             <Kicker>{t('flacToAiff.quality.kicker')}</Kicker>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
               {t('flacToAiff.quality.title')}
             </h2>
             <p className="mt-4 max-w-2xl leading-relaxed text-muted">
@@ -231,10 +231,10 @@ export default function FlacToAiff() {
           </Reveal>
         </section>
 
-        <section className="border-t border-line/60 py-14">
+        <section className="py-16 sm:py-20">
           <Reveal>
             <Kicker>{t('flacToAiff.faq.kicker')}</Kicker>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
               {t('flacToAiff.faq.title')}
             </h2>
           </Reveal>
@@ -258,9 +258,9 @@ export default function FlacToAiff() {
           </div>
         </section>
 
-        <section className="border-t border-line/60 py-16 text-center">
+        <section className="py-20 text-center sm:py-24">
           <Reveal>
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
               {t('flacToAiff.outro.title')}
             </h2>
             <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">

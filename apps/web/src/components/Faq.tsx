@@ -12,7 +12,7 @@ export default function Faq() {
     <section id="faq" className="scroll-mt-24 pb-24">
       <Reveal>
         <Kicker>{t('faq.kicker')}</Kicker>
-        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+        <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
           {t('faq.title')}
         </h2>
       </Reveal>

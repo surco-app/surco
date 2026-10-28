@@ -14,11 +14,10 @@ export default function Band({
   tone?: 'deep' | 'raised'
   className?: string
 }) {
-  const bg =
-    tone === 'deep' ? 'border-y border-line/50 bg-bg2' : 'border-y border-line/40 bg-surface2/30'
+  const bg = tone === 'deep' ? 'bg-bg2' : 'bg-surface2/30'
   return (
     <div className={`relative ml-[calc(50%-50vw)] w-screen ${bg} ${className}`}>
-      <div className="mx-auto max-w-5xl px-6">{children}</div>
+      <div className="mx-auto max-w-6xl px-6">{children}</div>
     </div>
   )
 }

@@ -40,9 +40,9 @@ export type UseCase = {
 export function UseCaseOutro() {
   const { t } = useTranslation()
   return (
-    <section className="border-t border-line/60 py-16 text-center">
+    <section className="py-20 text-center sm:py-24">
       <Reveal>
-        <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+        <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
           {t('useCases.outroTitle')}
         </h2>
         <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">

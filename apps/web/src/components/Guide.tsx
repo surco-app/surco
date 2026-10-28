@@ -132,7 +132,7 @@ export default function Guide() {
         </section>
 
         {sections.map((s, i) => (
-          <section key={s.id} id={s.id} className="scroll-mt-20 border-t border-line/60 py-12">
+          <section key={s.id} id={s.id} className="scroll-mt-20 py-14 sm:py-16">
             <Reveal>
               <p className="font-mono text-sm text-blue">{String(i + 1).padStart(2, '0')}</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{s.title}</h2>
@@ -166,9 +166,9 @@ export default function Guide() {
           </section>
         ))}
 
-        <section className="border-t border-line/60 py-16 text-center">
+        <section className="py-20 text-center sm:py-24">
           <Reveal>
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
               {t('guide.outroTitle')}
             </h2>
             <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">

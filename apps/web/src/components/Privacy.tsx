@@ -63,7 +63,7 @@ export default function Privacy() {
           </Reveal>
         </section>
 
-        <section className="border-t border-line/60 py-12" data-testid="privacy-app">
+        <section className="py-16 sm:py-20" data-testid="privacy-app">
           <Reveal>
             <Kicker>{t('privacy.privacyHeading')}</Kicker>
             <p className="mt-4 leading-relaxed text-muted">{t('privacy.privacyLede')}</p>
@@ -80,7 +80,7 @@ export default function Privacy() {
           </Reveal>
         </section>
 
-        <section className="border-t border-line/60 py-12" data-testid="privacy-web">
+        <section className="py-16 sm:py-20" data-testid="privacy-web">
           <Reveal>
             <Kicker>{t('privacy.webHeading')}</Kicker>
             <p className="mt-4 leading-relaxed text-muted">{t('privacy.webBody')}</p>
