@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import en from './changelog/en.json'
 import es from './changelog/es.json'
+import ja from './changelog/ja.json'
 import { resources } from './index'
 import enLocale from './locales/en.json'
 import esLocale from './locales/es.json'
@@ -8,10 +9,22 @@ import esLocale from './locales/es.json'
 type Item = string | { text: string; in: string }
 type Release = { version: string; date: string; title: string; items: Item[] }
 
+// The Japanese history is a translation of the English one, release by release: a
+// missing or extra item, or a stamp that differs, would show Japanese readers a different
+// set of changes, and the desktop popup would pick other items for the same update.
 describe('Japanese release history', () => {
-  it('reuses the English releases while keeping Japanese UI keys', () => {
-    expect(resources.ja.translation.changelog.releases).toBe(en)
-    expect(resources.ja.translation.changelog.title).toBeDefined()
+  it('serves the Japanese page its own releases', () => {
+    expect(resources.ja.translation.changelog.releases).toBe(ja)
+  })
+
+  it('mirrors every English release, item for item', () => {
+    const shape = (releases: Release[]) =>
+      releases.map((r) => ({
+        version: r.version,
+        date: r.date,
+        items: r.items.map((item) => (typeof item === 'string' ? null : item.in)),
+      }))
+    expect(shape(ja as Release[])).toEqual(shape(en as Release[]))
   })
 })
 
@@ -24,6 +37,7 @@ describe('Japanese release history', () => {
 describe.each([
   ['es', es as Release[]],
   ['en', en as Release[]],
+  ['ja', ja as Release[]],
 ])('%s changelog releases', (_lng, releases) => {
   it('has at least one release and every release lists features', () => {
     expect(releases.length).toBeGreaterThan(0)

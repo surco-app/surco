@@ -565,7 +565,7 @@
     "qualityBitsPaddedNote": "「Corrected」では 16 ビットとして保存され、可聴損失はありません。",
     "qualityBitsFull": "最初の1分間で低バイトは {{pct}}% 使用されています：パディングなし。",
     "qualityBitsUnknown": "24 ビットが本物か確認できませんでした。",
-    "qualityConvertHead": "変換中",
+    "qualityConvertHead": "変換時",
     "qualityConvertRate": "{{from}} → {{to}}",
     "qualityConvertRateSub": "実際のレートである 44.1 kHz で書き込まれます。",
     "saveQualityReport": "レポートを保存…",
