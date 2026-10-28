@@ -3,7 +3,13 @@ import { QueryClient } from '@tanstack/react-query'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { MIX_IN, MIX_IN_32, normalizeCueFlows } from '../../../shared/cueFlows'
-import type { DropInput } from '../../../shared/dropDetect'
+import type { CueProfile } from '../../../shared/cueProfile'
+import {
+  DROP_MODEL,
+  type DropInput,
+  type DropModel,
+  type DropProposal,
+} from '../../../shared/dropDetect'
 import type { QueuedCues, TrackCues } from '../../../shared/types'
 import { installApi } from '../test/api'
 import { acceptAutoMarks, autoMarkTracks } from './cueAutoMark'
@@ -18,11 +24,18 @@ import {
 } from './cueSession'
 import { quantizePoints } from './cueWave'
 
-const detectDrops = vi.hoisted(() => vi.fn<(input: DropInput) => number[]>())
+const dropProposals = vi.hoisted(() =>
+  vi.fn<(input: DropInput, model?: DropModel) => DropProposal[]>(),
+)
 vi.mock('../../../shared/dropDetect', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../../shared/dropDetect')>()),
-  detectDrops,
+  dropProposals,
 }))
+
+const sure = (ms: number): DropProposal => ({ ms, sure: true, quietBars: 8 })
+const doubt = (ms: number): DropProposal => ({ ms, sure: false, quietBars: 1 })
+const found = (...ms: number[]): DropProposal[] => ms.map(sure)
+const proposed = (...ms: number[]) => ({ kind: 'proposed', proposals: found(...ms) })
 
 const GRID = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
 const bar = (n: number) => n * 2000
@@ -42,7 +55,7 @@ const READ: TrackCues = {
 afterEach(resetCueSession)
 
 beforeEach(() => {
-  detectDrops.mockReset().mockReturnValue([bar(64), bar(128)])
+  dropProposals.mockReset().mockReturnValue(found(bar(64), bar(128)))
 })
 
 function setup({
@@ -50,11 +63,13 @@ function setup({
   words = {},
   queued = {},
   dropInputs = {},
+  profile = null,
 }: {
   reads?: Record<string, TrackCues | null>
   words?: Record<string, Uint16Array | null>
   queued?: Record<string, QueuedCues | null>
   dropInputs?: Record<string, DropInput | null>
+  profile?: CueProfile | null
 } = {}) {
   const api = installApi({
     rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (id) =>
@@ -68,6 +83,11 @@ function setup({
       async (id) => dropInputs[id] ?? null,
     ),
     saveRekordboxCues: vi.fn<Api['saveRekordboxCues']>(async () => {}),
+    cueProfile: vi.fn<Api['cueProfile']>(async () => ({
+      profile,
+      edits: { count: 0, sinceLearn: 0 },
+      marked: 0,
+    })),
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return { api, client }
@@ -75,11 +95,11 @@ function setup({
 
 describe('Auto marcar over several tracks', () => {
   it('leaves each track its own proposals pending and accepts or writes nothing', async () => {
-    detectDrops.mockReturnValueOnce([bar(64)]).mockReturnValueOnce([bar(32), bar(96)])
+    dropProposals.mockReturnValueOnce(found(bar(64))).mockReturnValueOnce(found(bar(32), bar(96)))
     const { api, client } = setup()
     await autoMarkTracks(client, ['103', '104'])
-    expect(autoMarkOf('103')).toEqual({ kind: 'proposed', ms: [bar(64)] })
-    expect(autoMarkOf('104')).toEqual({ kind: 'proposed', ms: [bar(32), bar(96)] })
+    expect(autoMarkOf('103')).toEqual(proposed(bar(64)))
+    expect(autoMarkOf('104')).toEqual(proposed(bar(32), bar(96)))
     expect([...unsavedCueTracks()]).toEqual([])
     expect(api.saveRekordboxCues).not.toHaveBeenCalled()
   })
@@ -87,7 +107,10 @@ describe('Auto marcar over several tracks', () => {
   it('reads each track’s grid, phrases and detailed wave, as the editor’s button does', async () => {
     const { client } = setup()
     await autoMarkTracks(client, ['103'])
-    expect(detectDrops).toHaveBeenCalledWith({ grid: GRID, phrases: READ.phrases, words: WORDS })
+    expect(dropProposals).toHaveBeenCalledWith(
+      { grid: GRID, phrases: READ.phrases, words: WORDS },
+      DROP_MODEL,
+    )
   })
 
   it('says a track has no analysis when rekordbox has no grid or detailed wave for it, or cannot read it', async () => {
@@ -99,11 +122,32 @@ describe('Auto marcar over several tracks', () => {
     expect(autoMarkOf('104')).toEqual({ kind: 'unanalysed' })
     expect(autoMarkOf('105')).toEqual({ kind: 'unanalysed' })
     expect(autoMarkOf('106')).toEqual({ kind: 'unanalysed' })
-    expect(detectDrops).not.toHaveBeenCalled()
+    expect(dropProposals).not.toHaveBeenCalled()
+  })
+
+  it('keeps whether each proposal is sure, so the list and the editor can show the doubtful apart', async () => {
+    dropProposals.mockReturnValue([sure(bar(64)), doubt(bar(128))])
+    const { client } = setup()
+    await autoMarkTracks(client, ['103'])
+    expect(autoMarkOf('103')).toEqual({
+      kind: 'proposed',
+      proposals: [sure(bar(64)), doubt(bar(128))],
+    })
+  })
+
+  it('detects with what Surco learned of the DJ’s marking once there is something learned', async () => {
+    const taste = { trees: [[[0.5]]], picking: { threshold: 0, spacingBars: 16, maxDrops: 2 } }
+    const { client } = setup({ profile: { taste } as unknown as CueProfile })
+    await autoMarkTracks(client, ['103'])
+    expect(dropProposals.mock.calls[0][1]).toEqual({
+      base: DROP_MODEL.base,
+      trees: [...DROP_MODEL.trees, ...taste.trees],
+      picking: taste.picking,
+    })
   })
 
   it('says so when the detector finds nothing', async () => {
-    detectDrops.mockReturnValue([])
+    dropProposals.mockReturnValue(found())
     const { client } = setup()
     await autoMarkTracks(client, ['103'])
     expect(autoMarkOf('103')).toEqual({ kind: 'none' })
@@ -118,7 +162,7 @@ describe('Auto marcar over several tracks', () => {
       },
     })
     await autoMarkTracks(client, ['103', '104'])
-    expect(autoMarkOf('103')).toEqual({ kind: 'proposed', ms: [bar(128)] })
+    expect(autoMarkOf('103')).toEqual(proposed(bar(128)))
     expect(autoMarkOf('104')).toEqual({ kind: 'marked' })
   })
 
@@ -135,13 +179,13 @@ describe('Auto marcar over several tracks', () => {
     )
     const { client } = setup({ queued: { '104': fresh } })
     await autoMarkTracks(client, ['103', '104'])
-    expect(autoMarkOf('103')).toEqual({ kind: 'proposed', ms: [bar(128)] })
-    expect(autoMarkOf('104')).toEqual({ kind: 'proposed', ms: [bar(64)] })
+    expect(autoMarkOf('103')).toEqual(proposed(bar(128)))
+    expect(autoMarkOf('104')).toEqual(proposed(bar(64)))
   })
 
   it('lets the window breathe between tracks even when everything is already read, so a long playlist never freezes it', async () => {
     const order: string[] = []
-    detectDrops.mockImplementation(() => {
+    dropProposals.mockImplementation(() => {
       order.push('detect')
       return []
     })
@@ -191,7 +235,7 @@ describe('accepting Auto marcar over several tracks', () => {
   // of opening each. What each track gets must be exactly what accepting its proposals in the
   // editor would give it, with the flow the DJ picked, and it stays a draft to save later.
   it('leaves every proposed track the cues the editor would place with the chosen flow, unsaved', async () => {
-    detectDrops.mockReturnValueOnce([bar(64)]).mockReturnValueOnce([bar(32), bar(96)])
+    dropProposals.mockReturnValueOnce(found(bar(64))).mockReturnValueOnce(found(bar(32), bar(96)))
     const { api, client } = setup()
     await autoMarkTracks(client, ['103', '104'])
 
@@ -212,7 +256,7 @@ describe('accepting Auto marcar over several tracks', () => {
   })
 
   it('places the cues of the flow picked for the batch, not a fixed one', async () => {
-    detectDrops.mockReturnValue([bar(64)])
+    dropProposals.mockReturnValue(found(bar(64)))
     const { client } = setup()
     await autoMarkTracks(client, ['103'])
 
@@ -220,6 +264,26 @@ describe('accepting Auto marcar over several tracks', () => {
 
     expect(draftsToSave()[0].wanted).toEqual(editorAccept(MIX_IN_32.id, [bar(64)]))
     expect(editorAccept(MIX_IN_32.id, [bar(64)])).not.toEqual(editorAccept(MIX_IN.id, [bar(64)]))
+  })
+
+  it('accepts only the sure proposals when asked, leaving the doubtful ones to check by hand', async () => {
+    dropProposals.mockReturnValueOnce([sure(bar(64)), doubt(bar(128))])
+    dropProposals.mockReturnValueOnce([doubt(bar(32))])
+    const { client } = setup()
+    await autoMarkTracks(client, ['103', '104'])
+
+    const accepted = await acceptAutoMarks(
+      client,
+      [target('103'), target('104')],
+      settings(MIX_IN.id),
+      { onlySure: true },
+    )
+
+    expect(accepted).toBe(1)
+    expect(draftsToSave().map((r) => r.contentId)).toEqual(['103'])
+    expect(draftsToSave()[0].wanted).toEqual(editorAccept(MIX_IN.id, [bar(64)]))
+    expect(autoMarkOf('103')).toEqual({ kind: 'proposed', proposals: [doubt(bar(128))] })
+    expect(autoMarkOf('104')).toEqual({ kind: 'proposed', proposals: [doubt(bar(32))] })
   })
 
   it('leaves alone the tracks with nothing proposed', async () => {
@@ -251,7 +315,7 @@ describe('Auto marcar over several Engine DJ tracks', () => {
       dropInputs: { 'engine:4': REKORDBOX_INPUT },
     })
     await autoMarkTracks(client, ['engine:4'])
-    expect(detectDrops).toHaveBeenCalledWith(REKORDBOX_INPUT)
+    expect(dropProposals).toHaveBeenCalledWith(REKORDBOX_INPUT, DROP_MODEL)
     expect(api.rekordboxCueWaveDetail).not.toHaveBeenCalled()
   })
 
@@ -261,14 +325,14 @@ describe('Auto marcar over several Engine DJ tracks', () => {
       dropInputs: { 'engine:4': REKORDBOX_INPUT },
     })
     await autoMarkTracks(client, ['engine:4'])
-    expect(autoMarkOf('engine:4')).toEqual({ kind: 'proposed', ms: [bar(64) + 30, bar(128) + 30] })
+    expect(autoMarkOf('engine:4')).toEqual(proposed(bar(64) + 30, bar(128) + 30))
   })
 
   it('says an Engine track has no analysis when there is nothing to detect on', async () => {
     const { client } = setup({ reads: { 'engine:4': engineRead('engine:4') } })
     await autoMarkTracks(client, ['engine:4'])
     expect(autoMarkOf('engine:4')).toEqual({ kind: 'unanalysed' })
-    expect(detectDrops).not.toHaveBeenCalled()
+    expect(dropProposals).not.toHaveBeenCalled()
   })
 })
 
@@ -282,7 +346,7 @@ describe('Auto marcar over a Traktor track', () => {
       dropInputs: { 'traktor:HD/:m/:t.wav': input },
     })
     await autoMarkTracks(client, ['traktor:HD/:m/:t.wav'])
-    expect(detectDrops).toHaveBeenCalledWith(input)
+    expect(dropProposals).toHaveBeenCalledWith(input, DROP_MODEL)
     expect(api.rekordboxCueWaveDetail).not.toHaveBeenCalled()
   })
 })

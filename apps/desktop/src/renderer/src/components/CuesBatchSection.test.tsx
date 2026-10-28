@@ -89,8 +89,14 @@ describe('Cues over several selected tracks', () => {
   it('accepts every proposal of the selection at once and leaves the cues unsaved', async () => {
     const { saveRekordboxCues } = setup()
     act(() => {
-      keepAutoMark('103', { kind: 'proposed', ms: [bar(64), bar(128)] })
-      keepAutoMark('104', { kind: 'proposed', ms: [bar(32)] })
+      keepAutoMark('103', {
+        kind: 'proposed',
+        proposals: [bar(64), bar(128)].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+      })
+      keepAutoMark('104', {
+        kind: 'proposed',
+        proposals: [bar(32)].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+      })
     })
     expect(screen.getByTestId('cues-batch-tally')).toHaveTextContent('2')
     fireEvent.click(screen.getByTestId('cues-batch-accept'))
@@ -102,8 +108,14 @@ describe('Cues over several selected tracks', () => {
   it('names the accept button by the proposals it accepts', () => {
     setup()
     act(() => {
-      keepAutoMark('103', { kind: 'proposed', ms: [bar(64), bar(128)] })
-      keepAutoMark('104', { kind: 'proposed', ms: [bar(32)] })
+      keepAutoMark('103', {
+        kind: 'proposed',
+        proposals: [bar(64), bar(128)].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+      })
+      keepAutoMark('104', {
+        kind: 'proposed',
+        proposals: [bar(32)].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+      })
     })
     expect(screen.getByTestId('cues-batch-accept')).toHaveTextContent(
       i18n.t('editor.cues.auto.accept', { count: 3 }),
@@ -124,7 +136,12 @@ describe('Cues over several selected tracks', () => {
 
   it('throws the proposals away on Descartar without placing anything', () => {
     setup()
-    act(() => keepAutoMark('103', { kind: 'proposed', ms: [bar(64)] }))
+    act(() =>
+      keepAutoMark('103', {
+        kind: 'proposed',
+        proposals: [bar(64)].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+      }),
+    )
     fireEvent.click(screen.getByTestId('cues-batch-discard'))
     expect(autoMarkOf('103')).toBeUndefined()
     expect([...unsavedCueTracks()]).toEqual([])
@@ -167,8 +184,14 @@ describe('Cues over several selected tracks', () => {
       '/m/b.wav': { traktor: T2, engine: 'engine:2' },
     })
     act(() => {
-      keepAutoMark('103', { kind: 'proposed', ms: [bar(64)] })
-      keepAutoMark('104', { kind: 'proposed', ms: [bar(96)] })
+      keepAutoMark('103', {
+        kind: 'proposed',
+        proposals: [bar(64)].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+      })
+      keepAutoMark('104', {
+        kind: 'proposed',
+        proposals: [bar(96)].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+      })
     })
     fireEvent.click(screen.getByTestId('cues-batch-accept'))
     const twins = await screen.findByTestId('cues-batch-twins')
@@ -200,7 +223,12 @@ describe('Cues over several selected tracks', () => {
       },
     )
     const { saveRekordboxCues } = setup({ '/m/a.wav': { traktor: T1 } })
-    act(() => keepAutoMark('103', { kind: 'proposed', ms: [bar(64)] }))
+    act(() =>
+      keepAutoMark('103', {
+        kind: 'proposed',
+        proposals: [bar(64)].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+      }),
+    )
     fireEvent.click(screen.getByTestId('cues-batch-accept'))
     const traktor = await screen.findByTestId('cues-batch-twin-traktor')
     expect(traktor).toHaveTextContent(i18n.t('editor.cues.batch.twinsUnsaved', { count: 1 }))

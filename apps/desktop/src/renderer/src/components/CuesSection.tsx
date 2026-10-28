@@ -18,7 +18,7 @@ import { activeCueFlow, DEFAULT_CUE_FLOW_ID, MANUAL_CUE_FLOW } from '../../../sh
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { ALL_SLOTS, BEATS_PER_BAR, nearestBeat, SAME_POSITION_MS } from '../../../shared/cueRules'
-import type { DropInput } from '../../../shared/dropDetect'
+import type { DropInput, DropProposal } from '../../../shared/dropDetect'
 import { isEngineContent } from '../../../shared/engineContent'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import { isTraktorContent, TRAKTOR_CUE_COLOR, TRAKTOR_SLOTS } from '../../../shared/traktorContent'
@@ -28,6 +28,7 @@ import { useMaximizedSection } from '../hooks/useEditorSections'
 import {
   cueDropInputQuery,
   useAuditionLead,
+  useCueProfile,
   useCueWaveDetail,
   useQueuedCues,
   useSurcoGrid,
@@ -500,10 +501,11 @@ function Editing({
     enabled: traktor && settings.traktorNmlPath !== '',
   })
   const [readingAudio, setReadingAudio] = useState(false)
-  const [proposed, setProposed] = useState<number[] | null>(() => {
+  const [proposed, setProposed] = useState<DropProposal[] | null>(() => {
     const kept = autoMarkOf(cue.contentId)
-    return kept?.kind === 'proposed' ? kept.ms : null
+    return kept?.kind === 'proposed' ? kept.proposals : null
   })
+  const taste = useCueProfile()?.profile?.taste ?? null
   const [autoNote, setAutoNote] = useState<'none' | 'marked' | 'unanalysed' | null>(() => {
     const kept = autoMarkOf(cue.contentId)
     if (kept?.kind === 'unanalysed' && engine) return 'unanalysed'
@@ -514,13 +516,13 @@ function Editing({
     [proposed, state.cues, read.grid],
   )
   useEffect(() => {
-    if (proposals.length > 0) keepAutoMark(cue.contentId, { kind: 'proposed', ms: proposals })
+    if (proposals.length > 0) keepAutoMark(cue.contentId, { kind: 'proposed', proposals })
     else if (autoMarkOf(cue.contentId)?.kind === 'proposed') forgetAutoMark(cue.contentId)
   }, [cue.contentId, proposals])
   const acceptAll = useMemo<DraftAction>(
     () => ({
       type: 'batch',
-      actions: proposals.map((ms) =>
+      actions: proposals.map(({ ms }) =>
         manual ? { type: 'add-call', ms } : { type: 'mark-drop', ms },
       ),
     }),
@@ -531,7 +533,7 @@ function Editing({
     [proposals, acceptAll, state, ctx],
   )
   const proposeFrom = (input: DropInput) => {
-    const found = dropsOnGrid(input, read.grid)
+    const found = dropsOnGrid(input, read.grid, taste)
     const note =
       found.length === 0
         ? 'none'
@@ -566,7 +568,7 @@ function Editing({
     setProposed(null)
   }
   const dropProposal = (ms: number) => {
-    setProposed((all) => (all ?? []).filter((p) => p !== ms))
+    setProposed((all) => (all ?? []).filter((p) => p.ms !== ms))
     focusEditor()
   }
   const acceptProposal = (ms: number) => {

@@ -885,7 +885,11 @@
         "unanalysed": "Pas d’analyse rekordbox",
         "none": "Surco ne trouve pas où ce morceau décolle",
         "marked": "Tu as déjà un CALL partout où Surco pense que le morceau décolle",
-        "selected": "Marquage auto de la sélection"
+        "selected": "Marquage auto de la sélection",
+        "sure": "Ça décolle ici {{time}}",
+        "why_one": "après {{count}} mesure avec peu de basses",
+        "why_other": "après {{count}} mesures avec peu de basses",
+        "whyNone": "sans pause de basses avant"
       },
       "batch": {
         "mark_one": "Marquage auto de {{count}} morceau",

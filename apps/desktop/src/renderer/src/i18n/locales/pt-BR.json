@@ -885,7 +885,11 @@
         "unanalysed": "Sem análise do rekordbox",
         "none": "O Surco não encontra onde esta faixa explode",
         "marked": "Você já tem um CALL em cada lugar onde o Surco acha que a faixa explode",
-        "selected": "Marcar automático nas selecionadas"
+        "selected": "Marcar automático nas selecionadas",
+        "sure": "Explode aqui {{time}}",
+        "why_one": "depois de {{count}} compasso com pouco grave",
+        "why_other": "depois de {{count}} compassos com pouco grave",
+        "whyNone": "sem pausa de grave antes"
       },
       "batch": {
         "mark_one": "Marcar automático em {{count}} faixa",

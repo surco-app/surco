@@ -885,7 +885,11 @@
         "unanalysed": "No rekordbox analysis",
         "none": "Surco can’t find where this track breaks",
         "marked": "You already have a CALL everywhere Surco thinks the track breaks",
-        "selected": "Auto mark the selected"
+        "selected": "Auto mark the selected",
+        "sure": "Breaks here {{time}}",
+        "why_one": "after {{count}} bar of weak bass",
+        "why_other": "after {{count}} bars of weak bass",
+        "whyNone": "no bass break before"
       },
       "batch": {
         "mark_one": "Auto mark {{count}} track",

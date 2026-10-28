@@ -5,7 +5,13 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
-import type { DropInput } from '../../../shared/dropDetect'
+import type { CueProfile } from '../../../shared/cueProfile'
+import {
+  DROP_MODEL,
+  type DropInput,
+  type DropModel,
+  type DropProposal,
+} from '../../../shared/dropDetect'
 import type { Settings, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
@@ -22,11 +28,17 @@ import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
 
-const detectDrops = vi.hoisted(() => vi.fn<(input: DropInput) => number[]>())
+const dropProposals = vi.hoisted(() =>
+  vi.fn<(input: DropInput, model?: DropModel) => DropProposal[]>(),
+)
 vi.mock('../../../shared/dropDetect', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../../shared/dropDetect')>()),
-  detectDrops,
+  dropProposals,
 }))
+
+const sure = (ms: number, quietBars = 8): DropProposal => ({ ms, sure: true, quietBars })
+const doubt = (ms: number, quietBars = 1): DropProposal => ({ ms, sure: false, quietBars })
+const found = (...ms: number[]): DropProposal[] => ms.map((m) => sure(m))
 
 const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32]
 const GRID = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
@@ -51,7 +63,7 @@ afterEach(() => {
 })
 
 beforeEach(() => {
-  detectDrops.mockReset().mockReturnValue([bar(64), bar(128)])
+  dropProposals.mockReset().mockReturnValue(found(bar(64), bar(128)))
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
     left: 0,
     top: 0,
@@ -70,7 +82,9 @@ function setup({
   words = WORDS,
   settings = {},
   actionsRef,
+  profile = null,
 }: {
+  profile?: CueProfile | null
   read?: TrackCues
   words?: Uint16Array | null
   settings?: Partial<Settings>
@@ -85,6 +99,11 @@ function setup({
     rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
     rekordboxCueWaveDetail: vi.fn<Api['rekordboxCueWaveDetail']>(async () => words),
     saveRekordboxCues,
+    cueProfile: vi.fn<Api['cueProfile']>(async () => ({
+      profile,
+      edits: { count: 0, sinceLearn: 0 },
+      marked: 0,
+    })),
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const tree = (cue = { contentId: '103', path: '/m/g.wav', label: 'Gowan' }) => (
@@ -132,7 +151,7 @@ describe('Auto marcar', () => {
     setup()
     await ready()
     await wordsLoaded()
-    expect(detectDrops).not.toHaveBeenCalled()
+    expect(dropProposals).not.toHaveBeenCalled()
     expect(proposals()).toEqual([])
     expect(autoButton()).toHaveTextContent('Auto mark')
     expect(autoButton().className).toContain('border-[var(--color-accent)]')
@@ -149,11 +168,53 @@ describe('Auto marcar', () => {
     setup()
     await ready()
     await autoMark()
-    expect(detectDrops).toHaveBeenCalledWith({
-      grid: READ.grid,
-      phrases: READ.phrases,
-      words: WORDS,
-    })
+    expect(dropProposals).toHaveBeenCalledWith(
+      { grid: READ.grid, phrases: READ.phrases, words: WORDS },
+      DROP_MODEL,
+    )
+  })
+
+  it('detects with what Surco learned of the DJ’s marking', async () => {
+    const taste = { trees: [[[0.5]]], picking: { threshold: 0, spacingBars: 16, maxDrops: 2 } }
+    setup({ profile: { taste } as unknown as CueProfile })
+    await ready()
+    await waitFor(() => expect(window.api.cueProfile).toHaveBeenCalled())
+    await autoMark()
+    await waitFor(() =>
+      expect(dropProposals.mock.calls.at(-1)?.[1]?.trees).toHaveLength(DROP_MODEL.trees.length + 1),
+    )
+  })
+
+  it('draws a sure proposal with a solid line and a doubtful one dashed, asking only about the doubtful', async () => {
+    dropProposals.mockReturnValue([sure(bar(64)), doubt(bar(96))])
+    setup()
+    await ready()
+    await autoMark()
+    expect(screen.getByTestId(`cue-wave-proposal-${bar(64)}`)).toHaveAttribute('data-sure', 'true')
+    expect(screen.getByTestId(`cue-wave-proposal-${bar(96)}`)).toHaveAttribute('data-sure', 'false')
+    seekStrip(bar(64))
+    expect(screen.getByTestId(`cue-proposal-${bar(64)}`)).toHaveAttribute('data-sure', 'true')
+    expect(screen.getByTestId(`cue-proposal-${bar(64)}`)).toHaveTextContent('Breaks here 2:08')
+    seekStrip(bar(96))
+    expect(screen.getByTestId(`cue-proposal-${bar(96)}`)).toHaveTextContent(
+      'Does it break here? 3:12',
+    )
+  })
+
+  it('says in full screen what it heard before each proposal, so the DJ knows why it doubts', async () => {
+    dropProposals.mockReturnValue([sure(bar(64), 8), doubt(bar(96), 0)])
+    setup()
+    await ready()
+    await openFull()
+    await autoMark()
+    seekStrip(bar(64))
+    expect(screen.getByTestId(`cue-proposal-why-${bar(64)}`)).toHaveTextContent(
+      'after 8 bars of weak bass',
+    )
+    seekStrip(bar(96))
+    expect(screen.getByTestId(`cue-proposal-why-${bar(96)}`)).toHaveTextContent(
+      'no bass break before',
+    )
   })
 
   it('draws each proposal over both waves and asks with its time where the zoomed wave shows it', async () => {
@@ -163,9 +224,7 @@ describe('Auto marcar', () => {
     expect(proposals()).toEqual([`cue-wave-proposal-${bar(64)}`, `cue-wave-proposal-${bar(128)}`])
     seekStrip(bar(64))
     expect(screen.getByTestId(`cue-detail-proposal-${bar(64)}`)).toBeInTheDocument()
-    expect(screen.getByTestId(`cue-proposal-${bar(64)}`)).toHaveTextContent(
-      'Does it break here? 2:08',
-    )
+    expect(screen.getByTestId(`cue-proposal-${bar(64)}`)).toHaveTextContent('Breaks here 2:08')
     expect(screen.queryByTestId(`cue-proposal-${bar(128)}`)).toBeNull()
   })
 
@@ -273,7 +332,7 @@ describe('Auto marcar', () => {
   })
 
   it('says so when the detector finds nothing, instead of proposing anything', async () => {
-    detectDrops.mockReturnValue([])
+    dropProposals.mockReturnValue(found())
     setup()
     await ready()
     await autoMark()
@@ -437,12 +496,12 @@ describe('accepting Auto marcar', () => {
 
 describe('pending proposals', () => {
   it('shows the proposals a batch left for the track as soon as it opens, so the DJ only reviews', async () => {
-    keepAutoMark('103', { kind: 'proposed', ms: [bar(64), bar(128)] })
+    keepAutoMark('103', { kind: 'proposed', proposals: found(bar(64), bar(128)) })
     setup()
     await ready()
     expect(proposals()).toEqual([`cue-wave-proposal-${bar(64)}`, `cue-wave-proposal-${bar(128)}`])
     expect(screen.getByTestId('cues-auto-accept')).toBeInTheDocument()
-    expect(detectDrops).not.toHaveBeenCalled()
+    expect(dropProposals).not.toHaveBeenCalled()
   })
 
   it('keeps them when the DJ moves to another track and comes back, until they are answered', async () => {
@@ -459,10 +518,10 @@ describe('pending proposals', () => {
     setup()
     await ready()
     await autoMark()
-    expect(autoMarkOf('103')).toEqual({ kind: 'proposed', ms: [bar(64), bar(128)] })
+    expect(autoMarkOf('103')).toEqual({ kind: 'proposed', proposals: found(bar(64), bar(128)) })
     seekStrip(bar(64))
     fireEvent.click(screen.getByTestId(`cue-proposal-accept-${bar(64)}`))
-    expect(autoMarkOf('103')).toEqual({ kind: 'proposed', ms: [bar(128)] })
+    expect(autoMarkOf('103')).toEqual({ kind: 'proposed', proposals: found(bar(128)) })
   })
 
   it('leaves nothing pending once they are all accepted', async () => {
@@ -482,7 +541,7 @@ describe('pending proposals', () => {
   })
 
   it('records when the detector finds nothing or only marked breaks, so the row can say so', async () => {
-    detectDrops.mockReturnValue([])
+    dropProposals.mockReturnValue(found())
     setup()
     await ready()
     await autoMark()
@@ -631,7 +690,7 @@ describe('saving several tracks', () => {
 
   it('never saves what is still only proposed, on this track or another', async () => {
     other()
-    keepAutoMark('105', { kind: 'proposed', ms: [bar(16)] })
+    keepAutoMark('105', { kind: 'proposed', proposals: found(bar(16)) })
     const { saveRekordboxCues } = setup()
     await ready()
     await autoMark()
@@ -643,6 +702,6 @@ describe('saving several tracks', () => {
     expect(reqs.map((r) => r.contentId).sort()).toEqual(['103', '104'])
     const mine = reqs.find((r) => r.contentId === '103')
     expect(mine?.wanted.some((c) => c.ms === bar(128))).toBe(false)
-    expect(autoMarkOf('105')).toEqual({ kind: 'proposed', ms: [bar(16)] })
+    expect(autoMarkOf('105')).toEqual({ kind: 'proposed', proposals: found(bar(16)) })
   })
 })

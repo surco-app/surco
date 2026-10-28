@@ -5,7 +5,12 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
-import type { DropInput } from '../../../shared/dropDetect'
+import {
+  DROP_MODEL,
+  type DropInput,
+  type DropModel,
+  type DropProposal,
+} from '../../../shared/dropDetect'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import { TRAKTOR_CUE_COLOR } from '../../../shared/traktorContent'
 import type { TrackCues } from '../../../shared/types'
@@ -17,10 +22,12 @@ import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
 
-const detectDrops = vi.hoisted(() => vi.fn<(input: DropInput) => number[]>())
+const dropProposals = vi.hoisted(() =>
+  vi.fn<(input: DropInput, model?: DropModel) => DropProposal[]>(),
+)
 vi.mock('../../../shared/dropDetect', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../../shared/dropDetect')>()),
-  detectDrops,
+  dropProposals,
 }))
 
 afterEach(cleanup)
@@ -222,7 +229,7 @@ describe('CuesSection on a Traktor track', () => {
   })()
 
   it('previews Auto mark in Traktor blue, not in the flow colours', async () => {
-    detectDrops.mockReset().mockReturnValue([bar(64)])
+    dropProposals.mockReset().mockReturnValue([{ ms: bar(64), sure: true, quietBars: 8 }])
     const input: DropInput = { grid: GRID, phrases: [], words: new Uint16Array(3000) }
     setup(READ, 'traktor:HD/:m/:e.wav', async () => input)
     await ready()

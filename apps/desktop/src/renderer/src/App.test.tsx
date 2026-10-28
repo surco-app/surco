@@ -552,7 +552,12 @@ describe('App Engine DJ cues', () => {
   it('shows on each row of an Engine DJ playlist what Auto marcar left for its Engine track', async () => {
     openEngine()
     await openFriday()
-    act(() => keepAutoMark('engine:12', { kind: 'proposed', ms: [1000, 2000] }))
+    act(() =>
+      keepAutoMark('engine:12', {
+        kind: 'proposed',
+        proposals: [1000, 2000].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+      }),
+    )
     const chips = () =>
       screen
         .getAllByTestId('track-wave-line')
@@ -2161,7 +2166,12 @@ describe('App source playlists', () => {
 
   it('shows on each row of the open playlist what Auto marcar left for its rekordbox entry', async () => {
     await openFactory()
-    act(() => keepAutoMark('c-l2', { kind: 'proposed', ms: [1000, 2000] }))
+    act(() =>
+      keepAutoMark('c-l2', {
+        kind: 'proposed',
+        proposals: [1000, 2000].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+      }),
+    )
     const chips = () =>
       screen
         .getAllByTestId('track-wave-line')

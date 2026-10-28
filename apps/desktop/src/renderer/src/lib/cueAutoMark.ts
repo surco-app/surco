@@ -3,11 +3,13 @@ import type { CueFlow } from '../../../shared/cueFlows'
 import { MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { ALL_SLOTS, nearestBeat } from '../../../shared/cueRules'
-import { type DropInput, detectDrops } from '../../../shared/dropDetect'
+import { type DropInput, type DropProposal, dropProposals } from '../../../shared/dropDetect'
+import { modelWithTaste } from '../../../shared/dropTaste'
 import { isEngineContent } from '../../../shared/engineContent'
 import { isTraktorContent, TRAKTOR_SLOTS } from '../../../shared/traktorContent'
 import {
   cueDropInputQuery,
+  cueProfileQuery,
   cueWaveDetailQuery,
   queuedCuesQuery,
   trackCuesQuery,
@@ -25,20 +27,32 @@ import {
 import { quantizePoints } from './cueWave'
 
 export function withoutCallInBar(
-  proposed: number[],
+  proposed: DropProposal[],
   cues: { ms: number; kind: number }[],
   grid: { ms: number; beat: number }[],
-): number[] {
+): DropProposal[] {
   const beats = grid.map((b) => b.ms)
   const barAt = (ms: number) =>
     grid.slice(0, nearestBeat(beats, ms) + 1).filter((b) => b.beat === 1).length
   const calls = cues.filter((c) => c.kind === 0).map((c) => barAt(c.ms))
-  return proposed.filter((ms) => !calls.includes(barAt(ms)))
+  return proposed.filter((p) => !calls.includes(barAt(p.ms)))
 }
 
-export function dropsOnGrid(input: DropInput, grid: { ms: number }[]): number[] {
+export function dropsOnGrid(
+  input: DropInput,
+  grid: { ms: number }[],
+  taste: Parameters<typeof modelWithTaste>[0] = null,
+): DropProposal[] {
   const beats = grid.map((b) => b.ms)
-  return detectDrops(input).map((ms) => beats[nearestBeat(beats, ms)])
+  return dropProposals(input, modelWithTaste(taste)).map((p) => ({
+    ...p,
+    ms: beats[nearestBeat(beats, p.ms)],
+  }))
+}
+
+export async function learnedTaste(client: QueryClient) {
+  const read = await client.fetchQuery(cueProfileQuery).catch(() => null)
+  return read?.profile?.taste ?? null
 }
 
 async function dropInputOf(
@@ -61,10 +75,10 @@ async function autoMarkOne(client: QueryClient, contentId: string): Promise<Auto
   const cues =
     keptDraftOn(contentId, read, queued)?.cues ??
     (queued && queued.fingerprint === read.fingerprint ? queued.wanted : read.cues)
-  const found = dropsOnGrid(input, read.grid)
+  const found = dropsOnGrid(input, read.grid, await learnedTaste(client))
   if (found.length === 0) return { kind: 'none' }
   const open = withoutCallInBar(found, cues, read.grid)
-  return open.length === 0 ? { kind: 'marked' } : { kind: 'proposed', ms: open }
+  return open.length === 0 ? { kind: 'marked' } : { kind: 'proposed', proposals: open }
 }
 
 export async function autoMarkTracks(client: QueryClient, contentIds: string[]): Promise<void> {
@@ -94,9 +108,13 @@ async function acceptOne(
   client: QueryClient,
   target: AutoMarkTarget,
   settings: AutoMarkSettings,
+  onlySure: boolean,
 ): Promise<boolean> {
   const mark = autoMarkOf(target.contentId)
   if (mark?.kind !== 'proposed') return false
+  const taken = mark.proposals.filter((p) => p.sure || !onlySure)
+  const left = mark.proposals.filter((p) => !taken.includes(p))
+  if (taken.length === 0) return false
   const read = await client.fetchQuery(trackCuesQuery(target.contentId)).catch(() => null)
   if (!read?.analysed || read.grid.length === 0) return false
   const queued = await client.fetchQuery(queuedCuesQuery(target.contentId))
@@ -125,12 +143,13 @@ async function acceptOne(
   const flowed = manual
     ? kept
     : reduceDraft(kept, { type: 'use-flow', flowId: settings.activeCueFlow }, ctx)
-  const open = withoutCallInBar(mark.ms, flowed.cues, read.grid)
-  const actions: DraftAction[] = open.map((ms) =>
+  const open = withoutCallInBar(taken, flowed.cues, read.grid)
+  const actions: DraftAction[] = open.map(({ ms }) =>
     manual ? { type: 'add-call', ms } : { type: 'mark-drop', ms },
   )
   const accepted = reduceDraft(flowed, { type: 'batch', actions }, ctx)
-  forgetAutoMark(target.contentId)
+  if (left.length > 0) keepAutoMark(target.contentId, { kind: 'proposed', proposals: left })
+  else forgetAutoMark(target.contentId)
   if (JSON.stringify(wantedOfDraft(accepted.cues)) === JSON.stringify(baseline)) return false
   keepDraft(
     target.contentId,
@@ -146,8 +165,10 @@ export async function acceptAutoMarks(
   client: QueryClient,
   targets: AutoMarkTarget[],
   settings: AutoMarkSettings,
+  { onlySure = false }: { onlySure?: boolean } = {},
 ): Promise<number> {
   let accepted = 0
-  for (const target of targets) if (await acceptOne(client, target, settings)) accepted += 1
+  for (const target of targets)
+    if (await acceptOne(client, target, settings, onlySure)) accepted += 1
   return accepted
 }

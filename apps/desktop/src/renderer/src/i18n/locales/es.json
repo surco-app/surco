@@ -885,7 +885,11 @@
         "unanalysed": "Sin análisis de rekordbox",
         "none": "Surco no encuentra dónde rompe en esta pista",
         "marked": "Ya tienes un CALL en cada sitio donde Surco cree que rompe",
-        "selected": "Auto marcar las seleccionadas"
+        "selected": "Auto marcar las seleccionadas",
+        "sure": "Rompe aquí {{time}}",
+        "why_one": "tras {{count}} compás con poco grave",
+        "why_other": "tras {{count}} compases con poco grave",
+        "whyNone": "sin parón de grave antes"
       },
       "batch": {
         "mark_one": "Auto marcar {{count}} pista",

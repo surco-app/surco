@@ -163,11 +163,22 @@ describe('CueWave', () => {
   })
 
   it('draws a proposal as a bare line under a mark at the same place, since it is accepted from its pill on the zoomed wave', () => {
-    setup({ proposals: [16000] })
+    setup({ proposals: [{ ms: 16000, sure: true, quietBars: 8 }] })
     const all = screen.getAllByTestId(/^cue-wave-(proposal|hot)-/)
     expect(all.map((e) => e.dataset.testid)).toEqual(['cue-wave-proposal-16000', 'cue-wave-hot-A'])
     expect(screen.getByTestId('cue-wave-proposal-16000')).toHaveAttribute('aria-hidden', 'true')
     expect(screen.getByTestId('cue-wave-proposal-16000').style.left).toBe('20%')
+  })
+
+  it('draws a doubtful proposal dashed and a sure one solid, so the DJ checks the doubtful first', () => {
+    setup({
+      proposals: [
+        { ms: 16000, sure: true, quietBars: 8 },
+        { ms: 32000, sure: false, quietBars: 1 },
+      ],
+    })
+    expect(screen.getByTestId('cue-wave-proposal-16000')).toHaveAttribute('data-sure', 'true')
+    expect(screen.getByTestId('cue-wave-proposal-32000')).toHaveAttribute('data-sure', 'false')
   })
 
   it('opens the menu on a right-click with the beat under it', () => {

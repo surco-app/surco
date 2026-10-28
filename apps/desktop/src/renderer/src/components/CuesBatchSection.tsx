@@ -87,7 +87,7 @@ export function CuesBatchSection({
   const ofKind = (kind: string) => ids.filter((id) => marks.get(id)?.kind === kind).length
   const proposals = ids.reduce((sum, id) => {
     const mark = marks.get(id)
-    return sum + (mark?.kind === 'proposed' ? mark.ms.length : 0)
+    return sum + (mark?.kind === 'proposed' ? mark.proposals.length : 0)
   }, 0)
   const tally = [
     ['proposed', tr('editor.cues.batch.withProposals'), ofKind('proposed')],

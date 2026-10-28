@@ -158,7 +158,12 @@ describe('French form of address', () => {
 
 describe('cue editor copy', () => {
   it('never says donde rompe, since a flow is placed on any point and not every DJ marks the drop, except Auto marcar, whose detector looks for where the track breaks', () => {
-    const autoMark = ['editor.cues.auto.ask', 'editor.cues.auto.none', 'editor.cues.auto.marked']
+    const autoMark = [
+      'editor.cues.auto.ask',
+      'editor.cues.auto.sure',
+      'editor.cues.auto.none',
+      'editor.cues.auto.marked',
+    ]
     expect(
       leaves(es)
         .filter(([key, text]) => /rompe/i.test(text) && !autoMark.includes(key))

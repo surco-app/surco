@@ -78,9 +78,15 @@ describe('cue session', () => {
   })
 
   it('keeps what Auto marcar found for each track apart, so a whole playlist can be reviewed one track at a time', () => {
-    keepAutoMark('103', { kind: 'proposed', ms: [128000, 256000] })
+    keepAutoMark('103', {
+      kind: 'proposed',
+      proposals: [128000, 256000].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+    })
     keepAutoMark('104', { kind: 'unanalysed' })
-    expect(autoMarkOf('103')).toEqual({ kind: 'proposed', ms: [128000, 256000] })
+    expect(autoMarkOf('103')).toEqual({
+      kind: 'proposed',
+      proposals: [128000, 256000].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+    })
     expect(autoMarkOf('104')).toEqual({ kind: 'unanalysed' })
     expect(autoMarkOf('105')).toBeUndefined()
     forgetAutoMark('103')
@@ -89,18 +95,30 @@ describe('cue session', () => {
   })
 
   it('never counts pending proposals as unsaved, so quitting with nothing accepted does not ask', () => {
-    keepAutoMark('103', { kind: 'proposed', ms: [128000] })
+    keepAutoMark('103', {
+      kind: 'proposed',
+      proposals: [128000].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+    })
     expect([...unsavedCueTracks()]).toEqual([])
   })
 
   it('calls back only when a track’s proposals really change, so the list does not repaint for the same result', () => {
     const listener = vi.fn<() => void>()
     const stop = subscribeCueDrafts(listener)
-    keepAutoMark('103', { kind: 'proposed', ms: [128000] })
-    keepAutoMark('103', { kind: 'proposed', ms: [128000] })
+    keepAutoMark('103', {
+      kind: 'proposed',
+      proposals: [128000].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+    })
+    keepAutoMark('103', {
+      kind: 'proposed',
+      proposals: [128000].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+    })
     forgetAutoMark('104')
     expect(listener).toHaveBeenCalledTimes(1)
-    keepAutoMark('103', { kind: 'proposed', ms: [] })
+    keepAutoMark('103', {
+      kind: 'proposed',
+      proposals: [].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+    })
     expect(listener).toHaveBeenCalledTimes(2)
     stop()
   })
@@ -123,7 +141,10 @@ describe('cue session', () => {
       label: 'Other',
       fingerprint: 'f1',
     })
-    keepAutoMark('105', { kind: 'proposed', ms: [128000] })
+    keepAutoMark('105', {
+      kind: 'proposed',
+      proposals: [128000].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+    })
     expect(draftsToSave()).toEqual([
       {
         contentId: '103',
@@ -141,7 +162,10 @@ describe('cue session', () => {
       initialProps: { at: '/a/master.db' as string | undefined },
     })
     keepDraft('103', '103|f0|null', startDraft([], 'mine'), TARGET)
-    keepAutoMark('104', { kind: 'proposed', ms: [128000] })
+    keepAutoMark('104', {
+      kind: 'proposed',
+      proposals: [128000].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+    })
     rerender({ at: '/a/master.db' })
     expect([...unsavedCueTracks()]).toEqual(['103'])
     rerender({ at: '/b/master.db' })

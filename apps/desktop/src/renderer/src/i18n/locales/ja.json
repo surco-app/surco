@@ -885,7 +885,11 @@
         "unanalysed": "rekordbox の解析なし",
         "none": "Surco はこのトラックのブレイク位置を見つけられません",
         "marked": "Surco がブレイクと判断した位置には、すべて CALL がすでにあります",
-        "selected": "選択したトラックを自動マーク"
+        "selected": "選択したトラックを自動マーク",
+        "sure": "ここでブレイク {{time}}",
+        "why_one": "低音の弱い {{count}} 小節のあと",
+        "why_other": "低音の弱い {{count}} 小節のあと",
+        "whyNone": "直前に低音の休みなし"
       },
       "batch": {
         "mark_one": "{{count}} トラックを自動マーク",

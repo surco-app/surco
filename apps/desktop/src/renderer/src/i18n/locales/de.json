@@ -885,7 +885,11 @@
         "unanalysed": "Keine rekordbox-Analyse",
         "none": "Surco findet nicht, wo dieser Titel losbricht",
         "marked": "Du hast schon überall ein CALL, wo Surco meint, dass der Titel losbricht",
-        "selected": "Auswahl auto-markieren"
+        "selected": "Auswahl auto-markieren",
+        "sure": "Bricht hier los {{time}}",
+        "why_one": "nach {{count}} Takt mit wenig Bass",
+        "why_other": "nach {{count}} Takten mit wenig Bass",
+        "whyNone": "ohne Basspause davor"
       },
       "batch": {
         "mark_one": "{{count}} Track auto-markieren",
