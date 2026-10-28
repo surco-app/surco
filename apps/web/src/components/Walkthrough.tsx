@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import type { Language } from '../i18n'
 import { PAGES } from '../lib/nav'
 import { SCENE_ANCHORS } from '../lib/sceneAnchors'
+import Kicker from './Kicker'
 import Reveal from './Reveal'
 import BatchScene from './scenes/BatchScene'
 import CuesScene from './scenes/CuesScene'
@@ -11,7 +12,7 @@ import NormalizeScene from './scenes/NormalizeScene'
 import QualityScene from './scenes/QualityScene'
 import ReplaceScene from './scenes/ReplaceScene'
 import { AnchorLink, Replayable } from './scenes/Replay'
-import SceneLayout, { STEP_LABEL } from './scenes/SceneLayout'
+import SceneLayout from './scenes/SceneLayout'
 import TagScene from './scenes/TagScene'
 import TrimScene from './scenes/TrimScene'
 
@@ -36,7 +37,7 @@ export default function Walkthrough() {
             edge, on the one link whose job is to show what the app does. */}
         <div className="pt-24">
           <div id="como" className="scroll-mt-8 text-center">
-            <p className={STEP_LABEL}>{t('home.walkthrough.kicker')}</p>
+            <Kicker>{t('home.walkthrough.kicker')}</Kicker>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
               {t('home.walkthrough.title')}
             </h2>
@@ -80,7 +81,7 @@ export default function Walkthrough() {
           what a visitor comes for, and they were being crowded out by their own footnotes. */}
       <section id={SCENE_ANCHORS.audio} className="scroll-mt-12 py-16 sm:py-24">
         <Reveal>
-          <p className={STEP_LABEL}>{t('home.audioGroup.step')}</p>
+          <Kicker>{t('home.audioGroup.step')}</Kicker>
           <h2 className="group/title mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
             {t('home.audioGroup.title')}
             <AnchorLink id={SCENE_ANCHORS.audio} />

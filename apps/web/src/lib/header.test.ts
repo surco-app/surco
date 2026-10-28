@@ -45,6 +45,10 @@ describe('showsHeaderDownload', () => {
     expect(showsHeaderDownload({ isIntersecting: false, top: -120 })).toBe(true)
   })
 
+  it('shows from the start on a page whose hero has no download of its own', () => {
+    expect(showsHeaderDownload(null)).toBe(true)
+  })
+
   it('stays hidden when the hero download is below the fold, not past it', () => {
     // On a short window the hero button starts below the fold; nobody has passed it yet.
     expect(showsHeaderDownload({ isIntersecting: false, top: 900 })).toBe(false)

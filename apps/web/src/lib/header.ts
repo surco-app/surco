@@ -13,6 +13,9 @@ export function isCondensed(scrollY: number, current: boolean): boolean {
   return current
 }
 
-export function showsHeaderDownload(heroCta: { isIntersecting: boolean; top: number }): boolean {
+export function showsHeaderDownload(
+  heroCta: { isIntersecting: boolean; top: number } | null,
+): boolean {
+  if (!heroCta) return true
   return !heroCta.isIntersecting && heroCta.top < 0
 }

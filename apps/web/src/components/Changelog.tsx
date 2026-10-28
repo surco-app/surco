@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
+import Kicker from './Kicker'
 import Reveal from './Reveal'
 import ScrollProgress from './ScrollProgress'
 
@@ -79,12 +80,10 @@ export default function Changelog() {
 
       <Header page="changelog" />
 
-      <main id="main" className="relative mx-auto max-w-3xl px-6">
+      <main id="main" className="relative mx-auto max-w-3xl px-6 sm:px-10">
         <section className="pt-12 pb-4 sm:pt-16">
           <Reveal eager>
-            <p className="font-mono text-xs tracking-wider text-blue uppercase">
-              {t('changelog.kicker')}
-            </p>
+            <Kicker>{t('changelog.kicker')}</Kicker>
             <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
               {t('changelog.title')}
             </h1>
@@ -99,9 +98,7 @@ export default function Changelog() {
             <Reveal>
               <div className="rounded-2xl border border-blue/30 bg-blue/[0.04] p-6 sm:p-8">
                 <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                  <span className="font-mono text-xs tracking-wider text-blue uppercase">
-                    {beta.kicker}
-                  </span>
+                  <span className="text-[0.9375rem] font-medium text-blue">{beta.kicker}</span>
                   <span className="rounded-full border border-line bg-surface2/40 px-3 py-1 font-mono text-sm text-blue tabular-nums">
                     v{beta.version}
                   </span>
@@ -137,7 +134,7 @@ export default function Changelog() {
         ))}
 
         {older.length > 0 && (
-          <section className="border-t border-line/60 py-12">
+          <section className="py-16 sm:py-20">
             <Reveal>
               <h2 className="text-lg font-semibold tracking-tight text-faint">
                 {t('changelog.olderTitle')}
@@ -168,9 +165,9 @@ export default function Changelog() {
           </section>
         )}
 
-        <section className="border-t border-line/60 py-16 text-center">
+        <section className="py-20 text-center sm:py-24">
           <Reveal>
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
               {t('changelog.outroTitle')}
             </h2>
             <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">

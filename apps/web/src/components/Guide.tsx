@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
+import Kicker from './Kicker'
 import Lightbox from './Lightbox'
 import Reveal from './Reveal'
 import ScrollProgress from './ScrollProgress'
@@ -67,7 +68,7 @@ function GuideShot({
           />
         </button>
       )}
-      <figcaption className="border-t border-line/60 px-4 py-2.5 font-mono text-xs text-muted">
+      <figcaption className="border-t border-line/60 px-4 py-2.5 text-sm text-muted">
         {caption}
       </figcaption>
     </figure>
@@ -96,14 +97,12 @@ export default function Guide() {
 
       <Header page="guide" />
 
-      <main id="main" className="relative mx-auto max-w-3xl px-6">
+      <main id="main" className="relative mx-auto max-w-3xl px-6 sm:px-10">
         {/* pb smaller than pt: each section below brings its own py-12, so the
             index used to sit in about 150px of empty background. */}
         <section className="pt-12 pb-4 sm:pt-16">
           <Reveal eager>
-            <p className="font-mono text-xs tracking-wider text-blue uppercase">
-              {t('guide.kicker')}
-            </p>
+            <Kicker>{t('guide.kicker')}</Kicker>
             <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
               {t('guide.title')}
             </h1>
@@ -112,9 +111,7 @@ export default function Guide() {
 
           <Reveal eager delay={120}>
             <nav className="mt-10 rounded-2xl border border-line bg-surface2/40 p-6">
-              <p className="font-mono text-xs tracking-wider text-faint uppercase">
-                {t('guide.tocLabel')}
-              </p>
+              <p className="text-sm font-medium text-faint">{t('guide.tocLabel')}</p>
               <ol className="mt-4 grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
                 {sections.map((s, i) => (
                   <li key={s.id}>
@@ -135,7 +132,7 @@ export default function Guide() {
         </section>
 
         {sections.map((s, i) => (
-          <section key={s.id} id={s.id} className="scroll-mt-20 border-t border-line/60 py-12">
+          <section key={s.id} id={s.id} className="scroll-mt-20 py-14 sm:py-16">
             <Reveal>
               <p className="font-mono text-sm text-blue">{String(i + 1).padStart(2, '0')}</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{s.title}</h2>
@@ -169,9 +166,9 @@ export default function Guide() {
           </section>
         ))}
 
-        <section className="border-t border-line/60 py-16 text-center">
+        <section className="py-20 text-center sm:py-24">
           <Reveal>
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
               {t('guide.outroTitle')}
             </h2>
             <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">

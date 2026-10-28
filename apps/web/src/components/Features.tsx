@@ -51,7 +51,7 @@ export default function Features() {
 
       {/* Same measure as the home. The two pages sit one click apart in the nav and
           the body used to step from 1152px to 1024px on the way over. */}
-      <main id="main" className="relative mx-auto max-w-6xl px-6">
+      <main id="main" className="relative mx-auto max-w-6xl px-6 sm:px-10">
         <section className="pt-16 pb-8 sm:pt-24">
           <Reveal eager>
             <Kicker>{t('features.kicker')}</Kicker>
@@ -81,7 +81,7 @@ export default function Features() {
                     <Icon name={FEATURE_ICONS[i]} className="size-4.5" />
                   </div>
                   <h2 className="text-lg font-semibold text-fg">{g.title}</h2>
-                  <p className="mt-1 font-mono text-xs text-faint">{g.replaces}</p>
+                  <p className="mt-1 text-sm text-faint">{g.replaces}</p>
                   <ul className="mt-4 space-y-3">
                     {g.items.map((it) => (
                       <li key={it.t} className="flex gap-2.5 text-sm leading-relaxed">
@@ -108,7 +108,7 @@ export default function Features() {
             <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-start">
               <div>
                 <Kicker>{t('shortcuts.kicker')}</Kicker>
-                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
                   {t('shortcuts.title')}
                 </h2>
                 <p className="mt-3 leading-relaxed text-pretty text-muted">{t('shortcuts.lede')}</p>
@@ -141,7 +141,7 @@ export default function Features() {
           <Reveal>
             <div className="flex flex-col items-center gap-4">
               <DownloadButton location="features" />
-              <p className="font-mono text-xs text-faint">{t('home.closeNote')}</p>
+              <p className="text-sm text-faint">{t('home.closeNote')}</p>
             </div>
           </Reveal>
         </section>

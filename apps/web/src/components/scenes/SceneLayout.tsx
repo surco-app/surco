@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react'
+import Kicker from '../Kicker'
 import Reveal from '../Reveal'
 import { AnchorLink, Replayable } from './Replay'
-
-export const STEP_LABEL = 'text-[0.9375rem] font-medium text-blue'
 
 // One step of the walkthrough: its label, heading and caption over a full-width slab of
 // app UI. Every step takes the page's width, so the editor's values have room to read.
@@ -22,7 +21,7 @@ export default function SceneLayout({
   return (
     <section id={id} className="scroll-mt-12 py-16 sm:py-24">
       <Reveal>
-        <p className={STEP_LABEL}>{step}</p>
+        <Kicker>{step}</Kicker>
         <h2 className="group/title mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
           {title}
           <AnchorLink id={id} />

@@ -52,12 +52,10 @@ export default function Privacy() {
 
       <Header page="privacy" />
 
-      <main id="main" className="relative mx-auto max-w-3xl px-6">
+      <main id="main" className="relative mx-auto max-w-3xl px-6 sm:px-10">
         <section className="pt-12 pb-10 sm:pt-16">
           <Reveal eager>
-            <p className="font-mono text-xs tracking-wider text-blue uppercase">
-              {t('privacy.kicker')}
-            </p>
+            <Kicker>{t('privacy.kicker')}</Kicker>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-balance sm:text-5xl">
               {t('privacy.title')}
             </h1>
@@ -65,7 +63,7 @@ export default function Privacy() {
           </Reveal>
         </section>
 
-        <section className="border-t border-line/60 py-12" data-testid="privacy-app">
+        <section className="py-16 sm:py-20" data-testid="privacy-app">
           <Reveal>
             <Kicker>{t('privacy.privacyHeading')}</Kicker>
             <p className="mt-4 leading-relaxed text-muted">{t('privacy.privacyLede')}</p>
@@ -82,7 +80,7 @@ export default function Privacy() {
           </Reveal>
         </section>
 
-        <section className="border-t border-line/60 py-12" data-testid="privacy-web">
+        <section className="py-16 sm:py-20" data-testid="privacy-web">
           <Reveal>
             <Kicker>{t('privacy.webHeading')}</Kicker>
             <p className="mt-4 leading-relaxed text-muted">{t('privacy.webBody')}</p>

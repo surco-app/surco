@@ -88,9 +88,7 @@ export default function Lightbox({
               open ? 'scale-100' : 'scale-[0.97]'
             }`}
           />
-          {caption && (
-            <p className="max-w-xl text-center font-mono text-xs text-muted">{caption}</p>
-          )}
+          {caption && <p className="max-w-xl text-center text-sm text-muted">{caption}</p>}
         </>
       )}
     </div>

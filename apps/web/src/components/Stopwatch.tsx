@@ -87,7 +87,7 @@ export default function Stopwatch() {
     <section id="cronometro" className="scroll-mt-24 pt-12 pb-24">
       <Reveal>
         <Kicker>{t('stopwatch.kicker')}</Kicker>
-        <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+        <h2 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
           {t('stopwatch.title')}
         </h2>
         <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">
@@ -160,7 +160,7 @@ export default function Stopwatch() {
         <button
           type="button"
           onClick={replay}
-          className="rounded-lg border border-line bg-surface2/60 px-3 py-1.5 font-mono text-xs text-muted transition-[color,border-color,scale] duration-200 hover:border-blue/40 hover:text-fg active:scale-[0.96]"
+          className="rounded-lg border border-line bg-surface2/60 px-3 py-1.5 text-xs font-medium text-muted transition-[color,border-color,scale] duration-200 hover:border-blue/40 hover:text-fg active:scale-[0.96]"
         >
           {t('stopwatch.replay')}
         </button>
@@ -226,7 +226,7 @@ export default function Stopwatch() {
         </div>
       </Reveal>
 
-      <p className="mt-4 font-mono text-[11px] text-faint">{t('stopwatch.footnote')}</p>
+      <p className="mt-4 text-xs text-faint">{t('stopwatch.footnote')}</p>
     </section>
   )
 }
