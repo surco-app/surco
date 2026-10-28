@@ -2707,6 +2707,102 @@ describe('App source playlists', () => {
       expect(screen.getByTestId('track-menu-playlist-h')).toBeInTheDocument()
       expect(screen.queryByTestId(`track-menu-playlist-${ALL_TRACKS_ID}`)).not.toBeInTheDocument()
     })
+
+    describe('background work', () => {
+      const PATHS = ['/m/w.wav', '/m/x.wav', '/m/y.wav', '/m/z.wav']
+      const matching: Release = {
+        provider: 'discogs',
+        id: 1,
+        title: 'Album',
+        artists: [{ name: 'Artist' }],
+        tracklist: [{ position: '1', title: 'My Song', duration: '3:00' }],
+      }
+      const ENTRIES = PATHS.map((path, i) => ({
+        path,
+        separator: false,
+        meta: {},
+        linkId: `e${i}`,
+        contentId: `e${i}`,
+      }))
+      const collection = {
+        rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+        loadRekordboxTree: vi
+          .fn<Api['loadRekordboxTree']>()
+          .mockResolvedValue([{ id: 'h', name: 'House', kind: 'playlist', count: 1 }]),
+        rekordboxTrackCount: vi.fn<Api['rekordboxTrackCount']>().mockResolvedValue(4),
+        loadRekordboxPlaylist: vi
+          .fn<Api['loadRekordboxPlaylist']>()
+          .mockImplementation(async (id) => (id === ALL_TRACKS_ID ? ENTRIES : [ENTRIES[0]])),
+      }
+
+      function scrollPast(rows: HTMLElement[]): void {
+        act(() => {
+          for (const o of observers) {
+            const seen = [...o.els].filter((el) => rows.some((r) => el === r || el.contains(r)))
+            if (seen.length === 0) continue
+            o.cb(
+              seen.map((target) => ({ target, isIntersecting: true }) as IntersectionObserverEntry),
+              o as unknown as IntersectionObserver,
+            )
+          }
+        })
+      }
+
+      async function openAll(): Promise<HTMLElement[]> {
+        await renderApp()
+        fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+        fireEvent.click(await screen.findByTestId(`source-node-${ALL_TRACKS_ID}`))
+        await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(4))
+        return screen.getAllByTestId('track-row')
+      }
+
+      it('analyzes only the rows scrolled past, with auto-analyze on', async () => {
+        const analyzed: string[] = []
+        setApi({
+          ...collection,
+          getSettings: vi.fn().mockResolvedValue(settings({ autoAnalyze: true })),
+          readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
+          spectrogram: vi.fn(async (path: string) => {
+            analyzed.push(path)
+            return spectrum
+          }),
+        })
+        const rows = await openAll()
+        await new Promise((r) => setTimeout(r, 400))
+        expect(analyzed).toEqual([])
+
+        scrollPast([rows[1], rows[2]])
+
+        await waitFor(() => expect([...analyzed].sort()).toEqual(['/m/x.wav', '/m/y.wav']))
+        await waitFor(() => expect(screen.queryByTestId('analyze-progress')).toBeNull())
+        expect([...analyzed].sort()).toEqual(['/m/x.wav', '/m/y.wav'])
+      })
+
+      it('auto-matches only the rows scrolled past, with auto-match on', async () => {
+        const search = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
+        setApi({
+          ...collection,
+          getSettings: vi
+            .fn()
+            .mockResolvedValue(settings({ discogsToken: 'tok', autoMatch: true })),
+          readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+          readDuration: vi.fn().mockResolvedValue(180),
+          search,
+          getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(matching),
+        })
+        const rows = await openAll()
+        await new Promise((r) => setTimeout(r, 400))
+        expect(within(rows[2]).queryByTestId('track-automatched')).toBeNull()
+
+        scrollPast([rows[2]])
+
+        await waitFor(() =>
+          expect(within(rows[2]).getByTestId('track-automatched')).toBeInTheDocument(),
+        )
+        await new Promise((r) => setTimeout(r, 400))
+        expect(within(rows[3]).queryByTestId('track-automatched')).toBeNull()
+      })
+    })
   })
 
   // With a filter on, rows between the visible ones are hidden; a drop would land among them.

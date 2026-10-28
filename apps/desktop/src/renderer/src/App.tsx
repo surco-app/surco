@@ -217,6 +217,8 @@ const ignoreQueued = (): void => {}
 
 const inFiles = (t: TrackItem): boolean => !!t.inFiles
 
+const SEEN_SETTLE_MS = 250
+
 // The editor (DiscogsPanel, metadata form, every section) is dead weight on first
 // paint, which shows the empty pane — split it into its own chunk, loaded the first
 // time a track is selected. The .then unwraps the named export React.lazy needs as a
@@ -1581,10 +1583,20 @@ export default function App(): React.JSX.Element {
     useDuplicateRanks(tracks)
   // One visibility report feeds both: auto-match runs the rows on screen first, and the
   // duplicate ranks only measure groups whose rows have all been shown.
+  const seenInAllRef = useRef(new Set<string>())
+  const seenSettle = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [seenInAll, setSeenInAll] = useState<ReadonlySet<string>>(() => new Set())
   const onListRowVisible = useStableCallback((id: string, visible: boolean): void => {
     onTrackVisible(id, visible)
     onDuplicateRowVisible(id, visible)
     if (visible) prioritizeReads([id])
+    if (visible && browser.playlist?.id === ALL_TRACKS_ID && !seenInAllRef.current.has(id)) {
+      seenInAllRef.current.add(id)
+      seenSettle.current ??= setTimeout(() => {
+        seenSettle.current = null
+        setSeenInAll(new Set(seenInAllRef.current))
+      }, SEEN_SETTLE_MS)
+    }
   })
   // A library that could not be read leaves every row without a verdict, the same blank a
   // check still loading shows; the notice is what tells the two apart. It goes away once
@@ -1650,13 +1662,12 @@ export default function App(): React.JSX.Element {
   // user had left. Narrowed from the moment a playlist is picked, before its entries land
   // (nothing is its work yet), so the one left behind does not start more in the meantime.
   // A source with no playlist open shows no rows, so it has no work either.
-  const sweepScope = useMemo(
-    () =>
-      browser.source
-        ? playlistMembership(browser.playlist ? (browser.entries ?? []) : [])
-        : inFiles,
-    [browser.source, browser.playlist, browser.entries],
-  )
+  const sweepScope = useMemo(() => {
+    if (!browser.source) return inFiles
+    const inPlaylist = playlistMembership(browser.playlist ? (browser.entries ?? []) : [])
+    if (browser.playlist?.id !== ALL_TRACKS_ID) return inPlaylist
+    return (t: TrackItem): boolean => seenInAll.has(t.id) && inPlaylist(t)
+  }, [browser.source, browser.playlist, browser.entries, seenInAll])
   useEffect(() => {
     scopeAutoMatch(sweepScope)
     scopeAnalysis(sweepScope)
