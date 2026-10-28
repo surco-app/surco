@@ -122,6 +122,13 @@ function originsOf(rule: CueRule, track: FlowTrack, drops: number[]): number[] {
     .sort((a, b) => a - b)
 }
 
+function startsStrongRun(strong: StrongPart[], ms: number): boolean {
+  return (
+    strong.some((s) => Math.abs(s.start - ms) <= SAME_POSITION_MS) &&
+    !strong.some((s) => s.start + SAME_POSITION_MS < ms && ms <= s.end + SAME_POSITION_MS)
+  )
+}
+
 function misfit(
   ms: number,
   rule: CueRule,
@@ -132,7 +139,8 @@ function misfit(
   if (rule.direction === 'forward')
     return next === null || ms < next - SAME_POSITION_MS ? null : 'point'
   if (previous !== null && ms <= previous + SAME_POSITION_MS) return 'point'
-  return strong.some((s) => s.start + SAME_POSITION_MS < ms && ms < s.end) ? 'strong' : null
+  const inside = strong.some((s) => s.start - SAME_POSITION_MS <= ms && ms < s.end)
+  return inside && !startsStrongRun(strong, ms) ? 'strong' : null
 }
 
 function beatMsAt(beats: number[], at: number): number {
@@ -235,7 +243,7 @@ function walkFlow(
         if (
           rule.when === 'fits' &&
           rule.direction === 'back' &&
-          track.strong.some((s) => near(s.start, ms))
+          startsStrongRun(track.strong, ms)
         ) {
           if (last !== null) reject(start, step, k + 1, last, 'strong')
           break

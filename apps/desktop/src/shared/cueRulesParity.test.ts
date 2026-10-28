@@ -29,9 +29,13 @@ function legacyPlanCues(
     for (const bars of LEGACY_DISTANCES) {
       const back = index - bars * 4
       if (back < 0 || (previous !== null && beatsMs[back] <= previous + SAME)) break
-      if (strong.some((s) => s.start + SAME < beatsMs[back] && beatsMs[back] < s.end)) break
-      plan.push({ ms: beatsMs[back], kind: bars })
-      if (strong.some((s) => Math.abs(s.start - beatsMs[back]) <= SAME)) break
+      const at = beatsMs[back]
+      const runStart =
+        strong.some((s) => Math.abs(s.start - at) <= SAME) &&
+        !strong.some((s) => s.start + SAME < at && at <= s.end + SAME)
+      if (!runStart && strong.some((s) => s.start - SAME <= at && at < s.end)) break
+      plan.push({ ms: at, kind: bars })
+      if (runStart) break
     }
     previous = drop
   }
