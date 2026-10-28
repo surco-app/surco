@@ -26,10 +26,15 @@ vi.mock('./channelScan', () => ({
   runChannelScan: vi.fn(async () => ({ clipped: [false, true], channels: [] })),
 }))
 
+vi.mock('../shared/dropTaste', () => ({
+  tuneDropTaste: vi.fn(() => null),
+}))
+
 vi.mock('./cueWaveWords', () => ({
   runCueWaveWords: vi.fn(async () => new Uint16Array([1, 2, 3])),
 }))
 
+import { tuneDropTaste } from '../shared/dropTaste'
 import { runChannelScan } from './channelScan'
 import { detectClicks } from './clickDetect'
 import { runCueWaveWords } from './cueWaveWords'
@@ -40,6 +45,13 @@ import { detectBpm } from './tempo'
 import { computePeaks } from './waveform'
 
 describe('runWorkerJob', () => {
+  it('routes tuneDrops jobs to the taste tuner, which can take seconds and must stay off the main loop', () => {
+    const tracks = [{ key: 'a', candidates: [{ bar: 0, features: [1] }], drops: [0] }]
+    const out = runWorkerJob({ type: 'tuneDrops', tracks })
+    expect(tuneDropTaste).toHaveBeenCalledWith(tracks)
+    expect(out).toBeNull()
+  })
+
   it('routes bpm jobs to the tempo detector with the job pcm and rate', () => {
     const pcm = new Float32Array([0.1, 0.2])
     const out = runWorkerJob({ type: 'bpm', pcm, sampleRate: 11025 })
