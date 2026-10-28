@@ -273,7 +273,9 @@ export function readEngineMembership(
   const find = engineRowFinder(libraryDir, rows)
   const lists = db.prepare(
     `SELECT DISTINCT e.listId AS id FROM PlaylistEntity e JOIN Playlist p ON p.id = e.listId
-      WHERE e.trackId = ? AND coalesce(p.isPersisted, 1) = 1 ORDER BY e.listId`,
+      WHERE e.trackId = ? AND e.membershipReference = 0 AND coalesce(p.isPersisted, 1) = 1
+        AND NOT EXISTS (SELECT 1 FROM Playlist c WHERE c.parentListId = p.id)
+      ORDER BY e.listId`,
   )
   const out: Record<string, string[]> = {}
   for (const path of paths) {

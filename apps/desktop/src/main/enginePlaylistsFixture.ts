@@ -26,7 +26,7 @@ export interface EngineFixture {
     nextListId: number
     isPersisted?: 0 | 1
   }[]
-  entities: { id: number; listId: number; trackId: number; nextEntityId: number }[]
+  entities: { id: number; listId: number; trackId: number; nextEntityId: number; ref?: number }[]
   performance?: EnginePerformanceRow[]
   wal?: boolean
 }
@@ -81,7 +81,7 @@ export function writeEngineLibraryFixture(
   for (const p of data.playlists)
     list.run(p.id, p.title, p.parentListId, p.isPersisted ?? 1, p.nextListId)
   const entity = db.prepare(`INSERT INTO PlaylistEntity (id, listId, trackId, databaseUuid,
-    nextEntityId, membershipReference) VALUES (?, ?, ?, 'fixture-uuid', ?, 0)`)
-  for (const e of data.entities) entity.run(e.id, e.listId, e.trackId, e.nextEntityId)
+    nextEntityId, membershipReference) VALUES (?, ?, ?, 'fixture-uuid', ?, ?)`)
+  for (const e of data.entities) entity.run(e.id, e.listId, e.trackId, e.nextEntityId, e.ref ?? 0)
   return db
 }

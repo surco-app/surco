@@ -538,3 +538,102 @@ describe('playlists chosen in the editor for a track, written to Engine DJ', () 
     expect(ensureClosed).not.toHaveBeenCalled()
   })
 })
+
+describe('playlists chosen for a track inside an Engine DJ folder', () => {
+  async function folder(): Promise<string> {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-enginefolder-'))
+    writeEngineLibraryFixture(dir, {
+      tracks: [
+        { id: 1, path: '../Music/a.mp3', title: 'a' },
+        { id: 2, path: '../Music/b.mp3', title: 'b' },
+      ],
+      playlists: [
+        { id: 2, title: 'Bases', parentListId: 0, nextListId: 0 },
+        { id: 3, title: '2K', parentListId: 2, nextListId: 4 },
+        { id: 4, title: '24', parentListId: 2, nextListId: 8 },
+        { id: 8, title: 'All', parentListId: 2, nextListId: 0 },
+      ],
+      entities: [
+        { id: 1, listId: 2, trackId: 2, nextEntityId: 2, ref: 1 },
+        { id: 2, listId: 2, trackId: 1, nextEntityId: 0, ref: 2 },
+        { id: 3, listId: 4, trackId: 1, nextEntityId: 0 },
+        { id: 4, listId: 8, trackId: 2, nextEntityId: 5 },
+        { id: 5, listId: 8, trackId: 1, nextEntityId: 0 },
+      ],
+    }).close()
+    return dir
+  }
+  const refs = (dir: string) => {
+    const db = new Database(join(dir, 'Database2', 'm.db'), { readonly: true })
+    try {
+      return db
+        .prepare(
+          'SELECT listId, trackId, membershipReference AS ref FROM PlaylistEntity ORDER BY listId, trackId',
+        )
+        .all()
+    } finally {
+      db.close()
+    }
+  }
+  const op = (dir: string, over: Partial<TrackOp>): TrackOp => ({
+    id: 't1',
+    kind: 'track',
+    path: resolve(dir, '../Music/a.mp3'),
+    label: 'a',
+    facts: null,
+    wanted: [],
+    known: [],
+    stamps: {},
+    ...over,
+  })
+
+  it('counts a new child list in the folder entry, as Engine keeps it', async () => {
+    const dir = await folder()
+    await applyEngineCuesBatch(
+      dir,
+      [
+        op(dir, {
+          wanted: [
+            { id: '3', name: '2K' },
+            { id: '4', name: '24' },
+            { id: '8', name: 'All' },
+          ],
+          known: ['4', '8'],
+        }),
+      ],
+      deps(),
+    )
+    expect(refs(dir)).toEqual([
+      { listId: 2, trackId: 1, ref: 3 },
+      { listId: 2, trackId: 2, ref: 1 },
+      { listId: 3, trackId: 1, ref: 0 },
+      { listId: 4, trackId: 1, ref: 0 },
+      { listId: 8, trackId: 1, ref: 0 },
+      { listId: 8, trackId: 2, ref: 0 },
+    ])
+  })
+
+  it('takes the folder entry away with the last child list, and leaves the other tracks there', async () => {
+    const dir = await folder()
+    await applyEngineCuesBatch(dir, [op(dir, { wanted: [], known: ['4', '8'] })], deps())
+    expect(refs(dir)).toEqual([
+      { listId: 2, trackId: 2, ref: 1 },
+      { listId: 8, trackId: 2, ref: 0 },
+    ])
+  })
+
+  it('never takes the track out of the folder entry when the DJ only changes another list', async () => {
+    const dir = await folder()
+    await applyEngineCuesBatch(
+      dir,
+      [op(dir, { wanted: [{ id: '8', name: 'All' }], known: ['4', '8'] })],
+      deps(),
+    )
+    expect(refs(dir)).toEqual([
+      { listId: 2, trackId: 1, ref: 1 },
+      { listId: 2, trackId: 2, ref: 1 },
+      { listId: 8, trackId: 1, ref: 0 },
+      { listId: 8, trackId: 2, ref: 0 },
+    ])
+  })
+})
