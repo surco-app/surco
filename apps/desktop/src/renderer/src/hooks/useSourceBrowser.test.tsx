@@ -353,6 +353,24 @@ describe('useSourceBrowser', () => {
     await waitFor(() => expect(result.current.tree?.[0].count).toBe(2))
   })
 
+  it('reads as loading, not failed, when a playlist whose read was dropped is opened again', async () => {
+    const loadRekordboxPlaylist = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('superseded'))
+      .mockReturnValue(new Promise(() => {}))
+    const { result } = setup({ loadRekordboxPlaylist })
+    act(() => result.current.selectSource('rekordbox'))
+    await waitFor(() => expect(result.current.tree).toHaveLength(1))
+    const house = result.current.tree?.[0] as SourceNode
+    act(() => result.current.selectPlaylist(house, []))
+    await waitFor(() => expect(result.current.entriesFailed).toBe(true))
+    act(() => result.current.selectPlaylist({ ...house, id: 'other' }, []))
+    act(() => result.current.selectPlaylist(house, []))
+    await waitFor(() => expect(loadRekordboxPlaylist).toHaveBeenCalledTimes(3))
+    expect(result.current.entriesFailed).toBe(false)
+    expect(result.current.entriesLoading).toBe(true)
+  })
+
   it('leaves Recently added out of Music, which has its own', async () => {
     const rekordboxRecentCount = vi.fn().mockResolvedValue(12)
     const loadAppleMusicPlaylists = vi

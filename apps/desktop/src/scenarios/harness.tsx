@@ -413,6 +413,7 @@ function scenarioApi(
         }),
       loadAppleMusicPlaylists: () => invokeMain('applemusic:playlists'),
       loadAppleMusicPlaylistTracks: (pid) => invokeMain('applemusic:playlistTracks', pid),
+      appleMusicArtwork: (pids) => invokeMain('applemusic:artwork', pids),
       addToAppleMusic: (job) => invokeMain('applemusic:add', job),
       updateAppleMusic: (job) => invokeMain('applemusic:update', job),
       deleteAppleMusic: (pid, track) => invokeMain('applemusic:delete', pid, track),

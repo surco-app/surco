@@ -69,6 +69,7 @@ import { UsbExportModal } from './components/UsbExportModal'
 import { UsbExportPill } from './components/UsbExportPill'
 import { UsbTopProgress } from './components/UsbTopProgress'
 import { useActivityLog } from './hooks/useActivityLog'
+import { useAppleMusicArtwork } from './hooks/useAppleMusicArtwork'
 import { useAutoMatch } from './hooks/useAutoMatch'
 import { useColumnLayout } from './hooks/useColumnLayout'
 import { type CleanupOffer, useConfirmFlows } from './hooks/useConfirmFlows'
@@ -1610,7 +1611,10 @@ export default function App(): React.JSX.Element {
   const seenInAllRef = useRef(new Set<string>())
   const seenSettle = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [seenInAll, setSeenInAll] = useState<ReadonlySet<string>>(() => new Set())
+  const rowsOnScreen = useRef(new Set<string>())
   const onListRowVisible = useStableCallback((id: string, visible: boolean): void => {
+    if (visible) rowsOnScreen.current.add(id)
+    else rowsOnScreen.current.delete(id)
     onTrackVisible(id, visible)
     onDuplicateRowVisible(id, visible)
     if (visible) prioritizeReads([id])
@@ -1723,6 +1727,12 @@ export default function App(): React.JSX.Element {
   // Feed the snapshot to the background sweep so it can re-check ownership against each
   // match's canonical metadata (the sweep reads .current at apply time, not at render).
   libraryIndexRef.current = libraryIndex
+  useAppleMusicArtwork({
+    tracks,
+    inScope: sweepScope,
+    onScreen: (id) => rowsOnScreen.current.has(id),
+    updateTrack,
+  })
 
   const unsavedCues = useUnsavedCueTracks()
   // What the filter asks about a row that the row does not carry: the fields Settings

@@ -48,6 +48,21 @@ vi.mock('./cover', () => ({ hasCoverSource: () => false, prepareProcessedCover: 
 vi.mock('./i18n', () => ({ createMenuT: () => (k: string) => k }))
 vi.mock('./settings', () => ({ getSettings: () => ({}) }))
 
+const readMeta = vi.fn()
+vi.mock('./ffmpeg', () => ({ readMeta: (...args: unknown[]) => readMeta(...args) }))
+const fetchAppleMusicArtwork = vi.fn()
+vi.mock('./appleMusicArtwork', () => ({
+  artworkDir: async () => '/tmp/art',
+  fetchAppleMusicArtwork: (...args: unknown[]) => fetchAppleMusicArtwork(...args),
+}))
+const readAppleMusicPlaylist = vi.fn()
+const dumpAppleMusicPlaylists = vi.fn()
+vi.mock('./appleMusicPlaylists', () => ({
+  dumpAppleMusicPlaylists: (...args: unknown[]) => dumpAppleMusicPlaylists(...args),
+  readAppleMusicEntry: vi.fn(),
+  readAppleMusicPlaylist: (...args: unknown[]) => readAppleMusicPlaylist(...args),
+}))
+
 const JOB = {
   outputPath: '/music/Castion - El Consentido.aiff',
   meta: { title: 'El Consentido', artist: 'Castion' },
@@ -160,5 +175,147 @@ describe('applemusic:setField', () => {
       'Dj Lara',
       '/m/c.aiff',
     )
+  })
+})
+
+describe('applemusic:playlistTracks', () => {
+  beforeEach(async () => {
+    handlers.clear()
+    readMeta.mockReset()
+    fetchAppleMusicArtwork.mockReset()
+    readAppleMusicPlaylist.mockReset()
+    vi.stubGlobal('process', { ...process, platform: 'darwin' })
+    const { registerAppleMusicIpc } = await import('./appleMusicIpc')
+    registerAppleMusicIpc()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  // Reading every file of a 406-track playlist on a NAS, then asking Music for the covers
+  // they lacked, kept the list empty for over a minute; the rows come from Music alone.
+  it('answers with Music’s rows without reading a file or fetching a cover first', async () => {
+    const tracks = {
+      paths: ['/m/a.wav', '/m/b.wav'],
+      persistentIds: { '/m/a.wav': 'PA', '/m/b.wav': 'PB' },
+      meta: {},
+      missing: 0,
+    }
+    readAppleMusicPlaylist.mockResolvedValue(tracks)
+    const out = await handlers.get('applemusic:playlistTracks')?.({}, 'P1')
+    expect(out).toEqual(tracks)
+    expect(readMeta).not.toHaveBeenCalled()
+    expect(fetchAppleMusicArtwork).not.toHaveBeenCalled()
+  })
+})
+
+describe('applemusic:artwork', () => {
+  beforeEach(async () => {
+    handlers.clear()
+    fetchAppleMusicArtwork.mockReset()
+    vi.stubGlobal('process', { ...process, platform: 'darwin' })
+    const { registerAppleMusicIpc } = await import('./appleMusicIpc')
+    registerAppleMusicIpc()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('hands back the covers Music held, by entry, and nothing for one without', async () => {
+    fetchAppleMusicArtwork.mockResolvedValue([{ path: '/tmp/art/PB.jpg', url: 'thumb://pb' }])
+    const out = await handlers.get('applemusic:artwork')?.({}, ['PA', 'PB'])
+    expect(fetchAppleMusicArtwork).toHaveBeenCalledWith([
+      { persistentId: 'PA', outPath: '/tmp/art/PA.jpg' },
+      { persistentId: 'PB', outPath: '/tmp/art/PB.jpg' },
+    ])
+    expect(out).toEqual({ PB: { coverPath: '/tmp/art/PB.jpg', coverUrl: 'thumb://pb' } })
+  })
+})
+
+describe('reading Apple Music', () => {
+  const deferred = <T>() => {
+    let resolve: (value: T) => void = () => {}
+    const promise = new Promise<T>((r) => {
+      resolve = r
+    })
+    return { promise, resolve }
+  }
+  const empty = { paths: [], persistentIds: {}, meta: {}, missing: 0 }
+  const settle = () => new Promise((r) => setTimeout(r, 0))
+  const invoke = (channel: string, ...args: unknown[]) =>
+    handlers.get(channel)?.({}, ...args) as Promise<unknown>
+
+  beforeEach(async () => {
+    handlers.clear()
+    vi.resetModules()
+    readAppleMusicPlaylist.mockReset()
+    dumpAppleMusicPlaylists.mockReset()
+    fetchAppleMusicArtwork.mockReset()
+    vi.stubGlobal('process', { ...process, platform: 'darwin' })
+    const { registerAppleMusicIpc } = await import('./appleMusicIpc')
+    registerAppleMusicIpc()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  // Music answers one AppleEvent at a time; fifteen sent together queued inside Music until
+  // all of them timed out, and no playlist opened at all.
+  it('sends Music one read at a time', async () => {
+    const first = deferred<typeof empty>()
+    readAppleMusicPlaylist.mockReturnValueOnce(first.promise).mockResolvedValue(empty)
+    const a = invoke('applemusic:playlistTracks', 'A')
+    await settle()
+    const b = invoke('applemusic:playlistTracks', 'B')
+    await settle()
+    expect(readAppleMusicPlaylist).toHaveBeenCalledTimes(1)
+    first.resolve(empty)
+    await a
+    await b
+    expect(readAppleMusicPlaylist).toHaveBeenLastCalledWith('B')
+  })
+
+  it('drops a playlist still waiting its turn once another is opened, since nobody is looking at it', async () => {
+    const first = deferred<typeof empty>()
+    readAppleMusicPlaylist.mockReturnValueOnce(first.promise).mockResolvedValue(empty)
+    const a = invoke('applemusic:playlistTracks', 'A')
+    await settle()
+    const b = invoke('applemusic:playlistTracks', 'B')
+    await settle()
+    const c = invoke('applemusic:playlistTracks', 'C')
+    await expect(b).rejects.toThrow()
+    first.resolve(empty)
+    await a
+    await c
+    expect(readAppleMusicPlaylist.mock.calls.map(([id]) => id)).toEqual(['A', 'C'])
+  })
+
+  it('shares one listing of the playlists among the asks made while it runs', async () => {
+    const listing = deferred<unknown[]>()
+    dumpAppleMusicPlaylists.mockReturnValue(listing.promise)
+    const a = invoke('applemusic:playlists')
+    const b = invoke('applemusic:playlists')
+    listing.resolve([{ persistentId: 'p1', name: 'Friday', count: 1 }])
+    expect(await a).toEqual(await b)
+    expect(dumpAppleMusicPlaylists).toHaveBeenCalledTimes(1)
+  })
+
+  it('opens a playlist ahead of the covers still waiting', async () => {
+    const first = deferred<typeof empty>()
+    readAppleMusicPlaylist.mockReturnValueOnce(first.promise).mockResolvedValue(empty)
+    fetchAppleMusicArtwork.mockResolvedValue([])
+    const order: string[] = []
+    const a = invoke('applemusic:playlistTracks', 'A')
+    await settle()
+    const covers = invoke('applemusic:artwork', ['PX']).then(() => order.push('covers'))
+    await settle()
+    const b = invoke('applemusic:playlistTracks', 'B').then(() => order.push('B'))
+    await settle()
+    first.resolve(empty)
+    await Promise.all([a, covers, b])
+    expect(order).toEqual(['B', 'covers'])
   })
 })

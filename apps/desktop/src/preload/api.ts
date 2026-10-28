@@ -206,6 +206,9 @@ export interface Api {
   loadAppleMusicPlaylists: () => Promise<AppleMusicPlaylist[]>
   // The files one playlist references, plus how many of its tracks have none.
   loadAppleMusicPlaylistTracks: (persistentId: string) => Promise<AppleMusicPlaylistTracks>
+  appleMusicArtwork: (
+    persistentIds: string[],
+  ) => Promise<Record<string, { coverPath: string; coverUrl: string }>>
   // Whether this machine has a rekordbox collection Surco can read. False for a user
   // without rekordbox, the normal case: the source then simply is not offered.
   rekordboxAvailable: () => Promise<boolean>

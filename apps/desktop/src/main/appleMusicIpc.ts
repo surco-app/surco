@@ -1,14 +1,17 @@
 import { access, realpath } from 'node:fs/promises'
+import { join } from 'node:path'
 import { app, ipcMain } from 'electron'
 import log from 'electron-log/main'
 import type {
   AppleMusicAddJob,
+  AppleMusicPlaylist,
   AppleMusicUpdateJob,
   MusicFieldFix,
   MusicReviewField,
   TrackMetadata,
 } from '../shared/types'
 import { activity } from './activity'
+import { createConcurrencyLimiter } from './analysisLimiter'
 import { artworkDir, fetchAppleMusicArtwork } from './appleMusicArtwork'
 import { loadLibraryCache, saveLibraryCache } from './appleMusicLibraryCache'
 import { attachMissingArtwork } from './appleMusicPlaylistArt'
@@ -172,16 +175,29 @@ export function registerAppleMusicIpc(
   // The user's own playlists, to pick one as a source of tracks. Empty off macOS, where
   // there is no Music to ask — the renderer never offers the import there, but a handler
   // that shelled out anyway would turn a stray call into a spawn failure.
-  ipcMain.handle('applemusic:playlists', () =>
-    process.platform === 'darwin'
-      ? activity.track('applemusic', 'activity.appleMusicPlaylists', dumpAppleMusicPlaylists, {
+  const musicReads = createConcurrencyLimiter(1)
+  let listing: Promise<AppleMusicPlaylist[]> | null = null
+  let waitingPlaylist: AbortController | null = null
+
+  ipcMain.handle('applemusic:playlists', () => {
+    if (process.platform !== 'darwin') return []
+    listing ??= activity
+      .track(
+        'applemusic',
+        'activity.appleMusicPlaylists',
+        () => musicReads.run(dumpAppleMusicPlaylists, 'high'),
+        {
           summary: (rows) => ({
             detailKey: 'activity.playlistCount',
             detailParams: { count: rows.length },
           }),
-        })
-      : [],
-  )
+        },
+      )
+      .finally(() => {
+        listing = null
+      })
+    return listing
+  })
 
   // The files one playlist holds, plus how many of its tracks have none — streaming rows
   // and undownloaded iCloud tracks. The count travels back so the app can say why fewer
@@ -199,15 +215,18 @@ export function registerAppleMusicIpc(
       ? activity.track(
           'applemusic',
           'activity.appleMusicPlaylistTracks',
-          async () => {
-            const tracks = await readAppleMusicPlaylist(persistentId)
-            // Music holds artwork for files that carry none — over half a real library,
-            // almost all WAVs — and those rows used to import with an empty cover slot.
-            return attachMissingArtwork(tracks, {
-              hasEmbedded: async (path) => Boolean((await readMeta(path)).cover),
-              fetchArtwork: fetchAppleMusicArtwork,
-              outDir: artworkDir,
-            })
+          () => {
+            waitingPlaylist?.abort()
+            const turn = new AbortController()
+            waitingPlaylist = turn
+            return musicReads.run(
+              () => {
+                if (waitingPlaylist === turn) waitingPlaylist = null
+                return readAppleMusicPlaylist(persistentId)
+              },
+              'high',
+              turn.signal,
+            )
           },
           {
             summary: (out) => ({
@@ -218,6 +237,23 @@ export function registerAppleMusicIpc(
         )
       : { paths: [], missing: 0 },
   )
+
+  ipcMain.handle('applemusic:artwork', async (_e, persistentIds: string[]) => {
+    if (process.platform !== 'darwin') return {}
+    const dir = await artworkDir()
+    const jobs = persistentIds.map((persistentId) => ({
+      persistentId,
+      outPath: join(dir, `${persistentId}.jpg`),
+    }))
+    const fetched = await musicReads.run(() => fetchAppleMusicArtwork(jobs), 'low')
+    const landed = new Map(fetched.map((c) => [c.path, c.url]))
+    const covers: Record<string, { coverPath: string; coverUrl: string }> = {}
+    for (const { persistentId, outPath } of jobs) {
+      const url = landed.get(outPath)
+      if (url) covers[persistentId] = { coverPath: outPath, coverUrl: url }
+    }
+    return covers
+  })
 
   // What Music holds for a file loaded on its own rather than imported from a playlist:
   // the same fill and the same missing artwork the import gives, for the candidate entries

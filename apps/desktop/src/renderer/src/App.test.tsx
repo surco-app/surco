@@ -1652,6 +1652,56 @@ describe('App source playlists', () => {
     ])
   })
 
+  describe('an Apple Music playlist’s covers', () => {
+    const cover = { thumbUrl: 'thumb://own', width: 600, height: 600 }
+    function musicPlaylist(appleMusicArtwork: Api['appleMusicArtwork']): void {
+      setApi({
+        platform: 'darwin',
+        readMeta: vi.fn(async (path: string) => ({
+          tags: { title: path === '/m/a.wav' ? 'Alpha' : 'Bravo', artist: 'DJ' },
+          duration: 180,
+          cover: path === '/m/a.wav' ? cover : null,
+        })),
+        loadAppleMusicPlaylists: vi
+          .fn<Api['loadAppleMusicPlaylists']>()
+          .mockResolvedValue([{ persistentId: 'p1', name: 'Friday', count: 2 }]),
+        loadAppleMusicPlaylistTracks: vi
+          .fn<Api['loadAppleMusicPlaylistTracks']>()
+          .mockResolvedValue({
+            paths: ['/m/a.wav', '/m/b.wav'],
+            persistentIds: { '/m/a.wav': 'PA', '/m/b.wav': 'PB' },
+            meta: {},
+            missing: 0,
+          }),
+        appleMusicArtwork: vi.fn(appleMusicArtwork),
+      })
+    }
+    async function openFriday(): Promise<void> {
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+      fireEvent.click(await screen.findByTestId('source-node-p1'))
+    }
+
+    it('shows the rows while Music is still busy with the covers', async () => {
+      musicPlaylist(() => new Promise(() => {}))
+      await openFriday()
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    })
+
+    it('fills the cover a file lacks from Music, and asks only for that one', async () => {
+      musicPlaylist(async () => ({ PB: { coverPath: '/art/PB.jpg', coverUrl: 'thumb://pb' } }))
+      await openFriday()
+      await waitFor(() =>
+        expect(screen.getAllByTestId('track-cover').map((c) => c.getAttribute('src'))).toEqual([
+          'thumb://own',
+          'thumb://pb',
+        ]),
+      )
+      expect(window.api.appleMusicArtwork).toHaveBeenCalledTimes(1)
+      expect(window.api.appleMusicArtwork).toHaveBeenCalledWith(['PB'])
+    })
+  })
+
   function factoryWithAlpha(over: Record<string, unknown> = {}): void {
     setApi({
       readTags: vi.fn(async (path: string) => ({
