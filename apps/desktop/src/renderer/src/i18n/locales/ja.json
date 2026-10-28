@@ -668,6 +668,7 @@
     "appleMusicUpdate": "Apple Music で更新",
     "appleMusicUpdating": "Apple Music で更新中…",
     "appleMusicShow": "Apple Music で表示",
+    "showInLibrary": "{{app}} で表示",
     "appleMusicError": "Apple Music に追加できませんでした",
     "oldCopyRemoved": "古いコピーが Apple Music から削除され、ファイルはゴミ箱にあります",
     "removeOldCopyError": "古い Apple Music コピーを削除できませんでした",

@@ -2,7 +2,12 @@ import { ArrowUpRight, Music, SlidersVertical, Trash2 } from 'lucide-react'
 import type React from 'react'
 import { useLayoutEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { FormatSetting, NormalizeConfig, OutputFormat } from '../../../shared/types'
+import type {
+  FormatSetting,
+  NormalizeConfig,
+  OutputFormat,
+  PlaylistSource,
+} from '../../../shared/types'
 import { type CleanupOffer, cleanupCount } from '../hooks/useConfirmFlows'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import type { Destination } from '../lib/destination'
@@ -13,6 +18,7 @@ import type { SelectionStatus } from '../lib/selectionStatus'
 import type { TrackItem } from '../types'
 import { DoneMenu } from './DoneMenu'
 import { ExportButton } from './ExportButton'
+import { SOURCE_ICON } from './SourceRail'
 import { FOOTER_BAR } from './SplitButton'
 import { Tooltip } from './Tooltip'
 
@@ -80,6 +86,8 @@ interface ConvertFooterProps {
   // Opens the DJ-app collection export — offered once the export landed, since the
   // collection file references the converted copies.
   onExportCollection: () => void
+  revealIn?: readonly PlaylistSource[]
+  onRevealIn?: (source: PlaylistSource) => void
 }
 
 // The editor's bottom bar: the error row, the normalization note, and either the
@@ -119,6 +127,8 @@ export function ConvertFooter({
   supersededPath,
   onCleanUp,
   onExportCollection,
+  revealIn = [],
+  onRevealIn,
 }: ConvertFooterProps): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const {
@@ -275,6 +285,23 @@ export function ConvertFooter({
                     <Tooltip label={tr('editor.appleMusicShow')} />
                   </button>
                 )}
+                {revealIn.map((source) => {
+                  const Icon = SOURCE_ICON[source]
+                  const label = tr('editor.showInLibrary', { app: tr(`sources.${source}`) })
+                  return (
+                    <button
+                      key={source}
+                      type="button"
+                      data-testid={`reveal-in-${source}`}
+                      onClick={() => onRevealIn?.(source)}
+                      aria-label={label}
+                      className={`${ICON_BUTTON} hover:text-fg`}
+                    >
+                      <Icon size={14} aria-hidden="true" />
+                      <Tooltip label={label} />
+                    </button>
+                  )
+                })}
                 {cleanupFiles > 0 && (
                   <button
                     type="button"

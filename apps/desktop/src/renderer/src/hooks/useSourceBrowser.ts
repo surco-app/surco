@@ -39,7 +39,7 @@ function readRecentCount(source: PlaylistSource): Promise<number> {
   return source === 'engine' ? window.api.engineRecentCount() : window.api.rekordboxRecentCount()
 }
 
-function readPlaylist(source: PlaylistSource, id: string): Promise<SourcePlaylistEntry[]> {
+export function readPlaylist(source: PlaylistSource, id: string): Promise<SourcePlaylistEntry[]> {
   if (source === 'engine') return window.api.loadEnginePlaylist(id)
   if (source === 'traktor') return window.api.loadTraktorPlaylist(id)
   return source === 'rekordbox'

@@ -8,7 +8,7 @@ import { Tooltip } from './Tooltip'
 
 // Each program's own mark, the thing a DJ already recognises from the Dock, so the rail
 // needs no words under it. Drawn in the rail's colour, not the apps' own.
-const ICON: Record<PlaylistSource, typeof AppleMusicIcon> = {
+export const SOURCE_ICON: Record<PlaylistSource, typeof AppleMusicIcon> = {
   appleMusic: AppleMusicIcon,
   rekordbox: RekordboxIcon,
   engine: EngineIcon,
@@ -103,7 +103,7 @@ export function SourceRail({
         () => onSelect(null),
       )}
       {sources.map((s) => {
-        const Icon = ICON[s]
+        const Icon = SOURCE_ICON[s]
         return item(
           s,
           tr(`sources.${s}`),
