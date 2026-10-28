@@ -50,7 +50,7 @@ export default function DownloadButton({
   showMeta?: boolean
   // Reassurance that belongs to the button rather than the section around it.
   // The hero uses it for price and platforms. Sits directly under the CTA, above
-  // the reserved Intel line, so it reads as part of the offer and not as a stray
+  // the facts line, so it reads as part of the offer and not as a stray
   // caption floating below the fold.
   note?: string
   // A centred hero lines the button and its small print up on the page's axis.
@@ -126,6 +126,36 @@ export default function DownloadButton({
     size !== null ? `${Math.round(size / 1_000_000)} MB` : null,
     os === 'mac' && href ? t('download.macRequirement') : null,
   ].filter((fact): fact is string => fact !== null)
+
+  const alternatives = showAlternatives && otherMacHref && (
+    <span data-testid="download-alternatives">
+      {t('download.alsoFor')}{' '}
+      <a
+        href={otherMacHref}
+        data-testid="download-other-mac"
+        className={altLink}
+        onClick={() =>
+          trackDownload({
+            href: otherMacHref,
+            os,
+            location,
+            ...(version ? { version } : {}),
+          })
+        }
+      >
+        {t('download.macWith', { chip: otherChip })}
+      </a>
+      <span aria-hidden="true"> · </span>
+      <a
+        href={montereyHref}
+        data-testid="download-monterey"
+        className={altLink}
+        onClick={() => trackDownload({ href: montereyHref, os, location, version: 'v1.2.3' })}
+      >
+        {t('download.monterey')}
+      </a>
+    </span>
+  )
 
   return (
     <>
@@ -248,53 +278,20 @@ export default function DownloadButton({
             ) : state === 'unsupported' ? (
               <p data-testid="download-unsupported">{t('download.unsupported')}</p>
             ) : (
-              facts.length > 0 && (
-                <span data-testid="download-facts" className="font-mono text-faint tabular-nums">
-                  {facts.map((fact) => fact.replaceAll(' ', '\u00a0')).join(' · ')}
-                </span>
-              )
+              <>
+                {facts.length > 0 && (
+                  <span data-testid="download-facts" className="font-mono text-faint tabular-nums">
+                    {facts.map((fact) => fact.replaceAll(' ', '\u00a0')).join(' · ')}
+                  </span>
+                )}
+                {alternatives && <span aria-hidden="true">·</span>}
+                {alternatives}
+              </>
             )}
           </div>
         </>
       )}
-      {/* Always mounted, invisible until the other Mac build resolves, so the line occupies
-          its place in the prerendered HTML and every client state alike. The page is
-          statically prerendered with no OS, so inserting the line only after hydration would
-          shove the hero screenshot and decorative waves down and spike CLS. The reserved
-          line costs non-Mac visitors a blank row. Both alternatives share one line so the
-          exceptions stop outweighing the button. */}
-      <p
-        data-testid="download-alternatives"
-        aria-hidden={showAlternatives ? undefined : true}
-        className={`mt-2 text-sm text-faint ${showAlternatives ? '' : 'invisible'}`}
-      >
-        {t('download.alsoFor')}{' '}
-        <a
-          href={showAlternatives && otherMacHref ? otherMacHref : undefined}
-          tabIndex={showAlternatives ? undefined : -1}
-          data-testid="download-other-mac"
-          className={altLink}
-          onClick={() => {
-            if (showAlternatives && otherMacHref)
-              trackDownload({ href: otherMacHref, os, location, ...(version ? { version } : {}) })
-          }}
-        >
-          {t('download.macWith', { chip: otherChip })}
-        </a>
-        <span aria-hidden="true"> · </span>
-        <a
-          href={showAlternatives ? montereyHref : undefined}
-          tabIndex={showAlternatives ? undefined : -1}
-          data-testid="download-monterey"
-          className={altLink}
-          onClick={() => {
-            if (showAlternatives)
-              trackDownload({ href: montereyHref, os, location, version: 'v1.2.3' })
-          }}
-        >
-          {t('download.monterey')}
-        </a>
-      </p>
+      {!showMeta && alternatives && <p className="mt-2 text-sm text-faint">{alternatives}</p>}
     </>
   )
 }
