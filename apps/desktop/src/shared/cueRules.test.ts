@@ -129,6 +129,15 @@ describe('strong parts', () => {
     ])
   })
 
+  it('cue where a chorus follows another chorus is not kept because the energy has not dropped yet', () => {
+    expect(
+      planCues([beat(68)], grid(200), [
+        { start: beat(40), end: beat(52) },
+        { start: beat(52), end: beat(60) },
+      ]),
+    ).toEqual([cue(beat(0), 'inicio')])
+  })
+
   it('chorus kind depends on rekordbox mood', () => {
     const beats = grid(200)
     expect(
