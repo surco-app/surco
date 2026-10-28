@@ -284,7 +284,11 @@ export default function DownloadButton({
                     {facts.map((fact) => fact.replaceAll(' ', '\u00a0')).join(' · ')}
                   </span>
                 )}
-                {alternatives && <span aria-hidden="true">·</span>}
+                {alternatives && (
+                  <span aria-hidden="true" className="hidden sm:inline">
+                    ·
+                  </span>
+                )}
                 {alternatives}
               </>
             )}

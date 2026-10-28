@@ -138,12 +138,10 @@ export default function Header({
       )}
       {/* Fixed height, always. The header used to animate its own padding, which
           shortened the document as it condensed — near the threshold that fed back
-          into the scroll position and flickered between both sizes. Only the inner
-          row scales now, so the space the header occupies never changes. */}
-      <div
-        className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 transition-transform duration-300"
-        style={{ transform: scrolled ? 'scale(0.92)' : 'scale(1)' }}
-      >
+          into the scroll position and flickered between both sizes. The row doesn't
+          scale either: shrinking it about its centre pulled the logo off the page's
+          left edge. Only the background changes on scroll. */}
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <a href={page ? home : '#top'} className="flex items-center gap-2">
           {/* The disc cropped to its rim, not the app icon: the icon keeps the margin macOS
               asks of a Dock tile, which held the disc to 36 of these 48px, and its dark rim
