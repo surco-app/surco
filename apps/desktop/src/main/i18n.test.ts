@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createMenuT, pickMenuLang, resolveMenuLocale } from './i18n'
+import ja from './locales/ja.json'
 
 describe('pickMenuLang', () => {
   // The native menu lives in the main process, which has no access to the
@@ -117,5 +118,14 @@ describe('the track-list search label', () => {
       expect(palette.commands.search).not.toMatch(/Discogs/)
       expect(createMenuT(lang)('search')).toBe(palette.commands.search)
     }
+  })
+})
+
+// The native menus and dialogs speak like the rest of the French app: tu, never vous.
+describe('French native strings', () => {
+  it('address the user as tu', () => {
+    const t = createMenuT('fr')
+    const keys = Object.keys(ja) as (keyof typeof ja)[]
+    expect(keys.map(t).filter((text) => /\b(vous|votre|vos)\b/i.test(text))).toEqual([])
   })
 })

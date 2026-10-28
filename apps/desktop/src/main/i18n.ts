@@ -538,7 +538,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     quitUsbCancel: "Continuer l'export",
     quitCuesMessage: 'Des cues ne sont pas enregistrés',
     quitCuesDetail:
-      'Si vous quittez maintenant, les modifications de cues non enregistrées seront perdues.',
+      'Si tu quittes maintenant, les modifications de cues non enregistrées seront perdues.',
     quitCuesCancel: 'Revenir aux cues',
     dialogConfigDir: 'Dossier de configuration',
     dialogPickTracks: 'Choisis des morceaux',
