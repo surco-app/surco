@@ -23,6 +23,8 @@ export interface SyncedDraft {
   backupRetentionDays: number
   backupMaxGb: number
   addToEngineDj: boolean
+  addToRekordbox: boolean
+  addToTraktor: boolean
   syncTraktor: boolean
   syncRekordbox: boolean
   completeCuesOnClose: boolean
@@ -131,6 +133,8 @@ export function pickSynced(s: Settings): SyncedDraft {
     backupRetentionDays: s.backupRetentionDays,
     backupMaxGb: s.backupMaxGb,
     addToEngineDj: s.addToEngineDj,
+    addToRekordbox: s.addToRekordbox,
+    addToTraktor: s.addToTraktor,
     syncTraktor: s.syncTraktor,
     syncRekordbox: s.syncRekordbox,
     completeCuesOnClose: s.completeCuesOnClose,

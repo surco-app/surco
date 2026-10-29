@@ -36,6 +36,8 @@ const synced: SyncedDraft = {
   backupRetentionDays: 30,
   backupMaxGb: 10,
   addToEngineDj: false,
+  addToRekordbox: false,
+  addToTraktor: false,
   syncTraktor: false,
   syncRekordbox: false,
   completeCuesOnClose: false,

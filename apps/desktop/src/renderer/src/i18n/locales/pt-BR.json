@@ -1576,6 +1576,12 @@
     "engineSync": "Biblioteca do Engine DJ",
     "syncEngineDj": "Atualizar a biblioteca do Engine DJ ao converter",
     "syncEngineDjHint": "Ao converter uma faixa que está na sua biblioteca do Engine DJ, a entrada dela passa a apontar para o arquivo novo e mantém as playlists e os cue points. Usa a biblioteca escolhida no destino Engine DJ. Antes de gravar, o Surco guarda na pasta de cópias dele (Ajustes → Avançado) uma cópia de segurança da leva inteira, mais uma de cada gravação, e nunca grava com o Engine DJ aberto.",
+    "djReach": {
+      "off": "Não mexer",
+      "update": "Atualizar",
+      "add": "Atualizar e adicionar"
+    },
+    "djReachAddHint": "Também cadastra as faixas que ele não tinha, sem análise: o programa as analisa ao abri-las.",
     "completeCues": "Ao fechar o rekordbox, aplicar seu fluxo ativo nas faixas com CALL e sem hot cues",
     "completeCuesHint": "Grava na sua coleção, inclusive em faixas que você não viu no Surco. Desligado, seus cues só são salvos pela seção Cues.",
     "completeCuesCount_one": "{{count}} faixa será completada ao fechar o rekordbox.",

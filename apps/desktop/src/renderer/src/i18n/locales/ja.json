@@ -1576,6 +1576,12 @@
     "engineSync": "Engine DJ ライブラリ",
     "syncEngineDj": "変換時にEngine DJライブラリを更新する",
     "syncEngineDjHint": "Engine DJライブラリにあるトラックを変換すると、そのエントリは新しいファイルに従い、プレイリストやキューポイントを保持します。Engine DJの宛先で選択されたライブラリを使用します。書き込み前にSurcoは実行全体のバックアップと各書き込みのバックアップをバックアップフォルダー（設定 → 詳細）に保存し、Engine DJが開いている間は書き込みを行いません。",
+    "djReach": {
+      "off": "触らない",
+      "update": "更新",
+      "add": "更新して追加"
+    },
+    "djReachAddHint": "まだ入っていないトラックも登録します（解析なし）。トラックを開いたときにソフト側で解析されます。",
     "completeCues": "rekordbox を閉じたときに、CALL があってホットキューのないトラックへ有効なフローを適用する",
     "completeCuesHint": "Surco で開いていないトラックについてもコレクションに書き込みます。オフの場合、キューは「キュー」セクションからのみ保存されます。",
     "completeCuesCount_one": "rekordbox を閉じると {{count}} 件のトラックが補完されます。",

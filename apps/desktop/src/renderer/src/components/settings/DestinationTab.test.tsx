@@ -39,6 +39,8 @@ const synced: SyncedDraft = {
   backupRetentionDays: 30,
   backupMaxGb: 10,
   addToEngineDj: false,
+  addToRekordbox: false,
+  addToTraktor: false,
   syncTraktor: false,
   syncRekordbox: false,
   completeCuesOnClose: false,
@@ -363,14 +365,15 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
 
-    fireEvent.click(screen.getByTestId('settings-sync-traktor'))
+    fireEvent.click(screen.getByTestId('settings-reach-traktor-update'))
     expect(patch).toHaveBeenCalledWith('syncTraktor', true)
+    expect(patch).toHaveBeenCalledWith('addToTraktor', false)
   })
 
   // Visible but disabled, never absent: a control that disappears leaves the user unsure
   // the feature exists at all. Dimmed says both that it is there and that something is
   // still missing, and the hint below names what.
-  it('shows the Traktor toggle disabled while no collection is set', () => {
+  it('Traktor stays disabled until a collection is chosen', () => {
     render(
       <DestinationTab
         synced={{ ...synced, syncTraktor: false }}
@@ -386,12 +389,14 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
 
-    expect(screen.getByTestId('settings-sync-traktor')).toBeDisabled()
+    for (const reach of ['off', 'update', 'add']) {
+      expect(screen.getByTestId(`settings-reach-traktor-${reach}`)).toBeDisabled()
+    }
   })
 
   // rekordbox keeps its collection in one place per platform, so unlike Traktor there is
   // nothing to point at: the toggle is the whole setup.
-  it('turns the rekordbox sync on with its own toggle', () => {
+  it('turning rekordbox to add saves both switches', () => {
     const patch = vi.fn()
     render(
       <DestinationTab
@@ -408,17 +413,18 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
 
-    fireEvent.click(screen.getByTestId('settings-sync-rekordbox'))
+    fireEvent.click(screen.getByTestId('settings-reach-rekordbox-add'))
     expect(patch).toHaveBeenCalledWith('syncRekordbox', true)
+    expect(patch).toHaveBeenCalledWith('addToRekordbox', true)
   })
 
-  // Keeping Engine DJ's rows on converted files writes into a library the user cannot
-  // rebuild, so it is its own opt-in, separate from merely adding tracks to Engine.
-  it('turns on Engine DJ library updates from its own toggle', () => {
+  // Settings forces Engine's update switch back on while its add switch is set, so an
+  // 'off' that left addToEngineDj behind would make Engine impossible to turn off.
+  it('turning a program off clears both switches', () => {
     const patch = vi.fn()
     render(
       <DestinationTab
-        synced={{ ...synced, syncEngineDj: false }}
+        synced={{ ...synced, syncEngineDj: true, addToEngineDj: true }}
         local={local}
         patch={patch}
         onOutputDirChange={vi.fn()}
@@ -431,14 +437,31 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
 
-    fireEvent.click(screen.getByTestId('settings-sync-engine'))
-    expect(patch).toHaveBeenCalledWith('syncEngineDj', true)
-    expect(patch).not.toHaveBeenCalledWith('addToEngineDj', expect.anything())
+    fireEvent.click(screen.getByTestId('settings-reach-engine-off'))
+    expect(patch).toHaveBeenCalledWith('syncEngineDj', false)
+    expect(patch).toHaveBeenCalledWith('addToEngineDj', false)
+  })
+
+  // Someone who used to pick Engine DJ as the destination was adding every conversion
+  // to it; the new control must show that as what is still happening, not as a mere update.
+  it('a user from the Engine destination sees Engine on add', () => {
+    renderTab({ addToEngineDj: true, syncEngineDj: true })
+    expect(screen.getByTestId('settings-reach-engine-add')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  // Adding registers tracks the program has never analysed, which a DJ would otherwise
+  // discover only on opening it; the warning is noise for the other two choices.
+  it('explains what adding costs only while a program is set to add', () => {
+    renderTab({ syncTraktor: true, addToTraktor: false })
+    expect(screen.queryByTestId('settings-reach-add-hint')).toBeNull()
+    cleanup()
+    renderTab({ syncTraktor: true, addToTraktor: true })
+    expect(screen.getAllByTestId('settings-reach-add-hint')).toHaveLength(1)
   })
 
   // Someone who does not run rekordbox still sees the setting, dimmed, with the hint
   // saying no collection was found — rather than wondering whether Surco supports it.
-  it('shows the rekordbox toggle disabled when no collection was found', () => {
+  it('rekordbox stays disabled when no collection was found', () => {
     render(
       <DestinationTab
         synced={{ ...synced, syncRekordbox: false }}
@@ -454,7 +477,7 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
 
-    expect(screen.getByTestId('settings-sync-rekordbox')).toBeDisabled()
+    expect(screen.getByTestId('settings-reach-rekordbox-add')).toBeDisabled()
   })
 
   // A collection outside rekordbox's usual place was undetected AND unpickable: the field

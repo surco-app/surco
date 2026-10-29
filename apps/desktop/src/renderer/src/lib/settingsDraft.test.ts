@@ -137,6 +137,17 @@ describe('pickSynced', () => {
 })
 
 describe('buildSettingsPatch', () => {
+  // Settings reads each DJ program's reach from both switches; dropping the add switch on
+  // the way through would save every program back as a plain update.
+  it('round-trips the add-new-tracks switches of rekordbox and Traktor', () => {
+    const patch = buildSettingsPatch(
+      pickSynced({ ...settings, addToRekordbox: true, addToTraktor: true }),
+      local,
+    )
+    expect(patch.addToRekordbox).toBe(true)
+    expect(patch.addToTraktor).toBe(true)
+  })
+
   it('keeps auto-match for a Beatport-only setup with a connected account', () => {
     const draft = { ...pickSynced(settings), searchProviders: ['beatport' as const] }
     const patch = buildSettingsPatch(draft, { ...local, autoMatch: true, beatportUsername: 'dj' })

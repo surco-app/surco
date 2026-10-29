@@ -1576,6 +1576,12 @@
     "engineSync": "Engine DJ library",
     "syncEngineDj": "Update the Engine DJ library when converting",
     "syncEngineDjHint": "When you convert a track that is in your Engine DJ library, its entry follows the new file and keeps its playlists and cue points. It uses the library chosen under the Engine DJ destination. Before writing, Surco saves a backup of the whole run in its backups folder (Settings → Advanced), plus one of each write, and it never writes while Engine DJ is open.",
+    "djReach": {
+      "off": "Leave alone",
+      "update": "Update",
+      "add": "Update and add"
+    },
+    "djReachAddHint": "Also registers the tracks it didn't have, without analysis: the program analyses them when it opens them.",
     "completeCues": "When rekordbox closes, apply your active flow to tracks with CALLs and no hot cues",
     "completeCuesHint": "It writes to your collection on tracks you have not looked at in Surco. Off, your cues are only saved from the Cues section.",
     "completeCuesCount_one": "{{count}} track will be completed when rekordbox closes.",
