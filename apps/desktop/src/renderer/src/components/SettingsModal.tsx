@@ -90,7 +90,7 @@ export function SettingsModal({
     const list = tablistRef.current
     const measure = (): void => {
       const btn = tabRefs.current[tab]
-      if (btn) setPill({ top: btn.offsetTop, height: btn.offsetHeight })
+      if (btn && !list?.hidden) setPill({ top: btn.offsetTop, height: btn.offsetHeight })
     }
     measure()
     if (!list || typeof ResizeObserver === 'undefined') return
