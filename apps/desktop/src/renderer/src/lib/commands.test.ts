@@ -110,6 +110,8 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     titleFormatSet: false,
     undoMeta: () => {},
     canUndoMeta: () => false,
+    redoMeta: () => {},
+    canRedoMeta: () => false,
     acceptReview: () => {},
     fireConfetti: () => {},
     sources: [],
@@ -855,6 +857,17 @@ describe('buildCommands editor + theme entries', () => {
     expect(cmd.enabled).toBe(true)
     cmd.run()
     expect(undoMeta).toHaveBeenCalledOnce()
+  })
+
+  it('offers redo-meta only while an undone step waits to be reapplied, and runs it', () => {
+    const redoMeta = vi.fn()
+    expect(commandById(makeDeps({ redoMeta, canRedoMeta: () => false }), 'redo-meta').enabled).toBe(
+      false,
+    )
+    const cmd = commandById(makeDeps({ redoMeta, canRedoMeta: () => true }), 'redo-meta')
+    expect(cmd.enabled).toBe(true)
+    cmd.run()
+    expect(redoMeta).toHaveBeenCalledOnce()
   })
 
   // The confetti command is pure fun, always available, and just fires the burst.

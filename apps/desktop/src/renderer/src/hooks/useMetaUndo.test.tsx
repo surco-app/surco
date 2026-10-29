@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { emptyMetadata } from '../../../shared/metadata'
 import type { TrackMetadata } from '../../../shared/types'
+import { trackSignature } from '../lib/dirty'
 import type { TrackItem } from '../types'
 import { MAX_META_UNDO, useMetaUndo } from './useMetaUndo'
 
@@ -297,6 +298,202 @@ describe('useMetaUndo', () => {
     expect(result.current.tracks[0].meta.title).toBe('A')
   })
 
+  it('keeps a title fixed by hand after a fill-all when the fill-all is undone, so undo never eats work done since', () => {
+    const { result } = setup([track('a', { title: '', album: '' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Filled', album: 'Filled Album' } })),
+      )
+    })
+    act(() => {
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Hand Fixed' } })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.tracks[0].meta.title).toBe('Hand Fixed')
+    expect(result.current.tracks[0].meta.album).toBe('')
+  })
+
+  it('leaves fields the step never touched alone, so a later hand edit to them survives the undo', () => {
+    const { result } = setup([track('a', { title: 'A', artist: 'Old' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, artist: 'Filled' } })),
+      )
+    })
+    act(() => {
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Typed', custom: { mood: 'Dark' } } })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.tracks[0].meta.artist).toBe('Old')
+    expect(result.current.tracks[0].meta.title).toBe('Typed')
+    expect(result.current.tracks[0].meta.custom).toEqual({ mood: 'Dark' })
+  })
+
+  it('keeps a field typed between two presses of a grouped cover step when that step is undone', () => {
+    const { result } = setup([track('a', { title: 'A' }, { coverUrl: 'data:own' })])
+    const press = (coverUrl: string) =>
+      act(() => {
+        result.current.record(result.current.tracks, { cover: true, group: 'cover-a' })
+        result.current.setTracks((prev) => prev.map((t) => ({ ...t, coverUrl })))
+      })
+    press('data:1')
+    act(() => {
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Typed' } })),
+      )
+    })
+    press('data:2')
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.tracks[0].coverUrl).toBe('data:own')
+    expect(result.current.tracks[0].meta.title).toBe('Typed')
+  })
+
+  it('reapplies an undone step with redo, so a ⌘Z pressed one time too many costs nothing', () => {
+    const { result } = setup([track('a', { title: 'A', album: '' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Filled', album: 'Filled Album' } })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.canRedo()).toBe(true)
+    let reapplied = 0
+    act(() => {
+      reapplied = result.current.redo()
+    })
+    expect(reapplied).toBe(1)
+    expect(result.current.tracks[0].meta.title).toBe('Filled')
+    expect(result.current.tracks[0].meta.album).toBe('Filled Album')
+    expect(result.current.canRedo()).toBe(false)
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.tracks[0].meta.title).toBe('A')
+  })
+
+  it('keeps a field typed after an undo when the step is redone, as undo does for the other direction', () => {
+    const { result } = setup([track('a', { title: 'A', album: '' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Filled', album: 'Filled Album' } })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    act(() => {
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Typed' } })),
+      )
+    })
+    act(() => {
+      result.current.redo()
+    })
+    expect(result.current.tracks[0].meta.title).toBe('Typed')
+    expect(result.current.tracks[0].meta.album).toBe('Filled Album')
+  })
+
+  it('drops the redo step once a new edit is recorded, so redo never replays over newer work', () => {
+    const { result } = setup([track('a', { title: 'A' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'First' } })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Second' } })),
+      )
+    })
+    expect(result.current.canRedo()).toBe(false)
+    let reapplied = -1
+    act(() => {
+      reapplied = result.current.redo()
+    })
+    expect(reapplied).toBe(0)
+    expect(result.current.tracks[0].meta.title).toBe('Second')
+  })
+
+  it('leaves a converted track with no custom fields matching its converted signature after undoing a paste that added one, so it does not read as stale', () => {
+    const { result } = setup([track('a', { title: 'A' })])
+    const converted = trackSignature(result.current.tracks[0])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, custom: { mood: 'Dark' } } })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    expect(trackSignature(result.current.tracks[0])).toBe(converted)
+  })
+
+  it('reports nothing undone and offers no redo when every field the step changed was edited since, so the toast never claims a restore that did not happen', () => {
+    const { result } = setup([track('a', { title: 'A' }), track('b', { title: 'B' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Filled' } })),
+      )
+    })
+    act(() => {
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: `Typed ${t.id}` } })),
+      )
+    })
+    let restored = -1
+    act(() => {
+      restored = result.current.undo()
+    })
+    expect(restored).toBe(0)
+    expect(result.current.canUndo()).toBe(false)
+    expect(result.current.canRedo()).toBe(false)
+    expect(result.current.tracks.map((t) => t.meta.title)).toEqual(['Typed a', 'Typed b'])
+  })
+
+  it('counts only the tracks an undo actually changed', () => {
+    const { result } = setup([track('a', { title: 'A' }), track('b', { title: 'B' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Filled' } })),
+      )
+    })
+    act(() => {
+      result.current.setTracks((prev) =>
+        prev.map((t) => (t.id === 'b' ? { ...t, meta: { ...t.meta, title: 'Typed' } } : t)),
+      )
+    })
+    let restored = -1
+    act(() => {
+      restored = result.current.undo()
+    })
+    expect(restored).toBe(1)
+    expect(result.current.tracks.map((t) => t.meta.title)).toEqual(['A', 'Typed'])
+  })
+
   describe('picked cover blobs', () => {
     const url = URL as unknown as Record<string, unknown>
     const original = url.revokeObjectURL
@@ -351,7 +548,7 @@ describe('useMetaUndo', () => {
       expect(revoke).not.toHaveBeenCalledWith('blob:shared')
     })
 
-    it('frees the blob an undo takes off a row when nothing else holds it', () => {
+    it('keeps the blob an undo takes off a row alive, so redo can show it again', () => {
       const revoke = spyRevoke()
       const { result } = setup([track('a', {}, { coverUrl: 'data:own' })])
       coverStep(result, 'a', 'blob:picked')
@@ -359,10 +556,14 @@ describe('useMetaUndo', () => {
         result.current.undo()
       })
       expect(result.current.tracks[0].coverUrl).toBe('data:own')
-      expect(revoke).toHaveBeenCalledWith('blob:picked')
+      expect(revoke).not.toHaveBeenCalled()
+      act(() => {
+        result.current.redo()
+      })
+      expect(result.current.tracks[0].coverUrl).toBe('blob:picked')
     })
 
-    it('frees only the blob an undo takes off a row, never the one it puts back', () => {
+    it('frees the blob an undo took off a row once a new edit drops the redo step, and never the one undo put back', () => {
       const revoke = spyRevoke()
       const { result } = setup([track('a', {}, { coverUrl: 'data:own' })])
       coverStep(result, 'a', 'blob:picked')
@@ -370,6 +571,7 @@ describe('useMetaUndo', () => {
       act(() => {
         result.current.undo()
       })
+      coverStep(result, 'a', 'data:other')
       expect(revoke).toHaveBeenCalledWith('blob:second')
       expect(revoke).not.toHaveBeenCalledWith('blob:picked')
     })

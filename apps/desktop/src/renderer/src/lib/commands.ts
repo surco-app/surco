@@ -273,6 +273,8 @@ export interface CommandDeps {
   // derive) overwrote. Read lazily so the palette entry reflects the stack at open time.
   undoMeta: () => void
   canUndoMeta: () => boolean
+  redoMeta: () => void
+  canRedoMeta: () => boolean
   // Applies the selected track's pending 'review' suggestion — the match the sweep flagged
   // but didn't write — without opening the editor. A no-op when there's nothing to accept.
   acceptReview: () => void
@@ -386,6 +388,8 @@ export function buildCommands(deps: CommandDeps): Command[] {
     titleFormatSet,
     undoMeta,
     canUndoMeta,
+    redoMeta,
+    canRedoMeta,
     acceptReview,
     fireConfetti,
     sources,
@@ -589,6 +593,14 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('undo-meta'),
       enabled: canUndoMeta(),
       run: undoMeta,
+    },
+    {
+      id: 'redo-meta',
+      group: 'tags',
+      title: tr('commands.redoMeta'),
+      hint: hintFor('redo-meta'),
+      enabled: canRedoMeta(),
+      run: redoMeta,
     },
     {
       id: 'prev',

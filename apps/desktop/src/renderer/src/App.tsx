@@ -2623,6 +2623,10 @@ export default function App(): React.JSX.Element {
     const count = metaUndo.undo()
     if (count > 0) setNotice(tr('notices.undoneMeta', { count }))
   })
+  const redoMeta = useStableCallback(() => {
+    const count = metaUndo.redo()
+    if (count > 0) setNotice(tr('notices.redoneMeta', { count }))
+  })
   // Accepts the selected track's pending 'review' suggestion straight from the list, applying
   // the stored release exactly like clicking it in the editor. A no-op when there's nothing to
   // accept, so the command's enabled gate and this stay in agreement.
@@ -2775,6 +2779,8 @@ export default function App(): React.JSX.Element {
       titleFormatSet: !!settings?.titleFormat?.trim(),
       undoMeta,
       canUndoMeta: metaUndo.canUndo,
+      redoMeta,
+      canRedoMeta: metaUndo.canRedo,
       acceptReview,
       fireConfetti,
       sources: browser.sources,

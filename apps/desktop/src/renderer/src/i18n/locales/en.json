@@ -282,6 +282,8 @@
     "undo": "Undo",
     "undoneMeta_one": "Metadata restored on {{count}} track",
     "undoneMeta_other": "Metadata restored on {{count}} tracks",
+    "redoneMeta_one": "Metadata edit redone on {{count}} track",
+    "redoneMeta_other": "Metadata edit redone on {{count}} tracks",
     "metaReadFailed_one": "Couldn't read the tags of {{count}} file, so only its file name is shown.",
     "metaReadFailed_other": "Couldn't read the tags of {{count}} files, so only their file names are shown."
   },
@@ -366,6 +368,7 @@
     "trimDetected": "Trim detected silence on the selection",
     "clearMeta": "Clear metadata",
     "undoMeta": "Undo last metadata edit",
+    "redoMeta": "Redo last undone metadata edit",
     "analyzeQuality": "Analyze quality of all tracks",
     "trashSuspects": "Move doubtful files to Trash",
     "trashSelected": "Move the selection to Trash",
