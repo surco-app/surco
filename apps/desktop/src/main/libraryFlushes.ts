@@ -180,7 +180,9 @@ export async function flushConversionBatch(
     'traktor',
     undefined,
     addToTraktor,
-    addToTraktor ? await traktorCollectionHas(getSettings().traktorNmlPath) : undefined,
+    addToTraktor
+      ? await traktorCollectionHas(getSettings().traktorNmlPath, getSettings().syncTraktor)
+      : undefined,
   )
   if (traktorQueue && traktorOps.length > 0) {
     traktorQueue.enqueue(traktorOps)
@@ -239,7 +241,9 @@ export async function flushConversionBatch(
     'engine',
     undefined,
     addToEngineDj,
-    addToEngineDj ? await engineLibraryHas(getSettings().engineLibraryDir) : undefined,
+    addToEngineDj
+      ? await engineLibraryHas(getSettings().engineLibraryDir, getSettings().syncEngineDj)
+      : undefined,
   )
   if (engineQueue && engineOps.length > 0) {
     engineQueue.enqueue(engineOps)
@@ -249,7 +253,14 @@ export async function flushConversionBatch(
 
 type LibraryHas = (path: string, from?: string) => boolean
 
-async function traktorCollectionHas(nmlPath: string): Promise<LibraryHas | undefined> {
+function pathsHeld(path: string, from: string | undefined, followsFrom: boolean): string[] {
+  return followsFrom && from !== undefined ? [path, from] : [path]
+}
+
+async function traktorCollectionHas(
+  nmlPath: string,
+  followsFrom: boolean,
+): Promise<LibraryHas | undefined> {
   let nml: string
   try {
     nml = await readFile(nmlPath, 'utf8')
@@ -257,10 +268,14 @@ async function traktorCollectionHas(nmlPath: string): Promise<LibraryHas | undef
     return undefined
   }
   const { byPath } = traktorCollectionIndex(nml, bootVolumeName())
-  return (path, from) => [path, from].some((p) => p !== undefined && byPath.has(p.normalize('NFC')))
+  return (path, from) =>
+    pathsHeld(path, from, followsFrom).some((p) => byPath.has(p.normalize('NFC')))
 }
 
-async function engineLibraryHas(libraryDir: string): Promise<LibraryHas | undefined> {
+async function engineLibraryHas(
+  libraryDir: string,
+  followsFrom: boolean,
+): Promise<LibraryHas | undefined> {
   let rows: { path: string }[]
   try {
     const SQL = await loadSqlJs()
@@ -277,7 +292,7 @@ async function engineLibraryHas(libraryDir: string): Promise<LibraryHas | undefi
   }
   const find = engineRowFinder(libraryDir, rows)
   const key = pathKey({ realPath: (p: string) => realpathSync(p) })
-  return (path, from) => [path, from].some((p) => p !== undefined && find(p, key).length > 0)
+  return (path, from) => pathsHeld(path, from, followsFrom).some((p) => find(p, key).length > 0)
 }
 
 function repointEngine(

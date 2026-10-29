@@ -372,6 +372,42 @@ describe('flushConversionBatch with a converted track Traktor does not have', ()
     }
   })
 
+  it('counts a track Traktor has under the file it was converted from only while Traktor follows moves, since only then a repoint brings that entry over', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-flush-nml-'))
+    const nmlPath = join(dir, 'collection.nml')
+    await writeFile(
+      nmlPath,
+      `<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<NML VERSION="20"><COLLECTION ENTRIES="1">
+<ENTRY TITLE="Plastic Dreams" ARTIST="Jaydee"><LOCATION DIR="/:m/:" FILE="a.mp3" VOLUME="" VOLUMEID=""></LOCATION>
+</ENTRY>
+</COLLECTION>
+<PLAYLISTS><NODE TYPE="FOLDER" NAME="$ROOT"><SUBNODES COUNT="0"></SUBNODES>
+</NODE>
+</PLAYLISTS>
+</NML>
+`,
+    )
+    Object.assign(REPOINTS[0], { meta: { artist: 'Jaydee', title: 'Plastic Dreams' } })
+    Object.assign(SETTINGS, { addToTraktor: true, traktorNmlPath: nmlPath })
+    try {
+      const unsynced = traktorQueue()
+      await flush(unsynced)
+      expect(unsynced.enqueue).toHaveBeenCalledWith([
+        expect.objectContaining({ path: '/m/a.flac', add: true }),
+      ])
+      Object.assign(SETTINGS, { syncTraktor: true })
+      const synced = traktorQueue()
+      await flush(synced)
+      expect(synced.enqueue).not.toHaveBeenCalledWith([
+        expect.objectContaining({ path: '/m/a.flac', add: true }),
+      ])
+    } finally {
+      delete (REPOINTS[0] as Record<string, unknown>).meta
+      Object.assign(SETTINGS, { addToTraktor: false, traktorNmlPath: '', syncTraktor: false })
+    }
+  })
+
   it('leaves it out of Traktor when the DJ only updates the tracks already there', async () => {
     Object.assign(REPOINTS[0], { meta: { artist: 'Jaydee', title: 'Plastic Dreams' } })
     try {
@@ -407,6 +443,7 @@ describe('flushConversionBatch with a converted track Engine DJ does not have', 
     dir: string,
     addToEngineDj: boolean,
     run: (engine: ReturnType<typeof engineQueue>) => Promise<void>,
+    syncEngineDj = false,
   ) {
     const saved = { from: REPOINTS[0].from, to: REPOINTS[0].to }
     Object.assign(REPOINTS[0], {
@@ -414,13 +451,13 @@ describe('flushConversionBatch with a converted track Engine DJ does not have', 
       to: join(dir, 'Music', 'a.flac'),
       meta: { artist: 'Jaydee', title: 'Plastic Dreams' },
     })
-    Object.assign(SETTINGS, { addToEngineDj, engineLibraryDir: dir })
+    Object.assign(SETTINGS, { addToEngineDj, syncEngineDj, engineLibraryDir: dir })
     try {
       await run(engineQueue())
     } finally {
       Object.assign(REPOINTS[0], saved)
       delete (REPOINTS[0] as Record<string, unknown>).meta
-      Object.assign(SETTINGS, { addToEngineDj: false, engineLibraryDir: '' })
+      Object.assign(SETTINGS, { addToEngineDj: false, syncEngineDj: false, engineLibraryDir: '' })
     }
   }
 
@@ -450,9 +487,24 @@ describe('flushConversionBatch with a converted track Engine DJ does not have', 
 
   it('counts a track Engine still has under the file it was converted from, since the repoint moves that row', async () => {
     const dir = await engineLibrary(['Music/a.mp3'])
+    await withRun(
+      dir,
+      true,
+      async (engine) => {
+        await flush(engine)
+        expect(engine.enqueue).not.toHaveBeenCalled()
+      },
+      true,
+    )
+  })
+
+  it('still queues adding it when Engine only has the file it was converted from and the DJ keeps Engine from following moves, since no repoint will bring that row over', async () => {
+    const dir = await engineLibrary(['Music/a.mp3'])
     await withRun(dir, true, async (engine) => {
       await flush(engine)
-      expect(engine.enqueue).not.toHaveBeenCalled()
+      expect(engine.enqueue).toHaveBeenCalledWith([
+        expect.objectContaining({ path: join(dir, 'Music', 'a.flac'), add: true }),
+      ])
     })
   })
 

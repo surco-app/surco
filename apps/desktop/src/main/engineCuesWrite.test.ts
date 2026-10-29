@@ -635,6 +635,42 @@ describe('playlists chosen in the editor for a track, written to Engine DJ', () 
     expect(readFileSync(join(dir, 'Database2', 'm.db')).equals(before)).toBe(true)
   })
 
+  it('adds nothing for an add op when Engine holds the file twice, since a third row would only be another duplicate', async () => {
+    const dir = await crates()
+    const db = new Database(join(dir, 'Database2', 'm.db'))
+    db.prepare(
+      "INSERT INTO Track (id, path, title) VALUES (3, '../Music/../Music/a.mp3', 'a again')",
+    ).run()
+    db.close()
+    const before = readFileSync(join(dir, 'Database2', 'm.db'))
+    const meta = rekordboxMetaFrom({ ...emptyMetadata(), title: 'a' })
+    const result = await applyEngineCuesBatch(dir, [track(dir, { meta, add: true })], deps())
+    expect(result).toMatchObject({ ok: true, wrote: false, outcomes: [{ applied: true }] })
+    expect(readFileSync(join(dir, 'Database2', 'm.db')).equals(before)).toBe(true)
+  })
+
+  it('adds the converted file for an add op even while Engine still names the file it came from, since nothing moves that row onto it', async () => {
+    const dir = await crates()
+    const meta = rekordboxMetaFrom({ ...emptyMetadata(), title: 'Love Ya' })
+    await applyEngineCuesBatch(
+      dir,
+      [
+        track(dir, {
+          path: resolve(dir, '../Music/a.flac'),
+          from: resolve(dir, '../Music/a.mp3'),
+          meta,
+          add: true,
+        }),
+      ],
+      deps(),
+    )
+    const db = openEngineDb(dir)
+    expect(db?.prepare("SELECT path FROM Track WHERE title = 'Love Ya'").get()).toEqual({
+      path: '../Music/a.flac',
+    })
+    db?.close()
+  })
+
   it('writes nothing for a track Engine does not have, and says so', async () => {
     const dir = await crates()
     const ensureClosed = vi.fn(async () => true)
