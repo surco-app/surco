@@ -227,6 +227,7 @@ export function useTrackProcessing({
           updateTrack(id, {
             status: 'error',
             error: tr('errors.sourceTagsUnread'),
+            skipReason: undefined,
             stage: undefined,
           })
           return 'failed'
@@ -240,6 +241,7 @@ export function useTrackProcessing({
           updateTrack(id, {
             status: 'error',
             error: tr('errors.sourceTagsUnread'),
+            skipReason: undefined,
             stage: undefined,
           })
           return 'failed'
@@ -256,6 +258,7 @@ export function useTrackProcessing({
         updateTrack(id, {
           status: 'error',
           error: tr('editor.missingRequired', { fields: names }),
+          skipReason: undefined,
           stage: undefined,
         })
         return 'failed'
@@ -647,6 +650,10 @@ export function useTrackProcessing({
       const pinnedOverwrite = destinationOverride ? undefined : settings?.overwriteOriginal
       cancelBatchRef.current = false
       runningIdsRef.current = ids
+      for (const t of tracksRef.current) {
+        if (t.skipReason !== undefined && ids.includes(t.id))
+          updateTrack(t.id, { skipReason: undefined })
+      }
       // A fresh run: let main forget any "apply to the rest" conflict choice the last batch
       // left, so this one starts asking again rather than reusing a stale decision.
       window.api.beginConversionBatch()
@@ -665,7 +672,8 @@ export function useTrackProcessing({
         // conversion can't be aborted, but every not-yet-started one bails as 'skipped'.
         results = await mapWithConcurrency(ids, concurrency, async (id) => {
           if (cancelBatchRef.current) {
-            updateTrack(id, { skipReason: tr('trackList.skipReason.cancelled') })
+            if (tracksRef.current.find((t) => t.id === id)?.status === 'idle')
+              updateTrack(id, { skipReason: tr('trackList.skipReason.cancelled') })
             return 'skipped'
           }
           // runOne, not processOne: this loop is already inside processAll's own

@@ -1526,6 +1526,85 @@ describe('useTrackProcessing', () => {
     )
   })
 
+  it('drops an earlier skip reason when the track now fails, so the row reads as an error and leaves the skipped bucket', async () => {
+    setApi({ processTrack: vi.fn() })
+    const updateTrack = vi.fn()
+    const tracks = [
+      track({ id: 'a', skipReason: 'kept existing', meta: meta({ title: '', artist: '' }) }),
+    ]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(updateTrack).toHaveBeenCalledWith(
+      'a',
+      expect.objectContaining({ status: 'error', skipReason: undefined }),
+    )
+  })
+
+  it('gives a cancel-before-its-turn skip reason only to an idle track, so a failed or edited row keeps its own state', async () => {
+    let releaseFirst: (v: { outputPath: string; inPlace: boolean }) => void = () => {}
+    const processTrack = vi.fn().mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          releaseFirst = resolve
+        }),
+    )
+    setApi({ processTrack, cancelJob: vi.fn() })
+    const updateTrack = vi.fn()
+    const tracks = [
+      track({ id: 'a' }),
+      track({ id: 'b', status: 'error', error: 'boom' }),
+      track({ id: 'c' }),
+    ]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack, concurrency: 1 }),
+      { wrapper: withClient() },
+    )
+    let run: Promise<void> = Promise.resolve()
+    act(() => {
+      run = result.current.processAll(tracks)
+    })
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+    act(() => result.current.cancelBatch())
+    releaseFirst({ outputPath: '/out/a.aiff', inPlace: false })
+    await act(async () => {
+      await run
+    })
+    expect(updateTrack).toHaveBeenCalledWith('c', {
+      skipReason: i18n.t('trackList.skipReason.cancelled'),
+    })
+    expect(updateTrack).not.toHaveBeenCalledWith(
+      'b',
+      expect.objectContaining({ skipReason: expect.anything() }),
+    )
+  })
+
+  it('clears the skip reasons a new batch takes in before it starts, so its skipped count and bucket describe only this run', async () => {
+    const processTrack = vi.fn(() => new Promise(() => {}))
+    setApi({ processTrack })
+    const updateTrack = vi.fn()
+    const tracks = [
+      track({ id: 'a', skipReason: 'kept existing' }),
+      track({ id: 'b', skipReason: 'kept existing' }),
+      track({ id: 'c' }),
+    ]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack, concurrency: 1 }),
+      { wrapper: withClient() },
+    )
+    act(() => {
+      void result.current.processAll(tracks)
+    })
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+    expect(updateTrack).toHaveBeenCalledWith('a', { skipReason: undefined })
+    expect(updateTrack).toHaveBeenCalledWith('b', { skipReason: undefined })
+    expect(updateTrack).not.toHaveBeenCalledWith('c', { skipReason: undefined })
+  })
+
   // Each queued job re-read Settings when its turn came, so enabling "overwrite
   // original" (or switching the format) mid-run changed what the REST of the batch did
   // — in-place source rewrites the user never confirmed. The run must convert every
