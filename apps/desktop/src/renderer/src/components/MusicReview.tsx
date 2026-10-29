@@ -913,7 +913,7 @@ export function MusicReview({
             onChange={(v) => onSort(v as ReviewSort)}
             label={t('musicReview.sort.label')}
             options={[
-              { value: 'default', label: t('sidebar.sort.import'), icon: ArrowDownUp },
+              { value: 'default', label: t('musicReview.sort.default'), icon: ArrowDownUp },
               { value: 'name', label: t('sidebar.sort.name'), icon: CaseSensitive },
               { value: 'tracks', label: t('musicReview.sort.tracks'), icon: ListMusic },
             ]}

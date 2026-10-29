@@ -286,7 +286,7 @@
           },
           {
             "t": "Tes playlists Traktor",
-            "d": "Ouvre-les dans Surco, organise-les comme celles de rekordbox et place des hot cues sur leurs morceaux avec le même éditeur, marquage auto compris. Traktor les reçoit en bleu, sur les boutons 2 à 8, et Surco te demande de le quitter avant d'enregistrer. Dans l'éditeur, tu choisis dans quelles playlists va chaque morceau, une fois la collection confirmée dans Réglages."
+            "d": "Ouvre-les dans Surco, organise-les comme celles de rekordbox et place des hot cues sur leurs morceaux avec le même éditeur, marquage auto compris. Traktor les reçoit en bleu, sur les boutons 2 à 8, et Surco te demande de le quitter avant d'enregistrer. Dans l'éditeur, tu choisis dans quelles playlists va chaque morceau, une fois la collection confirmée dans Réglages. Et si Traktor ne l'avait pas, Surco l'ajoute à ta collection en le convertissant, avec sa pochette."
           },
           {
             "t": "Fichiers pour rekordbox, Serato, M3U8",
@@ -907,7 +907,8 @@
           "Il fait toujours une sauvegarde avant d'écrire, dans un seul fichier qui est écrasé à chaque fois pour que ton dossier ne se remplisse pas de copies.",
           "Traktor doit être fermé : il réécrit toute sa collection en quittant, et tes changements seraient perdus. Surco le détecte et propose de le fermer.",
           "Un lot de trois cents morceaux ne produit qu'une seule écriture, pas trois cents.",
-          "Si l'arbre de cues d'un morceau est illisible, Surco n'efface pas ceux que tu avais déjà."
+          "Si l'arbre de cues d'un morceau est illisible, Surco n'efface pas ceux que tu avais déjà.",
+          "Ça marche avec Traktor Pro et avec Traktor Play."
         ],
         "shot": "traktor-fr.webp",
         "shotCaption": "La synchronisation de la collection Traktor dans les Réglages."
@@ -926,7 +927,7 @@
           "Si rekordbox n'a pas encore analysé le morceau, Surco mesure la grille et tu peux poser les cues quand même. Une fois que rekordbox l'analyse, ils se calent sur sa grille.",
           "Marquage auto suggère, il ne décide pas. Ses suggestions ne sont pas toujours justes, donc rien n'est enregistré tant que tu ne les as pas acceptées. Les sûres ont une ligne continue et les douteuses une ligne pointillée, et dans Réglages › Cues, « Apprendre de mes morceaux » l’adapte à ta façon de marquer.",
           "La même chose marche avec les playlists Engine DJ et Traktor, qui ne reçoivent que les hot cues. Dans Traktor, ils apparaissent en bleu et sur les boutons 2 à 8, car le bouton 1 sert à sa grille.",
-          "Un flux marqué dans un logiciel atteint le même morceau dans les autres à l'enregistrement, chacun sur sa propre grille et autour des cues qu'il avait déjà. Avant d'enregistrer, l'éditeur t'indique ce que chaque logiciel va recevoir, et dans Réglages › Cues tu choisis lesquels il atteint."
+          "Un flux marqué dans un logiciel atteint le même morceau dans les autres à l'enregistrement, chacun sur sa propre grille et autour des cues qu'il avait déjà. Avant d'enregistrer, l'éditeur t'indique ce que chaque logiciel va recevoir, et dans Réglages › Cues tu choisis lesquels il atteint. Seul ce que place un flux voyage : les cues que tu poses à la main restent dans le logiciel où tu les as marqués. Et s'il ne reste plus de lettre libre dans un autre logiciel, l'éditeur t'indique combien ne rentrent pas."
         ],
         "shot": "rekordbox-fr.webp",
         "shotCaption": "Marquage auto suggère où le morceau drope, avec ton flux prêt à accepter."
@@ -962,7 +963,7 @@
           "Genre et Regroupement choisissent chacun leur séparateur (virgule, point-virgule, barre oblique ou un des tiens) dans un petit menu à côté du nom du champ, dans Réglages → Champs.",
           "Choisis quels champs voir et lesquels rendre obligatoires, crée les tiens avec un nom et une clé, et réordonne-les par glisser-déposer ou clique sur « Auto-organiser » pour les mettre dans un ordre logique en un clic.",
           "L'onglet Statistiques suit tes chiffres depuis le début (morceaux chargés, convertis, analysés, trouvés sur chaque source…) et génère une image prête à partager.",
-          "Dans Pochette, les petites pochettes peuvent être agrandies jusqu'à ta taille minimale et recadrées en carré, et une option macOS fait afficher au Finder la pochette des FLAC quand tu les convertis ou les mets à jour. Elle définit l'image comme icône du fichier sans toucher à l'audio ni aux tags, et Traktor les accepte donc toujours, même avec la synchronisation activée.",
+          "Dans Pochette, les petites pochettes peuvent être agrandies jusqu'à ta taille minimale et recadrées en carré, et une option macOS fait afficher au Finder la pochette des FLAC quand tu les convertis ou les mets à jour. Pour cela, elle place devant le FLAC un petit tag ID3 qui porte la pochette. L'audio ne change pas, et Traktor les accepte toujours, même avec la synchronisation activée.",
           "Dans Recherche, tu peux limiter les résultats Discogs au vinyle, au CD, au fichier ou à la cassette, et décider combien en voir.",
           "Dans Éditeur, tu peux couper les explications en ligne une fois que tu les connais par cœur, et les remettre quand tu veux.",
           "L'analyse est mise en cache pour ne pas être refaite ; tu peux la vider, et ouvrir le journal d'erreurs, depuis les Réglages.",

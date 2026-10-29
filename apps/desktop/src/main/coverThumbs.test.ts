@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { readdir, utimes } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -45,6 +45,20 @@ describe('coverThumbUrlFor', () => {
     expect(a).toBe(b)
     expect(other).not.toBe(a)
     expect(await readdir(storeDir())).toHaveLength(2)
+  })
+
+  it('does not write a thumbnail that is already stored, yet keeps it fresh for the launch prune', async () => {
+    const url = await coverThumbUrlFor(jpeg(7))
+    const path = coverThumbPathOf(url) as string
+    writeFileSync(path, 'already stored')
+    const past = (Date.now() - 60_000) / 1000
+    await utimes(path, past, past)
+
+    const again = await coverThumbUrlFor(jpeg(7))
+
+    expect(again).toBe(url)
+    expect(readFileSync(path, 'utf-8')).toBe('already stored')
+    expect(statSync(path).mtimeMs).toBeGreaterThan(Date.now() - 10_000)
   })
 
   it('leaves anything that is not a data URL as it is', async () => {

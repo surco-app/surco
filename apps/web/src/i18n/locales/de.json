@@ -286,7 +286,7 @@
           },
           {
             "t": "Deine Traktor-Playlists",
-            "d": "Öffne sie in Surco, organisiere sie wie die von rekordbox und setze Hot Cues auf ihren Tracks mit demselben Editor, Auto-Markieren inklusive. Traktor bekommt sie in Blau, auf den Tasten 2 bis 8, und Surco bittet dich, Traktor vor dem Speichern zu beenden. Im Editor wählst du, in welche Playlists jeder Track kommt, sobald die Sammlung in den Einstellungen bestätigt ist."
+            "d": "Öffne sie in Surco, organisiere sie wie die von rekordbox und setze Hot Cues auf ihren Tracks mit demselben Editor, Auto-Markieren inklusive. Traktor bekommt sie in Blau, auf den Tasten 2 bis 8, und Surco bittet dich, Traktor vor dem Speichern zu beenden. Im Editor wählst du, in welche Playlists jeder Track kommt, sobald die Sammlung in den Einstellungen bestätigt ist. Und hatte Traktor ihn noch nicht, fügt Surco ihn beim Konvertieren deiner Sammlung hinzu, samt Cover."
           },
           {
             "t": "Dateien für rekordbox, Serato, M3U8",
@@ -907,7 +907,8 @@
           "Vor dem Schreiben legt es immer eine Sicherung an, in einer einzigen Datei, die jedes Mal überschrieben wird, damit sich dein Ordner nicht mit Kopien füllt.",
           "Traktor muss geschlossen sein: Es schreibt beim Beenden seine ganze Sammlung neu, und deine Änderungen wären weg. Surco erkennt das und bietet an, es zu schließen.",
           "Ein Stapel von dreihundert Tracks erzeugt einen einzigen Schreibvorgang, nicht dreihundert.",
-          "Lässt sich der Cue-Baum eines Tracks nicht lesen, löscht Surco nicht die Cues, die du schon hattest."
+          "Lässt sich der Cue-Baum eines Tracks nicht lesen, löscht Surco nicht die Cues, die du schon hattest.",
+          "Funktioniert mit Traktor Pro und mit Traktor Play."
         ],
         "shot": "traktor-de.webp",
         "shotCaption": "Die Synchronisierung der Traktor-Sammlung in den Einstellungen."
@@ -926,7 +927,7 @@
           "Hat rekordbox den Track noch nicht analysiert, misst Surco das Grid, und du kannst die Cues trotzdem setzen. Sobald rekordbox ihn analysiert, wandern sie auf dessen Grid.",
           "Auto-Markieren schlägt vor, es entscheidet nicht. Seine Vorschläge stimmen nicht immer, deshalb wird nichts gespeichert, bevor du sie annimmst. Sichere zeigen eine durchgehende Linie, unsichere eine gestrichelte, und unter Einstellungen › Cues passt „Aus meinen Tracks lernen“ es an deine Art zu markieren an.",
           "Dasselbe funktioniert mit Playlists von Engine DJ und Traktor, die nur die Hot Cues bekommen. In Traktor erscheinen sie in Blau und auf den Tasten 2 bis 8, weil Taste 1 für sein Grid reserviert ist.",
-          "Ein Flow, den du in einem Programm markierst, erreicht beim Speichern denselben Track in den anderen, jeweils auf dessen eigenem Grid und rund um die Cues, die er schon hatte. Vor dem Speichern sagt dir der Editor, was jedes Programm bekommt, und unter Einstellungen › Cues wählst du, welche es erreicht."
+          "Ein Flow, den du in einem Programm markierst, erreicht beim Speichern denselben Track in den anderen, jeweils auf dessen eigenem Grid und rund um die Cues, die er schon hatte. Vor dem Speichern sagt dir der Editor, was jedes Programm bekommt, und unter Einstellungen › Cues wählst du, welche es erreicht. Nur was ein Flow setzt, wandert mit: Cues, die du von Hand setzt, bleiben in dem Programm, in dem du sie markierst. Und sind in einem anderen Programm keine Buchstaben mehr frei, sagt dir der Editor, wie viele nicht passen."
         ],
         "shot": "rekordbox-de.webp",
         "shotCaption": "Auto-Markieren schlägt vor, wo der Track droppt, mit deinem Flow bereit zum Annehmen."
@@ -962,7 +963,7 @@
           "Genre und Grouping wählen jeweils ihr Trennzeichen (Komma, Semikolon, Schrägstrich oder ein eigenes) in einem kleinen Menü neben dem Feldnamen unter Einstellungen → Felder.",
           "Wähl, welche Felder du siehst und welche Pflicht sind, leg eigene mit Name und Schlüssel an und sortier sie per Ziehen um, oder drück „Auto-Sortieren“, um sie mit einem Klick in eine sinnvolle Reihenfolge zu bringen.",
           "Der Tab Statistiken zählt deine Zahlen seit dem ersten Tag (geladene, konvertierte und analysierte Tracks, Treffer pro Quelle…) und erzeugt ein Bild, das du direkt teilen kannst.",
-          "Unter Cover lassen sich kleine Cover auf deine Mindestgröße hochskalieren und quadratisch zuschneiden, und eine macOS-Option sorgt dafür, dass der Finder beim Konvertieren oder Aktualisieren das Cover von FLACs anzeigt. Sie setzt das Bild als Dateisymbol, ohne Audio oder Tags anzufassen, sodass Traktor sie auch mit aktiver Synchronisierung weiterhin akzeptiert.",
+          "Unter Cover lassen sich kleine Cover auf deine Mindestgröße hochskalieren und quadratisch zuschneiden, und eine macOS-Option sorgt dafür, dass der Finder beim Konvertieren oder Aktualisieren das Cover von FLACs anzeigt. Dazu setzt sie ein kleines ID3-Tag mit dem Cover vor das FLAC. Das Audio bleibt unverändert, und Traktor akzeptiert sie auch mit aktiver Synchronisierung weiterhin.",
           "Unter Suche kannst du Discogs-Ergebnisse auf Vinyl, CD, Datei oder Kassette beschränken und festlegen, wie viele du siehst.",
           "Unter Editor kannst du die Erklärungen im Editor ausschalten, sobald du sie auswendig kennst, und jederzeit wieder einschalten.",
           "Die Analyse wird zwischengespeichert, damit sie sich nicht wiederholt. In den Einstellungen kannst du den Cache leeren und das Fehlerprotokoll öffnen.",

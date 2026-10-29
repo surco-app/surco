@@ -286,7 +286,7 @@
           },
           {
             "t": "Suas playlists do Traktor",
-            "d": "Abra-as no Surco, organize-as como as do rekordbox e coloque hot cues nas faixas delas com o mesmo editor, Marcar automático incluído. O Traktor os recebe em azul, nos botões 2 a 8, e o Surco pede para você fechá-lo antes de salvar. No editor você escolhe em quais playlists cada faixa entra, depois de confirmar a coleção em Ajustes."
+            "d": "Abra-as no Surco, organize-as como as do rekordbox e coloque hot cues nas faixas delas com o mesmo editor, Marcar automático incluído. O Traktor os recebe em azul, nos botões 2 a 8, e o Surco pede para você fechá-lo antes de salvar. No editor você escolhe em quais playlists cada faixa entra, depois de confirmar a coleção em Ajustes. E se o Traktor não a tinha, o Surco a adiciona à sua coleção ao convertê-la, com a capa."
           },
           {
             "t": "Arquivos para rekordbox, Serato, M3U8",
@@ -907,7 +907,8 @@
           "Sempre faz uma cópia de segurança antes de gravar, num único arquivo que é sobrescrito, para a sua pasta não se encher de cópias.",
           "O Traktor precisa estar fechado: ele regrava a coleção inteira ao sair, então as suas mudanças se perderiam. O Surco detecta isso e se oferece para fechá-lo.",
           "Um lote de trezentas faixas gera uma única gravação, não trezentas.",
-          "Se a árvore de cues de uma faixa não puder ser lida, o Surco não apaga os que você já tinha."
+          "Se a árvore de cues de uma faixa não puder ser lida, o Surco não apaga os que você já tinha.",
+          "Funciona com o Traktor Pro e com o Traktor Play."
         ],
         "shot": "traktor-pt-BR.webp",
         "shotCaption": "A sincronização com a coleção do Traktor em Ajustes."
@@ -926,7 +927,7 @@
           "Se o rekordbox ainda não analisou a faixa, o Surco mede a grade e você pode colocar os cues mesmo assim. Quando o rekordbox a analisar, eles passam para a grade dele.",
           "Marcar automático sugere, não decide. As sugestões nem sempre acertam, então nada é salvo até você aceitá-las. As certas aparecem com linha contínua e as duvidosas tracejadas, e em Ajustes › Cues, “Aprender com minhas faixas” o ajusta ao seu jeito de marcar.",
           "O mesmo funciona com playlists do Engine DJ e do Traktor, que recebem só os hot cues. No Traktor eles aparecem em azul e nos botões de 2 a 8, já que o botão 1 é da grade.",
-          "Um fluxo marcado num programa chega à mesma faixa nos outros quando você salva, cada um na sua própria grade e ao redor dos cues que já tinha. Antes de salvar, o editor diz o que cada programa vai receber, e em Ajustes › Cues você escolhe a quais ele chega."
+          "Um fluxo marcado num programa chega à mesma faixa nos outros quando você salva, cada um na sua própria grade e ao redor dos cues que já tinha. Antes de salvar, o editor diz o que cada programa vai receber, e em Ajustes › Cues você escolhe a quais ele chega. Só viaja o que um fluxo coloca: os cues que você põe à mão ficam no programa onde você os marcou. E se em outro programa não sobrarem letras livres, o editor diz quantos não cabem."
         ],
         "shot": "rekordbox-pt-BR.webp",
         "shotCaption": "Marcar automático sugere onde a faixa entra, com o seu fluxo pronto para aceitar."
@@ -962,7 +963,7 @@
           "Gênero e Agrupamento escolhem cada um o seu separador (vírgula, ponto e vírgula, barra ou um seu) num pequeno menu ao lado do nome do campo em Ajustes → Campos.",
           "Escolha quais campos ver e quais exigir, crie os seus próprios com um nome e uma chave, e reordene arrastando ou clique em “Auto-organizar” para colocá-los numa ordem sensata com um clique.",
           "A aba Estatísticas acompanha os seus números de sempre (faixas carregadas, convertidas, analisadas, encontradas em cada fonte…) e gera uma imagem pronta para compartilhar.",
-          "Em Capa, as capas pequenas podem ser ampliadas até o seu tamanho mínimo e recortadas em quadrado, e uma opção do macOS faz o Finder mostrar a capa dos FLAC quando você os converte ou atualiza. Ela define a imagem como ícone do arquivo sem tocar no áudio nem nas tags, então o Traktor continua aceitando-os mesmo com a sincronização ligada.",
+          "Em Capa, as capas pequenas podem ser ampliadas até o seu tamanho mínimo e recortadas em quadrado, e uma opção do macOS faz o Finder mostrar a capa dos FLAC quando você os converte ou atualiza. Para isso, ela coloca na frente do FLAC uma pequena tag ID3 com a capa. O áudio não muda, e o Traktor continua aceitando-os mesmo com a sincronização ligada.",
           "Em Busca você pode limitar os resultados do Discogs a vinil, CD, arquivo ou cassete, e decidir quantos ver.",
           "Em Editor você pode desligar as explicações em linha quando já as souber de cor, e religá-las quando quiser.",
           "A análise fica em cache para não se repetir; você pode esvaziá-lo, e abrir o log de erros, em Ajustes.",

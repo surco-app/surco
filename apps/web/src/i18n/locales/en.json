@@ -286,7 +286,7 @@
           },
           {
             "t": "Your Traktor playlists",
-            "d": "Open them in Surco, organise them as you do rekordbox's and set hot cues on their tracks with the same editor, Auto mark included. Traktor gets them in blue, on buttons 2 to 8, and Surco asks you to quit it before saving. In the editor you choose which playlists each track goes into, once the collection is confirmed in Settings."
+            "d": "Open them in Surco, organise them as you do rekordbox's and set hot cues on their tracks with the same editor, Auto mark included. Traktor gets them in blue, on buttons 2 to 8, and Surco asks you to quit it before saving. In the editor you choose which playlists each track goes into, once the collection is confirmed in Settings. And if Traktor didn't have it, Surco adds it to your collection when it converts it, cover art included."
           },
           {
             "t": "Files for rekordbox, Serato, M3U8",
@@ -907,7 +907,8 @@
           "It always backs up before writing, to a single file that gets overwritten so your folder doesn't fill up with copies.",
           "Traktor has to be closed: it rewrites its whole collection on quit, so your changes would be lost. Surco detects it and offers to close it.",
           "A batch of three hundred tracks produces one single write, not three hundred.",
-          "If a track's cue tree can't be read, Surco doesn't wipe the ones you already had."
+          "If a track's cue tree can't be read, Surco doesn't wipe the ones you already had.",
+          "It works with Traktor Pro and with Traktor Play."
         ],
         "shot": "traktor-en.webp",
         "shotCaption": "Traktor collection sync in Settings."
@@ -926,7 +927,7 @@
           "If rekordbox hasn’t analyzed the track yet, Surco measures the grid and you can set the cues anyway. Once rekordbox analyzes it, they move onto its grid.",
           "Auto mark suggests, it doesn’t decide. Its suggestions aren’t always right, so nothing is saved until you accept them. Sure ones show a solid line and doubtful ones a dashed line, and in Settings › Cues, “Learn from my tracks” tunes it to how you mark.",
           "The same works with Engine DJ and Traktor playlists, which get the hot cues only. In Traktor they show in blue and on buttons 2 to 8, since button 1 is for its grid.",
-          "A flow marked in one program reaches the same track in the others when you save, each on its own grid and around the cues it already had. Before saving, the editor tells you what each program will get, and in Settings › Cues you choose which ones it reaches."
+          "A flow marked in one program reaches the same track in the others when you save, each on its own grid and around the cues it already had. Before saving, the editor tells you what each program will get, and in Settings › Cues you choose which ones it reaches. Only what a flow places travels: cues you set by hand stay in the program where you marked them. And if another program has no free letters left, the editor tells you how many won't fit."
         ],
         "shot": "rekordbox-en.webp",
         "shotCaption": "Auto mark suggests where the track drops, with your flow ready to accept."
@@ -962,7 +963,7 @@
           "Genre and Grouping each pick their separator (comma, semicolon, slash or one of your own) from a small menu beside the field name in Settings → Fields.",
           "Choose which fields to see and which to require, create your own with a name and a key, and reorder them by dragging or hit “Auto-organize” to put them in a sensible order in one click.",
           "The Stats tab tracks your lifetime numbers (tracks loaded, converted, analyzed, found on each source…) and generates an image ready to share.",
-          "Under Cover art, small covers can be upscaled to your minimum size, cropped square, and a macOS option makes Finder show the cover art of FLACs when you convert or update them. It sets the art as the file's icon without touching the audio or the tags, so Traktor still accepts them even with sync on.",
+          "Under Cover art, small covers can be upscaled to your minimum size, cropped square, and a macOS option makes Finder show the cover art of FLACs when you convert or update them. It does so by placing a small ID3 tag carrying the cover in front of the FLAC. The audio doesn't change, and Traktor still accepts them even with sync on.",
           "Under Search you can limit Discogs results to vinyl, CD, file or cassette, and decide how many to see.",
           "In Editor you can turn the inline explanations off once you know them by heart, and back on whenever you like.",
           "Analysis is cached so it isn't repeated; you can clear it, and open the error log, from Settings.",

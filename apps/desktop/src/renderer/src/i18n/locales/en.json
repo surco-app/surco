@@ -132,12 +132,16 @@
     },
     "sort": {
       "label": "Sort tracks",
-      "import": "Default",
+      "import": "Import order",
       "name": "Name",
       "artist": "Artist",
       "duration": "Time",
       "format": "Format",
       "trackNumber": "Track number",
+      "bpm": "BPM",
+      "key": "Key",
+      "year": "Year",
+      "quality": "Quality",
       "ascending": "Ascending order",
       "descending": "Descending order"
     },
@@ -2216,7 +2220,7 @@
     },
     "reorder": {
       "removeSeparator": "Remove separator",
-      "hint": "To reorder, sort by “Default” and clear the search and filters"
+      "hint": "To reorder, sort by “Import order” and clear the search and filters"
     },
     "menu": {
       "addTo": "Add to playlist",
@@ -2404,6 +2408,7 @@
     "noMatch": "No group matches.",
     "sort": {
       "label": "Sort groups",
+      "default": "Default",
       "tracks": "Tracks"
     },
     "badge": {

@@ -1,3 +1,4 @@
+import { MAJOR_CAMELOT, MAJOR_NAMES, MINOR_CAMELOT, MINOR_NAMES } from '../../../shared/keyNames'
 import type { TrackItem } from '../types'
 import { foldText } from './normalizeText'
 import { gradedExt, isLowResCover, isTranscode, qualityVerdict, type Verdict } from './quality'
@@ -289,6 +290,8 @@ function searchFields(track: TrackItem): string[] {
       track.meta?.title,
       track.meta?.artist,
       track.meta?.album,
+      track.meta?.genre,
+      track.meta?.publisher,
     ]
       .filter((field): field is string => Boolean(field))
       .map(foldText)
@@ -307,8 +310,19 @@ export function searchMatcher(query: string): (track: TrackItem) => boolean {
 }
 
 // The list sort modes: the drop order ('import'), or by name, artist, length, source
-// format (which groups a mixed crate by container) or album order (disc, then track).
-export type TrackSort = 'import' | 'name' | 'artist' | 'duration' | 'format' | 'trackNumber'
+// format (which groups a mixed crate by container), album order (disc, then track), tempo,
+// key (around the Camelot wheel), year or quality verdict (worst first).
+export type TrackSort =
+  | 'import'
+  | 'name'
+  | 'artist'
+  | 'duration'
+  | 'format'
+  | 'trackNumber'
+  | 'bpm'
+  | 'key'
+  | 'year'
+  | 'quality'
 
 // The sort direction. 'import' has none (it's the drop order), so the toggle is hidden
 // there; every other mode flips between ascending and descending.
@@ -331,6 +345,49 @@ function compareText(a: string | undefined, b: string | undefined, sign: number)
   return sign * collator.compare(aa, bb)
 }
 
+const ENHARMONIC: Record<number, string[]> = {
+  1: ['C#', 'Db'],
+  3: ['D#', 'Eb'],
+  6: ['F#', 'Gb'],
+  8: ['G#', 'Ab'],
+  10: ['A#', 'Bb'],
+}
+const keyRanks = new Map<string, number>()
+function rankKeys(names: string[], camelot: string[]): void {
+  names.forEach((name, pitch) => {
+    const [, position, ring] = camelot[pitch].match(/^(\d+)([AB])$/) ?? []
+    const rank = Number(position) * 2 + (ring === 'B' ? 1 : 0)
+    keyRanks.set(name.toLowerCase(), rank)
+    keyRanks.set(camelot[pitch].toLowerCase(), rank)
+    keyRanks.set(camelot[pitch].padStart(3, '0').toLowerCase(), rank)
+    for (const spelling of ENHARMONIC[pitch] ?? []) {
+      keyRanks.set((spelling + (name.endsWith('m') ? 'm' : '')).toLowerCase(), rank)
+    }
+  })
+}
+rankKeys(MAJOR_NAMES, MAJOR_CAMELOT)
+rankKeys(MINOR_NAMES, MINOR_CAMELOT)
+
+const QUALITY_SEVERITY: Partial<Record<TrackQuality, number>> = {
+  damaged: 0,
+  transcoded: 1,
+  bad: 2,
+  warn: 3,
+  processed: 4,
+  good: 5,
+}
+
+function numberOrNull(n: number): number | null {
+  return Number.isFinite(n) ? n : null
+}
+
+const NUMERIC_SORTS: Partial<Record<TrackSort, (track: TrackItem) => number | null>> = {
+  bpm: (t) => numberOrNull(Number.parseFloat(t.meta.bpm ?? '')),
+  year: (t) => numberOrNull(Number.parseInt(t.meta.year ?? '', 10)),
+  key: (t) => keyRanks.get((t.meta.key ?? '').trim().toLowerCase()) ?? null,
+  quality: (t) => QUALITY_SEVERITY[trackQuality(t)] ?? null,
+}
+
 // Orders the (already filtered) list for display. 'import' returns the list untouched so the
 // drop order survives verbatim; the rest sort a copy. Array.sort is stable, so equal rows
 // keep their import order and toggling sorts never scrambles ties. Untagged artists,
@@ -345,6 +402,17 @@ export function sortTracks(
 ): TrackItem[] {
   if (sort === 'import') return tracks
   const sign = dir === 'desc' ? -1 : 1
+  const sortValue = NUMERIC_SORTS[sort]
+  if (sortValue) {
+    return tracks
+      .map((track) => ({ track, value: sortValue(track) }))
+      .sort((a, b) => {
+        if (a.value === null || b.value === null)
+          return (a.value === null ? 1 : 0) - (b.value === null ? 1 : 0)
+        return sign * (a.value - b.value)
+      })
+      .map((entry) => entry.track)
+  }
   return [...tracks].sort((a, b) => {
     if (sort === 'name') return sign * collator.compare(a.listLabel, b.listLabel)
     if (sort === 'artist') return compareText(a.meta.artist, b.meta.artist, sign)

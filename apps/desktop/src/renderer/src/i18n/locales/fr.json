@@ -132,12 +132,16 @@
     },
     "sort": {
       "label": "Trier les morceaux",
-      "import": "Par défaut",
+      "import": "Ordre d'import",
       "name": "Nom",
       "artist": "Artiste",
       "duration": "Durée",
       "format": "Format",
       "trackNumber": "Numéro de piste",
+      "bpm": "BPM",
+      "key": "Tonalité",
+      "year": "Année",
+      "quality": "Qualité",
       "ascending": "Ordre croissant",
       "descending": "Ordre décroissant"
     },
@@ -2216,7 +2220,7 @@
     },
     "reorder": {
       "removeSeparator": "Retirer le séparateur",
-      "hint": "Pour réordonner, trie par « Par défaut » et efface la recherche et les filtres"
+      "hint": "Pour réordonner, trie par « Ordre d'import » et efface la recherche et les filtres"
     },
     "menu": {
       "addTo": "Ajouter à une playlist",
@@ -2404,6 +2408,7 @@
     "noMatch": "Aucun groupe ne correspond.",
     "sort": {
       "label": "Trier les groupes",
+      "default": "Par défaut",
       "tracks": "Pistes"
     },
     "badge": {

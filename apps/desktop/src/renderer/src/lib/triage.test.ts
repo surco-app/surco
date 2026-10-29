@@ -549,6 +549,13 @@ describe('matchesSearch', () => {
     expect(matchesSearch(t({ fileName: 'A2 - Untitled.flac' }), 'untitled')).toBe(true)
   })
 
+  it('matches the genre and the label so a crate can be narrowed by either', () => {
+    const track = t({ meta: { genre: 'Deep House', publisher: 'Defected Records' } })
+    expect(matchesSearch(track, 'deep house')).toBe(true)
+    expect(matchesSearch(track, 'defected')).toBe(true)
+    expect(matchesSearch(track, 'techno')).toBe(false)
+  })
+
   it('matches the artist, title and album tags so a crate can be searched by metadata', () => {
     const track = t({ meta: { artist: 'Floorplan', title: 'Never Grow Old', album: 'Paradise' } })
     expect(matchesSearch(track, 'floorplan')).toBe(true)
@@ -630,6 +637,82 @@ describe('sortTracks', () => {
       mk({ id: 'short', duration: 120 }),
     ]
     expect(sortTracks(list, 'duration').map((t) => t.id)).toEqual(['short', 'long', 'none'])
+  })
+
+  it('sorts by BPM by value, so 98 comes before 128, with the untempoed tracks last in both directions', () => {
+    const list = [
+      mk({ id: '128', meta: { bpm: '128' } }),
+      mk({ id: 'none' }),
+      mk({ id: '98.5', meta: { bpm: '98.5' } }),
+    ]
+    expect(sortTracks(list, 'bpm').map((t) => t.id)).toEqual(['98.5', '128', 'none'])
+    expect(sortTracks(list, 'bpm', 'desc').map((t) => t.id)).toEqual(['128', '98.5', 'none'])
+  })
+
+  it('sorts by year numerically, reading a full date as its year, with undated tracks last', () => {
+    const list = [
+      mk({ id: '2019', meta: { year: '2019-05-03' } }),
+      mk({ id: 'none', meta: { year: '' } }),
+      mk({ id: '1998', meta: { year: '1998' } }),
+    ]
+    expect(sortTracks(list, 'year').map((t) => t.id)).toEqual(['1998', '2019', 'none'])
+    expect(sortTracks(list, 'year', 'desc').map((t) => t.id)).toEqual(['2019', '1998', 'none'])
+  })
+
+  it('sorts by key around the Camelot wheel in either notation, with unkeyed tracks last', () => {
+    const list = [
+      mk({ id: '10A', meta: { key: '10A' } }),
+      mk({ id: 'none' }),
+      mk({ id: '2B', meta: { key: '2B' } }),
+      mk({ id: '2A', meta: { key: '02A' } }),
+      mk({ id: '4B-as-Ab', meta: { key: 'Ab' } }),
+      mk({ id: '8A-as-Am', meta: { key: 'Am' } }),
+    ]
+    expect(sortTracks(list, 'key').map((t) => t.id)).toEqual([
+      '2A',
+      '2B',
+      '4B-as-Ab',
+      '8A-as-Am',
+      '10A',
+      'none',
+    ])
+  })
+
+  it('reads sharp and flat spellings of the same key as one wheel position', () => {
+    const list = [
+      mk({ id: 'Gb', meta: { key: 'Gb' } }),
+      mk({ id: 'Abm', meta: { key: 'Abm' } }),
+      mk({ id: 'D#m', meta: { key: 'D#m' } }),
+    ]
+    expect(sortTracks(list, 'key').map((t) => t.id)).toEqual(['Abm', 'D#m', 'Gb'])
+  })
+
+  it('keeps keys that are not on the wheel with the unkeyed tracks at the end', () => {
+    const list = [mk({ id: 'odd', meta: { key: 'xyz' } }), mk({ id: '1A', meta: { key: '1A' } })]
+    expect(sortTracks(list, 'key', 'desc').map((t) => t.id)).toEqual(['1A', 'odd'])
+  })
+
+  it('sorts by quality worst verdict first so the files to check surface, unanalyzed last in both directions', () => {
+    const spec = (cutoffHz: number | null, over: Partial<SpectrumResult> = {}) =>
+      ({ image: '', cutoffHz, sampleRateHz: 44100, processed: false, ...over }) as SpectrumResult
+    const list = [
+      mk({ id: 'good', spectrum: spec(21000) }),
+      mk({ id: 'none' }),
+      mk({ id: 'warn', spectrum: spec(18000) }),
+      mk({ id: 'damaged', spectrum: spec(21000, { damaged: true }) }),
+    ]
+    expect(sortTracks(list, 'quality').map((t) => t.id)).toEqual([
+      'damaged',
+      'warn',
+      'good',
+      'none',
+    ])
+    expect(sortTracks(list, 'quality', 'desc').map((t) => t.id)).toEqual([
+      'good',
+      'warn',
+      'damaged',
+      'none',
+    ])
   })
 
   it('keeps equal rows in their import order so toggling never scrambles ties', () => {

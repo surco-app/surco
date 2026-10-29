@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { analysisOptions } from '../lib/analysisQueries'
 import { mapWithConcurrency } from '../lib/concurrency'
 import { createFocusGate } from '../lib/focusGate'
-import { tracksToAnalyze } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { spectrogramOptions } from './useSpectrogram'
 import { waveformOptions, waveformScanOptions } from './useWaveform'
@@ -78,8 +77,8 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
   // async metadata read, ahead of the render that would add the row to it — for two tracks
   // landing close together this gap can outlive not just the triggering call but the finally's
   // relaunch check too. Kept here (mirroring enqueueAutoMatch's own queue) and drained on every
-  // call, not just the first, so a track stays queued until targetsRef genuinely has it and
-  // tracksToAnalyze can retire it on its own.
+  // call, not just the first, so a track stays queued until the sweep has run every pass on
+  // it, even when the editor already measured its spectrum.
   //
   // Retired on exactly two events: the track gets measured (the per-track finally below), or
   // it leaves the list (forgetTracks). Missing that second case is what made a crate emptied
@@ -132,9 +131,8 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
   }, [])
 
   // targetsRef.current plus whatever pendingRef still holds that targetsRef doesn't carry
-  // yet — pendingRef entries are retired (see the per-track finally below) the moment
-  // targetsRef genuinely reflects them, so this never re-adds a track tracksToAnalyze would
-  // otherwise have dropped. What pendingRef holds for another playlist stays there either way;
+  // yet — pendingRef entries are retired (see the per-track finally below) once the sweep has
+  // run them, so this never re-adds a track the sweep already finished. What pendingRef holds for another playlist stays there either way;
   // the rows shown are held to the playlist only for a background sweep.
   const sweepCandidates = useCallback(
     (background: boolean): TrackItem[] => {
@@ -147,6 +145,14 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
       ]
     },
     [targetsRef],
+  )
+
+  const sweepTargets = useCallback(
+    (background: boolean): TrackItem[] =>
+      sweepCandidates(background).filter(
+        (t) => (!t.spectrum || pendingRef.current.has(t.id)) && !measuredRef.current.has(t.id),
+      ),
+    [sweepCandidates],
   )
 
   // Analyzes every not-yet-measured track's spectrum at once. Capped at 3 in flight
@@ -172,7 +178,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
         }
         pendingRef.current.set(t.id, t)
       }
-      const targets = tracksToAnalyze(sweepCandidates(background), measuredRef.current)
+      const targets = sweepTargets(background)
       if (runningRef.current || targets.length === 0) return
       runningRef.current = true
       analyzeCancel.current = false
@@ -258,10 +264,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
         // idling, so an import during analysis isn't stranded. pendingRef covers a track an
         // onMetaLoaded enqueued while this pass was running and the runningRef guard dropped —
         // it stays there (untouched by the guard above) until a relaunch actually measures it.
-        if (
-          !analyzeCancel.current &&
-          tracksToAnalyze(sweepCandidates(background), measuredRef.current).length > 0
-        ) {
+        if (!analyzeCancel.current && sweepTargets(background).length > 0) {
           analyzeAllQuality(undefined, background)
           return
         }
@@ -269,7 +272,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
         setAnalysis(null)
       })
     },
-    [queryClient, sweepCandidates, targetsRef],
+    [queryClient, sweepTargets, targetsRef],
   )
 
   const cancelAnalysis = useCallback((): void => {
