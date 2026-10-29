@@ -2803,7 +2803,7 @@
     "intro": "Antes de tocar tus programas o tus archivos, Surco guarda una copia. Si algo no te cuadra, vuelve atrás.",
     "state": {
       "ok": "Al día",
-      "pending_one": "{{count}} cambios esperan a que cierres {{program}}",
+      "pending_one": "{{count}} cambio espera a que cierres {{program}}",
       "pending_other": "{{count}} cambios esperan a que cierres {{program}}",
       "halted": "Surco ha parado: revisa los cambios pendientes",
       "failed": "La última copia falló",
@@ -2833,7 +2833,7 @@
       "title": "¿Volver a como estaba {{program}} {{when}}?",
       "body": "Se perderá lo que hayas cambiado en {{program}} después de esa hora, también lo que hiciste desde {{program}}.",
       "safety": "Antes guardamos una copia de cómo está ahora, por si cambias de idea.",
-      "queue_one": "También se descartarán {{count}} cambios que esperaban a que cerraras {{program}}.",
+      "queue_one": "También se descartará {{count}} cambio que esperaba a que cerraras {{program}}.",
       "queue_other": "También se descartarán {{count}} cambios que esperaban a que cerraras {{program}}.",
       "ok": "Restaurar"
     },

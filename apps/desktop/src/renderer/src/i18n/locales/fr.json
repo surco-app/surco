@@ -2830,9 +2830,9 @@
     "restore": "Restaurer…",
     "restoreThis": "Restaurer celle-ci",
     "confirm": {
-      "title": "Revenir à {{program}} tel qu’il était {{when}} ?",
+      "title": "Revenir à {{program}} tel qu'il était {{when}} ?",
       "body": "Tout ce que tu as modifié dans {{program}} après cette heure sera perdu, y compris ce que tu as fait depuis {{program}}.",
-      "safety": "Nous gardons d’abord une copie de l’état actuel, au cas où tu changerais d’avis.",
+      "safety": "Nous gardons d'abord une copie de l'état actuel, au cas où tu changerais d'avis.",
       "queue_one": "{{count}} modification qui attendait que tu fermes {{program}} sera aussi abandonnée.",
       "queue_other": "{{count}} modifications qui attendaient que tu fermes {{program}} seront aussi abandonnées.",
       "ok": "Restaurer"
