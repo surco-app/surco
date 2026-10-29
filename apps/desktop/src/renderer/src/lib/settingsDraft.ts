@@ -23,6 +23,8 @@ export interface SyncedDraft {
   backupRetentionDays: number
   backupMaxGb: number
   addToEngineDj: boolean
+  addToRekordbox: boolean
+  addToTraktor: boolean
   syncTraktor: boolean
   syncRekordbox: boolean
   completeCuesOnClose: boolean
@@ -37,7 +39,6 @@ export interface SyncedDraft {
   cueLearnFromEdits: boolean
   hiddenSources: PlaylistSource[]
   syncEngineDj: boolean
-  engineDjPlaylist: string
   filenameFormat: string
   titleFormat: string
   autoApplyFilename: boolean
@@ -131,6 +132,8 @@ export function pickSynced(s: Settings): SyncedDraft {
     backupRetentionDays: s.backupRetentionDays,
     backupMaxGb: s.backupMaxGb,
     addToEngineDj: s.addToEngineDj,
+    addToRekordbox: s.addToRekordbox,
+    addToTraktor: s.addToTraktor,
     syncTraktor: s.syncTraktor,
     syncRekordbox: s.syncRekordbox,
     completeCuesOnClose: s.completeCuesOnClose,
@@ -145,7 +148,6 @@ export function pickSynced(s: Settings): SyncedDraft {
     cueLearnFromEdits: s.cueLearnFromEdits,
     hiddenSources: s.hiddenSources,
     syncEngineDj: s.syncEngineDj,
-    engineDjPlaylist: s.engineDjPlaylist,
     filenameFormat: s.filenameFormat,
     titleFormat: s.titleFormat,
     autoApplyFilename: s.autoApplyFilename,
@@ -190,9 +192,6 @@ export function pickSynced(s: Settings): SyncedDraft {
 // The default applied when the filename format is left blank — every output would collide
 // on one name without at least the artist and title.
 const DEFAULT_FILENAME_FORMAT = '{artist} - {title}'
-// The playlist restored when the Engine DJ field is left blank — a nameless playlist
-// can't be created, and losing the inbox silently would defeat its purpose.
-const DEFAULT_ENGINE_DJ_PLAYLIST = 'Surco'
 // The cover cap restored when the field can't be parsed as a non-negative number.
 const DEFAULT_COVER_MAX_SIZE = 1200
 
@@ -210,7 +209,6 @@ export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Part
     coverMaxSize,
     traktorCueOffsetMs,
     filenameFormat,
-    engineDjPlaylist,
     searchIgnoreWords,
     ...rest
   } = synced
@@ -224,7 +222,6 @@ export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Part
     ...rest,
     ...localRest,
     discogsToken: token,
-    engineDjPlaylist: engineDjPlaylist.trim() || DEFAULT_ENGINE_DJ_PLAYLIST,
     filenameFormat: filenameFormat.trim() || DEFAULT_FILENAME_FORMAT,
     groupingPresets: splitPresets(grouping),
     genrePresets: splitPresets(genre),

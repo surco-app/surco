@@ -1,4 +1,6 @@
+import i18n from '../i18n'
 import type { Destination } from './destination'
+import type { DjLibraryId } from './djLibraries'
 
 export interface ExportLabelState {
   processing: boolean
@@ -8,7 +10,7 @@ export interface ExportLabelState {
   stale: boolean
   done: boolean
   withAppleMusic: boolean
-  withEngineDj: boolean
+  djTargets: DjLibraryId[]
   // Already uppercased for display ("AIFF").
   format: string
   // What the last export actually produced (uppercased), null before any export. Lets
@@ -28,7 +30,7 @@ export interface ExportLabelState {
   // The track already has a copy Surco added to Music, which converting an edit syncs
   // instead of adding a second one.
   inMusic?: boolean
-  // Where the file lands, named on the button when no library suffix already does.
+  // Where the file lands, named on the button unless Apple Music already names it.
   destination?: Destination
 }
 
@@ -59,19 +61,22 @@ export function exportButtonLabel(state: ExportLabelState): {
     return { key: 'editor.reexport' }
   }
   const place = placeSuffix(state)
+  const programs = programNames(state)
   if (state.count !== undefined) {
-    if (!state.withAppleMusic && !state.withEngineDj && place) {
+    if (state.djTargets.length > 0) {
+      return {
+        key: place ? `editor.convertAll${place}To` : 'editor.convertAllTo',
+        options: { count: state.count, format: state.format, programs },
+      }
+    }
+    if (!state.withAppleMusic && place) {
       return {
         key: `editor.convertAll${place}`,
         options: { count: state.count, format: state.format },
       }
     }
     return {
-      key: state.withAppleMusic
-        ? 'editor.convertAllMusic'
-        : state.withEngineDj
-          ? 'editor.convertAllEngine'
-          : 'editor.convertAll',
+      key: state.withAppleMusic ? 'editor.convertAllMusic' : 'editor.convertAll',
       options: { count: state.count, format: state.format },
     }
   }
@@ -86,15 +91,22 @@ export function exportButtonLabel(state: ExportLabelState): {
       return { key: 'editor.libraryHasBetter', options: { format: state.format } }
     return { key: 'editor.replaceMusic', options: { format: state.format } }
   }
-  if (!state.withAppleMusic && !state.withEngineDj && place) {
+  if (state.djTargets.length > 0) {
+    return {
+      key: place ? `editor.convert${place}To` : 'editor.convertTo',
+      options: { format: state.format, programs },
+    }
+  }
+  if (!state.withAppleMusic && place) {
     return { key: `editor.convert${place}`, options: { format: state.format } }
   }
   return {
-    key: state.withAppleMusic
-      ? 'editor.convert'
-      : state.withEngineDj
-        ? 'editor.convertEngine'
-        : 'editor.convertNoMusic',
+    key: state.withAppleMusic ? 'editor.convert' : 'editor.convertNoMusic',
     options: { format: state.format },
   }
+}
+
+function programNames(state: ExportLabelState): string {
+  const ids = [...(state.withAppleMusic ? ['appleMusic'] : []), ...state.djTargets]
+  return ids.map((id) => i18n.t(`settings.source.${id}`)).join(' + ')
 }

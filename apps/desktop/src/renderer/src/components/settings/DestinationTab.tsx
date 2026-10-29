@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BACKUP_POLICIES, type BackupPolicy } from '../../../../shared/backupPolicy'
 import { DESTINATIONS, fromDestination, toDestination } from '../../lib/destination'
+import type { DjLibraryId } from '../../lib/djLibraries'
+import { DJ_REACH_SETTINGS, type DjReach, fromDjReach, toDjReach } from '../../lib/djReach'
 import { isMacOS } from '../../lib/platform'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
@@ -88,9 +90,9 @@ interface Props {
 }
 
 // Where a conversion ends up: the output folder, the destination radio (folder /
-// Apple Music / Engine DJ / overwrite) and Engine DJ's own fields. Split from the
-// Conversion tab, which keeps everything that defines the file itself — the format
-// chosen there still gates the choices here (FLAC pins the folder).
+// Apple Music / beside the original / overwrite) and how far each DJ program is
+// reached. Split from the Conversion tab, which keeps everything that defines the file
+// itself — the format chosen there still gates the choices here (FLAC pins the folder).
 export function DestinationTab({
   synced,
   local,
@@ -125,7 +127,6 @@ export function DestinationTab({
     synced.addToAppleMusic && isMacOS(),
     flacOnly,
     synced.overwriteOriginal,
-    synced.addToEngineDj,
     synced.convertBesideOriginal,
   )
   function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
@@ -133,7 +134,6 @@ export function DestinationTab({
     patch('addToAppleMusic', next.addToAppleMusic)
     patch('keepOutputCopy', next.keepOutputCopy)
     patch('overwriteOriginal', next.overwriteOriginal)
-    patch('addToEngineDj', next.addToEngineDj)
     patch('convertBesideOriginal', next.convertBesideOriginal)
   }
   // The folder is a detail OF the "Output folder" choice, so it renders under that
@@ -145,18 +145,6 @@ export function DestinationTab({
       value={local.outputDir}
       onChange={onOutputDirChange}
       testid="settings-output"
-    />
-  )
-  // Engine DJ's fields nest under its radio exactly like the output folder does — the
-  // two destination details read as one pattern instead of one inline and one trailing
-  // the whole group.
-  const engineDetail = (
-    <EngineLibraryFields
-      libraryDir={local.engineLibraryDir}
-      onLibraryDirChange={onChangeEngineDir}
-      playlist={synced.engineDjPlaylist}
-      onPlaylistChange={(name) => patch('engineDjPlaylist', name)}
-      testidPrefix="settings-engine"
     />
   )
 
@@ -171,117 +159,26 @@ export function DestinationTab({
           keepOutputCopy={synced.keepOutputCopy}
           testidPrefix="settings-destination"
           radioName="destination"
-          details={{ folder: folderDetail, engineDj: engineDetail }}
+          details={{ folder: folderDetail }}
         />
       </SettingsField>
-      {/* Not a detail of the overwrite radio, which is where this started: Originals also
-          fills from a format change and from a delete on a volume with no OS Trash, and
-          hanging the setting off one destination left the other two paths ignoring it
-          while the control was not even on screen. Its own section, always reachable. */}
-      <SettingsSection eyebrow={tr('settings.originals')}>
-        <SettingsHint className="-mt-1 mb-3">{tr('settings.originalsHint')}</SettingsHint>
-        <SettingsLabel className="mb-2">{tr('settings.originalBackup')}</SettingsLabel>
-        <SegmentedControl
-          options={BACKUP_POLICIES}
-          value={synced.backupPolicy}
-          onChange={(id) => patch('backupPolicy', id)}
-          testidPrefix="settings-backup"
-          label={tr('settings.originalBackup')}
-          labelFor={(id) => tr(`settings.originalBackupPolicies.${id}`)}
-        />
-        {/* What this level costs, rather than one sentence covering all three: the choice
-            IS the trade-off, so the line has to move with it. */}
-        <SettingsHint className="mt-2.5" data-testid="settings-backup-hint">
-          {tr(POLICY_HINT[synced.backupPolicy])}
-        </SettingsHint>
-        {/* Only 'never' can cost a file, and the word alone doesn't say so — least of all
-            for the NAS delete, the one case where nothing else would have kept a copy.
-            Amber, not danger red: switching it off is a legitimate choice, not a mistake. */}
-        {synced.backupPolicy === 'never' && (
-          <div
-            data-testid="settings-backup-warning"
-            className="mt-2.5 flex items-start gap-2 rounded-lg border border-[color-mix(in_srgb,var(--color-warn)_22%,transparent)] bg-[color-mix(in_srgb,var(--color-warn)_10%,transparent)] px-2.5 py-2"
-          >
-            <AlertTriangle
-              className="mt-px h-3.5 w-3.5 shrink-0 text-warn"
-              strokeWidth={1.8}
-              aria-hidden="true"
-            />
-            <p className="text-xs leading-relaxed text-warn">
-              {tr('settings.originalBackupNeverHint')}
-            </p>
-          </div>
-        )}
-
-        {/* Disabled rather than hidden under 'never' (Settings' own rule), and for a
-            reason the hint states: they still govern the copies already stored. Turning
-            the feature off must never read as having discarded them. */}
-        <div className="mt-4 flex gap-4 border-t border-[var(--color-line)] pt-4">
-          <div className="flex-1">
-            <SettingsLabel htmlFor="backup-days" className="mb-2">
-              {tr('settings.originalBackupDays')}
-            </SettingsLabel>
-            <div className="flex items-center gap-2">
-              <LimitInput
-                id="backup-days"
-                data-testid="settings-backup-days"
-                min={1}
-                max={365}
-                value={synced.backupRetentionDays}
-                disabled={backupOff}
-                onCommit={(n) => patch('backupRetentionDays', n)}
-                className="w-20 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm text-fg tabular-nums disabled:opacity-50"
-              />
-              <span className="text-xs text-fg-dim">{tr('settings.originalBackupDaysUnit')}</span>
-            </div>
-          </div>
-          <div className="flex-1">
-            <SettingsLabel htmlFor="backup-gb" className="mb-2">
-              {tr('settings.originalBackupSize')}
-            </SettingsLabel>
-            <div className="flex items-center gap-2">
-              <LimitInput
-                id="backup-gb"
-                data-testid="settings-backup-gb"
-                min={0.1}
-                max={1024}
-                // "any", not a step: with min=0.1 a step of 0.5 makes the valid values
-                // 0.1, 0.6, 1.1 … so the default of 10 failed the browser's own
-                // constraint check and silently blocked the form from submitting —
-                // Save did nothing at all, on a field the user had not even touched.
-                step="any"
-                value={synced.backupMaxGb}
-                disabled={backupOff}
-                onCommit={(n) => patch('backupMaxGb', n)}
-                className="w-20 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm text-fg tabular-nums disabled:opacity-50"
-              />
-              <span className="text-xs text-fg-dim">GB</span>
-            </div>
-          </div>
-        </div>
-        <SettingsHint className="mt-2.5">
-          {backupOff
-            ? tr('settings.originalBackupLimitsKept')
-            : tr('settings.originalBackupLimitsHint')}
-        </SettingsHint>
-      </SettingsSection>
-
       {/* Independent of the destination radio above: Traktor sync patches cue points
           into collection.nml as a side effect of conversion, wherever the file ends up —
           it isn't itself a place the converted file goes. Empty path means the feature
           is off (see settings.ts), so this is the only control that turns it on. */}
       <SettingsSection eyebrow={tr('settings.traktorSync')}>
-        {/* The switch, and the only one. Emptying the path used to be what turned the
-            sync off — an invisible side effect nobody guesses, and the opposite of how
-            the rest of this screen works. Disabled rather than hidden while no collection
-            is set, so the feature never looks like it does not exist; the hint below says
-            what is missing. */}
-        <CheckboxRow
-          testid="settings-sync-traktor"
-          checked={synced.syncTraktor}
-          disabled={!local.traktorNmlPath}
-          onChange={(v) => patch('syncTraktor', v)}
+        {/* One three-state control per program, and the only thing that turns it on or
+            off: leave the collection alone, update it, or update it and add new tracks.
+            Emptying the path used to be what turned the sync off — an invisible side
+            effect nobody guesses, and the opposite of how the rest of this screen works.
+            Disabled rather than hidden while no collection is set, so the feature never
+            looks like it does not exist; the hint below says what is missing. */}
+        <DjReachRow
+          program="traktor"
           label={tr('settings.syncTraktor')}
+          synced={synced}
+          patch={patch}
+          disabled={!local.traktorNmlPath}
         />
         <SettingsHint className="mt-2 mb-4">
           {local.traktorNmlPath ? tr('settings.syncTraktorHint') : tr('settings.syncTraktorIdle')}
@@ -438,15 +335,15 @@ export function DestinationTab({
         </div>
       </SettingsSection>
       {/* rekordbox keeps its collection in one fixed place per platform, so there is
-          nothing to point at and the toggle is the whole setup — the path below is shown
-          only so the user can see which collection is being written to. */}
+          nothing to point at and the three-state control is the whole setup — the path
+          below is shown only so the user can see which collection is being written to. */}
       <SettingsSection eyebrow={tr('settings.rekordboxSync')}>
-        <CheckboxRow
-          testid="settings-sync-rekordbox"
-          checked={synced.syncRekordbox}
-          disabled={!rekordboxCollection}
-          onChange={(v) => patch('syncRekordbox', v)}
+        <DjReachRow
+          program="rekordbox"
           label={tr('settings.syncRekordbox')}
+          synced={synced}
+          patch={patch}
+          disabled={!rekordboxCollection}
         />
         <SettingsHint className="mt-2">
           {rekordboxCollection
@@ -523,19 +420,163 @@ export function DestinationTab({
         )}
         <SettingsHint className="mt-2">{tr('settings.completeCuesHint')}</SettingsHint>
       </SettingsSection>
-      {/* Engine DJ's library is the one its destination already writes to, so the
-          toggle is the whole setup: it keeps rows that point at a converted file's
-          original moving onto the new file. */}
+      {/* The library folder says which Engine database Surco reads and
+          writes; the three-state control decides whether rows that point at a converted
+          file's original move onto the new file, and whether new tracks are added too. */}
       <SettingsSection eyebrow={tr('settings.engineSync')}>
-        <CheckboxRow
-          testid="settings-sync-engine"
-          checked={synced.syncEngineDj}
-          onChange={(v) => patch('syncEngineDj', v)}
+        <div className="mb-4">
+          <EngineLibraryFields
+            libraryDir={local.engineLibraryDir}
+            onLibraryDirChange={onChangeEngineDir}
+            testidPrefix="settings-engine"
+          />
+        </div>
+        <DjReachRow
+          program="engine"
           label={tr('settings.syncEngineDj')}
+          synced={synced}
+          patch={patch}
         />
         <SettingsHint className="mt-2">{tr('settings.syncEngineDjHint')}</SettingsHint>
       </SettingsSection>
+      {/* Not a detail of the overwrite radio, which is where this started: Originals also
+          fills from a format change and from a delete on a volume with no OS Trash, and
+          hanging the setting off one destination left the other two paths ignoring it
+          while the control was not even on screen. Its own section, always reachable. */}
+      <SettingsSection eyebrow={tr('settings.originals')}>
+        <SettingsHint className="-mt-1 mb-3">{tr('settings.originalsHint')}</SettingsHint>
+        <SettingsLabel className="mb-2">{tr('settings.originalBackup')}</SettingsLabel>
+        <SegmentedControl
+          options={BACKUP_POLICIES}
+          value={synced.backupPolicy}
+          onChange={(id) => patch('backupPolicy', id)}
+          testidPrefix="settings-backup"
+          label={tr('settings.originalBackup')}
+          labelFor={(id) => tr(`settings.originalBackupPolicies.${id}`)}
+        />
+        {/* What this level costs, rather than one sentence covering all three: the choice
+            IS the trade-off, so the line has to move with it. */}
+        <SettingsHint className="mt-2.5" data-testid="settings-backup-hint">
+          {tr(POLICY_HINT[synced.backupPolicy])}
+        </SettingsHint>
+        {/* Only 'never' can cost a file, and the word alone doesn't say so — least of all
+            for the NAS delete, the one case where nothing else would have kept a copy.
+            Amber, not danger red: switching it off is a legitimate choice, not a mistake. */}
+        {synced.backupPolicy === 'never' && (
+          <div
+            data-testid="settings-backup-warning"
+            className="mt-2.5 flex items-start gap-2 rounded-lg border border-[color-mix(in_srgb,var(--color-warn)_22%,transparent)] bg-[color-mix(in_srgb,var(--color-warn)_10%,transparent)] px-2.5 py-2"
+          >
+            <AlertTriangle
+              className="mt-px h-3.5 w-3.5 shrink-0 text-warn"
+              strokeWidth={1.8}
+              aria-hidden="true"
+            />
+            <p className="text-xs leading-relaxed text-warn">
+              {tr('settings.originalBackupNeverHint')}
+            </p>
+          </div>
+        )}
+
+        {/* Disabled rather than hidden under 'never' (Settings' own rule), and for a
+            reason the hint states: they still govern the copies already stored. Turning
+            the feature off must never read as having discarded them. */}
+        <div className="mt-4 flex gap-4 border-t border-[var(--color-line)] pt-4">
+          <div className="flex-1">
+            <SettingsLabel htmlFor="backup-days" className="mb-2">
+              {tr('settings.originalBackupDays')}
+            </SettingsLabel>
+            <div className="flex items-center gap-2">
+              <LimitInput
+                id="backup-days"
+                data-testid="settings-backup-days"
+                min={1}
+                max={365}
+                value={synced.backupRetentionDays}
+                disabled={backupOff}
+                onCommit={(n) => patch('backupRetentionDays', n)}
+                className="w-20 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm text-fg tabular-nums disabled:opacity-50"
+              />
+              <span className="text-xs text-fg-dim">{tr('settings.originalBackupDaysUnit')}</span>
+            </div>
+          </div>
+          <div className="flex-1">
+            <SettingsLabel htmlFor="backup-gb" className="mb-2">
+              {tr('settings.originalBackupSize')}
+            </SettingsLabel>
+            <div className="flex items-center gap-2">
+              <LimitInput
+                id="backup-gb"
+                data-testid="settings-backup-gb"
+                min={0.1}
+                max={1024}
+                // "any", not a step: with min=0.1 a step of 0.5 makes the valid values
+                // 0.1, 0.6, 1.1 … so the default of 10 failed the browser's own
+                // constraint check and silently blocked the form from submitting —
+                // Save did nothing at all, on a field the user had not even touched.
+                step="any"
+                value={synced.backupMaxGb}
+                disabled={backupOff}
+                onCommit={(n) => patch('backupMaxGb', n)}
+                className="w-20 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm text-fg tabular-nums disabled:opacity-50"
+              />
+              <span className="text-xs text-fg-dim">GB</span>
+            </div>
+          </div>
+        </div>
+        <SettingsHint className="mt-2.5">
+          {backupOff
+            ? tr('settings.originalBackupLimitsKept')
+            : tr('settings.originalBackupLimitsHint')}
+        </SettingsHint>
+      </SettingsSection>
     </>
+  )
+}
+
+const DJ_REACHES: readonly DjReach[] = ['off', 'update', 'add']
+
+function DjReachRow({
+  program,
+  label,
+  synced,
+  patch,
+  disabled = false,
+}: {
+  program: DjLibraryId
+  label: string
+  synced: SyncedDraft
+  patch: PatchSynced
+  disabled?: boolean
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const keys = DJ_REACH_SETTINGS[program]
+  const value = toDjReach(synced[keys.sync], synced[keys.add])
+  return (
+    <fieldset
+      data-testid={`settings-reach-${program}`}
+      disabled={disabled}
+      className="min-w-0 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      <SettingsLabel className="mb-2">{label}</SettingsLabel>
+      <SegmentedControl
+        options={DJ_REACHES}
+        value={value}
+        onChange={(reach) => {
+          const next = fromDjReach(reach)
+          patch(keys.sync, next.sync)
+          patch(keys.add, next.add)
+        }}
+        testidPrefix={`settings-reach-${program}`}
+        label={label}
+        labelFor={(reach) => tr(`settings.djReach.${reach}`)}
+      />
+      {value === 'add' && (
+        <SettingsHint className="mt-2" data-testid={`settings-reach-${program}-add-hint`}>
+          {tr('settings.djReachAddHint')}
+        </SettingsHint>
+      )}
+    </fieldset>
   )
 }
 

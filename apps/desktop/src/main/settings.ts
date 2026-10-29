@@ -65,6 +65,8 @@ export const defaults: Settings = {
   backupRetentionDays: TRASH_RETENTION_DAYS,
   backupMaxGb: TRASH_MAX_BYTES / 1024 ** 3,
   addToEngineDj: false,
+  addToRekordbox: false,
+  addToTraktor: false,
   // Engine DJ's default library location on both macOS and Windows.
   engineLibraryDir: join(app.getPath('music'), 'Engine Library'),
   // Traktor's collection folder varies by version and user preference (Traktor 4.4.1, 4.5.0, …
@@ -100,7 +102,6 @@ export const defaults: Settings = {
   // Zero: the conversion already puts cues back where they were, so nobody who hasn't
   // gone looking for this should have theirs moved.
   traktorCueOffsetMs: 0,
-  engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
   titleFormat: '',
   // Off by default so an install from before it existed keeps the source file name; the

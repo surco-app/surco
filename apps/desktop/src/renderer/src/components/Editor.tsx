@@ -61,6 +61,7 @@ import type { AutoMarkTarget } from '../lib/cueAutoMark'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
+import { reachedPrograms } from '../lib/djReach'
 import { editorPlace } from '../lib/editorPlace'
 import { buildFieldSpecs } from '../lib/fieldSpecs'
 import {
@@ -309,6 +310,8 @@ export const Editor = memo(function Editor({
     outputFormat,
     addToAppleMusic,
     addToEngineDj,
+    addToRekordbox,
+    addToTraktor,
     keepMp3Sources,
     outputDir,
     overwriteOriginal,
@@ -449,7 +452,6 @@ export const Editor = memo(function Editor({
         addToAppleMusic && isMacOS(),
         format === 'flac',
         overwriteOriginal,
-        addToEngineDj,
         convertBesideOriginal,
       ),
   )
@@ -466,7 +468,6 @@ export const Editor = memo(function Editor({
     outputFormat,
     addToAppleMusic,
     overwriteOriginal,
-    addToEngineDj,
     convertBesideOriginal,
     keepMp3Sources,
   })
@@ -478,14 +479,12 @@ export const Editor = memo(function Editor({
     const destinationSettingsChanged =
       addToAppleMusic !== prev.addToAppleMusic ||
       overwriteOriginal !== prev.overwriteOriginal ||
-      addToEngineDj !== prev.addToEngineDj ||
       convertBesideOriginal !== prev.convertBesideOriginal
     if (!formatSettingChanged && !destinationSettingsChanged) return
     lastSettings.current = {
       outputFormat,
       addToAppleMusic,
       overwriteOriginal,
-      addToEngineDj,
       convertBesideOriginal,
       keepMp3Sources,
     }
@@ -502,19 +501,11 @@ export const Editor = memo(function Editor({
       addToAppleMusic && isMacOS(),
       seededFormat === 'flac',
       overwriteOriginal,
-      addToEngineDj,
       convertBesideOriginal,
     )
     setDestination(seededDestination)
     onDestinationChange?.(seededDestination)
-  }, [
-    outputFormat,
-    addToAppleMusic,
-    overwriteOriginal,
-    addToEngineDj,
-    convertBesideOriginal,
-    keepMp3Sources,
-  ])
+  }, [outputFormat, addToAppleMusic, overwriteOriginal, convertBesideOriginal, keepMp3Sources])
   // The facets the picked destination means, replacing the raw Settings reads below
   // so the in-place warnings, the button label and the membership badge all describe
   // the conversion the button will actually run.
@@ -522,9 +513,13 @@ export const Editor = memo(function Editor({
   // Overwrite is offered as a one-shot pick too: retagging one file in place shouldn't
   // need a Settings change, and the convert confirmations still ask before rewriting.
   const destinationChoices = DESTINATIONS.filter((d) => d !== 'appleMusic' || isMacOS())
-  // Which library the membership badge reads — the conversion destination's. Null
-  // (folder/beside/overwrite, or Apple Music off macOS) hides the badge entirely.
-  const librarySource = librarySourceOf({ ...picked, outputFormat: format }, isMacOS())
+  // Which library the membership badge reads — Engine DJ's whenever it's on, else the
+  // conversion destination's. Null (folder/beside/overwrite without Engine, or Apple
+  // Music off macOS) hides the badge entirely.
+  const librarySource = librarySourceOf(
+    { ...picked, addToEngineDj, outputFormat: format },
+    isMacOS(),
+  )
   // Per-track normalization, seeded from the track's own setting and falling back to
   // the Settings default for a track never touched. Editing it both updates the control
   // and reports the override up so convert uses it.
@@ -1775,7 +1770,7 @@ export const Editor = memo(function Editor({
           willEditInPlace={willEditInPlace}
           tagsOnly={tagsOnlyExport}
           addToAppleMusic={picked.addToAppleMusic}
-          addToEngineDj={picked.addToEngineDj}
+          djTargets={reachedPrograms({ addToRekordbox, addToTraktor, addToEngineDj })}
           destination={destination}
           destinations={destinationChoices}
           outputFolder={baseName(outputDir.replace(/[\\/]+$/, ''))}

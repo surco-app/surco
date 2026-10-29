@@ -39,11 +39,12 @@ const synced: SyncedDraft = {
   backupRetentionDays: 30,
   backupMaxGb: 10,
   addToEngineDj: false,
+  addToRekordbox: false,
+  addToTraktor: false,
   syncTraktor: false,
   syncRekordbox: false,
   completeCuesOnClose: false,
   syncEngineDj: false,
-  engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
   titleFormat: '',
   autoApplyFilename: false,
@@ -150,18 +151,6 @@ describe('DestinationTab FLAC restriction', () => {
 })
 
 describe('DestinationTab Engine DJ destination', () => {
-  // Choosing Engine DJ must clear the other destinations in the same patch batch —
-  // a leftover addToAppleMusic or overwriteOriginal would make the radio show one
-  // thing and the conversion do another.
-  it('stages Engine DJ as an exclusive destination choice', () => {
-    const patch = renderTab()
-    fireEvent.click(screen.getByTestId('settings-destination-engineDj'))
-    expect(patch).toHaveBeenCalledWith('addToEngineDj', true)
-    expect(patch).toHaveBeenCalledWith('addToAppleMusic', false)
-    expect(patch).toHaveBeenCalledWith('keepOutputCopy', true)
-    expect(patch).toHaveBeenCalledWith('overwriteOriginal', false)
-  })
-
   // "Next to the original" is the non-destructive sibling of overwrite: a fresh copy
   // beside the source, nothing in any library — one radio choice like the rest, so a
   // leftover boolean can't make the radio show one thing and the conversion do another.
@@ -171,11 +160,22 @@ describe('DestinationTab Engine DJ destination', () => {
     expect(patch).toHaveBeenCalledWith('convertBesideOriginal', true)
     expect(patch).toHaveBeenCalledWith('overwriteOriginal', false)
     expect(patch).toHaveBeenCalledWith('addToAppleMusic', false)
-    expect(patch).toHaveBeenCalledWith('addToEngineDj', false)
   })
 
-  // Like Engine DJ, a fresh copy beside the source is FLAC-proof, so the FLAC pin
-  // that greys Apple Music out must not touch it.
+  it('leaves Engine DJ as it was when the DJ picks where conversions go', () => {
+    const patch = renderTab({ addToEngineDj: true })
+    fireEvent.click(screen.getByTestId('settings-destination-beside'))
+    fireEvent.click(screen.getByTestId('settings-destination-folder'))
+    expect(patch).not.toHaveBeenCalledWith('addToEngineDj', expect.anything())
+  })
+
+  it('no longer offers Engine DJ as a place conversions go', () => {
+    renderTab()
+    expect(screen.queryByTestId('settings-destination-engineDj')).toBeNull()
+  })
+
+  // A fresh copy beside the source is FLAC-proof, so the FLAC pin that greys Apple
+  // Music out must not touch it.
   it('keeps beside-the-original selectable while FLAC is the format', () => {
     renderTab({ outputFormat: 'flac' })
     expect(screen.getByTestId('settings-destination-beside')).toBeEnabled()
@@ -202,46 +202,22 @@ describe('DestinationTab Engine DJ destination', () => {
     cleanup()
     // Kept mounted so the collapse can animate out; inert is what "hidden" means —
     // no focus stop, no interaction — while the height/opacity transition runs.
-    renderTab({ addToEngineDj: true })
+    renderTab({ convertBesideOriginal: true })
     expect(screen.getByTestId('settings-output').closest('[inert]')).not.toBeNull()
   })
 
-  // The library folder only matters once conversions are actually registered there;
-  // showing it under every destination would read as an unrelated global path.
-  it('shows the Engine library folder under its radio only while Engine DJ is the destination', () => {
-    renderTab()
-    expect(screen.getByTestId('settings-engine-library').closest('[inert]')).not.toBeNull()
-    cleanup()
-    renderTab({ addToEngineDj: true })
-    expect(screen.getByTestId('settings-engine-library')).toHaveTextContent('/music/Engine Library')
-    expect(screen.getByTestId('settings-engine-library').closest('[inert]')).toBeNull()
-  })
-
-  // Engine DJ plays FLAC natively, so the FLAC restriction that pins Apple Music to
-  // the folder must not grey this option out.
-  it('keeps Engine DJ selectable while FLAC is the format', () => {
-    renderTab({ outputFormat: 'flac' })
-    expect(screen.getByTestId('settings-destination-engineDj')).toBeEnabled()
-    expect(screen.getByTestId('settings-destination-appleMusic')).toBeDisabled()
-  })
-
-  // The playlist is where the DJ finds what Surco converted, so it belongs with the
-  // destination — editable, seeded from the setting, staged through the draft patch.
-  it('shows the editable playlist field only while Engine DJ is the destination', () => {
-    renderTab()
-    expect(screen.getByTestId('settings-engine-playlist').closest('[inert]')).not.toBeNull()
-    cleanup()
-    const patch = renderTab({ addToEngineDj: true })
-    const field = screen.getByTestId('settings-engine-playlist')
-    expect(field).toHaveValue('Surco')
-    fireEvent.change(field, { target: { value: 'Pool' } })
-    expect(patch).toHaveBeenCalledWith('engineDjPlaylist', 'Pool')
+  it('keeps the Engine library folder settable in the Engine DJ section whatever the destination', () => {
+    renderTab({ convertBesideOriginal: true })
+    const library = screen.getByTestId('settings-engine-library')
+    expect(library).toHaveTextContent('/music/Engine Library')
+    expect(library.closest('[inert]')).toBeNull()
+    expect(library.closest('[role="radiogroup"]')).toBeNull()
   })
 })
 
 describe('DestinationTab Traktor collection', () => {
   // Traktor cue sync is a side effect of conversion, not a destination the file goes
-  // to — it must stay visible whatever radio is selected, unlike Engine DJ's fields.
+  // to — it must stay visible whatever radio is selected.
   it('always shows the collection.nml field regardless of the chosen destination', () => {
     renderTab()
     expect(screen.getByTestId('settings-traktor-nml').closest('[inert]')).toBeNull()
@@ -360,9 +336,10 @@ describe('DestinationTab Traktor collection', () => {
 
   // Reported 09/09/2026: "look into being able to turn off loading the nml, because
   // there's no way to leave it empty — I have to point it at another path to test".
-  // The hint says "leave it empty to turn this off" and the tab offered only Change,
-  // which opens a file picker: the one promise the UI could not keep, and the only way
-  it('turns the Traktor sync on and off with its own toggle', () => {
+  // The hint said "leave it empty to turn this off" and the tab offered only Change,
+  // which opens a file picker. The per-program control now turns the sync on, and
+  // 'update' must not quietly start adding tracks the DJ never asked for.
+  it('setting Traktor to update syncs without adding', () => {
     const patch = vi.fn()
     render(
       <DestinationTab
@@ -379,14 +356,15 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
 
-    fireEvent.click(screen.getByTestId('settings-sync-traktor'))
+    fireEvent.click(screen.getByTestId('settings-reach-traktor-update'))
     expect(patch).toHaveBeenCalledWith('syncTraktor', true)
+    expect(patch).toHaveBeenCalledWith('addToTraktor', false)
   })
 
   // Visible but disabled, never absent: a control that disappears leaves the user unsure
   // the feature exists at all. Dimmed says both that it is there and that something is
   // still missing, and the hint below names what.
-  it('shows the Traktor toggle disabled while no collection is set', () => {
+  it('Traktor stays disabled until a collection is chosen', () => {
     render(
       <DestinationTab
         synced={{ ...synced, syncTraktor: false }}
@@ -402,12 +380,14 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
 
-    expect(screen.getByTestId('settings-sync-traktor')).toBeDisabled()
+    for (const reach of ['off', 'update', 'add']) {
+      expect(screen.getByTestId(`settings-reach-traktor-${reach}`)).toBeDisabled()
+    }
   })
 
   // rekordbox keeps its collection in one place per platform, so unlike Traktor there is
-  // nothing to point at: the toggle is the whole setup.
-  it('turns the rekordbox sync on with its own toggle', () => {
+  // nothing to point at: the three-state control is the whole setup.
+  it('turning rekordbox to add saves both switches', () => {
     const patch = vi.fn()
     render(
       <DestinationTab
@@ -424,17 +404,16 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
 
-    fireEvent.click(screen.getByTestId('settings-sync-rekordbox'))
+    fireEvent.click(screen.getByTestId('settings-reach-rekordbox-add'))
     expect(patch).toHaveBeenCalledWith('syncRekordbox', true)
+    expect(patch).toHaveBeenCalledWith('addToRekordbox', true)
   })
 
-  // Keeping Engine DJ's rows on converted files writes into a library the user cannot
-  // rebuild, so it is its own opt-in, separate from merely adding tracks to Engine.
-  it('turns on Engine DJ library updates from its own toggle', () => {
+  it('turning a program off clears both switches', () => {
     const patch = vi.fn()
     render(
       <DestinationTab
-        synced={{ ...synced, syncEngineDj: false }}
+        synced={{ ...synced, syncEngineDj: true, addToEngineDj: true }}
         local={local}
         patch={patch}
         onOutputDirChange={vi.fn()}
@@ -447,14 +426,29 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
 
-    fireEvent.click(screen.getByTestId('settings-sync-engine'))
-    expect(patch).toHaveBeenCalledWith('syncEngineDj', true)
-    expect(patch).not.toHaveBeenCalledWith('addToEngineDj', expect.anything())
+    fireEvent.click(screen.getByTestId('settings-reach-engine-off'))
+    expect(patch).toHaveBeenCalledWith('syncEngineDj', false)
+    expect(patch).toHaveBeenCalledWith('addToEngineDj', false)
+  })
+
+  it('a user from the Engine destination sees Engine on add', () => {
+    renderTab({ addToEngineDj: true, syncEngineDj: true })
+    expect(screen.getByTestId('settings-reach-engine-add')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('explains what adding costs only while a program is set to add', () => {
+    renderTab({ syncTraktor: true, addToTraktor: false })
+    expect(screen.queryByTestId('settings-reach-traktor-add-hint')).toBeNull()
+    cleanup()
+    renderTab({ syncTraktor: true, addToTraktor: true })
+    expect(screen.getByTestId('settings-reach-traktor-add-hint')).toBeInTheDocument()
+    expect(screen.queryByTestId('settings-reach-rekordbox-add-hint')).toBeNull()
+    expect(screen.queryByTestId('settings-reach-engine-add-hint')).toBeNull()
   })
 
   // Someone who does not run rekordbox still sees the setting, dimmed, with the hint
   // saying no collection was found — rather than wondering whether Surco supports it.
-  it('shows the rekordbox toggle disabled when no collection was found', () => {
+  it('rekordbox stays disabled when no collection was found', () => {
     render(
       <DestinationTab
         synced={{ ...synced, syncRekordbox: false }}
@@ -470,7 +464,7 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
 
-    expect(screen.getByTestId('settings-sync-rekordbox')).toBeDisabled()
+    expect(screen.getByTestId('settings-reach-rekordbox-add')).toBeDisabled()
   })
 
   // A collection outside rekordbox's usual place was undetected AND unpickable: the field

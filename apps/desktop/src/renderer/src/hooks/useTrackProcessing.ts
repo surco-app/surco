@@ -372,7 +372,6 @@ export function useTrackProcessing({
           overwriteOriginal: overwriteOverride ?? destination?.overwriteOriginal,
           addToAppleMusic: destination?.addToAppleMusic,
           keepOutputCopy: destination?.keepOutputCopy,
-          addToEngineDj: destination?.addToEngineDj,
           convertBesideOriginal: destination?.convertBesideOriginal,
           previousOutputPath: track.outputPath,
           previousOutputIdentity: track.outputIdentity,

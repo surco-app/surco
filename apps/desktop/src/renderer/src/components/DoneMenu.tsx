@@ -59,7 +59,7 @@ export function DoneMenu({
     stale: false,
     done: false,
     withAppleMusic: false,
-    withEngineDj: false,
+    djTargets: [],
     format: formatLabel,
     exportedFormat: multi ? null : (exportedFormat?.toUpperCase() ?? null),
   })

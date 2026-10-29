@@ -110,7 +110,7 @@ describe('addToEngineLibrary', () => {
   it('bootstraps a valid Engine library at the configured folder when none exists', async () => {
     const lib = join(root, 'fresh', 'Engine Library')
     const file = await makeFile(root, 'one.aiff')
-    await addToEngineLibrary(lib, file, meta(), 'Surco')
+    await addToEngineLibrary(lib, file, meta())
     const db = await open(join(lib, 'Database2', 'm.db'))
     expect(rows(db, 'PRAGMA integrity_check').map((r) => r.integrity_check)).toEqual(['ok'])
     expect(rows(db, 'SELECT uuid FROM Information')).toHaveLength(1)
@@ -168,16 +168,13 @@ describe('addToEngineLibrary', () => {
     await writeFile(backupOf(join(lib, 'Database2', 'm.db'), 'backup'), 'stale')
     await chmod(backupOf(join(lib, 'Database2', 'm.db'), 'backup'), 0o444)
     const file = await makeFile(root, 'two.aiff')
-    await addToEngineLibrary(lib, file, meta({ title: 'Two' }), 'Surco')
+    await addToEngineLibrary(lib, file, meta({ title: 'Two' }))
     const db = await open(dbPath)
     expect(rows(db, 'SELECT title FROM Track ORDER BY id').map((r) => r.title)).toEqual([
       'Old',
       'Two',
     ])
-    expect(rows(db, 'SELECT title FROM Playlist ORDER BY id').map((r) => r.title)).toEqual([
-      'Sets',
-      'Surco',
-    ])
+    expect(rows(db, 'SELECT title FROM Playlist ORDER BY id').map((r) => r.title)).toEqual(['Sets'])
     db.close()
     expect(await readFile(backupOf(join(lib, 'Database2', 'm.db'), 'backup'))).toEqual(before)
   })
@@ -200,7 +197,6 @@ describe('addToEngineLibrary', () => {
       lib,
       await makeFile(root, 'run-1.aiff'),
       meta({ title: 'One' }),
-      'Surco',
       undefined,
       undefined,
       sessionBackup,
@@ -209,7 +205,6 @@ describe('addToEngineLibrary', () => {
       lib,
       await makeFile(root, 'run-2.aiff'),
       meta({ title: 'Two' }),
-      'Surco',
       undefined,
       undefined,
       sessionBackup,
@@ -236,7 +231,7 @@ describe('addToEngineLibrary', () => {
     await writeFile(dbPath, '')
 
     const file = await makeFile(root, 'empty-case.aiff')
-    await addToEngineLibrary(lib, file, meta({ title: 'Rebuilt' }), 'Surco')
+    await addToEngineLibrary(lib, file, meta({ title: 'Rebuilt' }))
 
     expect((await stat(backup)).size).toBe(goodBackupSize)
   })
@@ -252,7 +247,7 @@ describe('addToEngineLibrary', () => {
     await writeFile(dbPath, '')
 
     const file = await makeFile(root, 'rebuild.aiff')
-    await addToEngineLibrary(lib, file, meta({ title: 'Rebuilt' }), 'Surco')
+    await addToEngineLibrary(lib, file, meta({ title: 'Rebuilt' }))
 
     const db = await open(dbPath)
     expect(rows(db, 'SELECT title FROM Track').map((r) => r.title)).toEqual(['Rebuilt'])
@@ -269,12 +264,12 @@ describe('addToEngineLibrary', () => {
     const lib = join(root, 'locked-swap', 'Engine Library')
     const dbPath = join(lib, 'Database2', 'm.db')
     const file = await makeFile(root, 'locked.aiff')
-    await addToEngineLibrary(lib, file, meta({ title: 'First' }), 'Surco')
+    await addToEngineLibrary(lib, file, meta({ title: 'First' }))
     // The swap is what fails, not the staging: everything up to it has to run for real,
     // so the tmp genuinely exists on disk by the time cleanup is expected to remove it.
     swap.fails = true
 
-    await addToEngineLibrary(lib, file, meta({ title: 'Second' }), 'Surco').catch(() => {})
+    await addToEngineLibrary(lib, file, meta({ title: 'Second' })).catch(() => {})
     swap.fails = false
 
     expect(existsSync(`${dbPath}.surco-tmp`)).toBe(false)
@@ -285,13 +280,13 @@ describe('addToEngineLibrary', () => {
   it('updates the existing row for a path instead of duplicating it', async () => {
     const lib = join(root, 'upsert', 'Engine Library')
     const file = await makeFile(root, 'three.aiff')
-    await addToEngineLibrary(lib, file, meta({ title: 'First pass' }), 'Surco')
+    await addToEngineLibrary(lib, file, meta({ title: 'First pass' }))
     const dbPath = join(lib, 'Database2', 'm.db')
     const before = await open(dbPath)
     before.run('UPDATE Track SET isAnalyzed = 1')
     await writeFile(dbPath, before.export())
     before.close()
-    await addToEngineLibrary(lib, file, meta({ title: 'Second pass', bpm: '130' }), 'Surco')
+    await addToEngineLibrary(lib, file, meta({ title: 'Second pass', bpm: '130' }))
     const db = await open(dbPath)
     const tracks = rows(db, 'SELECT * FROM Track')
     expect(tracks).toHaveLength(1)
@@ -306,7 +301,7 @@ describe('addToEngineLibrary', () => {
   it('moves the row of the file a conversion replaces instead of adding a second one', async () => {
     const lib = join(root, 'replace', 'Engine Library')
     const old = await makeFile(root, 'replaced.mp3')
-    await addToEngineLibrary(lib, old, meta({ title: 'Old' }), 'Surco')
+    await addToEngineLibrary(lib, old, meta({ title: 'Old' }))
     const dbPath = join(lib, 'Database2', 'm.db')
     const before = await open(dbPath)
     before.run("UPDATE Track SET isAnalyzed = 1, quickCues = X'01020304', bitrate = 320")
@@ -314,7 +309,7 @@ describe('addToEngineLibrary', () => {
     before.close()
 
     const file = await makeFile(root, 'replaced.aiff')
-    await addToEngineLibrary(lib, file, meta({ title: 'New' }), 'Surco', undefined, old)
+    await addToEngineLibrary(lib, file, meta({ title: 'New' }), undefined, old)
 
     const db = await open(dbPath)
     const tracks = rows(
@@ -342,13 +337,13 @@ describe('addToEngineLibrary', () => {
   it('resolves only the rows that share the replaced file name', async () => {
     const lib = join(root, 'replace-narrow', 'Engine Library')
     const old = await makeFile(root, 'narrow.mp3')
-    await addToEngineLibrary(lib, old, meta({ title: 'Old' }), 'Surco')
+    await addToEngineLibrary(lib, old, meta({ title: 'Old' }))
     for (let i = 0; i < 5; i++)
-      await addToEngineLibrary(lib, await makeFile(root, `other-${i}.mp3`), meta(), 'Surco')
+      await addToEngineLibrary(lib, await makeFile(root, `other-${i}.mp3`), meta())
     resolvedPaths.length = 0
 
     const file = await makeFile(root, 'narrow.aiff')
-    await addToEngineLibrary(lib, file, meta({ title: 'New' }), 'Surco', undefined, old)
+    await addToEngineLibrary(lib, file, meta({ title: 'New' }), undefined, old)
 
     const db = await open(join(lib, 'Database2', 'm.db'))
     expect(rows(db, "SELECT id FROM Track WHERE path LIKE '%narrow%'")).toEqual([{ id: 1 }])
@@ -363,14 +358,14 @@ describe('addToEngineLibrary', () => {
   it('keeps the length and BPM Engine analyzed when the re-convert knows nothing better', async () => {
     const lib = join(root, 'analysis', 'Engine Library')
     const file = await makeFile(root, 'four.aiff')
-    await addToEngineLibrary(lib, file, meta({ title: 'First' }), 'Surco')
+    await addToEngineLibrary(lib, file, meta({ title: 'First' }))
     const dbPath = join(lib, 'Database2', 'm.db')
     const before = await open(dbPath)
     before.run('UPDATE Track SET isAnalyzed = 1, length = 245, bpm = 127, bpmAnalyzed = 127.25')
     await writeFile(dbPath, before.export())
     before.close()
 
-    await addToEngineLibrary(lib, file, meta({ title: 'Second', bpm: '' }), 'Surco')
+    await addToEngineLibrary(lib, file, meta({ title: 'Second', bpm: '' }))
 
     const db = await open(dbPath)
     const tracks = rows(db, 'SELECT * FROM Track')
@@ -392,14 +387,9 @@ describe('addToEngineLibrary', () => {
   it('matches an existing row whose path differs only in Unicode normalization', async () => {
     const lib = join(root, 'nfd', 'Engine Library')
     const file = await makeFile(root, 'cancio\u0301n.aiff')
-    await addToEngineLibrary(lib, file, meta({ title: 'First' }), 'Surco')
+    await addToEngineLibrary(lib, file, meta({ title: 'First' }))
 
-    await addToEngineLibrary(
-      lib,
-      join(root, 'canci\u00f3n.aiff'),
-      meta({ title: 'Second' }),
-      'Surco',
-    )
+    await addToEngineLibrary(lib, join(root, 'canci\u00f3n.aiff'), meta({ title: 'Second' }))
 
     const db = await open(join(lib, 'Database2', 'm.db'))
     const tracks = rows(db, 'SELECT * FROM Track')
@@ -415,12 +405,10 @@ describe('addToEngineLibrary', () => {
   it('aborts the write when Engine DJ opens mid-batch, leaving the library untouched', async () => {
     const lib = join(root, 'race', 'Engine Library')
     const file = await makeFile(root, 'five.aiff')
-    await addToEngineLibrary(lib, file, meta({ title: 'Seed' }), 'Surco')
+    await addToEngineLibrary(lib, file, meta({ title: 'Seed' }))
     vi.mocked(isEngineDjRunning).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
 
-    await expect(
-      addToEngineLibrary(lib, file, meta({ title: 'Changed' }), 'Surco'),
-    ).rejects.toThrow()
+    await expect(addToEngineLibrary(lib, file, meta({ title: 'Changed' }))).rejects.toThrow()
 
     const db = await open(join(lib, 'Database2', 'm.db'))
     expect(rows(db, 'SELECT title FROM Track')[0].title).toBe('Seed')
@@ -432,12 +420,12 @@ describe('addToEngineLibrary', () => {
   it("maps the tag's stars onto Engine's 0-100 rating scale, updating on re-convert", async () => {
     const lib = join(root, 'rating', 'Engine Library')
     const file = await makeFile(root, 'rated.aiff')
-    await addToEngineLibrary(lib, file, meta({ rating: '5' }), 'Surco')
+    await addToEngineLibrary(lib, file, meta({ rating: '5' }))
     const dbPath = join(lib, 'Database2', 'm.db')
     const first = await open(dbPath)
     expect(rows(first, 'SELECT rating FROM Track')[0].rating).toBe(100)
     first.close()
-    await addToEngineLibrary(lib, file, meta({ rating: '3' }), 'Surco')
+    await addToEngineLibrary(lib, file, meta({ rating: '3' }))
     const db = await open(dbPath)
     expect(rows(db, 'SELECT rating FROM Track')[0].rating).toBe(60)
     db.close()
@@ -448,11 +436,9 @@ describe('addToEngineLibrary', () => {
   it('refuses to write while Engine DJ holds the library open', async () => {
     const lib = join(root, 'locked', 'Engine Library')
     const file = await makeFile(root, 'four.aiff')
-    await addToEngineLibrary(lib, file, meta(), 'Surco')
+    await addToEngineLibrary(lib, file, meta())
     await writeFile(join(lib, 'Database2', 'm.db-wal'), 'pending frames')
-    await expect(addToEngineLibrary(lib, file, meta(), 'Surco')).rejects.toThrow(
-      'SURCO_ERR:engineDjOpen',
-    )
+    await expect(addToEngineLibrary(lib, file, meta())).rejects.toThrow('SURCO_ERR:engineDjOpen')
   })
 
   // The renderer is the only side with an i18next catalogue, and the IPC hop keeps
@@ -462,10 +448,10 @@ describe('addToEngineLibrary', () => {
   it('names the failure with a key the renderer can translate', async () => {
     const lib = join(root, 'keyed', 'Engine Library')
     const file = await makeFile(root, 'keyed.aiff')
-    await addToEngineLibrary(lib, file, meta(), 'Surco')
+    await addToEngineLibrary(lib, file, meta())
     await writeFile(join(lib, 'Database2', 'm.db-wal'), 'pending frames')
 
-    const error = await addToEngineLibrary(lib, file, meta(), 'Surco').catch((e: Error) => e)
+    const error = await addToEngineLibrary(lib, file, meta()).catch((e: Error) => e)
 
     expect(errorKeyOf((error as Error).message)).toBe('engineDjOpen')
   })
@@ -475,11 +461,9 @@ describe('addToEngineLibrary', () => {
   it('refuses to write over a hot rollback journal', async () => {
     const lib = join(root, 'journal', 'Engine Library')
     const file = await makeFile(root, 'five.aiff')
-    await addToEngineLibrary(lib, file, meta(), 'Surco')
+    await addToEngineLibrary(lib, file, meta())
     await writeFile(join(lib, 'Database2', 'm.db-journal'), 'hot journal pages')
-    await expect(addToEngineLibrary(lib, file, meta(), 'Surco')).rejects.toThrow(
-      'SURCO_ERR:engineDjOpen',
-    )
+    await expect(addToEngineLibrary(lib, file, meta())).rejects.toThrow('SURCO_ERR:engineDjOpen')
   })
 
   // Journal files are only non-empty mid-transaction, so the reliable "Engine DJ is
@@ -489,9 +473,7 @@ describe('addToEngineLibrary', () => {
     const lib = join(root, 'process', 'Engine Library')
     const file = await makeFile(root, 'six.aiff')
     vi.mocked(isEngineDjRunning).mockResolvedValueOnce(true)
-    await expect(addToEngineLibrary(lib, file, meta(), 'Surco')).rejects.toThrow(
-      'SURCO_ERR:engineDjOpen',
-    )
+    await expect(addToEngineLibrary(lib, file, meta())).rejects.toThrow('SURCO_ERR:engineDjOpen')
   })
 
   // Bulk conversions finish in parallel; every add must land even when they overlap,
@@ -499,20 +481,13 @@ describe('addToEngineLibrary', () => {
   it('lands every track from overlapping adds', async () => {
     const lib = join(root, 'parallel', 'Engine Library')
     const files = await Promise.all(['p1.aiff', 'p2.aiff', 'p3.aiff'].map((n) => makeFile(root, n)))
-    await Promise.all(
-      files.map((f, i) => addToEngineLibrary(lib, f, meta({ title: `P${i + 1}` }), 'Surco')),
-    )
+    await Promise.all(files.map((f, i) => addToEngineLibrary(lib, f, meta({ title: `P${i + 1}` }))))
     const db = await open(join(lib, 'Database2', 'm.db'))
     expect(rows(db, 'SELECT title FROM Track ORDER BY title').map((r) => r.title)).toEqual([
       'P1',
       'P2',
       'P3',
     ])
-    // All three must also be members of the playlist, chained into one valid list:
-    // exactly one tail, and every entity reachable.
-    const entities = rows(db, 'SELECT * FROM PlaylistEntity')
-    expect(entities).toHaveLength(3)
-    expect(entities.filter((e) => e.nextEntityId === 0)).toHaveLength(1)
     db.close()
   })
 })
@@ -523,97 +498,14 @@ describe('addToEngineLibrary — playlist membership', () => {
     root = await mkdtemp(join(tmpdir(), 'surco-engine-pl-'))
   })
 
-  // The playlist is how the DJ finds what Surco just converted: tracks must land in a
-  // root playlist with the configured name, stamped with this library's own uuid.
-  it('creates the configured playlist and links the track into it', async () => {
+  it('registers a track in the collection without putting it in any playlist', async () => {
     const lib = join(root, 'fresh', 'Engine Library')
     const file = await makeFile(root, 'one.aiff')
-    await addToEngineLibrary(lib, file, meta(), 'Nuevos')
+    await addToEngineLibrary(lib, file, meta())
     const db = await open(join(lib, 'Database2', 'm.db'))
-    const lists = rows(db, 'SELECT * FROM Playlist')
-    expect(lists).toHaveLength(1)
-    expect(lists[0]).toMatchObject({ title: 'Nuevos', parentListId: 0, isPersisted: 1 })
-    const uuid = rows(db, 'SELECT uuid FROM Information')[0].uuid
-    const entities = rows(db, 'SELECT * FROM PlaylistEntity')
-    expect(entities).toHaveLength(1)
-    expect(entities[0]).toMatchObject({
-      listId: lists[0].id,
-      databaseUuid: uuid,
-      nextEntityId: 0,
-    })
-    db.close()
-  })
-
-  // Adding into a library that already has root playlists must chain the new one at
-  // the tail (the sibling linked list Engine renders the tree from), not clash with
-  // the UNIQUE(parentListId, nextListId) constraint.
-  it('appends the playlist after existing root playlists', async () => {
-    const lib = join(root, 'chain', 'Engine Library')
-    const dbPath = join(lib, 'Database2', 'm.db')
-    const { mkdir } = await import('node:fs/promises')
-    await mkdir(join(lib, 'Database2'), { recursive: true })
-    await writeFile(
-      dbPath,
-      await buildEngineDatabase(
-        [
-          {
-            relativePath: 'Music/old.mp3',
-            filename: 'old.mp3',
-            fileType: 'mp3',
-            fileBytes: 10,
-            title: 'Old',
-            artist: 'X',
-            album: '',
-            genre: '',
-            comment: '',
-            bpm: null,
-            bpmAnalyzed: null,
-            year: null,
-            durationSec: null,
-            rating: 0,
-          },
-        ],
-        'Sets',
-      ),
-    )
-    const file = await makeFile(root, 'two.aiff')
-    await addToEngineLibrary(lib, file, meta({ title: 'Two' }), 'Surco')
-    const db = await open(dbPath)
-    const lists = rows(db, 'SELECT * FROM Playlist ORDER BY id')
-    expect(lists.map((l) => l.title)).toEqual(['Sets', 'Surco'])
-    expect(lists[0].nextListId).toBe(lists[1].id)
-    expect(lists[1].nextListId).toBe(0)
-    expect(rows(db, 'PRAGMA integrity_check').map((r) => r.integrity_check)).toEqual(['ok'])
-    db.close()
-  })
-
-  // Re-converting a track already in the playlist must not add a second entry — the
-  // playlist mirrors the crate, it is not a conversion log.
-  it('does not duplicate the membership on re-convert', async () => {
-    const lib = join(root, 'dedup', 'Engine Library')
-    const file = await makeFile(root, 'three.aiff')
-    await addToEngineLibrary(lib, file, meta({ title: 'First' }), 'Surco')
-    await addToEngineLibrary(lib, file, meta({ title: 'Again' }), 'Surco')
-    const db = await open(join(lib, 'Database2', 'm.db'))
-    expect(rows(db, 'SELECT * FROM PlaylistEntity')).toHaveLength(1)
-    expect(rows(db, 'SELECT * FROM Playlist')).toHaveLength(1)
-    db.close()
-  })
-
-  // Two conversions with different configured names (the setting changed in between)
-  // land in their own playlists; membership follows the name at conversion time.
-  it('reuses the playlist by name and creates another for a different name', async () => {
-    const lib = join(root, 'names', 'Engine Library')
-    const one = await makeFile(root, 'n1.aiff')
-    const two = await makeFile(root, 'n2.aiff')
-    await addToEngineLibrary(lib, one, meta({ title: 'N1' }), 'Surco')
-    await addToEngineLibrary(lib, two, meta({ title: 'N2' }), 'Pool')
-    const db = await open(join(lib, 'Database2', 'm.db'))
-    expect(rows(db, 'SELECT title FROM Playlist ORDER BY id').map((r) => r.title)).toEqual([
-      'Surco',
-      'Pool',
-    ])
-    expect(rows(db, 'SELECT COUNT(*) AS n FROM PlaylistEntity')[0].n).toBe(2)
+    expect(rows(db, 'SELECT * FROM Track')).toHaveLength(1)
+    expect(rows(db, 'SELECT * FROM Playlist')).toHaveLength(0)
+    expect(rows(db, 'SELECT * FROM PlaylistEntity')).toHaveLength(0)
     db.close()
   })
 })
@@ -636,7 +528,7 @@ describe('addToEngineLibrary — album art', () => {
     const lib = join(root, 'art', 'Engine Library')
     const file = await makeFile(root, 'a1.aiff')
     const cover = await makeCover('a1.jpg', 'jpeg-bytes-one')
-    await addToEngineLibrary(lib, file, meta(), 'Surco', cover)
+    await addToEngineLibrary(lib, file, meta(), cover)
     const db = await open(join(lib, 'Database2', 'm.db'))
     const art = rows(db, 'SELECT id, hash, length(albumArt) AS bytes FROM AlbumArt WHERE id > 1')
     expect(art).toHaveLength(1)
@@ -651,20 +543,8 @@ describe('addToEngineLibrary — album art', () => {
   it('reuses the stored blob for a second track with the same cover', async () => {
     const lib = join(root, 'dedup-art', 'Engine Library')
     const cover = await makeCover('shared.jpg', 'jpeg-shared')
-    await addToEngineLibrary(
-      lib,
-      await makeFile(root, 'a2.aiff'),
-      meta({ title: 'A2' }),
-      'Surco',
-      cover,
-    )
-    await addToEngineLibrary(
-      lib,
-      await makeFile(root, 'a3.aiff'),
-      meta({ title: 'A3' }),
-      'Surco',
-      cover,
-    )
+    await addToEngineLibrary(lib, await makeFile(root, 'a2.aiff'), meta({ title: 'A2' }), cover)
+    await addToEngineLibrary(lib, await makeFile(root, 'a3.aiff'), meta({ title: 'A3' }), cover)
     const db = await open(join(lib, 'Database2', 'm.db'))
     expect(rows(db, 'SELECT id FROM AlbumArt WHERE id > 1')).toHaveLength(1)
     const ids = rows(db, 'SELECT DISTINCT albumArtId FROM Track')
@@ -677,8 +557,8 @@ describe('addToEngineLibrary — album art', () => {
   it('repoints an existing row at fresh artwork on re-convert', async () => {
     const lib = join(root, 'swap-art', 'Engine Library')
     const file = await makeFile(root, 'a4.aiff')
-    await addToEngineLibrary(lib, file, meta(), 'Surco', await makeCover('old.jpg', 'old-art'))
-    await addToEngineLibrary(lib, file, meta(), 'Surco', await makeCover('new.jpg', 'new-art'))
+    await addToEngineLibrary(lib, file, meta(), await makeCover('old.jpg', 'old-art'))
+    await addToEngineLibrary(lib, file, meta(), await makeCover('new.jpg', 'new-art'))
     const db = await open(join(lib, 'Database2', 'm.db'))
     const tracks = rows(db, 'SELECT albumArtId FROM Track')
     expect(tracks).toHaveLength(1)
@@ -690,7 +570,7 @@ describe('addToEngineLibrary — album art', () => {
   // No cover stays on the no-art sentinel — never a dangling albumArtId.
   it('leaves the track on the sentinel art row when no cover is given', async () => {
     const lib = join(root, 'no-art', 'Engine Library')
-    await addToEngineLibrary(lib, await makeFile(root, 'a5.aiff'), meta(), 'Surco')
+    await addToEngineLibrary(lib, await makeFile(root, 'a5.aiff'), meta())
     const db = await open(join(lib, 'Database2', 'm.db'))
     expect(rows(db, 'SELECT albumArtId FROM Track')[0].albumArtId).toBe(1)
     db.close()
@@ -707,12 +587,7 @@ describe('dumpEngineLibrary', () => {
   // Music dump feeds the renderer's index with.
   it('reads the library rows as membership candidates', async () => {
     const lib = join(root, 'lib', 'Engine Library')
-    await addToEngineLibrary(
-      lib,
-      await makeFile(root, 'd1.aiff'),
-      meta({ title: 'Dump One' }),
-      'Surco',
-    )
+    await addToEngineLibrary(lib, await makeFile(root, 'd1.aiff'), meta({ title: 'Dump One' }))
     const { dumpEngineLibrary } = await import('./engineLibrary')
     expect(await dumpEngineLibrary(lib)).toEqual([{ title: 'Dump One', artist: 'A' }])
   })
@@ -738,12 +613,7 @@ describe('dumpEngineLibrary — memoized by mtime', () => {
   // last successful dump; re-reading and re-parsing it every time is pure waste.
   it('does not re-read the database on a second call with an unchanged mtime', async () => {
     const lib = join(root, 'memo', 'Engine Library')
-    await addToEngineLibrary(
-      lib,
-      await makeFile(root, 'm1.aiff'),
-      meta({ title: 'Memo One' }),
-      'Surco',
-    )
+    await addToEngineLibrary(lib, await makeFile(root, 'm1.aiff'), meta({ title: 'Memo One' }))
     readFileCalls.count = 0
     const first = await dumpEngineLibrary(lib)
     const callsAfterFirst = readFileCalls.count
@@ -760,14 +630,14 @@ describe('dumpEngineLibrary — memoized by mtime', () => {
   it('re-reads the database when its mtime changes', async () => {
     const lib = join(root, 'bump', 'Engine Library')
     const file = await makeFile(root, 'm2.aiff')
-    await addToEngineLibrary(lib, file, meta({ title: 'Before' }), 'Surco')
+    await addToEngineLibrary(lib, file, meta({ title: 'Before' }))
     const dbPath = join(lib, 'Database2', 'm.db')
     const first = await dumpEngineLibrary(lib)
     expect(first).toEqual([{ title: 'Before', artist: 'A' }])
 
     const later = new Date(Date.now() + 60_000)
     await utimes(dbPath, later, later)
-    await addToEngineLibrary(lib, file, meta({ title: 'After' }), 'Surco')
+    await addToEngineLibrary(lib, file, meta({ title: 'After' }))
 
     expect(await dumpEngineLibrary(lib)).toEqual([{ title: 'After', artist: 'A' }])
   })
@@ -777,18 +647,8 @@ describe('dumpEngineLibrary — memoized by mtime', () => {
   it('re-reads when a different library directory is requested', async () => {
     const libA = join(root, 'dir-a', 'Engine Library')
     const libB = join(root, 'dir-b', 'Engine Library')
-    await addToEngineLibrary(
-      libA,
-      await makeFile(root, 'm3.aiff'),
-      meta({ title: 'Dir A' }),
-      'Surco',
-    )
-    await addToEngineLibrary(
-      libB,
-      await makeFile(root, 'm4.aiff'),
-      meta({ title: 'Dir B' }),
-      'Surco',
-    )
+    await addToEngineLibrary(libA, await makeFile(root, 'm3.aiff'), meta({ title: 'Dir A' }))
+    await addToEngineLibrary(libB, await makeFile(root, 'm4.aiff'), meta({ title: 'Dir B' }))
 
     expect(await dumpEngineLibrary(libA)).toEqual([{ title: 'Dir A', artist: 'A' }])
     expect(await dumpEngineLibrary(libB)).toEqual([{ title: 'Dir B', artist: 'A' }])
@@ -800,12 +660,7 @@ describe('dumpEngineLibrary — memoized by mtime', () => {
     const lib = join(root, 'missing-then-present', 'Engine Library')
     expect(await dumpEngineLibrary(lib)).toEqual([])
 
-    await addToEngineLibrary(
-      lib,
-      await makeFile(root, 'm5.aiff'),
-      meta({ title: 'Appeared' }),
-      'Surco',
-    )
+    await addToEngineLibrary(lib, await makeFile(root, 'm5.aiff'), meta({ title: 'Appeared' }))
 
     expect(await dumpEngineLibrary(lib)).toEqual([{ title: 'Appeared', artist: 'A' }])
   })
@@ -820,19 +675,14 @@ describe('addToEngineLibrary — gathering a run', () => {
   it('writes tracks that finish a moment apart in one rewrite', async () => {
     const root = await mkdtemp(join(tmpdir(), 'surco-engine-gather-'))
     const lib = join(root, 'Engine Library')
-    await addToEngineLibrary(
-      lib,
-      await makeFile(root, 'first.aiff'),
-      meta({ title: 'First' }),
-      'Surco',
-    )
+    await addToEngineLibrary(lib, await makeFile(root, 'first.aiff'), meta({ title: 'First' }))
     const files = await Promise.all(['g1.aiff', 'g2.aiff', 'g3.aiff'].map((n) => makeFile(root, n)))
     setEngineWriteGatherMs(300)
     readFileCalls.count = 0
 
     const adds: Promise<void>[] = []
     for (const [i, f] of files.entries()) {
-      adds.push(addToEngineLibrary(lib, f, meta({ title: `G${i + 1}` }), 'Surco'))
+      adds.push(addToEngineLibrary(lib, f, meta({ title: `G${i + 1}` })))
       await new Promise((r) => setTimeout(r, 60))
     }
     await Promise.all(adds)

@@ -10,6 +10,14 @@ import type { Settings } from '../shared/types'
 // stop it without telling them.
 
 export function migratedSyncToggles(stored: Partial<Settings>): Partial<Settings> {
+  return { ...migratedTraktorToggle(stored), ...migratedEngineToggle(stored) }
+}
+
+function migratedEngineToggle(stored: Partial<Settings>): Partial<Settings> {
+  return stored.addToEngineDj === true ? { syncEngineDj: true } : {}
+}
+
+function migratedTraktorToggle(stored: Partial<Settings>): Partial<Settings> {
   // Presence, not truthiness — the same rule the Discogs token migration in settings.ts
   // had to learn. Once the toggle exists in the stored settings it is the user's answer,
   // including a deliberate false, and a path left in the field must never overturn it.

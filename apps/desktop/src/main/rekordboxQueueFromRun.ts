@@ -19,9 +19,15 @@ function labelOf(r: RekordboxRepoint): string {
 export async function trackOpsFromRun(
   collectionPath: string,
   repoints: RekordboxRepoint[],
-  opts: { repointing: boolean; probe: ContentProbe; find: FindOptions; newId?: () => string },
+  opts: {
+    repointing: boolean
+    probe: ContentProbe
+    find: FindOptions
+    newId?: () => string
+    addNew?: boolean
+  },
 ): Promise<TrackOp[]> {
-  const wanted = repoints.filter((r) => r.playlists)
+  const wanted = repoints.filter((r) => r.playlists || (opts.addNew && r.meta))
   if (wanted.length === 0 || !collectionPath) return []
   const db = openRekordboxDb(collectionPath, { readonly: true })
   if (!db) return []
@@ -37,6 +43,7 @@ export async function trackOpsFromRun(
     for (const r of wanted) {
       const paths = opts.repointing && r.from !== r.to ? [r.to, r.from] : [r.to]
       const contentId = resolveTracks(db, [{ paths }], { ...opts.find, quiet: true }).contentIds[0]
+      if (!r.playlists && contentId) continue
       const known = !contentId ? [] : (r.playlistsBase ?? trackPlaylists(db, contentId))
       const stamps: Record<string, number> = {}
       const touched = new Set([
@@ -66,6 +73,7 @@ export async function trackOpsFromRun(
       wanted: r.playlists ?? [],
       known,
       stamps,
+      ...(r.playlists ? {} : { add: true as const }),
     })
   }
   return ops
@@ -75,10 +83,12 @@ export function libraryTrackOps(
   repoints: RekordboxRepoint[],
   library: 'traktor' | 'engine',
   newId: () => string = randomUUID,
+  addNew = false,
 ): TrackOp[] {
   return repoints.flatMap((r) => {
     const choice = library === 'traktor' ? r.traktorPlaylists : r.enginePlaylists
-    if (!choice) return []
+    const adding = !choice && addNew && library === 'traktor' && !!r.meta
+    if (!choice && !adding) return []
     return [
       {
         id: newId(),
@@ -88,9 +98,10 @@ export function libraryTrackOps(
         label: labelOf(r),
         facts: null,
         ...(r.meta ? { meta: r.meta } : {}),
-        wanted: choice.wanted,
-        known: choice.base,
+        wanted: choice?.wanted ?? [],
+        known: choice?.base ?? [],
         stamps: {},
+        ...(adding ? { add: true as const } : {}),
       },
     ]
   })

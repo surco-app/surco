@@ -14,10 +14,10 @@ const baseProps = {
   outputFormat: 'aiff' as const,
   exportedFormat: null,
   withAppleMusic: false,
-  withEngineDj: false,
+  djTargets: [],
   inPlace: false,
   destination: 'folder' as const,
-  destinations: ['folder', 'appleMusic', 'engineDj', 'beside'] as const,
+  destinations: ['folder', 'appleMusic', 'beside'] as const,
   onProcess: () => {},
   onSelectFormat: () => {},
   onSelectDestination: () => {},
@@ -155,19 +155,16 @@ describe('ExportButton', () => {
       />,
     )
     fireEvent.click(screen.getByTestId('process-format-toggle'))
-    fireEvent.click(screen.getByTestId('process-destination-engineDj'))
-    expect(onSelectDestination).toHaveBeenCalledWith('engineDj')
+    fireEvent.click(screen.getByTestId('process-destination-beside'))
+    expect(onSelectDestination).toHaveBeenCalledWith('beside')
     expect(onProcess).not.toHaveBeenCalled()
-    expect(screen.queryByTestId('process-destination-engineDj')).toBeNull()
+    expect(screen.queryByTestId('process-destination-beside')).toBeNull()
   })
 
   it('marks the current destination in the menu', () => {
-    render(<ExportButton {...baseProps} incomplete={false} destination="engineDj" />)
+    render(<ExportButton {...baseProps} incomplete={false} destination="beside" />)
     fireEvent.click(screen.getByTestId('process-format-toggle'))
-    expect(screen.getByTestId('process-destination-engineDj')).toHaveAttribute(
-      'aria-checked',
-      'true',
-    )
+    expect(screen.getByTestId('process-destination-beside')).toHaveAttribute('aria-checked', 'true')
     expect(screen.getByTestId('process-destination-folder')).toHaveAttribute(
       'aria-checked',
       'false',

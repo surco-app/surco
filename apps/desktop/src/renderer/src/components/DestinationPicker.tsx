@@ -16,7 +16,7 @@ interface Props {
   testidPrefix: string
   radioName: string
   // Extra controls rendered under an option's row while it is the selected one — the
-  // output-folder field under 'folder', the library/playlist fields under 'engineDj'.
+  // output-folder field under 'folder'.
   // Rendered outside the <label> so clicking an input inside never toggles the radio.
   // Kept mounted and collapsed (grid-rows 0fr + inert) rather than unmounted, so the
   // reveal/hide can transition instead of popping; inert keeps the hidden inputs out
@@ -69,11 +69,6 @@ export function DestinationPicker({
                       {keepOutputCopy && value === 'appleMusic'
                         ? tr('settings.destinationAppleMusicKeepCopyHint')
                         : tr('settings.destinationAppleMusicHint')}
-                    </span>
-                  )}
-                  {d === 'engineDj' && (
-                    <span className="mt-0.5 block text-xs leading-relaxed text-fg-dim">
-                      {tr('settings.destinationEngineDjHint')}
                     </span>
                   )}
                   {d === 'beside' && (

@@ -124,6 +124,35 @@ describe('track operations', () => {
     expect(xml).toMatch(/Id="7D0" [^>]*Timestamp="1767225600000"/)
   })
 
+  it('registers an add op with no playlists so a new track reaches the collection on its own', async () => {
+    const path = await collection()
+    const file = await newFile('Bam Bam.wav')
+    const result = await applyRekordboxBatch(
+      path,
+      [op({ path: file, facts: facts(file), add: true })],
+      deps(),
+    )
+    const entry = result.ok ? result.outcomes[0].contentId : undefined
+    expect(result.ok && result.outcomes[0]).toMatchObject({ applied: true, notices: [] })
+    expect(read(path, 'SELECT ID FROM djmdContent WHERE FolderPath = ?', file)).toEqual([
+      { ID: entry },
+    ])
+    expect(
+      read(path, 'SELECT ID FROM djmdSongPlaylist WHERE ContentID = ?', entry as string),
+    ).toEqual([])
+  })
+
+  it('leaves the playlists of a track rekordbox gained before an add op was applied untouched and silent', async () => {
+    const path = await collection()
+    const result = await applyRekordboxBatch(
+      path,
+      [op({ path: '/Volumes/Public/Music/Vacation.wav', add: true })],
+      deps(),
+    )
+    expect(result.ok && result.outcomes[0]).toMatchObject({ applied: true, notices: [] })
+    expect(contentsOf(path, '2000')).toContain('104')
+  })
+
   it('reuses the entry rekordbox already has for the file so the cues and history on it survive', async () => {
     const path = await collection()
     const before = read(path, 'SELECT ID FROM djmdContent').length

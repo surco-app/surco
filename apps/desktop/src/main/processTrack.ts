@@ -279,7 +279,7 @@ export async function runProcessTrack(
     // both ride the job, so a Settings change can't redirect a conversion in flight.
     const addToAppleMusic = job.addToAppleMusic ?? settings.addToAppleMusic
     const keepOutputCopy = job.keepOutputCopy ?? settings.keepOutputCopy
-    const addToEngineDj = job.addToEngineDj ?? settings.addToEngineDj
+    const addToEngineDj = settings.addToEngineDj
     const besideOriginal =
       (job.convertBesideOriginal ?? settings.convertBesideOriginal ?? false) &&
       !(job.overwriteOriginal ?? settings.overwriteOriginal)
@@ -551,7 +551,7 @@ export async function runProcessTrack(
       }
     }
 
-    // The Engine DJ destination points a library row at the file just written; a failed
+    // Adding to Engine DJ points a library row at the file just written; a failed
     // registration fails the job — never a silent "converted but not in the library".
     // Returned rather than thrown: the file has landed and the original may be retired,
     // and an IPC error carries only its message, so a throw left the row on a path that

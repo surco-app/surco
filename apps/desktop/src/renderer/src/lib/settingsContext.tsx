@@ -65,6 +65,8 @@ interface ResolvedSettings {
   outputSampleRate: OutputSampleRate
   addToAppleMusic: boolean
   addToEngineDj: boolean
+  addToRekordbox: boolean
+  addToTraktor: boolean
   overwriteOriginal: boolean
   backupPolicy: NonNullable<Settings['backupPolicy']>
   convertBesideOriginal: boolean
@@ -120,6 +122,8 @@ const DEFAULTS: ResolvedSettings = {
   outputSampleRate: 'source',
   addToAppleMusic: false,
   addToEngineDj: false,
+  addToRekordbox: false,
+  addToTraktor: false,
   overwriteOriginal: false,
   backupPolicy: 'audioChanges',
   convertBesideOriginal: false,
@@ -174,6 +178,8 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     outputSampleRate: settings.outputSampleRate ?? DEFAULTS.outputSampleRate,
     addToAppleMusic: settings.addToAppleMusic ?? DEFAULTS.addToAppleMusic,
     addToEngineDj: settings.addToEngineDj ?? DEFAULTS.addToEngineDj,
+    addToRekordbox: settings.addToRekordbox ?? DEFAULTS.addToRekordbox,
+    addToTraktor: settings.addToTraktor ?? DEFAULTS.addToTraktor,
     overwriteOriginal: settings.overwriteOriginal ?? DEFAULTS.overwriteOriginal,
     backupPolicy: settings.backupPolicy ?? DEFAULTS.backupPolicy,
     convertBesideOriginal: settings.convertBesideOriginal ?? DEFAULTS.convertBesideOriginal,

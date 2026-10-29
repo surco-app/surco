@@ -1013,12 +1013,12 @@ describe('runProcessTrack — in-place rewrite', () => {
   it('finishes the job and says the original stayed when it cannot be retired', async () => {
     const warn = vi.spyOn(log, 'warn').mockImplementation(() => {})
     const deps = makeDeps({
-      settings: settings({ overwriteOriginal: true }),
+      settings: settings({ overwriteOriginal: true, addToEngineDj: true }),
       removeRenamedOriginal: vi.fn(async () => {
         throw Object.assign(new Error('EBUSY: resource busy or locked, unlink'), { code: 'EBUSY' })
       }),
     })
-    const result = await runProcessTrack(job({ addToEngineDj: true }), deps)
+    const result = await runProcessTrack(job(), deps)
 
     expect(result).toMatchObject({ outputPath: '/in/Artist - Title.aiff', inPlace: true })
     expect(result.originalKept).toBe(true)
@@ -1253,19 +1253,20 @@ describe('runProcessTrack — per-job destination', () => {
   // The editor's split-button can send one conversion somewhere else without touching
   // Settings. Like the overwrite pin, each destination facet rides the job and falls
   // back to the live setting only when absent — otherwise a one-shot "this track to
-  // Engine DJ" would still convert to wherever Settings points.
-  it('honors a job that opts out of the configured Engine DJ registration', async () => {
-    const deps = makeDeps({ settings: settings({ addToEngineDj: true }) })
-    await runProcessTrack(job({ addToEngineDj: false }), deps)
-    expect(deps.addToEngineDj).not.toHaveBeenCalled()
-  })
-
-  it('registers in Engine DJ when only the job asks for it', async () => {
+  // Apple Music" would still convert to wherever Settings points.
+  it('keeps registering in Engine DJ when the job picks another destination', async () => {
     const deps = makeDeps({
-      settings: settings({ addToEngineDj: false }),
+      settings: settings({ addToEngineDj: true }),
       prepareProcessedCover: vi.fn(async () => undefined),
     })
-    await runProcessTrack(job({ addToEngineDj: true }), deps)
+    await runProcessTrack(
+      job({
+        addToAppleMusic: false,
+        keepOutputCopy: true,
+        addToEngineDj: false,
+      } as Partial<ProcessJob>),
+      deps,
+    )
     expect(deps.addToEngineDj).toHaveBeenCalledWith(
       '/out/Artist - Title.aiff',
       {},

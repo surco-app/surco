@@ -216,6 +216,8 @@ export interface Settings {
   // database at engineLibraryDir. Engine references the file where it lives (it never
   // imports a copy), so the output-folder copy is always kept in this mode.
   addToEngineDj: boolean
+  addToRekordbox: boolean
+  addToTraktor: boolean
   // The Engine DJ library folder whose Database2/m.db conversions are registered in.
   // Machine-local like outputDir — a filesystem path means nothing on another machine.
   engineLibraryDir: string
@@ -250,9 +252,6 @@ export interface Settings {
   // early or late in Traktor, which is about their ears and their rig rather than the
   // file — so unlike traktorNmlPath it is NOT machine-local, it follows the person.
   traktorCueOffsetMs: number
-  // The root playlist Engine DJ conversions land in (the "what Surco just converted"
-  // inbox), created on first use. 'Surco' by default; a blank save restores it.
-  engineDjPlaylist: string
   filenameFormat: string
   // Pattern for rebuilding the title tag from other fields (e.g. "({trackNumber}) {title}").
   // Empty = the feature is hidden. Applied only on demand, never automatically: the
@@ -730,7 +729,6 @@ export interface ProcessJob {
   // overwriteOriginal pin above.
   addToAppleMusic?: boolean
   keepOutputCopy?: boolean
-  addToEngineDj?: boolean
   convertBesideOriginal?: boolean
   // Where this track's last conversion landed, so re-exporting it overwrites its
   // own file silently while a collision with an unrelated file still prompts.

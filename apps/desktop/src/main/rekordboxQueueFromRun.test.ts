@@ -124,6 +124,69 @@ describe('trackOpsFromRun', () => {
     ).toEqual([])
   })
 
+  it('asks rekordbox to register a converted track that is in no playlist when adding new tracks', async () => {
+    const { path, dir } = await collection()
+    const file = join(dir, 'Bam Bam.wav')
+    await writeFile(file, Buffer.alloc(64))
+    const ops = await trackOpsFromRun(path, [{ from: file, to: file, meta: META }], {
+      repointing: false,
+      probe,
+      find: TWIN_PATHS,
+      newId,
+      addNew: true,
+    })
+    expect(ops).toHaveLength(1)
+    expect(ops[0]).toMatchObject({ kind: 'track', path: file, add: true, wanted: [], known: [] })
+    expect(ops[0].contentId).toBeUndefined()
+    expect(ops[0].facts).toMatchObject({ path: file, fileType: 11, fileSize: 64 })
+  })
+
+  it('leaves a track rekordbox already has alone when only adding new tracks, so none of its playlists are lost', async () => {
+    const { path } = await collection()
+    expect(
+      await trackOpsFromRun(
+        path,
+        [
+          {
+            from: '/Volumes/Public/Music/Play This Song.wav',
+            to: '/Volumes/Public/Music/Play This Song (24).wav',
+            meta: META,
+          },
+        ],
+        { repointing: true, probe, find: TWIN_PATHS, newId, addNew: true },
+      ),
+    ).toEqual([])
+  })
+
+  it('skips registering a track rekordbox could not describe, so no notice asks about a track nobody chose', async () => {
+    const { path, dir } = await collection()
+    const file = join(dir, 'Untagged.wav')
+    await writeFile(file, Buffer.alloc(64))
+    expect(
+      await trackOpsFromRun(path, [{ from: file, to: file }], {
+        repointing: false,
+        probe,
+        find: TWIN_PATHS,
+        newId,
+        addNew: true,
+      }),
+    ).toEqual([])
+  })
+
+  it('does nothing new with adding off, so a track in no playlist stays out of rekordbox', async () => {
+    const { path, dir } = await collection()
+    const file = join(dir, 'Bam Bam.wav')
+    await writeFile(file, Buffer.alloc(64))
+    expect(
+      await trackOpsFromRun(path, [{ from: file, to: file, meta: META }], {
+        repointing: false,
+        probe,
+        find: TWIN_PATHS,
+        newId,
+      }),
+    ).toEqual([])
+  })
+
   it('queues nothing without a collection', async () => {
     expect(
       await trackOpsFromRun('', [{ from: '/m/a.wav', to: '/m/a.wav', meta: META, playlists: [] }], {
@@ -173,6 +236,34 @@ describe('libraryTrackOps', () => {
         stamps: {},
       },
     ])
+  })
+
+  it('asks Traktor to register a track with no playlist choice when adding new tracks', () => {
+    const repoints: RekordboxRepoint[] = [{ from: '/m/a.wav', to: '/m/a.wav', meta: META }]
+    expect(libraryTrackOps(repoints, 'traktor', () => 'id1', true)).toEqual([
+      {
+        id: 'id1',
+        kind: 'track',
+        path: '/m/a.wav',
+        label: 'Sister Nancy - Bam Bam',
+        facts: null,
+        meta: META,
+        wanted: [],
+        known: [],
+        stamps: {},
+        add: true,
+      },
+    ])
+  })
+
+  it('needs track tags to register in Traktor, since its collection entry is built from them', () => {
+    const repoints: RekordboxRepoint[] = [{ from: '/m/a.wav', to: '/m/a.wav' }]
+    expect(libraryTrackOps(repoints, 'traktor', () => 'id1', true)).toEqual([])
+  })
+
+  it('leaves Engine DJ registration to the conversion itself, so no add op is queued for it', () => {
+    const repoints: RekordboxRepoint[] = [{ from: '/m/a.wav', to: '/m/a.wav', meta: META }]
+    expect(libraryTrackOps(repoints, 'engine', () => 'id1', true)).toEqual([])
   })
 })
 

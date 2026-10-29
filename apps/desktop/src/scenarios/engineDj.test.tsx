@@ -67,8 +67,7 @@ describe('Take your tracks to Engine DJ', () => {
     })
     makeTrack(join(crate, 'b.wav'), { title: 'Higher State', artist: 'Josh Wink' })
     surco = await openSurco({
-      settings: { outputDir: output, engineLibraryDir: library },
-      destination: 'engineDj',
+      settings: { outputDir: output, engineLibraryDir: library, addToEngineDj: true },
     })
     await surco.drop(crate)
     surco.editMeta('a.flac', { rating: '4' })
@@ -83,14 +82,14 @@ describe('Take your tracks to Engine DJ', () => {
     expect(readFileSync(backupOf(mdb, 'session')).equals(before)).toBe(true)
   })
 
-  it('puts every track in the library and in the playlist, next to what was there', async () => {
+  it('puts every track in the library, next to what was there, without filing them into a playlist', async () => {
     const titles = await query(mdb, 'SELECT title FROM Track ORDER BY title')
     expect(titles.flat()).toEqual(['Already There', 'Higher State', 'Plastic Dreams'])
     const inPlaylist = await query(
       mdb,
       "SELECT t.title FROM PlaylistEntity e JOIN Track t ON t.id = e.trackId JOIN Playlist p ON p.id = e.listId WHERE p.title = 'Surco' ORDER BY t.title",
     )
-    expect(inPlaylist.flat()).toEqual(['Already There', 'Higher State', 'Plastic Dreams'])
+    expect(inPlaylist.flat()).toEqual(['Already There'])
   })
 
   it('brings the rating and the cover', async () => {

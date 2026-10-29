@@ -28,6 +28,8 @@ const settings: Settings = {
   backupRetentionDays: 30,
   backupMaxGb: 10,
   addToEngineDj: false,
+  addToRekordbox: false,
+  addToTraktor: false,
   engineLibraryDir: '/music/Engine Library',
   traktorNmlPath: '',
   rekordboxDbPath: '',
@@ -40,7 +42,6 @@ const settings: Settings = {
   syncEngineDj: false,
   betaUpdates: false,
   traktorCueOffsetMs: 0,
-  engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
   titleFormat: '',
   autoApplyFilename: false,
@@ -135,6 +136,15 @@ describe('pickSynced', () => {
 })
 
 describe('buildSettingsPatch', () => {
+  it('round-trips the add-new-tracks switches of rekordbox and Traktor', () => {
+    const patch = buildSettingsPatch(
+      pickSynced({ ...settings, addToRekordbox: true, addToTraktor: true }),
+      local,
+    )
+    expect(patch.addToRekordbox).toBe(true)
+    expect(patch.addToTraktor).toBe(true)
+  })
+
   it('keeps auto-match for a Beatport-only setup with a connected account', () => {
     const draft = { ...pickSynced(settings), searchProviders: ['beatport' as const] }
     const patch = buildSettingsPatch(draft, { ...local, autoMatch: true, beatportUsername: 'dj' })

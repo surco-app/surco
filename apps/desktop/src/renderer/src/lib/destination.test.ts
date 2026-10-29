@@ -3,35 +3,28 @@ import { DESTINATIONS, fromDestination, toDestination } from './destination'
 
 describe('toDestination', () => {
   it('reads the stored booleans back as the single radio choice', () => {
-    expect(toDestination(false, false, false, false)).toBe('folder')
-    expect(toDestination(true, false, false, false)).toBe('appleMusic')
-    expect(toDestination(false, false, false, true)).toBe('engineDj')
-    expect(toDestination(false, false, false, false, true)).toBe('beside')
+    expect(toDestination(false, false, false)).toBe('folder')
+    expect(toDestination(true, false, false)).toBe('appleMusic')
+    expect(toDestination(false, false, false, true)).toBe('beside')
   })
 
   // FLAC can't be added to Apple Music, so the choice falls back to the always-valid
   // output folder regardless of what the booleans say.
   it('pins to the output folder while FLAC is the format', () => {
-    expect(toDestination(true, true, false, false)).toBe('folder')
-  })
-
-  // Engine DJ plays FLAC natively, so unlike Apple Music the choice survives the
-  // FLAC format — pinning it to the folder would silently drop the library add.
-  it('keeps Engine DJ while FLAC is the format', () => {
-    expect(toDestination(false, true, false, true)).toBe('engineDj')
+    expect(toDestination(true, true, false)).toBe('folder')
   })
 
   // Overwrite is its own axis (it rewrites the source in place), so it wins over every
   // other flag — including the FLAC pin and any library booleans left set.
   it('reports overwrite whenever the flag is set, regardless of the other booleans', () => {
-    expect(toDestination(false, false, true, false)).toBe('overwrite')
-    expect(toDestination(true, true, true, true, true)).toBe('overwrite')
+    expect(toDestination(false, false, true)).toBe('overwrite')
+    expect(toDestination(true, true, true, true)).toBe('overwrite')
   })
 
-  // Beside-original writes a fresh file next to the source, so like Engine DJ it is
-  // FLAC-proof — the pin to the output folder must not eat the choice.
+  // Beside-original writes a fresh file next to the source, so it is FLAC-proof — the
+  // pin to the output folder must not eat the choice.
   it('keeps beside-original while FLAC is the format', () => {
-    expect(toDestination(false, true, false, false, true)).toBe('beside')
+    expect(toDestination(false, true, false, true)).toBe('beside')
   })
 })
 
@@ -41,28 +34,18 @@ describe('fromDestination', () => {
       addToAppleMusic: false,
       keepOutputCopy: true,
       overwriteOriginal: false,
-      addToEngineDj: false,
       convertBesideOriginal: false,
     })
     expect(fromDestination('appleMusic')).toEqual({
       addToAppleMusic: true,
       keepOutputCopy: false,
       overwriteOriginal: false,
-      addToEngineDj: false,
       convertBesideOriginal: false,
     })
   })
 
-  // Engine DJ references the converted file where it lives instead of importing a copy
-  // (the Apple Music model), so the output-folder copy must always be kept.
-  it('keeps the output copy and clears the other destinations for engineDj', () => {
-    expect(fromDestination('engineDj')).toEqual({
-      addToAppleMusic: false,
-      keepOutputCopy: true,
-      overwriteOriginal: false,
-      addToEngineDj: true,
-      convertBesideOriginal: false,
-    })
+  it('picking a destination never turns Engine off', () => {
+    for (const d of DESTINATIONS) expect(fromDestination(d)).not.toHaveProperty('addToEngineDj')
   })
 
   // Overwrite leaves nothing in the output folder and adds nothing to any library: the
@@ -72,7 +55,6 @@ describe('fromDestination', () => {
       addToAppleMusic: false,
       keepOutputCopy: true,
       overwriteOriginal: true,
-      addToEngineDj: false,
       convertBesideOriginal: false,
     })
   })
@@ -84,7 +66,6 @@ describe('fromDestination', () => {
       addToAppleMusic: false,
       keepOutputCopy: true,
       overwriteOriginal: false,
-      addToEngineDj: false,
       convertBesideOriginal: true,
     })
   })
@@ -93,17 +74,10 @@ describe('fromDestination', () => {
   // what guarantees Settings and the wizard never drift apart.
   it('round-trips every choice', () => {
     for (const d of DESTINATIONS) {
-      const { addToAppleMusic, overwriteOriginal, addToEngineDj, convertBesideOriginal } =
-        fromDestination(d)
-      expect(
-        toDestination(
-          addToAppleMusic,
-          false,
-          overwriteOriginal,
-          addToEngineDj,
-          convertBesideOriginal,
-        ),
-      ).toBe(d)
+      const { addToAppleMusic, overwriteOriginal, convertBesideOriginal } = fromDestination(d)
+      expect(toDestination(addToAppleMusic, false, overwriteOriginal, convertBesideOriginal)).toBe(
+        d,
+      )
     }
   })
 })
