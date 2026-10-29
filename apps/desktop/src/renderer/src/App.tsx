@@ -3383,7 +3383,7 @@ export default function App(): React.JSX.Element {
                           onChangeTracksMeta={deriveTracksUndoable}
                           onApplyTitleFormat={applyTitleFormat}
                           onRecordUndo={recordMetaUndo}
-                          onClearExtras={onClearExtras}
+                          onClearAll={clearMeta}
                           onFieldFocusChange={onFieldFocusChange}
                           onChange={onEditorChange}
                           onChangeTracksPlaylists={onChangeTracksPlaylists}

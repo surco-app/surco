@@ -6341,6 +6341,37 @@ describe('App metadata undo', () => {
     await waitFor(() => expect(screen.getByTestId('cover-preview')).toBeInTheDocument())
   })
 
+  it('takes back a multi-select Eraser clear, tags and artwork together, with a single undo', async () => {
+    setApi({
+      readTags: vi.fn(async (path: string) => ({
+        title: path === '/music/a.wav' ? 'Alpha' : 'Bravo',
+        artist: 'Artist',
+      })),
+      prepareCoverDrag: vi.fn().mockResolvedValue(null),
+      readCover: vi
+        .fn()
+        .mockResolvedValue({ thumbUrl: 'data:image/jpeg;base64,AA', width: 600, height: 600 }),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[0])
+    await waitFor(() => expect(screen.getByTestId('cover-preview')).toBeInTheDocument())
+    fireEvent.click(rows[1], { metaKey: true })
+
+    fireEvent.click(await screen.findByTestId('clear-meta-btn'))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue(''))
+    expect(screen.queryByTestId('cover-preview')).toBeNull()
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+
+    for (const [index, title] of ['Alpha', 'Bravo'].entries()) {
+      fireEvent.click(screen.getAllByTestId('track-row')[index])
+      await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue(title))
+      await waitFor(() => expect(screen.getByTestId('cover-preview')).toBeInTheDocument())
+    }
+  })
+
   // The find & replace modal rewrites text fields across every visible track in one apply;
   // one ⌘Z afterwards must roll the whole sweep back, not just a single row.
   it('rolls back a find & replace sweep across tracks in one undo', async () => {

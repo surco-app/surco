@@ -21,7 +21,6 @@ import type { CueQuantize } from '../../../shared/cueQuantize'
 import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFields'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
-import { emptyMetadata } from '../../../shared/metadata'
 import type {
   DeclickConfig,
   FormatSetting,
@@ -163,10 +162,7 @@ interface Props {
   // release pick or a cover change overwrites them (derive is already recorded inside
   // onDeriveTags).
   onRecordUndo?: (ids: string[], opts?: { cover?: boolean; group?: string }) => void
-  // Marks the given tracks as fully cleared (coverRemoved + metaCleared) so a convert
-  // wipes their rating and cover too — the multi-select sibling of the flags the
-  // single-track clear sets on its onChange patch.
-  onClearExtras?: (ids: string[]) => void
+  onClearAll?: () => void
   // Reports which track (if any) has a field focused, so the background auto-match sweep
   // can leave the row being typed into alone (see App's editingRef). null on blur.
   onFieldFocusChange?: (id: string | null) => void
@@ -267,7 +263,7 @@ export const Editor = memo(function Editor({
   onChangeTracksPlaylists,
   onApplyTitleFormat,
   onRecordUndo,
-  onClearExtras,
+  onClearAll,
   onFieldFocusChange,
   onChange,
   onProcess,
@@ -911,22 +907,18 @@ export const Editor = memo(function Editor({
   // whole tag: the artwork rides coverRemoved and the rating rides metaCleared, so
   // the file keeps none of the fields the app manages (Traktor cues aside).
   function clearAllMeta(): void {
-    const blank = emptyMetadata()
-    // The artwork is part of what this clears, so the snapshot has to carry it: the
-    // single-track branch below drops coverUrl.
-    onRecordUndo?.(
-      (isMulti ? (selectedTracks ?? []) : [item]).map((t) => t.id),
-      { cover: true },
-    )
     if (isMulti) {
-      onChangeAllMeta?.(blank)
-      onClearExtras?.((selectedTracks ?? []).map((t) => t.id))
+      onClearAll?.()
+      return
     }
+    // The artwork is part of what this clears, so the snapshot has to carry it: the
+    // patch below drops coverUrl.
+    onRecordUndo?.([item.id], { cover: true })
     // Clearing the tags un-matches the track, so the sweep may fill it again. The ⌘K
     // palette's clear runs the same patch. The cover goes off the preview too, not just
     // off the next export: coverRemoved is a promise about the conversion, and leaving
     // the image on screen read as "clear didn't touch the artwork".
-    else onChange(clearedTrackPatch(item))
+    onChange(clearedTrackPatch(item))
   }
 
   // Dialing a different normalization is an edit like any other: the file on disk
