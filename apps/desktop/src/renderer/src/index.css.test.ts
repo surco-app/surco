@@ -45,12 +45,36 @@ describe('theme text contrast (WCAG 1.4.3 AA)', () => {
     ['dark', dark],
     ['light', light],
   ] as const) {
+    for (const surface of ['color-ink', 'color-panel-2']) {
+      it(`${theme} color-fg-faint reaches 4.5:1 on ${surface}`, () => {
+        expect(contrast(t['color-fg-faint'], t[surface])).toBeGreaterThanOrEqual(4.5)
+      })
+    }
+
     for (const token of ['color-fg-dim', 'color-fg-faint']) {
       it(`${theme} ${token} reaches 4.5:1 on the panel background`, () => {
         expect(contrast(t[token], t['color-panel'])).toBeGreaterThanOrEqual(4.5)
       })
     }
+
+    it(`${theme} keeps fg, fg-muted, fg-dim and fg-faint in descending order of emphasis`, () => {
+      const [fg, muted, dim, faint] = [
+        'color-fg',
+        'color-fg-muted',
+        'color-fg-dim',
+        'color-fg-faint',
+      ].map((k) => contrast(t[k], t['color-ink']))
+      expect(fg).toBeGreaterThan(muted)
+      expect(muted).toBeGreaterThan(dim)
+      expect(dim).toBeGreaterThan(faint)
+    })
   }
+
+  it('light color-fg-faint reaches 4.5:1 on the selected row fill', () => {
+    expect(contrast(light['color-fg-faint'], light['color-row-selected'])).toBeGreaterThanOrEqual(
+      4.5,
+    )
+  })
 })
 
 // The label on a FILLED surface — the primary CTA, the destructive confirm, the "applied"
@@ -379,14 +403,14 @@ type Blend = [string, number, string]
 const BLENDS: Record<Theme, Record<string, Blend>> = {
   dark: {
     'color-accent-hover': ['blue', 60, 'fg'],
-    'color-fg-faint': ['dark5', 70, 'fg_dark'],
+    'color-fg-faint': ['dark5', 50, 'fg_dark'],
   },
   light: {
     'color-panel-2': ['bg', 30, 'field'],
     'color-accent-hover': ['blue', 75, 'fg'],
     'color-accent-soft': ['blue', 15, 'field'],
-    'color-fg-dim': ['comment', 60, 'fg'],
-    'color-fg-faint': ['comment', 80, 'fg'],
+    'color-fg-dim': ['comment', 40, 'fg'],
+    'color-fg-faint': ['comment', 55, 'fg'],
     'color-warn': ['yellow', 75, 'fg'],
     'color-row-selected': ['blue', 25, 'field'],
   },
