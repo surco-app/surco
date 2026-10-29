@@ -69,17 +69,21 @@ async function hoverForTooltip(trigger: HTMLElement): Promise<HTMLElement> {
 function renderWithQuery(
   ui: React.ReactElement,
   settings: Partial<Settings> = {},
-): ReturnType<typeof render> {
+): ReturnType<typeof render> & { changeSettings: (next: Partial<Settings>) => void } {
   const client = createQueryClient()
   // The editor reads its Settings-derived values from the shared context now, so the
   // per-test overrides ride a provider instead of an 17-prop wall on <Editor>.
-  return render(
+  const tree = (current: Partial<Settings>) => (
     <QueryClientProvider client={client}>
-      <SettingsProvider settings={{ discogsToken: 'tok', showSpectrum: false, ...settings }}>
+      <SettingsProvider settings={{ discogsToken: 'tok', showSpectrum: false, ...current }}>
         {ui}
       </SettingsProvider>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   )
+  const result = render(tree(settings))
+  return Object.assign(result, {
+    changeSettings: (next: Partial<Settings>) => result.rerender(tree({ ...settings, ...next })),
+  })
 }
 
 // Editor mounts effects that touch window.api; a non-darwin platform skips the
@@ -206,6 +210,7 @@ function renderEditor(
   onSearchWeb: ReturnType<typeof vi.fn>
   onExportCollection: ReturnType<typeof vi.fn>
   onRecordUndo: ReturnType<typeof vi.fn>
+  changeSettings: (next: Partial<Settings>) => void
 } {
   const onProcess = vi.fn()
   const onRecordUndo = vi.fn()
@@ -222,7 +227,7 @@ function renderEditor(
   const onCopyFilename = vi.fn()
   const onSearchWeb = vi.fn()
   const onExportCollection = vi.fn()
-  renderWithQuery(
+  const { changeSettings } = renderWithQuery(
     // The panel reads "open Settings" from context now, so the spy rides a provider
     // exactly as App mounts it.
     <OpenSettingsProvider open={onOpenSettings}>
@@ -308,6 +313,7 @@ function renderEditor(
     onCopyFilename,
     onSearchWeb,
     onRecordUndo,
+    changeSettings,
   }
 }
 
@@ -825,6 +831,43 @@ describe('Editor convert button with Traktor taking new tracks', () => {
       expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Engine DJ'),
     )
     expect(screen.getByTestId('process-btn')).toHaveTextContent('Traktor')
+  })
+})
+
+describe('Editor convert button after choosing a DJ library in Settings', () => {
+  const found = (engine: boolean, rekordbox: boolean) => ({
+    rekordbox: { enabled: true, found: rekordbox },
+    engine: { enabled: true, found: engine },
+    traktor: { enabled: false, found: false },
+  })
+
+  it('names Engine DJ as soon as the DJ points Settings at its library, without reopening the track', async () => {
+    const libraryStatus = vi.fn<Api['libraryStatus']>().mockResolvedValue(found(false, false))
+    Object.assign(window.api, { libraryStatus })
+    const { changeSettings } = renderEditor({ id: 'a' }, 'aiff', {
+      addToAppleMusic: false,
+      addToEngineDj: true,
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Engine DJ'),
+    )
+    libraryStatus.mockResolvedValue(found(true, false))
+    changeSettings({ engineLibraryDir: '/e/Engine Library' })
+    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent('Engine DJ'))
+  })
+
+  it('names rekordbox as soon as the DJ points Settings at its master.db, without reopening the track', async () => {
+    const libraryStatus = vi.fn<Api['libraryStatus']>().mockResolvedValue(found(false, false))
+    Object.assign(window.api, { libraryStatus })
+    const { changeSettings } = renderEditor({ id: 'a' }, 'aiff', { addToAppleMusic: false })
+    changeSettings({ addToRekordbox: true })
+    await waitFor(() => expect(libraryStatus).toHaveBeenCalled())
+    await waitFor(() =>
+      expect(screen.getByTestId('process-btn')).not.toHaveTextContent('rekordbox'),
+    )
+    libraryStatus.mockResolvedValue(found(false, true))
+    changeSettings({ addToRekordbox: true, rekordboxDbPath: '/c/master.db' })
+    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent('rekordbox'))
   })
 })
 

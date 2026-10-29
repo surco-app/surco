@@ -347,9 +347,19 @@ export const Editor = memo(function Editor({
     outputSampleRate,
     editorSections,
     traktorNmlPath,
+    rekordboxDbPath,
+    engineLibraryDir,
   } = useAppSettings()
   const { data: libraries } = useQuery({
-    queryKey: ['library-status', addToRekordbox, addToTraktor, addToEngineDj, traktorNmlPath],
+    queryKey: [
+      'library-status',
+      addToRekordbox,
+      addToTraktor,
+      addToEngineDj,
+      traktorNmlPath,
+      rekordboxDbPath,
+      engineLibraryDir,
+    ],
     queryFn: () => window.api.libraryStatus(),
     enabled: addToRekordbox || addToTraktor || addToEngineDj,
   })
