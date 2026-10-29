@@ -1436,8 +1436,6 @@
     "destinationOverwriteHint": "各ソースファイルをその場で書き換えます。出力コピーはありません。フォーマットを変更すると元のファイルは削除されます。",
     "engineLibraryDir": "Engine DJ ライブラリ",
     "engineLibraryDirHint": "Surco がこのライブラリのデータベースに書き込みます。変換中は Engine DJ を閉じてください。",
-    "engineDjPlaylist": "プレイリスト",
-    "engineDjPlaylistHint": "変換されたトラックはライブラリのこのプレイリストに追加され、コレクションの先頭に配置されます。",
     "traktorSync": "Traktor コレクション",
     "traktorNmlPath": "collection.nml",
     "traktorNmlPathHint": "書き込む Traktor コレクションです。いつでも変更できます。",

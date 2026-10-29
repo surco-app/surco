@@ -1436,8 +1436,6 @@
     "destinationOverwriteHint": "Reescreve cada arquivo de origem no lugar; sem cópia de saída. Trocar de formato remove o original.",
     "engineLibraryDir": "Biblioteca do Engine DJ",
     "engineLibraryDirHint": "O Surco escreve no banco de dados desta biblioteca. Feche o Engine DJ enquanto converte.",
-    "engineDjPlaylist": "Playlist",
-    "engineDjPlaylistHint": "As faixas convertidas são adicionadas a esta playlist da sua biblioteca, além da coleção.",
     "traktorSync": "Coleção do Traktor",
     "traktorNmlPath": "collection.nml",
     "traktorNmlPathHint": "A coleção do Traktor em que gravar. Você pode trocar quando quiser.",

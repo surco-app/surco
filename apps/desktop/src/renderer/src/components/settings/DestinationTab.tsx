@@ -420,7 +420,7 @@ export function DestinationTab({
         )}
         <SettingsHint className="mt-2">{tr('settings.completeCuesHint')}</SettingsHint>
       </SettingsSection>
-      {/* The library folder and playlist say which Engine database Surco reads and
+      {/* The library folder says which Engine database Surco reads and
           writes; the three-state control decides whether rows that point at a converted
           file's original move onto the new file, and whether new tracks are added too. */}
       <SettingsSection eyebrow={tr('settings.engineSync')}>
@@ -428,8 +428,6 @@ export function DestinationTab({
           <EngineLibraryFields
             libraryDir={local.engineLibraryDir}
             onLibraryDirChange={onChangeEngineDir}
-            playlist={synced.engineDjPlaylist}
-            onPlaylistChange={(name) => patch('engineDjPlaylist', name)}
             testidPrefix="settings-engine"
           />
         </div>

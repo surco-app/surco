@@ -39,7 +39,6 @@ const synced: SyncedDraft = {
   syncRekordbox: false,
   completeCuesOnClose: false,
   syncEngineDj: false,
-  engineDjPlaylist: 'Surco',
   traktorCueOffsetMs: '0',
   filenameFormat: '{artist} - {title}',
   titleFormat: '',

@@ -102,7 +102,6 @@ export const defaults: Settings = {
   // Zero: the conversion already puts cues back where they were, so nobody who hasn't
   // gone looking for this should have theirs moved.
   traktorCueOffsetMs: 0,
-  engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
   titleFormat: '',
   // Off by default so an install from before it existed keeps the source file name; the

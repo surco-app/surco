@@ -1628,7 +1628,6 @@ function registerIpc(): void {
               s.engineLibraryDir,
               target,
               meta,
-              s.engineDjPlaylist,
               coverPath,
               // Only with the toggle on: moving a row is keeping the library in step with
               // converted files, which the user opted into, not just adding new ones.

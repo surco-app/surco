@@ -280,7 +280,7 @@ describe('updateEngineTags alongside a conversion adding to Engine', () => {
 
     const [result] = await updateEngineTags(lib.dir, [artist(lib.file)], {
       sessionBackup: async () => {
-        added = addToEngineLibrary(lib.dir, converted, emptyMetadata(), 'Surco')
+        added = addToEngineLibrary(lib.dir, converted, emptyMetadata())
         await Promise.race([added, new Promise((r) => setTimeout(r, 500))])
       },
     })

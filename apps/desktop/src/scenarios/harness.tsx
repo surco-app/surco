@@ -229,7 +229,6 @@ function processTrackInMain(
         s.engineLibraryDir,
         target,
         meta,
-        s.engineDjPlaylist,
         coverPath,
         s.syncEngineDj ? replaces : undefined,
         (db) => sessions.engine.ensure(db),

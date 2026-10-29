@@ -1436,8 +1436,6 @@
     "destinationOverwriteHint": "Rewrites each source file in place; no output copy. Changing format removes the original.",
     "engineLibraryDir": "Engine DJ library",
     "engineLibraryDirHint": "Surco writes into this library's database. Close Engine DJ while converting.",
-    "engineDjPlaylist": "Playlist",
-    "engineDjPlaylistHint": "Converted tracks are added to this playlist in your library, on top of the collection.",
     "traktorSync": "Traktor collection",
     "traktorNmlPath": "collection.nml",
     "traktorNmlPathHint": "The Traktor collection to write into. You can change it at any time.",

@@ -252,9 +252,6 @@ export interface Settings {
   // early or late in Traktor, which is about their ears and their rig rather than the
   // file — so unlike traktorNmlPath it is NOT machine-local, it follows the person.
   traktorCueOffsetMs: number
-  // The root playlist Engine DJ conversions land in (the "what Surco just converted"
-  // inbox), created on first use. 'Surco' by default; a blank save restores it.
-  engineDjPlaylist: string
   filenameFormat: string
   // Pattern for rebuilding the title tag from other fields (e.g. "({trackNumber}) {title}").
   // Empty = the feature is hidden. Applied only on demand, never automatically: the

@@ -42,7 +42,6 @@ const settings: Settings = {
   syncEngineDj: false,
   betaUpdates: false,
   traktorCueOffsetMs: 0,
-  engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
   titleFormat: '',
   autoApplyFilename: false,

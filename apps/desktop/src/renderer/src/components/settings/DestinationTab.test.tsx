@@ -45,7 +45,6 @@ const synced: SyncedDraft = {
   syncRekordbox: false,
   completeCuesOnClose: false,
   syncEngineDj: false,
-  engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
   titleFormat: '',
   autoApplyFilename: false,
@@ -213,15 +212,6 @@ describe('DestinationTab Engine DJ destination', () => {
     expect(library).toHaveTextContent('/music/Engine Library')
     expect(library.closest('[inert]')).toBeNull()
     expect(library.closest('[role="radiogroup"]')).toBeNull()
-  })
-
-  it('keeps the Engine playlist editable outside the destination choice', () => {
-    const patch = renderTab()
-    expect(screen.getByTestId('settings-engine-playlist').closest('[inert]')).toBeNull()
-    const field = screen.getByTestId('settings-engine-playlist')
-    expect(field).toHaveValue('Surco')
-    fireEvent.change(field, { target: { value: 'Pool' } })
-    expect(patch).toHaveBeenCalledWith('engineDjPlaylist', 'Pool')
   })
 })
 

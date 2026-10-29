@@ -113,7 +113,6 @@ interface PendingAdd {
   libraryDir: string
   filePath: string
   meta: TrackMetadata
-  playlist: string
   coverPath?: string
   // The file this conversion supersedes, when the user asked Surco to keep the library
   // pointing at converted files: its row moves onto the new file instead of a second row.
@@ -156,7 +155,6 @@ export function addToEngineLibrary(
   libraryDir: string,
   filePath: string,
   meta: TrackMetadata,
-  playlist: string,
   coverPath?: string,
   replaces?: string,
   sessionBackup?: (dbPath: string) => Promise<void>,
@@ -166,7 +164,6 @@ export function addToEngineLibrary(
       libraryDir,
       filePath,
       meta,
-      playlist,
       coverPath,
       replaces,
       sessionBackup,
@@ -235,7 +232,6 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
     // have added columns (left to their defaults) or dropped ones we would have set.
     const live = new Set(db.exec('PRAGMA table_info(Track)')[0].values.map((row) => String(row[1])))
     const epoch = Math.floor(Date.now() / 1000)
-    const uuid = String(db.exec('SELECT uuid FROM Information')[0].values[0][0])
     // Path matching is normalization-aware: APFS treats NFC and NFD names as one file,
     // so a byte-exact SQL compare would insert a twin row for a path Engine (or a
     // browser download) stored in the other form. Compare NFC-to-NFC in JS instead.
@@ -282,7 +278,6 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
       // tags, so the cover has to be stored here for the row to show any art.
       const artId = add.coverPath ? await ensureAlbumArt(db, add.coverPath) : null
       if (artId !== null) db.run('UPDATE Track SET albumArtId = ? WHERE id = ?', [artId, trackId])
-      addToPlaylist(db, add.playlist, trackId, uuid)
     }
     // The guard above ran before the batch's reads (covers, file stats); Engine
     // launched in that window has loaded the pre-write library, and renaming over it
@@ -328,13 +323,6 @@ export function albumArtId(db: Database, bytes: Buffer): number {
   if (found.length) return found[0].values[0][0] as number
   db.run('INSERT INTO AlbumArt (hash, albumArt) VALUES (?, ?)', [hash, new Uint8Array(bytes)])
   return lastId(db)
-}
-
-// Puts the track into the named root playlist — the DJ's "what Surco just converted"
-// inbox — creating the playlist on first use. Membership is deduplicated, so a
-// re-convert never lists the track twice.
-function addToPlaylist(db: Database, title: string, trackId: number, uuid: string): void {
-  appendToList(db, rootListId(db, title), trackId, uuid)
 }
 
 export function rootListId(db: Database, title: string): number {

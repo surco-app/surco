@@ -52,7 +52,6 @@ export const testSettings: Settings = {
   syncEngineDj: false,
   betaUpdates: false,
   traktorCueOffsetMs: 0,
-  engineDjPlaylist: 'Surco',
   filenameFormat: '',
   titleFormat: '',
   autoApplyFilename: false,
