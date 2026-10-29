@@ -1,4 +1,5 @@
 import type React from 'react'
+import { useEffect, useState } from 'react'
 import { Tooltip } from './Tooltip'
 
 export function ResizeHandle({
@@ -12,6 +13,13 @@ export function ResizeHandle({
   onDoubleClick?: () => void
   title?: string
 }): React.JSX.Element {
+  const [resizing, setResizing] = useState(false)
+  useEffect(() => {
+    if (!resizing) return
+    const end = (): void => setResizing(false)
+    window.addEventListener('pointerup', end)
+    return () => window.removeEventListener('pointerup', end)
+  }, [resizing])
   return (
     // A pointer-only resize affordance: the panels are fully usable at their
     // default width, so by design it offers no keyboard interaction and none of
@@ -22,12 +30,15 @@ export function ResizeHandle({
       // biome-ignore lint/a11y/useAriaPropsForRole: not focusable, so splitter value props don't apply
       role="separator"
       aria-orientation="vertical"
-      onPointerDown={onPointerDown}
+      onPointerDown={(e) => {
+        setResizing(true)
+        onPointerDown(e)
+      }}
       onDoubleClick={onDoubleClick}
       className="relative z-10 w-px shrink-0 cursor-col-resize bg-[var(--color-line)] transition-colors hover:bg-[var(--color-accent)]"
     >
       <div className="absolute inset-y-0 -left-1 -right-1" />
-      {title && <Tooltip label={title} />}
+      {title && !resizing && <Tooltip label={title} />}
     </div>
   )
 }

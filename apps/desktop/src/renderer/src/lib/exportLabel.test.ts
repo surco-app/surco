@@ -166,19 +166,14 @@ describe('exportButtonLabel', () => {
     })
   })
 
-  // The output folder, beside the original and over the original all read "Convert to
-  // AIFF", so where the file lands was only found out after it failed on an unplugged NAS.
-  // The button names the place the way it names Apple Music.
+  // Beside the original and over the original both read "Convert to AIFF", so where the
+  // file lands was only found out after it failed on an unplugged NAS. The button names the
+  // place the way it names Apple Music.
   it.each([
-    [{ ...base, destination: 'folder', folder: 'Conversiones' }, 'editor.convertFolder'],
-    [{ ...base, destination: 'beside', folder: 'Conversiones' }, 'editor.convertBeside'],
+    [{ ...base, destination: 'beside' }, 'editor.convertBeside'],
     [
-      { ...base, destination: 'overwrite', inPlace: true, tagsOnly: false, folder: 'Conversiones' },
+      { ...base, destination: 'overwrite', inPlace: true, tagsOnly: false },
       'editor.convertOverwrite',
-    ],
-    [
-      { ...base, count: 2, destination: 'folder', folder: 'Conversiones' },
-      'editor.convertAllFolder',
     ],
     [{ ...base, count: 2, destination: 'beside' }, 'editor.convertAllBeside'],
     [{ ...base, count: 2, destination: 'overwrite' }, 'editor.convertAllOverwrite'],
@@ -186,24 +181,24 @@ describe('exportButtonLabel', () => {
     expect(exportButtonLabel(state).key).toBe(key)
   })
 
-  it('hands the output folder name through for interpolation', () => {
-    expect(
-      exportButtonLabel({ ...base, destination: 'folder', folder: 'Conversiones' }).options,
-    ).toEqual({ format: 'AIFF', folder: 'Conversiones' })
-  })
-
-  it('keeps the plain convert label when no output folder is set yet', () => {
-    expect(exportButtonLabel({ ...base, destination: 'folder', folder: '' }).key).toBe(
-      'editor.convertNoMusic',
-    )
+  // "Convert to AIFF in out" glued the folder's name onto the verb; the button names the
+  // action and the folder rides beside it as secondary text.
+  it('leaves the output folder off the convert label', () => {
+    expect(exportButtonLabel({ ...base, destination: 'folder' })).toEqual({
+      key: 'editor.convertNoMusic',
+      options: { format: 'AIFF' },
+    })
+    expect(exportButtonLabel({ ...base, count: 2, destination: 'folder' })).toEqual({
+      key: 'editor.convertAll',
+      options: { count: 2, format: 'AIFF' },
+    })
   })
 
   // Apple Music and Engine DJ already name the place, and a FLAC pinned off Music lands
   // in the folder, so the library suffix wins over the destination.
   it('keeps the library suffix over the destination', () => {
     expect(
-      exportButtonLabel({ ...base, withAppleMusic: true, destination: 'appleMusic', folder: 'X' })
-        .key,
+      exportButtonLabel({ ...base, withAppleMusic: true, destination: 'appleMusic' }).key,
     ).toBe('editor.convert')
   })
 })

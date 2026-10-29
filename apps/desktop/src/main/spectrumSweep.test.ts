@@ -86,6 +86,7 @@ async function grade(path: string, durationSec?: number): Promise<Row> {
       cutoff: (i, s) => analyzeCutoff(i, s, undefined, durationSec),
       shelf: (i, s) => analyzeShelf(i, s),
       bits: async () => null,
+      damaged: async () => false,
     })
     return {
       path,

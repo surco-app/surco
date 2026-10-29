@@ -1125,6 +1125,39 @@ describe('TrackList quality badge', () => {
     expect(transcoded.querySelector('svg')).not.toBeNull()
   })
 
+  // A colour-blind DJ saw a fake FLAC only as a red-tinted chip with a dot the size of the
+  // conversion light: the verdicts that ask for attention must be readable as words too.
+  it('names a flagged verdict in a word beside the pill, never on a clean track', () => {
+    renderList([
+      track({ id: 'a', inputPath: '/music/a.flac', spectrum: spectrum(21000) }),
+      track({ id: 'b', inputPath: '/music/b.flac', spectrum: spectrum(16000) }),
+      track({
+        id: 'c',
+        inputPath: '/music/c.flac',
+        spectrum: { ...spectrum(16000), processed: true },
+      }),
+    ])
+    const words = screen.getAllByTestId('track-quality-word')
+    expect(words).toHaveLength(2)
+    expect(words[0]).toHaveTextContent(i18n.t('trackList.qualityWord.transcoded'))
+    expect(words[0]).toHaveAttribute('data-tone', 'danger')
+    expect(words[1]).toHaveTextContent(i18n.t('trackList.qualityWord.processed'))
+    expect(words[1]).toHaveAttribute('data-tone', 'warn')
+  })
+
+  it('names a damaged file Damaged in the row even when its highs measure full', () => {
+    renderList([
+      track({
+        id: 'a',
+        inputPath: '/music/a.flac',
+        spectrum: { ...spectrum(21000), damaged: true },
+      }),
+    ])
+    const word = screen.getByTestId('track-quality-word')
+    expect(word).toHaveTextContent(i18n.t('trackList.qualityWord.damaged'))
+    expect(word).toHaveAttribute('data-tone', 'danger')
+  })
+
   // With no extension there is no format to tint, but an analysed file still owes its
   // verdict: the pill falls back to the bare shape, good included.
   it('draws the bare shape when the file has no format to tint', () => {

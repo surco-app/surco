@@ -25,6 +25,7 @@ function browser(overrides: Partial<DiscogsBrowser>): DiscogsBrowser {
     release: null,
     openKey: null,
     suggestedKey: null,
+    suggestedConfident: false,
     pendingProviders: [],
     searchProgress: null,
     held: { count: 0, providers: [] },
@@ -39,13 +40,14 @@ function browser(overrides: Partial<DiscogsBrowser>): DiscogsBrowser {
   }
 }
 
-function panel(b: DiscogsBrowser) {
+function panel(b: DiscogsBrowser, fileDurationSec?: number) {
   return (
     <DiscogsPanel
       browser={b}
       matchedTrack={undefined}
       matchTier={undefined}
       appliedTrack={undefined}
+      fileDurationSec={fileDurationSec}
       showTokenTip={false}
       isMulti={false}
       selectedTracks={undefined}
@@ -60,8 +62,8 @@ function panel(b: DiscogsBrowser) {
   )
 }
 
-function renderPanel(b: DiscogsBrowser) {
-  return render(panel(b))
+function renderPanel(b: DiscogsBrowser, fileDurationSec?: number) {
+  return render(panel(b, fileDurationSec))
 }
 
 describe('DiscogsPanel column width', () => {
@@ -72,6 +74,7 @@ describe('DiscogsPanel column width', () => {
         matchedTrack={undefined}
         matchTier={undefined}
         appliedTrack={undefined}
+        fileDurationSec={undefined}
         showTokenTip={false}
         isMulti={false}
         selectedTracks={undefined}
@@ -265,6 +268,7 @@ describe('DiscogsPanel suggestion marks', () => {
         matchedTrack={release.tracklist[1]}
         matchTier={matchTier}
         appliedTrack={undefined}
+        fileDurationSec={undefined}
         showTokenTip={false}
         isMulti={false}
         selectedTracks={undefined}
@@ -292,6 +296,50 @@ describe('DiscogsPanel suggestion marks', () => {
     cleanup()
     renderMatched('review')
     expect(screen.getByTestId('track-confidence')).toHaveAccessibleName('Match to confirm')
+  })
+})
+
+describe('DiscogsPanel track length check', () => {
+  const results = [
+    { provider: 'bandcamp', id: 1, title: 'LCE' },
+  ] as unknown as DiscogsBrowser['results']
+  const release = {
+    provider: 'bandcamp' as const,
+    id: 1,
+    title: 'LCE',
+    artists: [],
+    tracklist: [
+      { position: '1', title: '01 Intro', duration: '0:36' },
+      { position: '2', title: '02 Untitled Track', duration: '3:57' },
+      { position: '3', title: '03 Outro' },
+    ],
+  }
+  const openRelease = browser({ results, openKey: 'bandcamp:1', release })
+  const mismatchOf = (title: string) =>
+    within(
+      screen
+        .getAllByTestId('discogs-track')
+        .find((row) => row.textContent?.includes(title)) as HTMLElement,
+    ).queryByTestId('track-length-mismatch')
+
+  it('warns on a track far longer than the file, so a different edit is not applied unnoticed', () => {
+    renderPanel(openRelease, 35)
+    expect(mismatchOf('02 Untitled Track')).toHaveAccessibleName(
+      'Length differs from your file (0:35)',
+    )
+  })
+
+  it('stays quiet on a track whose length agrees with the file', () => {
+    renderPanel(openRelease, 35)
+    expect(mismatchOf('01 Intro')).toBeNull()
+  })
+
+  it('claims no mismatch where either length is unknown', () => {
+    renderPanel(openRelease, 35)
+    expect(mismatchOf('03 Outro')).toBeNull()
+    cleanup()
+    renderPanel(openRelease)
+    expect(screen.queryByTestId('track-length-mismatch')).toBeNull()
   })
 })
 
@@ -540,10 +588,10 @@ describe('DiscogsPanel stable results', () => {
 
   // The release the auto-match opens is the one the user came for: it has a fixed place at
   // the top, held open while it is being chosen, so nobody scrolls to find it.
-  it('keeps the top slot for the best match while it is being chosen', () => {
+  it('keeps the top slot while a suggestion is being chosen without calling it the best match before its match is confirmed', () => {
     renderPanel(browser({ query: 'x', results: rows, choosingBest: true }))
     const slot = screen.getByTestId('best-match-slot')
-    expect(slot).toHaveTextContent('Best match')
+    expect(slot).not.toHaveTextContent('Best match')
     expect(within(slot).getAllByTestId('skeleton-row')).toHaveLength(1)
     expect(slot.compareDocumentPosition(screen.getAllByTestId('result-card')[0])).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
@@ -551,12 +599,20 @@ describe('DiscogsPanel stable results', () => {
   })
 
   it('heads the best match at the top of the list', () => {
-    renderPanel(browser({ query: 'x', results: rows, suggestedKey: 'bandcamp:9' }))
+    renderPanel(
+      browser({ query: 'x', results: rows, suggestedKey: 'bandcamp:9', suggestedConfident: true }),
+    )
     const label = screen.getByTestId('best-match-label')
     expect(label).toHaveTextContent('Best match')
     expect(label.compareDocumentPosition(screen.getAllByTestId('result-card')[0])).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     )
+  })
+
+  it('calls no unconfirmed suggestion the best match, so an unrelated release is not vouched for', () => {
+    renderPanel(browser({ query: 'x', results: rows, suggestedKey: 'bandcamp:9' }))
+    expect(screen.queryByTestId('best-match-label')).toBeNull()
+    expect(screen.getByTestId('result-suggested')).toBeInTheDocument()
   })
 
   it('heads nothing when the suggestion is not the first row', () => {

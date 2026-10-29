@@ -351,13 +351,19 @@ export function QualitySection({
                 <Tooltip label={tr('editor.saveQualityReport')} align="end" />
               </button>
             )}
-            {verdict && (
-              <SectionPill
-                tone={transcoded ? 'danger' : qualityBadge[verdict].tone}
-                testid="quality-badge"
-              >
-                {tr(transcoded ? 'editor.qualityTranscode' : qualityBadge[verdict].label)}
+            {spectrum?.damaged ? (
+              <SectionPill tone="danger" testid="quality-damaged">
+                {tr('editor.qualityDamaged')}
               </SectionPill>
+            ) : (
+              verdict && (
+                <SectionPill
+                  tone={transcoded ? 'danger' : qualityBadge[verdict].tone}
+                  testid="quality-badge"
+                >
+                  {tr(transcoded ? 'editor.qualityTranscode' : qualityBadge[verdict].label)}
+                </SectionPill>
+              )
             )}
             {spectrum?.bitsUsage === 'padded16' && (
               <SectionPill tone="neutral" testid="quality-bits-pill">
@@ -384,6 +390,11 @@ export function QualitySection({
             ) : spectrum ? (
               <>
                 <Spectrogram spectrum={spectrum} transcoded={transcoded} />
+                {spectrum.damaged && (
+                  <p data-testid="quality-damaged-note" className="mt-2 text-xs text-danger">
+                    {tr('editor.qualityDamagedCaption')}
+                  </p>
+                )}
                 {spectrum.cutoffHz === null && (
                   <p data-testid="quality-no-cutoff" className="mt-2 text-xs text-fg-dim">
                     {tr('editor.qualityNoCutoff')}

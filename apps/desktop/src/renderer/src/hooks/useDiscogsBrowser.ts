@@ -73,6 +73,7 @@ export interface DiscogsBrowser {
   // null when no probe matched. The panel badges that row "Suggested" in place — kept apart
   // from openKey so the badge stays on the probe's pick after the user opens another row.
   suggestedKey: string | null
+  suggestedConfident: boolean
   // The enabled catalogs whose answer is still out while others already filled the list, so
   // the panel can say what is still coming instead of the list looking final.
   pendingProviders: SearchProviderId[]
@@ -141,6 +142,7 @@ export function useDiscogsBrowser(
   // panel badges this row "Suggested", and that flag must stay on the probe's pick even after
   // the user clicks a different result open. Null until a probe matches, reset per search.
   const [suggested, setSuggested] = useState<SearchResult | null>(null)
+  const [suggestedConfident, setSuggestedConfident] = useState(false)
   // Which catalog's results to show, a renderer-side view over the merged list — distinct
   // from `providers`, which decides what gets searched. Resets per search below.
   const [providerFilter, setProviderFilter] = useState<SearchProviderId | 'all'>('all')
@@ -193,6 +195,7 @@ export function useDiscogsBrowser(
         if (seenStoredId.current !== storedId) return
         const pinned = resultFromRelease(rel)
         setSuggested(pinned)
+        setSuggestedConfident(true)
         if (!userOpened.current) setOpenResult(pinned)
       })
       .catch(() => {})
@@ -423,6 +426,7 @@ export function useDiscogsBrowser(
   useEffect(() => {
     setOpenResult(null)
     setSuggested(null)
+    setSuggestedConfident(false)
     setProviderFilter('all')
     userOpened.current = false
   }, [runKey])
@@ -454,6 +458,7 @@ export function useDiscogsBrowser(
       if (!cancelled && m) {
         setOpenResult((current) => current ?? m.result)
         setSuggested(m.result)
+        setSuggestedConfident(m.tier === 'high')
       }
     })().finally(() => {
       if (cancelled) return
@@ -527,6 +532,7 @@ export function useDiscogsBrowser(
       release,
       openKey,
       suggestedKey,
+      suggestedConfident,
       pendingProviders,
       searchProgress,
       held,
@@ -548,6 +554,7 @@ export function useDiscogsBrowser(
       release,
       openKey,
       suggestedKey,
+      suggestedConfident,
       pendingProviders,
       searchProgress,
       held,

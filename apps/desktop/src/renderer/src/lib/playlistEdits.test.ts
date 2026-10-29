@@ -63,7 +63,7 @@ describe('editMessage', () => {
   // so the -wal and -shm have to go aside first.
   it('tells the user to restore the copy when the collection state is unknown', () => {
     expect(editMessage(tr, add, { applied: false, reason: 'write-unknown' }, 'House')).toEqual({
-      text: 'The change could not be saved or undone, so the collection may have changed. Before opening rekordbox, move master.db-wal and master.db-shm out of its folder and then replace master.db with the copy master.db.surco-backup you will find in Settings → General → Collection backups',
+      text: 'The change could not be saved or undone, so the collection may have changed. Before opening rekordbox, move master.db-wal and master.db-shm out of its folder and then replace master.db with the copy master.db.surco-backup you will find in Settings → Advanced → Collection backups',
       tone: 'danger',
     })
   })

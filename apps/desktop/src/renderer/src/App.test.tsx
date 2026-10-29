@@ -294,6 +294,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     checkForUpdates: vi.fn().mockResolvedValue(undefined),
     onOpenFiles: () => () => {},
     onExpandedBatch: () => () => {},
+    onNotAudioSkipped: () => () => {},
     onFoldersChanged: () => () => {},
     unwatchFolders: vi.fn().mockResolvedValue(undefined),
     takePendingFiles: vi.fn().mockResolvedValue([]),
@@ -986,11 +987,20 @@ describe('App auto-match', () => {
     await waitFor(() => expect(screen.getByTestId('auto-match')).toBeEnabled())
   })
 
-  it('leaves the button disabled without a Discogs token to search', async () => {
-    setApi({ readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }) })
+  it('sends the button to the Search settings when Discogs has no token, instead of greying it out unexplained', async () => {
+    setApi({
+      platform: 'darwin',
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+    })
     await renderApp()
     await addTwoTracks()
-    expect(screen.getByTestId('auto-match')).toBeDisabled()
+    const button = screen.getByTestId('auto-match')
+    expect(button).toHaveAccessibleName(i18n.t('header.autoMatchNoToken'))
+    fireEvent.click(button)
+    expect(await screen.findByTestId('settings-tab-search')).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
   })
 
   // Auto-match on import runs the whole drop unattended: a folder of a thousand files is
@@ -3154,7 +3164,7 @@ describe('App source playlists', () => {
     fireEvent.drop(screen.getByTestId('sidebar'), {
       dataTransfer: fakeDataTransfer([new File([''], 'new.wav')]),
     })
-    await waitFor(() => expect(window.api.expandPaths).toHaveBeenCalledWith(['/Finder/new.wav']))
+    await waitFor(() => expect(window.api.expandPaths).toHaveBeenCalledWith(['/Finder/new.wav'], true))
   })
 
   // Rows dragged out of the list toward a playlist in the tree are already in the list;
@@ -3283,7 +3293,7 @@ describe('App import skeleton', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
-    expect(window.api.expandPaths).toHaveBeenCalledWith(['/music/crate'])
+    expect(window.api.expandPaths).toHaveBeenCalledWith(['/music/crate'], true)
   })
 
   // Reading tags/duration/cover up front used to block the whole drop behind the slowest
@@ -4245,6 +4255,56 @@ describe('App open with', () => {
   })
 })
 
+describe('App non-audio notice', () => {
+  function notAudioApi(): void {
+    let report: ((count: number) => void) | undefined
+    setApi({
+      getPathForFile: vi.fn((f: File) => `/m/${f.name}`),
+      onNotAudioSkipped: (cb: (count: number) => void) => {
+        report = cb
+        return () => {}
+      },
+      expandPaths: vi.fn(async (paths: string[], reportNotAudio?: boolean) => {
+        const notAudio = paths.filter((p) => p.endsWith('.txt'))
+        if (reportNotAudio && notAudio.length) report?.(notAudio.length)
+        return paths.filter((p) => !p.endsWith('.txt'))
+      }),
+      readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+    })
+  }
+
+  it('says how many dropped files were skipped for not being audio, beside the ones that loaded', async () => {
+    notAudioApi()
+    await renderApp()
+
+    fireEvent.drop(await screen.findByTestId('empty-dropzone'), {
+      dataTransfer: fakeDataTransfer([
+        new File([''], 'notes.txt'),
+        new File([''], 'lyrics.txt'),
+        new File([''], 'a.wav'),
+      ]),
+    })
+
+    expect(await screen.findByTestId('app-notice')).toHaveTextContent(
+      i18n.t('notices.notAudioSkipped', { count: 2 }),
+    )
+    expect(screen.getAllByTestId('track-row')).toHaveLength(1)
+  })
+
+  it('says so for a lone dropped file that is not audio instead of doing nothing', async () => {
+    notAudioApi()
+    await renderApp()
+
+    fireEvent.drop(await screen.findByTestId('empty-dropzone'), {
+      dataTransfer: fakeDataTransfer([new File([''], 'notes.txt')]),
+    })
+
+    expect(await screen.findByTestId('app-notice')).toHaveTextContent(
+      i18n.t('notices.notAudioSkipped', { count: 1 }),
+    )
+  })
+})
+
 describe('App multi-select convert', () => {
   // The reason this matters: users with a large crate (e.g. 400 tracks) tag a handful, select
   // just those, and hit convert expecting only the selection to run. Converting the whole list
@@ -5000,7 +5060,8 @@ describe('App on Windows', () => {
       await renderApp()
       fireEvent.click((await addTwoTracks())[0])
 
-      expect(await screen.findByTestId('process-btn')).toHaveTextContent('Convert to AIFF in out')
+      expect(await screen.findByTestId('process-btn')).toHaveTextContent('Convert to AIFF')
+      expect(screen.getByTestId('process-folder')).toHaveTextContent('out')
     })
 
     it('checks the output folder in Settings instead of leaving no destination picked', async () => {
@@ -7744,7 +7805,7 @@ describe('App empty screen offers a single way in', () => {
       dataTransfer: { files: [file], types: ['Files'], getData: () => '' },
     })
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
-    expect(window.api.expandPaths).toHaveBeenCalledWith(['/music/dropped.wav'])
+    expect(window.api.expandPaths).toHaveBeenCalledWith(['/music/dropped.wav'], true)
     expect(window.api.pickFiles).not.toHaveBeenCalled()
   })
 

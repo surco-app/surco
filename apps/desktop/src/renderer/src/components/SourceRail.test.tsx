@@ -16,11 +16,12 @@ describe('SourceRail', () => {
     expect(screen.queryByTestId('source-rail-appleMusic')).not.toBeInTheDocument()
   })
 
-  // Each program's own mark is what a DJ recognises at a glance, so the rail drops the
-  // words; the name stays as the button's accessible name and hover title. The marks are
-  // drawn in the text colour like the list icon beside them, not in the apps' own colours,
-  // so the rail reads as Surco's and the pressed state shows the same way on all three.
-  it('shows each source by its own mark in the rail colour, named only for screen readers and in a tooltip', () => {
+  // Each program's own mark is what a DJ recognises at a glance, but a newcomer cannot tell
+  // an "e" from a "T", so each mark carries its name in small type under it, the same name
+  // the button gives screen readers. The marks are drawn in the text colour like the list
+  // icon beside them, not in the apps' own colours, so the rail reads as Surco's and the
+  // pressed state shows the same way on all three.
+  it('shows each source by its own mark in the rail colour with its name written under it', () => {
     render(
       <SourceRail
         onHide={vi.fn()}
@@ -29,24 +30,28 @@ describe('SourceRail', () => {
         onSelect={vi.fn()}
       />,
     )
-    const rekordbox = screen.getByTestId('source-rail-rekordbox')
-    expect(rekordbox).toHaveTextContent('')
-    expect(rekordbox).toHaveAccessibleName('rekordbox')
-    expect(screen.getByTestId('source-rail-engine')).toHaveTextContent('')
-    expect(screen.getByTestId('source-rail-engine')).toHaveAccessibleName('Engine DJ')
-    expect(screen.getByTestId('source-rail-traktor')).toHaveTextContent('')
-    expect(screen.getByTestId('source-rail-traktor')).toHaveAccessibleName('Traktor')
+    for (const [id, name] of [
+      ['tracks', 'Tracks'],
+      ['appleMusic', 'Music'],
+      ['rekordbox', 'rekordbox'],
+      ['engine', 'Engine DJ'],
+      ['traktor', 'Traktor'],
+    ]) {
+      const button = screen.getByTestId(`source-rail-${id}`)
+      const label = screen.getByTestId(`source-rail-label-${id}`)
+      expect(button).toHaveAccessibleName(name)
+      expect(label).toHaveTextContent(name)
+      expect(button).toContainElement(label)
+    }
     for (const s of ['rekordbox', 'appleMusic', 'engine', 'traktor']) {
       const icon = screen.getByTestId(`source-rail-icon-${s}`)
       expect(icon.tagName.toLowerCase()).toBe('svg')
       expect(icon.querySelector('[fill="currentColor"]')).not.toBeNull()
     }
-    expect(screen.getByTestId('source-rail-tracks')).toHaveAccessibleName('Tracks')
-    expect(screen.getByTestId('source-rail-tracks')).toHaveTextContent('')
   })
 
-  // The rail has no words, so the name a sighted user reads on hover is the only way to
-  // tell the marks apart; it comes from the app's themed tooltip like every other icon.
+  // A long localised name is cut short under its mark, so the whole name a sighted user
+  // reads on hover still comes from the app's themed tooltip like every other icon.
   it('names each icon in the app tooltip on focus, not in a native title', () => {
     render(
       <SourceRail

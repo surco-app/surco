@@ -8,10 +8,11 @@ import { gradedExt, isLowResCover, isTranscode, qualityVerdict, type Verdict } f
 // verdict to show, and both leave the row blank. 'transcoded' is a fake-lossless: a
 // lossy cut hidden in a lossless container — the editor's headline verdict, promoted
 // to the row so the deception is spottable without opening the track.
-export type TrackQuality = Verdict | 'unanalyzed' | 'transcoded'
+export type TrackQuality = Verdict | 'unanalyzed' | 'transcoded' | 'damaged'
 
 export function trackQuality(track: TrackItem): TrackQuality {
   const s = track.spectrum
+  if (s?.damaged) return 'damaged'
   if (!s || s.cutoffHz === null) return 'unanalyzed'
   // Transcode outranks the plain 'bad' grade the same way it does in the editor: a codec
   // knee in a .flac/.wav/.aiff means the file lies about its format, which is the headline.
@@ -418,7 +419,7 @@ export function qualityCounts(
     const q = trackQuality(t)
     if (q === 'warn' || q === 'bad' || q === 'processed' || q === 'transcoded') suspect += 1
     else if (q === 'good') good += 1
-    else unanalyzed += 1
+    else if (q === 'unanalyzed') unanalyzed += 1
     if (t.status !== 'done') unconverted += 1
     if (hasFailed(t)) failed += 1
     if (t.autoMatched) automatched += 1

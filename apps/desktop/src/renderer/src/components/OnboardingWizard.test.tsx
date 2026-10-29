@@ -146,6 +146,41 @@ describe('OnboardingWizard keyboard', () => {
     fireEvent.submit(screen.getByTestId('onboarding-next').closest('form') as HTMLFormElement)
     expect(screen.getByTestId('onboarding-token')).toBeInTheDocument()
   })
+
+  it('opens with the focus on Next so Enter starts the setup instead of skipping it', () => {
+    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    expect(document.activeElement).toBe(screen.getByTestId('onboarding-next'))
+  })
+})
+
+describe('OnboardingWizard skip', () => {
+  it('keeps the choices already made instead of discarding them when skipping from a later step', () => {
+    const onFinish = vi.fn()
+    render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+    fireEvent.click(screen.getByTestId('onboarding-next'))
+    fireEvent.click(screen.getByTestId('onboarding-next'))
+    fireEvent.click(screen.getByTestId('onboarding-format-mp3'))
+    fireEvent.click(screen.getByTestId('onboarding-skip'))
+    expect(onFinish).toHaveBeenCalledWith(
+      expect.objectContaining({ outputFormat: 'mp3', hasSeenOnboarding: true }),
+    )
+  })
+
+  it('only marks the wizard as seen and names files from tags when a first run is skipped before any choice', () => {
+    const onFinish = vi.fn()
+    render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+    fireEvent.click(screen.getByTestId('onboarding-skip'))
+    expect(onFinish).toHaveBeenCalledWith({ autoApplyFilename: true, hasSeenOnboarding: true })
+  })
+
+  it("leaves an existing user's settings alone when a re-run is skipped before any choice", () => {
+    const onFinish = vi.fn()
+    render(
+      <OnboardingWizard settings={{ ...settings, hasSeenOnboarding: true }} onFinish={onFinish} />,
+    )
+    fireEvent.click(screen.getByTestId('onboarding-skip'))
+    expect(onFinish).toHaveBeenCalledWith({ hasSeenOnboarding: true })
+  })
 })
 
 describe('OnboardingWizard step focus', () => {
@@ -182,6 +217,31 @@ describe('OnboardingWizard destination', () => {
     expect(onFinish).toHaveBeenCalledWith(
       expect.objectContaining({ addToAppleMusic: true, keepOutputCopy: false }),
     )
+  })
+
+  it('describes the output-folder copy an untouched Apple Music default really keeps', () => {
+    const onFinish = vi.fn()
+    render(
+      <OnboardingWizard
+        settings={{ ...settings, addToAppleMusic: true, keepOutputCopy: true }}
+        onFinish={onFinish}
+      />,
+    )
+    for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    expect(screen.getByTestId('onboarding-destination-appleMusic')).toBeChecked()
+    expect(screen.getByText(i18n.t('settings.destinationAppleMusicKeepCopyHint'))).toBeVisible()
+    expect(screen.queryByText(i18n.t('settings.destinationAppleMusicHint'))).toBeNull()
+    for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    expect(onFinish).toHaveBeenCalledWith(
+      expect.objectContaining({ addToAppleMusic: true, keepOutputCopy: true }),
+    )
+  })
+
+  it('describes Apple Music as copy-free once picking it drops the folder copy', () => {
+    openFormatStep()
+    expect(screen.getByText(i18n.t('settings.destinationAppleMusicHint'))).toBeVisible()
+    fireEvent.click(screen.getByTestId('onboarding-destination-appleMusic'))
+    expect(screen.getByText(i18n.t('settings.destinationAppleMusicHint'))).toBeVisible()
   })
 
   // The wizard's whole point is configuring the first conversion — and WHERE the files
@@ -583,6 +643,11 @@ describe('OnboardingWizard token field', () => {
     openTokenStep()
     expect(screen.getByText(i18n.t('settings.tokenWhy'), { exact: false })).toBeInTheDocument()
   })
+
+  it('says the token is only optional for search, not for auto-match', () => {
+    openTokenStep()
+    expect(screen.getByTestId('onboarding-token').parentElement).toHaveTextContent(/auto-match/i)
+  })
 })
 
 describe('OnboardingWizard auto-match', () => {
@@ -629,6 +694,18 @@ describe('OnboardingWizard format', () => {
     expect(group.querySelector('[data-testid^="onboarding-format-"]')).toBe(
       screen.getByTestId('onboarding-format-source'),
     )
+  })
+
+  it('titles the step after both the format and the destination it sets', () => {
+    openFormatStep()
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
+      i18n.t('onboarding.formatTitle'),
+    )
+  })
+
+  it('lists ALAC among the lossless formats so picking it does not read as losing quality', () => {
+    openFormatStep()
+    expect(screen.getByText(i18n.t('settings.outputFormatHint'))).toHaveTextContent(/ALAC/)
   })
 
   it('persists Same as source when picked', () => {

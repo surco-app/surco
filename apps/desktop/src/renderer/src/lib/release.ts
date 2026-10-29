@@ -201,6 +201,10 @@ function durationProximity(
   return durationProximitySec(localSec, trackSec, missSec)
 }
 
+export function durationDiffers(localSec: number, trackDuration: string | undefined): boolean {
+  return durationProximity(localSec, trackDuration) === 0
+}
+
 function positionMatch(trackNumber: string, position: string): number | undefined {
   const candidate = splitPosition(position).track
   if (!candidate) return undefined

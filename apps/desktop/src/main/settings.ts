@@ -103,8 +103,8 @@ export const defaults: Settings = {
   engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
   titleFormat: '',
-  // Off by default: the metadata-derived name stays opt-in (the "Regenerate" button), so a
-  // plain "load and convert" keeps the source file name until the user turns this on.
+  // Off by default so an install from before it existed keeps the source file name; the
+  // first-run wizard turns it on for new users (buildOnboardingPatch).
   autoApplyFilename: false,
   // No grouping presets by default — they're personal/language-specific, so the user adds
   // their own (the field shows a localized example as a placeholder).

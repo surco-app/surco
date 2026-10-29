@@ -33,6 +33,7 @@ function footer(
   return (
     <ConvertFooter
       item={{ id: 't1', status: 'idle', inputPath: '/a.wav', meta: {} } as TrackItem}
+      spectrum={undefined}
       isMulti={false}
       selectedCount={1}
       outputFolder=""
@@ -340,6 +341,47 @@ describe('ConvertFooter done layout', () => {
     ).toHaveTextContent('Update in Apple Music')
   })
 
+  // Reported in the UX audit: a track converted to the output folder came back with "Add to
+  // Apple Music" as the filled button, pushing the library the DJ had just chosen not to use.
+  function convertedTo(destination: Destination, cleanUp = false): React.JSX.Element {
+    return (
+      <ConvertFooter
+        {...footer(true).props}
+        musicExt="aiff"
+        destination={destination}
+        status={{ ...status(true), canDeleteOriginal: cleanUp }}
+      />
+    )
+  }
+
+  it('offers Apple Music only as a secondary step after converting to a folder', () => {
+    render(convertedTo('folder'))
+    expect(
+      within(screen.getByTestId('done-actions')).getByTestId('add-apple-music'),
+    ).toHaveAttribute('data-variant', 'secondary')
+  })
+
+  it('keeps the Apple Music add the main action when Apple Music is the destination', () => {
+    render(convertedTo('appleMusic'))
+    expect(
+      within(screen.getByTestId('done-actions')).getByTestId('add-apple-music'),
+    ).toHaveAttribute('data-variant', 'primary')
+  })
+
+  // The trash sat flush against the next step, one slip from a delete prompt instead of it.
+  it('sets the clean-up apart from the next steps', () => {
+    render(convertedTo('folder', true))
+    const divider = screen.getByTestId('done-divider')
+    expect(
+      screen.getByTestId('clean-up-previous').compareDocumentPosition(divider) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      divider.compareDocumentPosition(screen.getByTestId('done-actions')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
   // A finished add leaves nothing to do: the green line already says so and leads there.
   it('drops the Apple Music button once the selection was added', () => {
     render(
@@ -388,5 +430,81 @@ describe('ConvertFooter library reveal', () => {
   it('offers no library the track has not reached', () => {
     render(cloneElement(footer(true), { revealIn: [], onRevealIn: vi.fn() }))
     expect(screen.queryByTestId('reveal-in-rekordbox')).toBeNull()
+  })
+})
+
+describe('ConvertFooter lossy source note', () => {
+  function converting(
+    inputPath: string,
+    format: 'aiff' | 'mp3',
+    spectrum?: TrackItem['spectrum'],
+  ): React.JSX.Element {
+    return cloneElement(footer(false), {
+      item: { id: 't1', status: 'idle', inputPath, meta: {} } as TrackItem,
+      spectrum,
+      format,
+    })
+  }
+  const cut = (cutoffHz: number): TrackItem['spectrum'] =>
+    ({ image: '', cutoffHz, sampleRateHz: 44100, processed: false }) as TrackItem['spectrum']
+
+  // A 1.2 MB MP3 came out a 5.3 MB AIFF without a word: a lossless container looks like an
+  // upgrade, and the DJ deserves to know it is only a bigger copy of the same audio.
+  it('says a lossy source converted to a lossless format keeps its quality', () => {
+    render(converting('/crate/a.mp3', 'aiff'))
+    expect(screen.getByTestId('convert-lossy-note')).toHaveTextContent(
+      i18n.t('editor.lossyToLossless', { format: 'AIFF' }),
+    )
+    expect(screen.getByTestId('process-btn')).not.toHaveAttribute('aria-disabled')
+  })
+
+  it('says the same of a lossless file measured as a lossy source', () => {
+    render(converting('/crate/a.flac', 'aiff', cut(16000)))
+    expect(screen.getByTestId('convert-lossy-note')).toBeInTheDocument()
+  })
+
+  it('stays quiet for a genuine lossless source', () => {
+    render(converting('/crate/a.flac', 'aiff', cut(21000)))
+    expect(screen.queryByTestId('convert-lossy-note')).toBeNull()
+  })
+
+  it('stays quiet when the output is lossy too', () => {
+    render(converting('/crate/a.mp3', 'mp3'))
+    expect(screen.queryByTestId('convert-lossy-note')).toBeNull()
+  })
+})
+
+describe('ConvertFooter damaged source note', () => {
+  const converting = (spectrum: TrackItem['spectrum']): React.JSX.Element =>
+    cloneElement(footer(false), {
+      item: {
+        id: 't1',
+        status: 'idle',
+        inputPath: '/crate/a.flac',
+        meta: {},
+      } as TrackItem,
+      spectrum,
+      format: 'aiff',
+    })
+  const measured = (damaged: boolean): TrackItem['spectrum'] =>
+    ({
+      image: '',
+      cutoffHz: 21000,
+      sampleRateHz: 44100,
+      processed: false,
+      damaged,
+    }) as TrackItem['spectrum']
+
+  it('warns that a damaged source makes a damaged copy, without blocking the conversion', () => {
+    render(converting(measured(true)))
+    expect(screen.getByTestId('convert-damaged-note')).toHaveTextContent(
+      i18n.t('editor.damagedSource'),
+    )
+    expect(screen.getByTestId('process-btn')).not.toHaveAttribute('aria-disabled')
+  })
+
+  it('stays quiet for an intact source', () => {
+    render(converting(measured(false)))
+    expect(screen.queryByTestId('convert-damaged-note')).toBeNull()
   })
 })

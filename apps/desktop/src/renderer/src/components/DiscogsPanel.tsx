@@ -1,4 +1,4 @@
-import { ChevronRight, ListFilter, SearchX, Sparkles } from 'lucide-react'
+import { ChevronRight, ListFilter, SearchX, Sparkles, TriangleAlert } from 'lucide-react'
 import type React from 'react'
 import {
   Fragment,
@@ -13,9 +13,11 @@ import {
 import { Trans, useTranslation } from 'react-i18next'
 import type { ReleaseTrack, SearchProviderId, SearchResult } from '../../../shared/types'
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
+import { formatTime } from '../lib/duration'
 import { editorPlace } from '../lib/editorPlace'
 import { useOpenSettings } from '../lib/openSettingsContext'
 import {
+  durationDiffers,
   joinArtists,
   type ReleaseMetaPatch,
   resultIdentity,
@@ -56,6 +58,7 @@ interface Props {
   // score is too weak to suggest anything (e.g. a rip whose length misses the printed
   // duration), while the badge stays the matcher's own verdict.
   appliedTrack: ReleaseTrack | undefined
+  fileDurationSec: number | undefined
   showTokenTip: boolean
   isMulti: boolean
   selectedTracks: TrackItem[] | undefined
@@ -85,6 +88,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   matchedTrack,
   matchTier,
   appliedTrack,
+  fileDurationSec,
   showTokenTip,
   isMulti,
   selectedTracks,
@@ -109,6 +113,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     release,
     openKey: liveOpenKey,
     suggestedKey: liveSuggestedKey,
+    suggestedConfident: liveSuggestedConfident,
     pendingProviders,
     searchProgress,
     held,
@@ -129,6 +134,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     results: liveResults,
     openKey: liveOpenKey,
     suggestedKey: liveSuggestedKey,
+    suggestedConfident: liveSuggestedConfident,
     choosingBest: liveChoosingBest,
   }
   const view = useRef(liveView)
@@ -141,7 +147,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
       results: holdOrder(view.current.results, liveResults, resultKeyOf),
     }
   }
-  const { results, openKey, suggestedKey, choosingBest } = view.current
+  const { results, openKey, suggestedKey, suggestedConfident, choosingBest } = view.current
   // The album applied before this track opened rides first, so tagging a release track
   // after track never means finding it again. Fixed for the mount, and shown with the
   // results so the filter row arriving above them never slides it down.
@@ -259,6 +265,10 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     [searchInputRef],
   )
   const tierLabel = tr(matchTier === 'high' ? 'editor.matchSuggested' : 'match.toConfirm')
+  const lengthMismatchLabel =
+    fileDurationSec !== undefined
+      ? tr('editor.lengthMismatch', { length: formatTime(fileDurationSec) })
+      : ''
   // What answered after the list showed waits at the foot of the list, where "Still
   // searching" stood, so its arrival moves no row; showing it is the user's own click.
   const heldButton = held.count > 0 && (
@@ -280,7 +290,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     const rk = resultKeyOf(r)
     const expanded = openKey === rk
     const suggested = suggestedKey === rk
-    const best = suggested && i === 0 && rk !== pinnedKey
+    const best = suggested && suggestedConfident && i === 0 && rk !== pinnedKey
     const loaded = expanded && openKey === liveOpenKey && !!release && !loading
     // Both empty for every Bandcamp row — its search returns no year, label or
     // catalogue — so each span is dropped rather than rendered blank, and the row
@@ -474,6 +484,18 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                             </span>
                           )}
                         </span>
+                        {fileDurationSec !== undefined &&
+                          durationDiffers(fileDurationSec, t.duration) && (
+                            <span
+                              data-testid="track-length-mismatch"
+                              role="img"
+                              aria-label={lengthMismatchLabel}
+                              className="group/dot relative flex shrink-0 text-warn"
+                            >
+                              <TriangleAlert className="h-3 w-3" aria-hidden="true" />
+                              <Tooltip label={lengthMismatchLabel} align="end" scope="dot" />
+                            </span>
+                          )}
                         <span className="min-w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim">
                           {t.duration}
                         </span>
@@ -675,7 +697,6 @@ export const DiscogsPanel = memo(function DiscogsPanel({
             <>
               {choosingBest && (
                 <div data-testid="best-match-slot">
-                  <BestMatchLabel label={tr('editor.bestMatch')} />
                   <SkeletonRows testid="best-match-skeleton" count={1} />
                 </div>
               )}

@@ -106,6 +106,28 @@ describe('expandPaths', () => {
     expect(announced).toEqual([])
   })
 
+  it('names a file the user dropped that is not audio, so its skip can be told', async () => {
+    const notes = join(dir, 'notes.txt')
+    const song = join(dir, 'song.wav')
+    await writeFile(notes, 'x')
+    await writeFile(song, 'x')
+    const notAudio: string[] = []
+
+    await expandPaths([notes, song], undefined, (p) => notAudio.push(p))
+
+    expect(notAudio).toEqual([notes])
+  })
+
+  it('keeps quiet about non-audio found inside a dropped folder, where cover art is normal', async () => {
+    await writeFile(join(dir, 'notes.txt'), 'x')
+    await writeFile(join(dir, 'song.wav'), 'x')
+    const notAudio: string[] = []
+
+    await expandPaths([dir], undefined, (p) => notAudio.push(p))
+
+    expect(notAudio).toEqual([])
+  })
+
   it('keeps an audio file whose extension is in capitals', async () => {
     const file = join(dir, 'TRACK.WAV')
     await writeFile(file, 'x')

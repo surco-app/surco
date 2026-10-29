@@ -848,6 +848,7 @@ button:hover > .process-fill {
    On the selected row they flip to the on-selection colour so the shape still reads; the
    colour cue they'd normally give is redundant here — the row is already the one in focus. */
 .is-primary [data-testid="track-quality-loading"],
+.is-primary [data-testid="track-quality-word"],
 .is-primary [data-testid="track-automatched"],
 .is-primary [data-testid="track-match-review"],
 .is-primary [data-testid="track-backup"] {

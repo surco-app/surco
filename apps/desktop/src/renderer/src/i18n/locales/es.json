@@ -47,6 +47,7 @@
     "analyzeQuality": "Analizar la calidad de todas las pistas",
     "analyzeQualityLabel": "Analizar",
     "analyzingCount": "Analizando calidad… {{done}}/{{total}}",
+    "analyzingPaused": "En pausa mientras Surco está en segundo plano · {{done}}/{{total}}",
     "convertingCount": "Convirtiendo… {{done}}/{{total}}",
     "convertAll_one": "Convertir {{count}} pista",
     "convertAll_other": "Convertir {{count}} pistas",
@@ -239,6 +240,8 @@
   },
   "notices": {
     "duplicatesSkipped": "Ya en la lista, omitidas: {{count}}",
+    "notAudioSkipped_one": "{{count}} archivo no es audio y se ha omitido",
+    "notAudioSkipped_other": "{{count}} archivos no son audio y se han omitido",
     "noAudioFound": "No se encontró audio en lo que soltaste: comprueba que la carpeta se puede leer y tiene formatos compatibles.",
     "normalizeSkipped": "No se pudo medir el volumen de «{{name}}»: convertida sin normalizar.",
     "keptAsIs": "«{{name}}» se queda como está porque «Mantener MP3 y M4A como están» está activo con «Junto al original».",
@@ -396,6 +399,13 @@
     "convertEditOriginal": "Convertir editando el original, solo esta vez"
   },
   "trackList": {
+    "qualityWord": {
+      "warn": "Dudosa",
+      "bad": "Baja calidad",
+      "processed": "Reprocesada",
+      "transcoded": "Con pérdida",
+      "damaged": "Dañado"
+    },
     "cuesUnsaved": "Cues sin guardar",
     "autoMark": {
       "proposed_one": "{{count}} propuesta",
@@ -482,6 +492,7 @@
     "searchClear": "Limpiar búsqueda",
     "tokenTip": "La búsqueda funciona sin configurar nada. Añade tu propio token de Discogs en <0>Ajustes</0> para tener un límite mayor y privado.",
     "matchSuggested": "Sugerida",
+    "lengthMismatch": "La duración no coincide con tu archivo ({{length}})",
     "chooseAlbumHint": "Elige un álbum de la lista para ver sus pistas.",
     "noResults": "Ningún álbum coincide con tu búsqueda.",
     "noResultsFromSource": "{{provider}} no tiene nada para esta búsqueda.",
@@ -535,6 +546,8 @@
     "qualityBad": "Mala calidad",
     "qualityProcessed": "Posible reprocesado",
     "qualityTranscode": "Fuente con pérdidas",
+    "qualityDamaged": "Archivo dañado",
+    "qualityDamagedCaption": "El archivo deja de decodificarse antes de su duración declarada: está dañado o incompleto.",
     "analyzing": "Analizando espectro…",
     "cleaned": {
       "label": "Limpiado",
@@ -638,8 +651,9 @@
     "regenerateCustom": "Personalizar el patrón del nombre para esta pista…",
     "convert": "Convertir a {{format}} + Apple Music",
     "convertEngine": "Convertir a {{format}} + Engine DJ",
+    "lossyToLossless": "La fuente tiene pérdidas: convertir a {{format}} no recupera su calidad.",
+    "damagedSource": "Este archivo está dañado o incompleto, así que la copia también lo estará.",
     "convertNoMusic": "Convertir a {{format}}",
-    "convertFolder": "Convertir a {{format}} en {{folder}}",
     "convertBeside": "Convertir a {{format}} junto al original",
     "convertOverwrite": "Convertir a {{format}} sobre el original",
     "exportAgain": "Convertir de nuevo",
@@ -693,7 +707,6 @@
     "libraryCheckFailed": "No se ha podido leer tu biblioteca de Apple Music, así que las pistas no se marcan como ya incluidas. Surco lo vuelve a intentar al volver a la ventana.",
     "libraryCheckFailedEngine": "No se ha podido leer tu biblioteca de Engine DJ, así que las pistas no se marcan como ya incluidas. Surco lo vuelve a intentar al volver a la ventana.",
     "convertAll": "Convertir ({{count}}) · {{format}}",
-    "convertAllFolder": "Convertir ({{count}}) · {{format}} en {{folder}}",
     "convertAllBeside": "Convertir ({{count}}) · {{format}} junto al original",
     "convertAllOverwrite": "Convertir ({{count}}) · {{format}} sobre el original",
     "editingMultiple": "Editando {{count}} pistas",
@@ -1185,6 +1198,7 @@
       "fields": "Campos",
       "shortcuts": "Atajos",
       "stats": "Estadísticas",
+      "advanced": "Avanzado",
       "cues": "Cues"
     },
     "tabGroups": {
@@ -1313,7 +1327,7 @@
     "beatportDisconnect": "Desconectar",
     "discogsToken": "Token de Discogs",
     "tokenPlaceholder": "Pega aquí tu token personal",
-    "tokenWhy": "Opcional. La búsqueda usa credenciales compartidas que pueden fallar en horas punta; tu propio token la mantiene rápida.",
+    "tokenWhy": "Opcional para buscar: la búsqueda usa credenciales compartidas que pueden fallar en horas punta; tu propio token la mantiene rápida. Para auto-emparejar sí hace falta.",
     "tokenHelp": "Genera uno gratis en",
     "autoMatch": "Auto-emparejar al importar",
     "autoMatchHint": "Al importar, busca en tus fuentes y aplica las coincidencias fiables. Discogs primero y el resto de tus fuentes de respaldo. Desactivado por defecto.",
@@ -1367,7 +1381,7 @@
       "wav": "WAV",
       "flac": "FLAC"
     },
-    "outputFormatHint": "«Igual que el origen» mantiene cada archivo en su propio formato, así que un lote mixto nunca se reconvierte. AIFF/WAV/FLAC sin pérdida (FLAC comprimido); MP3 ocupa menos. Un archivo ya en ese formato se copia sin reconvertir.",
+    "outputFormatHint": "«Igual que el origen» mantiene cada archivo en su propio formato, así que un lote mixto nunca se reconvierte. AIFF/WAV/FLAC/ALAC sin pérdida (FLAC y ALAC comprimidos); MP3 ocupa menos. Un archivo ya en ese formato se copia sin reconvertir.",
     "keepMp3Sources": "Mantener MP3 y M4A como están",
     "keepMp3SourcesHint": "Convertir un MP3 o un M4A a un formato sin pérdida no recupera calidad, solo ocupa más. Con esto activo se quedan en su formato y Surco escribe sus etiquetas en el destino que tengas elegido. Con «Junto al original» no los toca. Si igualas el volumen, reparas clics o recortas, el audio sí se vuelve a codificar.",
     "keepMp3SourcesOff": "No hace falta con MP3 o «Igual que el origen»: los MP3 ya se quedan como MP3.",
@@ -1417,6 +1431,7 @@
       "overwrite": "Editar el original"
     },
     "destinationAppleMusicHint": "Lo añade a Apple Music, sin copia en la carpeta.",
+    "destinationAppleMusicKeepCopyHint": "Lo añade a Apple Music y guarda una copia en la carpeta.",
     "destinationEngineDjHint": "Lo registra en tu biblioteca de Engine DJ; el archivo se queda en la carpeta de salida.",
     "destinationBesideHint": "Escribe la conversión junto al archivo original, sin tocarlo nunca; con el mismo formato la copia toma un nombre “(2)”.",
     "destinationOverwriteHint": "Reescribe cada archivo en su sitio; sin copia de salida. Cambiar de formato elimina el original.",
@@ -1533,10 +1548,10 @@
     "autoOrganizeHint": "Reordena los campos mostrados por grupo",
     "autoOrganized": "Organizado",
     "syncTraktor": "Actualizar la colección de Traktor al convertir",
-    "syncTraktorHint": "Los cue points y la rejilla de las pistas convertidas se escriben en tu colección de Traktor. Antes de escribir, Surco guarda una copia de seguridad en su carpeta de copias (Ajustes → General), y nunca escribe con Traktor abierto.",
+    "syncTraktorHint": "Los cue points y la rejilla de las pistas convertidas se escriben en tu colección de Traktor. Antes de escribir, Surco guarda una copia de seguridad en su carpeta de copias (Ajustes → Avanzado), y nunca escribe con Traktor abierto.",
     "syncTraktorIdle": "Indica abajo dónde está tu colección de Traktor para poder activarlo.",
     "syncRekordbox": "Actualizar la colección de rekordbox al convertir",
-    "syncRekordboxHint": "Al convertir o actualizar una pista que está en rekordbox, su entrada pasa a apuntar al archivo nuevo y recibe el título, el artista, el álbum, el género, el sello, el remixer, el comentario, el año, los números de pista y disco y la carátula. Conserva sus playlists, sus cue points, su BPM y su tonalidad, y un campo vacío en Surco no borra el de rekordbox. Antes de escribir, Surco guarda en su carpeta de copias (Ajustes → General) una copia de seguridad de toda la tanda y otra de cada escritura, y nunca escribe con rekordbox abierto.",
+    "syncRekordboxHint": "Al convertir o actualizar una pista que está en rekordbox, su entrada pasa a apuntar al archivo nuevo y recibe el título, el artista, el álbum, el género, el sello, el remixer, el comentario, el año, los números de pista y disco y la carátula. Conserva sus playlists, sus cue points, su BPM y su tonalidad, y un campo vacío en Surco no borra el de rekordbox. Antes de escribir, Surco guarda en su carpeta de copias (Ajustes → Avanzado) una copia de seguridad de toda la tanda y otra de cada escritura, y nunca escribe con rekordbox abierto.",
     "syncRekordboxIdle": "No se ha encontrado ninguna colección de rekordbox en este equipo.",
     "rekordboxSync": "Colección de rekordbox",
     "rekordboxDbPath": "Colección de rekordbox",
@@ -1561,7 +1576,7 @@
     "originalBackupLimitsKept": "Los límites siguen rigiendo para lo que ya está guardado.",
     "engineSync": "Biblioteca de Engine DJ",
     "syncEngineDj": "Actualizar la biblioteca de Engine DJ al convertir",
-    "syncEngineDjHint": "Al convertir una pista que está en tu biblioteca de Engine DJ, su entrada pasa a apuntar al archivo nuevo y conserva sus playlists y sus cue points. Usa la biblioteca elegida en el destino Engine DJ. Antes de escribir, Surco guarda en su carpeta de copias (Ajustes → General) una copia de seguridad de toda la tanda y otra de cada escritura, y nunca escribe con Engine DJ abierto.",
+    "syncEngineDjHint": "Al convertir una pista que está en tu biblioteca de Engine DJ, su entrada pasa a apuntar al archivo nuevo y conserva sus playlists y sus cue points. Usa la biblioteca elegida en el destino Engine DJ. Antes de escribir, Surco guarda en su carpeta de copias (Ajustes → Avanzado) una copia de seguridad de toda la tanda y otra de cada escritura, y nunca escribe con Engine DJ abierto.",
     "completeCues": "Al cerrar rekordbox, aplicar tu flujo activo en las pistas con CALL y sin hot cues",
     "completeCuesHint": "Escribe en tu colección, también en pistas que no has mirado en Surco. Apagado, tus cues solo se guardan desde la sección Cues.",
     "completeCuesCount_one": "Se completará {{count}} pista al cerrar rekordbox.",
@@ -1716,6 +1731,7 @@
   "onboarding": {
     "welcomeTitle": "Te damos la bienvenida a Surco",
     "welcomeBody": "Vamos a configurar lo esencial. Tardas menos de un minuto y podrás cambiarlo todo después en Ajustes.",
+    "formatTitle": "Formato y destino",
     "formatBody": "Elige a qué formato exporta Surco tus pistas.",
     "audioTitle": "¿Qué haces con tus pistas?",
     "audioBody": "Surco muestra solo las secciones del editor que tu flujo necesita. Elige lo que encaje: puedes cambiarlo cuando quieras en Ajustes.",
@@ -2119,7 +2135,7 @@
         "readOnly": "La colección de rekordbox es de solo lectura y no se cambió nada",
         "stale": "La playlist cambió en rekordbox. Revísala y vuelve a intentarlo",
         "noSeparator": "Tu colección no tiene ningún separador que copiar",
-        "writeUnknown": "No se pudo guardar el cambio ni deshacerlo, así que la colección puede haber cambiado. Antes de abrir rekordbox, saca master.db-wal y master.db-shm de su carpeta y después sustituye master.db por la copia master.db.surco-backup que tienes en Ajustes → General → Copias de las colecciones"
+        "writeUnknown": "No se pudo guardar el cambio ni deshacerlo, así que la colección puede haber cambiado. Antes de abrir rekordbox, saca master.db-wal y master.db-shm de su carpeta y después sustituye master.db por la copia master.db.surco-backup que tienes en Ajustes → Avanzado → Copias de las colecciones"
       }
     },
     "editTraktor": {
@@ -2141,7 +2157,7 @@
         "readOnly": "La colección de Traktor es de solo lectura y no se cambió nada",
         "stale": "La playlist cambió en Traktor. Revísala y vuelve a intentarlo",
         "noSeparator": "Tu colección no tiene ningún separador que copiar",
-        "writeUnknown": "No se pudo guardar ni deshacer el cambio, así que la colección puede haber cambiado. Antes de abrir Traktor, sustituye collection.nml por la copia collection.nml.surco-backup que tienes en Ajustes → General → Copias de las colecciones"
+        "writeUnknown": "No se pudo guardar ni deshacer el cambio, así que la colección puede haber cambiado. Antes de abrir Traktor, sustituye collection.nml por la copia collection.nml.surco-backup que tienes en Ajustes → Avanzado → Copias de las colecciones"
       }
     },
     "tree": {
@@ -2634,7 +2650,7 @@
     "discardYes": "Descartar",
     "discardNo": "Cancelar",
     "pillHalted": "Cambios de rekordbox en pausa",
-    "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la colección hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia master.db.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → General → Copias de las colecciones",
+    "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la colección hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia master.db.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → Avanzado → Copias de las colecciones",
     "pillElsewhere": "Pendiente de otra colección de rekordbox",
     "elsewhere_one": "Hay {{count}} cambio pendiente de otra colección de rekordbox. Se aplicará cuando vuelvas a ella",
     "elsewhere_other": "Hay {{count}} cambios pendientes de otra colección de rekordbox. Se aplicarán cuando vuelvas a ella"
@@ -2665,7 +2681,7 @@
     },
     "discardConfirm": "¿Descartar lo que espera? Tus playlists y cues de Engine DJ se quedan como las tiene Engine DJ",
     "pillHalted": "Cambios de Engine DJ en pausa",
-    "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la biblioteca hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia m.db.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → General → Copias de las colecciones",
+    "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la biblioteca hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia m.db.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → Avanzado → Copias de las colecciones",
     "pillElsewhere": "Pendiente de otra biblioteca de Engine DJ",
     "elsewhere_one": "Hay {{count}} cambio pendiente de otra biblioteca de Engine DJ. Se aplicará cuando vuelvas a ella",
     "elsewhere_other": "Hay {{count}} cambios pendientes de otra biblioteca de Engine DJ. Se aplicarán cuando vuelvas a ella"
@@ -2696,7 +2712,7 @@
     },
     "discardConfirm": "¿Descartar lo que espera? Tus playlists y cues de Traktor se quedan como las tiene Traktor",
     "pillHalted": "Cambios de Traktor en pausa",
-    "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la colección hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia collection.nml.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → General → Copias de las colecciones",
+    "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la colección hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia collection.nml.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → Avanzado → Copias de las colecciones",
     "pillElsewhere": "Pendiente de otra colección de Traktor",
     "elsewhere_one": "Hay {{count}} cambio pendiente de otra colección de Traktor. Se aplicará cuando vuelvas a ella",
     "elsewhere_other": "Hay {{count}} cambios pendientes de otra colección de Traktor. Se aplicarán cuando vuelvas a ella"

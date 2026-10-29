@@ -40,6 +40,7 @@ export async function gradeEntry(
       fineStepDb: steepestFineStep(fine),
     }),
     bits: async () => null,
+    damaged: async () => false,
     shelf: async () => ({
       shelfCutoffHz: detectFlatShelf(entry.shelf, SHELF_START_HZ, SHELF_WIDTH_HZ, NYQUIST),
       kneeCutoffHz: detectFftKnee(entry.shelf, SHELF_START_HZ, SHELF_WIDTH_HZ),

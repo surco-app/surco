@@ -7,6 +7,7 @@ type ImportNotice =
   | 'meta-read-failed'
   | 'duplicates-skipped'
   | 'no-audio-found'
+  | 'not-audio-skipped'
   | 'playlist-imported'
 
 // A folder walk streams one batch per DIRECTORY (see expand.ts), and every batch closes

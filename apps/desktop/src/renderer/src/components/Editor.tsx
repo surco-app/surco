@@ -1344,6 +1344,7 @@ export const Editor = memo(function Editor({
         matchedTrack={matchedTrack}
         matchTier={matchTier}
         appliedTrack={appliedTrack}
+        fileDurationSec={item.duration}
         showTokenTip={showTokenTip}
         isMulti={isMulti}
         selectedTracks={selectedTracks}
@@ -1742,6 +1743,7 @@ export const Editor = memo(function Editor({
 
         <ConvertFooter
           item={item}
+          spectrum={spectrumInHand}
           isMulti={isMulti}
           selectedCount={multiTracks.length}
           status={footerStatus}

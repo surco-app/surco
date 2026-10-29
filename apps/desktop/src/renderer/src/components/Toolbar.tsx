@@ -5,6 +5,7 @@ import {
   FilePlus,
   Loader2,
   type LucideIcon,
+  Pause,
   Radio,
   Search,
   Settings as SettingsIcon,
@@ -47,6 +48,7 @@ interface Props {
   // Progress of the analyze-quality sweep (null when idle) and whether every track is
   // already analyzed (which, when idle, disables the button).
   analysis: { done: number; total: number } | null
+  analysisPaused: boolean
   allAnalyzed: boolean
   // Progress of the auto-match sweep (null when idle), whether its sources can run (see
   // autoMatchAvailable), and how many tracks are still matchable (zero disables the button).
@@ -58,6 +60,7 @@ interface Props {
   // so the sweep would silently do nothing. The button then reads as a live "add a token"
   // fix instead of a disabled control, and onFixToken opens Settings where it's set.
   needsToken: boolean
+  tokenMissing: boolean
   autoMatchable: number
   onAnalyzeAll: () => void
   onCancelAnalyze: () => void
@@ -102,11 +105,13 @@ export const Toolbar = memo(function Toolbar({
   batching,
   batchProgress,
   analysis,
+  analysisPaused,
   allAnalyzed,
   matching,
   cleanedCount,
   canAutoMatch,
   needsToken,
+  tokenMissing,
   autoMatchable,
   onAnalyzeAll,
   onCancelAnalyze,
@@ -125,6 +130,12 @@ export const Toolbar = memo(function Toolbar({
   queuePill,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const analysisLabel =
+    analysis &&
+    tr(analysisPaused ? 'header.analyzingPaused' : 'header.analyzingCount', {
+      done: analysis.done,
+      total: analysis.total,
+    })
   const convertLabel =
     convertibleCount === 0
       ? tr('header.convertNone')
@@ -155,11 +166,7 @@ export const Toolbar = memo(function Toolbar({
             ? tr('header.autoMatchingCount', { done: matching.done, total: matching.total })
             : ''}
         </span>
-        <span role="status">
-          {analysis
-            ? tr('header.analyzingCount', { done: analysis.done, total: analysis.total })
-            : ''}
-        </span>
+        <span role="status">{analysisLabel || ''}</span>
       </div>
       <div />
       <div
@@ -235,15 +242,19 @@ export const Toolbar = memo(function Toolbar({
             <button
               type="button"
               data-testid="auto-match"
-              onClick={matching ? onCancelAutoMatch : needsToken ? onFixToken : onAutoMatch}
+              onClick={
+                matching ? onCancelAutoMatch : needsToken || tokenMissing ? onFixToken : onAutoMatch
+              }
               // When auto-match is on but the token is missing, the button isn't a dead
               // disabled control — it's the fix, so it stays enabled and routes to Settings.
-              disabled={!matching && !needsToken && (!canAutoMatch || autoMatchable === 0)}
+              disabled={
+                !matching && !needsToken && !tokenMissing && (!canAutoMatch || autoMatchable === 0)
+              }
               // Mid-run a press cancels, so the name has to say that and not offer the start.
               aria-label={
                 matching
                   ? tr('header.cancelAutoMatch')
-                  : needsToken
+                  : needsToken || tokenMissing
                     ? tr('header.autoMatchNoToken')
                     : tr('header.autoMatch')
               }
@@ -280,11 +291,11 @@ export const Toolbar = memo(function Toolbar({
                 label={
                   matching
                     ? tr('header.autoMatchingCount', { done: matching.done, total: matching.total })
-                    : needsToken
+                    : needsToken || tokenMissing
                       ? tr('header.autoMatchNoToken')
                       : tr('header.autoMatch')
                 }
-                hint={matching || needsToken ? undefined : hintFor('auto-match')}
+                hint={matching || needsToken || tokenMissing ? undefined : hintFor('auto-match')}
                 align="end"
               />
             </button>
@@ -309,10 +320,14 @@ export const Toolbar = memo(function Toolbar({
                   : 'text-fg-muted hover:text-fg'
               }`}
             >
-              <Activity
-                className={`h-4 w-4 ${analysis ? 'animate-pulse' : ''}`}
-                aria-hidden="true"
-              />
+              {analysisPaused ? (
+                <Pause data-testid="analyze-paused" className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Activity
+                  className={`h-4 w-4 ${analysis ? 'animate-pulse' : ''}`}
+                  aria-hidden="true"
+                />
+              )}
               {analysis ? (
                 <SteadyWidth
                   testid="analyze-progress-sizer"
@@ -326,11 +341,7 @@ export const Toolbar = memo(function Toolbar({
                 <span>{tr('header.analyzeQualityLabel')}</span>
               )}
               <Tooltip
-                label={
-                  analysis
-                    ? tr('header.analyzingCount', { done: analysis.done, total: analysis.total })
-                    : tr('header.analyzeQuality')
-                }
+                label={analysisLabel || tr('header.analyzeQuality')}
                 hint={analysis ? undefined : hintFor('analyze-quality')}
                 align="end"
               />

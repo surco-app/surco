@@ -36,9 +36,19 @@ function setApi(over: Record<string, unknown> = {}): void {
 }
 
 function item(
-  over: { query?: string; title?: string; discogsReleaseId?: string; loadingMeta?: boolean } = {},
+  over: {
+    query?: string
+    title?: string
+    artist?: string
+    discogsReleaseId?: string
+    loadingMeta?: boolean
+  } = {},
 ): TrackItem {
-  const meta = { title: over.title ?? '', discogsReleaseId: over.discogsReleaseId } as TrackMetadata
+  const meta = {
+    title: over.title ?? '',
+    artist: over.artist,
+    discogsReleaseId: over.discogsReleaseId,
+  } as TrackMetadata
   return {
     id: 'a',
     inputPath: '/m/a.wav',
@@ -305,6 +315,38 @@ describe('useDiscogsBrowser', () => {
 
   // A pasted release id loads a release directly with no probe, so nothing is "suggested" —
   // the badge would be a lie about a match Surco never scored.
+  it('does not vouch for a suggestion that only shares a title with the file', async () => {
+    setApi({
+      getRelease: vi.fn().mockResolvedValue({ ...release, artists: [{ name: 'Local Artist' }] }),
+    })
+    const { result } = renderHook(
+      () =>
+        useDiscogsBrowser(
+          item({ query: 'garbage noise', title: 'Track One', artist: 'Garbage' }),
+          tr,
+        ),
+      { wrapper: wrapper() },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.suggestedKey).toBe('discogs:1'))
+    expect(result.current.suggestedConfident).toBe(false)
+  })
+
+  it('vouches for a suggestion whose artist corroborates the title', async () => {
+    setApi()
+    const { result } = renderHook(
+      () =>
+        useDiscogsBrowser(
+          item({ query: 'some album', title: 'Track One', artist: 'The Artist' }),
+          tr,
+        ),
+      { wrapper: wrapper() },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.suggestedKey).toBe('discogs:1'))
+    expect(result.current.suggestedConfident).toBe(true)
+  })
+
   it('marks no result as suggested when none was probe-matched', async () => {
     setApi()
     const { result } = renderHook(() => useDiscogsBrowser(item({ query: 'some album' }), tr), {

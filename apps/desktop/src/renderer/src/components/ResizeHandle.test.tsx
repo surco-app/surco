@@ -31,4 +31,27 @@ describe('ResizeHandle', () => {
     expect(screen.getByRole('tooltip')).toHaveTextContent('Fit to content')
     vi.useRealTimers()
   })
+
+  it('keeps its hint away for the whole drag, so it never floats over the panels being resized', () => {
+    vi.useFakeTimers()
+    render(<ResizeHandle onPointerDown={vi.fn()} title="Fit to content" />)
+    const handle = screen.getByRole('separator')
+    fireEvent.pointerDown(handle, { clientX: 10, clientY: 10 })
+    fireEvent.pointerLeave(handle)
+    fireEvent.pointerEnter(handle)
+    fireEvent.pointerMove(handle, { clientX: 40, clientY: 10 })
+    act(() => vi.advanceTimersByTime(500))
+    expect(screen.queryByRole('tooltip')).toBeNull()
+
+    fireEvent.pointerUp(window)
+    act(() => vi.advanceTimersByTime(500))
+    expect(screen.queryByRole('tooltip')).toBeNull()
+
+    fireEvent.pointerLeave(handle)
+    fireEvent.pointerEnter(handle)
+    fireEvent.pointerMove(handle, { clientX: 40, clientY: 10 })
+    act(() => vi.advanceTimersByTime(500))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Fit to content')
+    vi.useRealTimers()
+  })
 })

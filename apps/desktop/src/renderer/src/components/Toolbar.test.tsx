@@ -23,12 +23,14 @@ function renderBar(over: Partial<Props> = {}): Props {
     onShowFailed: vi.fn(),
     batching: false,
     analysis: null,
+    analysisPaused: false,
     allAnalyzed: false,
     batchProgress: { done: 0, total: 0 },
     matching: null,
     cleanedCount: 0,
     canAutoMatch: true,
     needsToken: false,
+    tokenMissing: false,
     autoMatchable: 2,
     onAnalyzeAll: vi.fn(),
     onFixToken: vi.fn(),
@@ -122,7 +124,7 @@ describe('Toolbar', () => {
     )
   })
 
-  // A sweep with nothing to do must not be startable: no token means Discogs can't be
+  // A sweep with nothing to do must not be startable: no usable source means nothing can be
   // queried at all, and an all-analyzed list has nothing left to measure.
   it('disables the sweeps when they have nothing to work on', () => {
     renderBar({ canAutoMatch: false, allAnalyzed: true })
@@ -153,6 +155,35 @@ describe('Toolbar', () => {
     fireEvent.click(button)
     expect(props.onFixToken).toHaveBeenCalledOnce()
     // It must not misfire the sweep it can't run.
+    expect(props.onAutoMatch).not.toHaveBeenCalled()
+  })
+
+  it('says the quality sweep is paused while Surco is in the background, so a count that stops ticking is not taken for a hang', () => {
+    renderBar({ analysis: { done: 0, total: 4 }, analysisPaused: true })
+    const paused = i18n.t('header.analyzingPaused', { done: 0, total: 4 })
+    expect(screen.getAllByRole('status').filter((r) => r.textContent === paused)).toHaveLength(1)
+    expect(screen.getByTestId('analyze-paused')).toBeInTheDocument()
+    fireEvent.focus(screen.getByTestId('analyze-quality'))
+    expect(screen.getByRole('tooltip')).toHaveTextContent(paused)
+  })
+
+  it('keeps the running count while the window is in front', () => {
+    renderBar({ analysis: { done: 1, total: 4 }, analysisPaused: false })
+    expect(screen.queryByTestId('analyze-paused')).toBeNull()
+    fireEvent.focus(screen.getByTestId('analyze-quality'))
+    expect(screen.getByRole('tooltip')).toHaveTextContent(
+      i18n.t('header.analyzingCount', { done: 1, total: 4 }),
+    )
+  })
+
+  it('says why Match cannot run without a Discogs token and takes the user to add one', () => {
+    const props = renderBar({ tokenMissing: true, canAutoMatch: false })
+    const button = screen.getByTestId('auto-match')
+    expect(button).not.toBeDisabled()
+    expect(button).toHaveAccessibleName(i18n.t('header.autoMatchNoToken'))
+    expect(button).toHaveTextContent(i18n.t('header.autoMatchLabel'))
+    fireEvent.click(button)
+    expect(props.onFixToken).toHaveBeenCalledOnce()
     expect(props.onAutoMatch).not.toHaveBeenCalled()
   })
 

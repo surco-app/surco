@@ -721,6 +721,13 @@ export default function App(): React.JSX.Element {
     },
     filesOpen: browser.source === null,
   })
+  useEffect(
+    () =>
+      window.api.onNotAudioSkipped((count) =>
+        pushImportNotice(store, 'not-audio-skipped', tr('notices.notAudioSkipped', { count })),
+      ),
+    [store, tr],
+  )
 
   const [revealing, setRevealing] = useState<CueSpot | null>(null)
   // What an edit to rekordbox did, or why it did nothing: one keyed line, so a burst of
@@ -965,7 +972,7 @@ export default function App(): React.JSX.Element {
   // walks to its audio files, and ._ AppleDouble and hidden entries are filtered out.
   const addToWorkingList = useStableCallback(async (paths: string[]): Promise<void> => {
     if (paths.length > 0) selectSource(null)
-    await addPaths(await window.api.expandPaths(paths))
+    await addPaths(await window.api.expandPaths(paths, true))
   })
   const pickFiles = useStableCallback(
     async (): Promise<void> => addToWorkingList(await window.api.pickFiles()),
@@ -1222,6 +1229,7 @@ export default function App(): React.JSX.Element {
   // wires the start/cancel actions into the toolbar and commands.
   const {
     analysis,
+    paused: analysisPaused,
     analyzeAllQuality,
     cancelAnalysis,
     forgetTracks: forgetAnalysisTracks,
@@ -1925,6 +1933,8 @@ export default function App(): React.JSX.Element {
   // dead end. Only with tracks loaded — nothing to match on an empty list.
   const needsToken =
     scopeTracks.length > 0 && !!settings?.autoMatch && !autoMatchAvailable(settings)
+  const tokenMissing =
+    !!settings && !autoMatchAvailable(settings) && usableProviders(settings).includes('discogs')
   const canProcessAll = eligibleCount > 0 && !batching
 
   // Effective key bindings (defaults + the user's overrides): the single source the
@@ -3021,11 +3031,13 @@ export default function App(): React.JSX.Element {
                   batching={batching}
                   batchProgress={batchProgress}
                   analysis={analysis}
+                  analysisPaused={analysisPaused}
                   allAnalyzed={allAnalyzed}
                   matching={matching}
                   cleanedCount={cleanedCount}
                   canAutoMatch={!!settings && autoMatchAvailable(settings)}
                   needsToken={needsToken}
+                  tokenMissing={tokenMissing}
                   autoMatchable={autoMatchable}
                   onAnalyzeAll={onAnalyzeAll}
                   onCancelAnalyze={cancelAnalysis}

@@ -61,7 +61,11 @@ export type OnBatch = (paths: string[]) => void
 // after ~1s. onBatch reports files the moment they are identified so the import can
 // start on them; the returned array is unchanged, so callers that ignore it (and the
 // awaited result everything still uses) behave exactly as before.
-export async function expandPaths(paths: string[], onBatch?: OnBatch): Promise<string[]> {
+export async function expandPaths(
+  paths: string[],
+  onBatch?: OnBatch,
+  onNotAudio?: (path: string) => void,
+): Promise<string[]> {
   const expanded = await Promise.all(
     paths.map(async (p) => {
       const info = await sourceStat(p).catch(async (err: NodeJS.ErrnoException) =>
@@ -71,7 +75,10 @@ export async function expandPaths(paths: string[], onBatch?: OnBatch): Promise<s
       if (info?.isDirectory()) return collectAudio(p, onBatch)
       const name = basename(p)
       if (isHidden(name) || isConversionTemp(name)) return []
-      if (!AUDIO_EXTS.has(extname(name).toLowerCase())) return []
+      if (!AUDIO_EXTS.has(extname(name).toLowerCase())) {
+        onNotAudio?.(p)
+        return []
+      }
       // A 0-byte file has no header, no frames and no tags: every probe fails and the
       // row would sit in the list with no title, no duration and nothing saying why
       // (a user sent one among two MP3s that "keep failing", 21/09/2026). The stat is

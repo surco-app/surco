@@ -22,6 +22,7 @@ import {
 } from '../lib/settingsTabs'
 import { FieldsEditor } from './FieldsEditor'
 import { ModalShell } from './ModalShell'
+import { AdvancedTab } from './settings/AdvancedTab'
 import { ArtworkTab } from './settings/ArtworkTab'
 import { ConversionTab } from './settings/ConversionTab'
 import { CuesTab } from './settings/CuesTab'
@@ -365,6 +366,10 @@ export function SettingsModal({
                 local={local}
                 patchLocal={patchLocal}
                 onPreviewTheme={onPreviewTheme}
+              />
+            )}
+            {tab === 'advanced' && (
+              <AdvancedTab
                 configDir={configDir}
                 defaultDir={defaultDir}
                 onChangeConfigDir={changeConfigDir}

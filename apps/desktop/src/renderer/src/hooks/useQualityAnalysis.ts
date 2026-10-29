@@ -30,6 +30,7 @@ interface Params {
 interface QualityAnalysis {
   // Progress of the "analyze quality" run (null when idle).
   analysis: { done: number; total: number } | null
+  paused: boolean
   // tracks is folded into the sweep's targets alongside targetsRef, for a caller (an
   // import's onMetaLoaded) that fires before targetsRef's render has caught up with the
   // track it just added — mirroring enqueueAutoMatch's explicit candidates argument.
@@ -112,7 +113,11 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
     }
   }, [])
 
-  useWindowFocus((focused) => focusGate.current.set(focused))
+  const [focused, setFocused] = useState(true)
+  useWindowFocus((next) => {
+    focusGate.current.set(next)
+    setFocused(next)
+  })
 
   // A probe can land after the owner unmounted (the window closing, a test tearing down its
   // DOM): the sweep then starts no further track and leaves React state alone, since a
@@ -303,5 +308,12 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
     [analyzeAllQuality],
   )
 
-  return { analysis, analyzeAllQuality, cancelAnalysis, forgetTracks, scopeTo }
+  return {
+    analysis,
+    paused: analysis !== null && !focused,
+    analyzeAllQuality,
+    cancelAnalysis,
+    forgetTracks,
+    scopeTo,
+  }
 }

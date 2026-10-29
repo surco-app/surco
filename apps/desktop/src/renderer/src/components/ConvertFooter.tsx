@@ -7,6 +7,7 @@ import type {
   NormalizeConfig,
   OutputFormat,
   PlaylistSource,
+  SpectrumVerdict,
 } from '../../../shared/types'
 import { type CleanupOffer, cleanupCount } from '../hooks/useConfirmFlows'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
@@ -14,7 +15,9 @@ import type { Destination } from '../lib/destination'
 import { openFeedback } from '../lib/feedback'
 import { formatUpTo } from '../lib/numberFormat'
 import { isMacOS } from '../lib/platform'
+import { gradedExt, isLosslessContainer, isLossyContainer } from '../lib/quality'
 import type { SelectionStatus } from '../lib/selectionStatus'
+import { trackQuality } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { DoneMenu } from './DoneMenu'
 import { ExportButton } from './ExportButton'
@@ -27,6 +30,7 @@ const ICON_BUTTON =
 
 interface ConvertFooterProps {
   item: TrackItem
+  spectrum: SpectrumVerdict | undefined
   isMulti: boolean
   // Size of the multi-selection, for the "Convert all (N)" label and the done counts.
   selectedCount: number
@@ -95,6 +99,7 @@ interface ConvertFooterProps {
 // inline links (reveal/clean up) beside the next steps (Apple Music, DJ app, re-export).
 export function ConvertFooter({
   item,
+  spectrum,
   isMulti,
   selectedCount,
   status,
@@ -166,6 +171,12 @@ export function ConvertFooter({
     staleMusicCopy: !isMulti && musicAdded && staleMusicCopy ? staleMusicCopy : null,
   }
   const cleanupFiles = cleanupCount(cleanup)
+  const musicPrimary = destination === 'appleMusic' || hasMusicCopy
+  const lossyToLossless =
+    !isMulti &&
+    isLosslessContainer(format) &&
+    (isLossyContainer(gradedExt(item.inputPath, spectrum?.codec)) ||
+      trackQuality({ ...item, spectrum }) === 'transcoded')
   const musicLabel = musicAdding
     ? hasMusicCopy
       ? tr('editor.appleMusicUpdating')
@@ -240,8 +251,9 @@ export function ConvertFooter({
           // One line, always, ordered by what matters after an export. On the left, the
           // outcome in words, which is also the way to the library copy; the clean-up of what
           // was left behind, named while the row has room for it and an icon when it doesn't.
-          // On the right, the one step still pending (a Music add or update) as the only
-          // filled button, and "•••" for everything else, each named in full in its menu.
+          // On the right, the one step still pending (a Music add or update), filled only when
+          // Music is the destination or holds a copy, and "•••" for everything else, each named
+          // in full in its menu.
           <>
             <div data-testid="done-row" className="@container flex min-w-0 items-center gap-1">
               <div data-testid="done-outcome" className="flex min-w-0 flex-1 items-center gap-1">
@@ -318,6 +330,13 @@ export function ConvertFooter({
                   </button>
                 )}
               </div>
+              {cleanupFiles > 0 && (
+                <span
+                  data-testid="done-divider"
+                  aria-hidden="true"
+                  className="mx-1 h-4 w-px shrink-0 bg-[var(--color-line-strong)]"
+                />
+              )}
               <div data-testid="done-actions" className="flex shrink-0 items-center gap-2">
                 {isMacOS() &&
                   !showInMusic &&
@@ -327,9 +346,14 @@ export function ConvertFooter({
                     <button
                       type="button"
                       data-testid="add-apple-music"
+                      data-variant={musicPrimary ? 'primary' : 'secondary'}
                       onClick={onAddToAppleMusic}
                       disabled={musicAdding}
-                      className="press flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-3 text-xs font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
+                      className={`press flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg px-3 text-xs font-medium disabled:opacity-60 ${
+                        musicPrimary
+                          ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]'
+                          : 'border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-line-strong)]'
+                      }`}
                     >
                       {musicLabel}
                     </button>
@@ -357,33 +381,45 @@ export function ConvertFooter({
             )}
           </>
         ) : (
-          <ExportButton
-            status={isMulti ? 'idle' : item.status}
-            stage={isMulti ? undefined : item.stage}
-            stale={!isMulti && stale}
-            replaces={!isMulti && replaces}
-            libraryBetter={!isMulti && libraryBetter}
-            done={!isMulti && done}
-            outputFormat={format}
-            exportedFormat={isMulti ? null : exportedFormat}
-            withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
-            withEngineDj={addToEngineDj}
-            incomplete={incomplete}
-            incompleteReason={incompleteReason}
-            blockedLabel={incompleteSummary}
-            onBlockedPress={onBlockedPress}
-            inPlace={!isMulti && willEditInPlace}
-            tagsOnly={tagsOnly}
-            inMusic={hasMusicCopy}
-            destination={destination}
-            destinations={destinations}
-            outputFolder={outputFolder}
-            count={isMulti ? selectedCount : undefined}
-            onProcess={onProcess}
-            onCancel={onCancel}
-            onSelectFormat={onSelectFormat}
-            onSelectDestination={onSelectDestination}
-          />
+          <>
+            {!isMulti && spectrum?.damaged && (
+              <p data-testid="convert-damaged-note" className="text-center text-xs text-fg-dim">
+                {tr('editor.damagedSource')}
+              </p>
+            )}
+            {lossyToLossless && (
+              <p data-testid="convert-lossy-note" className="text-center text-xs text-fg-dim">
+                {tr('editor.lossyToLossless', { format: format.toUpperCase() })}
+              </p>
+            )}
+            <ExportButton
+              status={isMulti ? 'idle' : item.status}
+              stage={isMulti ? undefined : item.stage}
+              stale={!isMulti && stale}
+              replaces={!isMulti && replaces}
+              libraryBetter={!isMulti && libraryBetter}
+              done={!isMulti && done}
+              outputFormat={format}
+              exportedFormat={isMulti ? null : exportedFormat}
+              withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
+              withEngineDj={addToEngineDj}
+              incomplete={incomplete}
+              incompleteReason={incompleteReason}
+              blockedLabel={incompleteSummary}
+              onBlockedPress={onBlockedPress}
+              inPlace={!isMulti && willEditInPlace}
+              tagsOnly={tagsOnly}
+              inMusic={hasMusicCopy}
+              destination={destination}
+              destinations={destinations}
+              outputFolder={outputFolder}
+              count={isMulti ? selectedCount : undefined}
+              onProcess={onProcess}
+              onCancel={onCancel}
+              onSelectFormat={onSelectFormat}
+              onSelectDestination={onSelectDestination}
+            />
+          </>
         )}
       </div>
     </div>

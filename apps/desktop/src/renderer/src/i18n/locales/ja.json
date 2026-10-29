@@ -47,6 +47,7 @@
     "analyzeQuality": "すべてのトラックの品質を分析",
     "analyzeQualityLabel": "分析",
     "analyzingCount": "品質を分析中… {{done}}/{{total}}",
+    "analyzingPaused": "Surco がバックグラウンドにある間は一時停止中 · {{done}}/{{total}}",
     "convertingCount": "変換中… {{done}}/{{total}}",
     "convertAll_one": "{{count}} トラックを変換",
     "convertAll_other": "{{count}} トラックを変換",
@@ -239,6 +240,8 @@
   },
   "notices": {
     "duplicatesSkipped": "すでにリストにあります、スキップしました: {{count}}",
+    "notAudioSkipped_one": "{{count}} 件のファイルは音声ではないためスキップしました",
+    "notAudioSkipped_other": "{{count}} 件のファイルは音声ではないためスキップしました",
     "noAudioFound": "ドロップしたファイルに音声が見つかりませんでした。フォルダーが読み取り可能で対応形式が含まれているか確認してください。",
     "normalizeSkipped": "“{{name}}”のラウドネスを測定できなかったため、正規化せずに変換しました。",
     "keptAsIs": "“{{name}}”は「MP3 と M4A ファイルはそのまま保持」に設定され、元の横にあるためそのままです。",
@@ -396,6 +399,13 @@
     "convertEditOriginal": "今回だけ元ファイルを編集して変換"
   },
   "trackList": {
+    "qualityWord": {
+      "warn": "疑わしい",
+      "bad": "低音質",
+      "processed": "再処理",
+      "transcoded": "非可逆",
+      "damaged": "破損"
+    },
     "cuesUnsaved": "キューが未保存",
     "autoMark": {
       "proposed_one": "{{count}} 件の提案",
@@ -482,6 +492,7 @@
     "searchClear": "検索をクリア",
     "tokenTip": "検索はデフォルトで動作します。より高いプライベートレートリミットをご希望の場合は、<0>Settings</0>に Discogs トークンを入力してください。",
     "matchSuggested": "提案",
+    "lengthMismatch": "ファイルと長さが異なります（{{length}}）",
     "chooseAlbumHint": "リストからアルバムを選択してトラックを表示",
     "noResults": "検索に一致するアルバムがありません。",
     "noResultsFromSource": "{{provider}} はこの検索に該当するものがありません。",
@@ -535,6 +546,8 @@
     "qualityBad": "低音質",
     "qualityProcessed": "再処理された可能性があります",
     "qualityTranscode": "ロスの多いソース",
+    "qualityDamaged": "破損したファイル",
+    "qualityDamagedCaption": "表示上の長さより前でデコードが止まります。ファイルが破損しているか不完全です。",
     "analyzing": "スペクトルを分析中…",
     "cleaned": {
       "label": "クリーン済み",
@@ -638,8 +651,9 @@
     "regenerateCustom": "このトラックのファイル名パターンをカスタマイズ…",
     "convert": "{{format}} + Apple Music に変換",
     "convertEngine": "{{format}} + Engine DJ に変換",
+    "lossyToLossless": "ソースは非可逆です。{{format}} に変換しても音質は戻りません。",
+    "damagedSource": "このファイルは破損しているか不完全なため、コピーも同様になります。",
     "convertNoMusic": "{{format}} に変換",
-    "convertFolder": "{{format}} に変換（{{folder}}）",
     "convertBeside": "元ファイルの横に {{format}} に変換",
     "convertOverwrite": "元ファイルの上に {{format}} に変換",
     "exportAgain": "再度変換",
@@ -693,7 +707,6 @@
     "libraryCheckFailed": "Apple Music ライブラリを読み取れなかったため、トラックがすでに含まれているかマークできません。ウィンドウに戻ったときに Surco が再試行します。",
     "libraryCheckFailedEngine": "エンジンDJライブラリを読み取れなかったため、トラックがすでに登録されているかマークされていません。Surcoはウィンドウに戻ったときに再試行します。",
     "convertAll": "変換 ({{count}}) · {{format}}",
-    "convertAllFolder": "変換 ({{count}}) · {{format}} in {{folder}}",
     "convertAllBeside": "変換 ({{count}}) · {{format}} beside the original",
     "convertAllOverwrite": "変換 ({{count}}) · {{format}} over the original",
     "editingMultiple": "{{count}} トラックの編集",
@@ -1185,6 +1198,7 @@
       "fields": "フィールド",
       "shortcuts": "ショートカット",
       "stats": "統計",
+      "advanced": "詳細",
       "cues": "キュー"
     },
     "tabGroups": {
@@ -1313,7 +1327,7 @@
     "beatportDisconnect": "切断",
     "discogsToken": "Discogsトークン",
     "tokenPlaceholder": "個人トークンをここに貼り付けてください",
-    "tokenWhy": "任意です。検索は共有クレデンシャルを使用し、ピーク時に一時的に失敗することがあります。自分のトークンを使用すると高速に保てます。",
+    "tokenWhy": "検索では任意です。検索は共有クレデンシャルを使用し、ピーク時に一時的に失敗することがあります。自分のトークンを使用すると高速に保てます。自動マッチには必要です。",
     "tokenHelp": "無料で生成するには",
     "autoMatch": "インポート時の自動マッチング",
     "autoMatchHint": "インポート時にソースを検索し、確信度の高いマッチングを適用します。Discogsが優先され、他のソースはフォールバックします。デフォルトではオフです。",
@@ -1367,7 +1381,7 @@
       "wav": "WAV",
       "flac": "FLAC"
     },
-    "outputFormatHint": "「ソースと同じ」は各ファイルを元のフォーマットのまま保持するため、混在バッチが再エンコードされることはありません。AIFF/WAV/FLACはロスレス（FLACは圧縮）で、MP3はサイズが小さいです。すでにそのフォーマットのファイルは再エンコードせずにコピーされます。",
+    "outputFormatHint": "「ソースと同じ」は各ファイルを元のフォーマットのまま保持するため、混在バッチが再エンコードされることはありません。AIFF/WAV/FLAC/ALACはロスレス（FLACとALACは圧縮）で、MP3はサイズが小さいです。すでにそのフォーマットのファイルは再エンコードせずにコピーされます。",
     "keepMp3Sources": "MP3 と M4A ファイルはそのまま保持",
     "keepMp3SourcesHint": "MP3 または M4A をロスレス形式に変換しても品質は復元できず、ファイルが大きくなるだけです。これをオンにすると元のフォーマットを保持し、Surco が選択した宛先にタグを書き込みます。「オリジナルの隣」の場合はそのままです。音量正規化、クリック修復、トリミングを行うと、音声は再エンコードされます。",
     "keepMp3SourcesOff": "MP3 または「ソースと同じ」の場合は不要です：MP3 はすでに MP3 のままです。",
@@ -1417,6 +1431,7 @@
       "overwrite": "元ファイルを編集"
     },
     "destinationAppleMusicHint": "Apple Music に追加され、出力フォルダーへのコピーはありません。",
+    "destinationAppleMusicKeepCopyHint": "Apple Music に追加し、出力フォルダーにもコピーを残します。",
     "destinationEngineDjHint": "Engine DJ ライブラリに登録され、ファイルは出力フォルダーに残ります。",
     "destinationBesideHint": "ソースファイルの横に変換を書き込み、決して触れません。同一フォーマットのエクスポートは「(2)」という名前になります。",
     "destinationOverwriteHint": "各ソースファイルをその場で書き換えます。出力コピーはありません。フォーマットを変更すると元のファイルは削除されます。",
@@ -1533,10 +1548,10 @@
     "autoOrganizeHint": "グループ別に表示フィールドを再配置",
     "autoOrganized": "整理済み",
     "syncTraktor": "変換時に Traktor コレクションを更新",
-    "syncTraktorHint": "変換されたトラックのキューポイントとビートグリッドが Traktor コレクションに書き込まれます。書き込み前に Surco はバックアップフォルダー（設定 → 一般）にバックアップを保存し、Traktor が開いている間は書き込みを行いません。",
+    "syncTraktorHint": "変換されたトラックのキューポイントとビートグリッドが Traktor コレクションに書き込まれます。書き込み前に Surco はバックアップフォルダー（設定 → 詳細）にバックアップを保存し、Traktor が開いている間は書き込みを行いません。",
     "syncTraktorIdle": "下記の Traktor コレクションを指定してこの機能を有効にしてください。",
     "syncRekordbox": "変換時に rekordbox コレクションを更新",
-    "syncRekordboxHint": "rekordbox にあるトラックを変換または更新すると、そのエントリは新しいファイルに従い、タイトル、アーティスト、アルバム、ジャンル、レーベル、リミキサー、コメント、年、トラック番号、ディスク番号、アートワークを取得します。プレイリスト、キューポイント、BPM、キーを保持し、Surco で空にしたフィールドは rekordbox をクリアしません。書き込み前に Surco は実行全体のバックアップと各書き込みのバックアップをバックアップフォルダー（設定 → 一般）に保存し、rekordbox が開いている間は書き込みを行いません。",
+    "syncRekordboxHint": "rekordbox にあるトラックを変換または更新すると、そのエントリは新しいファイルに従い、タイトル、アーティスト、アルバム、ジャンル、レーベル、リミキサー、コメント、年、トラック番号、ディスク番号、アートワークを取得します。プレイリスト、キューポイント、BPM、キーを保持し、Surco で空にしたフィールドは rekordbox をクリアしません。書き込み前に Surco は実行全体のバックアップと各書き込みのバックアップをバックアップフォルダー（設定 → 詳細）に保存し、rekordbox が開いている間は書き込みを行いません。",
     "syncRekordboxIdle": "このマシンに rekordbox コレクションが見つかりませんでした。",
     "rekordboxSync": "rekordbox コレクション",
     "rekordboxDbPath": "rekordbox コレクション",
@@ -1561,7 +1576,7 @@
     "originalBackupLimitsKept": "制限は保持されているものに適用されます。",
     "engineSync": "Engine DJ ライブラリ",
     "syncEngineDj": "変換時にEngine DJライブラリを更新する",
-    "syncEngineDjHint": "Engine DJライブラリにあるトラックを変換すると、そのエントリは新しいファイルに従い、プレイリストやキューポイントを保持します。Engine DJの宛先で選択されたライブラリを使用します。書き込み前にSurcoは実行全体のバックアップと各書き込みのバックアップをバックアップフォルダー（設定 → 一般）に保存し、Engine DJが開いている間は書き込みを行いません。",
+    "syncEngineDjHint": "Engine DJライブラリにあるトラックを変換すると、そのエントリは新しいファイルに従い、プレイリストやキューポイントを保持します。Engine DJの宛先で選択されたライブラリを使用します。書き込み前にSurcoは実行全体のバックアップと各書き込みのバックアップをバックアップフォルダー（設定 → 詳細）に保存し、Engine DJが開いている間は書き込みを行いません。",
     "completeCues": "rekordbox を閉じたときに、CALL があってホットキューのないトラックへ有効なフローを適用する",
     "completeCuesHint": "Surco で開いていないトラックについてもコレクションに書き込みます。オフの場合、キューは「キュー」セクションからのみ保存されます。",
     "completeCuesCount_one": "rekordbox を閉じると {{count}} 件のトラックが補完されます。",
@@ -1716,6 +1731,7 @@
   "onboarding": {
     "welcomeTitle": "Surcoへようこそ",
     "welcomeBody": "基本設定を行いましょう。一分もかからずに済み、あとから設定ですべて変更できます。",
+    "formatTitle": "フォーマットと保存先",
     "formatBody": "Surcoがトラックをエクスポートする形式を選択してください。",
     "audioTitle": "トラックをどう使いますか？",
     "audioBody": "Surcoはワークフローに必要なエディタセクションのみを表示します。適切なものを選んでください。設定でいつでも変更できます。",
@@ -2119,7 +2135,7 @@
         "readOnly": "rekordbox コレクションは読み取り専用のため、何も変更されていません",
         "stale": "rekordbox でプレイリストが変更されました。確認してもう一度お試しください",
         "noSeparator": "コレクションにコピーできる区切り線がありません",
-        "writeUnknown": "変更を保存も取り消しもできなかったため、コレクションが変更されている可能性があります。rekordbox を開く前に、master.db-wal と master.db-shm をそのフォルダーの外へ移動し、設定 → 一般 → コレクションのバックアップ にあるコピー master.db.surco-backup で master.db を置き換えてください"
+        "writeUnknown": "変更を保存も取り消しもできなかったため、コレクションが変更されている可能性があります。rekordbox を開く前に、master.db-wal と master.db-shm をそのフォルダーの外へ移動し、設定 → 詳細 → コレクションのバックアップ にあるコピー master.db.surco-backup で master.db を置き換えてください"
       }
     },
     "editTraktor": {
@@ -2141,7 +2157,7 @@
         "readOnly": "Traktor コレクションは読み取り専用のため、何も変更されていません",
         "stale": "Traktor でプレイリストが変更されました。確認してもう一度お試しください",
         "noSeparator": "コレクションにコピーできる区切り線がありません",
-        "writeUnknown": "変更を保存も取り消しもできなかったため、コレクションが変更されている可能性があります。Traktor を開く前に、設定 → 一般 → コレクションのバックアップ にあるコピー collection.nml.surco-backup で collection.nml を置き換えてください"
+        "writeUnknown": "変更を保存も取り消しもできなかったため、コレクションが変更されている可能性があります。Traktor を開く前に、設定 → 詳細 → コレクションのバックアップ にあるコピー collection.nml.surco-backup で collection.nml を置き換えてください"
       }
     },
     "tree": {
@@ -2634,7 +2650,7 @@
     "discardYes": "破棄",
     "discardNo": "キャンセル",
     "pillHalted": "rekordbox の変更を保留中",
-    "halted": "最後の変更を保存も取り消しもできませんでした。「今すぐ適用」か「破棄」を選ぶまで、Surco はコレクションに触れません。「今すぐ適用」はバックアップコピー master.db.surco-backup を置き換えるため、何かおかしい場合は先にそこから復元してください。設定 → 一般 → コレクションのバックアップにあります",
+    "halted": "最後の変更を保存も取り消しもできませんでした。「今すぐ適用」か「破棄」を選ぶまで、Surco はコレクションに触れません。「今すぐ適用」はバックアップコピー master.db.surco-backup を置き換えるため、何かおかしい場合は先にそこから復元してください。設定 → 詳細 → コレクションのバックアップにあります",
     "pillElsewhere": "別の rekordbox コレクションを待っています",
     "elsewhere_one": "{{count}} 件の変更が別の rekordbox コレクションを待っています。そちらに戻ると適用されます",
     "elsewhere_other": "{{count}} 件の変更が別の rekordbox コレクションを待っています。そちらに戻ると適用されます"
@@ -2665,7 +2681,7 @@
     },
     "discardConfirm": "待機中の内容を破棄しますか？Engine DJ のプレイリストとキューは Engine DJ の状態のままです",
     "pillHalted": "Engine DJ の変更を保留中",
-    "halted": "最後の変更を保存も取り消しもできませんでした。「今すぐ適用」か「破棄」を選ぶまで、Surco はライブラリに触れません。「今すぐ適用」はバックアップコピー m.db.surco-backup を置き換えるため、何かおかしい場合は先にそこから復元してください。設定 → 一般 → コレクションのバックアップにあります",
+    "halted": "最後の変更を保存も取り消しもできませんでした。「今すぐ適用」か「破棄」を選ぶまで、Surco はライブラリに触れません。「今すぐ適用」はバックアップコピー m.db.surco-backup を置き換えるため、何かおかしい場合は先にそこから復元してください。設定 → 詳細 → コレクションのバックアップにあります",
     "pillElsewhere": "別の Engine DJ ライブラリを待っています",
     "elsewhere_one": "{{count}} 件の変更が別の Engine DJ ライブラリを待っています。そちらに戻ると適用されます",
     "elsewhere_other": "{{count}} 件の変更が別の Engine DJ ライブラリを待っています。そちらに戻ると適用されます"
@@ -2696,7 +2712,7 @@
     },
     "discardConfirm": "待機中の内容を破棄しますか？Traktor のプレイリストとキューは Traktor の状態のままです",
     "pillHalted": "Traktor の変更を保留中",
-    "halted": "最後の変更を保存も取り消しもできませんでした。「今すぐ適用」か「破棄」を選ぶまで、Surco はコレクションに触れません。「今すぐ適用」はバックアップコピー collection.nml.surco-backup を置き換えるため、何かおかしい場合は先にそこから復元してください。設定 → 一般 → コレクションのバックアップにあります",
+    "halted": "最後の変更を保存も取り消しもできませんでした。「今すぐ適用」か「破棄」を選ぶまで、Surco はコレクションに触れません。「今すぐ適用」はバックアップコピー collection.nml.surco-backup を置き換えるため、何かおかしい場合は先にそこから復元してください。設定 → 詳細 → コレクションのバックアップにあります",
     "pillElsewhere": "別の Traktor コレクションを待っています",
     "elsewhere_one": "{{count}} 件の変更が別の Traktor コレクションを待っています。そちらに戻ると適用されます",
     "elsewhere_other": "{{count}} 件の変更が別の Traktor コレクションを待っています。そちらに戻ると適用されます"

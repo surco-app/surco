@@ -1078,7 +1078,7 @@ function registerIpc(): void {
     return filePaths
   })
 
-  ipcMain.handle('files:expand', async (e, paths: string[]) => {
+  ipcMain.handle('files:expand', async (e, paths: string[], reportNotAudio = false) => {
     // One feed row per drop/pick: the folder walk is the import's visible unit of work
     // (per-file tag reads flow through the analyze rows already).
     // Each batch the walk finds is granted access and pushed to the renderer right away,
@@ -1089,10 +1089,11 @@ function registerIpc(): void {
       mediaAccess.allowAll(batch)
       if (!e.sender.isDestroyed()) e.sender.send('files:expanded', batch)
     }
+    let notAudio = 0
     const expanded = await activity.track(
       'import',
       'activity.import',
-      () => expandPaths(paths, streamBatch),
+      () => expandPaths(paths, streamBatch, () => notAudio++),
       {
         summary: (files) => ({
           detailKey: 'activity.trackCount',
@@ -1101,6 +1102,8 @@ function registerIpc(): void {
       },
     )
     mediaAccess.allowAll(expanded)
+    if (reportNotAudio && notAudio > 0 && !e.sender.isDestroyed())
+      e.sender.send('files:notAudio', notAudio)
     // Watch the folders the user dropped or picked so tracks copied in later surface as
     // "N new tracks"; a single dropped file has no folder to grow, so dirRoots drops it.
     const win = BrowserWindow.fromWebContents(e.sender)

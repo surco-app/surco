@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { columnWidths, FORM_MIN, shareFor } from './columnLayout'
+import {
+  COLUMN_LIMITS,
+  columnWidths,
+  DIVIDERS_WIDTH,
+  FORM_MIN,
+  RAIL_WIDTH,
+  shareFor,
+} from './columnLayout'
 
 const RAIL = 60
 
@@ -9,7 +16,7 @@ function total(w: { tree: number; list: number; results: number; form: number })
 
 describe('columnWidths', () => {
   it.each([
-    [1280, { tree: 207, list: 300, results: 300, form: 413 }],
+    [1280, { tree: 207, list: 300, results: 253, form: 460 }],
     [1440, { tree: 235, list: 331, results: 304, form: 510 }],
     [1728, { tree: 280, list: 400, results: 367, form: 621 }],
   ])(
@@ -63,17 +70,28 @@ describe('columnWidths', () => {
 
   it('takes it from the list once the results column is down to its minimum', () => {
     const w = columnWidths(1280, true, { list: 0.35, results: 0.4 })
-    expect(w.results).toBe(300)
+    expect(w.results).toBe(240)
     expect(w.form).toBe(FORM_MIN)
-    expect(w.list).toBe(1280 - w.tree - 300 - FORM_MIN)
+    expect(w.list).toBe(1280 - w.tree - 240 - FORM_MIN)
+  })
+
+  it('lets the search results give way below 300 px at the 1080 px minimum window, so the editor form is the column that keeps its room', () => {
+    const available = 1080 - RAIL_WIDTH - DIVIDERS_WIDTH
+    const files = columnWidths(available, false, undefined)
+    expect(files.results).toBeLessThan(300)
+    expect(files.form).toBe(FORM_MIN)
+    const source = columnWidths(available, true, undefined)
+    expect(source.results).toBe(COLUMN_LIMITS.results.min)
+    expect(source.form).toBe(available - source.tree - source.list - COLUMN_LIMITS.results.min)
+    expect(source.form).toBeGreaterThan(available - 200 - 300 - 300)
   })
 
   it('leaves every column at its minimum once even that is too wide for the window', () => {
     expect(columnWidths(1020, true, undefined)).toEqual({
       tree: 200,
       list: 300,
-      results: 300,
-      form: 220,
+      results: 240,
+      form: 280,
     })
   })
 
@@ -87,7 +105,7 @@ describe('columnWidths', () => {
   it('clamps a saved share to the column limits, so a share saved on a big screen cannot swallow a small one', () => {
     expect(columnWidths(2500, true, { list: 0.9, results: 0.01 })).toMatchObject({
       list: 480,
-      results: 300,
+      results: 240,
     })
   })
 

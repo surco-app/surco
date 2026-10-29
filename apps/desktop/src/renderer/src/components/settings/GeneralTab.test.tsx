@@ -6,13 +6,9 @@ import type { PlaylistSource } from '../../../../shared/types'
 import i18n from '../../i18n'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 
-// The tab reads its own cache size on mount, so the bridge has to exist before it
-// renders — nothing here is about the cache, it just has to not throw.
+// The tab asks which sources this machine has on mount, so the bridge has to exist
+// before it renders.
 ;(window as unknown as { api: unknown }).api = {
-  cacheStats: () => Promise.resolve({ entries: 0, bytes: 0 }),
-  clearCache: () => Promise.resolve(),
-  revealLog: () => {},
-  revealBackups: vi.fn(),
   platform: 'darwin',
   rekordboxAvailable: () => Promise.resolve(true),
   engineAvailable: () => Promise.resolve(true),
@@ -44,13 +40,6 @@ function renderTab(
       local={{ ...local, ...over }}
       patchLocal={patchLocal}
       onPreviewTheme={vi.fn()}
-      configDir={null}
-      defaultDir="/Users/dj/Library/Application Support/Surco"
-      onChangeConfigDir={vi.fn()}
-      onResetConfigDir={vi.fn()}
-      onExportSettings={vi.fn()}
-      onImportSettings={vi.fn()}
-      settingsFileError=""
     />,
   )
   return patchLocal
@@ -173,13 +162,6 @@ describe('GeneralTab sources', () => {
         local={local}
         patchLocal={vi.fn()}
         onPreviewTheme={vi.fn()}
-        configDir={null}
-        defaultDir={null}
-        onChangeConfigDir={vi.fn()}
-        onResetConfigDir={vi.fn()}
-        onExportSettings={vi.fn()}
-        onImportSettings={vi.fn()}
-        settingsFileError=""
       />,
     )
     return patch
@@ -267,14 +249,4 @@ describe('GeneralTab sources', () => {
       i18n.t('settings.sourcesHint'),
     )
   })
-})
-
-// The copies Surco takes before writing to rekordbox, Engine DJ or Traktor no longer sit
-// next to each collection: a DJ restoring one has to be able to reach Surco's folder.
-it('opens the folder with the collection backups', () => {
-  renderTab()
-  fireEvent.click(screen.getByTestId('settings-backups-reveal'))
-  expect(
-    (window as unknown as { api: { revealBackups: ReturnType<typeof vi.fn> } }).api.revealBackups,
-  ).toHaveBeenCalled()
 })

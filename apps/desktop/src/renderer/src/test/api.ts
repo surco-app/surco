@@ -140,6 +140,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     getPathForFile: () => '',
     expandPaths: async () => [],
     onExpandedBatch: unsubscribe,
+    onNotAudioSkipped: unsubscribe,
     takePendingFiles: async () => [],
     onOpenFiles: unsubscribe,
     onFoldersChanged: unsubscribe,

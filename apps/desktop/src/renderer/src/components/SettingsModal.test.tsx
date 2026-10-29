@@ -190,6 +190,7 @@ describe('SettingsModal settings export', () => {
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={() => {}}
+        initialTab="advanced"
         onSettingsReplaced={() => {}}
       />,
     )
@@ -263,7 +264,7 @@ describe('SettingsModal tablist', () => {
     expect(screen.getByTestId('settings-tab-general')).toHaveFocus()
     // Up from the first tab wraps to the last.
     fireEvent.keyDown(screen.getByTestId('settings-tab-general'), { key: 'ArrowUp' })
-    expect(screen.getByTestId('settings-tab-stats')).toHaveFocus()
+    expect(screen.getByTestId('settings-tab-advanced')).toHaveFocus()
   })
 
   // A tablist may only own tabs: the group headings and their wrappers sat in it as stray
@@ -1000,6 +1001,53 @@ describe('SettingsModal key notation', () => {
   })
 })
 
+describe('SettingsModal advanced', () => {
+  const MOVED = [
+    'settings-config-dir',
+    'settings-export',
+    'settings-import',
+    'settings-cache-clear',
+    'settings-log-reveal',
+    'settings-backups-reveal',
+  ]
+
+  it('keeps General to everyday choices so a newcomer is not met by sync folders, backups and caches', async () => {
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    expect(screen.getByTestId('settings-theme-dark')).toBeInTheDocument()
+    for (const id of MOVED) expect(screen.queryByTestId(id)).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('settings-tab-advanced'))
+    expect(screen.getByTestId('settings-tab-advanced')).toHaveTextContent('Advanced')
+    for (const id of MOVED) expect(await screen.findByTestId(id)).toBeInTheDocument()
+    expect(screen.queryByTestId('settings-theme-dark')).not.toBeInTheDocument()
+  })
+
+  it('lists Advanced last, in the App group after Stats, where maintenance is out of the way', () => {
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    const tabs = screen.getAllByRole('tab').map((t) => t.dataset.testid)
+    expect(tabs.slice(-3)).toEqual([
+      'settings-tab-shortcuts',
+      'settings-tab-stats',
+      'settings-tab-advanced',
+    ])
+  })
+})
+
 describe('SettingsModal settings folder', () => {
   // Moving the settings folder is how preferences sync across Macs (point it at
   // iCloud Drive/Dropbox). The adopted prefs are never written back as if edited, and
@@ -1017,6 +1065,7 @@ describe('SettingsModal settings folder', () => {
         onClose={() => {}}
         onSave={onSave}
         onPreviewTheme={() => {}}
+        initialTab="advanced"
         onSettingsReplaced={onSettingsReplaced}
       />,
     )
@@ -1030,6 +1079,7 @@ describe('SettingsModal settings folder', () => {
     )
     fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByTestId('settings-tab-general'))
     fireEvent.click(screen.getByTestId('settings-theme-dark'))
     fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).toHaveBeenCalledWith(
@@ -1047,6 +1097,7 @@ describe('SettingsModal settings folder', () => {
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={() => {}}
+        initialTab="advanced"
         onSettingsReplaced={() => {}}
       />,
     )
@@ -1079,6 +1130,7 @@ describe('SettingsModal analysis cache', () => {
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={() => {}}
+        initialTab="advanced"
         onSettingsReplaced={() => {}}
       />,
     )
@@ -1103,6 +1155,7 @@ describe('SettingsModal analysis cache', () => {
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={() => {}}
+        initialTab="advanced"
         onSettingsReplaced={() => {}}
       />,
     )
@@ -1114,7 +1167,7 @@ describe('SettingsModal analysis cache', () => {
 
   // Without telemetry the log file is the only artifact a user can attach to a
   // report, so Settings needs a discoverable way to reach it.
-  it('reveals the error log from the General tab', async () => {
+  it('reveals the error log from the Advanced tab', async () => {
     const api = window.api as unknown as Record<string, unknown>
     const revealLog = vi.fn(async () => {})
     api.revealLog = revealLog
@@ -1124,11 +1177,32 @@ describe('SettingsModal analysis cache', () => {
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={() => {}}
+        initialTab="advanced"
         onSettingsReplaced={() => {}}
       />,
     )
     fireEvent.click(await screen.findByTestId('settings-log-reveal'))
     expect(revealLog).toHaveBeenCalledTimes(1)
+  })
+
+  // The copies Surco takes before writing to rekordbox, Engine DJ or Traktor no longer sit
+  // next to each collection: a DJ restoring one has to be able to reach Surco's folder.
+  it('opens the folder with the collection backups from the Advanced tab', async () => {
+    const api = window.api as unknown as Record<string, unknown>
+    const revealBackups = vi.fn(async () => {})
+    api.revealBackups = revealBackups
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        initialTab="advanced"
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    fireEvent.click(await screen.findByTestId('settings-backups-reveal'))
+    expect(revealBackups).toHaveBeenCalledTimes(1)
   })
 
   // An empty cache has nothing to clear, so the button is disabled — clicking it
@@ -1142,6 +1216,7 @@ describe('SettingsModal analysis cache', () => {
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={() => {}}
+        initialTab="advanced"
         onSettingsReplaced={() => {}}
       />,
     )
@@ -1163,6 +1238,7 @@ describe('SettingsModal backup', () => {
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={() => {}}
+        initialTab="advanced"
         onSettingsReplaced={() => {}}
       />,
     )
@@ -1184,6 +1260,7 @@ describe('SettingsModal backup', () => {
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={() => {}}
+        initialTab="advanced"
         onSettingsReplaced={() => {}}
       />,
     )
@@ -1206,6 +1283,7 @@ describe('SettingsModal backup', () => {
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={onPreviewTheme}
+        initialTab="advanced"
         onSettingsReplaced={onSettingsReplaced}
       />,
     )
@@ -1233,6 +1311,7 @@ describe('SettingsModal backup', () => {
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={() => {}}
+        initialTab="advanced"
         onSettingsReplaced={onSettingsReplaced}
       />,
     )
@@ -1256,6 +1335,7 @@ describe('SettingsModal backup', () => {
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={() => {}}
+        initialTab="advanced"
         onSettingsReplaced={onSettingsReplaced}
       />,
     )

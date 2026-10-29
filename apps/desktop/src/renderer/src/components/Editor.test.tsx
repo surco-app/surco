@@ -1908,12 +1908,13 @@ describe('Editor place across tracks', () => {
 describe('Editor export control', () => {
   // "Output folder", "Beside the original" and "Overwrite" all read "Convert to WAV", so
   // where the file lands showed only once it failed on an unplugged NAS.
-  it('names the output folder on the convert button', () => {
+  it('names the output folder beside the convert button', () => {
     renderEditor({ id: 'a' }, 'aiff', {
       addToAppleMusic: false,
       outputDir: '/Volumes/NAS/Conversiones/',
     })
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF in Conversiones')
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Convert to AIFF')
+    expect(screen.getByTestId('process-folder')).toHaveTextContent('Conversiones')
   })
 
   it('says beside the original on the convert button when that is the destination', () => {
@@ -4433,5 +4434,33 @@ describe('Discogs token tip', () => {
     cleanup()
     renderEditor({ id: 'a' }, 'wav', { discogsToken: '', searchProviders: ['discogs'] })
     expect(screen.getByTestId('discogs-token-tip')).toBeInTheDocument()
+  })
+})
+
+describe('Editor convert notes from the measured spectrum', () => {
+  function renderMeasured(spectrum: Record<string, unknown>): void {
+    ;(window as unknown as { api: Record<string, unknown> }).api.spectrogram = vi.fn(async () => ({
+      image: '',
+      sampleRateHz: 44100,
+      processed: false,
+      ...spectrum,
+    }))
+    renderEditor({ id: 'a', inputPath: '/music/a.flac', fileName: 'a.flac' }, 'aiff', {
+      showSpectrum: true,
+    })
+  }
+
+  it('warns that a lossless file measured as a transcode stays lossy in a lossless format', async () => {
+    renderMeasured({ cutoffHz: 16000, hasKnee: true })
+    expect(await screen.findByTestId('convert-lossy-note')).toHaveTextContent(
+      i18n.t('editor.lossyToLossless', { format: 'AIFF' }),
+    )
+  })
+
+  it('warns that a file measured as damaged makes a damaged copy', async () => {
+    renderMeasured({ cutoffHz: 21000, damaged: true })
+    expect(await screen.findByTestId('convert-damaged-note')).toHaveTextContent(
+      i18n.t('editor.damagedSource'),
+    )
   })
 })
