@@ -341,12 +341,16 @@ export function applyTraktorEdits(
   allOps: (EditOp | TrackOp)[],
   bootVolume: string,
   now: Date = new Date(),
-): { nml: string; outcomes: Map<string, OpOutcome> } {
+): { nml: string; outcomes: Map<string, OpOutcome>; added: string[] } {
   let nml = read
+  const added: string[] = []
   for (const op of allOps) {
     if (op.kind !== 'track' || !op.meta || !parsePlaylists(nml)) continue
     if (keyOfTrack(op, traktorCollectionIndex(nml, bootVolume))) continue
-    nml = withCollectionEntry(nml, op.path, op.meta, bootVolume, now) ?? nml
+    const withEntry = withCollectionEntry(nml, op.path, op.meta, bootVolume, now)
+    if (withEntry === null) continue
+    nml = withEntry
+    added.push(op.path)
   }
   const model = parsePlaylists(nml)
   const outcomes = new Map<string, OpOutcome>()
@@ -367,5 +371,5 @@ export function applyTraktorEdits(
   for (const r of [...resolved].sort((a, b) => opRank(a.op) - opRank(b.op)))
     outcomes.set(r.op.id, apply(r, src))
   for (const op of allOps) if (op.kind === 'track') outcomes.set(op.id, applyTrack(op, model, src))
-  return { nml: serializePlaylists(nml, model), outcomes }
+  return { nml: serializePlaylists(nml, model), outcomes, added }
 }

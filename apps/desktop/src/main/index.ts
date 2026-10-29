@@ -32,6 +32,7 @@ import {
   type NativeImage,
   nativeImage,
   protocol,
+  screen,
   session,
   shell,
   type WebContents,
@@ -202,6 +203,7 @@ import { createUpdateRetry } from './updateRetry'
 import { registerUsbExportIpc } from './usbExportIpc'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
+import { loadWindowState, resolveWindowBounds, saveWindowState } from './windowState'
 import { runInWorker } from './worker'
 
 // At module load so even a throw during startup leaves a trace in the log file.
@@ -693,12 +695,24 @@ function buildAppMenu(win: BrowserWindow): void {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
 
+const WINDOW_DEFAULT_SIZE = { width: 1320, height: 820 }
+const WINDOW_MIN_SIZE = { width: 1080, height: 620 }
+
+function windowStatePath(): string {
+  return join(app.getPath('userData'), 'window-state.json')
+}
+
 function createWindow(): BrowserWindow {
+  const savedState = loadWindowState(windowStatePath())
   const win = new BrowserWindow({
-    width: 1320,
-    height: 820,
-    minWidth: 1080,
-    minHeight: 620,
+    ...resolveWindowBounds(
+      savedState?.bounds ?? null,
+      screen.getAllDisplays().map((display) => display.workArea),
+      WINDOW_DEFAULT_SIZE,
+      WINDOW_MIN_SIZE,
+    ),
+    minWidth: WINDOW_MIN_SIZE.width,
+    minHeight: WINDOW_MIN_SIZE.height,
     show: false,
     // Without this the window is SHOWN before it can paint, so it sits black for ~4s.
     // ready-to-show fires off the load, not off a rendered frame: measured at 232ms while
@@ -727,6 +741,17 @@ function createWindow(): BrowserWindow {
     },
   })
 
+  if (savedState?.maximized) win.maximize()
+  win.on('close', () => {
+    try {
+      saveWindowState(windowStatePath(), {
+        bounds: win.getNormalBounds(),
+        maximized: win.isMaximized(),
+      })
+    } catch (err) {
+      log.warn('window state save failed', String(err))
+    }
+  })
   win.on('ready-to-show', () => win.show())
   wireRendererRecovery(win.webContents, log)
   // Stream background-work events (Discogs/Bandcamp searches, cover downloads,

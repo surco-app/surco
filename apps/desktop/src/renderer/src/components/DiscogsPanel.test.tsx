@@ -35,6 +35,8 @@ function browser(overrides: Partial<DiscogsBrowser>): DiscogsBrowser {
     busy: false,
     noResults: false,
     error: '',
+    failedSources: [],
+    retrySearch: vi.fn(),
     previewRelease: vi.fn(),
     ...overrides,
   }
@@ -233,6 +235,27 @@ describe('DiscogsPanel search announcements', () => {
   it('announces a failed search as an alert', () => {
     renderPanel(browser({ query: 'uno', error: 'Discogs refused the token' }))
     expect(screen.getByRole('alert')).toHaveTextContent('Discogs refused the token')
+  })
+
+  it('offers a retry on a failed search so a rate limit does not mean retyping the query', () => {
+    const retrySearch = vi.fn()
+    renderPanel(browser({ query: 'uno', error: 'Search failed', retrySearch }))
+    fireEvent.click(screen.getByTestId('discogs-retry'))
+    expect(retrySearch).toHaveBeenCalledTimes(1)
+  })
+
+  it('names a source that failed while others answered, with a retry, and no alert', () => {
+    const retrySearch = vi.fn()
+    renderPanel(browser({ query: 'uno', results, failedSources: ['discogs'], retrySearch }))
+    expect(screen.getByTestId('discogs-failed-sources')).toHaveTextContent(/Discogs/)
+    expect(screen.queryByRole('alert')).toBeNull()
+    fireEvent.click(screen.getByTestId('discogs-retry-failed'))
+    expect(retrySearch).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows no failure line when every source answered', () => {
+    renderPanel(browser({ query: 'uno', results }))
+    expect(screen.queryByTestId('discogs-failed-sources')).toBeNull()
   })
 })
 

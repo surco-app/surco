@@ -123,6 +123,8 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     busy,
     noResults,
     error,
+    failedSources,
+    retrySearch,
     previewRelease: livePreviewRelease,
   } = browser
   // While the pointer is over the list, nothing the search does on its own moves a row:
@@ -603,6 +605,29 @@ export const DiscogsPanel = memo(function DiscogsPanel({
           {error && (
             <p role="alert" className="px-1.5 pt-2 text-xs text-danger">
               {error}
+              <button
+                type="button"
+                data-testid="discogs-retry"
+                onClick={retrySearch}
+                className="ml-2 underline underline-offset-2 hover:no-underline"
+              >
+                {tr('editor.retry')}
+              </button>
+            </p>
+          )}
+          {failedSources.length > 0 && (
+            <p data-testid="discogs-failed-sources" className="px-1.5 pt-2 text-xs text-fg-muted">
+              {tr('editor.sourcesFailed', {
+                providers: failedSources.map((p) => tr(`settings.provider.${p}`)).join(', '),
+              })}
+              <button
+                type="button"
+                data-testid="discogs-retry-failed"
+                onClick={retrySearch}
+                className="ml-2 underline underline-offset-2 hover:no-underline"
+              >
+                {tr('editor.retry')}
+              </button>
             </p>
           )}
           {(showProviderFilter || formatFilter.length > 0) && (

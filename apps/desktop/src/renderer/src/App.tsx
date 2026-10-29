@@ -1251,6 +1251,19 @@ export default function App(): React.JSX.Element {
     onMeasured: (id) => updateTrack(id, { analyzeFailed: undefined }),
   })
 
+  const metaUndo = useMetaUndo(tracksRef, setTracks)
+  // Snapshots the given rows' tags so ⌘Z can roll the batch operation back. Reads
+  // through tracksRef so the stable callbacks capturing it never see a stale list.
+  const recordMetaUndo = useStableCallback(
+    (ids: string[], opts?: { cover?: boolean; group?: string }) => {
+      const set = new Set(ids)
+      metaUndo.record(
+        tracksRef.current.filter((t) => set.has(t.id)),
+        opts,
+      )
+    },
+  )
+
   // The Discogs auto-match sweep: queue, visibility gating, pump and progress live in
   // the hook; App only wires enqueue/cancel into the import flow, toolbar and commands.
   const {
@@ -1275,6 +1288,7 @@ export default function App(): React.JSX.Element {
     matchCleanupRef,
     editingRef,
     reportActivity,
+    recordUndo: recordMetaUndo,
   })
 
   const readingSourcePlaylist = useMemo(() => holdsAutoMatch(tracks), [tracks])
@@ -1482,16 +1496,6 @@ export default function App(): React.JSX.Element {
     else removeTracks(targets.map((t) => t.id))
   })
 
-  const metaUndo = useMetaUndo(tracksRef, setTracks)
-  // Snapshots the given rows' tags so ⌘Z can roll the batch operation back. Reads
-  // through tracksRef so the stable callbacks capturing it never see a stale list.
-  const recordMetaUndo = useStableCallback((ids: string[], opts?: { cover?: boolean }) => {
-    const set = new Set(ids)
-    metaUndo.record(
-      tracksRef.current.filter((t) => set.has(t.id)),
-      opts,
-    )
-  })
   // Every deriveTracks consumer is a discrete batch overwrite (fill-all, find & replace,
   // the Tag buttons), so recording the undo snapshot at this seam covers them all. The
   // per-field bulk edit records its own in onChangeAllMeta: Field commits it once per pause.
@@ -2058,7 +2062,10 @@ export default function App(): React.JSX.Element {
   // same-named LP) is otherwise unrecoverable: the file's own tags are already gone.
   const onApplyMatches = useStableCallback(
     (patches: { id: string; patch: ReleaseMetaPatch }[], provider: SearchProviderId) => {
-      recordMetaUndo(patches.map((p) => p.id))
+      recordMetaUndo(
+        patches.map((p) => p.id),
+        { cover: true },
+      )
       for (const p of patches)
         updateTrack(p.id, { ...p.patch, matched: true, matchProvider: provider })
     },
@@ -2140,13 +2147,6 @@ export default function App(): React.JSX.Element {
 
   const onEditorChange = useStableCallback((patch: Partial<TrackItem>) => {
     if (!selected) return
-    // A cover change or removal may strand the selected track's old blob; free it only
-    // if no other track still references it.
-    if ('coverUrl' in patch && patch.coverUrl !== selected.coverUrl)
-      revokeCoverUrlIfUnused(
-        selected.coverUrl,
-        tracksRef.current.filter((t) => t.id !== selected.id).map((t) => t.coverUrl),
-      )
     updateTrack(selected.id, patch)
   })
   // Converting a single track is the donate nudge's moment of value, so every entry
@@ -2641,6 +2641,7 @@ export default function App(): React.JSX.Element {
       fullReleaseDate,
     )
     if (!accepted) return
+    recordMetaUndo([id], { cover: true })
     updateTrack(id, accepted.patch)
     window.api.recordStat(matchStatKey(accepted.provider))
   })
@@ -2675,6 +2676,12 @@ export default function App(): React.JSX.Element {
     )?.focus()
   const focusEditor = (): void =>
     document.querySelector<HTMLElement>('[data-testid="field-title"]')?.focus()
+  const stepTrackInField = (delta: 1 | -1): void => {
+    const field = document.activeElement?.getAttribute('data-testid')
+    moveSelection(delta)
+    if (!field?.startsWith('field-')) return
+    setTimeout(() => document.querySelector<HTMLElement>(`[data-testid="${field}"]`)?.focus(), 0)
+  }
   // El salto relativo se apoya en los tres saltos absolutos de arriba: resuelve a qué
   // columna toca ir mirando dónde está el foco ahora, y llama al que corresponda.
   const focusColumn = (delta: 1 | -1): void => {
@@ -2722,6 +2729,7 @@ export default function App(): React.JSX.Element {
       selectAll,
       askFillAll: onFillAll,
       moveSelection,
+      stepTrackInField,
       jumpSelection,
       pageSelection,
       focusList,
@@ -2918,6 +2926,13 @@ export default function App(): React.JSX.Element {
     openListReview,
     onSettled: cleanLoad,
   })
+  const openFromOs = useStableCallback(async (paths: string[]): Promise<void> => {
+    if (paths.length > 0) await addToWorkingList(paths)
+  })
+  useEffect(() => {
+    void window.api.takePendingFiles().then(openFromOs)
+    return window.api.onOpenFiles(openFromOs)
+  }, [openFromOs])
   // One source per opening: it remembers what it wrote and trashed until the review closes,
   // and it keeps to the rows it opened on. Picking another playlist while it is open does
   // not move it: what the menu said it would touch is what it touches.

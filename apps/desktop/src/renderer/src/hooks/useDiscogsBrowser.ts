@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
 import { type MatchCleanup, matchTargetOf, probeReleases, searchHintsFor } from '../lib/autoMatch'
 import { fetchRelease } from '../lib/fetchRelease'
-import { mainErrorMessage } from '../lib/ipcError'
+import { cleanIpcError, errorKeyOf, mainErrorMessage } from '../lib/ipcError'
 import { preRankResults, providerCountsOf, releaseKey, resultFromRelease } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
@@ -44,6 +44,10 @@ function combineSearches(queries: UseQueryResult<SearchResult[]>[]) {
     // only every source failing is an error.
     allFailed: settled && queries.every((q) => q.isError),
     firstError: queries.find((q) => q.isError)?.error ?? null,
+    errors: queries.map((q) => (q.isError ? q.error : null)),
+    retryFailed: () => {
+      for (const q of queries) if (q.isError) void q.refetch()
+    },
     refetchAll: () => {
       for (const q of queries) void q.refetch()
     },
@@ -95,6 +99,8 @@ export interface DiscogsBrowser {
   // "choose an album" hint.
   noResults: boolean
   error: string
+  failedSources: SearchProviderId[]
+  retrySearch: () => void
   previewRelease: (result: SearchResult) => void
 }
 
@@ -271,7 +277,8 @@ export function useDiscogsBrowser(
     })),
     combine: combineSearches,
   })
-  const { arrived, fetching, answered, settled, allFailed, firstError, refetchAll } = searchQueries
+  const { arrived, fetching, answered, settled, allFailed, firstError, errors, refetchAll } =
+    searchQueries
 
   // One run of the search: the term with everything else that keys it, plus a bump when the
   // same term is run again. The hold, the frozen order and the best-match slot reset per run.
@@ -515,6 +522,26 @@ export function useDiscogsBrowser(
     : releaseQuery.isError
       ? mainErrorMessage(releaseQuery.error, tr, tr('editor.releaseError'))
       : ''
+  const { retryFailed } = searchQueries
+  const refetchRelease = releaseQuery.refetch
+  const releaseFailed = releaseQuery.isError
+  const retrySearch = useCallback(() => {
+    retryFailed()
+    if (releaseFailed) void refetchRelease()
+  }, [retryFailed, releaseFailed, refetchRelease])
+
+  const failedSources = useMemo(
+    () =>
+      settled && !allFailed
+        ? sources.filter((source, i): source is SearchProviderId => {
+            const failure = errors[i]
+            if (source === 'direct' || !failure) return false
+            const raw = failure instanceof Error ? cleanIpcError(failure.message) : ''
+            return errorKeyOf(raw) !== 'beatportNotConnected'
+          })
+        : EMPTY_PROVIDERS,
+    [settled, allFailed, sources, errors],
+  )
 
   // Memoized so the hook's own consumers (DiscogsPanel, wrapped in memo — see
   // DiscogsPanel.tsx) don't reconcile on every Editor render: without this the
@@ -542,6 +569,8 @@ export function useDiscogsBrowser(
       busy,
       noResults,
       error,
+      failedSources,
+      retrySearch,
       previewRelease,
     }),
     [
@@ -564,6 +593,8 @@ export function useDiscogsBrowser(
       busy,
       noResults,
       error,
+      failedSources,
+      retrySearch,
       previewRelease,
     ],
   )

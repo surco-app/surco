@@ -62,6 +62,7 @@ export interface FieldSpec {
   // True while an audio-derived suggestion (BPM/Key) is still being detected: no chip
   // yet, but the field shows a placeholder chip so the real one doesn't pop in cold.
   suggesting?: boolean
+  audioDerived?: boolean
   insertSources?: InsertSource[]
   cleanResult?: string
   formatResult?: string
@@ -326,6 +327,7 @@ export function buildFieldSpecs({
               !isMulti &&
               ((def.key === 'bpm' && detectedBpm === undefined) ||
                 (def.key === 'key' && detectedKey === undefined)),
+            audioDerived: def.key === 'bpm' || def.key === 'key',
             tagList: tagListFor(def.key, genreTags, groupingTags),
           },
         ]

@@ -5,6 +5,9 @@ import { fireEvent, screen } from '@testing-library/react'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
+// The sync checks for a running Traktor with a real pgrep, so on a machine with Traktor
+// open the collection was never written and the scenario timed out.
+vi.mock('../main/traktorProcess', () => ({ isTraktorRunning: vi.fn().mockResolvedValue(false) }))
 
 import { toNmlLocation } from '../main/ffmpeg'
 import { backupOf } from '../main/libraryBackups'

@@ -1,12 +1,18 @@
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, stat, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { HOT_KINDS, type WantedCue } from '../shared/cueRules'
+import { emptyMetadata } from '../shared/metadata'
 import { traktorContentId } from '../shared/traktorContent'
+import { rekordboxMetaFrom } from './rekordboxMetadata'
 import type { CuesOp, EditOp, TrackOp } from './rekordboxQueueOps'
 import { readTraktorTrackCues, traktorEntryBlock } from './traktorCues'
 import { applyTraktorBatch, withTraktorCues } from './traktorCuesWrite'
+
+// The write checks for a running Traktor with a real pgrep, so on a machine with Traktor
+// open every write here was refused and the suite failed for a reason outside the code.
+vi.mock('./traktorProcess', () => ({ isTraktorRunning: vi.fn().mockResolvedValue(false) }))
 
 const KEY = 'Macintosh HD/:Users/:dj/:Music/:power.flac'
 const ID = traktorContentId(KEY)
@@ -308,6 +314,41 @@ describe('applyTraktorBatch', () => {
     })
     expect(result).toMatchObject({ ok: true, wrote: true, outcomes: [{ id: 't1', applied: true }] })
     expect(await readFile(file, 'utf8')).toContain(`KEY="${KEY}"`)
+  })
+
+  // Measured 29/10/2026 with Traktor Play 4.5.1: a track Surco added to the collection
+  // showed no cover, loaded and analysed or not, while the same file imported by Traktor
+  // did. Traktor only builds a cover for a file it finds newer than the collection it
+  // read, and the audio was written before the collection that names it.
+  it('leaves a track it adds to the collection newer than the collection, so Traktor builds its cover', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-traktoradd-'))
+    const audio = join(dir, 'love.flac')
+    await writeFile(audio, 'audio')
+    const past = new Date(Date.now() - 3600_000)
+    await utimes(audio, past, past)
+    const withList = doc.replace(
+      '</COLLECTION></NML>',
+      '</COLLECTION><PLAYLISTS><NODE TYPE="FOLDER" NAME="$ROOT"><SUBNODES COUNT="1"><NODE TYPE="PLAYLIST" NAME="Friday"><PLAYLIST ENTRIES="0" TYPE="LIST" UUID="fri"></PLAYLIST></NODE></SUBNODES></NODE></PLAYLISTS></NML>',
+    )
+    const file = await onDisk(withList)
+    const track: TrackOp = {
+      id: 't1',
+      kind: 'track',
+      path: audio,
+      label: 'Love Ya',
+      facts: null,
+      meta: rekordboxMetaFrom({ ...emptyMetadata(), artist: 'Danny Gibson', title: 'Love Ya' }),
+      wanted: [{ id: 'fri', name: 'Friday' }],
+      known: [],
+      stamps: {},
+    }
+    const result = await applyTraktorBatch(file, [track], {
+      ensureClosed: async () => true,
+      bootVolume: 'Macintosh HD',
+    })
+    expect(result).toMatchObject({ ok: true, wrote: true })
+    expect(await readFile(file, 'utf8')).toContain('FILE="love.flac"')
+    expect((await stat(audio)).mtimeMs).toBeGreaterThan((await stat(file)).mtimeMs)
   })
 
   it('reads the collection again after Traktor quits, so what Traktor saved on quitting is kept and a set it changed is refused', async () => {

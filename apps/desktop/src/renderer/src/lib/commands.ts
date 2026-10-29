@@ -186,6 +186,7 @@ export interface CommandDeps {
   selectAll: () => void
   askFillAll: () => void
   moveSelection: (delta: number) => void
+  stepTrackInField: (delta: 1 | -1) => void
   jumpSelection: (to: 'first' | 'last') => void
   pageSelection: (dir: -1 | 1) => void
   // Move keyboard focus between the three columns (list / Discogs matches / editor).
@@ -339,6 +340,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     selectAll,
     askFillAll,
     moveSelection,
+    stepTrackInField,
     jumpSelection,
     pageSelection,
     focusList,
@@ -603,6 +605,22 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('next'),
       enabled: visibleTracks.length > 1,
       run: () => moveSelection(1),
+    },
+    {
+      id: 'prev-in-field',
+      group: 'navigate',
+      title: tr('commands.prevInField'),
+      hint: hintFor('prev-in-field'),
+      enabled: visibleTracks.length > 1,
+      run: () => stepTrackInField(-1),
+    },
+    {
+      id: 'next-in-field',
+      group: 'navigate',
+      title: tr('commands.nextInField'),
+      hint: hintFor('next-in-field'),
+      enabled: visibleTracks.length > 1,
+      run: () => stepTrackInField(1),
     },
     {
       // Home/End/PageUp/PageDown are fixed aliases (not in the rebind UI), so their hints

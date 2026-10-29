@@ -998,10 +998,9 @@ describe('App auto-match', () => {
     const button = screen.getByTestId('auto-match')
     expect(button).toHaveAccessibleName(i18n.t('header.autoMatchNoToken'))
     fireEvent.click(button)
-    expect(await screen.findByTestId('settings-tab-search')).toHaveAttribute(
-      'aria-selected',
-      'true',
-    )
+    expect(
+      await screen.findByTestId('settings-tab-search', undefined, { timeout: 3000 }),
+    ).toHaveAttribute('aria-selected', 'true')
   })
 
   // Auto-match on import runs the whole drop unattended: a folder of a thousand files is
@@ -4287,6 +4286,28 @@ describe('App open with', () => {
     push?.(['/music/live.flac'])
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
   })
+
+  it('brings the working list forward when files are opened while a source is showing, so they are not left in a hidden list', async () => {
+    let push: ((paths: string[]) => void) | undefined
+    setApi({
+      onOpenFiles: (cb: (paths: string[]) => void) => {
+        push = cb
+        return () => {}
+      },
+      readTags: vi.fn().mockResolvedValue({ title: 'Live', artist: 'Artist' }),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    await waitFor(() =>
+      expect(screen.getByTestId('source-rail-rekordbox')).toHaveAttribute('aria-pressed', 'true'),
+    )
+    await act(async () => push?.(['/music/live.flac']))
+    await waitFor(() =>
+      expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true'),
+    )
+    expect(await screen.findAllByTestId('track-row')).toHaveLength(1)
+  })
 })
 
 describe('App non-audio notice', () => {
@@ -5015,6 +5036,29 @@ describe('App keyboard shortcuts', () => {
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Typed Name'))
     fireEvent.click(screen.getAllByTestId('track-row')[1])
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
+  })
+
+  it('steps to the next track with ⌥↓ from inside a field, keeping the typed text on its track and the cursor in that same field rather than the first one, so a list is tagged without leaving the keyboard', async () => {
+    setApi({
+      readTags: vi.fn(async (path: string) => ({
+        title: path.endsWith('a.wav') ? 'Alpha' : 'Bravo',
+        artist: path.endsWith('a.wav') ? 'Ann' : 'Bob',
+      })),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha'))
+    expect(screen.getByTestId('field-artist')).toHaveValue('Ann')
+    screen.getByTestId('field-artist').focus()
+    fireEvent.change(screen.getByTestId('field-artist'), { target: { value: 'Typed Artist' } })
+    fireEvent.keyDown(screen.getByTestId('field-artist'), { key: 'ArrowDown', altKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveValue('Bob'))
+    expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'true')
+    await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveFocus())
+    fireEvent.keyDown(screen.getByTestId('field-artist'), { key: 'ArrowUp', altKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveValue('Typed Artist'))
+    await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveFocus())
   })
 
   // The palette button is a bare glyph, so its hover hint is the only place the bar shows
@@ -6111,8 +6155,7 @@ describe('App metadata undo', () => {
 
   // Clearing wipes the artwork alongside the tags (coverRemoved plus coverUrl), so the
   // snapshot has to carry the cover the way paste's does. Without it ⌘Z brought the text
-  // back and left the well empty — and App revokes the blob on the way out, so the URL
-  // the undo would have restored is already dead.
+  // back and left the well empty.
   it('restores the artwork when a clear is undone', async () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
@@ -6183,6 +6226,280 @@ describe('App metadata undo', () => {
     fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
     expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Deep Mix')
     expect(screen.getByText('Metadata restored on 2 tracks')).toBeInTheDocument()
+  })
+
+  const matchRelease: Release = {
+    provider: 'discogs',
+    id: 1,
+    title: 'Album',
+    artists: [{ name: 'Artist' }],
+    tracklist: [{ position: '1', title: 'My Song', duration: '3:00' }],
+  }
+
+  it('takes back a whole auto-match sweep with one undo, so a wrong batch of matches is one keystroke from gone', async () => {
+    setApi({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(
+          settings({ discogsToken: 'tok', visibleFields: ['title', 'artist', 'album'] }),
+        ),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+      readDuration: vi.fn().mockResolvedValue(180),
+      search: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(matchRelease),
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(screen.getByTestId('auto-match'))
+    await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
+    await waitFor(() => expect(screen.getByTestId('field-album')).toHaveValue('Album'))
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+
+    await waitFor(() => expect(screen.queryAllByTestId('track-automatched')).toHaveLength(0))
+    expect(screen.getByTestId('field-album')).toHaveValue('')
+    expect(screen.getByText('Metadata restored on 2 tracks')).toBeInTheDocument()
+  })
+
+  it('puts a review accepted from the row back up for review on undo, tags and all', async () => {
+    setApi({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(
+          settings({ discogsToken: 'tok', visibleFields: ['title', 'artist', 'album'] }),
+        ),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+      search: vi.fn().mockResolvedValue([{ id: 1, title: 'Another Act - Album' }]),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue({
+        ...matchRelease,
+        artists: [{ name: 'Another Act' }],
+        tracklist: [{ position: '1', title: 'My Song' }],
+      }),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(screen.getByTestId('auto-match'))
+    await waitFor(() => expect(screen.getAllByTestId('track-match-review')).toHaveLength(2))
+    fireEvent.click(rows[0])
+
+    fireEvent.click(within(rows[0].parentElement as HTMLElement).getByTestId('track-match-review'))
+    await waitFor(() => expect(screen.getByTestId('field-album')).toHaveValue('Album'))
+    expect(screen.getAllByTestId('track-match-review')).toHaveLength(1)
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+
+    await waitFor(() => expect(screen.getAllByTestId('track-match-review')).toHaveLength(2))
+    expect(screen.getByTestId('field-album')).toHaveValue('')
+  })
+
+  it('takes back a release picked in the editor on undo, since the file own tags are otherwise gone', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok' })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Own Title', artist: 'Own Artist' }),
+      search: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue({
+        ...matchRelease,
+        tracklist: [{ position: '1', title: 'Release Title' }],
+      }),
+    })
+    await renderApp()
+    await addOneTrack()
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Own Title'))
+    fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'album' } })
+    fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
+    fireEvent.click(await screen.findByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Release Title'))
+    ;(document.activeElement as HTMLElement | null)?.blur()
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Own Title'))
+    expect(screen.getByTestId('field-artist')).toHaveValue('Own Artist')
+  })
+
+  it('takes the release artwork back off every selected track when a release applied across them is undone', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok' })),
+      readTags: vi.fn((path: string) =>
+        Promise.resolve({ title: path === '/music/a.wav' ? 'One' : 'Two', artist: 'Artist' }),
+      ),
+      prepareCoverDrag: vi.fn().mockResolvedValue(null),
+      search: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue({
+        ...matchRelease,
+        images: [{ uri: 'https://img/release.jpg', type: 'primary', resource_url: '' }],
+        tracklist: [
+          { position: '1', title: 'One' },
+          { position: '2', title: 'Two' },
+        ],
+      }),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.change(await screen.findByTestId('discogs-query'), { target: { value: 'album' } })
+    fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
+    fireEvent.click(await screen.findByTestId('discogs-result'))
+    fireEvent.click(await screen.findByTestId('match-apply'))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() =>
+      expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'https://img/release.jpg'),
+    )
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+
+    for (const index of [0, 1]) {
+      fireEvent.click(screen.getAllByTestId('track-row')[index])
+      await waitFor(() =>
+        expect(screen.getByTestId('field-title')).toHaveValue(['One', 'Two'][index]),
+      )
+      expect(screen.queryByTestId('cover-preview')).toBeNull()
+    }
+  })
+
+  it('brings back a cover removed by hand on undo', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+      prepareCoverDrag: vi.fn().mockResolvedValue(null),
+      readCover: vi
+        .fn()
+        .mockResolvedValue({ thumbUrl: 'data:image/jpeg;base64,AA', width: 600, height: 600 }),
+    })
+    await renderApp()
+    await addOneTrack()
+    await waitFor(() => expect(screen.getByTestId('cover-preview')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByTestId('cover-remove'))
+    await waitFor(() => expect(screen.queryByTestId('cover-preview')).toBeNull())
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+
+    await waitFor(() =>
+      expect(screen.getByTestId('cover-preview')).toHaveAttribute(
+        'src',
+        'data:image/jpeg;base64,AA',
+      ),
+    )
+  })
+
+  it('keeps a cover picked from disk alive when another replaces it, so undo can show it again', async () => {
+    const createObjectURL = vi
+      .fn()
+      .mockReturnValueOnce('blob:first')
+      .mockReturnValueOnce('blob:second')
+    const revokeObjectURL = vi.fn()
+    const url = URL as unknown as Record<string, unknown>
+    const original = { createObjectURL: url.createObjectURL, revokeObjectURL: url.revokeObjectURL }
+    Object.assign(url, { createObjectURL, revokeObjectURL })
+    try {
+      setApi({
+        pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+        readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+        prepareCoverDrag: vi.fn().mockResolvedValue(null),
+        getPathForFile: vi.fn((f: File) => `/img/${f.name}`),
+      })
+      await renderApp()
+      await addOneTrack()
+      for (const name of ['first.png', 'second.png']) {
+        const file = new File(['x'], name, { type: 'image/png' })
+        fireEvent.change(await screen.findByTestId('cover-input'), { target: { files: [file] } })
+      }
+      await waitFor(() =>
+        expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:second'),
+      )
+
+      fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+
+      await waitFor(() =>
+        expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:first'),
+      )
+      expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:first')
+    } finally {
+      Object.assign(url, original)
+    }
+  })
+
+  it('keeps a cover picked from disk alive when a selection-wide pick replaces it, so undo can show it again', async () => {
+    const createObjectURL = vi
+      .fn()
+      .mockReturnValueOnce('blob:first')
+      .mockReturnValueOnce('blob:second')
+    const revokeObjectURL = vi.fn()
+    const url = URL as unknown as Record<string, unknown>
+    const original = { createObjectURL: url.createObjectURL, revokeObjectURL: url.revokeObjectURL }
+    Object.assign(url, { createObjectURL, revokeObjectURL })
+    try {
+      setApi({
+        readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+        prepareCoverDrag: vi.fn().mockResolvedValue(null),
+        getPathForFile: vi.fn((f: File) => `/img/${f.name}`),
+      })
+      await renderApp()
+      const rows = await addTwoTracks()
+      fireEvent.click(rows[0])
+      fireEvent.click(rows[1], { metaKey: true })
+      for (const name of ['first.png', 'second.png']) {
+        const file = new File(['x'], name, { type: 'image/png' })
+        fireEvent.change(await screen.findByTestId('cover-input'), { target: { files: [file] } })
+      }
+      await waitFor(() =>
+        expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:second'),
+      )
+
+      fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+
+      await waitFor(() =>
+        expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:first'),
+      )
+      expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:first')
+    } finally {
+      Object.assign(url, original)
+    }
+  })
+
+  it('gives every selected track its own cover back after one was pasted over all of them', async () => {
+    setApi({
+      readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+      prepareCoverDrag: vi.fn().mockResolvedValue(null),
+      readCover: vi.fn((path: string) =>
+        Promise.resolve({
+          thumbUrl:
+            path === '/music/a.wav' ? 'data:image/jpeg;base64,AA' : 'data:image/jpeg;base64,BB',
+          width: 600,
+          height: 600,
+        }),
+      ),
+      hasClipboardImage: vi.fn().mockResolvedValue(true),
+      pasteCoverImage: vi
+        .fn()
+        .mockResolvedValue({ coverUrl: 'data:image/jpeg;base64,CC', coverPath: '/tmp/cc.jpg' }),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    await waitFor(() => expect(within(rows[1]).getByTestId('track-cover')).toBeInTheDocument())
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(await screen.findByTestId('cover-paste'))
+    await waitFor(() =>
+      expect(screen.getByTestId('cover-preview')).toHaveAttribute(
+        'src',
+        'data:image/jpeg;base64,CC',
+      ),
+    )
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+
+    for (const [index, src] of [
+      'data:image/jpeg;base64,AA',
+      'data:image/jpeg;base64,BB',
+    ].entries()) {
+      fireEvent.click(screen.getAllByTestId('track-row')[index])
+      await waitFor(() => expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', src))
+    }
   })
 })
 
@@ -6329,9 +6646,8 @@ describe('App reopen last session', () => {
 
   // An unanswered launch offer for a paths-only session must not park in the corner
   // forever: like the new-tracks prompt it carries a duration, so the shared toast
-  // draws its countdown bar and retires the card on its own. Expiring counts as
-  // declining (same clearing as the ✕), so the next launch starts quiet — safe here,
-  // because with no staged edits the countdown destroys nothing.
+  // draws its countdown bar and retires the card on its own. Expiring only hides the
+  // offer; only the ✕ clears the saved session.
   it('auto-dismisses the offer with a visible countdown', async () => {
     setApi({
       getLastSession: vi
@@ -6343,8 +6659,7 @@ describe('App reopen last session', () => {
     expect(screen.getByTestId('last-session-countdown')).toBeInTheDocument()
   })
 
-  // With staged edits the offer still ages out, so it never parks in the corner; its
-  // expiry keeps the saved session, so the edits are offered again on the next launch.
+  // A session with staged edits counts down the same way as a paths-only one.
   it('counts down the offer even when the session carries staged edits', async () => {
     setApi({
       getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({

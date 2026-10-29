@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { effectiveMeta } from '../../../shared/customFields'
 import type { CustomField } from '../../../shared/types'
-import { revokeDisplacedCovers } from '../lib/coverUrl'
 import { renderOutputName } from '../lib/outputName'
 import type { CopiedTags, TrackItem } from '../types'
 import { useStableCallback } from './useStableCallback'
@@ -66,8 +65,8 @@ export function useMetadataClipboard({
     const coverAlive =
       !!coverUrl &&
       (!coverUrl.startsWith('blob:') || tracksRef.current.some((t) => t.coverUrl === coverUrl))
-    // The displaced cover is NOT revoked here (unlike onApplyCoverAll): the undo
-    // snapshot above may restore it, and revoking would hand ⌘Z a dead blob URL.
+    // The displaced cover is NOT revoked here: the undo snapshot above may restore
+    // it, and revoking would hand ⌘Z a dead blob URL.
     if (coverAlive) patchTracks([track.id], { coverUrl, coverPath })
     setNotice(tr('notices.pastedMeta'))
   })
@@ -78,15 +77,8 @@ export function useMetadataClipboard({
     setNotice(tr('notices.copiedPath'))
   })
   const onApplyCoverAll = useStableCallback((coverUrl: string, coverPath?: string) => {
-    const ids = new Set(selectedIds)
-    const displaced: (string | undefined)[] = []
-    const kept: (string | undefined)[] = []
-    // One pass: the selected rows give up their covers, the rest keep theirs.
-    for (const t of tracksRef.current) (ids.has(t.id) ? displaced : kept).push(t.coverUrl)
+    recordMetaUndo(selectedIds, { cover: true })
     patchTracks(selectedIds, { coverUrl, coverPath })
-    // The selected tracks just took the new cover; free each old blob only if no
-    // unselected track still shows it (a prior apply-to-all can share one blob).
-    revokeDisplacedCovers(displaced, kept)
   })
   // Copies the Settings-pattern name to the OS clipboard so the user can paste the track
   // into Google or Soulseek. A "/" in the pattern means a subfolder, so drop everything but

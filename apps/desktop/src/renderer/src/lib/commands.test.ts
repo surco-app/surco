@@ -64,6 +64,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     selectAll: () => {},
     askFillAll: () => {},
     moveSelection: () => {},
+    stepTrackInField: () => {},
     jumpSelection: () => {},
     pageSelection: () => {},
     focusList: () => {},

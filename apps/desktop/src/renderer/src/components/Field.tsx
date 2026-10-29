@@ -45,6 +45,7 @@ interface FieldProps {
   // An audio-derived suggestion (BPM/Key) is still being detected — show a placeholder
   // chip until the real one lands, so it doesn't pop into empty space.
   suggesting?: boolean
+  audioDerived?: boolean
   insertSources?: InsertSource[]
   cleanResult?: string
   formatResult?: string
@@ -69,6 +70,7 @@ export const Field = memo(function Field({
   suggestions,
   tagList,
   suggesting,
+  audioDerived,
   insertSources,
   cleanResult,
   formatResult,
@@ -275,7 +277,9 @@ export const Field = memo(function Field({
             isOn={(s) =>
               tagList ? csvHas(draft, s, tagList.whole, tagList.separator) : draft === s
             }
+            audioDerived={audioDerived}
             onPick={(s) =>
+              !(audioDerived && draft === s) &&
               commit(
                 tagList
                   ? toggleCsv(draft, s, tagList.whole, tagList.separator)

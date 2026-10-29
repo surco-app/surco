@@ -65,6 +65,7 @@ interface Params {
   // Drops a probe's verdict into the activity feed (useActivityLog.report): which release
   // won or was suggested, why, and every candidate scored along the way.
   reportActivity: (report: LocalActivityReport) => void
+  recordUndo: (ids: string[], opts: { cover: boolean; group: string }) => void
 }
 
 interface AutoMatchSweep {
@@ -105,6 +106,7 @@ export function useAutoMatch({
   matchCleanupRef,
   editingRef,
   reportActivity,
+  recordUndo,
 }: Params): AutoMatchSweep {
   // Sweep progress (null when idle), a cancel flag the workers poll, and a ref guard
   // so an import landing mid-sweep doesn't start a second concurrent run.
@@ -118,6 +120,7 @@ export function useAutoMatch({
   // run rather than the size of the current concurrent slice.
   const sweepDone = useRef<Set<string>>(new Set())
   const sweepTotal = useRef<Set<string>>(new Set())
+  const sweepRun = useRef(0)
   // Track ids waiting for an auto-match. The drain reads this together with which rows
   // are currently visible, which decides the order and nothing else.
   const matchQueue = useRef<Set<string>>(new Set())
@@ -222,6 +225,7 @@ export function useAutoMatch({
           durationSec: live.duration,
         }) &&
         isInLibrary(index, { title: patch.meta.title, artist: patch.meta.artist })
+      recordUndo([t.id], { cover: true, group: `auto-match-${sweepRun.current}` })
       updateTrack(t.id, {
         meta: patch.meta,
         coverUrl: patch.coverUrl,
@@ -247,6 +251,7 @@ export function useAutoMatch({
       matchCleanupRef,
       editingRef,
       reportActivity,
+      recordUndo,
     ],
   )
 
@@ -272,6 +277,7 @@ export function useAutoMatch({
   const resetProgress = useCallback((): void => {
     sweepDone.current.clear()
     sweepTotal.current.clear()
+    sweepRun.current += 1
     setMatching(null)
   }, [])
 

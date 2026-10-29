@@ -41,9 +41,10 @@ export function useSessionPersistence({
   // still empty — restoring the old list on top of a fresh import would mix two sessions,
   // so the offer withdraws itself the moment Files has rows (the effect below). Accepting
   // routes through the same expand pipeline as a drop, so media access and metadata
-  // reads behave exactly like a fresh import. The ✕ and (for a paths-only session)
-  // the countdown expiring are both an answer: they clear the stored session so the
-  // next launch doesn't re-ask about the very list the user already waved off.
+  // reads behave exactly like a fresh import. Only the ✕ is an answer: it clears the stored
+  // session so the next launch doesn't re-ask about the list the user waved off. The
+  // countdown expiring only hides the offer, since the window can paint late enough for
+  // an unwatched countdown to run out before the user ever saw it.
   const LAST_SESSION_PROMPT_TIMEOUT_MS = 6_000
   const lastSessionToastId = useRef<string | null>(null)
   const withdrawnRef = useRef(withdrawOffer)
@@ -80,10 +81,6 @@ export function useSessionPersistence({
       withdrawnRef.current
     )
       return
-    // Two stakes, two expiries: a paths-only session loses nothing, so aging out is a no.
-    // Staged edits exist nowhere but in this saved session, so aging out only hides the
-    // offer and the next launch asks again; only the ✕ is a deliberate no.
-    const hasEdits = Object.keys(session.edits).length > 0
     lastSessionToastId.current = pushToast(store, {
       key: 'last-session',
       tone: 'neutral',
@@ -95,7 +92,7 @@ export function useSessionPersistence({
       },
       onDismiss: declineLastSession,
       duration: LAST_SESSION_PROMPT_TIMEOUT_MS,
-      onExpire: hasEdits ? forgetLastSessionOffer : declineLastSession,
+      onExpire: forgetLastSessionOffer,
     })
   })
   useEffect(() => {

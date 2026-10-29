@@ -410,3 +410,53 @@ describe('Field with a bounded width', () => {
     expect(screen.getByText('Key').parentElement?.className).not.toContain('contents')
   })
 })
+
+describe('Field audio-derived suggestion', () => {
+  it('names the audio as the origin so the figure does not read as a preset', () => {
+    render(
+      <Field
+        name="bpm"
+        label="BPM"
+        value=""
+        onChange={() => {}}
+        suggestions={['134']}
+        audioDerived
+      />,
+    )
+    expect(screen.getByTestId('chip-134')).toHaveAccessibleName(/audio.*134/i)
+  })
+
+  it('keeps a value that already equals the detected figure instead of clearing the field', () => {
+    const onChange = vi.fn()
+    render(
+      <Field
+        name="bpm"
+        label="BPM"
+        value=""
+        onChange={onChange}
+        suggestions={['134']}
+        audioDerived
+      />,
+    )
+    fireEvent.click(screen.getByTestId('chip-134'))
+    fireEvent.click(screen.getByTestId('chip-134'))
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onChange).toHaveBeenCalledWith('134')
+    expect((screen.getByTestId('field-bpm') as HTMLInputElement).value).toBe('134')
+  })
+
+  it('still toggles a genre preset off when it equals the value', () => {
+    const onChange = vi.fn()
+    render(
+      <Field
+        name="genre"
+        label="Genre"
+        value="House"
+        onChange={onChange}
+        suggestions={['House']}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('chip-House'))
+    expect(onChange).toHaveBeenCalledWith('')
+  })
+})

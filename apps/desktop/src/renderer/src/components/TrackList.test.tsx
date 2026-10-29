@@ -1589,6 +1589,45 @@ describe('TrackList current row', () => {
   })
 })
 
+describe('TrackList unsaved mark', () => {
+  const withDisk = (over: Parameters<typeof track>[0], diskTitle: string): TrackItem => {
+    const t = track(over)
+    return { ...t, diskSignature: trackSignature({ ...t, meta: { ...t.meta, title: diskTitle } }) }
+  }
+
+  it('marks a row whose edits are not on disk yet, so it reads apart from one that arrived like that', () => {
+    renderList([
+      withDisk({ id: 'a', meta: { title: 'Mine' } }, 'Original'),
+      withDisk({ id: 'b', meta: { title: 'Same' } }, 'Same'),
+      track({ id: 'c' }),
+    ])
+    const marks = screen.getAllByTestId('track-unsaved')
+    expect(marks).toHaveLength(1)
+    expect(within(screen.getAllByTestId('track-row')[0]).getByTestId('track-unsaved')).toBe(
+      marks[0],
+    )
+    expect(marks[0]).toHaveTextContent(i18n.t('trackList.unsaved'))
+  })
+
+  it('drops the mark once the conversion has written the edits', () => {
+    const edited = withDisk({ id: 'a', status: 'done', meta: { title: 'Mine' } }, 'Mine')
+    renderList([{ ...edited, processedSignature: edited.diskSignature }])
+    expect(screen.queryByTestId('track-unsaved')).not.toBeInTheDocument()
+  })
+
+  it('leaves a converted track edited afterwards to its stale badge instead of doubling up', () => {
+    const edited = withDisk({ id: 'a', status: 'done', meta: { title: 'Later' } }, 'Mine')
+    renderList([
+      {
+        ...edited,
+        processedSignature: trackSignature({ ...edited, meta: { ...edited.meta, title: 'Mine' } }),
+      },
+    ])
+    expect(screen.getByTestId('track-status-badge')).toBeInTheDocument()
+    expect(screen.queryByTestId('track-unsaved')).not.toBeInTheDocument()
+  })
+})
+
 // A track whose file Surco backed up before rewriting it carries a quiet mark on its
 // row, in place of the toolbar count that climbed with every conversion. The mark has
 // to say what it is to a screen reader too, and a click on it opens that backup rather

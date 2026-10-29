@@ -47,6 +47,7 @@ import {
 } from '../lib/reorderDrag'
 import { rowDisplay } from '../lib/rowDisplay'
 import type { ClickMods } from '../lib/selection'
+import { hasStagedEdits } from '../lib/sessionEdits'
 import { sourceFormat, type TrackQuality, trackQuality, unanalysedIn } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { CleanSpark } from './CleanSpark'
@@ -401,6 +402,7 @@ const TrackRow = memo(function TrackRow({
   // threading it to the badge and the tooltip avoids paying that serialization twice on
   // every render of a converted row.
   const stale = isStale(t)
+  const unsaved = !stale && hasStagedEdits(t)
   // Source format read off the input path — the parsed fileName drops its extension —
   // so a mixed crate (WAV rips next to bought MP3s) can be scanned for what still
   // needs a conversion without opening each track. Shared with the per-format filter
@@ -761,6 +763,19 @@ const TrackRow = memo(function TrackRow({
                     <TriangleAlert className="h-3 w-3" aria-hidden="true" />
                     <Tooltip label={tr('trackList.metaReadFailed')} align="end" scope="dot" />
                     <span className="sr-only">{tr('trackList.metaReadFailed')}</span>
+                  </span>
+                )}
+                {unsaved && (
+                  <span
+                    data-testid="track-unsaved"
+                    className="group/dot relative flex shrink-0 items-center"
+                  >
+                    <span
+                      aria-hidden
+                      className="h-1.5 w-1.5 rounded-full bg-[var(--color-accent)]"
+                    />
+                    <Tooltip label={tr('trackList.unsaved')} align="end" scope="dot" />
+                    <span className="sr-only">{tr('trackList.unsaved')}</span>
                   </span>
                 )}
                 {backupAt !== undefined && (

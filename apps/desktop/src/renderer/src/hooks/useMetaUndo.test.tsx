@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react'
 import { useRef, useState } from 'react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { emptyMetadata } from '../../../shared/metadata'
 import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
@@ -233,5 +233,145 @@ describe('useMetaUndo', () => {
     }
     expect(result.current.tracks[0].meta.title).toBe('v1')
     expect(result.current.canUndo()).toBe(false)
+  })
+
+  it('folds every track a sweep touches into one step, so a single undo takes back the whole sweep', () => {
+    const { result } = setup([track('a', { title: 'A' }), track('b', { title: 'B' })])
+    for (const id of ['a', 'b']) {
+      act(() => {
+        result.current.record(
+          result.current.tracks.filter((t) => t.id === id),
+          { group: 'sweep-1' },
+        )
+        result.current.setTracks((prev) =>
+          prev.map((t) => (t.id === id ? { ...t, meta: { ...t.meta, title: 'Matched' } } : t)),
+        )
+      })
+    }
+    let restored = 0
+    act(() => {
+      restored = result.current.undo()
+    })
+    expect(restored).toBe(2)
+    expect(result.current.tracks.map((t) => t.meta.title)).toEqual(['A', 'B'])
+    expect(result.current.canUndo()).toBe(false)
+  })
+
+  it('opens a new sweep step once another edit lands on top, so undoing that edit never takes back the sweep with it', () => {
+    const { result } = setup([track('a', { title: 'A' }), track('b', { title: 'B' })])
+    act(() => {
+      result.current.record([result.current.tracks[0]], { group: 'sweep-1' })
+      result.current.setTracks((prev) =>
+        prev.map((t) => (t.id === 'a' ? { ...t, meta: { ...t.meta, title: 'Matched' } } : t)),
+      )
+    })
+    act(() => {
+      result.current.record([result.current.tracks[0]])
+      result.current.setTracks((prev) =>
+        prev.map((t) => (t.id === 'a' ? { ...t, meta: { ...t.meta, title: 'Typed' } } : t)),
+      )
+    })
+    act(() => {
+      result.current.record([result.current.tracks[1]], { group: 'sweep-1' })
+      result.current.setTracks((prev) =>
+        prev.map((t) => (t.id === 'b' ? { ...t, meta: { ...t.meta, title: 'Matched' } } : t)),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.tracks.map((t) => t.meta.title)).toEqual(['Typed', 'B'])
+  })
+
+  it('keeps the first snapshot of a track the same sweep touches twice, so undo returns to before the sweep', () => {
+    const { result } = setup([track('a', { title: 'A' })])
+    for (const title of ['First', 'Second']) {
+      act(() => {
+        result.current.record(result.current.tracks, { group: 'sweep-1' })
+        result.current.setTracks((prev) => prev.map((t) => ({ ...t, meta: { ...t.meta, title } })))
+      })
+    }
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.tracks[0].meta.title).toBe('A')
+  })
+
+  describe('picked cover blobs', () => {
+    const url = URL as unknown as Record<string, unknown>
+    const original = url.revokeObjectURL
+    afterEach(() => {
+      url.revokeObjectURL = original
+    })
+    function spyRevoke(): ReturnType<typeof vi.fn> {
+      const revoke = vi.fn()
+      url.revokeObjectURL = revoke
+      return revoke
+    }
+    function coverStep(
+      result: ReturnType<typeof setup>['result'],
+      id: string,
+      coverUrl: string,
+    ): void {
+      act(() => {
+        result.current.record(
+          result.current.tracks.filter((t) => t.id === id),
+          { cover: true },
+        )
+        result.current.setTracks((prev) => prev.map((t) => (t.id === id ? { ...t, coverUrl } : t)))
+      })
+    }
+
+    it('frees a blob only a snapshot falling off the full stack still held, so long sessions do not pin every replaced image', () => {
+      const revoke = spyRevoke()
+      const { result } = setup([track('a', {}, { coverUrl: 'blob:first' })])
+      for (let i = 0; i <= MAX_META_UNDO; i++) coverStep(result, 'a', `blob:${i}`)
+      expect(revoke).toHaveBeenCalledWith('blob:first')
+    })
+
+    it('keeps a blob falling off the stack that another row still shows, so that row keeps its artwork', () => {
+      const revoke = spyRevoke()
+      const { result } = setup([
+        track('a', {}, { coverUrl: 'blob:shared' }),
+        track('b', {}, { coverUrl: 'blob:shared' }),
+      ])
+      for (let i = 0; i <= MAX_META_UNDO; i++) coverStep(result, 'a', `blob:${i}`)
+      expect(revoke).not.toHaveBeenCalledWith('blob:shared')
+    })
+
+    it('keeps a blob falling off the stack that a newer snapshot still holds, so that undo can still show it', () => {
+      const revoke = spyRevoke()
+      const { result } = setup([
+        track('a', {}, { coverUrl: 'blob:shared' }),
+        track('b', {}, { coverUrl: 'blob:shared' }),
+      ])
+      coverStep(result, 'a', 'blob:a1')
+      coverStep(result, 'b', 'blob:b1')
+      for (let i = 0; i < MAX_META_UNDO - 1; i++) coverStep(result, 'a', `blob:${i}`)
+      expect(revoke).not.toHaveBeenCalledWith('blob:shared')
+    })
+
+    it('frees the blob an undo takes off a row when nothing else holds it', () => {
+      const revoke = spyRevoke()
+      const { result } = setup([track('a', {}, { coverUrl: 'data:own' })])
+      coverStep(result, 'a', 'blob:picked')
+      act(() => {
+        result.current.undo()
+      })
+      expect(result.current.tracks[0].coverUrl).toBe('data:own')
+      expect(revoke).toHaveBeenCalledWith('blob:picked')
+    })
+
+    it('frees only the blob an undo takes off a row, never the one it puts back', () => {
+      const revoke = spyRevoke()
+      const { result } = setup([track('a', {}, { coverUrl: 'data:own' })])
+      coverStep(result, 'a', 'blob:picked')
+      coverStep(result, 'a', 'blob:second')
+      act(() => {
+        result.current.undo()
+      })
+      expect(revoke).toHaveBeenCalledWith('blob:second')
+      expect(revoke).not.toHaveBeenCalledWith('blob:picked')
+    })
   })
 })

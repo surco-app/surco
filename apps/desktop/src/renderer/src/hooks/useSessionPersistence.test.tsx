@@ -38,21 +38,26 @@ const withEdits: SessionData = {
 }
 
 describe('useSessionPersistence', () => {
-  it('lets a paths-only offer age out as a no', async () => {
+  it('keeps a paths-only session when the offer ages out unseen, since the window can paint late', async () => {
     const { store, toast, saveLastSession } = await offer({ paths: ['/music/a.wav'], edits: {} })
     expect(toast.duration).toBeGreaterThan(0)
     dismissToastByExpiry(store, toast.id)
-    expect(saveLastSession).toHaveBeenCalledWith([], {})
+    expect(store.getState().toasts).toHaveLength(0)
+    expect(saveLastSession).not.toHaveBeenCalled()
   })
 
-  // Staged edits live only in the saved session: the offer still ages out so it never
-  // parks in the corner, but its expiry is not an answer, so the next launch asks again.
   it('lets an offer with staged edits age out without dropping the saved session', async () => {
     const { store, toast, saveLastSession } = await offer(withEdits)
     expect(toast.duration).toBeGreaterThan(0)
     dismissToastByExpiry(store, toast.id)
     expect(store.getState().toasts).toHaveLength(0)
     expect(saveLastSession).not.toHaveBeenCalled()
+  })
+
+  it('drops a paths-only session when the offer is closed by hand', async () => {
+    const { store, toast, saveLastSession } = await offer({ paths: ['/music/a.wav'], edits: {} })
+    dismissToastByUser(store, toast.id)
+    expect(saveLastSession).toHaveBeenCalledWith([], {})
   })
 
   it('still drops the saved session when the offer with edits is closed by hand', async () => {

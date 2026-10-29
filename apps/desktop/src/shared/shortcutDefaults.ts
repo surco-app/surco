@@ -6,11 +6,13 @@ import { type Chord, chordEquals } from './shortcuts'
 //
 // `suppressWhileTyping` keeps a mod-combo from firing while a text field is focused —
 // only ⌘⌫ (remove) needs it, so ⌫ stays a backspace mid-edit instead of deleting the
-// track. Bare-key chords are always suppressed while typing regardless of this flag.
+// track. Bare-key chords are always suppressed while typing regardless of this flag, and
+// so are ⌥/⌃ chords unless the command sets `liveWhileTyping`.
 export interface ShortcutDef {
   id: string
   chord: Chord
   suppressWhileTyping?: boolean
+  liveWhileTyping?: boolean
   // Limita el comando al ámbito con ese nombre: solo dispara cuando el foco está dentro
   // de un `[data-shortcut-scope]` que coincide. Sin scope el comando es global.
   scope?: string
@@ -37,6 +39,8 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   { id: 'play', chord: ['space'] },
   { id: 'next', chord: ['down'] },
   { id: 'prev', chord: ['up'] },
+  { id: 'next-in-field', chord: ['alt', 'down'], liveWhileTyping: true },
+  { id: 'prev-in-field', chord: ['alt', 'up'], liveWhileTyping: true },
   { id: 'seek-back', chord: ['left'] },
   { id: 'seek-forward', chord: ['right'] },
   { id: 'search', chord: ['/'] },
@@ -130,8 +134,8 @@ export function resolveBindings(overrides: Record<string, Chord> = {}): Map<stri
 
 // Resolves a pressed chord to a command id. Iterates the defaults table so the result
 // is deterministic (first match wins) even if two commands share a chord. Respects the
-// typing guard: while a field is focused, bare-key chords and `suppressWhileTyping`
-// commands don't fire, but other mod-combos do.
+// typing guard: while a field is focused, bare-key chords, `suppressWhileTyping` commands
+// and ⌥/⌃ chords without `liveWhileTyping` don't fire, but other mod-combos do.
 //
 // The active scope's commands are matched BEFORE the global ones, so a scoped binding
 // beats a global that shares its chord: ← is seek-back everywhere, but inside the
@@ -153,13 +157,15 @@ export function matchChord(
   scope: string | string[] | null = null,
 ): string | null {
   const hasMod = chord.includes('mod')
+  const hasAltOrCtrl = chord.includes('alt') || chord.includes('ctrl')
   const chain = scope === null ? [] : typeof scope === 'string' ? [scope] : scope
   const match = (wantScope: string | null): string | null => {
     for (const def of SHORTCUT_DEFAULTS) {
       const bound = bindings.get(def.id)
       if (!bound || bound.length === 0 || !chordEquals(bound, chord)) continue
       if ((def.scope ?? null) !== wantScope) continue
-      if (typing && (!hasMod || def.suppressWhileTyping)) return null
+      const live = hasMod || (def.liveWhileTyping === true && hasAltOrCtrl)
+      if (typing && (!live || def.suppressWhileTyping)) return null
       return def.id
     }
     return null
