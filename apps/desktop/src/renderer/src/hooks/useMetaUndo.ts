@@ -21,6 +21,7 @@ function fieldsOf(t: TrackItem, cover: boolean): Fields {
   const { custom, ...meta } = t.meta
   return {
     ...Object.fromEntries(Object.entries(meta).map(([key, value]) => [`meta.${key}`, value])),
+    custom: custom !== undefined,
     ...Object.fromEntries(
       Object.entries(custom ?? {}).map(([key, value]) => [`custom.${key}`, value]),
     ),
@@ -50,21 +51,19 @@ function fieldsOf(t: TrackItem, cover: boolean): Fields {
 }
 
 function withFields(t: TrackItem, fields: Fields): TrackItem {
-  const meta: Fields = { ...t.meta }
-  const custom: Fields = { ...t.meta.custom }
+  const meta: Fields & TrackItem['meta'] = { ...t.meta }
+  const custom: Record<string, string> = { ...t.meta.custom }
   const rest: Fields = {}
   for (const [key, value] of Object.entries(fields)) {
     if (key.startsWith('meta.')) meta[key.slice('meta.'.length)] = value
+    else if (key === 'custom') continue
     else if (!key.startsWith('custom.')) rest[key] = value
     else if (value === undefined) delete custom[key.slice('custom.'.length)]
-    else custom[key.slice('custom.'.length)] = value
+    else custom[key.slice('custom.'.length)] = value as string
   }
-  const customTouched = Object.keys(fields).some((key) => key.startsWith('custom.'))
-  return {
-    ...t,
-    ...rest,
-    meta: { ...meta, ...(customTouched ? { custom } : {}) } as TrackItem['meta'],
-  }
+  if (Object.keys(fields).some((key) => key.startsWith('custom'))) meta.custom = custom
+  if (fields.custom === false && Object.keys(custom).length === 0) delete meta.custom
+  return { ...t, ...rest, meta }
 }
 
 function settle(s: MetaSnapshot, t: TrackItem | undefined): void {
@@ -168,7 +167,6 @@ export function useMetaUndo(
       // Rows removed since the edit stay gone — the snapshot restores fields on the
       // tracks that still exist, it never resurrects a deleted row.
       const kept = entry.filter((s) => live.has(s.id))
-      if (kept.length === 0) return 0
       const patches = new Map<string, Fields>()
       const inverse: MetaSnapshot[] = []
       for (const s of kept) {
@@ -176,6 +174,7 @@ export function useMetaUndo(
         settle(s, track)
         const now = fieldsOf(track, s.cover)
         const keys = Object.keys(s.after).filter((key) => now[key] === s.after[key])
+        if (keys.length === 0) continue
         patches.set(s.id, pick(s.before, keys))
         inverse.push({
           id: s.id,
@@ -184,7 +183,7 @@ export function useMetaUndo(
           after: pick(s.before, keys),
         })
       }
-      to.current.push(inverse)
+      if (inverse.length > 0) to.current.push(inverse)
       revokeDisplacedCovers(coversOf([entry]), [
         ...tracksRef.current.map((t) => t.coverUrl),
         ...coversOf(stack.current),
@@ -196,7 +195,7 @@ export function useMetaUndo(
           return patch ? withFields(t, patch) : t
         }),
       )
-      return kept.length
+      return inverse.length
     },
     [tracksRef, setTracks],
   )

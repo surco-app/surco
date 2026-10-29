@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { emptyMetadata } from '../../../shared/metadata'
 import type { TrackMetadata } from '../../../shared/types'
+import { trackSignature } from '../lib/dirty'
 import type { TrackItem } from '../types'
 import { MAX_META_UNDO, useMetaUndo } from './useMetaUndo'
 
@@ -432,6 +433,65 @@ describe('useMetaUndo', () => {
     })
     expect(reapplied).toBe(0)
     expect(result.current.tracks[0].meta.title).toBe('Second')
+  })
+
+  it('leaves a converted track with no custom fields matching its converted signature after undoing a paste that added one, so it does not read as stale', () => {
+    const { result } = setup([track('a', { title: 'A' })])
+    const converted = trackSignature(result.current.tracks[0])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, custom: { mood: 'Dark' } } })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    expect(trackSignature(result.current.tracks[0])).toBe(converted)
+  })
+
+  it('reports nothing undone and offers no redo when every field the step changed was edited since, so the toast never claims a restore that did not happen', () => {
+    const { result } = setup([track('a', { title: 'A' }), track('b', { title: 'B' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Filled' } })),
+      )
+    })
+    act(() => {
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: `Typed ${t.id}` } })),
+      )
+    })
+    let restored = -1
+    act(() => {
+      restored = result.current.undo()
+    })
+    expect(restored).toBe(0)
+    expect(result.current.canUndo()).toBe(false)
+    expect(result.current.canRedo()).toBe(false)
+    expect(result.current.tracks.map((t) => t.meta.title)).toEqual(['Typed a', 'Typed b'])
+  })
+
+  it('counts only the tracks an undo actually changed', () => {
+    const { result } = setup([track('a', { title: 'A' }), track('b', { title: 'B' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Filled' } })),
+      )
+    })
+    act(() => {
+      result.current.setTracks((prev) =>
+        prev.map((t) => (t.id === 'b' ? { ...t, meta: { ...t.meta, title: 'Typed' } } : t)),
+      )
+    })
+    let restored = -1
+    act(() => {
+      restored = result.current.undo()
+    })
+    expect(restored).toBe(1)
+    expect(result.current.tracks.map((t) => t.meta.title)).toEqual(['A', 'Typed'])
   })
 
   describe('picked cover blobs', () => {
