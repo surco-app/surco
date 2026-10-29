@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.16",
+    "date": "October 29, 2026",
+    "title": "Deine ganze Sammlung, ohne Warten",
+    "items": [
+      {
+        "text": "In rekordbox, Engine DJ und Traktor steht „Alle Titel“ über „Zuletzt hinzugefügt“ und zeigt deine ganze Sammlung, so findest du auch die Titel, die in keiner Playlist sind. Beim Öffnen analysiert und sucht Surco nur die Titel, an denen du vorbeiscrollst, nicht die ganze Sammlung.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Lange Listen scrollen flüssig. Eine Sammlung mit 8.000 Titeln läuft so ruhig wie eine kurze Playlist und braucht viel weniger Speicher.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Apple-Music-Playlists öffnen sich viel schneller. Die Titel erscheinen in Sekunden und die Cover folgen, und bei einer Playlist mit Tausenden Titeln siehst du die ersten sofort, während der Rest nachkommt. Der Sprung von einer Playlist zur nächsten lässt Music nicht mehr hängen.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Während eine Playlist oder die Liste der Playlists gelesen wird, siehst du die Form der kommenden Zeilen statt einer Textzeile.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Im Editor haben Traktor und Engine DJ jetzt ein eigenes Feld „Playlists“, wie rekordbox es schon hatte, und damit wählst du, in welche Playlists jeder Titel kommt. Hatte die Bibliothek den Titel noch nicht, fügt Surco ihn beim Konvertieren hinzu (bei Traktor, wenn er auf einem Laufwerk liegt, das Traktor schon kennt). Das Traktor-Feld wird aktiv, sobald du die Sammlung in den Einstellungen bestätigst.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Wenn du einen Titel konvertierst, den du in Playlists geschickt hast, bringt dich das Symbol von rekordbox, Engine DJ oder Traktor neben dem Ergebnis zu ihm, mit offenen Cues.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "In Flows mit Countdown bleibt der Cue, der dort liegt, wo ein Refrain beginnt, denn dort mischst du ein, und der Countdown endet dort. Zwischen zwei Refrains direkt hintereinander setzt er keinen mehr.",
+        "in": "1.16.0"
+      }
+    ]
+  },
+  {
     "version": "1.15",
     "date": "October 28, 2026",
     "title": "Auto-Markieren lernt von dir",

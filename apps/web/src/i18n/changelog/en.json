@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.16",
+    "date": "October 29, 2026",
+    "title": "Your whole collection, no waiting",
+    "items": [
+      {
+        "text": "In rekordbox, Engine DJ and Traktor, “All tracks” sits above “Recently added” and shows your whole collection, so you also find the tracks that are in no playlist. When you open it, Surco only analyzes and searches the tracks you scroll past, not the whole collection.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Long lists scroll smoothly. A collection of 8,000 tracks moves as smoothly as a short playlist and uses far less memory.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Apple Music playlists open much faster. The tracks show up in seconds and the covers follow, and in a playlist of thousands of tracks you see the first ones right away while the rest come in. Jumping from one playlist to another no longer leaves Music stuck.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "While a playlist or the list of playlists is being read, you see the shape of the rows about to appear instead of a line of text.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "In the editor, Traktor and Engine DJ get their own “Playlists” field, as rekordbox already had, and with it you choose which playlists each track goes into. If the library did not have the track yet, Surco adds it when converting (in Traktor, when it is on a disk Traktor already knows). The Traktor field turns on once you confirm the collection in Settings.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "When you convert a track you sent to playlists, the rekordbox, Engine DJ or Traktor icon next to the result takes you to it with its cues open.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "In flows with a countdown, the cue that lands where a chorus begins stays, because that is where you mix in, and the countdown ends there. Between two choruses in a row it no longer places any.",
+        "in": "1.16.0"
+      }
+    ]
+  },
+  {
     "version": "1.15",
     "date": "October 28, 2026",
     "title": "Auto mark learns from you",

@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.16",
+    "date": "October 29, 2026",
+    "title": "Toda a sua coleção, sem espera",
+    "items": [
+      {
+        "text": "No rekordbox, no Engine DJ e no Traktor, “Todas as faixas” aparece acima de “Adicionadas recentemente” e mostra a sua coleção inteira, então você também encontra as faixas que não estão em nenhuma playlist. Ao abrir, o Surco só analisa e busca as faixas pelas quais você passa, não a coleção inteira.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Listas longas rolam com fluidez. Uma coleção de 8.000 faixas rola tão suave quanto uma playlist curta e gasta muito menos memória.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "As playlists do Apple Music abrem muito mais rápido. As faixas aparecem em segundos e as capas chegam depois, e numa playlist de milhares de faixas você vê as primeiras na hora enquanto o resto chega. Pular de uma playlist para outra não deixa mais o Music travado.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Enquanto uma playlist ou a lista de playlists é lida, você vê o formato das linhas que vão aparecer em vez de uma linha de texto.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "No editor, o Traktor e o Engine DJ têm o seu próprio campo “Playlists”, como o rekordbox já tinha, e com ele você escolhe em quais playlists cada faixa entra. Se a biblioteca ainda não tinha a faixa, o Surco a adiciona ao convertê-la (no Traktor, se ela está num disco que o Traktor já conhece). O campo do Traktor é ativado quando você confirma a coleção em Ajustes.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Quando você converte uma faixa que mandou para playlists, o ícone do rekordbox, do Engine DJ ou do Traktor ao lado do resultado leva você até ela com os cues abertos.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Nos fluxos com contagem regressiva, o cue que cai onde começa um refrão fica, porque é ali que você entra na mixagem, e a contagem regressiva termina ali. Entre dois refrões seguidos ele não coloca mais nenhum.",
+        "in": "1.16.0"
+      }
+    ]
+  },
+  {
     "version": "1.15",
     "date": "October 28, 2026",
     "title": "A marcação automática aprende com você",

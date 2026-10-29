@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.16",
+    "date": "October 29, 2026",
+    "title": "Toute ta collection, sans attendre",
+    "items": [
+      {
+        "text": "Dans rekordbox, Engine DJ et Traktor, « Tous les morceaux » apparaît au-dessus de « Ajoutées récemment » et montre toute ta collection, pour retrouver aussi les morceaux qui ne sont dans aucune playlist. À l’ouverture, Surco n’analyse et ne cherche que les morceaux devant lesquels tu passes, pas toute la collection.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Les longues listes défilent avec fluidité. Une collection de 8 000 morceaux défile aussi doucement qu’une courte playlist et consomme beaucoup moins de mémoire.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Les playlists Apple Music s’ouvrent beaucoup plus vite. Les morceaux apparaissent en quelques secondes et les pochettes suivent, et dans une playlist de milliers de morceaux tu vois les premiers tout de suite pendant que les autres arrivent. Passer d’une playlist à l’autre ne bloque plus Music.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Pendant la lecture d’une playlist ou de la liste des playlists, tu vois la forme des lignes qui vont apparaître au lieu d’une ligne de texte.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Dans l’éditeur, Traktor et Engine DJ ont leur propre champ « Playlists », comme rekordbox, et avec lui tu choisis dans quelles playlists entre chaque morceau. Si la bibliothèque n’avait pas encore le morceau, Surco l’ajoute à la conversion (dans Traktor, s’il est sur un disque que Traktor connaît déjà). Le champ de Traktor s’active quand tu confirmes la collection dans Réglages.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Quand tu convertis un morceau envoyé dans des playlists, l’icône de rekordbox, Engine DJ ou Traktor à côté du résultat t’y amène avec ses cues ouverts.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Dans les flux avec compte à rebours, le cue qui tombe là où commence un refrain reste, car c’est là que tu entres dans le mix, et le compte à rebours s’arrête là. Entre deux refrains d’affilée, il n’en place plus.",
+        "in": "1.16.0"
+      }
+    ]
+  },
+  {
     "version": "1.15",
     "date": "October 28, 2026",
     "title": "Le marquage auto apprend de toi",

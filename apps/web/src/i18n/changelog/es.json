@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.16",
+    "date": "29 de octubre de 2026",
+    "title": "Toda tu colección, sin esperas",
+    "items": [
+      {
+        "text": "En rekordbox, Engine DJ y Traktor, «Todas las pistas» aparece encima de «Añadidas recientemente» y enseña tu colección entera, así encuentras también las pistas que no están en ninguna playlist. Al abrirla, Surco solo analiza y busca las pistas por las que pasas, no la colección completa.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Las listas largas se desplazan con fluidez. Una colección de 8.000 pistas va tan suave como una playlist corta y gasta mucha menos memoria.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Las playlists de Apple Music se abren mucho más rápido. Las pistas aparecen en segundos y las carátulas llegan después, y en una playlist de miles de pistas ves las primeras enseguida mientras llegan las demás. Saltar de una playlist a otra ya no deja Music atascado.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Mientras se lee una playlist o la lista de playlists, ves la forma de las filas que van a aparecer en lugar de un texto.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "En el editor, Traktor y Engine DJ tienen su propio campo «Playlists», como ya tenía rekordbox, y con él eliges en qué playlists entra cada pista. Si la biblioteca aún no tenía la pista, Surco la añade al convertirla (en Traktor, si está en un disco que Traktor ya conoce). El campo de Traktor se activa cuando confirmas la colección en Ajustes.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "Cuando conviertes una pista que mandaste a playlists, el icono de rekordbox, Engine DJ o Traktor junto al resultado te lleva a ella con sus cues abiertas.",
+        "in": "1.16.0"
+      },
+      {
+        "text": "En los flujos con cuenta atrás, la cue que cae donde empieza un estribillo se queda, porque es donde entras a mezclar, y la cuenta atrás termina ahí. Entre dos estribillos seguidos ya no pone ninguna.",
+        "in": "1.16.0"
+      }
+    ]
+  },
+  {
     "version": "1.15",
     "date": "28 de octubre de 2026",
     "title": "Auto marcar aprende de ti",
