@@ -4,7 +4,13 @@ import { BrowserWindow, ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
 import { isEngineContent } from '../shared/engineContent'
 import { isTraktorContent, traktorKey } from '../shared/traktorContent'
-import type { LibraryTracks, QueuedCues, SaveCuesRequest, SurcoGrid } from '../shared/types'
+import type {
+  CopyReason,
+  LibraryTracks,
+  QueuedCues,
+  SaveCuesRequest,
+  SurcoGrid,
+} from '../shared/types'
 import { type BeatGridFit, provisionalGrid } from './beatGrid'
 import { readEngineTrackCues } from './engineCues'
 import { engineDropInput } from './engineDropInput'
@@ -37,6 +43,7 @@ export function registerRekordboxCuesIpc(host: {
   collection: () => string
   queue: CueQueue
   applyQuietly: () => void
+  beginMoment?: (reason: CopyReason) => void
   flow: () => CueFlow
   beatGrid: (file: string) => Promise<BeatGridFit | null>
   words: (file: string) => Promise<Uint16Array | null>
@@ -230,6 +237,7 @@ export function registerRekordboxCuesIpc(host: {
           ]
         : []),
     ].filter((t) => t.mine.length > 0)
+    if (targets.length > 0) host.beginMoment?.('cues')
     for (const t of targets) {
       t.queue.enqueue(t.mine.map((req) => ({ ...req, id: randomUUID(), kind: 'cues' })))
       for (const req of t.mine)

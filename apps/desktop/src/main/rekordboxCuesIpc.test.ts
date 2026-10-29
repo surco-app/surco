@@ -240,6 +240,36 @@ describe('registerRekordboxCuesIpc', () => {
     expect(applyQuietly).toHaveBeenCalled()
   })
 
+  it('saving cues starts a cues momento before anything is queued, so the copy is labelled for the cue save', async () => {
+    const order: string[] = []
+    const beginMoment = vi.fn((r: string) => order.push(`begin:${r}`))
+    const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => {
+      order.push('enqueue')
+      return true
+    })
+    registerRekordboxCuesIpc({
+      collection: () => '/c/master.db',
+      queue: queue({ enqueue }),
+      applyQuietly: quietly(),
+      beginMoment,
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+    })
+    await handler('rekordbox:saveCues')({}, [
+      {
+        contentId: '103',
+        path: '/m/a.wav',
+        label: 'a',
+        wanted: [{ ms: 1000, kind: 0, color: null }],
+        fingerprint: 'f',
+      },
+    ])
+    expect(order).toEqual(['begin:cues', 'enqueue'])
+  })
+
   it('queues several tracks together and applies once, so master.db is written in one batch', async () => {
     const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
     const applyQuietly = quietly()

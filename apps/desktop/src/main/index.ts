@@ -155,6 +155,7 @@ import { adjustProvisional, createProvisionalList } from './rekordboxProvisional
 import { createRekordboxQueue, fileStore, type QueueApply } from './rekordboxQueue'
 import { appliedNotice, registerRekordboxQueueIpc } from './rekordboxQueueIpc'
 import { stillWaiting, watchRekordboxQueue } from './rekordboxQueueWatch'
+import { createMoments } from './moments'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { loadLastSession, saveLastSession } from './session'
@@ -266,6 +267,7 @@ const rekordboxSessionBackup = createSessionBackup({
 // The same for the Engine DJ library, which a run can repoint as well.
 const engineSessionBackup = createSessionBackup({})
 const sessions = { rekordbox: rekordboxSessionBackup, engine: engineSessionBackup }
+const moments = createMoments([rekordboxSessionBackup, engineSessionBackup, traktorSessionBackup])
 const broadcast = (channel: string, payload: unknown): void => {
   for (const win of BrowserWindow.getAllWindows())
     if (!win.webContents.isDestroyed()) win.webContents.send(channel, payload)
@@ -309,7 +311,11 @@ const announceApplied = (result: QueueApply): void => {
 const rekordboxQueueWatch = watchRekordboxQueue({
   queue: {
     isEmpty: () => rekordboxQueue.isEmpty(),
-    apply: (ensureClosed) => serialLibraryFlush(() => rekordboxQueue.apply(ensureClosed)),
+    apply: (ensureClosed) =>
+      serialLibraryFlush(() => {
+        moments.begin('queue')
+        return rekordboxQueue.apply(ensureClosed)
+      }),
   },
   collection: rekordboxCollectionPath,
   isRunning: isRekordboxRunning,
@@ -365,7 +371,11 @@ const announceEngineApplied = (result: QueueApply): void => {
 const engineCueQueueWatch = watchRekordboxQueue({
   queue: {
     isEmpty: () => engineCueQueue.isEmpty(),
-    apply: (ensureClosed) => serialLibraryFlush(() => engineCueQueue.apply(ensureClosed)),
+    apply: (ensureClosed) =>
+      serialLibraryFlush(() => {
+        moments.begin('queue')
+        return engineCueQueue.apply(ensureClosed)
+      }),
   },
   collection: engineLibraryPath,
   isRunning: isEngineDjRunning,
@@ -418,7 +428,11 @@ const announceTraktorApplied = (result: QueueApply): void => {
 const traktorCueQueueWatch = watchRekordboxQueue({
   queue: {
     isEmpty: () => traktorCueQueue.isEmpty(),
-    apply: (ensureClosed) => serialLibraryFlush(() => traktorCueQueue.apply(ensureClosed)),
+    apply: (ensureClosed) =>
+      serialLibraryFlush(() => {
+        moments.begin('queue')
+        return traktorCueQueue.apply(ensureClosed)
+      }),
   },
   collection: traktorWritePath,
   isRunning: isTraktorRunning,
@@ -1272,6 +1286,7 @@ function registerIpc(): void {
       queue: rekordboxQueue,
       onApplied: announceApplied,
       onWaiting: rekordboxQueueWatch.poke,
+      beginLoose: moments.beginLoose,
       allowMedia: (paths) => mediaAccess.allowAll(paths),
     },
   )
@@ -1288,11 +1303,13 @@ function registerIpc(): void {
     ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
     onWaiting: rekordboxQueueWatch.poke,
     onReady: () => void adjustProvisionalCuesOnLaunch(),
+    beginMoment: moments.begin,
   })
   registerRekordboxCuesIpc({
     collection: rekordboxCollectionPath,
     queue: rekordboxQueue,
     applyQuietly: applyRekordboxQueueQuietly,
+    beginMoment: moments.begin,
     flow: () => activeCueFlow(getSettings()),
     beatGrid: cachedBeatGrid,
     words: cachedCueWaveWords,
@@ -1331,11 +1348,13 @@ function registerIpc(): void {
     ensureClosed: (win) => ensureEngineDjClosed(win, 'engineQuitDetailCues'),
     onWaiting: engineCueQueueWatch.poke,
     onReady: engineCueQueueWatch.poke,
+    beginMoment: moments.begin,
   })
   registerTraktorCueQueueIpc(traktorCueQueue, {
     ensureClosed: (win) => ensureTraktorClosed(win, 'traktorQuitDetailCues'),
     onWaiting: traktorCueQueueWatch.poke,
     onReady: traktorCueQueueWatch.poke,
+    beginMoment: moments.begin,
   })
   ipcMain.handle('traktor:canSave', () => traktorWritePath() !== '')
   registerTraktorPlaylistEditIpc({
@@ -1344,6 +1363,7 @@ function registerIpc(): void {
     ensureClosed: (win) => ensureTraktorClosed(win, 'traktorQuitDetailPlaylists'),
     onApplied: announceTraktorApplied,
     onWaiting: traktorCueQueueWatch.poke,
+    beginLoose: moments.beginLoose,
   })
   registerRowWavesIpc(rekordboxCollectionPath)
   usbExport = registerUsbExportIpc({
@@ -1386,9 +1406,7 @@ function registerIpc(): void {
     // A new run gets its own dated pre-run copy; without this the newest one would describe
     // the collection before the FIRST run since launch, not before the run in progress.
     if (beginRekordboxBatch()) {
-      rekordboxSessionBackup.begin('run')
-      engineSessionBackup.begin('run')
-      traktorSessionBackup.begin('run')
+      moments.begin('run')
       stickyConflict.reset()
       coverMemo = createCoverMemo(prepareProcessedCover)
     }
@@ -1437,13 +1455,14 @@ function registerIpc(): void {
     ),
   )
 
-  ipcMain.handle('library:syncTags', (e, updates: LibraryTagUpdate[]) =>
-    syncTagsInLibraries(
+  ipcMain.handle('library:syncTags', (e, updates: LibraryTagUpdate[]) => {
+    moments.begin('review')
+    return syncTagsInLibraries(
       updates,
       hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
       sessions,
-    ),
-  )
+    )
+  })
 
   // Read only, for the duplicate detail: what each enabled library holds for each copy.
   ipcMain.handle('library:copyInfo', async (e, paths: string[]) => {
@@ -1467,6 +1486,7 @@ function registerIpc(): void {
     async (e, pairs: ReplacePair[]): Promise<DuplicateReplaceOutcome[]> => {
       if (process.platform !== 'darwin' || pairs.length === 0) return []
       if (!pairs.every(isIssuedPair)) throw errorWithKey('pathNotAllowed')
+      moments.begin('duplicates')
       return replaceDuplicates(pairs, {
         ...duplicateLibraryDeps(
           hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
@@ -1478,14 +1498,15 @@ function registerIpc(): void {
     },
   )
 
-  registerListReviewIpc(
-    listReviewDeps({
+  registerListReviewIpc({
+    ...listReviewDeps({
       mediaAccess,
       tmp: tmpManifest,
       hostFor: (sender) => hostFor(BrowserWindow.fromWebContents(sender), sender),
       sessions,
     }),
-  )
+    beginMoment: moments.begin,
+  })
 
   // Awaited by the renderer before it starts an in-place export: the surco:// stream
   // holds an OS handle on the very file the export renames over, and only main can

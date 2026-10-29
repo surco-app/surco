@@ -75,6 +75,23 @@ describe('registerRekordboxQueueIpc', () => {
     expect(q.apply).toHaveBeenCalledWith(expect.any(Function), { manual: true })
   })
 
+  it('applying the queue by hand is a queue momento, begun before the queue applies', async () => {
+    const order: string[] = []
+    const q = queue()
+    const apply = q.apply.getMockImplementation()
+    q.apply.mockImplementation(async (...args) => {
+      order.push('apply')
+      return apply ? apply(...args) : APPLIED
+    })
+    registerRekordboxQueueIpc(q, {
+      collection: () => '/c/master.db',
+      ensureClosed: vi.fn(async () => true),
+      beginMoment: (r) => order.push(`begin:${r}`),
+    })
+    await handler('rekordbox:applyNow')({ sender: {} })
+    expect(order).toEqual(['begin:queue', 'apply'])
+  })
+
   it('starts the queue only once the window listens, so the startup apply is never announced to nobody', async () => {
     const onReady = vi.fn()
     registerRekordboxQueueIpc(queue(), {

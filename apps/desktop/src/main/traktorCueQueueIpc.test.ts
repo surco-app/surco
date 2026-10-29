@@ -51,6 +51,22 @@ describe('registerTraktorCueQueueIpc', () => {
     expect(q.apply).toHaveBeenCalledWith(expect.any(Function), { manual: true })
   })
 
+  it('applying the queue by hand is a queue momento, begun before the queue applies', async () => {
+    const order: string[] = []
+    const q = queue()
+    const apply = q.apply.getMockImplementation()
+    q.apply.mockImplementation(async (...args) => {
+      order.push('apply')
+      return apply ? apply(...args) : APPLIED
+    })
+    registerTraktorCueQueueIpc(q, {
+      ensureClosed: vi.fn(async () => true),
+      beginMoment: (r) => order.push(`begin:${r}`),
+    })
+    await handler('traktor:applyCueQueue')({ sender: {} })
+    expect(order).toEqual(['begin:queue', 'apply'])
+  })
+
   it('keeps watching when the DJ leaves Traktor open, so the save lands once it closes', async () => {
     const onWaiting = vi.fn()
     registerTraktorCueQueueIpc(queue({ status: 'refused', reason: 'cancelled' }), {
