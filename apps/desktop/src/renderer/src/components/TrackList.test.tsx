@@ -1589,10 +1589,6 @@ describe('TrackList current row', () => {
   })
 })
 
-// A track whose file Surco backed up before rewriting it carries a quiet mark on its
-// row, in place of the toolbar count that climbed with every conversion. The mark has
-// to say what it is to a screen reader too, and a click on it opens that backup rather
-// than just selecting the row, since that is what someone clicking it is after.
 describe('TrackList unsaved mark', () => {
   const withDisk = (over: Parameters<typeof track>[0], diskTitle: string): TrackItem => {
     const t = track(over)
@@ -1632,6 +1628,10 @@ describe('TrackList unsaved mark', () => {
   })
 })
 
+// A track whose file Surco backed up before rewriting it carries a quiet mark on its
+// row, in place of the toolbar count that climbed with every conversion. The mark has
+// to say what it is to a screen reader too, and a click on it opens that backup rather
+// than just selecting the row, since that is what someone clicking it is after.
 describe('TrackList backup mark', () => {
   it('marks only the rows whose file has a backup, and names it', () => {
     renderListWithBackups([track({ id: 'a' }), track({ id: 'b' })], { '/music/a.wav': Date.now() })
