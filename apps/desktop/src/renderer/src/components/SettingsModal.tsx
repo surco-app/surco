@@ -362,7 +362,7 @@ export function SettingsModal({
             onKeyDown={onSearchKeyDown}
             placeholder={tr('settings.searchField.placeholder')}
             aria-label={tr('settings.searchField.placeholder')}
-            className="min-w-0 flex-1 bg-transparent text-[13px] text-fg outline-none placeholder:text-fg-faint"
+            className="min-w-0 flex-1 bg-transparent text-[13px] text-fg outline-none focus-visible:shadow-none placeholder:text-fg-faint"
           />
         </label>
         {searching && (
