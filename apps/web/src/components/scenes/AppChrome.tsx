@@ -182,7 +182,7 @@ export function AppWindow({
         <span
           ref={activity?.ref}
           className={`relative grid size-[30px] place-items-center rounded-lg transition-colors ${
-            activity?.open ? 'bg-[#292e42] text-fg' : 'text-muted'
+            activity?.open ? 'bg-highlight text-fg' : 'text-muted'
           }`}
         >
           <Glyph>{ICONS.radio}</Glyph>
@@ -259,7 +259,7 @@ export function Cover({ src, className = '' }: { src?: string; className?: strin
       className={`size-full object-cover ${className}`}
     />
   ) : (
-    <span className={`grid size-full place-items-center bg-[#292e42] text-faint ${className}`}>
+    <span className={`grid size-full place-items-center bg-highlight text-faint ${className}`}>
       <Glyph size={13}>{ICONS.note}</Glyph>
     </span>
   )
@@ -313,7 +313,7 @@ export function AppRow({
           className="absolute -inset-1 rounded-full transition-opacity duration-300"
           style={{
             opacity: working ? 1 : 0,
-            background: `conic-gradient(var(--color-fg) ${ring ?? 0}%, rgb(192 202 245 / 0.2) 0)`,
+            background: `conic-gradient(var(--color-fg) ${ring ?? 0}%, color-mix(in srgb, var(--color-fg) 20%, transparent) 0)`,
             mask: 'radial-gradient(circle, transparent 18px, var(--color-bg) 18.5px)',
           }}
         />
@@ -338,7 +338,7 @@ export function AppRow({
         <span className="mt-px flex min-h-4 items-center gap-1.5">
           {loading ? (
             <span
-              className="block h-2 w-28 rounded-full bg-[#292e42]"
+              className="block h-2 w-28 rounded-full bg-highlight"
               style={{ animation: 'glow 1.4s ease-in-out infinite' }}
             />
           ) : (
@@ -375,7 +375,7 @@ export function AppField({
       <p
         className={`flex h-[34px] items-center truncate rounded-[7px] border bg-bg2 px-[11px] text-[13.5px] text-fg transition-[border-color,box-shadow] duration-300 ${
           short ? 'w-[72px]' : ''
-        } ${flash ? 'border-blue shadow-[0_0_0_3px_rgb(122_162_247_/_0.15)]' : 'border-[#737aa2]/45'}`}
+        } ${flash ? 'border-blue shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-blue)_15%,transparent)]' : 'border-edge/45'}`}
       >
         {children}
       </p>
@@ -397,7 +397,7 @@ export function ConvertButton({
   buttonRef?: RefObject<HTMLDivElement | null>
 }) {
   const busy = progress !== null
-  const face = off ? 'bg-[#292e42] text-muted' : busy ? 'bg-blue/40 text-fg' : 'bg-blue text-bg'
+  const face = off ? 'bg-highlight text-muted' : busy ? 'bg-blue/40 text-fg' : 'bg-blue text-bg'
   return (
     <div className="flex flex-1">
       <div
@@ -540,8 +540,8 @@ export function Segmented({
           ref={refs?.[i]}
           className={`rounded-[7px] px-2.5 py-1 text-[12.5px] whitespace-nowrap transition-colors duration-200 ${
             i === active
-              ? 'bg-[#292e42] text-fg shadow-[inset_0_0_0_1px_rgb(192_202_245_/_0.16)]'
-              : 'text-[#a9b1d6]'
+              ? 'bg-highlight text-fg shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-fg)_16%,transparent)]'
+              : 'text-subtle'
           }`}
         >
           {label}

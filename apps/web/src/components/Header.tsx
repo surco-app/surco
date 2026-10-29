@@ -237,7 +237,7 @@ export default function Header({
             </button>
             <ul
               id="language-menu"
-              className={`absolute top-full right-0 z-50 mt-2 w-44 rounded-xl border border-line bg-surface2 p-1.5 shadow-[0_16px_40px_rgba(12,14,20,0.6)] transition-[opacity,translate,visibility] duration-150 ease-out ${
+              className={`absolute top-full right-0 z-50 mt-2 w-44 rounded-xl border border-line bg-surface2 p-1.5 shadow-[0_16px_40px_color-mix(in_srgb,var(--color-scrim)_60%,transparent)] transition-[opacity,translate,visibility] duration-150 ease-out ${
                 languageOpen ? 'opacity-100' : 'invisible -translate-y-1 opacity-0'
               }`}
             >

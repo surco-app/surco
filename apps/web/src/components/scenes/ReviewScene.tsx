@@ -76,7 +76,7 @@ export default function ReviewScene() {
           <span
             ref={apply}
             className={`flex h-[30px] items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] font-semibold whitespace-nowrap transition-[background-color,color,transform] duration-200 ${
-              frame.applied ? 'bg-[#292e42] text-muted' : 'bg-blue text-bg'
+              frame.applied ? 'bg-highlight text-muted' : 'bg-blue text-bg'
             }`}
             style={{ transform: frame.pressed ? 'scale(0.96)' : 'none' }}
           >
@@ -111,7 +111,7 @@ export default function ReviewScene() {
                   } ${selected ? 'bg-blue/30' : ''}`}
                   style={shown(i < frame.rows)}
                 >
-                  <span className="relative grid size-7 flex-none place-items-center rounded-md bg-[#292e42] text-faint">
+                  <span className="relative grid size-7 flex-none place-items-center rounded-md bg-highlight text-faint">
                     <Glyph size={13}>{g.kind === 'duplicate' ? COPIES_GLYPH : ICONS.note}</Glyph>
                     <i
                       className="absolute -right-0.5 -bottom-0.5 block size-[9px] rounded-full border-2 border-amber bg-bg"

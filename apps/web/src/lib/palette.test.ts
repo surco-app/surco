@@ -116,6 +116,20 @@ describe('components paint only Tokyo Night colours', () => {
     })
   }
 
+  // A literal paints the same in both themes, so it stays dark-palette ink on the light page.
+  // Only the theme tokens flip; rekordbox's cue colours are the hardware's, not the theme's.
+  for (const [name, path] of sources.filter(([name]) => name !== 'index.html')) {
+    const code = readFileSync(path, 'utf8').replace(/^\s*\/\/.*$/gm, '')
+    it(`${name} names its colours through the theme tokens`, () => {
+      const rekordbox = REKORDBOX_CUE_COLOURS_BY_FILE[name] ?? []
+      const hexes = [...code.matchAll(/['"`(\s[]#([0-9a-fA-F]{6})\b/g)]
+        .map((m) => `#${m[1]}`.toLowerCase())
+        .filter((c) => !rekordbox.includes(c))
+      const rgbs = code.match(/rgba?\([^)]*\)/g) ?? []
+      expect([...hexes, ...rgbs]).toEqual([])
+    })
+  }
+
   // canvas-confetti draws in its own neon rainbow unless it is handed colours, and no
   // literal in the source would show it.
   it('hands the donation confetti the palette instead of the library defaults', () => {

@@ -38,7 +38,7 @@ export default function NormalizeScene() {
           {['Streaming −14', 'Club −9', 'Broadcast −23'].map((preset, i) => (
             <span
               key={preset}
-              className={`rounded-[7px] px-2 py-1 whitespace-nowrap ${i === 0 ? 'bg-[#292e42] text-fg' : 'text-[#a9b1d6]'}`}
+              className={`rounded-[7px] px-2 py-1 whitespace-nowrap ${i === 0 ? 'bg-highlight text-fg' : 'text-subtle'}`}
             >
               {preset}
             </span>
@@ -57,7 +57,7 @@ export default function NormalizeScene() {
             lufs: num(LUFS + frame.gain),
             peak: num(PEAK + frame.gain),
           })}
-          <span className="rounded bg-[#292e42] px-1.5 py-px text-[10.5px] font-semibold text-fg tabular-nums">
+          <span className="rounded bg-highlight px-1.5 py-px text-[10.5px] font-semibold text-fg tabular-nums">
             {num(frame.gain)} dB
           </span>
         </p>

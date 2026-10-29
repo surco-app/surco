@@ -85,7 +85,7 @@ export default function BatchScene() {
                 <SectionTitle>{t('home.batch.editing', { count: BATCH_TOTAL })}</SectionTitle>
               </div>
               <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-[18px] sm:grid-cols-[96px_minmax(0,1fr)]">
-                <span className="hidden size-24 place-items-center rounded-lg bg-[#292e42] text-faint sm:grid">
+                <span className="hidden size-24 place-items-center rounded-lg bg-highlight text-faint sm:grid">
                   <Glyph size={22}>{ICONS.image}</Glyph>
                 </span>
                 <div>
@@ -101,9 +101,7 @@ export default function BatchScene() {
                       <span
                         key={genre}
                         className={`rounded-full border px-2 py-0.5 text-[11px] ${
-                          i === 0
-                            ? 'border-blue bg-blue/15 text-blue'
-                            : 'border-line text-[#a9b1d6]'
+                          i === 0 ? 'border-blue bg-blue/15 text-blue' : 'border-line text-subtle'
                         }`}
                       >
                         {genre}

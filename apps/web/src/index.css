@@ -6,6 +6,8 @@
   --color-surface: #24283b;
   --color-surface2: #1f2335;
   --color-line: #2e344b;
+  --color-highlight: #292e42;
+  --color-edge: #737aa2;
   --color-blue: #7aa2f7;
   --color-cyan: #7dcfff;
   --color-purple: #bb9af7;
@@ -15,6 +17,7 @@
      where red already means "clipping" and would read as the wrong problem. */
   --color-amber: #e0af68;
   --color-fg: #c0caf5;
+  --color-subtle: #a9b1d6;
   --color-muted: #9aa5ce;
   /* Lightened from #6b7396 (3.7:1, fails WCAG AA) to clear 4.5:1 on --color-bg
      while staying the dimmest tier below --color-muted. Tokyo Night's dark5 is
@@ -26,12 +29,12 @@
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
   /* light-from-above edge highlight: composes with shadow-* utilities, so
      hover shadows keep the inset edge instead of replacing it */
-  --inset-shadow-edge: inset 0 1px 0 rgba(192, 202, 245, 0.07);
+  --inset-shadow-edge: inset 0 1px 0 color-mix(in srgb, var(--color-fg) 7%, transparent);
 }
 
 html {
   scroll-behavior: smooth;
-  background-color: #1a1b26;
+  background-color: var(--color-bg);
   /* lets `height: auto` interpolate, so the FAQ <details> below can slide open
      instead of snapping; browsers without support keep the instant toggle */
   interpolate-size: allow-keywords;
@@ -58,8 +61,8 @@ button:not(:disabled) {
 }
 
 ::selection {
-  background: rgba(122, 162, 247, 0.3);
-  color: #c0caf5;
+  background: color-mix(in srgb, var(--color-blue) 30%, transparent);
+  color: var(--color-fg);
 }
 
 /* Visible keyboard focus on every interactive element; the default UA ring is
@@ -147,9 +150,21 @@ button:not(:disabled) {
    so the product is what glows and the headline above stays on flat ground. */
 .hero-light {
   background:
-    radial-gradient(ellipse 45% 50% at 50% 50%, rgba(122, 162, 247, 0.28), transparent 70%),
-    radial-gradient(ellipse 35% 40% at 28% 55%, rgba(187, 154, 247, 0.18), transparent 70%),
-    radial-gradient(ellipse 35% 40% at 72% 55%, rgba(125, 207, 255, 0.14), transparent 70%);
+    radial-gradient(
+      ellipse 45% 50% at 50% 50%,
+      color-mix(in srgb, var(--color-blue) 28%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 35% 40% at 28% 55%,
+      color-mix(in srgb, var(--color-purple) 18%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 35% 40% at 72% 55%,
+      color-mix(in srgb, var(--color-cyan) 14%, transparent),
+      transparent 70%
+    );
 }
 
 /* premium grain overlay */

@@ -50,9 +50,9 @@ function useLang(): Language {
   return lng
 }
 
-// The site's own accents, in the hex canvas-confetti needs; left alone it throws its
-// neon rainbow, which is no colour of the palette.
-const CONFETTI = ['#7aa2f7', '#7dcfff', '#bb9af7', '#9ece6a', '#e0af68', '#f7768e']
+// The site's own accents, read from the theme as the hex canvas-confetti needs; left alone
+// it throws its neon rainbow, which is no colour of the palette.
+const ACCENTS = ['blue', 'cyan', 'purple', 'green', 'amber', 'red']
 
 export default function DonateCompleted() {
   const lng = useLang()
@@ -64,20 +64,22 @@ export default function DonateCompleted() {
     const timers: ReturnType<typeof setTimeout>[] = []
     import('canvas-confetti').then(({ default: confetti }) => {
       if (cancelled) return
+      const theme = getComputedStyle(document.documentElement)
+      const colors = ACCENTS.map((name) => theme.getPropertyValue(`--color-${name}`).trim())
       const volley = (): void => {
         confetti({
           particleCount: 70,
           angle: 60,
           spread: 55,
           origin: { x: 0, y: 1 },
-          colors: CONFETTI,
+          colors,
         })
         confetti({
           particleCount: 70,
           angle: 120,
           spread: 55,
           origin: { x: 1, y: 1 },
-          colors: CONFETTI,
+          colors,
         })
       }
       volley()

@@ -92,7 +92,7 @@ export default function TagScene() {
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[13px] text-fg">{m.title}</span>
                       <span className="mt-0.5 flex items-center gap-1 text-[11px] text-muted">
-                        <b className="font-semibold text-[#a9b1d6]">{m.src}</b>
+                        <b className="font-semibold text-subtle">{m.src}</b>
                         {i === 0 && frame.picked && (
                           <span className="text-blue">
                             <Glyph size={11}>{ICONS.sparkle}</Glyph>
@@ -145,7 +145,7 @@ export default function TagScene() {
               </div>
               <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-[18px] sm:grid-cols-[96px_minmax(0,1fr)]">
                 <div className="hidden sm:block">
-                  <span className="relative block size-24 overflow-hidden rounded-lg bg-[#292e42]">
+                  <span className="relative block size-24 overflow-hidden rounded-lg bg-highlight">
                     <span className="absolute inset-0 grid place-items-center text-faint">
                       <Glyph size={22}>{ICONS.image}</Glyph>
                     </span>

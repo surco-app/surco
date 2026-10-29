@@ -96,7 +96,7 @@ export default function ReplaceScene() {
               <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-fg">
                 <Glyph size={13}>{ICONS.chevron}</Glyph>
                 {t('home.replace.metadata')}
-                <span className="ml-1 inline-flex items-center gap-1.5 text-xs font-medium text-[#a9b1d6]">
+                <span className="ml-1 inline-flex items-center gap-1.5 text-xs font-medium text-subtle">
                   <span className="text-green">
                     <Glyph size={13}>{ICONS.note}</Glyph>
                   </span>
@@ -168,7 +168,7 @@ export default function ReplaceScene() {
                     <circle cx="12" cy="12" r="2" />
                   </Glyph>
                 </span>
-                <span className="ml-auto flex h-8 rounded-lg border border-line bg-[#292e42] text-muted">
+                <span className="ml-auto flex h-8 rounded-lg border border-line bg-highlight text-muted">
                   <span className="grid w-8 place-items-center">
                     <Glyph size={14}>
                       <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
@@ -225,7 +225,7 @@ export default function ReplaceScene() {
             {t('home.replace.activityRow')}
           </p>
           <p
-            className="ml-[34px] overflow-hidden font-mono text-[10.5px] text-[#a9b1d6]"
+            className="ml-[34px] overflow-hidden font-mono text-[10.5px] text-subtle"
             style={{
               height: frame.activity === 'done' ? 26 : 0,
               opacity: frame.activity === 'done' ? 1 : 0,
@@ -275,7 +275,7 @@ export default function ReplaceScene() {
                 <li
                   key={name}
                   className={`flex items-center gap-2 rounded px-1.5 py-1 text-xs transition-colors duration-300 ${
-                    ok ? 'bg-green/[0.07] text-fg' : 'text-[#a9b1d6]'
+                    ok ? 'bg-green/[0.07] text-fg' : 'text-subtle'
                   }`}
                 >
                   <span className="text-faint">

@@ -69,7 +69,7 @@ export default function DeclickScene() {
         <span
           ref={listen}
           className={`mt-2.5 inline-flex h-7 items-center gap-1.5 rounded-[7px] border border-line px-2.5 text-xs transition-colors duration-200 ${
-            frame.playhead > 0 && frame.playhead < 1 ? 'bg-[#292e42] text-fg' : 'text-[#a9b1d6]'
+            frame.playhead > 0 && frame.playhead < 1 ? 'bg-highlight text-fg' : 'text-subtle'
           }`}
           style={{
             opacity: frame.listen ? 1 : 0,

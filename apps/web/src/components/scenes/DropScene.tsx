@@ -88,7 +88,7 @@ export default function DropScene() {
                 </SectionTitle>
               </div>
               <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-[18px] sm:grid-cols-[96px_minmax(0,1fr)]">
-                <span className="hidden size-24 overflow-hidden rounded-lg bg-[#292e42] sm:block">
+                <span className="hidden size-24 overflow-hidden rounded-lg bg-highlight sm:block">
                   {firstRead ? (
                     <Cover src={first.cover} />
                   ) : (
@@ -135,7 +135,10 @@ export default function DropScene() {
               className="absolute inset-4 rounded-2xl border-2 border-dashed transition-colors duration-300"
               style={{
                 borderColor: frame.stage === 'dragging' ? 'var(--color-blue)' : 'transparent',
-                background: frame.stage === 'dragging' ? 'rgb(122 162 247 / 0.05)' : 'transparent',
+                background:
+                  frame.stage === 'dragging'
+                    ? 'color-mix(in srgb, var(--color-blue) 5%, transparent)'
+                    : 'transparent',
               }}
             />
             <div className="relative">
@@ -165,7 +168,7 @@ export default function DropScene() {
             {PILE.map((format, i) => (
               <span
                 key={format}
-                className="absolute grid h-[58px] w-[46px] place-items-end justify-center rounded-md border border-line bg-[#292e42] pb-1.5 font-mono text-[9px] font-semibold text-[#a9b1d6] shadow-lg shadow-black/40"
+                className="absolute grid h-[58px] w-[46px] place-items-end justify-center rounded-md border border-line bg-highlight pb-1.5 font-mono text-[9px] font-semibold text-subtle shadow-lg shadow-black/40"
                 style={{ transform: `rotate(${(i - 1) * 7}deg)` }}
               >
                 {format}

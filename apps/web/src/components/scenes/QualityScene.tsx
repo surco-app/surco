@@ -77,7 +77,7 @@ export default function QualityScene() {
                   ) : (
                     <>
                       <i className={`block size-1.5 ${bad ? 'bg-red' : 'rounded-full bg-green'}`} />
-                      <span className={bad ? 'text-red' : 'text-[#a9b1d6]'}>
+                      <span className={bad ? 'text-red' : 'text-subtle'}>
                         {bad ? t('home.quality.bad') : t('home.quality.good')}
                       </span>
                     </>
@@ -108,7 +108,7 @@ export default function QualityScene() {
                   className="absolute inset-0 size-full object-cover"
                   style={{ clipPath: `inset(0 0 ${(1 - frame.scan) * 100}% 0)` }}
                 />
-                <div className="absolute inset-y-0 left-0 flex w-9 flex-col justify-between bg-gradient-to-r from-scrim/70 to-transparent py-2 pl-2 font-mono text-[10px] leading-none text-[#a9b1d6]">
+                <div className="absolute inset-y-0 left-0 flex w-9 flex-col justify-between bg-gradient-to-r from-scrim/70 to-transparent py-2 pl-2 font-mono text-[10px] leading-none text-subtle">
                   {AXIS.map((hz) => (
                     <span key={hz}>{hz}</span>
                   ))}
@@ -118,7 +118,8 @@ export default function QualityScene() {
                     className="absolute inset-x-0 h-px bg-fg"
                     style={{
                       top: `${frame.scan * 100}%`,
-                      boxShadow: '0 0 10px 1px rgb(192 202 245 / 0.7)',
+                      boxShadow:
+                        '0 0 10px 1px color-mix(in srgb, var(--color-fg) 70%, transparent)',
                     }}
                   />
                 )}
@@ -128,7 +129,7 @@ export default function QualityScene() {
                     height: `${SPECTRUM_WALL * 100}%`,
                     opacity: frame.wall,
                     backgroundImage:
-                      'repeating-linear-gradient(135deg, rgb(247 118 142 / 0.2) 0 5px, transparent 5px 10px)',
+                      'repeating-linear-gradient(135deg, color-mix(in srgb, var(--color-red) 20%, transparent) 0 5px, transparent 5px 10px)',
                   }}
                 />
                 <span
@@ -139,7 +140,7 @@ export default function QualityScene() {
                 </span>
               </div>
 
-              <p className="mt-2.5 flex min-h-5 gap-2 text-[12.5px] text-[#a9b1d6]">
+              <p className="mt-2.5 flex min-h-5 gap-2 text-[12.5px] text-subtle">
                 {frame.verdict !== 'analyzing' && (
                   <>
                     <i className={`block w-0.5 flex-none rounded ${bad ? 'bg-red' : 'bg-green'}`} />

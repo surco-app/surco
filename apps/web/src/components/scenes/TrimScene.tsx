@@ -52,12 +52,12 @@ export default function TrimScene() {
               <AppWave values={TAIL_ENVELOPE} className="fill-faint/35" />
             </span>
             <i
-              className="absolute inset-y-0 block border-l border-dashed border-[#a9b1d6]"
+              className="absolute inset-y-0 block border-l border-dashed border-subtle"
               style={{ left: `${frame.cut * 100}%`, opacity: frame.cut < 0.999 ? 1 : 0 }}
             >
               <span
                 className={`absolute top-1.5 -left-2.5 grid size-5 place-items-center rounded-full transition-colors duration-300 ${
-                  frame.locked ? 'bg-blue text-bg' : 'bg-[#292e42] text-fg'
+                  frame.locked ? 'bg-blue text-bg' : 'bg-highlight text-fg'
                 }`}
               >
                 <Glyph size={11}>{ICONS.scissors}</Glyph>
@@ -83,7 +83,7 @@ function Pane({
     <div className="min-w-0">
       <p className="flex items-center gap-1.5 text-[11.5px] text-muted">
         {label}
-        <span className="ml-auto rounded-md border border-[#737aa2]/45 bg-bg2 px-1.5 py-0.5 font-mono text-[10.5px] text-fg tabular-nums">
+        <span className="ml-auto rounded-md border border-edge/45 bg-bg2 px-1.5 py-0.5 font-mono text-[10.5px] text-fg tabular-nums">
           {time}
         </span>
       </p>

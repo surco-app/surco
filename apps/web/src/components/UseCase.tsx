@@ -134,7 +134,7 @@ export default function UseCasePage({ id }: { id: string }) {
         className="pointer-events-none absolute inset-x-0 top-0 h-[520px]"
         style={{
           background:
-            'radial-gradient(55% 50% at 72% 4%, rgba(122,162,247,0.18) 0%, rgba(26,27,38,0) 70%)',
+            'radial-gradient(55% 50% at 72% 4%, color-mix(in srgb, var(--color-blue) 18%, transparent) 0%, transparent 70%)',
         }}
       />
 
