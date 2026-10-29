@@ -46,6 +46,7 @@
     "importingCount": "Reading {{done}}/{{total}}",
     "analyzeQuality": "Analyze quality of all tracks",
     "analyzeQualityLabel": "Analyze",
+    "allAnalyzed": "Everything is already analyzed",
     "analyzingCount": "Analyzing quality… {{done}}/{{total}}",
     "analyzingPaused": "Paused while Surco is in the background · {{done}}/{{total}}",
     "convertingCount": "Converting… {{done}}/{{total}}",

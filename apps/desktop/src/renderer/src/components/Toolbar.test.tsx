@@ -132,6 +132,18 @@ describe('Toolbar', () => {
     expect(screen.getByTestId('analyze-quality')).toBeDisabled()
   })
 
+  it('says everything is already analyzed instead of greying Analyze out unexplained', () => {
+    renderBar({ allAnalyzed: true })
+    const button = screen.getByTestId('analyze-quality')
+    expect(button).toBeDisabled()
+    expect(button).toHaveAccessibleName(i18n.t('header.allAnalyzed'))
+    cleanup()
+    renderBar({ allAnalyzed: false })
+    expect(screen.getByTestId('analyze-quality')).toHaveAccessibleName(
+      i18n.t('header.analyzeQuality'),
+    )
+  })
+
   // An icon alone did not say what the sparkle did; the word does, in every state.
   it('names auto-match with a visible word', () => {
     renderBar()

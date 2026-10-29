@@ -46,6 +46,7 @@
     "importingCount": "{{done}}/{{total}} を読み取り中",
     "analyzeQuality": "すべてのトラックの品質を分析",
     "analyzeQualityLabel": "分析",
+    "allAnalyzed": "すべて分析済み",
     "analyzingCount": "品質を分析中… {{done}}/{{total}}",
     "analyzingPaused": "Surco がバックグラウンドにある間は一時停止中 · {{done}}/{{total}}",
     "convertingCount": "変換中… {{done}}/{{total}}",

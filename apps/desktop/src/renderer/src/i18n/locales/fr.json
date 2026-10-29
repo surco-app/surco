@@ -46,6 +46,7 @@
     "importingCount": "Lecture {{done}}/{{total}}",
     "analyzeQuality": "Analyser la qualité de tous les morceaux",
     "analyzeQualityLabel": "Analyser",
+    "allAnalyzed": "Tout est déjà analysé",
     "analyzingCount": "Analyse de la qualité… {{done}}/{{total}}",
     "analyzingPaused": "En pause tant que Surco est en arrière-plan · {{done}}/{{total}}",
     "convertingCount": "Conversion… {{done}}/{{total}}",

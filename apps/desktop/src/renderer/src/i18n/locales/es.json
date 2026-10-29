@@ -46,6 +46,7 @@
     "importingCount": "Leyendo {{done}}/{{total}}",
     "analyzeQuality": "Analizar la calidad de todas las pistas",
     "analyzeQualityLabel": "Analizar",
+    "allAnalyzed": "Todo analizado",
     "analyzingCount": "Analizando calidad… {{done}}/{{total}}",
     "analyzingPaused": "En pausa mientras Surco está en segundo plano · {{done}}/{{total}}",
     "convertingCount": "Convirtiendo… {{done}}/{{total}}",

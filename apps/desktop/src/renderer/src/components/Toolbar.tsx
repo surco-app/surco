@@ -313,7 +313,13 @@ export const Toolbar = memo(function Toolbar({
               data-testid="analyze-quality"
               onClick={analysis ? onCancelAnalyze : onAnalyzeAll}
               disabled={!analysis && allAnalyzed}
-              aria-label={analysis ? tr('header.cancelAnalyze') : tr('header.analyzeQuality')}
+              aria-label={
+                analysis
+                  ? tr('header.cancelAnalyze')
+                  : allAnalyzed
+                    ? tr('header.allAnalyzed')
+                    : tr('header.analyzeQuality')
+              }
               className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-medium hover:bg-[var(--color-hover)] disabled:opacity-40 ${
                 analysis
                   ? 'min-w-[3.25rem] text-[var(--color-accent)]'
@@ -341,7 +347,10 @@ export const Toolbar = memo(function Toolbar({
                 <span>{tr('header.analyzeQualityLabel')}</span>
               )}
               <Tooltip
-                label={analysisLabel || tr('header.analyzeQuality')}
+                label={
+                  analysisLabel ||
+                  (allAnalyzed ? tr('header.allAnalyzed') : tr('header.analyzeQuality'))
+                }
                 hint={analysis ? undefined : hintFor('analyze-quality')}
                 align="end"
               />
