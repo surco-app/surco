@@ -455,6 +455,7 @@
     },
     "matchReview": "Match to confirm",
     "metaReadFailed": "Couldn't read this file's tags, so only data from the file name is shown",
+    "unsaved": "Unsaved changes",
     "remove": "Remove",
     "status": {
       "idle": "Not converted",

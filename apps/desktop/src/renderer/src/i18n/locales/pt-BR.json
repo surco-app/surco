@@ -455,6 +455,7 @@
     },
     "matchReview": "Correspondência a confirmar",
     "metaReadFailed": "Não foi possível ler as tags deste arquivo, então só os dados do nome aparecem",
+    "unsaved": "Alterações não salvas",
     "remove": "Remover",
     "status": {
       "idle": "Sem converter",

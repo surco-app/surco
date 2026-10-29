@@ -455,6 +455,7 @@
     },
     "matchReview": "Treffer zu bestätigen",
     "metaReadFailed": "Die Tags dieser Datei konnten nicht gelesen werden, daher werden nur Daten aus dem Dateinamen angezeigt",
+    "unsaved": "Nicht gespeicherte Änderungen",
     "remove": "Entfernen",
     "status": {
       "idle": "Nicht konvertiert",

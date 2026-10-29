@@ -455,6 +455,7 @@
     },
     "matchReview": "Coincidencia por confirmar",
     "metaReadFailed": "No se pudieron leer los metadatos del archivo, así que solo se muestra el nombre",
+    "unsaved": "Cambios sin guardar",
     "remove": "Quitar",
     "status": {
       "idle": "Sin convertir",
