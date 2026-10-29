@@ -472,7 +472,7 @@ jobs:
           path: store
 
       - name: Set up the Microsoft Store CLI
-        uses: microsoft/microsoft-store-apppublisher@v1.1
+        uses: microsoft/microsoft-store-apppublisher@v1.4
 
       - name: Sign in to Partner Center
         shell: bash
