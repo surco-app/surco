@@ -1,4 +1,4 @@
-import { statSync } from 'node:fs'
+import { existsSync, statSync } from 'node:fs'
 import { copyFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { LibraryCopy } from '../shared/types'
@@ -48,8 +48,12 @@ export async function restoreCopy(
   const copy = await findCopy(req.collectionPath, req.copyId)
   if (!copy) return { ok: false, reason: 'not-found' }
   if (copy.collectionPath !== req.collectionPath) return { ok: false, reason: 'other-collection' }
-  if (!(await deps.ensureClosed())) return { ok: false, reason: 'running' }
-  if (deps.pendingLog(req.collectionPath)) return { ok: false, reason: 'pending-log' }
+  try {
+    if (!(await deps.ensureClosed())) return { ok: false, reason: 'running' }
+    if (deps.pendingLog(req.collectionPath)) return { ok: false, reason: 'pending-log' }
+  } catch {
+    return { ok: false, reason: 'failed' }
+  }
 
   const folder = copyFolder(copy)
   const pending = copy.files.map((file) => ({ from: `${file.target}${TEMP}`, to: file.target }))
@@ -61,23 +65,28 @@ export async function restoreCopy(
     const companions = copy.files
       .map((file) => file.target)
       .filter((t) => t !== copy.collectionPath)
-    await takeCopy(copy.collectionPath, companions, 'restore')
+    if (existsSync(copy.collectionPath)) {
+      await takeCopy(copy.collectionPath, companions, 'restore')
+    }
   } catch {
     await clean()
     return { ok: false, reason: 'failed' }
   }
 
+  let replaced = false
+  const stop = async (reason: RestoreRefusal): Promise<RestoreResult> => {
+    await clean()
+    if (replaced) deps.discardQueue()
+    return { ok: false, reason }
+  }
   while (pending.length > 0) {
-    if (await deps.isRunning()) {
-      await clean()
-      return { ok: false, reason: 'running' }
-    }
+    if (await deps.isRunning().catch(() => true)) return stop('running')
     try {
       await renameWithRetry(pending[0].from, pending[0].to)
     } catch {
-      await clean()
-      return { ok: false, reason: 'failed' }
+      return stop('failed')
     }
+    replaced = true
     pending.shift()
   }
   deps.discardQueue()

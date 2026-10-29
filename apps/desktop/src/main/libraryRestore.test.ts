@@ -114,9 +114,73 @@ describe('restoreCopy', () => {
       ok: false,
       reason: 'running',
     })
+    expect(readFileSync(db, 'utf8')).toBe('db-before')
+    expect(readFileSync(xml, 'utf8')).toBe('xml-after')
+    expect(leftovers(db)).toEqual([])
+    expect(d.discardQueue).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the waiting changes when the program opens before any file was replaced', async () => {
+    const db = collection('rekordbox', 'master.db', 'db-before')
+    const xml = collection('rekordbox', 'masterPlaylists6.xml', 'xml-before')
+    const copy = await takeCopy(db, [xml], 'cues', 1)
+    writeFileSync(db, 'db-after')
+    writeFileSync(xml, 'xml-after')
+    const d = deps({ isRunning: async () => true })
+    expect(await restoreCopy({ collectionPath: db, copyId: copy.id }, d)).toEqual({
+      ok: false,
+      reason: 'running',
+    })
+    expect(readFileSync(db, 'utf8')).toBe('db-after')
     expect(readFileSync(xml, 'utf8')).toBe('xml-after')
     expect(leftovers(db)).toEqual([])
     expect(d.discardQueue).not.toHaveBeenCalled()
+  })
+
+  it('treats a failing running check as the program being open and leaves no temp files', async () => {
+    const db = collection('rekordbox', 'master.db', 'db-before')
+    const xml = collection('rekordbox', 'masterPlaylists6.xml', 'xml-before')
+    const copy = await takeCopy(db, [xml], 'cues', 1)
+    writeFileSync(db, 'db-after')
+    writeFileSync(xml, 'xml-after')
+    const isRunning = vi.fn().mockResolvedValueOnce(false).mockRejectedValue(new Error('ps'))
+    const d = deps({ isRunning })
+    expect(await restoreCopy({ collectionPath: db, copyId: copy.id }, d)).toEqual({
+      ok: false,
+      reason: 'running',
+    })
+    expect(readFileSync(xml, 'utf8')).toBe('xml-after')
+    expect(leftovers(db)).toEqual([])
+    expect(d.discardQueue).toHaveBeenCalledTimes(1)
+  })
+
+  it('fails without changing anything when the closed or log checks throw', async () => {
+    const path = collection('Traktor', 'collection.nml', 'before')
+    const copy = await takeCopy(path, [], 'run', 1)
+    writeFileSync(path, 'after')
+    const req = { collectionPath: path, copyId: copy.id }
+    const closedThrows = deps({ ensureClosed: async () => Promise.reject(new Error('ps')) })
+    const logThrows = deps({
+      pendingLog: () => {
+        throw new Error('stat')
+      },
+    })
+    expect(await restoreCopy(req, closedThrows)).toEqual({ ok: false, reason: 'failed' })
+    expect(await restoreCopy(req, logThrows)).toEqual({ ok: false, reason: 'failed' })
+    expect(readFileSync(path, 'utf8')).toBe('after')
+    expect(await restoreSlot(path)).toBeNull()
+    expect(leftovers(path)).toEqual([])
+  })
+
+  it('brings back a collection whose file was deleted', async () => {
+    const path = collection('Traktor', 'collection.nml', 'before')
+    const copy = await takeCopy(path, [], 'run', 1)
+    rmSync(path)
+    expect(await restoreCopy({ collectionPath: path, copyId: copy.id }, deps())).toEqual({
+      ok: true,
+    })
+    expect(readFileSync(path, 'utf8')).toBe('before')
+    expect(leftovers(path)).toEqual([])
   })
 
   it('refuses when rekordbox still has an unfolded log', async () => {
