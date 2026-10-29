@@ -192,8 +192,6 @@ describe('exportButtonLabel', () => {
     })
   })
 
-  // A conversion can now reach several DJ programs at once. Naming only one of them, or
-  // none, would hide that a click writes into rekordbox's collection as well as Traktor's.
   it('names every DJ program a conversion adds to', () => {
     expect(exportButtonLabel({ ...base, djTargets: ['rekordbox', 'traktor'] })).toEqual({
       key: 'editor.convertTo',

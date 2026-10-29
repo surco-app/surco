@@ -498,8 +498,6 @@ describe('addToEngineLibrary — playlist membership', () => {
     root = await mkdtemp(join(tmpdir(), 'surco-engine-pl-'))
   })
 
-  // Playlists are chosen per track now, so a conversion must not file every track into a
-  // playlist the DJ never asked for and has to clean out of the library afterwards.
   it('registers a track in the collection without putting it in any playlist', async () => {
     const lib = join(root, 'fresh', 'Engine Library')
     const file = await makeFile(root, 'one.aiff')

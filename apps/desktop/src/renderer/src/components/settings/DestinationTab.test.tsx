@@ -409,8 +409,6 @@ describe('DestinationTab Traktor collection', () => {
     expect(patch).toHaveBeenCalledWith('addToRekordbox', true)
   })
 
-  // Settings forces Engine's update switch back on while its add switch is set, so an
-  // 'off' that left addToEngineDj behind would make Engine impossible to turn off.
   it('turning a program off clears both switches', () => {
     const patch = vi.fn()
     render(
@@ -433,15 +431,11 @@ describe('DestinationTab Traktor collection', () => {
     expect(patch).toHaveBeenCalledWith('addToEngineDj', false)
   })
 
-  // Someone who used to pick Engine DJ as the destination was adding every conversion
-  // to it; the new control must show that as what is still happening, not as a mere update.
   it('a user from the Engine destination sees Engine on add', () => {
     renderTab({ addToEngineDj: true, syncEngineDj: true })
     expect(screen.getByTestId('settings-reach-engine-add')).toHaveAttribute('aria-pressed', 'true')
   })
 
-  // Adding registers tracks the program has never analysed, which a DJ would otherwise
-  // discover only on opening it; the warning is noise for the other two choices.
   it('explains what adding costs only while a program is set to add', () => {
     renderTab({ syncTraktor: true, addToTraktor: false })
     expect(screen.queryByTestId('settings-reach-traktor-add-hint')).toBeNull()

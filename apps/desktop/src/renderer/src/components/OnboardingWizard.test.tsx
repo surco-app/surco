@@ -270,8 +270,6 @@ describe('OnboardingWizard destination', () => {
     expect(screen.queryByTestId('onboarding-destination-overwrite')).toBeNull()
   })
 
-  // Engine DJ is a program the files are added to, not a place they live, so the
-  // destination step no longer offers it nor the fixed playlist it once came with.
   it('no longer offers Engine DJ as a destination', () => {
     openFormatStep()
     expect(screen.queryByTestId('onboarding-destination-engineDj')).toBeNull()
@@ -377,8 +375,6 @@ describe('OnboardingWizard destination', () => {
     )
   })
 
-  // A DJ who set a program to only update the tracks already there must not lose that
-  // choice to a wizard re-run they clicked straight through.
   it.each([
     [0, { syncRekordbox: true, addToRekordbox: false }],
     [1, { syncRekordbox: false, addToRekordbox: false }],
@@ -408,8 +404,6 @@ describe('OnboardingWizard destination', () => {
     },
   )
 
-  // The Engine library and the folder line belong to a program that is on, whether it
-  // only updates or also adds: an update-only Engine user still writes into that library.
   it('asks for the Engine library and the folder for an update-only Engine user', async () => {
     const api = window as unknown as { api: { engineAvailable: () => Promise<boolean> } }
     api.api.engineAvailable = async () => true
@@ -431,8 +425,6 @@ describe('OnboardingWizard destination', () => {
     }
   })
 
-  // Unticking a program on a re-run means "leave it alone"; keeping the add on would go on
-  // writing new tracks into a collection the DJ just switched off.
   it('stops both updating and adding to a program the DJ unticks', async () => {
     ;(
       window as unknown as { api: { rekordboxCollection?: () => Promise<string> } }
@@ -566,8 +558,6 @@ describe('OnboardingWizard destination', () => {
     for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
   }
 
-  // A DJ who only cares about the program never looks at the destination step, yet the
-  // files still need a home on disk; the DJ step says where, and lets it be moved there.
   it('tells a DJ where the files will live', async () => {
     const api = window as unknown as {
       api: { rekordboxCollection: () => Promise<string>; pickOutputDir?: () => Promise<string> }
@@ -589,8 +579,6 @@ describe('OnboardingWizard destination', () => {
     }
   })
 
-  // Apple Music keeps its own copy and beside-the-original keeps the source's folder, so
-  // naming the output folder there would point the DJ at a place their files never go.
   it.each([
     ['Apple Music', { addToAppleMusic: true, keepOutputCopy: false }],
     ['beside the original', { convertBesideOriginal: true }],
@@ -606,8 +594,6 @@ describe('OnboardingWizard destination', () => {
     }
   })
 
-  // Engine DJ writes into the library folder it is pointed at, so a DJ switching it on in
-  // the wizard has to see, and be able to fix, which library that is.
   it('asks for the Engine library under Engine', async () => {
     const api = window as unknown as {
       api: { engineAvailable: () => Promise<boolean>; pickEngineLibraryDir?: () => Promise<string> }
