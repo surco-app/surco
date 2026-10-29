@@ -1544,10 +1544,10 @@
     "autoOrganizeHint": "Reordena os campos visíveis por grupo",
     "autoOrganized": "Organizado",
     "syncTraktor": "Atualizar a coleção do Traktor ao converter",
-    "syncTraktorHint": "Os cue points e a grade das faixas convertidas são gravados na sua coleção do Traktor. Antes de gravar, o Surco guarda uma cópia de segurança na pasta de cópias dele (Ajustes → Geral) e nunca grava com o Traktor aberto.",
+    "syncTraktorHint": "Os cue points e a grade das faixas convertidas são gravados na sua coleção do Traktor. Antes de gravar, o Surco guarda uma cópia de segurança na pasta de cópias dele (Ajustes → Avançado) e nunca grava com o Traktor aberto.",
     "syncTraktorIdle": "Indique abaixo onde está a sua coleção do Traktor para poder ativar.",
     "syncRekordbox": "Atualizar a coleção do rekordbox ao converter",
-    "syncRekordboxHint": "Ao converter ou atualizar uma faixa que está no rekordbox, a entrada dela passa a apontar para o arquivo novo e recebe o título, o artista, o álbum, o gênero, o selo, o remixer, o comentário, o ano, os números de faixa e de disco e a capa. Ela mantém as playlists, os cue points, o BPM e o tom, e um campo vazio no Surco nunca apaga o do rekordbox. Antes de gravar, o Surco guarda na pasta de cópias dele (Ajustes → Geral) uma cópia de segurança da leva inteira, mais uma de cada gravação, e nunca grava com o rekordbox aberto.",
+    "syncRekordboxHint": "Ao converter ou atualizar uma faixa que está no rekordbox, a entrada dela passa a apontar para o arquivo novo e recebe o título, o artista, o álbum, o gênero, o selo, o remixer, o comentário, o ano, os números de faixa e de disco e a capa. Ela mantém as playlists, os cue points, o BPM e o tom, e um campo vazio no Surco nunca apaga o do rekordbox. Antes de gravar, o Surco guarda na pasta de cópias dele (Ajustes → Avançado) uma cópia de segurança da leva inteira, mais uma de cada gravação, e nunca grava com o rekordbox aberto.",
     "syncRekordboxIdle": "Nenhuma coleção do rekordbox foi encontrada neste computador.",
     "rekordboxSync": "Coleção do rekordbox",
     "rekordboxDbPath": "Coleção do rekordbox",
@@ -1572,7 +1572,7 @@
     "originalBackupLimitsKept": "Os limites continuam valendo para o que já está guardado.",
     "engineSync": "Biblioteca do Engine DJ",
     "syncEngineDj": "Atualizar a biblioteca do Engine DJ ao converter",
-    "syncEngineDjHint": "Ao converter uma faixa que está na sua biblioteca do Engine DJ, a entrada dela passa a apontar para o arquivo novo e mantém as playlists e os cue points. Usa a biblioteca escolhida no destino Engine DJ. Antes de gravar, o Surco guarda na pasta de cópias dele (Ajustes → Geral) uma cópia de segurança da leva inteira, mais uma de cada gravação, e nunca grava com o Engine DJ aberto.",
+    "syncEngineDjHint": "Ao converter uma faixa que está na sua biblioteca do Engine DJ, a entrada dela passa a apontar para o arquivo novo e mantém as playlists e os cue points. Usa a biblioteca escolhida no destino Engine DJ. Antes de gravar, o Surco guarda na pasta de cópias dele (Ajustes → Avançado) uma cópia de segurança da leva inteira, mais uma de cada gravação, e nunca grava com o Engine DJ aberto.",
     "completeCues": "Ao fechar o rekordbox, aplicar seu fluxo ativo nas faixas com CALL e sem hot cues",
     "completeCuesHint": "Grava na sua coleção, inclusive em faixas que você não viu no Surco. Desligado, seus cues só são salvos pela seção Cues.",
     "completeCuesCount_one": "{{count}} faixa será completada ao fechar o rekordbox.",
@@ -2131,7 +2131,7 @@
         "readOnly": "A coleção do rekordbox é somente leitura e nada mudou",
         "stale": "A playlist mudou no rekordbox. Confira e tente de novo",
         "noSeparator": "Sua coleção não tem nenhum separador para copiar",
-        "writeUnknown": "Não foi possível salvar nem desfazer a mudança, então a coleção pode ter mudado. Antes de abrir o rekordbox, tire master.db-wal e master.db-shm da pasta dele e depois substitua master.db pela cópia master.db.surco-backup que está em Ajustes → Geral → Cópias das coleções"
+        "writeUnknown": "Não foi possível salvar nem desfazer a mudança, então a coleção pode ter mudado. Antes de abrir o rekordbox, tire master.db-wal e master.db-shm da pasta dele e depois substitua master.db pela cópia master.db.surco-backup que está em Ajustes → Avançado → Cópias das coleções"
       }
     },
     "editTraktor": {
@@ -2153,7 +2153,7 @@
         "readOnly": "A coleção do Traktor é somente leitura e nada mudou",
         "stale": "A playlist mudou no Traktor. Confira e tente de novo",
         "noSeparator": "Sua coleção não tem nenhum separador para copiar",
-        "writeUnknown": "Não foi possível salvar nem desfazer a alteração, então a coleção pode ter mudado. Antes de abrir o Traktor, substitua collection.nml pela cópia collection.nml.surco-backup que está em Ajustes → Geral → Cópias das coleções"
+        "writeUnknown": "Não foi possível salvar nem desfazer a alteração, então a coleção pode ter mudado. Antes de abrir o Traktor, substitua collection.nml pela cópia collection.nml.surco-backup que está em Ajustes → Avançado → Cópias das coleções"
       }
     },
     "tree": {
@@ -2646,7 +2646,7 @@
     "discardYes": "Descartar",
     "discardNo": "Cancelar",
     "pillHalted": "Mudanças do rekordbox em pausa",
-    "halted": "A última mudança não pôde ser salva nem desfeita. O Surco não vai mexer na coleção até você escolher Aplicar agora ou Descartar. Aplicar agora substitui a cópia de segurança master.db.surco-backup, então se algo parecer errado, restaure a partir dela antes. Você a encontra em Ajustes → Geral → Cópias das coleções",
+    "halted": "A última mudança não pôde ser salva nem desfeita. O Surco não vai mexer na coleção até você escolher Aplicar agora ou Descartar. Aplicar agora substitui a cópia de segurança master.db.surco-backup, então se algo parecer errado, restaure a partir dela antes. Você a encontra em Ajustes → Avançado → Cópias das coleções",
     "pillElsewhere": "Pendente de outra coleção do rekordbox",
     "elsewhere_one": "{{count}} alteração espera outra coleção do rekordbox. Ela será aplicada quando você voltar a ela",
     "elsewhere_other": "{{count}} alterações esperam outra coleção do rekordbox. Elas serão aplicadas quando você voltar a ela"
@@ -2677,7 +2677,7 @@
     },
     "discardConfirm": "Descartar o que está esperando? Suas playlists e cues do Engine DJ ficam como o Engine DJ as tem",
     "pillHalted": "Mudanças do Engine DJ em pausa",
-    "halted": "A última mudança não pôde ser salva nem desfeita. O Surco não vai mexer na biblioteca até você escolher Aplicar agora ou Descartar. Aplicar agora substitui a cópia de segurança m.db.surco-backup, então se algo parecer errado, restaure a partir dela antes. Você a encontra em Ajustes → Geral → Cópias das coleções",
+    "halted": "A última mudança não pôde ser salva nem desfeita. O Surco não vai mexer na biblioteca até você escolher Aplicar agora ou Descartar. Aplicar agora substitui a cópia de segurança m.db.surco-backup, então se algo parecer errado, restaure a partir dela antes. Você a encontra em Ajustes → Avançado → Cópias das coleções",
     "pillElsewhere": "Pendente de outra biblioteca do Engine DJ",
     "elsewhere_one": "{{count}} alteração espera outra biblioteca do Engine DJ. Ela será aplicada quando você voltar a ela",
     "elsewhere_other": "{{count}} alterações esperam outra biblioteca do Engine DJ. Elas serão aplicadas quando você voltar a ela"
@@ -2708,7 +2708,7 @@
     },
     "discardConfirm": "Descartar o que está esperando? Suas playlists e cues do Traktor ficam como o Traktor as tem",
     "pillHalted": "Mudanças do Traktor em pausa",
-    "halted": "A última mudança não pôde ser salva nem desfeita. O Surco não vai mexer na coleção até você escolher Aplicar agora ou Descartar. Aplicar agora substitui a cópia de segurança collection.nml.surco-backup, então se algo parecer errado, restaure a partir dela antes. Você a encontra em Ajustes → Geral → Cópias das coleções",
+    "halted": "A última mudança não pôde ser salva nem desfeita. O Surco não vai mexer na coleção até você escolher Aplicar agora ou Descartar. Aplicar agora substitui a cópia de segurança collection.nml.surco-backup, então se algo parecer errado, restaure a partir dela antes. Você a encontra em Ajustes → Avançado → Cópias das coleções",
     "pillElsewhere": "Pendente de outra coleção do Traktor",
     "elsewhere_one": "{{count}} alteração espera outra coleção do Traktor. Ela será aplicada quando você voltar a ela",
     "elsewhere_other": "{{count}} alterações esperam outra coleção do Traktor. Elas serão aplicadas quando você voltar a ela"

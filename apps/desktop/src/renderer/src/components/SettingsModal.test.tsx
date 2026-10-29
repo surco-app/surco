@@ -1008,6 +1008,7 @@ describe('SettingsModal advanced', () => {
     'settings-import',
     'settings-cache-clear',
     'settings-log-reveal',
+    'settings-backups-reveal',
   ]
 
   it('keeps General to everyday choices so a newcomer is not met by sync folders, backups and caches', async () => {
@@ -1182,6 +1183,26 @@ describe('SettingsModal analysis cache', () => {
     )
     fireEvent.click(await screen.findByTestId('settings-log-reveal'))
     expect(revealLog).toHaveBeenCalledTimes(1)
+  })
+
+  // The copies Surco takes before writing to rekordbox, Engine DJ or Traktor no longer sit
+  // next to each collection: a DJ restoring one has to be able to reach Surco's folder.
+  it('opens the folder with the collection backups from the Advanced tab', async () => {
+    const api = window.api as unknown as Record<string, unknown>
+    const revealBackups = vi.fn(async () => {})
+    api.revealBackups = revealBackups
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        initialTab="advanced"
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    fireEvent.click(await screen.findByTestId('settings-backups-reveal'))
+    expect(revealBackups).toHaveBeenCalledTimes(1)
   })
 
   // An empty cache has nothing to clear, so the button is disabled — clicking it

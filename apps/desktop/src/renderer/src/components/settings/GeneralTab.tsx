@@ -90,17 +90,6 @@ export function GeneralTab({
               labelFor={(id) => (id === 'ja' ? '日本語' : tr(`settings.languages.${id}`))}
             />
           </SettingsField>
-
-          <SettingsField label={tr('settings.backups')} hint={tr('settings.backupsHint')}>
-            <button
-              type="button"
-              data-testid="settings-backups-reveal"
-              onClick={() => void window.api.revealBackups()}
-              className="press self-start rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
-            >
-              {tr('settings.backupsReveal')}
-            </button>
-          </SettingsField>
         </div>
       </SettingsSection>
 

@@ -9,7 +9,6 @@ import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 // The tab asks which sources this machine has on mount, so the bridge has to exist
 // before it renders.
 ;(window as unknown as { api: unknown }).api = {
-  revealBackups: vi.fn(),
   platform: 'darwin',
   rekordboxAvailable: () => Promise.resolve(true),
   engineAvailable: () => Promise.resolve(true),
@@ -250,14 +249,4 @@ describe('GeneralTab sources', () => {
       i18n.t('settings.sourcesHint'),
     )
   })
-})
-
-// The copies Surco takes before writing to rekordbox, Engine DJ or Traktor no longer sit
-// next to each collection: a DJ restoring one has to be able to reach Surco's folder.
-it('opens the folder with the collection backups', () => {
-  renderTab()
-  fireEvent.click(screen.getByTestId('settings-backups-reveal'))
-  expect(
-    (window as unknown as { api: { revealBackups: ReturnType<typeof vi.fn> } }).api.revealBackups,
-  ).toHaveBeenCalled()
 })

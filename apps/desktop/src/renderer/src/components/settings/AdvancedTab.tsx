@@ -93,6 +93,17 @@ export function AdvancedTab({
           )}
         </SettingsField>
 
+        <SettingsField label={tr('settings.backups')} hint={tr('settings.backupsHint')}>
+          <button
+            type="button"
+            data-testid="settings-backups-reveal"
+            onClick={() => void window.api.revealBackups()}
+            className="press self-start rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+          >
+            {tr('settings.backupsReveal')}
+          </button>
+        </SettingsField>
+
         {/* The size is said once, beside the name: it used to sit in a box that looked
               editable and again in the hint under it. */}
         <div className="flex flex-col gap-2">

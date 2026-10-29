@@ -1544,10 +1544,10 @@
     "autoOrganizeHint": "Ordnet die angezeigten Felder nach Gruppe",
     "autoOrganized": "Sortiert",
     "syncTraktor": "Traktor-Sammlung beim Konvertieren aktualisieren",
-    "syncTraktorHint": "Cue-Punkte und Beatgrid konvertierter Titel werden in deine Traktor-Sammlung geschrieben. Vor dem Schreiben legt Surco eine Sicherung in seinem Sicherungsordner an (Einstellungen → Allgemein) und schreibt nie, während Traktor geöffnet ist.",
+    "syncTraktorHint": "Cue-Punkte und Beatgrid konvertierter Titel werden in deine Traktor-Sammlung geschrieben. Vor dem Schreiben legt Surco eine Sicherung in seinem Sicherungsordner an (Einstellungen → Erweitert) und schreibt nie, während Traktor geöffnet ist.",
     "syncTraktorIdle": "Gib unten deine Traktor-Sammlung an, um dies zu aktivieren.",
     "syncRekordbox": "rekordbox-Sammlung beim Konvertieren aktualisieren",
-    "syncRekordboxHint": "Wenn du einen Titel konvertierst oder aktualisierst, der in rekordbox liegt, folgt sein Eintrag der neuen Datei und übernimmt Titel, Interpret, Album, Genre, Label, Remixer, Kommentar, Jahr, Titel- und Discnummer sowie das Cover. Playlists, Cue-Punkte, BPM und Tonart bleiben erhalten, und ein in Surco leeres Feld löscht das in rekordbox nicht. Vor dem Schreiben legt Surco in seinem Sicherungsordner (Einstellungen → Allgemein) eine Sicherung des gesamten Durchlaufs an, dazu eine je Schreibvorgang, und schreibt nie, während rekordbox geöffnet ist.",
+    "syncRekordboxHint": "Wenn du einen Titel konvertierst oder aktualisierst, der in rekordbox liegt, folgt sein Eintrag der neuen Datei und übernimmt Titel, Interpret, Album, Genre, Label, Remixer, Kommentar, Jahr, Titel- und Discnummer sowie das Cover. Playlists, Cue-Punkte, BPM und Tonart bleiben erhalten, und ein in Surco leeres Feld löscht das in rekordbox nicht. Vor dem Schreiben legt Surco in seinem Sicherungsordner (Einstellungen → Erweitert) eine Sicherung des gesamten Durchlaufs an, dazu eine je Schreibvorgang, und schreibt nie, während rekordbox geöffnet ist.",
     "syncRekordboxIdle": "Auf diesem Rechner wurde keine rekordbox-Sammlung gefunden.",
     "rekordboxSync": "rekordbox-Sammlung",
     "rekordboxDbPath": "rekordbox-Sammlung",
@@ -1572,7 +1572,7 @@
     "originalBackupLimitsKept": "Die Grenzen gelten weiterhin für das bereits Aufbewahrte.",
     "engineSync": "Engine-DJ-Bibliothek",
     "syncEngineDj": "Engine-DJ-Bibliothek beim Konvertieren aktualisieren",
-    "syncEngineDjHint": "Wenn du einen Titel konvertierst, der in deiner Engine-DJ-Bibliothek liegt, folgt sein Eintrag der neuen Datei und behält Playlists und Cue-Punkte. Verwendet wird die beim Ziel Engine DJ gewählte Bibliothek. Vor dem Schreiben legt Surco in seinem Sicherungsordner (Einstellungen → Allgemein) eine Sicherung des gesamten Durchlaufs an, dazu eine je Schreibvorgang, und schreibt nie, während Engine DJ geöffnet ist.",
+    "syncEngineDjHint": "Wenn du einen Titel konvertierst, der in deiner Engine-DJ-Bibliothek liegt, folgt sein Eintrag der neuen Datei und behält Playlists und Cue-Punkte. Verwendet wird die beim Ziel Engine DJ gewählte Bibliothek. Vor dem Schreiben legt Surco in seinem Sicherungsordner (Einstellungen → Erweitert) eine Sicherung des gesamten Durchlaufs an, dazu eine je Schreibvorgang, und schreibt nie, während Engine DJ geöffnet ist.",
     "completeCues": "Beim Schließen von rekordbox deinen aktiven Ablauf auf Titel mit CALLs und ohne Hot Cues anwenden",
     "completeCuesHint": "Schreibt in deine Sammlung, auch in Titel, die du in Surco nicht angesehen hast. Aus werden deine Cues nur im Abschnitt Cues gespeichert.",
     "completeCuesCount_one": "{{count}} Titel wird beim Schließen von rekordbox ergänzt.",
@@ -2131,7 +2131,7 @@
         "readOnly": "Die rekordbox-Sammlung ist schreibgeschützt, nichts geändert",
         "stale": "Die Playlist hat sich in rekordbox geändert. Prüfe sie und versuche es erneut",
         "noSeparator": "Deine Sammlung hat keinen Trenner zum Kopieren",
-        "writeUnknown": "Die Änderung ließ sich weder speichern noch rückgängig machen, die Sammlung kann sich also geändert haben. Verschiebe vor dem Öffnen von rekordbox master.db-wal und master.db-shm aus dem Ordner und ersetze dann master.db durch die Kopie master.db.surco-backup unter Einstellungen → Allgemein → Sicherungen der Sammlungen"
+        "writeUnknown": "Die Änderung ließ sich weder speichern noch rückgängig machen, die Sammlung kann sich also geändert haben. Verschiebe vor dem Öffnen von rekordbox master.db-wal und master.db-shm aus dem Ordner und ersetze dann master.db durch die Kopie master.db.surco-backup unter Einstellungen → Erweitert → Sicherungen der Sammlungen"
       }
     },
     "editTraktor": {
@@ -2153,7 +2153,7 @@
         "readOnly": "Die Traktor-Sammlung ist schreibgeschützt, nichts geändert",
         "stale": "Die Playlist hat sich in Traktor geändert. Prüfe sie und versuche es erneut",
         "noSeparator": "Deine Sammlung hat keinen Trenner zum Kopieren",
-        "writeUnknown": "Die Änderung konnte weder gespeichert noch rückgängig gemacht werden, die Collection könnte sich also geändert haben. Ersetze vor dem Öffnen von Traktor collection.nml durch die Kopie collection.nml.surco-backup unter Einstellungen → Allgemein → Sicherungen der Sammlungen"
+        "writeUnknown": "Die Änderung konnte weder gespeichert noch rückgängig gemacht werden, die Collection könnte sich also geändert haben. Ersetze vor dem Öffnen von Traktor collection.nml durch die Kopie collection.nml.surco-backup unter Einstellungen → Erweitert → Sicherungen der Sammlungen"
       }
     },
     "tree": {
@@ -2646,7 +2646,7 @@
     "discardYes": "Verwerfen",
     "discardNo": "Abbrechen",
     "pillHalted": "rekordbox-Änderungen angehalten",
-    "halted": "Die letzte Änderung konnte weder gespeichert noch rückgängig gemacht werden. Surco rührt die Sammlung nicht an, bis du Jetzt anwenden oder Verwerfen wählst. Jetzt anwenden ersetzt die Sicherungskopie master.db.surco-backup. Wenn etwas nicht stimmt, stelle die Sammlung zuerst daraus wieder her. Du findest sie unter Einstellungen → Allgemein → Sicherungen der Sammlungen",
+    "halted": "Die letzte Änderung konnte weder gespeichert noch rückgängig gemacht werden. Surco rührt die Sammlung nicht an, bis du Jetzt anwenden oder Verwerfen wählst. Jetzt anwenden ersetzt die Sicherungskopie master.db.surco-backup. Wenn etwas nicht stimmt, stelle die Sammlung zuerst daraus wieder her. Du findest sie unter Einstellungen → Erweitert → Sicherungen der Sammlungen",
     "pillElsewhere": "Wartet auf eine andere rekordbox-Sammlung",
     "elsewhere_one": "{{count}} Änderung wartet auf eine andere rekordbox-Sammlung. Sie wird angewendet, wenn du zu ihr zurückkehrst",
     "elsewhere_other": "{{count}} Änderungen warten auf eine andere rekordbox-Sammlung. Sie werden angewendet, wenn du zu ihr zurückkehrst"
@@ -2677,7 +2677,7 @@
     },
     "discardConfirm": "Wartendes verwerfen? Deine Engine-DJ-Playlists und Cues bleiben, wie Engine DJ sie hat",
     "pillHalted": "Engine-DJ-Änderungen angehalten",
-    "halted": "Die letzte Änderung konnte weder gespeichert noch rückgängig gemacht werden. Surco rührt die Bibliothek nicht an, bis du Jetzt anwenden oder Verwerfen wählst. Jetzt anwenden ersetzt die Sicherungskopie m.db.surco-backup. Wenn etwas nicht stimmt, stelle die Bibliothek zuerst daraus wieder her. Du findest sie unter Einstellungen → Allgemein → Sicherungen der Sammlungen",
+    "halted": "Die letzte Änderung konnte weder gespeichert noch rückgängig gemacht werden. Surco rührt die Bibliothek nicht an, bis du Jetzt anwenden oder Verwerfen wählst. Jetzt anwenden ersetzt die Sicherungskopie m.db.surco-backup. Wenn etwas nicht stimmt, stelle die Bibliothek zuerst daraus wieder her. Du findest sie unter Einstellungen → Erweitert → Sicherungen der Sammlungen",
     "pillElsewhere": "Wartet auf eine andere Engine-DJ-Bibliothek",
     "elsewhere_one": "{{count}} Änderung wartet auf eine andere Engine-DJ-Bibliothek. Sie wird angewendet, wenn du zu ihr zurückkehrst",
     "elsewhere_other": "{{count}} Änderungen warten auf eine andere Engine-DJ-Bibliothek. Sie werden angewendet, wenn du zu ihr zurückkehrst"
@@ -2708,7 +2708,7 @@
     },
     "discardConfirm": "Wartendes verwerfen? Deine Traktor-Playlists und Cues bleiben, wie Traktor sie hat",
     "pillHalted": "Traktor-Änderungen angehalten",
-    "halted": "Die letzte Änderung konnte weder gespeichert noch rückgängig gemacht werden. Surco rührt die Collection nicht an, bis du Jetzt anwenden oder Verwerfen wählst. Jetzt anwenden ersetzt die Sicherungskopie collection.nml.surco-backup. Wenn etwas nicht stimmt, stelle die Collection zuerst daraus wieder her. Du findest sie unter Einstellungen → Allgemein → Sicherungen der Sammlungen",
+    "halted": "Die letzte Änderung konnte weder gespeichert noch rückgängig gemacht werden. Surco rührt die Collection nicht an, bis du Jetzt anwenden oder Verwerfen wählst. Jetzt anwenden ersetzt die Sicherungskopie collection.nml.surco-backup. Wenn etwas nicht stimmt, stelle die Collection zuerst daraus wieder her. Du findest sie unter Einstellungen → Erweitert → Sicherungen der Sammlungen",
     "pillElsewhere": "Wartet auf eine andere Traktor-Sammlung",
     "elsewhere_one": "{{count}} Änderung wartet auf eine andere Traktor-Sammlung. Sie wird angewendet, wenn du zu ihr zurückkehrst",
     "elsewhere_other": "{{count}} Änderungen warten auf eine andere Traktor-Sammlung. Sie werden angewendet, wenn du zu ihr zurückkehrst"
