@@ -60,6 +60,24 @@ function setup(selectedId: string | null = null, editable = false, nodes = NODES
 const files = (...names: string[]) => fakeDataTransfer(names.map((n) => new File([''], n)))
 
 describe('SourceTree', () => {
+  it('draws placeholder rows in the shape of the playlists while the tree is read', () => {
+    render(
+      <SourceTree
+        width={236}
+        title="Music"
+        source="appleMusic"
+        nodes={undefined}
+        failed={false}
+        selectedId={null}
+        onSelect={vi.fn()}
+      />,
+    )
+    const loading = screen.getByTestId('source-tree-loading')
+    expect(loading).toHaveAttribute('role', 'status')
+    expect(loading).toHaveTextContent('Reading playlists…')
+    expect(within(loading).getAllByTestId('source-tree-skeleton-row')).toHaveLength(8)
+  })
+
   it('keeps Traktor’s own playlists from being renamed or deleted, and HISTORY from taking tracks', () => {
     const PREP: SourceNode = { id: 'prep', name: 'Preparation', kind: 'playlist', count: 0 }
     const HIST: SourceNode = { id: 'hist', name: 'HISTORY', kind: 'playlist', count: 0 }

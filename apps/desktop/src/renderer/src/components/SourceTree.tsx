@@ -20,6 +20,8 @@ import { carriesOnlyFiles, draggedRows } from '../lib/reorderDrag'
 import { ConfirmDialog } from './ConfirmDialog'
 import { Tooltip } from './Tooltip'
 
+const SKELETON_NAME_WIDTHS = ['42%', '28%', '55%', '36%', '47%', '31%', '51%', '24%']
+
 // The folders on the way to a node, so the tree can open them for the selected playlist.
 function pathTo(nodes: SourceNode[], id: string, trail: SourceNode[] = []): SourceNode[] | null {
   for (const n of nodes) {
@@ -367,7 +369,28 @@ export function SourceTree({
         {tr(`sources.failed.${source}`)}
       </p>
     )
-  else if (!nodes) body = <p className="px-3 text-xs text-fg-faint">{tr('sources.loading')}</p>
+  else if (!nodes)
+    body = (
+      <div data-testid="source-tree-loading" role="status" className="relative overflow-hidden">
+        <span className="sr-only">{tr('sources.loading')}</span>
+        {SKELETON_NAME_WIDTHS.map((width, i) => (
+          <div
+            key={width}
+            data-testid="source-tree-skeleton-row"
+            aria-hidden="true"
+            className="flex h-[28px] items-center gap-1.5 pr-2.5 pl-2.5"
+            style={{ opacity: 1 - i * 0.09 }}
+          >
+            <span className="h-2.5 rounded bg-[var(--color-panel-2)]" style={{ width }} />
+            <span className="ml-auto h-2 w-5 rounded bg-[var(--color-panel-2)]" />
+          </div>
+        ))}
+        <span
+          aria-hidden="true"
+          className="spectrum-scan pointer-events-none absolute inset-y-0 left-0 w-1/3"
+        />
+      </div>
+    )
   else if (nodes.length === 0 && !creating)
     body = <p className="px-3 text-xs text-fg-faint">{tr('sources.empty')}</p>
   else if (hits && hits.length === 0)

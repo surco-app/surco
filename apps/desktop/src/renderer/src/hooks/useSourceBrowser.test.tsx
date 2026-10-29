@@ -256,6 +256,21 @@ describe('useSourceBrowser', () => {
       expect(load.mock.calls.map(([, from]) => from)).toEqual([1, 201, 201, 401])
     })
 
+    // The tree read "200" beside a 2,044-track playlist while its stretches came in: the
+    // count of what was read stands only once all of it has been.
+    it('keeps the count Music gives until every stretch is read', async () => {
+      const second = pending<ReturnType<typeof stretch>>()
+      const load = vi.fn(async (_id: string, from: number) =>
+        from === 1 ? stretch(1, 200, 450) : from === 201 ? second.promise : stretch(401, 49, 450),
+      )
+      const { result } = openFriday(load)
+      await waitFor(() => expect(result.current.entries).toHaveLength(200))
+      expect(result.current.tree?.[0].count).toBe(450)
+      act(() => second.resolve(stretch(201, 200, 450)))
+      await waitFor(() => expect(result.current.entries).toHaveLength(449))
+      await waitFor(() => expect(result.current.tree?.[0].count).toBe(449))
+    })
+
     it('stops asking Music for a playlist once another is opened', async () => {
       const second = pending<ReturnType<typeof stretch>>()
       const load = vi.fn(async (_id: string, from: number) =>

@@ -227,11 +227,9 @@ export function useSourceBrowser({
     tree:
       source === 'appleMusic' && tree.data
         ? withReadCounts(tree.data, (id) => {
-            const read = queryClient.getQueryData<SourcePlaylistEntry[]>([
-              'source-playlist',
-              'appleMusic',
-              id,
-            ])
+            const key = ['source-playlist', 'appleMusic', id]
+            if (queryClient.getQueryState(key)?.fetchStatus === 'fetching') return undefined
+            const read = queryClient.getQueryData<SourcePlaylistEntry[]>(key)
             return read && distinctTracks(read)
           })
         : shownTree,
