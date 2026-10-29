@@ -697,7 +697,6 @@ export const DiscogsPanel = memo(function DiscogsPanel({
             <>
               {choosingBest && (
                 <div data-testid="best-match-slot">
-                  <BestMatchLabel label={tr('editor.bestMatch')} />
                   <SkeletonRows testid="best-match-skeleton" count={1} />
                 </div>
               )}

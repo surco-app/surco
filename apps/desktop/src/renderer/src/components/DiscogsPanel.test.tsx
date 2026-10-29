@@ -588,10 +588,10 @@ describe('DiscogsPanel stable results', () => {
 
   // The release the auto-match opens is the one the user came for: it has a fixed place at
   // the top, held open while it is being chosen, so nobody scrolls to find it.
-  it('keeps the top slot for the best match while it is being chosen', () => {
+  it('keeps the top slot while a suggestion is being chosen without calling it the best match before its match is confirmed', () => {
     renderPanel(browser({ query: 'x', results: rows, choosingBest: true }))
     const slot = screen.getByTestId('best-match-slot')
-    expect(slot).toHaveTextContent('Best match')
+    expect(slot).not.toHaveTextContent('Best match')
     expect(within(slot).getAllByTestId('skeleton-row')).toHaveLength(1)
     expect(slot.compareDocumentPosition(screen.getAllByTestId('result-card')[0])).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
