@@ -90,7 +90,7 @@ export function SettingsModal({
     const list = tablistRef.current
     const measure = (): void => {
       const btn = tabRefs.current[tab]
-      if (btn) setPill({ top: btn.offsetTop, height: btn.offsetHeight })
+      if (btn && !list?.hidden) setPill({ top: btn.offsetTop, height: btn.offsetHeight })
     }
     measure()
     if (!list || typeof ResizeObserver === 'undefined') return
@@ -159,10 +159,11 @@ export function SettingsModal({
       setSelected((i) => Math.max(0, Math.min(last, i + (e.key === 'ArrowDown' ? 1 : -1))))
     } else if (e.key === 'Enter' && selectedAnchor) {
       e.preventDefault()
-      bodyRef.current
-        ?.querySelector(`[data-search-id="${selectedAnchor}"]`)
-        ?.querySelector<HTMLElement>('input, select, textarea, button, [tabindex]')
-        ?.focus()
+      const scope =
+        selectedId === `tabs.${tab}`
+          ? bodyRef.current
+          : bodyRef.current?.querySelector(`[data-search-id="${selectedAnchor}"]`)
+      scope?.querySelector<HTMLElement>('input, select, textarea, button, [tabindex]')?.focus()
     }
   }
   function onTabKeyDown(e: React.KeyboardEvent, idx: number): void {
@@ -464,7 +465,7 @@ export function SettingsModal({
             role="tabpanel"
             id="settings-tabpanel"
             aria-labelledby={`settings-tab-${tab}`}
-            className="-mr-2 flex-1 overflow-x-hidden overflow-y-auto pr-2 [&_[data-search-hit=true]]:rounded-md [&_[data-search-hit=true]]:outline-1 [&_[data-search-hit=true]]:outline-offset-4 [&_[data-search-hit=true]]:outline-[var(--color-accent)] [&_[data-search-hit=true]]:outline-solid"
+            className="-mr-2 flex-1 overflow-x-hidden overflow-y-auto pr-2 [&_[data-search-id]]:rounded-md [&_[data-search-id]]:outline-1 [&_[data-search-id]]:outline-offset-4 [&_[data-search-id]]:outline-transparent [&_[data-search-id]]:outline-solid [&_[data-search-id]]:transition-[outline-color] [&_[data-search-id]]:duration-500 motion-reduce:[&_[data-search-id]]:transition-none [&_[data-search-hit=true]]:outline-[var(--color-accent)]"
           >
             {tab === 'general' && (
               <GeneralTab
