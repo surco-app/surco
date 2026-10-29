@@ -2918,6 +2918,13 @@ export default function App(): React.JSX.Element {
     openListReview,
     onSettled: cleanLoad,
   })
+  const openFromOs = useStableCallback(async (paths: string[]): Promise<void> => {
+    if (paths.length > 0) await addToWorkingList(paths)
+  })
+  useEffect(() => {
+    void window.api.takePendingFiles().then(openFromOs)
+    return window.api.onOpenFiles(openFromOs)
+  }, [openFromOs])
   // One source per opening: it remembers what it wrote and trashed until the review closes,
   // and it keeps to the rows it opened on. Picking another playlist while it is open does
   // not move it: what the menu said it would touch is what it touches.

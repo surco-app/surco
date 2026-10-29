@@ -4286,6 +4286,28 @@ describe('App open with', () => {
     push?.(['/music/live.flac'])
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
   })
+
+  it('brings the working list forward when files are opened while a source is showing, so they are not left in a hidden list', async () => {
+    let push: ((paths: string[]) => void) | undefined
+    setApi({
+      onOpenFiles: (cb: (paths: string[]) => void) => {
+        push = cb
+        return () => {}
+      },
+      readTags: vi.fn().mockResolvedValue({ title: 'Live', artist: 'Artist' }),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    await waitFor(() =>
+      expect(screen.getByTestId('source-rail-rekordbox')).toHaveAttribute('aria-pressed', 'true'),
+    )
+    await act(async () => push?.(['/music/live.flac']))
+    await waitFor(() =>
+      expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true'),
+    )
+    expect(await screen.findAllByTestId('track-row')).toHaveLength(1)
+  })
 })
 
 describe('App non-audio notice', () => {

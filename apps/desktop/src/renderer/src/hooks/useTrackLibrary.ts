@@ -772,21 +772,8 @@ export function useTrackLibrary({
     [],
   )
 
-  // Files opened from Finder ("Open With Surco"), dropped on the dock, or double-clicked
-  // reach us through the OS, not the renderer: the main process buffers any handed over
-  // before this window existed and pushes later ones live. Drain the buffer on mount and
-  // subscribe for the rest, routing both through the same expand+add path as a drop. The
-  // ref keeps the live handler pointed at the latest addPaths so its dedupe sees the
-  // current crate rather than the empty one captured at mount.
   const addPathsRef = useRef(addPaths)
   addPathsRef.current = addPaths
-  useEffect(() => {
-    const open = async (paths: string[]): Promise<void> => {
-      if (paths.length) addPathsRef.current(await window.api.expandPaths(paths, true))
-    }
-    window.api.takePendingFiles().then(open)
-    return window.api.onOpenFiles(open)
-  }, [])
 
   // The folder walk reports its audio files as it finds them, so rows appear during a slow
   // (network) import instead of only when the whole tree has been walked — a 560-folder SMB
