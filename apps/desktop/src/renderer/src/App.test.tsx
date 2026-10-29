@@ -3164,7 +3164,9 @@ describe('App source playlists', () => {
     fireEvent.drop(screen.getByTestId('sidebar'), {
       dataTransfer: fakeDataTransfer([new File([''], 'new.wav')]),
     })
-    await waitFor(() => expect(window.api.expandPaths).toHaveBeenCalledWith(['/Finder/new.wav'], true))
+    await waitFor(() =>
+      expect(window.api.expandPaths).toHaveBeenCalledWith(['/Finder/new.wav'], true),
+    )
   })
 
   // Rows dragged out of the list toward a playlist in the tree are already in the list;
@@ -3844,6 +3846,37 @@ describe('App track removal', () => {
     await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
     expect(client.getQueryData(['spectrogram', '/music/a.wav'])).toBeUndefined()
     expect(client.getQueryData(['bpm', '/music/a.wav'])).toBeUndefined()
+  })
+})
+
+describe('App multi-select field edit', () => {
+  it('gives every track its own artist back on undo after one value was written over all of them', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn(async (path: string) => ({
+        title: 'T',
+        artist: { '/music/a.wav': 'Alpha', '/music/b.wav': 'Bravo', '/music/c.wav': 'Charlie' }[
+          path
+        ],
+      })),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(rows[2], { metaKey: true })
+
+    const artist = await screen.findByTestId('field-artist')
+    fireEvent.change(artist, { target: { value: 'Everyone' } })
+    fireEvent.blur(artist)
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+
+    for (const [index, expected] of ['Alpha', 'Bravo', 'Charlie'].entries()) {
+      fireEvent.click(screen.getAllByTestId('track-row')[index])
+      await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveValue(expected))
+    }
   })
 })
 

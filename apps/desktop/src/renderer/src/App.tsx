@@ -1493,8 +1493,8 @@ export default function App(): React.JSX.Element {
     )
   })
   // Every deriveTracks consumer is a discrete batch overwrite (fill-all, find & replace,
-  // the Tag buttons), so recording the undo snapshot at this seam covers them all —
-  // unlike updateTracksMeta, whose per-field bulk edits fire on every keystroke.
+  // the Tag buttons), so recording the undo snapshot at this seam covers them all. The
+  // per-field bulk edit records its own in onChangeAllMeta: Field commits it once per pause.
   const deriveTracksUndoable = useStableCallback(
     (patches: { id: string; meta: Partial<TrackMetadata> }[]) => {
       recordMetaUndo(patches.map((p) => p.id))
@@ -2073,9 +2073,10 @@ export default function App(): React.JSX.Element {
     ),
   )
   const onAddAllSelectedToAppleMusic = useStableCallback(() => void addAllToAppleMusic(selectedIds))
-  const onChangeAllMeta = useStableCallback((patch: Partial<TrackMetadata>) =>
-    updateTracksMeta(selectedIds, patch),
-  )
+  const onChangeAllMeta = useStableCallback((patch: Partial<TrackMetadata>) => {
+    recordMetaUndo(selectedIds)
+    updateTracksMeta(selectedIds, patch)
+  })
   const onChangeSelection = useStableCallback((patch: Partial<TrackItem>) =>
     patchTracks(selectedIds, patch),
   )
