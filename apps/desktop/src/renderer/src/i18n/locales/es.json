@@ -1794,7 +1794,8 @@
     "apply": "Aplicar a {{count}}",
     "suggested": "Coincidencia sugerida",
     "applied": "Aplicado",
-    "toConfirm": "Coincidencia por confirmar"
+    "toConfirm": "Coincidencia por confirmar",
+    "lengthMismatch": "La duración de la pista ({{track}}) no coincide con tu archivo ({{length}})"
   },
   "findReplace": {
     "title": "Buscar y reemplazar",

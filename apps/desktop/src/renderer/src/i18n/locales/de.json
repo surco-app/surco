@@ -1794,7 +1794,8 @@
     "apply": "Auf {{count}} anwenden",
     "suggested": "Vorgeschlagener Treffer",
     "applied": "Angewendet",
-    "toConfirm": "Treffer zu bestätigen"
+    "toConfirm": "Treffer zu bestätigen",
+    "lengthMismatch": "Die Länge des Titels ({{track}}) weicht von deiner Datei ab ({{length}})"
   },
   "findReplace": {
     "title": "Suchen & Ersetzen",

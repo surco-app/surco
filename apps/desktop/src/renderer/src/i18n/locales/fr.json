@@ -1794,7 +1794,8 @@
     "apply": "Appliquer à {{count}}",
     "suggested": "Correspondance suggérée",
     "applied": "Appliqué",
-    "toConfirm": "Correspondance à confirmer"
+    "toConfirm": "Correspondance à confirmer",
+    "lengthMismatch": "La durée du morceau ({{track}}) diffère de ton fichier ({{length}})"
   },
   "findReplace": {
     "title": "Rechercher et remplacer",
