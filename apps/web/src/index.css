@@ -74,7 +74,7 @@
 }
 
 /* The spectrum images are rendered for the dark page. On the light one they go through the
-   app's own ramp (SpectrumDuotone), muted as the app mutes it so the accent at full chroma
+   app's ramp ending in ink (SpectrumDuotone), muted as the app mutes it so the accent at full chroma
    doesn't outshout the page. */
 :root[data-theme="light"] .spectrum-duotone {
   filter: url(#spectrum-duotone) saturate(0.7);

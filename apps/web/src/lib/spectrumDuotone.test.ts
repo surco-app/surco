@@ -21,15 +21,18 @@ const ends = (table: string) => {
 
 // The spectrum images are rendered dark: on the light page they were a black slab, the
 // loudest thing on screen. The app recolors its spectrogram through a ramp built from the
-// theme, so in light silence melts into the panel and the music climbs through the accent
-// to amber. The site uses the app's own ramp over its own light tokens.
+// theme, so in light silence melts into the panel and the music climbs through the accent.
+// The site uses the app's own ramp, but ends it in the page's ink rather than amber: its
+// images are colored for the dark page and their whole low band is near white, so ending in
+// the light palette's amber turned that band into a strip of mud. Surco's charts are accent
+// and ink; amber is kept for states.
 describe('spectrum on the light page', () => {
-  it('starts the ramp at the page ground and ends it at amber, as the app does', () => {
-    const [ground, amber] = [token('spectrum', light), token('amber', light)]
+  it('starts the ramp at the page ground and ends it in the ink, never in amber', () => {
+    const [ground, ink] = [token('spectrum', light), token('fg', light)]
     expect(token('spectrum', light)).toEqual(token('bg', light))
     const channels = [LIGHT_SPECTRUM_RAMP.r, LIGHT_SPECTRUM_RAMP.g, LIGHT_SPECTRUM_RAMP.b]
     channels.forEach((table, i) => {
-      expect(ends(table)).toEqual([ground[i], amber[i]])
+      expect(ends(table)).toEqual([ground[i], ink[i]])
     })
   })
 
