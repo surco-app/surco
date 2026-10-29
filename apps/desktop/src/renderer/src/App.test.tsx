@@ -6152,6 +6152,27 @@ describe('App metadata undo', () => {
     expect(screen.getByText('Metadata restored on 1 track')).toBeInTheDocument()
   })
 
+  it('keeps a title typed after a clear when the clear is undone, bringing back only what the clear wiped', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+    expect(await screen.findByTestId('field-artist')).toHaveValue('Artist')
+
+    fireEvent.keyDown(window, { key: 'e', ctrlKey: true })
+    expect(screen.getByTestId('field-artist')).toHaveValue('')
+    const title = screen.getByTestId('field-title')
+    fireEvent.change(title, { target: { value: 'Typed Title' } })
+    fireEvent.blur(title)
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveValue('Artist'))
+    expect(screen.getByTestId('field-title')).toHaveValue('Typed Title')
+  })
+
   // Clearing wipes the artwork alongside the tags (coverRemoved plus coverUrl), so the
   // snapshot has to carry the cover the way paste's does. Without it ⌘Z brought the text
   // back and left the well empty.

@@ -297,6 +297,68 @@ describe('useMetaUndo', () => {
     expect(result.current.tracks[0].meta.title).toBe('A')
   })
 
+  it('keeps a title fixed by hand after a fill-all when the fill-all is undone, so undo never eats work done since', () => {
+    const { result } = setup([track('a', { title: '', album: '' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Filled', album: 'Filled Album' } })),
+      )
+    })
+    act(() => {
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Hand Fixed' } })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.tracks[0].meta.title).toBe('Hand Fixed')
+    expect(result.current.tracks[0].meta.album).toBe('')
+  })
+
+  it('leaves fields the step never touched alone, so a later hand edit to them survives the undo', () => {
+    const { result } = setup([track('a', { title: 'A', artist: 'Old' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, artist: 'Filled' } })),
+      )
+    })
+    act(() => {
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Typed', custom: { mood: 'Dark' } } })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.tracks[0].meta.artist).toBe('Old')
+    expect(result.current.tracks[0].meta.title).toBe('Typed')
+    expect(result.current.tracks[0].meta.custom).toEqual({ mood: 'Dark' })
+  })
+
+  it('keeps a field typed between two presses of a grouped cover step when that step is undone', () => {
+    const { result } = setup([track('a', { title: 'A' }, { coverUrl: 'data:own' })])
+    const press = (coverUrl: string) =>
+      act(() => {
+        result.current.record(result.current.tracks, { cover: true, group: 'cover-a' })
+        result.current.setTracks((prev) => prev.map((t) => ({ ...t, coverUrl })))
+      })
+    press('data:1')
+    act(() => {
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Typed' } })),
+      )
+    })
+    press('data:2')
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.tracks[0].coverUrl).toBe('data:own')
+    expect(result.current.tracks[0].meta.title).toBe('Typed')
+  })
+
   describe('picked cover blobs', () => {
     const url = URL as unknown as Record<string, unknown>
     const original = url.revokeObjectURL
