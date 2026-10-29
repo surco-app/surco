@@ -146,6 +146,32 @@ describe('OnboardingWizard keyboard', () => {
     fireEvent.submit(screen.getByTestId('onboarding-next').closest('form') as HTMLFormElement)
     expect(screen.getByTestId('onboarding-token')).toBeInTheDocument()
   })
+
+  it('opens with the focus on Next so Enter starts the setup instead of skipping it', () => {
+    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    expect(document.activeElement).toBe(screen.getByTestId('onboarding-next'))
+  })
+})
+
+describe('OnboardingWizard skip', () => {
+  it('keeps the choices already made instead of discarding them when skipping from a later step', () => {
+    const onFinish = vi.fn()
+    render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+    fireEvent.click(screen.getByTestId('onboarding-next'))
+    fireEvent.click(screen.getByTestId('onboarding-next'))
+    fireEvent.click(screen.getByTestId('onboarding-format-mp3'))
+    fireEvent.click(screen.getByTestId('onboarding-skip'))
+    expect(onFinish).toHaveBeenCalledWith(
+      expect.objectContaining({ outputFormat: 'mp3', hasSeenOnboarding: true }),
+    )
+  })
+
+  it('only marks the wizard as seen when skipped before any choice', () => {
+    const onFinish = vi.fn()
+    render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+    fireEvent.click(screen.getByTestId('onboarding-skip'))
+    expect(onFinish).toHaveBeenCalledWith({ hasSeenOnboarding: true })
+  })
 })
 
 describe('OnboardingWizard step focus', () => {

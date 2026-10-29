@@ -54,7 +54,11 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [seededIntents] = useState<AudioIntent[]>(() => seedAudioIntents(settings))
   const [audioIntents, setAudioIntents] = useState<AudioIntent[]>(seededIntents)
   const dialogRef = useRef<HTMLDivElement>(null)
+  const nextRef = useRef<HTMLButtonElement>(null)
   useFocusTrap(dialogRef)
+  useEffect(() => {
+    nextRef.current?.focus()
+  }, [])
 
   // The collection step only exists for a DJ who actually runs one of these programs, so
   // the wizard's length is decided by what was found rather than fixed — a user with no DJ
@@ -88,7 +92,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
   // Each step change lands the focus on the new step's heading: Back unmounts on the first
   // step and the focus fell to body, outside the trap, and a focused heading is also what
-  // makes VoiceOver announce the step. The mount keeps the trap's own initial focus.
+  // makes VoiceOver announce the step. The mount focuses Next instead.
   const shownStep = useRef(step)
   useEffect(() => {
     if (shownStep.current === step) return
@@ -375,7 +379,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
             <button
               type="button"
               data-testid="onboarding-skip"
-              onClick={() => onFinish(buildOnboardingPatch(null))}
+              onClick={() => (step > 0 ? finish() : onFinish(buildOnboardingPatch(null)))}
               className="press rounded-lg px-3 py-2 text-sm text-fg-muted hover:text-fg"
             >
               {tr('onboarding.skip')}
@@ -395,6 +399,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                 </button>
               )}
               <button
+                ref={nextRef}
                 type="submit"
                 data-testid="onboarding-next"
                 className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
