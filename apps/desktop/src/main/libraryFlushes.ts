@@ -11,6 +11,7 @@ import {
 } from './duplicateReplace'
 import { loadSqlJs } from './engine'
 import { replaceEngineDuplicates } from './engineDuplicates'
+import { isEngineDjRunning } from './engineProcess'
 import { engineRowFinder, repointEngineTracks } from './engineRepoint'
 import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
 import { updateEngineTags } from './engineTags'
@@ -219,13 +220,18 @@ export async function flushConversionBatch(
     apply: queue.applyQuietly,
   })
   // Engine DJ last, again independently. Its library is the one the Engine destination
-  // writes to. With Engine open the run waits in its queue, as rekordbox's does: the dialog
-  // asked to convert again, which an in-place conversion cannot, its source being gone.
+  // writes to. With Engine open the run waits in its queue without asking to close it, as
+  // rekordbox's does: the dialog asked to convert again, which an in-place conversion
+  // cannot, its source being gone. A check that cannot tell counts as Engine being open.
   const engineRepoints = repoints.filter((repoint) => repoint.from !== repoint.to)
   const engineUnplugged = onUnpluggedDrive(getSettings().engineLibraryDir)
   const engineResult = await flushEngineSync({
     ...engineFlushDeps(host),
-    ...(engineQueue && { showBlockedDialog: () => {}, unplugged: engineUnplugged }),
+    ...(engineQueue && {
+      ensureClosed: async () => !(await isEngineDjRunning().catch(() => true)),
+      showBlockedDialog: () => {},
+      unplugged: engineUnplugged,
+    }),
     endBatch: () => engineRepoints,
     repointTracks: (libraryDir, list) => repointEngine(libraryDir, list, sessions),
   })

@@ -56,6 +56,9 @@ const FILE_USE = vi.hoisted(() => {
 })
 vi.mock('./libraryFileUse', () => ({ djLibraryFileUse: FILE_USE.open }))
 
+const ENGINE_PROCESS = vi.hoisted(() => ({ isEngineDjRunning: vi.fn(async () => false) }))
+vi.mock('./engineProcess', () => ENGINE_PROCESS)
+
 import { activity } from './activity'
 import { writeEngineLibraryFixture } from './enginePlaylistsFixture'
 import {
@@ -132,26 +135,72 @@ describe('flushConversionBatch with master.db on an unplugged drive', () => {
 // Engine DJ abierto al acabar una conversión en su sitio: el aviso pedía volver a convertir,
 // y el MP3 ya no existe. La biblioteca se queda en la cola y apunta al FLAC al cerrar Engine.
 describe('flushConversionBatch with Engine DJ open', () => {
-  it('queues the repoints for when Engine DJ closes instead of asking to convert again', async () => {
+  async function withEngineOpen(running: () => Promise<boolean>, run: () => Promise<void>) {
     Object.assign(SETTINGS, { syncEngineDj: true, engineLibraryDir: '/e/Engine Library' })
     STATUS.engine = { enabled: true, found: true }
+    ENGINE_PROCESS.isEngineDjRunning.mockImplementation(running)
     try {
-      const h = host({ ensureEngineDjClosed: vi.fn(async () => false) })
-      const engine = { enqueue: vi.fn(), applyQuietly: vi.fn() }
-      await flushConversionBatch(
-        h,
-        sessions,
-        { enqueue: vi.fn(), applyQuietly: vi.fn() },
-        undefined,
-        engine,
-      )
-      expect(h.showBlockedDialog).not.toHaveBeenCalledWith('engineSyncBlocked')
-      expect(engine.enqueue).toHaveBeenCalledWith([], REPOINTS)
-      expect(engine.applyQuietly).toHaveBeenCalled()
+      await run()
     } finally {
+      ENGINE_PROCESS.isEngineDjRunning.mockImplementation(async () => false)
       Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
       STATUS.engine = { enabled: false, found: false }
     }
+  }
+
+  it('queues the repoints for when Engine DJ closes without asking to close it, since the queue applies them later', async () => {
+    await withEngineOpen(
+      async () => true,
+      async () => {
+        const h = host({ ensureEngineDjClosed: vi.fn(async () => false) })
+        const engine = { enqueue: vi.fn(), applyQuietly: vi.fn() }
+        await flushConversionBatch(
+          h,
+          sessions,
+          { enqueue: vi.fn(), applyQuietly: vi.fn() },
+          undefined,
+          engine,
+        )
+        expect(h.ensureEngineDjClosed).not.toHaveBeenCalled()
+        expect(h.showBlockedDialog).not.toHaveBeenCalledWith('engineSyncBlocked')
+        expect(engine.enqueue).toHaveBeenCalledWith([], REPOINTS)
+        expect(engine.applyQuietly).toHaveBeenCalled()
+      },
+    )
+  })
+
+  it('treats an unanswered check for Engine DJ as open and queues, because writing under a live Engine loses the library', async () => {
+    await withEngineOpen(
+      async () => {
+        throw new Error('pgrep missing')
+      },
+      async () => {
+        WRITERS.repointEngineTracks.mockClear()
+        const h = host()
+        const engine = { enqueue: vi.fn(), applyQuietly: vi.fn() }
+        await flushConversionBatch(
+          h,
+          sessions,
+          { enqueue: vi.fn(), applyQuietly: vi.fn() },
+          undefined,
+          engine,
+        )
+        expect(h.ensureEngineDjClosed).not.toHaveBeenCalled()
+        expect(WRITERS.repointEngineTracks).not.toHaveBeenCalled()
+        expect(engine.enqueue).toHaveBeenCalledWith([], REPOINTS)
+      },
+    )
+  })
+
+  it('still asks to close Engine DJ when there is no queue to leave the repoints in', async () => {
+    await withEngineOpen(
+      async () => true,
+      async () => {
+        const h = host({ ensureEngineDjClosed: vi.fn(async () => false) })
+        await flushConversionBatch(h, sessions, { enqueue: vi.fn(), applyQuietly: vi.fn() })
+        expect(h.ensureEngineDjClosed).toHaveBeenCalled()
+      },
+    )
   })
 
   it('queues the repoints while the Engine library is on an unplugged drive', async () => {

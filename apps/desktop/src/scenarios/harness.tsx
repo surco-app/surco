@@ -269,7 +269,11 @@ function libraryHost(errors: string[]): LibraryHost {
   return {
     ensureTraktorClosed: async () => true,
     ensureRekordboxClosed: async () => !(await isRekordboxRunning()),
-    ensureEngineDjClosed: async () => true,
+    ensureEngineDjClosed: async () => {
+      if (!(await isEngineDjRunning())) return true
+      errors.push('asked to close Engine DJ')
+      return false
+    },
     showBlockedDialog: (key) => errors.push(`library sync blocked: ${key}`),
     reportIssue: (channel, issue) => errors.push(`${channel}: ${JSON.stringify(issue)}`),
     rekordboxHeld: () => false,

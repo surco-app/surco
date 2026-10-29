@@ -97,3 +97,83 @@ describe('Convert into Engine DJ while Engine DJ is open', () => {
     expect(rows[0][0]).toBeGreaterThan(1000)
   })
 })
+
+describe('Convert into AIFF while Engine DJ is open and follows moves', () => {
+  let library: string
+  let output: string
+  let mdb: string
+  let before: Buffer
+  let surco: Scenario
+
+  beforeAll(async () => {
+    vi.mocked(isEngineDjRunning).mockResolvedValue(true)
+    const root = scenarioDir('engine-open-sync')
+    library = join(root, 'Engine Library')
+    output = join(root, 'Surco')
+    mdb = join(library, 'Database2', 'm.db')
+    mkdirSync(join(library, 'Database2'), { recursive: true })
+    const crate = join(root, 'Crate')
+    before = Buffer.from(
+      await buildEngineDatabase(
+        [
+          {
+            relativePath: '../Crate/a.flac',
+            filename: 'a.flac',
+            fileType: 'flac',
+            fileBytes: 1,
+            title: 'Plastic Dreams',
+            artist: 'Jaydee',
+            album: '',
+            genre: '',
+            comment: '',
+            bpm: 120,
+            bpmAnalyzed: 120,
+            year: null,
+            durationSec: 300,
+            rating: 0,
+          },
+        ],
+        'Surco',
+      ),
+    )
+    writeFileSync(mdb, before)
+
+    makeTrack(join(crate, 'a.flac'), { title: 'Plastic Dreams', artist: 'Jaydee' })
+    makeTrack(join(crate, 'b.flac'), { title: 'Higher State', artist: 'Josh Wink' })
+    surco = await openSurco({
+      settings: {
+        outputDir: output,
+        outputFormat: 'aiff',
+        engineLibraryDir: library,
+        syncEngineDj: true,
+        addToEngineDj: true,
+      },
+    })
+    await surco.drop(crate)
+    await surco.convertAll()
+  }, 60_000)
+
+  it('finishes the conversion without asking to close Engine, as adding to an open Engine promises', () => {
+    expect(surco.errors).toEqual([])
+    expect(surco.summary()?.failed ?? 0).toBe(0)
+  })
+
+  it('leaves the library untouched while Engine is open, since Engine would write its own copy back over it', () => {
+    expect(readFileSync(mdb).equals(before)).toBe(true)
+  })
+
+  it('keeps both the move of the track Engine has and the add of the new one in the Engine queue', () => {
+    expect(surco.engineQueue().tracks).toBe(2)
+  })
+
+  it('moves the track Engine has to its AIFF and adds the new one once Engine closes, without a second row for the moved one', async () => {
+    vi.mocked(isEngineDjRunning).mockResolvedValue(false)
+    await surco.engineClosed()
+    expect(surco.engineQueue().tracks).toBe(0)
+    const rows = await query(mdb, 'SELECT title, path FROM Track ORDER BY title')
+    expect(rows).toEqual([
+      ['Higher State', expect.stringMatching(/b\.aiff$/)],
+      ['Plastic Dreams', expect.stringMatching(/a\.aiff$/)],
+    ])
+  })
+})
