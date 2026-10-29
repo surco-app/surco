@@ -200,6 +200,7 @@ describe('matchesFilter / qualityCounts', () => {
       suspect: 2,
       good: 1,
       unanalyzed: 2,
+      damaged: 0,
       unconverted: 4,
       failed: 0,
       automatched: 0,
@@ -863,7 +864,7 @@ describe('suspectTracks', () => {
     expect(qualityCounts([damaged, transcoded]).suspect).toBe(1)
   })
 
-  it('counts a damaged file in no verdict bucket, so the suspect, good and unanalyzed badges each match what their filter shows', () => {
+  it('counts a damaged file in none of the suspect, good and unanalyzed buckets, so each of those badges matches what its filter shows', () => {
     const damaged = {
       id: 'damaged',
       status: 'idle',
@@ -872,6 +873,29 @@ describe('suspectTracks', () => {
     const counts = qualityCounts([damaged])
     expect([counts.suspect, counts.good, counts.unanalyzed]).toEqual([0, 0, 0])
     expect(by([damaged], { quality: 'unanalyzed' })).toEqual([])
+  })
+
+  it('lists only the damaged files under the damaged filter so a broken rip can be found and replaced', () => {
+    const damaged = {
+      id: 'damaged',
+      status: 'idle',
+      spectrum: { cutoffHz: 21000, sampleRateHz: 44100, processed: false, damaged: true },
+    } as TrackItem
+    const transcoded = {
+      id: 'transcoded',
+      status: 'idle',
+      inputPath: '/x/fake.flac',
+      spectrum: { cutoffHz: 16000, sampleRateHz: 44100, processed: false, hasKnee: true },
+    } as TrackItem
+    const good = {
+      id: 'good',
+      status: 'idle',
+      spectrum: { cutoffHz: 21000, sampleRateHz: 44100, processed: false },
+    } as TrackItem
+    const fresh = { id: 'fresh', status: 'idle' } as TrackItem
+    const tracks = [damaged, transcoded, good, fresh]
+    expect(by(tracks, { quality: 'damaged' }).map((x) => x.id)).toEqual(['damaged'])
+    expect(qualityCounts(tracks).damaged).toBe(1)
   })
 
   it('returns nothing when no track has a suspect verdict, so the action stays disabled', () => {

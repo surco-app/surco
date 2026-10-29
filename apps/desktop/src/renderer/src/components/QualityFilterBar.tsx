@@ -8,6 +8,7 @@ import {
   Disc3,
   Eye,
   FileAudio,
+  FileX2,
   FlagOff,
   Gauge,
   Hourglass,
@@ -36,7 +37,7 @@ import { FilterBar, FilterDivider, FilterOption } from './FilterBar'
 import { Tooltip } from './Tooltip'
 
 // The selectable bucket modes, one row each, grouped by the dimension they belong to.
-type QualityMode = 'unanalyzed' | 'suspect' | 'good'
+type QualityMode = 'unanalyzed' | 'suspect' | 'damaged' | 'good'
 type ConversionMode =
   | 'unsaved'
   | 'unconverted'
@@ -51,7 +52,7 @@ type AttentionMode = 'silence' | 'clipping' | 'noCues' | 'unanalysedRekordbox' |
 type TagsMode = 'missingRequired' | 'noCover' | 'smallCover' | 'noBpm' | 'noKey'
 type Mode = QualityMode | ConversionMode | LibraryMode | DuplicatesMode | AttentionMode | TagsMode
 
-const QUALITY_MODES: QualityMode[] = ['unanalyzed', 'suspect', 'good']
+const QUALITY_MODES: QualityMode[] = ['unanalyzed', 'suspect', 'damaged', 'good']
 const CONVERSION_MODES: ConversionMode[] = [
   'unsaved',
   'unconverted',
@@ -77,6 +78,7 @@ const ATTENTION_MODES: AttentionMode[] = [
 const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   all: List,
   suspect: TriangleAlert,
+  damaged: FileX2,
   good: CircleCheckBig,
   unanalyzed: AudioLines,
   unconverted: RefreshCw,
@@ -123,6 +125,7 @@ function axisOf(mode: Mode): keyof Omit<FilterSelection, 'format'> {
 // for the eye, so giving it its own accessible name would only say the number twice.
 function attentionDot(mode: Mode, tally: Tally): string | null {
   if (mode === 'suspect' && tally.suspect > 0) return 'bg-warn'
+  if (mode === 'damaged' && tally.damaged > 0) return 'bg-warn'
   if (mode === 'unconverted' && tally.unconverted > 0) return 'bg-[var(--color-accent)]'
   // The retouch buckets exist to be worked through, so they carry the same amber
   // nudge as suspect while anything is left in them.

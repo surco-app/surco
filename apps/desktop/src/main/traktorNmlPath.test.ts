@@ -146,7 +146,7 @@ describe('collectionsTraktorUses', () => {
   it('reads the Root Dir from the settings Traktor Play keeps', () => {
     const play: Record<string, string> = {
       [`${ni}/Traktor 4.5.1/Traktor Play Settings.tsi`]: tsi('Macintosh HD:Users:dj:Play:'),
-      ['/Users/dj/Play/collection.nml']: '<NML/>',
+      '/Users/dj/Play/collection.nml': '<NML/>',
     }
     expect(
       collectionsTraktorUses(
@@ -164,8 +164,8 @@ describe('collectionsTraktorUses', () => {
     const upgraded: Record<string, string> = {
       [`${ni}/Traktor 4.5.1/Traktor Play Settings.tsi`]: tsi('Macintosh HD:Users:dj:Play:'),
       [`${ni}/Traktor 4.5.1/Traktor Settings.tsi`]: tsi('Macintosh HD:Users:dj:Pro:'),
-      ['/Users/dj/Play/collection.nml']: '<NML/>',
-      ['/Users/dj/Pro/collection.nml']: '<NML/>',
+      '/Users/dj/Play/collection.nml': '<NML/>',
+      '/Users/dj/Pro/collection.nml': '<NML/>',
     }
     expect(
       collectionsTraktorUses(

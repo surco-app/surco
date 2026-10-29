@@ -15,6 +15,7 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   suspect: 0,
   good: 0,
   unanalyzed: 0,
+  damaged: 0,
   unconverted: 0,
   failed: 0,
   automatched: 0,
@@ -261,6 +262,24 @@ describe('QualityFilterBar', () => {
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-unconverted'))
     expect(onChange).toHaveBeenCalledWith(sel({ quality: 'good', conversion: 'unconverted' }))
+  })
+
+  it('offers the damaged files as a quality bucket with their count so a broken rip can be isolated and replaced', () => {
+    const { onChange } = renderBar({ tally: tally({ damaged: 2, suspect: 5 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    const option = screen.getByTestId('quality-filter-damaged')
+    expect(option).toHaveTextContent(i18n.t('sidebar.filter.damaged'))
+    expect(option).toHaveTextContent('2')
+    fireEvent.click(option)
+    expect(onChange).toHaveBeenCalledWith(sel({ quality: 'damaged' }))
+  })
+
+  it('never offers to trash the damaged files, since a broken rip is not a fake and only needs replacing', () => {
+    renderBar({ value: sel({ quality: 'damaged' }), tally: tally({ damaged: 2, suspect: 5 }) })
+    expect(screen.getByTestId('quality-filter-trigger')).toHaveTextContent(
+      i18n.t('sidebar.filter.damaged'),
+    )
+    expect(screen.queryByTestId('trash-suspects')).toBeNull()
   })
 
   // Clicking the already-active bucket in a section clears that axis (back to "any") without

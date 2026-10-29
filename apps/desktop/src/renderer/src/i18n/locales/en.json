@@ -95,6 +95,7 @@
       "suspect": "Doubtful",
       "good": "Good",
       "unanalyzed": "Unanalyzed",
+      "damaged": "Damaged",
       "unconverted": "Unconverted",
       "failed": "Failed",
       "automatched": "Auto-matched",

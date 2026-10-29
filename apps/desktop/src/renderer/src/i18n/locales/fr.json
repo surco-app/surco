@@ -95,6 +95,7 @@
       "suspect": "Douteux",
       "good": "Bons",
       "unanalyzed": "Non analysés",
+      "damaged": "Endommagés",
       "unconverted": "Non convertis",
       "failed": "En échec",
       "automatched": "Auto-associés",
