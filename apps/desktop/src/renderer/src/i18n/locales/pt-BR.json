@@ -949,7 +949,11 @@
         "calls_other": "{{count}} CALL",
         "both": "{{hot}} e {{calls}}",
         "unsaved": "Você tem alterações não salvas no {{program}} para esta faixa. Elas ficam como estão.",
-        "overwrite": "Colocar lá também e perder essas alterações"
+        "overwrite": "Colocar lá também e perder essas alterações",
+        "left_one": "{{count}} não cabe: não há letras livres",
+        "left_other": "{{count}} não cabem: não há letras livres",
+        "full_one": "O hot cue não cabe: todas as letras já têm cue",
+        "full_other": "Os {{count}} hot cues não cabem: todas as letras já têm cue"
       }
     }
   },

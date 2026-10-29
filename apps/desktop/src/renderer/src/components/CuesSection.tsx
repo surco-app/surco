@@ -333,6 +333,20 @@ function TwinRows({
                 </span>
               </li>
             )
+          if (plan.status === 'full')
+            return (
+              <li
+                key={plan.contentId}
+                data-testid={`cues-twin-${plan.library}-full`}
+                className="flex items-start gap-2"
+              >
+                <CircleAlert className="mt-px h-3.5 w-3.5 shrink-0 text-warn" aria-hidden="true" />
+                <span className="w-20 shrink-0 text-fg">{name}</span>
+                <span className="text-fg-muted">
+                  {tr('editor.cues.twins.full', { count: plan.left })}
+                </span>
+              </li>
+            )
           const hot = tr('editor.cues.twins.hot', { count: plan.hot })
           return (
             <li
@@ -353,6 +367,12 @@ function TwinRows({
                       calls: tr('editor.cues.twins.calls', { count: plan.calls }),
                     })
                   : hot}
+                {plan.left > 0 && (
+                  <span data-testid={`cues-twin-${plan.library}-left`} className="text-warn">
+                    {' · '}
+                    {tr('editor.cues.twins.left', { count: plan.left })}
+                  </span>
+                )}
               </span>
             </li>
           )

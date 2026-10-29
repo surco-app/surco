@@ -949,7 +949,11 @@
         "calls_other": "{{count}} CALL",
         "both": "{{hot}} et {{calls}}",
         "unsaved": "Tu as des modifications non enregistrées dans {{program}} pour ce morceau. Elles restent telles quelles.",
-        "overwrite": "Le placer là aussi et perdre ces modifications"
+        "overwrite": "Le placer là aussi et perdre ces modifications",
+        "left_one": "{{count}} ne rentre pas : plus de lettre libre",
+        "left_other": "{{count}} ne rentrent pas : plus de lettre libre",
+        "full_one": "Le hot cue ne rentre pas : toutes les lettres ont déjà un cue",
+        "full_other": "Les {{count}} hot cues ne rentrent pas : toutes les lettres ont déjà un cue"
       }
     }
   },

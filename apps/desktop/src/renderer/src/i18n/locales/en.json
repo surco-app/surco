@@ -949,7 +949,11 @@
         "calls_other": "{{count}} CALLs",
         "both": "{{hot}} and {{calls}}",
         "unsaved": "You have unsaved changes in {{program}} for this track. They are left as they are.",
-        "overwrite": "Place it there too and lose those changes"
+        "overwrite": "Place it there too and lose those changes",
+        "left_one": "{{count}} won't fit: no free letters left",
+        "left_other": "{{count}} won't fit: no free letters left",
+        "full_one": "The hot cue won't fit: every letter already has a cue",
+        "full_other": "The {{count}} hot cues won't fit: every letter already has a cue"
       }
     }
   },

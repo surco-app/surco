@@ -43,8 +43,10 @@ export type TwinPlan =
       status: 'planned'
       hot: number
       calls: number
+      left: number
       request: SaveCuesRequest
     }
+  | { library: CueLibrary; contentId: string; status: 'full'; left: number }
   | { library: CueLibrary; contentId: string; status: 'unsaved' }
 
 const LIBRARIES: CueLibrary[] = ['rekordbox', 'traktor', 'engine']
@@ -138,26 +140,33 @@ async function planOne(
     source.breaks[0].flowId,
     read.cues.filter((c) => c.loop).map((c) => c.id),
   )
-  const placed = source.breaks.reduce(
-    (draft, { flowId, points }) =>
-      reduceDraft(
-        reduceDraft(draft, { type: 'use-flow', flowId }, ctx),
-        { type: 'batch', actions: points.map((ms) => ({ type: 'mark-drop' as const, ms })) },
-        ctx,
-      ),
-    start,
-  )
+  const marked = (from: CueDraft) =>
+    source.breaks.reduce(
+      (draft, { flowId, points }) =>
+        reduceDraft(
+          reduceDraft(draft, { type: 'use-flow', flowId }, ctx),
+          { type: 'batch', actions: points.map((ms) => ({ type: 'mark-drop' as const, ms })) },
+          ctx,
+        ),
+      from,
+    )
+  const placed = marked(start)
   const result = onlyAdded(baseline, wantedOfDraft(placed.cues), ctx.slots?.kinds ?? HOT_KINDS)
   const added = result.slice(baseline.length)
   const hot = added.filter((c) => c.kind !== 0).length
   const calls = library === 'rekordbox' ? added.length - hot : 0
-  if (hot + calls === 0) return null
+  const meant = wantedOfDraft(marked(startDraft([], source.breaks[0].flowId)).cues).filter(
+    (c) => c.kind !== 0 && !baseline.some((b) => b.kind !== 0 && near(b.ms, c.ms)),
+  ).length
+  const left = Math.max(0, meant - hot)
+  if (hot + calls === 0) return left > 0 ? { library, contentId, status: 'full', left } : null
   return {
     library,
     contentId,
     status: 'planned',
     hot,
     calls,
+    left,
     request: {
       contentId,
       path: source.path,

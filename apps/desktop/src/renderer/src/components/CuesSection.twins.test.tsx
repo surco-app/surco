@@ -51,6 +51,7 @@ beforeEach(() => {
 function setup(
   settings: Partial<Settings> = {},
   twins: Record<string, LibraryTracks> = { '/m/g.wav': { traktor: TRAKTOR } },
+  reads: Record<string, Partial<TrackCues>> = {},
 ) {
   const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
   const rekordboxCueTwins = vi.fn<Api['rekordboxCueTwins']>(async (file) => twins[file] ?? {})
@@ -58,6 +59,7 @@ function setup(
     rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (id) => ({
       ...READ,
       contentId: id,
+      ...reads[id],
     })),
     rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
     rekordboxCueTwins,
@@ -103,6 +105,36 @@ describe('a flow placed in the cue editor reaches the other DJ programs', () => 
     const traktor = saveRekordboxCues.mock.calls[0][0][1]
     expect(traktor).toMatchObject({ path: '/m/g.wav', label: 'Gowan', fingerprint: 'f0' })
     expect(traktor.wanted.filter((c) => c.kind !== 0)).toHaveLength(3)
+  })
+
+  // Reported 29/10/2026: "of the 5 I marked, Traktor got 2 or 3 at most, or none". The flow
+  // only fills the buttons the DJ left free in Traktor, and the rest used to vanish without a
+  // word, which reads as Surco failing to write them.
+  const taken = (n: number) =>
+    ALL_SLOTS.kinds
+      .slice(0, n)
+      .map((kind, i) => ({ id: `t${i}`, ms: bar(150 + i), kind, color: 1 }))
+
+  it('says how many hot cues find no free button in the other program', async () => {
+    const { saveRekordboxCues } = setup({}, undefined, { [TRAKTOR]: { cues: taken(5) } })
+    await ready()
+    markAt(bar(64))
+    const row = await screen.findByTestId('cues-twin-traktor')
+    expect(row).toHaveTextContent('2')
+    expect(screen.getByTestId('cues-twin-traktor-left')).toHaveTextContent('1')
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    expect(savedIds(saveRekordboxCues)).toEqual(['103', TRAKTOR])
+  })
+
+  it('tells the DJ when no hot cue fits there and saves nothing in that program', async () => {
+    const { saveRekordboxCues } = setup({}, undefined, { [TRAKTOR]: { cues: taken(7) } })
+    await ready()
+    markAt(bar(64))
+    expect(await screen.findByTestId('cues-twin-traktor-full')).toHaveTextContent('3')
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    expect(savedIds(saveRekordboxCues)).toEqual(['103'])
   })
 
   it('shows and saves nothing elsewhere until a break is marked with the flow', async () => {

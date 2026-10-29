@@ -106,16 +106,42 @@ describe('placing a flow in the other DJ programs', () => {
     ])
   })
 
-  it('fits the flow in the seven buttons Traktor leaves to Surco', async () => {
-    const full = HOT_KINDS.slice(0, 7).map((kind, i) => ({
-      id: `h${i}`,
-      ms: bar(150 + i),
-      kind,
-      color: 1,
-    }))
-    const { client } = setup(ALL, { [TRAKTOR]: { ...READ, contentId: TRAKTOR, cues: full } })
+  // Reported 29/10/2026: "of the 5 I marked, Traktor got 2 or 3 at most, or none". A DJ's
+  // own Traktor collection left 2 or 3 of the seven buttons free on 23 of its 42 tracks,
+  // and the hot cues that did not fit were dropped without a word, which reads as Surco
+  // failing to write them. The DJ has to see how many stay out and why.
+  const traktorWith = (taken: number) =>
+    HOT_KINDS.slice(0, taken).map((kind, i) => ({ id: `h${i}`, ms: bar(150 + i), kind, color: 1 }))
+  const FIVE = [bar(16), bar(48), bar(80), bar(112), bar(176)]
+  const hotOf = (drops: number[]) =>
+    wantedOfDraft(placed(drops, TRAKTOR_SLOTS).cues).filter((c) => c.kind !== 0).length
+
+  it('counts the hot cues that find no free button in Traktor', async () => {
+    const { client } = setup(ALL, {
+      [TRAKTOR]: { ...READ, contentId: TRAKTOR, cues: traktorWith(5) },
+    })
+    const [traktor, engine] = await twinPlans(
+      client,
+      { ...SOURCE, breaks: [{ flowId: MIX_IN.id, points: FIVE }] },
+      settings(),
+    )
+    expect(hotOf(FIVE)).toBe(5)
+    expect(traktor.status === 'planned' && [traktor.hot, traktor.left]).toEqual([2, 3])
+    expect(engine.status === 'planned' && engine.left).toBe(0)
+  })
+
+  it('reports a Traktor with every button taken instead of leaving it out', async () => {
+    const { client } = setup(ALL, {
+      [TRAKTOR]: { ...READ, contentId: TRAKTOR, cues: traktorWith(7) },
+    })
     const plans = await twinPlans(client, SOURCE, settings())
-    expect(plans.map((p) => p.contentId)).toEqual([ENGINE])
+    expect(plans.map((p) => p.contentId)).toEqual([TRAKTOR, ENGINE])
+    expect(plans[0]).toEqual({
+      library: 'traktor',
+      contentId: TRAKTOR,
+      status: 'full',
+      left: hotOf([bar(64)]),
+    })
   })
 
   // Measured on a real library: on 2 of 19 shared tracks Engine DJ counts rekordbox's beat 1

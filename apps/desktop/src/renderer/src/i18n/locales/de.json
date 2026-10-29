@@ -949,7 +949,11 @@
         "calls_other": "{{count}} CALLs",
         "both": "{{hot}} und {{calls}}",
         "unsaved": "Du hast in {{program}} ungespeicherte Änderungen an diesem Track. Sie bleiben unverändert.",
-        "overwrite": "Auch dort setzen und diese Änderungen verwerfen"
+        "overwrite": "Auch dort setzen und diese Änderungen verwerfen",
+        "left_one": "{{count}} passt nicht: keine Buchstaben mehr frei",
+        "left_other": "{{count}} passen nicht: keine Buchstaben mehr frei",
+        "full_one": "Der Hot Cue passt nicht: Jeder Buchstabe hat schon einen Cue",
+        "full_other": "Die {{count}} Hot Cues passen nicht: Jeder Buchstabe hat schon einen Cue"
       }
     }
   },
