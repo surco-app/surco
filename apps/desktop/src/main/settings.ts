@@ -65,6 +65,8 @@ export const defaults: Settings = {
   backupRetentionDays: TRASH_RETENTION_DAYS,
   backupMaxGb: TRASH_MAX_BYTES / 1024 ** 3,
   addToEngineDj: false,
+  addToRekordbox: false,
+  addToTraktor: false,
   // Engine DJ's default library location on both macOS and Windows.
   engineLibraryDir: join(app.getPath('music'), 'Engine Library'),
   // Traktor's collection folder varies by version and user preference (Traktor 4.4.1, 4.5.0, …

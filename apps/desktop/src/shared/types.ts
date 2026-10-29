@@ -216,6 +216,8 @@ export interface Settings {
   // database at engineLibraryDir. Engine references the file where it lives (it never
   // imports a copy), so the output-folder copy is always kept in this mode.
   addToEngineDj: boolean
+  addToRekordbox: boolean
+  addToTraktor: boolean
   // The Engine DJ library folder whose Database2/m.db conversions are registered in.
   // Machine-local like outputDir — a filesystem path means nothing on another machine.
   engineLibraryDir: string

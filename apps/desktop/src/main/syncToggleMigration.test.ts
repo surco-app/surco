@@ -38,6 +38,23 @@ describe('migratedSyncToggles', () => {
     expect(migratedSyncToggles({ rekordboxDbPath: '/m/master.db' })).toEqual({})
   })
 
+  it('keeps a user of the Engine DJ destination reaching Engine', () => {
+    expect(migratedSyncToggles({ addToEngineDj: true, syncEngineDj: false })).toEqual({
+      syncEngineDj: true,
+    })
+  })
+
+  it('leaves Engine alone for a user who never chose it', () => {
+    expect(migratedSyncToggles({ addToEngineDj: false })).toEqual({})
+  })
+
+  it('applies the Traktor and Engine rules independently of each other', () => {
+    expect(migratedSyncToggles({ traktorNmlPath: '/x', addToEngineDj: true })).toEqual({
+      syncTraktor: true,
+      syncEngineDj: true,
+    })
+  })
+
   it('migrates nothing for a fresh install', () => {
     expect(migratedSyncToggles({})).toEqual({})
   })

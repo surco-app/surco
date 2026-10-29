@@ -58,6 +58,8 @@ const settings: Settings = {
   backupRetentionDays: 30,
   backupMaxGb: 10,
   addToEngineDj: false,
+  addToRekordbox: false,
+  addToTraktor: false,
   engineLibraryDir: '/music/Engine Library',
   traktorNmlPath: '',
   rekordboxDbPath: '',
