@@ -36,6 +36,9 @@ jobs:
           done
           exit 1
 
+      - name: Download the Electron binary once, before the tests load it in parallel
+        run: node -e "require('electron')"
+
       - name: Lint desktop
         run: npm run lint -w apps/desktop
 
@@ -76,6 +79,9 @@ jobs:
             sleep 15
           done
           exit 1
+
+      - name: Download the Electron binary once, before the tests load it in parallel
+        run: node -e "require('electron')"
 
       - name: USB export tests
         working-directory: apps/desktop
