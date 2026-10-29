@@ -40,13 +40,14 @@ function browser(overrides: Partial<DiscogsBrowser>): DiscogsBrowser {
   }
 }
 
-function panel(b: DiscogsBrowser) {
+function panel(b: DiscogsBrowser, fileDurationSec?: number) {
   return (
     <DiscogsPanel
       browser={b}
       matchedTrack={undefined}
       matchTier={undefined}
       appliedTrack={undefined}
+      fileDurationSec={fileDurationSec}
       showTokenTip={false}
       isMulti={false}
       selectedTracks={undefined}
@@ -61,8 +62,8 @@ function panel(b: DiscogsBrowser) {
   )
 }
 
-function renderPanel(b: DiscogsBrowser) {
-  return render(panel(b))
+function renderPanel(b: DiscogsBrowser, fileDurationSec?: number) {
+  return render(panel(b, fileDurationSec))
 }
 
 describe('DiscogsPanel column width', () => {
@@ -73,6 +74,7 @@ describe('DiscogsPanel column width', () => {
         matchedTrack={undefined}
         matchTier={undefined}
         appliedTrack={undefined}
+        fileDurationSec={undefined}
         showTokenTip={false}
         isMulti={false}
         selectedTracks={undefined}
@@ -266,6 +268,7 @@ describe('DiscogsPanel suggestion marks', () => {
         matchedTrack={release.tracklist[1]}
         matchTier={matchTier}
         appliedTrack={undefined}
+        fileDurationSec={undefined}
         showTokenTip={false}
         isMulti={false}
         selectedTracks={undefined}
@@ -293,6 +296,50 @@ describe('DiscogsPanel suggestion marks', () => {
     cleanup()
     renderMatched('review')
     expect(screen.getByTestId('track-confidence')).toHaveAccessibleName('Match to confirm')
+  })
+})
+
+describe('DiscogsPanel track length check', () => {
+  const results = [
+    { provider: 'bandcamp', id: 1, title: 'LCE' },
+  ] as unknown as DiscogsBrowser['results']
+  const release = {
+    provider: 'bandcamp' as const,
+    id: 1,
+    title: 'LCE',
+    artists: [],
+    tracklist: [
+      { position: '1', title: '01 Intro', duration: '0:36' },
+      { position: '2', title: '02 Untitled Track', duration: '3:57' },
+      { position: '3', title: '03 Outro' },
+    ],
+  }
+  const openRelease = browser({ results, openKey: 'bandcamp:1', release })
+  const mismatchOf = (title: string) =>
+    within(
+      screen
+        .getAllByTestId('discogs-track')
+        .find((row) => row.textContent?.includes(title)) as HTMLElement,
+    ).queryByTestId('track-length-mismatch')
+
+  it('warns on a track far longer than the file, so a different edit is not applied unnoticed', () => {
+    renderPanel(openRelease, 35)
+    expect(mismatchOf('02 Untitled Track')).toHaveAccessibleName(
+      'Length differs from your file (0:35)',
+    )
+  })
+
+  it('stays quiet on a track whose length agrees with the file', () => {
+    renderPanel(openRelease, 35)
+    expect(mismatchOf('01 Intro')).toBeNull()
+  })
+
+  it('claims no mismatch where either length is unknown', () => {
+    renderPanel(openRelease, 35)
+    expect(mismatchOf('03 Outro')).toBeNull()
+    cleanup()
+    renderPanel(openRelease)
+    expect(screen.queryByTestId('track-length-mismatch')).toBeNull()
   })
 })
 

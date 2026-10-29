@@ -483,6 +483,7 @@
     "searchClear": "検索をクリア",
     "tokenTip": "検索はデフォルトで動作します。より高いプライベートレートリミットをご希望の場合は、<0>Settings</0>に Discogs トークンを入力してください。",
     "matchSuggested": "提案",
+    "lengthMismatch": "ファイルと長さが異なります（{{length}}）",
     "chooseAlbumHint": "リストからアルバムを選択してトラックを表示",
     "noResults": "検索に一致するアルバムがありません。",
     "noResultsFromSource": "{{provider}} はこの検索に該当するものがありません。",

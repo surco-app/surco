@@ -483,6 +483,7 @@
     "searchClear": "Effacer la recherche",
     "tokenTip": "La recherche fonctionne sans rien configurer. Ajoute ton propre token Discogs dans les <0>Réglages</0> pour une limite plus élevée et privée.",
     "matchSuggested": "Suggéré",
+    "lengthMismatch": "La durée diffère de ton fichier ({{length}})",
     "chooseAlbumHint": "Choisis un album dans la liste pour voir ses morceaux.",
     "noResults": "Aucun album ne correspond à ta recherche.",
     "noResultsFromSource": "{{provider}} n'a rien pour cette recherche.",

@@ -1344,6 +1344,7 @@ export const Editor = memo(function Editor({
         matchedTrack={matchedTrack}
         matchTier={matchTier}
         appliedTrack={appliedTrack}
+        fileDurationSec={item.duration}
         showTokenTip={showTokenTip}
         isMulti={isMulti}
         selectedTracks={selectedTracks}
