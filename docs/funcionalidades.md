@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 28 de octubre de 2026** (v1.15.0, Auto marcar aprende de cada DJ, seguras y dudosas). Levantado por primera vez el
+**Última revisión: 29 de octubre de 2026** (v1.16.0, «Todas las pistas», Music por tramos, campos Playlists de Traktor y Engine DJ, listas largas fluidas). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -1082,12 +1082,31 @@ propio. Importar los calculados estamparía estrellas que nadie dio.
 convertirla actualiza esa entrada en vez de añadir una segunda copia de la canción.
 La atadura sobrevive a cerrar y reabrir la aplicación (`sessionEdits.ts`).
 
-**La carátula que falta se toma de Music.** Un fichero sin arte incrustado hereda el de
-la biblioteca al importar (`appleMusicArtwork.ts`, `appleMusicPlaylistArt.ts`), y la
-portada se pinta ya en la fila de la pista, no solo en la ficha
-(`useTrackLibrary.ts`).
+**La carátula que falta se toma de Music, después de enseñar las filas.** Desde v1.16.0
+abrir la lista ya no espera a leer cada fichero: las filas salen en cuanto Music da la
+lista, y la carátula de las que no traen arte propio se pide a Music por lotes de 10, las
+visibles primero y solo las de la lista abierta (`useAppleMusicArtwork.ts:23`,
+`applemusic:artwork`). Antes, una lista de 406 pistas en un NAS tardaba 94 s en enseñar la
+primera fila; ahora 13 s, medido el 28/10. Si se convierte una pista cuya carátula aún no
+ha llegado, se pide justo antes de convertir, así que el fichero convertido no sale sin
+ella (`withMusicCover`, `useAppleMusicArtwork.ts:61`; lo fija el escenario
+`musicPlaylistSet.test.tsx`). La portada se pinta en la fila, no solo en la ficha.
 
-**Tres trampas de AppleScript, medidas contra Music en macOS 26:**
+**Las listas largas salen por tramos** (v1.16.0). Music tarda unos 27 ms por pista en
+resolver dónde está cada fichero de un NAS: la lista «Music» de 2.044 pistas tardaba 114 s
+en dar algo. Se lee en tramos de 200 (`MUSIC_STRETCH`, `useSourceBrowser.ts:55`;
+`buildPlaylistTracksScript`, `appleMusicPlaylists.ts:80`) y las filas aparecen según
+llegan: las primeras 200 a los 4 s, medido el 29/10. Un tramo que falla se pide otra vez
+antes de dar la lista por fallida. Mientras se relee al volver a la ventana, la lista no
+encoge al primer tramo, y el aviso de pistas sin fichero espera a tenerlos todos.
+
+**Una petición a Music cada vez** (v1.16.0). Music atiende de una en una; quince lecturas
+mandadas a la vez esperaban dentro de Music hasta caducar todas (−1712) y no abría ninguna
+lista. Ahora van en cola (`musicReads`, `appleMusicIpc.ts:178`), las listas antes que las
+carátulas, la lectura de una lista que el usuario ya dejó y aún esperaba turno se descarta,
+y varias peticiones del listado de listas comparten una sola.
+
+**Trampas de AppleScript, medidas contra Music en macOS 26:**
 
 - `count of tracks of every user playlist` **no devuelve una lista**, sino un único
   número: indexarlo tumbaba el volcado entero con «Can't make item 1 of 0 into type
@@ -1096,8 +1115,12 @@ portada se pinta ya en la fila de la pista, no solo en la ficha
   **sin error**: es una coerción del sistema, no de Music. Cada pista parecía no tener
   fichero, y una lista de 400 ficheros reales importaba 0 (`appleMusicPlaylists.ts:66`).
 - Leer pista a pista cuesta **10x**: 14,34 s contra 1,39 s en una lista de 400, con el
-  mismo resultado. Se piden las propiedades en bloque; aun así una de 982 tarda ~14 s,
-  así que el diálogo dice que está leyendo en vez de cerrarse mudo.
+  mismo resultado. Se piden las propiedades en bloque, por tramos (arriba).
+- Un tramo de **una sola pista** devuelve el valor suelto, no una lista de uno, y
+  `item 1 of alias` tumbaba la lectura (−1728). Se convierte a lista **fuera** del bloque
+  de Music (`if class of … is not list`, `appleMusicPlaylists.ts:120`): pedirle a Music
+  `(… of tracks f thru u) as list` le encargaba la conversión a él, y bajo carga falló un
+  tramo con «Can't make «class pPIS» … into type Unicode text» (−1700).
 
 Los campos viajan separados por los caracteres de control *unit separator* y *record
 separator*, no por tabulador y salto de línea: el grouping y el comentario los escribe
@@ -1124,6 +1147,19 @@ cuentan en un aviso (`sources.missing*`).
 lista las pistas que entraron en la colección en los últimos 30 días, de la más nueva a la
 más antigua (`StockDate`, `rekordboxPlaylists.ts:128-141`). Es de solo lectura: no se
 renombra, no se borra, no se reordena y no se le añaden pistas.
+
+**Todas las pistas** (nuevo en v1.16.0). En rekordbox, Engine DJ y Traktor va encima de
+«Añadidas recientemente» y lista la colección entera, la pista más reciente primero, con el
+total en el árbol (`ALL_TRACKS_ID`, `useSourceBrowser.ts:156`; `readRekordboxTrackCount`,
+`rekordboxPlaylists.ts:156`; `readEngineTrackCount`, `enginePlaylists.ts:203`;
+`readTraktorTrackCount`, `traktorPlaylists.ts:204`). Existe para encontrar las pistas que
+no están en ninguna playlist (pedido por djotas: 8.250 en su colección, ~2.000 en
+playlists). Es de solo lectura como «Añadidas recientemente», y no se ofrece como destino
+de «Añadir a playlist». **Solo se analiza y se busca lo que el usuario ve**: el
+autoanálisis y el auto-match se limitan a las filas por las que ha pasado
+(`sweepScope`, `App.tsx:1707`), porque abrir la colección es mirar, no importar, y
+lanzaría miles de análisis. Las playlists normales siguen analizándose enteras, las
+visibles primero.
 
 **Independiente de la sincronización.** Ver las playlists no necesita la opción de
 sincronizar rekordbox al convertir.
@@ -1434,6 +1470,20 @@ añade pistas que ya están en la colección y dice cuántas no estaban
 (`sources.edit.notInCollection*`). El campo aparece solo la primera vez que hay colección
 (`useOfferRekordboxField`).
 
+**Campos Playlists de Traktor y Engine DJ** (nuevo en v1.16.0). Cada biblioteca tiene su
+propio campo «Playlists» en el editor, igual que rekordbox, escrito por la cola de cada
+programa. Si la pista no estaba en la biblioteca, se da de alta al convertirla: en Engine DJ
+(`planEngineTrackPlaylists`, `engineTrackPlaylists.ts:102`) y en Traktor solo si el fichero
+está en un disco que Traktor ya conoce (`volumeOf`, `withCollectionEntry`,
+`traktorPlaylistEdit.ts:259`, `:287`). El de Traktor queda deshabilitado hasta confirmar la
+colección en Ajustes, la única en la que Surco escribe (`'unconfirmed'`,
+`useRekordboxPlaylists.ts:143`).
+
+**Mostrar en la biblioteca tras convertir** (nuevo en v1.16.0). Si la pista convertida se
+mandó a playlists, el icono de rekordbox, Engine DJ o Traktor junto al resultado
+(`editor.showInLibrary`, `ConvertFooter.tsx:290`) abre esa biblioteca en Surco con la pista
+seleccionada y sus cues abiertas (`useLibraryReveals.ts`, `lib/revealCue.ts`).
+
 **Con rekordbox abierto, los cambios esperan.** Cada gesto pide cerrarlo una vez; si sigue
 abierto, el cambio entra en una cola guardada en disco (`rekordboxQueue.ts`) que se aplica
 sola al cerrar rekordbox, y una pastilla dice cuántos cambios esperan. La cola se puede
@@ -1547,6 +1597,11 @@ hay otra antes del punto), si pone hot cue, CALL o ambos, y el color. Los flujos
 crean en Ajustes → Cues, con una vista previa sobre una pista de ejemplo a 128 BPM. La
 cuenta atrás aprendida de la colección se puede convertir en flujo desde la tarjeta «Tu forma
 de marcar» (abajo).
+
+**La cuenta atrás y los estribillos** (v1.16.0). En una regla que cuenta hacia atrás «si
+cabe», la cue que cae donde empieza una racha de estribillos se queda, porque es donde se
+entra a mezclar, y la cuenta atrás termina ahí; entre dos estribillos seguidos no se pone
+ninguna, porque la energía aún no ha bajado (`startsStrongRun`, `shared/cueRules.ts:125`).
 
 **Vista previa y clic.** Al pasar el ratón por la onda se ve en transparente lo que pondría el
 flujo (`CueFlowPreview.tsx`) y un clic lo coloca en ese punto; lo que no cabe se dice en vez de
@@ -1837,6 +1892,16 @@ comparación»* (`useDeclickAb.ts:60-67`).
 
 ### Rendimiento
 
+- **Listas largas** (v1.16.0). Pasadas 500 filas, la lista solo monta las que están
+  cerca de la pantalla (`VIRTUALIZE_MIN_ROWS`, `TrackList.tsx:136`; `@tanstack/react-virtual`).
+  Medido en la app el 28/10: con 8.250 pistas el scroll pasa de 13-15 a ~60 fps y la
+  memoria de 1 GB a ~100 MB; con 20.000 queda en ~20 fps, así que **no prometer fluidez
+  con colecciones de ese tamaño**. Teclado, selección, reordenar arrastrando y el gesto para
+  quitar una fila funcionan igual; Inicio, Fin y la paleta traen a la vista una fila aún no
+  montada (`revealRowRef`, `useListNavigation.ts`).
+- **Esqueletos al leer** (v1.16.0). Mientras se lee una playlist o la lista de playlists se
+  ven filas fantasma con la forma de las reales (`TrackListSkeleton.tsx`,
+  `source-tree-loading` en `SourceTree.tsx:374`).
 - **Importación en red:** 560 carpetas en un SMB cuestan ~20 s de round trips
   aunque esté caliente, pero el primer fichero se conoce en ~1 s. Las filas se
   publican según se identifican (`expand.ts:47-79`).
