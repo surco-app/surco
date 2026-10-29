@@ -986,11 +986,20 @@ describe('App auto-match', () => {
     await waitFor(() => expect(screen.getByTestId('auto-match')).toBeEnabled())
   })
 
-  it('leaves the button disabled without a Discogs token to search', async () => {
-    setApi({ readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }) })
+  it('sends the button to the Search settings when Discogs has no token, instead of greying it out unexplained', async () => {
+    setApi({
+      platform: 'darwin',
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+    })
     await renderApp()
     await addTwoTracks()
-    expect(screen.getByTestId('auto-match')).toBeDisabled()
+    const button = screen.getByTestId('auto-match')
+    expect(button).toHaveAccessibleName(i18n.t('header.autoMatchNoToken'))
+    fireEvent.click(button)
+    expect(await screen.findByTestId('settings-tab-search')).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
   })
 
   // Auto-match on import runs the whole drop unattended: a folder of a thousand files is

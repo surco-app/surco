@@ -1926,6 +1926,8 @@ export default function App(): React.JSX.Element {
   // dead end. Only with tracks loaded — nothing to match on an empty list.
   const needsToken =
     scopeTracks.length > 0 && !!settings?.autoMatch && !autoMatchAvailable(settings)
+  const tokenMissing =
+    !!settings && !autoMatchAvailable(settings) && usableProviders(settings).includes('discogs')
   const canProcessAll = eligibleCount > 0 && !batching
 
   // Effective key bindings (defaults + the user's overrides): the single source the
@@ -3028,6 +3030,7 @@ export default function App(): React.JSX.Element {
                   cleanedCount={cleanedCount}
                   canAutoMatch={!!settings && autoMatchAvailable(settings)}
                   needsToken={needsToken}
+                  tokenMissing={tokenMissing}
                   autoMatchable={autoMatchable}
                   onAnalyzeAll={onAnalyzeAll}
                   onCancelAnalyze={cancelAnalysis}

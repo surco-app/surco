@@ -60,6 +60,7 @@ interface Props {
   // so the sweep would silently do nothing. The button then reads as a live "add a token"
   // fix instead of a disabled control, and onFixToken opens Settings where it's set.
   needsToken: boolean
+  tokenMissing: boolean
   autoMatchable: number
   onAnalyzeAll: () => void
   onCancelAnalyze: () => void
@@ -110,6 +111,7 @@ export const Toolbar = memo(function Toolbar({
   cleanedCount,
   canAutoMatch,
   needsToken,
+  tokenMissing,
   autoMatchable,
   onAnalyzeAll,
   onCancelAnalyze,
@@ -240,15 +242,19 @@ export const Toolbar = memo(function Toolbar({
             <button
               type="button"
               data-testid="auto-match"
-              onClick={matching ? onCancelAutoMatch : needsToken ? onFixToken : onAutoMatch}
+              onClick={
+                matching ? onCancelAutoMatch : needsToken || tokenMissing ? onFixToken : onAutoMatch
+              }
               // When auto-match is on but the token is missing, the button isn't a dead
               // disabled control — it's the fix, so it stays enabled and routes to Settings.
-              disabled={!matching && !needsToken && (!canAutoMatch || autoMatchable === 0)}
+              disabled={
+                !matching && !needsToken && !tokenMissing && (!canAutoMatch || autoMatchable === 0)
+              }
               // Mid-run a press cancels, so the name has to say that and not offer the start.
               aria-label={
                 matching
                   ? tr('header.cancelAutoMatch')
-                  : needsToken
+                  : needsToken || tokenMissing
                     ? tr('header.autoMatchNoToken')
                     : tr('header.autoMatch')
               }
@@ -285,11 +291,11 @@ export const Toolbar = memo(function Toolbar({
                 label={
                   matching
                     ? tr('header.autoMatchingCount', { done: matching.done, total: matching.total })
-                    : needsToken
+                    : needsToken || tokenMissing
                       ? tr('header.autoMatchNoToken')
                       : tr('header.autoMatch')
                 }
-                hint={matching || needsToken ? undefined : hintFor('auto-match')}
+                hint={matching || needsToken || tokenMissing ? undefined : hintFor('auto-match')}
                 align="end"
               />
             </button>

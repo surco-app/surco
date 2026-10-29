@@ -30,6 +30,7 @@ function renderBar(over: Partial<Props> = {}): Props {
     cleanedCount: 0,
     canAutoMatch: true,
     needsToken: false,
+    tokenMissing: false,
     autoMatchable: 2,
     onAnalyzeAll: vi.fn(),
     onFixToken: vi.fn(),
@@ -123,7 +124,7 @@ describe('Toolbar', () => {
     )
   })
 
-  // A sweep with nothing to do must not be startable: no token means Discogs can't be
+  // A sweep with nothing to do must not be startable: no usable source means nothing can be
   // queried at all, and an all-analyzed list has nothing left to measure.
   it('disables the sweeps when they have nothing to work on', () => {
     renderBar({ canAutoMatch: false, allAnalyzed: true })
@@ -173,6 +174,17 @@ describe('Toolbar', () => {
     expect(screen.getByRole('tooltip')).toHaveTextContent(
       i18n.t('header.analyzingCount', { done: 1, total: 4 }),
     )
+  })
+
+  it('says why Match cannot run without a Discogs token and takes the user to add one', () => {
+    const props = renderBar({ tokenMissing: true, canAutoMatch: false })
+    const button = screen.getByTestId('auto-match')
+    expect(button).not.toBeDisabled()
+    expect(button).toHaveAccessibleName(i18n.t('header.autoMatchNoToken'))
+    expect(button).toHaveTextContent(i18n.t('header.autoMatchLabel'))
+    fireEvent.click(button)
+    expect(props.onFixToken).toHaveBeenCalledOnce()
+    expect(props.onAutoMatch).not.toHaveBeenCalled()
   })
 
   // A misfired Convert all used to be unstoppable from anywhere in the UI. The batch
