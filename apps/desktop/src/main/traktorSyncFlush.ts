@@ -7,7 +7,8 @@ import type { SyncResult } from './traktorNmlLibrary'
 // without booting Electron — same shape as processTrack.ts. Every collaborator that
 // touches Electron (the quit-confirm dialog, the actual file write) arrives through
 // deps; this function only sequences the four outcomes: no path configured, nothing
-// recorded, the user declined to close Traktor, or a sync attempt (written or skipped).
+// recorded, Traktor still open (the user declined to close it, or the caller does not
+// ask), or a sync attempt (written or skipped).
 
 // Every non-write reason syncCollection can return, mapped to the activity row's detail
 // line. 'traktor-running' can't reach flushTraktorSync in practice (ensureTraktorClosed
@@ -33,9 +34,11 @@ export interface FlushTraktorSyncDeps {
   // case there is nothing to sync yet and the outer batch's own end will flush later.
   endNmlBatch: () => NmlPatch[]
   // Resolves true once Traktor is confirmed not running (possibly after the user
-  // accepted quitting it); false if it's running and the user declined.
+  // accepted quitting it); false if it's running and the user declined, or if it's
+  // running and the caller does not ask.
   ensureTraktorClosed: () => Promise<boolean>
-  // Shown only on decline, so the user knows the collection was NOT updated.
+  // Shown when Traktor stays open, so the user knows the collection was NOT updated. A
+  // caller whose patches wait in a queue passes a no-op.
   showBlockedDialog: () => void
   syncCollection: (nmlPath: string, patches: NmlPatch[]) => Promise<SyncResult>
   track: Activity['track']
