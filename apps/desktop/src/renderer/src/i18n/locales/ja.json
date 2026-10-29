@@ -1794,7 +1794,8 @@
     "apply": "{{count}}に適用",
     "suggested": "提案された一致",
     "applied": "適用済み",
-    "toConfirm": "確認のためマッチ"
+    "toConfirm": "確認のためマッチ",
+    "lengthMismatch": "トラックの長さ（{{track}}）がファイル（{{length}}）と異なります"
   },
   "findReplace": {
     "title": "検索と置換",

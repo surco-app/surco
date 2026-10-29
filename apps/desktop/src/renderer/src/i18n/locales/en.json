@@ -1794,7 +1794,8 @@
     "apply": "Apply to {{count}}",
     "suggested": "Suggested match",
     "applied": "Applied",
-    "toConfirm": "Match to confirm"
+    "toConfirm": "Match to confirm",
+    "lengthMismatch": "Track length ({{track}}) differs from your file ({{length}})"
   },
   "findReplace": {
     "title": "Find & Replace",

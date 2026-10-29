@@ -240,4 +240,51 @@ describe('AlbumMatchRows', () => {
     expect(screen.getByTestId('match-select-short')).toHaveTextContent('Extended Mix')
     expect(screen.getByTestId('match-select-long')).toHaveTextContent('Extended Mix')
   })
+
+  it('marks a file auto-paired with a track whose length is off so a different edit is not applied across the album unnoticed', async () => {
+    renderRows([track('short', 'radio edit', 192)])
+    await waitFor(() =>
+      expect(screen.getByTestId('match-select-short')).toHaveTextContent('Radio Edit'),
+    )
+    expect(screen.getByTestId('match-length-mismatch-short')).toHaveAccessibleName(
+      'Track length (3:00) differs from your file (3:12)',
+    )
+  })
+
+  it('stays quiet on a file whose length agrees with its track so only real mismatches draw the eye', async () => {
+    renderRows([track('short', 'radio edit', 181), track('long', 'extended mix', 359)])
+    await waitFor(() =>
+      expect(screen.getByTestId('match-select-short')).toHaveTextContent('Radio Edit'),
+    )
+    expect(screen.queryByTestId('match-length-mismatch-short')).toBeNull()
+    expect(screen.queryByTestId('match-length-mismatch-long')).toBeNull()
+  })
+
+  it('follows a hand correction so the warning always describes the pairing about to be applied', async () => {
+    renderRows([track('short', 'radio edit', 181)])
+    await waitFor(() =>
+      expect(screen.getByTestId('match-select-short')).toHaveTextContent('Radio Edit'),
+    )
+    expect(screen.queryByTestId('match-length-mismatch-short')).toBeNull()
+    pickTrack('short', '1')
+    expect(screen.getByTestId('match-length-mismatch-short')).toHaveAccessibleName(
+      'Track length (6:00) differs from your file (3:01)',
+    )
+    pickTrack('short', '0')
+    expect(screen.queryByTestId('match-length-mismatch-short')).toBeNull()
+  })
+
+  it('makes no length claim for an unassigned row or a file of unknown length', async () => {
+    renderRows([
+      track('short', 'radio edit', 181),
+      { ...track('unknown', 'extended mix', 0), duration: undefined },
+    ])
+    await waitFor(() =>
+      expect(screen.getByTestId('match-select-unknown')).toHaveTextContent('Extended Mix'),
+    )
+    pickTrack('short', '1')
+    pickTrack('short', '')
+    expect(screen.queryByTestId('match-length-mismatch-short')).toBeNull()
+    expect(screen.queryByTestId('match-length-mismatch-unknown')).toBeNull()
+  })
 })

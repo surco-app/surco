@@ -1,4 +1,4 @@
-import { ArrowRight, Check } from 'lucide-react'
+import { ArrowRight, Check, TriangleAlert } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -10,6 +10,7 @@ import { formatTime } from '../lib/duration'
 import {
   buildReleaseMeta,
   confidenceTier,
+  durationDiffers,
   type ReleaseMetaPatch,
   trackDisplayTitle,
 } from '../lib/release'
@@ -121,6 +122,15 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
           const file = files.find((f) => f.id === a.id)
           if (!file) return null
           const tier = a.track ? confidenceTier(a.confidence) : undefined
+          const lengthMismatch =
+            file.duration !== undefined &&
+            a.track &&
+            durationDiffers(file.duration, a.track.duration)
+              ? tr('match.lengthMismatch', {
+                  track: a.track.duration,
+                  length: formatTime(file.duration),
+                })
+              : undefined
           return (
             <div key={a.id} data-testid="match-row" className="flex items-center gap-3 py-1">
               <span className="min-w-0 flex-1">
@@ -130,6 +140,17 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
                 {file.duration !== undefined && (
                   <span className="text-xs tabular-nums text-fg-dim">
                     {formatTime(file.duration)}
+                  </span>
+                )}
+                {lengthMismatch && (
+                  <span
+                    data-testid={`match-length-mismatch-${a.id}`}
+                    role="img"
+                    aria-label={lengthMismatch}
+                    className="group/dot relative ml-1 inline-flex text-warn"
+                  >
+                    <TriangleAlert className="h-3 w-3" aria-hidden="true" />
+                    <Tooltip label={lengthMismatch} align="start" scope="dot" />
                   </span>
                 )}
               </span>
