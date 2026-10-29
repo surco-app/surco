@@ -1,6 +1,9 @@
-# Weekly checks, but grouped so the noise stays at two PRs at most: Electron on
-# its own (its patch releases carry Chromium security fixes and should not wait
-# for a batch), everything else as one batch PR.
+# Weekly checks, grouped so the batch stays mergeable: Electron on its own (its
+# patch releases carry Chromium security fixes and should not wait for a batch),
+# Biome on its own (its minors add lint rules that fail CI until the code is
+# fixed), React on its own (a minor changes how it renders, so it gets tested
+# apart), every other minor and patch as one batch PR, and each major as its own
+# PR.
 #
 # NOTE: a PR that bumps `electron` only updates package.json — the pinned
 # `electronVersion` in apps/desktop/electron-builder.yml must be bumped by hand
@@ -29,11 +32,28 @@ updates:
       electron:
         patterns:
           - electron
+      biome:
+        patterns:
+          - "@biomejs/*"
+      react:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react"
+          - "@types/react-dom"
       npm-dependencies:
         patterns:
           - "*"
         exclude-patterns:
           - electron
+          - "@biomejs/*"
+          - react
+          - react-dom
+          - "@types/react"
+          - "@types/react-dom"
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: github-actions
     directory: /
