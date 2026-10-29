@@ -1413,6 +1413,7 @@
       "overwrite": "Modifier l'original"
     },
     "destinationAppleMusicHint": "Ajoute à Apple Music, sans copie dans le dossier de sortie.",
+    "destinationAppleMusicKeepCopyHint": "Ajoute à Apple Music et garde une copie dans le dossier de sortie.",
     "destinationEngineDjHint": "L'enregistre dans ta bibliothèque Engine DJ ; le fichier reste dans le dossier de sortie.",
     "destinationBesideHint": "Écrit la conversion à côté du fichier source, sans jamais y toucher ; au même format, la copie prend un nom « (2) ».",
     "destinationOverwriteHint": "Réécrit chaque fichier source sur place ; pas de copie de sortie. Changer de format supprime l'original.",

@@ -210,6 +210,31 @@ describe('OnboardingWizard destination', () => {
     )
   })
 
+  it('describes the output-folder copy an untouched Apple Music default really keeps', () => {
+    const onFinish = vi.fn()
+    render(
+      <OnboardingWizard
+        settings={{ ...settings, addToAppleMusic: true, keepOutputCopy: true }}
+        onFinish={onFinish}
+      />,
+    )
+    for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    expect(screen.getByTestId('onboarding-destination-appleMusic')).toBeChecked()
+    expect(screen.getByText(i18n.t('settings.destinationAppleMusicKeepCopyHint'))).toBeVisible()
+    expect(screen.queryByText(i18n.t('settings.destinationAppleMusicHint'))).toBeNull()
+    for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    expect(onFinish).toHaveBeenCalledWith(
+      expect.objectContaining({ addToAppleMusic: true, keepOutputCopy: true }),
+    )
+  })
+
+  it('describes Apple Music as copy-free once picking it drops the folder copy', () => {
+    openFormatStep()
+    expect(screen.getByText(i18n.t('settings.destinationAppleMusicHint'))).toBeVisible()
+    fireEvent.click(screen.getByTestId('onboarding-destination-appleMusic'))
+    expect(screen.getByText(i18n.t('settings.destinationAppleMusicHint'))).toBeVisible()
+  })
+
   // The wizard's whole point is configuring the first conversion — and WHERE the files
   // land is the first thing a new user will look for after it. The folder shows (and is
   // changeable) right under its radio, exactly like Settings, and only for the choice

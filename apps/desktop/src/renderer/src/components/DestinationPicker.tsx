@@ -11,6 +11,7 @@ interface Props {
   // FLAC can't go to Apple Music, so its options pin to the folder while it's the
   // chosen format. Overwrite rewrites the source in place and stays valid.
   flacOnly: boolean
+  keepOutputCopy: boolean
   // Each option's data-testid is `${testidPrefix}-${destination}`.
   testidPrefix: string
   radioName: string
@@ -30,6 +31,7 @@ export function DestinationPicker({
   value,
   onChange,
   flacOnly,
+  keepOutputCopy,
   testidPrefix,
   radioName,
   details,
@@ -64,7 +66,9 @@ export function DestinationPicker({
                   {tr(`settings.destinations.${d}`)}
                   {d === 'appleMusic' && (
                     <span className="mt-0.5 block text-xs leading-relaxed text-fg-dim">
-                      {tr('settings.destinationAppleMusicHint')}
+                      {keepOutputCopy && value === 'appleMusic'
+                        ? tr('settings.destinationAppleMusicKeepCopyHint')
+                        : tr('settings.destinationAppleMusicHint')}
                     </span>
                   )}
                   {d === 'engineDj' && (

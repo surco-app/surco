@@ -239,6 +239,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                     value={destination}
                     onChange={chooseDestination}
                     flacOnly={synced.outputFormat === 'flac'}
+                    keepOutputCopy={synced.keepOutputCopy}
                     testidPrefix="onboarding-destination"
                     radioName="onboarding-destination"
                     details={{

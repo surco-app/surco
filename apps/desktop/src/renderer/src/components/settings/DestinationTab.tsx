@@ -168,6 +168,7 @@ export function DestinationTab({
           value={destination}
           onChange={chooseDestination}
           flacOnly={flacOnly}
+          keepOutputCopy={synced.keepOutputCopy}
           testidPrefix="settings-destination"
           radioName="destination"
           details={{ folder: folderDetail, engineDj: engineDetail }}
