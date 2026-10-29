@@ -99,6 +99,7 @@
       "damaged": "Damaged",
       "unconverted": "Unconverted",
       "failed": "Failed",
+      "skipped": "Skipped",
       "automatched": "Auto-matched",
       "matchReview": "To confirm",
       "matchedDiscogs": "Discogs",
@@ -468,6 +469,12 @@
       "done": "Done",
       "stale": "Unapplied changes",
       "error": "Error"
+    },
+    "skipReason": {
+      "conflictDeclined": "Skipped: you kept the existing file rather than replace it",
+      "noEquivalentFormat": "Skipped: no equivalent output format for Same as source",
+      "keptAsIs": "Skipped: stays as it is because “Keep MP3 and M4A files as they are” is on with “Next to the original”",
+      "cancelled": "Skipped: the conversion was cancelled"
     },
     "stage": {
       "cover": "Preparing artwork…",

@@ -99,6 +99,7 @@
       "damaged": "破損",
       "unconverted": "未変換",
       "failed": "失敗",
+      "skipped": "スキップ",
       "automatched": "自動マッチ済み",
       "matchReview": "要確認",
       "matchedDiscogs": "Discogs",
@@ -468,6 +469,12 @@
       "done": "完了",
       "stale": "未適用の変更",
       "error": "エラー"
+    },
+    "skipReason": {
+      "conflictDeclined": "スキップ：既存のファイルを置き換えずに残しました",
+      "noEquivalentFormat": "スキップ：「ソースと同じ」に相当する出力形式がありません",
+      "keptAsIs": "スキップ：「MP3 と M4A ファイルはそのまま保持」が「元の横」で有効なため、そのままです",
+      "cancelled": "スキップ：変換がキャンセルされました"
     },
     "stage": {
       "cover": "アートワークを準備中…",

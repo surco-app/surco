@@ -2133,6 +2133,11 @@ export default function App(): React.JSX.Element {
     setSearch('')
   })
 
+  const onShowSkipped = useStableCallback(() => {
+    setFilterSelection({ ...EMPTY_FILTER, conversion: 'skipped' })
+    setSearch('')
+  })
+
   // Stable like the other editor props so a search keystroke doesn't re-render the
   // memoized Editor: records which track's field has focus for the sweep's edit guard.
   const onFieldFocusChange = useStableCallback((id: string | null) => {
@@ -3050,6 +3055,7 @@ export default function App(): React.JSX.Element {
                   importing={importProgress}
                   batchSummary={batchSummary}
                   onShowFailed={onShowFailed}
+                  onShowSkipped={onShowSkipped}
                   batching={batching}
                   batchProgress={batchProgress}
                   analysis={analysis}

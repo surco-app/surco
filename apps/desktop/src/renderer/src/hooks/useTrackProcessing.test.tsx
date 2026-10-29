@@ -687,7 +687,11 @@ describe('useTrackProcessing', () => {
     await act(async () => {
       outcome = await result.current.processOne('a')
     })
-    expect(updateTrack).toHaveBeenLastCalledWith('a', { status: 'idle', stage: undefined })
+    expect(updateTrack).toHaveBeenLastCalledWith('a', {
+      status: 'idle',
+      stage: undefined,
+      skipReason: 'Skipped: the conversion was cancelled',
+    })
     expect(onProcessError).not.toHaveBeenCalled()
     expect(outcome).toBe('skipped')
   })
@@ -1461,6 +1465,65 @@ describe('useTrackProcessing', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('keeps a summary that reports skips past the auto-dismiss delay so its count can still lead to the skipped rows', async () => {
+    vi.useFakeTimers()
+    try {
+      setApi({
+        processTrack: vi
+          .fn<Api['processTrack']>()
+          .mockResolvedValue({ outputPath: '', inPlace: false, skipped: true }),
+      })
+      const tracks = [track({ id: 'a' })]
+      const { result } = renderHook(
+        () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+        { wrapper: withClient() },
+      )
+      await act(async () => {
+        await result.current.processAll(tracks)
+      })
+      await act(async () => {
+        vi.advanceTimersByTime(6000)
+      })
+      expect(result.current.batchSummary).toEqual({
+        converted: 0,
+        skipped: 1,
+        failed: 0,
+        cancelled: false,
+      })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('records why a track was skipped and clears it once the track converts again', async () => {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValueOnce({ outputPath: '', inPlace: false, skipped: true })
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    setApi({ processTrack })
+    const updateTrack = vi.fn()
+    const tracks = [track({ id: 'a' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    expect(updateTrack).toHaveBeenCalledWith(
+      'a',
+      expect.objectContaining({ skipReason: expect.stringMatching(/.+/) }),
+    )
+    updateTrack.mockClear()
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(updateTrack).toHaveBeenCalledWith(
+      'a',
+      expect.objectContaining({ status: 'processing', skipReason: undefined }),
+    )
   })
 
   // Each queued job re-read Settings when its turn came, so enabling "overwrite

@@ -197,6 +197,7 @@ export interface TrackItem {
   // show it and undo it. Dropped once an export writes the values out.
   cleaned?: Partial<Record<MusicReviewField, FieldCleanup>>
   error?: string
+  skipReason?: string
   // Tracks a manual "add to Apple Music" run, independent of status so the track
   // stays 'done' while it adds. 'error' carries the reason in musicError.
   musicStatus?: 'adding' | 'added' | 'error'

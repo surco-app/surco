@@ -99,6 +99,7 @@
       "damaged": "Endommagés",
       "unconverted": "Non convertis",
       "failed": "En échec",
+      "skipped": "Ignorés",
       "automatched": "Auto-associés",
       "matchReview": "À confirmer",
       "matchedDiscogs": "Discogs",
@@ -468,6 +469,12 @@
       "done": "Terminé",
       "stale": "Modifications non appliquées",
       "error": "Erreur"
+    },
+    "skipReason": {
+      "conflictDeclined": "Ignoré : tu as gardé le fichier existant au lieu de le remplacer",
+      "noEquivalentFormat": "Ignoré : pas de format de sortie équivalent pour Comme la source",
+      "keptAsIs": "Ignoré : reste tel quel car « Conserver les MP3 et M4A tels quels » est activé avec « À côté de l'original »",
+      "cancelled": "Ignoré : la conversion a été annulée"
     },
     "stage": {
       "cover": "Préparation de la pochette…",

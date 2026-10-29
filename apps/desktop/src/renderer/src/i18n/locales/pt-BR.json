@@ -99,6 +99,7 @@
       "damaged": "Danificadas",
       "unconverted": "Sem converter",
       "failed": "Com erro",
+      "skipped": "Puladas",
       "automatched": "Auto-associadas",
       "matchReview": "A confirmar",
       "matchedDiscogs": "Discogs",
@@ -468,6 +469,12 @@
       "done": "Concluído",
       "stale": "Alterações não aplicadas",
       "error": "Erro"
+    },
+    "skipReason": {
+      "conflictDeclined": "Pulada: você manteve o arquivo existente em vez de substituí-lo",
+      "noEquivalentFormat": "Pulada: não há formato de saída equivalente para Igual à origem",
+      "keptAsIs": "Pulada: fica como está porque “Manter arquivos MP3 e M4A como estão” está ativo com “Ao lado do original”",
+      "cancelled": "Pulada: a conversão foi cancelada"
     },
     "stage": {
       "cover": "Preparando a capa…",

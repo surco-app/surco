@@ -21,6 +21,7 @@ import {
   Plus,
   RefreshCw,
   Scissors,
+  SkipForward,
   SlidersHorizontal,
   Sparkles,
   Store,
@@ -42,6 +43,7 @@ type ConversionMode =
   | 'unsaved'
   | 'unconverted'
   | 'failed'
+  | 'skipped'
   | 'automatched'
   | 'matchReview'
   | 'matchedDiscogs'
@@ -57,6 +59,7 @@ const CONVERSION_MODES: ConversionMode[] = [
   'unsaved',
   'unconverted',
   'failed',
+  'skipped',
   'automatched',
   'matchReview',
   'matchedDiscogs',
@@ -83,6 +86,7 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   unanalyzed: AudioLines,
   unconverted: RefreshCw,
   failed: CircleAlert,
+  skipped: SkipForward,
   automatched: Sparkles,
   matchReview: Eye,
   matchedDiscogs: Disc3,

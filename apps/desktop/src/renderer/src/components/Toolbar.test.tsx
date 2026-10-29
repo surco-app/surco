@@ -21,6 +21,7 @@ function renderBar(over: Partial<Props> = {}): Props {
     importing: null,
     batchSummary: null,
     onShowFailed: vi.fn(),
+    onShowSkipped: vi.fn(),
     batching: false,
     analysis: null,
     analysisPaused: false,

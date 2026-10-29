@@ -18,6 +18,7 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   damaged: 0,
   unconverted: 0,
   failed: 0,
+  skipped: 0,
   automatched: 0,
   matchReview: 0,
   matchedDiscogs: 0,

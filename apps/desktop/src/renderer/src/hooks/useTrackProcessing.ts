@@ -181,10 +181,16 @@ export function useTrackProcessing({
 
   // The batch summary is a transient confirmation, not a persistent banner — it clears
   // itself a few seconds after a run so it never lingers over later work. A run that had
-  // failures is the exception: its "N failed" count is worth reading after the fact, so it
-  // stays until the next run replaces it rather than vanishing on the timer.
+  // failures or skips is the exception: its "N failed" and "N skipped" counts lead to those
+  // rows, so it stays until the next run replaces it rather than vanishing on the timer.
   useEffect(() => {
-    if (!batchSummary || batchSummary.failed > 0 || batchSummary.cancelled === true) return
+    if (
+      !batchSummary ||
+      batchSummary.failed > 0 ||
+      batchSummary.skipped > 0 ||
+      batchSummary.cancelled === true
+    )
+      return
     const id = setTimeout(() => setBatchSummary(null), 6000)
     return () => clearTimeout(id)
   }, [batchSummary])
@@ -264,7 +270,11 @@ export function useTrackProcessing({
       // kept, the file isn't touched. A concrete format pick is a deliberate override,
       // so it still converts normally.
       if (pickedFormat === 'source' && !hasFormatEquivalent(track.inputPath)) {
-        updateTrack(id, { status: 'idle', stage: undefined })
+        updateTrack(id, {
+          status: 'idle',
+          stage: undefined,
+          skipReason: tr('trackList.skipReason.noEquivalentFormat'),
+        })
         onFormatSkipped?.(track.listLabel)
         return 'skipped'
       }
@@ -300,7 +310,11 @@ export function useTrackProcessing({
         (destination?.convertBesideOriginal ?? settings?.convertBesideOriginal ?? false) &&
         !processesAudio(jobAudio(track, normalizeOverride, declickOverride, settings))
       if (keptBesideOriginal) {
-        updateTrack(id, { status: 'idle', stage: undefined })
+        updateTrack(id, {
+          status: 'idle',
+          stage: undefined,
+          skipReason: tr('trackList.skipReason.keptAsIs'),
+        })
         onKeptAsIs?.(track.listLabel)
         return 'skipped'
       }
@@ -311,6 +325,7 @@ export function useTrackProcessing({
       updateTrack(id, {
         status: 'processing',
         error: undefined,
+        skipReason: undefined,
         stage: undefined,
         format: jobFormat,
         musicStatus: undefined,
@@ -390,7 +405,11 @@ export function useTrackProcessing({
         // The user declined to overwrite a conflicting file: nothing was written, so
         // leave the track convertible (idle) rather than marking it done or failed.
         if (result.skipped) {
-          updateTrack(id, { status: 'idle', stage: undefined })
+          updateTrack(id, {
+            status: 'idle',
+            stage: undefined,
+            skipReason: tr('trackList.skipReason.conflictDeclined'),
+          })
           return 'skipped'
         }
         // Converted, but the requested loudness normalization couldn't be measured, so the
@@ -448,7 +467,11 @@ export function useTrackProcessing({
       } catch (e) {
         const raw = e instanceof Error ? cleanIpcError(e.message) : ''
         if (errorKeyOf(raw) === 'conversionCancelled') {
-          updateTrack(id, { status: 'idle', stage: undefined })
+          updateTrack(id, {
+            status: 'idle',
+            stage: undefined,
+            skipReason: tr('trackList.skipReason.cancelled'),
+          })
           return 'skipped'
         }
         // The held-file case keeps its own string: it is matched on a marker embedded
@@ -641,7 +664,10 @@ export function useTrackProcessing({
         // Music. Cancel is checked per task rather than breaking a loop: an already-running
         // conversion can't be aborted, but every not-yet-started one bails as 'skipped'.
         results = await mapWithConcurrency(ids, concurrency, async (id) => {
-          if (cancelBatchRef.current) return 'skipped'
+          if (cancelBatchRef.current) {
+            updateTrack(id, { skipReason: tr('trackList.skipReason.cancelled') })
+            return 'skipped'
+          }
           // runOne, not processOne: this loop is already inside processAll's own
           // begin/end pair, and calling the bracketed processOne here would open and
           // close a batch per track, flushing (and rewriting collection.nml) 300 times

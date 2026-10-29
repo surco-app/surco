@@ -4686,6 +4686,37 @@ describe('App conversion failure notice', () => {
     expect(screen.getByTestId('track-row')).toHaveTextContent('Second')
   })
 
+  it('filters the list to the skipped tracks when the run summary skip count is clicked, each saying why it was skipped', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi
+        .fn()
+        .mockResolvedValueOnce({ title: 'Pray', artist: 'A' })
+        .mockResolvedValueOnce({ title: 'Second', artist: 'B' })
+        .mockResolvedValueOnce({ title: 'Third', artist: 'C' }),
+      processTrack: vi.fn(async ({ inputPath }: { inputPath: string }) => {
+        if (inputPath === '/music/b.wav') return { outputPath: '/out/x.aiff', inPlace: false }
+        return { outputPath: '', inPlace: false, skipped: true }
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    fireEvent.click(await screen.findByTestId('convert-all'))
+    const skippedCount = await screen.findByTestId('batch-skipped-count')
+    expect(skippedCount).toHaveTextContent('2 skipped')
+    fireEvent.click(skippedCount)
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    const rows = screen.getAllByTestId('track-row')
+    expect(rows[0]).toHaveTextContent('Pray')
+    expect(rows[1]).toHaveTextContent('Third')
+    for (const row of rows) {
+      expect(within(row).getByTestId('track-status')).toHaveTextContent(
+        'Skipped: you kept the existing file rather than replace it',
+      )
+    }
+  })
+
   // Reported from a video: filtered to the 79 auto-matched rows, the button read "Convert
   // 81 tracks" and then converted 79. The run already honoured the filter; the label
   // counted every loaded track, so the user was promised work the click would not do.

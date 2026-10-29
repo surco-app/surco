@@ -41,6 +41,7 @@ interface Props {
   // Filters the list down to the rows whose conversion failed, so the summary's failure
   // count is a way into them instead of a number the user has to act on by eye.
   onShowFailed: () => void
+  onShowSkipped: () => void
   batching: boolean
   // Progress of the running batch (convert-all / add-all), shown as a cancellable pill
   // while `batching` — the conversion's counterpart of the sweep buttons below.
@@ -102,6 +103,7 @@ export const Toolbar = memo(function Toolbar({
   importing,
   batchSummary,
   onShowFailed,
+  onShowSkipped,
   batching,
   batchProgress,
   analysis,
@@ -180,14 +182,25 @@ export const Toolbar = memo(function Toolbar({
               // on its own and skipped tracks for some other reason.
               batchSummary.cancelled === true && tr('header.batchCancelled'),
               tr('header.batchConverted', { count: batchSummary.converted }),
-              batchSummary.skipped > 0 &&
-                tr('header.batchSkipped', { count: batchSummary.skipped }),
             ]
               .filter(Boolean)
               .join(' · ')}
-            {/* The failure count is the one segment worth acting on, so it's a button
-                rather than text: it filters the list down to the rows that failed. The
-                count used to point nowhere, leaving the user to find them by eye. */}
+            {/* The skip and failure counts are the segments worth acting on, so they're
+                buttons rather than text: each filters the list down to the rows it counts.
+                The counts used to point nowhere, leaving the user to find them by eye. */}
+            {batchSummary.skipped > 0 && (
+              <>
+                {' · '}
+                <button
+                  type="button"
+                  data-testid="batch-skipped-count"
+                  onClick={onShowSkipped}
+                  className="underline-offset-2 hover:underline"
+                >
+                  {tr('header.batchSkipped', { count: batchSummary.skipped })}
+                </button>
+              </>
+            )}
             {batchSummary.failed > 0 && (
               <>
                 {' · '}

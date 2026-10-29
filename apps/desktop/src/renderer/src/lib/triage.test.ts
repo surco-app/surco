@@ -203,6 +203,7 @@ describe('matchesFilter / qualityCounts', () => {
       damaged: 0,
       unconverted: 4,
       failed: 0,
+      skipped: 0,
       automatched: 0,
       matchReview: 0,
       matchedDiscogs: 0,
@@ -800,6 +801,17 @@ describe('failed filter', () => {
       'unmeasured',
     ])
     expect(qualityCounts(more).failed).toBe(4)
+  })
+})
+
+describe('skipped filter', () => {
+  const t = (id: string, skipReason?: string): TrackItem =>
+    ({ id, status: 'idle', skipReason }) as TrackItem
+  const tracks = [t('pending'), t('kept', 'kept existing'), t('cancelled', 'cancelled')]
+
+  it('keeps only the tracks a run skipped, not every idle track that was never attempted', () => {
+    expect(by(tracks, { conversion: 'skipped' }).map((x) => x.id)).toEqual(['kept', 'cancelled'])
+    expect(qualityCounts(tracks).skipped).toBe(2)
   })
 })
 

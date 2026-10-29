@@ -99,6 +99,7 @@
       "damaged": "Beschädigt",
       "unconverted": "Nicht konvertiert",
       "failed": "Fehlgeschlagen",
+      "skipped": "Übersprungen",
       "automatched": "Auto-abgeglichen",
       "matchReview": "Zu bestätigen",
       "matchedDiscogs": "Discogs",
@@ -468,6 +469,12 @@
       "done": "Fertig",
       "stale": "Nicht angewendete Änderungen",
       "error": "Fehler"
+    },
+    "skipReason": {
+      "conflictDeclined": "Übersprungen: Du hast die vorhandene Datei behalten, statt sie zu ersetzen",
+      "noEquivalentFormat": "Übersprungen: kein passendes Ausgabeformat für Wie die Quelle",
+      "keptAsIs": "Übersprungen: bleibt, wie es ist, weil „MP3- und M4A-Dateien behalten“ mit „Neben dem Original“ aktiv ist",
+      "cancelled": "Übersprungen: Die Konvertierung wurde abgebrochen"
     },
     "stage": {
       "cover": "Cover wird vorbereitet…",

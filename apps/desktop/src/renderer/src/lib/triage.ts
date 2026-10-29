@@ -50,6 +50,7 @@ export type ConversionFilter =
   | 'unsaved'
   | 'unconverted'
   | 'failed'
+  | 'skipped'
   | 'automatched'
   | 'matchReview'
   | 'matchedDiscogs'
@@ -150,6 +151,7 @@ function matchesConversion(
   if (filter === 'unsaved') return facts.unsaved(track)
   if (filter === 'unconverted') return track.status !== 'done'
   if (filter === 'failed') return hasFailed(track)
+  if (filter === 'skipped') return track.skipReason !== undefined
   if (filter === 'matchReview') return Boolean(track.matchReview)
   if (filter === 'matchedDiscogs') return track.matchProvider === 'discogs'
   if (filter === 'matchedBandcamp') return track.matchProvider === 'bandcamp'
@@ -375,6 +377,7 @@ export function qualityCounts(
   damaged: number
   unconverted: number
   failed: number
+  skipped: number
   automatched: number
   matchReview: number
   matchedDiscogs: number
@@ -400,6 +403,7 @@ export function qualityCounts(
   let damaged = 0
   let unconverted = 0
   let failed = 0
+  let skipped = 0
   let automatched = 0
   let matchReview = 0
   let matchedDiscogs = 0
@@ -426,6 +430,7 @@ export function qualityCounts(
     else if (q === 'damaged') damaged += 1
     if (t.status !== 'done') unconverted += 1
     if (hasFailed(t)) failed += 1
+    if (t.skipReason !== undefined) skipped += 1
     if (t.autoMatched) automatched += 1
     if (t.matchReview) matchReview += 1
     if (t.matchProvider === 'discogs') matchedDiscogs += 1
@@ -453,6 +458,7 @@ export function qualityCounts(
     damaged,
     unconverted,
     failed,
+    skipped,
     automatched,
     matchReview,
     matchedDiscogs,

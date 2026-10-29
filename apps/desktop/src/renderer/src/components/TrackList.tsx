@@ -506,7 +506,8 @@ const TrackRow = memo(function TrackRow({
   const unanalyzed = unanalysedIn(t)
   // Shared by each mark's hover tooltip and its sr-only twin, so what a screen reader
   // hears is the same sentence the pointer reveals.
-  const statusLabel = tr(stale ? 'trackList.status.stale' : `trackList.status.${t.status}`)
+  const statusLabel =
+    t.skipReason ?? tr(stale ? 'trackList.status.stale' : `trackList.status.${t.status}`)
   const autoMatchLabel = matchTooltip(
     t.matchProvider
       ? tr('trackList.autoMatchedFrom', { source: tr(`settings.provider.${t.matchProvider}`) })
@@ -713,8 +714,11 @@ const TrackRow = memo(function TrackRow({
             {!converting && <StatusBadge track={t} stale={stale} />}
             <Tooltip label={statusLabel} align="start" scope="dot" />
             {/* The badge is an unlabelled shape and the tooltip only shows on hover, so the
-                state is spoken from here. Idle draws no badge and stays silent too. */}
-            {(stale || t.status !== 'idle') && <span className="sr-only">{statusLabel}</span>}
+                state is spoken from here. Idle draws no badge and stays silent unless it was
+                skipped, when the reason is spoken instead. */}
+            {(stale || t.status !== 'idle' || t.skipReason !== undefined) && (
+              <span className="sr-only">{statusLabel}</span>
+            )}
           </span>
           {/* The row tooltip (frozen listLabel — not the editable meta.title — so it matches
               what the row shows) is scoped to the text itself, not this flex-1 layout slot:
