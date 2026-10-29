@@ -1141,4 +1141,73 @@ describe('stable search', () => {
     await waitFor(() => expect(result.current.choosingBest).toBe(false))
     expect(result.current.suggestedKey).toBeNull()
   })
+
+  describe('a source that fails while others answer', () => {
+    const bandcampHit = { provider: 'bandcamp' as const, id: 7, title: 'Some Album' }
+    const rateLimited = new Error(
+      "Error invoking remote method 'search': Error: SURCO_ERR:discogsRateLimit",
+    )
+
+    function searchWhere(discogs: () => Promise<unknown>) {
+      return vi.fn((_term: string, source: string) =>
+        source === 'discogs' ? discogs() : Promise.resolve([bandcampHit]),
+      )
+    }
+
+    // The rows of the source that answered are enough to look final, so a source that
+    // silently vanished from them read as "Discogs has nothing" instead of "Discogs failed".
+    it('names the failed source and keeps the results of the others', async () => {
+      setApi({ search: searchWhere(() => Promise.reject(rateLimited)) })
+      const { result } = renderHook(
+        () =>
+          useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, ['discogs', 'bandcamp']),
+        { wrapper: wrapper() },
+      )
+      act(() => result.current.doSearch())
+      await waitFor(() => expect(result.current.results).toHaveLength(1))
+      expect(result.current.results[0].provider).toBe('bandcamp')
+      expect(result.current.failedSources).toEqual(['discogs'])
+      expect(result.current.error).toBe('')
+    })
+
+    // Retrying must not refetch what already answered: the rows being read would be
+    // re-ranked under the user's pointer.
+    it('retries only the failed source, and the notice goes once it answers', async () => {
+      let attempts = 0
+      const search = searchWhere(() =>
+        ++attempts === 1 ? Promise.reject(rateLimited) : Promise.resolve([searchResult]),
+      )
+      setApi({ search })
+      const { result } = renderHook(
+        () =>
+          useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, ['discogs', 'bandcamp']),
+        { wrapper: wrapper() },
+      )
+      act(() => result.current.doSearch())
+      await waitFor(() => expect(result.current.failedSources).toEqual(['discogs']))
+      act(() => result.current.retrySearch())
+      await waitFor(() => expect(result.current.failedSources).toEqual([]))
+      expect(search.mock.calls.filter(([, source]) => source === 'bandcamp')).toHaveLength(1)
+      expect(search.mock.calls.filter(([, source]) => source === 'discogs')).toHaveLength(2)
+    })
+
+    // A source needing a token the user has not set has its own messaging; a second
+    // line about it on every search would nag.
+    it('stays quiet about a source that is not connected', async () => {
+      const notConnected = new Error('SURCO_ERR:beatportNotConnected')
+      setApi({
+        search: vi.fn((_term: string, source: string) =>
+          source === 'beatport' ? Promise.reject(notConnected) : Promise.resolve([bandcampHit]),
+        ),
+      })
+      const { result } = renderHook(
+        () =>
+          useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, ['beatport', 'bandcamp']),
+        { wrapper: wrapper() },
+      )
+      act(() => result.current.doSearch())
+      await waitFor(() => expect(result.current.results).toHaveLength(1))
+      expect(result.current.failedSources).toEqual([])
+    })
+  })
 })

@@ -81,6 +81,16 @@ describe('mainErrorMessage', () => {
     expect(mainErrorMessage(e, translate, 'fallback')).toBe('ffmpeg exited 1')
   })
 
+  it.each([
+    'fetch failed',
+    'getaddrinfo ENOTFOUND api.discogs.com',
+    'net::ERR_INTERNET_DISCONNECTED',
+  ])('names a dropped connection as offline instead of showing "%s"', (raw) => {
+    expect(mainErrorMessage(new Error(`${IPC_PREFIX}${raw}`), translate, 'fallback')).toBe(
+      'translated:errors.offline',
+    )
+  })
+
   // A rejection that is not an Error at all (or carries no message) has nothing to
   // show, so the caller's own wording stands in.
   it('falls back when there is no message to show', () => {
