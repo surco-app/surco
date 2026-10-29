@@ -174,6 +174,32 @@ describe('Toolbar', () => {
     expect(screen.getByTestId('import-progress')).toHaveTextContent('212/319')
   })
 
+  // The bar is pinned to the trailing edge, so a counter gaining a digit (9 → 10, 999 →
+  // 1000) pushed every icon to its left sideways mid-run. Each counter holds the width of
+  // the widest value it can reach, so the bar stays still while the numbers tick.
+  it('reserves every counter the width of its final value so the bar holds still', () => {
+    renderBar({
+      convertibleCount: 9,
+      batchSize: 2041,
+      importing: { done: 7, total: 1642 },
+      matching: { done: 3, total: 266 },
+      analysis: { done: 31, total: 200 },
+    })
+    expect(screen.getByTestId('import-progress-sizer')).toHaveTextContent(
+      i18n.t('header.importingCount', { done: 1642, total: 1642 }),
+    )
+    expect(screen.getByTestId('auto-match-progress-sizer')).toHaveTextContent('266/266')
+    expect(screen.getByTestId('analyze-progress-sizer')).toHaveTextContent('200/200')
+    expect(screen.getByTestId('convert-all-sizer')).toHaveTextContent(
+      i18n.t('header.convertSome', { ready: 2041, total: 2041 }),
+    )
+    cleanup()
+    renderBar({ batching: true, batchProgress: { done: 3, total: 120 } })
+    expect(screen.getByTestId('convert-all-sizer')).toHaveTextContent(
+      i18n.t('header.convertingCount', { done: 120, total: 120 }),
+    )
+  })
+
   // Importing is the longest operation in the app — thousands of files on a NAS — and
   // was the only sweep with no way out: the other three pills cancel on click and this
   // one was an inert span, so a wrong folder meant waiting it out.

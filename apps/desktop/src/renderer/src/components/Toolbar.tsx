@@ -215,9 +215,15 @@ export const Toolbar = memo(function Toolbar({
                 glyph already; this is the import's, echoing the Add files button it
                 follows from. */}
             <FilePlus className="h-4 w-4" aria-hidden="true" />
-            <span>
+            <SteadyWidth
+              testid="import-progress-sizer"
+              widest={tr('header.importingCount', {
+                done: importing.total,
+                total: importing.total,
+              })}
+            >
               {tr('header.importingCount', { done: importing.done, total: importing.total })}
-            </span>
+            </SteadyWidth>
             <Tooltip label={tr('header.cancelImport')} align="end" />
           </button>
         )}
@@ -252,9 +258,14 @@ export const Toolbar = memo(function Toolbar({
                 aria-hidden="true"
               />
               {matching && (
-                <span data-testid="auto-match-progress" className="text-xs tabular-nums">
-                  {matching.done}/{matching.total}
-                </span>
+                <SteadyWidth
+                  testid="auto-match-progress-sizer"
+                  widest={`${matching.total}/${matching.total}`}
+                >
+                  <span data-testid="auto-match-progress" className="text-xs tabular-nums">
+                    {matching.done}/{matching.total}
+                  </span>
+                </SteadyWidth>
               )}
               {/* Auto-match on, token missing: name the gap inline so it reads without a
                   hover — the tooltip alone was the invisible dead end this fixes. */}
@@ -303,9 +314,14 @@ export const Toolbar = memo(function Toolbar({
                 aria-hidden="true"
               />
               {analysis ? (
-                <span data-testid="analyze-progress" className="text-xs tabular-nums">
-                  {analysis.done}/{analysis.total}
-                </span>
+                <SteadyWidth
+                  testid="analyze-progress-sizer"
+                  widest={`${analysis.total}/${analysis.total}`}
+                >
+                  <span data-testid="analyze-progress" className="text-xs tabular-nums">
+                    {analysis.done}/{analysis.total}
+                  </span>
+                </SteadyWidth>
               ) : (
                 <span>{tr('header.analyzeQualityLabel')}</span>
               )}
@@ -395,11 +411,26 @@ export const Toolbar = memo(function Toolbar({
                 testid="convert-all"
                 Icon={ArrowRightLeft}
                 label={convertLabel}
+                labelWidest={
+                  convertibleCount > 0 && convertibleCount < batchSize
+                    ? tr('header.convertSome', { ready: batchSize, total: batchSize })
+                    : undefined
+                }
                 running={batching}
-                runningLabel={tr('header.convertingCount', {
-                  done: batchProgress.done,
-                  total: batchProgress.total,
-                })}
+                runningLabel={
+                  <SteadyWidth
+                    testid="convert-all-sizer"
+                    widest={tr('header.convertingCount', {
+                      done: batchProgress.total,
+                      total: batchProgress.total,
+                    })}
+                  >
+                    {tr('header.convertingCount', {
+                      done: batchProgress.done,
+                      total: batchProgress.total,
+                    })}
+                  </SteadyWidth>
+                }
                 cancelLabel={tr('header.cancelConvert')}
                 ready={canConvertAll}
                 hint={hintFor('process-all')}
@@ -414,12 +445,35 @@ export const Toolbar = memo(function Toolbar({
   )
 })
 
+// Holds a ticking counter at the width of the widest value it can reach: an invisible copy
+// of that value sizes the cell and the live text sits over it, so gaining a digit doesn't
+// shove the rest of the right-pinned bar sideways.
+function SteadyWidth({
+  testid,
+  widest,
+  children,
+}: {
+  testid: string
+  widest: string
+  children: React.ReactNode
+}): React.JSX.Element {
+  return (
+    <span className="inline-grid tabular-nums">
+      <span data-testid={testid} aria-hidden="true" className="invisible col-start-1 row-start-1">
+        {widest}
+      </span>
+      <span className="col-start-1 row-start-1">{children}</span>
+    </span>
+  )
+}
+
 // The toolbar's trailing main action: labelled, tinted while it can run, and while it runs
 // the same button shows the count and cancels.
 export function PrimaryAction({
   testid,
   Icon,
   label,
+  labelWidest,
   running,
   runningLabel,
   cancelLabel,
@@ -431,6 +485,8 @@ export function PrimaryAction({
   testid: string
   Icon: LucideIcon
   label: string
+  // The label at its widest, for a label carrying a count that moves while it shows.
+  labelWidest?: string
   running: boolean
   runningLabel: React.ReactNode
   cancelLabel: string
@@ -464,7 +520,13 @@ export function PrimaryAction({
       ) : (
         <>
           <Icon className="h-4 w-4" aria-hidden="true" />
-          {label}
+          {labelWidest ? (
+            <SteadyWidth testid={`${testid}-sizer`} widest={labelWidest}>
+              {label}
+            </SteadyWidth>
+          ) : (
+            label
+          )}
         </>
       )}
       {(!running || onCancel) && (
