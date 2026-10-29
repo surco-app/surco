@@ -80,8 +80,8 @@ interface MetaUndo {
   // Snapshots the given tracks' tags before a batch operation overwrites them;
   // cover: true also snapshots the artwork for operations that overwrite it.
   record: (targets: TrackItem[], opts?: { cover?: boolean; group?: string }) => void
-  // Restores the most recent snapshot; returns how many tracks actually changed
-  // (0 for an empty stack or when every recorded track has since been removed),
+  // Restores the most recent snapshot that still changes something; returns how many
+  // tracks actually changed (0 once no snapshot left on the stack changes anything),
   // so the caller can word — or skip — its confirmation toast.
   undo: () => number
   redo: () => number
@@ -169,15 +169,12 @@ export function useMetaUndo(
     [tracksRef],
   )
 
-  const step = useCallback(
+  const restore = useCallback(
     (
-      from: { current: MetaSnapshot[][] },
+      entry: MetaSnapshot[],
       to: { current: MetaSnapshot[][] },
       flip: { toMatched: boolean; report: (ids: string[]) => void },
     ): number => {
-      const entry = from.current.pop()
-      topGroup.current = undefined
-      if (!entry) return 0
       const live = new Map(tracksRef.current.map((t) => [t.id, t]))
       // Rows removed since the edit stay gone — the snapshot restores fields on the
       // tracks that still exist, it never resurrects a deleted row.
@@ -218,6 +215,22 @@ export function useMetaUndo(
       return inverse.length
     },
     [tracksRef, setTracks],
+  )
+
+  const step = useCallback(
+    (
+      from: { current: MetaSnapshot[][] },
+      to: { current: MetaSnapshot[][] },
+      flip: { toMatched: boolean; report: (ids: string[]) => void },
+    ): number => {
+      topGroup.current = undefined
+      for (let entry = from.current.pop(); entry; entry = from.current.pop()) {
+        const restored = restore(entry, to, flip)
+        if (restored > 0) return restored
+      }
+      return 0
+    },
+    [restore],
   )
 
   const undo = useCallback(

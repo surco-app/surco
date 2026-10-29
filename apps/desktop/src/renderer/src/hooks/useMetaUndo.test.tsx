@@ -473,6 +473,26 @@ describe('useMetaUndo', () => {
     expect(result.current.tracks.map((t) => t.meta.title)).toEqual(['Typed a', 'Typed b'])
   })
 
+  it('passes over a step whose write changed nothing, so one ⌘Z always takes back a visible edit', () => {
+    const { result } = setup([track('a', { title: 'A' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Filled' } })),
+      )
+    })
+    act(() => {
+      result.current.record(result.current.tracks)
+    })
+    let restored = 0
+    act(() => {
+      restored = result.current.undo()
+    })
+    expect(restored).toBe(1)
+    expect(result.current.tracks[0].meta.title).toBe('A')
+    expect(result.current.canUndo()).toBe(false)
+  })
+
   it('counts only the tracks an undo actually changed', () => {
     const { result } = setup([track('a', { title: 'A' }), track('b', { title: 'B' })])
     act(() => {
