@@ -169,7 +169,7 @@ export async function flushConversionBatch(
   // The run's repoints, taken once: rekordbox and Engine DJ each apply the same list to
   // their own library, and closing the batch twice would hand the second one nothing.
   const repoints = endRekordboxBatch()
-  const traktorOps = libraryTrackOps(repoints, 'traktor')
+  const traktorOps = libraryTrackOps(repoints, 'traktor', undefined, getSettings().addToTraktor)
   if (traktorQueue && traktorOps.length > 0) {
     traktorQueue.enqueue(traktorOps)
     traktorQueue.applyQuietly()
@@ -199,6 +199,7 @@ export async function flushConversionBatch(
         repointing: rekordbox.collectionPath !== '' || rekordbox.held,
         probe: { properties: probeProperties, duration: (p) => probeDuration(p) },
         find: { realPath: (p: string) => realpathSync(p) },
+        addNew: getSettings().addToRekordbox,
       }),
     enqueue: queue.enqueue,
     apply: queue.applyQuietly,

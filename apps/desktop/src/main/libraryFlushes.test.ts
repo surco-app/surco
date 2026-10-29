@@ -10,6 +10,7 @@ const SETTINGS = vi.hoisted(() => ({
   engineLibraryDir: '',
   syncTraktor: false,
   traktorNmlPath: '',
+  addToTraktor: false,
 }))
 const REPOINTS = vi.hoisted(() => [
   { from: '/m/a.mp3', to: '/m/a.flac', playlists: [{ name: 'House' }] },
@@ -306,6 +307,43 @@ describe('flushConversionBatch with playlists chosen for Traktor and Engine DJ',
       const first = REPOINTS[0] as Record<string, unknown>
       delete first.traktorPlaylists
       delete first.enginePlaylists
+    }
+  })
+})
+
+describe('flushConversionBatch with a converted track Traktor does not have', () => {
+  const traktorQueue = () => ({
+    enqueue: vi.fn(),
+    applyQuietly: vi.fn(),
+    state: () => ({ tracks: 0, changes: 0, items: [] }),
+  })
+  const flush = (traktor: ReturnType<typeof traktorQueue>) =>
+    flushConversionBatch(host(), sessions, { enqueue: vi.fn(), applyQuietly: vi.fn() }, traktor)
+
+  it('asks Traktor to register it when the DJ chose to add new tracks there', async () => {
+    Object.assign(REPOINTS[0], { meta: { artist: 'Jaydee', title: 'Plastic Dreams' } })
+    Object.assign(SETTINGS, { addToTraktor: true })
+    try {
+      const traktor = traktorQueue()
+      await flush(traktor)
+      expect(traktor.enqueue).toHaveBeenCalledWith([
+        expect.objectContaining({ kind: 'track', path: '/m/a.flac', add: true, wanted: [] }),
+      ])
+      expect(traktor.applyQuietly).toHaveBeenCalled()
+    } finally {
+      delete (REPOINTS[0] as Record<string, unknown>).meta
+      Object.assign(SETTINGS, { addToTraktor: false })
+    }
+  })
+
+  it('leaves it out of Traktor when the DJ only updates the tracks already there', async () => {
+    Object.assign(REPOINTS[0], { meta: { artist: 'Jaydee', title: 'Plastic Dreams' } })
+    try {
+      const traktor = traktorQueue()
+      await flush(traktor)
+      expect(traktor.enqueue).not.toHaveBeenCalled()
+    } finally {
+      delete (REPOINTS[0] as Record<string, unknown>).meta
     }
   })
 })

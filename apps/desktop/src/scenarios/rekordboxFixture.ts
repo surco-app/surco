@@ -44,13 +44,30 @@ export function makeRekordbox(dir: string, tracks: RekordboxSeed[]): string {
   db.pragma('legacy=4')
   db.pragma(`key='${REKORDBOX_KEY}'`)
   db.exec(`CREATE TABLE djmdContent (ID VARCHAR(255) PRIMARY KEY, FolderPath VARCHAR(255),
-    FileNameL VARCHAR(255), FileNameS VARCHAR(255), FileType INTEGER, FileSize INTEGER,
-    OrgFolderPath VARCHAR(255), Title VARCHAR(255), ArtistID VARCHAR(255), AlbumID VARCHAR(255),
-    GenreID VARCHAR(255), LabelID VARCHAR(255), RemixerID VARCHAR(255), Commnt TEXT,
-    ReleaseYear INTEGER, TrackNo INTEGER, DiscNo INTEGER, BPM INTEGER, KeyID VARCHAR(255),
-    Rating INTEGER, ImagePath VARCHAR(255), AnalysisDataPath VARCHAR(255), Analysed INTEGER,
-    AnalysisUpdated INTEGER, CueUpdated VARCHAR(255), usn BIGINT, rb_local_usn BIGINT,
-    rb_local_deleted TINYINT(1) DEFAULT 0, updated_at DATETIME)`)
+    FileNameL VARCHAR(255), FileNameS VARCHAR(255), Title VARCHAR(255), ArtistID VARCHAR(255),
+    AlbumID VARCHAR(255), GenreID VARCHAR(255), BPM INTEGER, Length INTEGER, TrackNo INTEGER,
+    BitRate INTEGER, BitDepth INTEGER, Commnt TEXT, FileType INTEGER, Rating INTEGER,
+    ReleaseYear INTEGER, RemixerID VARCHAR(255), LabelID VARCHAR(255), OrgArtistID VARCHAR(255),
+    KeyID VARCHAR(255), StockDate VARCHAR(255), ColorID VARCHAR(255), DJPlayCount INTEGER,
+    ImagePath VARCHAR(255), MasterDBID VARCHAR(255), MasterSongID VARCHAR(255),
+    AnalysisDataPath VARCHAR(255), SearchStr VARCHAR(255), FileSize INTEGER, DiscNo INTEGER,
+    ComposerID VARCHAR(255), Subtitle VARCHAR(255), SampleRate INTEGER, DisableQuantize INTEGER,
+    Analysed INTEGER, ReleaseDate VARCHAR(255), DateCreated VARCHAR(255), ContentLink INTEGER,
+    Tag VARCHAR(255), ModifiedByRBM VARCHAR(255), HotCueAutoLoad VARCHAR(255),
+    DeliveryControl VARCHAR(255), DeliveryComment VARCHAR(255), CueUpdated VARCHAR(255),
+    AnalysisUpdated VARCHAR(255), TrackInfoUpdated VARCHAR(255), Lyricist VARCHAR(255),
+    ISRC VARCHAR(255), SamplerTrackInfo INTEGER, SamplerPlayOffset INTEGER, SamplerGain FLOAT,
+    VideoAssociate VARCHAR(255), LyricStatus INTEGER, ServiceID INTEGER,
+    OrgFolderPath VARCHAR(255), Reserved1 TEXT, ExtInfo TEXT, rb_file_id VARCHAR(255),
+    DeviceID VARCHAR(255), UUID VARCHAR(255), rb_data_status INTEGER DEFAULT 0,
+    rb_local_data_status INTEGER DEFAULT 0, rb_local_deleted INTEGER DEFAULT 0,
+    rb_local_synced INTEGER DEFAULT 0, usn BIGINT, rb_local_usn BIGINT, created_at DATETIME,
+    updated_at DATETIME)`)
+  db.exec(`CREATE TABLE djmdDevice (ID VARCHAR(255) PRIMARY KEY, MasterDBID VARCHAR(255),
+    Name VARCHAR(255), ${LOOKUP})`)
+  db.exec(`CREATE TABLE djmdKey (ID VARCHAR(255) PRIMARY KEY, ScaleName VARCHAR(255))`)
+  db.exec(`CREATE TABLE djmdPlaylist (ID VARCHAR(255) PRIMARY KEY, Seq INTEGER, Name VARCHAR(255),
+    ImagePath VARCHAR(255), Attribute INTEGER, ParentID VARCHAR(255), SmartList TEXT, ${LOOKUP})`)
   db.exec(`CREATE TABLE djmdSongPlaylist (ID VARCHAR(255) PRIMARY KEY, PlaylistID VARCHAR(255),
     ContentID VARCHAR(255))`)
   db.exec(`CREATE TABLE djmdCue (ID VARCHAR(255) PRIMARY KEY, ContentID VARCHAR(255),
@@ -69,6 +86,9 @@ export function makeRekordbox(dir: string, tracks: RekordboxSeed[]): string {
   db.exec(`CREATE TABLE agentRegistry (registry_id VARCHAR(255), int_1 BIGINT,
     updated_at DATETIME)`)
   db.prepare(`INSERT INTO agentRegistry VALUES ('localUpdateCount', 1000, NULL)`).run()
+  db.prepare(
+    `INSERT INTO djmdDevice (ID, MasterDBID, Name) VALUES ('7', '3216549870', 'Mac')`,
+  ).run()
   for (const t of tracks) {
     const artistId = `artist-${t.id}`
     db.prepare(`INSERT INTO djmdArtist (ID, Name, rb_local_deleted) VALUES (?, ?, 0)`).run(
@@ -136,6 +156,20 @@ export function rekordboxRow(dbPath: string, id: string): RekordboxRow {
       db.prepare(`SELECT InMsec FROM djmdCue WHERE ContentID = ?`).all(id) as { InMsec: number }[]
     ).map((r) => r.InMsec)
     return { ...row, playlists, cuesMs }
+  } finally {
+    db.close()
+  }
+}
+
+export function rekordboxPaths(dbPath: string): string[] {
+  const db = openRekordboxDb(dbPath)
+  if (!db) throw new Error(`scenario: could not reopen ${dbPath}`)
+  try {
+    return (
+      db.prepare(`SELECT FolderPath FROM djmdContent WHERE rb_local_deleted = 0`).all() as {
+        FolderPath: string
+      }[]
+    ).map((r) => r.FolderPath)
   } finally {
     db.close()
   }
