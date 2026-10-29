@@ -286,7 +286,7 @@
           },
           {
             "t": "Tus playlists de Traktor",
-            "d": "Las abres en Surco, las organizas como las de rekordbox y pones hot cues a sus pistas con el mismo editor, Auto marcar incluido. Traktor los recibe en azul, en los botones 2 a 8, y Surco te pide cerrarlo antes de guardar. En el editor eliges en qué playlists va cada pista, una vez confirmada la colección en Ajustes."
+            "d": "Las abres en Surco, las organizas como las de rekordbox y pones hot cues a sus pistas con el mismo editor, Auto marcar incluido. Traktor los recibe en azul, en los botones 2 a 8, y Surco te pide cerrarlo antes de guardar. En el editor eliges en qué playlists va cada pista, una vez confirmada la colección en Ajustes. Y si Traktor no la tenía, Surco la añade a tu colección al convertirla, con su carátula."
           },
           {
             "t": "Ficheros para rekordbox, Serato y M3U8",
@@ -907,7 +907,8 @@
           "Siempre hace una copia de seguridad antes de escribir, en un único archivo que se va sobrescribiendo para no llenarte la carpeta.",
           "Traktor tiene que estar cerrado: reescribe su colección entera al salir, así que tus cambios se perderían. Surco lo detecta y se ofrece a cerrarlo.",
           "Una tanda de trescientas pistas produce una sola escritura, no trescientas.",
-          "Si el árbol de cues de una pista no se puede leer, Surco no borra los que ya tenías."
+          "Si el árbol de cues de una pista no se puede leer, Surco no borra los que ya tenías.",
+          "Funciona con Traktor Pro y con Traktor Play."
         ],
         "shot": "traktor-es.webp",
         "shotCaption": "La sincronización con la colección de Traktor en Ajustes."
@@ -926,7 +927,7 @@
           "Si rekordbox aún no ha analizado la pista, Surco calcula la rejilla y puedes poner las cues igual. Cuando rekordbox la analiza, se ajustan a su rejilla.",
           "Auto marcar propone, no decide. Sus propuestas no siempre aciertan, así que no se guarda nada hasta que las aceptas. Las seguras se ven con línea continua y las dudosas discontinuas, y en Ajustes › Cues, «Aprender de mis pistas» lo ajusta a tu forma de marcar.",
           "Lo mismo con las playlists de Engine DJ y Traktor, que reciben solo los hot cues. En Traktor salen en azul y en los botones 2 a 8, porque el 1 es para su rejilla.",
-          "Un flujo marcado en un programa llega al guardar a la misma pista en los demás, cada uno con su rejilla y las cues que ya tenía. Antes de guardar, el editor dice qué recibirá cada programa, y en Ajustes › Cues eliges a cuáles llega."
+          "Un flujo marcado en un programa llega al guardar a la misma pista en los demás, cada uno con su rejilla y las cues que ya tenía. Antes de guardar, el editor dice qué recibirá cada programa, y en Ajustes › Cues eliges a cuáles llega. Solo viaja lo que pone un flujo: las cues que pones a mano se quedan en el programa donde las marcas. Y si en otro programa no quedan letras libres, el editor te dice cuántas no caben."
         ],
         "shot": "rekordbox-es.webp",
         "shotCaption": "Auto marcar propone dónde rompe la pista, con tu flujo listo para aceptar."
@@ -962,7 +963,7 @@
           "Género y Grouping eligen cada uno su separador (coma, punto y coma, barra o uno tuyo) desde un menú junto al nombre del campo en Ajustes → Campos.",
           "Elige qué campos ver y cuáles obligar, crea los tuyos con un nombre y una clave, y reordénalos arrastrando o pulsa «Auto-organizar» para ponerlos en un orden sensato de un clic.",
           "La pestaña Estadísticas acumula tus números de por vida (pistas cargadas, convertidas, analizadas, encontradas en cada fuente…) y genera una imagen lista para compartir.",
-          "En Carátula, las portadas pequeñas pueden ampliarse hasta tu tamaño mínimo, recortarse a cuadrado, y una opción de macOS hace que el Finder muestre la carátula de los FLAC al convertirlos o actualizarlos. La pone como icono del archivo sin tocar el audio ni las etiquetas, así que Traktor los sigue aceptando aunque lo sincronices.",
+          "En Carátula, las portadas pequeñas pueden ampliarse hasta tu tamaño mínimo, recortarse a cuadrado, y una opción de macOS hace que el Finder muestre la carátula de los FLAC al convertirlos o actualizarlos. Para ello añade delante del FLAC una pequeña etiqueta ID3 con la carátula. El audio no cambia y Traktor los sigue aceptando aunque lo sincronices.",
           "En Búsqueda puedes limitar los resultados de Discogs a vinilo, CD, archivo o casete, y decidir cuántos ver.",
           "En Editor puedes apagar las explicaciones en línea cuando ya te las sepas de memoria, y volver a encenderlas cuando quieras.",
           "El análisis se guarda en caché para no repetirlo; puedes vaciarla, y abrir el registro de errores, desde Ajustes.",
