@@ -5,8 +5,10 @@ import { describe, expect, it } from 'vitest'
 const css = readFileSync(fileURLToPath(new URL('../index.css', import.meta.url)), 'utf8')
 const app = readFileSync(fileURLToPath(new URL('../App.tsx', import.meta.url)), 'utf8')
 
-function token(name: string): string {
-  const m = css.match(new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6})`))
+const lightCss = css.slice(css.indexOf('[data-theme="light"]'))
+
+function token(name: string, from = css): string {
+  const m = from.match(new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6})`))
   if (!m) throw new Error(`missing token --color-${name}`)
   return m[1]
 }
@@ -74,4 +76,20 @@ describe('body text contrast (WCAG 1.4.3 AA)', () => {
       expect(ratio).toBeGreaterThanOrEqual(4.5)
     }
   })
+})
+
+// The light page is read by the same eyes: its hints and helper copy owe the same 4.5:1,
+// and the primary button's label, drawn in the page ground over the blue, has to read on it.
+describe('light theme contrast (WCAG 1.4.3 AA)', () => {
+  for (const name of ['faint', 'muted', 'subtle', 'fg']) {
+    it(`${name} clears 4.5:1 on the light page background`, () => {
+      expect(contrast(token(name, lightCss), token('bg', lightCss))).toBeGreaterThanOrEqual(4.5)
+    })
+  }
+
+  for (const fill of ['blue', 'cyan']) {
+    it(`the primary button label clears 4.5:1 on its ${fill} end`, () => {
+      expect(contrast(token('bg', lightCss), token(fill, lightCss))).toBeGreaterThanOrEqual(4.5)
+    })
+  }
 })

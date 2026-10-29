@@ -11,6 +11,20 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#1a1b26" />
+    <!-- Sets the theme before the first paint, so a light visitor never sees the dark page
+         flash in first. The sun in the header stores a choice under surco_theme; without
+         one the system preference decides. -->
+    <script>
+      var theme
+      try {
+        theme = localStorage.getItem('surco_theme')
+      } catch (e) {}
+      if (theme !== 'light' && theme !== 'dark')
+        theme = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+      document.documentElement.dataset.theme = theme
+      if (theme === 'light')
+        document.querySelector('meta[name="theme-color"]').content = '#e6e7ed'
+    </script>
 
     <!-- The download button resolves the installer from the GitHub API on load;
          warming the connection shaves the TLS handshake off that round-trip. -->

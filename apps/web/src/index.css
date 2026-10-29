@@ -32,6 +32,41 @@
   --inset-shadow-edge: inset 0 1px 0 color-mix(in srgb, var(--color-fg) 7%, transparent);
 }
 
+/* The desktop app's light palette, set on <html> by the theme script in index.html before
+   the first paint. Every utility resolves to var(--color-*), so it flips with these. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-bg: #e6e7ed;
+  --color-bg2: #d6d8df;
+  --color-surface: #f4f5f8;
+  --color-surface2: #f0f1f5;
+  --color-line: #c2c5cf;
+  --color-highlight: #f0f1f5;
+  --color-edge: #707280;
+  --color-blue: #2959aa;
+  --color-cyan: #0f4b6e;
+  --color-purple: #5a4a78;
+  --color-green: #33635c;
+  --color-red: #8c4351;
+  --color-amber: #785526;
+  --color-fg: #343b58;
+  --color-subtle: #40434f;
+  --color-muted: #565a69;
+  --color-faint: #61646f;
+  --color-scrim: #d6d8df;
+}
+
+/* The spectrum images are rendered dark and stay dark on the light page, so the axis, the
+   scan line and the wall drawn over them keep the dark palette. */
+:root[data-theme="light"] .keep-dark {
+  --color-scrim: #0c0e14;
+  --color-fg: #c0caf5;
+  --color-subtle: #a9b1d6;
+  --color-red: #f7768e;
+}
+
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+
 html {
   scroll-behavior: smooth;
   background-color: var(--color-bg);

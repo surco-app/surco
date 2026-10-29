@@ -87,7 +87,7 @@ export default function QualityScene() {
                 {t('home.quality.section')}
               </SectionTitle>
 
-              <div className="relative mt-3 h-[260px] overflow-hidden rounded-lg bg-scrim">
+              <div className="keep-dark relative mt-3 h-[260px] overflow-hidden rounded-lg bg-scrim">
                 <img
                   src={GENUINE.src}
                   alt={t('home.quality.goodAlt')}

@@ -50,6 +50,29 @@ const BLENDS: Record<string, [Colour, number, Colour]> = {
 
 const palette = new Set<string>(Object.values(TOKYO_NIGHT))
 
+// The light theme is the desktop app's: its [data-theme='light'] palette, plus Tokyo Night
+// Light's cyan and magenta, which the app never needed and the site's accents do.
+const SURCO_LIGHT = {
+  ink: '#d6d8df',
+  panel: '#e6e7ed',
+  panel_2: '#f0f1f5',
+  field: '#f4f5f8',
+  line: '#c2c5cf',
+  input_border: '#707280',
+  accent: '#2959aa',
+  fg: '#343b58',
+  fg_muted: '#40434f',
+  fg_dim: '#565a69',
+  fg_faint: '#61646f',
+  good: '#33635c',
+  warn: '#785526',
+  danger: '#8c4351',
+  cyan: '#0f4b6e',
+  magenta: '#5a4a78',
+} as const
+
+const lightPalette = new Set<string>(Object.values(SURCO_LIGHT))
+
 const REKORDBOX_CUE_COLOURS_BY_FILE: Record<string, string[]> = {
   'lib/scenes.ts': ['#e62828', '#28e214', '#305aff'],
 }
@@ -80,7 +103,9 @@ describe('Tokyo Night palette', () => {
     const blends = new Set(
       Object.values(BLENDS).map(([a, p, b]) => blend(TOKYO_NIGHT[a], TOKYO_NIGHT[b], p / 100)),
     )
-    const foreign = [...hexes, ...rgbs].filter((c) => !palette.has(c) && !blends.has(c))
+    const foreign = [...hexes, ...rgbs].filter(
+      (c) => !palette.has(c) && !lightPalette.has(c) && !blends.has(c),
+    )
     expect([...foreign, ...(code.match(/\b(white|black)\b/g) ?? [])]).toEqual([])
   })
 })
@@ -89,6 +114,30 @@ describe('Tokyo Night palette', () => {
 // Tailwind class paints a Tokyo Night colour. Tailwind's white, black and default palette
 // are in none of them. Shadows are exempt for now: whether the site keeps them at all is a
 // pending flat-design decision, so their colour waits for it.
+describe('light theme', () => {
+  const start = css.indexOf('[data-theme="light"]')
+  const light = css.slice(start, css.indexOf('\n}', start))
+  const tokens = (block: string) =>
+    new Map([...block.matchAll(/--(color-[\w-]+):\s*(#[0-9a-fA-F]{6})/g)].map((m) => [m[1], m[2]]))
+  const dark = tokens(css.slice(css.indexOf('@theme'), css.indexOf('\n}', css.indexOf('@theme'))))
+
+  it('is declared on the root, where the theme script sets it', () => {
+    expect(start).toBeGreaterThan(-1)
+  })
+
+  for (const token of dark.keys()) {
+    it(`flips ${token}, or the dark ink would stay on the light page`, () => {
+      expect(tokens(light).has(token)).toBe(true)
+    })
+  }
+
+  for (const [token, value] of tokens(light)) {
+    it(`${token} is a colour of Surco's light palette`, () => {
+      expect(lightPalette).toContain(value.toLowerCase())
+    })
+  }
+})
+
 describe('components paint only Tokyo Night colours', () => {
   const root = fileURLToPath(new URL('..', import.meta.url))
   const sources = (readdirSync(root, { recursive: true }) as string[])
@@ -105,7 +154,10 @@ describe('components paint only Tokyo Night colours', () => {
       )
       const rekordbox = REKORDBOX_CUE_COLOURS_BY_FILE[name] ?? []
       const foreign = [...hexes, ...rgbs].filter(
-        (c) => !palette.has(c.toLowerCase()) && !rekordbox.includes(c.toLowerCase()),
+        (c) =>
+          !palette.has(c.toLowerCase()) &&
+          !lightPalette.has(c.toLowerCase()) &&
+          !rekordbox.includes(c.toLowerCase()),
       )
       const tailwind = (
         code.match(
