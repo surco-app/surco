@@ -33,7 +33,7 @@ interface AppState {
   sortDir: SortDir
   // The list filter, one independent axis per dimension, all ANDed together so a DJ can
   // stack "not in Apple Music AND good AND WAV AND unconverted" at once. Null = no
-  // constraint on that axis. Quality is the spectrum verdict (suspect/good/unanalyzed),
+  // constraint on that axis. Quality is the spectrum verdict (suspect/good/unanalyzed/damaged),
   // conversion the processing/provenance bucket, library the Apple Music ownership bucket,
   // format the source container ('WAV', 'FLAC'…).
   qualityFilter: QualityFilter | null

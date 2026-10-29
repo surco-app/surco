@@ -35,8 +35,9 @@ export function tracksToAnalyze(tracks: TrackItem[], inFlight: ReadonlySet<strin
 // this dimension" — and the active axes are ANDed together (see matchesFilter).
 //
 // Quality is the spectrum verdict: the suspect (likely fake-lossless) rips, the ones that
-// passed as genuine lossless ('good'), or the ones still without a verdict ('unanalyzed').
-export type QualityFilter = 'suspect' | 'good' | 'unanalyzed'
+// passed as genuine lossless ('good'), the ones still without a verdict ('unanalyzed'), or
+// the files that stop decoding before their stated length ('damaged').
+export type QualityFilter = 'suspect' | 'good' | 'unanalyzed' | 'damaged'
 // Conversion/provenance: still pending conversion (status !== 'done'), filled by
 // auto-match, or matched from a specific catalog — a different dimension from the
 // quality verdict, so its own axis. The per-provider buckets let a mixed-crate sweep
@@ -371,6 +372,7 @@ export function qualityCounts(
   suspect: number
   good: number
   unanalyzed: number
+  damaged: number
   unconverted: number
   failed: number
   automatched: number
@@ -395,6 +397,7 @@ export function qualityCounts(
   let suspect = 0
   let good = 0
   let unanalyzed = 0
+  let damaged = 0
   let unconverted = 0
   let failed = 0
   let automatched = 0
@@ -420,6 +423,7 @@ export function qualityCounts(
     if (q === 'warn' || q === 'bad' || q === 'processed' || q === 'transcoded') suspect += 1
     else if (q === 'good') good += 1
     else if (q === 'unanalyzed') unanalyzed += 1
+    else if (q === 'damaged') damaged += 1
     if (t.status !== 'done') unconverted += 1
     if (hasFailed(t)) failed += 1
     if (t.autoMatched) automatched += 1
@@ -446,6 +450,7 @@ export function qualityCounts(
     suspect,
     good,
     unanalyzed,
+    damaged,
     unconverted,
     failed,
     automatched,
