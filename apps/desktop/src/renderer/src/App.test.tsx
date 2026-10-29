@@ -1491,6 +1491,21 @@ describe('App source rail', () => {
     expect(screen.queryByText('No tracks match.')).not.toBeInTheDocument()
   })
 
+  it('draws placeholder rows in the shape of the tracks to come while the playlist is read', async () => {
+    rekordboxWithFactory({
+      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>(() => new Promise(() => {})),
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+
+    const loading = await screen.findByTestId('source-playlist-loading')
+    expect(loading).toHaveAttribute('role', 'status')
+    expect(within(loading).getAllByTestId('track-row-skeleton')).toHaveLength(8)
+    expect(within(loading).queryByTestId('track-row')).toBeNull()
+  })
+
   it('lists a rekordbox row rekordbox has art for from the light read and completes it once the row is selected', async () => {
     const readMeta = vi.fn<Api['readMeta']>().mockResolvedValue({
       tags: { ...emptyMetadata(), title: 'Charlie' },

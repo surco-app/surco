@@ -64,6 +64,7 @@ import { TopProgressBar } from './components/TopProgressBar'
 import { TrackContextMenu, type TrackPlaylistMenu } from './components/TrackContextMenu'
 import { TrackList, type MenuState as TrackMenuState } from './components/TrackList'
 import { TrackListHeader } from './components/TrackListHeader'
+import { TrackListSkeleton } from './components/TrackListSkeleton'
 import { TrashPanel } from './components/TrashPanel'
 import { UsbExportModal } from './components/UsbExportModal'
 import { UsbExportPill } from './components/UsbExportPill'
@@ -3118,13 +3119,10 @@ export default function App(): React.JSX.Element {
                       ) : browser.entriesLoading ? (
                         // A playlist still being read is not an empty result: "No tracks
                         // match" here read as the playlist having nothing in it.
-                        <p
-                          data-testid="source-playlist-loading"
-                          aria-live="polite"
-                          className="p-4 text-xs text-fg-faint"
-                        >
-                          {tr('sources.loadingPlaylist')}
-                        </p>
+                        <TrackListSkeleton
+                          testid="source-playlist-loading"
+                          label={tr('sources.loadingPlaylist')}
+                        />
                       ) : browser.entriesFailed && browser.source ? (
                         // A failed read is not an empty playlist either. The tree's own failure
                         // line says why, and it holds for one playlist as for the library.
