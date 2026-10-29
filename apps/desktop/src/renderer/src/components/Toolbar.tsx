@@ -466,6 +466,7 @@ export const Toolbar = memo(function Toolbar({
                 }
                 cancelLabel={tr('header.cancelConvert')}
                 ready={canConvertAll}
+                quiet={convertibleCount === 1 && batchSize === 1}
                 hint={hintFor('process-all')}
                 onRun={onConvertAll}
                 onCancel={onCancelBatch}
@@ -511,6 +512,7 @@ export function PrimaryAction({
   runningLabel,
   cancelLabel,
   ready,
+  quiet = false,
   hint,
   onRun,
   onCancel,
@@ -524,6 +526,7 @@ export function PrimaryAction({
   runningLabel: React.ReactNode
   cancelLabel: string
   ready: boolean
+  quiet?: boolean
   hint?: string
   onRun: () => void
   onCancel?: () => void
@@ -534,12 +537,15 @@ export function PrimaryAction({
       data-testid={testid}
       onClick={running ? onCancel : onRun}
       disabled={running ? !onCancel : !ready}
+      data-prominence={quiet ? 'quiet' : 'primary'}
       aria-label={running ? (onCancel ? cancelLabel : undefined) : label}
       className={`press group relative flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium disabled:opacity-40 ${
         running
           ? 'text-[var(--color-accent)] hover:bg-[var(--color-hover)]'
           : ready
-            ? 'bg-[var(--color-accent-soft)] text-fg hover:bg-[var(--color-row-selected)] hover:text-[var(--color-on-row-selected)]'
+            ? quiet
+              ? 'text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg'
+              : 'bg-[var(--color-accent-soft)] text-fg hover:bg-[var(--color-row-selected)] hover:text-[var(--color-on-row-selected)]'
             : 'text-fg-muted'
       }`}
     >
