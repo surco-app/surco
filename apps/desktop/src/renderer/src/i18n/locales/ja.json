@@ -1737,6 +1737,19 @@
       "useFlow": "フローとして使う",
       "fromEdits": "修正しながら学習",
       "fromEditsHint": "エディタで保存したトラックは学習内容に加わり、10 件ごとに Surco が学習し直します。"
+    },
+    "searchSynonyms": {
+      "mp3Quality": "ビットレート, bitrate, kbps, CBR, VBR",
+      "bitDepth": "ビット, 16bit, 24bit",
+      "sampleRate": "Hz, kHz, 44.1, 48, サンプリング",
+      "outputFormat": "AIFF, FLAC, MP3, WAV, ALAC, 変換",
+      "theme": "ダーク, ライト, モード",
+      "coverMaxSize": "アートワーク, 画像, 解像度",
+      "destination": "フォルダ, 書き出し, Apple Music",
+      "configDir": "iCloud, Dropbox, 同期",
+      "normalize": {
+        "title": "ラウドネス, LUFS, 音量"
+      }
     }
   },
   "errorBoundary": {

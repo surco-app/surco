@@ -39,7 +39,7 @@ export function SearchTab({
   const beatportOn = synced.searchProviders.includes('beatport')
   return (
     <>
-      <SettingsSection first eyebrow={tr('settings.searchProviders')}>
+      <SettingsSection first eyebrow={tr('settings.searchProviders')} searchId="searchProviders">
         <SettingsHint className="-mt-1.5 mb-3">{tr('settings.searchSourcesIntro')}</SettingsHint>
         <SearchProvidersControl
           value={synced.searchProviders}
@@ -70,14 +70,19 @@ export function SearchTab({
       </SettingsSection>
 
       {/* What the result list shows: which formats and how many rows. */}
-      <SettingsSection eyebrow={tr('settings.searchResultsSection')}>
+      <SettingsSection
+        eyebrow={tr('settings.searchResultsSection')}
+        searchId="searchResultsSection"
+      >
         {!formatsOn && (
           <SettingsHint data-testid="settings-formats-disabled" className="mb-4">
             {tr('settings.discogsFormatsDisabledHint')}
           </SettingsHint>
         )}
         <div className={formatsOn ? '' : 'opacity-50'}>
-          <SettingsLabel className="mb-2">{tr('settings.discogsFormats')}</SettingsLabel>
+          <SettingsLabel className="mb-2" searchId="discogsFormats">
+            {tr('settings.discogsFormats')}
+          </SettingsLabel>
           <SettingsHint className="mb-3">{tr('settings.discogsFormatsHint')}</SettingsHint>
           <div className="flex flex-wrap gap-x-5 gap-y-2" data-testid="settings-discogs-formats">
             {DISCOGS_FORMATS.map((f) => (
@@ -113,7 +118,7 @@ export function SearchTab({
             justify-between, the select used to give up 2px and poke past the panel,
             summoning a horizontal scrollbar over the whole tab. */}
           <div className="min-w-0 flex flex-col gap-2">
-            <SettingsLabel>{tr('settings.maxResults')}</SettingsLabel>
+            <SettingsLabel searchId="maxResults">{tr('settings.maxResults')}</SettingsLabel>
             <SettingsHint>{tr('settings.maxResultsHint')}</SettingsHint>
           </div>
           <div className="shrink-0">
@@ -133,13 +138,17 @@ export function SearchTab({
 
       {/* How the search runs and what it does on its own: the album-first order, the words
           it strips, and auto-match, a behaviour (when matches get applied) not a source. */}
-      <SettingsSection eyebrow={tr('settings.searchMatchingSection')}>
+      <SettingsSection
+        eyebrow={tr('settings.searchMatchingSection')}
+        searchId="searchMatchingSection"
+      >
         <div className="flex flex-col gap-5">
           <SettingsCheckboxField
             testid="settings-search-album-first"
             checked={synced.searchByAlbumFirst}
             onChange={(v) => patch('searchByAlbumFirst', v)}
             label={tr('settings.searchByAlbumFirst')}
+            searchId="searchByAlbumFirst"
             hint={tr('settings.searchByAlbumFirstHint')}
           />
           <div>
@@ -169,6 +178,7 @@ export function SearchTab({
             checked={synced.autoCleanSpacing}
             onChange={(v) => patch('autoCleanSpacing', v)}
             label={tr('settings.autoCleanSpacing')}
+            searchId="autoCleanSpacing"
             hint={tr('settings.autoCleanSpacingHint')}
           />
           <SettingsCheckboxField
@@ -176,6 +186,7 @@ export function SearchTab({
             checked={synced.autoCleanCase}
             onChange={(v) => patch('autoCleanCase', v)}
             label={tr('settings.autoCleanCase')}
+            searchId="autoCleanCase"
             hint={tr('settings.autoCleanCaseHint')}
           />
         </div>

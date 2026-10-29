@@ -20,7 +20,11 @@ export function ArtworkTab({ synced, patch }: Props): React.JSX.Element {
   return (
     <>
       <SettingsSection first>
-        <SettingsField label={tr('settings.coverMaxSize')} htmlFor="settings-cover-max">
+        <SettingsField
+          label={tr('settings.coverMaxSize')}
+          htmlFor="settings-cover-max"
+          searchId="coverMaxSize"
+        >
           <div className="flex items-center gap-2">
             <input
               id="settings-cover-max"
@@ -49,12 +53,14 @@ export function ArtworkTab({ synced, patch }: Props): React.JSX.Element {
             checked={synced.coverUpscale}
             onChange={(v) => patch('coverUpscale', v)}
             label={tr('settings.coverUpscale')}
+            searchId="coverUpscale"
           />
           <SettingsCheckboxField
             testid="settings-cover-square"
             checked={synced.coverSquare}
             onChange={(v) => patch('coverSquare', v)}
             label={tr('settings.coverSquare')}
+            searchId="coverSquare"
             hint={tr('settings.coverHint')}
           />
           <SettingsCheckboxField
@@ -62,6 +68,7 @@ export function ArtworkTab({ synced, patch }: Props): React.JSX.Element {
             checked={synced.replaceLowResCover}
             onChange={(v) => patch('replaceLowResCover', v)}
             label={tr('settings.replaceLowRes')}
+            searchId="replaceLowRes"
             hint={tr('settings.replaceLowResHint')}
           />
           {isMacOS() && (
@@ -70,6 +77,7 @@ export function ArtworkTab({ synced, patch }: Props): React.JSX.Element {
               checked={synced.flacFinderCovers}
               onChange={(v) => patch('flacFinderCovers', v)}
               label={tr('settings.flacFinderCovers')}
+              searchId="flacFinderCovers"
               hint={tr('settings.flacFinderCoversHint')}
             />
           )}

@@ -2,7 +2,12 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { SettingsField, SettingsSection } from './SettingsPrimitives'
+import {
+  SettingsCheckboxField,
+  SettingsField,
+  SettingsLabel,
+  SettingsSection,
+} from './SettingsPrimitives'
 
 afterEach(cleanup)
 
@@ -72,5 +77,49 @@ describe('SettingsSection', () => {
     const label = screen.getByText('Discogs token')
     expect(label.className).not.toBe(heading.className)
     expect(label).not.toHaveClass('font-semibold')
+  })
+})
+
+describe('search anchors', () => {
+  it('marks a section with its search anchor so settings search can scroll to it', () => {
+    render(
+      <SettingsSection eyebrow="Traktor collection" searchId="traktorSync">
+        <p />
+      </SettingsSection>,
+    )
+    expect(screen.getByTestId('settings-section')).toHaveAttribute('data-search-id', 'traktorSync')
+  })
+
+  it('marks a field with its search anchor', () => {
+    render(
+      <SettingsField label="MP3 quality" searchId="mp3Quality">
+        <input data-testid="mp3" />
+      </SettingsField>,
+    )
+    expect(screen.getByTestId('mp3').closest('[data-search-id]')).toHaveAttribute(
+      'data-search-id',
+      'mp3Quality',
+    )
+  })
+
+  it('marks a checkbox setting with its search anchor', () => {
+    render(
+      <SettingsCheckboxField
+        testid="ascii"
+        checked={false}
+        onChange={() => {}}
+        label="ASCII file names"
+        searchId="asciiFileNames"
+      />,
+    )
+    expect(screen.getByTestId('ascii').closest('[data-search-id]')).toHaveAttribute(
+      'data-search-id',
+      'asciiFileNames',
+    )
+  })
+
+  it('marks a loose label with its search anchor', () => {
+    render(<SettingsLabel searchId="theme">Appearance</SettingsLabel>)
+    expect(screen.getByText('Appearance')).toHaveAttribute('data-search-id', 'theme')
   })
 })

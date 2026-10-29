@@ -43,7 +43,11 @@ export function AdvancedTab({
   return (
     <SettingsSection first>
       <div className="flex flex-col gap-5">
-        <SettingsField label={tr('settings.configDir')} hint={tr('settings.configDirHint')}>
+        <SettingsField
+          label={tr('settings.configDir')}
+          hint={tr('settings.configDirHint')}
+          searchId="configDir"
+        >
           <div className="flex gap-2">
             <div className="min-w-0 flex-1">
               <PathField
@@ -65,7 +69,11 @@ export function AdvancedTab({
           </div>
         </SettingsField>
 
-        <SettingsField label={tr('settings.backup')} hint={tr('settings.backupHint')}>
+        <SettingsField
+          label={tr('settings.backup')}
+          hint={tr('settings.backupHint')}
+          searchId="backup"
+        >
           <div className="flex gap-2">
             <button
               type="button"
@@ -93,7 +101,11 @@ export function AdvancedTab({
           )}
         </SettingsField>
 
-        <SettingsField label={tr('settings.backups')} hint={tr('settings.backupsHint')}>
+        <SettingsField
+          label={tr('settings.backups')}
+          hint={tr('settings.backupsHint')}
+          searchId="backups"
+        >
           <button
             type="button"
             data-testid="settings-backups-reveal"
@@ -108,7 +120,7 @@ export function AdvancedTab({
               editable and again in the hint under it. */}
         <div className="flex flex-col gap-2">
           <div className="flex items-baseline justify-between gap-3">
-            <SettingsLabel>{tr('settings.cache')}</SettingsLabel>
+            <SettingsLabel searchId="cache">{tr('settings.cache')}</SettingsLabel>
             <span data-testid="settings-cache-stats" className="text-xs tabular-nums text-fg-dim">
               {cacheStats &&
                 (cacheStats.files > 0
@@ -131,7 +143,7 @@ export function AdvancedTab({
           <SettingsHint>{tr('settings.cacheHint')}</SettingsHint>
         </div>
 
-        <SettingsField label={tr('settings.log')} hint={tr('settings.logHint')}>
+        <SettingsField label={tr('settings.log')} hint={tr('settings.logHint')} searchId="log">
           <button
             type="button"
             data-testid="settings-log-reveal"

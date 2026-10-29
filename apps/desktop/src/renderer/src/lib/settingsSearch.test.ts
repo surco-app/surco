@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import en from '../i18n/locales/en.json'
 import { groupByTab, searchSettings } from './settingsSearch'
-import type { SettingsSearchEntry } from './settingsSearchIndex'
+import { SETTINGS_SEARCH_INDEX, type SettingsSearchEntry } from './settingsSearchIndex'
 
 const dict: Record<string, string> = {
   'settings.traktorSync': 'Traktor collection',
@@ -62,5 +63,40 @@ describe('groupByTab', () => {
     const groups = groupByTab(searchSettings('a', index, t))
     expect(groups.map((g) => g.tab)).toEqual(['general', 'conversion', 'destination'])
     expect(groups[0].hits.map((h) => h.entry.id)).toEqual(['theme', 'language'])
+  })
+})
+
+describe('the shipped index', () => {
+  const enT = (key: string): string => {
+    const value = key
+      .split('.')
+      .reduce<unknown>((node, part) => (node as Record<string, unknown>)?.[part], en)
+    return typeof value === 'string' ? value : key
+  }
+  const ids = (q: string) => searchSettings(q, SETTINGS_SEARCH_INDEX, enT).map((h) => h.entry.id)
+
+  it.each([
+    ['bitrate', 'mp3Quality'],
+    ['kHz', 'sampleRate'],
+    ['dark', 'theme'],
+    ['LUFS', 'normalize.title'],
+    ['iCloud', 'configDir'],
+  ])(
+    'finds a setting by the word a DJ would type (%s) even when the label says it otherwise',
+    (q, id) => {
+      expect(ids(q)).toContain(id)
+    },
+  )
+
+  it('finds a tab with no labelled settings by its name', () => {
+    expect(ids('shortcuts')).toContain('tabs.shortcuts')
+  })
+
+  it('only keeps synonyms for settings the index has, so none is translated in vain', () => {
+    const synonymIds = Object.keys(
+      (en.settings as Record<string, unknown>).searchSynonyms as Record<string, unknown>,
+    )
+    const indexIds = new Set(SETTINGS_SEARCH_INDEX.map((e) => e.id.split('.')[0]))
+    expect(synonymIds.filter((id) => !indexIds.has(id))).toEqual([])
   })
 })

@@ -69,7 +69,7 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
   }
   return (
     <SettingsSection first>
-      <SettingsLabel>{tr('settings.sections.title')}</SettingsLabel>
+      <SettingsLabel searchId="sections.title">{tr('settings.sections.title')}</SettingsLabel>
       <SettingsHint className="mt-2 mb-3">{tr('settings.sections.hint')}</SettingsHint>
       {/* Column headings on the row grid, so each label sits over its own control. Each
           carries what its column means, asked for once here rather than repeated on every

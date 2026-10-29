@@ -63,7 +63,7 @@ export function GeneralTab({
     <>
       <SettingsSection first>
         <div className="flex flex-col gap-5">
-          <SettingsField label={tr('settings.theme')}>
+          <SettingsField label={tr('settings.theme')} searchId="theme">
             <SegmentedControl
               options={THEMES}
               value={synced.theme}
@@ -78,7 +78,7 @@ export function GeneralTab({
             />
           </SettingsField>
 
-          <SettingsField label={tr('settings.language')}>
+          <SettingsField label={tr('settings.language')} searchId="language">
             <SegmentedControl
               options={LANGUAGES}
               value={synced.language}
@@ -98,7 +98,7 @@ export function GeneralTab({
         that folder, when it is about which builds this machine installs. Machine-bound
         (see settings.ts), so it stages through patchLocal — a synced flag would drag a
         tester's laptop channel onto the machine he plays gigs from. */}
-      <SettingsSection eyebrow={tr('settings.sourcesTitle')}>
+      <SettingsSection eyebrow={tr('settings.sourcesTitle')} searchId="sourcesTitle">
         <div className="flex flex-col gap-3">
           {SOURCES.map((source) => (
             <SettingsCheckboxField
@@ -124,12 +124,13 @@ export function GeneralTab({
         </div>
       </SettingsSection>
 
-      <SettingsSection eyebrow={tr('settings.updates')}>
+      <SettingsSection eyebrow={tr('settings.updates')} searchId="updates">
         <SettingsCheckboxField
           testid="settings-beta-updates"
           checked={local.betaUpdates}
           onChange={(v) => patchLocal('betaUpdates', v)}
           label={tr('settings.betaUpdates')}
+          searchId="betaUpdates"
           hint={tr(isStoreBuild() ? 'settings.betaUpdatesStoreHint' : 'settings.betaUpdatesHint')}
           disabled={isStoreBuild()}
         />

@@ -36,7 +36,11 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
   return (
     <SettingsSection first>
       <div className="flex flex-col gap-5">
-        <SettingsField label={tr('settings.outputFormat')} hint={tr('settings.outputFormatHint')}>
+        <SettingsField
+          label={tr('settings.outputFormat')}
+          hint={tr('settings.outputFormatHint')}
+          searchId="outputFormat"
+        >
           <FormatSettingControl
             value={synced.outputFormat}
             onChange={(id) => patch('outputFormat', id)}
@@ -51,11 +55,13 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
           checked={synced.keepMp3Sources}
           onChange={(v) => patch('keepMp3Sources', v)}
           label={tr('settings.keepMp3Sources')}
+          searchId="keepMp3Sources"
           hint={keepMp3Off ? tr('settings.keepMp3SourcesOff') : tr('settings.keepMp3SourcesHint')}
           disabled={keepMp3Off}
         />
 
         <SettingsField
+          searchId="mp3Quality"
           label={tr('settings.mp3Quality')}
           hint={
             <AppliesHint
@@ -76,6 +82,7 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
         </SettingsField>
 
         <SettingsField
+          searchId="bitDepth"
           label={tr('settings.bitDepth')}
           hint={
             <AppliesHint
@@ -95,7 +102,11 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
           />
         </SettingsField>
 
-        <SettingsField label={tr('settings.sampleRate')} hint={tr('settings.sampleRateHint')}>
+        <SettingsField
+          label={tr('settings.sampleRate')}
+          hint={tr('settings.sampleRateHint')}
+          searchId="sampleRate"
+        >
           <SegmentedControl
             options={['source', '44100', '48000', 'corrected'] as const}
             value={synced.outputSampleRate}
@@ -107,6 +118,7 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
         </SettingsField>
 
         <SettingsField
+          searchId="flacCompression"
           label={tr('settings.flacCompression')}
           hint={
             <AppliesHint

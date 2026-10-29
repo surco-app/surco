@@ -1737,6 +1737,19 @@
       "useFlow": "Als Ablauf verwenden",
       "fromEdits": "Beim Korrigieren lernen",
       "fromEditsHint": "Jeder Track, den du im Editor speicherst, fließt ins Gelernte ein, und Surco lernt alle 10 neu."
+    },
+    "searchSynonyms": {
+      "mp3Quality": "Bitrate, kbps, CBR, VBR",
+      "bitDepth": "Bits, 16 Bit, 24 Bit, Bittiefe",
+      "sampleRate": "Hz, kHz, 44.1, 48, Abtastrate",
+      "outputFormat": "AIFF, FLAC, MP3, WAV, ALAC, konvertieren",
+      "theme": "dunkel, hell, Modus",
+      "coverMaxSize": "Cover, Bild, Auflösung",
+      "destination": "Ordner, exportieren, Apple Music",
+      "configDir": "iCloud, Dropbox, synchronisieren",
+      "normalize": {
+        "title": "Lautheit, LUFS, Lautstärke"
+      }
     }
   },
   "errorBoundary": {

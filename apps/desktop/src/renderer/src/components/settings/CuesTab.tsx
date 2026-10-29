@@ -120,7 +120,7 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
   return (
     <div className="flex flex-col gap-5">
       <CueProfileCard synced={synced} patch={patch} onAdopt={select} />
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2" data-search-id="cueFlows.flows">
         <h3 className={HEADING}>{tr('settings.cueFlows.flows')}</h3>
         <div className="flex items-center gap-2">
           {renaming ? (
@@ -387,7 +387,10 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
       <div className="flex flex-col gap-2">
         <h3 className={HEADING}>{tr('settings.cueFlows.manual.title')}</h3>
         <div data-testid="cue-manual" className={`${GROUP} text-sm`}>
-          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3.5 py-2.5">
+          <div
+            data-search-id="cueFlows.manual.jump"
+            className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3.5 py-2.5"
+          >
             <div className="min-w-0">
               <p className="text-fg">{tr('settings.cueFlows.manual.jump')}</p>
               <p className="text-xs text-fg-dim">{tr('settings.cueFlows.manual.unit')}</p>
@@ -407,7 +410,10 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
               label={tr('settings.cueFlows.manual.jump')}
             />
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3.5 py-2.5">
+          <div
+            data-search-id="cueFlows.manual.quantize"
+            className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3.5 py-2.5"
+          >
             <p className="min-w-0 text-fg">{tr('settings.cueFlows.manual.quantize')}</p>
             <SegmentedControl
               compact
@@ -421,7 +427,11 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
               label={tr('settings.cueFlows.manual.quantize')}
             />
           </div>
-          <div data-testid="cue-letters" className="px-3.5 py-2.5">
+          <div
+            data-testid="cue-letters"
+            data-search-id="cueFlows.lettersByTime"
+            className="px-3.5 py-2.5"
+          >
             <CheckboxRow
               testid="settings-cue-letters-by-time"
               checked={synced.cueLettersByTime}

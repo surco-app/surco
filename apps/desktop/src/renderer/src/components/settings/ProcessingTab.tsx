@@ -20,7 +20,9 @@ export function ProcessingTab({ synced, patch }: Props): React.JSX.Element {
   return (
     <>
       <SettingsSection first>
-        <SettingsLabel className="mb-3">{tr('declick.title')}</SettingsLabel>
+        <SettingsLabel className="mb-3" searchId="declick.title">
+          {tr('declick.title')}
+        </SettingsLabel>
         <SettingsHint className="mb-4">{tr('declick.hint')}</SettingsHint>
         <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
           <div className="min-w-0">
@@ -39,7 +41,7 @@ export function ProcessingTab({ synced, patch }: Props): React.JSX.Element {
       </SettingsSection>
 
       <SettingsSection>
-        <SettingsLabel>{tr('normalize.title')}</SettingsLabel>
+        <SettingsLabel searchId="normalize.title">{tr('normalize.title')}</SettingsLabel>
         <SettingsHint className="mt-2 mb-3">{tr('normalize.hint')}</SettingsHint>
         <NormalizeControls
           value={synced.normalize}

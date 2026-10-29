@@ -18,6 +18,8 @@ vi.hoisted(() => {
     rekordboxAvailable: async () => false,
     engineAvailable: async () => false,
     traktorAvailable: async () => false,
+    cueProfile: async () => ({ profile: null, edits: { count: 0, sinceLearn: 0 }, marked: 0 }),
+    onCueProfileChanged: () => () => {},
   }
 })
 
@@ -25,6 +27,8 @@ import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import type { Settings } from '../../../shared/types'
 import i18n from '../i18n'
 import { FIELD_DEFS } from '../lib/fields'
+import { SETTINGS_SEARCH_INDEX } from '../lib/settingsSearchIndex'
+import { SETTINGS_TABS } from '../lib/settingsTabs'
 import { DONATE_URL, SettingsModal } from './SettingsModal'
 
 afterEach(cleanup)
@@ -1471,4 +1475,27 @@ describe('SettingsModal sources tab', () => {
     )
     expect(screen.getByTestId('settings-tab-search')).toHaveTextContent('Sources')
   })
+})
+
+describe('settings search index', () => {
+  it.each(SETTINGS_TABS)(
+    'has an anchor in the %s tab for every entry, so a result never points nowhere',
+    async (tab) => {
+      render(
+        <SettingsModal
+          settings={settings}
+          onClose={() => {}}
+          onSave={() => {}}
+          onPreviewTheme={() => {}}
+          onSettingsReplaced={() => {}}
+          initialTab={tab}
+        />,
+      )
+      const panel = await screen.findByRole('tabpanel')
+      const missing = SETTINGS_SEARCH_INDEX.filter((e) => e.tab === tab && e.id !== `tabs.${tab}`)
+        .map((e) => e.anchor ?? e.id)
+        .filter((a) => !panel.querySelector(`[data-search-id="${a}"]`))
+      expect(missing).toEqual([])
+    },
+  )
 })

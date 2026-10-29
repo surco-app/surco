@@ -37,18 +37,22 @@ export function SettingsLabel({
   children,
   htmlFor,
   className = '',
+  searchId,
 }: {
   children: React.ReactNode
   htmlFor?: string
   className?: string
+  searchId?: string
 }): React.JSX.Element {
   const cls = `block ${useContext(InNamedSection) ? NESTED_LABEL : HEADING} ${className}`
   return htmlFor ? (
-    <label htmlFor={htmlFor} className={cls}>
+    <label htmlFor={htmlFor} className={cls} data-search-id={searchId}>
       {children}
     </label>
   ) : (
-    <p className={cls}>{children}</p>
+    <p className={cls} data-search-id={searchId}>
+      {children}
+    </p>
   )
 }
 
@@ -77,10 +81,12 @@ export function SettingsSection({
   eyebrow,
   first = false,
   children,
+  searchId,
 }: {
   eyebrow?: React.ReactNode
   first?: boolean
   children: React.ReactNode
+  searchId?: string
 }): React.JSX.Element {
   // Reported with a screenshot of the Output tab: "the Traktor and the rekordbox section
   // are practically indistinguishable", when the only separation was a 10px dim label over
@@ -90,6 +96,7 @@ export function SettingsSection({
   return (
     <section
       data-testid="settings-section"
+      data-search-id={searchId}
       className={first ? '' : 'mt-6 border-t border-[var(--color-line)] pt-5'}
     >
       {eyebrow && <h3 className={`mb-3 ${HEADING}`}>{eyebrow}</h3>}
@@ -106,14 +113,16 @@ export function SettingsField({
   htmlFor,
   hint,
   children,
+  searchId,
 }: {
   label?: string
   htmlFor?: string
   hint?: React.ReactNode
   children: React.ReactNode
+  searchId?: string
 }): React.JSX.Element {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2" data-search-id={searchId}>
       {label && <SettingsLabel htmlFor={htmlFor}>{label}</SettingsLabel>}
       {children}
       {hint && <SettingsHint>{hint}</SettingsHint>}
@@ -142,6 +151,7 @@ export function SettingsCheckboxField({
   label,
   hint,
   disabled = false,
+  searchId,
 }: {
   testid: string
   checked: boolean
@@ -149,9 +159,10 @@ export function SettingsCheckboxField({
   label: string
   hint?: React.ReactNode
   disabled?: boolean
+  searchId?: string
 }): React.JSX.Element {
   return (
-    <div>
+    <div data-search-id={searchId}>
       <CheckboxRow
         testid={testid}
         checked={checked}
