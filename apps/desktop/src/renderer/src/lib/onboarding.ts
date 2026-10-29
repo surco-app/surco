@@ -118,9 +118,14 @@ export function seedAudioIntents(
 }
 
 // Passing null means the user skipped: we only flag the wizard as seen so it
-// never reappears, leaving the existing settings untouched.
-export function buildOnboardingPatch(drafts: OnboardingDrafts | null): Partial<Settings> {
-  if (!drafts) return { hasSeenOnboarding: true }
+// never reappears (and, on a first run, name files from their tags), leaving the
+// existing settings untouched.
+export function buildOnboardingPatch(
+  drafts: OnboardingDrafts | null,
+  settings: Pick<Settings, 'hasSeenOnboarding' | 'editorSections'> | undefined = drafts?.settings,
+): Partial<Settings> {
+  const newcomer = settings !== undefined && !layoutConfigured(settings)
+  if (!drafts) return { ...(newcomer ? { autoApplyFilename: true } : {}), hasSeenOnboarding: true }
   return {
     // The shared serialization — trim/clamp/gating rules included — so a field (or a
     // rule) added to the Settings save path can never miss the wizard's.
@@ -141,6 +146,7 @@ export function buildOnboardingPatch(drafts: OnboardingDrafts | null): Partial<S
           drafts.audioIntents,
         )
       : deriveEditorSections(drafts.audioIntents),
+    ...(newcomer ? { autoApplyFilename: true } : {}),
     hasSeenOnboarding: true,
   }
 }

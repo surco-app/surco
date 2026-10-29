@@ -380,7 +380,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
             <button
               type="button"
               data-testid="onboarding-skip"
-              onClick={() => (step > 0 ? finish() : onFinish(buildOnboardingPatch(null)))}
+              onClick={() => (step > 0 ? finish() : onFinish(buildOnboardingPatch(null, settings)))}
               className="press rounded-lg px-3 py-2 text-sm text-fg-muted hover:text-fg"
             >
               {tr('onboarding.skip')}

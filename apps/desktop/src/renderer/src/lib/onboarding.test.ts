@@ -199,6 +199,7 @@ describe('buildOnboardingPatch', () => {
       ...buildSettingsPatch(d.synced, d.local),
       showSpectrum: false,
       editorSections: deriveEditorSections([]),
+      autoApplyFilename: true,
       hasSeenOnboarding: true,
     })
   })
@@ -256,6 +257,40 @@ describe('buildOnboardingPatch', () => {
     )
     expect(patch.addToEngineDj).toBe(true)
     expect(patch.keepOutputCopy).toBe(true)
+  })
+})
+
+describe('buildOnboardingPatch file naming', () => {
+  const firstRun = { hasSeenOnboarding: false, editorSections: DEFAULT_EDITOR_SECTIONS }
+  const rerun = { hasSeenOnboarding: true, editorSections: DEFAULT_EDITOR_SECTIONS }
+
+  it("names a new user's files from their applied tags once the wizard is finished", () => {
+    expect(buildOnboardingPatch(drafts({ settings: firstRun })).autoApplyFilename).toBe(true)
+  })
+
+  it("names a new user's files from their applied tags even when the wizard is skipped", () => {
+    expect(buildOnboardingPatch(null, firstRun)).toEqual({
+      autoApplyFilename: true,
+      hasSeenOnboarding: true,
+    })
+  })
+
+  it("keeps an existing user's file names as they were when a re-run is finished", () => {
+    expect(buildOnboardingPatch(drafts({ settings: rerun })).autoApplyFilename).toBe(false)
+  })
+
+  it("keeps an existing user's file names as they were when a re-run is skipped", () => {
+    expect(buildOnboardingPatch(null, rerun)).toEqual({ hasSeenOnboarding: true })
+  })
+
+  it("keeps the file naming a second machine synced in from the user's own setup", () => {
+    const secondMac = {
+      hasSeenOnboarding: false,
+      editorSections: DEFAULT_EDITOR_SECTIONS.map((s) =>
+        s.id === 'trim' ? { ...s, hidden: true } : s,
+      ),
+    }
+    expect(buildOnboardingPatch(drafts({ settings: secondMac })).autoApplyFilename).toBe(false)
   })
 })
 

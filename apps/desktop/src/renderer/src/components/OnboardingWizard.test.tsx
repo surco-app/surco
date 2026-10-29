@@ -166,9 +166,18 @@ describe('OnboardingWizard skip', () => {
     )
   })
 
-  it('only marks the wizard as seen when skipped before any choice', () => {
+  it('only marks the wizard as seen and names files from tags when a first run is skipped before any choice', () => {
     const onFinish = vi.fn()
     render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+    fireEvent.click(screen.getByTestId('onboarding-skip'))
+    expect(onFinish).toHaveBeenCalledWith({ autoApplyFilename: true, hasSeenOnboarding: true })
+  })
+
+  it("leaves an existing user's settings alone when a re-run is skipped before any choice", () => {
+    const onFinish = vi.fn()
+    render(
+      <OnboardingWizard settings={{ ...settings, hasSeenOnboarding: true }} onFinish={onFinish} />,
+    )
     fireEvent.click(screen.getByTestId('onboarding-skip'))
     expect(onFinish).toHaveBeenCalledWith({ hasSeenOnboarding: true })
   })
