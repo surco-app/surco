@@ -240,6 +240,8 @@
   },
   "notices": {
     "duplicatesSkipped": "すでにリストにあります、スキップしました: {{count}}",
+    "notAudioSkipped_one": "{{count}} 件のファイルは音声ではないためスキップしました",
+    "notAudioSkipped_other": "{{count}} 件のファイルは音声ではないためスキップしました",
     "noAudioFound": "ドロップしたファイルに音声が見つかりませんでした。フォルダーが読み取り可能で対応形式が含まれているか確認してください。",
     "normalizeSkipped": "“{{name}}”のラウドネスを測定できなかったため、正規化せずに変換しました。",
     "keptAsIs": "“{{name}}”は「MP3 と M4A ファイルはそのまま保持」に設定され、元の横にあるためそのままです。",

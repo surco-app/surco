@@ -240,6 +240,8 @@
   },
   "notices": {
     "duplicatesSkipped": "Já estavam na lista, ignoradas: {{count}}",
+    "notAudioSkipped_one": "{{count}} arquivo não é áudio e foi ignorado",
+    "notAudioSkipped_other": "{{count}} arquivos não são áudio e foram ignorados",
     "noAudioFound": "Nenhum áudio encontrado no que você soltou. Verifique se a pasta pode ser lida e tem formatos compatíveis.",
     "normalizeSkipped": "Não foi possível medir o volume de “{{name}}”: convertida sem normalização.",
     "keptAsIs": "“{{name}}” fica como está porque “Manter arquivos MP3 e M4A como estão” está ativo com “Ao lado do original”.",

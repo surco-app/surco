@@ -294,6 +294,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     checkForUpdates: vi.fn().mockResolvedValue(undefined),
     onOpenFiles: () => () => {},
     onExpandedBatch: () => () => {},
+    onNotAudioSkipped: () => () => {},
     onFoldersChanged: () => () => {},
     unwatchFolders: vi.fn().mockResolvedValue(undefined),
     takePendingFiles: vi.fn().mockResolvedValue([]),
@@ -3163,7 +3164,7 @@ describe('App source playlists', () => {
     fireEvent.drop(screen.getByTestId('sidebar'), {
       dataTransfer: fakeDataTransfer([new File([''], 'new.wav')]),
     })
-    await waitFor(() => expect(window.api.expandPaths).toHaveBeenCalledWith(['/Finder/new.wav']))
+    await waitFor(() => expect(window.api.expandPaths).toHaveBeenCalledWith(['/Finder/new.wav'], true))
   })
 
   // Rows dragged out of the list toward a playlist in the tree are already in the list;
@@ -3292,7 +3293,7 @@ describe('App import skeleton', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
-    expect(window.api.expandPaths).toHaveBeenCalledWith(['/music/crate'])
+    expect(window.api.expandPaths).toHaveBeenCalledWith(['/music/crate'], true)
   })
 
   // Reading tags/duration/cover up front used to block the whole drop behind the slowest
@@ -4251,6 +4252,56 @@ describe('App open with', () => {
     await screen.findByTestId('add-files')
     push?.(['/music/live.flac'])
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+  })
+})
+
+describe('App non-audio notice', () => {
+  function notAudioApi(): void {
+    let report: ((count: number) => void) | undefined
+    setApi({
+      getPathForFile: vi.fn((f: File) => `/m/${f.name}`),
+      onNotAudioSkipped: (cb: (count: number) => void) => {
+        report = cb
+        return () => {}
+      },
+      expandPaths: vi.fn(async (paths: string[], reportNotAudio?: boolean) => {
+        const notAudio = paths.filter((p) => p.endsWith('.txt'))
+        if (reportNotAudio && notAudio.length) report?.(notAudio.length)
+        return paths.filter((p) => !p.endsWith('.txt'))
+      }),
+      readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+    })
+  }
+
+  it('says how many dropped files were skipped for not being audio, beside the ones that loaded', async () => {
+    notAudioApi()
+    await renderApp()
+
+    fireEvent.drop(await screen.findByTestId('empty-dropzone'), {
+      dataTransfer: fakeDataTransfer([
+        new File([''], 'notes.txt'),
+        new File([''], 'lyrics.txt'),
+        new File([''], 'a.wav'),
+      ]),
+    })
+
+    expect(await screen.findByTestId('app-notice')).toHaveTextContent(
+      i18n.t('notices.notAudioSkipped', { count: 2 }),
+    )
+    expect(screen.getAllByTestId('track-row')).toHaveLength(1)
+  })
+
+  it('says so for a lone dropped file that is not audio instead of doing nothing', async () => {
+    notAudioApi()
+    await renderApp()
+
+    fireEvent.drop(await screen.findByTestId('empty-dropzone'), {
+      dataTransfer: fakeDataTransfer([new File([''], 'notes.txt')]),
+    })
+
+    expect(await screen.findByTestId('app-notice')).toHaveTextContent(
+      i18n.t('notices.notAudioSkipped', { count: 1 }),
+    )
   })
 })
 
@@ -7754,7 +7805,7 @@ describe('App empty screen offers a single way in', () => {
       dataTransfer: { files: [file], types: ['Files'], getData: () => '' },
     })
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
-    expect(window.api.expandPaths).toHaveBeenCalledWith(['/music/dropped.wav'])
+    expect(window.api.expandPaths).toHaveBeenCalledWith(['/music/dropped.wav'], true)
     expect(window.api.pickFiles).not.toHaveBeenCalled()
   })
 

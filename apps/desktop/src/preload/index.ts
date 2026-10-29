@@ -71,12 +71,18 @@ const api: Api = {
   // stamp feedback with the version synchronously, like platform.
   version: ipcRenderer.sendSync('app:version') as string,
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
-  expandPaths: (paths: string[]): Promise<string[]> => ipcRenderer.invoke('files:expand', paths),
+  expandPaths: (paths: string[], reportNotAudio?: boolean): Promise<string[]> =>
+    ipcRenderer.invoke('files:expand', paths, reportNotAudio),
   takePendingFiles: (): Promise<string[]> => ipcRenderer.invoke('files:pending'),
   onExpandedBatch: (cb: (paths: string[]) => void) => {
     const listener = (_e: unknown, paths: string[]): void => cb(paths)
     ipcRenderer.on('files:expanded', listener)
     return () => ipcRenderer.removeListener('files:expanded', listener)
+  },
+  onNotAudioSkipped: (cb: (count: number) => void) => {
+    const listener = (_e: unknown, count: number): void => cb(count)
+    ipcRenderer.on('files:notAudio', listener)
+    return () => ipcRenderer.removeListener('files:notAudio', listener)
   },
   onOpenFiles: (cb: (paths: string[]) => void) => {
     const listener = (_e: unknown, paths: string[]): void => cb(paths)

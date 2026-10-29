@@ -721,6 +721,13 @@ export default function App(): React.JSX.Element {
     },
     filesOpen: browser.source === null,
   })
+  useEffect(
+    () =>
+      window.api.onNotAudioSkipped((count) =>
+        pushImportNotice(store, 'not-audio-skipped', tr('notices.notAudioSkipped', { count })),
+      ),
+    [store, tr],
+  )
 
   const [revealing, setRevealing] = useState<CueSpot | null>(null)
   // What an edit to rekordbox did, or why it did nothing: one keyed line, so a burst of
@@ -965,7 +972,7 @@ export default function App(): React.JSX.Element {
   // walks to its audio files, and ._ AppleDouble and hidden entries are filtered out.
   const addToWorkingList = useStableCallback(async (paths: string[]): Promise<void> => {
     if (paths.length > 0) selectSource(null)
-    await addPaths(await window.api.expandPaths(paths))
+    await addPaths(await window.api.expandPaths(paths, true))
   })
   const pickFiles = useStableCallback(
     async (): Promise<void> => addToWorkingList(await window.api.pickFiles()),

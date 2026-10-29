@@ -240,6 +240,8 @@
   },
   "notices": {
     "duplicatesSkipped": "Schon in der Liste, übersprungen: {{count}}",
+    "notAudioSkipped_one": "{{count}} Datei ist kein Audio und wurde übersprungen",
+    "notAudioSkipped_other": "{{count}} Dateien sind kein Audio und wurden übersprungen",
     "noAudioFound": "Kein Audio im abgelegten Inhalt gefunden. Prüfe, ob der Ordner lesbar ist und unterstützte Formate enthält.",
     "normalizeSkipped": "Die Lautheit von „{{name}}“ konnte nicht gemessen werden: ohne Normalisierung konvertiert.",
     "keptAsIs": "„{{name}}“ bleibt, wie es ist, weil „MP3- und M4A-Dateien behalten“ mit „Neben dem Original“ aktiv ist.",

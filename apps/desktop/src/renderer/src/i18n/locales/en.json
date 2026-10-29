@@ -240,6 +240,8 @@
   },
   "notices": {
     "duplicatesSkipped": "Already in the list, skipped: {{count}}",
+    "notAudioSkipped_one": "{{count}} file isn't audio and was skipped",
+    "notAudioSkipped_other": "{{count}} files aren't audio and were skipped",
     "noAudioFound": "No audio found in what you dropped. Check the folder is readable and holds supported formats.",
     "normalizeSkipped": "Couldn't measure the loudness of “{{name}}”, so it was converted without normalization.",
     "keptAsIs": "“{{name}}” stays as it is because “Keep MP3 and M4A files as they are” is on with “Next to the original”.",

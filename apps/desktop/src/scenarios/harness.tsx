@@ -276,6 +276,7 @@ function scenarioApi(
 ): Api {
   const reservations = createOutputReservations()
   const expandedListeners = new Set<(paths: string[]) => void>()
+  const notAudioListeners = new Set<(count: number) => void>()
   const folderListeners = new Set<(root: string, files: string[]) => void>()
   watcher = new FolderWatcher((root, files) =>
     onWatchedFilesChanged(
@@ -344,12 +345,19 @@ function scenarioApi(
     usbVolumes: async () => ({ volumes: [], lastKey: null }),
     onUsbVolumesChanged: () => () => {},
     onUsbEvent: () => () => {},
-    expandPaths: async (paths) => {
-      const expanded = await expandPaths(paths, (batch) => {
-        mediaAccess.allowAll(batch)
-        for (const listener of expandedListeners) listener(batch)
-      })
+    expandPaths: async (paths, reportNotAudio = false) => {
+      let notAudio = 0
+      const expanded = await expandPaths(
+        paths,
+        (batch) => {
+          mediaAccess.allowAll(batch)
+          for (const listener of expandedListeners) listener(batch)
+        },
+        () => notAudio++,
+      )
       mediaAccess.allowAll(expanded)
+      if (reportNotAudio && notAudio > 0)
+        for (const listener of notAudioListeners) listener(notAudio)
       const roots = await dirRoots(paths)
       if (roots.length) watcher?.watch(roots)
       return expanded
@@ -357,6 +365,10 @@ function scenarioApi(
     onExpandedBatch: (listener) => {
       expandedListeners.add(listener)
       return () => expandedListeners.delete(listener)
+    },
+    onNotAudioSkipped: (listener) => {
+      notAudioListeners.add(listener)
+      return () => notAudioListeners.delete(listener)
     },
     onOpenFiles: () => () => {},
     onFoldersChanged: (listener) => {

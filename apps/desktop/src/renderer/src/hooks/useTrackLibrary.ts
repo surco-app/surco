@@ -782,7 +782,7 @@ export function useTrackLibrary({
   addPathsRef.current = addPaths
   useEffect(() => {
     const open = async (paths: string[]): Promise<void> => {
-      if (paths.length) addPathsRef.current(await window.api.expandPaths(paths))
+      if (paths.length) addPathsRef.current(await window.api.expandPaths(paths, true))
     }
     window.api.takePendingFiles().then(open)
     return window.api.onOpenFiles(open)
