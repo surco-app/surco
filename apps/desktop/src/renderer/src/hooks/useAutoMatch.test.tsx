@@ -57,9 +57,11 @@ function setup(
   updateTrack: ReturnType<typeof vi.fn>
   tracksRef: { current: TrackItem[] }
   reportActivity: ReturnType<typeof vi.fn>
+  recordUndo: ReturnType<typeof vi.fn>
 } {
   const updateTrack = vi.fn()
   const reportActivity = vi.fn()
+  const recordUndo = vi.fn()
   const tracksRef = { current: tracks }
   const libraryIndexRef = { current: libraryIndex }
   const searchProvidersRef: { current: SearchProviderId[] } = { current: ['discogs'] }
@@ -80,9 +82,10 @@ function setup(
       matchCleanupRef,
       editingRef,
       reportActivity,
+      recordUndo,
     }),
   )
-  return { result, updateTrack, tracksRef, reportActivity }
+  return { result, updateTrack, tracksRef, reportActivity, recordUndo }
 }
 
 describe('useAutoMatch', () => {
@@ -99,6 +102,31 @@ describe('useAutoMatch', () => {
     expect(updateTrack).toHaveBeenCalledWith('a', expect.objectContaining({ autoMatched: true }))
     expect(updateTrack).toHaveBeenCalledWith('b', expect.objectContaining({ autoMatched: true }))
     await waitFor(() => expect(result.current.matching).toBeNull())
+  })
+
+  it('records each applied track, cover included, under one step per sweep so ⌘Z takes back a whole sweep at once', async () => {
+    setApi()
+    const tracks = [track('a'), track('b')]
+    const { result, updateTrack, recordUndo, tracksRef } = setup(tracks)
+
+    act(() => result.current.enqueueAutoMatch(tracks))
+    await waitFor(() => expect(updateTrack).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(result.current.matching).toBeNull())
+
+    expect(recordUndo).toHaveBeenCalledTimes(2)
+    expect(recordUndo.mock.invocationCallOrder[0]).toBeLessThan(
+      updateTrack.mock.invocationCallOrder[0],
+    )
+    const [first, second] = recordUndo.mock.calls
+    expect([first[0], second[0]].flat().sort()).toEqual(['a', 'b'])
+    expect(first[1]).toMatchObject({ cover: true })
+    expect(second[1].group).toBe(first[1].group)
+
+    const next = [track('c')]
+    tracksRef.current = [...tracks, ...next]
+    act(() => result.current.enqueueAutoMatch(next))
+    await waitFor(() => expect(recordUndo).toHaveBeenCalledTimes(3))
+    expect(recordUndo.mock.calls[2][1].group).not.toBe(first[1].group)
   })
 
   // The sweep is the one path that tags without anyone watching — a crate of 600 files
@@ -595,6 +623,7 @@ describe('a row listed before its full read', () => {
         matchCleanupRef: { current: {} },
         editingRef: { current: null },
         reportActivity: vi.fn(),
+        recordUndo: vi.fn(),
       }),
     )
     return { result, tracksRef }

@@ -549,19 +549,25 @@ describe('CoverPicker drag and counter', () => {
     // The file's own cover sits at index 0, the two release images after it.
     expect(screen.getByTestId('cover-image-count')).toHaveTextContent('1/3')
     fireEvent.click(screen.getByTestId('cover-next'))
-    expect(onChange).toHaveBeenLastCalledWith({
-      coverUrl: 'http://a/1.jpg',
-      coverPath: undefined,
-      coverRemoved: false,
-    })
+    expect(onChange).toHaveBeenLastCalledWith(
+      {
+        coverUrl: 'http://a/1.jpg',
+        coverPath: undefined,
+        coverRemoved: false,
+      },
+      { group: expect.any(String) },
+    )
     // Stepping back from the original wraps to the last release image, so both directions
     // reach the release art.
     fireEvent.click(screen.getByTestId('cover-prev'))
-    expect(onChange).toHaveBeenLastCalledWith({
-      coverUrl: 'http://a/2.jpg',
-      coverPath: undefined,
-      coverRemoved: false,
-    })
+    expect(onChange).toHaveBeenLastCalledWith(
+      {
+        coverUrl: 'http://a/2.jpg',
+        coverPath: undefined,
+        coverRemoved: false,
+      },
+      { group: expect.any(String) },
+    )
   })
 })
 
