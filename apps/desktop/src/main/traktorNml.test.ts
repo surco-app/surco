@@ -209,6 +209,26 @@ describe('grid tempo already in the collection', () => {
     expect(out).toContain('BPM="144.500000"')
   })
 
+  // Measured 29/10/2026 with Traktor Play 4.5.1: Traktor re-analysed a track and kept the
+  // new grid in the collection only, while the file still carried an AutoGrid 51 ms off.
+  // Converting it wrote the file's marker AND kept the collection's, two grid anchors a
+  // fraction of a beat apart, which Traktor reads as a tempo change inside the first beat.
+  // The collection is what Traktor plays from, so its grid is the one that stays.
+  it('keeps the collection grid instead of adding a different one the file carries', () => {
+    const stale = buildTraktorTree([
+      traktorCue('AutoGrid', 4, 61.187472, -1),
+      traktorCue('Drop', 0, 79672.64, 1),
+    ])
+
+    const out = applyPatches(WITH_GRID, [
+      { volume: 'HD', dir: '/:M/:', file: 'uno.mp3', cueTree: stale, bpm: 142 },
+    ])
+
+    expect(out.match(/TYPE="4"/g)).toHaveLength(1)
+    expect(out).toContain('START="10.187472"')
+    expect(out).toContain('START="79672.640000"')
+  })
+
   // The DJ retyping the BPM field is the one case where the tag SHOULD win: they are
   // telling Surco the analysed figure is wrong. Only a value that differs beyond the
   // rounding counts, or every track whose tag reads 142 would overwrite its own 141.9996.

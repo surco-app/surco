@@ -377,6 +377,16 @@ function collectionOnlyCues(
   return out
 }
 
+// A grid marker the entry keeps carries the tempo gridBpmFor settled on, which is the DJ's
+// own when they retyped it; any other cue passes through untouched.
+function withGridTempo(cue: string, bpm: number): string {
+  if (attr(cue, 'TYPE') !== '4') return cue
+  const grid = `<GRID BPM="${bpm.toFixed(6)}"></GRID>`
+  if (/<GRID\b/.test(cue)) return cue.replace(/<GRID\b[^>]*>(?:<\/GRID>)?/, () => grid)
+  if (cue.endsWith('/>')) return `${cue.slice(0, -2)}>${grid}</CUE_V2>`
+  return cue.replace(/<\/CUE_V2>$/, () => `${grid}</CUE_V2>`)
+}
+
 function replaceCues(
   block: string,
   tree: Uint8Array,
@@ -392,14 +402,25 @@ function replaceCues(
   // so leave the block exactly as it is instead of erasing what Traktor already has.
   if (markers.length === 0) return block
   const tempo = gridBpmFor(block, bpm)
-  const newCues = cuesToXml(tree, tempo)
-  const droppedGrid = markers.some((m) => m.type === 4) && !newCues.includes('TYPE="4"')
+  // Traktor can re-analyse a track and keep the new grid in the collection alone, so the
+  // file's marker may sit a fraction of a beat from the one Traktor plays from. With a
+  // grid of its own the entry keeps it, moved like its other cues, and the file's is left
+  // out: written together they are two anchors, a tempo change inside the first beat.
+  const ownGrid = (block.match(CUE_V2_RE) ?? []).some((cue) => attr(cue, 'TYPE') === '4')
+  const fromFile = ownGrid ? markers.filter((m) => m.type !== 4) : markers
+  const newCues = cuesToXml(tree, ownGrid ? undefined : tempo)
+  const droppedGrid = !ownGrid && markers.some((m) => m.type === 4) && !newCues.includes('TYPE="4"')
   const existingGrid = droppedGrid
     ? block.match(new RegExp(CUE_V2_RE.source.replace('[^>]*?', '[^>]*?TYPE="4"[^>]*?')))?.[0]
     : undefined
 
+  const kept = collectionOnlyCues(block, fromFile, shift, tempo, existingGrid)
   const cuesXml =
-    (existingGrid ?? '') + newCues + collectionOnlyCues(block, markers, shift, tempo, existingGrid)
+    (existingGrid ?? '') +
+    newCues +
+    (ownGrid && tempo !== undefined
+      ? kept.replace(CUE_V2_RE, (cue) => withGridTempo(cue, tempo))
+      : kept)
   // Where the ENTRY already kept its cues, when it had any. The fixed anchor below is
   // right after LOCATION, which is the FIRST child of an ENTRY — so using it for a block
   // that already had cues further down moves them ahead of INFO, TEMPO, LOUDNESS and
