@@ -155,8 +155,9 @@ interface Props {
   // the pass shares the ⌘K command's undo channel and its "changed n / changed
   // nothing" notices; the editor's T button is just a second trigger for it.
   onApplyTitleFormat?: () => void
-  // Snapshots the given tracks' tags into App's ⌘Z stack before the clear button
-  // overwrites them (derive is already recorded inside onDeriveTags).
+  // Snapshots the given tracks' tags into App's ⌘Z stack before the clear button, a
+  // release pick or a cover change overwrites them (derive is already recorded inside
+  // onDeriveTags).
   onRecordUndo?: (ids: string[], opts?: { cover?: boolean }) => void
   // Marks the given tracks as fully cleared (coverRemoved + metaCleared) so a convert
   // wipes their rating and cover too — the multi-select sibling of the flags the
@@ -732,6 +733,7 @@ export const Editor = memo(function Editor({
     const coverIsOriginal = !!current.coverUrl && current.coverUrl === current.embeddedCover
     const shownDims =
       coverIsOriginal && current.embeddedCoverDims ? current.embeddedCoverDims : coverDims
+    onRecordUndo?.([current.id], { cover: true })
     onChange({
       ...buildReleaseMeta(
         current.meta,
@@ -803,6 +805,11 @@ export const Editor = memo(function Editor({
   })
   const setCustom = useStableCallback((key: string, value: string): void => {
     onChange({ meta: { ...item.meta, custom: { ...item.meta.custom, [key]: value } } })
+  })
+
+  const onCoverChange = useStableCallback((patch: Partial<TrackItem>): void => {
+    onRecordUndo?.([item.id], { cover: true })
+    onChange(patch)
   })
 
   // The open track's metadata with its custom fields resolved, once, for every reader below.
@@ -880,8 +887,7 @@ export const Editor = memo(function Editor({
   function clearAllMeta(): void {
     const blank = emptyMetadata()
     // The artwork is part of what this clears, so the snapshot has to carry it: the
-    // single-track branch below drops coverUrl, and App revokes that blob on the way
-    // out, which would hand a later undo a dead URL to restore.
+    // single-track branch below drops coverUrl.
     onRecordUndo?.(
       (isMulti ? (selectedTracks ?? []) : [item]).map((t) => t.id),
       { cover: true },
@@ -1438,7 +1444,7 @@ export const Editor = memo(function Editor({
                 release={release}
                 coverDims={effectiveCoverDims}
                 setCoverDims={setCoverDims}
-                onChange={onChange}
+                onChange={onCoverChange}
                 onApplyCoverAll={onApplyCoverAll}
                 onRate={(v) => setField('rating', v)}
                 fields={fieldSpecs}

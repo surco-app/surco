@@ -160,9 +160,7 @@ export function CoverPicker({
   useEffect(() => setCoverDims(null), [displayCover])
 
   // Sets the artwork from a resolved (url, path) pair: stamps onto every selected
-  // track in multi-select, otherwise just the primary. Freeing the previous blob URL
-  // is left to App, the only place that knows whether another track still shows it (a
-  // multi-select apply makes several tracks share one blob).
+  // track in multi-select, otherwise just the primary.
   // The editor remounts per track, so a cover resolved after this picker unmounted (a
   // browser image still downloading when the user moved on) belongs to a track that is no
   // longer open; applying it would stamp it on whatever track is selected now.

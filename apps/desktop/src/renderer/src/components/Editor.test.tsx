@@ -203,8 +203,10 @@ function renderEditor(
   onCopyFilename: ReturnType<typeof vi.fn>
   onSearchWeb: ReturnType<typeof vi.fn>
   onExportCollection: ReturnType<typeof vi.fn>
+  onRecordUndo: ReturnType<typeof vi.fn>
 } {
   const onProcess = vi.fn()
+  const onRecordUndo = vi.fn()
   const onChange = vi.fn()
   const onDeriveTags = vi.fn()
   const onApplyTitleFormat = vi.fn()
@@ -247,6 +249,7 @@ function renderEditor(
         onCopyFilename={onCopyFilename}
         onSearchWeb={onSearchWeb}
         onExportCollection={onExportCollection}
+        onRecordUndo={onRecordUndo}
         readFullTrack={props.readFullTrack ?? (async () => undefined)}
       />
     </OpenSettingsProvider>,
@@ -300,6 +303,7 @@ function renderEditor(
     onRegenerateName,
     onCopyFilename,
     onSearchWeb,
+    onRecordUndo,
   }
 }
 
@@ -410,6 +414,20 @@ describe('Editor cover picker', () => {
 
   // Clearing the artwork must signal a real removal (coverRemoved), not just drop
   // the URL — otherwise the conversion's in-place path would keep the embedded art.
+  it('records the cover before a change by hand, so ⌘Z can bring the old artwork back', () => {
+    ;(window as unknown as { api: Record<string, unknown> }).api.prepareCoverDrag = () =>
+      Promise.resolve('/tmp/c.jpg')
+    const { onChange, onRecordUndo } = renderEditor({
+      id: 'a',
+      coverUrl: 'data:image/png;base64,xxx',
+    })
+    fireEvent.click(screen.getByTestId('cover-remove'))
+    expect(onRecordUndo).toHaveBeenCalledWith(['a'], { cover: true })
+    expect(onRecordUndo.mock.invocationCallOrder[0]).toBeLessThan(
+      onChange.mock.invocationCallOrder[0],
+    )
+  })
+
   it('clears the cover and flags removal when the remove button is clicked', () => {
     ;(window as unknown as { api: Record<string, unknown> }).api.prepareCoverDrag = () =>
       Promise.resolve('/tmp/c.jpg')
@@ -3261,6 +3279,37 @@ describe('Editor track preselection', () => {
       expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ matched: true })),
     )
     expect(box).toHaveFocus()
+  })
+
+  it('records the track, cover included, before a confident match applies itself, so ⌘Z can take back a write nobody clicked', async () => {
+    withDiscogs()
+    const { onChange, onRecordUndo } = renderEditor(
+      { id: 'a', meta: { title: 'Track Two (Remix)', artist: 'The Artist' } },
+      'wav',
+      { autoMatch: true, visibleFields: ['title'] },
+    )
+    await loadTracklist({ autoOpens: true })
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ matched: true })),
+    )
+    expect(onRecordUndo).toHaveBeenCalledTimes(1)
+    expect(onRecordUndo).toHaveBeenCalledWith(['a'], { cover: true })
+    expect(onRecordUndo.mock.invocationCallOrder[0]).toBeLessThan(
+      onChange.mock.invocationCallOrder.at(-1) ?? 0,
+    )
+  })
+
+  it('pushes no undo step when opening an already-matched track, since nothing is applied to it', async () => {
+    withDiscogs()
+    const { onChange, onRecordUndo } = renderEditor(
+      { id: 'a', matched: true, meta: { title: 'Track Two (Remix)', artist: 'The Artist' } },
+      'wav',
+      { autoMatch: true, visibleFields: ['title'] },
+    )
+    await loadTracklist({ autoOpens: true })
+    expect(await screen.findByTestId('track-confidence')).toHaveAttribute('data-confidence', 'high')
+    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ matched: true }))
+    expect(onRecordUndo).not.toHaveBeenCalled()
   })
 
   it('still moves the focus to the title when nothing is being typed', async () => {

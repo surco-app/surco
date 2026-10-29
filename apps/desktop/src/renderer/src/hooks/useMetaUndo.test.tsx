@@ -234,4 +234,66 @@ describe('useMetaUndo', () => {
     expect(result.current.tracks[0].meta.title).toBe('v1')
     expect(result.current.canUndo()).toBe(false)
   })
+
+  it('folds every track a sweep touches into one step, so a single undo takes back the whole sweep', () => {
+    const { result } = setup([track('a', { title: 'A' }), track('b', { title: 'B' })])
+    for (const id of ['a', 'b']) {
+      act(() => {
+        result.current.record(
+          result.current.tracks.filter((t) => t.id === id),
+          { group: 'sweep-1' },
+        )
+        result.current.setTracks((prev) =>
+          prev.map((t) => (t.id === id ? { ...t, meta: { ...t.meta, title: 'Matched' } } : t)),
+        )
+      })
+    }
+    let restored = 0
+    act(() => {
+      restored = result.current.undo()
+    })
+    expect(restored).toBe(2)
+    expect(result.current.tracks.map((t) => t.meta.title)).toEqual(['A', 'B'])
+    expect(result.current.canUndo()).toBe(false)
+  })
+
+  it('opens a new sweep step once another edit lands on top, so undoing that edit never takes back the sweep with it', () => {
+    const { result } = setup([track('a', { title: 'A' }), track('b', { title: 'B' })])
+    act(() => {
+      result.current.record([result.current.tracks[0]], { group: 'sweep-1' })
+      result.current.setTracks((prev) =>
+        prev.map((t) => (t.id === 'a' ? { ...t, meta: { ...t.meta, title: 'Matched' } } : t)),
+      )
+    })
+    act(() => {
+      result.current.record([result.current.tracks[0]])
+      result.current.setTracks((prev) =>
+        prev.map((t) => (t.id === 'a' ? { ...t, meta: { ...t.meta, title: 'Typed' } } : t)),
+      )
+    })
+    act(() => {
+      result.current.record([result.current.tracks[1]], { group: 'sweep-1' })
+      result.current.setTracks((prev) =>
+        prev.map((t) => (t.id === 'b' ? { ...t, meta: { ...t.meta, title: 'Matched' } } : t)),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.tracks.map((t) => t.meta.title)).toEqual(['Typed', 'B'])
+  })
+
+  it('keeps the first snapshot of a track the same sweep touches twice, so undo returns to before the sweep', () => {
+    const { result } = setup([track('a', { title: 'A' })])
+    for (const title of ['First', 'Second']) {
+      act(() => {
+        result.current.record(result.current.tracks, { group: 'sweep-1' })
+        result.current.setTracks((prev) => prev.map((t) => ({ ...t, meta: { ...t.meta, title } })))
+      })
+    }
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.tracks[0].meta.title).toBe('A')
+  })
 })

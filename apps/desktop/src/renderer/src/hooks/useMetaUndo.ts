@@ -36,7 +36,7 @@ interface MetaSnapshot {
 interface MetaUndo {
   // Snapshots the given tracks' tags before a batch operation overwrites them;
   // cover: true also snapshots the artwork for operations that overwrite it.
-  record: (targets: TrackItem[], opts?: { cover?: boolean }) => void
+  record: (targets: TrackItem[], opts?: { cover?: boolean; group?: string }) => void
   // Restores the most recent snapshot; returns how many tracks actually changed
   // (0 for an empty stack or when every recorded track has since been removed),
   // so the caller can word — or skip — its confirmation toast.
@@ -54,11 +54,15 @@ export function useMetaUndo(
   setTracks: React.Dispatch<React.SetStateAction<TrackItem[]>>,
 ): MetaUndo {
   const stack = useRef<MetaSnapshot[][]>([])
+  const topGroup = useRef<string | undefined>(undefined)
 
-  const record = useCallback((targets: TrackItem[], opts?: { cover?: boolean }) => {
+  const record = useCallback((targets: TrackItem[], opts?: { cover?: boolean; group?: string }) => {
     if (targets.length === 0) return
-    stack.current.push(
-      targets.map((t) => ({
+    const top = stack.current.at(-1)
+    const joining = top && opts?.group !== undefined && opts.group === topGroup.current
+    const snapshots = targets
+      .filter((t) => !joining || !top.some((s) => s.id === t.id))
+      .map((t) => ({
         id: t.id,
         meta: t.meta,
         matched: t.matched,
@@ -71,13 +75,19 @@ export function useMetaUndo(
         coverRemoved: t.coverRemoved,
         foreignRemoved: t.foreignRemoved,
         ...(opts?.cover ? { cover: { url: t.coverUrl, path: t.coverPath } } : {}),
-      })),
-    )
+      }))
+    topGroup.current = opts?.group
+    if (joining) {
+      top.push(...snapshots)
+      return
+    }
+    stack.current.push(snapshots)
     if (stack.current.length > MAX_META_UNDO) stack.current.shift()
   }, [])
 
   const undo = useCallback((): number => {
     const entry = stack.current.pop()
+    topGroup.current = undefined
     if (!entry) return 0
     const byId = new Map(entry.map((s) => [s.id, s]))
     // Rows removed since the edit stay gone — the snapshot restores fields on the
