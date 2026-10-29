@@ -548,6 +548,18 @@ describe('useMetaUndo', () => {
       })
     }
 
+    it('names every cover its undo and redo steps hold, so removing a row never frees one a step can still bring back', () => {
+      const { result } = setup([track('a', {}, { coverUrl: 'blob:own' })])
+      coverStep(result, 'a', 'blob:picked')
+      coverStep(result, 'a', 'blob:second')
+      act(() => {
+        result.current.undo()
+      })
+      expect(new Set(result.current.heldCovers())).toEqual(
+        new Set(['blob:own', 'blob:picked', 'blob:second']),
+      )
+    })
+
     it('frees a blob only a snapshot falling off the full stack still held, so long sessions do not pin every replaced image', () => {
       const revoke = spyRevoke()
       const { result } = setup([track('a', {}, { coverUrl: 'blob:first' })])

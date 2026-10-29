@@ -87,6 +87,7 @@ interface MetaUndo {
   redo: () => number
   canUndo: () => boolean
   canRedo: () => boolean
+  heldCovers: () => (string | undefined)[]
 }
 
 function pick(fields: Fields, keys: string[]): Fields {
@@ -237,6 +238,10 @@ export function useMetaUndo(
   )
   const canUndo = useCallback(() => stack.current.length > 0, [])
   const canRedo = useCallback(() => redoStack.current.length > 0, [])
+  const heldCovers = useCallback(
+    () => [...coversOf(stack.current), ...coversOf(redoStack.current)],
+    [],
+  )
 
-  return { record, undo, redo, canUndo, canRedo }
+  return { record, undo, redo, canUndo, canRedo, heldCovers }
 }

@@ -650,10 +650,10 @@ export default function App(): React.JSX.Element {
       // Deliberately NOT forgetAnalysisTracks here: forget means the row is being rebuilt
       // in place (start over), so the track is still in the list and must stay analyzable.
       // Free the rebuilt row's old blob only if no other track still shows it.
-      revokeCoverUrlIfUnused(
-        tracksRef.current.find((t) => t.id === id)?.coverUrl,
-        tracksRef.current.filter((t) => t.id !== id).map((t) => t.coverUrl),
-      )
+      revokeCoverUrlIfUnused(tracksRef.current.find((t) => t.id === id)?.coverUrl, [
+        ...tracksRef.current.filter((t) => t.id !== id).map((t) => t.coverUrl),
+        ...metaUndo.heldCovers(),
+      ])
     },
     // A row leaving the list also evicts its probe results from the session-long
     // query cache, where the spectrogram image would otherwise be retained until quit.
@@ -679,7 +679,10 @@ export default function App(): React.JSX.Element {
       // the entire selection is gone.
       revokeDisplacedCovers(
         removed.map((t) => t.coverUrl),
-        tracksRef.current.filter((t) => !gone.has(t.id)).map((t) => t.coverUrl),
+        [
+          ...tracksRef.current.filter((t) => !gone.has(t.id)).map((t) => t.coverUrl),
+          ...metaUndo.heldCovers(),
+        ],
       )
     },
     onClear: (cleared) => {

@@ -6668,6 +6668,58 @@ describe('App metadata undo', () => {
     }
   })
 
+  it('keeps a shared cover an undo step still holds alive when the other row showing it is removed, so undo can show it again', async () => {
+    const createObjectURL = vi
+      .fn()
+      .mockReturnValueOnce('blob:shared')
+      .mockReturnValueOnce('blob:own')
+    const revokeObjectURL = vi.fn()
+    const url = URL as unknown as Record<string, unknown>
+    const original = { createObjectURL: url.createObjectURL, revokeObjectURL: url.revokeObjectURL }
+    Object.assign(url, { createObjectURL, revokeObjectURL })
+    try {
+      setApi({
+        readTags: vi.fn(async (path: string) => ({
+          title: path === '/music/a.wav' ? 'Alpha' : 'Bravo',
+          artist: 'Artist',
+        })),
+        prepareCoverDrag: vi.fn().mockResolvedValue(null),
+        getPathForFile: vi.fn((f: File) => `/img/${f.name}`),
+      })
+      await renderApp()
+      const rows = await addTwoTracks()
+      fireEvent.click(rows[0])
+      fireEvent.click(rows[1], { metaKey: true })
+      fireEvent.change(await screen.findByTestId('cover-input'), {
+        target: { files: [new File(['x'], 'shared.png', { type: 'image/png' })] },
+      })
+      fireEvent.click(screen.getAllByTestId('track-row')[1])
+      await waitFor(() =>
+        expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:shared'),
+      )
+      fireEvent.change(screen.getByTestId('cover-input'), {
+        target: { files: [new File(['x'], 'own.png', { type: 'image/png' })] },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:own'),
+      )
+
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(screen.getByTestId('track-menu-remove'))
+      fireEvent.click(await screen.findByTestId('confirm-ok'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:shared')
+
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+      await waitFor(() =>
+        expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:shared'),
+      )
+    } finally {
+      Object.assign(url, original)
+    }
+  })
+
   it('gives every selected track its own cover back after one was pasted over all of them', async () => {
     setApi({
       readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
