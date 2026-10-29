@@ -921,6 +921,7 @@ export interface Scenario {
   rekordboxClosed: () => Promise<void>
   engineQueue: () => RekordboxQueueState
   engineClosed: () => Promise<void>
+  traktorQueue: () => RekordboxQueueState
   traktorClosed: () => Promise<void>
   retry: (fileName: string) => Promise<'rerun-job' | 'rechecked'>
   verification: (fileName: string) => Verification | undefined
@@ -1255,6 +1256,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
     rekordboxWaiting: () => queues.rekordbox.state().tracks,
     rekordboxClosed: () => applyOnClose(queues, 'rekordbox', verify?.checks),
     engineQueue: () => queues.engine.state(),
+    traktorQueue: () => queues.traktor.state(),
     verification: (fileName) => trackNamed(fileName).verification,
     statuses: (fileName) => verify?.statuses.get(trackNamed(fileName).id) ?? [],
     settled: async () => {
