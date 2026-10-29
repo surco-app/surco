@@ -1309,7 +1309,7 @@
     "beatportDisconnect": "Trennen",
     "discogsToken": "Discogs-Token",
     "tokenPlaceholder": "Füg hier deinen persönlichen Token ein",
-    "tokenWhy": "Optional. Die Suche nutzt geteilte Zugangsdaten, die zu Stoßzeiten kurz ausfallen können; dein eigener Token hält sie schnell.",
+    "tokenWhy": "Für die Suche optional: Sie nutzt geteilte Zugangsdaten, die zu Stoßzeiten kurz ausfallen können; dein eigener Token hält sie schnell. Für den automatischen Abgleich ist er nötig.",
     "tokenHelp": "Erstell kostenlos einen auf",
     "autoMatch": "Beim Import automatisch abgleichen",
     "autoMatchHint": "Durchsucht beim Import deine Quellen und übernimmt sichere Treffer. Discogs zuerst, deine übrigen Quellen als Rückfall. Standardmäßig aus.",

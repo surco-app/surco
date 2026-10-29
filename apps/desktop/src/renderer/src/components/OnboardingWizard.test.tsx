@@ -634,6 +634,11 @@ describe('OnboardingWizard token field', () => {
     openTokenStep()
     expect(screen.getByText(i18n.t('settings.tokenWhy'), { exact: false })).toBeInTheDocument()
   })
+
+  it('says the token is only optional for search, not for auto-match', () => {
+    openTokenStep()
+    expect(screen.getByTestId('onboarding-token').parentElement).toHaveTextContent(/auto-match/i)
+  })
 })
 
 describe('OnboardingWizard auto-match', () => {

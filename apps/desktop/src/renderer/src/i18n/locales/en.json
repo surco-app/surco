@@ -1309,7 +1309,7 @@
     "beatportDisconnect": "Disconnect",
     "discogsToken": "Discogs token",
     "tokenPlaceholder": "Paste your personal token here",
-    "tokenWhy": "Optional. Search uses shared credentials that can briefly fail at peak times; your own token keeps it fast.",
+    "tokenWhy": "Optional for search, which uses shared credentials that can briefly fail at peak times; your own token keeps it fast. Auto-match does need it.",
     "tokenHelp": "Generate one for free at",
     "autoMatch": "Auto-match on import",
     "autoMatchHint": "On import, search your sources and apply confident matches. Discogs leads, your other sources fall back. Off by default.",

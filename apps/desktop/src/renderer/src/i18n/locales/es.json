@@ -1309,7 +1309,7 @@
     "beatportDisconnect": "Desconectar",
     "discogsToken": "Token de Discogs",
     "tokenPlaceholder": "Pega aquí tu token personal",
-    "tokenWhy": "Opcional. La búsqueda usa credenciales compartidas que pueden fallar en horas punta; tu propio token la mantiene rápida.",
+    "tokenWhy": "Opcional para buscar: la búsqueda usa credenciales compartidas que pueden fallar en horas punta; tu propio token la mantiene rápida. Para auto-emparejar sí hace falta.",
     "tokenHelp": "Genera uno gratis en",
     "autoMatch": "Auto-emparejar al importar",
     "autoMatchHint": "Al importar, busca en tus fuentes y aplica las coincidencias fiables. Discogs primero y el resto de tus fuentes de respaldo. Desactivado por defecto.",
