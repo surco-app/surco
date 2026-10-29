@@ -156,7 +156,7 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
 
   return (
     <>
-      <SettingsSection first>
+      <SettingsSection first searchId="titleFormat">
         <FormatField
           id="settings-title-format"
           label={tr('settings.titleFormat')}
@@ -178,7 +178,7 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
         />
       </SettingsSection>
 
-      <SettingsSection>
+      <SettingsSection searchId="filenameFormat">
         <FormatField
           id="settings-filename-format"
           label={tr('settings.filenameFormat')}
@@ -208,6 +208,7 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
             checked={synced.autoApplyFilename}
             onChange={(v) => patch('autoApplyFilename', v)}
             label={tr('settings.autoApplyFilename')}
+            searchId="autoApplyFilename"
             hint={tr('settings.autoApplyFilenameHint')}
           />
           <SettingsCheckboxField
@@ -215,6 +216,7 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
             checked={synced.asciiFileNames}
             onChange={(v) => patch('asciiFileNames', v)}
             label={tr('settings.asciiFileNames')}
+            searchId="asciiFileNames"
             hint={tr('settings.asciiFileNamesHint')}
           />
           <SettingsCheckboxField
@@ -222,18 +224,21 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
             checked={synced.trimWhitespace}
             onChange={(v) => patch('trimWhitespace', v)}
             label={tr('settings.trimWhitespace')}
+            searchId="trimWhitespace"
           />
           <SettingsCheckboxField
             testid="settings-zeropad"
             checked={synced.zeroPadTrack}
             onChange={(v) => patch('zeroPadTrack', v)}
             label={tr('settings.zeroPadTrack')}
+            searchId="zeroPadTrack"
           />
           <SettingsCheckboxField
             testid="settings-full-release-date"
             checked={synced.fullReleaseDate}
             onChange={(v) => patch('fullReleaseDate', v)}
             label={tr('settings.fullReleaseDate')}
+            searchId="fullReleaseDate"
             hint={tr('settings.fullReleaseDateHint')}
           />
         </SettingsGroup>

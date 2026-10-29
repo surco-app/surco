@@ -150,7 +150,7 @@ export function DestinationTab({
 
   return (
     <>
-      <SettingsField label={tr('settings.destination')}>
+      <SettingsField label={tr('settings.destination')} searchId="destination">
         <DestinationPicker
           destinations={DESTINATIONS.filter((d) => isMac || d !== 'appleMusic')}
           value={destination}
@@ -166,7 +166,7 @@ export function DestinationTab({
           into collection.nml as a side effect of conversion, wherever the file ends up —
           it isn't itself a place the converted file goes. Empty path means the feature
           is off (see settings.ts), so this is the only control that turns it on. */}
-      <SettingsSection eyebrow={tr('settings.traktorSync')}>
+      <SettingsSection eyebrow={tr('settings.traktorSync')} searchId="traktorSync">
         {/* One three-state control per program, and the only thing that turns it on or
             off: leave the collection alone, update it, or update it and add new tracks.
             Emptying the path used to be what turned the sync off — an invisible side
@@ -185,7 +185,7 @@ export function DestinationTab({
         </SettingsHint>
         {/* No htmlFor: the value below is a read-only display, not a form control, so
             there is nothing for a label to focus. */}
-        <SettingsLabel>{tr('settings.traktorNmlPath')}</SettingsLabel>
+        <SettingsLabel searchId="traktorNmlPath">{tr('settings.traktorNmlPath')}</SettingsLabel>
         <div className="mt-2">
           <PathField
             value={local.traktorNmlPath}
@@ -249,7 +249,9 @@ export function DestinationTab({
             disappears leaves the user unable to tell whether the setting exists at all.
             Without a collection it is disabled and the hint says what is missing. */}
         <div className="mt-6">
-          <SettingsLabel>{tr('settings.traktorCueOffset')}</SettingsLabel>
+          <SettingsLabel searchId="traktorCueOffset">
+            {tr('settings.traktorCueOffset')}
+          </SettingsLabel>
           <p className="mt-1 text-sm text-fg-muted">{tr('settings.traktorCueQuestion')}</p>
 
           {/* Radios, not a row of signed buttons: the DJ answers what he HEARS and Surco
@@ -337,7 +339,7 @@ export function DestinationTab({
       {/* rekordbox keeps its collection in one fixed place per platform, so there is
           nothing to point at and the three-state control is the whole setup — the path
           below is shown only so the user can see which collection is being written to. */}
-      <SettingsSection eyebrow={tr('settings.rekordboxSync')}>
+      <SettingsSection eyebrow={tr('settings.rekordboxSync')} searchId="rekordboxSync">
         <DjReachRow
           program="rekordbox"
           label={tr('settings.syncRekordbox')}
@@ -350,7 +352,9 @@ export function DestinationTab({
             ? tr('settings.syncRekordboxHint')
             : tr('settings.syncRekordboxIdle')}
         </SettingsHint>
-        <SettingsLabel className="mt-4">{tr('settings.rekordboxDbPath')}</SettingsLabel>
+        <SettingsLabel className="mt-4" searchId="rekordboxDbPath">
+          {tr('settings.rekordboxDbPath')}
+        </SettingsLabel>
         <div className="mt-2">
           <PathField
             value={rekordboxCollection}
@@ -423,7 +427,7 @@ export function DestinationTab({
       {/* The library folder says which Engine database Surco reads and
           writes; the three-state control decides whether rows that point at a converted
           file's original move onto the new file, and whether new tracks are added too. */}
-      <SettingsSection eyebrow={tr('settings.engineSync')}>
+      <SettingsSection eyebrow={tr('settings.engineSync')} searchId="engineSync">
         <div className="mb-4">
           <EngineLibraryFields
             libraryDir={local.engineLibraryDir}
@@ -443,9 +447,11 @@ export function DestinationTab({
           fills from a format change and from a delete on a volume with no OS Trash, and
           hanging the setting off one destination left the other two paths ignoring it
           while the control was not even on screen. Its own section, always reachable. */}
-      <SettingsSection eyebrow={tr('settings.originals')}>
+      <SettingsSection eyebrow={tr('settings.originals')} searchId="originals">
         <SettingsHint className="-mt-1 mb-3">{tr('settings.originalsHint')}</SettingsHint>
-        <SettingsLabel className="mb-2">{tr('settings.originalBackup')}</SettingsLabel>
+        <SettingsLabel className="mb-2" searchId="originalBackup">
+          {tr('settings.originalBackup')}
+        </SettingsLabel>
         <SegmentedControl
           options={BACKUP_POLICIES}
           value={synced.backupPolicy}

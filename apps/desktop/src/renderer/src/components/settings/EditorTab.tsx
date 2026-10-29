@@ -23,6 +23,7 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
         <div className="flex flex-col gap-5">
           <SettingsField
             label={tr('settings.grouping')}
+            searchId="grouping"
             htmlFor="settings-grouping"
             hint={tr('settings.groupingHint')}
           >
@@ -37,6 +38,7 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
           </SettingsField>
           <SettingsField
             label={tr('settings.genre')}
+            searchId="genre"
             htmlFor="settings-genre"
             hint={tr('settings.genreHint')}
           >
@@ -60,6 +62,7 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
               checked={synced.showSpectrum}
               onChange={(v) => patch('showSpectrum', v)}
               label={tr('settings.showSpectrum')}
+              searchId="showSpectrum"
               hint={tr('settings.showSpectrumHint')}
             />
             {/* Only meaningful while the quality analysis above is on — disabled (not hidden)
@@ -74,6 +77,7 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
                 onChange={(v) => patch('autoAnalyze', v)}
                 disabled={!synced.showSpectrum}
                 label={tr('settings.autoAnalyze')}
+                searchId="autoAnalyze"
                 hint={tr('settings.autoAnalyzeHint')}
               />
             </div>
@@ -83,6 +87,7 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
             checked={synced.showLoudness}
             onChange={(v) => patch('showLoudness', v)}
             label={tr('settings.showLoudness')}
+            searchId="showLoudness"
             hint={tr('settings.showLoudnessHint')}
           />
           <SettingsCheckboxField
@@ -90,9 +95,14 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
             checked={synced.showEditorHints}
             onChange={(v) => patch('showEditorHints', v)}
             label={tr('settings.showEditorHints')}
+            searchId="showEditorHints"
             hint={tr('settings.showEditorHintsHint')}
           />
-          <SettingsField label={tr('settings.keyNotation')} hint={tr('settings.keyNotationHint')}>
+          <SettingsField
+            label={tr('settings.keyNotation')}
+            hint={tr('settings.keyNotationHint')}
+            searchId="keyNotation"
+          >
             <SegmentedControl
               options={['camelot', 'musical'] as const}
               value={synced.keyNotation}

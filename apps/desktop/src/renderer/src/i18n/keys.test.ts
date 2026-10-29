@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ERROR_KEYS } from '../../../shared/errorKeys'
 import type { UsbFailure } from '../../../shared/types'
+import { SETTINGS_SEARCH_INDEX } from '../lib/settingsSearchIndex'
 import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
@@ -174,5 +175,12 @@ describe('cue editor copy', () => {
   it('names Auto marcar in the help as the button reads, so a DJ who reads it finds the button', () => {
     for (const locale of [es, en, de, fr, ptBR])
       expect(locale.editor.cues.help).toContain(locale.editor.cues.auto.button)
+  })
+})
+
+describe('settings search index labels', () => {
+  it('names every entry with a key en defines, so a result never shows a raw key', () => {
+    const en_ = new Map(leaves(en))
+    expect(SETTINGS_SEARCH_INDEX.map((e) => e.label).filter((k) => !en_.has(k))).toEqual([])
   })
 })

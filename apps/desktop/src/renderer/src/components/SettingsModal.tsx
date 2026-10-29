@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -14,6 +14,8 @@ import {
   pickSynced,
   type SyncedDraft,
 } from '../lib/settingsDraft'
+import { groupByTab, searchSettings } from '../lib/settingsSearch'
+import { SETTINGS_SEARCH_INDEX } from '../lib/settingsSearchIndex'
 import {
   SETTINGS_TAB_GROUPS,
   SETTINGS_TAB_ICONS,
@@ -33,12 +35,18 @@ import { LayoutTab } from './settings/LayoutTab'
 import { NamingTab } from './settings/NamingTab'
 import { ProcessingTab } from './settings/ProcessingTab'
 import { SearchTab } from './settings/SearchTab'
+import {
+  SETTINGS_SEARCH_LISTBOX_ID,
+  SettingsSearchResults,
+  settingsSearchOptionId,
+} from './settings/SettingsSearchResults'
 import { ShortcutsTab } from './settings/ShortcutsTab'
 import { StatsTab } from './settings/StatsTab'
 
 export { DONATE_URL }
 
 const SAVE_DELAY_MS = 300
+const SEARCH_HIT_MS = 1500
 
 interface Props {
   settings: Settings
@@ -98,6 +106,65 @@ export function SettingsModal({
       ?.querySelector<HTMLElement>('[role="tab"][tabindex="0"]')
       ?.focus({ focusVisible: false })
   }, [])
+  const searchRef = useRef<HTMLInputElement>(null)
+  const [query, setQuery] = useState('')
+  const [selected, setSelected] = useState(0)
+  const results = groupByTab(searchSettings(query, SETTINGS_SEARCH_INDEX, tr))
+  const flatResults = results.flatMap((g) => g.hits)
+  const searching = query.trim() !== ''
+  const selectedHit = searching ? flatResults[selected] : undefined
+  const selectedTab = selectedHit?.entry.tab
+  const selectedId = selectedHit?.entry.id
+  const selectedAnchor = selectedHit && (selectedHit.entry.anchor ?? selectedHit.entry.id)
+  useEffect(() => {
+    if (selectedTab) setTab(selectedTab)
+  }, [selectedTab])
+  useEffect(() => {
+    const panel = bodyRef.current
+    if (!panel || !selectedAnchor || selectedTab !== tab) return
+    if (selectedId === `tabs.${tab}`) {
+      panel.scrollTop = 0
+      return
+    }
+    const anchor = panel.querySelector<HTMLElement>(`[data-search-id="${selectedAnchor}"]`)
+    if (!anchor) return
+    anchor.scrollIntoView({ block: 'center' })
+    anchor.dataset.searchHit = 'true'
+    const timer = setTimeout(() => delete anchor.dataset.searchHit, SEARCH_HIT_MS)
+    return () => {
+      clearTimeout(timer)
+      delete anchor.dataset.searchHit
+    }
+  }, [tab, selectedTab, selectedId, selectedAnchor, bodyRef])
+  useEffect(() => {
+    function onKey(e: KeyboardEvent): void {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault()
+        searchRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+  function onSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>): void {
+    if (e.key === 'Escape' && query !== '') {
+      e.preventDefault()
+      setQuery('')
+      return
+    }
+    if (!searching) return
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault()
+      const last = flatResults.length - 1
+      setSelected((i) => Math.max(0, Math.min(last, i + (e.key === 'ArrowDown' ? 1 : -1))))
+    } else if (e.key === 'Enter' && selectedAnchor) {
+      e.preventDefault()
+      bodyRef.current
+        ?.querySelector(`[data-search-id="${selectedAnchor}"]`)
+        ?.querySelector<HTMLElement>('input, select, textarea, button, [tabindex]')
+        ?.focus()
+    }
+  }
   function onTabKeyDown(e: React.KeyboardEvent, idx: number): void {
     const last = SETTINGS_TABS.length - 1
     let next = -1
@@ -272,73 +339,113 @@ export function SettingsModal({
       {/* A vertical nav down the side reads like macOS System Settings and scales past the
           point a single centred row of ten tabs starts to crowd — every label gets its
           full width, and adding a tab costs a row, not horizontal space it doesn't have. */}
-      <div
-        ref={tablistRef}
-        role="tablist"
-        aria-orientation="vertical"
-        aria-label={tr('header.settings')}
-        // relative z-0 fences a stacking context so the pill's -z-10 stays above this
-        // column's own background instead of escaping behind it.
-        className="relative z-0 flex w-[188px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-ink)] p-3"
-      >
-        {pill && (
-          <div
-            data-testid="settings-tab-indicator"
+      <div className="flex w-[188px] shrink-0 flex-col overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-ink)] p-3">
+        <label className="mb-2 flex h-8 shrink-0 items-center gap-2 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] px-2.5 focus-within:border-[var(--color-accent)]">
+          <Search
+            className="h-3.5 w-3.5 shrink-0 text-fg-faint"
+            strokeWidth={2}
             aria-hidden="true"
-            className="pointer-events-none absolute top-0 right-3 left-3 -z-10 rounded-lg bg-[var(--color-row-selected)] transition-[transform,height] duration-200 ease-[cubic-bezier(0.645,0.045,0.355,1)] motion-reduce:transition-none"
-            style={{ transform: `translateY(${pill.top}px)`, height: pill.height }}
+          />
+          <input
+            ref={searchRef}
+            type="search"
+            role="combobox"
+            aria-expanded={searching}
+            aria-controls={SETTINGS_SEARCH_LISTBOX_ID}
+            aria-activedescendant={selectedId ? settingsSearchOptionId(selectedId) : undefined}
+            data-testid="settings-search"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setSelected(0)
+            }}
+            onKeyDown={onSearchKeyDown}
+            placeholder={tr('settings.searchField.placeholder')}
+            aria-label={tr('settings.searchField.placeholder')}
+            className="min-w-0 flex-1 bg-transparent text-[13px] text-fg outline-none placeholder:text-fg-faint"
+          />
+        </label>
+        {searching && (
+          <SettingsSearchResults
+            query={query}
+            groups={results}
+            selected={selected}
+            onSelect={setSelected}
           />
         )}
-        {SETTINGS_TAB_GROUPS.map((group) => (
-          // A tablist may only own tabs, so the group wrapper and its heading are
-          // presentational: the heading stays a visual divider and the arrows (and a
-          // screen reader's tab count) walk one flat list.
-          <div key={group.heading ?? 'main'} role="presentation" className="flex flex-col gap-0.5">
-            {group.heading && (
-              <p
-                role="presentation"
-                className="mt-3 mb-1 px-3 text-[11px] font-medium text-fg-faint"
-              >
-                {tr(`settings.tabGroups.${group.heading}`)}
-              </p>
-            )}
-            {group.tabs.map((id) => {
-              const Icon = SETTINGS_TAB_ICONS[id]
-              // The keyboard handler walks the flat SETTINGS_TABS order, so the button
-              // reports its index there, not its position within the group.
-              const idx = SETTINGS_TABS.indexOf(id)
-              return (
-                <button
-                  key={id}
-                  ref={(el) => {
-                    tabRefs.current[id] = el
-                  }}
-                  type="button"
-                  role="tab"
-                  id={`settings-tab-${id}`}
-                  data-testid={`settings-tab-${id}`}
-                  aria-selected={tab === id}
-                  aria-controls="settings-tabpanel"
-                  tabIndex={tab === id ? 0 : -1}
-                  onClick={() => setTab(id)}
-                  onKeyDown={(e) => onTabKeyDown(e, idx)}
-                  // The button paints no background of its own — the sliding pill behind
-                  // it does, in the same ink sidebar and selected-row fill as the track
-                  // list, so Settings reads like the window it opens over. Text color
-                  // shares the pill's 200ms so the two arrive together.
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors duration-200 ${
-                    tab === id
-                      ? 'font-medium text-[var(--color-on-row-selected)]'
-                      : 'text-fg-muted hover:text-fg'
-                  }`}
+        <div
+          ref={tablistRef}
+          role="tablist"
+          hidden={searching}
+          aria-orientation="vertical"
+          aria-label={tr('header.settings')}
+          // relative z-0 fences a stacking context so the pill's -z-10 stays above this
+          // column's own background instead of escaping behind it.
+          className="relative z-0 flex flex-col gap-0.5"
+        >
+          {pill && (
+            <div
+              data-testid="settings-tab-indicator"
+              aria-hidden="true"
+              className="pointer-events-none absolute top-0 right-0 left-0 -z-10 rounded-lg bg-[var(--color-row-selected)] transition-[transform,height] duration-200 ease-[cubic-bezier(0.645,0.045,0.355,1)] motion-reduce:transition-none"
+              style={{ transform: `translateY(${pill.top}px)`, height: pill.height }}
+            />
+          )}
+          {SETTINGS_TAB_GROUPS.map((group) => (
+            // A tablist may only own tabs, so the group wrapper and its heading are
+            // presentational: the heading stays a visual divider and the arrows (and a
+            // screen reader's tab count) walk one flat list.
+            <div
+              key={group.heading ?? 'main'}
+              role="presentation"
+              className="flex flex-col gap-0.5"
+            >
+              {group.heading && (
+                <p
+                  role="presentation"
+                  className="mt-3 mb-1 px-3 text-[11px] font-medium text-fg-faint"
                 >
-                  <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
-                  {tr(`settings.tabs.${id}`)}
-                </button>
-              )
-            })}
-          </div>
-        ))}
+                  {tr(`settings.tabGroups.${group.heading}`)}
+                </p>
+              )}
+              {group.tabs.map((id) => {
+                const Icon = SETTINGS_TAB_ICONS[id]
+                // The keyboard handler walks the flat SETTINGS_TABS order, so the button
+                // reports its index there, not its position within the group.
+                const idx = SETTINGS_TABS.indexOf(id)
+                return (
+                  <button
+                    key={id}
+                    ref={(el) => {
+                      tabRefs.current[id] = el
+                    }}
+                    type="button"
+                    role="tab"
+                    id={`settings-tab-${id}`}
+                    data-testid={`settings-tab-${id}`}
+                    aria-selected={tab === id}
+                    aria-controls="settings-tabpanel"
+                    tabIndex={tab === id ? 0 : -1}
+                    onClick={() => setTab(id)}
+                    onKeyDown={(e) => onTabKeyDown(e, idx)}
+                    // The button paints no background of its own — the sliding pill behind
+                    // it does, in the same ink sidebar and selected-row fill as the track
+                    // list, so Settings reads like the window it opens over. Text color
+                    // shares the pill's 200ms so the two arrive together.
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors duration-200 ${
+                      tab === id
+                        ? 'font-medium text-[var(--color-on-row-selected)]'
+                        : 'text-fg-muted hover:text-fg'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
+                    {tr(`settings.tabs.${id}`)}
+                  </button>
+                )
+              })}
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="relative flex min-w-0 flex-1 flex-col p-6">
@@ -357,7 +464,7 @@ export function SettingsModal({
             role="tabpanel"
             id="settings-tabpanel"
             aria-labelledby={`settings-tab-${tab}`}
-            className="-mr-2 flex-1 overflow-x-hidden overflow-y-auto pr-2"
+            className="-mr-2 flex-1 overflow-x-hidden overflow-y-auto pr-2 [&_[data-search-hit=true]]:rounded-md [&_[data-search-hit=true]]:outline-1 [&_[data-search-hit=true]]:outline-offset-4 [&_[data-search-hit=true]]:outline-[var(--color-accent)] [&_[data-search-hit=true]]:outline-solid"
           >
             {tab === 'general' && (
               <GeneralTab

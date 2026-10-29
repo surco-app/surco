@@ -1218,7 +1218,7 @@
   "settings": {
     "tabs": {
       "general": "Allgemein",
-      "search": "Suche",
+      "search": "Quellen",
       "conversion": "Format",
       "processing": "Verarbeitung",
       "destination": "Ausgabe",
@@ -1737,6 +1737,30 @@
       "useFlow": "Als Ablauf verwenden",
       "fromEdits": "Beim Korrigieren lernen",
       "fromEditsHint": "Jeder Track, den du im Editor speicherst, fließt ins Gelernte ein, und Surco lernt alle 10 neu."
+    },
+    "searchSynonyms": {
+      "mp3Quality": "Bitrate, kbps, CBR, VBR",
+      "bitDepth": "Bits, 16 Bit, 24 Bit, Bittiefe",
+      "sampleRate": "Hz, kHz, 44.1, 48, Abtastrate",
+      "outputFormat": "AIFF, FLAC, MP3, WAV, ALAC, konvertieren",
+      "theme": "dunkel, hell, Modus",
+      "coverMaxSize": "Cover, Bild, Auflösung",
+      "destination": "Ordner, exportieren, Apple Music",
+      "configDir": "iCloud, Dropbox, synchronisieren",
+      "normalize": {
+        "title": "Lautheit, LUFS, Lautstärke"
+      }
+    },
+    "searchField": {
+      "placeholder": "Einstellungen durchsuchen",
+      "results_one": "{{count}} Ergebnis",
+      "results_other": "{{count}} Ergebnisse",
+      "also": "Auch: {{words}}",
+      "none": "Keine Einstellung passt zu „{{query}}“",
+      "noneHint": "Versuche ein anderes Wort, etwa den Namen eines Formats oder einer App.",
+      "keysMove": "bewegen",
+      "keysOpen": "öffnen",
+      "keysBack": "zurück zu den Tabs"
     }
   },
   "errorBoundary": {
