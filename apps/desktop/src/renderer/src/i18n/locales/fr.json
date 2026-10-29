@@ -397,6 +397,12 @@
     "convertEditOriginal": "Convertir en modifiant l’original, cette fois seulement"
   },
   "trackList": {
+    "qualityWord": {
+      "warn": "Douteux",
+      "bad": "Faible",
+      "processed": "Retraité",
+      "transcoded": "Avec pertes"
+    },
     "cuesUnsaved": "Cues non enregistrés",
     "autoMark": {
       "proposed_one": "{{count}} proposition",

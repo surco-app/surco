@@ -397,6 +397,12 @@
     "convertEditOriginal": "今回だけ元ファイルを編集して変換"
   },
   "trackList": {
+    "qualityWord": {
+      "warn": "疑わしい",
+      "bad": "低音質",
+      "processed": "再処理",
+      "transcoded": "非可逆"
+    },
     "cuesUnsaved": "キューが未保存",
     "autoMark": {
       "proposed_one": "{{count}} 件の提案",

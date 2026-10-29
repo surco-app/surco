@@ -397,6 +397,12 @@
     "convertEditOriginal": "Convert editing the original, just this once"
   },
   "trackList": {
+    "qualityWord": {
+      "warn": "Doubtful",
+      "bad": "Low quality",
+      "processed": "Reprocessed",
+      "transcoded": "Lossy"
+    },
     "cuesUnsaved": "Cues not saved",
     "autoMark": {
       "proposed_one": "{{count}} proposal",

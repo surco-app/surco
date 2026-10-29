@@ -397,6 +397,12 @@
     "convertEditOriginal": "Convertir editando el original, solo esta vez"
   },
   "trackList": {
+    "qualityWord": {
+      "warn": "Dudosa",
+      "bad": "Baja calidad",
+      "processed": "Reprocesada",
+      "transcoded": "Con pérdida"
+    },
     "cuesUnsaved": "Cues sin guardar",
     "autoMark": {
       "proposed_one": "{{count}} propuesta",
