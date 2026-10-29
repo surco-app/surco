@@ -1,5 +1,4 @@
-import type { ProcessProgress, ProcessStage } from '../../../shared/types'
-import type { TrackItem } from '../types'
+import type { ProcessStage } from '../../../shared/types'
 
 // How far the per-item bar has advanced when each export phase begins. Honest
 // *phase* progress, not byte progress — the AIFF encode and the Apple Music
@@ -31,8 +30,4 @@ export function topBarProgress(
   if (total > 0) return { fraction: active.reduce((sum, s) => sum + s.done, 0) / total }
   if (importing) return { fraction: null }
   return null
-}
-
-export function applyProgress(tracks: TrackItem[], progress: ProcessProgress): TrackItem[] {
-  return tracks.map((t) => (t.id === progress.id ? { ...t, stage: progress.stage } : t))
 }

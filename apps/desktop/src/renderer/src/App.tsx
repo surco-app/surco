@@ -150,7 +150,7 @@ import { flushPendingEdits } from './lib/pendingEdits'
 import { isMacOS } from './lib/platform'
 import { playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
-import { applyProgress, topBarProgress } from './lib/progress'
+import { topBarProgress } from './lib/progress'
 import {
   clearWrittenPlaylists,
   discardPlaylistEdits,
@@ -627,6 +627,7 @@ export default function App(): React.JSX.Element {
     prioritizeReads,
     openSourcePlaylist,
     updateTrack,
+    stageTrack,
     mapTracks,
     updateTracksMeta,
     patchTracks,
@@ -1026,10 +1027,7 @@ export default function App(): React.JSX.Element {
     tr,
   ])
 
-  useEffect(
-    () => window.api.onProcessProgress((p) => setTracks((prev) => applyProgress(prev, p))),
-    [setTracks],
-  )
+  useEffect(() => window.api.onProcessProgress(stageTrack), [stageTrack])
 
   // The last session: offered back at launch, written out as it changes. Self-contained —
   // it hands nothing back.
