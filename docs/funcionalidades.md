@@ -1866,11 +1866,11 @@ destino (fichero, Music y cada biblioteca DJ) con lo que hizo o por qué no.
 Se guardan las rutas cargadas y las ediciones no aplicadas, con debounce de 1 s y
 escritura atómica.
 
-Dos comportamientos según lo que esté en juego: una sesión de solo rutas caduca a
-los 6 segundos porque no se pierde nada; **una sesión con ediciones sin aplicar
-no caduca nunca**, porque esas ediciones no existen en ningún otro sitio
-(`useSessionPersistence.ts:61-64`). Desde v1.0 la sesión guarda también el volumen
-y la reparación de clics de cada pista (`main/session.ts`, `lib/sessionEdits.ts`).
+La oferta de reabrir la sesión desaparece a los 6 segundos, pero caducar no la
+olvida: la ventana puede tardar unos 4 s en pintarse y quien no está mirando
+perdería la lista para siempre. Solo la ✕ descarta la sesión guardada; si no, el
+siguiente arranque vuelve a preguntar (`useSessionPersistence.ts`). Desde v1.0 la sesión guarda también el
+volumen y la reparación de clics de cada pista (`main/session.ts`, `lib/sessionEdits.ts`).
 
 ### Reproductor
 
