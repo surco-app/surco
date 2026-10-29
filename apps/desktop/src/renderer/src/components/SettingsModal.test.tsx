@@ -1457,3 +1457,18 @@ describe('SettingsModal Beatport card state', () => {
     expect(status.getAttribute('aria-label')).not.toMatch(/^settings\./)
   })
 })
+
+describe('SettingsModal sources tab', () => {
+  it('names the lookup tab Sources so it is not confused with the settings search field', () => {
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    expect(screen.getByTestId('settings-tab-search')).toHaveTextContent('Sources')
+  })
+})

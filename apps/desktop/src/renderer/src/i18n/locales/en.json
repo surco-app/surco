@@ -1218,7 +1218,7 @@
   "settings": {
     "tabs": {
       "general": "General",
-      "search": "Search",
+      "search": "Sources",
       "conversion": "Format",
       "processing": "Processing",
       "destination": "Output",

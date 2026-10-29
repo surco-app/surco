@@ -1218,7 +1218,7 @@
   "settings": {
     "tabs": {
       "general": "一般",
-      "search": "検索",
+      "search": "ソース",
       "conversion": "フォーマット",
       "processing": "処理",
       "destination": "出力",
