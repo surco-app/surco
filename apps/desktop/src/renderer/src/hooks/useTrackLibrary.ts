@@ -4,6 +4,7 @@ import type {
   AppleMusicTrackMeta,
   LibraryTagUpdate,
   PlaylistSource,
+  ProcessProgress,
   ReviewRawFields,
   SessionEdit,
   SourcePlaylistEntry,
@@ -155,6 +156,7 @@ interface TrackLibrary {
     options?: { fillLoaded?: boolean },
   ) => Promise<number>
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
+  stageTrack: (progress: ProcessProgress) => void
   mapTracks: (patch: (t: TrackItem) => TrackItem) => void
   updateTracksMeta: (ids: string[], metaPatch: Partial<TrackMetadata>) => void
   patchTracks: (ids: string[], patch: Partial<TrackItem>) => void
@@ -321,6 +323,13 @@ export function useTrackLibrary({
       scheduleMetaFlush()
     },
     [scheduleMetaFlush],
+  )
+  const stageTrack = useCallback(
+    (progress: ProcessProgress): void =>
+      enqueueMetaPatch(progress.id, (t) =>
+        t.status === 'processing' ? { ...t, stage: progress.stage } : t,
+      ),
+    [enqueueMetaPatch],
   )
 
   // `streamed` marks the call as one of the folder walk's own progress batches rather than a
@@ -1169,6 +1178,7 @@ export function useTrackLibrary({
     prioritizeReads,
     openSourcePlaylist,
     updateTrack,
+    stageTrack,
     mapTracks,
     updateTracksMeta,
     patchTracks,
