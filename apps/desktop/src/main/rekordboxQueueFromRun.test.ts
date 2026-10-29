@@ -256,6 +256,21 @@ describe('libraryTrackOps', () => {
     ])
   })
 
+  it('does not queue adding a track the collection already has, so the queue shows only real additions', () => {
+    const repoints: RekordboxRepoint[] = [{ from: '/m/a.mp3', to: '/m/a.wav', meta: META }]
+    const known = vi.fn((path: string, from?: string) => path === '/m/a.wav' && from === '/m/a.mp3')
+    expect(libraryTrackOps(repoints, 'traktor', () => 'id1', true, known)).toEqual([])
+    expect(
+      libraryTrackOps(
+        repoints,
+        'traktor',
+        () => 'id1',
+        true,
+        () => false,
+      ),
+    ).toEqual([expect.objectContaining({ id: 'id1', path: '/m/a.wav', add: true, wanted: [] })])
+  })
+
   it('needs track tags to register in Traktor, since its collection entry is built from them', () => {
     const repoints: RekordboxRepoint[] = [{ from: '/m/a.wav', to: '/m/a.wav' }]
     expect(libraryTrackOps(repoints, 'traktor', () => 'id1', true)).toEqual([])

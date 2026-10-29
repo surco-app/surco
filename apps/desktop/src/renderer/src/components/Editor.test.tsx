@@ -170,6 +170,8 @@ function renderEditor(
     rememberedPick?: React.ComponentProps<typeof Editor>['rememberedPick']
     addToAppleMusic?: boolean
     addToEngineDj?: boolean
+    addToTraktor?: boolean
+    traktorNmlPath?: string
     keepMp3Sources?: boolean
     keyNotation?: KeyNotation
     discogsFormats?: string[]
@@ -260,6 +262,8 @@ function renderEditor(
       // test opts into another destination.
       addToAppleMusic: props.addToAppleMusic ?? true,
       addToEngineDj: props.addToEngineDj ?? false,
+      addToTraktor: props.addToTraktor ?? false,
+      traktorNmlPath: props.traktorNmlPath ?? '',
       keepMp3Sources: props.keepMp3Sources ?? false,
       overwriteOriginal: props.overwriteOriginal ?? false,
       ...(props.backupPolicy ? { backupPolicy: props.backupPolicy } : {}),
@@ -781,6 +785,42 @@ describe('Editor Traktor Playlists field without a confirmed collection', () => 
       expect(field).toHaveTextContent('Choose the collection in Settings → Output → Traktor'),
     )
     expect(within(field).getByTestId('playlists-summary')).toBeDisabled()
+  })
+})
+
+describe('Editor convert button with Traktor taking new tracks', () => {
+  const status = (traktorFound: boolean) =>
+    vi.fn<Api['libraryStatus']>().mockResolvedValue({
+      rekordbox: { enabled: false, found: false },
+      engine: { enabled: false, found: false },
+      traktor: { enabled: true, found: traktorFound },
+    })
+
+  it('does not name Traktor when its collection is not found, since nothing would be added there', async () => {
+    Object.assign(window.api, { libraryStatus: status(false) })
+    renderEditor({ id: 'a' }, 'aiff', {
+      addToAppleMusic: false,
+      addToTraktor: true,
+      traktorNmlPath: '/c/collection.nml',
+    })
+    await waitFor(() => expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Traktor'))
+  })
+
+  it('does not name Traktor without a confirmed collection.nml, the only one Surco writes to', async () => {
+    Object.assign(window.api, { libraryStatus: status(true) })
+    renderEditor({ id: 'a' }, 'aiff', { addToAppleMusic: false, addToTraktor: true })
+    await waitFor(() => expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Traktor'))
+  })
+
+  it('names Traktor once its confirmed collection is found, so the DJ sees where the track goes', async () => {
+    Object.assign(window.api, { libraryStatus: status(true) })
+    renderEditor({ id: 'a' }, 'aiff', {
+      addToAppleMusic: false,
+      addToTraktor: true,
+      traktorNmlPath: '/c/collection.nml',
+    })
+    await waitFor(() => expect(window.api.libraryStatus).toHaveBeenCalled())
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Traktor')
   })
 })
 

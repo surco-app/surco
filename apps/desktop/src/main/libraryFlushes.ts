@@ -1,4 +1,4 @@
-import { existsSync, realpathSync } from 'node:fs'
+import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import log from 'electron-log/main'
 import type { LibraryStatus, LibraryTagUpdate, RekordboxSyncIssue } from '../shared/types'
 import { activity } from './activity'
@@ -29,8 +29,9 @@ import type { createSessionBackup } from './rekordboxSessionBackup'
 import { updateRekordboxTags } from './rekordboxTags'
 import { getSettings } from './settings'
 import { readEmbeddedCover } from './tags'
-import { replaceDuplicatesInCollection, syncCollection } from './traktorNmlLibrary'
+import { bootVolumeName, replaceDuplicatesInCollection, syncCollection } from './traktorNmlLibrary'
 import { holdInQueue } from './traktorPatchQueue'
+import { traktorCollectionIndex } from './traktorPlaylists'
 import { flushTraktorSync } from './traktorSyncFlush'
 import { sourceRoot } from './usbExport'
 
@@ -169,7 +170,14 @@ export async function flushConversionBatch(
   // The run's repoints, taken once: rekordbox and Engine DJ each apply the same list to
   // their own library, and closing the batch twice would hand the second one nothing.
   const repoints = endRekordboxBatch()
-  const traktorOps = libraryTrackOps(repoints, 'traktor', undefined, getSettings().addToTraktor)
+  const addToTraktor = getSettings().addToTraktor
+  const traktorOps = libraryTrackOps(
+    repoints,
+    'traktor',
+    undefined,
+    addToTraktor,
+    addToTraktor ? traktorCollectionHas(getSettings().traktorNmlPath) : undefined,
+  )
   if (traktorQueue && traktorOps.length > 0) {
     traktorQueue.enqueue(traktorOps)
     traktorQueue.applyQuietly()
@@ -226,6 +234,19 @@ export async function flushConversionBatch(
     engineQueue.enqueue(engineOps)
     engineQueue.applyQuietly()
   }
+}
+
+function traktorCollectionHas(
+  nmlPath: string,
+): ((path: string, from?: string) => boolean) | undefined {
+  let nml: string
+  try {
+    nml = readFileSync(nmlPath, 'utf8')
+  } catch {
+    return undefined
+  }
+  const { byPath } = traktorCollectionIndex(nml, bootVolumeName())
+  return (path, from) => [path, from].some((p) => p !== undefined && byPath.has(p.normalize('NFC')))
 }
 
 function repointEngine(

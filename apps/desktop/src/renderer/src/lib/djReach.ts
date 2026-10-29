@@ -28,6 +28,7 @@ export function fromDjReach(r: DjReach): { sync: boolean; add: boolean } {
 
 export function reachedPrograms(
   s: Pick<Settings, 'addToRekordbox' | 'addToTraktor' | 'addToEngineDj'>,
+  reachable?: ReadonlySet<DjLibraryId>,
 ): DjLibraryId[] {
-  return ORDER.filter((id) => s[DJ_REACH_SETTINGS[id].add])
+  return ORDER.filter((id) => s[DJ_REACH_SETTINGS[id].add] && (!reachable || reachable.has(id)))
 }

@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import {
   ChevronRight,
   Copy,
@@ -62,6 +63,7 @@ import type { AutoMarkTarget } from '../lib/cueAutoMark'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
+import type { DjLibraryId } from '../lib/djLibraries'
 import { reachedPrograms } from '../lib/djReach'
 import { editorPlace } from '../lib/editorPlace'
 import { buildFieldSpecs } from '../lib/fieldSpecs'
@@ -344,7 +346,23 @@ export const Editor = memo(function Editor({
     declick,
     outputSampleRate,
     editorSections,
+    traktorNmlPath,
   } = useAppSettings()
+  const { data: libraries } = useQuery({
+    queryKey: ['library-status', addToRekordbox, addToTraktor, addToEngineDj, traktorNmlPath],
+    queryFn: () => window.api.libraryStatus(),
+    enabled: addToRekordbox || addToTraktor || addToEngineDj,
+  })
+  const reachable = useMemo(
+    () =>
+      libraries &&
+      new Set<DjLibraryId>(
+        (['rekordbox', 'engine', 'traktor'] as const).filter(
+          (id) => libraries[id].found && (id !== 'traktor' || traktorNmlPath !== ''),
+        ),
+      ),
+    [libraries, traktorNmlPath],
+  )
   const showTokenTip = discogsToken === '' && searchProviders.includes('discogs')
   const isMulti = (selectedTracks?.length ?? 0) > 1
   const revealIn = useLibraryReveals(item, isMulti ? [] : librarySources)
@@ -1800,7 +1818,7 @@ export const Editor = memo(function Editor({
           willEditInPlace={willEditInPlace}
           tagsOnly={tagsOnlyExport}
           addToAppleMusic={picked.addToAppleMusic}
-          djTargets={reachedPrograms({ addToRekordbox, addToTraktor, addToEngineDj })}
+          djTargets={reachedPrograms({ addToRekordbox, addToTraktor, addToEngineDj }, reachable)}
           destination={destination}
           destinations={destinationChoices}
           outputFolder={baseName(outputDir.replace(/[\\/]+$/, ''))}

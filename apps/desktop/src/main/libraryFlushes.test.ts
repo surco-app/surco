@@ -1,3 +1,6 @@
+import { mkdtemp, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import type { ActivityEvent } from '../shared/types'
 
@@ -333,6 +336,34 @@ describe('flushConversionBatch with a converted track Traktor does not have', ()
     } finally {
       delete (REPOINTS[0] as Record<string, unknown>).meta
       Object.assign(SETTINGS, { addToTraktor: false })
+    }
+  })
+
+  it('asks the Traktor collection which converted tracks it already has, so the queue does not promise adding one it holds', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-flush-nml-'))
+    const nmlPath = join(dir, 'collection.nml')
+    await writeFile(
+      nmlPath,
+      `<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<NML VERSION="20"><COLLECTION ENTRIES="1">
+<ENTRY TITLE="Plastic Dreams" ARTIST="Jaydee"><LOCATION DIR="/:m/:" FILE="a.flac" VOLUME="" VOLUMEID=""></LOCATION>
+</ENTRY>
+</COLLECTION>
+<PLAYLISTS><NODE TYPE="FOLDER" NAME="$ROOT"><SUBNODES COUNT="0"></SUBNODES>
+</NODE>
+</PLAYLISTS>
+</NML>
+`,
+    )
+    Object.assign(REPOINTS[0], { meta: { artist: 'Jaydee', title: 'Plastic Dreams' } })
+    Object.assign(SETTINGS, { addToTraktor: true, traktorNmlPath: nmlPath })
+    try {
+      const traktor = traktorQueue()
+      await flush(traktor)
+      expect(traktor.enqueue).not.toHaveBeenCalled()
+    } finally {
+      delete (REPOINTS[0] as Record<string, unknown>).meta
+      Object.assign(SETTINGS, { addToTraktor: false, traktorNmlPath: '' })
     }
   })
 
