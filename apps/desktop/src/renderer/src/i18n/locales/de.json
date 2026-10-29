@@ -1750,6 +1750,17 @@
       "normalize": {
         "title": "Lautheit, LUFS, Lautstärke"
       }
+    },
+    "searchField": {
+      "placeholder": "Einstellungen durchsuchen",
+      "results_one": "{{count}} Ergebnis",
+      "results_other": "{{count}} Ergebnisse",
+      "also": "Auch: {{words}}",
+      "none": "Keine Einstellung passt zu „{{query}}“",
+      "noneHint": "Versuche ein anderes Wort, etwa den Namen eines Formats oder einer App.",
+      "keysMove": "bewegen",
+      "keysOpen": "öffnen",
+      "keysBack": "zurück zu den Tabs"
     }
   },
   "errorBoundary": {

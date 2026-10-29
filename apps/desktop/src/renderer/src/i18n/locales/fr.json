@@ -1750,6 +1750,17 @@
       "normalize": {
         "title": "sonie, LUFS, volume"
       }
+    },
+    "searchField": {
+      "placeholder": "Rechercher dans les réglages",
+      "results_one": "{{count}} résultat",
+      "results_other": "{{count}} résultats",
+      "also": "Aussi : {{words}}",
+      "none": "Aucun réglage ne correspond à « {{query}} »",
+      "noneHint": "Essayez un autre mot, comme le nom d’un format ou d’une app.",
+      "keysMove": "déplacer",
+      "keysOpen": "ouvrir",
+      "keysBack": "revenir aux onglets"
     }
   },
   "errorBoundary": {

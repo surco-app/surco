@@ -2,7 +2,7 @@
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // SettingsModal reads window.api.platform at module load, so stub it before the
 // component is imported.
@@ -1498,4 +1498,122 @@ describe('settings search index', () => {
       expect(missing).toEqual([])
     },
   )
+})
+
+describe('settings search', () => {
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn()
+  })
+
+  function open(onClose = () => {}) {
+    return render(
+      <SettingsModal
+        settings={settings}
+        onClose={onClose}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+  }
+
+  function search(text: string) {
+    fireEvent.change(screen.getByTestId('settings-search'), { target: { value: text } })
+  }
+
+  it('swaps the tabs for grouped results while typing, as macOS Settings does', () => {
+    open()
+    search('traktor')
+    expect(screen.getByRole('tablist', { hidden: true })).not.toBeVisible()
+    expect(screen.getByTestId('settings-search-result-traktorSync')).toBeVisible()
+  })
+
+  it('opens the tab of the selected result and marks the setting so the eye lands on it', async () => {
+    open()
+    search('traktor')
+    expect(screen.getByRole('tabpanel')).toHaveAttribute(
+      'aria-labelledby',
+      'settings-tab-destination',
+    )
+    await waitFor(() =>
+      expect(
+        screen.getByRole('tabpanel').querySelector('[data-search-id="traktorSync"]'),
+      ).toHaveAttribute('data-search-hit', 'true'),
+    )
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled()
+  })
+
+  it('moves through results with the arrow keys without leaving the field', () => {
+    open()
+    const field = screen.getByTestId('settings-search')
+    field.focus()
+    search('a')
+    const first = screen.getAllByRole('option')[0]
+    const second = screen.getAllByRole('option')[1]
+    expect(first).toHaveAttribute('aria-selected', 'true')
+    fireEvent.keyDown(field, { key: 'ArrowDown' })
+    expect(second).toHaveAttribute('aria-selected', 'true')
+    expect(field).toHaveFocus()
+  })
+
+  it('opens a result on click', () => {
+    open()
+    search('bitrate')
+    fireEvent.click(screen.getByTestId('settings-search-result-mp3Quality'))
+    expect(screen.getByRole('tabpanel')).toHaveAttribute(
+      'aria-labelledby',
+      'settings-tab-conversion',
+    )
+  })
+
+  it('says why a result matched when only a synonym did', () => {
+    open()
+    search('bitrate')
+    expect(screen.getByTestId('settings-search-result-mp3Quality')).toHaveTextContent(
+      'Also: bitrate',
+    )
+  })
+
+  it('clears the search on Escape instead of closing Settings', () => {
+    const onClose = vi.fn()
+    open(onClose)
+    search('traktor')
+    const event = fireEvent.keyDown(screen.getByTestId('settings-search'), { key: 'Escape' })
+    expect(event).toBe(false)
+    expect(screen.getByTestId('settings-search')).toHaveValue('')
+    expect(screen.getByTestId('settings-tab-general')).toBeVisible()
+  })
+
+  it('says nothing matches instead of showing an empty list', () => {
+    open()
+    search('zzzz')
+    expect(screen.getByTestId('settings-search-empty')).toHaveTextContent('zzzz')
+  })
+
+  it('treats a whitespace-only query as no search', () => {
+    open()
+    search('   ')
+    expect(screen.getByTestId('settings-tab-general')).toBeVisible()
+  })
+
+  it('focuses the search field with ⌘F while Settings is open', () => {
+    open()
+    fireEvent.keyDown(window, { key: 'f', metaKey: true })
+    expect(screen.getByTestId('settings-search')).toHaveFocus()
+  })
+
+  it('starts with an empty search every time Settings opens', () => {
+    const first = open()
+    search('traktor')
+    first.unmount()
+    open()
+    expect(screen.getByTestId('settings-search')).toHaveValue('')
+  })
+
+  it('keeps the tab of the last result open when the search is cleared', () => {
+    open()
+    search('traktor')
+    search('')
+    expect(screen.getByTestId('settings-tab-destination')).toHaveAttribute('aria-selected', 'true')
+  })
 })

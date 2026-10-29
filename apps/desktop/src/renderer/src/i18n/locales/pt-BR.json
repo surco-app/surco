@@ -1750,6 +1750,17 @@
       "normalize": {
         "title": "loudness, LUFS, volume"
       }
+    },
+    "searchField": {
+      "placeholder": "Buscar ajustes",
+      "results_one": "{{count}} resultado",
+      "results_other": "{{count}} resultados",
+      "also": "Também: {{words}}",
+      "none": "Nenhum ajuste corresponde a “{{query}}”",
+      "noneHint": "Tente outra palavra, como o nome de um formato ou de um app.",
+      "keysMove": "mover",
+      "keysOpen": "abrir",
+      "keysBack": "voltar às abas"
     }
   },
   "errorBoundary": {

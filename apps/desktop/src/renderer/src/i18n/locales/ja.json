@@ -1750,6 +1750,17 @@
       "normalize": {
         "title": "ラウドネス, LUFS, 音量"
       }
+    },
+    "searchField": {
+      "placeholder": "設定を検索",
+      "results_one": "{{count}} 件",
+      "results_other": "{{count}} 件",
+      "also": "別名: {{words}}",
+      "none": "「{{query}}」に一致する設定はありません",
+      "noneHint": "フォーマット名やアプリ名など、別の言葉で試してください。",
+      "keysMove": "移動",
+      "keysOpen": "開く",
+      "keysBack": "タブに戻る"
     }
   },
   "errorBoundary": {
