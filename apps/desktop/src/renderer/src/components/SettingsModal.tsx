@@ -159,10 +159,11 @@ export function SettingsModal({
       setSelected((i) => Math.max(0, Math.min(last, i + (e.key === 'ArrowDown' ? 1 : -1))))
     } else if (e.key === 'Enter' && selectedAnchor) {
       e.preventDefault()
-      bodyRef.current
-        ?.querySelector(`[data-search-id="${selectedAnchor}"]`)
-        ?.querySelector<HTMLElement>('input, select, textarea, button, [tabindex]')
-        ?.focus()
+      const scope =
+        selectedId === `tabs.${tab}`
+          ? bodyRef.current
+          : bodyRef.current?.querySelector(`[data-search-id="${selectedAnchor}"]`)
+      scope?.querySelector<HTMLElement>('input, select, textarea, button, [tabindex]')?.focus()
     }
   }
   function onTabKeyDown(e: React.KeyboardEvent, idx: number): void {

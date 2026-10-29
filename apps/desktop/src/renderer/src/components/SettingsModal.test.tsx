@@ -1640,6 +1640,15 @@ describe('settings search', () => {
     expect(scrolled).toContain(screen.getAllByRole('option')[15])
   })
 
+  it('moves into the tab on Enter when the result is a tab, so the keyboard can carry on there', () => {
+    open()
+    const field = screen.getByTestId('settings-search')
+    field.focus()
+    search('shortcuts')
+    fireEvent.keyDown(field, { key: 'Enter' })
+    expect(screen.getByRole('tabpanel')).toContainElement(document.activeElement as HTMLElement)
+  })
+
   it('keeps the tab of the last result open when the search is cleared', () => {
     open()
     search('traktor')
