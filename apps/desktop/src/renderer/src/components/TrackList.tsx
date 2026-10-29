@@ -848,7 +848,7 @@ const TrackRow = memo(function TrackRow({
                 )}
                 <span
                   data-testid="track-format-slot"
-                  className="flex w-[46px] shrink-0 justify-end"
+                  className="flex w-[50px] shrink-0 justify-end"
                 >
                   {quality !== 'unanalyzed' ? (
                     <QualityPill

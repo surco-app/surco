@@ -372,7 +372,7 @@ function Lane({
                 onKeyStep(e.shiftKey ? -COARSE_STEP_SEC : -fineStepSec)
               }
             }}
-            className="h-7 w-16 shrink-0 rounded-md border border-[var(--color-input-border)] bg-transparent px-1.5 text-center text-[11px] tabular-nums text-fg-muted outline-none focus:border-accent focus:text-fg"
+            className="h-7 w-[72px] shrink-0 rounded-md border border-[var(--color-input-border)] bg-transparent px-1.5 text-center text-[11px] tabular-nums text-fg-muted outline-none focus:border-accent focus:text-fg"
           />
           <button
             type="button"
