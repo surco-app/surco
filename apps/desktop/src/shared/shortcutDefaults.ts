@@ -6,7 +6,8 @@ import { type Chord, chordEquals } from './shortcuts'
 //
 // `suppressWhileTyping` keeps a mod-combo from firing while a text field is focused —
 // only ⌘⌫ (remove) needs it, so ⌫ stays a backspace mid-edit instead of deleting the
-// track. Bare-key chords are always suppressed while typing regardless of this flag.
+// track. Bare-key chords are always suppressed while typing regardless of this flag, and
+// so are ⌥/⌃ chords unless the command sets `liveWhileTyping`.
 export interface ShortcutDef {
   id: string
   chord: Chord
@@ -133,8 +134,8 @@ export function resolveBindings(overrides: Record<string, Chord> = {}): Map<stri
 
 // Resolves a pressed chord to a command id. Iterates the defaults table so the result
 // is deterministic (first match wins) even if two commands share a chord. Respects the
-// typing guard: while a field is focused, bare-key chords and `suppressWhileTyping`
-// commands don't fire, but other mod-combos do.
+// typing guard: while a field is focused, bare-key chords, `suppressWhileTyping` commands
+// and ⌥/⌃ chords without `liveWhileTyping` don't fire, but other mod-combos do.
 //
 // The active scope's commands are matched BEFORE the global ones, so a scoped binding
 // beats a global that shares its chord: ← is seek-back everywhere, but inside the

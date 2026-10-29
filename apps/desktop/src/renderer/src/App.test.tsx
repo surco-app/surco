@@ -5038,26 +5038,27 @@ describe('App keyboard shortcuts', () => {
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
   })
 
-  it('steps to the next track with ⌥↓ from inside a field, keeping the typed text on its track and the cursor in the same field, so a list is tagged without leaving the keyboard', async () => {
+  it('steps to the next track with ⌥↓ from inside a field, keeping the typed text on its track and the cursor in that same field rather than the first one, so a list is tagged without leaving the keyboard', async () => {
     setApi({
       readTags: vi.fn(async (path: string) => ({
         title: path.endsWith('a.wav') ? 'Alpha' : 'Bravo',
-        artist: 'DJ',
+        artist: path.endsWith('a.wav') ? 'Ann' : 'Bob',
       })),
     })
     await renderApp()
     const rows = await addTwoTracks()
     fireEvent.click(rows[0])
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha'))
-    screen.getByTestId('field-title').focus()
-    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'Typed Name' } })
-    fireEvent.keyDown(screen.getByTestId('field-title'), { key: 'ArrowDown', altKey: true })
-    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
+    expect(screen.getByTestId('field-artist')).toHaveValue('Ann')
+    screen.getByTestId('field-artist').focus()
+    fireEvent.change(screen.getByTestId('field-artist'), { target: { value: 'Typed Artist' } })
+    fireEvent.keyDown(screen.getByTestId('field-artist'), { key: 'ArrowDown', altKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveValue('Bob'))
     expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'true')
-    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveFocus())
-    fireEvent.keyDown(screen.getByTestId('field-title'), { key: 'ArrowUp', altKey: true })
-    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Typed Name'))
-    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveFocus())
+    await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveFocus())
+    fireEvent.keyDown(screen.getByTestId('field-artist'), { key: 'ArrowUp', altKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveValue('Typed Artist'))
+    await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveFocus())
   })
 
   // The palette button is a bare glyph, so its hover hint is the only place the bar shows
