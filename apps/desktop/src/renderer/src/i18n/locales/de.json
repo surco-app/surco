@@ -401,7 +401,8 @@
       "warn": "Zweifelhaft",
       "bad": "Schwach",
       "processed": "Nachbearbeitet",
-      "transcoded": "Verlustbehaftet"
+      "transcoded": "Verlustbehaftet",
+      "damaged": "Beschädigt"
     },
     "cuesUnsaved": "Cues nicht gespeichert",
     "autoMark": {
@@ -543,6 +544,8 @@
     "qualityBad": "Schlechte Qualität",
     "qualityProcessed": "Möglicherweise nachbearbeitet",
     "qualityTranscode": "Verlustbehaftete Quelle",
+    "qualityDamaged": "Beschädigte Datei",
+    "qualityDamagedCaption": "Die Datei lässt sich nicht bis zu ihrer angegebenen Länge decodieren: Sie ist beschädigt oder unvollständig.",
     "analyzing": "Spektrum wird analysiert…",
     "cleaned": {
       "label": "Bereinigt",
@@ -647,6 +650,7 @@
     "convert": "In {{format}} konvertieren + Apple Music",
     "convertEngine": "In {{format}} konvertieren + Engine DJ",
     "lossyToLossless": "Die Quelle ist verlustbehaftet – {{format}} stellt ihre Qualität nicht wieder her.",
+    "damagedSource": "Diese Datei ist beschädigt oder unvollständig, die Kopie wird es also auch sein.",
     "convertNoMusic": "In {{format}} konvertieren",
     "convertBeside": "In {{format}} neben das Original konvertieren",
     "convertOverwrite": "Original mit {{format}} überschreiben",

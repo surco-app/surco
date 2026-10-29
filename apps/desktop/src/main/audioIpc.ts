@@ -49,6 +49,7 @@ import {
   readMetaLight,
   readTags,
   renderDeclickRepaired,
+  sourceDamaged,
   tagsFromProbe,
 } from './ffmpeg'
 import { previewTempPath } from './playback'
@@ -263,6 +264,8 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
                     analysisLimiter.run(() => analyzeShelf(i, sr, signal), priority, signal),
                   bits: (i) =>
                     analysisLimiter.run(() => analyzeBitsUsage(i, signal), priority, signal),
+                  damaged: (i) =>
+                    analysisLimiter.run(() => sourceDamaged(i, signal), priority, signal),
                 })
                 // This producer only runs on a cache miss (disk cache hits return above, and
                 // the renderer's React Query cache dedups repeats), so bumping here counts

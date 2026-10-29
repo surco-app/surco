@@ -1145,6 +1145,19 @@ describe('TrackList quality badge', () => {
     expect(words[1]).toHaveAttribute('data-tone', 'warn')
   })
 
+  it('names a damaged file Damaged in the row even when its highs measure full', () => {
+    renderList([
+      track({
+        id: 'a',
+        inputPath: '/music/a.flac',
+        spectrum: { ...spectrum(21000), damaged: true },
+      }),
+    ])
+    const word = screen.getByTestId('track-quality-word')
+    expect(word).toHaveTextContent(i18n.t('trackList.qualityWord.damaged'))
+    expect(word).toHaveAttribute('data-tone', 'danger')
+  })
+
   // With no extension there is no format to tint, but an analysed file still owes its
   // verdict: the pill falls back to the bare shape, good included.
   it('draws the bare shape when the file has no format to tint', () => {

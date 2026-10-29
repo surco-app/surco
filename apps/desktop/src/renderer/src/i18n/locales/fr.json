@@ -401,7 +401,8 @@
       "warn": "Douteux",
       "bad": "Faible",
       "processed": "Retraité",
-      "transcoded": "Avec pertes"
+      "transcoded": "Avec pertes",
+      "damaged": "Endommagé"
     },
     "cuesUnsaved": "Cues non enregistrés",
     "autoMark": {
@@ -543,6 +544,8 @@
     "qualityBad": "Mauvaise qualité",
     "qualityProcessed": "Retraitement possible",
     "qualityTranscode": "Source avec pertes",
+    "qualityDamaged": "Fichier endommagé",
+    "qualityDamagedCaption": "Le fichier cesse d'être décodé avant sa durée annoncée : il est endommagé ou incomplet.",
     "analyzing": "Analyse du spectre…",
     "cleaned": {
       "label": "Nettoyé",
@@ -647,6 +650,7 @@
     "convert": "Convertir en {{format}} + Apple Music",
     "convertEngine": "Convertir en {{format}} + Engine DJ",
     "lossyToLossless": "La source est avec pertes : la convertir en {{format}} ne rendra pas sa qualité.",
+    "damagedSource": "Ce fichier est endommagé ou incomplet, la copie le sera donc aussi.",
     "convertNoMusic": "Convertir en {{format}}",
     "convertBeside": "Convertir en {{format}} à côté de l’original",
     "convertOverwrite": "Convertir en {{format}} sur l’original",

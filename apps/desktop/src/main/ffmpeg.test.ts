@@ -1703,6 +1703,7 @@ describe('buildSpectrum', () => {
     })),
     shelf: vi.fn(async () => ({ shelfCutoffHz: null, kneeCutoffHz: null })),
     bits: vi.fn(async () => null),
+    damaged: vi.fn(async () => false),
     ...over,
   })
 
@@ -1855,6 +1856,18 @@ describe('buildSpectrum', () => {
       deps({ bits: vi.fn(async () => Promise.reject(new Error('boom'))) }),
     )
     expect(failed.bitsUsage).toBeUndefined()
+    expect(failed.image).toBe('data:image/png;base64,AAAA')
+  })
+
+  it('carries the damage verdict so a truncated file never reads as healthy, and absorbs a failed check', async () => {
+    const res = await buildSpectrum('/in.flac', deps({ damaged: vi.fn(async () => true) }))
+    expect(res.damaged).toBe(true)
+
+    const failed = await buildSpectrum(
+      '/in.flac',
+      deps({ damaged: vi.fn(async () => Promise.reject(new Error('boom'))) }),
+    )
+    expect(failed.damaged).toBeUndefined()
     expect(failed.image).toBe('data:image/png;base64,AAAA')
   })
 

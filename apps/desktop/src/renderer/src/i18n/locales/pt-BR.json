@@ -401,7 +401,8 @@
       "warn": "Duvidosa",
       "bad": "Baixa qualidade",
       "processed": "Reprocessada",
-      "transcoded": "Com perdas"
+      "transcoded": "Com perdas",
+      "damaged": "Danificado"
     },
     "cuesUnsaved": "Cues não salvos",
     "autoMark": {
@@ -543,6 +544,8 @@
     "qualityBad": "Má qualidade",
     "qualityProcessed": "Possível reprocessamento",
     "qualityTranscode": "Fonte com perdas",
+    "qualityDamaged": "Arquivo danificado",
+    "qualityDamagedCaption": "O arquivo para de decodificar antes da duração declarada: está danificado ou incompleto.",
     "analyzing": "Analisando espectro…",
     "cleaned": {
       "label": "Limpo",
@@ -647,6 +650,7 @@
     "convert": "Converter para {{format}} + Apple Music",
     "convertEngine": "Converter para {{format}} + Engine DJ",
     "lossyToLossless": "A fonte tem perdas: converter para {{format}} não recupera a qualidade.",
+    "damagedSource": "Este arquivo está danificado ou incompleto, então a cópia também estará.",
     "convertNoMusic": "Converter para {{format}}",
     "convertBeside": "Converter para {{format}} ao lado do original",
     "convertOverwrite": "Converter para {{format}} sobre o original",

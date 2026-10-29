@@ -1423,10 +1423,14 @@ const MIN_VERIFIABLE_SEC = 3
 //
 // -v error is deliberately not passed: ffmpeg reports the decoded length on the
 // progress line, so one decode answers both questions instead of paying for two.
-export async function assertDecodable(file: string, copiedFrom?: string): Promise<void> {
-  const whole = await decodeForCheck(file)
+export async function assertDecodable(
+  file: string,
+  copiedFrom?: string,
+  opts?: RunOpts,
+): Promise<void> {
+  const whole = await decodeForCheck(file, undefined, opts)
   if (whole.ok) return assertNotTruncated(file, whole.stderr, whole.stdout)
-  if (copiedFrom !== undefined && !(await decodeForCheck(copiedFrom)).ok)
+  if (copiedFrom !== undefined && !(await decodeForCheck(copiedFrom, undefined, opts)).ok)
     return assertDeliversAsMuchAs(file, copiedFrom)
   // -xerror fails on the first packet the decoder rejects wherever it sits, and a
   // complete file can carry one after its last frame: three of a user's MP3s (17/09/2026)
@@ -1443,8 +1447,18 @@ export async function assertDecodable(file: string, copiedFrom?: string): Promis
   // nothing left to add here.
   const header = headerDurationSec(whole.stderr)
   if (header === null || header < MIN_VERIFIABLE_SEC) throw whole.error
-  const bounded = await decodeForCheck(file, header * (1 - MAX_DECODE_SHORTFALL / 2))
+  const bounded = await decodeForCheck(file, header * (1 - MAX_DECODE_SHORTFALL / 2), opts)
   if (!bounded.ok) throw bounded.error
+}
+
+export async function sourceDamaged(file: string, signal?: AbortSignal): Promise<boolean> {
+  try {
+    await assertDecodable(file, undefined, { timeout: ANALYSIS_TIMEOUT_MS, signal })
+    return false
+  } catch (err) {
+    if (isAbortError(err) || (err as { killed?: unknown }).killed === true) throw err
+    return true
+  }
 }
 
 async function assertDeliversAsMuchAs(file: string, source: string): Promise<void> {
@@ -1500,7 +1514,11 @@ type DecodeForCheck =
   | { ok: true; stderr: string; stdout: string }
   | { ok: false; stderr: string; error: Error }
 
-async function decodeForCheck(file: string, untilSec?: number): Promise<DecodeForCheck> {
+async function decodeForCheck(
+  file: string,
+  untilSec?: number,
+  opts?: RunOpts,
+): Promise<DecodeForCheck> {
   try {
     const { stderr, stdout } = await run(
       ffmpegPath,
@@ -1521,12 +1539,13 @@ async function decodeForCheck(file: string, untilSec?: number): Promise<DecodeFo
         'null',
         '-',
       ],
-      { maxBuffer: 1024 * 1024 * 16 },
+      { maxBuffer: 1024 * 1024 * 16, ...opts },
     )
     // The two figures arrive on different streams: the input banner (with Duration) on
     // stderr, and -progress's own report on stdout, which is what `-progress -` means.
     return { ok: true, stderr: String(stderr), stdout: String(stdout) }
   } catch (e) {
+    if (isAbortError(e) || (e as { killed?: unknown }).killed === true) throw e
     const text = String((e as { stderr?: unknown })?.stderr ?? '').trim()
     return {
       ok: false,
@@ -3396,6 +3415,7 @@ interface SpectrumDeps {
   bits: (
     input: string,
   ) => Promise<{ usage: 'full' | 'padded16' | 'unknown'; lowBytePct?: number } | null>
+  damaged: (input: string) => Promise<boolean>
 }
 
 interface SpectrumBuild {
@@ -3428,6 +3448,7 @@ interface SpectrumBuild {
   flatShelf?: boolean
   bitsUsage?: 'full' | 'padded16' | 'unknown'
   bitsLowPct?: number
+  damaged?: boolean
   cutoffError?: unknown
   shelfError?: unknown
 }
@@ -3442,11 +3463,12 @@ interface SpectrumBuild {
 export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<SpectrumBuild> {
   const probed = await deps.probe(input)
   const sampleRateHz = Number(probed.sampleRate) || 0
-  const [imageR, cutoffR, shelfR, bitsR] = await Promise.allSettled([
+  const [imageR, cutoffR, shelfR, bitsR, damagedR] = await Promise.allSettled([
     deps.spectrogram(input, sampleRateHz),
     deps.cutoff(input, sampleRateHz),
     deps.shelf(input, sampleRateHz),
     deps.bits(input),
+    deps.damaged(input),
   ])
   if (imageR.status === 'rejected') throw imageR.reason
   const cutoff = cutoffR.status === 'fulfilled' ? cutoffR.value : null
@@ -3496,6 +3518,7 @@ export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<
     flatShelf: cutoff?.processed !== true && shelfCutoffHz !== null ? true : undefined,
     bitsUsage: bitsR.status === 'fulfilled' ? (bitsR.value?.usage ?? undefined) : undefined,
     bitsLowPct: bitsR.status === 'fulfilled' ? (bitsR.value?.lowBytePct ?? undefined) : undefined,
+    damaged: damagedR.status === 'fulfilled' ? damagedR.value : undefined,
     cutoffError: cutoffR.status === 'rejected' ? cutoffR.reason : undefined,
     shelfError: shelfR.status === 'rejected' ? shelfR.reason : undefined,
   }

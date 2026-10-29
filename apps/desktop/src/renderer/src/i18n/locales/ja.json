@@ -401,7 +401,8 @@
       "warn": "疑わしい",
       "bad": "低音質",
       "processed": "再処理",
-      "transcoded": "非可逆"
+      "transcoded": "非可逆",
+      "damaged": "破損"
     },
     "cuesUnsaved": "キューが未保存",
     "autoMark": {
@@ -543,6 +544,8 @@
     "qualityBad": "低音質",
     "qualityProcessed": "再処理された可能性があります",
     "qualityTranscode": "ロスの多いソース",
+    "qualityDamaged": "破損したファイル",
+    "qualityDamagedCaption": "表示上の長さより前でデコードが止まります。ファイルが破損しているか不完全です。",
     "analyzing": "スペクトルを分析中…",
     "cleaned": {
       "label": "クリーン済み",
@@ -647,6 +650,7 @@
     "convert": "{{format}} + Apple Music に変換",
     "convertEngine": "{{format}} + Engine DJ に変換",
     "lossyToLossless": "ソースは非可逆です。{{format}} に変換しても音質は戻りません。",
+    "damagedSource": "このファイルは破損しているか不完全なため、コピーも同様になります。",
     "convertNoMusic": "{{format}} に変換",
     "convertBeside": "元ファイルの横に {{format}} に変換",
     "convertOverwrite": "元ファイルの上に {{format}} に変換",

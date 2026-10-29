@@ -401,7 +401,8 @@
       "warn": "Doubtful",
       "bad": "Low quality",
       "processed": "Reprocessed",
-      "transcoded": "Lossy"
+      "transcoded": "Lossy",
+      "damaged": "Damaged"
     },
     "cuesUnsaved": "Cues not saved",
     "autoMark": {
@@ -543,6 +544,8 @@
     "qualityBad": "Bad quality",
     "qualityProcessed": "Possibly reprocessed",
     "qualityTranscode": "Lossy source",
+    "qualityDamaged": "Damaged",
+    "qualityDamagedCaption": "The file stops decoding before its stated length: it is damaged or incomplete.",
     "analyzing": "Analyzing spectrum…",
     "cleaned": {
       "label": "Cleaned",
@@ -647,6 +650,7 @@
     "convert": "Convert to {{format}} + Apple Music",
     "convertEngine": "Convert to {{format}} + Engine DJ",
     "lossyToLossless": "Source is lossy: converting to {{format}} won't restore its quality.",
+    "damagedSource": "This file is damaged or incomplete, so the copy will be too.",
     "convertNoMusic": "Convert to {{format}}",
     "convertBeside": "Convert to {{format}} beside the original",
     "convertOverwrite": "Convert to {{format}} over the original",

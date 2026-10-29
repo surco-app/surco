@@ -465,6 +465,24 @@ describe('QualitySection verdict caption', () => {
     await waitFor(() => expect(reportError).toHaveBeenCalledWith(i18n.t('errors.qualityReport')))
   })
 
+  it('names a file that stops decoding before its stated length Damaged instead of grading its highs', async () => {
+    renderSection({
+      image: '',
+      cutoffHz: 22000,
+      sampleRateHz: 44100,
+      processed: false,
+      hasKnee: false,
+      damaged: true,
+    })
+    expect(await screen.findByTestId('quality-damaged')).toHaveTextContent(
+      i18n.t('editor.qualityDamaged'),
+    )
+    expect(screen.getByTestId('quality-damaged-note')).toHaveTextContent(
+      i18n.t('editor.qualityDamagedCaption'),
+    )
+    expect(screen.queryByTestId('quality-badge')).toBeNull()
+  })
+
   it('flags regenerated highs with a Reprocessed badge, not Bad quality over cutoff boilerplate', async () => {
     // The enhancer hump reaches past the good line, so a "full spectrum" view under
     // a "Bad quality" badge reads as a contradiction. The processed case gets its

@@ -1394,6 +1394,7 @@ export interface SpectrumResult {
   bitsUsage?: 'full' | 'padded16' | 'unknown'
   // Share of content samples whose lowest byte is non-zero, 0-100.
   bitsLowPct?: number
+  damaged?: boolean
 }
 
 // Everything the list reads off a spectrum: the whole result but the ~300 KB image,

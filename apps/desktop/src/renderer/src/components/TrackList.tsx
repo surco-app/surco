@@ -210,6 +210,7 @@ const qualityTone: Record<RowVerdict, RowTone> = {
   bad: 'danger',
   processed: 'warn',
   transcoded: 'danger',
+  damaged: 'danger',
 }
 
 // Solid shapes, not outlined icons: two 12px outlines side by side (sparkle and verdict)
@@ -231,6 +232,7 @@ const qualityLabel: Record<RowVerdict, string> = {
   bad: 'editor.qualityBad',
   processed: 'editor.qualityProcessed',
   transcoded: 'editor.qualityTranscode',
+  damaged: 'editor.qualityDamaged',
 }
 
 const qualityWord: Record<Exclude<RowVerdict, 'good'>, string> = {
@@ -238,6 +240,7 @@ const qualityWord: Record<Exclude<RowVerdict, 'good'>, string> = {
   bad: 'trackList.qualityWord.bad',
   processed: 'trackList.qualityWord.processed',
   transcoded: 'trackList.qualityWord.transcoded',
+  damaged: 'trackList.qualityWord.damaged',
 }
 
 const wordClass: Record<Exclude<RowTone, 'good'>, string> = {

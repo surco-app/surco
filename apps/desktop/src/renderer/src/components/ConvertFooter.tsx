@@ -379,6 +379,11 @@ export function ConvertFooter({
           </>
         ) : (
           <>
+            {!isMulti && item.spectrum?.damaged && (
+              <p data-testid="convert-damaged-note" className="text-center text-xs text-fg-dim">
+                {tr('editor.damagedSource')}
+              </p>
+            )}
             {lossyToLossless && (
               <p data-testid="convert-lossy-note" className="text-center text-xs text-fg-dim">
                 {tr('editor.lossyToLossless', { format: format.toUpperCase() })}

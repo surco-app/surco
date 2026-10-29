@@ -471,3 +471,38 @@ describe('ConvertFooter lossy source note', () => {
     expect(screen.queryByTestId('convert-lossy-note')).toBeNull()
   })
 })
+
+describe('ConvertFooter damaged source note', () => {
+  const converting = (spectrum: TrackItem['spectrum']): React.JSX.Element =>
+    cloneElement(footer(false), {
+      item: {
+        id: 't1',
+        status: 'idle',
+        inputPath: '/crate/a.flac',
+        meta: {},
+        spectrum,
+      } as TrackItem,
+      format: 'aiff',
+    })
+  const measured = (damaged: boolean): TrackItem['spectrum'] =>
+    ({
+      image: '',
+      cutoffHz: 21000,
+      sampleRateHz: 44100,
+      processed: false,
+      damaged,
+    }) as TrackItem['spectrum']
+
+  it('warns that a damaged source makes a damaged copy, without blocking the conversion', () => {
+    render(converting(measured(true)))
+    expect(screen.getByTestId('convert-damaged-note')).toHaveTextContent(
+      i18n.t('editor.damagedSource'),
+    )
+    expect(screen.getByTestId('process-btn')).not.toHaveAttribute('aria-disabled')
+  })
+
+  it('stays quiet for an intact source', () => {
+    render(converting(measured(false)))
+    expect(screen.queryByTestId('convert-damaged-note')).toBeNull()
+  })
+})
