@@ -222,6 +222,34 @@ describe('libraryTrackOps', () => {
       },
     ])
   })
+
+  it('asks Traktor to register a track with no playlist choice when adding new tracks', () => {
+    const repoints: RekordboxRepoint[] = [{ from: '/m/a.wav', to: '/m/a.wav', meta: META }]
+    expect(libraryTrackOps(repoints, 'traktor', () => 'id1', true)).toEqual([
+      {
+        id: 'id1',
+        kind: 'track',
+        path: '/m/a.wav',
+        label: 'Sister Nancy - Bam Bam',
+        facts: null,
+        meta: META,
+        wanted: [],
+        known: [],
+        stamps: {},
+        add: true,
+      },
+    ])
+  })
+
+  it('needs track tags to register in Traktor, since its collection entry is built from them', () => {
+    const repoints: RekordboxRepoint[] = [{ from: '/m/a.wav', to: '/m/a.wav' }]
+    expect(libraryTrackOps(repoints, 'traktor', () => 'id1', true)).toEqual([])
+  })
+
+  it('leaves Engine DJ registration to the conversion itself, so no add op is queued for it', () => {
+    const repoints: RekordboxRepoint[] = [{ from: '/m/a.wav', to: '/m/a.wav', meta: META }]
+    expect(libraryTrackOps(repoints, 'engine', () => 'id1', true)).toEqual([])
+  })
 })
 
 describe('queueConversionRun', () => {

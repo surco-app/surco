@@ -7,7 +7,7 @@ import type { RekordboxPlaylistEdit } from '../shared/types'
 import { rekordboxMetaFrom } from './rekordboxMetadata'
 import type { EditOp, TrackOp } from './rekordboxQueueOps'
 import { applyTraktorEdits } from './traktorPlaylistEdit'
-import { PLAYLISTS_SAMPLE } from './traktorPlaylistFixture'
+import { PLAYLISTS_SAMPLE, playlistRow } from './traktorPlaylistFixture'
 import {
   nodeById,
   parsePlaylists,
@@ -419,6 +419,49 @@ describe('playlists chosen in the editor for a track', () => {
       now,
     )
     expect(nml).toBe(bare)
+  })
+
+  it('adds a new ENTRY for an add op with no playlists, so the DJ finds the track in Traktor', () => {
+    const { nml, outcomes } = applyTraktorEdits(
+      DOC,
+      [track({ path: '/m/z.flac', meta: loveYa, wanted: [], known: [], add: true })],
+      'HD',
+      now,
+    )
+    expect(nml).toContain('<COLLECTION ENTRIES="5">')
+    expect(nml).toContain(
+      '<LOCATION DIR="/:m/:" FILE="z.flac" VOLUME="HD" VOLUMEID="v"></LOCATION>',
+    )
+    expect(outcome(outcomes)).toMatchObject({ applied: true, notices: [] })
+  })
+
+  it('leaves a track Traktor already has untouched for an add op, so none of its playlists are lost', () => {
+    const doc = DOC.replace(
+      '<PLAYLIST ENTRIES="0" TYPE="LIST" UUID="dnb"></PLAYLIST>',
+      `<PLAYLIST ENTRIES="1" TYPE="LIST" UUID="dnb">\n${playlistRow('HD/:m/:a.mp3')}\n</PLAYLIST>`,
+    )
+    const { nml, outcomes } = applyTraktorEdits(
+      doc,
+      [track({ path: '/m/a.mp3', meta: loveYa, wanted: [], known: [], add: true })],
+      'HD',
+      now,
+    )
+    expect(nml).toBe(doc)
+    expect(outcome(outcomes)).toMatchObject({ applied: true, notices: [] })
+  })
+
+  it('says the track was not added when Traktor does not know its disk', () => {
+    const { nml, outcomes } = applyTraktorEdits(
+      DOC,
+      [track({ path: '/Volumes/USB/z.flac', meta: loveYa, wanted: [], known: [], add: true })],
+      'HD',
+      now,
+    )
+    expect(nml).toBe(DOC)
+    expect(outcome(outcomes)).toMatchObject({
+      applied: false,
+      notices: [{ code: 'not-in-library', track: 'B' }],
+    })
   })
 
   it('writes nothing for a track Traktor does not have, and says so', () => {

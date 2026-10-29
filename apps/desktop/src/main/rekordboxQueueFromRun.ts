@@ -83,10 +83,12 @@ export function libraryTrackOps(
   repoints: RekordboxRepoint[],
   library: 'traktor' | 'engine',
   newId: () => string = randomUUID,
+  addNew = false,
 ): TrackOp[] {
   return repoints.flatMap((r) => {
     const choice = library === 'traktor' ? r.traktorPlaylists : r.enginePlaylists
-    if (!choice) return []
+    const adding = !choice && addNew && library === 'traktor' && !!r.meta
+    if (!choice && !adding) return []
     return [
       {
         id: newId(),
@@ -96,9 +98,10 @@ export function libraryTrackOps(
         label: labelOf(r),
         facts: null,
         ...(r.meta ? { meta: r.meta } : {}),
-        wanted: choice.wanted,
-        known: choice.base,
+        wanted: choice?.wanted ?? [],
+        known: choice?.base ?? [],
         stamps: {},
+        ...(adding ? { add: true as const } : {}),
       },
     ]
   })

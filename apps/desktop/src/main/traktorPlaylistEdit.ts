@@ -210,6 +210,7 @@ function applyTrack(op: TrackOp, model: PlaylistModel | null, src: Sources): OpO
   const key = keyOfTrack(op, src.index)
   if (!key || !model)
     return { id: op.id, applied: false, notices: [{ code: 'not-in-library', track: op.label }] }
+  if (op.add && op.wanted.length === 0) return { id: op.id, applied: true, notices: [] }
   const notices: OpOutcome['notices'] = []
   const lists = playlistsOf(model)
   const holding = lists.filter((l) => l.rows.some((r) => r.key === key))
