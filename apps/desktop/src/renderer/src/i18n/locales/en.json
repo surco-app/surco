@@ -558,6 +558,10 @@
     "qualityDamaged": "Damaged",
     "qualityDamagedCaption": "The file stops decoding before its stated length: it is damaged or incomplete.",
     "analyzing": "Analyzing spectrum…",
+    "previous": {
+      "label": "Before:",
+      "restore": "Restore"
+    },
     "cleaned": {
       "label": "Cleaned",
       "leading_one": "removed a leading space",

@@ -3246,6 +3246,83 @@ describe('Editor Discogs apply', () => {
     expect(rows[0]).toHaveTextContent('3:21')
     expect(rows[1]).toHaveTextContent('7:45')
   })
+
+  function AppliedHarness({
+    start,
+    onRecordUndo,
+  }: {
+    start: TrackItem
+    onRecordUndo: (ids: string[]) => void
+  }) {
+    const [track, setTrack] = useState(start)
+    return (
+      <Editor
+        item={track}
+        libraryIndex={null}
+        searchInputRef={createRef<HTMLInputElement>()}
+        onChange={(patch) => setTrack((t) => ({ ...t, ...patch }))}
+        onRecordUndo={onRecordUndo}
+        onProcess={vi.fn()}
+        onAddToAppleMusic={vi.fn()}
+        resultsWidth={480}
+        onResultsResizeStart={vi.fn()}
+        onResultsFit={vi.fn()}
+        onShowLoudnessHelp={vi.fn()}
+        onHideEditorHints={vi.fn()}
+        onOpenRename={vi.fn()}
+        onRegenerateName={vi.fn()}
+        onTrimDetectedAll={vi.fn()}
+        onCopyFilename={vi.fn()}
+        onSearchWeb={vi.fn()}
+        onExportCollection={vi.fn()}
+        readFullTrack={async () => undefined}
+      />
+    )
+  }
+
+  async function applyFirstTrack(start: TrackItem, onRecordUndo = vi.fn()): Promise<void> {
+    withDiscogs()
+    renderWithQuery(<AppliedHarness start={start} onRecordUndo={onRecordUndo} />, {
+      visibleFields: ['title', 'artist'],
+      showLoudness: false,
+    })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Track One'))
+  }
+
+  it('shows the title a release replaced and puts it back on Restaurar, so a bad match costs one click', async () => {
+    const onRecordUndo = vi.fn()
+    await applyFirstTrack(item({ id: 'a', meta: { title: 'My Own Title' } }), onRecordUndo)
+    const previous = screen.getByTestId('field-title-previous')
+    expect(previous).toHaveTextContent('My Own Title')
+    onRecordUndo.mockClear()
+    fireEvent.click(within(previous).getByRole('button'))
+    expect(onRecordUndo).toHaveBeenCalledWith(['a'])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('My Own Title'))
+    expect(screen.queryByTestId('field-title-previous')).not.toBeInTheDocument()
+  })
+
+  it('shows no previous line for a field the release filled from empty, since there is nothing to restore', async () => {
+    await applyFirstTrack(item({ id: 'a' }))
+    expect(screen.getByTestId('field-artist')).toHaveValue('The Artist')
+    expect(screen.queryByTestId('field-artist-previous')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('field-title-previous')).not.toBeInTheDocument()
+  })
+
+  it('drops the previous line once the DJ retypes the field, since the release value is no longer there to replace', () => {
+    renderEditor(
+      {
+        id: 'a',
+        meta: { title: 'Typed By Hand' },
+        appliedRelease: { before: { title: 'Old' }, wrote: { title: 'Track One' } },
+      },
+      'wav',
+      { visibleFields: ['title'] },
+    )
+    expect(screen.queryByTestId('field-title-previous')).not.toBeInTheDocument()
+  })
 })
 
 describe('Editor track preselection', () => {

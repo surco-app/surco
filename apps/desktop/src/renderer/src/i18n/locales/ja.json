@@ -558,6 +558,10 @@
     "qualityDamaged": "破損したファイル",
     "qualityDamagedCaption": "表示上の長さより前でデコードが止まります。ファイルが破損しているか不完全です。",
     "analyzing": "スペクトルを分析中…",
+    "previous": {
+      "label": "以前:",
+      "restore": "元に戻す"
+    },
     "cleaned": {
       "label": "クリーン済み",
       "leading_one": "先頭のスペースを削除しました",

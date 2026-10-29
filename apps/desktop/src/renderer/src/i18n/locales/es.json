@@ -558,6 +558,10 @@
     "qualityDamaged": "Archivo dañado",
     "qualityDamagedCaption": "El archivo deja de decodificarse antes de su duración declarada: está dañado o incompleto.",
     "analyzing": "Analizando espectro…",
+    "previous": {
+      "label": "Antes:",
+      "restore": "Restaurar"
+    },
     "cleaned": {
       "label": "Limpiado",
       "leading_one": "quitado un espacio al principio",

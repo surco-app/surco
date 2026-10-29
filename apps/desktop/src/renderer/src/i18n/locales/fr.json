@@ -558,6 +558,10 @@
     "qualityDamaged": "Fichier endommagé",
     "qualityDamagedCaption": "Le fichier cesse d'être décodé avant sa durée annoncée : il est endommagé ou incomplet.",
     "analyzing": "Analyse du spectre…",
+    "previous": {
+      "label": "Avant :",
+      "restore": "Restaurer"
+    },
     "cleaned": {
       "label": "Nettoyé",
       "leading_one": "espace en début supprimé",

@@ -67,6 +67,7 @@ export interface FieldSpec {
   cleanResult?: string
   formatResult?: string
   cleaned?: FieldCleanedNote
+  previous?: FieldPreviousNote
   perTrack?: {
     list: TagList
     tracks: TrackItem[]
@@ -79,6 +80,11 @@ export interface FieldSpec {
 export interface FieldCleanedNote {
   reasons: string
   onUndo?: () => void
+}
+
+export interface FieldPreviousNote {
+  value: string
+  onRestore: () => void
 }
 
 // The free-text fields that host the { } insert menu — the ones where composing a
@@ -140,6 +146,7 @@ export interface BuildFieldSpecsParams {
   // Year holds a whole release date, which needs a wider box than a year.
   fullReleaseDate: boolean
   cleanedNotes?: Partial<Record<string, FieldCleanedNote>>
+  previousNotes?: Partial<Record<string, FieldPreviousNote>>
   playlists?: Partial<Record<PlaylistLibrary, PlaylistsSpec>>
 }
 
@@ -208,6 +215,7 @@ export function buildFieldSpecs({
   onChangeTracksMeta,
   fullReleaseDate,
   cleanedNotes,
+  previousNotes,
   playlists,
 }: BuildFieldSpecsParams): FieldSpec[] {
   const widthOf = (key: MetaTextKey): FieldWidth | undefined =>
@@ -305,6 +313,7 @@ export function buildFieldSpecs({
             cleanResult: !isMulti && def.key === 'album' ? albumCleanResult : undefined,
             formatResult: !isMulti && def.key === 'title' ? titleFormatResult : undefined,
             cleaned: cleanedNotes?.[def.key],
+            previous: previousNotes?.[def.key],
             width: widthOf(def.key),
             required: requiredFields.includes(def.key),
             invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),

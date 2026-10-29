@@ -89,6 +89,7 @@ function renderField(
       cleanResult={f.cleanResult}
       formatResult={f.formatResult}
       cleaned={f.cleaned}
+      previous={f.previous}
       required={f.required}
       invalid={f.invalid}
       mixed={f.mixed}

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useLatest } from '../hooks/useLatest'
 import type { TagList } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
-import type { FieldCleanedNote } from '../lib/fieldSpecs'
+import type { FieldCleanedNote, FieldPreviousNote } from '../lib/fieldSpecs'
 import type { FieldWidth } from '../lib/fields'
 import { holdPendingEdit } from '../lib/pendingEdits'
 import { CleanSpark } from './CleanSpark'
@@ -50,6 +50,7 @@ interface FieldProps {
   cleanResult?: string
   formatResult?: string
   cleaned?: FieldCleanedNote
+  previous?: FieldPreviousNote
 }
 
 // Memoized so a keystroke in one field doesn't re-render every other visible field:
@@ -75,6 +76,7 @@ export const Field = memo(function Field({
   cleanResult,
   formatResult,
   cleaned,
+  previous,
 }: FieldProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
   const { t: tr } = useTranslation()
@@ -290,6 +292,23 @@ export const Field = memo(function Field({
             }
           />
         </div>
+      )}
+      {previous && (
+        <span
+          data-testid={`field-${name}-previous`}
+          className={`mt-1 block text-[11.5px] text-fg-faint ${width ? '' : '@[24rem]:col-start-2 @[24rem]:-mt-1'}`}
+        >
+          {`${tr('editor.previous.label')} `}
+          <span className="line-through">{previous.value}</span>
+          {' · '}
+          <button
+            type="button"
+            onClick={previous.onRestore}
+            className="text-[var(--color-accent)] hover:underline"
+          >
+            {tr('editor.previous.restore')}
+          </button>
+        </span>
       )}
     </>
   )

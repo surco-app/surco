@@ -24,6 +24,7 @@ import { emptyMetadata } from '../../../shared/metadata'
 import type {
   DeclickConfig,
   FormatSetting,
+  MetaTextKey,
   NormalizeConfig,
   OutputFormat,
   PlaylistLibrary,
@@ -1046,6 +1047,33 @@ export const Editor = memo(function Editor({
     [isMulti, item.meta, item.cleaned, tr, onChange],
   )
 
+  const previousNotes = useMemo(
+    () =>
+      isMulti || !item.appliedRelease
+        ? undefined
+        : Object.fromEntries(
+            (Object.entries(item.appliedRelease.wrote) as [MetaTextKey, string][]).flatMap(
+              ([key, wrote]) => {
+                const before = item.appliedRelease?.before[key] ?? ''
+                if (!before || before === wrote || (item.meta[key] ?? '') !== wrote) return []
+                return [
+                  [
+                    key,
+                    {
+                      value: before,
+                      onRestore: () => {
+                        onRecordUndo?.([item.id])
+                        setField(key, before)
+                      },
+                    },
+                  ],
+                ]
+              },
+            ),
+          ),
+    [isMulti, item.id, item.meta, item.appliedRelease, onRecordUndo, setField],
+  )
+
   const playlistTracks = useMemo(
     () => (isMulti && selectedTracks ? selectedTracks : [item]),
     [isMulti, selectedTracks, item],
@@ -1097,6 +1125,7 @@ export const Editor = memo(function Editor({
         fullReleaseDate,
         onChangeTracksMeta,
         cleanedNotes,
+        previousNotes,
         playlists: playlistsSpec,
       }),
     [
@@ -1125,6 +1154,7 @@ export const Editor = memo(function Editor({
       onChangeTracksMeta,
       fullReleaseDate,
       cleanedNotes,
+      previousNotes,
       playlistsSpec,
     ],
   )

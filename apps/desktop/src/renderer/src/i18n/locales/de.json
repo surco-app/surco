@@ -558,6 +558,10 @@
     "qualityDamaged": "Beschädigte Datei",
     "qualityDamagedCaption": "Die Datei lässt sich nicht bis zu ihrer angegebenen Länge decodieren: Sie ist beschädigt oder unvollständig.",
     "analyzing": "Spektrum wird analysiert…",
+    "previous": {
+      "label": "Vorher:",
+      "restore": "Wiederherstellen"
+    },
     "cleaned": {
       "label": "Bereinigt",
       "leading_one": "ein Leerzeichen am Anfang entfernt",
