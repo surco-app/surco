@@ -346,9 +346,10 @@ describe('DestinationTab Traktor collection', () => {
 
   // Reported 09/09/2026: "look into being able to turn off loading the nml, because
   // there's no way to leave it empty — I have to point it at another path to test".
-  // The hint says "leave it empty to turn this off" and the tab offered only Change,
-  // which opens a file picker: the one promise the UI could not keep, and the only way
-  it('turns the Traktor sync on and off with its own toggle', () => {
+  // The hint said "leave it empty to turn this off" and the tab offered only Change,
+  // which opens a file picker. The per-program control now turns the sync on, and
+  // 'update' must not quietly start adding tracks the DJ never asked for.
+  it('setting Traktor to update syncs without adding', () => {
     const patch = vi.fn()
     render(
       <DestinationTab
@@ -395,7 +396,7 @@ describe('DestinationTab Traktor collection', () => {
   })
 
   // rekordbox keeps its collection in one place per platform, so unlike Traktor there is
-  // nothing to point at: the toggle is the whole setup.
+  // nothing to point at: the three-state control is the whole setup.
   it('turning rekordbox to add saves both switches', () => {
     const patch = vi.fn()
     render(
@@ -453,10 +454,12 @@ describe('DestinationTab Traktor collection', () => {
   // discover only on opening it; the warning is noise for the other two choices.
   it('explains what adding costs only while a program is set to add', () => {
     renderTab({ syncTraktor: true, addToTraktor: false })
-    expect(screen.queryByTestId('settings-reach-add-hint')).toBeNull()
+    expect(screen.queryByTestId('settings-reach-traktor-add-hint')).toBeNull()
     cleanup()
     renderTab({ syncTraktor: true, addToTraktor: true })
-    expect(screen.getAllByTestId('settings-reach-add-hint')).toHaveLength(1)
+    expect(screen.getByTestId('settings-reach-traktor-add-hint')).toBeInTheDocument()
+    expect(screen.queryByTestId('settings-reach-rekordbox-add-hint')).toBeNull()
+    expect(screen.queryByTestId('settings-reach-engine-add-hint')).toBeNull()
   })
 
   // Someone who does not run rekordbox still sees the setting, dimmed, with the hint

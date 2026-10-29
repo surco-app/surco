@@ -90,9 +90,9 @@ interface Props {
 }
 
 // Where a conversion ends up: the output folder, the destination radio (folder /
-// Apple Music / Engine DJ / overwrite) and Engine DJ's own fields. Split from the
-// Conversion tab, which keeps everything that defines the file itself — the format
-// chosen there still gates the choices here (FLAC pins the folder).
+// Apple Music / beside the original / overwrite) and how far each DJ program is
+// reached. Split from the Conversion tab, which keeps everything that defines the file
+// itself — the format chosen there still gates the choices here (FLAC pins the folder).
 export function DestinationTab({
   synced,
   local,
@@ -167,11 +167,12 @@ export function DestinationTab({
           it isn't itself a place the converted file goes. Empty path means the feature
           is off (see settings.ts), so this is the only control that turns it on. */}
       <SettingsSection eyebrow={tr('settings.traktorSync')}>
-        {/* The switch, and the only one. Emptying the path used to be what turned the
-            sync off — an invisible side effect nobody guesses, and the opposite of how
-            the rest of this screen works. Disabled rather than hidden while no collection
-            is set, so the feature never looks like it does not exist; the hint below says
-            what is missing. */}
+        {/* One three-state control per program, and the only thing that turns it on or
+            off: leave the collection alone, update it, or update it and add new tracks.
+            Emptying the path used to be what turned the sync off — an invisible side
+            effect nobody guesses, and the opposite of how the rest of this screen works.
+            Disabled rather than hidden while no collection is set, so the feature never
+            looks like it does not exist; the hint below says what is missing. */}
         <DjReachRow
           program="traktor"
           label={tr('settings.syncTraktor')}
@@ -334,8 +335,8 @@ export function DestinationTab({
         </div>
       </SettingsSection>
       {/* rekordbox keeps its collection in one fixed place per platform, so there is
-          nothing to point at and the toggle is the whole setup — the path below is shown
-          only so the user can see which collection is being written to. */}
+          nothing to point at and the three-state control is the whole setup — the path
+          below is shown only so the user can see which collection is being written to. */}
       <SettingsSection eyebrow={tr('settings.rekordboxSync')}>
         <DjReachRow
           program="rekordbox"
@@ -420,8 +421,8 @@ export function DestinationTab({
         <SettingsHint className="mt-2">{tr('settings.completeCuesHint')}</SettingsHint>
       </SettingsSection>
       {/* The library folder and playlist say which Engine database Surco reads and
-          writes; the toggle keeps rows that point at a converted file's original
-          moving onto the new file. */}
+          writes; the three-state control decides whether rows that point at a converted
+          file's original move onto the new file, and whether new tracks are added too. */}
       <SettingsSection eyebrow={tr('settings.engineSync')}>
         <div className="mb-4">
           <EngineLibraryFields
@@ -573,7 +574,7 @@ function DjReachRow({
         labelFor={(reach) => tr(`settings.djReach.${reach}`)}
       />
       {value === 'add' && (
-        <SettingsHint className="mt-2" data-testid="settings-reach-add-hint">
+        <SettingsHint className="mt-2" data-testid={`settings-reach-${program}-add-hint`}>
           {tr('settings.djReachAddHint')}
         </SettingsHint>
       )}
