@@ -49,6 +49,7 @@ import { buildEngineDatabase } from './engine'
 import { addToEngineLibrary, dumpEngineLibrary, setEngineWriteGatherMs } from './engineLibrary'
 import { isEngineDjRunning } from './engineProcess'
 import { backupOf } from './libraryBackups'
+import { copyFolder, listCopies } from './libraryHistory'
 import { createSessionBackup } from './rekordboxSessionBackup'
 
 // The real probe shells out to pgrep/tasklist; tests pin it so they never depend on
@@ -210,7 +211,8 @@ describe('addToEngineLibrary', () => {
       sessionBackup,
     )
 
-    expect((await readFile(backupOf(dbPath, 'session'))).equals(before)).toBe(true)
+    const [first] = await listCopies(dbPath)
+    expect((await readFile(join(copyFolder(first), 'm.db'))).equals(before)).toBe(true)
   })
 
   // A zero-byte m.db is what an interrupted Engine write, a crashed session or a

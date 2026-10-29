@@ -3,6 +3,8 @@ import { chmod, copyFile, mkdir, rm, stat } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import log from 'electron-log/main'
 import { backupOf } from './libraryBackups'
+import type { CopyReason } from '../shared/types'
+import { takeCopy } from './libraryHistory'
 import { openRekordboxDb } from './rekordboxDb'
 
 // A copy keeps the mode of what it copied, and rekordbox can leave its files read-only.
@@ -16,8 +18,8 @@ export async function writeBackup(from: string, to: string): Promise<void> {
   await chmod(to, (await stat(to)).mode | 0o200)
 }
 
-// One copy of the collection per conversion run, taken before the first write and left
-// alone afterwards.
+// One dated copy of the collection per momento (a conversion run, a cue write...), taken
+// before the first write and left alone until the next momento begins.
 //
 // It exists because the per-write backup cannot do this job. That one is overwritten
 // before every track, so after a 300-track run it holds the collection as it was before
@@ -26,35 +28,61 @@ export async function writeBackup(from: string, to: string): Promise<void> {
 // before the run started. A DJ who converts 300 tracks and then decides the whole batch
 // was a mistake needs this one.
 //
-// Overwritten on each new run rather than dated: the user's collection is 56 MB, and a
-// dated copy per run would pile up on disk for something they want as a
-// safety net, not an archive. rekordbox keeps its own three rotating backups besides.
+// Copies go into the library history (libraryHistory.ts), which keeps the last few dated
+// ones per collection, so an older state survives the next momento.
 export interface SessionBackup {
-  // Copies the collection if this run has not already done so. Throws if the copy fails —
-  // the caller must not write without one.
+  // Copies the collection if this momento has not already done so. Throws if the copy
+  // fails — the caller must not write without one.
   ensure: (collectionPath: string) => Promise<void>
-  // Ends the run, so the next one takes its own fresh copy.
-  reset: () => void
+  // Starts a momento, so the next write takes its own fresh copy.
+  begin: (reason: CopyReason) => void
+  // Small edits to one collection share a single copy for the whole Surco session.
+  beginLoose: (collectionPath: string) => void
+  // Collections whose latest copy attempt failed.
+  failed: () => ReadonlySet<string>
 }
 
 export function createSessionBackup(deps: {
-  copy?: (from: string, to: string) => Promise<void>
+  take?: typeof takeCopy
+  companionsOf?: (collectionPath: string) => string[]
+  skip?: (collectionPath: string) => boolean
 }): SessionBackup {
-  const copy = deps.copy ?? writeBackup
-  // Per collection, not one flag: tracking a single "done" would leave a second collection
-  // in the same run with no pre-run copy at all.
+  const take = deps.take ?? takeCopy
+  const companionsOf = deps.companionsOf ?? (() => [])
+  const skip = deps.skip ?? (() => false)
   const done = new Set<string>()
+  const loose = new Set<string>()
+  const pending = new Map<string, CopyReason>()
+  const failures = new Set<string>()
+  let reason: CopyReason = 'run'
   return {
     async ensure(collectionPath: string): Promise<void> {
-      if (done.has(collectionPath)) return
-      // Recorded only after the copy lands, so a failure leaves the next track trying
-      // again rather than writing into a collection with nothing behind it.
-      await copy(collectionPath, backupOf(collectionPath, 'session'))
+      if (skip(collectionPath) || done.has(collectionPath)) return
+      try {
+        await take(
+          collectionPath,
+          companionsOf(collectionPath),
+          pending.get(collectionPath) ?? reason,
+        )
+      } catch (err) {
+        failures.add(collectionPath)
+        throw err
+      }
+      failures.delete(collectionPath)
+      pending.delete(collectionPath)
       done.add(collectionPath)
     },
-    reset(): void {
+    begin(next: CopyReason): void {
+      reason = next
       done.clear()
     },
+    beginLoose(collectionPath: string): void {
+      if (loose.has(collectionPath)) return
+      loose.add(collectionPath)
+      done.delete(collectionPath)
+      pending.set(collectionPath, 'playlists')
+    },
+    failed: () => failures,
   }
 }
 

@@ -32,9 +32,9 @@ import { isTraktorRunning } from './traktorProcess'
 // he only wants as a safety net. What he can lose is the state before the previous
 // write, which the write he is undoing had already replaced anyway.
 
-// …and one copy per run, taken before its first write and left alone until the next run
-// (see rekordboxSessionBackup.ts): the per-write copy above no longer holds the DJ's
-// collection after a second save, this one still does. Reset when a convert-all begins.
+// …and one dated copy per run, taken before its first write and left alone until the next
+// run (see rekordboxSessionBackup.ts): the per-write copy above no longer holds the DJ's
+// collection after a second save, this one still does. A new one begins with a convert-all.
 export const traktorSessionBackup = createSessionBackup({})
 
 // How far ahead of the collection a detached conversion's timestamp is placed. Seconds

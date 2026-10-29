@@ -268,7 +268,7 @@ describe('a renderer reload', () => {
     const handler =
       source.match(/on\('process:batch-begin', \(\) => \{([\s\S]*?)\n {2}\}\)/)?.[1] ?? ''
     expect(handler).toMatch(
-      /if \(beginRekordboxBatch\(\)\) \{\s*rekordboxSessionBackup\.reset\(\)\s*engineSessionBackup\.reset\(\)/,
+      /if \(beginRekordboxBatch\(\)\) \{\s*rekordboxSessionBackup\.begin\('run'\)\s*engineSessionBackup\.begin\('run'\)/,
     )
   })
 

@@ -89,8 +89,18 @@ function host(overrides: Partial<LibraryHost> = {}): LibraryHost {
 }
 
 const sessions = {
-  rekordbox: { ensure: vi.fn(async () => {}), reset: vi.fn() },
-  engine: { ensure: vi.fn(async () => {}), reset: vi.fn() },
+  rekordbox: {
+    ensure: vi.fn(async () => {}),
+    begin: vi.fn(),
+    beginLoose: vi.fn(),
+    failed: () => new Set<string>(),
+  },
+  engine: {
+    ensure: vi.fn(async () => {}),
+    begin: vi.fn(),
+    beginLoose: vi.fn(),
+    failed: () => new Set<string>(),
+  },
 }
 
 describe('flushConversionBatch with rekordbox open', () => {

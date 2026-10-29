@@ -31,7 +31,8 @@ const { renameShouldFail, copyFileShouldFail } = vi.hoisted(() => ({
 vi.mock('node:fs/promises', async (importOriginal) => {
   const real = await importOriginal<typeof import('node:fs/promises')>()
   const rename: typeof real.rename = (async (...args: Parameters<typeof real.rename>) => {
-    if (renameShouldFail.value) throw Object.assign(new Error('ENOSPC'), { code: 'ENOSPC' })
+    if (renameShouldFail.value && String(args[1]).endsWith('.nml'))
+      throw Object.assign(new Error('ENOSPC'), { code: 'ENOSPC' })
     return real.rename(...args)
   }) as typeof real.rename
   const copyFile: typeof real.copyFile = (async (...args: Parameters<typeof real.copyFile>) => {
@@ -58,6 +59,7 @@ vi.mock('electron', () => ({
 }))
 
 import { backupOf } from './libraryBackups'
+import { copyFolder, listCopies } from './libraryHistory'
 import {
   bootVolumeName,
   replaceDuplicatesInCollection,
@@ -144,17 +146,21 @@ describe('syncCollection', () => {
   // colección del DJ. La de la sesión se toma antes de la primera escritura y no se toca
   // hasta la siguiente tanda, para poder volver a como estaba todo antes de empezar.
   it('keeps the collection as it was before the first write of the run, however many follow', async () => {
-    traktorSessionBackup.reset()
+    traktorSessionBackup.begin('run')
     await syncCollection(nmlPath, [patch])
     writeFileSync(nmlPath, `${NML}<!-- later -->`)
     await syncCollection(nmlPath, [patch])
-    expect(readFileSync(backupOf(nmlPath, 'session'), 'utf8')).toBe(NML)
+    expect(
+      readFileSync(join(copyFolder((await listCopies(nmlPath))[0]), 'collection.nml'), 'utf8'),
+    ).toBe(NML)
     expect(readFileSync(backupOf(nmlPath, 'backup'), 'utf8')).toBe(`${NML}<!-- later -->`)
-    traktorSessionBackup.reset()
+    traktorSessionBackup.begin('run')
     writeFileSync(nmlPath, `${NML}<!-- next run -->`)
     const beforeNext = readFileSync(nmlPath, 'utf8')
     await syncCollection(nmlPath, [patch])
-    expect(readFileSync(backupOf(nmlPath, 'session'), 'utf8')).toBe(beforeNext)
+    expect(
+      readFileSync(join(copyFolder((await listCopies(nmlPath))[0]), 'collection.nml'), 'utf8'),
+    ).toBe(beforeNext)
   })
 
   // Una copia hereda el modo de lo copiado: una colección de solo lectura dejaba un backup
@@ -187,7 +193,7 @@ describe('syncCollection', () => {
   // seguridad. Mismo trato que la biblioteca de Engine DJ (m.db.surco-backup).
   // Y en la carpeta de Surco, no al lado de la colección: en un Windows que no dejaba crear
   // ficheros junto a collection.nml, la copia fallaba y ningún guardado llegaba a Traktor.
-  it('keeps one backup and one copy of the run in Surco folder however many times it writes', async () => {
+  it('keeps one backup and one dated copy of the run in Surco folder however many times it writes', async () => {
     await syncCollection(nmlPath, [patch])
     writeFileSync(nmlPath, NML)
     await syncCollection(nmlPath, [patch])
@@ -196,7 +202,7 @@ describe('syncCollection', () => {
 
     expect(readdirSync(dirname(backupOf(nmlPath, 'backup'))).sort()).toEqual([
       'collection.nml.surco-backup',
-      'collection.nml.surco-session',
+      'history',
     ])
     expect(readdirSync(dir).filter((f) => f.includes('surco'))).toEqual([])
   })
@@ -243,7 +249,7 @@ describe('syncCollection', () => {
     expect(result).toMatchObject({ written: true, matched: 2 })
     expect(readdirSync(dirname(backupOf(nmlPath, 'backup'))).sort()).toEqual([
       'collection.nml.surco-backup',
-      'collection.nml.surco-session',
+      'history',
     ])
     const out = readFileSync(nmlPath, 'utf8')
     expect(out).toContain('uno.flac')

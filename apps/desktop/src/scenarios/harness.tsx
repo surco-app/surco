@@ -497,8 +497,8 @@ function scenarioApi(
     beginConversionBatch: () => {
       beginNmlBatch()
       beginRekordboxBatch()
-      sessions.rekordbox.reset()
-      sessions.engine.reset()
+      sessions.rekordbox.begin('run')
+      sessions.engine.begin('run')
     },
     endConversionBatch: () => {
       let applying: Promise<unknown> = Promise.resolve()

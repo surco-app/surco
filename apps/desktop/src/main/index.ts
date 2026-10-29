@@ -20,7 +20,7 @@ import {
   writeFile,
 } from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { Readable } from 'node:stream'
 import {
   app,
@@ -146,7 +146,7 @@ import {
 import { completeOnClose } from './rekordboxCompleteOnClose'
 import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
 import { markedTracks, readCollectionMarksAt } from './rekordboxLearnFlow'
-import { readNodeStamps } from './rekordboxMasterXml'
+import { playlistXmlPath, readNodeStamps } from './rekordboxMasterXml'
 import { findRekordboxCollection } from './rekordboxPath'
 import { keyOf, registerRekordboxPlaylistsIpc } from './rekordboxPlaylistsIpc'
 import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
@@ -259,7 +259,10 @@ const stickyConflict = createStickyConflict()
 // One copy of the rekordbox collection per conversion run, taken before the run's first
 // write. Module-scoped for the same reason as stickyConflict: a run fans out into separate
 // process:track calls, and they all have to agree that the copy is already taken.
-const rekordboxSessionBackup = createSessionBackup({})
+const rekordboxSessionBackup = createSessionBackup({
+  companionsOf: (path) => (basename(path) === 'master.db' ? [playlistXmlPath(path)] : []),
+  skip: (path) => basename(path) === 'masterPlaylists6.xml',
+})
 // The same for the Engine DJ library, which a run can repoint as well.
 const engineSessionBackup = createSessionBackup({})
 const sessions = { rekordbox: rekordboxSessionBackup, engine: engineSessionBackup }
@@ -1380,12 +1383,12 @@ function registerIpc(): void {
   // nesting is tracked there so a lone convert mid-batch can never wipe it.
   ipcMain.on('process:batch-begin', () => {
     beginNmlBatch()
-    // A new run gets a new pre-run copy; without this the stored one would describe the
-    // collection before the FIRST run since launch, not before the run in progress.
+    // A new run gets its own dated pre-run copy; without this the newest one would describe
+    // the collection before the FIRST run since launch, not before the run in progress.
     if (beginRekordboxBatch()) {
-      rekordboxSessionBackup.reset()
-      engineSessionBackup.reset()
-      traktorSessionBackup.reset()
+      rekordboxSessionBackup.begin('run')
+      engineSessionBackup.begin('run')
+      traktorSessionBackup.begin('run')
       stickyConflict.reset()
       coverMemo = createCoverMemo(prepareProcessedCover)
     }
