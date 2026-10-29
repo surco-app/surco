@@ -151,9 +151,9 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
             else setStep((s) => s + 1)
           }}
         >
-          <div className="min-h-[280px]">
+          <div className="min-h-[min(70vh,592px)]">
             {STEPS[step] === 'welcome' && (
-              <div className="flex h-[280px] flex-col items-center justify-center text-center">
+              <div className="flex min-h-[min(70vh,592px)] flex-col items-center justify-center text-center">
                 <AudioLines
                   aria-hidden="true"
                   strokeWidth={1.75}
@@ -218,7 +218,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                   tabIndex={-1}
                   className="focus-visible:shadow-none mb-1 text-lg font-semibold"
                 >
-                  {tr('settings.outputFormat')}
+                  {tr('onboarding.formatTitle')}
                 </h2>
                 <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.formatBody')}</p>
                 <FormatSettingControl

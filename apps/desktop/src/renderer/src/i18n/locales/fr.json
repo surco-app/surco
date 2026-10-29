@@ -1363,7 +1363,7 @@
       "wav": "WAV",
       "flac": "FLAC"
     },
-    "outputFormatHint": "« Comme la source » garde chaque fichier dans son propre format, donc un lot mixte n'est jamais ré-encodé. AIFF/WAV/FLAC sont sans perte (FLAC compressé) ; le MP3 est plus léger. Un fichier déjà dans le format est copié sans ré-encodage.",
+    "outputFormatHint": "« Comme la source » garde chaque fichier dans son propre format, donc un lot mixte n'est jamais ré-encodé. AIFF/WAV/FLAC/ALAC sont sans perte (FLAC et ALAC compressés) ; le MP3 est plus léger. Un fichier déjà dans le format est copié sans ré-encodage.",
     "keepMp3Sources": "Conserver les MP3 et M4A tels quels",
     "keepMp3SourcesHint": "Convertir un MP3 ou un M4A vers un format sans perte ne restaure aucune qualité, le fichier devient seulement plus volumineux. Avec cette option, ils gardent leur format et Surco écrit leurs tags vers la destination choisie. Avec « À côté de l'original », il n’y touche pas. Si tu égalises le volume, répares des clics ou coupes le silence, l’audio est quand même réencodé.",
     "keepMp3SourcesOff": "Inutile avec MP3 ou « Comme la source » : les MP3 restent déjà en MP3.",
@@ -1713,6 +1713,7 @@
   "onboarding": {
     "welcomeTitle": "Bienvenue dans Surco",
     "welcomeBody": "Configurons l'essentiel. Ça prend moins d'une minute, et tu pourras tout changer plus tard dans les Réglages.",
+    "formatTitle": "Format et destination",
     "formatBody": "Choisis le format vers lequel Surco exporte tes morceaux.",
     "audioTitle": "Que fais-tu avec tes morceaux ?",
     "audioBody": "Surco n'affiche que les sections de l'éditeur dont ton flux a besoin. Choisis ce qui te convient. C'est modifiable à tout moment dans les Réglages.",

@@ -682,6 +682,18 @@ describe('OnboardingWizard format', () => {
     )
   })
 
+  it('titles the step after both the format and the destination it sets', () => {
+    openFormatStep()
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
+      i18n.t('onboarding.formatTitle'),
+    )
+  })
+
+  it('lists ALAC among the lossless formats so picking it does not read as losing quality', () => {
+    openFormatStep()
+    expect(screen.getByText(i18n.t('settings.outputFormatHint'))).toHaveTextContent(/ALAC/)
+  })
+
   it('persists Same as source when picked', () => {
     const onFinish = vi.fn()
     openFormatStep(settings, onFinish)

@@ -1363,7 +1363,7 @@
       "wav": "WAV",
       "flac": "FLAC"
     },
-    "outputFormatHint": "“Igual à origem” mantém cada arquivo em seu próprio formato, então um lote misto nunca é recodificado. AIFF/WAV/FLAC são sem perdas (FLAC comprimido); MP3 ocupa menos. Um arquivo que já está no formato é copiado sem recodificar.",
+    "outputFormatHint": "“Igual à origem” mantém cada arquivo em seu próprio formato, então um lote misto nunca é recodificado. AIFF/WAV/FLAC/ALAC são sem perdas (FLAC e ALAC comprimidos); MP3 ocupa menos. Um arquivo que já está no formato é copiado sem recodificar.",
     "keepMp3Sources": "Manter arquivos MP3 e M4A como estão",
     "keepMp3SourcesHint": "Converter um MP3 ou M4A para um formato sem perdas não recupera qualidade, o arquivo só fica maior. Com isso ativo, eles mantêm o formato e o Surco grava as tags no destino que você escolheu. Com “Ao lado do original”, não mexe neles. Se você igualar o volume, reparar cliques ou cortar o silêncio, o áudio é recodificado mesmo assim.",
     "keepMp3SourcesOff": "Não é necessário com MP3 ou “Igual à origem”: os MP3 já continuam MP3.",
@@ -1713,6 +1713,7 @@
   "onboarding": {
     "welcomeTitle": "Boas-vindas ao Surco",
     "welcomeBody": "Vamos configurar o essencial. Leva menos de um minuto e você pode mudar tudo depois em Ajustes.",
+    "formatTitle": "Formato e destino",
     "formatBody": "Escolha para qual formato o Surco exporta suas faixas.",
     "audioTitle": "O que você faz com suas faixas?",
     "audioBody": "O Surco mostra só as seções do editor que seu fluxo precisa. Escolha o que se encaixa. Você pode mudar isso quando quiser em Ajustes.",

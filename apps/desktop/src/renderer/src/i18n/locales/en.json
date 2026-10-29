@@ -1363,7 +1363,7 @@
       "wav": "WAV",
       "flac": "FLAC"
     },
-    "outputFormatHint": "“Same as source” keeps each file in its own format, so a mixed batch is never re-encoded. AIFF/WAV/FLAC are lossless (FLAC compressed); MP3 is smaller. A file already in the format is copied without re-encoding.",
+    "outputFormatHint": "“Same as source” keeps each file in its own format, so a mixed batch is never re-encoded. AIFF/WAV/FLAC/ALAC are lossless (FLAC and ALAC compressed); MP3 is smaller. A file already in the format is copied without re-encoding.",
     "keepMp3Sources": "Keep MP3 and M4A files as they are",
     "keepMp3SourcesHint": "Converting an MP3 or an M4A to a lossless format can't restore quality, it only makes the file bigger. With this on they keep their format and Surco writes their tags to the destination you chose. With “Next to the original” it leaves them alone. If you normalize loudness, repair clicks or trim, the audio is re-encoded after all.",
     "keepMp3SourcesOff": "Not needed with MP3 or “Same as source”: MP3s already stay MP3.",
@@ -1713,6 +1713,7 @@
   "onboarding": {
     "welcomeTitle": "Welcome to Surco",
     "welcomeBody": "Let's set up the essentials. It takes less than a minute, and you can change everything later in Settings.",
+    "formatTitle": "Format and destination",
     "formatBody": "Choose the format Surco exports your tracks to.",
     "audioTitle": "What do you do with your tracks?",
     "audioBody": "Surco shows only the editor sections your workflow needs. Pick what fits. You can change it anytime in Settings.",
