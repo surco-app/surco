@@ -38,7 +38,7 @@ export function CuePhraseBand({
           className="absolute inset-y-0 pr-0.5"
         >
           <div
-            className={`h-full truncate rounded-[3px] px-1.5 text-[10px] leading-5 ${TONE[r.kind]}`}
+            className={`h-full truncate rounded-[3px] px-1.5 text-[11px] leading-5 ${TONE[r.kind]}`}
           >
             {(r.end - r.ms) / durationMs >= LABELLED_SHARE ? r.label : ''}
           </div>

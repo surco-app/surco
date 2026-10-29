@@ -192,7 +192,7 @@ export function LoudnessReadout({
         {/* The two columns named where the eye starts, replacing the footnote legend
             that explained the old italics from the very bottom of the section. */}
         {predicted && (
-          <span data-testid="loudness-after-header" className="ml-auto text-[10px] text-fg-muted">
+          <span data-testid="loudness-after-header" className="ml-auto text-[11px] text-fg-muted">
             {tr('editor.loudnessAfterHeader')}
           </span>
         )}

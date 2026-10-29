@@ -340,7 +340,7 @@ export function CueWave({
             color: '#000',
             ...(gone.has(h.key) ? { opacity: GONE_OPACITY } : {}),
           },
-          className: `absolute z-10 h-3 w-3 rounded-[3px] text-center text-[9px] font-semibold leading-3 ${
+          className: `absolute z-10 h-3 w-3 rounded-[3px] text-center text-[11px] font-semibold leading-3 ${
             isSelected ? 'ring-2 ring-[var(--color-fg)]' : ''
           }`,
         }
@@ -376,7 +376,7 @@ export function CueWave({
           data-testid={`cue-wave-ghost-hot-${h.letter}`}
           aria-hidden="true"
           style={{ ...markStyle(h.at), backgroundColor: 'var(--color-panel-2)' }}
-          className="pointer-events-none absolute z-10 h-3 w-3 overflow-hidden rounded-[3px] text-center text-[9px] font-semibold leading-3"
+          className="pointer-events-none absolute z-10 h-3 w-3 overflow-hidden rounded-[3px] text-center text-[11px] font-semibold leading-3"
         >
           <span
             data-ghost-fill

@@ -179,7 +179,7 @@ export function Waveform({
             // Dressed like the clock pill so the two speak the same language. Near
             // either edge it hangs inward from the ghost line instead of centring,
             // so the card's clipped corners never cut the number.
-            className={`absolute top-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums ring-1 ring-[var(--color-line)] backdrop-blur-sm ${
+            className={`absolute top-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[11px] text-fg-dim leading-none tabular-nums ring-1 ring-[var(--color-line)] backdrop-blur-sm ${
               hoverRatio < 0.08 ? '' : hoverRatio > 0.92 ? '-translate-x-full' : '-translate-x-1/2'
             }`}
           >

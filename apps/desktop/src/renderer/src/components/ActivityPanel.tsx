@@ -177,7 +177,7 @@ function ChildRow({ row }: { row: ActivityRow }): React.JSX.Element {
           {rowLabel(tr, row)}
         </span>
         {row.ms !== undefined && (
-          <span className="shrink-0 text-right font-mono text-[10px] text-fg-muted tabular-nums">
+          <span className="shrink-0 text-right font-mono text-[11px] text-fg-muted tabular-nums">
             {tr('activity.elapsedMs', { ms: row.ms })}
           </span>
         )}
@@ -196,7 +196,7 @@ function ChildRow({ row }: { row: ActivityRow }): React.JSX.Element {
         <span className="mr-2 ml-1 h-6 w-6 shrink-0" />
       </button>
       {open && detail && (
-        <pre className="max-h-32 overflow-auto whitespace-pre-wrap break-all px-3 pb-2 pl-12 font-mono text-[10px] text-fg-muted">
+        <pre className="max-h-32 overflow-auto whitespace-pre-wrap break-all px-3 pb-2 pl-12 font-mono text-[11px] text-fg-muted">
           <DetailText text={detail} />
         </pre>
       )}
@@ -226,12 +226,12 @@ function Row({ row }: { row: ActivityRow }): React.JSX.Element {
           <Icon className="h-3.5 w-3.5 shrink-0 text-fg-muted" aria-hidden="true" />
           <span className="min-w-0 flex-1 truncate text-xs text-fg">{rowLabel(tr, row)}</span>
           {grouped && (
-            <span className="shrink-0 text-[10px] text-fg-muted tabular-nums">
+            <span className="shrink-0 text-[11px] text-fg-muted tabular-nums">
               {row.children?.filter((c) => c.status !== 'running').length}/{row.children?.length}
             </span>
           )}
           {row.ms !== undefined && (
-            <span className="shrink-0 text-right font-mono text-[10px] text-fg-muted tabular-nums">
+            <span className="shrink-0 text-right font-mono text-[11px] text-fg-muted tabular-nums">
               {tr('activity.elapsedMs', { ms: row.ms })}
             </span>
           )}
@@ -273,7 +273,7 @@ function Row({ row }: { row: ActivityRow }): React.JSX.Element {
       {open && !grouped && detail && (
         <pre
           data-testid="activity-row-detail"
-          className="max-h-32 overflow-auto whitespace-pre-wrap break-all px-3 pb-2 pl-9 font-mono text-[10px] text-fg-muted"
+          className="max-h-32 overflow-auto whitespace-pre-wrap break-all px-3 pb-2 pl-9 font-mono text-[11px] text-fg-muted"
         >
           <DetailText text={detail} />
         </pre>

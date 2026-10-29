@@ -88,7 +88,7 @@ export function SourceRail({
       {icon}
       <span
         data-testid={`source-rail-label-${key}`}
-        className="max-w-full truncate px-0.5 text-[10px] leading-tight"
+        className="max-w-full truncate px-0.5 text-[11px] leading-tight"
       >
         {label}
       </span>

@@ -866,7 +866,7 @@ function BestMatchLabel({ label, testid }: { label: string; testid?: string }): 
   return (
     <p
       data-testid={testid}
-      className="px-3 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-fg-faint"
+      className="px-3 pt-2 pb-0.5 text-[11px] font-semibold uppercase tracking-wide text-fg-faint"
     >
       {label}
     </p>

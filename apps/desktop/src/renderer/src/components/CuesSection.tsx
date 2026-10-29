@@ -1020,7 +1020,7 @@ function Editing({
               {proposals.length}
             </>
           )}
-          <kbd className="rounded border border-[var(--color-accent)] px-1 font-sans text-[10px]">
+          <kbd className="rounded border border-[var(--color-accent)] px-1 font-sans text-[11px]">
             ↵
           </kbd>
         </button>

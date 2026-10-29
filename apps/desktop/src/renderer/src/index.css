@@ -738,9 +738,9 @@ button:hover > .process-fill {
    little boxes read as UI competing with the wave rather than as a scale beneath it.
    The halo is the theme's own panel colour, so it inverts with the theme like everything
    else — a dark outline would glow on the light palette.
-   The size lives here too: 10px, up from 9, which was too small to read on this ground. */
+   The size lives here too: 11px, up from 9, which was too small to read on this ground. */
 .wave-label {
-  font-size: 10px;
+  font-size: 11px;
   text-shadow:
     0 0 3px var(--color-panel),
     0 0 3px var(--color-panel),

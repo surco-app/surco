@@ -23,7 +23,7 @@ export function listRowClass(primary: boolean, selected: boolean): string {
 export const ROW_TITLE = 'relative block w-fit max-w-full truncate text-sm font-medium text-fg'
 export const ROW_DETAIL = 'relative block min-w-0 flex-1 truncate text-xs text-fg-dim'
 export const ROW_TRAILING = 'shrink-0 text-right text-xs tabular-nums text-fg-dim'
-export const PILL_TEXT = 'text-[10px] font-semibold leading-4'
+export const PILL_TEXT = 'text-[11px] font-semibold leading-4'
 
 export function CoverPlaceholder({
   testid,

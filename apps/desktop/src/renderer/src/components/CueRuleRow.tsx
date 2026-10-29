@@ -273,7 +273,7 @@ export function CueRuleRow({
                     {showDistance && (
                       <span
                         data-testid={`${id}-color-${slot}-distance`}
-                        className="text-[10px] leading-none font-semibold tabular-nums"
+                        className="text-[11px] leading-none font-semibold tabular-nums"
                       >
                         {rule.bars * (slot + 1)}
                       </span>

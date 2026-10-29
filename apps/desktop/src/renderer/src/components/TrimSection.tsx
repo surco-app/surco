@@ -372,7 +372,7 @@ function Lane({
                 onKeyStep(e.shiftKey ? -COARSE_STEP_SEC : -fineStepSec)
               }
             }}
-            className="h-7 w-16 shrink-0 rounded-md border border-[var(--color-input-border)] bg-transparent px-1.5 text-center text-[10px] tabular-nums text-fg-muted outline-none focus:border-accent focus:text-fg"
+            className="h-7 w-16 shrink-0 rounded-md border border-[var(--color-input-border)] bg-transparent px-1.5 text-center text-[11px] tabular-nums text-fg-muted outline-none focus:border-accent focus:text-fg"
           />
           <button
             type="button"
@@ -1204,7 +1204,7 @@ export function TrimSection({
                 {shown ? (
                   <span
                     data-testid="trim-cuts"
-                    className="min-w-0 truncate text-[10px] tabular-nums text-fg-dim"
+                    className="min-w-0 truncate text-[11px] tabular-nums text-fg-dim"
                   >
                     <span className="font-medium">{tr('trim.cutsLabel')}</span>
                     {` ${cuts.join(' · ')}`}
@@ -1214,7 +1214,7 @@ export function TrimSection({
                   !suggestion && (
                     <span
                       data-testid="trim-detected"
-                      className="min-w-0 truncate text-[10px] text-fg-dim"
+                      className="min-w-0 truncate text-[11px] text-fg-dim"
                     >
                       {tr('trim.nothing')}
                     </span>
@@ -1255,7 +1255,7 @@ export function TrimSection({
                 losesTraktorCues(format) && (
                   <p
                     data-testid="trim-cue-warning"
-                    className="relative mt-2 inline-flex items-center gap-1.5 text-[10px] text-warn"
+                    className="relative mt-2 inline-flex items-center gap-1.5 text-[11px] text-warn"
                   >
                     <TriangleAlert className="h-3 w-3 shrink-0" aria-hidden="true" />
                     {tr('trim.cueWarningShort')}

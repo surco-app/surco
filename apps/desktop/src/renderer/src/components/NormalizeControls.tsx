@@ -224,7 +224,7 @@ export function NormalizeControls({
               {showHints && (
                 <p
                   data-testid="normalize-ceiling-caption"
-                  className="mt-1 max-w-[180px] text-[10px] leading-snug text-fg-faint"
+                  className="mt-1 max-w-[180px] text-[11px] leading-snug text-fg-faint"
                 >
                   {tr('normalize.truePeakCaption')}
                 </p>

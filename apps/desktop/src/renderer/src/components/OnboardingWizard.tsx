@@ -502,7 +502,7 @@ function SpectrumPreview(): React.JSX.Element {
         <span
           key={f}
           style={{ top: `${(1 - f / PREVIEW_NYQUIST) * 100}%` }}
-          className={`pointer-events-none absolute left-1 ${f === 0 ? '-mt-0.5 -translate-y-full' : '-translate-y-1/2'} rounded bg-scrim/55 px-1 text-[10px] tabular-nums text-on-scrim`}
+          className={`pointer-events-none absolute left-1 ${f === 0 ? '-mt-0.5 -translate-y-full' : '-translate-y-1/2'} rounded bg-scrim/55 px-1 text-[11px] tabular-nums text-on-scrim`}
         >
           {f / 1000}k
         </span>
@@ -511,7 +511,7 @@ function SpectrumPreview(): React.JSX.Element {
         style={{ top: `${cutoffTop}%` }}
         className="pointer-events-none absolute inset-x-0 border-t border-dashed border-on-scrim/70"
       >
-        <span className="absolute right-1 top-0.5 rounded bg-scrim/65 px-1 text-[10px] font-medium text-on-scrim">
+        <span className="absolute right-1 top-0.5 rounded bg-scrim/65 px-1 text-[11px] font-medium text-on-scrim">
           {tr('editor.spectrumCutoff', { cutoff: formatKHz(PREVIEW_CUTOFF, i18n.language) })}
         </span>
       </div>

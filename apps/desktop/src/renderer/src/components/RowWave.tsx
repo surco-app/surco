@@ -121,7 +121,7 @@ export function RowWave({
                   ? { ...markStyle(c.at), borderColor: colour, color: colour }
                   : { ...markStyle(c.at), backgroundColor: colour, color: '#000' }
               }
-              className={`absolute h-3 w-3 rounded-[3px] text-center text-[9px] font-semibold leading-3 ${
+              className={`absolute h-3 w-3 rounded-[3px] text-center text-[11px] font-semibold leading-3 ${
                 pending ? 'border' : ''
               }`}
             >

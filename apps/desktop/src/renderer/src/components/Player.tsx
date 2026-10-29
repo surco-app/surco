@@ -556,7 +556,7 @@ function VolumeControl({
       {/* Tabular so the strip doesn't twitch as the digits change under a drag. */}
       <span
         data-testid="player-volume"
-        className="w-8 shrink-0 text-[10px] text-fg-dim leading-none tabular-nums"
+        className="w-8 shrink-0 text-[11px] text-fg-dim leading-none tabular-nums"
       >
         {Math.round(volume * 100)}%
       </span>

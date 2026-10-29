@@ -113,7 +113,7 @@ function Legend({
   return (
     <span
       data-testid={testid}
-      className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px]"
+      className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px]"
     >
       <span
         aria-hidden="true"
@@ -597,7 +597,7 @@ export function Strip({
               // whitespace-nowrap keeps the chip one line at the strip's edges: an
               // absolute element squeezed against its container's right edge wraps,
               // grows taller than the strip, and used to force a vertical scrollbar.
-              className={`pointer-events-none absolute top-1 whitespace-nowrap rounded border border-[var(--color-line)] bg-[var(--color-panel-2)] px-1.5 py-0.5 text-[10px] tabular-nums ${
+              className={`pointer-events-none absolute top-1 whitespace-nowrap rounded border border-[var(--color-line)] bg-[var(--color-panel-2)] px-1.5 py-0.5 text-[11px] tabular-nums ${
                 readout.over ? 'text-danger' : 'text-fg-muted'
               }`}
               style={{
@@ -655,7 +655,7 @@ function ClippedFlag({
       data-testid="waveform-clipped"
       aria-pressed={active}
       onClick={onToggle}
-      className="press flex min-w-0 items-center gap-1.5 text-[10px]"
+      className="press flex min-w-0 items-center gap-1.5 text-[11px]"
     >
       <span
         aria-hidden="true"
@@ -829,7 +829,7 @@ export function WaveformSolo({
             />
             <span
               data-testid="waveform-preview"
-              className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px]"
+              className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px]"
             >
               <span
                 aria-hidden="true"
@@ -855,7 +855,7 @@ export function WaveformSolo({
                   digits — trailing the targets as one more "· −16.5 dB" it hid. */}
               <span
                 data-testid="waveform-gain-delta"
-                className={`shrink-0 whitespace-nowrap rounded-full px-1.5 py-0.5 text-[10px] font-medium tabular-nums ${
+                className={`shrink-0 whitespace-nowrap rounded-full px-1.5 py-0.5 text-[11px] font-medium tabular-nums ${
                   preview.gainDb >= 0
                     ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
                     : 'bg-[var(--color-panel-2)] text-fg-muted'

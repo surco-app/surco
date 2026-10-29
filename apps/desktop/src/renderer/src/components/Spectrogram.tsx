@@ -106,7 +106,7 @@ export function Spectrogram({
           <span
             key={f}
             style={{ top: `${(1 - f / topHz) * 100}%` }}
-            className={`pointer-events-none absolute left-1 ${f === 0 ? '-mt-0.5 -translate-y-full' : '-translate-y-1/2'} rounded border border-[var(--color-line)] bg-[var(--color-panel)]/80 px-1 text-[10px] tabular-nums text-[var(--color-fg)]`}
+            className={`pointer-events-none absolute left-1 ${f === 0 ? '-mt-0.5 -translate-y-full' : '-translate-y-1/2'} rounded border border-[var(--color-line)] bg-[var(--color-panel)]/80 px-1 text-[11px] tabular-nums text-[var(--color-fg)]`}
           >
             {f / 1000}k
           </span>
@@ -151,7 +151,7 @@ export function Spectrogram({
           }`}
         >
           <span
-            className={`absolute right-1 top-0.5 rounded border bg-[var(--color-panel)]/80 px-1 text-[10px] font-medium ${
+            className={`absolute right-1 top-0.5 rounded border bg-[var(--color-panel)]/80 px-1 text-[11px] font-medium ${
               transcoded
                 ? 'border-[var(--color-danger)]/40 text-[var(--color-danger)]'
                 : 'border-[var(--color-line)] text-[var(--color-fg)]'
@@ -170,7 +170,7 @@ export function Spectrogram({
           style={{ top: `${hover.topPct}%` }}
           className="pointer-events-none absolute inset-x-0 border-t border-[var(--color-fg)]/40"
         >
-          <span className="absolute right-1 -top-2 rounded border border-[var(--color-line)] bg-[var(--color-panel)]/90 px-1 text-[10px] font-medium tabular-nums text-[var(--color-fg)]">
+          <span className="absolute right-1 -top-2 rounded border border-[var(--color-line)] bg-[var(--color-panel)]/90 px-1 text-[11px] font-medium tabular-nums text-[var(--color-fg)]">
             {formatKHz(hover.hz, i18n.language)}
           </span>
         </div>

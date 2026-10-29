@@ -17,7 +17,7 @@ export const TOGGLE_OFF = 'text-fg-dim hover:bg-[var(--color-hover)] hover:text-
 
 // The column headings strip above a list: same grid as its rows (passed in by the caller,
 // since the two lists differ), sized and coloured to sit quietly above them.
-export const COLUMN_HEAD = 'mb-1 px-2 text-[10px] uppercase text-fg-faint'
+export const COLUMN_HEAD = 'mb-1 px-2 text-[11px] uppercase text-fg-faint'
 
 // One heading cell: the label, its ⓘ, and room between them.
 export const COLUMN_HEAD_CELL =

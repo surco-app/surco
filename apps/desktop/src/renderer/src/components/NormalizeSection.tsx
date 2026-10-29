@@ -181,7 +181,7 @@ export function NormalizeSection({
           {value.mode !== 'none' && losesTraktorCues(format) && (
             <p
               data-testid="normalize-cue-warning"
-              className="relative mt-2 inline-flex items-center gap-1.5 text-[10px] text-warn"
+              className="relative mt-2 inline-flex items-center gap-1.5 text-[11px] text-warn"
             >
               <TriangleAlert className="h-3 w-3 shrink-0" aria-hidden="true" />
               {tr('normalize.cueWarningShort')}

@@ -502,7 +502,7 @@ export function CueWaveDetail({
                     ...(gone.has(h.key) ? { opacity: GONE_OPACITY } : {}),
                     ...(movable?.includes(h.key) && onMoveMark ? { cursor: 'ew-resize' } : {}),
                   }}
-                  className={`absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-[9px] font-bold leading-[14px] ${
+                  className={`absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-[11px] font-bold leading-[14px] ${
                     selected === h.key ? 'ring-2 ring-[var(--color-fg)]' : ''
                   }`}
                 >
@@ -531,7 +531,7 @@ export function CueWaveDetail({
               data-testid={`cue-detail-ghost-hot-${h.letter}`}
               aria-hidden="true"
               style={{ ...markStyle(h.at), backgroundColor: 'var(--color-panel-2)' }}
-              className="pointer-events-none absolute z-10 h-3.5 w-3.5 overflow-hidden rounded-[3px] text-center text-[9px] font-bold leading-[14px]"
+              className="pointer-events-none absolute z-10 h-3.5 w-3.5 overflow-hidden rounded-[3px] text-center text-[11px] font-bold leading-[14px]"
             >
               <span
                 data-ghost-fill
