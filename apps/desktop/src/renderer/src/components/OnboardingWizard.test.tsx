@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // OnboardingWizard's tree reads window.api.platform at module load, so stub it first.
@@ -290,53 +290,15 @@ describe('OnboardingWizard destination', () => {
     expect(screen.getByText(i18n.t('settings.appleMusicFlacNote'))).toBeInTheDocument()
   })
 
-  // Engine DJ is a first-class destination in Settings; a new user setting Surco up for a
-  // Denon workflow must be able to pick it here rather than discover Settings later.
-  it('offers Engine DJ and persists it when chosen', () => {
+  it('keeps a DJ who already sends tracks to Engine DJ doing so whatever destination they pick', () => {
     const onFinish = vi.fn()
-    openFormatStep(onFinish)
-    fireEvent.click(screen.getByTestId('onboarding-destination-engineDj'))
+    render(<OnboardingWizard settings={{ ...settings, addToEngineDj: true }} onFinish={onFinish} />)
+    fireEvent.click(screen.getByTestId('onboarding-next'))
+    fireEvent.click(screen.getByTestId('onboarding-next'))
+    fireEvent.click(screen.getByTestId('onboarding-destination-beside'))
+    fireEvent.click(screen.getByTestId('onboarding-destination-folder'))
     for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
-    expect(onFinish).toHaveBeenCalledWith(
-      expect.objectContaining({
-        addToEngineDj: true,
-        addToAppleMusic: false,
-        keepOutputCopy: true,
-      }),
-    )
-  })
-
-  // The wizard offered Engine DJ as a destination and then asked nothing else, so a new
-  // user finished setup with the destination set and the library pointing at a default
-  // folder that need not exist — on the machine this was found on, it did not. Settings
-  // has always shown these two fields under the same radio; the wizard now does too.
-  it('asks where the Engine DJ library is once Engine DJ is the destination', () => {
-    openFormatStep()
-    expect(screen.getByTestId('onboarding-engine-library').closest('[inert]')).not.toBeNull()
-
-    fireEvent.click(screen.getByTestId('onboarding-destination-engineDj'))
-    expect(screen.getByTestId('onboarding-engine-library').closest('[inert]')).toBeNull()
-    expect(screen.getByTestId('onboarding-engine-playlist')).toHaveValue('Surco')
-  })
-
-  it('persists the library folder the user picks for Engine DJ', async () => {
-    ;(
-      window as unknown as { api: { pickEngineLibraryDir?: () => Promise<string> } }
-    ).api.pickEngineLibraryDir = async () => '/dj/Engine Library'
-    const onFinish = vi.fn()
-    openFormatStep(onFinish)
-    fireEvent.click(screen.getByTestId('onboarding-destination-engineDj'))
-    fireEvent.click(screen.getByTestId('onboarding-engine-library-change'))
-    await waitFor(() =>
-      expect(screen.getByTestId('onboarding-engine-library')).toHaveTextContent(
-        '/dj/Engine Library',
-      ),
-    )
-
-    for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
-    expect(onFinish).toHaveBeenCalledWith(
-      expect.objectContaining({ addToEngineDj: true, engineLibraryDir: '/dj/Engine Library' }),
-    )
+    expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ addToEngineDj: true }))
   })
 
   // Detection is a nicety: a library probe that fails (an unreadable rekordbox folder) used
@@ -519,14 +481,14 @@ describe('OnboardingWizard destination', () => {
     expect(screen.queryByTestId('onboarding-sync-rekordbox')).not.toBeInTheDocument()
   })
 
-  // The destination choice is no longer macOS-only: Engine DJ and overwrite exist on every
+  // The destination choice is no longer macOS-only: beside-original exists on every
   // platform, so Windows gets the step too — minus Apple Music, which only exists on macOS.
   it('shows the destination step without Apple Music on Windows', () => {
     ;(window.api as unknown as { platform: string }).platform = 'win32'
     try {
       openFormatStep()
       expect(screen.getByTestId('onboarding-destination-folder')).toBeInTheDocument()
-      expect(screen.getByTestId('onboarding-destination-engineDj')).toBeInTheDocument()
+      expect(screen.getByTestId('onboarding-destination-beside')).toBeInTheDocument()
       expect(screen.queryByTestId('onboarding-destination-appleMusic')).toBeNull()
     } finally {
       ;(window.api as unknown as { platform: string }).platform = 'darwin'

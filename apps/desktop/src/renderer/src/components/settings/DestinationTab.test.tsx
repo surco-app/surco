@@ -150,18 +150,6 @@ describe('DestinationTab FLAC restriction', () => {
 })
 
 describe('DestinationTab Engine DJ destination', () => {
-  // Choosing Engine DJ must clear the other destinations in the same patch batch —
-  // a leftover addToAppleMusic or overwriteOriginal would make the radio show one
-  // thing and the conversion do another.
-  it('stages Engine DJ as an exclusive destination choice', () => {
-    const patch = renderTab()
-    fireEvent.click(screen.getByTestId('settings-destination-engineDj'))
-    expect(patch).toHaveBeenCalledWith('addToEngineDj', true)
-    expect(patch).toHaveBeenCalledWith('addToAppleMusic', false)
-    expect(patch).toHaveBeenCalledWith('keepOutputCopy', true)
-    expect(patch).toHaveBeenCalledWith('overwriteOriginal', false)
-  })
-
   // "Next to the original" is the non-destructive sibling of overwrite: a fresh copy
   // beside the source, nothing in any library — one radio choice like the rest, so a
   // leftover boolean can't make the radio show one thing and the conversion do another.
@@ -171,11 +159,22 @@ describe('DestinationTab Engine DJ destination', () => {
     expect(patch).toHaveBeenCalledWith('convertBesideOriginal', true)
     expect(patch).toHaveBeenCalledWith('overwriteOriginal', false)
     expect(patch).toHaveBeenCalledWith('addToAppleMusic', false)
-    expect(patch).toHaveBeenCalledWith('addToEngineDj', false)
   })
 
-  // Like Engine DJ, a fresh copy beside the source is FLAC-proof, so the FLAC pin
-  // that greys Apple Music out must not touch it.
+  it('leaves Engine DJ as it was when the DJ picks where conversions go', () => {
+    const patch = renderTab({ addToEngineDj: true })
+    fireEvent.click(screen.getByTestId('settings-destination-beside'))
+    fireEvent.click(screen.getByTestId('settings-destination-folder'))
+    expect(patch).not.toHaveBeenCalledWith('addToEngineDj', expect.anything())
+  })
+
+  it('no longer offers Engine DJ as a place conversions go', () => {
+    renderTab()
+    expect(screen.queryByTestId('settings-destination-engineDj')).toBeNull()
+  })
+
+  // A fresh copy beside the source is FLAC-proof, so the FLAC pin that greys Apple
+  // Music out must not touch it.
   it('keeps beside-the-original selectable while FLAC is the format', () => {
     renderTab({ outputFormat: 'flac' })
     expect(screen.getByTestId('settings-destination-beside')).toBeEnabled()
@@ -202,36 +201,21 @@ describe('DestinationTab Engine DJ destination', () => {
     cleanup()
     // Kept mounted so the collapse can animate out; inert is what "hidden" means —
     // no focus stop, no interaction — while the height/opacity transition runs.
-    renderTab({ addToEngineDj: true })
+    renderTab({ convertBesideOriginal: true })
     expect(screen.getByTestId('settings-output').closest('[inert]')).not.toBeNull()
   })
 
-  // The library folder only matters once conversions are actually registered there;
-  // showing it under every destination would read as an unrelated global path.
-  it('shows the Engine library folder under its radio only while Engine DJ is the destination', () => {
-    renderTab()
-    expect(screen.getByTestId('settings-engine-library').closest('[inert]')).not.toBeNull()
-    cleanup()
-    renderTab({ addToEngineDj: true })
-    expect(screen.getByTestId('settings-engine-library')).toHaveTextContent('/music/Engine Library')
-    expect(screen.getByTestId('settings-engine-library').closest('[inert]')).toBeNull()
+  it('keeps the Engine library folder settable in the Engine DJ section whatever the destination', () => {
+    renderTab({ convertBesideOriginal: true })
+    const library = screen.getByTestId('settings-engine-library')
+    expect(library).toHaveTextContent('/music/Engine Library')
+    expect(library.closest('[inert]')).toBeNull()
+    expect(library.closest('[role="radiogroup"]')).toBeNull()
   })
 
-  // Engine DJ plays FLAC natively, so the FLAC restriction that pins Apple Music to
-  // the folder must not grey this option out.
-  it('keeps Engine DJ selectable while FLAC is the format', () => {
-    renderTab({ outputFormat: 'flac' })
-    expect(screen.getByTestId('settings-destination-engineDj')).toBeEnabled()
-    expect(screen.getByTestId('settings-destination-appleMusic')).toBeDisabled()
-  })
-
-  // The playlist is where the DJ finds what Surco converted, so it belongs with the
-  // destination — editable, seeded from the setting, staged through the draft patch.
-  it('shows the editable playlist field only while Engine DJ is the destination', () => {
-    renderTab()
-    expect(screen.getByTestId('settings-engine-playlist').closest('[inert]')).not.toBeNull()
-    cleanup()
-    const patch = renderTab({ addToEngineDj: true })
+  it('keeps the Engine playlist editable outside the destination choice', () => {
+    const patch = renderTab()
+    expect(screen.getByTestId('settings-engine-playlist').closest('[inert]')).toBeNull()
     const field = screen.getByTestId('settings-engine-playlist')
     expect(field).toHaveValue('Surco')
     fireEvent.change(field, { target: { value: 'Pool' } })
@@ -241,7 +225,7 @@ describe('DestinationTab Engine DJ destination', () => {
 
 describe('DestinationTab Traktor collection', () => {
   // Traktor cue sync is a side effect of conversion, not a destination the file goes
-  // to — it must stay visible whatever radio is selected, unlike Engine DJ's fields.
+  // to — it must stay visible whatever radio is selected.
   it('always shows the collection.nml field regardless of the chosen destination', () => {
     renderTab()
     expect(screen.getByTestId('settings-traktor-nml').closest('[inert]')).toBeNull()

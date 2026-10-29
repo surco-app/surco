@@ -448,7 +448,6 @@ export const Editor = memo(function Editor({
         addToAppleMusic && isMacOS(),
         format === 'flac',
         overwriteOriginal,
-        addToEngineDj,
         convertBesideOriginal,
       ),
   )
@@ -465,7 +464,6 @@ export const Editor = memo(function Editor({
     outputFormat,
     addToAppleMusic,
     overwriteOriginal,
-    addToEngineDj,
     convertBesideOriginal,
     keepMp3Sources,
   })
@@ -477,14 +475,12 @@ export const Editor = memo(function Editor({
     const destinationSettingsChanged =
       addToAppleMusic !== prev.addToAppleMusic ||
       overwriteOriginal !== prev.overwriteOriginal ||
-      addToEngineDj !== prev.addToEngineDj ||
       convertBesideOriginal !== prev.convertBesideOriginal
     if (!formatSettingChanged && !destinationSettingsChanged) return
     lastSettings.current = {
       outputFormat,
       addToAppleMusic,
       overwriteOriginal,
-      addToEngineDj,
       convertBesideOriginal,
       keepMp3Sources,
     }
@@ -501,19 +497,11 @@ export const Editor = memo(function Editor({
       addToAppleMusic && isMacOS(),
       seededFormat === 'flac',
       overwriteOriginal,
-      addToEngineDj,
       convertBesideOriginal,
     )
     setDestination(seededDestination)
     onDestinationChange?.(seededDestination)
-  }, [
-    outputFormat,
-    addToAppleMusic,
-    overwriteOriginal,
-    addToEngineDj,
-    convertBesideOriginal,
-    keepMp3Sources,
-  ])
+  }, [outputFormat, addToAppleMusic, overwriteOriginal, convertBesideOriginal, keepMp3Sources])
   // The facets the picked destination means, replacing the raw Settings reads below
   // so the in-place warnings, the button label and the membership badge all describe
   // the conversion the button will actually run.
@@ -521,9 +509,13 @@ export const Editor = memo(function Editor({
   // Overwrite is offered as a one-shot pick too: retagging one file in place shouldn't
   // need a Settings change, and the convert confirmations still ask before rewriting.
   const destinationChoices = DESTINATIONS.filter((d) => d !== 'appleMusic' || isMacOS())
-  // Which library the membership badge reads — the conversion destination's. Null
-  // (folder/beside/overwrite, or Apple Music off macOS) hides the badge entirely.
-  const librarySource = librarySourceOf({ ...picked, outputFormat: format }, isMacOS())
+  // Which library the membership badge reads — Engine DJ's when it's on, else the
+  // conversion destination's. Null (folder/beside/overwrite, or Apple Music off macOS)
+  // hides the badge entirely.
+  const librarySource = librarySourceOf(
+    { ...picked, addToEngineDj, outputFormat: format },
+    isMacOS(),
+  )
   // Per-track normalization, seeded from the track's own setting and falling back to
   // the Settings default for a track never touched. Editing it both updates the control
   // and reports the override up so convert uses it.
@@ -1767,7 +1759,7 @@ export const Editor = memo(function Editor({
           willEditInPlace={willEditInPlace}
           tagsOnly={tagsOnlyExport}
           addToAppleMusic={picked.addToAppleMusic}
-          addToEngineDj={picked.addToEngineDj}
+          addToEngineDj={addToEngineDj}
           destination={destination}
           destinations={destinationChoices}
           outputFolder={baseName(outputDir.replace(/[\\/]+$/, ''))}

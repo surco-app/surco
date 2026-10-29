@@ -981,17 +981,36 @@ describe('useTrackProcessing', () => {
       { wrapper: withClient() },
     )
     await act(async () => {
-      await result.current.processOne('a', undefined, undefined, undefined, 'engineDj')
+      await result.current.processOne('a', undefined, undefined, undefined, 'folder')
     })
     expect(processTrack).toHaveBeenCalledWith(
       expect.objectContaining({
         addToAppleMusic: false,
         keepOutputCopy: true,
-        addToEngineDj: true,
         convertBesideOriginal: false,
         overwriteOriginal: false,
       }),
     )
+  })
+
+  it('leaves Engine DJ to Settings when the DJ picks another destination for one track', async () => {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    setApi({ processTrack })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: { addToEngineDj: true } as unknown as Settings,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a', undefined, undefined, undefined, 'beside')
+    })
+    expect(processTrack.mock.calls[0][0]).not.toHaveProperty('addToEngineDj')
   })
 
   // Overriding to overwrite must behave exactly like the setting: the export lands

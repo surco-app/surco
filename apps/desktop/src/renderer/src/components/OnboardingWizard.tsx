@@ -12,7 +12,6 @@ import { type LocalDraft, pickLocal, pickSynced, type SyncedDraft } from '../lib
 import { AutoMatchControl } from './AutoMatchControl'
 import { DestinationPicker } from './DestinationPicker'
 import { DiscogsTokenField } from './DiscogsTokenField'
-import { EngineLibraryFields } from './EngineLibraryFields'
 import { FormatSettingControl } from './FormatSettingControl'
 import { OutputFolderField } from './OutputFolderField'
 import { SearchProvidersControl } from './SearchProvidersControl'
@@ -119,7 +118,6 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
     synced.addToAppleMusic && isMac,
     synced.outputFormat === 'flac',
     synced.overwriteOriginal,
-    synced.addToEngineDj,
     synced.convertBesideOriginal,
   )
   function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
@@ -128,7 +126,6 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
     patch('keepOutputCopy', next.keepOutputCopy)
     patch('overwriteOriginal', next.overwriteOriginal)
     patch('convertBesideOriginal', next.convertBesideOriginal)
-    patch('addToEngineDj', next.addToEngineDj)
   }
   function toggleIntent(intent: AudioIntent, on: boolean): void {
     setAudioIntents((prev) => (on ? [...prev, intent] : prev.filter((i) => i !== intent)))
@@ -251,19 +248,6 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                           value={local.outputDir}
                           onChange={(dir) => patchLocal('outputDir', dir)}
                           testid="onboarding-output"
-                        />
-                      ),
-                      // Engine DJ was offered here with nothing under it, so a new user
-                      // could finish setup with the destination chosen and the library
-                      // pointing at a default folder that need not exist. Same two fields
-                      // Settings shows under the same radio.
-                      engineDj: (
-                        <EngineLibraryFields
-                          libraryDir={local.engineLibraryDir}
-                          onLibraryDirChange={(dir) => patchLocal('engineLibraryDir', dir)}
-                          playlist={synced.engineDjPlaylist}
-                          onPlaylistChange={(name) => patch('engineDjPlaylist', name)}
-                          testidPrefix="onboarding-engine"
                         />
                       ),
                     }}

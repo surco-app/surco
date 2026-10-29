@@ -125,7 +125,6 @@ export function DestinationTab({
     synced.addToAppleMusic && isMacOS(),
     flacOnly,
     synced.overwriteOriginal,
-    synced.addToEngineDj,
     synced.convertBesideOriginal,
   )
   function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
@@ -133,7 +132,6 @@ export function DestinationTab({
     patch('addToAppleMusic', next.addToAppleMusic)
     patch('keepOutputCopy', next.keepOutputCopy)
     patch('overwriteOriginal', next.overwriteOriginal)
-    patch('addToEngineDj', next.addToEngineDj)
     patch('convertBesideOriginal', next.convertBesideOriginal)
   }
   // The folder is a detail OF the "Output folder" choice, so it renders under that
@@ -145,18 +143,6 @@ export function DestinationTab({
       value={local.outputDir}
       onChange={onOutputDirChange}
       testid="settings-output"
-    />
-  )
-  // Engine DJ's fields nest under its radio exactly like the output folder does — the
-  // two destination details read as one pattern instead of one inline and one trailing
-  // the whole group.
-  const engineDetail = (
-    <EngineLibraryFields
-      libraryDir={local.engineLibraryDir}
-      onLibraryDirChange={onChangeEngineDir}
-      playlist={synced.engineDjPlaylist}
-      onPlaylistChange={(name) => patch('engineDjPlaylist', name)}
-      testidPrefix="settings-engine"
     />
   )
 
@@ -171,7 +157,7 @@ export function DestinationTab({
           keepOutputCopy={synced.keepOutputCopy}
           testidPrefix="settings-destination"
           radioName="destination"
-          details={{ folder: folderDetail, engineDj: engineDetail }}
+          details={{ folder: folderDetail }}
         />
       </SettingsField>
       {/* Not a detail of the overwrite radio, which is where this started: Originals also
@@ -523,10 +509,19 @@ export function DestinationTab({
         )}
         <SettingsHint className="mt-2">{tr('settings.completeCuesHint')}</SettingsHint>
       </SettingsSection>
-      {/* Engine DJ's library is the one its destination already writes to, so the
-          toggle is the whole setup: it keeps rows that point at a converted file's
-          original moving onto the new file. */}
+      {/* The library folder and playlist say which Engine database Surco reads and
+          writes; the toggle keeps rows that point at a converted file's original
+          moving onto the new file. */}
       <SettingsSection eyebrow={tr('settings.engineSync')}>
+        <div className="mb-4">
+          <EngineLibraryFields
+            libraryDir={local.engineLibraryDir}
+            onLibraryDirChange={onChangeEngineDir}
+            playlist={synced.engineDjPlaylist}
+            onPlaylistChange={(name) => patch('engineDjPlaylist', name)}
+            testidPrefix="settings-engine"
+          />
+        </div>
         <CheckboxRow
           testid="settings-sync-engine"
           checked={synced.syncEngineDj}

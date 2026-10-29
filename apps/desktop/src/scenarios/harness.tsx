@@ -759,7 +759,6 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         settings.addToAppleMusic,
         settings.outputFormat === 'flac',
         settings.overwriteOriginal,
-        settings.addToEngineDj,
         settings.convertBesideOriginal,
       )
       await act(async () => {

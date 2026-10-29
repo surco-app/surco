@@ -1427,13 +1427,11 @@
     "destinations": {
       "folder": "Pasta de saída",
       "appleMusic": "Apple Music",
-      "engineDj": "Engine DJ",
       "beside": "Ao lado do original",
       "overwrite": "Editar o original"
     },
     "destinationAppleMusicHint": "Adiciona ao Apple Music, sem cópia na pasta de saída.",
     "destinationAppleMusicKeepCopyHint": "Adiciona ao Apple Music e mantém uma cópia na pasta de saída.",
-    "destinationEngineDjHint": "Registra na sua biblioteca do Engine DJ; o arquivo fica na pasta de saída.",
     "destinationBesideHint": "Grava a conversão ao lado do arquivo original, sem nunca tocá-lo; no mesmo formato a cópia recebe um nome “(2)”.",
     "destinationOverwriteHint": "Reescreve cada arquivo de origem no lugar; sem cópia de saída. Trocar de formato remove o original.",
     "engineLibraryDir": "Biblioteca do Engine DJ",

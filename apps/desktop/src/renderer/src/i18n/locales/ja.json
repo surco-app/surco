@@ -1427,13 +1427,11 @@
     "destinations": {
       "folder": "出力フォルダー",
       "appleMusic": "Apple Music",
-      "engineDj": "Engine DJ",
       "beside": "オリジナルの隣",
       "overwrite": "元ファイルを編集"
     },
     "destinationAppleMusicHint": "Apple Music に追加され、出力フォルダーへのコピーはありません。",
     "destinationAppleMusicKeepCopyHint": "Apple Music に追加し、出力フォルダーにもコピーを残します。",
-    "destinationEngineDjHint": "Engine DJ ライブラリに登録され、ファイルは出力フォルダーに残ります。",
     "destinationBesideHint": "ソースファイルの横に変換を書き込み、決して触れません。同一フォーマットのエクスポートは「(2)」という名前になります。",
     "destinationOverwriteHint": "各ソースファイルをその場で書き換えます。出力コピーはありません。フォーマットを変更すると元のファイルは削除されます。",
     "engineLibraryDir": "Engine DJ ライブラリ",

@@ -67,8 +67,7 @@ describe('Take your tracks to Engine DJ', () => {
     })
     makeTrack(join(crate, 'b.wav'), { title: 'Higher State', artist: 'Josh Wink' })
     surco = await openSurco({
-      settings: { outputDir: output, engineLibraryDir: library },
-      destination: 'engineDj',
+      settings: { outputDir: output, engineLibraryDir: library, addToEngineDj: true },
     })
     await surco.drop(crate)
     surco.editMeta('a.flac', { rating: '4' })

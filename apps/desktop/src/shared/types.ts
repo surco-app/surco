@@ -732,7 +732,6 @@ export interface ProcessJob {
   // overwriteOriginal pin above.
   addToAppleMusic?: boolean
   keepOutputCopy?: boolean
-  addToEngineDj?: boolean
   convertBesideOriginal?: boolean
   // Where this track's last conversion landed, so re-exporting it overwrites its
   // own file silently while a collision with an unrelated file still prompts.

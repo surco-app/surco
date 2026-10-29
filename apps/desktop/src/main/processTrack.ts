@@ -279,7 +279,7 @@ export async function runProcessTrack(
     // both ride the job, so a Settings change can't redirect a conversion in flight.
     const addToAppleMusic = job.addToAppleMusic ?? settings.addToAppleMusic
     const keepOutputCopy = job.keepOutputCopy ?? settings.keepOutputCopy
-    const addToEngineDj = job.addToEngineDj ?? settings.addToEngineDj
+    const addToEngineDj = settings.addToEngineDj
     const besideOriginal =
       (job.convertBesideOriginal ?? settings.convertBesideOriginal ?? false) &&
       !(job.overwriteOriginal ?? settings.overwriteOriginal)
