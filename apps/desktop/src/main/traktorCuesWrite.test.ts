@@ -8,6 +8,10 @@ import type { CuesOp, EditOp, TrackOp } from './rekordboxQueueOps'
 import { readTraktorTrackCues, traktorEntryBlock } from './traktorCues'
 import { applyTraktorBatch, withTraktorCues } from './traktorCuesWrite'
 
+// The write checks for a running Traktor with a real pgrep, so on a machine with Traktor
+// open every write here was refused and the suite failed for a reason outside the code.
+vi.mock('./traktorProcess', () => ({ isTraktorRunning: vi.fn().mockResolvedValue(false) }))
+
 const KEY = 'Macintosh HD/:Users/:dj/:Music/:power.flac'
 const ID = traktorContentId(KEY)
 const GRID =
