@@ -1743,6 +1743,7 @@ export const Editor = memo(function Editor({
 
         <ConvertFooter
           item={item}
+          spectrum={spectrumInHand}
           isMulti={isMulti}
           selectedCount={multiTracks.length}
           status={footerStatus}

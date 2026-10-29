@@ -4436,3 +4436,31 @@ describe('Discogs token tip', () => {
     expect(screen.getByTestId('discogs-token-tip')).toBeInTheDocument()
   })
 })
+
+describe('Editor convert notes from the measured spectrum', () => {
+  function renderMeasured(spectrum: Record<string, unknown>): void {
+    ;(window as unknown as { api: Record<string, unknown> }).api.spectrogram = vi.fn(async () => ({
+      image: '',
+      sampleRateHz: 44100,
+      processed: false,
+      ...spectrum,
+    }))
+    renderEditor({ id: 'a', inputPath: '/music/a.flac', fileName: 'a.flac' }, 'aiff', {
+      showSpectrum: true,
+    })
+  }
+
+  it('warns that a lossless file measured as a transcode stays lossy in a lossless format', async () => {
+    renderMeasured({ cutoffHz: 16000, hasKnee: true })
+    expect(await screen.findByTestId('convert-lossy-note')).toHaveTextContent(
+      i18n.t('editor.lossyToLossless', { format: 'AIFF' }),
+    )
+  })
+
+  it('warns that a file measured as damaged makes a damaged copy', async () => {
+    renderMeasured({ cutoffHz: 21000, damaged: true })
+    expect(await screen.findByTestId('convert-damaged-note')).toHaveTextContent(
+      i18n.t('editor.damagedSource'),
+    )
+  })
+})

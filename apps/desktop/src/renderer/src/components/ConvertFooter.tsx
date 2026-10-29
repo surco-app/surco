@@ -7,6 +7,7 @@ import type {
   NormalizeConfig,
   OutputFormat,
   PlaylistSource,
+  SpectrumVerdict,
 } from '../../../shared/types'
 import { type CleanupOffer, cleanupCount } from '../hooks/useConfirmFlows'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
@@ -29,6 +30,7 @@ const ICON_BUTTON =
 
 interface ConvertFooterProps {
   item: TrackItem
+  spectrum: SpectrumVerdict | undefined
   isMulti: boolean
   // Size of the multi-selection, for the "Convert all (N)" label and the done counts.
   selectedCount: number
@@ -97,6 +99,7 @@ interface ConvertFooterProps {
 // inline links (reveal/clean up) beside the next steps (Apple Music, DJ app, re-export).
 export function ConvertFooter({
   item,
+  spectrum,
   isMulti,
   selectedCount,
   status,
@@ -172,8 +175,8 @@ export function ConvertFooter({
   const lossyToLossless =
     !isMulti &&
     isLosslessContainer(format) &&
-    (isLossyContainer(gradedExt(item.inputPath, item.spectrum?.codec)) ||
-      trackQuality(item) === 'transcoded')
+    (isLossyContainer(gradedExt(item.inputPath, spectrum?.codec)) ||
+      trackQuality({ ...item, spectrum }) === 'transcoded')
   const musicLabel = musicAdding
     ? hasMusicCopy
       ? tr('editor.appleMusicUpdating')
@@ -379,7 +382,7 @@ export function ConvertFooter({
           </>
         ) : (
           <>
-            {!isMulti && item.spectrum?.damaged && (
+            {!isMulti && spectrum?.damaged && (
               <p data-testid="convert-damaged-note" className="text-center text-xs text-fg-dim">
                 {tr('editor.damagedSource')}
               </p>

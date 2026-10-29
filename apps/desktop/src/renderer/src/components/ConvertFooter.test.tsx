@@ -33,6 +33,7 @@ function footer(
   return (
     <ConvertFooter
       item={{ id: 't1', status: 'idle', inputPath: '/a.wav', meta: {} } as TrackItem}
+      spectrum={undefined}
       isMulti={false}
       selectedCount={1}
       outputFolder=""
@@ -439,7 +440,8 @@ describe('ConvertFooter lossy source note', () => {
     spectrum?: TrackItem['spectrum'],
   ): React.JSX.Element {
     return cloneElement(footer(false), {
-      item: { id: 't1', status: 'idle', inputPath, meta: {}, spectrum } as TrackItem,
+      item: { id: 't1', status: 'idle', inputPath, meta: {} } as TrackItem,
+      spectrum,
       format,
     })
   }
@@ -480,8 +482,8 @@ describe('ConvertFooter damaged source note', () => {
         status: 'idle',
         inputPath: '/crate/a.flac',
         meta: {},
-        spectrum,
       } as TrackItem,
+      spectrum,
       format: 'aiff',
     })
   const measured = (damaged: boolean): TrackItem['spectrum'] =>
