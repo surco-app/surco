@@ -334,6 +334,46 @@ describe('Field mixed values', () => {
     render(<Field name="genre" label="Genre" value="" onChange={() => {}} mixed />)
     expect(screen.getByTestId('field-genre')).toHaveAccessibleDescription('Multiple values')
   })
+
+  it('does not overwrite every selected track when tabbing out of a mixed field without typing', () => {
+    const onChange = vi.fn()
+    render(<Field name="artist" label="Artist" value="" onChange={onChange} mixed />)
+    const input = screen.getByTestId('field-artist')
+
+    fireEvent.focus(input)
+    fireEvent.blur(input)
+
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('moves on with Enter without writing anything when nothing was typed', () => {
+    const onChange = vi.fn()
+    render(
+      <div>
+        <Field name="artist" label="Artist" value="" onChange={onChange} mixed />
+        <Field name="album" label="Album" value="" onChange={() => {}} mixed />
+      </div>,
+    )
+    const artist = screen.getByTestId('field-artist')
+    artist.focus()
+
+    fireEvent.keyDown(artist, { key: 'Enter' })
+
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.getByTestId('field-album')).toHaveFocus()
+  })
+
+  it('still commits typed text on blur', () => {
+    const onChange = vi.fn()
+    render(<Field name="artist" label="Artist" value="" onChange={onChange} mixed />)
+    const input = screen.getByTestId('field-artist')
+
+    fireEvent.change(input, { target: { value: 'Daft Punk' } })
+    fireEvent.blur(input)
+
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onChange).toHaveBeenCalledWith('Daft Punk')
+  })
 })
 
 describe('Field with a bounded width', () => {

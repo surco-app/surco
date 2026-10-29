@@ -129,7 +129,7 @@ export const Field = memo(function Field({
     )
       return
     e.preventDefault()
-    commit(draft)
+    if (dirty.current) commit(draft)
     const fields = Array.from(
       document.querySelectorAll<HTMLElement>('input[data-testid^="field-"]'),
     )
@@ -197,7 +197,9 @@ export const Field = memo(function Field({
           placeholder={placeholder}
           onChange={(e) => onType(e.target.value)}
           onKeyDown={onKeyDown}
-          onBlur={() => commit(draft)}
+          onBlur={() => {
+            if (dirty.current) commit(draft)
+          }}
           // An empty field should recede, not punch a dark hole in the panel: the fill
           // sits a hair above the panel (not the heavy near-black --color-field), the
           // border defines the input, and focus brings the accent ring + surface up.
