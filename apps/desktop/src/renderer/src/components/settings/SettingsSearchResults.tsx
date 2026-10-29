@@ -1,4 +1,5 @@
 import type React from 'react'
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SettingsSearchHit } from '../../lib/settingsSearch'
 import type { SettingsTab } from '../../lib/settingsTabs'
@@ -18,6 +19,12 @@ function Highlighted({ hit }: { hit: SettingsSearchHit }): React.JSX.Element {
   )
 }
 
+export const SETTINGS_SEARCH_LISTBOX_ID = 'settings-search-results'
+
+export function settingsSearchOptionId(entryId: string): string {
+  return `settings-search-option-${entryId}`
+}
+
 export function SettingsSearchResults({
   query,
   groups,
@@ -31,6 +38,12 @@ export function SettingsSearchResults({
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const count = groups.reduce((n, g) => n + g.hits.length, 0)
+  const listRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    listRef.current
+      ?.querySelectorAll('[role="option"]')
+      [selected]?.scrollIntoView({ block: 'nearest' })
+  }, [selected])
   if (count === 0) {
     return (
       <div data-testid="settings-search-empty" className="flex flex-col gap-1.5 px-3 py-4">
@@ -48,6 +61,8 @@ export function SettingsSearchResults({
         {tr('settings.searchField.results', { count })}
       </p>
       <div
+        ref={listRef}
+        id={SETTINGS_SEARCH_LISTBOX_ID}
         role="listbox"
         aria-label={tr('settings.searchField.placeholder')}
         className="flex flex-col gap-0.5"
@@ -66,8 +81,10 @@ export function SettingsSearchResults({
                   type="button"
                   role="option"
                   tabIndex={-1}
+                  id={settingsSearchOptionId(hit.entry.id)}
                   data-testid={`settings-search-result-${hit.entry.id}`}
                   aria-selected={isSelected}
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => onSelect(index)}
                   className={`flex flex-col gap-0.5 rounded-lg px-3 py-1.5 text-left text-[13px] ${
                     isSelected

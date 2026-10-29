@@ -1610,6 +1610,36 @@ describe('settings search', () => {
     expect(screen.getByTestId('settings-search')).toHaveValue('')
   })
 
+  it('keeps focus in the field when a result is clicked, so the arrows and Escape still work', () => {
+    open()
+    search('bitrate')
+    const notPrevented = fireEvent.mouseDown(
+      screen.getByTestId('settings-search-result-mp3Quality'),
+    )
+    expect(notPrevented).toBe(false)
+  })
+
+  it('tells assistive tech which result the arrows picked, since focus never leaves the field', () => {
+    open()
+    const field = screen.getByTestId('settings-search')
+    search('a')
+    fireEvent.keyDown(field, { key: 'ArrowDown' })
+    const second = screen.getAllByRole('option')[1]
+    expect(field).toHaveAttribute('role', 'combobox')
+    expect(field).toHaveAttribute('aria-expanded', 'true')
+    expect(field).toHaveAttribute('aria-controls', screen.getByRole('listbox').id)
+    expect(field).toHaveAttribute('aria-activedescendant', second.id)
+  })
+
+  it('keeps the selected result in view while stepping through a long list', () => {
+    open()
+    const field = screen.getByTestId('settings-search')
+    search('a')
+    for (let i = 0; i < 15; i++) fireEvent.keyDown(field, { key: 'ArrowDown' })
+    const scrolled = vi.mocked(Element.prototype.scrollIntoView).mock.contexts
+    expect(scrolled).toContain(screen.getAllByRole('option')[15])
+  })
+
   it('keeps the tab of the last result open when the search is cleared', () => {
     open()
     search('traktor')
