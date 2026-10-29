@@ -175,13 +175,14 @@ export async function flushConversionBatch(
   // The run's repoints, taken once: rekordbox and Engine DJ each apply the same list to
   // their own library, and closing the batch twice would hand the second one nothing.
   const repoints = endRekordboxBatch()
+  const addable = repoints.some((repoint) => repoint.meta)
   const addToTraktor = getSettings().addToTraktor
   const traktorOps = libraryTrackOps(
     repoints,
     'traktor',
     undefined,
     addToTraktor,
-    addToTraktor
+    addToTraktor && addable
       ? await traktorCollectionHas(getSettings().traktorNmlPath, getSettings().syncTraktor)
       : undefined,
   )
@@ -247,7 +248,7 @@ export async function flushConversionBatch(
     'engine',
     undefined,
     addToEngineDj,
-    addToEngineDj
+    addToEngineDj && addable
       ? await engineLibraryHas(getSettings().engineLibraryDir, getSettings().syncEngineDj)
       : undefined,
   )

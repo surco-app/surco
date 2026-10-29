@@ -6,6 +6,13 @@ import type { ActivityEvent } from '../shared/types'
 
 vi.mock('electron', () => ({ app: { getPath: () => '/tmp' } }))
 
+const READS = vi.hoisted(() => ({ readFile: vi.fn() }))
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>()
+  READS.readFile.mockImplementation(actual.readFile)
+  return { ...actual, readFile: READS.readFile }
+})
+
 const SETTINGS = vi.hoisted(() => ({
   syncRekordbox: true,
   rekordboxDbPath: '/c/master.db',
@@ -457,6 +464,22 @@ describe('flushConversionBatch with a converted track Traktor does not have', ()
     }
   })
 
+  it('does not read collection.nml when no converted track could be added, since a large collection costs every run', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-flush-nml-'))
+    const nmlPath = join(dir, 'collection.nml')
+    await writeFile(nmlPath, '<NML VERSION="20"><COLLECTION ENTRIES="0"></COLLECTION></NML>')
+    Object.assign(SETTINGS, { addToTraktor: true, traktorNmlPath: nmlPath })
+    READS.readFile.mockClear()
+    try {
+      const traktor = traktorQueue()
+      await flush(traktor)
+      expect(READS.readFile).not.toHaveBeenCalledWith(nmlPath, expect.anything())
+      expect(traktor.enqueue).not.toHaveBeenCalled()
+    } finally {
+      Object.assign(SETTINGS, { addToTraktor: false, traktorNmlPath: '' })
+    }
+  })
+
   it('leaves it out of Traktor when the DJ only updates the tracks already there', async () => {
     Object.assign(REPOINTS[0], { meta: { artist: 'Jaydee', title: 'Plastic Dreams' } })
     try {
@@ -554,6 +577,17 @@ describe('flushConversionBatch with a converted track Engine DJ does not have', 
       expect(engine.enqueue).toHaveBeenCalledWith([
         expect.objectContaining({ path: join(dir, 'Music', 'a.flac'), add: true }),
       ])
+    })
+  })
+
+  it('does not read the Engine database when no converted track could be added, since a large library costs every run', async () => {
+    const dir = await engineLibrary(['Music/other.flac'])
+    await withRun(dir, true, async (engine) => {
+      delete (REPOINTS[0] as Record<string, unknown>).meta
+      READS.readFile.mockClear()
+      await flush(engine)
+      expect(READS.readFile).not.toHaveBeenCalledWith(join(dir, 'Database2', 'm.db'))
+      expect(engine.enqueue).not.toHaveBeenCalled()
     })
   })
 
