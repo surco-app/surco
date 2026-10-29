@@ -82,7 +82,9 @@ export function collectionsTraktorUses(
 ): string[] {
   const found: string[] = []
   for (const candidate of candidates) {
-    const settings = read(join(dirname(candidate), 'Traktor Settings.tsi'))
+    const settings =
+      read(join(dirname(candidate), 'Traktor Settings.tsi')) ??
+      read(join(dirname(candidate), 'Traktor Play Settings.tsi'))
     const root = settings === null ? null : traktorRootDir(settings, bootVolume)
     if (root === null) continue
     const collection = join(root, 'collection.nml')

@@ -140,6 +140,42 @@ describe('collectionsTraktorUses', () => {
       ),
     ).toEqual([`${ni}/Traktor 4.0.2/collection.nml`])
   })
+
+  // Traktor Play is a reduced Traktor 4 that names its settings file after itself; without
+  // reading it, a Play DJ whose Root Dir points elsewhere would never be warned.
+  it('reads the Root Dir from the settings Traktor Play keeps', () => {
+    const play: Record<string, string> = {
+      [`${ni}/Traktor 4.5.1/Traktor Play Settings.tsi`]: tsi('Macintosh HD:Users:dj:Play:'),
+      ['/Users/dj/Play/collection.nml']: '<NML/>',
+    }
+    expect(
+      collectionsTraktorUses(
+        [`${ni}/Traktor 4.5.1/collection.nml`],
+        (path) => play[path] ?? null,
+        (path) => path in play,
+        'Macintosh HD',
+      ),
+    ).toEqual(['/Users/dj/Play/collection.nml'])
+  })
+
+  // Paying the difference turns Play into Traktor Pro in the same folder, which starts
+  // writing its own settings file and leaves the Play one behind, stale.
+  it('trusts the Traktor Pro settings over leftover Play ones in the same folder', () => {
+    const upgraded: Record<string, string> = {
+      [`${ni}/Traktor 4.5.1/Traktor Play Settings.tsi`]: tsi('Macintosh HD:Users:dj:Play:'),
+      [`${ni}/Traktor 4.5.1/Traktor Settings.tsi`]: tsi('Macintosh HD:Users:dj:Pro:'),
+      ['/Users/dj/Play/collection.nml']: '<NML/>',
+      ['/Users/dj/Pro/collection.nml']: '<NML/>',
+    }
+    expect(
+      collectionsTraktorUses(
+        [`${ni}/Traktor 4.5.1/collection.nml`],
+        (path) => upgraded[path] ?? null,
+        (path) => path in upgraded,
+        'Macintosh HD',
+      ),
+    ).toEqual(['/Users/dj/Pro/collection.nml'])
+  })
 })
 
 describe('sameCollection', () => {
