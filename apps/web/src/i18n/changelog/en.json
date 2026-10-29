@@ -1,5 +1,60 @@
 [
   {
+    "version": "1.17",
+    "date": "October 29, 2026",
+    "title": "Each DJ program, your way",
+    "items": [
+      {
+        "text": "In Settings › Output you choose separately for rekordbox, Engine DJ and Traktor what a conversion does. “Leave alone” keeps it as it is, “Update” brings the tracks it already has up to date and “Update and add” also registers the new ones, even when you send them to no playlist. The convert button names every program the track will reach, and the setup wizard asks you.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "With Engine DJ open, converting no longer fails. What Surco has to change or add in Engine waits its turn and goes in when you close it.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Surco also works with Traktor Play, the tracks it adds to Traktor arrive with their cover and, if your collection already had a track’s grid, yours stays.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Settings has a search. Type in “Search settings” and Surco takes you to the setting, even if you leave out accents or use another word (bitrate, LUFS, iCloud). The Search tab is now called Sources, and the settings folder, the backups, the analysis cache and the error log move to Advanced.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "⌘Z also undoes picking a release, auto-match, accepting a review and changing the cover by hand, and ⇧⌘Z redoes it. Each step undoes only what it changed, so what you fixed afterwards stays, across several tracks at once each one gets its own value back, and a match you undid does not apply itself again.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "When you apply a release, under each field you see “Before:” with what was there, and “Restore” brings it back in one click. The BPM and key a track already had stay, the release only fills them when they are empty.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "If a release track runs well longer or shorter than your file, Surco warns you, on album rows too, so you do not apply a different version without noticing. “Best match” only shows when the match is confirmed, not because the title is shared.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Surco recognizes damaged files, the ones that stop playing before their length. It marks them “Damaged” beside the format, they get their own “Damaged” filter and they never count as fakes, so they do not end up in the trash with them. Every quality verdict reads as a word beside the format, without relying on colour, and before converting something lossy to a lossless format Surco reminds you it does not win back quality.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "The list sorts by BPM, key, year and quality, and the search finds tracks by genre and by label.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "With ⌥↑ and ⌥↓ you move to the previous or next track without leaving the field you are typing in. Rows with unsaved changes carry a coloured dot, and the BPM and key detected in the audio show up as a suggestion.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Surco no longer stays quiet about what it skips. When you drop files that are not audio it says how many it left out, the conversion summary takes you to the skipped tracks with the reason for each, and if a search source does not answer it tells you which one and lets you retry it.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Surco reopens at the size and position you closed it with, the smallest text reads better in both themes and the list stays responsive while you convert several tracks at once.",
+        "in": "1.17.0"
+      }
+    ]
+  },
+  {
     "version": "1.16",
     "date": "October 29, 2026",
     "title": "Your whole collection, no waiting",
