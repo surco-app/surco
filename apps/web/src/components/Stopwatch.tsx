@@ -99,7 +99,7 @@ export default function Stopwatch() {
         <div
           ref={boardRef}
           data-testid="stopwatch-board"
-          className="inset-shadow-edge mt-10 overflow-hidden rounded-2xl border border-line bg-surface2/40"
+          className="mt-10 overflow-hidden rounded-2xl border border-line bg-surface2/40"
         >
           <div className="flex items-baseline justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
             <div className="text-sm font-semibold text-fg">
@@ -173,13 +173,10 @@ export default function Stopwatch() {
         {tiles.map((tile, i) => (
           <Reveal key={tile.label} delay={i * 80}>
             <div
-              className={`inset-shadow-edge relative h-full overflow-hidden rounded-2xl border bg-surface2/40 p-5 ${
+              className={`relative h-full overflow-hidden rounded-2xl border bg-surface2/40 p-5 ${
                 i === 0 ? 'border-blue/40' : 'border-line'
               }`}
             >
-              {i === 0 && (
-                <div className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-blue/15 blur-2xl" />
-              )}
               <div className="relative font-mono text-3xl tracking-tight text-fg tabular-nums">
                 {tile.big}
               </div>
@@ -192,7 +189,7 @@ export default function Stopwatch() {
 
       <Reveal>
         <div className="mt-7 grid gap-4 md:grid-cols-2">
-          <div className="inset-shadow-edge rounded-2xl border border-line bg-surface2/40 p-5">
+          <div className="rounded-2xl border border-line bg-surface2/40 p-5">
             <div className="flex items-baseline justify-between text-sm font-semibold text-fg">
               <span>{t('stopwatch.before')}</span>
               <span className="font-mono text-red tabular-nums">
@@ -204,7 +201,7 @@ export default function Stopwatch() {
             </div>
             <p className="mt-2.5 font-mono text-[11px] text-faint">{t('stopwatch.beforeHow')}</p>
           </div>
-          <div className="inset-shadow-edge rounded-2xl border border-line bg-surface2/40 p-5">
+          <div className="rounded-2xl border border-line bg-surface2/40 p-5">
             <div className="flex items-baseline justify-between text-sm font-semibold text-fg">
               <span>{t('stopwatch.after')}</span>
               <span className="font-mono text-cyan tabular-nums">

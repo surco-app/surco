@@ -114,11 +114,4 @@ describe('light theme follows the app it depicts', () => {
   it('casts lighter shadows on the light page, where black ones read as heavy smudges', () => {
     expect(luminance(token('shade', lightCss))).toBeGreaterThan(luminance(token('shade')))
   })
-
-  it('lights the top edge of a card with a colour lighter than the card in both themes', () => {
-    expect(luminance(token('sheen'))).toBeGreaterThan(luminance(token('surface')))
-    expect(luminance(token('sheen', lightCss))).toBeGreaterThanOrEqual(
-      luminance(token('surface', lightCss)),
-    )
-  })
 })

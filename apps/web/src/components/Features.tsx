@@ -16,7 +16,7 @@ const FEATURE_ICONS: GlyphName[] = ['convert', 'tag', 'spectrum', 'upload']
 
 function Kbd({ k }: { k: string }) {
   return (
-    <kbd className="rounded-md border border-line bg-surface px-2 py-1 font-mono text-xs text-fg shadow-sm">
+    <kbd className="rounded-md border border-line bg-surface px-2 py-1 font-mono text-xs text-fg">
       {k}
     </kbd>
   )
@@ -46,7 +46,6 @@ export default function Features() {
 
   return (
     <div id="top" className="min-h-screen overflow-x-clip bg-bg text-fg antialiased">
-      <div className="grain pointer-events-none fixed inset-0 z-[1] opacity-[0.03] mix-blend-soft-light" />
       <Header page="features" />
 
       {/* Same measure as the home. The two pages sit one click apart in the nav and

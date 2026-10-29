@@ -38,7 +38,6 @@ export default function App() {
   return (
     <div id="top" className="min-h-screen overflow-x-clip bg-bg text-fg antialiased">
       <ScrollProgress />
-      <div className="grain pointer-events-none fixed inset-0 z-[1] opacity-[0.03] mix-blend-soft-light" />
 
       <Header />
 
@@ -136,13 +135,13 @@ export default function App() {
                 its widest child, so the download meta and the brew command held the cards
                 at 513px inside a 342px column and the page clipped them off the right. */}
             <div className="mx-auto mt-10 grid max-w-3xl gap-5 sm:grid-cols-2">
-              <div className="inset-shadow-edge min-w-0 rounded-2xl border border-blue/30 bg-gradient-to-b from-blue/[0.07] to-transparent p-5 sm:p-6">
+              <div className="min-w-0 rounded-2xl border border-blue/30 bg-blue/[0.05] p-5 sm:p-6">
                 <p className="text-sm font-medium text-faint">{t('home.closeDirect')}</p>
                 <DownloadButton location="home-closing" />
               </div>
               <BrewCommand
                 location="home-closing"
-                className="inset-shadow-edge min-w-0 rounded-2xl border border-line bg-surface2/40 p-5 sm:p-6"
+                className="min-w-0 rounded-2xl border border-line bg-surface2/40 p-5 sm:p-6"
               />
             </div>
 

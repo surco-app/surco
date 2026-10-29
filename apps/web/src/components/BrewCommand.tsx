@@ -29,7 +29,7 @@ export default function BrewCommand({
   return (
     <div className={className}>
       <p className="text-sm font-medium text-faint">{t('install.or')}</p>
-      <div className="inset-shadow-edge mt-3 flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface2/50 px-4 py-4 transition-colors hover:border-blue/30">
+      <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface2/50 px-4 py-4 transition-colors hover:border-blue/30">
         {/* Wraps at its spaces rather than scrolling: in the half-width card the box shows
             209 of the command's 362px, so a scroller read as "brew install --cask sur". */}
         <code className="min-w-0 font-mono text-sm break-words text-fg">

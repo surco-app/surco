@@ -37,7 +37,7 @@ export default function HeroApp({ video }: { video?: boolean }) {
 
   return (
     <div className="relative">
-      <div className="overflow-hidden rounded-xl shadow-2xl shadow-shade/60 ring-1 ring-line/60">
+      <div className="overflow-hidden rounded-xl ring-1 ring-line/60">
         <div className="relative">
           <img
             src={shot}

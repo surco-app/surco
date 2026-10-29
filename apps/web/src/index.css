@@ -32,12 +32,7 @@
   /* The colour shadows are cast in. Near black on the dark page; the light palette softens
      it to a grey, since the same black reads as a smudge on a light ground. */
   --color-shade: #0c0e14;
-  /* The 1px light along a card's top edge. */
-  --color-sheen: #c0caf5;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
-  /* light-from-above edge highlight: composes with shadow-* utilities, so
-     hover shadows keep the inset edge instead of replacing it */
-  --inset-shadow-edge: inset 0 1px 0 color-mix(in srgb, var(--color-sheen) 7%, transparent);
 }
 
 /* The desktop app's light palette, set on <html> by the theme script in index.html before
@@ -64,7 +59,6 @@
   --color-faint: #61646f;
   --color-scrim: #d6d8df;
   --color-shade: #707280;
-  --color-sheen: #f4f5f8;
 }
 
 /* The spectrum images are rendered dark and stay dark on the light page, so the axis, the
@@ -214,11 +208,6 @@ button:not(:disabled) {
       color-mix(in srgb, var(--color-cyan) 14%, transparent),
       transparent 70%
     );
-}
-
-/* premium grain overlay */
-.grain {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 @media (prefers-reduced-motion: reduce) {

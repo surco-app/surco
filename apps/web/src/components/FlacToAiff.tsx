@@ -73,14 +73,6 @@ export default function FlacToAiff() {
   return (
     <div className="min-h-screen bg-bg text-fg antialiased">
       <ScrollProgress />
-      <div className="grain pointer-events-none fixed inset-0 z-[1] opacity-[0.03] mix-blend-soft-light" />
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-[520px]"
-        style={{
-          background:
-            'radial-gradient(55% 50% at 72% 4%, color-mix(in srgb, var(--color-blue) 18%, transparent) 0%, transparent 70%)',
-        }}
-      />
 
       <Header page="flacToAiff" />
 
@@ -103,7 +95,7 @@ export default function FlacToAiff() {
             <figure
               data-testid="flac-to-aiff-example"
               aria-label={t('flacToAiff.example.label')}
-              className="rounded-2xl border border-line bg-surface p-4 shadow-2xl shadow-shade/40 inset-shadow-edge"
+              className="rounded-2xl border border-line bg-surface p-4"
             >
               <ExampleFile format="FLAC" />
               <p className="py-2 text-center font-mono text-xs text-faint">

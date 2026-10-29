@@ -109,7 +109,7 @@ export default function CuesScene() {
       <div
         ref={win}
         aria-hidden="true"
-        className="inset-shadow-edge relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-line bg-bg text-left shadow-xl shadow-shade/25"
+        className="relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-line bg-bg text-left"
       >
         <div className="flex h-9 items-center pl-3.5">
           <span className="flex gap-[7px]">
