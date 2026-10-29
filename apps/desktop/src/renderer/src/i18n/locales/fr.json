@@ -2796,5 +2796,60 @@
       "one-at-32": "Un cue à 32",
       "calls-only": "CALL seulement"
     }
+  },
+  "copies": {
+    "rail": "Sauvegardes",
+    "title": "Sauvegardes",
+    "intro": "Avant de toucher à tes logiciels ou à tes fichiers, Surco garde une copie. Si quelque chose cloche, reviens en arrière.",
+    "state": {
+      "ok": "À jour",
+      "pending_one": "{{count}} modification attend que tu fermes {{program}}",
+      "pending_other": "{{count}} modifications attendent que tu fermes {{program}}",
+      "halted": "Surco s'est arrêté : vérifie les modifications en attente",
+      "failed": "La dernière sauvegarde a échoué",
+      "untouched": "Surco n'y touche pas (choix fait dans les Réglages)"
+    },
+    "facts": {
+      "state": "État",
+      "last": "Dernière sauvegarde",
+      "kept": "Conservées"
+    },
+    "kept": "{{count}} sur {{max}}",
+    "none": "Pas encore de sauvegarde",
+    "reason": {
+      "run": "Avant la conversion",
+      "cues": "Avant l'enregistrement des cues",
+      "review": "Avant la correction des métadonnées",
+      "queue": "Avant l'application des modifications en attente",
+      "duplicates": "Avant le remplacement des doublons",
+      "playlists": "Avant tes changements de playlists d'aujourd'hui",
+      "restore": "Avant la restauration"
+    },
+    "show": "Voir les sauvegardes",
+    "hide": "Masquer les sauvegardes",
+    "restore": "Restaurer…",
+    "restoreThis": "Restaurer celle-ci",
+    "confirm": {
+      "title": "Revenir à {{program}} tel qu’il était {{when}} ?",
+      "body": "Tout ce que tu as modifié dans {{program}} après cette heure sera perdu, y compris ce que tu as fait depuis {{program}}.",
+      "safety": "Nous gardons d’abord une copie de l’état actuel, au cas où tu changerais d’avis.",
+      "queue_one": "{{count}} modification qui attendait que tu fermes {{program}} sera aussi abandonnée.",
+      "queue_other": "{{count}} modifications qui attendaient que tu fermes {{program}} seront aussi abandonnées.",
+      "ok": "Restaurer"
+    },
+    "refused": {
+      "running": "{{program}} est toujours ouvert. Ferme-le et réessaie.",
+      "pending-log": "{{program}} enregistre encore des modifications. Patiente un instant et réessaie.",
+      "not-found": "Cette sauvegarde ne correspond plus à ta collection actuelle.",
+      "other-collection": "Cette sauvegarde ne correspond plus à ta collection actuelle.",
+      "failed": "La restauration a échoué. Ta bibliothèque n'a pas changé."
+    },
+    "music": {
+      "title": "Fichiers de musique",
+      "state": "Originaux conservés"
+    },
+    "footer": "Pour chaque logiciel, nous gardons les 5 dernières sauvegardes. Pour les fichiers de musique, {{days}} jours.",
+    "reveal": "Afficher dans le Finder",
+    "revealWin": "Afficher dans l'Explorateur"
   }
 }

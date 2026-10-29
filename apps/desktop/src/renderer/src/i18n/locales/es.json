@@ -2796,5 +2796,60 @@
       "one-at-32": "Una cue a 32",
       "calls-only": "Solo CALL"
     }
+  },
+  "copies": {
+    "rail": "Copias",
+    "title": "Copias",
+    "intro": "Antes de tocar tus programas o tus archivos, Surco guarda una copia. Si algo no te cuadra, vuelve atrás.",
+    "state": {
+      "ok": "Al día",
+      "pending_one": "{{count}} cambios esperan a que cierres {{program}}",
+      "pending_other": "{{count}} cambios esperan a que cierres {{program}}",
+      "halted": "Surco ha parado: revisa los cambios pendientes",
+      "failed": "La última copia falló",
+      "untouched": "Surco no lo toca (lo has elegido en Ajustes)"
+    },
+    "facts": {
+      "state": "Estado",
+      "last": "Última copia",
+      "kept": "Guardadas"
+    },
+    "kept": "{{count}} de {{max}}",
+    "none": "Aún no hay copias",
+    "reason": {
+      "run": "Antes de convertir",
+      "cues": "Antes de guardar cues",
+      "review": "Antes de corregir metadatos",
+      "queue": "Antes de aplicar los cambios que esperaban",
+      "duplicates": "Antes de reemplazar duplicados",
+      "playlists": "Antes de tus cambios de playlists de hoy",
+      "restore": "Antes de restaurar"
+    },
+    "show": "Ver copias",
+    "hide": "Ocultar copias",
+    "restore": "Restaurar…",
+    "restoreThis": "Restaurar esta",
+    "confirm": {
+      "title": "¿Volver a como estaba {{program}} {{when}}?",
+      "body": "Se perderá lo que hayas cambiado en {{program}} después de esa hora, también lo que hiciste desde {{program}}.",
+      "safety": "Antes guardamos una copia de cómo está ahora, por si cambias de idea.",
+      "queue_one": "También se descartarán {{count}} cambios que esperaban a que cerraras {{program}}.",
+      "queue_other": "También se descartarán {{count}} cambios que esperaban a que cerraras {{program}}.",
+      "ok": "Restaurar"
+    },
+    "refused": {
+      "running": "{{program}} sigue abierto. Ciérralo y vuelve a intentarlo.",
+      "pending-log": "{{program}} aún está guardando cambios. Espera un momento y vuelve a intentarlo.",
+      "not-found": "Esta copia ya no corresponde a tu colección actual.",
+      "other-collection": "Esta copia ya no corresponde a tu colección actual.",
+      "failed": "No se pudo restaurar. Tu biblioteca no ha cambiado."
+    },
+    "music": {
+      "title": "Archivos de música",
+      "state": "Originales guardados"
+    },
+    "footer": "De cada programa guardamos las últimas 5 copias. Los archivos de música, {{days}} días.",
+    "reveal": "Mostrar en Finder",
+    "revealWin": "Mostrar en el Explorador"
   }
 }
