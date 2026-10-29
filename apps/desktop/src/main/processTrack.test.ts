@@ -572,15 +572,15 @@ describe('runProcessTrack — output conflict', () => {
     expect(outputs).toEqual(['/in/Song.aiff', '/in/Song (2).aiff'])
   })
 
-  // With "Add to Engine DJ" on, each job waits to learn Engine is closed. Waited between
-  // reading the name as free and claiming it, both jobs of a run read it free, both wrote
-  // it, and the batch said 2 converted with one file left in the folder.
-  it('never lets two jobs land on the same name while they wait for Engine DJ to close', async () => {
+  // With "Add to Engine DJ" on, each job waits to learn whether Engine is open. Waited
+  // between reading the name as free and claiming it, both jobs of a run read it free, both
+  // wrote it, and the batch said 2 converted with one file left in the folder.
+  it('never lets two jobs land on the same name while they wait to learn whether Engine DJ is open', async () => {
     const reservations = createOutputReservations(false)
     const release: Array<() => void> = []
     const deps = makeDeps({
       settings: settings({ addToEngineDj: true }),
-      ensureEngineDjClosed: vi.fn(async () => true),
+      isEngineDjRunning: vi.fn(async () => false),
       isPathReserved: reservations.isReserved,
       reservePath: reservations.reserve,
       releasePath: reservations.release,
@@ -985,23 +985,51 @@ describe('runProcessTrack — a source main never handed out', () => {
 })
 
 describe('runProcessTrack — Engine DJ open before the write', () => {
-  it('fails before writing anything when Engine DJ stays open', async () => {
+  it('leaves the Engine add to its queue while Engine DJ is open, so the conversion finishes instead of asking to close it', async () => {
     const deps = makeDeps({
       settings: settings({ overwriteOriginal: true, addToEngineDj: true }),
-      ensureEngineDjClosed: vi.fn(async () => false),
+      isEngineDjRunning: vi.fn(async () => true),
     })
 
-    await expect(runProcessTrack(job(), deps)).rejects.toThrow('engineDjOpen')
-    expect(deps.convertAudio).not.toHaveBeenCalled()
-    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    const result = await runProcessTrack(job(), deps)
+    expect(deps.convertAudio).toHaveBeenCalled()
+    expect(deps.addToEngineDj).not.toHaveBeenCalled()
+    expect(result.engineDjQueued).toBe(true)
+    expect(result.engineDjError).toBeUndefined()
+    expect(result.addedToEngineDj).toBeUndefined()
+  })
+
+  it('leaves the Engine add to its queue when it cannot tell whether Engine DJ is open, since writing under a live Engine loses the library', async () => {
+    const deps = makeDeps({
+      settings: settings({ addToEngineDj: true }),
+      isEngineDjRunning: vi.fn(async () => {
+        throw new Error('pgrep failed')
+      }),
+    })
+
+    const result = await runProcessTrack(job(), deps)
+    expect(deps.addToEngineDj).not.toHaveBeenCalled()
+    expect(result.engineDjQueued).toBe(true)
+  })
+
+  it('registers in Engine DJ right away while it is closed, with the cover the job processed', async () => {
+    const deps = makeDeps({
+      settings: settings({ addToEngineDj: true }),
+      isEngineDjRunning: vi.fn(async () => false),
+    })
+
+    const result = await runProcessTrack(job(), deps)
+    expect(deps.addToEngineDj).toHaveBeenCalled()
+    expect(result.addedToEngineDj).toBe(true)
+    expect(result.engineDjQueued).toBeUndefined()
   })
 
   it('does not ask about Engine DJ when the job does not add to it', async () => {
-    const ensureEngineDjClosed = vi.fn(async () => false)
-    const deps = makeDeps({ ensureEngineDjClosed })
+    const isEngineDjRunning = vi.fn(async () => true)
+    const deps = makeDeps({ isEngineDjRunning })
 
     await runProcessTrack(job(), deps)
-    expect(ensureEngineDjClosed).not.toHaveBeenCalled()
+    expect(isEngineDjRunning).not.toHaveBeenCalled()
   })
 })
 

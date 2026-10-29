@@ -591,6 +591,50 @@ describe('playlists chosen in the editor for a track, written to Engine DJ', () 
     db?.close()
   })
 
+  it('adds an Engine track for an add op with no playlists, so a conversion made while Engine was open still lands in its collection', async () => {
+    const dir = await crates()
+    vi.mocked(readEmbeddedCover).mockReturnValue(Buffer.from('cover'))
+    const meta = rekordboxMetaFrom({ ...emptyMetadata(), artist: 'Danny Gibson', title: 'Love Ya' })
+    const result = await applyEngineCuesBatch(
+      dir,
+      [track(dir, { path: resolve(dir, '../Music/z.flac'), meta, add: true })],
+      deps(),
+    )
+    expect(result).toMatchObject({ ok: true, wrote: true, outcomes: [{ applied: true }] })
+    const db = openEngineDb(dir)
+    if (!db) throw new Error('library did not open')
+    try {
+      const row = db
+        .prepare(
+          'SELECT t.path, a.albumArt FROM Track t JOIN AlbumArt a ON a.id = t.albumArtId WHERE t.title = ?',
+        )
+        .get('Love Ya') as { path: string; albumArt: Buffer }
+      expect(row.path).toBe('../Music/z.flac')
+      expect(Buffer.from(row.albumArt).toString()).toBe('cover')
+    } finally {
+      db.close()
+    }
+  })
+
+  it('leaves an Engine track already in the library untouched for an add op, so a track registered at conversion is never added twice', async () => {
+    const dir = await crates()
+    const before = readFileSync(join(dir, 'Database2', 'm.db'))
+    const ensureClosed = vi.fn(async () => true)
+    const meta = rekordboxMetaFrom({ ...emptyMetadata(), title: 'a' })
+    const result = await applyEngineCuesBatch(
+      dir,
+      [track(dir, { meta, add: true })],
+      deps({ ensureClosed }),
+    )
+    expect(result).toMatchObject({
+      ok: true,
+      wrote: false,
+      outcomes: [{ applied: true, notices: [] }],
+    })
+    expect(ensureClosed).not.toHaveBeenCalled()
+    expect(readFileSync(join(dir, 'Database2', 'm.db')).equals(before)).toBe(true)
+  })
+
   it('writes nothing for a track Engine does not have, and says so', async () => {
     const dir = await crates()
     const ensureClosed = vi.fn(async () => true)

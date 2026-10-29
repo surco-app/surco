@@ -1281,6 +1281,7 @@ export interface ProcessResult {
   // The Engine DJ registration's error when it failed after the file landed: the job is
   // failed, but outputPath still says where the file now is.
   engineDjError?: string
+  engineDjQueued?: true
   // The written file's identity (see inplace.ts fileIdentity), handed back on the next
   // export as previousOutputIdentity.
   outputIdentity?: string

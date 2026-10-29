@@ -817,9 +817,13 @@ describe('Editor convert button with Traktor taking new tracks', () => {
     renderEditor({ id: 'a' }, 'aiff', {
       addToAppleMusic: false,
       addToTraktor: true,
+      addToEngineDj: true,
       traktorNmlPath: '/c/collection.nml',
     })
-    await waitFor(() => expect(window.api.libraryStatus).toHaveBeenCalled())
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Engine DJ')
+    await waitFor(() =>
+      expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Engine DJ'),
+    )
     expect(screen.getByTestId('process-btn')).toHaveTextContent('Traktor')
   })
 })

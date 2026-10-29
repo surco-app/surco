@@ -92,6 +92,10 @@ describe('Take your tracks to Engine DJ', () => {
     expect(inPlaylist.flat()).toEqual(['Already There'])
   })
 
+  it('leaves nothing in the Engine queue once the conversion registered the tracks, so none is added twice', () => {
+    expect(surco.engineQueue().items).toEqual([])
+  })
+
   it('brings the rating and the cover', async () => {
     const [[rating, art]] = await query(
       mdb,

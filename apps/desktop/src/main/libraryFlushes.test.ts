@@ -14,6 +14,7 @@ const SETTINGS = vi.hoisted(() => ({
   syncTraktor: false,
   traktorNmlPath: '',
   addToTraktor: false,
+  addToEngineDj: false,
 }))
 const REPOINTS = vi.hoisted(() => [
   { from: '/m/a.mp3', to: '/m/a.flac', playlists: [{ name: 'House' }] },
@@ -35,7 +36,10 @@ const WRITERS = vi.hoisted(() => ({
   replaceRekordboxDuplicates: vi.fn(async () => [{ written: true, outcome: 'replaced' }]),
   repointEngineTracks: vi.fn(async () => [{ written: true, id: '1' }]),
 }))
-vi.mock('./engineRepoint', () => ({ repointEngineTracks: WRITERS.repointEngineTracks }))
+vi.mock('./engineRepoint', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./engineRepoint')>()),
+  repointEngineTracks: WRITERS.repointEngineTracks,
+}))
 vi.mock('./rekordboxQueueFromRun', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./rekordboxQueueFromRun')>()),
   trackOpsFromRun: WRITERS.trackOpsFromRun,
@@ -53,6 +57,7 @@ const FILE_USE = vi.hoisted(() => {
 vi.mock('./libraryFileUse', () => ({ djLibraryFileUse: FILE_USE.open }))
 
 import { activity } from './activity'
+import { writeEngineLibraryFixture } from './enginePlaylistsFixture'
 import {
   duplicateLibraryDeps,
   flushConversionBatch,
@@ -376,5 +381,86 @@ describe('flushConversionBatch with a converted track Traktor does not have', ()
     } finally {
       delete (REPOINTS[0] as Record<string, unknown>).meta
     }
+  })
+})
+
+describe('flushConversionBatch with a converted track Engine DJ does not have', () => {
+  const engineQueue = () => ({ enqueue: vi.fn(), applyQuietly: vi.fn() })
+  const flush = (engine: ReturnType<typeof engineQueue>) =>
+    flushConversionBatch(
+      host(),
+      sessions,
+      { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      undefined,
+      engine,
+    )
+  async function engineLibrary(paths: string[]): Promise<string> {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-flush-engine-'))
+    writeEngineLibraryFixture(dir, {
+      tracks: paths.map((path, i) => ({ id: i + 1, path, title: `t${i}` })),
+      playlists: [],
+      entities: [],
+    }).close()
+    return dir
+  }
+  async function withRun(
+    dir: string,
+    addToEngineDj: boolean,
+    run: (engine: ReturnType<typeof engineQueue>) => Promise<void>,
+  ) {
+    const saved = { from: REPOINTS[0].from, to: REPOINTS[0].to }
+    Object.assign(REPOINTS[0], {
+      from: join(dir, 'Music', 'a.mp3'),
+      to: join(dir, 'Music', 'a.flac'),
+      meta: { artist: 'Jaydee', title: 'Plastic Dreams' },
+    })
+    Object.assign(SETTINGS, { addToEngineDj, engineLibraryDir: dir })
+    try {
+      await run(engineQueue())
+    } finally {
+      Object.assign(REPOINTS[0], saved)
+      delete (REPOINTS[0] as Record<string, unknown>).meta
+      Object.assign(SETTINGS, { addToEngineDj: false, engineLibraryDir: '' })
+    }
+  }
+
+  it('queues adding it to Engine DJ, so a track converted while Engine was open lands there once Engine closes', async () => {
+    const dir = await engineLibrary(['Music/other.flac'])
+    await withRun(dir, true, async (engine) => {
+      await flush(engine)
+      expect(engine.enqueue).toHaveBeenCalledWith([
+        expect.objectContaining({
+          kind: 'track',
+          path: join(dir, 'Music', 'a.flac'),
+          add: true,
+          wanted: [],
+        }),
+      ])
+      expect(engine.applyQuietly).toHaveBeenCalled()
+    })
+  })
+
+  it('asks the Engine library which converted tracks it already has, so a track the conversion registered is not queued again', async () => {
+    const dir = await engineLibrary(['Music/a.flac'])
+    await withRun(dir, true, async (engine) => {
+      await flush(engine)
+      expect(engine.enqueue).not.toHaveBeenCalled()
+    })
+  })
+
+  it('counts a track Engine still has under the file it was converted from, since the repoint moves that row', async () => {
+    const dir = await engineLibrary(['Music/a.mp3'])
+    await withRun(dir, true, async (engine) => {
+      await flush(engine)
+      expect(engine.enqueue).not.toHaveBeenCalled()
+    })
+  })
+
+  it('leaves it out of Engine DJ when the DJ only updates the tracks already there', async () => {
+    const dir = await engineLibrary(['Music/other.flac'])
+    await withRun(dir, false, async (engine) => {
+      await flush(engine)
+      expect(engine.enqueue).not.toHaveBeenCalled()
+    })
   })
 })

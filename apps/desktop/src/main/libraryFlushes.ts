@@ -1,4 +1,6 @@
-import { existsSync, readFileSync, realpathSync } from 'node:fs'
+import { existsSync, realpathSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import log from 'electron-log/main'
 import type { LibraryStatus, LibraryTagUpdate, RekordboxSyncIssue } from '../shared/types'
 import { activity } from './activity'
@@ -7,12 +9,14 @@ import {
   type ReplaceDuplicatesDeps,
   traktorDuplicateStep,
 } from './duplicateReplace'
+import { loadSqlJs } from './engine'
 import { replaceEngineDuplicates } from './engineDuplicates'
-import { repointEngineTracks } from './engineRepoint'
+import { engineRowFinder, repointEngineTracks } from './engineRepoint'
 import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
 import { updateEngineTags } from './engineTags'
 import { probeDuration, probeProperties, toNmlLocation } from './ffmpeg'
 import { djLibraryFileUse } from './libraryFileUse'
+import { pathKey } from './libraryPathKey'
 import { flushLibraryRepoints, type LibraryRepointResult } from './libraryRepointFlush'
 import { libraryStatus } from './libraryStatus'
 import { nmlTagPatches } from './libraryTagPatches'
@@ -176,7 +180,7 @@ export async function flushConversionBatch(
     'traktor',
     undefined,
     addToTraktor,
-    addToTraktor ? traktorCollectionHas(getSettings().traktorNmlPath) : undefined,
+    addToTraktor ? await traktorCollectionHas(getSettings().traktorNmlPath) : undefined,
   )
   if (traktorQueue && traktorOps.length > 0) {
     traktorQueue.enqueue(traktorOps)
@@ -229,24 +233,51 @@ export async function flushConversionBatch(
     engineQueue.enqueue([], engineRepoints)
     engineQueue.applyQuietly()
   }
-  const engineOps = libraryTrackOps(repoints, 'engine')
+  const addToEngineDj = getSettings().addToEngineDj
+  const engineOps = libraryTrackOps(
+    repoints,
+    'engine',
+    undefined,
+    addToEngineDj,
+    addToEngineDj ? await engineLibraryHas(getSettings().engineLibraryDir) : undefined,
+  )
   if (engineQueue && engineOps.length > 0) {
     engineQueue.enqueue(engineOps)
     engineQueue.applyQuietly()
   }
 }
 
-function traktorCollectionHas(
-  nmlPath: string,
-): ((path: string, from?: string) => boolean) | undefined {
+type LibraryHas = (path: string, from?: string) => boolean
+
+async function traktorCollectionHas(nmlPath: string): Promise<LibraryHas | undefined> {
   let nml: string
   try {
-    nml = readFileSync(nmlPath, 'utf8')
+    nml = await readFile(nmlPath, 'utf8')
   } catch {
     return undefined
   }
   const { byPath } = traktorCollectionIndex(nml, bootVolumeName())
   return (path, from) => [path, from].some((p) => p !== undefined && byPath.has(p.normalize('NFC')))
+}
+
+async function engineLibraryHas(libraryDir: string): Promise<LibraryHas | undefined> {
+  let rows: { path: string }[]
+  try {
+    const SQL = await loadSqlJs()
+    const db = new SQL.Database(await readFile(join(libraryDir, 'Database2', 'm.db')))
+    try {
+      rows = (db.exec('SELECT path FROM Track WHERE path IS NOT NULL')[0]?.values ?? []).map(
+        ([stored]) => ({ path: String(stored) }),
+      )
+    } finally {
+      db.close()
+    }
+  } catch {
+    return undefined
+  }
+  const find = engineRowFinder(libraryDir, rows)
+  const key = pathKey({ realPath: (p: string) => realpathSync(p) })
+  return (path, from) => [path, from].some((p) => p !== undefined && find(p, key).length > 0)
 }
 
 function repointEngine(

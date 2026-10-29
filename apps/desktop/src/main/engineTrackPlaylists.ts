@@ -108,6 +108,16 @@ export function planEngineTrackPlaylists(
   const found = trackOf(db, libraryDir, op, key)
   const meta = op.meta
   if (found === null && !meta) return null
+  if (op.add && op.wanted.length === 0)
+    return {
+      notices: [],
+      write:
+        found === null
+          ? (target) => {
+              addTrack(target, libraryDir, op.path, meta as RekordboxMeta)
+            }
+          : null,
+    }
   const lists: List[] = (
     db.exec('SELECT id, title, parentListId FROM Playlist WHERE coalesce(isPersisted, 1) = 1')[0]
       ?.values ?? []

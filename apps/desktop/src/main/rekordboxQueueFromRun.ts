@@ -88,7 +88,7 @@ export function libraryTrackOps(
 ): TrackOp[] {
   return repoints.flatMap((r) => {
     const choice = library === 'traktor' ? r.traktorPlaylists : r.enginePlaylists
-    const adding = !choice && addNew && library === 'traktor' && !!r.meta
+    const adding = !choice && addNew && !!r.meta
     if (!choice && !adding) return []
     if (adding && known?.(r.to, r.from)) return []
     return [
