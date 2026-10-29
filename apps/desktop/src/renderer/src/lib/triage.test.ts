@@ -678,6 +678,15 @@ describe('sortTracks', () => {
     ])
   })
 
+  it('reads sharp and flat spellings of the same key as one wheel position', () => {
+    const list = [
+      mk({ id: 'Gb', meta: { key: 'Gb' } }),
+      mk({ id: 'Abm', meta: { key: 'Abm' } }),
+      mk({ id: 'D#m', meta: { key: 'D#m' } }),
+    ]
+    expect(sortTracks(list, 'key').map((t) => t.id)).toEqual(['Abm', 'D#m', 'Gb'])
+  })
+
   it('keeps keys that are not on the wheel with the unkeyed tracks at the end', () => {
     const list = [mk({ id: 'odd', meta: { key: 'xyz' } }), mk({ id: '1A', meta: { key: '1A' } })]
     expect(sortTracks(list, 'key', 'desc').map((t) => t.id)).toEqual(['1A', 'odd'])

@@ -2220,7 +2220,7 @@
     },
     "reorder": {
       "removeSeparator": "Trenner entfernen",
-      "hint": "Zum Umsortieren nach „Standard“ sortieren und Suche und Filter leeren"
+      "hint": "Zum Umsortieren nach „Importreihenfolge“ sortieren und Suche und Filter leeren"
     },
     "menu": {
       "addTo": "Zu Playlist hinzufügen",
@@ -2408,6 +2408,7 @@
     "noMatch": "Keine Gruppe passt.",
     "sort": {
       "label": "Gruppen sortieren",
+      "default": "Standard",
       "tracks": "Titel"
     },
     "badge": {

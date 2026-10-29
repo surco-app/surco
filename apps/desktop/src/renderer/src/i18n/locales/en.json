@@ -2220,7 +2220,7 @@
     },
     "reorder": {
       "removeSeparator": "Remove separator",
-      "hint": "To reorder, sort by “Default” and clear the search and filters"
+      "hint": "To reorder, sort by “Import order” and clear the search and filters"
     },
     "menu": {
       "addTo": "Add to playlist",
@@ -2408,6 +2408,7 @@
     "noMatch": "No group matches.",
     "sort": {
       "label": "Sort groups",
+      "default": "Default",
       "tracks": "Tracks"
     },
     "badge": {

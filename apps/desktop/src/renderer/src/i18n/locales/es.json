@@ -2220,7 +2220,7 @@
     },
     "reorder": {
       "removeSeparator": "Quitar separador",
-      "hint": "Para reordenar, ordena «Por defecto» y quita la búsqueda y los filtros"
+      "hint": "Para reordenar, ordena «Orden de importación» y quita la búsqueda y los filtros"
     },
     "menu": {
       "addTo": "Añadir a playlist",
@@ -2408,6 +2408,7 @@
     "noMatch": "Ningún grupo coincide.",
     "sort": {
       "label": "Ordenar grupos",
+      "default": "Por defecto",
       "tracks": "Pistas"
     },
     "badge": {

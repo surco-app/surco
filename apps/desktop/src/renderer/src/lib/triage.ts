@@ -345,6 +345,13 @@ function compareText(a: string | undefined, b: string | undefined, sign: number)
   return sign * collator.compare(aa, bb)
 }
 
+const ENHARMONIC: Record<number, string[]> = {
+  1: ['C#', 'Db'],
+  3: ['D#', 'Eb'],
+  6: ['F#', 'Gb'],
+  8: ['G#', 'Ab'],
+  10: ['A#', 'Bb'],
+}
 const keyRanks = new Map<string, number>()
 function rankKeys(names: string[], camelot: string[]): void {
   names.forEach((name, pitch) => {
@@ -353,6 +360,9 @@ function rankKeys(names: string[], camelot: string[]): void {
     keyRanks.set(name.toLowerCase(), rank)
     keyRanks.set(camelot[pitch].toLowerCase(), rank)
     keyRanks.set(camelot[pitch].padStart(3, '0').toLowerCase(), rank)
+    for (const spelling of ENHARMONIC[pitch] ?? []) {
+      keyRanks.set((spelling + (name.endsWith('m') ? 'm' : '')).toLowerCase(), rank)
+    }
   })
 }
 rankKeys(MAJOR_NAMES, MAJOR_CAMELOT)
