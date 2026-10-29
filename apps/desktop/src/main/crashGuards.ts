@@ -1,3 +1,4 @@
+import { type ErrorKey, errorKeyOf } from '../shared/errorKeys'
 // The narrow slices of process / webContents the guards need, so tests hand in fakes.
 export interface CrashLogger {
   error: (...params: unknown[]) => void
@@ -26,6 +27,15 @@ interface HandlerRegistry<E, A extends unknown[]> {
 // a rejection for the renderer and prints it to the console, and screens that catch it
 // show a generic error. Wrapping every handler once puts each failure, with its channel,
 // in the log file a user can send.
+const QUIET_KEYS: ReadonlySet<ErrorKey> = new Set(['beatportTerritoryRestricted'])
+
+function expected(err: unknown): boolean {
+  const e = err as Error | undefined
+  if (e?.name === 'AbortError') return true
+  const key = typeof e?.message === 'string' ? errorKeyOf(e.message) : null
+  return key !== null && QUIET_KEYS.has(key)
+}
+
 export function logHandlerFailures<E, A extends unknown[]>(
   ipc: HandlerRegistry<E, A>,
   logger: CrashLogger,
@@ -36,8 +46,7 @@ export function logHandlerFailures<E, A extends unknown[]>(
       try {
         return await cb(event, ...args)
       } catch (err) {
-        if ((err as Error | undefined)?.name !== 'AbortError')
-          logger.error(`ipc ${channel} failed`, err)
+        if (!expected(err)) logger.error(`ipc ${channel} failed`, err)
         throw err
       }
     })

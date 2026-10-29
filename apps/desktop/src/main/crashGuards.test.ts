@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { errorWithKey } from '../shared/errorKeys'
 import { installCrashGuards, logHandlerFailures, wireRendererRecovery } from './crashGuards'
 
 function fakeEmitter(): {
@@ -96,6 +97,29 @@ describe('logHandlerFailures', () => {
     ipc.handle('applemusic:playlistTracks', async () => Promise.reject(cancelled))
     await expect(ipc.call('applemusic:playlistTracks')).rejects.toBe(cancelled)
     expect(logger.error).not.toHaveBeenCalled()
+  })
+
+  // Beatport refusing a release in this country is its answer, not Surco failing: the
+  // search goes on with the other sources, yet every auto-match left a stack trace in the
+  // log, burying the real failures a user sends in (log of 29/10).
+  it('leaves Beatport refusing a release in this country out of the log and still rejects the caller', async () => {
+    const ipc = fakeIpc()
+    const logger = { error: vi.fn() }
+    logHandlerFailures(ipc, logger)
+    const refused = errorWithKey('beatportTerritoryRestricted', '/catalog/releases/6856771/')
+    ipc.handle('search:release', async () => Promise.reject(refused))
+    await expect(ipc.call('search:release')).rejects.toBe(refused)
+    expect(logger.error).not.toHaveBeenCalled()
+  })
+
+  it('still logs every other known failure', async () => {
+    const ipc = fakeIpc()
+    const logger = { error: vi.fn() }
+    logHandlerFailures(ipc, logger)
+    const missing = errorWithKey('fileMissing', '/m/a.wav')
+    ipc.handle('audio:meta', async () => Promise.reject(missing))
+    await expect(ipc.call('audio:meta')).rejects.toBe(missing)
+    expect(logger.error).toHaveBeenCalledWith('ipc audio:meta failed', missing)
   })
 
   it('logs an async handler that rejects', async () => {
