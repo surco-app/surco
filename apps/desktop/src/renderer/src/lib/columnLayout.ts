@@ -10,7 +10,7 @@ export interface ColumnWidths {
   form: number
 }
 
-export const RAIL_WIDTH = 60
+export const RAIL_WIDTH = 68
 export const DIVIDERS_WIDTH = 2
 export const FORM_MIN = 460
 

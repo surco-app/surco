@@ -6,8 +6,8 @@ import type { PlaylistSource } from '../../../shared/types'
 import { AppleMusicIcon, EngineIcon, RekordboxIcon, TraktorIcon } from './SourceIcons'
 import { Tooltip } from './Tooltip'
 
-// Each program's own mark, the thing a DJ already recognises from the Dock, so the rail
-// needs no words under it. Drawn in the rail's colour, not the apps' own.
+// Each program's own mark, the thing a DJ already recognises from the Dock, with its name
+// in small type under it. Drawn in the rail's colour, not the apps' own.
 export const SOURCE_ICON: Record<PlaylistSource, typeof AppleMusicIcon> = {
   appleMusic: AppleMusicIcon,
   rekordbox: RekordboxIcon,
@@ -81,11 +81,17 @@ export function SourceRail({
             }
           : undefined
       }
-      className={`flex size-[44px] items-center justify-center rounded-lg ${
+      className={`flex w-[64px] flex-col items-center justify-center gap-0.5 rounded-lg pt-1.5 pb-1 ${
         on ? 'bg-[var(--color-accent-soft)] text-fg' : 'text-fg-faint hover:bg-[var(--color-hover)]'
       }`}
     >
       {icon}
+      <span
+        data-testid={`source-rail-label-${key}`}
+        className="max-w-full truncate px-0.5 text-[10px] leading-tight"
+      >
+        {label}
+      </span>
       <Tooltip label={label} />
     </button>
   )
@@ -93,7 +99,7 @@ export function SourceRail({
     <nav
       data-testid="source-rail"
       aria-label={tr('sources.rail')}
-      className="flex w-[60px] shrink-0 flex-col items-center gap-1 border-r border-[var(--color-line)] bg-[var(--color-ink)] pt-2.5"
+      className="flex w-[68px] shrink-0 flex-col items-center gap-1 border-r border-[var(--color-line)] bg-[var(--color-ink)] pt-2.5"
     >
       {item(
         'tracks',
