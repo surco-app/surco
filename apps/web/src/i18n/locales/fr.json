@@ -751,14 +751,14 @@
         "body": [
           "Dans l'éditeur, cherche la release par son nom ou colle directement un id de release Discogs, puis lance « Rechercher » (ou la touche /). Surco liste les résultats avec pochette, année, label, numéro de catalogue et format, pour distinguer le pressage exact ; déplie-en un pour voir sa tracklist.",
           "Clique sur le morceau correspondant et Surco applique d'un coup artiste, album, année, genre, label, numéro de catalogue et pochette. Le plus proche est marqué « Suggéré ». La recherche marche sans rien configurer ; ajoute ton propre token Discogs dans les Réglages et tu obtiens une limite plus haute, privée et plus rapide.",
-          "Tu cherches de l'autoproduit ou de l'exclusif ? Active aussi Bandcamp dans Réglages → Recherche : ses résultats se rangent à côté de ceux de Discogs dans la même liste, chacun étiqueté avec sa source, et tu les choisis de la même façon. Bandcamp ne demande ni compte ni token. Et le commercial (pop, urbain, tubes radio) qui n'est sur aucun des deux ? C'est pour ça que Deezer est activé par défaut : sans compte ni token non plus, il couvre exactement le catalogue que Discogs et Bandcamp ratent. Et si tu joues ce que vend Beatport, connecte ton compte dans Réglages → Recherche (un compte gratuit suffit) : chaque morceau apporte son BPM, sa tonalité dans ta notation, le mix et l'ISRC, et parmi les versions au même titre Surco choisit celle que nomme ton fichier. MusicBrainz, le catalogue ouvert tenu par sa communauté, est lui aussi activé par défaut, sans compte ni token : il complète les releases et les crédits qui manquent aux autres, à une recherche par seconde comme l'exigent ses règles, ses résultats peuvent donc arriver un peu après les autres."
+          "Tu cherches de l'autoproduit ou de l'exclusif ? Active aussi Bandcamp dans Réglages → Sources : ses résultats se rangent à côté de ceux de Discogs dans la même liste, chacun étiqueté avec sa source, et tu les choisis de la même façon. Bandcamp ne demande ni compte ni token. Et le commercial (pop, urbain, tubes radio) qui n'est sur aucun des deux ? C'est pour ça que Deezer est activé par défaut : sans compte ni token non plus, il couvre exactement le catalogue que Discogs et Bandcamp ratent. Et si tu joues ce que vend Beatport, connecte ton compte dans Réglages → Sources (un compte gratuit suffit) : chaque morceau apporte son BPM, sa tonalité dans ta notation, le mix et l'ISRC, et parmi les versions au même titre Surco choisit celle que nomme ton fichier. MusicBrainz, le catalogue ouvert tenu par sa communauté, est lui aussi activé par défaut, sans compte ni token : il complète les releases et les crédits qui manquent aux autres, à une recherche par seconde comme l'exigent ses règles, ses résultats peuvent donc arriver un peu après les autres."
         ],
         "points": [
           "Cherche par texte ou colle un id de release si tu sais déjà laquelle c'est. Si le fichier en porte déjà un, Surco ouvre directement ce disque.",
           "Si la première recherche ne donne rien, Surco réessaie tout seul : en retirant le préfixe DJ, en essayant l'artiste principal, ou en cherchant par numéro de catalogue ou par titre seul.",
           "Avec l'option activée (plus ton token si Discogs fait partie de tes sources, ou ton compte pour Beatport ; Bandcamp, Deezer et MusicBrainz n'ont besoin de rien), Surco associe automatiquement les morceaux dès que tu les importes.",
           "Ta propre pochette est conservée si tu en as déjà une ; celle de la release reste en alternative, et tu peux lui faire remplacer uniquement celles en basse résolution.",
-          "Des signatures de rip ou des filigranes salissent tes titres ? Liste-les dans Réglages → Recherche, « vinyl » et « rip » y sont d'office, et ils sont ignorés pour chercher et associer ; tes tags ne sont pas touchés.",
+          "Des signatures de rip ou des filigranes salissent tes titres ? Liste-les dans Réglages → Sources, « vinyl » et « rip » y sont d'office, et ils sont ignorés pour chercher et associer ; tes tags ne sont pas touchés.",
           "Avec plusieurs sources actives, un filtre réduit les résultats à une seule, et tu peux limiter ceux de Discogs au vinyle, au CD, au fichier ou à la cassette.",
           "Choisis la release avec les flèches ; un bandeau t'indique combien de morceaux elle compte avant que tu la déplies.",
           "Si tu as déjà renommé avec ton propre format de titre, Surco l'annule avant de chercher pour que ton modèle ne s'invite pas dans la requête."
@@ -1428,7 +1428,7 @@
         "keywords": "tags étiquettes métadonnées pochette cover remplir automatiquement autofill metadata artwork",
         "settings": [
           {
-            "tab": "Recherche",
+            "tab": "Sources",
             "setting": "Auto-associer à l'import",
             "note": "Quand tu déposes tes morceaux, Surco cherche chacun d'eux et ajoute ses infos et sa pochette quand il est sûr."
           },
@@ -1802,7 +1802,7 @@
             "note": "Atténue le souffle du disque qu'on entend dans les breaks et le grondement de la platine. Ne touche pas à la musique."
           },
           {
-            "tab": "Recherche",
+            "tab": "Sources",
             "setting": "N'afficher que ces formats",
             "value": "Vinyle",
             "note": "Pour que Discogs te montre le pressage vinyle et pas le CD."
@@ -2108,7 +2108,7 @@
         "points": [
           "Ça marche sur le titre, l'artiste, l'album, le genre, le regroupement, le commentaire, le label et d'autres champs texte.",
           "Si tu connais les expressions régulières, coche « Regex ».",
-          "Si ces marques ne te gênent que pour chercher sur Discogs, ajoute-les dans Réglages › Recherche › « Mots à ignorer dans les recherches ». Elles sont écartées de la recherche, sans toucher à tes tags."
+          "Si ces marques ne te gênent que pour chercher sur Discogs, ajoute-les dans Réglages › Sources › « Mots à ignorer dans les recherches ». Elles sont écartées de la recherche, sans toucher à tes tags."
         ],
         "related": [
           {
@@ -2129,7 +2129,7 @@
         "keywords": "bpm tonalité key mix beatport camelot",
         "settings": [
           {
-            "tab": "Recherche",
+            "tab": "Sources",
             "section": "Sources de recherche",
             "setting": "Beatport",
             "note": "Juste en dessous, tape ton identifiant et ton mot de passe et clique sur « Connecter ». Le mot de passe est stocké chiffré et uniquement sur ton ordinateur."
@@ -2179,7 +2179,7 @@
         "keywords": "dossier surveillé automatique téléchargements watch folder downloads",
         "settings": [
           {
-            "tab": "Recherche",
+            "tab": "Sources",
             "setting": "Auto-associer à l'import",
             "note": "Cherche chaque nouveau morceau dans tes sources et ajoute ses infos quand il est sûr."
           }

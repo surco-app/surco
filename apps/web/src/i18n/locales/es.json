@@ -751,14 +751,14 @@
         "body": [
           "En el editor, busca el disco por nombre o pega directamente un release id de Discogs y pulsa «Buscar» (o la tecla /). Surco lista los resultados con carátula, año, sello, número de catálogo y formato, para que distingas la edición exacta; despliega uno para ver su tracklist.",
           "Haz clic en la pista que corresponda y Surco aplica artista, álbum, año, género, sello, catálogo y carátula de un golpe. La más parecida aparece marcada como «Sugerida». La búsqueda funciona sin configurar nada; si añades tu propio token de Discogs en Ajustes, tendrás un límite mayor, privado y más rápido.",
-          "¿Buscas autoeditados o exclusivos? Activa también Bandcamp en Ajustes → Búsqueda: sus resultados aparecen junto a los de Discogs en la misma lista, cada uno con una etiqueta de su origen, y lo eliges igual. Bandcamp no necesita cuenta ni token. ¿Y la música comercial (pop, urbano, éxitos de radio) que no está en ninguno de los dos? Para eso viene Deezer activado de serie: tampoco pide cuenta ni token, y cubre justo el catálogo que a Discogs y Bandcamp se les escapa. Y si pinchas lo que vende Beatport, conecta tu cuenta en Ajustes → Búsqueda (una gratuita vale): cada pista trae su BPM, su tonalidad en tu notación, el mix y el ISRC, y entre versiones con el mismo título Surco elige la que nombra tu archivo. Y MusicBrainz, el catálogo abierto que mantiene su comunidad, también viene activado de serie y sin cuenta ni token: completa con lanzamientos y créditos que a los demás les faltan, a una búsqueda por segundo como piden sus normas, así que sus resultados pueden llegar un poco después que el resto."
+          "¿Buscas autoeditados o exclusivos? Activa también Bandcamp en Ajustes → Fuentes: sus resultados aparecen junto a los de Discogs en la misma lista, cada uno con una etiqueta de su origen, y lo eliges igual. Bandcamp no necesita cuenta ni token. ¿Y la música comercial (pop, urbano, éxitos de radio) que no está en ninguno de los dos? Para eso viene Deezer activado de serie: tampoco pide cuenta ni token, y cubre justo el catálogo que a Discogs y Bandcamp se les escapa. Y si pinchas lo que vende Beatport, conecta tu cuenta en Ajustes → Fuentes (una gratuita vale): cada pista trae su BPM, su tonalidad en tu notación, el mix y el ISRC, y entre versiones con el mismo título Surco elige la que nombra tu archivo. Y MusicBrainz, el catálogo abierto que mantiene su comunidad, también viene activado de serie y sin cuenta ni token: completa con lanzamientos y créditos que a los demás les faltan, a una búsqueda por segundo como piden sus normas, así que sus resultados pueden llegar un poco después que el resto."
         ],
         "points": [
           "Busca por texto o pega un release id si ya sabes cuál es. Si el archivo ya trae uno, Surco abre directamente esa ficha.",
           "Si la primera búsqueda no da nada, Surco reintenta solo: quita el prefijo del DJ, prueba con el artista principal o busca por catálogo o por título.",
           "Con la opción activada (y tu token si Discogs es una de tus fuentes, o tu cuenta si lo es Beatport; con Bandcamp, Deezer y MusicBrainz no hace falta), Surco auto-empareja las pistas nada más importarlas.",
           "Tu carátula se conserva si ya tienes una; la del disco queda como alternativa, y puedes activar que sustituya solo a las de baja resolución.",
-          "¿Firmas de rip o marcas de agua ensuciando tus títulos? Lístalas en Ajustes → Búsqueda, trae «vinyl» y «rip» de serie, y se ignoran al buscar y emparejar; tus tags no se tocan.",
+          "¿Firmas de rip o marcas de agua ensuciando tus títulos? Lístalas en Ajustes → Fuentes, trae «vinyl» y «rip» de serie, y se ignoran al buscar y emparejar; tus tags no se tocan.",
           "Con varias fuentes activas, un filtro reduce la lista de resultados a una sola, y puedes limitar los de Discogs a vinilo, CD, archivo o casete.",
           "Elige el disco con las flechas del teclado; una banda te dice cuántas pistas tiene antes de desplegarlo.",
           "Si ya renombraste con tu propio formato de título, Surco lo deshace antes de buscar para no arrastrar tu plantilla a la consulta."
@@ -1428,7 +1428,7 @@
         "keywords": "etiquetar tags metadatos portada cover autocompletar",
         "settings": [
           {
-            "tab": "Búsqueda",
+            "tab": "Fuentes",
             "setting": "Auto-emparejar al importar",
             "note": "Al soltar las pistas, Surco busca cada una y le pone sus datos y su carátula cuando está seguro."
           },
@@ -1802,7 +1802,7 @@
             "note": "Baja el soplido del disco que se oye en los parones y el retumbe del plato. No toca la música."
           },
           {
-            "tab": "Búsqueda",
+            "tab": "Fuentes",
             "setting": "Mostrar solo estos formatos",
             "value": "Vinyl",
             "note": "Así Discogs te enseña la edición en vinilo y no la del CD."
@@ -2108,7 +2108,7 @@
         "points": [
           "Funciona en el título, el artista, el álbum, el género, el grouping, el comentario, el sello y otros campos de texto.",
           "Si sabes de expresiones regulares, marca «Regex».",
-          "Si esas firmas solo te molestan al buscar en Discogs, añádelas en Ajustes › Búsqueda › «Palabras a ignorar en las búsquedas». Se quitan al buscar, sin tocar tus etiquetas."
+          "Si esas firmas solo te molestan al buscar en Discogs, añádelas en Ajustes › Fuentes › «Palabras a ignorar en las búsquedas». Se quitan al buscar, sin tocar tus etiquetas."
         ],
         "related": [
           {
@@ -2129,7 +2129,7 @@
         "keywords": "bpm key tonalidad mix",
         "settings": [
           {
-            "tab": "Búsqueda",
+            "tab": "Fuentes",
             "section": "Fuentes de búsqueda",
             "setting": "Beatport",
             "note": "Justo debajo escribes tu usuario y tu contraseña y pulsas «Conectar». La contraseña se guarda cifrada y solo en tu ordenador."
@@ -2179,7 +2179,7 @@
         "keywords": "vigilar automático descargas carpeta",
         "settings": [
           {
-            "tab": "Búsqueda",
+            "tab": "Fuentes",
             "setting": "Auto-emparejar al importar",
             "note": "Busca cada pista nueva en tus fuentes y le pone sus datos cuando está seguro."
           }
