@@ -101,7 +101,7 @@ describe('useColumnLayout', () => {
   it('commits a share for the double-click fit as well', () => {
     const { result, onCommit } = setup()
     act(() => result.current.fit('list', 49))
-    expect(onCommit).toHaveBeenCalledWith({ list: 377 / 1370 })
+    expect(onCommit).toHaveBeenCalledWith({ list: 378 / 1370 })
   })
 
   it('saves the width the drag shows, so the form keeps its minimum on a wider window too', () => {
@@ -118,7 +118,7 @@ describe('useColumnLayout', () => {
   it.each(['results', 'list'] as const)(
     'saves nothing when the %s divider is dragged while the form is already at its floor',
     (column) => {
-      setWindowWidth(1280)
+      setWindowWidth(1080)
       const { result, onCommit } = setup()
       const before = result.current.widths
       act(() => result.current.startResize(column, pointerDown(500)))
@@ -134,7 +134,7 @@ describe('useColumnLayout', () => {
   it.each(['results', 'list'] as const)(
     'saves nothing when the %s fit asks for room the form cannot give',
     (column) => {
-      setWindowWidth(1280)
+      setWindowWidth(1080)
       const { result, onCommit } = setup()
       act(() => result.current.fit(column, 100))
       expect(onCommit).not.toHaveBeenCalled()

@@ -17,7 +17,7 @@ export const FORM_MIN = 460
 export const COLUMN_LIMITS: Record<SharedColumn, { share: number; min: number; max: number }> = {
   tree: { share: 0.17, min: 200, max: 280 },
   list: { share: 0.24, min: 300, max: 480 },
-  results: { share: 0.22, min: 300, max: 560 },
+  results: { share: 0.22, min: 240, max: 560 },
 }
 
 const GIVE_WAY: ResizableColumn[] = ['results', 'list']
