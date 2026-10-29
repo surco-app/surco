@@ -23,12 +23,13 @@ export function isFileInUseMessage(message: string): boolean {
 }
 
 const NETWORK_FAILURE =
-  /fetch failed|ENOTFOUND|ECONNREFUSED|ECONNRESET|EAI_AGAIN|ERR_INTERNET_DISCONNECTED|ERR_NETWORK/
+  /fetch failed|ENOTFOUND|ECONNREFUSED|ECONNRESET|EAI_AGAIN|ERR_INTERNET_DISCONNECTED|ERR_NETWORK|aborted due to timeout|TimeoutError/
 
 // One way to turn a rejected IPC call into something worth showing: peel the plumbing,
-// translate a key the main process stamped, name a dropped connection, and otherwise keep the raw text — ffmpeg's
-// own stderr says more in a bug report than a generic sentence would. `fallback` covers
-// a rejection with nothing readable in it at all.
+// name a dropped connection (even inside a stamped "unavailable" detail), translate a key
+// the main process stamped, and otherwise keep the raw text — ffmpeg's own stderr says
+// more in a bug report than a generic sentence would. `fallback` covers a rejection with
+// nothing readable in it at all.
 export function mainErrorMessage(
   e: unknown,
   translate: (key: string) => string,
@@ -36,7 +37,7 @@ export function mainErrorMessage(
 ): string {
   const raw = e instanceof Error ? cleanIpcError(e.message) : ''
   if (!raw) return fallback
+  if (NETWORK_FAILURE.test(raw)) return translate('errors.offline')
   const key = errorKeyOf(raw)
-  if (key) return translate(`errors.${key}`)
-  return NETWORK_FAILURE.test(raw) ? translate('errors.offline') : raw
+  return key ? translate(`errors.${key}`) : raw
 }

@@ -99,11 +99,7 @@ export interface DiscogsBrowser {
   // "choose an album" hint.
   noResults: boolean
   error: string
-  // The sources that were queried and failed while others answered, so the panel can name
-  // them. Empty when every source failed (that is `error`) and for a source that is simply
-  // not connected, which has its own messaging.
   failedSources: SearchProviderId[]
-  // Runs the failed sources again, leaving the ones that answered (and the rows) alone.
   retrySearch: () => void
   previewRelease: (result: SearchResult) => void
 }

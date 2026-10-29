@@ -1154,8 +1154,6 @@ describe('stable search', () => {
       )
     }
 
-    // The rows of the source that answered are enough to look final, so a source that
-    // silently vanished from them read as "Discogs has nothing" instead of "Discogs failed".
     it('names the failed source and keeps the results of the others', async () => {
       setApi({ search: searchWhere(() => Promise.reject(rateLimited)) })
       const { result } = renderHook(
@@ -1170,8 +1168,6 @@ describe('stable search', () => {
       expect(result.current.error).toBe('')
     })
 
-    // Retrying must not refetch what already answered: the rows being read would be
-    // re-ranked under the user's pointer.
     it('retries only the failed source, and the notice goes once it answers', async () => {
       let attempts = 0
       const search = searchWhere(() =>
@@ -1191,8 +1187,6 @@ describe('stable search', () => {
       expect(search.mock.calls.filter(([, source]) => source === 'discogs')).toHaveLength(2)
     })
 
-    // A source needing a token the user has not set has its own messaging; a second
-    // line about it on every search would nag.
     it('stays quiet about a source that is not connected', async () => {
       const notConnected = new Error('SURCO_ERR:beatportNotConnected')
       setApi({
