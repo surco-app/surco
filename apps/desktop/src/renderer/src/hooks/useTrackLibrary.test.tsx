@@ -1651,46 +1651,49 @@ describe('useTrackLibrary refresh after an in-place export', () => {
 
 describe('useTrackLibrary conversion progress coalescing', () => {
   it('renders a burst of conversion stage events from parallel encodes once, showing the latest stage', async () => {
-    setApi({
-      readMeta: vi
-        .fn()
-        .mockResolvedValue({ tags: { title: '', artist: '' }, duration: 180, cover: null }),
-    })
-    let renders = 0
-    const { result } = renderHook(() => {
-      renders++
-      return useTrackLibrary({
-        setSelection: vi.fn(),
-        onForget: vi.fn(),
-        onRemove: vi.fn(),
-        onClear: vi.fn(),
-        onMetaLoaded: vi.fn(),
-        onDuplicatesSkipped: vi.fn(),
-        onNoAudioFound: vi.fn(),
-        onMetaReadFailed: vi.fn(),
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] })
+    try {
+      setApi({
+        readMeta: vi
+          .fn()
+          .mockResolvedValue({ tags: { title: '', artist: '' }, duration: 180, cover: null }),
       })
-    })
-    await act(() => result.current.addPaths(['/m/a.flac']))
-    const id = result.current.tracks[0].id
-    act(() => result.current.updateTrack(id, { status: 'processing', stage: undefined }))
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 100))
-    })
-    const rendersBefore = renders
-    const stages = ['cover', 'converting', 'cover', 'converting', 'appleMusic'] as const
-    const events = Array.from({ length: 10 }, (_, i) => stages[i % stages.length])
+      let renders = 0
+      const { result } = renderHook(() => {
+        renders++
+        return useTrackLibrary({
+          setSelection: vi.fn(),
+          onForget: vi.fn(),
+          onRemove: vi.fn(),
+          onClear: vi.fn(),
+          onMetaLoaded: vi.fn(),
+          onDuplicatesSkipped: vi.fn(),
+          onNoAudioFound: vi.fn(),
+          onMetaReadFailed: vi.fn(),
+        })
+      })
+      await act(() => result.current.addPaths(['/m/a.flac']))
+      const id = result.current.tracks[0].id
+      act(() => result.current.updateTrack(id, { status: 'processing', stage: undefined }))
+      await act(() => vi.advanceTimersByTimeAsync(100))
+      const rendersBefore = renders
+      const stages = ['cover', 'converting', 'cover', 'converting', 'appleMusic'] as const
+      const events = Array.from({ length: 10 }, (_, i) => stages[i % stages.length])
 
-    for (const stage of events) {
-      result.current.stageTrack({ id, stage })
-      await new Promise((r) => setTimeout(r, 0))
+      for (const stage of events) {
+        await act(async () => {
+          result.current.stageTrack({ id, stage })
+          await vi.advanceTimersByTimeAsync(1)
+        })
+      }
+      await act(() => vi.advanceTimersByTimeAsync(50))
+
+      expect(result.current.tracks[0].stage).toBe('appleMusic')
+      expect(result.current.tracksRef.current[0].stage).toBe('appleMusic')
+      expect(renders - rendersBefore).toBe(2)
+    } finally {
+      vi.useRealTimers()
     }
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 100))
-    })
-
-    expect(result.current.tracks[0].stage).toBe('appleMusic')
-    expect(result.current.tracksRef.current[0].stage).toBe('appleMusic')
-    expect(renders - rendersBefore).toBeLessThanOrEqual(3)
   })
 
   it('keeps a finished conversion done when its last stage event is flushed after the result', async () => {
