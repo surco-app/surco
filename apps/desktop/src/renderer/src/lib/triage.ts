@@ -123,7 +123,7 @@ export function sourceFormat(track: TrackItem): string | undefined {
 function matchesQuality(track: TrackItem, filter: QualityFilter): boolean {
   const q = trackQuality(track)
   if (filter === 'suspect')
-    return q === 'warn' || q === 'bad' || q === 'processed' || q === 'transcoded' || q === 'damaged'
+    return q === 'warn' || q === 'bad' || q === 'processed' || q === 'transcoded'
   return q === filter
 }
 
@@ -417,10 +417,9 @@ export function qualityCounts(
   let unsaved = 0
   for (const t of tracks) {
     const q = trackQuality(t)
-    if (q === 'warn' || q === 'bad' || q === 'processed' || q === 'transcoded' || q === 'damaged')
-      suspect += 1
+    if (q === 'warn' || q === 'bad' || q === 'processed' || q === 'transcoded') suspect += 1
     else if (q === 'good') good += 1
-    else unanalyzed += 1
+    else if (q === 'unanalyzed') unanalyzed += 1
     if (t.status !== 'done') unconverted += 1
     if (hasFailed(t)) failed += 1
     if (t.autoMatched) automatched += 1
