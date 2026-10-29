@@ -1222,6 +1222,7 @@ export default function App(): React.JSX.Element {
   // wires the start/cancel actions into the toolbar and commands.
   const {
     analysis,
+    paused: analysisPaused,
     analyzeAllQuality,
     cancelAnalysis,
     forgetTracks: forgetAnalysisTracks,
@@ -3021,6 +3022,7 @@ export default function App(): React.JSX.Element {
                   batching={batching}
                   batchProgress={batchProgress}
                   analysis={analysis}
+                  analysisPaused={analysisPaused}
                   allAnalyzed={allAnalyzed}
                   matching={matching}
                   cleanedCount={cleanedCount}

@@ -23,6 +23,7 @@ function renderBar(over: Partial<Props> = {}): Props {
     onShowFailed: vi.fn(),
     batching: false,
     analysis: null,
+    analysisPaused: false,
     allAnalyzed: false,
     batchProgress: { done: 0, total: 0 },
     matching: null,
@@ -154,6 +155,24 @@ describe('Toolbar', () => {
     expect(props.onFixToken).toHaveBeenCalledOnce()
     // It must not misfire the sweep it can't run.
     expect(props.onAutoMatch).not.toHaveBeenCalled()
+  })
+
+  it('says the quality sweep is paused while Surco is in the background, so a count that stops ticking is not taken for a hang', () => {
+    renderBar({ analysis: { done: 0, total: 4 }, analysisPaused: true })
+    const paused = i18n.t('header.analyzingPaused', { done: 0, total: 4 })
+    expect(screen.getAllByRole('status').filter((r) => r.textContent === paused)).toHaveLength(1)
+    expect(screen.getByTestId('analyze-paused')).toBeInTheDocument()
+    fireEvent.focus(screen.getByTestId('analyze-quality'))
+    expect(screen.getByRole('tooltip')).toHaveTextContent(paused)
+  })
+
+  it('keeps the running count while the window is in front', () => {
+    renderBar({ analysis: { done: 1, total: 4 }, analysisPaused: false })
+    expect(screen.queryByTestId('analyze-paused')).toBeNull()
+    fireEvent.focus(screen.getByTestId('analyze-quality'))
+    expect(screen.getByRole('tooltip')).toHaveTextContent(
+      i18n.t('header.analyzingCount', { done: 1, total: 4 }),
+    )
   })
 
   // A misfired Convert all used to be unstoppable from anywhere in the UI. The batch

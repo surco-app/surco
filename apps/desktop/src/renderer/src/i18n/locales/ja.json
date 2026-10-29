@@ -47,6 +47,7 @@
     "analyzeQuality": "すべてのトラックの品質を分析",
     "analyzeQualityLabel": "分析",
     "analyzingCount": "品質を分析中… {{done}}/{{total}}",
+    "analyzingPaused": "Surco がバックグラウンドにある間は一時停止中 · {{done}}/{{total}}",
     "convertingCount": "変換中… {{done}}/{{total}}",
     "convertAll_one": "{{count}} トラックを変換",
     "convertAll_other": "{{count}} トラックを変換",

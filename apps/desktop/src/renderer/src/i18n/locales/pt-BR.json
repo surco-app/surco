@@ -47,6 +47,7 @@
     "analyzeQuality": "Analisar a qualidade de todas as faixas",
     "analyzeQualityLabel": "Analisar",
     "analyzingCount": "Analisando qualidade… {{done}}/{{total}}",
+    "analyzingPaused": "Pausado enquanto o Surco está em segundo plano · {{done}}/{{total}}",
     "convertingCount": "Convertendo… {{done}}/{{total}}",
     "convertAll_one": "Converter {{count}} faixa",
     "convertAll_other": "Converter {{count}} faixas",

@@ -566,3 +566,49 @@ describe('useQualityAnalysis after unmount', () => {
     expect(result.current.analysis).toBeNull()
   })
 })
+
+describe('useQualityAnalysis in the background', () => {
+  it('reports the sweep paused while the window is in the background, so a stalled counter is not taken for a hang', async () => {
+    let setFocused: (focused: boolean) => void = () => {}
+    const spectrogram = vi.fn().mockResolvedValue(spectrum)
+    setApi({
+      spectrogram,
+      onWindowFocus: (cb: (focused: boolean) => void) => {
+        setFocused = cb
+        return () => {}
+      },
+    })
+    const targetsRef = { current: [track('a'), track('b')] }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
+      wrapper: wrapper(),
+    })
+
+    act(() => setFocused(false))
+    act(() => result.current.analyzeAllQuality())
+
+    expect(result.current.paused).toBe(true)
+    expect(spectrogram).not.toHaveBeenCalled()
+
+    act(() => setFocused(true))
+
+    expect(result.current.paused).toBe(false)
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+  })
+
+  it('is not paused while idle, since an unfocused window with nothing to sweep holds nothing back', () => {
+    let setFocused: (focused: boolean) => void = () => {}
+    setApi({
+      onWindowFocus: (cb: (focused: boolean) => void) => {
+        setFocused = cb
+        return () => {}
+      },
+    })
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef: { current: [] } }), {
+      wrapper: wrapper(),
+    })
+
+    act(() => setFocused(false))
+
+    expect(result.current.paused).toBe(false)
+  })
+})

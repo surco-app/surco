@@ -47,6 +47,7 @@
     "analyzeQuality": "Analyze quality of all tracks",
     "analyzeQualityLabel": "Analyze",
     "analyzingCount": "Analyzing quality… {{done}}/{{total}}",
+    "analyzingPaused": "Paused while Surco is in the background · {{done}}/{{total}}",
     "convertingCount": "Converting… {{done}}/{{total}}",
     "convertAll_one": "Convert {{count}} track",
     "convertAll_other": "Convert {{count}} tracks",
