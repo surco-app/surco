@@ -127,7 +127,6 @@ import { registerListReviewIpc } from './listReviewIpc'
 import { listReviewDeps } from './listReviewWiring'
 import { createMediaAccess } from './mediaAccess'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
-import { createMoments } from './moments'
 import { isIssuedPair } from './musicDuplicates'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
@@ -160,6 +159,7 @@ import { adjustProvisional, createProvisionalList } from './rekordboxProvisional
 import { createRekordboxQueue, fileStore, type QueueApply } from './rekordboxQueue'
 import { appliedNotice, registerRekordboxQueueIpc } from './rekordboxQueueIpc'
 import { stillWaiting, watchRekordboxQueue } from './rekordboxQueueWatch'
+import { createMoments } from './moments'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { loadLastSession, saveLastSession } from './session'
@@ -266,9 +266,6 @@ let unsavedCueTracks: ReadonlySet<string> = new Set()
 // across the separate process:track IPC calls a batch fans out into, and cleared at the top
 // of each run (process:batch-begin) so it never leaks a stale choice into the next batch.
 const stickyConflict = createStickyConflict()
-// One copy of the rekordbox collection per conversion run, taken before the run's first
-// write. Module-scoped for the same reason as stickyConflict: a run fans out into separate
-// process:track calls, and they all have to agree that the copy is already taken.
 async function takeCopyAndAnnounce(...args: Parameters<typeof takeCopy>) {
   try {
     return await takeCopy(...args)
@@ -276,6 +273,9 @@ async function takeCopyAndAnnounce(...args: Parameters<typeof takeCopy>) {
     broadcast('copies:changed', null)
   }
 }
+// One copy of the rekordbox collection per conversion run, taken before the run's first
+// write. Module-scoped for the same reason as stickyConflict: a run fans out into separate
+// process:track calls, and they all have to agree that the copy is already taken.
 const rekordboxSessionBackup = createSessionBackup({
   take: takeCopyAndAnnounce,
   companionsOf: (path) => (basename(path) === 'master.db' ? [playlistXmlPath(path)] : []),
