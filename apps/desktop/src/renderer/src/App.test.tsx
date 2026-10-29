@@ -279,6 +279,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     cacheStats: vi.fn().mockResolvedValue({ files: 0, bytes: 0 }),
     clearCache: vi.fn().mockResolvedValue(undefined),
     detectTraktorNmlPath: vi.fn().mockResolvedValue(null),
+    appleMusicArtwork: vi.fn<Api['appleMusicArtwork']>().mockResolvedValue({}),
     onMenuCommand: (cb: (id: string) => void) => {
       menuListener = cb
       return () => {}
