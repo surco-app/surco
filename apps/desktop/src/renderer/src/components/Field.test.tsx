@@ -335,9 +335,7 @@ describe('Field mixed values', () => {
     expect(screen.getByTestId('field-genre')).toHaveAccessibleDescription('Multiple values')
   })
 
-  // A mixed field shows an empty box, so tabbing or pressing Enter through a form of
-  // selected tracks must not stamp that empty text over every track's own value.
-  it('leaves every track alone when the cursor leaves the field without typing', () => {
+  it('does not overwrite every selected track when tabbing out of a mixed field without typing', () => {
     const onChange = vi.fn()
     render(<Field name="artist" label="Artist" value="" onChange={onChange} mixed />)
     const input = screen.getByTestId('field-artist')
