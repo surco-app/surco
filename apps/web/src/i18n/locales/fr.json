@@ -270,7 +270,7 @@
           },
           {
             "t": "Tes playlists rekordbox",
-            "d": "Ouvre-les dans Surco avec leurs dossiers et dans leur ordre, avec la forme d'onde et les cues de rekordbox sur chaque morceau. Et organise-les d'ici. Crée, renomme et supprime playlists et dossiers, ajoute, retire et réordonne les morceaux, et choisis dans l'éditeur dans quelles playlists est chaque morceau. Si rekordbox est ouvert, les changements attendent que tu le fermes. « Ajoutées récemment » arrive en premier, avec ce que tu as ajouté à la collection ces 30 derniers jours. Si tu n'utilises pas rekordbox ou Apple Music, masque cette source."
+            "d": "Ouvre-les dans Surco avec leurs dossiers et dans leur ordre, avec la forme d'onde et les cues de rekordbox sur chaque morceau. Et organise-les d'ici. Crée, renomme et supprime playlists et dossiers, ajoute, retire et réordonne les morceaux, et choisis dans l'éditeur dans quelles playlists est chaque morceau. Si rekordbox est ouvert, les changements attendent que tu le fermes. « Tous les morceaux » arrive en premier, avec toute ta collection, y compris ce qui n'est dans aucune playlist, puis « Ajoutées récemment », avec ce que tu as ajouté à la collection ces 30 derniers jours. Si tu n'utilises pas rekordbox ou Apple Music, masque cette source."
           },
           {
             "t": "Cues rekordbox",
@@ -286,7 +286,7 @@
           },
           {
             "t": "Tes playlists Traktor",
-            "d": "Ouvre-les dans Surco, organise-les comme celles de rekordbox et place des hot cues sur leurs morceaux avec le même éditeur, marquage auto compris. Traktor les reçoit en bleu, sur les boutons 2 à 8, et Surco te demande de le quitter avant d'enregistrer."
+            "d": "Ouvre-les dans Surco, organise-les comme celles de rekordbox et place des hot cues sur leurs morceaux avec le même éditeur, marquage auto compris. Traktor les reçoit en bleu, sur les boutons 2 à 8, et Surco te demande de le quitter avant d'enregistrer. Dans l'éditeur, tu choisis dans quelles playlists va chaque morceau, une fois la collection confirmée dans Réglages."
           },
           {
             "t": "Fichiers pour rekordbox, Serato, M3U8",

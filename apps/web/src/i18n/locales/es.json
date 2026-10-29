@@ -270,7 +270,7 @@
           },
           {
             "t": "Tus playlists de rekordbox",
-            "d": "Las abres en Surco con sus carpetas y en su orden, con la onda y las cues de rekordbox en cada pista. Y las organizas desde aquí. Creas, renombras y borras playlists y carpetas, añades, quitas y reordenas pistas, y en el editor eliges en qué playlists está cada una. Si rekordbox está abierto, los cambios esperan a que lo cierres. «Añadidas recientemente» va la primera, con lo que metiste en la colección los últimos 30 días. Si no usas rekordbox o Apple Music, ocultas esa fuente."
+            "d": "Las abres en Surco con sus carpetas y en su orden, con la onda y las cues de rekordbox en cada pista. Y las organizas desde aquí. Creas, renombras y borras playlists y carpetas, añades, quitas y reordenas pistas, y en el editor eliges en qué playlists está cada una. Si rekordbox está abierto, los cambios esperan a que lo cierres. «Todas las pistas» va la primera, con tu colección entera, también lo que no está en ninguna playlist, y después «Añadidas recientemente», con lo que metiste en la colección los últimos 30 días. Si no usas rekordbox o Apple Music, ocultas esa fuente."
           },
           {
             "t": "Cues de rekordbox",
@@ -286,7 +286,7 @@
           },
           {
             "t": "Tus playlists de Traktor",
-            "d": "Las abres en Surco, las organizas como las de rekordbox y pones hot cues a sus pistas con el mismo editor, Auto marcar incluido. Traktor los recibe en azul, en los botones 2 a 8, y Surco te pide cerrarlo antes de guardar."
+            "d": "Las abres en Surco, las organizas como las de rekordbox y pones hot cues a sus pistas con el mismo editor, Auto marcar incluido. Traktor los recibe en azul, en los botones 2 a 8, y Surco te pide cerrarlo antes de guardar. En el editor eliges en qué playlists va cada pista, una vez confirmada la colección en Ajustes."
           },
           {
             "t": "Ficheros para rekordbox, Serato y M3U8",

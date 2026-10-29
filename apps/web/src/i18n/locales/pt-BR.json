@@ -270,7 +270,7 @@
           },
           {
             "t": "Suas playlists do rekordbox",
-            "d": "Abra-as no Surco com suas pastas e na sua ordem, com a onda e os cues do rekordbox em cada faixa. E organize-as daqui. Crie, renomeie e apague playlists e pastas, adicione, remova e reordene faixas, e escolha no editor em quais playlists cada faixa está. Se o rekordbox estiver aberto, as mudanças esperam você fechá-lo. «Adicionadas recentemente» vem primeiro, com o que você adicionou à coleção nos últimos 30 dias. Se você não usa rekordbox ou Apple Music, oculte essa fonte."
+            "d": "Abra-as no Surco com suas pastas e na sua ordem, com a onda e os cues do rekordbox em cada faixa. E organize-as daqui. Crie, renomeie e apague playlists e pastas, adicione, remova e reordene faixas, e escolha no editor em quais playlists cada faixa está. Se o rekordbox estiver aberto, as mudanças esperam você fechá-lo. «Todas as faixas» vem primeiro, com a sua coleção inteira, inclusive o que não está em nenhuma playlist, e depois «Adicionadas recentemente», com o que você adicionou à coleção nos últimos 30 dias. Se você não usa rekordbox ou Apple Music, oculte essa fonte."
           },
           {
             "t": "Cues do rekordbox",
@@ -286,7 +286,7 @@
           },
           {
             "t": "Suas playlists do Traktor",
-            "d": "Abra-as no Surco, organize-as como as do rekordbox e coloque hot cues nas faixas delas com o mesmo editor, Marcar automático incluído. O Traktor os recebe em azul, nos botões 2 a 8, e o Surco pede para você fechá-lo antes de salvar."
+            "d": "Abra-as no Surco, organize-as como as do rekordbox e coloque hot cues nas faixas delas com o mesmo editor, Marcar automático incluído. O Traktor os recebe em azul, nos botões 2 a 8, e o Surco pede para você fechá-lo antes de salvar. No editor você escolhe em quais playlists cada faixa entra, depois de confirmar a coleção em Ajustes."
           },
           {
             "t": "Arquivos para rekordbox, Serato, M3U8",

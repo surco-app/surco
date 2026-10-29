@@ -270,7 +270,7 @@
           },
           {
             "t": "Your rekordbox playlists",
-            "d": "Open them in Surco with their folders and in their order, with rekordbox's waveform and cues on every track. And organise them from here. Create, rename and delete playlists and folders, add, remove and reorder tracks, and pick in the editor which playlists each track is in. If rekordbox is open, the changes wait for you to close it. «Recently added» comes first, with what you added to the collection in the last 30 days. If you don't use rekordbox or Apple Music, hide that source."
+            "d": "Open them in Surco with their folders and in their order, with rekordbox's waveform and cues on every track. And organise them from here. Create, rename and delete playlists and folders, add, remove and reorder tracks, and pick in the editor which playlists each track is in. If rekordbox is open, the changes wait for you to close it. «All tracks» comes first, with your whole collection, including what is in no playlist, then «Recently added», with what you added to the collection in the last 30 days. If you don't use rekordbox or Apple Music, hide that source."
           },
           {
             "t": "rekordbox cues",
@@ -286,7 +286,7 @@
           },
           {
             "t": "Your Traktor playlists",
-            "d": "Open them in Surco, organise them as you do rekordbox's and set hot cues on their tracks with the same editor, Auto mark included. Traktor gets them in blue, on buttons 2 to 8, and Surco asks you to quit it before saving."
+            "d": "Open them in Surco, organise them as you do rekordbox's and set hot cues on their tracks with the same editor, Auto mark included. Traktor gets them in blue, on buttons 2 to 8, and Surco asks you to quit it before saving. In the editor you choose which playlists each track goes into, once the collection is confirmed in Settings."
           },
           {
             "t": "Files for rekordbox, Serato, M3U8",

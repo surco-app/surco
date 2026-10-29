@@ -270,7 +270,7 @@
           },
           {
             "t": "Deine rekordbox-Playlists",
-            "d": "Öffne sie in Surco mit ihren Ordnern und in ihrer Reihenfolge, mit der Wellenform und den Cues von rekordbox bei jedem Track. Und organisiere sie von hier aus. Leg Playlists und Ordner an, benenne sie um und lösche sie, füge Tracks hinzu, entferne und sortiere sie, und wähle im Editor, in welchen Playlists jeder Track steckt. Ist rekordbox offen, warten die Änderungen, bis du es schließt. „Zuletzt hinzugefügt“ steht ganz oben, mit dem, was du in den letzten 30 Tagen zur Sammlung hinzugefügt hast. Nutzt du rekordbox oder Apple Music nicht, blende diese Quelle aus."
+            "d": "Öffne sie in Surco mit ihren Ordnern und in ihrer Reihenfolge, mit der Wellenform und den Cues von rekordbox bei jedem Track. Und organisiere sie von hier aus. Leg Playlists und Ordner an, benenne sie um und lösche sie, füge Tracks hinzu, entferne und sortiere sie, und wähle im Editor, in welchen Playlists jeder Track steckt. Ist rekordbox offen, warten die Änderungen, bis du es schließt. „Alle Titel“ steht ganz oben, mit deiner ganzen Sammlung, auch dem, was in keiner Playlist ist, danach „Zuletzt hinzugefügt“, mit dem, was du in den letzten 30 Tagen zur Sammlung hinzugefügt hast. Nutzt du rekordbox oder Apple Music nicht, blende diese Quelle aus."
           },
           {
             "t": "rekordbox-Cues",
@@ -286,7 +286,7 @@
           },
           {
             "t": "Deine Traktor-Playlists",
-            "d": "Öffne sie in Surco, organisiere sie wie die von rekordbox und setze Hot Cues auf ihren Tracks mit demselben Editor, Auto-Markieren inklusive. Traktor bekommt sie in Blau, auf den Tasten 2 bis 8, und Surco bittet dich, Traktor vor dem Speichern zu beenden."
+            "d": "Öffne sie in Surco, organisiere sie wie die von rekordbox und setze Hot Cues auf ihren Tracks mit demselben Editor, Auto-Markieren inklusive. Traktor bekommt sie in Blau, auf den Tasten 2 bis 8, und Surco bittet dich, Traktor vor dem Speichern zu beenden. Im Editor wählst du, in welche Playlists jeder Track kommt, sobald die Sammlung in den Einstellungen bestätigt ist."
           },
           {
             "t": "Dateien für rekordbox, Serato, M3U8",
