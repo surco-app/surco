@@ -5038,6 +5038,28 @@ describe('App keyboard shortcuts', () => {
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
   })
 
+  it('steps to the next track with ⌥↓ from inside a field, keeping the typed text on its track and the cursor in the same field, so a list is tagged without leaving the keyboard', async () => {
+    setApi({
+      readTags: vi.fn(async (path: string) => ({
+        title: path.endsWith('a.wav') ? 'Alpha' : 'Bravo',
+        artist: 'DJ',
+      })),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha'))
+    screen.getByTestId('field-title').focus()
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'Typed Name' } })
+    fireEvent.keyDown(screen.getByTestId('field-title'), { key: 'ArrowDown', altKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
+    expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'true')
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveFocus())
+    fireEvent.keyDown(screen.getByTestId('field-title'), { key: 'ArrowUp', altKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Typed Name'))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveFocus())
+  })
+
   // The palette button is a bare glyph, so its hover hint is the only place the bar shows
   // its shortcut. ⌘K is a fixed menu accelerator outside the rebindable table, and the hint
   // read only that table, so the tooltip said "Command palette" with no keys at all.

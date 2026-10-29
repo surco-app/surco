@@ -2675,6 +2675,12 @@ export default function App(): React.JSX.Element {
     )?.focus()
   const focusEditor = (): void =>
     document.querySelector<HTMLElement>('[data-testid="field-title"]')?.focus()
+  const stepTrackInField = (delta: 1 | -1): void => {
+    const field = document.activeElement?.getAttribute('data-testid')
+    moveSelection(delta)
+    if (!field?.startsWith('field-')) return
+    setTimeout(() => document.querySelector<HTMLElement>(`[data-testid="${field}"]`)?.focus(), 0)
+  }
   // El salto relativo se apoya en los tres saltos absolutos de arriba: resuelve a qué
   // columna toca ir mirando dónde está el foco ahora, y llama al que corresponda.
   const focusColumn = (delta: 1 | -1): void => {
@@ -2722,6 +2728,7 @@ export default function App(): React.JSX.Element {
       selectAll,
       askFillAll: onFillAll,
       moveSelection,
+      stepTrackInField,
       jumpSelection,
       pageSelection,
       focusList,

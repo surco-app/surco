@@ -326,6 +326,8 @@
     "remove": "Remover faixa atual",
     "next": "Próxima faixa",
     "prev": "Faixa anterior",
+    "nextInField": "Próxima faixa, sem sair do campo",
+    "prevInField": "Faixa anterior, sem sair do campo",
     "listTop": "Ir para a primeira faixa",
     "listBottom": "Ir para a última faixa",
     "listPageUp": "Subir uma página",

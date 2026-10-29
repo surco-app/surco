@@ -326,6 +326,8 @@
     "remove": "Remove current track",
     "next": "Next track",
     "prev": "Previous track",
+    "nextInField": "Next track, staying in the same field",
+    "prevInField": "Previous track, staying in the same field",
     "listTop": "Go to first track",
     "listBottom": "Go to last track",
     "listPageUp": "Page up the list",

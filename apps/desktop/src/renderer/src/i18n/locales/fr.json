@@ -326,6 +326,8 @@
     "remove": "Retirer le morceau actuel",
     "next": "Morceau suivant",
     "prev": "Morceau précédent",
+    "nextInField": "Morceau suivant, en restant dans le champ",
+    "prevInField": "Morceau précédent, en restant dans le champ",
     "listTop": "Aller au premier morceau",
     "listBottom": "Aller au dernier morceau",
     "listPageUp": "Monter d'une page",

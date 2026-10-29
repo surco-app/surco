@@ -11,6 +11,7 @@ export interface ShortcutDef {
   id: string
   chord: Chord
   suppressWhileTyping?: boolean
+  liveWhileTyping?: boolean
   // Limita el comando al ámbito con ese nombre: solo dispara cuando el foco está dentro
   // de un `[data-shortcut-scope]` que coincide. Sin scope el comando es global.
   scope?: string
@@ -37,6 +38,8 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   { id: 'play', chord: ['space'] },
   { id: 'next', chord: ['down'] },
   { id: 'prev', chord: ['up'] },
+  { id: 'next-in-field', chord: ['alt', 'down'], liveWhileTyping: true },
+  { id: 'prev-in-field', chord: ['alt', 'up'], liveWhileTyping: true },
   { id: 'seek-back', chord: ['left'] },
   { id: 'seek-forward', chord: ['right'] },
   { id: 'search', chord: ['/'] },
@@ -153,13 +156,15 @@ export function matchChord(
   scope: string | string[] | null = null,
 ): string | null {
   const hasMod = chord.includes('mod')
+  const hasAltOrCtrl = chord.includes('alt') || chord.includes('ctrl')
   const chain = scope === null ? [] : typeof scope === 'string' ? [scope] : scope
   const match = (wantScope: string | null): string | null => {
     for (const def of SHORTCUT_DEFAULTS) {
       const bound = bindings.get(def.id)
       if (!bound || bound.length === 0 || !chordEquals(bound, chord)) continue
       if ((def.scope ?? null) !== wantScope) continue
-      if (typing && (!hasMod || def.suppressWhileTyping)) return null
+      const live = hasMod || (def.liveWhileTyping === true && hasAltOrCtrl)
+      if (typing && (!live || def.suppressWhileTyping)) return null
       return def.id
     }
     return null

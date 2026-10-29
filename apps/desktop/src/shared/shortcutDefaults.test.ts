@@ -71,6 +71,13 @@ describe('matchChord', () => {
     expect(matchChord(b, ['mod', 'backspace'], false)).toBe('remove')
   })
 
+  it('fires ⌥↓/⌥↑ from inside a field so the next track is reached without leaving it, while a bare-key rebind of them stays silent so typing is never stolen', () => {
+    expect(matchChord(b, ['alt', 'down'], true)).toBe('next-in-field')
+    expect(matchChord(b, ['alt', 'up'], true)).toBe('prev-in-field')
+    const bare = resolveBindings({ 'next-in-field': ['n'] })
+    expect(matchChord(bare, ['n'], true)).toBeNull()
+  })
+
   // The editor's own clean-up actions (Tag / Eraser) and the fake-purge get first-class
   // chords so the keyboard-first flow doesn't have to detour through ⌘K for them.
   it('resolves the editor and quality clean-up chords', () => {
