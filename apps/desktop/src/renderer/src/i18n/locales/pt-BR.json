@@ -282,6 +282,8 @@
     "undo": "Desfazer",
     "undoneMeta_one": "Metadados restaurados em {{count}} faixa",
     "undoneMeta_other": "Metadados restaurados em {{count}} faixas",
+    "redoneMeta_one": "Edição de metadados refeita em {{count}} faixa",
+    "redoneMeta_other": "Edição de metadados refeita em {{count}} faixas",
     "metaReadFailed_one": "Não foi possível ler as tags de {{count}} arquivo, então só o nome dele aparece.",
     "metaReadFailed_other": "Não foi possível ler as tags de {{count}} arquivos, então só os nomes deles aparecem."
   },
@@ -366,6 +368,7 @@
     "trimDetected": "Cortar o silêncio detectado na seleção",
     "clearMeta": "Limpar metadados",
     "undoMeta": "Desfazer última edição de metadados",
+    "redoMeta": "Refazer a última edição de metadados desfeita",
     "analyzeQuality": "Analisar a qualidade de todas as faixas",
     "trashSuspects": "Mover os arquivos duvidosos para a Lixeira",
     "trashSelected": "Mover a seleção para a lixeira",

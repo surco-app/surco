@@ -6173,6 +6173,25 @@ describe('App metadata undo', () => {
     expect(screen.getByTestId('field-title')).toHaveValue('Typed Title')
   })
 
+  it('reapplies an undone clear with the redo shortcut and confirms it, so one ⌘Z too many is not a dead end', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+    expect(await screen.findByTestId('field-title')).toHaveValue('Imported Title')
+
+    fireEvent.keyDown(window, { key: 'e', ctrlKey: true })
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
+    expect(screen.getByTestId('field-title')).toHaveValue('Imported Title')
+
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true, shiftKey: true })
+    expect(screen.getByTestId('field-title')).toHaveValue('')
+    expect(screen.getByText('Metadata edit redone on 1 track')).toBeInTheDocument()
+  })
+
   // Clearing wipes the artwork alongside the tags (coverRemoved plus coverUrl), so the
   // snapshot has to carry the cover the way paste's does. Without it ⌘Z brought the text
   // back and left the well empty.

@@ -66,6 +66,7 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   // Typing-guarded like ⌘A: while a field is focused the press falls through to the
   // native Edit-menu Undo, so text edits keep their own in-field history.
   { id: 'undo-meta', chord: ['mod', 'z'], suppressWhileTyping: true },
+  { id: 'redo-meta', chord: ['mod', 'shift', 'z'], suppressWhileTyping: true },
   // Move the flagged (suspect) rips to the Trash. Guarded while typing like ⌘⌫ remove — it
   // deletes files, so ⌫ mid-edit must never trigger it.
   { id: 'trash-suspects', chord: ['mod', 'shift', 'backspace'], suppressWhileTyping: true },

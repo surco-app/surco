@@ -84,7 +84,13 @@ interface MetaUndo {
   // (0 for an empty stack or when every recorded track has since been removed),
   // so the caller can word — or skip — its confirmation toast.
   undo: () => number
+  redo: () => number
   canUndo: () => boolean
+  canRedo: () => boolean
+}
+
+function pick(fields: Fields, keys: string[]): Fields {
+  return Object.fromEntries(keys.map((key) => [key, fields[key]]))
 }
 
 function coversOf(entries: MetaSnapshot[][]): (string | undefined)[] {
@@ -105,6 +111,7 @@ export function useMetaUndo(
 ): MetaUndo {
   const stack = useRef<MetaSnapshot[][]>([])
   const topGroup = useRef<string | undefined>(undefined)
+  const redoStack = useRef<MetaSnapshot[][]>([])
   const unsettled = useRef<MetaSnapshot[]>([])
 
   useEffect(() => {
@@ -117,6 +124,12 @@ export function useMetaUndo(
   const record = useCallback(
     (targets: TrackItem[], opts?: { cover?: boolean; group?: string }) => {
       if (targets.length === 0) return
+      const undone = redoStack.current
+      redoStack.current = []
+      revokeDisplacedCovers(coversOf(undone), [
+        ...tracksRef.current.map((t) => t.coverUrl),
+        ...coversOf(stack.current),
+      ])
       const top = stack.current.at(-1)
       const joining = top && opts?.group !== undefined && opts.group === topGroup.current
       const cover = !!opts?.cover
@@ -146,43 +159,52 @@ export function useMetaUndo(
     [tracksRef],
   )
 
-  const undo = useCallback((): number => {
-    const entry = stack.current.pop()
-    topGroup.current = undefined
-    if (!entry) return 0
-    const live = new Map(tracksRef.current.map((t) => [t.id, t]))
-    // Rows removed since the edit stay gone — the snapshot restores fields on the
-    // tracks that still exist, it never resurrects a deleted row.
-    const kept = entry.filter((s) => live.has(s.id))
-    if (kept.length === 0) return 0
-    const patches = new Map<string, Fields>()
-    for (const s of kept) {
-      const track = live.get(s.id) as TrackItem
-      settle(s, track)
-      const now = fieldsOf(track, s.cover)
-      const keys = Object.keys(s.after).filter((key) => now[key] === s.after[key])
-      patches.set(s.id, Object.fromEntries(keys.map((key) => [key, s.before[key]])))
-    }
-    const restoresCover = (t: TrackItem) => 'coverUrl' in (patches.get(t.id) ?? {})
-    revokeDisplacedCovers(
-      tracksRef.current.filter(restoresCover).map((t) => t.coverUrl),
-      [
-        ...tracksRef.current.map((t) =>
-          restoresCover(t) ? (patches.get(t.id)?.coverUrl as string | undefined) : t.coverUrl,
-        ),
+  const step = useCallback(
+    (from: { current: MetaSnapshot[][] }, to: { current: MetaSnapshot[][] }): number => {
+      const entry = from.current.pop()
+      topGroup.current = undefined
+      if (!entry) return 0
+      const live = new Map(tracksRef.current.map((t) => [t.id, t]))
+      // Rows removed since the edit stay gone — the snapshot restores fields on the
+      // tracks that still exist, it never resurrects a deleted row.
+      const kept = entry.filter((s) => live.has(s.id))
+      if (kept.length === 0) return 0
+      const patches = new Map<string, Fields>()
+      const inverse: MetaSnapshot[] = []
+      for (const s of kept) {
+        const track = live.get(s.id) as TrackItem
+        settle(s, track)
+        const now = fieldsOf(track, s.cover)
+        const keys = Object.keys(s.after).filter((key) => now[key] === s.after[key])
+        patches.set(s.id, pick(s.before, keys))
+        inverse.push({
+          id: s.id,
+          cover: s.cover,
+          before: pick(s.after, keys),
+          after: pick(s.before, keys),
+        })
+      }
+      to.current.push(inverse)
+      revokeDisplacedCovers(coversOf([entry]), [
+        ...tracksRef.current.map((t) => t.coverUrl),
         ...coversOf(stack.current),
-      ],
-    )
-    setTracks((prev) =>
-      prev.map((t) => {
-        const patch = patches.get(t.id)
-        return patch ? withFields(t, patch) : t
-      }),
-    )
-    return kept.length
-  }, [tracksRef, setTracks])
+        ...coversOf(redoStack.current),
+      ])
+      setTracks((prev) =>
+        prev.map((t) => {
+          const patch = patches.get(t.id)
+          return patch ? withFields(t, patch) : t
+        }),
+      )
+      return kept.length
+    },
+    [tracksRef, setTracks],
+  )
 
+  const undo = useCallback(() => step(stack, redoStack), [step])
+  const redo = useCallback(() => step(redoStack, stack), [step])
   const canUndo = useCallback(() => stack.current.length > 0, [])
+  const canRedo = useCallback(() => redoStack.current.length > 0, [])
 
-  return { record, undo, canUndo }
+  return { record, undo, redo, canUndo, canRedo }
 }

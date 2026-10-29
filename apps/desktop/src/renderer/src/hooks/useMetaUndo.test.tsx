@@ -359,6 +359,81 @@ describe('useMetaUndo', () => {
     expect(result.current.tracks[0].meta.title).toBe('Typed')
   })
 
+  it('reapplies an undone step with redo, so a ⌘Z pressed one time too many costs nothing', () => {
+    const { result } = setup([track('a', { title: 'A', album: '' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Filled', album: 'Filled Album' } })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.canRedo()).toBe(true)
+    let reapplied = 0
+    act(() => {
+      reapplied = result.current.redo()
+    })
+    expect(reapplied).toBe(1)
+    expect(result.current.tracks[0].meta.title).toBe('Filled')
+    expect(result.current.tracks[0].meta.album).toBe('Filled Album')
+    expect(result.current.canRedo()).toBe(false)
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.tracks[0].meta.title).toBe('A')
+  })
+
+  it('keeps a field typed after an undo when the step is redone, as undo does for the other direction', () => {
+    const { result } = setup([track('a', { title: 'A', album: '' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Filled', album: 'Filled Album' } })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    act(() => {
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Typed' } })),
+      )
+    })
+    act(() => {
+      result.current.redo()
+    })
+    expect(result.current.tracks[0].meta.title).toBe('Typed')
+    expect(result.current.tracks[0].meta.album).toBe('Filled Album')
+  })
+
+  it('drops the redo step once a new edit is recorded, so redo never replays over newer work', () => {
+    const { result } = setup([track('a', { title: 'A' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'First' } })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Second' } })),
+      )
+    })
+    expect(result.current.canRedo()).toBe(false)
+    let reapplied = -1
+    act(() => {
+      reapplied = result.current.redo()
+    })
+    expect(reapplied).toBe(0)
+    expect(result.current.tracks[0].meta.title).toBe('Second')
+  })
+
   describe('picked cover blobs', () => {
     const url = URL as unknown as Record<string, unknown>
     const original = url.revokeObjectURL
@@ -413,7 +488,7 @@ describe('useMetaUndo', () => {
       expect(revoke).not.toHaveBeenCalledWith('blob:shared')
     })
 
-    it('frees the blob an undo takes off a row when nothing else holds it', () => {
+    it('keeps the blob an undo takes off a row alive, so redo can show it again', () => {
       const revoke = spyRevoke()
       const { result } = setup([track('a', {}, { coverUrl: 'data:own' })])
       coverStep(result, 'a', 'blob:picked')
@@ -421,10 +496,14 @@ describe('useMetaUndo', () => {
         result.current.undo()
       })
       expect(result.current.tracks[0].coverUrl).toBe('data:own')
-      expect(revoke).toHaveBeenCalledWith('blob:picked')
+      expect(revoke).not.toHaveBeenCalled()
+      act(() => {
+        result.current.redo()
+      })
+      expect(result.current.tracks[0].coverUrl).toBe('blob:picked')
     })
 
-    it('frees only the blob an undo takes off a row, never the one it puts back', () => {
+    it('frees the blob an undo took off a row once a new edit drops the redo step, and never the one undo put back', () => {
       const revoke = spyRevoke()
       const { result } = setup([track('a', {}, { coverUrl: 'data:own' })])
       coverStep(result, 'a', 'blob:picked')
@@ -432,6 +511,7 @@ describe('useMetaUndo', () => {
       act(() => {
         result.current.undo()
       })
+      coverStep(result, 'a', 'data:other')
       expect(revoke).toHaveBeenCalledWith('blob:second')
       expect(revoke).not.toHaveBeenCalledWith('blob:picked')
     })

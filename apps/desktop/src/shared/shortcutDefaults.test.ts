@@ -106,6 +106,11 @@ describe('matchChord', () => {
     expect(matchChord(b, ['mod', 'z'], false)).toBe('undo-meta')
     expect(matchChord(b, ['mod', 'z'], true)).toBeNull()
   })
+
+  it('binds redo-meta to ⇧⌘Z outside a field and leaves the press to the native text redo inside one', () => {
+    expect(matchChord(b, ['mod', 'shift', 'z'], false)).toBe('redo-meta')
+    expect(matchChord(b, ['mod', 'shift', 'z'], true)).toBeNull()
+  })
 })
 
 describe('findConflicts', () => {

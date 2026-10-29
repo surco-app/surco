@@ -282,6 +282,8 @@
     "undo": "Annuler",
     "undoneMeta_one": "Métadonnées restaurées sur {{count}} morceau",
     "undoneMeta_other": "Métadonnées restaurées sur {{count}} morceaux",
+    "redoneMeta_one": "Modification de métadonnées rétablie sur {{count}} morceau",
+    "redoneMeta_other": "Modification de métadonnées rétablie sur {{count}} morceaux",
     "metaReadFailed_one": "Impossible de lire les tags de {{count}} fichier, seul son nom est affiché.",
     "metaReadFailed_other": "Impossible de lire les tags de {{count}} fichiers, seuls leurs noms sont affichés."
   },
@@ -366,6 +368,7 @@
     "trimDetected": "Rogner le silence détecté sur la sélection",
     "clearMeta": "Effacer les métadonnées",
     "undoMeta": "Annuler la dernière modification de métadonnées",
+    "redoMeta": "Rétablir la dernière modification de métadonnées annulée",
     "analyzeQuality": "Analyser la qualité de tous les morceaux",
     "trashSuspects": "Mettre les fichiers douteux à la corbeille",
     "trashSelected": "Mettre la sélection à la corbeille",

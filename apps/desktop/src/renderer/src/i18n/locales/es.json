@@ -282,6 +282,8 @@
     "undo": "Deshacer",
     "undoneMeta_one": "Metadatos restaurados en {{count}} pista",
     "undoneMeta_other": "Metadatos restaurados en {{count}} pistas",
+    "redoneMeta_one": "Edición de metadatos rehecha en {{count}} pista",
+    "redoneMeta_other": "Edición de metadatos rehecha en {{count}} pistas",
     "metaReadFailed_one": "No se pudieron leer los metadatos de {{count}} archivo, así que solo se muestra su nombre.",
     "metaReadFailed_other": "No se pudieron leer los metadatos de {{count}} archivos, así que solo se muestran sus nombres."
   },
@@ -366,6 +368,7 @@
     "trimDetected": "Recortar el silencio detectado en la selección",
     "clearMeta": "Borrar metadatos",
     "undoMeta": "Deshacer última edición de metadatos",
+    "redoMeta": "Rehacer la última edición de metadatos deshecha",
     "analyzeQuality": "Analizar la calidad de todas las pistas",
     "trashSuspects": "Mover los archivos dudosos a la papelera",
     "trashSelected": "Mover la selección a la papelera",

@@ -282,6 +282,8 @@
     "undo": "Rückgängig",
     "undoneMeta_one": "Metadaten in {{count}} Track wiederhergestellt",
     "undoneMeta_other": "Metadaten in {{count}} Tracks wiederhergestellt",
+    "redoneMeta_one": "Metadaten-Änderung in {{count}} Track wiederholt",
+    "redoneMeta_other": "Metadaten-Änderung in {{count}} Tracks wiederholt",
     "metaReadFailed_one": "Die Tags von {{count}} Datei konnten nicht gelesen werden, daher wird nur ihr Dateiname angezeigt.",
     "metaReadFailed_other": "Die Tags von {{count}} Dateien konnten nicht gelesen werden, daher werden nur ihre Dateinamen angezeigt."
   },
@@ -366,6 +368,7 @@
     "trimDetected": "Erkannte Stille in der Auswahl abschneiden",
     "clearMeta": "Metadaten löschen",
     "undoMeta": "Letzte Metadaten-Änderung rückgängig machen",
+    "redoMeta": "Zuletzt rückgängig gemachte Metadaten-Änderung wiederholen",
     "analyzeQuality": "Qualität aller Tracks analysieren",
     "trashSuspects": "Zweifelhafte Dateien in den Papierkorb legen",
     "trashSelected": "Auswahl in den Papierkorb legen",

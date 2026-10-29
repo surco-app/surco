@@ -282,6 +282,8 @@
     "undo": "元に戻す",
     "undoneMeta_one": "{{count}} トラックのメタデータを復元しました",
     "undoneMeta_other": "{{count}} トラックのメタデータを復元しました",
+    "redoneMeta_one": "{{count}} トラックのメタデータ編集をやり直しました",
+    "redoneMeta_other": "{{count}} トラックのメタデータ編集をやり直しました",
     "metaReadFailed_one": "{{count}} ファイルのタグを読み取れなかったため、ファイル名のみ表示しています。",
     "metaReadFailed_other": "{{count}} ファイルのタグを読み取れなかったため、ファイル名のみ表示しています。"
   },
@@ -366,6 +368,7 @@
     "trimDetected": "選択範囲の検出された無音部分をトリミング",
     "clearMeta": "メタデータをクリア",
     "undoMeta": "最後のメタデータ編集を元に戻す",
+    "redoMeta": "取り消したメタデータ編集をやり直す",
     "analyzeQuality": "すべてのトラックの品質を分析",
     "trashSuspects": "疑わしいファイルをゴミ箱へ移動",
     "trashSelected": "選択範囲をゴミ箱へ移動",
