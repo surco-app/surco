@@ -125,18 +125,18 @@ describe('trackDonate', () => {
 
   // PayPal is a different domain, so the click is the last thing this site can observe.
   // The donate links sit in different places, and only the location separates the
-  // header's permanently visible button from a deliberate scroll to the donate section.
+  // footer link from the retry on the cancelled-donation page.
   it('reports the outbound click with the section', () => {
     const gtag = vi.fn()
     ;(globalThis as { gtag?: unknown }).gtag = gtag
 
-    trackDonate('header')
+    trackDonate('footer')
 
-    expect(gtag).toHaveBeenCalledWith('event', 'donate_click', { surco_location: 'header' })
+    expect(gtag).toHaveBeenCalledWith('event', 'donate_click', { surco_location: 'footer' })
   })
 
   it('does nothing when gtag was never loaded', () => {
-    expect(() => trackDonate('header')).not.toThrow()
+    expect(() => trackDonate('footer')).not.toThrow()
   })
 })
 

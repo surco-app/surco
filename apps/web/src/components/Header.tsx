@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DONATE_URL } from '../config'
 import { LANGUAGE_NAMES, LANGUAGES, type Language } from '../i18n'
-import { trackDonate } from '../lib/analytics'
 import { isCondensed, showsHeaderDownload } from '../lib/header'
-import { HEADER_SECTIONS, HOME, PAGES, type Page } from '../lib/nav'
+import { HOME, PAGES, type Page } from '../lib/nav'
 import { toggleTheme } from '../lib/theme'
 import { btnPrimary } from '../lib/ui'
 import { rememberLanguage, useAutoLanguage } from '../lib/useAutoLanguage'
@@ -37,7 +35,6 @@ export default function Header({
       window.location.href = languageHref(code) + window.location.hash
     }
   }
-  const sectionHref = (id: string) => (page ? `${home}#${id}` : `#${id}`)
   const featuresHref = PAGES.features[lang]
   const guideHref = PAGES.guide[lang]
   const useCasesHref = PAGES.useCases[lang]
@@ -160,12 +157,10 @@ export default function Header({
           <span className="text-xl font-semibold leading-none tracking-tight">Surco</span>
         </a>
         <div className="flex items-center gap-4 sm:gap-7">
-          <nav className="hidden items-center gap-7 text-sm text-muted lg:flex">
-            {HEADER_SECTIONS.map((id) => (
-              <a key={id} href={sectionHref(id)} className="transition-colors hover:text-fg">
-                {t(`nav.${id}`)}
-              </a>
-            ))}
+          <nav
+            data-testid="header-nav"
+            className="hidden items-center gap-7 text-sm text-muted lg:flex"
+          >
             <a href={featuresHref} className="transition-colors hover:text-fg">
               {t('nav.funciones')}
             </a>
@@ -181,17 +176,6 @@ export default function Header({
             </a>
             <a href={changelogHref} className="transition-colors hover:text-fg">
               {t('nav.cambios')}
-            </a>
-            {/* A link like its neighbours: as a filled pill it was a second primary action
-                above the fold, as loud as the download it sat across from. */}
-            <a
-              href={DONATE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => trackDonate('header')}
-              className="transition-colors hover:text-fg"
-            >
-              {t('nav.donar')}
             </a>
           </nav>
           {/* Both glyphs ship and CSS picks one from <html>'s theme, so the prerendered
@@ -258,7 +242,10 @@ export default function Header({
                 <path d="M3 12h18M12 3c2.6 2.6 3.8 5.6 3.8 9s-1.2 6.4-3.8 9c-2.6-2.6-3.8-5.6-3.8-9s1.2-6.4 3.8-9z" />
               </svg>
               <span className="sr-only">{t('nav.language')} </span>
-              <span lang={lang}>{LANGUAGE_NAMES[lang]}</span>
+              <span className="sr-only" lang={lang}>
+                {LANGUAGE_NAMES[lang]}
+              </span>
+              <span aria-hidden="true">{lang.split('-')[0].toUpperCase()}</span>
               <svg
                 width="12"
                 height="12"
@@ -369,6 +356,7 @@ export default function Header({
           panel out of the tab order and away from clicks. */}
       <nav
         id="mobile-nav"
+        data-testid="header-mobile-nav"
         aria-hidden={!open}
         className={`absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-t bg-bg/95 backdrop-blur-md transition-[opacity,translate,visibility] duration-200 ease-out lg:hidden ${
           open
@@ -377,16 +365,6 @@ export default function Header({
         }`}
       >
         <div className="mx-auto max-w-6xl px-6 sm:px-10 py-2">
-          {HEADER_SECTIONS.map((id) => (
-            <a
-              key={id}
-              href={sectionHref(id)}
-              onClick={() => setOpen(false)}
-              className="block py-3 text-sm text-muted transition-colors hover:text-fg"
-            >
-              {t(`nav.${id}`)}
-            </a>
-          ))}
           <a
             href={featuresHref}
             onClick={() => setOpen(false)}
@@ -415,21 +393,6 @@ export default function Header({
             className="block py-3 text-sm text-muted transition-colors hover:text-fg"
           >
             {t('nav.cambios')}
-          </a>
-          <a
-            href={DONATE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => {
-              trackDonate('header-mobile')
-              setOpen(false)
-            }}
-            className="flex items-center gap-2 py-3 text-sm text-blue transition-colors hover:text-cyan"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-            </svg>
-            {t('nav.donar')}
           </a>
         </div>
       </nav>

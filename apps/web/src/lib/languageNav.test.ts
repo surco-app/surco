@@ -30,7 +30,7 @@ describe('language navigation', () => {
   it('links Japanese pages to their matching Spanish and English pages', () => {
     expect(header('ja', 'guide')).toContain('href="/guia"')
     expect(header('ja', 'guide')).toContain('href="/en/guide"')
-    expect(header('ja', 'guide')).toContain('href="/ja#como"')
+    expect(header('ja', 'guide')).toContain('href="/ja#instalar"')
   })
 
   it('links every page to the same page in German, French and Portuguese', () => {
@@ -38,7 +38,7 @@ describe('language navigation', () => {
     expect(html).toContain('href="/de/guide"')
     expect(html).toContain('href="/fr/guide"')
     expect(html).toContain('href="/pt/guide"')
-    expect(header('de', 'guide')).toContain('href="/de#como"')
+    expect(header('de', 'guide')).toContain('href="/de#instalar"')
     expect(header('pt-BR', 'useCases', 'nas')).toContain('href="/fr/use-cases/music-on-a-nas"')
   })
 

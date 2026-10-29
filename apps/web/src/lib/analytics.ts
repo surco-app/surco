@@ -17,7 +17,7 @@ export type DownloadLocation =
 // Which donate link left for PayPal. 'donate-retry' is the odd one out and the reason
 // this is not just a boolean: it sits on the page PayPal returns a cancelled payment to,
 // so it counts recovered donations rather than intent.
-export type DonateLocation = 'header' | 'header-mobile' | 'donate-retry'
+export type DonateLocation = 'footer' | 'donate-retry'
 
 // Sections worth knowing a visitor reached. Deliberately few: a section_view on every
 // band would drown the report and cost a listener per section for questions nobody asks.

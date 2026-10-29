@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next'
+import { DONATE_URL } from '../config'
 import type { Language } from '../i18n'
+import { trackDonate } from '../lib/analytics'
 import { PAGES } from '../lib/nav'
 import DownloadCount from './DownloadCount'
 
@@ -63,6 +65,18 @@ export default function Footer() {
             <li>
               <a href={changelogHref} className="transition-colors hover:text-fg">
                 {t('nav.cambios')}
+              </a>
+            </li>
+            <li>
+              <a
+                href={DONATE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="footer-donate"
+                onClick={() => trackDonate('footer')}
+                className="transition-colors hover:text-fg"
+              >
+                {t('nav.donar')}
               </a>
             </li>
           </ul>
