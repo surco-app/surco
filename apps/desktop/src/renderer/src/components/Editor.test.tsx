@@ -1908,12 +1908,13 @@ describe('Editor place across tracks', () => {
 describe('Editor export control', () => {
   // "Output folder", "Beside the original" and "Overwrite" all read "Convert to WAV", so
   // where the file lands showed only once it failed on an unplugged NAS.
-  it('names the output folder on the convert button', () => {
+  it('names the output folder beside the convert button', () => {
     renderEditor({ id: 'a' }, 'aiff', {
       addToAppleMusic: false,
       outputDir: '/Volumes/NAS/Conversiones/',
     })
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF in Conversiones')
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Convert to AIFF')
+    expect(screen.getByTestId('process-folder')).toHaveTextContent('Conversiones')
   })
 
   it('says beside the original on the convert button when that is the destination', () => {

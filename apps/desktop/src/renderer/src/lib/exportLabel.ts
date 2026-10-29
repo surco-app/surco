@@ -30,14 +30,11 @@ export interface ExportLabelState {
   inMusic?: boolean
   // Where the file lands, named on the button when no library suffix already does.
   destination?: Destination
-  // The output folder's own name, empty while none is set.
-  folder?: string
 }
 
-function placeSuffix(state: ExportLabelState): 'Folder' | 'Beside' | 'Overwrite' | null {
+function placeSuffix(state: ExportLabelState): 'Beside' | 'Overwrite' | null {
   if (state.destination === 'beside') return 'Beside'
   if (state.destination === 'overwrite') return 'Overwrite'
-  if (state.destination === 'folder' && state.folder) return 'Folder'
   return null
 }
 
@@ -66,7 +63,7 @@ export function exportButtonLabel(state: ExportLabelState): {
     if (!state.withAppleMusic && !state.withEngineDj && place) {
       return {
         key: `editor.convertAll${place}`,
-        options: { count: state.count, format: state.format, folder: state.folder },
+        options: { count: state.count, format: state.format },
       }
     }
     return {
@@ -90,13 +87,7 @@ export function exportButtonLabel(state: ExportLabelState): {
     return { key: 'editor.replaceMusic', options: { format: state.format } }
   }
   if (!state.withAppleMusic && !state.withEngineDj && place) {
-    return {
-      key: `editor.convert${place}`,
-      options:
-        place === 'Folder'
-          ? { format: state.format, folder: state.folder }
-          : { format: state.format },
-    }
+    return { key: `editor.convert${place}`, options: { format: state.format } }
   }
   return {
     key: state.withAppleMusic

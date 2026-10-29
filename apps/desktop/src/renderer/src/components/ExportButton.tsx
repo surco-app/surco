@@ -73,7 +73,7 @@ interface ExportButtonProps {
   // Like the format, picking one only relabels the button for this track.
   destination: Destination
   destinations: readonly Destination[]
-  // The output folder's own name, named on the button when the file goes there.
+  // The output folder's own name, named beside the button when the file goes there.
   outputFolder?: string
   onProcess: (format: FormatSetting) => void
   // When given, the button stays live while converting: clicking it cancels the in-flight
@@ -152,7 +152,6 @@ export function ExportButton({
     format: formatLabel,
     exportedFormat: exportedFormat?.toUpperCase() ?? null,
     destination,
-    folder: outputFolder,
   })
   // The in-flight view mirrors the track list's row: the stage names what's
   // happening, the fill below marks where in the pipeline it is (same keys, same
@@ -404,6 +403,14 @@ export function ExportButton({
           </div>
         )}
       </div>
+      {!quiet && destination === 'folder' && outputFolder && (
+        <span
+          data-testid="process-folder"
+          className="max-w-[30%] shrink-0 truncate text-xs text-fg-dim"
+        >
+          → {outputFolder}
+        </span>
+      )}
     </div>
   )
 }

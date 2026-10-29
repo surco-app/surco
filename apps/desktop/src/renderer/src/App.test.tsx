@@ -5009,7 +5009,8 @@ describe('App on Windows', () => {
       await renderApp()
       fireEvent.click((await addTwoTracks())[0])
 
-      expect(await screen.findByTestId('process-btn')).toHaveTextContent('Convert to AIFF in out')
+      expect(await screen.findByTestId('process-btn')).toHaveTextContent('Convert to AIFF')
+      expect(screen.getByTestId('process-folder')).toHaveTextContent('out')
     })
 
     it('checks the output folder in Settings instead of leaving no destination picked', async () => {

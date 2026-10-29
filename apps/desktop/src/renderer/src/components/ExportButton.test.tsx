@@ -34,6 +34,21 @@ const hover = (el: HTMLElement): void => {
 }
 
 describe('ExportButton', () => {
+  // "Convert to AIFF in out" read as one odd sentence: the action keeps the button and the
+  // folder it lands in rides beside it.
+  it('names the output folder beside the convert button, not in its name', () => {
+    render(<ExportButton {...baseProps} incomplete={false} outputFolder="out" />)
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Convert to AIFF')
+    expect(screen.getByTestId('process-folder')).toHaveTextContent('out')
+  })
+
+  it('names no folder when the file does not go to the output folder', () => {
+    render(
+      <ExportButton {...baseProps} incomplete={false} destination="beside" outputFolder="out" />,
+    )
+    expect(screen.queryByTestId('process-folder')).toBeNull()
+  })
+
   // A disabled convert with no explanation leaves the user guessing; the tooltip must
   // name the empty required fields. The button itself fires no events while disabled, so
   // the wrapper carries the hover — this guards that wiring, not just the copy.
