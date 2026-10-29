@@ -105,8 +105,8 @@ describe('applemusic:playlistTracks', () => {
   it('reads the playlist the renderer asked for, by persistent ID', async () => {
     readAppleMusicPlaylist.mockResolvedValue({ paths: [], missing: 0 })
     await register()
-    await handlers.get('applemusic:playlistTracks')?.({}, 'FFEEDDCCBBAA9988')
-    expect(readAppleMusicPlaylist).toHaveBeenCalledWith('FFEEDDCCBBAA9988')
+    await handlers.get('applemusic:playlistTracks')?.({}, 'FFEEDDCCBBAA9988', 201, 400)
+    expect(readAppleMusicPlaylist).toHaveBeenCalledWith('FFEEDDCCBBAA9988', 201, 400)
   })
 
   it('returns an empty result off macOS instead of spawning osascript', async () => {

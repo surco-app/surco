@@ -210,32 +210,34 @@ export function registerAppleMusicIpc(
     process.platform === 'darwin' ? appleMusicEntryLocation(persistentId) : '',
   )
 
-  ipcMain.handle('applemusic:playlistTracks', (_e, persistentId: string) =>
-    process.platform === 'darwin'
-      ? activity.track(
-          'applemusic',
-          'activity.appleMusicPlaylistTracks',
-          () => {
-            waitingPlaylist?.abort()
-            const turn = new AbortController()
-            waitingPlaylist = turn
-            return musicReads.run(
-              () => {
-                if (waitingPlaylist === turn) waitingPlaylist = null
-                return readAppleMusicPlaylist(persistentId)
-              },
-              'high',
-              turn.signal,
-            )
-          },
-          {
-            summary: (out) => ({
-              detailKey: 'activity.trackCount',
-              detailParams: { count: out.paths.length },
-            }),
-          },
-        )
-      : { paths: [], missing: 0 },
+  ipcMain.handle(
+    'applemusic:playlistTracks',
+    (_e, persistentId: string, from?: number, to?: number) =>
+      process.platform === 'darwin'
+        ? activity.track(
+            'applemusic',
+            'activity.appleMusicPlaylistTracks',
+            () => {
+              waitingPlaylist?.abort()
+              const turn = new AbortController()
+              waitingPlaylist = turn
+              return musicReads.run(
+                () => {
+                  if (waitingPlaylist === turn) waitingPlaylist = null
+                  return readAppleMusicPlaylist(persistentId, from, to)
+                },
+                'high',
+                turn.signal,
+              )
+            },
+            {
+              summary: (out) => ({
+                detailKey: 'activity.trackCount',
+                detailParams: { count: out.paths.length },
+              }),
+            },
+          )
+        : { paths: [], missing: 0 },
   )
 
   ipcMain.handle('applemusic:artwork', async (_e, persistentIds: string[]) => {

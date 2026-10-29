@@ -275,7 +275,7 @@ describe('reading Apple Music', () => {
     first.resolve(empty)
     await a
     await b
-    expect(readAppleMusicPlaylist).toHaveBeenLastCalledWith('B')
+    expect(readAppleMusicPlaylist).toHaveBeenLastCalledWith('B', undefined, undefined)
   })
 
   it('drops a playlist still waiting its turn once another is opened, since nobody is looking at it', async () => {

@@ -12,6 +12,7 @@ import {
 // grouping and comment are user-typed and can hold both a tab and a newline.
 const US = '\u001f'
 const RS = '\u001e'
+const GS = '\u001d'
 function trackRow(path: string, persistentId = ''): string {
   return [path, persistentId, '', '0', '', '0', '0', '0', '0', 'computed'].join(US)
 }
@@ -122,7 +123,7 @@ describe('buildPlaylistTracksScript', () => {
   })
 
   it('returns empty for a playlist with no tracks rather than raising on the property of an empty list', () => {
-    expect(buildPlaylistTracksScript('A1B2C3D4E5F60718')).toContain('is 0 then return ""')
+    expect(buildPlaylistTracksScript('A1B2C3D4E5F60718')).toContain('if total is 0 then return')
   })
 
   it('fetches the locations and IDs as whole lists, not one round trip per track', () => {
@@ -131,8 +132,32 @@ describe('buildPlaylistTracksScript', () => {
     // 1.39s for an identical result. Unlike `count of tracks`, these two DO return one
     // item per track, so the bulk form is both correct and ten times cheaper.
     const script = buildPlaylistTracksScript('A1B2C3D4E5F60718')
-    expect(script).toContain('location of every track')
-    expect(script).toContain('persistent ID of every track')
+    expect(script).toContain('(location of tracks f thru u of theList) as list')
+    expect(script).toContain('(persistent ID of tracks f thru u of theList) as list')
+  })
+
+  // Music resolves every file location on the NAS at ~27 ms a track (measured: the
+  // 2,044-track playlist took 114 s whole, 5.4 s per 200), so the rows come in stretches.
+  it('reads only the stretch asked for, so a long playlist can show its first rows in seconds', () => {
+    const script = buildPlaylistTracksScript('A1B2C3D4E5F60718', 201, 400)
+    expect(script).toContain('set f to 201')
+    expect(script).toContain('set u to 400')
+    expect(script).toContain('if u > total then set u to total')
+  })
+
+  // Measured against Music on macOS 26: a stretch of one track answers the bare value, not
+  // a one-item list, and `item 1 of alias` failed the whole read (-1728). A playlist of 201
+  // ends on such a stretch.
+  it('keeps every field a list when the stretch holds a single track', () => {
+    const fetches = buildPlaylistTracksScript('A1B2C3D4E5F60718', 201, 201)
+      .split('\n')
+      .filter((l) => l.includes('of tracks f thru u of theList'))
+    expect(fetches).toHaveLength(10)
+    for (const line of fetches) expect(line).toMatch(/\) as list$/)
+  })
+
+  it('reads the whole playlist when no stretch is asked for', () => {
+    expect(buildPlaylistTracksScript('A1B2C3D4E5F60718')).toContain('set u to total')
   })
 
   it('converts the alias to a POSIX path outside the Music tell block, where that coercion exists', () => {
@@ -158,6 +183,16 @@ describe('buildPlaylistTracksScript', () => {
 })
 
 describe('parsePlaylistTracks', () => {
+  it('reads how many tracks the whole playlist holds, so the caller knows how many stretches remain', () => {
+    const out = parsePlaylistTracks(`2044${GS}${trackRow('/Users/dj/Music/a.aiff')}`)
+    expect(out.total).toBe(2044)
+    expect(out.paths).toEqual(['/Users/dj/Music/a.aiff'])
+  })
+
+  it('reads a stretch past the end as no tracks, with the total still told', () => {
+    expect(parsePlaylistTracks(`200${GS}\n`)).toMatchObject({ paths: [], missing: 0, total: 200 })
+  })
+
   it('returns the POSIX paths of the tracks that have a file', () => {
     const out = parsePlaylistTracks(
       [trackRow('/Users/dj/Music/a.aiff'), trackRow('/Users/dj/Music/b.flac')].join(RS),

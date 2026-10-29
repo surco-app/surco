@@ -77,13 +77,18 @@ export async function dumpAppleMusicPlaylists(): Promise<AppleMusicPlaylist[]> {
 // The playlist is re-found by persistent ID rather than by the name the dialog showed:
 // the user can rename or delete it in Music between opening the dialog and importing,
 // and a name lookup would then load the wrong crate or nothing at all.
-export function buildPlaylistTracksScript(persistentId: string): string {
+export function buildPlaylistTracksScript(persistentId: string, from = 1, to?: number): string {
   return [
     'tell application "Music"',
     `  set theLists to (every user playlist whose persistent ID is ${appleScriptString(persistentId)})`,
     '  if (count of theLists) is 0 then return ""',
     '  set theList to item 1 of theLists',
-    '  if (count of every track of theList) is 0 then return ""',
+    '  set total to count of tracks of theList',
+    '  if total is 0 then return "0" & (ASCII character 29)',
+    `  set f to ${from}`,
+    '  if f > total then return (total as text) & (ASCII character 29)',
+    to === undefined ? '  set u to total' : `  set u to ${to}`,
+    '  if u > total then set u to total',
     // Two bulk property fetches rather than a round trip per track: measured against Music
     // on macOS 26, a 400-track playlist costs 14.34s read one track at a time and 1.39s
     // read this way, for an identical result. Unlike `count of tracks` (see the dump
@@ -92,25 +97,25 @@ export function buildPlaylistTracksScript(persistentId: string): string {
     // A playlist mixes the user's own files with Apple Music streaming rows, which carry
     // no file at all: those come back as `missing value` here and become an empty path
     // below, so the caller can count them rather than never learn they existed.
-    '  set theLocs to location of every track of theList',
+    '  set theLocs to (location of tracks f thru u of theList) as list',
     // The entry's identity travels with its file so a conversion can update THAT library
     // copy instead of adding a second one. Without it an imported track looks to Surco
     // like a file it has never seen, and converting it duplicates the song in Music.
-    '  set thePids to persistent ID of every track of theList',
+    '  set thePids to (persistent ID of tracks f thru u of theList) as list',
     // What Music knows that an untagged file does not. Measured on a real library: the WAVs
     // carry title/artist/album/year/genre and nothing else, while Music holds the grouping
     // ("Bases, Chocolate") and the artwork for the very same track.
-    '  set theGroupings to grouping of every track of theList',
-    '  set theYears to year of every track of theList',
-    '  set theComments to comment of every track of theList',
-    '  set theTrackNos to track number of every track of theList',
-    '  set theDiscNos to disc number of every track of theList',
-    '  set theBpms to bpm of every track of theList',
-    '  set theRatings to rating of every track of theList',
+    '  set theGroupings to (grouping of tracks f thru u of theList) as list',
+    '  set theYears to (year of tracks f thru u of theList) as list',
+    '  set theComments to (comment of tracks f thru u of theList) as list',
+    '  set theTrackNos to (track number of tracks f thru u of theList) as list',
+    '  set theDiscNos to (disc number of tracks f thru u of theList) as list',
+    '  set theBpms to (bpm of tracks f thru u of theList) as list',
+    '  set theRatings to (rating of tracks f thru u of theList) as list',
     // Music reports a rating it computed itself for tracks the user never rated (measured:
     // all 400 of one playlist). Importing those would write stars nobody gave, so the kind
     // travels too and only `user` survives the parse.
-    '  set theRatingKinds to rating kind of every track of theList',
+    '  set theRatingKinds to (rating kind of tracks f thru u of theList) as list',
     'end tell',
     'set out to {}',
     'repeat with i from 1 to count of thePids',
@@ -131,7 +136,7 @@ export function buildPlaylistTracksScript(persistentId: string): string {
     '  set end of out to p & (ASCII character 31) & (item i of thePids) & (ASCII character 31) & (item i of theGroupings) & (ASCII character 31) & (item i of theYears) & (ASCII character 31) & (item i of theComments) & (ASCII character 31) & (item i of theTrackNos) & (ASCII character 31) & (item i of theDiscNos) & (ASCII character 31) & (item i of theBpms) & (ASCII character 31) & (item i of theRatings) & (ASCII character 31) & (item i of theRatingKinds)',
     'end repeat',
     "set AppleScript's text item delimiters to (ASCII character 30)",
-    'return out as text',
+    'return (total as text) & (ASCII character 29) & (out as text)',
   ].join('\n')
 }
 
@@ -143,6 +148,7 @@ export function buildPlaylistTracksScript(persistentId: string): string {
 // newline: grouping and comment are user-typed and can hold both.
 const US = '\u001f'
 const RS = '\u001e'
+const GS = '\u001d'
 
 // Music says "unset" with a zero for year, track number, disc number and bpm (measured on a
 // real library), so a zero must not travel as data the user never entered.
@@ -162,9 +168,15 @@ export function parsePlaylistTracks(stdout: string): AppleMusicPlaylistTracks {
   const meta: Record<string, AppleMusicTrackMeta> = {}
   const seen = new Set<string>()
   let missing = 0
+  const at = stdout.indexOf(GS)
+  const total = at === -1 ? undefined : Number(stdout.slice(0, at))
+  const told = total === undefined ? {} : { total }
   // A trailing record separator is the delimiter's, not a track's.
-  const body = stdout.replace(/\n$/, '').replace(new RegExp(`${RS}+$`), '')
-  if (!body) return { paths, persistentIds, meta, missing }
+  const body = stdout
+    .slice(at + 1)
+    .replace(/\n$/, '')
+    .replace(new RegExp(`${RS}+$`), '')
+  if (!body) return { paths, persistentIds, meta, missing, ...told }
   for (const line of body.split(RS)) {
     const f = line.split(US)
     const path = f[0]?.trim() ?? ''
@@ -204,13 +216,15 @@ export function parsePlaylistTracks(stdout: string): AppleMusicPlaylistTracks {
     }
     meta[path] = entry
   }
-  return { paths, persistentIds, meta, missing }
+  return { paths, persistentIds, meta, missing, ...told }
 }
 
 export async function readAppleMusicPlaylist(
   persistentId: string,
+  from?: number,
+  to?: number,
 ): Promise<AppleMusicPlaylistTracks> {
-  const stdout = await runOsascript(buildPlaylistTracksScript(persistentId), {
+  const stdout = await runOsascript(buildPlaylistTracksScript(persistentId, from, to), {
     maxBuffer: 64 * 1024 * 1024,
   })
   return parsePlaylistTracks(stdout)

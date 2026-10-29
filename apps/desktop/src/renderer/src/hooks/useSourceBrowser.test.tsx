@@ -188,6 +188,89 @@ describe('useSourceBrowser', () => {
     await waitFor(() => expect(result.current.tree?.[0].count).toBe(3))
   })
 
+  describe('a long Music playlist', () => {
+    const stretch = (from: number, count: number, total: number) => ({
+      paths: Array.from({ length: count }, (_, i) => `/m/${from + i}.wav`),
+      persistentIds: {},
+      meta: {},
+      missing: 0,
+      total,
+    })
+    const pending = <T,>() => {
+      let resolve: (v: T) => void = () => {}
+      const promise = new Promise<T>((r) => {
+        resolve = r
+      })
+      return { promise, resolve }
+    }
+    const FRIDAY = { id: 'P1', name: 'Friday', kind: 'playlist' as const, count: 450 }
+    const openFriday = (load: ReturnType<typeof vi.fn>, other = false) => {
+      const hook = setup({
+        loadAppleMusicPlaylists: vi
+          .fn()
+          .mockResolvedValue([
+            { persistentId: 'P1', name: 'Friday', count: 450 },
+            ...(other ? [{ persistentId: 'P2', name: 'Saturday', count: 1 }] : []),
+          ]),
+        loadAppleMusicPlaylistTracks: load,
+      })
+      act(() => hook.result.current.selectSource('appleMusic'))
+      act(() => hook.result.current.selectPlaylist(FRIDAY, []))
+      return hook
+    }
+
+    // Music resolves each file on the NAS at ~27 ms a track: a 2,044-track playlist kept the
+    // list blank for 114 s. The first stretch shows while Music works through the rest.
+    it('shows the first stretch while Music reads the rest', async () => {
+      const second = pending<ReturnType<typeof stretch>>()
+      const load = vi.fn(async (_id: string, from: number) =>
+        from === 1 ? stretch(1, 200, 450) : from === 201 ? second.promise : stretch(401, 50, 450),
+      )
+      const { result } = openFriday(load)
+      await waitFor(() => expect(result.current.entries).toHaveLength(200))
+      expect(result.current.entriesLoading).toBe(false)
+      expect(load).toHaveBeenCalledWith('P1', 1, 200)
+      act(() => second.resolve(stretch(201, 200, 450)))
+      await waitFor(() => expect(result.current.entries).toHaveLength(450))
+      expect(load).toHaveBeenLastCalledWith('P1', 401, 600)
+    })
+
+    it('stops asking Music for a playlist once another is opened', async () => {
+      const second = pending<ReturnType<typeof stretch>>()
+      const load = vi.fn(async (_id: string, from: number) =>
+        from === 1 ? stretch(1, 200, 600) : second.promise,
+      )
+      const { result } = openFriday(load, true)
+      await waitFor(() => expect(load).toHaveBeenCalledTimes(2))
+      act(() =>
+        result.current.selectPlaylist(
+          { id: 'P2', name: 'Saturday', kind: 'playlist', count: 1 },
+          [],
+        ),
+      )
+      await act(async () => second.resolve(stretch(201, 200, 600)))
+      await new Promise((r) => setTimeout(r, 50))
+      expect(load.mock.calls.filter(([id]) => id === 'P1').map(([, from]) => from)).toEqual([
+        1, 201,
+      ])
+    })
+
+    it('keeps every row on screen while a refocus reads the playlist again', async () => {
+      let rereading: ReturnType<typeof pending<ReturnType<typeof stretch>>> | null = null
+      const load = vi.fn(async (_id: string, from: number) => {
+        if (from === 1) return stretch(1, 200, 450)
+        if (from === 201 && rereading) return rereading.promise
+        return from === 201 ? stretch(201, 200, 450) : stretch(401, 50, 450)
+      })
+      const { result, focus } = openFriday(load)
+      await waitFor(() => expect(result.current.entries).toHaveLength(450))
+      rereading = pending()
+      act(() => focus())
+      await waitFor(() => expect(load).toHaveBeenCalledTimes(5))
+      expect(result.current.entries).toHaveLength(450)
+    })
+  })
+
   it('loads the picked playlist rows', async () => {
     const { result } = setup({})
     act(() => result.current.selectSource('rekordbox'))

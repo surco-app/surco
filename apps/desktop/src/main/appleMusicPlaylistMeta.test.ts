@@ -74,14 +74,14 @@ describe('what Music knows that the file does not', () => {
   it('asks Music for every field it is expected to carry', () => {
     const script = buildPlaylistTracksScript('A1B2C3D4E5F60718')
     for (const field of [
-      'grouping of every track',
-      'year of every track',
-      'comment of every track',
-      'track number of every track',
-      'disc number of every track',
-      'bpm of every track',
-      'rating of every track',
-      'rating kind of every track',
+      '(grouping of tracks f thru u of theList) as list',
+      '(year of tracks f thru u of theList) as list',
+      '(comment of tracks f thru u of theList) as list',
+      '(track number of tracks f thru u of theList) as list',
+      '(disc number of tracks f thru u of theList) as list',
+      '(bpm of tracks f thru u of theList) as list',
+      '(rating of tracks f thru u of theList) as list',
+      '(rating kind of tracks f thru u of theList) as list',
     ]) {
       expect(script).toContain(field)
     }

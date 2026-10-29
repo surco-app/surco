@@ -1821,6 +1821,34 @@ describe('App source playlists', () => {
     )
   })
 
+  it('counts the tracks without a file of every stretch of a long Music playlist, not only the first', async () => {
+    const stretch = (paths: string[], missing: number) => ({
+      paths,
+      persistentIds: {},
+      meta: {},
+      missing,
+      total: 400,
+    })
+    setApi({
+      platform: 'darwin',
+      readTags: vi.fn(async () => ({ title: 'Alpha', artist: 'DJ' })),
+      loadAppleMusicPlaylists: vi
+        .fn<Api['loadAppleMusicPlaylists']>()
+        .mockResolvedValue([{ persistentId: 'p1', name: 'Friday', count: 400 }]),
+      loadAppleMusicPlaylistTracks: vi.fn<Api['loadAppleMusicPlaylistTracks']>(
+        async (_id, from) => {
+          if (from === 1) return stretch(['/m/a.wav'], 1)
+          await new Promise((r) => setTimeout(r, 300))
+          return stretch(['/m/b.wav'], 1)
+        },
+      ),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+    fireEvent.click(await screen.findByTestId('source-node-p1'))
+    expect(await screen.findByTestId('app-notice')).toHaveTextContent('2 tracks from “Friday”')
+  })
+
   it('says which playlist went away when rekordbox deleted it while it was open', async () => {
     const focusListeners: ((focused: boolean) => void)[] = []
     setApi({

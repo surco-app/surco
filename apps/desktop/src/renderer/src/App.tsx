@@ -977,14 +977,19 @@ export default function App(): React.JSX.Element {
   // The gaps of rows already loaded are filled from the playlist once per opening, the
   // same moment fresh rows get theirs; an edit's re-read is not an opening.
   const filledPlaylist = useRef<string | null>(null)
-  const { entries: sourceEntries, source: sourceKind, playlist: sourcePlaylist } = browser
+  const {
+    entries: sourceEntries,
+    source: sourceKind,
+    playlist: sourcePlaylist,
+    entriesFetching,
+  } = browser
   useEffect(() => {
     if (!sourceEntries || !sourceKind) return
     const opening = sourcePlaylist ? `${sourceKind}:${sourcePlaylist.id}` : null
     const fillLoaded = opening !== null && filledPlaylist.current !== opening
     if (fillLoaded) filledPlaylist.current = opening
     void openSourcePlaylistStable(sourceEntries, sourceKind, { fillLoaded }).then((notOnDisk) => {
-      if (!sourcePlaylist) return
+      if (!sourcePlaylist || entriesFetching) return
       const opened = `${sourceKind}:${sourcePlaylist.id}`
       if (noticedPlaylist.current === opened) return
       noticedPlaylist.current = opened
@@ -999,7 +1004,15 @@ export default function App(): React.JSX.Element {
         testid: 'app-notice',
       })
     })
-  }, [sourceEntries, sourceKind, sourcePlaylist, openSourcePlaylistStable, store, tr])
+  }, [
+    sourceEntries,
+    sourceKind,
+    sourcePlaylist,
+    entriesFetching,
+    openSourcePlaylistStable,
+    store,
+    tr,
+  ])
 
   useEffect(
     () => window.api.onProcessProgress((p) => setTracks((prev) => applyProgress(prev, p))),

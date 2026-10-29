@@ -412,7 +412,8 @@ function scenarioApi(
           log: { track: activity.track, copyOf: musicReviewLog.copyOf },
         }),
       loadAppleMusicPlaylists: () => invokeMain('applemusic:playlists'),
-      loadAppleMusicPlaylistTracks: (pid) => invokeMain('applemusic:playlistTracks', pid),
+      loadAppleMusicPlaylistTracks: (pid, from, to) =>
+        invokeMain('applemusic:playlistTracks', pid, from, to),
       appleMusicArtwork: (pids) => invokeMain('applemusic:artwork', pids),
       addToAppleMusic: (job) => invokeMain('applemusic:add', job),
       updateAppleMusic: (job) => invokeMain('applemusic:update', job),

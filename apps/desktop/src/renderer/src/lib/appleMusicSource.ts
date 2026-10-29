@@ -56,6 +56,25 @@ export function withReadCounts(
 // Music returns the files and, apart, how many rows had none; the shared shape keeps those
 // as file-less entries so the app can tell the user how many have no file. Music has no
 // separators.
+export function joinStretches(
+  a: AppleMusicPlaylistTracks,
+  b: AppleMusicPlaylistTracks,
+): AppleMusicPlaylistTracks {
+  const had = new Set(a.paths)
+  const fresh = b.paths.filter((p) => !had.has(p))
+  return {
+    paths: [...a.paths, ...fresh],
+    persistentIds: { ...b.persistentIds, ...a.persistentIds },
+    meta: { ...b.meta, ...a.meta },
+    missing: a.missing + b.missing,
+    ...(b.total !== undefined
+      ? { total: b.total }
+      : a.total !== undefined
+        ? { total: a.total }
+        : {}),
+  }
+}
+
 export function musicEntries(t: AppleMusicPlaylistTracks): SourcePlaylistEntry[] {
   const rows: SourcePlaylistEntry[] = t.paths.map((path) => ({
     path,

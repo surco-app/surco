@@ -1057,6 +1057,7 @@ export interface AppleMusicPlaylistTracks {
   // a value the file wins, because the file is what the user's other tools read.
   meta: Record<string, AppleMusicTrackMeta>
   missing: number
+  total?: number
 }
 
 // Where a crate of playlists comes from. Every DJ library hands its playlists over in the

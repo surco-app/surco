@@ -4,7 +4,13 @@ import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { PlaylistSource, SourceNode, SourcePlaylistEntry } from '../../../shared/types'
-import { distinctTracks, musicEntries, musicTree, withReadCounts } from '../lib/appleMusicSource'
+import {
+  distinctTracks,
+  joinStretches,
+  musicEntries,
+  musicTree,
+  withReadCounts,
+} from '../lib/appleMusicSource'
 import { useRekordboxAvailable } from './useRekordboxPlaylists'
 import { useWindowFocus } from './useWindowFocus'
 
@@ -18,6 +24,7 @@ export interface SourceBrowser {
   entries: SourcePlaylistEntry[] | undefined
   entriesLoading: boolean
   entriesFailed: boolean
+  entriesFetching: boolean
   canInsertSeparator: boolean
   selectSource: (source: PlaylistSource | null) => void
   selectPlaylist: (node: SourceNode, folders: string[]) => void
@@ -43,6 +50,26 @@ function readRecentCount(source: PlaylistSource): Promise<number> {
 function readTrackCount(source: PlaylistSource): Promise<number> {
   if (source === 'traktor') return window.api.traktorTrackCount()
   return source === 'engine' ? window.api.engineTrackCount() : window.api.rekordboxTrackCount()
+}
+
+const MUSIC_STRETCH = 200
+
+async function readMusicPlaylist(
+  id: string,
+  signal: AbortSignal,
+  onStretch: (entries: SourcePlaylistEntry[]) => void,
+): Promise<SourcePlaylistEntry[]> {
+  let read = await window.api.loadAppleMusicPlaylistTracks(id, 1, MUSIC_STRETCH)
+  const total = read.total ?? 0
+  for (let from = MUSIC_STRETCH + 1; from <= total; from += MUSIC_STRETCH) {
+    signal.throwIfAborted()
+    onStretch(musicEntries(read))
+    read = joinStretches(
+      read,
+      await window.api.loadAppleMusicPlaylistTracks(id, from, from + MUSIC_STRETCH - 1),
+    )
+  }
+  return musicEntries(read)
 }
 
 export function readPlaylist(source: PlaylistSource, id: string): Promise<SourcePlaylistEntry[]> {
@@ -144,9 +171,17 @@ export function useSourceBrowser({
         : tree.data,
     [hasRecent, tree.data, all.data, recent.data, tr],
   )
+  const entriesKey = ['source-playlist', source, playlist?.id]
   const entries = useQuery({
-    queryKey: ['source-playlist', source, playlist?.id],
-    queryFn: () => readPlaylist(source as PlaylistSource, playlist?.id as string),
+    queryKey: entriesKey,
+    queryFn: ({ signal }) => {
+      if (source !== 'appleMusic')
+        return readPlaylist(source as PlaylistSource, playlist?.id as string)
+      const firstRead = queryClient.getQueryData(entriesKey) === undefined
+      return readMusicPlaylist(playlist?.id as string, signal, (part) => {
+        if (firstRead) queryClient.setQueryData(entriesKey, part)
+      })
+    },
     enabled: source !== null && playlist !== null,
     staleTime: Number.POSITIVE_INFINITY,
   })
@@ -201,6 +236,7 @@ export function useSourceBrowser({
     entries: entries.data,
     entriesLoading: source !== null && playlist !== null && entries.isPending,
     entriesFailed: source !== null && playlist !== null && entries.isError,
+    entriesFetching: entries.isFetching,
     canInsertSeparator: separator.data ?? false,
     selectSource: setSource,
     selectPlaylist: (node, folders) => {

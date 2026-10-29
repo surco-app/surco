@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { musicEntries, musicTree } from './appleMusicSource'
+import { joinStretches, musicEntries, musicTree } from './appleMusicSource'
 
 describe('musicTree', () => {
   it('puts root playlists first and groups the rest under their folder, the only thing telling repeated names apart', () => {
@@ -44,5 +44,37 @@ describe('musicEntries', () => {
       { path: null, separator: false, meta: {} },
       { path: null, separator: false, meta: {} },
     ])
+  })
+})
+
+describe('joinStretches', () => {
+  // Two Music entries can point at one file, and the read is now cut in stretches: the second
+  // entry may fall in a later one. The row keeps the first entry's identity, as a single read
+  // did, or a later conversion would update the wrong library copy.
+  it('keeps a file listed in two stretches once, with the first entry it came from', () => {
+    const joined = joinStretches(
+      {
+        paths: ['/m/a.wav'],
+        persistentIds: { '/m/a.wav': 'FIRST' },
+        meta: { '/m/a.wav': { year: '1993' } },
+        missing: 1,
+        total: 4,
+      },
+      {
+        paths: ['/m/b.wav', '/m/a.wav'],
+        persistentIds: { '/m/a.wav': 'SECOND', '/m/b.wav': 'B' },
+        meta: { '/m/a.wav': { year: '2001' } },
+        missing: 0,
+        total: 4,
+      },
+    )
+    expect(joined.paths).toEqual(['/m/a.wav', '/m/b.wav'])
+    expect(joined.persistentIds).toEqual({ '/m/a.wav': 'FIRST', '/m/b.wav': 'B' })
+    expect(joined.meta['/m/a.wav']).toEqual({ year: '1993' })
+  })
+
+  it('adds up the tracks without a file across stretches, so the notice counts all of them', () => {
+    const empty = { paths: [], persistentIds: {}, meta: {} }
+    expect(joinStretches({ ...empty, missing: 2 }, { ...empty, missing: 3 }).missing).toBe(5)
   })
 })

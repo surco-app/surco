@@ -205,7 +205,11 @@ export interface Api {
   // macOS, where the renderer never offers the import.
   loadAppleMusicPlaylists: () => Promise<AppleMusicPlaylist[]>
   // The files one playlist references, plus how many of its tracks have none.
-  loadAppleMusicPlaylistTracks: (persistentId: string) => Promise<AppleMusicPlaylistTracks>
+  loadAppleMusicPlaylistTracks: (
+    persistentId: string,
+    from?: number,
+    to?: number,
+  ) => Promise<AppleMusicPlaylistTracks>
   appleMusicArtwork: (
     persistentIds: string[],
   ) => Promise<Record<string, { coverPath: string; coverUrl: string }>>
