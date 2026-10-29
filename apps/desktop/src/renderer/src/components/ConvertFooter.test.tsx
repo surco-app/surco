@@ -340,6 +340,47 @@ describe('ConvertFooter done layout', () => {
     ).toHaveTextContent('Update in Apple Music')
   })
 
+  // Reported in the UX audit: a track converted to the output folder came back with "Add to
+  // Apple Music" as the filled button, pushing the library the DJ had just chosen not to use.
+  function convertedTo(destination: Destination, cleanUp = false): React.JSX.Element {
+    return (
+      <ConvertFooter
+        {...footer(true).props}
+        musicExt="aiff"
+        destination={destination}
+        status={{ ...status(true), canDeleteOriginal: cleanUp }}
+      />
+    )
+  }
+
+  it('offers Apple Music only as a secondary step after converting to a folder', () => {
+    render(convertedTo('folder'))
+    expect(
+      within(screen.getByTestId('done-actions')).getByTestId('add-apple-music'),
+    ).toHaveAttribute('data-variant', 'secondary')
+  })
+
+  it('keeps the Apple Music add the main action when Apple Music is the destination', () => {
+    render(convertedTo('appleMusic'))
+    expect(
+      within(screen.getByTestId('done-actions')).getByTestId('add-apple-music'),
+    ).toHaveAttribute('data-variant', 'primary')
+  })
+
+  // The trash sat flush against the next step, one slip from a delete prompt instead of it.
+  it('sets the clean-up apart from the next steps', () => {
+    render(convertedTo('folder', true))
+    const divider = screen.getByTestId('done-divider')
+    expect(
+      screen.getByTestId('clean-up-previous').compareDocumentPosition(divider) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      divider.compareDocumentPosition(screen.getByTestId('done-actions')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
   // A finished add leaves nothing to do: the green line already says so and leads there.
   it('drops the Apple Music button once the selection was added', () => {
     render(

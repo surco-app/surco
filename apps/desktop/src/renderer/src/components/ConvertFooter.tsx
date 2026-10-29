@@ -168,6 +168,7 @@ export function ConvertFooter({
     staleMusicCopy: !isMulti && musicAdded && staleMusicCopy ? staleMusicCopy : null,
   }
   const cleanupFiles = cleanupCount(cleanup)
+  const musicPrimary = destination === 'appleMusic' || hasMusicCopy
   const lossyToLossless =
     !isMulti &&
     isLosslessContainer(format) &&
@@ -247,8 +248,9 @@ export function ConvertFooter({
           // One line, always, ordered by what matters after an export. On the left, the
           // outcome in words, which is also the way to the library copy; the clean-up of what
           // was left behind, named while the row has room for it and an icon when it doesn't.
-          // On the right, the one step still pending (a Music add or update) as the only
-          // filled button, and "•••" for everything else, each named in full in its menu.
+          // On the right, the one step still pending (a Music add or update), filled only when
+          // Music is the destination or holds a copy, and "•••" for everything else, each named
+          // in full in its menu.
           <>
             <div data-testid="done-row" className="@container flex min-w-0 items-center gap-1">
               <div data-testid="done-outcome" className="flex min-w-0 flex-1 items-center gap-1">
@@ -325,6 +327,13 @@ export function ConvertFooter({
                   </button>
                 )}
               </div>
+              {cleanupFiles > 0 && (
+                <span
+                  data-testid="done-divider"
+                  aria-hidden="true"
+                  className="mx-1 h-4 w-px shrink-0 bg-[var(--color-line-strong)]"
+                />
+              )}
               <div data-testid="done-actions" className="flex shrink-0 items-center gap-2">
                 {isMacOS() &&
                   !showInMusic &&
@@ -334,9 +343,14 @@ export function ConvertFooter({
                     <button
                       type="button"
                       data-testid="add-apple-music"
+                      data-variant={musicPrimary ? 'primary' : 'secondary'}
                       onClick={onAddToAppleMusic}
                       disabled={musicAdding}
-                      className="press flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-3 text-xs font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
+                      className={`press flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg px-3 text-xs font-medium disabled:opacity-60 ${
+                        musicPrimary
+                          ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]'
+                          : 'border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-line-strong)]'
+                      }`}
                     >
                       {musicLabel}
                     </button>
