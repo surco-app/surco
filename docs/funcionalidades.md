@@ -1244,16 +1244,29 @@ playlist exige que la pista traiga tags con los que describirla (`trackOpsFromRu
 `rekordboxQueueFromRun.ts:30`); en Traktor y rekordbox se distingue del resto de cambios con
 `op.add` (`traktorPlaylistEdit.ts:213`, `rekordboxPlaylistWrite.ts:232`).
 
-**Con el programa abierto.** Las altas de rekordbox y Traktor esperan en la cola de cada
-programa, como las playlists (`libraryFlushes.ts:172`, `:202`). Engine DJ no usa esa cola
-para el alta sin playlist: se registra en la propia conversión (`processTrack.ts:561`) y, si
-Engine no se cierra, la pista falla con `engineDjOpen` (`processTrack.ts:341`).
+**Con el programa abierto.** Las altas de rekordbox, Traktor y Engine DJ esperan en la cola de
+cada programa, como las playlists (`libraryFlushes.ts:177`, `:238`). Con Engine DJ abierto, una
+conversión con Engine en «Actualizar y añadir» no pregunta ni falla: la pista queda en la cola de
+Engine, la misma de los cues y las playlists, y se da de alta al cerrarse Engine, con la carátula
+incrustada en el fichero (`planEngineTrackPlaylists`, `engineTrackPlaylists.ts:112`;
+`engineDjQueued`, `processTrack.ts:341`). Con Engine cerrado se registra en la propia conversión
+(`processTrack.ts:563`), con la carátula procesada, como antes. Si no se puede saber si Engine está
+abierto, cuenta como abierto y la pista espera (`processTrack.ts:344`).
+
+**La cola no anuncia lo que el programa ya tiene.** Antes de encolar un alta, Surco mira la
+colección (el NML de Traktor, la base de datos de Engine) y descarta la pista si ya está
+(`traktorCollectionHas`, `engineLibraryHas`, `libraryFlushes.ts:260`, `:275`; `known`,
+`rekordboxQueueFromRun.ts:87`, `:93`). El fichero antiguo de la pista solo cuenta mientras el
+«Actualizar» de ese programa esté encendido (`pathsHeld`, `libraryFlushes.ts:256`): sin él, el
+programa no sigue los movimientos y la pista nueva sí es un alta.
 
 **El botón de convertir nombra los programas** a los que llega: «Convertir a AIFF + rekordbox
 + Traktor», y con Apple Music delante, «Apple Music + rekordbox» (`exportButtonLabel`,
 `exportLabel.ts:48`; `programNames`, `exportLabel.ts:106`; `reachedPrograms`, `djReach.ts:29`,
-usado en `Editor.tsx:1765`). Solo cuentan los programas en «Actualizar y añadir»: uno en
-«Actualizar» no recibe pistas nuevas y no sale en el botón. En lote, «Convertir (3) · AIFF +
+usado en `Editor.tsx:1821`). Solo cuentan los programas en «Actualizar y añadir»: uno en
+«Actualizar» no recibe pistas nuevas y no sale en el botón. Tampoco sale uno al que Surco no
+llega: su biblioteca no se encuentra y, en Traktor, además falta elegir su `collection.nml`
+(`reachable`, `Editor.tsx:356`). En lote, «Convertir (3) · AIFF +
 rekordbox».
 
 **El asistente de primer arranque** pregunta por cada programa que encuentra con una casilla
@@ -1291,7 +1304,7 @@ playlists las elige el campo Playlists de la pista.
 `isAnalyzed = 0`, para que Engine analice el audio él mismo al primer load.
 
 **Salvaguardas:** backup antes de cada escritura, escritura atómica, y **se niega
-a escribir con Engine DJ abierto**. Si no puede saber si está abierto (la consulta del
+a escribir con Engine DJ abierto** (las altas de una conversión esperan en su cola). Si no puede saber si está abierto (la consulta del
 proceso falla), lo da por abierto, como rekordbox y Traktor (desde v1.12.0,
 `engineProcess.ts:23`) — Engine carga la biblioteca al arrancar y no
 la relee, así que una escritura sería invisible en el mejor caso y machacada en
@@ -2069,8 +2082,8 @@ Recopilado de los cinco informes. Cada punto está verificado.
 2. **Apple Music:** solo macOS, nunca FLAC. Clave, sello, catálogo y remixer no
    llegan a la biblioteca, ni los campos propios. Al añadir no se transfiere rating
    ni se crean playlists. Al sustituir sí pasan de la entrada vieja a la nueva (punto 6).
-3. **Engine DJ como programa al que se añade al convertir:** no lleva cue points ni beatgrid. Exige Engine
-   cerrado. Los cues solo llegan a Engine desde el editor de cues, desde su pestaña o con un
+3. **Engine DJ como programa al que se añade al convertir:** no lleva cue points ni beatgrid. Con Engine
+   abierto el alta espera en su cola y entra al cerrarse. Los cues solo llegan a Engine desde el editor de cues, desde su pestaña o con un
    flujo marcado en otro programa (v1.13.0), y solo los hot cues.
 4. **Exportar a rekordbox/Serato/Traktor/M3U8:** ninguno de los cuatro ficheros
     puente lleva cues, rating ni carátula. Esto es la **exportación**, y no debe
