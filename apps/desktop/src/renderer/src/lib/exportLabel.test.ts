@@ -7,7 +7,7 @@ const base: ExportLabelState = {
   stale: false,
   done: false,
   withAppleMusic: false,
-  withEngineDj: false,
+  djTargets: [],
   format: 'AIFF',
   tagsOnly: true,
 }
@@ -19,14 +19,12 @@ describe('exportButtonLabel', () => {
     [{ ...base, processing: true, quiet: true, count: 2, done: true }, 'editor.processing'],
     [{ ...base, quiet: true, count: 2, inPlace: true }, 'editor.reexport'],
     [{ ...base, count: 2, inPlace: true, withAppleMusic: true }, 'editor.convertAllMusic'],
-    [{ ...base, count: 2, inPlace: true, withEngineDj: true }, 'editor.convertAllEngine'],
     [{ ...base, count: 2, inPlace: true }, 'editor.convertAll'],
     [{ ...base, inPlace: true, stale: true, withAppleMusic: true }, 'editor.updateMusic'],
     [{ ...base, inPlace: true, stale: true }, 'editor.update'],
     [{ ...base, stale: true, done: true }, 'editor.update'],
     [{ ...base, done: true }, 'editor.exportAgain'],
     [{ ...base, withAppleMusic: true }, 'editor.convert'],
-    [{ ...base, withEngineDj: true }, 'editor.convertEngine'],
     [base, 'editor.convertNoMusic'],
   ])('resolves %o to %s', (state, key) => {
     expect(exportButtonLabel(state).key).toBe(key)
@@ -66,7 +64,7 @@ describe('exportButtonLabel', () => {
         stale: false,
         done: false,
         withAppleMusic: true,
-        withEngineDj: false,
+        djTargets: [],
         format: 'AIFF',
         tagsOnly: true,
         replaces: true,
@@ -107,7 +105,7 @@ describe('exportButtonLabel', () => {
         stale: false,
         done: false,
         withAppleMusic: true,
-        withEngineDj: false,
+        djTargets: [],
         format: 'AIFF',
         tagsOnly: true,
         replaces: true,
@@ -124,7 +122,7 @@ describe('exportButtonLabel', () => {
         stale: false,
         done: false,
         withAppleMusic: true,
-        withEngineDj: false,
+        djTargets: [],
         format: 'AIFF',
         tagsOnly: true,
       }),
@@ -194,7 +192,33 @@ describe('exportButtonLabel', () => {
     })
   })
 
-  // Apple Music and Engine DJ already name the place, and a FLAC pinned off Music lands
+  // A conversion can now reach several DJ programs at once. Naming only one of them, or
+  // none, would hide that a click writes into rekordbox's collection as well as Traktor's.
+  it('names every DJ program a conversion adds to', () => {
+    expect(exportButtonLabel({ ...base, djTargets: ['rekordbox', 'traktor'] })).toEqual({
+      key: 'editor.convertTo',
+      options: { format: 'AIFF', programs: 'rekordbox + Traktor' },
+    })
+    expect(exportButtonLabel({ ...base, count: 3, djTargets: ['rekordbox', 'traktor'] })).toEqual({
+      key: 'editor.convertAllTo',
+      options: { count: 3, format: 'AIFF', programs: 'rekordbox + Traktor' },
+    })
+  })
+
+  it('names Apple Music beside the DJ programs it also reaches', () => {
+    expect(exportButtonLabel({ ...base, withAppleMusic: true, djTargets: ['engine'] })).toEqual({
+      key: 'editor.convertTo',
+      options: { format: 'AIFF', programs: 'Apple Music + Engine DJ' },
+    })
+  })
+
+  it('keeps naming the programs over where the file lands', () => {
+    expect(exportButtonLabel({ ...base, djTargets: ['engine'], destination: 'beside' }).key).toBe(
+      'editor.convertTo',
+    )
+  })
+
+  // Apple Music and the DJ programs already name the place, and a FLAC pinned off Music lands
   // in the folder, so the library suffix wins over the destination.
   it('keeps the library suffix over the destination', () => {
     expect(

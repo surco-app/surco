@@ -46,7 +46,7 @@ function footer(
       willEditInPlace={false}
       tagsOnly={false}
       addToAppleMusic={false}
-      addToEngineDj={false}
+      djTargets={[]}
       destination={'beside' as Destination}
       destinations={['beside' as Destination]}
       format="aiff"

@@ -61,6 +61,7 @@ import type { AutoMarkTarget } from '../lib/cueAutoMark'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
+import { reachedPrograms } from '../lib/djReach'
 import { editorPlace } from '../lib/editorPlace'
 import { buildFieldSpecs } from '../lib/fieldSpecs'
 import {
@@ -308,6 +309,8 @@ export const Editor = memo(function Editor({
     outputFormat,
     addToAppleMusic,
     addToEngineDj,
+    addToRekordbox,
+    addToTraktor,
     keepMp3Sources,
     outputDir,
     overwriteOriginal,
@@ -1759,7 +1762,7 @@ export const Editor = memo(function Editor({
           willEditInPlace={willEditInPlace}
           tagsOnly={tagsOnlyExport}
           addToAppleMusic={picked.addToAppleMusic}
-          addToEngineDj={addToEngineDj}
+          djTargets={reachedPrograms({ addToRekordbox, addToTraktor, addToEngineDj })}
           destination={destination}
           destinations={destinationChoices}
           outputFolder={baseName(outputDir.replace(/[\\/]+$/, ''))}

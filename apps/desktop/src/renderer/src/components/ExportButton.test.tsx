@@ -14,7 +14,7 @@ const baseProps = {
   outputFormat: 'aiff' as const,
   exportedFormat: null,
   withAppleMusic: false,
-  withEngineDj: false,
+  djTargets: [],
   inPlace: false,
   destination: 'folder' as const,
   destinations: ['folder', 'appleMusic', 'beside'] as const,

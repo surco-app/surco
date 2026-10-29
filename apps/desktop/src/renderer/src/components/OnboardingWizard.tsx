@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Settings } from '../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
-import { type DetectedDjLibrary, type DjLibraryId, detectedDjLibraries } from '../lib/djLibraries'
+import { type DetectedDjLibrary, detectedDjLibraries } from '../lib/djLibraries'
+import { DJ_REACH_SETTINGS } from '../lib/djReach'
 import { type AudioIntent, buildOnboardingPatch, seedAudioIntents } from '../lib/onboarding'
 import { isMacOS } from '../lib/platform'
 import { formatKHz } from '../lib/quality'
@@ -12,6 +13,7 @@ import { type LocalDraft, pickLocal, pickSynced, type SyncedDraft } from '../lib
 import { AutoMatchControl } from './AutoMatchControl'
 import { DestinationPicker } from './DestinationPicker'
 import { DiscogsTokenField } from './DiscogsTokenField'
+import { EngineLibraryFields } from './EngineLibraryFields'
 import { FormatSettingControl } from './FormatSettingControl'
 import { OutputFolderField } from './OutputFolderField'
 import { SearchProvidersControl } from './SearchProvidersControl'
@@ -26,11 +28,6 @@ const AUDIO_INTENTS: AudioIntent[] = ['restore', 'level', 'quality']
 // in Settings — every extra question here delays the first drop of files.
 const BASE_STEPS = ['welcome', 'search', 'format', 'audio'] as const
 type Step = (typeof BASE_STEPS)[number] | 'djLibraries'
-const SYNC_SETTING: Record<DjLibraryId, 'syncRekordbox' | 'syncEngineDj' | 'syncTraktor'> = {
-  rekordbox: 'syncRekordbox',
-  engine: 'syncEngineDj',
-  traktor: 'syncTraktor',
-}
 
 interface Props {
   settings: Settings
@@ -127,6 +124,17 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
     patch('overwriteOriginal', next.overwriteOriginal)
     patch('convertBesideOriginal', next.convertBesideOriginal)
   }
+  function reachProgram(library: DetectedDjLibrary, on: boolean): void {
+    patch(DJ_REACH_SETTINGS[library.id].sync, on)
+    patch(DJ_REACH_SETTINGS[library.id].add, on)
+    if (library.id === 'traktor' && on && !local.traktorNmlPath)
+      patchLocal('traktorNmlPath', library.path)
+  }
+  async function changeOutputDir(): Promise<void> {
+    const dir = await window.api.pickOutputDir()
+    if (dir) patchLocal('outputDir', dir)
+  }
+  const reachesProgram = djLibraries.some((library) => synced[DJ_REACH_SETTINGS[library.id].add])
   function toggleIntent(intent: AudioIntent, on: boolean): void {
     setAudioIntents((prev) => (on ? [...prev, intent] : prev.filter((i) => i !== intent)))
   }
@@ -323,38 +331,64 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                 <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.djLibrariesBody')}</p>
                 <div className="flex flex-col gap-2">
                   {djLibraries.map((library) => (
-                    <label
+                    <div
                       key={library.id}
-                      className="flex cursor-pointer items-start gap-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2.5"
+                      className="rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2.5"
                     >
-                      <input
-                        data-testid={`onboarding-sync-${library.id}`}
-                        type="checkbox"
-                        checked={synced[SYNC_SETTING[library.id]]}
-                        onChange={(e) => {
-                          patch(SYNC_SETTING[library.id], e.target.checked)
-                          if (library.id === 'traktor' && e.target.checked && !local.traktorNmlPath)
-                            patchLocal('traktorNmlPath', library.path)
-                        }}
-                        className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
-                      />
-                      <span className="min-w-0 text-sm font-medium">
-                        {tr(`onboarding.djLibrary.${library.id}`)}
-                        <span className="mt-0.5 block text-xs font-normal text-fg-dim">
-                          {tr(`onboarding.djLibrary.${library.id}Body`)}
+                      <label className="flex cursor-pointer items-start gap-3">
+                        <input
+                          data-testid={`onboarding-sync-${library.id}`}
+                          type="checkbox"
+                          checked={synced[DJ_REACH_SETTINGS[library.id].add]}
+                          onChange={(e) => reachProgram(library, e.target.checked)}
+                          className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
+                        />
+                        <span className="min-w-0 text-sm font-medium">
+                          {tr(`onboarding.djLibrary.${library.id}`)}
+                          <span className="mt-0.5 block text-xs font-normal text-fg-dim">
+                            {tr(`onboarding.djLibrary.${library.id}Body`)}
+                          </span>
+                          {/* The path it found, so the DJ can see WHICH collection is about
+                              to be written to before switching it on. */}
+                          <span
+                            data-testid={`onboarding-djlibrary-${library.id}`}
+                            className="mt-1 block truncate text-xs text-fg-faint"
+                          >
+                            {library.path}
+                          </span>
                         </span>
-                        {/* The path it found, so the DJ can see WHICH collection is about
-                            to be written to before switching it on. */}
-                        <span
-                          data-testid={`onboarding-djlibrary-${library.id}`}
-                          className="mt-1 block truncate text-xs text-fg-faint"
-                        >
-                          {library.path}
-                        </span>
-                      </span>
-                    </label>
+                      </label>
+                      {library.id === 'engine' && synced.addToEngineDj && (
+                        <div className="mt-3">
+                          <EngineLibraryFields
+                            libraryDir={local.engineLibraryDir}
+                            onLibraryDirChange={(dir) => patchLocal('engineLibraryDir', dir)}
+                            testidPrefix="onboarding-engine"
+                          />
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
+                {reachesProgram && destination === 'folder' && (
+                  <p className="mt-3 flex min-w-0 items-center gap-2 text-sm text-fg-muted">
+                    <span
+                      data-testid="onboarding-dj-folder"
+                      className="min-w-0 truncate"
+                      title={local.outputDir}
+                    >
+                      {tr('onboarding.djFolder', { folder: local.outputDir })}
+                    </span>
+                    <button
+                      type="button"
+                      data-testid="onboarding-dj-folder-change"
+                      onClick={() => void changeOutputDir()}
+                      className="press shrink-0 rounded-lg px-2 py-1 text-sm text-fg-muted hover:bg-[var(--color-line)] hover:text-fg"
+                    >
+                      {tr('onboarding.djFolderChange')}
+                    </button>
+                  </p>
+                )}
                 <p className="mt-4 text-xs text-fg-dim">{tr('onboarding.djLibrariesNote')}</p>
               </>
             )}

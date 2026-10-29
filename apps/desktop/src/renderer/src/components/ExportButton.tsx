@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { FORMAT_SETTINGS, OUTPUT_FORMATS } from '../../../shared/outputFormats'
 import type { FormatSetting, OutputFormat, ProcessStage } from '../../../shared/types'
 import type { Destination } from '../lib/destination'
+import type { DjLibraryId } from '../lib/djLibraries'
 import { exportButtonLabel } from '../lib/exportLabel'
 import { STAGE_PROGRESS } from '../lib/progress'
 import type { TrackItem } from '../types'
@@ -35,7 +36,7 @@ interface ExportButtonProps {
   outputFormat: FormatSetting
   exportedFormat: OutputFormat | null
   withAppleMusic: boolean
-  withEngineDj: boolean
+  djTargets: DjLibraryId[]
   incomplete: boolean
   // The reason the convert is blocked (the empty required fields), shown as a tooltip on
   // the disabled button so it explains itself. Only meaningful while incomplete.
@@ -100,7 +101,7 @@ export function ExportButton({
   outputFormat,
   exportedFormat,
   withAppleMusic,
-  withEngineDj,
+  djTargets,
   incomplete,
   incompleteReason,
   blockedLabel,
@@ -148,7 +149,7 @@ export function ExportButton({
     libraryBetter,
     done,
     withAppleMusic,
-    withEngineDj,
+    djTargets,
     format: formatLabel,
     exportedFormat: exportedFormat?.toUpperCase() ?? null,
     destination,
