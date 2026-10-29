@@ -109,6 +109,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     release,
     openKey: liveOpenKey,
     suggestedKey: liveSuggestedKey,
+    suggestedConfident: liveSuggestedConfident,
     pendingProviders,
     searchProgress,
     held,
@@ -129,6 +130,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     results: liveResults,
     openKey: liveOpenKey,
     suggestedKey: liveSuggestedKey,
+    suggestedConfident: liveSuggestedConfident,
     choosingBest: liveChoosingBest,
   }
   const view = useRef(liveView)
@@ -141,7 +143,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
       results: holdOrder(view.current.results, liveResults, resultKeyOf),
     }
   }
-  const { results, openKey, suggestedKey, choosingBest } = view.current
+  const { results, openKey, suggestedKey, suggestedConfident, choosingBest } = view.current
   // The album applied before this track opened rides first, so tagging a release track
   // after track never means finding it again. Fixed for the mount, and shown with the
   // results so the filter row arriving above them never slides it down.
@@ -280,7 +282,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     const rk = resultKeyOf(r)
     const expanded = openKey === rk
     const suggested = suggestedKey === rk
-    const best = suggested && i === 0 && rk !== pinnedKey
+    const best = suggested && suggestedConfident && i === 0 && rk !== pinnedKey
     const loaded = expanded && openKey === liveOpenKey && !!release && !loading
     // Both empty for every Bandcamp row — its search returns no year, label or
     // catalogue — so each span is dropped rather than rendered blank, and the row

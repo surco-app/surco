@@ -25,6 +25,7 @@ function browser(overrides: Partial<DiscogsBrowser>): DiscogsBrowser {
     release: null,
     openKey: null,
     suggestedKey: null,
+    suggestedConfident: false,
     pendingProviders: [],
     searchProgress: null,
     held: { count: 0, providers: [] },
@@ -551,12 +552,20 @@ describe('DiscogsPanel stable results', () => {
   })
 
   it('heads the best match at the top of the list', () => {
-    renderPanel(browser({ query: 'x', results: rows, suggestedKey: 'bandcamp:9' }))
+    renderPanel(
+      browser({ query: 'x', results: rows, suggestedKey: 'bandcamp:9', suggestedConfident: true }),
+    )
     const label = screen.getByTestId('best-match-label')
     expect(label).toHaveTextContent('Best match')
     expect(label.compareDocumentPosition(screen.getAllByTestId('result-card')[0])).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     )
+  })
+
+  it('calls no unconfirmed suggestion the best match, so an unrelated release is not vouched for', () => {
+    renderPanel(browser({ query: 'x', results: rows, suggestedKey: 'bandcamp:9' }))
+    expect(screen.queryByTestId('best-match-label')).toBeNull()
+    expect(screen.getByTestId('result-suggested')).toBeInTheDocument()
   })
 
   it('heads nothing when the suggestion is not the first row', () => {
