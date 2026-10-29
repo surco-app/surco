@@ -884,14 +884,16 @@ describe('App quality triage', () => {
     })
   })
 
-  it('holds the auto-analysis sweep until every read of the import lands, because its decodes measurably slow the tags still loading', async () => {
+  it('holds the auto-analysis sweep until every read of the import lands, then runs every pass on each track, even the one whose spectrum the editor already measured', async () => {
     let releaseB: () => void = () => {}
     const bRead = new Promise<void>((r) => {
       releaseB = r
     })
     const loudness = vi.fn().mockResolvedValue(null)
+    const spectrogram = vi.fn().mockResolvedValue(spectrum)
     setApi({
       loudness,
+      spectrogram,
       readTags: vi.fn(async (path: string) => {
         if (path === '/music/b.wav') await bRead
         return { title: path === '/music/a.wav' ? 'Song A' : 'Song B', artist: 'Artist' }
@@ -901,11 +903,53 @@ describe('App quality triage', () => {
     await renderApp()
     await addTwoTracks()
     await waitFor(() => expect(screen.getAllByText('Song A').length).toBeGreaterThan(0))
-    await new Promise((r) => setTimeout(r, 200))
+    await waitFor(() => expect(spectrogram).toHaveBeenCalledWith('/music/a.wav', 'high'))
+    expect(screen.queryByTestId('analyze-progress')).toBeNull()
     expect(loudness).not.toHaveBeenCalled()
 
     releaseB()
-    await waitFor(() => expect(loudness).toHaveBeenCalledWith('/music/b.wav', 'low'))
+    await waitFor(() => {
+      const paths = loudness.mock.calls.map((c) => c[0]).sort()
+      expect(paths).toEqual(['/music/a.wav', '/music/b.wav'])
+    })
+  })
+
+  it('drops the held tracks when auto-analyze is turned off before the import settles, since the user just said not to decode them', async () => {
+    let releaseB: () => void = () => {}
+    const bRead = new Promise<void>((r) => {
+      releaseB = r
+    })
+    const loudness = vi.fn().mockResolvedValue(null)
+    const base = settings({ autoAnalyze: true })
+    setApi({
+      platform: 'darwin',
+      loudness,
+      readTags: vi.fn(async (path: string) => {
+        if (path === '/music/b.wav') await bRead
+        return { title: path === '/music/a.wav' ? 'Song A' : 'Song B', artist: 'Artist' }
+      }),
+      getSettings: vi.fn().mockResolvedValue(base),
+      saveSettings: vi.fn((patch) => Promise.resolve({ ...base, ...patch })),
+    })
+    await renderApp()
+    await addTwoTracks()
+    await waitFor(() => expect(screen.getAllByText('Song A').length).toBeGreaterThan(0))
+    fireEvent.click(screen.getByTestId('open-settings'))
+    fireEvent.click(await screen.findByTestId('settings-tab-editor'))
+    fireEvent.click(screen.getByTestId('settings-auto-analyze'))
+    fireEvent.click(screen.getByTestId('settings-close'))
+    await waitFor(() => expect(screen.queryByTestId('settings-close')).toBeNull())
+    await waitFor(() =>
+      expect(window.api.saveSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ autoAnalyze: false }),
+      ),
+    )
+
+    releaseB()
+    await waitFor(() => expect(screen.getAllByText('Song B').length).toBeGreaterThan(0))
+    await waitFor(() => expect(screen.queryByTestId('import-progress')).toBeNull())
+    expect(screen.queryByTestId('analyze-progress')).toBeNull()
+    expect(loudness).not.toHaveBeenCalled()
   })
 })
 

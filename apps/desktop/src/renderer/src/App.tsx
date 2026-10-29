@@ -2911,8 +2911,14 @@ export default function App(): React.JSX.Element {
     const held = autoAnalyzeHeld.current
     autoAnalyzeHeld.current = []
     setAutoAnalyzeHeldCount(0)
-    analyzeAllQuality(held, true)
-  }, [importProgress, anyLoadingMeta, autoAnalyzeHeldCount, analyzeAllQuality])
+    if (settings?.autoAnalyze) analyzeAllQuality(held, true)
+  }, [
+    importProgress,
+    anyLoadingMeta,
+    autoAnalyzeHeldCount,
+    settings?.autoAnalyze,
+    analyzeAllQuality,
+  ])
   // Staged like an auto-match result. The cleaned rows go back to auto-match because it drops
   // a probe whose track changed while it searched.
   const cleanLoad = useStableCallback((paths: ReadonlySet<string>) => {
