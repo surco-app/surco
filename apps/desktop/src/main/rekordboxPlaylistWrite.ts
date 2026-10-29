@@ -229,7 +229,8 @@ function planTrack(probe: Db, xml: string | null, op: TrackOp, find: FindOptions
     return finish(false)
   }
   const entry = resolved.contentIds[0]
-  if (!entry && op.wanted.length === 0) return finish(true)
+  if (op.add && entry) return finish(true)
+  if (!entry && op.wanted.length === 0 && !op.add) return finish(true)
   if (!entry && (!op.facts || !existsSync(op.path))) {
     notices.push({ code: op.facts ? 'file-missing' : 'not-added', track: op.label })
     return finish(false)
@@ -268,7 +269,8 @@ function planTrack(probe: Db, xml: string | null, op: TrackOp, find: FindOptions
       })
     else removes.push(pid)
   }
-  if (adds.length === 0 && removes.length === 0 && names.length === 0) return finish(!!entry)
+  if (adds.length === 0 && removes.length === 0 && names.length === 0 && !op.add)
+    return finish(!!entry)
   return { op, track: { entry, adds, removes, names, notices } }
 }
 

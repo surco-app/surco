@@ -32,6 +32,7 @@ export interface TrackOp {
   wanted: RekordboxPlaylistTarget[]
   known: string[]
   stamps: Record<string, number>
+  add?: true
 }
 
 export interface CuesOp extends Omit<SaveCuesRequest, 'wanted'> {
