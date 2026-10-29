@@ -742,12 +742,16 @@ function createWindow(): BrowserWindow {
   })
 
   if (savedState?.maximized) win.maximize()
-  win.on('close', () =>
-    saveWindowState(windowStatePath(), {
-      bounds: win.getNormalBounds(),
-      maximized: win.isMaximized(),
-    }),
-  )
+  win.on('close', () => {
+    try {
+      saveWindowState(windowStatePath(), {
+        bounds: win.getNormalBounds(),
+        maximized: win.isMaximized(),
+      })
+    } catch (err) {
+      log.warn('window state save failed', String(err))
+    }
+  })
   win.on('ready-to-show', () => win.show())
   wireRendererRecovery(win.webContents, log)
   // Stream background-work events (Discogs/Bandcamp searches, cover downloads,

@@ -55,6 +55,13 @@ describe('window state file', () => {
     expect(loadWindowState(path)).toEqual(state)
   })
 
+  it('throws on an unwritable path so the caller can log why the state was lost', () => {
+    const path = join(file(), 'missing-dir', 'window-state.json')
+    expect(() =>
+      saveWindowState(path, { bounds: { x: 0, y: 0, width: 1, height: 1 }, maximized: false }),
+    ).toThrow()
+  })
+
   it('treats a missing file as no saved state', () => {
     expect(loadWindowState(file())).toBeNull()
   })

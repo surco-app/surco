@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, renameSync, writeFileSync } from 'node:fs'
 
 export interface Rect {
   x: number
@@ -65,7 +65,7 @@ export function loadWindowState(path: string): WindowState | null {
 }
 
 export function saveWindowState(path: string, state: WindowState): void {
-  try {
-    writeFileSync(path, JSON.stringify(state), 'utf-8')
-  } catch {}
+  const tmp = `${path}.tmp`
+  writeFileSync(tmp, JSON.stringify(state), 'utf-8')
+  renameSync(tmp, path)
 }
