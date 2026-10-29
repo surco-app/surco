@@ -68,6 +68,25 @@ describe('createMenuT', () => {
     )
   })
 
+  it('asks to close rekordbox and Traktor for a library update without promising a conversion, since only tag syncs and duplicate replacements still ask', () => {
+    const conversion: Record<string, RegExp> = {
+      es: /conversi[oó]n/i,
+      en: /conversion/i,
+      de: /konvertierung/i,
+      fr: /conversion/i,
+      'pt-BR': /convers[aã]o/i,
+      ja: /変換/,
+    }
+    for (const [lang, word] of Object.entries(conversion)) {
+      const t = createMenuT(lang)
+      expect(t('rekordboxQuitDetail')).not.toMatch(word)
+      expect(t('traktorQuitDetail')).not.toMatch(word)
+    }
+    expect(createMenuT('es')('rekordboxQuitDetail')).toBe(
+      'Surco necesita cerrarlo para actualizar tu colección. rekordbox se cerrará de forma segura y puedes volver a abrirlo enseguida.',
+    )
+  })
+
   it('translates a key for the resolved locale', () => {
     expect(createMenuT('es-ES')('settings')).toBe('Ajustes…')
     expect(createMenuT('en-US')('settings')).toBe('Settings…')
