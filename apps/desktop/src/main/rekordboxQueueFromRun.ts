@@ -27,7 +27,7 @@ export async function trackOpsFromRun(
     addNew?: boolean
   },
 ): Promise<TrackOp[]> {
-  const wanted = repoints.filter((r) => r.playlists || opts.addNew)
+  const wanted = repoints.filter((r) => r.playlists || (opts.addNew && r.meta))
   if (wanted.length === 0 || !collectionPath) return []
   const db = openRekordboxDb(collectionPath, { readonly: true })
   if (!db) return []

@@ -158,6 +158,21 @@ describe('trackOpsFromRun', () => {
     ).toEqual([])
   })
 
+  it('skips registering a track rekordbox could not describe, so no notice asks about a track nobody chose', async () => {
+    const { path, dir } = await collection()
+    const file = join(dir, 'Untagged.wav')
+    await writeFile(file, Buffer.alloc(64))
+    expect(
+      await trackOpsFromRun(path, [{ from: file, to: file }], {
+        repointing: false,
+        probe,
+        find: TWIN_PATHS,
+        newId,
+        addNew: true,
+      }),
+    ).toEqual([])
+  })
+
   it('does nothing new with adding off, so a track in no playlist stays out of rekordbox', async () => {
     const { path, dir } = await collection()
     const file = join(dir, 'Bam Bam.wav')
