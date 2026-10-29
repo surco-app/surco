@@ -163,6 +163,7 @@ interface Props {
   // onDeriveTags).
   onRecordUndo?: (ids: string[], opts?: { cover?: boolean; group?: string }) => void
   onClearAll?: () => void
+  autoMatchDeclined?: boolean
   // Reports which track (if any) has a field focused, so the background auto-match sweep
   // can leave the row being typed into alone (see App's editingRef). null on blur.
   onFieldFocusChange?: (id: string | null) => void
@@ -264,6 +265,7 @@ export const Editor = memo(function Editor({
   onApplyTitleFormat,
   onRecordUndo,
   onClearAll,
+  autoMatchDeclined,
   onFieldFocusChange,
   onChange,
   onProcess,
@@ -803,7 +805,7 @@ export const Editor = memo(function Editor({
         autoMatchOn: autoMatch,
         tier: matchTier,
         hasMatchedTrack: true,
-        alreadyMatched: !!item.matched,
+        alreadyMatched: !!item.matched || !!autoMatchDeclined,
         editing,
         multi: isMulti,
       })
@@ -812,7 +814,7 @@ export const Editor = memo(function Editor({
       // Nobody clicked, so someone typing (in the search box) keeps their keys.
       void selectTrack(matchedTrack, !isTypingTarget(document.activeElement))
     }
-  }, [autoMatch, release, matchedTrack, matchTier, item.matched, isMulti])
+  }, [autoMatch, release, matchedTrack, matchTier, item.matched, autoMatchDeclined, isMulti])
 
   // Stable identity so the field specs below can memoize: the body still reads the
   // current item.meta on every call (useStableCallback mirrors the latest closure),

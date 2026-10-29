@@ -27,12 +27,12 @@ function track(
 
 // A harness owning the tracks state the way App does, so record/undo run against the
 // same setTracks contract the real hook receives.
-function setup(initial: TrackItem[]) {
+function setup(initial: TrackItem[], matchFlips: Parameters<typeof useMetaUndo>[2] = {}) {
   return renderHook(() => {
     const [tracks, setTracks] = useState(initial)
     const tracksRef = useRef(tracks)
     tracksRef.current = tracks
-    const undo = useMetaUndo(tracksRef, setTracks)
+    const undo = useMetaUndo(tracksRef, setTracks, matchFlips)
     return { tracks, setTracks, ...undo }
   })
 }
@@ -492,6 +492,35 @@ describe('useMetaUndo', () => {
     })
     expect(restored).toBe(1)
     expect(result.current.tracks.map((t) => t.meta.title)).toEqual(['A', 'Typed'])
+  })
+
+  it('names the tracks an undo took a match off, so the sweep can leave them unmatched instead of matching them again', () => {
+    const onMatchUndone = vi.fn()
+    const onMatchRedone = vi.fn()
+    const { result } = setup([track('a', { title: 'A' }), track('b', { title: 'B' })], {
+      onMatchUndone,
+      onMatchRedone,
+    })
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) =>
+          t.id === 'a'
+            ? { ...t, meta: { ...t.meta, album: 'Album' }, autoMatched: true }
+            : { ...t, meta: { ...t.meta, album: 'Typed' } },
+        ),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    expect(onMatchUndone).toHaveBeenCalledWith(['a'])
+    expect(onMatchRedone).not.toHaveBeenCalled()
+    act(() => {
+      result.current.redo()
+    })
+    expect(onMatchRedone).toHaveBeenCalledWith(['a'])
+    expect(onMatchUndone).toHaveBeenCalledTimes(1)
   })
 
   describe('picked cover blobs', () => {

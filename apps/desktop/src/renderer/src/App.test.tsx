@@ -1114,6 +1114,43 @@ describe('App auto-match', () => {
     expect(search).toHaveBeenCalled()
   })
 
+  it('leaves an undone auto-match undone when the user comes back to the track, so ⌘Z is not overruled by the sweep or the editor', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(
+        settings({
+          discogsToken: 'tok',
+          autoMatch: true,
+          visibleFields: ['title', 'artist', 'album'],
+        }),
+      ),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+      readDuration: vi.fn().mockResolvedValue(180),
+      search: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(release),
+    })
+    await renderApp()
+    await addTwoTracks()
+    await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
+    await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
+    await waitFor(() => expect(screen.getByTestId('field-album')).toHaveValue('Album'))
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.queryAllByTestId('track-automatched')).toHaveLength(0))
+    expect(screen.getByTestId('field-album')).toHaveValue('')
+
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 700))
+    })
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 900))
+    })
+
+    expect(screen.queryAllByTestId('track-automatched')).toHaveLength(0)
+    expect(screen.getByTestId('field-album')).toHaveValue('')
+  })
+
   // One row's malformed Discogs payload (a release without a tracklist) must skip
   // that track, not sink the sweep: the other rows still match, the progress pill
   // still completes, and nothing escapes as an unhandled rejection.

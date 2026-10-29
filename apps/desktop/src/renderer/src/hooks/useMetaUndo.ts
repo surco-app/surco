@@ -2,6 +2,7 @@ import type React from 'react'
 import { useCallback, useEffect, useRef } from 'react'
 import { revokeDisplacedCovers } from '../lib/coverUrl'
 import type { TrackItem } from '../types'
+import { useLatest } from './useLatest'
 
 // Bounded so a long tagging session can't hold the whole crate's history forever —
 // twenty steps back covers any realistic "that sweep was a mistake" moment.
@@ -92,6 +93,10 @@ function pick(fields: Fields, keys: string[]): Fields {
   return Object.fromEntries(keys.map((key) => [key, fields[key]]))
 }
 
+function isMatched(fields: Fields): boolean {
+  return !!fields.matched || !!fields.autoMatched
+}
+
 function coversOf(entries: MetaSnapshot[][]): (string | undefined)[] {
   return entries.flatMap((entry) =>
     entry.flatMap((s) => [s.before.coverUrl, s.after.coverUrl] as (string | undefined)[]),
@@ -107,7 +112,12 @@ function coversOf(entries: MetaSnapshot[][]): (string | undefined)[] {
 export function useMetaUndo(
   tracksRef: { current: TrackItem[] },
   setTracks: React.Dispatch<React.SetStateAction<TrackItem[]>>,
+  matchFlips: {
+    onMatchUndone?: (ids: string[]) => void
+    onMatchRedone?: (ids: string[]) => void
+  } = {},
 ): MetaUndo {
+  const flips = useLatest(matchFlips)
   const stack = useRef<MetaSnapshot[][]>([])
   const topGroup = useRef<string | undefined>(undefined)
   const redoStack = useRef<MetaSnapshot[][]>([])
@@ -159,7 +169,11 @@ export function useMetaUndo(
   )
 
   const step = useCallback(
-    (from: { current: MetaSnapshot[][] }, to: { current: MetaSnapshot[][] }): number => {
+    (
+      from: { current: MetaSnapshot[][] },
+      to: { current: MetaSnapshot[][] },
+      flip: { toMatched: boolean; report: (ids: string[]) => void },
+    ): number => {
       const entry = from.current.pop()
       topGroup.current = undefined
       if (!entry) return 0
@@ -169,13 +183,17 @@ export function useMetaUndo(
       const kept = entry.filter((s) => live.has(s.id))
       const patches = new Map<string, Fields>()
       const inverse: MetaSnapshot[] = []
+      const flipped: string[] = []
       for (const s of kept) {
         const track = live.get(s.id) as TrackItem
         settle(s, track)
         const now = fieldsOf(track, s.cover)
         const keys = Object.keys(s.after).filter((key) => now[key] === s.after[key])
         if (keys.length === 0) continue
-        patches.set(s.id, pick(s.before, keys))
+        const patch = pick(s.before, keys)
+        patches.set(s.id, patch)
+        const matchedAfter = isMatched({ ...now, ...patch })
+        if (isMatched(now) !== matchedAfter && matchedAfter === flip.toMatched) flipped.push(s.id)
         inverse.push({
           id: s.id,
           cover: s.cover,
@@ -184,6 +202,7 @@ export function useMetaUndo(
         })
       }
       if (inverse.length > 0) to.current.push(inverse)
+      if (flipped.length > 0) flip.report(flipped)
       revokeDisplacedCovers(coversOf([entry]), [
         ...tracksRef.current.map((t) => t.coverUrl),
         ...coversOf(stack.current),
@@ -200,8 +219,22 @@ export function useMetaUndo(
     [tracksRef, setTracks],
   )
 
-  const undo = useCallback(() => step(stack, redoStack), [step])
-  const redo = useCallback(() => step(redoStack, stack), [step])
+  const undo = useCallback(
+    () =>
+      step(stack, redoStack, {
+        toMatched: false,
+        report: (ids) => flips.current.onMatchUndone?.(ids),
+      }),
+    [step, flips],
+  )
+  const redo = useCallback(
+    () =>
+      step(redoStack, stack, {
+        toMatched: true,
+        report: (ids) => flips.current.onMatchRedone?.(ids),
+      }),
+    [step, flips],
+  )
   const canUndo = useCallback(() => stack.current.length > 0, [])
   const canRedo = useCallback(() => redoStack.current.length > 0, [])
 
