@@ -524,6 +524,8 @@ export default function App(): React.JSX.Element {
   // Marks tracks whose Discogs caches are warmed (or warming) so a second hover
   // never re-runs the search; cleared on failure so a transient error can retry.
   const discogsPrefetched = useRef<Set<string>>(new Set())
+  const autoAnalyzeHeld = useRef<TrackItem[]>([])
+  const [autoAnalyzeHeldCount, setAutoAnalyzeHeldCount] = useState(0)
   // The failures behind the standing error card. The toast is keyed, so a batch that
   // breaks on thirty tracks collapses onto one card — which is why the card has to carry
   // the tally itself: it names the first track that failed and counts the others, instead
@@ -700,7 +702,9 @@ export default function App(): React.JSX.Element {
       // explicitly covers the track this call is for even before bulkTracksRef's render has
       // caught up with it (see analyzeAllQuality). Ignores the quality-section fold: this is
       // an explicit "always analyze my imports" setting.
-      if (settings?.autoAnalyze) analyzeAllQuality([t], true)
+      if (!settings?.autoAnalyze) return
+      autoAnalyzeHeld.current.push(t)
+      setAutoAnalyzeHeldCount(autoAnalyzeHeld.current.length)
     },
     // Keyed, unlike the plain notices above: a folder walk settles one batch per directory,
     // so an unkeyed card here stacks one per folder rather than one per import.
@@ -2902,6 +2906,13 @@ export default function App(): React.JSX.Element {
   // Memoized so the O(n) "any row still reading its tags?" scan runs only when the list
   // changes, not on every App render — the same frequent-render concern as `selected` above.
   const anyLoadingMeta = useMemo(() => tracks.some((t) => t.loadingMeta), [tracks])
+  useEffect(() => {
+    if (importProgress !== null || anyLoadingMeta || autoAnalyzeHeldCount === 0) return
+    const held = autoAnalyzeHeld.current
+    autoAnalyzeHeld.current = []
+    setAutoAnalyzeHeldCount(0)
+    analyzeAllQuality(held, true)
+  }, [importProgress, anyLoadingMeta, autoAnalyzeHeldCount, analyzeAllQuality])
   // Staged like an auto-match result. The cleaned rows go back to auto-match because it drops
   // a probe whose track changed while it searched.
   const cleanLoad = useStableCallback((paths: ReadonlySet<string>) => {

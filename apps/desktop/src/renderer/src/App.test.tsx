@@ -883,6 +883,30 @@ describe('App quality triage', () => {
       expect(paths).toEqual(['/music/a.wav', '/music/b.wav'])
     })
   })
+
+  it('holds the auto-analysis sweep until every read of the import lands, because its decodes measurably slow the tags still loading', async () => {
+    let releaseB: () => void = () => {}
+    const bRead = new Promise<void>((r) => {
+      releaseB = r
+    })
+    const loudness = vi.fn().mockResolvedValue(null)
+    setApi({
+      loudness,
+      readTags: vi.fn(async (path: string) => {
+        if (path === '/music/b.wav') await bRead
+        return { title: path === '/music/a.wav' ? 'Song A' : 'Song B', artist: 'Artist' }
+      }),
+      getSettings: vi.fn().mockResolvedValue(settings({ autoAnalyze: true })),
+    })
+    await renderApp()
+    await addTwoTracks()
+    await waitFor(() => expect(screen.getAllByText('Song A').length).toBeGreaterThan(0))
+    await new Promise((r) => setTimeout(r, 200))
+    expect(loudness).not.toHaveBeenCalled()
+
+    releaseB()
+    await waitFor(() => expect(loudness).toHaveBeenCalledWith('/music/b.wav', 'low'))
+  })
 })
 
 describe('App auto-match', () => {
