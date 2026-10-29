@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { PathField } from './PathField'
 import { SettingsHint, SettingsLabel } from './settings/SettingsPrimitives'
 
-// The field Engine DJ needs before it can be a destination: where its library lives.
-// Shared by Settings and the onboarding wizard, like OutputFolderField next to it — the wizard used to offer Engine DJ as a
-// destination and ask neither, so a new user could finish setup with the destination set
-// and the library pointing at a default folder that need not exist.
+// The field Engine DJ needs before Surco can write to it: where its library lives.
+// Shared by Settings and the onboarding wizard, like OutputFolderField next to it — the
+// wizard used to offer Engine DJ and ask neither, so a new user could finish setup with
+// Engine on and the library pointing at a default folder that need not exist.
 //
 // It owns the folder dialog too, so neither surface reimplements the same round-trip.
 export function EngineLibraryFields({
