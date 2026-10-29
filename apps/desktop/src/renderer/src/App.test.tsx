@@ -6328,9 +6328,8 @@ describe('App reopen last session', () => {
 
   // An unanswered launch offer for a paths-only session must not park in the corner
   // forever: like the new-tracks prompt it carries a duration, so the shared toast
-  // draws its countdown bar and retires the card on its own. Expiring counts as
-  // declining (same clearing as the ✕), so the next launch starts quiet — safe here,
-  // because with no staged edits the countdown destroys nothing.
+  // draws its countdown bar and retires the card on its own. Expiring only hides the
+  // offer; only the ✕ clears the saved session.
   it('auto-dismisses the offer with a visible countdown', async () => {
     setApi({
       getLastSession: vi
@@ -6342,8 +6341,7 @@ describe('App reopen last session', () => {
     expect(screen.getByTestId('last-session-countdown')).toBeInTheDocument()
   })
 
-  // With staged edits the offer still ages out, so it never parks in the corner; its
-  // expiry keeps the saved session, so the edits are offered again on the next launch.
+  // A session with staged edits counts down the same way as a paths-only one.
   it('counts down the offer even when the session carries staged edits', async () => {
     setApi({
       getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({
