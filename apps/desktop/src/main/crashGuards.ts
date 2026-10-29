@@ -36,7 +36,8 @@ export function logHandlerFailures<E, A extends unknown[]>(
       try {
         return await cb(event, ...args)
       } catch (err) {
-        logger.error(`ipc ${channel} failed`, err)
+        if ((err as Error | undefined)?.name !== 'AbortError')
+          logger.error(`ipc ${channel} failed`, err)
         throw err
       }
     })

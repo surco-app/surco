@@ -86,6 +86,18 @@ describe('logHandlerFailures', () => {
     expect(logger.error).toHaveBeenCalledWith('ipc rekordbox:saveCues failed', boom)
   })
 
+  // A read the user walked away from is cancelled on purpose: logging it put a stack trace
+  // of "analysis aborted" in the log for every playlist clicked past, burying real failures.
+  it('leaves a cancelled call out of the log and still rejects the caller', async () => {
+    const ipc = fakeIpc()
+    const logger = { error: vi.fn() }
+    logHandlerFailures(ipc, logger)
+    const cancelled = Object.assign(new Error('analysis aborted'), { name: 'AbortError' })
+    ipc.handle('applemusic:playlistTracks', async () => Promise.reject(cancelled))
+    await expect(ipc.call('applemusic:playlistTracks')).rejects.toBe(cancelled)
+    expect(logger.error).not.toHaveBeenCalled()
+  })
+
   it('logs an async handler that rejects', async () => {
     const ipc = fakeIpc()
     const logger = { error: vi.fn() }

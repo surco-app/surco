@@ -132,8 +132,8 @@ describe('buildPlaylistTracksScript', () => {
     // 1.39s for an identical result. Unlike `count of tracks`, these two DO return one
     // item per track, so the bulk form is both correct and ten times cheaper.
     const script = buildPlaylistTracksScript('A1B2C3D4E5F60718')
-    expect(script).toContain('(location of tracks f thru u of theList) as list')
-    expect(script).toContain('(persistent ID of tracks f thru u of theList) as list')
+    expect(script).toContain('set theLocs to location of tracks f thru u of theList')
+    expect(script).toContain('set thePids to persistent ID of tracks f thru u of theList')
   })
 
   // Music resolves every file location on the NAS at ~27 ms a track (measured: the
@@ -149,11 +149,28 @@ describe('buildPlaylistTracksScript', () => {
   // a one-item list, and `item 1 of alias` failed the whole read (-1728). A playlist of 201
   // ends on such a stretch.
   it('keeps every field a list when the stretch holds a single track', () => {
-    const fetches = buildPlaylistTracksScript('A1B2C3D4E5F60718', 201, 201)
-      .split('\n')
-      .filter((l) => l.includes('of tracks f thru u of theList'))
-    expect(fetches).toHaveLength(10)
-    for (const line of fetches) expect(line).toMatch(/\) as list$/)
+    const lines = buildPlaylistTracksScript('A1B2C3D4E5F60718', 201, 201).split('\n')
+    const fetched = lines.flatMap(
+      (l) => l.match(/set (\w+) to \w[\w ]* of tracks f thru u/)?.[1] ?? [],
+    )
+    expect(fetched).toHaveLength(10)
+    for (const name of fetched)
+      expect(lines).toContain(`if class of ${name} is not list then set ${name} to {${name}}`)
+  })
+
+  // Asking Music for `(… of tracks 601 thru 800) as list` made Music do the coercion, and
+  // under load it failed the stretch with "Can't make «class pPIS» … into type Unicode
+  // text" (-1700), seen in the user's log on 29/10. Music only reads; AppleScript coerces.
+  it('asks Music for the fields alone and turns them into lists outside its tell block', () => {
+    const lines = buildPlaylistTracksScript('A1B2C3D4E5F60718', 601, 800).split('\n')
+    expect(lines.some((l) => l.includes('as list'))).toBe(false)
+    let depth = 0
+    for (const line of lines) {
+      const t = line.trim()
+      if (t.startsWith('tell application')) depth += 1
+      if (t === 'end tell') depth -= 1
+      if (t.startsWith('if class of')) expect(depth).toBe(0)
+    }
   })
 
   it('reads the whole playlist when no stretch is asked for', () => {

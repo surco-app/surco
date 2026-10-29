@@ -235,6 +235,27 @@ describe('useSourceBrowser', () => {
       expect(load).toHaveBeenLastCalledWith('P1', 401, 600)
     })
 
+    // A stretch failed once in the user's log (-1700) and took the 600 rows already shown
+    // down with it; asking once more costs one stretch, failing costs the whole playlist.
+    it('asks once more for a stretch Music failed, keeping the rows already read', async () => {
+      let failed = false
+      const load = vi.fn(async (_id: string, from: number) => {
+        if (from === 201 && !failed) {
+          failed = true
+          throw new Error('Can’t make «class pPIS» into type Unicode text. (-1700)')
+        }
+        return from === 1
+          ? stretch(1, 200, 450)
+          : from === 201
+            ? stretch(201, 200, 450)
+            : stretch(401, 50, 450)
+      })
+      const { result } = openFriday(load)
+      await waitFor(() => expect(result.current.entries).toHaveLength(450))
+      expect(result.current.entriesFailed).toBe(false)
+      expect(load.mock.calls.map(([, from]) => from)).toEqual([1, 201, 201, 401])
+    })
+
     it('stops asking Music for a playlist once another is opened', async () => {
       const second = pending<ReturnType<typeof stretch>>()
       const load = vi.fn(async (_id: string, from: number) =>

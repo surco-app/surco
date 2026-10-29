@@ -64,10 +64,14 @@ async function readMusicPlaylist(
   for (let from = MUSIC_STRETCH + 1; from <= total; from += MUSIC_STRETCH) {
     signal.throwIfAborted()
     onStretch(musicEntries(read))
-    read = joinStretches(
-      read,
-      await window.api.loadAppleMusicPlaylistTracks(id, from, from + MUSIC_STRETCH - 1),
-    )
+    const to = from + MUSIC_STRETCH - 1
+    const stretch = await window.api
+      .loadAppleMusicPlaylistTracks(id, from, to)
+      .catch((err: unknown) => {
+        if (signal.aborted) throw err
+        return window.api.loadAppleMusicPlaylistTracks(id, from, to)
+      })
+    read = joinStretches(read, stretch)
   }
   return musicEntries(read)
 }

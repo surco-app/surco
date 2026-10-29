@@ -97,26 +97,36 @@ export function buildPlaylistTracksScript(persistentId: string, from = 1, to?: n
     // A playlist mixes the user's own files with Apple Music streaming rows, which carry
     // no file at all: those come back as `missing value` here and become an empty path
     // below, so the caller can count them rather than never learn they existed.
-    '  set theLocs to (location of tracks f thru u of theList) as list',
+    '  set theLocs to location of tracks f thru u of theList',
     // The entry's identity travels with its file so a conversion can update THAT library
     // copy instead of adding a second one. Without it an imported track looks to Surco
     // like a file it has never seen, and converting it duplicates the song in Music.
-    '  set thePids to (persistent ID of tracks f thru u of theList) as list',
+    '  set thePids to persistent ID of tracks f thru u of theList',
     // What Music knows that an untagged file does not. Measured on a real library: the WAVs
     // carry title/artist/album/year/genre and nothing else, while Music holds the grouping
     // ("Bases, Chocolate") and the artwork for the very same track.
-    '  set theGroupings to (grouping of tracks f thru u of theList) as list',
-    '  set theYears to (year of tracks f thru u of theList) as list',
-    '  set theComments to (comment of tracks f thru u of theList) as list',
-    '  set theTrackNos to (track number of tracks f thru u of theList) as list',
-    '  set theDiscNos to (disc number of tracks f thru u of theList) as list',
-    '  set theBpms to (bpm of tracks f thru u of theList) as list',
-    '  set theRatings to (rating of tracks f thru u of theList) as list',
+    '  set theGroupings to grouping of tracks f thru u of theList',
+    '  set theYears to year of tracks f thru u of theList',
+    '  set theComments to comment of tracks f thru u of theList',
+    '  set theTrackNos to track number of tracks f thru u of theList',
+    '  set theDiscNos to disc number of tracks f thru u of theList',
+    '  set theBpms to bpm of tracks f thru u of theList',
+    '  set theRatings to rating of tracks f thru u of theList',
     // Music reports a rating it computed itself for tracks the user never rated (measured:
     // all 400 of one playlist). Importing those would write stars nobody gave, so the kind
     // travels too and only `user` survives the parse.
-    '  set theRatingKinds to (rating kind of tracks f thru u of theList) as list',
+    '  set theRatingKinds to rating kind of tracks f thru u of theList',
     'end tell',
+    'if class of theLocs is not list then set theLocs to {theLocs}',
+    'if class of thePids is not list then set thePids to {thePids}',
+    'if class of theGroupings is not list then set theGroupings to {theGroupings}',
+    'if class of theYears is not list then set theYears to {theYears}',
+    'if class of theComments is not list then set theComments to {theComments}',
+    'if class of theTrackNos is not list then set theTrackNos to {theTrackNos}',
+    'if class of theDiscNos is not list then set theDiscNos to {theDiscNos}',
+    'if class of theBpms is not list then set theBpms to {theBpms}',
+    'if class of theRatings is not list then set theRatings to {theRatings}',
+    'if class of theRatingKinds is not list then set theRatingKinds to {theRatingKinds}',
     'set out to {}',
     'repeat with i from 1 to count of thePids',
     '  set loc to item i of theLocs',
