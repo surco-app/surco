@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { mkdir, readdir, stat, unlink, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, stat, unlink, utimes, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app } from 'electron'
 import { MEDIA_SCHEME } from '../shared/media'
@@ -33,9 +33,12 @@ export async function coverThumbUrlForBytes(bytes: Buffer): Promise<string> {
   const id = `${createHash('sha1').update(bytes).digest('hex')}.jpg`
   const path = join(dir(), id)
   await pruning
-  // Rewritten when present too: it refreshes the mtime the launch prune keeps by.
-  await mkdir(dir(), { recursive: true })
-  await writeFile(path, bytes)
+  const now = new Date()
+  // Touched when present: it refreshes the mtime the launch prune keeps by, without a rewrite.
+  await utimes(path, now, now).catch(async () => {
+    await mkdir(dir(), { recursive: true })
+    await writeFile(path, bytes)
+  })
   return `${MEDIA_SCHEME}://${HOST}/${id}`
 }
 
