@@ -7,6 +7,7 @@ import Header from './Header'
 import Kicker from './Kicker'
 import Reveal from './Reveal'
 import ScrollProgress from './ScrollProgress'
+import SpectrumDuotone from './SpectrumDuotone'
 
 type Row = { what: string; result: string; how: string }
 type Item = { title: string; text: string }
@@ -48,7 +49,7 @@ function Spectrum({
   good?: boolean
 }) {
   return (
-    <figure className="rounded-xl bg-scrim p-3">
+    <figure className="rounded-xl bg-spectrum p-3">
       <figcaption
         className={`mb-2.5 inline-flex rounded-full px-2.5 py-0.5 font-mono text-[11px] ${
           good ? 'bg-green/15 text-green' : 'bg-red/15 text-red'
@@ -56,7 +57,7 @@ function Spectrum({
       >
         {badge}
       </figcaption>
-      <img src={src} alt={alt} loading="lazy" className="w-full rounded-md" />
+      <img src={src} alt={alt} loading="lazy" className="spectrum-duotone w-full rounded-md" />
     </figure>
   )
 }
@@ -209,6 +210,7 @@ export default function FlacToAiff() {
             <p className="mt-4 max-w-2xl leading-relaxed text-muted">
               {t('flacToAiff.quality.lede')}
             </p>
+            <SpectrumDuotone />
             <div className="mt-8 grid gap-4 md:grid-cols-2">
               <Spectrum
                 src="/spectrum/lossless-real.jpg"

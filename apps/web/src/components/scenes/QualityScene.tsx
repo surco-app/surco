@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { CRATE } from '../../lib/crate'
 import { qualityFrame, SPECTRUM_WALL } from '../../lib/scenes'
 import { useSceneProgress } from '../../lib/useSceneProgress'
+import SpectrumDuotone from '../SpectrumDuotone'
 import {
   AppRow,
   AppWindow,
@@ -87,7 +88,8 @@ export default function QualityScene() {
                 {t('home.quality.section')}
               </SectionTitle>
 
-              <div className="keep-dark relative mt-3 h-[260px] overflow-hidden rounded-lg bg-scrim">
+              <div className="relative mt-3 h-[260px] overflow-hidden rounded-lg bg-spectrum">
+                <SpectrumDuotone />
                 <img
                   src={GENUINE.src}
                   alt={t('home.quality.goodAlt')}
@@ -95,7 +97,7 @@ export default function QualityScene() {
                   height={245}
                   loading="lazy"
                   decoding="async"
-                  className="absolute inset-0 size-full object-cover transition-opacity duration-300"
+                  className="spectrum-duotone absolute inset-0 size-full object-cover transition-opacity duration-300"
                   style={{ opacity: fake ? 0 : 1 }}
                 />
                 <img
@@ -105,10 +107,10 @@ export default function QualityScene() {
                   height={245}
                   loading="lazy"
                   decoding="async"
-                  className="absolute inset-0 size-full object-cover"
+                  className="spectrum-duotone absolute inset-0 size-full object-cover"
                   style={{ clipPath: `inset(0 0 ${(1 - frame.scan) * 100}% 0)` }}
                 />
-                <div className="absolute inset-y-0 left-0 flex w-9 flex-col justify-between bg-gradient-to-r from-scrim/70 to-transparent py-2 pl-2 font-mono text-[10px] leading-none text-subtle">
+                <div className="absolute inset-y-0 left-0 flex w-9 flex-col justify-between bg-gradient-to-r from-spectrum/70 to-transparent py-2 pl-2 font-mono text-[10px] leading-none text-subtle">
                   {AXIS.map((hz) => (
                     <span key={hz}>{hz}</span>
                   ))}
@@ -133,7 +135,7 @@ export default function QualityScene() {
                   }}
                 />
                 <span
-                  className="absolute top-1.5 right-1.5 rounded bg-scrim/75 px-1.5 py-0.5 text-[10px] text-fg transition-opacity duration-300"
+                  className="absolute top-1.5 right-1.5 rounded bg-spectrum/75 px-1.5 py-0.5 text-[10px] text-fg transition-opacity duration-300"
                   style={{ opacity: frame.verdict === 'analyzing' ? 0 : 1 }}
                 >
                   {bad ? t('home.quality.highsBad') : t('home.quality.highsGood')}

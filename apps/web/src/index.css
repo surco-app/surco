@@ -32,6 +32,9 @@
   /* The colour shadows are cast in. Near black on the dark page; the light palette softens
      it to a grey, since the same black reads as a smudge on a light ground. */
   --color-shade: #0c0e14;
+  /* The ground of a spectrum image: as dark as the rendered image on the dark page; on the
+     light page the page ground, which the duotone sinks the image's silence into. */
+  --color-spectrum: #0c0e14;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
 }
 
@@ -59,18 +62,22 @@
   --color-faint: #61646f;
   --color-scrim: #d6d8df;
   --color-shade: #707280;
+  --color-spectrum: #e6e7ed;
 }
 
-/* The spectrum images are rendered dark and stay dark on the light page, so the axis, the
-   scan line and the wall drawn over them keep the dark palette. So do a window's traffic
-   lights, which macOS paints the same in both appearances. */
+/* A window's traffic lights keep the dark palette on the light page: macOS paints them the
+   same in both appearances. */
 :root[data-theme="light"] .keep-dark {
-  --color-scrim: #0c0e14;
-  --color-fg: #c0caf5;
-  --color-subtle: #a9b1d6;
   --color-red: #f7768e;
   --color-amber: #e0af68;
   --color-green: #9ece6a;
+}
+
+/* The spectrum images are rendered for the dark page. On the light one they go through the
+   app's own ramp (SpectrumDuotone), muted as the app mutes it so the accent at full chroma
+   doesn't outshout the page. */
+:root[data-theme="light"] .spectrum-duotone {
+  filter: url(#spectrum-duotone) saturate(0.7);
 }
 
 @custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
