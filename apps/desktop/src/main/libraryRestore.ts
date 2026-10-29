@@ -1,13 +1,11 @@
 import { existsSync, statSync } from 'node:fs'
 import { copyFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { LibraryCopy } from '../shared/types'
+import type { LibraryCopy, RestoreRefusal, RestoreResult } from '../shared/types'
 import { copyFolder, listCopies, restoreSlot, takeCopy } from './libraryHistory'
 import { removeTemp, renameWithRetry } from './renameRetry'
 
-export type RestoreRefusal = 'running' | 'pending-log' | 'not-found' | 'other-collection' | 'failed'
-
-export type RestoreResult = { ok: true } | { ok: false; reason: RestoreRefusal }
+export type { RestoreRefusal, RestoreResult }
 
 export interface RestoreDeps {
   ensureClosed: () => Promise<boolean>

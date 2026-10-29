@@ -2,6 +2,7 @@ import { type Dirent, existsSync, readdirSync, readlinkSync } from 'node:fs'
 import { readFile, stat, unlink, utimes, writeFile } from 'node:fs/promises'
 import log from 'electron-log/main'
 import { backupOf } from './libraryBackups'
+import { takeCopy } from './libraryHistory'
 import { createSessionBackup, writeBackup } from './rekordboxSessionBackup'
 import { renameWithRetry } from './renameRetry'
 import { readEmbeddedCover } from './tags'
@@ -35,7 +36,19 @@ import { isTraktorRunning } from './traktorProcess'
 // …and one dated copy per run, taken before its first write and left alone until the next
 // run (see rekordboxSessionBackup.ts): the per-write copy above no longer holds the DJ's
 // collection after a second save, this one still does. A new one begins with a convert-all.
-export const traktorSessionBackup = createSessionBackup({})
+let afterTraktorCopy: () => void = () => {}
+export function onTraktorCopyAttempt(listener: () => void): void {
+  afterTraktorCopy = listener
+}
+export const traktorSessionBackup = createSessionBackup({
+  take: async (...args) => {
+    try {
+      return await takeCopy(...args)
+    } finally {
+      afterTraktorCopy()
+    }
+  },
+})
 
 // How far ahead of the collection a detached conversion's timestamp is placed. Seconds
 // rather than milliseconds because the comparison has to survive a filesystem that

@@ -82,6 +82,7 @@ import { setBeatportSession } from './beatport'
 import { beatportSession, connectBeatport, disconnectBeatport } from './beatportCredentials'
 import { clipboardHasImage, readClipboardImage, writeClipboardImage } from './clipboardImage'
 import { createQuitIntent, handleGuardedClose } from './closeToQuit'
+import { registerCopiesIpc } from './copiesIpc'
 import type { CoverSource } from './cover'
 import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
 import { downloadCover, imageExt } from './coverDownload'
@@ -95,6 +96,7 @@ import { type ReplacePair, replaceDuplicates } from './duplicateReplace'
 import { registerEngineCueQueueIpc } from './engineCueQueueIpc'
 import { applyEngineCuesBatch } from './engineCuesWrite'
 import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
+import { engineDatabasePath } from './enginePlaylists'
 import { registerEnginePlaylistsIpc } from './enginePlaylistsIpc'
 import { isEngineDjRunning, quitEngineDj } from './engineProcess'
 import { expandPaths } from './expand'
@@ -118,11 +120,14 @@ import {
   syncTagsInLibraries,
   traktorFlushDeps,
 } from './libraryFlushes'
+import { takeCopy } from './libraryHistory'
+import { enginePendingLog, rekordboxPendingLog } from './libraryRestore'
 import { serialLibraryFlush } from './libraryTagSync'
 import { registerListReviewIpc } from './listReviewIpc'
 import { listReviewDeps } from './listReviewWiring'
 import { createMediaAccess } from './mediaAccess'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
+import { createMoments } from './moments'
 import { isIssuedPair } from './musicDuplicates'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
@@ -155,7 +160,6 @@ import { adjustProvisional, createProvisionalList } from './rekordboxProvisional
 import { createRekordboxQueue, fileStore, type QueueApply } from './rekordboxQueue'
 import { appliedNotice, registerRekordboxQueueIpc } from './rekordboxQueueIpc'
 import { stillWaiting, watchRekordboxQueue } from './rekordboxQueueWatch'
-import { createMoments } from './moments'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { loadLastSession, saveLastSession } from './session'
@@ -183,7 +187,12 @@ import { snapshotTagsInWorker, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
 import { registerTraktorCueQueueIpc } from './traktorCueQueueIpc'
 import { applyTraktorBatch } from './traktorCuesWrite'
-import { bootVolumeName, syncCollection, traktorSessionBackup } from './traktorNmlLibrary'
+import {
+  bootVolumeName,
+  onTraktorCopyAttempt,
+  syncCollection,
+  traktorSessionBackup,
+} from './traktorNmlLibrary'
 import {
   collectionsTraktorUses,
   collectionTraktorUses,
@@ -260,12 +269,20 @@ const stickyConflict = createStickyConflict()
 // One copy of the rekordbox collection per conversion run, taken before the run's first
 // write. Module-scoped for the same reason as stickyConflict: a run fans out into separate
 // process:track calls, and they all have to agree that the copy is already taken.
+async function takeCopyAndAnnounce(...args: Parameters<typeof takeCopy>) {
+  try {
+    return await takeCopy(...args)
+  } finally {
+    broadcast('copies:changed', null)
+  }
+}
 const rekordboxSessionBackup = createSessionBackup({
+  take: takeCopyAndAnnounce,
   companionsOf: (path) => (basename(path) === 'master.db' ? [playlistXmlPath(path)] : []),
   skip: (path) => basename(path) === 'masterPlaylists6.xml',
 })
 // The same for the Engine DJ library, which a run can repoint as well.
-const engineSessionBackup = createSessionBackup({})
+const engineSessionBackup = createSessionBackup({ take: takeCopyAndAnnounce })
 const sessions = { rekordbox: rekordboxSessionBackup, engine: engineSessionBackup }
 const moments = createMoments([rekordboxSessionBackup, engineSessionBackup, traktorSessionBackup])
 const broadcast = (channel: string, payload: unknown): void => {
@@ -1868,6 +1885,42 @@ function registerIpc(): void {
   ipcMain.handle('clipboard:hasImage', () => clipboardHasImage())
 
   registerShellIpc(mediaAccess)
+  onTraktorCopyAttempt(() => broadcast('copies:changed', null))
+  registerCopiesIpc(
+    {
+      rekordbox: {
+        collectionPath: () => rekordboxCollectionPath() || null,
+        untouched: () => !getSettings().syncRekordbox,
+        session: rekordboxSessionBackup,
+        queue: rekordboxQueue,
+        ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
+        isRunning: isRekordboxRunning,
+        pendingLog: rekordboxPendingLog,
+      },
+      traktor: {
+        collectionPath: () => traktorWritePath() || null,
+        untouched: () => !getSettings().syncTraktor,
+        session: traktorSessionBackup,
+        queue: traktorCueQueue,
+        ensureClosed: (win) => ensureTraktorClosed(win, 'traktorQuitDetailCues'),
+        isRunning: isTraktorRunning,
+        pendingLog: () => false,
+      },
+      engine: {
+        collectionPath: () => {
+          const dir = engineLibraryPath()
+          return dir ? engineDatabasePath(dir) : null
+        },
+        untouched: () => !getSettings().syncEngineDj,
+        session: engineSessionBackup,
+        queue: engineCueQueue,
+        ensureClosed: (win) => ensureEngineDjClosed(win, 'engineQuitDetailCues'),
+        isRunning: isEngineDjRunning,
+        pendingLog: enginePendingLog,
+      },
+    },
+    broadcast,
+  )
   registerTrashIpc(surcoTrash, mediaAccess)
   registerFeedbackIpc()
 

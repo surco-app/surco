@@ -17,6 +17,7 @@ import type {
   CoverExportJob,
   CoverRead,
   DeclickConfig,
+  DjProgram,
   DockIconFrames,
   DuplicatePair,
   DuplicateReplaceOutcome,
@@ -42,6 +43,7 @@ import type {
   ProcessJob,
   ProcessProgress,
   ProcessResult,
+  ProgramCopies,
   QueuedCues,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
@@ -50,6 +52,7 @@ import type {
   RekordboxSyncIssue,
   Release,
   RemoveCopyResult,
+  RestoreResult,
   ReviewOutcome,
   RowWaveRequest,
   SaveCuesRequest,
@@ -378,6 +381,9 @@ export interface Api {
   // Shows the log file in the OS file manager so a user can attach it to a report.
   revealLog: () => Promise<void>
   revealBackups: () => Promise<string>
+  copiesStatus: () => Promise<ProgramCopies[]>
+  restoreCopy: (program: DjProgram, copyId: string) => Promise<RestoreResult>
+  onCopiesChanged: (cb: () => void) => () => void
   // Opens a prefilled report in the OS mail client. Only the error text crosses the
   // bridge; main stamps version and OS and builds the address itself.
   openFeedback: (error?: string, stack?: string) => Promise<void>
