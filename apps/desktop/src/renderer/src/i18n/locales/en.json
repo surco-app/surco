@@ -1577,7 +1577,7 @@
     "originalBackupLimitsKept": "The limits still govern what is already kept.",
     "engineSync": "Engine DJ library",
     "syncEngineDj": "Update the Engine DJ library when converting",
-    "syncEngineDjHint": "When you convert a track that is in your Engine DJ library, its entry follows the new file and keeps its playlists and cue points. It uses the library chosen under the Engine DJ destination. Before writing, Surco saves a backup of the whole run in its backups folder (Settings → Advanced), plus one of each write, and it never writes while Engine DJ is open.",
+    "syncEngineDjHint": "When you convert a track that is in your Engine DJ library, its entry follows the new file and keeps its playlists and cue points. It uses the library chosen just above. Before writing, Surco saves a backup of the whole run in its backups folder (Settings → Advanced), plus one of each write, and it never writes while Engine DJ is open.",
     "djReach": {
       "off": "Leave alone",
       "update": "Update",
@@ -1764,11 +1764,11 @@
     "djFolderChange": "Change",
     "djLibrary": {
       "rekordbox": "rekordbox",
-      "rekordboxBody": "Keep the collection in step when converting.",
+      "rekordboxBody": "Keep the collection in step when converting and add new tracks to it.",
       "engine": "Engine DJ",
-      "engineBody": "Keep the library in step when converting.",
+      "engineBody": "Keep the library in step when converting and add new tracks to it.",
       "traktor": "Traktor",
-      "traktorBody": "Keep the collection in step when converting, with its playlists and cues."
+      "traktorBody": "Keep the collection in step when converting, with its playlists and cues, and add new tracks to it."
     }
   },
   "help": {

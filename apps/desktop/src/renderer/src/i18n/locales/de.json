@@ -1577,7 +1577,7 @@
     "originalBackupLimitsKept": "Die Grenzen gelten weiterhin für das bereits Aufbewahrte.",
     "engineSync": "Engine-DJ-Bibliothek",
     "syncEngineDj": "Engine-DJ-Bibliothek beim Konvertieren aktualisieren",
-    "syncEngineDjHint": "Wenn du einen Titel konvertierst, der in deiner Engine-DJ-Bibliothek liegt, folgt sein Eintrag der neuen Datei und behält Playlists und Cue-Punkte. Verwendet wird die beim Ziel Engine DJ gewählte Bibliothek. Vor dem Schreiben legt Surco in seinem Sicherungsordner (Einstellungen → Erweitert) eine Sicherung des gesamten Durchlaufs an, dazu eine je Schreibvorgang, und schreibt nie, während Engine DJ geöffnet ist.",
+    "syncEngineDjHint": "Wenn du einen Titel konvertierst, der in deiner Engine-DJ-Bibliothek liegt, folgt sein Eintrag der neuen Datei und behält Playlists und Cue-Punkte. Verwendet wird die direkt darüber gewählte Bibliothek. Vor dem Schreiben legt Surco in seinem Sicherungsordner (Einstellungen → Erweitert) eine Sicherung des gesamten Durchlaufs an, dazu eine je Schreibvorgang, und schreibt nie, während Engine DJ geöffnet ist.",
     "djReach": {
       "off": "Nicht anfassen",
       "update": "Aktualisieren",
@@ -1764,11 +1764,11 @@
     "djFolderChange": "Ändern",
     "djLibrary": {
       "rekordbox": "rekordbox",
-      "rekordboxBody": "Die Sammlung beim Konvertieren aktuell halten.",
+      "rekordboxBody": "Die Sammlung beim Konvertieren aktuell halten und neue Titel hinzufügen.",
       "engine": "Engine DJ",
-      "engineBody": "Die Bibliothek beim Konvertieren aktuell halten.",
+      "engineBody": "Die Bibliothek beim Konvertieren aktuell halten und neue Titel hinzufügen.",
       "traktor": "Traktor",
-      "traktorBody": "Die Sammlung beim Konvertieren aktuell halten, mit Playlists und Cues."
+      "traktorBody": "Die Sammlung beim Konvertieren aktuell halten, mit Playlists und Cues, und neue Titel hinzufügen."
     }
   },
   "help": {

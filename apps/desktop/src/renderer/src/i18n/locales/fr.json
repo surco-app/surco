@@ -1577,7 +1577,7 @@
     "originalBackupLimitsKept": "Les limites régissent toujours ce qui est déjà conservé.",
     "engineSync": "Bibliothèque Engine DJ",
     "syncEngineDj": "Mettre à jour la bibliothèque Engine DJ à la conversion",
-    "syncEngineDjHint": "Quand tu convertis un morceau présent dans ta bibliothèque Engine DJ, son entrée suit le nouveau fichier et conserve ses playlists et ses cue points. C'est la bibliothèque choisie pour la destination Engine DJ qui est utilisée. Avant d'écrire, Surco enregistre dans son dossier de sauvegardes (Réglages → Avancé) une sauvegarde de toute la série, plus une par écriture, et n'écrit jamais quand Engine DJ est ouvert.",
+    "syncEngineDjHint": "Quand tu convertis un morceau présent dans ta bibliothèque Engine DJ, son entrée suit le nouveau fichier et conserve ses playlists et ses cue points. C'est la bibliothèque choisie juste au-dessus qui est utilisée. Avant d'écrire, Surco enregistre dans son dossier de sauvegardes (Réglages → Avancé) une sauvegarde de toute la série, plus une par écriture, et n'écrit jamais quand Engine DJ est ouvert.",
     "djReach": {
       "off": "Ne pas toucher",
       "update": "Mettre à jour",
@@ -1764,11 +1764,11 @@
     "djFolderChange": "Modifier",
     "djLibrary": {
       "rekordbox": "rekordbox",
-      "rekordboxBody": "Garder la collection à jour à la conversion.",
+      "rekordboxBody": "Garder la collection à jour à la conversion et y ajouter les nouveaux morceaux.",
       "engine": "Engine DJ",
-      "engineBody": "Garder la bibliothèque à jour à la conversion.",
+      "engineBody": "Garder la bibliothèque à jour à la conversion et y ajouter les nouveaux morceaux.",
       "traktor": "Traktor",
-      "traktorBody": "Garder la collection à jour à la conversion, avec ses playlists et ses cues."
+      "traktorBody": "Garder la collection à jour à la conversion, avec ses playlists et ses cues, et y ajouter les nouveaux morceaux."
     }
   },
   "help": {

@@ -1577,7 +1577,7 @@
     "originalBackupLimitsKept": "Los límites siguen rigiendo para lo que ya está guardado.",
     "engineSync": "Biblioteca de Engine DJ",
     "syncEngineDj": "Actualizar la biblioteca de Engine DJ al convertir",
-    "syncEngineDjHint": "Al convertir una pista que está en tu biblioteca de Engine DJ, su entrada pasa a apuntar al archivo nuevo y conserva sus playlists y sus cue points. Usa la biblioteca elegida en el destino Engine DJ. Antes de escribir, Surco guarda en su carpeta de copias (Ajustes → Avanzado) una copia de seguridad de toda la tanda y otra de cada escritura, y nunca escribe con Engine DJ abierto.",
+    "syncEngineDjHint": "Al convertir una pista que está en tu biblioteca de Engine DJ, su entrada pasa a apuntar al archivo nuevo y conserva sus playlists y sus cue points. Usa la biblioteca elegida justo encima. Antes de escribir, Surco guarda en su carpeta de copias (Ajustes → Avanzado) una copia de seguridad de toda la tanda y otra de cada escritura, y nunca escribe con Engine DJ abierto.",
     "djReach": {
       "off": "No tocar",
       "update": "Actualizar",
@@ -1764,11 +1764,11 @@
     "djFolderChange": "Cambiar",
     "djLibrary": {
       "rekordbox": "rekordbox",
-      "rekordboxBody": "Mantener la colección al día al convertir.",
+      "rekordboxBody": "Mantener la colección al día al convertir y añadirle las pistas nuevas.",
       "engine": "Engine DJ",
-      "engineBody": "Mantener la biblioteca al día al convertir.",
+      "engineBody": "Mantener la biblioteca al día al convertir y añadirle las pistas nuevas.",
       "traktor": "Traktor",
-      "traktorBody": "Mantener la colección al día al convertir, con sus playlists y sus cues."
+      "traktorBody": "Mantener la colección al día al convertir, con sus playlists y sus cues, y añadirle las pistas nuevas."
     }
   },
   "help": {

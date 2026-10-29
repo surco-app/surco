@@ -1577,7 +1577,7 @@
     "originalBackupLimitsKept": "制限は保持されているものに適用されます。",
     "engineSync": "Engine DJ ライブラリ",
     "syncEngineDj": "変換時にEngine DJライブラリを更新する",
-    "syncEngineDjHint": "Engine DJライブラリにあるトラックを変換すると、そのエントリは新しいファイルに従い、プレイリストやキューポイントを保持します。Engine DJの宛先で選択されたライブラリを使用します。書き込み前にSurcoは実行全体のバックアップと各書き込みのバックアップをバックアップフォルダー（設定 → 詳細）に保存し、Engine DJが開いている間は書き込みを行いません。",
+    "syncEngineDjHint": "Engine DJライブラリにあるトラックを変換すると、そのエントリは新しいファイルに従い、プレイリストやキューポイントを保持します。すぐ上で選択したライブラリを使用します。書き込み前にSurcoは実行全体のバックアップと各書き込みのバックアップをバックアップフォルダー（設定 → 詳細）に保存し、Engine DJが開いている間は書き込みを行いません。",
     "djReach": {
       "off": "触らない",
       "update": "更新",
@@ -1764,11 +1764,11 @@
     "djFolderChange": "変更",
     "djLibrary": {
       "rekordbox": "rekordbox",
-      "rekordboxBody": "変換時にコレクションを同期させておく。",
+      "rekordboxBody": "変換時にコレクションを同期させ、新しいトラックも追加する。",
       "engine": "Engine DJ",
-      "engineBody": "変換時にライブラリを同期させておく。",
+      "engineBody": "変換時にライブラリを同期させ、新しいトラックも追加する。",
       "traktor": "Traktor",
-      "traktorBody": "変換時にプレイリストとキューを含めてコレクションを同期させておく。"
+      "traktorBody": "変換時にプレイリストとキューを含めてコレクションを同期させ、新しいトラックも追加する。"
     }
   },
   "help": {
