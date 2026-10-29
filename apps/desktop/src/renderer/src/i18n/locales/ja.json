@@ -646,6 +646,7 @@
     "regenerateCustom": "このトラックのファイル名パターンをカスタマイズ…",
     "convert": "{{format}} + Apple Music に変換",
     "convertEngine": "{{format}} + Engine DJ に変換",
+    "lossyToLossless": "ソースは非可逆です。{{format}} に変換しても音質は戻りません。",
     "convertNoMusic": "{{format}} に変換",
     "convertFolder": "{{format}} に変換（{{folder}}）",
     "convertBeside": "元ファイルの横に {{format}} に変換",

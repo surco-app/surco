@@ -646,6 +646,7 @@
     "regenerateCustom": "Dateinamen-Muster für diesen Track anpassen…",
     "convert": "In {{format}} konvertieren + Apple Music",
     "convertEngine": "In {{format}} konvertieren + Engine DJ",
+    "lossyToLossless": "Die Quelle ist verlustbehaftet – {{format}} stellt ihre Qualität nicht wieder her.",
     "convertNoMusic": "In {{format}} konvertieren",
     "convertFolder": "In {{format}} nach {{folder}} konvertieren",
     "convertBeside": "In {{format}} neben das Original konvertieren",

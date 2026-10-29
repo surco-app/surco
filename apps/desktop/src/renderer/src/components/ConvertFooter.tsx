@@ -14,7 +14,9 @@ import type { Destination } from '../lib/destination'
 import { openFeedback } from '../lib/feedback'
 import { formatUpTo } from '../lib/numberFormat'
 import { isMacOS } from '../lib/platform'
+import { gradedExt, isLosslessContainer, isLossyContainer } from '../lib/quality'
 import type { SelectionStatus } from '../lib/selectionStatus'
+import { trackQuality } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { DoneMenu } from './DoneMenu'
 import { ExportButton } from './ExportButton'
@@ -166,6 +168,11 @@ export function ConvertFooter({
     staleMusicCopy: !isMulti && musicAdded && staleMusicCopy ? staleMusicCopy : null,
   }
   const cleanupFiles = cleanupCount(cleanup)
+  const lossyToLossless =
+    !isMulti &&
+    isLosslessContainer(format) &&
+    (isLossyContainer(gradedExt(item.inputPath, item.spectrum?.codec)) ||
+      trackQuality(item) === 'transcoded')
   const musicLabel = musicAdding
     ? hasMusicCopy
       ? tr('editor.appleMusicUpdating')
@@ -357,33 +364,40 @@ export function ConvertFooter({
             )}
           </>
         ) : (
-          <ExportButton
-            status={isMulti ? 'idle' : item.status}
-            stage={isMulti ? undefined : item.stage}
-            stale={!isMulti && stale}
-            replaces={!isMulti && replaces}
-            libraryBetter={!isMulti && libraryBetter}
-            done={!isMulti && done}
-            outputFormat={format}
-            exportedFormat={isMulti ? null : exportedFormat}
-            withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
-            withEngineDj={addToEngineDj}
-            incomplete={incomplete}
-            incompleteReason={incompleteReason}
-            blockedLabel={incompleteSummary}
-            onBlockedPress={onBlockedPress}
-            inPlace={!isMulti && willEditInPlace}
-            tagsOnly={tagsOnly}
-            inMusic={hasMusicCopy}
-            destination={destination}
-            destinations={destinations}
-            outputFolder={outputFolder}
-            count={isMulti ? selectedCount : undefined}
-            onProcess={onProcess}
-            onCancel={onCancel}
-            onSelectFormat={onSelectFormat}
-            onSelectDestination={onSelectDestination}
-          />
+          <>
+            {lossyToLossless && (
+              <p data-testid="convert-lossy-note" className="text-center text-xs text-fg-dim">
+                {tr('editor.lossyToLossless', { format: format.toUpperCase() })}
+              </p>
+            )}
+            <ExportButton
+              status={isMulti ? 'idle' : item.status}
+              stage={isMulti ? undefined : item.stage}
+              stale={!isMulti && stale}
+              replaces={!isMulti && replaces}
+              libraryBetter={!isMulti && libraryBetter}
+              done={!isMulti && done}
+              outputFormat={format}
+              exportedFormat={isMulti ? null : exportedFormat}
+              withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
+              withEngineDj={addToEngineDj}
+              incomplete={incomplete}
+              incompleteReason={incompleteReason}
+              blockedLabel={incompleteSummary}
+              onBlockedPress={onBlockedPress}
+              inPlace={!isMulti && willEditInPlace}
+              tagsOnly={tagsOnly}
+              inMusic={hasMusicCopy}
+              destination={destination}
+              destinations={destinations}
+              outputFolder={outputFolder}
+              count={isMulti ? selectedCount : undefined}
+              onProcess={onProcess}
+              onCancel={onCancel}
+              onSelectFormat={onSelectFormat}
+              onSelectDestination={onSelectDestination}
+            />
+          </>
         )}
       </div>
     </div>

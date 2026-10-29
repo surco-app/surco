@@ -646,6 +646,7 @@
     "regenerateCustom": "Personalizar o padrão do nome para esta faixa…",
     "convert": "Converter para {{format}} + Apple Music",
     "convertEngine": "Converter para {{format}} + Engine DJ",
+    "lossyToLossless": "A fonte tem perdas: converter para {{format}} não recupera a qualidade.",
     "convertNoMusic": "Converter para {{format}}",
     "convertFolder": "Converter para {{format}} em {{folder}}",
     "convertBeside": "Converter para {{format}} ao lado do original",

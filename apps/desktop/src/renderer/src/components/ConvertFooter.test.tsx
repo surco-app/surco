@@ -390,3 +390,43 @@ describe('ConvertFooter library reveal', () => {
     expect(screen.queryByTestId('reveal-in-rekordbox')).toBeNull()
   })
 })
+
+describe('ConvertFooter lossy source note', () => {
+  function converting(
+    inputPath: string,
+    format: 'aiff' | 'mp3',
+    spectrum?: TrackItem['spectrum'],
+  ): React.JSX.Element {
+    return cloneElement(footer(false), {
+      item: { id: 't1', status: 'idle', inputPath, meta: {}, spectrum } as TrackItem,
+      format,
+    })
+  }
+  const cut = (cutoffHz: number): TrackItem['spectrum'] =>
+    ({ image: '', cutoffHz, sampleRateHz: 44100, processed: false }) as TrackItem['spectrum']
+
+  // A 1.2 MB MP3 came out a 5.3 MB AIFF without a word: a lossless container looks like an
+  // upgrade, and the DJ deserves to know it is only a bigger copy of the same audio.
+  it('says a lossy source converted to a lossless format keeps its quality', () => {
+    render(converting('/crate/a.mp3', 'aiff'))
+    expect(screen.getByTestId('convert-lossy-note')).toHaveTextContent(
+      i18n.t('editor.lossyToLossless', { format: 'AIFF' }),
+    )
+    expect(screen.getByTestId('process-btn')).not.toHaveAttribute('aria-disabled')
+  })
+
+  it('says the same of a lossless file measured as a lossy source', () => {
+    render(converting('/crate/a.flac', 'aiff', cut(16000)))
+    expect(screen.getByTestId('convert-lossy-note')).toBeInTheDocument()
+  })
+
+  it('stays quiet for a genuine lossless source', () => {
+    render(converting('/crate/a.flac', 'aiff', cut(21000)))
+    expect(screen.queryByTestId('convert-lossy-note')).toBeNull()
+  })
+
+  it('stays quiet when the output is lossy too', () => {
+    render(converting('/crate/a.mp3', 'mp3'))
+    expect(screen.queryByTestId('convert-lossy-note')).toBeNull()
+  })
+})
