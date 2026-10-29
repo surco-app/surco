@@ -692,14 +692,18 @@ async function readMetaUncached(input: string, full = true): Promise<MetaRead | 
     // found no rating (ID3 containers only; a no-op elsewhere).
     if (!tags.rating?.trim() && tagLib.popm) tags.rating = tagLib.popm
     const reviewRaw = reviewRawOf(tags, reviewRawFromProbe(data), () => tagLib.reviewRaw)
+    const duration = Number.isFinite(seconds) ? seconds : await measureDurationByDecoding(input)
+    // Read through ffmpeg, not the ffprobe JSON above: the bundled ffprobe (4.4.1) hides a
+    // WAV's ID3 TXXX frames, so foreignTagsFromProbe(data) would miss them. readForeignTags
+    // runs its own ffmpeg pass (best-effort) that surfaces them on every container.
+    const [cover, foreignTags] = full
+      ? await Promise.all([extractCover(input, dims), readForeignTags(input)])
+      : [null, []]
     return {
       tags,
-      duration: Number.isFinite(seconds) ? seconds : await measureDurationByDecoding(input),
-      cover: full ? await extractCover(input, dims) : null,
-      // Read through ffmpeg, not the ffprobe JSON above: the bundled ffprobe (4.4.1) hides a
-      // WAV's ID3 TXXX frames, so foreignTagsFromProbe(data) would miss them. readForeignTags
-      // runs its own ffmpeg pass (best-effort) that surfaces them on every container.
-      foreignTags: full ? await readForeignTags(input) : [],
+      duration,
+      cover,
+      foreignTags,
       ...(reviewRaw && { reviewRaw }),
     }
   } catch {
