@@ -6319,6 +6319,47 @@ describe('App metadata undo', () => {
     expect(screen.getByTestId('field-artist')).toHaveValue('Own Artist')
   })
 
+  it('takes the release artwork back off every selected track when a release applied across them is undone', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok' })),
+      readTags: vi.fn((path: string) =>
+        Promise.resolve({ title: path === '/music/a.wav' ? 'One' : 'Two', artist: 'Artist' }),
+      ),
+      prepareCoverDrag: vi.fn().mockResolvedValue(null),
+      search: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue({
+        ...matchRelease,
+        images: [{ uri: 'https://img/release.jpg', type: 'primary', resource_url: '' }],
+        tracklist: [
+          { position: '1', title: 'One' },
+          { position: '2', title: 'Two' },
+        ],
+      }),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.change(await screen.findByTestId('discogs-query'), { target: { value: 'album' } })
+    fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
+    fireEvent.click(await screen.findByTestId('discogs-result'))
+    fireEvent.click(await screen.findByTestId('match-apply'))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() =>
+      expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'https://img/release.jpg'),
+    )
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+
+    for (const index of [0, 1]) {
+      fireEvent.click(screen.getAllByTestId('track-row')[index])
+      await waitFor(() =>
+        expect(screen.getByTestId('field-title')).toHaveValue(['One', 'Two'][index]),
+      )
+      expect(screen.queryByTestId('cover-preview')).toBeNull()
+    }
+  })
+
   it('brings back a cover removed by hand on undo', async () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),

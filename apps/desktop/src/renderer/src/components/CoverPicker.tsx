@@ -82,9 +82,11 @@ interface Props {
   // should replace a low-res existing cover; the <img> onLoad reports it back up.
   coverDims: { w: number; h: number } | null
   setCoverDims: (dims: { w: number; h: number } | null) => void
-  onChange: (patch: Partial<TrackItem>) => void
+  onChange: (patch: Partial<TrackItem>, opts?: { group?: string }) => void
   onApplyCoverAll?: (coverUrl: string, coverPath?: string) => void
 }
+
+let stepSessions = 0
 
 // The album artwork well: shows the current cover (with hover remove/export), a
 // drop/click target when empty, a stepper through the file's image and the release's
@@ -102,6 +104,7 @@ export function CoverPicker({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { reportError } = useToast()
+  const [stepSession] = useState(() => ++stepSessions)
   // In multi-select the cover is whatever the tracks already share (or nothing, when
   // they differ); a drop/pick stamps it onto all of them instead of just the primary.
   const sharedCover =
@@ -358,11 +361,14 @@ export function CoverPicker({
     if (i < 0) return
     if (isMulti) onApplyCoverAll?.(coverChoices[i].uri, coverChoices[i].path)
     else
-      onChange({
-        coverUrl: coverChoices[i].uri,
-        coverPath: coverChoices[i].path,
-        coverRemoved: false,
-      })
+      onChange(
+        {
+          coverUrl: coverChoices[i].uri,
+          coverPath: coverChoices[i].path,
+          coverRemoved: false,
+        },
+        { group: `cover-step-${item.id}-${stepSession}` },
+      )
   }
 
   function onCoverExport(): void {

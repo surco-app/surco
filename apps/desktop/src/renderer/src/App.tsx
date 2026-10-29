@@ -2062,7 +2062,10 @@ export default function App(): React.JSX.Element {
   // same-named LP) is otherwise unrecoverable: the file's own tags are already gone.
   const onApplyMatches = useStableCallback(
     (patches: { id: string; patch: ReleaseMetaPatch }[], provider: SearchProviderId) => {
-      recordMetaUndo(patches.map((p) => p.id))
+      recordMetaUndo(
+        patches.map((p) => p.id),
+        { cover: true },
+      )
       for (const p of patches)
         updateTrack(p.id, { ...p.patch, matched: true, matchProvider: provider })
     },

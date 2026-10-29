@@ -412,8 +412,6 @@ describe('Editor cover picker', () => {
     })
   })
 
-  // Clearing the artwork must signal a real removal (coverRemoved), not just drop
-  // the URL — otherwise the conversion's in-place path would keep the embedded art.
   it('records the cover before a change by hand, so ⌘Z can bring the old artwork back', () => {
     ;(window as unknown as { api: Record<string, unknown> }).api.prepareCoverDrag = () =>
       Promise.resolve('/tmp/c.jpg')
@@ -428,6 +426,8 @@ describe('Editor cover picker', () => {
     )
   })
 
+  // Clearing the artwork must signal a real removal (coverRemoved), not just drop
+  // the URL — otherwise the conversion's in-place path would keep the embedded art.
   it('clears the cover and flags removal when the remove button is clicked', () => {
     ;(window as unknown as { api: Record<string, unknown> }).api.prepareCoverDrag = () =>
       Promise.resolve('/tmp/c.jpg')
@@ -3189,6 +3189,49 @@ describe('Editor Discogs apply', () => {
     fireEvent.click(screen.getByTestId('cover-lightbox-next'))
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ coverUrl: 'discogs.jpg', coverRemoved: false }),
+    )
+  })
+
+  it('folds a run of cover stepper presses into one undo step, so browsing candidates does not push real edits off the stack', async () => {
+    withImages()
+    const { onRecordUndo } = renderEditor({
+      id: 'a',
+      coverUrl: 'embedded.jpg',
+      embeddedCover: 'embedded.jpg',
+    })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    await screen.findAllByTestId('discogs-track')
+    fireEvent.click(screen.getByTestId('cover-next'))
+    fireEvent.click(screen.getByTestId('cover-next'))
+    fireEvent.click(screen.getByTestId('cover-prev'))
+
+    expect(onRecordUndo).toHaveBeenCalledTimes(3)
+    const groups = onRecordUndo.mock.calls.map(([, opts]) => opts.group)
+    expect(groups[0]).toEqual(expect.any(String))
+    expect(new Set(groups).size).toBe(1)
+  })
+
+  it('gives a stepper run on another opening of the track its own undo step', async () => {
+    withImages()
+    const first = renderEditor({ id: 'a', coverUrl: 'embedded.jpg', embeddedCover: 'embedded.jpg' })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    await screen.findAllByTestId('discogs-track')
+    fireEvent.click(screen.getByTestId('cover-next'))
+    cleanup()
+    const second = renderEditor({
+      id: 'a',
+      coverUrl: 'embedded.jpg',
+      embeddedCover: 'embedded.jpg',
+    })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    await screen.findAllByTestId('discogs-track')
+    fireEvent.click(screen.getByTestId('cover-next'))
+
+    expect(second.onRecordUndo.mock.calls[0][1].group).not.toBe(
+      first.onRecordUndo.mock.calls[0][1].group,
     )
   })
 

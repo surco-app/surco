@@ -158,7 +158,7 @@ interface Props {
   // Snapshots the given tracks' tags into App's ⌘Z stack before the clear button, a
   // release pick or a cover change overwrites them (derive is already recorded inside
   // onDeriveTags).
-  onRecordUndo?: (ids: string[], opts?: { cover?: boolean }) => void
+  onRecordUndo?: (ids: string[], opts?: { cover?: boolean; group?: string }) => void
   // Marks the given tracks as fully cleared (coverRemoved + metaCleared) so a convert
   // wipes their rating and cover too — the multi-select sibling of the flags the
   // single-track clear sets on its onChange patch.
@@ -807,10 +807,12 @@ export const Editor = memo(function Editor({
     onChange({ meta: { ...item.meta, custom: { ...item.meta.custom, [key]: value } } })
   })
 
-  const onCoverChange = useStableCallback((patch: Partial<TrackItem>): void => {
-    onRecordUndo?.([item.id], { cover: true })
-    onChange(patch)
-  })
+  const onCoverChange = useStableCallback(
+    (patch: Partial<TrackItem>, opts?: { group?: string }): void => {
+      onRecordUndo?.([item.id], { cover: true, ...opts })
+      onChange(patch)
+    },
+  )
 
   // The open track's metadata with its custom fields resolved, once, for every reader below.
   const resolvedMeta = useMemo(() => effectiveMeta(item, customFields), [item, customFields])
