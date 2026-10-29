@@ -465,7 +465,7 @@ export function SettingsModal({
             role="tabpanel"
             id="settings-tabpanel"
             aria-labelledby={`settings-tab-${tab}`}
-            className="-mr-2 flex-1 overflow-x-hidden overflow-y-auto pr-2 [&_[data-search-hit=true]]:rounded-md [&_[data-search-hit=true]]:outline-1 [&_[data-search-hit=true]]:outline-offset-4 [&_[data-search-hit=true]]:outline-[var(--color-accent)] [&_[data-search-hit=true]]:outline-solid"
+            className="-mr-2 flex-1 overflow-x-hidden overflow-y-auto pr-2 [&_[data-search-id]]:rounded-md [&_[data-search-id]]:outline-1 [&_[data-search-id]]:outline-offset-4 [&_[data-search-id]]:outline-transparent [&_[data-search-id]]:outline-solid [&_[data-search-id]]:transition-[outline-color] [&_[data-search-id]]:duration-500 motion-reduce:[&_[data-search-id]]:transition-none [&_[data-search-hit=true]]:outline-[var(--color-accent)]"
           >
             {tab === 'general' && (
               <GeneralTab
