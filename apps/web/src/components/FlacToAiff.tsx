@@ -103,7 +103,7 @@ export default function FlacToAiff() {
             <figure
               data-testid="flac-to-aiff-example"
               aria-label={t('flacToAiff.example.label')}
-              className="rounded-2xl border border-line bg-surface p-4 shadow-2xl shadow-black/40 inset-shadow-edge"
+              className="rounded-2xl border border-line bg-surface p-4 shadow-2xl shadow-shade/40 inset-shadow-edge"
             >
               <ExampleFile format="FLAC" />
               <p className="py-2 text-center font-mono text-xs text-faint">

@@ -93,3 +93,32 @@ describe('light theme contrast (WCAG 1.4.3 AA)', () => {
     })
   }
 })
+
+// The scenes copy the app's window, so in light they follow the app's light theme, not an
+// inverted dark one: there a text field is brighter than the panel it sits on.
+describe('light theme follows the app it depicts', () => {
+  it('draws scene fields brighter than the panel in light and darker in dark', () => {
+    expect(luminance(token('field', lightCss))).toBeGreaterThan(luminance(token('bg', lightCss)))
+    expect(luminance(token('field'))).toBeLessThan(luminance(token('bg')))
+  })
+
+  it('keeps the deep bands as quiet on the light page as on the dark one', () => {
+    expect(contrast(token('bg2', lightCss), token('bg', lightCss))).toBeLessThanOrEqual(1.1)
+  })
+
+  it('brightens the primary button toward its cyan end in both themes, so it reads lit', () => {
+    expect(luminance(token('cyan'))).toBeGreaterThan(luminance(token('blue')))
+    expect(luminance(token('cyan', lightCss))).toBeGreaterThan(luminance(token('blue', lightCss)))
+  })
+
+  it('casts lighter shadows on the light page, where black ones read as heavy smudges', () => {
+    expect(luminance(token('shade', lightCss))).toBeGreaterThan(luminance(token('shade')))
+  })
+
+  it('lights the top edge of a card with a colour lighter than the card in both themes', () => {
+    expect(luminance(token('sheen'))).toBeGreaterThan(luminance(token('surface')))
+    expect(luminance(token('sheen', lightCss))).toBeGreaterThanOrEqual(
+      luminance(token('surface', lightCss)),
+    )
+  })
+})

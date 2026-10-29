@@ -51,7 +51,8 @@ const BLENDS: Record<string, [Colour, number, Colour]> = {
 const palette = new Set<string>(Object.values(TOKYO_NIGHT))
 
 // The light theme is the desktop app's: its [data-theme='light'] palette, plus Tokyo Night
-// Light's cyan and magenta, which the app never needed and the site's accents do.
+// Light's teal and magenta, which the app never needed and the site's accents do. The deep
+// bands take a ground halfway between the app's ink and panel, as quiet as the dark ones.
 const SURCO_LIGHT = {
   ink: '#d6d8df',
   panel: '#e6e7ed',
@@ -67,7 +68,8 @@ const SURCO_LIGHT = {
   good: '#33635c',
   warn: '#785526',
   danger: '#8c4351',
-  cyan: '#0f4b6e',
+  teal: '#166775',
+  ink_panel_mix: '#dee0e6',
   magenta: '#5a4a78',
 } as const
 
@@ -181,6 +183,26 @@ describe('components paint only Tokyo Night colours', () => {
       expect([...hexes, ...rgbs]).toEqual([])
     })
   }
+
+  // A shadow in Tailwind's black is as heavy on the light page as on the dark one; the
+  // shade token lightens with the theme.
+  for (const [name, path] of sources.filter(([name]) => name !== 'index.html')) {
+    it(`${name} casts its shadows in the theme's shade`, () => {
+      expect(readFileSync(path, 'utf8').match(/shadow-black\b/g) ?? []).toEqual([])
+    })
+  }
+
+  // macOS draws the window buttons in the same red, amber and green in both appearances;
+  // the status tokens darken in light, which turned them into maroon and olive dots.
+  it("keeps the scene windows' traffic lights in their dark-theme colours", () => {
+    const chrome = readFileSync(join(root, 'components/scenes/AppChrome.tsx'), 'utf8')
+    expect(chrome).toMatch(/className="keep-dark[^"]*">\s*<i[^>]*bg-red[^>]*\/>\s*<i[^>]*bg-amber/)
+    const keepDark = css.slice(
+      css.indexOf('.keep-dark {'),
+      css.indexOf('}', css.indexOf('.keep-dark {')),
+    )
+    for (const token of ['red', 'amber', 'green']) expect(keepDark).toContain(`--color-${token}:`)
+  })
 
   // canvas-confetti draws in its own neon rainbow unless it is handed colours, and no
   // literal in the source would show it.

@@ -109,7 +109,7 @@ export default function CuesScene() {
       <div
         ref={win}
         aria-hidden="true"
-        className="inset-shadow-edge relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-line bg-bg text-left shadow-xl shadow-black/25"
+        className="inset-shadow-edge relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-line bg-bg text-left shadow-xl shadow-shade/25"
       >
         <div className="flex h-9 items-center pl-3.5">
           <span className="flex gap-[7px]">
@@ -142,7 +142,7 @@ export default function CuesScene() {
               </span>
             </span>
             <span className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-              <span className="flex h-8 items-center gap-1.5 rounded-lg border border-line bg-bg2 px-2.5 text-[12.5px] whitespace-nowrap">
+              <span className="flex h-8 items-center gap-1.5 rounded-lg border border-line bg-field px-2.5 text-[12.5px] whitespace-nowrap">
                 <span className="text-muted">{t('home.cues.flow')}</span>
                 <span className="font-medium text-fg">{t('home.cues.flowName')}</span>
                 <span className="text-faint">

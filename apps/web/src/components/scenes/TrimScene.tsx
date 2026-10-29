@@ -83,7 +83,7 @@ function Pane({
     <div className="min-w-0">
       <p className="flex items-center gap-1.5 text-[11.5px] text-muted">
         {label}
-        <span className="ml-auto rounded-md border border-edge/45 bg-bg2 px-1.5 py-0.5 font-mono text-[10.5px] text-fg tabular-nums">
+        <span className="ml-auto rounded-md border border-edge/45 bg-field px-1.5 py-0.5 font-mono text-[10.5px] text-fg tabular-nums">
           {time}
         </span>
       </p>

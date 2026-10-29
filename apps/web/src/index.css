@@ -7,6 +7,9 @@
   --color-surface2: #1f2335;
   --color-line: #2e344b;
   --color-highlight: #292e42;
+  /* A text field in the scenes: Tokyo Night's bg_dark, sunk below the panel as the app
+     draws it in dark; the light palette lifts it above the panel, as the app does there. */
+  --color-field: #16161e;
   --color-edge: #737aa2;
   --color-blue: #7aa2f7;
   --color-cyan: #7dcfff;
@@ -26,10 +29,15 @@
   /* The dark laid over the spectrum images, behind their axis and badge: Tokyo
      Night's deepest ground, where Tailwind's black used to be. Same as the app. */
   --color-scrim: #0c0e14;
+  /* The colour shadows are cast in. Near black on the dark page; the light palette softens
+     it to a grey, since the same black reads as a smudge on a light ground. */
+  --color-shade: #0c0e14;
+  /* The 1px light along a card's top edge. */
+  --color-sheen: #c0caf5;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
   /* light-from-above edge highlight: composes with shadow-* utilities, so
      hover shadows keep the inset edge instead of replacing it */
-  --inset-shadow-edge: inset 0 1px 0 color-mix(in srgb, var(--color-fg) 7%, transparent);
+  --inset-shadow-edge: inset 0 1px 0 color-mix(in srgb, var(--color-sheen) 7%, transparent);
 }
 
 /* The desktop app's light palette, set on <html> by the theme script in index.html before
@@ -37,14 +45,15 @@
 :root[data-theme="light"] {
   color-scheme: light;
   --color-bg: #e6e7ed;
-  --color-bg2: #d6d8df;
+  --color-bg2: #dee0e6;
   --color-surface: #f4f5f8;
   --color-surface2: #f0f1f5;
   --color-line: #c2c5cf;
   --color-highlight: #f0f1f5;
+  --color-field: #f4f5f8;
   --color-edge: #707280;
   --color-blue: #2959aa;
-  --color-cyan: #0f4b6e;
+  --color-cyan: #166775;
   --color-purple: #5a4a78;
   --color-green: #33635c;
   --color-red: #8c4351;
@@ -54,15 +63,20 @@
   --color-muted: #565a69;
   --color-faint: #61646f;
   --color-scrim: #d6d8df;
+  --color-shade: #707280;
+  --color-sheen: #f4f5f8;
 }
 
 /* The spectrum images are rendered dark and stay dark on the light page, so the axis, the
-   scan line and the wall drawn over them keep the dark palette. */
+   scan line and the wall drawn over them keep the dark palette. So do a window's traffic
+   lights, which macOS paints the same in both appearances. */
 :root[data-theme="light"] .keep-dark {
   --color-scrim: #0c0e14;
   --color-fg: #c0caf5;
   --color-subtle: #a9b1d6;
   --color-red: #f7768e;
+  --color-amber: #e0af68;
+  --color-green: #9ece6a;
 }
 
 @custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));

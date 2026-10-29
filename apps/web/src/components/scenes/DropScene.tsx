@@ -168,7 +168,7 @@ export default function DropScene() {
             {PILE.map((format, i) => (
               <span
                 key={format}
-                className="absolute grid h-[58px] w-[46px] place-items-end justify-center rounded-md border border-line bg-highlight pb-1.5 font-mono text-[9px] font-semibold text-subtle shadow-lg shadow-black/40"
+                className="absolute grid h-[58px] w-[46px] place-items-end justify-center rounded-md border border-line bg-highlight pb-1.5 font-mono text-[9px] font-semibold text-subtle shadow-lg shadow-shade/40"
                 style={{ transform: `rotate(${(i - 1) * 7}deg)` }}
               >
                 {format}

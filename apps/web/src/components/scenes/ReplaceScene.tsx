@@ -185,7 +185,7 @@ export default function ReplaceScene() {
         </div>
 
         <div
-          className="absolute top-[50px] right-2.5 z-10 w-[min(330px,calc(100%-20px))] origin-top-right rounded-xl border border-line bg-bg shadow-2xl shadow-black/60"
+          className="absolute top-[50px] right-2.5 z-10 w-[min(330px,calc(100%-20px))] origin-top-right rounded-xl border border-line bg-bg shadow-2xl shadow-shade/60"
           style={{
             opacity: frame.activityOpen ? 1 : 0,
             transform: frame.activityOpen ? 'none' : 'scale(0.96) translateY(-4px)',
@@ -243,7 +243,7 @@ export default function ReplaceScene() {
       </AppWindow>
 
       <div
-        className={`flex min-w-0 flex-col overflow-hidden rounded-xl border bg-scrim text-left shadow-xl shadow-black/25 transition-[border-color] duration-500 ${
+        className={`flex min-w-0 flex-col overflow-hidden rounded-xl border bg-scrim text-left shadow-xl shadow-shade/25 transition-[border-color] duration-500 ${
           frame.repointed && !frame.saved ? 'border-blue/55' : 'border-line'
         }`}
       >

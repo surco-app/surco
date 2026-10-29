@@ -164,10 +164,10 @@ export function AppWindow({
     <div
       ref={windowRef}
       aria-hidden="true"
-      className="inset-shadow-edge relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-line bg-bg text-left shadow-xl shadow-black/25"
+      className="inset-shadow-edge relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-line bg-bg text-left shadow-xl shadow-shade/25"
     >
       <div className="flex h-11 items-center gap-1 border-b border-line bg-bg2 pr-2.5 pl-3.5">
-        <span className="mr-auto flex gap-[7px]">
+        <span className="keep-dark mr-auto flex gap-[7px]">
           <i className="block size-[11px] rounded-full bg-red" />
           <i className="block size-[11px] rounded-full bg-amber" />
           <i className="block size-[11px] rounded-full bg-green" />
@@ -225,7 +225,7 @@ export function ToolbarButton({
 
 export function SearchBox({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-8 items-center gap-2 overflow-hidden rounded-lg border border-line bg-bg2 px-2.5 text-[12.5px] whitespace-nowrap text-faint">
+    <div className="flex h-8 items-center gap-2 overflow-hidden rounded-lg border border-line bg-field px-2.5 text-[12.5px] whitespace-nowrap text-faint">
       <Glyph size={13}>{ICONS.search}</Glyph>
       {children}
     </div>
@@ -373,7 +373,7 @@ export function AppField({
     <div className="mb-3">
       <p className="mb-1.5 text-[12.5px] text-muted">{label}</p>
       <p
-        className={`flex h-[34px] items-center truncate rounded-[7px] border bg-bg2 px-[11px] text-[13.5px] text-fg transition-[border-color,box-shadow] duration-300 ${
+        className={`flex h-[34px] items-center truncate rounded-[7px] border bg-field px-[11px] text-[13.5px] text-fg transition-[border-color,box-shadow] duration-300 ${
           short ? 'w-[72px]' : ''
         } ${flash ? 'border-blue shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-blue)_15%,transparent)]' : 'border-edge/45'}`}
       >
@@ -515,7 +515,7 @@ export function EditorPanel({
     <div
       ref={panelRef}
       aria-hidden="true"
-      className="inset-shadow-edge relative h-full min-w-0 overflow-hidden rounded-xl border border-line bg-bg p-4 text-left shadow-xl shadow-black/25"
+      className="inset-shadow-edge relative h-full min-w-0 overflow-hidden rounded-xl border border-line bg-bg p-4 text-left shadow-xl shadow-shade/25"
     >
       <SectionTitle aside={aside}>{title}</SectionTitle>
       {children}
@@ -533,7 +533,7 @@ export function Segmented({
   refs?: Record<number, RefObject<HTMLSpanElement | null>>
 }) {
   return (
-    <span className="mt-3 inline-flex max-w-full rounded-[9px] border border-line bg-bg2 p-0.5">
+    <span className="mt-3 inline-flex max-w-full rounded-[9px] border border-line bg-field p-0.5">
       {options.map((label, i) => (
         <span
           key={label}
