@@ -12,7 +12,7 @@ import {
   traktorEntryBlock,
 } from './traktorCues'
 import { withAttr } from './traktorNml'
-import { bootVolumeName, writeCollection } from './traktorNmlLibrary'
+import { bootVolumeName, markNewerThanCollection, writeCollection } from './traktorNmlLibrary'
 import { applyTraktorEdits } from './traktorPlaylistEdit'
 
 const NO_BUTTON = HOT_KINDS[HOT_KINDS.length - 1]
@@ -76,7 +76,7 @@ function planBatch(
   text: string,
   ops: QueueOp[],
   bootVolume: string,
-): { nml: string; outcomes: OpOutcome[] } {
+): { nml: string; outcomes: OpOutcome[]; added: string[] } {
   const edits = applyTraktorEdits(
     text,
     ops.filter((op): op is Exclude<QueueOp, CuesOp> => op.kind !== 'cues'),
@@ -113,7 +113,7 @@ function planBatch(
     nml = `${nml.slice(0, entry.start)}${next}${nml.slice(entry.end)}`
     return { id: op.id, applied: true, notices }
   })
-  return { nml, outcomes }
+  return { nml, outcomes, added: edits.added }
 }
 
 // Playlist edits and cue saves queued while Traktor was open go out together, in one
@@ -141,9 +141,10 @@ export async function applyTraktorBatch(
   if (!(await deps.ensureClosed())) return { ok: false, reason: 'cancelled' }
   const fresh = await read()
   if (fresh === null) return { ok: false, reason: 'unreadable' }
-  const { nml, outcomes } = planBatch(fresh, ops, bootVolume)
+  const { nml, outcomes, added } = planBatch(fresh, ops, bootVolume)
   if (nml === fresh) return { ok: true, wrote: false, outcomes }
   const failure = await (deps.write ?? writeCollection)(nmlPath, nml)
   if (failure) return { ok: false, reason: refusalOf(failure) }
+  await markNewerThanCollection(nmlPath, added)
   return { ok: true, wrote: true, outcomes }
 }

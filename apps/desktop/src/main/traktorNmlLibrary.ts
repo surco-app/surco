@@ -94,13 +94,24 @@ export async function syncCollection(
   // audio newer than the collection it just read, so without this the converted track
   // shows no cover at all rather than the one embedded in the file.
   //
-  // Ahead of the NML's own timestamp, not merely "now": the collection was written
-  // microseconds earlier, and on a filesystem with coarse timestamps the two would
-  // otherwise land on the same second and Traktor would not count the file as newer.
+  await markNewerThanCollection(nmlPath, detachedOutputPaths(original, patches, onDisk))
+
+  return { written: true, matched: matchedPatchCount(original, patches, onDisk) }
+}
+
+// Traktor builds a track's cover only when it finds the audio newer than the collection it
+// read (measured 29/10/2026 with Traktor Play 4.5.1), so a file the collection names with
+// no cover id of its own is dated past the collection's last write.
+//
+// Ahead of the NML's own timestamp, not merely "now": the collection was written
+// microseconds earlier, and on a filesystem with coarse timestamps the two would
+// otherwise land on the same second and Traktor would not count the file as newer.
+export async function markNewerThanCollection(nmlPath: string, files: string[]): Promise<void> {
+  if (files.length === 0) return
   try {
     const writtenAt = (await stat(nmlPath)).mtimeMs
     const newer = new Date(Math.max(Date.now(), writtenAt) + MTIME_LEAD_MS)
-    for (const file of detachedOutputPaths(original, patches, onDisk)) {
+    for (const file of files) {
       // Per file: a read-only or missing output must not stop the rest from being
       // touched, and the collection on disk is already correct either way.
       await utimes(file, newer, newer).catch(() => {})
@@ -109,8 +120,6 @@ export async function syncCollection(
     // The collection is written and the sync succeeded. A failure to read its timestamp
     // only postpones Traktor noticing the new cover; it must not report the sync failed.
   }
-
-  return { written: true, matched: matchedPatchCount(original, patches, onDisk) }
 }
 
 // The backup, the second check that Traktor is closed and the write-then-rename every
