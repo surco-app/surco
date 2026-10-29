@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { Settings } from '../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
 import { type DetectedDjLibrary, detectedDjLibraries } from '../lib/djLibraries'
-import { DJ_REACH_SETTINGS } from '../lib/djReach'
+import { DJ_REACH_SETTINGS, toDjReach } from '../lib/djReach'
 import { type AudioIntent, buildOnboardingPatch, seedAudioIntents } from '../lib/onboarding'
 import { isMacOS } from '../lib/platform'
 import { formatKHz } from '../lib/quality'
@@ -134,7 +134,11 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
     const dir = await window.api.pickOutputDir()
     if (dir) patchLocal('outputDir', dir)
   }
-  const reachesProgram = djLibraries.some((library) => synced[DJ_REACH_SETTINGS[library.id].add])
+  function reaches(library: DetectedDjLibrary): boolean {
+    const keys = DJ_REACH_SETTINGS[library.id]
+    return toDjReach(synced[keys.sync], synced[keys.add]) !== 'off'
+  }
+  const reachesProgram = djLibraries.some(reaches)
   function toggleIntent(intent: AudioIntent, on: boolean): void {
     setAudioIntents((prev) => (on ? [...prev, intent] : prev.filter((i) => i !== intent)))
   }
@@ -339,7 +343,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                         <input
                           data-testid={`onboarding-sync-${library.id}`}
                           type="checkbox"
-                          checked={synced[DJ_REACH_SETTINGS[library.id].add]}
+                          checked={reaches(library)}
                           onChange={(e) => reachProgram(library, e.target.checked)}
                           className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
                         />
@@ -358,7 +362,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                           </span>
                         </span>
                       </label>
-                      {library.id === 'engine' && synced.addToEngineDj && (
+                      {library.id === 'engine' && reaches(library) && (
                         <div className="mt-3">
                           <EngineLibraryFields
                             libraryDir={local.engineLibraryDir}

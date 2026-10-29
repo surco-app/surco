@@ -377,6 +377,60 @@ describe('OnboardingWizard destination', () => {
     )
   })
 
+  // A DJ who set a program to only update the tracks already there must not lose that
+  // choice to a wizard re-run they clicked straight through.
+  it.each([
+    [0, { syncRekordbox: true, addToRekordbox: false }],
+    [1, { syncRekordbox: false, addToRekordbox: false }],
+    [2, { syncRekordbox: true, addToRekordbox: true }],
+  ])(
+    'shows an update-only program as on and keeps it so until it is clicked (%i clicks)',
+    async (clicks, expected) => {
+      ;(
+        window as unknown as { api: { rekordboxCollection?: () => Promise<string> } }
+      ).api.rekordboxCollection = async () => '/Users/dj/Library/Pioneer/rekordbox/master.db'
+      const onFinish = vi.fn()
+      render(
+        <OnboardingWizard
+          settings={{ ...settings, syncRekordbox: true, addToRekordbox: false }}
+          onFinish={onFinish}
+        />,
+      )
+      expect(
+        await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
+      ).toBeInTheDocument()
+      for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+      const toggle = await screen.findByTestId('onboarding-sync-rekordbox')
+      expect(toggle).toBeChecked()
+      for (let i = 0; i < clicks; i++) fireEvent.click(toggle)
+      fireEvent.click(screen.getByTestId('onboarding-next'))
+      expect(onFinish).toHaveBeenCalledWith(expect.objectContaining(expected))
+    },
+  )
+
+  // The Engine library and the folder line belong to a program that is on, whether it
+  // only updates or also adds: an update-only Engine user still writes into that library.
+  it('asks for the Engine library and the folder for an update-only Engine user', async () => {
+    const api = window as unknown as { api: { engineAvailable: () => Promise<boolean> } }
+    api.api.engineAvailable = async () => true
+    try {
+      render(
+        <OnboardingWizard
+          settings={{ ...settings, syncEngineDj: true, addToEngineDj: false }}
+          onFinish={vi.fn()}
+        />,
+      )
+      expect(
+        await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
+      ).toBeInTheDocument()
+      for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+      expect(await screen.findByTestId('onboarding-engine-library')).toBeInTheDocument()
+      expect(screen.getByTestId('onboarding-dj-folder')).toHaveTextContent('/out')
+    } finally {
+      api.api.engineAvailable = async () => false
+    }
+  })
+
   // Unticking a program on a re-run means "leave it alone"; keeping the add on would go on
   // writing new tracks into a collection the DJ just switched off.
   it('stops both updating and adding to a program the DJ unticks', async () => {
