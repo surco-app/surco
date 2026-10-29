@@ -40,8 +40,9 @@ que la interfaz deje de hacerles pensar en ella.
    Music, Junto al original y Editar el original. Engine DJ sale del radio.
 2. **Apple Music se queda en el radio.** En la conversación propuse moverlo a los controles de programas, pero
    no encaja: Apple Music es una ubicación (se queda el fichero) y no un programa que solo apunta.
-   Con Apple Music elegido, los programas de DJ registran el fichero que hay dentro de Music/Media,
-   la misma ruta que rekordbox ve hoy al leer la biblioteca de Music.
+   Con Apple Music elegido, rekordbox y Traktor apuntan al fichero que hay dentro de Music/Media,
+   la misma ruta que rekordbox ve hoy al leer la biblioteca de Music. Engine DJ registra la copia
+   de la carpeta de salida que Surco conserva mientras Engine está activado.
 3. **Debajo del radio, un control por programa** (los mismos que hoy muestran su sección en
    Ajustes). Se pueden activar varios a la vez.
 4. **Cada control sustituye al interruptor "Actualizar la colección de X al convertir"**. Es un
@@ -61,8 +62,10 @@ que la interfaz deje de hacerles pensar en ella.
    (decisión 3). La playlist fija de Engine (`engineDjPlaylist`) se retira: tenía sentido
    cuando Surco no sabía crear playlists, y ahora se crean desde el árbol de cada programa
    (Vicent, 29/10).
-8. **Con el programa abierto, las altas esperan en la cola de cada programa**, que ya existe
-   para los tres (`libraryFlushes.ts`).
+8. **Con rekordbox o Traktor abiertos, las altas esperan en la cola de cada programa**
+   (`libraryFlushes.ts`). Engine DJ registra la pista durante la conversión: pide cerrar Engine
+   y, si no se cierra, la pista falla con el error de Engine abierto, igual que con el antiguo
+   destino Engine DJ. Encolar también las altas de Engine queda fuera de esta spec.
 
 ## Qué hay ya y qué falta
 
@@ -102,6 +105,8 @@ analizan, y que Traktor no pierde las entradas al salir. Termina con Vicent comp
 
 - Exportar a USB (spec del 16/10).
 - Serato.
+- Encolar las altas de Engine DJ mientras Engine está abierto, como ya hacen rekordbox y
+  Traktor (pendiente para después).
 
 ## Preguntas cerradas
 
