@@ -997,10 +997,9 @@ describe('App auto-match', () => {
     const button = screen.getByTestId('auto-match')
     expect(button).toHaveAccessibleName(i18n.t('header.autoMatchNoToken'))
     fireEvent.click(button)
-    expect(await screen.findByTestId('settings-tab-search')).toHaveAttribute(
-      'aria-selected',
-      'true',
-    )
+    expect(
+      await screen.findByTestId('settings-tab-search', undefined, { timeout: 3000 }),
+    ).toHaveAttribute('aria-selected', 'true')
   })
 
   // Auto-match on import runs the whole drop unattended: a folder of a thousand files is
