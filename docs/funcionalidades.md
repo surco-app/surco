@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 29 de octubre de 2026** (v1.16.0, «Todas las pistas», Music por tramos, campos Playlists de Traktor y Engine DJ, listas largas fluidas). Levantado por primera vez el
+**Última revisión: 29 de octubre de 2026** (v1.16.0, «Todas las pistas», Music por tramos, campos Playlists de Traktor y Engine DJ, listas largas fluidas, elección por programa de DJ). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -1211,6 +1211,70 @@ importar nada y no devolver nada. Surco lo detecta sondeando la biblioteca
 acotado a entradas añadidas después de arrancar, para no adoptar una copia
 antigua (`applemusic.ts:97-108`).
 
+### Añadir a rekordbox, Traktor y Engine DJ al convertir
+
+El destino de los archivos y los programas de DJ son dos preguntas distintas. El destino
+responde solo a dónde queda el fichero: carpeta de salida, Apple Music, junto al original o
+sobrescribir (`Destination`, `destination.ts:6`). Engine DJ ya no es una opción de ese
+radio: era «carpeta de salida + registrar en Engine» presentado como un destino.
+
+**Un control por programa** (nuevo tras v1.16.0). En Ajustes › Destino, rekordbox, Engine DJ
+y Traktor tienen cada uno un control de tres estados (`DjReachRow`,
+`DestinationTab.tsx:539`; `settings.djReach.*`), y se pueden activar varios a la vez:
+
+- **No tocar:** Surco no escribe en ese programa.
+- **Actualizar:** reapunta y vuelca los datos de las pistas que ya están en la colección
+  (`syncRekordbox`, `syncTraktor`, `syncEngineDj`, `settings.ts:80`, `:81`, `:96`).
+- **Actualizar y añadir:** además da de alta en la colección las pistas que no están, sin
+  playlist y sin análisis; el programa las analiza al abrirlas. Al elegirlo aparece el aviso
+  `settings.djReachAddHint` (`addToRekordbox`, `addToTraktor`, `addToEngineDj`,
+  `settings.ts:67`-`:69`).
+
+Cada control es un par de ajustes (`DJ_REACH_SETTINGS`, `toDjReach`, `fromDjReach`,
+`djReach.ts:6`, `:20`, `:25`): «Actualizar» enciende el de sincronizar y «Actualizar y
+añadir» enciende los dos. El de Traktor queda deshabilitado mientras no hay colección
+configurada (`DestinationTab.tsx:341`). El de Engine DJ lleva encima la carpeta de su
+biblioteca (`EngineLibraryFields`, `DestinationTab.tsx:428`).
+
+**Las playlists son solo el campo por pista.** La playlist fija de Engine («Surco»,
+`engineDjPlaylist`) desapareció de los ajustes: ahora una pista llega a una playlist porque
+el campo Playlists de su programa la elige (`planEngineTrackPlaylists`,
+`engineTrackPlaylists.ts:102`), y sin campo solo se da de alta. En rekordbox el alta sin
+playlist exige que la pista traiga tags con los que describirla (`trackOpsFromRun`,
+`rekordboxQueueFromRun.ts:30`); en Traktor y rekordbox se distingue del resto de cambios con
+`op.add` (`traktorPlaylistEdit.ts:213`, `rekordboxPlaylistWrite.ts:232`).
+
+**Con el programa abierto.** Las altas de rekordbox y Traktor esperan en la cola de cada
+programa, como las playlists (`libraryFlushes.ts:172`, `:202`). Engine DJ no usa esa cola
+para el alta sin playlist: se registra en la propia conversión (`processTrack.ts:561`) y, si
+Engine no se cierra, la pista falla con `engineDjOpen` (`processTrack.ts:341`).
+
+**El botón de convertir nombra los programas** a los que llega: «Convertir a AIFF + rekordbox
++ Traktor», y con Apple Music delante, «Apple Music + rekordbox» (`exportButtonLabel`,
+`exportLabel.ts:48`; `programNames`, `exportLabel.ts:106`; `reachedPrograms`, `djReach.ts:29`,
+usado en `Editor.tsx:1765`). Solo cuentan los programas en «Actualizar y añadir»: uno en
+«Actualizar» no recibe pistas nuevas y no sale en el botón. En lote, «Convertir (3) · AIFF +
+rekordbox».
+
+**El asistente de primer arranque** pregunta por cada programa que encuentra con una casilla
+(`onboarding-sync-*`), y marcarla lo pone en «Actualizar y añadir» (`reachProgram`,
+`OnboardingWizard.tsx:127`). Si el programa ya estaba en «Actualizar», se muestra marcado y se
+queda así hasta que se pulse. Con Engine DJ marcado muestra su biblioteca debajo
+(`OnboardingWizard.tsx:365`). Si hay algún programa marcado y el destino es la carpeta de
+salida, dice «Los archivos se guardan en …» con un botón para cambiarla
+(`onboarding.djFolder`, `OnboardingWizard.tsx:380`): quien no toca nada acaba con
+`~/Music/Surco` y los programas apuntando ahí. Los programas guardan la ruta del fichero, no
+una copia, así que esa carpeta es donde viven las pistas.
+
+**Ajustes antiguos.** `addToEngineDj` ya era el interruptor de Engine y pasa a ser «Actualizar
+y añadir» en Engine con el destino en la carpeta de salida; un `syncX` encendido es
+«Actualizar» y apagado «No tocar». Las pistas ya metidas en la playlist fija de Engine se
+quedan donde están.
+
+**Sin probar en Traktor real:** el alta en la colección de Traktor (`withCollectionEntry`,
+`traktorPlaylistEdit.ts:288`) solo está probada contra copias de `collection.nml` en los
+tests. No se ha comprobado que Traktor la abra, la analice y la conserve al salir.
+
 ### Engine DJ / Denon
 
 Escribe en la base SQLite real del usuario. El esquema es el de libdjinterop, que
@@ -1220,8 +1284,8 @@ esquema real de Engine y hay que conservarlas exactas.
 
 **Qué llega:** ruta, título, artista, álbum, género, comentario, BPM, año,
 **rating** (escala 0–100) y **carátula** como blob propio — Engine nunca lee el
-arte de los tags (`engineLibrary.ts:220-221`). Más una fila en la playlist
-configurable.
+arte de los tags (`engineLibrary.ts:220-221`). Ya no entra en ninguna playlist fija: las
+playlists las elige el campo Playlists de la pista.
 
 **Qué NO llega:** cue points, beatgrid y waveforms se dejan nulos con
 `isAnalyzed = 0`, para que Engine analice el audio él mismo al primer load.
@@ -1328,8 +1392,9 @@ del fichero (de FLAC a MP3, por ejemplo), las entradas de sus playlists pasan a 
 Traktor nombra cada pista de una playlist por volumen, carpeta y fichero, así que antes la
 pista se quedaba fuera de ellas (`rewritePlaylists`, `traktorNml.ts:576`).
 
-Apagado por defecto. Cuando se configura la ruta de la colección, actualiza el
-`.nml` real: repunta la ruta si cambió la extensión, reescribe las miniaturas que
+Apagado por defecto (`syncTraktor: false`, `settings.ts:80`). Con el control de Traktor en
+Ajustes › Destino en «Actualizar» o «Actualizar y añadir» y la ruta de la colección
+configurada, actualiza el `.nml` real: repunta la ruta si cambió la extensión, reescribe las miniaturas que
 Traktor tiene cacheadas para que redibuje la carátula, y escribe los `CUE_V2`
 del fichero convertido.
 
@@ -1384,7 +1449,8 @@ sobrescrito, porque copias fechadas dejaban basura en la carpeta del usuario.
 Distinto de la exportación XML de más abajo: aquí se escribe **en la colección real**
 (`master.db`), reapuntando entradas que ya existen en vez de crear pistas nuevas.
 
-**Apagado por defecto** (`syncRekordbox: false`, `settings.ts:79`). El asistente de
+**Apagado por defecto** (`syncRekordbox: false`, `settings.ts:81`; es el «No tocar» del
+control de rekordbox). El asistente de
 primer arranque lo ofrece solo si encuentra rekordbox en el equipo; a quien no lo use, el
 paso no le aparece (`djLibraries.ts`). La ruta se detecta sola y el ajuste solo hace falta
 si la colección vive en otro sitio (`rekordboxDbPath`).
@@ -1472,7 +1538,8 @@ añade pistas que ya están en la colección y dice cuántas no estaban
 
 **Campos Playlists de Traktor y Engine DJ** (nuevo en v1.16.0). Cada biblioteca tiene su
 propio campo «Playlists» en el editor, igual que rekordbox, escrito por la cola de cada
-programa. Si la pista no estaba en la biblioteca, se da de alta al convertirla: en Engine DJ
+programa. Si la pista no estaba en la biblioteca, se da de alta al convertirla, con el campo
+relleno o, con el programa en «Actualizar y añadir», también sin playlist: en Engine DJ
 (`planEngineTrackPlaylists`, `engineTrackPlaylists.ts:102`) y en Traktor solo si el fichero
 está en un disco que Traktor ya conoce (`volumeOf`, `withCollectionEntry`,
 `traktorPlaylistEdit.ts:259`, `:287`). El de Traktor queda deshabilitado hasta confirmar la
@@ -2002,7 +2069,7 @@ Recopilado de los cinco informes. Cada punto está verificado.
 2. **Apple Music:** solo macOS, nunca FLAC. Clave, sello, catálogo y remixer no
    llegan a la biblioteca, ni los campos propios. Al añadir no se transfiere rating
    ni se crean playlists. Al sustituir sí pasan de la entrada vieja a la nueva (punto 6).
-3. **Engine DJ como destino de conversión:** no lleva cue points ni beatgrid. Exige Engine
+3. **Engine DJ como programa al que se añade al convertir:** no lleva cue points ni beatgrid. Exige Engine
    cerrado. Los cues solo llegan a Engine desde el editor de cues, desde su pestaña o con un
    flujo marcado en otro programa (v1.13.0), y solo los hot cues.
 4. **Exportar a rekordbox/Serato/Traktor/M3U8:** ninguno de los cuatro ficheros
@@ -2010,7 +2077,7 @@ Recopilado de los cinco informes. Cada punto está verificado.
     confundirse con el repunte de la colección real de rekordbox (§11), donde los
     cues y las playlists sí sobreviven precisamente porque no se tocan: se cambia
     la ruta de una entrada que ya existe.
-5. **El repunte de rekordbox sale apagado** (`syncRekordbox: false`): sin él, convertir
+5. **El repunte de rekordbox sale en «No tocar»** (`syncRekordbox: false`): sin él, convertir
     una pista de rekordbox no conserva nada en la colección, que sigue apuntando al fichero
     antiguo. Escribe con rekordbox cerrado; si está abierto, espera en la cola hasta que se
     cierre. No resuelve las pistas con dos entradas, las declara ambiguas y no elige. No se
