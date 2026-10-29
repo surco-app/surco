@@ -509,9 +509,9 @@ export const Editor = memo(function Editor({
   // Overwrite is offered as a one-shot pick too: retagging one file in place shouldn't
   // need a Settings change, and the convert confirmations still ask before rewriting.
   const destinationChoices = DESTINATIONS.filter((d) => d !== 'appleMusic' || isMacOS())
-  // Which library the membership badge reads — Engine DJ's when it's on, else the
-  // conversion destination's. Null (folder/beside/overwrite, or Apple Music off macOS)
-  // hides the badge entirely.
+  // Which library the membership badge reads — Engine DJ's whenever it's on, else the
+  // conversion destination's. Null (folder/beside/overwrite without Engine, or Apple
+  // Music off macOS) hides the badge entirely.
   const librarySource = librarySourceOf(
     { ...picked, addToEngineDj, outputFormat: format },
     isMacOS(),

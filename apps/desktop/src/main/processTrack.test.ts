@@ -1259,7 +1259,14 @@ describe('runProcessTrack — per-job destination', () => {
       settings: settings({ addToEngineDj: true }),
       prepareProcessedCover: vi.fn(async () => undefined),
     })
-    await runProcessTrack(job({ addToAppleMusic: false, keepOutputCopy: true }), deps)
+    await runProcessTrack(
+      job({
+        addToAppleMusic: false,
+        keepOutputCopy: true,
+        addToEngineDj: false,
+      } as Partial<ProcessJob>),
+      deps,
+    )
     expect(deps.addToEngineDj).toHaveBeenCalledWith(
       '/out/Artist - Title.aiff',
       {},

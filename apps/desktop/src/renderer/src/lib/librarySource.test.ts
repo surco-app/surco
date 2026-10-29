@@ -27,6 +27,15 @@ describe('librarySourceOf', () => {
     ).toBeNull()
   })
 
+  it('reads the Engine library beside or over the original too, since the file is registered there either way', () => {
+    expect(
+      librarySourceOf({ ...base, addToEngineDj: true, convertBesideOriginal: true }, true),
+    ).toBe('engineDj')
+    expect(librarySourceOf({ ...base, addToEngineDj: true, overwriteOriginal: true }, true)).toBe(
+      'engineDj',
+    )
+  })
+
   // The Apple Music bridge only exists on macOS; the Engine database is plain SQLite
   // everywhere, so only the former is platform-gated.
   it('gates Apple Music on macOS but not Engine DJ', () => {
