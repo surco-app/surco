@@ -166,8 +166,9 @@ function stateOf(
       continue
     }
     it.label = op.label
-    if (!op.contentId && addsTracks) it.parts.push({ kind: 'collection' })
-    it.parts.push({ kind: 'playlists', names: op.wanted.map((t) => t.name) })
+    if (op.add || (!op.contentId && addsTracks)) it.parts.push({ kind: 'collection' })
+    if (!op.add || op.wanted.length > 0)
+      it.parts.push({ kind: 'playlists', names: op.wanted.map((t) => t.name) })
   }
   const all = [...items.values()]
   const tracks = all.filter((i) => i.key.startsWith('track:')).length

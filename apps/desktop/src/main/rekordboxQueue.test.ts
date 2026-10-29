@@ -100,6 +100,18 @@ describe('rekordbox queue', () => {
     expect(q.state().items[0].parts).toEqual([{ kind: 'playlists', names: ['Cierre'] }])
   })
 
+  it('names only the collection entry for a track added with no playlist, so it never reads as taken out of its playlists', () => {
+    const q = createRekordboxQueue(deps())
+    q.enqueue([track('a', '/m/a.wav', { wanted: [], add: true })])
+    expect(q.state().items[0].parts).toEqual([{ kind: 'collection' }])
+  })
+
+  it('names the collection entry for a track added to Traktor with no playlist, so the DJ sees it is being added', () => {
+    const q = createRekordboxQueue({ ...deps(), addsTracks: false })
+    q.enqueue([track('a', '/m/a.wav', { wanted: [], add: true })])
+    expect(q.state().items[0].parts).toEqual([{ kind: 'collection' }])
+  })
+
   it('counts tracks apart from tree changes, and names what happens to each', () => {
     const q = createRekordboxQueue(deps())
     const repoint: RekordboxRepoint = { from: '/m/b.mp3', to: '/m/b.wav' }
