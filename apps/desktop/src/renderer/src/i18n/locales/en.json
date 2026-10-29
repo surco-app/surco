@@ -1013,6 +1013,7 @@
     "mediaType": "Media type",
     "discogsUrl": "Discogs URL",
     "suggestionsMore": "Show {{count}} more",
+    "suggestionDetected": "Detected in the audio: {{value}}",
     "rowAutoFill": "Fill {{name}} automatically",
     "rowRequired": "{{name}} required",
     "rowMoveUp": "Move {{name}} up",

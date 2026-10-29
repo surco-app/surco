@@ -1013,6 +1013,7 @@
     "mediaType": "メディアタイプ",
     "discogsUrl": "Discogs URL",
     "suggestionsMore": "{{count}} を表示",
+    "suggestionDetected": "音声から検出: {{value}}",
     "rowAutoFill": "{{name}} を自動入力",
     "rowRequired": "{{name}} 必須",
     "rowMoveUp": "{{name}} を上に移動",

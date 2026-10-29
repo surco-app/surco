@@ -1013,6 +1013,7 @@
     "mediaType": "Medientyp",
     "discogsUrl": "Discogs-URL",
     "suggestionsMore": "{{count}} weitere anzeigen",
+    "suggestionDetected": "Im Audio erkannt: {{value}}",
     "rowAutoFill": "{{name}} automatisch füllen",
     "rowRequired": "{{name}} als Pflichtfeld",
     "rowMoveUp": "{{name}} nach oben",

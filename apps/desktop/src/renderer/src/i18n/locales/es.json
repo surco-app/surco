@@ -1013,6 +1013,7 @@
     "mediaType": "Tipo de medio",
     "discogsUrl": "URL de Discogs",
     "suggestionsMore": "Mostrar {{count}} más",
+    "suggestionDetected": "Detectado en el audio: {{value}}",
     "rowAutoFill": "Rellenar {{name}} automáticamente",
     "rowRequired": "{{name}} obligatorio",
     "rowMoveUp": "Subir {{name}}",

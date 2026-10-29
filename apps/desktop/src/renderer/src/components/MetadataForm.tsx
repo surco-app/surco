@@ -95,6 +95,7 @@ function renderField(
       suggestions={f.suggestions}
       tagList={f.tagList}
       suggesting={f.suggesting}
+      audioDerived={f.audioDerived}
     />
   )
 }

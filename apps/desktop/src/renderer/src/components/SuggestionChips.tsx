@@ -10,6 +10,7 @@ interface SuggestionChipsProps {
   onPick: (s: string) => void
   scope?: string
   dim?: boolean
+  audioDerived?: boolean
 }
 
 // Suggestion chips collapse to the first few + a "+N" chip so a long list (a genre with
@@ -21,6 +22,7 @@ export function SuggestionChips({
   onPick,
   scope,
   dim,
+  audioDerived,
 }: SuggestionChipsProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [chipsExpanded, setChipsExpanded] = useState(false)
@@ -59,6 +61,8 @@ export function SuggestionChips({
             data-testid={scope ? `chip-${scope}-${s}` : `chip-${s}`}
             data-state={state}
             aria-pressed={state === 'on' ? true : state === 'some' ? 'mixed' : false}
+            aria-label={audioDerived ? tr('fields.suggestionDetected', { value: s }) : undefined}
+            title={audioDerived ? tr('fields.suggestionDetected', { value: s }) : undefined}
             onClick={() => onPick(s)}
             // Colapsado, el chip puede encoger y truncar con elipsis — solo pasa en el caso
             // mínimo-1 (ni un chip cabe entero); si el corte dice que cabe, no encoge nada.
@@ -71,7 +75,9 @@ export function SuggestionChips({
                   ? 'border-dashed border-[color-mix(in_srgb,var(--color-accent)_60%,transparent)] text-[var(--color-accent)]'
                   : dim
                     ? 'border-[var(--color-line)] text-fg-faint hover:bg-[var(--color-hover)]'
-                    : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-hover)]'
+                    : audioDerived
+                      ? 'border-dashed border-[var(--color-line-strong)] text-fg-faint hover:bg-[var(--color-hover)]'
+                      : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-hover)]'
             }`}
           >
             {s}
