@@ -69,17 +69,21 @@ async function hoverForTooltip(trigger: HTMLElement): Promise<HTMLElement> {
 function renderWithQuery(
   ui: React.ReactElement,
   settings: Partial<Settings> = {},
-): ReturnType<typeof render> {
+): ReturnType<typeof render> & { changeSettings: (next: Partial<Settings>) => void } {
   const client = createQueryClient()
   // The editor reads its Settings-derived values from the shared context now, so the
   // per-test overrides ride a provider instead of an 17-prop wall on <Editor>.
-  return render(
+  const tree = (current: Partial<Settings>) => (
     <QueryClientProvider client={client}>
-      <SettingsProvider settings={{ discogsToken: 'tok', showSpectrum: false, ...settings }}>
+      <SettingsProvider settings={{ discogsToken: 'tok', showSpectrum: false, ...current }}>
         {ui}
       </SettingsProvider>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   )
+  const result = render(tree(settings))
+  return Object.assign(result, {
+    changeSettings: (next: Partial<Settings>) => result.rerender(tree({ ...settings, ...next })),
+  })
 }
 
 // Editor mounts effects that touch window.api; a non-darwin platform skips the
@@ -170,6 +174,8 @@ function renderEditor(
     rememberedPick?: React.ComponentProps<typeof Editor>['rememberedPick']
     addToAppleMusic?: boolean
     addToEngineDj?: boolean
+    addToTraktor?: boolean
+    traktorNmlPath?: string
     keepMp3Sources?: boolean
     keyNotation?: KeyNotation
     discogsFormats?: string[]
@@ -204,6 +210,7 @@ function renderEditor(
   onSearchWeb: ReturnType<typeof vi.fn>
   onExportCollection: ReturnType<typeof vi.fn>
   onRecordUndo: ReturnType<typeof vi.fn>
+  changeSettings: (next: Partial<Settings>) => void
 } {
   const onProcess = vi.fn()
   const onRecordUndo = vi.fn()
@@ -220,7 +227,7 @@ function renderEditor(
   const onCopyFilename = vi.fn()
   const onSearchWeb = vi.fn()
   const onExportCollection = vi.fn()
-  renderWithQuery(
+  const { changeSettings } = renderWithQuery(
     // The panel reads "open Settings" from context now, so the spy rides a provider
     // exactly as App mounts it.
     <OpenSettingsProvider open={onOpenSettings}>
@@ -260,6 +267,8 @@ function renderEditor(
       // test opts into another destination.
       addToAppleMusic: props.addToAppleMusic ?? true,
       addToEngineDj: props.addToEngineDj ?? false,
+      addToTraktor: props.addToTraktor ?? false,
+      traktorNmlPath: props.traktorNmlPath ?? '',
       keepMp3Sources: props.keepMp3Sources ?? false,
       overwriteOriginal: props.overwriteOriginal ?? false,
       ...(props.backupPolicy ? { backupPolicy: props.backupPolicy } : {}),
@@ -304,6 +313,7 @@ function renderEditor(
     onCopyFilename,
     onSearchWeb,
     onRecordUndo,
+    changeSettings,
   }
 }
 
@@ -781,6 +791,83 @@ describe('Editor Traktor Playlists field without a confirmed collection', () => 
       expect(field).toHaveTextContent('Choose the collection in Settings → Output → Traktor'),
     )
     expect(within(field).getByTestId('playlists-summary')).toBeDisabled()
+  })
+})
+
+describe('Editor convert button with Traktor taking new tracks', () => {
+  const status = (traktorFound: boolean) =>
+    vi.fn<Api['libraryStatus']>().mockResolvedValue({
+      rekordbox: { enabled: false, found: false },
+      engine: { enabled: false, found: false },
+      traktor: { enabled: true, found: traktorFound },
+    })
+
+  it('does not name Traktor when its collection is not found, since nothing would be added there', async () => {
+    Object.assign(window.api, { libraryStatus: status(false) })
+    renderEditor({ id: 'a' }, 'aiff', {
+      addToAppleMusic: false,
+      addToTraktor: true,
+      traktorNmlPath: '/c/collection.nml',
+    })
+    await waitFor(() => expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Traktor'))
+  })
+
+  it('does not name Traktor without a confirmed collection.nml, the only one Surco writes to', async () => {
+    Object.assign(window.api, { libraryStatus: status(true) })
+    renderEditor({ id: 'a' }, 'aiff', { addToAppleMusic: false, addToTraktor: true })
+    await waitFor(() => expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Traktor'))
+  })
+
+  it('names Traktor once its confirmed collection is found, so the DJ sees where the track goes', async () => {
+    Object.assign(window.api, { libraryStatus: status(true) })
+    renderEditor({ id: 'a' }, 'aiff', {
+      addToAppleMusic: false,
+      addToTraktor: true,
+      addToEngineDj: true,
+      traktorNmlPath: '/c/collection.nml',
+    })
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Engine DJ')
+    await waitFor(() =>
+      expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Engine DJ'),
+    )
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Traktor')
+  })
+})
+
+describe('Editor convert button after choosing a DJ library in Settings', () => {
+  const found = (engine: boolean, rekordbox: boolean) => ({
+    rekordbox: { enabled: true, found: rekordbox },
+    engine: { enabled: true, found: engine },
+    traktor: { enabled: false, found: false },
+  })
+
+  it('names Engine DJ as soon as the DJ points Settings at its library, without reopening the track', async () => {
+    const libraryStatus = vi.fn<Api['libraryStatus']>().mockResolvedValue(found(false, false))
+    Object.assign(window.api, { libraryStatus })
+    const { changeSettings } = renderEditor({ id: 'a' }, 'aiff', {
+      addToAppleMusic: false,
+      addToEngineDj: true,
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Engine DJ'),
+    )
+    libraryStatus.mockResolvedValue(found(true, false))
+    changeSettings({ engineLibraryDir: '/e/Engine Library' })
+    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent('Engine DJ'))
+  })
+
+  it('names rekordbox as soon as the DJ points Settings at its master.db, without reopening the track', async () => {
+    const libraryStatus = vi.fn<Api['libraryStatus']>().mockResolvedValue(found(false, false))
+    Object.assign(window.api, { libraryStatus })
+    const { changeSettings } = renderEditor({ id: 'a' }, 'aiff', { addToAppleMusic: false })
+    changeSettings({ addToRekordbox: true })
+    await waitFor(() => expect(libraryStatus).toHaveBeenCalled())
+    await waitFor(() =>
+      expect(screen.getByTestId('process-btn')).not.toHaveTextContent('rekordbox'),
+    )
+    libraryStatus.mockResolvedValue(found(false, true))
+    changeSettings({ addToRekordbox: true, rekordboxDbPath: '/c/master.db' })
+    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent('rekordbox'))
   })
 })
 

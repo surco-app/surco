@@ -13,7 +13,9 @@ import * as appleMusic from '../main/applemusic'
 import { registerAudioIpc } from '../main/audioIpc'
 import { hasCoverSource, prepareProcessedCover } from '../main/cover'
 import { replaceDuplicates } from '../main/duplicateReplace'
+import { applyEngineCuesBatch } from '../main/engineCuesWrite'
 import { addToEngineLibrary } from '../main/engineLibrary'
+import { isEngineDjRunning } from '../main/engineProcess'
 import { expandPaths } from '../main/expand'
 import { convertAudio } from '../main/ffmpeg'
 import { fileIdentity, isSameFile, removeRenamedOriginal } from '../main/inplace'
@@ -23,6 +25,7 @@ import {
   flushConversionBatch,
   type LibraryHost,
   rekordboxCollectionPath,
+  repointEngineQueued,
   repointRekordbox,
   syncTagsInLibraries,
 } from '../main/libraryFlushes'
@@ -93,6 +96,7 @@ import type {
   FormatSetting,
   ProcessJob,
   ProcessResult,
+  RekordboxQueueState,
   Release,
   SearchResult,
   Settings,
@@ -223,6 +227,7 @@ function processTrackInMain(
     },
     updateInAppleMusic: (pid, meta, coverPath) =>
       musicIsFake ? appleMusic.updateInAppleMusic(pid, meta, coverPath) : noMusic(),
+    isEngineDjRunning,
     addToEngineDj: (target, meta, coverPath, replaces) => {
       const s = getSettings()
       return addToEngineLibrary(
@@ -264,7 +269,11 @@ function libraryHost(errors: string[]): LibraryHost {
   return {
     ensureTraktorClosed: async () => true,
     ensureRekordboxClosed: async () => !(await isRekordboxRunning()),
-    ensureEngineDjClosed: async () => true,
+    ensureEngineDjClosed: async () => {
+      if (!(await isEngineDjRunning())) return true
+      errors.push('asked to close Engine DJ')
+      return false
+    },
     showBlockedDialog: (key) => errors.push(`library sync blocked: ${key}`),
     reportIssue: (channel, issue) => errors.push(`${channel}: ${JSON.stringify(issue)}`),
     rekordboxHeld: () => false,
@@ -273,18 +282,38 @@ function libraryHost(errors: string[]): LibraryHost {
 
 let watcher: FolderWatcher | undefined
 
-function rekordboxQueueInMemory(): RekordboxQueue {
+function storeInMemory() {
   let stored: string | null = null
-  return createRekordboxQueue({
-    store: {
-      read: () => stored,
-      write: (text) => {
-        stored = text
-      },
-      setAside: () => {
-        stored = null
-      },
+  return {
+    read: () => stored,
+    write: (text: string) => {
+      stored = text
     },
+    setAside: () => {
+      stored = null
+    },
+  }
+}
+
+function engineQueueInMemory(): RekordboxQueue {
+  return createRekordboxQueue({
+    store: storeInMemory(),
+    collection: () => getSettings().engineLibraryDir,
+    applyBatch: (libraryDir, ops, ensureClosed) =>
+      applyEngineCuesBatch(libraryDir, ops, {
+        ensureClosed,
+        sessionBackup: (path) => sessions.engine.ensure(path),
+      }),
+    repoint: (libraryDir, list) => repointEngineQueued(libraryDir, list, sessions),
+    nodeStamps: async () => ({}),
+    onChange: () => {},
+    addsTracks: false,
+  })
+}
+
+function rekordboxQueueInMemory(): RekordboxQueue {
+  return createRekordboxQueue({
+    store: storeInMemory(),
     collection: rekordboxCollectionPath,
     configured: () => getSettings().rekordboxDbPath,
     applyBatch: (collectionPath, ops, ensureClosed, stillQueued) =>
@@ -306,6 +335,7 @@ function scenarioApi(
   appleMusicSends: string[],
   flushes: Promise<void>[],
   rekordboxQueue: RekordboxQueue,
+  engineQueue: RekordboxQueue,
 ): Api {
   const reservations = createOutputReservations()
   const expandedListeners = new Set<(paths: string[]) => void>()
@@ -472,13 +502,25 @@ function scenarioApi(
     },
     endConversionBatch: () => {
       let applying: Promise<unknown> = Promise.resolve()
+      let applyingEngine: Promise<unknown> = Promise.resolve()
       flushes.push(
-        flushConversionBatch(libraryHost(errors), sessions, {
-          enqueue: rekordboxQueue.enqueue,
-          applyQuietly: () => {
-            applying = rekordboxQueue.apply(async () => !(await isRekordboxRunning()))
+        flushConversionBatch(
+          libraryHost(errors),
+          sessions,
+          {
+            enqueue: rekordboxQueue.enqueue,
+            applyQuietly: () => {
+              applying = rekordboxQueue.apply(async () => !(await isRekordboxRunning()))
+            },
           },
-        }).then(() => applying.then(() => {})),
+          undefined,
+          {
+            enqueue: engineQueue.enqueue,
+            applyQuietly: () => {
+              applyingEngine = engineQueue.apply(async () => !(await isEngineDjRunning()))
+            },
+          },
+        ).then(() => Promise.all([applying, applyingEngine]).then(() => {})),
       )
     },
     processTrack: (job) => processTrackInMain(job, reservations, options, errors, appleMusicSends),
@@ -535,6 +577,8 @@ export interface Scenario {
   sentToAppleMusic: string[]
   rekordboxWaiting: () => number
   rekordboxClosed: () => Promise<void>
+  engineQueue: () => RekordboxQueueState
+  engineClosed: () => Promise<void>
 }
 
 // The main process every scenario runs against: settings, the backup store, the real IPC
@@ -547,6 +591,7 @@ export interface MainBoot {
   sentToAppleMusic: string[]
   flushes: Promise<void>[]
   rekordboxQueue: RekordboxQueue
+  engineQueue: RekordboxQueue
   api: Api
 }
 
@@ -579,8 +624,9 @@ export function bootMain(options: ScenarioOptions): MainBoot {
   const sentToAppleMusic: string[] = []
   const flushes: Promise<void>[] = []
   const rekordboxQueue = rekordboxQueueInMemory()
-  const api = scenarioApi(options, errors, sentToAppleMusic, flushes, rekordboxQueue)
-  return { settings, trash, errors, sentToAppleMusic, flushes, rekordboxQueue, api }
+  const engineQueue = engineQueueInMemory()
+  const api = scenarioApi(options, errors, sentToAppleMusic, flushes, rekordboxQueue, engineQueue)
+  return { settings, trash, errors, sentToAppleMusic, flushes, rekordboxQueue, engineQueue, api }
 }
 
 export function closeMain(): void {
@@ -588,7 +634,7 @@ export function closeMain(): void {
 }
 
 export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
-  const { settings, trash, errors, sentToAppleMusic, flushes, rekordboxQueue, api } =
+  const { settings, trash, errors, sentToAppleMusic, flushes, rekordboxQueue, engineQueue, api } =
     bootMain(options)
   const prompts: ConfirmModal[] = []
   const editorVerdicts = new Map<string, () => ReturnType<typeof useLibraryVerdict>>()
@@ -838,6 +884,10 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
     rekordboxWaiting: () => rekordboxQueue.state().tracks,
     rekordboxClosed: async () => {
       await rekordboxQueue.apply(async () => !(await isRekordboxRunning()))
+    },
+    engineQueue: () => engineQueue.state(),
+    engineClosed: async () => {
+      await engineQueue.apply(async () => !(await isEngineDjRunning()))
     },
     prompts,
     drop: async (...paths) => {

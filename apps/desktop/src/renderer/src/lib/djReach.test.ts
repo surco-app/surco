@@ -65,4 +65,10 @@ describe('reachedPrograms', () => {
       }),
     ).toEqual([])
   })
+
+  it('leaves out a program Surco cannot reach, so the button never promises adding to it', () => {
+    const s = { addToRekordbox: false, addToTraktor: true, addToEngineDj: false }
+    expect(reachedPrograms(s, new Set(['rekordbox']))).toEqual([])
+    expect(reachedPrograms(s)).toEqual(['traktor'])
+  })
 })

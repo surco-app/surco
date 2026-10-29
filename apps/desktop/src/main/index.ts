@@ -515,10 +515,11 @@ function menuLocale(): string {
   return resolveMenuLocale(getSettings().language, app.getLocale())
 }
 
-// The pending "Engine DJ is open — close it?" prompt, shared so a bulk conversion's
-// parallel tracks (each hitting the Engine add at once) raise ONE dialog and all wait
-// on the same answer. Cleared once settled: the next conversion re-checks the process,
-// which by then is either gone (proceed silently) or reopened (ask again).
+// The pending "Engine DJ is open — close it?" prompt, shared so parallel writes (a bulk
+// conversion's tracks reaching the Engine add as Engine opens) raise ONE dialog and all
+// wait on the same answer. Conversions that find Engine open leave the add to its queue
+// instead of asking. Cleared once settled: the next write re-checks the process, which by
+// then is either gone (proceed silently) or reopened (ask again).
 let engineQuitPrompt: Promise<boolean> | null = null
 
 // True when Engine DJ is not running (possibly because the user just accepted quitting
@@ -1634,7 +1635,7 @@ function registerIpc(): void {
         if (titles.length === 0) return undefined
         return appleMusicLimiter.run(() => musicEntryForFile(path, titles))
       },
-      ensureEngineDjClosed: () => ensureEngineDjClosed(BrowserWindow.fromWebContents(e.sender)),
+      isEngineDjRunning,
       // The library folder is read at add time (not captured with the job) so a queue of
       // conversions follows a mid-run settings change; addToEngineLibrary serializes the
       // database writes itself, so no limiter is needed here.

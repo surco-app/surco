@@ -1,4 +1,6 @@
 import { existsSync, realpathSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import log from 'electron-log/main'
 import type { LibraryStatus, LibraryTagUpdate, RekordboxSyncIssue } from '../shared/types'
 import { activity } from './activity'
@@ -7,12 +9,15 @@ import {
   type ReplaceDuplicatesDeps,
   traktorDuplicateStep,
 } from './duplicateReplace'
+import { loadSqlJs } from './engine'
 import { replaceEngineDuplicates } from './engineDuplicates'
-import { repointEngineTracks } from './engineRepoint'
+import { isEngineDjRunning } from './engineProcess'
+import { engineRowFinder, repointEngineTracks } from './engineRepoint'
 import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
 import { updateEngineTags } from './engineTags'
 import { probeDuration, probeProperties, toNmlLocation } from './ffmpeg'
 import { djLibraryFileUse } from './libraryFileUse'
+import { pathKey } from './libraryPathKey'
 import { flushLibraryRepoints, type LibraryRepointResult } from './libraryRepointFlush'
 import { libraryStatus } from './libraryStatus'
 import { nmlTagPatches } from './libraryTagPatches'
@@ -29,8 +34,9 @@ import type { createSessionBackup } from './rekordboxSessionBackup'
 import { updateRekordboxTags } from './rekordboxTags'
 import { getSettings } from './settings'
 import { readEmbeddedCover } from './tags'
-import { replaceDuplicatesInCollection, syncCollection } from './traktorNmlLibrary'
+import { bootVolumeName, replaceDuplicatesInCollection, syncCollection } from './traktorNmlLibrary'
 import { holdInQueue } from './traktorPatchQueue'
+import { traktorCollectionIndex } from './traktorPlaylists'
 import { flushTraktorSync } from './traktorSyncFlush'
 import { sourceRoot } from './usbExport'
 
@@ -169,7 +175,17 @@ export async function flushConversionBatch(
   // The run's repoints, taken once: rekordbox and Engine DJ each apply the same list to
   // their own library, and closing the batch twice would hand the second one nothing.
   const repoints = endRekordboxBatch()
-  const traktorOps = libraryTrackOps(repoints, 'traktor', undefined, getSettings().addToTraktor)
+  const addable = repoints.some((repoint) => repoint.meta)
+  const addToTraktor = getSettings().addToTraktor
+  const traktorOps = libraryTrackOps(
+    repoints,
+    'traktor',
+    undefined,
+    addToTraktor,
+    addToTraktor && addable
+      ? await traktorCollectionHas(getSettings().traktorNmlPath, getSettings().syncTraktor)
+      : undefined,
+  )
   if (traktorQueue && traktorOps.length > 0) {
     traktorQueue.enqueue(traktorOps)
     traktorQueue.applyQuietly()
@@ -205,13 +221,18 @@ export async function flushConversionBatch(
     apply: queue.applyQuietly,
   })
   // Engine DJ last, again independently. Its library is the one the Engine destination
-  // writes to. With Engine open the run waits in its queue, as rekordbox's does: the dialog
-  // asked to convert again, which an in-place conversion cannot, its source being gone.
+  // writes to. With Engine open the run waits in its queue without asking to close it, as
+  // rekordbox's does: the dialog asked to convert again, which an in-place conversion
+  // cannot, its source being gone. A check that cannot tell counts as Engine being open.
   const engineRepoints = repoints.filter((repoint) => repoint.from !== repoint.to)
   const engineUnplugged = onUnpluggedDrive(getSettings().engineLibraryDir)
   const engineResult = await flushEngineSync({
     ...engineFlushDeps(host),
-    ...(engineQueue && { showBlockedDialog: () => {}, unplugged: engineUnplugged }),
+    ...(engineQueue && {
+      ensureClosed: async () => !(await isEngineDjRunning().catch(() => true)),
+      showBlockedDialog: () => {},
+      unplugged: engineUnplugged,
+    }),
     endBatch: () => engineRepoints,
     repointTracks: (libraryDir, list) => repointEngine(libraryDir, list, sessions),
   })
@@ -221,11 +242,64 @@ export async function flushConversionBatch(
     engineQueue.enqueue([], engineRepoints)
     engineQueue.applyQuietly()
   }
-  const engineOps = libraryTrackOps(repoints, 'engine')
+  const addToEngineDj = getSettings().addToEngineDj
+  const engineOps = libraryTrackOps(
+    repoints,
+    'engine',
+    undefined,
+    addToEngineDj,
+    addToEngineDj && addable
+      ? await engineLibraryHas(getSettings().engineLibraryDir, getSettings().syncEngineDj)
+      : undefined,
+  )
   if (engineQueue && engineOps.length > 0) {
     engineQueue.enqueue(engineOps)
     engineQueue.applyQuietly()
   }
+}
+
+type LibraryHas = (path: string, from?: string) => boolean
+
+function pathsHeld(path: string, from: string | undefined, followsFrom: boolean): string[] {
+  return followsFrom && from !== undefined ? [path, from] : [path]
+}
+
+async function traktorCollectionHas(
+  nmlPath: string,
+  followsFrom: boolean,
+): Promise<LibraryHas | undefined> {
+  let nml: string
+  try {
+    nml = await readFile(nmlPath, 'utf8')
+  } catch {
+    return undefined
+  }
+  const { byPath } = traktorCollectionIndex(nml, bootVolumeName())
+  return (path, from) =>
+    pathsHeld(path, from, followsFrom).some((p) => byPath.has(p.normalize('NFC')))
+}
+
+async function engineLibraryHas(
+  libraryDir: string,
+  followsFrom: boolean,
+): Promise<LibraryHas | undefined> {
+  let rows: { path: string }[]
+  try {
+    const SQL = await loadSqlJs()
+    const db = new SQL.Database(await readFile(join(libraryDir, 'Database2', 'm.db')))
+    try {
+      rows = (db.exec('SELECT path FROM Track WHERE path IS NOT NULL')[0]?.values ?? []).map(
+        ([stored]) => ({ path: String(stored) }),
+      )
+    } finally {
+      db.close()
+    }
+  } catch {
+    return undefined
+  }
+  const find = engineRowFinder(libraryDir, rows)
+  const key = pathKey({ realPath: (p: string) => realpathSync(p) })
+  return (path, from) => pathsHeld(path, from, followsFrom).some((p) => find(p, key).length > 0)
 }
 
 function repointEngine(

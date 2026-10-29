@@ -97,7 +97,7 @@ export interface ProcessTrackDeps {
     coverPath: string | undefined,
     replaces: string,
   ) => Promise<void>
-  ensureEngineDjClosed?: () => Promise<boolean>
+  isEngineDjRunning?: () => Promise<boolean>
   isAllowed?: (path: string) => boolean
   // Marks a written file as streamable through surco://.
   allowMedia: (path: string) => void
@@ -336,10 +336,12 @@ export async function runProcessTrack(
     // Awaited before the conflict check reads the disk and the sibling claims, as the
     // beside branch does: with the wait between that read and reservePath, two in-place
     // jobs of one run (Song.flac and Song.wav, both becoming Song.aiff) each read the name
-    // as free, both wrote it, and the folder kept one recording of the two. The wait for
-    // Engine DJ to close is held here for the same reason.
-    if (addToEngineDj && deps.ensureEngineDjClosed && !(await deps.ensureEngineDjClosed()))
-      throw errorWithKey('engineDjOpen')
+    // as free, both wrote it, and the folder kept one recording of the two. The check for
+    // Engine DJ being open is held here for the same reason.
+    const engineDjQueued =
+      addToEngineDj &&
+      !!deps.isEngineDjRunning &&
+      (await deps.isEngineDjRunning().catch(() => true))
     // The previous output only counts as this track's own while it is still the file this
     // track wrote: another track can have been written over that path since.
     const ownPrevious =
@@ -558,7 +560,7 @@ export async function runProcessTrack(
     // no longer exists and a staged trim set to cut the already cut file again.
     let addedToEngineDj: true | undefined
     let engineDjError: string | undefined
-    if (addToEngineDj) {
+    if (addToEngineDj && !engineDjQueued) {
       stage('engineDj')
       // Engine renders artwork from its own database, never from the file's tags, so
       // the row needs the image handed over: the job's processed cover when there is
@@ -623,6 +625,7 @@ export async function runProcessTrack(
       declickedSamples,
       addedToEngineDj,
       engineDjError,
+      ...(engineDjQueued ? { engineDjQueued: true as const } : {}),
       outputIdentity,
       oldMusicCopyKept,
       appleMusicFailed,

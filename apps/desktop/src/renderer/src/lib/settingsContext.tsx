@@ -108,6 +108,8 @@ interface ResolvedSettings {
   hiddenSources: PlaylistSource[]
   // The collection.nml the DJ confirmed, the only one Traktor cues are written to.
   traktorNmlPath: string
+  rekordboxDbPath: string
+  engineLibraryDir: string
 }
 
 // One frozen default per field (not fresh objects per call): the provider memoizes on
@@ -163,6 +165,8 @@ const DEFAULTS: ResolvedSettings = {
   cueLearnFromEdits: true,
   hiddenSources: [],
   traktorNmlPath: '',
+  rekordboxDbPath: '',
+  engineLibraryDir: '',
 }
 
 function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
@@ -219,6 +223,8 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     cueLearnFromEdits: settings.cueLearnFromEdits !== false,
     hiddenSources: normalizeHiddenSources(settings.hiddenSources),
     traktorNmlPath: settings.traktorNmlPath ?? DEFAULTS.traktorNmlPath,
+    rekordboxDbPath: settings.rekordboxDbPath ?? DEFAULTS.rekordboxDbPath,
+    engineLibraryDir: settings.engineLibraryDir ?? DEFAULTS.engineLibraryDir,
   }
 }
 

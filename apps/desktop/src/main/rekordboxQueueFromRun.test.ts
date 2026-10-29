@@ -256,14 +256,73 @@ describe('libraryTrackOps', () => {
     ])
   })
 
+  it('does not queue adding a track the collection already has, so the queue shows only real additions', () => {
+    const repoints: RekordboxRepoint[] = [{ from: '/m/a.mp3', to: '/m/a.wav', meta: META }]
+    const known = vi.fn((path: string, from?: string) => path === '/m/a.wav' && from === '/m/a.mp3')
+    expect(libraryTrackOps(repoints, 'traktor', () => 'id1', true, known)).toEqual([])
+    expect(
+      libraryTrackOps(
+        repoints,
+        'traktor',
+        () => 'id1',
+        true,
+        () => false,
+      ),
+    ).toEqual([expect.objectContaining({ id: 'id1', path: '/m/a.wav', add: true, wanted: [] })])
+  })
+
   it('needs track tags to register in Traktor, since its collection entry is built from them', () => {
     const repoints: RekordboxRepoint[] = [{ from: '/m/a.wav', to: '/m/a.wav' }]
     expect(libraryTrackOps(repoints, 'traktor', () => 'id1', true)).toEqual([])
   })
 
-  it('leaves Engine DJ registration to the conversion itself, so no add op is queued for it', () => {
-    const repoints: RekordboxRepoint[] = [{ from: '/m/a.wav', to: '/m/a.wav', meta: META }]
-    expect(libraryTrackOps(repoints, 'engine', () => 'id1', true)).toEqual([])
+  it('queues adding a converted track Engine DJ does not have yet, so a conversion made while Engine was open still reaches it', () => {
+    const repoints: RekordboxRepoint[] = [{ from: '/m/a.mp3', to: '/m/a.wav', meta: META }]
+    expect(
+      libraryTrackOps(
+        repoints,
+        'engine',
+        () => 'id1',
+        true,
+        () => false,
+      ),
+    ).toEqual([
+      {
+        id: 'id1',
+        kind: 'track',
+        path: '/m/a.wav',
+        from: '/m/a.mp3',
+        label: 'Sister Nancy - Bam Bam',
+        facts: null,
+        meta: META,
+        wanted: [],
+        known: [],
+        stamps: {},
+        add: true,
+      },
+    ])
+  })
+
+  it('queues no Engine DJ add for a track it already has, nor when the DJ only updates the tracks there', () => {
+    const repoints: RekordboxRepoint[] = [{ from: '/m/a.mp3', to: '/m/a.wav', meta: META }]
+    expect(
+      libraryTrackOps(
+        repoints,
+        'engine',
+        () => 'id1',
+        true,
+        () => true,
+      ),
+    ).toEqual([])
+    expect(
+      libraryTrackOps(
+        repoints,
+        'engine',
+        () => 'id1',
+        false,
+        () => false,
+      ),
+    ).toEqual([])
   })
 })
 

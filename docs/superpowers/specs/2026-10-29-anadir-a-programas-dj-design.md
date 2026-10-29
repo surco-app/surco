@@ -63,9 +63,9 @@ que la interfaz deje de hacerles pensar en ella.
    cuando Surco no sabía crear playlists, y ahora se crean desde el árbol de cada programa
    (Vicent, 29/10).
 8. **Con rekordbox o Traktor abiertos, las altas esperan en la cola de cada programa**
-   (`libraryFlushes.ts`). Engine DJ registra la pista durante la conversión: pide cerrar Engine
-   y, si no se cierra, la pista falla con el error de Engine abierto, igual que con el antiguo
-   destino Engine DJ. Encolar también las altas de Engine queda fuera de esta spec.
+   (`libraryFlushes.ts`). Engine DJ también: con Engine cerrado registra la pista durante la
+   conversión (con la carátula ya procesada); con Engine abierto no pregunta ni falla, sino que
+   deja el alta en su cola y la aplica al cerrarlo (enmienda del 29/10, segunda tanda).
 
 ## Qué hay ya y qué falta
 

@@ -20,15 +20,19 @@ interface List {
   parent: number
 }
 
+function trackRows(db: Database): { id: number; path: string }[] {
+  return (db.exec('SELECT id, path FROM Track WHERE path IS NOT NULL')[0]?.values ?? []).map(
+    ([id, path]) => ({ id: Number(id), path: String(path) }),
+  )
+}
+
 function trackOf(
   db: Database,
   libraryDir: string,
   op: TrackOp,
   key: (path: string) => string,
 ): number | null {
-  const rows = (db.exec('SELECT id, path FROM Track WHERE path IS NOT NULL')[0]?.values ?? []).map(
-    ([id, path]) => ({ id: Number(id), path: String(path) }),
-  )
+  const rows = trackRows(db)
   const byId = op.contentId ? engineTrackId(op.contentId) : null
   if (byId !== null && rows.some((r) => r.id === byId)) return byId
   const find = engineRowFinder(libraryDir, rows)
@@ -105,8 +109,19 @@ export function planEngineTrackPlaylists(
   op: TrackOp,
   key: (path: string) => string,
 ): { notices: RekordboxQueueNotice[]; write: ((db: Database) => void) | null } | null {
-  const found = trackOf(db, libraryDir, op, key)
   const meta = op.meta
+  if (op.add && op.wanted.length === 0) {
+    if (engineRowFinder(libraryDir, trackRows(db))(op.path, key).length > 0)
+      return { notices: [], write: null }
+    if (!meta) return null
+    return {
+      notices: [],
+      write: (target) => {
+        addTrack(target, libraryDir, op.path, meta)
+      },
+    }
+  }
+  const found = trackOf(db, libraryDir, op, key)
   if (found === null && !meta) return null
   const lists: List[] = (
     db.exec('SELECT id, title, parentListId FROM Playlist WHERE coalesce(isPersisted, 1) = 1')[0]
