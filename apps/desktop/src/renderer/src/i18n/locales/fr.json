@@ -2688,7 +2688,8 @@
     "discardNo": "Annuler",
     "pillHalted": "Changements rekordbox en pause",
     "halted": "Le dernier changement n’a pu être ni enregistré ni annulé. Surco ne touchera pas à la collection tant que tu n’auras pas choisi Appliquer maintenant ou Abandonner. Appliquer maintenant remplace la copie de secours master.db.surco-backup, donc si quelque chose cloche, restaure d’abord depuis cette copie. Tu la trouveras dans Réglages → Avancé → Sauvegardes des collections",
-    "pillElsewhere": "En attente d’une autre collection rekordbox",
+    "pillElsewhere_one": "{{count}} en attente d’une autre collection rekordbox",
+    "pillElsewhere_other": "{{count}} en attente d’une autre collection rekordbox",
     "elsewhere_one": "{{count}} modification attend une autre collection rekordbox. Elle sera appliquée quand tu y reviendras",
     "elsewhere_other": "{{count}} modifications attendent une autre collection rekordbox. Elles seront appliquées quand tu y reviendras"
   },
@@ -2719,7 +2720,8 @@
     "discardConfirm": "Abandonner ce qui attend ? Tes playlists et cues Engine DJ restent comme Engine DJ les a",
     "pillHalted": "Changements Engine DJ en pause",
     "halted": "Le dernier changement n’a pu être ni enregistré ni annulé. Surco ne touchera pas à la bibliothèque tant que tu n’auras pas choisi Appliquer maintenant ou Abandonner. Appliquer maintenant remplace la copie de secours m.db.surco-backup, donc si quelque chose cloche, restaure d’abord depuis cette copie. Tu la trouveras dans Réglages → Avancé → Sauvegardes des collections",
-    "pillElsewhere": "En attente d’une autre bibliothèque Engine DJ",
+    "pillElsewhere_one": "{{count}} en attente d’une autre bibliothèque Engine DJ",
+    "pillElsewhere_other": "{{count}} en attente d’une autre bibliothèque Engine DJ",
     "elsewhere_one": "{{count}} modification attend une autre bibliothèque Engine DJ. Elle sera appliquée quand tu y reviendras",
     "elsewhere_other": "{{count}} modifications attendent une autre bibliothèque Engine DJ. Elles seront appliquées quand tu y reviendras"
   },
@@ -2750,7 +2752,8 @@
     "discardConfirm": "Abandonner ce qui attend ? Tes playlists et cues Traktor restent comme Traktor les a",
     "pillHalted": "Changements Traktor en pause",
     "halted": "Le dernier changement n’a pu être ni enregistré ni annulé. Surco ne touchera pas à la collection tant que tu n’auras pas choisi Appliquer maintenant ou Abandonner. Appliquer maintenant remplace la copie de secours collection.nml.surco-backup, donc si quelque chose cloche, restaure d’abord depuis cette copie. Tu la trouveras dans Réglages → Avancé → Sauvegardes des collections",
-    "pillElsewhere": "En attente d’une autre collection Traktor",
+    "pillElsewhere_one": "{{count}} en attente d’une autre collection Traktor",
+    "pillElsewhere_other": "{{count}} en attente d’une autre collection Traktor",
     "elsewhere_one": "{{count}} modification attend une autre collection Traktor. Elle sera appliquée quand tu y reviendras",
     "elsewhere_other": "{{count}} modifications attendent une autre collection Traktor. Elles seront appliquées quand tu y reviendras"
   },

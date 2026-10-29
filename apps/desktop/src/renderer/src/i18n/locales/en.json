@@ -2688,7 +2688,8 @@
     "discardNo": "Cancel",
     "pillHalted": "rekordbox changes on hold",
     "halted": "The last change could not be saved or undone. Surco will not touch the collection until you choose Apply now or Discard. Apply now replaces the backup copy master.db.surco-backup, so if anything looks wrong, restore from it first. You will find it in Settings → Advanced → Collection backups",
-    "pillElsewhere": "Waiting for another rekordbox collection",
+    "pillElsewhere_one": "{{count}} waiting for another rekordbox collection",
+    "pillElsewhere_other": "{{count}} waiting for another rekordbox collection",
     "elsewhere_one": "{{count}} change waits for another rekordbox collection. It will be applied when you go back to it",
     "elsewhere_other": "{{count}} changes wait for another rekordbox collection. They will be applied when you go back to it"
   },
@@ -2719,7 +2720,8 @@
     "discardConfirm": "Discard what is waiting? Your Engine DJ playlists and cues stay as Engine DJ has them",
     "pillHalted": "Engine DJ changes on hold",
     "halted": "The last change could not be saved or undone. Surco will not touch the library until you choose Apply now or Discard. Apply now replaces the backup copy m.db.surco-backup, so if anything looks wrong, restore from it first. You will find it in Settings → Advanced → Collection backups",
-    "pillElsewhere": "Waiting for another Engine DJ library",
+    "pillElsewhere_one": "{{count}} waiting for another Engine DJ library",
+    "pillElsewhere_other": "{{count}} waiting for another Engine DJ library",
     "elsewhere_one": "{{count}} change waits for another Engine DJ library. It will be applied when you go back to it",
     "elsewhere_other": "{{count}} changes wait for another Engine DJ library. They will be applied when you go back to it"
   },
@@ -2750,7 +2752,8 @@
     "discardConfirm": "Discard what is waiting? Your Traktor playlists and cues stay as Traktor has them",
     "pillHalted": "Traktor changes on hold",
     "halted": "The last change could not be saved or undone. Surco will not touch the collection until you choose Apply now or Discard. Apply now replaces the backup copy collection.nml.surco-backup, so if anything looks wrong, restore from it first. You will find it in Settings → Advanced → Collection backups",
-    "pillElsewhere": "Waiting for another Traktor collection",
+    "pillElsewhere_one": "{{count}} waiting for another Traktor collection",
+    "pillElsewhere_other": "{{count}} waiting for another Traktor collection",
     "elsewhere_one": "{{count}} change waits for another Traktor collection. It will be applied when you go back to it",
     "elsewhere_other": "{{count}} changes wait for another Traktor collection. They will be applied when you go back to it"
   },

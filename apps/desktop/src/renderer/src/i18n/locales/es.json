@@ -2688,7 +2688,8 @@
     "discardNo": "Cancelar",
     "pillHalted": "Cambios de rekordbox en pausa",
     "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la colección hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia master.db.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → Avanzado → Copias de las colecciones",
-    "pillElsewhere": "Pendiente de otra colección de rekordbox",
+    "pillElsewhere_one": "{{count}} pendiente de otra colección de rekordbox",
+    "pillElsewhere_other": "{{count}} pendientes de otra colección de rekordbox",
     "elsewhere_one": "Hay {{count}} cambio pendiente de otra colección de rekordbox. Se aplicará cuando vuelvas a ella",
     "elsewhere_other": "Hay {{count}} cambios pendientes de otra colección de rekordbox. Se aplicarán cuando vuelvas a ella"
   },
@@ -2719,7 +2720,8 @@
     "discardConfirm": "¿Descartar lo que espera? Tus playlists y cues de Engine DJ se quedan como las tiene Engine DJ",
     "pillHalted": "Cambios de Engine DJ en pausa",
     "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la biblioteca hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia m.db.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → Avanzado → Copias de las colecciones",
-    "pillElsewhere": "Pendiente de otra biblioteca de Engine DJ",
+    "pillElsewhere_one": "{{count}} pendiente de otra biblioteca de Engine DJ",
+    "pillElsewhere_other": "{{count}} pendientes de otra biblioteca de Engine DJ",
     "elsewhere_one": "Hay {{count}} cambio pendiente de otra biblioteca de Engine DJ. Se aplicará cuando vuelvas a ella",
     "elsewhere_other": "Hay {{count}} cambios pendientes de otra biblioteca de Engine DJ. Se aplicarán cuando vuelvas a ella"
   },
@@ -2750,7 +2752,8 @@
     "discardConfirm": "¿Descartar lo que espera? Tus playlists y cues de Traktor se quedan como las tiene Traktor",
     "pillHalted": "Cambios de Traktor en pausa",
     "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la colección hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia collection.nml.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → Avanzado → Copias de las colecciones",
-    "pillElsewhere": "Pendiente de otra colección de Traktor",
+    "pillElsewhere_one": "{{count}} pendiente de otra colección de Traktor",
+    "pillElsewhere_other": "{{count}} pendientes de otra colección de Traktor",
     "elsewhere_one": "Hay {{count}} cambio pendiente de otra colección de Traktor. Se aplicará cuando vuelvas a ella",
     "elsewhere_other": "Hay {{count}} cambios pendientes de otra colección de Traktor. Se aplicarán cuando vuelvas a ella"
   },

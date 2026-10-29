@@ -2688,7 +2688,8 @@
     "discardNo": "キャンセル",
     "pillHalted": "rekordbox の変更を保留中",
     "halted": "最後の変更を保存も取り消しもできませんでした。「今すぐ適用」か「破棄」を選ぶまで、Surco はコレクションに触れません。「今すぐ適用」はバックアップコピー master.db.surco-backup を置き換えるため、何かおかしい場合は先にそこから復元してください。設定 → 詳細 → コレクションのバックアップにあります",
-    "pillElsewhere": "別の rekordbox コレクションを待っています",
+    "pillElsewhere_one": "{{count}} 件が別の rekordbox コレクションを待っています",
+    "pillElsewhere_other": "{{count}} 件が別の rekordbox コレクションを待っています",
     "elsewhere_one": "{{count}} 件の変更が別の rekordbox コレクションを待っています。そちらに戻ると適用されます",
     "elsewhere_other": "{{count}} 件の変更が別の rekordbox コレクションを待っています。そちらに戻ると適用されます"
   },
@@ -2719,7 +2720,8 @@
     "discardConfirm": "待機中の内容を破棄しますか？Engine DJ のプレイリストとキューは Engine DJ の状態のままです",
     "pillHalted": "Engine DJ の変更を保留中",
     "halted": "最後の変更を保存も取り消しもできませんでした。「今すぐ適用」か「破棄」を選ぶまで、Surco はライブラリに触れません。「今すぐ適用」はバックアップコピー m.db.surco-backup を置き換えるため、何かおかしい場合は先にそこから復元してください。設定 → 詳細 → コレクションのバックアップにあります",
-    "pillElsewhere": "別の Engine DJ ライブラリを待っています",
+    "pillElsewhere_one": "{{count}} 件が別の Engine DJ ライブラリを待っています",
+    "pillElsewhere_other": "{{count}} 件が別の Engine DJ ライブラリを待っています",
     "elsewhere_one": "{{count}} 件の変更が別の Engine DJ ライブラリを待っています。そちらに戻ると適用されます",
     "elsewhere_other": "{{count}} 件の変更が別の Engine DJ ライブラリを待っています。そちらに戻ると適用されます"
   },
@@ -2750,7 +2752,8 @@
     "discardConfirm": "待機中の内容を破棄しますか？Traktor のプレイリストとキューは Traktor の状態のままです",
     "pillHalted": "Traktor の変更を保留中",
     "halted": "最後の変更を保存も取り消しもできませんでした。「今すぐ適用」か「破棄」を選ぶまで、Surco はコレクションに触れません。「今すぐ適用」はバックアップコピー collection.nml.surco-backup を置き換えるため、何かおかしい場合は先にそこから復元してください。設定 → 詳細 → コレクションのバックアップにあります",
-    "pillElsewhere": "別の Traktor コレクションを待っています",
+    "pillElsewhere_one": "{{count}} 件が別の Traktor コレクションを待っています",
+    "pillElsewhere_other": "{{count}} 件が別の Traktor コレクションを待っています",
     "elsewhere_one": "{{count}} 件の変更が別の Traktor コレクションを待っています。そちらに戻ると適用されます",
     "elsewhere_other": "{{count}} 件の変更が別の Traktor コレクションを待っています。そちらに戻ると適用されます"
   },

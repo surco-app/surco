@@ -2688,7 +2688,8 @@
     "discardNo": "Cancelar",
     "pillHalted": "Mudanças do rekordbox em pausa",
     "halted": "A última mudança não pôde ser salva nem desfeita. O Surco não vai mexer na coleção até você escolher Aplicar agora ou Descartar. Aplicar agora substitui a cópia de segurança master.db.surco-backup, então se algo parecer errado, restaure a partir dela antes. Você a encontra em Ajustes → Avançado → Cópias das coleções",
-    "pillElsewhere": "Pendente de outra coleção do rekordbox",
+    "pillElsewhere_one": "{{count}} pendente de outra coleção do rekordbox",
+    "pillElsewhere_other": "{{count}} pendentes de outra coleção do rekordbox",
     "elsewhere_one": "{{count}} alteração espera outra coleção do rekordbox. Ela será aplicada quando você voltar a ela",
     "elsewhere_other": "{{count}} alterações esperam outra coleção do rekordbox. Elas serão aplicadas quando você voltar a ela"
   },
@@ -2719,7 +2720,8 @@
     "discardConfirm": "Descartar o que está esperando? Suas playlists e cues do Engine DJ ficam como o Engine DJ as tem",
     "pillHalted": "Mudanças do Engine DJ em pausa",
     "halted": "A última mudança não pôde ser salva nem desfeita. O Surco não vai mexer na biblioteca até você escolher Aplicar agora ou Descartar. Aplicar agora substitui a cópia de segurança m.db.surco-backup, então se algo parecer errado, restaure a partir dela antes. Você a encontra em Ajustes → Avançado → Cópias das coleções",
-    "pillElsewhere": "Pendente de outra biblioteca do Engine DJ",
+    "pillElsewhere_one": "{{count}} pendente de outra biblioteca do Engine DJ",
+    "pillElsewhere_other": "{{count}} pendentes de outra biblioteca do Engine DJ",
     "elsewhere_one": "{{count}} alteração espera outra biblioteca do Engine DJ. Ela será aplicada quando você voltar a ela",
     "elsewhere_other": "{{count}} alterações esperam outra biblioteca do Engine DJ. Elas serão aplicadas quando você voltar a ela"
   },
@@ -2750,7 +2752,8 @@
     "discardConfirm": "Descartar o que está esperando? Suas playlists e cues do Traktor ficam como o Traktor as tem",
     "pillHalted": "Mudanças do Traktor em pausa",
     "halted": "A última mudança não pôde ser salva nem desfeita. O Surco não vai mexer na coleção até você escolher Aplicar agora ou Descartar. Aplicar agora substitui a cópia de segurança collection.nml.surco-backup, então se algo parecer errado, restaure a partir dela antes. Você a encontra em Ajustes → Avançado → Cópias das coleções",
-    "pillElsewhere": "Pendente de outra coleção do Traktor",
+    "pillElsewhere_one": "{{count}} pendente de outra coleção do Traktor",
+    "pillElsewhere_other": "{{count}} pendentes de outra coleção do Traktor",
     "elsewhere_one": "{{count}} alteração espera outra coleção do Traktor. Ela será aplicada quando você voltar a ela",
     "elsewhere_other": "{{count}} alterações esperam outra coleção do Traktor. Elas serão aplicadas quando você voltar a ela"
   },

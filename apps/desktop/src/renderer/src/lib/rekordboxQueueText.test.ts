@@ -59,12 +59,14 @@ describe('rekordbox queue text', () => {
   )
 
   it('says in Spanish that the queue is pending for another collection', () => {
-    expect(es.rekordboxQueue.pillElsewhere).toBe('Pendiente de otra colección de rekordbox')
+    expect(es.rekordboxQueue.pillElsewhere_other).toBe(
+      '{{count}} pendientes de otra colección de rekordbox',
+    )
   })
 
-  it('says the queue waits for another collection when nothing waits for this one', () => {
+  it('counts how much waits for another collection when nothing waits for this one, so the pill is not a bare warning', () => {
     expect(pillText(tr, { tracks: 0, changes: 0, items: [], elsewhere: 2 })).toBe(
-      'Waiting for another rekordbox collection',
+      '2 waiting for another rekordbox collection',
     )
   })
 

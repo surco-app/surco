@@ -2688,7 +2688,8 @@
     "discardNo": "Abbrechen",
     "pillHalted": "rekordbox-Änderungen angehalten",
     "halted": "Die letzte Änderung konnte weder gespeichert noch rückgängig gemacht werden. Surco rührt die Sammlung nicht an, bis du Jetzt anwenden oder Verwerfen wählst. Jetzt anwenden ersetzt die Sicherungskopie master.db.surco-backup. Wenn etwas nicht stimmt, stelle die Sammlung zuerst daraus wieder her. Du findest sie unter Einstellungen → Erweitert → Sicherungen der Sammlungen",
-    "pillElsewhere": "Wartet auf eine andere rekordbox-Sammlung",
+    "pillElsewhere_one": "{{count}} wartet auf eine andere rekordbox-Sammlung",
+    "pillElsewhere_other": "{{count}} wartet auf eine andere rekordbox-Sammlung",
     "elsewhere_one": "{{count}} Änderung wartet auf eine andere rekordbox-Sammlung. Sie wird angewendet, wenn du zu ihr zurückkehrst",
     "elsewhere_other": "{{count}} Änderungen warten auf eine andere rekordbox-Sammlung. Sie werden angewendet, wenn du zu ihr zurückkehrst"
   },
@@ -2719,7 +2720,8 @@
     "discardConfirm": "Wartendes verwerfen? Deine Engine-DJ-Playlists und Cues bleiben, wie Engine DJ sie hat",
     "pillHalted": "Engine-DJ-Änderungen angehalten",
     "halted": "Die letzte Änderung konnte weder gespeichert noch rückgängig gemacht werden. Surco rührt die Bibliothek nicht an, bis du Jetzt anwenden oder Verwerfen wählst. Jetzt anwenden ersetzt die Sicherungskopie m.db.surco-backup. Wenn etwas nicht stimmt, stelle die Bibliothek zuerst daraus wieder her. Du findest sie unter Einstellungen → Erweitert → Sicherungen der Sammlungen",
-    "pillElsewhere": "Wartet auf eine andere Engine-DJ-Bibliothek",
+    "pillElsewhere_one": "{{count}} wartet auf eine andere Engine-DJ-Bibliothek",
+    "pillElsewhere_other": "{{count}} wartet auf eine andere Engine-DJ-Bibliothek",
     "elsewhere_one": "{{count}} Änderung wartet auf eine andere Engine-DJ-Bibliothek. Sie wird angewendet, wenn du zu ihr zurückkehrst",
     "elsewhere_other": "{{count}} Änderungen warten auf eine andere Engine-DJ-Bibliothek. Sie werden angewendet, wenn du zu ihr zurückkehrst"
   },
@@ -2750,7 +2752,8 @@
     "discardConfirm": "Wartendes verwerfen? Deine Traktor-Playlists und Cues bleiben, wie Traktor sie hat",
     "pillHalted": "Traktor-Änderungen angehalten",
     "halted": "Die letzte Änderung konnte weder gespeichert noch rückgängig gemacht werden. Surco rührt die Collection nicht an, bis du Jetzt anwenden oder Verwerfen wählst. Jetzt anwenden ersetzt die Sicherungskopie collection.nml.surco-backup. Wenn etwas nicht stimmt, stelle die Collection zuerst daraus wieder her. Du findest sie unter Einstellungen → Erweitert → Sicherungen der Sammlungen",
-    "pillElsewhere": "Wartet auf eine andere Traktor-Sammlung",
+    "pillElsewhere_one": "{{count}} wartet auf eine andere Traktor-Sammlung",
+    "pillElsewhere_other": "{{count}} wartet auf eine andere Traktor-Sammlung",
     "elsewhere_one": "{{count}} Änderung wartet auf eine andere Traktor-Sammlung. Sie wird angewendet, wenn du zu ihr zurückkehrst",
     "elsewhere_other": "{{count}} Änderungen warten auf eine andere Traktor-Sammlung. Sie werden angewendet, wenn du zu ihr zurückkehrst"
   },

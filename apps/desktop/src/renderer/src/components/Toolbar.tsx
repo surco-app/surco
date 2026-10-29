@@ -537,7 +537,7 @@ export function PrimaryAction({
       data-testid={testid}
       onClick={running ? onCancel : onRun}
       disabled={running ? !onCancel : !ready}
-      data-prominence={quiet ? 'quiet' : 'primary'}
+      data-variant={quiet ? 'secondary' : 'primary'}
       aria-label={running ? (onCancel ? cancelLabel : undefined) : label}
       className={`press group relative flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium disabled:opacity-40 ${
         running

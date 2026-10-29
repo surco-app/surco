@@ -70,19 +70,19 @@ describe('Toolbar', () => {
     expect(screen.queryByTestId('auto-clean-count')).toBeNull()
   })
 
-  // Another view (the Music review) can own the screen's main action; the convert button
-  // would then act on a list the user cannot see.
   it('keeps Convert quiet when the list holds one track, since the editor footer already carries the accented convert for it', () => {
     renderBar({ trackCount: 1, convertibleCount: 1, batchSize: 1 })
-    expect(screen.getByTestId('convert-all')).toHaveAttribute('data-prominence', 'quiet')
+    expect(screen.getByTestId('convert-all')).toHaveAttribute('data-variant', 'secondary')
     expect(screen.getByTestId('convert-all')).toBeEnabled()
   })
 
   it('accents Convert when it converts more than the one track the footer handles', () => {
     renderBar({ trackCount: 2, convertibleCount: 2, batchSize: 2 })
-    expect(screen.getByTestId('convert-all')).toHaveAttribute('data-prominence', 'primary')
+    expect(screen.getByTestId('convert-all')).toHaveAttribute('data-variant', 'primary')
   })
 
+  // Another view (the Music review) can own the screen's main action; the convert button
+  // would then act on a list the user cannot see.
   it('shows a given main action in place of Convert, even with no tracks', () => {
     renderBar({ trackCount: 0, primary: <button type="button" data-testid="other-action" /> })
     expect(screen.getByTestId('other-action')).toBeInTheDocument()

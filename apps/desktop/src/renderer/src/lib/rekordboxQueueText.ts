@@ -133,7 +133,7 @@ export function pillText(
   const changes = state.unplugged ? words.pillChangesUnplugged : words.pillChanges
   if (state.tracks > 0) return tr(tracks, { count: state.tracks })
   if (state.changes > 0) return tr(changes, { count: state.changes })
-  if (state.elsewhere) return tr(words.pillElsewhere)
+  if (state.elsewhere) return tr(words.pillElsewhere, { count: state.elsewhere })
   return null
 }
 
