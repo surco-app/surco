@@ -30,7 +30,7 @@ export interface ExportLabelState {
   // The track already has a copy Surco added to Music, which converting an edit syncs
   // instead of adding a second one.
   inMusic?: boolean
-  // Where the file lands, named on the button when no library suffix already does.
+  // Where the file lands, named on the button unless Apple Music already names it.
   destination?: Destination
 }
 
@@ -65,7 +65,7 @@ export function exportButtonLabel(state: ExportLabelState): {
   if (state.count !== undefined) {
     if (state.djTargets.length > 0) {
       return {
-        key: 'editor.convertAllTo',
+        key: place ? `editor.convertAll${place}To` : 'editor.convertAllTo',
         options: { count: state.count, format: state.format, programs },
       }
     }
@@ -92,7 +92,10 @@ export function exportButtonLabel(state: ExportLabelState): {
     return { key: 'editor.replaceMusic', options: { format: state.format } }
   }
   if (state.djTargets.length > 0) {
-    return { key: 'editor.convertTo', options: { format: state.format, programs } }
+    return {
+      key: place ? `editor.convert${place}To` : 'editor.convertTo',
+      options: { format: state.format, programs },
+    }
   }
   if (!state.withAppleMusic && place) {
     return { key: `editor.convert${place}`, options: { format: state.format } }
