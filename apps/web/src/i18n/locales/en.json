@@ -89,7 +89,7 @@
           },
           {
             "t": "You choose where it lands",
-            "d": "A folder, beside the original, Apple Music or Engine DJ."
+            "d": "A folder, beside the original or Apple Music. And in rekordbox, Engine DJ and Traktor you choose whether the track gets updated or added too."
           },
           {
             "t": "Corrected sample rate",
@@ -535,7 +535,7 @@
       },
       {
         "q": "Does it work with Denon gear (Engine DJ)?",
-        "a": "Yes. Pick Engine DJ as the destination and every converted track is registered straight into your Engine DJ library (with its cover, rating and a configurable playlist), ready to sync to your players. It also exports collections to rekordbox, Traktor and Serato."
+        "a": "Yes. In Settings → Output set Engine DJ to “Update and add” and every converted track is registered straight into your Engine DJ library (with its cover, rating and the playlists you pick), ready to sync to your players. It also exports collections to rekordbox, Traktor and Serato."
       },
       {
         "q": "Windows says \"Windows protected your PC\". Is it safe?",
@@ -826,7 +826,7 @@
         "title": "Convert the track",
         "body": [
           "The button at the bottom of the editor converts the selected track, and tells you which format it's about to write before you click. The dropdown to its right picks the format: AIFF, WAV, FLAC or ALAC lossless, MP3, or “Same as source”. If the track is already in that format, Surco copies it as-is, instantly, without re-encoding, unless your quality settings or an audio filter change its audio.",
-          "Quality is set in Settings → Format: MP3 bitrate (320 down to 128 kbps, or VBR V0/V2), bit depth, sample rate and FLAC compression. By default the original's are kept, except the bit depth: “Corrected” saves a 16-bit file padded to 24 as true 16-bit, with no loss. In Settings → Output you decide where it goes: an output folder, your Apple Music library, your Engine DJ (Denon) library, next to the original (same-format exports take a “(2)” name and the source is untouched), or overwrite the original in place, which Surco confirms with you first. If you want, turn on normalization (loudness or peak, with streaming, club or broadcast presets) to even out the volume. When it's done, “Show file” takes you to the result in Finder or Explorer."
+          "Quality is set in Settings → Format: MP3 bitrate (320 down to 128 kbps, or VBR V0/V2), bit depth, sample rate and FLAC compression. By default the original's are kept, except the bit depth: “Corrected” saves a 16-bit file padded to 24 as true 16-bit, with no loss. In Settings → Output you decide where it goes: an output folder, your Apple Music library, next to the original (same-format exports take a “(2)” name and the source is untouched), or overwrite the original in place, which Surco confirms with you first. Right there you also choose, separately for rekordbox, Engine DJ and Traktor, whether a conversion leaves them alone (“Leave alone”), brings the tracks they already have up to date (“Update”) or also adds the new ones (“Update and add”). If you want, turn on normalization (loudness or peak, with streaming, club or broadcast presets) to even out the volume. When it's done, “Show file” takes you to the result in Finder or Explorer."
         ],
         "points": [
           "Formats: AIFF, WAV, FLAC and ALAC (lossless) and MP3. 320 down to 128 kbps, or VBR V0/V2.",
@@ -885,7 +885,7 @@
         "points": [
           "To Apple Music or Engine DJ in one click, during conversion.",
           "Engine DJ also gets the rating and the cover art, and the track lands in the playlist you choose. Cue points and beatgrid don't: Engine analyzes the audio itself on first load.",
-          "Engine DJ and Traktor have to be closed to write to their library; Surco offers to close them and backs up before touching anything.",
+          "Traktor has to be closed to write to its collection; Surco offers to close it and backs up before touching anything. With Engine DJ open, what Surco has to write waits its turn and goes in when you close it, also with a backup.",
           "Surco tells you when a track is already in your library, checking whichever one matches your destination. It's a well-tuned hint, not a guarantee.",
           "Edit a track later and Surco updates its Apple Music copy instead of duplicating it, and if an older copy was already there it offers to remove it.",
           "You can replace a track you already own: load another copy of something in your library, in any format including the same one (an MP3 to an AIFF, or a 128 MP3 to a 320), and the button turns into “Replace”. The Apple Music entry and the rekordbox row both follow the new file, keeping their playlists and cue points, and in Apple Music its play count, your rating and its favorite too. rekordbox may recalculate the beatgrid when it sees a different file, so check the grid. When it finishes, Surco offers to send the old file to the Trash.",
@@ -955,7 +955,7 @@
         "id": "ajustes",
         "title": "Make it yours",
         "body": [
-          "Settings (⌘ ,) holds everything that isn't day-to-day, organized in a sidebar by blocks (Editing, Output and App): General and Search up top, then Editor, Sections, Fields and Cover art; then Format, Processing, Naming and Destination; and finally Shortcuts and Stats.",
+          "Settings (⌘ ,) holds everything that isn't day-to-day, organized in a sidebar by blocks (Editing, Output and App): General and Sources up top, then Editor, Sections, Fields, Artwork and Cues; then Format, Processing, Naming and Output; and finally Shortcuts, Stats and Advanced. If you cannot remember where something is, type it in “Search settings”, above the tabs, and Surco takes you to that setting.",
           "Set it up once and Surco respects your decisions on every track. And if you want to take it to another machine, you can export your whole configuration to a file and import it back whenever you need it."
         ],
         "points": [
@@ -964,9 +964,9 @@
           "Choose which fields to see and which to require, create your own with a name and a key, and reorder them by dragging or hit “Auto-organize” to put them in a sensible order in one click.",
           "The Stats tab tracks your lifetime numbers (tracks loaded, converted, analyzed, found on each source…) and generates an image ready to share.",
           "Under Cover art, small covers can be upscaled to your minimum size, cropped square, and a macOS option makes Finder show the cover art of FLACs when you convert or update them. It does so by placing a small ID3 tag carrying the cover in front of the FLAC. The audio doesn't change, and Traktor still accepts them even with sync on.",
-          "Under Search you can limit Discogs results to vinyl, CD, file or cassette, and decide how many to see.",
+          "Under Sources you can limit Discogs results to vinyl, CD, file or cassette, and decide how many to see.",
           "In Editor you can turn the inline explanations off once you know them by heart, and back on whenever you like.",
-          "Analysis is cached so it isn't repeated; you can clear it, and open the error log, from Settings.",
+          "Analysis is cached so it isn't repeated; you can clear it, and open the error log, from Settings → Advanced.",
           "Export your configuration as a backup, or point the config folder at iCloud Drive or Dropbox to share your preferences across Macs. Your Discogs token travels with it, so you don't have to set it up again on each machine. None of this goes through any Surco server: no account, no cloud, no telemetry.",
           "Everything works from the keyboard and with a screen reader: every control says what it is and what state it's in, and conversions, analysis and notices are announced on their own.",
           "Turn on your system's reduced motion setting and the animations simplify rather than disappear."

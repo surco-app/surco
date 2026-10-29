@@ -89,7 +89,7 @@
           },
           {
             "t": "Du bestimmst, wo es landet",
-            "d": "Ein Ordner, neben dem Original, Apple Music oder Engine DJ."
+            "d": "Ein Ordner, neben dem Original oder Apple Music. Und für rekordbox, Engine DJ und Traktor wählst du, ob der Track aktualisiert oder auch hinzugefügt wird."
           },
           {
             "t": "Korrigierte Samplerate",
@@ -535,7 +535,7 @@
       },
       {
         "q": "Funktioniert es mit Denon-Geräten (Engine DJ)?",
-        "a": "Ja. Wähl Engine DJ als Ziel, und jeder konvertierte Track wird direkt in deiner Engine-DJ-Bibliothek eingetragen (mit Cover, Bewertung und einer einstellbaren Playlist), bereit zur Synchronisierung mit deinen Playern. Außerdem exportiert es Sammlungen für rekordbox, Traktor und Serato."
+        "a": "Ja. Stell Engine DJ unter Einstellungen → Ausgabe auf „Aktualisieren und hinzufügen“, und jeder konvertierte Track wird direkt in deiner Engine-DJ-Bibliothek eingetragen (mit Cover, Bewertung und den Playlists, die du wählst), bereit zur Synchronisierung mit deinen Playern. Außerdem exportiert es Sammlungen für rekordbox, Traktor und Serato."
       },
       {
         "q": "Windows meldet „Der Computer wurde durch Windows geschützt“. Ist es sicher?",
@@ -826,7 +826,7 @@
         "title": "Den Track konvertieren",
         "body": [
           "Der Button unten im Editor konvertiert den ausgewählten Track und zeigt dir vor dem Klick, welches Format er gleich schreibt. Das Dropdown rechts daneben wählt das Format: AIFF, WAV, FLAC oder ALAC verlustfrei, MP3 oder „Wie die Quelle“. Liegt der Track schon in diesem Format vor, kopiert Surco ihn unverändert, sofort und ohne Neukodierung, es sei denn, deine Qualitätseinstellungen oder ein Audiofilter verändern sein Audio.",
-          "Die Qualität stellst du unter Einstellungen → Format ein: MP3-Bitrate (320 bis 128 kbps oder VBR V0/V2), Bittiefe, Samplerate und FLAC-Kompression. Standardmäßig bleiben die Werte des Originals erhalten, außer der Bittiefe: „Korrigiert“ speichert eine auf 24 aufgefüllte 16-Bit-Datei verlustfrei als echtes 16 Bit. Unter Einstellungen → Ausgabe entscheidest du, wohin es geht: in einen Ausgabeordner, in deine Apple-Music-Bibliothek, in deine Engine-DJ-Bibliothek (Denon), neben das Original (Exporte im selben Format bekommen ein „(2)“ im Namen, die Quelle bleibt unberührt) oder direkt über das Original, was Surco vorher mit dir bestätigt. Wenn du willst, schalte die Normalisierung ein (Lautheit oder Peak, mit Presets für Streaming, Club oder Broadcast), um die Lautstärke anzugleichen. Ist alles fertig, bringt dich „Datei zeigen“ im Finder oder Explorer zum Ergebnis."
+          "Die Qualität stellst du unter Einstellungen → Format ein: MP3-Bitrate (320 bis 128 kbps oder VBR V0/V2), Bittiefe, Samplerate und FLAC-Kompression. Standardmäßig bleiben die Werte des Originals erhalten, außer der Bittiefe: „Korrigiert“ speichert eine auf 24 aufgefüllte 16-Bit-Datei verlustfrei als echtes 16 Bit. Unter Einstellungen → Ausgabe entscheidest du, wohin es geht: in einen Ausgabeordner, in deine Apple-Music-Bibliothek, neben das Original (Exporte im selben Format bekommen ein „(2)“ im Namen, die Quelle bleibt unberührt) oder direkt über das Original, was Surco vorher mit dir bestätigt. Dort wählst du auch für rekordbox, Engine DJ und Traktor getrennt, ob eine Konvertierung sie in Ruhe lässt („Nicht anfassen“), die Tracks, die sie schon haben, auf den neuesten Stand bringt („Aktualisieren“) oder ihnen außerdem die neuen hinzufügt („Aktualisieren und hinzufügen“). Wenn du willst, schalte die Normalisierung ein (Lautheit oder Peak, mit Presets für Streaming, Club oder Broadcast), um die Lautstärke anzugleichen. Ist alles fertig, bringt dich „Datei zeigen“ im Finder oder Explorer zum Ergebnis."
         ],
         "points": [
           "Formate: AIFF, WAV, FLAC und ALAC (verlustfrei) und MP3. 320 bis 128 kbps oder VBR V0/V2.",
@@ -885,7 +885,7 @@
         "points": [
           "Mit einem Klick zu Apple Music oder Engine DJ, während der Konvertierung.",
           "Engine DJ bekommt auch Bewertung und Cover, und der Track landet in der Playlist deiner Wahl. Cue-Punkte und Beatgrid nicht: Engine analysiert das Audio beim ersten Laden selbst.",
-          "Engine DJ und Traktor müssen geschlossen sein, damit in ihre Bibliothek geschrieben werden kann. Surco bietet an, sie zu schließen, und legt eine Sicherung an, bevor es etwas anfasst.",
+          "Traktor muss geschlossen sein, damit in seine Sammlung geschrieben werden kann. Surco bietet an, es zu schließen, und legt eine Sicherung an, bevor es etwas anfasst. Ist Engine DJ offen, wartet, was Surco schreiben muss, bis es dran ist, und kommt beim Schließen hinein, ebenfalls mit Sicherung.",
           "Surco sagt dir, wenn ein Track schon in deiner Bibliothek ist, und prüft dabei die, die zu deinem Ziel passt. Das ist ein gut abgestimmter Hinweis, keine Garantie.",
           "Bearbeitest du einen Track später, aktualisiert Surco seine Kopie in Apple Music, statt sie zu duplizieren, und gibt es dort schon eine ältere Kopie, bietet es an, sie zu entfernen.",
           "Du kannst einen Track ersetzen, den du schon hast: Lade eine andere Kopie von etwas aus deiner Bibliothek, in jedem Format, auch im selben (ein MP3 durch ein AIFF oder ein MP3 mit 128 durch eins mit 320), und der Button wird zu „Ersetzen“. Der Eintrag in Apple Music und die Zeile in rekordbox folgen beide der neuen Datei und behalten ihre Playlists und Cue-Punkte, in Apple Music außerdem Wiedergabezähler, deine Bewertung und den Favoriten. rekordbox berechnet das Beatgrid möglicherweise neu, wenn es eine andere Datei sieht, also prüf das Grid. Zum Schluss bietet Surco an, die alte Datei in den Papierkorb zu legen.",
@@ -955,7 +955,7 @@
         "id": "ajustes",
         "title": "Mach es zu deinem",
         "body": [
-          "Die Einstellungen (⌘ ,) enthalten alles, was nicht zum Alltag gehört, in einer Seitenleiste nach Blöcken sortiert (Bearbeitung, Ausgabe und App): oben Allgemein und Suche, dann Editor, Abschnitte, Felder und Cover, danach Format, Verarbeitung, Benennung und Ausgabe, und zuletzt Kürzel und Statistiken.",
+          "Die Einstellungen (⌘ ,) enthalten alles, was nicht zum Alltag gehört, in einer Seitenleiste nach Blöcken sortiert (Bearbeitung, Ausgabe und App): oben Allgemein und Quellen, dann Editor, Abschnitte, Felder, Cover und Cues, danach Format, Verarbeitung, Benennung und Ausgabe, und zuletzt Kürzel, Statistiken und Erweitert. Weißt du nicht mehr, wo etwas ist, tippe es in „Einstellungen durchsuchen“ über den Tabs, und Surco bringt dich zu dieser Einstellung.",
           "Einmal eingerichtet, respektiert Surco deine Entscheidungen bei jedem Track. Und willst du sie auf einen anderen Rechner mitnehmen, exportierst du deine ganze Konfiguration in eine Datei und importierst sie wieder, wann immer du sie brauchst."
         ],
         "points": [
@@ -964,9 +964,9 @@
           "Wähl, welche Felder du siehst und welche Pflicht sind, leg eigene mit Name und Schlüssel an und sortier sie per Ziehen um, oder drück „Auto-Sortieren“, um sie mit einem Klick in eine sinnvolle Reihenfolge zu bringen.",
           "Der Tab Statistiken zählt deine Zahlen seit dem ersten Tag (geladene, konvertierte und analysierte Tracks, Treffer pro Quelle…) und erzeugt ein Bild, das du direkt teilen kannst.",
           "Unter Cover lassen sich kleine Cover auf deine Mindestgröße hochskalieren und quadratisch zuschneiden, und eine macOS-Option sorgt dafür, dass der Finder beim Konvertieren oder Aktualisieren das Cover von FLACs anzeigt. Dazu setzt sie ein kleines ID3-Tag mit dem Cover vor das FLAC. Das Audio bleibt unverändert, und Traktor akzeptiert sie auch mit aktiver Synchronisierung weiterhin.",
-          "Unter Suche kannst du Discogs-Ergebnisse auf Vinyl, CD, Datei oder Kassette beschränken und festlegen, wie viele du siehst.",
+          "Unter Quellen kannst du Discogs-Ergebnisse auf Vinyl, CD, Datei oder Kassette beschränken und festlegen, wie viele du siehst.",
           "Unter Editor kannst du die Erklärungen im Editor ausschalten, sobald du sie auswendig kennst, und jederzeit wieder einschalten.",
-          "Die Analyse wird zwischengespeichert, damit sie sich nicht wiederholt. In den Einstellungen kannst du den Cache leeren und das Fehlerprotokoll öffnen.",
+          "Die Analyse wird zwischengespeichert, damit sie sich nicht wiederholt. Unter Einstellungen → Erweitert kannst du den Cache leeren und das Fehlerprotokoll öffnen.",
           "Exportier deine Konfiguration als Sicherung oder leg den Konfigurationsordner in iCloud Drive oder Dropbox, um deine Einstellungen zwischen Macs zu teilen. Dein Discogs-Token reist mit, du musst ihn also nicht auf jedem Rechner neu einrichten. Nichts davon läuft über einen Surco-Server: kein Konto, keine Cloud, keine Telemetrie.",
           "Alles funktioniert mit der Tastatur und mit einem Screenreader: Jedes Bedienelement sagt, was es ist und in welchem Zustand, und Konvertierungen, Analysen und Hinweise werden von selbst angesagt.",
           "Schalte in deinem System die Option für reduzierte Bewegung ein, und die Animationen werden schlichter, statt zu verschwinden."

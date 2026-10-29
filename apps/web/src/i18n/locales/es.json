@@ -89,7 +89,7 @@
           },
           {
             "t": "Tú eliges dónde cae",
-            "d": "Una carpeta, junto al original, Apple Music o Engine DJ."
+            "d": "Una carpeta, junto al original o Apple Music. Y en rekordbox, Engine DJ y Traktor eliges si la pista se actualiza o también se añade."
           },
           {
             "t": "Frecuencia corregida",
@@ -535,7 +535,7 @@
       },
       {
         "q": "¿Funciona con equipos Denon (Engine DJ)?",
-        "a": "Sí. Elige Engine DJ como destino y cada pista convertida se registra directamente en tu biblioteca de Engine DJ (con carátula, rating y una playlist configurable), lista para sincronizar a tus players. También exporta colecciones a rekordbox, Traktor y Serato."
+        "a": "Sí. En Ajustes → Destino pon Engine DJ en «Actualizar y añadir» y cada pista convertida se registra directamente en tu biblioteca de Engine DJ (con carátula, rating y las playlists que elijas), lista para sincronizar a tus players. También exporta colecciones a rekordbox, Traktor y Serato."
       },
       {
         "q": "Windows dice «Windows protegió tu PC». ¿Es seguro?",
@@ -826,7 +826,7 @@
         "title": "Convierte la pista",
         "body": [
           "El botón de abajo del editor convierte la pista seleccionada, y te dice a qué formato va a escribir antes de que lo pulses. El desplegable de su derecha elige el formato: AIFF, WAV, FLAC o ALAC sin pérdida, MP3, o «Igual que el origen». Si la pista ya está en ese formato, Surco la copia tal cual al instante, sin recodificar, salvo que tus ajustes de calidad o un filtro de audio cambien su audio.",
-          "La calidad se ajusta en Ajustes → Formato: bitrate del MP3 (de 320 a 128 kbps, o VBR V0/V2), profundidad de bits, frecuencia de muestreo y compresión FLAC. Por defecto se conservan las del original, salvo la profundidad: «Corregido» guarda como 16 bits reales, sin pérdida, un archivo de 16 bits rellenado a 24. En Ajustes → Destino decides adónde va: una carpeta de salida, tu biblioteca de Apple Music, tu biblioteca de Engine DJ (Denon), junto al original (los exports al mismo formato toman un nombre «(2)» y la fuente no se toca), o sobrescribir el original en su sitio, que Surco te confirma antes de hacerlo. Si quieres, activa la normalización (loudness o pico, con presets de streaming, club o broadcast) para igualar el volumen. Al terminar, «Mostrar archivo» te lleva al resultado en el Finder o el Explorador."
+          "La calidad se ajusta en Ajustes → Formato: bitrate del MP3 (de 320 a 128 kbps, o VBR V0/V2), profundidad de bits, frecuencia de muestreo y compresión FLAC. Por defecto se conservan las del original, salvo la profundidad: «Corregido» guarda como 16 bits reales, sin pérdida, un archivo de 16 bits rellenado a 24. En Ajustes → Destino decides adónde va: una carpeta de salida, tu biblioteca de Apple Music, junto al original (los exports al mismo formato toman un nombre «(2)» y la fuente no se toca), o sobrescribir el original en su sitio, que Surco te confirma antes de hacerlo. Ahí mismo eliges, para rekordbox, Engine DJ y Traktor por separado, si la conversión no los toca («No tocar»), pone al día las pistas que ya tienen («Actualizar») o además les añade las nuevas («Actualizar y añadir»). Si quieres, activa la normalización (loudness o pico, con presets de streaming, club o broadcast) para igualar el volumen. Al terminar, «Mostrar archivo» te lleva al resultado en el Finder o el Explorador."
         ],
         "points": [
           "Formatos: AIFF, WAV, FLAC y ALAC (lossless) y MP3. De 320 a 128 kbps, o VBR V0/V2.",
@@ -885,7 +885,7 @@
         "points": [
           "A Apple Music o Engine DJ con un clic, durante la conversión.",
           "A Engine DJ llegan también la valoración y la carátula, y la pista entra en la playlist que tú elijas. Los cue points y el beatgrid no: Engine los analiza él mismo al primer load.",
-          "Engine DJ y Traktor tienen que estar cerrados para escribir en su biblioteca; Surco se ofrece a cerrarlos y hace copia de seguridad antes de tocar nada.",
+          "Traktor tiene que estar cerrado para escribir en su colección; Surco se ofrece a cerrarlo y hace copia de seguridad antes de tocar nada. Con Engine DJ abierto, lo que Surco tiene que escribir espera su turno y entra cuando lo cierras, también con copia de seguridad.",
           "Surco te avisa si una pista ya está en tu biblioteca, mirando la que corresponda a tu destino. Es un indicio muy afinado, no una garantía.",
           "Si editas una pista después, Surco actualiza su copia de Apple Music en vez de duplicarla, y si ya había una copia antigua te ofrece eliminarla.",
           "Puedes sustituir una pista que ya tengas: carga otra copia de un tema que esté en tu biblioteca, en cualquier formato y también en el mismo (de un MP3 a un AIFF, o de un MP3 de 128 a uno de 320), y el botón pasa a decir «Sustituir». La entrada de Apple Music y la ficha de rekordbox pasan a apuntar al archivo nuevo, con sus playlists y sus cue points, y en Apple Music también con sus reproducciones, tu valoración y el favorito. rekordbox puede recalcular el beatgrid al ver un archivo distinto, así que revisa la rejilla. Al terminar, Surco te ofrece mandar el archivo viejo a la papelera.",
@@ -955,7 +955,7 @@
         "id": "ajustes",
         "title": "Ajústalo a tu gusto",
         "body": [
-          "En Ajustes (⌘ ,) está todo lo que no toca el día a día, ordenado en una barra lateral por bloques (Edición, Salida y App): General y Búsqueda arriba, luego Editor, Secciones, Campos y Carátula; después Formato, Procesado, Nombres y Destino; y al final Atajos y Estadísticas.",
+          "En Ajustes (⌘ ,) está todo lo que no toca el día a día, ordenado en una barra lateral por bloques (Edición, Salida y App): General y Fuentes arriba, luego Editor, Secciones, Campos, Carátula y Cues; después Formato, Procesado, Nombres y Destino; y al final Atajos, Estadísticas y Avanzado. Si no recuerdas dónde está algo, escríbelo en «Buscar ajustes», encima de las pestañas, y Surco te lleva a ese ajuste.",
           "Lo configuras una vez y Surco respeta tus decisiones en cada pista. Y si quieres llevártelo a otro equipo, puedes exportar toda tu configuración a un archivo y volver a importarla cuando te haga falta."
         ],
         "points": [
@@ -964,9 +964,9 @@
           "Elige qué campos ver y cuáles obligar, crea los tuyos con un nombre y una clave, y reordénalos arrastrando o pulsa «Auto-organizar» para ponerlos en un orden sensato de un clic.",
           "La pestaña Estadísticas acumula tus números de por vida (pistas cargadas, convertidas, analizadas, encontradas en cada fuente…) y genera una imagen lista para compartir.",
           "En Carátula, las portadas pequeñas pueden ampliarse hasta tu tamaño mínimo, recortarse a cuadrado, y una opción de macOS hace que el Finder muestre la carátula de los FLAC al convertirlos o actualizarlos. Para ello añade delante del FLAC una pequeña etiqueta ID3 con la carátula. El audio no cambia y Traktor los sigue aceptando aunque lo sincronices.",
-          "En Búsqueda puedes limitar los resultados de Discogs a vinilo, CD, archivo o casete, y decidir cuántos ver.",
+          "En Fuentes puedes limitar los resultados de Discogs a vinilo, CD, archivo o casete, y decidir cuántos ver.",
           "En Editor puedes apagar las explicaciones en línea cuando ya te las sepas de memoria, y volver a encenderlas cuando quieras.",
-          "El análisis se guarda en caché para no repetirlo; puedes vaciarla, y abrir el registro de errores, desde Ajustes.",
+          "El análisis se guarda en caché para no repetirlo; puedes vaciarla, y abrir el registro de errores, desde Ajustes → Avanzado.",
           "Exporta tu configuración como copia de seguridad, o apunta la carpeta de configuración a iCloud Drive o Dropbox para compartir tus preferencias entre Macs. El token de Discogs viaja con ella, así que no tienes que reconfigurarlo en cada equipo. Nada de esto pasa por ningún servidor de Surco: no hay cuenta, ni nube, ni telemetría.",
           "Todo se maneja con teclado y con lector de pantalla: cada control dice qué es y qué estado tiene, y la conversión, el análisis y los avisos se anuncian solos.",
           "Si activas el movimiento reducido del sistema, las animaciones se simplifican en vez de desaparecer."
