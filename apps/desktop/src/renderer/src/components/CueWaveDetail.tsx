@@ -605,7 +605,7 @@ export function CueWaveDetail({
                     aria-label={t('editor.cues.auto.acceptOne')}
                     title={t('editor.cues.auto.acceptOne')}
                     onClick={() => onAcceptProposal?.(ms)}
-                    className="press flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-accent)] text-[var(--color-on-accent)]"
+                    className="press relative flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-accent)] text-[var(--color-on-accent)] after:absolute after:-inset-1 after:content-['']"
                   >
                     <Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
                   </button>
@@ -615,7 +615,7 @@ export function CueWaveDetail({
                     aria-label={t('editor.cues.auto.drop')}
                     title={t('editor.cues.auto.drop')}
                     onClick={() => onDropProposal?.(ms)}
-                    className="press flex h-4 w-4 items-center justify-center rounded-full text-fg-dim hover:text-fg"
+                    className="press relative flex h-4 w-4 items-center justify-center rounded-full text-fg-dim after:absolute after:-inset-1 after:content-[''] hover:text-fg"
                   >
                     <X className="h-3 w-3" aria-hidden="true" />
                   </button>

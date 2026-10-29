@@ -146,7 +146,7 @@ export function SectionHeader({
           <span
             data-testid="section-help"
             role="note"
-            className="relative flex h-5 w-5 shrink-0 items-center justify-center text-fg-dim hover:text-fg-muted"
+            className="relative flex h-5 w-5 shrink-0 items-center justify-center text-fg-dim after:absolute after:-inset-0.5 after:content-[''] hover:text-fg-muted"
           >
             <Info className="h-3 w-3" aria-hidden="true" />
             {/* The sentence is the note's content for a screen reader, and the
@@ -163,7 +163,7 @@ export function SectionHeader({
             aria-label={isMaximized ? tr('editor.sectionRestore') : tr('editor.sectionMaximize')}
             aria-pressed={isMaximized}
             onClick={() => setMaximized(isMaximized ? null : sectionId)}
-            className="press flex h-5 w-5 shrink-0 items-center justify-center rounded text-fg-dim hover:text-fg"
+            className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded text-fg-dim after:absolute after:-inset-0.5 after:content-[''] hover:text-fg"
           >
             {isMaximized ? (
               <Minimize2 className="h-3 w-3" aria-hidden="true" />
