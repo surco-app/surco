@@ -1070,6 +1070,28 @@ describe('buildReleaseMeta', () => {
       expect([out.bpm, out.key, out.mixName, out.isrc]).toEqual(['128', '8A', 'Extended Mix', 'X'])
     })
 
+    it('the BPM and key the DJ analysed survive a Beatport match, which only fills empty ones', () => {
+      const current = { ...meta(), bpm: '128', key: '8A' }
+      const out = buildReleaseMeta(current, beatport, version).meta
+      expect([out.bpm, out.key]).toEqual(['128', '8A'])
+    })
+
+    it('a BPM and key written by the previous release are replaced by the next release', () => {
+      const first = buildReleaseMeta(meta(), beatport, version)
+      const other: ReleaseTrack = { ...version, bpm: '124', key: '5A' }
+      const out = buildReleaseMeta(
+        { ...meta(), ...first.meta },
+        beatport,
+        other,
+        {},
+        undefined,
+        [],
+        false,
+        first.appliedRelease,
+      ).meta
+      expect([out.bpm, out.key]).toEqual(['124', '5A'])
+    })
+
     it('the default import list lets Beatport fill bpm, key, mix and isrc, as the app always passes one', () => {
       const out = buildReleaseMeta(meta(), beatport, version, {}, DEFAULT_IMPORT_FIELDS).meta
       expect([out.bpm, out.key, out.mixName, out.isrc]).toEqual([

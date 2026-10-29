@@ -645,8 +645,8 @@ export function buildReleaseMeta(
     publisher: publisher || base.publisher,
     catalogNumber: catalogNumber || base.catalogNumber,
     composer: composerOf(rel, track) || base.composer,
-    bpm: track?.bpm || base.bpm,
-    key: track?.key || base.key,
+    bpm: base.bpm || track?.bpm || '',
+    key: base.key || track?.key || '',
     mixName: track?.mixName || base.mixName || '',
     isrc: track?.isrc || base.isrc || '',
     // Provenance is Discogs-specific: a Bandcamp match must not stamp its id into the
