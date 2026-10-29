@@ -104,6 +104,25 @@ describe('useAutoMatch', () => {
     await waitFor(() => expect(result.current.matching).toBeNull())
   })
 
+  it('skips a track whose auto-match the user undid until they ask for it again, so revisiting the row does not redo what ⌘Z took back', async () => {
+    setApi()
+    const tracks = [track('a'), track('b')]
+    const { result, updateTrack } = setup(tracks)
+
+    act(() => result.current.declineTracks(['a']))
+    act(() => result.current.enqueueAutoMatch(tracks))
+    await waitFor(() => expect(result.current.matching).toBeNull())
+    expect(updateTrack.mock.calls.map(([id]) => id)).toEqual(['b'])
+    expect(result.current.isDeclined('a')).toBe(true)
+
+    act(() => result.current.allowTracks(['a']))
+    act(() => result.current.enqueueAutoMatch([tracks[0]]))
+    await waitFor(() =>
+      expect(updateTrack).toHaveBeenCalledWith('a', expect.objectContaining({ autoMatched: true })),
+    )
+    expect(result.current.isDeclined('a')).toBe(false)
+  })
+
   it('records each applied track, cover included, under one step per sweep so ⌘Z takes back a whole sweep at once', async () => {
     setApi()
     const tracks = [track('a'), track('b')]

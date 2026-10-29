@@ -303,6 +303,7 @@ export const Field = memo(function Field({
           {' · '}
           <button
             type="button"
+            data-testid={`field-previous-restore-${name}`}
             onClick={previous.onRestore}
             className="text-[var(--color-accent)] hover:underline"
           >

@@ -1114,6 +1114,43 @@ describe('App auto-match', () => {
     expect(search).toHaveBeenCalled()
   })
 
+  it('leaves an undone auto-match undone when the user comes back to the track, so ⌘Z is not overruled by the sweep or the editor', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(
+        settings({
+          discogsToken: 'tok',
+          autoMatch: true,
+          visibleFields: ['title', 'artist', 'album'],
+        }),
+      ),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+      readDuration: vi.fn().mockResolvedValue(180),
+      search: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(release),
+    })
+    await renderApp()
+    await addTwoTracks()
+    await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
+    await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
+    await waitFor(() => expect(screen.getByTestId('field-album')).toHaveValue('Album'))
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.queryAllByTestId('track-automatched')).toHaveLength(0))
+    expect(screen.getByTestId('field-album')).toHaveValue('')
+
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 700))
+    })
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 900))
+    })
+
+    expect(screen.queryAllByTestId('track-automatched')).toHaveLength(0)
+    expect(screen.getByTestId('field-album')).toHaveValue('')
+  })
+
   // One row's malformed Discogs payload (a release without a tracklist) must skip
   // that track, not sink the sweep: the other rows still match, the progress pill
   // still completes, and nothing escapes as an unhandled rejection.
@@ -6341,6 +6378,37 @@ describe('App metadata undo', () => {
     await waitFor(() => expect(screen.getByTestId('cover-preview')).toBeInTheDocument())
   })
 
+  it('takes back a multi-select Eraser clear, tags and artwork together, with a single undo', async () => {
+    setApi({
+      readTags: vi.fn(async (path: string) => ({
+        title: path === '/music/a.wav' ? 'Alpha' : 'Bravo',
+        artist: 'Artist',
+      })),
+      prepareCoverDrag: vi.fn().mockResolvedValue(null),
+      readCover: vi
+        .fn()
+        .mockResolvedValue({ thumbUrl: 'data:image/jpeg;base64,AA', width: 600, height: 600 }),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[0])
+    await waitFor(() => expect(screen.getByTestId('cover-preview')).toBeInTheDocument())
+    fireEvent.click(rows[1], { metaKey: true })
+
+    fireEvent.click(await screen.findByTestId('clear-meta-btn'))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue(''))
+    expect(screen.queryByTestId('cover-preview')).toBeNull()
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+
+    for (const [index, title] of ['Alpha', 'Bravo'].entries()) {
+      fireEvent.click(screen.getAllByTestId('track-row')[index])
+      await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue(title))
+      await waitFor(() => expect(screen.getByTestId('cover-preview')).toBeInTheDocument())
+    }
+  })
+
   // The find & replace modal rewrites text fields across every visible track in one apply;
   // one ⌘Z afterwards must roll the whole sweep back, not just a single row.
   it('rolls back a find & replace sweep across tracks in one undo', async () => {
@@ -6595,6 +6663,58 @@ describe('App metadata undo', () => {
         expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:first'),
       )
       expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:first')
+    } finally {
+      Object.assign(url, original)
+    }
+  })
+
+  it('keeps a shared cover an undo step still holds alive when the other row showing it is removed, so undo can show it again', async () => {
+    const createObjectURL = vi
+      .fn()
+      .mockReturnValueOnce('blob:shared')
+      .mockReturnValueOnce('blob:own')
+    const revokeObjectURL = vi.fn()
+    const url = URL as unknown as Record<string, unknown>
+    const original = { createObjectURL: url.createObjectURL, revokeObjectURL: url.revokeObjectURL }
+    Object.assign(url, { createObjectURL, revokeObjectURL })
+    try {
+      setApi({
+        readTags: vi.fn(async (path: string) => ({
+          title: path === '/music/a.wav' ? 'Alpha' : 'Bravo',
+          artist: 'Artist',
+        })),
+        prepareCoverDrag: vi.fn().mockResolvedValue(null),
+        getPathForFile: vi.fn((f: File) => `/img/${f.name}`),
+      })
+      await renderApp()
+      const rows = await addTwoTracks()
+      fireEvent.click(rows[0])
+      fireEvent.click(rows[1], { metaKey: true })
+      fireEvent.change(await screen.findByTestId('cover-input'), {
+        target: { files: [new File(['x'], 'shared.png', { type: 'image/png' })] },
+      })
+      fireEvent.click(screen.getAllByTestId('track-row')[1])
+      await waitFor(() =>
+        expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:shared'),
+      )
+      fireEvent.change(screen.getByTestId('cover-input'), {
+        target: { files: [new File(['x'], 'own.png', { type: 'image/png' })] },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:own'),
+      )
+
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(screen.getByTestId('track-menu-remove'))
+      fireEvent.click(await screen.findByTestId('confirm-ok'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:shared')
+
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+      await waitFor(() =>
+        expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:shared'),
+      )
     } finally {
       Object.assign(url, original)
     }

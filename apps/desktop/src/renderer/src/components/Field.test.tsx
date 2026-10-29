@@ -460,3 +460,20 @@ describe('Field audio-derived suggestion', () => {
     expect(onChange).toHaveBeenCalledWith('')
   })
 })
+
+describe('Field previous value', () => {
+  it('brings the value a release replaced back from its restore button', () => {
+    const onRestore = vi.fn()
+    render(
+      <Field
+        name="title"
+        label="Title"
+        value="Release Title"
+        onChange={vi.fn()}
+        previous={{ value: 'My Title', onRestore }}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('field-previous-restore-title'))
+    expect(onRestore).toHaveBeenCalledTimes(1)
+  })
+})
