@@ -186,6 +186,29 @@ describe('grid tempo already in the collection', () => {
     expect(out).toContain('BPM="142.000000"')
   })
 
+  // Measured 29/10/2026 with Traktor Play 4.5.1: on quit Traktor writes TBPM into the file
+  // as a whole number, 145 for a grid analysed at 144.855270. Saving the file again with
+  // only a playlist change retuned the grid to 145.000000, a drift of ~374 ms by the end
+  // of that 6:14 track. A tag that is the analysed tempo rounded is not the DJ's edit.
+  it('keeps the analysed tempo when the tag is it rounded to a whole number', () => {
+    const offBeat = WITH_GRID.replace('BPM="141.999619"', 'BPM="144.855270"')
+    const out = applyPatches(offBeat, [
+      { volume: 'HD', dir: '/:M/:', file: 'uno.mp3', cueTree: tree, bpm: 145 },
+    ])
+
+    expect(out).toContain('BPM="144.855270"')
+    expect(out).not.toContain('BPM="145.000000"')
+  })
+
+  it('takes a tag that is close to the analysed tempo but not a rounding of it', () => {
+    const offBeat = WITH_GRID.replace('BPM="141.999619"', 'BPM="144.855270"')
+    const out = applyPatches(offBeat, [
+      { volume: 'HD', dir: '/:M/:', file: 'uno.mp3', cueTree: tree, bpm: 144.5 },
+    ])
+
+    expect(out).toContain('BPM="144.500000"')
+  })
+
   // The DJ retyping the BPM field is the one case where the tag SHOULD win: they are
   // telling Surco the analysed figure is wrong. Only a value that differs beyond the
   // rounding counts, or every track whose tag reads 142 would overwrite its own 141.9996.

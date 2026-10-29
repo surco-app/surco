@@ -322,6 +322,11 @@ const GRID_BPM_RE = /<GRID\b[^>]*\sBPM="([^"]*)"/
 // hundredth covers every rounding of a six-decimal analysis without swallowing an edit.
 const SAME_TEMPO_MS = 0.005
 
+// Traktor itself writes the file's BPM tag as a whole number on quit (145 for a grid at
+// 144.855270), and a field showing one or two decimals rounds the same way, so a tag that
+// is the analysed figure rounded to any of those is that figure, however far it lands.
+const TAG_DECIMALS = [0, 1, 2]
+
 // The tempo to write: the entry's own analysed figure whenever the caller's only differs
 // from it by rounding, and the caller's otherwise (nothing analysed yet, or the DJ typed
 // a real change).
@@ -329,7 +334,8 @@ function gridBpmFor(block: string, bpm: number | undefined): number | undefined 
   const analysed = Number(block.match(GRID_BPM_RE)?.[1])
   if (!Number.isFinite(analysed) || analysed <= 0) return bpm
   if (bpm === undefined) return analysed
-  return Math.abs(analysed - bpm) < SAME_TEMPO_MS ? analysed : bpm
+  const rounded = TAG_DECIMALS.some((d) => Number(analysed.toFixed(d)) === bpm)
+  return rounded || Math.abs(analysed - bpm) < SAME_TEMPO_MS ? analysed : bpm
 }
 
 // A cue within this of a file marker of the same kind is that marker: the NML keeps six
