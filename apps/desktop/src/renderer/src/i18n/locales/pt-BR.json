@@ -132,12 +132,16 @@
     },
     "sort": {
       "label": "Ordenar faixas",
-      "import": "Padrão",
+      "import": "Ordem de importação",
       "name": "Nome",
       "artist": "Artista",
       "duration": "Duração",
       "format": "Formato",
       "trackNumber": "Número da faixa",
+      "bpm": "BPM",
+      "key": "Tom",
+      "year": "Ano",
+      "quality": "Qualidade",
       "ascending": "Ordem crescente",
       "descending": "Ordem decrescente"
     },

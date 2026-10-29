@@ -1,8 +1,10 @@
 import type { TFunction } from 'i18next'
 import {
+  Activity,
   ArrowDownNarrowWide,
   ArrowDownUp,
   ArrowUpNarrowWide,
+  Calendar,
   CaseSensitive,
   Clock,
   Copy,
@@ -10,6 +12,8 @@ import {
   Ellipsis,
   FileAudio,
   FilePlus,
+  Gauge,
+  KeyRound,
   ListMinus,
   ListOrdered,
   ListX,
@@ -254,6 +258,10 @@ export function TrackListHeader({
             { value: 'duration', label: tr('sidebar.sort.duration'), icon: Clock },
             { value: 'format', label: tr('sidebar.sort.format'), icon: FileAudio },
             { value: 'trackNumber', label: tr('sidebar.sort.trackNumber'), icon: ListOrdered },
+            { value: 'bpm', label: tr('sidebar.sort.bpm'), icon: Activity },
+            { value: 'key', label: tr('sidebar.sort.key'), icon: KeyRound },
+            { value: 'year', label: tr('sidebar.sort.year'), icon: Calendar },
+            { value: 'quality', label: tr('sidebar.sort.quality'), icon: Gauge },
           ]}
         />
         {sortBy !== 'import' && (

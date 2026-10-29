@@ -132,12 +132,16 @@
     },
     "sort": {
       "label": "Ordenar pistas",
-      "import": "Por defecto",
+      "import": "Orden de importación",
       "name": "Nombre",
       "artist": "Artista",
       "duration": "Duración",
       "format": "Formato",
       "trackNumber": "Número de pista",
+      "bpm": "BPM",
+      "key": "Tonalidad",
+      "year": "Año",
+      "quality": "Calidad",
       "ascending": "Orden ascendente",
       "descending": "Orden descendente"
     },

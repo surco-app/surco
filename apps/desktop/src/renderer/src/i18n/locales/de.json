@@ -132,12 +132,16 @@
     },
     "sort": {
       "label": "Tracks sortieren",
-      "import": "Standard",
+      "import": "Importreihenfolge",
       "name": "Name",
       "artist": "Künstler",
       "duration": "Dauer",
       "format": "Format",
       "trackNumber": "Titelnummer",
+      "bpm": "BPM",
+      "key": "Tonart",
+      "year": "Jahr",
+      "quality": "Qualität",
       "ascending": "Aufsteigende Reihenfolge",
       "descending": "Absteigende Reihenfolge"
     },

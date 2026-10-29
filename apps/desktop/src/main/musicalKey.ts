@@ -9,6 +9,7 @@
 // confirms, never written unattended.
 
 import type { KeyResult } from '../shared/types'
+import { MAJOR_CAMELOT, MAJOR_NAMES, MINOR_CAMELOT, MINOR_NAMES } from '../shared/keyNames'
 import { fft } from './fft'
 
 // ~0.74 s frames at the 11025 Hz analysis rate give 1.35 Hz bins — enough to
@@ -32,16 +33,6 @@ const MIN_CONFIDENCE = 0.6
 // through the 12 roots yields all 24 key templates.
 const MAJOR_PROFILE = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88]
 const MINOR_PROFILE = [6.33, 2.68, 3.52, 5.38, 2.6, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17]
-
-// Names follow the Mixed In Key display convention DJs see elsewhere
-// (sharps/flats mixed, e.g. F# but Eb), indexed by pitch class from C.
-const MAJOR_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
-const MINOR_NAMES = ['Cm', 'C#m', 'Dm', 'Ebm', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'Bbm', 'Bm']
-
-// Camelot wheel positions indexed by pitch class: majors are the B ring
-// (C=8B, a fifth up steps +1), minors the A ring (Am=8A).
-const MAJOR_CAMELOT = ['8B', '3B', '10B', '5B', '12B', '7B', '2B', '9B', '4B', '11B', '6B', '1B']
-const MINOR_CAMELOT = ['5A', '12A', '7A', '2A', '9A', '4A', '11A', '6A', '1A', '8A', '3A', '10A']
 
 function pearson(a: number[], b: number[]): number {
   const n = a.length

@@ -132,12 +132,16 @@
     },
     "sort": {
       "label": "トラックをソート",
-      "import": "デフォルト",
+      "import": "インポート順",
       "name": "名前",
       "artist": "アーティスト",
       "duration": "時間",
       "format": "フォーマット",
       "trackNumber": "トラック番号",
+      "bpm": "BPM",
+      "key": "キー",
+      "year": "年",
+      "quality": "品質",
       "ascending": "昇順",
       "descending": "降順"
     },
