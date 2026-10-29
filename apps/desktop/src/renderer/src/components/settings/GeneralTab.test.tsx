@@ -6,12 +6,9 @@ import type { PlaylistSource } from '../../../../shared/types'
 import i18n from '../../i18n'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 
-// The tab reads its own cache size on mount, so the bridge has to exist before it
-// renders — nothing here is about the cache, it just has to not throw.
+// The tab asks which sources this machine has on mount, so the bridge has to exist
+// before it renders.
 ;(window as unknown as { api: unknown }).api = {
-  cacheStats: () => Promise.resolve({ entries: 0, bytes: 0 }),
-  clearCache: () => Promise.resolve(),
-  revealLog: () => {},
   revealBackups: vi.fn(),
   platform: 'darwin',
   rekordboxAvailable: () => Promise.resolve(true),
@@ -44,13 +41,6 @@ function renderTab(
       local={{ ...local, ...over }}
       patchLocal={patchLocal}
       onPreviewTheme={vi.fn()}
-      configDir={null}
-      defaultDir="/Users/dj/Library/Application Support/Surco"
-      onChangeConfigDir={vi.fn()}
-      onResetConfigDir={vi.fn()}
-      onExportSettings={vi.fn()}
-      onImportSettings={vi.fn()}
-      settingsFileError=""
     />,
   )
   return patchLocal
@@ -173,13 +163,6 @@ describe('GeneralTab sources', () => {
         local={local}
         patchLocal={vi.fn()}
         onPreviewTheme={vi.fn()}
-        configDir={null}
-        defaultDir={null}
-        onChangeConfigDir={vi.fn()}
-        onResetConfigDir={vi.fn()}
-        onExportSettings={vi.fn()}
-        onImportSettings={vi.fn()}
-        settingsFileError=""
       />,
     )
     return patch
