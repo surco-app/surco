@@ -197,6 +197,16 @@ export function matchedEntryCues(
 
 export const entryCues = (block: string): string => (block.match(CUE_V2_RE) ?? []).join('')
 
+// Each cue as Traktor places it, whatever spelling the collection was written in: its type,
+// its slot, and its position and length to the thousandth of a millisecond.
+export function cuePlaces(cues: string): string[] {
+  return (cues.match(CUE_V2_RE) ?? []).map((cue) => {
+    const open = cue.match(/<CUE_V2\b[^>]*?\/?>/)?.[0] ?? cue
+    const ms = (name: string) => Number(attr(open, name) || '0').toFixed(3)
+    return [attr(open, 'TYPE'), attr(open, 'HOTCUE') || '-1', ms('START'), ms('LEN')].join('|')
+  })
+}
+
 function matchedEntries(nml: string, patches: NmlPatch[], onDisk?: OnDisk): (NmlEntry | null)[] {
   const entries = findEntries(nml)
   const index = indexPatches(patches, entries, onDisk)

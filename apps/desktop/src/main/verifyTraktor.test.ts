@@ -152,6 +152,49 @@ describe('checkTraktor', () => {
     ])
   })
 
+  // Traktor rewrites the whole collection when it quits, in its own spelling: the same cues
+  // in another attribute order, closed on themselves, with the position written shorter.
+  it('the same cues as Traktor writes them back are traktorOk', () => {
+    const { list } = flush(nml(withCue(entry('Title.mp3'), '10000')), [
+      patch({ file: 'Title.mp3', ...elsewhere }),
+    ])
+    const rewritten = entry('Title.mp3').replace(
+      '</LOCATION>',
+      '</LOCATION><CUE_V2 HOTCUE="1" TYPE="0" START="10000" LEN="0" NAME="Drop" DISPL_ORDER="0" REPEATS="-1"/>',
+    )
+    expect(checkTraktor(nml(rewritten), list, BOOT)[0]?.detail.key).toBe('traktorOk')
+  })
+
+  // A grid Traktor adds once it analyses the track, or a cue the DJ sets before a retry, is
+  // not something the write did; only the cues that were there are held to their place.
+  it('a cue added after the write leaves the entry traktorOk', () => {
+    const { list } = flush(nml(withCue(entry('Title.mp3'), '10000')), [
+      patch({ file: 'Title.mp3', ...elsewhere }),
+    ])
+    const analysed = withCue(entry('Title.mp3'), '10000').replace(
+      '</ENTRY>',
+      '<CUE_V2 NAME="AutoGrid" DISPL_ORDER="0" TYPE="4" START="31.5" LEN="0" REPEATS="-1" HOTCUE="-1"></CUE_V2></ENTRY>',
+    )
+    expect(checkTraktor(nml(analysed), list, BOOT)[0]?.detail.key).toBe('traktorOk')
+  })
+
+  it('a cue that was there and is gone is traktorCuesChanged', () => {
+    const { list } = flush(nml(withCue(entry('Title.mp3'), '10000')), [
+      patch({ file: 'Title.mp3', ...elsewhere }),
+    ])
+    expect(checkTraktor(nml(entry('Title.mp3')), list, BOOT)[0]?.detail.key).toBe(
+      'traktorCuesChanged',
+    )
+  })
+
+  it('one of two cues on the same spot gone is traktorCuesChanged', () => {
+    const twice = withCue(withCue(entry('Title.mp3'), '10000'), '10000')
+    const { list } = flush(nml(twice), [patch({ file: 'Title.mp3', ...elsewhere })])
+    expect(checkTraktor(nml(withCue(entry('Title.mp3'), '10000')), list, BOOT)[0]?.detail.key).toBe(
+      'traktorCuesChanged',
+    )
+  })
+
   // Reconverted in place under the same name (a trim, a quality change): the source entry IS
   // the output, and its cues were rewritten on purpose to follow the file.
   it('an entry the conversion rewrote in place produces no check', () => {

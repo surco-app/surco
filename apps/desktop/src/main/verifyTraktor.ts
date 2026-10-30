@@ -1,6 +1,6 @@
 import { extname } from 'node:path'
 import type { PlaceCheck, VerifyDetailKey } from '../shared/verification'
-import { entryCues, findEntries, locationKey, type NmlPatch } from './traktorNml'
+import { cuePlaces, entryCues, findEntries, locationKey, type NmlPatch } from './traktorNml'
 import { formatOf } from './verifyFile'
 
 // before is the FILE of the entry the patch matched in the collection read ahead of the
@@ -68,7 +68,7 @@ function judge(
     if (count > 1) return check('mismatch', 'traktorAmbiguous', { count })
     const now = cuesAt.get(source)
     if (now === undefined) return check('mismatch', 'traktorMissing')
-    if (now !== e.cues) return check('mismatch', 'traktorCuesChanged')
+    if (!cuesHeld(e.cues, now)) return check('mismatch', 'traktorCuesChanged')
     return check('ok', 'traktorOk', { format: formatOf(extname(before)) })
   }
   // The old name in any casing: on a case-insensitive volume an entry spelled Title.AIFF is
@@ -86,4 +86,15 @@ function judge(
   if (old > 0 && oldKey !== newKey.toLowerCase()) return stillOld
   if (on === 1) return check('ok', 'traktorOk', { format: formatOf(extname(patch.newFile)) })
   return check('mismatch', 'traktorMissing')
+}
+
+// Every cue the entry had before the write is still where it was. A cue added since, a grid
+// Traktor analysed or one the DJ set before a retry, is not the write's doing.
+function cuesHeld(before: string, now: string): boolean {
+  const left = cuePlaces(now)
+  return cuePlaces(before).every((cue) => {
+    const at = left.indexOf(cue)
+    if (at !== -1) left.splice(at, 1)
+    return at !== -1
+  })
 }
