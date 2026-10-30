@@ -322,6 +322,8 @@ function setApi(over: Record<string, unknown> = {}): void {
     discardRekordboxQueue: vi.fn<Api['discardRekordboxQueue']>().mockResolvedValue(undefined),
     rekordboxQueueReady: vi.fn<Api['rekordboxQueueReady']>().mockResolvedValue(undefined),
     onRekordboxQueueChanged: vi.fn<Api['onRekordboxQueueChanged']>(() => () => {}),
+    onVerifyUpdate: vi.fn<Api['onVerifyUpdate']>(() => () => {}),
+    retryVerification: vi.fn<Api['retryVerification']>().mockResolvedValue('rechecked'),
     onRekordboxQueueApplied: vi.fn<Api['onRekordboxQueueApplied']>(() => () => {}),
     engineCueQueue: vi
       .fn<Api['engineCueQueue']>()

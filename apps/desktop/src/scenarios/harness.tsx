@@ -405,6 +405,7 @@ function scenarioApi(
     traktorMembership: async () => ({}),
     engineMembership: async () => ({}),
     onRekordboxQueueChanged: () => () => {},
+    onVerifyUpdate: () => () => {},
     onRekordboxQueueApplied: () => () => {},
     engineCueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
     applyEngineCueQueue: async () => null,
