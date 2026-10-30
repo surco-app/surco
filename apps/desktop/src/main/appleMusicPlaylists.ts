@@ -17,6 +17,13 @@ export function buildPlaylistDumpScript(): string {
     // list, so asking for a property of every item of one raises -1728 and would fail
     // the whole dialog on a library with no playlists instead of opening it empty.
     '  if (count of userPlaylists) is 0 then return ""',
+    // Music's playlist of every song, on a line of its own ahead of the rows. Its name
+    // follows the system language, so only its kind tells it from a playlist the user
+    // happened to name the same.
+    '  set libraryId to ""',
+    '  try',
+    '    set libraryId to persistent ID of (first user playlist whose special kind is Music)',
+    '  end try',
     '  set out to {}',
     // Read one playlist at a time rather than three bulk property fetches. The names and
     // IDs would come back as lists, but `count of tracks of every user playlist` collapses
@@ -48,10 +55,17 @@ const TRAILING_PID = /\t([0-9A-F]{16})$/
 // tab without shifting any other field.
 const PID_THEN_FOLDER = /\t([0-9A-F]{16})\t([\s\S]*)$/
 const TRAILING_COUNT = /\t(\d+)$/
+const LIBRARY_LINE = /^([0-9A-F]{16})$/
 
 export function parsePlaylistDump(stdout: string): AppleMusicPlaylist[] {
   const rows: AppleMusicPlaylist[] = []
+  let libraryId: string | undefined
   for (const line of stdout.split('\n')) {
+    const library = line.match(LIBRARY_LINE)
+    if (library) {
+      libraryId = library[1]
+      continue
+    }
     // Rows written before folders were read end at the ID; both shapes have to load.
     const withFolder = line.match(PID_THEN_FOLDER)
     const pid = withFolder ?? line.match(TRAILING_PID)
@@ -64,7 +78,7 @@ export function parsePlaylistDump(stdout: string): AppleMusicPlaylist[] {
     if (!name) continue
     rows.push({ name, count: Number(cnt[1]), persistentId: pid[1], ...(folder ? { folder } : {}) })
   }
-  return rows
+  return rows.map((r) => (r.persistentId === libraryId ? { ...r, library: true } : r))
 }
 
 export async function dumpAppleMusicPlaylists(): Promise<AppleMusicPlaylist[]> {

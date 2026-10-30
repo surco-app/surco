@@ -1010,6 +1010,8 @@ export interface AppleMusicPlaylist {
   // user sees in Music, and the only one they can check this list against.
   count: number
   persistentId: string
+  // Music's own playlist of every song, which stands as All tracks like the other sources'.
+  library?: true
 }
 
 // What one playlist yields when imported: the files it references, and how many of its

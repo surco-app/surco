@@ -34,12 +34,12 @@ function containsNode(nodes: SourceNode[], id: string): boolean {
   return nodes.some((n) => n.id === id || (n.children ? containsNode(n.children, id) : false))
 }
 
-function readTree(source: PlaylistSource): Promise<SourceNode[]> {
+function readTree(source: PlaylistSource, allTracksName: string): Promise<SourceNode[]> {
   if (source === 'engine') return window.api.loadEngineTree()
   if (source === 'traktor') return window.api.loadTraktorTree()
   return source === 'rekordbox'
     ? window.api.loadRekordboxTree()
-    : window.api.loadAppleMusicPlaylists().then(musicTree)
+    : window.api.loadAppleMusicPlaylists().then((lists) => musicTree(lists, allTracksName))
 }
 
 function readRecentCount(source: PlaylistSource): Promise<number> {
@@ -129,7 +129,7 @@ export function useSourceBrowser({
 
   const tree = useQuery({
     queryKey: ['source-tree', source],
-    queryFn: () => readTree(source as PlaylistSource),
+    queryFn: () => readTree(source as PlaylistSource, tr('sources.allTracks')),
     enabled: source !== null,
     staleTime: Number.POSITIVE_INFINITY,
   })

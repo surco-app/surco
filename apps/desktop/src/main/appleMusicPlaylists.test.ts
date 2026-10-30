@@ -45,6 +45,12 @@ describe('buildPlaylistDumpScript', () => {
     expect(script).not.toContain('count of tracks of every user playlist')
     expect(script).toContain('count of tracks of p')
   })
+
+  // Music's own playlist of every song is named by the system language ("Music", "Música"),
+  // so only its kind tells it apart from a playlist the user happened to call that.
+  it('names the playlist of every song by its kind, not by its name', () => {
+    expect(buildPlaylistDumpScript()).toContain('special kind is Music')
+  })
 })
 
 describe('parsePlaylistDump', () => {
@@ -99,6 +105,16 @@ describe('parsePlaylistDump', () => {
     const rows = parsePlaylistDump('Sesión\t12\tA1B2C3D4E5F60718')
     expect(rows[0].name).toBe('Sesión')
     expect(rows[0].folder).toBeUndefined()
+  })
+
+  it('marks the playlist of every song, so it can stand as All tracks like the other sources', () => {
+    const rows = parsePlaylistDump(
+      'A1B2C3D4E5F60718\nMusic\t2044\tA1B2C3D4E5F60718\t\nMusic\t12\tFFEEDDCCBBAA9988\t',
+    )
+    expect(rows).toEqual([
+      { name: 'Music', count: 2044, persistentId: 'A1B2C3D4E5F60718', library: true },
+      { name: 'Music', count: 12, persistentId: 'FFEEDDCCBBAA9988' },
+    ])
   })
 
   it('keeps an empty playlist, which is a real thing to pick and must not look like a parse failure', () => {
