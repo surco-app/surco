@@ -1079,11 +1079,14 @@ export function convertArgs(
   return args
 }
 
+const LOSSLESS_CODEC = /^(pcm_|flac$|alac$)/
+
 export interface ConversionPlan extends EncodeArgs {
   // A reduction to 16 bits from a wider/float pipeline needs TPDF dither at the
   // requantization (ffmpeg's swresample doesn't dither on its own); convertAudio
   // appends the aresample stage when this is set.
   dither?: boolean
+  samplesKept?: true
   ext: '.aiff' | '.mp3' | '.wav' | '.flac' | '.m4a'
 }
 
@@ -1130,7 +1133,7 @@ export async function planConversion(
   if (format === 'mp3') {
     // A source already in MP3 still stream-copies whatever the quality setting says:
     // re-encoding lossy-to-lossy only degrades it.
-    if (MP3_INPUT.test(input) && copyOk) return { codec: 'copy', ext: '.mp3' }
+    if (MP3_INPUT.test(input) && copyOk) return { codec: 'copy', samplesKept: true, ext: '.mp3' }
     const rate = await pinnedRate()
     const vbr = MP3_VBR[q.mp3Quality]
     return {
@@ -1193,19 +1196,27 @@ export async function planConversion(
     )
   }
 
+  const samplesSurvive = async (plan: Awaited<ReturnType<typeof losslessPlan>>): Promise<boolean> =>
+    copyOk && LOSSLESS_CODEC.test((await probeOnce()).codecName ?? '') && (await keepsSource(plan))
+
   if (format === 'wav') {
     const same = WAV_INPUT.test(input) && copyOk
-    if (same && !pinned) return { codec: 'copy', ext: '.wav' }
+    if (same && !pinned) return { codec: 'copy', samplesKept: true, ext: '.wav' }
     const plan = await losslessPlan()
-    if (same && (await keepsSource(plan))) return { codec: 'copy', ext: '.wav' }
+    if (same && (await keepsSource(plan))) return { codec: 'copy', samplesKept: true, ext: '.wav' }
     const { depth, ...rest } = plan
-    return { codec: pcmCodec(depth, 'le'), ...rest, ext: '.wav' }
+    return {
+      codec: pcmCodec(depth, 'le'),
+      ...rest,
+      ...((await samplesSurvive(plan)) ? { samplesKept: true as const } : {}),
+      ext: '.wav',
+    }
   }
   if (format === 'flac') {
     const same = FLAC_INPUT.test(input) && copyOk
-    if (same && !pinned) return { codec: 'copy', ext: '.flac' }
+    if (same && !pinned) return { codec: 'copy', samplesKept: true, ext: '.flac' }
     const plan = await losslessPlan()
-    if (same && (await keepsSource(plan))) return { codec: 'copy', ext: '.flac' }
+    if (same && (await keepsSource(plan))) return { codec: 'copy', samplesKept: true, ext: '.flac' }
     const { depth, ...rest } = plan
     // FLAC holds integers only (its s32 input writes 24-bit), so a float source
     // lands on the encoder's widest width rather than keeping float.
@@ -1214,6 +1225,7 @@ export async function planConversion(
       sampleFmt: !depth.float && depth.bits <= 16 ? 's16' : 's32',
       compressionLevel: q.flacCompression,
       ...rest,
+      ...((await samplesSurvive(plan)) ? { samplesKept: true as const } : {}),
       ext: '.flac',
     }
   }
@@ -1222,7 +1234,8 @@ export async function planConversion(
     // say, like an MP3: decoding a lossy stream to ALAC only makes the file bigger (an
     // 11 MB AAC came back at 44 MB). Holding ALAC it is lossless like the rest.
     const same = M4A_INPUT.test(input) && copyOk
-    if (same && (await probeOnce()).codecName !== 'alac') return { codec: 'copy', ext: '.m4a' }
+    if (same && (await probeOnce()).codecName !== 'alac')
+      return { codec: 'copy', samplesKept: true, ext: '.m4a' }
     if (M4A_INPUT.test(input) && (await probeOnce()).codecName !== 'alac') {
       const kbps = Math.round(((await probeOnce()).bitRate ?? 256000) / 1000)
       const rate = await pinnedRate()
@@ -1233,23 +1246,29 @@ export async function planConversion(
         ext: '.m4a',
       }
     }
-    if (same && !pinned) return { codec: 'copy', ext: '.m4a' }
+    if (same && !pinned) return { codec: 'copy', samplesKept: true, ext: '.m4a' }
     const plan = await losslessPlan()
-    if (same && (await keepsSource(plan))) return { codec: 'copy', ext: '.m4a' }
+    if (same && (await keepsSource(plan))) return { codec: 'copy', samplesKept: true, ext: '.m4a' }
     const { depth, ...rest } = plan
     return {
       codec: 'alac',
       sampleFmt: !depth.float && depth.bits <= 16 ? 's16p' : 's32p',
       ...rest,
+      ...((await samplesSurvive(plan)) ? { samplesKept: true as const } : {}),
       ext: '.m4a',
     }
   }
   const same = AIFF_INPUT.test(input) && copyOk
-  if (same && !pinned) return { codec: 'copy', ext: '.aiff' }
+  if (same && !pinned) return { codec: 'copy', samplesKept: true, ext: '.aiff' }
   const plan = await losslessPlan()
-  if (same && (await keepsSource(plan))) return { codec: 'copy', ext: '.aiff' }
+  if (same && (await keepsSource(plan))) return { codec: 'copy', samplesKept: true, ext: '.aiff' }
   const { depth, ...rest } = plan
-  return { codec: pcmCodec(depth, 'be'), ...rest, ext: '.aiff' }
+  return {
+    codec: pcmCodec(depth, 'be'),
+    ...rest,
+    ...((await samplesSurvive(plan)) ? { samplesKept: true as const } : {}),
+    ext: '.aiff',
+  }
 }
 
 // Resolves the audio filter for the chosen normalization, running the required
