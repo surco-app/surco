@@ -52,6 +52,10 @@ describe('buildPlaylistDumpScript', () => {
   it('names the playlist of every song by its kind, not by its name', () => {
     expect(buildPlaylistDumpScript()).toContain('special kind is Music')
   })
+
+  it('hands that playlist back ahead of the rows, where the parser looks for it', () => {
+    expect(buildPlaylistDumpScript()).toContain('return libraryId & linefeed & (out as text)')
+  })
 })
 
 describe('parsePlaylistDump', () => {

@@ -42,7 +42,7 @@ export function buildPlaylistDumpScript(): string {
     '  end repeat',
     'end tell',
     "set AppleScript's text item delimiters to linefeed",
-    'return out as text',
+    'return libraryId & linefeed & (out as text)',
   ].join('\n')
 }
 
