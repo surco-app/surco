@@ -47,14 +47,14 @@ export default function App() {
             running off the right edge; the crop cut the form and the convert button, the part
             that shows what Surco does. The three anchors follow the window, where they
             confirm what the picture just showed instead of queueing under the button. */}
-        <section className="mx-auto max-w-6xl px-6 sm:px-10 pt-10 pb-12 text-center sm:pt-14 lg:pt-16 lg:pb-16">
+        <section className="mx-auto max-w-6xl px-6 sm:px-10 pt-10 pb-12 text-center sm:pt-14 lg:pt-12 lg:pb-16">
           <Reveal eager>
-            <div className="mb-6 flex h-8 items-center justify-center">
+            <div className="mb-6 flex min-h-8 items-center justify-center">
               <LatestRelease />
             </div>
           </Reveal>
           <Reveal eager>
-            <h1 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-[3.5rem] lg:leading-[1.03]">
+            <h1 className="mx-auto max-w-4xl text-[min(2.25rem,7.6vw)] leading-[1.1] font-bold tracking-tight text-balance sm:text-5xl lg:text-[4.5rem] lg:leading-[1.02]">
               {t('hero.h1a')}
               <br />
               {t('hero.h1b')}
@@ -71,7 +71,7 @@ export default function App() {
             </div>
           </Reveal>
           <Reveal eager delay={220}>
-            <div className="relative isolate mx-auto mt-12 max-w-5xl text-left">
+            <div className="relative isolate mx-auto mt-8 max-w-5xl text-left">
               <div className="hero-light pointer-events-none absolute top-0 left-1/2 -z-10 h-[36rem] w-[140%] -translate-x-1/2 -translate-y-1/2" />
               <HeroApp video />
             </div>
