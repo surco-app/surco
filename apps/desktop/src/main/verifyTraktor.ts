@@ -57,9 +57,12 @@ function judge(
   if (before === null) return null
   const volume = patch.volume || bootVolume
   // The output went to another folder and the entry stays on the source, whose audio did
-  // not change: the write was to leave its cues exactly as they were.
+  // not change: the write was to leave its cues exactly as they were. A conversion in place
+  // under the same name rewrote the source itself, cues included, so there is nothing to hold.
   if (!patch.newFile && !e.stranded) {
-    if (e.cues == null) return null
+    if (e.cues == null || !patch.outputDir || !patch.outputFile) return null
+    const output = locationKey(patch.outputVolume || bootVolume, patch.outputDir, patch.outputFile)
+    if (output === locationKey(volume, patch.dir, patch.file)) return null
     const now = cuesAt.get(locationKey(volume, patch.dir, before))
     if (now === undefined) return check('mismatch', 'traktorMissing')
     if (now !== e.cues) return check('mismatch', 'traktorCuesChanged')

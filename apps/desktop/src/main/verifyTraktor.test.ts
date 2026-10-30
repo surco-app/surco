@@ -34,6 +34,14 @@ const patch = (over: Partial<NmlPatch> = {}): NmlPatch => ({
   ...over,
 })
 
+// The output went to another folder: no rename, and the entry stays on the source.
+const elsewhere: Partial<NmlPatch> = {
+  newFile: undefined,
+  outputVolume: 'Public',
+  outputDir: '/:Out/:',
+  outputFile: 'Title.aiff',
+}
+
 // What the flush does: read which entry each patch matches, write, then check the result.
 function flush(original: string, patches: NmlPatch[], stranded = false) {
   const before = matchedEntryFiles(original, patches)
@@ -128,7 +136,7 @@ describe('checkTraktor', () => {
   // not change: its cues have to read exactly as they did before the write.
   it('an entry left on the source with its cues as they were is traktorOk', () => {
     const { list, written } = flush(nml(withCue(entry('Title.mp3'), '10000')), [
-      patch({ file: 'Title.mp3', newFile: undefined }),
+      patch({ file: 'Title.mp3', ...elsewhere }),
     ])
     expect(checkTraktor(written, list, BOOT)).toEqual([
       { place: 'traktor', state: 'ok', detail: { key: 'traktorOk', params: { format: 'MP3' } } },
@@ -137,17 +145,36 @@ describe('checkTraktor', () => {
 
   it('an entry left on the source whose cues moved is traktorCuesChanged', () => {
     const { list } = flush(nml(withCue(entry('Title.mp3'), '10000')), [
-      patch({ file: 'Title.mp3', newFile: undefined }),
+      patch({ file: 'Title.mp3', ...elsewhere }),
     ])
     expect(checkTraktor(nml(withCue(entry('Title.mp3'), '9949')), list, BOOT)).toEqual([
       { place: 'traktor', state: 'mismatch', detail: { key: 'traktorCuesChanged' } },
     ])
   })
 
-  it('an entry left on the source that is gone is traktorMissing', () => {
-    const { list } = flush(nml(entry('Title.mp3')), [
+  // Reconverted in place under the same name (a trim, a quality change): the source entry IS
+  // the output, and its cues were rewritten on purpose to follow the file.
+  it('an entry the conversion rewrote in place produces no check', () => {
+    const inPlace = patch({
+      file: 'Title.mp3',
+      newFile: undefined,
+      outputVolume: 'Public',
+      outputDir: '/:Musica/:Artist/:',
+      outputFile: 'Title.mp3',
+    })
+    const { list } = flush(nml(withCue(entry('Title.mp3'), '10000')), [inPlace])
+    expect(checkTraktor(nml(withCue(entry('Title.mp3'), '8000')), list, BOOT)).toEqual([null])
+  })
+
+  it('a patch that names no output produces no check', () => {
+    const { list } = flush(nml(withCue(entry('Title.mp3'), '10000')), [
       patch({ file: 'Title.mp3', newFile: undefined }),
     ])
+    expect(checkTraktor(nml(withCue(entry('Title.mp3'), '8000')), list, BOOT)).toEqual([null])
+  })
+
+  it('an entry left on the source that is gone is traktorMissing', () => {
+    const { list } = flush(nml(entry('Title.mp3')), [patch({ file: 'Title.mp3', ...elsewhere })])
     expect(checkTraktor(nml(entry('Other.mp3')), list, BOOT)[0]?.detail.key).toBe('traktorMissing')
   })
 
@@ -189,7 +216,7 @@ describe('checkTraktor', () => {
   it('judges every track of the batch in order', () => {
     const a = patch()
     const b = patch({ file: 'B.aiff', newFile: 'B.wav' })
-    const c = patch({ file: 'C.aiff', newFile: undefined })
+    const c = patch({ file: 'C.aiff', ...elsewhere })
     const original = nml(entry('Title.aiff'), entry('B.aiff'), entry('C.aiff'))
     const before = matchedEntryFiles(original, [a, b, c])
     const cues = matchedEntryCues(original, [a, b, c])
