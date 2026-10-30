@@ -498,6 +498,20 @@ describe('queueVerification', () => {
     await vi.waitFor(() => expect(registry.get('a')?.status).toBe('ok'))
   })
 
+  // The registry's work runs detached from the queue's own chain: a check that throws is
+  // logged, never left as an unhandled rejection.
+  it('a check that rejects after an apply is logged, not left unhandled', async () => {
+    const { default: log } = await import('electron-log/main')
+    const warn = vi.spyOn(log, 'warn').mockImplementation(() => {})
+    const afterQueueApplied = vi.fn(async () => {
+      throw new Error('boom')
+    })
+    const q = queueVerification({ afterQueueApplied, afterQueueWaits: vi.fn(async () => {}) })
+    q.discarded('rekordbox')
+    await vi.waitFor(() => expect(warn).toHaveBeenCalledWith(expect.stringContaining('boom')))
+    warn.mockRestore()
+  })
+
   it('what one apply repointed is not reported again by the next', () => {
     const { afterQueueApplied, q } = setup()
     q.repointed('rekordbox', [{ written: true }])

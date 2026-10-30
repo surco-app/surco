@@ -1,5 +1,6 @@
 import { readFile, stat } from 'node:fs/promises'
 import { ipcMain, type WebContents } from 'electron'
+import log from 'electron-log/main'
 import type { Verification } from '../shared/verification'
 import { type EngineDb, openEngineDb } from './enginePlaylists'
 import { pathKey } from './libraryPathKey'
@@ -219,6 +220,9 @@ export function queueVerification(registry: {
   afterQueueWaits: (place: Library) => Promise<void>
 }) {
   const repointed: Partial<Record<Library, QueueApplied>> = {}
+  const logged = (work: Promise<void>): void => {
+    work.catch((err) => log.warn(`verification after a queue apply failed: ${String(err)}`))
+  }
   return {
     repointed(place: Library, results: LibraryRepointResult[], write?: QueueApplied): void {
       if (results.every((r) => r.written || !COLLECTION_WIDE.has(r.reason)))
@@ -227,14 +231,14 @@ export function queueVerification(registry: {
     settled(place: Library, result: QueueApply | 'threw'): void {
       const written = repointed[place]
       delete repointed[place]
-      if (written) void registry.afterQueueApplied(place, written)
-      else if (result !== 'threw' && stillWaiting(result)) void registry.afterQueueWaits(place)
+      if (written) logged(registry.afterQueueApplied(place, written))
+      else if (result !== 'threw' && stillWaiting(result)) logged(registry.afterQueueWaits(place))
       else if (result === 'threw' || (result.status === 'refused' && !stillWaiting(result)))
-        void registry.afterQueueApplied(place, 'failed', true)
+        logged(registry.afterQueueApplied(place, 'failed', true))
     },
     discarded(place: Library): void {
       delete repointed[place]
-      void registry.afterQueueApplied(place, 'failed', false)
+      logged(registry.afterQueueApplied(place, 'failed', false))
     },
   }
 }

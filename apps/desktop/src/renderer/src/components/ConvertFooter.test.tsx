@@ -665,6 +665,8 @@ describe('ConvertFooter verification', () => {
     expect(screen.getByTestId('export-success')).toHaveAttribute('data-tone', 'dim')
     rerender(verified([fileOk]))
     expect(screen.getByTestId('export-success')).toHaveAttribute('data-tone', 'good')
+    rerender(verified([fileOk, pending('rekordbox', 'rekordbox')]))
+    expect(screen.getByTestId('export-success')).toHaveAttribute('data-tone', 'dim')
   })
 
   it('a pending track never shows the amber line or Reintentar', () => {

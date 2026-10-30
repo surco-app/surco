@@ -354,9 +354,9 @@ export function ConvertFooter({
         .flatMap((part, i) => (i === 0 ? [part] : [' · ', part]))}
     </span>
   )
-  // Green vouches only for what came back ok: a batch's other counts and a line never
-  // re-read are told in the quiet tone.
-  const successTone = isMulti || unverified ? 'dim' : 'good'
+  // Green vouches only for what came back ok: a batch's other counts, a line still pending
+  // and a line never re-read are told in the quiet tone.
+  const successTone = !isMulti && verification?.status === 'ok' ? 'good' : 'dim'
   const addedLine = pendingPrograms
     ? tr('verify.pendingLine.addedToAppleMusic', {
         programs: pendingPrograms,
