@@ -177,8 +177,6 @@ describe('CopiesScreen', () => {
     expect(screen.getByTestId('copies-item-before')).toHaveTextContent(when(before.takenAt))
   })
 
-  // Inside a sentence the day is part of the phrase: "¿Volver a como estaba rekordbox
-  // Hoy, 08:02?" reads like a typo, so sentences take their own lowercase variant.
   it('the confirmation and the outcome name the day as part of the sentence', async () => {
     const today = copy({ id: 'today', takenAt: new Date(2026, 10, 20, 8, 2).getTime() })
     const yesterday = copy({ id: 'yday', takenAt: new Date(2026, 10, 19, 13, 8).getTime() })
@@ -409,9 +407,6 @@ describe('CopiesScreen', () => {
     expect(open).toHaveBeenCalledWith('destination')
   })
 
-  // The list folds shut with an animation, so it stays mounted while closed; a closed list
-  // must still be out of the tab order and the accessibility tree, or Tab walks into
-  // buttons nobody can see.
   it('keeps a closed list out of reach and gives it back when opened', () => {
     renderScreen([program('rekordbox', { copies: [latest, older] })])
     const list = screen.getByTestId('copies-list-rekordbox')
@@ -548,8 +543,6 @@ describe('CopiesScreen music files', () => {
     expect(row).toHaveTextContent(/deleted from Surco/i)
   })
 
-  // Reason is the only axis this list has. The counts read the whole trash, so they keep
-  // answering "what is in here" while a search narrows the rows.
   it('filters by reason from the chips without changing the counts', () => {
     renderMusic([...crate(8), entry({ id: 'b', name: 'Renamed.mp3', reason: 'renamed' })])
     expect(screen.getByTestId('trash-filter-replaced')).toHaveTextContent('8')
@@ -561,7 +554,6 @@ describe('CopiesScreen music files', () => {
     expect(screen.getByTestId('trash-filter-renamed')).toHaveAttribute('aria-pressed', 'true')
   })
 
-  // A chip that can only lead to an empty list is noise on a screen that has to read calm.
   it('offers a chip only for the reasons that hold something', () => {
     renderMusic([...crate(8), entry({ id: 'b', reason: 'renamed' })])
     expect(screen.getByTestId('trash-filter-all')).toHaveTextContent('9')
@@ -570,8 +562,6 @@ describe('CopiesScreen music files', () => {
     expect(screen.queryByTestId('trash-filter-restored-over')).not.toBeInTheDocument()
   })
 
-  // A handful of files is read at a glance; filters and a search box over three rows are
-  // furniture. They arrive once the list is long enough to need them.
   it('keeps a short list plain and brings filters and search to a long one', () => {
     renderMusic(crate(8))
     expect(screen.queryByTestId('trash-search')).not.toBeInTheDocument()
@@ -594,7 +584,6 @@ describe('CopiesScreen music files', () => {
     expect(rows[0]).toHaveTextContent('Jaguar.wav')
   })
 
-  // A search that matches nothing must say so: an empty list would read as files gone.
   it('says when a search matches nothing', () => {
     renderMusic(crate(9))
     fireEvent.change(screen.getByTestId('trash-search'), { target: { value: 'zzzz' } })
@@ -628,7 +617,6 @@ describe('CopiesScreen music files', () => {
     expect(lanes[1]).not.toBeEmptyDOMElement()
   })
 
-  // With nothing kept there is nothing to open: a toggle onto an empty list is a dead button.
   it('has no list to open when no music file is kept', () => {
     renderMusic([])
     expect(screen.queryByTestId('copies-toggle-music')).not.toBeInTheDocument()
@@ -652,8 +640,6 @@ describe('CopiesScreen music files', () => {
     expect(screen.queryByTestId('copies-music-empty')).not.toBeInTheDocument()
   })
 
-  // The music list sits inside Copias like the program lists do: the rule that files go
-  // by themselves is said under the files, not in a sidebar of a window inside the page.
   it('says under the files how long they stay', () => {
     renderMusic([entry()])
     expect(screen.getByTestId('trash-footer')).toHaveTextContent(

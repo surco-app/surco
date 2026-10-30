@@ -325,8 +325,6 @@ describe('reduced motion', () => {
   })
 })
 
-// A Copias list folds by its rows track alone: transitioning anything else, or everything,
-// would animate layout the fold never meant to move.
 describe('Copias list fold', () => {
   it('transitions only the rows track and the fade', () => {
     const rule = css.slice(css.indexOf('.copies-collapse {'))
@@ -339,8 +337,6 @@ describe('Copias list fold', () => {
   })
 })
 
-// A restore's outcome line arrives the moment the restore settles; easing it in tells the
-// eye something new appeared without making the answer wait.
 describe('Copias outcome line', () => {
   it('rises in from just below as it fades in', () => {
     const start = css.slice(css.indexOf('@starting-style'))
