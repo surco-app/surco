@@ -29,7 +29,9 @@
 3. **Trash gate fails closed**: no `verification` or `pending` → no offer. Task 16.
 4. **Paths compared NFC + realpath** in every reader (the `~/Music/Music` symlink; NFD from SMB). Each reader task has an NFD test.
 5. **Queued is not failed**: a flush `blocked` by the app being open must give `pending`, never `mismatch`. Task 10.
-6. **Music async import**: the Music check retries an empty location before saying mismatch, and never retries forever. Task 6.
+6. **No ✓ while anything is pending**: the done line drops the ✓ and names the program until the queue is applied and re-checked. Tasks 14 and 17.
+7. **Retry never re-converts from the suspect file**: with the source gone it only re-reads. Tasks 4, 10, 15.
+8. **Music async import**: the Music check retries an empty location before saying mismatch, and never retries forever. Task 6.
 
 ---
 
@@ -116,12 +118,13 @@ Detail keys per the spec (`fileIdentical`, `fileReencoded`, `fileMissing`, `file
 
 **Files:** Modify `apps/desktop/src/main/ffmpeg.ts` (`convertAudio` ~l.1920-2445), `processTrack.ts` (`ProcessTrackDeps.convertAudio` return type); Test `ffmpeg.test.ts` (next to the in-place conversion tests).
 
-**Interfaces:** return type becomes `{ normalizeSkipped; declickedSamples?; written: { samplesKept: boolean; sourcePcm?: PcmDigest; plan: Pick<ConversionPlan,'ext'|'codec'|'sampleRateHz'|'bitDepth'>; sourceDurationSec?: number; trimmedSec: number } }`. `sourcePcm` computed with `Promise.all([assertDecodable(tmp, …), samplesKept ? pcmDigest(input) : undefined])` before `renameWithRetry`.
+**Interfaces:** return type becomes `{ normalizeSkipped; declickedSamples?; written: { samplesKept: boolean; originalKept: boolean; sourcePcm?: PcmDigest; plan: Pick<ConversionPlan,'ext'|'codec'|'sampleRateHz'|'bitDepth'>; sourceDurationSec?: number; trimmedSec: number } }`. `sourcePcm` computed with `Promise.all([assertDecodable(tmp, …), samplesKept ? pcmDigest(input) : undefined])` before `renameWithRetry`.
 
 - [ ] Tests:
   - `an in-place AIFF tag update reports the source digest of the audio before the rewrite` (source and output same path; assert `written.sourcePcm.md5` equals a digest taken in the test BEFORE calling convertAudio)
   - `a reencode to MP3 carries no source digest`
   - `a cancel during the digest leaves the source untouched` (isCancelled flips; source sha1 unchanged)
+  - `an in-place rewrite says whether Originals kept a copy` (`written.originalKept` true with `keepOriginal` configured to keep, false with the unit-test default that keeps nothing)
 - [ ] Mutation that must go red: move the digest after the rename.
 - [ ] Update every `convertAudio` fake in `processTrack.test.ts` with `vi.fn<ProcessTrackDeps['convertAudio']>()` returning `written`. Typecheck node.
 - [ ] Commit `Digest the source audio before an in-place conversion replaces it`
@@ -208,12 +211,12 @@ export function checkRekordbox(db: RekordboxDb, list: RekordboxExpect[], find: F
 
 **Interfaces:**
 ```ts
-export interface VerifyEntry { trackId: string; from: string; to: string; samplesKept: boolean; places: Set<VerifyPlace>; rekordbox?: RekordboxSnapshot | null; engine?: EngineSnapshot | null; traktorPatch?: NmlPatch; verification: Verification }
+export interface VerifyEntry { trackId: string; from: string; to: string; samplesKept: boolean; originalKept: boolean; places: Set<VerifyPlace>; rekordbox?: RekordboxSnapshot | null; engine?: EngineSnapshot | null; traktorPatch?: NmlPatch; verification: Verification }
 export function createVerifyRegistry(deps: { emit: (trackId: string, v: Verification) => void; readRekordbox: (list) => Promise<PlaceCheck[]|'unreadable'>; readEngine; readTraktor }): {
   register(e: VerifyEntry): void
   afterFlush(outcome: { rekordbox: 'written'|'queued'|'off'; engine: …; traktor: … }): Promise<void>
   afterQueueApplied(place: 'rekordbox'|'engine'|'traktor'): Promise<void>
-  retry(trackId: string): Promise<'rerun-job' | 'rechecked'>
+  retry(trackId: string): Promise<'rerun-job' | 'rechecked'>  // deps also gets exists(path)
   get(trackId: string): Verification | undefined
 }
 ```
@@ -224,7 +227,10 @@ export function createVerifyRegistry(deps: { emit: (trackId: string, v: Verifica
   - `a place the job never touched is never listed`
   - `retry on an unreadable place re-reads only that place`
   - `retry on a library mismatch re-enqueues that repoint and re-checks after apply`
-  - `retry on a file or Music mismatch answers rerun-job`
+  - `retry on a file or Music mismatch answers rerun-job while the source is still on disk`
+  - `retry on a file mismatch after an in-place conversion only re-reads and answers rechecked` (`from === to`; assert no rerun and `readFile` called once more)
+  - `retry when the source was deleted only re-reads` (`exists(from)` false)
+  - `a file still wrong after retry with the source gone carries fileSourceGone kept true when Originals has a copy` (and `kept: false` otherwise)
 - [ ] Commit `Track each conversion's places and re-check the libraries after the batch`
 
 ### Task 11: Wire the checks into `runProcessTrack`
@@ -262,6 +268,7 @@ export function createVerifyRegistry(deps: { emit: (trackId: string, v: Verifica
   - `a verify:update for a track updates only that track`
   - `an update for a track no longer loaded is ignored`
   - `retry that answers rerun-job converts the track again`
+  - `retry that answers rechecked never converts` (assert `window.api.processTrack` not called)
 - [ ] Commit `Keep each track's verification in the renderer`
 
 ### Task 14: Footer states and the shield popover
@@ -274,13 +281,19 @@ export function createVerifyRegistry(deps: { emit: (trackId: string, v: Verifica
   - `once ok the success line shows with the verify-shield button`
   - `the popover lists one verify-line per touched place, in place order` (file + rekordbox only → 2 lines, no Music line)
   - `the shield button has an accessible name` (`aria-label` = `verify.shieldLabel`)
-  - pending rendering per the open decision in the spec (default: success text without ✓, popover line `verify.detail.pending`)
+  - `a pending rekordbox shows the success text without the check mark and names rekordbox` (single track added to Music, rekordbox pending: `export-success` text is `Añadido a Apple Music · rekordbox al cerrarlo`, does not contain `✓`, and `verify-pending-icon` is present)
+  - `two programs pending are joined in the line` (rekordbox + Engine pending → `… · rekordbox y Engine DJ al cerrarlo`)
+  - `a pending exported file reads Exportado como WAV · rekordbox al cerrarlo without ✓`
+  - `the popover marks the pending place with the clock and its text` (line for rekordbox contains `verify-line-pending` icon and `Pendiente, se aplica al cerrar rekordbox`; the file line shows its ok detail)
+  - `the check mark appears only when the queue applied and every place is ok` (rerender with rekordbox `ok` → text `✓ Añadido a Apple Music`, no `verify-pending-icon`)
+  - `a pending track never shows the amber line or Reintentar`
 - [ ] Commit `Show Comprobando until the checks pass and what was checked behind a shield`
 
 ### Task 15: Amber line and Reintentar
 
 **Files:** Modify `ConvertFooter.tsx`; Test `ConvertFooter.test.tsx`.
 - [ ] Tests: `a mismatch shows verify-mismatch with the worst place's text and no success line`; `Reintentar calls retryVerification once with the track id`; `Reintentar is disabled while checking`; `an unreadable place reads No se pudo comprobar`.
+- [ ] Tests for the source-gone case: `with the source gone the amber line says the original is gone and points to Originales` (`fileSourceGone` kept true → text `El original ya no está, hay una copia en Originales`, `verify-open-originals` button calls the existing open-Originals action); `without a kept copy it only says the original is gone` (no `verify-open-originals`); `Reintentar is still offered and only re-reads` (click → `retryVerification` called, `processTrack` not called).
 - [ ] Commit `Say what does not add up and offer to try again`
 
 ### Task 16: Trash gate
@@ -293,12 +306,12 @@ export function createVerifyRegistry(deps: { emit: (trackId: string, v: Verifica
 ### Task 17: Batch summary, amber dot and the "No cuadran" filter
 
 **Files:** Modify `ConvertFooter.tsx` (multi text), `lib/triage.ts` (`ConversionFilter` += `'mismatch'`, tally `mismatch`), `components/QualityFilterBar.tsx` (option with amber dot, shown only when tally > 0), the list row (`ListRow.tsx`/`ExportTrackRow.tsx`, amber dot `data-testid="verify-dot"` with `aria-label`). Tests: `triage.test.ts`, `QualityFilterBar.test.tsx`, `ConvertFooter.test.tsx`, row test.
-- [ ] Tests: `the batch line counts verified and mismatched` (38/2 → `verify.batch` with both counts); `all verified shows only the verified count`; `the mismatch filter keeps only tracks whose verification is mismatch`; `the filter option is hidden at zero`; `a failing row carries the amber dot with its label`; `a pending row carries no dot`.
+- [ ] Tests: `the batch line counts verified and mismatched` (38/2 → `verify.batch` with both counts); `all verified shows only the verified count`; `the mismatch filter keeps only tracks whose verification is mismatch`; `the filter option is hidden at zero`; `a failing row carries the amber dot with its label`; `a pending row carries no dot`; `a batch with pending tracks shows no check mark` (36 ok + 2 pending → `36 comprobadas · 2 pendientes`, no `✓`); `the batch check mark appears once the pending ones are verified`.
 - [ ] Commit `Count verified tracks in a batch and filter the ones that do not add up`
 
 ### Task 18: i18n in six locales
 
-**Files:** `renderer/src/i18n/locales/{es,en,de,fr,pt-BR,ja}.json` (`verify.*`: `checking`, `shieldLabel`, `title`, `retry`, `batch_one/_other`, `mismatchCount_one/_other`, `places.*`, `detail.*`, `filter.mismatch`).
+**Files:** `renderer/src/i18n/locales/{es,en,de,fr,pt-BR,ja}.json` (`verify.*`: `checking`, `shieldLabel`, `title`, `retry`, `pendingLine.addedToAppleMusic`, `pendingLine.exportedAs`, `batchPending`, `detail.pending`, `detail.fileSourceGone`, `detail.fileSourceGoneKept`, `openOriginals`, `batch_one/_other`, `mismatchCount_one/_other`, `places.*`, `detail.*`, `filter.mismatch`).
 - [ ] `keys.test.ts` passes (es/en parity), and grep every new value in all six: no `—`, no `:` introducing an explanation, no usted/Sie/vous.
 - [ ] Commit `Translate the verification copy`
 
@@ -313,7 +326,8 @@ export function createVerifyRegistry(deps: { emit: (trackId: string, v: Verifica
 
 Not a subagent task. With backups of master.db, m.db, collection.nml and the Music library first (run-desktop skill, user's settings copy):
 - [ ] AIFF→WAV from the Music tab on the 30/10 track: Comprobando… then ✓, popover with Fichero, Apple Music, rekordbox, Engine DJ lines matching the spec examples.
-- [ ] Same with rekordbox open: rekordbox pending; close rekordbox, line turns ok.
+- [ ] Same with rekordbox open: line reads «Añadido a Apple Music · rekordbox al cerrarlo» with the clock and no ✓; close rekordbox, the line turns «✓ Añadido a Apple Music».
+- [ ] In-place conversion with the file broken by hand afterwards: amber line says the original is gone and points to Originales; Reintentar re-reads and does not convert.
 - [ ] Break one place by hand (repoint rekordbox back with SQL on the copy): amber "rekordbox sigue en el AIFF", Reintentar fixes it, no trash offer until then.
 - [ ] Batch of ~10 on the NAS: measure seconds per track with and without the checks; summary and filter right.
 - [ ] Measure the footer and popover at ~1000x621 in es, en, de, fr, pt-BR, ja (no wrap, no clipping). Restore the backups.

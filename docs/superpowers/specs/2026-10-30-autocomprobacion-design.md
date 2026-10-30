@@ -27,7 +27,13 @@ sitio que Surco tocó (el fichero y cada biblioteca) se ha releído y cuadra con
 4. Lotes: el resumen cuenta comprobadas («✓ 38 comprobadas · 2 no cuadran»), las filas que fallan llevan un punto ámbar
    (con `aria-label`) y hay un filtro «No cuadran» en el menú de filtros (eje de conversión, como «Sin guardar»).
 5. Una escritura en biblioteca ENCOLADA porque el programa está abierto (colas de rekordbox, Engine, Traktor) no es un
-   fallo: se lee como pendiente y se comprueba cuando la cola se aplica.
+   fallo: se lee como pendiente y se comprueba cuando la cola se aplica. Mientras haya algo pendiente la línea de hecho
+   NO lleva ✓: «Añadido a Apple Music · rekordbox al cerrarlo», con un icono de pendiente (reloj, `Clock`) en vez del
+   ✓; el escudo lista «◷ rekordbox · Pendiente, se aplica al cerrar rekordbox». El ✓ solo sale cuando todos los sitios
+   están en ok (30/10).
+6. Reintentar cuando falla el Fichero o Music: si el origen ya no existe (conversión en el sitio), Reintentar solo
+   relee y la línea ámbar dice que el original ya no está, señalando Originales si se guardó copia allí; si el origen
+   existe, relanza la conversión (30/10).
 
 ## Arquitectura
 
@@ -101,7 +107,15 @@ Ejemplos de `detail` (claves bajo `verify.detail.*` en los 6 idiomas):
   {format}, `rekordboxCuesLost` {before, after}, `rekordboxAnalysisEmptied`, `rekordboxSizeDiffers`.
 - Engine: `engineOk`, `engineStillOld`, `enginePerformanceChanged`.
 - Traktor: `traktorOk`, `traktorStillOld`.
-- `pending` {program} → «Pendiente · se aplica al cerrar rekordbox».
+- `pending` {program} → «Pendiente, se aplica al cerrar rekordbox» (en el escudo, con `Clock` delante).
+- `fileSourceGone` {kept} → «El original ya no está» / «El original ya no está, hay una copia en Originales» (con
+  «Originales» como botón que abre ese panel).
+
+Línea de hecho con algo pendiente (claves nuevas, sin ✓ porque las de siempre lo llevan dentro del texto):
+`verify.pendingLine.addedToAppleMusic` «Añadido a Apple Music · {{programs}} al cerrarlo»,
+`verify.pendingLine.exportedAs` «Exportado como {{format}} · {{programs}} al cerrarlo», y las variantes de lote
+`verify.batchPending` «{{verified}} comprobadas · {{pending}} pendientes». `programs` se une con `Intl.ListFormat` del
+idioma activo («rekordbox y Engine DJ»).
 
 ### Qué verifica cada comprobación
 
@@ -159,8 +173,13 @@ file) es la del fichero final existe, y ninguna sigue en el nombre viejo. Sin pa
 - `unreadable` en cualquier sitio: solo relee ese sitio.
 - `mismatch` en rekordbox / Engine / Traktor: vuelve a encolar la reapuntación grabada para ESE sitio
   (`queue.enqueue([], [repoint])` + `applyQuietly`) y al aplicarse recomprueba. No toca el fichero ni Music.
-- `mismatch` en Fichero o Apple Music: el renderer relanza el trabajo de conversión con el camino existente
-  (`processOne`), que vuelve a comprobarlo todo. Ver «Pendiente de decidir».
+- `mismatch` en Fichero o Apple Music, origen todavía en disco (y distinto de la salida): `retry` responde
+  `'rerun-job'` y el renderer relanza el trabajo con el camino existente (`processOne`), que vuelve a comprobarlo todo.
+- `mismatch` en Fichero o Apple Music, origen ya no existe (conversión en el sitio, `from === to`, o `!exists(from)`):
+  NO se reconvierte, porque la única fuente sería el fichero sospechoso. `retry` solo relee Fichero y Music y responde
+  `'rechecked'`; si sigue sin cuadrar, el check de Fichero lleva además `fileSourceGone` {kept}. `kept` sale de
+  `convertAudio` (`written.originalKept`: `keepOriginal` guardó copia en Originales). La línea ámbar dice «El original
+  ya no está, hay una copia en Originales» con «Originales» abriendo ese panel, o solo «El original ya no está».
 
 ### Papelera
 
@@ -208,10 +227,7 @@ file) es la del fichero final existe, y ninguna sigue en el nombre viejo. Sin pa
 - **Lyrics3 / cola rara en MP3**: el md5 de PCM se hace sobre lo decodificado, así que una cola copiada igual no
   rompe la igualdad; el decode completo usa la misma lógica acotada que `assertDecodable`.
 
-## Pendiente de decidir (necesita a Vicent)
+## Decisiones tomadas el 30/10 tras el primer borrador
 
-1. **Reintentar cuando falla el Fichero o Music**: ¿relanza la conversión entera? En una conversión en el sitio el
-   origen ya es la salida, así que «reintentar» convierte desde el fichero escrito, que es justo el sospechoso.
-   Propuesta: si el origen ya no existe, Reintentar solo relee y el texto ámbar lo dice.
-2. **Cómo se ve `pending`**: propuesta, la línea de éxito de lo que sí está comprobado sin «✓», y el escudo lista
-   «rekordbox · Pendiente, se aplica al cerrar rekordbox». ¿O el ✓ completo con el escudo como único aviso?
+Las dos preguntas abiertas quedaron cerradas como se proponía (decisiones 5 y 6 de arriba): pendiente sin ✓ con icono
+de reloj y el programa nombrado en la línea; Reintentar solo relee cuando el original ya no existe.
