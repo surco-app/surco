@@ -7,6 +7,7 @@ import { collectionKey } from './libraryBackups'
 import {
   copyFolder,
   listCopies,
+  recoverRestoreSlot,
   restoreSlot,
   type StagedRestoreCopy,
   stageRestoreCopy,
@@ -49,20 +50,38 @@ async function findCopy(collectionPath: string, copyId: string): Promise<Library
   return slot?.id === copyId ? slot : null
 }
 
+async function chosenCopy(req: {
+  collectionPath: string
+  copyId: string
+}): Promise<LibraryCopy | RestoreRefusal> {
+  const copy = await findCopy(req.collectionPath, req.copyId)
+  if (!copy) return 'not-found'
+  if (collectionKey(copy.collectionPath) !== collectionKey(req.collectionPath))
+    return 'other-collection'
+  return copy
+}
+
 export async function restoreCopy(
   req: { collectionPath: string; copyId: string },
   deps: RestoreDeps,
 ): Promise<RestoreResult> {
-  const copy = await findCopy(req.collectionPath, req.copyId)
-  if (!copy) return { ok: false, reason: 'not-found' }
-  if (collectionKey(copy.collectionPath) !== collectionKey(req.collectionPath))
-    return { ok: false, reason: 'other-collection' }
+  const found = await chosenCopy(req)
+  if (typeof found === 'string') return { ok: false, reason: found }
   try {
     if (!(await deps.ensureClosed())) return { ok: false, reason: 'running' }
   } catch {
     return { ok: false, reason: 'failed' }
   }
-  return deps.exclusive(() => replaceFiles(copy, req.collectionPath, deps))
+  return deps.exclusive(async () => {
+    try {
+      await recoverRestoreSlot(req.collectionPath)
+    } catch {
+      return { ok: false, reason: 'failed' }
+    }
+    const copy = await chosenCopy(req)
+    if (typeof copy === 'string') return { ok: false, reason: copy }
+    return replaceFiles(copy, req.collectionPath, deps)
+  })
 }
 
 async function putBack(undo: StagedRestoreCopy, target: string): Promise<boolean> {
@@ -125,6 +144,9 @@ async function replaceFiles(
       return { ok: false, reason }
     }
     deps.discardQueue()
+    await recoverRestoreSlot(copy.collectionPath).catch((err) =>
+      log.warn(`undo copy of ${copy.collectionPath} could not be recovered: ${String(err)}`),
+    )
     return { ok: false, reason: 'partial' }
   }
   while (pending.length > 0) {

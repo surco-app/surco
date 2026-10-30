@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const renames = vi.hoisted(() => ({ refuse: (_from: string): boolean => false }))
 
@@ -18,7 +18,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import type { LibraryCopy } from '../shared/types'
 import { setLibraryBackupRoot } from './libraryBackups'
-import { copyFolder, listCopies, restoreSlot, takeCopy } from './libraryHistory'
+import { copyFolder, listCopies, restoreSlot, stageRestoreCopy, takeCopy } from './libraryHistory'
 import { enginePendingLog, rekordboxPendingLog, restoreCopy } from './libraryRestore'
 
 let dir: string
@@ -27,6 +27,10 @@ beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'surco-restore-'))
   setLibraryBackupRoot(join(dir, 'backups'))
   renames.refuse = () => false
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
 })
 
 function collection(folder: string, name: string, content: string): string {
@@ -380,6 +384,77 @@ describe('restoreCopy', () => {
     expect(leftovers(path)).toEqual([])
     expect(await restoreSlot(path)).toEqual(slot)
     expect(readFileSync(join(copyFolder(slot), 'collection.nml'), 'utf8')).toBe('second')
+  })
+
+  it('a half-done restore whose undo copy could not be kept makes it «Antes de restaurar» once the disk lets it, so the state before that restore is not left hidden', async () => {
+    const path = collection('Traktor', 'collection.nml', 'first')
+    const copy = await takeCopy(path, [], 'run', 1)
+    const now = vi.spyOn(Date, 'now').mockReturnValue(1000)
+    writeFileSync(path, 'second')
+    await restoreCopy({ collectionPath: path, copyId: copy.id }, deps())
+    writeFileSync(path, 'third')
+    now.mockReturnValue(2000)
+    let commitTries = 0
+    renames.refuse = (from) =>
+      from.endsWith('.staged')
+        ? commitTries++ === 0
+        : commitTries > 0 && from.endsWith('.surco-tmp')
+    expect(await restoreCopy({ collectionPath: path, copyId: copy.id }, deps())).toEqual({
+      ok: false,
+      reason: 'partial',
+    })
+    const slot = (await restoreSlot(path)) as LibraryCopy
+    expect(slot.takenAt).toBe(2000)
+    expect(readFileSync(join(copyFolder(slot), 'collection.nml'), 'utf8')).toBe('third')
+  })
+
+  it('restoring the old «Antes de restaurar» after a half-done restore never loses the state before that restore', async () => {
+    const path = collection('Traktor', 'collection.nml', 'first')
+    const copy = await takeCopy(path, [], 'run', 1)
+    const now = vi.spyOn(Date, 'now').mockReturnValue(1000)
+    writeFileSync(path, 'second')
+    await restoreCopy({ collectionPath: path, copyId: copy.id }, deps())
+    const shown = (await restoreSlot(path)) as LibraryCopy
+    writeFileSync(path, 'third')
+    now.mockReturnValue(2000)
+    let commitTried = false
+    renames.refuse = (from) => {
+      if (from.endsWith('.staged')) commitTried = true
+      return from.endsWith('.staged') || (commitTried && from.endsWith('.surco-tmp'))
+    }
+    expect(await restoreCopy({ collectionPath: path, copyId: copy.id }, deps())).toEqual({
+      ok: false,
+      reason: 'partial',
+    })
+    renames.refuse = () => false
+    now.mockReturnValue(3000)
+    expect(await restoreCopy({ collectionPath: path, copyId: shown.id }, deps())).toEqual({
+      ok: false,
+      reason: 'not-found',
+    })
+    const slot = (await restoreSlot(path)) as LibraryCopy
+    expect(slot.takenAt).toBe(2000)
+    expect(await restoreCopy({ collectionPath: path, copyId: slot.id }, deps())).toEqual({
+      ok: true,
+    })
+    expect(readFileSync(path, 'utf8')).toBe('third')
+  })
+
+  it('restoring the old «Antes de restaurar» when a crash left a newer one staged and Surco could not recover it at launch keeps the newer one', async () => {
+    const path = collection('Traktor', 'collection.nml', 'second')
+    const shown = await takeCopy(path, [], 'restore', 1000)
+    writeFileSync(path, 'third')
+    await stageRestoreCopy(path, [], 2000)
+    writeFileSync(path, 'first')
+    vi.spyOn(Date, 'now').mockReturnValue(3000)
+    expect(await restoreCopy({ collectionPath: path, copyId: shown.id }, deps())).toEqual({
+      ok: false,
+      reason: 'not-found',
+    })
+    const slot = (await restoreSlot(path)) as LibraryCopy
+    expect(slot.takenAt).toBe(2000)
+    expect(readFileSync(join(copyFolder(slot), 'collection.nml'), 'utf8')).toBe('third')
+    expect(readFileSync(path, 'utf8')).toBe('first')
   })
 
   it('undoing a restore removes the playlist file the restore brought back where there was none', async () => {

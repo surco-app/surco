@@ -27,21 +27,23 @@ export function registerCopiesIpc(
   broadcast: (channel: string, payload: unknown) => void,
   converting: () => boolean,
 ): void {
-  void serialLibraryFlush(async () => {
-    for (const program of ORDER) {
-      const collectionPath = programs[program].collectionPath()
-      if (!collectionPath) continue
-      await recoverRestoreSlot(collectionPath).catch((err) =>
-        log.warn(`undo copy of ${collectionPath} could not be recovered: ${String(err)}`),
-      )
-    }
-  })
+  const recover = (program: DjProgram, collectionPath: string) =>
+    serialLibraryFlush(() =>
+      programs[program].exclusive(collectionPath, () => recoverRestoreSlot(collectionPath)),
+    ).catch((err) =>
+      log.warn(`undo copy of ${collectionPath} could not be recovered: ${String(err)}`),
+    )
+  for (const program of ORDER) {
+    const collectionPath = programs[program].collectionPath()
+    if (collectionPath) void recover(program, collectionPath)
+  }
   ipcMain.handle('copies:status', async (): Promise<ProgramCopies[]> => {
     const found: ProgramCopies[] = []
     for (const program of ORDER) {
       const deps = programs[program]
       const collectionPath = deps.collectionPath()
       if (!collectionPath) continue
+      await recover(program, collectionPath)
       const queue = deps.queue.state()
       found.push({
         program,

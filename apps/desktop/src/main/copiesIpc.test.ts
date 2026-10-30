@@ -5,6 +5,19 @@ vi.mock('electron', () => ({
   BrowserWindow: { fromWebContents: () => null },
 }))
 
+const events = vi.hoisted(() => [] as string[])
+
+vi.mock('./libraryHistory', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./libraryHistory')>()
+  return {
+    ...real,
+    recoverRestoreSlot: (collectionPath: string) => {
+      events.push('recover')
+      return real.recoverRestoreSlot(collectionPath)
+    },
+  }
+})
+
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -65,6 +78,7 @@ function collection(name: string): string {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  events.length = 0
   dir = mkdtempSync(join(tmpdir(), 'copies-ipc-'))
   const root = join(dir, 'backups')
   mkdirSync(root)
@@ -167,6 +181,66 @@ describe('opening Surco', () => {
     registerCopiesIpc(programs({ traktor: { collectionPath: () => path } }), broadcast, () => false)
     await serialLibraryFlush(async () => undefined)
     expect((await status())[0].restore?.takenAt).toBe(2000)
+  })
+})
+
+describe('copies:status', () => {
+  it('turns an undo copy a crash left staged into «Antes de restaurar» even when the collection was not found at launch, such as an unmounted Traktor drive', async () => {
+    const path = collection('collection.nml')
+    await takeCopy(path, [], 'restore', 1000)
+    writeFileSync(path, 'before the restore')
+    await stageRestoreCopy(path, [], 2000)
+    writeFileSync(path, 'restored')
+    let mounted: string | null = null
+    registerCopiesIpc(
+      programs({ traktor: { collectionPath: () => mounted } }),
+      broadcast,
+      () => false,
+    )
+    await serialLibraryFlush(async () => undefined)
+    mounted = path
+    expect((await status())[0].restore?.takenAt).toBe(2000)
+  })
+
+  it('a status asked for while a restore is under way waits for it, so its recovery never touches the undo copy that restore is staging', async () => {
+    const path = collection('collection.nml')
+    const copy = await takeCopy(path, [], 'run', 1000)
+    writeFileSync(path, 'changed')
+    let letCheck: () => void = () => {}
+    const checked = new Promise<void>((resolve) => {
+      letCheck = resolve
+    })
+    let checking: () => void = () => {}
+    const reached = new Promise<void>((resolve) => {
+      checking = resolve
+    })
+    registerCopiesIpc(
+      programs({
+        traktor: {
+          collectionPath: () => path,
+          isRunning: async () => {
+            events.push('checking')
+            checking()
+            await checked
+            return false
+          },
+          queue: {
+            state: () => ({ tracks: 0, changes: 0 }),
+            discardCurrent: () => events.push('restored'),
+          },
+        },
+      }),
+      broadcast,
+      () => false,
+    )
+    const restoring = handlerFor('copies:restore')({ sender: {} }, 'traktor', copy.id)
+    await reached
+    const asked = status()
+    letCheck()
+    expect(await restoring).toEqual({ ok: true })
+    const [traktor] = await asked
+    expect(events.slice(events.indexOf('checking'))).toEqual(['checking', 'restored', 'recover'])
+    expect(traktor.restore).not.toBeNull()
   })
 })
 
