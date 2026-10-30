@@ -2566,10 +2566,7 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
 })
 
 describe('useTrackProcessing retryVerification', () => {
-  function retryHook(
-    answer: 'rechecked' | 'requeued' | 'rerun-job',
-    over: Partial<TrackItem> = {},
-  ) {
+  function retryHook(answer: 'rechecked' | 'rerun-job', over: Partial<TrackItem> = {}) {
     const processTrack = vi
       .fn<Api['processTrack']>()
       .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })

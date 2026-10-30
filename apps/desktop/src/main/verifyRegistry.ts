@@ -71,7 +71,8 @@ export interface VerifyRegistryDeps {
   readTraktor: (list: TraktorExpect[]) => Read<PlaceCheck | null>
   readFile: (e: FileExpect) => Promise<PlaceCheck>
   readMusic: (e: MusicExpect) => Promise<PlaceCheck>
-  // True when the repoint is held in the queue because the program is open.
+  // True when the library is not there to take the repoint now: it waits in the queue until
+  // the library is back. One found open is told by the apply (afterQueueWaits).
   requeue: (place: Library, e: VerifyEntry) => boolean
   exists: (path: string) => Promise<boolean>
   // Two spellings of one file as the libraries resolve them (links, case, composition).
@@ -323,6 +324,16 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
         if (result === 'failed' && stillQueued) for (const e of held) awaiting[place].add(e)
         for (const e of held) emit(e)
       })
+    },
+
+    // An apply that found the program open: the tracks a retry left checking wait for it to
+    // close.
+    async afterQueueWaits(place: Library): Promise<void> {
+      const held = [...awaiting[place]].filter((e) => stateOf(e, place) === 'checking')
+      for (const e of held) {
+        replace(e, pending(place), place)
+        emit(e)
+      }
     },
 
     // The worst place decides: a file or Music entry that does not add up is converted again

@@ -368,7 +368,12 @@ describe('queueVerification', () => {
     const afterQueueApplied = vi.fn(
       async (_place: string, _result: unknown, _stillQueued?: boolean) => {},
     )
-    return { afterQueueApplied, q: queueVerification({ afterQueueApplied }) }
+    const afterQueueWaits = vi.fn(async (_place: string) => {})
+    return {
+      afterQueueApplied,
+      afterQueueWaits,
+      q: queueVerification({ afterQueueApplied, afterQueueWaits }),
+    }
   }
 
   it('an apply that repointed is checked as written', () => {
@@ -396,12 +401,13 @@ describe('queueVerification', () => {
   })
 
   it('a repoint the program refused stays pending', () => {
-    const { afterQueueApplied, q } = setup()
+    const { afterQueueApplied, afterQueueWaits, q } = setup()
     q.repointed('engine', [{ written: false, reason: 'rekordbox-running' }])
     q.settled('engine', { status: 'refused', reason: 'rekordbox-running' })
     q.settled('engine', { status: 'refused', reason: 'cancelled' })
     q.settled('engine', { status: 'empty' })
     expect(afterQueueApplied).not.toHaveBeenCalled()
+    expect(afterQueueWaits.mock.calls).toEqual([['engine'], ['engine']])
   })
 
   // A refusal or a throw leaves the repoints in the queue for the next apply; a discard
@@ -417,6 +423,43 @@ describe('queueVerification', () => {
       ['engine', 'failed', true],
       ['traktor', 'failed', false],
     ])
+  })
+
+  // A retry finds the library there and reads checking; the apply it started finds the
+  // program open and waits. The track says so, and is read once the program closes.
+  it('a retry while the program is open reads pending, then verified when it closes', async () => {
+    const emit = vi.fn<VerifyRegistryDeps['emit']>()
+    const readRekordbox = vi
+      .fn<VerifyRegistryDeps['readRekordbox']>()
+      .mockResolvedValueOnce([
+        { place: 'rekordbox', state: 'mismatch', detail: { key: 'rekordboxStillOld' } },
+      ])
+      .mockResolvedValue([{ place: 'rekordbox', state: 'ok', detail: { key: 'rekordboxOk' } }])
+    const registry = createVerifyRegistry({
+      emit,
+      readRekordbox,
+      readEngine: vi.fn<VerifyRegistryDeps['readEngine']>(),
+      readTraktor: vi.fn<VerifyRegistryDeps['readTraktor']>(),
+      readFile: vi.fn<VerifyRegistryDeps['readFile']>(),
+      readMusic: vi.fn<VerifyRegistryDeps['readMusic']>(),
+      requeue: vi.fn<VerifyRegistryDeps['requeue']>(() => false),
+      exists: vi.fn<VerifyRegistryDeps['exists']>(async () => true),
+    })
+    const q = queueVerification(registry)
+    const rekordboxOf = () => registry.get('a')?.checks.find((c) => c.place === 'rekordbox')
+    registry.register(entry())
+    await registry.afterFlush({ rekordbox: 'written', engine: 'off', traktor: 'off' })
+    await registry.retry('a')
+    expect(rekordboxOf()?.state).toBe('checking')
+
+    q.settled('rekordbox', { status: 'refused', reason: 'cancelled' })
+    await vi.waitFor(() => expect(rekordboxOf()?.state).toBe('pending'))
+    expect(rekordboxOf()?.detail).toEqual({ key: 'pending', params: { program: 'rekordbox' } })
+    expect(emit.mock.lastCall?.[1].checks).toContainEqual(rekordboxOf())
+
+    q.repointed('rekordbox', [{ written: true }])
+    q.settled('rekordbox', applied)
+    await vi.waitFor(() => expect(registry.get('a')?.status).toBe('ok'))
   })
 
   it('what one apply repointed is not reported again by the next', () => {

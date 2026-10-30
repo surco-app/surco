@@ -318,7 +318,7 @@ export interface Api {
   ) => Promise<{ outcome: 'deleted' | 'missing'; location?: string } | undefined>
   processTrack: (job: ProcessJob) => Promise<ProcessResult>
   onVerifyUpdate: (cb: (trackId: string, v: Verification) => void) => () => void
-  retryVerification: (trackId: string) => Promise<'rechecked' | 'requeued' | 'rerun-job'>
+  retryVerification: (trackId: string) => Promise<'rechecked' | 'rerun-job'>
   // Closes the surco:// stream holding this file and resolves only once the OS
   // descriptor is gone. Must be awaited before an in-place export: on Windows the
   // rename fails while the handle lives, and Surco's own player is the holder.

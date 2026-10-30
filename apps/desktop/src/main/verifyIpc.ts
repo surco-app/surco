@@ -204,6 +204,7 @@ export function libraryRequeue(queues: {
 // throw leaves them queued for the next apply to write, a discard does not.
 export function queueVerification(registry: {
   afterQueueApplied: (place: Library, result: QueueApplied, stillQueued?: boolean) => Promise<void>
+  afterQueueWaits: (place: Library) => Promise<void>
 }) {
   const repointed: Partial<Record<Library, QueueApplied>> = {}
   return {
@@ -215,6 +216,7 @@ export function queueVerification(registry: {
       const written = repointed[place]
       delete repointed[place]
       if (written) void registry.afterQueueApplied(place, written)
+      else if (result !== 'threw' && stillWaiting(result)) void registry.afterQueueWaits(place)
       else if (result === 'threw' || (result.status === 'refused' && !stillWaiting(result)))
         void registry.afterQueueApplied(place, 'failed', true)
     },
