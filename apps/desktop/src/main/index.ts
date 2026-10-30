@@ -95,7 +95,7 @@ import { parseDockFrames } from './dockFrames'
 import { type ReplacePair, replaceDuplicates } from './duplicateReplace'
 import { registerEngineCueQueueIpc } from './engineCueQueueIpc'
 import { applyEngineCuesBatch } from './engineCuesWrite'
-import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
+import { addToEngineLibrary, dumpEngineLibrary, withEngineDatabase } from './engineLibrary'
 import { engineDatabasePath } from './enginePlaylists'
 import { registerEnginePlaylistsIpc } from './enginePlaylistsIpc'
 import { isEngineDjRunning, quitEngineDj } from './engineProcess'
@@ -1913,6 +1913,7 @@ function registerIpc(): void {
         ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailRestore'),
         isRunning: isRekordboxRunning,
         pendingLog: rekordboxPendingLog,
+        exclusive: (_path, task) => task(),
       },
       traktor: {
         collectionPath: () => traktorWritePath() || null,
@@ -1922,6 +1923,7 @@ function registerIpc(): void {
         ensureClosed: (win) => ensureTraktorClosed(win, 'traktorQuitDetailRestore'),
         isRunning: isTraktorRunning,
         pendingLog: () => false,
+        exclusive: (_path, task) => task(),
       },
       engine: {
         collectionPath: () => {
@@ -1934,6 +1936,7 @@ function registerIpc(): void {
         ensureClosed: (win) => ensureEngineDjClosed(win, 'engineQuitDetailRestore'),
         isRunning: isEngineDjRunning,
         pendingLog: enginePendingLog,
+        exclusive: withEngineDatabase,
       },
     },
     broadcast,

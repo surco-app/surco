@@ -16,6 +16,7 @@ export interface CopiesProgram {
   ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
   isRunning: () => Promise<boolean>
   pendingLog: (collectionPath: string) => boolean
+  exclusive: <T>(collectionPath: string, task: () => Promise<T>) => Promise<T>
 }
 
 const ORDER: DjProgram[] = ['rekordbox', 'traktor', 'engine']
@@ -63,6 +64,8 @@ export function registerCopiesIpc(
               isRunning: deps.isRunning,
               pendingLog: deps.pendingLog,
               discardQueue: deps.queue.discardCurrent,
+              busy: converting,
+              exclusive: (task) => deps.exclusive(collectionPath, task),
             },
           )
         } finally {

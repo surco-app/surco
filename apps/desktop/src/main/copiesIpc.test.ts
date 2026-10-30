@@ -13,6 +13,7 @@ import type { DjProgram, ProgramCopies } from '../shared/types'
 import { type CopiesProgram, registerCopiesIpc } from './copiesIpc'
 import { setLibraryBackupRoot } from './libraryBackups'
 import { takeCopy } from './libraryHistory'
+import { withEngineDatabase } from './engineLibrary'
 import { serialLibraryFlush } from './libraryTagSync'
 
 function handlerFor(channel: string): (e: unknown, ...args: unknown[]) => Promise<unknown> {
@@ -38,6 +39,7 @@ function program(over: Partial<CopiesProgram> = {}): CopiesProgram {
     ensureClosed: async () => true,
     isRunning: async () => false,
     pendingLog: () => false,
+    exclusive: (_path, task) => task(),
     ...over,
   }
 }
@@ -228,5 +230,59 @@ describe('copies:restore', () => {
       reason: 'busy',
     })
     expect(readFileSync(path, 'utf8')).toBe('changed')
+  })
+
+  it('refuses when a conversion began while the program was being closed, before touching the library', async () => {
+    const path = collection('collection.nml')
+    const copy = await takeCopy(path, [], 'run', 1000)
+    writeFileSync(path, 'changed')
+    let converting = false
+    registerCopiesIpc(
+      programs({
+        traktor: {
+          collectionPath: () => path,
+          ensureClosed: async () => {
+            converting = true
+            return true
+          },
+        },
+      }),
+      broadcast,
+      () => converting,
+    )
+    expect(await handlerFor('copies:restore')({ sender: {} }, 'traktor', copy.id)).toEqual({
+      ok: false,
+      reason: 'busy',
+    })
+    expect(readFileSync(path, 'utf8')).toBe('changed')
+  })
+
+  it('an Engine add from a conversion that starts mid-restore waits and lands in the restored m.db', async () => {
+    const path = collection('m.db')
+    const copy = await takeCopy(path, [], 'run', 1000)
+    writeFileSync(path, 'changed')
+    let added: Promise<void> = Promise.resolve()
+    registerCopiesIpc(
+      programs({
+        engine: {
+          collectionPath: () => path,
+          exclusive: withEngineDatabase,
+          isRunning: async () => {
+            added = withEngineDatabase(path, async () => {
+              writeFileSync(path, `${readFileSync(path, 'utf8')}+added`)
+            })
+            await new Promise((resolve) => setTimeout(resolve, 20))
+            return false
+          },
+        },
+      }),
+      broadcast,
+      () => false,
+    )
+    expect(await handlerFor('copies:restore')({ sender: {} }, 'engine', copy.id)).toEqual({
+      ok: true,
+    })
+    await added
+    expect(readFileSync(path, 'utf8')).toBe('m.db+added')
   })
 })

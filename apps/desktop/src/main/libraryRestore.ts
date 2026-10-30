@@ -14,6 +14,8 @@ export interface RestoreDeps {
   isRunning: () => Promise<boolean>
   pendingLog: (collectionPath: string) => boolean
   discardQueue: () => void
+  busy: () => boolean
+  exclusive: <T>(task: () => Promise<T>) => Promise<T>
 }
 
 const TEMP = '.surco-tmp'
@@ -51,7 +53,20 @@ export async function restoreCopy(
     return { ok: false, reason: 'other-collection' }
   try {
     if (!(await deps.ensureClosed())) return { ok: false, reason: 'running' }
-    if (deps.pendingLog(req.collectionPath)) return { ok: false, reason: 'pending-log' }
+  } catch {
+    return { ok: false, reason: 'failed' }
+  }
+  return deps.exclusive(() => replaceFiles(copy, req.collectionPath, deps))
+}
+
+async function replaceFiles(
+  copy: LibraryCopy,
+  collectionPath: string,
+  deps: RestoreDeps,
+): Promise<RestoreResult> {
+  if (deps.busy()) return { ok: false, reason: 'busy' }
+  try {
+    if (deps.pendingLog(collectionPath)) return { ok: false, reason: 'pending-log' }
   } catch {
     return { ok: false, reason: 'failed' }
   }

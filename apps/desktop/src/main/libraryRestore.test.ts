@@ -27,6 +27,8 @@ function deps(overrides: Partial<Parameters<typeof restoreCopy>[1]> = {}) {
     isRunning: async () => false,
     pendingLog: () => false,
     discardQueue: vi.fn(),
+    busy: () => false,
+    exclusive: <T>(task: () => Promise<T>) => task(),
     ...overrides,
   }
 }
