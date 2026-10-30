@@ -54,7 +54,7 @@ const trashEntry: TrashEntry = {
   originalPath: '/Music/Around the World.mp3',
   storedPath: '/ud/trash/items/t1-Around the World.mp3',
   bytes: 1024 * 1024,
-  trashedAt: Date.now(),
+  trashedAt: NOW.getTime(),
   reason: 'replaced',
 }
 
