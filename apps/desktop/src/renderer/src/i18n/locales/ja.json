@@ -2853,6 +2853,11 @@
     "revealWin": "File Explorerで表示",
     "changeInSettings": "設定で変更",
     "today": "今日 {{time}}",
-    "yesterday": "昨日 {{time}}"
+    "yesterday": "昨日 {{time}}",
+    "inSentence": {
+      "today": "今日{{time}}",
+      "yesterday": "昨日{{time}}",
+      "date": "{{date}}"
+    }
   }
 }

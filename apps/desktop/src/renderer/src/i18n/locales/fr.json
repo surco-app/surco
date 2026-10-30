@@ -2853,6 +2853,11 @@
     "revealWin": "Afficher dans l'Explorateur",
     "changeInSettings": "Modifier dans les Réglages",
     "today": "Aujourd'hui, {{time}}",
-    "yesterday": "Hier, {{time}}"
+    "yesterday": "Hier, {{time}}",
+    "inSentence": {
+      "today": "aujourd'hui à {{time}}",
+      "yesterday": "hier à {{time}}",
+      "date": "le {{date}}"
+    }
   }
 }

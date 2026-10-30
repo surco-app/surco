@@ -94,15 +94,32 @@ function daysBefore(days: number): string {
   return day.toDateString()
 }
 
-function useWhen(): (ms: number) => string {
+function useWhen(): {
+  when: (ms: number) => string
+  whenInSentence: (ms: number) => string
+} {
   const { t: tr, i18n } = useTranslation()
   const format = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' })
   const clock = new Intl.DateTimeFormat(i18n.language, { timeStyle: 'short' })
-  return (ms) => {
+  const dayOf = (ms: number): 'today' | 'yesterday' | 'older' => {
     const day = new Date(ms).toDateString()
-    if (day === daysBefore(0)) return tr('copies.today', { time: clock.format(ms) })
-    if (day === daysBefore(1)) return tr('copies.yesterday', { time: clock.format(ms) })
-    return format.format(ms)
+    if (day === daysBefore(0)) return 'today'
+    if (day === daysBefore(1)) return 'yesterday'
+    return 'older'
+  }
+  return {
+    when: (ms) => {
+      const day = dayOf(ms)
+      if (day === 'today') return tr('copies.today', { time: clock.format(ms) })
+      if (day === 'yesterday') return tr('copies.yesterday', { time: clock.format(ms) })
+      return format.format(ms)
+    },
+    whenInSentence: (ms) => {
+      const day = dayOf(ms)
+      if (day === 'today') return tr('copies.inSentence.today', { time: clock.format(ms) })
+      if (day === 'yesterday') return tr('copies.inSentence.yesterday', { time: clock.format(ms) })
+      return tr('copies.inSentence.date', { date: format.format(ms) })
+    },
   }
 }
 
@@ -162,7 +179,7 @@ function ProgramSection({
   onAsk: (copy: LibraryCopy) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const when = useWhen()
+  const { when, whenInSentence } = useWhen()
   const openSettings = useOpenSettings()
   const [open, setOpen] = useState(false)
   const { program, copies } = entry
@@ -248,7 +265,7 @@ function ProgramSection({
           data-testid={`copies-restored-${program}`}
           className="copies-feedback col-span-2 col-start-2 mt-2 text-[13px] text-[var(--color-good)]"
         >
-          {tr('copies.restored', { program: name, when: when(outcome.takenAt) })}
+          {tr('copies.restored', { program: name, when: whenInSentence(outcome.takenAt) })}
         </p>
       )}
       {listed.length > 0 && (
@@ -511,7 +528,7 @@ function MusicSection({
   openMusic: boolean
 }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
-  const when = useWhen()
+  const { when } = useWhen()
   const [open, setOpen] = useState(openMusic)
   const ref = useRef<HTMLElement>(null)
   const { entries } = trash
@@ -584,7 +601,7 @@ export function CopiesScreen({
   onReveal,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const when = useWhen()
+  const { whenInSentence } = useWhen()
   const [asking, setAsking] = useState<{ program: DjProgram; copyId: string } | null>(null)
   const [outcomes, setOutcomes] = useState<Partial<Record<DjProgram, Outcome>>>({})
   const [restoring, setRestoring] = useState(0)
@@ -675,7 +692,7 @@ export function CopiesScreen({
         <ConfirmDialog
           title={tr('copies.confirm.title', {
             program: tr(`sources.${askedEntry.program}`),
-            when: when(askedCopy.takenAt),
+            when: whenInSentence(askedCopy.takenAt),
           })}
           message={confirmText(askedEntry)}
           confirmLabel={tr('copies.confirm.ok')}

@@ -10,6 +10,7 @@ import type {
   TrashEntry,
 } from '../../../shared/types'
 import i18n from '../i18n'
+import es from '../i18n/locales/es.json'
 import { OpenSettingsProvider } from '../lib/openSettingsContext'
 import { installApi } from '../test/api'
 import { CopiesScreen, formatBytes } from './CopiesScreen'
@@ -176,21 +177,37 @@ describe('CopiesScreen', () => {
     expect(screen.getByTestId('copies-item-before')).toHaveTextContent(when(before.takenAt))
   })
 
-  it('the confirmation and the outcome name the day the same way', async () => {
+  // Inside a sentence the day is part of the phrase: "¿Volver a como estaba rekordbox
+  // Hoy, 08:02?" reads like a typo, so sentences take their own lowercase variant.
+  it('the confirmation and the outcome name the day as part of the sentence', async () => {
     const today = copy({ id: 'today', takenAt: new Date(2026, 10, 20, 8, 2).getTime() })
+    const yesterday = copy({ id: 'yday', takenAt: new Date(2026, 10, 19, 13, 8).getTime() })
     const name = i18n.t('sources.rekordbox')
-    const relative = i18n.t('copies.today', { time: clock(today.takenAt) })
-    renderScreen([program('rekordbox', { copies: [today] })])
+    const inToday = i18n.t('copies.inSentence.today', { time: clock(today.takenAt) })
+    renderScreen([program('rekordbox', { copies: [today, yesterday] })])
     fireEvent.click(screen.getByTestId('copies-restore-rekordbox'))
     expect(screen.getByRole('dialog')).toHaveTextContent(
-      i18n.t('copies.confirm.title', { program: name, when: relative }),
+      i18n.t('copies.confirm.title', { program: name, when: inToday }),
     )
     await act(async () => {
       fireEvent.click(screen.getByTestId('confirm-ok'))
     })
     expect(screen.getByTestId('copies-restored-rekordbox')).toHaveTextContent(
-      i18n.t('copies.restored', { program: name, when: relative }),
+      i18n.t('copies.restored', { program: name, when: inToday }),
     )
+    fireEvent.click(screen.getByTestId('copies-toggle-rekordbox'))
+    fireEvent.click(screen.getByTestId('copies-restore-item-yday'))
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      i18n.t('copies.confirm.title', {
+        program: name,
+        when: i18n.t('copies.inSentence.yesterday', { time: clock(yesterday.takenAt) }),
+      }),
+    )
+    expect(es.copies.inSentence).toEqual({
+      today: 'hoy a las {{time}}',
+      yesterday: 'ayer a las {{time}}',
+      date: 'el {{date}}',
+    })
   })
 
   it('restoring asks first, says what is lost and that the current state is kept', () => {
@@ -238,7 +255,7 @@ describe('CopiesScreen', () => {
     expect(screen.getByRole('dialog')).toHaveTextContent(
       i18n.t('copies.confirm.title', {
         program: i18n.t('sources.rekordbox'),
-        when: when(latest.takenAt),
+        when: i18n.t('copies.inSentence.date', { date: when(latest.takenAt) }),
       }),
     )
   })
@@ -293,7 +310,7 @@ describe('CopiesScreen', () => {
     expect(screen.getByTestId('copies-restored-rekordbox')).toHaveTextContent(
       i18n.t('copies.restored', {
         program: i18n.t('sources.rekordbox'),
-        when: when(older.takenAt),
+        when: i18n.t('copies.inSentence.date', { date: when(older.takenAt) }),
       }),
     )
     fireEvent.click(screen.getByTestId('copies-restore-rekordbox'))

@@ -2853,6 +2853,11 @@
     "revealWin": "Show in File Explorer",
     "changeInSettings": "Change in Settings",
     "today": "Today, {{time}}",
-    "yesterday": "Yesterday, {{time}}"
+    "yesterday": "Yesterday, {{time}}",
+    "inSentence": {
+      "today": "today at {{time}}",
+      "yesterday": "yesterday at {{time}}",
+      "date": "on {{date}}"
+    }
   }
 }
