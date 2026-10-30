@@ -23,7 +23,7 @@ import {
   readMusicEntryFacts,
   runOsascript,
 } from './applemusic'
-import type { ConversionPlan } from './ffmpeg'
+import { convertAudio } from './ffmpeg'
 import { type ProcessTrackDeps, runProcessTrack } from './processTrack'
 import { checkFile, fileReaders } from './verifyFile'
 import { checkAppleMusic, musicReaders } from './verifyMusic'
@@ -130,32 +130,43 @@ function deps(): ProcessTrackDeps {
     sendProgress: () => {},
     hasCoverSource: () => false,
     prepareProcessedCover: async () => undefined,
-    convertAudio: async (input, output, _format, m) => {
-      execFileSync(FF, [
-        '-v',
-        'error',
-        '-y',
-        '-i',
+    convertAudio: (
+      input,
+      output,
+      format,
+      m,
+      cover,
+      normalize,
+      removeCover,
+      onChild,
+      onTmp,
+      declick,
+      trim,
+      clearExtras,
+      foreignRemoved,
+      replacesPath,
+      keepOverwritten,
+    ) =>
+      convertAudio(
         input,
-        ...(output.endsWith('.aiff') ? ['-write_id3v2', '1'] : []),
-        '-metadata',
-        `title=${m.title}`,
-        '-metadata',
-        `artist=${m.artist}`,
-        '-metadata',
-        `album=${m.album}`,
         output,
-      ])
-      return {
-        normalizeSkipped: false,
-        written: {
-          samplesKept: false,
-          originalKept: false,
-          plan: { ext: extname(output) as ConversionPlan['ext'], codec: 'pcm_s16be' },
-          trimmedSec: 0,
-        },
-      }
-    },
+        format,
+        m,
+        cover,
+        normalize,
+        removeCover,
+        {},
+        onChild,
+        onTmp,
+        false,
+        declick,
+        trim,
+        clearExtras,
+        foreignRemoved,
+        replacesPath,
+        () => false,
+        keepOverwritten,
+      ),
     registerActiveConversion: () => {},
     unregisterActiveConversion: () => {},
     beginJob: () => {},
@@ -230,7 +241,7 @@ async function replaceCase(from: 'wav' | 'aiff', to: OutputFormat, title: string
   expect(verdict.state).toBe('ok')
   expect(verdict.detail.key).toMatch(/^musicOne/)
   const checks = result.verification?.checks ?? []
-  expect(checks.find((c) => c.place === 'file')?.state).toBe('ok')
+  expect(checks.find((c) => c.place === 'file')).toMatchObject({ state: 'ok' })
   const music = checks.find((c) => c.place === 'appleMusic')
   expect(music?.state).toBe('ok')
   expect(music?.detail.key).toMatch(/^musicOne/)
@@ -353,7 +364,6 @@ describe.skipIf(!real)('Apple Music against the real app', () => {
     const verdict = await checkEntry(pid, title, undefined, file)
 
     expect(verdict.state).not.toBe('ok')
-    console.log('deleted-file verdict', JSON.stringify(verdict))
     expect(verdict.detail.key).toBe('musicNoFile')
   }, 120_000)
 
