@@ -10,6 +10,7 @@ import {
   discardBackup,
   keepOriginal,
   policyKeeper,
+  settleHeldOriginal,
 } from './originalKeeper'
 
 afterEach(() => {
@@ -175,6 +176,106 @@ describe('configureBackupStore', () => {
     if (!entry) throw new Error('expected a backup')
     await discardBackup(entry)
     expect(s.remove).toHaveBeenCalledWith('kept')
+  })
+})
+
+// Decided 31/10/2026: under never an overwrite that the self-check finds wrong still
+// leaves the original in Copias. The verdict lands after the original is gone, so the
+// copy is taken anyway and dropped only once the new file is shown to add up.
+describe('an overwrite under never, until the self-check answers', () => {
+  function store(room = true) {
+    return {
+      stash: vi.fn(async (path: string, reason: TrashReason, outputPath?: string) =>
+        room
+          ? {
+              id: `kept:${path}`,
+              name: 'x',
+              originalPath: path,
+              storedPath: '',
+              bytes: 0,
+              trashedAt: 0,
+              reason,
+              ...(outputPath ? { outputPath } : {}),
+            }
+          : null,
+      ),
+      remove: vi.fn(async (_id: string) => {}),
+    }
+  }
+
+  it('keeps the original in Copias when something does not match', async () => {
+    const s = store()
+    configureBackupStore(s, () => 'never')
+    const kept = await keepOriginal('/a.aiff', 'replaced', '/a.aiff', {
+      reencodes: true,
+      untilChecked: true,
+    })
+    expect(kept?.originalPath).toBe('/a.aiff')
+    expect(settleHeldOriginal('/a.aiff', 'mismatch')).toBe('kept')
+    expect(s.remove).not.toHaveBeenCalled()
+  })
+
+  it('drops the copy once everything matches, leaving nothing as never promises', async () => {
+    const s = store()
+    configureBackupStore(s, () => 'never')
+    await keepOriginal('/b.wav', 'renamed', '/b.flac', { untilChecked: true })
+    expect(settleHeldOriginal('/b.flac', 'ok')).toBeUndefined()
+    expect(s.remove).toHaveBeenCalledWith('kept:/b.wav')
+  })
+
+  it('keeps the original while the verdict has not arrived', async () => {
+    const s = store()
+    configureBackupStore(s, () => 'never')
+    await keepOriginal('/c.wav', 'renamed', '/c.flac', { untilChecked: true })
+    expect(settleHeldOriginal('/c.flac', 'checking')).toBeUndefined()
+    expect(settleHeldOriginal('/c.flac', 'pending')).toBeUndefined()
+    expect(s.stash).toHaveBeenCalledTimes(1)
+    expect(s.remove).not.toHaveBeenCalled()
+  })
+
+  it('stays kept once a mismatch was reported, whatever a later check says', async () => {
+    const s = store()
+    configureBackupStore(s, () => 'never')
+    await keepOriginal('/d.aiff', 'replaced', '/d.aiff', { reencodes: true, untilChecked: true })
+    settleHeldOriginal('/d.aiff', 'mismatch')
+    expect(settleHeldOriginal('/d.aiff', 'ok')).toBe('kept')
+    expect(s.remove).not.toHaveBeenCalled()
+  })
+
+  it('says so when Copias has no room for it, and deletes as never does', async () => {
+    const s = store(false)
+    const overflow = vi.fn(async (_path: string) => {})
+    configureBackupStore(s, () => 'never', overflow)
+    expect(
+      await keepOriginal(join(process.cwd(), 'package.json'), 'renamed', '/e.flac', {
+        untilChecked: true,
+      }),
+    ).toBeNull()
+    expect(overflow).not.toHaveBeenCalled()
+    expect(settleHeldOriginal('/e.flac', 'mismatch')).toBe('noRoom')
+  })
+
+  it('leaves the other levels as they were', async () => {
+    for (const policy of ['always', 'audioChanges'] as const) {
+      const s = store()
+      configureBackupStore(s, () => policy)
+      await keepOriginal('/f.aiff', 'replaced', '/f.aiff', { reencodes: true, untilChecked: true })
+      await keepOriginal('/g.aiff', 'replaced', '/g.aiff', { reencodes: false, untilChecked: true })
+      expect(settleHeldOriginal('/f.aiff', 'ok')).toBeUndefined()
+      expect(settleHeldOriginal('/g.aiff', 'mismatch')).toBeUndefined()
+      expect(s.stash.mock.calls.map(([path]) => path)).toEqual(
+        policy === 'always' ? ['/f.aiff', '/g.aiff'] : ['/f.aiff'],
+      )
+      expect(s.remove).not.toHaveBeenCalled()
+    }
+  })
+
+  it('holds nothing for a file that is not the original being overwritten', async () => {
+    const s = store()
+    configureBackupStore(s, () => 'never')
+    expect(await keepOriginal('/h.aiff', 'replaced', '/h.aiff')).toBeNull()
+    expect(await keepOriginal('/i.wav', 'deleted')).toBeNull()
+    expect(s.stash).not.toHaveBeenCalled()
   })
 })
 

@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -74,15 +74,14 @@ describe('a format change under the backup policy', () => {
   })
 
   // What the user asked for on 21/09/2026: "Never" has to mean never, whichever write
-  // path the conversion happens to take.
-  it('deletes it outright under never, keeping nothing', async () => {
+  // path the conversion happens to take. Since 31/10/2026 only once the self-check has
+  // answered: until then the old-format file is held, so a conversion that does not add
+  // up still has its original.
+  it('holds it under never until the self-check answers', async () => {
     const { input, output } = pair()
     const kept = install('never')
     await removeRenamedOriginal(input, output)
-    expect(kept).toEqual([])
-    // Not kept AND not left behind: the file the user replaced is gone, which is the
-    // whole point of the level and why Settings warns before it is chosen.
-    expect(existsSync(input)).toBe(false)
+    expect(kept).toEqual([input])
   })
 
   // A format change re-encodes by definition, so the middle level has no reason to skip

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   type PlaceCheck,
   type Verification,
@@ -6,6 +6,12 @@ import {
   type VerifyPlace,
   verificationStatus,
 } from '../shared/verification'
+import {
+  configureBackupDiscarder,
+  configureOriginalKeeper,
+  keepOriginal,
+  policyKeeper,
+} from './originalKeeper'
 import type { NmlPatch } from './traktorNml'
 import type { FileExpect } from './verifyFile'
 import type { MusicExpect } from './verifyMusic'
@@ -1017,5 +1023,55 @@ describe('verify registry', () => {
   it('retry on a track it does not know rejects with an error key', async () => {
     const { registry } = setup()
     await expect(registry.retry('nope')).rejects.toThrow(/^SURCO_ERR:verifyUnknownTrack$/)
+  })
+})
+
+// Under never the original an overwrite replaced waits in Copias for this verdict: the
+// libraries answer last, so it is their read that keeps or drops it, and the DJ is told
+// it stayed when it did.
+describe('the original held under never', () => {
+  afterEach(() => {
+    configureOriginalKeeper(null)
+    configureBackupDiscarder(null)
+  })
+
+  function holdFor(to: string) {
+    const store = {
+      stash: vi.fn(async (path: string) => ({
+        id: 'held',
+        name: 'x',
+        originalPath: path,
+        storedPath: '',
+        bytes: 0,
+        trashedAt: 0,
+        reason: 'renamed' as const,
+      })),
+      remove: vi.fn(async (_id: string) => {}),
+    }
+    configureOriginalKeeper(policyKeeper(() => 'never', store.stash))
+    configureBackupDiscarder((e) => store.remove(e.id))
+    return keepOriginal('/Music/a.aiff', 'renamed', to, { untilChecked: true }).then(() => store)
+  }
+
+  it('is reported kept with the library mismatch that kept it', async () => {
+    const store = await holdFor('/Music/a.wav')
+    const { deps, registry } = setup()
+    deps.readRekordbox.mockResolvedValueOnce([mismatch('rekordbox', 'rekordboxStillOld')])
+    registry.register(entry('a'))
+    await registry.afterFlush(written)
+    expect(deps.emit.mock.calls[0][1]).toMatchObject({
+      status: 'mismatch',
+      originalHeld: 'kept',
+    })
+    expect(store.remove).not.toHaveBeenCalled()
+  })
+
+  it('is dropped when every place adds up', async () => {
+    const store = await holdFor('/Music/a.wav')
+    const { deps, registry } = setup()
+    registry.register(entry('a'))
+    await registry.afterFlush(written)
+    expect(deps.emit.mock.calls[0][1]).not.toHaveProperty('originalHeld')
+    expect(store.remove).toHaveBeenCalledWith('held')
   })
 })

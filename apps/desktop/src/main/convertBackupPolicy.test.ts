@@ -103,10 +103,12 @@ describe('backup policy on an in-place rewrite', () => {
     expect(await rewriteInPlace({ backupPolicy: 'always' })).toEqual(['the original'])
   })
 
-  // 'never' is the only level that removes the net, and it has to do it even where the
-  // file is most at risk — a re-encode, where the original samples are gone once the
-  // rename lands.
-  it('keeps nothing under never, re-encode included', async () => {
-    expect(await rewriteInPlace({ backupPolicy: 'never', normalize: PEAK })).toEqual([])
+  // 'never' removes the net only once the self-check has read the new file back: the
+  // rename lands before that verdict, so the original is held until it answers (see
+  // settleHeldOriginal), and a file that does not add up still has its original.
+  it('holds the original under never until the self-check answers', async () => {
+    expect(await rewriteInPlace({ backupPolicy: 'never', normalize: PEAK })).toEqual([
+      'the original',
+    ])
   })
 })

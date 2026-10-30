@@ -192,7 +192,7 @@ export async function removeRenamedOriginal(
     // Into Surco's trash when one is configured (see originalKeeper.ts), or the system
     // trash when that has no room for it, so the user can get the old file back; a plain
     // unlink only where the setting keeps no copy or no trash exists (unit tests).
-    if (alreadyKept || !(await keepOriginal(input, 'renamed', output)))
+    if (alreadyKept || !(await keepOriginal(input, 'renamed', output, { untilChecked: true })))
       await unlink(input).catch((err: NodeJS.ErrnoException) => {
         if (err.code !== 'ENOENT') throw err
       })

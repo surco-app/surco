@@ -2158,7 +2158,14 @@ comparación»* (`useDeclickAb.ts:60-67`).
   arranque pone el almacén detrás de `policyKeeper` (`main/index.ts:229`,
   `originalKeeper.ts:85-97`). «Siempre» guarda todo, «Solo si cambia el audio» se salta las
   reescrituras que copian el audio sin tocarlo (solo etiquetas) y «Nunca» no guarda nada al
-  convertir, normalizar ni cambiar de formato. Dos excepciones guardan siempre: las
+  convertir, normalizar ni cambiar de formato una vez la autocomprobación da todo por bueno.
+  Desde el 31/10/2026, con «Nunca» el original que una conversión sobrescribe (en su sitio o
+  al cambiar de formato) entra igualmente en Copias hasta que llega el veredicto
+  (`untilChecked`, `originalKeeper.ts`): si todo cuadra se borra, si algo no cuadra se queda
+  y la línea ámbar lo dice (`verify.heldOriginalLine`), y si el veredicto no llega (la app
+  se cierra, una biblioteca que nunca responde) también se queda. Respeta los límites de
+  Copias; si no cabe se borra como siempre y, si luego algo no cuadra, la línea dice que no
+  había sitio (`verify.heldOriginalNoRoomLine`). Dos excepciones guardan siempre: las
   correcciones de la revisión de metadatos, cuyo Deshacer depende de la copia
   (`musicFieldWrite.ts:38-42`), y los borrados automáticos de arriba. Los límites de días y
   espacio se aplican igual.
@@ -2310,7 +2317,9 @@ Recopilado de los cinco informes. Cada punto está verificado.
     de metadatos y los borrados automáticos guardan su copia igualmente
     (`musicFieldWrite.ts:38-42`, `recoverableTrash.ts:17`). Y con «Nunca» solo es definitivo
     el borrado que el usuario confirma en un disco sin papelera, tras un aviso que lo dice;
-    un duplicado quitado en la revisión va a Copias de seguridad.
+    un duplicado quitado en la revisión va a Copias de seguridad. El original que una
+    conversión sobrescribe espera en Copias a la autocomprobación y se queda si algo no
+    cuadra.
 34. **Auto marcar propone, no decide.** Encuentra en torno al 68 % de los drops y en torno
     al 70 % de sus propuestas aciertan; el usuario acepta o quita cada una. No decir «pone los
     cues solo» ni «detecta el drop». Necesita el análisis de rekordbox. Del ajuste a cada DJ

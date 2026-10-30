@@ -8,7 +8,12 @@ import type { ProcessJob, Settings, TrackMetadata, TrashEntry } from '../shared/
 import type { PlaceCheck } from '../shared/verification'
 import { createActiveConversions } from './activeConversions'
 import type { ConversionWritten } from './ffmpeg'
-import { configureBackupDiscarder, configureOriginalKeeper, policyKeeper } from './originalKeeper'
+import {
+  configureBackupDiscarder,
+  configureOriginalKeeper,
+  keepOriginal,
+  policyKeeper,
+} from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
 import { type ProcessTrackDeps, replaceAppleMusicCopy, runProcessTrack } from './processTrack'
 
@@ -1104,6 +1109,42 @@ describe('runProcessTrack — in-place rewrite', () => {
     expect(deps.addToEngineDj).toHaveBeenCalled()
     expect(warn).toHaveBeenCalled()
     warn.mockRestore()
+  })
+
+  // Under never the file read back right away can already be wrong: the original the
+  // rename retired was held for that answer, and the row says it stayed in Copias.
+  it('reports the original kept under never when the file does not add up', async () => {
+    configureOriginalKeeper(
+      policyKeeper(
+        () => 'never',
+        async (path, reason) => ({
+          id: 'held',
+          name: 'x',
+          originalPath: path,
+          storedPath: '',
+          bytes: 0,
+          trashedAt: 0,
+          reason,
+        }),
+      ),
+    )
+    const deps = makeDeps({
+      settings: settings({ overwriteOriginal: true }),
+      removeRenamedOriginal: vi.fn(async (input: string, output: string) => {
+        await keepOriginal(input, 'renamed', output, { untilChecked: true })
+      }),
+      verifyFile: vi.fn<ProcessTrackDeps['verifyFile']>(async () => ({
+        place: 'file',
+        state: 'mismatch',
+        detail: { key: 'fileTruncated' },
+      })),
+    })
+    try {
+      const result = await runProcessTrack(job(), deps)
+      expect(result.verification).toMatchObject({ status: 'mismatch', originalHeld: 'kept' })
+    } finally {
+      configureOriginalKeeper(null)
+    }
   })
 
   // Updating a file in place under its own name must land on that name. "Aux" is a device

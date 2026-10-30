@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { type BackupPolicy, keepsBackup } from '../shared/backupPolicy'
 import { errorWithKey } from '../shared/errorKeys'
 import type { TrashEntry, TrashReason } from '../shared/types'
+import type { HeldOriginal, Verification } from '../shared/verification'
 
 // The seam between the write paths and Surco's Originals. convertAudio,
 // removeRenamedOriginal and the shell's delete call keepOriginal at the moment a user's
@@ -22,6 +23,9 @@ export interface KeepContext {
   // A file that stays on its path, playing in Music while Music rewrites it: short of
   // room it is not sent to the system Trash, which would take it from under the entry.
   staysInPlace?: boolean
+  // The original a conversion writes over. Under 'never' it is kept anyway until the
+  // checks of the new file answer (settleHeldOriginal), which happens after it is gone.
+  untilChecked?: boolean
 }
 
 export type OriginalKeeper = (
@@ -33,9 +37,14 @@ export type OriginalKeeper = (
 
 let keeper: OriginalKeeper | null = null
 let livePolicy: (() => BackupPolicy) | null = null
+// The originals held under 'never', by the file written over them: null when Copias had no
+// room. `settled` once the checks found something wrong, after which it is a copy like any.
+const held = new Map<string, { entry: TrashEntry | null; settled?: HeldOriginal }>()
+const heldKey = (outputPath: string) => outputPath.normalize('NFC')
 
 export function configureOriginalKeeper(next: OriginalKeeper | null): void {
   keeper = next
+  held.clear()
 }
 
 // Wraps the real store with the user's setting, so ONE decision covers all three write
@@ -54,7 +63,12 @@ export function policyKeeper(
     // No conversion to judge (a format change's leftover, a delete): nothing was
     // re-encoded, but nothing can be re-run either, so only 'never' skips these.
     const reencodes = ctx?.reencodes ?? true
-    if (!ctx?.regardlessOfPolicy && !keepsBackup(policy(), { reencodes })) return null
+    if (!ctx?.regardlessOfPolicy && !keepsBackup(policy(), { reencodes })) {
+      if (!ctx?.untilChecked || !outputPath || policy() !== 'never') return null
+      const entry = await stash(path, reason, outputPath, ctx)
+      held.set(heldKey(outputPath), { entry })
+      return entry
+    }
     const kept = await stash(path, reason, outputPath, ctx)
     if (!kept && !ctx?.regardlessOfPolicy && !ctx?.staysInPlace && noRoom && existsSync(path))
       await noRoom(path)
@@ -103,7 +117,25 @@ export function configureBackupDiscarder(next: BackupDiscarder | null): void {
 }
 
 export async function discardBackup(entry: TrashEntry): Promise<void> {
+  for (const [key, hold] of held) if (hold.entry?.id === entry.id) held.delete(key)
   if (discarder) await discarder(entry)
+}
+
+// The checks' word on the file written at `outputPath`. Everything adding up drops the
+// held original, as 'never' asks; something wrong keeps it for good, and says whether it is
+// there. No word at all (the app quit, a library that never answered) leaves it in Copias.
+export function settleHeldOriginal(
+  outputPath: string,
+  status: Verification['status'],
+): HeldOriginal | undefined {
+  const hold = held.get(heldKey(outputPath))
+  if (!hold || hold.settled) return hold?.settled
+  if (status === 'mismatch') hold.settled = hold.entry ? 'kept' : 'noRoom'
+  if (status === 'ok') {
+    held.delete(heldKey(outputPath))
+    if (hold.entry) void discardBackup(hold.entry).catch(() => undefined)
+  }
+  return hold.settled
 }
 
 // What launch installs: the real store behind the user's setting, and the same store
