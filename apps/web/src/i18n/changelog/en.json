@@ -27,6 +27,10 @@
       {
         "text": "MP3 and AIFF grouping reaches Traktor and Apple Music on every conversion, and a “3/12” track number or “1/2” disc number is saved as is instead of becoming 312 or being lost.",
         "in": "1.18.0"
+      },
+      {
+        "text": "When Apple Music rewrites one of your files as a tag changes, from “Review metadata”, “Update in Apple Music” or a conversion, Surco keeps a copy first. Undo in “Review metadata” brings the file back exactly as it was, and if there is no room for the copy, Surco does not let Music touch it.",
+        "in": "1.18.1"
       }
     ]
   },

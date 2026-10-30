@@ -27,6 +27,10 @@
       {
         "text": "La agrupación de los MP3 y AIFF llega a Traktor y a Apple Music en todas las conversiones, y un número de pista «3/12» o de disco «1/2» se guarda tal cual en vez de convertirse en 312 o perderse.",
         "in": "1.18.0"
+      },
+      {
+        "text": "Cuando Apple Music reescribe un archivo tuyo al cambiarle una etiqueta, desde «Revisar metadatos», «Actualizar en Apple Music» o al convertir, Surco guarda antes una copia. Deshacer en «Revisar metadatos» devuelve el archivo tal como estaba, y si no queda sitio para la copia, Surco no deja que Music lo toque.",
+        "in": "1.18.1"
       }
     ]
   },

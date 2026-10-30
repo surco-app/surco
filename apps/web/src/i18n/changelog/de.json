@@ -27,6 +27,10 @@
       {
         "text": "Die Gruppierung von MP3 und AIFF kommt bei jeder Konvertierung in Traktor und Apple Music an, und eine Titelnummer „3/12“ oder Disc-Nummer „1/2“ bleibt erhalten, statt zu 312 zu werden oder zu verschwinden.",
         "in": "1.18.0"
+      },
+      {
+        "text": "Wenn Apple Music eine deiner Dateien beim Ändern eines Tags neu schreibt, über „Metadaten prüfen“, „In Apple Music aktualisieren“ oder beim Konvertieren, legt Surco vorher eine Kopie an. Rückgängig in „Metadaten prüfen“ bringt die Datei genau so zurück, wie sie war, und ist kein Platz für die Kopie, lässt Surco Music die Datei nicht anrühren.",
+        "in": "1.18.1"
       }
     ]
   },

@@ -27,6 +27,10 @@
       {
         "text": "Le regroupement des MP3 et AIFF arrive dans Traktor et Apple Music à chaque conversion, et un numéro de piste « 3/12 » ou de disque « 1/2 » est enregistré tel quel au lieu de devenir 312 ou de disparaître.",
         "in": "1.18.0"
+      },
+      {
+        "text": "Quand Apple Music réécrit un de tes fichiers en changeant un tag, depuis « Vérifier les métadonnées », « Mettre à jour dans Apple Music » ou lors d’une conversion, Surco garde d’abord une copie. Annuler dans « Vérifier les métadonnées » rend le fichier exactement comme il était, et s’il n’y a pas de place pour la copie, Surco ne laisse pas Music y toucher.",
+        "in": "1.18.1"
       }
     ]
   },
