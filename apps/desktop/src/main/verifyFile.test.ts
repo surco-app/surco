@@ -10,7 +10,8 @@ vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 import { errorKeyOf } from '../shared/errorKeys'
 import { emptyMetadata } from '../shared/metadata'
-import type { TrackMetadata } from '../shared/types'
+import type { OutputFormat, TrackMetadata } from '../shared/types'
+import { convertAudio } from './ffmpeg'
 import { writeTags } from './tags'
 import {
   checkFile,
@@ -535,4 +536,67 @@ describe('checkFile — cost and cancel', () => {
     expect(check.state).toBe('ok')
     expect(calls.assertDecodable).toBe(1)
   })
+})
+
+describe('checkFile — what convertAudio wrote reads back as written', () => {
+  let n = 0
+  const converted = async (format: OutputFormat, tags: Partial<TrackMetadata>) => {
+    const out = at(`conv-${n++}.${format === 'alac' ? 'm4a' : format}`)
+    const { written } = await convertAudio(at('source.wav'), out, format, meta(tags))
+    return checkFile(
+      {
+        path: out,
+        ext: written.plan.ext,
+        codec: written.plan.codec,
+        sampleRateHz: written.plan.sampleRateHz,
+        bitDepth: written.plan.bitDepth,
+        samplesKept: written.samplesKept,
+        sourcePcm: written.sourcePcm,
+        sourceDurationSec: written.sourceDurationSec,
+        trimmedSec: written.trimmedSec,
+        tags,
+        cover: 'untouched',
+        ...(written.proven ? { proven: written.proven } : {}),
+      },
+      fileReaders,
+    )
+  }
+
+  // ID3v2.3 has no separator of its own, so TagLib reads a '/' (and a TCON ';') as one:
+  // "AC/DC" comes back as the two values AC and DC, which is still what was written. The
+  // comment sends the file through the TagLib pass, the one that writes TIT1.
+  it.each(
+    (['mp3', 'aiff'] as OutputFormat[]).flatMap((format) =>
+      (
+        [
+          ['artist', 'AC/DC'],
+          ['albumArtist', 'X/Y'],
+          ['grouping', 'g/h'],
+          ['genre', 'Drum & Bass / Jungle'],
+          ['genre', 'House; Deep House'],
+          ['genre', 'House;Deep House'],
+        ] as const
+      ).map(([field, value]) => [format, field, value] as const),
+    ),
+  )(
+    'a %s whose %s "%s" TagLib reads split is ok',
+    async (format, field, value) => {
+      const check = await converted(format, { title: 'T', comment: 'C', [field]: value })
+      expect(check.state, JSON.stringify(check.detail)).toBe('ok')
+    },
+    30_000,
+  )
+
+  it('values split in another order are still fileTagDiffers', async () => {
+    const readers: FileReaders = {
+      ...fileReaders,
+      snapshotTags: () => ['id3 TCON=Deep House|House'],
+    }
+    const check = await checkFile(
+      await expectFor(at('source.wav'), { tags: { genre: 'House; Deep House' } }),
+      readers,
+    )
+    expect(check.detail).toEqual({ key: 'fileTagDiffers', params: { field: 'genre' } })
+  })
+
 })
