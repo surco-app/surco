@@ -33,10 +33,14 @@ export function recordNmlPatch(patch: NmlPatch, paths?: { input: string; output:
 // recorded without a newFile; Music then copies the file into its Media folder. Traktor
 // rewrites FILE only, never DIR or VOLUME, so the entry can follow only when the landed
 // file sits in the source's own folder.
+// Finder and NAS paths come back decomposed while Music's AppleScript location can be
+// composed, so the same accented folder must still count as the same folder.
+const sameFolder = (a: string, b: string) => a.normalize('NFC') === b.normalize('NFC')
+
 export function redirectNmlPatch(currentTo: string, landedAt: string): void {
   const index = origins.findIndex((o) => o?.output === currentTo)
   const found = origins[index]
-  if (!found || dirname(landedAt) !== dirname(found.input)) return
+  if (!found || !sameFolder(dirname(landedAt), dirname(found.input))) return
   const name = basename(landedAt)
   if (name !== patches[index].file) patches[index].newFile = name
 }

@@ -124,6 +124,17 @@ describe('nmlBatch', () => {
       expect(endNmlBatch()[0].newFile).toBeUndefined()
     })
 
+    it('treats a decomposed source folder and a composed landed folder as the same', () => {
+      beginNmlBatch()
+      recordNmlPatch(patch('x.aiff'), {
+        input: '/m/Ba\u0301sicos/x.aiff',
+        output: '/tmp/surco-1/x.wav',
+      })
+      redirectNmlPatch('/tmp/surco-1/x.wav', '/m/B\u00e1sicos/x.wav')
+
+      expect(endNmlBatch()[0].newFile).toBe('x.wav')
+    })
+
     it('ignores a destination no patch was recorded for', () => {
       recorded()
       redirectNmlPatch('/tmp/surco-9/y.wav', '/m/A/y.wav')
