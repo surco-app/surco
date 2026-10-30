@@ -3,10 +3,11 @@ import { join } from 'node:path'
 import log from 'electron-log/main'
 import { describe, expect, it, vi } from 'vitest'
 import { errorKeyOf, errorWithKey, splitNameLeftMarked } from '../shared/errorKeys'
-import type { ProcessJob, Settings, TrackMetadata } from '../shared/types'
+import type { ProcessJob, Settings, TrackMetadata, TrashEntry } from '../shared/types'
 import type { PlaceCheck } from '../shared/verification'
 import { createActiveConversions } from './activeConversions'
 import type { ConversionWritten } from './ffmpeg'
+import { configureBackupDiscarder, configureOriginalKeeper } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
 import { type ProcessTrackDeps, replaceAppleMusicCopy, runProcessTrack } from './processTrack'
 
@@ -2895,6 +2896,77 @@ describe('runProcessTrack — converting a library track to another format', () 
 
     expect(result.supersededPath).toBe('/Users/me/Music/Media/A.aiff')
     expect(result.musicLandedPath).toBeUndefined()
+  })
+
+  // Measured on 30/10: Music rewrites an entry's file the moment a tag is set on it. The
+  // entry the job knows may play a file of the DJ's this conversion never wrote.
+  it('backs up the file an updated entry plays before Music retags it', async () => {
+    const deps = converting('/lib/A.aiff')
+    const keeper = vi.fn(async () => null)
+    configureOriginalKeeper(keeper)
+    try {
+      await runProcessTrack(
+        libraryJob({ inputPath: '/lib/A.wav', format: 'aiff', keepOutputCopy: true }),
+        deps,
+      )
+    } finally {
+      configureOriginalKeeper(null)
+    }
+
+    expect(keeper).toHaveBeenCalledWith('/lib/A.aiff', 'replaced', '/lib/A.aiff', {
+      reencodes: false,
+      staysInPlace: true,
+    })
+    expect(keeper.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(deps.updateInAppleMusic).mock.invocationCallOrder[0],
+    )
+  })
+
+  it('drops that backup when the entry turned out gone and Music touched nothing', async () => {
+    const deps = converting('/lib/A.aiff', { updateInAppleMusic: vi.fn(async () => null) })
+    const kept = { id: 'kept' } as TrashEntry
+    const discarded = vi.fn(async () => {})
+    configureOriginalKeeper(vi.fn(async () => kept))
+    configureBackupDiscarder(discarded)
+    try {
+      await runProcessTrack(
+        libraryJob({ inputPath: '/lib/A.wav', format: 'aiff', keepOutputCopy: true }),
+        deps,
+      )
+    } finally {
+      configureOriginalKeeper(null)
+      configureBackupDiscarder(null)
+    }
+
+    expect(discarded).toHaveBeenCalledWith(kept)
+  })
+
+  // Retired after the Music step, the original went to Originals as Music had rewritten
+  // it. The copy is taken before Music, and the retirement only removes the file.
+  it('keeps the renamed original as it was before Music retagged it', async () => {
+    const deps = converting('/lib/A.aiff')
+    const keeper = vi.fn(async () => ({ id: 'kept' }) as TrashEntry)
+    configureOriginalKeeper(keeper)
+    try {
+      await runProcessTrack(
+        libraryJob({ format: 'aiff', overwriteOriginal: true, keepOutputCopy: true }),
+        deps,
+      )
+    } finally {
+      configureOriginalKeeper(null)
+    }
+
+    expect(keeper).toHaveBeenCalledWith('/lib/A.aiff', 'replaced', '/lib/Artist - Title.aiff', {
+      staysInPlace: true,
+    })
+    expect(keeper.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(deps.updateInAppleMusic).mock.invocationCallOrder[0],
+    )
+    expect(deps.removeRenamedOriginal).toHaveBeenCalledWith(
+      '/lib/A.aiff',
+      '/lib/Artist - Title.aiff',
+      true,
+    )
   })
 
   // The in-place rename already retired the AIFF: offering it again would trash nothing.

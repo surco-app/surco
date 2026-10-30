@@ -16,6 +16,7 @@ import type {
   RekordboxPlaylistTarget,
   Settings,
   TrackMetadata,
+  TrashEntry,
   TrimRange,
 } from '../shared/types'
 import {
@@ -35,6 +36,7 @@ import {
   uniqueOutputPath,
 } from './inplace'
 import { pathKey } from './libraryPathKey'
+import { discardBackup, keepBeforeMusicRewrite, keepOriginal } from './originalKeeper'
 import type { EngineBefore } from './verifyEngine'
 import type { FileExpect } from './verifyFile'
 import type { MusicExpect } from './verifyMusic'
@@ -91,7 +93,7 @@ export interface ProcessTrackDeps {
   trackTmp: (path: string) => void
   untrackTmp: (path: string) => void
   recordConversion: () => void
-  removeRenamedOriginal: (inputPath: string, target: string) => Promise<void>
+  removeRenamedOriginal: (inputPath: string, target: string, alreadyKept?: boolean) => Promise<void>
   addToAppleMusic: (target: string, meta: TrackMetadata, coverPath?: string) => Promise<string>
   updateInAppleMusic: (
     persistentId: string,
@@ -760,8 +762,12 @@ export async function runProcessTrack(
     // on the unlink that ends a copy into the trash) must not fail the job: the user
     // keeps both files and is told so.
     let originalKept: true | undefined
+    let keptBeforeMusic = false
     const retireOriginal = (): Promise<void> =>
-      deps.removeRenamedOriginal(job.inputPath, target).catch((e) => {
+      (keptBeforeMusic
+        ? deps.removeRenamedOriginal(job.inputPath, target, true)
+        : deps.removeRenamedOriginal(job.inputPath, target)
+      ).catch((e) => {
         log.warn('process:track kept the original it could not retire', job.inputPath, e)
         originalKept = true
       })
@@ -908,10 +914,28 @@ export async function runProcessTrack(
             }
             verified = true
           } else {
-            musicPersistentId = job.musicPersistentId
-              ? ((await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)) ??
-                (await musicDeps.addToAppleMusic(target, job.meta, coverPath)))
-              : await musicDeps.addToAppleMusic(target, job.meta, coverPath)
+            // Music rewrites the entry's file as it retags it, so a file this job did not
+            // just write is copied first. The original a rename retires below is copied now,
+            // as it was, and the retirement only removes it.
+            let preMusic: TrashEntry | null = null
+            if (
+              job.musicPersistentId &&
+              entry?.path &&
+              entry.path.normalize('NFC') !== target.normalize('NFC')
+            )
+              preMusic = entryMayPlaySource
+                ? await keepOriginal(job.inputPath, 'replaced', target, { staysInPlace: true })
+                : await keepBeforeMusicRewrite(entry.path)
+            const updated = job.musicPersistentId
+              ? await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)
+              : null
+            if (!updated && preMusic) {
+              await discardBackup(preMusic).catch(() => undefined)
+              preMusic = null
+            }
+            keptBeforeMusic = entryMayPlaySource && preMusic !== null
+            musicPersistentId =
+              updated ?? (await musicDeps.addToAppleMusic(target, job.meta, coverPath))
           }
         }
         if (musicOnly && musicPersistentId && !verified)

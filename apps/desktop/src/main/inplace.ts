@@ -178,7 +178,11 @@ export async function fileIdentity(path: string): Promise<string | undefined> {
 // rename that only changes case (Song.WAV → Song.wav) is the *same* file on the
 // case-insensitive macOS/Windows volumes Surco runs on — unlinking the old path
 // there would delete the file we just wrote.
-export async function removeRenamedOriginal(input: string, output: string): Promise<void> {
+export async function removeRenamedOriginal(
+  input: string,
+  output: string,
+  alreadyKept = false,
+): Promise<void> {
   if (input === output) return
   const [inStat, outStat] = await Promise.all([
     stat(input, { bigint: true }).catch(() => null),
@@ -188,7 +192,7 @@ export async function removeRenamedOriginal(input: string, output: string): Prom
     // Into Surco's trash when one is configured (see originalKeeper.ts), or the system
     // trash when that has no room for it, so the user can get the old file back; a plain
     // unlink only where the setting keeps no copy or no trash exists (unit tests).
-    if (!(await keepOriginal(input, 'renamed', output)))
+    if (alreadyKept || !(await keepOriginal(input, 'renamed', output)))
       await unlink(input).catch((err: NodeJS.ErrnoException) => {
         if (err.code !== 'ENOENT') throw err
       })
