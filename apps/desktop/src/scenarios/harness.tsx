@@ -17,7 +17,7 @@ import { applyEngineCuesBatch } from '../main/engineCuesWrite'
 import { addToEngineLibrary } from '../main/engineLibrary'
 import { isEngineDjRunning } from '../main/engineProcess'
 import { expandPaths } from '../main/expand'
-import { convertAudio } from '../main/ffmpeg'
+import { convertAudio, toNmlLocation } from '../main/ffmpeg'
 import { fileIdentity, isSameFile, removeRenamedOriginal } from '../main/inplace'
 import {
   currentLibraryStatus,
@@ -33,7 +33,7 @@ import { registerListReviewIpc } from '../main/listReviewIpc'
 import { listReviewDeps } from '../main/listReviewWiring'
 import { createMediaAccess } from '../main/mediaAccess'
 import { musicReviewLog } from '../main/musicReviewLog'
-import { beginNmlBatch } from '../main/nmlBatch'
+import { beginNmlBatch, redirectNmlPatch } from '../main/nmlBatch'
 import { configureBackupStore } from '../main/originalKeeper'
 import { createOutputReservations } from '../main/outputReservations'
 import { runProcessTrack } from '../main/processTrack'
@@ -256,12 +256,16 @@ function processTrackInMain(
     },
     appleMusicEntryLocation: (pid) =>
       musicIsFake ? appleMusic.appleMusicEntryLocation(pid) : noMusic(),
+    appleMusicEntry: (pid) => (musicIsFake ? appleMusic.appleMusicEntry(pid) : noMusic()),
     deleteAppleMusic: (pid, label) =>
       musicIsFake ? appleMusic.deleteFromAppleMusic(pid, label) : noMusic(),
     carryAppleMusicHistory: (fromPid, toPid, label) =>
       musicIsFake ? appleMusic.carryOverToAppleMusicCopy(fromPid, toPid, label) : noMusic(),
     markAppleMusicReplacing: async () => 'missing',
-    redirectRepoint: redirectRekordboxRepoint,
+    redirectRepoint: (to, landed) => {
+      redirectRekordboxRepoint(to, landed)
+      return redirectNmlPatch(to, landed, toNmlLocation(landed))
+    },
   })
 }
 
