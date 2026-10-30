@@ -621,4 +621,30 @@ describe('checkFile — what convertAudio wrote reads back as written', () => {
     )
     expect(check.detail).toEqual({ key: 'fileTagDiffers', params: { field: 'key' } })
   })
+
+  // A vinyl side position is text: "A2" is not a number, and NaN never equals NaN.
+  it.each(['mp3', 'aiff', 'flac', 'wav', 'alac'] as OutputFormat[])(
+    'a %s whose track is the vinyl position A2 is ok',
+    async (format) => {
+      const check = await converted(format, { title: 'T', trackNumber: 'A2' })
+      expect(check.state, JSON.stringify(check.detail)).toBe('ok')
+    },
+    30_000,
+  )
+
+  it.each(['mp3', 'flac'])('a %s holding A3 where A2 was asked is fileTagDiffers', async (ext) => {
+    const file = at(`side.${ext}`)
+    ff('-i', at('source.wav'), file)
+    writeTags(file, meta({ trackNumber: 'A3' }))
+    const check = await checkFile(
+      await expectFor(file, {
+        ext: `.${ext}` as FileExpect['ext'],
+        codec: 'copy',
+        samplesKept: false,
+        tags: { trackNumber: 'A2' },
+      }),
+      fileReaders,
+    )
+    expect(check.detail).toEqual({ key: 'fileTagDiffers', params: { field: 'trackNumber' } })
+  })
 })

@@ -128,7 +128,8 @@ const norm = (s: string) => s.normalize('NFC').trim()
 function valueMatches(field: keyof TrackMetadata, expected: string, stored: string): boolean {
   const want = norm(expected)
   const have = norm(stored)
-  if (field === 'trackNumber') return Number.parseInt(have, 10) === Number.parseInt(want, 10)
+  if (field === 'trackNumber')
+    return have === want || Number.parseInt(have, 10) === Number.parseInt(want, 10)
   if (field === 'bpm') return Number(have) === Number(want)
   if (field === 'year')
     return have.length >= 4 && want.length >= 4 && (have.startsWith(want) || want.startsWith(have))
@@ -138,6 +139,12 @@ function valueMatches(field: keyof TrackMetadata, expected: string, stored: stri
   // one: "AC/DC" comes back as AC and DC, in the order they were written.
   const parts = want.split(/[/;]/).map(norm)
   return parts.length === values.length && parts.every((p, i) => p === values[i])
+}
+
+// MP4's trkn atom holds integers only, so a vinyl position rides it as its digits.
+const m4aTrack = (want: string) => {
+  const n = Math.round(Number.parseFloat(want))
+  return Number.isFinite(n) ? n : Number(want.replace(/\D/g, ''))
 }
 
 function differingTag(
@@ -151,7 +158,12 @@ function differingTag(
     const want = norm(expected)
     if (m4a && (field === 'trackNumber' || field === 'bpm')) {
       const stored = field === 'trackNumber' ? m4a.track : m4a.bpm
-      const meant = want === '' ? 0 : Math.round(Number.parseFloat(want))
+      const meant =
+        want === ''
+          ? 0
+          : field === 'trackNumber'
+            ? m4aTrack(want)
+            : Math.round(Number.parseFloat(want))
       if (stored !== meant) return field
       continue
     }
