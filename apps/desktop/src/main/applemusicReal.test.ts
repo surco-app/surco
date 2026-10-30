@@ -232,7 +232,7 @@ describe.skipIf(!real)('Apple Music against the real app', () => {
     const title = `${PREFIX} Readback`
     const pid = await addToAppleMusic(tone(join(dir, `${title}.aiff`), title), meta(title))
 
-    const facts = await readMusicEntryFacts(pid, 'FFFFFFFFFFFFFFFF')
+    const facts = await readMusicEntryFacts(pid, 'FFFFFFFFFFFFFFFF', { withPlaylists: true })
 
     expect(facts).not.toBe('missing')
     expect(facts).toMatchObject({

@@ -34,7 +34,7 @@ function osascriptError(err: unknown): Error {
 
 export async function runOsascript(
   script: string,
-  options?: { maxBuffer?: number; language?: 'JavaScript' },
+  options?: { maxBuffer?: number; timeout?: number; language?: 'JavaScript' },
 ): Promise<string> {
   const { language, ...execOptions } = options ?? {}
   const args = language ? ['-l', language, '-e', script] : ['-e', script]
@@ -330,7 +330,7 @@ export async function appleMusicEntry(
 }
 
 export type MusicEntryFacts = {
-  location: string
+  location: string | null
   name: string
   artist: string
   album: string
@@ -339,15 +339,25 @@ export type MusicEntryFacts = {
   oldExists?: boolean
 }
 
+const LOCATION_UNREADABLE = 'surco-location-unreadable'
+const VERIFY_FIELDS = 7
+const VERIFY_TIMEOUT_MS = 60_000
+
 // Re-reads an entry after the add or replace so the self-check compares what Music holds
 // with what was written. The track list is taken first and each property read from one
 // track: a property of "every track whose" throws -1728 with zero matches, and location
 // in bulk fails. Fields are separated by control characters because a tag may hold tabs
-// and newlines; the location leaves the tell block before POSIX path touches it.
-export function buildVerifyEntryScript(persistentId: string, oldPersistentId?: string): string {
+// and newlines; the location leaves the tell block before POSIX path touches it. The
+// playlist membership walks every normal playlist, so it is only read when asked for.
+export function buildVerifyEntryScript(
+  persistentId: string,
+  oldPersistentId?: string,
+  withPlaylists = false,
+): string {
   return [
     'set FS to ASCII character 31',
     'set theLocation to missing value',
+    'set theLocationText to ""',
     'set theOldFlag to ""',
     'set thePlaylists to {}',
     'tell application "Music"',
@@ -360,6 +370,8 @@ export function buildVerifyEntryScript(persistentId: string, oldPersistentId?: s
     '  set theArtworks to count of artworks of theTrack',
     '  try',
     '    set theLocation to location of theTrack',
+    '  on error',
+    `    set theLocationText to "${LOCATION_UNREADABLE}"`,
     '  end try',
     ...(oldPersistentId === undefined
       ? []
@@ -371,12 +383,15 @@ export function buildVerifyEntryScript(persistentId: string, oldPersistentId?: s
           '    set theOldFlag to "1"',
           '  end if',
         ]),
-    '  set theLists to (every user playlist whose smart is false and special kind is none)',
-    '  repeat with p in theLists',
-    `    if (count of (every track of p whose persistent ID is ${appleScriptString(persistentId)})) is not 0 then set end of thePlaylists to (name of p)`,
-    '  end repeat',
+    ...(withPlaylists
+      ? [
+          '  set theLists to (every user playlist whose smart is false and special kind is none)',
+          '  repeat with p in theLists',
+          `    if (count of (every track of p whose persistent ID is ${appleScriptString(persistentId)})) is not 0 then set end of thePlaylists to (name of p)`,
+          '  end repeat',
+        ]
+      : []),
     'end tell',
-    'set theLocationText to ""',
     'if theLocation is not missing value then set theLocationText to POSIX path of theLocation',
     'set out to {"ok", theLocationText, theName, theArtist, theAlbum, (theArtworks as text), theOldFlag}',
     'repeat with n in thePlaylists',
@@ -387,12 +402,20 @@ export function buildVerifyEntryScript(persistentId: string, oldPersistentId?: s
   ].join('\n')
 }
 
+// Anything but the sentinel or a whole "ok" row is a failed read, never facts: empty or
+// cut-off output must not pass for an entry with no artwork and no playlists. A null
+// location is a location Music would not hand over; '' is an entry holding no file.
 export function parseVerifyEntry(stdout: string): MusicEntryFacts | 'missing' {
   const body = stdout.replace(/\n$/, '')
   if (body === 'missing') return 'missing'
-  const [, location, name, artist, album, artworks, oldFlag, ...playlists] = body.split(REVIEW_FS)
+  const parts = body.split(REVIEW_FS)
+  if (parts[0] !== 'ok' || parts.length < VERIFY_FIELDS) {
+    throw new Error('Apple Music answered something that is not an entry')
+  }
+  const [, location, name, artist, album, artworks, oldFlag, ...playlists] = parts
   const facts: MusicEntryFacts = {
-    location: location === 'missing value' ? '' : location,
+    location:
+      location === LOCATION_UNREADABLE ? null : location === 'missing value' ? '' : location,
     name,
     artist,
     album,
@@ -406,10 +429,30 @@ export function parseVerifyEntry(stdout: string): MusicEntryFacts | 'missing' {
 export function readMusicEntryFacts(
   persistentId: string,
   oldPersistentId?: string,
+  options: {
+    withPlaylists?: boolean
+    run?: typeof runOsascript
+    timeoutMs?: number
+  } = {},
 ): Promise<MusicEntryFacts | 'missing'> {
-  return appleMusicLimiter.run(async () =>
-    parseVerifyEntry(await runOsascript(buildVerifyEntryScript(persistentId, oldPersistentId))),
-  )
+  const { withPlaylists = false, run = runOsascript, timeoutMs = VERIFY_TIMEOUT_MS } = options
+  return appleMusicLimiter.run(async () => {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const timedOut = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error('Apple Music did not answer in time')), timeoutMs)
+    })
+    try {
+      const stdout = await Promise.race([
+        run(buildVerifyEntryScript(persistentId, oldPersistentId, withPlaylists), {
+          timeout: timeoutMs,
+        }),
+        timedOut,
+      ])
+      return parseVerifyEntry(stdout)
+    } finally {
+      clearTimeout(timer)
+    }
+  })
 }
 
 // Selects the library copy in the Music window and brings the app forward — the

@@ -37,6 +37,8 @@ import {
   parseReviewDump,
   parseVerifyEntry,
   REPLACING_MARK,
+  readMusicEntryFacts,
+  type runOsascript,
   shouldAddToAppleMusic,
 } from './applemusic'
 
@@ -1317,8 +1319,20 @@ describe('buildVerifyEntryScript', () => {
     expect(script).toContain('POSIX path')
   })
 
-  it('lists only normal playlists', () => {
+  it('walks the playlists only when asked', () => {
+    expect(buildVerifyEntryScript('NEW1234NEW123456')).not.toContain('user playlist')
+    expect(buildVerifyEntryScript('NEW1234NEW123456', undefined, true)).toContain('user playlist')
+  })
+
+  it('marks a location Music would not hand over apart from an entry with no file', () => {
     const script = buildVerifyEntryScript('NEW1234NEW123456')
+
+    expect(script).toContain('on error')
+    expect(script).toContain('surco-location-unreadable')
+  })
+
+  it('lists only normal playlists', () => {
+    const script = buildVerifyEntryScript('NEW1234NEW123456', undefined, true)
 
     expect(script).toContain('user playlist whose smart is false and special kind is none')
   })
@@ -1372,5 +1386,46 @@ describe('parseVerifyEntry', () => {
 
   it('answers the missing sentinel', () => {
     expect(parseVerifyEntry('missing\n')).toBe('missing')
+  })
+})
+
+describe('parseVerifyEntry refusing what is not an entry', () => {
+  const FS = '\u001f'
+
+  it.each([
+    ['empty output', ''],
+    ['garbage', 'garbage'],
+    ['a truncated row', ['ok', '/x.wav', 'N', 'A'].join(FS)],
+  ])('throws on %s instead of inventing an entry with no artwork', (_label, stdout) => {
+    expect(() => parseVerifyEntry(stdout)).toThrow()
+  })
+
+  it('tells a location Music would not hand over from an entry with no file', () => {
+    const row = (loc: string) => ['ok', loc, 'N', 'A', 'B', '1', ''].join(FS)
+
+    expect(parseVerifyEntry(row('surco-location-unreadable'))).toMatchObject({ location: null })
+    expect(parseVerifyEntry(row('missing value'))).toMatchObject({ location: '' })
+  })
+})
+
+describe('readMusicEntryFacts', () => {
+  const row = ['ok', '/x.aiff', 'N', 'A', 'B', '1', ''].join('\u001f')
+
+  it('rejects when Music does not answer in time instead of hanging', async () => {
+    const stuck = vi.fn(() => new Promise<string>(() => {}))
+
+    await expect(
+      readMusicEntryFacts('NEW1234NEW123456', undefined, { run: stuck, timeoutMs: 20 }),
+    ).rejects.toThrow()
+  })
+
+  it('does not read playlists unless asked', async () => {
+    const run = vi.fn<typeof runOsascript>(async () => row)
+
+    await readMusicEntryFacts('NEW1234NEW123456', undefined, { run })
+    await readMusicEntryFacts('NEW1234NEW123456', undefined, { run, withPlaylists: true })
+
+    expect(run.mock.calls[0][0]).not.toContain('user playlist')
+    expect(run.mock.calls[1][0]).toContain('user playlist')
   })
 })
