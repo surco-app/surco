@@ -115,7 +115,7 @@ function cell(layer: Cell['layer'], row: Row): Cell {
   return { ...row, layer, name: row.name ?? described(row), core: row.core ?? false }
 }
 
-const CORE_C = new Set(['flac>aiff', 'aiff>wav', 'wav16>flac', 'mp3n>aiff'])
+const CORE_C = new Set(['flac>aiff', 'aiff>wav', 'wav16>flac', 'mp3n>aiff', 'flac>mp3'])
 
 const LAYER_C: Cell[] = TARGETS.flatMap((target) =>
   ORIGINS.map((origin) =>
@@ -150,7 +150,7 @@ const PAIRWISE: [FileDest, Programs, CellState, keyof typeof CONVERSION, boolean
   ['overwrite', 'rekordbox', 'retry', 'fromLossy'],
   ['overwrite', 'engine', 'closed', 'toLossy', true],
   ['overwrite', 'traktor', 'open', 'keep'],
-  ['overwrite', 'all', 'closed', 'toLossy'],
+  ['overwrite', 'all', 'closed', 'toLossy', true],
   ['appleMusic', 'rekordbox', 'closed', 'keep'],
   ['appleMusic', 'engine', 'open', 'fromLossy'],
   ['appleMusic', 'traktor', 'retry', 'toLossy'],
@@ -297,6 +297,7 @@ const K_ROWS: Row[] = [
     programs: 'all',
     state: 'closed',
     quality: 'source',
+    core: true,
   },
   {
     id: 'K10',

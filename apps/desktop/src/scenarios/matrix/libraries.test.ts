@@ -37,6 +37,7 @@ const untouched = (t: SeededTrack, more: Partial<Expected> = {}): Expected => ({
   finalPath: more.finalPath ?? t.path,
   at: pointingAt(more.finalPath ?? t.path),
   lagMs: 0,
+  rekordboxStartMovedMs: 0,
   samplesKept: true,
   destGone: false,
   ...more,
@@ -197,6 +198,28 @@ describe('Synthetic libraries the matrix judges on its own', () => {
         'cues',
         'rekordbox: cues',
       )
+    })
+
+    // rekordbox counts from a later start on an MP3 with an Info frame or on an .m4a, so the
+    // row Surco repointed carries cues moved by the difference on purpose; a row still on the
+    // old file is read on the old file's timeline and keeps them where they were.
+    it('accepts the repointed row cues moved by the change of rekordbox timeline', () => {
+      rekordbox(`UPDATE djmdCue SET InMsec = InMsec + 26 WHERE ContentID = ?`, track.rekordboxId)
+      const notKept = { samplesKept: false }
+      expect(
+        beyondCollateral(judge(only, untouched(track, { ...notKept, rekordboxStartMovedMs: 26 }))),
+      ).toEqual([])
+      seen(judge(only, untouched(track, notKept)), 'cues', 'rekordbox: cues')
+    })
+
+    it('keeps the cues of a row left on the old file where they were', () => {
+      const elsewhere = join(dirname(track.path), 'nuevo.mp3')
+      const stayed = untouched(track, {
+        finalPath: elsewhere,
+        at: pointingAt(track.path),
+        rekordboxStartMovedMs: 26,
+      })
+      expect(judge(only, stayed).filter((b) => b.invariant === 'cues')).toEqual([])
     })
 
     it('sees a playlist link deleted', () => {

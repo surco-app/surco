@@ -27,6 +27,7 @@ import {
   markerLagMs,
   originalBroken,
   pcmSha1,
+  rekordboxTimelineMs,
   traktorCalibrationMs,
 } from './oracle'
 import { makeSource, type SourceTrack, TRICKY, type TrickyTags } from './sources'
@@ -468,6 +469,55 @@ describe('matrix file oracle', () => {
     expect(traktorCalibrationMs('.mp3', '.m4a')).toBe(0)
     expect(traktorCalibrationMs('.m4a', '.mp3')).toBe(0)
     expect(traktorCalibrationMs('.flac', '.aiff')).toBe(0)
+  })
+
+  // rekordbox counts cue milliseconds from its own start, which is not where ffmpeg starts:
+  // an MP3 with an Info/Xing frame starts one frame (1152 samples) later, plus the encoder
+  // delay and the decoder's 529 when the frame is LAME-signed, and an .m4a after the 2112
+  // AAC priming samples. Seen in C-flac-mp3 and D12 (cues at 10026, 15026 on a Lavc MP3),
+  // K09 (9974, 14974 from an mp3x) and C-aiff-alac (10048, 15048 on an .m4a).
+  it("places rekordbox's timeline where rekordbox starts counting on each kind of file", () => {
+    const mp3x = makeSource(dir, 'mp3x', { fileName: 'timeline-x' })
+    const lame = join(dir, 'timeline-lame.mp3')
+    const bytes = readFileSync(mp3x.path)
+    const signature = bytes.indexOf('Lavc', bytes.indexOf('Info'))
+    bytes.write('LAME', signature, 'latin1')
+    writeFileSync(lame, bytes)
+    const info = bytes.indexOf('Info')
+    const noToc = Buffer.concat([
+      bytes.subarray(0, info + 16),
+      bytes.subarray(info + 116, info + 400),
+      Buffer.alloc(100),
+      bytes.subarray(info + 400),
+    ])
+    noToc.writeUInt32BE(noToc.readUInt32BE(info + 4) & ~4, info + 4)
+    const lameNoToc = join(dir, 'timeline-lame-sin-toc.mp3')
+    writeFileSync(lameNoToc, noToc)
+    const mp3at48k = join(dir, 'timeline-48k.mp3')
+    execFileSync(FF, [
+      '-y',
+      '-v',
+      'error',
+      '-i',
+      mp3x.path,
+      '-ar',
+      '48000',
+      ...ENCODE.mp3.args,
+      mp3at48k,
+    ])
+    const table: [string, number][] = [
+      [mp3x.path, (1152 / 44100) * 1000],
+      [lame, ((1152 + 576 + 529) / 44100) * 1000],
+      [lameNoToc, ((1152 + 576 + 529) / 44100) * 1000],
+      [mp3at48k, (1152 / 48000) * 1000],
+      [makeSource(dir, 'mp3n', { fileName: 'timeline-n' }).path, 0],
+      [makeSource(dir, 'mp3j', { fileName: 'timeline-j' }).path, 0],
+      [makeSource(dir, 'alac', { fileName: 'timeline-alac' }).path, (2112 / 44100) * 1000],
+      [makeSource(dir, 'wav16', { fileName: 'timeline-wav' }).path, 0],
+      [makeSource(dir, 'aiff', { fileName: 'timeline-aiff' }).path, 0],
+      [flac.path, 0],
+    ]
+    for (const [path, ms] of table) expect(rekordboxTimelineMs(path), path).toBeCloseTo(ms, 2)
   })
 
   // Surco's Originals are a way back, not a loss: only the system Trash, a file gone for

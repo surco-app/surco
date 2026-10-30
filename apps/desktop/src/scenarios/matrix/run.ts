@@ -21,6 +21,7 @@ import {
   markerLagMs,
   originalBroken,
   pointingAt,
+  rekordboxTimelineMs,
 } from './oracle'
 import type { CellOutcome } from './report'
 import { SABOTAGES } from './sabotage'
@@ -242,6 +243,9 @@ export async function runGroup(
             spelled(dirname(finalPath)) === spelled(dirname(source.path)) ? finalPath : source.path,
         },
         lagMs: fileExists ? markerLagMs(witness.path, finalPath) : 0,
+        rekordboxStartMovedMs: fileExists
+          ? rekordboxTimelineMs(finalPath) - rekordboxTimelineMs(witness.path)
+          : 0,
         samplesKept:
           cell.quality === 'source' &&
           ((LOSSLESS.has(cell.origin) && cell.target !== 'mp3') || sameFormat(cell, source.path)),

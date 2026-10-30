@@ -553,6 +553,7 @@ export interface Expected {
   finalPath: string
   at: Record<Program, string>
   lagMs: number
+  rekordboxStartMovedMs: number
   samplesKept: boolean
   destGone: boolean
 }
@@ -653,7 +654,8 @@ function rekordboxBroken(dbPath: string, t: SeededTrack, e: Expected): Found[] {
         .prepare(`SELECT InMsec FROM djmdCue WHERE ContentID = ? AND rb_local_deleted = 0`)
         .all(t.rekordboxId) as { InMsec: number }[]
     ).map((c) => c.InMsec)
-    const want = SEEDED_CUES_MS.map((ms) => ms + e.lagMs)
+    const moved = canonical(e.at.rekordbox) === canonical(e.finalPath) ? e.rekordboxStartMovedMs : 0
+    const want = SEEDED_CUES_MS.map((ms) => ms + e.lagMs + moved)
     if (!cuesAt(cues, want))
       found.push(['cues', `rekordbox: cues en ${msList(cues)} ms, se esperaba ${msList(want)}`])
     const lists = (
@@ -861,6 +863,42 @@ export function traktorCalibrationMs(sourceExt: string, outputExt: string): numb
   )
 }
 
+const MP3_FRAME_SAMPLES = 1152
+const MP3_DECODER_DELAY = 529
+const AAC_PRIMING_SAMPLES = 2112
+const XING_FIELDS: [number, number][] = [
+  [1, 4],
+  [2, 4],
+  [4, 100],
+  [8, 4],
+]
+
+function mp3TimelineSamples(bytes: Buffer): number {
+  let sync = leadingId3End(bytes)
+  while (sync + 4 <= bytes.length && !(bytes[sync] === 0xff && (bytes[sync + 1] & 0xe0) === 0xe0))
+    sync++
+  const mono = bytes[sync + 3] >> 6 === 3
+  const xing = sync + 4 + (mono ? 17 : 32)
+  if (!['Info', 'Xing'].includes(bytes.toString('latin1', xing, xing + 4))) return 0
+  const flags = bytes.readUInt32BE(xing + 4)
+  let lame = xing + 8
+  for (const [flag, size] of XING_FIELDS) if (flags & flag) lame += size
+  if (bytes.toString('latin1', lame, lame + 4) !== 'LAME') return MP3_FRAME_SAMPLES
+  const delay = (bytes[lame + 21] << 4) | (bytes[lame + 22] >> 4)
+  return MP3_FRAME_SAMPLES + delay + MP3_DECODER_DELAY
+}
+
+export function rekordboxTimelineMs(path: string): number {
+  const ext = extname(path).toLowerCase()
+  const samples =
+    ext === '.m4a'
+      ? AAC_PRIMING_SAMPLES
+      : ext === '.mp3'
+        ? mp3TimelineSamples(readFileSync(path))
+        : 0
+  return samples === 0 ? 0 : (samples / probe(path).rate) * 1000
+}
+
 function traktorBroken(nmlFile: string, set: LibrarySet, t: SeededTrack, e: Expected): Found[] {
   const nml = readFileSync(nmlFile, 'utf8')
   const final = canonical(e.at.traktor)
@@ -1061,6 +1099,7 @@ export function libraryInvariants(
     finalPath: other.path,
     at: pointingAt(other.path),
     lagMs: 0,
+    rekordboxStartMovedMs: 0,
     samplesKept: true,
     destGone: false,
   }
