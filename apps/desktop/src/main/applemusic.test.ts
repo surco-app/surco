@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
+import { errorKeyOf } from '../shared/errorKeys'
 import type { TrackMetadata } from '../shared/types'
 import {
+  ADD_RETURNED_EXISTING,
+  addToAppleMusic,
   appleMusicEntry,
   appleScriptString,
   buildAddScript,
@@ -222,6 +225,56 @@ describe('buildAddScript', () => {
   it('fails with a clear macOS 26 message instead of -2753 when the import never lands', () => {
     const script = buildAddScript('/x.aiff', base)
     expect(script).toContain('if not gotTrack then error "Música no importó el archivo')
+  })
+})
+
+// Measured 30/10: Music answers an `add` whose file matches an entry it already has with
+// that entry, importing nothing. Any copy with the same name and artist can be the one it
+// answers with, a second copy in the library or one renamed by another job of the batch,
+// so every add checks the answer against the entries that were there before it.
+describe('buildAddScript refusing an entry that was already there', () => {
+  const s = buildAddScript('/x/a.aiff', base)
+
+  it('lists the entries with the same name and artist before adding', () => {
+    const list = s.indexOf(
+      'set preexisting to persistent ID of (every track of library playlist 1 whose name is "ATB (Till I Come)" and artist is "Tom Hafman")',
+    )
+    expect(list).toBeGreaterThan(-1)
+    expect(list).toBeLessThan(s.indexOf('add POSIX file'))
+  })
+
+  // Before any tag is written: writing them first would retag the entry Music handed back.
+  it('answers with the sentinel before writing a single tag to an entry from that list', () => {
+    const check = s.indexOf(
+      `if preexisting contains (persistent ID of theTrack) then return "${ADD_RETURNED_EXISTING}"`,
+    )
+    expect(check).toBeGreaterThan(s.indexOf('repeat 600 times'))
+    expect(check).toBeLessThan(s.indexOf('set name of theTrack'))
+    expect(check).toBeGreaterThan(s.indexOf('if not gotTrack then error'))
+  })
+
+  it('checks the answer even when the add has no title or artist to recover by', () => {
+    expect(buildAddScript('/x/a.aiff', { ...base, title: '', artist: '' })).toContain(
+      'if preexisting contains (persistent ID of theTrack)',
+    )
+  })
+})
+
+describe('addToAppleMusic', () => {
+  it('fails with a translatable key when Music answered with an entry that was already there', async () => {
+    const failure = await addToAppleMusic(
+      '/x/a.aiff',
+      base,
+      undefined,
+      async () => `${ADD_RETURNED_EXISTING}\n`,
+    ).catch((e: Error) => e)
+    expect(errorKeyOf((failure as Error).message)).toBe('appleMusicAddReturnedOld')
+  })
+
+  it('returns the new entry’s persistent ID', async () => {
+    await expect(
+      addToAppleMusic('/x/a.aiff', base, undefined, async () => 'ABCDEF0123456789\n'),
+    ).resolves.toBe('ABCDEF0123456789')
   })
 })
 

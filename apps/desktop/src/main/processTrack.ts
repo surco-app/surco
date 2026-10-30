@@ -17,6 +17,7 @@ import type {
   TrackMetadata,
   TrimRange,
 } from '../shared/types'
+import { createConcurrencyLimiter } from './analysisLimiter'
 import { isAppleMusicOnly, shouldAddToAppleMusic } from './applemusic'
 import type { CoverSource, PreparedCover } from './cover'
 import {
@@ -199,11 +200,29 @@ async function replaceAppleMusicCopy(
     persistentId: job.musicPersistentId,
     label: job.replacesLabel ?? metaLabel(job),
   },
-): Promise<{
+): Promise<ReplacedCopy> {
+  return replaceLock.run(() => replaceUnlocked(job, target, coverPath, deps, handedOver, old))
+}
+
+interface ReplacedCopy {
   added: string
   oldCopyKept?: 'mismatch' | 'error' | 'carry'
   landed?: MediaCopy
-}> {
+}
+
+// One replacement at a time across the jobs of a batch: Music only serializes each script,
+// and another job's add landing between this one's rename and restore is the window where
+// Music hands back a copy other than the one being replaced.
+const replaceLock = createConcurrencyLimiter(1)
+
+async function replaceUnlocked(
+  job: ProcessJob,
+  target: string,
+  coverPath: string | undefined,
+  deps: ProcessTrackDeps,
+  handedOver: { tmpDir?: string } | undefined,
+  old: { persistentId?: string; label: string },
+): Promise<ReplacedCopy> {
   const marked =
     !!old.persistentId &&
     (await deps.markAppleMusicReplacing(old.persistentId, old.label, true)) === 'set'

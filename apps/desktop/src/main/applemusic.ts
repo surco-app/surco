@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import log from 'electron-log/main'
+import { errorWithKey } from '../shared/errorKeys'
 import type {
   AppleMusicLookupCandidate,
   MusicFileEntry,
@@ -111,6 +112,9 @@ function numericFields(meta: TrackMetadata): [string, string][] {
 // re-raise any other error, and fail loud if it never becomes writable. The
 // 600 tries × 0.1s give a 60s window: a 10s one was not enough for a large
 // extended-mix AIFF copied into the library, which gave up and landed untagged.
+// What the add answers when Music handed back an entry that was already in the library.
+export const ADD_RETURNED_EXISTING = 'surco-add-returned-existing'
+
 export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?: string): string {
   const sets: string[] = []
 
@@ -172,6 +176,11 @@ export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?
     // Two seconds of slack: date added has second resolution, and an import that
     // races the clock edge must still fall inside the recovery window.
     ...(canRecover ? ['    set importStarted to (current date) - 2'] : []),
+    // Music answers an add whose file matches an entry it already has with that entry,
+    // importing nothing (measured 30/10, even across formats). Any copy carrying the same
+    // name and artist can be that entry, so the answer is checked against all of them,
+    // before a single tag is written to it.
+    `    set preexisting to persistent ID of (every track of library playlist 1 whose name is ${appleScriptString(meta.title)} and artist is ${appleScriptString(meta.artist)})`,
     `    set theTrack to add POSIX file ${appleScriptString(filePath)}`,
     '    set gotTrack to true',
     '    try',
@@ -184,6 +193,7 @@ export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?
     '    set metaSet to false',
     '    repeat 600 times',
     '      try',
+    `        if preexisting contains (persistent ID of theTrack) then return "${ADD_RETURNED_EXISTING}"`,
     ...sets.map((line) => `  ${line}`),
     '        set metaSet to true',
     '        exit repeat',
@@ -1043,9 +1053,11 @@ export async function addToAppleMusic(
   filePath: string,
   meta: TrackMetadata,
   coverPath?: string,
+  run: typeof runOsascript = runOsascript,
 ): Promise<string> {
-  const stdout = await runOsascript(buildAddScript(filePath, meta, coverPath))
-  return stdout.trim()
+  const answer = (await run(buildAddScript(filePath, meta, coverPath))).trim()
+  if (answer === ADD_RETURNED_EXISTING) throw errorWithKey('appleMusicAddReturnedOld', filePath)
+  return answer
 }
 
 // null means the library copy is gone (the script's "missing"): the caller decides

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import log from 'electron-log/main'
 import { describe, expect, it, vi } from 'vitest'
-import { errorKeyOf } from '../shared/errorKeys'
+import { errorKeyOf, errorWithKey } from '../shared/errorKeys'
 import type { ProcessJob, Settings, TrackMetadata } from '../shared/types'
 import { createOutputReservations } from './outputReservations'
 import { type ProcessTrackDeps, runProcessTrack } from './processTrack'
@@ -2263,6 +2263,86 @@ describe('runProcessTrack — Music answering an add with the entry it already h
 
     expect(calls).toEqual(['mark old-id', 'add', 'unmark old-id', 'carry'])
     expect(result.oldMusicCopyKept).toBe('carry')
+  })
+
+  // The renderer runs a batch's conversions in parallel and Music only serializes single
+  // scripts: a second job's add landing between this one's rename and its restore is the
+  // window where Music hands back a copy that is not the one being replaced.
+  it('runs one replacement at a time so two jobs cannot interleave rename, add and delete', async () => {
+    let release = () => {}
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const deps = recording({
+      addToAppleMusic: vi.fn(async (file: string) => {
+        calls.push(`add ${file}`)
+        if (file.includes('One')) await gate
+        return file.includes('One') ? 'new-1' : 'new-2'
+      }),
+    })
+    const replaceOf = (id: string, name: string, pid: string) =>
+      runProcessTrack(
+        job({
+          id,
+          outputName: name,
+          meta: { artist: 'A', title: name } as TrackMetadata,
+          addToAppleMusic: true,
+          musicPersistentId: pid,
+          replacesPath: `/m/${name}.wav`,
+          replacesLabel: `A - ${name}`,
+        }),
+        deps,
+      )
+
+    const one = replaceOf('a', 'One', 'old-1')
+    const two = replaceOf('b', 'Two', 'old-2')
+    await vi.waitFor(() => expect(calls).toContain('add /out/One.aiff'))
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(calls).not.toContain('mark old-2')
+    release()
+    await Promise.all([one, two])
+
+    expect(calls.indexOf('delete old-1')).toBeLessThan(calls.indexOf('mark old-2'))
+  })
+
+  // Every add refuses an answer that was already in the library (appleMusic.ts), the plain
+  // add included: verified against that entry's own file, it reported success while the
+  // collections were redirected to the old file.
+  it('fails "Apple Music only" when a plain add is answered with an entry already there', async () => {
+    const redirectRepoint = vi.fn(() => true)
+    const deps = recording({
+      settings: settings({ keepOutputCopy: false }),
+      redirectRepoint,
+      addToAppleMusic: vi.fn(async () => {
+        throw errorWithKey('appleMusicAddReturnedOld', '/tmp/x')
+      }),
+    })
+
+    await expect(
+      runProcessTrack(
+        job({ meta: replaceJob.meta, addToAppleMusic: true, keepOutputCopy: false }),
+        deps,
+      ),
+    ).rejects.toThrow('appleMusicAddReturnedOld')
+
+    expect(redirectRepoint).not.toHaveBeenCalled()
+    expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
+  })
+
+  it('reports the Music step failed when a plain add with an output copy is answered with an entry already there', async () => {
+    const deps = recording({
+      addToAppleMusic: vi.fn(async () => {
+        throw errorWithKey('appleMusicAddReturnedOld', '/out/x')
+      }),
+    })
+
+    const result = await runProcessTrack(
+      job({ meta: replaceJob.meta, addToAppleMusic: true }),
+      deps,
+    )
+
+    expect(result.appleMusicFailed).toBe(true)
+    expect(result.musicPersistentId).toBeUndefined()
   })
 
   // An entry that no longer carries the confirmed name is not renamed, so there is nothing to
