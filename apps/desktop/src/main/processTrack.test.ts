@@ -1821,6 +1821,29 @@ describe('runProcessTrack — Apple Music only into the Media folder', () => {
     )
   })
 
+  // A blank album artist is no album artist: Music files under the artist then. A folder
+  // ending in a dot is renamed by an SMB share, and one starting with it is hidden.
+  it('files a blank album artist under the artist and keeps dots off the folder ends', async () => {
+    const deps = intoMedia()
+    await runProcessTrack(
+      musicJob({ meta: { ...meta, albumArtist: '   ', artist: 'Mr. Oizo.', album: '...Baby' } }),
+      deps,
+    )
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith(
+      `${media}/Music/Mr. Oizo/Baby/Artist - Title.wav`,
+      expect.anything(),
+      undefined,
+    )
+
+    const dots = intoMedia()
+    await runProcessTrack(musicJob({ meta: { ...meta, artist: '...', album: '.' } }), dots)
+    expect(dots.addToAppleMusic).toHaveBeenCalledWith(
+      `${media}/Music/Unknown Artist/Unknown Album/Artist - Title.wav`,
+      expect.anything(),
+      undefined,
+    )
+  })
+
   it('removes the file and the folders it made when the add fails', async () => {
     const deps = intoMedia({
       addToAppleMusic: vi.fn(async () => {

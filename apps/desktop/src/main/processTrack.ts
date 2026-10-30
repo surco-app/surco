@@ -341,9 +341,13 @@ async function verifyMediaCopy(
 
 // Music files a copy under <Media>/Music/<album artist, else artist>/<album>/. A slash or
 // colon in a tag would open another folder (Finder shows "/" as ":"), so both become "_"
-// the way Music writes them, and the rest follows the output name's own rules.
+// the way Music writes them, and the rest follows the output name's own rules. Dots go off
+// both ends: an SMB share renames a folder ending in one, and one starting with it is hidden.
 function musicFolder(name: string | undefined, fallback: string): string {
-  return sanitizeOutputName((name ?? '').replace(/[/:]/g, '_')).normalize('NFD') || fallback
+  const folder = sanitizeOutputName((name ?? '').replace(/[/:]/g, '_'))
+    .replace(/^[.\s]+|[.\s]+$/g, '')
+    .normalize('NFD')
+  return folder || fallback
 }
 
 // A conversion written into the Media folder that Music never took: the file goes, then each
@@ -526,7 +530,7 @@ export async function runProcessTrack(
           ? join(
               media,
               'Music',
-              musicFolder(job.meta.albumArtist || job.meta.artist, 'Unknown Artist'),
+              musicFolder(job.meta.albumArtist?.trim() || job.meta.artist, 'Unknown Artist'),
               musicFolder(job.meta.album, 'Unknown Album'),
               basename(outputPath),
             )
