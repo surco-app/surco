@@ -76,8 +76,11 @@ function renderScreen(
     onReveal: vi.fn(),
     ...over,
   }
-  render(<CopiesScreen {...props} />)
-  return props
+  const { rerender } = render(<CopiesScreen {...props} />)
+  return {
+    ...props,
+    rerender: (next: ProgramCopies[]) => rerender(<CopiesScreen {...props} programs={next} />),
+  }
 }
 
 const latest = copy({ id: 'new' })
@@ -150,6 +153,78 @@ describe('CopiesScreen', () => {
     expect(screen.getByTestId('copies-kept-rekordbox')).toHaveTextContent(
       i18n.t('copies.kept', { count: 1, max: 5 }),
     )
+  })
+
+  it('the confirmation names the time the library goes back to', () => {
+    renderScreen([program('rekordbox', { copies: [latest, older] })])
+    fireEvent.click(screen.getByTestId('copies-restore-rekordbox'))
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      i18n.t('copies.confirm.title', {
+        program: i18n.t('sources.rekordbox'),
+        when: when(latest.takenAt),
+      }),
+    )
+  })
+
+  it('the confirmation counts the waiting changes there are when it is read, not when it opened', () => {
+    const view = renderScreen([program('rekordbox', { copies: [latest], pending: 1 })])
+    fireEvent.click(screen.getByTestId('copies-restore-rekordbox'))
+    view.rerender([program('rekordbox', { copies: [latest], pending: 4 })])
+    const name = i18n.t('sources.rekordbox')
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      i18n.t('copies.confirm.queue', { count: 4, program: name }),
+    )
+    fireEvent.click(screen.getByTestId('confirm-ok'))
+    expect(view.onRestore).toHaveBeenCalledWith('rekordbox', 'new')
+  })
+
+  it('closes the confirmation when the copy it would restore is gone', () => {
+    const view = renderScreen([program('rekordbox', { copies: [latest] })])
+    fireEvent.click(screen.getByTestId('copies-restore-rekordbox'))
+    view.rerender([program('rekordbox', { copies: [older] })])
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    view.rerender([program('rekordbox', { copies: [latest, older] })])
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('a restore that throws says the library did not change', async () => {
+    renderScreen([program('rekordbox', { copies: [latest] })], {
+      onRestore: vi.fn(async (): Promise<RestoreResult> => {
+        throw new Error('ipc gone')
+      }),
+    })
+    fireEvent.click(screen.getByTestId('copies-restore-rekordbox'))
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('confirm-ok'))
+    })
+    expect(screen.getByTestId('copies-refused-rekordbox')).toHaveTextContent(
+      i18n.t('copies.refused.failed'),
+    )
+  })
+
+  it('a restore that worked says to when, until the next attempt', async () => {
+    const onRestore = vi
+      .fn<(p: DjProgram, id: string) => Promise<RestoreResult>>()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: false, reason: 'running' })
+    renderScreen([program('rekordbox', { copies: [latest, older] })], { onRestore })
+    fireEvent.click(screen.getByTestId('copies-toggle-rekordbox'))
+    fireEvent.click(screen.getByTestId('copies-restore-item-old'))
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('confirm-ok'))
+    })
+    expect(screen.getByTestId('copies-restored-rekordbox')).toHaveTextContent(
+      i18n.t('copies.restored', {
+        program: i18n.t('sources.rekordbox'),
+        when: when(older.takenAt),
+      }),
+    )
+    fireEvent.click(screen.getByTestId('copies-restore-rekordbox'))
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('confirm-ok'))
+    })
+    expect(screen.queryByTestId('copies-restored-rekordbox')).not.toBeInTheDocument()
+    expect(screen.getByTestId('copies-refused-rekordbox')).toBeInTheDocument()
   })
 
   it('restore stays available for a program set to "No tocar"', () => {

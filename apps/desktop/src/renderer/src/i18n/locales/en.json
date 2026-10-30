@@ -2844,6 +2844,7 @@
       "other-collection": "This backup no longer matches your current collection.",
       "failed": "Couldn't restore. Your library hasn't changed."
     },
+    "restored": "Done: {{program}} is back to how it was {{when}}.",
     "music": {
       "title": "Music files",
       "state": "Originals kept"

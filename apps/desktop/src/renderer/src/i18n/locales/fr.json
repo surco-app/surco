@@ -2844,6 +2844,7 @@
       "other-collection": "Cette sauvegarde ne correspond plus à ta collection actuelle.",
       "failed": "La restauration a échoué. Ta bibliothèque n'a pas changé."
     },
+    "restored": "C'est fait : {{program}} est revenu tel qu'il était {{when}}.",
     "music": {
       "title": "Fichiers de musique",
       "state": "Originaux conservés"

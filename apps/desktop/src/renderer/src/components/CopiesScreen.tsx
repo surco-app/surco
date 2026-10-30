@@ -23,6 +23,8 @@ interface Props {
   onReveal: () => void
 }
 
+type Outcome = { ok: true; takenAt: number } | { ok: false; reason: RestoreRefusal }
+
 const PROGRAM_ORDER: DjProgram[] = ['rekordbox', 'traktor', 'engine']
 
 const STATE_TONE: Record<ProgramState, string> = {
@@ -73,11 +75,11 @@ function Fact({
 
 function ProgramSection({
   entry,
-  refusal,
+  outcome,
   onAsk,
 }: {
   entry: ProgramCopies
-  refusal?: RestoreRefusal
+  outcome?: Outcome
   onAsk: (copy: LibraryCopy) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -140,13 +142,22 @@ function ProgramSection({
           {tr('copies.restore')}
         </button>
       </div>
-      {refusal && (
+      {outcome?.ok === false && (
         <p
           role="status"
           data-testid={`copies-refused-${program}`}
           className="col-span-2 col-start-2 text-[13px] text-[var(--color-danger)]"
         >
-          {tr(`copies.refused.${refusal}`, { program: name })}
+          {tr(`copies.refused.${outcome.reason}`, { program: name })}
+        </p>
+      )}
+      {outcome?.ok && (
+        <p
+          role="status"
+          data-testid={`copies-restored-${program}`}
+          className="col-span-2 col-start-2 text-[13px] text-[var(--color-good)]"
+        >
+          {tr('copies.restored', { program: name, when: when(outcome.takenAt) })}
         </p>
       )}
       {open && listed.length > 0 && (
@@ -258,14 +269,28 @@ export function CopiesScreen({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const when = useWhen()
-  const [asking, setAsking] = useState<{ entry: ProgramCopies; copy: LibraryCopy } | null>(null)
-  const [refused, setRefused] = useState<Partial<Record<DjProgram, RestoreRefusal>>>({})
+  const [asking, setAsking] = useState<{ program: DjProgram; copyId: string } | null>(null)
+  const [outcomes, setOutcomes] = useState<Partial<Record<DjProgram, Outcome>>>({})
   const sorted = PROGRAM_ORDER.flatMap((p) => programs.filter((e) => e.program === p))
+  const askedEntry = asking && programs.find((e) => e.program === asking.program)
+  const askedCopy =
+    askedEntry && [askedEntry.restore, ...askedEntry.copies].find((c) => c?.id === asking?.copyId)
 
-  const restore = async (entry: ProgramCopies, copy: LibraryCopy): Promise<void> => {
-    setRefused((r) => ({ ...r, [entry.program]: undefined }))
-    const result = await onRestore(entry.program, copy.id)
-    if (!result.ok) setRefused((r) => ({ ...r, [entry.program]: result.reason }))
+  useEffect(() => {
+    if (asking && !askedCopy) setAsking(null)
+  }, [asking, askedCopy])
+
+  const settle = (program: DjProgram, outcome: Outcome | undefined): void =>
+    setOutcomes((o) => ({ ...o, [program]: outcome }))
+
+  const restore = async (program: DjProgram, copy: LibraryCopy): Promise<void> => {
+    settle(program, undefined)
+    try {
+      const result = await onRestore(program, copy.id)
+      settle(program, result.ok ? { ok: true, takenAt: copy.takenAt } : result)
+    } catch {
+      settle(program, { ok: false, reason: 'failed' })
+    }
   }
 
   const confirmText = (entry: ProgramCopies): string => {
@@ -293,8 +318,8 @@ export function CopiesScreen({
           <ProgramSection
             key={entry.program}
             entry={entry}
-            refusal={refused[entry.program]}
-            onAsk={(copy) => setAsking({ entry, copy })}
+            outcome={outcomes[entry.program]}
+            onAsk={(copy) => setAsking({ program: entry.program, copyId: copy.id })}
           />
         ))}
         <MusicSection trash={trash} openMusic={openMusic} />
@@ -312,15 +337,15 @@ export function CopiesScreen({
           {tr(isWindows() ? 'copies.revealWin' : 'copies.reveal')}
         </button>
       </footer>
-      {asking && (
+      {askedEntry && askedCopy && (
         <ConfirmDialog
           title={tr('copies.confirm.title', {
-            program: tr(`sources.${asking.entry.program}`),
-            when: when(asking.copy.takenAt),
+            program: tr(`sources.${askedEntry.program}`),
+            when: when(askedCopy.takenAt),
           })}
-          message={confirmText(asking.entry)}
+          message={confirmText(askedEntry)}
           confirmLabel={tr('copies.confirm.ok')}
-          onConfirm={() => void restore(asking.entry, asking.copy)}
+          onConfirm={() => void restore(askedEntry.program, askedCopy)}
           onClose={() => setAsking(null)}
         />
       )}

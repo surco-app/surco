@@ -2844,6 +2844,7 @@
       "other-collection": "Esta copia ya no corresponde a tu colección actual.",
       "failed": "No se pudo restaurar. Tu biblioteca no ha cambiado."
     },
+    "restored": "Listo: {{program}} ha vuelto a como estaba {{when}}.",
     "music": {
       "title": "Archivos de música",
       "state": "Originales guardados"

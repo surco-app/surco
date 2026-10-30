@@ -2844,6 +2844,7 @@
       "other-collection": "Dieses Backup gehört nicht mehr zu deiner aktuellen Sammlung.",
       "failed": "Wiederherstellen nicht möglich. Deine Bibliothek ist unverändert."
     },
+    "restored": "Fertig: {{program}} ist wieder auf dem Stand von {{when}}.",
     "music": {
       "title": "Musikdateien",
       "state": "Originale gespeichert"
