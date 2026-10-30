@@ -12,7 +12,7 @@ import { osTrash } from '../electronFake'
 import { music } from '../fakeMusic'
 import { scenarioDir } from '../fixtures'
 import { type ConflictChoice, openSurco, type Sabotage, type Scenario } from '../harness'
-import { type Cell, type CellGroup, type Origin, qualitySettings } from './cells'
+import { type Cell, type CellGroup, type Origin, qualitySettings, type SabotageId } from './cells'
 import { buildLibraries, type LibrarySet, type SeededTrack, syncedPrograms } from './libraries'
 import {
   type Expected,
@@ -23,6 +23,7 @@ import {
   pointingAt,
 } from './oracle'
 import type { CellOutcome } from './report'
+import { SABOTAGES } from './sabotage'
 import { makeSource } from './sources'
 
 const EXTENSION: Record<OutputFormat, string> = {
@@ -133,13 +134,22 @@ function unreadableOnce(set: LibrarySet, cell: Cell): { sabotage: Sabotage; rest
   }
 }
 
+function sabotageOf(id: SabotageId): (typeof SABOTAGES)[SabotageId] {
+  const make = SABOTAGES[id]
+  if (!make) throw new Error(`scenario: no sabotage ${id}`)
+  return make
+}
+
 function programsOpen(open: boolean): void {
   vi.mocked(isRekordboxRunning).mockResolvedValue(open)
   vi.mocked(isEngineDjRunning).mockResolvedValue(open)
   vi.mocked(isTraktorRunning).mockResolvedValue(open)
 }
 
-export async function runGroup(group: CellGroup): Promise<CellOutcome[]> {
+export async function runGroup(
+  group: CellGroup,
+  afterSettled?: (set: LibrarySet, written: string[]) => void,
+): Promise<CellOutcome[]> {
   const [first] = group.cells
   const root = scenarioDir(`matriz-${first.id}`)
   const outputDir = join(root, 'Salida')
@@ -166,10 +176,11 @@ export async function runGroup(group: CellGroup): Promise<CellOutcome[]> {
       })
   const written = group.cells.map((cell, i) => writtenPath(cell, sources[i].path, outputDir))
   const retry = first.state === 'retry' ? unreadableOnce(set, first) : undefined
+  const sabotage = first.sabotage ? sabotageOf(first.sabotage)(set, set.tracks[0]) : undefined
   const keepBoth = group.cells.some((cell) => NAME_TAKEN.has(cell.id))
   const surco = await openSurco({
     verify: true,
-    sabotage: retry?.sabotage,
+    sabotage: retry?.sabotage ?? sabotage,
     onConflict: keepBoth ? (): ConflictChoice => 'keepBoth' : undefined,
     settings: {
       ...set.settings,
@@ -191,6 +202,7 @@ export async function runGroup(group: CellGroup): Promise<CellOutcome[]> {
     if (first.dest === 'appleMusic') for (const name of names) await surco.convertInEditor(name)
     else await surco.convertAll('confirm', first.target)
     await surco.settled()
+    afterSettled?.(set, written)
     if (first.state === 'open') {
       for (const [i, s] of sources.entries())
         openUntil[i] = surco.statuses(rowName(surco, s.path, written[i])).length

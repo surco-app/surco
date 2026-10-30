@@ -787,6 +787,13 @@ describe('Synthetic libraries the matrix judges on its own', () => {
       seen(judgeMusic(), 'playlists', 'Music: la playlist Sábado')
     })
 
+    it('sees the entry carrying other tags than the file was given', () => {
+      const entry = own()
+      if (entry) Object.assign(entry, { title: 'Otro título', grouping: '' })
+      seen(judgeMusic(), 'tags', "Music: título 'Otro título'")
+      seen(judgeMusic(), 'tags', "Music: grouping ''")
+    })
+
     it('sees a second entry for the same file', () => {
       music.addEntry({ location: withMusic.tracks[0].path.normalize('NFC'), title: 'x' })
       seen(judgeMusic(), 'unique', 'Music: 2 entradas')

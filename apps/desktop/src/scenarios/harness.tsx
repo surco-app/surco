@@ -136,6 +136,7 @@ export interface ScenarioOptions {
 // reads it back, so the check has something real to catch.
 export interface Sabotage {
   afterConvert?: (finalPath: string) => void | Promise<void>
+  beforeMusicCheck?: () => void | Promise<void>
   beforeLibraryCheck?: () => void | Promise<void>
 }
 
@@ -319,10 +320,12 @@ function processTrackInMain(
             .then((facts) => (facts === 'missing' ? [] : facts.playlists))
         : [],
     verifyFile: (expect, signal) => checkFile(expect, fileReaders, { signal }),
-    verifyMusic: async (expect, signal) =>
-      musicIsFake
+    verifyMusic: async (expect, signal) => {
+      await options.sabotage?.beforeMusicCheck?.()
+      return musicIsFake
         ? checkAppleMusic(expect, musicReaders, { signal })
-        : { place: 'appleMusic', state: 'ok', detail: { key: 'musicOneNoPlaylists' } },
+        : { place: 'appleMusic', state: 'ok', detail: { key: 'musicOneNoPlaylists' } }
+    },
     redirectRepoint: (to, landed) => {
       redirectRekordboxRepoint(to, landed)
       return redirectNmlPatch(to, landed, toNmlLocation(landed))

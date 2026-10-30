@@ -934,6 +934,13 @@ function stayedEntryBroken(nml: string, set: LibrarySet, t: SeededTrack): Found[
   return found
 }
 
+const MUSIC_TAGS: [string, 'title' | 'artist' | 'album' | 'grouping'][] = [
+  ['título', 'title'],
+  ['artista', 'artist'],
+  ['álbum', 'album'],
+  ['grouping', 'grouping'],
+]
+
 function musicBroken(t: SeededTrack, e: Expected): Found[] {
   const final = canonical(e.at.music)
   const living = music.state.entries.filter(
@@ -945,6 +952,10 @@ function musicBroken(t: SeededTrack, e: Expected): Found[] {
   const old = t.musicPid ? music.entry(t.musicPid) : undefined
   if (old && (old.location === null || canonical(old.location) !== final))
     found.push(['points', 'Music: la entrada vieja sigue viva'])
+  for (const entry of living)
+    for (const [label, field] of MUSIC_TAGS)
+      if (entry[field].normalize('NFC') !== t.tags[field].normalize('NFC'))
+        found.push(['tags', `Music: ${label} '${entry[field]}', se esperaba '${t.tags[field]}'`])
   for (const pid of t.playlists.music) {
     const list = music.playlist(pid)
     if (!living.some((x) => list?.entries.includes(x.persistentId)))
