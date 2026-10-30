@@ -4,6 +4,7 @@ import type { CueJumpBars } from './cueJump'
 import type { CueQuantize } from './cueQuantize'
 import type { StrongPart, WantedCue } from './cueRules'
 import type { EditorSectionPref } from './editorSections'
+import type { ErrorKey } from './errorKeys'
 import type { Chord } from './shortcuts'
 import type { Verification } from './verification'
 
@@ -1301,6 +1302,8 @@ export interface ProcessResult {
   // new file, which the row moves to like an in-place conversion.
   musicLandedPath?: string
   appleMusicFailed?: true
+  // The stamped reason the Apple Music step failed, when it had one the user can act on.
+  appleMusicErrorKey?: ErrorKey
   // Set when the converted file landed but the original it replaced in a format change
   // could not be retired, so both are in the folder.
   originalKept?: true

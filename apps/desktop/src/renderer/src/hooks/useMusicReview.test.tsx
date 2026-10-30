@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { createHash } from 'node:crypto'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
@@ -205,6 +206,29 @@ describe('useMusicReview', () => {
     expect(onFilesChanged).toHaveBeenLastCalledWith([
       { path: '/m/c.mp3', fields: { artist: { from: 'DJ Lara', to: 'Dj Lara' } } },
     ])
+  })
+
+  // Measured on 30/10: Music rewrites the file the moment a tag is set on the entry, the
+  // one set back by an undo too. Restored before that, the original is rewritten again.
+  it('ends an undo with the original bytes on disk though Music rewrites the file', async () => {
+    const original = Buffer.from('the DJ’s original file')
+    let disk = Buffer.from('written by the review')
+    const sha1 = (b: Buffer) => createHash('sha1').update(b).digest('hex')
+    setApi({
+      setMusicField: vi.fn<Api['setMusicField']>(async (_pid, _field, _from, to) => {
+        disk = Buffer.from(`rewritten by Music with ${to}`)
+        return 'set'
+      }),
+      trashRestore: vi.fn<Api['trashRestore']>(async () => {
+        disk = original
+        return { restoredTo: '/m/c.mp3' }
+      }),
+    })
+    const { result } = await ready()
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    await act(() => result.current.undo())
+    expect(sha1(disk)).toBe(sha1(original))
   })
 
   it('never stages a tie until the user picks a spelling', async () => {
@@ -769,7 +793,6 @@ describe('useMusicReview', () => {
       .mockResolvedValue({ restoredTo: '/m/d.mp3' })
     const { api, result } = await runTwo({ trashRestore })
     await act(() => result.current.undo())
-    expect(api.setMusicField).toHaveBeenCalledTimes(1)
     expect(api.setMusicField).toHaveBeenCalledWith('D', 'artist', 'DJ Lara', 'dj lara')
     expect(api.syncLibraryTags).toHaveBeenLastCalledWith([
       { path: '/m/d.mp3', fields: { artist: { from: 'DJ Lara', to: 'dj lara' } } },
@@ -777,6 +800,25 @@ describe('useMusicReview', () => {
     expect(result.current.lastRun).toMatchObject({ undoFailures: 1 })
     expect(result.current.lastRun?.outcomes.map((o) => o.id)).toEqual(['C'])
     expect(result.current.status).toBe('ready')
+  })
+
+  // Music is set back before the file, so a restore that fails leaves only the file owed:
+  // the retry restores it without asking Music a second time.
+  it('retries only the restore of a file whose Music value already went back', async () => {
+    const trashRestore = vi
+      .fn<Api['trashRestore']>()
+      .mockRejectedValueOnce(new Error('busy'))
+      .mockResolvedValue({ restoredTo: '/m/c.mp3' })
+    const { api, result } = await runTwo({ trashRestore })
+    await act(() => result.current.undo())
+    expect(api.setMusicField).toHaveBeenCalledTimes(2)
+    await act(() => result.current.undo())
+    expect(api.setMusicField).toHaveBeenCalledTimes(2)
+    expect(trashRestore).toHaveBeenLastCalledWith('b1', 'undo')
+    expect(api.syncLibraryTags).toHaveBeenLastCalledWith([
+      { path: '/m/c.mp3', fields: { artist: { from: 'DJ Lara', to: 'Dj Lara' } } },
+    ])
+    expect(result.current.lastRun).toBeNull()
   })
 
   it('forgets the removals and library lines when a failed undo leaves the run to retry', async () => {

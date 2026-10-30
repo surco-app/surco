@@ -452,7 +452,12 @@ export function useTrackProcessing({
           ),
         })
         if (result.appleMusicFailed) {
-          updateTrack(id, { musicStatus: 'error', musicError: tr('editor.appleMusicError') })
+          updateTrack(id, {
+            musicStatus: 'error',
+            musicError: result.appleMusicErrorKey
+              ? tr(`errors.${result.appleMusicErrorKey}`)
+              : tr('editor.appleMusicError'),
+          })
           onAppleMusicFailed?.(track.listLabel)
         }
         // Every conversion replaces the file at the output path, so probes cached for
@@ -607,7 +612,7 @@ export function useTrackProcessing({
     } catch (e) {
       updateTrack(id, {
         musicStatus: 'error',
-        musicError: e instanceof Error ? e.message : tr('editor.appleMusicError'),
+        musicError: mainErrorMessage(e, tr, tr('editor.appleMusicError')),
       })
     }
   })

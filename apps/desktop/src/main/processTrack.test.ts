@@ -1,12 +1,14 @@
-import { readFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import log from 'electron-log/main'
 import { describe, expect, it, vi } from 'vitest'
 import { errorKeyOf, errorWithKey, splitNameLeftMarked } from '../shared/errorKeys'
-import type { ProcessJob, Settings, TrackMetadata } from '../shared/types'
+import type { ProcessJob, Settings, TrackMetadata, TrashEntry } from '../shared/types'
 import type { PlaceCheck } from '../shared/verification'
 import { createActiveConversions } from './activeConversions'
 import type { ConversionWritten } from './ffmpeg'
+import { configureBackupDiscarder, configureOriginalKeeper, policyKeeper } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
 import { type ProcessTrackDeps, replaceAppleMusicCopy, runProcessTrack } from './processTrack'
 
@@ -2895,6 +2897,165 @@ describe('runProcessTrack — converting a library track to another format', () 
 
     expect(result.supersededPath).toBe('/Users/me/Music/Media/A.aiff')
     expect(result.musicLandedPath).toBeUndefined()
+  })
+
+  // Measured on 30/10: Music rewrites an entry's file the moment a tag is set on it. The
+  // entry the job knows may play a file of the DJ's this conversion never wrote.
+  it('backs up the file an updated entry plays before Music retags it', async () => {
+    const deps = converting('/lib/A.aiff')
+    const keeper = vi.fn(async () => null)
+    configureOriginalKeeper(keeper)
+    try {
+      await runProcessTrack(
+        libraryJob({ inputPath: '/lib/A.wav', format: 'aiff', keepOutputCopy: true }),
+        deps,
+      )
+    } finally {
+      configureOriginalKeeper(null)
+    }
+
+    expect(keeper).toHaveBeenCalledWith('/lib/A.aiff', 'replaced', '/lib/A.aiff', {
+      reencodes: false,
+      staysInPlace: true,
+    })
+    expect(keeper.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(deps.updateInAppleMusic).mock.invocationCallOrder[0],
+    )
+  })
+
+  it('leaves Music alone and names why when that backup has no room', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-pt-'))
+    const entryFile = join(dir, 'A.aiff')
+    writeFileSync(entryFile, 'audio')
+    const deps = converting(entryFile)
+    configureOriginalKeeper(
+      policyKeeper(
+        () => 'always',
+        async () => null,
+      ),
+    )
+    let result: Awaited<ReturnType<typeof runProcessTrack>>
+    try {
+      result = await runProcessTrack(
+        libraryJob({ inputPath: '/lib/A.wav', format: 'aiff', keepOutputCopy: true }),
+        deps,
+      )
+    } finally {
+      configureOriginalKeeper(null)
+    }
+
+    expect(deps.updateInAppleMusic).not.toHaveBeenCalled()
+    expect(result).toMatchObject({
+      appleMusicFailed: true,
+      appleMusicErrorKey: 'noRoomBeforeMusicRewrite',
+    })
+  })
+
+  // Beside the original, a same-format conversion writes a new file and leaves the source
+  // where it is: the entry the job knows keeps playing it, and Music retags it there.
+  it('backs up the source beside which it converted before Music retags it', async () => {
+    const deps = converting('/lib/A.aiff')
+    const keeper = vi.fn(async () => null)
+    configureOriginalKeeper(keeper)
+    let result: Awaited<ReturnType<typeof runProcessTrack>>
+    try {
+      result = await runProcessTrack(
+        libraryJob({ format: 'aiff', convertBesideOriginal: true, keepOutputCopy: true }),
+        deps,
+      )
+    } finally {
+      configureOriginalKeeper(null)
+    }
+
+    expect(result.inPlace).toBe(false)
+    expect(keeper).toHaveBeenCalledWith('/lib/A.aiff', 'replaced', '/lib/A.aiff', {
+      reencodes: false,
+      staysInPlace: true,
+    })
+    expect(keeper.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(deps.updateInAppleMusic).mock.invocationCallOrder[0],
+    )
+  })
+
+  it('drops that backup when the entry turned out gone and Music touched nothing', async () => {
+    const deps = converting('/lib/A.aiff', { updateInAppleMusic: vi.fn(async () => null) })
+    const kept = { id: 'kept' } as TrashEntry
+    const discarded = vi.fn(async () => {})
+    configureOriginalKeeper(vi.fn(async () => kept))
+    configureBackupDiscarder(discarded)
+    try {
+      await runProcessTrack(
+        libraryJob({ inputPath: '/lib/A.wav', format: 'aiff', keepOutputCopy: true }),
+        deps,
+      )
+    } finally {
+      configureOriginalKeeper(null)
+      configureBackupDiscarder(null)
+    }
+
+    expect(discarded).toHaveBeenCalledWith(kept)
+  })
+
+  it('leaves Music alone when the renamed original has no room for its copy', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-pt-'))
+    const source = join(dir, 'A.aiff')
+    writeFileSync(source, 'audio')
+    const deps = converting(source)
+    configureOriginalKeeper(
+      policyKeeper(
+        () => 'always',
+        async () => null,
+      ),
+    )
+    let result: Awaited<ReturnType<typeof runProcessTrack>>
+    try {
+      result = await runProcessTrack(
+        libraryJob({
+          inputPath: source,
+          format: 'aiff',
+          overwriteOriginal: true,
+          keepOutputCopy: true,
+        }),
+        deps,
+      )
+    } finally {
+      configureOriginalKeeper(null)
+    }
+
+    expect(deps.updateInAppleMusic).not.toHaveBeenCalled()
+    expect(result).toMatchObject({
+      appleMusicFailed: true,
+      appleMusicErrorKey: 'noRoomBeforeMusicRewrite',
+    })
+  })
+
+  // Retired after the Music step, the original went to Originals as Music had rewritten
+  // it. The copy is taken before Music, and the retirement only removes the file.
+  it('keeps the renamed original as it was before Music retagged it', async () => {
+    const deps = converting('/lib/A.aiff')
+    const keeper = vi.fn(async () => ({ id: 'kept' }) as TrashEntry)
+    configureOriginalKeeper(keeper)
+    try {
+      await runProcessTrack(
+        libraryJob({ format: 'aiff', overwriteOriginal: true, keepOutputCopy: true }),
+        deps,
+      )
+    } finally {
+      configureOriginalKeeper(null)
+    }
+
+    expect(keeper).toHaveBeenCalledWith('/lib/A.aiff', 'replaced', '/lib/Artist - Title.aiff', {
+      reencodes: true,
+      staysInPlace: true,
+    })
+    expect(keeper.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(deps.updateInAppleMusic).mock.invocationCallOrder[0],
+    )
+    expect(deps.removeRenamedOriginal).toHaveBeenCalledWith(
+      '/lib/A.aiff',
+      '/lib/Artist - Title.aiff',
+      true,
+    )
   })
 
   // The in-place rename already retired the AIFF: offering it again would trash nothing.

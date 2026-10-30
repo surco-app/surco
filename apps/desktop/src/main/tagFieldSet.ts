@@ -130,13 +130,18 @@ function onDiskTags(f: TagFile): Tag[] {
   return tags
 }
 
-function setOne(f: TagFile, { field, from, to }: TagFieldChange): FieldWrite {
-  if (!matches(firstHeld(f, field), from)) return 'unchanged'
+function holds(f: TagFile, field: MusicReviewField, value: string): boolean {
+  if (!matches(firstHeld(f, field), value)) return false
   for (const tag of onDiskTags(f)) {
     for (const values of readValues(tag, field)) {
-      if (values.length > 0 && !matches(values, from)) return 'unchanged'
+      if (values.length > 0 && !matches(values, value)) return false
     }
   }
+  return true
+}
+
+function setOne(f: TagFile, { field, from, to }: TagFieldChange): FieldWrite {
+  if (!holds(f, field, from)) return 'unchanged'
   const info = f.getTag(TagTypes.RiffInfo, false)
   if (info instanceof InfoTag) {
     const elsewhere = f.tagTypesOnDisk & ~(TagTypes.RiffInfo | TagTypes.Id3v1)
@@ -169,6 +174,17 @@ export function setTagFields(file: string, changes: TagFieldChange[]): FieldWrit
     }
     f.save()
     return outcomes
+  } finally {
+    f.dispose()
+  }
+}
+
+// Whether every tag on disk already says what each change asks for: Music, which rewrites
+// its file as it sets the field, may have written the fix before Surco got to it.
+export function tagFieldsHeld(file: string, changes: TagFieldChange[]): boolean[] {
+  const f = TagFile.createFromPath(file)
+  try {
+    return changes.map(({ field, to }) => holds(f, field, to))
   } finally {
     f.dispose()
   }

@@ -1249,6 +1249,32 @@ describe('useTrackProcessing', () => {
     expect(onAppleMusicFailed).toHaveBeenCalledWith('a.wav')
   })
 
+  it('says why the Apple Music step was refused when the conversion names it', async () => {
+    setApi({
+      processTrack: vi.fn<Api['processTrack']>().mockResolvedValue({
+        outputPath: '/out/Artist - Title.aiff',
+        inPlace: false,
+        appleMusicFailed: true,
+        appleMusicErrorKey: 'noRoomBeforeMusicRewrite',
+      }),
+    })
+    const updateTrack = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', musicPersistentId: 'PID1' })],
+          settings: null,
+          updateTrack,
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    const patch = Object.assign({}, ...updateTrack.mock.calls.map((c) => c[1]))
+    expect(patch.musicError).toBe(i18n.t('errors.noRoomBeforeMusicRewrite'))
+  })
+
   // Auto-apply only fills the gap when the user hasn't chosen a name: a manual outputName
   // (rename/edit) must still win, or the setting would silently overwrite deliberate names.
   it('keeps a manual output name over the pattern when auto-apply is on', async () => {
@@ -1962,6 +1988,34 @@ describe('useTrackProcessing', () => {
       expect.objectContaining({ persistentId: 'ABCD1234', outputPath: '/out/a.aiff' }),
     )
     expect(addToAppleMusic).not.toHaveBeenCalled()
+  })
+
+  // The refusal crosses IPC as a stamped key wrapped in Electron's own prefix; painted as
+  // is, the user read "Error invoking remote method…" and a path.
+  it('says in the user’s language why Music was not asked to retag the file', async () => {
+    const updateAppleMusic = vi
+      .fn()
+      .mockRejectedValue(
+        new Error(
+          "Error invoking remote method 'applemusic:update': Error: SURCO_ERR:noRoomBeforeMusicRewrite: /m/a.aiff",
+        ),
+      )
+    setApi({ updateAppleMusic })
+    const updateTrack = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', outputPath: '/out/a.aiff', musicPersistentId: 'ABCD1234' })],
+          settings: null,
+          updateTrack,
+        }),
+      { wrapper: withClient() },
+    )
+    await act(() => result.current.addTrackToAppleMusic('a'))
+    expect(updateTrack).toHaveBeenLastCalledWith('a', {
+      musicStatus: 'error',
+      musicError: i18n.t('errors.noRoomBeforeMusicRewrite'),
+    })
   })
 
   // The user deleted the library copy in Music: updateAppleMusic finds nothing (resolves
