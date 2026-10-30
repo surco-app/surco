@@ -1,31 +1,45 @@
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { mkdtempSync, readFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffprobeInstaller from '@ffprobe-installer/ffprobe'
 import ffmpegStatic from 'ffmpeg-static'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 const digest = vi.hoisted(() => ({
   onStart: null as null | (() => void),
+  onSourceTimeout: null as null | ((ms: number) => number),
+  runs: [] as { signal?: AbortSignal; outcome: Promise<'done' | 'aborted' | 'failed'> }[],
 }))
 vi.mock('./verifyPcm', async (importOriginal) => {
   const real = await importOriginal<typeof import('./verifyPcm')>()
   return {
     ...real,
+    pcmTimeoutMs: (...args: Parameters<typeof real.pcmTimeoutMs>) => {
+      const ms = real.pcmTimeoutMs(...args)
+      return digest.onSourceTimeout ? digest.onSourceTimeout(ms) : ms
+    },
     pcmDigest: async (...args: Parameters<typeof real.pcmDigest>) => {
       digest.onStart?.()
-      return real.pcmDigest(...args)
+      const run = real.pcmDigest(...args)
+      digest.runs.push({
+        signal: args[1]?.signal,
+        outcome: run.then(
+          () => 'done' as const,
+          (e: Error) => (e.name === 'AbortError' ? ('aborted' as const) : ('failed' as const)),
+        ),
+      })
+      return run
     },
   }
 })
 
 import type { ConversionQuality, OutputFormat, TrackMetadata, TrimRange } from '../shared/types'
-import { convertAudio } from './ffmpeg'
+import { convertAudio, deliveredDurationSec } from './ffmpeg'
 import { configureOriginalKeeper } from './originalKeeper'
 import { pcmDigest } from './verifyPcm'
 
@@ -52,7 +66,7 @@ const meta: TrackMetadata = {
 }
 
 let n = 0
-function source(ext: string, encode: string[] = []): string {
+function source(ext: string, encode: string[] = [], seconds = 2): string {
   const path = join(dir, `in${n++}${ext}`)
   execFileSync(FF, [
     '-y',
@@ -61,7 +75,7 @@ function source(ext: string, encode: string[] = []): string {
     '-f',
     'lavfi',
     '-i',
-    'anoisesrc=color=pink:amplitude=0.3:duration=2:sample_rate=44100',
+    `anoisesrc=color=pink:amplitude=0.3:duration=${seconds}:sample_rate=44100`,
     '-ac',
     '2',
     ...encode,
@@ -97,6 +111,8 @@ function convert(
     quality?: Partial<ConversionQuality>
     trim?: TrimRange
     isCancelled?: () => boolean
+    onTmp?: (path: string) => void
+    keepOverwritten?: boolean
   } = {},
 ) {
   return convertAudio(
@@ -109,7 +125,7 @@ function convert(
     undefined,
     opts.quality,
     undefined,
-    undefined,
+    opts.onTmp,
     undefined,
     undefined,
     opts.trim,
@@ -117,11 +133,14 @@ function convert(
     undefined,
     undefined,
     opts.isCancelled,
+    opts.keepOverwritten,
   )
 }
 
 afterEach(() => {
   digest.onStart = null
+  digest.onSourceTimeout = null
+  digest.runs = []
   configureOriginalKeeper(null)
 })
 
@@ -221,6 +240,31 @@ describe('what convertAudio reports it wrote', () => {
     expect((await convert(notKept, notKept, 'aiff')).written.originalKept).toBe(false)
   })
 
+  // "Overwrite" in the conflict prompt archives the file that was at the destination: a
+  // different track, so its copy is no way back to this source.
+  it('a backup of a different file overwritten at the destination is not the original', async () => {
+    const keptPaths: string[] = []
+    configureOriginalKeeper(async (path) => {
+      keptPaths.push(path)
+      return {
+        id: 'x',
+        name: 'other.aiff',
+        originalPath: path,
+        storedPath: join(dir, 'stored-other.aiff'),
+        bytes: 1,
+        trashedAt: 0,
+        reason: 'replaced',
+      }
+    })
+    const src = source('.aiff')
+    const occupied = source('.aiff')
+
+    const { written } = await convert(src, occupied, 'aiff', { keepOverwritten: true })
+
+    expect(keptPaths).toEqual([occupied])
+    expect(written.originalKept).toBe(false)
+  })
+
   it('a conversion to another path never claims Originals kept a copy', async () => {
     configureOriginalKeeper(async () => {
       throw new Error('must not be asked')
@@ -228,6 +272,84 @@ describe('what convertAudio reports it wrote', () => {
     const src = source('.aiff')
     expect((await convert(src, join(dir, 'elsewhere.wav'), 'wav')).written.originalKept).toBe(false)
   })
+})
+
+// Long enough that its digest is still decoding when the step around it settles: a whole
+// mix on a share, where an unbounded decode holds the source open for minutes.
+describe('the source measurement never outlives its step', () => {
+  let long = ''
+  let longMp3 = ''
+  beforeAll(() => {
+    long = source('.flac', ['-sample_fmt', 's16'], 1800)
+    longMp3 = source('.mp3', ['-b:a', '128k'], 1800)
+  }, 120_000)
+
+  it('a cancel during the source digest stops it and rejects as cancelled', async () => {
+    let cancelled = false
+    digest.onStart = () => {
+      cancelled = true
+    }
+
+    await expect(
+      convert(long, join(dir, 'cancelled-long.aiff'), 'aiff', { isCancelled: () => cancelled }),
+    ).rejects.toThrow('conversionCancelled')
+    expect(digest.runs).toHaveLength(1)
+    expect(digest.runs[0].signal?.aborted).toBe(true)
+    expect(await digest.runs[0].outcome).toBe('aborted')
+  }, 120_000)
+
+  // A re-encode measures the source's length by decoding all of it, just as long a hold
+  // on the source as the digest.
+  it('the source length measure gives up at its timeout and is left unknown', async () => {
+    digest.onSourceTimeout = () => 1
+
+    const { written } = await convert(long, join(dir, 'timed-out-long.wav'), 'wav', {
+      trim: { startSec: 1 },
+    })
+
+    expect(written.samplesKept).toBe(false)
+    expect(written.sourceDurationSec).toBeUndefined()
+  }, 120_000)
+
+  it('a cancel during the source length measure stops it', async () => {
+    const started = performance.now()
+    await deliveredDurationSec(longMp3)
+    const wholeDecodeMs = performance.now() - started
+    let cancelled = false
+    let cancelledAt = 0
+    digest.onSourceTimeout = (ms) => {
+      cancelled = true
+      cancelledAt = performance.now()
+      return ms
+    }
+
+    await expect(
+      convert(longMp3, join(dir, 'cancelled-measure.wav'), 'wav', {
+        trim: { startSec: 1 },
+        isCancelled: () => cancelled,
+      }),
+    ).rejects.toThrow('conversionCancelled')
+    const stoppedMs = performance.now() - cancelledAt
+    expect(stoppedMs).toBeLessThan(wholeDecodeMs / 2)
+  }, 120_000)
+
+  // The temp failing its own check ends the job, and the source digest still running
+  // would keep the source open behind it, which on Windows blocks the next write to it.
+  it('a temp that fails its check stops the source digest still running', async () => {
+    let tmp = ''
+    digest.onStart = () => writeFileSync(tmp, 'not audio')
+
+    await expect(
+      convert(long, join(dir, 'broken-long.aiff'), 'aiff', {
+        onTmp: (path) => {
+          tmp = path
+        },
+      }),
+    ).rejects.toThrow()
+    expect(digest.runs).toHaveLength(1)
+    expect(digest.runs[0].signal?.aborted).toBe(true)
+    expect(await digest.runs[0].outcome).toBe('aborted')
+  }, 120_000)
 })
 
 // The check compares these bits strictly against what ffprobe reads back, so each one is

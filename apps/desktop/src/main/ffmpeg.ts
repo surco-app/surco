@@ -117,7 +117,7 @@ import {
 } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
-import { type PcmDigest, pcmDigest } from './verifyPcm'
+import { type PcmDigest, pcmDigest, pcmTimeoutMs } from './verifyPcm'
 import { WAVEFORM_BUCKETS, WAVEFORM_SAMPLE_RATE } from './waveform'
 import { isMalformedInputError, repairWav } from './wavRepair'
 import { runInWorker, signalWorkers } from './worker'
@@ -1538,7 +1538,10 @@ async function assertDeliversAsMuchAs(file: string, source: string): Promise<voi
   )
 }
 
-export async function deliveredDurationSec(file: string): Promise<number | null> {
+export async function deliveredDurationSec(
+  file: string,
+  opts?: { timeout?: number; signal?: AbortSignal },
+): Promise<number | null> {
   try {
     const { stdout } = await run(
       ffmpegPath,
@@ -1557,7 +1560,7 @@ export async function deliveredDurationSec(file: string): Promise<number | null>
         'null',
         '-',
       ],
-      { maxBuffer: 1024 * 1024 * 16 },
+      { maxBuffer: 1024 * 1024 * 16, ...opts },
     )
     return decodedDurationSec(String(stdout))
   } catch {
@@ -1946,6 +1949,26 @@ function recordConversionPatch(
     )
   } catch {
     // Best-effort: see comment above.
+  }
+}
+
+// How often the source measurement before the rename looks for a cancel: convertAudio
+// learns of one only by asking, and a whole-file decode on a share runs for minutes.
+const CANCEL_POLL_MS = 50
+
+// The source's decoded length, bounded like its digest: a timeout sized to the file
+// and the job's cancel. Anything that keeps it from answering leaves it unknown.
+async function decodedSourceSec(
+  input: string,
+  probeOnce: (file: string) => Promise<ProbeResult>,
+  signal: AbortSignal,
+): Promise<number | undefined> {
+  try {
+    const [{ size }, probe] = await Promise.all([stat(input), probeOnce(input)])
+    const timeout = pcmTimeoutMs(size, probe.headerSeconds)
+    return (await deliveredDurationSec(input, { timeout, signal })) ?? undefined
+  } catch {
+    return undefined
   }
 }
 
@@ -2382,16 +2405,34 @@ export async function convertAudio(
     // the samples should come out identical, its decoded length otherwise. Here because an
     // in-place rename replaces it. A failed digest only leaves the check without a
     // comparison (it says so); it never costs a conversion that went fine.
-    ;[, sourcePcm, sourceDurationSec] = await Promise.all([
-      assertDecodable(tmp, copiedVerbatim ? input : undefined),
+    //
+    // Every decode here holds the source open, and on Windows an open source is what blocks
+    // the rename: a cancel stops them all, and so does the verdict on the temp arriving
+    // first, so none outlives this step.
+    const measuring = new AbortController()
+    const watchCancel = setInterval(() => {
+      if (isCancelled?.()) measuring.abort()
+    }, CANCEL_POLL_MS)
+    const measures = [
+      assertDecodable(tmp, copiedVerbatim ? input : undefined, { signal: measuring.signal }),
       samplesKept
-        ? pcmDigest(input).catch((err) => {
+        ? pcmDigest(input, { signal: measuring.signal }).catch((err) => {
             log.warn(`source digest failed, the check cannot compare: ${err}`)
             return undefined
           })
         : undefined,
-      samplesKept ? undefined : deliveredDurationSec(input).then((d) => d ?? undefined),
-    ])
+      samplesKept ? undefined : decodedSourceSec(input, probeOnce, measuring.signal),
+    ] as const
+    try {
+      ;[, sourcePcm, sourceDurationSec] = await Promise.all(measures)
+    } catch (err) {
+      if (isCancelled?.()) throw errorWithKey('conversionCancelled')
+      throw err
+    } finally {
+      clearInterval(watchCancel)
+      measuring.abort()
+      await Promise.allSettled(measures)
+    }
     if (isCancelled?.()) throw errorWithKey('conversionCancelled')
     // rekordbox keeps cues in milliseconds of its own timeline, which starts at a different
     // point on each kind of file (see rekordboxTimeline.ts). Read on both files here, the
@@ -2418,11 +2459,13 @@ export async function convertAudio(
     // the other two write paths (a format change, a NAS delete) ignoring it. What only
     // this scope knows is what the encode did — `codec` is the planner's own verdict,
     // 'copy' exactly when the audio passes through untouched — so that rides along.
-    if (await isSameFile(input, output))
+    if (await isSameFile(input, output)) {
       archived = await keepOriginal(input, 'replaced', output, {
         reencodes:
           codec !== 'copy' || (extname(output).toLowerCase() === '.wav' && dropsForeignCues(input)),
       })
+      originalKept = archived !== null
+    }
     // A different file already at the destination ("Overwrite" in the conflict prompt) is
     // not this source's audio in any form, so nothing re-run could bring it back: kept
     // like a file with no encode to judge, which only 'never' skips. A re-export over the
@@ -2434,7 +2477,6 @@ export async function convertAudio(
     // taken back: checked once more right before it, the original stays as it was and
     // the catch drops the backup.
     if (isCancelled?.()) throw errorWithKey('conversionCancelled')
-    originalKept = archived !== null
     // Logged because this failure only reproduces on Windows machines we cannot
     // attach a debugger to: when a user reports "another program is using the file",
     // these lines are the whole evidence — whether the destination was still held,
@@ -2525,7 +2567,7 @@ export async function convertAudio(
         ...(plan.bitDepth ? { bitDepth: plan.bitDepth } : {}),
       },
       ...(sourceDurationSec !== undefined ? { sourceDurationSec } : {}),
-      trimmedSec: trimAf !== undefined ? (trim?.startSec ?? 0) + cutTail : 0,
+      trimmedSec: trimAf !== undefined ? Math.max(0, trim?.startSec ?? 0) + cutTail : 0,
     },
   }
 }
