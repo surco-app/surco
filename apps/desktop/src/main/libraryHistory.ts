@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs'
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import type { CopyReason, LibraryCopy } from '../shared/types'
-import { backupOf } from './libraryBackups'
+import { backupOf, collectionKey } from './libraryBackups'
 import { renameWithRetry } from './renameRetry'
 import { writeBackup } from './rekordboxSessionBackup'
 
@@ -27,6 +27,15 @@ export function copyFolder(copy: LibraryCopy): string {
     : join(historyRoot(copy.collectionPath), copy.id)
 }
 
+function besideCollection(collectionPath: string, target: unknown): boolean {
+  return (
+    typeof target === 'string' &&
+    collectionKey(dirname(target)) === collectionKey(dirname(collectionPath)) &&
+    basename(target) !== '..' &&
+    basename(target) !== '.'
+  )
+}
+
 function isCopy(value: unknown): value is LibraryCopy {
   const copy = value as Partial<LibraryCopy> | null
   return (
@@ -40,10 +49,11 @@ function isCopy(value: unknown): value is LibraryCopy {
         typeof file?.name === 'string' &&
         file.name === basename(file.name) &&
         file.name !== '..' &&
-        typeof file.target === 'string',
+        besideCollection(copy.collectionPath as string, file.target),
     ) &&
     (copy.absent === undefined ||
-      (Array.isArray(copy.absent) && copy.absent.every((t) => typeof t === 'string')))
+      (Array.isArray(copy.absent) &&
+        copy.absent.every((t) => besideCollection(copy.collectionPath as string, t))))
   )
 }
 

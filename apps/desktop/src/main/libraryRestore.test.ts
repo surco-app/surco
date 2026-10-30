@@ -311,7 +311,11 @@ describe('restoreCopy', () => {
     writeFileSync(path, 'after')
     writeFileSync(
       join(copyFolder(copy), 'copy.json'),
-      JSON.stringify({ ...copy, collectionPath: other }),
+      JSON.stringify({
+        ...copy,
+        collectionPath: other,
+        files: [{ name: 'collection.nml', target: other }],
+      }),
     )
     expect(await restoreCopy({ collectionPath: path, copyId: copy.id }, deps())).toEqual({
       ok: false,
@@ -320,6 +324,22 @@ describe('restoreCopy', () => {
     expect(readFileSync(path, 'utf8')).toBe('after')
     expect(readFileSync(other, 'utf8')).toBe('old')
     expect(await restoreSlot(path)).toBeNull()
+  })
+
+  it('refuses a copy whose manifest points a file outside the collection folder and leaves that file alone', async () => {
+    const path = collection('Traktor', 'collection.nml', 'current')
+    const outside = collection('Elsewhere', 'settings.tsi', 'outside')
+    const copy = await takeCopy(path, [], 'run', 1)
+    writeFileSync(
+      join(copyFolder(copy), 'copy.json'),
+      JSON.stringify({ ...copy, files: [{ name: 'collection.nml', target: outside }] }),
+    )
+    expect(await restoreCopy({ collectionPath: path, copyId: copy.id }, deps())).toEqual({
+      ok: false,
+      reason: 'not-found',
+    })
+    expect(readFileSync(outside, 'utf8')).toBe('outside')
+    expect(readFileSync(path, 'utf8')).toBe('current')
   })
 
   it('on Windows a copy whose path differs only in letter case is the same collection', async () => {

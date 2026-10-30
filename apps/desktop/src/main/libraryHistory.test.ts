@@ -163,6 +163,50 @@ describe('libraryHistory', () => {
     expect((await listCopies(path)).map((c) => c.id)).toEqual(['1'])
   })
 
+  it('skips a copy whose manifest points a file outside the collection folder, so a restore can only ever write beside the collection', async () => {
+    const path = collection('Traktor', 'collection.nml')
+    const good = await takeCopy(path, [], 'run', 1)
+    const elsewhere = join(dir, 'Elsewhere', 'collection.nml')
+    const bad = (id: string, manifest: unknown) => {
+      const folder = copyFolder({ ...good, id })
+      mkdirSync(folder)
+      writeFileSync(join(folder, 'copy.json'), JSON.stringify(manifest))
+      writeFileSync(join(folder, 'collection.nml'), 'tampered')
+    }
+    bad('2', { ...good, id: '2', files: [{ name: 'collection.nml', target: elsewhere }] })
+    bad('3', { ...good, id: '3', absent: [elsewhere] })
+    bad('4', {
+      ...good,
+      id: '4',
+      files: [{ name: 'collection.nml', target: join(dir, 'Traktor', '..') }],
+    })
+    bad('5', { ...good, id: '5', absent: [join(dir, 'Traktor', 'sub', 'x.nml')] })
+    expect((await listCopies(path)).map((c) => c.id)).toEqual(['1'])
+  })
+
+  it('on Windows a manifest target whose folder differs only in letter case is still inside the collection', async () => {
+    const platform = process.platform
+    Object.defineProperty(process, 'platform', { value: 'win32', configurable: true })
+    try {
+      const path = collection('Traktor', 'collection.nml')
+      const good = await takeCopy(path, [], 'run', 1)
+      const folder = copyFolder({ ...good, id: '2' })
+      mkdirSync(folder)
+      writeFileSync(
+        join(folder, 'copy.json'),
+        JSON.stringify({
+          ...good,
+          id: '2',
+          takenAt: 2,
+          files: [{ name: 'collection.nml', target: path.toUpperCase() }],
+        }),
+      )
+      expect((await listCopies(path)).map((c) => c.id)).toEqual(['2', '1'])
+    } finally {
+      Object.defineProperty(process, 'platform', { value: platform, configurable: true })
+    }
+  })
+
   it('an undo copy keeps the main file and its companions even when the main file is missing', async () => {
     const db = join(dir, 'rekordbox', 'master.db')
     const xml = collection('rekordbox', 'masterPlaylists6.xml', 'xml-now')
