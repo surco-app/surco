@@ -6,7 +6,10 @@ name: Stats
 # leave every local main behind origin.
 on:
   schedule:
-    - cron: '17 5 * * *'
+    - cron: '17 * * * *'
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
