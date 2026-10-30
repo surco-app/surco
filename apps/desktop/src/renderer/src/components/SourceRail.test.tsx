@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PlaylistSource } from '../../../shared/types'
 import '../i18n'
+import { RAIL_WIDTH } from '../lib/columnLayout'
 import { SourceRail } from './SourceRail'
 
 afterEach(cleanup)
@@ -11,6 +12,13 @@ afterEach(cleanup)
 const COPIES = { active: false, alert: 'none', onOpen: () => {} } as const
 
 describe('SourceRail', () => {
+  it('is as wide as the rail the column layout subtracts, so the editor columns fill the window exactly', () => {
+    render(
+      <SourceRail copies={COPIES} onHide={vi.fn()} sources={[]} active={null} onSelect={vi.fn()} />,
+    )
+    expect(screen.getByTestId('source-rail').style.width).toBe(`${RAIL_WIDTH}px`)
+  })
+
   it('offers the working list plus each source found on this machine', () => {
     render(
       <SourceRail

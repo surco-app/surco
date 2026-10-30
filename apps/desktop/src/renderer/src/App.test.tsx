@@ -723,7 +723,7 @@ describe('App column widths', () => {
   it('sizes the list as a share of the window, so a wider window gives every column room', async () => {
     await renderApp()
     await addTwoTracks()
-    expect(screen.getByTestId('sidebar')).toHaveStyle({ width: '350px' })
+    expect(screen.getByTestId('sidebar')).toHaveStyle({ width: '348px' })
   })
 
   it('saves the dragged list width as a share of the window, not as pixels', async () => {
@@ -738,7 +738,7 @@ describe('App column widths', () => {
     fireEvent(window, at(createEvent.pointerMove(window), 400))
     fireEvent(window, at(createEvent.pointerUp(window), 400))
     const saved = saveSettings.mock.calls.find(([patch]) => patch.columnShares)?.[0]
-    expect(saved?.columnShares?.list).toBeCloseTo((400 * 0.83) / 1210)
+    expect(saved?.columnShares?.list).toBeCloseTo((400 * 0.83) / 1202)
     expect(saved?.resultsWidth).toBeUndefined()
   })
 
@@ -752,7 +752,7 @@ describe('App column widths', () => {
     await addTwoTracks()
     await waitFor(() =>
       expect(screen.getByTestId('sidebar')).toHaveStyle({
-        width: `${Math.round((1210 * 0.3) / 0.83)}px`,
+        width: `${Math.round((1202 * 0.3) / 0.83)}px`,
       }),
     )
   })

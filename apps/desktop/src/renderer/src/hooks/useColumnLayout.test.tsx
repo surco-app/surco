@@ -46,12 +46,12 @@ afterEach(() => {
 describe('useColumnLayout', () => {
   it('sizes the columns from the window minus the source rail and the two dividers', () => {
     const { result } = setup()
-    expect(result.current.widths).toEqual(columnWidths(1370, true, undefined))
+    expect(result.current.widths).toEqual(columnWidths(1362, true, undefined))
   })
 
   it('reads the saved shares, so a drag from an earlier session comes back', () => {
     const { result } = setup({ results: 0.25 })
-    expect(result.current.widths.results).toBe(343)
+    expect(result.current.widths.results).toBe(341)
   })
 
   it('follows the window as it is resized, keeping the proportions', () => {
@@ -59,7 +59,7 @@ describe('useColumnLayout', () => {
     setWindowWidth(1728)
     act(() => window.dispatchEvent(new Event('resize')))
     flushFrames()
-    expect(result.current.widths).toEqual(columnWidths(1658, true, undefined))
+    expect(result.current.widths).toEqual(columnWidths(1650, true, undefined))
   })
 
   it('catches a resize that lands while the app is still mounting, as the window does on launch', () => {
@@ -69,7 +69,7 @@ describe('useColumnLayout', () => {
       get: () => (reads++ === 0 ? 1320 : 1280),
     })
     const { result } = setup()
-    expect(result.current.widths).toEqual(columnWidths(1210, true, undefined))
+    expect(result.current.widths).toEqual(columnWidths(1202, true, undefined))
   })
 
   it('commits a share, not a pixel width, when a drag ends', () => {
@@ -77,10 +77,10 @@ describe('useColumnLayout', () => {
     act(() => result.current.startResize('results', pointerDown(500)))
     act(() => pointer('pointermove', 520))
     flushFrames()
-    expect(result.current.widths.results).toBe(321)
+    expect(result.current.widths.results).toBe(320)
     act(() => pointer('pointerup', 520))
     expect(onCommit).toHaveBeenCalledTimes(1)
-    expect(onCommit.mock.calls[0][0].results).toBeCloseTo(321 / 1370)
+    expect(onCommit.mock.calls[0][0].results).toBeCloseTo(320 / 1362)
   })
 
   it('keeps the other saved shares when one column is dragged', () => {
@@ -88,7 +88,7 @@ describe('useColumnLayout', () => {
     act(() => result.current.startResize('list', pointerDown(300)))
     act(() => pointer('pointermove', 340))
     act(() => pointer('pointerup', 340))
-    expect(onCommit.mock.calls[0][0]).toEqual({ results: 0.3, list: 369 / 1370 })
+    expect(onCommit.mock.calls[0][0]).toEqual({ results: 0.3, list: 367 / 1362 })
   })
 
   it('commits nothing for a click on the divider that moves nothing', () => {
@@ -101,7 +101,7 @@ describe('useColumnLayout', () => {
   it('commits a share for the double-click fit as well', () => {
     const { result, onCommit } = setup()
     act(() => result.current.fit('list', 49))
-    expect(onCommit).toHaveBeenCalledWith({ list: 378 / 1370 })
+    expect(onCommit).toHaveBeenCalledWith({ list: 376 / 1362 })
   })
 
   it('saves the width the drag shows, so the form keeps its minimum on a wider window too', () => {
@@ -112,7 +112,7 @@ describe('useColumnLayout', () => {
     const shown = result.current.widths
     expect(shown.form).toBe(460)
     act(() => pointer('pointerup', 600))
-    expect(onCommit.mock.calls[0][0].results).toBeCloseTo(shown.results / 1370)
+    expect(onCommit.mock.calls[0][0].results).toBeCloseTo(shown.results / 1362)
   })
 
   it.each(['results', 'list'] as const)(

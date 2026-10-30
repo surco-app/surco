@@ -3,6 +3,7 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistSource } from '../../../shared/types'
+import { RAIL_WIDTH } from '../lib/columnLayout'
 import { AppleMusicIcon, EngineIcon, RekordboxIcon, TraktorIcon } from './SourceIcons'
 import { Tooltip } from './Tooltip'
 
@@ -107,7 +108,8 @@ export function SourceRail({
     <nav
       data-testid="source-rail"
       aria-label={tr('sources.rail')}
-      className="flex w-[76px] shrink-0 flex-col items-center gap-1 border-r border-[var(--color-line)] bg-[var(--color-ink)] pt-2.5 pb-2.5"
+      style={{ width: RAIL_WIDTH }}
+      className="flex shrink-0 flex-col items-center gap-1 border-r border-[var(--color-line)] bg-[var(--color-ink)] pt-2.5 pb-2.5"
     >
       {item(
         'tracks',
