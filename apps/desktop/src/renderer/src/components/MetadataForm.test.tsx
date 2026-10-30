@@ -149,52 +149,50 @@ describe('MetadataForm', () => {
     )
   })
 
-  // A year, a BPM and a key each took a full row in boxes as wide as the title. Bounded
-  // fields that follow each other in the user's order share one row instead; a longer field
-  // between them breaks the row, so the user's order is never rearranged to pack them.
-  it('joins consecutive bounded fields into one row, in the user order', () => {
+  // Pairing any two short fields that happened to follow each other put "Disc no." beside
+  // "Total tracks" and "Total discs" beside "BPM": a row that reads as one fact but holds
+  // two unrelated ones. Only fields that complete each other share a row, and only when
+  // the user's order already puts them together, so that order is never rearranged.
+  it('shares a row only between fields that belong together', () => {
     renderForm([
-      spec('title', 'Illusion'),
-      { ...spec('year', '2007'), width: 'short' },
-      { ...spec('bpm', '145'), width: 'short' },
-      spec('genre', 'Electronic'),
-      { ...spec('key', '4A'), width: 'short' },
-    ])
-    const year = screen.getByTestId('field-year')
-    expect(year).not.toHaveAttribute('data-inline')
-    expect(year).toContainElement(screen.getByTestId('field-bpm'))
-    expect(screen.getByTestId('field-bpm')).toHaveAttribute('data-inline', 'true')
-    expect(year).not.toContainElement(screen.getByTestId('field-key'))
-    expect(screen.getByTestId('field-key')).not.toHaveAttribute('data-inline')
-    expect(screen.getAllByTestId(/^field-/).map((n) => n.getAttribute('data-testid'))).toEqual([
-      'field-title',
-      'field-year',
-      'field-bpm',
-      'field-genre',
-      'field-key',
-    ])
-  })
-
-  // Five bounded fields in one row wrapped wherever the column ran out, so each line began
-  // somewhere else and "Total discs" hung under a box. Two to a row, every line opens on its
-  // own label in the label column and the boxes stack into two clean columns.
-  it('puts at most two bounded fields on a row', () => {
-    renderForm([
+      { ...spec('trackNumber', '4'), width: 'short' },
+      { ...spec('trackTotal', '10'), width: 'short' },
       { ...spec('discNumber', '1'), width: 'short' },
-      { ...spec('trackTotal', '4'), width: 'short' },
       { ...spec('discTotal', '1'), width: 'short' },
-      { ...spec('bpm', '142'), width: 'short' },
-      { ...spec('key', '8A'), width: 'short' },
+      spec('comment'),
+      { ...spec('bpm', '140'), width: 'short' },
+      { ...spec('key', '11B'), width: 'short' },
     ])
     const rowStarts = screen
       .getAllByTestId(/^field-/)
       .filter((n) => !n.hasAttribute('data-inline'))
       .map((n) => n.getAttribute('data-testid'))
-    expect(rowStarts).toEqual(['field-discNumber', 'field-discTotal', 'field-key'])
-    expect(screen.getByTestId('field-discNumber')).toContainElement(
+    expect(rowStarts).toEqual([
+      'field-trackNumber',
+      'field-discNumber',
+      'field-comment',
+      'field-bpm',
+    ])
+    expect(screen.getByTestId('field-trackNumber')).toContainElement(
       screen.getByTestId('field-trackTotal'),
     )
-    expect(screen.getByTestId('field-discTotal')).toContainElement(screen.getByTestId('field-bpm'))
+    expect(screen.getByTestId('field-discNumber')).toContainElement(
+      screen.getByTestId('field-discTotal'),
+    )
+    expect(screen.getByTestId('field-bpm')).toContainElement(screen.getByTestId('field-key'))
+  })
+
+  it('keeps short fields that do not belong together on rows of their own', () => {
+    renderForm([
+      { ...spec('year', '2007'), width: 'short' },
+      { ...spec('bpm', '145'), width: 'short' },
+      { ...spec('discNumber', '1'), width: 'short' },
+      { ...spec('trackTotal', '4'), width: 'short' },
+      { ...spec('discTotal', '1'), width: 'short' },
+    ])
+    expect(screen.queryAllByTestId(/^field-/).filter((n) => n.hasAttribute('data-inline'))).toEqual(
+      [],
+    )
   })
 
   // The rating is a fact about the record, like its artwork, and above the form it cost a
