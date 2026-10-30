@@ -1,7 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createSessionBackup } from './rekordboxSessionBackup'
 
+// One copy of the collection per momento, taken before the first write and never touched
+// again. The per-write backup this sits alongside is overwritten on every track, so after
+// 300 conversions it holds the state before track 300 — not the state the user started
+// from. Only this one can put the collection back the way it was before the run.
+
 describe('createSessionBackup', () => {
+  // The whole point. Copying again on track 2 would take a copy that already carries track
+  // 1's write, and by the end of a 300-track run the newest copy would be one write old.
   it('one copy per momento, however many tracks it writes', async () => {
     const take = vi.fn(async () => ({}) as never)
     const backup = createSessionBackup({ take })
@@ -15,6 +22,8 @@ describe('createSessionBackup', () => {
     expect(take).toHaveBeenCalledWith('/dj/master.db', [], 'run')
   })
 
+  // The next momento starts from a clean slate: its own first write takes a fresh copy, so
+  // the newest one always describes the state before the momento the user is living through.
   it('a new momento takes a new copy', async () => {
     const take = vi.fn(async () => ({}) as never)
     const backup = createSessionBackup({ take })
@@ -68,6 +77,8 @@ describe('createSessionBackup', () => {
     expect(take).toHaveBeenCalledWith('/dj/master.db', ['/dj/masterPlaylists6.xml'], 'run')
   })
 
+  // A momento that failed to take the copy must not be treated as backed up: the next write
+  // tries again rather than writing into a collection with no copy behind it.
   it('a failed copy is remembered so the Copias screen can say so', async () => {
     const take = vi
       .fn<() => Promise<never>>()
@@ -84,6 +95,8 @@ describe('createSessionBackup', () => {
     expect(take).toHaveBeenCalledTimes(2)
   })
 
+  // Two collections in one momento is not a case Surco creates today, but tracking a single
+  // "done" flag would silently leave the second one with no copy at all.
   it('keeps a separate copy per collection', async () => {
     const take = vi.fn(async () => ({}) as never)
     const backup = createSessionBackup({ take })

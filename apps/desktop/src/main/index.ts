@@ -273,8 +273,8 @@ async function takeCopyAndAnnounce(...args: Parameters<typeof takeCopy>) {
     broadcast('copies:changed', null)
   }
 }
-// One copy of the rekordbox collection per conversion run, taken before the run's first
-// write. Module-scoped for the same reason as stickyConflict: a run fans out into separate
+// One dated copy of the rekordbox collection per momento (a conversion run, a cue save...),
+// taken before the momento's first write. Module-scoped for the same reason as stickyConflict: a run fans out into separate
 // process:track calls, and they all have to agree that the copy is already taken.
 const rekordboxSessionBackup = createSessionBackup({
   take: takeCopyAndAnnounce,

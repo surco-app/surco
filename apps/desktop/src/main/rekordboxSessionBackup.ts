@@ -42,6 +42,8 @@ export interface SessionBackup {
 
 interface Momento {
   reason: CopyReason
+  // Per collection, not one flag: tracking a single "done" would leave a second collection
+  // in the same momento with no copy at all.
   copied: Set<string>
   taking: Map<string, Promise<void>>
 }
@@ -75,6 +77,8 @@ export function createSessionBackup(deps: {
       throw err
     }
     failures.delete(collectionPath)
+    // Recorded only after the copy lands, so a failure leaves the next write trying again
+    // rather than writing into a collection with nothing behind it.
     m.copied.add(collectionPath)
     if (m.reason !== 'playlists') loose.delete(collectionPath)
   }
