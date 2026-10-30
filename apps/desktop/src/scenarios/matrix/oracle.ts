@@ -54,6 +54,7 @@ import {
   type SeededTrack,
   sha1Of,
   syncedPrograms,
+  traktorEntryOf,
   twinIdOf,
 } from './libraries'
 import { SEEDED_CUES_MS, type SourceTrack, type TrickyTags } from './sources'
@@ -531,12 +532,20 @@ export function fileInvariants(
 
 export interface Expected {
   finalPath: string
+  at: Record<Program, string>
   lagMs: number
   samplesKept: boolean
   destGone: boolean
 }
 
 type Found = [InvariantName, string]
+
+export const pointingAt = (path: string): Record<Program, string> => ({
+  rekordbox: path,
+  engine: path,
+  traktor: path,
+  music: path,
+})
 
 function canonical(path: string): string {
   try {
@@ -573,7 +582,7 @@ function rekordboxBroken(dbPath: string, t: SeededTrack, e: Expected): Found[] {
   const db = openRekordboxDb(dbPath, { readonly: true })
   if (!db) return [['points', 'rekordbox: la biblioteca no se puede abrir']]
   try {
-    const final = canonical(e.finalPath)
+    const final = canonical(e.at.rekordbox)
     const found: Found[] = []
     const row = db
       .prepare(
@@ -595,14 +604,14 @@ function rekordboxBroken(dbPath: string, t: SeededTrack, e: Expected): Found[] {
       if (canonical(row.FolderPath) !== final)
         found.push([
           'points',
-          `rekordbox: FolderPath '${row.FolderPath}', se esperaba '${e.finalPath}'`,
+          `rekordbox: FolderPath '${row.FolderPath}', se esperaba '${e.at.rekordbox}'`,
         ])
-      if (row.FileNameL.normalize('NFC') !== basename(e.finalPath).normalize('NFC'))
+      if (row.FileNameL.normalize('NFC') !== basename(e.at.rekordbox).normalize('NFC'))
         found.push(['points', `rekordbox: FileNameL '${row.FileNameL}'`])
-      const fileType = REKORDBOX_FILE_TYPE[extname(e.finalPath).toLowerCase()]
+      const fileType = REKORDBOX_FILE_TYPE[extname(e.at.rekordbox).toLowerCase()]
       if (row.FileType !== fileType)
         found.push(['points', `rekordbox: FileType ${row.FileType}, se esperaba ${fileType}`])
-      const size = sizeOf(e.finalPath)
+      const size = sizeOf(e.at.rekordbox)
       if (size !== null && row.FileSize !== size)
         found.push(['points', `rekordbox: FileSize ${row.FileSize}, el fichero mide ${size}`])
       if (
@@ -692,7 +701,7 @@ function engineChain(entities: { id: number; trackId: number; nextEntityId: numb
 function engineBroken(dir: string, set: LibrarySet, t: SeededTrack, e: Expected): Found[] {
   const db = new Database(engineDbPath(dir), { readonly: true, fileMustExist: true })
   try {
-    const final = canonical(e.finalPath)
+    const final = canonical(e.at.engine)
     const found: Found[] = []
     const row = db
       .prepare('SELECT path, fileType, fileBytes FROM Track WHERE id = ?')
@@ -700,11 +709,11 @@ function engineBroken(dir: string, set: LibrarySet, t: SeededTrack, e: Expected)
     if (!row) found.push(['points', `Engine: la pista ${t.engineId} ya no está`])
     else {
       if (canonical(resolve(dir, row.path)) !== final)
-        found.push(['points', `Engine: path '${row.path}', se esperaba '${e.finalPath}'`])
-      const fileType = extname(e.finalPath).slice(1).toLowerCase()
+        found.push(['points', `Engine: path '${row.path}', se esperaba '${e.at.engine}'`])
+      const fileType = extname(e.at.engine).slice(1).toLowerCase()
       if (row.fileType !== fileType)
         found.push(['points', `Engine: fileType '${row.fileType}', se esperaba '${fileType}'`])
-      const size = sizeOf(e.finalPath)
+      const size = sizeOf(e.at.engine)
       if (size !== null && row.fileBytes !== size)
         found.push(['points', `Engine: fileBytes ${row.fileBytes}, el fichero mide ${size}`])
     }
@@ -818,9 +827,10 @@ function nmlPlaylist(nml: string, uuid: string): string[] | null {
   return [...list[0].matchAll(/<PRIMARYKEY\b[^>]*>/g)].map(([key]) => nmlKeyPath(key))
 }
 
-function traktorBroken(nmlFile: string, t: SeededTrack, e: Expected): Found[] {
+function traktorBroken(nmlFile: string, set: LibrarySet, t: SeededTrack, e: Expected): Found[] {
   const nml = readFileSync(nmlFile, 'utf8')
-  const final = canonical(e.finalPath)
+  const final = canonical(e.at.traktor)
+  const stays = final !== canonical(e.finalPath)
   const entries = nmlCollection(nml)
   const found: Found[] = []
   const byId = entries.filter((x) => x.audioId === t.traktorAudioId)
@@ -835,8 +845,9 @@ function traktorBroken(nmlFile: string, t: SeededTrack, e: Expected): Found[] {
   else if (!entry) found.push(['points', 'Traktor: la entrada ya no está'])
   else {
     if (canonical(entry.path) !== final)
-      found.push(['points', `Traktor: LOCATION '${entry.path}', se esperaba '${e.finalPath}'`])
-    if (!cuesAt(entry.starts, want))
+      found.push(['points', `Traktor: LOCATION '${entry.path}', se esperaba '${e.at.traktor}'`])
+    if (stays) found.push(...stayedEntryBroken(nml, set, t))
+    else if (!cuesAt(entry.starts, want))
       found.push([
         'cues',
         `Traktor: CUE_V2 en ${msList(entry.starts)} ms, se esperaba ${msList(want)}`,
@@ -866,11 +877,30 @@ function traktorBroken(nmlFile: string, t: SeededTrack, e: Expected): Found[] {
   }
   const atFinal = entries.filter((x) => canonical(x.path) === final).length
   if (atFinal !== 1) found.push(['unique', `Traktor: ${atFinal} entradas para el fichero final`])
+  const atConverted = entries.filter((x) => canonical(x.path) === canonical(e.finalPath)).length
+  if (stays && atConverted > 0)
+    found.push(['unique', `Traktor: ${atConverted} entradas para el fichero convertido`])
+  return found
+}
+
+const cueTags = (entry: string): string => [...entry.matchAll(/<CUE_V2\b[^>]*>/g)].join('\n')
+const rankingOf = (entry: string): string | undefined =>
+  nmlAttr(entry.match(/<ENTRY\b[^>]*>/)?.[0] ?? '', 'RANKING') ??
+  nmlAttr(entry.match(/<INFO\b[^>]*>/)?.[0] ?? '', 'RANKING')
+
+function stayedEntryBroken(nml: string, set: LibrarySet, t: SeededTrack): Found[] {
+  const seeded = set.traktorEntries[t.traktorAudioId] ?? ''
+  const now = traktorEntryOf(nml, t.traktorAudioId)
+  const found: Found[] = []
+  if (cueTags(now) !== cueTags(seeded))
+    found.push(['cues', 'Traktor: la entrada del original cambió sus CUE_V2'])
+  if (rankingOf(now) !== rankingOf(seeded))
+    found.push(['collateral', 'Traktor: la entrada del original cambió su RANKING'])
   return found
 }
 
 function musicBroken(t: SeededTrack, e: Expected): Found[] {
-  const final = canonical(e.finalPath)
+  const final = canonical(e.at.music)
   const living = music.state.entries.filter(
     (x) => x.location !== null && canonical(x.location) === final,
   )
@@ -901,7 +931,7 @@ function musicNewEntries(set: LibrarySet): Found[] {
 function programBroken(program: Program, set: LibrarySet, t: SeededTrack, e: Expected): Found[] {
   if (program === 'rekordbox') return set.rekordboxDb ? rekordboxBroken(set.rekordboxDb, t, e) : []
   if (program === 'engine') return set.engineDir ? engineBroken(set.engineDir, set, t, e) : []
-  if (program === 'traktor') return set.traktorNml ? traktorBroken(set.traktorNml, t, e) : []
+  if (program === 'traktor') return set.traktorNml ? traktorBroken(set.traktorNml, set, t, e) : []
   return set.music ? musicBroken(t, e) : []
 }
 
@@ -983,6 +1013,7 @@ export function libraryInvariants(
   const other = set.bystander
   const untouched: Expected = {
     finalPath: other.path,
+    at: pointingAt(other.path),
     lagMs: 0,
     samplesKept: true,
     destGone: false,

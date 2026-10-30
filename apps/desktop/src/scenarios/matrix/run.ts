@@ -19,6 +19,7 @@ import {
   fileInvariants,
   libraryInvariants,
   markerLagMs,
+  pointingAt,
 } from './oracle'
 import type { CellOutcome } from './report'
 import { makeSource, type SourceTrack } from './sources'
@@ -62,16 +63,21 @@ function destinationSettings(cell: Cell): Partial<Settings> {
   return fromDestination(cell.dest)
 }
 
+const sameFormat = (cell: Cell, source: string): boolean =>
+  SAME_FORMAT[cell.target].includes(extname(source).toLowerCase())
+
+const inPlace = (cell: Cell, source: string): boolean =>
+  cell.dest !== 'beside' &&
+  ((cell.dest === 'overwrite' && cell.target !== 'alac') || sameFormat(cell, source))
+
 function writtenPath(cell: Cell, source: string, outputDir: string): string {
   const ext = EXTENSION[cell.target]
   const stem = basename(source, extname(source))
-  const sameFormat = SAME_FORMAT[cell.target].includes(extname(source).toLowerCase())
   if (cell.dest === 'beside') {
     const beside = join(dirname(source), `${stem}${ext}`)
     return existsSync(beside) ? join(dirname(source), `${stem} (2)${ext}`) : beside
   }
-  const inPlace = (cell.dest === 'overwrite' && cell.target !== 'alac') || sameFormat
-  return join(inPlace ? dirname(source) : outputDir, `${stem}${ext}`)
+  return join(inPlace(cell, source) ? dirname(source) : outputDir, `${stem}${ext}`)
 }
 
 const spelled = (path: string): string => {
@@ -82,7 +88,7 @@ const spelled = (path: string): string => {
   }
 }
 
-function musicPlays(set: LibrarySet, t: SeededTrack): string | undefined {
+function musicPlays(set: LibrarySet, t: SeededTrack): string | null | undefined {
   const stem = basename(t.path, extname(t.path)).normalize('NFC')
   const seeded = new Set([...set.tracks, set.bystander].map((x) => x.musicPid))
   const named = (location: string | null) =>
@@ -91,7 +97,7 @@ function musicPlays(set: LibrarySet, t: SeededTrack): string | undefined {
     basename(location).normalize('NFC').startsWith(stem)
   const added = music.state.entries.find((e) => !seeded.has(e.persistentId) && named(e.location))
   const kept = t.musicPid ? music.entry(t.musicPid) : undefined
-  return (added ?? (kept && named(kept.location) ? kept : undefined))?.location ?? undefined
+  return (added ?? (kept && named(kept.location) ? kept : undefined))?.location
 }
 
 function rowName(surco: Scenario, source: string, written: string): string {
@@ -199,6 +205,8 @@ export async function runGroup(group: CellGroup): Promise<CellOutcome[]> {
     },
   })
   const names = sources.map((s) => basename(s.path))
+  const openUntil: number[] = []
+  const retried: ('rerun-job' | 'rechecked')[] = []
   try {
     if (first.state === 'open') programsOpen(true)
     await surco.drop(...sources.map((s) => s.path))
@@ -207,6 +215,8 @@ export async function runGroup(group: CellGroup): Promise<CellOutcome[]> {
     else await surco.convertAll('confirm', first.target)
     await surco.settled()
     if (first.state === 'open') {
+      for (const [i, s] of sources.entries())
+        openUntil[i] = surco.statuses(rowName(surco, s.path, written[i])).length
       programsOpen(false)
       await surco.rekordboxClosed()
       await surco.engineClosed()
@@ -215,7 +225,8 @@ export async function runGroup(group: CellGroup): Promise<CellOutcome[]> {
     }
     if (retry) {
       retry.restore()
-      for (const [i, s] of sources.entries()) await surco.retry(rowName(surco, s.path, written[i]))
+      for (const [i, s] of sources.entries())
+        retried[i] = await surco.retry(rowName(surco, s.path, written[i]))
       await surco.settled()
     }
   } finally {
@@ -231,26 +242,33 @@ export async function runGroup(group: CellGroup): Promise<CellOutcome[]> {
       const finalPath = (toMusic(cell) && musicPlays(set, track)) || written[i]
       const name = rowName(surco, source.path, written[i])
       const verdict = surco.verification(name)
+      const fileExists = existsSync(finalPath)
+      const consumed = cell.dest === 'overwrite' && inPlace(cell, source.path)
       const expected: Expected = {
         finalPath,
-        lagMs: existsSync(finalPath) ? markerLagMs(witness.path, finalPath) : 0,
+        at: {
+          ...pointingAt(finalPath),
+          traktor:
+            spelled(dirname(finalPath)) === spelled(dirname(source.path)) ? finalPath : source.path,
+        },
+        lagMs: fileExists ? markerLagMs(witness.path, finalPath) : 0,
         samplesKept:
           cell.quality === 'source' &&
-          ((LOSSLESS.has(cell.origin) && cell.target !== 'mp3') ||
-            SAME_FORMAT[cell.target].includes(extname(source.path).toLowerCase())),
-        destGone: cell.dest === 'overwrite',
+          ((LOSSLESS.has(cell.origin) && cell.target !== 'mp3') || sameFormat(cell, source.path)),
+        destGone: consumed,
       }
       return {
         cell,
         finalPath,
+        fileExists,
         verdict,
         statuses: surco.statuses(name),
+        openUntil: openUntil[i],
+        retry: retried[i],
         broken: [
           ...fileInvariants(cell, witness, finalPath, source.coverSha1),
           ...libraryInvariants(cell, set, track, expected),
-          ...(cell.dest === 'overwrite'
-            ? await trashBroken(surco, source, finalPath, verdict)
-            : []),
+          ...(consumed ? await trashBroken(surco, source, finalPath, verdict) : []),
         ],
       }
     }),

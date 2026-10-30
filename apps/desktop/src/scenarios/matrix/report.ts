@@ -1,5 +1,5 @@
-import { writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import type { OutputFormat } from '../../shared/types'
 import type { Verification } from '../../shared/verification'
 import { scenarioRoot } from '../electronFake'
@@ -9,9 +9,12 @@ import type { Broken } from './oracle'
 export interface CellOutcome {
   cell: Cell
   finalPath: string
+  fileExists: boolean
   broken: Broken[]
   verdict: Verification | undefined
   statuses: Verification['status'][]
+  openUntil?: number
+  retry?: 'rerun-job' | 'rechecked'
 }
 
 export type Agreement = 'green' | 'honestBug' | 'falseOk' | 'falseAlarm'
@@ -90,8 +93,18 @@ const FILE_JUDGED: InvariantName[] = ['pcm', 'tags', 'cover']
 
 const declaredOf = (cell: Cell) => new Set(cell.expectBroken?.map((b) => b.invariant))
 
-const okBeforeClose = (o: CellOutcome): boolean =>
-  o.cell.state === 'open' && o.statuses.slice(0, -1).includes('ok')
+function gateFailure(o: CellOutcome): string | null {
+  const seen = o.statuses.join(' → ') || 'sin estados'
+  if (o.cell.state === 'open') {
+    const whileOpen = o.statuses.slice(0, o.openUntil ?? o.statuses.length)
+    if (whileOpen.includes('ok')) return `veredicto ok antes de cerrar el programa (${seen})`
+    if (!whileOpen.includes('pending'))
+      return `con el programa abierto nunca quedó pendiente (${seen})`
+  }
+  if (o.cell.state === 'retry' && o.retry !== 'rechecked')
+    return `Reintentar respondió ${o.retry ?? 'nada'}, se esperaba rechecked`
+  return null
+}
 
 const namesExpectedKey = (o: CellOutcome): boolean =>
   !o.cell.expectedKey || !!o.verdict?.checks.some((c) => c.detail.key === o.cell.expectedKey)
@@ -105,8 +118,12 @@ function brokenAsDeclared(o: CellOutcome): boolean {
 
 export function agreement(o: CellOutcome): Agreement {
   const expectsBreak = !!o.cell.sabotage || declaredOf(o.cell).size > 0
-  if (okBeforeClose(o)) return 'falseOk'
-  if (o.verdict?.status === 'ok') return o.broken.length > 0 || expectsBreak ? 'falseOk' : 'green'
+  if (!o.verdict) return o.broken.length > 0 ? 'honestBug' : 'falseAlarm'
+  if (gateFailure(o)) {
+    if (o.verdict.status === 'ok') return 'falseOk'
+    return o.broken.length > 0 ? 'honestBug' : 'falseAlarm'
+  }
+  if (o.verdict.status === 'ok') return o.broken.length > 0 || expectsBreak ? 'falseOk' : 'green'
   if (o.broken.length === 0) return 'falseAlarm'
   return brokenAsDeclared(o) && namesExpectedKey(o) ? 'green' : 'honestBug'
 }
@@ -119,8 +136,8 @@ function verdictKeys(v: Verification): string {
 function verdictLine(o: CellOutcome, kind: Agreement): string {
   const v = o.verdict
   if (!v) return 'veredicto ninguno, la autocomprobación no terminó'
-  if (okBeforeClose(o))
-    return `veredicto ok antes de cerrar el programa (${o.statuses.join(' → ')})`
+  const gate = gateFailure(o)
+  if (gate) return gate
   if (kind === 'falseOk')
     return 'veredicto ok, pero el resultado no cuadra (el verificador no lo vio)'
   const said = `veredicto ${v.status} (${verdictKeys(v)})`
@@ -148,8 +165,9 @@ const SUPERSCRIPT = '⁰¹²³⁴⁵⁶⁷⁸⁹'
 const superscript = (n: number): string =>
   [...String(n)].map((digit) => SUPERSCRIPT[Number(digit)]).join('')
 
-const fileMissing = (o: CellOutcome): boolean =>
-  o.broken.some((b) => b.invariant === 'format' && b.detail.endsWith('no existe'))
+const applies = (o: CellOutcome, invariant: InvariantName): boolean =>
+  !(invariant === 'cues' && o.cell.programs === 'music') &&
+  !(FILE_JUDGED.includes(invariant) && !o.fileExists)
 
 const pad = (n: number): string => String(n).padStart(2, '0')
 
@@ -158,12 +176,12 @@ export function renderReport(outcomes: CellOutcome[], at: Date): string {
   const rows = outcomes.map((o) => {
     const marks = INVARIANTS.map((invariant) => {
       const details = o.broken.filter((b) => b.invariant === invariant).map((b) => b.detail)
-      if (details.length === 0) return fileMissing(o) && FILE_JUDGED.includes(invariant) ? '–' : '✓'
+      if (details.length === 0) return applies(o, invariant) ? '✓' : '–'
       notes.push(`${superscript(notes.length + 1)} ${details.join('; ')}`)
       return `✗${superscript(notes.length)}`
     })
     const kind = agreement(o)
-    const agrees = kind === 'green' || kind === 'honestBug' ? '✓' : '✗'
+    const agrees = o.verdict && (kind === 'green' || kind === 'honestBug') ? '✓' : '✗'
     const { cell } = o
     return `| ${[
       cell.id,
@@ -198,6 +216,7 @@ export function writeReport(outcomes: CellOutcome[]): string {
   const at = new Date()
   const day = `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`
   const path = process.env.SURCO_MATRIX_REPORT || join(scenarioRoot, `matriz-${day}.md`)
+  mkdirSync(dirname(path), { recursive: true })
   writeFileSync(path, renderReport(outcomes, at))
   console.log(`Matriz de resultados en ${path}`)
   return path

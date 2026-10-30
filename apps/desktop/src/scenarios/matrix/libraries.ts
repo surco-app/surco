@@ -40,6 +40,7 @@ export interface LibrarySet {
   settings: Partial<Settings>
   sha1Before: Record<'rekordbox' | 'engine' | 'traktor', string | null>
   bystanderRows: Partial<Record<'rekordbox' | 'engine' | 'traktor', string>>
+  traktorEntries: Record<string, string>
 }
 
 export type Program = 'rekordbox' | 'engine' | 'traktor' | 'music'
@@ -275,11 +276,16 @@ function engineRowsOf(dir: string, t: SeededTrack): string {
   }
 }
 
+export function traktorEntryOf(nml: string, audioId: string): string {
+  const start = nml.indexOf(`AUDIO_ID="${audioId}"`)
+  return start === -1
+    ? ''
+    : nml.slice(nml.lastIndexOf('<ENTRY', start), nml.indexOf('</ENTRY>', start))
+}
+
 function traktorRowsOf(nmlFile: string, t: SeededTrack): string {
   const nml = readFileSync(nmlFile, 'utf8')
-  const start = nml.indexOf(`AUDIO_ID="${t.traktorAudioId}"`)
-  const entry =
-    start === -1 ? '' : nml.slice(nml.lastIndexOf('<ENTRY', start), nml.indexOf('</ENTRY>', start))
+  const entry = traktorEntryOf(nml, t.traktorAudioId)
   const location = entry.match(/<LOCATION\b[^>]*>/)?.[0] ?? ''
   const raw = (name: string) => location.match(new RegExp(` ${name}="([^"]*)"`))?.[1] ?? ''
   const key = `KEY="${raw('VOLUME')}${raw('DIR')}${raw('FILE')}"`
@@ -361,5 +367,11 @@ export function buildLibraries(
       traktor: sha1Of(traktorNml),
     },
     bystanderRows: bystanderRows({ rekordboxDb, engineDir, traktorNml }, bystander),
+    traktorEntries: Object.fromEntries(
+      tracks.map((t) => [
+        t.traktorAudioId,
+        traktorEntryOf(readFileSync(traktorNml, 'utf8'), t.traktorAudioId),
+      ]),
+    ),
   }
 }

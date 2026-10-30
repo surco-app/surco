@@ -39,8 +39,17 @@ function outcome(
   broken: Broken[],
   verdict: Verification | undefined,
   statuses: Verification['status'][] = verdict ? [verdict.status] : [],
+  more: Partial<CellOutcome> = {},
 ): CellOutcome {
-  return { cell: cellOf(id), finalPath: '/x/flac Café Olé.aiff', broken, verdict, statuses }
+  return {
+    cell: cellOf(id),
+    finalPath: '/x/flac Café Olé.aiff',
+    fileExists: true,
+    broken,
+    verdict,
+    statuses,
+    ...more,
+  }
 }
 
 afterEach(() => {
@@ -117,12 +126,49 @@ describe('a matrix cell is judged by whether the oracle and the self-check agree
   })
 
   // An ok shown while the program still held its library is a ✓ on a track no library
-  // points at yet.
+  // points at yet. Only the statuses emitted before the runner closed the program count.
   it('calls an ok emitted before the program closed the worst case', () => {
-    const early = outcome('K14', [], ok, ['ok', 'pending', 'ok'])
+    const early = outcome('K14', [], ok, ['ok', 'pending', 'ok'], { openUntil: 2 })
     expect(agreement(early)).toBe('falseOk')
     expect(cellFailure(early)).toContain('antes de cerrar')
-    expect(agreement(outcome('K14', [], ok, ['pending', 'ok']))).toBe('green')
+    expect(agreement(outcome('K14', [], ok, ['pending', 'ok'], { openUntil: 1 }))).toBe('green')
+  })
+
+  it('calls a lone ok given while the program was open the worst case', () => {
+    expect(agreement(outcome('K14', [], ok, ['ok'], { openUntil: 1 }))).toBe('falseOk')
+    expect(agreement(outcome('K14', [], ok, ['pending', 'ok'], { openUntil: 2 }))).toBe('falseOk')
+  })
+
+  it('accepts as many oks as the close brings once the program is closed', () => {
+    expect(agreement(outcome('K14', [], ok, ['pending', 'ok', 'ok'], { openUntil: 1 }))).toBe(
+      'green',
+    )
+  })
+
+  // An open program that never made the track wait means Surco did not see it open: the
+  // write either went through under the DJ or was never queued.
+  it('needs the track to wait while the program is open', () => {
+    const neverWaited = outcome('K14', [], ok, ['checking', 'ok'], { openUntil: 1 })
+    expect(agreement(neverWaited)).toBe('falseOk')
+    expect(cellFailure(neverWaited)).toContain('nunca quedó pendiente')
+  })
+
+  it('does not call a missing verdict green, even over a declared blind spot', () => {
+    const moved: Broken[] = [{ invariant: 'cues', detail: 'rekordbox: un cue movido 500 ms' }]
+    const silent = outcome('S-blindRekordboxCueMoved', moved, undefined)
+    expect(agreement(silent)).not.toBe('green')
+    expect(cellFailure(silent)).toContain('veredicto ninguno')
+  })
+
+  // Reintentar after an unreadable library only has to read again: a rerun converts a
+  // second time, and that is how cues get shifted twice.
+  it('needs a retry that only rechecks', () => {
+    const statuses: Verification['status'][] = ['mismatch', 'checking', 'ok']
+    expect(agreement(outcome('K10', [], ok, statuses, { retry: 'rechecked' }))).toBe('green')
+    const rerun = outcome('K10', [], ok, statuses, { retry: 'rerun-job' })
+    expect(agreement(rerun)).toBe('falseOk')
+    expect(cellFailure(rerun)).toContain('rerun-job')
+    expect(agreement(outcome('K10', [], ok, statuses))).toBe('falseOk')
   })
 })
 
@@ -186,8 +232,10 @@ describe('the matrix report', () => {
   it('marks the file columns it could not judge when the file is missing', () => {
     const gone = outcome(
       'C-flac-aiff',
-      [{ invariant: 'format', detail: 'formato: el fichero final no existe' }],
+      [{ invariant: 'format', detail: 'formato: sin fichero' }],
       mismatch('rekordboxStillOld'),
+      undefined,
+      { fileExists: false },
     )
     const row = renderReport([gone], new Date(2026, 9, 30))
       .split('\n')
@@ -197,8 +245,19 @@ describe('the matrix report', () => {
     )
   })
 
+  // Music keeps no cue points, so a Music-only cell has nothing to judge there; a ✓ would
+  // claim a check that never ran.
+  it('marks an invariant that does not apply to the cell', () => {
+    const row = renderReport([outcome('D16', [], ok)], new Date(2026, 9, 30))
+      .split('\n')
+      .find((line) => line.startsWith('| D16'))
+    expect(row).toBe(
+      '| D16 | AIFF→WAV | Music | Music | cerrado | ✓ | ✓ | ✓ | – | ✓ | ✓ | ✓ | ✓ | ✓ | ok | ✓ |',
+    )
+  })
+
   it('writes the report where SURCO_MATRIX_REPORT says and returns that path', () => {
-    const path = join(scenarioDir('matriz-informe'), 'matriz.md')
+    const path = join(scenarioDir('matriz-informe'), 'nueva carpeta', 'matriz.md')
     vi.stubEnv('SURCO_MATRIX_REPORT', path)
     vi.spyOn(console, 'log').mockImplementation(() => {})
     expect(writeReport(outcomes)).toBe(path)

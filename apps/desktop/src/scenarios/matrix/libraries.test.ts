@@ -25,13 +25,15 @@ import {
   libraryInvariants,
   nmlKeyPath,
   nmlLocationPath,
+  pointingAt,
 } from './oracle'
 import { makeSource, SEEDED_CUES_MS, type SourceTrack } from './sources'
 
 const BASE = CELLS.find((c) => c.id === 'C-flac-aiff') as Cell
 const cellWith = (programs: Programs): Cell => ({ ...BASE, programs })
 const untouched = (t: SeededTrack, more: Partial<Expected> = {}): Expected => ({
-  finalPath: t.path,
+  finalPath: more.finalPath ?? t.path,
+  at: pointingAt(more.finalPath ?? t.path),
   lagMs: 0,
   samplesKept: true,
   destGone: false,
@@ -408,6 +410,98 @@ describe('Synthetic libraries the matrix judges on its own', () => {
         return nml.replace(entry, `${entry}\n${entry.replace(track.traktorAudioId, 'OTRO')}`)
       })
       seen(judge(only), 'unique', 'Traktor: 2 entradas')
+    })
+  })
+
+  // Traktor's entry follows a conversion only when the new file sits in the source's own
+  // folder (recordConversionPatch). Written to the output folder, the source survives and
+  // Traktor keeps playing it: that entry must come out byte for byte as it went in.
+  describe('Traktor left on the source by a conversion to another folder', () => {
+    const only = cellWith('traktor')
+    let converted: string
+    const staying = () =>
+      untouched(track, {
+        finalPath: converted,
+        at: { ...pointingAt(converted), traktor: track.path },
+      })
+
+    beforeAll(() => {
+      converted = join(scenarioDir('matrix-traktor-salida'), basename(track.path))
+      copyFileSync(track.path, converted)
+    })
+
+    it('passes the source entry left exactly as it was', () => {
+      expect(judge(only, staying())).toEqual([])
+    })
+
+    it('sees a cue moved on the entry that stayed', () => {
+      traktor((nml) => nml.replace('START="15000.000000"', 'START="14949.000000"'))
+      seen(judge(only, staying()), 'cues', 'Traktor: la entrada del original')
+    })
+
+    it('sees the ranking of the entry that stayed changed', () => {
+      traktor((nml) =>
+        nml.replace(
+          `AUDIO_ID="${track.traktorAudioId}"`,
+          `AUDIO_ID="${track.traktorAudioId}" RANKING="255"`,
+        ),
+      )
+      seen(judge(only, staying()), 'collateral', 'Traktor: la entrada del original')
+    })
+
+    it('sees a playlist moved off the entry that stayed', () => {
+      const file = basename(track.path).normalize('NFC')
+      traktor((nml) => nml.replaceAll(`${file}"></PRIMARYKEY>`, 'otro.flac"></PRIMARYKEY>'))
+      seen(judge(only, staying()), 'playlists', 'ya no nombra la pista')
+    })
+
+    it('sees a new entry added for the converted file', () => {
+      traktor((nml) => {
+        const start = nml.indexOf(
+          `<ENTRY MODIFIED_DATE="2026/10/30" AUDIO_ID="${track.traktorAudioId}"`,
+        )
+        const entry = nml.slice(start, nml.indexOf('</ENTRY>', start) + 8)
+        const { volume, dir, file } = toNmlLocation(converted.normalize('NFC'))
+        const there = entry
+          .replace(track.traktorAudioId, 'NUEVA')
+          .replace(
+            /<LOCATION\b[^>]*>/,
+            `<LOCATION DIR="${dir}" FILE="${file}" VOLUME="${volume || bootVolumeName()}" VOLUMEID="x">`,
+          )
+        return nml.replace(entry, `${entry}\n${there}`)
+      })
+      seen(judge(only, staying()), 'unique', 'Traktor: 1 entradas para el fichero convertido')
+    })
+
+    it('sees the entry moved to the converted file when it should have stayed', () => {
+      const { dir, file } = toNmlLocation(converted.normalize('NFC'))
+      traktor((nml) => {
+        const start = nml.indexOf(`AUDIO_ID="${track.traktorAudioId}"`)
+        const head = nml.slice(0, start)
+        const rest = nml
+          .slice(start)
+          .replace(/<LOCATION DIR="[^"]*" FILE="[^"]*"/, `<LOCATION DIR="${dir}" FILE="${file}"`)
+        return head + rest
+      })
+      seen(judge(only, staying()), 'points', 'Traktor: LOCATION')
+    })
+  })
+
+  describe('Traktor following a file written beside the source', () => {
+    const only = cellWith('traktor')
+
+    it('expects the entry and its playlists on the new file', () => {
+      const beside = join(dirname(track.path), 'junto.flac')
+      copyFileSync(track.path, beside)
+      try {
+        const expected = untouched(track, { finalPath: beside })
+        seen(judge(only, expected), 'points', 'Traktor: LOCATION')
+        const file = basename(track.path).normalize('NFC')
+        traktor((nml) => nml.replaceAll(`${file}"`, 'junto.flac"'))
+        expect(beyondCollateral(judge(only, expected))).toEqual([])
+      } finally {
+        rmSync(beside)
+      }
     })
   })
 
