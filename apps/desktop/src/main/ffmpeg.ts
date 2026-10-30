@@ -745,7 +745,9 @@ export async function probeAudio(input: string): Promise<ProbeResult> {
   )
   const parsed = JSON.parse(stdout)
   const stream = parsed.streams?.[0] ?? {}
-  const headerSeconds = Number(stream.duration ?? parsed.format?.duration)
+  // A stream with no length of its own reports N/A; the container's may still know it.
+  const streamSeconds = Number(stream.duration)
+  const headerSeconds = streamSeconds > 0 ? streamSeconds : Number(parsed.format?.duration)
   return {
     codecName: String(stream.codec_name ?? ''),
     sampleFmt: stream.sample_fmt ?? 's16',
@@ -1520,7 +1522,7 @@ export async function proveDecodable(
     }
   }
   if (copiedFrom !== undefined && !(await decodeForCheck(copiedFrom, undefined, opts)).ok)
-    return { durationSec: await assertDeliversAsMuchAs(file, copiedFrom) }
+    return { durationSec: await assertDeliversAsMuchAs(file, copiedFrom, opts) }
   // -xerror fails on the first packet the decoder rejects wherever it sits, and a
   // complete file can carry one after its last frame: three of a user's MP3s (17/09/2026)
   // ended in a Lyrics3v2 block, which ffmpeg's mp3 demuxer does not know and hands to the
@@ -1551,10 +1553,18 @@ export async function sourceDamaged(file: string, signal?: AbortSignal): Promise
   }
 }
 
-async function assertDeliversAsMuchAs(file: string, source: string): Promise<number> {
+async function assertDeliversAsMuchAs(
+  file: string,
+  source: string,
+  opts?: RunOpts,
+): Promise<number> {
+  const bounds = {
+    timeout: opts?.timeout as number | undefined,
+    signal: opts?.signal as AbortSignal | undefined,
+  }
   const [delivered, playable] = await Promise.all([
-    deliveredDurationSec(file),
-    deliveredDurationSec(source),
+    deliveredDurationSec(file, bounds),
+    deliveredDurationSec(source, bounds),
   ])
   if (delivered === null || playable === null)
     throw errorWithKey('convertedOutputUnreadable', basename(file))
