@@ -82,3 +82,35 @@ describe('rejectedCues', () => {
     expect(rejectedCues(MY_FLOW, track({ beats: [] }))).toEqual([])
   })
 })
+
+describe('points marked by hand', () => {
+  const mixIn = flow(rule())
+
+  it('places the cue inside a strong part, since the DJ chose that point and the fitting is only for Auto mark', () => {
+    const t = track({ strong: [{ start: beat(40), end: beat(56) }] })
+    expect(evaluateFlow(mixIn, t).cues).toEqual([])
+    const forced = track({ strong: [{ start: beat(40), end: beat(56) }], byHand: [beat(64)] })
+    expect(evaluateFlow(mixIn, forced).cues.map((c) => c.ms)).toEqual([beat(48)])
+    expect(rejectedCues(mixIn, forced)).toEqual([])
+  })
+
+  it('places the cue past the previous point too', () => {
+    const t = track({ drops: [beat(100), beat(108)], byHand: [beat(108)] })
+    expect(evaluateFlow(mixIn, t).cues.map((c) => c.ms)).toEqual([beat(84), beat(92)])
+  })
+
+  it('still leaves out a cue that falls off the start of the track, where there is nowhere to put it', () => {
+    const t = track({ drops: [beat(10)], byHand: [beat(10)] })
+    expect(evaluateFlow(mixIn, t).cues).toEqual([])
+    expect(brief(mixIn, t).map(([, , reason]) => reason)).toEqual(['start'])
+  })
+
+  it('keeps fitting the points it did not mark by hand', () => {
+    const t = track({
+      drops: [beat(64), beat(150)],
+      strong: [{ start: beat(40), end: beat(56) }],
+      byHand: [beat(150)],
+    })
+    expect(evaluateFlow(mixIn, t).cues.map((c) => c.ms)).toEqual([beat(134)])
+  })
+})

@@ -46,6 +46,7 @@ export interface CueDraft {
   placed: string[]
   origin: Record<string, string>
   locked: string[]
+  marked: string[]
   nextKey: number
 }
 
@@ -62,7 +63,7 @@ export interface DraftContext {
 const kindsOf = (ctx: DraftContext): number[] => (ctx.slots ?? ALL_SLOTS).kinds
 
 export type DraftAction =
-  | { type: 'mark-drop'; ms: number }
+  | { type: 'mark-drop'; ms: number; byHand?: boolean }
   | { type: 'select'; key: string | null }
   | { type: 'move'; key: string; ms: number }
   | { type: 'remove'; key: string }
@@ -95,6 +96,7 @@ export function startDraft(cues: WantedCue[], flowId: string, locked: string[] =
     placed: [],
     origin: {},
     locked,
+    marked: [],
     nextKey: cues.length,
   }
 }
@@ -104,6 +106,10 @@ export function draftDrops(cues: DraftCue[], locked: string[] = []): number[] {
     cues.filter((c) => !isHot(c) && !locked.includes(c.key)).map((c) => c.ms),
     cues.filter(isHot).map((c) => c.ms),
   )
+}
+
+function handPoints(state: CueDraft): number[] {
+  return state.cues.filter((c) => !isHot(c) && state.marked.includes(c.key)).map((c) => c.ms)
 }
 
 export function draftPoints(
@@ -116,6 +122,7 @@ export function draftPoints(
     strong: ctx.strong,
     phrases: ctx.phrases,
     drops: draftDrops(state.cues, state.locked),
+    byHand: handPoints(state),
   })
 }
 
@@ -186,7 +193,12 @@ function withoutPoint(state: CueDraft, ctx: DraftContext, key: string): DraftCue
   const target = state.cues.find((c) => c.key === key)
   const flowId = target && state.origin[target.key]
   if (!target || isHot(target) || !flowId || ctx.beats.length === 0) return null
-  const track = { beats: ctx.beats, strong: ctx.strong, phrases: ctx.phrases }
+  const track = {
+    beats: ctx.beats,
+    strong: ctx.strong,
+    phrases: ctx.phrases,
+    byHand: handPoints(state),
+  }
   const flow = flowById(ctx, flowId)
   const points = flowDrops(flow, { ...track, drops: draftDrops(state.cues, state.locked) })
   if (!points.some((p) => near(p, target.ms))) return null
@@ -220,6 +232,7 @@ function regenerate(
   drops: number[],
   flow: CueFlow,
   point: number,
+  byHand: number[],
 ): CueDraft {
   const existing: ExistingCue[] = state.cues.map((c) => ({
     id: c.key,
@@ -238,9 +251,10 @@ function regenerate(
     flow,
     kept: state.placed,
     slots: ctx.slots,
+    byHand,
   })
   if (out.status === 'too-many') return { ...state, notice: 'too-many' }
-  if (out.status === 'manual') return fillMissing(state, ctx, drops, flow, point)
+  if (out.status === 'manual') return fillMissing(state, ctx, drops, flow, point, byHand)
   const byKey = new Map(state.cues.map((c) => [c.key, c]))
   let nextKey = state.nextKey
   const origin = { ...state.origin }
@@ -273,6 +287,7 @@ function fillMissing(
   drops: number[],
   flow: CueFlow,
   point: number,
+  byHand: number[],
 ): CueDraft {
   const wantedOf = (points: number[]): WantedCue[] => {
     const out = flowOutcome({
@@ -284,6 +299,7 @@ function fillMissing(
       phrases: ctx.phrases,
       flow,
       slots: ctx.slots,
+      byHand,
     })
     return out.status === 'too-many' ? [] : out.wanted
   }
@@ -355,6 +371,7 @@ function placeOnce(
   ms: number,
   flow: CueFlow,
   byHand: boolean,
+  hand: number[],
 ): CueDraft {
   const out = flowOutcome({
     existing: [],
@@ -366,6 +383,7 @@ function placeOnce(
     flow,
     point: ms,
     slots: ctx.slots,
+    byHand: hand,
   })
   if (out.status === 'too-many') return { ...state, notice: 'too-many' }
   const taken = (c: WantedCue): boolean =>
@@ -479,7 +497,7 @@ function step(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft
     // The point is placed again by the flow that placed it, whatever flow is chosen now.
     const moved = reduceDraft(
       { ...state, cues, selected: null, flowId: state.origin[target.key] },
-      { type: 'mark-drop', ms: action.ms },
+      { type: 'mark-drop', ms: action.ms, byHand: state.marked.includes(target.key) },
       ctx,
     )
     if (moved.cues === cues) return { ...state, notice: moved.notice }
@@ -489,9 +507,14 @@ function step(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft
     const ms = snap(ctx, action.ms)
     const drops = draftDrops(state.cues, state.locked)
     if (drops.some((d) => near(d, ms))) return state
-    if (!flow.markPoint) return placeOnce(state, ctx, ms, flow, true)
-    if (flow.id !== generator.id) return placeOnce(state, ctx, ms, flow, false)
-    return regenerate(state, ctx, [...drops, ms], flow, ms)
+    const hand = action.byHand ? [...handPoints(state), ms] : handPoints(state)
+    const next = !flow.markPoint
+      ? placeOnce(state, ctx, ms, flow, true, hand)
+      : flow.id !== generator.id
+        ? placeOnce(state, ctx, ms, flow, false, hand)
+        : regenerate(state, ctx, [...drops, ms], flow, ms, hand)
+    const point = next.cues.find((c) => !isHot(c) && near(c.ms, ms) && !state.cues.includes(c))
+    return action.byHand && point ? { ...next, marked: [...next.marked, point.key] } : next
   }
   if (action.type === 'add-hot' || action.type === 'add-call') {
     const ms = snap(ctx, action.ms)
@@ -563,10 +586,15 @@ const sameCue = (a: DraftCue, b: DraftCue): boolean =>
   a.key === b.key && a.ms === b.ms && a.kind === b.kind && a.color === b.color
 
 function rejectsOf(state: CueDraft, action: DraftAction, ctx: DraftContext): RejectedCue[] {
-  const track = { beats: ctx.beats, strong: ctx.strong, phrases: ctx.phrases }
-  const drops = draftDrops(state.cues, state.locked)
   if (action.type !== 'mark-drop' || ctx.beats.length === 0) return []
   const ms = snap(ctx, action.ms)
+  const track = {
+    beats: ctx.beats,
+    strong: ctx.strong,
+    phrases: ctx.phrases,
+    byHand: action.byHand ? [...handPoints(state), ms] : handPoints(state),
+  }
+  const drops = draftDrops(state.cues, state.locked)
   if (drops.some((d) => near(d, ms))) return []
   const flow = flowById(ctx, state.flowId)
   const once = !flow.markPoint || flow.id !== state.generatedBy

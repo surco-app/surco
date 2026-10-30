@@ -492,7 +492,8 @@ function Editing({
   const playheadBeatMs =
     ctx.snapTo.length > 0 ? ctx.snapTo[nearestBeat(ctx.snapTo, playheadMs)] : playheadMs
   const playheadGhost = useMemo<DraftGhost | null>(
-    () => (placing ? ghostOf(state, { type: 'mark-drop', ms: playheadBeatMs }, ctx) : null),
+    () =>
+      placing ? ghostOf(state, { type: 'mark-drop', ms: playheadBeatMs, byHand: true }, ctx) : null,
     [placing, playheadBeatMs, state, ctx],
   )
   const [hoverMs, setHoverMs] = useState<number | null>(null)
@@ -501,7 +502,9 @@ function Editing({
   }, [placing])
   const hoverGhost = useMemo<DraftGhost | null>(
     () =>
-      placing && hoverMs !== null ? ghostOf(state, { type: 'mark-drop', ms: hoverMs }, ctx) : null,
+      placing && hoverMs !== null
+        ? ghostOf(state, { type: 'mark-drop', ms: hoverMs, byHand: true }, ctx)
+        : null,
     [placing, hoverMs, state, ctx],
   )
   const { data: rekordboxWords } = useCueWaveDetail(cue.contentId, !provisional)
@@ -609,7 +612,7 @@ function Editing({
           added: anyGhost.added.map((c) => (c.kind !== 0 ? { ...c, color: TRAKTOR_CUE_COLOR } : c)),
         }
       : anyGhost
-  const place = (ms: number) => dispatch({ type: 'mark-drop', ms })
+  const place = (ms: number) => dispatch({ type: 'mark-drop', ms, byHand: true })
   const markHere = () => {
     if (manual) dispatch({ type: 'add-call', ms: playheadMs })
     else if (placing) place(playheadMs)
@@ -1389,7 +1392,7 @@ function Editing({
               type="button"
               role="menuitem"
               data-testid="cues-menu-mark-drop"
-              onClick={() => fromMenu({ type: 'mark-drop', ms: menu.ms })}
+              onClick={() => fromMenu({ type: 'mark-drop', ms: menu.ms, byHand: true })}
               className={MENU_ITEM}
             >
               {tr('editor.cues.menuMarkDrop')}

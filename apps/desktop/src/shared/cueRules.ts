@@ -82,6 +82,7 @@ export interface FlowTrack {
   drops: number[]
   strong: StrongPart[]
   phrases: FlowPhrase[]
+  byHand?: number[]
 }
 
 export interface FlowCue {
@@ -218,6 +219,9 @@ function walkFlow(
     const origins = originsOf(rule, track, drops)
     origins.forEach((origin, i) => {
       const start = nearestBeat(beats, origin)
+      const fits =
+        rule.when === 'fits' &&
+        !(rule.from === 'drop' && (track.byHand ?? []).some((p) => near(p, origin)))
       if (rule.bars === 0) {
         if (allowed(rule, beats[start], placed, drops, beats)) add(beats[start], 1)
         return
@@ -234,17 +238,13 @@ function walkFlow(
           break
         }
         const ms = beats[at]
-        const reason = rule.when === 'fits' ? misfit(ms, rule, previous, next, track.strong) : null
+        const reason = fits ? misfit(ms, rule, previous, next, track.strong) : null
         if (reason) {
           reject(start, step, k, last ?? k, reason)
           break
         }
         if (allowed(rule, ms, placed, drops, beats)) add(ms, k)
-        if (
-          rule.when === 'fits' &&
-          rule.direction === 'back' &&
-          startsStrongRun(track.strong, ms)
-        ) {
+        if (fits && rule.direction === 'back' && startsStrongRun(track.strong, ms)) {
           if (last !== null) reject(start, step, k + 1, last, 'strong')
           break
         }
@@ -399,6 +399,7 @@ export interface FlowInput {
   point?: number
   kept?: string[]
   slots?: CueSlots
+  byHand?: number[]
 }
 
 export type FlowOutcome =
@@ -428,12 +429,12 @@ export function flowDrops(flow: CueFlow, track: FlowTrack): number[] {
 }
 
 export function flowOutcome(input: FlowInput): FlowOutcome {
-  const { existing, beats, strong, phrases, flow } = input
+  const { existing, beats, strong, phrases, flow, byHand } = input
   const hot = existing.filter((c) => c.kind !== 0)
   const memory = existing.filter((c) => c.kind === 0)
   const slots = input.slots ?? ALL_SLOTS
   const letters = slots.kinds
-  const wantedDrops = flowDrops(flow, { beats, drops: input.drops, strong, phrases })
+  const wantedDrops = flowDrops(flow, { beats, drops: input.drops, strong, phrases, byHand })
   const currentDrops = memory.filter((m) => !m.loop && hot.every((h) => !near(m.ms, h.ms)))
   const removed = new Set(
     currentDrops.filter((m) => !wantedDrops.some((d) => near(d, m.ms))).map((m) => m.id),
@@ -443,15 +444,26 @@ export function flowOutcome(input: FlowInput): FlowOutcome {
   const added: WantedCue[] = wantedDrops
     .filter((ms) => !memory.some((m) => near(m.ms, ms)) && !unmarked(ms))
     .map((ms) => ({ ms, kind: 0, color: null }))
-  const plan = evaluateFlow(flow, { beats, drops: wantedDrops, strong, phrases }, letters.length)
+  const plan = evaluateFlow(
+    flow,
+    { beats, drops: wantedDrops, strong, phrases, byHand },
+    letters.length,
+  )
   const previousFlow = input.previousFlow ?? flow
   const oldPlan = evaluateFlow(
     previousFlow,
     {
       beats,
-      drops: flowDrops(previousFlow, { beats, drops: input.previousDrops, strong, phrases }),
+      drops: flowDrops(previousFlow, {
+        beats,
+        drops: input.previousDrops,
+        strong,
+        phrases,
+        byHand,
+      }),
       strong,
       phrases,
+      byHand,
     },
     letters.length,
   )
