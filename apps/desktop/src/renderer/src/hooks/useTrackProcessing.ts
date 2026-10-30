@@ -601,6 +601,9 @@ export function useTrackProcessing({
         musicStatus: 'added',
         musicPersistentId: persistentId ?? musicPersistentId,
       })
+      // A check that read Music before this add is read again for the entry it made.
+      if (persistentId && track.verification?.checks.some((c) => c.place === 'appleMusic'))
+        void window.api.verifyMusicAdded(id, persistentId).catch(() => {})
     } catch (e) {
       updateTrack(id, {
         musicStatus: 'error',

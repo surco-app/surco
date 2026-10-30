@@ -346,6 +346,19 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
       return during([e], () => recheck(e))
     },
 
+    // The DJ added the track to Music by hand after its check: Music is read again for the
+    // entry that add made. A track whose job never went to Music has nothing to re-read.
+    async musicAdded(trackId: string, pid: string): Promise<void> {
+      const e = entries.get(trackId)
+      if (!e?.music) return
+      const music = { ...e.music, pid }
+      e.music = music
+      await during([e], async () => {
+        replace(e, await deps.readMusic(music), 'appleMusic')
+        emit(e)
+      })
+    },
+
     get(trackId: string): Verification | undefined {
       return entries.get(trackId)?.verification
     },

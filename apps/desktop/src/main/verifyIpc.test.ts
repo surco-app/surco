@@ -124,10 +124,18 @@ describe('verify IPC', () => {
 
   it('verify:retry answers what the registry decided', async () => {
     const retry = vi.fn(async () => 'rerun-job' as const)
-    registerVerifyIpc({ retry })
+    registerVerifyIpc({ retry, musicAdded: vi.fn(async () => {}) })
 
     await expect(handlerFor('verify:retry')({}, 'a')).resolves.toBe('rerun-job')
     expect(retry).toHaveBeenCalledWith('a')
+  })
+
+  it('verify:musicAdded hands the registry the track and the entry the add made', async () => {
+    const musicAdded = vi.fn(async (_trackId: string, _pid: string) => {})
+    registerVerifyIpc({ retry: vi.fn(async () => 'rechecked' as const), musicAdded })
+
+    await handlerFor('verify:musicAdded')({}, 'a', 'PID')
+    expect(musicAdded).toHaveBeenCalledWith('a', 'PID')
   })
 })
 

@@ -1917,6 +1917,33 @@ describe('useTrackProcessing', () => {
     })
   })
 
+  // The check said the track was not in Music; added by hand, main reads Music again for the
+  // new entry so the amber line answers what is there now. A track with no Music check
+  // has nothing to re-read.
+  it('a manual add asks main to re-read Music only for a track whose check went there', async () => {
+    const verifyMusicAdded = vi.fn<Api['verifyMusicAdded']>(async () => {})
+    setApi({
+      addToAppleMusic: vi.fn<Api['addToAppleMusic']>().mockResolvedValue('NEWPID'),
+      verifyMusicAdded,
+    })
+    const checked = track({
+      id: 'a',
+      outputPath: '/out/a.aiff',
+      verification: {
+        status: 'mismatch',
+        checks: [{ place: 'appleMusic', state: 'mismatch', detail: { key: 'musicMissing' } }],
+      },
+    })
+    const plain = track({ id: 'b', outputPath: '/out/b.aiff' })
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks: [checked, plain], settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(() => result.current.addTrackToAppleMusic('a'))
+    await act(() => result.current.addTrackToAppleMusic('b'))
+    expect(verifyMusicAdded.mock.calls).toEqual([['a', 'NEWPID']])
+  })
+
   it('syncs through updateAppleMusic when the track already has a library copy, passing the output file as the re-add fallback for a copy the user deleted', async () => {
     const updateAppleMusic = vi.fn().mockResolvedValue('ABCD1234')
     const addToAppleMusic = vi.fn()

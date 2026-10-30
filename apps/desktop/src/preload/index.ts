@@ -353,6 +353,8 @@ const api: Api = {
     return () => ipcRenderer.removeListener('verify:update', listener)
   },
   retryVerification: (trackId) => ipcRenderer.invoke('verify:retry', trackId),
+  verifyMusicAdded: (trackId, persistentId) =>
+    ipcRenderer.invoke('verify:musicAdded', trackId, persistentId),
   releasePlayingFile: (path) => ipcRenderer.invoke('player:release', path),
   beginConversionBatch: (): void => ipcRenderer.send('process:batch-begin'),
   endConversionBatch: (): void => ipcRenderer.send('process:batch-end'),

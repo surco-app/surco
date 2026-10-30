@@ -23,9 +23,13 @@ export function verifyUpdateSender(contents: () => WebContents[]) {
 
 export function registerVerifyIpc(registry: {
   retry: (trackId: string) => Promise<'rerun-job' | 'rechecked'>
+  musicAdded: (trackId: string, pid: string) => Promise<void>
 }): void {
   ipcMain.handle('verify:retry', async (_e, trackId: unknown) => {
     return registry.retry(String(trackId))
+  })
+  ipcMain.handle('verify:musicAdded', async (_e, trackId: unknown, pid: unknown) => {
+    return registry.musicAdded(String(trackId), String(pid))
   })
 }
 

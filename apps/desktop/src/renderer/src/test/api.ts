@@ -283,6 +283,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     },
     onVerifyUpdate: unsubscribe,
     retryVerification: async () => 'rechecked',
+    verifyMusicAdded: async () => {},
     releasePlayingFile: async () => {},
     beginConversionBatch: noop,
     endConversionBatch: noop,

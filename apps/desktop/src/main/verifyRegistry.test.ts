@@ -964,6 +964,35 @@ describe('verify registry', () => {
     ])
   })
 
+  // The job's add never reached Music and the DJ added it by hand: the amber line that said
+  // so is answered by reading Music again for the entry the add made, not left standing.
+  it('a manual Music add re-reads Music for the entry it made', async () => {
+    const { deps, registry } = setup()
+    const checks = [ok('file', 'fileIdentical'), mismatch('appleMusic', 'musicMissing')]
+    registry.register(
+      entry('a', {
+        places: new Set(['file', 'appleMusic']),
+        music: musicExpect,
+        verification: { status: 'mismatch', checks, job: 'j', seq: 0 },
+      }),
+    )
+    await registry.afterFlush(written)
+
+    await registry.musicAdded('a', 'NEWPID')
+
+    expect(deps.readMusic).toHaveBeenCalledWith({ ...musicExpect, pid: 'NEWPID' })
+    expect(registry.get('a')?.status).toBe('ok')
+    expect(deps.emit).toHaveBeenLastCalledWith('a', expect.objectContaining({ status: 'ok' }))
+  })
+
+  it('a manual Music add for a track never checked in Music reads nothing', async () => {
+    const { deps, registry } = setup()
+    registry.register(entry('a'))
+    await registry.musicAdded('a', 'NEWPID')
+    await registry.musicAdded('gone', 'NEWPID')
+    expect(deps.readMusic).not.toHaveBeenCalled()
+  })
+
   it('retry on a track it does not know rejects with an error key', async () => {
     const { registry } = setup()
     await expect(registry.retry('nope')).rejects.toThrow(/^SURCO_ERR:verifyUnknownTrack$/)
