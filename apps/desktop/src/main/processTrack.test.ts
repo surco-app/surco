@@ -3194,16 +3194,24 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect(result.verification?.checks.map((c) => c.place)).toEqual(['file'])
   })
 
-  it('a cancel during the check still ends the job as cancelled', async () => {
+  // The file has landed, the original may be gone and the libraries already point at it:
+  // a cancel now can only stop the reads, and the row has to follow the file it wrote.
+  it('a cancel during the check returns the conversion with the file unreadable', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
     const deps = makeDeps({
       verifyFile: vi.fn(async () => {
         throw errorWithKey('conversionCancelled')
       }),
+      registerVerification,
     })
 
-    const failure = await runProcessTrack(job(), deps).catch((e: unknown) => e)
+    const result = await runProcessTrack(job(), deps)
 
-    expect(errorKeyOf((failure as Error).message)).toBe('conversionCancelled')
+    expect(result.outputPath).toBe('/out/Artist - Title.aiff')
+    expect(result.verification?.checks).toEqual([
+      { place: 'file', state: 'unreadable', detail: { key: 'fileUnreadable' } },
+    ])
+    expect(registerVerification).toHaveBeenCalledTimes(1)
   })
 
   it('Music is listed only when the job went through the Music step', async () => {
@@ -3626,29 +3634,37 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect(entry.places.has('traktor')).toBe(false)
   })
 
-  it('a cancel while the job reads back what it wrote ends it as cancelled', async () => {
+  it('a cancel while the job reads back what it wrote stops the reads, not the job', async () => {
     const active = createActiveConversions()
     let reading: () => void = () => {}
     const started = new Promise<void>((resolve) => (reading = resolve))
+    const aborted = (signal: AbortSignal) =>
+      new Promise<never>((_resolve, reject) => {
+        reading()
+        signal.addEventListener('abort', () => reject(errorWithKey('conversionCancelled')))
+      })
     const deps = makeDeps({
+      platform: 'darwin',
       beginJob: active.beginJob,
       endJob: active.endJob,
       registerActiveConversion: active.register,
       unregisterActiveConversion: active.unregister,
-      verifyFile: vi.fn<ProcessTrackDeps['verifyFile']>(
-        (_e, signal) =>
-          new Promise((resolve) => {
-            reading()
-            signal.addEventListener('abort', () => resolve(fileOk))
-          }),
+      verifyFile: vi.fn<ProcessTrackDeps['verifyFile']>((_e, signal) => aborted(signal)),
+      verifyMusic: vi.fn<NonNullable<ProcessTrackDeps['verifyMusic']>>((_e, signal) =>
+        aborted(signal),
       ),
     })
 
-    const running = runProcessTrack(job(), deps).catch((e: unknown) => e)
+    const running = runProcessTrack(job({ meta, addToAppleMusic: true }), deps)
     await started
     expect(active.cancel('job1')).toBe(true)
 
-    expect(errorKeyOf(((await running) as Error).message)).toBe('conversionCancelled')
+    const result = await running
+    expect(result.musicPersistentId).toBe('added-id')
+    expect(result.verification?.checks.map((c) => [c.place, c.state, c.detail.key])).toEqual([
+      ['file', 'unreadable', 'fileUnreadable'],
+      ['appleMusic', 'unreadable', 'musicUnreadable'],
+    ])
     expect(active.count()).toBe(0)
   })
 
@@ -3695,14 +3711,17 @@ describe('runProcessTrack — checking what it wrote', () => {
         active.cancel('job1')
         return { normalizeSkipped: false, written }
       }),
-      verifyFile: vi.fn<ProcessTrackDeps['verifyFile']>(async (_e, signal) =>
-        signal.aborted ? fileOk : new Promise(() => {}),
-      ),
+      verifyFile: vi.fn<ProcessTrackDeps['verifyFile']>(async (_e, signal) => {
+        if (signal.aborted) throw errorWithKey('conversionCancelled')
+        return new Promise(() => {})
+      }),
     })
 
-    const failure = await runProcessTrack(job(), deps).catch((e: unknown) => e)
+    const result = await runProcessTrack(job(), deps)
 
-    expect(errorKeyOf((failure as Error).message)).toBe('conversionCancelled')
+    expect(result.verification?.checks).toEqual([
+      { place: 'file', state: 'unreadable', detail: { key: 'fileUnreadable' } },
+    ])
   })
 
   it('libraries that could not be read before converting are unreadable, not skipped', async () => {

@@ -2,12 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
-import {
-  errorKeyOf,
-  errorWithKey,
-  splitNameLeftMarked,
-  withNameLeftMarked,
-} from '../shared/errorKeys'
+import { errorWithKey, splitNameLeftMarked, withNameLeftMarked } from '../shared/errorKeys'
 import { foldAccents } from '../shared/foldAccents'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../shared/format'
 import type {
@@ -451,16 +446,13 @@ function replacedExpect(
 }
 
 // The file is written by now, so a reader that throws only means the place could not be
-// read. A cancel is the exception: it still ends the job.
+// read, and so does a cancel: it stops the reads, never the conversion already landed.
 function settled(
   check: Promise<PlaceCheck>,
   place: VerifyPlace,
   key: VerifyDetailKey,
 ): Promise<PlaceCheck> {
-  return check.catch((e) => {
-    if (errorKeyOf(e instanceof Error ? e.message : '') === 'conversionCancelled') throw e
-    return { place, state: 'unreadable', detail: { key } }
-  })
+  return check.catch(() => ({ place, state: 'unreadable', detail: { key } }))
 }
 
 // The file Music is held to when the output copy stays where it was written: Music may have
@@ -992,8 +984,9 @@ export async function runProcessTrack(
     // nothing (the trash offer, a new edit) can act on a track still being checked. The
     // libraries are only written when the batch is flushed, so they stay checking here.
     stage('verify')
-    // A cancel now stops the reads, not the conversion already landed: the job still ends
-    // as cancelled.
+    // A cancel now stops the reads, not the conversion already landed: the original may be
+    // retired and the libraries already point at the new file, so the job still returns it,
+    // with what could not be read left unreadable.
     const verifying = new AbortController()
     deps.registerActiveConversion(job.id, () => verifying.abort())
     let fileCheck: PlaceCheck
@@ -1058,7 +1051,6 @@ export async function runProcessTrack(
     } finally {
       deps.unregisterActiveConversion(job.id)
     }
-    if (verifying.signal.aborted) throw errorWithKey('conversionCancelled')
     const traktor = settings.syncTraktor && !!settings.traktorNmlPath
     const engineListed = (before.engine && before.engine !== 'absent') || !!addedToEngineDj
     // Music only with no location: the repoints still name the deleted temp, so what the
