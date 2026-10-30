@@ -50,9 +50,9 @@ describe('SourceRail', () => {
     }
   })
 
-  // A long localised name is cut short under its mark, so the whole name a sighted user
-  // reads on hover still comes from the app's themed tooltip like every other icon.
-  it('names each icon in the app tooltip on focus, not in a native title', () => {
+  // The name is already written under each mark, so a hover bubble repeating it only
+  // covers the playlist column beside the rail.
+  it('does not repeat the written name in a tooltip or a native title', () => {
     render(
       <SourceRail
         onHide={vi.fn()}
@@ -61,14 +61,12 @@ describe('SourceRail', () => {
         onSelect={vi.fn()}
       />,
     )
-    for (const [id, name] of [
-      ['tracks', 'Tracks'],
-      ['rekordbox', 'rekordbox'],
-    ]) {
+    for (const id of ['tracks', 'appleMusic', 'rekordbox']) {
       const button = screen.getByTestId(`source-rail-${id}`)
       expect(button).not.toHaveAttribute('title')
       fireEvent.focusIn(button)
-      expect(screen.getByRole('tooltip')).toHaveTextContent(name)
+      fireEvent.mouseEnter(button)
+      expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
       fireEvent.focusOut(button)
     }
   })

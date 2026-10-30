@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistSource } from '../../../shared/types'
 import { AppleMusicIcon, EngineIcon, RekordboxIcon, TraktorIcon } from './SourceIcons'
-import { Tooltip } from './Tooltip'
 
 // Each program's own mark, the thing a DJ already recognises from the Dock, with its name
 // in small type under it. Drawn in the rail's colour, not the apps' own.
@@ -92,7 +91,6 @@ export function SourceRail({
       >
         {label}
       </span>
-      <Tooltip label={label} />
     </button>
   )
   return (
