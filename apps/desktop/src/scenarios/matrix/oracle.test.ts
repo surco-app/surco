@@ -171,6 +171,10 @@ describe('matrix file oracle', () => {
     expect(fileInvariants(cellOf('C-flac-aiff'), flac, aiff.path, aiff.coverSha1)).toEqual([])
   })
 
+  it('passes an untouched FLAC as its own samples-kept FLAC output', () => {
+    expect(fileInvariants(cellOf('C-flac-flac'), flac, flac.path, flac.coverSha1)).toEqual([])
+  })
+
   it.each(['wav', 'flac', 'alac', 'mp3'] as OutputFormat[])(
     'passes a %s written from a FLAC the way the pipeline writes it, so a red cell is never the oracle',
     (target) => {

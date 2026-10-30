@@ -1,11 +1,11 @@
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
 import { encodeBase91 } from '../../main/base91'
 import { leadingId3v2Size } from '../../main/id3Header'
-import { writeTags } from '../../main/tags'
+import { setFlacComment, writeTags } from '../../main/tags'
 import {
   buildTraktorTree,
   id3WithPriv,
@@ -14,6 +14,8 @@ import {
   traktorCue,
 } from '../../main/traktor4Fixture'
 import { emptyMetadata } from '../../shared/metadata'
+import { TAG_FIELDS } from '../../shared/tagFields'
+import type { TrackMetadata } from '../../shared/types'
 import { coverJpg } from '../fixtures'
 import type { Origin } from './cells'
 
@@ -104,6 +106,52 @@ function lyrics3Junk(): Buffer {
   return Buffer.concat([Buffer.from(block, 'latin1'), Buffer.alloc(512)])
 }
 
+function vorbisMetadataArgs(meta: TrackMetadata): string[] {
+  return TAG_FIELDS.flatMap((field) => {
+    const name = field.vorbis ?? field.id3
+    const value = meta[field.key]?.trim()
+    if (!name || !value) return []
+    return [name, ...(field.vorbisAlso ?? [])].flatMap((n) => ['-metadata', `${n}=${value}`])
+  })
+}
+
+function tagFlacLikeThePipeline(path: string, tags: TrickyTags, cover: string): void {
+  const encoded = `${path}.encoded.flac`
+  renameSync(path, encoded)
+  const [trackNumber, trackTotal = ''] = tags.trackNumber.split('/')
+  const [discNumber, discTotal = ''] = tags.discNumber.split('/')
+  const meta = { ...emptyMetadata(), ...tags, trackNumber, trackTotal, discNumber, discTotal }
+  execFileSync(FF, [
+    '-y',
+    '-loglevel',
+    'error',
+    '-i',
+    encoded,
+    '-i',
+    cover,
+    '-map',
+    '0:a',
+    '-map',
+    '1:v',
+    '-c:v',
+    'copy',
+    '-disposition:v:0',
+    'attached_pic',
+    '-metadata:s:v:0',
+    'comment=Cover (front)',
+    '-c:a',
+    'flac',
+    '-sample_fmt',
+    's16',
+    '-fflags',
+    '+bitexact',
+    ...vorbisMetadataArgs(meta),
+    path,
+  ])
+  rmSync(encoded)
+  setFlacComment(path, meta.comment)
+}
+
 export function leadingTagsEnd(bytes: Buffer): number {
   let end = 0
   for (let size = leadingId3v2Size(bytes); size > 0; size = leadingId3v2Size(bytes.subarray(end))) {
@@ -143,14 +191,8 @@ export function makeSource(
   else if (ext === '.mp3')
     writeFileSync(path, Buffer.concat([id3WithPriv(tree), readFileSync(path)]))
   const cover = coverJpg(join(dir, `${name}.cover.jpg`))
-  writeTags(
-    path,
-    {
-      ...emptyMetadata(),
-      ...tags,
-    },
-    cover,
-  )
+  if (origin === 'flac') tagFlacLikeThePipeline(path, tags, cover)
+  else writeTags(path, { ...emptyMetadata(), ...tags }, cover)
   if (origin === 'mp3j') {
     const bytes = readFileSync(path)
     const tagEnd = leadingTagsEnd(bytes)

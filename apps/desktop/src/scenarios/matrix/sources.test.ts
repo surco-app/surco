@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { basename, extname } from 'node:path'
 import ffprobeInstaller from '@ffprobe-installer/ffprobe'
 import ffmpegStatic from 'ffmpeg-static'
+import { PictureType, File as TagFile, TagTypes, type XiphComment } from 'node-taglib-sharp'
 import { describe, expect, it } from 'vitest'
 import { leadingId3v2Size } from '../../main/id3Header'
 import { readTagLibFields } from '../../main/tags'
@@ -132,10 +133,9 @@ describe('matrix sources', () => {
     expect(read.artist).toBe(TRICKY.artist)
     expect(read.album).toBe(TRICKY.album)
     expect(read.grouping).toBe(TRICKY.grouping)
-    expect(read.publisher).toBe(TRICKY.publisher)
-    if (extname(sourceOf(origin).path) !== '.m4a') {
-      expect(read.catalogNumber).toBe(TRICKY.catalogNumber)
-    }
+    const ext = extname(sourceOf(origin).path)
+    if (ext !== '.flac') expect(read.publisher).toBe(TRICKY.publisher)
+    if (ext !== '.m4a' && ext !== '.flac') expect(read.catalogNumber).toBe(TRICKY.catalogNumber)
     expect(read.genre?.split(/[,;]\s*/)).toEqual(['House', 'Deep House'])
     expect(read.trackNumber).toBe('3')
     expect(read.trackTotal).toBe('12')
@@ -192,6 +192,33 @@ describe('matrix sources', () => {
         .update(cover as Buffer)
         .digest('hex'),
     ).toBe(track.coverSha1)
+  })
+
+  it('writes the flac like a real FLAC, starting with fLaC and tagged in Vorbis only', () => {
+    const track = sourceOf('flac')
+    const bytes = readFileSync(track.path)
+    expect(bytes.subarray(0, 4).toString('latin1')).toBe('fLaC')
+    const f = TagFile.createFromPath(track.path)
+    try {
+      expect(f.getTag(TagTypes.Id3v2, false)).toBeFalsy()
+      const xiph = f.getTag(TagTypes.Xiph, false) as XiphComment
+      expect(xiph.getField('TITLE')).toEqual([TRICKY.title])
+      expect(xiph.getField('ARTIST')).toEqual([TRICKY.artist])
+      expect(xiph.getField('GROUPING')).toEqual([TRICKY.grouping])
+      expect(xiph.getField('TRACKNUMBER')).toEqual(['3'])
+      expect(xiph.getField('TRACKTOTAL')).toEqual(['12'])
+      expect(xiph.getField('DISCNUMBER')).toEqual(['1'])
+      expect(xiph.getField('DISCTOTAL')).toEqual(['2'])
+      expect(xiph.getField('CATALOGNUMBER')).toEqual([TRICKY.catalogNumber])
+      expect(xiph.getField('LABEL')).toEqual([TRICKY.publisher])
+      expect(xiph.getField('COMMENT')).toEqual([TRICKY.comment])
+      expect(xiph.getField('TRAKTOR4')).toHaveLength(1)
+      const pictures = f.tag.pictures
+      expect(pictures).toHaveLength(1)
+      expect(pictures[0].type).toBe(PictureType.FrontCover)
+    } finally {
+      f.dispose()
+    }
   })
 
   it('moves the click with the lead silence', () => {
