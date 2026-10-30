@@ -15,7 +15,7 @@ export default function LibraryReview() {
       <Reveal>
         <div id={SCENE_ANCHORS.review} className="scroll-mt-8 text-center">
           <Kicker>{t('home.review.kicker')}</Kicker>
-          <h2 className="group/title mx-auto mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
+          <h2 className="group/title mx-auto mt-3 max-w-2xl text-[min(1.875rem,6.15vw)] font-semibold tracking-tight text-balance sm:text-5xl">
             {t('home.review.title')}
             <AnchorLink id={SCENE_ANCHORS.review} />
           </h2>

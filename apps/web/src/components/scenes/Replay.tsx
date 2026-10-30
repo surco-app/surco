@@ -8,7 +8,7 @@ export function AnchorLink({ id }: { id: string }) {
       href={`#${id}`}
       data-testid="scene-anchor"
       aria-label={t('home.anchorLink')}
-      className="ml-2 font-normal text-faint opacity-0 transition-[color,opacity] group-hover/title:opacity-100 hover:text-blue focus-visible:opacity-100"
+      className="ml-2 font-normal text-faint opacity-0 transition-[color,opacity] group-hover/title:opacity-100 hover:text-blue focus-visible:opacity-100 [@media(hover:none)]:hidden"
     >
       #
     </a>

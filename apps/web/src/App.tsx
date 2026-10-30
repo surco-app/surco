@@ -118,7 +118,7 @@ export default function App() {
           <SectionView location="home-closing" />
           <Reveal>
             <div className="text-center">
-              <h2 className="mx-auto max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
+              <h2 className="mx-auto max-w-2xl text-[min(1.875rem,6.15vw)] font-semibold tracking-tight text-balance sm:text-5xl">
                 {t('home.closeTitle')}
               </h2>
               {/* Was a mono footnote below the button, in the pile of small print. It is an
