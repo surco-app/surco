@@ -180,19 +180,28 @@ export function matchedEntryFiles(
   patches: NmlPatch[],
   onDisk?: OnDisk,
 ): (string | null)[] {
-  return matchedEntries(nml, patches, onDisk).map((entry) => entry?.file ?? null)
+  return matchedEntryFacts(nml, patches, onDisk).before
 }
 
-// The cues of those same entries as the collection held them, so the check can tell an entry
-// the write was meant to leave alone from one it moved.
-export function matchedEntryCues(
+// The FILE of those entries and their cues as the collection held them, from one match: the
+// cues let the check tell an entry the write was meant to leave alone from one it moved.
+export function matchedEntryFacts(
   nml: string,
   patches: NmlPatch[],
   onDisk?: OnDisk,
-): (string | null)[] {
-  return matchedEntries(nml, patches, onDisk).map((entry) =>
-    entry ? entryCues(nml.slice(entry.start, entry.end)) : null,
-  )
+): { before: (string | null)[]; cues: (string | null)[] } {
+  const entries = findEntries(nml)
+  const index = indexPatches(patches, entries, onDisk)
+  const found = new Map<NmlPatch, NmlEntry>()
+  for (const entry of entries) {
+    const patch = matchPatch(entry, index)
+    if (patch) found.set(patch, entry)
+  }
+  const matched = patches.map((p) => found.get(p))
+  return {
+    before: matched.map((entry) => entry?.file ?? null),
+    cues: matched.map((entry) => (entry ? entryCues(nml.slice(entry.start, entry.end)) : null)),
+  }
 }
 
 export const entryCues = (block: string): string => (block.match(CUE_V2_RE) ?? []).join('')
@@ -205,17 +214,6 @@ export function cuePlaces(cues: string): string[] {
     const ms = (name: string) => Number(attr(open, name) || '0').toFixed(3)
     return [attr(open, 'TYPE'), attr(open, 'HOTCUE') || '-1', ms('START'), ms('LEN')].join('|')
   })
-}
-
-function matchedEntries(nml: string, patches: NmlPatch[], onDisk?: OnDisk): (NmlEntry | null)[] {
-  const entries = findEntries(nml)
-  const index = indexPatches(patches, entries, onDisk)
-  const found = new Map<NmlPatch, NmlEntry>()
-  for (const entry of entries) {
-    const patch = matchPatch(entry, index)
-    if (patch) found.set(patch, entry)
-  }
-  return patches.map((p) => found.get(p) ?? null)
 }
 
 // Traktor writes COVERARTID only on <INFO>, so the read is anchored there rather than

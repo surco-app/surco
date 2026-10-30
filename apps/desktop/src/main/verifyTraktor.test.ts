@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
-import { applyPatches, matchedEntryCues, matchedEntryFiles, type NmlPatch } from './traktorNml'
+import { applyPatches, matchedEntryFacts, type NmlPatch } from './traktorNml'
 import { checkTraktor, type TraktorExpect } from './verifyTraktor'
 
 const BOOT = 'Macintosh HD'
@@ -44,8 +44,7 @@ const elsewhere: Partial<NmlPatch> = {
 
 // What the flush does: read which entry each patch matches, write, then check the result.
 function flush(original: string, patches: NmlPatch[], stranded = false) {
-  const before = matchedEntryFiles(original, patches)
-  const cues = matchedEntryCues(original, patches)
+  const { before, cues } = matchedEntryFacts(original, patches)
   const list: TraktorExpect[] = patches.map((p, i) => ({
     patch: p,
     before: before[i],
@@ -275,8 +274,7 @@ describe('checkTraktor', () => {
     const b = patch({ file: 'B.aiff', newFile: 'B.wav' })
     const c = patch({ file: 'C.aiff', ...elsewhere })
     const original = nml(entry('Title.aiff'), entry('B.aiff'), entry('C.aiff'))
-    const before = matchedEntryFiles(original, [a, b, c])
-    const cues = matchedEntryCues(original, [a, b, c])
+    const { before, cues } = matchedEntryFacts(original, [a, b, c])
     const written = applyPatches(original, [a])
     expect(
       checkTraktor(

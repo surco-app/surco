@@ -1,13 +1,20 @@
 import { extname } from 'node:path'
 import type { PlaceCheck, VerifyDetailKey } from '../shared/verification'
-import { cuePlaces, entryCues, findEntries, locationKey, type NmlPatch } from './traktorNml'
+import {
+  cuePlaces,
+  entryCues,
+  findEntries,
+  locationKey,
+  type NmlEntry,
+  type NmlPatch,
+} from './traktorNml'
 import { formatOf } from './verifyFile'
 
 // before is the FILE of the entry the patch matched in the collection read ahead of the
 // write (matchedEntryFiles), null when Traktor had no entry for the track. stranded marks a
 // patch that could not follow its file (it landed in another folder, see redirectNmlPatch):
 // Traktor rewrites FILE only, so its entry stays on the old name. cues are that entry's cues
-// as the same read found them (matchedEntryCues).
+// as the same read found them (matchedEntryFacts).
 export interface TraktorExpect {
   patch: NmlPatch
   before: string | null
@@ -36,12 +43,16 @@ export function checkTraktor(
 ): (PlaceCheck | null)[] {
   const at = new Map<string, number>()
   const atAnyCase = new Map<string, number>()
-  const cuesAt = new Map<string, string>()
+  const last = new Map<string, NmlEntry>()
   for (const e of findEntries(nml)) {
     const k = locationKey(e.volume, e.dir, e.file)
     at.set(k, (at.get(k) ?? 0) + 1)
     atAnyCase.set(k.toLowerCase(), (atAnyCase.get(k.toLowerCase()) ?? 0) + 1)
-    cuesAt.set(k, entryCues(nml.slice(e.start, e.end)))
+    last.set(k, e)
+  }
+  const cuesAt = (k: string) => {
+    const e = last.get(k)
+    return e && entryCues(nml.slice(e.start, e.end))
   }
   return list.map((e) => judge(at, atAnyCase, cuesAt, e, bootVolume))
 }
@@ -49,7 +60,7 @@ export function checkTraktor(
 function judge(
   at: Map<string, number>,
   atAnyCase: Map<string, number>,
-  cuesAt: Map<string, string>,
+  cuesAt: (key: string) => string | undefined,
   e: TraktorExpect,
   bootVolume: string,
 ): PlaceCheck | null {
@@ -66,7 +77,7 @@ function judge(
     const source = locationKey(volume, patch.dir, before)
     const count = at.get(source) ?? 0
     if (count > 1) return check('mismatch', 'traktorAmbiguous', { count })
-    const now = cuesAt.get(source)
+    const now = cuesAt(source)
     if (now === undefined) return check('mismatch', 'traktorMissing')
     if (!cuesHeld(e.cues, now)) return check('mismatch', 'traktorCuesChanged')
     return check('ok', 'traktorOk', { format: formatOf(extname(before)) })

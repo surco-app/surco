@@ -9,8 +9,7 @@ import { refreshCachedCoverArt } from './traktorCoverCache'
 import {
   applyPatches,
   detachedOutputPaths,
-  matchedEntryCues,
-  matchedEntryFiles,
+  matchedEntryFacts,
   matchedPatchCount,
   type NmlLocation,
   type NmlPatch,
@@ -49,9 +48,9 @@ export interface SyncResult {
   matched: number
   reason?: 'traktor-running' | 'backup-failed' | 'no-matches' | 'unreadable' | 'write-failed'
   // Once the collection was read: the FILE of the entry each patch matched in it, in the
-  // order given, null where Traktor had none (see matchedEntryFiles).
+  // order given, null where Traktor had none (see matchedEntryFacts).
   before?: (string | null)[]
-  // The cues of those same entries, read at the same time (see matchedEntryCues).
+  // The cues of those same entries, read at the same time.
   cues?: (string | null)[]
 }
 
@@ -83,8 +82,7 @@ export async function syncCollection(
   const onDisk: OnDisk = (entry) =>
     existsSync(traktorFileOf(original.slice(entry.start, entry.end), bootVolume))
   const patched = applyPatches(original, located, onDisk)
-  const before = matchedEntryFiles(original, located, onDisk)
-  const cues = matchedEntryCues(original, located, onDisk)
+  const { before, cues } = matchedEntryFacts(original, located, onDisk)
   if (patched === original) {
     // A patch that matched nothing is the normal "Traktor doesn't have this track"
     // case, not a failure — no backup, no write, disk untouched.
