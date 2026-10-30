@@ -3,7 +3,7 @@ import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
 import { errorWithKey } from '../shared/errorKeys'
 import { foldAccents } from '../shared/foldAccents'
-import { editsInPlace, resolveJobFormat } from '../shared/format'
+import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../shared/format'
 import type {
   DeclickConfig,
   LibraryPlaylistChoice,
@@ -496,6 +496,7 @@ export async function runProcessTrack(
     // file get imported, which also re-establishes the persistent ID.
     let musicPersistentId: string | undefined
     let oldMusicCopyKept: ProcessResult['oldMusicCopyKept']
+    let supersededPath: string | undefined
     let appleMusicFailed: true | undefined
     if (shouldAddToAppleMusic(addToAppleMusic, deps.platform, format)) {
       stage('appleMusic')
@@ -531,10 +532,24 @@ export async function runProcessTrack(
           oldMusicCopyKept = replaced.oldCopyKept
           verified = true
         } else {
-          musicPersistentId = job.musicPersistentId
-            ? ((await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)) ??
-              (await deps.addToAppleMusic(target, job.meta, coverPath)))
-            : await deps.addToAppleMusic(target, job.meta, coverPath)
+          // An entry in another format than the output can't be retagged into it: Music
+          // keeps playing the old file. Compared by format, not path, since the file
+          // written (a temp, or the output Music copies from) is never the entry's own.
+          const entryPath = job.musicPersistentId
+            ? await deps.appleMusicEntryLocation(job.musicPersistentId).catch(() => '')
+            : ''
+          if (entryPath && !formatMatchesInput(format, entryPath)) {
+            const replaced = await replaceAppleMusicCopy(job, target, coverPath, deps, tmpDir)
+            musicPersistentId = replaced.added
+            oldMusicCopyKept = replaced.oldCopyKept
+            if (!replaced.oldCopyKept) supersededPath = entryPath
+            verified = true
+          } else {
+            musicPersistentId = job.musicPersistentId
+              ? ((await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)) ??
+                (await deps.addToAppleMusic(target, job.meta, coverPath)))
+              : await deps.addToAppleMusic(target, job.meta, coverPath)
+          }
         }
         if (tmpDir && musicPersistentId && !verified)
           await verifyMediaCopy(
@@ -599,6 +614,7 @@ export async function runProcessTrack(
     // shell guard rejects any path it was never handed, and this one lives in the user's
     // library folder, which a convert has no other reason to authorise.
     if (job.replacesPath) deps.allowMedia(job.replacesPath)
+    if (supersededPath) deps.allowMedia(supersededPath)
     // The add succeeded (a failure would have thrown above), and the temp dir is
     // cleaned up in finally — tell the renderer there is no file to reveal, only an
     // Apple Music entry.
@@ -611,6 +627,7 @@ export async function runProcessTrack(
         normalizeSkipped,
         declickedSamples,
         oldMusicCopyKept,
+        supersededPath,
         originalKept,
       }
 
@@ -628,6 +645,7 @@ export async function runProcessTrack(
       ...(engineDjQueued ? { engineDjQueued: true as const } : {}),
       outputIdentity,
       oldMusicCopyKept,
+      supersededPath,
       appleMusicFailed,
       originalKept,
     }

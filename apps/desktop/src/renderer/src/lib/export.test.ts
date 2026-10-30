@@ -209,4 +209,25 @@ describe('exportedPatch', () => {
     })
     expect(patch.musicPersistentId).toBe('ABCD1234')
   })
+
+  // A conversion that replaced the Music entry in another format leaves the old file
+  // referenced by nothing; recording it as replacesPath is what lets the trash offer it.
+  it('records the file a format change superseded so it can be offered for trash', () => {
+    const patch = exportedPatch(track(), {
+      outputPath: '/out/ATB - Till I Come.wav',
+      inPlace: false,
+      supersededPath: '/lib/Till I Come.aiff',
+    })
+    expect(patch.replacesPath).toBe('/lib/Till I Come.aiff')
+  })
+
+  it('records the superseded file in Apple Music only mode too', () => {
+    const patch = exportedPatch(track(), {
+      outputPath: '',
+      inPlace: false,
+      addedToMusicOnly: true,
+      supersededPath: '/lib/Till I Come.aiff',
+    })
+    expect(patch.replacesPath).toBe('/lib/Till I Come.aiff')
+  })
 })

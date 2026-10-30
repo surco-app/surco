@@ -1290,6 +1290,9 @@ export interface ProcessResult {
   // the live entry no longer carries the offered name; 'error' that the delete failed;
   // 'carry' that its playlists, play count and rating could not be copied, so it stayed.
   oldMusicCopyKept?: 'mismatch' | 'error' | 'carry'
+  // The file a library entry pointed at before a format change replaced that entry, set
+  // only once the old entry is gone: the renderer offers it for trash as replacesPath.
+  supersededPath?: string
   appleMusicFailed?: true
   // Set when the converted file landed but the original it replaced in a format change
   // could not be retired, so both are in the folder.
