@@ -1,15 +1,21 @@
-import {
-  chmodSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const renames = vi.hoisted(() => ({ refuse: (_from: string): boolean => false }))
+
+vi.mock('./renameRetry', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./renameRetry')>()
+  return {
+    ...real,
+    renameWithRetry: async (from: string, to: string) => {
+      if (renames.refuse(from)) throw Object.assign(new Error('EIO: refused'), { code: 'EIO' })
+      return real.renameWithRetry(from, to)
+    },
+  }
+})
+
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { LibraryCopy } from '../shared/types'
 import { setLibraryBackupRoot } from './libraryBackups'
 import { copyFolder, listCopies, restoreSlot, takeCopy } from './libraryHistory'
@@ -20,6 +26,7 @@ let dir: string
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'surco-restore-'))
   setLibraryBackupRoot(join(dir, 'backups'))
+  renames.refuse = () => false
 })
 
 function collection(folder: string, name: string, content: string): string {
@@ -364,21 +371,11 @@ describe('restoreCopy', () => {
     await restoreCopy({ collectionPath: path, copyId: copy.id }, deps())
     const slot = (await restoreSlot(path)) as LibraryCopy
     writeFileSync(path, 'third')
-    const backups = dirname(copyFolder(slot))
-    try {
-      const result = await restoreCopy(
-        { collectionPath: path, copyId: copy.id },
-        deps({
-          isRunning: async () => {
-            chmodSync(backups, 0o555)
-            return false
-          },
-        }),
-      )
-      expect(result).toEqual({ ok: false, reason: 'failed' })
-    } finally {
-      chmodSync(backups, 0o755)
-    }
+    renames.refuse = (from) => from.endsWith('.staged')
+    expect(await restoreCopy({ collectionPath: path, copyId: copy.id }, deps())).toEqual({
+      ok: false,
+      reason: 'failed',
+    })
     expect(readFileSync(path, 'utf8')).toBe('third')
     expect(leftovers(path)).toEqual([])
     expect(await restoreSlot(path)).toEqual(slot)
