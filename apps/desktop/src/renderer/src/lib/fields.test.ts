@@ -85,6 +85,19 @@ describe('IMPORTABLE_FIELDS', () => {
   })
 })
 
+describe('FIELD_DEFS', () => {
+  it('offers each field right after the one it completes', () => {
+    const keys: string[] = FIELD_DEFS.map((d) => d.key)
+    for (const [first, second] of [
+      ['trackNumber', 'trackTotal'],
+      ['discNumber', 'discTotal'],
+      ['bpm', 'key'],
+    ]) {
+      expect(keys.indexOf(second)).toBe(keys.indexOf(first) + 1)
+    }
+  })
+})
+
 describe('DEFAULT_FIELDS', () => {
   it('shows the core tags by default but keeps the advanced ones hidden until enabled', () => {
     // advanced DJ/label tags ship in the catalog so Settings can offer them,

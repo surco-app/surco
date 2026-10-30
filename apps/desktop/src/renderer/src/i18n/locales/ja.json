@@ -1047,9 +1047,9 @@
     "rowHide": "{{name}} を非表示",
     "rowShow": "{{name}} を表示",
     "rowToken": "内部名 {{token}}",
-    "rekordboxPlaylists": "プレイリスト",
-    "traktorPlaylists": "プレイリスト",
-    "enginePlaylists": "プレイリスト"
+    "rekordboxPlaylists": "rekordbox プレイリスト",
+    "traktorPlaylists": "Traktor プレイリスト",
+    "enginePlaylists": "Engine DJ プレイリスト"
   },
   "declick": {
     "cueWarning": "ALACはTraktorのキューやビートグリッドを保持しません：変換すると失われます。",

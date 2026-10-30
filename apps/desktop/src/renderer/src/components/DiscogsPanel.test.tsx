@@ -555,7 +555,7 @@ describe('DiscogsPanel stable results', () => {
   it('fills the divider under the search box as the catalogs answer', () => {
     renderPanel(browser({ query: 'x', busy: true, searchProgress: { answered: 3, total: 5 } }))
     const bar = within(screen.getByTestId('matches-column')).getByTestId('top-progress')
-    expect((bar.firstElementChild as HTMLElement).style.width).toBe('60%')
+    expect((bar.firstElementChild as HTMLElement).style.transform).toBe('scaleX(0.6)')
   })
 
   // Once the list shows, a slow catalog keeps searching behind it: the line keeps counting
@@ -576,7 +576,7 @@ describe('DiscogsPanel stable results', () => {
       }),
     )
     const bar = within(screen.getByTestId('matches-column')).getByTestId('top-progress')
-    expect((bar.firstElementChild as HTMLElement).style.width).toBe('75%')
+    expect((bar.firstElementChild as HTMLElement).style.transform).toBe('scaleX(0.75)')
   })
 
   it('slides the divider while a single catalog or the best match is still working', () => {

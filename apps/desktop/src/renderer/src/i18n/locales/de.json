@@ -1047,9 +1047,9 @@
     "rowHide": "{{name}} ausblenden",
     "rowShow": "{{name}} anzeigen",
     "rowToken": "Interner Name {{token}}",
-    "rekordboxPlaylists": "Playlists",
-    "traktorPlaylists": "Playlists",
-    "enginePlaylists": "Playlists"
+    "rekordboxPlaylists": "rekordbox-Playlists",
+    "traktorPlaylists": "Traktor-Playlists",
+    "enginePlaylists": "Engine DJ-Playlists"
   },
   "declick": {
     "cueWarning": "ALAC speichert keine Traktor-Cues und kein Beatgrid: Beim Konvertieren gehen sie verloren.",

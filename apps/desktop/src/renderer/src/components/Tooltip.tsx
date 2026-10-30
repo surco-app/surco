@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { isReturningFocus } from './useFocusTrap'
 
 // Themed hover tooltip, dropped in as a child of the trigger element. It follows the cursor
 // (like a native title, but styled) and renders into a body-level portal so it never gets
@@ -155,7 +156,7 @@ export function Tooltip({
     // trigger's box, and let Escape dismiss it without moving focus (WCAG 1.4.13). Focus
     // skips the hover delay — the wait only earns its keep against an idle pointer.
     const onFocus = (): void => {
-      if (pointerFocus) return
+      if (pointerFocus || isReturningFocus()) return
       clearTimer()
       shown = true
       setInstant(false)
