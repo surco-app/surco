@@ -31,6 +31,7 @@ function queue(result: QueueApply = APPLIED) {
     state: vi.fn(() => ({ tracks: 1, changes: 0, items: [] })),
     isEmpty: vi.fn(() => false),
     discard: vi.fn(),
+    discardCurrent: vi.fn(),
     drop: vi.fn(),
     cuesOp: vi.fn(),
     busy: vi.fn(() => false),

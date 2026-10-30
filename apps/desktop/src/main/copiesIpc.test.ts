@@ -34,7 +34,7 @@ function program(over: Partial<CopiesProgram> = {}): CopiesProgram {
       inRunFlush: () => {},
       failed: () => new Set(),
     },
-    queue: { state: () => ({ tracks: 0, changes: 0 }), discard: vi.fn() },
+    queue: { state: () => ({ tracks: 0, changes: 0 }), discardCurrent: vi.fn() },
     ensureClosed: async () => true,
     isRunning: async () => false,
     pendingLog: () => false,
@@ -101,7 +101,10 @@ describe('copies:status', () => {
       programs({
         rekordbox: {
           collectionPath: () => collection('master.db'),
-          queue: { state: () => ({ tracks: 2, changes: 3, halted: true }), discard: vi.fn() },
+          queue: {
+            state: () => ({ tracks: 2, changes: 3, halted: true }),
+            discardCurrent: vi.fn(),
+          },
         },
         engine: { collectionPath: () => collection('m.db') },
       }),
@@ -166,7 +169,7 @@ describe('copies:restore', () => {
       programs({
         traktor: {
           collectionPath: () => path,
-          queue: { state: () => ({ tracks: 0, changes: 0 }), discard },
+          queue: { state: () => ({ tracks: 0, changes: 0 }), discardCurrent: discard },
         },
       }),
       broadcast,
@@ -193,7 +196,7 @@ describe('copies:restore', () => {
           ensureClosed: () => closing,
           queue: {
             state: () => ({ tracks: 0, changes: waiting.length }),
-            discard: () => {
+            discardCurrent: () => {
               waiting = []
             },
           },

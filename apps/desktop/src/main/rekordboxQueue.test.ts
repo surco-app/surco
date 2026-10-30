@@ -306,6 +306,18 @@ describe('rekordbox queue', () => {
     expect(q.isEmpty()).toBe(true)
   })
 
+  it('a restore discards only what waits for the restored collection, even when nothing waits for it', () => {
+    let at = '/copy/master.db'
+    const q = createRekordboxQueue(deps({ collection: () => at }))
+    q.enqueue([rename])
+    at = '/real/master.db'
+    q.discardCurrent()
+    expect(q.state()).toEqual({ tracks: 0, changes: 0, items: [], elsewhere: 1 })
+    q.enqueue([track('a', '/m/a.wav')])
+    q.discardCurrent()
+    expect(q.state()).toEqual({ tracks: 0, changes: 0, items: [], elsewhere: 1 })
+  })
+
   it('lifts the hold on this collection without discarding what waits for another', async () => {
     let at = '/copy/master.db'
     const d = deps({ collection: () => at })

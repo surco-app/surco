@@ -11,7 +11,7 @@ export interface CopiesProgram {
   session: SessionBackup
   queue: {
     state: () => { tracks: number; changes: number; halted?: true }
-    discard: () => void
+    discardCurrent: () => void
   }
   ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
   isRunning: () => Promise<boolean>
@@ -62,7 +62,7 @@ export function registerCopiesIpc(
               ensureClosed: () => deps.ensureClosed(win),
               isRunning: deps.isRunning,
               pendingLog: deps.pendingLog,
-              discardQueue: deps.queue.discard,
+              discardQueue: deps.queue.discardCurrent,
             },
           )
         } finally {
