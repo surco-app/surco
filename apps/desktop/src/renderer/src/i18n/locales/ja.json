@@ -2296,7 +2296,7 @@
       "trash": "ファイルはゴミ箱に移動します（rekordbox、Engine DJ、Traktor が使用中のものは除く）",
       "untouched": "BPM、キー、キュー、評価はそのままです",
       "libraries": "rekordbox、Engine DJ、Traktor は同期がオンの場合、アップデート時に同様に追従します",
-      "backup": "すべてのファイルのコピーが Backups に保持されます",
+      "backup": "すべてのファイルのコピーが「バックアップ」に保持されます",
       "cancel": "キャンセル",
       "apply": "適用",
       "libraryMissing": "{{library}} はコレクションが見つからなかったため更新されません"

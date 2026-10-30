@@ -2112,7 +2112,7 @@
     "reviewDuplicateFileUnsettled": "Bleibt auf der Platte, weil eine Bibliothek nicht aktualisiert wurde",
     "reviewDuplicateFileUsed": "Bleibt auf der Platte, weil rekordbox, Engine DJ oder Traktor sie nutzen",
     "reviewDuplicateFileTrash": "In den Papierkorb verschoben",
-    "reviewDuplicateFileSurco": "In Sicherungskopien abgelegt, weil dieses Laufwerk keinen Papierkorb hat",
+    "reviewDuplicateFileSurco": "In Backups abgelegt, weil dieses Laufwerk keinen Papierkorb hat",
     "reviewDuplicateFileTrashFailed": "Bleibt auf der Platte, weil sie nicht in den Papierkorb verschoben werden konnte ({{error}})",
     "reviewDuplicateFileMusic": "Bleibt auf der Platte, weil Music sie noch hat",
     "listReviewDuplicateNotInMusic": "Nicht in Music",
@@ -2296,7 +2296,7 @@
       "trash": "Ihre Dateien kommen in den Papierkorb, außer denen, die rekordbox, Engine DJ oder Traktor noch nutzen",
       "untouched": "BPM, Tonart, Cues und Bewertung bleiben unverändert",
       "libraries": "rekordbox, Engine DJ und Traktor ziehen nach wie bei einem Aktualisieren, wenn ihr Abgleich aktiv ist",
-      "backup": "Von jeder Datei wird eine Kopie in den Sicherungen abgelegt.",
+      "backup": "Von jeder Datei wird eine Kopie in Backups abgelegt.",
       "cancel": "Abbrechen",
       "apply": "Anwenden",
       "libraryMissing": "{{library}} wird nicht aktualisiert, weil die Sammlung nicht gefunden wurde."
