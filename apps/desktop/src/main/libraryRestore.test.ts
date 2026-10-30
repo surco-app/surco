@@ -315,16 +315,12 @@ describe('restoreCopy', () => {
     const platform = process.platform
     Object.defineProperty(process, 'platform', { value: 'win32', configurable: true })
     try {
-      const path = collection('Traktor', 'collection.nml', 'before')
+      const path = collection('TRAKTOR', 'collection.nml', 'before')
       const copy = await takeCopy(path, [], 'run', 1)
       writeFileSync(path, 'after')
-      writeFileSync(
-        join(copyFolder(copy), 'copy.json'),
-        JSON.stringify({ ...copy, collectionPath: path.toUpperCase() }),
-      )
-      expect(await restoreCopy({ collectionPath: path, copyId: copy.id }, deps())).toEqual({
-        ok: true,
-      })
+      expect(
+        await restoreCopy({ collectionPath: path.toUpperCase(), copyId: copy.id }, deps()),
+      ).toEqual({ ok: true })
       expect(readFileSync(path, 'utf8')).toBe('before')
     } finally {
       Object.defineProperty(process, 'platform', { value: platform, configurable: true })
