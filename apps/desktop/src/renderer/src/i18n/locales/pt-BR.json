@@ -173,7 +173,7 @@
     "settingsFileNotSurco": "Esse arquivo não contém uma configuração do Surco.",
     "appleMusicNoMediaCopy": "O Música não copiou o arquivo para a pasta de mídia, então “Somente Apple Music” o deixaria sem áudio. Ative “Copiar arquivos para a pasta Mídia ao adicionar” no Música, ou desative “Somente Apple Music”.",
     "appleMusicNoMediaCopyKept": "O Música não copiou o arquivo para a pasta de mídia, então “Somente Apple Music” o deixaria sem áudio. Sua cópia anterior continua no Música como estava e nada se perdeu. Ative “Copiar arquivos para a pasta Mídia ao adicionar” no Música, ou desative “Somente Apple Music”.",
-    "appleMusicAddReturnedOld": "O Música devolveu sua faixa anterior em vez de importar a nova, então nada foi alterado. Sua cópia anterior continua no Música como estava. Tente de novo.",
+    "appleMusicAddReturnedOld": "O Música devolveu uma faixa que já estava na sua biblioteca em vez de importar o arquivo novo, então ele não foi adicionado. Sua faixa anterior continua no Música. Se acontecer de novo, procure no Música outra faixa com o mesmo título e artista.",
     "appleMusicNameLeftMarked": "Não foi possível substituir a faixa no Música, e a entrada anterior ainda tem “[surco-replacing]” no fim do nome. Remova isso à mão no Música.",
     "convertedOutputUnreadable": "O arquivo convertido saiu ilegível, então foi descartado e o original ficou intacto. Tente de novo com outros ajustes de conversão.",
     "convertedOutputTruncated": "O arquivo convertido saiu mais curto que o original, então foi descartado e o original ficou intacto. Tente de novo com outros ajustes de conversão.",
