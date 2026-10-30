@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 29 de octubre de 2026** (v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
+**Última revisión: 30 de octubre de 2026** (v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -726,7 +726,8 @@ letrista y director (TOPE/TEXT/TPE3 en ID3, ORIGARTIST/LYRICIST/CONDUCTOR en
 Vorbis, freeform en MP4, con los nombres de mp3tag), total de pistas y de discos,
 copyright y codificado por (`shared/tagFields.ts:66-90`, `:150-182`, `tags.ts:684-693`).
 Los totales viajan como «3/12» en ID3 y MP4 y como TRACKTOTAL/DISCTOTAL en Vorbis;
-antes Surco los borraba al leer el «n/N». Copyright y codificado por nombran a
+antes Surco los borraba al leer el «n/N». Un «3/12» escrito en el número de pista se guarda
+como pista 3 de 12, nunca 312, y un disco «1/2» como disco 1 de 2 (`tags.ts:785-800`). Copyright y codificado por nombran a
 quien hizo el fichero antes que el usuario: mientras sigan ocultos, convertir los
 vacía (`lib/hygiene.ts:97-101`), para que el estudio y el ripeador del dueño
 anterior no viajen con la pista. Discogs no rellena ninguno de estos campos.
@@ -839,7 +840,10 @@ Meterlo en un átomo freeform escribiría bytes que no lee nadie, ni el propio S
 
 - **Grouping de iTunes:** Apple Music guarda el grouping en su propio frame
   `GRP1`. Ni ffprobe ni ffmpeg lo exponen y TagLib lo devuelve como frame
-  desconocido, así que Surco lo lee byte a byte (`tags.ts:65-98`).
+  desconocido, así que Surco lo lee byte a byte (`tags.ts:144-170`). Desde v1.18.0 lo
+  escribe en TIT1 y GRP1 a la vez en MP3 y AIFF, y quita el TXXX espejo de ffmpeg
+  (`tags.ts:1108-1120`); en WAV solo TIT1, porque Music no lee etiquetas de un WAV y un GRP1
+  taparía la edición de otro programa.
 - **Posición de vinilo:** un `"A2"` se escribe literal reescribiendo el frame
   TRCK. En M4A no sobrevive: el átomo `trkn` solo admite enteros
   (`tags.ts:507-516`).
@@ -1234,6 +1238,11 @@ comentario, año, nº de pista, nº de disco, BPM y carátula.
 tag del fichero (`applemusic.ts:51-52`). Tampoco rating ni playlists.
 
 **FLAC nunca se envía**, en ninguna plataforma: Music no puede ingerirlo.
+
+**Con «Solo Apple Music» el fichero va a su carpeta** `Music/<Artista del álbum o Artista>/<Álbum>/`
+dentro de la carpeta multimedia de Music (`processTrack.ts:625-640`), para que un WAV, del que
+Music no lee etiquetas al importar, no acabe en Unknown Artist/Unknown Album. Sin carpeta
+multimedia, o si ese nombre ya existe, se usa el temporal de siempre.
 
 **Bug de macOS 26 (Tahoe):** el `add` de Music puede ejecutarse sin error,
 importar nada y no devolver nada. Surco lo detecta sondeando la biblioteca
@@ -1832,8 +1841,12 @@ rekordbox. Sin las opciones propias de rekordbox (My Settings, sincronización).
 
 Cada escritura en la colección deja las copias `.surco-session` y `.surco-backup` en la
 carpeta de copias de Surco (`backups/` dentro de sus datos, `libraryBackups.ts`), no junto a
-`master.db`. Se abre desde Ajustes → General → Copias de las colecciones. Lo mismo vale para
-Engine DJ y Traktor. El changelog de v1.9.0 aconseja además hacer la propia copia de la biblioteca
+`master.db`. Lo mismo vale para Engine DJ y Traktor. Desde v1.18.0 la pantalla **Copias** del
+rail (`CopiesScreen.tsx`) enseña por programa su estado, la última copia y las guardadas: las
+5 últimas copias fechadas de cada colección (`HISTORY_KEEP`, `libraryHistory.ts:9`), con el
+motivo de cada una («Antes de convertir», «Antes de guardar cues»…) y **Restaurar esta**.
+Restaurar guarda antes una copia de cómo está ahora y avisa de los cambios en cola que se
+descartarían. En la misma pantalla, «Archivos de música» lista Copias de seguridad. El changelog de v1.9.0 aconseja además hacer la propia copia de la biblioteca
 desde rekordbox antes de que Surco escriba. Ese consejo no aparece dentro de la app.
 
 ### Sustituir la copia de la biblioteca
@@ -1893,6 +1906,32 @@ fichero (claves `confirm.cleanUpMessageBackups*` y `*Mixed*`). Con Copias de seg
 
 **Un repunte rechazado no cancela la sustitución:** el fichero ya está en disco y la copia
 de biblioteca sigue mereciendo actualizarse. El motivo viaja hacia arriba para contarlo.
+
+### Autocomprobación tras convertir
+
+Desde v1.18.0, al acabar cada pista Surco relee lo que acaba de tocar y solo entonces da el ✓
+(`verifyRegistry.ts`, `shared/verification.ts`). Un sitio no tocado no se mira ni se lista.
+
+- **El fichero** (`verifyFile.ts`, `verifyPcm.ts`): existe donde dice, se decodifica entero,
+  y cuando las muestras debían quedar iguales (sin pérdida a sin pérdida, misma frecuencia y
+  profundidad) el resumen del audio decodificado coincide con el del origen. Se hace siempre,
+  también en un NAS; el tiempo límite crece con el tamaño y la duración. Las etiquetas
+  escritas se releen.
+- **Apple Music** (`verifyMusic.ts`): una sola entrada para la pista, apuntando al fichero
+  nuevo.
+- **rekordbox, Engine DJ y Traktor** (`verifyRekordbox.ts`, `verifyEngine.ts`,
+  `verifyTraktor.ts`): la entrada apunta al fichero nuevo y conserva cues y análisis respecto a
+  la foto de antes de escribir. Con el programa abierto el cambio queda en cola y la pista
+  sale **pendiente**, sin ✓, hasta que se aplica.
+
+Si algo no cuadra la pista sale en ámbar, sin ✓, dice qué y dónde, y ofrece **Reintentar**. El
+fichero viejo no se ofrece a la papelera mientras algo lo siga usando (`supersededFile.ts`). Si
+todo cuadra, un escudo discreto junto al aviso abre la lista de lo comprobado
+(`VerifiedPopover.tsx`). En lote el pie dice cuántas se comprobaron y cuántas no cuadran, y la
+revisión tiene el filtro «No cuadran».
+
+**Lo que no mira:** la posición exacta de cada cue de rekordbox (cuenta los cues, no dónde
+caen) ni las playlists de los programas de DJ.
 
 ### Exportación a rekordbox, Serato, Traktor y M3U8
 
