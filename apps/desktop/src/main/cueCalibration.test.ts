@@ -155,6 +155,15 @@ describe('automaticCueOffsetOfFiles', () => {
     },
   )
 
+  it('counts a VBRI frame, which ffmpeg drops without trimming any delay', async () => {
+    const wav = encode('vbri.wav', [])
+    const bare = encode('vbri-bare.mp3', ['-c:a', 'libmp3lame', '-b:a', '320k', '-write_xing', '0'])
+    const vbri = join(dir, 'vbri.mp3')
+    writeFileSync(vbri, withVbriFrame(readFileSync(bare)))
+
+    expect(await automaticCueOffsetOfFiles(vbri, wav)).toBeCloseTo(-ms(XING_FRAME, 44100))
+  })
+
   it('reads the output MP3 header the same way', async () => {
     const flac = encode('pcm.flac', [])
     const withoutXing = encode('bare-out.mp3', ['-c:a', 'libmp3lame', '-write_xing', '0'])
@@ -211,6 +220,18 @@ describe('automaticCueOffsetOfFiles past a large cover', () => {
   })
 })
 
+function withVbriFrame(bare: Buffer): Buffer {
+  const vbri = Buffer.from(bare)
+  const frame = leadingId3v2Size(vbri)
+  const length = Math.floor((144 * 320000) / 44100) + ((vbri[frame + 2] >> 1) & 1)
+  vbri.fill(0, frame + 4, frame + length)
+  vbri.write('VBRI', frame + 36, 'latin1')
+  vbri.writeUInt16BE(1, frame + 40)
+  vbri.writeUInt32BE(vbri.length, frame + 46)
+  vbri.writeUInt32BE(100, frame + 50)
+  return vbri
+}
+
 function firstClick(file: string): number {
   const pcm = execFileSync(FF, ['-v', 'error', '-i', file, '-f', 's16le', '-ac', '1', '-'], {
     maxBuffer: 1 << 26,
@@ -237,7 +258,7 @@ describe('what ffmpeg drops from the start of an MP3', () => {
     return out
   }
 
-  it('drops the header frame and the signed delay, only the frame when unsigned or not right after the tag, nothing without one', () => {
+  it('drops the header frame and the signed delay, only the frame when unsigned, not right after the tag or VBRI, nothing without one', () => {
     const wav = click()
     const mp3 = (name: string, args: string[]) => {
       const out = join(dir, name)
@@ -245,7 +266,9 @@ describe('what ffmpeg drops from the start of an MP3', () => {
       return out
     }
     const signed = mp3('click-signed.mp3', [])
-    const bare = mp3('click-bare.mp3', ['-write_xing', '0'])
+    const bare = mp3('click-bare.mp3', ['-b:a', '320k', '-write_xing', '0'])
+    const vbri = join(dir, 'click-vbri.mp3')
+    writeFileSync(vbri, withVbriFrame(readFileSync(bare)))
     const bytes = readFileSync(signed)
     bytes.write('XXXX', bytes.indexOf('Lavc'), 'latin1')
     const unsigned = join(dir, 'click-unsigned.mp3')
@@ -264,5 +287,6 @@ describe('what ffmpeg drops from the start of an MP3', () => {
     expect(Math.abs(firstClick(bare) - (at + ENCODER_DELAY))).toBeLessThanOrEqual(2)
     expect(Math.abs(firstClick(unsigned) - (at + ENCODER_DELAY))).toBeLessThanOrEqual(2)
     expect(Math.abs(firstClick(junky) - (at + ENCODER_DELAY))).toBeLessThanOrEqual(2)
+    expect(Math.abs(firstClick(vbri) - (at + ENCODER_DELAY - XING_FRAME))).toBeLessThanOrEqual(2)
   })
 })
