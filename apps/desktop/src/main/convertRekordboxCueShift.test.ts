@@ -265,6 +265,52 @@ describe('what a conversion tells Engine DJ about its cues', () => {
     expect(recorded()?.engineShift).toEqual({ trimmedMs: 0, sampleRateHz: 48000 })
   })
 
+  // A trim rewritten on the source's own path leaves Engine's row where it was: the size the
+  // source had is what Engine still records, and what tells the write the cut is owed.
+  it('carries the source’s size from before the rewrite when the trim lands in place', async () => {
+    const src = join(dir, 'engine-inplace.wav')
+    pcm(src, 'pcm_s16le')
+    const size = readFileSync(src).length
+    await convertAudio(
+      src,
+      src,
+      'wav',
+      meta,
+      undefined, // coverPath
+      undefined, // normalize
+      undefined, // removeCover
+      undefined, // quality
+      undefined, // onChild
+      undefined, // onTmp
+      undefined, // finderCovers
+      undefined, // declick
+      { startSec: 0.5 },
+    )
+    expect(readFileSync(src).length).not.toBe(size)
+    expect(recorded()).toMatchObject({ from: src, to: src, fromBytes: size })
+  })
+
+  it('carries no size when the conversion lands on another path', async () => {
+    const src = join(dir, 'engine-moved.wav')
+    pcm(src, 'pcm_s16le')
+    await convertAudio(
+      src,
+      join(dir, 'engine-moved.aiff'),
+      'aiff',
+      meta,
+      undefined, // coverPath
+      undefined, // normalize
+      undefined, // removeCover
+      undefined, // quality
+      undefined, // onChild
+      undefined, // onTmp
+      undefined, // finderCovers
+      undefined, // declick
+      { startSec: 0.5 },
+    )
+    expect(recorded()?.fromBytes).toBeUndefined()
+  })
+
   // The library's row is the replaced copy, not the file this cut was measured on: rekordbox
   // moves nothing there either.
   it('carries nothing when the conversion replaces another copy in the library', async () => {

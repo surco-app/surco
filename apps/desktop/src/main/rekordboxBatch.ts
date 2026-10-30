@@ -12,6 +12,8 @@ export interface RekordboxRepoint {
   audio?: { cueShiftMs: number }
   // The same move as Engine DJ counts it (see shiftEnginePerformance).
   engineShift?: EngineShift
+  // The source's size before a conversion rewrote it in place (see EngineRepoint).
+  fromBytes?: number
   playlists?: RekordboxPlaylistTarget[]
   playlistsBase?: string[]
   traktorPlaylists?: LibraryPlaylistChoice
@@ -60,6 +62,7 @@ export function recordRekordboxRepoint(repoint: RekordboxRepoint): void {
       ? { ...repoint, audio: { cueShiftMs: earlier.audio.cueShiftMs + repoint.audio.cueShiftMs } }
       : repoint),
     ...(engineShift ? { engineShift } : {}),
+    ...(stacks && earlier.fromBytes !== undefined ? { fromBytes: earlier.fromBytes } : {}),
   }
 }
 

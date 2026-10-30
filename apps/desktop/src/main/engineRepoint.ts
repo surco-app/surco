@@ -47,6 +47,9 @@ export interface EngineRepoint extends PathMatchOptions {
   from: string
   to: string
   engineShift?: EngineShift
+  // The source's size before a conversion rewrote it on its own path, what the row still
+  // records until the shift lands.
+  fromBytes?: number
 }
 
 export interface EngineRepointOptions {
@@ -241,12 +244,13 @@ export async function writeEngineRepoints(
   }
 
   try {
-    const stored = (db.exec('SELECT id, path FROM Track ORDER BY id')[0]?.values ?? []).map(
-      ([id, path]) => ({
-        id: String(id),
-        path: String(path),
-      }),
-    )
+    const stored = (
+      db.exec('SELECT id, path, fileBytes FROM Track ORDER BY id')[0]?.values ?? []
+    ).map(([id, path, fileBytes]) => ({
+      id: String(id),
+      path: String(path),
+      fileBytes,
+    }))
     const find = engineRowFinder(libraryDir, stored)
     const updates: { id: string; to: string; size: number; shift?: EngineShift }[] = []
     for (const [i, repoint] of repoints.entries()) {
@@ -261,8 +265,18 @@ export async function writeEngineRepoints(
         results[i] = { written: false, reason: 'ambiguous', ids: matches.map((m) => m.id) }
         continue
       }
-      if (find(repoint.to, key).some((row) => row.id !== matches[0].id)) {
+      const onTarget = find(repoint.to, key)
+      if (onTarget.some((row) => row.id !== matches[0].id)) {
         results[i] = { written: false, reason: 'occupied' }
+        continue
+      }
+      // A row already on the file moves only its shift, and only while it still records the
+      // source's size: the same write records the new one, so the shift lands once.
+      if (
+        onTarget.length > 0 &&
+        (repoint.fromBytes === undefined || matches[0].fileBytes !== repoint.fromBytes)
+      ) {
+        results[i] = { written: false, reason: 'no-match' }
         continue
       }
       updates.push({

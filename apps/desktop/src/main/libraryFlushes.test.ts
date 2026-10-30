@@ -722,6 +722,35 @@ describe('flushConversionBatch outcome', () => {
     }
   })
 
+  // A same-format reconvert that cut the lead-in keeps its path but moves the audio under
+  // Engine's cues: the shift still has to reach the row, carrying the size that proves it is
+  // still owed.
+  it('hands Engine DJ a file rewritten in place when the audio moved under its cues', async () => {
+    Object.assign(SETTINGS, { syncEngineDj: true, engineLibraryDir: '/e/Engine Library' })
+    STATUS.engine = { enabled: true, found: true }
+    const first = REPOINTS[0] as Record<string, unknown>
+    const to = REPOINTS[0].to
+    Object.assign(first, {
+      to: REPOINTS[0].from,
+      engineShift: { trimmedMs: 1900 },
+      fromBytes: 100,
+    })
+    WRITERS.repointEngineTracks.mockClear()
+    try {
+      const outcome = await flushConversionBatch(host(), sessions, quiet(), undefined, quiet())
+      expect(outcome.engine).toBe('written')
+      expect(WRITERS.repointEngineTracks).toHaveBeenCalledWith(
+        '/e/Engine Library',
+        [expect.objectContaining({ to: first.from, engineShift: { trimmedMs: 1900 } })],
+        expect.anything(),
+      )
+    } finally {
+      Object.assign(first, { to, engineShift: undefined, fromBytes: undefined })
+      Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
+      STATUS.engine = { enabled: false, found: false }
+    }
+  })
+
   // An end nested in a batch still open takes nothing: the outer end flushes, and judges.
   it('says every library is for a later end when an outer batch is still open', async () => {
     Object.assign(SETTINGS, { syncEngineDj: true, engineLibraryDir: '/e/Engine Library' })

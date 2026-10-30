@@ -177,6 +177,7 @@ type Move = {
   to: string
   audio?: { cueShiftMs: number }
   engineShift?: EngineShift
+  fromBytes?: number
 }
 export function libraryRequeue(queues: {
   rekordbox: RequeueTarget<Move>
@@ -210,6 +211,7 @@ export function libraryRequeue(queues: {
             to: e.to,
             ...(e.cueShiftMs === undefined ? {} : { audio: { cueShiftMs: e.cueShiftMs } }),
             ...(e.engineShift ? { engineShift: e.engineShift } : {}),
+            ...(e.fromBytes === undefined ? {} : { fromBytes: e.fromBytes }),
           },
         ],
       )

@@ -315,6 +315,20 @@ describe('libraryRequeue', () => {
     )
   })
 
+  // Rewritten in place, the row is found by the path it still has: only the size it still
+  // records says the cut is owed, so the retry has to carry it.
+  it('hands Engine a rewrite in place with the size that says its cut is owed', () => {
+    const q = queues()
+    const shift = { trimmedMs: 1900 }
+
+    libraryRequeue(q)('engine', entry({ to: FROM, engineShift: shift, fromBytes: 100 }))
+
+    expect(q.engine.enqueue).toHaveBeenCalledWith(
+      [],
+      [{ from: FROM, to: FROM, engineShift: shift, fromBytes: 100 }],
+    )
+  })
+
   it('hands Traktor the rename and its cue shift, without cue tree, grid or stars', () => {
     const q = queues()
     const patch = {

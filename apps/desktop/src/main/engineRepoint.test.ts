@@ -455,6 +455,48 @@ describe.each(['2.18', '3.0.2'] as const)(
       expect(await positionsOf(lib)).toEqual(once)
     })
 
+    // A same-format reconvert with a trim rewrites the file on its own path, so the row never
+    // moves and the path alone cannot say whether the cut already came off. The size Engine
+    // recorded can: the source's size before the write means the shift is still owed, and the
+    // write swaps it for the new one, so a retry or a queued apply finds it and shifts nothing.
+    it('shifts a row rewritten in place once, while it still has the source’s size', async () => {
+      const lib = await analysedLibrary(schema)
+      const before = await positionsOf(lib)
+      await writeFile(lib.oldFile, Buffer.alloc(4321))
+      const move = {
+        from: lib.oldFile,
+        to: lib.oldFile,
+        fromBytes: 100,
+        engineShift: { trimmedMs: TRIM_MS },
+      }
+      const [result] = await repointEngineTracks(lib.dir, [move])
+      expect(result).toEqual({ written: true, id: '1' })
+      const once = await positionsOf(lib)
+      expect(once.hot?.[1]).toBeCloseTo(HOT_SEC[1] - TRIM_MS / 1000, 6)
+      expect(once.grid).toEqual(before.grid?.map((s) => expect.closeTo(s - TRIM_MS / 1000, 6)))
+      const db = await openDb(lib.dbPath)
+      expect(one(db, 'SELECT path, fileBytes FROM Track')).toEqual({
+        path: '../music/old.mp3',
+        fileBytes: 4321,
+      })
+      db.close()
+      const [again] = await repointEngineTracks(lib.dir, [move])
+      expect(again).toEqual({ written: false, reason: 'no-match' })
+      expect(await positionsOf(lib)).toEqual(once)
+    })
+
+    it('leaves a row rewritten in place alone when nothing says the cut is still owed', async () => {
+      const lib = await analysedLibrary(schema)
+      const before = await positionsOf(lib)
+      const bytes = await readFile(lib.dbPath)
+      const [result] = await repointEngineTracks(lib.dir, [
+        { from: lib.oldFile, to: lib.oldFile, engineShift: { trimmedMs: TRIM_MS } },
+      ])
+      expect(result).toEqual({ written: false, reason: 'no-match' })
+      expect(await positionsOf(lib)).toEqual(before)
+      expect(await readFile(lib.dbPath)).toEqual(bytes)
+    })
+
     // A blob Surco cannot read is kept as Engine wrote it: guessing at its layout could only
     // corrupt it, and the path still has to follow the file.
     it('moves the row and leaves blobs it cannot read as they were', async () => {

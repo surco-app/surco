@@ -1916,6 +1916,7 @@ function registerIpc(): void {
           traktorPatch: recordedNmlPatch(entry.source),
           cueShiftMs: recordedRekordboxRepoint(entry.to)?.audio?.cueShiftMs,
           engineShift: recordedRekordboxRepoint(entry.to)?.engineShift,
+          fromBytes: recordedRekordboxRepoint(entry.to)?.fromBytes,
         }),
       realPath: (p) => realpathSync(p),
       // Music exists only on macOS, where the Music step is the only caller.

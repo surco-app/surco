@@ -1356,8 +1356,12 @@ inicial, cada hot cue, el cue principal, cada loop y la rejilla se adelantan lo 
 cortó; lo que caía dentro del corte queda en el nuevo inicio, como en rekordbox y Traktor. Si
 además se cambió la frecuencia de muestreo, las posiciones se reescriben en la nueva
 (`shiftEnginePerformance`, `engineRepoint.ts:114`). Antes la fila seguía al fichero pero cada
-cue sonaba tarde lo que durara el corte. Una pista recortada en su sitio, con la misma ruta, no
-se reapunta en Engine y sus cues no se mueven. El desfase de MP3 que se aplica a rekordbox y a
+cue sonaba tarde lo que durara el corte. Una pista recortada en su sitio, con la misma ruta,
+también mueve sus cues en Engine. Como la fila no cambia de ruta, lo que dice que el corte sigue
+pendiente es que Engine aún guarde el tamaño del original, y la misma escritura guarda el nuevo,
+así que un reintento no los mueve dos veces (`engineRepoint.ts`, `fromBytes`). Si ese tamaño ya
+no coincide, por ejemplo porque las etiquetas se cambiaron antes en el fichero sin que Engine lo
+supiera, los cues se quedan como estaban. El desfase de MP3 que se aplica a rekordbox y a
 Traktor al cambiar de formato no se aplica a Engine, porque no se ha medido en Engine.
 
 ### Cue points de Traktor

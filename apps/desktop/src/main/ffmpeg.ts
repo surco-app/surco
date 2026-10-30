@@ -2548,7 +2548,9 @@ export async function convertAudio(
     // the other two write paths (a format change, a NAS delete) ignoring it. What only
     // this scope knows is what the encode did — `codec` is the planner's own verdict,
     // 'copy' exactly when the audio passes through untouched — so that rides along.
-    if (await isSameFile(input, output)) {
+    const inPlace = await isSameFile(input, output)
+    const fromBytes = inPlace ? (await stat(input)).size : undefined
+    if (inPlace) {
       archived = await keepOriginal(input, 'replaced', output, {
         reencodes:
           codec !== 'copy' || (extname(output).toLowerCase() === '.wav' && dropsForeignCues(input)),
@@ -2602,6 +2604,7 @@ export async function convertAudio(
       replaces: replacesPath,
       meta: rekordboxMetaFrom(meta),
       audio: rekordboxAudio,
+      fromBytes,
     })
     if (repoint) recordRekordboxRepoint(repoint)
   } catch (e) {

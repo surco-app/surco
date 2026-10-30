@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { readFileSync } from 'node:fs'
+import { readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -116,5 +116,75 @@ describe('Cut the silence before a record without moving its Engine DJ cues off 
 
   it('moves the beat grid by the cut, so every beat still falls on the music', () => {
     expect(after.grid).toEqual(before.grid.map((s) => expect.closeTo(s - TRIM_SEC, 4)))
+  })
+})
+
+// Re-saving the record as the same format, over itself, keeps its path, so Engine's row does
+// not move: the cut still has to reach its cues, once.
+describe('Cut the silence before a record rewritten over itself, with its Engine DJ cues', () => {
+  let surco: Scenario
+  let library: string
+  let source: string
+  let before: Awaited<ReturnType<typeof performance>>
+  let after: Awaited<ReturnType<typeof performance>>
+
+  beforeAll(async () => {
+    const root = scenarioDir('engine-trim-in-place')
+    source = join(root, 'Crate', 'Record.flac')
+    library = join(root, 'Engine Library')
+    makeTrack(source, {
+      title: 'Record',
+      artist: 'A',
+      lavfi: `aevalsrc=0.3*sin(2*PI*220*t):s=${RATE}:d=20`,
+    })
+    const db = writeEngineLibraryFixture(library, {
+      tracks: [{ id: 1, path: relative(library, source) }],
+      playlists: [],
+      entities: [],
+      performance: [
+        analysedTrack(
+          1,
+          CUE_SEC.map((s, i) => ({ label: `C${i}`, sample: s * RATE, argb: 0xffcc0000 })),
+        ),
+      ],
+    })
+    db.prepare("UPDATE Track SET fileType = 'flac', fileBytes = ? WHERE id = 1").run(
+      statSync(source).size,
+    )
+    db.close()
+    before = await performance(library)
+    surco = await openSurco({
+      settings: { outputFormat: 'source', engineLibraryDir: library, syncEngineDj: true },
+      destination: 'overwrite',
+    })
+    await surco.drop(join(root, 'Crate'))
+    surco.patchTrack('Record.flac', { trim: { startSec: TRIM_SEC } })
+    await surco.convertAll()
+    after = await performance(library)
+  }, 90_000)
+
+  it('runs without a single error the user would see', () => {
+    expect(surco.errors).toEqual([])
+  })
+
+  it('moves every hot cue and the grid earlier by the cut', () => {
+    expect(after.cues.slice(0, 3)).toEqual([
+      0,
+      expect.closeTo(CUE_SEC[1] - TRIM_SEC, 4),
+      expect.closeTo(CUE_SEC[2] - TRIM_SEC, 4),
+    ])
+    expect(after.grid).toEqual(before.grid.map((s) => expect.closeTo(s - TRIM_SEC, 4)))
+  })
+
+  it('records the rewritten file’s size, the mark that the cut already came off', async () => {
+    const SQL = await loadSqlJs()
+    const db = new SQL.Database(readFileSync(engineDbPath(library)))
+    try {
+      expect(db.exec('SELECT path, fileBytes FROM Track')[0].values).toEqual([
+        [relative(library, source), statSync(source).size],
+      ])
+    } finally {
+      db.close()
+    }
   })
 })
