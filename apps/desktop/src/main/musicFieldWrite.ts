@@ -53,6 +53,7 @@ export async function rewriteTagFields(
 export interface PreparedRewrite {
   write: (changes: TagFieldChange[]) => Promise<{ outcomes: FieldWrite[]; backup?: TrashEntry }>
   abandon: () => Promise<void>
+  keep: () => Promise<TrashEntry | undefined>
   backup: () => TrashEntry | undefined
 }
 
@@ -104,7 +105,11 @@ export async function prepareTagRewrite(
       throw e
     }
   }
-  return { write, abandon, backup: () => archived ?? undefined }
+  const keep = async () => {
+    await dropTemp(tmp, tracking)
+    return archived ?? undefined
+  }
+  return { write, abandon, keep, backup: () => archived ?? undefined }
 }
 
 // A temp that will not delete (a network volume still holding the handle) stays in the

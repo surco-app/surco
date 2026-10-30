@@ -721,6 +721,29 @@ describe('the library review against a Music that rewrites the file', () => {
     expect(out).toMatchObject({ file: 'unchanged', written: [] })
   }, 60000)
 
+  it('keeps the backup when Music wrote the file and then did not answer', async () => {
+    const file = make('aiff', ['-c:a', 'pcm_s16be'], 'Dj Lara')
+    const original = readFileSync(file)
+    const stored = copyingKeeper()
+    const music = musicThatRewrites(file)
+    const temps: string[] = []
+    const [out] = await applyMusicFixes(
+      [{ persistentId: 'A', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
+      {
+        setField: async (pid, field, from, to) => {
+          await music(pid, field, from, to)
+          throw new Error('AppleEvent timed out (-1712)')
+        },
+        locate: async () => file,
+        exists: async () => true,
+        prepare: (path) =>
+          prepareTagRewrite(path, { track: (tmp) => temps.push(tmp), untrack: () => {} }),
+      },
+    )
+    expect(stored.get(out.backupId ?? '')?.equals(original)).toBe(true)
+    expect(existsSync(temps[0])).toBe(false)
+  }, 60000)
+
   it('reports the field as written, not as a file that differs', async () => {
     const file = make('aiff', ['-c:a', 'pcm_s16be'], 'Dj Lara')
     copyingKeeper()

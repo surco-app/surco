@@ -25,6 +25,7 @@ function deps({
     prepare: vi.fn(async (file: string) => ({
       write: (changes: TagFieldChange[]) => rewrite(file, changes),
       abandon,
+      keep: async () => undefined,
       backup: () => undefined,
     })),
     ...over,
@@ -167,12 +168,30 @@ describe('applyMusicFixes', () => {
         return {
           write: async () => ({ outcomes: ['written'] }),
           abandon: async () => {},
+          keep: async () => undefined,
           backup: () => undefined,
         }
       },
     })
     await applyMusicFixes([fix('A')], d)
     expect(order).toEqual(['backup', 'music'])
+  })
+
+  // A timeout says nothing about whether Music wrote first: the copy stays, and Undo gets it.
+  it('keeps the backup when Music did not answer, since it may have written', async () => {
+    const abandon = vi.fn(async () => {})
+    const d = deps({
+      setField: vi.fn().mockRejectedValue(new Error('AppleEvent timed out (-1712)')),
+      prepare: async () => ({
+        write: async () => ({ outcomes: ['written'] }),
+        abandon,
+        keep: async () => ({ id: 'b1' }) as TrashEntry,
+        backup: () => ({ id: 'b1' }) as TrashEntry,
+      }),
+    })
+    const [out] = await applyMusicFixes([fix('A')], d)
+    expect(abandon).not.toHaveBeenCalled()
+    expect(out).toMatchObject({ music: ['failed'], file: 'skipped', backupId: 'b1' })
   })
 
   it('drops the backup when Music refused every field', async () => {
@@ -196,6 +215,7 @@ describe('applyMusicFixes', () => {
           throw new Error('EACCES')
         },
         abandon: async () => {},
+        keep: async () => undefined,
         backup: () => ({ id: 'b1' }) as TrashEntry,
       }),
     })

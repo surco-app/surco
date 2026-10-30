@@ -80,8 +80,13 @@ async function applyTrack(
     )
   const accepted = fixes.filter((_, i) => music[i] === 'set')
   if (accepted.length === 0) {
-    await prepared?.abandon()
-    return { persistentId, fixes, music, file: 'skipped', written: [] }
+    // Music refused every field, so it wrote nothing; one that did not answer may have.
+    if (!music.includes('failed')) {
+      await prepared?.abandon()
+      return { persistentId, fixes, music, file: 'skipped', written: [] }
+    }
+    const kept = await prepared?.keep()
+    return { persistentId, fixes, music, file: 'skipped', written: [], backupId: kept?.id }
   }
   if (!prepared)
     return { persistentId, fixes, music, file: 'missing', path: path || undefined, written: [] }
