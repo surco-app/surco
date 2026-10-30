@@ -17,10 +17,6 @@ import { SegmentedControl } from '../SegmentedControl'
 import { CheckboxRow } from './CheckboxRow'
 import { SettingsField, SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
 
-// Apple Music automation only exists on macOS, so the destination is meaningless on
-// other platforms where a track simply finishes in the output folder.
-const isMac = isMacOS()
-
 // The grey line states what each level DOES, in one register. 'never' gets a line of
 // its own rather than reusing its warning text: the amber box below already carries the
 // risk, and printing the same sentence twice, stacked, read as a rendering fault.
@@ -152,7 +148,7 @@ export function DestinationTab({
     <>
       <SettingsField label={tr('settings.destination')} searchId="destination">
         <DestinationPicker
-          destinations={DESTINATIONS.filter((d) => isMac || d !== 'appleMusic')}
+          destinations={DESTINATIONS.filter((d) => isMacOS() || d !== 'appleMusic')}
           value={destination}
           onChange={chooseDestination}
           flacOnly={flacOnly}
