@@ -99,6 +99,7 @@
       "damaged": "Endommagés",
       "unconverted": "Non convertis",
       "failed": "En échec",
+      "mismatch": "Ne correspondent pas",
       "skipped": "Ignorés",
       "automatched": "Auto-associés",
       "matchReview": "À confirmer",
@@ -466,6 +467,7 @@
     "matchReview": "Correspondance à confirmer",
     "metaReadFailed": "Impossible de lire les tags de ce fichier, seules les données du nom sont affichées",
     "unsaved": "Modifications non enregistrées",
+    "verifyMismatch": "Quelque chose ne correspond pas",
     "remove": "Retirer",
     "status": {
       "idle": "Non converti",
@@ -691,11 +693,7 @@
     "updateMusic": "Mettre à jour les étiquettes + Apple Music",
     "processing": "Conversion…",
     "exportedAs": "✓ Exporté en {{format}}",
-    "exportedCount_one": "✓ {{count}} morceau exporté",
-    "exportedCount_other": "✓ {{count}} morceaux exportés",
     "addedToAppleMusic": "✓ Ajouté à Apple Music",
-    "addedToAppleMusicCount_one": "✓ {{count}} morceau ajouté à Apple Music",
-    "addedToAppleMusicCount_other": "✓ {{count}} morceaux ajoutés à Apple Music",
     "moreActions": "Plus d'actions",
     "showFile": "Afficher le fichier",
     "reexport": "Convertir à nouveau",
@@ -2868,7 +2866,20 @@
     },
     "plainLine": {
       "addedToAppleMusic": "Ajouté à Apple Music",
-      "exportedAs": "Exporté en {{format}}"
+      "exportedAs": "Exporté en {{format}}",
+      "exportedCount_one": "{{count}} morceau exporté",
+      "exportedCount_other": "{{count}} morceaux exportés",
+      "addedToAppleMusicCount_one": "{{count}} morceau ajouté à Apple Music",
+      "addedToAppleMusicCount_other": "{{count}} morceaux ajoutés à Apple Music"
+    },
+    "batch": {
+      "verified_one": "{{count}} vérifié",
+      "verified_other": "{{count}} vérifiés",
+      "mismatch_one": "{{count}} ne correspond pas",
+      "mismatch_other": "{{count}} ne correspondent pas",
+      "pending": "{{count}} à la fermeture de {{programs}}",
+      "checking": "{{count}} en cours de vérification",
+      "unverified": "{{count}} sans vérification"
     },
     "places": {
       "file": "Fichier",

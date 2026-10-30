@@ -99,6 +99,7 @@
       "damaged": "Danificadas",
       "unconverted": "Sem converter",
       "failed": "Com erro",
+      "mismatch": "Não batem",
       "skipped": "Puladas",
       "automatched": "Auto-associadas",
       "matchReview": "A confirmar",
@@ -466,6 +467,7 @@
     "matchReview": "Correspondência a confirmar",
     "metaReadFailed": "Não foi possível ler as tags deste arquivo, então só os dados do nome aparecem",
     "unsaved": "Alterações não salvas",
+    "verifyMismatch": "Algo não bate",
     "remove": "Remover",
     "status": {
       "idle": "Sem converter",
@@ -691,11 +693,7 @@
     "updateMusic": "Atualizar etiquetas + Apple Music",
     "processing": "Convertendo…",
     "exportedAs": "✓ Exportado como {{format}}",
-    "exportedCount_one": "✓ {{count}} faixa exportada",
-    "exportedCount_other": "✓ {{count}} faixas exportadas",
     "addedToAppleMusic": "✓ Adicionada ao Apple Music",
-    "addedToAppleMusicCount_one": "✓ {{count}} faixa adicionada ao Apple Music",
-    "addedToAppleMusicCount_other": "✓ {{count}} faixas adicionadas ao Apple Music",
     "moreActions": "Mais ações",
     "showFile": "Mostrar arquivo",
     "reexport": "Converter de novo",
@@ -2868,7 +2866,20 @@
     },
     "plainLine": {
       "addedToAppleMusic": "Adicionada ao Apple Music",
-      "exportedAs": "Exportado como {{format}}"
+      "exportedAs": "Exportado como {{format}}",
+      "exportedCount_one": "{{count}} faixa exportada",
+      "exportedCount_other": "{{count}} faixas exportadas",
+      "addedToAppleMusicCount_one": "{{count}} faixa adicionada ao Apple Music",
+      "addedToAppleMusicCount_other": "{{count}} faixas adicionadas ao Apple Music"
+    },
+    "batch": {
+      "verified_one": "{{count}} verificada",
+      "verified_other": "{{count}} verificadas",
+      "mismatch_one": "{{count}} não bate",
+      "mismatch_other": "{{count}} não batem",
+      "pending": "{{count}} ao fechar {{programs}}",
+      "checking": "{{count}} em verificação",
+      "unverified": "{{count}} sem verificar"
     },
     "places": {
       "file": "Arquivo",

@@ -212,12 +212,33 @@ export function ConvertFooter({
   // was never re-read, so it reads plain: no ✓, no shield. Multi keeps its counts.
   const verification = isMulti ? undefined : item.verification
   const unverified = !isMulti && !verification
-  const checking =
-    !isMulti &&
-    ((showDone && verification?.status === 'checking') ||
-      (item.status === 'processing' && item.stage === 'verify'))
-  const pendingPlaces =
-    verification?.status === 'pending'
+  // A batch counts what its re-read found, not what was sent. The ✓ vouches for the
+  // verified count once nothing is on its way (pending or still checking); a batch where
+  // every track is still checking reads like a single one. A batch never re-read keeps the
+  // sent count, without the ✓.
+  const batch = isMulti
+    ? (status.batch ?? {
+        ok: 0,
+        mismatch: 0,
+        pending: 0,
+        checking: 0,
+        unverified: selectedCount,
+        pendingPlaces: [],
+      })
+    : undefined
+  const batchSettled = !!batch && batch.pending === 0 && batch.checking === 0
+  const batchAllChecking =
+    !!batch &&
+    batch.checking > 0 &&
+    batch.ok + batch.mismatch + batch.pending + batch.unverified === 0
+  const batchReread = !!batch && batch.ok + batch.mismatch + batch.pending + batch.checking > 0
+  const checking = isMulti
+    ? showDone && batchAllChecking
+    : (showDone && verification?.status === 'checking') ||
+      (item.status === 'processing' && item.stage === 'verify')
+  const pendingPlaces = batch
+    ? batch.pendingPlaces.map((p) => tr(`verify.places.${p}`))
+    : verification?.status === 'pending'
       ? verification.checks
           .filter((c) => c.state === 'pending')
           .map((c) => tr(`verify.places.${c.place}`))
@@ -295,6 +316,30 @@ export function ConvertFooter({
       ?.querySelector<HTMLButtonElement>('[data-testid="process-btn"], [data-testid="done-more"]')
       ?.focus()
   })
+  const batchLine = batch && batchReread && (
+    <span className="min-w-0">
+      {[
+        batch.ok > 0 &&
+          `${batchSettled ? '✓ ' : ''}${tr('verify.batch.verified', { count: batch.ok })}`,
+        batch.mismatch > 0 && (
+          <span
+            key="mismatch"
+            data-testid="verify-batch-mismatch"
+            data-tone="warn"
+            className="text-warn"
+          >
+            {tr('verify.batch.mismatch', { count: batch.mismatch })}
+          </span>
+        ),
+        batch.pending > 0 &&
+          tr('verify.batch.pending', { count: batch.pending, programs: pendingPrograms }),
+        batch.checking > 0 && tr('verify.batch.checking', { count: batch.checking }),
+        batch.unverified > 0 && tr('verify.batch.unverified', { count: batch.unverified }),
+      ]
+        .filter(Boolean)
+        .flatMap((part, i) => (i === 0 ? [part] : [' · ', part]))}
+    </span>
+  )
   const addedLine = pendingPrograms
     ? tr('verify.pendingLine.addedToAppleMusic', {
         programs: pendingPrograms,
@@ -397,7 +442,7 @@ export function ConvertFooter({
                       data-testid="export-success"
                       role="status"
                       className={`min-w-0 text-xs font-medium text-good ${
-                        pendingPrograms ? 'flex items-center gap-1' : 'truncate'
+                        pendingPrograms || batchLine ? 'flex items-center gap-1' : 'truncate'
                       }`}
                     >
                       {pendingPrograms && (
@@ -407,7 +452,9 @@ export function ConvertFooter({
                           aria-hidden="true"
                         />
                       )}
-                      {revealsInMusic && addedToMusic ? (
+                      {batchLine ? (
+                        batchLine
+                      ) : revealsInMusic && addedToMusic ? (
                         <button
                           type="button"
                           data-testid="add-apple-music"
@@ -420,12 +467,12 @@ export function ConvertFooter({
                         </button>
                       ) : addedToMusic ? (
                         isMulti ? (
-                          tr('editor.addedToAppleMusicCount', { count: selectedCount })
+                          tr('verify.plainLine.addedToAppleMusicCount', { count: selectedCount })
                         ) : (
                           addedLine
                         )
                       ) : isMulti ? (
-                        tr('editor.exportedCount', { count: selectedCount })
+                        tr('verify.plainLine.exportedCount', { count: selectedCount })
                       ) : pendingPrograms ? (
                         tr('verify.pendingLine.exportedAs', {
                           format: (exportedFormat ?? '').toUpperCase(),

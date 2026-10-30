@@ -99,6 +99,7 @@
       "damaged": "破損",
       "unconverted": "未変換",
       "failed": "失敗",
+      "mismatch": "不一致",
       "skipped": "スキップ",
       "automatched": "自動マッチ済み",
       "matchReview": "要確認",
@@ -466,6 +467,7 @@
     "matchReview": "確認のためマッチ",
     "metaReadFailed": "ファイルのタグを読み取れなかったため、ファイル名のデータのみ表示しています",
     "unsaved": "未保存の変更",
+    "verifyMismatch": "一致しない項目があります",
     "remove": "削除",
     "status": {
       "idle": "変換されていません",
@@ -691,11 +693,7 @@
     "updateMusic": "タグを更新 + Apple Music",
     "processing": "変換中…",
     "exportedAs": "✓ {{format}} としてエクスポート",
-    "exportedCount_one": "✓ {{count}} トラックをエクスポート",
-    "exportedCount_other": "✓ {{count}} トラックをエクスポート",
     "addedToAppleMusic": "✓ Apple Music に追加",
-    "addedToAppleMusicCount_one": "✓ {{count}} トラックを Apple Music に追加",
-    "addedToAppleMusicCount_other": "✓ {{count}} トラックを Apple Music に追加",
     "moreActions": "その他の操作",
     "showFile": "ファイルを表示",
     "reexport": "再度変換",
@@ -2868,7 +2866,20 @@
     },
     "plainLine": {
       "addedToAppleMusic": "Apple Music に追加",
-      "exportedAs": "{{format}} としてエクスポート"
+      "exportedAs": "{{format}} としてエクスポート",
+      "exportedCount_one": "{{count}} トラックをエクスポート",
+      "exportedCount_other": "{{count}} トラックをエクスポート",
+      "addedToAppleMusicCount_one": "{{count}} トラックを Apple Music に追加",
+      "addedToAppleMusicCount_other": "{{count}} トラックを Apple Music に追加"
+    },
+    "batch": {
+      "verified_one": "{{count}} 件確認済み",
+      "verified_other": "{{count}} 件確認済み",
+      "mismatch_one": "{{count}} 件が不一致",
+      "mismatch_other": "{{count}} 件が不一致",
+      "pending": "{{count}} 件は{{programs}}の終了時に反映",
+      "checking": "{{count}} 件を確認中",
+      "unverified": "{{count}} 件は未確認"
     },
     "places": {
       "file": "ファイル",

@@ -38,7 +38,12 @@ export function FilterOption({
     >
       <span className="relative">
         <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-        {dot && <span className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${dot}`} />}
+        {dot && (
+          <span
+            data-testid={`${testid}-dot`}
+            className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${dot}`}
+          />
+        )}
       </span>
       <span className="flex-1">{label}</span>
       <span className="tabular-nums text-fg-dim">{count}</span>

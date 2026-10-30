@@ -18,6 +18,42 @@ function track(over: Partial<TrackItem> & { id: string }): TrackItem {
 const ok: Verification = { status: 'ok', checks: [] }
 
 describe('selectionStatus', () => {
+  // The batch line counts what was re-read, not what was sent: each selected track lands in
+  // exactly one bucket, and the programs the pending ones wait on are named once each, in the
+  // order the shield lists places.
+  it('tallies a batch by what its re-read found', () => {
+    const v = (status: Verification['status'], checks: Verification['checks'] = []) =>
+      ({ status, checks }) as Verification
+    const pend = (place: 'rekordbox' | 'engine') =>
+      ({ place, state: 'pending', detail: { key: 'pending' } }) as const
+    const tracks = [
+      track({ id: 'a', status: 'done', verification: ok }),
+      track({ id: 'b', status: 'done', verification: ok }),
+      track({ id: 'c', status: 'done', verification: v('mismatch') }),
+      track({
+        id: 'd',
+        status: 'done',
+        verification: v('pending', [
+          { place: 'file', state: 'ok', detail: { key: 'fileIdentical' } },
+          pend('engine'),
+        ]),
+      }),
+      track({ id: 'e', status: 'done', verification: v('pending', [pend('rekordbox')]) }),
+      track({ id: 'f', status: 'done', verification: v('pending', [pend('engine')]) }),
+      track({ id: 'g', status: 'done', verification: v('checking') }),
+      track({ id: 'h', status: 'done' }),
+    ]
+    expect(selectionStatus(tracks[0], tracks, true).batch).toEqual({
+      ok: 2,
+      mismatch: 1,
+      pending: 3,
+      checking: 1,
+      unverified: 1,
+      pendingPlaces: ['rekordbox', 'engine'],
+    })
+    expect(selectionStatus(tracks[0], undefined, true).batch).toBeUndefined()
+  })
+
   // The source is the only copy until the result was re-read, so the clean-up offer waits.
   it('the original is not offered for cleanup unless verified', () => {
     const base = { id: 'a', status: 'done', outputPath: '/out/a.aiff' } as const

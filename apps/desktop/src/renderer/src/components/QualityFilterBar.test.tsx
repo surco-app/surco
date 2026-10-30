@@ -34,6 +34,7 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   noKey: 0,
   missingRequired: 0,
   unsaved: 0,
+  mismatch: 0,
   inLibrary: 0,
   notInLibrary: 0,
   duplicates: 0,
@@ -213,6 +214,25 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('quality-filter-missingRequired')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('quality-filter-unsaved'))
     expect(onChange).toHaveBeenCalledWith(sel({ conversion: 'unsaved' }))
+  })
+
+  // The batch line counts "2 no cuadran"; this is the way to those two rows. It carries the
+  // amber nudge because they are work to do, and like "Sin guardar" it stays out of the menu
+  // while nothing is in it, so a crate that converted cleanly grows no empty row.
+  it('offers the tracks that do not add up, with their count and the amber dot', () => {
+    const { onChange } = renderBar({ tally: tally({ mismatch: 2 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    const option = screen.getByTestId('quality-filter-mismatch')
+    expect(option).toHaveTextContent(/^Don’t add up2$/)
+    expect(screen.getByTestId('quality-filter-mismatch-dot')).toBeInTheDocument()
+    fireEvent.click(option)
+    expect(onChange).toHaveBeenCalledWith(sel({ conversion: 'mismatch' }))
+  })
+
+  it('the filter option is hidden at zero', () => {
+    renderBar({ tally: tally({ unsaved: 1 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.queryByTestId('quality-filter-mismatch')).toBeNull()
   })
 
   it('picking a provider bucket filters the conversion axis', () => {

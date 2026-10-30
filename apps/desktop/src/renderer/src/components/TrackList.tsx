@@ -769,6 +769,19 @@ const TrackRow = memo(function TrackRow({
                     <span className="sr-only">{tr('trackList.metaReadFailed')}</span>
                   </span>
                 )}
+                {/* The re-read after converting found something wrong: the same amber as the
+                    batch line's "no cuadran", so the rows it counts are found by eye. */}
+                {t.verification?.status === 'mismatch' && (
+                  <span className="group/dot relative flex shrink-0 items-center">
+                    <span
+                      data-testid="verify-dot"
+                      role="img"
+                      aria-label={tr('trackList.verifyMismatch')}
+                      className="h-1.5 w-1.5 rounded-full bg-warn"
+                    />
+                    <Tooltip label={tr('trackList.verifyMismatch')} align="end" scope="dot" />
+                  </span>
+                )}
                 {unsaved && (
                   <span
                     data-testid="track-unsaved"

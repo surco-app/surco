@@ -99,6 +99,7 @@
       "damaged": "Dañadas",
       "unconverted": "Sin convertir",
       "failed": "Con error",
+      "mismatch": "No cuadran",
       "skipped": "Saltadas",
       "automatched": "Auto-emparejadas",
       "matchReview": "Por confirmar",
@@ -466,6 +467,7 @@
     "matchReview": "Coincidencia por confirmar",
     "metaReadFailed": "No se pudieron leer los metadatos del archivo, así que solo se muestra el nombre",
     "unsaved": "Cambios sin guardar",
+    "verifyMismatch": "Algo no cuadra",
     "remove": "Quitar",
     "status": {
       "idle": "Sin convertir",
@@ -691,11 +693,7 @@
     "updateMusic": "Actualizar etiquetas + Apple Music",
     "processing": "Convirtiendo…",
     "exportedAs": "✓ Exportado como {{format}}",
-    "exportedCount_one": "✓ {{count}} pista exportada",
-    "exportedCount_other": "✓ {{count}} pistas exportadas",
     "addedToAppleMusic": "✓ Añadido a Apple Music",
-    "addedToAppleMusicCount_one": "✓ {{count}} pista añadida a Apple Music",
-    "addedToAppleMusicCount_other": "✓ {{count}} pistas añadidas a Apple Music",
     "moreActions": "Más acciones",
     "showFile": "Mostrar archivo",
     "reexport": "Convertir de nuevo",
@@ -2868,7 +2866,20 @@
     },
     "plainLine": {
       "addedToAppleMusic": "Añadido a Apple Music",
-      "exportedAs": "Exportado como {{format}}"
+      "exportedAs": "Exportado como {{format}}",
+      "exportedCount_one": "{{count}} pista exportada",
+      "exportedCount_other": "{{count}} pistas exportadas",
+      "addedToAppleMusicCount_one": "{{count}} pista añadida a Apple Music",
+      "addedToAppleMusicCount_other": "{{count}} pistas añadidas a Apple Music"
+    },
+    "batch": {
+      "verified_one": "{{count}} comprobada",
+      "verified_other": "{{count}} comprobadas",
+      "mismatch_one": "{{count}} no cuadra",
+      "mismatch_other": "{{count}} no cuadran",
+      "pending": "{{count}} al cerrar {{programs}}",
+      "checking": "{{count}} por comprobar",
+      "unverified": "{{count}} sin comprobar"
     },
     "places": {
       "file": "Fichero",

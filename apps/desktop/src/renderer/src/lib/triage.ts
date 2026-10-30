@@ -46,9 +46,11 @@ export type QualityFilter = 'suspect' | 'good' | 'unanalyzed' | 'damaged'
 // number, so those rows are the ones worth a separate eyeball. By the same argument
 // 'matchReview' and 'failed' get their own buckets: they are the rows the user still has
 // to ACT on — the sweep's unapplied suggestions and the conversions that errored — and
-// the toolbar already counts both, a count that until now pointed nowhere.
+// the toolbar already counts both, a count that until now pointed nowhere. 'mismatch' is
+// the batch line's "no cuadran": a conversion whose re-read found something wrong.
 export type ConversionFilter =
   | 'unsaved'
+  | 'mismatch'
   | 'unconverted'
   | 'failed'
   | 'skipped'
@@ -150,6 +152,7 @@ function matchesConversion(
   facts: FilterFacts,
 ): boolean {
   if (filter === 'unsaved') return facts.unsaved(track)
+  if (filter === 'mismatch') return track.verification?.status === 'mismatch'
   if (filter === 'unconverted') return track.status !== 'done'
   if (filter === 'failed') return hasFailed(track)
   if (filter === 'skipped') return track.skipReason !== undefined
@@ -464,6 +467,7 @@ export function qualityCounts(
   noKey: number
   missingRequired: number
   unsaved: number
+  mismatch: number
 } {
   let suspect = 0
   let good = 0
@@ -490,6 +494,7 @@ export function qualityCounts(
   let noKey = 0
   let missingRequired = 0
   let unsaved = 0
+  let mismatch = 0
   for (const t of tracks) {
     const q = trackQuality(t)
     if (q === 'warn' || q === 'bad' || q === 'processed' || q === 'transcoded') suspect += 1
@@ -518,6 +523,7 @@ export function qualityCounts(
     if (matchesTags(t, 'noKey', facts)) noKey += 1
     if (matchesTags(t, 'missingRequired', facts)) missingRequired += 1
     if (facts.unsaved(t)) unsaved += 1
+    if (t.verification?.status === 'mismatch') mismatch += 1
   }
   return {
     suspect,
@@ -545,6 +551,7 @@ export function qualityCounts(
     noKey,
     missingRequired,
     unsaved,
+    mismatch,
   }
 }
 

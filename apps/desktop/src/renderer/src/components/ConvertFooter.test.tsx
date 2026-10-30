@@ -7,7 +7,7 @@ import type { FormatSetting } from '../../../shared/types'
 import { type PlaceCheck, verificationStatus } from '../../../shared/verification'
 import i18n from '../i18n'
 import type { Destination } from '../lib/destination'
-import type { SelectionStatus } from '../lib/selectionStatus'
+import type { BatchVerification, SelectionStatus } from '../lib/selectionStatus'
 import type { TrackItem } from '../types'
 import { ConvertFooter } from './ConvertFooter'
 
@@ -324,7 +324,7 @@ describe('ConvertFooter done layout', () => {
 
   it('counts a batch sent to Apple Music as added there, with no file to show', () => {
     render(sentToMusic('appleMusic', true))
-    expect(screen.getByRole('status')).toHaveTextContent('✓ 9 tracks added to Apple Music')
+    expect(screen.getByRole('status')).toHaveTextContent(/^9 tracks added to Apple Music$/)
     expect(screen.queryByTestId('show-file')).toBeNull()
   })
 
@@ -850,5 +850,122 @@ describe('ConvertFooter verification', () => {
     fireEvent.click(screen.getByTestId('verify-retry'))
     expect(onRetryVerification).toHaveBeenCalledWith('t1')
     expect(onProcess).not.toHaveBeenCalled()
+  })
+})
+
+// A batch said "✓ 40 pistas exportadas" for what was sent. It now counts what was re-read:
+// the check mark vouches for the verified tracks once nothing is still on its way, and the
+// tracks that do not add up, wait on a program or were never re-read are named for what they are.
+describe('ConvertFooter batch verification', () => {
+  beforeEach(() => i18n.changeLanguage('es'))
+  afterEach(() => i18n.changeLanguage('en'))
+
+  const none: BatchVerification = {
+    ok: 0,
+    mismatch: 0,
+    pending: 0,
+    checking: 0,
+    unverified: 0,
+    pendingPlaces: [],
+  }
+
+  function batchFooter(
+    batch: Partial<BatchVerification>,
+    destination: Destination = 'beside' as Destination,
+  ): React.JSX.Element {
+    const tally = { ...none, ...batch }
+    return cloneElement(footer(true), {
+      isMulti: true,
+      selectedCount: tally.ok + tally.mismatch + tally.pending + tally.checking + tally.unverified,
+      destination,
+      status: {
+        ...status(true),
+        revealPath: '/out/a.wav',
+        musicAdded: destination === 'appleMusic',
+        superseded: [],
+        batch: tally,
+      },
+    })
+  }
+
+  it('the batch line counts verified and mismatched', () => {
+    render(batchFooter({ ok: 38, mismatch: 2 }))
+    expect(screen.getByTestId('export-success')).toHaveTextContent(
+      /^✓ 38 comprobadas · 2 no cuadran$/,
+    )
+    expect(screen.getByTestId('verify-batch-mismatch')).toHaveAttribute('data-tone', 'warn')
+  })
+
+  it('all verified shows only the verified count', () => {
+    render(batchFooter({ ok: 40 }))
+    expect(screen.getByTestId('export-success')).toHaveTextContent(/^✓ 40 comprobadas$/)
+    expect(screen.queryByTestId('verify-batch-mismatch')).toBeNull()
+  })
+
+  it('a single verified track agrees in number', () => {
+    render(batchFooter({ ok: 1, mismatch: 1 }))
+    expect(screen.getByTestId('export-success')).toHaveTextContent(/^✓ 1 comprobada · 1 no cuadra$/)
+  })
+
+  it('a batch with pending tracks shows no check mark', () => {
+    render(batchFooter({ ok: 36, pending: 2, pendingPlaces: ['rekordbox'] }))
+    const line = screen.getByTestId('export-success')
+    expect(line).toHaveTextContent(/^36 comprobadas · 2 al cerrar rekordbox$/)
+    expect(line.textContent).not.toContain('✓')
+    expect(screen.getByTestId('verify-pending-icon')).toBeInTheDocument()
+  })
+
+  it('names every program the pending tracks wait on', () => {
+    render(batchFooter({ ok: 3, pending: 2, pendingPlaces: ['rekordbox', 'engine'] }))
+    expect(screen.getByTestId('export-success')).toHaveTextContent(
+      /^3 comprobadas · 2 al cerrar rekordbox y Engine DJ$/,
+    )
+  })
+
+  it('the batch check mark appears once the pending ones are verified', () => {
+    const { rerender } = render(batchFooter({ ok: 36, pending: 2, pendingPlaces: ['rekordbox'] }))
+    rerender(batchFooter({ ok: 38 }))
+    expect(screen.getByTestId('export-success')).toHaveTextContent(/^✓ 38 comprobadas$/)
+    expect(screen.queryByTestId('verify-pending-icon')).toBeNull()
+  })
+
+  // The library re-read runs once after the whole batch, so for a moment every track is
+  // still checking: the line says so the way a single track does, not "0 comprobadas".
+  it('a batch still being checked says so, and counts the rest once some are back', () => {
+    const { rerender } = render(batchFooter({ checking: 40 }))
+    expect(screen.getByTestId('verify-checking')).toHaveTextContent(/^Comprobando…$/)
+    expect(screen.queryByTestId('export-success')).toBeNull()
+    rerender(batchFooter({ ok: 30, checking: 10 }))
+    const line = screen.getByTestId('export-success')
+    expect(line).toHaveTextContent(/^30 comprobadas · 10 por comprobar$/)
+    expect(line.textContent).not.toContain('✓')
+  })
+
+  // Nothing re-read is nothing vouched for: the sent count stays, without the check mark.
+  it('a batch never re-read counts what was sent without the check mark', () => {
+    const { rerender } = render(batchFooter({ unverified: 9 }))
+    expect(screen.getByTestId('export-success')).toHaveTextContent(/^9 pistas exportadas$/)
+    rerender(batchFooter({ unverified: 9 }, 'appleMusic' as Destination))
+    expect(screen.getByTestId('export-success')).toHaveTextContent(
+      /^9 pistas añadidas a Apple Music$/,
+    )
+  })
+
+  it('counts the tracks never re-read apart from the verified ones', () => {
+    render(batchFooter({ ok: 10, unverified: 30 }))
+    expect(screen.getByTestId('export-success')).toHaveTextContent(
+      /^✓ 10 comprobadas · 30 sin comprobar$/,
+    )
+  })
+
+  it('a batch where nothing adds up has no check mark', () => {
+    render(batchFooter({ mismatch: 2 }))
+    expect(screen.getByTestId('export-success')).toHaveTextContent(/^2 no cuadran$/)
+  })
+
+  // The longest batch line names counts and programs; it wraps at the narrowest editor.
+  it('the batch line is never cut short', () => {
+    render(batchFooter({ ok: 36, mismatch: 1, checking: 2, unverified: 3 }))
+    expect(screen.getByTestId('export-success').className).not.toMatch(/\btruncate\b/)
   })
 })

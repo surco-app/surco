@@ -21,6 +21,7 @@ import {
   Plus,
   RefreshCw,
   Scissors,
+  ShieldAlert,
   SkipForward,
   SlidersHorizontal,
   Sparkles,
@@ -43,6 +44,7 @@ type ConversionMode =
   | 'unsaved'
   | 'unconverted'
   | 'failed'
+  | 'mismatch'
   | 'skipped'
   | 'automatched'
   | 'matchReview'
@@ -59,6 +61,7 @@ const CONVERSION_MODES: ConversionMode[] = [
   'unsaved',
   'unconverted',
   'failed',
+  'mismatch',
   'skipped',
   'automatched',
   'matchReview',
@@ -86,6 +89,7 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   unanalyzed: AudioLines,
   unconverted: RefreshCw,
   failed: CircleAlert,
+  mismatch: ShieldAlert,
   skipped: SkipForward,
   automatched: Sparkles,
   matchReview: Eye,
@@ -138,6 +142,7 @@ function attentionDot(mode: Mode, tally: Tally): string | null {
   if (mode === 'noCues' && tally.noCues > 0) return 'bg-warn'
   if (mode === 'missingRequired' && tally.missingRequired > 0) return 'bg-warn'
   if (mode === 'unsaved' && tally.unsaved > 0) return 'bg-[var(--color-accent)]'
+  if (mode === 'mismatch' && tally.mismatch > 0) return 'bg-warn'
   return null
 }
 

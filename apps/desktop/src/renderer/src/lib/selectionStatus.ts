@@ -1,3 +1,4 @@
+import { PLACE_ORDER, type VerifyPlace } from '../../../shared/verification'
 import type { TrackItem } from '../types'
 import { supersededFile } from './supersededFile'
 
@@ -12,6 +13,34 @@ export interface SupersededFile {
 // values mirror the one open track; in multi-select the done block shows once every
 // selected track is converted, reveal opens the first output, and the Apple Music
 // state reflects the whole selection.
+// What a multi-select batch's re-read found, one bucket per track, for the line that counts
+// checked tracks instead of sent ones. `unverified` are the tracks never re-read; the pending
+// places are the programs the pending tracks still wait on, each once, in shield order.
+export interface BatchVerification {
+  ok: number
+  mismatch: number
+  pending: number
+  checking: number
+  unverified: number
+  pendingPlaces: VerifyPlace[]
+}
+
+function batchVerification(tracks: TrackItem[]): BatchVerification {
+  const batch = { ok: 0, mismatch: 0, pending: 0, checking: 0, unverified: 0 }
+  const waiting = new Set<VerifyPlace>()
+  for (const t of tracks) {
+    const v = t.verification
+    if (!v) {
+      batch.unverified += 1
+      continue
+    }
+    batch[v.status] += 1
+    if (v.status === 'pending')
+      for (const c of v.checks) if (c.state === 'pending') waiting.add(c.place)
+  }
+  return { ...batch, pendingPlaces: PLACE_ORDER.filter((p) => waiting.has(p)) }
+}
+
 export interface SelectionStatus {
   showDone: boolean
   revealPath: string | undefined
@@ -24,6 +53,8 @@ export interface SelectionStatus {
   // with rekordbox following their successors. Empty in single-select, where the footer
   // offers the one file through supersededFile instead.
   superseded: SupersededFile[]
+  // Multi-select only: the batch's re-read, tallied.
+  batch?: BatchVerification
 }
 
 export function selectionStatus(
@@ -82,5 +113,6 @@ export function selectionStatus(
     musicAdded,
     musicError,
     superseded,
+    batch: isMulti ? batchVerification(multiTracks) : undefined,
   }
 }

@@ -99,6 +99,7 @@
       "damaged": "Damaged",
       "unconverted": "Unconverted",
       "failed": "Failed",
+      "mismatch": "Don’t add up",
       "skipped": "Skipped",
       "automatched": "Auto-matched",
       "matchReview": "To confirm",
@@ -466,6 +467,7 @@
     "matchReview": "Match to confirm",
     "metaReadFailed": "Couldn't read this file's tags, so only data from the file name is shown",
     "unsaved": "Unsaved changes",
+    "verifyMismatch": "Something doesn’t add up",
     "remove": "Remove",
     "status": {
       "idle": "Not converted",
@@ -691,11 +693,7 @@
     "updateMusic": "Update tags + Apple Music",
     "processing": "Converting…",
     "exportedAs": "✓ Exported as {{format}}",
-    "exportedCount_one": "✓ {{count}} track exported",
-    "exportedCount_other": "✓ {{count}} tracks exported",
     "addedToAppleMusic": "✓ Added to Apple Music",
-    "addedToAppleMusicCount_one": "✓ {{count}} track added to Apple Music",
-    "addedToAppleMusicCount_other": "✓ {{count}} tracks added to Apple Music",
     "moreActions": "More actions",
     "showFile": "Show file",
     "reexport": "Convert again",
@@ -2868,7 +2866,20 @@
     },
     "plainLine": {
       "addedToAppleMusic": "Added to Apple Music",
-      "exportedAs": "Exported as {{format}}"
+      "exportedAs": "Exported as {{format}}",
+      "exportedCount_one": "{{count}} track exported",
+      "exportedCount_other": "{{count}} tracks exported",
+      "addedToAppleMusicCount_one": "{{count}} track added to Apple Music",
+      "addedToAppleMusicCount_other": "{{count}} tracks added to Apple Music"
+    },
+    "batch": {
+      "verified_one": "{{count}} checked",
+      "verified_other": "{{count}} checked",
+      "mismatch_one": "{{count}} doesn’t add up",
+      "mismatch_other": "{{count}} don’t add up",
+      "pending": "{{count}} waiting on {{programs}}",
+      "checking": "{{count}} still checking",
+      "unverified": "{{count}} not checked"
     },
     "places": {
       "file": "File",

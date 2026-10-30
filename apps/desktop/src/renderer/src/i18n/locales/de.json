@@ -99,6 +99,7 @@
       "damaged": "Beschädigt",
       "unconverted": "Nicht konvertiert",
       "failed": "Fehlgeschlagen",
+      "mismatch": "Stimmen nicht",
       "skipped": "Übersprungen",
       "automatched": "Auto-abgeglichen",
       "matchReview": "Zu bestätigen",
@@ -466,6 +467,7 @@
     "matchReview": "Treffer zu bestätigen",
     "metaReadFailed": "Die Tags dieser Datei konnten nicht gelesen werden, daher werden nur Daten aus dem Dateinamen angezeigt",
     "unsaved": "Nicht gespeicherte Änderungen",
+    "verifyMismatch": "Etwas stimmt nicht",
     "remove": "Entfernen",
     "status": {
       "idle": "Nicht konvertiert",
@@ -691,11 +693,7 @@
     "updateMusic": "Tags aktualisieren + Apple Music",
     "processing": "Wird konvertiert…",
     "exportedAs": "✓ Exportiert als {{format}}",
-    "exportedCount_one": "✓ {{count}} Track exportiert",
-    "exportedCount_other": "✓ {{count}} Tracks exportiert",
     "addedToAppleMusic": "✓ Zu Apple Music hinzugefügt",
-    "addedToAppleMusicCount_one": "✓ {{count}} Track zu Apple Music hinzugefügt",
-    "addedToAppleMusicCount_other": "✓ {{count}} Tracks zu Apple Music hinzugefügt",
     "moreActions": "Weitere Aktionen",
     "showFile": "Datei zeigen",
     "reexport": "Erneut konvertieren",
@@ -2868,7 +2866,20 @@
     },
     "plainLine": {
       "addedToAppleMusic": "Zu Apple Music hinzugefügt",
-      "exportedAs": "Exportiert als {{format}}"
+      "exportedAs": "Exportiert als {{format}}",
+      "exportedCount_one": "{{count}} Track exportiert",
+      "exportedCount_other": "{{count}} Tracks exportiert",
+      "addedToAppleMusicCount_one": "{{count}} Track zu Apple Music hinzugefügt",
+      "addedToAppleMusicCount_other": "{{count}} Tracks zu Apple Music hinzugefügt"
+    },
+    "batch": {
+      "verified_one": "{{count}} geprüft",
+      "verified_other": "{{count}} geprüft",
+      "mismatch_one": "{{count}} stimmt nicht",
+      "mismatch_other": "{{count}} stimmen nicht",
+      "pending": "{{count}} beim Schließen von {{programs}}",
+      "checking": "{{count}} in Prüfung",
+      "unverified": "{{count}} nicht geprüft"
     },
     "places": {
       "file": "Datei",

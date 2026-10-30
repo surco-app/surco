@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { SpectrumResult, TrackMetadata } from '../../../shared/types'
+import type { Verification } from '../../../shared/verification'
 import type { TrackItem, TrackStatus } from '../types'
 import * as normalizeText from './normalizeText'
 import {
@@ -222,6 +223,7 @@ describe('matchesFilter / qualityCounts', () => {
       noKey: 5,
       missingRequired: 0,
       unsaved: 0,
+      mismatch: 0,
     })
   })
 })
@@ -884,6 +886,29 @@ describe('failed filter', () => {
       'unmeasured',
     ])
     expect(qualityCounts(more).failed).toBe(4)
+  })
+})
+
+describe('mismatch filter', () => {
+  const t = (id: string, status?: Verification['status']): TrackItem =>
+    ({ id, status: 'done', verification: status && { status, checks: [] } }) as TrackItem
+  // A batch of 40 ends "38 comprobadas · 2 no cuadran": the count has to lead to the two
+  // rows, or the DJ scrolls the crate looking for an amber dot. A track still checking, one
+  // waiting on a program to close, or one never re-read has nothing to fix yet.
+  const tracks = [
+    t('ok', 'ok'),
+    t('bad', 'mismatch'),
+    t('wait', 'pending'),
+    t('busy', 'checking'),
+    t('old'),
+  ]
+
+  it('the mismatch filter keeps only tracks whose verification is mismatch', () => {
+    expect(by(tracks, { conversion: 'mismatch' }).map((x) => x.id)).toEqual(['bad'])
+  })
+
+  it('tallies the tracks that do not add up for its filter badge', () => {
+    expect(qualityCounts(tracks).mismatch).toBe(1)
   })
 })
 

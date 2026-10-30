@@ -22,6 +22,7 @@ import type { Api } from '../../../preload/api'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
 import type { Chord } from '../../../shared/shortcuts'
 import type { TrackMetadata } from '../../../shared/types'
+import type { Verification } from '../../../shared/verification'
 import i18n from '../i18n'
 import type { AutoMark } from '../lib/cueSession'
 import { trackSignature } from '../lib/dirty'
@@ -1625,6 +1626,29 @@ describe('TrackList unsaved mark', () => {
     ])
     expect(screen.getByTestId('track-status-badge')).toBeInTheDocument()
     expect(screen.queryByTestId('track-unsaved')).not.toBeInTheDocument()
+  })
+})
+
+// The batch line says "2 no cuadran"; the two rows say it too, so the DJ finds them in the
+// crate without opening each track. Only a verdict earns the dot: a track still waiting on a
+// program to close, or still being checked, has nothing wrong with it yet.
+describe('TrackList verification dot', () => {
+  const verified = (id: string, status: Verification['status']): TrackItem => ({
+    ...track({ id, status: 'done' }),
+    verification: { status, checks: [] },
+  })
+
+  it('a failing row carries the amber dot with its label', () => {
+    renderList([verified('a', 'ok'), verified('b', 'mismatch')])
+    const dots = screen.getAllByTestId('verify-dot')
+    expect(dots).toHaveLength(1)
+    expect(within(screen.getAllByTestId('track-row')[1]).getByTestId('verify-dot')).toBe(dots[0])
+    expect(dots[0]).toHaveAccessibleName(i18n.t('trackList.verifyMismatch'))
+  })
+
+  it('a pending row carries no dot', () => {
+    renderList([verified('a', 'pending'), verified('b', 'checking'), track({ id: 'c' })])
+    expect(screen.queryByTestId('verify-dot')).toBeNull()
   })
 })
 
