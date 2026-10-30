@@ -8,7 +8,7 @@ import {
   TagTypes,
 } from 'node-taglib-sharp'
 import type { MusicReviewField } from '../shared/types'
-import { dropBrokenUfids } from './tags'
+import { dropBrokenUfids, keepGenreParentheses } from './tags'
 
 // Kept apart from musicFieldWrite so the analysis worker can load it without dragging in
 // ffmpeg.ts, which pulls electron and the ffmpeg binaries into the worker thread.
@@ -168,10 +168,9 @@ export function setTagFields(file: string, changes: TagFieldChange[]): FieldWrit
     // WAV with only an "id3 " chunk gained LIST INFO, MID and IDVX chunks. Only tags the
     // file already had are rewritten.
     f.removeTags(f.tagTypes & ~f.tagTypesOnDisk)
-    if (extname(file).toLowerCase() === '.mp3') {
-      const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
-      if (id3) dropBrokenUfids(id3)
-    }
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+    if (id3 && extname(file).toLowerCase() === '.mp3') dropBrokenUfids(id3)
+    if (id3) keepGenreParentheses(id3)
     f.save()
     return outcomes
   } finally {

@@ -11,13 +11,14 @@ import {
   Id3v2Settings,
   type Id3v2Tag,
   Id3v2TextInformationFrame,
-  type Id3v2UnknownFrame,
+  Id3v2UnknownFrame,
   Id3v2UserTextInformationFrame,
   type InfoTag,
   type Mpeg4AppleTag,
   Mpeg4BoxType,
   Picture,
   PictureType,
+  StringType,
   File as TagFile,
   TagTypes,
   type XiphComment,
@@ -382,6 +383,7 @@ export function copyCueFrames(source: string, dest: string, shift?: CueShift): v
       const tag = out.getTag(TagTypes.Id3v2, true) as Id3v2Tag
       removeCueFrames(tag)
       for (const frame of cues) tag.addFrame(frame)
+      keepGenreParentheses(tag)
       out.save()
     } finally {
       out.dispose()
@@ -513,6 +515,7 @@ export function copyCuesFromFlac(source: string, dest: string, shift?: CueShift)
         priv.privateData = ByteVector.fromByteArray(anchored)
         tag.addFrame(priv)
       }
+      keepGenreParentheses(tag)
       out.save()
     } finally {
       out.dispose()
@@ -924,6 +927,26 @@ export function dropBrokenUfids(id3: Id3v2Tag): void {
   }
 }
 
+// TagLib writes every '(' of a v2.3 genre as '((' (the spec's escape for a refinement
+// after an ID3v1 number), and it renders the genre on every save: Beatport's
+// "Techno (Peak Time / Driving)" came back "Techno ((Peak Time / Driving)", doubling again
+// on each later save. A genre holding one goes out as plain text instead, the way ffmpeg
+// writes it; the rest keep TagLib's rendering, which round-trips an ID3v1 "(35)".
+export function keepGenreParentheses(id3: Id3v2Tag): void {
+  if (id3.version !== 3) return
+  const [tcon] = id3.getFramesByIdentifier<Id3v2TextInformationFrame>(
+    Id3v2FrameClassType.TextInformationFrame,
+    Id3v2FrameIdentifiers.TCON,
+  )
+  const text = tcon?.text.join(';') ?? ''
+  if (!text.includes('(')) return
+  const data = ByteVector.concatenate(
+    StringType.UTF16,
+    ByteVector.fromString(text, StringType.UTF16),
+  )
+  id3.replaceFrame(tcon, Id3v2UnknownFrame.fromData(Id3v2FrameIdentifiers.TCON, data))
+}
+
 // Overwrites the metadata fields we manage and leaves every other frame — most
 // importantly Traktor's GEOB cue/beatgrid blob — untouched. An empty field is
 // written as empty so clearing a value in the editor clears it on disk too,
@@ -1204,6 +1227,7 @@ export function writeTags(
     // nothing here is stale, and grouping keeps round-tripping through ID3 via the TIT1
     // fallback in readItunesGrouping.
 
+    keepGenreParentheses(id3)
     f.save()
   } finally {
     f.dispose()
