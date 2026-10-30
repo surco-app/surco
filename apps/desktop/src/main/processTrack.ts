@@ -23,7 +23,12 @@ import type {
   TrackMetadata,
   TrimRange,
 } from '../shared/types'
-import { type PlaceCheck, type VerifyPlace, withChecks } from '../shared/verification'
+import {
+  type PlaceCheck,
+  type VerifyDetailKey,
+  type VerifyPlace,
+  withChecks,
+} from '../shared/verification'
 import { createConcurrencyLimiter } from './analysisLimiter'
 import { isAppleMusicOnly, shouldAddToAppleMusic } from './applemusic'
 import type { CoverSource, PreparedCover } from './cover'
@@ -447,7 +452,11 @@ function replacedExpect(
 
 // The file is written by now, so a reader that throws only means the place could not be
 // read. A cancel is the exception: it still ends the job.
-function settled(check: Promise<PlaceCheck>, place: VerifyPlace, key: string): Promise<PlaceCheck> {
+function settled(
+  check: Promise<PlaceCheck>,
+  place: VerifyPlace,
+  key: VerifyDetailKey,
+): Promise<PlaceCheck> {
   return check.catch((e) => {
     if (errorKeyOf(e instanceof Error ? e.message : '') === 'conversionCancelled') throw e
     return { place, state: 'unreadable', detail: { key } }

@@ -3,7 +3,7 @@ import { basename, dirname, extname, join } from 'node:path'
 import { File as TagFile } from 'node-taglib-sharp'
 import { errorKeyOf, errorWithKey } from '../shared/errorKeys'
 import type { TrackMetadata } from '../shared/types'
-import type { PlaceCheck } from '../shared/verification'
+import type { PlaceCheck, VerifyDetailKey } from '../shared/verification'
 import {
   assertDecodable,
   type ConversionPlan,
@@ -105,7 +105,7 @@ export const formatOf = (ext: string) =>
 
 const check = (
   state: PlaceCheck['state'],
-  key: string,
+  key: VerifyDetailKey,
   params?: Record<string, string | number>,
 ): PlaceCheck => ({ place: 'file', state, detail: params ? { key, params } : { key } })
 

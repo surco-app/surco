@@ -1,8 +1,65 @@
 export type VerifyPlace = 'file' | 'appleMusic' | 'rekordbox' | 'engine' | 'traktor'
 export type CheckState = 'checking' | 'ok' | 'mismatch' | 'pending' | 'unreadable'
 
+// Every detail a check can come back with, each a string under `verify.detail.*` in every
+// locale. A runtime list with the type derived from it, like ERROR_KEYS: a checker that
+// sends a key not listed here does not compile, and the renderer's locale test walks the
+// list so none of them reaches the screen raw.
+export const VERIFY_DETAIL_KEYS = [
+  'pending',
+  'checking',
+  'fileIdentical',
+  'fileReencoded',
+  'fileMissing',
+  'fileWrongFormat',
+  'fileTruncated',
+  'filePcmDiffers',
+  'fileTagDiffers',
+  'fileNoCover',
+  'fileCoverKept',
+  'fileUnreadable',
+  'fileSourceGone',
+  'musicOne',
+  'musicOneNoPlaylists',
+  'musicMissing',
+  'musicNoFile',
+  'musicOtherFile',
+  'musicWrongFile',
+  'musicDuplicate',
+  'musicTagDiffers',
+  'musicNoArtwork',
+  'musicPlaylistLost',
+  'musicUnreadable',
+  'rekordboxOk',
+  'rekordboxStillOld',
+  'rekordboxMissing',
+  'rekordboxAmbiguous',
+  'rekordboxOtherRow',
+  'rekordboxSizeDiffers',
+  'rekordboxCuesLost',
+  'rekordboxCuesChanged',
+  'rekordboxAnalysisEmptied',
+  'rekordboxUnreadable',
+  'engineOk',
+  'engineStillOld',
+  'engineMissing',
+  'engineAmbiguous',
+  'engineOtherRow',
+  'engineNoFileType',
+  'engineSizeDiffers',
+  'enginePerformanceChanged',
+  'engineUnreadable',
+  'traktorOk',
+  'traktorStillOld',
+  'traktorMissing',
+  'traktorAmbiguous',
+  'traktorUnreadable',
+] as const
+
+export type VerifyDetailKey = (typeof VERIFY_DETAIL_KEYS)[number]
+
 export interface CheckDetail {
-  key: string
+  key: VerifyDetailKey
   params?: Record<string, string | number | string[]>
 }
 

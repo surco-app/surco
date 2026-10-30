@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { extname } from 'node:path'
-import type { PlaceCheck } from '../shared/verification'
+import type { PlaceCheck, VerifyDetailKey } from '../shared/verification'
 import type { EngineDb } from './enginePlaylists'
 import { engineRowFinder } from './engineRepoint'
 import { formatOf } from './verifyFile'
@@ -85,7 +85,7 @@ export function snapshotEngineRow(
 
 const check = (
   state: PlaceCheck['state'],
-  detailKey: string,
+  detailKey: VerifyDetailKey,
   params?: Record<string, string | number>,
 ): PlaceCheck => ({
   place: 'engine',

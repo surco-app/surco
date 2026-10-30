@@ -11,7 +11,7 @@ import {
 const check = (place: VerifyPlace, state: CheckState): PlaceCheck => ({
   place,
   state,
-  detail: { key: `verify.${place}.${state}` },
+  detail: { key: 'checking' },
 })
 
 describe('verificationStatus', () => {

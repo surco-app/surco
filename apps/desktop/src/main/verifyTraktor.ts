@@ -1,5 +1,5 @@
 import { extname } from 'node:path'
-import type { PlaceCheck } from '../shared/verification'
+import type { PlaceCheck, VerifyDetailKey } from '../shared/verification'
 import { findEntries, locationKey, type NmlPatch } from './traktorNml'
 import { formatOf } from './verifyFile'
 
@@ -15,7 +15,7 @@ export interface TraktorExpect {
 
 const check = (
   state: PlaceCheck['state'],
-  detailKey: string,
+  detailKey: VerifyDetailKey,
   params?: Record<string, string | number>,
 ): PlaceCheck => ({
   place: 'traktor',

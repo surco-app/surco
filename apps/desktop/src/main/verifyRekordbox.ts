@@ -1,6 +1,6 @@
 import { extname } from 'node:path'
 import type Database from 'better-sqlite3-multiple-ciphers'
-import type { PlaceCheck } from '../shared/verification'
+import type { PlaceCheck, VerifyDetailKey } from '../shared/verification'
 import { pathKey } from './libraryPathKey'
 import {
   FILE_TYPES,
@@ -98,7 +98,7 @@ export function snapshotRekordboxRow(
 
 const check = (
   state: PlaceCheck['state'],
-  key: string,
+  key: VerifyDetailKey,
   params?: Record<string, string | number>,
 ): PlaceCheck => ({ place: 'rekordbox', state, detail: params ? { key, params } : { key } })
 

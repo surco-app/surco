@@ -4,7 +4,11 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { cloneElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FormatSetting } from '../../../shared/types'
-import { type PlaceCheck, verificationStatus } from '../../../shared/verification'
+import {
+  type PlaceCheck,
+  type VerifyDetailKey,
+  verificationStatus,
+} from '../../../shared/verification'
 import i18n from '../i18n'
 import type { Destination } from '../lib/destination'
 import type { BatchVerification, SelectionStatus } from '../lib/selectionStatus'
@@ -521,7 +525,7 @@ describe('ConvertFooter verification', () => {
     state: 'ok',
     detail: { key: 'fileIdentical', params: { format: 'WAV' } },
   }
-  const ok = (place: PlaceCheck['place']): PlaceCheck => ({
+  const ok = (place: 'rekordbox' | 'engine' | 'traktor'): PlaceCheck => ({
     place,
     state: 'ok',
     detail: { key: `${place}Ok`, params: { format: 'WAV', cues: 4 } },
@@ -660,7 +664,7 @@ describe('ConvertFooter verification', () => {
 
   const bad = (
     place: PlaceCheck['place'],
-    key: string,
+    key: VerifyDetailKey,
     params?: Record<string, string | number>,
     state: PlaceCheck['state'] = 'mismatch',
   ): PlaceCheck => ({ place, state, detail: params ? { key, params } : { key } })

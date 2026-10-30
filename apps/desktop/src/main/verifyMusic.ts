@@ -2,7 +2,7 @@ import { realpathSync } from 'node:fs'
 import { extname } from 'node:path'
 import { errorWithKey } from '../shared/errorKeys'
 import type { TrackMetadata } from '../shared/types'
-import type { PlaceCheck } from '../shared/verification'
+import type { PlaceCheck, VerifyDetailKey } from '../shared/verification'
 import {
   appleMusicLimiter,
   musicFileEntries,
@@ -81,7 +81,7 @@ const EMPTY_LOCATION_WAITS_MS = [1000, 2000, 4000]
 
 const check = (
   state: PlaceCheck['state'],
-  key: string,
+  key: VerifyDetailKey,
   params?: Record<string, string | number | string[]>,
 ): PlaceCheck => ({ place: 'appleMusic', state, detail: params ? { key, params } : { key } })
 

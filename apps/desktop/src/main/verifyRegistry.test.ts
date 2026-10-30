@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   type PlaceCheck,
   type Verification,
+  type VerifyDetailKey,
   type VerifyPlace,
   verificationStatus,
 } from '../shared/verification'
@@ -16,7 +17,7 @@ import {
 } from './verifyRegistry'
 import type { TraktorExpect } from './verifyTraktor'
 
-const ok = (place: VerifyPlace, key = `${place}Ok`): PlaceCheck => ({
+const ok = (place: VerifyPlace, key = `${place}Ok` as VerifyDetailKey): PlaceCheck => ({
   place,
   state: 'ok',
   detail: { key },
@@ -26,12 +27,12 @@ const checking = (place: VerifyPlace): PlaceCheck => ({
   state: 'checking',
   detail: { key: 'checking' },
 })
-const mismatch = (place: VerifyPlace, key: string): PlaceCheck => ({
+const mismatch = (place: VerifyPlace, key: VerifyDetailKey): PlaceCheck => ({
   place,
   state: 'mismatch',
   detail: { key },
 })
-const unreadable = (place: VerifyPlace, key: string): PlaceCheck => ({
+const unreadable = (place: VerifyPlace, key: VerifyDetailKey): PlaceCheck => ({
   place,
   state: 'unreadable',
   detail: { key },
