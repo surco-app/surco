@@ -8,15 +8,22 @@ vi.mock('electron', () => ({
   ipcMain: { handle: vi.fn() },
 }))
 
-const OPENED = vi.hoisted(() => [] as { path: string; readonly: boolean; closed: boolean }[])
+const OPENED = vi.hoisted(
+  () => [] as { path: string; readonly: boolean; rawKey: boolean; closed: boolean }[],
+)
 vi.mock('./rekordboxDb', async (importOriginal) => {
   const real = await importOriginal<typeof import('./rekordboxDb')>()
   return {
     ...real,
-    openRekordboxDb: (path: string, options?: { readonly?: boolean }) => {
+    openRekordboxDb: (path: string, options?: { readonly?: boolean; key?: string }) => {
       const db = real.openRekordboxDb(path, options)
       if (!db) return db
-      const seen = { path, readonly: options?.readonly === true, closed: false }
+      const seen = {
+        path,
+        readonly: options?.readonly === true,
+        rawKey: options?.key?.startsWith("x'") === true,
+        closed: false,
+      }
       OPENED.push(seen)
       const close = db.close.bind(db)
       db.close = () => {
@@ -126,8 +133,9 @@ describe('verify IPC', () => {
 
 describe('library readers', () => {
   // An open handle keeps the next write's wal_checkpoint busy, which fails its backup: the
-  // read closes the collection as soon as it has its answer.
-  it('reads rekordbox read-only and closes it right after', async () => {
+  // read closes the collection as soon as it has its answer. It opens with the derived key:
+  // the passphrase costs a key derivation on the main thread at every open.
+  it('reads rekordbox read-only with the derived key and closes it right after', async () => {
     const path = collection()
     const readers = libraryReaders(
       { rekordbox: () => path, engine: () => '', traktor: () => '' },
@@ -146,7 +154,7 @@ describe('library readers', () => {
         detail: { key: 'rekordboxStillOld', params: { format: 'AIFF' } },
       },
     ])
-    expect(OPENED).toEqual([{ path, readonly: true, closed: true }])
+    expect(OPENED).toEqual([{ path, readonly: true, rawKey: true, closed: true }])
   })
 
   it('a library that is not there reads as unreadable', async () => {
@@ -191,11 +199,13 @@ describe('library readers', () => {
 describe('snapshotLibraries', () => {
   it('takes the source row from the libraries in play and closes them', async () => {
     const path = collection()
+    OPENED.length = 0
     const before = await snapshotLibraries(FROM, { rekordbox: path, engine: '' }, realPath)
 
     expect(before).toEqual({
       rekordbox: { id: '100', cues: 2, analysisDataPath: '', analysed: 0 },
     })
+    expect(OPENED).toEqual([{ path, readonly: true, rawKey: true, closed: true }])
   })
 
   // A conversion must never fail because a library could not be read before it.

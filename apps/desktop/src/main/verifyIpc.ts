@@ -4,7 +4,7 @@ import type { Verification } from '../shared/verification'
 import { type EngineDb, openEngineDb } from './enginePlaylists'
 import { pathKey } from './libraryPathKey'
 import type { LibraryRepointResult } from './libraryRepointFlush'
-import { type FindOptions, openRekordboxDb } from './rekordboxDb'
+import { type FindOptions, openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
 import { COLLECTION_WIDE, type QueueApply } from './rekordboxQueue'
 import { stillWaiting } from './rekordboxQueueWatch'
 import { queuedNmlPatch } from './traktorPatchQueue'
@@ -52,7 +52,12 @@ function withDb<D extends { close: () => unknown }, T>(
   }
 }
 
-const openRekordboxReadOnly = (path: string) => openRekordboxDb(path, { readonly: true })
+// Opened with the key derived once per collection (off the main thread): the passphrase
+// makes every open derive it again, on the main thread.
+const rekordboxKey = (path: string) =>
+  path ? rekordboxRawKey(path).catch(() => undefined) : undefined
+const openRekordboxReadOnly = (key: string | undefined) => (path: string) =>
+  openRekordboxDb(path, { readonly: true, key })
 
 // The source's row in each library about to follow it, before anything writes. An empty
 // path is a library not in play. Never rejects: a library it cannot read is unreadable.
@@ -62,10 +67,12 @@ export async function snapshotLibraries(
   realPath: (p: string) => string,
 ): Promise<{ rekordbox?: RekordboxBefore; engine?: EngineBefore }> {
   const out: { rekordbox?: RekordboxBefore; engine?: EngineBefore } = {}
-  if (at.rekordbox)
-    out.rekordbox = withDb(at.rekordbox, openRekordboxReadOnly, (db) =>
+  if (at.rekordbox) {
+    const open = openRekordboxReadOnly(await rekordboxKey(at.rekordbox))
+    out.rekordbox = withDb(at.rekordbox, open, (db) =>
       snapshotRekordboxRow(db, from, { realPath, quiet: true }),
     )
+  }
   if (at.engine) {
     // Opening reads the database file itself, which can throw where rekordbox's open cannot.
     try {
@@ -99,7 +106,8 @@ export function libraryReaders(
   return {
     readRekordbox: async (list) => {
       const size = await sizes(list)
-      return withDb(paths.rekordbox(), openRekordboxReadOnly, (db) =>
+      const path = paths.rekordbox()
+      return withDb(path, openRekordboxReadOnly(await rekordboxKey(path)), (db) =>
         checkRekordbox(
           db,
           list.map((e, i) => ({
