@@ -325,8 +325,16 @@ export function ConvertFooter({
   const batchLine = batch && batchReread && (
     <span className="min-w-0">
       {[
-        batch.ok > 0 &&
-          `${batchSettled ? '✓ ' : ''}${tr('verify.batch.verified', { count: batch.ok })}`,
+        batch.ok > 0 && (
+          <span
+            key="verified"
+            data-testid="verify-batch-verified"
+            data-tone="good"
+            className="text-good"
+          >
+            {`${batchSettled ? '✓ ' : ''}${tr('verify.batch.verified', { count: batch.ok })}`}
+          </span>
+        ),
         batch.mismatch > 0 && (
           <span
             key="mismatch"
@@ -346,6 +354,9 @@ export function ConvertFooter({
         .flatMap((part, i) => (i === 0 ? [part] : [' · ', part]))}
     </span>
   )
+  // Green vouches only for what came back ok: a batch's other counts and a line never
+  // re-read are told in the quiet tone.
+  const successTone = isMulti || unverified ? 'dim' : 'good'
   const addedLine = pendingPrograms
     ? tr('verify.pendingLine.addedToAppleMusic', {
         programs: pendingPrograms,
@@ -446,8 +457,9 @@ export function ConvertFooter({
                   ) : (
                     <p
                       data-testid="export-success"
+                      data-tone={successTone}
                       role="status"
-                      className={`min-w-0 text-xs font-medium text-good ${
+                      className={`min-w-0 text-xs font-medium ${successTone === 'good' ? 'text-good' : 'text-fg-dim'} ${
                         pendingPrograms || batchLine ? 'flex items-center gap-1' : 'truncate'
                       }`}
                     >

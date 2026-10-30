@@ -656,6 +656,17 @@ describe('ConvertFooter verification', () => {
     expect(screen.getByTestId('export-success')).toHaveTextContent(/^Añadido a Apple Music$/)
   })
 
+  it('a single track never re-read reads in the quiet tone, a verified one in green', () => {
+    const plain = cloneElement(footer(true), {
+      item: { id: 't1', status: 'done', inputPath: '/a.aiff', meta: {} } as TrackItem,
+      exportedFormat: 'wav',
+    })
+    const { rerender } = render(plain)
+    expect(screen.getByTestId('export-success')).toHaveAttribute('data-tone', 'dim')
+    rerender(verified([fileOk]))
+    expect(screen.getByTestId('export-success')).toHaveAttribute('data-tone', 'good')
+  })
+
   it('a pending track never shows the amber line or Reintentar', () => {
     render(verified([fileOk, pending('rekordbox', 'rekordbox')]))
     expect(screen.queryByTestId('verify-mismatch')).toBeNull()
@@ -975,6 +986,20 @@ describe('ConvertFooter batch verification', () => {
     expect(screen.getByTestId('export-success')).toHaveTextContent(
       /^✓ 10 comprobadas · 30 sin comprobar$/,
     )
+  })
+
+  // Green vouches for a check that came back ok. What is still on its way or was never
+  // re-read is told in the quiet tone, so the colour never claims more than the count.
+  it('only the verified count reads in the success colour', () => {
+    const { rerender } = render(
+      batchFooter({ ok: 3, pending: 2, checking: 1, unverified: 4, pendingPlaces: ['rekordbox'] }),
+    )
+    expect(screen.getByTestId('export-success')).toHaveAttribute('data-tone', 'dim')
+    expect(screen.getByTestId('verify-batch-verified')).toHaveAttribute('data-tone', 'good')
+    expect(screen.getByTestId('verify-batch-verified')).toHaveTextContent(/^3 comprobadas$/)
+
+    rerender(batchFooter({ unverified: 9 }))
+    expect(screen.getByTestId('export-success')).toHaveAttribute('data-tone', 'dim')
   })
 
   it('a batch where nothing adds up has no check mark', () => {
