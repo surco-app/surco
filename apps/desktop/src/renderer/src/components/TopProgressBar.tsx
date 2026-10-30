@@ -20,9 +20,15 @@ export function TopProgressBar({ fraction }: Props): React.JSX.Element {
     >
       <div
         className={`h-full bg-[var(--color-accent)] ${
-          determinate ? 'transition-[width] duration-300 ease-out' : 'w-1/3 animate-top-progress'
+          determinate
+            ? 'w-full origin-left transition-transform duration-200 ease-out'
+            : 'w-1/3 animate-top-progress'
         }`}
-        style={determinate ? { width: `${Math.round((fraction ?? 0) * 100)}%` } : undefined}
+        style={
+          determinate
+            ? { transform: `scaleX(${Math.round((fraction ?? 0) * 100) / 100})` }
+            : undefined
+        }
       />
     </div>
   )

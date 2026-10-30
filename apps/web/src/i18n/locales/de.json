@@ -247,7 +247,7 @@
           },
           {
             "t": "Tippfehler und Duplikate in deiner Mediathek",
-            "d": "Gruppiert, was deine Apple-Music-Mediathek oder deine Liste auf mehr als eine Art schreibt, unsichtbare Zeichen und die Tracks, die du doppelt hast. Jede Korrektur landet in der Datei, in Apple Music und, wenn du sie synchronisierst, in rekordbox, Engine DJ und Traktor, mit Sicherung und Rückgängig. Die Kopie, die du entfernst, übergibt ihre Playlists an die, die du behältst. Apple Music nur unter macOS."
+            "d": "Gruppiert, was deine Apple-Music-Mediathek oder deine Liste auf mehr als eine Art schreibt, unsichtbare Zeichen und die Tracks, die du doppelt hast. Jede Korrektur landet in der Datei, in Apple Music und, wenn du sie synchronisierst, in rekordbox, Engine DJ und Traktor, mit einer Sicherung vor dem Schreiben, die du in Backups wiederherstellst, und Rückgängig. Die Kopie, die du entfernst, übergibt ihre Playlists an die, die du behältst. Apple Music nur unter macOS."
           },
           {
             "t": "Cover in einer WAV",
@@ -263,7 +263,7 @@
           },
           {
             "t": "Deine Traktor-Sammlung",
-            "d": "Aktualisiert die .nml mit Sicherung und einem Schreibvorgang pro Stapel. Traktor muss geschlossen sein."
+            "d": "Aktualisiert die .nml mit vorheriger Sicherung, die du in Backups wiederherstellst, und einem Schreibvorgang pro Stapel. Traktor muss geschlossen sein."
           },
           {
             "t": "Deine rekordbox-Sammlung",
@@ -306,12 +306,16 @@
             "d": "Dateien und Titel aus {artist} - {title}. Ein Schrägstrich in einem Feld legt nie einen Ordner an, und verschluckt sich dein NAS an Akzenten, gibt es Dateinamen ohne Akzente."
           },
           {
-            "t": "Sicherungskopien",
-            "d": "Bevor es ein Original überschreibt, legt es eine Kopie an, die du direkt am Track wiederherstellst. Du wählst immer, nur wenn sich das Audio ändert, oder nie. Standardmäßig für 7 Tage und bis zu 2 GB. Fällt der freie Platz unter 5 GB, gehen die ältesten Kopien zuerst."
+            "t": "Sicherungen deiner Bibliotheken",
+            "d": "Bevor Surco in rekordbox, Traktor oder Engine DJ schreibt, legt es eine Kopie mit Datum an und behält die letzten 5 pro Programm. Unter Backups, unten in der linken Leiste, siehst du sie je Programm und stellst jede mit einem Klick wieder her: Surco bittet dich, das Programm zu schließen, sichert den aktuellen Stand, damit du zurückgehen kannst, und verwirft nur die wartenden Änderungen dieser Bibliothek."
+          },
+          {
+            "t": "Original-Audiodateien",
+            "d": "Dateien, die Surco ersetzt oder umbenennt, liegen unter Backups › Musikdateien; du stellst sie dort oder über die Backup-Markierung am Track wieder her. Du wählst immer, nur wenn sich das Audio ändert, oder nie. Standardmäßig 7 Tage oder bis zu 2 GB. Fällt der freie Platz unter 5 GB, gehen die ältesten zuerst."
           },
           {
             "t": "Nichts wird ohne Warnung gelöscht",
-            "d": "Was du entfernst, kommt in den Papierkorb des Systems. Auf einem Laufwerk ohne Papierkorb, etwa einem NAS, und unter Windows kommt es in die Sicherungskopien, wo du es wiederherstellen kannst. Stellst du die Sicherungskopien auf „Nie“, wird es dort endgültig gelöscht, und der Dialog sagt dir das, bevor du bestätigst."
+            "d": "Was du entfernst, kommt in den Papierkorb des Systems. Auf einem Laufwerk ohne Papierkorb, etwa einem NAS, und unter Windows kommt es unter Backups › Musikdateien, wo du es wiederherstellen kannst. Wählst du in Einstellungen → Ausgabe „Nie“, wird es endgültig gelöscht, und der Dialog sagt dir das, bevor du bestätigst."
           }
         ]
       }
@@ -531,7 +535,7 @@
       },
       {
         "q": "Meine Bibliothek ist voller MP3s. Kann ich sie auf verlustfrei umstellen, ohne meine Playlists zu verlieren?",
-        "a": "Ja, genau dafür ist das Ersetzen da. Lade das AIFF oder FLAC desselben Tracks, und wenn Surco ihn in deiner Bibliothek findet, steht auf dem Button „Ersetzen“ statt „Hinzufügen“. Beim Konvertieren zeigt der Eintrag in Apple Music nicht mehr auf das MP3, sondern auf die neue Datei, und in rekordbox wird dieselbe Zeile umgeleitet: Sie behält ihre Playlists und Cue-Punkte, weil rekordbox über den Track verknüpft und nicht über den Pfad. Ein Vorbehalt: rekordbox analysiert die neue Datei und verschiebt womöglich das Beatgrid, also prüf das Grid danach. rekordbox muss geschlossen sein, damit in seine Datenbank geschrieben werden kann. Surco bietet an, es zu schließen, und legt vorher eine Sicherung an. Zum Schluss bietet es an, die alte Datei in den Papierkorb zu legen, und liegt sie auf einem Laufwerk ohne Papierkorb, etwa einem NAS, behält es sie bei den Sicherungskopien. Steht Sicherungskopien auf Nie, wird sie endgültig gelöscht, und der Dialog sagt dir das vorher."
+        "a": "Ja, genau dafür ist das Ersetzen da. Lade das AIFF oder FLAC desselben Tracks, und wenn Surco ihn in deiner Bibliothek findet, steht auf dem Button „Ersetzen“ statt „Hinzufügen“. Beim Konvertieren zeigt der Eintrag in Apple Music nicht mehr auf das MP3, sondern auf die neue Datei, und in rekordbox wird dieselbe Zeile umgeleitet: Sie behält ihre Playlists und Cue-Punkte, weil rekordbox über den Track verknüpft und nicht über den Pfad. Ein Vorbehalt: rekordbox analysiert die neue Datei und verschiebt womöglich das Beatgrid, also prüf das Grid danach. rekordbox muss geschlossen sein, damit in seine Datenbank geschrieben werden kann. Surco bietet an, es zu schließen, und legt vorher eine Sicherung an. Zum Schluss bietet es an, die alte Datei in den Papierkorb zu legen, und liegt sie auf einem Laufwerk ohne Papierkorb, etwa einem NAS, behält es sie unter Backups › Musikdateien. Wählst du in Einstellungen → Ausgabe Nie, wird sie endgültig gelöscht, und der Dialog sagt dir das vorher."
       },
       {
         "q": "Funktioniert es mit Denon-Geräten (Engine DJ)?",
@@ -837,7 +841,7 @@
           "„MP3- und M4A-Dateien behalten“ verhindert, dass deine MP3s und M4As beim Export in ein verlustfreies Format grundlos aufgebläht werden. Sie bleiben, wie sie sind, nur ihre Tags werden aktualisiert, es sei denn, du normalisierst die Lautheit, reparierst Knackser oder kürzt, was das Audio neu kodiert.",
           "Du kannst eine Konvertierung mittendrin abbrechen und, wenn eine Datei schon existiert, dieselbe Entscheidung gleich für den Rest des Stapels treffen.",
           "Verändert die Konvertierung das Audio eines Originals, legt Surco vorher eine Sicherungskopie an. Die Markierung an der Zeile (oder ⌘K) bringt dich zum Original zurück. Unter Einstellungen → Ausgabe entscheidest du, ob immer eine behalten wird, nur wenn sich das Audio ändert (Standard) oder nie, wie viele Tage lang und bis zu welchem Platz.",
-          "Nach dem Konvertieren kannst du die Originale in einem Schritt in den Papierkorb legen. In den Papierkorb oder, auf einem Laufwerk ohne Papierkorb, zu den Sicherungskopien. Nur wenn Sicherungskopien auf Nie steht, werden sie endgültig gelöscht, und der Dialog sagt dir das, bevor du bestätigst."
+          "Nach dem Konvertieren kannst du die Originale in einem Schritt in den Papierkorb legen. In den Papierkorb oder, auf einem Laufwerk ohne Papierkorb, unter Backups › Musikdateien. Nur wenn in Einstellungen → Ausgabe Nie gewählt ist, werden sie endgültig gelöscht, und der Dialog sagt dir das, bevor du bestätigst."
         ],
         "shot": "convertir-de.webp",
         "shotCaption": "Der Konvertieren-Button mit seiner Formatauswahl."
@@ -904,7 +908,7 @@
         ],
         "points": [
           "Ab Werk ist es aus: Bis du deine collection.nml auswählst, schreibt Surco nicht in die Sammlung.",
-          "Vor dem Schreiben legt es immer eine Sicherung an, in einer einzigen Datei, die jedes Mal überschrieben wird, damit sich dein Ordner nicht mit Kopien füllt.",
+          "Vor dem Schreiben legt es immer eine Kopie mit Datum an und behält die letzten 5; du siehst und stellst sie unter Backups wieder her.",
           "Traktor muss geschlossen sein: Es schreibt beim Beenden seine ganze Sammlung neu, und deine Änderungen wären weg. Surco erkennt das und bietet an, es zu schließen.",
           "Ein Stapel von dreihundert Tracks erzeugt einen einzigen Schreibvorgang, nicht dreihundert.",
           "Lässt sich der Cue-Baum eines Tracks nicht lesen, löscht Surco nicht die Cues, die du schon hattest.",
@@ -1154,7 +1158,7 @@
     },
     "cues": {
       "step": "In deiner App · Mit Cues",
-      "title": "Deine Cues für rekordbox, Engine DJ und Traktor, mit einem Klick.",
+      "title": "Deine Cues, mit einem Klick.",
       "lede": "Klick dorthin, wo der Track droppt, oder lass dir die Stelle von Auto-Markieren vorschlagen. Dein Ablauf setzt die übrigen Cues, und Surco speichert sie in rekordbox, Engine DJ oder Traktor. Engine DJ und Traktor übernehmen nur die Hot Cues.",
       "unsaved": "Nicht gespeichert",
       "flow": "Ablauf",
@@ -1199,7 +1203,7 @@
         },
         "everywhere": {
           "title": "Überall",
-          "text": "Dateien, Apple Music, rekordbox, Engine DJ und Traktor, mit einer Sicherung jeder Datei. Und jede Korrektur lässt sich mit Rückgängig zurücknehmen."
+          "text": "Dateien, Apple Music, rekordbox, Engine DJ und Traktor, mit einer Sicherung jeder Datei und jeder DJ-Bibliothek, wiederherstellbar unter Backups. Und jede Korrektur lässt sich mit Rückgängig zurücknehmen."
         }
       },
       "all": "Alle",
@@ -1446,7 +1450,7 @@
           },
           {
             "tab": "Ausgabe",
-            "section": "Sicherungskopien",
+            "section": "Kopien der Originale",
             "setting": "Was aufbewahrt wird",
             "value": "Immer",
             "optional": true,
@@ -1976,7 +1980,7 @@
         ],
         "points": [
           "Die Änderung landet in der Datei und in Apple Music, und in rekordbox, Engine DJ und Traktor, wenn du sie synchronisierst.",
-          "Bevor es etwas anfasst, legt Surco eine Kopie jeder Datei an. „Rückgängig“ stellt alles wieder her.",
+          "Bevor es etwas anfasst, legt Surco eine Kopie jeder Datei und deiner DJ-Bibliotheken an. „Rückgängig“ stellt alles wieder her.",
           "BPM, Tonart, Cue-Points und Bewertung bleiben unverändert.",
           "Ist eine DJ-App offen, bietet Surco an, sie zu schließen."
         ],
@@ -2036,8 +2040,8 @@
         "points": [
           "Die Kopie, die du behältst, kommt in die Playlists der anderen, in Apple Music und in deinen DJ-Apps.",
           "Die Cue-Points der entfernten Kopie gehen nicht auf die andere über. Prüfe vor der Wahl, welche Cues hat.",
-          "Die entfernte Datei kommt in den Papierkorb, oder in die Sicherungskopien, wenn das Laufwerk keinen Papierkorb hat, etwa ein NAS.",
-          "„Rückgängig“ holt entfernte Kopien nicht zurück. Hast du dich vertan, liegt die Datei noch im Papierkorb oder in den Sicherungskopien."
+          "Die entfernte Datei kommt in den Papierkorb, oder unter Backups › Musikdateien, wenn das Laufwerk keinen Papierkorb hat, etwa ein NAS.",
+          "„Rückgängig“ holt entfernte Kopien nicht zurück. Hast du dich vertan, liegt die Datei noch im Papierkorb oder unter Backups › Musikdateien."
         ],
         "related": []
       },
@@ -2312,7 +2316,7 @@
         "points": [
           "Daten, Bewertung und Cover kommen in Engine an.",
           "Cue-Points und Beatgrid nicht. Die ermittelt Engine, wenn du den Track lädst.",
-          "Bevor es schreibt, legt Surco eine Sicherung der Bibliothek an.",
+          "Bevor es schreibt, legt Surco eine Sicherung der Bibliothek an, die du unter Backups wiederherstellst.",
           "Im Editor wählst du im Feld „Playlists“ von Engine DJ, in welche Playlists jeder Track kommt, auch wenn Engine ihn noch nicht hat. Surco nimmt ihn beim Konvertieren auf. Danach bringt dich das Engine-DJ-Symbol neben dem Ergebnis zum Track, mit seinen Cues offen."
         ],
         "related": [
@@ -2447,10 +2451,10 @@
           },
           {
             "tab": "Ausgabe",
-            "section": "Sicherungskopien",
+            "section": "Kopien der Originale",
             "setting": "Was aufbewahrt wird",
             "value": "Nur wenn sich das Audio ändert",
-            "note": "Das ist die Voreinstellung. Ein NAS hat keinen Papierkorb, deshalb landet, was du löschst, in den Sicherungskopien."
+            "note": "Das ist die Voreinstellung. Ein NAS hat keinen Papierkorb, deshalb landet, was du löschst, unter Backups › Musikdateien."
           }
         ],
         "steps": [

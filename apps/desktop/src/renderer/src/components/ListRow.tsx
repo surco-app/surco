@@ -37,7 +37,7 @@ export function CoverPlaceholder({
   return (
     <span
       data-testid={testid}
-      className={`flex ${large ? 'h-16 w-16' : 'h-8 w-8'} items-center justify-center bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-300 ${
+      className={`flex ${large ? 'h-16 w-16' : 'h-8 w-8'} items-center justify-center bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-150 ${
         round ? 'rounded-full' : 'rounded-md'
       }`}
     >
@@ -86,10 +86,11 @@ const badgeBase =
   'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 bg-[var(--color-ink)] ring-2 ring-[var(--color-ink)]'
 
 // Amber is kept for what needs the user (here, changes not yet applied); a running
-// conversion needs nothing from them, so it pulses in the accent instead.
+// conversion needs nothing from them, so it takes the accent instead, holding still while
+// the ring round the cover is what moves.
 const badgeTone = {
   attention: 'border-warn',
-  busy: 'animate-pulse border-[var(--color-accent)]',
+  busy: 'border-[var(--color-accent)]',
 } as const
 
 export function ToneBadge({

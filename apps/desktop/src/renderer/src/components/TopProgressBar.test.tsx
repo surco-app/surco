@@ -21,4 +21,12 @@ describe('TopProgressBar', () => {
     render(<TopProgressBar fraction={0.5} />)
     expect(zOf(screen.getByTestId('top-progress'))).toBeGreaterThan(0)
   })
+
+  it('fills by scaling from the left edge, never by resizing', () => {
+    render(<TopProgressBar fraction={0.6} />)
+    const fill = screen.getByTestId('top-progress').firstElementChild as HTMLElement
+    expect(fill.style.transform).toBe('scaleX(0.6)')
+    expect(fill.style.width).toBe('')
+    expect(fill.className).toContain('origin-left')
+  })
 })

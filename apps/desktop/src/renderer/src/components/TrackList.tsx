@@ -704,7 +704,7 @@ const TrackRow = memo(function TrackRow({
                 // which, combined with content-visibility below, lands mid-scroll and janks.
                 loading="lazy"
                 decoding="async"
-                className={`h-16 w-16 object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-300 ${
+                className={`h-16 w-16 object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-150 ${
                   converting ? 'rounded-full' : 'rounded-md'
                 }`}
               />
@@ -1005,7 +1005,7 @@ const TrackRow = memo(function TrackRow({
             // overlay to a render surface even at opacity-0, and dozens of backdrop-filter
             // layers inside the scroller are a known compositor jank source. A slightly
             // denser plain fill keeps the glyph readable over any cover.
-            className="absolute top-1/2 left-2.5 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-md bg-scrim/65 text-on-scrim opacity-0 transition-opacity pointer-events-none hover:bg-scrim/75 group-hover:pointer-events-auto group-hover:opacity-100"
+            className="absolute top-1/2 left-2.5 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-md bg-scrim/65 text-on-scrim opacity-0 transition-[opacity,scale] motion-safe:active:scale-[0.97] pointer-events-none hover:bg-scrim/75 group-hover:pointer-events-auto group-hover:opacity-100"
           >
             <Play className="h-5 w-5 fill-current" aria-hidden="true" />
           </button>
@@ -1025,7 +1025,7 @@ const TrackRow = memo(function TrackRow({
               width: Math.max(swipe - SWIPE_GAP_PX, 0),
               ...(tracking ? { transition: 'none' } : {}),
             }}
-            className="absolute inset-y-1 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-swipe-action)] transition-[width] duration-200 ease-out text-[11px] font-semibold whitespace-nowrap text-[var(--color-on-swipe-action)]"
+            className="absolute inset-y-1 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-swipe-action)] transition-[width,scale] duration-200 ease-out motion-safe:active:scale-[0.97] text-[11px] font-semibold whitespace-nowrap text-[var(--color-on-swipe-action)]"
           >
             <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             {tr('trackList.remove')}

@@ -8576,9 +8576,11 @@ describe('App Copias music files', () => {
     act(() => menuListener?.('backups'))
 
     const { default: i18n } = await import('./i18n')
-    const { formatBytes } = await import('./components/TrashBrowser')
-    expect(await screen.findByText(i18n.t('trash.selfEmpties', { days: 3 }))).toBeInTheDocument()
-    expect(screen.getByTestId('trash-usage')).toHaveTextContent(
+    const { formatBytes } = await import('./components/CopiesScreen')
+    expect(await screen.findByTestId('copies-screen')).toHaveTextContent(
+      i18n.t('copies.footer', { days: 3 }),
+    )
+    expect(screen.getByTestId('copies-kept-music')).toHaveTextContent(
       formatBytes(2 * 1024 ** 3, i18n.language),
     )
   })

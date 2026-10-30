@@ -10,12 +10,20 @@ import type {
   TrashEntry,
 } from '../../../shared/types'
 import i18n from '../i18n'
+import es from '../i18n/locales/es.json'
+import { OpenSettingsProvider } from '../lib/openSettingsContext'
 import { installApi } from '../test/api'
-import { CopiesScreen } from './CopiesScreen'
-import { formatBytes } from './TrashBrowser'
+import { CopiesScreen, formatBytes } from './CopiesScreen'
 
-afterEach(cleanup)
+const NOW = new Date(2026, 10, 20, 12, 0)
+
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+})
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(NOW)
   installApi()
 })
 
@@ -46,7 +54,7 @@ const trashEntry: TrashEntry = {
   originalPath: '/Music/Around the World.mp3',
   storedPath: '/ud/trash/items/t1-Around the World.mp3',
   bytes: 1024 * 1024,
-  trashedAt: Date.now(),
+  trashedAt: NOW.getTime(),
   reason: 'replaced',
 }
 
@@ -56,21 +64,29 @@ function when(ms: number): string {
   )
 }
 
+function clock(ms: number): string {
+  return new Intl.DateTimeFormat(i18n.language, { timeStyle: 'short' }).format(ms)
+}
+
+function musicTrash() {
+  return {
+    entries: [trashEntry],
+    retentionDays: 7,
+    maxBytes: 10 * 1024 * 1024 * 1024,
+    onRestore: vi.fn(),
+    onRemove: vi.fn(),
+    onEmpty: vi.fn(),
+    onReveal: vi.fn(),
+  }
+}
+
 function renderScreen(
   programs: ProgramCopies[],
   over: Partial<Parameters<typeof CopiesScreen>[0]> = {},
 ) {
   const props = {
     programs,
-    trash: {
-      entries: [trashEntry],
-      retentionDays: 7,
-      maxBytes: 10 * 1024 * 1024 * 1024,
-      onRestore: vi.fn(),
-      onRemove: vi.fn(),
-      onEmpty: vi.fn(),
-      onReveal: vi.fn(),
-    },
+    trash: musicTrash(),
     onRestore: vi.fn<(p: DjProgram, id: string) => Promise<RestoreResult>>(async () => ({
       ok: true,
     })),
@@ -114,7 +130,110 @@ describe('CopiesScreen', () => {
       i18n.t('copies.state.pending', { count: 3, program: i18n.t('sources.traktor') }),
     )
     expect(screen.getByTestId('copies-last-engine')).toHaveTextContent(i18n.t('copies.none'))
-    expect(screen.getByTestId('copies-restore-engine')).toBeDisabled()
+  })
+
+  it('every section answers the same three questions, even before its first copy', () => {
+    renderScreen([program('engine')], { trash: { ...musicTrash(), entries: [] } })
+    expect(screen.getByTestId('copies-state-engine')).toBeInTheDocument()
+    expect(screen.getByTestId('copies-last-engine')).toHaveTextContent(i18n.t('copies.none'))
+    expect(screen.getByTestId('copies-kept-engine')).toHaveTextContent(
+      i18n.t('copies.kept', { count: 0, max: 5 }),
+    )
+    expect(screen.getByTestId('copies-state-music')).toBeInTheDocument()
+    expect(screen.getByTestId('copies-last-music')).toHaveTextContent(i18n.t('copies.none'))
+    expect(screen.getByTestId('copies-kept-music')).toHaveTextContent(
+      i18n.t('copies.music.summary', { count: 0, size: '0 B', max: '10 GB' }),
+    )
+  })
+
+  it('offers no buttons for a program with nothing to show or restore, so none of them is dead', () => {
+    renderScreen([program('rekordbox', { copies: [latest] }), program('engine')])
+    expect(screen.queryByTestId('copies-toggle-engine')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('copies-restore-engine')).not.toBeInTheDocument()
+    expect(screen.getByTestId('copies-toggle-rekordbox')).toBeEnabled()
+    expect(screen.getByTestId('copies-restore-rekordbox')).toBeEnabled()
+  })
+
+  it('lists the copy taken before restoring even when it is the only one, without a restore of the latest', () => {
+    const before = copy({ id: 'pre', reason: 'restore' })
+    renderScreen([program('traktor', { restore: before })])
+    expect(screen.queryByTestId('copies-restore-traktor')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('copies-toggle-traktor'))
+    expect(screen.getByTestId('copies-restore-item-pre')).toBeEnabled()
+  })
+
+  it('never says there are no copies while the copy taken before restoring can be restored', () => {
+    const before = copy({
+      id: 'pre',
+      reason: 'restore',
+      takenAt: new Date(2026, 10, 2, 9, 30).getTime(),
+    })
+    renderScreen([program('traktor', { restore: before })])
+    expect(screen.getByTestId('copies-last-traktor')).toHaveTextContent(when(before.takenAt))
+    expect(screen.getByTestId('copies-last-traktor')).not.toHaveTextContent(i18n.t('copies.none'))
+    expect(screen.getByTestId('copies-kept-traktor')).toHaveTextContent(
+      i18n.t('copies.reason.restore'),
+    )
+  })
+
+  it('dates the last copy by the newest one listed, the slot or the latest copy', () => {
+    const before = copy({
+      id: 'pre',
+      reason: 'restore',
+      takenAt: new Date(2026, 10, 2, 9, 30).getTime(),
+    })
+    const newer = copy({ id: 'n', takenAt: new Date(2026, 10, 5, 18, 0).getTime() })
+    renderScreen([program('traktor', { restore: before, copies: [newer] })])
+    expect(screen.getByTestId('copies-last-traktor')).toHaveTextContent(when(newer.takenAt))
+    expect(screen.getByTestId('copies-kept-traktor')).toHaveTextContent(
+      `${i18n.t('copies.kept', { count: 1, max: 5 })} · ${i18n.t('copies.reason.restore')}`,
+    )
+  })
+
+  it('names today and yesterday instead of making the DJ work out the date', () => {
+    const today = copy({ id: 'today', takenAt: new Date(2026, 10, 20, 8, 2).getTime() })
+    const yesterday = copy({ id: 'yday', takenAt: new Date(2026, 10, 19, 13, 8).getTime() })
+    const before = copy({ id: 'before', takenAt: new Date(2026, 10, 18, 23, 59).getTime() })
+    renderScreen([program('rekordbox', { copies: [today, yesterday, before] })])
+    expect(screen.getByTestId('copies-last-rekordbox')).toHaveTextContent(
+      i18n.t('copies.today', { time: clock(today.takenAt) }),
+    )
+    fireEvent.click(screen.getByTestId('copies-toggle-rekordbox'))
+    expect(screen.getByTestId('copies-item-yday')).toHaveTextContent(
+      i18n.t('copies.yesterday', { time: clock(yesterday.takenAt) }),
+    )
+    expect(screen.getByTestId('copies-item-before')).toHaveTextContent(when(before.takenAt))
+  })
+
+  it('the confirmation and the outcome name the day as part of the sentence', async () => {
+    const today = copy({ id: 'today', takenAt: new Date(2026, 10, 20, 8, 2).getTime() })
+    const yesterday = copy({ id: 'yday', takenAt: new Date(2026, 10, 19, 13, 8).getTime() })
+    const name = i18n.t('sources.rekordbox')
+    const inToday = i18n.t('copies.inSentence.today', { time: clock(today.takenAt) })
+    renderScreen([program('rekordbox', { copies: [today, yesterday] })])
+    fireEvent.click(screen.getByTestId('copies-restore-rekordbox'))
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      i18n.t('copies.confirm.title', { program: name, when: inToday }),
+    )
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('confirm-ok'))
+    })
+    expect(screen.getByTestId('copies-restored-rekordbox')).toHaveTextContent(
+      i18n.t('copies.restored', { program: name, when: inToday }),
+    )
+    fireEvent.click(screen.getByTestId('copies-toggle-rekordbox'))
+    fireEvent.click(screen.getByTestId('copies-restore-item-yday'))
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      i18n.t('copies.confirm.title', {
+        program: name,
+        when: i18n.t('copies.inSentence.yesterday', { time: clock(yesterday.takenAt) }),
+      }),
+    )
+    expect(es.copies.inSentence).toEqual({
+      today: 'hoy a las {{time}}',
+      yesterday: 'ayer a las {{time}}',
+      date: 'el {{date}}',
+    })
   })
 
   it('restoring asks first, says what is lost and that the current state is kept', () => {
@@ -162,7 +281,7 @@ describe('CopiesScreen', () => {
     expect(screen.getByRole('dialog')).toHaveTextContent(
       i18n.t('copies.confirm.title', {
         program: i18n.t('sources.rekordbox'),
-        when: when(latest.takenAt),
+        when: i18n.t('copies.inSentence.date', { date: when(latest.takenAt) }),
       }),
     )
   })
@@ -217,7 +336,7 @@ describe('CopiesScreen', () => {
     expect(screen.getByTestId('copies-restored-rekordbox')).toHaveTextContent(
       i18n.t('copies.restored', {
         program: i18n.t('sources.rekordbox'),
-        when: when(older.takenAt),
+        when: i18n.t('copies.inSentence.date', { date: when(older.takenAt) }),
       }),
     )
     fireEvent.click(screen.getByTestId('copies-restore-rekordbox'))
@@ -296,11 +415,42 @@ describe('CopiesScreen', () => {
     expect(screen.getByTestId('copies-restore-engine')).toBeEnabled()
   })
 
+  it('says briefly that Surco leaves the program alone and links to where that is changed', () => {
+    const open = vi.fn()
+    render(
+      <OpenSettingsProvider open={open}>
+        <CopiesScreen
+          programs={[program('engine', { untouched: true }), program('rekordbox')]}
+          trash={musicTrash()}
+          onRestore={vi.fn()}
+          onReveal={vi.fn()}
+        />
+      </OpenSettingsProvider>,
+    )
+    expect(screen.getByTestId('copies-state-engine')).toHaveTextContent(
+      i18n.t('copies.state.untouched'),
+    )
+    expect(screen.queryByTestId('copies-settings-rekordbox')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('copies-settings-engine'))
+    expect(open).toHaveBeenCalledWith('destination')
+  })
+
+  it('keeps a closed list out of reach and gives it back when opened', () => {
+    renderScreen([program('rekordbox', { copies: [latest, older] })])
+    const list = screen.getByTestId('copies-list-rekordbox')
+    expect(list).toHaveAttribute('inert')
+    fireEvent.click(screen.getByTestId('copies-toggle-rekordbox'))
+    expect(list).not.toHaveAttribute('inert')
+    fireEvent.click(screen.getByTestId('copies-toggle-rekordbox'))
+    expect(list).toHaveAttribute('inert')
+  })
+
   it('lists the copy taken before restoring first and restores any copy from the list', () => {
     const before = copy({ id: 'pre', reason: 'restore', takenAt: Date.now() })
     const props = renderScreen([program('rekordbox', { copies: [latest, older], restore: before })])
-    expect(screen.queryByTestId('copies-item-old')).not.toBeInTheDocument()
+    expect(screen.getByTestId('copies-list-rekordbox')).toHaveAttribute('inert')
     fireEvent.click(screen.getByTestId('copies-toggle-rekordbox'))
+    expect(screen.getByTestId('copies-list-rekordbox')).not.toHaveAttribute('inert')
     const items = within(screen.getByTestId('copies-section-rekordbox')).getAllByTestId(
       /^copies-item-/,
     )
@@ -316,31 +466,31 @@ describe('CopiesScreen', () => {
     expect(props.onRestore).toHaveBeenCalledWith('rekordbox', 'old')
   })
 
-  it('shows how many music originals are kept and how much they weigh', () => {
+  it('shows how many music originals are kept, how much they weigh and the room they get', () => {
     renderScreen([])
     expect(screen.getByTestId('copies-section-music')).toHaveTextContent(
-      i18n.t('trash.summary', { count: 1, size: '1 MB' }),
+      i18n.t('copies.music.kept'),
     )
-    expect(screen.queryByTestId('trash-search')).not.toBeInTheDocument()
+    expect(screen.getByTestId('copies-kept-music')).toHaveTextContent(
+      i18n.t('copies.music.summary', { count: 1, size: '1 MB', max: '10 GB' }),
+    )
+    expect(screen.getByTestId('copies-toggle-music')).toHaveTextContent(i18n.t('copies.music.show'))
+    expect(screen.getByTestId('copies-list-music')).toHaveAttribute('inert')
     fireEvent.click(screen.getByTestId('copies-toggle-music'))
-    expect(screen.getByTestId('trash-search')).toBeInTheDocument()
+    expect(screen.getByTestId('copies-list-music')).not.toHaveAttribute('inert')
+    expect(screen.getByTestId('copies-toggle-music')).toHaveTextContent(i18n.t('copies.music.hide'))
   })
 
-  it("opening from a track's backup mark lands on the music files with the search filled", () => {
-    const base = {
-      entries: [trashEntry],
-      retentionDays: 7,
-      maxBytes: 1024,
-      onRestore: vi.fn(),
-      onRemove: vi.fn(),
-      onEmpty: vi.fn(),
-      onReveal: vi.fn(),
-    }
+  it("opening from a track's backup mark lands on that file, even in a short list, and lets it go", () => {
+    const other = { ...trashEntry, id: 't2', name: 'Jaguar.wav', originalPath: '/Music/Jaguar.wav' }
     renderScreen([program('rekordbox')], {
       openMusic: true,
-      trash: { ...base, initialQuery: 'Around the World' },
+      trash: { ...musicTrash(), entries: [trashEntry, other], initialQuery: 'Around the World' },
     })
     expect(screen.getByTestId('trash-search')).toHaveValue('Around the World')
+    expect(screen.getAllByTestId('trash-row')).toHaveLength(1)
+    fireEvent.change(screen.getByTestId('trash-search'), { target: { value: '' } })
+    expect(screen.getAllByTestId('trash-row')).toHaveLength(2)
   })
 
   it('shows the folder with every copy', () => {
@@ -365,6 +515,9 @@ const entry = (over: Partial<TrashEntry> = {}): TrashEntry => ({
   reason: 'replaced',
   ...over,
 })
+
+const crate = (n: number, over: Partial<TrashEntry> = {}): TrashEntry[] =>
+  Array.from({ length: n }, (_, i) => entry({ id: `c${i}`, name: `Crate ${i}.aiff`, ...over }))
 
 function renderMusic(entries: TrashEntry[]) {
   const trash = {
@@ -399,7 +552,9 @@ describe('CopiesScreen music files', () => {
   // to the folder to work out what happened. outputPath is already on the entry.
   it('names the file that took the original place', () => {
     renderMusic([entry({ outputPath: '/Music/Crate/Track.flac' })])
-    expect(screen.getByTestId('trash-row')).toHaveTextContent('Track.flac')
+    expect(screen.getByTestId('trash-reason')).toHaveTextContent(
+      i18n.t('copies.music.replacedBy', { name: 'Track.flac' }),
+    )
   })
 
   // "Track (Original Mix)" and "Track (Extended Mix)" cut at the same width look alike, and
@@ -416,25 +571,61 @@ describe('CopiesScreen music files', () => {
     expect(row).toHaveTextContent(/deleted from Surco/i)
   })
 
-  // The sidebar navigates by reason, which is the only axis this list has. Its counts read
-  // the whole trash, so they keep answering "what is in here" while a search narrows the rows.
-  it('filters by reason from the sidebar without changing the counts', () => {
-    renderMusic([
-      entry({ id: 'a', reason: 'replaced' }),
-      entry({ id: 'b', name: 'Renamed.mp3', reason: 'renamed' }),
-    ])
-    expect(screen.getByTestId('trash-filter-replaced')).toHaveTextContent('1')
+  it('filters by reason from the chips without changing the counts', () => {
+    renderMusic([...crate(8), entry({ id: 'b', name: 'Renamed.mp3', reason: 'renamed' })])
+    expect(screen.getByTestId('trash-filter-replaced')).toHaveTextContent('8')
     fireEvent.click(screen.getByTestId('trash-filter-renamed'))
     const rows = screen.getAllByTestId('trash-row')
     expect(rows).toHaveLength(1)
     expect(rows[0]).toHaveTextContent('Renamed.mp3')
-    expect(screen.getByTestId('trash-filter-replaced')).toHaveTextContent('1')
+    expect(screen.getByTestId('trash-filter-replaced')).toHaveTextContent('8')
+    expect(screen.getByTestId('trash-filter-renamed')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('goes back to every file once the chosen reason runs out, and stays there', () => {
+    const trash = (entries: TrashEntry[]) => ({ ...musicTrash(), entries })
+    const renamed = entry({ id: 'r', name: 'Renamed.mp3', reason: 'renamed' })
+    const view = (entries: TrashEntry[]) => (
+      <CopiesScreen
+        programs={[]}
+        trash={trash(entries)}
+        openMusic
+        onRestore={vi.fn()}
+        onReveal={vi.fn()}
+      />
+    )
+    const { rerender } = render(view([...crate(9), renamed]))
+    fireEvent.click(screen.getByTestId('trash-filter-renamed'))
+    expect(screen.getAllByTestId('trash-row')).toHaveLength(1)
+    rerender(view(crate(9)))
+    expect(screen.getByTestId('trash-filter-all')).toHaveAttribute('aria-pressed', 'true')
+    rerender(view([...crate(9), renamed]))
+    expect(screen.getAllByTestId('trash-row')).toHaveLength(10)
+    expect(screen.getByTestId('trash-filter-all')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('offers a chip only for the reasons that hold something', () => {
+    renderMusic([...crate(8), entry({ id: 'b', reason: 'renamed' })])
+    expect(screen.getByTestId('trash-filter-all')).toHaveTextContent('9')
+    expect(screen.getByTestId('trash-filter-renamed')).toBeInTheDocument()
+    expect(screen.queryByTestId('trash-filter-deleted')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('trash-filter-restored-over')).not.toBeInTheDocument()
+  })
+
+  it('keeps a short list plain and brings filters and search to a long one', () => {
+    renderMusic(crate(8))
+    expect(screen.queryByTestId('trash-search')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('trash-filter-all')).not.toBeInTheDocument()
+    cleanup()
+    renderMusic(crate(9))
+    expect(screen.getByTestId('trash-search')).toBeInTheDocument()
+    expect(screen.getByTestId('trash-filter-all')).toBeInTheDocument()
   })
 
   // A replaced crate is looked up by the crate, not by each file's name.
   it('searches the name and the folder', () => {
     renderMusic([
-      entry({ id: 'a', name: 'Pray.aiff', originalPath: '/Music/House/Pray.aiff' }),
+      ...crate(8, { originalPath: '/Music/House/Crate.aiff' }),
       entry({ id: 'b', name: 'Jaguar.wav', originalPath: '/Music/Detroit/Jaguar.wav' }),
     ])
     fireEvent.change(screen.getByTestId('trash-search'), { target: { value: 'detroit' } })
@@ -443,13 +634,11 @@ describe('CopiesScreen music files', () => {
     expect(rows[0]).toHaveTextContent('Jaguar.wav')
   })
 
-  // A search that matches nothing is not an empty trash: saying "nothing to restore" there
-  // would tell the user their files are gone.
-  it('tells a fruitless search apart from an empty trash', () => {
-    renderMusic([entry()])
+  it('says when a search matches nothing', () => {
+    renderMusic(crate(9))
     fireEvent.change(screen.getByTestId('trash-search'), { target: { value: 'zzzz' } })
-    expect(screen.getByTestId('trash-no-matches')).toBeInTheDocument()
-    expect(screen.queryByTestId('trash-empty')).not.toBeInTheDocument()
+    expect(screen.getByTestId('trash-no-matches')).toHaveTextContent(i18n.t('trash.noMatches'))
+    expect(screen.queryByTestId('trash-row')).not.toBeInTheDocument()
   })
 
   // The trash deletes files by itself, which no OS trash does by default. The warning is
@@ -478,17 +667,67 @@ describe('CopiesScreen music files', () => {
     expect(lanes[1]).not.toBeEmptyDOMElement()
   })
 
-  it('shows how much room the trash takes when it is empty', () => {
+  it('has no list to open when no music file is kept', () => {
     renderMusic([])
-    expect(screen.getByTestId('trash-empty')).toBeInTheDocument()
-    expect(screen.getByTestId('trash-usage')).toHaveTextContent('10 GB')
+    expect(screen.queryByTestId('copies-toggle-music')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('trash-list')).not.toBeInTheDocument()
   })
 
-  // Settings' rule: a control that is not available stays visible and disabled, so the
-  // footer never changes shape between an empty and a full trash.
-  it('keeps emptying visible but disabled when there is nothing to empty', () => {
+  it('never says originals are kept when none is, and says what will land here', () => {
     renderMusic([])
-    expect(screen.getByTestId('trash-empty-button')).toBeDisabled()
+    expect(screen.getByTestId('copies-state-music')).toHaveTextContent(
+      i18n.t('copies.music.stateEmpty'),
+    )
+    expect(screen.getByTestId('copies-state-music')).not.toHaveTextContent(
+      i18n.t('copies.music.state'),
+    )
+    expect(screen.getByTestId('copies-music-empty')).toHaveTextContent(i18n.t('trash.emptyBody'))
+  })
+
+  it('says originals are kept once there is one, without the empty explanation', () => {
+    renderMusic([entry()])
+    expect(screen.getByTestId('copies-state-music')).toHaveTextContent(i18n.t('copies.music.state'))
+    expect(screen.queryByTestId('copies-music-empty')).not.toBeInTheDocument()
+  })
+
+  it('says under the files how long they stay', () => {
+    renderMusic([entry()])
+    expect(screen.getByTestId('trash-footer')).toHaveTextContent(
+      i18n.t('copies.music.expires', { days: 30, size: '10 GB' }),
+    )
+    expect(screen.queryByTestId('trash-usage')).not.toBeInTheDocument()
+    expect(screen.getByTestId('trash-footer')).toHaveTextContent('10 GB')
+    expect(es.copies.music.expires).toBe(
+      'Se borran solos a los {{days}} días, o antes si pasan de {{size}}.',
+    )
+  })
+
+  it('names what a renamed original became, in the words of the list', () => {
+    renderMusic([entry({ reason: 'renamed', outputPath: '/Music/Crate/Track.flac' })])
+    expect(screen.getByTestId('trash-reason')).toHaveTextContent(
+      i18n.t('copies.music.renamedTo', { name: 'Track.flac' }),
+    )
+    expect(es.copies.music.renamedTo).toBe('Renombrado por una conversión a «{{name}}»')
+  })
+
+  it('spells out the whole new name of a long rename instead of cutting it', () => {
+    const long = 'HH Traxx – Nia Owen – The funk (Original mix) [Extended Club Version].aiff'
+    renderMusic([entry({ reason: 'renamed', outputPath: `/Music/Crate/${long}` })])
+    const reason = screen.getByTestId('trash-reason')
+    expect(reason.textContent).toBe(i18n.t('copies.music.renamedTo', { name: long }))
+  })
+
+  it('says only what happened when the conversion kept the name', () => {
+    renderMusic([entry({ reason: 'replaced', outputPath: '/Music/Crate/Track.aiff' })])
+    expect(screen.getByTestId('trash-reason')).toHaveTextContent(
+      new RegExp(`^${i18n.t('trash.reason.replaced')}$`),
+    )
+    expect(es.trash.reason).toEqual({
+      replaced: 'sustituido por una conversión',
+      renamed: 'renombrado por una conversión',
+      deleted: 'borrado desde Surco',
+      'restored-over': 'apartado al restaurar otro',
+    })
   })
 
   // Emptying is the one irreversible action here, so it asks once, in place, and only
@@ -530,6 +769,23 @@ describe('CopiesScreen music files', () => {
     fireEvent.click(screen.getByTestId('trash-remove'), { detail: 1 })
     fireEvent.click(screen.getByTestId('trash-remove-confirm'), { detail: 2 })
     expect(props.onRemove).not.toHaveBeenCalled()
+  })
+
+  it('drops an armed confirmation when the list is hidden, so it neither eats Escape nor comes back armed', () => {
+    const props = renderMusic([entry()])
+    fireEvent.click(screen.getByTestId('trash-remove'))
+    fireEvent.click(screen.getByTestId('trash-empty-button'))
+    fireEvent.click(screen.getByTestId('copies-toggle-music'))
+    const press = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true })
+    window.dispatchEvent(press)
+    expect(press.defaultPrevented).toBe(false)
+    fireEvent.click(screen.getByTestId('copies-toggle-music'))
+    expect(screen.queryByTestId('trash-remove-confirm')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('trash-empty-confirm')).not.toBeInTheDocument()
+    expect(screen.getByTestId('trash-remove')).toBeInTheDocument()
+    expect(screen.getByTestId('trash-empty-button')).toBeInTheDocument()
+    expect(props.onRemove).not.toHaveBeenCalled()
+    expect(props.onEmpty).not.toHaveBeenCalled()
   })
 
   it('reveals the folder', () => {

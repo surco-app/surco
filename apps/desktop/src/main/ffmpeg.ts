@@ -2230,20 +2230,25 @@ export async function convertAudio(
             maxBuffer: 1024 * 1024 * 32,
             onChild,
           },
-        ).catch((e: unknown) => {
-          // execFile prefixes a failed run with "Command failed: " and the ENTIRE command
-          // line before any of ffmpeg's own output. That line carries every -metadata flag
-          // Surco writes — around forty of them — so the message the user was shown ran to
-          // thousands of characters with the one line that says WHY buried at the bottom.
-          // Distilled to the decoder's own diagnosis, the same way assertDecodable already
-          // treats its failures; the raw text still reaches the log through the throw site.
-          // Not stamped with an error key: the cause here is open-ended (permissions, a
-          // full disk, a codec refusing a parameter) and ffmpeg's own line names it better
-          // than any sentence Surco could pick in advance.
-          if (isCancelled?.()) throw errorWithKey('conversionCancelled')
-          const text = String((e as { stderr?: unknown })?.stderr ?? '').trim()
-          throw text ? new Error(firstErrorLine(text) || text) : e
-        })
+        )
+          .catch((e: unknown) => {
+            // execFile prefixes a failed run with "Command failed: " and the ENTIRE command
+            // line before any of ffmpeg's own output. That line carries every -metadata flag
+            // Surco writes — around forty of them — so the message the user was shown ran to
+            // thousands of characters with the one line that says WHY buried at the bottom.
+            // Distilled to the decoder's own diagnosis, the same way assertDecodable already
+            // treats its failures; the raw text still reaches the log through the throw site.
+            // Not stamped with an error key: the cause here is open-ended (permissions, a
+            // full disk, a codec refusing a parameter) and ffmpeg's own line names it better
+            // than any sentence Surco could pick in advance.
+            if (isCancelled?.()) throw errorWithKey('conversionCancelled')
+            const text = String((e as { stderr?: unknown })?.stderr ?? '').trim()
+            throw text ? new Error(firstErrorLine(text) || text) : e
+          })
+          .then((result) => {
+            if (isCancelled?.()) throw errorWithKey('conversionCancelled')
+            return result
+          })
       let { stderr } = await encode(audioFilter)
       // The MP3 encoder puts peaks back over the ceiling the filter held them under: on the
       // reference track, 0.3 dB at 320 kbps with a constant gain and up to 1.7 dB at 128

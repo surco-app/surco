@@ -310,16 +310,46 @@ describe('reduced motion', () => {
     '.player-section',
     '.press',
     '.animate-toast-countdown',
+    '.copies-collapse',
+    '.copies-feedback',
   ]) {
     it(`holds ${selector} still`, () => {
       expect(reduced).toContain(selector)
     })
   }
 
+  it('lets the Copias outcome line only fade, never move', () => {
+    const rule = reduced.match(/\.copies-feedback\s*\{[^}]*\}/)
+    expect(rule?.[0]).toContain('opacity')
+    expect(rule?.[0]).not.toContain('transform')
+  })
+
   it('drains the toast countdown by fading rather than sliding', () => {
     expect(reduced).toMatch(/\.animate-toast-countdown\s*\{[^}]*toast-countdown-fade/)
     const frames = css.slice(css.indexOf('@keyframes toast-countdown-fade'))
     expect(frames.slice(0, frames.indexOf('}\n}'))).toContain('opacity')
+  })
+})
+
+describe('Copias list fold', () => {
+  it('transitions only the rows track and the fade', () => {
+    const rule = css.slice(css.indexOf('.copies-collapse {'))
+    const body = rule.slice(0, rule.indexOf('}'))
+    expect(body).toContain('grid-template-rows: 0fr')
+    expect(body).toMatch(
+      /transition:\s*grid-template-rows 200ms cubic-bezier\(0\.23, 1, 0\.32, 1\),\s*opacity 200ms/,
+    )
+    expect(body).not.toMatch(/transition:\s*all/)
+  })
+})
+
+describe('Copias outcome line', () => {
+  it('rises in from just below as it fades in', () => {
+    const start = css.slice(css.indexOf('@starting-style'))
+    expect(start.slice(0, start.indexOf('}\n}'))).toMatch(
+      /\.copies-feedback\s*\{[^}]*opacity: 0;[^}]*transform: translateY\(4px\)/,
+    )
+    expect(css).toMatch(/\.copies-feedback\s*\{[^}]*transition:[^}]*opacity 180ms ease-out/)
   })
 })
 
