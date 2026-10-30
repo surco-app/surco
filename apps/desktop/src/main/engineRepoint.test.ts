@@ -349,7 +349,7 @@ async function positionsOf(lib: Library) {
       hot: cues?.slots.map((s) => (s.cue ? s.cue.sample / rate : null)),
       main: [sec(cues?.tail.readDoubleBE(0) ?? 0), sec(cues?.tail.readDoubleBE(9) ?? 0)],
       mainAdjusted: cues?.tail[8],
-      loops: decodeLoops(Buffer.from(row.loops as Uint8Array))?.map((l) => [
+      loops: decodeLoops(Buffer.from(row.loops as Uint8Array))?.loops.map((l) => [
         sec(l.start),
         sec(l.end),
       ]),

@@ -97,8 +97,10 @@ function positionsOf(
         : null,
     beatData: grid?.markers.map((m) => m.sample / rate) ?? null,
     loops:
-      loops?.flatMap((l) => [l.startSet ? sec(l.start) : null, l.endSet ? sec(l.end) : null]) ??
-      null,
+      loops?.loops.flatMap((l) => [
+        l.startSet ? sec(l.start) : null,
+        l.endSet ? sec(l.end) : null,
+      ]) ?? null,
   }
 }
 

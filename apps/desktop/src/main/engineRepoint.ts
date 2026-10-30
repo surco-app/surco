@@ -189,7 +189,7 @@ export function shiftEnginePerformance(perf: Performance, shift: EngineShift): P
   const loops = perf.loops && decodeLoops(Buffer.from(perf.loops))
   if (loops)
     next.loops = encodeLoops(
-      loops.map((loop) => {
+      loops.loops.map((loop) => {
         const start = loop.startSet ? set(loop.start) : loop.start
         const end =
           loop.startSet && loop.endSet
@@ -199,6 +199,7 @@ export function shiftEnginePerformance(perf: Performance, shift: EngineShift): P
               : loop.end
         return { ...loop, start, end }
       }),
+      loops.tail,
     )
   return next
 }

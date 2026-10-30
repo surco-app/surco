@@ -152,8 +152,8 @@ describe('Engine DJ performance blobs', () => {
 
   it('reads loops as Engine stores them, uncompressed and little-endian, eight unset slots on a track nobody looped', () => {
     const loops = decodeLoops(Buffer.from(REAL_LOOPS, 'hex'))
-    expect(loops).toHaveLength(8)
-    expect(loops?.[0]).toEqual({
+    expect(loops?.loops).toHaveLength(8)
+    expect(loops?.loops[0]).toMatchObject({
       label: '',
       start: -1,
       end: -1,
@@ -161,7 +161,7 @@ describe('Engine DJ performance blobs', () => {
       endSet: false,
       argb: 0,
     })
-    expect(encodeLoops(loops ?? [])).toEqual(Buffer.from(REAL_LOOPS, 'hex'))
+    expect(encodeLoops(loops?.loops ?? [], loops?.tail)).toEqual(Buffer.from(REAL_LOOPS, 'hex'))
   })
 
   it('writes a set loop back byte for byte, label and colour included', () => {
@@ -173,7 +173,31 @@ describe('Engine DJ performance blobs', () => {
       endSet: true,
       argb: 0xff00cc00,
     }
-    expect(decodeLoops(encodeLoops([loop]))).toEqual([loop])
+    expect(decodeLoops(encodeLoops([loop]))?.loops).toMatchObject([loop])
+  })
+
+  // Like the main cue after the quick cues, whatever a later Engine keeps after the loops,
+  // or a flag byte it sets to something other than 1, has to survive a rewrite of them.
+  it('writes loops back with the bytes after them and their own flag bytes', () => {
+    const flagged = `${SET_LOOP.slice(0, -12)}0201${SET_LOOP.slice(-8)}`
+    const raw = Buffer.from(`0100000000000000${flagged}cafe`, 'hex')
+    const loops = decodeLoops(raw)
+    expect(loops?.loops[0]).toMatchObject({ startSet: true, endSet: true, start: 8 * 44100 })
+    expect(encodeLoops(loops?.loops ?? [], loops?.tail)).toEqual(raw)
+    const shifted = shiftEnginePerformance(
+      {
+        trackData: Buffer.from(REAL_TRACK_DATA, 'hex'),
+        overviewWaveFormData: null,
+        beatData: null,
+        quickCues: null,
+        loops: raw,
+      },
+      { trimmedMs: 1000 },
+    ).loops
+    const after = Buffer.from(shifted ?? [])
+    expect(after.subarray(-2).toString('hex')).toBe('cafe')
+    expect(after[8 + 6 + 16]).toBe(2)
+    expect(decodeLoops(after)?.loops[0].start).toBe(7 * 44100)
   })
 
   it('reads a loops blob that does not fit its layout as nothing', () => {
@@ -231,7 +255,7 @@ function masked(raw: Buffer, ranges: [number, number][]): Buffer {
 
 describe('shifting real Engine DJ blobs', () => {
   it('reads the set loop laid out as the real blob lays out its slots', () => {
-    expect(decodeLoops(Buffer.from(REAL_SHAPED_LOOPS, 'hex'))?.[0]).toEqual({
+    expect(decodeLoops(Buffer.from(REAL_SHAPED_LOOPS, 'hex'))?.loops[0]).toMatchObject({
       label: 'Break',
       start: 8 * 44100,
       end: 10 * 44100,
