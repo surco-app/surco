@@ -184,9 +184,9 @@ describe('useConfirmFlows move to Trash', () => {
     const a = track('a', { inputPath: '/Volumes/NAS/a.wav' })
     const { flows, opened } = setup([a])
     await flows.askTrash([a])
-    expect(opened[0].title).toBe('Move file to Backups?')
+    expect(opened[0].title).toBe('Move file to Backups › Music files?')
     expect(opened[0].message).toBe(
-      'This disk has no Trash, so “Artist - a.wav” is kept in Backups and removed from the list. You can restore it from there.',
+      'This disk has no Trash, so “Artist - a.wav” is kept in Backups › Music files and removed from the list. You can restore it from there.',
     )
     expect(opened[0].message).not.toContain('from the Trash')
   })
@@ -196,8 +196,8 @@ describe('useConfirmFlows move to Trash', () => {
     const a = track('a')
     const { flows, opened } = setup([a])
     await flows.askTrash([a])
-    expect(opened[0].title).toBe('Move file to Backups?')
-    expect(opened[0].confirmLabel).toBe('Move to Backups')
+    expect(opened[0].title).toBe('Move file to Backups › Music files?')
+    expect(opened[0].confirmLabel).toBe('Move to Backups › Music files')
     expect(`${opened[0].title} ${opened[0].message}`).not.toContain('Recycle Bin')
   })
 
@@ -207,9 +207,9 @@ describe('useConfirmFlows move to Trash', () => {
     const b = track('b', { inputPath: '/Volumes/NAS/b.wav' })
     const { flows, opened } = setup([a, b])
     await flows.askTrash([a, b])
-    expect(opened[0].title).toBe('Move 2 files to the Trash or Backups?')
+    expect(opened[0].title).toBe('Move 2 files to the Trash or Backups › Music files?')
     expect(opened[0].message).toBe(
-      'This removes 2 files from the list. Those on a disk with no Trash are kept in Backups and the rest go to the Trash. You can restore them from there.',
+      'This removes 2 files from the list. Those on a disk with no Trash are kept in Backups › Music files and the rest go to the Trash. You can restore them from there.',
     )
   })
 
@@ -266,7 +266,7 @@ describe('useConfirmFlows delete for good', () => {
     await flows.askTrash([a])
     expect(opened[0].title).toBe('Delete file permanently?')
     expect(opened[0].message).toBe(
-      'This disk has no Trash and Backups is set to Never, so “Artist - a.wav” will be deleted for good. You won’t be able to get it back.',
+      'This disk has no Trash and Music files is set to Never, so “Artist - a.wav” will be deleted for good. You won’t be able to get it back.',
     )
     expect(opened[0].confirmLabel).toBe('Delete permanently')
     expect(trashFile).not.toHaveBeenCalled()
@@ -286,7 +286,7 @@ describe('useConfirmFlows delete for good', () => {
     await flows.askTrash([a, b])
     expect(opened[0].title).toBe('Move 2 files to the Trash or delete them for good?')
     expect(opened[0].message).toBe(
-      'This removes 2 files from the list. Those on a disk with a Trash go to the Trash. The rest are deleted for good because Backups is set to Never, and you won’t be able to get them back.',
+      'This removes 2 files from the list. Those on a disk with a Trash go to the Trash. The rest are deleted for good because Music files is set to Never, and you won’t be able to get them back.',
     )
     expect(opened[0].confirmLabel).toBe('Move and delete')
     opened[0].onConfirm()
@@ -311,7 +311,7 @@ describe('useConfirmFlows delete for good', () => {
     const a = track('a', { inputPath: '/Volumes/NAS/a.wav' })
     const { flows, opened } = setup([a], { settings: { backupPolicy: 'audioChanges' } as Settings })
     await flows.askTrash([a])
-    expect(opened[0].title).toBe('Move file to Backups?')
+    expect(opened[0].title).toBe('Move file to Backups › Music files?')
     opened[0].onConfirm()
     expect(trashFile).toHaveBeenCalledWith('/Volumes/NAS/a.wav', false)
   })
@@ -328,7 +328,7 @@ describe('useConfirmFlows delete for good', () => {
     })
     expect(opened[0].title).toBe('Delete 2 files permanently?')
     expect(opened[0].message).toBe(
-      'Your converted file stays where it is. The items below are deleted for good because their disk has no Trash and Backups is set to Never. You won’t be able to get them back.',
+      'Your converted file stays where it is. The items below are deleted for good because their disk has no Trash and Music files is set to Never. You won’t be able to get them back.',
     )
     expect(opened[0].confirmLabel).toBe('Delete permanently')
     opened[0].onConfirm()
@@ -347,7 +347,7 @@ describe('useConfirmFlows delete for good', () => {
     })
     expect(opened[0].title).toBe('Move 2 files to the Trash or delete them for good?')
     expect(opened[0].message).toBe(
-      'Your converted file stays where it is. Items on a disk with a Trash go to the Trash. The rest are deleted for good because Backups is set to Never, and you won’t be able to get them back.',
+      'Your converted file stays where it is. Items on a disk with a Trash go to the Trash. The rest are deleted for good because Music files is set to Never, and you won’t be able to get them back.',
     )
   })
 })
@@ -444,9 +444,9 @@ describe('useConfirmFlows clean up previous files', () => {
       superseded: [{ trackId: 'a', path: '/Volumes/NAS/old/a.mp3' }],
       staleMusicCopy: null,
     })
-    expect(opened[0].title).toBe('Move 2 files to the Trash or Backups?')
+    expect(opened[0].title).toBe('Move 2 files to the Trash or Backups › Music files?')
     expect(opened[0].message).toBe(
-      'Your converted file stays where it is. Items on a disk with no Trash go to Backups and the rest to the Trash. You can restore them from there.',
+      'Your converted file stays where it is. Items on a disk with no Trash go to Backups › Music files and the rest to the Trash. You can restore them from there.',
     )
     expect(opened[0].confirmLabel).toBe('Move')
   })
@@ -460,11 +460,11 @@ describe('useConfirmFlows clean up previous files', () => {
       superseded: [{ trackId: 'a', path: 'Z:\\old\\a.mp3' }],
       staleMusicCopy: null,
     })
-    expect(opened[0].title).toBe('Move 2 files to Backups?')
+    expect(opened[0].title).toBe('Move 2 files to Backups › Music files?')
     expect(opened[0].message).toBe(
-      'Your converted file stays where it is. The items below go to Backups because their disk has no Trash. You can restore them from there.',
+      'Your converted file stays where it is. The items below go to Backups › Music files because their disk has no Trash. You can restore them from there.',
     )
-    expect(opened[0].confirmLabel).toBe('Move to Backups')
+    expect(opened[0].confirmLabel).toBe('Move to Backups › Music files')
     expect(`${opened[0].title} ${opened[0].message}`).not.toContain('Recycle Bin')
   })
 
