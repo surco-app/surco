@@ -797,6 +797,46 @@ describe('ghostOf rejected', () => {
   })
 })
 
+describe('a point marked by hand', () => {
+  const chorus = { ...ctx, strong: [{ start: bar(44), end: bar(56) }] }
+  const mixIn = () => startDraft([], 'mix-in')
+  const hand = (ms: number): DraftAction => ({ type: 'mark-drop', ms, byHand: true })
+  const hot = (s: CueDraft) => hotOf(s).map(([ms]) => ms)
+  const pointAt = (s: CueDraft, ms: number) => at(s, ms, false)?.key as string
+
+  it('gets its cue even inside a chorus, since only Auto mark is meant to judge whether it fits', () => {
+    expect(hot(reduceDraft(mixIn(), { type: 'mark-drop', ms: bar(64) }, chorus))).toEqual([])
+    expect(hot(reduceDraft(mixIn(), hand(bar(64)), chorus))).toEqual([bar(48)])
+  })
+
+  it('previews the cue it will get, not a rejection', () => {
+    const g = ghostOf(mixIn(), hand(bar(64)), chorus)
+    expect(g.added.filter((c) => c.kind !== 0).map((c) => c.ms)).toEqual([bar(48)])
+    expect(g.rejected).toEqual([])
+  })
+
+  it('keeps its cue when another point is marked, which redraws the whole flow', () => {
+    const s = [hand(bar(64)), hand(bar(160))].reduce((d, a) => reduceDraft(d, a, chorus), mixIn())
+    expect(hot(s)).toEqual([bar(48), bar(144)])
+  })
+
+  it('stays marked by hand when it is moved', () => {
+    const s = reduceDraft(mixIn(), hand(bar(64)), chorus)
+    const moved = reduceDraft(
+      s,
+      { type: 'move-point', key: pointAt(s, bar(64)), ms: bar(66) },
+      chorus,
+    )
+    expect(hot(moved)).toEqual([bar(50)])
+  })
+
+  it('gets no cue when the cue would fall before the start of the track', () => {
+    const s = reduceDraft(mixIn(), hand(bar(10)), chorus)
+    expect(draftDrops(s.cues)).toEqual([bar(10)])
+    expect(hot(s)).toEqual([])
+  })
+})
+
 describe('correcting a point', () => {
   const shape = (s: CueDraft) =>
     s.cues
