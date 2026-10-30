@@ -1,6 +1,5 @@
 import { readdir, stat } from 'node:fs/promises'
 import { basename, dirname, extname, join } from 'node:path'
-import { File as TagFile } from 'node-taglib-sharp'
 import { errorKeyOf, errorWithKey } from '../shared/errorKeys'
 import type { TrackMetadata } from '../shared/types'
 import type { PlaceCheck, VerifyDetailKey } from '../shared/verification'
@@ -11,9 +10,9 @@ import {
   deliveredDurationSec,
   probeAudio,
 } from './ffmpeg'
-import { snapshotTags } from './tagSnapshot'
-import { readEmbeddedCover } from './tags'
+import { snapshotTagsInWorker } from './tagChanges'
 import { type PcmDigest, pcmDigest, pcmTimeoutMs } from './verifyPcm'
+import { runInWorker } from './worker'
 
 export interface FileExpect {
   path: string
@@ -44,9 +43,23 @@ export interface FileReaders {
   assertDecodable(path: string, opts: ReadOpts): Promise<number | null>
   deliveredDurationSec(path: string, opts: ReadOpts): Promise<number | null>
   pcmDigest(path: string, opts: ReadOpts): Promise<PcmDigest>
-  snapshotTags(path: string): string[] | Promise<string[]>
-  readEmbeddedCover(path: string): Buffer | null
-  m4aNumbers(path: string): { track: number; bpm: number }
+  snapshotTags(path: string, opts: ReadOpts): string[] | Promise<string[]>
+  tagExtras(path: string, opts: ReadOpts): Promise<{ cover: boolean; track: number; bpm: number }>
+}
+
+// A worker job cannot be stopped halfway, but the check need not wait for it: the job's
+// cancel and the read's bound both end the wait, and the parse finishes on its own.
+function bounded<T>(read: Promise<T>, { signal, timeoutMs }: ReadOpts): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const stop = () => reject(new Error('tag read stopped'))
+    const timer = timeoutMs === undefined ? undefined : setTimeout(stop, timeoutMs)
+    signal?.addEventListener('abort', stop, { once: true })
+    if (signal?.aborted) stop()
+    read.then(resolve, reject).finally(() => {
+      clearTimeout(timer)
+      signal?.removeEventListener('abort', stop)
+    })
+  })
 }
 
 async function findOnDisk(path: string): Promise<string | null> {
@@ -68,16 +81,19 @@ export const fileReaders: FileReaders = {
   deliveredDurationSec: (path, { signal, timeoutMs }) =>
     deliveredDurationSec(path, { signal, timeout: timeoutMs }),
   pcmDigest: (path, { signal }) => pcmDigest(path, { signal }),
-  snapshotTags,
-  readEmbeddedCover,
-  m4aNumbers(path) {
-    const f = TagFile.createFromPath(path)
-    try {
-      return { track: f.tag.track, bpm: f.tag.beatsPerMinute }
-    } finally {
-      f.dispose()
-    }
+  async snapshotTags(path, opts) {
+    const lines = await bounded(snapshotTagsInWorker(path), opts)
+    if (lines === null) throw new Error(`no tags read from ${path}`)
+    return lines
   },
+  tagExtras: (path, opts) =>
+    bounded(
+      runInWorker<{ cover: boolean; track: number; bpm: number }>({
+        type: 'verifyTagExtras',
+        file: path,
+      }),
+      opts,
+    ),
 }
 
 const FORMAT_BY_EXT: Record<string, string> = {
@@ -286,16 +302,12 @@ async function judge(e: FileExpect, r: FileReaders, signal?: AbortSignal): Promi
     if (delivered > wanted + tolerance) return check('mismatch', 'filePcmDiffers')
   }
 
-  const field = differingTag(
-    await r.snapshotTags(found),
-    e.tags,
-    e.ext === '.m4a' ? r.m4aNumbers(found) : null,
-  )
+  const [lines, extras] = await Promise.all([r.snapshotTags(found, opts), r.tagExtras(found, opts)])
+  const field = differingTag(lines, e.tags, e.ext === '.m4a' ? extras : null)
   if (field !== null) return check('mismatch', 'fileTagDiffers', { field })
 
-  const cover = r.readEmbeddedCover(found)
-  if (e.cover === 'written' && cover === null) return check('mismatch', 'fileNoCover')
-  if (e.cover === 'removed' && cover !== null) return check('mismatch', 'fileCoverKept')
+  if (e.cover === 'written' && !extras.cover) return check('mismatch', 'fileNoCover')
+  if (e.cover === 'removed' && extras.cover) return check('mismatch', 'fileCoverKept')
 
   return identical
     ? check('ok', 'fileIdentical', { format: expectedFormat })

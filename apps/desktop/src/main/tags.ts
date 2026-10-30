@@ -583,6 +583,22 @@ export function readEmbeddedCover(file: string): Buffer | null {
   }
 }
 
+// What the self-check needs past the tag lines, from one parse: whether any picture is
+// embedded, and the M4A numbers its trkn and tmpo atoms hold as integers. Throws when
+// TagLib cannot open the file, so an unread file never passes as one with no cover.
+export function readCoverAndNumbers(file: string): { cover: boolean; track: number; bpm: number } {
+  const f = TagFile.createFromPath(file)
+  try {
+    return {
+      cover: (f.tag.pictures ?? []).length > 0,
+      track: f.tag.track,
+      bpm: f.tag.beatsPerMinute,
+    }
+  } finally {
+    f.dispose()
+  }
+}
+
 // The NML sync needs the cue tree of the file that was just converted, not the source —
 // a trim already re-anchored it there. ID3 (MP3/AIFF) and FLAC armor the same tree two
 // different ways, so this decides by what the file actually carries rather than by

@@ -14,6 +14,7 @@ import {
   copyCueFrames,
   copyCuesFromFlac,
   copyCuesToFlac,
+  readCoverAndNumbers,
   readTagLibFields,
   setFlacComment,
   shiftFlacCues,
@@ -92,6 +93,8 @@ export type WorkerJob =
   | { type: 'tagLibRead'; file: string }
   // The activity panel's before/after tag snapshot, a full synchronous TagLib parse.
   | { type: 'tagSnapshot'; file: string }
+  // The self-check's cover and M4A numbers, read beside that snapshot.
+  | { type: 'verifyTagExtras'; file: string }
   | { type: 'tuneDrops'; tracks: TasteTrack[] }
 
 export type WorkerJobResult =
@@ -106,6 +109,7 @@ export type WorkerJobResult =
   | Uint16Array
   | TagLibRead
   | TunedTaste
+  | { cover: boolean; track: number; bpm: number }
   | null
 
 export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJobResult> {
@@ -162,6 +166,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return readTagLibFields(job.file)
     case 'tagSnapshot':
       return snapshotTagsOrNull(job.file)
+    case 'verifyTagExtras':
+      return readCoverAndNumbers(job.file)
     case 'tuneDrops':
       return tuneDropTaste(job.tracks)
     case 'prependFlacId3':
