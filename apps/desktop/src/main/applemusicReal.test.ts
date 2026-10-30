@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
 import { mkdir, mkdtemp, rm, rmdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { extname, join } from 'node:path'
@@ -25,7 +25,8 @@ import {
 } from './applemusic'
 import type { ConversionPlan } from './ffmpeg'
 import { type ProcessTrackDeps, runProcessTrack } from './processTrack'
-import { checkAppleMusic, type MusicReaders, musicEntriesForFile } from './verifyMusic'
+import { checkFile, fileReaders } from './verifyFile'
+import { checkAppleMusic, musicReaders } from './verifyMusic'
 
 // Opt-in: drives the real Music app with throwaway tones, for the measurements the unit
 // tests can only assume (Music handing back an entry it already has, the replace sequence
@@ -91,16 +92,6 @@ async function entriesNamed(name: string): Promise<{ pid: string; path: string }
     })
 }
 
-const productionReaders: MusicReaders = {
-  entry: readMusicEntryFacts,
-  entriesForFile: musicEntriesForFile({
-    run: runOsascript,
-    realPath: (p) => realpathSync(p),
-  }),
-  realPath: (p) => realpathSync(p),
-  wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-}
-
 async function locationOf(pid: string): Promise<string> {
   const facts = await readMusicEntryFacts(pid)
   if (facts === 'missing' || !facts.location) throw new Error(`entry ${pid} has no file`)
@@ -118,7 +109,7 @@ async function checkEntry(pid: string, title: string, replacedPid?: string, know
       coverSet: false,
       replaced: replacedPid ? { oldPid: replacedPid, playlistsBefore: [] } : undefined,
     },
-    productionReaders,
+    musicReaders,
   )
 }
 
@@ -203,12 +194,8 @@ function deps(): ProcessTrackDeps {
       readMusicEntryFacts(pid, undefined, { withPlaylists: true }).then((facts) =>
         facts === 'missing' ? [] : facts.playlists,
       ),
-    verifyFile: async () => ({ place: 'file', state: 'ok', detail: { key: 'fileReencoded' } }),
-    verifyMusic: async () => ({
-      place: 'appleMusic',
-      state: 'unreadable',
-      detail: { key: 'musicUnreadable' },
-    }),
+    verifyFile: (e, signal) => checkFile(e, fileReaders, { signal }),
+    verifyMusic: (e, signal) => checkAppleMusic(e, musicReaders, { signal }),
   }
 }
 
@@ -242,6 +229,11 @@ async function replaceCase(from: 'wav' | 'aiff', to: OutputFormat, title: string
   const verdict = await checkEntry(result.musicPersistentId as string, title, oldPid)
   expect(verdict.state).toBe('ok')
   expect(verdict.detail.key).toMatch(/^musicOne/)
+  const checks = result.verification?.checks ?? []
+  expect(checks.find((c) => c.place === 'file')?.state).toBe('ok')
+  const music = checks.find((c) => c.place === 'appleMusic')
+  expect(music?.state).toBe('ok')
+  expect(music?.detail.key).toMatch(/^musicOne/)
 }
 
 describe.skipIf(!real)('Apple Music against the real app', () => {
@@ -361,6 +353,27 @@ describe.skipIf(!real)('Apple Music against the real app', () => {
     const verdict = await checkEntry(pid, title, undefined, file)
 
     expect(verdict.state).not.toBe('ok')
-    expect(['musicNoFile', 'musicUnreadable', 'musicOtherFile']).toContain(verdict.detail.key)
+    console.log('deleted-file verdict', JSON.stringify(verdict))
+    expect(verdict.detail.key).toBe('musicNoFile')
+  }, 120_000)
+
+  it('checks musicWrongFile when a WAV entry is pointed at an AIFF', async () => {
+    const title = `${PREFIX} CheckWrong`
+    const wavPid = await addToAppleMusic(tone(join(dir, `${title}.wav`), title), meta(title))
+    const wav = await locationOf(wavPid)
+    const aiff = tone(join(dir, `${title} sibling.aiff`), title, 660)
+    await runOsascript(
+      [
+        'tell application "Music"',
+        `  set t to (first track of library playlist 1 whose persistent ID is ${appleScriptString(wavPid)})`,
+        `  set location of t to POSIX file ${appleScriptString(aiff)}`,
+        'end tell',
+      ].join('\n'),
+    )
+
+    const verdict = await checkEntry(wavPid, title, undefined, wav)
+
+    expect(verdict.state).toBe('mismatch')
+    expect(verdict.detail.key).toBe('musicWrongFile')
   }, 120_000)
 })
