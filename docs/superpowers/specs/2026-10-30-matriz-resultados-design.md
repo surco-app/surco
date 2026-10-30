@@ -195,6 +195,15 @@ wav → `wav`/`pcm_s*le`, .wav; flac → `flac`/`flac`; alac → `mov,mp4…`/`a
 mp3-no-tiene-bit-depth); con `rate48` 48000; con `bits16` 16. "Solo reetiquetó" (el bug del
 30/10) falla aquí: el contenedor sigue siendo el del origen.
 
+Dos reglas de producción que el oráculo codifica como esperadas, no como fallo:
+
+- Origen AAC a destino `alac` sigue siendo AAC en `.m4a`. `planConversion` (ffmpeg.ts, rama
+  `alac`) copia o recodifica el AAC a propósito, porque decodificar un lossy a ALAC solo hace
+  el fichero más grande sin ganar calidad.
+- La tasa de un MP3 de salida sin tasa fijada es min(origen, 48000). libmp3lame no admite más
+  de 48 kHz y ffmpeg negocia la tasa admitida más cercana (medido, un origen de 96 kHz sale a
+  48000), así que `wav24` a MP3 espera 48000.
+
 ### 5.2 PCM (`pcm`)
 
 Solo cuando origen y destino son lossless y la calidad no cambia muestras. ffmpeg decodifica

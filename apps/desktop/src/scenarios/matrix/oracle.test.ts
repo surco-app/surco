@@ -10,32 +10,24 @@ import {
   Id3v2TextInformationFrame,
   File as TagFile,
   TagTypes,
+  type XiphComment,
 } from 'node-taglib-sharp'
 import { describe, expect, it } from 'vitest'
+import { prependFlacId3 } from '../../main/flacFinderCover'
 import { writeTags } from '../../main/tags'
 import { emptyMetadata } from '../../shared/metadata'
 import type { OutputFormat } from '../../shared/types'
 import { coverJpg, scenarioDir } from '../fixtures'
 import { CELLS, type Cell } from './cells'
 import { fileInvariants, markerLagMs, pcmSha1 } from './oracle'
-import { makeSource, type SourceTrack, TRICKY } from './sources'
+import { makeSource, type SourceTrack, TRICKY, type TrickyTags } from './sources'
 
 const FF = ffmpegStatic as unknown as string
 
 const ENCODE: Record<OutputFormat, { ext: string; args: string[] }> = {
   aiff: { ext: '.aiff', args: ['-c:a', 'pcm_s16be'] },
   wav: { ext: '.wav', args: ['-c:a', 'pcm_s16le'] },
-  flac: {
-    ext: '.flac',
-    args: [
-      '-c:a',
-      'flac',
-      '-sample_fmt',
-      's16',
-      '-metadata',
-      `CATALOGNUMBER=${TRICKY.catalogNumber}`,
-    ],
-  },
+  flac: { ext: '.flac', args: ['-c:a', 'flac', '-sample_fmt', 's16'] },
   alac: { ext: '.m4a', args: ['-c:a', 'alac', '-sample_fmt', 's16p'] },
   mp3: { ext: '.mp3', args: ['-c:a', 'libmp3lame', '-b:a', '320k'] },
 }
@@ -50,6 +42,63 @@ function sha1(path: string): string {
   return createHash('sha1').update(readFileSync(path)).digest('hex')
 }
 
+function vorbisFields(tags: TrickyTags): [string, string][] {
+  const [track, trackTotal] = tags.trackNumber.split('/')
+  const [disc, discTotal] = tags.discNumber.split('/')
+  return [
+    ['TITLE', tags.title],
+    ['ARTIST', tags.artist],
+    ['ALBUM', tags.album],
+    ['GENRE', tags.genre],
+    ['GROUPING', tags.grouping],
+    ['TRACKNUMBER', track],
+    ['TRACKTOTAL', trackTotal],
+    ['DISCNUMBER', disc],
+    ['DISCTOTAL', discTotal],
+    ['BPM', tags.bpm],
+    ['INITIALKEY', tags.key],
+    ['LABEL', tags.publisher],
+    ['PUBLISHER', tags.publisher],
+    ['CATALOGNUMBER', tags.catalogNumber],
+    ['COMMENT', tags.comment],
+  ]
+}
+
+function setVorbis(path: string, fields: [string, string | undefined][]): void {
+  const f = TagFile.createFromPath(path)
+  try {
+    const xiph = f.getTag(TagTypes.Xiph, true) as XiphComment
+    for (const [key, value] of fields) {
+      if (value) xiph.setFieldAsStrings(key, value)
+      else xiph.removeField(key)
+    }
+    f.save()
+  } finally {
+    f.dispose()
+  }
+}
+
+function encodeFlac(source: SourceTrack, path: string, cover: string | null): void {
+  const picture = cover
+    ? ['-i', cover, '-map', '1:v', '-c:v', 'copy', '-disposition:v', 'attached_pic']
+    : []
+  execFileSync(FF, [
+    '-y',
+    '-v',
+    'error',
+    '-i',
+    source.path,
+    ...picture,
+    '-map',
+    '0:a:0',
+    '-map_metadata',
+    '-1',
+    ...ENCODE.flac.args,
+    path,
+  ])
+  setVorbis(path, vorbisFields(source.tags))
+}
+
 function convertByHand(
   source: SourceTrack,
   target: OutputFormat,
@@ -58,6 +107,11 @@ function convertByHand(
 ): { path: string; coverSha1: string } {
   const { ext, args } = ENCODE[target]
   const path = join(dir, `${name} Café Olé`.normalize('NFD') + ext)
+  const cover = coverJpg(join(dir, `${name}.cover.jpg`))
+  if (target === 'flac') {
+    encodeFlac(source, path, cover)
+    return { path, coverSha1: sha1(cover) }
+  }
   execFileSync(FF, [
     '-y',
     '-v',
@@ -71,8 +125,7 @@ function convertByHand(
     ...args,
     path,
   ])
-  const cover = coverJpg(join(dir, `${name}.cover.jpg`))
-  writeTags(path, { ...emptyMetadata(), ...TRICKY }, cover)
+  writeTags(path, { ...emptyMetadata(), ...source.tags }, cover)
   return { path, coverSha1: sha1(cover) }
 }
 
@@ -219,17 +272,7 @@ describe('matrix file oracle', () => {
     ['COMMENT', 'comentario'],
   ])('sees a changed Vorbis %s in a FLAC', (key, label) => {
     const out = convertByHand(flac, 'flac', dir, `vorbis-${key}`)
-    const f = TagFile.createFromPath(out.path)
-    try {
-      ;(
-        f.getTag(TagTypes.Xiph, false) as unknown as {
-          setFieldAsStrings: (k: string, ...v: string[]) => void
-        }
-      ).setFieldAsStrings(key, '7')
-      f.save()
-    } finally {
-      f.dispose()
-    }
+    setVorbis(out.path, [[key, '7']])
     const details = fileInvariants(cellOf('C-flac-flac'), flac, out.path, out.coverSha1).map(
       (b) => b.detail,
     )
@@ -247,6 +290,57 @@ describe('matrix file oracle', () => {
       { invariant: 'cover', detail: 'carátula: ausente' },
     ])
     expect(fileInvariants(cellOf('C-flac-aiff'), flac, out.path, null)).toEqual([])
+  })
+
+  it('judges against the tags this source was seeded with, not the default set', () => {
+    const vinyl = makeSource(dir, 'flac', {
+      fileName: 'vinyl',
+      tags: { title: 'Señal', trackNumber: 'A2' },
+    })
+    const out = convertByHand(vinyl, 'aiff', dir, 'vinyl-out')
+    expect(fileInvariants(cellOf('C-flac-aiff'), vinyl, out.path, out.coverSha1)).toEqual([])
+    const asDefault = convertByHand(flac, 'aiff', dir, 'default-out')
+    const details = fileInvariants(
+      cellOf('C-flac-aiff'),
+      vinyl,
+      asDefault.path,
+      asDefault.coverSha1,
+    ).map((b) => b.detail)
+    expect(details).toContain("pista: TRCK '3/12', se esperaba 'A2'")
+    expect(details).toContain("título: TIT2 'Café Olé', se esperaba 'Señal'")
+  })
+
+  it('reports a WAV with a wrong TIT1 and a GRP1 as two grouping problems', () => {
+    const wav = convertByHand(flac, 'wav', dir, 'grp1-and-tit1')
+    editId3(wav.path, (id3) => {
+      setText(id3, Id3v2FrameIdentifiers.TIT1, ['Warm Up'])
+      setText(id3, GRP1, ['Peak Time'])
+    })
+    expect(fileInvariants(cellOf('C-flac-wav'), flac, wav.path, wav.coverSha1)).toEqual([
+      { invariant: 'tags', detail: "grouping: TIT1 'Warm Up', se esperaba 'Peak Time'" },
+      { invariant: 'tags', detail: "grouping: GRP1 'Peak Time' en un WAV" },
+    ])
+  })
+
+  it('fails cover for a FLAC whose only picture rides a leading ID3 tag Traktor and rekordbox skip', () => {
+    const path = join(dir, 'id3cover Café Olé.flac'.normalize('NFD'))
+    const cover = coverJpg(join(dir, 'id3cover.jpg'))
+    encodeFlac(flac, path, null)
+    prependFlacId3(path, { ...emptyMetadata(), ...flac.tags }, cover)
+    const finder = { ...cellOf('C-flac-flac'), settings: { flacFinderCovers: true } }
+    expect(fileInvariants(finder, flac, path, sha1(cover))).toEqual([
+      { invariant: 'cover', detail: 'carátula: ausente' },
+    ])
+  })
+
+  it('fails format for a FLAC with an ID3 tag in front, unless Finder covers were asked for', () => {
+    const out = convertByHand(flac, 'flac', dir, 'finder')
+    prependFlacId3(out.path, { ...emptyMetadata(), ...flac.tags }, join(dir, 'finder.cover.jpg'))
+    expect(fileInvariants(cellOf('C-flac-flac'), flac, out.path, out.coverSha1)).toEqual([
+      { invariant: 'format', detail: 'formato: FLAC con ID3 delante' },
+    ])
+    const finder = { ...cellOf('C-flac-flac'), settings: { flacFinderCovers: true } }
+    expect(fileInvariants(finder, flac, out.path, out.coverSha1)).toEqual([])
   })
 
   it('finds an NFD-named output asked for by its NFC name', () => {
