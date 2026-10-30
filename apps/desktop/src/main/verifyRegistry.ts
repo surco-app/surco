@@ -132,8 +132,14 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     e.verification =
       result === null ? without(e.verification, place) : withChecks(e.verification, [result])
   }
+  // Each update names the conversion it belongs to and counts up from the result's seq 0:
+  // the renderer keeps only the newest word about the conversion it holds.
+  const stamps = new WeakMap<VerifyEntry, { job?: string; seq: number }>()
   const emit = (e: VerifyEntry) => {
-    if (live(e)) deps.emit(e.trackId, e.verification)
+    if (!live(e)) return
+    const stamp = stamps.get(e) ?? { seq: 0 }
+    stamp.seq += 1
+    deps.emit(e.trackId, { ...e.verification, job: stamp.job, seq: stamp.seq })
   }
 
   // Tracks a flush, a queue apply or a retry is still working on: a new batch must not clear
@@ -220,6 +226,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
       const previous = entries.get(e.trackId)
       if (previous) for (const place of LIBRARIES) awaiting[place].delete(previous)
       entries.set(e.trackId, e)
+      stamps.set(e, { job: e.verification.job, seq: e.verification.seq ?? 0 })
       traktorBefore.delete(e.trackId)
       batch.add(e)
     },

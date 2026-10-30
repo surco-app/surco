@@ -107,6 +107,39 @@ describe('syncCollection on the boot disk', () => {
     expect(readFileSync(nmlPath, 'utf8')).toContain('uno.flac')
   })
 
+  // The check after the write judges each track against the entry its patch moved, read
+  // from the collection the write replaced: afterwards the old name is gone.
+  it('names the entry each patch matched before the write, null where Traktor had none', async () => {
+    writeFileSync(
+      nmlPath,
+      NML.replace('DIR="/:M/:"', 'DIR="/:Users/:dj/:M/:"').replace(
+        'VOLUME="HD"',
+        'VOLUME="Macintosh HD"',
+      ),
+    )
+    const result = await syncCollection(
+      nmlPath,
+      [
+        { volume: '', dir: '/:Users/:dj/:M/:', file: 'uno.wav', newFile: 'uno.flac' },
+        { volume: '', dir: '/:Users/:dj/:M/:', file: 'dos.aiff', newFile: 'dos.flac' },
+      ],
+      session,
+      'Macintosh HD',
+    )
+
+    expect(result).toMatchObject({ written: true, before: ['uno.aiff', null] })
+  })
+
+  it('a run Traktor has none of says so per patch', async () => {
+    const result = await syncCollection(
+      nmlPath,
+      [{ volume: 'HD', dir: '/:M/:', file: 'dos.aiff', newFile: 'dos.flac' }],
+      session,
+    )
+
+    expect(result).toEqual({ written: false, matched: 0, reason: 'no-matches', before: [null] })
+  })
+
   // Song.wav no está en Traktor y Song.mp3 sí, con sus cues y playlists. Convertir el WAV
   // en su sitio no puede llevarse la ENTRY del MP3 por nombre base: el MP3 sigue en disco
   // y es otra pista, que se quedaría apuntando al FLAC con los cues del WAV.
@@ -118,7 +151,7 @@ describe('syncCollection on the boot disk', () => {
       `<NML VERSION="19"><COLLECTION ENTRIES="1"><ENTRY TITLE="Mp3"><LOCATION DIR="${traktorDir}" FILE="Song.mp3" VOLUME="Macintosh HD"></LOCATION></ENTRY></COLLECTION><PLAYLISTS><NODE TYPE="PLAYLIST" NAME="Set"><PLAYLIST ENTRIES="1" TYPE="LIST"><ENTRY><PRIMARYKEY TYPE="TRACK" KEY="Macintosh HD${traktorDir}Song.mp3"></PRIMARYKEY></ENTRY></PLAYLIST></NODE></PLAYLISTS></NML>`,
     )
 
-    await syncCollection(
+    const result = await syncCollection(
       nmlPath,
       [{ volume: '', dir: traktorDir, file: 'Song.wav', newFile: 'Song.flac' }],
       session,
@@ -128,6 +161,7 @@ describe('syncCollection on the boot disk', () => {
     const out = readFileSync(nmlPath, 'utf8')
     expect(out).toContain('FILE="Song.mp3"')
     expect(out).not.toContain('Song.flac')
+    expect(result.before).toEqual([null])
   })
 })
 

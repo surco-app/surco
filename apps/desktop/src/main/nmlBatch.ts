@@ -29,6 +29,13 @@ export function recordNmlPatch(patch: NmlPatch, paths?: { input: string; output:
   origins.push(paths)
 }
 
+// The patch a conversion of this source recorded, the last one when it was converted twice:
+// what the flush will write for it.
+export function recordedNmlPatch(input: string): NmlPatch | undefined {
+  const index = origins.findLastIndex((o) => o?.input === input)
+  return index === -1 ? undefined : patches[index]
+}
+
 // With "Apple Music only" the conversion lands in a private temp folder, so the patch is
 // recorded without a newFile; Music then copies the file into its Media folder. Traktor
 // rewrites FILE only, never DIR or VOLUME, so the entry can follow only when the landed

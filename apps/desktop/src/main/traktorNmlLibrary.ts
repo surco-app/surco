@@ -9,6 +9,7 @@ import { refreshCachedCoverArt } from './traktorCoverCache'
 import {
   applyPatches,
   detachedOutputPaths,
+  matchedEntryFiles,
   matchedPatchCount,
   type NmlLocation,
   type NmlPatch,
@@ -46,6 +47,9 @@ export interface SyncResult {
   written: boolean
   matched: number
   reason?: 'traktor-running' | 'backup-failed' | 'no-matches' | 'unreadable' | 'write-failed'
+  // Once the collection was read: the FILE of the entry each patch matched in it, in the
+  // order given, null where Traktor had none (see matchedEntryFiles).
+  before?: (string | null)[]
 }
 
 export async function syncCollection(
@@ -72,10 +76,11 @@ export async function syncCollection(
   const onDisk: OnDisk = (entry) =>
     existsSync(traktorFileOf(original.slice(entry.start, entry.end), bootVolume))
   const patched = applyPatches(original, located, onDisk)
+  const before = matchedEntryFiles(original, located, onDisk)
   if (patched === original) {
     // A patch that matched nothing is the normal "Traktor doesn't have this track"
     // case, not a failure — no backup, no write, disk untouched.
-    return { written: false, matched: 0, reason: 'no-matches' }
+    return { written: false, matched: 0, reason: 'no-matches', before }
   }
 
   const failure = await writeCollection(nmlPath, patched, session)
@@ -97,7 +102,7 @@ export async function syncCollection(
   //
   await markNewerThanCollection(nmlPath, detachedOutputPaths(original, patches, onDisk))
 
-  return { written: true, matched: matchedPatchCount(original, patches, onDisk) }
+  return { written: true, matched: matchedPatchCount(original, patches, onDisk), before }
 }
 
 // Traktor builds a track's cover only when it finds the audio newer than the collection it

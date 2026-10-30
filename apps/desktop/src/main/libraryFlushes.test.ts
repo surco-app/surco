@@ -65,6 +65,7 @@ vi.mock('./libraryFileUse', () => ({ djLibraryFileUse: FILE_USE.open }))
 
 const ENGINE_PROCESS = vi.hoisted(() => ({ isEngineDjRunning: vi.fn(async () => false) }))
 vi.mock('./engineProcess', () => ENGINE_PROCESS)
+vi.mock('./traktorProcess', () => ({ isTraktorRunning: vi.fn(async () => false) }))
 
 import { activity } from './activity'
 import { writeEngineLibraryFixture } from './enginePlaylistsFixture'
@@ -75,6 +76,8 @@ import {
   repointEngineQueued,
   syncTagsInLibraries,
 } from './libraryFlushes'
+import { beginNmlBatch, recordNmlPatch } from './nmlBatch'
+import { traktorPatchKey } from './verifyRegistry'
 
 function host(overrides: Partial<LibraryHost> = {}): LibraryHost {
   return {
@@ -642,6 +645,141 @@ describe('flushConversionBatch with a converted track Engine DJ does not have', 
     await withRun(dir, false, async (engine) => {
       await flush(engine)
       expect(engine.enqueue).not.toHaveBeenCalled()
+    })
+  })
+})
+
+// The check after the batch reads each library only when its flush wrote; one held in its
+// queue waits for the apply, and one that wrote nothing has nothing to be judged.
+describe('flushConversionBatch outcome', () => {
+  const quiet = () => ({ enqueue: vi.fn(), applyQuietly: vi.fn() })
+  const traktorQueue = () => ({
+    ...quiet(),
+    state: () => ({ tracks: 0, changes: 0, items: [] }),
+  })
+
+  it('flushConversionBatch says rekordbox was queued when the app is open', async () => {
+    const outcome = await flushConversionBatch(host(), sessions, quiet())
+    expect(outcome.rekordbox).toBe('queued')
+  })
+
+  it('says rekordbox was written once its repoint ran', async () => {
+    const h = host({ ensureRekordboxClosed: vi.fn(async () => true) })
+    const outcome = await flushConversionBatch(h, sessions, quiet())
+    expect(outcome.rekordbox).toBe('written')
+  })
+
+  it('says rekordbox failed when the collection stopped the write', async () => {
+    WRITERS.repointTracks.mockResolvedValueOnce([
+      { written: false, reason: 'backup-failed' },
+    ] as never)
+    const h = host({ ensureRekordboxClosed: vi.fn(async () => true) })
+    const outcome = await flushConversionBatch(h, sessions, quiet())
+    expect(outcome.rekordbox).toBe('failed')
+  })
+
+  it('says rekordbox is off while its sync is', async () => {
+    Object.assign(SETTINGS, { syncRekordbox: false })
+    try {
+      const outcome = await flushConversionBatch(host(), sessions, quiet())
+      expect(outcome.rekordbox).toBe('off')
+    } finally {
+      Object.assign(SETTINGS, { syncRekordbox: true })
+    }
+  })
+
+  it('says Engine DJ was queued while it is open and written once it is not', async () => {
+    Object.assign(SETTINGS, { syncEngineDj: true, engineLibraryDir: '/e/Engine Library' })
+    STATUS.engine = { enabled: true, found: true }
+    try {
+      ENGINE_PROCESS.isEngineDjRunning.mockResolvedValueOnce(true)
+      const open = await flushConversionBatch(host(), sessions, quiet(), undefined, quiet())
+      const closed = await flushConversionBatch(host(), sessions, quiet(), undefined, quiet())
+      expect([open.engine, closed.engine]).toEqual(['queued', 'written'])
+    } finally {
+      Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
+      STATUS.engine = { enabled: false, found: false }
+    }
+  })
+
+  // Engine follows only a file that moved: a run converted in place gave it nothing.
+  it('says Engine DJ is off when no converted file moved', async () => {
+    Object.assign(SETTINGS, { syncEngineDj: true, engineLibraryDir: '/e/Engine Library' })
+    STATUS.engine = { enabled: true, found: true }
+    const to = REPOINTS[0].to
+    REPOINTS[0].to = REPOINTS[0].from
+    try {
+      const outcome = await flushConversionBatch(host(), sessions, quiet(), undefined, quiet())
+      expect(outcome.engine).toBe('off')
+    } finally {
+      REPOINTS[0].to = to
+      Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
+      STATUS.engine = { enabled: false, found: false }
+    }
+  })
+
+  describe('Traktor', () => {
+    const patch = { volume: 'HD', dir: '/:m/:', file: 'a.aiff', newFile: 'a.flac' }
+    let nmlPath = ''
+
+    async function withTraktor(run: () => Promise<void>) {
+      const dir = await mkdtemp(join(tmpdir(), 'surco-flush-outcome-'))
+      nmlPath = join(dir, 'collection.nml')
+      await writeFile(
+        nmlPath,
+        `<NML VERSION="19"><COLLECTION ENTRIES="1"><ENTRY TITLE="A"><LOCATION DIR="/:m/:" FILE="a.aiff" VOLUME="HD"></LOCATION></ENTRY></COLLECTION></NML>`,
+      )
+      Object.assign(SETTINGS, { syncTraktor: true, traktorNmlPath: nmlPath })
+      STATUS.traktor = { enabled: true, found: true }
+      try {
+        await run()
+      } finally {
+        Object.assign(SETTINGS, { syncTraktor: false, traktorNmlPath: '' })
+        STATUS.traktor = { enabled: false, found: false }
+      }
+    }
+
+    it('hands back the entry each patch matched before the write, keyed like the queue', async () => {
+      await withTraktor(async () => {
+        const missing = { ...patch, file: 'b.aiff', newFile: 'b.flac' }
+        beginNmlBatch()
+        recordNmlPatch(patch)
+        recordNmlPatch(missing)
+        const outcome = await flushConversionBatch(host(), sessions, quiet(), traktorQueue())
+        expect(outcome.traktor).toEqual({
+          before: new Map([
+            [traktorPatchKey(patch), 'a.aiff'],
+            [traktorPatchKey(missing), null],
+          ]),
+        })
+      })
+    })
+
+    it('says Traktor was queued when the DJ keeps it open', async () => {
+      await withTraktor(async () => {
+        beginNmlBatch()
+        recordNmlPatch(patch)
+        const h = host({ ensureTraktorClosed: vi.fn(async () => false) })
+        const outcome = await flushConversionBatch(h, sessions, quiet(), traktorQueue())
+        expect(outcome.traktor).toBe('queued')
+      })
+    })
+
+    it('says Traktor failed when its collection is gone and nothing waits for it', async () => {
+      await withTraktor(async () => {
+        STATUS.traktor = { enabled: true, found: false }
+        beginNmlBatch()
+        recordNmlPatch(patch)
+        const outcome = await flushConversionBatch(host(), sessions, quiet(), traktorQueue())
+        expect(outcome.traktor).toBe('failed')
+      })
+    })
+
+    it('says Traktor is off when the run recorded nothing for it', async () => {
+      await withTraktor(async () => {
+        const outcome = await flushConversionBatch(host(), sessions, quiet(), traktorQueue())
+        expect(outcome.traktor).toBe('off')
+      })
     })
   })
 })

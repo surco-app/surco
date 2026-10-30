@@ -125,6 +125,7 @@ import {
   repointRekordbox,
   syncTagsInLibraries,
   traktorFlushDeps,
+  traktorWrite,
 } from './libraryFlushes'
 import { takeCopy } from './libraryHistory'
 import { enginePendingLog, rekordboxPendingLog } from './libraryRestore'
@@ -136,7 +137,7 @@ import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { isIssuedPair } from './musicDuplicates'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
-import { abandonNmlBatch, beginNmlBatch, redirectNmlPatch } from './nmlBatch'
+import { abandonNmlBatch, beginNmlBatch, recordedNmlPatch, redirectNmlPatch } from './nmlBatch'
 import { filesFromArgv, routeOpenedFile } from './openedFiles'
 import { configureBackupStore } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
@@ -150,6 +151,7 @@ import {
   attachLibraryPlaylists,
   attachRekordboxPlaylists,
   beginRekordboxBatch,
+  type RekordboxRepoint,
   redirectRekordboxRepoint,
   rekordboxBatchOpen,
 } from './rekordboxBatch'
@@ -200,7 +202,7 @@ import {
   detectTraktorNmlPaths,
   sameCollection,
 } from './traktorNmlPath'
-import { type QueuedNmlPatch, syncQueuedPatches } from './traktorPatchQueue'
+import { type QueuedNmlPatch, queuedNmlPatch, syncQueuedPatches } from './traktorPatchQueue'
 import { registerTraktorPlaylistEditIpc } from './traktorPlaylistEditIpc'
 import { nmlPath } from './traktorPlaylists'
 import { registerTraktorPlaylistsIpc } from './traktorPlaylistsIpc'
@@ -213,7 +215,19 @@ import { armUpdateRecheck } from './updateRecheck'
 import { createUpdateRetry } from './updateRetry'
 import { registerUsbExportIpc } from './usbExportIpc'
 import { checkFile, fileReaders } from './verifyFile'
-import { checkAppleMusic, musicReaders } from './verifyMusic'
+import {
+  libraryReaders,
+  registerVerifyIpc,
+  snapshotLibraries,
+  verifyUpdateSender,
+} from './verifyIpc'
+import { checkAppleMusic, type MusicExpect, musicReaders } from './verifyMusic'
+import {
+  createVerifyRegistry,
+  type FlushOutcome,
+  type QueueApplied,
+  type VerifyEntry,
+} from './verifyRegistry'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
 import { loadWindowState, resolveWindowBounds, saveWindowState } from './windowState'
@@ -309,7 +323,10 @@ const rekordboxQueue = createRekordboxQueue({
       sessionBackup: (path) => sessions.rekordbox.ensure(path),
       realPath: (p: string) => realpathSync(p),
     }),
-  repoint: (collectionPath, list) => repointRekordbox(collectionPath, list, sessions),
+  repoint: (collectionPath, list) => {
+    queueRepointed.rekordbox = 'written'
+    return repointRekordbox(collectionPath, list, sessions)
+  },
   nodeStamps: async (collectionPath) => readNodeStamps(collectionPath),
   onChange: (state) => broadcast('rekordbox:queueChanged', state),
 })
@@ -333,6 +350,7 @@ const adjustProvisionalCues = (): void =>
 const announceApplied = (result: QueueApply): void => {
   const notice = appliedNotice(result)
   if (notice) broadcast('rekordbox:queueApplied', notice)
+  verifyQueueApplied('rekordbox', result)
 }
 const rekordboxQueueWatch = watchRekordboxQueue({
   queue: {
@@ -372,6 +390,7 @@ const applyRekordboxQueueQuietly = (serial = serialLibraryFlush): void => {
       announceApplied(result)
       if (stillWaiting(result)) rekordboxQueueWatch.poke()
     },
+    () => verifyQueueApplied('rekordbox', 'threw'),
   )
 }
 const engineLibraryPath = (): string =>
@@ -385,7 +404,10 @@ const engineCueQueue = createRekordboxQueue({
       ensureClosed,
       sessionBackup: (path) => sessions.engine.ensure(path),
     }),
-  repoint: (libraryDir, list) => repointEngineQueued(libraryDir, list, sessions),
+  repoint: (libraryDir, list) => {
+    queueRepointed.engine = 'written'
+    return repointEngineQueued(libraryDir, list, sessions)
+  },
   nodeStamps: async () => ({}),
   onChange: (state) => broadcast('engine:cueQueueChanged', state),
   addsTracks: false,
@@ -393,6 +415,7 @@ const engineCueQueue = createRekordboxQueue({
 const announceEngineApplied = (result: QueueApply): void => {
   const notice = appliedNotice(result)
   if (notice) broadcast('engine:cueQueueApplied', notice)
+  verifyQueueApplied('engine', result)
 }
 const engineCueQueueWatch = watchRekordboxQueue({
   queue: {
@@ -417,6 +440,7 @@ const applyEngineCueQueueQuietly = (serial = serialLibraryFlush): void => {
       announceEngineApplied(result)
       if (stillWaiting(result)) engineCueQueueWatch.poke()
     },
+    () => verifyQueueApplied('engine', 'threw'),
   )
 }
 // The tab reads the collection Settings names or, without one, the newest Traktor found;
@@ -444,7 +468,11 @@ const traktorCueQueue = createRekordboxQueue<QueuedNmlPatch>({
   applyBatch: (nml, ops, ensureClosed) =>
     applyTraktorBatch(nml, ops, { ensureClosed, session: sessions.traktor }),
   repoint: (nml, patches) =>
-    syncQueuedPatches(nml, patches, (path, list) => syncCollection(path, list, sessions.traktor)),
+    syncQueuedPatches(nml, patches, async (path, list) => {
+      const result = await syncCollection(path, list, sessions.traktor)
+      queueRepointed.traktor = traktorWrite(list, result)
+      return result
+    }),
   nodeStamps: async () => ({}),
   onChange: (state) => broadcast('traktor:cueQueueChanged', state),
   addsTracks: false,
@@ -452,6 +480,7 @@ const traktorCueQueue = createRekordboxQueue<QueuedNmlPatch>({
 const announceTraktorApplied = (result: QueueApply): void => {
   const notice = appliedNotice(result)
   if (notice) broadcast('traktor:cueQueueApplied', notice)
+  verifyQueueApplied('traktor', result)
 }
 const traktorCueQueueWatch = watchRekordboxQueue({
   queue: {
@@ -471,10 +500,13 @@ const traktorCueQueueWatch = watchRekordboxQueue({
 const applyTraktorCueQueueAsking = (win: BrowserWindow | null): void => {
   void serialLibraryFlush(() =>
     traktorCueQueue.apply(() => ensureTraktorClosed(win, 'traktorQuitDetailCues')),
-  ).then((result) => {
-    announceTraktorApplied(result)
-    if (stillWaiting(result)) traktorCueQueueWatch.poke()
-  })
+  ).then(
+    (result) => {
+      announceTraktorApplied(result)
+      if (stillWaiting(result)) traktorCueQueueWatch.poke()
+    },
+    () => verifyQueueApplied('traktor', 'threw'),
+  )
 }
 // A conversion run's collection patches held because Traktor stayed open or the write
 // failed: written as soon as Traktor is closed, without asking again. Held for a drive that
@@ -489,8 +521,65 @@ const applyTraktorCueQueueQuietly = (serial = serialLibraryFlush): void => {
       announceTraktorApplied(result)
       if (stillWaiting(result)) traktorCueQueueWatch.poke()
     },
+    () => verifyQueueApplied('traktor', 'threw'),
   )
 }
+// What each conversion is checked against after its batch and each queue apply (see
+// verifyRegistry.ts). A queue apply that repointed tells the registry what it wrote; one
+// that still waits on the program says nothing, the tracks stay pending; any other refusal
+// or a throw is a failed apply, never left pending.
+type VerifyLibrary = 'rekordbox' | 'engine' | 'traktor'
+const queueRepointed: Partial<Record<VerifyLibrary, QueueApplied>> = {}
+function verifyQueueApplied(place: VerifyLibrary, result: QueueApply | 'threw'): void {
+  const written = queueRepointed[place]
+  delete queueRepointed[place]
+  if (result === 'threw' || (result.status === 'refused' && !stillWaiting(result)))
+    void verifyRegistry.afterQueueApplied(place, 'failed')
+  else if (result.status === 'applied' && written)
+    void verifyRegistry.afterQueueApplied(place, written)
+}
+// The repoint each converted file was last given, by where it landed: a retry hands the
+// library the same one again, with its cue shift.
+const recordedRepoints = new Map<string, RekordboxRepoint>()
+const repointOf = (e: VerifyEntry): RekordboxRepoint =>
+  recordedRepoints.get(e.to.normalize('NFC')) ?? { from: e.from, to: e.to }
+const musicUnreadable = async () =>
+  ({ place: 'appleMusic', state: 'unreadable', detail: { key: 'musicUnreadable' } }) as const
+const verifyRegistry = createVerifyRegistry({
+  emit: verifyUpdateSender(() => BrowserWindow.getAllWindows().map((w) => w.webContents)),
+  ...libraryReaders(
+    { rekordbox: rekordboxCollectionPath, engine: engineLibraryPath, traktor: traktorWritePath },
+    { realPath: (p) => realpathSync(p), bootVolume: () => bootVolumeName() },
+  ),
+  readFile: (e) => checkFile(e, fileReaders),
+  // Music exists only on macOS.
+  readMusic:
+    process.platform === 'darwin'
+      ? (e: MusicExpect) => checkAppleMusic(e, musicReaders)
+      : musicUnreadable,
+  // Handed to the queue, which applies it now or once the program closes. True when it
+  // cannot be applied now: the library is not there.
+  requeue: (place, e) => {
+    if (place === 'traktor') {
+      if (e.traktorPatch) traktorCueQueue.enqueue([], [queuedNmlPatch(e.traktorPatch)])
+      applyTraktorCueQueueQuietly()
+      return !traktorWritePath()
+    }
+    if (place === 'engine') {
+      engineCueQueue.enqueue([], [repointOf(e)])
+      applyEngineCueQueueQuietly()
+      return !engineLibraryPath()
+    }
+    rekordboxQueue.enqueue([], [repointOf(e)])
+    applyRekordboxQueueQuietly()
+    return !rekordboxCollectionPath()
+  },
+  exists: (path) =>
+    access(path).then(
+      () => true,
+      () => false,
+    ),
+})
 // A batch adding N tracks that share one album cover used to re-run the ffmpeg encode N
 // times. Shares one prepareProcessedCover per distinct (source, opts) across the
 // concurrent process:track calls a batch fans out into — same module-scoped-per-run
@@ -1477,27 +1566,40 @@ function registerIpc(): void {
   })
 
   // Queued behind any review sync still writing, and the other way round.
+  // The libraries are read back for the batch's tracks inside the same turn of the write
+  // chain: a queue apply the flush started runs after it, so the tracks it holds are already
+  // pending when it lands. A nested end flushed nothing; the outer one reads them all.
   ipcMain.on('process:batch-end', (e) =>
-    moments.runFlush(serialLibraryFlush, rekordboxBatchOpen, (later) =>
-      flushConversionBatch(
-        hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
-        sessions,
-        {
-          enqueue: rekordboxQueue.enqueue,
-          applyQuietly: () => applyRekordboxQueueQuietly(later),
-        },
-        {
-          enqueue: traktorCueQueue.enqueue,
-          state: traktorCueQueue.state,
-          applyQuietly: () => applyTraktorCueQueueQuietly(later),
-        },
-        {
-          enqueue: engineCueQueue.enqueue,
-          applyQuietly: () => applyEngineCueQueueQuietly(later),
-        },
-      ),
-    ),
+    moments.runFlush(serialLibraryFlush, rekordboxBatchOpen, async (later) => {
+      let outcome: FlushOutcome = { rekordbox: 'failed', engine: 'failed', traktor: 'failed' }
+      try {
+        const flushed = await flushConversionBatch(
+          hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
+          sessions,
+          {
+            enqueue: rekordboxQueue.enqueue,
+            applyQuietly: () => applyRekordboxQueueQuietly(later),
+          },
+          {
+            enqueue: traktorCueQueue.enqueue,
+            state: traktorCueQueue.state,
+            applyQuietly: () => applyTraktorCueQueueQuietly(later),
+          },
+          {
+            enqueue: engineCueQueue.enqueue,
+            applyQuietly: () => applyEngineCueQueueQuietly(later),
+          },
+        )
+        for (const repoint of flushed.repoints)
+          recordedRepoints.set(repoint.to.normalize('NFC'), repoint)
+        outcome = flushed
+      } finally {
+        if (!rekordboxBatchOpen()) await verifyRegistry.afterFlush(outcome)
+      }
+    }),
   )
+
+  registerVerifyIpc(verifyRegistry)
 
   ipcMain.handle('library:syncTags', (e, updates: LibraryTagUpdate[]) =>
     syncTagsInLibraries(
@@ -1787,6 +1889,21 @@ function registerIpc(): void {
         return redirectNmlPatch(to, landed, toNmlLocation(landed))
       },
       verifyFile: (expect, signal) => checkFile(expect, fileReaders, { signal }),
+      // Read only in the libraries that will follow the file.
+      snapshotLibraries: (from) => {
+        const s = getSettings()
+        return snapshotLibraries(
+          from,
+          {
+            rekordbox: s.syncRekordbox ? rekordboxCollectionPath() : '',
+            engine: s.syncEngineDj ? engineLibraryPath() : '',
+          },
+          (p) => realpathSync(p),
+        )
+      },
+      // The Traktor patch is recorded inside the conversion; the job never sees it.
+      registerVerification: (entry) =>
+        verifyRegistry.register({ ...entry, traktorPatch: recordedNmlPatch(entry.source) }),
       realPath: (p) => realpathSync(p),
       // Music exists only on macOS, where the Music step is the only caller.
       verifyMusic:

@@ -124,6 +124,7 @@ describe('verify registry', () => {
     expect(deps.emit).toHaveBeenCalledWith('a', {
       status: 'ok',
       checks: [ok('file', 'fileIdentical'), ok('rekordbox')],
+      seq: 1,
     })
     expect(registry.get('b')).toEqual({
       status: 'ok',
@@ -318,6 +319,7 @@ describe('verify registry', () => {
     expect(deps.emit).toHaveBeenCalledWith('a', {
       status: 'ok',
       checks: [ok('file', 'fileIdentical'), ok('rekordbox'), ok('engine')],
+      seq: 2,
     })
   })
 
@@ -491,7 +493,7 @@ describe('verify registry', () => {
           { place: 'file', state: 'mismatch', detail: { key: 'fileSourceGone', params: { kept } } },
         ],
       })
-      expect(deps.emit).toHaveBeenCalledWith('a', registry.get('a'))
+      expect(deps.emit).toHaveBeenCalledWith('a', { ...registry.get('a'), seq: 1 })
     },
   )
 
@@ -586,6 +588,7 @@ describe('verify registry', () => {
     expect(deps.emit).toHaveBeenCalledWith('x', {
       status: 'ok',
       checks: [ok('file', 'fileIdentical'), ok('rekordbox')],
+      seq: 1,
     })
   })
 
@@ -616,6 +619,7 @@ describe('verify registry', () => {
     expect(deps.emit).toHaveBeenLastCalledWith('m', {
       status: 'ok',
       checks: [ok('file', 'fileIdentical'), ok('appleMusic', 'musicOne')],
+      seq: 2,
     })
   })
 
@@ -700,6 +704,46 @@ describe('verify registry', () => {
       { patch: p, before: 'a.aiff', stranded: false },
     ])
     expect(stateOf(registry.get('a'), 'traktor')).toBe('ok')
+  })
+
+  // The renderer applies an update only for the conversion it holds and only when it is newer
+  // than what it has: the result came back as seq 0, so every later word must count up.
+  it('every emit names its conversion and counts up across the flush, a queue apply and a retry', async () => {
+    const { deps, registry } = setup()
+    const checks = [ok('file', 'fileIdentical'), checking('rekordbox')]
+    registry.register(
+      entry('a', { verification: { status: 'checking', checks, job: 'job-1', seq: 0 } }),
+    )
+    deps.readRekordbox.mockResolvedValueOnce([mismatch('rekordbox', 'rekordboxStillOld')])
+    await registry.afterFlush(written)
+    await registry.retry('a')
+    await registry.afterQueueApplied('rekordbox', 'written')
+
+    const sent = deps.emit.mock.calls.map(([, v]) => [v.job, v.seq])
+    expect(sent).toEqual([
+      ['job-1', 1],
+      ['job-1', 2],
+      ['job-1', 3],
+    ])
+  })
+
+  it('a conversion of the same track again counts its own updates from the start', async () => {
+    const { deps, registry } = setup()
+    const checks = [ok('file', 'fileIdentical'), checking('rekordbox')]
+    deps.readRekordbox.mockResolvedValueOnce([mismatch('rekordbox', 'rekordboxStillOld')])
+    registry.register(
+      entry('a', { verification: { status: 'checking', checks, job: 'j1', seq: 0 } }),
+    )
+    await registry.afterFlush(written)
+    registry.register(
+      entry('a', { verification: { status: 'checking', checks, job: 'j2', seq: 0 } }),
+    )
+    await registry.afterFlush(written)
+
+    expect(deps.emit.mock.calls.map(([, v]) => [v.job, v.seq])).toEqual([
+      ['j1', 1],
+      ['j2', 1],
+    ])
   })
 
   it('retry on a track it does not know rejects with an error key', async () => {

@@ -4,6 +4,7 @@ import {
   abandonNmlBatch,
   beginNmlBatch,
   endNmlBatch,
+  recordedNmlPatch,
   recordNmlPatch,
   redirectNmlPatch,
 } from './nmlBatch'
@@ -200,5 +201,21 @@ describe('nmlBatch', () => {
 
       expect(endNmlBatch()[0].newFile).toBeUndefined()
     })
+  })
+
+  // The check after the batch judges Traktor against the patch the conversion recorded:
+  // the last one for that source, the one the flush will write.
+  it('hands back the patch last recorded for a source while its batch is open', () => {
+    beginNmlBatch()
+    const first = patch('x.aiff')
+    const second = patch('x.aiff')
+    recordNmlPatch(first, { input: '/m/x.aiff', output: '/m/x.wav' })
+    recordNmlPatch(patch('y.aiff'), { input: '/m/y.aiff', output: '/m/y.wav' })
+    recordNmlPatch(second, { input: '/m/x.aiff', output: '/m/x.flac' })
+
+    expect(recordedNmlPatch('/m/x.aiff')).toBe(second)
+    expect(recordedNmlPatch('/m/z.aiff')).toBeUndefined()
+    endNmlBatch()
+    expect(recordedNmlPatch('/m/x.aiff')).toBeUndefined()
   })
 })

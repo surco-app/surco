@@ -144,7 +144,7 @@ describe('runProcessTrack — plain conversion', () => {
       musicPersistentId: undefined,
       normalizeSkipped: false,
       outputIdentity: 'dev:1',
-      verification: { status: 'ok', checks: [fileOk] },
+      verification: { status: 'ok', checks: [fileOk], job: expect.any(String), seq: 0 },
     })
   })
 
@@ -1838,7 +1838,12 @@ describe('runProcessTrack — Apple Music only', () => {
       addedToMusicOnly: true,
       musicPersistentId: 'added-id',
       normalizeSkipped: false,
-      verification: { status: 'ok', checks: [fileOk, musicOkDefault] },
+      verification: {
+        status: 'ok',
+        checks: [fileOk, musicOkDefault],
+        job: expect.any(String),
+        seq: 0,
+      },
     })
   })
 
@@ -3069,6 +3074,8 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect(result.verification).toEqual({
       status: 'checking',
       checks: [fileOk, checking('rekordbox'), checking('engine'), checking('traktor')],
+      job: expect.any(String),
+      seq: 0,
     })
     expect(registerVerification).toHaveBeenCalledOnce()
     const entry = registerVerification.mock.calls[0][0]
@@ -3107,6 +3114,23 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect(registerVerification.mock.calls[0][0].engine).toBe('unreadable')
   })
 
+  // The renderer keeps an update only for the conversion it holds and only when newer than
+  // the result: converting the same track again must not inherit the last one's count.
+  it('each conversion names its own job and starts its count at 0', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const deps = makeDeps({ registerVerification })
+
+    const first = await runProcessTrack(job(), deps)
+    const second = await runProcessTrack(job(), deps)
+
+    expect(first.verification?.seq).toBe(0)
+    expect(second.verification?.seq).toBe(0)
+    expect(first.verification?.job).toEqual(expect.any(String))
+    expect(second.verification?.job).toEqual(expect.any(String))
+    expect(second.verification?.job).not.toBe(first.verification?.job)
+    expect(registerVerification.mock.calls[1][0].verification.job).toBe(second.verification?.job)
+  })
+
   it('the success result carries the file mismatch instead of throwing', async () => {
     const missing: PlaceCheck = { place: 'file', state: 'mismatch', detail: { key: 'fileMissing' } }
     const deps = makeDeps({ verifyFile: vi.fn(async () => missing) })
@@ -3114,7 +3138,12 @@ describe('runProcessTrack — checking what it wrote', () => {
     const result = await runProcessTrack(job(), deps)
 
     expect(result.outputPath).toBe('/out/Artist - Title.aiff')
-    expect(result.verification).toEqual({ status: 'mismatch', checks: [missing] })
+    expect(result.verification).toEqual({
+      status: 'mismatch',
+      checks: [missing],
+      job: expect.any(String),
+      seq: 0,
+    })
   })
 
   // The file is written by then: a reader that throws only means it could not be read.
@@ -3130,6 +3159,8 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect(result.verification).toEqual({
       status: 'mismatch',
       checks: [{ place: 'file', state: 'unreadable', detail: { key: 'fileUnreadable' } }],
+      job: expect.any(String),
+      seq: 0,
     })
   })
 
@@ -3539,6 +3570,60 @@ describe('runProcessTrack — checking what it wrote', () => {
       state: 'mismatch',
       detail: { key: 'fileMissing' },
     })
+  })
+
+  // The repoints were recorded on the temp, which is deleted by now: a location read late
+  // moves them to the file Music plays, or the libraries would be pointed at nothing.
+  it('Music only points the libraries at a location read late', async () => {
+    const redirectRepoint = vi.fn<NonNullable<ProcessTrackDeps['redirectRepoint']>>(() => false)
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const deps = makeDeps({
+      platform: 'darwin',
+      settings: settings({ addToAppleMusic: true, keepOutputCopy: false }),
+      appleMusicEntryLocation: vi
+        .fn<ProcessTrackDeps['appleMusicEntryLocation']>()
+        .mockResolvedValueOnce('')
+        .mockResolvedValue('/Users/me/Music/Media/Late.aiff'),
+      redirectRepoint,
+      registerVerification,
+    })
+
+    await runProcessTrack(job({ meta }), deps)
+
+    expect(redirectRepoint).toHaveBeenCalledWith(
+      expect.stringMatching(/Artist - Title\.aiff$/),
+      '/Users/me/Music/Media/Late.aiff',
+    )
+    expect(registerVerification.mock.calls[0][0].traktorStranded).toBe(true)
+  })
+
+  // With no file to follow, what the libraries hold cannot be judged: their repoints still
+  // name the deleted temp.
+  it('Music only with no location lists the libraries as unreadable, not as checking', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const deps = makeDeps({
+      platform: 'darwin',
+      settings: settings({
+        addToAppleMusic: true,
+        keepOutputCopy: false,
+        syncTraktor: true,
+        traktorNmlPath: '/t/collection.nml',
+      }),
+      appleMusicEntryLocation: vi.fn(async () => ''),
+      snapshotLibraries: vi.fn<NonNullable<ProcessTrackDeps['snapshotLibraries']>>(async () => ({
+        rekordbox: snapshot,
+      })),
+      registerVerification,
+    })
+
+    const result = await runProcessTrack(job({ meta }), deps)
+
+    const states = result.verification?.checks.map((c) => [c.place, c.state, c.detail.key])
+    expect(states).toContainEqual(['rekordbox', 'unreadable', 'rekordboxUnreadable'])
+    expect(states).toContainEqual(['traktor', 'unreadable', 'traktorUnreadable'])
+    const entry = registerVerification.mock.calls[0][0]
+    expect(entry.places.has('rekordbox')).toBe(false)
+    expect(entry.places.has('traktor')).toBe(false)
   })
 
   it('a cancel while the job reads back what it wrote ends it as cancelled', async () => {

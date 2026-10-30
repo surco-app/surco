@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
@@ -998,6 +999,12 @@ export async function runProcessTrack(
           ? await deps.appleMusicEntryLocation(musicPersistentId).catch(() => '')
           : ''
       finalPath = musicOnly ? landed?.path || entryAt : target
+      // The repoints still name the temp, deleted by now: they follow the file Music plays.
+      if (musicOnly && !landed?.path && entryAt)
+        landed = {
+          path: entryAt,
+          traktorFollowed: deps.redirectRepoint?.(target, entryAt) !== false,
+        }
       fileExpect = {
         path: finalPath,
         ext: written.plan.ext,
@@ -1045,18 +1052,30 @@ export async function runProcessTrack(
     if (verifying.signal.aborted) throw errorWithKey('conversionCancelled')
     const traktor = settings.syncTraktor && !!settings.traktorNmlPath
     const engineListed = (before.engine && before.engine !== 'absent') || !!addedToEngineDj
+    // Music only with no location: the repoints still name the deleted temp, so what the
+    // libraries hold cannot be judged against any file.
+    const followed = !musicOnly || finalPath !== ''
+    const library = (place: 'rekordbox' | 'engine' | 'traktor'): PlaceCheck =>
+      followed
+        ? checking(place)
+        : { place, state: 'unreadable', detail: { key: `${place}Unreadable` } }
     const places = new Set<VerifyPlace>(['file'])
     if (musicCheck) places.add('appleMusic')
-    if (before.rekordbox) places.add('rekordbox')
-    if (before.engine || addedToEngineDj) places.add('engine')
-    if (traktor) places.add('traktor')
-    const verification = withChecks({ status: 'checking', checks: [] }, [
-      fileCheck,
-      ...(musicCheck ? [musicCheck] : []),
-      ...(before.rekordbox && before.rekordbox !== 'absent' ? [checking('rekordbox')] : []),
-      ...(engineListed ? [checking('engine')] : []),
-      ...(traktor ? [checking('traktor')] : []),
-    ])
+    if (followed && before.rekordbox) places.add('rekordbox')
+    if (followed && (before.engine || addedToEngineDj)) places.add('engine')
+    if (followed && traktor) places.add('traktor')
+    // Named per conversion, not per track: a track converted again starts its own count.
+    const verification = {
+      ...withChecks({ status: 'checking', checks: [] }, [
+        fileCheck,
+        ...(musicCheck ? [musicCheck] : []),
+        ...(before.rekordbox && before.rekordbox !== 'absent' ? [library('rekordbox')] : []),
+        ...(engineListed ? [library('engine')] : []),
+        ...(traktor ? [library('traktor')] : []),
+      ]),
+      job: randomUUID(),
+      seq: 0,
+    }
     deps.registerVerification?.({
       trackId: job.id,
       from: libraryFrom,
