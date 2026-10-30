@@ -21,6 +21,7 @@ function track(over: Partial<TrackItem> = {}): TrackItem {
     query: '',
     status: 'done',
     meta: {},
+    verification: { status: 'ok', checks: [] },
     ...over,
   } as TrackItem
 }
@@ -100,6 +101,31 @@ describe('supersededFile', () => {
   it('never offers the file the conversion just wrote', () => {
     expect(
       supersededFile(track({ replacesPath: '/m/new.aiff', outputPath: '/m/new.aiff' })),
+    ).toBeNull()
+  })
+
+  // The old file is the only copy until everything that points at the new one was re-read:
+  // offering the trash before that invites destroying the original on an unverified result.
+  it.each(['checking', 'pending', 'mismatch'] as const)(
+    'offers nothing while the verification is %s',
+    (status) => {
+      expect(
+        supersededFile(
+          track({
+            replacesPath: '/m/old.mp3',
+            outputPath: '/m/new.aiff',
+            verification: { status, checks: [] },
+          }),
+        ),
+      ).toBeNull()
+    },
+  )
+
+  it('offers nothing when the track has no verification', () => {
+    expect(
+      supersededFile(
+        track({ replacesPath: '/m/old.mp3', outputPath: '/m/new.aiff', verification: undefined }),
+      ),
     ).toBeNull()
   })
 })

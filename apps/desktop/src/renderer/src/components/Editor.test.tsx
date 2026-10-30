@@ -2599,6 +2599,7 @@ describe('Editor clean up previous files', () => {
       status: 'done',
       inputPath: '/music/a.wav',
       outputPath: '/out/a.aiff',
+      verification: { status: 'ok', checks: [] },
     })
     expect(screen.getByTestId('clean-up-previous')).toHaveAccessibleName(/previous file/)
     fireEvent.click(screen.getByTestId('clean-up-previous'))
@@ -2618,6 +2619,7 @@ describe('Editor clean up previous files', () => {
       inputPath: '/music/a.wav',
       outputPath: '/out/a.aiff',
       replacesPath: '/old/a.mp3',
+      verification: { status: 'ok', checks: [] },
     })
     expect(screen.getAllByTestId('clean-up-previous')).toHaveLength(1)
     expect(screen.getByTestId('clean-up-previous')).toHaveAccessibleName(/2/)
@@ -2715,6 +2717,7 @@ describe('Editor replace old Apple Music copy', () => {
         outputPath: '/out/a.aiff',
         musicStatus: 'added',
         musicPersistentId: 'NEWCOPY123456789',
+        verification: { status: 'ok', checks: [] },
         duration: 365,
         meta: { title: 'Save My Love (Original Mix)', artist: 'DJ Mofly' },
       },
@@ -2742,6 +2745,7 @@ describe('Editor replace old Apple Music copy', () => {
         id: 'a',
         status: 'done',
         outputPath: '/out/a.aiff',
+        verification: { status: 'ok', checks: [] },
         duration: 365,
         meta: { title: 'Save My Love (Original Mix)', artist: 'DJ Mofly' },
       },

@@ -44,9 +44,14 @@ export function selectionStatus(
   const inMusicLibraryOnly = showDone && !revealPath
   // A real conversion writes a separate file and leaves the source at its own path;
   // an in-place export rewrites the source, so inputPath === outputPath and there is
-  // nothing distinct to trash. Single-track only, and gone once the original is trashed.
+  // nothing distinct to trash. Single-track only, gone once the original is trashed, and
+  // held back until the self-check found everything in place.
   const canDeleteOriginal =
-    !isMulti && !!item.outputPath && item.outputPath !== item.inputPath && !item.originalTrashed
+    !isMulti &&
+    !!item.outputPath &&
+    item.outputPath !== item.inputPath &&
+    !item.originalTrashed &&
+    item.verification?.status === 'ok'
   const musicAdding = isMulti
     ? multiTracks.some((t) => t.musicStatus === 'adding')
     : item.musicStatus === 'adding'

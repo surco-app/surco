@@ -12,6 +12,9 @@ import type { TrackItem } from '../types'
 // still running must leave every file exactly where it was.
 export function supersededFile(track: TrackItem): string | null {
   if (track.status !== 'done') return null
+  // The old file stays the only trusted copy until every place was re-read and agrees:
+  // checking, pending, mismatch and a missing verification all keep it off the offer.
+  if (track.verification?.status !== 'ok') return null
   const superseded = track.replacesPath ?? track.supersededPath
   if (!superseded || track.supersededTrashed) return null
   // A replacement that failed in Music or had to keep the old entry left that entry still

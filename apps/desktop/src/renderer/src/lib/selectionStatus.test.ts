@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { Verification } from '../../../shared/verification'
 import type { TrackItem } from '../types'
 import { selectionStatus } from './selectionStatus'
 
@@ -14,7 +15,21 @@ function track(over: Partial<TrackItem> & { id: string }): TrackItem {
   } as TrackItem
 }
 
+const ok: Verification = { status: 'ok', checks: [] }
+
 describe('selectionStatus', () => {
+  // The source is the only copy until the result was re-read, so the clean-up offer waits.
+  it('the original is not offered for cleanup unless verified', () => {
+    const base = { id: 'a', status: 'done', outputPath: '/out/a.aiff' } as const
+    const offered = (verification: TrackItem['verification']) =>
+      selectionStatus(track({ ...base, verification }), undefined, true).canDeleteOriginal
+    expect(offered({ status: 'checking', checks: [] })).toBe(false)
+    expect(offered({ status: 'pending', checks: [] })).toBe(false)
+    expect(offered({ status: 'mismatch', checks: [] })).toBe(false)
+    expect(offered(undefined)).toBe(false)
+    expect(offered(ok)).toBe(true)
+  })
+
   // The done footer must only appear once EVERY selected track converted — showing it
   // while one is still pending would offer reveal/add actions for files that don't
   // exist yet.
@@ -40,12 +55,13 @@ describe('selectionStatus', () => {
   it('never offers delete-original for an in-place export', () => {
     const inPlace = track({ id: 'a', status: 'done', outputPath: '/m/a.wav' })
     expect(selectionStatus(inPlace, undefined, true).canDeleteOriginal).toBe(false)
-    const real = track({ id: 'a', status: 'done', outputPath: '/out/a.aiff' })
+    const real = track({ id: 'a', status: 'done', outputPath: '/out/a.aiff', verification: ok })
     expect(selectionStatus(real, undefined, true).canDeleteOriginal).toBe(true)
     const trashed = track({
       id: 'a',
       status: 'done',
       outputPath: '/out/a.aiff',
+      verification: ok,
       originalTrashed: true,
     })
     expect(selectionStatus(trashed, undefined, true).canDeleteOriginal).toBe(false)
@@ -76,6 +92,7 @@ describe('selectionStatus superseded files', () => {
       status: 'done',
       outputPath: `/m/${id}.aiff`,
       replacesPath: `/m/${id}-old.mp3`,
+      verification: ok,
     })
 
   it('collects every superseded file across the selection with the track that replaced it', () => {
@@ -90,7 +107,12 @@ describe('selectionStatus superseded files', () => {
 
   it('collects the file a format change superseded in Apple Music', () => {
     const a = replaced('a')
-    const b = track({ id: 'b', status: 'done', supersededPath: '/lib/b.aiff' })
+    const b = track({
+      id: 'b',
+      status: 'done',
+      supersededPath: '/lib/b.aiff',
+      verification: ok,
+    })
 
     expect(selectionStatus(a, [a, b], true).superseded).toEqual([
       { trackId: 'a', path: '/m/a-old.mp3' },
