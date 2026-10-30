@@ -529,7 +529,9 @@ describe('CopiesScreen music files', () => {
   // to the folder to work out what happened. outputPath is already on the entry.
   it('names the file that took the original place', () => {
     renderMusic([entry({ outputPath: '/Music/Crate/Track.flac' })])
-    expect(screen.getByTestId('trash-row')).toHaveTextContent('Track.flac')
+    expect(screen.getByTestId('trash-reason')).toHaveTextContent(
+      i18n.t('copies.music.replacedBy', { name: 'Track.flac' }),
+    )
   })
 
   // "Track (Original Mix)" and "Track (Extended Mix)" cut at the same width look alike, and
@@ -660,11 +662,25 @@ describe('CopiesScreen music files', () => {
     expect(screen.queryByTestId('trash-usage')).not.toBeInTheDocument()
   })
 
-  it('names what a renamed original became, starting the line as a sentence', () => {
+  it('names what a renamed original became, in the words of the list', () => {
     renderMusic([entry({ reason: 'renamed', outputPath: '/Music/Crate/Track.flac' })])
     expect(screen.getByTestId('trash-reason')).toHaveTextContent(
-      `${i18n.t('trash.renamedTo')} Track.flac`,
+      i18n.t('copies.music.renamedTo', { name: 'Track.flac' }),
     )
+    expect(es.copies.music.renamedTo).toBe('Renombrado por una conversión a «{{name}}»')
+  })
+
+  it('says only what happened when the conversion kept the name', () => {
+    renderMusic([entry({ reason: 'replaced', outputPath: '/Music/Crate/Track.aiff' })])
+    expect(screen.getByTestId('trash-reason')).toHaveTextContent(
+      new RegExp(`^${i18n.t('trash.reason.replaced')}$`),
+    )
+    expect(es.trash.reason).toEqual({
+      replaced: 'sustituido por una conversión',
+      renamed: 'renombrado por una conversión',
+      deleted: 'borrado desde Surco',
+      'restored-over': 'apartado al restaurar otro',
+    })
   })
 
   // Emptying is the one irreversible action here, so it asks once, in place, and only

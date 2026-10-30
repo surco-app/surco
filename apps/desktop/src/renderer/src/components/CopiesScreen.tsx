@@ -400,14 +400,11 @@ function MusicFiles({
                       data-testid="trash-reason"
                       className="truncate text-[12.5px] text-fg-faint first-letter:uppercase"
                     >
-                      {replacement ? (
-                        <>
-                          {tr(entry.reason === 'renamed' ? 'trash.renamedTo' : 'trash.replacedBy')}{' '}
-                          <span className="text-fg-muted">{replacement}</span>
-                        </>
-                      ) : (
-                        tr(`trash.reason.${entry.reason}`)
-                      )}
+                      {replacement && entry.reason === 'renamed'
+                        ? tr('copies.music.renamedTo', { name: replacement })
+                        : replacement && replacement !== entry.name
+                          ? tr('copies.music.replacedBy', { name: replacement })
+                          : tr(`trash.reason.${entry.reason}`)}
                     </div>
                     <div
                       title={folderOf(entry.originalPath)}

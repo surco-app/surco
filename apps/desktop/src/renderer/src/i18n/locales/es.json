@@ -231,8 +231,6 @@
       "restored-over": "Apartados"
     },
     "search": "Buscar por título o carpeta",
-    "replacedBy": "sustituido por",
-    "renamedTo": "renombrado a",
     "expiring_one": "queda {{count}} día",
     "expiring_other": "quedan {{count}} días",
     "noMatches": "Nada coincide con la búsqueda",
@@ -2848,7 +2846,9 @@
       "show": "Ver archivos",
       "hide": "Ocultar archivos",
       "expires": "Se borran solos a los {{days}} días.",
-      "stateEmpty": "Nada guardado"
+      "stateEmpty": "Nada guardado",
+      "renamedTo": "Renombrado por una conversión a «{{name}}»",
+      "replacedBy": "Sustituido por «{{name}}» en una conversión"
     },
     "footer": "De cada programa guardamos las últimas 5 copias. Los archivos de música, {{days}} días.",
     "reveal": "Mostrar en Finder",

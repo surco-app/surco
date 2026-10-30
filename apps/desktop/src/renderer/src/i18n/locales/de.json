@@ -231,8 +231,6 @@
       "restored-over": "Beiseitegelegt"
     },
     "search": "Nach Titel oder Ordner suchen",
-    "replacedBy": "ersetzt durch",
-    "renamedTo": "umbenannt in",
     "expiring_one": "noch {{count}} Tag",
     "expiring_other": "noch {{count}} Tage",
     "noMatches": "Nichts passt zur Suche",
@@ -2848,7 +2846,9 @@
       "show": "Dateien anzeigen",
       "hide": "Dateien ausblenden",
       "expires": "Werden nach {{days}} Tagen von selbst gelöscht.",
-      "stateEmpty": "Nichts gespeichert"
+      "stateEmpty": "Nichts gespeichert",
+      "renamedTo": "Durch eine Konvertierung umbenannt in „{{name}}“",
+      "replacedBy": "Bei einer Konvertierung durch „{{name}}“ ersetzt"
     },
     "footer": "Von jedem Programm behalten wir die letzten 5 Backups. Musikdateien {{days}} Tage.",
     "reveal": "Im Finder zeigen",

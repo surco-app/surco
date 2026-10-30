@@ -231,8 +231,6 @@
       "restored-over": "Mis de côté"
     },
     "search": "Rechercher par titre ou dossier",
-    "replacedBy": "remplacé par",
-    "renamedTo": "renommé en",
     "expiring_one": "{{count}} jour restant",
     "expiring_other": "{{count}} jours restants",
     "noMatches": "Aucun résultat pour cette recherche",
@@ -2848,7 +2846,9 @@
       "show": "Voir les fichiers",
       "hide": "Masquer les fichiers",
       "expires": "Ils s'effacent d'eux-mêmes après {{days}} jours.",
-      "stateEmpty": "Rien de conservé"
+      "stateEmpty": "Rien de conservé",
+      "renamedTo": "Renommé par une conversion en « {{name}} »",
+      "replacedBy": "Remplacé par « {{name}} » lors d'une conversion"
     },
     "footer": "Pour chaque logiciel, nous gardons les 5 dernières sauvegardes. Pour les fichiers de musique, {{days}} jours.",
     "reveal": "Afficher dans le Finder",

@@ -231,8 +231,6 @@
       "restored-over": "Postos de lado"
     },
     "search": "Buscar por título ou pasta",
-    "replacedBy": "substituído por",
-    "renamedTo": "renomeado para",
     "expiring_one": "resta {{count}} dia",
     "expiring_other": "restam {{count}} dias",
     "noMatches": "Nada corresponde à busca",
@@ -2848,7 +2846,9 @@
       "show": "Ver arquivos",
       "hide": "Ocultar arquivos",
       "expires": "São apagados sozinhos após {{days}} dias.",
-      "stateEmpty": "Nada guardado"
+      "stateEmpty": "Nada guardado",
+      "renamedTo": "Renomeado por uma conversão para “{{name}}”",
+      "replacedBy": "Substituído por “{{name}}” em uma conversão"
     },
     "footer": "De cada programa guardamos as últimas 5 cópias. Os arquivos de música, {{days}} dias.",
     "reveal": "Mostrar no Finder",
