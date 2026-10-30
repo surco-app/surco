@@ -261,7 +261,7 @@ describe('restoreCopy', () => {
     expect(rekordboxPendingLog(db)).toBe(true)
   })
 
-  it('refuses when Engine still has an unfolded wal or journal', async () => {
+  it('sees an Engine wal or journal with data as a log still to fold', async () => {
     const db = collection('Engine Library/Database2', 'm.db', 'db')
     expect(enginePendingLog(db)).toBe(false)
     writeFileSync(`${db}-journal`, 'pages')
@@ -299,6 +299,26 @@ describe('restoreCopy', () => {
     expect(readFileSync(path, 'utf8')).toBe('after')
     expect(readFileSync(other, 'utf8')).toBe('old')
     expect(await restoreSlot(path)).toBeNull()
+  })
+
+  it('on Windows a copy whose path differs only in letter case is the same collection', async () => {
+    const platform = process.platform
+    Object.defineProperty(process, 'platform', { value: 'win32', configurable: true })
+    try {
+      const path = collection('Traktor', 'collection.nml', 'before')
+      const copy = await takeCopy(path, [], 'run', 1)
+      writeFileSync(path, 'after')
+      writeFileSync(
+        join(copyFolder(copy), 'copy.json'),
+        JSON.stringify({ ...copy, collectionPath: path.toUpperCase() }),
+      )
+      expect(await restoreCopy({ collectionPath: path, copyId: copy.id }, deps())).toEqual({
+        ok: true,
+      })
+      expect(readFileSync(path, 'utf8')).toBe('before')
+    } finally {
+      Object.defineProperty(process, 'platform', { value: platform, configurable: true })
+    }
   })
 
   it('refuses an id that is not among the copies', async () => {

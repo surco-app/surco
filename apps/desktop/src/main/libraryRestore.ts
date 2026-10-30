@@ -3,6 +3,7 @@ import { copyFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import log from 'electron-log/main'
 import type { LibraryCopy, RestoreRefusal, RestoreResult } from '../shared/types'
+import { collectionKey } from './libraryBackups'
 import { copyFolder, listCopies, restoreSlot, stageRestoreCopy } from './libraryHistory'
 import { removeTemp, renameWithRetry } from './renameRetry'
 
@@ -46,7 +47,8 @@ export async function restoreCopy(
 ): Promise<RestoreResult> {
   const copy = await findCopy(req.collectionPath, req.copyId)
   if (!copy) return { ok: false, reason: 'not-found' }
-  if (copy.collectionPath !== req.collectionPath) return { ok: false, reason: 'other-collection' }
+  if (collectionKey(copy.collectionPath) !== collectionKey(req.collectionPath))
+    return { ok: false, reason: 'other-collection' }
   try {
     if (!(await deps.ensureClosed())) return { ok: false, reason: 'running' }
     if (deps.pendingLog(req.collectionPath)) return { ok: false, reason: 'pending-log' }

@@ -206,7 +206,7 @@ describe('editRekordboxPlaylist', () => {
   // rekordbox can leave its files read-only, and a copy keeps the mode of what it copied.
   // The user's second edit then found last edit's backups locked and was refused as
   // backup-failed: one read-only copy blocked every write after it.
-  it('backs up again over read-only copies left by the last edit', async () => {
+  it("backs up again over the last edit's read-only backups and keeps the playlist XML in the momento copy", async () => {
     const path = await collection()
     const xmlPath = join(path, '..', 'masterPlaylists6.xml')
     const session = createSessionBackup({
