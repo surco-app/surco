@@ -12,14 +12,17 @@ export interface EngineSnapshot {
   loops: string
 }
 
-// before is the source's row read ahead of the conversion; size is the written file's size
-// on disk. Engine's repoint never adds a row, so a check without a snapshot has nothing to
-// say the row is the same one.
+// What the library said about the source before the conversion: its row, no row at all
+// (Engine does not have the track and is not checked), several rows, or a read that failed.
+export type EngineBefore = EngineSnapshot | 'absent' | 'ambiguous' | 'unreadable'
+
+// size is the written file's size on disk. Engine's repoint never adds a row, so a check
+// without a snapshot has nothing to say the row is the same one.
 export interface EngineExpect {
   from: string
   to: string
   samplesKept: boolean
-  before: EngineSnapshot | null
+  before: EngineBefore
   size: number
 }
 
@@ -38,6 +41,8 @@ const digest = (blob: Uint8Array | null): string =>
   createHash('sha1')
     .update(blob ?? new Uint8Array())
     .digest('hex')
+
+const EMPTY = digest(null)
 
 function rowsFinder(db: EngineDb, libraryDir: string) {
   const rows = db
@@ -58,17 +63,21 @@ function performanceOf(db: EngineDb, id: number): Omit<EngineSnapshot, 'id'> {
 }
 
 // The source's row and its cues, grid and loops as they are before anything writes, so the
-// check can say they survived. Null when the library has no row, or more than one, for the
-// file. A read error throws to the caller.
+// check can say they survived.
 export function snapshotEngineRow(
   db: EngineDb,
   libraryDir: string,
   from: string,
   key: Key,
-): EngineSnapshot | null {
-  const rows = rowsFinder(db, libraryDir)(from, key)
-  if (rows.length !== 1) return null
-  return { id: rows[0].id, ...performanceOf(db, rows[0].id) }
+): EngineBefore {
+  try {
+    const rows = rowsFinder(db, libraryDir)(from, key)
+    if (rows.length === 0) return 'absent'
+    if (rows.length > 1) return 'ambiguous'
+    return { id: rows[0].id, ...performanceOf(db, rows[0].id) }
+  } catch {
+    return 'unreadable'
+  }
 }
 
 const check = (
@@ -109,6 +118,7 @@ function judge(
   e: EngineExpect,
   key: Key,
 ): PlaceCheck {
+  if (e.before === 'unreadable') return check('unreadable', 'engineUnreadable')
   const on = find(e.to, key)
   if (on.length > 1) return check('mismatch', 'engineAmbiguous', { count: on.length })
   if (on.length === 0) {
@@ -120,19 +130,22 @@ function judge(
   }
 
   const row = on[0]
-  if (!e.before) return check('unreadable', 'engineUnreadable')
-  if (row.id !== e.before.id) return check('mismatch', 'engineOtherRow')
+  const before = e.before
+  if (typeof before !== 'object') return check('unreadable', 'engineUnreadable')
+  if (row.id !== before.id) return check('mismatch', 'engineOtherRow')
   const fileType = (row.fileType ?? '').toLowerCase()
+  if (!fileType) return check('mismatch', 'engineNoFileType')
   if (fileType !== extname(e.to).slice(1).toLowerCase())
     return check('mismatch', 'engineStillOld', { format: formatOf(`.${fileType}`) })
   if (row.fileBytes !== e.size) return check('mismatch', 'engineSizeDiffers')
 
   // Engine's repoint only moves the file columns; with the samples kept, a cue, beat or
-  // loop that changed is one the DJ set and lost.
-  if (e.samplesKept) {
-    const now = performanceOf(db, row.id)
-    const changed = PERFORMANCE.find((field) => now[field] !== e.before?.[field])
-    if (changed) return check('mismatch', 'enginePerformanceChanged', { field: changed })
-  }
+  // loop that changed is one the DJ set and lost. A re-encode may move them, but what the
+  // row had must still be there.
+  const now = performanceOf(db, row.id)
+  const changed = PERFORMANCE.find((field) =>
+    e.samplesKept ? now[field] !== before[field] : before[field] !== EMPTY && now[field] === EMPTY,
+  )
+  if (changed) return check('mismatch', 'enginePerformanceChanged', { field: changed })
   return check('ok', 'engineOk', { format: formatOf(extname(e.to)) })
 }

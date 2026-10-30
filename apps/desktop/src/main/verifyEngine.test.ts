@@ -14,8 +14,8 @@ import { engineDbPath, writeEngineLibraryFixture } from './enginePlaylistsFixtur
 import { pathKey } from './libraryPathKey'
 import {
   checkEngine,
+  type EngineBefore,
   type EngineExpect,
-  type EngineSnapshot,
   snapshotEngineRow,
 } from './verifyEngine'
 
@@ -79,10 +79,7 @@ const readOnly = (dir: string) => {
 
 const snapshot = (dir: string, from = FROM) => snapshotEngineRow(readOnly(dir), dir, from, key)
 
-const expectFor = (
-  before: EngineSnapshot | null,
-  over: Partial<EngineExpect> = {},
-): EngineExpect => ({
+const expectFor = (before: EngineBefore, over: Partial<EngineExpect> = {}): EngineExpect => ({
   from: FROM,
   to: TO,
   samplesKept: true,
@@ -92,6 +89,8 @@ const expectFor = (
 })
 
 const checkOne = (dir: string, e: EngineExpect) => checkEngine(readOnly(dir), dir, [e], key)
+
+const idOf = (b: EngineBefore) => (typeof b === 'object' ? b.id : b)
 
 const sha1 = (b: Uint8Array) => createHash('sha1').update(b).digest('hex')
 
@@ -108,14 +107,15 @@ describe('snapshotEngineRow', () => {
     })
   })
 
-  it('a file the library does not have has no snapshot', () => {
-    expect(snapshot(library(), '/Volumes/Public/Musica/Other.aiff')).toBeNull()
+  // Absent means Engine does not have the track, so there is nothing there to check.
+  it('a file the library does not have is absent', () => {
+    expect(snapshot(library(), '/Volumes/Public/Musica/Other.aiff')).toBe('absent')
   })
 
-  it('two rows on the file have no snapshot', () => {
+  it('two rows on the file are ambiguous, not absent', () => {
     const dir = library([FROM, '/Volumes/Public/Musica/Other.aiff'])
     write(dir, 'UPDATE Track SET path = ? WHERE id = 2', `${relative(dir, FROM)}/../Title.aiff`)
-    expect(snapshot(dir)).toBeNull()
+    expect(snapshot(dir)).toBe('ambiguous')
   })
 })
 
@@ -218,8 +218,48 @@ describe('checkEngine', () => {
     const dir = library()
     const before = snapshot(dir)
     repoint(dir, 1)
-    write(dir, 'UPDATE PerformanceData SET beatData = NULL, quickCues = NULL WHERE trackId = 1')
+    write(
+      dir,
+      'UPDATE PerformanceData SET beatData = ? WHERE trackId = 1',
+      beatDataBlob(44100, 44100 * 60, [
+        [0, 0],
+        [44100 * 60, 120],
+      ]),
+    )
     expect(checkOne(dir, expectFor(before, { samplesKept: false }))[0].state).toBe('ok')
+  })
+
+  // A re-encode may move the cues, never wipe them: the DJ set them and Engine has no
+  // other copy.
+  it.each(['quickCues', 'beatData', 'loops'])(
+    'cleared %s after a reencode is enginePerformanceChanged',
+    (field) => {
+      const dir = library()
+      const before = snapshot(dir)
+      repoint(dir, 1)
+      write(dir, `UPDATE PerformanceData SET ${field} = NULL WHERE trackId = 1`)
+      expect(checkOne(dir, expectFor(before, { samplesKept: false }))[0]).toEqual({
+        place: 'engine',
+        state: 'mismatch',
+        detail: { key: 'enginePerformanceChanged', params: { field } },
+      })
+    },
+  )
+
+  it('a reencode of a track with no cues and no grid is ok', () => {
+    const dir = library()
+    write(dir, 'UPDATE PerformanceData SET quickCues = NULL, beatData = NULL, loops = NULL')
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    expect(checkOne(dir, expectFor(before, { samplesKept: false }))[0].state).toBe('ok')
+  })
+
+  it('a row with no fileType is engineNoFileType', () => {
+    const dir = library()
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    write(dir, 'UPDATE Track SET fileType = NULL WHERE id = 1')
+    expect(checkOne(dir, expectFor(before))[0].detail).toEqual({ key: 'engineNoFileType' })
   })
 
   // Engine keeps every path relative to the library folder: compared raw, nothing would
@@ -231,7 +271,7 @@ describe('checkEngine', () => {
     const to = join(music, 'Title.wav')
     write(dir, 'UPDATE Track SET path = ? WHERE id = 1', '../music/Title.aiff')
     const before = snapshot(dir, from)
-    expect(before?.id).toBe(1)
+    expect(idOf(before)).toBe(1)
     repoint(dir, 1, to)
     expect(checkOne(dir, expectFor(before, { from, to }))[0].state).toBe('ok')
   })
@@ -242,7 +282,7 @@ describe('checkEngine', () => {
     const to = '/Volumes/Public/Música/Artist/Café.wav'.normalize('NFC')
     const dir = library([from.normalize('NFD')])
     const before = snapshot(dir, from)
-    expect(before?.id).toBe(1)
+    expect(idOf(before)).toBe(1)
     repoint(dir, 1, to.normalize('NFD'))
     expect(checkOne(dir, expectFor(before, { from, to }))[0].state).toBe('ok')
   })
@@ -255,7 +295,7 @@ describe('checkEngine', () => {
     })
     const dir = library([`${link}/Artist/Title.aiff`])
     const before = snapshotEngineRow(readOnly(dir), dir, FROM, linked)
-    expect(before?.id).toBe(1)
+    expect(idOf(before)).toBe(1)
     repoint(dir, 1, `${link}/Artist/Title.wav`)
     expect(checkEngine(readOnly(dir), dir, [expectFor(before)], linked)[0].state).toBe('ok')
   })
@@ -277,7 +317,7 @@ describe('checkEngine', () => {
   it('two rows still on the source file are engineAmbiguous', () => {
     const dir = library([FROM, '/Volumes/Public/Musica/Other.aiff'])
     write(dir, 'UPDATE Track SET path = ? WHERE id = 2', `${relative(dir, FROM)}/../Title.aiff`)
-    expect(checkOne(dir, expectFor(null))[0].detail).toEqual({
+    expect(checkOne(dir, expectFor('ambiguous'))[0].detail).toEqual({
       key: 'engineAmbiguous',
       params: { count: 2 },
     })
@@ -306,7 +346,26 @@ describe('checkEngine', () => {
   it('a repoint with no snapshot is unreadable, never ok', () => {
     const dir = library()
     repoint(dir, 1)
-    expect(checkOne(dir, expectFor(null))[0]).toEqual({
+    expect(checkOne(dir, expectFor('absent'))[0]).toEqual({
+      place: 'engine',
+      state: 'unreadable',
+      detail: { key: 'engineUnreadable' },
+    })
+  })
+
+  // A failed read is not "Engine does not have it": the caller must mark the track
+  // unreadable rather than skip Engine.
+  it('a snapshot that fails to read is unreadable, not absent', () => {
+    const dir = library()
+    const handle = readOnly(dir)
+    opened.splice(opened.indexOf(handle), 1)
+    handle.close()
+    expect(snapshotEngineRow(handle, dir, FROM, key)).toBe('unreadable')
+  })
+
+  it('a check whose snapshot failed is unreadable whatever the row says', () => {
+    const dir = library()
+    expect(checkOne(dir, expectFor('unreadable'))[0]).toEqual({
       place: 'engine',
       state: 'unreadable',
       detail: { key: 'engineUnreadable' },
@@ -364,7 +423,7 @@ describe('checkEngine', () => {
     const handle = readOnly(dir)
     expect(handle.readonly).toBe(true)
     expect(checkEngine(handle, dir, [expectFor(before)], key)[0].state).toBe('ok')
-    expect(snapshotEngineRow(handle, dir, TO, key)?.id).toBe(1)
+    expect(idOf(snapshotEngineRow(handle, dir, TO, key))).toBe(1)
     expect({ sha: sha(), mtime: statSync(file).mtimeMs }).toEqual(was)
   })
 })
