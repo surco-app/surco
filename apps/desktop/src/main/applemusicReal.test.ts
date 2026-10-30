@@ -163,6 +163,10 @@ function deps(): ProcessTrackDeps {
     },
     carryAppleMusicHistory: (from, to, label) => carryOverToAppleMusicCopy(from, to, label),
     markAppleMusicReplacing: (pid, label, marked) => markAppleMusicReplacing(pid, label, marked),
+    appleMusicPlaylists: (pid) =>
+      readMusicEntryFacts(pid, undefined, { withPlaylists: true }).then((facts) =>
+        facts === 'missing' ? [] : facts.playlists,
+      ),
   }
 }
 

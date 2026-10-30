@@ -82,7 +82,7 @@ const LAST_FRAME_SAMPLES: Record<string, number> = {
   aac: 1024,
 }
 
-const formatOf = (ext: string) =>
+export const formatOf = (ext: string) =>
   FORMAT_BY_EXT[ext.toLowerCase()] ?? ext.replace('.', '').toUpperCase()
 
 const check = (

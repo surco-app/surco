@@ -161,6 +161,8 @@ export interface ProcessTrackDeps {
     expectedLabel: string,
     marked: boolean,
   ) => Promise<'set' | 'missing' | 'mismatch'>
+  // The normal playlists holding the entry, read for the self-check of the carry.
+  appleMusicPlaylists: (persistentId: string) => Promise<string[]>
   // Corrects the recorded repoint once Music has copied the file into its Media folder.
   // The conversion only knows the temp path it wrote, which no longer exists when the
   // flush runs — the collection would be told to follow a file that is already gone.
@@ -193,7 +195,7 @@ export interface ProcessTrackDeps {
 // deleting it took the track out of Music. So the old entry is renamed for the length of the
 // add and restored right after, before the label-checked carry and delete; an add that still
 // answers with the old entry changes nothing and fails the step.
-async function replaceAppleMusicCopy(
+export async function replaceAppleMusicCopy(
   job: ProcessJob,
   target: string,
   coverPath: string | undefined,
@@ -214,6 +216,8 @@ interface ReplacedCopy {
   landed?: MediaCopy
   // The old entry's name still ends with the replacing mark.
   nameLeftMarked?: true
+  // The old entry's normal playlists before the add, null when Music could not say.
+  playlistsBefore?: string[] | null
 }
 
 // One replacement at a time across the jobs of a batch: Music only serializes each script,
@@ -234,6 +238,12 @@ async function replaceUnlocked(
   let marked = false
   let added: string
   let landed: MediaCopy | undefined
+  const playlistsBefore = old.persistentId
+    ? await deps.appleMusicPlaylists(old.persistentId).catch((e) => {
+        log.warn('process:track could not read the old Music entry playlists', e)
+        return null
+      })
+    : undefined
   try {
     if (old.persistentId) {
       marked = true
@@ -259,7 +269,10 @@ async function replaceUnlocked(
     throw e
   }
   const nameLeftMarked = marked && !(await restoreName(old, deps))
-  const retired = await retireOldEntry(old, added, landed, deps)
+  const retired = {
+    ...(await retireOldEntry(old, added, landed, deps)),
+    ...(playlistsBefore === undefined ? {} : { playlistsBefore }),
+  }
   return nameLeftMarked ? { ...retired, nameLeftMarked: true } : retired
 }
 

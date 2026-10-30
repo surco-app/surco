@@ -6,7 +6,7 @@ import { errorKeyOf, errorWithKey, splitNameLeftMarked } from '../shared/errorKe
 import type { ProcessJob, Settings, TrackMetadata } from '../shared/types'
 import type { ConversionWritten } from './ffmpeg'
 import { createOutputReservations } from './outputReservations'
-import { type ProcessTrackDeps, runProcessTrack } from './processTrack'
+import { type ProcessTrackDeps, replaceAppleMusicCopy, runProcessTrack } from './processTrack'
 
 function settings(overrides: Partial<Settings> = {}): Settings {
   return {
@@ -77,6 +77,7 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     deleteAppleMusic: vi.fn(async () => {}),
     carryAppleMusicHistory: vi.fn(async () => 'carried' as const),
     markAppleMusicReplacing: vi.fn(async () => 'set' as const),
+    appleMusicPlaylists: vi.fn<ProcessTrackDeps['appleMusicPlaylists']>(async () => []),
     isPathReserved: vi.fn(() => false),
     reservePath: vi.fn(),
     releasePath: vi.fn(),
@@ -1268,6 +1269,79 @@ describe('runProcessTrack — Apple Music only copy verification', () => {
     await runProcessTrack(replacement, deps)
 
     expect(calls).toEqual(['add', 'locate', 'carry', 'delete old-id'])
+  })
+})
+
+describe('replaceAppleMusicCopy — playlists before the add', () => {
+  const replacing = job({
+    meta: { artist: 'Artist', title: 'Title' } as TrackMetadata,
+    addToAppleMusic: true,
+    musicPersistentId: 'old-id',
+    replacesLabel: 'Old Artist - Old Title',
+  })
+
+  // The self-check proves the carry by finding the new entry in every normal playlist the
+  // old one was in. Read after the carry, the old entry would already be gone.
+  it('a replacement returns the playlists the old entry had before the add', async () => {
+    const calls: string[] = []
+    const deps = makeDeps({
+      appleMusicPlaylists: vi.fn<ProcessTrackDeps['appleMusicPlaylists']>(async (pid) => {
+        calls.push(`playlists ${pid}`)
+        return ['24', 'All']
+      }),
+      addToAppleMusic: vi.fn<ProcessTrackDeps['addToAppleMusic']>(async () => {
+        calls.push('add')
+        return 'added-id'
+      }),
+    })
+
+    const replaced = await replaceAppleMusicCopy(
+      replacing,
+      '/out/Artist - Title.wav',
+      undefined,
+      deps,
+      undefined,
+    )
+
+    expect(replaced.playlistsBefore).toEqual(['24', 'All'])
+    expect(calls).toEqual(['playlists old-id', 'add'])
+  })
+
+  // An unread list must not pass for "it was in no playlist": the check then has nothing
+  // to hold the new entry to and would say ok.
+  it('a replacement whose old playlists could not be read says so and still replaces', async () => {
+    const deps = makeDeps({
+      appleMusicPlaylists: vi.fn<ProcessTrackDeps['appleMusicPlaylists']>(async () => {
+        throw new Error('Apple Music did not answer in time')
+      }),
+    })
+
+    const replaced = await replaceAppleMusicCopy(
+      replacing,
+      '/out/Artist - Title.wav',
+      undefined,
+      deps,
+      undefined,
+    )
+
+    expect(replaced.playlistsBefore).toBeNull()
+    expect(replaced.added).toBe('added-id')
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('old-id', 'Old Artist - Old Title')
+  })
+
+  it('a plain add reads no playlists', async () => {
+    const deps = makeDeps()
+
+    const replaced = await replaceAppleMusicCopy(
+      job({ addToAppleMusic: true, musicPersistentId: undefined }),
+      '/out/Artist - Title.wav',
+      undefined,
+      deps,
+      undefined,
+    )
+
+    expect(deps.appleMusicPlaylists).not.toHaveBeenCalled()
+    expect(replaced.playlistsBefore).toBeUndefined()
   })
 })
 

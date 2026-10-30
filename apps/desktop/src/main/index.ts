@@ -77,6 +77,7 @@ import {
   deleteFromAppleMusic,
   markAppleMusicReplacing,
   musicEntryForFile,
+  readMusicEntryFacts,
   updateInAppleMusic,
 } from './applemusic'
 import { appMenuTemplate } from './appMenu'
@@ -1775,6 +1776,10 @@ function registerIpc(): void {
         appleMusicLimiter.run(() => carryOverToAppleMusicCopy(fromPid, toPid, label)),
       markAppleMusicReplacing: (pid, label, marked) =>
         appleMusicLimiter.run(() => markAppleMusicReplacing(pid, label, marked)),
+      appleMusicPlaylists: (pid) =>
+        readMusicEntryFacts(pid, undefined, { withPlaylists: true }).then((facts) =>
+          facts === 'missing' ? [] : facts.playlists,
+        ),
       redirectRepoint: (to, landed) => {
         redirectRekordboxRepoint(to, landed)
         return redirectNmlPatch(to, landed, toNmlLocation(landed))

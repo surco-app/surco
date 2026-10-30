@@ -261,6 +261,7 @@ function processTrackInMain(
     carryAppleMusicHistory: (fromPid, toPid, label) =>
       musicIsFake ? appleMusic.carryOverToAppleMusicCopy(fromPid, toPid, label) : noMusic(),
     markAppleMusicReplacing: async () => 'missing',
+    appleMusicPlaylists: async () => [],
     redirectRepoint: redirectRekordboxRepoint,
   })
 }
