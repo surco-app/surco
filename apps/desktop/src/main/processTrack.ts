@@ -226,12 +226,16 @@ async function replaceUnlocked(
   handedOver: { tmpDir?: string } | undefined,
   old: { persistentId?: string; label: string },
 ): Promise<ReplacedCopy> {
-  const marked =
-    !!old.persistentId &&
-    (await deps.markAppleMusicReplacing(old.persistentId, old.label, true)) === 'set'
+  // Stays true when the rename throws: it may have landed before the script failed, and the
+  // restore only touches an entry that still carries the mark.
+  let marked = false
   let added: string
   let landed: MediaCopy | undefined
   try {
+    if (old.persistentId) {
+      marked = true
+      marked = (await deps.markAppleMusicReplacing(old.persistentId, old.label, true)) === 'set'
+    }
     added = await deps.addToAppleMusic(target, job.meta, coverPath)
     if (old.persistentId && added === old.persistentId)
       throw errorWithKey('appleMusicAddReturnedOld', added)

@@ -2416,6 +2416,24 @@ describe('runProcessTrack — Music answering an add with the entry it already h
     expect(result.musicPersistentId).toBeUndefined()
   })
 
+  // The rename can land in Music and the script still fail on the way back (a timeout):
+  // the restore is label-guarded, so asking for it is harmless when nothing was renamed.
+  it('still restores the name when the rename itself failed', async () => {
+    const deps = recording({
+      markAppleMusicReplacing: vi.fn(async (pid: string, _label: string, marked: boolean) => {
+        calls.push(`${marked ? 'mark' : 'unmark'} ${pid}`)
+        if (marked) throw new Error('AppleEvent timed out (-1712)')
+        return 'set' as const
+      }),
+    })
+
+    const result = await runProcessTrack(replaceJob, deps)
+
+    expect(calls).toEqual(['mark old-id', 'unmark old-id'])
+    expect(deps.addToAppleMusic).not.toHaveBeenCalled()
+    expect(result.appleMusicFailed).toBe(true)
+  })
+
   // An entry that no longer carries the confirmed name is not renamed, so there is nothing to
   // restore; the add still runs and the label checks after it decide as before.
   it('restores nothing it did not rename', async () => {
