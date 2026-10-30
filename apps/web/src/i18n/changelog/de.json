@@ -30,7 +30,7 @@
       },
       {
         "text": "Wenn Apple Music eine deiner Dateien beim Ändern eines Tags neu schreibt, über „Metadaten prüfen“, „In Apple Music aktualisieren“ oder beim Konvertieren, legt Surco vorher eine Kopie an. Rückgängig in „Metadaten prüfen“ bringt die Datei genau so zurück, wie sie war, und ist kein Platz für die Kopie, lässt Surco Music die Datei nicht anrühren.",
-        "in": "1.18.1"
+        "in": "1.18.2"
       }
     ]
   },
