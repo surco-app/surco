@@ -103,6 +103,27 @@ describe('prependFlacId3', () => {
     expect(tags.title).toBe('Elastic Pump')
     expect(tags.artist).toBe('Javi Soria')
   })
+
+  // The header is a snapshot for Finder; the Vorbis comments are what Traktor, rekordbox
+  // and mp3tag edit. A title another tool fixed after Surco wrote the header has to show
+  // in the editor, not the header's stale copy.
+  it('reads the Vorbis comments, not the header, when the two disagree', async () => {
+    const p = join(dir, 'disagree.flac')
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-i',
+      flac,
+      '-c:a',
+      'copy',
+      '-metadata',
+      'title=Elastic Pump (Extended Mix)',
+      p,
+    ])
+    prependFlacId3(p, meta, cover)
+    expect((await readTags(p)).title).toBe('Elastic Pump (Extended Mix)')
+  })
 })
 
 describe('convertAudio with Finder covers enabled', () => {

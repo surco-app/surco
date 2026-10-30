@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -131,6 +131,53 @@ describe('the comment on a FLAC target', () => {
       const fields = xiphFields(out)
       expect(fields.COMMENT).toBeUndefined()
       expect(fields.DESCRIPTION).toBeUndefined()
+    })
+  })
+})
+
+// Traktor and rekordbox read a FLAC's Vorbis comments and nothing else, and do not load a
+// FLAC that opens with an ID3 tag instead of "fLaC". writeTags handles FLAC as an ID3
+// container: it puts the catalog number, mood and energy into an ID3 tag it prepends and
+// leaves the Vorbis copies stale. An update must never reach it with a FLAC.
+describe('the extras on a FLAC update', () => {
+  it('replaces the old values in the Vorbis comments, with nothing ahead of fLaC', async () => {
+    const tagged = join(dir, 'extras.flac')
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-i',
+      src,
+      '-c:a',
+      'copy',
+      '-metadata',
+      'CATALOGNUMBER=OLD-1',
+      '-metadata',
+      'MOOD=Old',
+      '-metadata',
+      'ENERGY=1',
+      tagged,
+    ])
+    const out = join(dir, 'extras-updated.flac')
+    await convertAudio(tagged, out, 'flac', {
+      ...meta,
+      catalogNumber: 'KON123',
+      mood: 'Dark',
+      energy: '8',
+      style: 'Hardstyle',
+      country: 'NL',
+      mediaType: 'Vinyl',
+      discogsReleaseId: '12345',
+    })
+    expect(readFileSync(out).toString('latin1', 0, 4)).toBe('fLaC')
+    expect(xiphFields(out)).toMatchObject({
+      CATALOGNUMBER: ['KON123'],
+      MOOD: ['Dark'],
+      ENERGY: ['8'],
+      STYLE: ['Hardstyle'],
+      COUNTRY: ['NL'],
+      MEDIATYPE: ['Vinyl'],
+      DISCOGS_RELEASE_ID: ['12345'],
     })
   })
 })
