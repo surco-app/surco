@@ -267,8 +267,8 @@ function processTrackInMain(
     verifyFile: (expect, signal) => checkFile(expect, fileReaders, { signal }),
     verifyMusic: async () => ({
       place: 'appleMusic',
-      state: 'unreadable',
-      detail: { key: 'musicUnreadable' },
+      state: 'ok',
+      detail: { key: 'musicOneNoPlaylists' },
     }),
   })
 }
@@ -864,7 +864,10 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         await result.current.confirmFlows.askCleanUp(track, {
           originalPath: null,
           superseded: superseded ? [{ trackId: track.id, path: superseded }] : [],
-          staleMusicCopy: editorVerdicts.get(fileName)?.().staleMusicCopy ?? null,
+          staleMusicCopy:
+            track.verification?.status === 'ok'
+              ? (editorVerdicts.get(fileName)?.().staleMusicCopy ?? null)
+              : null,
         })
       })
       await waitFor(() => expect(prompts.length).toBeGreaterThan(asked))

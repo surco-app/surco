@@ -2680,6 +2680,7 @@ describe('Editor replace old Apple Music copy', () => {
         outputPath: '/out/a.aiff',
         musicStatus: 'added',
         musicPersistentId: 'NEWCOPY123456789',
+        verification: { status: 'ok', checks: [] },
         duration: 365,
         meta: { title: 'Save My Love (Original Mix)', artist: 'DJ Mofly' },
       },
@@ -2695,6 +2696,35 @@ describe('Editor replace old Apple Music copy', () => {
         },
       }),
     )
+  })
+
+  // The old Music entry is deleted from the library: until the new file was re-read and
+  // agrees, it may be the only good copy, so no clean-up is offered for it.
+  it('does not offer the removal while the verification is pending', () => {
+    ;(window as unknown as { api: { platform: string } }).api.platform = 'darwin'
+    const libraryIndex = buildLibraryIndex([
+      {
+        title: 'Save My Love (26 Rmx)',
+        artist: 'Djmofly',
+        durationSec: 365,
+        persistentId: 'OLDCOPY123456789',
+      },
+    ])
+    renderEditor(
+      {
+        id: 'a',
+        status: 'done',
+        outputPath: '/out/a.aiff',
+        musicStatus: 'added',
+        musicPersistentId: 'NEWCOPY123456789',
+        verification: { status: 'pending', checks: [] },
+        duration: 365,
+        meta: { title: 'Save My Love (Original Mix)', artist: 'DJ Mofly' },
+      },
+      'aiff',
+      { libraryIndex },
+    )
+    expect(screen.queryByTestId('clean-up-previous')).not.toBeInTheDocument()
   })
 
   // Once the snapshot refreshes it also holds the copy the add itself created; the

@@ -169,7 +169,10 @@ export function ConvertFooter({
       : supersededPath
         ? [{ trackId: item.id, path: supersededPath }]
         : [],
-    staleMusicCopy: !isMulti && musicAdded && staleMusicCopy ? staleMusicCopy : null,
+    staleMusicCopy:
+      !isMulti && musicAdded && item.verification?.status === 'ok' && staleMusicCopy
+        ? staleMusicCopy
+        : null,
   }
   const cleanupFiles = cleanupCount(cleanup)
   const musicPrimary = destination === 'appleMusic' || hasMusicCopy
