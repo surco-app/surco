@@ -766,3 +766,65 @@ describe('a repoint whose audio was rewritten', () => {
     })
   })
 })
+
+// The user's music lives on an SMB NAS, whose names reach Surco decomposed, while the
+// collection holds whichever form rekordbox was given. A lookup that misses on the form
+// leaves rekordbox on the replaced file, its cues and playlists behind a "!".
+describe('a repoint across Unicode forms', () => {
+  const FROM = '/Volumes/Public/Music/Señor/Café.mp3'
+
+  function seed(folderPath: string): void {
+    const db = openRekordboxDb(dbPath)
+    if (!db) throw new Error('could not reopen the collection')
+    db.prepare(`UPDATE djmdContent SET FolderPath = ?, FileNameL = ? WHERE ID = '900001'`).run(
+      folderPath,
+      folderPath.split('/').pop(),
+    )
+    db.close()
+  }
+
+  async function output(form: 'NFC' | 'NFD'): Promise<string> {
+    const path = join(audioDir, 'Café.wav'.normalize(form))
+    await writeFile(path, Buffer.alloc(5000))
+    return path
+  }
+
+  it('moves a composed row from the decomposed path, keeping its cues and playlists', async () => {
+    seed(FROM.normalize('NFC'))
+    const to = await output('NFD')
+
+    const result = await repointTrack(dbPath, { from: FROM.normalize('NFD'), to })
+
+    expect(result.written).toBe(true)
+    const row = readRow(dbPath)
+    expect(row.FolderPath.normalize('NFC')).toBe(to.normalize('NFC'))
+    expect(row.playlists).toBe(2)
+    expect(row.cues).toBe(1)
+  })
+
+  it('moves a decomposed row from a composed path, keeping its cues and playlists', async () => {
+    seed(FROM.normalize('NFD'))
+    const to = await output('NFC')
+
+    const result = await repointTrack(dbPath, { from: FROM.normalize('NFC'), to })
+
+    expect(result.written).toBe(true)
+    const row = readRow(dbPath)
+    expect(row.FolderPath.normalize('NFC')).toBe(to.normalize('NFC'))
+    expect(row.playlists).toBe(2)
+    expect(row.cues).toBe(1)
+  })
+
+  // Every non-ASCII path in the measured collection is composed, and a new row is written
+  // that way; a moved row must not be the one spelled differently.
+  it('writes the new path composed, as the collection stores paths', async () => {
+    seed(FROM.normalize('NFC'))
+    const to = await output('NFD')
+
+    await repointTrack(dbPath, { from: FROM.normalize('NFD'), to })
+
+    const row = readRow(dbPath)
+    expect(row.FolderPath).toBe(to.normalize('NFC'))
+    expect(row.FileNameL).toBe('Café.wav'.normalize('NFC'))
+  })
+})
