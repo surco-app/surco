@@ -42,7 +42,7 @@ import {
   uniqueOutputPath,
 } from './inplace'
 import { pathKey } from './libraryPathKey'
-import { discardBackup, keepBeforeMusicRewrite, keepOriginal } from './originalKeeper'
+import { discardBackup, keepBeforeMusicRewrite } from './originalKeeper'
 import type { EngineBefore } from './verifyEngine'
 import type { FileExpect } from './verifyFile'
 import type { MusicExpect } from './verifyMusic'
@@ -931,7 +931,10 @@ export async function runProcessTrack(
               entry.path.normalize('NFC') !== target.normalize('NFC')
             )
               preMusic = entryMayPlaySource
-                ? await keepOriginal(job.inputPath, 'replaced', target, { staysInPlace: true })
+                ? await keepBeforeMusicRewrite(job.inputPath, {
+                    outputPath: target,
+                    reencodes: true,
+                  })
                 : await keepBeforeMusicRewrite(entry.path)
             const updated = job.musicPersistentId
               ? await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)

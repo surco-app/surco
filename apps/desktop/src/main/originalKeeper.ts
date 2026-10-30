@@ -79,16 +79,15 @@ export async function keepOriginal(
 }
 
 // Music rewrites an entry's file as soon as a tag is set on it, so that file is copied
-// first, under the setting a tag-only rewrite follows. A copy the setting asks for and the
-// room refuses stops the rewrite rather than letting Music change the file with no way back.
-export async function keepBeforeMusicRewrite(path: string): Promise<TrashEntry | null> {
-  const kept = await keepOriginal(path, 'replaced', path, { reencodes: false, staysInPlace: true })
-  if (
-    !kept &&
-    keeper &&
-    existsSync(path) &&
-    keepsBackup(currentBackupPolicy(), { reencodes: false })
-  )
+// first, under the setting the write it stands for follows: a tag-only rewrite unless the
+// caller says the audio changed. A copy the setting asks for and the room refuses stops
+// the rewrite rather than letting Music change the file with no way back.
+export async function keepBeforeMusicRewrite(
+  path: string,
+  { outputPath = path, reencodes = false }: { outputPath?: string; reencodes?: boolean } = {},
+): Promise<TrashEntry | null> {
+  const kept = await keepOriginal(path, 'replaced', outputPath, { reencodes, staysInPlace: true })
+  if (!kept && keeper && existsSync(path) && keepsBackup(currentBackupPolicy(), { reencodes }))
     throw errorWithKey('noRoomBeforeMusicRewrite', path)
   return kept
 }

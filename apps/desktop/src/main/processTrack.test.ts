@@ -2970,6 +2970,39 @@ describe('runProcessTrack — converting a library track to another format', () 
     expect(discarded).toHaveBeenCalledWith(kept)
   })
 
+  it('leaves Music alone when the renamed original has no room for its copy', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-pt-'))
+    const source = join(dir, 'A.aiff')
+    writeFileSync(source, 'audio')
+    const deps = converting(source)
+    configureOriginalKeeper(
+      policyKeeper(
+        () => 'always',
+        async () => null,
+      ),
+    )
+    let result: Awaited<ReturnType<typeof runProcessTrack>>
+    try {
+      result = await runProcessTrack(
+        libraryJob({
+          inputPath: source,
+          format: 'aiff',
+          overwriteOriginal: true,
+          keepOutputCopy: true,
+        }),
+        deps,
+      )
+    } finally {
+      configureOriginalKeeper(null)
+    }
+
+    expect(deps.updateInAppleMusic).not.toHaveBeenCalled()
+    expect(result).toMatchObject({
+      appleMusicFailed: true,
+      appleMusicErrorKey: 'noRoomBeforeMusicRewrite',
+    })
+  })
+
   // Retired after the Music step, the original went to Originals as Music had rewritten
   // it. The copy is taken before Music, and the retirement only removes the file.
   it('keeps the renamed original as it was before Music retagged it', async () => {
@@ -2986,6 +3019,7 @@ describe('runProcessTrack — converting a library track to another format', () 
     }
 
     expect(keeper).toHaveBeenCalledWith('/lib/A.aiff', 'replaced', '/lib/Artist - Title.aiff', {
+      reencodes: true,
       staysInPlace: true,
     })
     expect(keeper.mock.invocationCallOrder[0]).toBeLessThan(
