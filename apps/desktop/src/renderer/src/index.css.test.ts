@@ -318,6 +318,12 @@ describe('reduced motion', () => {
     })
   }
 
+  it('lets the Copias outcome line only fade, never move', () => {
+    const rule = reduced.match(/\.copies-feedback\s*\{[^}]*\}/)
+    expect(rule?.[0]).toContain('opacity')
+    expect(rule?.[0]).not.toContain('transform')
+  })
+
   it('drains the toast countdown by fading rather than sliding', () => {
     expect(reduced).toMatch(/\.animate-toast-countdown\s*\{[^}]*toast-countdown-fade/)
     const frames = css.slice(css.indexOf('@keyframes toast-countdown-fade'))
