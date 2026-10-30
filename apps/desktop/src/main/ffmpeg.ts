@@ -2124,6 +2124,7 @@ export async function convertAudio(
   let archived: TrashEntry | null = null
   const samplesKept = copiedVerbatim || plan.samplesKept === true
   let sourcePcm: PcmDigest | undefined
+  let absorbedPcm: PcmDigest | null | undefined
   let sourceDurationSec: number | undefined
   let proven: DecodeProof | undefined
   let originalKept = false
@@ -2142,7 +2143,14 @@ export async function convertAudio(
       // size) and silently falls back to a byte copy otherwise (other
       // filesystems, or an output folder on a different volume).
       await copyFile(input, tmp, fsConstants.COPYFILE_FICLONE)
-      if (ext === '.mp3') await absorbMp3HeadJunk(tmp)
+      // The bytes absorbed ahead of the first frame decode as a frame of their own, so the
+      // source read raw starts 1105 samples early: the copy's own audio, digested before any
+      // tag pass (which never touches a frame), is what the check compares against.
+      if (ext === '.mp3' && (await absorbMp3HeadJunk(tmp)))
+        absorbedPcm = await pcmDigest(tmp).catch((err) => {
+          log.warn(`source digest failed, the check cannot compare: ${err}`)
+          return null
+        })
       await runInWorker({
         type: 'writeTags',
         file: tmp,
@@ -2432,12 +2440,14 @@ export async function convertAudio(
     }, CANCEL_POLL_MS)
     const measures = [
       assertDecodable(tmp, copiedVerbatim ? input : undefined, { signal: measuring.signal }),
-      samplesKept
-        ? pcmDigest(input, { signal: measuring.signal }).catch((err) => {
-            log.warn(`source digest failed, the check cannot compare: ${err}`)
-            return undefined
-          })
-        : undefined,
+      samplesKept && absorbedPcm !== undefined
+        ? (absorbedPcm ?? undefined)
+        : samplesKept
+          ? pcmDigest(input, { signal: measuring.signal }).catch((err) => {
+              log.warn(`source digest failed, the check cannot compare: ${err}`)
+              return undefined
+            })
+          : undefined,
       samplesKept ? undefined : decodedSourceSec(input, probeOnce, measuring.signal),
     ] as const
     try {

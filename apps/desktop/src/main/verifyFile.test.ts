@@ -20,6 +20,7 @@ import { errorKeyOf } from '../shared/errorKeys'
 import { emptyMetadata } from '../shared/metadata'
 import type { OutputFormat, TrackMetadata } from '../shared/types'
 import { convertAudio } from './ffmpeg'
+import { leadingId3v2Size } from './id3Header'
 import { writeTags } from './tags'
 import {
   checkFile,
@@ -686,6 +687,22 @@ describe('checkFile — what convertAudio wrote reads back as written', () => {
     )
     expect(check.detail).toEqual({ key: 'fileTagDiffers', params: { field: 'trackNumber' } })
   })
+
+  // The copy drops the bytes ahead of the first frame (absorbMp3HeadJunk) and the decoder
+  // reads them as a frame of their own: the source decoded raw starts 1105 samples early.
+  it('an MP3 with junk ahead of its first frame, copied to MP3, is ok', async () => {
+    const clean = at('clean.mp3')
+    ff('-i', at('source.wav'), '-id3v2_version', '3', '-metadata', 'title=O', clean)
+    const bytes = readFileSync(clean)
+    const head = leadingId3v2Size(bytes)
+    const junk = at('junk.mp3')
+    writeFileSync(
+      junk,
+      Buffer.concat([bytes.subarray(0, head), Buffer.alloc(4000), bytes.subarray(head)]),
+    )
+    const check = await converted('mp3', { title: 'T' }, junk)
+    expect(check.state, JSON.stringify(check.detail)).toBe('ok')
+  }, 30_000)
 
   // ffmpeg refuses a LIST chunk shorter than its own header; every other read repairs a
   // copy and retries, so the conversion goes through and the check has to as well.
