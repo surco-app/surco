@@ -34,12 +34,12 @@ function containsNode(nodes: SourceNode[], id: string): boolean {
   return nodes.some((n) => n.id === id || (n.children ? containsNode(n.children, id) : false))
 }
 
-function readTree(source: PlaylistSource): Promise<SourceNode[]> {
+function readTree(source: PlaylistSource, allTracksName: string): Promise<SourceNode[]> {
   if (source === 'engine') return window.api.loadEngineTree()
   if (source === 'traktor') return window.api.loadTraktorTree()
   return source === 'rekordbox'
     ? window.api.loadRekordboxTree()
-    : window.api.loadAppleMusicPlaylists().then(musicTree)
+    : window.api.loadAppleMusicPlaylists().then((lists) => musicTree(lists, allTracksName))
 }
 
 function readRecentCount(source: PlaylistSource): Promise<number> {
@@ -57,13 +57,17 @@ const MUSIC_STRETCH = 200
 async function readMusicPlaylist(
   id: string,
   signal: AbortSignal,
-  onStretch: (entries: SourcePlaylistEntry[]) => void,
+  onLastRead: (entries: SourcePlaylistEntry[]) => void,
 ): Promise<SourcePlaylistEntry[]> {
+  const reading = window.api.loadAppleMusicLibraryPlaylistTracks(id)
+  const last = await window.api.loadAppleMusicPlaylistCached(id)
+  if (last) onLastRead(musicEntries(last))
+  const whole = await reading
+  if (whole) return musicEntries(whole)
   let read = await window.api.loadAppleMusicPlaylistTracks(id, 1, MUSIC_STRETCH)
   const total = read.total ?? 0
   for (let from = MUSIC_STRETCH + 1; from <= total; from += MUSIC_STRETCH) {
     signal.throwIfAborted()
-    onStretch(musicEntries(read))
     const to = from + MUSIC_STRETCH - 1
     const stretch = await window.api
       .loadAppleMusicPlaylistTracks(id, from, to)
@@ -133,7 +137,7 @@ export function useSourceBrowser({
 
   const tree = useQuery({
     queryKey: ['source-tree', source],
-    queryFn: () => readTree(source as PlaylistSource),
+    queryFn: () => readTree(source as PlaylistSource, tr('sources.allTracks')),
     enabled: source !== null,
     staleTime: Number.POSITIVE_INFINITY,
   })
@@ -185,9 +189,9 @@ export function useSourceBrowser({
     queryFn: ({ signal }) => {
       if (source !== 'appleMusic')
         return readPlaylist(source as PlaylistSource, playlist?.id as string)
-      const firstRead = queryClient.getQueryData(entriesKey) === undefined
-      return readMusicPlaylist(playlist?.id as string, signal, (part) => {
-        if (firstRead) queryClient.setQueryData(entriesKey, part)
+      return readMusicPlaylist(playlist?.id as string, signal, (last) => {
+        if (queryClient.getQueryData(entriesKey) === undefined)
+          queryClient.setQueryData(entriesKey, last)
       })
     },
     enabled: source !== null && playlist !== null,

@@ -26,6 +26,7 @@
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "cambios": "What's new",
+    "estadisticas": "Stats",
     "donar": "Donate",
     "download": "Download",
     "language": "Language",
@@ -489,8 +490,7 @@
     "slogan": "your music, in order",
     "convertHeading": "Convert",
     "flacToAiff": "FLAC to AIFF",
-    "privacy": "Privacy",
-    "downloads": "downloads"
+    "privacy": "Privacy"
   },
   "install": {
     "kicker": "Install",
@@ -2538,5 +2538,34 @@
         "url": "https://vercel.com/legal/privacy-notice"
       }
     ]
+  },
+  "stats": {
+    "metaTitle": "Stats · Surco",
+    "metaDescription": "How many times Surco has been downloaded on Mac, Windows and Linux without bots, and how installs grow week by week.",
+    "kicker": "Stats",
+    "title": "How many people download Surco",
+    "lede": "Surco has no telemetry, so it doesn't know who uses it. What is public is how many times each installer is downloaded from GitHub. These figures come from that.",
+    "total": "downloads since {{date}}, bots left out",
+    "mac": "Mac",
+    "windows": "Windows, updates included",
+    "linux": "Linux, updates included",
+    "macHeading": "Installs on Mac",
+    "macLede": "On Mac, updates come through a different file, so every download here is someone installing Surco.",
+    "lastWeek": "in the last 7 days",
+    "lastMonth": "in the last 30 days",
+    "chartLabel": "Total installs on Mac",
+    "estimatedLegend": "The dotted part is rebuilt from the date of each version. The solid part is measured every day.",
+    "weeklyHeading": "New installs on Mac per week",
+    "updatesHeading": "Macs updating to each version",
+    "updatesLede": "How many Macs downloaded each update. It is the closest thing to knowing how many people really use Surco.",
+    "howHeading": "How it is counted",
+    "howItems": [
+      "On Mac only the .dmg installer counts. Updates download a different file, so the two never mix.",
+      "On Windows and Linux the installer is also the update, so each new version adds one download for every person who updates.",
+      "Every version gets one or two downloads from automated programs that fetch every file. They are taken off using a file no person ever needs."
+    ],
+    "measuredSince": "GitHub only keeps today's total. Everything before {{date}} is rebuilt from the date of each version, and since then a snapshot is saved every day.",
+    "loading": "Loading figures…",
+    "error": "The figures could not be loaded. Try reloading the page."
   }
 }

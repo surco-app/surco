@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PlaylistSource } from '../../../shared/types'
-import '../i18n'
+import i18n from '../i18n'
 import { RAIL_WIDTH } from '../lib/columnLayout'
 import { SourceRail } from './SourceRail'
 
@@ -69,9 +69,9 @@ describe('SourceRail', () => {
     }
   })
 
-  // A long localised name is cut short under its mark, so the whole name a sighted user
-  // reads on hover still comes from the app's themed tooltip like every other icon.
-  it('names each icon in the app tooltip on focus, not in a native title', () => {
+  // The name is already written under each mark, so a hover bubble repeating it only
+  // covers the playlist column beside the rail.
+  it('does not repeat the written name in a tooltip or a native title', () => {
     render(
       <SourceRail
         copies={COPIES}
@@ -81,15 +81,43 @@ describe('SourceRail', () => {
         onSelect={vi.fn()}
       />,
     )
-    for (const [id, name] of [
-      ['tracks', 'Tracks'],
-      ['rekordbox', 'rekordbox'],
-    ]) {
+    for (const id of ['tracks', 'appleMusic', 'rekordbox']) {
       const button = screen.getByTestId(`source-rail-${id}`)
       expect(button).not.toHaveAttribute('title')
       fireEvent.focusIn(button)
-      expect(screen.getByRole('tooltip')).toHaveTextContent(name)
+      fireEvent.mouseEnter(button)
+      expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
       fireEvent.focusOut(button)
+    }
+  })
+
+  // Each mark is labelled with the program's own brand name, which no locale translates, so
+  // a DJ finds the same word under the mark that they know from the program itself.
+  it('writes the same brand name under every source mark in every language', async () => {
+    try {
+      for (const lng of ['en', 'es', 'de', 'fr', 'pt-BR', 'ja']) {
+        await i18n.changeLanguage(lng)
+        render(
+          <SourceRail
+            copies={COPIES}
+            onHide={vi.fn()}
+            sources={['appleMusic', 'rekordbox', 'engine', 'traktor']}
+            active={null}
+            onSelect={vi.fn()}
+          />,
+        )
+        for (const [id, name] of [
+          ['appleMusic', 'Music'],
+          ['rekordbox', 'rekordbox'],
+          ['engine', 'Engine DJ'],
+          ['traktor', 'Traktor'],
+        ]) {
+          expect(screen.getByTestId(`source-rail-label-${id}`)).toHaveTextContent(name)
+        }
+        cleanup()
+      }
+    } finally {
+      await i18n.changeLanguage('en')
     }
   })
 

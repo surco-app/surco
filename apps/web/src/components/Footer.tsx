@@ -3,7 +3,6 @@ import { DONATE_URL } from '../config'
 import type { Language } from '../i18n'
 import { trackDonate } from '../lib/analytics'
 import { PAGES } from '../lib/nav'
-import DownloadCount from './DownloadCount'
 
 export default function Footer() {
   const { t, i18n } = useTranslation()
@@ -14,6 +13,7 @@ export default function Footer() {
   const changelogHref = PAGES.changelog[lang]
   const flacToAiffHref = PAGES.flacToAiff[lang]
   const privacyHref = PAGES.privacy[lang]
+  const statsHref = PAGES.stats[lang]
 
   return (
     <footer className="relative mt-10 border-t border-line/60">
@@ -65,6 +65,15 @@ export default function Footer() {
             <li>
               <a href={changelogHref} className="transition-colors hover:text-fg">
                 {t('nav.cambios')}
+              </a>
+            </li>
+            <li>
+              <a
+                href={statsHref}
+                data-testid="footer-stats"
+                className="transition-colors hover:text-fg"
+              >
+                {t('nav.estadisticas')}
               </a>
             </li>
             <li>
@@ -121,10 +130,7 @@ export default function Footer() {
 
       <div className="border-t border-line/60">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 sm:px-10 py-6 text-xs text-faint sm:flex-row">
-          <span className="flex gap-2">
-            <span>{t('footer.copyright')}</span>
-            <DownloadCount />
-          </span>
+          <span>{t('footer.copyright')}</span>
           <a
             href={privacyHref}
             data-testid="footer-privacy"

@@ -26,6 +26,7 @@
     "openMenu": "Abrir menú",
     "closeMenu": "Cerrar menú",
     "cambios": "Novedades",
+    "estadisticas": "Estadísticas",
     "donar": "Donar",
     "download": "Descargar",
     "language": "Idioma",
@@ -489,8 +490,7 @@
     "slogan": "tu música, en orden",
     "convertHeading": "Convertir",
     "flacToAiff": "FLAC a AIFF",
-    "privacy": "Privacidad",
-    "downloads": "descargas"
+    "privacy": "Privacidad"
   },
   "install": {
     "kicker": "Instalar",
@@ -2538,5 +2538,34 @@
         "url": "https://vercel.com/legal/privacy-notice"
       }
     ]
+  },
+  "stats": {
+    "metaTitle": "Estadísticas · Surco",
+    "metaDescription": "Cuántas veces se ha descargado Surco en Mac, Windows y Linux sin contar bots, y cómo crecen las instalaciones semana a semana.",
+    "kicker": "Estadísticas",
+    "title": "Cuánta gente descarga Surco",
+    "lede": "Surco no tiene telemetría, así que no sabe quién lo usa. Lo que sí es público es cuántas veces se baja cada instalador en GitHub. Con eso salen estas cifras.",
+    "total": "descargas desde el {{date}}, sin contar bots",
+    "mac": "Mac",
+    "windows": "Windows, con actualizaciones",
+    "linux": "Linux, con actualizaciones",
+    "macHeading": "Instalaciones en Mac",
+    "macLede": "En Mac las actualizaciones van aparte, así que aquí cada descarga es alguien que instala Surco.",
+    "lastWeek": "en los últimos 7 días",
+    "lastMonth": "en los últimos 30 días",
+    "chartLabel": "Instalaciones acumuladas en Mac",
+    "estimatedLegend": "La parte punteada está reconstruida a partir de la fecha de cada versión. La continua se mide cada día.",
+    "weeklyHeading": "Instalaciones nuevas en Mac por semana",
+    "updatesHeading": "Macs que se actualizan a cada versión",
+    "updatesLede": "Cuántos Mac se bajaron cada actualización. Es lo más parecido a saber cuánta gente usa Surco de verdad.",
+    "howHeading": "Cómo se cuenta",
+    "howItems": [
+      "En Mac solo cuenta el instalador .dmg. Las actualizaciones bajan otro fichero, así que no se mezclan.",
+      "En Windows y Linux el instalador también es la actualización, así que cada versión nueva suma una descarga por cada persona que actualiza.",
+      "Cada versión recibe una o dos descargas de programas automáticos que se bajan todos los ficheros. Se restan usando un fichero que ninguna persona necesita."
+    ],
+    "measuredSince": "GitHub solo guarda el total de hoy. Lo anterior al {{date}} está reconstruido con la fecha de cada versión, y desde entonces se guarda una foto cada día.",
+    "loading": "Cargando cifras…",
+    "error": "No se han podido cargar las cifras. Prueba a recargar la página."
   }
 }

@@ -214,6 +214,12 @@ export interface Api {
     from?: number,
     to?: number,
   ) => Promise<AppleMusicPlaylistTracks>
+  // The same, whole, from the library database; null when it cannot give the playlist.
+  loadAppleMusicLibraryPlaylistTracks: (
+    persistentId: string,
+  ) => Promise<AppleMusicPlaylistTracks | null>
+  // The playlist as last read whole; null when it never was.
+  loadAppleMusicPlaylistCached: (persistentId: string) => Promise<AppleMusicPlaylistTracks | null>
   appleMusicArtwork: (
     persistentIds: string[],
   ) => Promise<Record<string, { coverPath: string; coverUrl: string }>>
