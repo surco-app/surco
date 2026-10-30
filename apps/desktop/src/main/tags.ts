@@ -42,7 +42,7 @@ const TXXX_NATIVE_MIRRORS = ['comment', 'RATING WMP', 'grouping']
 
 // Apple Music's own grouping frame. TagLib knows no such id, so it reads one back as an
 // UnknownFrame (see itunesGroupingOf) but writes it as the text frame it is.
-const GRP1 = new Id3v2FrameIdentifier('GRP1', 'GRP1', undefined)
+const GRP1 = new Id3v2FrameIdentifier('GRP1', 'GRP1', 'GP1')
 
 // Every ID3 container we write gets v2.3, pinned per tag rather than through the
 // global Id3v2Settings so a library upgrade can't silently change other tag kinds.
