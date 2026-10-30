@@ -1,4 +1,10 @@
+import { mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { BackupPolicy } from '../shared/backupPolicy'
+import type { TrashEntry } from '../shared/types'
+import { configureBackupDiscarder, configureOriginalKeeper, policyKeeper } from './originalKeeper'
 
 // The handlers are registered against a stub ipcMain so each test can invoke one directly
 // with the job the renderer would have sent, without an Electron runtime.
@@ -27,14 +33,17 @@ vi.mock('./recoverableTrash', () => ({
 const addToAppleMusic = vi.fn()
 const deleteFromAppleMusic = vi.fn()
 const setAppleMusicField = vi.fn()
+const updateInAppleMusic = vi.fn()
+const appleMusicEntryLocation = vi.fn()
 vi.mock('./applemusic', () => ({
+  appleMusicEntryLocation: (...args: unknown[]) => appleMusicEntryLocation(...args),
   addToAppleMusic: (...args: unknown[]) => addToAppleMusic(...args),
   appleMusicLimiter: { run: (fn: () => unknown) => fn() },
   deleteFromAppleMusic: (...args: unknown[]) => deleteFromAppleMusic(...args),
   dumpAppleMusicLibrary: vi.fn(),
   revealInAppleMusic: vi.fn(),
   setAppleMusicField: (...args: unknown[]) => setAppleMusicField(...args),
-  updateInAppleMusic: vi.fn(),
+  updateInAppleMusic: (...args: unknown[]) => updateInAppleMusic(...args),
 }))
 
 vi.mock('./activity', () => ({
@@ -175,6 +184,110 @@ describe('applemusic:setField', () => {
       'Dj Lara',
       '/m/c.aiff',
     )
+  })
+})
+
+// Measured on 30/10: Music rewrites the entry's file the moment a tag is set on it, so the
+// update is a rewrite of the user's file and is backed up like the conversion's own.
+describe('applemusic:update', () => {
+  const original = process.platform
+  const order: string[] = []
+  const kept: TrashEntry = {
+    id: 'b1',
+    name: 'c.aiff',
+    originalPath: '/m/c.aiff',
+    storedPath: '',
+    bytes: 0,
+    trashedAt: 0,
+    reason: 'replaced',
+  }
+  const stash = vi.fn()
+  const discard = vi.fn()
+  let policy: BackupPolicy = 'always'
+  const job = { persistentId: 'PID', meta: { title: 'El Consentido', artist: 'Castion' } }
+
+  beforeEach(async () => {
+    handlers.clear()
+    order.length = 0
+    policy = 'always'
+    appleMusicEntryLocation.mockReset().mockResolvedValue('/m/c.aiff')
+    stash.mockReset().mockImplementation(async () => {
+      order.push('backup')
+      return kept
+    })
+    discard.mockReset().mockResolvedValue(undefined)
+    updateInAppleMusic.mockReset().mockImplementation(async () => {
+      order.push('music')
+      return 'PID'
+    })
+    configureOriginalKeeper(policyKeeper(() => policy, stash))
+    configureBackupDiscarder(discard)
+    Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true })
+    const { registerAppleMusicIpc } = await import('./appleMusicIpc')
+    registerAppleMusicIpc()
+  })
+
+  afterEach(() => {
+    configureOriginalKeeper(null)
+    configureBackupDiscarder(null)
+    Object.defineProperty(process, 'platform', { value: original, configurable: true })
+  })
+
+  it("backs up the entry's file before Music is asked to retag it", async () => {
+    await handlers.get('applemusic:update')?.(null, job)
+    expect(order).toEqual(['backup', 'music'])
+    expect(stash).toHaveBeenCalledWith('/m/c.aiff', 'replaced', '/m/c.aiff', {
+      reencodes: false,
+      staysInPlace: true,
+    })
+  })
+
+  // A retag leaves the audio as it was, so «only when the audio changes» keeps nothing,
+  // exactly as for a conversion that stream-copies.
+  it('keeps nothing when the setting only keeps audio changes', async () => {
+    policy = 'audioChanges'
+    await handlers.get('applemusic:update')?.(null, job)
+    expect(stash).not.toHaveBeenCalled()
+    expect(updateInAppleMusic).toHaveBeenCalled()
+  })
+
+  // Short of room, the keeper sends a file about to be replaced to the system Trash. This
+  // one stays where it is, playing in Music: moved there, Music would retag a file in the
+  // Trash. With no copy possible, Music is not asked.
+  it('leaves the file where it is and Music alone when the backup has no room', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-update-'))
+    const file = join(dir, 'c.aiff')
+    writeFileSync(file, 'audio')
+    appleMusicEntryLocation.mockResolvedValue(file)
+    const noRoom = vi.fn()
+    configureOriginalKeeper(
+      policyKeeper(
+        () => 'always',
+        async () => null,
+        noRoom,
+      ),
+    )
+    await expect(handlers.get('applemusic:update')?.(null, job)).rejects.toThrow(
+      'noRoomBeforeMusicRewrite',
+    )
+    expect(noRoom).not.toHaveBeenCalled()
+    expect(updateInAppleMusic).not.toHaveBeenCalled()
+  })
+
+  // An unanswered location may well be a file Music would rewrite with no copy taken.
+  it('leaves Music alone when it could not say where the entry’s file is', async () => {
+    appleMusicEntryLocation.mockRejectedValue(new Error('AppleEvent timed out (-1712)'))
+    await expect(handlers.get('applemusic:update')?.(null, job)).rejects.toThrow(
+      'appleMusicEntryUnread',
+    )
+    expect(updateInAppleMusic).not.toHaveBeenCalled()
+  })
+
+  it('drops the backup when the entry is gone and Music touched nothing', async () => {
+    updateInAppleMusic.mockResolvedValue(null)
+    addToAppleMusic.mockReset().mockResolvedValue('NEW')
+    await handlers.get('applemusic:update')?.(null, { ...job, outputPath: '/m/out.aiff' })
+    expect(discard).toHaveBeenCalledWith(kept)
   })
 })
 

@@ -345,6 +345,30 @@ describe('removeRenamedOriginal', () => {
     expect(await exists(newPath)).toBe(true)
   })
 
+  // The copy was taken before Music rewrote the original: a second one now would keep
+  // Music's bytes beside it, and a refusal to keep it would not mean it is lost.
+  it('removes an original already kept without keeping it again', async () => {
+    dir = await mkdtemp(join(tmpdir(), 'surco-rm-'))
+    const oldPath = join(dir, 'old.aiff')
+    const newPath = join(dir, 'new.aiff')
+    await writeFile(oldPath, 'a')
+    await writeFile(newPath, 'b')
+    const kept: string[] = []
+    configureOriginalKeeper(async (path) => {
+      kept.push(path)
+      return null
+    })
+    try {
+      await removeRenamedOriginal(oldPath, newPath, true)
+    } finally {
+      configureOriginalKeeper(null)
+    }
+
+    expect(kept).toEqual([])
+    expect(await exists(oldPath)).toBe(false)
+    expect(await exists(newPath)).toBe(true)
+  })
+
   it('does nothing when input and output are the same path', async () => {
     dir = await mkdtemp(join(tmpdir(), 'surco-rm-'))
     const path = join(dir, 'song.wav')

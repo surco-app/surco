@@ -625,18 +625,10 @@ export function useMusicReview({
           failed.push(o)
           continue
         }
-        if (o.backupId) {
-          try {
-            await window.api.trashRestore(o.backupId, 'undo')
-            restored.push(o)
-          } catch {
-            failed.push(o)
-            continue
-          }
-        }
         // A field goes back in the libraries only once whatever it followed went back: Music
-        // when Music took it, else the file just restored. A 'mismatch' or 'missing' left
-        // Music as it was, and the libraries stay with it.
+        // when Music took it, else the file restored. A 'mismatch' or 'missing' left Music as
+        // it was, and the libraries stay with it. Music goes first: it rewrites the file as
+        // it sets the value back, so the backup restored after it is what stays on disk.
         const music = [...o.music]
         const back: MusicReviewField[] = []
         for (const [i, f] of o.fixes.entries()) {
@@ -648,6 +640,15 @@ export function useMusicReview({
           if (answer !== 'set') continue
           music[i] = 'none'
           back.push(f.field)
+        }
+        if (o.backupId) {
+          try {
+            await window.api.trashRestore(o.backupId, 'undo')
+            restored.push(o)
+          } catch {
+            failed.push({ ...o, music })
+            continue
+          }
         }
         reverted.push({ ...o, music: o.music.map(() => 'none'), written: back })
         // The file is back already: a retry only owes Music the fields it refused.

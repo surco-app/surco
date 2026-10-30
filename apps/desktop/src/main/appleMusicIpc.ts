@@ -2,6 +2,7 @@ import { access, realpath } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, ipcMain } from 'electron'
 import log from 'electron-log/main'
+import { errorWithKey } from '../shared/errorKeys'
 import type {
   AppleMusicAddJob,
   AppleMusicPlaylist,
@@ -39,9 +40,10 @@ import { hasCoverSource, prepareProcessedCover } from './cover'
 import { readMeta } from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { removeDuplicateCopyLogged } from './musicDuplicates'
-import { rewriteTagFields } from './musicFieldWrite'
+import { prepareTagRewrite } from './musicFieldWrite'
 import { applyMusicFixes } from './musicReviewApply'
 import { musicReviewLog, setFieldLogged } from './musicReviewLog'
+import { discardBackup, keepBeforeMusicRewrite } from './originalKeeper'
 import { trashRecoverably } from './recoverableTrash'
 import { getSettings } from './settings'
 
@@ -115,10 +117,9 @@ export function registerAppleMusicIpc(
             () => true,
             () => false,
           ),
-        rewrite: (file, changes) =>
-          rewriteTagFields(
+        prepare: (file) =>
+          prepareTagRewrite(
             file,
-            changes,
             trackTmp && untrackTmp ? { track: trackTmp, untrack: untrackTmp } : undefined,
           ),
       },
@@ -342,7 +343,9 @@ export function registerAppleMusicIpc(
   // manual "update in Apple Music" action. When the user deleted that copy from
   // Music, the converted file (if one was kept) is imported afresh so the action
   // still ends with the song in the library; in "Apple Music only" mode there is no
-  // file left to import, so the missing copy is surfaced as an error instead.
+  // file left to import, so the missing copy is surfaced as an error instead. Music rewrites
+  // the entry's file as it sets the tags, so that file is backed up first, under the setting
+  // a conversion's tag-only rewrite follows.
   ipcMain.handle('applemusic:update', async (_e, job: AppleMusicUpdateJob) => {
     if (process.platform !== 'darwin') return
     return appleMusicLimiter.run(() =>
@@ -360,8 +363,13 @@ export function registerAppleMusicIpc(
                 upscale: settings.coverUpscale,
               })
             }
+            const location = await appleMusicEntryLocation(job.persistentId).catch((err) => {
+              throw errorWithKey('appleMusicEntryUnread', err instanceof Error ? err.message : '')
+            })
+            const kept = location ? await keepBeforeMusicRewrite(location) : null
             const updated = await updateInAppleMusic(job.persistentId, job.meta, prepared?.path)
             if (updated) return updated
+            if (kept) await discardBackup(kept).catch(() => undefined)
             if (!job.outputPath) {
               const t = createMenuT(resolveMenuLocale(settings.language, app.getLocale()))
               throw new Error(t('appleMusicGone'))

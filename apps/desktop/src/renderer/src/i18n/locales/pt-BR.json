@@ -179,6 +179,8 @@
     "convertedOutputTruncated": "O arquivo convertido saiu mais curto que o original, então foi descartado e o original ficou intacto. Tente de novo com outros ajustes de conversão.",
     "engineDjOpen": "Feche o Engine DJ antes de converter: ele está com a biblioteca aberta.",
     "noRoomForBackup": "Não há espaço em disco para um backup do original e o disco dele não tem Lixeira, então ele não foi tocado. Libere espaço e tente de novo.",
+    "noRoomBeforeMusicRewrite": "Não há espaço em Cópias para a cópia que o Surco guarda antes de o Música reescrever o arquivo, então ele não foi tocado. Libere espaço e tente de novo.",
+    "appleMusicEntryUnread": "O Música não disse onde está o arquivo da faixa, então nada foi pedido a ele. Tente de novo.",
     "conversionCancelled": "Conversão cancelada.",
     "verifyUnknownTrack": "Esta verificação não existe mais. Converta a faixa de novo para refazê-la.",
     "sourceTagsUnread": "As tags deste arquivo não puderam ser lidas, então ele não foi tocado: convertê-lo apagaria as que ele tem. Carregue-o de novo e tente outra vez.",
