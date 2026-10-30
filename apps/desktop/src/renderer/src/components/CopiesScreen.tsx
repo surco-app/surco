@@ -43,6 +43,7 @@ const SECTION =
   'grid grid-cols-[44px_1fr_auto] items-center gap-x-3.5 gap-y-2 border-t border-[var(--color-line)] py-4.5 first:border-t-0'
 const BADGE =
   'flex h-11 w-11 items-center justify-center rounded-[10px] bg-[var(--color-hover)] text-fg-muted'
+const FACTS = 'mt-1.5 grid grid-cols-[13rem_11rem_minmax(0,1fr)] gap-x-5.5'
 const LIST =
   'col-span-2 col-start-2 rounded-[10px] border border-[var(--color-line)] bg-[var(--color-ink)] px-3 py-1'
 
@@ -100,7 +101,7 @@ function ProgramSection({
       </div>
       <div className="min-w-0">
         <h2 className="text-[14.5px] font-semibold text-fg">{name}</h2>
-        <div className="mt-1.5 flex flex-wrap gap-x-5.5 gap-y-1">
+        <div className={FACTS}>
           <Fact
             label={tr('copies.facts.state')}
             testId={`copies-state-${program}`}
@@ -217,7 +218,7 @@ function MusicSection({
       </div>
       <div className="min-w-0">
         <h2 className="text-[14.5px] font-semibold text-fg">{tr('copies.music.title')}</h2>
-        <div className="mt-1.5 flex flex-wrap gap-x-5.5 gap-y-1">
+        <div className={FACTS}>
           <Fact
             label={tr('copies.facts.state')}
             testId="copies-state-music"
