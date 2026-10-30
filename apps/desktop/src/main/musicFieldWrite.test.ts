@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, statSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -667,20 +667,34 @@ describe('the library review against a Music that rewrites the file', () => {
     expect(stored.get(out.backupId ?? '')?.equals(original)).toBe(true)
   }, 60000)
 
-  it('drops the backup when neither Music nor Surco changed the file', async () => {
-    const file = make('aiff', ['-c:a', 'pcm_s16be'], 'Someone Else')
+  // A case-only fix keeps the size, and HFS+ or FAT round the mtime to a second or two, so
+  // neither tells whether Music has written yet. Music accepting the field is what does.
+  it('keeps the backup once Music accepted, though size and mtime look untouched', async () => {
+    const file = make('aiff', ['-c:a', 'pcm_s16be'], 'Dj Lara')
+    const second = 1_700_000_000
+    utimesSync(file, second, second)
+    const original = readFileSync(file)
     const stored = copyingKeeper()
+    const temps: string[] = []
+    const music = musicThatRewrites(file)
     const [out] = await applyMusicFixes(
       [{ persistentId: 'A', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
       {
-        setField: async () => 'set',
+        setField: async (pid, field, from, to) => {
+          writeFileSync(temps[0], 'not audio')
+          const answer = await music(pid, field, from, to)
+          utimesSync(file, second, second)
+          return answer
+        },
         locate: async () => file,
         exists: async () => true,
-        prepare: (path) => prepareTagRewrite(path),
+        prepare: (path) =>
+          prepareTagRewrite(path, { track: (tmp) => temps.push(tmp), untrack: () => {} }),
       },
     )
-    expect(out.file).toBe('unchanged')
-    expect(stored.size).toBe(0)
+    expect(statSync(file).size).toBe(original.length)
+    expect(out.file).toBe('failed')
+    expect(stored.get(out.backupId ?? '')?.equals(original)).toBe(true)
   }, 60000)
 
   it('reports the field as written, not as a file that differs', async () => {

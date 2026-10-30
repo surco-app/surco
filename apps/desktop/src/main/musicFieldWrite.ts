@@ -1,5 +1,5 @@
-import { constants as fsConstants, type Stats } from 'node:fs'
-import { copyFile, stat } from 'node:fs/promises'
+import { constants as fsConstants } from 'node:fs'
+import { copyFile } from 'node:fs/promises'
 import { extname } from 'node:path'
 import log from 'electron-log/main'
 import type { TrashEntry } from '../shared/types'
@@ -66,21 +66,12 @@ export async function prepareTagRewrite(
   const tmp = convertTmpPath(file, extname(file))
   tracking?.track(tmp)
   let archived: TrashEntry | null = null
-  let before: Stats | null = null
   const abandon = async () => {
     if (archived) await discardBackup(archived).catch(() => undefined)
     archived = null
     await dropTemp(tmp, tracking)
   }
-  // Music may have rewritten the file by the time the write gives up: then the copy is
-  // the only way back to it and stays.
-  const settle = async () => {
-    const now = await stat(file).catch(() => null)
-    if (now && before && now.size === before.size && now.mtimeMs === before.mtimeMs) await abandon()
-    else await dropTemp(tmp, tracking)
-  }
   try {
-    before = await stat(file)
     await copyFile(file, tmp, fsConstants.COPYFILE_FICLONE)
     archived = await keepOriginal(file, 'replaced', file, {
       reencodes: false,
@@ -91,11 +82,13 @@ export async function prepareTagRewrite(
     await abandon()
     throw e
   }
+  // The write only runs once Music accepted a field, and Music rewrote the file when it
+  // did: from then on the copy is the only way back and stays, whatever the write does.
   const write = async (changes: TagFieldChange[]) => {
     try {
       const outcomes = await runInWorker<FieldWrite[]>({ type: 'setTagFields', file: tmp, changes })
       if (!outcomes.includes('written')) {
-        await settle()
+        await dropTemp(tmp, tracking)
         return { outcomes, backup: archived ?? undefined }
       }
       await assertDecodable(tmp, file)
@@ -103,7 +96,7 @@ export async function prepareTagRewrite(
       tracking?.untrack(tmp)
       return { outcomes, backup: archived ?? undefined }
     } catch (e) {
-      await settle()
+      await dropTemp(tmp, tracking)
       throw e
     }
   }
