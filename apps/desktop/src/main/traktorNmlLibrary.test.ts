@@ -61,6 +61,7 @@ vi.mock('electron', () => ({
 import { backupOf } from './libraryBackups'
 import { copyFolder, listCopies } from './libraryHistory'
 import { createSessionBackup, type SessionBackup } from './rekordboxSessionBackup'
+import { buildTraktorTree, traktorCue } from './traktor4Fixture'
 import { bootVolumeName, replaceDuplicatesInCollection, syncCollection } from './traktorNmlLibrary'
 import { isTraktorRunning } from './traktorProcess'
 
@@ -105,6 +106,70 @@ describe('syncCollection on the boot disk', () => {
 
     expect(result.written).toBe(true)
     expect(readFileSync(nmlPath, 'utf8')).toContain('uno.flac')
+  })
+
+  // A boot-disk path records an empty volume for the output as well as for the source. Read
+  // as "no output known", the converted file's calibrated cues landed on the entry still
+  // naming the MP3 left in its folder: every cue 51 ms early over audio that never changed.
+  describe('a conversion into another folder', () => {
+    const cue = (name: string, start: string, hotcue: number) =>
+      `<CUE_V2 NAME="${name}" DISPL_ORDER="0" TYPE="0" START="${start}" LEN="0.000000" REPEATS="-1" HOTCUE="${hotcue}"></CUE_V2>`
+    const entryAt = (dir: string, file: string) =>
+      `<ENTRY TITLE="Uno"><LOCATION DIR="${dir}" FILE="${file}" VOLUME="Macintosh HD"></LOCATION>${cue('Intro', '10000.000000', 1)}${cue('Break', '15000.000000', 2)}</ENTRY>`
+    const source = entryAt('/:Users/:dj/:M/:', 'uno.mp3')
+    const converted = {
+      volume: '',
+      dir: '/:Users/:dj/:M/:',
+      file: 'uno.mp3',
+      cueTree: buildTraktorTree([traktorCue('Intro', 0, 9949, 1)]),
+      cueShift: { shiftMs: 51 },
+      outputVolume: '',
+      outputDir: '/:Users/:dj/:Out/:',
+      outputFile: 'uno.aiff',
+    }
+
+    it('leaves the cues of the entry still on the source byte for byte', async () => {
+      writeFileSync(
+        nmlPath,
+        `<NML VERSION="19"><COLLECTION ENTRIES="1">\n${source}\n</COLLECTION></NML>`,
+      )
+
+      await syncCollection(nmlPath, [converted], session, 'Macintosh HD')
+
+      expect(readFileSync(nmlPath, 'utf8')).toContain(source)
+    })
+
+    it('moves the cues once, by the calibration, on the entry that follows the file', async () => {
+      writeFileSync(
+        nmlPath,
+        `<NML VERSION="19"><COLLECTION ENTRIES="1">\n${source}\n</COLLECTION></NML>`,
+      )
+
+      await syncCollection(
+        nmlPath,
+        [{ ...converted, newFile: 'uno.aiff', outputDir: converted.dir }],
+        session,
+        'Macintosh HD',
+      )
+
+      expect(readFileSync(nmlPath, 'utf8')).toContain(
+        `FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION>${cue('Intro', '9949.000000', 1)}${cue('Break', '14949.000000', 2)}</ENTRY>`,
+      )
+    })
+
+    it('gives the converted file its own cues on the entry that names it', async () => {
+      const output = entryAt('/:Users/:dj/:Out/:', 'uno.aiff')
+      writeFileSync(
+        nmlPath,
+        `<NML VERSION="19"><COLLECTION ENTRIES="2">\n${source}\n${output}\n</COLLECTION></NML>`,
+      )
+
+      await syncCollection(nmlPath, [converted], session, 'Macintosh HD')
+
+      const written = readFileSync(nmlPath, 'utf8')
+      expect(written).toContain(source)
+      expect(written).toMatch(/FILE="uno\.aiff"[^\n]*NAME="Intro"[^>]*START="9949\.000000"/)
+    })
   })
 
   // The check after the write judges each track against the entry its patch moved, read
@@ -476,6 +541,40 @@ describe('syncCollection refreshes the cached artwork', () => {
         },
       ],
       session,
+    )
+
+    expect(statSync(audio).mtimeMs).toBeGreaterThan(statSync(nmlPath).mtimeMs)
+  })
+
+  it('makes a detached conversion on the boot disk newer than the collection', async () => {
+    writeFileSync(
+      nmlPath,
+      `<NML VERSION="19"><COLLECTION ENTRIES="2">
+<ENTRY TITLE="Uno"><INFO COVERARTID="042/ABC"></INFO><LOCATION DIR="/:M/:" FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION></ENTRY>
+<ENTRY TITLE="Uno"><INFO COVERARTID="042/ABC"></INFO><LOCATION DIR="/:Out/:" FILE="uno.flac" VOLUME="Macintosh HD"></LOCATION></ENTRY>
+</COLLECTION></NML>`,
+    )
+    const audio = join(dir, 'uno.flac')
+    writeFileSync(audio, 'audio')
+    const stale = new Date(Date.now() - 60_000)
+    utimesSync(audio, stale, stale)
+
+    await syncCollection(
+      nmlPath,
+      [
+        {
+          volume: '',
+          dir: '/:M/:',
+          file: 'uno.aiff',
+          refreshCoverArt: true,
+          outputPath: audio,
+          outputVolume: '',
+          outputDir: '/:Out/:',
+          outputFile: 'uno.flac',
+        },
+      ],
+      session,
+      'Macintosh HD',
     )
 
     expect(statSync(audio).mtimeMs).toBeGreaterThan(statSync(nmlPath).mtimeMs)

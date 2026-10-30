@@ -72,7 +72,11 @@ export async function syncCollection(
     return { written: false, matched: 0, reason: 'unreadable' }
   }
 
-  const located = patches.map((p) => (p.volume ? p : { ...p, volume: bootVolume }))
+  const located = patches.map((p) => ({
+    ...p,
+    volume: p.volume || bootVolume,
+    outputVolume: p.outputVolume || bootVolume,
+  }))
   const onDisk: OnDisk = (entry) =>
     existsSync(traktorFileOf(original.slice(entry.start, entry.end), bootVolume))
   const patched = applyPatches(original, located, onDisk)
@@ -100,7 +104,7 @@ export async function syncCollection(
   // audio newer than the collection it just read, so without this the converted track
   // shows no cover at all rather than the one embedded in the file.
   //
-  await markNewerThanCollection(nmlPath, detachedOutputPaths(original, patches, onDisk))
+  await markNewerThanCollection(nmlPath, detachedOutputPaths(original, located, onDisk))
 
   return { written: true, matched: matchedPatchCount(original, patches, onDisk), before }
 }
