@@ -238,10 +238,23 @@ describe('buildAddScript refusing an entry that was already there', () => {
 
   it('lists the entries with the same name and artist before adding', () => {
     const list = s.indexOf(
-      'set preexisting to persistent ID of (every track of library playlist 1 whose name is "ATB (Till I Come)" and artist is "Tom Hafman")',
+      'set candidates to (every track of library playlist 1 whose name is "ATB (Till I Come)" and artist is "Tom Hafman")',
     )
     expect(list).toBeGreaterThan(-1)
     expect(list).toBeLessThan(s.indexOf('add POSIX file'))
+  })
+
+  // Measured 30/10 on the real app: `persistent ID of (every track whose ...)` raises -1728
+  // when nothing matches, which is every new track and every replacement (the old entry is
+  // renamed first), so every add failed. The element list is {} when empty; the IDs are read
+  // one track at a time from it, never through a try that would quietly drop the guard.
+  it('reads the IDs from the track list, so an add with no same-named entry still runs', () => {
+    expect(s).not.toMatch(/persistent ID of \(every track/)
+    expect(s).toContain('set preexisting to {}')
+    expect(s).toContain('repeat with candidate in candidates')
+    expect(s).toContain('set end of preexisting to persistent ID of candidate')
+    const head = s.slice(0, s.indexOf('add POSIX file'))
+    expect(head).not.toContain('try')
   })
 
   // Before any tag is written: writing them first would retag the entry Music handed back.

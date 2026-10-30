@@ -179,8 +179,17 @@ export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?
     // Music answers an add whose file matches an entry it already has with that entry,
     // importing nothing (measured 30/10, even across formats). Any copy carrying the same
     // name and artist can be that entry, so the answer is checked against all of them,
-    // before a single tag is written to it.
-    `    set preexisting to persistent ID of (every track of library playlist 1 whose name is ${appleScriptString(meta.title)} and artist is ${appleScriptString(meta.artist)})`,
+    // before a single tag is written to it. The IDs come from the track list: asked of an empty `every
+    // track whose`, `persistent ID of` raises -1728, and nothing matching is the usual case.
+    '    set preexisting to {}',
+    ...[
+      `whose name is ${appleScriptString(meta.title)} and artist is ${appleScriptString(meta.artist)}`,
+    ].flatMap((filter) => [
+      `    set candidates to (every track of library playlist 1 ${filter})`,
+      '    repeat with candidate in candidates',
+      '      set end of preexisting to persistent ID of candidate',
+      '    end repeat',
+    ]),
     `    set theTrack to add POSIX file ${appleScriptString(filePath)}`,
     '    set gotTrack to true',
     '    try',
