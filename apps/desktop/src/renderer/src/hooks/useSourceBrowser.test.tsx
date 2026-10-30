@@ -305,6 +305,27 @@ describe('useSourceBrowser', () => {
       await waitFor(() => expect(load).toHaveBeenCalledTimes(5))
       expect(result.current.entries).toHaveLength(450)
     })
+
+    // A refocus halfway through the first read left a 2,044-track playlist showing 399 rows
+    // for the whole re-read: rows already on screen must not stop the list from growing.
+    it('keeps adding stretches when a refocus restarts a read still under way', async () => {
+      const firstRead = pending<ReturnType<typeof stretch>>()
+      const lastStretch = pending<ReturnType<typeof stretch>>()
+      let refocused = false
+      const load = vi.fn(async (_id: string, from: number) => {
+        if (from === 1) return stretch(1, 200, 800)
+        if (from === 201) return stretch(201, 200, 800)
+        if (from === 401) return refocused ? stretch(401, 200, 800) : firstRead.promise
+        return lastStretch.promise
+      })
+      const { result, focus } = openFriday(load)
+      await waitFor(() => expect(result.current.entries).toHaveLength(400))
+      refocused = true
+      act(() => focus())
+      await waitFor(() => expect(result.current.entries).toHaveLength(600))
+      act(() => lastStretch.resolve(stretch(601, 200, 800)))
+      await waitFor(() => expect(result.current.entries).toHaveLength(800))
+    })
   })
 
   it('loads the picked playlist rows', async () => {
