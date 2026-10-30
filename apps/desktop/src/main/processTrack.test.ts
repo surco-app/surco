@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import log from 'electron-log/main'
 import { describe, expect, it, vi } from 'vitest'
@@ -7,7 +8,7 @@ import type { ProcessJob, Settings, TrackMetadata, TrashEntry } from '../shared/
 import type { PlaceCheck } from '../shared/verification'
 import { createActiveConversions } from './activeConversions'
 import type { ConversionWritten } from './ffmpeg'
-import { configureBackupDiscarder, configureOriginalKeeper } from './originalKeeper'
+import { configureBackupDiscarder, configureOriginalKeeper, policyKeeper } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
 import { type ProcessTrackDeps, replaceAppleMusicCopy, runProcessTrack } from './processTrack'
 
@@ -2920,6 +2921,34 @@ describe('runProcessTrack — converting a library track to another format', () 
     expect(keeper.mock.invocationCallOrder[0]).toBeLessThan(
       vi.mocked(deps.updateInAppleMusic).mock.invocationCallOrder[0],
     )
+  })
+
+  it('leaves Music alone and names why when that backup has no room', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-pt-'))
+    const entryFile = join(dir, 'A.aiff')
+    writeFileSync(entryFile, 'audio')
+    const deps = converting(entryFile)
+    configureOriginalKeeper(
+      policyKeeper(
+        () => 'always',
+        async () => null,
+      ),
+    )
+    let result: Awaited<ReturnType<typeof runProcessTrack>>
+    try {
+      result = await runProcessTrack(
+        libraryJob({ inputPath: '/lib/A.wav', format: 'aiff', keepOutputCopy: true }),
+        deps,
+      )
+    } finally {
+      configureOriginalKeeper(null)
+    }
+
+    expect(deps.updateInAppleMusic).not.toHaveBeenCalled()
+    expect(result).toMatchObject({
+      appleMusicFailed: true,
+      appleMusicErrorKey: 'noRoomBeforeMusicRewrite',
+    })
   })
 
   it('drops that backup when the entry turned out gone and Music touched nothing', async () => {

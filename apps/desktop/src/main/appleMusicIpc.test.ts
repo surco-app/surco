@@ -267,7 +267,9 @@ describe('applemusic:update', () => {
         noRoom,
       ),
     )
-    await expect(handlers.get('applemusic:update')?.(null, job)).rejects.toThrow('noRoomForBackup')
+    await expect(handlers.get('applemusic:update')?.(null, job)).rejects.toThrow(
+      'noRoomBeforeMusicRewrite',
+    )
     expect(noRoom).not.toHaveBeenCalled()
     expect(updateInAppleMusic).not.toHaveBeenCalled()
   })

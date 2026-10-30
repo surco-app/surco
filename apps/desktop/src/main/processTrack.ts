@@ -2,7 +2,13 @@ import { randomUUID } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
-import { errorWithKey, splitNameLeftMarked, withNameLeftMarked } from '../shared/errorKeys'
+import {
+  type ErrorKey,
+  errorKeyOf,
+  errorWithKey,
+  splitNameLeftMarked,
+  withNameLeftMarked,
+} from '../shared/errorKeys'
 import { foldAccents } from '../shared/foldAccents'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../shared/format'
 import type {
@@ -799,6 +805,7 @@ export async function runProcessTrack(
     let supersededPath: string | undefined
     let musicLandedPath: string | undefined
     let appleMusicFailed: true | undefined
+    let appleMusicErrorKey: ErrorKey | undefined
     let musicNameLeftMarked: true | undefined
     let musicReplaced: MusicExpect['replaced']
     // Where Music filed the "Apple Music only" copy: the temp it was written to is removed.
@@ -954,6 +961,7 @@ export async function runProcessTrack(
           musicNameLeftMarked = true
         musicPersistentId = undefined
         appleMusicFailed = true
+        appleMusicErrorKey = errorKeyOf(e instanceof Error ? e.message : '') ?? undefined
       }
     }
 
@@ -1160,6 +1168,7 @@ export async function runProcessTrack(
       oldMusicCopyKept,
       supersededPath,
       appleMusicFailed,
+      appleMusicErrorKey,
       originalKept,
       musicNameLeftMarked,
       verification,

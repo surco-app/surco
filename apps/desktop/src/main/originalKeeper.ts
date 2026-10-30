@@ -89,7 +89,7 @@ export async function keepBeforeMusicRewrite(path: string): Promise<TrashEntry |
     existsSync(path) &&
     keepsBackup(currentBackupPolicy(), { reencodes: false })
   )
-    throw errorWithKey('noRoomForBackup', path)
+    throw errorWithKey('noRoomBeforeMusicRewrite', path)
   return kept
 }
 

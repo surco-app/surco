@@ -45,6 +45,7 @@ export const ERROR_KEYS = [
   'musicbrainzUnavailable',
   'musicbrainzRateLimit',
   'noRoomForBackup',
+  'noRoomBeforeMusicRewrite',
   'conversionCancelled',
   'verifyUnknownTrack',
 ] as const
