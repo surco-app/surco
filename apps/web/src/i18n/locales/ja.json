@@ -26,6 +26,7 @@
     "openMenu": "メニューを開く",
     "closeMenu": "メニューを閉じる",
     "cambios": "最新情報",
+    "estadisticas": "統計",
     "donar": "寄付",
     "download": "ダウンロード",
     "language": "言語",
@@ -489,8 +490,7 @@
     "slogan": "音楽を、きちんと整理",
     "convertHeading": "変換",
     "flacToAiff": "FLACからAIFF",
-    "privacy": "プライバシー",
-    "downloads": "ダウンロード"
+    "privacy": "プライバシー"
   },
   "install": {
     "kicker": "インストール",
@@ -2536,5 +2536,34 @@
         "url": "https://vercel.com/legal/privacy-notice"
       }
     ]
+  },
+  "stats": {
+    "metaTitle": "統計 · Surco",
+    "metaDescription": "Mac、Windows、Linux で Surco がボットを除いて何回ダウンロードされたか、そしてインストール数の週ごとの伸び。",
+    "kicker": "統計",
+    "title": "Surco をダウンロードした人の数",
+    "lede": "Surco にはテレメトリーがないため、誰が使っているかはわかりません。公開されているのは、GitHub で各インストーラーが何回ダウンロードされたかです。この数字はそこから出しています。",
+    "total": "{{date}}以降のダウンロード数（ボットを除く）",
+    "mac": "Mac",
+    "windows": "Windows（アップデートを含む）",
+    "linux": "Linux（アップデートを含む）",
+    "macHeading": "Mac でのインストール",
+    "macLede": "Mac ではアップデートが別のファイルで届くため、ここでの 1 ダウンロードは Surco をインストールした 1 人です。",
+    "lastWeek": "直近 7 日間",
+    "lastMonth": "直近 30 日間",
+    "chartLabel": "Mac での累計インストール数",
+    "estimatedLegend": "点線部分は各バージョンの公開日から再構成したものです。実線部分は毎日計測しています。",
+    "weeklyHeading": "Mac での週ごとの新規インストール",
+    "updatesHeading": "各バージョンにアップデートした Mac",
+    "updatesLede": "各アップデートをダウンロードした Mac の数です。Surco を実際に使っている人の数に最も近い指標です。",
+    "howHeading": "数え方",
+    "howItems": [
+      "Mac では .dmg インストーラーだけを数えます。アップデートは別のファイルを使うので混ざりません。",
+      "Windows と Linux ではインストーラーがそのままアップデートにもなるため、新しいバージョンごとにアップデートした人数分のダウンロードが加わります。",
+      "どのバージョンにも、すべてのファイルを取得する自動プログラムからのダウンロードが 1〜2 回あります。人が必要としないファイルを使って差し引いています。"
+    ],
+    "measuredSince": "GitHub は現在の合計しか保存しません。{{date}}より前は各バージョンの公開日から再構成したもので、それ以降は毎日記録しています。",
+    "loading": "数字を読み込み中…",
+    "error": "数字を読み込めませんでした。ページを再読み込みしてください。"
   }
 }
