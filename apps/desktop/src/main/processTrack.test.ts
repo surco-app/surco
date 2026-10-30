@@ -2951,6 +2951,32 @@ describe('runProcessTrack — converting a library track to another format', () 
     })
   })
 
+  // Beside the original, a same-format conversion writes a new file and leaves the source
+  // where it is: the entry the job knows keeps playing it, and Music retags it there.
+  it('backs up the source beside which it converted before Music retags it', async () => {
+    const deps = converting('/lib/A.aiff')
+    const keeper = vi.fn(async () => null)
+    configureOriginalKeeper(keeper)
+    let result: Awaited<ReturnType<typeof runProcessTrack>>
+    try {
+      result = await runProcessTrack(
+        libraryJob({ format: 'aiff', convertBesideOriginal: true, keepOutputCopy: true }),
+        deps,
+      )
+    } finally {
+      configureOriginalKeeper(null)
+    }
+
+    expect(result.inPlace).toBe(false)
+    expect(keeper).toHaveBeenCalledWith('/lib/A.aiff', 'replaced', '/lib/A.aiff', {
+      reencodes: false,
+      staysInPlace: true,
+    })
+    expect(keeper.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(deps.updateInAppleMusic).mock.invocationCallOrder[0],
+    )
+  })
+
   it('drops that backup when the entry turned out gone and Music touched nothing', async () => {
     const deps = converting('/lib/A.aiff', { updateInAppleMusic: vi.fn(async () => null) })
     const kept = { id: 'kept' } as TrashEntry
