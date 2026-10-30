@@ -127,14 +127,20 @@ function describeFrame(frame: Id3v2Frame): string {
 
 // The iTunes atoms: TagLib exposes them only through named getters, so the list is
 // read straight from the file's ilst box. Each child is `name` (four chars, or the
-// freeform mean:name) followed by its data payloads.
+// freeform ----:mean:name) followed by its data payloads.
 function describeApple(f: TagFile): string[] {
   const tag = f.tag as unknown as {
     _ilstBox?: { children: { boxType: ByteVector; children: unknown[] }[] }
   }
   const items = tag._ilstBox?.children ?? []
   return items.map((box) => {
-    const name = box.boxType.toString(StringType.Latin1)
+    const children = box.children as { boxType: ByteVector; text?: string }[]
+    const named = (type: string) =>
+      children.find((c) => c.boxType.toString(StringType.Latin1) === type)?.text ?? ''
+    const type = box.boxType.toString(StringType.Latin1)
+    // A freeform atom says what it is only through its mean and name: the key and the
+    // label both sit in a "----", so the bare type could not tell one from the other.
+    const name = type === '----' ? `----:${named('mean')}:${named('name')}` : type
     // A data box says whether it holds text through its flags; a picture or a BPM
     // integer read as text would put binary into the line.
     const data = (

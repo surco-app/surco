@@ -598,4 +598,27 @@ describe('checkFile — what convertAudio wrote reads back as written', () => {
     )
     expect(check.detail).toEqual({ key: 'fileTagDiffers', params: { field: 'genre' } })
   })
+
+  // An M4A keeps the key and the label side by side as freeform atoms: only the one named
+  // initialkey is the key.
+  it('an M4A with a label and no key is ok', async () => {
+    const check = await converted('alac', { title: 'T', publisher: 'Lbl', key: '' })
+    expect(check.state, JSON.stringify(check.detail)).toBe('ok')
+  }, 30_000)
+
+  it('an M4A whose label holds the key that was asked is still fileTagDiffers', async () => {
+    const file = at('key-in-label.m4a')
+    ff('-i', at('source.wav'), '-c:a', 'alac', file)
+    writeTags(file, meta({ key: '1B', publisher: '8A' }))
+    const check = await checkFile(
+      await expectFor(file, {
+        ext: '.m4a',
+        codec: 'copy',
+        samplesKept: false,
+        tags: { key: '8A' },
+      }),
+      fileReaders,
+    )
+    expect(check.detail).toEqual({ key: 'fileTagDiffers', params: { field: 'key' } })
+  })
 })

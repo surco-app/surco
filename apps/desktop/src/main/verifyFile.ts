@@ -118,7 +118,7 @@ const TAG_LINES: Partial<Record<keyof TrackMetadata, RegExp>> = {
   year: /^(id3 (TDRC|TYER)|xiph (DATE|YEAR)|mp4 ©day|riff ICRD)=/,
   trackNumber: /^(id3 TRCK|xiph TRACKNUMBER|riff IPRT)=/,
   bpm: /^(id3 TBPM|xiph (TEMPO|BPM))=/,
-  key: /^(id3 TKEY|xiph INITIALKEY|mp4 ----)=/,
+  key: /^(id3 TKEY|xiph INITIALKEY|mp4 ----:com\.apple\.iTunes:initialkey)=/,
   grouping: /^(id3 (TIT1|GRP1)|xiph GROUPING|mp4 ©grp)=/,
   comment: /^(id3 COMM\[[^\]]*\]|xiph (COMMENT|DESCRIPTION)|mp4 ©cmt|riff ICMT)=/,
 }
