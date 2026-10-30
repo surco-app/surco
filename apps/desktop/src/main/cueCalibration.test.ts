@@ -118,6 +118,18 @@ describe('automaticCueOffsetOfFiles', () => {
     )
   })
 
+  it('finds the header frame past junk that fakes a sync, and like ffmpeg trims no delay there', async () => {
+    const wav = encode('junk.wav', [])
+    const clean = readFileSync(encode('junk-clean.mp3', ['-c:a', 'libmp3lame']))
+    const tagEnd = leadingId3v2Size(clean)
+    const junk = Buffer.alloc(200)
+    Buffer.from([0xff, 0xfb, 0x90, 0x44]).copy(junk)
+    const junky = join(dir, 'junky.mp3')
+    writeFileSync(junky, Buffer.concat([clean.subarray(0, tagEnd), junk, clean.subarray(tagEnd)]))
+
+    expect(await automaticCueOffsetOfFiles(junky, wav)).toBeCloseTo(-ms(XING_FRAME, 44100))
+  })
+
   it('reads the output MP3 header the same way', async () => {
     const flac = encode('pcm.flac', [])
     const withoutXing = encode('bare-out.mp3', ['-c:a', 'libmp3lame', '-write_xing', '0'])
@@ -200,7 +212,7 @@ describe('what ffmpeg drops from the start of an MP3', () => {
     return out
   }
 
-  it('drops the header frame and the signed delay, only the frame when unsigned, nothing without one', () => {
+  it('drops the header frame and the signed delay, only the frame when unsigned or not right after the tag, nothing without one', () => {
     const wav = click()
     const mp3 = (name: string, args: string[]) => {
       const out = join(dir, name)
@@ -214,9 +226,18 @@ describe('what ffmpeg drops from the start of an MP3', () => {
     const unsigned = join(dir, 'click-unsigned.mp3')
     writeFileSync(unsigned, bytes)
 
+    const tagEnd = leadingId3v2Size(bytes)
+    const junky = join(dir, 'click-junky.mp3')
+    const clean = readFileSync(signed)
+    writeFileSync(
+      junky,
+      Buffer.concat([clean.subarray(0, tagEnd), Buffer.alloc(200), clean.subarray(tagEnd)]),
+    )
+
     const at = firstClick(wav)
     expect(Math.abs(firstClick(signed) - at)).toBeLessThanOrEqual(2)
     expect(Math.abs(firstClick(bare) - (at + ENCODER_DELAY))).toBeLessThanOrEqual(2)
     expect(Math.abs(firstClick(unsigned) - (at + ENCODER_DELAY))).toBeLessThanOrEqual(2)
+    expect(Math.abs(firstClick(junky) - (at + ENCODER_DELAY))).toBeLessThanOrEqual(2)
   })
 })

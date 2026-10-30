@@ -42,16 +42,23 @@ export interface Mpeg1Info {
   delay: number
 }
 
-function xingTagAt(head: Buffer, frame: number): number | null {
+export function xingTagAt(head: Buffer, frame: number): number | null {
   const mono = head[frame + 3] >> 6 === 3
   const tagAt = frame + 4 + (mono ? 17 : 32)
   const tag = head.toString('latin1', tagAt, tagAt + 4)
   return tag === 'Info' || tag === 'Xing' ? tagAt : null
 }
 
-export function mpeg1SampleRate(head: Buffer): number | null {
-  const frame = firstFrame(head)
-  return frame === null ? null : MPEG1_SAMPLE_RATES[(head[frame + 2] >> 2) & 3]
+export function xingEncoder(head: Buffer, tagAt: number): { encoder: string; delay: number } {
+  const flags = head.readUInt32BE(tagAt + 4)
+  const encoderAt = XING_FIELD_BYTES.reduce(
+    (at, [flag, bytes]) => (flags & flag ? at + bytes : at),
+    tagAt + 8,
+  )
+  return {
+    encoder: head.toString('latin1', encoderAt, encoderAt + 4),
+    delay: (head[encoderAt + 21] << 4) | (head[encoderAt + 22] >> 4),
+  }
 }
 
 export function mpeg1Info(head: Buffer): Mpeg1Info | null {
@@ -59,16 +66,7 @@ export function mpeg1Info(head: Buffer): Mpeg1Info | null {
   if (frame === null) return null
   const tagAt = xingTagAt(head, frame)
   if (tagAt === null) return null
-  const flags = head.readUInt32BE(tagAt + 4)
-  const encoderAt = XING_FIELD_BYTES.reduce(
-    (at, [flag, bytes]) => (flags & flag ? at + bytes : at),
-    tagAt + 8,
-  )
-  return {
-    sampleRate: MPEG1_SAMPLE_RATES[(head[frame + 2] >> 2) & 3],
-    encoder: head.toString('latin1', encoderAt, encoderAt + 4),
-    delay: (head[encoderAt + 21] << 4) | (head[encoderAt + 22] >> 4),
-  }
+  return { sampleRate: MPEG1_SAMPLE_RATES[(head[frame + 2] >> 2) & 3], ...xingEncoder(head, tagAt) }
 }
 
 export function rekordboxLeadMs(head: Buffer): number {
