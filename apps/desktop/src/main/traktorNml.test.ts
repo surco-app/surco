@@ -10,6 +10,7 @@ import {
   entryStates,
   escapeAttr,
   findEntries,
+  matchedEntryFiles,
   matchedPatchCount,
   type NmlPatch,
   refreshedCoverIds,
@@ -639,6 +640,24 @@ describe('repointing onto a path the collection already has', () => {
 
     expect(out).toContain('FILE="uno.mp3"')
     expect(out).not.toContain('FILE="uno.flac"')
+  })
+})
+
+describe('matchedEntryFiles', () => {
+  const at = (file: string) => ({ volume: 'Macintosh HD', dir: '/:Musica/:', file })
+
+  // The check after the write needs to know which entry each patch was going to move,
+  // decided exactly as applyPatches decides it.
+  it('names the entry each patch matches, exact or by stem, and null for none', () => {
+    expect(matchedEntryFiles(NML, [at('dos.flac'), at('uno.wav'), at('tres.aiff')])).toEqual([
+      'dos.flac',
+      'uno.aiff',
+      null,
+    ])
+  })
+
+  it('an entry whose own file is still on disk is not matched by stem', () => {
+    expect(matchedEntryFiles(NML, [at('uno.wav')], () => true)).toEqual([null])
   })
 })
 

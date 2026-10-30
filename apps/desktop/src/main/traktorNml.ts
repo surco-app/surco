@@ -123,7 +123,7 @@ const baseName = (file: string): string => file.replace(/\.[^.]*$/, '')
 // ever contain — a space or "/" would let a value straddling the boundary collide
 // with a different split of the same three strings. NUL can't appear in any real
 // filesystem path, so it can't collide.
-export const key = (volume: string, dir: string, file: string): string =>
+export const locationKey = (volume: string, dir: string, file: string): string =>
   `${volume.normalize('NFC')}\0${dir.normalize('NFC')}\0${file.normalize('NFC')}`
 
 // A real collection can be tens of thousands of ENTRY blocks; scanning every patch
@@ -156,20 +156,38 @@ function indexPatches(
   onDisk: OnDisk = () => false,
 ): PatchIndex {
   const byFile = new Map<string, NmlPatch>()
-  for (const patch of patches) byFile.set(key(patch.volume, patch.dir, patch.file), patch)
-  const owned = new Set(entries.map((e) => key(e.volume, e.dir, e.file)))
+  for (const patch of patches) byFile.set(locationKey(patch.volume, patch.dir, patch.file), patch)
+  const owned = new Set(entries.map((e) => locationKey(e.volume, e.dir, e.file)))
   const byBaseName = new Map<string, NmlPatch>()
   for (const patch of patches)
-    if (!owned.has(key(patch.volume, patch.dir, patch.file)))
-      byBaseName.set(key(patch.volume, patch.dir, baseName(patch.file)), patch)
+    if (!owned.has(locationKey(patch.volume, patch.dir, patch.file)))
+      byBaseName.set(locationKey(patch.volume, patch.dir, baseName(patch.file)), patch)
   return { byFile, byBaseName, onDisk }
 }
 
 function matchPatch(entry: NmlEntry, index: PatchIndex): NmlPatch | undefined {
-  const exact = index.byFile.get(key(entry.volume, entry.dir, entry.file))
+  const exact = index.byFile.get(locationKey(entry.volume, entry.dir, entry.file))
   if (exact) return exact
-  const fallback = index.byBaseName.get(key(entry.volume, entry.dir, baseName(entry.file)))
+  const fallback = index.byBaseName.get(locationKey(entry.volume, entry.dir, baseName(entry.file)))
   return fallback && !index.onDisk(entry) ? fallback : undefined
+}
+
+// The FILE of the entry each patch is going to rewrite, read from the collection before the
+// write with the matching applyPatches uses; null where the patch matches no entry, so the
+// check after the write knows what Traktor had rather than guessing from the patch.
+export function matchedEntryFiles(
+  nml: string,
+  patches: NmlPatch[],
+  onDisk?: OnDisk,
+): (string | null)[] {
+  const entries = findEntries(nml)
+  const index = indexPatches(patches, entries, onDisk)
+  const found = new Map<NmlPatch, string>()
+  for (const entry of entries) {
+    const patch = matchPatch(entry, index)
+    if (patch) found.set(patch, entry.file)
+  }
+  return patches.map((p) => found.get(p) ?? null)
 }
 
 // Traktor writes COVERARTID only on <INFO>, so the read is anchored there rather than
@@ -208,7 +226,7 @@ export function refreshedCoverIds(
     const patch = matchPatch(entry, index)
     if (!patch?.refreshCoverArt || !patch.outputPath) continue
     if (detached.has(patch)) continue
-    if (sharedCover.has(key(entry.volume, entry.dir, entry.file))) continue
+    if (sharedCover.has(locationKey(entry.volume, entry.dir, entry.file))) continue
     const coverId = nml.slice(entry.start, entry.end).match(COVER_ID_RE)?.[1]
     if (coverId) out.push({ coverId, file: patch.outputPath })
   }
@@ -247,7 +265,7 @@ function sharedCoverSubstitutions(
     if (!id || (counts.get(id) ?? 0) < 2) return
     const patch = matchPatch(entry, index)
     if (!patch?.refreshCoverArt || !patch.outputPath || detached.has(patch)) return
-    out.set(key(entry.volume, entry.dir, entry.file), patch)
+    out.set(locationKey(entry.volume, entry.dir, entry.file), patch)
   })
   return out
 }
@@ -256,12 +274,12 @@ function sharedCoverSubstitutions(
 // case. A substitution (the source is gone, LOCATION follows the file) is deliberately
 // not here: there the identity is the same track's and has to survive.
 function coexistingOutputs(entries: NmlEntry[], patches: NmlPatch[]): Map<string, NmlPatch> {
-  const present = new Set(entries.map((e) => key(e.volume, e.dir, e.file)))
+  const present = new Set(entries.map((e) => locationKey(e.volume, e.dir, e.file)))
   const out = new Map<string, NmlPatch>()
   for (const patch of patches) {
     if (!patch.outputVolume || !patch.outputDir || !patch.outputFile) continue
-    const source = key(patch.volume, patch.dir, patch.file)
-    const output = key(patch.outputVolume, patch.outputDir, patch.outputFile)
+    const source = locationKey(patch.volume, patch.dir, patch.file)
+    const output = locationKey(patch.outputVolume, patch.outputDir, patch.outputFile)
     if (source === output || !present.has(output) || !present.has(source)) continue
     if (!out.has(output)) out.set(output, patch)
   }
@@ -525,13 +543,13 @@ function replaceTags(block: string, tags: NonNullable<NmlPatch['tags']>): string
 // land on whichever entry matched.
 function pathTaken(entries: NmlEntry[], patch: NmlPatch, self: NmlEntry): boolean {
   if (!patch.newFile) return false
-  const target = key(patch.volume, patch.dir, patch.newFile)
-  return entries.some((e) => e !== self && key(e.volume, e.dir, e.file) === target)
+  const target = locationKey(patch.volume, patch.dir, patch.newFile)
+  return entries.some((e) => e !== self && locationKey(e.volume, e.dir, e.file) === target)
 }
 
 const outputKey = (patch: NmlPatch): string | undefined =>
   patch.outputVolume && patch.outputDir && patch.outputFile
-    ? key(patch.outputVolume, patch.outputDir, patch.outputFile)
+    ? locationKey(patch.outputVolume, patch.outputDir, patch.outputFile)
     : undefined
 
 // What the patch may do to the entry it matched. The cue tree was read back from the
@@ -543,14 +561,19 @@ function patchFor(entries: NmlEntry[], patch: NmlPatch, entry: NmlEntry): NmlPat
   const repoints = patch.newFile !== undefined && !pathTaken(entries, patch, entry)
   // The names are the file's own; a same-stem sibling is another file the review never read.
   const exact =
-    key(entry.volume, entry.dir, entry.file) === key(patch.volume, patch.dir, patch.file)
+    locationKey(entry.volume, entry.dir, entry.file) ===
+    locationKey(patch.volume, patch.dir, patch.file)
   const safe = {
     ...patch,
     newFile: repoints ? patch.newFile : undefined,
     tags: exact ? patch.tags : undefined,
   }
   const output = outputKey(patch)
-  if (repoints || output === undefined || output === key(entry.volume, entry.dir, entry.file))
+  if (
+    repoints ||
+    output === undefined ||
+    output === locationKey(entry.volume, entry.dir, entry.file)
+  )
     return safe
   return { ...safe, cueTree: undefined, cueShift: undefined }
 }
@@ -561,7 +584,8 @@ function producedOutputs(patches: NmlPatch[]): Map<string, NmlPatch> {
   const out = new Map<string, NmlPatch>()
   for (const patch of patches) {
     const output = outputKey(patch)
-    if (!output || !patch.cueTree || output === key(patch.volume, patch.dir, patch.file)) continue
+    if (!output || !patch.cueTree || output === locationKey(patch.volume, patch.dir, patch.file))
+      continue
     if (!out.has(output)) out.set(output, patch)
   }
   return out
@@ -593,7 +617,7 @@ export function applyPatches(nml: string, patches: NmlPatch[], onDisk?: OnDisk):
   for (let i = entries.length - 1; i >= 0; i--) {
     const entry = entries[i]
     const block = out.slice(entry.start, entry.end)
-    const at = key(entry.volume, entry.dir, entry.file)
+    const at = locationKey(entry.volume, entry.dir, entry.file)
     // The converted file's own ENTRY is not the one the patch matches (that is the
     // source's), so the detach is keyed on the entry's location rather than on a match.
     const detached = coexisting.has(at)
@@ -678,7 +702,7 @@ export function matchedPatchCount(nml: string, patches: NmlPatch[], onDisk?: OnD
   const matched = new Set<NmlPatch>()
   for (const entry of entries) {
     const patch = matchPatch(entry, index)
-    const output = produced.get(key(entry.volume, entry.dir, entry.file))
+    const output = produced.get(locationKey(entry.volume, entry.dir, entry.file))
     if (!patch && !output) continue
     // Same rewrite applyPatches makes, or the count would claim a rename or a cue write
     // that the write itself declines to make.
