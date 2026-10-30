@@ -9,8 +9,10 @@ vi.mock('../main/engineProcess', () => ({ isEngineDjRunning: vi.fn(async () => f
 import { loadSqlJs } from '../main/engine'
 import {
   decodeBeatGrid,
+  decodeLoops,
   decodeQuickCues,
   decodeTrackData,
+  encodeLoops,
   inflateEngineBlob,
 } from '../main/engineBlobs'
 import { analysedTrack } from '../main/enginePerformanceFixture'
@@ -21,13 +23,31 @@ import { openSurco, type Scenario } from './harness'
 const RATE = 44100
 const TRIM_SEC = 1.9
 const CUE_SEC = [1, 5, 12]
+const LOOP_SEC = [
+  [0.5, 1.5],
+  [8, 10],
+]
+const loopsBlob = () =>
+  encodeLoops(
+    LOOP_SEC.map(([start, end]) => ({
+      label: '',
+      start: start * RATE,
+      end: end * RATE,
+      startSet: true,
+      endSet: true,
+      argb: 0xff00cc00,
+    })),
+  )
 
 async function performance(library: string) {
   const SQL = await loadSqlJs()
   const db = new SQL.Database(readFileSync(engineDbPath(library)))
   try {
-    const [row] = db.exec('SELECT trackData, beatData, quickCues FROM PerformanceData')[0].values
-    const [trackData, beatData, quickCues] = row.map((b) => inflateEngineBlob(b as Uint8Array))
+    const [row] = db.exec('SELECT trackData, beatData, quickCues, loops FROM PerformanceData')[0]
+      .values
+    const [trackData, beatData, quickCues] = row
+      .slice(0, 3)
+      .map((b) => inflateEngineBlob(b as Uint8Array))
     const rate = decodeTrackData(trackData)?.sampleRate ?? 0
     const sec = (sample: number) => sample / rate
     const cues = decodeQuickCues(quickCues)
@@ -35,6 +55,11 @@ async function performance(library: string) {
       cues: cues?.slots.map((s) => (s.cue ? sec(s.cue.sample) : null)) ?? [],
       mainCue: sec(cues?.tail.readDoubleBE(0) ?? 0),
       grid: decodeBeatGrid(beatData)?.markers.map((m) => sec(m.sample)) ?? [],
+      loops:
+        decodeLoops(Buffer.from((row[3] as Uint8Array | null) ?? []))?.loops.map((l) => [
+          sec(l.start),
+          sec(l.end),
+        ]) ?? [],
     }
   } finally {
     db.close()
@@ -59,7 +84,7 @@ describe('Cut the silence before a record without moving its Engine DJ cues off 
       artist: 'A',
       lavfi: `aevalsrc=0.3*sin(2*PI*220*t):s=${RATE}:d=20`,
     })
-    writeEngineLibraryFixture(library, {
+    const db = writeEngineLibraryFixture(library, {
       tracks: [{ id: 1, path: relative(library, source) }],
       playlists: [],
       entities: [],
@@ -69,7 +94,9 @@ describe('Cut the silence before a record without moving its Engine DJ cues off 
           CUE_SEC.map((s, i) => ({ label: `C${i}`, sample: s * RATE, argb: 0xffcc0000 })),
         ),
       ],
-    }).close()
+    })
+    db.prepare('UPDATE PerformanceData SET loops = ? WHERE trackId = 1').run(loopsBlob())
+    db.close()
     before = await performance(library)
     surco = await openSurco({
       settings: {
@@ -116,6 +143,14 @@ describe('Cut the silence before a record without moving its Engine DJ cues off 
 
   it('moves the beat grid by the cut, so every beat still falls on the music', () => {
     expect(after.grid).toEqual(before.grid.map((s) => expect.closeTo(s - TRIM_SEC, 4)))
+  })
+
+  it('moves every loop by the cut, and one set in the lead-in to the new start at its length', () => {
+    expect(before.loops).toEqual(LOOP_SEC)
+    expect(after.loops).toEqual([
+      [0, expect.closeTo(1, 4)],
+      [expect.closeTo(8 - TRIM_SEC, 4), expect.closeTo(10 - TRIM_SEC, 4)],
+    ])
   })
 })
 
