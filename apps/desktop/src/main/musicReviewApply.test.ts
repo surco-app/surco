@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { ActivityEvent, MusicFieldFix, TrashEntry } from '../shared/types'
 import { createActivity } from './activity'
+import type { PreparedRewrite, TagFieldChange } from './musicFieldWrite'
 import { type ApplyDeps, applyMusicFixes } from './musicReviewApply'
 
 const fix = (persistentId: string, field: MusicFieldFix['field'] = 'artist'): MusicFieldFix => ({
@@ -10,13 +11,24 @@ const fix = (persistentId: string, field: MusicFieldFix['field'] = 'artist'): Mu
   to: 'DJ Lara',
 })
 
-function deps(over: Partial<ApplyDeps> = {}): ApplyDeps {
+type Rewrite = (file: string, changes: TagFieldChange[]) => ReturnType<PreparedRewrite['write']>
+
+function deps({
+  rewrite = vi.fn().mockResolvedValue({ outcomes: ['written'], backup: { id: 'b1' } }),
+  ...over
+}: Partial<ApplyDeps> & { rewrite?: Rewrite } = {}) {
+  const abandon = vi.fn().mockResolvedValue(undefined)
   return {
     setField: vi.fn().mockResolvedValue('set'),
     locate: vi.fn().mockResolvedValue('/m/a.mp3'),
     exists: vi.fn().mockResolvedValue(true),
-    rewrite: vi.fn().mockResolvedValue({ outcomes: ['written'], backup: { id: 'b1' } }),
+    prepare: vi.fn(async (file: string) => ({
+      write: (changes: TagFieldChange[]) => rewrite(file, changes),
+      abandon,
+    })),
     ...over,
+    rewrite,
+    abandon,
   }
 }
 
@@ -103,7 +115,7 @@ describe('applyMusicFixes', () => {
         }),
     )
     const run = applyMusicFixes([fix('A')], deps({ setField }), { onProgress })
-    await Promise.resolve()
+    await vi.waitFor(() => expect(setField).toHaveBeenCalled())
     expect(onProgress).toHaveBeenCalledWith({ done: 0, total: 1, current: 1 })
     answer('set')
     await run
@@ -138,6 +150,38 @@ describe('applyMusicFixes', () => {
     const rewrite = vi.fn().mockResolvedValue({ outcomes: ['written', 'unchanged'] })
     const [out] = await applyMusicFixes([fix('A'), fix('A', 'genre')], deps({ rewrite }))
     expect(out.written).toEqual(['artist'])
+  })
+
+  // Music rewrites its copy of the file the moment the tag is set, so the backup the
+  // review's Undo restores has to exist before Music is asked.
+  it('backs up the file before Music is asked', async () => {
+    const order: string[] = []
+    const d = deps({
+      setField: vi.fn(async () => {
+        order.push('music')
+        return 'set' as const
+      }),
+      prepare: async () => {
+        order.push('backup')
+        return { write: async () => ({ outcomes: ['written'] }), abandon: async () => {} }
+      },
+    })
+    await applyMusicFixes([fix('A')], d)
+    expect(order).toEqual(['backup', 'music'])
+  })
+
+  it('drops the backup when Music refused every field', async () => {
+    const d = deps({ setField: vi.fn().mockResolvedValue('mismatch') })
+    await applyMusicFixes([fix('A')], d)
+    expect(d.abandon).toHaveBeenCalledTimes(1)
+  })
+
+  // Asking Music anyway would let it rewrite the file with no copy to go back to.
+  it('leaves Music alone when the file could not be backed up', async () => {
+    const d = deps({ prepare: vi.fn().mockRejectedValue(new Error('no-backup')) })
+    const [out] = await applyMusicFixes([fix('A')], d)
+    expect(d.setField).not.toHaveBeenCalled()
+    expect(out).toMatchObject({ file: 'failed', error: 'no-backup', written: [] })
   })
 
   it('reports a missing file with no path when the location cannot be read', async () => {

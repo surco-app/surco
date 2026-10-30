@@ -4,10 +4,9 @@ import type {
   MusicFixOutcome,
   MusicFixProgress,
   MusicReviewField,
-  TrashEntry,
 } from '../shared/types'
 import type { MusicSetResult } from './applemusic'
-import type { FieldWrite, TagFieldChange } from './musicFieldWrite'
+import type { PreparedRewrite } from './musicFieldWrite'
 import { type FieldEnding, logFieldRows, type RunLog } from './musicReviewLog'
 
 export interface ApplyDeps {
@@ -19,10 +18,7 @@ export interface ApplyDeps {
   ) => Promise<MusicSetResult>
   locate: (persistentId: string) => Promise<string>
   exists: (path: string) => Promise<boolean>
-  rewrite: (
-    file: string,
-    changes: TagFieldChange[],
-  ) => Promise<{ outcomes: FieldWrite[]; backup?: TrashEntry }>
+  prepare: (file: string) => Promise<PreparedRewrite>
 }
 
 export interface ApplyHooks {
@@ -54,25 +50,44 @@ function endingOf(o: MusicFixOutcome, index: number): FieldEnding {
 const message = (e: unknown): string => (e instanceof Error ? e.message : String(e))
 
 // Music is the guard: a field only reaches the file when Music still held the value the
-// review read, so a track edited meanwhile is never overwritten on disk.
+// review read, so a track edited meanwhile is never overwritten on disk. The file is
+// copied and backed up before Music is asked, since Music rewrites it on the spot.
 async function applyTrack(
   persistentId: string,
   fixes: MusicFieldFix[],
   deps: ApplyDeps,
 ): Promise<MusicFixOutcome> {
+  const path = await deps.locate(persistentId).catch(() => '')
+  let prepared: PreparedRewrite | undefined
+  if (path && (await deps.exists(path))) {
+    try {
+      prepared = await deps.prepare(path)
+    } catch (e) {
+      return {
+        persistentId,
+        path,
+        fixes,
+        music: [],
+        file: 'failed',
+        written: [],
+        error: message(e),
+      }
+    }
+  }
   const music: MusicFieldOutcome[] = []
   for (const f of fixes)
     music.push(
       await deps.setField(persistentId, f.field, f.from, f.to).catch(() => 'failed' as const),
     )
   const accepted = fixes.filter((_, i) => music[i] === 'set')
-  if (accepted.length === 0) return { persistentId, fixes, music, file: 'skipped', written: [] }
-  const path = await deps.locate(persistentId).catch(() => '')
-  if (!path || !(await deps.exists(path)))
+  if (accepted.length === 0) {
+    await prepared?.abandon()
+    return { persistentId, fixes, music, file: 'skipped', written: [] }
+  }
+  if (!prepared)
     return { persistentId, fixes, music, file: 'missing', path: path || undefined, written: [] }
   try {
-    const { outcomes, backup } = await deps.rewrite(
-      path,
+    const { outcomes, backup } = await prepared.write(
       accepted.map(({ field, from, to }) => ({ field, from, to })),
     )
     const file = outcomes.includes('written') ? 'written' : 'unchanged'

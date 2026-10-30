@@ -17,8 +17,9 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
-import { rewriteTagFields } from './musicFieldWrite'
-import { configureOriginalKeeper, policyKeeper } from './originalKeeper'
+import { prepareTagRewrite, rewriteTagFields } from './musicFieldWrite'
+import { applyMusicFixes } from './musicReviewApply'
+import { configureBackupDiscarder, configureOriginalKeeper, policyKeeper } from './originalKeeper'
 import { diffSnapshots, snapshotTags } from './tagSnapshot'
 
 const FF = ffmpegStatic as unknown as string
@@ -553,6 +554,83 @@ describe('rewriteTagFields', () => {
     ])
     expect(outcomes).toEqual(['written'])
     expect(backup?.id).toBe('kept')
+    expect(snapshotTags(file).join('\n')).toContain('DJ Lara')
+  }, 60000)
+})
+
+// Measured against the real app on 30/10: Music rewrites its own copy of the file the
+// moment a tag is set on the entry, before Surco has written or backed up anything.
+describe('the library review against a Music that rewrites the file', () => {
+  function musicThatRewrites(file: string) {
+    return async (_pid: string, _field: string, _from: string, to: string) => {
+      const f = TagFile.createFromPath(file)
+      try {
+        f.tag.performers = [to]
+        f.save()
+      } finally {
+        f.dispose()
+      }
+      return 'set' as const
+    }
+  }
+
+  function copyingKeeper() {
+    const stored = new Map<string, Buffer>()
+    configureOriginalKeeper(async (path, reason) => {
+      const id = `b${stored.size + 1}`
+      stored.set(id, readFileSync(path))
+      return { id, name: id, originalPath: path, storedPath: '', bytes: 0, trashedAt: 0, reason }
+    })
+    return stored
+  }
+
+  it('backs up the original bytes, so Undo has the file as it was', async () => {
+    const file = make('aiff', ['-c:a', 'pcm_s16be'], 'Dj Lara')
+    const original = readFileSync(file)
+    const stored = copyingKeeper()
+    const [out] = await applyMusicFixes(
+      [{ persistentId: 'A', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
+      {
+        setField: musicThatRewrites(file),
+        locate: async () => file,
+        exists: async () => true,
+        prepare: (path) => prepareTagRewrite(path),
+      },
+    )
+    expect(out.backupId).toBeDefined()
+    expect(stored.get(out.backupId ?? '')?.equals(original)).toBe(true)
+  }, 60000)
+
+  it('leaves no copy and no backup behind when the fix is abandoned', async () => {
+    const file = make('mp3', ['-c:a', 'libmp3lame'], 'Dj Lara')
+    const before = snapshotTags(file)
+    const discarded = vi.fn().mockResolvedValue(undefined)
+    configureBackupDiscarder(discarded)
+    configureOriginalKeeper(vi.fn().mockResolvedValue({ id: 'b1' }))
+    const track = vi.fn()
+    const untrack = vi.fn()
+    const prepared = await prepareTagRewrite(file, { track, untrack })
+    await prepared.abandon()
+    expect(discarded).toHaveBeenCalledWith({ id: 'b1' })
+    expect(existsSync(track.mock.calls[0][0])).toBe(false)
+    expect(untrack).toHaveBeenCalledWith(track.mock.calls[0][0])
+    expect(snapshotTags(file)).toEqual(before)
+    configureBackupDiscarder(null)
+  }, 60000)
+
+  it('reports the field as written, not as a file that differs', async () => {
+    const file = make('aiff', ['-c:a', 'pcm_s16be'], 'Dj Lara')
+    copyingKeeper()
+    const [out] = await applyMusicFixes(
+      [{ persistentId: 'A', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
+      {
+        setField: musicThatRewrites(file),
+        locate: async () => file,
+        exists: async () => true,
+        prepare: (path) => prepareTagRewrite(path),
+      },
+    )
+    expect(out).toMatchObject({ file: 'written', written: ['artist'] })
     expect(snapshotTags(file).join('\n')).toContain('DJ Lara')
   }, 60000)
 })

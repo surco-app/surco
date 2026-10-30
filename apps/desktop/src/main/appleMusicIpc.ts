@@ -39,7 +39,7 @@ import { hasCoverSource, prepareProcessedCover } from './cover'
 import { readMeta } from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { removeDuplicateCopyLogged } from './musicDuplicates'
-import { rewriteTagFields } from './musicFieldWrite'
+import { prepareTagRewrite } from './musicFieldWrite'
 import { applyMusicFixes } from './musicReviewApply'
 import { musicReviewLog, setFieldLogged } from './musicReviewLog'
 import { trashRecoverably } from './recoverableTrash'
@@ -115,10 +115,9 @@ export function registerAppleMusicIpc(
             () => true,
             () => false,
           ),
-        rewrite: (file, changes) =>
-          rewriteTagFields(
+        prepare: (file) =>
+          prepareTagRewrite(
             file,
-            changes,
             trackTmp && untrackTmp ? { track: trackTmp, untrack: untrackTmp } : undefined,
           ),
       },

@@ -50,6 +50,55 @@ export async function rewriteTagFields(
   }
 }
 
+export interface PreparedRewrite {
+  write: (changes: TagFieldChange[]) => Promise<{ outcomes: FieldWrite[]; backup?: TrashEntry }>
+  abandon: () => Promise<void>
+}
+
+// rewriteTagFields with the copy and the backup taken up front, for a write that follows
+// setting the field in Music: Music rewrites its file as soon as the tag is set, so by
+// then the original and the value the review read are only left in these two copies.
+export async function prepareTagRewrite(
+  file: string,
+  tracking?: TmpTracking,
+): Promise<PreparedRewrite> {
+  const tmp = convertTmpPath(file, extname(file))
+  tracking?.track(tmp)
+  let archived: TrashEntry | null = null
+  const abandon = async () => {
+    if (archived) await discardBackup(archived).catch(() => undefined)
+    await dropTemp(tmp, tracking)
+  }
+  try {
+    await copyFile(file, tmp, fsConstants.COPYFILE_FICLONE)
+    archived = await keepOriginal(file, 'replaced', file, {
+      reencodes: false,
+      regardlessOfPolicy: true,
+    })
+    if (!archived && hasOriginalKeeper()) throw new Error('no-backup')
+  } catch (e) {
+    await abandon()
+    throw e
+  }
+  const write = async (changes: TagFieldChange[]) => {
+    try {
+      const outcomes = await runInWorker<FieldWrite[]>({ type: 'setTagFields', file: tmp, changes })
+      if (!outcomes.includes('written')) {
+        await abandon()
+        return { outcomes }
+      }
+      await assertDecodable(tmp, file)
+      await renameWithRetry(tmp, file)
+      tracking?.untrack(tmp)
+      return { outcomes, backup: archived ?? undefined }
+    } catch (e) {
+      await abandon()
+      throw e
+    }
+  }
+  return { write, abandon }
+}
+
 // A temp that will not delete (a network volume still holding the handle) stays in the
 // manifest so the next launch sweeps it, as convertAudio does.
 async function dropTemp(tmp: string, tracking?: TmpTracking): Promise<void> {
