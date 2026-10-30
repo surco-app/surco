@@ -46,7 +46,19 @@ beforeAll(() => {
   ff('-i', at('kick24.aiff'), '-c:a', 'flac', at('kick.flac'))
   ff('-i', at('kick.flac'), '-c:a', 'alac', at('kick.m4a'))
   ff('-f', 'lavfi', '-i', 'anullsrc=r=8000:cl=mono', '-t', '1200', '-c:a', 'pcm_u8', at('long.wav'))
-})
+  ff('-f', 'lavfi', '-i', 'anullsrc=r=8000:cl=mono', '-t', '3600', '-b:a', '8k', at('hour.mp3'))
+  ff(
+    '-f',
+    'lavfi',
+    '-i',
+    'anullsrc=r=96000:cl=stereo',
+    '-t',
+    '450',
+    '-c:a',
+    'pcm_s24le',
+    at('big.wav'),
+  )
+}, 120_000)
 
 describe('pcmDigest', () => {
   afterEach(() => {
@@ -203,7 +215,6 @@ describe('pcmTimeoutMs', () => {
   // A long compressed file is small for its length, so its header duration has to scale
   // the timeout where the size term would stay at the floor.
   it('scales a long MP3 by its header duration', async () => {
-    ff('-f', 'lavfi', '-i', 'anullsrc=r=8000:cl=mono', '-t', '3600', '-b:a', '8k', at('hour.mp3'))
     const size = statSync(at('hour.mp3')).size
     expect(pcmTimeoutMs(size)).toBe(ANALYSIS_TIMEOUT_MS)
     spawned.length = 0
@@ -216,17 +227,6 @@ describe('pcmTimeoutMs', () => {
   // Asking for the duration of a file without one decodes it a second time under the
   // very timeout that is too short, so the size alone must carry the scaling.
   it('scales by size and never decodes a second time to learn the duration', async () => {
-    ff(
-      '-f',
-      'lavfi',
-      '-i',
-      'anullsrc=r=96000:cl=stereo',
-      '-t',
-      '450',
-      '-c:a',
-      'pcm_s24le',
-      at('big.wav'),
-    )
     const size = statSync(at('big.wav')).size
     spawned.length = 0
     await pcmDigest(at('big.wav'))
