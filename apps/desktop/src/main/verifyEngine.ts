@@ -78,13 +78,13 @@ function decoded<T>(read: () => T | null | undefined): T | null {
 function positionsOf(
   row: Record<(typeof PERFORMANCE)[number] | 'trackData', Uint8Array | null> | undefined,
 ): Positions {
-  const rate = decoded(
-    () => row?.trackData && decodeTrackData(inflateEngineBlob(row.trackData)),
-  )?.sampleRate
+  const grid = decoded(() => row?.beatData && decodeBeatGrid(inflateEngineBlob(row.beatData)))
+  const rate =
+    decoded(() => row?.trackData && decodeTrackData(inflateEngineBlob(row.trackData)))
+      ?.sampleRate || grid?.sampleRate
   if (!row || !rate) return { quickCues: null, beatData: null, loops: null }
   const sec = (sample: number) => (sample < 0 ? null : sample / rate)
   const cues = decoded(() => row.quickCues && decodeQuickCues(inflateEngineBlob(row.quickCues)))
-  const grid = decoded(() => row.beatData && decodeBeatGrid(inflateEngineBlob(row.beatData)))
   const loops = decoded(() => row.loops && decodeLoops(Buffer.from(row.loops)))
   return {
     quickCues:

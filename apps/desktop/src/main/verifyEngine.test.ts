@@ -599,6 +599,19 @@ describe('checkEngine after a conversion that moved the audio', () => {
     })
   })
 
+  // The write moves a row with no trackData by its grid's rate, so the check reads it by
+  // the same rate rather than saying nothing about its cues.
+  it('cues left behind on a row with no trackData are engineCuesMisplaced', () => {
+    const dir = trimmable()
+    write(dir, 'UPDATE PerformanceData SET trackData = NULL')
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    expect(checkOne(dir, expectFor(before, trimmedBy(CUT)))[0].detail).toEqual({
+      key: 'engineCuesMisplaced',
+      params: { field: 'quickCues' },
+    })
+  })
+
   it('cues moved by the cut twice are engineCuesMisplaced', () => {
     const dir = trimmable()
     const before = snapshot(dir)

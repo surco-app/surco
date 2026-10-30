@@ -560,6 +560,29 @@ describe.each(['2.18', '3.0.2'] as const)(
       ])
     })
 
+    // Engine can hold a row's cues and grid without its trackData. The grid carries the same
+    // rate, so the cues still have a unit to move in, and missing it would leave them late.
+    it('moves the cues of a row with no trackData by the rate its grid carries', async () => {
+      const lib = await analysedLibrary(schema)
+      const db = await openDb(lib.dbPath)
+      db.run('UPDATE PerformanceData SET trackData = NULL WHERE trackId = 1')
+      await writeFile(lib.dbPath, db.export())
+      db.close()
+      await repointEngineTracks(lib.dir, [
+        { from: lib.oldFile, to: lib.newFile, engineShift: { trimmedMs: TRIM_MS } },
+      ])
+      const after = await openDb(lib.dbPath)
+      const row = one(after, 'SELECT trackData, quickCues FROM PerformanceData WHERE trackId = 1')
+      after.close()
+      expect(row.trackData).toBeNull()
+      const cues = decodeQuickCues(inflateEngineBlob(row.quickCues as Uint8Array))
+      expect(cues?.slots.map((s) => (s.cue ? s.cue.sample / RATE : null)).slice(0, 3)).toEqual([
+        0,
+        expect.closeTo(HOT_SEC[1] - TRIM_MS / 1000, 6),
+        expect.closeTo(HOT_SEC[2] - TRIM_MS / 1000, 6),
+      ])
+    })
+
     // The overview is the whole-track waveform Engine draws the cues over, one entry per
     // fixed run of samples. Left alone after a cut, the cues sit on the right beats while the
     // drawing under them still shows the lead-in; after a resample its run is counted at the

@@ -120,24 +120,32 @@ function inflated(blob: Blob): Buffer | null {
 // may sit before it. Unset slots (-1) stay unset, and a blob that does not decode is left
 // as Engine wrote it.
 export function shiftEnginePerformance(perf: Performance, shift: EngineShift): Performance {
-  const track = inflated(perf.trackData)
-  if (!track || track.length < 16) return perf
-  const from = track.readDoubleBE(0)
+  const raw = inflated(perf.trackData)
+  const track = raw && raw.length >= 16 ? raw : null
+  const rawBeats = inflated(perf.beatData)
+  const beats = rawBeats && rawBeats.length >= 17 ? rawBeats : null
+  const from = track?.readDoubleBE(0) ?? beats?.readDoubleBE(0) ?? 0
+  if (!(from > 0)) {
+    if (perf.quickCues) log.warn('Engine DJ repoint: no sample rate to move the cues by')
+    return perf
+  }
   const to = shift.sampleRateHz ?? from
   const moved = (sample: number) => (sample / from - shift.trimmedMs / 1000) * to
   const set = (sample: number) => (sample < 0 ? sample : Math.max(0, moved(sample)))
-  const was = Number(track.readBigInt64BE(8))
-  const samples = shift.sampleCount ?? Math.max(0, Math.round(moved(was)))
-  if (!(from > 0) || (shift.trimmedMs === 0 && to === from && samples === was)) return perf
+  const was = track ? Number(track.readBigInt64BE(8)) : undefined
+  const samples =
+    shift.sampleCount ?? (was === undefined ? was : Math.max(0, Math.round(moved(was))))
+  if (shift.trimmedMs === 0 && to === from && samples === was) return perf
   const next = { ...perf }
 
-  const length = Buffer.from(track)
-  length.writeDoubleBE(to, 0)
-  length.writeBigInt64BE(BigInt(samples), 8)
-  next.trackData = deflateEngineBlob(length)
+  if (track && samples !== undefined) {
+    const length = Buffer.from(track)
+    length.writeDoubleBE(to, 0)
+    length.writeBigInt64BE(BigInt(samples), 8)
+    next.trackData = deflateEngineBlob(length)
+  }
 
-  const beats = inflated(perf.beatData)
-  if (beats && beats.length >= 17) {
+  if (beats) {
     const grid = Buffer.from(beats)
     grid.writeDoubleBE(to, 0)
     grid.writeDoubleBE(shift.sampleCount ?? Math.max(0, moved(grid.readDoubleBE(8))), 8)
