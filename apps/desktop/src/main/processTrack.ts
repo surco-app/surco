@@ -1,7 +1,12 @@
 import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
-import { errorWithKey, splitNameLeftMarked, withNameLeftMarked } from '../shared/errorKeys'
+import {
+  errorKeyOf,
+  errorWithKey,
+  splitNameLeftMarked,
+  withNameLeftMarked,
+} from '../shared/errorKeys'
 import { foldAccents } from '../shared/foldAccents'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../shared/format'
 import type {
@@ -17,6 +22,7 @@ import type {
   TrackMetadata,
   TrimRange,
 } from '../shared/types'
+import { type PlaceCheck, type VerifyPlace, withChecks } from '../shared/verification'
 import { createConcurrencyLimiter } from './analysisLimiter'
 import { isAppleMusicOnly, shouldAddToAppleMusic } from './applemusic'
 import type { CoverSource, PreparedCover } from './cover'
@@ -27,6 +33,11 @@ import {
   sanitizeOutputName,
   uniqueOutputPath,
 } from './inplace'
+import type { EngineBefore } from './verifyEngine'
+import type { FileExpect } from './verifyFile'
+import type { MusicExpect } from './verifyMusic'
+import type { VerifyEntry } from './verifyRegistry'
+import type { RekordboxBefore } from './verifyRekordbox'
 
 // The conversion workflow, lifted out of the process:track IPC handler so it can be
 // unit-tested without booting Electron. Every collaborator that touches Electron, the
@@ -168,6 +179,17 @@ export interface ProcessTrackDeps {
   // flush runs — the collection would be told to follow a file that is already gone.
   // False when Traktor's entry stays on the source: Music landed the file in another folder.
   redirectRepoint?: (currentTo: string, landedAt: string) => boolean
+  // The source's row in each library the conversion will touch, read before anything writes
+  // so the check after the batch can say its cues and grid survived. Only the libraries in
+  // play are keyed; a read that fails is 'unreadable', never a rejection.
+  snapshotLibraries?: (
+    from: string,
+  ) => Promise<{ rekordbox?: RekordboxBefore; engine?: EngineBefore }>
+  // Re-read the written file and the Music entry before the job reports back.
+  verifyFile: (e: FileExpect) => Promise<PlaceCheck>
+  verifyMusic?: (e: MusicExpect) => Promise<PlaceCheck>
+  // Hands the job to the registry that checks the libraries once the batch is flushed.
+  registerVerification?: (e: VerifyEntry) => void
 }
 
 // Imports the converted file and retires the copy it supersedes, returning the new
@@ -404,6 +426,35 @@ function metaLabel(job: ProcessJob): string {
   return `${job.meta.artist} - ${job.meta.title}`
 }
 
+// What Music is held to when the job replaced an entry: the old one is gone (unless the
+// replacement already said it kept it) and the new one sits in its playlists.
+function replacedExpect(
+  oldPid: string | undefined,
+  replaced: ReplacedCopy,
+): MusicExpect['replaced'] {
+  if (!oldPid) return undefined
+  return {
+    oldPid,
+    playlistsBefore: replaced.playlistsBefore ?? null,
+    ...(replaced.oldCopyKept ? { oldKept: true as const } : {}),
+  }
+}
+
+// The file is written by now, so a reader that throws only means the place could not be
+// read. A cancel is the exception: it still ends the job.
+function settled(check: Promise<PlaceCheck>, place: VerifyPlace, key: string): Promise<PlaceCheck> {
+  return check.catch((e) => {
+    if (errorKeyOf(e instanceof Error ? e.message : '') === 'conversionCancelled') throw e
+    return { place, state: 'unreadable', detail: { key } }
+  })
+}
+
+const checking = (place: VerifyPlace): PlaceCheck => ({
+  place,
+  state: 'checking',
+  detail: { key: 'checking' },
+})
+
 export async function runProcessTrack(
   job: ProcessJob,
   deps: ProcessTrackDeps,
@@ -414,6 +465,9 @@ export async function runProcessTrack(
   const { settings } = deps
   const stage = (s: ProcessStage): void => deps.sendProgress(s)
   if (deps.isAllowed && !deps.isAllowed(job.inputPath)) throw errorWithKey('pathNotAllowed')
+  // The libraries follow the file this conversion supersedes, the same one the repoint names.
+  const libraryFrom = job.replacesPath ?? job.inputPath
+  const before = (await deps.snapshotLibraries?.(libraryFrom)) ?? {}
 
   let prepared: PreparedCover | undefined
   // Set only in "Apple Music only" mode (see below); cleaned up in finally so a failed
@@ -617,9 +671,10 @@ export async function runProcessTrack(
     if (mediaTarget && typeof madeFrom === 'string') mediaDirsFrom = madeFrom
     let normalizeSkipped: boolean
     let declickedSamples: number | undefined
+    let written: ConversionWritten
     let tmpPath: string | undefined
     try {
-      ;({ normalizeSkipped, declickedSamples } = await deps.convertAudio(
+      ;({ normalizeSkipped, declickedSamples, written } = await deps.convertAudio(
         job.inputPath,
         target,
         format,
@@ -706,6 +761,9 @@ export async function runProcessTrack(
     let musicLandedPath: string | undefined
     let appleMusicFailed: true | undefined
     let musicNameLeftMarked: true | undefined
+    let musicReplaced: MusicExpect['replaced']
+    // Where Music filed the "Apple Music only" copy: the temp it was written to is removed.
+    let landed: MediaCopy | undefined
     // The source a replacement superseded in place: offered only if retiring it fails.
     let supersededIfKept: string | undefined
     // Until Music says where the track's own entry points, it may be playing the original.
@@ -725,7 +783,8 @@ export async function runProcessTrack(
         }
       : deps
     const handedOver = musicOnly ? { tmpDir } : undefined
-    if (shouldAddToAppleMusic(addToAppleMusic, deps.platform, format)) {
+    const musicStep = shouldAddToAppleMusic(addToAppleMusic, deps.platform, format)
+    if (musicStep) {
       stage('appleMusic')
       try {
         // Replacing a DIFFERENT file, not re-converting our own earlier output. Updating an
@@ -748,6 +807,8 @@ export async function runProcessTrack(
           musicPersistentId = replaced.added
           oldMusicCopyKept = replaced.oldCopyKept
           musicNameLeftMarked = replaced.nameLeftMarked
+          musicReplaced = replacedExpect(job.musicPersistentId, replaced)
+          landed = replaced.landed
           verified = true
         } else if (existingMusicEntry && inPlace && outputIsInput) {
           musicPersistentId =
@@ -765,6 +826,8 @@ export async function runProcessTrack(
           musicPersistentId = replaced.added
           oldMusicCopyKept = replaced.oldCopyKept
           musicNameLeftMarked = replaced.nameLeftMarked
+          musicReplaced = replacedExpect(existingMusicEntry.persistentId, replaced)
+          landed = replaced.landed
           verified = true
         } else {
           // An entry in another format than the output can't be retagged into it: Music
@@ -793,6 +856,8 @@ export async function runProcessTrack(
             musicPersistentId = replaced.added
             oldMusicCopyKept = replaced.oldCopyKept
             musicNameLeftMarked = replaced.nameLeftMarked
+            musicReplaced = replacedExpect(job.musicPersistentId, replaced)
+            landed = replaced.landed
             const isSource = entry.path.normalize('NFC') === job.inputPath.normalize('NFC')
             // The row was the file Music played, so it follows the entry to its new file.
             if (isSource && replaced.landed?.path) musicLandedPath = replaced.landed.path
@@ -811,7 +876,7 @@ export async function runProcessTrack(
           }
         }
         if (musicOnly && musicPersistentId && !verified)
-          await verifyMediaCopy(
+          landed = await verifyMediaCopy(
             musicPersistentId,
             tmpDir,
             target,
@@ -877,6 +942,71 @@ export async function runProcessTrack(
       }
     }
 
+    // Re-read inside the job, not after it: the batch slot bounds how many run at once, and
+    // nothing (the trash offer, a new edit) can act on a track still being checked. The
+    // libraries are only written when the batch is flushed, so they stay checking here.
+    stage('verify')
+    const finalPath = musicOnly ? (landed?.path ?? '') : target
+    const fileExpect: FileExpect = {
+      path: finalPath,
+      ext: written.plan.ext,
+      codec: written.plan.codec,
+      sampleRateHz: written.plan.sampleRateHz,
+      bitDepth: written.plan.bitDepth,
+      samplesKept: written.samplesKept,
+      sourcePcm: written.sourcePcm,
+      sourceDurationSec: written.sourceDurationSec,
+      trimmedSec: written.trimmedSec,
+      tags: job.meta,
+      cover: coverPath ? 'written' : job.removeCover ? 'removed' : 'untouched',
+    }
+    const musicExpect: MusicExpect | undefined =
+      musicStep && musicPersistentId && deps.verifyMusic
+        ? {
+            pid: musicPersistentId,
+            file: finalPath,
+            ext: written.plan.ext,
+            meta: { title: job.meta.title, artist: job.meta.artist, album: job.meta.album },
+            coverSet: coverPath !== undefined,
+            ...(musicReplaced ? { replaced: musicReplaced } : {}),
+          }
+        : undefined
+    const [fileCheck, musicCheck] = await Promise.all([
+      settled(deps.verifyFile(fileExpect), 'file', 'fileUnreadable'),
+      musicExpect && deps.verifyMusic
+        ? settled(deps.verifyMusic(musicExpect), 'appleMusic', 'musicUnreadable')
+        : musicStep && appleMusicFailed
+          ? ({ place: 'appleMusic', state: 'mismatch', detail: { key: 'musicMissing' } } as const)
+          : undefined,
+    ])
+    const traktor = settings.syncTraktor && !!settings.traktorNmlPath
+    const places = new Set<VerifyPlace>(['file'])
+    if (musicCheck) places.add('appleMusic')
+    if (before.rekordbox) places.add('rekordbox')
+    if (before.engine) places.add('engine')
+    if (traktor) places.add('traktor')
+    const verification = withChecks({ status: 'checking', checks: [] }, [
+      fileCheck,
+      ...(musicCheck ? [musicCheck] : []),
+      ...(before.rekordbox && before.rekordbox !== 'absent' ? [checking('rekordbox')] : []),
+      ...(before.engine && before.engine !== 'absent' ? [checking('engine')] : []),
+      ...(traktor ? [checking('traktor')] : []),
+    ])
+    deps.registerVerification?.({
+      trackId: job.id,
+      from: libraryFrom,
+      to: finalPath,
+      samplesKept: written.samplesKept,
+      originalKept: written.originalKept,
+      places,
+      file: fileExpect,
+      music: musicExpect,
+      rekordbox: before.rekordbox,
+      engine: before.engine,
+      traktorStranded: landed?.traktorFollowed === false,
+      verification,
+    })
+
     // The copy this replacement superseded, so the renderer can offer to trash it: the
     // shell guard rejects any path it was never handed, and this one lives in the user's
     // library folder, which a convert has no other reason to authorise.
@@ -899,6 +1029,7 @@ export async function runProcessTrack(
         musicLandedPath,
         originalKept,
         musicNameLeftMarked,
+        verification,
       }
 
     // The conversion wrote a real file the renderer may play next — directly, or
@@ -919,6 +1050,7 @@ export async function runProcessTrack(
       appleMusicFailed,
       originalKept,
       musicNameLeftMarked,
+      verification,
     }
   } catch (e) {
     // The toast is all the user sees and it is gone once dismissed; the log is what a

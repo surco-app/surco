@@ -4,6 +4,7 @@ import log from 'electron-log/main'
 import { describe, expect, it, vi } from 'vitest'
 import { errorKeyOf, errorWithKey, splitNameLeftMarked } from '../shared/errorKeys'
 import type { ProcessJob, Settings, TrackMetadata } from '../shared/types'
+import type { PlaceCheck } from '../shared/verification'
 import type { ConversionWritten } from './ffmpeg'
 import { createOutputReservations } from './outputReservations'
 import { type ProcessTrackDeps, replaceAppleMusicCopy, runProcessTrack } from './processTrack'
@@ -87,8 +88,15 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     endJob: vi.fn(),
     trackTmp: vi.fn(),
     untrackTmp: vi.fn(),
+    verifyFile: vi.fn<ProcessTrackDeps['verifyFile']>(async () => fileOk),
     ...overrides,
   }
+}
+
+const fileOk: PlaceCheck = {
+  place: 'file',
+  state: 'ok',
+  detail: { key: 'fileReencoded', params: { format: 'AIFF', rate: 44100, bits: 16 } },
 }
 
 // These pin the conversion orchestration that lived inline in the process:track IPC
@@ -128,6 +136,7 @@ describe('runProcessTrack — plain conversion', () => {
       musicPersistentId: undefined,
       normalizeSkipped: false,
       outputIdentity: 'dev:1',
+      verification: { status: 'ok', checks: [fileOk] },
     })
   })
 
@@ -150,7 +159,7 @@ describe('runProcessTrack — plain conversion', () => {
 
     expect(deps.prepareProcessedCover).not.toHaveBeenCalled()
     const stages = (deps.sendProgress as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0])
-    expect(stages).toEqual(['converting'])
+    expect(stages).toEqual(['converting', 'verify'])
   })
 
   it('prefers the job’s click-repair override over the settings default', async () => {
@@ -330,7 +339,7 @@ describe('runProcessTrack — cover handling', () => {
       false,
     )
     const stages = (deps.sendProgress as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0])
-    expect(stages).toEqual(['cover', 'converting'])
+    expect(stages).toEqual(['cover', 'converting', 'verify'])
     expect(cleanup).toHaveBeenCalledOnce()
   })
 
@@ -1821,6 +1830,7 @@ describe('runProcessTrack — Apple Music only', () => {
       addedToMusicOnly: true,
       musicPersistentId: 'added-id',
       normalizeSkipped: false,
+      verification: { status: 'ok', checks: [fileOk] },
     })
   })
 
@@ -3003,5 +3013,402 @@ describe('runProcessTrack — converting a library track to another format', () 
     expect(result.oldMusicCopyKept).toBe('mismatch')
     expect(result.supersededPath).toBeUndefined()
     expect(deps.allowMedia).not.toHaveBeenCalledWith('/lib/A.aiff')
+  })
+})
+
+describe('runProcessTrack — checking what it wrote', () => {
+  const snapshot = { id: '7', cues: 3, analysisDataPath: '/a.DAT', analysed: 105 }
+  const engineSnapshot = { id: 9, quickCues: 'q', beatData: 'b', loops: 'l' }
+  const meta = { title: 'Title', artist: 'Artist', album: 'Album' } as TrackMetadata
+  const musicOk: PlaceCheck = {
+    place: 'appleMusic',
+    state: 'ok',
+    detail: { key: 'musicOneNoPlaylists' },
+  }
+
+  it('a finished job returns verification with the file check and libraries checking', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const deps = makeDeps({
+      settings: settings({ syncTraktor: true, traktorNmlPath: '/t/collection.nml' }),
+      snapshotLibraries: vi.fn<NonNullable<ProcessTrackDeps['snapshotLibraries']>>(async () => ({
+        rekordbox: snapshot,
+        engine: engineSnapshot,
+      })),
+      registerVerification,
+    })
+
+    const result = await runProcessTrack(job({ meta, removeCover: true }), deps)
+
+    expect(deps.verifyFile).toHaveBeenCalledWith({
+      path: '/out/Artist - Title.aiff',
+      ext: '.aiff',
+      codec: 'pcm_s16be',
+      bitDepth: 16,
+      samplesKept: false,
+      sourceDurationSec: 2,
+      trimmedSec: 0,
+      tags: meta,
+      cover: 'removed',
+    })
+    const checking = (place: PlaceCheck['place']) => ({
+      place,
+      state: 'checking',
+      detail: { key: 'checking' },
+    })
+    expect(result.verification).toEqual({
+      status: 'checking',
+      checks: [fileOk, checking('rekordbox'), checking('engine'), checking('traktor')],
+    })
+    expect(registerVerification).toHaveBeenCalledOnce()
+    const entry = registerVerification.mock.calls[0][0]
+    expect(entry).toMatchObject({
+      trackId: 'job1',
+      from: '/in/song.wav',
+      to: '/out/Artist - Title.aiff',
+      samplesKept: false,
+      originalKept: false,
+      rekordbox: snapshot,
+      engine: engineSnapshot,
+      verification: result.verification,
+    })
+    expect([...entry.places]).toEqual(['file', 'rekordbox', 'engine', 'traktor'])
+    expect(entry.music).toBeUndefined()
+  })
+
+  // A source no library has was never touched there: listing it would leave a place
+  // "checking" that nothing will ever answer for. One that could not be read is kept,
+  // or a locked database would pass for a track the library does not have.
+  it('lists a library only when the source was there or could not be told apart', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const deps = makeDeps({
+      snapshotLibraries: vi.fn<NonNullable<ProcessTrackDeps['snapshotLibraries']>>(async () => ({
+        rekordbox: 'absent',
+        engine: 'unreadable',
+      })),
+      registerVerification,
+    })
+
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result.verification?.checks.map((c) => c.place)).toEqual(['file', 'engine'])
+    expect(registerVerification.mock.calls[0][0].rekordbox).toBe('absent')
+    expect(registerVerification.mock.calls[0][0].engine).toBe('unreadable')
+  })
+
+  it('the success result carries the file mismatch instead of throwing', async () => {
+    const missing: PlaceCheck = { place: 'file', state: 'mismatch', detail: { key: 'fileMissing' } }
+    const deps = makeDeps({ verifyFile: vi.fn(async () => missing) })
+
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result.outputPath).toBe('/out/Artist - Title.aiff')
+    expect(result.verification).toEqual({ status: 'mismatch', checks: [missing] })
+  })
+
+  // The file is written by then: a reader that throws only means it could not be read.
+  it('a check that throws reads as unreadable and the job still succeeds', async () => {
+    const deps = makeDeps({
+      verifyFile: vi.fn(async () => {
+        throw new Error('ffprobe exited 1')
+      }),
+    })
+
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result.verification).toEqual({
+      status: 'mismatch',
+      checks: [{ place: 'file', state: 'unreadable', detail: { key: 'fileUnreadable' } }],
+    })
+  })
+
+  it('a Music check that throws reads as unreadable and the job still succeeds', async () => {
+    const deps = makeDeps({
+      platform: 'darwin',
+      verifyMusic: vi.fn(async () => {
+        throw new Error('Apple Music did not answer in time')
+      }),
+    })
+
+    const result = await runProcessTrack(job({ meta, addToAppleMusic: true }), deps)
+
+    expect(result.musicPersistentId).toBe('added-id')
+    expect(result.verification?.checks[1]).toEqual({
+      place: 'appleMusic',
+      state: 'unreadable',
+      detail: { key: 'musicUnreadable' },
+    })
+  })
+
+  // The toggle is the permission, the path only the address: with sync off no patch is
+  // recorded, and Traktor would sit there checking.
+  it('Traktor is not listed while its sync is off', async () => {
+    const deps = makeDeps({
+      settings: settings({ syncTraktor: false, traktorNmlPath: '/t/collection.nml' }),
+    })
+
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result.verification?.checks.map((c) => c.place)).toEqual(['file'])
+  })
+
+  it('a cancel during the check still ends the job as cancelled', async () => {
+    const deps = makeDeps({
+      verifyFile: vi.fn(async () => {
+        throw errorWithKey('conversionCancelled')
+      }),
+    })
+
+    const failure = await runProcessTrack(job(), deps).catch((e: unknown) => e)
+
+    expect(errorKeyOf((failure as Error).message)).toBe('conversionCancelled')
+  })
+
+  it('Music is listed only when the job went through the Music step', async () => {
+    const verifyMusic = vi.fn<NonNullable<ProcessTrackDeps['verifyMusic']>>(async () => musicOk)
+    const without = makeDeps({ platform: 'darwin', verifyMusic })
+    const plain = await runProcessTrack(job({ meta }), without)
+    expect(verifyMusic).not.toHaveBeenCalled()
+    expect(plain.verification?.checks.map((c) => c.place)).toEqual(['file'])
+
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const withMusic = makeDeps({ platform: 'darwin', verifyMusic, registerVerification })
+    const added = await runProcessTrack(job({ meta, addToAppleMusic: true }), withMusic)
+    const expected = {
+      pid: 'added-id',
+      file: '/out/Artist - Title.aiff',
+      ext: '.aiff',
+      meta: { title: 'Title', artist: 'Artist', album: 'Album' },
+      coverSet: false,
+    }
+    expect(verifyMusic).toHaveBeenCalledWith(expected)
+    expect(added.verification?.checks).toEqual([fileOk, musicOk])
+    expect(registerVerification.mock.calls[0][0].music).toEqual(expected)
+    expect([...registerVerification.mock.calls[0][0].places]).toEqual(['file', 'appleMusic'])
+  })
+
+  // The step already said it failed; with no entry to read, the place is not left out as if
+  // Music were never asked.
+  it('a Music step that failed lists Music as missing', async () => {
+    const verifyMusic = vi.fn<NonNullable<ProcessTrackDeps['verifyMusic']>>(async () => musicOk)
+    const deps = makeDeps({
+      platform: 'darwin',
+      verifyMusic,
+      addToAppleMusic: vi.fn(async () => {
+        throw new Error('Apple Music did not answer in time')
+      }),
+    })
+
+    const result = await runProcessTrack(job({ meta, addToAppleMusic: true }), deps)
+
+    expect(verifyMusic).not.toHaveBeenCalled()
+    expect(result.appleMusicFailed).toBe(true)
+    expect(result.verification?.checks[1]).toEqual({
+      place: 'appleMusic',
+      state: 'mismatch',
+      detail: { key: 'musicMissing' },
+    })
+  })
+
+  it("Music only checks the file at the entry's location, not the removed temp", async () => {
+    const verifyMusic = vi.fn<NonNullable<ProcessTrackDeps['verifyMusic']>>(async () => musicOk)
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const deps = makeDeps({
+      platform: 'darwin',
+      settings: settings({ addToAppleMusic: true, keepOutputCopy: false }),
+      appleMusicEntryLocation: vi.fn(async () => '/Users/me/Music/Media/Artist - Title.aiff'),
+      verifyMusic,
+      registerVerification,
+    })
+
+    const result = await runProcessTrack(job({ meta }), deps)
+
+    expect(vi.mocked(deps.convertAudio).mock.calls[0][1]).toBe('/tmp/surco-abc/Artist - Title.aiff')
+    expect(deps.verifyFile).toHaveBeenCalledWith(
+      expect.objectContaining({ path: '/Users/me/Music/Media/Artist - Title.aiff' }),
+    )
+    expect(verifyMusic).toHaveBeenCalledWith(
+      expect.objectContaining({ file: '/Users/me/Music/Media/Artist - Title.aiff' }),
+    )
+    expect(registerVerification.mock.calls[0][0].to).toBe(
+      '/Users/me/Music/Media/Artist - Title.aiff',
+    )
+    expect(result.verification?.checks).toEqual([fileOk, musicOk])
+  })
+
+  it('Music only checks the location the replaced entry landed at', async () => {
+    const verifyMusic = vi.fn<NonNullable<ProcessTrackDeps['verifyMusic']>>(async () => musicOk)
+    const deps = makeDeps({
+      platform: 'darwin',
+      settings: settings({ addToAppleMusic: true, keepOutputCopy: false }),
+      appleMusicEntryLocation: vi.fn(async () => '/Users/me/Music/Media/Landed.aiff'),
+      verifyMusic,
+    })
+
+    await runProcessTrack(
+      job({
+        meta,
+        musicPersistentId: 'old-id',
+        replacesPath: '/m/old.mp3',
+        replacesLabel: 'A - T',
+      }),
+      deps,
+    )
+
+    expect(deps.verifyFile).toHaveBeenCalledWith(
+      expect.objectContaining({ path: '/Users/me/Music/Media/Landed.aiff' }),
+    )
+    expect(verifyMusic).toHaveBeenCalledWith(
+      expect.objectContaining({ file: '/Users/me/Music/Media/Landed.aiff' }),
+    )
+  })
+
+  it('a replacement hands Music the old entry, its playlists and whether it was kept', async () => {
+    const verifyMusic = vi.fn<NonNullable<ProcessTrackDeps['verifyMusic']>>(async () => musicOk)
+    const replace = {
+      meta,
+      addToAppleMusic: true,
+      musicPersistentId: 'old-id',
+      replacesPath: '/m/old.mp3',
+      replacesLabel: 'A - T',
+    }
+    const deps = makeDeps({
+      platform: 'darwin',
+      verifyMusic,
+      appleMusicPlaylists: vi.fn<ProcessTrackDeps['appleMusicPlaylists']>(async () => ['24']),
+    })
+    await runProcessTrack(job(replace), deps)
+    expect(verifyMusic).toHaveBeenLastCalledWith(
+      expect.objectContaining({ replaced: { oldPid: 'old-id', playlistsBefore: ['24'] } }),
+    )
+
+    const kept = makeDeps({
+      platform: 'darwin',
+      verifyMusic,
+      appleMusicPlaylists: vi.fn<ProcessTrackDeps['appleMusicPlaylists']>(async () => {
+        throw new Error('Apple Music did not answer in time')
+      }),
+      carryAppleMusicHistory: vi.fn(async () => 'mismatch' as const),
+    })
+    await runProcessTrack(job(replace), kept)
+    expect(verifyMusic).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        replaced: { oldPid: 'old-id', playlistsBefore: null, oldKept: true },
+      }),
+    )
+  })
+
+  it('an entry found by its file is handed over as the one replaced', async () => {
+    const verifyMusic = vi.fn<NonNullable<ProcessTrackDeps['verifyMusic']>>(async () => musicOk)
+    const deps = makeDeps({
+      platform: 'darwin',
+      settings: settings({ overwriteOriginal: true }),
+      findAppleMusicEntry: vi.fn(async () => ({ persistentId: 'found-id', label: 'A - T' })),
+      appleMusicPlaylists: vi.fn<ProcessTrackDeps['appleMusicPlaylists']>(async () => ['All']),
+      verifyMusic,
+    })
+
+    await runProcessTrack(job({ meta, addToAppleMusic: true }), deps)
+
+    expect(verifyMusic).toHaveBeenCalledWith(
+      expect.objectContaining({ replaced: { oldPid: 'found-id', playlistsBefore: ['All'] } }),
+    )
+  })
+
+  it('an entry in another format is handed over as the one replaced', async () => {
+    const verifyMusic = vi.fn<NonNullable<ProcessTrackDeps['verifyMusic']>>(async () => musicOk)
+    const deps = makeDeps({
+      platform: 'darwin',
+      appleMusicEntry: vi.fn(async () => ({ path: '/lib/A.mp3', label: 'A - T' })),
+      appleMusicPlaylists: vi.fn<ProcessTrackDeps['appleMusicPlaylists']>(async () => ['24']),
+      verifyMusic,
+    })
+
+    await runProcessTrack(job({ meta, addToAppleMusic: true, musicPersistentId: 'PID' }), deps)
+
+    expect(verifyMusic).toHaveBeenCalledWith(
+      expect.objectContaining({ replaced: { oldPid: 'PID', playlistsBefore: ['24'] } }),
+    )
+  })
+
+  it('a cover put on the file is expected in the file and in Music', async () => {
+    const verifyMusic = vi.fn<NonNullable<ProcessTrackDeps['verifyMusic']>>(async () => musicOk)
+    const deps = makeDeps({ platform: 'darwin', hasCoverSource: vi.fn(() => true), verifyMusic })
+
+    await runProcessTrack(job({ meta, addToAppleMusic: true }), deps)
+
+    expect(deps.verifyFile).toHaveBeenCalledWith(expect.objectContaining({ cover: 'written' }))
+    expect(verifyMusic).toHaveBeenCalledWith(expect.objectContaining({ coverSet: true }))
+  })
+
+  it('a job that leaves the cover alone expects it untouched', async () => {
+    const deps = makeDeps()
+
+    await runProcessTrack(job(), deps)
+
+    expect(deps.verifyFile).toHaveBeenCalledWith(expect.objectContaining({ cover: 'untouched' }))
+  })
+
+  it('Traktor is marked stranded when its entry could not follow the landed file', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const deps = makeDeps({
+      platform: 'darwin',
+      settings: settings({
+        addToAppleMusic: true,
+        keepOutputCopy: false,
+        syncTraktor: true,
+        traktorNmlPath: '/t/collection.nml',
+      }),
+      redirectRepoint: vi.fn(() => false),
+      registerVerification,
+    })
+
+    await runProcessTrack(job({ meta }), deps)
+
+    expect(registerVerification.mock.calls[0][0].traktorStranded).toBe(true)
+  })
+
+  it('the snapshot is taken before convertAudio runs', async () => {
+    const snapshotLibraries = vi.fn<NonNullable<ProcessTrackDeps['snapshotLibraries']>>(
+      async () => ({ rekordbox: snapshot }),
+    )
+    const deps = makeDeps({ snapshotLibraries })
+
+    await runProcessTrack(job({ replacesPath: '/m/old.mp3' }), deps)
+
+    expect(snapshotLibraries).toHaveBeenCalledWith('/m/old.mp3')
+    expect(snapshotLibraries.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(deps.convertAudio).mock.invocationCallOrder[0],
+    )
+  })
+
+  it('the verify stage is sent after the Engine stage', async () => {
+    const deps = makeDeps({
+      settings: settings({ addToEngineDj: true }),
+      prepareProcessedCover: vi.fn(async () => undefined),
+    })
+    const order: string[] = []
+    deps.verifyFile = vi.fn(async () => {
+      order.push('verifyFile')
+      return fileOk
+    })
+    deps.sendProgress = vi.fn((stage) => {
+      order.push(stage)
+    })
+
+    await runProcessTrack(job(), deps)
+
+    expect(order).toEqual(['converting', 'engineDj', 'verify', 'verifyFile'])
+  })
+
+  it('a skipped job checks nothing', async () => {
+    const deps = makeDeps({
+      existsSync: vi.fn(() => true),
+      confirmConflict: vi.fn(async () => 'skip' as const),
+    })
+
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result.verification).toBeUndefined()
+    expect(deps.verifyFile).not.toHaveBeenCalled()
   })
 })

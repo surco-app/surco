@@ -167,6 +167,7 @@ function deps(): ProcessTrackDeps {
       readMusicEntryFacts(pid, undefined, { withPlaylists: true }).then((facts) =>
         facts === 'missing' ? [] : facts.playlists,
       ),
+    verifyFile: async () => ({ place: 'file', state: 'ok', detail: { key: 'fileReencoded' } }),
   }
 }
 

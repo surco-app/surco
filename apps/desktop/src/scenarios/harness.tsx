@@ -49,6 +49,7 @@ import { registerShellIpc } from '../main/shellIpc'
 import { createSurcoTrash, type SurcoTrash } from '../main/surcoTrash'
 import { createTmpManifest } from '../main/tmpManifest'
 import { registerTrashIpc } from '../main/trashIpc'
+import { checkFile, fileReaders } from '../main/verifyFile'
 import { onWatchedFilesChanged } from '../main/watchedFiles'
 import { dirRoots, FolderWatcher } from '../main/watcher'
 import type { Api } from '../preload/api'
@@ -263,6 +264,7 @@ function processTrackInMain(
     markAppleMusicReplacing: async () => 'missing',
     appleMusicPlaylists: async () => [],
     redirectRepoint: redirectRekordboxRepoint,
+    verifyFile: (expect) => checkFile(expect, fileReaders),
   })
 }
 

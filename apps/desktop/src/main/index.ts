@@ -212,6 +212,7 @@ import { updateMode } from './updateMode'
 import { armUpdateRecheck } from './updateRecheck'
 import { createUpdateRetry } from './updateRetry'
 import { registerUsbExportIpc } from './usbExportIpc'
+import { checkFile, fileReaders } from './verifyFile'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
 import { loadWindowState, resolveWindowBounds, saveWindowState } from './windowState'
@@ -1784,6 +1785,7 @@ function registerIpc(): void {
         redirectRekordboxRepoint(to, landed)
         return redirectNmlPatch(to, landed, toNmlLocation(landed))
       },
+      verifyFile: (expect) => checkFile(expect, fileReaders),
     }),
   )
 

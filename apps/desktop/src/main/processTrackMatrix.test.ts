@@ -84,6 +84,11 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     endJob: vi.fn(),
     trackTmp: vi.fn(),
     untrackTmp: vi.fn(),
+    verifyFile: vi.fn<ProcessTrackDeps['verifyFile']>(async () => ({
+      place: 'file',
+      state: 'ok',
+      detail: { key: 'fileReencoded' },
+    })),
     ...overrides,
   }
 }
