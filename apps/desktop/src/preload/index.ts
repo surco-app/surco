@@ -9,6 +9,7 @@ import type {
   AppleMusicPlaylistTracks,
   AppleMusicTrackMeta,
   BpmResult,
+  DjProgram,
   DockIconFrames,
   KeyResult,
   LibraryTracks,
@@ -23,12 +24,14 @@ import type {
   MusicReviewField,
   PairFacts,
   ProcessProgress,
+  ProgramCopies,
   QueuedCues,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
   RekordboxQueueApplied,
   RekordboxQueueState,
   RekordboxSyncIssue,
+  RestoreResult,
   RowWaveRequest,
   SaveCuesRequest,
   ScanVerdict,
@@ -198,6 +201,12 @@ const api: Api = {
     to?: number,
   ): Promise<AppleMusicPlaylistTracks> =>
     ipcRenderer.invoke('applemusic:playlistTracks', persistentId, from, to),
+  loadAppleMusicLibraryPlaylistTracks: (
+    persistentId: string,
+  ): Promise<AppleMusicPlaylistTracks | null> =>
+    ipcRenderer.invoke('applemusic:libraryPlaylistTracks', persistentId),
+  loadAppleMusicPlaylistCached: (persistentId: string): Promise<AppleMusicPlaylistTracks | null> =>
+    ipcRenderer.invoke('applemusic:playlistCached', persistentId),
   appleMusicArtwork: (
     persistentIds: string[],
   ): Promise<Record<string, { coverPath: string; coverUrl: string }>> =>
@@ -369,6 +378,14 @@ const api: Api = {
     ipcRenderer.send('log:renderer', message, stack),
   revealLog: (): Promise<void> => ipcRenderer.invoke('log:reveal'),
   revealBackups: (): Promise<string> => ipcRenderer.invoke('backups:reveal'),
+  copiesStatus: (): Promise<ProgramCopies[]> => ipcRenderer.invoke('copies:status'),
+  restoreCopy: (program: DjProgram, copyId: string): Promise<RestoreResult> =>
+    ipcRenderer.invoke('copies:restore', program, copyId),
+  onCopiesChanged: (cb: () => void): (() => void) => {
+    const handler = () => cb()
+    ipcRenderer.on('copies:changed', handler)
+    return () => ipcRenderer.removeListener('copies:changed', handler)
+  },
   openFeedback: (error?: string, stack?: string): Promise<void> =>
     ipcRenderer.invoke('feedback:open', error, stack),
   spectrogram: (path: string, priority: 'high' | 'low' = 'low') =>

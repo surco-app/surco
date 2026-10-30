@@ -3,14 +3,32 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PlaylistSource } from '../../../shared/types'
-import '../i18n'
+import i18n from '../i18n'
+import { RAIL_WIDTH } from '../lib/columnLayout'
 import { SourceRail } from './SourceRail'
 
 afterEach(cleanup)
 
+const COPIES = { active: false, alert: 'none', onOpen: () => {} } as const
+
 describe('SourceRail', () => {
+  it('is as wide as the rail the column layout subtracts, so the editor columns fill the window exactly', () => {
+    render(
+      <SourceRail copies={COPIES} onHide={vi.fn()} sources={[]} active={null} onSelect={vi.fn()} />,
+    )
+    expect(screen.getByTestId('source-rail').style.width).toBe(`${RAIL_WIDTH}px`)
+  })
+
   it('offers the working list plus each source found on this machine', () => {
-    render(<SourceRail onHide={vi.fn()} sources={['rekordbox']} active={null} onSelect={vi.fn()} />)
+    render(
+      <SourceRail
+        copies={COPIES}
+        onHide={vi.fn()}
+        sources={['rekordbox']}
+        active={null}
+        onSelect={vi.fn()}
+      />,
+    )
     expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByTestId('source-rail-rekordbox')).toHaveAttribute('aria-pressed', 'false')
     expect(screen.queryByTestId('source-rail-appleMusic')).not.toBeInTheDocument()
@@ -24,6 +42,7 @@ describe('SourceRail', () => {
   it('shows each source by its own mark in the rail colour with its name written under it', () => {
     render(
       <SourceRail
+        copies={COPIES}
         onHide={vi.fn()}
         sources={['appleMusic', 'rekordbox', 'engine', 'traktor']}
         active={null}
@@ -50,26 +69,55 @@ describe('SourceRail', () => {
     }
   })
 
-  // A long localised name is cut short under its mark, so the whole name a sighted user
-  // reads on hover still comes from the app's themed tooltip like every other icon.
-  it('names each icon in the app tooltip on focus, not in a native title', () => {
+  // The name is already written under each mark, so a hover bubble repeating it only
+  // covers the playlist column beside the rail.
+  it('does not repeat the written name in a tooltip or a native title', () => {
     render(
       <SourceRail
+        copies={COPIES}
         onHide={vi.fn()}
         sources={['appleMusic', 'rekordbox']}
         active={null}
         onSelect={vi.fn()}
       />,
     )
-    for (const [id, name] of [
-      ['tracks', 'Tracks'],
-      ['rekordbox', 'rekordbox'],
-    ]) {
+    for (const id of ['tracks', 'appleMusic', 'rekordbox']) {
       const button = screen.getByTestId(`source-rail-${id}`)
       expect(button).not.toHaveAttribute('title')
       fireEvent.focusIn(button)
-      expect(screen.getByRole('tooltip')).toHaveTextContent(name)
+      fireEvent.mouseEnter(button)
+      expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
       fireEvent.focusOut(button)
+    }
+  })
+
+  // Each mark is labelled with the program's own brand name, which no locale translates, so
+  // a DJ finds the same word under the mark that they know from the program itself.
+  it('writes the same brand name under every source mark in every language', async () => {
+    try {
+      for (const lng of ['en', 'es', 'de', 'fr', 'pt-BR', 'ja']) {
+        await i18n.changeLanguage(lng)
+        render(
+          <SourceRail
+            copies={COPIES}
+            onHide={vi.fn()}
+            sources={['appleMusic', 'rekordbox', 'engine', 'traktor']}
+            active={null}
+            onSelect={vi.fn()}
+          />,
+        )
+        for (const [id, name] of [
+          ['appleMusic', 'Music'],
+          ['rekordbox', 'rekordbox'],
+          ['engine', 'Engine DJ'],
+          ['traktor', 'Traktor'],
+        ]) {
+          expect(screen.getByTestId(`source-rail-label-${id}`)).toHaveTextContent(name)
+        }
+        cleanup()
+      }
+    } finally {
+      await i18n.changeLanguage('en')
     }
   })
 
@@ -77,6 +125,7 @@ describe('SourceRail', () => {
     const onSelect = vi.fn()
     render(
       <SourceRail
+        copies={COPIES}
         onHide={vi.fn()}
         sources={['appleMusic', 'rekordbox']}
         active="rekordbox"
@@ -98,6 +147,7 @@ describe('SourceRail', () => {
           active={active}
           onSelect={onSelect}
           onHide={onHide}
+          copies={COPIES}
         />,
       )
       return { onSelect, onHide }
@@ -157,6 +207,52 @@ describe('SourceRail', () => {
       expect(button).toHaveFocus()
       fireEvent.keyDown(button, { key: 'ContextMenu' })
       expect(screen.getByRole('menu')).toBeInTheDocument()
+    })
+  })
+
+  describe('Copias', () => {
+    function renderWith(copies: Partial<Parameters<typeof SourceRail>[0]['copies']>) {
+      const props = { ...COPIES, onOpen: vi.fn(), ...copies }
+      render(
+        <SourceRail
+          onHide={vi.fn()}
+          sources={['rekordbox']}
+          active="rekordbox"
+          onSelect={vi.fn()}
+          copies={props}
+        />,
+      )
+      return props
+    }
+
+    it('shows Copias at the bottom with no dot when all is well', () => {
+      const props = renderWith({})
+      const button = screen.getByTestId('source-rail-copies')
+      expect(button).toHaveAccessibleName('Backups')
+      expect(screen.getByTestId('source-rail')).toContainElement(button)
+      expect(screen.queryByTestId('source-rail-copies-dot')).not.toBeInTheDocument()
+      expect(screen.getByTestId('source-rail-copies-icon')).toHaveAttribute('data-icon', 'check')
+      fireEvent.click(button)
+      expect(props.onOpen).toHaveBeenCalledTimes(1)
+    })
+
+    it('an amber dot when changes are waiting', () => {
+      renderWith({ alert: 'warn' })
+      expect(screen.getByTestId('source-rail-copies-dot')).toHaveAttribute('data-alert', 'warn')
+      expect(screen.getByTestId('source-rail-copies-icon')).toHaveAttribute('data-icon', 'check')
+    })
+
+    it('a red dot and alert shield when Surco stopped', () => {
+      renderWith({ alert: 'danger' })
+      expect(screen.getByTestId('source-rail-copies-dot')).toHaveAttribute('data-alert', 'danger')
+      expect(screen.getByTestId('source-rail-copies-icon')).toHaveAttribute('data-icon', 'alert')
+    })
+
+    it('is the one pressed entry while open, so no source looks like the screen on show', () => {
+      renderWith({ active: true })
+      expect(screen.getByTestId('source-rail-copies')).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getByTestId('source-rail-rekordbox')).toHaveAttribute('aria-pressed', 'false')
+      expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'false')
     })
   })
 })

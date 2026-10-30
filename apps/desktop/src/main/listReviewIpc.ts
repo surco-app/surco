@@ -1,5 +1,5 @@
 import { ipcMain, type WebContents } from 'electron'
-import type { ListFixRequest, ListMusicOutcome, ListRemoval } from '../shared/types'
+import type { CopyReason, ListFixRequest, ListMusicOutcome, ListRemoval } from '../shared/types'
 import type { Activity } from './activity'
 import { type ReplaceDuplicatesDeps, type ReplacePair, replaceDuplicates } from './duplicateReplace'
 import { applyListFixes, type ListApplyDeps } from './listReviewApply'
@@ -33,6 +33,7 @@ export interface ListReviewIpcDeps {
   isAllowed: (path: string) => boolean
   removal: (sender: WebContents) => ListRemovalDeps
   log?: { track: Activity['track']; reviewLog: MusicReviewLog }
+  beginMoment?: (reason: CopyReason) => void
 }
 
 // The list review's writes. Not limited to macOS: the list exists everywhere, and only the
@@ -41,6 +42,7 @@ export function registerListReviewIpc(deps: ListReviewIpcDeps): void {
   const running = new Set<{ cancelled: boolean }>()
   let removalRuns = 0
   ipcMain.handle('listreview:applyFixes', async (e, req: ListFixRequest) => {
+    deps.beginMoment?.('review')
     const run = { cancelled: false }
     running.add(run)
     const titleOf = (path: string) => req.titles[path] ?? path
@@ -73,6 +75,7 @@ export function registerListReviewIpc(deps: ListReviewIpcDeps): void {
   // path is some pair's kept copy, or it is named for removal twice.
   ipcMain.handle('listreview:removeDuplicates', async (e, removals: ListRemoval[]) => {
     if (removals.length === 0) return []
+    deps.beginMoment?.('duplicates')
     const d = deps.removal(e.sender)
     const paths = [...new Set(removals.flatMap((r) => [r.from, r.to]))]
     const real = new Map(

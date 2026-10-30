@@ -265,7 +265,11 @@ function processTrackInMain(
   })
 }
 
-const sessions = { rekordbox: createSessionBackup({}), engine: createSessionBackup({}) }
+const sessions = {
+  rekordbox: createSessionBackup({}),
+  traktor: createSessionBackup({}),
+  engine: createSessionBackup({}),
+}
 
 function libraryHost(errors: string[]): LibraryHost {
   return {
@@ -406,6 +410,8 @@ function scenarioApi(
     traktorCueQueueReady: async () => {},
     onTraktorCueQueueChanged: () => () => {},
     onTraktorCueQueueApplied: () => () => {},
+    copiesStatus: async () => [],
+    onCopiesChanged: () => () => {},
     traktorCanSave: async () => false,
     usbVolumes: async () => ({ volumes: [], lastKey: null }),
     onUsbVolumesChanged: () => () => {},
@@ -458,7 +464,8 @@ function scenarioApi(
     cancelAnalysis: (path) => invokeMain('audio:cancelAnalysis', path),
     onWindowFocus: () => () => {},
     libraryStatus: async () => currentLibraryStatus(),
-    syncLibraryTags: (updates) => syncTagsInLibraries(updates, libraryHost(errors), sessions),
+    syncLibraryTags: (updates) =>
+      syncTagsInLibraries(updates, libraryHost(errors), sessions, () => {}),
     applyListFixes: (request) => invokeMain('listreview:applyFixes', request),
     cancelListFixes: () => invokeMain('listreview:cancelFixes'),
     onListFixProgress: (listener) => listen('listreview:fixProgress', listener),
@@ -499,8 +506,8 @@ function scenarioApi(
     beginConversionBatch: () => {
       beginNmlBatch()
       beginRekordboxBatch()
-      sessions.rekordbox.reset()
-      sessions.engine.reset()
+      sessions.rekordbox.begin('run')
+      sessions.engine.begin('run')
     },
     endConversionBatch: () => {
       let applying: Promise<unknown> = Promise.resolve()

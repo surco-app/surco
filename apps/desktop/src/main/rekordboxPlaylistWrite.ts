@@ -70,7 +70,7 @@ import { checkpointCollection, restoreCollection, writeBackup } from './rekordbo
 // operations are planned on a read-only handle first, so a batch with nothing to write (or
 // one the XML cannot take) never asks the user to close rekordbox; rekordbox must be closed
 // (asked once, then checked again right before the write); there is a complete copy for the
-// session and one for this write before anything changes; and the operations run in one
+// momento and one for this write before anything changes; and the operations run in one
 // transaction, a savepoint each, that also covers the XML, written just before the commit. A failure is undone by SQLite's own
 // rollback, not by copying files over the user's: only an XML already written goes back
 // from its copy, and master.db is copied back only when its state is unknown.
@@ -78,7 +78,7 @@ import { checkpointCollection, restoreCollection, writeBackup } from './rekordbo
 export interface PlaylistWriteDeps extends FindOptions {
   // Asks the user to close rekordbox when it is open; false means it is still open.
   ensureClosed: () => Promise<boolean>
-  // The session's one pre-edit copy (rekordboxSessionBackup.ts); throws if it cannot copy.
+  // The momento's one pre-edit copy (rekordboxSessionBackup.ts); throws if it cannot copy.
   sessionBackup: (path: string) => Promise<void>
   now?: () => Date
   // Seams for the tests to fail the write after it has really changed something.

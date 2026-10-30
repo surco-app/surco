@@ -1,0 +1,48 @@
+name: Stats
+
+# GitHub keeps only today's download totals, so the stats page's history is whatever this
+# stores each day. It lives on its own `stats` branch, which the page reads straight from
+# raw.githubusercontent.com: a daily commit on main would redeploy the site every day and
+# leave every local main behind origin.
+on:
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: stats
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Check out the stats branch, or start it
+        run: |
+          if git fetch --depth=1 origin stats:stats; then
+            git worktree add "$RUNNER_TEMP/stats" stats
+          else
+            git worktree add --orphan -b stats "$RUNNER_TEMP/stats"
+          fi
+
+      - name: Record today's totals
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node apps/web/scripts/stats-snapshot.ts "$RUNNER_TEMP/stats/stats.json"
+
+      - name: Commit the snapshot
+        working-directory: ${{ runner.temp }}/stats
+        run: |
+          git add stats.json
+          if git diff --cached --quiet; then exit 0; fi
+          git -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "Record download stats for $(date -u +%F)"
+          git push origin stats

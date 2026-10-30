@@ -17,9 +17,12 @@ export function libraryBackupRoot(): string {
 // read collection.nml and then refuse every save because the copy beside it failed. One
 // folder per collection, named after its parent for a DJ looking for it and keyed by the
 // full path so two collection.nml (Traktor 3 and 4) never share, and restore, one copy.
+export function collectionKey(collectionPath: string): string {
+  return process.platform === 'win32' ? collectionPath.toLowerCase() : collectionPath
+}
+
 export function backupOf(collectionPath: string, kind: 'backup' | 'session'): string {
-  const key = process.platform === 'win32' ? collectionPath.toLowerCase() : collectionPath
-  const id = createHash('sha256').update(key).digest('hex').slice(0, 8)
+  const id = createHash('sha256').update(collectionKey(collectionPath)).digest('hex').slice(0, 8)
   return join(
     libraryBackupRoot(),
     `${basename(dirname(collectionPath))}-${id}`,

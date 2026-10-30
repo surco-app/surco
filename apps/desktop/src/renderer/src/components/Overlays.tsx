@@ -1,5 +1,5 @@
 import type React from 'react'
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
 import { effectiveMeta } from '../../../shared/customFields'
 import { formatExtension, resolveJobFormat } from '../../../shared/format'
 import type {
@@ -11,6 +11,7 @@ import type {
 } from '../../../shared/types'
 import type { ActiveModal } from '../hooks/useOverlays'
 import type { Command } from '../lib/commands'
+import { lazyChunk } from '../lib/lazyChunk'
 import type { TrackItem } from '../types'
 import { ConfirmDialog } from './ConfirmDialog'
 
@@ -18,32 +19,36 @@ import { ConfirmDialog } from './ConfirmDialog'
 // activeModal branch), so each is split into its own chunk and kept out of the startup
 // parse, loading the first time the user opens it. The .then unwraps the named export
 // React.lazy needs as a default.
-const SettingsModal = lazy(() =>
+const SettingsModal = lazyChunk(() =>
   import('./SettingsModal').then((m) => ({ default: m.SettingsModal })),
 )
-const OnboardingWizard = lazy(() =>
+const OnboardingWizard = lazyChunk(() =>
   import('./OnboardingWizard').then((m) => ({ default: m.OnboardingWizard })),
 )
-const DonateNudgeModal = lazy(() =>
+const DonateNudgeModal = lazyChunk(() =>
   import('./DonateNudgeModal').then((m) => ({ default: m.DonateNudgeModal })),
 )
-const WhatsNewModal = lazy(() =>
+const WhatsNewModal = lazyChunk(() =>
   import('./WhatsNewModal').then((m) => ({ default: m.WhatsNewModal })),
 )
-const HelpModal = lazy(() => import('./HelpModal').then((m) => ({ default: m.HelpModal })))
-const LoudnessHelpModal = lazy(() =>
+const HelpModal = lazyChunk(() => import('./HelpModal').then((m) => ({ default: m.HelpModal })))
+const LoudnessHelpModal = lazyChunk(() =>
   import('./LoudnessHelpModal').then((m) => ({ default: m.LoudnessHelpModal })),
 )
-const FindReplaceModal = lazy(() =>
+const FindReplaceModal = lazyChunk(() =>
   import('./FindReplaceModal').then((m) => ({ default: m.FindReplaceModal })),
 )
-const StripNumberingModal = lazy(() =>
+const StripNumberingModal = lazyChunk(() =>
   import('./StripNumberingModal').then((m) => ({ default: m.StripNumberingModal })),
 )
-const RenameModal = lazy(() => import('./RenameModal').then((m) => ({ default: m.RenameModal })))
-const InfoModal = lazy(() => import('./InfoModal').then((m) => ({ default: m.InfoModal })))
-const ExportModal = lazy(() => import('./ExportModal').then((m) => ({ default: m.ExportModal })))
-const CommandPalette = lazy(() =>
+const RenameModal = lazyChunk(() =>
+  import('./RenameModal').then((m) => ({ default: m.RenameModal })),
+)
+const InfoModal = lazyChunk(() => import('./InfoModal').then((m) => ({ default: m.InfoModal })))
+const ExportModal = lazyChunk(() =>
+  import('./ExportModal').then((m) => ({ default: m.ExportModal })),
+)
+const CommandPalette = lazyChunk(() =>
   import('./CommandPalette').then((m) => ({ default: m.CommandPalette })),
 )
 

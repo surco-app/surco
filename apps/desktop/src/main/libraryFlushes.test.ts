@@ -88,9 +88,36 @@ function host(overrides: Partial<LibraryHost> = {}): LibraryHost {
   }
 }
 
+const fakeSession = () => ({
+  ensure: vi.fn(async () => {}),
+  begin: vi.fn(),
+  beginLoose: vi.fn(),
+  inRunFlush: vi.fn(),
+  ensureForRun: vi.fn(async () => {}),
+  endRun: vi.fn(),
+  failed: () => new Set<string>(),
+})
+
 const sessions = {
-  rekordbox: { ensure: vi.fn(async () => {}), reset: vi.fn() },
-  engine: { ensure: vi.fn(async () => {}), reset: vi.fn() },
+  traktor: fakeSession(),
+  rekordbox: {
+    ensure: vi.fn(async () => {}),
+    begin: vi.fn(),
+    beginLoose: vi.fn(),
+    inRunFlush: vi.fn(),
+    ensureForRun: vi.fn(async () => {}),
+    endRun: vi.fn(),
+    failed: () => new Set<string>(),
+  },
+  engine: {
+    ensure: vi.fn(async () => {}),
+    begin: vi.fn(),
+    beginLoose: vi.fn(),
+    inRunFlush: vi.fn(),
+    ensureForRun: vi.fn(async () => {}),
+    endRun: vi.fn(),
+    failed: () => new Set<string>(),
+  },
 }
 
 describe('flushConversionBatch with rekordbox open', () => {
@@ -292,8 +319,26 @@ describe('rekordbox writes while the queue is held after a write left the collec
 
   it('does not write Update tags into the collection, so master.db.surco-backup stays the good copy', async () => {
     WRITERS.updateRekordboxTags.mockClear()
-    await syncTagsInLibraries([{ path: '/m/a.flac', fields: {} }], held(), sessions)
+    await syncTagsInLibraries([{ path: '/m/a.flac', fields: {} }], held(), sessions, vi.fn())
     expect(WRITERS.updateRekordboxTags).not.toHaveBeenCalled()
+  })
+
+  it('a review with nothing to sync begins no momento, so it cannot end the one in progress', async () => {
+    const begin = vi.fn()
+    await syncTagsInLibraries(
+      [],
+      host({ ensureRekordboxClosed: vi.fn(async () => true) }),
+      sessions,
+      begin,
+    )
+    expect(begin).not.toHaveBeenCalled()
+    await syncTagsInLibraries(
+      [{ path: '/m/a.flac', fields: {} }],
+      host({ ensureRekordboxClosed: vi.fn(async () => true) }),
+      sessions,
+      begin,
+    )
+    expect(begin).toHaveBeenCalledTimes(1)
   })
 
   it('still writes Update tags when the queue is not held', async () => {
@@ -302,6 +347,7 @@ describe('rekordbox writes while the queue is held after a write left the collec
       [{ path: '/m/a.flac', fields: {} }],
       host({ ensureRekordboxClosed: vi.fn(async () => true) }),
       sessions,
+      vi.fn(),
     )
     expect(WRITERS.updateRekordboxTags).toHaveBeenCalled()
   })

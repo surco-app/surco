@@ -204,6 +204,28 @@ describe('registerRekordboxPlaylistsIpc', () => {
     expect(result).toEqual({ applied: true })
   })
 
+  it('a playlist edit is a small change of its collection, marked before the queue applies', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
+    const order: string[] = []
+    const queue = queueFor(path)
+    const apply = queue.apply.bind(queue)
+    queue.apply = (...args) => {
+      order.push('apply')
+      return apply(...args)
+    }
+    registerRekordboxPlaylistsIpc(() => path, {
+      ensureClosed: vi.fn(async () => true),
+      queue,
+      beginLoose: (p) => order.push(`loose:${p}`),
+    })
+    await handler('rekordbox:edit')(
+      { sender: {} },
+      { kind: 'move', playlistId: '2000', linkIds: ['f6'], beforeLinkId: 'f1' },
+    )
+    expect(order).toEqual([`loose:${path}`, 'apply'])
+  })
+
   it('says whether the collection has a separator to copy', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)

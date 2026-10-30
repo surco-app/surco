@@ -1,4 +1,5 @@
 import { BrowserWindow, ipcMain } from 'electron'
+import type { CopyReason } from '../shared/types'
 import { serialLibraryFlush } from './libraryTagSync'
 import type { RekordboxQueue } from './rekordboxQueue'
 import { appliedNotice } from './rekordboxQueueIpc'
@@ -10,11 +11,13 @@ export function registerTraktorCueQueueIpc(
     ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
     onWaiting?: () => void
     onReady?: () => void
+    beginMoment?: (reason: CopyReason) => void
   },
 ): void {
   ipcMain.handle('traktor:cueQueue', () => queue.state())
   ipcMain.handle('traktor:applyCueQueue', (e) =>
     serialLibraryFlush(async () => {
+      host.beginMoment?.('queue')
       const result = await queue.apply(
         () => host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
         { manual: true },

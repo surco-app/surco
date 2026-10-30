@@ -224,7 +224,6 @@
     "emptyConfirm_one": "Apagar {{count}} arquivo para sempre?",
     "emptyConfirm_other": "Apagar {{count}} arquivos para sempre?",
     "reveal": "Abrir pasta",
-    "close": "Fechar",
     "restored": "“{{name}}” restaurado na sua pasta",
     "restoreFailed": "Não foi possível restaurar “{{name}}”: {{reason}}",
     "removeFailed": "Não foi possível apagar “{{name}}”. {{reason}}",
@@ -244,7 +243,6 @@
     "selfEmpties": "Esvazia-se sozinha após {{days}} dias.",
     "expiring_one": "resta {{count}} dia",
     "expiring_other": "restam {{count}} dias",
-    "summaryEmpty": "vazio",
     "noMatches": "Nada corresponde à busca"
   },
   "notices": {
@@ -2798,5 +2796,63 @@
       "one-at-32": "Um cue a 32",
       "calls-only": "Só CALL"
     }
+  },
+  "copies": {
+    "rail": "Cópias",
+    "title": "Cópias",
+    "intro": "Antes de mexer nos seus programas ou nos seus arquivos, o Surco guarda uma cópia. Se algo não parecer certo, volte atrás.",
+    "state": {
+      "ok": "Em dia",
+      "pending_one": "{{count}} alteração espera você fechar o {{program}}",
+      "pending_other": "{{count}} alterações esperam você fechar o {{program}}",
+      "halted": "O Surco parou: revise as alterações pendentes",
+      "failed": "A última cópia falhou",
+      "untouched": "O Surco não mexe nele (você escolheu isso nos Ajustes)"
+    },
+    "facts": {
+      "state": "Estado",
+      "last": "Última cópia",
+      "kept": "Guardadas"
+    },
+    "kept": "{{count}} de {{max}}",
+    "none": "Ainda não há cópias",
+    "reason": {
+      "run": "Antes de converter",
+      "cues": "Antes de salvar cues",
+      "review": "Antes de corrigir metadados",
+      "queue": "Antes de aplicar as alterações que estavam esperando",
+      "duplicates": "Antes de substituir duplicatas",
+      "playlists": "Antes das suas alterações de playlists de hoje",
+      "restore": "Antes de restaurar"
+    },
+    "show": "Ver cópias",
+    "hide": "Ocultar cópias",
+    "restore": "Restaurar…",
+    "restoreThis": "Restaurar esta",
+    "confirm": {
+      "title": "Voltar ao que o {{program}} era {{when}}?",
+      "body": "Tudo o que você alterou no {{program}} depois desse horário será perdido, inclusive o que você fez a partir do {{program}}.",
+      "safety": "Antes, guardamos uma cópia de como está agora, caso você mude de ideia.",
+      "queue_one": "{{count}} alteração que esperava você fechar o {{program}} também será descartada.",
+      "queue_other": "{{count}} alterações que esperavam você fechar o {{program}} também serão descartadas.",
+      "ok": "Restaurar"
+    },
+    "refused": {
+      "running": "O {{program}} ainda está aberto. Feche-o e tente de novo.",
+      "pending-log": "O {{program}} ainda está salvando alterações. Espere um momento e tente de novo.",
+      "not-found": "Esta cópia não corresponde mais à sua coleção atual.",
+      "other-collection": "Esta cópia não corresponde mais à sua coleção atual.",
+      "failed": "Não foi possível restaurar. Sua biblioteca não mudou.",
+      "busy": "O Surco está convertendo faixas. Espere terminar e tente de novo.",
+      "partial": "A restauração do {{program}} ficou pela metade. Feche-o e restaure esta cópia de novo, ou volte atrás com “Antes de restaurar”."
+    },
+    "restored": "Pronto: o {{program}} voltou ao que era {{when}}.",
+    "music": {
+      "title": "Arquivos de música",
+      "state": "Originais guardados"
+    },
+    "footer": "De cada programa guardamos as últimas 5 cópias. Os arquivos de música, {{days}} dias.",
+    "reveal": "Mostrar no Finder",
+    "revealWin": "Mostrar no Explorador de Arquivos"
   }
 }

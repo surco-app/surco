@@ -26,6 +26,7 @@
     "openMenu": "Menü öffnen",
     "closeMenu": "Menü schließen",
     "cambios": "Neuigkeiten",
+    "estadisticas": "Statistiken",
     "donar": "Spenden",
     "download": "Herunterladen",
     "language": "Sprache",
@@ -489,8 +490,7 @@
     "slogan": "deine Musik, in Ordnung",
     "convertHeading": "Konvertieren",
     "flacToAiff": "FLAC in AIFF",
-    "privacy": "Datenschutz",
-    "downloads": "Downloads"
+    "privacy": "Datenschutz"
   },
   "install": {
     "kicker": "Installieren",
@@ -2538,5 +2538,34 @@
         "url": "https://vercel.com/legal/privacy-notice"
       }
     ]
+  },
+  "stats": {
+    "metaTitle": "Statistiken · Surco",
+    "metaDescription": "Wie oft Surco auf Mac, Windows und Linux heruntergeladen wurde, ohne Bots, und wie die Installationen Woche für Woche wachsen.",
+    "kicker": "Statistiken",
+    "title": "Wie viele Leute Surco herunterladen",
+    "lede": "Surco hat keine Telemetrie und weiß daher nicht, wer es nutzt. Öffentlich ist, wie oft jeder Installer von GitHub geladen wird. Daraus stammen diese Zahlen.",
+    "total": "Downloads seit dem {{date}}, ohne Bots",
+    "mac": "Mac",
+    "windows": "Windows, mit Updates",
+    "linux": "Linux, mit Updates",
+    "macHeading": "Installationen auf dem Mac",
+    "macLede": "Auf dem Mac kommen Updates über eine andere Datei. Jeder Download hier ist also jemand, der Surco installiert.",
+    "lastWeek": "in den letzten 7 Tagen",
+    "lastMonth": "in den letzten 30 Tagen",
+    "chartLabel": "Installationen auf dem Mac insgesamt",
+    "estimatedLegend": "Der gepunktete Teil ist aus dem Datum jeder Version rekonstruiert. Der durchgezogene wird täglich gemessen.",
+    "weeklyHeading": "Neue Installationen auf dem Mac pro Woche",
+    "updatesHeading": "Macs, die auf jede Version aktualisieren",
+    "updatesLede": "Wie viele Macs jedes Update geladen haben. Näher kommt man ohne Telemetrie nicht an die Zahl der Leute, die Surco wirklich nutzen.",
+    "howHeading": "Wie gezählt wird",
+    "howItems": [
+      "Auf dem Mac zählt nur der .dmg-Installer. Updates laden eine andere Datei, deshalb vermischt sich nichts.",
+      "Unter Windows und Linux ist der Installer zugleich das Update. Jede neue Version bringt also einen Download pro Person, die aktualisiert.",
+      "Jede Version bekommt ein oder zwei Downloads von automatischen Programmen, die alle Dateien laden. Sie werden über eine Datei abgezogen, die kein Mensch braucht."
+    ],
+    "measuredSince": "GitHub speichert nur den heutigen Stand. Alles vor dem {{date}} ist aus dem Datum jeder Version rekonstruiert, seitdem wird jeden Tag ein Stand gespeichert.",
+    "loading": "Zahlen werden geladen…",
+    "error": "Die Zahlen konnten nicht geladen werden. Lade die Seite neu."
   }
 }

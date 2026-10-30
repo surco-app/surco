@@ -12,13 +12,12 @@ import {
 import { useStableCallback } from './useStableCallback'
 
 interface Params {
-  hasRail: boolean
   hasTree: boolean
   saved: ColumnShares | undefined
   onCommit: (shares: ColumnShares) => void
 }
 
-export function useColumnLayout({ hasRail, hasTree, saved, onCommit }: Params): {
+export function useColumnLayout({ hasTree, saved, onCommit }: Params): {
   widths: ColumnWidths
   startResize: (column: ResizableColumn, e: React.PointerEvent) => void
   fit: (column: ResizableColumn, deficit: number) => void
@@ -47,7 +46,7 @@ export function useColumnLayout({ hasRail, hasTree, saved, onCommit }: Params): 
   useEffect(() => () => endDrag.current?.(), [])
 
   const shares = draft ?? saved
-  const available = windowWidth - (hasRail ? RAIL_WIDTH : 0) - DIVIDERS_WIDTH
+  const available = windowWidth - RAIL_WIDTH - DIVIDERS_WIDTH
   const widths = columnWidths(available, hasTree, shares)
 
   const settle = (

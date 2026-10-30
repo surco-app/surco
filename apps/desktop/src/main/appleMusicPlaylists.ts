@@ -17,6 +17,13 @@ export function buildPlaylistDumpScript(): string {
     // list, so asking for a property of every item of one raises -1728 and would fail
     // the whole dialog on a library with no playlists instead of opening it empty.
     '  if (count of userPlaylists) is 0 then return ""',
+    // Music's playlist of every song, on a line of its own ahead of the rows. Its name
+    // follows the system language, so only its kind tells it from a playlist the user
+    // happened to name the same.
+    '  set libraryId to ""',
+    '  try',
+    '    set libraryId to persistent ID of (first user playlist whose special kind is Music)',
+    '  end try',
     '  set out to {}',
     // Read one playlist at a time rather than three bulk property fetches. The names and
     // IDs would come back as lists, but `count of tracks of every user playlist` collapses
@@ -35,7 +42,7 @@ export function buildPlaylistDumpScript(): string {
     '  end repeat',
     'end tell',
     "set AppleScript's text item delimiters to linefeed",
-    'return out as text',
+    'return libraryId & linefeed & (out as text)',
   ].join('\n')
 }
 
@@ -48,10 +55,17 @@ const TRAILING_PID = /\t([0-9A-F]{16})$/
 // tab without shifting any other field.
 const PID_THEN_FOLDER = /\t([0-9A-F]{16})\t([\s\S]*)$/
 const TRAILING_COUNT = /\t(\d+)$/
+const LIBRARY_LINE = /^([0-9A-F]{16})$/
 
 export function parsePlaylistDump(stdout: string): AppleMusicPlaylist[] {
   const rows: AppleMusicPlaylist[] = []
+  let libraryId: string | undefined
   for (const line of stdout.split('\n')) {
+    const library = line.match(LIBRARY_LINE)
+    if (library) {
+      libraryId = library[1]
+      continue
+    }
     // Rows written before folders were read end at the ID; both shapes have to load.
     const withFolder = line.match(PID_THEN_FOLDER)
     const pid = withFolder ?? line.match(TRAILING_PID)
@@ -64,7 +78,7 @@ export function parsePlaylistDump(stdout: string): AppleMusicPlaylist[] {
     if (!name) continue
     rows.push({ name, count: Number(cnt[1]), persistentId: pid[1], ...(folder ? { folder } : {}) })
   }
-  return rows
+  return rows.map((r) => (r.persistentId === libraryId ? { ...r, library: true } : r))
 }
 
 export async function dumpAppleMusicPlaylists(): Promise<AppleMusicPlaylist[]> {
@@ -236,6 +250,52 @@ export async function readAppleMusicPlaylist(
 ): Promise<AppleMusicPlaylistTracks> {
   const stdout = await runOsascript(buildPlaylistTracksScript(persistentId, from, to), {
     maxBuffer: 64 * 1024 * 1024,
+  })
+  return parsePlaylistTracks(stdout)
+}
+
+// The same rows buildPlaylistTracksScript gives, read from the library database through
+// macOS's iTunesLibrary framework instead of asked of Music. Measured on a 2,044-track
+// playlist on a NAS: Music took about a minute, 200 tracks at a time, while the database
+// gave every row in 0.5 s (17 s the first time after the NAS has gone idle), in the same
+// order and with the same fields. Fields go through a bulk key path per column: one bridge
+// call per track per field cost 17 s on its own.
+export function buildLibraryPlaylistScript(persistentId: string): string {
+  return [
+    "ObjC.import('iTunesLibrary')",
+    "const hex = (n) => BigInt(n).toString(16).toUpperCase().padStart(16, '0')",
+    "const lib = $.ITLibrary.libraryWithAPIVersionError('1.0', null)",
+    'const lists = lib.allPlaylists',
+    'let found = null',
+    'for (let i = 0; i < lists.count && !found; i++) {',
+    '  const p = lists.objectAtIndex(i)',
+    `  if (hex(p.persistentID.description.js) === ${JSON.stringify(persistentId)}) found = p`,
+    '}',
+    "if (!found) throw new Error('playlist not in the library database')",
+    'const col = (key) => ObjC.deepUnwrap(found.items.valueForKeyPath(key))',
+    "const paths = col('location.path')",
+    "const pids = col('persistentID.description')",
+    "const groupings = col('grouping')",
+    "const years = col('year')",
+    "const comments = col('comments')",
+    "const trackNos = col('trackNumber')",
+    "const discNos = col('album.discNumber')",
+    "const bpms = col('beatsPerMinute')",
+    "const ratings = col('rating')",
+    "const computed = col('ratingComputed')",
+    "const text = (v) => (v === null || v === undefined ? '' : String(v))",
+    'const rows = pids.map((pid, i) =>',
+    '  [text(paths[i]), hex(pid), text(groupings[i]), text(years[i]), text(comments[i]),',
+    '   text(trackNos[i]), text(discNos[i]), text(bpms[i]), text(ratings[i]),',
+    "   computed[i] ? 'computed' : 'user'].join('\\u001f'))",
+    "pids.length + '\\u001d' + rows.join('\\u001e')",
+  ].join('\n')
+}
+
+export async function readLibraryPlaylist(persistentId: string): Promise<AppleMusicPlaylistTracks> {
+  const stdout = await runOsascript(buildLibraryPlaylistScript(persistentId), {
+    maxBuffer: 64 * 1024 * 1024,
+    language: 'JavaScript',
   })
   return parsePlaylistTracks(stdout)
 }

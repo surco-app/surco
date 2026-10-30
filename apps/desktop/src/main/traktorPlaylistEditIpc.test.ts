@@ -80,6 +80,19 @@ describe('registerTraktorPlaylistEditIpc', () => {
     expect(stamps).toEqual(traktorSubtreeStamps(PLAYLISTS_SAMPLE, 'folder:Sets#2'))
   })
 
+  it('a playlist edit is a small change of its collection, marked before the queue applies', async () => {
+    const file = await collection()
+    const { host } = setup(file, applied)
+    const order: string[] = []
+    host.queue.apply.mockImplementationOnce(async () => {
+      order.push('apply')
+      return applied({ id: 'x' } as QueueOp)
+    })
+    registerTraktorPlaylistEditIpc({ ...host, beginLoose: (p) => order.push(`loose:${p}`) })
+    await handler('traktor:edit')({ sender: {} }, { kind: 'delete', playlistId: 'dnb' })
+    expect(order).toEqual([`loose:${file}`, 'apply'])
+  })
+
   it('keeps an edit waiting while Traktor stays open and wakes the watcher', async () => {
     const file = await collection()
     const { host } = setup(file, () => ({ status: 'refused', reason: 'cancelled' }))

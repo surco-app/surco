@@ -24,6 +24,7 @@ export const PAGES = {
   changelog: localized('/cambios', '/changelog'),
   flacToAiff: localized('/convertir/flac-a-aiff', '/convert/flac-to-aiff'),
   privacy: localized('/privacidad', '/privacy'),
+  stats: localized('/estadisticas', '/stats'),
 }
 
 export type Page = keyof typeof PAGES

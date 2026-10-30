@@ -267,9 +267,7 @@ describe('a renderer reload', () => {
     const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
     const handler =
       source.match(/on\('process:batch-begin', \(\) => \{([\s\S]*?)\n {2}\}\)/)?.[1] ?? ''
-    expect(handler).toMatch(
-      /if \(beginRekordboxBatch\(\)\) \{\s*rekordboxSessionBackup\.reset\(\)\s*engineSessionBackup\.reset\(\)/,
-    )
+    expect(handler).toMatch(/if \(beginRekordboxBatch\(\)\) \{\s*moments\.begin\('run'\)/)
   })
 
   it('keeps the conflict choice and cover memo of the run when a single convert starts mid-run', () => {

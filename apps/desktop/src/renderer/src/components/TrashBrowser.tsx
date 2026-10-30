@@ -1,6 +1,6 @@
 import { Archive, FolderOpen, Pencil, RotateCcw, Search, Undo2, X } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TrashEntry } from '../../../shared/types'
 import { baseName } from '../lib/baseName'
@@ -12,10 +12,9 @@ import {
   type TrashFilter,
   visibleEntries,
 } from '../lib/trashView'
-import { ModalShell } from './ModalShell'
 import { SECTION_SUBHEAD } from './SectionSubhead'
 
-interface Props {
+export interface TrashBrowserProps {
   entries: TrashEntry[]
   retentionDays: number
   maxBytes: number
@@ -23,10 +22,10 @@ interface Props {
   onRemove: (entry: TrashEntry) => void
   onEmpty: () => void
   onReveal: () => void
-  onClose: () => void
   // Opened from one track's backup mark: the search starts on that file's name, so the
-  // panel lands on its copies and clearing the box brings the whole list back.
+  // section lands on its copies and clearing the box brings the whole list back.
   initialQuery?: string
+  header?: React.ReactNode
 }
 
 export function formatBytes(bytes: number, lng: string): string {
@@ -54,13 +53,7 @@ const FILTER_ICONS: Record<TrashFilter, typeof Archive> = {
   'restored-over': Undo2,
 }
 
-// Surco's own trash, built out of the settings dialog's parts — the same shell, the same
-// sidebar with its accent pill, the same footer — because it is the same kind of surface:
-// a place you open on purpose, not a card that interrupts. It carries no dates. The OS
-// trash has none either, and the only temporal fact that matters here is the one no OS
-// trash has: this one deletes by itself, so a row says how long is left, and only once
-// the sweep is close enough for that to be a warning.
-export function TrashPanel({
+export function TrashBrowser({
   entries,
   retentionDays,
   maxBytes,
@@ -68,30 +61,34 @@ export function TrashPanel({
   onRemove,
   onEmpty,
   onReveal,
-  onClose,
   initialQuery = '',
-}: Props): React.JSX.Element {
+  header,
+  total,
+}: TrashBrowserProps & { total: number }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const lng = i18n.language
   const [confirmEmpty, setConfirmEmpty] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
   const [filter, setFilter] = useState<TrashFilter>('all')
   const [query, setQuery] = useState(initialQuery)
-  const total = entries.reduce((sum, e) => sum + e.bytes, 0)
   const counts = countByReason(entries)
   const rows = visibleEntries(entries, filter, query)
+  const confirming = confirmEmpty || confirmRemove !== null
+
+  useEffect(() => {
+    if (!confirming) return
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== 'Escape') return
+      e.preventDefault()
+      setConfirmEmpty(false)
+      setConfirmRemove(null)
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [confirming])
 
   return (
-    <ModalShell
-      onClose={onClose}
-      backdropTestId="trash-backdrop"
-      dialogTestId="trash-panel"
-      labelledBy="trash-title"
-      // A set height, not a ceiling: the row count swings from a whole replaced crate to
-      // one survivor of a filter, and a dialog that sized itself to its rows would jump —
-      // sidebar, footer and all — on every click of the sidebar.
-      className="flex h-[62vh] max-h-[620px] min-h-[420px] w-[min(900px,calc(100vw-32px))] overflow-hidden rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)]"
-    >
+    <>
       <div className="flex w-[188px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-panel-2)] p-3">
         <p className={`${SECTION_SUBHEAD} mb-1 px-3`}>{tr('trash.filtersLabel')}</p>
         {TRASH_FILTERS.map((id) => {
@@ -136,24 +133,7 @@ export function TrashPanel({
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-center gap-3 px-5 pt-4 pb-3">
-          <h2 id="trash-title" className="text-base font-semibold text-fg">
-            {tr('trash.title')}
-          </h2>
-          <span className="text-xs text-fg-dim" data-testid="trash-summary">
-            {entries.length > 0
-              ? tr('trash.summary', { count: entries.length, size: formatBytes(total, lng) })
-              : tr('trash.summaryEmpty')}
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={tr('trash.close')}
-            className="press ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
-          >
-            <X className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </div>
+        {header}
 
         {entries.length > 0 && (
           <div className="px-5 pb-3">
@@ -219,8 +199,8 @@ export function TrashPanel({
                         </span>
                       </div>
                       {/* What happened, and to what. The entry has carried the replacement's
-                          path all along; without it the row makes the user open the folder
-                          to find out which file took the original's place. */}
+                        path all along; without it the row makes the user open the folder
+                        to find out which file took the original's place. */}
                       <div className="truncate text-[11px] text-fg-dim">
                         {replacement ? (
                           <>
@@ -241,8 +221,8 @@ export function TrashPanel({
                       </div>
                     </div>
                     {/* A lane of its own, held open on every row: the badge only shows on
-                        the few about to be swept, and letting it push the buttons would
-                        put Restore at a different x on each of them. */}
+                      the few about to be swept, and letting it push the buttons would
+                      put Restore at a different x on each of them. */}
                     <div
                       data-testid="trash-expiring-lane"
                       className="flex w-[92px] shrink-0 justify-end"
@@ -335,6 +315,6 @@ export function TrashPanel({
           )}
         </div>
       </div>
-    </ModalShell>
+    </>
   )
 }

@@ -24,6 +24,7 @@ vi.mock('./rekordboxPlaylistEdit', async (importOriginal) => {
 })
 
 import { backupOf } from './libraryBackups'
+import { copyFolder, listCopies } from './libraryHistory'
 import { randomPlaylistId } from './rekordboxPlaylistEdit'
 import { applyRekordboxBatch, editRekordboxPlaylist, replaceFile } from './rekordboxPlaylistWrite'
 import { isRekordboxRunning } from './rekordboxProcess'
@@ -205,17 +206,17 @@ describe('editRekordboxPlaylist', () => {
   // rekordbox can leave its files read-only, and a copy keeps the mode of what it copied.
   // The user's second edit then found last edit's backups locked and was refused as
   // backup-failed: one read-only copy blocked every write after it.
-  it('backs up again over read-only copies left by the last edit', async () => {
+  it("backs up again over the last edit's read-only backups and keeps the playlist XML in the momento copy", async () => {
     const path = await collection()
     const xmlPath = join(path, '..', 'masterPlaylists6.xml')
-    const session = createSessionBackup({})
+    const session = createSessionBackup({
+      companionsOf: (p) => (p === path ? [xmlPath] : []),
+      skip: (p) => p === xmlPath,
+    })
     for (const file of [path, xmlPath]) {
       mkdirSync(dirname(backupOf(file, 'backup')), { recursive: true })
       await writeFile(backupOf(file, 'backup'), 'last edit')
-      mkdirSync(dirname(backupOf(file, 'session')), { recursive: true })
-      await writeFile(backupOf(file, 'session'), 'last run')
       await chmod(backupOf(file, 'backup'), 0o444)
-      await chmod(backupOf(file, 'session'), 0o444)
     }
     const result = await editRekordboxPlaylist(
       path,
@@ -224,7 +225,17 @@ describe('editRekordboxPlaylist', () => {
     )
     expect(result.applied).toBe(true)
     expect(linkIds(backupOf(path, 'backup'), '2000')).toEqual(FACTORY)
-    expect(await readFile(backupOf(xmlPath, 'session'), 'utf8')).not.toBe('last run')
+    const [copy] = await listCopies(path)
+    expect(copy.files.map((f) => f.name)).toContain('masterPlaylists6.xml')
+    expect(existsSync(join(copyFolder(copy), 'masterPlaylists6.xml'))).toBe(true)
+  })
+
+  it('ensures master.db before the playlist XML', async () => {
+    const path = await collection()
+    const xmlPath = join(path, '..', 'masterPlaylists6.xml')
+    const sessionBackup = vi.fn(async (_path: string) => {})
+    await editRekordboxPlaylist(path, CREATE, deps({ sessionBackup }))
+    expect(sessionBackup.mock.calls.map(([p]) => p)).toEqual([path, xmlPath])
   })
 
   // The source itself read-only: its copies must still be replaceable by the next edit.
@@ -235,7 +246,7 @@ describe('editRekordboxPlaylist', () => {
     const session = createSessionBackup({})
     const d = deps({ sessionBackup: (p: string) => session.ensure(p) })
     expect((await editRekordboxPlaylist(path, CREATE, d)).applied).toBe(true)
-    session.reset()
+    session.begin('run')
     expect((await editRekordboxPlaylist(path, { ...CREATE, name: 'Bolo 2' }, d)).applied).toBe(true)
   })
 

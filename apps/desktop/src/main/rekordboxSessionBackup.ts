@@ -3,6 +3,8 @@ import { chmod, copyFile, mkdir, rm, stat } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import log from 'electron-log/main'
 import { backupOf } from './libraryBackups'
+import type { CopyReason } from '../shared/types'
+import { takeCopy } from './libraryHistory'
 import { openRekordboxDb } from './rekordboxDb'
 
 // A copy keeps the mode of what it copied, and rekordbox can leave its files read-only.
@@ -16,8 +18,8 @@ export async function writeBackup(from: string, to: string): Promise<void> {
   await chmod(to, (await stat(to)).mode | 0o200)
 }
 
-// One copy of the collection per conversion run, taken before the first write and left
-// alone afterwards.
+// One dated copy of the collection per momento (a conversion run, a cue write...), taken
+// before the first write and left alone until the next momento begins.
 //
 // It exists because the per-write backup cannot do this job. That one is overwritten
 // before every track, so after a 300-track run it holds the collection as it was before
@@ -26,35 +28,98 @@ export async function writeBackup(from: string, to: string): Promise<void> {
 // before the run started. A DJ who converts 300 tracks and then decides the whole batch
 // was a mistake needs this one.
 //
-// Overwritten on each new run rather than dated: the user's collection is 56 MB, and a
-// dated copy per run would pile up on disk for something they want as a
-// safety net, not an archive. rekordbox keeps its own three rotating backups besides.
+// Copies go into the library history (libraryHistory.ts), which keeps the last few dated
+// ones per collection, so an older state survives the next momento.
 export interface SessionBackup {
-  // Copies the collection if this run has not already done so. Throws if the copy fails —
-  // the caller must not write without one.
+  // Copies the collection if this momento has not already done so. Throws if the copy
+  // fails — the caller must not write without one.
   ensure: (collectionPath: string) => Promise<void>
-  // Ends the run, so the next one takes its own fresh copy.
-  reset: () => void
+  ensureForRun: (collectionPath: string) => Promise<void>
+  endRun: () => void
+  begin: (reason: CopyReason) => void
+  beginLoose: (collectionPath: string) => void
+  inRunFlush: (active: boolean) => void
+  failed: () => ReadonlySet<string>
 }
 
-export function createSessionBackup(deps: {
-  copy?: (from: string, to: string) => Promise<void>
-}): SessionBackup {
-  const copy = deps.copy ?? writeBackup
+interface Momento {
+  reason: CopyReason
   // Per collection, not one flag: tracking a single "done" would leave a second collection
-  // in the same run with no pre-run copy at all.
-  const done = new Set<string>()
+  // in the same momento with no copy at all.
+  copied: Set<string>
+  taking: Map<string, Promise<void>>
+}
+
+const momento = (reason: CopyReason): Momento => ({
+  reason,
+  copied: new Set(),
+  taking: new Map(),
+})
+
+export function createSessionBackup(deps: {
+  take?: typeof takeCopy
+  companionsOf?: (collectionPath: string) => string[]
+  skip?: (collectionPath: string) => boolean
+}): SessionBackup {
+  const take = deps.take ?? takeCopy
+  const companionsOf = deps.companionsOf ?? (() => [])
+  const skip = deps.skip ?? (() => false)
+  const loose = new Map<string, Momento>()
+  const waiting = new Map<string, Momento>()
+  const failures = new Set<string>()
+  let current = momento('run')
+  let run: Momento | null = null
+  let flushingRun = false
+
+  const copyInto = async (m: Momento, collectionPath: string): Promise<void> => {
+    try {
+      await take(collectionPath, companionsOf(collectionPath), m.reason)
+    } catch (err) {
+      failures.add(collectionPath)
+      throw err
+    }
+    failures.delete(collectionPath)
+    // Recorded only after the copy lands, so a failure leaves the next write trying again
+    // rather than writing into a collection with nothing behind it.
+    m.copied.add(collectionPath)
+    if (m.reason !== 'playlists') loose.delete(collectionPath)
+  }
+
+  const ensureIn = async (m: Momento, collectionPath: string): Promise<void> => {
+    if (skip(collectionPath)) return
+    if (m.copied.has(collectionPath)) return
+    const inFlight = m.taking.get(collectionPath)
+    if (inFlight) return inFlight
+    const taking = copyInto(m, collectionPath).finally(() => m.taking.delete(collectionPath))
+    m.taking.set(collectionPath, taking)
+    return taking
+  }
+
   return {
-    async ensure(collectionPath: string): Promise<void> {
-      if (done.has(collectionPath)) return
-      // Recorded only after the copy lands, so a failure leaves the next track trying
-      // again rather than writing into a collection with nothing behind it.
-      await copy(collectionPath, backupOf(collectionPath, 'session'))
-      done.add(collectionPath)
+    ensure: (collectionPath) =>
+      ensureIn((flushingRun && run) || waiting.get(collectionPath) || current, collectionPath),
+    ensureForRun: (collectionPath) => ensureIn(run ?? current, collectionPath),
+    endRun(): void {
+      if (current === run) current = momento('run')
+      run = null
     },
-    reset(): void {
-      done.clear()
+    begin(next: CopyReason): void {
+      current = momento(next)
+      waiting.clear()
+      if (next === 'run') run = current
     },
+    beginLoose(collectionPath: string): void {
+      let m = loose.get(collectionPath)
+      if (!m) {
+        m = momento('playlists')
+        loose.set(collectionPath, m)
+      }
+      waiting.set(collectionPath, m)
+    },
+    inRunFlush(active: boolean): void {
+      flushingRun = active
+    },
+    failed: () => failures,
   }
 }
 

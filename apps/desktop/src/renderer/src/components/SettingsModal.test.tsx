@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // SettingsModal reads window.api.platform at module load, so stub it before the
@@ -1214,7 +1214,11 @@ describe('SettingsModal analysis cache', () => {
   // would be a no-op that misleads the user into thinking something happened.
   it('disables the clear button when nothing is cached', async () => {
     const api = window.api as unknown as Record<string, unknown>
-    api.cacheStats = vi.fn(async () => ({ files: 0, bytes: 0 }))
+    let answer: (stats: { files: number; bytes: number }) => void = () => {}
+    const stats = new Promise<{ files: number; bytes: number }>((resolve) => {
+      answer = resolve
+    })
+    api.cacheStats = vi.fn(() => stats)
     render(
       <SettingsModal
         settings={settings}
@@ -1225,7 +1229,13 @@ describe('SettingsModal analysis cache', () => {
         onSettingsReplaced={() => {}}
       />,
     )
-    expect(await screen.findByTestId('settings-cache-clear')).toBeDisabled()
+    const clear = await screen.findByTestId('settings-cache-clear')
+    await act(async () => {
+      answer({ files: 0, bytes: 0 })
+      await stats
+    })
+    expect(screen.getByTestId('settings-cache-stats')).toHaveTextContent('Nothing cached yet')
+    expect(clear).toBeDisabled()
   })
 })
 

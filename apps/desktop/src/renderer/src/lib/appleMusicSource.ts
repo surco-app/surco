@@ -8,12 +8,22 @@ import type {
 // Music's playlists in the shape every source shares. Music only reports the folder a
 // playlist sits in, not the whole path, so the tree is one level deep; root playlists
 // come first, as the old import dialog showed them, so none reads as belonging to the
-// folder above it.
-export function musicTree(lists: AppleMusicPlaylist[]): SourceNode[] {
+// folder above it. Music's playlist of every song leads as All tracks, as in the other sources.
+export function musicTree(lists: AppleMusicPlaylist[], allTracksName: string): SourceNode[] {
+  const library: SourceNode[] = []
   const root: SourceNode[] = []
   const folders = new Map<string, SourceNode[]>()
   for (const p of lists) {
-    const node: SourceNode = { id: p.persistentId, name: p.name, kind: 'playlist', count: p.count }
+    const node: SourceNode = {
+      id: p.persistentId,
+      name: p.library ? allTracksName : p.name,
+      kind: 'playlist',
+      count: p.count,
+    }
+    if (p.library) {
+      library.push(node)
+      continue
+    }
     if (!p.folder) {
       root.push(node)
       continue
@@ -31,7 +41,7 @@ export function musicTree(lists: AppleMusicPlaylist[]): SourceNode[] {
       children,
     }),
   )
-  return [...root, ...grouped]
+  return [...library, ...root, ...grouped]
 }
 
 // Music counts a playlist's rows, repeats included, while the list shows each file once. A

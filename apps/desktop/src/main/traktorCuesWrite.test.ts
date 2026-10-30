@@ -7,12 +7,15 @@ import { emptyMetadata } from '../shared/metadata'
 import { traktorContentId } from '../shared/traktorContent'
 import { rekordboxMetaFrom } from './rekordboxMetadata'
 import type { CuesOp, EditOp, TrackOp } from './rekordboxQueueOps'
+import { createSessionBackup } from './rekordboxSessionBackup'
 import { readTraktorTrackCues, traktorEntryBlock } from './traktorCues'
 import { applyTraktorBatch, withTraktorCues } from './traktorCuesWrite'
 
 // The write checks for a running Traktor with a real pgrep, so on a machine with Traktor
 // open every write here was refused and the suite failed for a reason outside the code.
 vi.mock('./traktorProcess', () => ({ isTraktorRunning: vi.fn().mockResolvedValue(false) }))
+
+const session = createSessionBackup({})
 
 const KEY = 'Macintosh HD/:Users/:dj/:Music/:power.flac'
 const ID = traktorContentId(KEY)
@@ -123,6 +126,7 @@ describe('applyTraktorBatch', () => {
     const ensureClosed = vi.fn(async () => true)
     const write = vi.fn(async () => null)
     const result = await applyTraktorBatch(file, [op(doc, asWanted(doc))], {
+      session,
       ensureClosed,
       write,
     })
@@ -135,6 +139,7 @@ describe('applyTraktorBatch', () => {
     const file = await onDisk(doc)
     const wanted = [...asWanted(doc), { ms: 60000, kind: HOT_KINDS[2], color: 5 }]
     const result = await applyTraktorBatch(file, [op(doc, wanted)], {
+      session,
       ensureClosed: async () => true,
       write: async (path, text) => {
         await writeFile(path, text)
@@ -149,6 +154,7 @@ describe('applyTraktorBatch', () => {
     const file = await onDisk(doc)
     const wanted = [...asWanted(doc), { ms: 60000, kind: HOT_KINDS[7], color: 5 }]
     const result = await applyTraktorBatch(file, [op(doc, wanted)], {
+      session,
       ensureClosed: async () => true,
       write: async () => null,
     })
@@ -161,6 +167,7 @@ describe('applyTraktorBatch', () => {
   it('refuses a set built on cues Traktor changed since', async () => {
     const file = await onDisk(doc)
     const result = await applyTraktorBatch(file, [op(doc, asWanted(doc), 'stale')], {
+      session,
       ensureClosed: async () => true,
     })
     expect(result).toMatchObject({
@@ -174,6 +181,7 @@ describe('applyTraktorBatch', () => {
     const file = await onDisk(doc)
     const moved = asWanted(doc).map((c) => (c.id === '2' ? { ...c, ms: 1 } : c))
     const result = await applyTraktorBatch(file, [op(doc, moved)], {
+      session,
       ensureClosed: async () => true,
     })
     expect(result).toMatchObject({
@@ -183,7 +191,10 @@ describe('applyTraktorBatch', () => {
 
   it('refuses without a confirmed collection', async () => {
     expect(
-      await applyTraktorBatch('', [op(doc, asWanted(doc))], { ensureClosed: async () => true }),
+      await applyTraktorBatch('', [op(doc, asWanted(doc))], {
+        ensureClosed: async () => true,
+        session,
+      }),
     ).toEqual({ ok: false, reason: 'unreadable' })
   })
 
@@ -191,6 +202,7 @@ describe('applyTraktorBatch', () => {
     const file = await onDisk(doc)
     const wanted = asWanted(doc).filter((c) => c.id !== '3')
     const result = await applyTraktorBatch(file, [op(doc, wanted)], {
+      session,
       ensureClosed: async () => true,
       write: async () => 'traktor-running',
     })
@@ -202,6 +214,7 @@ describe('applyTraktorBatch', () => {
     const wanted = asWanted(doc).filter((c) => c.id !== '3')
     const write = vi.fn(async () => null)
     const result = await applyTraktorBatch(file, [op(doc, wanted)], {
+      session,
       ensureClosed: async () => false,
       write,
     })
@@ -217,6 +230,7 @@ describe('applyTraktorBatch', () => {
     const write = vi.fn(async () => null)
     const wanted = asWanted(strange).filter((c) => c.ms !== 92674.60674)
     const result = await applyTraktorBatch(file, [op(strange, wanted)], {
+      session,
       ensureClosed: async () => true,
       write,
     })
@@ -235,6 +249,7 @@ describe('applyTraktorBatch', () => {
     const file = await onDisk(doc2)
     const wanted = [...asWanted(doc2), { ms: 60000, kind: HOT_KINDS[1], color: 5 }]
     const result = await applyTraktorBatch(file, [op(doc2, wanted)], {
+      session,
       ensureClosed: async () => true,
       write: async () => null,
     })
@@ -281,6 +296,7 @@ describe('applyTraktorBatch', () => {
       asWanted(withList).filter((c) => c.id !== '3'),
     )
     const result = await applyTraktorBatch(file, [cues, edit], {
+      session,
       ensureClosed: async () => true,
       write,
       bootVolume: 'Macintosh HD',
@@ -309,6 +325,7 @@ describe('applyTraktorBatch', () => {
       stamps: {},
     }
     const result = await applyTraktorBatch(file, [track], {
+      session,
       ensureClosed: async () => true,
       bootVolume: 'Macintosh HD',
     })
@@ -343,6 +360,7 @@ describe('applyTraktorBatch', () => {
       stamps: {},
     }
     const result = await applyTraktorBatch(file, [track], {
+      session,
       ensureClosed: async () => true,
       bootVolume: 'Macintosh HD',
     })
@@ -363,6 +381,7 @@ describe('applyTraktorBatch', () => {
         ),
       ],
       {
+        session,
         ensureClosed: async () => {
           await writeFile(file, savedByTraktor)
           return true
@@ -393,6 +412,7 @@ describe('applyTraktorBatch', () => {
         ),
       ],
       {
+        session,
         ensureClosed: async () => {
           await writeFile(file, elsewhere)
           return true

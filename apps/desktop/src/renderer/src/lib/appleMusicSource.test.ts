@@ -3,11 +3,14 @@ import { joinStretches, musicEntries, musicTree } from './appleMusicSource'
 
 describe('musicTree', () => {
   it('puts root playlists first and groups the rest under their folder, the only thing telling repeated names apart', () => {
-    const tree = musicTree([
-      { name: '95', count: 10, persistentId: 'AAAAAAAAAAAAAAA1', folder: 'Bases' },
-      { name: 'House', count: 32, persistentId: 'AAAAAAAAAAAAAAA2' },
-      { name: '95', count: 4, persistentId: 'AAAAAAAAAAAAAAA3', folder: 'Cantaditas' },
-    ])
+    const tree = musicTree(
+      [
+        { name: '95', count: 10, persistentId: 'AAAAAAAAAAAAAAA1', folder: 'Bases' },
+        { name: 'House', count: 32, persistentId: 'AAAAAAAAAAAAAAA2' },
+        { name: '95', count: 4, persistentId: 'AAAAAAAAAAAAAAA3', folder: 'Cantaditas' },
+      ],
+      'All tracks',
+    )
     expect(tree.map((n) => [n.kind, n.name])).toEqual([
       ['playlist', 'House'],
       ['folder', 'Bases'],
@@ -19,6 +22,22 @@ describe('musicTree', () => {
       kind: 'playlist',
       count: 10,
     })
+  })
+
+  // rekordbox, Engine DJ and Traktor all open on All tracks; Music's playlist of every song
+  // is the same thing under the name the system language gives it.
+  it('puts the playlist of every song first as All tracks', () => {
+    const tree = musicTree(
+      [
+        { name: 'House', count: 32, persistentId: 'AAAAAAAAAAAAAAA2' },
+        { name: 'Música', count: 2044, persistentId: 'AAAAAAAAAAAAAAA1', library: true },
+      ],
+      'All tracks',
+    )
+    expect(tree.map((n) => [n.id, n.name])).toEqual([
+      ['AAAAAAAAAAAAAAA1', 'All tracks'],
+      ['AAAAAAAAAAAAAAA2', 'House'],
+    ])
   })
 })
 
