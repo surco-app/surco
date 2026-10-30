@@ -33,7 +33,9 @@ export default function LibraryReview() {
         <ol className="mt-8 grid gap-x-5 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
           {POINTS.map((key, i) => (
             <li key={key} className="border-t border-line pt-3">
-              <p className="font-mono text-xs text-faint">{String(i + 1).padStart(2, '0')}</p>
+              <p className="font-mono text-[0.8125rem] text-faint">
+                {String(i + 1).padStart(2, '0')}
+              </p>
               <p className="mt-1.5 text-sm font-semibold text-fg">
                 {t(`home.review.points.${key}.title`)}
               </p>

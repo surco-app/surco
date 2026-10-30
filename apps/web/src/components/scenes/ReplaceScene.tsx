@@ -243,6 +243,7 @@ export default function ReplaceScene() {
       </AppWindow>
 
       <div
+        data-ui
         className={`flex min-w-0 flex-col overflow-hidden rounded-xl border bg-scrim text-left transition-[border-color] duration-500 ${
           frame.repointed && !frame.saved ? 'border-blue/55' : 'border-line'
         }`}

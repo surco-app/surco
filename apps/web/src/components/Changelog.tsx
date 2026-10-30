@@ -88,7 +88,7 @@ export default function Changelog() {
             <Reveal>
               <div className="rounded-2xl border border-blue/30 bg-blue/[0.04] p-6 sm:p-8">
                 <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                  <span className="text-[0.9375rem] font-medium text-blue">{beta.kicker}</span>
+                  <span className="text-sm font-medium text-blue">{beta.kicker}</span>
                   <span className="rounded-full border border-line bg-surface2/40 px-3 py-1 font-mono text-sm text-blue tabular-nums">
                     v{beta.version}
                   </span>
