@@ -1079,7 +1079,7 @@ export function convertArgs(
   return args
 }
 
-const LOSSLESS_CODEC = /^(pcm_|flac$|alac$)/
+const LOSSLESS_CODEC = /^(pcm_(?!alaw|mulaw)|flac$|alac$)/
 
 export interface ConversionPlan extends EncodeArgs {
   // A reduction to 16 bits from a wider/float pipeline needs TPDF dither at the
@@ -1196,8 +1196,14 @@ export async function planConversion(
     )
   }
 
-  const samplesSurvive = async (plan: Awaited<ReturnType<typeof losslessPlan>>): Promise<boolean> =>
-    copyOk && LOSSLESS_CODEC.test((await probeOnce()).codecName ?? '') && (await keepsSource(plan))
+  const samplesSurvive = async (
+    plan: Awaited<ReturnType<typeof losslessPlan>>,
+    encoderHolds: (depth: SampleDepth) => boolean = () => true,
+  ): Promise<boolean> =>
+    copyOk &&
+    LOSSLESS_CODEC.test((await probeOnce()).codecName) &&
+    (await keepsSource(plan)) &&
+    encoderHolds(plan.depth)
 
   if (format === 'wav') {
     const same = WAV_INPUT.test(input) && copyOk
@@ -1225,7 +1231,9 @@ export async function planConversion(
       sampleFmt: !depth.float && depth.bits <= 16 ? 's16' : 's32',
       compressionLevel: q.flacCompression,
       ...rest,
-      ...((await samplesSurvive(plan)) ? { samplesKept: true as const } : {}),
+      ...((await samplesSurvive(plan, (d) => !d.float && d.bits <= 24))
+        ? { samplesKept: true as const }
+        : {}),
       ext: '.flac',
     }
   }
@@ -1254,7 +1262,7 @@ export async function planConversion(
       codec: 'alac',
       sampleFmt: !depth.float && depth.bits <= 16 ? 's16p' : 's32p',
       ...rest,
-      ...((await samplesSurvive(plan)) ? { samplesKept: true as const } : {}),
+      ...((await samplesSurvive(plan, (d) => !d.float)) ? { samplesKept: true as const } : {}),
       ext: '.m4a',
     }
   }

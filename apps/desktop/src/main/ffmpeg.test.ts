@@ -1078,6 +1078,30 @@ describe('planConversion samplesKept', () => {
     expect((await planConversion('/in.m4a', 'wav', probeOf('aac', 16))).samplesKept).toBeUndefined()
   })
 
+  it('does not keep them when the FLAC or ALAC encoder would requantize a float source', async () => {
+    const f32 = probeOf('pcm_f32le', 32)
+    const floatProbe = vi.fn(async () => ({
+      ...(await f32()),
+      sampleFmt: 'flt',
+      bitsPerRawSample: 0,
+    }))
+    expect((await planConversion('/in.wav', 'flac', floatProbe)).samplesKept).toBeUndefined()
+    expect((await planConversion('/in.wav', 'alac', floatProbe)).samplesKept).toBeUndefined()
+    expect(await planConversion('/in.wav', 'aiff', floatProbe)).toMatchObject({ samplesKept: true })
+  })
+
+  it('does not keep a 32-bit integer source in FLAC, which stores at most 24 bits', async () => {
+    const int32 = probeOf('pcm_s32le', 32)
+    expect((await planConversion('/in.wav', 'flac', int32)).samplesKept).toBeUndefined()
+    expect(await planConversion('/in.wav', 'alac', int32)).toMatchObject({ samplesKept: true })
+  })
+
+  it('does not treat companded PCM as lossless', async () => {
+    expect(
+      (await planConversion('/in.wav', 'aiff', probeOf('pcm_alaw', 16))).samplesKept,
+    ).toBeUndefined()
+  })
+
   it('keeps them on every stream copy', async () => {
     expect(await planConversion('/in.mp3', 'mp3', probeOf('mp3', 16))).toMatchObject({
       codec: 'copy',
