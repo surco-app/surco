@@ -11,6 +11,7 @@ import {
 } from '../main/settings'
 import type { Api } from '../preload/api'
 import { createQueryClient } from '../renderer/src/lib/queryClient'
+import { preloadLazyChunks } from '../renderer/src/test/lazyChunks'
 import type { Release } from '../shared/types'
 import { bootMain, closeMain, invokeMain, listen, type ScenarioOptions } from './harness'
 
@@ -160,6 +161,7 @@ export async function openApp(
   })
   stubBrowser()
   const { default: App } = await import('../renderer/src/App')
+  await preloadLazyChunks()
   const container = document.body.appendChild(document.createElement('div'))
   const root = createRoot(container)
   act(() =>

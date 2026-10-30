@@ -41,6 +41,7 @@ import { createQueryClient } from './lib/queryClient'
 import { clearDraggedRows, draggedRows } from './lib/reorderDrag'
 import { usbExportStore } from './lib/usbExportStore'
 import { fakeDataTransfer, installDragEvent } from './test/drag'
+import { preloadLazyChunks } from './test/lazyChunks'
 
 // Pass-through triage that counts sort runs, so the derived-list stability test can
 // assert renders without track changes skip the whole filter+sort pipeline.
@@ -425,6 +426,7 @@ beforeEach(() => {
 // imported only after the bridge mock is in place — a dynamic import after beforeEach.
 async function renderApp(): Promise<QueryClient> {
   const { default: App } = await import('./App')
+  await preloadLazyChunks()
   const client = createQueryClient()
   render(
     <QueryClientProvider client={client}>
