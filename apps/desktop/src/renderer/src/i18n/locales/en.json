@@ -173,7 +173,7 @@
     "settingsFileNotSurco": "That file doesn't hold a Surco configuration.",
     "appleMusicNoMediaCopy": "Music didn’t copy the file into its media folder, so “Apple Music only” would leave it with no audio. Turn on “Copy files to the Media folder when adding” in Music, or turn off “Apple Music only”.",
     "appleMusicNoMediaCopyKept": "Music didn’t copy the file into its media folder, so “Apple Music only” would leave it with no audio. Your previous copy is still in Music as it was, and nothing was lost. Turn on “Copy files to the Media folder when adding” in Music, or turn off “Apple Music only”.",
-    "appleMusicAddReturnedOld": "Music handed back a track already in your library instead of importing the new file, so it wasn’t added. Your previous track is still in Music. If it happens again, look in Music for another track with the same title and artist.",
+    "appleMusicAddReturnedOld": "Music handed back a track already in your library instead of importing the new file, so it wasn’t added. No track was removed from your library. If it happens again, look in Music for another track with the same title and artist, or named after the file.",
     "convertedOutputUnreadable": "The converted file came out unreadable, so it was discarded and the original left untouched. Try again with different conversion settings.",
     "convertedOutputTruncated": "The converted file came out shorter than the original, so it was discarded and the original left untouched. Try again with different conversion settings.",
     "engineDjOpen": "Close Engine DJ before converting: it has the library open.",
