@@ -781,8 +781,15 @@ const toArray = (value: string): string[] => (value.trim() ? [value] : [])
 // holds integers only); the ID3 path rewrites the full text afterwards.
 const toTrackNumber = (value: string): number => {
   const n = toNumber(value)
-  return n || toNumber(value.replace(/\D/g, ''))
+  if (n) return n
+  // "3/12" is track 3 of 12, never 312: its digits only count for a position like "A2".
+  const ofTotal = /^\s*(\d+)\s*\/\s*\d*\s*$/.exec(value)
+  return ofTotal ? Number(ofTotal[1]) : toNumber(value.replace(/\D/g, ''))
 }
+
+// The total a "3/12" track number carries, for when no total of its own was given.
+const totalInTrackNumber = (value: string): number =>
+  Number(/^\s*\d+\s*\/\s*(\d+)\s*$/.exec(value)?.[1] ?? 0)
 
 // The fields no tag family gives a dedicated box: they ride TXXX descriptions in ID3 and
 // "----" freeform atoms in MP4, under the names mp3tag writes so a collection tagged with
@@ -965,7 +972,7 @@ export function writeTags(
     tag.grouping = meta.grouping
     tag.comment = meta.comment
     tag.track = toTrackNumber(meta.trackNumber)
-    tag.trackCount = toNumber(meta.trackTotal ?? '')
+    tag.trackCount = toNumber(meta.trackTotal ?? '') || totalInTrackNumber(meta.trackNumber)
     tag.disc = toNumber(meta.discNumber)
     tag.discCount = toNumber(meta.discTotal ?? '')
     tag.beatsPerMinute = Math.round(toNumber(meta.bpm))
