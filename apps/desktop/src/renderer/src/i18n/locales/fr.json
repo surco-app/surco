@@ -173,6 +173,7 @@
     "settingsFileNotSurco": "Ce fichier ne contient pas de configuration Surco.",
     "appleMusicNoMediaCopy": "Musique n’a pas copié le fichier dans son dossier multimédia : avec « Apple Music uniquement », il resterait sans audio. Active « Copier les fichiers dans le dossier Musique » dans Musique, ou désactive « Apple Music uniquement ».",
     "appleMusicNoMediaCopyKept": "Musique n’a pas copié le fichier dans son dossier multimédia : avec « Apple Music uniquement », il resterait sans audio. Ta copie précédente est toujours dans Musique telle quelle, rien n’est perdu. Active « Copier les fichiers dans le dossier Musique » dans Musique, ou désactive « Apple Music uniquement ».",
+    "appleMusicAddReturnedOld": "Musique a renvoyé ton morceau précédent au lieu d’importer le nouveau, donc rien n’a été modifié. Ta copie précédente est toujours dans Musique telle quelle. Réessaie.",
     "convertedOutputUnreadable": "Le fichier converti est sorti illisible, il a donc été écarté et l'original laissé intact. Réessayez avec d'autres réglages de conversion.",
     "convertedOutputTruncated": "Le fichier converti est sorti plus court que l'original, il a donc été écarté et l'original laissé intact. Réessayez avec d'autres réglages de conversion.",
     "engineDjOpen": "Ferme Engine DJ avant de convertir : sa bibliothèque est ouverte.",

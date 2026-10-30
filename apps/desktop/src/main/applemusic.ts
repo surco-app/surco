@@ -484,6 +484,50 @@ export async function carryOverToAppleMusicCopy(
   throw new Error(`unexpected Music answer: ${answer}`)
 }
 
+// Music answers an `add` of a file whose name, artist and album match an entry it already
+// has with that entry, importing nothing, even across formats (measured 30/10). Marking the
+// old entry's name for the length of the add makes Music import the new file. Both ways
+// check the live label first, so only the entry the DJ confirmed is renamed or restored.
+export const REPLACING_MARK = ' [surco-replacing]'
+
+export function buildReplacingMarkScript(
+  persistentId: string,
+  expectedLabel: string,
+  marked: boolean,
+): string {
+  const label = marked ? expectedLabel : `${expectedLabel}${REPLACING_MARK}`
+  return [
+    'tell application "Music"',
+    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${appleScriptString(persistentId)})`,
+    '  if (count of theMatches) is 0 then return "missing"',
+    '  set theTrack to item 1 of theMatches',
+    `  if (artist of theTrack) & " - " & (name of theTrack) is not ${appleScriptString(label)} then return "mismatch"`,
+    ...(marked
+      ? [`  set name of theTrack to (name of theTrack) & ${appleScriptString(REPLACING_MARK)}`]
+      : [
+          '  set theName to name of theTrack',
+          `  if (length of theName) > ${REPLACING_MARK.length} then`,
+          `    set name of theTrack to text 1 thru -${REPLACING_MARK.length + 1} of theName`,
+          '  else',
+          '    set name of theTrack to ""',
+          '  end if',
+        ]),
+    '  return "set"',
+    'end tell',
+  ].join('\n')
+}
+
+export async function markAppleMusicReplacing(
+  persistentId: string,
+  expectedLabel: string,
+  marked: boolean,
+  run: typeof runOsascript = runOsascript,
+): Promise<MusicSetResult> {
+  const answer = (await run(buildReplacingMarkScript(persistentId, expectedLabel, marked))).trim()
+  if (answer === 'set' || answer === 'missing' || answer === 'mismatch') return answer
+  throw new Error(`unexpected Music answer: ${answer}`)
+}
+
 // osascript and the Music AppleScript bridge only exist on macOS, so this gates
 // the whole feature on the platform. Apple Music for Windows exposes no
 // automation, so a track simply finishes in the output folder there. FLAC is

@@ -23,6 +23,7 @@ export const ERROR_KEYS = [
   'settingsFileNotSurco',
   'appleMusicNoMediaCopy',
   'appleMusicNoMediaCopyKept',
+  'appleMusicAddReturnedOld',
   'convertedOutputUnreadable',
   'convertedOutputTruncated',
   'engineDjOpen',

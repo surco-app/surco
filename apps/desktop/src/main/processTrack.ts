@@ -145,6 +145,13 @@ export interface ProcessTrackDeps {
     toPid: string,
     expectedLabel: string,
   ) => Promise<'carried' | 'missing' | 'mismatch'>
+  // Renames the superseded entry for the length of the add (marked) and back, each only
+  // while the entry still carries the expected label (see replaceAppleMusicCopy).
+  markAppleMusicReplacing: (
+    persistentId: string,
+    expectedLabel: string,
+    marked: boolean,
+  ) => Promise<'set' | 'missing' | 'mismatch'>
   // Corrects the recorded repoint once Music has copied the file into its Media folder.
   // The conversion only knows the temp path it wrote, which no longer exists when the
   // flush runs — the collection would be told to follow a file that is already gone.
@@ -171,6 +178,12 @@ export interface ProcessTrackDeps {
 // Deleting removes the library row only, never the file: the superseded MP3 stays on disk
 // for the user's own "trash original" to decide. A delete that fails after the add leaves
 // a duplicate, not a failed conversion: the file is already converted and in Music.
+//
+// Music answers an add whose name, artist and album match an entry it already has with that
+// entry, importing nothing (measured 30/10, even across formats): carrying onto it and
+// deleting it took the track out of Music. So the old entry is renamed for the length of the
+// add and restored right after, before the label-checked carry and delete; an add that still
+// answers with the old entry changes nothing and fails the step.
 async function replaceAppleMusicCopy(
   job: ProcessJob,
   target: string,
@@ -186,17 +199,32 @@ async function replaceAppleMusicCopy(
   oldCopyKept?: 'mismatch' | 'error' | 'carry'
   landed?: MediaCopy
 }> {
-  const added = await deps.addToAppleMusic(target, job.meta, coverPath)
-  const landed = tmpDir
-    ? await verifyMediaCopy(
-        added,
-        tmpDir,
-        target,
-        job,
-        deps,
-        old.persistentId ? 'appleMusicNoMediaCopyKept' : 'appleMusicNoMediaCopy',
-      )
-    : undefined
+  const marked =
+    !!old.persistentId &&
+    (await deps.markAppleMusicReplacing(old.persistentId, old.label, true)) === 'set'
+  let added: string
+  let landed: MediaCopy | undefined
+  try {
+    added = await deps.addToAppleMusic(target, job.meta, coverPath)
+    if (old.persistentId && added === old.persistentId)
+      throw errorWithKey('appleMusicAddReturnedOld', added)
+    landed = tmpDir
+      ? await verifyMediaCopy(
+          added,
+          tmpDir,
+          target,
+          job,
+          deps,
+          old.persistentId ? 'appleMusicNoMediaCopyKept' : 'appleMusicNoMediaCopy',
+        )
+      : undefined
+  } finally {
+    // A restore that fails leaves the mark in the name, never a lost entry: logged, not thrown.
+    if (marked && old.persistentId)
+      await deps
+        .markAppleMusicReplacing(old.persistentId, old.label, false)
+        .catch((e) => log.warn('process:track could not restore the old Music entry name', e))
+  }
   if (!old.persistentId) return { added, landed }
   try {
     const carried = await deps.carryAppleMusicHistory(old.persistentId, added, old.label)

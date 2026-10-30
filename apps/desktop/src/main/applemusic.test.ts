@@ -13,6 +13,7 @@ import {
   buildLocationScript,
   buildMusicRunningScript,
   buildPlaylistTransferScript,
+  buildReplacingMarkScript,
   buildRevealScript,
   buildReviewDumpScript,
   buildSetFieldScript,
@@ -20,6 +21,7 @@ import {
   carryOverToAppleMusicCopy,
   entriesForPaths,
   isAppleMusicOnly,
+  markAppleMusicReplacing,
   musicEntryForFile,
   musicFileEntries,
   musicFileLocations,
@@ -27,6 +29,7 @@ import {
   parseFileNames,
   parseLibraryDump,
   parseReviewDump,
+  REPLACING_MARK,
   shouldAddToAppleMusic,
 } from './applemusic'
 
@@ -811,6 +814,66 @@ describe('buildCarryOverScript', () => {
   it('escapes quotes and backslashes in the label', () => {
     const q = buildCarryOverScript('OLD0000000000000', 'NEW0000000000000', 'Mr "Big" \\ Co - "Hit"')
     expect(q).toContain('is not "Mr \\"Big\\" \\\\ Co - \\"Hit\\"" then return "mismatch"')
+  })
+})
+
+// Music answers an `add` of a file whose name, artist and album match an entry it already
+// has with that entry, importing nothing, even across formats (measured 30/10: an AIFF added
+// over its WAV came back with the WAV's persistent ID). Renaming the old entry for the length
+// of the add is what makes Music import the new file.
+describe('buildReplacingMarkScript', () => {
+  it('appends the mark to the name of the entry the DJ confirmed, and only that one', () => {
+    const s = buildReplacingMarkScript('OLD0000000000000', 'A - B', true)
+    expect(s).toContain('whose persistent ID is "OLD0000000000000"')
+    const check = s.indexOf(
+      'if (artist of theTrack) & " - " & (name of theTrack) is not "A - B" then return "mismatch"',
+    )
+    expect(check).toBeGreaterThan(-1)
+    expect(check).toBeLessThan(s.indexOf('set name of theTrack'))
+    expect(s).toContain(`set name of theTrack to (name of theTrack) & "${REPLACING_MARK}"`)
+  })
+
+  // Restoring checks for the marked name, so an entry Music or the DJ renamed meanwhile is
+  // left as it is instead of losing the tail of its new name.
+  it('takes the mark off only an entry that still carries it', () => {
+    const s = buildReplacingMarkScript('OLD0000000000000', 'A - B', false)
+    expect(s).toContain(
+      `if (artist of theTrack) & " - " & (name of theTrack) is not "A - B${REPLACING_MARK}" then return "mismatch"`,
+    )
+    expect(s).toContain(
+      `set name of theTrack to text 1 thru -${REPLACING_MARK.length + 1} of theName`,
+    )
+  })
+
+  // `text 1 thru -19` of a name that is only the mark raises instead of giving "".
+  it('restores an empty name without slicing past its start', () => {
+    const s = buildReplacingMarkScript('OLD0000000000000', 'A - ', false)
+    expect(s).toContain(`if (length of theName) > ${REPLACING_MARK.length} then`)
+    expect(s).toContain('set name of theTrack to ""')
+  })
+
+  it('escapes quotes in the label', () => {
+    expect(buildReplacingMarkScript('OLD', 'Mr "Big" - Hit', true)).toContain(
+      'is not "Mr \\"Big\\" - Hit" then return "mismatch"',
+    )
+  })
+})
+
+describe('markAppleMusicReplacing', () => {
+  it('reads what Music answered', async () => {
+    const run = vi.fn(async () => 'set\n')
+    await expect(markAppleMusicReplacing('OLD', 'A - B', true, run)).resolves.toBe('set')
+    expect(run).toHaveBeenCalledWith(buildReplacingMarkScript('OLD', 'A - B', true))
+    await expect(
+      markAppleMusicReplacing('OLD', 'A - B', true, async () => 'mismatch'),
+    ).resolves.toBe('mismatch')
+    await expect(
+      markAppleMusicReplacing('OLD', 'A - B', true, async () => 'missing'),
+    ).resolves.toBe('missing')
+  })
+
+  it('fails on anything else', async () => {
+    await expect(markAppleMusicReplacing('OLD', 'A - B', true, async () => '')).rejects.toThrow()
   })
 })
 

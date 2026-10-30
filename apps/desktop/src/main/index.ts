@@ -72,6 +72,7 @@ import {
   appleMusicLimiter,
   carryOverToAppleMusicCopy,
   deleteFromAppleMusic,
+  markAppleMusicReplacing,
   musicEntryForFile,
   updateInAppleMusic,
 } from './applemusic'
@@ -1705,6 +1706,8 @@ function registerIpc(): void {
       deleteAppleMusic: deleteFromAppleMusic,
       carryAppleMusicHistory: (fromPid, toPid, label) =>
         appleMusicLimiter.run(() => carryOverToAppleMusicCopy(fromPid, toPid, label)),
+      markAppleMusicReplacing: (pid, label, marked) =>
+        appleMusicLimiter.run(() => markAppleMusicReplacing(pid, label, marked)),
       redirectRepoint: (to, landed) => {
         redirectRekordboxRepoint(to, landed)
         return redirectNmlPatch(to, landed, toNmlLocation(landed))
