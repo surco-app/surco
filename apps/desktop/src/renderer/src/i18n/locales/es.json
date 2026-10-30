@@ -207,10 +207,6 @@
   },
   "trash": {
     "title": "Copias de seguridad",
-    "summary_one": "{{count}} archivo · {{size}}",
-    "summary_other": "{{count}} archivos · {{size}}",
-    "emptyTitle": "No hay nada que restaurar",
-    "emptyBody": "Cuando una conversión sustituya o renombre un original, o borres una pista en un disco sin papelera, aparecerá aquí.",
     "reason": {
       "replaced": "sustituido por una conversión",
       "renamed": "renombrado por una conversión",
@@ -235,15 +231,11 @@
       "deleted": "Borrados",
       "restored-over": "Apartados"
     },
-    "filtersLabel": "Copias",
     "search": "Buscar por título o carpeta",
-    "replacedBy": "sustituido por",
-    "renamedTo": "renombrado a",
-    "usage": "{{used}} de {{size}}",
-    "selfEmpties": "Se vacía sola a los {{days}} días.",
     "expiring_one": "queda {{count}} día",
     "expiring_other": "quedan {{count}} días",
-    "noMatches": "Nada coincide con la búsqueda"
+    "noMatches": "Nada coincide con la búsqueda",
+    "emptyBody": "Cuando una conversión sustituya o renombre un original, o borres una pista en un disco sin papelera, aparecerá aquí."
   },
   "notices": {
     "duplicatesSkipped": "Ya en la lista, omitidas: {{count}}",
@@ -2807,7 +2799,7 @@
       "pending_other": "{{count}} cambios esperan a que cierres {{program}}",
       "halted": "Surco ha parado: revisa los cambios pendientes",
       "failed": "La última copia falló",
-      "untouched": "Surco no lo toca (lo has elegido en Ajustes)"
+      "untouched": "No lo toca"
     },
     "facts": {
       "state": "Estado",
@@ -2849,10 +2841,27 @@
     "restored": "Listo: {{program}} ha vuelto a como estaba {{when}}.",
     "music": {
       "title": "Archivos de música",
-      "state": "Originales guardados"
+      "state": "Originales guardados",
+      "kept": "Guardados",
+      "summary_one": "{{count}} archivo · {{size}} de {{max}}",
+      "summary_other": "{{count}} archivos · {{size}} de {{max}}",
+      "show": "Ver archivos",
+      "hide": "Ocultar archivos",
+      "expires": "Se borran solos a los {{days}} días, o antes si pasan de {{size}}.",
+      "stateEmpty": "Nada guardado",
+      "renamedTo": "Renombrado por una conversión a «{{name}}»",
+      "replacedBy": "Sustituido por «{{name}}» en una conversión"
     },
     "footer": "De cada programa guardamos las últimas 5 copias. Los archivos de música, {{days}} días.",
     "reveal": "Mostrar en Finder",
-    "revealWin": "Mostrar en el Explorador"
+    "revealWin": "Mostrar en el Explorador",
+    "changeInSettings": "Cambiar en Ajustes",
+    "today": "Hoy, {{time}}",
+    "yesterday": "Ayer, {{time}}",
+    "inSentence": {
+      "today": "hoy a las {{time}}",
+      "yesterday": "ayer a las {{time}}",
+      "date": "el {{date}}"
+    }
   }
 }

@@ -207,10 +207,6 @@
   },
   "trash": {
     "title": "Sicherungskopien",
-    "summary_one": "{{count}} Datei · {{size}}",
-    "summary_other": "{{count}} Dateien · {{size}}",
-    "emptyTitle": "Nichts wiederherzustellen",
-    "emptyBody": "Wenn eine Konvertierung ein Original ersetzt oder umbenennt, oder du einen Titel auf einem Laufwerk ohne Papierkorb löschst, erscheint er hier.",
     "reason": {
       "replaced": "durch eine Konvertierung ersetzt",
       "renamed": "durch eine Konvertierung umbenannt",
@@ -235,15 +231,11 @@
       "deleted": "Gelöscht",
       "restored-over": "Beiseitegelegt"
     },
-    "filtersLabel": "Kopien",
     "search": "Nach Titel oder Ordner suchen",
-    "replacedBy": "ersetzt durch",
-    "renamedTo": "umbenannt in",
-    "usage": "{{used}} von {{size}}",
-    "selfEmpties": "Leert sich nach {{days}} Tagen von selbst.",
     "expiring_one": "noch {{count}} Tag",
     "expiring_other": "noch {{count}} Tage",
-    "noMatches": "Nichts passt zur Suche"
+    "noMatches": "Nichts passt zur Suche",
+    "emptyBody": "Wenn eine Konvertierung ein Original ersetzt oder umbenennt, oder du einen Titel auf einem Laufwerk ohne Papierkorb löschst, erscheint er hier."
   },
   "notices": {
     "duplicatesSkipped": "Schon in der Liste, übersprungen: {{count}}",
@@ -2807,7 +2799,7 @@
       "pending_other": "{{count}} Änderungen warten darauf, dass du {{program}} schließt",
       "halted": "Surco hat angehalten: Prüfe die ausstehenden Änderungen",
       "failed": "Das letzte Backup ist fehlgeschlagen",
-      "untouched": "Surco fasst es nicht an (so in den Einstellungen gewählt)"
+      "untouched": "Fasst es nicht an"
     },
     "facts": {
       "state": "Status",
@@ -2849,10 +2841,27 @@
     "restored": "Fertig: {{program}} ist wieder auf dem Stand von {{when}}.",
     "music": {
       "title": "Musikdateien",
-      "state": "Originale gespeichert"
+      "state": "Originale gespeichert",
+      "kept": "Gespeichert",
+      "summary_one": "{{count}} Datei · {{size}} von {{max}}",
+      "summary_other": "{{count}} Dateien · {{size}} von {{max}}",
+      "show": "Dateien anzeigen",
+      "hide": "Dateien ausblenden",
+      "expires": "Werden nach {{days}} Tagen von selbst gelöscht, oder früher, wenn sie {{size}} überschreiten.",
+      "stateEmpty": "Nichts gespeichert",
+      "renamedTo": "Durch eine Konvertierung umbenannt in „{{name}}“",
+      "replacedBy": "Bei einer Konvertierung durch „{{name}}“ ersetzt"
     },
     "footer": "Von jedem Programm behalten wir die letzten 5 Backups. Musikdateien {{days}} Tage.",
     "reveal": "Im Finder zeigen",
-    "revealWin": "Im Explorer zeigen"
+    "revealWin": "Im Explorer zeigen",
+    "changeInSettings": "In den Einstellungen ändern",
+    "today": "Heute, {{time}}",
+    "yesterday": "Gestern, {{time}}",
+    "inSentence": {
+      "today": "heute um {{time}}",
+      "yesterday": "gestern um {{time}}",
+      "date": "{{date}}"
+    }
   }
 }

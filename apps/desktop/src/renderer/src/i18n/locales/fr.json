@@ -207,10 +207,6 @@
   },
   "trash": {
     "title": "Copies de sauvegarde",
-    "summary_one": "{{count}} fichier · {{size}}",
-    "summary_other": "{{count}} fichiers · {{size}}",
-    "emptyTitle": "Rien à restaurer",
-    "emptyBody": "Quand une conversion remplace ou renomme un original, ou que tu supprimes une piste sur un disque sans corbeille, il apparaît ici.",
     "reason": {
       "replaced": "remplacé par une conversion",
       "renamed": "renommé par une conversion",
@@ -235,15 +231,11 @@
       "deleted": "Supprimés",
       "restored-over": "Mis de côté"
     },
-    "filtersLabel": "Copies",
     "search": "Rechercher par titre ou dossier",
-    "replacedBy": "remplacé par",
-    "renamedTo": "renommé en",
-    "usage": "{{used}} sur {{size}}",
-    "selfEmpties": "Se vide seule après {{days}} jours.",
     "expiring_one": "{{count}} jour restant",
     "expiring_other": "{{count}} jours restants",
-    "noMatches": "Aucun résultat pour cette recherche"
+    "noMatches": "Aucun résultat pour cette recherche",
+    "emptyBody": "Quand une conversion remplace ou renomme un original, ou que tu supprimes une piste sur un disque sans corbeille, il apparaît ici."
   },
   "notices": {
     "duplicatesSkipped": "Déjà dans la liste, ignorés : {{count}}",
@@ -2807,7 +2799,7 @@
       "pending_other": "{{count}} modifications attendent que tu fermes {{program}}",
       "halted": "Surco s'est arrêté : vérifie les modifications en attente",
       "failed": "La dernière sauvegarde a échoué",
-      "untouched": "Surco n'y touche pas (choix fait dans les Réglages)"
+      "untouched": "N'y touche pas"
     },
     "facts": {
       "state": "État",
@@ -2849,10 +2841,27 @@
     "restored": "C'est fait : {{program}} est revenu tel qu'il était {{when}}.",
     "music": {
       "title": "Fichiers de musique",
-      "state": "Originaux conservés"
+      "state": "Originaux conservés",
+      "kept": "Conservés",
+      "summary_one": "{{count}} fichier · {{size}} sur {{max}}",
+      "summary_other": "{{count}} fichiers · {{size}} sur {{max}}",
+      "show": "Voir les fichiers",
+      "hide": "Masquer les fichiers",
+      "expires": "Ils s'effacent d'eux-mêmes après {{days}} jours, ou plus tôt s'ils dépassent {{size}}.",
+      "stateEmpty": "Rien de conservé",
+      "renamedTo": "Renommé par une conversion en « {{name}} »",
+      "replacedBy": "Remplacé par « {{name}} » lors d'une conversion"
     },
     "footer": "Pour chaque logiciel, nous gardons les 5 dernières sauvegardes. Pour les fichiers de musique, {{days}} jours.",
     "reveal": "Afficher dans le Finder",
-    "revealWin": "Afficher dans l'Explorateur"
+    "revealWin": "Afficher dans l'Explorateur",
+    "changeInSettings": "Modifier dans les Réglages",
+    "today": "Aujourd'hui, {{time}}",
+    "yesterday": "Hier, {{time}}",
+    "inSentence": {
+      "today": "aujourd'hui à {{time}}",
+      "yesterday": "hier à {{time}}",
+      "date": "le {{date}}"
+    }
   }
 }
