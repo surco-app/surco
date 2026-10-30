@@ -83,9 +83,9 @@ describe('readMeta keeps the untrimmed review fields beside the trimmed tags', (
     expect((await readMeta(file)).reviewRaw).toBeUndefined()
   })
 
-  it('reads under a new cache namespace, so a read cached trimmed is not served again', async () => {
+  it('reads under a new cache namespace, so a read cached trimmed or with a split genre is not served again', async () => {
     namespaces.length = 0
     await readMeta(encoded('ns.mp3', ['-c:a', 'libmp3lame'], { album: 'X' }))
-    expect(namespaces).toEqual(['readmeta-v5'])
+    expect(namespaces).toEqual(['readmeta-v6'])
   })
 })
