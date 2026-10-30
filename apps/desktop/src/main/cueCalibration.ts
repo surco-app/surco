@@ -2,7 +2,9 @@ import { firstFramePair, leadingTags } from './mp3Head'
 import { mp3Head, xingEncoder, xingTagAt } from './rekordboxTimeline'
 
 const MPEG1_FRAME_SAMPLES = 1152
+const MPEG2_FRAME_SAMPLES = 576
 const MPEG1_SAMPLE_RATES = [44100, 48000, 32000]
+const RATE_DIVISORS = [4, 0, 2, 1]
 const DECODER_DELAY_SAMPLES = 529
 const LIBMP3LAME_DELAY_SAMPLES = 576 + DECODER_DELAY_SAMPLES
 const GAPLESS_SIGNATURES = ['LAME', 'Lavf', 'Lavc']
@@ -16,12 +18,13 @@ export interface Mp3Timing {
 export function mp3Timing(head: Buffer): Mp3Timing | null {
   const audioAt = leadingTags(head).end
   const frame = firstFramePair(head, audioAt)
-  if (frame === null || ((head[frame + 1] >> 3) & 3) !== 3) return null
+  if (frame === null) return null
+  const version = (head[frame + 1] >> 3) & 3
   const tagAt = xingTagAt(head, frame)
   const tag = tagAt === null ? null : xingEncoder(head, tagAt)
   return {
-    sampleRate: MPEG1_SAMPLE_RATES[(head[frame + 2] >> 2) & 3],
-    headerSamples: tag ? MPEG1_FRAME_SAMPLES : 0,
+    sampleRate: MPEG1_SAMPLE_RATES[(head[frame + 2] >> 2) & 3] / RATE_DIVISORS[version],
+    headerSamples: tag ? (version === 3 ? MPEG1_FRAME_SAMPLES : MPEG2_FRAME_SAMPLES) : 0,
     gaplessDelay:
       tag && frame === audioAt && GAPLESS_SIGNATURES.includes(tag.encoder)
         ? tag.delay + DECODER_DELAY_SAMPLES

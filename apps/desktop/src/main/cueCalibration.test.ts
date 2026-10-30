@@ -130,6 +130,31 @@ describe('automaticCueOffsetOfFiles', () => {
     expect(await automaticCueOffsetOfFiles(junky, wav)).toBeCloseTo(-ms(XING_FRAME, 44100))
   })
 
+  it.each([24000, 22050, 11025])(
+    'counts a %i Hz MPEG-2 header frame as the 576 samples it holds',
+    async (rate) => {
+      const wav = encode(`low${rate}.wav`, ['-ar', String(rate)])
+      const withXing = encode(`low${rate}.mp3`, ['-ar', String(rate), '-c:a', 'libmp3lame'])
+      const withoutXing = encode(`low${rate}-bare.mp3`, [
+        '-ar',
+        String(rate),
+        '-c:a',
+        'libmp3lame',
+        '-write_xing',
+        '0',
+      ])
+
+      expect(await automaticCueOffsetOfFiles(withXing, wav)).toBeCloseTo(
+        -ms(576 + ENCODER_DELAY, rate),
+      )
+      expect(await automaticCueOffsetOfFiles(wav, withXing)).toBeCloseTo(
+        ms(576 + ENCODER_DELAY, rate),
+      )
+      expect(await automaticCueOffsetOfFiles(withoutXing, wav)).toBe(0)
+      expect(await automaticCueOffsetOfFiles(wav, withoutXing)).toBeCloseTo(ms(ENCODER_DELAY, rate))
+    },
+  )
+
   it('reads the output MP3 header the same way', async () => {
     const flac = encode('pcm.flac', [])
     const withoutXing = encode('bare-out.mp3', ['-c:a', 'libmp3lame', '-write_xing', '0'])

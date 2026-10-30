@@ -43,8 +43,9 @@ export interface Mpeg1Info {
 }
 
 export function xingTagAt(head: Buffer, frame: number): number | null {
+  const mpeg1 = ((head[frame + 1] >> 3) & 3) === 3
   const mono = head[frame + 3] >> 6 === 3
-  const tagAt = frame + 4 + (mono ? 17 : 32)
+  const tagAt = frame + 4 + (mpeg1 ? (mono ? 17 : 32) : mono ? 9 : 17)
   const tag = head.toString('latin1', tagAt, tagAt + 4)
   return tag === 'Info' || tag === 'Xing' ? tagAt : null
 }
