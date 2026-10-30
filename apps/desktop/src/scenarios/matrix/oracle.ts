@@ -1,8 +1,18 @@
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { closeSync, openSync, readdirSync, readFileSync, readSync } from 'node:fs'
-import { basename, dirname, extname, join } from 'node:path'
+import {
+  closeSync,
+  existsSync,
+  openSync,
+  readdirSync,
+  readFileSync,
+  readSync,
+  realpathSync,
+  statSync,
+} from 'node:fs'
+import { basename, dirname, extname, join, resolve } from 'node:path'
 import ffprobeInstaller from '@ffprobe-installer/ffprobe'
+import Database from 'better-sqlite3-multiple-ciphers'
 import ffmpegStatic from 'ffmpeg-static'
 import {
   Id3v2AttachmentFrame,
@@ -19,9 +29,33 @@ import {
   TagTypes,
   type XiphComment,
 } from 'node-taglib-sharp'
+import {
+  decodeBeatGrid,
+  decodeQuickCues,
+  decodeTrackData,
+  inflateEngineBlob,
+} from '../../main/engineBlobs'
+import { analysedTrack } from '../../main/enginePerformanceFixture'
+import { engineDbPath } from '../../main/enginePlaylistsFixture'
+import { backupOf } from '../../main/libraryBackups'
+import { openRekordboxDb } from '../../main/rekordboxDb'
+import { readTraktorCueStart, storedTree } from '../../main/traktor4Fixture'
 import type { OutputFormat } from '../../shared/types'
+import { music } from '../fakeMusic'
 import type { Cell, InvariantName } from './cells'
-import type { SourceTrack, TrickyTags } from './sources'
+import {
+  analysisDataPathOf,
+  engineSeededCues,
+  type LibrarySet,
+  type Program,
+  REKORDBOX_FILE_TYPE,
+  SEEDED_ANALYSED,
+  type SeededTrack,
+  sha1Of,
+  syncedPrograms,
+  twinIdOf,
+} from './libraries'
+import { SEEDED_CUES_MS, type SourceTrack, type TrickyTags } from './sources'
 
 const FF = ffmpegStatic as unknown as string
 const PROBE = ffprobeInstaller.path
@@ -492,4 +526,456 @@ export function fileInvariants(
     ...tagsBroken(cell.target, source.tags, path, out).map(as('tags')),
     ...coverBroken(cell.target, path, expectedCoverSha1).map(as('cover')),
   ]
+}
+
+export interface Expected {
+  finalPath: string
+  lagMs: number
+  samplesKept: boolean
+  destGone: boolean
+}
+
+type Found = [InvariantName, string]
+
+function canonical(path: string): string {
+  try {
+    return realpathSync(path).normalize('NFC')
+  } catch {
+    try {
+      return join(realpathSync(dirname(path)), basename(path)).normalize('NFC')
+    } catch {
+      return path.normalize('NFC')
+    }
+  }
+}
+
+function sizeOf(path: string): number | null {
+  try {
+    return statSync(path).size
+  } catch {
+    return null
+  }
+}
+
+function cuesAt(got: number[], want: number[]): boolean {
+  const a = [...got].sort((x, y) => x - y)
+  const b = [...want].sort((x, y) => x - y)
+  return a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) <= 1)
+}
+
+const msList = (values: number[]): string => values.map((v) => v.toFixed(0)).join(', ')
+
+const sameSet = <T>(a: T[], b: T[]): boolean =>
+  a.length === b.length && [...a].sort().every((v, i) => v === [...b].sort()[i])
+
+function rekordboxBroken(dbPath: string, t: SeededTrack, e: Expected): Found[] {
+  const db = openRekordboxDb(dbPath, { readonly: true })
+  if (!db) return [['points', 'rekordbox: la biblioteca no se puede abrir']]
+  try {
+    const final = canonical(e.finalPath)
+    const found: Found[] = []
+    const row = db
+      .prepare(
+        `SELECT FolderPath, FileNameL, FileType, FileSize, AnalysisDataPath, Analysed
+         FROM djmdContent WHERE ID = ? AND rb_local_deleted = 0`,
+      )
+      .get(t.rekordboxId) as
+      | {
+          FolderPath: string
+          FileNameL: string
+          FileType: number
+          FileSize: number
+          AnalysisDataPath: string | null
+          Analysed: number | null
+        }
+      | undefined
+    if (!row) found.push(['points', `rekordbox: la fila ${t.rekordboxId} ya no está`])
+    else {
+      if (canonical(row.FolderPath) !== final)
+        found.push([
+          'points',
+          `rekordbox: FolderPath '${row.FolderPath}', se esperaba '${e.finalPath}'`,
+        ])
+      if (row.FileNameL.normalize('NFC') !== basename(e.finalPath).normalize('NFC'))
+        found.push(['points', `rekordbox: FileNameL '${row.FileNameL}'`])
+      const fileType = REKORDBOX_FILE_TYPE[extname(e.finalPath).toLowerCase()]
+      if (row.FileType !== fileType)
+        found.push(['points', `rekordbox: FileType ${row.FileType}, se esperaba ${fileType}`])
+      const size = sizeOf(e.finalPath)
+      if (size !== null && row.FileSize !== size)
+        found.push(['points', `rekordbox: FileSize ${row.FileSize}, el fichero mide ${size}`])
+      if (
+        e.samplesKept &&
+        (row.AnalysisDataPath !== analysisDataPathOf(t.rekordboxId) ||
+          row.Analysed !== SEEDED_ANALYSED)
+      )
+        found.push(['cues', 'rekordbox: análisis borrado con las muestras conservadas'])
+    }
+    const live = db
+      .prepare(`SELECT ID, FolderPath FROM djmdContent WHERE rb_local_deleted = 0`)
+      .all() as { ID: string; FolderPath: string }[]
+    const old = canonical(t.path)
+    if (e.destGone && old !== final) {
+      const stale = live.filter((r) => canonical(r.FolderPath) === old).length
+      if (stale > 0) found.push(['points', `rekordbox: ${stale} filas vivas en la ruta vieja`])
+    }
+    const cues = (
+      db
+        .prepare(`SELECT InMsec FROM djmdCue WHERE ContentID = ? AND rb_local_deleted = 0`)
+        .all(t.rekordboxId) as { InMsec: number }[]
+    ).map((c) => c.InMsec)
+    const want = SEEDED_CUES_MS.map((ms) => ms + e.lagMs)
+    if (!cuesAt(cues, want))
+      found.push(['cues', `rekordbox: cues en ${msList(cues)} ms, se esperaba ${msList(want)}`])
+    const lists = (
+      db
+        .prepare(`SELECT PlaylistID FROM djmdSongPlaylist WHERE ContentID = ?`)
+        .all(t.rekordboxId) as {
+        PlaylistID: string
+      }[]
+    ).map((r) => r.PlaylistID)
+    if (!sameSet(lists, t.playlists.rekordbox))
+      found.push(['playlists', `rekordbox: playlists ${lists.join(', ') || 'ninguna'}`])
+    const atFinal = live.filter((r) => canonical(r.FolderPath) === final).length
+    if (atFinal !== 1)
+      found.push(['unique', `rekordbox: ${atFinal} filas vivas para el fichero final`])
+    return found
+  } finally {
+    db.close()
+  }
+}
+
+function rekordboxNewRows(dbPath: string, set: LibrarySet): Found[] {
+  const db = openRekordboxDb(dbPath, { readonly: true })
+  if (!db) return []
+  try {
+    const seeded = new Set(
+      [...set.tracks, set.bystander].flatMap((t) => [t.rekordboxId, twinIdOf(t.rekordboxId)]),
+    )
+    const orphans = (
+      db
+        .prepare(
+          `SELECT c.ID FROM djmdContent c WHERE c.rb_local_deleted = 0
+           AND NOT EXISTS (SELECT 1 FROM djmdSongPlaylist s WHERE s.ContentID = c.ID)`,
+        )
+        .all() as { ID: string }[]
+    ).filter((r) => !seeded.has(r.ID))
+    return orphans.map((r): Found => ['unique', `rekordbox: fila nueva ${r.ID} sin playlists`])
+  } finally {
+    db.close()
+  }
+}
+
+interface EnginePerf {
+  trackData: Buffer | null
+  beatData: Buffer | null
+  quickCues: Buffer | null
+  overviewWaveFormData: Buffer | null
+}
+
+function engineChain(entities: { id: number; trackId: number; nextEntityId: number }[]): number[] {
+  const next = new Map(entities.map((x) => [x.id, x]))
+  const pointed = new Set(entities.map((x) => x.nextEntityId))
+  const order: number[] = []
+  let at = entities.find((x) => !pointed.has(x.id))
+  while (at && order.length < entities.length) {
+    order.push(at.trackId)
+    at = next.get(at.nextEntityId)
+  }
+  return order
+}
+
+function engineBroken(dir: string, set: LibrarySet, t: SeededTrack, e: Expected): Found[] {
+  const db = new Database(engineDbPath(dir), { readonly: true, fileMustExist: true })
+  try {
+    const final = canonical(e.finalPath)
+    const found: Found[] = []
+    const row = db
+      .prepare('SELECT path, fileType, fileBytes FROM Track WHERE id = ?')
+      .get(t.engineId) as { path: string; fileType: string; fileBytes: number } | undefined
+    if (!row) found.push(['points', `Engine: la pista ${t.engineId} ya no está`])
+    else {
+      if (canonical(resolve(dir, row.path)) !== final)
+        found.push(['points', `Engine: path '${row.path}', se esperaba '${e.finalPath}'`])
+      const fileType = extname(e.finalPath).slice(1).toLowerCase()
+      if (row.fileType !== fileType)
+        found.push(['points', `Engine: fileType '${row.fileType}', se esperaba '${fileType}'`])
+      const size = sizeOf(e.finalPath)
+      if (size !== null && row.fileBytes !== size)
+        found.push(['points', `Engine: fileBytes ${row.fileBytes}, el fichero mide ${size}`])
+    }
+    const perf = db
+      .prepare(
+        'SELECT trackData, beatData, quickCues, overviewWaveFormData FROM PerformanceData WHERE trackId = ?',
+      )
+      .get(t.engineId) as EnginePerf | undefined
+    const seeded = analysedTrack(t.engineId, engineSeededCues())
+    if (!perf?.quickCues || !perf.trackData) found.push(['cues', 'Engine: sin análisis'])
+    else if (e.samplesKept) {
+      const changed = (
+        ['trackData', 'beatData', 'quickCues', 'overviewWaveFormData'] as const
+      ).filter((k) => !(perf[k] && seeded[k]?.equals(perf[k])))
+      if (changed.length > 0)
+        found.push(['cues', `Engine: ${changed.join(', ')} cambiado con las muestras conservadas`])
+    } else {
+      const rate = decodeTrackData(inflateEngineBlob(perf.trackData))?.sampleRate ?? 0
+      const cues = (decodeQuickCues(inflateEngineBlob(perf.quickCues))?.slots ?? []).flatMap((s) =>
+        s.cue ? [(s.cue.sample / rate) * 1000] : [],
+      )
+      const want = SEEDED_CUES_MS.map((ms) => ms + e.lagMs)
+      if (!cuesAt(cues, want))
+        found.push(['cues', `Engine: cues en ${msList(cues)} ms, se esperaba ${msList(want)}`])
+      const grid = perf.beatData ? decodeBeatGrid(inflateEngineBlob(perf.beatData)) : null
+      if (!grid?.markers.length) found.push(['cues', 'Engine: rejilla vacía'])
+    }
+    const entities = db
+      .prepare('SELECT id, listId, trackId, nextEntityId FROM PlaylistEntity')
+      .all() as { id: number; listId: number; trackId: number; nextEntityId: number }[]
+    const lists = [
+      ...new Set(entities.filter((x) => x.trackId === t.engineId).map((x) => x.listId)),
+    ]
+    if (!sameSet(lists, t.playlists.engine))
+      found.push(['playlists', `Engine: playlists ${lists.join(', ') || 'ninguna'}`])
+    const position = [...set.tracks, set.bystander].indexOf(t)
+    for (const listId of t.playlists.engine) {
+      const at = engineChain(entities.filter((x) => x.listId === listId)).indexOf(t.engineId)
+      if (at !== -1 && at !== position)
+        found.push([
+          'playlists',
+          `Engine: posición ${at + 1} en la playlist ${listId}, era ${position + 1}`,
+        ])
+    }
+    const paths = db.prepare('SELECT path FROM Track').all() as { path: string }[]
+    const atFinal = paths.filter((r) => canonical(resolve(dir, r.path)) === final).length
+    if (atFinal !== 1) found.push(['unique', `Engine: ${atFinal} pistas para el fichero final`])
+    return found
+  } finally {
+    db.close()
+  }
+}
+
+const NML_ENTITIES: Record<string, string> = { quot: '"', lt: '<', gt: '>', amp: '&', apos: "'" }
+
+function nmlAttr(tag: string, name: string): string | undefined {
+  for (const m of tag.matchAll(/([A-Za-z_][\w.:-]*)="([^"]*)"/g))
+    if (m[1] === name)
+      return m[2].replace(/&([a-z]+);/g, (whole, ref: string) => NML_ENTITIES[ref] ?? whole)
+  return undefined
+}
+
+function nmlPath(volume: string, dirAndFile: string): string {
+  const path = dirAndFile.replace(/\/:/g, '/')
+  return volume ? `/Volumes/${volume}${path}` : path
+}
+
+interface NmlEntryRead {
+  audioId?: string
+  title?: string
+  artist?: string
+  path: string
+  starts: number[]
+}
+
+function nmlCollection(nml: string): NmlEntryRead[] {
+  const collection = nml.match(/<COLLECTION\b[\s\S]*?<\/COLLECTION>/)?.[0] ?? ''
+  return [...collection.matchAll(/<ENTRY\b[^>]*>[\s\S]*?<\/ENTRY>/g)].map(([block]) => {
+    const head = block.match(/<ENTRY\b[^>]*>/)?.[0] ?? ''
+    const location = block.match(/<LOCATION\b[^>]*>/)?.[0] ?? ''
+    return {
+      audioId: nmlAttr(head, 'AUDIO_ID'),
+      title: nmlAttr(head, 'TITLE'),
+      artist: nmlAttr(head, 'ARTIST'),
+      path: nmlPath(
+        nmlAttr(location, 'VOLUME') ?? '',
+        `${nmlAttr(location, 'DIR') ?? ''}${nmlAttr(location, 'FILE') ?? ''}`,
+      ),
+      starts: [...block.matchAll(/<CUE_V2\b[^>]*>/g)]
+        .filter(([cue]) => nmlAttr(cue, 'TYPE') !== '4')
+        .map(([cue]) => Number(nmlAttr(cue, 'START'))),
+    }
+  })
+}
+
+function nmlPlaylist(nml: string, uuid: string): string[] | null {
+  const list = [...nml.matchAll(/<PLAYLIST\b[^>]*>[\s\S]*?<\/PLAYLIST>/g)].find(
+    ([block]) => nmlAttr(block.match(/<PLAYLIST\b[^>]*>/)?.[0] ?? '', 'UUID') === uuid,
+  )
+  if (!list) return null
+  return [...list[0].matchAll(/<PRIMARYKEY\b[^>]*>/g)].map(([key]) => {
+    const value = nmlAttr(key, 'KEY') ?? ''
+    const cut = value.indexOf('/:')
+    return cut === -1 ? value : nmlPath(value.slice(0, cut), value.slice(cut))
+  })
+}
+
+function traktorBroken(nmlFile: string, t: SeededTrack, e: Expected): Found[] {
+  const nml = readFileSync(nmlFile, 'utf8')
+  const final = canonical(e.finalPath)
+  const entries = nmlCollection(nml)
+  const found: Found[] = []
+  const byId = entries.filter((x) => x.audioId === t.traktorAudioId)
+  const byTags = entries.filter(
+    (x) => x.title === t.tags.title.normalize('NFC') && x.artist === t.tags.artist,
+  )
+  const candidates = byId.length > 0 ? byId : byTags
+  const entry = candidates.find((x) => canonical(x.path) === final) ?? candidates[0]
+  const want = SEEDED_CUES_MS.map((ms) => ms + e.lagMs)
+  if (!entry) found.push(['points', 'Traktor: la entrada ya no está'])
+  else {
+    if (canonical(entry.path) !== final)
+      found.push(['points', `Traktor: LOCATION '${entry.path}', se esperaba '${e.finalPath}'`])
+    if (!cuesAt(entry.starts, want))
+      found.push([
+        'cues',
+        `Traktor: CUE_V2 en ${msList(entry.starts)} ms, se esperaba ${msList(want)}`,
+      ])
+  }
+  if (t.cuesMs.length > 0 && extname(e.finalPath).toLowerCase() !== '.m4a') {
+    const path = located(e.finalPath)
+    const tree = path ? storedTree(path) : null
+    const wantFile = t.cuesMs.map((ms) => ms + e.lagMs)
+    if (!tree) found.push(['cues', 'Traktor: el fichero no lleva TRAKTOR4'])
+    else {
+      const starts = t.cuesMs.map((_, i) => readTraktorCueStart(tree, i))
+      if (!cuesAt(starts, wantFile))
+        found.push([
+          'cues',
+          `Traktor: TRAKTOR4 en ${msList(starts)} ms, se esperaba ${msList(wantFile)}`,
+        ])
+    }
+  }
+  const known = new Set(entries.map((x) => canonical(x.path)))
+  for (const uuid of t.playlists.traktor) {
+    const keys = (nmlPlaylist(nml, uuid) ?? []).map(canonical)
+    if (!keys.includes(final))
+      found.push(['playlists', `Traktor: la playlist ${uuid} ya no nombra la pista`])
+    if (keys.some((k) => !known.has(k)))
+      found.push(['playlists', `Traktor: la playlist ${uuid} nombra una ubicación sin entrada`])
+  }
+  const atFinal = entries.filter((x) => canonical(x.path) === final).length
+  if (atFinal !== 1) found.push(['unique', `Traktor: ${atFinal} entradas para el fichero final`])
+  return found
+}
+
+function musicBroken(t: SeededTrack, e: Expected): Found[] {
+  const final = canonical(e.finalPath)
+  const living = music.state.entries.filter(
+    (x) => x.location !== null && canonical(x.location) === final,
+  )
+  const found: Found[] = []
+  if (living.length === 0)
+    found.push(['points', 'Music: ninguna entrada reproduce el fichero final'])
+  const old = t.musicPid ? music.entry(t.musicPid) : undefined
+  if (old && (old.location === null || canonical(old.location) !== final))
+    found.push(['points', 'Music: la entrada vieja sigue viva'])
+  for (const pid of t.playlists.music) {
+    const list = music.playlist(pid)
+    if (!living.some((x) => list?.entries.includes(x.persistentId)))
+      found.push(['playlists', `Music: la playlist ${list?.name ?? pid} ya no la tiene`])
+  }
+  if (living.length > 1)
+    found.push(['unique', `Music: ${living.length} entradas para el fichero final`])
+  return found
+}
+
+function musicNewEntries(set: LibrarySet): Found[] {
+  const seeded = new Set([...set.tracks, set.bystander].map((t) => t.musicPid))
+  return music.state.entries
+    .filter((x) => !seeded.has(x.persistentId))
+    .filter((x) => x.location === null || !existsSync(x.location))
+    .map((x): Found => ['unique', `Music: entrada nueva ${x.persistentId} sin fichero`])
+}
+
+function programBroken(program: Program, set: LibrarySet, t: SeededTrack, e: Expected): Found[] {
+  if (program === 'rekordbox') return set.rekordboxDb ? rekordboxBroken(set.rekordboxDb, t, e) : []
+  if (program === 'engine') return set.engineDir ? engineBroken(set.engineDir, set, t, e) : []
+  if (program === 'traktor') return set.traktorNml ? traktorBroken(set.traktorNml, t, e) : []
+  return set.music ? musicBroken(t, e) : []
+}
+
+const PROGRAM_NAME: Record<'rekordbox' | 'engine' | 'traktor', string> = {
+  rekordbox: 'rekordbox',
+  engine: 'Engine',
+  traktor: 'Traktor',
+}
+
+function libraryFile(
+  set: LibrarySet,
+  program: 'rekordbox' | 'engine' | 'traktor',
+): string | undefined {
+  if (program === 'rekordbox') return set.rekordboxDb
+  if (program === 'engine') return set.engineDir && engineDbPath(set.engineDir)
+  return set.traktorNml
+}
+
+function backedUp(path: string, sha1: string): boolean {
+  let history: string
+  try {
+    history = join(dirname(backupOf(path, 'backup')), 'history')
+  } catch {
+    return false
+  }
+  try {
+    return readdirSync(history).some((copy) => {
+      const file = join(history, copy, basename(path))
+      return existsSync(file) && sha1Of(file) === sha1
+    })
+  } catch {
+    return false
+  }
+}
+
+function collateralBroken(cell: Cell, set: LibrarySet): Found[] {
+  const synced = new Set<Program>(syncedPrograms(cell.programs))
+  return (['rekordbox', 'engine', 'traktor'] as const).flatMap((program): Found[] => {
+    const file = libraryFile(set, program)
+    const before = set.sha1Before[program]
+    if (!file || before === null || sha1Of(file) === before) return []
+    if (!synced.has(program))
+      return [['collateral', `${PROGRAM_NAME[program]}: la biblioteca no sincronizada cambió`]]
+    return backedUp(file, before)
+      ? []
+      : [['collateral', `${PROGRAM_NAME[program]}: escrita sin copia de seguridad previa`]]
+  })
+}
+
+function diskBroken(t: SeededTrack, e: Expected): Found[] {
+  const found: Found[] = []
+  let names: string[] = []
+  try {
+    names = readdirSync(dirname(e.finalPath))
+  } catch {}
+  for (const name of names.filter((n) => n.includes('.tmp-')))
+    found.push(['unique', `disco: queda el temporal ${name}`])
+  if (!e.destGone && !located(t.path)) found.push(['unique', 'disco: el original ya no está'])
+  return found
+}
+
+export function libraryInvariants(
+  cell: Cell,
+  set: LibrarySet,
+  track: SeededTrack,
+  expected: Expected,
+): Broken[] {
+  const programs = syncedPrograms(cell.programs)
+  const other = set.bystander
+  const untouched: Expected = {
+    finalPath: other.path,
+    lagMs: 0,
+    samplesKept: true,
+    destGone: false,
+  }
+  const found: Found[] = [
+    ...programs.flatMap((p) => programBroken(p, set, track, expected)),
+    ...(programs.includes('rekordbox') && set.rekordboxDb
+      ? rekordboxNewRows(set.rekordboxDb, set)
+      : []),
+    ...(set.music ? musicNewEntries(set) : []),
+    ...diskBroken(track, expected),
+    ...collateralBroken(cell, set),
+    ...programs
+      .flatMap((p) => programBroken(p, set, other, untouched))
+      .map(([, detail]): Found => ['collateral', `otra pista, ${detail}`]),
+  ]
+  return found.map(([invariant, detail]) => ({ invariant, detail }))
 }

@@ -12,7 +12,10 @@ import {
   TagTypes,
   type XiphComment,
 } from 'node-taglib-sharp'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('electron', async () => (await import('../electronFake')).electronFake())
+
 import { prependFlacId3 } from '../../main/flacFinderCover'
 import { writeTags } from '../../main/tags'
 import { emptyMetadata } from '../../shared/metadata'
