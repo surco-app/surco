@@ -16,6 +16,9 @@ import {
   addToAppleMusic,
   appleMusicEntry,
   appleMusicEntryLocation,
+  appleMusicHoldsFile,
+  appleMusicLimiter,
+  appleMusicMediaFolder,
   appleScriptString,
   carryOverToAppleMusicCopy,
   deleteFromAppleMusic,
@@ -205,6 +208,9 @@ function deps(): ProcessTrackDeps {
       readMusicEntryFacts(pid, undefined, { withPlaylists: true }).then((facts) =>
         facts === 'missing' ? [] : facts.playlists,
       ),
+    appleMusicMediaFolder,
+    appleMusicHoldsFile: (path, titles) =>
+      appleMusicLimiter.run(() => appleMusicHoldsFile(path, titles)),
     realPath: (p) => realpathSync(p),
     verifyFile: (e, signal) => checkFile(e, fileReaders, { signal }),
     verifyMusic: (e, signal) => checkAppleMusic(e, musicReaders, { signal }),
@@ -247,6 +253,34 @@ async function replaceCase(from: 'wav' | 'aiff', to: OutputFormat, title: string
   expect(music?.state).toBe('ok')
   expect(music?.detail.key).toMatch(/^musicOne/)
 }
+
+type OptionalDepKey = {
+  [K in keyof ProcessTrackDeps]-?: undefined extends ProcessTrackDeps[K] ? K : never
+}[keyof ProcessTrackDeps]
+
+// Every optional dep must be classified: adding one to ProcessTrackDeps fails tsc here until
+// someone decides whether the verification this test runs needs it, as index.ts wires it.
+const optionalDeps: Record<OptionalDepKey, 'wired' | 'notNeeded'> = {
+  findAppleMusicEntry: 'notNeeded',
+  isEngineDjRunning: 'notNeeded',
+  isAllowed: 'notNeeded',
+  attachRekordboxPlaylists: 'notNeeded',
+  attachLibraryPlaylists: 'notNeeded',
+  appleMusicMediaFolder: 'wired',
+  appleMusicHoldsFile: 'wired',
+  redirectRepoint: 'notNeeded',
+  snapshotLibraries: 'notNeeded',
+  realPath: 'wired',
+  registerVerification: 'notNeeded',
+}
+
+describe('the opt-in Music test deps', () => {
+  it('provide every optional dependency the verification reads, as production does', () => {
+    const provided = deps() as unknown as Record<string, unknown>
+    for (const [key, status] of Object.entries(optionalDeps))
+      if (status === 'wired') expect(provided[key], key).toBeTypeOf('function')
+  })
+})
 
 describe.skipIf(!real)('Apple Music against the real app', () => {
   afterAll(async () => {
