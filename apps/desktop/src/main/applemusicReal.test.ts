@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
 import { afterAll, describe, expect, it } from 'vitest'
 import { errorKeyOf } from '../shared/errorKeys'
+import { emptyMetadata } from '../shared/metadata'
 import type { OutputFormat, Settings, TrackMetadata } from '../shared/types'
 import {
   addToAppleMusic,
@@ -33,7 +34,7 @@ const dir = real ? mkdtempSync(join(tmpdir(), 'surco-real-music-')) : ''
 const deletedFiles: string[] = []
 
 function meta(title: string): TrackMetadata {
-  return { title, artist: ARTIST, album: ALBUM } as TrackMetadata
+  return { ...emptyMetadata(), title, artist: ARTIST, album: ALBUM }
 }
 
 function tone(file: string, title: string, frequency = 440): string {
