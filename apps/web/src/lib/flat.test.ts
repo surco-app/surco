@@ -37,8 +37,9 @@ describe('flat, like the app', () => {
     expect(css).not.toMatch(/\.grain\b|--inset-shadow-edge/)
   })
 
-  it('keeps the primary button lit by its gradient alone, without a glow or a lift', () => {
-    expect(btnPrimary).toMatch(/from-blue to-cyan/)
+  it('keeps the primary button a flat brand fill, without a gradient, a glow or a lift', () => {
+    expect(btnPrimary).toMatch(/\bbg-blue\b/)
+    expect(btnPrimary).not.toMatch(/gradient|from-|to-cyan/)
     expect(btnPrimary).not.toMatch(/shadow-|-translate-y/)
   })
 })
