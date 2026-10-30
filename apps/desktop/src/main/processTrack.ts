@@ -623,11 +623,16 @@ export async function runProcessTrack(
     // on the unlink that ends a copy into the trash) must not fail the job: the user
     // keeps both files and is told so.
     let originalKept: true | undefined
-    if (inPlace)
-      await deps.removeRenamedOriginal(job.inputPath, target).catch((e) => {
+    const retireOriginal = (): Promise<void> =>
+      deps.removeRenamedOriginal(job.inputPath, target).catch((e) => {
         log.warn('process:track kept the original it could not retire', job.inputPath, e)
         originalKept = true
       })
+    // The Music entry that plays the original is replaced below, and until then the original
+    // is the file it plays: retired first, a replacement that failed or kept the old entry
+    // left that entry playing a file that was gone. So it waits for the replacement.
+    const replacesOwnEntry = !!existingMusicEntry && inPlace && !outputIsInput
+    if (inPlace && !replacesOwnEntry) await retireOriginal()
     // The file has landed and the original may be gone: a stats write that fails (a locked
     // or synced settings file) must not turn a finished conversion into a failed one.
     try {
@@ -758,6 +763,11 @@ export async function runProcessTrack(
         musicPersistentId = undefined
         appleMusicFailed = true
       }
+    }
+
+    if (replacesOwnEntry) {
+      if (appleMusicFailed || oldMusicCopyKept) originalKept = true
+      else await retireOriginal()
     }
 
     // Adding to Engine DJ points a library row at the file just written; a failed

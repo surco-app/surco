@@ -1437,6 +1437,43 @@ describe('runProcessTrack — Apple Music', () => {
     expect(result.musicPersistentId).toBe('added-id')
   })
 
+  // The old entry plays the original until the replacement retires it. Retiring the original
+  // first left that entry playing a file that was gone whenever the replacement then failed
+  // or had to keep the old entry: Music handing back an entry, a refused carry, a timeout.
+  it('retires the renamed original only once its Music entry has been replaced', async () => {
+    const deps = mac({ overwriteOriginal: true })
+    deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    await runProcessTrack(job(), deps)
+
+    expect(vi.mocked(deps.removeRenamedOriginal).mock.invocationCallOrder[0]).toBeGreaterThan(
+      vi.mocked(deps.deleteAppleMusic).mock.invocationCallOrder[0],
+    )
+  })
+
+  it('keeps the renamed original when its Music entry could not be replaced', async () => {
+    const deps = mac({ overwriteOriginal: true })
+    deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    deps.addToAppleMusic = vi.fn(async () => {
+      throw new Error('SURCO_ERR:appleMusicAddReturnedOld: lib-9')
+    })
+    const result = await runProcessTrack(job(), deps)
+
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result.appleMusicFailed).toBe(true)
+    expect(result.originalKept).toBe(true)
+  })
+
+  it('keeps the renamed original when the old Music entry had to be kept', async () => {
+    const deps = mac({ overwriteOriginal: true })
+    deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    deps.carryAppleMusicHistory = vi.fn(async () => 'mismatch' as const)
+    const result = await runProcessTrack(job(), deps)
+
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result.oldMusicCopyKept).toBe('mismatch')
+    expect(result.originalKept).toBe(true)
+  })
+
   it("carries the renamed file's playlists, play count and rating onto its new Music entry", async () => {
     const deps = mac({ overwriteOriginal: true })
     deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
