@@ -115,6 +115,20 @@ describe('fetchAllReleases', () => {
     expect(fetchMock.mock.calls[1][0]).toContain('page=2')
   })
 
+  // The daily stats snapshot runs on a shared Actions runner, whose IP may already have
+  // spent the 60 unauthenticated requests an hour, so it signs every page with its token.
+  it('sends the given headers with every page', async () => {
+    const full = Array.from({ length: 100 }, (_, i) => release(`v${i}`))
+    const fetchMock = vi.fn().mockResolvedValueOnce(page(full)).mockResolvedValueOnce(page([]))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await fetchAllReleases('surco-app/surco-releases', { Authorization: 'Bearer t' })
+
+    for (const call of fetchMock.mock.calls) {
+      expect(call[1]).toEqual({ headers: { Authorization: 'Bearer t' } })
+    }
+  })
+
   it('stops after a single short page', async () => {
     const fetchMock = vi.fn().mockResolvedValue(page([release('v0')]))
     vi.stubGlobal('fetch', fetchMock)
