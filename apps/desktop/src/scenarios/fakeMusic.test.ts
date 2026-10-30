@@ -1,15 +1,23 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
+import { extname, join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
+vi.mock('../main/applemusic', async (original) => ({
+  ...(await import('./fakeMusic')).appleMusicModule(await original()),
+  scenarioFake: true,
+}))
 
 import * as realArtwork from '../main/appleMusicArtwork'
-import * as realMusic from '../main/applemusic'
 import { coverThumbUrlForBytes } from '../main/coverThumbs'
+import { checkAppleMusic, musicReaders } from '../main/verifyMusic'
 import type { TrackMetadata } from '../shared/types'
 import { scenarioRoot } from './electronFake'
 import { appleMusicModule, artworkModule, music, playlistsModule } from './fakeMusic'
+import { makeTrack, scenarioDir } from './fixtures'
+import { MUSIC_FACTS, type MusicUnderTest } from './musicFacts'
+
+const realMusic = await vi.importActual<typeof import('../main/applemusic')>('../main/applemusic')
 
 const dir = join(scenarioRoot, 'fake-music')
 mkdirSync(dir, { recursive: true })
@@ -95,7 +103,7 @@ describe('the fake Music library answers like the real scripts', () => {
 
   it('updates every field of a live entry and returns null once it is gone', async () => {
     const entry = music.addEntry({
-      location: file('u.aiff'),
+      location: makeTrack(join(dir, 'u.aiff'), { title: 'T', artist: 'A' }),
       title: 'T',
       year: 1999,
       grouping: 'x',
@@ -180,7 +188,10 @@ describe('the fake Music library answers like the real scripts', () => {
   })
 
   it('guards a field write on the value the review read', async () => {
-    const entry = music.addEntry({ location: file('f.aiff'), genre: 'House ' })
+    const entry = music.addEntry({
+      location: makeTrack(join(dir, 'f.aiff'), { title: 'T', artist: 'A' }),
+      genre: 'House ',
+    })
     expect(await fake.setAppleMusicField(entry.persistentId, 'genre', 'house', 'House')).toBe(
       'mismatch',
     )
@@ -207,4 +218,49 @@ describe('the fake Music library answers like the real scripts', () => {
       'scenario: unexpected osascript',
     )
   })
+})
+
+const underTest: MusicUnderTest = {
+  add: async (path, fields) => music.add(path, fields),
+  markReplacing: (pid, label) => fake.markAppleMusicReplacing(pid, label, true),
+  location: (pid) => fake.appleMusicEntryLocation(pid),
+  tagGrouping: async (pid, grouping) => music.tag(pid, { grouping }),
+  mediaFolder: async () => music.state.mediaFolder,
+}
+
+describe('the Music fake keeps the facts measured on 30/10', () => {
+  beforeEach(() => {
+    music.state.mediaFolder = scenarioDir('media')
+  })
+
+  for (const fact of MUSIC_FACTS) {
+    it(fact.name, () => fact.check(underTest, scenarioDir('fact')), 30_000)
+  }
+
+  it('lets checkAppleMusic read an entry it added', async () => {
+    const path = makeTrack(join(scenarioDir('verify'), 'Check.aiff'), {
+      title: 'Check',
+      artist: 'Band',
+      signal: 'kick',
+    })
+    const wanted = meta({ title: 'Check', artist: 'Band', album: 'Record' })
+    const pid = await fake.addToAppleMusic(path, wanted)
+    const expectation = {
+      pid,
+      file: await fake.appleMusicEntryLocation(pid),
+      ext: extname(path),
+      meta: wanted,
+      coverSet: false,
+    }
+
+    expect(await checkAppleMusic(expectation, musicReaders)).toMatchObject({
+      state: 'ok',
+      detail: { key: 'musicOneNoPlaylists' },
+    })
+    music.addEntry({ location: realpathSync(expectation.file), title: 'Check', artist: 'Band' })
+    expect(await checkAppleMusic(expectation, musicReaders)).toMatchObject({
+      state: 'mismatch',
+      detail: { key: 'musicDuplicate' },
+    })
+  }, 30_000)
 })

@@ -61,6 +61,7 @@ import { isTraktorRunning } from '../main/traktorProcess'
 import { registerTrashIpc } from '../main/trashIpc'
 import { checkFile, fileReaders } from '../main/verifyFile'
 import { appVerifyRegistry, queueVerification, snapshotLibraries } from '../main/verifyIpc'
+import { checkAppleMusic, musicReaders } from '../main/verifyMusic'
 import type { FlushOutcome, TraktorWrite } from '../main/verifyRegistry'
 import { onWatchedFilesChanged } from '../main/watchedFiles'
 import { dirRoots, FolderWatcher } from '../main/watcher'
@@ -305,14 +306,23 @@ function processTrackInMain(
       musicIsFake ? appleMusic.deleteFromAppleMusic(pid, label) : noMusic(),
     carryAppleMusicHistory: (fromPid, toPid, label) =>
       musicIsFake ? appleMusic.carryOverToAppleMusicCopy(fromPid, toPid, label) : noMusic(),
-    markAppleMusicReplacing: async () => 'missing',
-    appleMusicPlaylists: async () => [],
+    markAppleMusicReplacing: async (pid, label, marked) =>
+      musicIsFake
+        ? appleMusic.appleMusicLimiter.run(() =>
+            appleMusic.markAppleMusicReplacing(pid, label, marked),
+          )
+        : 'missing',
+    appleMusicPlaylists: async (pid) =>
+      musicIsFake
+        ? appleMusic
+            .readMusicEntryFacts(pid, undefined, { withPlaylists: true })
+            .then((facts) => (facts === 'missing' ? [] : facts.playlists))
+        : [],
     verifyFile: (expect, signal) => checkFile(expect, fileReaders, { signal }),
-    verifyMusic: async () => ({
-      place: 'appleMusic',
-      state: 'ok',
-      detail: { key: 'musicOneNoPlaylists' },
-    }),
+    verifyMusic: async (expect, signal) =>
+      musicIsFake
+        ? checkAppleMusic(expect, musicReaders, { signal })
+        : { place: 'appleMusic', state: 'ok', detail: { key: 'musicOneNoPlaylists' } },
     redirectRepoint: (to, landed) => {
       redirectRekordboxRepoint(to, landed)
       return redirectNmlPatch(to, landed, toNmlLocation(landed))
