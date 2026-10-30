@@ -19,6 +19,7 @@ import {
   dumpAppleMusicPlaylists,
   readAppleMusicEntry,
   readAppleMusicPlaylist,
+  readLibraryPlaylist,
 } from './appleMusicPlaylists'
 import {
   addToAppleMusic,
@@ -238,6 +239,22 @@ export function registerAppleMusicIpc(
             },
           )
         : { paths: [], missing: 0 },
+  )
+
+  // The whole playlist from the library database, outside the queue of reads Music serves
+  // one at a time: it never asks Music, so it has no reason to wait behind cover fetches.
+  // Null when the database cannot give it, and the renderer then asks Music.
+  ipcMain.handle('applemusic:libraryPlaylistTracks', (_e, persistentId: string) =>
+    process.platform === 'darwin'
+      ? activity
+          .track('applemusic', 'activity.appleMusicPlaylistTracks', () =>
+            readLibraryPlaylist(persistentId),
+          )
+          .catch((err: unknown) => {
+            log.warn('library database read failed, asking Music', err)
+            return null
+          })
+      : null,
   )
 
   ipcMain.handle('applemusic:artwork', async (_e, persistentIds: string[]) => {

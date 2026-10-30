@@ -31,6 +31,7 @@ function setup(
       .mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }]),
     loadAppleMusicPlaylists: vi.fn().mockResolvedValue([]),
     loadAppleMusicPlaylistTracks: vi.fn(),
+    loadAppleMusicLibraryPlaylistTracks: vi.fn().mockResolvedValue(null),
     engineAvailable: vi.fn().mockResolvedValue(true),
     loadEngineTree: vi
       .fn()
@@ -204,8 +205,13 @@ describe('useSourceBrowser', () => {
       return { promise, resolve }
     }
     const FRIDAY = { id: 'P1', name: 'Friday', kind: 'playlist' as const, count: 450 }
-    const openFriday = (load: ReturnType<typeof vi.fn>, other = false) => {
+    const openFriday = (
+      load: ReturnType<typeof vi.fn>,
+      other = false,
+      library: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue(null),
+    ) => {
       const hook = setup({
+        loadAppleMusicLibraryPlaylistTracks: library,
         loadAppleMusicPlaylists: vi
           .fn()
           .mockResolvedValue([
@@ -219,17 +225,28 @@ describe('useSourceBrowser', () => {
       return hook
     }
 
-    // Music resolves each file on the NAS at ~27 ms a track: a 2,044-track playlist kept the
-    // list blank for 114 s. The first stretch shows while Music works through the rest.
-    it('shows the first stretch while Music reads the rest', async () => {
+    // Read through Music, a 2,044-track playlist took a minute, and the counts and filters
+    // climbed 200 at a time while it did. The library database gives every row at once.
+    it('reads the whole playlist from the library database at once, without asking Music', async () => {
+      const load = vi.fn()
+      const library = vi.fn().mockResolvedValue(stretch(1, 450, 450))
+      const { result } = openFriday(load, false, library)
+      await waitFor(() => expect(result.current.entries).toHaveLength(450))
+      expect(library).toHaveBeenCalledWith('P1')
+      expect(load).not.toHaveBeenCalled()
+    })
+
+    // Every count and filter is worked out from the rows on screen, so a row shown before
+    // the rest arrive makes each of them read a number that is about to change.
+    it('shows no row until Music has given every stretch, when the database cannot', async () => {
       const second = pending<ReturnType<typeof stretch>>()
       const load = vi.fn(async (_id: string, from: number) =>
         from === 1 ? stretch(1, 200, 450) : from === 201 ? second.promise : stretch(401, 50, 450),
       )
       const { result } = openFriday(load)
-      await waitFor(() => expect(result.current.entries).toHaveLength(200))
-      expect(result.current.entriesLoading).toBe(false)
-      expect(load).toHaveBeenCalledWith('P1', 1, 200)
+      await waitFor(() => expect(load).toHaveBeenCalledWith('P1', 201, 400))
+      expect(result.current.entries).toBeUndefined()
+      expect(result.current.entriesLoading).toBe(true)
       act(() => second.resolve(stretch(201, 200, 450)))
       await waitFor(() => expect(result.current.entries).toHaveLength(450))
       expect(load).toHaveBeenLastCalledWith('P1', 401, 600)
@@ -264,8 +281,8 @@ describe('useSourceBrowser', () => {
         from === 1 ? stretch(1, 200, 450) : from === 201 ? second.promise : stretch(401, 49, 450),
       )
       const { result } = openFriday(load)
-      await waitFor(() => expect(result.current.entries).toHaveLength(200))
-      expect(result.current.tree?.[0].count).toBe(450)
+      await waitFor(() => expect(load).toHaveBeenCalledWith('P1', 201, 400))
+      await waitFor(() => expect(result.current.tree?.[0].count).toBe(450))
       act(() => second.resolve(stretch(201, 200, 450)))
       await waitFor(() => expect(result.current.entries).toHaveLength(449))
       await waitFor(() => expect(result.current.tree?.[0].count).toBe(449))
@@ -304,27 +321,6 @@ describe('useSourceBrowser', () => {
       act(() => focus())
       await waitFor(() => expect(load).toHaveBeenCalledTimes(5))
       expect(result.current.entries).toHaveLength(450)
-    })
-
-    // A refocus halfway through the first read left a 2,044-track playlist showing 399 rows
-    // for the whole re-read: rows already on screen must not stop the list from growing.
-    it('keeps adding stretches when a refocus restarts a read still under way', async () => {
-      const firstRead = pending<ReturnType<typeof stretch>>()
-      const lastStretch = pending<ReturnType<typeof stretch>>()
-      let refocused = false
-      const load = vi.fn(async (_id: string, from: number) => {
-        if (from === 1) return stretch(1, 200, 800)
-        if (from === 201) return stretch(201, 200, 800)
-        if (from === 401) return refocused ? stretch(401, 200, 800) : firstRead.promise
-        return lastStretch.promise
-      })
-      const { result, focus } = openFriday(load)
-      await waitFor(() => expect(result.current.entries).toHaveLength(400))
-      refocused = true
-      act(() => focus())
-      await waitFor(() => expect(result.current.entries).toHaveLength(600))
-      act(() => lastStretch.resolve(stretch(601, 200, 800)))
-      await waitFor(() => expect(result.current.entries).toHaveLength(800))
     })
   })
 

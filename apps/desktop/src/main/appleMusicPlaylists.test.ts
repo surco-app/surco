@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildEntriesScript,
+  buildLibraryPlaylistScript,
   buildPlaylistDumpScript,
   buildPlaylistTracksScript,
   entryForFile,
@@ -44,6 +45,12 @@ describe('buildPlaylistDumpScript', () => {
     const script = buildPlaylistDumpScript()
     expect(script).not.toContain('count of tracks of every user playlist')
     expect(script).toContain('count of tracks of p')
+  })
+
+  // Music's own playlist of every song is named by the system language ("Music", "Música"),
+  // so only its kind tells it apart from a playlist the user happened to call that.
+  it('names the playlist of every song by its kind, not by its name', () => {
+    expect(buildPlaylistDumpScript()).toContain('special kind is Music')
   })
 })
 
@@ -101,8 +108,36 @@ describe('parsePlaylistDump', () => {
     expect(rows[0].folder).toBeUndefined()
   })
 
+  it('marks the playlist of every song, so it can stand as All tracks like the other sources', () => {
+    const rows = parsePlaylistDump(
+      'A1B2C3D4E5F60718\nMusic\t2044\tA1B2C3D4E5F60718\t\nMusic\t12\tFFEEDDCCBBAA9988\t',
+    )
+    expect(rows).toEqual([
+      { name: 'Music', count: 2044, persistentId: 'A1B2C3D4E5F60718', library: true },
+      { name: 'Music', count: 12, persistentId: 'FFEEDDCCBBAA9988' },
+    ])
+  })
+
   it('keeps an empty playlist, which is a real thing to pick and must not look like a parse failure', () => {
     expect(parsePlaylistDump('Por clasificar\t0\tA1B2C3D4E5F60718')[0].count).toBe(0)
+  })
+})
+
+// Asked through Music, a 2,044-track playlist took a minute to list its files, 200 at a
+// time, and every count in the app climbed while it did. The library's own database
+// lists the same rows, in the same order, in half a second.
+describe('buildLibraryPlaylistScript', () => {
+  it('reads the playlist from the library database without asking Music', () => {
+    const script = buildLibraryPlaylistScript('A1B2C3D4E5F60718')
+    expect(script).toContain("ObjC.import('iTunesLibrary')")
+    expect(script).toContain('"A1B2C3D4E5F60718"')
+    expect(script).not.toContain('Application("Music")')
+  })
+
+  // The rows must read exactly as Music's do, or the same playlist would import different
+  // ratings depending on which way it was read.
+  it('marks each rating as given or computed, as Music does', () => {
+    expect(buildLibraryPlaylistScript('A1B2C3D4E5F60718')).toContain("'ratingComputed'")
   })
 })
 

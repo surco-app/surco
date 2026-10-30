@@ -31,10 +31,12 @@ function osascriptError(err: unknown): Error {
 
 export async function runOsascript(
   script: string,
-  options?: { maxBuffer?: number },
+  options?: { maxBuffer?: number; language?: 'JavaScript' },
 ): Promise<string> {
+  const { language, ...execOptions } = options ?? {}
+  const args = language ? ['-l', language, '-e', script] : ['-e', script]
   try {
-    const { stdout } = await run('osascript', ['-e', script], { encoding: 'utf8', ...options })
+    const { stdout } = await run('osascript', args, { encoding: 'utf8', ...execOptions })
     return stdout
   } catch (err) {
     const failure = osascriptError(err)

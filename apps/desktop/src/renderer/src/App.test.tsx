@@ -270,6 +270,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     platform: 'win32',
     version: '0.0.0-test',
     getSettings: vi.fn().mockResolvedValue(settings()),
+    loadAppleMusicLibraryPlaylistTracks: vi.fn().mockResolvedValue(null),
     keepsTrash: vi.fn().mockResolvedValue(true),
     saveSettings: vi.fn<Api['saveSettings']>().mockResolvedValue(settings()),
     recordStat: vi.fn(),
