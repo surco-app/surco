@@ -2853,6 +2853,8 @@
     "footer": "We keep the last 5 backups of each program. Music files, {{days}} days.",
     "reveal": "Reveal in Finder",
     "revealWin": "Show in File Explorer",
-    "changeInSettings": "Change in Settings"
+    "changeInSettings": "Change in Settings",
+    "today": "Today, {{time}}",
+    "yesterday": "Yesterday, {{time}}"
   }
 }

@@ -15,8 +15,15 @@ import { installApi } from '../test/api'
 import { CopiesScreen } from './CopiesScreen'
 import { formatBytes } from './TrashBrowser'
 
-afterEach(cleanup)
+const NOW = new Date(2026, 10, 20, 12, 0)
+
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+})
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(NOW)
   installApi()
 })
 
@@ -55,6 +62,10 @@ function when(ms: number): string {
   return new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }).format(
     ms,
   )
+}
+
+function clock(ms: number): string {
+  return new Intl.DateTimeFormat(i18n.language, { timeStyle: 'short' }).format(ms)
 }
 
 function musicTrash() {
@@ -149,6 +160,38 @@ describe('CopiesScreen', () => {
     expect(screen.queryByTestId('copies-restore-traktor')).not.toBeInTheDocument()
     fireEvent.click(screen.getByTestId('copies-toggle-traktor'))
     expect(screen.getByTestId('copies-restore-item-pre')).toBeEnabled()
+  })
+
+  it('names today and yesterday instead of making the DJ work out the date', () => {
+    const today = copy({ id: 'today', takenAt: new Date(2026, 10, 20, 8, 2).getTime() })
+    const yesterday = copy({ id: 'yday', takenAt: new Date(2026, 10, 19, 13, 8).getTime() })
+    const before = copy({ id: 'before', takenAt: new Date(2026, 10, 18, 23, 59).getTime() })
+    renderScreen([program('rekordbox', { copies: [today, yesterday, before] })])
+    expect(screen.getByTestId('copies-last-rekordbox')).toHaveTextContent(
+      i18n.t('copies.today', { time: clock(today.takenAt) }),
+    )
+    fireEvent.click(screen.getByTestId('copies-toggle-rekordbox'))
+    expect(screen.getByTestId('copies-item-yday')).toHaveTextContent(
+      i18n.t('copies.yesterday', { time: clock(yesterday.takenAt) }),
+    )
+    expect(screen.getByTestId('copies-item-before')).toHaveTextContent(when(before.takenAt))
+  })
+
+  it('the confirmation and the outcome name the day the same way', async () => {
+    const today = copy({ id: 'today', takenAt: new Date(2026, 10, 20, 8, 2).getTime() })
+    const name = i18n.t('sources.rekordbox')
+    const relative = i18n.t('copies.today', { time: clock(today.takenAt) })
+    renderScreen([program('rekordbox', { copies: [today] })])
+    fireEvent.click(screen.getByTestId('copies-restore-rekordbox'))
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      i18n.t('copies.confirm.title', { program: name, when: relative }),
+    )
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('confirm-ok'))
+    })
+    expect(screen.getByTestId('copies-restored-rekordbox')).toHaveTextContent(
+      i18n.t('copies.restored', { program: name, when: relative }),
+    )
   })
 
   it('restoring asks first, says what is lost and that the current state is kept', () => {

@@ -48,10 +48,22 @@ const FACTS = 'mt-1.5 grid grid-cols-[13rem_11rem_minmax(0,1fr)] gap-x-5.5'
 const LIST =
   'col-span-2 col-start-2 rounded-[10px] border border-[var(--color-line)] bg-[var(--color-ink)] px-3 py-1'
 
+function daysBefore(days: number): string {
+  const day = new Date()
+  day.setDate(day.getDate() - days)
+  return day.toDateString()
+}
+
 function useWhen(): (ms: number) => string {
-  const { i18n } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const format = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' })
-  return (ms) => format.format(ms)
+  const clock = new Intl.DateTimeFormat(i18n.language, { timeStyle: 'short' })
+  return (ms) => {
+    const day = new Date(ms).toDateString()
+    if (day === daysBefore(0)) return tr('copies.today', { time: clock.format(ms) })
+    if (day === daysBefore(1)) return tr('copies.yesterday', { time: clock.format(ms) })
+    return format.format(ms)
+  }
 }
 
 function Fact({

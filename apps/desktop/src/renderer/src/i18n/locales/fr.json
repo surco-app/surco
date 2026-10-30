@@ -2853,6 +2853,8 @@
     "footer": "Pour chaque logiciel, nous gardons les 5 dernières sauvegardes. Pour les fichiers de musique, {{days}} jours.",
     "reveal": "Afficher dans le Finder",
     "revealWin": "Afficher dans l'Explorateur",
-    "changeInSettings": "Modifier dans les Réglages"
+    "changeInSettings": "Modifier dans les Réglages",
+    "today": "Aujourd'hui, {{time}}",
+    "yesterday": "Hier, {{time}}"
   }
 }

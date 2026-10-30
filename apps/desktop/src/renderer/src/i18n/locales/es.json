@@ -2853,6 +2853,8 @@
     "footer": "De cada programa guardamos las últimas 5 copias. Los archivos de música, {{days}} días.",
     "reveal": "Mostrar en Finder",
     "revealWin": "Mostrar en el Explorador",
-    "changeInSettings": "Cambiar en Ajustes"
+    "changeInSettings": "Cambiar en Ajustes",
+    "today": "Hoy, {{time}}",
+    "yesterday": "Ayer, {{time}}"
   }
 }

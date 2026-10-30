@@ -2853,6 +2853,8 @@
     "footer": "各ソフトにつき、直近5件のバックアップを保存します。音楽ファイルは{{days}}日間です。",
     "reveal": "Finderで表示",
     "revealWin": "File Explorerで表示",
-    "changeInSettings": "設定で変更"
+    "changeInSettings": "設定で変更",
+    "today": "今日 {{time}}",
+    "yesterday": "昨日 {{time}}"
   }
 }
