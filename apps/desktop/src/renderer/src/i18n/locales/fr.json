@@ -2955,6 +2955,7 @@
       "traktorStillOld": "Traktor pointe toujours vers le {{format}}",
       "traktorMissing": "Le morceau n’est pas dans Traktor",
       "traktorAmbiguous": "Traktor a {{count}} entrées pour ce morceau",
+      "traktorCuesChanged": "Les cues ont changé dans Traktor",
       "traktorUnreadable": "Impossible de vérifier Traktor"
     },
     "retry": "Réessayer",

@@ -53,6 +53,7 @@ export const VERIFY_DETAIL_KEYS = [
   'traktorStillOld',
   'traktorMissing',
   'traktorAmbiguous',
+  'traktorCuesChanged',
   'traktorUnreadable',
 ] as const
 

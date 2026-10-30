@@ -2955,6 +2955,7 @@
       "traktorStillOld": "Traktor sigue en el {{format}}",
       "traktorMissing": "La pista no está en Traktor",
       "traktorAmbiguous": "Traktor tiene {{count}} entradas de esta pista",
+      "traktorCuesChanged": "Los cues cambiaron en Traktor",
       "traktorUnreadable": "No se pudo comprobar Traktor"
     },
     "retry": "Reintentar",

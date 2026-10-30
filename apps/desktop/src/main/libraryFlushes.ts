@@ -180,7 +180,7 @@ export async function flushConversionBatch(
   engineQueue?: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void },
 ): Promise<FlushOutcome> {
   const traktorDeps = traktorFlushDeps(host, sessions.traktor)
-  const traktorHold = traktorQueue && holdInQueue(traktorQueue)
+  const traktorHold = traktorQueue && holdInQueue(traktorQueue, bootVolumeName)
   let patches: NmlPatch[] = []
   let synced: { patches: NmlPatch[]; result: SyncResult } | undefined
   let traktorHeld = false
@@ -349,7 +349,10 @@ function repointOutcome(
 export function traktorWrite(patches: NmlPatch[], result: SyncResult): TraktorWrite {
   const before = result.before
   if (!before) return 'failed'
-  return { before: new Map(patches.map((p, i) => [traktorPatchKey(p), before[i] ?? null])) }
+  const cues = result.cues
+  const keyed = <T>(values: T[]) =>
+    new Map(patches.map((p, i) => [traktorPatchKey(p), values[i] ?? null]))
+  return cues ? { before: keyed(before), cues: keyed(cues) } : { before: keyed(before) }
 }
 
 type LibraryHas = (path: string, from?: string) => boolean

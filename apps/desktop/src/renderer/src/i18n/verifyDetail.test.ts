@@ -97,6 +97,7 @@ const SENT: Record<VerifyDetailKey, CheckDetail['params'][]> = {
   traktorStillOld: [{ format: 'AIFF' }],
   traktorMissing: [undefined],
   traktorAmbiguous: [{ count: 2 }],
+  traktorCuesChanged: [undefined],
   traktorUnreadable: [undefined],
 }
 

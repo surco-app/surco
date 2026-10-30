@@ -48,8 +48,11 @@ export const traktorPatchKey = (patch: NmlPatch) =>
 
 // What a collection write knew: the FILE of the entry each patch matched in the NML it wrote
 // over (matchedEntryFiles inside syncCollection), by traktorPatchKey, null where Traktor had
-// no entry; or 'failed' when nothing was written.
-export type TraktorWrite = { before: Map<string, string | null> } | 'failed'
+// no entry, and that entry's cues as the same read found them; or 'failed' when nothing was
+// written.
+export type TraktorWrite =
+  | { before: Map<string, string | null>; cues?: Map<string, string | null> }
+  | 'failed'
 
 // 'failed' is a write that went wrong or a flush that threw: nothing is known, nothing pending.
 // 'later' is an end nested in a batch still open: it took nothing, the outer end will.
@@ -139,6 +142,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
   // The Traktor fact each track was last written with, kept for a later re-read. A track
   // with none was never written, and its re-read cannot say anything.
   const traktorBefore = new Map<string, string | null>()
+  const traktorCues = new Map<string, string | null>()
   // Tracks whose repoint sits in a queue, by place: re-checked when that queue applies.
   const awaiting: Record<Library, Set<VerifyEntry>> = {
     rekordbox: new Set(),
@@ -231,11 +235,23 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
         const key = traktorPatchKey(patch)
         if (result.before.has(key)) traktorBefore.set(e.trackId, result.before.get(key) ?? null)
         else traktorBefore.delete(e.trackId)
+        const cues = result.cues?.get(key)
+        if (cues === undefined) traktorCues.delete(e.trackId)
+        else traktorCues.set(e.trackId, cues)
       }
       const before = traktorBefore.get(e.trackId)
       if (result === 'failed' || !patch || before === undefined)
         replace(e, unreadable('traktor'), 'traktor')
-      else expects.push({ e, expect: { patch, before, stranded: e.traktorStranded ?? false } })
+      else
+        expects.push({
+          e,
+          expect: {
+            patch,
+            before,
+            cues: traktorCues.get(e.trackId),
+            stranded: e.traktorStranded ?? false,
+          },
+        })
     }
     if (expects.length === 0) return
     const results = await deps
@@ -257,6 +273,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
           if (old.verification.status === 'ok' && !working.has(old)) {
             entries.delete(id)
             traktorBefore.delete(id)
+            traktorCues.delete(id)
           }
       const previous = entries.get(e.trackId)
       if (previous)
@@ -267,6 +284,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
       entries.set(e.trackId, e)
       stamps.set(e, { job: e.verification.job, seq: e.verification.seq ?? 0 })
       traktorBefore.delete(e.trackId)
+      traktorCues.delete(e.trackId)
       registered += 1
       order.set(e, registered)
       for (const place of LIBRARIES) unflushed[place].add(e)
