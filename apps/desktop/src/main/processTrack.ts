@@ -666,11 +666,16 @@ export async function runProcessTrack(
         log.warn('process:track kept the original it could not retire', job.inputPath, e)
         originalKept = true
       })
-    // The Music entry that plays the original is replaced below, and until then the original
+    // A Music entry that plays the original may be replaced below, and until then the original
     // is the file it plays: retired first, a replacement that failed or kept the old entry
-    // left that entry playing a file that was gone. So it waits for the replacement.
-    const replacesOwnEntry = !!existingMusicEntry && inPlace && !outputIsInput
-    if (inPlace && !replacesOwnEntry) await retireOriginal()
+    // left that entry playing a file that was gone. So it waits for the Music step, whether
+    // the entry was found by its file or is the one the track already knew.
+    const retireAfterMusic =
+      inPlace &&
+      !outputIsInput &&
+      shouldAddToAppleMusic(addToAppleMusic, deps.platform, format) &&
+      (!!existingMusicEntry || (!!job.musicPersistentId && !job.replacesPath))
+    if (inPlace && !retireAfterMusic) await retireOriginal()
     // The file has landed and the original may be gone: a stats write that fails (a locked
     // or synced settings file) must not turn a finished conversion into a failed one.
     try {
@@ -690,6 +695,10 @@ export async function runProcessTrack(
     let musicLandedPath: string | undefined
     let appleMusicFailed: true | undefined
     let musicNameLeftMarked: true | undefined
+    // The source a replacement superseded in place: offered only if retiring it fails.
+    let supersededIfKept: string | undefined
+    // Until Music says where the track's own entry points, it may be playing the original.
+    let entryMayPlaySource = retireAfterMusic
     // The file in the Media folder is Music's once an add answers with an entry of its own;
     // one that answers with the entry being replaced imported nothing (see replaceAppleMusicCopy).
     const musicDeps: ProcessTrackDeps = mediaTarget
@@ -756,6 +765,8 @@ export async function runProcessTrack(
           const entry = job.musicPersistentId
             ? await deps.appleMusicEntry(job.musicPersistentId)
             : undefined
+          entryMayPlaySource =
+            retireAfterMusic && entry?.path.normalize('NFC') === job.inputPath.normalize('NFC')
           if (entry?.path && !formatMatchesInput(format, entry.path)) {
             const replaced = await replaceAppleMusicCopy(
               job,
@@ -774,14 +785,12 @@ export async function runProcessTrack(
             const isSource = entry.path.normalize('NFC') === job.inputPath.normalize('NFC')
             // The row was the file Music played, so it follows the entry to its new file.
             if (isSource && replaced.landed?.path) musicLandedPath = replaced.landed.path
-            // Not offered when the in-place rename already retired it, or when Traktor's
-            // entry is still on it.
-            if (
-              !replaced.oldCopyKept &&
-              !(isSource && inPlace && !originalKept) &&
-              replaced.landed?.traktorFollowed !== false
-            )
-              supersededPath = entry.path
+            // Not offered when the in-place rename retires it below, or when Traktor's entry
+            // is still on it.
+            if (!replaced.oldCopyKept && replaced.landed?.traktorFollowed !== false) {
+              if (isSource && inPlace) supersededIfKept = entry.path
+              else supersededPath = entry.path
+            }
             verified = true
           } else {
             musicPersistentId = job.musicPersistentId
@@ -809,10 +818,11 @@ export async function runProcessTrack(
       }
     }
 
-    if (replacesOwnEntry) {
-      if (appleMusicFailed || oldMusicCopyKept) originalKept = true
+    if (retireAfterMusic) {
+      if (entryMayPlaySource && (appleMusicFailed || oldMusicCopyKept)) originalKept = true
       else await retireOriginal()
     }
+    if (supersededIfKept && originalKept) supersededPath = supersededIfKept
 
     // Adding to Engine DJ points a library row at the file just written; a failed
     // registration fails the job — never a silent "converted but not in the library".

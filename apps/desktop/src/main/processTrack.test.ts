@@ -2767,6 +2767,68 @@ describe('runProcessTrack — converting a library track to another format', () 
     expect(result.supersededPath).toBeUndefined()
   })
 
+  // The entry plays the original until it is replaced: retired first, a replacement that
+  // failed or kept the old entry left that entry playing a file that was gone.
+  it('retires the in-place original only after its Music entry was replaced', async () => {
+    const deps = converting('/lib/A.aiff')
+
+    await runProcessTrack(libraryJob({ overwriteOriginal: true, keepOutputCopy: true }), deps)
+
+    expect(vi.mocked(deps.removeRenamedOriginal).mock.invocationCallOrder[0]).toBeGreaterThan(
+      vi.mocked(deps.deleteAppleMusic).mock.invocationCallOrder[0],
+    )
+  })
+
+  it('keeps the in-place original when the old entry had to be kept', async () => {
+    const deps = converting('/lib/A.aiff', {
+      carryAppleMusicHistory: vi.fn(async () => 'mismatch' as const),
+    })
+
+    const result = await runProcessTrack(
+      libraryJob({ overwriteOriginal: true, keepOutputCopy: true }),
+      deps,
+    )
+
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result.originalKept).toBe(true)
+    expect(result.supersededPath).toBeUndefined()
+  })
+
+  it('keeps the in-place original when Music could not be asked about its entry', async () => {
+    const deps = converting('/lib/A.aiff', {
+      appleMusicEntry: vi.fn(async () => {
+        throw new Error('AppleEvent timed out (-1712)')
+      }),
+    })
+
+    const result = await runProcessTrack(
+      libraryJob({ overwriteOriginal: true, keepOutputCopy: true }),
+      deps,
+    )
+
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result.appleMusicFailed).toBe(true)
+    expect(result.originalKept).toBe(true)
+  })
+
+  // A retire that fails on its own (a Windows lock) after a good replacement still leaves
+  // the old file to offer, as before.
+  it('offers the in-place original when the replacement worked but retiring it failed', async () => {
+    const deps = converting('/lib/A.aiff', {
+      removeRenamedOriginal: vi.fn(async () => {
+        throw new Error('EBUSY')
+      }),
+    })
+
+    const result = await runProcessTrack(
+      libraryJob({ overwriteOriginal: true, keepOutputCopy: true }),
+      deps,
+    )
+
+    expect(result.originalKept).toBe(true)
+    expect(result.supersededPath).toBe('/lib/A.aiff')
+  })
+
   // Traktor rewrites FILE only, so a WAV Music landed in another folder leaves its entry
   // on the AIFF: trashing that would drop the track from Traktor.
   it('keeps the old file out of the trash offer when Traktor could not follow the landed file', async () => {
