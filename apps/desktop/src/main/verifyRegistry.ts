@@ -15,11 +15,14 @@ import type { TraktorExpect } from './verifyTraktor'
 type Library = 'rekordbox' | 'engine' | 'traktor'
 
 // One conversion as the job left it: the file and Music already judged in verification, the
-// libraries it will touch still checking. traktorStranded marks a patch that could not follow
-// its file (see redirectNmlPatch).
+// libraries it will touch still checking. from is the file the libraries followed (the copy
+// replaced, else the source), source the file converted. traktorStranded marks a patch that
+// could not follow its file (see redirectNmlPatch). engineStep marks an Engine row the job's
+// own Engine DJ step wrote, which is there whatever the flush did.
 export interface VerifyEntry {
   trackId: string
   from: string
+  source: string
   to: string
   samplesKept: boolean
   originalKept: boolean
@@ -30,6 +33,7 @@ export interface VerifyEntry {
   engine?: EngineBefore
   traktorPatch?: NmlPatch
   traktorStranded?: boolean
+  engineStep?: boolean
   verification: Verification
 }
 
@@ -99,7 +103,7 @@ const without = (v: Verification, place: VerifyPlace): Verification => {
 function touches(e: VerifyEntry, place: VerifyPlace): boolean {
   if (!e.places.has(place)) return false
   if (place === 'rekordbox') return e.rekordbox !== 'absent'
-  if (place === 'engine') return e.engine !== 'absent'
+  if (place === 'engine') return e.engine !== 'absent' || e.engineStep === true
   if (place === 'traktor') return e.traktorPatch !== undefined
   return true
 }
@@ -228,12 +232,17 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
           LIBRARIES.map(async (place) => {
             const listed = flushed.filter((e) => e.places.has(place))
             const touched = listed.filter((e) => touches(e, place))
+            const byJob = touched.filter((e) => place === 'engine' && e.engineStep)
+            const byFlush = touched.filter((e) => !byJob.includes(e))
             const result = outcome[place]
             for (const e of listed)
-              if (!touched.includes(e) || result === 'off') replace(e, null, place)
-            if (result === 'off') return
-            if (result === 'queued') for (const e of touched) hold(place, e)
-            else await check(place, touched, result)
+              if (!touched.includes(e) || (result === 'off' && byFlush.includes(e)))
+                replace(e, null, place)
+            if (result === 'queued') for (const e of byFlush) hold(place, e)
+            await Promise.all([
+              check(place, byJob, null),
+              result === 'off' || result === 'queued' ? undefined : check(place, byFlush, result),
+            ])
           }),
         ),
       )
@@ -265,7 +274,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     const bad = (place: VerifyPlace) => stateOf(e, place) === 'mismatch'
     const sourceGone =
       (bad('file') || bad('appleMusic')) &&
-      (e.from.normalize('NFC') === e.to.normalize('NFC') || !(await deps.exists(e.from)))
+      (e.source.normalize('NFC') === e.to.normalize('NFC') || !(await deps.exists(e.source)))
     if ((bad('file') || bad('appleMusic')) && !sourceGone) return 'rerun-job'
 
     const rereadFile = sourceGone || stateOf(e, 'file') === 'unreadable'

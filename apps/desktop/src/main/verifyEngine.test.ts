@@ -342,6 +342,38 @@ describe('checkEngine', () => {
     expect(checkOne(dir, expectFor(before))[0].detail).toEqual({ key: 'engineOtherRow' })
   })
 
+  // The Engine DJ destination adds a row for a source Engine did not have: no photo to
+  // hold it to, only that the row is there and plays the written file.
+  it('a row the add created on the written file is ok', () => {
+    const dir = library([FROM, '/Volumes/Public/Musica/Other.aiff'])
+    repoint(dir, 2)
+    expect(checkOne(dir, expectFor('absent', { added: true }))[0]).toEqual({
+      place: 'engine',
+      state: 'ok',
+      detail: { key: 'engineOk', params: { format: 'WAV' } },
+    })
+  })
+
+  it('an add that left no row on the written file is engineMissing', () => {
+    const dir = library()
+    const e = expectFor('absent', { added: true, from: '/Volumes/Public/Downloads/Title.wav' })
+    expect(checkOne(dir, e)[0].detail).toEqual({ key: 'engineMissing' })
+  })
+
+  it('an added row whose size is not the file is engineSizeDiffers', () => {
+    const dir = library([FROM, '/Volumes/Public/Musica/Other.aiff'])
+    repoint(dir, 2, TO, SIZE + 1)
+    expect(checkOne(dir, expectFor('absent', { added: true }))[0].detail).toEqual({
+      key: 'engineSizeDiffers',
+    })
+  })
+
+  it('an add whose library could not be read before is still unreadable', () => {
+    const dir = library([FROM, '/Volumes/Public/Musica/Other.aiff'])
+    repoint(dir, 2)
+    expect(checkOne(dir, expectFor('unreadable', { added: true }))[0].state).toBe('unreadable')
+  })
+
   // Without the photo there is nothing to compare the cues, grid and loops against.
   it('a repoint with no snapshot is unreadable, never ok', () => {
     const dir = library()

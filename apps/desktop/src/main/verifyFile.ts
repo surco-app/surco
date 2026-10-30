@@ -1,13 +1,19 @@
-import { readdir } from 'node:fs/promises'
+import { readdir, stat } from 'node:fs/promises'
 import { basename, dirname, extname, join } from 'node:path'
 import { File as TagFile } from 'node-taglib-sharp'
-import { errorKeyOf } from '../shared/errorKeys'
+import { errorKeyOf, errorWithKey } from '../shared/errorKeys'
 import type { TrackMetadata } from '../shared/types'
 import type { PlaceCheck } from '../shared/verification'
-import { assertDecodable, type ConversionPlan, deliveredDurationSec, probeAudio } from './ffmpeg'
+import {
+  assertDecodable,
+  type ConversionPlan,
+  type DecodeProof,
+  deliveredDurationSec,
+  probeAudio,
+} from './ffmpeg'
 import { snapshotTags } from './tagSnapshot'
 import { readEmbeddedCover } from './tags'
-import { type PcmDigest, pcmDigest } from './verifyPcm'
+import { type PcmDigest, pcmDigest, pcmTimeoutMs } from './verifyPcm'
 
 export interface FileExpect {
   path: string
@@ -21,14 +27,23 @@ export interface FileExpect {
   trimmedSec: number
   tags: Partial<TrackMetadata>
   cover: 'written' | 'removed' | 'untouched'
+  proven?: DecodeProof
+}
+
+// signal is the job's cancel; timeoutMs bounds a decode by the file's size and length.
+export interface ReadOpts {
+  signal?: AbortSignal
+  timeoutMs?: number
 }
 
 export interface FileReaders {
   exists(path: string): Promise<string | null>
   probe(path: string): ReturnType<typeof probeAudio>
-  assertDecodable(path: string): Promise<void>
-  deliveredDurationSec(path: string): Promise<number | null>
-  pcmDigest(path: string): Promise<PcmDigest>
+  stat(path: string): Promise<Pick<DecodeProof, 'size' | 'mtimeMs' | 'ino'>>
+  // The decoded length when the decode alone gave it, null when it came from another pass.
+  assertDecodable(path: string, opts: ReadOpts): Promise<number | null>
+  deliveredDurationSec(path: string, opts: ReadOpts): Promise<number | null>
+  pcmDigest(path: string, opts: ReadOpts): Promise<PcmDigest>
   snapshotTags(path: string): string[] | Promise<string[]>
   readEmbeddedCover(path: string): Buffer | null
   m4aNumbers(path: string): { track: number; bpm: number }
@@ -47,9 +62,12 @@ async function findOnDisk(path: string): Promise<string | null> {
 export const fileReaders: FileReaders = {
   exists: findOnDisk,
   probe: probeAudio,
-  assertDecodable: (path) => assertDecodable(path),
-  deliveredDurationSec,
-  pcmDigest: (path) => pcmDigest(path),
+  stat,
+  assertDecodable: (path, { signal, timeoutMs }) =>
+    assertDecodable(path, undefined, { signal, timeout: timeoutMs }),
+  deliveredDurationSec: (path, { signal, timeoutMs }) =>
+    deliveredDurationSec(path, { signal, timeout: timeoutMs }),
+  pcmDigest: (path, { signal }) => pcmDigest(path, { signal }),
   snapshotTags,
   readEmbeddedCover,
   m4aNumbers(path) {
@@ -149,15 +167,34 @@ function bitsOf(probe: Awaited<ReturnType<typeof probeAudio>>): number {
   return pcm ? Number(pcm[1]) : 0
 }
 
-export async function checkFile(e: FileExpect, r: FileReaders): Promise<PlaceCheck> {
+// A cancel is not a read that failed: it rejects with conversionCancelled, so the job ends
+// as cancelled instead of reporting a file it never finished reading.
+export async function checkFile(
+  e: FileExpect,
+  r: FileReaders,
+  opts: { signal?: AbortSignal } = {},
+): Promise<PlaceCheck> {
   try {
-    return await judge(e, r)
+    return await judge(e, r, opts.signal)
   } catch {
+    if (opts.signal?.aborted) throw errorWithKey('conversionCancelled')
     return check('unreadable', 'fileUnreadable')
   }
 }
 
-async function judge(e: FileExpect, r: FileReaders): Promise<PlaceCheck> {
+const isTruncation = (err: unknown) => {
+  const key = errorKeyOf(err instanceof Error ? err.message : '')
+  return key === 'convertedOutputTruncated' || key === 'convertedOutputUnreadable'
+}
+
+// The same bytes convertAudio proved decodable just before its rename, untouched since.
+const sameAsProven = (proven: DecodeProof | undefined, now: Omit<DecodeProof, 'durationSec'>) =>
+  proven !== undefined &&
+  proven.size === now.size &&
+  proven.mtimeMs === now.mtimeMs &&
+  proven.ino === now.ino
+
+async function judge(e: FileExpect, r: FileReaders, signal?: AbortSignal): Promise<PlaceCheck> {
   const found = await r.exists(e.path)
   if (found === null) return check('mismatch', 'fileMissing')
 
@@ -190,28 +227,38 @@ async function judge(e: FileExpect, r: FileReaders): Promise<PlaceCheck> {
       actual: `${expectedFormat} ${rate} Hz ${bits} bits`,
     })
 
-  try {
-    await r.assertDecodable(found)
-  } catch (err) {
-    const key = errorKeyOf(err instanceof Error ? err.message : '')
-    if (key === 'convertedOutputTruncated' || key === 'convertedOutputUnreadable')
-      return check('mismatch', 'fileTruncated')
-    throw err
-  }
-
   if (e.samplesKept && e.sourcePcm === undefined) return check('unreadable', 'fileUnreadable')
   if (!e.samplesKept && e.sourceDurationSec === undefined)
     return check('unreadable', 'fileUnreadable')
 
+  const now = await r.stat(found)
+  const opts = { signal, timeoutMs: pcmTimeoutMs(now.size, probe.headerSeconds) }
+  // One decode at most: the digest when the samples were kept (equal to the source's, the
+  // file decodes whole), else the decode that proves it whole also gives its length, and
+  // the bytes convertAudio already proved need none at all.
+  const decodes = async (): Promise<number | null | 'truncated'> => {
+    try {
+      return await r.assertDecodable(found, opts)
+    } catch (err) {
+      if (isTruncation(err)) return 'truncated'
+      throw err
+    }
+  }
   const identical = e.samplesKept
   if (identical) {
-    const out = await r.pcmDigest(found)
+    const out = await r.pcmDigest(found, opts)
     const src = e.sourcePcm as PcmDigest
     if (!out.md5 || !src.md5) return check('unreadable', 'fileUnreadable')
     if (out.md5 !== src.md5 || out.sampleRate !== src.sampleRate || out.channels !== src.channels)
-      return check('mismatch', 'filePcmDiffers')
+      return check(
+        'mismatch',
+        (await decodes()) === 'truncated' ? 'fileTruncated' : 'filePcmDiffers',
+      )
   } else {
-    const delivered = await r.deliveredDurationSec(found)
+    const proven = sameAsProven(e.proven, now) ? (e.proven as DecodeProof).durationSec : undefined
+    const decoded = proven === undefined ? await decodes() : proven
+    if (decoded === 'truncated') return check('mismatch', 'fileTruncated')
+    const delivered = decoded ?? (await r.deliveredDurationSec(found, opts))
     if (delivered === null) return check('unreadable', 'fileUnreadable')
     const wanted = (e.sourceDurationSec as number) - e.trimmedSec
     if (!Number.isFinite(wanted) || !Number.isFinite(delivered))

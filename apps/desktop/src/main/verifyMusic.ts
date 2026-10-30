@@ -1,5 +1,6 @@
 import { realpathSync } from 'node:fs'
 import { extname } from 'node:path'
+import { errorWithKey } from '../shared/errorKeys'
 import type { TrackMetadata } from '../shared/types'
 import type { PlaceCheck } from '../shared/verification'
 import {
@@ -28,7 +29,8 @@ export interface MusicReaders {
   // Rejects when Music could not be asked.
   entriesForFile: (path: string, titles: string[]) => Promise<string[]>
   realPath: (p: string) => string
-  wait: (ms: number) => Promise<void>
+  // Rejects as soon as the signal aborts.
+  wait: (ms: number, signal?: AbortSignal) => Promise<void>
 }
 
 // Compares by where a path really lands, not by how Music spelled it: the library holds the
@@ -64,7 +66,14 @@ export const musicReaders: MusicReaders = {
   entry: readMusicEntryFacts,
   entriesForFile: musicEntriesForFile({ run: runOsascript, realPath }),
   realPath,
-  wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  wait: (ms, signal) =>
+    new Promise((resolve, reject) => {
+      const timer = setTimeout(resolve, ms)
+      signal?.addEventListener('abort', () => {
+        clearTimeout(timer)
+        reject(signal.reason)
+      })
+    }),
 }
 
 // Music fills the location of a fresh add asynchronously, and may refuse it meanwhile.
@@ -84,20 +93,28 @@ const TAG_FIELDS = [
   ['album', 'album'],
 ] as const
 
-export async function checkAppleMusic(e: MusicExpect, r: MusicReaders): Promise<PlaceCheck> {
+// A cancel is not a read that failed: it rejects with conversionCancelled.
+export async function checkAppleMusic(
+  e: MusicExpect,
+  r: MusicReaders,
+  opts: { signal?: AbortSignal } = {},
+): Promise<PlaceCheck> {
   try {
-    return await judge(e, r)
+    const result = await judge(e, r, opts.signal)
+    opts.signal?.throwIfAborted()
+    return result
   } catch {
+    if (opts.signal?.aborted) throw errorWithKey('conversionCancelled')
     return check('unreadable', 'musicUnreadable')
   }
 }
 
-async function judge(e: MusicExpect, r: MusicReaders): Promise<PlaceCheck> {
+async function judge(e: MusicExpect, r: MusicReaders, signal?: AbortSignal): Promise<PlaceCheck> {
   const read = () => r.entry(e.pid, e.replaced?.oldPid, { withPlaylists: e.replaced !== undefined })
   let facts = await read()
   for (const ms of EMPTY_LOCATION_WAITS_MS) {
     if (facts === 'missing' || (facts.location !== '' && facts.location !== null)) break
-    await r.wait(ms)
+    await r.wait(ms, signal)
     facts = await read()
   }
   if (facts === 'missing') return check('mismatch', 'musicMissing')

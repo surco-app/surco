@@ -89,6 +89,11 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
       state: 'ok',
       detail: { key: 'fileReencoded' },
     })),
+    verifyMusic: vi.fn<ProcessTrackDeps['verifyMusic']>(async () => ({
+      place: 'appleMusic',
+      state: 'ok',
+      detail: { key: 'musicOneNoPlaylists' },
+    })),
     ...overrides,
   }
 }

@@ -181,13 +181,14 @@ export interface ProcessTrackDeps {
   redirectRepoint?: (currentTo: string, landedAt: string) => boolean
   // The source's row in each library the conversion will touch, read before anything writes
   // so the check after the batch can say its cues and grid survived. Only the libraries in
-  // play are keyed; a read that fails is 'unreadable', never a rejection.
+  // play are keyed; a read that fails is 'unreadable'.
   snapshotLibraries?: (
     from: string,
   ) => Promise<{ rekordbox?: RekordboxBefore; engine?: EngineBefore }>
-  // Re-read the written file and the Music entry before the job reports back.
-  verifyFile: (e: FileExpect) => Promise<PlaceCheck>
-  verifyMusic?: (e: MusicExpect) => Promise<PlaceCheck>
+  // Re-read the written file and the Music entry before the job reports back. The signal is
+  // the job's cancel; a cancelled read rejects with conversionCancelled.
+  verifyFile: (e: FileExpect, signal: AbortSignal) => Promise<PlaceCheck>
+  verifyMusic: (e: MusicExpect, signal: AbortSignal) => Promise<PlaceCheck>
   // Hands the job to the registry that checks the libraries once the batch is flushed.
   registerVerification?: (e: VerifyEntry) => void
 }
@@ -449,6 +450,17 @@ function settled(check: Promise<PlaceCheck>, place: VerifyPlace, key: string): P
   })
 }
 
+// The file Music is held to when the output copy stays where it was written: Music may have
+// copied it into its own Media folder, and that copy is the one it plays. Anywhere else the
+// entry is still judged against the written file, so a wrong file still reads as one.
+async function musicPlays(entryAt: string, target: string, deps: ProcessTrackDeps) {
+  if (!entryAt) return target
+  const media = await deps.appleMusicMediaFolder?.().catch(() => undefined)
+  const at = entryAt.normalize('NFC')
+  const inMedia = !!media && at.startsWith(`${media.normalize('NFC').replace(/\/+$/, '')}/`)
+  return at === target.normalize('NFC') || inMedia ? entryAt : target
+}
+
 const checking = (place: VerifyPlace): PlaceCheck => ({
   place,
   state: 'checking',
@@ -467,7 +479,12 @@ export async function runProcessTrack(
   if (deps.isAllowed && !deps.isAllowed(job.inputPath)) throw errorWithKey('pathNotAllowed')
   // The libraries follow the file this conversion supersedes, the same one the repoint names.
   const libraryFrom = job.replacesPath ?? job.inputPath
-  const before = (await deps.snapshotLibraries?.(libraryFrom)) ?? {}
+  // A snapshot that failed is not a library without the track: both read as unreadable.
+  const before =
+    (await deps.snapshotLibraries?.(libraryFrom).catch((e) => {
+      log.warn('process:track could not read the libraries before converting', e)
+      return { rekordbox: 'unreadable' as const, engine: 'unreadable' as const }
+    })) ?? {}
 
   let prepared: PreparedCover | undefined
   // Set only in "Apple Music only" mode (see below); cleaned up in finally so a failed
@@ -946,55 +963,83 @@ export async function runProcessTrack(
     // nothing (the trash offer, a new edit) can act on a track still being checked. The
     // libraries are only written when the batch is flushed, so they stay checking here.
     stage('verify')
-    const finalPath = musicOnly ? (landed?.path ?? '') : target
-    const fileExpect: FileExpect = {
-      path: finalPath,
-      ext: written.plan.ext,
-      codec: written.plan.codec,
-      sampleRateHz: written.plan.sampleRateHz,
-      bitDepth: written.plan.bitDepth,
-      samplesKept: written.samplesKept,
-      sourcePcm: written.sourcePcm,
-      sourceDurationSec: written.sourceDurationSec,
-      trimmedSec: written.trimmedSec,
-      tags: job.meta,
-      cover: coverPath ? 'written' : job.removeCover ? 'removed' : 'untouched',
+    // A cancel now stops the reads, not the conversion already landed: the job still ends
+    // as cancelled.
+    const verifying = new AbortController()
+    deps.registerActiveConversion(job.id, () => verifying.abort())
+    let fileCheck: PlaceCheck
+    let musicCheck: PlaceCheck | undefined
+    let finalPath: string
+    let musicExpect: MusicExpect | undefined
+    let fileExpect: FileExpect
+    try {
+      // Where Music says the entry plays, read again now: a fresh add fills it late.
+      const entryAt =
+        musicStep && musicPersistentId && (!musicOnly || !landed?.path)
+          ? await deps.appleMusicEntryLocation(musicPersistentId).catch(() => '')
+          : ''
+      finalPath = musicOnly ? landed?.path || entryAt : target
+      fileExpect = {
+        path: finalPath,
+        ext: written.plan.ext,
+        codec: written.plan.codec,
+        sampleRateHz: written.plan.sampleRateHz,
+        bitDepth: written.plan.bitDepth,
+        samplesKept: written.samplesKept,
+        sourcePcm: written.sourcePcm,
+        sourceDurationSec: written.sourceDurationSec,
+        trimmedSec: written.trimmedSec,
+        tags: job.meta,
+        cover: coverPath ? 'written' : job.removeCover ? 'removed' : 'untouched',
+        ...(written.proven ? { proven: written.proven } : {}),
+      }
+      musicExpect =
+        musicStep && musicPersistentId
+          ? {
+              pid: musicPersistentId,
+              file: musicOnly ? finalPath : await musicPlays(entryAt, target, deps),
+              ext: written.plan.ext,
+              meta: { title: job.meta.title, artist: job.meta.artist, album: job.meta.album },
+              coverSet: coverPath !== undefined,
+              ...(musicReplaced ? { replaced: musicReplaced } : {}),
+            }
+          : undefined
+      ;[fileCheck, musicCheck] = await Promise.all([
+        finalPath
+          ? settled(deps.verifyFile(fileExpect, verifying.signal), 'file', 'fileUnreadable')
+          : ({ place: 'file', state: 'mismatch', detail: { key: 'fileMissing' } } as const),
+        musicExpect
+          ? settled(
+              deps.verifyMusic(musicExpect, verifying.signal),
+              'appleMusic',
+              'musicUnreadable',
+            )
+          : musicStep && appleMusicFailed
+            ? ({ place: 'appleMusic', state: 'mismatch', detail: { key: 'musicMissing' } } as const)
+            : undefined,
+      ])
+    } finally {
+      deps.unregisterActiveConversion(job.id)
     }
-    const musicExpect: MusicExpect | undefined =
-      musicStep && musicPersistentId && deps.verifyMusic
-        ? {
-            pid: musicPersistentId,
-            file: finalPath,
-            ext: written.plan.ext,
-            meta: { title: job.meta.title, artist: job.meta.artist, album: job.meta.album },
-            coverSet: coverPath !== undefined,
-            ...(musicReplaced ? { replaced: musicReplaced } : {}),
-          }
-        : undefined
-    const [fileCheck, musicCheck] = await Promise.all([
-      settled(deps.verifyFile(fileExpect), 'file', 'fileUnreadable'),
-      musicExpect && deps.verifyMusic
-        ? settled(deps.verifyMusic(musicExpect), 'appleMusic', 'musicUnreadable')
-        : musicStep && appleMusicFailed
-          ? ({ place: 'appleMusic', state: 'mismatch', detail: { key: 'musicMissing' } } as const)
-          : undefined,
-    ])
+    if (verifying.signal.aborted) throw errorWithKey('conversionCancelled')
     const traktor = settings.syncTraktor && !!settings.traktorNmlPath
+    const engineListed = (before.engine && before.engine !== 'absent') || !!addedToEngineDj
     const places = new Set<VerifyPlace>(['file'])
     if (musicCheck) places.add('appleMusic')
     if (before.rekordbox) places.add('rekordbox')
-    if (before.engine) places.add('engine')
+    if (before.engine || addedToEngineDj) places.add('engine')
     if (traktor) places.add('traktor')
     const verification = withChecks({ status: 'checking', checks: [] }, [
       fileCheck,
       ...(musicCheck ? [musicCheck] : []),
       ...(before.rekordbox && before.rekordbox !== 'absent' ? [checking('rekordbox')] : []),
-      ...(before.engine && before.engine !== 'absent' ? [checking('engine')] : []),
+      ...(engineListed ? [checking('engine')] : []),
       ...(traktor ? [checking('traktor')] : []),
     ])
     deps.registerVerification?.({
       trackId: job.id,
       from: libraryFrom,
+      source: job.inputPath,
       to: finalPath,
       samplesKept: written.samplesKept,
       originalKept: written.originalKept,
@@ -1004,6 +1049,7 @@ export async function runProcessTrack(
       rekordbox: before.rekordbox,
       engine: before.engine,
       traktorStranded: landed?.traktorFollowed === false,
+      engineStep: addedToEngineDj,
       verification,
     })
 

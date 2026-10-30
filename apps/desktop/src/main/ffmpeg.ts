@@ -1485,14 +1485,19 @@ const MIN_VERIFIABLE_SEC = 3
 // cancels out.
 //
 // -v error is deliberately not passed: ffmpeg reports the decoded length on the
-// progress line, so one decode answers both questions instead of paying for two.
+// progress line, so one decode answers both questions instead of paying for two. That
+// length is handed back (null when the verdict came from another pass), so a caller that
+// needs it pays for no third.
 export async function assertDecodable(
   file: string,
   copiedFrom?: string,
   opts?: RunOpts,
-): Promise<void> {
+): Promise<number | null> {
   const whole = await decodeForCheck(file, undefined, opts)
-  if (whole.ok) return assertNotTruncated(file, whole.stderr, whole.stdout)
+  if (whole.ok) {
+    assertNotTruncated(file, whole.stderr, whole.stdout)
+    return decodedDurationSec(whole.stdout)
+  }
   if (copiedFrom !== undefined && !(await decodeForCheck(copiedFrom, undefined, opts)).ok)
     return assertDeliversAsMuchAs(file, copiedFrom)
   // -xerror fails on the first packet the decoder rejects wherever it sits, and a
@@ -1512,6 +1517,7 @@ export async function assertDecodable(
   if (header === null || header < MIN_VERIFIABLE_SEC) throw whole.error
   const bounded = await decodeForCheck(file, header * (1 - MAX_DECODE_SHORTFALL / 2), opts)
   if (!bounded.ok) throw bounded.error
+  return null
 }
 
 export async function sourceDamaged(file: string, signal?: AbortSignal): Promise<boolean> {
@@ -1524,14 +1530,14 @@ export async function sourceDamaged(file: string, signal?: AbortSignal): Promise
   }
 }
 
-async function assertDeliversAsMuchAs(file: string, source: string): Promise<void> {
+async function assertDeliversAsMuchAs(file: string, source: string): Promise<number> {
   const [delivered, playable] = await Promise.all([
     deliveredDurationSec(file),
     deliveredDurationSec(source),
   ])
   if (delivered === null || playable === null)
     throw errorWithKey('convertedOutputUnreadable', basename(file))
-  if (delivered >= playable * (1 - MAX_DECODE_SHORTFALL)) return
+  if (delivered >= playable * (1 - MAX_DECODE_SHORTFALL)) return delivered
   throw errorWithKey(
     'convertedOutputTruncated',
     `${delivered.toFixed(2)}s of ${playable.toFixed(2)}s in ${basename(file)}`,
@@ -1982,6 +1988,16 @@ export interface ConversionWritten {
   plan: Pick<ConversionPlan, 'ext' | 'codec' | 'sampleRateHz' | 'bitDepth'>
   sourceDurationSec?: number
   trimmedSec: number
+  // The output as it stood when its decode was proven, and the length that decode
+  // delivered: a check that finds the same bytes needs no decode of its own.
+  proven?: DecodeProof
+}
+
+export interface DecodeProof {
+  size: number
+  mtimeMs: number
+  ino: number
+  durationSec: number | null
 }
 
 export async function convertAudio(
@@ -2109,6 +2125,7 @@ export async function convertAudio(
   const samplesKept = copiedVerbatim || plan.samplesKept === true
   let sourcePcm: PcmDigest | undefined
   let sourceDurationSec: number | undefined
+  let proven: DecodeProof | undefined
   let originalKept = false
 
   try {
@@ -2424,7 +2441,10 @@ export async function convertAudio(
       samplesKept ? undefined : decodedSourceSec(input, probeOnce, measuring.signal),
     ] as const
     try {
-      ;[, sourcePcm, sourceDurationSec] = await Promise.all(measures)
+      let durationSec: number | null
+      ;[durationSec, sourcePcm, sourceDurationSec] = await Promise.all(measures)
+      const { size, mtimeMs, ino } = await stat(tmp)
+      proven = { size, mtimeMs, ino, durationSec }
     } catch (err) {
       if (isCancelled?.()) throw errorWithKey('conversionCancelled')
       throw err
@@ -2567,6 +2587,7 @@ export async function convertAudio(
         ...(plan.bitDepth ? { bitDepth: plan.bitDepth } : {}),
       },
       ...(sourceDurationSec !== undefined ? { sourceDurationSec } : {}),
+      ...(proven ? { proven } : {}),
       trimmedSec: trimAf !== undefined ? Math.max(0, trim?.startSec ?? 0) + cutTail : 0,
     },
   }

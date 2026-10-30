@@ -66,6 +66,7 @@ function entry(trackId: string, over: Partial<VerifyEntry> = {}): VerifyEntry {
   return {
     trackId,
     from: `/Music/${trackId}.aiff`,
+    source: `/Music/${trackId}.aiff`,
     to: `/Music/${trackId}.wav`,
     samplesKept: true,
     originalKept: false,
@@ -372,6 +373,7 @@ describe('verify registry', () => {
     registry.register(
       entry('a', {
         from: '/Music/a.wav',
+        source: '/Music/a.wav',
         to: '/Music/a.wav',
         places: new Set(['file']),
         verification: { status: 'mismatch', checks: [mismatch('file', 'filePcmDiffers')] },
@@ -384,6 +386,62 @@ describe('verify registry', () => {
     expect(deps.readFile).toHaveBeenCalledWith(fileExpect('/Music/a.wav'))
     expect(registry.get('a')).toEqual({ status: 'ok', checks: [ok('file', 'fileIdentical')] })
   })
+
+  // A swap converts one file and retires another: the copy the libraries followed is still
+  // on disk, but the file converted in place is not, and only that one can be converted again.
+  it('retry on a swap whose converted file is gone only re-reads', async () => {
+    const { deps, registry } = setup({
+      exists: vi.fn<VerifyRegistryDeps['exists']>(async (p) => p === '/Music/old.mp3'),
+    })
+    registry.register(
+      entry('s', {
+        from: '/Music/old.mp3',
+        source: '/Music/s.flac',
+        places: new Set(['file']),
+        verification: { status: 'mismatch', checks: [mismatch('file', 'filePcmDiffers')] },
+      }),
+    )
+
+    expect(await registry.retry('s')).toBe('rechecked')
+    expect(deps.exists).toHaveBeenCalledWith('/Music/s.flac')
+    expect(deps.readFile).toHaveBeenCalledTimes(1)
+  })
+
+  it('retry on a conversion written over its own source only re-reads', async () => {
+    const { deps, registry } = setup()
+    registry.register(
+      entry('p', {
+        from: '/Music/old.mp3',
+        source: '/Music/p.wav',
+        to: '/Music/p.wav',
+        places: new Set(['file']),
+        verification: { status: 'mismatch', checks: [mismatch('file', 'filePcmDiffers')] },
+      }),
+    )
+
+    expect(await registry.retry('p')).toBe('rechecked')
+    expect(deps.exists).not.toHaveBeenCalled()
+  })
+
+  // The Engine DJ destination writes its row during the job, not in the flush: it is
+  // there to read whether the flush wrote Engine, queued it or had nothing for it.
+  it.each(['off', 'queued', 'written'] as const)(
+    'an Engine row the job wrote is read after a flush that was %s',
+    async (engine) => {
+      const { deps, registry } = setup()
+      registry.register(
+        entry('e', { places: new Set(['file', 'engine']), engine: 'absent', engineStep: true }),
+      )
+
+      await registry.afterFlush({ rekordbox: 'off', engine, traktor: 'off' })
+
+      expect(deps.readEngine).toHaveBeenCalledWith([expect.objectContaining({ trackId: 'e' })])
+      expect(registry.get('e')).toEqual({
+        status: 'ok',
+        checks: [ok('file', 'fileIdentical'), ok('engine')],
+      })
+    },
+  )
 
   it('retry when the source was deleted only re-reads', async () => {
     const { deps, registry } = setup({
@@ -588,7 +646,14 @@ describe('verify registry', () => {
       status: 'mismatch' as const,
       checks: [mismatch('file', 'filePcmDiffers'), checking('rekordbox')],
     }
-    registry.register(entry('a', { from: '/Music/a.wav', to: '/Music/a.wav', verification }))
+    registry.register(
+      entry('a', {
+        from: '/Music/a.wav',
+        source: '/Music/a.wav',
+        to: '/Music/a.wav',
+        verification,
+      }),
+    )
     await registry.afterFlush({ ...written, rekordbox: 'queued' })
 
     const retrying = registry.retry('a')

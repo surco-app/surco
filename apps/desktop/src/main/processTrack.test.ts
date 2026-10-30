@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { errorKeyOf, errorWithKey, splitNameLeftMarked } from '../shared/errorKeys'
 import type { ProcessJob, Settings, TrackMetadata } from '../shared/types'
 import type { PlaceCheck } from '../shared/verification'
+import { createActiveConversions } from './activeConversions'
 import type { ConversionWritten } from './ffmpeg'
 import { createOutputReservations } from './outputReservations'
 import { type ProcessTrackDeps, replaceAppleMusicCopy, runProcessTrack } from './processTrack'
@@ -89,8 +90,15 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     trackTmp: vi.fn(),
     untrackTmp: vi.fn(),
     verifyFile: vi.fn<ProcessTrackDeps['verifyFile']>(async () => fileOk),
+    verifyMusic: vi.fn<ProcessTrackDeps['verifyMusic']>(async () => musicOkDefault),
     ...overrides,
   }
+}
+
+const musicOkDefault: PlaceCheck = {
+  place: 'appleMusic',
+  state: 'ok',
+  detail: { key: 'musicOneNoPlaylists' },
 }
 
 const fileOk: PlaceCheck = {
@@ -1830,7 +1838,7 @@ describe('runProcessTrack — Apple Music only', () => {
       addedToMusicOnly: true,
       musicPersistentId: 'added-id',
       normalizeSkipped: false,
-      verification: { status: 'ok', checks: [fileOk] },
+      verification: { status: 'ok', checks: [fileOk, musicOkDefault] },
     })
   })
 
@@ -3039,17 +3047,20 @@ describe('runProcessTrack — checking what it wrote', () => {
 
     const result = await runProcessTrack(job({ meta, removeCover: true }), deps)
 
-    expect(deps.verifyFile).toHaveBeenCalledWith({
-      path: '/out/Artist - Title.aiff',
-      ext: '.aiff',
-      codec: 'pcm_s16be',
-      bitDepth: 16,
-      samplesKept: false,
-      sourceDurationSec: 2,
-      trimmedSec: 0,
-      tags: meta,
-      cover: 'removed',
-    })
+    expect(deps.verifyFile).toHaveBeenCalledWith(
+      {
+        path: '/out/Artist - Title.aiff',
+        ext: '.aiff',
+        codec: 'pcm_s16be',
+        bitDepth: 16,
+        samplesKept: false,
+        sourceDurationSec: 2,
+        trimmedSec: 0,
+        tags: meta,
+        cover: 'removed',
+      },
+      expect.any(AbortSignal),
+    )
     const checking = (place: PlaceCheck['place']) => ({
       place,
       state: 'checking',
@@ -3064,6 +3075,7 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect(entry).toMatchObject({
       trackId: 'job1',
       from: '/in/song.wav',
+      source: '/in/song.wav',
       to: '/out/Artist - Title.aiff',
       samplesKept: false,
       originalKept: false,
@@ -3180,7 +3192,7 @@ describe('runProcessTrack — checking what it wrote', () => {
       meta: { title: 'Title', artist: 'Artist', album: 'Album' },
       coverSet: false,
     }
-    expect(verifyMusic).toHaveBeenCalledWith(expected)
+    expect(verifyMusic).toHaveBeenCalledWith(expected, expect.any(AbortSignal))
     expect(added.verification?.checks).toEqual([fileOk, musicOk])
     expect(registerVerification.mock.calls[0][0].music).toEqual(expected)
     expect([...registerVerification.mock.calls[0][0].places]).toEqual(['file', 'appleMusic'])
@@ -3225,9 +3237,11 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect(vi.mocked(deps.convertAudio).mock.calls[0][1]).toBe('/tmp/surco-abc/Artist - Title.aiff')
     expect(deps.verifyFile).toHaveBeenCalledWith(
       expect.objectContaining({ path: '/Users/me/Music/Media/Artist - Title.aiff' }),
+      expect.any(AbortSignal),
     )
     expect(verifyMusic).toHaveBeenCalledWith(
       expect.objectContaining({ file: '/Users/me/Music/Media/Artist - Title.aiff' }),
+      expect.any(AbortSignal),
     )
     expect(registerVerification.mock.calls[0][0].to).toBe(
       '/Users/me/Music/Media/Artist - Title.aiff',
@@ -3256,9 +3270,11 @@ describe('runProcessTrack — checking what it wrote', () => {
 
     expect(deps.verifyFile).toHaveBeenCalledWith(
       expect.objectContaining({ path: '/Users/me/Music/Media/Landed.aiff' }),
+      expect.any(AbortSignal),
     )
     expect(verifyMusic).toHaveBeenCalledWith(
       expect.objectContaining({ file: '/Users/me/Music/Media/Landed.aiff' }),
+      expect.any(AbortSignal),
     )
   })
 
@@ -3279,6 +3295,7 @@ describe('runProcessTrack — checking what it wrote', () => {
     await runProcessTrack(job(replace), deps)
     expect(verifyMusic).toHaveBeenLastCalledWith(
       expect.objectContaining({ replaced: { oldPid: 'old-id', playlistsBefore: ['24'] } }),
+      expect.any(AbortSignal),
     )
 
     const kept = makeDeps({
@@ -3294,6 +3311,7 @@ describe('runProcessTrack — checking what it wrote', () => {
       expect.objectContaining({
         replaced: { oldPid: 'old-id', playlistsBefore: null, oldKept: true },
       }),
+      expect.any(AbortSignal),
     )
   })
 
@@ -3311,6 +3329,7 @@ describe('runProcessTrack — checking what it wrote', () => {
 
     expect(verifyMusic).toHaveBeenCalledWith(
       expect.objectContaining({ replaced: { oldPid: 'found-id', playlistsBefore: ['All'] } }),
+      expect.any(AbortSignal),
     )
   })
 
@@ -3327,6 +3346,7 @@ describe('runProcessTrack — checking what it wrote', () => {
 
     expect(verifyMusic).toHaveBeenCalledWith(
       expect.objectContaining({ replaced: { oldPid: 'PID', playlistsBefore: ['24'] } }),
+      expect.any(AbortSignal),
     )
   })
 
@@ -3336,8 +3356,14 @@ describe('runProcessTrack — checking what it wrote', () => {
 
     await runProcessTrack(job({ meta, addToAppleMusic: true }), deps)
 
-    expect(deps.verifyFile).toHaveBeenCalledWith(expect.objectContaining({ cover: 'written' }))
-    expect(verifyMusic).toHaveBeenCalledWith(expect.objectContaining({ coverSet: true }))
+    expect(deps.verifyFile).toHaveBeenCalledWith(
+      expect.objectContaining({ cover: 'written' }),
+      expect.any(AbortSignal),
+    )
+    expect(verifyMusic).toHaveBeenCalledWith(
+      expect.objectContaining({ coverSet: true }),
+      expect.any(AbortSignal),
+    )
   })
 
   it('a job that leaves the cover alone expects it untouched', async () => {
@@ -3345,7 +3371,10 @@ describe('runProcessTrack — checking what it wrote', () => {
 
     await runProcessTrack(job(), deps)
 
-    expect(deps.verifyFile).toHaveBeenCalledWith(expect.objectContaining({ cover: 'untouched' }))
+    expect(deps.verifyFile).toHaveBeenCalledWith(
+      expect.objectContaining({ cover: 'untouched' }),
+      expect.any(AbortSignal),
+    )
   })
 
   it('Traktor is marked stranded when its entry could not follow the landed file', async () => {
@@ -3365,6 +3394,230 @@ describe('runProcessTrack — checking what it wrote', () => {
     await runProcessTrack(job({ meta }), deps)
 
     expect(registerVerification.mock.calls[0][0].traktorStranded).toBe(true)
+  })
+
+  // Music copies the file into its Media folder when its preference says so, and then
+  // plays that copy: the entry is held to the copy, the file check to what was written.
+  it('Music is held to its Media folder copy when it made one, the file to the written one', async () => {
+    const copy = '/Users/me/Music/Media/Music/Artist/Album/Artist - Title.aiff'
+    const deps = makeDeps({
+      platform: 'darwin',
+      appleMusicMediaFolder: vi.fn(async () => '/Users/me/Music/Media'),
+      appleMusicEntryLocation: vi.fn(async () => copy),
+    })
+
+    await runProcessTrack(job({ meta, addToAppleMusic: true }), deps)
+
+    expect(deps.verifyMusic).toHaveBeenCalledWith(
+      expect.objectContaining({ file: copy }),
+      expect.any(AbortSignal),
+    )
+    expect(deps.verifyFile).toHaveBeenCalledWith(
+      expect.objectContaining({ path: '/out/Artist - Title.aiff' }),
+      expect.any(AbortSignal),
+    )
+  })
+
+  it('an entry on a file outside the Media folder is still held to the written file', async () => {
+    const deps = makeDeps({
+      platform: 'darwin',
+      appleMusicMediaFolder: vi.fn(async () => '/Users/me/Music/Media'),
+      appleMusicEntryLocation: vi.fn(async () => '/Volumes/Old/Artist - Title.mp3'),
+    })
+
+    await runProcessTrack(job({ meta, addToAppleMusic: true }), deps)
+
+    expect(deps.verifyMusic).toHaveBeenCalledWith(
+      expect.objectContaining({ file: '/out/Artist - Title.aiff' }),
+      expect.any(AbortSignal),
+    )
+  })
+
+  // Music fills a fresh entry's location late: an empty one at the add is read again.
+  it('Music only reads the entry again when the add gave no location', async () => {
+    const deps = makeDeps({
+      platform: 'darwin',
+      settings: settings({ addToAppleMusic: true, keepOutputCopy: false }),
+      appleMusicEntryLocation: vi
+        .fn<ProcessTrackDeps['appleMusicEntryLocation']>()
+        .mockResolvedValueOnce('')
+        .mockResolvedValue('/Users/me/Music/Media/Late.aiff'),
+    })
+
+    await runProcessTrack(job({ meta }), deps)
+
+    expect(deps.verifyFile).toHaveBeenCalledWith(
+      expect.objectContaining({ path: '/Users/me/Music/Media/Late.aiff' }),
+      expect.any(AbortSignal),
+    )
+  })
+
+  it('Music only with no location at all is a missing file, and the job still lands', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const deps = makeDeps({
+      platform: 'darwin',
+      settings: settings({ addToAppleMusic: true, keepOutputCopy: false }),
+      appleMusicEntryLocation: vi.fn(async () => ''),
+      registerVerification,
+    })
+
+    const result = await runProcessTrack(job({ meta }), deps)
+
+    expect(result.addedToMusicOnly).toBe(true)
+    expect(deps.verifyFile).not.toHaveBeenCalled()
+    expect(result.verification?.checks[0]).toEqual({
+      place: 'file',
+      state: 'mismatch',
+      detail: { key: 'fileMissing' },
+    })
+  })
+
+  it('a cancel while the job reads back what it wrote ends it as cancelled', async () => {
+    const active = createActiveConversions()
+    let reading: () => void = () => {}
+    const started = new Promise<void>((resolve) => (reading = resolve))
+    const deps = makeDeps({
+      beginJob: active.beginJob,
+      endJob: active.endJob,
+      registerActiveConversion: active.register,
+      unregisterActiveConversion: active.unregister,
+      verifyFile: vi.fn<ProcessTrackDeps['verifyFile']>(
+        (_e, signal) =>
+          new Promise((resolve) => {
+            reading()
+            signal.addEventListener('abort', () => resolve(fileOk))
+          }),
+      ),
+    })
+
+    const running = runProcessTrack(job(), deps).catch((e: unknown) => e)
+    await started
+    expect(active.cancel('job1')).toBe(true)
+
+    expect(errorKeyOf(((await running) as Error).message)).toBe('conversionCancelled')
+    expect(active.count()).toBe(0)
+  })
+
+  // Once the job has reported back there is nothing left for a cancel to stop.
+  it('a finished job leaves nothing registered for a cancel to reach', async () => {
+    const active = createActiveConversions()
+    const deps = makeDeps({
+      beginJob: active.beginJob,
+      endJob: active.endJob,
+      registerActiveConversion: active.register,
+      unregisterActiveConversion: active.unregister,
+    })
+
+    await runProcessTrack(job(), deps)
+
+    expect(active.cancel('job1')).toBe(false)
+  })
+
+  it('hands the check the decode convertAudio already proved', async () => {
+    const proven = { size: 10, mtimeMs: 1, ino: 2, durationSec: 2 }
+    const deps = makeDeps({
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async () => ({
+        normalizeSkipped: false,
+        written: { ...written, proven },
+      })),
+    })
+
+    await runProcessTrack(job(), deps)
+
+    expect(deps.verifyFile).toHaveBeenCalledWith(
+      expect.objectContaining({ proven }),
+      expect.any(AbortSignal),
+    )
+  })
+
+  it('a cancel that landed during the conversion stops the reads before they start', async () => {
+    const active = createActiveConversions()
+    const deps = makeDeps({
+      beginJob: active.beginJob,
+      endJob: active.endJob,
+      registerActiveConversion: active.register,
+      unregisterActiveConversion: active.unregister,
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async () => {
+        active.cancel('job1')
+        return { normalizeSkipped: false, written }
+      }),
+      verifyFile: vi.fn<ProcessTrackDeps['verifyFile']>(async (_e, signal) =>
+        signal.aborted ? fileOk : new Promise(() => {}),
+      ),
+    })
+
+    const failure = await runProcessTrack(job(), deps).catch((e: unknown) => e)
+
+    expect(errorKeyOf((failure as Error).message)).toBe('conversionCancelled')
+  })
+
+  it('libraries that could not be read before converting are unreadable, not skipped', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const deps = makeDeps({
+      snapshotLibraries: vi.fn<NonNullable<ProcessTrackDeps['snapshotLibraries']>>(async () => {
+        throw new Error('SQLITE_BUSY')
+      }),
+      registerVerification,
+    })
+
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result.outputPath).toBe('/out/Artist - Title.aiff')
+    expect(registerVerification.mock.calls[0][0]).toMatchObject({
+      rekordbox: 'unreadable',
+      engine: 'unreadable',
+    })
+    expect(result.verification?.checks.map((c) => c.place)).toEqual(['file', 'rekordbox', 'engine'])
+  })
+
+  // The Engine DJ destination writes its row during the job: a source Engine did not have
+  // still leaves a row to check.
+  it.each([
+    ['no snapshot', undefined],
+    ['a source Engine did not have', 'absent' as const],
+  ])('an Engine row the job added is listed with %s', async (_, engine) => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const deps = makeDeps({
+      settings: settings({ addToEngineDj: true }),
+      prepareProcessedCover: vi.fn(async () => undefined),
+      snapshotLibraries: vi.fn<NonNullable<ProcessTrackDeps['snapshotLibraries']>>(async () =>
+        engine ? { engine } : {},
+      ),
+      registerVerification,
+    })
+
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result.verification?.checks.map((c) => c.place)).toEqual(['file', 'engine'])
+    expect(registerVerification.mock.calls[0][0].engineStep).toBe(true)
+    expect([...registerVerification.mock.calls[0][0].places]).toContain('engine')
+  })
+
+  it('an Engine add that failed lists no Engine row to check', async () => {
+    const deps = makeDeps({
+      settings: settings({ addToEngineDj: true }),
+      prepareProcessedCover: vi.fn(async () => undefined),
+      addToEngineDj: vi.fn(async () => {
+        throw new Error('database is locked')
+      }),
+    })
+
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result.verification?.checks.map((c) => c.place)).toEqual(['file'])
+  })
+
+  // The libraries followed the copy replaced; only the file converted can be converted again.
+  it('a swap registers the replaced copy for the libraries and the converted file as source', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const deps = makeDeps({ registerVerification })
+
+    await runProcessTrack(job({ replacesPath: '/m/old.mp3' }), deps)
+
+    expect(registerVerification.mock.calls[0][0]).toMatchObject({
+      from: '/m/old.mp3',
+      source: '/in/song.wav',
+    })
   })
 
   it('the snapshot is taken before convertAudio runs', async () => {

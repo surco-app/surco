@@ -1,10 +1,14 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync } from 'node:fs'
 import { mkdir, mkdtemp, rm, rmdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { extname, join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
-import { afterAll, describe, expect, it } from 'vitest'
+import { afterAll, describe, expect, it, vi } from 'vitest'
+
+vi.mock('electron', () => ({ app: { isPackaged: false } }))
+vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
+
 import { errorKeyOf } from '../shared/errorKeys'
 import { emptyMetadata } from '../shared/metadata'
 import type { OutputFormat, Settings, TrackMetadata } from '../shared/types'
@@ -21,6 +25,7 @@ import {
 } from './applemusic'
 import type { ConversionPlan } from './ffmpeg'
 import { type ProcessTrackDeps, runProcessTrack } from './processTrack'
+import { checkAppleMusic, type MusicReaders, musicEntriesForFile } from './verifyMusic'
 
 // Opt-in: drives the real Music app with throwaway tones, for the measurements the unit
 // tests can only assume (Music handing back an entry it already has, the replace sequence
@@ -84,6 +89,37 @@ async function entriesNamed(name: string): Promise<{ pid: string; path: string }
       const [pid, path] = line.split('\t')
       return { pid, path }
     })
+}
+
+const productionReaders: MusicReaders = {
+  entry: readMusicEntryFacts,
+  entriesForFile: musicEntriesForFile({
+    run: runOsascript,
+    realPath: (p) => realpathSync(p),
+  }),
+  realPath: (p) => realpathSync(p),
+  wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+}
+
+async function locationOf(pid: string): Promise<string> {
+  const facts = await readMusicEntryFacts(pid)
+  if (facts === 'missing' || !facts.location) throw new Error(`entry ${pid} has no file`)
+  return facts.location
+}
+
+async function checkEntry(pid: string, title: string, replacedPid?: string) {
+  const file = await locationOf(pid)
+  return checkAppleMusic(
+    {
+      pid,
+      file,
+      ext: extname(file),
+      meta: { title, artist: ARTIST, album: ALBUM },
+      coverSet: false,
+      replaced: replacedPid ? { oldPid: replacedPid, playlistsBefore: [] } : undefined,
+    },
+    productionReaders,
+  )
 }
 
 function deps(): ProcessTrackDeps {
@@ -168,6 +204,11 @@ function deps(): ProcessTrackDeps {
         facts === 'missing' ? [] : facts.playlists,
       ),
     verifyFile: async () => ({ place: 'file', state: 'ok', detail: { key: 'fileReencoded' } }),
+    verifyMusic: async () => ({
+      place: 'appleMusic',
+      state: 'unreadable',
+      detail: { key: 'musicUnreadable' },
+    }),
   }
 }
 
@@ -197,6 +238,10 @@ async function replaceCase(from: 'wav' | 'aiff', to: OutputFormat, title: string
   expect(left[0].pid).toBe(result.musicPersistentId)
   expect(left[0].path).toMatch(to === 'aiff' ? /\.aiff?$/i : /\.wav$/i)
   expect(await entriesNamed(`${title} [surco-replacing]`)).toHaveLength(0)
+  expect(await readMusicEntryFacts(oldPid)).toBe('missing')
+  const verdict = await checkEntry(result.musicPersistentId as string, title, oldPid)
+  expect(verdict.state).toBe('ok')
+  expect(verdict.detail.key).toMatch(/^musicOne/)
 }
 
 describe.skipIf(!real)('Apple Music against the real app', () => {
@@ -271,4 +316,52 @@ describe.skipIf(!real)('Apple Music against the real app', () => {
   it('replaces an AIFF entry with its WAV, leaving one entry', async () => {
     await replaceCase('aiff', 'wav', `${PREFIX} A2W`)
   }, 240_000)
+
+  it('checks a fresh add ok against the real entry', async () => {
+    const title = `${PREFIX} CheckPlain`
+    const pid = await addToAppleMusic(tone(join(dir, `${title}.aiff`), title), meta(title))
+
+    const verdict = await checkEntry(pid, title)
+
+    expect(verdict.state).toBe('ok')
+    expect(verdict.detail.key).toMatch(/^musicOne/)
+  }, 120_000)
+
+  it('checks musicDuplicate when two entries play one file', async () => {
+    const title = `${PREFIX} CheckTwice`
+    const first = await addToAppleMusic(tone(join(dir, `${title}.aiff`), title), meta(title))
+    const otherTitle = `${title} other`
+    const second = await addToAppleMusic(
+      tone(join(dir, `${otherTitle}.aiff`), otherTitle, 660),
+      meta(otherTitle),
+    )
+    const file = await locationOf(first)
+    await runOsascript(
+      [
+        'tell application "Music"',
+        `  set t to (first track of library playlist 1 whose persistent ID is ${appleScriptString(second)})`,
+        `  set location of t to POSIX file ${appleScriptString(file)}`,
+        `  set name of t to ${appleScriptString(title)}`,
+        'end tell',
+      ].join('\n'),
+    )
+
+    const verdict = await checkEntry(second, title)
+
+    expect(verdict.state).toBe('mismatch')
+    expect(verdict.detail.key).toBe('musicDuplicate')
+  }, 120_000)
+
+  it('never checks ok an entry whose file was deleted', async () => {
+    const title = `${PREFIX} CheckGone`
+    const pid = await addToAppleMusic(tone(join(dir, `${title}.aiff`), title), meta(title))
+    const file = await locationOf(pid)
+    rmSync(file, { force: true })
+
+    const verdict = await checkEntry(pid, title).catch(() => undefined)
+
+    expect(verdict).toBeDefined()
+    expect(verdict?.state).not.toBe('ok')
+    expect(['musicNoFile', 'musicUnreadable', 'musicOtherFile']).toContain(verdict?.detail.key)
+  }, 120_000)
 })

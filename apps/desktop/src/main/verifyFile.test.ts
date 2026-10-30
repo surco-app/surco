@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, statSync, truncateSync } from 'node:fs'
+import { copyFileSync, mkdtempSync, statSync, truncateSync, utimesSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -8,11 +8,18 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
+import { errorKeyOf } from '../shared/errorKeys'
 import { emptyMetadata } from '../shared/metadata'
 import type { TrackMetadata } from '../shared/types'
 import { writeTags } from './tags'
-import { checkFile, type FileExpect, type FileReaders, fileReaders } from './verifyFile'
-import { pcmDigest } from './verifyPcm'
+import {
+  checkFile,
+  type FileExpect,
+  type FileReaders,
+  fileReaders,
+  type ReadOpts,
+} from './verifyFile'
+import { pcmDigest, pcmTimeoutMs } from './verifyPcm'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-verifyfile-'))
@@ -82,6 +89,18 @@ describe('checkFile', () => {
       fileReaders,
     )
     expect(check.state).toBe('mismatch')
+    expect(check.detail.key).toBe('fileTruncated')
+  })
+
+  // The digest alone says the samples differ; the decode it then needs says why.
+  it('a file whose samples were kept, cut to a quarter, is fileTruncated', async () => {
+    const cut = at('cut-kept.flac')
+    ff('-i', at('source.wav'), '-c:a', 'flac', cut)
+    truncateSync(cut, Math.floor(statSync(cut).size / 4))
+    const check = await checkFile(
+      await expectFor(cut, { ext: '.flac', codec: 'flac' }),
+      fileReaders,
+    )
     expect(check.detail.key).toBe('fileTruncated')
   })
 
@@ -194,7 +213,10 @@ describe('checkFile', () => {
       assertDecodable: () =>
         Promise.reject(Object.assign(new Error('timed out'), { killed: true })),
     }
-    const check = await checkFile(await expectFor(at('source.wav')), readers)
+    const check = await checkFile(
+      await expectFor(at('source.wav'), { samplesKept: false }),
+      readers,
+    )
     expect(check.state).toBe('unreadable')
   })
 
@@ -403,12 +425,114 @@ describe('checkFile', () => {
     const empty = { md5: '', sampleRate: 44100, channels: 2 }
     const readers: FileReaders = {
       ...fileReaders,
-      pcmDigest: async (path) => (side === 'output' ? empty : fileReaders.pcmDigest(path)),
+      pcmDigest: async (path, opts) =>
+        side === 'output' ? empty : fileReaders.pcmDigest(path, opts),
     }
     const check = await checkFile(
       await expectFor(at('source.wav'), side === 'source' ? { sourcePcm: empty } : {}),
       readers,
     )
     expect(check.state).toBe('unreadable')
+  })
+})
+
+describe('checkFile — cost and cancel', () => {
+  const long = at('long.flac')
+  beforeAll(() => {
+    ff(
+      '-f',
+      'lavfi',
+      '-i',
+      'anoisesrc=color=pink:amplitude=0.3:duration=600:sample_rate=44100',
+      '-ac',
+      '2',
+      '-c:a',
+      'flac',
+      long,
+    )
+  })
+
+  const counted = () => {
+    const calls = { assertDecodable: 0, deliveredDurationSec: 0, pcmDigest: 0 }
+    const opts: ReadOpts[] = []
+    const readers: FileReaders = {
+      ...fileReaders,
+      assertDecodable: (path, o) => {
+        calls.assertDecodable++
+        opts.push(o)
+        return fileReaders.assertDecodable(path, o)
+      },
+      deliveredDurationSec: (path, o) => {
+        calls.deliveredDurationSec++
+        return fileReaders.deliveredDurationSec(path, o)
+      },
+      pcmDigest: (path, o) => {
+        calls.pcmDigest++
+        return fileReaders.pcmDigest(path, o)
+      },
+    }
+    return { calls, opts, readers }
+  }
+
+  const reencoded = (path: string, over: Partial<FileExpect> = {}) =>
+    expectFor(path, {
+      ext: '.flac',
+      codec: 'flac',
+      samplesKept: false,
+      sourcePcm: undefined,
+      sourceDurationSec: 600,
+      ...over,
+    })
+
+  it('a cancel during the decode rejects as cancelled, never as unreadable', async () => {
+    const controller = new AbortController()
+    setTimeout(() => controller.abort(), 50)
+    const failure = await checkFile(await reencoded(long), fileReaders, {
+      signal: controller.signal,
+    }).catch((e: unknown) => e)
+    expect(errorKeyOf((failure as Error).message)).toBe('conversionCancelled')
+  })
+
+  it('a re-encoded file is decoded once, by a pass bounded by its size', async () => {
+    const { calls, opts, readers } = counted()
+    const check = await checkFile(await reencoded(long), readers)
+    expect(check.state).toBe('ok')
+    expect(calls).toEqual({ assertDecodable: 1, deliveredDurationSec: 0, pcmDigest: 0 })
+    const probe = await fileReaders.probe(long)
+    expect(opts[0].timeoutMs).toBe(pcmTimeoutMs(statSync(long).size, probe.headerSeconds))
+  })
+
+  it('a file whose samples were kept is decoded once, for its digest', async () => {
+    const { calls, readers } = counted()
+    const check = await checkFile(await expectFor(at('source.wav')), readers)
+    expect(check.state).toBe('ok')
+    expect(calls).toEqual({ assertDecodable: 0, deliveredDurationSec: 0, pcmDigest: 1 })
+  })
+
+  it('the bytes convertAudio proved decodable are not decoded again', async () => {
+    const copy = at('proven.flac')
+    copyFileSync(long, copy)
+    const { size, mtimeMs, ino } = statSync(copy)
+    const { calls, readers } = counted()
+    const check = await checkFile(
+      await reencoded(copy, { proven: { size, mtimeMs, ino, durationSec: 600 } }),
+      readers,
+    )
+    expect(check.state).toBe('ok')
+    expect(calls).toEqual({ assertDecodable: 0, deliveredDurationSec: 0, pcmDigest: 0 })
+  })
+
+  it('a file written again after the proof is decoded again', async () => {
+    const copy = at('touched.flac')
+    copyFileSync(long, copy)
+    const { size, mtimeMs, ino } = statSync(copy)
+    utimesSync(copy, new Date(), new Date(Date.now() + 5000))
+    const { calls, readers } = counted()
+    const check = await checkFile(
+      await reencoded(copy, { proven: { size, mtimeMs, ino, durationSec: 1 } }),
+      readers,
+    )
+    expect(check.state).toBe('ok')
+    expect(calls.assertDecodable).toBe(1)
   })
 })

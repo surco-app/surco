@@ -264,7 +264,12 @@ function processTrackInMain(
     markAppleMusicReplacing: async () => 'missing',
     appleMusicPlaylists: async () => [],
     redirectRepoint: redirectRekordboxRepoint,
-    verifyFile: (expect) => checkFile(expect, fileReaders),
+    verifyFile: (expect, signal) => checkFile(expect, fileReaders, { signal }),
+    verifyMusic: async () => ({
+      place: 'appleMusic',
+      state: 'unreadable',
+      detail: { key: 'musicUnreadable' },
+    }),
   })
 }
 

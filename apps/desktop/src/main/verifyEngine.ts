@@ -17,13 +17,16 @@ export interface EngineSnapshot {
 export type EngineBefore = EngineSnapshot | 'absent' | 'ambiguous' | 'unreadable'
 
 // size is the written file's size on disk. Engine's repoint never adds a row, so a check
-// without a snapshot has nothing to say the row is the same one.
+// without a snapshot has nothing to say the row is the same one. added is the row the Engine
+// DJ destination created for a source Engine did not have: it only has to be there, on the
+// written file.
 export interface EngineExpect {
   from: string
   to: string
   samplesKept: boolean
   before: EngineBefore
   size: number
+  added?: boolean
 }
 
 interface Row {
@@ -131,13 +134,15 @@ function judge(
 
   const row = on[0]
   const before = e.before
-  if (typeof before !== 'object') return check('unreadable', 'engineUnreadable')
-  if (row.id !== before.id) return check('mismatch', 'engineOtherRow')
+  if (!e.added && typeof before !== 'object') return check('unreadable', 'engineUnreadable')
+  if (typeof before === 'object' && row.id !== before.id) return check('mismatch', 'engineOtherRow')
   const fileType = (row.fileType ?? '').toLowerCase()
   if (!fileType) return check('mismatch', 'engineNoFileType')
   if (fileType !== extname(e.to).slice(1).toLowerCase())
     return check('mismatch', 'engineStillOld', { format: formatOf(`.${fileType}`) })
   if (row.fileBytes !== e.size) return check('mismatch', 'engineSizeDiffers')
+  if (typeof before !== 'object')
+    return check('ok', 'engineOk', { format: formatOf(extname(e.to)) })
 
   // Engine's repoint only moves the file columns; with the samples kept, a cue, beat or
   // loop that changed is one the DJ set and lost. A re-encode may move them, but what the

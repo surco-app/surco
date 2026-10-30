@@ -257,7 +257,7 @@ describe('assertDecodable', () => {
   })
 
   it('accepts a file ffmpeg decodes cleanly', async () => {
-    await expect(assertDecodable(src)).resolves.toBeUndefined()
+    await expect(assertDecodable(src)).resolves.not.toThrow()
   })
 
   // A declared length ffmpeg itself flagged as estimated is not evidence of anything:
@@ -286,7 +286,7 @@ describe('assertDecodable', () => {
       header * 0.9,
     )
 
-    await expect(assertDecodable(estimatedDuration)).resolves.toBeUndefined()
+    await expect(assertDecodable(estimatedDuration)).resolves.not.toThrow()
   })
 
   // The detail appended to the key is the only description of WHY a conversion was
@@ -349,7 +349,7 @@ describe('a complete file with junk after its last frame', () => {
   // the refusal was permanent. A file whose every frame decodes is not unreadable.
   it('is accepted even though -xerror alone would refuse it', async () => {
     expect(xerrorRejects(lyrics3Tail), 'the fixture no longer trips -xerror').toBe(true)
-    await expect(assertDecodable(lyrics3Tail)).resolves.toBeUndefined()
+    await expect(assertDecodable(lyrics3Tail)).resolves.not.toThrow()
   })
 
   // Under three seconds no ratio of decoded to declared length can be trusted, so the
@@ -387,7 +387,7 @@ describe('a complete file with junk after its last frame', () => {
 // count the audio the decode delivered, not trust where its clock ended.
 describe('a complete FLAC whose last frame is numbered out of order', () => {
   it('is accepted because every second of its audio decodes', async () => {
-    await expect(assertDecodable(strayFrame)).resolves.toBeUndefined()
+    await expect(assertDecodable(strayFrame)).resolves.not.toThrow()
   })
 })
 

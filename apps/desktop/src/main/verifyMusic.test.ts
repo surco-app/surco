@@ -4,12 +4,14 @@ import { describe, expect, it, type Mock, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
+import { errorKeyOf } from '../shared/errorKeys'
 import type { MusicEntryFacts, readMusicEntryFacts, runOsascript } from './applemusic'
 import {
   checkAppleMusic,
   type MusicExpect,
   type MusicReaders,
   musicEntriesForFile,
+  musicReaders,
 } from './verifyMusic'
 
 const FILE = '/Volumes/Music/Media/Artist/Title.wav'
@@ -365,5 +367,31 @@ describe('musicEntriesForFile', () => {
     const run = vi.fn<typeof runOsascript>().mockRejectedValue(new Error('-1712'))
 
     await expect(lookup(run)('/Volumes/Music/Media/Title.wav', ['Title'])).rejects.toThrow()
+  })
+})
+
+describe('checkAppleMusic — cancel', () => {
+  // Music fills a fresh location while the check waits up to 7 s; a cancel must not sit
+  // through that wait, nor read as "Music could not be asked".
+  it('a cancel during the wait for a location rejects as cancelled at once', async () => {
+    const r = readers([facts({ location: '' })], { wait: musicReaders.wait })
+    const controller = new AbortController()
+    setTimeout(() => controller.abort(), 50)
+    const started = Date.now()
+
+    const failure = await checkAppleMusic(expectFor(), r, { signal: controller.signal }).catch(
+      (e: unknown) => e,
+    )
+
+    expect(errorKeyOf((failure as Error).message)).toBe('conversionCancelled')
+    expect(Date.now() - started).toBeLessThan(900)
+  })
+
+  it('a read that fails without a cancel is still unreadable', async () => {
+    const r = readers([new Error('Apple Music did not answer in time')])
+
+    await expect(
+      checkAppleMusic(expectFor(), r, { signal: new AbortController().signal }),
+    ).resolves.toMatchObject({ state: 'unreadable' })
   })
 })

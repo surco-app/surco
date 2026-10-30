@@ -165,7 +165,7 @@ describe('reading an mp3 whose bytes fool ffmpeg format detection', () => {
   })
 
   it('passes the converted-output decode check', async () => {
-    await expect(assertDecodable(adversarial)).resolves.toBeUndefined()
+    await expect(assertDecodable(adversarial)).resolves.not.toThrow()
   })
 
   it('converts to another format', async () => {

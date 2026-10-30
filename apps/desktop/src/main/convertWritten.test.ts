@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffprobeInstaller from '@ffprobe-installer/ffprobe'
@@ -173,6 +173,17 @@ describe('what convertAudio reports it wrote', () => {
     expect(written.plan.bitDepth).toBeUndefined()
     expect(written.sourceDurationSec).toBeCloseTo(2, 2)
     expect(written.trimmedSec).toBe(0)
+  })
+
+  // The check after the job finds these bytes and needs no decode of its own.
+  it('the proof names the output exactly as it landed, with the length its decode delivered', async () => {
+    const src = source('.wav')
+    const out = join(dir, 'proven.flac')
+    const { written } = await convert(src, out, 'flac')
+
+    const { size, mtimeMs, ino } = statSync(out)
+    expect(written.proven).toMatchObject({ size, mtimeMs, ino })
+    expect(written.proven?.durationSec).toBeCloseTo(2, 1)
   })
 
   // The digest decodes the whole source, which on a NAS takes long enough for the user to
