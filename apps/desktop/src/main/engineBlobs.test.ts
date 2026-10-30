@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
   decodeBeatGrid,
@@ -258,7 +260,35 @@ function masked(raw: Buffer, ranges: [number, number][]): Buffer {
   return copy
 }
 
+const REAL_OVERVIEW = readFileSync(join(import.meta.dirname, 'fixtures', 'engine-4-overview.bin'))
+
 describe('shifting real Engine DJ blobs', () => {
+  // The overview Engine drew for the same track as REAL_TRACK_DATA. A cut drops the entries
+  // that drew the lead-in and nothing else: every remaining entry, and the peak after them,
+  // has to come through byte for byte, with only the count and the run per entry rewritten.
+  it('drops only the cut’s entries from a real overview and recounts its header', () => {
+    const was = inflateEngineBlob(REAL_OVERVIEW)
+    expect(decodeOverview(was)?.entries).toHaveLength(1024)
+    const run = was.readDoubleBE(16)
+    const after = shiftEnginePerformance(
+      {
+        trackData: Buffer.from(REAL_TRACK_DATA, 'hex'),
+        overviewWaveFormData: REAL_OVERVIEW,
+        beatData: null,
+        quickCues: null,
+        loops: null,
+      },
+      { trimmedMs: 1700, sampleRateHz: 48000 },
+    )
+    const now = inflateEngineBlob(after.overviewWaveFormData ?? new Uint8Array(5))
+    const dropped = Math.round((1.7 * 44100) / run)
+    expect(dropped).toBe(5)
+    expect(Number(now.readBigInt64BE(0))).toBe(1024 - dropped)
+    expect(Number(now.readBigInt64BE(8))).toBe(1024 - dropped)
+    expect(now.readDoubleBE(16)).toBeCloseTo((run * 48000) / 44100, 9)
+    expect(now.subarray(24).equals(was.subarray(24 + dropped * 3))).toBe(true)
+  })
+
   it('reads the set loop laid out as the real blob lays out its slots', () => {
     expect(decodeLoops(Buffer.from(REAL_SHAPED_LOOPS, 'hex'))?.loops[0]).toMatchObject({
       label: 'Break',
