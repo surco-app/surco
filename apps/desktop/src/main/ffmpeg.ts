@@ -2336,7 +2336,7 @@ export async function convertAudio(
         )
           await carryRiffChunks(input, tmp)
       } else if (
-        (meta.rating?.trim() || meta.comment.trim() || clearExtras) &&
+        (meta.rating?.trim() || meta.comment.trim() || meta.grouping.trim() || clearExtras) &&
         (ext === '.mp3' || ext === '.aiff')
       ) {
         // ffmpeg can't emit a POPM frame, so a re-encoded MP3/AIFF needs a TagLib
@@ -2347,7 +2347,8 @@ export async function convertAudio(
         // whole-file rewrite on top of it.
         // A comment counts too: ffmpeg writes one as a TXXX described "comment", not the
         // COMM frame the spec defines and Traktor and mp3tag read, so an unrated track
-        // reached them with no comment at all.
+        // reached them with no comment at all. And a grouping: ffmpeg writes that as TXXX
+        // "grouping" too, never the TIT1 and GRP1 DJ software and Apple Music read.
         await runInWorker({
           type: 'writeTags',
           file: tmp,

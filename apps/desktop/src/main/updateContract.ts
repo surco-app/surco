@@ -56,17 +56,20 @@ export const ALLOWED_UPDATE_CHANGES: Record<UpdateExt, { added: RegExp[]; remove
       /^id3 TYER=/,
       // The picture is re-described as "<album>.jpg", which mp3tag and DJ software show.
       /^id3 APIC\[type=3,mime=image\/jpeg,desc=/,
+      // The grouping also rides Apple Music's GRP1, beside the TIT1 everyone else reads.
+      /^id3 GRP1=/,
     ],
     removed: [/^id3 TDRC=/, /^id3 APIC\[type=3,/],
   },
   aiff: {
-    added: [/^id3 TYER=/, /^id3 APIC\[type=3,mime=image\/jpeg,desc=/],
+    added: [/^id3 TYER=/, /^id3 APIC\[type=3,mime=image\/jpeg,desc=/, /^id3 GRP1=/],
     removed: [/^id3 TDRC=/, /^id3 APIC\[type=3,/],
   },
   wav: {
     added: [
       /^id3 TYER=/,
       /^id3 APIC\[type=3,mime=image\/jpeg,desc=/,
+      /^id3 GRP1=/,
       /^picture type=3 mime=image\/jpeg /,
       // ffmpeg's INFO spelling of the album and artist, written beside TagLib's DIRC/ISTR.
       /^riff IPRD=/,

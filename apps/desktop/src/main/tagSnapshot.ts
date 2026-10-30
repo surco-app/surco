@@ -12,6 +12,7 @@ import {
   type Id3v2Tag,
   type Id3v2TextInformationFrame,
   type Id3v2UniqueFileIdentifierFrame,
+  type Id3v2UnknownFrame,
   type Id3v2UrlLinkFrame,
   type Id3v2UserTextInformationFrame,
   type Id3v2UserUrlLinkFrame,
@@ -20,6 +21,7 @@ import {
   TagTypes,
   type XiphComment,
 } from 'node-taglib-sharp'
+import { id3TextOf } from './tags'
 
 // Every tag a file carries, spelled the way it sits on disk: one line per field, sorted,
 // with binary payloads reduced to a hash and a length. The point is the observer.
@@ -121,6 +123,9 @@ function describeFrame(frame: Id3v2Frame): string {
       return `${id}[${u.description}]=${u.text.join('|')}`
     }
     default:
+      // Apple Music's GRP1 is a text frame TagLib does not know, so only its bytes come back.
+      if (id === 'GRP1')
+        return `${id}=${id3TextOf((frame as Id3v2UnknownFrame).data.toByteArray())}`
       return `${id} ${digest(frame.render(4))}`
   }
 }

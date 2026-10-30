@@ -4,6 +4,7 @@ import {
   Id3v2AttachmentFrame,
   type Id3v2Frame,
   Id3v2FrameClassType,
+  Id3v2FrameIdentifier,
   Id3v2FrameIdentifiers,
   Id3v2PopularimeterFrame,
   Id3v2PrivateFrame,
@@ -37,7 +38,11 @@ import { shiftTraktorCues } from './traktor4'
 // TXXX descriptions ffmpeg synthesises from a source's Vorbis fields that duplicate a frame
 // writeTags writes natively (COMM, POPM). Cleared on every ID3 save so the value lives in
 // one place — the frame DJ software actually reads — instead of two.
-const TXXX_NATIVE_MIRRORS = ['comment', 'RATING WMP']
+const TXXX_NATIVE_MIRRORS = ['comment', 'RATING WMP', 'grouping']
+
+// Apple Music's own grouping frame. TagLib knows no such id, so it reads one back as an
+// UnknownFrame (see itunesGroupingOf) but writes it as the text frame it is.
+const GRP1 = new Id3v2FrameIdentifier('GRP1', 'GRP1', undefined)
 
 // Every ID3 container we write gets v2.3, pinned per tag rather than through the
 // global Id3v2Settings so a library upgrade can't silently change other tag kinds.
@@ -156,18 +161,29 @@ export function itunesGroupingOf(f: TagFile): string {
   // grouping only in ID3 (RIFF INFO has no field for it), and ffmpeg's WAV demuxer
   // reads INFO — so without this the probe and this fallback would both miss it.
   if (!grp1) return id3?.grouping ?? ''
-  const bytes = (grp1 as Id3v2UnknownFrame).data.toByteArray()
+  return id3TextOf((grp1 as Id3v2UnknownFrame).data.toByteArray())
+}
+
+// The text of an ID3 text frame body TagLib could only hand back as bytes.
+export function id3TextOf(bytes: Uint8Array): string {
   if (bytes.length < 2) return ''
   const encoding = bytes[0]
   const text = Buffer.from(bytes.slice(1))
-  // 0 = Latin1, 1/2 = UTF-16 (with/without BOM), 3 = UTF-8. iTunes writes Latin1 or UTF-8.
+  // 0 = Latin1, 1 = UTF-16 behind a byte order mark, 2 = UTF-16BE, 3 = UTF-8. iTunes writes
+  // Latin1 or UTF-8; TagLib writes 1, little endian.
+  const utf16 = (body: Buffer, bigEndian: boolean) => {
+    const even = Buffer.from(body.subarray(0, body.length - (body.length % 2)))
+    return (bigEndian ? even.swap16() : even).toString('utf16le')
+  }
   const decoded =
     encoding === 3
       ? text.toString('utf8')
-      : encoding === 1 || encoding === 2
-        ? text.toString('utf16le')
-        : text.toString('latin1')
-  return decoded.replace(/\0+$/, '')
+      : encoding === 1
+        ? utf16(text, text[0] === 0xfe && text[1] === 0xff)
+        : encoding === 2
+          ? utf16(text, true)
+          : text.toString('latin1')
+  return decoded.replace(/^\ufeff/, '').replace(/\0+$/, '')
 }
 
 // What the probe cannot see, read through TagLib's own view of the file. ffmpeg's WAV
@@ -1077,6 +1093,16 @@ export function writeTags(
     // rating printed as its raw byte next to the same rating printed as stars. The native
     // frame is the one every DJ tool reads, so the text mirror goes.
     for (const mirrored of TXXX_NATIVE_MIRRORS) setUserText(id3, mirrored, '')
+    // The grouping's mirror goes the same way, and it rides GRP1 beside TIT1: Traktor and
+    // every other tagger read TIT1, Apple Music its own GRP1, which also wins when Surco
+    // reads the file back, so a stale one would undo the edit.
+    for (const fr of id3.frames.filter((frame) => frame.frameId.toString() === 'GRP1'))
+      id3.removeFrame(fr)
+    if (meta.grouping.trim()) {
+      const grp1 = Id3v2TextInformationFrame.fromIdentifier(GRP1)
+      grp1.text = [meta.grouping]
+      id3.addFrame(grp1)
+    }
     // Mood and energy ride that same shared list. Mood's standard frame (TMOO) is
     // ID3v2.4-only — TagLib has no v2.3 equivalent, so on the v2.3 tags pinned above it
     // would be silently dropped on save. TXXX "MOOD" is what ffmpeg writes for a mood tag
