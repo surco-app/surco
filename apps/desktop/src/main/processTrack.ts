@@ -566,7 +566,9 @@ export async function runProcessTrack(
             const isSource = entry.path.normalize('NFC') === job.inputPath.normalize('NFC')
             // The row was the file Music played, so it follows the entry to its new file.
             if (isSource && replaced.landed?.path) musicLandedPath = replaced.landed.path
-            if (!replaced.oldCopyKept) supersededPath = entry.path
+            // Not offered when the in-place rename already retired it.
+            if (!replaced.oldCopyKept && !(isSource && inPlace && !originalKept))
+              supersededPath = entry.path
             verified = true
           } else {
             musicPersistentId = job.musicPersistentId

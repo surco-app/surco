@@ -40,6 +40,20 @@ describe('supersededFile', () => {
     )
   })
 
+  // A kept output copy leaves the source beside it, and the footer already offers that as
+  // the original: offering it twice trashed it once and failed the second time.
+  it('offers nothing when the superseded file is the source the footer offers as original', () => {
+    expect(
+      supersededFile(
+        track({
+          inputPath: '/lib/A.aiff',
+          supersededPath: '/lib/A.aiff',
+          outputPath: '/out/A.wav',
+        }),
+      ),
+    ).toBeNull()
+  })
+
   // Nothing was superseded: an ordinary conversion leaves its own source alone, which the
   // clean-up offer lists as the original.
   it('offers nothing when the conversion replaced no copy', () => {

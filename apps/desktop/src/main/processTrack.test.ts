@@ -2187,6 +2187,21 @@ describe('runProcessTrack — converting a library track to another format', () 
     expect(result.musicLandedPath).toBeUndefined()
   })
 
+  // The in-place rename already retired the AIFF: offering it again would trash nothing.
+  it('offers nothing for trash when the conversion overwrote the original in place', async () => {
+    const deps = converting('/lib/A.aiff')
+
+    const result = await runProcessTrack(
+      libraryJob({ overwriteOriginal: true, keepOutputCopy: true }),
+      deps,
+    )
+
+    expect(result.inPlace).toBe(true)
+    expect(deps.removeRenamedOriginal).toHaveBeenCalled()
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('PID', expect.any(String))
+    expect(result.supersededPath).toBeUndefined()
+  })
+
   // The batch this was measured for is auto-matched AIFFs: the job's tags are the match,
   // not what Music shows, and the delete only retires an entry whose live name it is told.
   it('retires the entry under the name Music shows, not the edited tags the job carries', async () => {

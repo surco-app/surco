@@ -17,5 +17,7 @@ export function supersededFile(track: TrackItem): string | null {
   // Never offer the file the track now points at: a same-path conversion would otherwise
   // invite deleting the very output it just produced.
   if (superseded === track.outputPath) return null
+  // A source with a separate output is already offered as the original (selectionStatus).
+  if (superseded === track.inputPath && track.outputPath) return null
   return superseded
 }
