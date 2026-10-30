@@ -1,4 +1,4 @@
-import { ArrowUpRight, Music, SlidersVertical, Trash2 } from 'lucide-react'
+import { ArrowUpRight, Clock, Loader2, Music, SlidersVertical, Trash2 } from 'lucide-react'
 import type React from 'react'
 import { useLayoutEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -25,6 +25,7 @@ import { ExportButton } from './ExportButton'
 import { SOURCE_ICON } from './SourceRail'
 import { FOOTER_BAR } from './SplitButton'
 import { Tooltip } from './Tooltip'
+import { VerifiedPopover } from './VerifiedPopover'
 
 const ICON_BUTTON =
   'press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg-dim hover:bg-[var(--color-hover)]'
@@ -175,6 +176,24 @@ export function ConvertFooter({
         : null,
   }
   const cleanupFiles = cleanupCount(cleanup)
+  // A single track's re-read gates its done line: "Comprobando…" from the job's last stage
+  // until every check is back, the line of always (with its ✓) only once all are ok, and
+  // the programs still to apply a queued write named in place of the ✓. A mismatch keeps
+  // the success line away for the amber line that answers it. Multi keeps its counts.
+  const verification = isMulti ? undefined : item.verification
+  const checking =
+    !isMulti &&
+    ((showDone && verification?.status === 'checking') ||
+      (item.status === 'processing' && item.stage === 'verify'))
+  const pendingPrograms =
+    verification?.status === 'pending'
+      ? new Intl.ListFormat(i18n.language, { type: 'conjunction' }).format(
+          verification.checks
+            .filter((c) => c.state === 'pending')
+            .map((c) => tr(`verify.places.${c.place}`)),
+        )
+      : null
+  const verifyMismatch = verification?.status === 'mismatch'
   const musicPrimary = destination === 'appleMusic' || hasMusicCopy
   const lossyToLossless =
     !isMulti &&
@@ -214,6 +233,19 @@ export function ConvertFooter({
       ?.querySelector<HTMLButtonElement>('[data-testid="process-btn"], [data-testid="done-more"]')
       ?.focus()
   })
+  const addedLine = pendingPrograms
+    ? tr('verify.pendingLine.addedToAppleMusic', { programs: pendingPrograms })
+    : tr('editor.addedToAppleMusic')
+  const checkingLine = (
+    <p
+      data-testid="verify-checking"
+      role="status"
+      className="flex min-w-0 items-center gap-1.5 text-xs text-fg-dim"
+    >
+      <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden="true" />
+      {tr('verify.checking')}
+    </p>
+  )
   return (
     <div ref={footerRef} className={FOOTER_BAR}>
       {item.status === 'error' && (
@@ -261,34 +293,57 @@ export function ConvertFooter({
           <>
             <div data-testid="done-row" className="@container flex min-w-0 items-center gap-1">
               <div data-testid="done-outcome" className="flex min-w-0 flex-1 items-center gap-1">
-                <p
-                  data-testid="export-success"
-                  role="status"
-                  className="mr-auto min-w-0 truncate text-xs font-medium text-good"
-                >
-                  {revealsInMusic && addedToMusic ? (
-                    <button
-                      type="button"
-                      data-testid="add-apple-music"
-                      onClick={revealInMusic}
-                      aria-label={`${tr('editor.addedToAppleMusic')} · ${tr('editor.appleMusicShow')}`}
-                      className="press inline-flex items-center gap-1 hover:underline"
+                <div className="mr-auto flex min-w-0 items-center gap-0.5">
+                  {checking ? (
+                    checkingLine
+                  ) : verifyMismatch ? null : (
+                    <p
+                      data-testid="export-success"
+                      role="status"
+                      className={`min-w-0 text-xs font-medium text-good ${
+                        pendingPrograms ? 'flex items-center gap-1' : 'truncate'
+                      }`}
                     >
-                      {tr('editor.addedToAppleMusic')}
-                      <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
-                    </button>
-                  ) : addedToMusic ? (
-                    isMulti ? (
-                      tr('editor.addedToAppleMusicCount', { count: selectedCount })
-                    ) : (
-                      tr('editor.addedToAppleMusic')
-                    )
-                  ) : isMulti ? (
-                    tr('editor.exportedCount', { count: selectedCount })
-                  ) : (
-                    tr('editor.exportedAs', { format: (exportedFormat ?? '').toUpperCase() })
+                      {pendingPrograms && (
+                        <Clock
+                          data-testid="verify-pending-icon"
+                          className="h-3.5 w-3.5 shrink-0"
+                          aria-hidden="true"
+                        />
+                      )}
+                      {revealsInMusic && addedToMusic ? (
+                        <button
+                          type="button"
+                          data-testid="add-apple-music"
+                          onClick={revealInMusic}
+                          aria-label={`${addedLine} · ${tr('editor.appleMusicShow')}`}
+                          className="press inline-flex items-center gap-1 text-left hover:underline"
+                        >
+                          {addedLine}
+                          <ArrowUpRight className="h-3 w-3 shrink-0" aria-hidden="true" />
+                        </button>
+                      ) : addedToMusic ? (
+                        isMulti ? (
+                          tr('editor.addedToAppleMusicCount', { count: selectedCount })
+                        ) : (
+                          addedLine
+                        )
+                      ) : isMulti ? (
+                        tr('editor.exportedCount', { count: selectedCount })
+                      ) : pendingPrograms ? (
+                        tr('verify.pendingLine.exportedAs', {
+                          format: (exportedFormat ?? '').toUpperCase(),
+                          programs: pendingPrograms,
+                        })
+                      ) : (
+                        tr('editor.exportedAs', { format: (exportedFormat ?? '').toUpperCase() })
+                      )}
+                    </p>
                   )}
-                </p>
+                  {(verification?.status === 'ok' || verification?.status === 'pending') && (
+                    <VerifiedPopover checks={verification.checks} />
+                  )}
+                </div>
                 {revealsInMusic && !addedToMusic && (
                   <button
                     type="button"
@@ -396,33 +451,37 @@ export function ConvertFooter({
                 {tr('editor.lossyToLossless', { format: format.toUpperCase() })}
               </p>
             )}
-            <ExportButton
-              status={isMulti ? 'idle' : item.status}
-              stage={isMulti ? undefined : item.stage}
-              stale={!isMulti && stale}
-              replaces={!isMulti && replaces}
-              libraryBetter={!isMulti && libraryBetter}
-              done={!isMulti && done}
-              outputFormat={format}
-              exportedFormat={isMulti ? null : exportedFormat}
-              withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
-              djTargets={djTargets}
-              incomplete={incomplete}
-              incompleteReason={incompleteReason}
-              blockedLabel={incompleteSummary}
-              onBlockedPress={onBlockedPress}
-              inPlace={!isMulti && willEditInPlace}
-              tagsOnly={tagsOnly}
-              inMusic={hasMusicCopy}
-              destination={destination}
-              destinations={destinations}
-              outputFolder={outputFolder}
-              count={isMulti ? selectedCount : undefined}
-              onProcess={onProcess}
-              onCancel={onCancel}
-              onSelectFormat={onSelectFormat}
-              onSelectDestination={onSelectDestination}
-            />
+            {checking ? (
+              <div className="flex h-10 items-center justify-center">{checkingLine}</div>
+            ) : (
+              <ExportButton
+                status={isMulti ? 'idle' : item.status}
+                stage={isMulti ? undefined : item.stage}
+                stale={!isMulti && stale}
+                replaces={!isMulti && replaces}
+                libraryBetter={!isMulti && libraryBetter}
+                done={!isMulti && done}
+                outputFormat={format}
+                exportedFormat={isMulti ? null : exportedFormat}
+                withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
+                djTargets={djTargets}
+                incomplete={incomplete}
+                incompleteReason={incompleteReason}
+                blockedLabel={incompleteSummary}
+                onBlockedPress={onBlockedPress}
+                inPlace={!isMulti && willEditInPlace}
+                tagsOnly={tagsOnly}
+                inMusic={hasMusicCopy}
+                destination={destination}
+                destinations={destinations}
+                outputFolder={outputFolder}
+                count={isMulti ? selectedCount : undefined}
+                onProcess={onProcess}
+                onCancel={onCancel}
+                onSelectFormat={onSelectFormat}
+                onSelectDestination={onSelectDestination}
+              />
+            )}
           </>
         )}
       </div>

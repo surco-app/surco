@@ -484,7 +484,8 @@
       "cover": "Preparando a capa…",
       "converting": "Convertendo para {{format}}…",
       "appleMusic": "Adicionando ao Apple Music…",
-      "engineDj": "Adicionando ao Engine DJ…"
+      "engineDj": "Adicionando ao Engine DJ…",
+      "verify": "Verificando…"
     },
     "context": {
       "backup": "Restaurar a cópia de segurança…",
@@ -2854,5 +2855,33 @@
     "footer": "De cada programa guardamos as últimas 5 cópias. Os arquivos de música, {{days}} dias.",
     "reveal": "Mostrar no Finder",
     "revealWin": "Mostrar no Explorador de Arquivos"
+  },
+  "verify": {
+    "checking": "Verificando…",
+    "shieldLabel": "O que foi verificado",
+    "title": "O que foi verificado",
+    "pendingLine": {
+      "addedToAppleMusic": "Adicionado ao Apple Music · {{programs}} ao fechar",
+      "exportedAs": "Exportado como {{format}} · {{programs}} ao fechar"
+    },
+    "places": {
+      "file": "Arquivo",
+      "appleMusic": "Apple Music",
+      "rekordbox": "rekordbox",
+      "engine": "Engine DJ",
+      "traktor": "Traktor"
+    },
+    "detail": {
+      "pending": "Pendente, aplicado ao fechar o {{program}}",
+      "fileIdentical": "{{format}} · áudio idêntico ao original",
+      "fileReencoded": "{{format}} · {{rate}} kHz · {{bits}} bits · decodifica inteiro",
+      "fileReencodedLossy": "{{format}} · {{rate}} kHz · decodifica inteiro",
+      "musicOne": "Uma só entrada · em {{playlists}}",
+      "musicOneNoPlaylists": "Uma só entrada",
+      "rekordboxOk_one": "Aponta para o {{format}} · {{count}} cue",
+      "rekordboxOk_other": "Aponta para o {{format}} · {{count}} cues",
+      "engineOk": "Aponta para o {{format}}",
+      "traktorOk": "Aponta para o {{format}}"
+    }
   }
 }

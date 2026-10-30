@@ -484,7 +484,8 @@
       "cover": "アートワークを準備中…",
       "converting": "{{format}}へ変換中…",
       "appleMusic": "Apple Musicに追加中…",
-      "engineDj": "Engine DJに追加中…"
+      "engineDj": "Engine DJに追加中…",
+      "verify": "確認中…"
     },
     "context": {
       "backup": "バックアップを復元…",
@@ -2854,5 +2855,33 @@
     "footer": "各ソフトにつき、直近5件のバックアップを保存します。音楽ファイルは{{days}}日間です。",
     "reveal": "Finderで表示",
     "revealWin": "File Explorerで表示"
+  },
+  "verify": {
+    "checking": "確認中…",
+    "shieldLabel": "確認した内容",
+    "title": "確認した内容",
+    "pendingLine": {
+      "addedToAppleMusic": "Apple Musicに追加済み · {{programs}}は終了時に反映",
+      "exportedAs": "{{format}}で書き出し済み · {{programs}}は終了時に反映"
+    },
+    "places": {
+      "file": "ファイル",
+      "appleMusic": "Apple Music",
+      "rekordbox": "rekordbox",
+      "engine": "Engine DJ",
+      "traktor": "Traktor"
+    },
+    "detail": {
+      "pending": "保留中、{{program}}の終了時に反映",
+      "fileIdentical": "{{format}} · 音声は元と同一",
+      "fileReencoded": "{{format}} · {{rate}} kHz · {{bits}}ビット · 最後までデコード可能",
+      "fileReencodedLossy": "{{format}} · {{rate}} kHz · 最後までデコード可能",
+      "musicOne": "エントリーは1つ · {{playlists}}に収録",
+      "musicOneNoPlaylists": "エントリーは1つ",
+      "rekordboxOk_one": "{{format}}を参照 · キュー{{count}}個",
+      "rekordboxOk_other": "{{format}}を参照 · キュー{{count}}個",
+      "engineOk": "{{format}}を参照",
+      "traktorOk": "{{format}}を参照"
+    }
   }
 }

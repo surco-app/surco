@@ -484,7 +484,8 @@
       "cover": "Cover wird vorbereitet…",
       "converting": "Wird in {{format}} konvertiert…",
       "appleMusic": "Wird zu Apple Music hinzugefügt…",
-      "engineDj": "Wird zu Engine DJ hinzugefügt…"
+      "engineDj": "Wird zu Engine DJ hinzugefügt…",
+      "verify": "Wird geprüft…"
     },
     "context": {
       "backup": "Sicherungskopie wiederherstellen…",
@@ -2854,5 +2855,33 @@
     "footer": "Von jedem Programm behalten wir die letzten 5 Backups. Musikdateien {{days}} Tage.",
     "reveal": "Im Finder zeigen",
     "revealWin": "Im Explorer zeigen"
+  },
+  "verify": {
+    "checking": "Wird geprüft…",
+    "shieldLabel": "Was geprüft wurde",
+    "title": "Was geprüft wurde",
+    "pendingLine": {
+      "addedToAppleMusic": "Zu Apple Music hinzugefügt · {{programs}} beim Schließen",
+      "exportedAs": "Als {{format}} exportiert · {{programs}} beim Schließen"
+    },
+    "places": {
+      "file": "Datei",
+      "appleMusic": "Apple Music",
+      "rekordbox": "rekordbox",
+      "engine": "Engine DJ",
+      "traktor": "Traktor"
+    },
+    "detail": {
+      "pending": "Ausstehend, wird beim Schließen von {{program}} übernommen",
+      "fileIdentical": "{{format}} · Audio identisch mit dem Original",
+      "fileReencoded": "{{format}} · {{rate}} kHz · {{bits}} Bit · vollständig dekodierbar",
+      "fileReencodedLossy": "{{format}} · {{rate}} kHz · vollständig dekodierbar",
+      "musicOne": "Ein einziger Eintrag · in {{playlists}}",
+      "musicOneNoPlaylists": "Ein einziger Eintrag",
+      "rekordboxOk_one": "Zeigt auf die {{format}} · {{count}} Cue",
+      "rekordboxOk_other": "Zeigt auf die {{format}} · {{count}} Cues",
+      "engineOk": "Zeigt auf die {{format}}",
+      "traktorOk": "Zeigt auf die {{format}}"
+    }
   }
 }

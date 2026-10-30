@@ -3,6 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { cloneElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { type PlaceCheck, verificationStatus } from '../../../shared/verification'
 import i18n from '../i18n'
 import type { Destination } from '../lib/destination'
 import type { SelectionStatus } from '../lib/selectionStatus'
@@ -506,5 +507,127 @@ describe('ConvertFooter damaged source note', () => {
   it('stays quiet for an intact source', () => {
     render(converting(measured(false)))
     expect(screen.queryByTestId('convert-damaged-note')).toBeNull()
+  })
+})
+
+describe('ConvertFooter verification', () => {
+  beforeEach(() => i18n.changeLanguage('es'))
+  afterEach(() => i18n.changeLanguage('en'))
+
+  const fileOk: PlaceCheck = {
+    place: 'file',
+    state: 'ok',
+    detail: { key: 'fileIdentical', params: { format: 'WAV' } },
+  }
+  const ok = (place: PlaceCheck['place']): PlaceCheck => ({
+    place,
+    state: 'ok',
+    detail: { key: `${place}Ok`, params: { format: 'WAV', cues: 4 } },
+  })
+  const pending = (place: PlaceCheck['place'], program: string): PlaceCheck => ({
+    place,
+    state: 'pending',
+    detail: { key: 'pending', params: { program } },
+  })
+
+  function verified(
+    checks: PlaceCheck[],
+    opts: { music?: boolean; processing?: boolean } = {},
+  ): React.JSX.Element {
+    const item = {
+      id: 't1',
+      status: opts.processing ? 'processing' : 'done',
+      stage: opts.processing ? 'verify' : undefined,
+      inputPath: '/a.aiff',
+      meta: {},
+      verification: { status: verificationStatus(checks), checks },
+    } as TrackItem
+    return cloneElement(footer(!opts.processing), {
+      item,
+      exportedFormat: opts.processing ? null : 'wav',
+      status: { ...status(!opts.processing), inMusicLibraryOnly: !!opts.music },
+    })
+  }
+
+  // "Done" was said before anything was re-read. Until the checks come back the row says
+  // it is still checking, and the success line, the one that promises it worked, waits.
+  it('while checking the done row shows verify-checking and no export-success', () => {
+    render(
+      verified([fileOk, { place: 'rekordbox', state: 'checking', detail: { key: 'checking' } }]),
+    )
+    expect(within(screen.getByTestId('done-row')).getByTestId('verify-checking')).toHaveTextContent(
+      'Comprobando…',
+    )
+    expect(screen.queryByTestId('export-success')).toBeNull()
+    expect(screen.queryByTestId('verify-shield')).toBeNull()
+  })
+
+  // The re-read runs inside the job as its last stage: the button must not name a stage
+  // it has no words for, and the wording must not change when the result comes back.
+  it('stage verify on the processing track shows verify-checking too', () => {
+    render(verified([], { processing: true }))
+    expect(screen.getByTestId('verify-checking')).toHaveTextContent('Comprobando…')
+    expect(screen.queryByTestId('process-btn')).toBeNull()
+  })
+
+  it('once ok the success line shows with the verify-shield button', () => {
+    render(verified([fileOk]))
+    expect(screen.getByTestId('export-success')).toHaveTextContent('✓ Exportado como WAV')
+    expect(screen.queryByTestId('verify-checking')).toBeNull()
+    // Beside the line it vouches for, not lost among the library icons at the far end.
+    expect(screen.getByTestId('export-success').nextElementSibling).toContainElement(
+      screen.getByTestId('verify-shield'),
+    )
+  })
+
+  // A write queued behind an open rekordbox is not done yet: no check mark, and the line
+  // says which program it waits on.
+  it('a pending rekordbox shows the success text without the check mark and names rekordbox', () => {
+    render(verified([fileOk, pending('rekordbox', 'rekordbox')], { music: true }))
+    const line = screen.getByTestId('export-success')
+    expect(line).toHaveTextContent(/^Añadido a Apple Music · rekordbox al cerrarlo$/)
+    expect(line.textContent).not.toContain('✓')
+    expect(screen.getByTestId('verify-pending-icon')).toBeInTheDocument()
+    expect(screen.getByTestId('verify-shield')).toBeInTheDocument()
+  })
+
+  it('two programs pending are joined in the line', () => {
+    render(
+      verified([fileOk, pending('rekordbox', 'rekordbox'), pending('engine', 'Engine DJ')], {
+        music: true,
+      }),
+    )
+    expect(screen.getByTestId('export-success')).toHaveTextContent(
+      'Añadido a Apple Music · rekordbox y Engine DJ al cerrarlo',
+    )
+  })
+
+  it('a pending exported file reads Exportado como WAV · rekordbox al cerrarlo without ✓', () => {
+    render(verified([fileOk, pending('rekordbox', 'rekordbox')]))
+    const line = screen.getByTestId('export-success')
+    expect(line).toHaveTextContent(/^Exportado como WAV · rekordbox al cerrarlo$/)
+    expect(line.textContent).not.toContain('✓')
+  })
+
+  // The pending line is the longest the row ever holds, and it is the part that tells
+  // the DJ to close a program: it wraps at the narrowest editor instead of an ellipsis.
+  it('the pending line is never cut short', () => {
+    render(verified([fileOk, pending('rekordbox', 'rekordbox'), pending('engine', 'Engine DJ')]))
+    expect(screen.getByTestId('export-success').className).not.toMatch(/\btruncate\b/)
+  })
+
+  it('the check mark appears only when the queue applied and every place is ok', () => {
+    const { rerender } = render(
+      verified([fileOk, pending('rekordbox', 'rekordbox')], { music: true }),
+    )
+    rerender(verified([fileOk, ok('rekordbox')], { music: true }))
+    expect(screen.getByTestId('export-success')).toHaveTextContent(/^✓ Añadido a Apple Music$/)
+    expect(screen.queryByTestId('verify-pending-icon')).toBeNull()
+  })
+
+  it('a pending track never shows the amber line or Reintentar', () => {
+    render(verified([fileOk, pending('rekordbox', 'rekordbox')]))
+    expect(screen.queryByTestId('verify-mismatch')).toBeNull()
+    expect(screen.queryByTestId('verify-retry')).toBeNull()
   })
 })

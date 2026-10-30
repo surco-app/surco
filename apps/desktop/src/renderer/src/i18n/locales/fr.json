@@ -484,7 +484,8 @@
       "cover": "Préparation de la pochette…",
       "converting": "Conversion en {{format}}…",
       "appleMusic": "Ajout à Apple Music…",
-      "engineDj": "Ajout à Engine DJ…"
+      "engineDj": "Ajout à Engine DJ…",
+      "verify": "Vérification…"
     },
     "context": {
       "backup": "Restaurer la copie de sauvegarde…",
@@ -2854,5 +2855,33 @@
     "footer": "Pour chaque logiciel, nous gardons les 5 dernières sauvegardes. Pour les fichiers de musique, {{days}} jours.",
     "reveal": "Afficher dans le Finder",
     "revealWin": "Afficher dans l'Explorateur"
+  },
+  "verify": {
+    "checking": "Vérification…",
+    "shieldLabel": "Ce qui a été vérifié",
+    "title": "Ce qui a été vérifié",
+    "pendingLine": {
+      "addedToAppleMusic": "Ajouté à Apple Music · {{programs}} à la fermeture",
+      "exportedAs": "Exporté en {{format}} · {{programs}} à la fermeture"
+    },
+    "places": {
+      "file": "Fichier",
+      "appleMusic": "Apple Music",
+      "rekordbox": "rekordbox",
+      "engine": "Engine DJ",
+      "traktor": "Traktor"
+    },
+    "detail": {
+      "pending": "En attente, s’applique à la fermeture de {{program}}",
+      "fileIdentical": "{{format}} · audio identique à l’original",
+      "fileReencoded": "{{format}} · {{rate}} kHz · {{bits}} bits · se décode en entier",
+      "fileReencodedLossy": "{{format}} · {{rate}} kHz · se décode en entier",
+      "musicOne": "Une seule entrée · dans {{playlists}}",
+      "musicOneNoPlaylists": "Une seule entrée",
+      "rekordboxOk_one": "Pointe vers le {{format}} · {{count}} cue",
+      "rekordboxOk_other": "Pointe vers le {{format}} · {{count}} cues",
+      "engineOk": "Pointe vers le {{format}}",
+      "traktorOk": "Pointe vers le {{format}}"
+    }
   }
 }

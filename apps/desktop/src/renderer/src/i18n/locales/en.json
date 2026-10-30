@@ -484,7 +484,8 @@
       "cover": "Preparing artwork…",
       "converting": "Converting to {{format}}…",
       "appleMusic": "Adding to Apple Music…",
-      "engineDj": "Adding to Engine DJ…"
+      "engineDj": "Adding to Engine DJ…",
+      "verify": "Checking…"
     },
     "context": {
       "backup": "Restore the backup…",
@@ -2854,5 +2855,33 @@
     "footer": "We keep the last 5 backups of each program. Music files, {{days}} days.",
     "reveal": "Reveal in Finder",
     "revealWin": "Show in File Explorer"
+  },
+  "verify": {
+    "checking": "Checking…",
+    "shieldLabel": "What was checked",
+    "title": "What was checked",
+    "pendingLine": {
+      "addedToAppleMusic": "Added to Apple Music · {{programs}} once closed",
+      "exportedAs": "Exported as {{format}} · {{programs}} once closed"
+    },
+    "places": {
+      "file": "File",
+      "appleMusic": "Apple Music",
+      "rekordbox": "rekordbox",
+      "engine": "Engine DJ",
+      "traktor": "Traktor"
+    },
+    "detail": {
+      "pending": "Pending, applies once you close {{program}}",
+      "fileIdentical": "{{format}} · audio identical to the original",
+      "fileReencoded": "{{format}} · {{rate}} kHz · {{bits}}-bit · decodes in full",
+      "fileReencodedLossy": "{{format}} · {{rate}} kHz · decodes in full",
+      "musicOne": "One entry · in {{playlists}}",
+      "musicOneNoPlaylists": "One entry",
+      "rekordboxOk_one": "Points to the {{format}} · {{count}} cue",
+      "rekordboxOk_other": "Points to the {{format}} · {{count}} cues",
+      "engineOk": "Points to the {{format}}",
+      "traktorOk": "Points to the {{format}}"
+    }
   }
 }
