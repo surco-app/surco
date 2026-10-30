@@ -247,7 +247,7 @@
           },
           {
             "t": "Erratas y duplicados de tu biblioteca",
-            "d": "Agrupa lo que tu Apple Music o tu lista escribe de varias formas, los caracteres invisibles y las pistas que tienes dos veces. Cada corrección llega al fichero, a Apple Music y, si los sincronizas, a rekordbox, Engine DJ y Traktor, con copia de seguridad y Deshacer. La copia que quitas deja sus playlists a la que se queda. Apple Music, solo en macOS."
+            "d": "Agrupa lo que tu Apple Music o tu lista escribe de varias formas, los caracteres invisibles y las pistas que tienes dos veces. Cada corrección llega al fichero, a Apple Music y, si los sincronizas, a rekordbox, Engine DJ y Traktor, con copia antes de escribir, que restauras desde Copias, y Deshacer. La copia que quitas deja sus playlists a la que se queda. Apple Music, solo en macOS."
           },
           {
             "t": "Carátula dentro de un WAV",
@@ -263,7 +263,7 @@
           },
           {
             "t": "Tu colección de Traktor",
-            "d": "Actualiza el .nml con copia de seguridad y una escritura por tanda. Necesita Traktor cerrado."
+            "d": "Actualiza el .nml con una copia antes, que restauras desde Copias, y una escritura por tanda. Necesita Traktor cerrado."
           },
           {
             "t": "Tu colección de rekordbox",
@@ -306,12 +306,16 @@
             "d": "Archivos y títulos con {artist} - {title}. Una barra dentro de un campo no crea carpetas, y si tu NAS se atraganta con las tildes, nombres sin acentos."
           },
           {
-            "t": "Copias de seguridad",
-            "d": "Antes de reescribir un original guarda una copia que restauras desde la propia pista. Tú eliges si siempre, solo cuando cambia el audio o nunca. Por defecto 7 días y hasta 2 GB. Si el disco se queda con menos de 5 GB libres, borra primero las copias más antiguas."
+            "t": "Copias de tus bibliotecas",
+            "d": "Antes de escribir en rekordbox, Traktor o Engine DJ, Surco guarda una copia con fecha y conserva las últimas 5 de cada programa. En Copias, abajo en la barra lateral, ves las de cada uno y restauras cualquiera de un clic: te pide cerrar el programa, guarda una copia de cómo estaba para que puedas volver atrás y solo descarta los cambios en espera de esa biblioteca."
+          },
+          {
+            "t": "Originales de audio",
+            "d": "Los archivos que Surco reemplaza o renombra se guardan en Copias › Archivos de música; los restauras desde ahí o desde la marca de la pista. Tú eliges si siempre, solo cuando cambia el audio o nunca. Por defecto 7 días o hasta 2 GB. Si el disco se queda con menos de 5 GB libres, borra primero los más antiguos."
           },
           {
             "t": "Nada se borra sin avisar",
-            "d": "Lo que quitas va a la papelera del sistema. En un disco sin papelera, como un NAS, y en Windows, va a Copias de seguridad, desde donde lo restauras. Si en Copias de seguridad eliges «Nunca», ahí se borra del todo y el aviso lo dice antes de confirmar."
+            "d": "Lo que quitas va a la papelera del sistema. En un disco sin papelera, como un NAS, y en Windows, va a Copias › Archivos de música, desde donde lo restauras. Si en Ajustes → Destino eliges «Nunca», se borra del todo y el aviso lo dice antes de confirmar."
           }
         ]
       }
@@ -531,7 +535,7 @@
       },
       {
         "q": "Tengo MP3 en mi biblioteca. ¿Puedo pasarlos a lossless sin perder las playlists?",
-        "a": "Sí, eso es sustituir. Carga el AIFF o el FLAC del mismo tema y, si Surco lo encuentra en tu biblioteca, el botón dice «Sustituir» en vez de «Añadir». Al convertir, la entrada de Apple Music deja de apuntar al MP3 y apunta al archivo nuevo, y en rekordbox se reapunta la misma ficha: conserva sus playlists y sus cue points, porque rekordbox enlaza por pista y no por ruta. Un aviso: rekordbox analiza el archivo nuevo y puede recolocar el beatgrid, así que conviene revisar la rejilla. rekordbox tiene que estar cerrado para escribir en su base de datos; Surco se ofrece a cerrarlo y hace copia de seguridad antes. Al acabar te ofrece mandar el archivo viejo a la papelera, y si está en un disco sin papelera, como un NAS, lo guarda en Copias de seguridad. Con Copias de seguridad en «Nunca» se borra del todo, y el aviso lo dice antes."
+        "a": "Sí, eso es sustituir. Carga el AIFF o el FLAC del mismo tema y, si Surco lo encuentra en tu biblioteca, el botón dice «Sustituir» en vez de «Añadir». Al convertir, la entrada de Apple Music deja de apuntar al MP3 y apunta al archivo nuevo, y en rekordbox se reapunta la misma ficha: conserva sus playlists y sus cue points, porque rekordbox enlaza por pista y no por ruta. Un aviso: rekordbox analiza el archivo nuevo y puede recolocar el beatgrid, así que conviene revisar la rejilla. rekordbox tiene que estar cerrado para escribir en su base de datos; Surco se ofrece a cerrarlo y hace copia de seguridad antes. Al acabar te ofrece mandar el archivo viejo a la papelera, y si está en un disco sin papelera, como un NAS, lo guarda en Copias › Archivos de música. Con «Nunca» en Ajustes → Destino se borra del todo, y el aviso lo dice antes."
       },
       {
         "q": "¿Funciona con equipos Denon (Engine DJ)?",
@@ -837,7 +841,7 @@
           "«Mantener MP3 y M4A como están» evita que tus MP3 y M4A engorden sin ganar nada al exportar a un formato sin pérdidas. Se quedan como están y solo se les actualizan los tags, salvo que iguales el volumen, repares clics o recortes, que vuelven a codificar el audio.",
           "Puedes cancelar una conversión a medias, y aplicar de una vez la misma decisión al resto cuando un archivo ya existe.",
           "Si la conversión cambia el audio de un original, Surco guarda antes una copia de seguridad; la marca de la fila (o ⌘K) te devuelve al original. En Ajustes → Destino decides si se guarda siempre, solo cuando cambia el audio (así viene) o nunca, durante cuántos días y hasta cuánto espacio.",
-          "Tras convertir, puedes mandar los originales a la papelera con una sola acción. A la papelera, o a Copias de seguridad en un disco sin ella. Solo con «Nunca» en Copias de seguridad se borran del todo, y el aviso lo dice antes de confirmar."
+          "Tras convertir, puedes mandar los originales a la papelera con una sola acción. A la papelera, o a Copias › Archivos de música en un disco sin ella. Solo con «Nunca» en Ajustes → Destino se borran del todo, y el aviso lo dice antes de confirmar."
         ],
         "shot": "convertir-es.webp",
         "shotCaption": "El botón de convertir con su selector de formato."
@@ -904,7 +908,7 @@
         ],
         "points": [
           "Viene apagado: hasta que no eliges tu collection.nml, Surco no escribe en la colección.",
-          "Siempre hace una copia de seguridad antes de escribir, en un único archivo que se va sobrescribiendo para no llenarte la carpeta.",
+          "Siempre guarda una copia con fecha antes de escribir y conserva las 5 últimas; las ves y restauras en Copias.",
           "Traktor tiene que estar cerrado: reescribe su colección entera al salir, así que tus cambios se perderían. Surco lo detecta y se ofrece a cerrarlo.",
           "Una tanda de trescientas pistas produce una sola escritura, no trescientas.",
           "Si el árbol de cues de una pista no se puede leer, Surco no borra los que ya tenías.",
@@ -1199,7 +1203,7 @@
         },
         "everywhere": {
           "title": "En todas partes",
-          "text": "Ficheros, Apple Music, rekordbox, Engine DJ y Traktor, con copia de seguridad de cada fichero. Y las correcciones tienen Deshacer."
+          "text": "Ficheros, Apple Music, rekordbox, Engine DJ y Traktor, con copia de cada fichero y de cada biblioteca de DJ, que restauras desde Copias. Y las correcciones tienen Deshacer."
         }
       },
       "all": "Todo",
@@ -1976,7 +1980,7 @@
         ],
         "points": [
           "El cambio llega al archivo y a Apple Music, y a rekordbox, Engine DJ y Traktor si los sincronizas.",
-          "Antes de tocar nada, Surco guarda una copia de cada archivo. «Deshacer» lo deja todo como estaba.",
+          "Antes de tocar nada, Surco guarda una copia de cada archivo y de tus bibliotecas de DJ. «Deshacer» lo deja todo como estaba.",
           "El BPM, la tonalidad, los cue points y la valoración no se tocan.",
           "Si un programa de DJ está abierto, Surco se ofrece a cerrarlo."
         ],
@@ -2036,8 +2040,8 @@
         "points": [
           "La copia que se queda entra en las playlists de la otra, en Apple Music y en tus programas de DJ.",
           "Los cue points de la copia que quitas no pasan a la otra. Mira cuál tiene cues antes de elegir.",
-          "El archivo quitado va a la Papelera, o a Copias de seguridad si el disco no tiene Papelera, como un NAS.",
-          "«Deshacer» no devuelve las copias quitadas. Si te equivocas, el archivo sigue en la Papelera o en Copias de seguridad."
+          "El archivo quitado va a la Papelera, o a Copias › Archivos de música si el disco no tiene Papelera, como un NAS.",
+          "«Deshacer» no devuelve las copias quitadas. Si te equivocas, el archivo sigue en la Papelera o en Copias › Archivos de música."
         ],
         "related": []
       },
@@ -2312,7 +2316,7 @@
         "points": [
           "A Engine llegan los datos, la valoración y la carátula.",
           "Los cue points y la rejilla no. Engine los calcula al cargar la pista.",
-          "Antes de escribir, Surco guarda una copia de seguridad de la biblioteca.",
+          "Antes de escribir, Surco guarda una copia de seguridad de la biblioteca, que restauras desde Copias.",
           "En el editor, el campo «Playlists» de Engine DJ elige en qué playlists entra cada pista, también si Engine aún no la tiene. Surco la añade al convertirla. Al terminar, el icono de Engine DJ junto al resultado te lleva a la pista con sus cues abiertas."
         ],
         "related": [
@@ -2450,7 +2454,7 @@
             "section": "Copias de seguridad",
             "setting": "Qué se guarda",
             "value": "Solo si cambia el audio",
-            "note": "Así viene. Un NAS no tiene Papelera, así que lo que borras va a Copias de seguridad."
+            "note": "Así viene. Un NAS no tiene Papelera, así que lo que borras va a Copias › Archivos de música."
           }
         ],
         "steps": [

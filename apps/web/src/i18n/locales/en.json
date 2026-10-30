@@ -247,7 +247,7 @@
           },
           {
             "t": "Typos and duplicates in your library",
-            "d": "Groups what your Apple Music library or your list spells more than one way, invisible characters and the tracks you have twice. Each fix reaches the file, Apple Music and, if you sync them, rekordbox, Engine DJ and Traktor, with a backup and Undo. The copy you remove hands its playlists to the one you keep. Apple Music on macOS only."
+            "d": "Groups what your Apple Music library or your list spells more than one way, invisible characters and the tracks you have twice. Each fix reaches the file, Apple Music and, if you sync them, rekordbox, Engine DJ and Traktor, with a backup before writing that you restore from Backups, and Undo. The copy you remove hands its playlists to the one you keep. Apple Music on macOS only."
           },
           {
             "t": "Artwork inside a WAV",
@@ -263,7 +263,7 @@
           },
           {
             "t": "Your Traktor collection",
-            "d": "Updates the .nml with a backup and one write per batch. Needs Traktor closed."
+            "d": "Updates the .nml with a backup first that you restore from Backups, and one write per batch. Needs Traktor closed."
           },
           {
             "t": "Your rekordbox collection",
@@ -306,12 +306,16 @@
             "d": "Files and titles from {artist} - {title}. A slash inside a field never makes a folder, and if your NAS chokes on accents, accent-free file names."
           },
           {
-            "t": "Backups",
-            "d": "Before rewriting an original it keeps a copy you restore from the track itself. You choose always, only when the audio changes, or never. By default for 7 days and up to 2 GB. If the disk drops below 5 GB free, the oldest copies go first."
+            "t": "Library backups",
+            "d": "Before writing to rekordbox, Traktor or Engine DJ, Surco keeps a dated copy and holds on to the last 5 for each program. Backups, at the bottom of the left sidebar, shows them per program and restores any one in a click: it asks you to close the program, keeps a copy of how it was so you can go back, and drops only that library's waiting changes."
+          },
+          {
+            "t": "Original audio files",
+            "d": "The files Surco replaces or renames are kept in Backups › Music files; restore them from there or from the track's backup mark. You choose always, only when the audio changes, or never. By default for 7 days or up to 2 GB. If the disk drops below 5 GB free, the oldest go first."
           },
           {
             "t": "Nothing deleted without warning",
-            "d": "Whatever you remove goes to the system Trash. On a disk with no Trash, like a NAS, and on Windows, it goes to Backups, where you can restore it. If you set Backups to Never, it is deleted for good there, and the dialog says so before you confirm."
+            "d": "Whatever you remove goes to the system Trash. On a disk with no Trash, like a NAS, and on Windows, it goes to Backups › Music files, where you can restore it. If you choose Never in Settings → Output, it is deleted for good, and the dialog says so before you confirm."
           }
         ]
       }
@@ -531,7 +535,7 @@
       },
       {
         "q": "My library is full of MP3s. Can I move them to lossless without losing my playlists?",
-        "a": "Yes, that's what replacing does. Load the AIFF or FLAC of the same track and, if Surco finds it in your library, the button reads “Replace” instead of “Add”. On convert, the Apple Music entry stops pointing at the MP3 and points at the new file, and in rekordbox the same row is repointed: it keeps its playlists and its cue points, because rekordbox links by track rather than by path. One caveat: rekordbox analyzes the new file and may move the beatgrid, so check the grid afterwards. rekordbox has to be closed to write to its database; Surco offers to close it and backs up first. When it's done it offers to send the old file to the Trash, and if it sits on a disk with no Trash, like a NAS, it keeps it in Backups. With Backups set to Never it is deleted for good, and the dialog says so first."
+        "a": "Yes, that's what replacing does. Load the AIFF or FLAC of the same track and, if Surco finds it in your library, the button reads “Replace” instead of “Add”. On convert, the Apple Music entry stops pointing at the MP3 and points at the new file, and in rekordbox the same row is repointed: it keeps its playlists and its cue points, because rekordbox links by track rather than by path. One caveat: rekordbox analyzes the new file and may move the beatgrid, so check the grid afterwards. rekordbox has to be closed to write to its database; Surco offers to close it and backs up first. When it's done it offers to send the old file to the Trash, and if it sits on a disk with no Trash, like a NAS, it keeps it in Backups › Music files. With Never chosen in Settings → Output it is deleted for good, and the dialog says so first."
       },
       {
         "q": "Does it work with Denon gear (Engine DJ)?",
@@ -837,7 +841,7 @@
           "“Keep MP3 and M4A files as they are” stops your MP3s and M4As bloating for nothing when you export to a lossless format. They stay as they are and only their tags are updated, unless you normalize loudness, repair clicks or trim, which re-encode the audio.",
           "You can cancel a conversion midway, and apply the same decision to the rest of the batch at once when a file already exists.",
           "If the conversion changes the audio of an original, Surco keeps a backup first; the mark on the row (or ⌘K) takes you back to the original. In Settings → Output you decide whether to keep one always, only when the audio changes (the default) or never, for how many days and up to how much space.",
-          "Once converted, you can send the originals to the trash in a single action. To the trash, or to Backups on a disk without one. Only with Backups set to Never are they deleted for good, and the dialog says so before you confirm."
+          "Once converted, you can send the originals to the trash in a single action. To the trash, or to Backups › Music files on a disk without one. Only with Never chosen in Settings → Output are they deleted for good, and the dialog says so before you confirm."
         ],
         "shot": "convertir-en.webp",
         "shotCaption": "The convert button with its format picker."
@@ -904,7 +908,7 @@
         ],
         "points": [
           "It ships off: until you pick your collection.nml, Surco doesn't write to the collection.",
-          "It always backs up before writing, to a single file that gets overwritten so your folder doesn't fill up with copies.",
+          "It always keeps a dated copy before writing and holds on to the last 5; you see and restore them in Backups.",
           "Traktor has to be closed: it rewrites its whole collection on quit, so your changes would be lost. Surco detects it and offers to close it.",
           "A batch of three hundred tracks produces one single write, not three hundred.",
           "If a track's cue tree can't be read, Surco doesn't wipe the ones you already had.",
@@ -1199,7 +1203,7 @@
         },
         "everywhere": {
           "title": "Everywhere",
-          "text": "Files, Apple Music, rekordbox, Engine DJ and Traktor, with a backup of every file. And corrections come with Undo."
+          "text": "Files, Apple Music, rekordbox, Engine DJ and Traktor, with a backup of every file and every DJ library, restorable from Backups. And corrections come with Undo."
         }
       },
       "all": "All",
@@ -1976,7 +1980,7 @@
         ],
         "points": [
           "The change reaches the file and Apple Music, and rekordbox, Engine DJ and Traktor if you sync them.",
-          "Before touching anything, Surco keeps a copy of every file. “Undo” puts it all back.",
+          "Before touching anything, Surco keeps a copy of every file and your DJ libraries. “Undo” puts it all back.",
           "BPM, key, cue points and rating are left alone.",
           "If a DJ app is open, Surco offers to close it."
         ],
@@ -2036,8 +2040,8 @@
         "points": [
           "The copy you keep joins the other one's playlists, in Apple Music and in your DJ apps.",
           "The cue points of the copy you remove don't move to the other. Check which one has cues before you choose.",
-          "The removed file goes to the Trash, or to Backups on a disk with no Trash, like a NAS.",
-          "“Undo” doesn't bring removed copies back. If you get it wrong, the file is still in the Trash or in Backups."
+          "The removed file goes to the Trash, or to Backups › Music files on a disk with no Trash, like a NAS.",
+          "“Undo” doesn't bring removed copies back. If you get it wrong, the file is still in the Trash or in Backups › Music files."
         ],
         "related": []
       },
@@ -2312,7 +2316,7 @@
         "points": [
           "Details, rating and artwork reach Engine.",
           "Cue points and beatgrid don't. Engine works them out when you load the track.",
-          "Before writing, Surco keeps a backup of the library.",
+          "Before writing, Surco keeps a backup of the library, which you restore from Backups.",
           "In the editor, the Engine DJ “Playlists” field picks which playlists each track goes in, even if Engine doesn't have it yet. Surco adds it when you convert it. When it's done, the Engine DJ icon next to the result takes you to the track with its cues open."
         ],
         "related": [
@@ -2450,7 +2454,7 @@
             "section": "Backups",
             "setting": "What gets kept",
             "value": "Only when the audio changes",
-            "note": "That's the default. A NAS has no Trash, so what you delete goes to Backups."
+            "note": "That's the default. A NAS has no Trash, so what you delete goes to Backups › Music files."
           }
         ],
         "steps": [

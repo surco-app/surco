@@ -247,7 +247,7 @@
           },
           {
             "t": "Fautes et doublons dans ta bibliothèque",
-            "d": "Regroupe ce que ta bibliothèque Apple Music ou ta liste écrit de plusieurs façons, les caractères invisibles et les morceaux que tu as en double. Chaque correction arrive au fichier, à Apple Music et, si tu les synchronises, à rekordbox, Engine DJ et Traktor, avec une sauvegarde et Annuler. La copie que tu retires transmet ses playlists à celle que tu gardes. Apple Music sur macOS uniquement."
+            "d": "Regroupe ce que ta bibliothèque Apple Music ou ta liste écrit de plusieurs façons, les caractères invisibles et les morceaux que tu as en double. Chaque correction arrive au fichier, à Apple Music et, si tu les synchronises, à rekordbox, Engine DJ et Traktor, avec une sauvegarde avant l'écriture, que tu restaures dans Sauvegardes, et Annuler. La copie que tu retires transmet ses playlists à celle que tu gardes. Apple Music sur macOS uniquement."
           },
           {
             "t": "Une pochette dans un WAV",
@@ -263,7 +263,7 @@
           },
           {
             "t": "Ta collection Traktor",
-            "d": "Met à jour le .nml avec une sauvegarde et une seule écriture par lot. Traktor doit être fermé."
+            "d": "Met à jour le .nml avec une sauvegarde préalable, que tu restaures dans Sauvegardes, et une seule écriture par lot. Traktor doit être fermé."
           },
           {
             "t": "Ta collection rekordbox",
@@ -306,12 +306,16 @@
             "d": "Fichiers et titres à partir de {artist} - {title}. Une barre oblique dans un champ ne crée jamais de dossier, et si ton NAS bute sur les accents, des noms de fichier sans accents."
           },
           {
-            "t": "Copies de sauvegarde",
-            "d": "Avant de réécrire un original, il garde une copie que tu restaures depuis le morceau lui-même. Tu choisis toujours, seulement si l'audio change, ou jamais. Par défaut pendant 7 jours et jusqu'à 2 Go. Si le disque passe sous 5 Go libres, les copies les plus anciennes partent en premier."
+            "t": "Copies de tes bibliothèques",
+            "d": "Avant d'écrire dans rekordbox, Traktor ou Engine DJ, Surco garde une copie datée et conserve les 5 dernières de chaque logiciel. Dans Sauvegardes, en bas de la barre de gauche, tu les vois par logiciel et tu restaures n'importe laquelle en un clic : Surco te demande de fermer le logiciel, garde une copie de l'état actuel pour pouvoir revenir en arrière, et n'écarte que les modifications en attente de cette bibliothèque."
+          },
+          {
+            "t": "Fichiers audio d'origine",
+            "d": "Les fichiers que Surco remplace ou renomme sont gardés dans Sauvegardes › Fichiers de musique ; tu les restaures de là ou depuis la marque de sauvegarde du morceau. Tu choisis toujours, seulement si l'audio change, ou jamais. Par défaut 7 jours ou jusqu'à 2 Go. Si le disque passe sous 5 Go libres, les plus anciens partent en premier."
           },
           {
             "t": "Rien supprimé sans prévenir",
-            "d": "Ce que tu supprimes va à la corbeille du système. Sur un disque sans corbeille, comme un NAS, et sous Windows, ça va dans Copies de sauvegarde, d'où tu peux le restaurer. Si tu règles les copies de sauvegarde sur Jamais, c'est supprimé définitivement à cet endroit, et la fenêtre le dit avant que tu confirmes."
+            "d": "Ce que tu supprimes va à la corbeille du système. Sur un disque sans corbeille, comme un NAS, et sous Windows, ça va dans Sauvegardes › Fichiers de musique, d'où tu peux le restaurer. Si tu choisis Jamais dans Réglages → Sortie, c'est supprimé définitivement, et la fenêtre le dit avant que tu confirmes."
           }
         ]
       }
@@ -531,7 +535,7 @@
       },
       {
         "q": "Ma bibliothèque est pleine de MP3. Je peux passer au sans perte sans perdre mes playlists ?",
-        "a": "Oui, c'est à ça que sert le remplacement. Charge l'AIFF ou le FLAC du même morceau et, si Surco le trouve dans ta bibliothèque, le bouton affiche « Remplacer » au lieu de « Ajouter ». À la conversion, l'entrée Apple Music cesse de pointer vers le MP3 et pointe vers le nouveau fichier, et dans rekordbox la même ligne est redirigée : elle garde ses playlists et ses cues, car rekordbox relie par morceau et non par chemin. Une réserve : rekordbox analyse le nouveau fichier et peut déplacer le beatgrid, vérifie donc la grille ensuite. rekordbox doit être fermé pour écrire dans sa base ; Surco propose de le fermer et fait d'abord une sauvegarde. À la fin, il propose de mettre l'ancien fichier à la corbeille, et s'il se trouve sur un disque sans corbeille, comme un NAS, il le garde dans les Copies de sauvegarde. Avec les Copies de sauvegarde réglées sur Jamais, il est supprimé définitivement, et la boîte de dialogue le dit d'abord."
+        "a": "Oui, c'est à ça que sert le remplacement. Charge l'AIFF ou le FLAC du même morceau et, si Surco le trouve dans ta bibliothèque, le bouton affiche « Remplacer » au lieu de « Ajouter ». À la conversion, l'entrée Apple Music cesse de pointer vers le MP3 et pointe vers le nouveau fichier, et dans rekordbox la même ligne est redirigée : elle garde ses playlists et ses cues, car rekordbox relie par morceau et non par chemin. Une réserve : rekordbox analyse le nouveau fichier et peut déplacer le beatgrid, vérifie donc la grille ensuite. rekordbox doit être fermé pour écrire dans sa base ; Surco propose de le fermer et fait d'abord une sauvegarde. À la fin, il propose de mettre l'ancien fichier à la corbeille, et s'il se trouve sur un disque sans corbeille, comme un NAS, il le garde dans Sauvegardes › Fichiers de musique. Avec Jamais choisi dans Réglages → Sortie, il est supprimé définitivement, et la boîte de dialogue le dit d'abord."
       },
       {
         "q": "Ça marche avec le matériel Denon (Engine DJ) ?",
@@ -837,7 +841,7 @@
           "« Conserver les MP3 et M4A tels quels » évite que tes MP3 et M4A gonflent pour rien quand tu exportes vers un format sans perte. Ils restent tels quels et seuls leurs tags sont mis à jour, sauf si tu normalises le loudness, répares les clics ou rognes, ce qui réencode l'audio.",
           "Tu peux annuler une conversion en cours, et appliquer d'un coup la même décision au reste du lot quand un fichier existe déjà.",
           "Si la conversion modifie l'audio d'un original, Surco en garde d'abord une copie de sauvegarde ; la marque sur la ligne (ou ⌘K) te ramène à l'original. Dans Réglages → Sortie, tu choisis d'en garder une toujours, seulement si l'audio change (par défaut) ou jamais, pendant combien de jours et jusqu'à quel espace.",
-          "Une fois convertis, tu peux mettre les originaux à la corbeille en une seule action. À la corbeille, ou dans les Copies de sauvegarde sur un disque qui n'en a pas. Ils ne sont supprimés définitivement que si les Copies de sauvegarde sont réglées sur Jamais, et la boîte de dialogue le dit avant que tu confirmes."
+          "Une fois convertis, tu peux mettre les originaux à la corbeille en une seule action. À la corbeille, ou dans Sauvegardes › Fichiers de musique sur un disque qui n'en a pas. Ils ne sont supprimés définitivement que si Jamais est choisi dans Réglages → Sortie, et la boîte de dialogue le dit avant que tu confirmes."
         ],
         "shot": "convertir-fr.webp",
         "shotCaption": "Le bouton de conversion avec son choix de format."
@@ -904,7 +908,7 @@
         ],
         "points": [
           "C'est désactivé par défaut : tant que tu n'as pas choisi ton collection.nml, Surco n'écrit pas dans la collection.",
-          "Il fait toujours une sauvegarde avant d'écrire, dans un seul fichier qui est écrasé à chaque fois pour que ton dossier ne se remplisse pas de copies.",
+          "Il garde toujours une copie datée avant d'écrire et conserve les 5 dernières ; tu les vois et les restaures dans Sauvegardes.",
           "Traktor doit être fermé : il réécrit toute sa collection en quittant, et tes changements seraient perdus. Surco le détecte et propose de le fermer.",
           "Un lot de trois cents morceaux ne produit qu'une seule écriture, pas trois cents.",
           "Si l'arbre de cues d'un morceau est illisible, Surco n'efface pas ceux que tu avais déjà.",
@@ -1199,7 +1203,7 @@
         },
         "everywhere": {
           "title": "Partout",
-          "text": "Fichiers, Apple Music, rekordbox, Engine DJ et Traktor, avec une sauvegarde de chaque fichier. Et chaque correction peut s'annuler."
+          "text": "Fichiers, Apple Music, rekordbox, Engine DJ et Traktor, avec une sauvegarde de chaque fichier et de chaque bibliothèque DJ, restaurable dans Sauvegardes. Et chaque correction peut s'annuler."
         }
       },
       "all": "Tout",
@@ -1976,7 +1980,7 @@
         ],
         "points": [
           "Le changement arrive au fichier et à Apple Music, et à rekordbox, Engine DJ et Traktor si tu les synchronises.",
-          "Avant de toucher à quoi que ce soit, Surco garde une copie de chaque fichier. « Annuler » remet tout comme avant.",
+          "Avant de toucher à quoi que ce soit, Surco garde une copie de chaque fichier et de tes bibliothèques DJ. « Annuler » remet tout comme avant.",
           "Le BPM, la tonalité, les cue points et la note ne sont pas touchés.",
           "Si une app DJ est ouverte, Surco propose de la fermer."
         ],
@@ -2036,8 +2040,8 @@
         "points": [
           "La copie que tu gardes rejoint les playlists de l'autre, dans Apple Music et dans tes apps DJ.",
           "Les cue points de la copie que tu retires ne passent pas à l'autre. Regarde laquelle a des cues avant de choisir.",
-          "Le fichier retiré va à la corbeille, ou dans Copies de sauvegarde sur un disque sans corbeille, comme un NAS.",
-          "« Annuler » ne ramène pas les copies retirées. Si tu te trompes, le fichier est encore dans la corbeille ou dans Copies de sauvegarde."
+          "Le fichier retiré va à la corbeille, ou dans Sauvegardes › Fichiers de musique sur un disque sans corbeille, comme un NAS.",
+          "« Annuler » ne ramène pas les copies retirées. Si tu te trompes, le fichier est encore dans la corbeille ou dans Sauvegardes › Fichiers de musique."
         ],
         "related": []
       },
@@ -2312,7 +2316,7 @@
         "points": [
           "Les infos, la note et la pochette arrivent dans Engine.",
           "Les cue points et la grille, non. Engine les calcule quand tu charges le morceau.",
-          "Avant d'écrire, Surco garde une sauvegarde de la bibliothèque.",
+          "Avant d'écrire, Surco garde une sauvegarde de la bibliothèque, que tu restaures dans Sauvegardes.",
           "Dans l'éditeur, le champ « Playlists » d'Engine DJ choisit dans quelles playlists va chaque morceau, même si Engine ne l'a pas encore. Surco l'ajoute en le convertissant. Une fois fini, l'icône Engine DJ à côté du résultat t'amène au morceau avec ses cues ouverts."
         ],
         "related": [
@@ -2450,7 +2454,7 @@
             "section": "Copies de sauvegarde",
             "setting": "Ce qui est conservé",
             "value": "Seulement si l'audio change",
-            "note": "C'est le réglage par défaut. Un NAS n'a pas de corbeille, donc ce que tu supprimes va dans Copies de sauvegarde."
+            "note": "C'est le réglage par défaut. Un NAS n'a pas de corbeille, donc ce que tu supprimes va dans Sauvegardes › Fichiers de musique."
           }
         ],
         "steps": [
