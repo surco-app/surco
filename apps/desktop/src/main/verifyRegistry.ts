@@ -33,15 +33,25 @@ export interface VerifyEntry {
   verification: Verification
 }
 
-// What a collection write knew: the FILE of the entry each patch matched in the NML it wrote
-// over (matchedEntryFiles inside syncCollection), or 'failed' when nothing was written.
-export type TraktorWrite = { before: Map<NmlPatch, string | null> } | 'failed'
+// A patch by the source its entry is found by, the same identity the Traktor queue keeps
+// (queuedNmlPatch.from): a queued patch comes back from JSON as another object.
+export const traktorPatchKey = (patch: NmlPatch) =>
+  [patch.volume, patch.dir, patch.file].map((s) => s.normalize('NFC')).join('\0')
 
+// What a collection write knew: the FILE of the entry each patch matched in the NML it wrote
+// over (matchedEntryFiles inside syncCollection), by traktorPatchKey, null where Traktor had
+// no entry; or 'failed' when nothing was written.
+export type TraktorWrite = { before: Map<string, string | null> } | 'failed'
+
+// 'failed' is a write that went wrong or a flush that threw: nothing is known, nothing pending.
 export interface FlushOutcome {
-  rekordbox: 'written' | 'queued' | 'off'
-  engine: 'written' | 'queued' | 'off'
+  rekordbox: 'written' | 'queued' | 'off' | 'failed'
+  engine: 'written' | 'queued' | 'off' | 'failed'
   traktor: TraktorWrite | 'queued' | 'off'
 }
+
+// How a queue apply went; Traktor's carries its write's facts like the flush.
+export type QueueApplied = 'written' | TraktorWrite
 
 type Read<T> = Promise<T[] | 'unreadable'>
 
@@ -52,7 +62,8 @@ export interface VerifyRegistryDeps {
   readTraktor: (list: TraktorExpect[]) => Read<PlaceCheck | null>
   readFile: (e: FileExpect) => Promise<PlaceCheck>
   readMusic: (e: MusicExpect) => Promise<PlaceCheck>
-  requeue: (place: Library, e: VerifyEntry) => void
+  // True when the repoint is held in the queue because the program is open.
+  requeue: (place: Library, e: VerifyEntry) => boolean
   exists: (path: string) => Promise<boolean>
 }
 
@@ -67,6 +78,11 @@ const pending = (place: Library): PlaceCheck => ({
   place,
   state: 'pending',
   detail: { key: 'pending', params: { program: PROGRAM[place] } },
+})
+const checking = (place: Library): PlaceCheck => ({
+  place,
+  state: 'checking',
+  detail: { key: 'checking' },
 })
 const unreadable = (place: Library): PlaceCheck => ({
   place,
@@ -96,29 +112,66 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
   // The Traktor fact each track was last written with, kept for a later re-read. A track
   // with none was never written, and its re-read cannot say anything.
   const traktorBefore = new Map<string, string | null>()
-  let batch: string[] = []
+  // Tracks whose repoint sits in a queue, by place: re-checked when that queue applies.
+  const awaiting: Record<Library, Set<VerifyEntry>> = {
+    rekordbox: new Set(),
+    engine: new Set(),
+    traktor: new Set(),
+  }
+  let batch = new Set<VerifyEntry>()
 
-  const replace = (e: VerifyEntry, result: PlaceCheck | null, place: Library) => {
+  // A track converted again while its checks were running has a newer entry; the old
+  // entry's results are never sent for it.
+  const live = (e: VerifyEntry) => entries.get(e.trackId) === e
+
+  const replace = (e: VerifyEntry, result: PlaceCheck | null, place: VerifyPlace) => {
     e.verification =
       result === null ? without(e.verification, place) : withChecks(e.verification, [result])
   }
+  const emit = (e: VerifyEntry) => {
+    if (live(e)) deps.emit(e.trackId, e.verification)
+  }
 
-  async function check(place: Library, list: VerifyEntry[], write?: TraktorWrite) {
-    if (place === 'traktor') return checkTraktor(list, write)
+  const hold = (place: Library, e: VerifyEntry) => {
+    awaiting[place].add(e)
+    replace(e, pending(place), place)
+  }
+
+  // result null re-reads what is there with the facts already known.
+  async function check(place: Library, list: VerifyEntry[], result: QueueApplied | null) {
+    for (const e of list) awaiting[place].delete(e)
+    if (place === 'traktor') return checkTraktor(list, result)
     if (list.length === 0) return
+    if (result === 'failed') {
+      for (const e of list) replace(e, unreadable(place), place)
+      return
+    }
     const read = place === 'rekordbox' ? deps.readRekordbox : deps.readEngine
-    const results = await read(list).catch(() => 'unreadable' as const)
+    settle(place, list, await read(list).catch(() => 'unreadable' as const))
+  }
+
+  // A reader that answered for some other number of tracks cannot be lined up with them.
+  function settle(
+    place: Library,
+    list: VerifyEntry[],
+    results: (PlaceCheck | null)[] | 'unreadable',
+  ) {
+    const aligned = results !== 'unreadable' && results.length === list.length
     list.forEach((e, i) => {
-      replace(e, results === 'unreadable' ? unreadable(place) : results[i], place)
+      replace(e, aligned ? results[i] : unreadable(place), place)
     })
   }
 
-  async function checkTraktor(list: VerifyEntry[], write?: TraktorWrite) {
+  async function checkTraktor(list: VerifyEntry[], result: QueueApplied | null) {
     const expects: { e: VerifyEntry; expect: TraktorExpect }[] = []
     for (const e of list) {
       const patch = e.traktorPatch
-      if (write === 'failed' || !patch) traktorBefore.delete(e.trackId)
-      else if (write) traktorBefore.set(e.trackId, write.before.get(patch) ?? null)
+      if (result === 'failed' || result === 'written' || !patch) traktorBefore.delete(e.trackId)
+      else if (result) {
+        const key = traktorPatchKey(patch)
+        if (result.before.has(key)) traktorBefore.set(e.trackId, result.before.get(key) ?? null)
+        else traktorBefore.delete(e.trackId)
+      }
       const before = traktorBefore.get(e.trackId)
       if (!patch || before === undefined) replace(e, unreadable('traktor'), 'traktor')
       else expects.push({ e, expect: { patch, before, stranded: e.traktorStranded ?? false } })
@@ -127,21 +180,33 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     const results = await deps
       .readTraktor(expects.map((x) => x.expect))
       .catch(() => 'unreadable' as const)
-    expects.forEach(({ e }, i) => {
-      replace(e, results === 'unreadable' ? unreadable('traktor') : results[i], 'traktor')
-    })
+    settle(
+      'traktor',
+      expects.map((x) => x.e),
+      results,
+    )
   }
 
   return {
+    // The first track of a new batch clears the tracks already verified: nothing more can
+    // happen to them, and the registry stays the size of what is still open.
     register(e: VerifyEntry): void {
+      if (batch.size === 0)
+        for (const [id, old] of entries)
+          if (old.verification.status === 'ok') {
+            entries.delete(id)
+            traktorBefore.delete(id)
+          }
+      const previous = entries.get(e.trackId)
+      if (previous) for (const place of LIBRARIES) awaiting[place].delete(previous)
       entries.set(e.trackId, e)
       traktorBefore.delete(e.trackId)
-      batch.push(e.trackId)
+      batch.add(e)
     },
 
     async afterFlush(outcome: FlushOutcome): Promise<void> {
-      const flushed = batch.flatMap((id) => entries.get(id) ?? [])
-      batch = []
+      const flushed = [...batch].filter(live)
+      batch = new Set()
       await Promise.all(
         LIBRARIES.map(async (place) => {
           const listed = flushed.filter((e) => e.places.has(place))
@@ -150,17 +215,17 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
           for (const e of listed)
             if (!touched.includes(e) || result === 'off') replace(e, null, place)
           if (result === 'off') return
-          if (result === 'queued') for (const e of touched) replace(e, pending(place), place)
-          else await check(place, touched, result === 'written' ? undefined : result)
+          if (result === 'queued') for (const e of touched) hold(place, e)
+          else await check(place, touched, result)
         }),
       )
-      for (const e of flushed) deps.emit(e.trackId, e.verification)
+      for (const e of flushed) emit(e)
     },
 
-    async afterQueueApplied(place: Library, write?: TraktorWrite): Promise<void> {
-      const held = [...entries.values()].filter((e) => stateOf(e, place) === 'pending')
-      await check(place, held, place === 'traktor' ? (write ?? 'failed') : undefined)
-      for (const e of held) deps.emit(e.trackId, e.verification)
+    async afterQueueApplied(place: Library, result: QueueApplied): Promise<void> {
+      const held = [...awaiting[place]]
+      await check(place, held, result)
+      for (const e of held) emit(e)
     },
 
     // The worst place decides: a file or Music entry that does not add up is converted again
@@ -176,27 +241,31 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
         (e.from.normalize('NFC') === e.to.normalize('NFC') || !(await deps.exists(e.from)))
       if ((bad('file') || bad('appleMusic')) && !sourceGone) return 'rerun-job'
 
-      if (sourceGone || stateOf(e, 'file') === 'unreadable')
-        e.verification = withChecks(e.verification, [await deps.readFile(e.file)])
-      if (e.music && (sourceGone || stateOf(e, 'appleMusic') === 'unreadable'))
-        e.verification = withChecks(e.verification, [await deps.readMusic(e.music)])
+      const rereadFile = sourceGone || stateOf(e, 'file') === 'unreadable'
+      const rereadMusic =
+        e.music !== undefined && (sourceGone || stateOf(e, 'appleMusic') === 'unreadable')
+      if (rereadFile) replace(e, await deps.readFile(e.file), 'file')
+      if (rereadMusic && e.music) replace(e, await deps.readMusic(e.music), 'appleMusic')
       if (sourceGone && bad('file'))
-        e.verification = withChecks(e.verification, [
+        replace(
+          e,
           {
             place: 'file',
             state: 'mismatch',
             detail: { key: 'fileSourceGone', params: { kept: e.originalKept ? 1 : 0 } },
           },
-        ])
+          'file',
+        )
       for (const place of LIBRARIES) {
         const state = stateOf(e, place)
-        if (state === 'unreadable') await check(place, [e])
+        if (state === 'unreadable') await check(place, [e], null)
         else if (state === 'mismatch') {
-          deps.requeue(place, e)
-          replace(e, pending(place), place)
+          hold(place, e)
+          if (!deps.requeue(place, e) && stateOf(e, place) === 'pending')
+            replace(e, checking(place), place)
         }
       }
-      deps.emit(e.trackId, e.verification)
+      emit(e)
       return 'rechecked'
     },
 

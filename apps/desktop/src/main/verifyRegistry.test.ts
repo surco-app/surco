@@ -8,7 +8,12 @@ import {
 import type { NmlPatch } from './traktorNml'
 import type { FileExpect } from './verifyFile'
 import type { MusicExpect } from './verifyMusic'
-import { createVerifyRegistry, type VerifyEntry, type VerifyRegistryDeps } from './verifyRegistry'
+import {
+  createVerifyRegistry,
+  traktorPatchKey,
+  type VerifyEntry,
+  type VerifyRegistryDeps,
+} from './verifyRegistry'
 import type { TraktorExpect } from './verifyTraktor'
 
 const ok = (place: VerifyPlace, key = `${place}Ok`): PlaceCheck => ({
@@ -83,7 +88,7 @@ const mocks = () => ({
   ),
   readFile: vi.fn<VerifyRegistryDeps['readFile']>(async () => ok('file', 'fileIdentical')),
   readMusic: vi.fn<VerifyRegistryDeps['readMusic']>(async () => ok('appleMusic', 'musicOne')),
-  requeue: vi.fn<VerifyRegistryDeps['requeue']>(),
+  requeue: vi.fn<VerifyRegistryDeps['requeue']>(() => true),
   exists: vi.fn<VerifyRegistryDeps['exists']>(async () => true),
 })
 
@@ -149,7 +154,8 @@ describe('verify registry', () => {
 
   it('applying the rekordbox queue re-checks only the tracks pending there', async () => {
     const { deps, registry } = setup()
-    registry.register(entry('done'))
+    deps.readRekordbox.mockResolvedValueOnce([mismatch('rekordbox', 'rekordboxStillOld')])
+    registry.register(entry('wrong'))
     await registry.afterFlush(written)
     registry.register(entry('held'))
     registry.register(
@@ -163,7 +169,7 @@ describe('verify registry', () => {
     deps.readRekordbox.mockClear()
     deps.emit.mockClear()
 
-    await registry.afterQueueApplied('rekordbox')
+    await registry.afterQueueApplied('rekordbox', 'written')
 
     expect(deps.readRekordbox).toHaveBeenCalledTimes(1)
     expect(deps.readRekordbox.mock.calls[0][0].map((e) => e.trackId)).toEqual(['held'])
@@ -238,13 +244,21 @@ describe('verify registry', () => {
       }),
     )
     registry.register(entry('b', { places: new Set(['file', 'traktor']), traktorPatch: none }))
+    registry.register(
+      entry('c', {
+        places: new Set(['file', 'traktor']),
+        traktorPatch: { ...none, file: 'c.aiff' },
+      }),
+    )
 
+    // The flush hands back patches that went through the queue's JSON: equal, not the same.
+    const copy = (p: NmlPatch): NmlPatch => JSON.parse(JSON.stringify(p))
     await registry.afterFlush({
       ...written,
       traktor: {
         before: new Map([
-          [had, 'A.AIFF'],
-          [none, null],
+          [traktorPatchKey(copy(had)), 'A.AIFF'],
+          [traktorPatchKey(copy(none)), null],
         ]),
       },
     })
@@ -255,6 +269,8 @@ describe('verify registry', () => {
     ])
     expect(stateOf(registry.get('a'), 'traktor')).toBe('ok')
     expect(registry.get('b')).toEqual({ status: 'ok', checks: [ok('file', 'fileIdentical')] })
+    // A patch the write said nothing about is not a track Traktor lacks: it is unknown.
+    expect(registry.get('c')?.checks[1]).toEqual(unreadable('traktor', 'traktorUnreadable'))
   })
 
   it('a Traktor write that never happened is not read as if it had', async () => {
@@ -318,7 +334,7 @@ describe('verify registry', () => {
     expect(stateOf(registry.get('a'), 'rekordbox')).toBe('pending')
     expect(deps.readRekordbox).toHaveBeenCalledTimes(1)
 
-    await registry.afterQueueApplied('rekordbox')
+    await registry.afterQueueApplied('rekordbox', 'written')
 
     expect(deps.readRekordbox).toHaveBeenCalledTimes(2)
     expect(registry.get('a')?.status).toBe('ok')
@@ -420,6 +436,152 @@ describe('verify registry', () => {
       expect(deps.emit).toHaveBeenCalledWith('a', registry.get('a'))
     },
   )
+
+  it('a library flush that failed reads unreadable and a failed queue apply never leaves it pending', async () => {
+    const { deps, registry } = setup()
+    registry.register(entry('a'))
+    await registry.afterFlush({ ...written, rekordbox: 'failed' })
+    expect(deps.readRekordbox).not.toHaveBeenCalled()
+    expect(registry.get('a')?.checks[1]).toEqual(unreadable('rekordbox', 'rekordboxUnreadable'))
+
+    registry.register(entry('b'))
+    await registry.afterFlush({ ...written, rekordbox: 'queued' })
+    await registry.afterQueueApplied('rekordbox', 'failed')
+    expect(deps.readRekordbox).not.toHaveBeenCalled()
+    expect(registry.get('b')?.checks[1]).toEqual(unreadable('rekordbox', 'rekordboxUnreadable'))
+  })
+
+  it('a reader that answers for another number of tracks marks them all unreadable', async () => {
+    const { deps, registry } = setup()
+    deps.readRekordbox.mockResolvedValueOnce([ok('rekordbox')])
+    registry.register(entry('a'))
+    registry.register(entry('b'))
+
+    await registry.afterFlush(written)
+
+    expect(stateOf(registry.get('a'), 'rekordbox')).toBe('unreadable')
+    expect(stateOf(registry.get('b'), 'rekordbox')).toBe('unreadable')
+    expect(deps.emit).toHaveBeenCalledTimes(2)
+  })
+
+  it('a track registered twice in a batch is read once', async () => {
+    const { deps, registry } = setup()
+    const a = entry('a')
+    registry.register(a)
+    registry.register(a)
+    registry.register(entry('a'))
+
+    await registry.afterFlush(written)
+
+    expect(deps.readRekordbox.mock.calls[0][0]).toHaveLength(1)
+    expect(deps.emit).toHaveBeenCalledTimes(1)
+  })
+
+  it('a check that finishes after the track was converted again never lands on it', async () => {
+    let finish: (v: PlaceCheck[]) => void = () => {}
+    const { deps, registry } = setup()
+    deps.readRekordbox.mockReturnValueOnce(new Promise((r) => (finish = r)))
+    registry.register(entry('a'))
+    const flushing = registry.afterFlush(written)
+    const again = entry('a')
+    registry.register(again)
+
+    finish([mismatch('rekordbox', 'rekordboxStillOld')])
+    await flushing
+
+    expect(deps.emit).not.toHaveBeenCalled()
+    expect(registry.get('a')).toBe(again.verification)
+    expect(stateOf(registry.get('a'), 'rekordbox')).toBe('checking')
+  })
+
+  it('a queue apply does not re-read a track converted again since it was held', async () => {
+    const { deps, registry } = setup()
+    registry.register(entry('a'))
+    await registry.afterFlush({ ...written, rekordbox: 'queued' })
+    registry.register(entry('a'))
+    await registry.afterFlush(written)
+    deps.readRekordbox.mockClear()
+
+    await registry.afterQueueApplied('rekordbox', 'written')
+
+    expect(deps.readRekordbox).not.toHaveBeenCalled()
+  })
+
+  it('a new batch forgets the tracks already verified and keeps the open ones', async () => {
+    const { deps, registry } = setup()
+    deps.readRekordbox.mockResolvedValueOnce([
+      ok('rekordbox'),
+      mismatch('rekordbox', 'rekordboxStillOld'),
+    ])
+    registry.register(entry('done'))
+    registry.register(entry('wrong'))
+    await registry.afterFlush(written)
+    registry.register(entry('held'))
+    await registry.afterFlush({ ...written, rekordbox: 'queued' })
+
+    registry.register(entry('next'))
+
+    expect(registry.get('done')).toBeUndefined()
+    expect(registry.get('wrong')?.status).toBe('mismatch')
+    expect(registry.get('held')?.status).toBe('pending')
+  })
+
+  it('a queue apply landing while a retry re-reads the file is kept', async () => {
+    let finish: (v: PlaceCheck) => void = () => {}
+    const { deps, registry } = setup()
+    deps.readFile.mockReturnValueOnce(new Promise((r) => (finish = r)))
+    const verification = {
+      status: 'mismatch' as const,
+      checks: [mismatch('file', 'filePcmDiffers'), checking('rekordbox')],
+    }
+    registry.register(entry('a', { from: '/Music/a.wav', to: '/Music/a.wav', verification }))
+    await registry.afterFlush({ ...written, rekordbox: 'queued' })
+
+    const retrying = registry.retry('a')
+    await registry.afterQueueApplied('rekordbox', 'written')
+    finish(ok('file', 'fileIdentical'))
+    await retrying
+
+    expect(registry.get('a')).toEqual({
+      status: 'ok',
+      checks: [ok('file', 'fileIdentical'), ok('rekordbox')],
+    })
+  })
+
+  it('a repoint retried with the program closed reads checking, not waiting for it to close', async () => {
+    const { deps, registry } = setup()
+    deps.readRekordbox.mockResolvedValueOnce([mismatch('rekordbox', 'rekordboxStillOld')])
+    deps.requeue.mockImplementation(() => {
+      expect(stateOf(registry.get('a'), 'rekordbox')).toBe('pending')
+      return false
+    })
+    registry.register(entry('a'))
+    await registry.afterFlush(written)
+
+    await registry.retry('a')
+    expect(registry.get('a')?.checks[1]).toEqual(checking('rekordbox'))
+
+    await registry.afterQueueApplied('rekordbox', 'written')
+    expect(registry.get('a')?.status).toBe('ok')
+  })
+
+  it('retry on an unreadable Traktor re-reads with what the write matched', async () => {
+    const { deps, registry } = setup()
+    deps.readTraktor.mockResolvedValueOnce('unreadable')
+    const p: NmlPatch = { volume: 'Public', dir: '/:Musica/:', file: 'a.aiff', newFile: 'a.wav' }
+    registry.register(entry('a', { places: new Set(['file', 'traktor']), traktorPatch: p }))
+    await registry.afterFlush({
+      ...written,
+      traktor: { before: new Map([[traktorPatchKey(p), 'a.aiff']]) },
+    })
+
+    await registry.retry('a')
+
+    expect(deps.readTraktor.mock.calls[1][0]).toEqual([
+      { patch: p, before: 'a.aiff', stranded: false },
+    ])
+    expect(stateOf(registry.get('a'), 'traktor')).toBe('ok')
+  })
 
   it('retry on a track it does not know rejects with an error key', async () => {
     const { registry } = setup()
