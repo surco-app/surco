@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PlaylistSource } from '../../../shared/types'
-import '../i18n'
+import i18n from '../i18n'
 import { SourceRail } from './SourceRail'
 
 afterEach(cleanup)
@@ -68,6 +68,35 @@ describe('SourceRail', () => {
       fireEvent.mouseEnter(button)
       expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
       fireEvent.focusOut(button)
+    }
+  })
+
+  // Each mark is labelled with the program's own brand name, which no locale translates, so
+  // a DJ finds the same word under the mark that they know from the program itself.
+  it('writes the same brand name under every source mark in every language', async () => {
+    try {
+      for (const lng of ['en', 'es', 'de', 'fr', 'pt-BR', 'ja']) {
+        await i18n.changeLanguage(lng)
+        render(
+          <SourceRail
+            onHide={vi.fn()}
+            sources={['appleMusic', 'rekordbox', 'engine', 'traktor']}
+            active={null}
+            onSelect={vi.fn()}
+          />,
+        )
+        for (const [id, name] of [
+          ['appleMusic', 'Music'],
+          ['rekordbox', 'rekordbox'],
+          ['engine', 'Engine DJ'],
+          ['traktor', 'Traktor'],
+        ]) {
+          expect(screen.getByTestId(`source-rail-label-${id}`)).toHaveTextContent(name)
+        }
+        cleanup()
+      }
+    } finally {
+      await i18n.changeLanguage('en')
     }
   })
 
