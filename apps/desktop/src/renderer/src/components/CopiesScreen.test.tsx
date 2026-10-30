@@ -582,6 +582,28 @@ describe('CopiesScreen music files', () => {
     expect(screen.getByTestId('trash-filter-renamed')).toHaveAttribute('aria-pressed', 'true')
   })
 
+  it('goes back to every file once the chosen reason runs out, and stays there', () => {
+    const trash = (entries: TrashEntry[]) => ({ ...musicTrash(), entries })
+    const renamed = entry({ id: 'r', name: 'Renamed.mp3', reason: 'renamed' })
+    const view = (entries: TrashEntry[]) => (
+      <CopiesScreen
+        programs={[]}
+        trash={trash(entries)}
+        openMusic
+        onRestore={vi.fn()}
+        onReveal={vi.fn()}
+      />
+    )
+    const { rerender } = render(view([...crate(9), renamed]))
+    fireEvent.click(screen.getByTestId('trash-filter-renamed'))
+    expect(screen.getAllByTestId('trash-row')).toHaveLength(1)
+    rerender(view(crate(9)))
+    expect(screen.getByTestId('trash-filter-all')).toHaveAttribute('aria-pressed', 'true')
+    rerender(view([...crate(9), renamed]))
+    expect(screen.getAllByTestId('trash-row')).toHaveLength(10)
+    expect(screen.getByTestId('trash-filter-all')).toHaveAttribute('aria-pressed', 'true')
+  })
+
   it('offers a chip only for the reasons that hold something', () => {
     renderMusic([...crate(8), entry({ id: 'b', reason: 'renamed' })])
     expect(screen.getByTestId('trash-filter-all')).toHaveTextContent('9')

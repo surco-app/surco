@@ -323,8 +323,8 @@ function MusicFiles({
   const [query, setQuery] = useState(initialQuery)
   const counts = countByReason(entries)
   const tools = entries.length >= MUSIC_TOOLS_MIN || initialQuery !== ''
-  const active = counts[filter] > 0 ? filter : 'all'
-  const rows = tools ? visibleEntries(entries, active, query) : entries
+  if (counts[filter] === 0 && filter !== 'all') setFilter('all')
+  const rows = tools ? visibleEntries(entries, filter, query) : entries
   const confirming = confirmEmpty || confirmRemove !== null
 
   useEffect(() => {
@@ -354,10 +354,10 @@ function MusicFiles({
               key={id}
               type="button"
               data-testid={`trash-filter-${id}`}
-              aria-pressed={active === id}
+              aria-pressed={filter === id}
               onClick={() => setFilter(id)}
               className={`press rounded-full border px-2.5 py-0.5 text-[12px] ${
-                active === id
+                filter === id
                   ? 'border-transparent bg-[var(--color-accent-soft)] text-fg'
                   : 'border-[var(--color-line-strong)] text-fg-muted hover:text-fg'
               }`}
