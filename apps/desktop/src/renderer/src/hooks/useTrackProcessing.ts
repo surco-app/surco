@@ -117,6 +117,7 @@ interface TrackProcessing {
     destinationOverride?: Destination,
     declickOverride?: DeclickConfig,
   ) => Promise<void>
+  retryVerification: (id: string) => Promise<void>
   addTrackToAppleMusic: (id: string) => Promise<void>
   addAllToAppleMusic: (ids: string[]) => Promise<void>
   batching: boolean
@@ -740,9 +741,15 @@ export function useTrackProcessing({
     window.api.cancelJob(id)
   })
 
+  const retryVerification = useStableCallback(async (id: string): Promise<void> => {
+    const answer = await window.api.retryVerification(id)
+    if (answer === 'rerun-job') await processOne(id)
+  })
+
   return {
     processOne,
     processAll,
+    retryVerification,
     addTrackToAppleMusic,
     addAllToAppleMusic,
     batching,

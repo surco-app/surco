@@ -281,6 +281,8 @@ export function stubApi(over: Partial<Api> = {}): Api {
     processTrack: async () => {
       throw new Error('stubApi: this test needs its own processTrack')
     },
+    onVerifyUpdate: unsubscribe,
+    retryVerification: async () => 'rechecked',
     releasePlayingFile: async () => {},
     beginConversionBatch: noop,
     endConversionBatch: noop,

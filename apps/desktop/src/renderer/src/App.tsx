@@ -101,6 +101,7 @@ import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { useTracksView, type ViewCacheEntry } from './hooks/useTracksView'
 import { useTriageFilters } from './hooks/useTriageFilters'
 import { useUsbVolumes } from './hooks/useUsbVolumes'
+import { useVerificationUpdates } from './hooks/useVerificationUpdates'
 import { waveformOptions } from './hooks/useWaveform'
 import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries, seedCachedAnalyses } from './lib/analysisQueries'
@@ -1410,6 +1411,8 @@ export default function App(): React.JSX.Element {
       testid: 'old-copy-error',
     })
   }
+
+  useVerificationUpdates({ tracksRef, updateTrack })
 
   const {
     processOne,

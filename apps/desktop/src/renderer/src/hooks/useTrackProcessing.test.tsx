@@ -2562,3 +2562,43 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
     )
   })
 })
+
+describe('useTrackProcessing retryVerification', () => {
+  function retryHook(answer: 'rechecked' | 'requeued' | 'rerun-job') {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    const retryVerification = vi.fn<Api['retryVerification']>().mockResolvedValue(answer)
+    setApi({ processTrack, retryVerification })
+    const hook = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: null,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    return { processTrack, retryVerification, hook }
+  }
+
+  // Main only answers rerun-job when nothing it holds can redo the check, so the
+  // conversion is the only way left to get a verified result.
+  it('retry that answers rerun-job converts the track again', async () => {
+    const { processTrack, retryVerification, hook } = retryHook('rerun-job')
+    await act(async () => {
+      await hook.result.current.retryVerification('a')
+    })
+    expect(retryVerification).toHaveBeenCalledWith('a')
+    expect(processTrack).toHaveBeenCalledTimes(1)
+  })
+
+  // A recheck only re-reads; converting again would rewrite a file that is fine.
+  it('retry that answers rechecked never converts', async () => {
+    const { processTrack, hook } = retryHook('rechecked')
+    await act(async () => {
+      await hook.result.current.retryVerification('a')
+    })
+    expect(processTrack).not.toHaveBeenCalled()
+  })
+})

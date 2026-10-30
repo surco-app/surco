@@ -56,6 +56,7 @@ import type {
   WaveformResult,
   WaveformScan,
 } from '../shared/types'
+import type { Verification } from '../shared/verification'
 import type { Api } from './api'
 
 // The renderer half of shared/audioIpcContract.ts: every analysis invoke goes
@@ -346,6 +347,12 @@ const api: Api = {
   deleteAppleMusic: (persistentId: string, track: string) =>
     ipcRenderer.invoke('applemusic:delete', persistentId, track),
   processTrack: (job) => ipcRenderer.invoke('process:track', job),
+  onVerifyUpdate: (cb) => {
+    const listener = (_e: unknown, trackId: string, v: Verification): void => cb(trackId, v)
+    ipcRenderer.on('verify:update', listener)
+    return () => ipcRenderer.removeListener('verify:update', listener)
+  },
+  retryVerification: (trackId) => ipcRenderer.invoke('verify:retry', trackId),
   releasePlayingFile: (path) => ipcRenderer.invoke('player:release', path),
   beginConversionBatch: (): void => ipcRenderer.send('process:batch-begin'),
   endConversionBatch: (): void => ipcRenderer.send('process:batch-end'),

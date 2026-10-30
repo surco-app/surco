@@ -24,6 +24,7 @@ export function exportedPatch(
     return {
       status: 'done',
       outputPath: undefined,
+      verification: result.verification,
       musicStatus: 'added',
       ...(result.musicPersistentId && { musicPersistentId: result.musicPersistentId }),
       oldMusicCopyKept: result.oldMusicCopyKept,
@@ -58,6 +59,7 @@ export function exportedPatch(
   return {
     status: 'done',
     outputPath: result.outputPath,
+    verification: result.verification,
     outputIdentity: result.outputIdentity,
     ...(result.inPlace && {
       inputPath: result.outputPath,

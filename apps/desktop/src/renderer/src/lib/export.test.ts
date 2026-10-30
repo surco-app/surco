@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { Verification } from '../../../shared/verification'
 import type { TrackItem } from '../types'
 import { trackSignature } from './dirty'
 import { exportedPatch } from './export'
@@ -34,6 +35,23 @@ function track(over: Partial<TrackItem> = {}): TrackItem {
 }
 
 describe('exportedPatch', () => {
+  // The row shows what main re-read, so the patch must carry it for both result shapes.
+  it('exportedPatch keeps the verification main returned', () => {
+    const verification: Verification = { status: 'checking', checks: [] }
+    expect(
+      exportedPatch(track(), { outputPath: '/out/a.aiff', inPlace: false, verification })
+        .verification,
+    ).toEqual(verification)
+    expect(
+      exportedPatch(track(), {
+        outputPath: '',
+        inPlace: false,
+        addedToMusicOnly: true,
+        verification,
+      }).verification,
+    ).toEqual(verification)
+  })
+
   it('remembers the path an in-place export moved the file away from', () => {
     const patch = exportedPatch(track({ movedFrom: ['/music/older.wav'] }), {
       outputPath: '/music/ATB - Till I Come.aiff',
@@ -245,6 +263,7 @@ describe('exportedPatch', () => {
       outputPath: '/out/ATB - Till I Come.wav',
       inPlace: false,
       supersededPath: '/lib/Till I Come.aiff',
+      verification: { status: 'ok', checks: [] },
     })
     expect(patch.replacesPath).toBeUndefined()
     expect(supersededFile({ ...t, ...patch })).toBe('/lib/Till I Come.aiff')
@@ -257,6 +276,7 @@ describe('exportedPatch', () => {
       inPlace: false,
       addedToMusicOnly: true,
       supersededPath: '/lib/Till I Come.aiff',
+      verification: { status: 'ok', checks: [] },
     })
     expect(patch.replacesPath).toBeUndefined()
     expect(supersededFile({ ...t, ...patch })).toBe('/lib/Till I Come.aiff')
@@ -271,6 +291,7 @@ describe('exportedPatch', () => {
       inPlace: false,
       addedToMusicOnly: true,
       supersededPath: '/lib/Till I Come.aiff',
+      verification: { status: 'ok', checks: [] },
       musicLandedPath: '/Music/Media/ATB/Till I Come.wav',
     })
     expect(patch.inputPath).toBe('/Music/Media/ATB/Till I Come.wav')
