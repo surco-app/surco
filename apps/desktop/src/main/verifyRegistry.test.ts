@@ -91,6 +91,9 @@ const mocks = () => ({
   readMusic: vi.fn<VerifyRegistryDeps['readMusic']>(async () => ok('appleMusic', 'musicOne')),
   requeue: vi.fn<VerifyRegistryDeps['requeue']>(() => true),
   exists: vi.fn<VerifyRegistryDeps['exists']>(async () => true),
+  samePath: vi.fn<NonNullable<VerifyRegistryDeps['samePath']>>(
+    (a, b) => a.normalize('NFC') === b.normalize('NFC'),
+  ),
 })
 
 function setup(over: Partial<ReturnType<typeof mocks>> = {}) {
@@ -389,6 +392,24 @@ describe('verify registry', () => {
 
     expect(deps.requeue).not.toHaveBeenCalled()
     expect(deps.readRekordbox).toHaveBeenCalledTimes(2)
+  })
+
+  // The same file spelled twice (another case on a case-insensitive volume, a link) is
+  // still the same file: the repoint would find the moved row by it.
+  it('retry compares the paths as the libraries resolve them', async () => {
+    const { deps, registry } = setup({
+      samePath: vi.fn<NonNullable<VerifyRegistryDeps['samePath']>>(
+        (a, b) => a.toLowerCase() === b.toLowerCase(),
+      ),
+    })
+    deps.readRekordbox.mockResolvedValueOnce([mismatch('rekordbox', 'rekordboxStillOld')])
+    registry.register(entry('a', { from: '/Music/A.WAV' }))
+    await registry.afterFlush(written)
+
+    await registry.retry('a')
+
+    expect(deps.requeue).not.toHaveBeenCalled()
+    expect(deps.samePath).toHaveBeenCalledWith('/Music/A.WAV', '/Music/a.wav')
   })
 
   // A batch that began while the last one was still flushing: each flush judges only the

@@ -73,6 +73,8 @@ export interface VerifyRegistryDeps {
   // True when the repoint is held in the queue because the program is open.
   requeue: (place: Library, e: VerifyEntry) => boolean
   exists: (path: string) => Promise<boolean>
+  // Two spellings of one file as the libraries resolve them (links, case, composition).
+  samePath?: (a: string, b: string) => boolean
 }
 
 const LIBRARIES: Library[] = ['rekordbox', 'engine', 'traktor']
@@ -115,13 +117,14 @@ function touches(e: VerifyEntry, place: VerifyPlace): boolean {
 const stateOf = (e: VerifyEntry, place: VerifyPlace) =>
   e.verification.checks.find((c) => c.place === place)?.state
 
-// A conversion written over its own path is found by the repoint on the row it already
-// moved, which would shift its cues again.
-const stillOld = (e: VerifyEntry, place: Library) =>
-  e.from.normalize('NFC') !== e.to.normalize('NFC') &&
-  e.verification.checks.find((c) => c.place === place)?.detail.key === `${place}StillOld`
-
 export function createVerifyRegistry(deps: VerifyRegistryDeps) {
+  const samePath =
+    deps.samePath ?? ((a: string, b: string) => a.normalize('NFC') === b.normalize('NFC'))
+  // A conversion written over its own path is found by the repoint on the row it already
+  // moved, which would shift its cues again.
+  const stillOld = (e: VerifyEntry, place: Library) =>
+    !samePath(e.from, e.to) &&
+    e.verification.checks.find((c) => c.place === place)?.detail.key === `${place}StillOld`
   const entries = new Map<string, VerifyEntry>()
   // The Traktor fact each track was last written with, kept for a later re-read. A track
   // with none was never written, and its re-read cannot say anything.

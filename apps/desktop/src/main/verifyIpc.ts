@@ -173,6 +173,11 @@ export function libraryRequeue(queues: {
               file: p.file,
               newFile: p.newFile,
               ...(p.cueShift ? { cueShift: p.cueShift } : {}),
+              // Where the file is: an entry that cannot take the new name (another holds
+              // it) keeps its cues, so a retry shifts them only along with the move.
+              outputVolume: p.outputVolume,
+              outputDir: p.outputDir,
+              outputFile: p.outputFile,
             }),
           ],
         )

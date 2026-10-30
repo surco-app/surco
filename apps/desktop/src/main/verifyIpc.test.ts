@@ -34,7 +34,8 @@ import { makeRekordbox, rekordboxRow } from '../scenarios/rekordboxFixture'
 import type { Verification } from '../shared/verification'
 import { repointTracks } from './rekordboxLibrary'
 import type { QueueApply } from './rekordboxQueue'
-import type { QueuedNmlPatch } from './traktorPatchQueue'
+import { applyPatches } from './traktorNml'
+import { nmlPatchOf, type QueuedNmlPatch } from './traktorPatchQueue'
 import {
   libraryReaders,
   libraryRequeue,
@@ -256,6 +257,52 @@ describe('libraryRequeue', () => {
       file: 'a.aiff',
       newFile: 'a.wav',
       cueShift: { shiftMs: 25, maxMs: 50 },
+    })
+  })
+
+  describe('on a Traktor collection', () => {
+    const entryAt = (file: string, start: number) =>
+      `<ENTRY TITLE="Uno"><LOCATION DIR="/:Musica/:" FILE="${file}" VOLUME="Macintosh HD"></LOCATION>` +
+      `<CUE_V2 NAME="Mine" DISPL_ORDER="0" TYPE="0" START="${start}" LEN="0" REPEATS="-1" HOTCUE="0"></CUE_V2></ENTRY>`
+    const nml = (...entries: string[]) =>
+      `<NML VERSION="19"><COLLECTION ENTRIES="${entries.length}">${entries.join('')}</COLLECTION></NML>`
+    const retry = () => {
+      const q = queues()
+      libraryRequeue(q)(
+        'traktor',
+        entry({
+          traktorPatch: {
+            volume: 'Macintosh HD',
+            dir: '/:Musica/:',
+            file: 'uno.aiff',
+            newFile: 'uno.flac',
+            cueShift: { shiftMs: -51 },
+            outputVolume: 'Macintosh HD',
+            outputDir: '/:Musica/:',
+            outputFile: 'uno.flac',
+          },
+        }),
+      )
+      const [, [queued]] = q.traktor.enqueue.mock.calls[0]
+      return nmlPatchOf(queued)
+    }
+    const onDisk = () => true
+
+    it('a free name moves the entry and shifts its cues exactly once', () => {
+      const once = applyPatches(nml(entryAt('uno.aiff', 1000)), [retry()], onDisk)
+      expect(once).toContain('FILE="uno.flac"')
+      expect(once).not.toContain('START="1000"')
+
+      expect(applyPatches(once, [retry()], onDisk)).toBe(once)
+    })
+
+    // Another entry already holds the new name: the old one cannot move, and its cues
+    // describe the old file, which did not change. Retried again and again, they stay.
+    it('a name another entry holds leaves the old entry and its cues alone', () => {
+      const before = nml(entryAt('uno.aiff', 1000), entryAt('uno.flac', 2000))
+      const once = applyPatches(before, [retry()], onDisk)
+      expect(applyPatches(once, [retry()], onDisk)).toBe(before)
+      expect(once).toBe(before)
     })
   })
 

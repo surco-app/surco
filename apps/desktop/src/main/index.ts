@@ -128,6 +128,7 @@ import {
   traktorWrite,
 } from './libraryFlushes'
 import { takeCopy } from './libraryHistory'
+import { pathKey } from './libraryPathKey'
 import { enginePendingLog, rekordboxPendingLog } from './libraryRestore'
 import { serialLibraryFlush } from './libraryTagSync'
 import { registerListReviewIpc } from './listReviewIpc'
@@ -565,6 +566,10 @@ const verifyRegistry = createVerifyRegistry({
       () => true,
       () => false,
     ),
+  samePath: (a, b) => {
+    const key = pathKey({ realPath: (p) => realpathSync(p) })
+    return key(a).normalize('NFC') === key(b).normalize('NFC')
+  },
 })
 const queueChecks = queueVerification(verifyRegistry)
 // A batch adding N tracks that share one album cover used to re-run the ffmpeg encode N
