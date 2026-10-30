@@ -42,6 +42,7 @@ import { removeDuplicateCopyLogged } from './musicDuplicates'
 import { prepareTagRewrite } from './musicFieldWrite'
 import { applyMusicFixes } from './musicReviewApply'
 import { musicReviewLog, setFieldLogged } from './musicReviewLog'
+import { discardBackup, keepOriginal } from './originalKeeper'
 import { trashRecoverably } from './recoverableTrash'
 import { getSettings } from './settings'
 
@@ -341,7 +342,9 @@ export function registerAppleMusicIpc(
   // manual "update in Apple Music" action. When the user deleted that copy from
   // Music, the converted file (if one was kept) is imported afresh so the action
   // still ends with the song in the library; in "Apple Music only" mode there is no
-  // file left to import, so the missing copy is surfaced as an error instead.
+  // file left to import, so the missing copy is surfaced as an error instead. Music rewrites
+  // the entry's file as it sets the tags, so that file is backed up first, under the setting
+  // a conversion's tag-only rewrite follows.
   ipcMain.handle('applemusic:update', async (_e, job: AppleMusicUpdateJob) => {
     if (process.platform !== 'darwin') return
     return appleMusicLimiter.run(() =>
@@ -359,8 +362,13 @@ export function registerAppleMusicIpc(
                 upscale: settings.coverUpscale,
               })
             }
+            const location = await appleMusicEntryLocation(job.persistentId).catch(() => '')
+            const kept = location
+              ? await keepOriginal(location, 'replaced', location, { reencodes: false })
+              : null
             const updated = await updateInAppleMusic(job.persistentId, job.meta, prepared?.path)
             if (updated) return updated
+            if (kept) await discardBackup(kept).catch(() => undefined)
             if (!job.outputPath) {
               const t = createMenuT(resolveMenuLocale(settings.language, app.getLocale()))
               throw new Error(t('appleMusicGone'))
