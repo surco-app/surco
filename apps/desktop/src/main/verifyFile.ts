@@ -278,8 +278,9 @@ async function judge(e: FileExpect, r: FileReaders, signal?: AbortSignal): Promi
     }
   }
   const identical = e.samplesKept
+  const proof = sameAsProven(e.proven, now) ? e.proven : undefined
   if (identical) {
-    const out = await r.pcmDigest(found, opts)
+    const out = proof?.pcm ?? (await r.pcmDigest(found, opts))
     const src = e.sourcePcm as PcmDigest
     if (!out.md5 || !src.md5) return check('unreadable', 'fileUnreadable')
     if (out.md5 !== src.md5 || out.sampleRate !== src.sampleRate || out.channels !== src.channels)
@@ -288,8 +289,7 @@ async function judge(e: FileExpect, r: FileReaders, signal?: AbortSignal): Promi
         (await decodes()) === 'truncated' ? 'fileTruncated' : 'filePcmDiffers',
       )
   } else {
-    const proven = sameAsProven(e.proven, now) ? (e.proven as DecodeProof).durationSec : undefined
-    const decoded = proven === undefined ? await decodes() : proven
+    const decoded = proof === undefined ? await decodes() : proof.durationSec
     if (decoded === 'truncated') return check('mismatch', 'fileTruncated')
     const delivered = decoded ?? (await r.deliveredDurationSec(found, opts))
     if (delivered === null) return check('unreadable', 'fileUnreadable')

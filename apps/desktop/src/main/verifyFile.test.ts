@@ -546,6 +546,41 @@ describe('checkFile — cost and cancel', () => {
     expect(calls).toEqual({ assertDecodable: 0, deliveredDurationSec: 0, pcmDigest: 1 })
   })
 
+  const kept = async (path: string) => {
+    const { size, mtimeMs, ino } = statSync(path)
+    return { size, mtimeMs, ino, durationSec: 4, pcm: await pcmDigest(path) }
+  }
+
+  it('the kept samples convertAudio digested in its proof are not digested again', async () => {
+    const copy = at('proven-kept.wav')
+    copyFileSync(at('source.wav'), copy)
+    const { calls, readers } = counted()
+    const check = await checkFile(await expectFor(copy, { proven: await kept(copy) }), readers)
+    expect(check.state).toBe('ok')
+    expect(calls).toEqual({ assertDecodable: 0, deliveredDurationSec: 0, pcmDigest: 0 })
+  })
+
+  it('a proof whose digest differs from the source is filePcmDiffers', async () => {
+    const copy = at('proven-other.wav')
+    copyFileSync(at('other.wav'), copy)
+    const check = await checkFile(await expectFor(copy, { proven: await kept(copy) }), fileReaders)
+    expect(check.detail.key).toBe('filePcmDiffers')
+  })
+
+  it('kept samples written again after the proof are digested again', async () => {
+    const copy = at('touched-kept.wav')
+    copyFileSync(at('source.wav'), copy)
+    const proven = await kept(copy)
+    utimesSync(copy, new Date(), new Date(Date.now() + 5000))
+    const { calls, readers } = counted()
+    const check = await checkFile(
+      await expectFor(copy, { proven: { ...proven, pcm: { ...proven.pcm, md5: '0'.repeat(32) } } }),
+      readers,
+    )
+    expect(check.state).toBe('ok')
+    expect(calls.pcmDigest).toBe(1)
+  })
+
   it('the bytes convertAudio proved decodable are not decoded again', async () => {
     const copy = at('proven.flac')
     copyFileSync(long, copy)
@@ -710,4 +745,22 @@ describe('checkFile — what convertAudio wrote reads back as written', () => {
     const check = await converted('aiff', { title: 'T' }, malformedWav(at('short-list.wav')))
     expect(check.state, JSON.stringify(check.detail)).toBe('ok')
   }, 30_000)
+
+  // The decode that proves the temp whole digests it too: the check that finds the same
+  // bytes then compares that digest instead of decoding the file a second time.
+  it.each([
+    ['flac', 'pcm_s16le'],
+    ['aiff', 'pcm_s24le'],
+  ] as const)(
+    'a %s whose samples were kept carries the digest of its proof',
+    async (format, codec) => {
+      const source = at(`proof-${codec}.wav`)
+      ff('-i', at('source.wav'), '-c:a', codec, source)
+      const out = at(`proof-${codec}.${format}`)
+      const { written } = await convertAudio(source, out, format, meta({ title: 'T' }))
+      expect(written.samplesKept).toBe(true)
+      expect(written.proven?.pcm).toEqual(await pcmDigest(out))
+    },
+    30_000,
+  )
 })

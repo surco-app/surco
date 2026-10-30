@@ -117,7 +117,7 @@ import {
 } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
-import { type PcmDigest, pcmDigest, pcmTimeoutMs } from './verifyPcm'
+import { digestCodec, type PcmDigest, pcmDigest, pcmTimeoutMs } from './verifyPcm'
 import { WAVEFORM_BUCKETS, WAVEFORM_SAMPLE_RATE } from './waveform'
 import { isMalformedInputError, repairWav } from './wavRepair'
 import { runInWorker, signalWorkers } from './worker'
@@ -1493,13 +1493,34 @@ export async function assertDecodable(
   copiedFrom?: string,
   opts?: RunOpts,
 ): Promise<number | null> {
-  const whole = await decodeForCheck(file, undefined, opts)
+  return (await proveDecodable(file, copiedFrom, opts)).durationSec
+}
+
+// assertDecodable, with the same pass also digesting the samples the way pcmDigest does
+// when `digestAs` (the file's probe) is given: a whole decode that succeeds hands both
+// back, so a check that finds these bytes again needs no decode of its own. A verdict
+// that took another pass carries no digest.
+export async function proveDecodable(
+  file: string,
+  copiedFrom?: string,
+  opts?: RunOpts,
+  digestAs?: ProbeResult,
+): Promise<{ durationSec: number | null; pcm?: PcmDigest }> {
+  const whole = await decodeForCheck(file, undefined, opts, digestAs && digestCodec(digestAs))
   if (whole.ok) {
     assertNotTruncated(file, whole.stderr, whole.stdout)
-    return decodedDurationSec(whole.stdout)
+    const md5 = /^MD5=([0-9a-f]{32})/m.exec(whole.stdout)?.[1]
+    return {
+      durationSec: decodedDurationSec(whole.stdout),
+      ...(md5 && digestAs
+        ? {
+            pcm: { md5, sampleRate: Number(digestAs.sampleRate), channels: digestAs.channels },
+          }
+        : {}),
+    }
   }
   if (copiedFrom !== undefined && !(await decodeForCheck(copiedFrom, undefined, opts)).ok)
-    return assertDeliversAsMuchAs(file, copiedFrom)
+    return { durationSec: await assertDeliversAsMuchAs(file, copiedFrom) }
   // -xerror fails on the first packet the decoder rejects wherever it sits, and a
   // complete file can carry one after its last frame: three of a user's MP3s (17/09/2026)
   // ended in a Lyrics3v2 block, which ffmpeg's mp3 demuxer does not know and hands to the
@@ -1517,7 +1538,7 @@ export async function assertDecodable(
   if (header === null || header < MIN_VERIFIABLE_SEC) throw whole.error
   const bounded = await decodeForCheck(file, header * (1 - MAX_DECODE_SHORTFALL / 2), opts)
   if (!bounded.ok) throw bounded.error
-  return null
+  return { durationSec: null }
 }
 
 export async function sourceDamaged(file: string, signal?: AbortSignal): Promise<boolean> {
@@ -1590,6 +1611,7 @@ async function decodeForCheck(
   file: string,
   untilSec?: number,
   opts?: RunOpts,
+  digestCodec?: string,
 ): Promise<DecodeForCheck> {
   try {
     const { stderr, stdout } = await run(
@@ -1610,6 +1632,7 @@ async function decodeForCheck(
         '-f',
         'null',
         '-',
+        ...(digestCodec ? ['-map', '0:a:0', '-c:a', digestCodec, '-f', 'md5', '-'] : []),
       ],
       { maxBuffer: 1024 * 1024 * 16, ...opts },
     )
@@ -1998,6 +2021,8 @@ export interface DecodeProof {
   mtimeMs: number
   ino: number
   durationSec: number | null
+  // The samples' digest, taken by that same decode when they were meant to stay the same.
+  pcm?: PcmDigest
 }
 
 export async function convertAudio(
@@ -2438,8 +2463,14 @@ export async function convertAudio(
     const watchCancel = setInterval(() => {
       if (isCancelled?.()) measuring.abort()
     }, CANCEL_POLL_MS)
+    const digestAs = samplesKept ? await probeAudio(tmp).catch(() => undefined) : undefined
     const measures = [
-      assertDecodable(tmp, copiedVerbatim ? input : undefined, { signal: measuring.signal }),
+      proveDecodable(
+        tmp,
+        copiedVerbatim ? input : undefined,
+        { signal: measuring.signal },
+        digestAs,
+      ),
       samplesKept && absorbedPcm !== undefined
         ? (absorbedPcm ?? undefined)
         : samplesKept
@@ -2451,10 +2482,10 @@ export async function convertAudio(
       samplesKept ? undefined : decodedSourceSec(input, probeOnce, measuring.signal),
     ] as const
     try {
-      let durationSec: number | null
-      ;[durationSec, sourcePcm, sourceDurationSec] = await Promise.all(measures)
+      let proof: Awaited<ReturnType<typeof proveDecodable>>
+      ;[proof, sourcePcm, sourceDurationSec] = await Promise.all(measures)
       const { size, mtimeMs, ino } = await stat(tmp)
-      proven = { size, mtimeMs, ino, durationSec }
+      proven = { size, mtimeMs, ino, ...proof }
     } catch (err) {
       if (isCancelled?.()) throw errorWithKey('conversionCancelled')
       throw err
