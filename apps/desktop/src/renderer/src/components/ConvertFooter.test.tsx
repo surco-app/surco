@@ -727,14 +727,46 @@ describe('ConvertFooter verification', () => {
         onRetryVerification,
       }),
     )
+    screen.getByTestId('verify-retry').focus()
     fireEvent.click(screen.getByTestId('verify-retry'))
-    expect(screen.getByTestId('verify-retry')).toBeDisabled()
+    // aria-disabled, not disabled: a disabled button drops the keyboard user's focus to <body>.
+    expect(screen.getByTestId('verify-retry')).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByTestId('verify-retry')).toHaveFocus()
     expect(screen.getByTestId('verify-checking')).toHaveTextContent('Comprobando…')
     expect(screen.queryByTestId('verify-mismatch')).toBeNull()
     fireEvent.click(screen.getByTestId('verify-retry'))
     expect(onRetryVerification).toHaveBeenCalledTimes(1)
     await act(async () => settle())
-    expect(screen.getByTestId('verify-retry')).toBeEnabled()
+    expect(screen.getByTestId('verify-retry')).not.toHaveAttribute('aria-disabled', 'true')
+  })
+
+  // Once the retry answered, focus lands on the shield that lists what was checked again.
+  it('a retry that answered hands focus to the shield', async () => {
+    const onRetryVerification = vi.fn<(id: string) => Promise<void>>(async () => {})
+    render(
+      mismatched([fileOk, bad('rekordbox', 'rekordboxStillOld', { format: 'AIFF' })], {
+        onRetryVerification,
+      }),
+    )
+    screen.getByTestId('verify-retry').focus()
+    await act(async () => fireEvent.click(screen.getByTestId('verify-retry')))
+    expect(screen.getByTestId('verify-shield')).toHaveFocus()
+  })
+
+  // The place is Apple Music but its keys say music: the line must read as words, never a key.
+  it('a failed retry on Apple Music says it could not check Apple Music', async () => {
+    const onRetryVerification = vi.fn<(id: string) => Promise<void>>(async () => {
+      throw new Error('verifyUnknownTrack')
+    })
+    render(
+      mismatched([fileOk, bad('appleMusic', 'musicWrongFile', { format: 'AIFF' })], {
+        onRetryVerification,
+      }),
+    )
+    await act(async () => fireEvent.click(screen.getByTestId('verify-retry')))
+    expect(screen.getByTestId('verify-mismatch')).toHaveTextContent(
+      /^No se pudo comprobar Apple Music$/,
+    )
   })
 
   // Main can refuse the retry with a bare Error whose message was never meant for the DJ:
@@ -753,7 +785,7 @@ describe('ConvertFooter verification', () => {
       /^No se pudo comprobar rekordbox$/,
     )
     expect(screen.getByTestId('done-row').textContent).not.toContain('verifyUnknownTrack')
-    expect(screen.getByTestId('verify-retry')).toBeEnabled()
+    expect(screen.getByTestId('verify-retry')).not.toHaveAttribute('aria-disabled', 'true')
   })
 
   // Whatever main says next is the answer: a fresh verification replaces the failed retry's
@@ -788,7 +820,7 @@ describe('ConvertFooter verification', () => {
       }),
     )
     expect(screen.getByTestId('verify-mismatch')).toHaveTextContent(
-      /^El original ya no está, hay una copia en Originales$/,
+      /^El original ya no está, hay una copia en Copias$/,
     )
     fireEvent.click(screen.getByTestId('verify-open-originals'))
     expect(onOpenOriginals).toHaveBeenCalledTimes(1)

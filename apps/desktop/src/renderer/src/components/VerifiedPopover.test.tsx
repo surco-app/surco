@@ -147,7 +147,27 @@ describe('VerifiedPopover', () => {
         detail: { key: 'fileTagDiffers', params: { field: 'albumArtist' } },
       },
     ])
-    expect(file).toHaveTextContent(`${i18n.t('fields.albumArtist')} distinto en el fichero`)
+    expect(file).toHaveTextContent(`No cuadra ${i18n.t('fields.albumArtist')} en el fichero`)
+  })
+
+  // One cue is a cue: the count picks its plural like the ok line does.
+  it('counts lost cues in the singular when there was one', () => {
+    const [rekordbox] = open([
+      {
+        place: 'rekordbox',
+        state: 'mismatch',
+        detail: { key: 'rekordboxCuesLost', params: { before: 1, after: 0 } },
+      },
+    ])
+    expect(rekordbox).toHaveTextContent('rekordbox tenía 1 cue y ahora 0')
+  })
+
+  // The kept copy lives in the panel by the name the rail gives it.
+  it('names the panel a kept original lives in as the rail does', () => {
+    const [file] = open([
+      { place: 'file', state: 'mismatch', detail: { key: 'fileSourceGone', params: { kept: 1 } } },
+    ])
+    expect(file).toHaveTextContent(`hay una copia en ${i18n.t('copies.rail')}`)
   })
 
   // Focus moves in on open, so a keyboard user's Escape lands on the popover that

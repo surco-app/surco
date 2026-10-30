@@ -36,10 +36,12 @@ export function detailText(
     return tr('verify.detail.enginePerformanceChanged', {
       field: tr(`verify.engineField.${params.field}`),
     })
+  if (key === 'rekordboxCuesLost' || key === 'rekordboxCuesChanged')
+    return tr(`verify.detail.${key}`, { ...params, count: params.before })
   if (key === 'fileSourceGone')
-    return tr(
-      Number(params.kept) ? 'verify.detail.fileSourceGoneKept' : 'verify.detail.fileSourceGone',
-    )
+    return Number(params.kept)
+      ? tr('verify.detail.fileSourceGoneKept', { panel: tr('copies.rail') })
+      : tr('verify.detail.fileSourceGone')
   return tr(`verify.detail.${key}`, params)
 }
 

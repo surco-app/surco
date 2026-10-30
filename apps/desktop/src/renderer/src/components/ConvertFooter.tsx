@@ -39,6 +39,9 @@ import { detailText, VerifiedPopover } from './VerifiedPopover'
 // The one place the amber line names when several fail: a wrong answer before a place that
 // could not be read, then the file before the libraries that follow it, since a library
 // pointing at a bad file is fixed by fixing the file.
+// The places whose detail keys carry another prefix than the place's own name.
+const DETAIL_PREFIX: Partial<Record<PlaceCheck['place'], string>> = { appleMusic: 'music' }
+
 function worstCheck(checks: PlaceCheck[]): PlaceCheck | undefined {
   const rank = (c: PlaceCheck) =>
     (c.state === 'mismatch' ? 0 : c.state === 'unreadable' ? 1 : 2) * PLACE_ORDER.length +
@@ -233,12 +236,20 @@ export function ConvertFooter({
   const [retrying, setRetrying] = useState(false)
   const [retryFailedOn, setRetryFailedOn] = useState<typeof verification>(undefined)
   const retryFailed = !!verification && retryFailedOn === verification
+  // The button keeps focus while it runs (aria-disabled, not disabled), and an answered retry
+  // hands it to the shield that lists the fresh result.
+  const focusShield = useRef(false)
   const retry = (): void => {
-    if (!onRetryVerification) return
+    if (!onRetryVerification || retrying) return
     const on = verification
     setRetrying(true)
     void onRetryVerification(item.id)
-      .catch(() => setRetryFailedOn(on))
+      .then(
+        () => {
+          focusShield.current = footerRef.current?.contains(document.activeElement) ?? false
+        },
+        () => setRetryFailedOn(on),
+      )
       .finally(() => setRetrying(false))
   }
   const musicPrimary = destination === 'appleMusic' || hasMusicCopy
@@ -274,6 +285,10 @@ export function ConvertFooter({
     refocus.current = footerRef.current?.contains(document.activeElement) ?? false
   }
   useLayoutEffect(() => {
+    if (focusShield.current && !retrying) {
+      focusShield.current = false
+      footerRef.current?.querySelector<HTMLButtonElement>('[data-testid="verify-shield"]')?.focus()
+    }
     if (!refocus.current) return
     refocus.current = false
     footerRef.current
@@ -357,10 +372,11 @@ export function ConvertFooter({
                       <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                       <span className="min-w-0">
                         {worst && retryFailed ? (
-                          tr(`verify.detail.${worst.place}Unreadable`)
+                          tr(`verify.detail.${DETAIL_PREFIX[worst.place] ?? worst.place}Unreadable`)
                         ) : keptOriginal ? (
                           <Trans
                             i18nKey="verify.sourceGoneKeptLine"
+                            values={{ panel: tr('copies.rail') }}
                             components={[
                               <button
                                 key="originals"
@@ -431,8 +447,8 @@ export function ConvertFooter({
                       type="button"
                       data-testid="verify-retry"
                       onClick={retry}
-                      disabled={retrying}
-                      className="press flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium text-fg hover:bg-[var(--color-hover)] disabled:opacity-60"
+                      aria-disabled={retrying || undefined}
+                      className="press flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium text-fg hover:bg-[var(--color-hover)] aria-disabled:opacity-60"
                     >
                       {tr('verify.retry')}
                     </button>
