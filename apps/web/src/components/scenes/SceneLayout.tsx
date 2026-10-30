@@ -19,7 +19,7 @@ export default function SceneLayout({
   app: ReactNode
 }) {
   return (
-    <section id={id} className="scroll-mt-12 py-16 sm:py-24">
+    <section id={id} className="scroll-mt-12 py-16 sm:py-20">
       <Reveal>
         <Kicker>{step}</Kicker>
         <h2 className="group/title mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
