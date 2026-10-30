@@ -95,7 +95,7 @@ function positionsOf(
             sec(cues.tail.readDoubleBE(9)),
           ]
         : null,
-    beatData: grid?.markers.map((m) => m.sample / rate) ?? null,
+    beatData: grid ? [...grid.defaultMarkers, ...grid.markers].map((m) => m.sample / rate) : null,
     loops:
       loops?.loops.flatMap((l) => [
         l.startSet ? sec(l.start) : null,

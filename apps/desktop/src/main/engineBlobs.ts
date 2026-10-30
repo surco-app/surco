@@ -39,14 +39,20 @@ function readGrid(raw: Buffer, at: number): { markers: EngineBeatMarker[]; end: 
   return { markers, end }
 }
 
-export function decodeBeatGrid(
-  raw: Buffer,
-): { sampleRate: number; markers: EngineBeatMarker[] } | null {
+export function decodeBeatGrid(raw: Buffer): {
+  sampleRate: number
+  markers: EngineBeatMarker[]
+  defaultMarkers: EngineBeatMarker[]
+} | null {
   if (raw.length < 17) return null
   const base = readGrid(raw, 17)
   const adjusted = base ? readGrid(raw, base.end) : null
-  if (!adjusted) return null
-  return { sampleRate: raw.readDoubleBE(0), markers: adjusted.markers }
+  if (!base || !adjusted) return null
+  return {
+    sampleRate: raw.readDoubleBE(0),
+    markers: adjusted.markers,
+    defaultMarkers: base.markers,
+  }
 }
 
 export interface EngineQuickCue {

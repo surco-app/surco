@@ -45,6 +45,10 @@ describe('Engine DJ performance blobs', () => {
         { sample: -56700, beat: -4 },
         { sample: 14760900, beat: 780 },
       ],
+      defaultMarkers: [
+        { sample: -56700, beat: -4 },
+        { sample: 14760900, beat: 780 },
+      ],
     })
     const cues = decodeQuickCues(real(REAL_QUICK_CUES))
     expect(cues?.slots.map((s) => s.cue)).toEqual([
@@ -101,6 +105,7 @@ describe('Engine DJ performance blobs', () => {
         { sample: 1200, beat: 0 },
         { sample: 481200, beat: 16 },
       ],
+      defaultMarkers: [{ sample: 0, beat: 0 }],
     })
   })
 
