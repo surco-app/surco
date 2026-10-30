@@ -1610,8 +1610,10 @@ export async function deliveredDurationSec(
 // ended in a stray frame header numbered out of sequence; a stream copy carried it
 // across, every sample still decoded, and the clock jumped back to 191.84 s of a 405 s
 // file, so the conversion was thrown away as truncated. Restamping each frame by the
-// samples before it makes out_time_us the length of audio actually delivered.
-const COUNT_DELIVERED_SAMPLES = ['-af', 'asetpts=N/SR/TB']
+// samples before it makes out_time_us the length of audio actually delivered. That clock
+// still stops where the last frame STARTS, short by up to a whole FLAC block (104 ms at
+// 44.1 kHz): one padded sample after the end puts the last start on the true length.
+const COUNT_DELIVERED_SAMPLES = ['-af', 'asetpts=N/SR/TB,apad=pad_len=1']
 
 type DecodeForCheck =
   | { ok: true; stderr: string; stdout: string }
