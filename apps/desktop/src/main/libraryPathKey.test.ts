@@ -67,4 +67,16 @@ describe('pathKey', () => {
     })
     expect(key(`${home}/Café.wav`.normalize('NFD'))).toBe(key(`${VOLUME}/Café.wav`))
   })
+
+  it('rewrites the music folder link when the folder itself is named decomposed', () => {
+    const home = '/Users/José/Music/Music'.normalize('NFD')
+    const key = pathKey({
+      realPath: (p) => {
+        if (p === home) return VOLUME
+        throw new Error('ENOENT')
+      },
+      homeMusicDir: home,
+    })
+    expect(key(`${home}/Café.wav`.normalize('NFC'))).toBe(key(`${VOLUME}/Café.wav`))
+  })
 })

@@ -797,7 +797,7 @@ describe('a repoint across Unicode forms', () => {
 
     expect(result.written).toBe(true)
     const row = readRow(dbPath)
-    expect(row.FolderPath.normalize('NFC')).toBe(to.normalize('NFC'))
+    expect(row.FolderPath).toBe(to)
     expect(row.playlists).toBe(2)
     expect(row.cues).toBe(1)
   })
@@ -810,7 +810,7 @@ describe('a repoint across Unicode forms', () => {
 
     expect(result.written).toBe(true)
     const row = readRow(dbPath)
-    expect(row.FolderPath.normalize('NFC')).toBe(to.normalize('NFC'))
+    expect(row.FolderPath).toBe(to)
     expect(row.playlists).toBe(2)
     expect(row.cues).toBe(1)
   })
