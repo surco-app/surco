@@ -1450,7 +1450,7 @@
           },
           {
             "tab": "Destino",
-            "section": "Copias de seguridad",
+            "section": "Copias de los originales",
             "setting": "Qué se guarda",
             "value": "Siempre",
             "optional": true,
@@ -2451,7 +2451,7 @@
           },
           {
             "tab": "Destino",
-            "section": "Copias de seguridad",
+            "section": "Copias de los originales",
             "setting": "Qué se guarda",
             "value": "Solo si cambia el audio",
             "note": "Así viene. Un NAS no tiene Papelera, así que lo que borras va a Copias › Archivos de música."

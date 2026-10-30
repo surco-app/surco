@@ -1450,7 +1450,7 @@
           },
           {
             "tab": "Ausgabe",
-            "section": "Sicherungskopien",
+            "section": "Kopien der Originale",
             "setting": "Was aufbewahrt wird",
             "value": "Immer",
             "optional": true,
@@ -2451,7 +2451,7 @@
           },
           {
             "tab": "Ausgabe",
-            "section": "Sicherungskopien",
+            "section": "Kopien der Originale",
             "setting": "Was aufbewahrt wird",
             "value": "Nur wenn sich das Audio ändert",
             "note": "Das ist die Voreinstellung. Ein NAS hat keinen Papierkorb, deshalb landet, was du löschst, unter Backups › Musikdateien."

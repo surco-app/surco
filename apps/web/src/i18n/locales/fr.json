@@ -1450,7 +1450,7 @@
           },
           {
             "tab": "Sortie",
-            "section": "Copies de sauvegarde",
+            "section": "Copies des originaux",
             "setting": "Ce qui est conservé",
             "value": "Toujours",
             "optional": true,
@@ -2451,7 +2451,7 @@
           },
           {
             "tab": "Sortie",
-            "section": "Copies de sauvegarde",
+            "section": "Copies des originaux",
             "setting": "Ce qui est conservé",
             "value": "Seulement si l'audio change",
             "note": "C'est le réglage par défaut. Un NAS n'a pas de corbeille, donc ce que tu supprimes va dans Sauvegardes › Fichiers de musique."

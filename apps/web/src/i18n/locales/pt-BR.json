@@ -1450,7 +1450,7 @@
           },
           {
             "tab": "Saída",
-            "section": "Cópias de segurança",
+            "section": "Cópias dos originais",
             "setting": "O que é guardado",
             "value": "Sempre",
             "optional": true,
@@ -2451,7 +2451,7 @@
           },
           {
             "tab": "Saída",
-            "section": "Cópias de segurança",
+            "section": "Cópias dos originais",
             "setting": "O que é guardado",
             "value": "Só se o áudio mudar",
             "note": "É o padrão. Um NAS não tem Lixeira, então o que você apaga vai para Cópias › Arquivos de música."
