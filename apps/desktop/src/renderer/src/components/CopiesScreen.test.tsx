@@ -343,7 +343,7 @@ describe('CopiesScreen music files', () => {
   })
 
   // "Track (Original Mix)" and "Track (Extended Mix)" cut at the same width look alike, and
-  // restoring the wrong one is the mistake this panel exists to undo. Hovering shows it all.
+  // restoring the wrong one is the mistake this section exists to undo. Hovering shows it all.
   it('shows the full name and folder of a cut row on hover', () => {
     renderMusic([entry({ name: 'Track (Extended Mix).aiff' })])
     expect(screen.getByTitle('Track (Extended Mix).aiff')).toBeInTheDocument()

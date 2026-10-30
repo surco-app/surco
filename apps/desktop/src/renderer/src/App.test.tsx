@@ -21,8 +21,10 @@ import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import type {
   ActivityEvent,
+  ProgramCopies,
   RekordboxSyncIssue,
   Release,
+  RestoreResult,
   Settings,
   UsbExportEvent,
   UsbVolume,
@@ -1350,8 +1352,6 @@ describe('App source rail', () => {
     expect(await screen.findByTestId('source-rail-rekordbox')).toBeInTheDocument()
   })
 
-  // The music files Surco kept are there on every machine, so the way to them cannot
-  // depend on a DJ program being installed.
   it('the rail and Copias show even without any DJ program', async () => {
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ hiddenSources: ['rekordbox', 'engine'] })),
@@ -8323,7 +8323,58 @@ describe('App empty screen offers a single way in', () => {
   })
 })
 
-describe('App Originals panel', () => {
+const rekordboxCopies: ProgramCopies = {
+  program: 'rekordbox',
+  collectionPath: '/lib/master.db',
+  copies: [
+    {
+      id: 'c1',
+      collectionPath: '/lib/master.db',
+      takenAt: Date.now(),
+      reason: 'run',
+      files: [],
+    },
+  ],
+  restore: null,
+  pending: 0,
+  halted: false,
+  copyFailed: false,
+  untouched: false,
+}
+
+describe('App Copias music files', () => {
+  it('Escape on the restore confirmation closes only the confirmation', async () => {
+    setApi({ copiesStatus: vi.fn().mockResolvedValue([rekordboxCopies]) })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-copies'))
+    fireEvent.click(await screen.findByTestId('copies-restore-rekordbox'))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByTestId('copies-screen')).toBeInTheDocument()
+  })
+
+  it('keeps Copias open on Escape while a restore is running, so its outcome is seen', async () => {
+    let finish: (r: RestoreResult) => void = () => {}
+    setApi({
+      copiesStatus: vi.fn().mockResolvedValue([rekordboxCopies]),
+      restoreCopy: vi.fn(() => new Promise<RestoreResult>((resolve) => (finish = resolve))),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-copies'))
+    fireEvent.click(await screen.findByTestId('copies-restore-rekordbox'))
+    fireEvent.click(screen.getByTestId('confirm-ok'))
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.getByTestId('copies-screen')).toBeInTheDocument()
+    await act(async () => finish({ ok: false, reason: 'running' }))
+    expect(await screen.findByTestId('copies-refused-rekordbox')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByTestId('copies-screen')).not.toBeInTheDocument()
+  })
+
   // The toolbar count is gone; a track Surco backed up says so on its own row, and that
   // mark is the way into its backup: Copias opens on the music files searched to that
   // file, not on the whole list of everything a crate conversion ever rewrote.
@@ -8351,10 +8402,11 @@ describe('App Originals panel', () => {
     await screen.findByTestId('copies-screen')
     expect(screen.getByTestId('copies-toggle-music')).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByTestId('trash-search')).toHaveValue('a.wav')
+    expect(screen.getAllByTestId('trash-row')).toHaveLength(1)
     expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument()
   })
 
-  // The panel states how long originals stay and how much room they get; showing the
+  // Copias states how long originals stay and how much room they get; showing the
   // shipped defaults instead of the user's own choice tells them their setting did nothing.
   it('shows the retention and size cap the user chose', async () => {
     setApi({
@@ -8371,9 +8423,8 @@ describe('App Originals panel', () => {
       formatBytes(2 * 1024 ** 3, i18n.language),
     )
   })
-  // Originals is a dialog, but it opened outside the modal registry, so nothing gated
-  // the global shortcuts or answered Escape: the arrows walked the list hidden behind it
-  // and the only way out was the close button.
+  // Copias opens outside the modal registry, so unless it gates the global shortcuts and
+  // answers Escape, the arrows walk the list hidden behind it.
   it('closes on Escape and keeps track shortcuts off the list behind it', async () => {
     setApi({ trashList: vi.fn().mockResolvedValue([]) })
     await renderApp()
@@ -8418,10 +8469,10 @@ describe('App Originals panel', () => {
     )
   })
 
-  // The keys behind a panel were already off, but the menu bar still reached the list: Convert
-  // all from the menu while Originals or a review is open ran a batch under it, two writers on
-  // the same files and libraries. The menu now waits for the panel like the keyboard does.
-  it('runs no track command from the menu bar while the panel is open', async () => {
+  // The keys behind Copias are off, but the menu bar could still reach the list: Convert
+  // all from the menu while Copias or a review is open ran a batch under it, two writers on
+  // the same files and libraries. The menu waits for Copias like the keyboard does.
+  it('runs no track command from the menu bar while Copias is open', async () => {
     const processTrack = vi.fn(async () => ({ outputPath: '/out/x.aiff', inPlace: false }))
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3']),

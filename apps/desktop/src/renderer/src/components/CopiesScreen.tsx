@@ -271,6 +271,7 @@ export function CopiesScreen({
   const when = useWhen()
   const [asking, setAsking] = useState<{ program: DjProgram; copyId: string } | null>(null)
   const [outcomes, setOutcomes] = useState<Partial<Record<DjProgram, Outcome>>>({})
+  const [restoring, setRestoring] = useState(0)
   const sorted = PROGRAM_ORDER.flatMap((p) => programs.filter((e) => e.program === p))
   const askedEntry = asking && programs.find((e) => e.program === asking.program)
   const askedCopy =
@@ -280,16 +281,30 @@ export function CopiesScreen({
     if (asking && !askedCopy) setAsking(null)
   }, [asking, askedCopy])
 
+  useEffect(() => {
+    if (!asking && restoring === 0) return
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== 'Escape') return
+      e.preventDefault()
+      setAsking(null)
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [asking, restoring])
+
   const settle = (program: DjProgram, outcome: Outcome | undefined): void =>
     setOutcomes((o) => ({ ...o, [program]: outcome }))
 
   const restore = async (program: DjProgram, copy: LibraryCopy): Promise<void> => {
     settle(program, undefined)
+    setRestoring((n) => n + 1)
     try {
       const result = await onRestore(program, copy.id)
       settle(program, result.ok ? { ok: true, takenAt: copy.takenAt } : result)
     } catch {
       settle(program, { ok: false, reason: 'failed' })
+    } finally {
+      setRestoring((n) => n - 1)
     }
   }
 

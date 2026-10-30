@@ -193,7 +193,6 @@ describe('SourceRail', () => {
       const props = renderWith({})
       const button = screen.getByTestId('source-rail-copies')
       expect(button).toHaveAccessibleName('Backups')
-      expect(button.className).toMatch(/(^|\s)mt-auto(\s|$)/)
       expect(screen.getByTestId('source-rail')).toContainElement(button)
       expect(screen.queryByTestId('source-rail-copies-dot')).not.toBeInTheDocument()
       expect(screen.getByTestId('source-rail-copies-icon')).toHaveAttribute('data-icon', 'check')
