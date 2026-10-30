@@ -181,9 +181,9 @@ export function useSourceBrowser({
     queryFn: ({ signal }) => {
       if (source !== 'appleMusic')
         return readPlaylist(source as PlaylistSource, playlist?.id as string)
-      const firstRead = queryClient.getQueryData(entriesKey) === undefined
       return readMusicPlaylist(playlist?.id as string, signal, (part) => {
-        if (firstRead) queryClient.setQueryData(entriesKey, part)
+        const shown = queryClient.getQueryData<SourcePlaylistEntry[]>(entriesKey)
+        if (!shown || part.length > shown.length) queryClient.setQueryData(entriesKey, part)
       })
     },
     enabled: source !== null && playlist !== null,
