@@ -54,8 +54,15 @@ function readTrackCount(source: PlaylistSource): Promise<number> {
 
 const MUSIC_STRETCH = 200
 
-async function readMusicPlaylist(id: string, signal: AbortSignal): Promise<SourcePlaylistEntry[]> {
-  const whole = await window.api.loadAppleMusicLibraryPlaylistTracks(id)
+async function readMusicPlaylist(
+  id: string,
+  signal: AbortSignal,
+  onLastRead: (entries: SourcePlaylistEntry[]) => void,
+): Promise<SourcePlaylistEntry[]> {
+  const reading = window.api.loadAppleMusicLibraryPlaylistTracks(id)
+  const last = await window.api.loadAppleMusicPlaylistCached(id)
+  if (last) onLastRead(musicEntries(last))
+  const whole = await reading
   if (whole) return musicEntries(whole)
   let read = await window.api.loadAppleMusicPlaylistTracks(id, 1, MUSIC_STRETCH)
   const total = read.total ?? 0
@@ -178,7 +185,10 @@ export function useSourceBrowser({
     queryFn: ({ signal }) => {
       if (source !== 'appleMusic')
         return readPlaylist(source as PlaylistSource, playlist?.id as string)
-      return readMusicPlaylist(playlist?.id as string, signal)
+      return readMusicPlaylist(playlist?.id as string, signal, (last) => {
+        if (queryClient.getQueryData(entriesKey) === undefined)
+          queryClient.setQueryData(entriesKey, last)
+      })
     },
     enabled: source !== null && playlist !== null,
     staleTime: Number.POSITIVE_INFINITY,

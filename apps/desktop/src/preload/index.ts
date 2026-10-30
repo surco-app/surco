@@ -202,6 +202,8 @@ const api: Api = {
     persistentId: string,
   ): Promise<AppleMusicPlaylistTracks | null> =>
     ipcRenderer.invoke('applemusic:libraryPlaylistTracks', persistentId),
+  loadAppleMusicPlaylistCached: (persistentId: string): Promise<AppleMusicPlaylistTracks | null> =>
+    ipcRenderer.invoke('applemusic:playlistCached', persistentId),
   appleMusicArtwork: (
     persistentIds: string[],
   ): Promise<Record<string, { coverPath: string; coverUrl: string }>> =>

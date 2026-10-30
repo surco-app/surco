@@ -32,6 +32,7 @@ function setup(
     loadAppleMusicPlaylists: vi.fn().mockResolvedValue([]),
     loadAppleMusicPlaylistTracks: vi.fn(),
     loadAppleMusicLibraryPlaylistTracks: vi.fn().mockResolvedValue(null),
+    loadAppleMusicPlaylistCached: vi.fn().mockResolvedValue(null),
     engineAvailable: vi.fn().mockResolvedValue(true),
     loadEngineTree: vi
       .fn()
@@ -234,6 +235,27 @@ describe('useSourceBrowser', () => {
       await waitFor(() => expect(result.current.entries).toHaveLength(450))
       expect(library).toHaveBeenCalledWith('P1')
       expect(load).not.toHaveBeenCalled()
+    })
+
+    // The same read took 0.3 s one time and 14 s the next on a NAS. The last whole read
+    // shows at once, every count right, and the fresh one replaces it whole.
+    it('shows the last whole read while the database reads the playlist again', async () => {
+      const fresh = pending<ReturnType<typeof stretch>>()
+      const library = vi.fn(() => fresh.promise)
+      const hook = setup({
+        loadAppleMusicPlaylists: vi
+          .fn()
+          .mockResolvedValue([{ persistentId: 'P1', name: 'Friday', count: 450 }]),
+        loadAppleMusicLibraryPlaylistTracks: library,
+        loadAppleMusicPlaylistCached: vi.fn().mockResolvedValue(stretch(1, 450, 450)),
+        loadAppleMusicPlaylistTracks: vi.fn(),
+      })
+      act(() => hook.result.current.selectSource('appleMusic'))
+      act(() => hook.result.current.selectPlaylist(FRIDAY, []))
+      await waitFor(() => expect(hook.result.current.entries).toHaveLength(450))
+      expect(library).toHaveBeenCalledWith('P1')
+      act(() => fresh.resolve(stretch(1, 451, 451)))
+      await waitFor(() => expect(hook.result.current.entries).toHaveLength(451))
     })
 
     // Every count and filter is worked out from the rows on screen, so a row shown before
