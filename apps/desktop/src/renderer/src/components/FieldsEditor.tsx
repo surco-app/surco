@@ -152,12 +152,7 @@ export function FieldsEditor({
     const library = libraryOf(key)
     if (!library) return null
     const Icon = LIBRARY_ICON[library]
-    return (
-      <>
-        <Icon size={12} />
-        <span className="sr-only">{tr(`sources.${library}`)}</span>
-      </>
-    )
+    return <Icon size={12} />
   }
   const nameCell = (key: string): React.JSX.Element => (
     <>

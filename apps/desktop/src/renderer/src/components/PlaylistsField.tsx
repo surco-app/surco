@@ -364,7 +364,6 @@ function TreeField({
       >
         {label}
         <Icon size={12} />
-        <span className="sr-only">{app}</span>
       </label>
       <div ref={rootRef} className="relative min-w-0 @[24rem]:col-start-2">
         <button

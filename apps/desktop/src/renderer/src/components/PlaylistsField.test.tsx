@@ -51,7 +51,7 @@ function Harness({ initial = SEVEN, spy = vi.fn() }) {
   const [value, setValue] = useState(initial)
   return (
     <PlaylistsField
-      label="Playlists"
+      label="rekordbox playlists"
       tree={TREE}
       options={OPTIONS}
       value={value}
@@ -70,11 +70,13 @@ const visiblePlaylists = () =>
   screen.queryAllByTestId(/^playlists-check-/).map((el) => el.getAttribute('data-testid'))
 
 describe('PlaylistsField for Traktor and Engine DJ', () => {
-  it('names its library beside the label, so three Playlists fields read apart', () => {
+  // The label already names the program, so the field is announced with it once,
+  // not "Traktor playlists Traktor".
+  it('is named by its label alone, which already carries the program', () => {
     render(
       <PlaylistsField
         library="traktor"
-        label="Playlists"
+        label="Traktor playlists"
         tree={TREE}
         options={OPTIONS}
         value={[]}
@@ -82,7 +84,7 @@ describe('PlaylistsField for Traktor and Engine DJ', () => {
       />,
     )
     const field = screen.getByTestId('traktor-playlists-field')
-    expect(within(field).getByTestId('playlists-summary')).toHaveAccessibleName('Playlists Traktor')
+    expect(within(field).getByTestId('playlists-summary')).toHaveAccessibleName('Traktor playlists')
     fireEvent.click(within(field).getByTestId('playlists-summary'))
     expect(screen.getByTestId('playlists-popover')).toHaveAccessibleName('Traktor playlists')
   })
@@ -116,7 +118,7 @@ describe('PlaylistsField closed', () => {
 
   it('reads the count and where to a screen reader, since the label alone only names the field', () => {
     render(<Harness />)
-    expect(summary()).toHaveAccessibleName('Playlists rekordbox')
+    expect(summary()).toHaveAccessibleName('rekordbox playlists')
     expect(summary()).toHaveAccessibleDescription('In 7 playlists BOLOS (5) · CANTADITAS · House')
     cleanup()
     render(<Harness initial={[]} />)

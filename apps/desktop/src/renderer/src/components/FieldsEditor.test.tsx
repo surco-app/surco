@@ -545,8 +545,8 @@ describe('the Playlists rows of Traktor and Engine DJ', () => {
       visibleFields: ['title', 'traktorPlaylists', 'enginePlaylists'],
       playlistLibraries: ['traktor', 'engine'],
     })
-    expect(screen.getByTestId('field-row-traktorPlaylists')).toHaveTextContent('PlaylistsTraktor')
-    expect(screen.getByTestId('field-row-enginePlaylists')).toHaveTextContent('PlaylistsEngine DJ')
+    expect(screen.getByTestId('field-row-traktorPlaylists')).toHaveTextContent('Traktor playlists')
+    expect(screen.getByTestId('field-row-enginePlaylists')).toHaveTextContent('Engine DJ playlists')
     expect(screen.queryByTestId('field-required-traktorPlaylists')).toBeNull()
   })
 
