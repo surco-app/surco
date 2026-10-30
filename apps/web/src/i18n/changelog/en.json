@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.18",
+    "date": "October 30, 2026",
+    "title": "Surco checks its own work",
+    "items": [
+      {
+        "text": "When a conversion finishes, Surco reads back what it wrote to the file, Apple Music, rekordbox, Engine DJ and Traktor. The ✓ only shows when everything adds up, and the shield next to it shows “What was checked”. If something doesn’t add up, an amber line tells you what and where, with “Try again”, and the old file is not offered for the trash while anything still uses it. A batch shows how many tracks were checked, and the “Don’t add up” filter takes you to the rest.",
+        "in": "1.18.0"
+      },
+      {
+        "text": "Convert a track you already have in Apple Music to another format and Surco replaces it instead of leaving two. It stays in its playlists with its plays and rating, and rekordbox, Engine DJ and Traktor move to the new file without dropping it from their playlists. Between AIFF, WAV, FLAC and ALAC, when the audio doesn’t change, rekordbox keeps its analysis, its grid and its cues.",
+        "in": "1.18.0"
+      },
+      {
+        "text": "Tracks Surco sends to Apple Music are filed in their artist and album folder, WAVs too, which used to land in “Unknown Album”.",
+        "in": "1.18.0"
+      },
+      {
+        "text": "New “Backups” screen at the bottom of the sidebar. It keeps the last five dated backups of your rekordbox, Engine DJ and Traktor collections, and from there you put a collection back the way it was. “Music files” lists the original songs Surco kept when it replaced them.",
+        "in": "1.18.0"
+      },
+      {
+        "text": "Apple Music playlists open at once with all their tracks, and the playlist of every song comes first as “All tracks”.",
+        "in": "1.18.0"
+      },
+      {
+        "text": "MP3 and AIFF grouping reaches Traktor and Apple Music on every conversion, and a “3/12” track number or “1/2” disc number is saved as is instead of becoming 312 or being lost.",
+        "in": "1.18.0"
+      }
+    ]
+  },
+  {
     "version": "1.17",
     "date": "October 29, 2026",
     "title": "Each DJ program, your way",
