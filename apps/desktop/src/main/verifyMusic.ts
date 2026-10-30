@@ -1,10 +1,14 @@
 import { realpathSync } from 'node:fs'
-import { realpath } from 'node:fs/promises'
 import { extname } from 'node:path'
 import type { TrackMetadata } from '../shared/types'
 import type { PlaceCheck } from '../shared/verification'
-import { appleMusicLimiter, musicFileEntries, readMusicEntryFacts } from './applemusic'
-import { pathAliasesOf, pathKey } from './libraryPathKey'
+import {
+  appleMusicLimiter,
+  musicFileEntries,
+  readMusicEntryFacts,
+  runOsascript,
+} from './applemusic'
+import { pathKey } from './libraryPathKey'
 import { formatOf } from './verifyFile'
 
 export interface MusicExpect {
@@ -13,8 +17,9 @@ export interface MusicExpect {
   ext: string
   meta: Pick<TrackMetadata, 'title' | 'artist' | 'album'>
   coverSet: boolean
-  // null when the old entry's playlists could not be read before the add.
-  replaced?: { oldPid: string; playlistsBefore: string[] | null }
+  // playlistsBefore is null when the old entry's playlists could not be read before the
+  // add; oldKept when the replace already reported keeping the old entry on purpose.
+  replaced?: { oldPid: string; playlistsBefore: string[] | null; oldKept?: true }
 }
 
 export interface MusicReaders {
@@ -26,30 +31,49 @@ export interface MusicReaders {
   wait: (ms: number) => Promise<void>
 }
 
-export const musicReaders: MusicReaders = {
-  entry: readMusicEntryFacts,
-  async entriesForFile(path, titles) {
-    const spellings = await pathAliasesOf([path], { realPath: (p) => realpath(p) })
+// Compares by where a path really lands, not by how Music spelled it: the library holds the
+// same volume both directly and through the ~/Music/Music link, in NFD or NFC, in any case.
+const comparablePath = (options: { realPath: (p: string) => string; homeMusicDir?: string }) => {
+  const key = pathKey(options)
+  return (p: string) => key(p.normalize('NFC')).normalize('NFC')
+}
+
+export function musicEntriesForFile(options: {
+  run: typeof runOsascript
+  realPath: (p: string) => string
+  homeMusicDir?: string
+}): MusicReaders['entriesForFile'] {
+  const keyOf = comparablePath(options)
+  return async (path, titles) => {
     const { consulted, entries } = await appleMusicLimiter.run(() =>
       musicFileEntries(
-        spellings.flatMap((p) => titles.map((title) => ({ path: p, title }))),
+        titles.map((title) => ({ path, title })),
         true,
+        options.run,
+        keyOf,
       ),
     )
     if (!consulted) throw new Error('Music could not say which entries play the file')
-    return [...new Set(spellings.flatMap((p) => (entries[p] ?? []).map((e) => e.persistentId)))]
-  },
-  realPath: (p) => realpathSync(p),
+    return [...new Set((entries[path] ?? []).map((e) => e.persistentId))]
+  }
+}
+
+const realPath = (p: string) => realpathSync(p)
+
+export const musicReaders: MusicReaders = {
+  entry: readMusicEntryFacts,
+  entriesForFile: musicEntriesForFile({ run: runOsascript, realPath }),
+  realPath,
   wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 }
 
-// Music fills the location of a fresh add asynchronously.
+// Music fills the location of a fresh add asynchronously, and may refuse it meanwhile.
 const EMPTY_LOCATION_WAITS_MS = [1000, 2000, 4000]
 
 const check = (
   state: PlaceCheck['state'],
   key: string,
-  params?: Record<string, string | number>,
+  params?: Record<string, string | number | string[]>,
 ): PlaceCheck => ({ place: 'appleMusic', state, detail: params ? { key, params } : { key } })
 
 const nameKey = (text: string) => text.normalize('NFC').trim().toLowerCase()
@@ -72,7 +96,7 @@ async function judge(e: MusicExpect, r: MusicReaders): Promise<PlaceCheck> {
   const read = () => r.entry(e.pid, e.replaced?.oldPid, { withPlaylists: e.replaced !== undefined })
   let facts = await read()
   for (const ms of EMPTY_LOCATION_WAITS_MS) {
-    if (facts === 'missing' || facts.location !== '') break
+    if (facts === 'missing' || (facts.location !== '' && facts.location !== null)) break
     await r.wait(ms)
     facts = await read()
   }
@@ -80,17 +104,16 @@ async function judge(e: MusicExpect, r: MusicReaders): Promise<PlaceCheck> {
   if (facts.location === null) return check('unreadable', 'musicUnreadable')
   if (facts.location === '') return check('mismatch', 'musicNoFile')
 
-  const key = pathKey({ realPath: r.realPath })
-  const same = (a: string, b: string) =>
-    key(a.normalize('NFC')).normalize('NFC') === key(b.normalize('NFC')).normalize('NFC')
-  if (!same(facts.location, e.file)) {
+  const key = comparablePath({ realPath: r.realPath })
+  if (key(facts.location) !== key(e.file)) {
     const ext = extname(facts.location).toLowerCase()
     return ext === e.ext.toLowerCase()
       ? check('mismatch', 'musicOtherFile')
       : check('mismatch', 'musicWrongFile', { format: formatOf(ext) })
   }
 
-  if (facts.oldExists === true) return check('mismatch', 'musicDuplicate', { count: 2 })
+  if (facts.oldExists === true && !e.replaced?.oldKept)
+    return check('mismatch', 'musicDuplicate', { count: 2 })
   const titles = [facts.name, e.meta.title].filter((t) => t.trim() !== '')
   const pids = await r.entriesForFile(e.file, [...new Set(titles)])
   if (!pids.includes(e.pid)) return check('unreadable', 'musicUnreadable')
@@ -110,8 +133,7 @@ async function judge(e: MusicExpect, r: MusicReaders): Promise<PlaceCheck> {
     if (lost !== undefined) return check('mismatch', 'musicPlaylistLost', { playlist: lost })
   }
 
-  return check('ok', 'musicOne', {
-    playlists: facts.playlists.join(', '),
-    count: facts.playlists.length,
-  })
+  return facts.playlists.length === 0
+    ? check('ok', 'musicOneNoPlaylists')
+    : check('ok', 'musicOne', { playlists: facts.playlists })
 }

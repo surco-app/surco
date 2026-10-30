@@ -3,7 +3,7 @@ export type CheckState = 'checking' | 'ok' | 'mismatch' | 'pending' | 'unreadabl
 
 export interface CheckDetail {
   key: string
-  params?: Record<string, string | number>
+  params?: Record<string, string | number | string[]>
 }
 
 export interface PlaceCheck {

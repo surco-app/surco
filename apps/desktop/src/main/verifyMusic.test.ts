@@ -4,8 +4,13 @@ import { describe, expect, it, type Mock, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
-import type { MusicEntryFacts, readMusicEntryFacts } from './applemusic'
-import { checkAppleMusic, type MusicExpect, type MusicReaders } from './verifyMusic'
+import type { MusicEntryFacts, readMusicEntryFacts, runOsascript } from './applemusic'
+import {
+  checkAppleMusic,
+  type MusicExpect,
+  type MusicReaders,
+  musicEntriesForFile,
+} from './verifyMusic'
 
 const FILE = '/Volumes/Music/Media/Artist/Title.wav'
 
@@ -56,7 +61,17 @@ describe('checkAppleMusic', () => {
     await expect(checkAppleMusic(expectFor(), r)).resolves.toEqual({
       place: 'appleMusic',
       state: 'ok',
-      detail: { key: 'musicOne', params: { playlists: '24, All', count: 2 } },
+      detail: { key: 'musicOne', params: { playlists: ['24', 'All'] } },
+    })
+  })
+
+  it('an entry in no playlist is ok with its own key', async () => {
+    const r = readers([facts({ playlists: [] })])
+
+    await expect(checkAppleMusic(expectFor(), r)).resolves.toEqual({
+      place: 'appleMusic',
+      state: 'ok',
+      detail: { key: 'musicOneNoPlaylists' },
     })
   })
 
@@ -171,7 +186,7 @@ describe('checkAppleMusic', () => {
     expect(vi.mocked(r.wait).mock.calls.map(([ms]) => ms)).toEqual([1000, 2000, 4000])
   })
 
-  it('an empty location that fills on the second read is ok', async () => {
+  it('an empty location that fills on the third read is ok', async () => {
     const r = readers([facts({ location: '' }), facts({ location: '' }), facts()])
 
     await expect(checkAppleMusic(expectFor(), r)).resolves.toMatchObject({ state: 'ok' })
@@ -179,13 +194,20 @@ describe('checkAppleMusic', () => {
   })
 
   // A location Music would not hand over says nothing about the file: not ok, not wrong.
-  it('a location Music could not read is unreadable', async () => {
+  it('a location Music could not read is retried then unreadable', async () => {
     const r = readers([facts({ location: null })])
 
     await expect(checkAppleMusic(expectFor(), r)).resolves.toMatchObject({
       state: 'unreadable',
       detail: { key: 'musicUnreadable' },
     })
+    expect(vi.mocked(r.wait).mock.calls.map(([ms]) => ms)).toEqual([1000, 2000, 4000])
+  })
+
+  it('a location Music could not read at first that it hands over later is ok', async () => {
+    const r = readers([facts({ location: null }), facts()])
+
+    await expect(checkAppleMusic(expectFor(), r)).resolves.toMatchObject({ state: 'ok' })
   })
 
   it('a name that differs from the title written is musicTagDiffers', async () => {
@@ -226,6 +248,25 @@ describe('checkAppleMusic', () => {
     expect(r.entry.mock.calls[1]).toEqual(['NEW', 'OLD', { withPlaylists: true }])
   })
 
+  // The replace already reported keeping the old entry (oldMusicCopyKept): it is there by
+  // design and is not a duplicate of this check's making, but the carry still has to hold.
+  it('an old entry kept on purpose is not a duplicate', async () => {
+    const r = readers([facts({ oldExists: true })])
+    const e = expectFor({ replaced: { oldPid: 'OLD', playlistsBefore: ['24'], oldKept: true } })
+
+    await expect(checkAppleMusic(e, r)).resolves.toMatchObject({ state: 'ok' })
+  })
+
+  it('an old entry kept on purpose still needs its playlists carried', async () => {
+    const r = readers([facts({ oldExists: true, playlists: ['All'] })])
+    const e = expectFor({ replaced: { oldPid: 'OLD', playlistsBefore: ['24'], oldKept: true } })
+
+    await expect(checkAppleMusic(e, r)).resolves.toMatchObject({
+      state: 'mismatch',
+      detail: { key: 'musicPlaylistLost', params: { playlist: '24' } },
+    })
+  })
+
   // The playlists could not be read before the add: their carry cannot be vouched for.
   it('a replace whose old playlists were not read is unreadable', async () => {
     const r = readers([facts({ oldExists: false })])
@@ -263,5 +304,66 @@ describe('checkAppleMusic', () => {
     await expect(checkAppleMusic(expectFor(), r)).resolves.toMatchObject({
       state: 'unreadable',
     })
+  })
+})
+
+describe('musicEntriesForFile', () => {
+  const RS = '\u001e'
+  const FS = '\u001f'
+  const SELF = 'AAAAAAAAAAAAAAAA'
+  const TWIN = 'BBBBBBBBBBBBBBBB'
+  const home = '/Users/dj/Music/Music'
+  const realPath = (p: string) => (p.startsWith(home) ? `/Volumes/Music${p.slice(home.length)}` : p)
+
+  function music(located: [string, string][]): Mock<typeof runOsascript> {
+    const names = located.map(([pid]) => [pid, 'Artist', 'Title', ''].join(FS)).join(RS)
+    const locations = located.map(([pid, path]) => [pid, path].join(FS)).join(RS)
+    return vi
+      .fn<typeof runOsascript>()
+      .mockResolvedValueOnce(names)
+      .mockResolvedValueOnce(locations)
+  }
+
+  const lookup = (run: Mock<typeof runOsascript>) =>
+    musicEntriesForFile({ run, realPath, homeMusicDir: home })
+
+  // The spec counts entries by where the path really lands, not by its spelling: the
+  // library references the volume both directly and through the home link.
+  it('counts a twin stored through the ~/Music/Music link', async () => {
+    const run = music([
+      [SELF, '/Volumes/Music/Media/Title.wav'],
+      [TWIN, `${home}/Media/Title.wav`],
+    ])
+
+    await expect(lookup(run)('/Volumes/Music/Media/Title.wav', ['Title'])).resolves.toEqual([
+      SELF,
+      TWIN,
+    ])
+  })
+
+  it('counts a twin stored with decomposed accents', async () => {
+    const path = '/Volumes/Music/Media/Café.wav'.normalize('NFC')
+    const run = music([
+      [SELF, path],
+      [TWIN, path.normalize('NFD')],
+    ])
+
+    await expect(lookup(run)(path, ['Title'])).resolves.toEqual([SELF, TWIN])
+  })
+
+  // macOS volumes are case-insensitive: the entry itself under another case is one entry.
+  it('finds the entry itself stored in another case and nothing more', async () => {
+    const run = music([
+      [SELF, '/Volumes/Music/Media/TITLE.wav'],
+      [TWIN, '/Volumes/Music/Media/Other.wav'],
+    ])
+
+    await expect(lookup(run)('/Volumes/Music/Media/Title.wav', ['Title'])).resolves.toEqual([SELF])
+  })
+
+  it('rejects when Music could not say', async () => {
+    const run = vi.fn<typeof runOsascript>().mockRejectedValue(new Error('-1712'))
+
+    await expect(lookup(run)('/Volumes/Music/Media/Title.wav', ['Title'])).rejects.toThrow()
   })
 })

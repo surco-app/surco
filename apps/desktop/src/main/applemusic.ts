@@ -1022,15 +1022,16 @@ export function parseFileLocations(stdout: string): { persistentId: string; path
 export function entriesForPaths(
   rows: ({ path: string } & MusicFileEntry)[],
   paths: string[],
+  keyOf: (path: string) => string = (p) => p.normalize('NFC'),
 ): Record<string, MusicFileEntry[]> {
   const byPath = new Map<string, MusicFileEntry[]>()
   for (const { path, ...entry } of rows) {
-    const key = path.normalize('NFC')
+    const key = keyOf(path)
     byPath.set(key, [...(byPath.get(key) ?? []), entry])
   }
   const out: Record<string, MusicFileEntry[]> = {}
   for (const path of paths) {
-    const found = byPath.get(path.normalize('NFC'))
+    const found = byPath.get(keyOf(path))
     if (found) out[path] = found
   }
   return out
@@ -1045,6 +1046,7 @@ export async function musicFileEntries(
   candidates: { path: string; title: string }[],
   launch: boolean,
   run: typeof runOsascript = runOsascript,
+  keyOf?: (path: string) => string,
 ): Promise<MusicFileLookup> {
   try {
     if (!launch && (await run(buildMusicRunningScript())).trim() !== 'true')
@@ -1068,6 +1070,7 @@ export async function musicFileEntries(
       entries: entriesForPaths(
         located,
         candidates.map((c) => c.path),
+        keyOf,
       ),
     }
   } catch (err) {
