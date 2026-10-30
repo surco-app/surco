@@ -164,6 +164,7 @@ export function AppWindow({
     <div
       ref={windowRef}
       aria-hidden="true"
+      data-ui
       className="relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-line bg-bg text-left"
     >
       <div className="flex h-11 items-center gap-1 border-b border-line bg-bg2 pr-2.5 pl-3.5">

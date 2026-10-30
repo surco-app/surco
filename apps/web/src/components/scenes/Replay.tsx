@@ -8,7 +8,7 @@ export function AnchorLink({ id }: { id: string }) {
       href={`#${id}`}
       data-testid="scene-anchor"
       aria-label={t('home.anchorLink')}
-      className="ml-2 font-normal text-faint opacity-0 transition-[color,opacity] group-hover/title:opacity-100 hover:text-blue focus-visible:opacity-100"
+      className="ml-2 font-normal text-faint opacity-0 transition-[color,opacity] group-hover/title:opacity-100 hover:text-blue focus-visible:opacity-100 [@media(hover:none)]:hidden"
     >
       #
     </a>
@@ -27,7 +27,7 @@ export function Replayable({ children }: { children: ReactNode }) {
         aria-label={t('home.replay')}
         title={t('home.replay')}
         onClick={() => setRun((n) => n + 1)}
-        className="absolute right-3 bottom-3 z-20 grid size-8 place-items-center rounded-lg border border-line bg-bg2/85 text-muted opacity-0 backdrop-blur-sm transition-[opacity,color,border-color,scale] duration-200 group-hover:opacity-100 hover:border-blue/40 hover:text-fg focus-visible:opacity-100 active:scale-[0.94] [@media(hover:none)]:opacity-100"
+        className="absolute right-3 bottom-3 z-20 grid size-8 place-items-center rounded-lg border border-line bg-bg2/85 text-muted opacity-0 backdrop-blur-sm transition-[opacity,color,border-color,scale] duration-200 group-hover:opacity-100 hover:border-blue/40 hover:text-fg focus-visible:opacity-100 active:scale-[0.97] [@media(hover:none)]:hidden"
       >
         <svg
           aria-hidden="true"

@@ -12,20 +12,22 @@ export default function LatestRelease() {
     <a
       href={href}
       data-testid="latest-release"
-      className="group inline-flex items-center gap-2 rounded-full bg-surface/70 py-1.5 pr-3.5 pl-3 text-[0.8125rem] text-muted ring-1 ring-line backdrop-blur-sm transition-colors hover:text-fg hover:ring-blue/60"
+      className="group inline-flex flex-wrap items-baseline justify-center gap-x-2 text-sm text-muted transition-colors hover:text-fg"
     >
-      <span className="text-[0.6875rem] font-bold tracking-wider text-blue uppercase">
+      <span className="font-semibold whitespace-nowrap text-blue">
         {t('hero.latestRelease', { version: latest.version })}
       </span>
-      <span aria-hidden="true" className="text-line">
+      <span aria-hidden="true" className="text-faint">
         ·
       </span>
-      <span>{latest.title}</span>
-      <span
-        aria-hidden="true"
-        className="text-blue transition-transform group-hover:translate-x-0.5"
-      >
-        →
+      <span>
+        {latest.title}{' '}
+        <span
+          aria-hidden="true"
+          className="inline-block text-blue transition-transform group-hover:translate-x-0.5"
+        >
+          →
+        </span>
       </span>
     </a>
   )

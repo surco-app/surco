@@ -38,7 +38,7 @@ export default function Walkthrough() {
         <div className="pt-24">
           <div id="como" className="scroll-mt-8 text-center">
             <Kicker>{t('home.walkthrough.kicker')}</Kicker>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
+            <h2 className="mt-3 text-[min(1.875rem,6.15vw)] font-semibold tracking-tight text-balance sm:text-5xl">
               {t('home.walkthrough.title')}
             </h2>
             <p className="mx-auto mt-3 max-w-xl leading-relaxed text-pretty text-muted">
@@ -82,7 +82,7 @@ export default function Walkthrough() {
       <section id={SCENE_ANCHORS.audio} className="scroll-mt-12 py-16 sm:py-24">
         <Reveal>
           <Kicker>{t('home.audioGroup.step')}</Kicker>
-          <h2 className="group/title mt-3 max-w-3xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+          <h2 className="group/title mt-3 max-w-3xl text-[min(1.875rem,6.15vw)] font-semibold tracking-tight text-balance sm:text-4xl">
             {t('home.audioGroup.title')}
             <AnchorLink id={SCENE_ANCHORS.audio} />
           </h2>
