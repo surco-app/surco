@@ -214,10 +214,13 @@ function ProgramSection({
             )}
           </Fact>
           <Fact label={tr('copies.facts.last')} testId={`copies-last-${program}`}>
-            {copies.length > 0 ? when(copies[0].takenAt) : tr('copies.none')}
+            {listed.length > 0
+              ? when(Math.max(...listed.map((c) => c.takenAt)))
+              : tr('copies.none')}
           </Fact>
           <Fact label={tr('copies.facts.kept')} testId={`copies-kept-${program}`}>
             {tr('copies.kept', { count: copies.length, max: COPIES_KEEP })}
+            {entry.restore && ` · ${tr('copies.reason.restore')}`}
           </Fact>
         </div>
       </div>

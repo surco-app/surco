@@ -162,6 +162,34 @@ describe('CopiesScreen', () => {
     expect(screen.getByTestId('copies-restore-item-pre')).toBeEnabled()
   })
 
+  it('never says there are no copies while the copy taken before restoring can be restored', () => {
+    const before = copy({
+      id: 'pre',
+      reason: 'restore',
+      takenAt: new Date(2026, 10, 2, 9, 30).getTime(),
+    })
+    renderScreen([program('traktor', { restore: before })])
+    expect(screen.getByTestId('copies-last-traktor')).toHaveTextContent(when(before.takenAt))
+    expect(screen.getByTestId('copies-last-traktor')).not.toHaveTextContent(i18n.t('copies.none'))
+    expect(screen.getByTestId('copies-kept-traktor')).toHaveTextContent(
+      i18n.t('copies.reason.restore'),
+    )
+  })
+
+  it('dates the last copy by the newest one listed, the slot or the latest copy', () => {
+    const before = copy({
+      id: 'pre',
+      reason: 'restore',
+      takenAt: new Date(2026, 10, 2, 9, 30).getTime(),
+    })
+    const newer = copy({ id: 'n', takenAt: new Date(2026, 10, 5, 18, 0).getTime() })
+    renderScreen([program('traktor', { restore: before, copies: [newer] })])
+    expect(screen.getByTestId('copies-last-traktor')).toHaveTextContent(when(newer.takenAt))
+    expect(screen.getByTestId('copies-kept-traktor')).toHaveTextContent(
+      `${i18n.t('copies.kept', { count: 1, max: 5 })} · ${i18n.t('copies.reason.restore')}`,
+    )
+  })
+
   it('names today and yesterday instead of making the DJ work out the date', () => {
     const today = copy({ id: 'today', takenAt: new Date(2026, 10, 20, 8, 2).getTime() })
     const yesterday = copy({ id: 'yday', takenAt: new Date(2026, 10, 19, 13, 8).getTime() })
