@@ -8,7 +8,24 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
-import { pcmDigest } from './verifyPcm'
+const spawned: { args: string[]; signal?: AbortSignal; timeout?: number }[] = []
+const digests = () => spawned.filter((o) => o.args.includes('md5'))
+
+vi.mock('node:child_process', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:child_process')>()
+  const { promisify } = await import('node:util')
+  const real = promisify(actual.execFile)
+  const execFile = Object.assign(actual.execFile.bind(actual), {
+    [promisify.custom]: (file: string, args: string[], opts: never) => {
+      spawned.push({ ...(opts as object), args } as (typeof spawned)[number])
+      return real(file, args, opts)
+    },
+  })
+  return { ...actual, execFile }
+})
+
+import { ANALYSIS_TIMEOUT_MS } from './ffmpeg'
+import { pcmDigest, pcmTimeoutMs } from './verifyPcm'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-verifypcm-'))
@@ -73,6 +90,34 @@ describe('pcmDigest', () => {
     )
   })
 
+  // A 24 or 32 bit file differs from its twin only in the lowest bits; decoding to 16 bits
+  // would hide exactly the corruption the check exists to catch.
+  it('the lowest bit of one sample changes the digest at 24 and 32 bits', async () => {
+    ff('-i', at('kick24.aiff'), '-c:a', 'pcm_s32le', at('kick32.wav'))
+    for (const [name, stride] of [
+      ['kick24.wav', 3],
+      ['kick32.wav', 4],
+    ] as const) {
+      const bytes = readFileSync(at(name))
+      const data = bytes.indexOf('data') + 8
+      bytes[data + stride * 30000] ^= 0x01
+      writeFileSync(at(`lsb-${name}`), bytes)
+      expect((await pcmDigest(at(`lsb-${name}`))).md5).not.toBe((await pcmDigest(at(name))).md5)
+    }
+  })
+
+  // An aborted or timed out decode must reject, never hand back a digest of partial audio.
+  it('rejects when the signal is already aborted', async () => {
+    await expect(pcmDigest(at('kick16.wav'), { signal: AbortSignal.abort() })).rejects.toThrow()
+  })
+
+  it('hands the signal to the decode so an abort mid-way kills it', async () => {
+    const controller = new AbortController()
+    spawned.length = 0
+    await pcmDigest(at('kick16.wav'), { signal: controller.signal })
+    expect(digests().map((o) => o.signal)).toEqual([controller.signal])
+  })
+
   it('a 48 kHz resample does not digest the same', async () => {
     ff('-i', at('kick16.wav'), '-ar', '48000', at('kick48.wav'))
     const resampled = await pcmDigest(at('kick48.wav'))
@@ -109,5 +154,35 @@ describe('pcmDigest', () => {
   it('rejects on an undecodable file', async () => {
     writeFileSync(at('junk.wav'), Buffer.from('this is not audio at all'))
     await expect(pcmDigest(at('junk.wav'))).rejects.toThrow()
+  })
+})
+
+describe('pcmTimeoutMs', () => {
+  it('never drops below the analysis timeout', () => {
+    expect(pcmTimeoutMs(null)).toBe(ANALYSIS_TIMEOUT_MS)
+    expect(pcmTimeoutMs(60)).toBe(ANALYSIS_TIMEOUT_MS)
+  })
+
+  // A 4 GB 96 kHz WAV is almost two hours and takes about 130 s to read from a NAS.
+  it('grows with the length of a long mix', () => {
+    expect(pcmTimeoutMs(6944)).toBeGreaterThan(600_000)
+  })
+
+  it('gives the decode the timeout of its duration', async () => {
+    spawned.length = 0
+    ff(
+      '-f',
+      'lavfi',
+      '-i',
+      'anullsrc=r=8000:cl=mono',
+      '-t',
+      '1500',
+      '-c:a',
+      'pcm_u8',
+      at('long.wav'),
+    )
+    await pcmDigest(at('long.wav'))
+    expect(digests().map((o) => o.timeout)).toEqual([pcmTimeoutMs(1500)])
+    expect(pcmTimeoutMs(1500)).toBeGreaterThan(ANALYSIS_TIMEOUT_MS)
   })
 })
