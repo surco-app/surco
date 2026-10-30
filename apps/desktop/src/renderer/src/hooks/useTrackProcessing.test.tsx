@@ -5,10 +5,12 @@ import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { NAME_LEFT_MARKED } from '../../../shared/errorKeys'
-import type { Settings, TrackMetadata } from '../../../shared/types'
+import type { ProcessResult, Settings, TrackMetadata } from '../../../shared/types'
+import type { Verification } from '../../../shared/verification'
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { useTrackProcessing } from './useTrackProcessing'
+import { useVerificationUpdates } from './useVerificationUpdates'
 
 function meta(over: Partial<TrackMetadata> = {}): TrackMetadata {
   return {
@@ -2616,5 +2618,106 @@ describe('useTrackProcessing retryVerification', () => {
     expect(processTrack).toHaveBeenCalledWith(
       expect.objectContaining({ format: 'flac', overwriteOriginal: true }),
     )
+  })
+
+  // End to end: the check of the new conversion can report while the encode is still
+  // being written back, and that report must survive the result landing.
+  it('an update of the new job that arrived before the result survives it', async () => {
+    let push: (id: string, v: Verification) => void = () => {}
+    let release: (r: ProcessResult) => void = () => {}
+    setApi({
+      onVerifyUpdate: vi.fn<Api['onVerifyUpdate']>((cb) => {
+        push = cb
+        return () => {}
+      }),
+      processTrack: vi.fn<Api['processTrack']>(
+        () => new Promise<ProcessResult>((resolve) => (release = resolve)),
+      ),
+    })
+    const rows = {
+      current: [track({ id: 'a', verification: { status: 'ok', checks: [], job: 'j1', seq: 3 } })],
+    }
+    const updateTrack = vi.fn((id: string, patch: Partial<TrackItem>) => {
+      rows.current = rows.current.map((t) => (t.id === id ? { ...t, ...patch } : t))
+    })
+    const { result } = renderHook(
+      () => {
+        useVerificationUpdates({ tracksRef: rows, updateTrack })
+        return useTrackProcessing({
+          tracks: rows.current,
+          tracksRef: rows,
+          settings: null,
+          updateTrack,
+        })
+      },
+      { wrapper: withClient() },
+    )
+    let done: Promise<unknown> = Promise.resolve()
+    act(() => {
+      done = result.current.processOne('a')
+    })
+    await waitFor(() => expect(release).not.toBe(undefined))
+    const late: Verification = { status: 'ok', checks: [], job: 'j2', seq: 1 }
+    push('a', late)
+    push('a', { status: 'ok', checks: [], job: 'j0', seq: 9 })
+    await act(async () => {
+      release({
+        outputPath: '/out/a.aiff',
+        inPlace: false,
+        verification: { status: 'checking', checks: [], job: 'j2', seq: 0 },
+      })
+      await done
+    })
+    expect(rows.current[0].verification).toEqual(late)
+  })
+
+  // A first conversion has no verification yet, so the update lands on the row directly.
+  it('an update applied to a row without verification survives the result', async () => {
+    let push: (id: string, v: Verification) => void = () => {}
+    let release: (r: ProcessResult) => void = () => {}
+    setApi({
+      onVerifyUpdate: vi.fn<Api['onVerifyUpdate']>((cb) => {
+        push = cb
+        return () => {}
+      }),
+      processTrack: vi.fn<Api['processTrack']>(
+        () => new Promise<ProcessResult>((resolve) => (release = resolve)),
+      ),
+    })
+    const rows = {
+      current: [track({ id: 'a' })],
+    }
+    const updateTrack = vi.fn((id: string, patch: Partial<TrackItem>) => {
+      rows.current = rows.current.map((t) => (t.id === id ? { ...t, ...patch } : t))
+    })
+    const { result } = renderHook(
+      () => {
+        useVerificationUpdates({ tracksRef: rows, updateTrack })
+        return useTrackProcessing({
+          tracks: rows.current,
+          tracksRef: rows,
+          settings: null,
+          updateTrack,
+        })
+      },
+      { wrapper: withClient() },
+    )
+    let done: Promise<unknown> = Promise.resolve()
+    act(() => {
+      done = result.current.processOne('a')
+    })
+    await waitFor(() => expect(release).not.toBe(undefined))
+    const late: Verification = { status: 'ok', checks: [], job: 'j2', seq: 1 }
+    push('a', late)
+    push('a', { status: 'ok', checks: [], job: 'j0', seq: 9 })
+    await act(async () => {
+      release({
+        outputPath: '/out/a.aiff',
+        inPlace: false,
+        verification: { status: 'checking', checks: [], job: 'j2', seq: 0 },
+      })
+      await done
+    })
+    expect(rows.current[0].verification).toEqual(late)
   })
 })

@@ -23,6 +23,7 @@ import { clearHiddenProvenance, sanitizeMeta } from '../lib/hygiene'
 import { cleanIpcError, errorKeyOf, isFileInUseMessage, mainErrorMessage } from '../lib/ipcError'
 import { autoNamesFile, renderOutputName } from '../lib/outputName'
 import { declickFor, declickForJob, jobAudio, normalizeFor, normalizeForJob } from '../lib/reapply'
+import { settleVerification } from '../lib/verificationBuffer'
 import type { TrackItem } from '../types'
 import { withMusicCover } from './useAppleMusicArtwork'
 import type { RememberedPick } from './useEditorPicks'
@@ -436,15 +437,20 @@ export function useTrackProcessing({
         if (result.musicNameLeftMarked) onMusicNameLeftMarked?.(track.listLabel)
         // Record the config main actually applied — same fallback processTrack uses
         // when the job carries none — so the stale check compares against reality.
-        updateTrack(
-          id,
-          exportedPatch(
-            track,
-            result,
-            normalizeFor(track, normalizeOverride, settings?.normalize),
-            declickFor(track, declickOverride, settings?.declick),
-          ),
+        const patch = exportedPatch(
+          track,
+          result,
+          normalizeFor(track, normalizeOverride, settings?.normalize),
+          declickFor(track, declickOverride, settings?.declick),
         )
+        updateTrack(id, {
+          ...patch,
+          verification: settleVerification(
+            id,
+            result.verification,
+            tracksRef.current.find((t) => t.id === id)?.verification,
+          ),
+        })
         if (result.appleMusicFailed) {
           updateTrack(id, { musicStatus: 'error', musicError: tr('editor.appleMusicError') })
           onAppleMusicFailed?.(track.listLabel)
