@@ -172,7 +172,7 @@ const niceDecode = (file: string, args: string[], opts?: RunOpts) => {
 // non-zero exit just rethrows); repairWav returns null for any arg that isn't a
 // fixable WAV, so flags and output paths are skipped and only the source is copied.
 // The temp copy is deleted after the retry resolves.
-const run = (async (file: string, args: string[], opts?: RunOpts) => {
+export const run = (async (file: string, args: string[], opts?: RunOpts) => {
   try {
     return await niceDecode(file, args, opts)
   } catch (err) {

@@ -1,12 +1,8 @@
-import { execFile } from 'node:child_process'
 import { stat } from 'node:fs/promises'
-import { promisify } from 'node:util'
 import { forcedInputArgs } from '../shared/inputFormat'
 import { createConcurrencyLimiter } from './analysisLimiter'
 import { ffmpegPath } from './binaries'
-import { ANALYSIS_TIMEOUT_MS, probeAudio } from './ffmpeg'
-
-const execFileAsync = promisify(execFile)
+import { ANALYSIS_TIMEOUT_MS, probeAudio, run } from './ffmpeg'
 
 const pcmLimiter = createConcurrencyLimiter(2)
 
@@ -40,7 +36,9 @@ export async function pcmDigest(
         probe.codecName.startsWith('pcm_f') ||
         probe.sampleFmt.startsWith('f') ||
         probe.sampleFmt.startsWith('dbl')
-      const { stdout } = await execFileAsync(
+      // Through run, so a WAV whose header ffmpeg refuses is repaired and read like every
+      // other pass reads it, instead of failing the one read the check depends on.
+      const { stdout } = await run(
         ffmpegPath,
         [
           '-v',

@@ -1,5 +1,13 @@
 import { execFileSync } from 'node:child_process'
-import { copyFileSync, mkdtempSync, statSync, truncateSync, utimesSync } from 'node:fs'
+import {
+  copyFileSync,
+  mkdtempSync,
+  readFileSync,
+  statSync,
+  truncateSync,
+  utimesSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -30,6 +38,33 @@ const hat = 'aevalsrc=0.5*sin(2*PI*3000*t)*exp(-9*mod(t\\,0.25)):s=44100:d=4'
 
 function ff(...args: string[]): void {
   execFileSync(FF, ['-y', '-v', 'error', ...args])
+}
+
+function malformedWav(path: string): string {
+  const u32 = (v: number) => Buffer.from(Uint32Array.of(v).buffer)
+  const u16 = (v: number) => Buffer.from(Uint16Array.of(v).buffer)
+  const data = readFileSync(at('source.wav')).subarray(44)
+  const fmt = Buffer.concat([
+    Buffer.from('fmt '),
+    u32(16),
+    u16(1),
+    u16(2),
+    u32(44100),
+    u32(44100 * 4),
+    u16(4),
+    u16(16),
+  ])
+  const body = Buffer.concat([
+    Buffer.from('WAVE'),
+    fmt,
+    Buffer.from('LIST'),
+    u32(0),
+    Buffer.from('data'),
+    u32(data.length),
+    data,
+  ])
+  writeFileSync(path, Buffer.concat([Buffer.from('RIFF'), u32(body.length), body]))
+  return path
 }
 
 const meta = (over: Partial<TrackMetadata> = {}): TrackMetadata => ({ ...emptyMetadata(), ...over })
@@ -540,9 +575,13 @@ describe('checkFile — cost and cancel', () => {
 
 describe('checkFile — what convertAudio wrote reads back as written', () => {
   let n = 0
-  const converted = async (format: OutputFormat, tags: Partial<TrackMetadata>) => {
+  const converted = async (
+    format: OutputFormat,
+    tags: Partial<TrackMetadata>,
+    source = at('source.wav'),
+  ) => {
     const out = at(`conv-${n++}.${format === 'alac' ? 'm4a' : format}`)
-    const { written } = await convertAudio(at('source.wav'), out, format, meta(tags))
+    const { written } = await convertAudio(source, out, format, meta(tags))
     return checkFile(
       {
         path: out,
@@ -647,4 +686,11 @@ describe('checkFile — what convertAudio wrote reads back as written', () => {
     )
     expect(check.detail).toEqual({ key: 'fileTagDiffers', params: { field: 'trackNumber' } })
   })
+
+  // ffmpeg refuses a LIST chunk shorter than its own header; every other read repairs a
+  // copy and retries, so the conversion goes through and the check has to as well.
+  it('a WAV with a too-short LIST chunk, converted to AIFF, is ok', async () => {
+    const check = await converted('aiff', { title: 'T' }, malformedWav(at('short-list.wav')))
+    expect(check.state, JSON.stringify(check.detail)).toBe('ok')
+  }, 30_000)
 })
