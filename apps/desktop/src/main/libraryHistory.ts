@@ -10,6 +10,8 @@ export const HISTORY_KEEP = 5
 
 const PARTIAL = '.partial'
 const MANIFEST = 'copy.json'
+const ASIDE = '.aside'
+const STAGED = '.staged'
 
 function historyRoot(collectionPath: string): string {
   return join(dirname(backupOf(collectionPath, 'backup')), 'history')
@@ -38,7 +40,7 @@ export async function listCopies(collectionPath: string): Promise<LibraryCopy[]>
   const names = await readdir(root).catch(() => [] as string[])
   const copies: LibraryCopy[] = []
   for (const name of names) {
-    if (name.endsWith(PARTIAL)) continue
+    if (name.endsWith(PARTIAL) || name.endsWith(ASIDE)) continue
     const copy = await readCopy(join(root, name))
     if (copy) copies.push(copy)
   }
@@ -49,15 +51,14 @@ export async function restoreSlot(collectionPath: string): Promise<LibraryCopy |
   return readCopy(restoreRoot(collectionPath))
 }
 
-export async function takeCopy(
+function describeCopy(
   collectionPath: string,
   companions: string[],
   reason: CopyReason,
-  now: number = Date.now(),
-): Promise<LibraryCopy> {
-  const id = String(now)
-  const copy: LibraryCopy = {
-    id,
+  now: number,
+): LibraryCopy {
+  return {
+    id: String(now),
     collectionPath,
     takenAt: now,
     reason,
@@ -66,21 +67,60 @@ export async function takeCopy(
       target,
     })),
   }
-  const finalFolder = copyFolder(copy)
-  const partial = `${finalFolder}${PARTIAL}`
+}
+
+async function writeCopy(copy: LibraryCopy, folder: string): Promise<void> {
+  const partial = `${folder}${PARTIAL}`
   await rm(partial, { recursive: true, force: true })
   try {
     await mkdir(partial, { recursive: true })
     for (const file of copy.files) await writeBackup(file.target, join(partial, file.name))
     await writeFile(join(partial, MANIFEST), JSON.stringify(copy))
-    await rm(finalFolder, { recursive: true, force: true })
-    await renameWithRetry(partial, finalFolder)
+    await swapIn(partial, folder)
   } catch (err) {
     await rm(partial, { recursive: true, force: true })
     throw err
   }
+}
+
+async function swapIn(from: string, folder: string): Promise<void> {
+  const aside = `${folder}${ASIDE}`
+  await rm(aside, { recursive: true, force: true })
+  const had = existsSync(folder)
+  if (had) await renameWithRetry(folder, aside)
+  try {
+    await renameWithRetry(from, folder)
+  } catch (err) {
+    if (had) await renameWithRetry(aside, folder)
+    throw err
+  }
+  await rm(aside, { recursive: true, force: true })
+}
+
+export async function takeCopy(
+  collectionPath: string,
+  companions: string[],
+  reason: CopyReason,
+  now: number = Date.now(),
+): Promise<LibraryCopy> {
+  const copy = describeCopy(collectionPath, companions, reason, now)
+  await writeCopy(copy, copyFolder(copy))
   if (reason !== 'restore') await prune(collectionPath)
   return copy
+}
+
+export async function stageRestoreCopy(
+  collectionPath: string,
+  companions: string[],
+  now: number = Date.now(),
+): Promise<{ commit: () => Promise<void>; discard: () => Promise<void> }> {
+  const copy = describeCopy(collectionPath, companions, 'restore', now)
+  const staged = `${restoreRoot(collectionPath)}${STAGED}`
+  await writeCopy(copy, staged)
+  return {
+    commit: () => swapIn(staged, copyFolder(copy)),
+    discard: () => rm(staged, { recursive: true, force: true }),
+  }
 }
 
 async function prune(collectionPath: string): Promise<void> {

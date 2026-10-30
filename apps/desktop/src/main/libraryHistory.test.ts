@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setLibraryBackupRoot } from './libraryBackups'
-import { copyFolder, listCopies, restoreSlot, takeCopy } from './libraryHistory'
+import { copyFolder, listCopies, restoreSlot, stageRestoreCopy, takeCopy } from './libraryHistory'
 
 let dir: string
 
@@ -65,5 +65,21 @@ describe('libraryHistory', () => {
     await takeCopy(b, [], 'run', 2)
     expect((await listCopies(a)).map((c) => c.id)).toEqual(['1'])
     expect((await listCopies(b)).map((c) => c.id)).toEqual(['2'])
+  })
+
+  it('a staged undo copy leaves the previous one in place until it is committed', async () => {
+    const path = collection('Traktor', 'collection.nml', 'older state')
+    const previous = await takeCopy(path, [], 'restore', 1)
+    writeFileSync(path, 'newer state')
+    const dropped = await stageRestoreCopy(path, [], 2)
+    expect(await restoreSlot(path)).toEqual(previous)
+    await dropped.discard()
+    expect(await restoreSlot(path)).toEqual(previous)
+    expect(readFileSync(join(copyFolder(previous), 'collection.nml'), 'utf8')).toBe('older state')
+    const kept = await stageRestoreCopy(path, [], 3)
+    await kept.commit()
+    expect((await restoreSlot(path))?.takenAt).toBe(3)
+    expect(readFileSync(join(copyFolder(previous), 'collection.nml'), 'utf8')).toBe('newer state')
+    expect(readdirSync(join(copyFolder(previous), '..')).sort()).toEqual(['history-restore'])
   })
 })

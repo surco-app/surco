@@ -1,8 +1,9 @@
 import { existsSync, statSync } from 'node:fs'
 import { copyFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import log from 'electron-log/main'
 import type { LibraryCopy, RestoreRefusal, RestoreResult } from '../shared/types'
-import { copyFolder, listCopies, restoreSlot, takeCopy } from './libraryHistory'
+import { copyFolder, listCopies, restoreSlot, stageRestoreCopy } from './libraryHistory'
 import { removeTemp, renameWithRetry } from './renameRetry'
 
 export type { RestoreRefusal, RestoreResult }
@@ -56,6 +57,7 @@ export async function restoreCopy(
   const folder = copyFolder(copy)
   const pending = copy.files.map((file) => ({ from: `${file.target}${TEMP}`, to: file.target }))
   const clean = () => Promise.all(pending.map((file) => removeTemp(file.from)))
+  let undo: Awaited<ReturnType<typeof stageRestoreCopy>> | null = null
   try {
     for (const [i, file] of copy.files.entries()) {
       await copyFile(join(folder, file.name), pending[i].from)
@@ -64,7 +66,7 @@ export async function restoreCopy(
       .map((file) => file.target)
       .filter((t) => t !== copy.collectionPath)
     if (existsSync(copy.collectionPath)) {
-      await takeCopy(copy.collectionPath, companions, 'restore')
+      undo = await stageRestoreCopy(copy.collectionPath, companions)
     }
   } catch {
     await clean()
@@ -74,6 +76,7 @@ export async function restoreCopy(
   let replaced = false
   const stop = async (reason: RestoreRefusal): Promise<RestoreResult> => {
     await clean()
+    if (!replaced) await undo?.discard()
     if (replaced) deps.discardQueue()
     return { ok: false, reason }
   }
@@ -84,6 +87,10 @@ export async function restoreCopy(
     } catch {
       return stop('failed')
     }
+    if (!replaced)
+      await undo
+        ?.commit()
+        .catch((err) => log.warn(`undo copy of ${copy.collectionPath} left staged: ${String(err)}`))
     replaced = true
     pending.shift()
   }

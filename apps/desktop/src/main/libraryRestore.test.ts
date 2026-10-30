@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSyn
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { LibraryCopy } from '../shared/types'
 import { setLibraryBackupRoot } from './libraryBackups'
 import { copyFolder, listCopies, restoreSlot, takeCopy } from './libraryHistory'
 import { enginePendingLog, rekordboxPendingLog, restoreCopy } from './libraryRestore'
@@ -86,6 +87,46 @@ describe('restoreCopy', () => {
     await restoreCopy({ collectionPath: path, copyId: before[0] }, deps())
     expect((await listCopies(path)).map((c) => c.id)).toEqual(before)
     expect(readFileSync(path, 'utf8')).toBe('v5')
+  })
+
+  it('a restore stopped before any file was replaced keeps the previous undo copy as it was', async () => {
+    const path = collection('Traktor', 'collection.nml', 'first')
+    const copy = await takeCopy(path, [], 'run', 1)
+    writeFileSync(path, 'second')
+    await restoreCopy({ collectionPath: path, copyId: copy.id }, deps())
+    const slot = await restoreSlot(path)
+    const kept = readFileSync(join(copyFolder(slot as LibraryCopy), 'collection.nml'))
+    writeFileSync(path, 'third')
+    expect(
+      await restoreCopy(
+        { collectionPath: path, copyId: copy.id },
+        deps({ isRunning: async () => true }),
+      ),
+    ).toEqual({ ok: false, reason: 'running' })
+    expect(await restoreSlot(path)).toEqual(slot)
+    expect(readFileSync(join(copyFolder(slot as LibraryCopy), 'collection.nml'))).toEqual(kept)
+    expect(readFileSync(path, 'utf8')).toBe('third')
+  })
+
+  it('restoring from the undo copy and being stopped keeps that undo copy', async () => {
+    const path = collection('Traktor', 'collection.nml', 'first')
+    const copy = await takeCopy(path, [], 'run', 1)
+    writeFileSync(path, 'second')
+    await restoreCopy({ collectionPath: path, copyId: copy.id }, deps())
+    const slot = (await restoreSlot(path)) as LibraryCopy
+    writeFileSync(path, 'third')
+    expect(
+      await restoreCopy(
+        { collectionPath: path, copyId: slot.id },
+        deps({ isRunning: async () => true }),
+      ),
+    ).toEqual({ ok: false, reason: 'running' })
+    expect(await restoreSlot(path)).toEqual(slot)
+    expect(readFileSync(join(copyFolder(slot), 'collection.nml'), 'utf8')).toBe('second')
+    expect(await restoreCopy({ collectionPath: path, copyId: slot.id }, deps())).toEqual({
+      ok: true,
+    })
+    expect(readFileSync(path, 'utf8')).toBe('second')
   })
 
   it('refuses while the program is open and changes nothing', async () => {
