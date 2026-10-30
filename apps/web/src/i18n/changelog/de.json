@@ -1,5 +1,60 @@
 [
   {
+    "version": "1.17",
+    "date": "October 29, 2026",
+    "title": "Jedes DJ-Programm, wie du willst",
+    "items": [
+      {
+        "text": "Unter Einstellungen › Ausgabe wählst du für rekordbox, Engine DJ und Traktor getrennt, was eine Konvertierung tut. „Nicht anfassen“ lässt es, wie es ist, „Aktualisieren“ bringt die Tracks, die es schon hat, auf den neuesten Stand, und „Aktualisieren und hinzufügen“ trägt außerdem die neuen ein, auch wenn du sie in keine Playlist schickst. Der Konvertieren-Button nennt jedes Programm, in dem der Track ankommt, und der Einrichtungsassistent fragt dich danach.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Mit geöffnetem Engine DJ schlägt das Konvertieren nicht mehr fehl. Was Surco in Engine ändern oder hinzufügen muss, wartet, bis es dran ist, und kommt hinein, wenn du Engine schließt.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Surco funktioniert auch mit Traktor Play, die Tracks, die es zu Traktor hinzufügt, kommen mit ihrem Cover an, und hatte deine Sammlung schon das Grid eines Tracks, bleibt deins.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Die Einstellungen haben eine Suche. Tippe in „Einstellungen durchsuchen“, und Surco bringt dich zur Einstellung, auch ohne Akzente oder mit einem anderen Wort (Bitrate, LUFS, iCloud). Der Tab Suche heißt jetzt Quellen, und der Einstellungsordner, die Backups, der Analyse-Cache und das Fehlerprotokoll ziehen nach Erweitert um.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "⌘Z macht jetzt auch das Wählen einer Veröffentlichung, den automatischen Abgleich, das Annehmen einer Prüfung und ein von Hand geändertes Cover rückgängig, und ⇧⌘Z stellt es wieder her. Jeder Schritt macht nur rückgängig, was er geändert hat, sodass bleibt, was du danach korrigiert hast, bei mehreren Tracks auf einmal bekommt jeder seinen eigenen Wert zurück, und ein rückgängig gemachter Abgleich wendet sich nicht von selbst wieder an.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Wenn du eine Veröffentlichung anwendest, siehst du unter jedem Feld „Vorher:“ mit dem, was da stand, und „Wiederherstellen“ holt es mit einem Klick zurück. BPM und Tonart, die ein Track schon hatte, bleiben, die Veröffentlichung füllt sie nur, wenn sie leer sind.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Ist ein Track der Veröffentlichung deutlich länger oder kürzer als deine Datei, warnt dich Surco, auch in den Album-Zeilen, damit du nicht unbemerkt eine andere Version anwendest. „Beste Übereinstimmung“ erscheint nur, wenn der Treffer bestätigt ist, nicht wegen eines gleichen Titels.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Surco erkennt beschädigte Dateien, die vor ihrer Länge aufhören zu spielen. Es markiert sie neben dem Format als „Beschädigt“, sie haben ihren eigenen Filter „Beschädigt“ und zählen nie als Fälschungen, landen also nicht mit ihnen im Papierkorb. Jedes Qualitätsurteil liest sich als Wort neben dem Format, ohne auf Farbe angewiesen zu sein, und bevor du etwas Verlustbehaftetes in ein verlustfreies Format konvertierst, erinnert dich Surco, dass es keine Qualität zurückgewinnt.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Die Liste sortiert nach BPM, Tonart, Jahr und Qualität, und die Suche findet Tracks nach Genre und nach Label.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Mit ⌥↑ und ⌥↓ springst du zum vorigen oder nächsten Track, ohne das Feld zu verlassen, in dem du tippst. Zeilen mit nicht gespeicherten Änderungen tragen einen farbigen Punkt, und im Audio erkannte BPM und Tonart erscheinen als Vorschlag.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Surco verschweigt nicht mehr, was es überspringt. Ziehst du Dateien hinein, die kein Audio sind, sagt es, wie viele es ausgelassen hat, die Zusammenfassung der Konvertierung führt dich zu den übersprungenen Tracks mit dem Grund für jeden, und antwortet eine Suchquelle nicht, sagt es dir, welche, und lässt dich es erneut versuchen.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Surco öffnet sich wieder in der Größe und an der Stelle, an der du es geschlossen hast, der kleinste Text ist in beiden Themes besser lesbar, und die Liste bleibt flüssig, während du mehrere Tracks gleichzeitig konvertierst.",
+        "in": "1.17.0"
+      }
+    ]
+  },
+  {
     "version": "1.16",
     "date": "October 29, 2026",
     "title": "Deine ganze Sammlung, ohne Warten",

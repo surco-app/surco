@@ -1604,6 +1604,7 @@ describe('Editor multi-select', () => {
     if (opts.platform)
       (window as unknown as { api: { platform: string } }).api.platform = opts.platform
     const onChangeAllMeta = vi.fn()
+    const onClearAll = vi.fn()
     const onProcessAll = vi.fn()
     const onAddAllToAppleMusic = vi.fn()
     const onDeriveTags = vi.fn()
@@ -1643,6 +1644,7 @@ describe('Editor multi-select', () => {
         onProcessAll={onProcessAll}
         onAddAllToAppleMusic={onAddAllToAppleMusic}
         onChangeAllMeta={onChangeAllMeta}
+        onClearAll={onClearAll}
         onApplyCoverAll={vi.fn()}
         onDeriveTags={onDeriveTags}
         onChangeTracksMeta={onChangeTracksMeta}
@@ -1671,6 +1673,7 @@ describe('Editor multi-select', () => {
     )
     return {
       onChangeAllMeta,
+      onClearAll,
       onProcessAll,
       onAddAllToAppleMusic,
       onDeriveTags,
@@ -1946,12 +1949,11 @@ describe('Editor multi-select', () => {
 
   // Clearing over a selection goes through the same shared-form channel as any
   // multi edit, so every selected track is emptied, not just the primary one.
-  it('empties the metadata of every selected track in one click', () => {
-    const { onChangeAllMeta } = renderMulti()
+  it('hands a selection clear to the one channel that records tags and artwork as a single undo step', () => {
+    const { onClearAll, onChangeAllMeta } = renderMulti()
     fireEvent.click(screen.getByTestId('clear-meta-btn'))
-    expect(onChangeAllMeta).toHaveBeenCalledWith(
-      expect.objectContaining({ title: '', artist: '', album: '', genre: '', rating: '' }),
-    )
+    expect(onClearAll).toHaveBeenCalledTimes(1)
+    expect(onChangeAllMeta).not.toHaveBeenCalled()
   })
 
   // The same post-convert "Add to Apple Music" button is reused for the selection rather

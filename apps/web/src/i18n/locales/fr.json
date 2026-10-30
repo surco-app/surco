@@ -89,7 +89,7 @@
           },
           {
             "t": "Tu choisis où ça arrive",
-            "d": "Un dossier, à côté de l'original, Apple Music ou Engine DJ."
+            "d": "Un dossier, à côté de l'original ou Apple Music. Et pour rekordbox, Engine DJ et Traktor, tu choisis si le morceau est mis à jour ou aussi ajouté."
           },
           {
             "t": "Fréquence corrigée",
@@ -535,7 +535,7 @@
       },
       {
         "q": "Ça marche avec le matériel Denon (Engine DJ) ?",
-        "a": "Oui. Choisis Engine DJ comme destination et chaque morceau converti est enregistré directement dans ta bibliothèque Engine DJ (avec sa pochette, sa note et une playlist configurable), prêt à synchroniser vers tes lecteurs. Il exporte aussi des collections vers rekordbox, Traktor et Serato."
+        "a": "Oui. Dans Réglages → Sortie, mets Engine DJ sur « Mettre à jour et ajouter » et chaque morceau converti est enregistré directement dans ta bibliothèque Engine DJ (avec sa pochette, sa note et les playlists que tu choisis), prêt à synchroniser vers tes lecteurs. Il exporte aussi des collections vers rekordbox, Traktor et Serato."
       },
       {
         "q": "Windows affiche « Windows a protégé votre ordinateur ». C'est sûr ?",
@@ -751,14 +751,14 @@
         "body": [
           "Dans l'éditeur, cherche la release par son nom ou colle directement un id de release Discogs, puis lance « Rechercher » (ou la touche /). Surco liste les résultats avec pochette, année, label, numéro de catalogue et format, pour distinguer le pressage exact ; déplie-en un pour voir sa tracklist.",
           "Clique sur le morceau correspondant et Surco applique d'un coup artiste, album, année, genre, label, numéro de catalogue et pochette. Le plus proche est marqué « Suggéré ». La recherche marche sans rien configurer ; ajoute ton propre token Discogs dans les Réglages et tu obtiens une limite plus haute, privée et plus rapide.",
-          "Tu cherches de l'autoproduit ou de l'exclusif ? Active aussi Bandcamp dans Réglages → Recherche : ses résultats se rangent à côté de ceux de Discogs dans la même liste, chacun étiqueté avec sa source, et tu les choisis de la même façon. Bandcamp ne demande ni compte ni token. Et le commercial (pop, urbain, tubes radio) qui n'est sur aucun des deux ? C'est pour ça que Deezer est activé par défaut : sans compte ni token non plus, il couvre exactement le catalogue que Discogs et Bandcamp ratent. Et si tu joues ce que vend Beatport, connecte ton compte dans Réglages → Recherche (un compte gratuit suffit) : chaque morceau apporte son BPM, sa tonalité dans ta notation, le mix et l'ISRC, et parmi les versions au même titre Surco choisit celle que nomme ton fichier. MusicBrainz, le catalogue ouvert tenu par sa communauté, est lui aussi activé par défaut, sans compte ni token : il complète les releases et les crédits qui manquent aux autres, à une recherche par seconde comme l'exigent ses règles, ses résultats peuvent donc arriver un peu après les autres."
+          "Tu cherches de l'autoproduit ou de l'exclusif ? Active aussi Bandcamp dans Réglages → Sources : ses résultats se rangent à côté de ceux de Discogs dans la même liste, chacun étiqueté avec sa source, et tu les choisis de la même façon. Bandcamp ne demande ni compte ni token. Et le commercial (pop, urbain, tubes radio) qui n'est sur aucun des deux ? C'est pour ça que Deezer est activé par défaut : sans compte ni token non plus, il couvre exactement le catalogue que Discogs et Bandcamp ratent. Et si tu joues ce que vend Beatport, connecte ton compte dans Réglages → Sources (un compte gratuit suffit) : chaque morceau apporte son BPM, sa tonalité dans ta notation, le mix et l'ISRC, et parmi les versions au même titre Surco choisit celle que nomme ton fichier. MusicBrainz, le catalogue ouvert tenu par sa communauté, est lui aussi activé par défaut, sans compte ni token : il complète les releases et les crédits qui manquent aux autres, à une recherche par seconde comme l'exigent ses règles, ses résultats peuvent donc arriver un peu après les autres."
         ],
         "points": [
           "Cherche par texte ou colle un id de release si tu sais déjà laquelle c'est. Si le fichier en porte déjà un, Surco ouvre directement ce disque.",
           "Si la première recherche ne donne rien, Surco réessaie tout seul : en retirant le préfixe DJ, en essayant l'artiste principal, ou en cherchant par numéro de catalogue ou par titre seul.",
           "Avec l'option activée (plus ton token si Discogs fait partie de tes sources, ou ton compte pour Beatport ; Bandcamp, Deezer et MusicBrainz n'ont besoin de rien), Surco associe automatiquement les morceaux dès que tu les importes.",
           "Ta propre pochette est conservée si tu en as déjà une ; celle de la release reste en alternative, et tu peux lui faire remplacer uniquement celles en basse résolution.",
-          "Des signatures de rip ou des filigranes salissent tes titres ? Liste-les dans Réglages → Recherche, « vinyl » et « rip » y sont d'office, et ils sont ignorés pour chercher et associer ; tes tags ne sont pas touchés.",
+          "Des signatures de rip ou des filigranes salissent tes titres ? Liste-les dans Réglages → Sources, « vinyl » et « rip » y sont d'office, et ils sont ignorés pour chercher et associer ; tes tags ne sont pas touchés.",
           "Avec plusieurs sources actives, un filtre réduit les résultats à une seule, et tu peux limiter ceux de Discogs au vinyle, au CD, au fichier ou à la cassette.",
           "Choisis la release avec les flèches ; un bandeau t'indique combien de morceaux elle compte avant que tu la déplies.",
           "Si tu as déjà renommé avec ton propre format de titre, Surco l'annule avant de chercher pour que ton modèle ne s'invite pas dans la requête."
@@ -826,7 +826,7 @@
         "title": "Convertir le morceau",
         "body": [
           "Le bouton en bas de l'éditeur convertit le morceau sélectionné, et t'indique quel format il va écrire avant que tu cliques. Le menu à sa droite choisit le format : AIFF, WAV, FLAC ou ALAC sans perte, MP3, ou « Comme la source ». Si le morceau est déjà dans ce format, Surco le copie tel quel, instantanément, sans réencoder, sauf si tes réglages de qualité ou un filtre audio en modifient l'audio.",
-          "La qualité se règle dans Réglages → Format : débit MP3 (de 320 à 128 kbps, ou VBR V0/V2), profondeur de bits, fréquence d'échantillonnage et compression FLAC. Par défaut, ceux de l'original sont conservés, sauf la profondeur de bits : « Corrigé » enregistre un fichier 16 bits gonflé en 24 comme un vrai 16 bits, sans perte. Dans Réglages → Sortie, tu décides où il va : un dossier de sortie, ta bibliothèque Apple Music, ta bibliothèque Engine DJ (Denon), à côté de l'original (les exports au même format prennent un nom en « (2) » et la source n'est pas touchée), ou en remplaçant l'original sur place, ce que Surco te fait confirmer d'abord. Si tu veux, active la normalisation (loudness ou pic, avec des préréglages streaming, club ou broadcast) pour égaliser le volume. Une fois fini, « Afficher le fichier » t'amène au résultat dans le Finder ou l'Explorateur."
+          "La qualité se règle dans Réglages → Format : débit MP3 (de 320 à 128 kbps, ou VBR V0/V2), profondeur de bits, fréquence d'échantillonnage et compression FLAC. Par défaut, ceux de l'original sont conservés, sauf la profondeur de bits : « Corrigé » enregistre un fichier 16 bits gonflé en 24 comme un vrai 16 bits, sans perte. Dans Réglages → Sortie, tu décides où il va : un dossier de sortie, ta bibliothèque Apple Music, à côté de l'original (les exports au même format prennent un nom en « (2) » et la source n'est pas touchée), ou en remplaçant l'original sur place, ce que Surco te fait confirmer d'abord. Au même endroit, tu choisis séparément pour rekordbox, Engine DJ et Traktor si une conversion les laisse tranquilles (« Ne pas toucher »), met à jour les morceaux qu'ils ont déjà (« Mettre à jour ») ou leur ajoute aussi les nouveaux (« Mettre à jour et ajouter »). Si tu veux, active la normalisation (loudness ou pic, avec des préréglages streaming, club ou broadcast) pour égaliser le volume. Une fois fini, « Afficher le fichier » t'amène au résultat dans le Finder ou l'Explorateur."
         ],
         "points": [
           "Formats : AIFF, WAV, FLAC et ALAC (sans perte) et MP3. De 320 à 128 kbps, ou VBR V0/V2.",
@@ -885,7 +885,7 @@
         "points": [
           "Vers Apple Music ou Engine DJ en un clic, pendant la conversion.",
           "Engine DJ reçoit aussi la note et la pochette, et le morceau arrive dans la playlist de ton choix. Les cues et le beatgrid, non : Engine analyse lui-même l'audio au premier chargement.",
-          "Engine DJ et Traktor doivent être fermés pour écrire dans leur bibliothèque ; Surco propose de les fermer et fait une sauvegarde avant de toucher à quoi que ce soit.",
+          "Traktor doit être fermé pour écrire dans sa collection ; Surco propose de le fermer et fait une sauvegarde avant de toucher à quoi que ce soit. Avec Engine DJ ouvert, ce que Surco doit écrire attend son tour et entre quand tu le fermes, avec une sauvegarde aussi.",
           "Surco te signale quand un morceau est déjà dans ta bibliothèque, en vérifiant celle qui correspond à ta destination. C'est un indice bien réglé, pas une garantie.",
           "Modifie un morceau plus tard et Surco met à jour sa copie Apple Music au lieu de la dupliquer, et si une ancienne copie s'y trouvait déjà, il propose de la retirer.",
           "Tu peux remplacer un morceau que tu as déjà : charge une autre copie d'un titre de ta bibliothèque, dans n'importe quel format, même identique (un MP3 vers un AIFF, ou un MP3 128 vers un 320), et le bouton devient « Remplacer ». L'entrée Apple Music et la ligne rekordbox suivent toutes deux le nouveau fichier, en gardant leurs playlists et leurs cues, et dans Apple Music aussi son nombre de lectures, ta note et son favori. rekordbox peut recalculer le beatgrid en voyant un fichier différent, vérifie donc la grille. À la fin, Surco propose de mettre l'ancien fichier à la corbeille.",
@@ -955,7 +955,7 @@
         "id": "ajustes",
         "title": "Le faire tien",
         "body": [
-          "Les Réglages (⌘ ,) regroupent tout ce qui ne sert pas au quotidien, organisé dans une barre latérale par blocs (Édition, Sortie et App) : Général et Recherche en haut, puis Éditeur, Sections, Champs et Pochette ; ensuite Format, Traitement, Noms et Sortie ; et enfin Raccourcis et Statistiques.",
+          "Les Réglages (⌘ ,) regroupent tout ce qui ne sert pas au quotidien, organisé dans une barre latérale par blocs (Édition, Sortie et App) : Général et Sources en haut, puis Éditeur, Sections, Champs, Pochette et Cues ; ensuite Format, Traitement, Noms et Sortie ; et enfin Raccourcis, Statistiques et Avancé. Si tu ne te souviens plus où est quelque chose, tape-le dans « Rechercher dans les réglages », au-dessus des onglets, et Surco t'amène à ce réglage.",
           "Configure-le une fois et Surco respecte tes choix sur chaque morceau. Et si tu veux l'emmener sur une autre machine, tu peux exporter toute ta configuration dans un fichier et la réimporter quand tu en as besoin."
         ],
         "points": [
@@ -964,9 +964,9 @@
           "Choisis quels champs voir et lesquels rendre obligatoires, crée les tiens avec un nom et une clé, et réordonne-les par glisser-déposer ou clique sur « Auto-organiser » pour les mettre dans un ordre logique en un clic.",
           "L'onglet Statistiques suit tes chiffres depuis le début (morceaux chargés, convertis, analysés, trouvés sur chaque source…) et génère une image prête à partager.",
           "Dans Pochette, les petites pochettes peuvent être agrandies jusqu'à ta taille minimale et recadrées en carré, et une option macOS fait afficher au Finder la pochette des FLAC quand tu les convertis ou les mets à jour. Pour cela, elle place devant le FLAC un petit tag ID3 qui porte la pochette. L'audio ne change pas, et Traktor les accepte toujours, même avec la synchronisation activée.",
-          "Dans Recherche, tu peux limiter les résultats Discogs au vinyle, au CD, au fichier ou à la cassette, et décider combien en voir.",
+          "Dans Sources, tu peux limiter les résultats Discogs au vinyle, au CD, au fichier ou à la cassette, et décider combien en voir.",
           "Dans Éditeur, tu peux couper les explications en ligne une fois que tu les connais par cœur, et les remettre quand tu veux.",
-          "L'analyse est mise en cache pour ne pas être refaite ; tu peux la vider, et ouvrir le journal d'erreurs, depuis les Réglages.",
+          "L'analyse est mise en cache pour ne pas être refaite ; tu peux la vider, et ouvrir le journal d'erreurs, depuis Réglages → Avancé.",
           "Exporte ta configuration en sauvegarde, ou fais pointer le dossier de configuration vers iCloud Drive ou Dropbox pour partager tes préférences entre plusieurs Mac. Ton token Discogs voyage avec, tu n'as donc pas à le reconfigurer sur chaque machine. Rien de tout cela ne passe par un serveur de Surco : pas de compte, pas de cloud, pas de télémétrie.",
           "Tout fonctionne au clavier et avec un lecteur d'écran : chaque contrôle dit ce qu'il est et dans quel état il se trouve, et les conversions, les analyses et les avis sont annoncés d'eux-mêmes.",
           "Active la réduction des animations de ton système et les animations se simplifient au lieu de disparaître."
@@ -1428,7 +1428,7 @@
         "keywords": "tags étiquettes métadonnées pochette cover remplir automatiquement autofill metadata artwork",
         "settings": [
           {
-            "tab": "Recherche",
+            "tab": "Sources",
             "setting": "Auto-associer à l'import",
             "note": "Quand tu déposes tes morceaux, Surco cherche chacun d'eux et ajoute ses infos et sa pochette quand il est sûr."
           },
@@ -1802,7 +1802,7 @@
             "note": "Atténue le souffle du disque qu'on entend dans les breaks et le grondement de la platine. Ne touche pas à la musique."
           },
           {
-            "tab": "Recherche",
+            "tab": "Sources",
             "setting": "N'afficher que ces formats",
             "value": "Vinyle",
             "note": "Pour que Discogs te montre le pressage vinyle et pas le CD."
@@ -2108,7 +2108,7 @@
         "points": [
           "Ça marche sur le titre, l'artiste, l'album, le genre, le regroupement, le commentaire, le label et d'autres champs texte.",
           "Si tu connais les expressions régulières, coche « Regex ».",
-          "Si ces marques ne te gênent que pour chercher sur Discogs, ajoute-les dans Réglages › Recherche › « Mots à ignorer dans les recherches ». Elles sont écartées de la recherche, sans toucher à tes tags."
+          "Si ces marques ne te gênent que pour chercher sur Discogs, ajoute-les dans Réglages › Sources › « Mots à ignorer dans les recherches ». Elles sont écartées de la recherche, sans toucher à tes tags."
         ],
         "related": [
           {
@@ -2129,7 +2129,7 @@
         "keywords": "bpm tonalité key mix beatport camelot",
         "settings": [
           {
-            "tab": "Recherche",
+            "tab": "Sources",
             "section": "Sources de recherche",
             "setting": "Beatport",
             "note": "Juste en dessous, tape ton identifiant et ton mot de passe et clique sur « Connecter ». Le mot de passe est stocké chiffré et uniquement sur ton ordinateur."
@@ -2179,7 +2179,7 @@
         "keywords": "dossier surveillé automatique téléchargements watch folder downloads",
         "settings": [
           {
-            "tab": "Recherche",
+            "tab": "Sources",
             "setting": "Auto-associer à l'import",
             "note": "Cherche chaque nouveau morceau dans tes sources et ajoute ses infos quand il est sûr."
           }

@@ -654,10 +654,10 @@ export default function App(): React.JSX.Element {
       // Deliberately NOT forgetAnalysisTracks here: forget means the row is being rebuilt
       // in place (start over), so the track is still in the list and must stay analyzable.
       // Free the rebuilt row's old blob only if no other track still shows it.
-      revokeCoverUrlIfUnused(
-        tracksRef.current.find((t) => t.id === id)?.coverUrl,
-        tracksRef.current.filter((t) => t.id !== id).map((t) => t.coverUrl),
-      )
+      revokeCoverUrlIfUnused(tracksRef.current.find((t) => t.id === id)?.coverUrl, [
+        ...tracksRef.current.filter((t) => t.id !== id).map((t) => t.coverUrl),
+        ...metaUndo.heldCovers(),
+      ])
     },
     // A row leaving the list also evicts its probe results from the session-long
     // query cache, where the spectrogram image would otherwise be retained until quit.
@@ -683,7 +683,10 @@ export default function App(): React.JSX.Element {
       // the entire selection is gone.
       revokeDisplacedCovers(
         removed.map((t) => t.coverUrl),
-        tracksRef.current.filter((t) => !gone.has(t.id)).map((t) => t.coverUrl),
+        [
+          ...tracksRef.current.filter((t) => !gone.has(t.id)).map((t) => t.coverUrl),
+          ...metaUndo.heldCovers(),
+        ],
       )
     },
     onClear: (cleared) => {
@@ -1257,7 +1260,10 @@ export default function App(): React.JSX.Element {
     onMeasured: (id) => updateTrack(id, { analyzeFailed: undefined }),
   })
 
-  const metaUndo = useMetaUndo(tracksRef, setTracks)
+  const metaUndo = useMetaUndo(tracksRef, setTracks, {
+    onMatchUndone: (ids) => declineAutoMatch(ids),
+    onMatchRedone: (ids) => allowAutoMatch(ids),
+  })
   // Snapshots the given rows' tags so ⌘Z can roll the batch operation back. Reads
   // through tracksRef so the stable callbacks capturing it never see a stale list.
   const recordMetaUndo = useStableCallback(
@@ -1282,6 +1288,9 @@ export default function App(): React.JSX.Element {
     focusTrack: focusAutoMatch,
     scopeTo: scopeAutoMatch,
     holdForReads: holdAutoMatch,
+    declineTracks: declineAutoMatch,
+    allowTracks: allowAutoMatch,
+    isDeclined: autoMatchDeclined,
   } = useAutoMatch({
     tracksRef,
     updateTrack,
@@ -1974,7 +1983,11 @@ export default function App(): React.JSX.Element {
   )
   const onFindReplace = useStableCallback(overlays.openFindReplace)
   const onAnalyzeAll = useStableCallback(() => analyzeAllQuality())
-  const onAutoMatchAll = useStableCallback(() => enqueueAutoMatch(bulkTracks))
+  const autoMatchTracks = useStableCallback((targets: TrackItem[]) => {
+    allowAutoMatch(targets.map((t) => t.id))
+    enqueueAutoMatch(targets)
+  })
+  const onAutoMatchAll = useStableCallback(() => autoMatchTracks(bulkTracks))
   const onOpenExport = useStableCallback(overlays.openExport)
   const onClearAll = useStableCallback(() => askClearAll(visibleTracksRef.current))
   // The one-click "trash the fakes": collect the flagged rips out of the visible rows and route
@@ -2156,6 +2169,7 @@ export default function App(): React.JSX.Element {
 
   const onEditorChange = useStableCallback((patch: Partial<TrackItem>) => {
     if (!selected) return
+    if (patch.matched) allowAutoMatch([selected.id])
     updateTrack(selected.id, patch)
   })
   // Converting a single track is the donate nudge's moment of value, so every entry
@@ -2757,7 +2771,7 @@ export default function App(): React.JSX.Element {
       cancelAnalysis,
       analyzeAllQuality,
       cancelAutoMatch,
-      enqueueAutoMatch,
+      enqueueAutoMatch: autoMatchTracks,
       addTrackToAppleMusic,
       removeTrack,
       reveal: window.api.reveal,
@@ -3418,7 +3432,8 @@ export default function App(): React.JSX.Element {
                             onChangeTracksMeta={deriveTracksUndoable}
                             onApplyTitleFormat={applyTitleFormat}
                             onRecordUndo={recordMetaUndo}
-                            onClearExtras={onClearExtras}
+                            onClearAll={clearMeta}
+                            autoMatchDeclined={autoMatchDeclined(selected.id)}
                             onFieldFocusChange={onFieldFocusChange}
                             onChange={onEditorChange}
                             onChangeTracksPlaylists={onChangeTracksPlaylists}

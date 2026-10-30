@@ -27,12 +27,12 @@ function track(
 
 // A harness owning the tracks state the way App does, so record/undo run against the
 // same setTracks contract the real hook receives.
-function setup(initial: TrackItem[]) {
+function setup(initial: TrackItem[], matchFlips: Parameters<typeof useMetaUndo>[2] = {}) {
   return renderHook(() => {
     const [tracks, setTracks] = useState(initial)
     const tracksRef = useRef(tracks)
     tracksRef.current = tracks
-    const undo = useMetaUndo(tracksRef, setTracks)
+    const undo = useMetaUndo(tracksRef, setTracks, matchFlips)
     return { tracks, setTracks, ...undo }
   })
 }
@@ -473,6 +473,26 @@ describe('useMetaUndo', () => {
     expect(result.current.tracks.map((t) => t.meta.title)).toEqual(['Typed a', 'Typed b'])
   })
 
+  it('passes over a step whose write changed nothing, so one ⌘Z always takes back a visible edit', () => {
+    const { result } = setup([track('a', { title: 'A' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Filled' } })),
+      )
+    })
+    act(() => {
+      result.current.record(result.current.tracks)
+    })
+    let restored = 0
+    act(() => {
+      restored = result.current.undo()
+    })
+    expect(restored).toBe(1)
+    expect(result.current.tracks[0].meta.title).toBe('A')
+    expect(result.current.canUndo()).toBe(false)
+  })
+
   it('counts only the tracks an undo actually changed', () => {
     const { result } = setup([track('a', { title: 'A' }), track('b', { title: 'B' })])
     act(() => {
@@ -492,6 +512,35 @@ describe('useMetaUndo', () => {
     })
     expect(restored).toBe(1)
     expect(result.current.tracks.map((t) => t.meta.title)).toEqual(['A', 'Typed'])
+  })
+
+  it('names the tracks an undo took a match off, so the sweep can leave them unmatched instead of matching them again', () => {
+    const onMatchUndone = vi.fn()
+    const onMatchRedone = vi.fn()
+    const { result } = setup([track('a', { title: 'A' }), track('b', { title: 'B' })], {
+      onMatchUndone,
+      onMatchRedone,
+    })
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) =>
+          t.id === 'a'
+            ? { ...t, meta: { ...t.meta, album: 'Album' }, autoMatched: true }
+            : { ...t, meta: { ...t.meta, album: 'Typed' } },
+        ),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    expect(onMatchUndone).toHaveBeenCalledWith(['a'])
+    expect(onMatchRedone).not.toHaveBeenCalled()
+    act(() => {
+      result.current.redo()
+    })
+    expect(onMatchRedone).toHaveBeenCalledWith(['a'])
+    expect(onMatchUndone).toHaveBeenCalledTimes(1)
   })
 
   describe('picked cover blobs', () => {
@@ -518,6 +567,18 @@ describe('useMetaUndo', () => {
         result.current.setTracks((prev) => prev.map((t) => (t.id === id ? { ...t, coverUrl } : t)))
       })
     }
+
+    it('names every cover its undo and redo steps hold, so removing a row never frees one a step can still bring back', () => {
+      const { result } = setup([track('a', {}, { coverUrl: 'blob:own' })])
+      coverStep(result, 'a', 'blob:picked')
+      coverStep(result, 'a', 'blob:second')
+      act(() => {
+        result.current.undo()
+      })
+      expect(new Set(result.current.heldCovers())).toEqual(
+        new Set(['blob:own', 'blob:picked', 'blob:second']),
+      )
+    })
 
     it('frees a blob only a snapshot falling off the full stack still held, so long sessions do not pin every replaced image', () => {
       const revoke = spyRevoke()

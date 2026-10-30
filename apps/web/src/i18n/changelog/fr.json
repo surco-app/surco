@@ -1,5 +1,60 @@
 [
   {
+    "version": "1.17",
+    "date": "October 29, 2026",
+    "title": "Chaque logiciel DJ, à ta façon",
+    "items": [
+      {
+        "text": "Dans Réglages › Sortie, tu choisis séparément pour rekordbox, Engine DJ et Traktor ce que fait une conversion. « Ne pas toucher » le laisse tel quel, « Mettre à jour » met à jour les morceaux qu’il a déjà et « Mettre à jour et ajouter » ajoute aussi les nouveaux, même si tu ne les envoies dans aucune playlist. Le bouton de conversion nomme chaque logiciel où arrivera le morceau, et l’assistant de démarrage te le demande.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Avec Engine DJ ouvert, la conversion n’échoue plus. Ce que Surco doit changer ou ajouter dans Engine attend son tour et entre quand tu le fermes.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Surco marche aussi avec Traktor Play, les morceaux qu’il ajoute à Traktor arrivent avec leur pochette et, si ta collection avait déjà la grille d’un morceau, c’est la tienne qui reste.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Les Réglages ont une recherche. Tape dans « Rechercher dans les réglages » et Surco t’amène au réglage, même sans accents ou avec un autre mot (bitrate, LUFS, iCloud). L’onglet Recherche s’appelle maintenant Sources, et le dossier des réglages, les sauvegardes, le cache d’analyse et le journal d’erreurs passent dans Avancé.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "⌘Z annule aussi le choix d’une édition, l’auto-association, l’acceptation d’une revue et une pochette changée à la main, et ⇧⌘Z le rétablit. Chaque étape n’annule que ce qu’elle a changé, donc ce que tu as corrigé ensuite reste, sur plusieurs morceaux à la fois chacun retrouve sa propre valeur, et une association que tu as annulée ne se réapplique pas toute seule.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Quand tu appliques une édition, sous chaque champ tu vois « Avant : » avec ce qu’il y avait, et « Restaurer » le remet en un clic. Le BPM et la tonalité que le morceau avait déjà restent, l’édition ne les remplit que s’ils sont vides.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Si un morceau de l’édition dure nettement plus ou moins que ton fichier, Surco te prévient, aussi sur les lignes de l’album, pour que tu n’appliques pas une autre version sans t’en rendre compte. « Meilleure correspondance » n’apparaît que quand la correspondance est confirmée, pas pour un titre en commun.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Surco reconnaît les fichiers endommagés, ceux qui s’arrêtent de jouer avant leur durée. Il les marque « Endommagé » à côté du format, ils ont leur propre filtre « Endommagés » et ne comptent jamais comme faux, donc ils ne finissent pas à la corbeille avec eux. Chaque verdict de qualité se lit en un mot à côté du format, sans dépendre de la couleur, et avant de convertir quelque chose avec perte vers un format sans perte, Surco te rappelle que ça ne récupère pas la qualité.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "La liste se trie par BPM, tonalité, année et qualité, et la recherche trouve les morceaux par genre et par label.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Avec ⌥↑ et ⌥↓ tu passes au morceau précédent ou suivant sans quitter le champ où tu écris. Les lignes avec des modifications non enregistrées portent un point de couleur, et le BPM et la tonalité détectés dans l’audio apparaissent comme suggestion.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Surco ne tait plus ce qu’il saute. Quand tu déposes des fichiers qui ne sont pas de l’audio, il dit combien il en a laissé de côté, le résumé de la conversion t’amène aux morceaux sautés avec la raison de chacun, et si une source de recherche ne répond pas, il te dit laquelle et te laisse réessayer.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Surco se rouvre à la taille et à la position où tu l’as fermé, le plus petit texte se lit mieux dans les deux thèmes et la liste reste fluide pendant que tu convertis plusieurs morceaux à la fois.",
+        "in": "1.17.0"
+      }
+    ]
+  },
+  {
     "version": "1.16",
     "date": "October 29, 2026",
     "title": "Toute ta collection, sans attendre",

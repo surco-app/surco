@@ -1,5 +1,60 @@
 [
   {
+    "version": "1.17",
+    "date": "29 de octubre de 2026",
+    "title": "Cada programa DJ, a tu manera",
+    "items": [
+      {
+        "text": "En Ajustes › Destino eliges por separado para rekordbox, Engine DJ y Traktor qué hace una conversión. «No tocar» lo deja como está, «Actualizar» pone al día las pistas que ya tiene y «Actualizar y añadir» además da de alta las nuevas, aunque no las mandes a ninguna playlist. El botón de convertir nombra cada programa al que llegará la pista, y el asistente de inicio te lo pregunta.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Con Engine DJ abierto, convertir ya no falla. Lo que Surco tiene que cambiar o añadir en Engine espera su turno y entra cuando lo cierras.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Surco funciona también con Traktor Play, las pistas que añade a Traktor llegan con su carátula y, si tu colección ya tenía la rejilla de una pista, se queda la tuya.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Ajustes tiene buscador. Escribe en «Buscar ajustes» y Surco te lleva al ajuste, aunque escribas sin tildes o con otra palabra (bitrate, LUFS, iCloud). La pestaña Búsqueda pasa a llamarse Fuentes, y la carpeta de ajustes, las copias de seguridad, la caché de análisis y el registro de errores se mudan a Avanzado.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "⌘Z deshace también elegir una edición, el auto-emparejado, aceptar una revisión y cambiar la carátula a mano, y ⇧⌘Z lo rehace. Cada paso deshace solo lo que cambió, así que lo que corregiste después se queda, en varias pistas a la vez cada una recupera su propio valor, y un emparejado que deshiciste no vuelve a aplicarse solo.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Al aplicar una edición, debajo de cada campo ves «Antes:» con lo que había, y «Restaurar» lo devuelve con un clic. El BPM y la tonalidad que la pista ya tenía se quedan, la edición solo los rellena si están vacíos.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Si una pista de la edición dura bastante más o menos que tu archivo, Surco te avisa, también en las filas del álbum, para que no apliques otra versión sin darte cuenta. «Mejor coincidencia» solo aparece cuando la coincidencia se confirma, no por compartir el título.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Surco reconoce los archivos dañados, los que dejan de sonar antes de su duración. Los marca «Dañado» junto al formato, tienen su propio filtro «Dañadas» y nunca cuentan como falsos, así que no acaban en la papelera con ellos. Cada veredicto de calidad se lee en una palabra junto al formato, sin depender del color, y antes de convertir algo con pérdida a un formato sin pérdida Surco te recuerda que no recupera calidad.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "La lista se ordena por BPM, tonalidad, año y calidad, y la búsqueda encuentra pistas por género y por sello.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Con ⌥↑ y ⌥↓ pasas a la pista anterior o siguiente sin salir del campo en el que escribes. Las filas con cambios sin guardar llevan un punto de color, y el BPM y la tonalidad detectados en el audio aparecen como sugerencia.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Surco ya no calla lo que se salta. Al soltar archivos que no son audio dice cuántos ha omitido, el resumen de la conversión te lleva a las pistas saltadas con el motivo de cada una, y si una fuente de búsqueda no responde te dice cuál y te deja reintentarla.",
+        "in": "1.17.0"
+      },
+      {
+        "text": "Surco vuelve a abrirse con el tamaño y la posición con que lo cerraste, el texto más pequeño se lee mejor en los dos temas y la lista sigue ágil mientras conviertes varias pistas a la vez.",
+        "in": "1.17.0"
+      }
+    ]
+  },
+  {
     "version": "1.16",
     "date": "29 de octubre de 2026",
     "title": "Toda tu colección, sin esperas",

@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 29 de octubre de 2026** (v1.16.0, «Todas las pistas», Music por tramos, campos Playlists de Traktor y Engine DJ, listas largas fluidas, elección por programa de DJ). Levantado por primera vez el
+**Última revisión: 29 de octubre de 2026** (v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -505,6 +505,21 @@ apagado queda una línea por hallazgo: se ocultan la línea tranquilizadora del 
 sano y las líneas didácticas de los bits (`QualitySection.tsx:241-243`, `:400-415`).
 El informe PNG usa las mismas líneas que la sección.
 
+**Archivo dañado** (nuevo en v1.17.0). Si el fichero deja de decodificarse antes de su
+duración declarada, el análisis lo marca dañado en vez de graduarlo como sano
+(`sourceDamaged`, `main/ffmpeg.ts:1458`), con el badge «Archivo dañado» en el editor
+(`editor.qualityDamaged`, `QualitySection.tsx:356`) y su propio filtro «Dañadas» en la
+lista (`QualityFilterBar.tsx:41`). No cuenta como sospechoso ni entra en el barrido de
+tirar los falsos, así que un rip roto nunca acaba en la papelera como fake
+(`triage.ts:16`, `:498`). Al convertirlo, el pie avisa de que la copia también saldrá
+dañada (`editor.damagedSource`, `ConvertFooter.tsx:388`).
+
+**El veredicto se lee sin color** (v1.17.0): la fila de la lista nombra en una palabra
+junto al formato cualquier veredicto que no sea bueno (Dudosa, Baja calidad, Reprocesada,
+Con pérdida, Dañado; `qualityWord`, `TrackList.tsx:239`). Y antes de convertir una fuente
+con pérdida a un formato sin pérdida, el pie avisa de que no recupera calidad
+(`editor.lossyToLossless`, `ConvertFooter.tsx:176`).
+
 ### 4.5 Métricas de loudness
 
 Loudness integrada, true peak, LRA, dinámica, balance L/R, offset de DC y suelo
@@ -901,7 +916,7 @@ pueden cambiar sin aviso; el parseo es defensivo (`bandcamp.ts:8-11`).
 un ISRC que simplemente no tiene (`deezer.ts:10-13`).
 
 **Beatport** no tiene API abierta: Surco busca con la cuenta del usuario, que se
-conecta en Ajustes → Búsqueda. La contraseña se guarda cifrada con el llavero del
+conecta en Ajustes → Fuentes. La contraseña se guarda cifrada con el llavero del
 sistema y solo en ese equipo; si el sistema no puede cifrar, no se guarda
 (`beatportCredentials.ts:9-13`). Sale **apagado** (`settings.ts:32`), y sin cuenta
 conectada queda fuera del auto-emparejado aunque esté marcado como fuente
@@ -948,14 +963,14 @@ ajenos bajaron del 25-39 % al 0-11 % según la fuente, sin perder ninguna que no
 al artista (`npm run search-sweep`, `searchSweep.test.ts`). Discogs y los peldaños por
 campos de MusicBrainz no pasan por esta regla: ya fijan el artista en la consulta.
 
-**Buscar primero por álbum** (Ajustes → Búsqueda, apagado por defecto). Con artista y
+**Buscar primero por álbum** (Ajustes → Fuentes, apagado por defecto). Con artista y
 álbum en las etiquetas, Discogs y MusicBrainz buscan primero ese disco por sus campos
 (`discogs.ts:298-302`, `musicbrainz.ts:285-310`), y el resto prueba «artista álbum» como
 primer peldaño (`searchQuery.ts:44`); si no aparece un disco del artista, sigue la
 búsqueda por pista de siempre. Un álbum igual al título o vacío se ignora. Una edición
 entre corchetes en la etiqueta se reintenta sin ella en las dos fuentes.
 
-**Filtro de formatos** (Ajustes → Búsqueda, «Mostrar solo estos formatos»: vinilo,
+**Filtro de formatos** (Ajustes → Fuentes, «Mostrar solo estos formatos»: vinilo,
 CD, digital, casete). Limita a la vez los resultados de Discogs y de MusicBrainz
 (`discogs.ts:79-82`, `musicbrainz.ts:190-207`); las demás fuentes no saben el formato
 del lanzamiento y no se filtran. Con las dos fuentes apagadas el control queda
@@ -1019,7 +1034,21 @@ panel de álbum, el barrido y al aceptar una revisión, y se guarda en la sesió
 hay evidencia independiente del título — duraciones en ambos lados, el artista
 coincidiendo, o el número de catálogo. Sin eso queda «Por confirmar», porque un
 release sin duraciones puntúa 1.0 solo por el título y los títulos de una palabra
-existen en decenas de discos no relacionados (`release.ts:290-298`).
+existen en decenas de discos no relacionados (`release.ts:290-298`). Desde v1.17.0 el
+resultado de búsqueda solo lleva «Mejor coincidencia» con esa misma corroboración, no por
+compartir el título (`DiscogsPanel.tsx:304`).
+
+**Duración que no cuadra** (v1.17.0). Si una pista del lanzamiento dura bastante más o
+menos que el fichero, la fila lleva un aviso con la duración del fichero, en el panel de
+búsqueda (`editor.lengthMismatch`, `DiscogsPanel.tsx:270`) y en las filas del álbum
+(`match.lengthMismatch`, `AlbumMatchRows.tsx:125`), para no aplicar otra edición sin verlo.
+
+**BPM y tonalidad propios se quedan** (v1.17.0). Aplicar un lanzamiento solo rellena BPM y
+tonalidad si la pista no los tiene (`release.ts`, `base.bpm || track?.bpm`).
+
+**«Antes:» bajo cada campo** (v1.17.0). Tras aplicar un lanzamiento, cada campo que cambió
+enseña el valor anterior con un botón «Restaurar» que lo devuelve, y la restauración se
+puede deshacer (`editor.previous`, `Field.tsx:301-310`).
 
 **Bandcamp, con listón propio.** Discogs va siempre primero por ser la fuente
 curada; Bandcamp solo se prueba si Discogs no encuentra nada y el fichero tiene
@@ -1456,6 +1485,16 @@ Salvaguardas notables: un árbol de cues ilegible **no borra** los hotcues
 existentes; una rejilla existente se rescata cuando no hay BPM; y un lote de 300
 pistas produce **una** escritura, no 300 (`nmlBatch.ts:3-6`). Un backup único,
 sobrescrito, porque copias fechadas dejaban basura en la carpeta del usuario.
+
+**La rejilla de la colección manda** (v1.17.0). Si la entrada ya tiene su propia rejilla
+(Traktor puede reanalizar y guardarla solo en la colección), se queda la suya, movida como
+el resto de cues, y la del fichero no se escribe (`ownGrid`, `traktorNml.ts:405-410`). Un
+tag de BPM que es el tempo analizado redondeado no retoca la rejilla (`gridBpmFor`,
+`traktorNml.ts:315-330`). **Traktor Play** también vale: el Root Dir se lee de
+`Traktor Play Settings.tsi` si no hay ajustes de Traktor Pro (`traktorNmlPath.ts:85-87`).
+Las pistas que Surco añade a la colección llegan con carátula, porque se fechan después de
+la colección y Traktor la construye al abrirla (`traktorNmlLibrary.ts`,
+`traktorPlaylistEdit.ts`).
 
 ### Repunte de la colección de rekordbox
 
@@ -2064,8 +2103,32 @@ comparación»* (`useDeclickAb.ts:60-67`).
   elegir (⌘O, Ctrl+O fuera de macOS). Toda la pantalla es un botón que abre el selector
   de ficheros y acepta soltar pistas (`App.tsx`). Abrir playlists de Apple Music, revisar
   metadatos y mostrar duplicados siguen en el rail, los menús y la paleta (⌘K).
-- **Deshacer** de hasta 20 pasos para ediciones de tags. No cubre operaciones de
-  fichero ni conversiones.
+- **Deshacer y rehacer** de hasta 20 pasos para ediciones de tags (`MAX_META_UNDO`,
+  `useMetaUndo.ts:9`), con ⌘Z y ⇧⌘Z (`undo-meta`, `redo-meta`,
+  `shortcutDefaults.ts:68-69`) y también desde la paleta. Desde v1.17.0 cubre además
+  elegir un lanzamiento, el barrido de auto-emparejado, aceptar una revisión y cambiar la
+  carátula a mano; cada paso devuelve solo los campos que cambió, así que una corrección
+  posterior sobrevive, en una edición sobre varias pistas cada una recupera su propio
+  valor, se saltan los pasos que no cambiaron nada, y un auto-emparejado deshecho no se
+  vuelve a aplicar al volver a la pista. No cubre operaciones de fichero ni conversiones.
+- **Buscar en Ajustes** (v1.17.0). Un campo «Buscar ajustes» sobre las pestañas encuentra
+  cualquier ajuste por su etiqueta o por sinónimos por idioma, sin distinguir mayúsculas
+  ni tildes, y lleva a él resaltándolo (`searchSettings`, `lib/settingsSearch.ts:28`;
+  claves `settings.searchSynonyms`). La pestaña Búsqueda pasó a llamarse **Fuentes**, y la
+  carpeta de ajustes, la copia de seguridad, la caché de análisis y el registro de errores
+  viven en la pestaña **Avanzado** (`settings/AdvancedTab.tsx`).
+- **Lista** (v1.17.0). Se ordena también por BPM, tonalidad, año y calidad
+  (`SortKey`, `triage.ts:318-325`), y la búsqueda encuentra por género y sello además de
+  título, artista y álbum (`triage.ts:286-294`). Las filas con ediciones sin escribir en el
+  fichero llevan un punto de acento (`TrackList.tsx:405`, `:772`). Una pista saltada dice
+  en su fila por qué, y soltar ficheros que no son audio avisa de cuántos se omitieron
+  (`skipReason`, `TrackList.tsx:510`; `notices.notAudioSkipped`, `App.tsx:735`).
+- **⌥↑ / ⌥↓** pasan a la pista anterior o siguiente sin salir del campo en el que se
+  escribe (`next-in-field`, `prev-in-field`, `shortcutDefaults.ts:42-43`). El BPM y la
+  tonalidad detectados en el audio salen como sugerencias que nunca vacían el campo
+  (`fields.suggestionDetected`, `SuggestionChips.tsx:64`).
+- **La ventana vuelve como se cerró**: tamaño, posición y maximizada
+  (`main/windowState.ts`, `main/index.ts:707`).
 
 ---
 

@@ -86,6 +86,9 @@ interface AutoMatchSweep {
   // outside it are set aside, and those set aside that it holds are queued again.
   scopeTo: (inScope: ((t: TrackItem) => boolean) | null) => void
   holdForReads: (held: boolean) => void
+  declineTracks: (ids: string[]) => void
+  allowTracks: (ids: string[]) => void
+  isDeclined: (id: string) => boolean
 }
 
 // The Discogs auto-match sweep. An import and the toolbar sweep both enqueue every
@@ -124,6 +127,7 @@ export function useAutoMatch({
   // Track ids waiting for an auto-match. The drain reads this together with which rows
   // are currently visible, which decides the order and nothing else.
   const matchQueue = useRef<Set<string>>(new Set())
+  const declined = useRef<Set<string>>(new Set())
   const visibleIds = useRef<Set<string>>(new Set())
   // The track the user has selected. It probes ahead of the rest of the crate (drained
   // first) and at high priority, so the row in front of you resolves now instead of
@@ -344,6 +348,7 @@ export function useAutoMatch({
     (candidates: TrackItem[], background = false): void => {
       const before = sweepTotal.current.size
       for (const t of tracksToAutoMatch(candidates)) {
+        if (declined.current.has(t.id)) continue
         if (background && scope.current && !scope.current(t)) {
           setAside.current.set(t.id, t)
           continue
@@ -394,6 +399,7 @@ export function useAutoMatch({
 
   const forgetTrack = useCallback((id: string): void => {
     matchQueue.current.delete(id)
+    declined.current.delete(id)
     setAside.current.delete(id)
     visibleIds.current.delete(id)
     if (!sweepTotal.current.delete(id)) return
@@ -406,6 +412,7 @@ export function useAutoMatch({
     matchQueue.current.clear()
     setAside.current.clear()
     visibleIds.current.clear()
+    declined.current.clear()
     focusedId.current = null
     resetProgress()
   }, [resetProgress])
@@ -461,6 +468,20 @@ export function useAutoMatch({
     [tracksRef, enqueueAutoMatch],
   )
 
+  const declineTracks = useCallback((ids: string[]): void => {
+    for (const id of ids) {
+      declined.current.add(id)
+      matchQueue.current.delete(id)
+      setAside.current.delete(id)
+    }
+  }, [])
+
+  const allowTracks = useCallback((ids: string[]): void => {
+    for (const id of ids) declined.current.delete(id)
+  }, [])
+
+  const isDeclined = useCallback((id: string): boolean => declined.current.has(id), [])
+
   return {
     scopeTo,
     matching,
@@ -471,5 +492,8 @@ export function useAutoMatch({
     reset,
     focusTrack,
     holdForReads,
+    declineTracks,
+    allowTracks,
+    isDeclined,
   }
 }
