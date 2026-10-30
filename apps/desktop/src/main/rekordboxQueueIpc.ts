@@ -27,6 +27,9 @@ export interface QueueIpcHost {
   onWaiting?: () => void
   onReady?: () => void
   beginMoment?: (reason: CopyReason) => void
+  // How an apply by hand went and a discarded queue, for the tracks held pending on it.
+  onSettled?: (result: QueueApply | 'threw') => void
+  onDiscarded?: () => void
 }
 
 export function registerRekordboxQueueIpc(queue: RekordboxQueue, host: QueueIpcHost): void {
@@ -34,15 +37,25 @@ export function registerRekordboxQueueIpc(queue: RekordboxQueue, host: QueueIpcH
   ipcMain.handle('rekordbox:applyNow', (e) =>
     serialLibraryFlush(async () => {
       host.beginMoment?.('queue')
-      const result = await queue.apply(
-        () => host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
-        { manual: true },
-      )
+      let result: QueueApply
+      try {
+        result = await queue.apply(
+          () => host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
+          { manual: true },
+        )
+      } catch (err) {
+        host.onSettled?.('threw')
+        throw err
+      }
+      host.onSettled?.(result)
       if (stillWaiting(result)) host.onWaiting?.()
       return appliedNotice(result)
     }),
   )
-  ipcMain.handle('rekordbox:discardQueue', () => queue.discard())
+  ipcMain.handle('rekordbox:discardQueue', () => {
+    queue.discard()
+    host.onDiscarded?.()
+  })
   ipcMain.handle('rekordbox:queueReady', () => host.onReady?.())
   ipcMain.handle('rekordbox:membership', async (_e, paths: string[]) => {
     const path = host.collection()

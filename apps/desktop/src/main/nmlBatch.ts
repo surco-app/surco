@@ -79,6 +79,10 @@ export function abandonNmlBatch(): void {
   depth = 0
 }
 
+export function nmlBatchOpen(): boolean {
+  return depth > 0
+}
+
 export function beginNmlBatch(): void {
   if (depth === 0) {
     patches = []

@@ -90,4 +90,31 @@ describe('registerEngineCueQueueIpc', () => {
     handler('engine:cueQueueReady')()
     expect(onReady).toHaveBeenCalled()
   })
+
+  // The tracks a conversion left pending on this queue are checked once it applies by hand,
+  // and an apply that throws or a discarded queue never leaves them pending.
+  it('tells the verification how an apply by hand went', async () => {
+    const onSettled = vi.fn()
+    registerEngineCueQueueIpc(queue(), { ensureClosed: vi.fn(async () => true), onSettled })
+    await handler('engine:applyCueQueue')({ sender: {} })
+    expect(onSettled).toHaveBeenCalledWith(APPLIED)
+  })
+
+  it('tells the verification an apply by hand threw', async () => {
+    const onSettled = vi.fn()
+    const q = queue()
+    q.apply.mockRejectedValueOnce(new Error('disk gone'))
+    registerEngineCueQueueIpc(q, { ensureClosed: vi.fn(async () => true), onSettled })
+    await expect(handler('engine:applyCueQueue')({ sender: {} })).rejects.toThrow('disk gone')
+    expect(onSettled).toHaveBeenCalledWith('threw')
+  })
+
+  it('tells the verification the queue was discarded', async () => {
+    const onDiscarded = vi.fn()
+    const q = queue()
+    registerEngineCueQueueIpc(q, { ensureClosed: vi.fn(async () => true), onDiscarded })
+    await handler('engine:discardCueQueue')()
+    expect(q.discard).toHaveBeenCalled()
+    expect(onDiscarded).toHaveBeenCalled()
+  })
 })

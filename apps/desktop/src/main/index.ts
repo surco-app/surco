@@ -151,7 +151,6 @@ import {
   attachLibraryPlaylists,
   attachRekordboxPlaylists,
   beginRekordboxBatch,
-  type RekordboxRepoint,
   redirectRekordboxRepoint,
   rekordboxBatchOpen,
 } from './rekordboxBatch'
@@ -202,7 +201,7 @@ import {
   detectTraktorNmlPaths,
   sameCollection,
 } from './traktorNmlPath'
-import { type QueuedNmlPatch, queuedNmlPatch, syncQueuedPatches } from './traktorPatchQueue'
+import { type QueuedNmlPatch, syncQueuedPatches } from './traktorPatchQueue'
 import { registerTraktorPlaylistEditIpc } from './traktorPlaylistEditIpc'
 import { nmlPath } from './traktorPlaylists'
 import { registerTraktorPlaylistsIpc } from './traktorPlaylistsIpc'
@@ -217,17 +216,14 @@ import { registerUsbExportIpc } from './usbExportIpc'
 import { checkFile, fileReaders } from './verifyFile'
 import {
   libraryReaders,
+  libraryRequeue,
+  queueVerification,
   registerVerifyIpc,
   snapshotLibraries,
   verifyUpdateSender,
 } from './verifyIpc'
 import { checkAppleMusic, type MusicExpect, musicReaders } from './verifyMusic'
-import {
-  createVerifyRegistry,
-  type FlushOutcome,
-  type QueueApplied,
-  type VerifyEntry,
-} from './verifyRegistry'
+import { createVerifyRegistry, type FlushOutcome, type TraktorWrite } from './verifyRegistry'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
 import { loadWindowState, resolveWindowBounds, saveWindowState } from './windowState'
@@ -323,9 +319,10 @@ const rekordboxQueue = createRekordboxQueue({
       sessionBackup: (path) => sessions.rekordbox.ensure(path),
       realPath: (p: string) => realpathSync(p),
     }),
-  repoint: (collectionPath, list) => {
-    queueRepointed.rekordbox = 'written'
-    return repointRekordbox(collectionPath, list, sessions)
+  repoint: async (collectionPath, list) => {
+    const results = await repointRekordbox(collectionPath, list, sessions)
+    queueChecks.repointed('rekordbox', results)
+    return results
   },
   nodeStamps: async (collectionPath) => readNodeStamps(collectionPath),
   onChange: (state) => broadcast('rekordbox:queueChanged', state),
@@ -350,7 +347,7 @@ const adjustProvisionalCues = (): void =>
 const announceApplied = (result: QueueApply): void => {
   const notice = appliedNotice(result)
   if (notice) broadcast('rekordbox:queueApplied', notice)
-  verifyQueueApplied('rekordbox', result)
+  queueChecks.settled('rekordbox', result)
 }
 const rekordboxQueueWatch = watchRekordboxQueue({
   queue: {
@@ -390,7 +387,7 @@ const applyRekordboxQueueQuietly = (serial = serialLibraryFlush): void => {
       announceApplied(result)
       if (stillWaiting(result)) rekordboxQueueWatch.poke()
     },
-    () => verifyQueueApplied('rekordbox', 'threw'),
+    () => queueChecks.settled('rekordbox', 'threw'),
   )
 }
 const engineLibraryPath = (): string =>
@@ -404,9 +401,10 @@ const engineCueQueue = createRekordboxQueue({
       ensureClosed,
       sessionBackup: (path) => sessions.engine.ensure(path),
     }),
-  repoint: (libraryDir, list) => {
-    queueRepointed.engine = 'written'
-    return repointEngineQueued(libraryDir, list, sessions)
+  repoint: async (libraryDir, list) => {
+    const results = await repointEngineQueued(libraryDir, list, sessions)
+    queueChecks.repointed('engine', results)
+    return results
   },
   nodeStamps: async () => ({}),
   onChange: (state) => broadcast('engine:cueQueueChanged', state),
@@ -415,7 +413,7 @@ const engineCueQueue = createRekordboxQueue({
 const announceEngineApplied = (result: QueueApply): void => {
   const notice = appliedNotice(result)
   if (notice) broadcast('engine:cueQueueApplied', notice)
-  verifyQueueApplied('engine', result)
+  queueChecks.settled('engine', result)
 }
 const engineCueQueueWatch = watchRekordboxQueue({
   queue: {
@@ -440,7 +438,7 @@ const applyEngineCueQueueQuietly = (serial = serialLibraryFlush): void => {
       announceEngineApplied(result)
       if (stillWaiting(result)) engineCueQueueWatch.poke()
     },
-    () => verifyQueueApplied('engine', 'threw'),
+    () => queueChecks.settled('engine', 'threw'),
   )
 }
 // The tab reads the collection Settings names or, without one, the newest Traktor found;
@@ -467,12 +465,16 @@ const traktorCueQueue = createRekordboxQueue<QueuedNmlPatch>({
   configured: () => getSettings().traktorNmlPath,
   applyBatch: (nml, ops, ensureClosed) =>
     applyTraktorBatch(nml, ops, { ensureClosed, session: sessions.traktor }),
-  repoint: (nml, patches) =>
-    syncQueuedPatches(nml, patches, async (path, list) => {
+  repoint: async (nml, patches) => {
+    let write: TraktorWrite = 'failed'
+    const results = await syncQueuedPatches(nml, patches, async (path, list) => {
       const result = await syncCollection(path, list, sessions.traktor)
-      queueRepointed.traktor = traktorWrite(list, result)
+      write = traktorWrite(list, result)
       return result
-    }),
+    })
+    queueChecks.repointed('traktor', results, write)
+    return results
+  },
   nodeStamps: async () => ({}),
   onChange: (state) => broadcast('traktor:cueQueueChanged', state),
   addsTracks: false,
@@ -480,7 +482,7 @@ const traktorCueQueue = createRekordboxQueue<QueuedNmlPatch>({
 const announceTraktorApplied = (result: QueueApply): void => {
   const notice = appliedNotice(result)
   if (notice) broadcast('traktor:cueQueueApplied', notice)
-  verifyQueueApplied('traktor', result)
+  queueChecks.settled('traktor', result)
 }
 const traktorCueQueueWatch = watchRekordboxQueue({
   queue: {
@@ -505,7 +507,7 @@ const applyTraktorCueQueueAsking = (win: BrowserWindow | null): void => {
       announceTraktorApplied(result)
       if (stillWaiting(result)) traktorCueQueueWatch.poke()
     },
-    () => verifyQueueApplied('traktor', 'threw'),
+    () => queueChecks.settled('traktor', 'threw'),
   )
 }
 // A conversion run's collection patches held because Traktor stayed open or the write
@@ -521,28 +523,11 @@ const applyTraktorCueQueueQuietly = (serial = serialLibraryFlush): void => {
       announceTraktorApplied(result)
       if (stillWaiting(result)) traktorCueQueueWatch.poke()
     },
-    () => verifyQueueApplied('traktor', 'threw'),
+    () => queueChecks.settled('traktor', 'threw'),
   )
 }
 // What each conversion is checked against after its batch and each queue apply (see
-// verifyRegistry.ts). A queue apply that repointed tells the registry what it wrote; one
-// that still waits on the program says nothing, the tracks stay pending; any other refusal
-// or a throw is a failed apply, never left pending.
-type VerifyLibrary = 'rekordbox' | 'engine' | 'traktor'
-const queueRepointed: Partial<Record<VerifyLibrary, QueueApplied>> = {}
-function verifyQueueApplied(place: VerifyLibrary, result: QueueApply | 'threw'): void {
-  const written = queueRepointed[place]
-  delete queueRepointed[place]
-  if (result === 'threw' || (result.status === 'refused' && !stillWaiting(result)))
-    void verifyRegistry.afterQueueApplied(place, 'failed')
-  else if (result.status === 'applied' && written)
-    void verifyRegistry.afterQueueApplied(place, written)
-}
-// The repoint each converted file was last given, by where it landed: a retry hands the
-// library the same one again, with its cue shift.
-const recordedRepoints = new Map<string, RekordboxRepoint>()
-const repointOf = (e: VerifyEntry): RekordboxRepoint =>
-  recordedRepoints.get(e.to.normalize('NFC')) ?? { from: e.from, to: e.to }
+// verifyRegistry.ts).
 const musicUnreadable = async () =>
   ({ place: 'appleMusic', state: 'unreadable', detail: { key: 'musicUnreadable' } }) as const
 const verifyRegistry = createVerifyRegistry({
@@ -557,29 +542,30 @@ const verifyRegistry = createVerifyRegistry({
     process.platform === 'darwin'
       ? (e: MusicExpect) => checkAppleMusic(e, musicReaders)
       : musicUnreadable,
-  // Handed to the queue, which applies it now or once the program closes. True when it
-  // cannot be applied now: the library is not there.
-  requeue: (place, e) => {
-    if (place === 'traktor') {
-      if (e.traktorPatch) traktorCueQueue.enqueue([], [queuedNmlPatch(e.traktorPatch)])
-      applyTraktorCueQueueQuietly()
-      return !traktorWritePath()
-    }
-    if (place === 'engine') {
-      engineCueQueue.enqueue([], [repointOf(e)])
-      applyEngineCueQueueQuietly()
-      return !engineLibraryPath()
-    }
-    rekordboxQueue.enqueue([], [repointOf(e)])
-    applyRekordboxQueueQuietly()
-    return !rekordboxCollectionPath()
-  },
+  requeue: libraryRequeue({
+    rekordbox: {
+      enqueue: rekordboxQueue.enqueue,
+      apply: () => applyRekordboxQueueQuietly(),
+      at: rekordboxCollectionPath,
+    },
+    engine: {
+      enqueue: engineCueQueue.enqueue,
+      apply: () => applyEngineCueQueueQuietly(),
+      at: engineLibraryPath,
+    },
+    traktor: {
+      enqueue: traktorCueQueue.enqueue,
+      apply: () => applyTraktorCueQueueQuietly(),
+      at: traktorWritePath,
+    },
+  }),
   exists: (path) =>
     access(path).then(
       () => true,
       () => false,
     ),
 })
+const queueChecks = queueVerification(verifyRegistry)
 // A batch adding N tracks that share one album cover used to re-run the ffmpeg encode N
 // times. Shares one prepareProcessedCover per distinct (source, opts) across the
 // concurrent process:track calls a batch fans out into — same module-scoped-per-run
@@ -1431,6 +1417,8 @@ function registerIpc(): void {
     onWaiting: rekordboxQueueWatch.poke,
     onReady: () => void adjustProvisionalCuesOnLaunch(),
     beginMoment: (reason) => moments.begin(reason, ['rekordbox']),
+    onSettled: (result) => queueChecks.settled('rekordbox', result),
+    onDiscarded: () => queueChecks.discarded('rekordbox'),
   })
   registerRekordboxCuesIpc({
     collection: rekordboxCollectionPath,
@@ -1476,12 +1464,16 @@ function registerIpc(): void {
     onWaiting: engineCueQueueWatch.poke,
     onReady: engineCueQueueWatch.poke,
     beginMoment: (reason) => moments.begin(reason, ['engine']),
+    onSettled: (result) => queueChecks.settled('engine', result),
+    onDiscarded: () => queueChecks.discarded('engine'),
   })
   registerTraktorCueQueueIpc(traktorCueQueue, {
     ensureClosed: (win) => ensureTraktorClosed(win, 'traktorQuitDetailCues'),
     onWaiting: traktorCueQueueWatch.poke,
     onReady: traktorCueQueueWatch.poke,
     beginMoment: (reason) => moments.begin(reason, ['traktor']),
+    onSettled: (result) => queueChecks.settled('traktor', result),
+    onDiscarded: () => queueChecks.discarded('traktor'),
   })
   ipcMain.handle('traktor:canSave', () => traktorWritePath() !== '')
   registerTraktorPlaylistEditIpc({
@@ -1568,12 +1560,15 @@ function registerIpc(): void {
   // Queued behind any review sync still writing, and the other way round.
   // The libraries are read back for the batch's tracks inside the same turn of the write
   // chain: a queue apply the flush started runs after it, so the tracks it holds are already
-  // pending when it lands. A nested end flushed nothing; the outer one reads them all.
-  ipcMain.on('process:batch-end', (e) =>
-    moments.runFlush(serialLibraryFlush, rekordboxBatchOpen, async (later) => {
+  // pending when it lands. The flush judges the tracks registered before this end arrived,
+  // so a batch begun meanwhile waits for its own; a library a nested end took nothing from
+  // is left for the end that does.
+  ipcMain.on('process:batch-end', (e) => {
+    const upTo = verifyRegistry.cut()
+    return moments.runFlush(serialLibraryFlush, rekordboxBatchOpen, async (later) => {
       let outcome: FlushOutcome = { rekordbox: 'failed', engine: 'failed', traktor: 'failed' }
       try {
-        const flushed = await flushConversionBatch(
+        outcome = await flushConversionBatch(
           hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
           sessions,
           {
@@ -1590,14 +1585,11 @@ function registerIpc(): void {
             applyQuietly: () => applyEngineCueQueueQuietly(later),
           },
         )
-        for (const repoint of flushed.repoints)
-          recordedRepoints.set(repoint.to.normalize('NFC'), repoint)
-        outcome = flushed
       } finally {
-        if (!rekordboxBatchOpen()) await verifyRegistry.afterFlush(outcome)
+        await verifyRegistry.afterFlush(outcome, upTo)
       }
-    }),
-  )
+    })
+  })
 
   registerVerifyIpc(verifyRegistry)
 

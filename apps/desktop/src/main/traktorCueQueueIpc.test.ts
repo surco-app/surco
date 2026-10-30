@@ -90,4 +90,31 @@ describe('registerTraktorCueQueueIpc', () => {
     handler('traktor:cueQueueReady')()
     expect(onReady).toHaveBeenCalled()
   })
+
+  // The tracks a conversion left pending on this queue are checked once it applies by hand,
+  // and an apply that throws or a discarded queue never leaves them pending.
+  it('tells the verification how an apply by hand went', async () => {
+    const onSettled = vi.fn()
+    registerTraktorCueQueueIpc(queue(), { ensureClosed: vi.fn(async () => true), onSettled })
+    await handler('traktor:applyCueQueue')({ sender: {} })
+    expect(onSettled).toHaveBeenCalledWith(APPLIED)
+  })
+
+  it('tells the verification an apply by hand threw', async () => {
+    const onSettled = vi.fn()
+    const q = queue()
+    q.apply.mockRejectedValueOnce(new Error('disk gone'))
+    registerTraktorCueQueueIpc(q, { ensureClosed: vi.fn(async () => true), onSettled })
+    await expect(handler('traktor:applyCueQueue')({ sender: {} })).rejects.toThrow('disk gone')
+    expect(onSettled).toHaveBeenCalledWith('threw')
+  })
+
+  it('tells the verification the queue was discarded', async () => {
+    const onDiscarded = vi.fn()
+    const q = queue()
+    registerTraktorCueQueueIpc(q, { ensureClosed: vi.fn(async () => true), onDiscarded })
+    await handler('traktor:discardCueQueue')()
+    expect(q.discard).toHaveBeenCalled()
+    expect(onDiscarded).toHaveBeenCalled()
+  })
 })

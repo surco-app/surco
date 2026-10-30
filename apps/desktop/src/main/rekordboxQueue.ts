@@ -100,7 +100,7 @@ export interface RekordboxQueue<R extends QueuedRepoint = RekordboxRepoint> {
   apply: (ensureClosed: () => Promise<boolean>, opts?: { manual?: boolean }) => Promise<QueueApply>
 }
 
-const COLLECTION_WIDE: ReadonlySet<string> = new Set([
+export const COLLECTION_WIDE: ReadonlySet<string> = new Set([
   'rekordbox-running',
   'backup-failed',
   'read-only',

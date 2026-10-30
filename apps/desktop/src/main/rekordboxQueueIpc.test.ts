@@ -145,4 +145,43 @@ describe('registerRekordboxQueueIpc', () => {
     })
     expect(await handler('rekordbox:membership')({}, ['/m/a.wav'])).toEqual({})
   })
+
+  // The tracks a conversion left pending on this queue are checked once it applies by hand,
+  // and an apply that throws or a discarded queue never leaves them pending.
+  it('tells the verification how an apply by hand went', async () => {
+    const onSettled = vi.fn()
+    registerRekordboxQueueIpc(queue(), {
+      collection: () => '',
+      ensureClosed: vi.fn(async () => true),
+      onSettled,
+    })
+    await handler('rekordbox:applyNow')({ sender: {} })
+    expect(onSettled).toHaveBeenCalledWith(APPLIED)
+  })
+
+  it('tells the verification an apply by hand threw', async () => {
+    const onSettled = vi.fn()
+    const q = queue()
+    q.apply.mockRejectedValueOnce(new Error('disk gone'))
+    registerRekordboxQueueIpc(q, {
+      collection: () => '',
+      ensureClosed: vi.fn(async () => true),
+      onSettled,
+    })
+    await expect(handler('rekordbox:applyNow')({ sender: {} })).rejects.toThrow('disk gone')
+    expect(onSettled).toHaveBeenCalledWith('threw')
+  })
+
+  it('tells the verification the queue was discarded', async () => {
+    const onDiscarded = vi.fn()
+    const q = queue()
+    registerRekordboxQueueIpc(q, {
+      collection: () => '',
+      ensureClosed: vi.fn(async () => true),
+      onDiscarded,
+    })
+    await handler('rekordbox:discardQueue')()
+    expect(q.discard).toHaveBeenCalled()
+    expect(onDiscarded).toHaveBeenCalled()
+  })
 })

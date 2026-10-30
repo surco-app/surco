@@ -3,9 +3,13 @@ import { ipcMain, type WebContents } from 'electron'
 import type { Verification } from '../shared/verification'
 import { type EngineDb, openEngineDb } from './enginePlaylists'
 import { pathKey } from './libraryPathKey'
+import type { LibraryRepointResult } from './libraryRepointFlush'
 import { type FindOptions, openRekordboxDb } from './rekordboxDb'
+import { COLLECTION_WIDE, type QueueApply } from './rekordboxQueue'
+import { stillWaiting } from './rekordboxQueueWatch'
+import { queuedNmlPatch } from './traktorPatchQueue'
 import { checkEngine, type EngineBefore, snapshotEngineRow } from './verifyEngine'
-import type { VerifyEntry, VerifyRegistryDeps } from './verifyRegistry'
+import type { QueueApplied, VerifyEntry, VerifyRegistryDeps } from './verifyRegistry'
 import { checkRekordbox, type RekordboxBefore, snapshotRekordboxRow } from './verifyRekordbox'
 import { checkTraktor } from './verifyTraktor'
 
@@ -133,6 +137,64 @@ export function libraryReaders(
       const path = paths.traktor()
       if (!path) return 'unreadable'
       return checkTraktor(await readFile(path, 'utf8'), list, options.bootVolume())
+    },
+  }
+}
+
+type Library = 'rekordbox' | 'engine' | 'traktor'
+
+interface RequeueTarget<T> {
+  enqueue: (ops: [], repoints: T[]) => void
+  apply: () => void
+  // Where the library is now, empty while it is not there.
+  at: () => string
+}
+
+// A retry hands a library still on the old file the move alone: the cues, grid and stars
+// went with the first repoint, and sending them again would move the cues twice. True when
+// the library is not there to take it now.
+export function libraryRequeue(queues: {
+  rekordbox: RequeueTarget<{ from: string; to: string }>
+  engine: RequeueTarget<{ from: string; to: string }>
+  traktor: RequeueTarget<ReturnType<typeof queuedNmlPatch>>
+}): VerifyRegistryDeps['requeue'] {
+  return (place, e) => {
+    if (place === 'traktor') {
+      const p = e.traktorPatch
+      if (p)
+        queues.traktor.enqueue(
+          [],
+          [queuedNmlPatch({ volume: p.volume, dir: p.dir, file: p.file, newFile: p.newFile })],
+        )
+    } else queues[place].enqueue([], [{ from: e.from, to: e.to }])
+    queues[place].apply()
+    return !queues[place].at()
+  }
+}
+
+// How each queue apply went, for the tracks held pending on it. Repoints that came back
+// without a collection-wide refusal left the queue: whatever the rest of the apply did,
+// they are read back. Otherwise a program still open keeps them pending, and any other
+// refusal, a throw or a discarded queue is a failed apply, never left pending.
+export function queueVerification(registry: {
+  afterQueueApplied: (place: Library, result: QueueApplied) => Promise<void>
+}) {
+  const repointed: Partial<Record<Library, QueueApplied>> = {}
+  return {
+    repointed(place: Library, results: LibraryRepointResult[], write?: QueueApplied): void {
+      if (results.every((r) => r.written || !COLLECTION_WIDE.has(r.reason)))
+        repointed[place] = write ?? 'written'
+    },
+    settled(place: Library, result: QueueApply | 'threw'): void {
+      const written = repointed[place]
+      delete repointed[place]
+      if (written) void registry.afterQueueApplied(place, written)
+      else if (result === 'threw' || (result.status === 'refused' && !stillWaiting(result)))
+        void registry.afterQueueApplied(place, 'failed')
+    },
+    discarded(place: Library): void {
+      delete repointed[place]
+      void registry.afterQueueApplied(place, 'failed')
     },
   }
 }

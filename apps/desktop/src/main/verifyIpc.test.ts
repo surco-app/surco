@@ -30,10 +30,15 @@ vi.mock('./rekordboxDb', async (importOriginal) => {
 
 import type { WebContents } from 'electron'
 import { ipcMain } from 'electron'
-import { makeRekordbox } from '../scenarios/rekordboxFixture'
+import { makeRekordbox, rekordboxRow } from '../scenarios/rekordboxFixture'
 import type { Verification } from '../shared/verification'
+import { repointTracks } from './rekordboxLibrary'
+import type { QueueApply } from './rekordboxQueue'
+import type { QueuedNmlPatch } from './traktorPatchQueue'
 import {
   libraryReaders,
+  libraryRequeue,
+  queueVerification,
   registerVerifyIpc,
   snapshotLibraries,
   verifyUpdateSender,
@@ -198,5 +203,146 @@ describe('snapshotLibraries', () => {
     const before = await snapshotLibraries(FROM, { rekordbox: garbage, engine: dir }, realPath)
 
     expect(before).toEqual({ rekordbox: 'unreadable', engine: 'unreadable' })
+  })
+})
+
+describe('libraryRequeue', () => {
+  const queues = () => ({
+    rekordbox: { enqueue: vi.fn(), apply: vi.fn(), at: () => '/c/master.db' },
+    engine: { enqueue: vi.fn(), apply: vi.fn(), at: () => '' },
+    traktor: {
+      enqueue: vi.fn<(ops: [], patches: QueuedNmlPatch[]) => void>(),
+      apply: vi.fn(),
+      at: () => '/t/collection.nml',
+    },
+  })
+
+  // The repoint is handed again only to move the row onto the file: the cues were moved
+  // with the first one, and moving them again would put every cue off its beat.
+  it('hands rekordbox and Engine the path alone, never the cue shift', () => {
+    const q = queues()
+    const requeue = libraryRequeue(q)
+
+    expect(requeue('rekordbox', entry())).toBe(false)
+    expect(requeue('engine', entry())).toBe(true)
+
+    expect(q.rekordbox.enqueue).toHaveBeenCalledWith([], [{ from: FROM, to: TO }])
+    expect(q.engine.enqueue).toHaveBeenCalledWith([], [{ from: FROM, to: TO }])
+    expect(q.rekordbox.apply).toHaveBeenCalledOnce()
+  })
+
+  it('hands Traktor the rename alone, without cue tree, shift, grid or stars', () => {
+    const q = queues()
+    const patch = {
+      volume: 'HD',
+      dir: '/:M/:',
+      file: 'a.aiff',
+      newFile: 'a.wav',
+      cueTree: new Uint8Array([1, 2]),
+      cueShift: { shiftMs: 25, maxMs: 50 },
+      bpm: 128,
+      ranking: 255,
+    }
+
+    libraryRequeue(q)('traktor', entry({ traktorPatch: patch }))
+
+    const [, [queued]] = q.traktor.enqueue.mock.calls[0]
+    expect(queued.patch).toEqual({ volume: 'HD', dir: '/:M/:', file: 'a.aiff', newFile: 'a.wav' })
+  })
+
+  it('the repoint it hands rekordbox leaves the cues where they are', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-verifyipc-requeue-'))
+    const from = join(dir, 'Title.aiff')
+    const to = join(dir, 'Title.wav')
+    writeFileSync(from, 'aiff')
+    writeFileSync(to, 'wav')
+    const path = makeRekordbox(join(dir, 'rekordbox'), [
+      {
+        id: '100',
+        path: from,
+        title: 'Title',
+        artist: 'Artist',
+        fileType: 12,
+        cuesMs: [1000, 2000],
+      },
+    ])
+    const q = queues()
+    libraryRequeue(q)('rekordbox', entry({ from, to }))
+    const [, [item]] = q.rekordbox.enqueue.mock.calls[0]
+
+    await repointTracks(path, [{ ...item, realPath, quiet: true }])
+
+    const row = rekordboxRow(path, '100')
+    expect(row.path).toBe(to)
+    expect(row.cuesMs).toEqual([1000, 2000])
+  })
+})
+
+describe('queueVerification', () => {
+  const applied: QueueApply = {
+    status: 'applied',
+    tracks: 1,
+    changes: 0,
+    notices: [],
+    written: [],
+    outcomes: [],
+  }
+  const setup = () => {
+    const afterQueueApplied = vi.fn(async () => {})
+    return { afterQueueApplied, q: queueVerification({ afterQueueApplied }) }
+  }
+
+  it('an apply that repointed is checked as written', () => {
+    const { afterQueueApplied, q } = setup()
+    q.repointed('rekordbox', [{ written: true }])
+    q.settled('rekordbox', applied)
+    expect(afterQueueApplied).toHaveBeenCalledWith('rekordbox', 'written')
+  })
+
+  // The repoints landed and left the queue; what failed after them was the rest of the
+  // queue, and the tracks are read as they are.
+  it('repoints that landed before a later refusal are still checked as written', () => {
+    const { afterQueueApplied, q } = setup()
+    q.repointed('rekordbox', [{ written: true }, { written: false, reason: 'no-match' }])
+    q.settled('rekordbox', { status: 'refused', reason: 'rekordbox-running' })
+    expect(afterQueueApplied).toHaveBeenCalledWith('rekordbox', 'written')
+  })
+
+  it('Traktor carries the facts of its write', () => {
+    const { afterQueueApplied, q } = setup()
+    const write = { before: new Map([['k', 'a.aiff']]) }
+    q.repointed('traktor', [{ written: true }], write)
+    q.settled('traktor', applied)
+    expect(afterQueueApplied).toHaveBeenCalledWith('traktor', write)
+  })
+
+  it('a repoint the program refused stays pending', () => {
+    const { afterQueueApplied, q } = setup()
+    q.repointed('engine', [{ written: false, reason: 'rekordbox-running' }])
+    q.settled('engine', { status: 'refused', reason: 'rekordbox-running' })
+    q.settled('engine', { status: 'refused', reason: 'cancelled' })
+    q.settled('engine', { status: 'empty' })
+    expect(afterQueueApplied).not.toHaveBeenCalled()
+  })
+
+  it('a refusal, a throw or a discard is a failed apply, never left pending', () => {
+    const { afterQueueApplied, q } = setup()
+    q.repointed('rekordbox', [{ written: false, reason: 'backup-failed' }])
+    q.settled('rekordbox', { status: 'refused', reason: 'backup-failed' })
+    q.settled('engine', 'threw')
+    q.discarded('traktor')
+    expect(afterQueueApplied.mock.calls).toEqual([
+      ['rekordbox', 'failed'],
+      ['engine', 'failed'],
+      ['traktor', 'failed'],
+    ])
+  })
+
+  it('what one apply repointed is not reported again by the next', () => {
+    const { afterQueueApplied, q } = setup()
+    q.repointed('rekordbox', [{ written: true }])
+    q.settled('rekordbox', applied)
+    q.settled('rekordbox', applied)
+    expect(afterQueueApplied).toHaveBeenCalledTimes(1)
   })
 })

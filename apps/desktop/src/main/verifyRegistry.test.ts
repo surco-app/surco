@@ -343,6 +343,71 @@ describe('verify registry', () => {
     expect(registry.get('a')?.status).toBe('ok')
   })
 
+  // Handing the repoint again moves cues a second time when the row already names the
+  // file (a same-path reconversion): only a library still on the old file gets it again.
+  it.each([
+    ['rekordbox', 'rekordboxCuesLost'],
+    ['engine', 'enginePerformanceChanged'],
+    ['traktor', 'traktorMissing'],
+  ] as const)('retry on a %s %s only re-reads it, never repoints again', async (place, key) => {
+    const p: NmlPatch = { volume: 'HD', dir: '/:M/:', file: 'a.aiff', newFile: 'a.wav' }
+    const { deps, registry } = setup()
+    const read = {
+      rekordbox: deps.readRekordbox,
+      engine: deps.readEngine,
+      traktor: deps.readTraktor,
+    }[place]
+    read.mockResolvedValueOnce([mismatch(place, key)])
+    registry.register(
+      entry('a', {
+        places: new Set(['file', place]),
+        engine: { id: 1, quickCues: 'q', beatData: 'b', loops: 'l' },
+        traktorPatch: p,
+      }),
+    )
+    await registry.afterFlush({
+      ...written,
+      traktor: { before: new Map([[traktorPatchKey(p), 'a.aiff']]) },
+    })
+
+    await registry.retry('a')
+
+    expect(deps.requeue).not.toHaveBeenCalled()
+    expect(read).toHaveBeenCalledTimes(2)
+    expect(stateOf(registry.get('a'), place)).toBe('ok')
+  })
+
+  // A batch that began while the last one was still flushing: each flush judges only the
+  // tracks registered before its own batch ended, against what it did.
+  it('overlapping batches: each flush judges only the tracks its batch registered', async () => {
+    const { deps, registry } = setup()
+    registry.register(entry('a'))
+    const first = registry.cut()
+    registry.register(entry('b'))
+
+    await registry.afterFlush(written, first)
+    expect(deps.readRekordbox.mock.calls.map(([list]) => list.map((e) => e.trackId))).toEqual([
+      ['a'],
+    ])
+    expect(stateOf(registry.get('b'), 'rekordbox')).toBe('checking')
+
+    await registry.afterFlush({ rekordbox: 'off', engine: 'off', traktor: 'off' })
+    expect(stateOf(registry.get('a'), 'rekordbox')).toBe('ok')
+    expect(stateOf(registry.get('b'), 'rekordbox')).toBeUndefined()
+  })
+
+  // A nested end took nothing: the end that takes the run's repoints judges its tracks.
+  it('a flush that left a library for a later end keeps its tracks checking for it', async () => {
+    const { deps, registry } = setup()
+    registry.register(entry('a'))
+    await registry.afterFlush({ rekordbox: 'later', engine: 'later', traktor: 'later' })
+    expect(deps.readRekordbox).not.toHaveBeenCalled()
+    expect(stateOf(registry.get('a'), 'rekordbox')).toBe('checking')
+
+    await registry.afterFlush(written)
+    expect(stateOf(registry.get('a'), 'rekordbox')).toBe('ok')
+  })
+
   it('retry on a file or Music mismatch answers rerun-job while the source is still on disk', async () => {
     const { deps, registry } = setup()
     registry.register(

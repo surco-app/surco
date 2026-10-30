@@ -48,10 +48,11 @@ export const traktorPatchKey = (patch: NmlPatch) =>
 export type TraktorWrite = { before: Map<string, string | null> } | 'failed'
 
 // 'failed' is a write that went wrong or a flush that threw: nothing is known, nothing pending.
+// 'later' is an end nested in a batch still open: it took nothing, the outer end will.
 export interface FlushOutcome {
-  rekordbox: 'written' | 'queued' | 'off' | 'failed'
-  engine: 'written' | 'queued' | 'off' | 'failed'
-  traktor: TraktorWrite | 'queued' | 'off'
+  rekordbox: 'written' | 'queued' | 'off' | 'failed' | 'later'
+  engine: 'written' | 'queued' | 'off' | 'failed' | 'later'
+  traktor: TraktorWrite | 'queued' | 'off' | 'later'
 }
 
 // How a queue apply went; Traktor's carries its write's facts like the flush.
@@ -111,6 +112,9 @@ function touches(e: VerifyEntry, place: VerifyPlace): boolean {
 const stateOf = (e: VerifyEntry, place: VerifyPlace) =>
   e.verification.checks.find((c) => c.place === place)?.state
 
+const stillOld = (e: VerifyEntry, place: Library) =>
+  e.verification.checks.find((c) => c.place === place)?.detail.key === `${place}StillOld`
+
 export function createVerifyRegistry(deps: VerifyRegistryDeps) {
   const entries = new Map<string, VerifyEntry>()
   // The Traktor fact each track was last written with, kept for a later re-read. A track
@@ -122,7 +126,16 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     engine: new Set(),
     traktor: new Set(),
   }
-  let batch = new Set<VerifyEntry>()
+  // Tracks no flush has judged yet, by library, with the order they were registered in: a
+  // flush judges only what was registered before its batch ended, and leaves a library it
+  // took nothing from for the end that will.
+  const unflushed: Record<Library, Set<VerifyEntry>> = {
+    rekordbox: new Set(),
+    engine: new Set(),
+    traktor: new Set(),
+  }
+  const order = new WeakMap<VerifyEntry, number>()
+  let registered = 0
 
   // A track converted again while its checks were running has a newer entry; the old
   // entry's results are never sent for it.
@@ -137,7 +150,8 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
   const stamps = new WeakMap<VerifyEntry, { job?: string; seq: number }>()
   const emit = (e: VerifyEntry) => {
     if (!live(e)) return
-    const stamp = stamps.get(e) ?? { seq: 0 }
+    const stamp = stamps.get(e) ?? { job: e.verification.job, seq: 0 }
+    stamps.set(e, stamp)
     stamp.seq += 1
     deps.emit(e.trackId, { ...e.verification, job: stamp.job, seq: stamp.seq })
   }
@@ -217,31 +231,51 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     // The first track of a new batch clears the tracks already verified: nothing more can
     // happen to them, and the registry stays the size of what is still open.
     register(e: VerifyEntry): void {
-      if (batch.size === 0)
+      if (LIBRARIES.every((place) => unflushed[place].size === 0))
         for (const [id, old] of entries)
           if (old.verification.status === 'ok' && !working.has(old)) {
             entries.delete(id)
             traktorBefore.delete(id)
           }
       const previous = entries.get(e.trackId)
-      if (previous) for (const place of LIBRARIES) awaiting[place].delete(previous)
+      if (previous)
+        for (const place of LIBRARIES) {
+          awaiting[place].delete(previous)
+          unflushed[place].delete(previous)
+        }
       entries.set(e.trackId, e)
       stamps.set(e, { job: e.verification.job, seq: e.verification.seq ?? 0 })
       traktorBefore.delete(e.trackId)
-      batch.add(e)
+      registered += 1
+      order.set(e, registered)
+      for (const place of LIBRARIES) unflushed[place].add(e)
     },
 
-    async afterFlush(outcome: FlushOutcome): Promise<void> {
-      const flushed = [...batch].filter(live)
-      batch = new Set()
+    // Where a batch ends: its flush judges the tracks registered up to here.
+    cut(): number {
+      return registered
+    },
+
+    async afterFlush(outcome: FlushOutcome, upTo = registered): Promise<void> {
+      const mine = {} as Record<Library, VerifyEntry[]>
+      for (const place of LIBRARIES) {
+        mine[place] =
+          outcome[place] === 'later'
+            ? []
+            : [...unflushed[place]].filter((e) => (order.get(e) ?? 0) <= upTo)
+        for (const e of mine[place]) unflushed[place].delete(e)
+        mine[place] = mine[place].filter(live)
+      }
+      const flushed = [...new Set(LIBRARIES.flatMap((place) => mine[place]))]
       await during(flushed, () =>
         Promise.all(
           LIBRARIES.map(async (place) => {
-            const listed = flushed.filter((e) => e.places.has(place))
+            const listed = mine[place].filter((e) => e.places.has(place))
             const touched = listed.filter((e) => touches(e, place))
             const byJob = touched.filter((e) => place === 'engine' && e.engineStep)
             const byFlush = touched.filter((e) => !byJob.includes(e))
             const result = outcome[place]
+            if (result === 'later') return
             for (const e of listed)
               if (!touched.includes(e) || (result === 'off' && byFlush.includes(e)))
                 replace(e, null, place)
@@ -302,11 +336,13 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     for (const place of LIBRARIES) {
       const state = stateOf(e, place)
       if (state === 'unreadable') await check(place, [e], null)
-      else if (state === 'mismatch') {
+      // Only a library still on the old file is handed its repoint again: one that already
+      // names the file would move its cues a second time.
+      else if (state === 'mismatch' && stillOld(e, place)) {
         hold(place, e)
         if (!deps.requeue(place, e) && stateOf(e, place) === 'pending')
           replace(e, checking(place), place)
-      }
+      } else if (state === 'mismatch') await check(place, [e], null)
     }
     emit(e)
     return 'rechecked'

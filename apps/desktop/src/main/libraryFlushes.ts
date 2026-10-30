@@ -22,8 +22,8 @@ import { flushLibraryRepoints, type LibraryRepointResult } from './libraryRepoin
 import { libraryStatus } from './libraryStatus'
 import { nmlTagPatches } from './libraryTagPatches'
 import { serialLibraryFlush, syncLibraryTags, tagSyncOf } from './libraryTagSync'
-import { endNmlBatch } from './nmlBatch'
-import { endRekordboxBatch, type RekordboxRepoint } from './rekordboxBatch'
+import { endNmlBatch, nmlBatchOpen } from './nmlBatch'
+import { endRekordboxBatch, type RekordboxRepoint, rekordboxBatchOpen } from './rekordboxBatch'
 import { replaceRekordboxDuplicates } from './rekordboxDuplicates'
 import { type FlushResult, flushRekordboxSync, REKORDBOX_KEYS } from './rekordboxFlush'
 import { repointTracks } from './rekordboxLibrary'
@@ -170,25 +170,27 @@ export function logLibraryFlush(label: string, result: FlushResult): void {
 // branch below only logs and returns, never throws back at the renderer.
 //
 // It answers what became of each library, for the check that reads them back: written,
-// held in its queue, not in play, or failed. Traktor's write carries the entry each patch
-// matched in the collection it replaced. The run's repoints come along so a retry can hand
-// a library the same repoint again.
+// held in its queue, not in play, failed, or left for the outer end of a nested batch.
+// Traktor's write carries the entry each patch matched in the collection it replaced.
 export async function flushConversionBatch(
   host: LibraryHost,
   sessions: Sessions,
   queue: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void },
   traktorQueue?: Parameters<typeof holdInQueue>[0],
   engineQueue?: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void },
-): Promise<FlushOutcome & { repoints: RekordboxRepoint[] }> {
+): Promise<FlushOutcome> {
   const traktorDeps = traktorFlushDeps(host, sessions.traktor)
   const traktorHold = traktorQueue && holdInQueue(traktorQueue)
   let patches: NmlPatch[] = []
   let synced: { patches: NmlPatch[]; result: SyncResult } | undefined
   let traktorHeld = false
+  // An end nested in a batch still open takes nothing: the outer end flushes, and judges.
+  let traktorLater = false
   await flushTraktorSync({
     ...traktorDeps,
     endNmlBatch: () => {
       patches = endNmlBatch()
+      traktorLater = nmlBatchOpen()
       return patches
     },
     syncCollection: async (path, list) => {
@@ -204,8 +206,9 @@ export async function flushConversionBatch(
       },
     },
   })
-  const traktor: FlushOutcome['traktor'] =
-    patches.length === 0
+  const traktor: FlushOutcome['traktor'] = traktorLater
+    ? 'later'
+    : patches.length === 0
       ? 'off'
       : traktorHeld
         ? 'queued'
@@ -217,6 +220,7 @@ export async function flushConversionBatch(
   // The run's repoints, taken once: rekordbox and Engine DJ each apply the same list to
   // their own library, and closing the batch twice would hand the second one nothing.
   const repoints = endRekordboxBatch()
+  const repointsLater = rekordboxBatchOpen()
   const addable = repoints.some((repoint) => repoint.meta)
   const addToTraktor = getSettings().addToTraktor
   const traktorOps = libraryTrackOps(
@@ -309,28 +313,31 @@ export async function flushConversionBatch(
   }
   return {
     rekordbox: repointOutcome(
+      repointsLater,
       repoints.length,
       rekordboxQueued,
       rekordboxResult,
       rekordbox.collectionPath,
     ),
     engine: repointOutcome(
+      repointsLater,
       engineRepoints.length,
       engineQueued,
       engineResult,
       engineDeps.collectionPath,
     ),
     traktor,
-    repoints,
   }
 }
 
 function repointOutcome(
+  later: boolean,
   count: number,
   queued: boolean,
   result: FlushResult | undefined,
   collectionPath: string,
 ): FlushOutcome['rekordbox'] {
+  if (later) return 'later'
   if (count === 0) return 'off'
   if (queued) return 'queued'
   if (result?.blocked) return 'failed'

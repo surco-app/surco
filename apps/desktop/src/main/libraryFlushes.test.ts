@@ -35,7 +35,11 @@ const STATUS = vi.hoisted(() => ({
   traktor: { enabled: false, found: false },
 }))
 vi.mock('./libraryStatus', () => ({ libraryStatus: () => STATUS }))
-vi.mock('./rekordboxBatch', () => ({ endRekordboxBatch: () => REPOINTS }))
+const BATCH = vi.hoisted(() => ({ open: false }))
+vi.mock('./rekordboxBatch', () => ({
+  endRekordboxBatch: () => (BATCH.open ? [] : REPOINTS),
+  rekordboxBatchOpen: () => BATCH.open,
+}))
 const WRITERS = vi.hoisted(() => ({
   trackOpsFromRun: vi.fn(async () => []),
   repointTracks: vi.fn(async () => [{ written: true }]),
@@ -76,7 +80,7 @@ import {
   repointEngineQueued,
   syncTagsInLibraries,
 } from './libraryFlushes'
-import { beginNmlBatch, recordNmlPatch } from './nmlBatch'
+import { beginNmlBatch, endNmlBatch, recordNmlPatch } from './nmlBatch'
 import { traktorPatchKey } from './verifyRegistry'
 
 function host(overrides: Partial<LibraryHost> = {}): LibraryHost {
@@ -713,6 +717,29 @@ describe('flushConversionBatch outcome', () => {
       expect(outcome.engine).toBe('off')
     } finally {
       REPOINTS[0].to = to
+      Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
+      STATUS.engine = { enabled: false, found: false }
+    }
+  })
+
+  // An end nested in a batch still open takes nothing: the outer end flushes, and judges.
+  it('says every library is for a later end when an outer batch is still open', async () => {
+    Object.assign(SETTINGS, { syncEngineDj: true, engineLibraryDir: '/e/Engine Library' })
+    STATUS.engine = { enabled: true, found: true }
+    BATCH.open = true
+    beginNmlBatch()
+    beginNmlBatch()
+    recordNmlPatch({ volume: 'HD', dir: '/:m/:', file: 'a.aiff', newFile: 'a.flac' })
+    try {
+      const outcome = await flushConversionBatch(host(), sessions, quiet(), traktorQueue(), quiet())
+      expect([outcome.rekordbox, outcome.engine, outcome.traktor]).toEqual([
+        'later',
+        'later',
+        'later',
+      ])
+    } finally {
+      BATCH.open = false
+      endNmlBatch()
       Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
       STATUS.engine = { enabled: false, found: false }
     }
