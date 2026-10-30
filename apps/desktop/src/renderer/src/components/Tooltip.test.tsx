@@ -90,9 +90,6 @@ describe('Tooltip', () => {
     expect(screen.queryByRole('tooltip')).toBeNull()
   })
 
-  // Closing a dialog hands focus back to the button that opened it. Nobody navigated to
-  // that button, so its hint popped up out of nowhere and stayed over the editor ("Ajustes ⌘,"
-  // covering the ISRC label) until something else took the focus.
   it('does not appear when a closing dialog returns the focus to its trigger', async () => {
     function Dialog(): React.JSX.Element {
       const ref = useRef<HTMLDivElement>(null)

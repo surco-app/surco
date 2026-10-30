@@ -70,8 +70,6 @@ const visiblePlaylists = () =>
   screen.queryAllByTestId(/^playlists-check-/).map((el) => el.getAttribute('data-testid'))
 
 describe('PlaylistsField for Traktor and Engine DJ', () => {
-  // The label already names the program, so the field is announced with it once,
-  // not "Traktor playlists Traktor".
   it('is named by its label alone, which already carries the program', () => {
     render(
       <PlaylistsField

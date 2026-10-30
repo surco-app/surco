@@ -10,8 +10,6 @@ const LOCALES = { de, en, es, fr, ja, 'pt-BR': ptBR }
 const LIBRARIES = ['rekordbox', 'engine', 'traktor'] as const
 
 describe('the Playlists field labels', () => {
-  // Three rows all labelled "Playlists" told apart only by a 12px glyph: the form has one
-  // per DJ program, so each label says which program the playlists belong to.
   it.each(Object.entries(LOCALES))('name their program in %s', (_, locale) => {
     for (const library of LIBRARIES) {
       expect(locale.fields[`${library}Playlists`]).toContain(locale.sources[library])
