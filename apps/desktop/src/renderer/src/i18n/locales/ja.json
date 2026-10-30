@@ -2845,7 +2845,7 @@
       "summary_other": "{{count}} ファイル · {{size}} / {{max}}",
       "show": "ファイルを表示",
       "hide": "ファイルを隠す",
-      "expires": "{{days}}日後に自動で削除されます。",
+      "expires": "{{days}}日後、または{{size}}を超えるとそれより早く自動で削除されます。",
       "stateEmpty": "保存なし",
       "renamedTo": "変換により “{{name}}” に名前が変更されました",
       "replacedBy": "変換により “{{name}}” に置き換えられました"

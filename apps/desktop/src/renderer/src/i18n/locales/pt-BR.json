@@ -2845,7 +2845,7 @@
       "summary_other": "{{count}} arquivos · {{size}} de {{max}}",
       "show": "Ver arquivos",
       "hide": "Ocultar arquivos",
-      "expires": "São apagados sozinhos após {{days}} dias.",
+      "expires": "São apagados sozinhos após {{days}} dias, ou antes se passarem de {{size}}.",
       "stateEmpty": "Nada guardado",
       "renamedTo": "Renomeado por uma conversão para “{{name}}”",
       "replacedBy": "Substituído por “{{name}}” em uma conversão"

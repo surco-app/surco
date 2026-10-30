@@ -307,6 +307,7 @@ function ProgramSection({
 function MusicFiles({
   entries,
   retentionDays,
+  maxBytes,
   onRestore,
   onRemove,
   onEmpty,
@@ -484,7 +485,7 @@ function MusicFiles({
           className="flex items-center justify-between gap-4 border-t border-[var(--color-line)] pt-2.5 pb-1.5"
         >
           <span className="text-[12.5px] text-fg-faint">
-            {tr('copies.music.expires', { days: retentionDays })}
+            {tr('copies.music.expires', { days: retentionDays, size: formatBytes(maxBytes, lng) })}
           </span>
           <span className="flex items-center gap-4.5">
             <button

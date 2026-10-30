@@ -671,9 +671,13 @@ describe('CopiesScreen music files', () => {
   it('says under the files how long they stay', () => {
     renderMusic([entry()])
     expect(screen.getByTestId('trash-footer')).toHaveTextContent(
-      i18n.t('copies.music.expires', { days: 30 }),
+      i18n.t('copies.music.expires', { days: 30, size: '10 GB' }),
     )
     expect(screen.queryByTestId('trash-usage')).not.toBeInTheDocument()
+    expect(screen.getByTestId('trash-footer')).toHaveTextContent('10 GB')
+    expect(es.copies.music.expires).toBe(
+      'Se borran solos a los {{days}} días, o antes si pasan de {{size}}.',
+    )
   })
 
   it('names what a renamed original became, in the words of the list', () => {

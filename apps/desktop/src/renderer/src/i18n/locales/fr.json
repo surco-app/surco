@@ -2845,7 +2845,7 @@
       "summary_other": "{{count}} fichiers · {{size}} sur {{max}}",
       "show": "Voir les fichiers",
       "hide": "Masquer les fichiers",
-      "expires": "Ils s'effacent d'eux-mêmes après {{days}} jours.",
+      "expires": "Ils s'effacent d'eux-mêmes après {{days}} jours, ou plus tôt s'ils dépassent {{size}}.",
       "stateEmpty": "Rien de conservé",
       "renamedTo": "Renommé par une conversion en « {{name}} »",
       "replacedBy": "Remplacé par « {{name}} » lors d'une conversion"
