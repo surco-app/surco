@@ -5,6 +5,7 @@ import type { Database } from 'sql.js'
 import { loadSqlJs } from './engine'
 import {
   decodeLoops,
+  decodeOverview,
   decodeQuickCues,
   deflateEngineBlob,
   encodeLoops,
@@ -95,6 +96,7 @@ type Blob = Uint8Array | null
 
 interface Performance {
   trackData: Blob
+  overviewWaveFormData: Blob
   beatData: Blob
   quickCues: Blob
   loops: Blob
@@ -110,7 +112,8 @@ function inflated(blob: Blob): Buffer | null {
 }
 
 // Every position Engine keeps for a track, moved onto the converted file: the cut comes off
-// each one and each is rewritten at the new rate. A cue or loop end inside the cut lands on
+// each one and each is rewritten at the new rate, and the overview drops the entries the cut
+// took. A cue or loop end inside the cut lands on
 // the new start, as rekordbox's and Traktor's do; grid markers keep their spacing, so they
 // may sit before it. Unset slots (-1) stay unset, and a blob that does not decode is left
 // as Engine wrote it.
@@ -147,6 +150,20 @@ export function shiftEnginePerformance(perf: Performance, shift: EngineShift): P
     next.beatData = deflateEngineBlob(grid)
   }
 
+  const overview = inflated(perf.overviewWaveFormData)
+  const runSamples = overview && decodeOverview(overview) ? overview.readDoubleBE(16) : 0
+  if (overview && runSamples > 0) {
+    const count = Number(overview.readBigInt64BE(0))
+    const dropped = Math.min(count, Math.round(((shift.trimmedMs / 1000) * from) / runSamples))
+    const head = Buffer.from(overview.subarray(0, 24))
+    head.writeBigInt64BE(BigInt(count - dropped), 0)
+    if (Number(head.readBigInt64BE(8)) === count) head.writeBigInt64BE(BigInt(count - dropped), 8)
+    head.writeDoubleBE((runSamples * to) / from, 16)
+    next.overviewWaveFormData = deflateEngineBlob(
+      Buffer.concat([head, overview.subarray(24 + dropped * 3)]),
+    )
+  }
+
   const rawCues = inflated(perf.quickCues)
   const cues = rawCues && decodeQuickCues(rawCues)
   if (cues) {
@@ -179,7 +196,7 @@ export function shiftEnginePerformance(perf: Performance, shift: EngineShift): P
 
 function performanceOf(db: Database, id: number): Performance | null {
   const statement = db.prepare(
-    'SELECT trackData, beatData, quickCues, loops FROM PerformanceData WHERE trackId = ?',
+    'SELECT trackData, overviewWaveFormData, beatData, quickCues, loops FROM PerformanceData WHERE trackId = ?',
   )
   try {
     statement.bind([id])
@@ -317,8 +334,15 @@ export async function writeEngineRepoints(
       const next = perf && u.shift && shiftEnginePerformance(perf, u.shift)
       if (next && next !== perf)
         db.run(
-          'UPDATE PerformanceData SET trackData = ?, beatData = ?, quickCues = ?, loops = ? WHERE trackId = ?',
-          [next.trackData, next.beatData, next.quickCues, next.loops, Number(u.id)],
+          'UPDATE PerformanceData SET trackData = ?, overviewWaveFormData = ?, beatData = ?, quickCues = ?, loops = ? WHERE trackId = ?',
+          [
+            next.trackData,
+            next.overviewWaveFormData,
+            next.beatData,
+            next.quickCues,
+            next.loops,
+            Number(u.id),
+          ],
         )
     }
 

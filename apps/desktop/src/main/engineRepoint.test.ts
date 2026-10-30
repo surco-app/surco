@@ -10,8 +10,10 @@ import { ENGINE_3_SCHEMA } from './engine3Fixture'
 import {
   decodeBeatGrid,
   decodeLoops,
+  decodeOverview,
   decodeQuickCues,
   decodeTrackData,
+  deflateEngineBlob,
   encodeLoops,
   inflateEngineBlob,
 } from './engineBlobs'
@@ -495,6 +497,46 @@ describe.each(['2.18', '3.0.2'] as const)(
       expect(result).toEqual({ written: false, reason: 'no-match' })
       expect(await positionsOf(lib)).toEqual(before)
       expect(await readFile(lib.dbPath)).toEqual(bytes)
+    })
+
+    // The overview is the whole-track waveform Engine draws the cues over, one entry per
+    // fixed run of samples. Left alone after a cut, the cues sit on the right beats while the
+    // drawing under them still shows the lead-in; after a resample its run is counted at the
+    // old rate and the drawing stretches.
+    it('drops the overview’s entries for the cut and counts its run at the new rate', async () => {
+      const lib = await analysedLibrary(schema)
+      const head = Buffer.alloc(24)
+      head.writeBigInt64BE(10n, 0)
+      head.writeBigInt64BE(10n, 8)
+      head.writeDoubleBE(RATE / 2, 16)
+      const entries = Array.from({ length: 10 }, (_, i) => [i, i + 1, i + 2]).flat()
+      const raw = Buffer.concat([head, Buffer.from(entries), Buffer.from([9, 10, 11])])
+      const db = await openDb(lib.dbPath)
+      db.run('UPDATE PerformanceData SET overviewWaveFormData = ? WHERE trackId = 1', [
+        deflateEngineBlob(raw),
+      ])
+      await writeFile(lib.dbPath, db.export())
+      db.close()
+      await repointEngineTracks(lib.dir, [
+        {
+          from: lib.oldFile,
+          to: lib.newFile,
+          engineShift: { trimmedMs: TRIM_MS, sampleRateHz: 48000 },
+        },
+      ])
+      const after = await openDb(lib.dbPath)
+      const overview = inflateEngineBlob(
+        one(after, 'SELECT overviewWaveFormData FROM PerformanceData WHERE trackId = 1')
+          .overviewWaveFormData as Uint8Array,
+      )
+      after.close()
+      expect(Number(overview.readBigInt64BE(0))).toBe(6)
+      expect(Number(overview.readBigInt64BE(8))).toBe(6)
+      expect(overview.readDoubleBE(16)).toBeCloseTo((RATE / 2) * (48000 / RATE), 6)
+      expect(decodeOverview(overview)).toEqual({
+        entries: [4, 5, 6, 7, 8, 9].map((i) => [i, i + 1, i + 2]),
+        max: [9, 10, 11],
+      })
     })
 
     // A blob Surco cannot read is kept as Engine wrote it: guessing at its layout could only

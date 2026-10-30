@@ -1355,7 +1355,8 @@ lectura/escritura, no 300.
 inicial, cada hot cue, el cue principal, cada loop y la rejilla se adelantan lo mismo que se
 cortó; lo que caía dentro del corte queda en el nuevo inicio, como en rekordbox y Traktor. Si
 además se cambió la frecuencia de muestreo, las posiciones se reescriben en la nueva
-(`shiftEnginePerformance`, `engineRepoint.ts:114`). Antes la fila seguía al fichero pero cada
+(`shiftEnginePerformance`, `engineRepoint.ts:120`). La onda de vista general pierde las
+entradas del tramo cortado y su paso se cuenta en la nueva frecuencia. Antes la fila seguía al fichero pero cada
 cue sonaba tarde lo que durara el corte. Una pista recortada en su sitio, con la misma ruta,
 también mueve sus cues en Engine. Como la fila no cambia de ruta, lo que dice que el corte sigue
 pendiente es que Engine aún guarde el tamaño del original, y la misma escritura guarda el nuevo,
