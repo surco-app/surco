@@ -256,7 +256,7 @@ function MusicSection({
       </div>
       {open && (
         <div className="col-span-2 col-start-2 flex h-[60vh] max-h-[620px] min-h-[420px] overflow-hidden rounded-[10px] border border-[var(--color-line)] bg-[var(--color-panel)]">
-          <TrashBrowser {...trash} header={<div className="pt-4" />} />
+          <TrashBrowser {...trash} total={total} header={<div className="pt-4" />} />
         </div>
       )}
     </section>

@@ -88,7 +88,18 @@ function host(overrides: Partial<LibraryHost> = {}): LibraryHost {
   }
 }
 
+const fakeSession = () => ({
+  ensure: vi.fn(async () => {}),
+  begin: vi.fn(),
+  beginLoose: vi.fn(),
+  inRunFlush: vi.fn(),
+  ensureForRun: vi.fn(async () => {}),
+  endRun: vi.fn(),
+  failed: () => new Set<string>(),
+})
+
 const sessions = {
+  traktor: fakeSession(),
   rekordbox: {
     ensure: vi.fn(async () => {}),
     begin: vi.fn(),

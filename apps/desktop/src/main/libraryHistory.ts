@@ -27,9 +27,30 @@ export function copyFolder(copy: LibraryCopy): string {
     : join(historyRoot(copy.collectionPath), copy.id)
 }
 
+function isCopy(value: unknown): value is LibraryCopy {
+  const copy = value as Partial<LibraryCopy> | null
+  return (
+    typeof copy?.id === 'string' &&
+    typeof copy.collectionPath === 'string' &&
+    typeof copy.takenAt === 'number' &&
+    typeof copy.reason === 'string' &&
+    Array.isArray(copy.files) &&
+    copy.files.every(
+      (file) =>
+        typeof file?.name === 'string' &&
+        file.name === basename(file.name) &&
+        file.name !== '..' &&
+        typeof file.target === 'string',
+    ) &&
+    (copy.absent === undefined ||
+      (Array.isArray(copy.absent) && copy.absent.every((t) => typeof t === 'string')))
+  )
+}
+
 async function readCopy(folder: string): Promise<LibraryCopy | null> {
   try {
-    return JSON.parse(await readFile(join(folder, MANIFEST), 'utf8')) as LibraryCopy
+    const copy: unknown = JSON.parse(await readFile(join(folder, MANIFEST), 'utf8'))
+    return isCopy(copy) ? copy : null
   } catch {
     return null
   }
@@ -57,15 +78,17 @@ function describeCopy(
   reason: CopyReason,
   now: number,
 ): LibraryCopy {
+  const restore = reason === 'restore'
+  const targets = [collectionPath, ...companions]
+  const kept = targets.filter((t) => (!restore && t === collectionPath) || existsSync(t))
+  const absent = restore ? targets.filter((t) => !kept.includes(t)) : []
   return {
     id: String(now),
     collectionPath,
     takenAt: now,
     reason,
-    files: [collectionPath, ...companions.filter((path) => existsSync(path))].map((target) => ({
-      name: basename(target),
-      target,
-    })),
+    files: kept.map((target) => ({ name: basename(target), target })),
+    ...(absent.length > 0 && { absent }),
   }
 }
 
@@ -134,6 +157,7 @@ export async function stageRestoreCopy(
 }
 
 async function sameAsLibrary(copy: LibraryCopy, folder: string): Promise<boolean> {
+  if (copy.absent?.some((target) => existsSync(target))) return false
   for (const file of copy.files) {
     const [kept, live] = await Promise.all([
       readFile(join(folder, file.name)),
@@ -159,6 +183,9 @@ export async function recoverRestoreSlot(collectionPath: string): Promise<void> 
 }
 
 async function prune(collectionPath: string): Promise<void> {
+  const root = historyRoot(collectionPath)
+  for (const name of await readdir(root).catch(() => [] as string[]))
+    if (name.endsWith(PARTIAL)) await rm(join(root, name), { recursive: true, force: true })
   const stale = (await listCopies(collectionPath)).slice(HISTORY_KEEP)
   for (const copy of stale) await rm(copyFolder(copy), { recursive: true, force: true })
 }

@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain } from 'electron'
+import { BrowserWindow, type IpcMainInvokeEvent, ipcMain } from 'electron'
 import log from 'electron-log/main'
 import type { DjProgram, ProgramCopies, RestoreResult } from '../shared/types'
 import { listCopies, recoverRestoreSlot, restoreSlot } from './libraryHistory'
@@ -59,13 +59,13 @@ export function registerCopiesIpc(
 
   ipcMain.handle(
     'copies:restore',
-    (e, program: DjProgram, copyId: string): Promise<RestoreResult> =>
+    (e: IpcMainInvokeEvent, program: DjProgram, copyId: string): Promise<RestoreResult> =>
       serialLibraryFlush(async () => {
         const deps = programs[program]
         const collectionPath = deps?.collectionPath()
         if (!deps || !collectionPath) return { ok: false, reason: 'not-found' }
         if (converting()) return { ok: false, reason: 'busy' }
-        const win = BrowserWindow.fromWebContents((e as { sender: Electron.WebContents }).sender)
+        const win = BrowserWindow.fromWebContents(e.sender)
         try {
           return await restoreCopy(
             { collectionPath, copyId },

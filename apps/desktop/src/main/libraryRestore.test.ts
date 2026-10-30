@@ -388,4 +388,32 @@ describe('restoreCopy', () => {
     expect(await restoreSlot(path)).toEqual(slot)
     expect(readFileSync(join(copyFolder(slot), 'collection.nml'), 'utf8')).toBe('second')
   })
+
+  it('undoing a restore removes the playlist file the restore brought back where there was none', async () => {
+    const db = collection('rekordbox', 'master.db', 'db-before')
+    const xml = collection('rekordbox', 'masterPlaylists6.xml', 'xml-before')
+    const copy = await takeCopy(db, [xml], 'cues', 1)
+    writeFileSync(db, 'db-after')
+    rmSync(xml)
+    await restoreCopy({ collectionPath: db, copyId: copy.id }, deps())
+    expect(readFileSync(xml, 'utf8')).toBe('xml-before')
+    const undo = (await restoreSlot(db)) as LibraryCopy
+    expect(await restoreCopy({ collectionPath: db, copyId: undo.id }, deps())).toEqual({ ok: true })
+    expect(readFileSync(db, 'utf8')).toBe('db-after')
+    expect(readdirSync(dirname(db))).toEqual(['master.db'])
+  })
+
+  it('keeps an undo copy of the playlist file a restore overwrites even when master.db is gone', async () => {
+    const db = collection('rekordbox', 'master.db', 'db-before')
+    const xml = collection('rekordbox', 'masterPlaylists6.xml', 'xml-before')
+    const copy = await takeCopy(db, [xml], 'cues', 1)
+    rmSync(db)
+    writeFileSync(xml, 'xml-after')
+    expect(await restoreCopy({ collectionPath: db, copyId: copy.id }, deps())).toEqual({ ok: true })
+    const undo = (await restoreSlot(db)) as LibraryCopy
+    expect(readFileSync(join(copyFolder(undo), 'masterPlaylists6.xml'), 'utf8')).toBe('xml-after')
+    expect(await restoreCopy({ collectionPath: db, copyId: undo.id }, deps())).toEqual({ ok: true })
+    expect(readFileSync(xml, 'utf8')).toBe('xml-after')
+    expect(readdirSync(dirname(db))).toEqual(['masterPlaylists6.xml'])
+  })
 })

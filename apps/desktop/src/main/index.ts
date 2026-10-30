@@ -187,12 +187,7 @@ import { snapshotTagsInWorker, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
 import { registerTraktorCueQueueIpc } from './traktorCueQueueIpc'
 import { applyTraktorBatch } from './traktorCuesWrite'
-import {
-  bootVolumeName,
-  onTraktorCopyAttempt,
-  syncCollection,
-  traktorSessionBackup,
-} from './traktorNmlLibrary'
+import { bootVolumeName, syncCollection } from './traktorNmlLibrary'
 import {
   collectionsTraktorUses,
   collectionTraktorUses,
@@ -284,12 +279,13 @@ const rekordboxSessionBackup = createSessionBackup({
 })
 // The same for the Engine DJ library, which a run can repoint as well.
 const engineSessionBackup = createSessionBackup({ take: takeCopyAndAnnounce })
-const sessions = { rekordbox: rekordboxSessionBackup, engine: engineSessionBackup }
-const moments = createMoments({
+const traktorSessionBackup = createSessionBackup({ take: takeCopyAndAnnounce })
+const sessions = {
   rekordbox: rekordboxSessionBackup,
   traktor: traktorSessionBackup,
   engine: engineSessionBackup,
-})
+}
+const moments = createMoments(sessions)
 const broadcast = (channel: string, payload: unknown): void => {
   for (const win of BrowserWindow.getAllWindows())
     if (!win.webContents.isDestroyed()) win.webContents.send(channel, payload)
@@ -437,8 +433,10 @@ const traktorCueQueue = createRekordboxQueue<QueuedNmlPatch>({
   store: fileStore(join(app.getPath('userData'), 'traktor-cue-queue.json')),
   collection: traktorWritePath,
   configured: () => getSettings().traktorNmlPath,
-  applyBatch: (nml, ops, ensureClosed) => applyTraktorBatch(nml, ops, { ensureClosed }),
-  repoint: (nml, patches) => syncQueuedPatches(nml, patches, syncCollection),
+  applyBatch: (nml, ops, ensureClosed) =>
+    applyTraktorBatch(nml, ops, { ensureClosed, session: sessions.traktor }),
+  repoint: (nml, patches) =>
+    syncQueuedPatches(nml, patches, (path, list) => syncCollection(path, list, sessions.traktor)),
   nodeStamps: async () => ({}),
   onChange: (state) => broadcast('traktor:cueQueueChanged', state),
   addsTracks: false,
@@ -1511,7 +1509,7 @@ function registerIpc(): void {
       {
         rekordbox: rekordboxFlushDeps(hostFor(win, e.sender)).collectionPath,
         engine: engineFlushDeps(hostFor(win, e.sender)).collectionPath,
-        traktor: traktorFlushDeps(hostFor(win, e.sender)).traktorNmlPath,
+        traktor: traktorFlushDeps(hostFor(win, e.sender), sessions.traktor).traktorNmlPath,
       },
       { realPath: (p: string) => realpathSync(p) },
     )
@@ -1906,7 +1904,6 @@ function registerIpc(): void {
   ipcMain.handle('clipboard:hasImage', () => clipboardHasImage())
 
   registerShellIpc(mediaAccess)
-  onTraktorCopyAttempt(() => broadcast('copies:changed', null))
   registerCopiesIpc(
     {
       rekordbox: {

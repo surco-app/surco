@@ -263,7 +263,11 @@ function processTrackInMain(
   })
 }
 
-const sessions = { rekordbox: createSessionBackup({}), engine: createSessionBackup({}) }
+const sessions = {
+  rekordbox: createSessionBackup({}),
+  traktor: createSessionBackup({}),
+  engine: createSessionBackup({}),
+}
 
 function libraryHost(errors: string[]): LibraryHost {
   return {

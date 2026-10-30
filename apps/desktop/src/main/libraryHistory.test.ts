@@ -66,10 +66,16 @@ describe('libraryHistory', () => {
     await expect(takeCopy(join(dir, 'Traktor', 'gone.nml'), [], 'run', 6)).rejects.toThrow()
     await expect(takeCopy(path, [join(dir, 'Traktor')], 'run', 7)).rejects.toThrow()
     expect((await listCopies(path)).map((c) => c.id)).toEqual(before)
-    const partials = readdirSync(join(copyFolder((await listCopies(path))[0]), '..')).filter((n) =>
-      n.endsWith('.partial'),
-    )
-    expect(partials).toEqual([])
+    const gone = copyFolder({
+      id: '6',
+      collectionPath: join(dir, 'Traktor', 'gone.nml'),
+      takenAt: 6,
+      reason: 'run',
+      files: [],
+    })
+    for (const root of [join(copyFolder((await listCopies(path))[0]), '..'), join(gone, '..')]) {
+      expect(readdirSync(root).filter((n) => n.endsWith('.partial'))).toEqual([])
+    }
   })
 
   it('two collections never share history', async () => {
@@ -129,5 +135,54 @@ describe('libraryHistory', () => {
     await stageRestoreCopy(path, [], 2)
     expect(await restoreSlot(path)).toEqual(previous)
     expect(readFileSync(join(copyFolder(previous), 'collection.nml'), 'utf8')).toBe('first')
+  })
+
+  it('sweeps the half-written copies a crash left behind when the next copy is taken', async () => {
+    const path = collection('Traktor', 'collection.nml')
+    const first = await takeCopy(path, [], 'run', 1)
+    const stale = `${copyFolder({ ...first, id: '0' })}.partial`
+    mkdirSync(stale)
+    writeFileSync(join(stale, 'collection.nml'), 'half')
+    await takeCopy(path, [], 'run', 2)
+    expect(readdirSync(join(stale, '..')).sort()).toEqual(['1', '2'])
+  })
+
+  it('skips a copy whose manifest is not one Surco wrote, so restore never reads a wrong file list', async () => {
+    const path = collection('Traktor', 'collection.nml')
+    const good = await takeCopy(path, [], 'run', 1)
+    const bad = (id: string, manifest: unknown) => {
+      const folder = copyFolder({ ...good, id })
+      mkdirSync(folder)
+      writeFileSync(join(folder, 'copy.json'), JSON.stringify(manifest))
+    }
+    bad('2', { ...good, id: '2', takenAt: 'yesterday' })
+    bad('3', { ...good, id: '3', files: [{ name: 'collection.nml' }] })
+    bad('4', { ...good, id: '4', files: [{ name: '../../escape.nml', target: path }] })
+    bad('5', { ...good, id: 5 })
+    bad('6', null)
+    expect((await listCopies(path)).map((c) => c.id)).toEqual(['1'])
+  })
+
+  it('an undo copy keeps the main file and its companions even when the main file is missing', async () => {
+    const db = join(dir, 'rekordbox', 'master.db')
+    const xml = collection('rekordbox', 'masterPlaylists6.xml', 'xml-now')
+    const staged = await stageRestoreCopy(db, [xml], 2)
+    await staged.commit()
+    const slot = await restoreSlot(db)
+    expect(slot?.collectionPath).toBe(db)
+    expect(slot?.files.map((f) => f.target)).toEqual([xml])
+    expect(slot?.absent).toEqual([db])
+    expect(readFileSync(join(copyFolder(slot as never), 'masterPlaylists6.xml'), 'utf8')).toBe(
+      'xml-now',
+    )
+  })
+
+  it('an undo copy left staged after a restore created the missing main file is promoted, so undo can remove it', async () => {
+    const db = join(dir, 'rekordbox', 'master.db')
+    const xml = collection('rekordbox', 'masterPlaylists6.xml', 'xml-now')
+    await stageRestoreCopy(db, [xml], 2)
+    writeFileSync(db, 'restored')
+    await recoverRestoreSlot(db)
+    expect((await restoreSlot(db))?.absent).toEqual([db])
   })
 })

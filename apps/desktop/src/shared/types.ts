@@ -1801,6 +1801,7 @@ export interface LibraryCopy {
   takenAt: number
   reason: CopyReason
   files: { name: string; target: string }[]
+  absent?: string[]
 }
 
 export type RestoreRefusal =

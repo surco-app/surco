@@ -60,12 +60,8 @@ vi.mock('electron', () => ({
 
 import { backupOf } from './libraryBackups'
 import { copyFolder, listCopies } from './libraryHistory'
-import {
-  bootVolumeName,
-  replaceDuplicatesInCollection,
-  syncCollection,
-  traktorSessionBackup,
-} from './traktorNmlLibrary'
+import { createSessionBackup, type SessionBackup } from './rekordboxSessionBackup'
+import { bootVolumeName, replaceDuplicatesInCollection, syncCollection } from './traktorNmlLibrary'
 import { isTraktorRunning } from './traktorProcess'
 
 const NML = `<NML VERSION="19"><COLLECTION ENTRIES="1">
@@ -74,11 +70,13 @@ const NML = `<NML VERSION="19"><COLLECTION ENTRIES="1">
 
 let dir: string
 let nmlPath: string
+let session: SessionBackup
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'surco-nml-'))
   nmlPath = join(dir, 'collection.nml')
   writeFileSync(nmlPath, NML)
+  session = createSessionBackup({})
   // mockReset (not just a fresh mockResolvedValue) clears any mockResolvedValueOnce
   // left queued by the race test — without it, that queued value leaks into whichever
   // test happens to run next and fails it with the wrong reason.
@@ -101,6 +99,7 @@ describe('syncCollection on the boot disk', () => {
     const result = await syncCollection(
       nmlPath,
       [{ volume: '', dir: '/:Users/:dj/:M/:', file: 'uno.aiff', newFile: 'uno.flac' }],
+      session,
       'Macintosh HD',
     )
 
@@ -122,6 +121,7 @@ describe('syncCollection on the boot disk', () => {
     await syncCollection(
       nmlPath,
       [{ volume: '', dir: traktorDir, file: 'Song.wav', newFile: 'Song.flac' }],
+      session,
       'Macintosh HD',
     )
 
@@ -135,7 +135,7 @@ describe('syncCollection', () => {
   // La colección es la biblioteca entera de un DJ: nunca se escribe sin una copia
   // recuperable al lado, y el backup va ANTES de tocar el original.
   it('writes a backup before touching the collection', async () => {
-    const result = await syncCollection(nmlPath, [patch])
+    const result = await syncCollection(nmlPath, [patch], session)
 
     expect(result.written).toBe(true)
     expect(readFileSync(backupOf(nmlPath, 'backup'), 'utf8')).toBe(NML)
@@ -145,19 +145,25 @@ describe('syncCollection', () => {
   // La copia de cada escritura se pisa en la siguiente: tras tres guardados ya no guarda la
   // colección del DJ. La de la sesión se toma antes de la primera escritura y no se toca
   // hasta la siguiente tanda, para poder volver a como estaba todo antes de empezar.
+  it('takes the dated copy through the session it is handed, so the Copias screen hears of it as it does for rekordbox and Engine', async () => {
+    const take = vi.fn(async () => ({}) as never)
+    await syncCollection(nmlPath, [patch], createSessionBackup({ take }))
+    expect(take).toHaveBeenCalledWith(nmlPath, [], 'run')
+  })
+
   it('keeps the collection as it was before the first write of the run, however many follow', async () => {
-    traktorSessionBackup.begin('run')
-    await syncCollection(nmlPath, [patch])
+    session.begin('run')
+    await syncCollection(nmlPath, [patch], session)
     writeFileSync(nmlPath, `${NML}<!-- later -->`)
-    await syncCollection(nmlPath, [patch])
+    await syncCollection(nmlPath, [patch], session)
     expect(
       readFileSync(join(copyFolder((await listCopies(nmlPath))[0]), 'collection.nml'), 'utf8'),
     ).toBe(NML)
     expect(readFileSync(backupOf(nmlPath, 'backup'), 'utf8')).toBe(`${NML}<!-- later -->`)
-    traktorSessionBackup.begin('run')
+    session.begin('run')
     writeFileSync(nmlPath, `${NML}<!-- next run -->`)
     const beforeNext = readFileSync(nmlPath, 'utf8')
-    await syncCollection(nmlPath, [patch])
+    await syncCollection(nmlPath, [patch], session)
     expect(
       readFileSync(join(copyFolder((await listCopies(nmlPath))[0]), 'collection.nml'), 'utf8'),
     ).toBe(beforeNext)
@@ -169,7 +175,7 @@ describe('syncCollection', () => {
     mkdirSync(dirname(backupOf(nmlPath, 'backup')), { recursive: true })
     writeFileSync(backupOf(nmlPath, 'backup'), 'stale')
     chmodSync(backupOf(nmlPath, 'backup'), 0o444)
-    const result = await syncCollection(nmlPath, [patch])
+    const result = await syncCollection(nmlPath, [patch], session)
 
     expect(result.written).toBe(true)
     expect(readFileSync(backupOf(nmlPath, 'backup'), 'utf8')).toBe(NML)
@@ -180,7 +186,7 @@ describe('syncCollection', () => {
   it('refuses to write while Traktor is running', async () => {
     vi.mocked(isTraktorRunning).mockResolvedValue(true)
 
-    const result = await syncCollection(nmlPath, [patch])
+    const result = await syncCollection(nmlPath, [patch], session)
 
     expect(result).toMatchObject({ written: false, reason: 'traktor-running' })
     expect(readFileSync(nmlPath, 'utf8')).toBe(NML)
@@ -194,11 +200,11 @@ describe('syncCollection', () => {
   // Y en la carpeta de Surco, no al lado de la colección: en un Windows que no dejaba crear
   // ficheros junto a collection.nml, la copia fallaba y ningún guardado llegaba a Traktor.
   it('keeps one backup and one dated copy of the run in Surco folder however many times it writes', async () => {
-    await syncCollection(nmlPath, [patch])
+    await syncCollection(nmlPath, [patch], session)
     writeFileSync(nmlPath, NML)
-    await syncCollection(nmlPath, [patch])
+    await syncCollection(nmlPath, [patch], session)
     writeFileSync(nmlPath, NML)
-    await syncCollection(nmlPath, [patch])
+    await syncCollection(nmlPath, [patch], session)
 
     expect(readdirSync(dirname(backupOf(nmlPath, 'backup'))).sort()).toEqual([
       'collection.nml.surco-backup',
@@ -211,11 +217,11 @@ describe('syncCollection', () => {
   // conservara la más vieja, el usuario recuperaría un estado anterior al que creía
   // estar deshaciendo.
   it('overwrites the backup with the state from just before this write', async () => {
-    await syncCollection(nmlPath, [patch])
+    await syncCollection(nmlPath, [patch], session)
     const second = NML.replace('uno.aiff', 'dos.aiff')
     writeFileSync(nmlPath, second)
 
-    await syncCollection(nmlPath, [{ ...patch, file: 'dos.aiff' }])
+    await syncCollection(nmlPath, [{ ...patch, file: 'dos.aiff' }], session)
 
     expect(readFileSync(backupOf(nmlPath, 'backup'), 'utf8')).toBe(second)
   })
@@ -223,9 +229,11 @@ describe('syncCollection', () => {
   // Una pista que no está en la colección no es un error: es el caso normal de
   // "esta no la tiene Traktor". No se escribe, y no se toca el fichero.
   it('does not write when no entry matches', async () => {
-    const result = await syncCollection(nmlPath, [
-      { volume: 'X', dir: '/:otro/:', file: 'nope.mp3' },
-    ])
+    const result = await syncCollection(
+      nmlPath,
+      [{ volume: 'X', dir: '/:otro/:', file: 'nope.mp3' }],
+      session,
+    )
 
     expect(result).toMatchObject({ written: false, reason: 'no-matches' })
     expect(readFileSync(nmlPath, 'utf8')).toBe(NML)
@@ -241,10 +249,11 @@ describe('syncCollection', () => {
 </COLLECTION></NML>`
     writeFileSync(nmlPath, many)
 
-    const result = await syncCollection(nmlPath, [
-      patch,
-      { volume: 'HD', dir: '/:M/:', file: 'dos.aiff', newFile: 'dos.flac' },
-    ])
+    const result = await syncCollection(
+      nmlPath,
+      [patch, { volume: 'HD', dir: '/:M/:', file: 'dos.aiff', newFile: 'dos.flac' }],
+      session,
+    )
 
     expect(result).toMatchObject({ written: true, matched: 2 })
     expect(readdirSync(dirname(backupOf(nmlPath, 'backup'))).sort()).toEqual([
@@ -260,10 +269,11 @@ describe('syncCollection', () => {
   // contador de "matched" tiene que reflejar cuántas se tocaron de verdad, no cuántas
   // se pasaron: si no, un "matched: 2" mentiría sobre una que nunca estuvo en Traktor.
   it('counts only the patches that actually matched an entry', async () => {
-    const result = await syncCollection(nmlPath, [
-      patch,
-      { volume: 'X', dir: '/:otro/:', file: 'nope.mp3' },
-    ])
+    const result = await syncCollection(
+      nmlPath,
+      [patch, { volume: 'X', dir: '/:otro/:', file: 'nope.mp3' }],
+      session,
+    )
 
     expect(result).toMatchObject({ written: true, matched: 1 })
   })
@@ -275,7 +285,7 @@ describe('syncCollection', () => {
   it('refuses to write when Traktor starts in the window between the two checks', async () => {
     vi.mocked(isTraktorRunning).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
 
-    const result = await syncCollection(nmlPath, [patch])
+    const result = await syncCollection(nmlPath, [patch], session)
 
     expect(result).toMatchObject({ written: false, reason: 'traktor-running' })
     expect(readFileSync(nmlPath, 'utf8')).toBe(NML)
@@ -292,7 +302,7 @@ describe('syncCollection', () => {
     copyFileShouldFail.value = true
     vi.mocked(log.warn).mockClear()
 
-    await syncCollection(nmlPath, [patch])
+    await syncCollection(nmlPath, [patch], session)
 
     expect(log.warn).toHaveBeenCalledWith(expect.stringMatching(/backup.*EACCES/))
   })
@@ -301,7 +311,7 @@ describe('syncCollection', () => {
     renameShouldFail.value = true
     vi.mocked(log.warn).mockClear()
 
-    await syncCollection(nmlPath, [patch])
+    await syncCollection(nmlPath, [patch], session)
 
     expect(log.warn).toHaveBeenCalledWith(expect.stringMatching(/write.*ENOSPC/))
   })
@@ -309,7 +319,7 @@ describe('syncCollection', () => {
   it('leaves the collection untouched when the backup cannot be written', async () => {
     copyFileShouldFail.value = true
 
-    const result = await syncCollection(nmlPath, [patch])
+    const result = await syncCollection(nmlPath, [patch], session)
 
     expect(result).toMatchObject({ written: false, reason: 'backup-failed' })
     expect(readFileSync(nmlPath, 'utf8')).toBe(NML)
@@ -322,7 +332,7 @@ describe('syncCollection', () => {
   it('reports the specific reason when the collection cannot be read', async () => {
     chmodSync(nmlPath, 0o000)
     try {
-      const result = await syncCollection(nmlPath, [patch])
+      const result = await syncCollection(nmlPath, [patch], session)
 
       expect(result).toMatchObject({ written: false, matched: 0, reason: 'unreadable' })
     } finally {
@@ -337,7 +347,7 @@ describe('syncCollection', () => {
   it('reports write-failed instead of throwing, and clears the leftover tmp file', async () => {
     renameShouldFail.value = true
 
-    const result = await syncCollection(nmlPath, [patch])
+    const result = await syncCollection(nmlPath, [patch], session)
 
     expect(result).toMatchObject({ written: false, matched: 0, reason: 'write-failed' })
     expect(existsSync(`${nmlPath}.surco-tmp`)).toBe(false)
@@ -359,7 +369,7 @@ describe('syncCollection', () => {
     writeFileSync(join(dir, 'coleccion a mano.bak'), 'hand-made backup')
     writeFileSync(join(dir, 'collection.nml.surco-2026-07-01T00-00.bak'), 'old dated backup')
 
-    await syncCollection(nmlPath, [patch])
+    await syncCollection(nmlPath, [patch], session)
 
     expect(readFileSync(join(dir, 'Backup', 'collection.nml'), 'utf8')).toBe('traktor backup')
     expect(readFileSync(join(dir, 'collection ORI.nml'), 'utf8')).toBe('user backup')
@@ -417,18 +427,22 @@ describe('syncCollection refreshes the cached artwork', () => {
     const stale = new Date(Date.now() - 60_000)
     utimesSync(audio, stale, stale)
 
-    await syncCollection(nmlPath, [
-      {
-        volume: 'HD',
-        dir: '/:M/:',
-        file: 'uno.aiff',
-        refreshCoverArt: true,
-        outputPath: audio,
-        outputVolume: 'HD',
-        outputDir: '/:M/:',
-        outputFile: 'uno.flac',
-      },
-    ])
+    await syncCollection(
+      nmlPath,
+      [
+        {
+          volume: 'HD',
+          dir: '/:M/:',
+          file: 'uno.aiff',
+          refreshCoverArt: true,
+          outputPath: audio,
+          outputVolume: 'HD',
+          outputDir: '/:M/:',
+          outputFile: 'uno.flac',
+        },
+      ],
+      session,
+    )
 
     expect(statSync(audio).mtimeMs).toBeGreaterThan(statSync(nmlPath).mtimeMs)
   })
@@ -444,7 +458,7 @@ describe('syncCollection refreshes the cached artwork', () => {
     const stale = new Date(Date.now() - 60_000)
     utimesSync(audio, stale, stale)
 
-    await syncCollection(nmlPath, [{ ...coverPatch, outputPath: audio }])
+    await syncCollection(nmlPath, [{ ...coverPatch, outputPath: audio }], session)
 
     expect(statSync(audio).mtimeMs).toBeCloseTo(stale.getTime(), -2)
   })
@@ -453,7 +467,7 @@ describe('syncCollection refreshes the cached artwork', () => {
     writeFileSync(nmlPath, COVER_NML)
     const cache = seedCache()
 
-    const result = await syncCollection(nmlPath, [coverPatch])
+    const result = await syncCollection(nmlPath, [coverPatch], session)
 
     expect(result.written).toBe(true)
     expect(readFileSync(nmlPath, 'utf8')).toContain('COVERARTID="042/ABC"')
@@ -469,7 +483,7 @@ describe('syncCollection refreshes the cached artwork', () => {
     const cache = seedCache()
     vi.mocked(isTraktorRunning).mockResolvedValue(true)
 
-    const result = await syncCollection(nmlPath, [coverPatch])
+    const result = await syncCollection(nmlPath, [coverPatch], session)
 
     expect(result.written).toBe(false)
     expect(readFileSync(join(cache, 'ABC000'), 'utf8')).toBe('stale thumbnail')
@@ -480,7 +494,7 @@ describe('syncCollection refreshes the cached artwork', () => {
   it('still reports the write when there is no cache to refresh', async () => {
     writeFileSync(nmlPath, COVER_NML)
 
-    const result = await syncCollection(nmlPath, [coverPatch])
+    const result = await syncCollection(nmlPath, [coverPatch], session)
 
     expect(result.written).toBe(true)
   })
@@ -505,7 +519,7 @@ describe('replaceDuplicatesInCollection', () => {
   beforeEach(() => writeFileSync(nmlPath, BOTH))
 
   it('writes the collection with a backup of it as it was and says what each pair did', async () => {
-    const result = await replaceDuplicatesInCollection(nmlPath, [pair, missing])
+    const result = await replaceDuplicatesInCollection(nmlPath, [pair, missing], session)
     expect(result).toEqual({ written: true, outcomes: ['replaced', 'none'] })
     expect(readFileSync(backupOf(nmlPath, 'backup'), 'utf8')).toBe(BOTH)
     const out = readFileSync(nmlPath, 'utf8')
@@ -514,14 +528,14 @@ describe('replaceDuplicatesInCollection', () => {
   })
 
   it('writes nothing and makes no backup when no pair is in the collection', async () => {
-    const result = await replaceDuplicatesInCollection(nmlPath, [missing])
+    const result = await replaceDuplicatesInCollection(nmlPath, [missing], session)
     expect(result).toEqual({ written: false, outcomes: ['none'] })
     expect(existsSync(backupOf(nmlPath, 'backup'))).toBe(false)
   })
 
   it('skips every pair while Traktor is running', async () => {
     vi.mocked(isTraktorRunning).mockResolvedValue(true)
-    const result = await replaceDuplicatesInCollection(nmlPath, [pair, missing])
+    const result = await replaceDuplicatesInCollection(nmlPath, [pair, missing], session)
     expect(result).toEqual({
       written: false,
       reason: 'traktor-running',
@@ -532,28 +546,28 @@ describe('replaceDuplicatesInCollection', () => {
 
   it('skips when Traktor starts between the read and the write', async () => {
     vi.mocked(isTraktorRunning).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
-    const result = await replaceDuplicatesInCollection(nmlPath, [pair])
+    const result = await replaceDuplicatesInCollection(nmlPath, [pair], session)
     expect(result).toEqual({ written: false, reason: 'traktor-running', outcomes: ['skipped'] })
     expect(readFileSync(nmlPath, 'utf8')).toBe(BOTH)
   })
 
   it('skips when the backup cannot be made', async () => {
     copyFileShouldFail.value = true
-    const result = await replaceDuplicatesInCollection(nmlPath, [pair])
+    const result = await replaceDuplicatesInCollection(nmlPath, [pair], session)
     expect(result).toEqual({ written: false, reason: 'backup-failed', outcomes: ['skipped'] })
     expect(readFileSync(nmlPath, 'utf8')).toBe(BOTH)
   })
 
   it('reports a failed write and keeps the collection', async () => {
     renameShouldFail.value = true
-    const result = await replaceDuplicatesInCollection(nmlPath, [pair])
+    const result = await replaceDuplicatesInCollection(nmlPath, [pair], session)
     expect(result).toEqual({ written: false, reason: 'write-failed', outcomes: ['failed'] })
     expect(readFileSync(nmlPath, 'utf8')).toBe(BOTH)
     expect(readdirSync(dir)).not.toContain('collection.nml.surco-tmp')
   })
 
   it('skips when the collection cannot be read', async () => {
-    const result = await replaceDuplicatesInCollection(join(dir, 'gone.nml'), [pair])
+    const result = await replaceDuplicatesInCollection(join(dir, 'gone.nml'), [pair], session)
     expect(result).toEqual({ written: false, reason: 'unreadable', outcomes: ['skipped'] })
   })
 })

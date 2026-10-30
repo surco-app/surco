@@ -2,8 +2,7 @@ import { type Dirent, existsSync, readdirSync, readlinkSync } from 'node:fs'
 import { readFile, stat, unlink, utimes, writeFile } from 'node:fs/promises'
 import log from 'electron-log/main'
 import { backupOf } from './libraryBackups'
-import { takeCopy } from './libraryHistory'
-import { createSessionBackup, writeBackup } from './rekordboxSessionBackup'
+import { type SessionBackup, writeBackup } from './rekordboxSessionBackup'
 import { renameWithRetry } from './renameRetry'
 import { readEmbeddedCover } from './tags'
 import { refreshCachedCoverArt } from './traktorCoverCache'
@@ -33,22 +32,10 @@ import { isTraktorRunning } from './traktorProcess'
 // he only wants as a safety net. What he can lose is the state before the previous
 // write, which the write he is undoing had already replaced anyway.
 
-// …and one dated copy per run, taken before its first write and left alone until the next
-// run (see rekordboxSessionBackup.ts): the per-write copy above no longer holds the DJ's
-// collection after a second save, this one still does. A new one begins with a convert-all.
-let afterTraktorCopy: () => void = () => {}
-export function onTraktorCopyAttempt(listener: () => void): void {
-  afterTraktorCopy = listener
-}
-export const traktorSessionBackup = createSessionBackup({
-  take: async (...args) => {
-    try {
-      return await takeCopy(...args)
-    } finally {
-      afterTraktorCopy()
-    }
-  },
-})
+// …and one dated copy per momento, taken through the session each writer is handed before
+// its first write and left alone until the next momento (see rekordboxSessionBackup.ts):
+// the per-write copy above no longer holds the DJ's collection after a second save, this
+// one still does.
 
 // How far ahead of the collection a detached conversion's timestamp is placed. Seconds
 // rather than milliseconds because the comparison has to survive a filesystem that
@@ -64,6 +51,7 @@ export interface SyncResult {
 export async function syncCollection(
   nmlPath: string,
   patches: NmlPatch[],
+  session: SessionBackup,
   bootVolume = bootVolumeName(),
 ): Promise<SyncResult> {
   // Traktor loads collection.nml once at launch and rewrites it whole on quit, so a
@@ -90,7 +78,7 @@ export async function syncCollection(
     return { written: false, matched: 0, reason: 'no-matches' }
   }
 
-  const failure = await writeCollection(nmlPath, patched)
+  const failure = await writeCollection(nmlPath, patched, session)
   if (failure) return { written: false, matched: 0, reason: failure }
 
   // Only now the collection is actually on disk. Traktor draws the library's artwork
@@ -140,9 +128,10 @@ export async function markNewerThanCollection(nmlPath: string, files: string[]):
 export async function writeCollection(
   nmlPath: string,
   patched: string,
+  session: SessionBackup,
 ): Promise<SyncResult['reason'] | null> {
   try {
-    await traktorSessionBackup.ensure(nmlPath)
+    await session.ensure(nmlPath)
     await writeBackup(nmlPath, backupOf(nmlPath, 'backup'))
   } catch (e) {
     log.warn(`Traktor collection: backup of ${nmlPath} failed: ${(e as Error).message}`)
@@ -210,6 +199,7 @@ export function bootVolumeName(fs: VolumesFs = volumesFs): string {
 export async function replaceDuplicatesInCollection(
   nmlPath: string,
   pairs: { from: NmlLocation; to: NmlLocation }[],
+  session: SessionBackup,
 ): Promise<DuplicateCollectionResult> {
   const skipped = (reason: SyncResult['reason']): DuplicateCollectionResult => ({
     written: false,
@@ -231,7 +221,7 @@ export async function replaceDuplicatesInCollection(
     return result.outcome
   })
   if (patched === original) return { written: false, outcomes }
-  const failure = await writeCollection(nmlPath, patched)
+  const failure = await writeCollection(nmlPath, patched, session)
   if (!failure) return { written: true, outcomes }
   const lost = failure === 'write-failed' ? 'failed' : 'skipped'
   return {

@@ -55,7 +55,7 @@ export interface LibraryHost {
 }
 
 type SessionBackup = ReturnType<typeof createSessionBackup>
-export type Sessions = { rekordbox: SessionBackup; engine: SessionBackup }
+export type Sessions = { rekordbox: SessionBackup; traktor: SessionBackup; engine: SessionBackup }
 
 // A collection can live on an external drive. Gone because that drive is not mounted, it
 // comes back when the drive does, unlike one deleted from a disk that is there.
@@ -89,7 +89,7 @@ export function repointRekordbox(
   )
 }
 
-export function traktorFlushDeps(host: LibraryHost) {
+export function traktorFlushDeps(host: LibraryHost, session: SessionBackup) {
   return {
     // Same rule as rekordbox below: the toggle grants permission, the path only says
     // where. Before these toggles a filled-in path meant both, which is why anyone
@@ -102,7 +102,8 @@ export function traktorFlushDeps(host: LibraryHost) {
     unplugged: onUnpluggedDrive(getSettings().traktorNmlPath),
     ensureTraktorClosed: host.ensureTraktorClosed,
     showBlockedDialog: () => host.showBlockedDialog('traktorSyncBlocked'),
-    syncCollection,
+    syncCollection: (nmlPath: string, patches: Parameters<typeof syncCollection>[1]) =>
+      syncCollection(nmlPath, patches, session),
     track: activity.track.bind(activity),
   }
 }
@@ -162,13 +163,13 @@ export function logLibraryFlush(label: string, result: FlushResult): void {
 // branch below only logs and returns, never throws back at the renderer.
 export async function flushConversionBatch(
   host: LibraryHost,
-  sessions: { rekordbox: SessionBackup; engine: SessionBackup },
+  sessions: Sessions,
   queue: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void },
   traktorQueue?: Parameters<typeof holdInQueue>[0],
   engineQueue?: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void },
 ): Promise<void> {
   await flushTraktorSync({
-    ...traktorFlushDeps(host),
+    ...traktorFlushDeps(host, sessions.traktor),
     endNmlBatch,
     queue: traktorQueue && holdInQueue(traktorQueue),
   })
@@ -345,7 +346,7 @@ export function syncTagsInLibraries(
   return syncLibraryTags({
     traktor: () =>
       flushTraktorSync({
-        ...traktorFlushDeps(host),
+        ...traktorFlushDeps(host, sessions.traktor),
         endNmlBatch: () => nmlTagPatches(updates, toNmlLocation),
       }),
     rekordbox: async () => {
@@ -395,7 +396,7 @@ export function duplicateLibraryDeps(
   const realPath = (p: string) => realpathSync(p)
   const rekordbox = rekordboxFlushDeps(host)
   const engine = engineFlushDeps(host)
-  const traktor = traktorFlushDeps(host)
+  const traktor = traktorFlushDeps(host, sessions.traktor)
   const keys = { written: 'activity.duplicatesReplaced' }
   return {
     libraries: {
@@ -452,7 +453,8 @@ export function duplicateLibraryDeps(
             ensureTraktorClosed: traktor.ensureTraktorClosed,
             showBlockedDialog: traktor.showBlockedDialog,
             track: traktor.track,
-            replace: replaceDuplicatesInCollection,
+            replace: (nmlPath, pairs) =>
+              replaceDuplicatesInCollection(nmlPath, pairs, sessions.traktor),
           }),
       }),
     },

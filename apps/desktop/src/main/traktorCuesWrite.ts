@@ -12,6 +12,7 @@ import {
   traktorEntryBlock,
 } from './traktorCues'
 import { withAttr } from './traktorNml'
+import type { SessionBackup } from './rekordboxSessionBackup'
 import { bootVolumeName, markNewerThanCollection, writeCollection } from './traktorNmlLibrary'
 import { applyTraktorEdits } from './traktorPlaylistEdit'
 
@@ -19,6 +20,7 @@ const NO_BUTTON = HOT_KINDS[HOT_KINDS.length - 1]
 
 export interface TraktorCuesWriteDeps {
   ensureClosed: () => Promise<boolean>
+  session: SessionBackup
   write?: typeof writeCollection
   bootVolume?: string
 }
@@ -143,7 +145,7 @@ export async function applyTraktorBatch(
   if (fresh === null) return { ok: false, reason: 'unreadable' }
   const { nml, outcomes, added } = planBatch(fresh, ops, bootVolume)
   if (nml === fresh) return { ok: true, wrote: false, outcomes }
-  const failure = await (deps.write ?? writeCollection)(nmlPath, nml)
+  const failure = await (deps.write ?? writeCollection)(nmlPath, nml, deps.session)
   if (failure) return { ok: false, reason: refusalOf(failure) }
   await markNewerThanCollection(nmlPath, added)
   return { ok: true, wrote: true, outcomes }

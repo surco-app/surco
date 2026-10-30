@@ -1,5 +1,5 @@
 import { existsSync, statSync } from 'node:fs'
-import { copyFile } from 'node:fs/promises'
+import { copyFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import log from 'electron-log/main'
 import type { LibraryCopy, RestoreRefusal, RestoreResult } from '../shared/types'
@@ -66,12 +66,16 @@ export async function restoreCopy(
 }
 
 async function putBack(undo: StagedRestoreCopy, target: string): Promise<boolean> {
-  const file = undo.copy.files.find((f) => f.target === target)
-  if (!file) return false
   const temp = `${target}${TEMP}`
   try {
-    await copyFile(join(undo.folder, file.name), temp)
-    await renameWithRetry(temp, target)
+    const file = undo.copy.files.find((f) => f.target === target)
+    if (file) {
+      await copyFile(join(undo.folder, file.name), temp)
+      await renameWithRetry(temp, target)
+      return true
+    }
+    if (!undo.copy.absent?.includes(target)) return false
+    await rm(target, { force: true })
     return true
   } catch (err) {
     log.error(`${target} could not be put back after its undo copy failed: ${String(err)}`)
@@ -93,17 +97,19 @@ async function replaceFiles(
   }
 
   const folder = copyFolder(copy)
-  const pending = copy.files.map((file) => ({ from: `${file.target}${TEMP}`, to: file.target }))
-  const clean = () => Promise.all(pending.map((file) => removeTemp(file.from)))
+  const moves = copy.files.map((file) => ({ from: `${file.target}${TEMP}`, to: file.target }))
+  const pending: { from?: string; to: string }[] = [
+    ...moves,
+    ...(copy.absent ?? []).map((to) => ({ to })),
+  ]
+  const clean = () => Promise.all(moves.map((file) => removeTemp(file.from)))
   let undo: StagedRestoreCopy | null = null
   try {
     for (const [i, file] of copy.files.entries()) {
-      await copyFile(join(folder, file.name), pending[i].from)
+      await copyFile(join(folder, file.name), moves[i].from)
     }
-    const companions = copy.files
-      .map((file) => file.target)
-      .filter((t) => t !== copy.collectionPath)
-    if (existsSync(copy.collectionPath)) {
+    const companions = pending.map((step) => step.to).filter((t) => t !== copy.collectionPath)
+    if (pending.some((step) => existsSync(step.to))) {
       undo = await stageRestoreCopy(copy.collectionPath, companions)
     }
   } catch {
@@ -122,6 +128,7 @@ async function replaceFiles(
     return { ok: false, reason: 'partial' }
   }
   while (pending.length > 0) {
+    const step = pending[0]
     let running: boolean
     try {
       running = await deps.isRunning()
@@ -130,7 +137,8 @@ async function replaceFiles(
     }
     if (running) return stop('running')
     try {
-      await renameWithRetry(pending[0].from, pending[0].to)
+      if (step.from) await renameWithRetry(step.from, step.to)
+      else await rm(step.to, { force: true })
     } catch {
       return stop('failed')
     }
@@ -139,7 +147,7 @@ async function replaceFiles(
         await undo.commit()
       } catch (err) {
         log.warn(`undo copy of ${copy.collectionPath} could not be kept: ${String(err)}`)
-        if (await putBack(undo, pending[0].to)) {
+        if (await putBack(undo, step.to)) {
           await clean()
           await undo.discard().catch(() => undefined)
           return { ok: false, reason: 'failed' }

@@ -63,14 +63,14 @@ export function TrashBrowser({
   onReveal,
   initialQuery = '',
   header,
-}: TrashBrowserProps): React.JSX.Element {
+  total,
+}: TrashBrowserProps & { total: number }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const lng = i18n.language
   const [confirmEmpty, setConfirmEmpty] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
   const [filter, setFilter] = useState<TrashFilter>('all')
   const [query, setQuery] = useState(initialQuery)
-  const total = entries.reduce((sum, e) => sum + e.bytes, 0)
   const counts = countByReason(entries)
   const rows = visibleEntries(entries, filter, query)
   const confirming = confirmEmpty || confirmRemove !== null
