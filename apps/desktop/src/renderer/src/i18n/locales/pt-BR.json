@@ -180,6 +180,7 @@
     "engineDjOpen": "Feche o Engine DJ antes de converter: ele está com a biblioteca aberta.",
     "noRoomForBackup": "Não há espaço em disco para um backup do original e o disco dele não tem Lixeira, então ele não foi tocado. Libere espaço e tente de novo.",
     "conversionCancelled": "Conversão cancelada.",
+    "verifyUnknownTrack": "Esta verificação não existe mais. Converta a faixa de novo para refazê-la.",
     "sourceTagsUnread": "As tags deste arquivo não puderam ser lidas, então ele não foi tocado: convertê-lo apagaria as que ele tem. Carregue-o de novo e tente outra vez.",
     "coverDownloadFailed": "Não foi possível baixar a capa.",
     "coverNotImage": "Esse endereço não leva a uma imagem.",

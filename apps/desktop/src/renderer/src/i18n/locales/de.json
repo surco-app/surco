@@ -180,6 +180,7 @@
     "engineDjOpen": "Schließ Engine DJ vor dem Konvertieren: Es hat die Bibliothek geöffnet.",
     "noRoomForBackup": "Für eine Sicherung des Originals ist kein Speicherplatz frei und sein Laufwerk hat keinen Papierkorb, daher wurde es nicht angerührt. Gib Speicherplatz frei und versuche es erneut.",
     "conversionCancelled": "Konvertierung abgebrochen.",
+    "verifyUnknownTrack": "Diese Prüfung gibt es nicht mehr. Konvertiere den Track erneut, um sie zu wiederholen.",
     "sourceTagsUnread": "Die Tags dieser Datei konnten nicht gelesen werden, daher wurde sie nicht angerührt: eine Konvertierung hätte die vorhandenen gelöscht. Lade sie erneut und versuche es noch einmal.",
     "coverDownloadFailed": "Das Cover konnte nicht heruntergeladen werden.",
     "coverNotImage": "Diese Adresse führt zu keinem Bild.",

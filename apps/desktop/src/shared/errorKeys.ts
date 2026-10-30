@@ -46,6 +46,7 @@ export const ERROR_KEYS = [
   'musicbrainzRateLimit',
   'noRoomForBackup',
   'conversionCancelled',
+  'verifyUnknownTrack',
 ] as const
 
 export type ErrorKey = (typeof ERROR_KEYS)[number]

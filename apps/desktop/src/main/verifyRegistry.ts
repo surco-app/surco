@@ -1,3 +1,4 @@
+import { errorWithKey } from '../shared/errorKeys'
 import {
   type PlaceCheck,
   type Verification,
@@ -311,7 +312,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     // and re-checked when the queue applies; a place that could not be read is read again.
     async retry(trackId: string): Promise<'rerun-job' | 'rechecked'> {
       const e = entries.get(trackId)
-      if (!e) throw new Error('verifyUnknownTrack')
+      if (!e) throw errorWithKey('verifyUnknownTrack')
       return during([e], () => recheck(e))
     },
 

@@ -848,6 +848,6 @@ describe('verify registry', () => {
 
   it('retry on a track it does not know rejects with an error key', async () => {
     const { registry } = setup()
-    await expect(registry.retry('nope')).rejects.toThrow('verifyUnknownTrack')
+    await expect(registry.retry('nope')).rejects.toThrow(/^SURCO_ERR:verifyUnknownTrack$/)
   })
 })

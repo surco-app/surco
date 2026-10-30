@@ -107,8 +107,12 @@ describe('verify IPC', () => {
     const deps = {} as VerifyRegistryDeps
     registerVerifyIpc(createVerifyRegistry(deps))
 
-    await expect(handlerFor('verify:retry')({}, 'nope')).rejects.toThrow('verifyUnknownTrack')
-    await expect(handlerFor('verify:retry')({}, 42)).rejects.toThrow('verifyUnknownTrack')
+    await expect(handlerFor('verify:retry')({}, 'nope')).rejects.toThrow(
+      /^SURCO_ERR:verifyUnknownTrack$/,
+    )
+    await expect(handlerFor('verify:retry')({}, 42)).rejects.toThrow(
+      /^SURCO_ERR:verifyUnknownTrack$/,
+    )
   })
 
   it('verify:retry answers what the registry decided', async () => {
