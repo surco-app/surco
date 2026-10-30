@@ -159,6 +159,21 @@ export function snapshotEngineRow(
   }
 }
 
+// The first field whose positions did not move by the cut the conversion made.
+function misplacedField(
+  db: EngineDb,
+  id: number,
+  before: EngineSnapshot,
+  shift: EngineShift | undefined,
+  now = performanceOf(db, id),
+): (typeof PERFORMANCE)[number] | undefined {
+  if (!shift) return undefined
+  return PERFORMANCE.find((field) => {
+    const was = before.positions?.[field] ?? null
+    return was !== null && !sameAt(shifted(field, was, shift), now.positions?.[field] ?? null)
+  })
+}
+
 const check = (
   state: PlaceCheck['state'],
   detailKey: VerifyDetailKey,
@@ -219,7 +234,12 @@ function judge(
   if (!fileType) return check('mismatch', 'engineNoFileType')
   if (fileType !== extname(e.to).slice(1).toLowerCase())
     return check('mismatch', 'engineStillOld', { format: formatOf(`.${fileType}`) })
-  if (row.fileBytes !== e.size) return check('mismatch', 'engineSizeDiffers')
+  if (row.fileBytes !== e.size) {
+    const late = typeof before === 'object' && misplacedField(db, row.id, before, e.shift)
+    return late
+      ? check('mismatch', 'engineCuesMisplaced', { field: late })
+      : check('mismatch', 'engineSizeDiffers')
+  }
   if (typeof before !== 'object')
     return check('ok', 'engineOk', { format: formatOf(extname(e.to)) })
 
@@ -231,13 +251,7 @@ function judge(
     e.samplesKept ? now[field] !== before[field] : before[field] !== EMPTY && now[field] === EMPTY,
   )
   if (changed) return check('mismatch', 'enginePerformanceChanged', { field: changed })
-  const shift = e.shift
-  const misplaced =
-    shift &&
-    PERFORMANCE.find((field) => {
-      const was = before.positions?.[field] ?? null
-      return was !== null && !sameAt(shifted(field, was, shift), now.positions?.[field] ?? null)
-    })
+  const misplaced = misplacedField(db, row.id, before, e.shift, now)
   if (misplaced) return check('mismatch', 'engineCuesMisplaced', { field: misplaced })
   return check('ok', 'engineOk', { format: formatOf(extname(e.to)) })
 }

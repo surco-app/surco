@@ -1949,7 +1949,9 @@ revisión tiene el filtro «No cuadran».
 
 En Engine DJ, tras un recorte o un cambio de frecuencia, comprueba que cues, loops y las dos
 rejillas (la ajustada y la de por defecto) cayeron donde debían respecto a la foto, con un
-margen de 1 ms; si no, la pista sale en ámbar con «Los cues de Engine DJ no siguieron al audio» (`engineCuesMisplaced`, `verifyEngine.ts:241`).
+margen de 1 ms; si no, la pista sale en ámbar con «Los cues de Engine DJ no siguieron al audio» (`engineCuesMisplaced`, `verifyEngine.ts:255`). También sale
+así una pista recortada en su sitio cuyos cues Engine no dejó mover, aunque lo primero que
+no cuadre sea el tamaño.
 
 **Lo que no mira:** la posición exacta de cada cue de rekordbox (cuenta los cues, no dónde
 caen) ni las playlists de los programas de DJ.

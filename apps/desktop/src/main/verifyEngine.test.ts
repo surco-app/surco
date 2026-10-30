@@ -553,6 +553,36 @@ describe('checkEngine after a conversion that moved the audio', () => {
     ])
   })
 
+  // A rewrite in place moves Engine's cues only while the row still records the source's
+  // size. A size Engine never kept up to date, or none at all, leaves them where they were,
+  // and what the DJ needs to hear is that the cues did not follow, not that a size differs.
+  it.each([
+    ['a stale size', 999],
+    ['no size', null],
+  ])('a rewrite in place the row refused for %s is engineCuesMisplaced', async (_, stored) => {
+    const dir = trimmable()
+    const file = FROM_LOCAL(dir)
+    writeFileSync(file, Buffer.alloc(1))
+    write(dir, 'UPDATE Track SET path = ?, fileBytes = ? WHERE id = 1', relative(dir, file), stored)
+    const before = snapshot(dir, file)
+    writeFileSync(file, Buffer.alloc(SIZE_SMALL))
+    const shift = { trimmedMs: CUT * 1000 }
+    const [result] = await repointEngineTracks(dir, [
+      { from: file, to: file, fromBytes: 1, engineShift: shift },
+    ])
+    expect(result).toEqual({ written: false, reason: 'no-match' })
+    expect(
+      checkOne(
+        dir,
+        expectFor(before, { from: file, to: file, size: SIZE_SMALL, samplesKept: false, shift }),
+      )[0],
+    ).toEqual({
+      place: 'engine',
+      state: 'mismatch',
+      detail: { key: 'engineCuesMisplaced', params: { field: 'quickCues' } },
+    })
+  })
+
   it('positions rewritten at the new sample rate are ok', () => {
     const dir = trimmable()
     const before = snapshot(dir)
