@@ -1226,7 +1226,12 @@ function Editing({
       className="flex shrink-0 items-center gap-3 border-b border-[var(--color-line)] pb-3"
     >
       {track?.cover ? (
-        <img src={track.cover} alt="" className="h-10 w-10 shrink-0 rounded-md object-cover" />
+        <img
+          data-testid="cues-cover"
+          src={track.cover}
+          alt=""
+          className="h-10 w-10 shrink-0 rounded-md object-cover"
+        />
       ) : (
         <div
           aria-hidden="true"

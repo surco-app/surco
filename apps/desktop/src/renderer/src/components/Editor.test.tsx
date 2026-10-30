@@ -364,6 +364,44 @@ describe('Editor cues section', () => {
     expect(screen.getByTestId('section-maximized-overlay')).toContainElement(header)
   })
 
+  it('heads the full cue editor with the rekordbox artwork when the file carries none, as the list row does', async () => {
+    const grid = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
+    Object.assign((window as unknown as { api: object }).api, {
+      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue({
+        contentId: '103',
+        analysed: true,
+        grid,
+        strong: [],
+        phrases: [],
+        cues: [],
+        wave: null,
+        durationMs: 400000,
+        fingerprint: 'f0',
+      }),
+    })
+    renderEditor(
+      {
+        id: 'a',
+        meta: { title: 'Purrrr...' },
+        sourcePreview: {
+          title: 'Purrrr...',
+          artist: 'The King Of House',
+          durationSec: 253,
+          coverUrl: 'surco-media:///rekordbox/artwork/purrrr.jpg',
+          cues: [],
+        },
+      },
+      'wav',
+      { rekordboxCue: { contentId: '103', path: '/music/a.wav', label: 'a' } },
+    )
+    await waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
+    fireEvent.click(within(screen.getByTestId('cues-section')).getByTestId('section-maximize'))
+    expect(await screen.findByTestId('cues-cover')).toHaveAttribute(
+      'src',
+      'surco-media:///rekordbox/artwork/purrrr.jpg',
+    )
+  })
+
   it('is absent for a track that is not in an open rekordbox playlist', () => {
     renderEditor({ id: 'a' })
     expect(screen.queryByTestId('cues-section')).toBeNull()
