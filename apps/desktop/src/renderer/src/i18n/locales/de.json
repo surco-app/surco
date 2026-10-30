@@ -223,7 +223,6 @@
     "emptyConfirm_one": "{{count}} Datei endgültig löschen?",
     "emptyConfirm_other": "{{count}} Dateien endgültig löschen?",
     "reveal": "Ordner öffnen",
-    "close": "Schließen",
     "restored": "„{{name}}“ in seinem Ordner wiederhergestellt",
     "restoreFailed": "„{{name}}“ konnte nicht wiederhergestellt werden: {{reason}}",
     "removeFailed": "„{{name}}“ konnte nicht gelöscht werden. {{reason}}",
@@ -243,7 +242,6 @@
     "selfEmpties": "Leert sich nach {{days}} Tagen von selbst.",
     "expiring_one": "noch {{count}} Tag",
     "expiring_other": "noch {{count}} Tage",
-    "summaryEmpty": "leer",
     "noMatches": "Nichts passt zur Suche"
   },
   "notices": {

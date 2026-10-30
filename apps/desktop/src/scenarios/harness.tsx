@@ -404,6 +404,8 @@ function scenarioApi(
     traktorCueQueueReady: async () => {},
     onTraktorCueQueueChanged: () => () => {},
     onTraktorCueQueueApplied: () => () => {},
+    copiesStatus: async () => [],
+    onCopiesChanged: () => () => {},
     traktorCanSave: async () => false,
     usbVolumes: async () => ({ volumes: [], lastKey: null }),
     onUsbVolumesChanged: () => () => {},

@@ -223,7 +223,6 @@
     "emptyConfirm_one": "Delete {{count}} file for good?",
     "emptyConfirm_other": "Delete {{count}} files for good?",
     "reveal": "Open folder",
-    "close": "Close",
     "restored": "Restored “{{name}}” to its folder",
     "restoreFailed": "Could not restore “{{name}}”: {{reason}}",
     "removeFailed": "Could not delete “{{name}}”. {{reason}}",
@@ -243,7 +242,6 @@
     "selfEmpties": "Empties itself after {{days}} days.",
     "expiring_one": "{{count}} day left",
     "expiring_other": "{{count}} days left",
-    "summaryEmpty": "empty",
     "noMatches": "Nothing matches your search"
   },
   "notices": {

@@ -23,7 +23,7 @@ export interface TrashBrowserProps {
   onEmpty: () => void
   onReveal: () => void
   // Opened from one track's backup mark: the search starts on that file's name, so the
-  // panel lands on its copies and clearing the box brings the whole list back.
+  // section lands on its copies and clearing the box brings the whole list back.
   initialQuery?: string
   header?: React.ReactNode
 }

@@ -8,9 +8,19 @@ import { SourceRail } from './SourceRail'
 
 afterEach(cleanup)
 
+const COPIES = { active: false, alert: 'none', onOpen: () => {} } as const
+
 describe('SourceRail', () => {
   it('offers the working list plus each source found on this machine', () => {
-    render(<SourceRail onHide={vi.fn()} sources={['rekordbox']} active={null} onSelect={vi.fn()} />)
+    render(
+      <SourceRail
+        copies={COPIES}
+        onHide={vi.fn()}
+        sources={['rekordbox']}
+        active={null}
+        onSelect={vi.fn()}
+      />,
+    )
     expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByTestId('source-rail-rekordbox')).toHaveAttribute('aria-pressed', 'false')
     expect(screen.queryByTestId('source-rail-appleMusic')).not.toBeInTheDocument()
@@ -24,6 +34,7 @@ describe('SourceRail', () => {
   it('shows each source by its own mark in the rail colour with its name written under it', () => {
     render(
       <SourceRail
+        copies={COPIES}
         onHide={vi.fn()}
         sources={['appleMusic', 'rekordbox', 'engine', 'traktor']}
         active={null}
@@ -55,6 +66,7 @@ describe('SourceRail', () => {
   it('names each icon in the app tooltip on focus, not in a native title', () => {
     render(
       <SourceRail
+        copies={COPIES}
         onHide={vi.fn()}
         sources={['appleMusic', 'rekordbox']}
         active={null}
@@ -77,6 +89,7 @@ describe('SourceRail', () => {
     const onSelect = vi.fn()
     render(
       <SourceRail
+        copies={COPIES}
         onHide={vi.fn()}
         sources={['appleMusic', 'rekordbox']}
         active="rekordbox"
@@ -98,6 +111,7 @@ describe('SourceRail', () => {
           active={active}
           onSelect={onSelect}
           onHide={onHide}
+          copies={COPIES}
         />,
       )
       return { onSelect, onHide }
@@ -157,6 +171,53 @@ describe('SourceRail', () => {
       expect(button).toHaveFocus()
       fireEvent.keyDown(button, { key: 'ContextMenu' })
       expect(screen.getByRole('menu')).toBeInTheDocument()
+    })
+  })
+
+  describe('Copias', () => {
+    function renderWith(copies: Partial<Parameters<typeof SourceRail>[0]['copies']>) {
+      const props = { ...COPIES, onOpen: vi.fn(), ...copies }
+      render(
+        <SourceRail
+          onHide={vi.fn()}
+          sources={['rekordbox']}
+          active="rekordbox"
+          onSelect={vi.fn()}
+          copies={props}
+        />,
+      )
+      return props
+    }
+
+    it('shows Copias at the bottom with no dot when all is well', () => {
+      const props = renderWith({})
+      const button = screen.getByTestId('source-rail-copies')
+      expect(button).toHaveAccessibleName('Backups')
+      expect(button.className).toMatch(/(^|\s)mt-auto(\s|$)/)
+      expect(screen.getByTestId('source-rail')).toContainElement(button)
+      expect(screen.queryByTestId('source-rail-copies-dot')).not.toBeInTheDocument()
+      expect(screen.getByTestId('source-rail-copies-icon')).toHaveAttribute('data-icon', 'check')
+      fireEvent.click(button)
+      expect(props.onOpen).toHaveBeenCalledTimes(1)
+    })
+
+    it('an amber dot when changes are waiting', () => {
+      renderWith({ alert: 'warn' })
+      expect(screen.getByTestId('source-rail-copies-dot')).toHaveAttribute('data-alert', 'warn')
+      expect(screen.getByTestId('source-rail-copies-icon')).toHaveAttribute('data-icon', 'check')
+    })
+
+    it('a red dot and alert shield when Surco stopped', () => {
+      renderWith({ alert: 'danger' })
+      expect(screen.getByTestId('source-rail-copies-dot')).toHaveAttribute('data-alert', 'danger')
+      expect(screen.getByTestId('source-rail-copies-icon')).toHaveAttribute('data-icon', 'alert')
+    })
+
+    it('is the one pressed entry while open, so no source looks like the screen on show', () => {
+      renderWith({ active: true })
+      expect(screen.getByTestId('source-rail-copies')).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getByTestId('source-rail-rekordbox')).toHaveAttribute('aria-pressed', 'false')
+      expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'false')
     })
   })
 })

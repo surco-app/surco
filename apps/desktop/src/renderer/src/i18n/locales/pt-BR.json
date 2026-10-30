@@ -223,7 +223,6 @@
     "emptyConfirm_one": "Apagar {{count}} arquivo para sempre?",
     "emptyConfirm_other": "Apagar {{count}} arquivos para sempre?",
     "reveal": "Abrir pasta",
-    "close": "Fechar",
     "restored": "“{{name}}” restaurado na sua pasta",
     "restoreFailed": "Não foi possível restaurar “{{name}}”: {{reason}}",
     "removeFailed": "Não foi possível apagar “{{name}}”. {{reason}}",
@@ -243,7 +242,6 @@
     "selfEmpties": "Esvazia-se sozinha após {{days}} dias.",
     "expiring_one": "resta {{count}} dia",
     "expiring_other": "restam {{count}} dias",
-    "summaryEmpty": "vazio",
     "noMatches": "Nada corresponde à busca"
   },
   "notices": {

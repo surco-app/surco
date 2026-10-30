@@ -335,6 +335,8 @@ function setApi(over: Record<string, unknown> = {}): void {
     traktorCueQueueReady: vi.fn<Api['traktorCueQueueReady']>().mockResolvedValue(undefined),
     onTraktorCueQueueChanged: vi.fn<Api['onTraktorCueQueueChanged']>(() => () => {}),
     onTraktorCueQueueApplied: vi.fn<Api['onTraktorCueQueueApplied']>(() => () => {}),
+    copiesStatus: vi.fn<Api['copiesStatus']>().mockResolvedValue([]),
+    onCopiesChanged: vi.fn<Api['onCopiesChanged']>(() => () => {}),
     traktorCanSave: vi.fn<Api['traktorCanSave']>().mockResolvedValue(true),
     onWindowFocus: () => () => {},
     usbVolumes: vi.fn<Api['usbVolumes']>().mockResolvedValue({ volumes: [], lastKey: null }),
@@ -717,7 +719,7 @@ describe('App column widths', () => {
   it('sizes the list as a share of the window, so a wider window gives every column room', async () => {
     await renderApp()
     await addTwoTracks()
-    expect(screen.getByTestId('sidebar')).toHaveStyle({ width: '370px' })
+    expect(screen.getByTestId('sidebar')).toHaveStyle({ width: '350px' })
   })
 
   it('saves the dragged list width as a share of the window, not as pixels', async () => {
@@ -728,11 +730,11 @@ describe('App column widths', () => {
     const at = (event: Event, clientX: number): Event =>
       Object.defineProperty(event, 'clientX', { value: clientX })
     const divider = screen.getAllByRole('separator')[0]
-    fireEvent(divider, at(createEvent.pointerDown(divider), 370))
-    fireEvent(window, at(createEvent.pointerMove(window), 420))
-    fireEvent(window, at(createEvent.pointerUp(window), 420))
+    fireEvent(divider, at(createEvent.pointerDown(divider), 350))
+    fireEvent(window, at(createEvent.pointerMove(window), 400))
+    fireEvent(window, at(createEvent.pointerUp(window), 400))
     const saved = saveSettings.mock.calls.find(([patch]) => patch.columnShares)?.[0]
-    expect(saved?.columnShares?.list).toBeCloseTo((420 * 0.83) / 1278)
+    expect(saved?.columnShares?.list).toBeCloseTo((400 * 0.83) / 1210)
     expect(saved?.resultsWidth).toBeUndefined()
   })
 
@@ -746,7 +748,7 @@ describe('App column widths', () => {
     await addTwoTracks()
     await waitFor(() =>
       expect(screen.getByTestId('sidebar')).toHaveStyle({
-        width: `${Math.round((1278 * 0.3) / 0.83)}px`,
+        width: `${Math.round((1210 * 0.3) / 0.83)}px`,
       }),
     )
   })
@@ -1348,7 +1350,9 @@ describe('App source rail', () => {
     expect(await screen.findByTestId('source-rail-rekordbox')).toBeInTheDocument()
   })
 
-  it('is not drawn when every source this machine has is hidden', async () => {
+  // The music files Surco kept are there on every machine, so the way to them cannot
+  // depend on a DJ program being installed.
+  it('the rail and Copias show even without any DJ program', async () => {
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ hiddenSources: ['rekordbox', 'engine'] })),
       rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
@@ -1356,7 +1360,18 @@ describe('App source rail', () => {
     await renderApp()
     await waitFor(() => expect(window.api.rekordboxAvailable).toHaveBeenCalled())
     await act(async () => {})
-    expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument()
+    expect(screen.getByTestId('source-rail')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-rail-rekordbox')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('source-rail-copies'))
+    expect(await screen.findByTestId('copies-screen')).toBeInTheDocument()
+    expect(screen.getByTestId('copies-section-music')).toBeInTheDocument()
+    expect(screen.queryByTestId('add-files')).not.toBeInTheDocument()
+    expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'false')
+
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    expect(screen.queryByTestId('copies-screen')).not.toBeInTheDocument()
+    expect(screen.getByTestId('add-files')).toBeInTheDocument()
   })
 
   it('hides a source from its right-click menu and keeps the choice in the settings', async () => {
@@ -8310,9 +8325,9 @@ describe('App empty screen offers a single way in', () => {
 
 describe('App Originals panel', () => {
   // The toolbar count is gone; a track Surco backed up says so on its own row, and that
-  // mark is the way into its backup: the panel opens searched to the file, not on the
-  // whole list of everything a crate conversion ever rewrote.
-  it('marks a backed-up track and opens its backups from the mark', async () => {
+  // mark is the way into its backup: Copias opens on the music files searched to that
+  // file, not on the whole list of everything a crate conversion ever rewrote.
+  it("a track's backup mark opens Copias on that file", async () => {
     setApi({
       trashList: vi.fn().mockResolvedValue([
         {
@@ -8333,8 +8348,10 @@ describe('App Originals panel', () => {
     expect(within(second).queryByTestId('track-backup')).toBeNull()
 
     fireEvent.click(mark)
-    await screen.findByTestId('trash-panel')
-    expect(screen.getByDisplayValue('a.wav')).toBeInTheDocument()
+    await screen.findByTestId('copies-screen')
+    expect(screen.getByTestId('copies-toggle-music')).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByTestId('trash-search')).toHaveValue('a.wav')
+    expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument()
   })
 
   // The panel states how long originals stay and how much room they get; showing the
@@ -8348,7 +8365,7 @@ describe('App Originals panel', () => {
     act(() => menuListener?.('backups'))
 
     const { default: i18n } = await import('./i18n')
-    const { formatBytes } = await import('./components/TrashPanel')
+    const { formatBytes } = await import('./components/TrashBrowser')
     expect(await screen.findByText(i18n.t('trash.selfEmpties', { days: 3 }))).toBeInTheDocument()
     expect(screen.getByTestId('trash-usage')).toHaveTextContent(
       formatBytes(2 * 1024 ** 3, i18n.language),
@@ -8363,14 +8380,14 @@ describe('App Originals panel', () => {
     const [first, second] = await addTwoTracks()
     fireEvent.click(first)
     act(() => menuListener?.('backups'))
-    await screen.findByTestId('trash-panel')
+    await screen.findByTestId('copies-screen')
 
     fireEvent.keyDown(window, { key: 'ArrowDown', cancelable: true })
     expect(first).toHaveAttribute('aria-selected', 'true')
     expect(second).toHaveAttribute('aria-selected', 'false')
 
     fireEvent.keyDown(window, { key: 'Escape' })
-    expect(screen.queryByTestId('trash-panel')).toBeNull()
+    expect(screen.queryByTestId('copies-screen')).toBeNull()
     expect(first).toHaveAttribute('aria-selected', 'true')
   })
   // Emptying Originals with one copy held open used to close the confirm and say nothing,
@@ -8415,7 +8432,7 @@ describe('App Originals panel', () => {
     await renderApp()
     await addTwoTracks()
     act(() => menuListener?.('backups'))
-    await screen.findByTestId('trash-panel')
+    await screen.findByTestId('copies-screen')
 
     runMenu('process-all')
     await act(async () => {})

@@ -223,7 +223,6 @@
     "emptyConfirm_one": "Supprimer {{count}} fichier pour de bon ?",
     "emptyConfirm_other": "Supprimer {{count}} fichiers pour de bon ?",
     "reveal": "Ouvrir le dossier",
-    "close": "Fermer",
     "restored": "« {{name}} » restauré dans son dossier",
     "restoreFailed": "Impossible de restaurer « {{name}} » : {{reason}}",
     "removeFailed": "Impossible de supprimer « {{name}} ». {{reason}}",
@@ -243,7 +242,6 @@
     "selfEmpties": "Se vide seule après {{days}} jours.",
     "expiring_one": "{{count}} jour restant",
     "expiring_other": "{{count}} jours restants",
-    "summaryEmpty": "vide",
     "noMatches": "Aucun résultat pour cette recherche"
   },
   "notices": {

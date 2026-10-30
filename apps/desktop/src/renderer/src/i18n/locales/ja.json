@@ -223,7 +223,6 @@
     "emptyConfirm_one": "{{count}} ファイルを永久に削除しますか？",
     "emptyConfirm_other": "{{count}} ファイルを永久に削除しますか？",
     "reveal": "フォルダーを開く",
-    "close": "閉じる",
     "restored": "“{{name}}” をフォルダーに復元しました",
     "restoreFailed": "“{{name}}” の復元に失敗しました：{{reason}}",
     "removeFailed": "「{{name}}」を削除できませんでした。{{reason}}",
@@ -243,7 +242,6 @@
     "selfEmpties": "{{days}}日後に空になります。",
     "expiring_one": "{{count}}日残り",
     "expiring_other": "{{count}}日残り",
-    "summaryEmpty": "空",
     "noMatches": "検索結果に一致するものがありません"
   },
   "notices": {

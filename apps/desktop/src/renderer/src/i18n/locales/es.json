@@ -223,7 +223,6 @@
     "emptyConfirm_one": "¿Eliminar {{count}} archivo para siempre?",
     "emptyConfirm_other": "¿Eliminar {{count}} archivos para siempre?",
     "reveal": "Abrir carpeta",
-    "close": "Cerrar",
     "restored": "Restaurado «{{name}}» en su carpeta",
     "restoreFailed": "No se pudo restaurar «{{name}}»: {{reason}}",
     "removeFailed": "No se pudo eliminar «{{name}}». {{reason}}",
@@ -243,7 +242,6 @@
     "selfEmpties": "Se vacía sola a los {{days}} días.",
     "expiring_one": "queda {{count}} día",
     "expiring_other": "quedan {{count}} días",
-    "summaryEmpty": "vacío",
     "noMatches": "Nada coincide con la búsqueda"
   },
   "notices": {
