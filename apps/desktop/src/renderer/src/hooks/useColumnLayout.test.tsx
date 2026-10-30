@@ -28,7 +28,7 @@ function setup(saved?: ColumnShares) {
   const onCommit = vi.fn<(shares: ColumnShares) => void>()
   const hook = renderHook(
     (props: { saved?: ColumnShares }) =>
-      useColumnLayout({ hasRail: true, hasTree: true, saved: props.saved, onCommit }),
+      useColumnLayout({ hasTree: true, saved: props.saved, onCommit }),
     { initialProps: { saved } },
   )
   return { ...hook, onCommit }

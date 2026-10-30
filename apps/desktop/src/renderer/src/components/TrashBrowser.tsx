@@ -1,6 +1,6 @@
 import { Archive, FolderOpen, Pencil, RotateCcw, Search, Undo2, X } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TrashEntry } from '../../../shared/types'
 import { baseName } from '../lib/baseName'
@@ -73,6 +73,19 @@ export function TrashBrowser({
   const total = entries.reduce((sum, e) => sum + e.bytes, 0)
   const counts = countByReason(entries)
   const rows = visibleEntries(entries, filter, query)
+  const confirming = confirmEmpty || confirmRemove !== null
+
+  useEffect(() => {
+    if (!confirming) return
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== 'Escape') return
+      e.preventDefault()
+      setConfirmEmpty(false)
+      setConfirmRemove(null)
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [confirming])
 
   return (
     <>

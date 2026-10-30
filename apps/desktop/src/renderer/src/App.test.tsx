@@ -8475,6 +8475,39 @@ describe('App Copias music files', () => {
     expect(screen.getByTestId('copies-screen')).toBeInTheDocument()
   })
 
+  it('Escape on an inline trash confirmation cancels only that confirmation', async () => {
+    setApi({
+      trashList: vi.fn().mockResolvedValue([
+        {
+          id: 'e1',
+          name: 'a.wav',
+          originalPath: '/music/a.wav',
+          storedPath: '/ud/trash/items/e1-a.wav',
+          bytes: 1024,
+          trashedAt: Date.now(),
+          reason: 'replaced',
+        },
+      ]),
+    })
+    await renderApp()
+    act(() => menuListener?.('backups'))
+    fireEvent.click(await screen.findByTestId('trash-empty-button'))
+    expect(screen.getByTestId('trash-empty-confirm')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByTestId('trash-empty-confirm')).not.toBeInTheDocument()
+    expect(screen.getByTestId('copies-screen')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('trash-remove'))
+    expect(screen.getByTestId('trash-remove-confirm')).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByTestId('trash-remove-confirm')).not.toBeInTheDocument()
+    expect(screen.getByTestId('copies-screen')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByTestId('copies-screen')).not.toBeInTheDocument()
+  })
+
   it('keeps Copias open on Escape while a restore is running, so its outcome is seen', async () => {
     let finish: (r: RestoreResult) => void = () => {}
     setApi({

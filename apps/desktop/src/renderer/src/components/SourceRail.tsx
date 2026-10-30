@@ -15,10 +15,11 @@ export const SOURCE_ICON: Record<PlaylistSource, typeof AppleMusicIcon> = {
   traktor: TraktorIcon,
 }
 
-// The column of places tracks come from, as rekordbox's own side panel has it. The first
-// entry is the working list every import has always landed in; the rest are the DJ
-// libraries found on this machine. A source this machine lacks is not drawn at all — the
-// same rule the Apple Music destination follows off macOS.
+// The column of places tracks come from, as rekordbox's own side panel has it, with Copias
+// pinned at the bottom. The first entry is the working list every import has always landed
+// in; then come the DJ libraries found on this machine. A source this machine lacks is not
+// drawn at all — the same rule the Apple Music destination follows off macOS — but the rail
+// always is, because Copias always has the music files to show.
 export function SourceRail({
   sources,
   active,

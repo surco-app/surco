@@ -1564,7 +1564,6 @@ export default function App(): React.JSX.Element {
   }
 
   const columns = useColumnLayout({
-    hasRail: true,
     hasTree: !!browser.source,
     saved: settings?.columnShares,
     onCommit: (columnShares) => saveSettings({ columnShares }),
