@@ -257,6 +257,17 @@ describe('buildAddScript refusing an entry that was already there', () => {
     expect(head).not.toContain('try')
   })
 
+  // Music reads no tags from a WAV and names its entry after the file, with no artist, so an
+  // older untagged copy of the same file is found by that name alone.
+  it('also lists the entries named after the file being added', () => {
+    const wav = buildAddScript('/x/Tom Hafman - ATB.wav', base)
+    const list = wav.indexOf(
+      'set candidates to (every track of library playlist 1 whose name is "Tom Hafman - ATB")',
+    )
+    expect(list).toBeGreaterThan(-1)
+    expect(list).toBeLessThan(wav.indexOf('add POSIX file'))
+  })
+
   // Before any tag is written: writing them first would retag the entry Music handed back.
   it('answers with the sentinel before writing a single tag to an entry from that list', () => {
     const check = s.indexOf(

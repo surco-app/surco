@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process'
+import { basename, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import log from 'electron-log/main'
@@ -178,12 +179,14 @@ export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?
     ...(canRecover ? ['    set importStarted to (current date) - 2'] : []),
     // Music answers an add whose file matches an entry it already has with that entry,
     // importing nothing (measured 30/10, even across formats). Any copy carrying the same
-    // name and artist can be that entry, so the answer is checked against all of them,
-    // before a single tag is written to it. The IDs come from the track list: asked of an empty `every
+    // name and artist can be that entry, and so can one named after the file (Music reads
+    // no tags from a WAV), so the answer is checked against all of them, before a single
+    // tag is written to it. The IDs come from the track list: asked of an empty `every
     // track whose`, `persistent ID of` raises -1728, and nothing matching is the usual case.
     '    set preexisting to {}',
     ...[
       `whose name is ${appleScriptString(meta.title)} and artist is ${appleScriptString(meta.artist)}`,
+      `whose name is ${appleScriptString(basename(filePath, extname(filePath)))}`,
     ].flatMap((filter) => [
       `    set candidates to (every track of library playlist 1 ${filter})`,
       '    repeat with candidate in candidates',
