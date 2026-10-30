@@ -598,5 +598,4 @@ describe('checkFile — what convertAudio wrote reads back as written', () => {
     )
     expect(check.detail).toEqual({ key: 'fileTagDiffers', params: { field: 'genre' } })
   })
-
 })

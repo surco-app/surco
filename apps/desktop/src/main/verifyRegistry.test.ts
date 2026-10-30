@@ -696,6 +696,44 @@ describe('verify registry', () => {
     })
   })
 
+  // A batch begun the moment the reads are in must not find the tracks done but not yet sent.
+  it.each([0, 1, 2, 3, 4, 5, 6])(
+    'a batch registered %i ticks after the reads land still lets the flush send its tracks',
+    async (ticks) => {
+      const { deps, registry } = setup()
+      registry.register(entry('x'))
+      deps.readRekordbox.mockImplementationOnce(async (list) => {
+        let at: Promise<void> = Promise.resolve()
+        for (let i = 0; i < ticks; i++) at = at.then(() => {})
+        void at.then(() => registry.register(entry('z')))
+        return list.map(() => libraryOk('rekordbox'))
+      })
+
+      await registry.afterFlush(written, 1)
+
+      expect(deps.emit).toHaveBeenCalledWith('x', expect.objectContaining({ status: 'ok' }))
+    },
+  )
+
+  it.each([0, 1, 2, 3, 4, 5, 6])(
+    'a batch registered %i ticks after a queue apply reads lets it send its tracks',
+    async (ticks) => {
+      const { deps, registry } = setup()
+      registry.register(entry('x'))
+      await registry.afterFlush({ ...written, rekordbox: 'queued' })
+      deps.readRekordbox.mockImplementationOnce(async (list) => {
+        let at: Promise<void> = Promise.resolve()
+        for (let i = 0; i < ticks; i++) at = at.then(() => {})
+        void at.then(() => registry.register(entry('z')))
+        return list.map(() => libraryOk('rekordbox'))
+      })
+
+      await registry.afterQueueApplied('rekordbox', 'written')
+
+      expect(deps.emit).toHaveBeenLastCalledWith('x', expect.objectContaining({ status: 'ok' }))
+    },
+  )
+
   it('a retry that turns ok while Music is still read is not forgotten before its emit', async () => {
     let finish: (v: PlaceCheck) => void = () => {}
     const { deps, registry } = setup({

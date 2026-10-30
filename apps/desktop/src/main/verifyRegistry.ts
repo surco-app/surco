@@ -288,8 +288,8 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
         mine[place] = mine[place].filter(live)
       }
       const flushed = [...new Set(LIBRARIES.flatMap((place) => mine[place]))]
-      await during(flushed, () =>
-        Promise.all(
+      await during(flushed, async () => {
+        await Promise.all(
           LIBRARIES.map(async (place) => {
             const listed = mine[place].filter((e) => e.places.has(place))
             const touched = listed.filter((e) => touches(e, place))
@@ -306,9 +306,9 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
               result === 'off' || result === 'queued' ? undefined : check(place, byFlush, result),
             ])
           }),
-        ),
-      )
-      for (const e of flushed) emit(e)
+        )
+        for (const e of flushed) emit(e)
+      })
     },
 
     // stillQueued: the apply was refused and left the repoints in the queue, so the tracks
