@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import log from 'electron-log/main'
 import { describe, expect, it, vi } from 'vitest'
-import { errorKeyOf, errorWithKey } from '../shared/errorKeys'
+import { errorKeyOf, errorWithKey, splitNameLeftMarked } from '../shared/errorKeys'
 import type { ProcessJob, Settings, TrackMetadata } from '../shared/types'
 import { createOutputReservations } from './outputReservations'
 import { type ProcessTrackDeps, runProcessTrack } from './processTrack'
@@ -2489,7 +2489,9 @@ describe('runProcessTrack — Music answering an add with the entry it already h
     expect(result.musicNameLeftMarked).toBe(true)
   })
 
-  it('fails "Apple Music only" with the name it could not restore', async () => {
+  // The cause is what the DJ can act on; the leftover mark rides along so the renderer can
+  // say it too, without the failure losing its own message or key.
+  it('fails "Apple Music only" with the real cause, carrying the name it could not restore', async () => {
     const deps = recording({
       settings: settings({ keepOutputCopy: false }),
       markAppleMusicReplacing: restoreRefused(),
@@ -2502,7 +2504,28 @@ describe('runProcessTrack — Music answering an add with the entry it already h
       (e: Error) => e,
     )
 
-    expect(errorKeyOf((failure as Error).message)).toBe('appleMusicNameLeftMarked')
+    expect((failure as Error).message).toContain('Music got an error: -2753')
+    expect(splitNameLeftMarked((failure as Error).message)).toEqual({
+      message: 'Music got an error: -2753',
+      left: true,
+    })
+  })
+
+  it('keeps a translatable cause readable when the name was left marked', async () => {
+    const deps = recording({
+      settings: settings({ keepOutputCopy: false }),
+      markAppleMusicReplacing: restoreRefused(),
+      addToAppleMusic: vi.fn(async () => {
+        throw errorWithKey('appleMusicAddReturnedOld', '/tmp/x')
+      }),
+    })
+
+    const failure = await runProcessTrack({ ...replaceJob, keepOutputCopy: false }, deps).catch(
+      (e: Error) => e,
+    )
+
+    expect(errorKeyOf((failure as Error).message)).toBe('appleMusicAddReturnedOld')
+    expect(splitNameLeftMarked((failure as Error).message).left).toBe(true)
   })
 
   it('reports nothing when the name came back', async () => {

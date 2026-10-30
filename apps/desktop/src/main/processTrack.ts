@@ -1,7 +1,7 @@
 import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
-import { errorKeyOf, errorWithKey } from '../shared/errorKeys'
+import { errorWithKey, splitNameLeftMarked, withNameLeftMarked } from '../shared/errorKeys'
 import { foldAccents } from '../shared/foldAccents'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../shared/format'
 import type {
@@ -253,11 +253,8 @@ async function replaceUnlocked(
       : undefined
   } catch (e) {
     // A restore that fails leaves the mark in the name, never a lost entry, but only the DJ
-    // can take it off, so the failure that reaches them names it (the cause is logged).
-    if (marked && !(await restoreName(old, deps))) {
-      log.warn('process:track Apple Music step failed', e)
-      throw errorWithKey('appleMusicNameLeftMarked', old.label)
-    }
+    // can take it off, so the failure carries that along with its own cause.
+    if (marked && !(await restoreName(old, deps))) throw withNameLeftMarked(e)
     throw e
   }
   const nameLeftMarked = marked && !(await restoreName(old, deps))
@@ -811,7 +808,7 @@ export async function runProcessTrack(
       } catch (e) {
         if (musicOnly) throw e
         log.warn('process:track Apple Music step failed after the file was written', target, e)
-        if (errorKeyOf(e instanceof Error ? e.message : '') === 'appleMusicNameLeftMarked')
+        if (splitNameLeftMarked(e instanceof Error ? e.message : '').left)
           musicNameLeftMarked = true
         musicPersistentId = undefined
         appleMusicFailed = true

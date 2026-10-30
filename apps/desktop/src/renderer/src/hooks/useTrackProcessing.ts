@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { processesAudio } from '../../../shared/audioProcessing'
 import { effectiveMeta, strayTags } from '../../../shared/customFields'
 import { DEFAULT_FIELDS } from '../../../shared/defaults'
+import { splitNameLeftMarked } from '../../../shared/errorKeys'
 import { batchKeepMp3, hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
 import type { DeclickConfig, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
 import { removeAnalysisQueries } from '../lib/analysisQueries'
@@ -474,7 +475,9 @@ export function useTrackProcessing({
         }
         return 'converted'
       } catch (e) {
-        const raw = e instanceof Error ? cleanIpcError(e.message) : ''
+        const marked = splitNameLeftMarked(e instanceof Error ? cleanIpcError(e.message) : '')
+        if (marked.left) onMusicNameLeftMarked?.(track.listLabel)
+        const raw = marked.message
         if (errorKeyOf(raw) === 'conversionCancelled') {
           updateTrack(id, {
             status: 'idle',
@@ -488,7 +491,7 @@ export function useTrackProcessing({
         // the leading key mainErrorMessage reads.
         const message = isFileInUseMessage(raw)
           ? tr('editor.fileInUseError')
-          : mainErrorMessage(e, tr, tr('editor.processError'))
+          : mainErrorMessage(marked.left ? new Error(raw) : e, tr, tr('editor.processError'))
         updateTrack(id, {
           status: 'error',
           error: message,

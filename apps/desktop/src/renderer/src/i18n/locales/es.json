@@ -174,7 +174,6 @@
     "appleMusicNoMediaCopy": "Música no ha copiado el archivo a su carpeta multimedia, así que “Solo Apple Music” lo dejaría sin audio. Activa “Copiar archivos a la carpeta multimedia” en Música, o desactiva “Solo Apple Music”.",
     "appleMusicNoMediaCopyKept": "Música no ha copiado el archivo a su carpeta multimedia, así que “Solo Apple Music” lo dejaría sin audio. Tu copia anterior sigue en Música tal cual y no se ha perdido nada. Activa “Copiar archivos a la carpeta multimedia” en Música, o desactiva “Solo Apple Music”.",
     "appleMusicAddReturnedOld": "Música ha devuelto una pista que ya estaba en tu biblioteca en vez de importar el archivo nuevo, así que no se ha añadido. Tu pista anterior sigue en Música. Si vuelve a pasar, busca en Música otra pista con el mismo título y artista.",
-    "appleMusicNameLeftMarked": "No se ha podido sustituir la pista en Música, y su entrada anterior sigue con «[surco-replacing]» al final del nombre. Quítalo a mano en Música.",
     "convertedOutputUnreadable": "El archivo convertido salió ilegible, así que se descartó y el original quedó intacto. Prueba con otros ajustes de conversión.",
     "convertedOutputTruncated": "El archivo convertido salió más corto que el original, así que se descartó y el original quedó intacto. Prueba con otros ajustes de conversión.",
     "engineDjOpen": "Cierra Engine DJ antes de convertir: tiene la biblioteca abierta.",

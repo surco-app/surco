@@ -4,6 +4,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
+import { NAME_LEFT_MARKED } from '../../../shared/errorKeys'
 import type { Settings, TrackMetadata } from '../../../shared/types'
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
@@ -1178,6 +1179,36 @@ describe('useTrackProcessing', () => {
       await result.current.processOne('a')
     })
     expect(onMusicNameLeftMarked).toHaveBeenCalledWith('a.wav')
+  })
+
+  // A failed "Apple Music only" job carries the leftover mark in its error: the DJ reads the
+  // real cause on the row and is told about the name as well.
+  it('tells the user about a marked name a failed job left, showing the real cause', async () => {
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockRejectedValue(new Error(`Music got an error: -2753${NAME_LEFT_MARKED}`)),
+    })
+    const onMusicNameLeftMarked = vi.fn()
+    const updateTrack = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: null,
+          updateTrack,
+          onMusicNameLeftMarked,
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(onMusicNameLeftMarked).toHaveBeenCalledWith('a.wav')
+    expect(updateTrack).toHaveBeenCalledWith(
+      'a',
+      expect.objectContaining({ status: 'error', error: 'Music got an error: -2753' }),
+    )
   })
 
   it('follows a renamed file and counts it converted when only the Apple Music step failed', async () => {

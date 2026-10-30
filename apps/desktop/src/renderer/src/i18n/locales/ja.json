@@ -174,7 +174,6 @@
     "appleMusicNoMediaCopy": "音楽がファイルをメディアフォルダにコピーしなかったため、「Apple Music のみ」では音声がなくなります。Music の「追加時にメディアフォルダへコピー」をオンにするか、 「Apple Music のみ」をオフにしてください。",
     "appleMusicNoMediaCopyKept": "Music がファイルをメディアフォルダにコピーしなかったため、「Apple Music のみ」では音声がなくなります。以前のコピーはそのまま Music に残っており、何も失われていません。Music の「追加時にメディアフォルダへコピー」をオンにするか、「Apple Music のみ」をオフにしてください。",
     "appleMusicAddReturnedOld": "Music は新しいファイルを読み込まず、ライブラリに既にあるトラックを返したため、追加されませんでした。以前のトラックは Music に残っています。再び起きる場合は、同じタイトルとアーティストの別のトラックが Music にないか確認してください。",
-    "appleMusicNameLeftMarked": "Music でトラックを置き換えられず、以前の項目の名前の末尾に「[surco-replacing]」が残っています。Music で手動で削除してください。",
     "convertedOutputUnreadable": "変換後のファイルが読み取れなかったため、破棄され元のファイルはそのままです。別の変換設定で再度お試しください。",
     "convertedOutputTruncated": "変換後のファイルが元より短くなったため、破棄され元のファイルはそのままです。別の変換設定で再度お試しください。",
     "engineDjOpen": "変換前に Engine DJ を閉じてください: ライブラリが開いたままです。",
