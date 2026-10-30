@@ -2890,7 +2890,7 @@
       "traktor": "Traktor"
     },
     "detail": {
-      "pending": "Pendente, aplicado ao fechar o {{program}}",
+      "pending": "Pendente, será aplicado ao fechar o {{program}}",
       "fileIdentical": "{{format}} · áudio idêntico ao original",
       "fileReencoded": "{{format}} · {{rate}} kHz · {{bits}} bits · decodifica inteiro",
       "fileReencodedLossy": "{{format}} · {{rate}} kHz · decodifica inteiro",
@@ -2929,7 +2929,7 @@
       "rekordboxCuesLost_other": "O rekordbox tinha {{count}} cues e agora tem {{after}}",
       "rekordboxCuesChanged_one": "O rekordbox tinha {{count}} cue e agora tem {{after}}",
       "rekordboxCuesChanged_other": "O rekordbox tinha {{count}} cues e agora tem {{after}}",
-      "rekordboxAnalysisEmptied": "O rekordbox perdeu a análise e o grid",
+      "rekordboxAnalysisEmptied": "A análise do rekordbox mudou",
       "rekordboxUnreadable": "Não foi possível verificar o rekordbox",
       "engineStillOld": "O Engine DJ continua apontando para o {{format}}",
       "engineMissing": "A faixa não está no Engine DJ",

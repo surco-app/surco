@@ -2929,7 +2929,7 @@
       "rekordboxCuesLost_other": "rekordboxのキューが{{count}}個から{{after}}個になりました",
       "rekordboxCuesChanged_one": "rekordboxのキューが{{count}}個から{{after}}個になりました",
       "rekordboxCuesChanged_other": "rekordboxのキューが{{count}}個から{{after}}個になりました",
-      "rekordboxAnalysisEmptied": "rekordboxの解析とグリッドが消えました",
+      "rekordboxAnalysisEmptied": "rekordboxの解析が変わりました",
       "rekordboxUnreadable": "rekordboxを確認できませんでした",
       "engineStillOld": "Engine DJはまだ{{format}}を参照しています",
       "engineMissing": "トラックがEngine DJにありません",

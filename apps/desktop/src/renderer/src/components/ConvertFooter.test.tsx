@@ -941,7 +941,7 @@ describe('ConvertFooter batch verification', () => {
     expect(screen.queryByTestId('export-success')).toBeNull()
     rerender(batchFooter({ ok: 30, checking: 10 }))
     const line = screen.getByTestId('export-success')
-    expect(line).toHaveTextContent(/^30 comprobadas · 10 por comprobar$/)
+    expect(line).toHaveTextContent(/^30 comprobadas · 10 comprobándose$/)
     expect(line.textContent).not.toContain('✓')
   })
 

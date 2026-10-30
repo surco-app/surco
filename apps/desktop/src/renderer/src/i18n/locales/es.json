@@ -2879,7 +2879,7 @@
       "mismatch_one": "{{count}} no cuadra",
       "mismatch_other": "{{count}} no cuadran",
       "pending": "{{count}} al cerrar {{programs}}",
-      "checking": "{{count}} por comprobar",
+      "checking": "{{count}} comprobándose",
       "unverified": "{{count}} sin comprobar"
     },
     "places": {
@@ -2929,7 +2929,7 @@
       "rekordboxCuesLost_other": "rekordbox tenía {{count}} cues y ahora {{after}}",
       "rekordboxCuesChanged_one": "rekordbox tenía {{count}} cue y ahora {{after}}",
       "rekordboxCuesChanged_other": "rekordbox tenía {{count}} cues y ahora {{after}}",
-      "rekordboxAnalysisEmptied": "rekordbox perdió el análisis y la rejilla",
+      "rekordboxAnalysisEmptied": "El análisis de rekordbox cambió",
       "rekordboxUnreadable": "No se pudo comprobar rekordbox",
       "engineStillOld": "Engine DJ sigue en el {{format}}",
       "engineMissing": "La pista no está en Engine DJ",

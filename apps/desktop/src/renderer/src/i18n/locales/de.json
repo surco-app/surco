@@ -2929,7 +2929,7 @@
       "rekordboxCuesLost_other": "rekordbox hatte {{count}} Cues und jetzt {{after}}",
       "rekordboxCuesChanged_one": "rekordbox hatte {{count}} Cue und jetzt {{after}}",
       "rekordboxCuesChanged_other": "rekordbox hatte {{count}} Cues und jetzt {{after}}",
-      "rekordboxAnalysisEmptied": "rekordbox hat die Analyse und das Beatgrid verloren",
+      "rekordboxAnalysisEmptied": "Die Analyse in rekordbox hat sich geändert",
       "rekordboxUnreadable": "rekordbox konnte nicht geprüft werden",
       "engineStillOld": "Engine DJ zeigt noch auf die {{format}}",
       "engineMissing": "Der Track ist nicht in Engine DJ",

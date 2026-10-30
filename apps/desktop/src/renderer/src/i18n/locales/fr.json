@@ -2929,7 +2929,7 @@
       "rekordboxCuesLost_other": "rekordbox avait {{count}} cues et en a maintenant {{after}}",
       "rekordboxCuesChanged_one": "rekordbox avait {{count}} cue et en a maintenant {{after}}",
       "rekordboxCuesChanged_other": "rekordbox avait {{count}} cues et en a maintenant {{after}}",
-      "rekordboxAnalysisEmptied": "rekordbox a perdu l’analyse et la grille",
+      "rekordboxAnalysisEmptied": "L’analyse de rekordbox a changé",
       "rekordboxUnreadable": "Impossible de vérifier rekordbox",
       "engineStillOld": "Engine DJ pointe toujours vers le {{format}}",
       "engineMissing": "Le morceau n’est pas dans Engine DJ",
