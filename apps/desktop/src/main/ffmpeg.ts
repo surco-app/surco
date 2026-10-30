@@ -1510,7 +1510,7 @@ async function assertDeliversAsMuchAs(file: string, source: string): Promise<voi
   )
 }
 
-async function deliveredDurationSec(file: string): Promise<number | null> {
+export async function deliveredDurationSec(file: string): Promise<number | null> {
   try {
     const { stdout } = await run(
       ffmpegPath,
