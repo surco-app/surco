@@ -374,4 +374,41 @@ describe('checkFile', () => {
     const check = await checkFile(await expectFor(at('source.wav')), readers)
     expect(check.state).toBe('unreadable')
   })
+
+  it('a probe without a sample rate is unreadable, never an unchecked truncation', async () => {
+    ff('-t', '1', '-i', at('source.wav'), '-c:a', 'flac', at('norate.flac'))
+    const readers: FileReaders = {
+      ...fileReaders,
+      probe: async () => ({ ...(await fileReaders.probe(at('norate.flac'))), sampleRate: '' }),
+    }
+    const check = await checkFile(
+      await expectFor(at('norate.flac'), { ext: '.flac', codec: 'flac', samplesKept: false }),
+      readers,
+    )
+    expect(check.state).toBe('unreadable')
+  })
+
+  it.each([
+    ['sourceDurationSec', { sourceDurationSec: Number.NaN }],
+    ['trimmedSec', { trimmedSec: Number.NaN }],
+  ])('a non-finite %s is unreadable, never ok', async (_name, over) => {
+    const check = await checkFile(
+      await expectFor(at('source.wav'), { samplesKept: false, ...over }),
+      fileReaders,
+    )
+    expect(check.state).toBe('unreadable')
+  })
+
+  it.each(['source', 'output'])('an empty %s digest is unreadable, never equal', async (side) => {
+    const empty = { md5: '', sampleRate: 44100, channels: 2 }
+    const readers: FileReaders = {
+      ...fileReaders,
+      pcmDigest: async (path) => (side === 'output' ? empty : fileReaders.pcmDigest(path)),
+    }
+    const check = await checkFile(
+      await expectFor(at('source.wav'), side === 'source' ? { sourcePcm: empty } : {}),
+      readers,
+    )
+    expect(check.state).toBe('unreadable')
+  })
 })

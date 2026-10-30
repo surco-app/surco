@@ -178,6 +178,7 @@ async function judge(e: FileExpect, r: FileReaders): Promise<PlaceCheck> {
       actual: `${expectedFormat} ${probe.codecName}`,
     })
   const rate = Number(probe.sampleRate)
+  if (!Number.isFinite(rate) || rate <= 0) return check('unreadable', 'fileUnreadable')
   const bits = bitsOf(probe)
   if (e.bitDepth !== undefined && bits === 0) return check('unreadable', 'fileUnreadable')
   if (
@@ -206,12 +207,15 @@ async function judge(e: FileExpect, r: FileReaders): Promise<PlaceCheck> {
   if (identical) {
     const out = await r.pcmDigest(found)
     const src = e.sourcePcm as PcmDigest
+    if (!out.md5 || !src.md5) return check('unreadable', 'fileUnreadable')
     if (out.md5 !== src.md5 || out.sampleRate !== src.sampleRate || out.channels !== src.channels)
       return check('mismatch', 'filePcmDiffers')
   } else {
     const delivered = await r.deliveredDurationSec(found)
     if (delivered === null) return check('unreadable', 'fileUnreadable')
     const wanted = (e.sourceDurationSec as number) - e.trimmedSec
+    if (!Number.isFinite(wanted) || !Number.isFinite(delivered))
+      return check('unreadable', 'fileUnreadable')
     const tolerance = Math.max(DURATION_TOLERANCE_SEC, wanted * DURATION_TOLERANCE_RATIO)
     const lastFrame = (LAST_FRAME_SAMPLES[probe.codecName] ?? 0) / rate
     if (delivered < wanted - tolerance - lastFrame) return check('mismatch', 'fileTruncated')
