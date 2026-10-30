@@ -173,6 +173,20 @@ describe('checkTraktor', () => {
     expect(checkTraktor(nml(withCue(entry('Title.mp3'), '8000')), list, BOOT)).toEqual([null])
   })
 
+  // Two entries on one file can hold different cues, and nothing says which one the write
+  // read: the duplicate is the finding, like on a rename.
+  it('two entries left on the source are traktorAmbiguous, never a cue change', () => {
+    const original = nml(withCue(entry('Title.mp3'), '10000'), withCue(entry('Title.mp3'), '20000'))
+    const { list, written } = flush(original, [patch({ file: 'Title.mp3', ...elsewhere })])
+    expect(checkTraktor(written, list, BOOT)).toEqual([
+      {
+        place: 'traktor',
+        state: 'mismatch',
+        detail: { key: 'traktorAmbiguous', params: { count: 2 } },
+      },
+    ])
+  })
+
   it('an entry left on the source that is gone is traktorMissing', () => {
     const { list } = flush(nml(entry('Title.mp3')), [patch({ file: 'Title.mp3', ...elsewhere })])
     expect(checkTraktor(nml(entry('Other.mp3')), list, BOOT)[0]?.detail.key).toBe('traktorMissing')

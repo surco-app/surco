@@ -41,7 +41,7 @@ export function checkTraktor(
     const k = locationKey(e.volume, e.dir, e.file)
     at.set(k, (at.get(k) ?? 0) + 1)
     atAnyCase.set(k.toLowerCase(), (atAnyCase.get(k.toLowerCase()) ?? 0) + 1)
-    if (!cuesAt.has(k)) cuesAt.set(k, entryCues(nml.slice(e.start, e.end)))
+    cuesAt.set(k, entryCues(nml.slice(e.start, e.end)))
   }
   return list.map((e) => judge(at, atAnyCase, cuesAt, e, bootVolume))
 }
@@ -63,7 +63,10 @@ function judge(
     if (e.cues == null || !patch.outputDir || !patch.outputFile) return null
     const output = locationKey(patch.outputVolume || bootVolume, patch.outputDir, patch.outputFile)
     if (output === locationKey(volume, patch.dir, patch.file)) return null
-    const now = cuesAt.get(locationKey(volume, patch.dir, before))
+    const source = locationKey(volume, patch.dir, before)
+    const count = at.get(source) ?? 0
+    if (count > 1) return check('mismatch', 'traktorAmbiguous', { count })
+    const now = cuesAt.get(source)
     if (now === undefined) return check('mismatch', 'traktorMissing')
     if (now !== e.cues) return check('mismatch', 'traktorCuesChanged')
     return check('ok', 'traktorOk', { format: formatOf(extname(before)) })
