@@ -39,6 +39,7 @@ import { analysedTrack } from '../../main/enginePerformanceFixture'
 import { engineDbPath } from '../../main/enginePlaylistsFixture'
 import { libraryBackupRoot } from '../../main/libraryBackups'
 import { openRekordboxDb } from '../../main/rekordboxDb'
+import { defaults } from '../../main/settings'
 import { readTraktorCueStart, storedTree } from '../../main/traktor4Fixture'
 import type { OutputFormat } from '../../shared/types'
 import { music } from '../fakeMusic'
@@ -205,7 +206,13 @@ function pcmBroken(
     return ['pcm: no decodifica entero']
   }
   const frame = LOSSY.test(src.codec) || LOSSY.test(out.codec) ? 1152 : 2
-  const want = durationSec(source.path, src.rate) - (cell.quality === 'trim' ? TRIM_SEC : 0)
+  let want = durationSec(source.path, src.rate)
+  if (cell.quality === 'trim') {
+    const cut = Math.max(0, -markerLagMs(source.path, path) / 1000)
+    if (cut < 0.01 || cut > TRIM_SEC + frame / Math.min(src.rate, out.rate))
+      return [`pcm: el recorte quitó ${cut.toFixed(2)} s, el silencio era de ${TRIM_SEC} s`]
+    want -= cut
+  }
   const got = durationSec(path, out.rate)
   return Math.abs(got - want) <= frame / Math.min(src.rate, out.rate)
     ? []
@@ -415,6 +422,18 @@ function withTagFile<T>(path: string, read: (f: TagFile) => T): T | string {
   }
 }
 
+function paddedTrack(t: TrickyTags): TrickyTags {
+  if (/[A-Za-z]/.test(t.trackNumber)) return t
+  const pad = (v: string) => v.replace(/\D/g, '').padStart(2, '0')
+  const [number, total] = t.trackNumber.split('/')
+  return { ...t, trackNumber: total === undefined ? pad(number) : `${pad(number)}/${pad(total)}` }
+}
+
+function writtenTags(cell: Cell, t: TrickyTags): TrickyTags {
+  const zeroPad = cell.settings?.zeroPadTrack ?? defaults.zeroPadTrack
+  return zeroPad && cell.target !== 'alac' ? paddedTrack(t) : t
+}
+
 function tagsBroken(target: OutputFormat, t: TrickyTags, path: string, out: Probe): string[] {
   const frames = withTagFile(path, (f) => {
     if (target === 'flac')
@@ -525,7 +544,7 @@ export function fileInvariants(
     ...formatBroken(cell, src, path, out).map(as('format')),
     ...flacPrefixBroken(cell, path).map(as('format')),
     ...pcmBroken(cell, source, src, path, out).map(as('pcm')),
-    ...tagsBroken(cell.target, source.tags, path, out).map(as('tags')),
+    ...tagsBroken(cell.target, writtenTags(cell, source.tags), path, out).map(as('tags')),
     ...coverBroken(cell.target, path, expectedCoverSha1).map(as('cover')),
   ]
 }
@@ -827,6 +846,21 @@ function nmlPlaylist(nml: string, uuid: string): string[] | null {
   return [...list[0].matchAll(/<PRIMARYKEY\b[^>]*>/g)].map(([key]) => nmlKeyPath(key))
 }
 
+const TRAKTOR_CALIBRATION_MS: [string[], string[], number][] = [
+  [['.mp3'], ['.aif', '.aiff', '.flac'], -51],
+  [['.wav', '.aif', '.aiff', '.flac'], ['.mp3'], 51],
+]
+
+export function traktorCalibrationMs(sourceExt: string, outputExt: string): number {
+  const from = sourceExt.toLowerCase()
+  const to = outputExt.toLowerCase()
+  return (
+    TRAKTOR_CALIBRATION_MS.find(
+      ([sources, outputs]) => sources.includes(from) && outputs.includes(to),
+    )?.[2] ?? 0
+  )
+}
+
 function traktorBroken(nmlFile: string, set: LibrarySet, t: SeededTrack, e: Expected): Found[] {
   const nml = readFileSync(nmlFile, 'utf8')
   const final = canonical(e.at.traktor)
@@ -839,7 +873,8 @@ function traktorBroken(nmlFile: string, set: LibrarySet, t: SeededTrack, e: Expe
   )
   const candidates = byId.length > 0 ? byId : byTags
   const entry = candidates.length === 1 ? candidates[0] : undefined
-  const want = SEEDED_CUES_MS.map((ms) => ms + e.lagMs)
+  const shift = e.lagMs + traktorCalibrationMs(extname(t.path), extname(e.finalPath))
+  const want = SEEDED_CUES_MS.map((ms) => ms + shift)
   if (candidates.length > 1)
     found.push(['points', `Traktor: ${candidates.length} entradas posibles para la pista`])
   else if (!entry) found.push(['points', 'Traktor: la entrada ya no está'])
@@ -856,7 +891,7 @@ function traktorBroken(nmlFile: string, set: LibrarySet, t: SeededTrack, e: Expe
   if (t.cuesMs.length > 0 && extname(e.finalPath).toLowerCase() !== '.m4a') {
     const path = located(e.finalPath)
     const tree = path ? storedTree(path) : null
-    const wantFile = t.cuesMs.map((ms) => ms + e.lagMs)
+    const wantFile = t.cuesMs.map((ms) => ms + shift)
     if (!tree) found.push(['cues', 'Traktor: el fichero no lleva TRAKTOR4'])
     else {
       const starts = t.cuesMs.map((_, i) => readTraktorCueStart(tree, i))
@@ -1032,4 +1067,37 @@ export function libraryInvariants(
       .map(([, detail]): Found => ['collateral', `otra pista, ${detail}`]),
   ]
   return found.map(([invariant, detail]) => ({ invariant, detail }))
+}
+
+export interface OriginalFate {
+  status: string | undefined
+  sourcePath: string
+  finalPath: string
+  originals: string[]
+  osTrash: string[]
+  offered: string | null
+}
+
+export function originalBroken(o: OriginalFate): Broken[] {
+  const source = canonical(o.sourcePath)
+  if (o.status === 'ok' || source === canonical(o.finalPath)) return []
+  const said = o.status ?? 'ninguno'
+  const isSource = (path: string) => canonical(path) === source
+  const found: Broken[] = []
+  if (o.osTrash.some(isSource))
+    found.push({
+      invariant: 'unique',
+      detail: `papelera: el original fue a la Papelera con el veredicto ${said}`,
+    })
+  else if (!located(o.sourcePath) && !o.originals.some(isSource))
+    found.push({
+      invariant: 'unique',
+      detail: `papelera: el original se borró con el veredicto ${said}`,
+    })
+  if (o.offered && isSource(o.offered))
+    found.push({
+      invariant: 'unique',
+      detail: `papelera: se ofrece borrar el original con el veredicto ${said}`,
+    })
+  return found
 }

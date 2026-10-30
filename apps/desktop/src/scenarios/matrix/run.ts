@@ -6,23 +6,24 @@ import { isEngineDjRunning } from '../../main/engineProcess'
 import { isRekordboxRunning } from '../../main/rekordboxProcess'
 import { isTraktorRunning } from '../../main/traktorProcess'
 import { fromDestination } from '../../renderer/src/lib/destination'
+import { supersededFile } from '../../renderer/src/lib/supersededFile'
 import type { OutputFormat, Settings } from '../../shared/types'
-import type { Verification } from '../../shared/verification'
+import { osTrash } from '../electronFake'
 import { music } from '../fakeMusic'
 import { scenarioDir } from '../fixtures'
 import { type ConflictChoice, openSurco, type Sabotage, type Scenario } from '../harness'
 import { type Cell, type CellGroup, type Origin, qualitySettings } from './cells'
 import { buildLibraries, type LibrarySet, type SeededTrack, syncedPrograms } from './libraries'
 import {
-  type Broken,
   type Expected,
   fileInvariants,
   libraryInvariants,
   markerLagMs,
+  originalBroken,
   pointingAt,
 } from './oracle'
 import type { CellOutcome } from './report'
-import { makeSource, type SourceTrack } from './sources'
+import { makeSource } from './sources'
 
 const EXTENSION: Record<OutputFormat, string> = {
   aiff: '.aiff',
@@ -138,30 +139,6 @@ function programsOpen(open: boolean): void {
   vi.mocked(isTraktorRunning).mockResolvedValue(open)
 }
 
-async function trashBroken(
-  surco: Scenario,
-  source: SourceTrack,
-  finalPath: string,
-  verdict: Verification | undefined,
-): Promise<Broken[]> {
-  if (spelled(source.path) === spelled(finalPath)) return []
-  const kept = (await surco.trash.list()).some(
-    (entry) => spelled(entry.originalPath) === spelled(source.path),
-  )
-  if (verdict?.status === 'ok' && !kept && !existsSync(source.path))
-    return [
-      { invariant: 'unique', detail: 'papelera: el original no está en la papelera de Surco' },
-    ]
-  if (verdict?.status !== 'ok' && kept)
-    return [
-      {
-        invariant: 'unique',
-        detail: `papelera: el original se tiró con el veredicto ${verdict?.status ?? 'ninguno'}`,
-      },
-    ]
-  return []
-}
-
 export async function runGroup(group: CellGroup): Promise<CellOutcome[]> {
   const [first] = group.cells
   const root = scenarioDir(`matriz-${first.id}`)
@@ -241,6 +218,7 @@ export async function runGroup(group: CellGroup): Promise<CellOutcome[]> {
       const track = set.tracks[i]
       const finalPath = (toMusic(cell) && musicPlays(set, track)) || written[i]
       const name = rowName(surco, source.path, written[i])
+      const row = surco.tracks().find((t) => basename(t.inputPath) === name)
       const verdict = surco.verification(name)
       const fileExists = existsSync(finalPath)
       const consumed = cell.dest === 'overwrite' && inPlace(cell, source.path)
@@ -268,7 +246,14 @@ export async function runGroup(group: CellGroup): Promise<CellOutcome[]> {
         broken: [
           ...fileInvariants(cell, witness, finalPath, source.coverSha1),
           ...libraryInvariants(cell, set, track, expected),
-          ...(consumed ? await trashBroken(surco, source, finalPath, verdict) : []),
+          ...originalBroken({
+            status: verdict?.status,
+            sourcePath: source.path,
+            finalPath,
+            originals: (await surco.trash.list()).map((entry) => entry.originalPath),
+            osTrash,
+            offered: row ? supersededFile(row) : null,
+          }),
         ],
       }
     }),

@@ -1,6 +1,8 @@
+import { execFileSync } from 'node:child_process'
 import { copyFileSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join, relative } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
+import ffmpegStatic from 'ffmpeg-static'
 import { File as TagFile, TagTypes, type XiphComment } from 'node-taglib-sharp'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -13,7 +15,7 @@ import { toNmlLocation } from '../../main/ffmpeg'
 import { setLibraryBackupRoot } from '../../main/libraryBackups'
 import { takeCopy } from '../../main/libraryHistory'
 import { openRekordboxDb } from '../../main/rekordboxDb'
-import { buildTraktorTree, traktorCue } from '../../main/traktor4Fixture'
+import { buildTraktorTree, id3WithPriv, traktorCue } from '../../main/traktor4Fixture'
 import { bootVolumeName } from '../../main/traktorNmlLibrary'
 import { music } from '../fakeMusic'
 import { scenarioDir } from '../fixtures'
@@ -501,6 +503,77 @@ describe('Synthetic libraries the matrix judges on its own', () => {
         expect(beyondCollateral(judge(only, expected))).toEqual([])
       } finally {
         rmSync(beside)
+      }
+    })
+  })
+
+  // Traktor draws an MP3's markers 51 ms off from where it draws the same audio in a
+  // WAV (djotas, 10/09): a WAV turned into an MP3 has its Traktor cues 51 ms later, in the
+  // collection and in the file, on purpose.
+  describe('Traktor cues of a WAV made into an MP3 beside it', () => {
+    const only = cellWith('traktor')
+    const tree = (shift: number) =>
+      buildTraktorTree(SEEDED_CUES_MS.map((ms, i) => traktorCue(`c${i}`, 0, ms + shift, i)))
+
+    function mp3Beside(t: SeededTrack, shift: number): string {
+      const mp3 = join(dirname(t.path), 'junto.mp3')
+      execFileSync(ffmpegStatic as unknown as string, [
+        '-y',
+        '-v',
+        'error',
+        '-i',
+        t.path,
+        '-c:a',
+        'libmp3lame',
+        '-b:a',
+        '320k',
+        '-write_id3v2',
+        '0',
+        mp3,
+      ])
+      writeFileSync(mp3, Buffer.concat([id3WithPriv(tree(shift)), readFileSync(mp3)]))
+      return mp3
+    }
+
+    function repoint(t: SeededTrack, shift: number): void {
+      const file = basename(t.path).normalize('NFC')
+      traktor((nml) => {
+        const start = nml.indexOf(`AUDIO_ID="${t.traktorAudioId}"`)
+        const end = nml.indexOf('</ENTRY>', start)
+        const entry = nml
+          .slice(start, end)
+          .replace(`FILE="${file}"`, 'FILE="junto.mp3"')
+          .replace('START="10000.000000"', `START="${(10000 + shift).toFixed(6)}"`)
+          .replace('START="15000.000000"', `START="${(15000 + shift).toFixed(6)}"`)
+        return (nml.slice(0, start) + entry + nml.slice(end)).replaceAll(
+          `${file}"></PRIMARYKEY>`,
+          'junto.mp3"></PRIMARYKEY>',
+        )
+      })
+    }
+
+    it('expects the cues 51 ms later in the entry and in the file', () => {
+      const [, wav] = set.tracks
+      const mp3 = mp3Beside(wav, 51)
+      try {
+        repoint(wav, 51)
+        const broken = libraryInvariants(only, set, wav, untouched(wav, { finalPath: mp3 }))
+        expect(beyondCollateral(broken)).toEqual([])
+      } finally {
+        rmSync(mp3)
+      }
+    })
+
+    it('sees cues left where the WAV had them', () => {
+      const [, wav] = set.tracks
+      const mp3 = mp3Beside(wav, 0)
+      try {
+        repoint(wav, 0)
+        const broken = libraryInvariants(only, set, wav, untouched(wav, { finalPath: mp3 }))
+        seen(broken, 'cues', 'Traktor: CUE_V2')
+        seen(broken, 'cues', 'Traktor: TRAKTOR4')
+      } finally {
+        rmSync(mp3)
       }
     })
   })

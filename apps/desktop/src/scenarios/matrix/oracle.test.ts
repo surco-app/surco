@@ -22,7 +22,13 @@ import { emptyMetadata } from '../../shared/metadata'
 import type { OutputFormat } from '../../shared/types'
 import { coverJpg, scenarioDir } from '../fixtures'
 import { CELLS, type Cell } from './cells'
-import { fileInvariants, markerLagMs, pcmSha1 } from './oracle'
+import {
+  fileInvariants,
+  markerLagMs,
+  originalBroken,
+  pcmSha1,
+  traktorCalibrationMs,
+} from './oracle'
 import { makeSource, type SourceTrack, TRICKY, type TrickyTags } from './sources'
 
 const FF = ffmpegStatic as unknown as string
@@ -44,6 +50,9 @@ function cellOf(id: string): Cell {
 function sha1(path: string): string {
   return createHash('sha1').update(readFileSync(path)).digest('hex')
 }
+
+const padded = (tags: TrickyTags): TrickyTags =>
+  tags.trackNumber === '3/12' ? { ...tags, trackNumber: '03/12' } : tags
 
 function vorbisFields(tags: TrickyTags): [string, string][] {
   const [track, trackTotal] = tags.trackNumber.split('/')
@@ -99,7 +108,7 @@ function encodeFlac(source: SourceTrack, path: string, cover: string | null): vo
     ...ENCODE.flac.args,
     path,
   ])
-  setVorbis(path, vorbisFields(source.tags))
+  setVorbis(path, vorbisFields(padded(source.tags)))
 }
 
 function convertByHand(
@@ -128,7 +137,7 @@ function convertByHand(
     ...args,
     path,
   ])
-  writeTags(path, { ...emptyMetadata(), ...source.tags }, cover)
+  writeTags(path, { ...emptyMetadata(), ...padded(source.tags) }, cover)
   return { path, coverSha1: sha1(cover) }
 }
 
@@ -174,8 +183,25 @@ describe('matrix file oracle', () => {
     expect(fileInvariants(cellOf('C-flac-aiff'), flac, aiff.path, aiff.coverSha1)).toEqual([])
   })
 
-  it('passes an untouched FLAC as its own samples-kept FLAC output', () => {
-    expect(fileInvariants(cellOf('C-flac-flac'), flac, flac.path, flac.coverSha1)).toEqual([])
+  it('passes an untouched FLAC as its own samples-kept FLAC output when tracks are not padded', () => {
+    const unpadded = { ...cellOf('C-flac-flac'), settings: { zeroPadTrack: false } }
+    expect(fileInvariants(unpadded, flac, flac.path, flac.coverSha1)).toEqual([])
+  })
+
+  it('expects the track number padded the way the cell has Surco write it', () => {
+    const tracks = (cell: Cell, path: string) =>
+      fileInvariants(cell, flac, path, null)
+        .map((b) => b.detail)
+        .filter((d) => d.startsWith('pista') || d.startsWith('ffprobe: track'))
+    expect(tracks(cellOf('C-flac-aiff'), aiff.path)).toEqual([])
+    const off = { ...cellOf('C-flac-aiff'), settings: { zeroPadTrack: false } }
+    expect(tracks(off, aiff.path)).toContain("pista: TRCK '03/12', se esperaba '3/12'")
+    const plain = convertByHand(flac, 'aiff', dir, 'plain')
+    editId3(plain.path, (id3) => setText(id3, Id3v2FrameIdentifiers.TRCK, ['3/12']))
+    expect(tracks(cellOf('C-flac-aiff'), plain.path)).toContain(
+      "pista: TRCK '3/12', se esperaba '03/12'",
+    )
+    expect(tracks(off, plain.path)).toEqual([])
   })
 
   it.each(['wav', 'flac', 'alac', 'mp3'] as OutputFormat[])(
@@ -231,7 +257,7 @@ describe('matrix file oracle', () => {
     const broken = fileInvariants(cellOf('C-flac-aiff'), flac, out.path, out.coverSha1)
     expect(broken.every((b) => b.invariant === 'tags')).toBe(true)
     const details = broken.map((b) => b.detail)
-    expect(details).toContain("pista: TRCK '312', se esperaba '3/12'")
+    expect(details).toContain("pista: TRCK '312', se esperaba '03/12'")
     expect(details).toContain("disco: TPOS '0', se esperaba '1/2'")
   })
 
@@ -288,11 +314,15 @@ describe('matrix file oracle', () => {
 
   it('fails cover when the picture is another one or gone', () => {
     const out = convertByHand(flac, 'aiff', dir, 'cover')
-    writeTags(out.path, { ...emptyMetadata(), ...TRICKY }, coverJpg(join(dir, 'other.jpg'), 20))
+    writeTags(
+      out.path,
+      { ...emptyMetadata(), ...padded(TRICKY) },
+      coverJpg(join(dir, 'other.jpg'), 20),
+    )
     expect(fileInvariants(cellOf('C-flac-aiff'), flac, out.path, out.coverSha1)).toEqual([
       { invariant: 'cover', detail: 'carátula: no es la que se preparó' },
     ])
-    writeTags(out.path, { ...emptyMetadata(), ...TRICKY }, undefined, true)
+    writeTags(out.path, { ...emptyMetadata(), ...padded(TRICKY) }, undefined, true)
     expect(fileInvariants(cellOf('C-flac-aiff'), flac, out.path, out.coverSha1)).toEqual([
       { invariant: 'cover', detail: 'carátula: ausente' },
     ])
@@ -313,7 +343,7 @@ describe('matrix file oracle', () => {
       asDefault.path,
       asDefault.coverSha1,
     ).map((b) => b.detail)
-    expect(details).toContain("pista: TRCK '3/12', se esperaba 'A2'")
+    expect(details).toContain("pista: TRCK '03/12', se esperaba 'A2'")
     expect(details).toContain("título: TIT2 'Café Olé', se esperaba 'Señal'")
   })
 
@@ -378,6 +408,105 @@ describe('matrix file oracle', () => {
       trimmed,
     ])
     expect(markerLagMs(lead.path, trimmed)).toBeCloseTo(-2000, 1)
+  })
+
+  // The adaptive gate cuts where the silence really ends, not a fixed 2 s; the oracle takes
+  // the cut from where the marker moved and demands nothing else went missing.
+  describe('a trimmed result', () => {
+    const lead = makeSource(dir, 'wav24', { leadSilenceSec: 2, fileName: 'trim-lead' })
+    const cut = (name: string, filter: string) => {
+      const out = join(dir, `${name}.aiff`)
+      execFileSync(FF, [
+        '-y',
+        '-v',
+        'error',
+        '-i',
+        lead.path,
+        '-af',
+        filter,
+        '-c:a',
+        'pcm_s24be',
+        out,
+      ])
+      return fileInvariants(cellOf('Q-trim-wav24'), lead, out, null).filter(
+        (b) => b.invariant === 'pcm',
+      )
+    }
+
+    it('accepts the 1.9 s the gate cut', () => {
+      expect(cut('trim-19', 'atrim=start=1.9,asetpts=PTS-STARTPTS')).toEqual([])
+    })
+
+    it('sees the tail cut as well', () => {
+      expect(cut('trim-tail', 'atrim=start=1.9:end=21.5,asetpts=PTS-STARTPTS')).toEqual([
+        { invariant: 'pcm', detail: expect.stringContaining('pcm: dura') },
+      ])
+    })
+
+    it('sees a cut that ate into the music', () => {
+      expect(cut('trim-deep', 'atrim=start=2.5,asetpts=PTS-STARTPTS')).toEqual([
+        { invariant: 'pcm', detail: expect.stringContaining('pcm: el recorte quitó 2.50 s') },
+      ])
+    })
+
+    it('sees a trim that cut nothing', () => {
+      expect(cut('trim-none', 'anull')).toEqual([
+        { invariant: 'pcm', detail: expect.stringContaining('pcm: el recorte quitó 0.00 s') },
+      ])
+    })
+  })
+
+  it('shifts Traktor cues by the calibration djotas measured in Traktor', () => {
+    expect(traktorCalibrationMs('.mp3', '.aiff')).toBe(-51)
+    expect(traktorCalibrationMs('.mp3', '.aif')).toBe(-51)
+    expect(traktorCalibrationMs('.MP3', '.flac')).toBe(-51)
+    expect(traktorCalibrationMs('.wav', '.mp3')).toBe(51)
+    expect(traktorCalibrationMs('.flac', '.mp3')).toBe(51)
+    expect(traktorCalibrationMs('.aiff', '.mp3')).toBe(51)
+    expect(traktorCalibrationMs('.mp3', '.wav')).toBe(0)
+    expect(traktorCalibrationMs('.mp3', '.mp3')).toBe(0)
+    expect(traktorCalibrationMs('.mp3', '.m4a')).toBe(0)
+    expect(traktorCalibrationMs('.m4a', '.mp3')).toBe(0)
+    expect(traktorCalibrationMs('.flac', '.aiff')).toBe(0)
+  })
+
+  // Surco's Originals are a way back, not a loss: only the system Trash, a file gone for
+  // good, or an offer to delete it count, and only while the self-check has not said ok.
+  describe('what became of the original', () => {
+    const source = join(dir, 'orig.flac')
+    const final = join(dir, 'orig.aiff')
+    const base = { sourcePath: source, finalPath: final, originals: [], osTrash: [], offered: null }
+
+    it('accepts an original kept in Originals whatever the verdict', () => {
+      expect(originalBroken({ ...base, status: 'mismatch', originals: [source] })).toEqual([])
+    })
+
+    it('sees the original sent to the system Trash before the verdict was ok', () => {
+      expect(originalBroken({ ...base, status: 'mismatch', osTrash: [source] })).toEqual([
+        {
+          invariant: 'unique',
+          detail: 'papelera: el original fue a la Papelera con el veredicto mismatch',
+        },
+      ])
+      expect(originalBroken({ ...base, status: 'ok', osTrash: [source] })).toEqual([])
+    })
+
+    it('sees the original gone for good before the verdict was ok', () => {
+      expect(originalBroken({ ...base, status: 'pending' })).toEqual([
+        { invariant: 'unique', detail: 'papelera: el original se borró con el veredicto pending' },
+      ])
+    })
+
+    it('sees a deletion offered before the verdict was ok', () => {
+      expect(
+        originalBroken({ ...base, status: undefined, originals: [source], offered: source }),
+      ).toEqual([
+        {
+          invariant: 'unique',
+          detail: 'papelera: se ofrece borrar el original con el veredicto ninguno',
+        },
+      ])
+    })
   })
 
   it('measures mp3x and mp3n lags separately', () => {
