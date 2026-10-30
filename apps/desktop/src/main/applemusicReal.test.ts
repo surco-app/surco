@@ -107,8 +107,8 @@ async function locationOf(pid: string): Promise<string> {
   return facts.location
 }
 
-async function checkEntry(pid: string, title: string, replacedPid?: string) {
-  const file = await locationOf(pid)
+async function checkEntry(pid: string, title: string, replacedPid?: string, knownFile?: string) {
+  const file = knownFile ?? (await locationOf(pid))
   return checkAppleMusic(
     {
       pid,
@@ -358,10 +358,9 @@ describe.skipIf(!real)('Apple Music against the real app', () => {
     const file = await locationOf(pid)
     rmSync(file, { force: true })
 
-    const verdict = await checkEntry(pid, title).catch(() => undefined)
+    const verdict = await checkEntry(pid, title, undefined, file)
 
-    expect(verdict).toBeDefined()
-    expect(verdict?.state).not.toBe('ok')
-    expect(['musicNoFile', 'musicUnreadable', 'musicOtherFile']).toContain(verdict?.detail.key)
+    expect(verdict.state).not.toBe('ok')
+    expect(['musicNoFile', 'musicUnreadable', 'musicOtherFile']).toContain(verdict.detail.key)
   }, 120_000)
 })
