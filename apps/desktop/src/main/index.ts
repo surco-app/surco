@@ -565,7 +565,11 @@ let engineQuitPrompt: Promise<boolean> | null = null
 // the library write, since Engine would not see it and could overwrite it on exit.
 async function ensureEngineDjClosed(
   win: BrowserWindow | null,
-  detail: 'engineQuitDetail' | 'engineQuitDetailCues' | 'engineQuitDetailUsb' = 'engineQuitDetail',
+  detail:
+    | 'engineQuitDetail'
+    | 'engineQuitDetailCues'
+    | 'engineQuitDetailUsb'
+    | 'engineQuitDetailRestore' = 'engineQuitDetail',
 ): Promise<boolean> {
   if (!(await isEngineDjRunning())) return true
   engineQuitPrompt ??= (async () => {
@@ -601,7 +605,8 @@ async function ensureTraktorClosed(
   detail:
     | 'traktorQuitDetail'
     | 'traktorQuitDetailCues'
-    | 'traktorQuitDetailPlaylists' = 'traktorQuitDetail',
+    | 'traktorQuitDetailPlaylists'
+    | 'traktorQuitDetailRestore' = 'traktorQuitDetail',
 ): Promise<boolean> {
   if (!(await isTraktorRunning())) return true
   traktorQuitPrompt ??= (async () => {
@@ -639,7 +644,11 @@ async function ensureTraktorClosed(
 // convert the whole track again to get another attempt.
 const rekordboxQuitPrompt = sharedPrompt(
   async (
-    detail: 'rekordboxQuitDetail' | 'rekordboxQuitDetailPlaylists' | 'rekordboxQuitDetailUsb',
+    detail:
+      | 'rekordboxQuitDetail'
+      | 'rekordboxQuitDetailPlaylists'
+      | 'rekordboxQuitDetailUsb'
+      | 'rekordboxQuitDetailRestore',
     win: BrowserWindow | null,
   ): Promise<boolean> => {
     if (!(await isRekordboxRunning())) return true
@@ -667,7 +676,8 @@ function ensureRekordboxClosed(
   detail:
     | 'rekordboxQuitDetail'
     | 'rekordboxQuitDetailPlaylists'
-    | 'rekordboxQuitDetailUsb' = 'rekordboxQuitDetail',
+    | 'rekordboxQuitDetailUsb'
+    | 'rekordboxQuitDetailRestore' = 'rekordboxQuitDetail',
 ): Promise<boolean> {
   return rekordboxQuitPrompt(detail, win)
 }
@@ -1899,7 +1909,7 @@ function registerIpc(): void {
         untouched: () => !getSettings().syncRekordbox,
         session: rekordboxSessionBackup,
         queue: rekordboxQueue,
-        ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
+        ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailRestore'),
         isRunning: isRekordboxRunning,
         pendingLog: rekordboxPendingLog,
       },
@@ -1908,7 +1918,7 @@ function registerIpc(): void {
         untouched: () => !getSettings().syncTraktor,
         session: traktorSessionBackup,
         queue: traktorCueQueue,
-        ensureClosed: (win) => ensureTraktorClosed(win, 'traktorQuitDetailCues'),
+        ensureClosed: (win) => ensureTraktorClosed(win, 'traktorQuitDetailRestore'),
         isRunning: isTraktorRunning,
         pendingLog: () => false,
       },
@@ -1920,7 +1930,7 @@ function registerIpc(): void {
         untouched: () => !getSettings().syncEngineDj,
         session: engineSessionBackup,
         queue: engineCueQueue,
-        ensureClosed: (win) => ensureEngineDjClosed(win, 'engineQuitDetailCues'),
+        ensureClosed: (win) => ensureEngineDjClosed(win, 'engineQuitDetailRestore'),
         isRunning: isEngineDjRunning,
         pendingLog: enginePendingLog,
       },

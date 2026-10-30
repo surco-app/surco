@@ -2841,7 +2841,8 @@
       "not-found": "This backup no longer matches your current collection.",
       "other-collection": "This backup no longer matches your current collection.",
       "failed": "Couldn't restore. Your library hasn't changed.",
-      "busy": "Surco is converting tracks. Wait for it to finish and try again."
+      "busy": "Surco is converting tracks. Wait for it to finish and try again.",
+      "partial": "The restore of {{program}} was left half done. Close it and restore this copy again, or go back with “Before restoring”."
     },
     "restored": "Done: {{program}} is back to how it was {{when}}.",
     "music": {

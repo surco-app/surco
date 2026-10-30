@@ -143,7 +143,7 @@ describe('restoreCopy', () => {
     expect(d.discardQueue).not.toHaveBeenCalled()
   })
 
-  it('stops if the program opens mid-restore', async () => {
+  it('stops if the program opens mid-restore and says the restore is half done', async () => {
     const db = collection('rekordbox', 'master.db', 'db-before')
     const xml = collection('rekordbox', 'masterPlaylists6.xml', 'xml-before')
     const copy = await takeCopy(db, [xml], 'cues', 1)
@@ -153,7 +153,7 @@ describe('restoreCopy', () => {
     const d = deps({ isRunning })
     expect(await restoreCopy({ collectionPath: db, copyId: copy.id }, d)).toEqual({
       ok: false,
-      reason: 'running',
+      reason: 'partial',
     })
     expect(readFileSync(db, 'utf8')).toBe('db-before')
     expect(readFileSync(xml, 'utf8')).toBe('xml-after')
@@ -178,7 +178,21 @@ describe('restoreCopy', () => {
     expect(d.discardQueue).not.toHaveBeenCalled()
   })
 
-  it('treats a failing running check as the program being open and leaves no temp files', async () => {
+  it('a running check that fails before any file was replaced is a failure, not an open program', async () => {
+    const path = collection('Traktor', 'collection.nml', 'before')
+    const copy = await takeCopy(path, [], 'run', 1)
+    writeFileSync(path, 'after')
+    const d = deps({ isRunning: async () => Promise.reject(new Error('ps')) })
+    expect(await restoreCopy({ collectionPath: path, copyId: copy.id }, d)).toEqual({
+      ok: false,
+      reason: 'failed',
+    })
+    expect(readFileSync(path, 'utf8')).toBe('after')
+    expect(leftovers(path)).toEqual([])
+    expect(d.discardQueue).not.toHaveBeenCalled()
+  })
+
+  it('a running check that fails after a file was replaced says the restore is half done and leaves no temp files', async () => {
     const db = collection('rekordbox', 'master.db', 'db-before')
     const xml = collection('rekordbox', 'masterPlaylists6.xml', 'xml-before')
     const copy = await takeCopy(db, [xml], 'cues', 1)
@@ -188,7 +202,7 @@ describe('restoreCopy', () => {
     const d = deps({ isRunning })
     expect(await restoreCopy({ collectionPath: db, copyId: copy.id }, d)).toEqual({
       ok: false,
-      reason: 'running',
+      reason: 'partial',
     })
     expect(readFileSync(xml, 'utf8')).toBe('xml-after')
     expect(leftovers(db)).toEqual([])

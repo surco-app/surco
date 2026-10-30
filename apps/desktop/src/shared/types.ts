@@ -1810,6 +1810,7 @@ export type RestoreRefusal =
   | 'other-collection'
   | 'failed'
   | 'busy'
+  | 'partial'
 
 export type RestoreResult = { ok: true } | { ok: false; reason: RestoreRefusal }
 

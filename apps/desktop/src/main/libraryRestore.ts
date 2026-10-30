@@ -76,12 +76,21 @@ export async function restoreCopy(
   let replaced = false
   const stop = async (reason: RestoreRefusal): Promise<RestoreResult> => {
     await clean()
-    if (!replaced) await undo?.discard()
-    if (replaced) deps.discardQueue()
-    return { ok: false, reason }
+    if (!replaced) {
+      await undo?.discard()
+      return { ok: false, reason }
+    }
+    deps.discardQueue()
+    return { ok: false, reason: 'partial' }
   }
   while (pending.length > 0) {
-    if (await deps.isRunning().catch(() => true)) return stop('running')
+    let running: boolean
+    try {
+      running = await deps.isRunning()
+    } catch {
+      return stop('failed')
+    }
+    if (running) return stop('running')
     try {
       await renameWithRetry(pending[0].from, pending[0].to)
     } catch {

@@ -271,6 +271,23 @@ describe('CopiesScreen', () => {
     )
   })
 
+  it('a restore left half done says so and how to finish or undo it, never that nothing changed', async () => {
+    renderScreen([program('traktor', { copies: [latest] })], {
+      onRestore: vi.fn(async () => ({ ok: false, reason: 'partial' }) as RestoreResult),
+    })
+    fireEvent.click(screen.getByTestId('copies-restore-traktor'))
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('confirm-ok'))
+    })
+    const name = i18n.t('sources.traktor')
+    expect(screen.getByTestId('copies-refused-traktor')).toHaveTextContent(
+      i18n.t('copies.refused.partial', { program: name }),
+    )
+    expect(i18n.t('copies.refused.partial', { program: name })).toBe(
+      'The restore of Traktor was left half done. Close it and restore this copy again, or go back with “Before restoring”.',
+    )
+  })
+
   it('restore stays available for a program set to "No tocar"', () => {
     renderScreen([program('engine', { untouched: true, copies: [latest] })])
     expect(screen.getByTestId('copies-state-engine')).toHaveTextContent(

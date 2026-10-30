@@ -2841,7 +2841,8 @@
       "not-found": "Dieses Backup gehört nicht mehr zu deiner aktuellen Sammlung.",
       "other-collection": "Dieses Backup gehört nicht mehr zu deiner aktuellen Sammlung.",
       "failed": "Wiederherstellen nicht möglich. Deine Bibliothek ist unverändert.",
-      "busy": "Surco konvertiert gerade Tracks. Warte, bis es fertig ist, und versuche es erneut."
+      "busy": "Surco konvertiert gerade Tracks. Warte, bis es fertig ist, und versuche es erneut.",
+      "partial": "Die Wiederherstellung von {{program}} ist nur halb fertig geworden. Schließe es und stelle diese Kopie erneut wieder her, oder geh mit „Vor dem Wiederherstellen“ zurück."
     },
     "restored": "Fertig: {{program}} ist wieder auf dem Stand von {{when}}.",
     "music": {

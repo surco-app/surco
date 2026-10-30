@@ -2841,7 +2841,8 @@
       "not-found": "Cette sauvegarde ne correspond plus à ta collection actuelle.",
       "other-collection": "Cette sauvegarde ne correspond plus à ta collection actuelle.",
       "failed": "La restauration a échoué. Ta bibliothèque n'a pas changé.",
-      "busy": "Surco est en train de convertir des morceaux. Attends que ce soit fini et réessaie."
+      "busy": "Surco est en train de convertir des morceaux. Attends que ce soit fini et réessaie.",
+      "partial": "La restauration de {{program}} est restée à moitié faite. Ferme-le et restaure à nouveau cette copie, ou reviens en arrière avec « Avant la restauration »."
     },
     "restored": "C'est fait : {{program}} est revenu tel qu'il était {{when}}.",
     "music": {

@@ -2841,7 +2841,8 @@
       "not-found": "Esta copia ya no corresponde a tu colección actual.",
       "other-collection": "Esta copia ya no corresponde a tu colección actual.",
       "failed": "No se pudo restaurar. Tu biblioteca no ha cambiado.",
-      "busy": "Surco está convirtiendo pistas. Espera a que termine y vuelve a intentarlo."
+      "busy": "Surco está convirtiendo pistas. Espera a que termine y vuelve a intentarlo.",
+      "partial": "La restauración de {{program}} quedó a medias. Ciérralo y vuelve a restaurar esta copia, o vuelve atrás con «Antes de restaurar»."
     },
     "restored": "Listo: {{program}} ha vuelto a como estaba {{when}}.",
     "music": {
