@@ -17,6 +17,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron-log/main', () => ({ default: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }))
 vi.mock('./traktorProcess', () => ({ isTraktorRunning: vi.fn().mockResolvedValue(false) }))
+vi.mock('./verifyFile', () => ({ formatOf: (ext: string) => ext.slice(1).toUpperCase() }))
 
 // Only `rename`/`copyFile` are faked, and only for the tests that need one
 // of them to fail in isolation: every other test relies on the real read/copy/write/
@@ -61,8 +62,10 @@ vi.mock('electron', () => ({
 import { backupOf } from './libraryBackups'
 import { copyFolder, listCopies } from './libraryHistory'
 import { createSessionBackup, type SessionBackup } from './rekordboxSessionBackup'
+import { buildTraktorTree, traktorCue } from './traktor4Fixture'
 import { bootVolumeName, replaceDuplicatesInCollection, syncCollection } from './traktorNmlLibrary'
 import { isTraktorRunning } from './traktorProcess'
+import { checkTraktor } from './verifyTraktor'
 
 const NML = `<NML VERSION="19"><COLLECTION ENTRIES="1">
 <ENTRY TITLE="Uno"><LOCATION DIR="/:M/:" FILE="uno.aiff" VOLUME="HD"></LOCATION></ENTRY>
@@ -107,6 +110,166 @@ describe('syncCollection on the boot disk', () => {
     expect(readFileSync(nmlPath, 'utf8')).toContain('uno.flac')
   })
 
+  // The count is what the DJ reads as "N tracks updated"; a boot-disk track the write did
+  // move has to be in it.
+  it('counts a boot-disk track the write moved', async () => {
+    writeFileSync(
+      nmlPath,
+      NML.replace('DIR="/:M/:"', 'DIR="/:Users/:dj/:M/:"').replace(
+        'VOLUME="HD"',
+        'VOLUME="Macintosh HD"',
+      ),
+    )
+    const result = await syncCollection(
+      nmlPath,
+      [{ volume: '', dir: '/:Users/:dj/:M/:', file: 'uno.aiff', newFile: 'uno.flac' }],
+      session,
+      'Macintosh HD',
+    )
+
+    expect(result).toMatchObject({ written: true, matched: 1 })
+  })
+
+  // A boot-disk path records an empty volume for the output as well as for the source. Read
+  // as "no output known", the converted file's calibrated cues landed on the entry still
+  // naming the MP3 left in its folder: every cue 51 ms early over audio that never changed.
+  describe('a conversion into another folder', () => {
+    const cue = (name: string, start: string, hotcue: number) =>
+      `<CUE_V2 NAME="${name}" DISPL_ORDER="0" TYPE="0" START="${start}" LEN="0.000000" REPEATS="-1" HOTCUE="${hotcue}"></CUE_V2>`
+    const entryAt = (dir: string, file: string, volume = 'Macintosh HD') =>
+      `<ENTRY TITLE="Uno"><LOCATION DIR="${dir}" FILE="${file}" VOLUME="${volume}"></LOCATION>${cue('Intro', '10000.000000', 1)}${cue('Break', '15000.000000', 2)}</ENTRY>`
+    const source = entryAt('/:Users/:dj/:M/:', 'uno.mp3')
+    const converted = {
+      volume: '',
+      dir: '/:Users/:dj/:M/:',
+      file: 'uno.mp3',
+      cueTree: buildTraktorTree([traktorCue('Intro', 0, 9949, 1)]),
+      cueShift: { shiftMs: 51 },
+      outputVolume: '',
+      outputDir: '/:Users/:dj/:Out/:',
+      outputFile: 'uno.aiff',
+    }
+
+    // A NAS path names its volume and a boot-disk one leaves it empty: the two locations
+    // still differ, so the entry on the share keeps its cues.
+    it('leaves the cues of a source on a NAS when the output lands on the boot disk', async () => {
+      const shared = entryAt('/:M/:', 'uno.mp3', 'NAS')
+      writeFileSync(
+        nmlPath,
+        `<NML VERSION="19"><COLLECTION ENTRIES="1">\n${shared}\n</COLLECTION></NML>`,
+      )
+      const fromNas = { ...converted, volume: 'NAS', dir: '/:M/:' }
+
+      const result = await syncCollection(nmlPath, [fromNas], session, 'Macintosh HD')
+
+      const written = readFileSync(nmlPath, 'utf8')
+      expect(written).toContain(shared)
+      expect(
+        checkTraktor(
+          written,
+          [
+            {
+              patch: fromNas,
+              before: result.before?.[0] ?? null,
+              cues: result.cues?.[0],
+              stranded: false,
+            },
+          ],
+          'Macintosh HD',
+        )[0]?.detail.key,
+      ).toBe('traktorOk')
+    })
+
+    // Beside the source, but the collection already has the converted file: the entry is not
+    // moved onto a path another one holds, so it stays on the MP3 with its cues.
+    it('leaves the source cues when the converted file already has its own entry', async () => {
+      const output = entryAt('/:Users/:dj/:M/:', 'uno.aiff')
+      writeFileSync(
+        nmlPath,
+        `<NML VERSION="19"><COLLECTION ENTRIES="2">\n${source}\n${output}\n</COLLECTION></NML>`,
+      )
+
+      await syncCollection(
+        nmlPath,
+        [{ ...converted, newFile: 'uno.aiff', outputDir: converted.dir }],
+        session,
+        'Macintosh HD',
+      )
+
+      expect(readFileSync(nmlPath, 'utf8')).toContain(source)
+    })
+
+    it('leaves the cues of the entry still on the source byte for byte', async () => {
+      writeFileSync(
+        nmlPath,
+        `<NML VERSION="19"><COLLECTION ENTRIES="1">\n${source}\n</COLLECTION></NML>`,
+      )
+
+      await syncCollection(nmlPath, [converted], session, 'Macintosh HD')
+
+      expect(readFileSync(nmlPath, 'utf8')).toContain(source)
+    })
+
+    it('moves the cues once, by the calibration, on the entry that follows the file', async () => {
+      writeFileSync(
+        nmlPath,
+        `<NML VERSION="19"><COLLECTION ENTRIES="1">\n${source}\n</COLLECTION></NML>`,
+      )
+
+      await syncCollection(
+        nmlPath,
+        [{ ...converted, newFile: 'uno.aiff', outputDir: converted.dir }],
+        session,
+        'Macintosh HD',
+      )
+
+      expect(readFileSync(nmlPath, 'utf8')).toContain(
+        `FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION>${cue('Intro', '9949.000000', 1)}${cue('Break', '14949.000000', 2)}</ENTRY>`,
+      )
+    })
+
+    // The self-check is what the DJ sees: a source entry the write moved must not read as ok.
+    it('checks the entry left on the source against its cues before the write', async () => {
+      writeFileSync(
+        nmlPath,
+        `<NML VERSION="19"><COLLECTION ENTRIES="1">\n${source}\n</COLLECTION></NML>`,
+      )
+
+      const result = await syncCollection(nmlPath, [converted], session, 'Macintosh HD')
+
+      expect(
+        checkTraktor(
+          readFileSync(nmlPath, 'utf8'),
+          [
+            {
+              patch: converted,
+              before: result.before?.[0] ?? null,
+              cues: result.cues?.[0],
+              stranded: false,
+            },
+          ],
+          'Macintosh HD',
+        ),
+      ).toEqual([
+        { place: 'traktor', state: 'ok', detail: { key: 'traktorOk', params: { format: 'MP3' } } },
+      ])
+    })
+
+    it('gives the converted file its own cues on the entry that names it', async () => {
+      const output = entryAt('/:Users/:dj/:Out/:', 'uno.aiff')
+      writeFileSync(
+        nmlPath,
+        `<NML VERSION="19"><COLLECTION ENTRIES="2">\n${source}\n${output}\n</COLLECTION></NML>`,
+      )
+
+      await syncCollection(nmlPath, [converted], session, 'Macintosh HD')
+
+      const written = readFileSync(nmlPath, 'utf8')
+      expect(written).toContain(source)
+      expect(written).toMatch(/FILE="uno\.aiff"[^\n]*NAME="Intro"[^>]*START="9949\.000000"/)
+    })
+  })
+
   // The check after the write judges each track against the entry its patch moved, read
   // from the collection the write replaced: afterwards the old name is gone.
   it('names the entry each patch matched before the write, null where Traktor had none', async () => {
@@ -137,7 +300,13 @@ describe('syncCollection on the boot disk', () => {
       session,
     )
 
-    expect(result).toEqual({ written: false, matched: 0, reason: 'no-matches', before: [null] })
+    expect(result).toEqual({
+      written: false,
+      matched: 0,
+      reason: 'no-matches',
+      before: [null],
+      cues: [null],
+    })
   })
 
   // Song.wav no está en Traktor y Song.mp3 sí, con sus cues y playlists. Convertir el WAV
@@ -476,6 +645,40 @@ describe('syncCollection refreshes the cached artwork', () => {
         },
       ],
       session,
+    )
+
+    expect(statSync(audio).mtimeMs).toBeGreaterThan(statSync(nmlPath).mtimeMs)
+  })
+
+  it('makes a detached conversion on the boot disk newer than the collection', async () => {
+    writeFileSync(
+      nmlPath,
+      `<NML VERSION="19"><COLLECTION ENTRIES="2">
+<ENTRY TITLE="Uno"><INFO COVERARTID="042/ABC"></INFO><LOCATION DIR="/:M/:" FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION></ENTRY>
+<ENTRY TITLE="Uno"><INFO COVERARTID="042/ABC"></INFO><LOCATION DIR="/:Out/:" FILE="uno.flac" VOLUME="Macintosh HD"></LOCATION></ENTRY>
+</COLLECTION></NML>`,
+    )
+    const audio = join(dir, 'uno.flac')
+    writeFileSync(audio, 'audio')
+    const stale = new Date(Date.now() - 60_000)
+    utimesSync(audio, stale, stale)
+
+    await syncCollection(
+      nmlPath,
+      [
+        {
+          volume: '',
+          dir: '/:M/:',
+          file: 'uno.aiff',
+          refreshCoverArt: true,
+          outputPath: audio,
+          outputVolume: '',
+          outputDir: '/:Out/:',
+          outputFile: 'uno.flac',
+        },
+      ],
+      session,
+      'Macintosh HD',
     )
 
     expect(statSync(audio).mtimeMs).toBeGreaterThan(statSync(nmlPath).mtimeMs)

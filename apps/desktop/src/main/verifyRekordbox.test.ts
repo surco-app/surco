@@ -301,6 +301,17 @@ describe('checkRekordbox', () => {
     expect(checkOne(db, expectFor(before, { from, to }))[0].state).toBe('ok')
   })
 
+  it('an NFC FolderPath matches an NFD file', () => {
+    const from = '/Volumes/Music/Señor/Café.aiff'.normalize('NFD')
+    const to = '/Volumes/Music/Señor/Café.wav'.normalize('NFD')
+    const db = collection([{ path: from.normalize('NFC') }])
+    analyse(db, '100')
+    const before = snapshot(db, from)
+    expect(field(before, 'id')).toBe('100')
+    repoint(db, '100', to.normalize('NFC'))
+    expect(checkOne(db, expectFor(before, { from, to }))[0].state).toBe('ok')
+  })
+
   it('a row on the ~/Music/Music spelling of the file is the same file', () => {
     const link = '/Users/dj/Music/Music'
     const options: FindOptions = {

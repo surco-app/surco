@@ -206,6 +206,30 @@ describe('library readers', () => {
 
     expect(seen.map((e) => (e as { added: boolean }).added)).toEqual([true, false, false])
   })
+  // The check has to know the cut to tell cues that followed it from cues left behind.
+  it('hands the Engine check the cut the conversion made', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-verifyipc-engine-'))
+    const seen: unknown[] = []
+    const readers = libraryReaders(
+      { rekordbox: () => '', engine: () => dir, traktor: () => '' },
+      {
+        realPath,
+        bootVolume: () => 'Macintosh HD',
+        openEngine: () => ({ close: () => {} }) as never,
+        checkEngine: (_db, _dir, list) => {
+          seen.push(...list)
+          return list.map(() => ({ place: 'engine', state: 'ok', detail: { key: 'engineOk' } }))
+        },
+      },
+    )
+
+    await readers.readEngine([entry({ engineShift: { trimmedMs: 1900 } }), entry()])
+
+    expect(seen.map((e) => (e as { shift?: unknown }).shift)).toEqual([
+      { trimmedMs: 1900 },
+      undefined,
+    ])
+  })
 })
 
 describe('snapshotLibraries', () => {
@@ -277,6 +301,20 @@ describe('libraryRequeue', () => {
     )
     expect(q.engine.enqueue).toHaveBeenCalledWith([], [{ from: FROM, to: TO }])
     expect(q.rekordbox.apply).toHaveBeenCalledOnce()
+  })
+
+  // Engine's row also never moved, so its cues still wait for the cut: the retry is the
+  // only write that can still bring it, once, along with the move.
+  it('hands Engine the move with the cut its cues still wait for', () => {
+    const q = queues()
+    const shift = { trimmedMs: 1900, sampleRateHz: 48000 }
+
+    libraryRequeue(q)('engine', entry({ cueShiftMs: -1900, engineShift: shift }))
+
+    expect(q.engine.enqueue).toHaveBeenCalledWith(
+      [],
+      [{ from: FROM, to: TO, audio: { cueShiftMs: -1900 }, engineShift: shift }],
+    )
   })
 
   it('hands Traktor the rename and its cue shift, without cue tree, grid or stars', () => {

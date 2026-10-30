@@ -161,7 +161,7 @@ function valueMatches(field: keyof TrackMetadata, expected: string, stored: stri
     return have.length >= 4 && want.length >= 4 && (have.startsWith(want) || want.startsWith(have))
   const values = have.split('|').map(norm)
   if (values.includes(want)) return true
-  // ID3v2.3 has no separator of its own, so TagLib reads every '/' (and a TCON's ';') as
+  // ID3v2.3 has no separator of its own, so TagLib reads every '/' of an artist frame as
   // one: "AC/DC" comes back as AC and DC, in the order they were written.
   const parts = want.split(/[/;]/).map(norm)
   return parts.length === values.length && parts.every((p, i) => p === values[i])

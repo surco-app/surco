@@ -1,11 +1,12 @@
 import { extname } from 'node:path'
 import type Database from 'better-sqlite3-multiple-ciphers'
 import type { PlaceCheck, VerifyDetailKey } from '../shared/verification'
-import { pathKey } from './libraryPathKey'
 import {
   FILE_TYPES,
   type FindOptions,
-  rekordboxStoredPath,
+  fileNameForms,
+  rekordboxPathKey,
+  SAME_FILE_NAME,
   STREAMING_FILE_TYPE,
 } from './rekordboxDb'
 import { formatOf } from './verifyFile'
@@ -49,19 +50,16 @@ const LIVE = 'coalesce(rb_local_deleted, 0) = 0'
 // was given, through the ~/Music/Music link or not, NFD or NFC. Unlike findTrackByPath it
 // returns all of them, so two rows on one file are seen as two and never one picked.
 function rowsOn(db: RekordboxDb, path: string, find: FindOptions): Row[] {
-  const resolve = pathKey(find)
-  const key = (p: string) => rekordboxStoredPath(resolve(p.normalize('NFC'))).normalize('NFC')
-  const stored = rekordboxStoredPath(path)
-  const name = stored.slice(stored.lastIndexOf('/') + 1)
+  const key = rekordboxPathKey(find)
   const rows = db
     .prepare(
       `SELECT ID, FolderPath, FileType, FileSize, AnalysisDataPath, Analysed
          FROM djmdContent
-        WHERE FileNameL COLLATE NOCASE IN (?, ?)
+        WHERE ${SAME_FILE_NAME}
           AND FileType <> ?
           AND ${LIVE}`,
     )
-    .all(name.normalize('NFC'), name.normalize('NFD'), STREAMING_FILE_TYPE) as Row[]
+    .all(...fileNameForms(path), STREAMING_FILE_TYPE) as Row[]
   const target = key(path)
   return rows.filter((r) => key(r.FolderPath) === target)
 }

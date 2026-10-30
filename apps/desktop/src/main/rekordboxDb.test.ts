@@ -76,6 +76,23 @@ const TRACKS = [
     FileSize: 116951070,
     OrgFolderPath: '',
   },
+  // rekordbox keeps whichever Unicode form it was handed: composed here, decomposed below.
+  {
+    ID: '700000001',
+    FolderPath: '/Volumes/Public/Music/Señor/Café Noir.mp3'.normalize('NFC'),
+    FileNameL: 'Café Noir.mp3'.normalize('NFC'),
+    FileType: 1,
+    FileSize: 7000000,
+    OrgFolderPath: '',
+  },
+  {
+    ID: '700000002',
+    FolderPath: '/Volumes/Public/Music/Björk/Jóga.wav'.normalize('NFD'),
+    FileNameL: 'Jóga.wav'.normalize('NFD'),
+    FileType: 11,
+    FileSize: 40000000,
+    OrgFolderPath: '',
+  },
 ]
 
 beforeAll(async () => {
@@ -145,7 +162,7 @@ describe('openRekordboxDb', () => {
   it('reads rows through the cipher rather than failing to decrypt', () => {
     const db = open()
     const row = db.prepare('SELECT count(*) c FROM djmdContent').get() as { c: number }
-    expect(row.c).toBe(6)
+    expect(row.c).toBe(TRACKS.length)
     db?.close()
   })
 
@@ -165,7 +182,7 @@ describe('openRekordboxDb', () => {
 describe('rekordboxRawKey', () => {
   it('opens the collection with the key stretched once from its salt, so a read skips the 80 ms derivation that held the main process', async () => {
     const db = openRekordboxDb(dbPath, { readonly: true, key: await rekordboxRawKey(dbPath) })
-    expect(db?.prepare('SELECT count(*) c FROM djmdContent').get()).toEqual({ c: 6 })
+    expect(db?.prepare('SELECT count(*) c FROM djmdContent').get()).toEqual({ c: TRACKS.length })
     db?.close()
   })
 
@@ -288,6 +305,23 @@ describe('findTrackByPath', () => {
       homeMusicDir: '/Users/vicent/Music/Music',
     })
     expect(found).toEqual({ ambiguous: ['500000001', '500000002'] })
+    db.close()
+  })
+
+  // macOS and the user's SMB NAS hand Surco decomposed names, while the collection holds
+  // whatever form rekordbox was given. A miss here leaves rekordbox on the old file after
+  // a conversion, cues and playlists stranded behind a "!".
+  it('finds a composed row from the decomposed path macOS hands over', () => {
+    const db = open()
+    const found = findTrackByPath(db, '/Volumes/Public/Music/Señor/Café Noir.mp3'.normalize('NFD'))
+    expect(single(found).id).toBe('700000001')
+    db.close()
+  })
+
+  it('finds a decomposed row from a composed path', () => {
+    const db = open()
+    const found = findTrackByPath(db, '/Volumes/Public/Music/Björk/Jóga.wav'.normalize('NFC'))
+    expect(single(found).id).toBe('700000002')
     db.close()
   })
 })

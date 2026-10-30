@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { MAX_ALIAS_PATHS, pathAliasesOf } from './libraryPathKey'
+import { MAX_ALIAS_PATHS, pathAliasesOf, pathKey } from './libraryPathKey'
 
 // The user's layout: ~/Music/Music is a symlink to the NAS volume their collection also
 // names directly, so one file has two spellings and the OS may hand back either.
@@ -44,5 +44,39 @@ describe('pathAliasesOf', () => {
     expect(await pathAliasesOf([42, '/m/a.wav', null], options)).toEqual(['/m/a.wav'])
     const many = Array.from({ length: MAX_ALIAS_PATHS + 5 }, (_, i) => `/m/${i}.wav`)
     expect(await pathAliasesOf(many, options)).toHaveLength(MAX_ALIAS_PATHS)
+  })
+})
+
+// A DJ library keeps whichever Unicode form it was handed and macOS or the NAS hands Surco
+// the other, so the key every library match compares has to see one file in both.
+describe('pathKey', () => {
+  it('gives the composed and decomposed spellings of one path the same key', () => {
+    const key = pathKey()
+    const path = '/Volumes/Public/Music/Señor/Café.wav'
+    expect(key(path.normalize('NFD'))).toBe(key(path.normalize('NFC')))
+  })
+
+  it('rewrites the music folder link for a decomposed path under it', () => {
+    const home = '/Users/José/Music/Music'
+    const key = pathKey({
+      realPath: (p) => {
+        if (p === home) return VOLUME
+        throw new Error('ENOENT')
+      },
+      homeMusicDir: home,
+    })
+    expect(key(`${home}/Café.wav`.normalize('NFD'))).toBe(key(`${VOLUME}/Café.wav`))
+  })
+
+  it('rewrites the music folder link when the folder itself is named decomposed', () => {
+    const home = '/Users/José/Music/Music'.normalize('NFD')
+    const key = pathKey({
+      realPath: (p) => {
+        if (p === home) return VOLUME
+        throw new Error('ENOENT')
+      },
+      homeMusicDir: home,
+    })
+    expect(key(`${home}/Café.wav`.normalize('NFC'))).toBe(key(`${VOLUME}/Café.wav`))
   })
 })

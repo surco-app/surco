@@ -47,18 +47,21 @@ export function nmlPatchOf(queued: QueuedNmlPatch): NmlPatch {
 // declined. Only a conversion patch counts as waiting; saved cues in the same queue are
 // checked against the collection when written and do not depend on a run's order, and
 // patches held for another collection wait in that collection's own queue.
-export function holdInQueue(queue: {
-  enqueue: RekordboxQueue<QueuedNmlPatch>['enqueue']
-  state: () => RekordboxQueueState
-  applyQuietly: () => void
-}): { waiting: () => boolean; hold: (patches: NmlPatch[], nmlPath: string) => Promise<void> } {
+export function holdInQueue(
+  queue: {
+    enqueue: RekordboxQueue<QueuedNmlPatch>['enqueue']
+    state: () => RekordboxQueueState
+    applyQuietly: () => void
+  },
+  bootVolume: () => string,
+): { waiting: () => boolean; hold: (patches: NmlPatch[], nmlPath: string) => Promise<void> } {
   return {
     waiting: () => {
       return queue.state().items.some((i) => i.parts.some((p) => p.kind === 'repoint'))
     },
     hold: async (patches, nmlPath) => {
       const nml = await readCollection(nmlPath)
-      const states = nml === null ? [] : entryStates(nml, patches)
+      const states = nml === null ? [] : entryStates(nml, patches, bootVolume())
       queue.enqueue(
         [],
         patches.map((p, i) => queuedNmlPatch(p, states[i])),
@@ -83,6 +86,7 @@ export async function syncQueuedPatches(
   nmlPath: string,
   queued: QueuedNmlPatch[],
   sync: (nmlPath: string, patches: NmlPatch[]) => Promise<SyncResult>,
+  bootVolume: string,
 ): Promise<LibraryRepointResult[]> {
   const patches = queued.map(nmlPatchOf)
   const nml = await readCollection(nmlPath)
@@ -94,6 +98,7 @@ export async function syncQueuedPatches(
           nml,
           patches,
           queued.map((q) => q.entryState),
+          bootVolume,
         ),
   )
   return queued.map(() =>

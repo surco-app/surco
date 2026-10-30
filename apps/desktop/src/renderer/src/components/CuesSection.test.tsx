@@ -692,24 +692,32 @@ describe('CuesSection', () => {
   })
 
   it('draws dimmed and dashed what the flow drops with the point at the playhead and writes no count, folded or full screen, since the dashed marks already say it and a count beside the flow menu confused', async () => {
-    setup({ ...READ, strong: [{ start: bar(30), end: bar(40) }] })
+    setup()
     await ready()
-    hoverAt(bar(64))
-    for (const ms of [bar(32), bar(16)])
-      expect(screen.getByTestId(`cue-wave-ghost-dropped-${ms}`)).toHaveStyle({
-        borderStyle: 'dashed',
-        opacity: '0.3',
-      })
+    markAt(bar(64))
+    markAt(bar(128))
+    hoverAt(bar(192))
+    const dropped = screen.queryAllByTestId(/^cue-wave-ghost-dropped-/)
+    expect(dropped.length).toBeGreaterThan(0)
+    for (const el of dropped) expect(el).toHaveStyle({ borderStyle: 'dashed', opacity: '0.3' })
     expect(screen.queryByTestId('cues-rejected')).toBeNull()
     expect(screen.queryByTestId('cues-rejected-slot')).toBeNull()
     expect(screen.getByTestId('cues-flow-menu').previousElementSibling).toBeNull()
-    hoverAt(bar(200))
-    expect(screen.queryAllByTestId(/^cue-wave-ghost-dropped-/)).toHaveLength(0)
     await openFull()
-    hoverAt(bar(64))
+    hoverAt(bar(192))
     expect(screen.queryAllByTestId(/^cue-wave-ghost-dropped-/).length).toBeGreaterThan(0)
     expect(screen.queryByTestId('cues-rejected')).toBeNull()
     expect(screen.queryByTestId('cues-rejected-slot')).toBeNull()
+  })
+
+  it('places every cue of a point marked by hand inside a chorus, since the DJ chose it and only Auto mark judges whether it fits', async () => {
+    setup({ ...READ, strong: [{ start: bar(30), end: bar(40) }] })
+    await ready()
+    hoverAt(bar(64))
+    expect(screen.queryAllByTestId(/^cue-wave-ghost-dropped-/)).toHaveLength(0)
+    markAt(bar(64))
+    for (const letter of ['A', 'B', 'C'])
+      expect(screen.getByTestId(`cue-wave-hot-${letter}`)).toBeInTheDocument()
   })
 
   it('draws no flow and no cursor in Manual', async () => {

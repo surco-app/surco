@@ -1470,9 +1470,9 @@ describe('patches written after the DJ edited the entry', () => {
 
   it('writes the whole patch while the entry is as it was when held', () => {
     const held = entryWith('Mine', '153')
-    const states = entryStates(held, [converted()])
+    const states = entryStates(held, [converted()], 'Macintosh HD')
 
-    const out = applyPatches(held, spareEditedEntries(held, [converted()], states))
+    const out = applyPatches(held, spareEditedEntries(held, [converted()], states, 'Macintosh HD'))
 
     expect(out).toContain('FILE="uno.flac"')
     expect(out).toContain('NAME="Converted"')
@@ -1480,10 +1480,13 @@ describe('patches written after the DJ edited the entry', () => {
   })
 
   it('only moves the entry once the DJ changed its cues or stars', () => {
-    const states = entryStates(entryWith('Mine', '153'), [converted()])
+    const states = entryStates(entryWith('Mine', '153'), [converted()], 'Macintosh HD')
     const edited = entryWith('Set at the gig', '255')
 
-    const out = applyPatches(edited, spareEditedEntries(edited, [converted()], states))
+    const out = applyPatches(
+      edited,
+      spareEditedEntries(edited, [converted()], states, 'Macintosh HD'),
+    )
 
     expect(out).toContain('FILE="uno.flac"')
     expect(out).toContain('NAME="Set at the gig"')
@@ -1502,10 +1505,12 @@ describe('patches written after the DJ edited the entry', () => {
       cueShift: { shiftMs: -51 },
     }
     const held = entryWith('Mine', '153')
-    const states = entryStates(held, [shifted])
-    const once = applyPatches(held, spareEditedEntries(held, [shifted], states))
+    const states = entryStates(held, [shifted], 'Macintosh HD')
+    const once = applyPatches(held, spareEditedEntries(held, [shifted], states, 'Macintosh HD'))
     expect(once).toContain('START="551')
 
-    expect(applyPatches(once, spareEditedEntries(once, [shifted], states))).toBe(once)
+    expect(applyPatches(once, spareEditedEntries(once, [shifted], states, 'Macintosh HD'))).toBe(
+      once,
+    )
   })
 })

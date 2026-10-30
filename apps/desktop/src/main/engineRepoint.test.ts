@@ -7,6 +7,15 @@ import initSqlJs, { type Database, type SqlJsStatic } from 'sql.js'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildEngineDatabase } from './engine'
 import { ENGINE_3_SCHEMA } from './engine3Fixture'
+import {
+  decodeBeatGrid,
+  decodeLoops,
+  decodeQuickCues,
+  decodeTrackData,
+  encodeLoops,
+  inflateEngineBlob,
+} from './engineBlobs'
+import { analysedTrack, quickCuesBlob } from './enginePerformanceFixture'
 import { isEngineDjRunning } from './engineProcess'
 import { repointEngineTracks } from './engineRepoint'
 import { backupOf } from './libraryBackups'
@@ -266,3 +275,197 @@ it('reports a library it cannot read', async () => {
   ])
   expect(result).toEqual({ written: false, reason: 'unreadable' })
 })
+
+const RATE = 44100
+const TRIM_MS = 1900
+const HOT_SEC = [1, 5, 12]
+const LOOP_SEC: [number, number] = [8, 10]
+const MAIN_SEC: [number, number] = [6, 0.5]
+
+function mainCueTail(adjusted: number, isAdjusted: boolean, fallback: number) {
+  const tail = Buffer.alloc(17)
+  tail.writeDoubleBE(adjusted, 0)
+  tail[8] = isAdjusted ? 1 : 0
+  tail.writeDoubleBE(fallback, 9)
+  return tail
+}
+
+async function analysedLibrary(schema: '2.18' | '3.0.2'): Promise<Library> {
+  const lib = await library(schema)
+  const perf = analysedTrack(1)
+  const loops = encodeLoops([
+    {
+      label: 'Break',
+      start: LOOP_SEC[0] * RATE,
+      end: LOOP_SEC[1] * RATE,
+      startSet: true,
+      endSet: true,
+      argb: 0xff00cc00,
+    },
+    { label: '', start: -1, end: -1, startSet: false, endSet: false, argb: 0 },
+  ])
+  const db = await openDb(lib.dbPath)
+  db.run(
+    'UPDATE PerformanceData SET trackData = ?, beatData = ?, quickCues = ?, loops = ? WHERE trackId = 1',
+    [
+      perf.trackData as Buffer,
+      perf.beatData as Buffer,
+      quickCuesBlob(
+        HOT_SEC.map((s, i) => ({ label: `C${i}`, sample: s * RATE, argb: 0xffcc0000 })),
+        mainCueTail(MAIN_SEC[0] * RATE, true, MAIN_SEC[1] * RATE),
+      ),
+      loops,
+    ],
+  )
+  await writeFile(lib.dbPath, db.export())
+  db.close()
+  return lib
+}
+
+function defaultGrid(raw: Buffer): number[] {
+  const count = Number(raw.readBigInt64BE(17))
+  return Array.from({ length: count }, (_, i) => raw.readDoubleLE(25 + i * 24))
+}
+
+async function positionsOf(lib: Library) {
+  const db = await openDb(lib.dbPath)
+  try {
+    const row = one(
+      db,
+      'SELECT trackData, beatData, quickCues, loops FROM PerformanceData WHERE trackId = 1',
+    )
+    const track = decodeTrackData(inflateEngineBlob(row.trackData as Uint8Array))
+    const rate = track?.sampleRate ?? 0
+    const beats = inflateEngineBlob(row.beatData as Uint8Array)
+    const cues = decodeQuickCues(inflateEngineBlob(row.quickCues as Uint8Array))
+    const sec = (sample: number) => (sample < 0 ? sample : sample / rate)
+    return {
+      rate,
+      lengthSec: (track?.sampleCount ?? 0) / rate,
+      gridRate: beats.readDoubleBE(0),
+      gridLengthSec: beats.readDoubleBE(8) / rate,
+      hot: cues?.slots.map((s) => (s.cue ? s.cue.sample / rate : null)),
+      main: [sec(cues?.tail.readDoubleBE(0) ?? 0), sec(cues?.tail.readDoubleBE(9) ?? 0)],
+      mainAdjusted: cues?.tail[8],
+      loops: decodeLoops(Buffer.from(row.loops as Uint8Array))?.map((l) => [
+        sec(l.start),
+        sec(l.end),
+      ]),
+      grid: decodeBeatGrid(beats)?.markers.map((m) => m.sample / rate),
+      defaultGrid: defaultGrid(beats).map((s) => s / rate),
+    }
+  } finally {
+    db.close()
+  }
+}
+
+describe.each(['2.18', '3.0.2'] as const)(
+  'repointEngineTracks after a trim, on a %s library',
+  (schema) => {
+    // Engine keeps every cue, loop and beat as a sample count from the file's first sample.
+    // Cutting the lead-in makes the music start that much earlier, so each position has to
+    // come down by the same amount or every pad fires late by the length of the cut.
+    it('moves every hot cue, the main cue, every loop and both grids earlier by the cut', async () => {
+      const lib = await analysedLibrary(schema)
+      const before = await positionsOf(lib)
+      const [result] = await repointEngineTracks(lib.dir, [
+        { from: lib.oldFile, to: lib.newFile, engineShift: { trimmedMs: TRIM_MS } },
+      ])
+      expect(result).toEqual({ written: true, id: '1' })
+      const after = await positionsOf(lib)
+      const cut = TRIM_MS / 1000
+      expect(after.rate).toBe(RATE)
+      expect(after.hot).toEqual([
+        0,
+        expect.closeTo(HOT_SEC[1] - cut, 6),
+        expect.closeTo(HOT_SEC[2] - cut, 6),
+        null,
+        null,
+        null,
+        null,
+        null,
+      ])
+      expect(after.main).toEqual([expect.closeTo(MAIN_SEC[0] - cut, 6), 0])
+      expect(after.mainAdjusted).toBe(1)
+      expect(after.loops).toEqual([
+        [expect.closeTo(LOOP_SEC[0] - cut, 6), expect.closeTo(LOOP_SEC[1] - cut, 6)],
+        [-1, -1],
+      ])
+      expect(after.grid).toEqual(before.grid?.map((s) => expect.closeTo(s - cut, 6)))
+      expect(after.defaultGrid).toEqual(before.defaultGrid.map((s) => expect.closeTo(s - cut, 6)))
+      expect(after.lengthSec).toBeCloseTo(before.lengthSec - cut, 4)
+      expect(after.gridLengthSec).toBeCloseTo(before.gridLengthSec - cut, 4)
+    })
+
+    // A conversion that also resamples leaves Engine's sample counts describing the old
+    // rate: each position is rewritten at the new one, and the rate Engine reads them by
+    // with it.
+    it('rewrites every position at the converted file’s sample rate', async () => {
+      const lib = await analysedLibrary(schema)
+      const before = await positionsOf(lib)
+      await repointEngineTracks(lib.dir, [
+        {
+          from: lib.oldFile,
+          to: lib.newFile,
+          engineShift: { trimmedMs: TRIM_MS, sampleRateHz: 48000 },
+        },
+      ])
+      const after = await positionsOf(lib)
+      const cut = TRIM_MS / 1000
+      expect(after.rate).toBe(48000)
+      expect(after.gridRate).toBe(48000)
+      expect(after.hot?.slice(0, 3)).toEqual([
+        0,
+        expect.closeTo(HOT_SEC[1] - cut, 6),
+        expect.closeTo(HOT_SEC[2] - cut, 6),
+      ])
+      expect(after.loops?.[0]).toEqual([
+        expect.closeTo(LOOP_SEC[0] - cut, 6),
+        expect.closeTo(LOOP_SEC[1] - cut, 6),
+      ])
+      expect(after.grid).toEqual(before.grid?.map((s) => expect.closeTo(s - cut, 6)))
+      expect(after.lengthSec).toBeCloseTo(before.lengthSec - cut, 4)
+    })
+
+    it('a resample with no trim keeps every position where it was in time', async () => {
+      const lib = await analysedLibrary(schema)
+      const before = await positionsOf(lib)
+      await repointEngineTracks(lib.dir, [
+        {
+          from: lib.oldFile,
+          to: lib.newFile,
+          engineShift: { trimmedMs: 0, sampleRateHz: 96000 },
+        },
+      ])
+      const after = await positionsOf(lib)
+      expect(after.rate).toBe(96000)
+      expect(after.hot).toEqual(before.hot?.map((s) => (s === null ? null : expect.closeTo(s, 6))))
+      expect(after.grid).toEqual(before.grid?.map((s) => expect.closeTo(s, 6)))
+    })
+
+    // The retry and the queue hand the same move again. The row already left the old path
+    // with the first write, so the second finds nothing to move and nothing shifts twice.
+    it('shifts once when the same move is handed again', async () => {
+      const lib = await analysedLibrary(schema)
+      const move = { from: lib.oldFile, to: lib.newFile, engineShift: { trimmedMs: TRIM_MS } }
+      await repointEngineTracks(lib.dir, [move])
+      const once = await positionsOf(lib)
+      const [again] = await repointEngineTracks(lib.dir, [move])
+      expect(again).toEqual({ written: false, reason: 'no-match' })
+      expect(await positionsOf(lib)).toEqual(once)
+    })
+
+    // A blob Surco cannot read is kept as Engine wrote it: guessing at its layout could only
+    // corrupt it, and the path still has to follow the file.
+    it('moves the row and leaves blobs it cannot read as they were', async () => {
+      const lib = await library(schema)
+      const [result] = await repointEngineTracks(lib.dir, [
+        { from: lib.oldFile, to: lib.newFile, engineShift: { trimmedMs: TRIM_MS } },
+      ])
+      expect(result).toEqual({ written: true, id: '1' })
+      const perf = performance(await openDb(lib.dbPath), schema)
+      expect(perf.quickCues).toEqual(CUES)
+      expect(perf.beatData).toEqual(GRID)
+    })
+  },
+)

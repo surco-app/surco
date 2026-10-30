@@ -1573,7 +1573,8 @@ export const Editor = memo(function Editor({
                             artist: item.meta.artist,
                             bpm: item.meta.bpm,
                             key: item.meta.key,
-                            cover: item.coverUrl ?? item.embeddedCover,
+                            cover:
+                              item.coverUrl ?? item.embeddedCover ?? item.sourcePreview?.coverUrl,
                           }}
                           onJumpBars={onCueJumpBars}
                           onQuantize={onCueQuantize}

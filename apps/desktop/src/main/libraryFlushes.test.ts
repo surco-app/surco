@@ -766,7 +766,7 @@ describe('flushConversionBatch outcome', () => {
       }
     }
 
-    it('hands back the entry each patch matched before the write, keyed like the queue', async () => {
+    it('hands back the entry each patch matched before the write and its cues, keyed like the queue', async () => {
       await withTraktor(async () => {
         const missing = { ...patch, file: 'b.aiff', newFile: 'b.flac' }
         beginNmlBatch()
@@ -776,6 +776,10 @@ describe('flushConversionBatch outcome', () => {
         expect(outcome.traktor).toEqual({
           before: new Map([
             [traktorPatchKey(patch), 'a.aiff'],
+            [traktorPatchKey(missing), null],
+          ]),
+          cues: new Map([
+            [traktorPatchKey(patch), ''],
             [traktorPatchKey(missing), null],
           ]),
         })

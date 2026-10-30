@@ -221,3 +221,76 @@ describe('what a conversion tells rekordbox about its cues', () => {
     expect(recorded()?.audio).toBeDefined()
   })
 })
+
+// Engine DJ keeps its cues as sample counts from the file's first sample, so a trim moves
+// them by exactly the cut, and a resample changes the unit they are counted in. rekordbox's
+// own timeline offsets (rekordboxTimeline.ts) are rekordbox's and stay out of it.
+describe('what a conversion tells Engine DJ about its cues', () => {
+  it('carries the cut from the start of a trimmed conversion', async () => {
+    const src = join(dir, 'engine-trim.wav')
+    pcm(src, 'pcm_s16le')
+    await convertAudio(
+      src,
+      join(dir, 'engine-trim.aiff'),
+      'aiff',
+      meta,
+      undefined, // coverPath
+      undefined, // normalize
+      undefined, // removeCover
+      undefined, // quality
+      undefined, // onChild
+      undefined, // onTmp
+      undefined, // finderCovers
+      undefined, // declick
+      { startSec: 0.5 },
+    )
+    expect(recorded()?.engineShift).toEqual({ trimmedMs: 500 })
+  })
+
+  it('carries the new sample rate of a resampled conversion', async () => {
+    const src = join(dir, 'engine-resample.wav')
+    pcm(src, 'pcm_s16le')
+    await convertAudio(
+      src,
+      join(dir, 'engine-resample.aiff'),
+      'aiff',
+      meta,
+      undefined,
+      undefined,
+      undefined,
+      {
+        sampleRate: '48000',
+      },
+    )
+    expect(recorded()?.engineShift).toEqual({ trimmedMs: 0, sampleRateHz: 48000 })
+  })
+
+  // The library's row is the replaced copy, not the file this cut was measured on: rekordbox
+  // moves nothing there either.
+  it('carries nothing when the conversion replaces another copy in the library', async () => {
+    const src = join(dir, 'engine-replaces.wav')
+    pcm(src, 'pcm_s16le')
+    const old = join(dir, 'engine-replaces-old.mp3')
+    copyFileSync(lame, old)
+    await convertAudio(
+      src,
+      join(dir, 'engine-replaces.aiff'),
+      'aiff',
+      meta,
+      undefined, // coverPath
+      undefined, // normalize
+      undefined, // removeCover
+      undefined, // quality
+      undefined, // onChild
+      undefined, // onTmp
+      undefined, // finderCovers
+      undefined, // declick
+      { startSec: 0.5 },
+      undefined, // clearExtras
+      undefined, // foreignRemoved
+      old,
+    )
+    expect(recorded()?.from).toBe(old)
+    expect(recorded()?.engineShift).toBeUndefined()
+  })
+})

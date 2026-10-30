@@ -282,6 +282,27 @@ describe('verify registry', () => {
     expect(registry.get('c')?.checks[1]).toEqual(unreadable('traktor', 'traktorUnreadable'))
   })
 
+  // An entry the write left on the source is judged by its cues, so the ones the write read
+  // have to reach the check, on the flush and on every re-read after it.
+  it('Traktor is judged against the cues the write read, again on a retry', async () => {
+    const { deps, registry } = setup()
+    deps.readTraktor.mockResolvedValueOnce([mismatch('traktor', 'traktorCuesChanged')])
+    const p: NmlPatch = { volume: 'HD', dir: '/:M/:', file: 'a.mp3' }
+    registry.register(entry('a', { places: new Set(['file', 'traktor']), traktorPatch: p }))
+    await registry.afterFlush({
+      ...written,
+      traktor: {
+        before: new Map([[traktorPatchKey(p), 'a.mp3']]),
+        cues: new Map([[traktorPatchKey(p), '<CUE_V2 START="10000"/>']]),
+      },
+    })
+
+    await registry.retry('a')
+
+    const expected = { patch: p, before: 'a.mp3', cues: '<CUE_V2 START="10000"/>', stranded: false }
+    expect(deps.readTraktor.mock.calls.map((c) => c[0])).toEqual([[expected], [expected]])
+  })
+
   it('a Traktor write that never happened is not read as if it had', async () => {
     const { deps, registry } = setup()
     const p: NmlPatch = { volume: 'Public', dir: '/:Musica/:', file: 'a.aiff', newFile: 'a.wav' }

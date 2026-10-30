@@ -7,12 +7,12 @@ const MAX_IN_FLIGHT = 3
 let inFlight = 0
 const waiting: (() => void)[] = []
 
-async function acquire(): Promise<void> {
+async function acquire(urgent: boolean): Promise<void> {
   if (inFlight < MAX_IN_FLIGHT) {
     inFlight++
     return
   }
-  await new Promise<void>((resolve) => waiting.push(resolve))
+  await new Promise<void>((resolve) => (urgent ? waiting.unshift(resolve) : waiting.push(resolve)))
 }
 
 function release(): void {
@@ -33,8 +33,8 @@ export async function isMissing(path: string, err: NodeJS.ErrnoException): Promi
   )
 }
 
-export async function sourceStat(path: string): Promise<Stats> {
-  await acquire()
+export async function sourceStat(path: string, { urgent = false } = {}): Promise<Stats> {
+  await acquire(urgent)
   try {
     return await stat(path)
   } finally {

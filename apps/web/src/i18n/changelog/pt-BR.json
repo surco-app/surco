@@ -31,6 +31,18 @@
       {
         "text": "Quando o Apple Music reescreve um arquivo seu ao mudar uma tag, em “Revisar metadados”, “Atualizar no Apple Music” ou numa conversão, o Surco guarda uma cópia antes. Desfazer em “Revisar metadados” devolve o arquivo exatamente como estava e, se não houver espaço para a cópia, o Surco não deixa o Music mexer nele.",
         "in": "1.18.2"
+      },
+      {
+        "text": "Ao converter um MP3 para AIFF ou FLAC, os cues da faixa original no Traktor ficam onde estavam, e se você converter com o Traktor aberto, os cues que editar nesse meio-tempo são mantidos.",
+        "in": "1.18.3"
+      },
+      {
+        "text": "Faixas do rekordbox com acentos no nome acompanham a versão convertida com seus cues e playlists, e o Engine DJ move hot cues, loops e grid quando você corta o silêncio do início.",
+        "in": "1.18.3"
+      },
+      {
+        "text": "Gêneros com vários valores ou com parênteses, como “Techno (Peak Time / Driving)”, são salvos como estão em MP3, AIFF e WAV, e a verificação após converter não marca mais por engano um FLAC convertido para MP3.",
+        "in": "1.18.3"
       }
     ]
   },

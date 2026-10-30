@@ -1,3 +1,4 @@
+import type { EngineShift } from './engineRepoint'
 import type { RekordboxRepoint } from './rekordboxBatch'
 import type { RekordboxMeta } from './rekordboxMetadata'
 
@@ -19,9 +20,14 @@ export function rekordboxRepointFor(
     replaces?: string
     meta?: RekordboxMeta
     // Set when the conversion rewrote the audio rather than copying it: where each file's
-    // first sample sits in rekordbox's timeline (see rekordboxTimeline.ts) and how much
-    // silence was cut from the start.
-    audio?: { sourceShiftMs: number; outputShiftMs: number; trimmedMs: number }
+    // first sample sits in rekordbox's timeline (see rekordboxTimeline.ts), how much
+    // silence was cut from the start and the rate the audio was resampled to, if it was.
+    audio?: {
+      sourceShiftMs: number
+      outputShiftMs: number
+      trimmedMs: number
+      sampleRateHz?: number
+    }
   } = {},
 ): RekordboxRepoint | null {
   const from = options.replaces ?? input
@@ -32,9 +38,19 @@ export function rekordboxRepointFor(
           options.audio.outputShiftMs - options.audio.sourceShiftMs - options.audio.trimmedMs,
         ),
   }
+  const engineShift: EngineShift | undefined =
+    options.audio &&
+    !options.replaces &&
+    (options.audio.trimmedMs > 0 || options.audio.sampleRateHz)
+      ? {
+          trimmedMs: options.audio.trimmedMs,
+          ...(options.audio.sampleRateHz ? { sampleRateHz: options.audio.sampleRateHz } : {}),
+        }
+      : undefined
   const extra = {
     ...(options.meta ? { meta: options.meta } : {}),
     ...(audio ? { audio } : {}),
+    ...(engineShift ? { engineShift } : {}),
   }
   if (from === output && !options.meta && !audio) return null
   return { from, to: output, ...extra }
