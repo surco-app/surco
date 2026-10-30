@@ -2181,11 +2181,18 @@ export async function convertAudio(
       // The bytes absorbed ahead of the first frame decode as a frame of their own, so the
       // source read raw starts 1105 samples early: the copy's own audio, digested before any
       // tag pass (which never touches a frame), is what the check compares against.
-      if (ext === '.mp3' && (await absorbMp3HeadJunk(tmp)))
-        absorbedPcm = await pcmDigest(tmp, { priority: 'high' }).catch((err) => {
-          log.warn(`source digest failed, the check cannot compare: ${err}`)
-          return null
-        })
+      if (ext === '.mp3' && (await absorbMp3HeadJunk(tmp))) {
+        const absorbing = new AbortController()
+        const watch = setInterval(() => {
+          if (isCancelled?.()) absorbing.abort()
+        }, CANCEL_POLL_MS)
+        absorbedPcm = await pcmDigest(tmp, { signal: absorbing.signal, priority: 'high' })
+          .catch((err) => {
+            log.warn(`source digest failed, the check cannot compare: ${err}`)
+            return null
+          })
+          .finally(() => clearInterval(watch))
+      }
       await runInWorker({
         type: 'writeTags',
         file: tmp,

@@ -188,7 +188,8 @@ export interface ProcessTrackDeps {
     from: string,
   ) => Promise<{ rekordbox?: RekordboxBefore; engine?: EngineBefore }>
   // Re-read the written file and the Music entry before the job reports back. The signal is
-  // the job's cancel; a cancelled read rejects with conversionCancelled.
+  // the job's cancel; a cancelled read rejects with conversionCancelled, and the job still
+  // returns what it converted with that place unreadable.
   verifyFile: (e: FileExpect, signal: AbortSignal) => Promise<PlaceCheck>
   verifyMusic: (e: MusicExpect, signal: AbortSignal) => Promise<PlaceCheck>
   // Where a path really lands, so a Media folder reached through a link is still the one.

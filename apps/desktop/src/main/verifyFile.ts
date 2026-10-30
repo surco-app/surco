@@ -210,8 +210,9 @@ function bitsOf(probe: Awaited<ReturnType<typeof probeAudio>>): number {
   return pcm ? Number(pcm[1]) : 0
 }
 
-// A cancel is not a read that failed: it rejects with conversionCancelled, so the job ends
-// as cancelled instead of reporting a file it never finished reading.
+// A cancel is not a read that failed: it rejects with conversionCancelled instead of
+// reporting a file it never finished reading. The job keeps what it converted and marks
+// the read unreadable.
 export async function checkFile(
   e: FileExpect,
   r: FileReaders,
