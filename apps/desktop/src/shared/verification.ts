@@ -67,6 +67,9 @@ export interface PlaceCheck {
   place: VerifyPlace
   state: CheckState
   detail: CheckDetail
+  // No retry can change this answer (a library row with no photo from before the write):
+  // reading again would only say the same.
+  final?: true
 }
 
 export interface Verification {

@@ -102,6 +102,9 @@ const check = (
   params?: Record<string, string | number>,
 ): PlaceCheck => ({ place: 'rekordbox', state, detail: params ? { key, params } : { key } })
 
+// Without the row as it was before the write, no later read can judge it.
+const noPhoto = (): PlaceCheck => ({ ...check('unreadable', 'rekordboxUnreadable'), final: true })
+
 const formatOfType = (fileType: number) => {
   const ext = Object.keys(FILE_TYPES).find((e) => FILE_TYPES[e] === fileType)
   return ext ? formatOf(`.${ext}`) : String(fileType)
@@ -123,7 +126,7 @@ export function checkRekordbox(
 }
 
 function judge(db: RekordboxDb, e: RekordboxExpect, find: FindOptions): PlaceCheck {
-  if (e.before === 'unreadable') return check('unreadable', 'rekordboxUnreadable')
+  if (e.before === 'unreadable') return noPhoto()
   const on = rowsOn(db, e.to, find)
   if (on.length > 1) return check('mismatch', 'rekordboxAmbiguous', { count: on.length })
   if (on.length === 0) {
@@ -145,7 +148,7 @@ function judge(db: RekordboxDb, e: RekordboxExpect, find: FindOptions): PlaceChe
   const id = String(row.ID)
   const before = typeof e.before === 'object' ? e.before : null
   if (!e.added) {
-    if (!before) return check('unreadable', 'rekordboxUnreadable')
+    if (!before) return noPhoto()
     if (id !== before.id) return check('mismatch', 'rekordboxOtherRow')
   }
   if (row.FileType !== FILE_TYPES[extname(e.to).slice(1).toLowerCase()])

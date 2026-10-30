@@ -93,6 +93,9 @@ const check = (
   detail: params ? { key: detailKey, params } : { key: detailKey },
 })
 
+// Without the row as it was before the write, no later read can judge it.
+const noPhoto = (): PlaceCheck => ({ ...check('unreadable', 'engineUnreadable'), final: true })
+
 // One read-only pass over the library for the whole batch, after its flush.
 export function checkEngine(
   db: EngineDb,
@@ -121,7 +124,7 @@ function judge(
   e: EngineExpect,
   key: Key,
 ): PlaceCheck {
-  if (e.before === 'unreadable') return check('unreadable', 'engineUnreadable')
+  if (e.before === 'unreadable') return noPhoto()
   const on = find(e.to, key)
   if (on.length > 1) return check('mismatch', 'engineAmbiguous', { count: on.length })
   if (on.length === 0) {
@@ -134,7 +137,7 @@ function judge(
 
   const row = on[0]
   const before = e.before
-  if (!e.added && typeof before !== 'object') return check('unreadable', 'engineUnreadable')
+  if (!e.added && typeof before !== 'object') return noPhoto()
   if (typeof before === 'object' && row.id !== before.id) return check('mismatch', 'engineOtherRow')
   const fileType = (row.fileType ?? '').toLowerCase()
   if (!fileType) return check('mismatch', 'engineNoFileType')

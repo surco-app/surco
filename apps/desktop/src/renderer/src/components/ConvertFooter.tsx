@@ -249,6 +249,12 @@ export function ConvertFooter({
       : null
   const verifyMismatch = verification?.status === 'mismatch'
   const worst = verifyMismatch ? worstCheck(verification.checks) : undefined
+  // Offered while some failed place is one a retry can change.
+  const canRetry =
+    verifyMismatch &&
+    verification.checks.some(
+      (c) => (c.state === 'mismatch' || c.state === 'unreadable') && !c.final,
+    )
   const keptOriginal =
     worst?.detail.key === 'fileSourceGone' && Number(worst.detail.params?.kept) === 1
   // A retry reads back as checking until its answer lands, and cannot be pressed twice.
@@ -489,7 +495,7 @@ export function ConvertFooter({
                   {(verification?.status === 'ok' ||
                     verification?.status === 'pending' ||
                     verifyMismatch) && <VerifiedPopover checks={verification.checks} />}
-                  {verifyMismatch && (
+                  {canRetry && (
                     <button
                       type="button"
                       data-testid="verify-retry"

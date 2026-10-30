@@ -716,6 +716,21 @@ describe('ConvertFooter verification', () => {
     expect(onRetryVerification).toHaveBeenCalledWith('t1')
   })
 
+  // A library with no row from before the write reads the same at every retry: the button
+  // would promise something it cannot do. Beside a place a retry can fix, it stays.
+  it('Reintentar is offered only while a retry can change the answer', () => {
+    const noPhoto: PlaceCheck = {
+      ...bad('rekordbox', 'rekordboxUnreadable', undefined, 'unreadable'),
+      final: true,
+    }
+    const { rerender } = render(mismatched([fileOk, noPhoto]))
+    expect(screen.getByTestId('verify-mismatch')).toBeInTheDocument()
+    expect(screen.queryByTestId('verify-retry')).toBeNull()
+
+    rerender(mismatched([fileOk, noPhoto, bad('engine', 'engineStillOld', { format: 'AIFF' })]))
+    expect(screen.getByTestId('verify-retry')).toBeInTheDocument()
+  })
+
   // A second press while the first retry still runs would queue the same work twice; the
   // line says it is checking again until the answer is back.
   it('Reintentar is disabled while checking', async () => {

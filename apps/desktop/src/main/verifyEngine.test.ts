@@ -374,7 +374,8 @@ describe('checkEngine', () => {
     expect(checkOne(dir, expectFor('unreadable', { added: true }))[0].state).toBe('unreadable')
   })
 
-  // Without the photo there is nothing to compare the cues, grid and loops against.
+  // Without the photo there is nothing to compare the cues, grid and loops against. No
+  // re-read can take one: the answer is final, and a retry would only read the same.
   it('a repoint with no snapshot is unreadable, never ok', () => {
     const dir = library()
     repoint(dir, 1)
@@ -382,6 +383,7 @@ describe('checkEngine', () => {
       place: 'engine',
       state: 'unreadable',
       detail: { key: 'engineUnreadable' },
+      final: true,
     })
   })
 
@@ -401,6 +403,7 @@ describe('checkEngine', () => {
       place: 'engine',
       state: 'unreadable',
       detail: { key: 'engineUnreadable' },
+      final: true,
     })
   })
 

@@ -336,7 +336,8 @@ describe('checkRekordbox', () => {
     expect(checkOne(db, expectFor(before))[0].detail).toEqual({ key: 'rekordboxOtherRow' })
   })
 
-  // Without the photo there is nothing to compare the cues and the grid against.
+  // Without the photo there is nothing to compare the cues and the grid against. No re-read
+  // can take one: the answer is final, and a retry would only read the same.
   it('a repoint with no snapshot is unreadable, never ok', () => {
     const db = collection([{}])
     repoint(db, '100')
@@ -344,6 +345,7 @@ describe('checkRekordbox', () => {
       place: 'rekordbox',
       state: 'unreadable',
       detail: { key: 'rekordboxUnreadable' },
+      final: true,
     })
   })
 
@@ -382,6 +384,7 @@ describe('checkRekordbox', () => {
       place: 'rekordbox',
       state: 'unreadable',
       detail: { key: 'rekordboxUnreadable' },
+      final: true,
     })
   })
 
