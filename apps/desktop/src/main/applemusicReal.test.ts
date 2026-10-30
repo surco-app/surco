@@ -1,14 +1,23 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  realpathSync,
+  rmdirSync,
+  rmSync,
+} from 'node:fs'
 import { mkdir, mkdtemp, rm, rmdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { extname, join } from 'node:path'
+import { basename, extname, join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
+import { MUSIC_FACTS, type MusicUnderTest } from '../scenarios/musicFacts'
 import { errorKeyOf } from '../shared/errorKeys'
 import { emptyMetadata } from '../shared/metadata'
 import type { OutputFormat, Settings, TrackMetadata } from '../shared/types'
@@ -25,6 +34,8 @@ import {
   markAppleMusicReplacing,
   readMusicEntryFacts,
   runOsascript,
+  setAppleMusicField,
+  updateInAppleMusic,
 } from './applemusic'
 import { convertAudio } from './ffmpeg'
 import { type ProcessTrackDeps, runProcessTrack } from './processTrack'
@@ -93,6 +104,67 @@ async function entriesNamed(name: string): Promise<{ pid: string; path: string }
       const [pid, path] = line.split('\t')
       return { pid, path }
     })
+}
+
+async function plainAdd(path: string, m: TrackMetadata): Promise<string> {
+  const pid = (
+    await runOsascript(
+      [
+        'tell application "Music"',
+        '  with timeout of 300 seconds',
+        `    set theTrack to add POSIX file ${appleScriptString(path)}`,
+        '    repeat 600 times',
+        '      try',
+        `        set name of theTrack to ${appleScriptString(m.title)}`,
+        `        set artist of theTrack to ${appleScriptString(m.artist)}`,
+        `        set album of theTrack to ${appleScriptString(m.album)}`,
+        '        exit repeat',
+        '      on error errMsg number errNum',
+        '        if errNum is not -50 then error errMsg number errNum',
+        '        delay 0.1',
+        '      end try',
+        '    end repeat',
+        '    return persistent ID of theTrack',
+        '  end timeout',
+        'end tell',
+      ].join('\n'),
+    )
+  ).trim()
+  deletedFiles.push(await appleMusicEntryLocation(pid))
+  return pid
+}
+
+async function entryFields(pid: string) {
+  const facts = await readMusicEntryFacts(pid)
+  if (facts === 'missing') throw new Error(`entry ${pid} is gone`)
+  return facts
+}
+
+const realMusic: MusicUnderTest = {
+  add: plainAdd,
+  markReplacing: (pid, label) => markAppleMusicReplacing(pid, label, true),
+  location: appleMusicEntryLocation,
+  tagGrouping: async (pid, grouping) => {
+    const { name, artist, album } = await entryFields(pid)
+    await updateInAppleMusic(pid, { ...emptyMetadata(), title: name, artist, album, grouping })
+  },
+  tagArtist: async (pid, artist) => {
+    expect(await setAppleMusicField(pid, 'artist', (await entryFields(pid)).artist, artist)).toBe(
+      'set',
+    )
+  },
+  relocate: async (pid, path) => {
+    deletedFiles.push(await appleMusicEntryLocation(pid))
+    await runOsascript(
+      [
+        'tell application "Music"',
+        `  set t to (first track of library playlist 1 whose persistent ID is ${appleScriptString(pid)})`,
+        `  set location of t to POSIX file ${appleScriptString(path)}`,
+        'end tell',
+      ].join('\n'),
+    )
+  },
+  mediaFolder: async () => (await appleMusicMediaFolder()) ?? null,
 }
 
 async function locationOf(pid: string): Promise<string> {
@@ -304,9 +376,21 @@ describe.skipIf(!real)('Apple Music against the real app', () => {
       ].join('\n'),
     )
     for (const file of [...out.split('\n').filter(Boolean), ...deletedFiles])
-      rmSync(file, { force: true })
+      if (basename(file).startsWith(PREFIX)) rmSync(file, { force: true })
     rmSync(dir, { recursive: true, force: true })
+    const media = await appleMusicMediaFolder()
+    const folders = media ? join(media, 'Music') : ''
+    for (const name of folders ? readdirSync(folders).filter((n) => n.startsWith(PREFIX)) : []) {
+      for (const inner of readdirSync(join(folders, name))) rmdirSync(join(folders, name, inner))
+      rmdirSync(join(folders, name))
+    }
   }, 120_000)
+
+  describe('the Music facts hold in the real app', () => {
+    for (const fact of MUSIC_FACTS) {
+      it(fact.name, () => fact.check(realMusic, join(dir, PREFIX)), 120_000)
+    }
+  })
 
   it('adds a new track nothing in the library shares a name with', async () => {
     const title = `${PREFIX} Plain`
@@ -374,6 +458,7 @@ describe.skipIf(!real)('Apple Music against the real app', () => {
       meta(otherTitle),
     )
     const file = await locationOf(first)
+    deletedFiles.push(await locationOf(second))
     await runOsascript(
       [
         'tell application "Music"',
@@ -406,6 +491,7 @@ describe.skipIf(!real)('Apple Music against the real app', () => {
     const title = `${PREFIX} CheckWrong`
     const wavPid = await addToAppleMusic(tone(join(dir, `${title}.wav`), title), meta(title))
     const wav = await locationOf(wavPid)
+    deletedFiles.push(wav)
     const aiff = tone(join(dir, `${title} sibling.aiff`), title, 660)
     await runOsascript(
       [

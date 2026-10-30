@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { readFileSync, realpathSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import { type Id3v2Tag, type Id3v2UnknownFrame, File as TagFile, TagTypes } from 'node-taglib-sharp'
 import { expect } from 'vitest'
@@ -13,6 +13,8 @@ export interface MusicUnderTest {
   markReplacing: (pid: string, label: string) => Promise<string>
   location: (pid: string) => Promise<string>
   tagGrouping: (pid: string, grouping: string) => Promise<void>
+  tagArtist: (pid: string, artist: string) => Promise<void>
+  relocate: (pid: string, path: string) => Promise<void>
   mediaFolder: () => Promise<string | null>
 }
 
@@ -48,6 +50,15 @@ async function mediaOf(m: MusicUnderTest): Promise<string> {
   const media = await m.mediaFolder()
   if (!media) throw new Error('Music copies nothing into a media folder here')
   return media
+}
+
+function artistOf(path: string): string {
+  const file = TagFile.createFromPath(path)
+  try {
+    return file.tag.performers.join('/')
+  } finally {
+    file.dispose()
+  }
 }
 
 const nfc = (p: string) => p.normalize('NFC')
@@ -132,6 +143,44 @@ export const MUSIC_FACTS: {
       const pid = await m.add(s.file(dir, 'mp3', 'Warmup'), s.meta)
       await m.tagGrouping(pid, 'Peak')
       expect(groupingFrames(await m.location(pid))).toEqual({ grp1: 'Peak', tit1: 'Warmup' })
+    },
+  },
+  {
+    name: 'setting the artist of an entry whose file lives outside the media folder rewrites that file',
+    check: async (m, dir) => {
+      const s = song(dir, 'Outside')
+      const pid = await m.add(s.file(dir, 'aiff'), s.meta)
+      const outside = s.file(join(dir, 'outside'), 'aiff')
+      await m.relocate(pid, outside)
+      const before = sha1(outside)
+      await m.tagArtist(pid, `${s.meta.artist} Retagged`)
+      expect(nfc(await m.location(pid))).toBe(nfc(realpathSync(outside)))
+      expect(sha1(outside)).not.toBe(before)
+      expect(artistOf(outside)).toBe(`${s.meta.artist} Retagged`)
+    },
+  },
+  {
+    name: 'setting a tag on a WAV entry leaves the WAV file as it was',
+    check: async (m, dir) => {
+      const s = song(dir, 'Wave')
+      const pid = await m.add(s.file(dir, 'wav'), s.meta)
+      const file = await m.location(pid)
+      const before = sha1(file)
+      await m.tagArtist(pid, `${s.meta.artist} Retagged`)
+      await m.tagGrouping(pid, 'Peak')
+      expect(nfc(await m.location(pid))).toBe(nfc(file))
+      expect(sha1(file)).toBe(before)
+    },
+  },
+  {
+    name: 'adding a WAV when a tagged AIFF of the same song exists creates a new entry',
+    check: async (m, dir) => {
+      const s = song(dir, 'Second')
+      const aiff = await m.add(s.file(dir, 'aiff'), s.meta)
+      const wav = await m.add(s.file(dir, 'wav'), s.meta)
+      expect(wav).not.toBe(aiff)
+      expect(await m.location(wav)).toMatch(/\.wav$/i)
+      expect(await m.location(aiff)).toMatch(/\.aiff?$/i)
     },
   },
 ]

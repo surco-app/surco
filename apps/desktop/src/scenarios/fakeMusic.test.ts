@@ -225,6 +225,8 @@ const underTest: MusicUnderTest = {
   markReplacing: (pid, label) => fake.markAppleMusicReplacing(pid, label, true),
   location: (pid) => fake.appleMusicEntryLocation(pid),
   tagGrouping: async (pid, grouping) => music.tag(pid, { grouping }),
+  tagArtist: async (pid, artist) => music.tag(pid, { artist }),
+  relocate: async (pid, path) => music.relocate(pid, path),
   mediaFolder: async () => music.state.mediaFolder,
 }
 

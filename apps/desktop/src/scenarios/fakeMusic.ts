@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync } from 'node:fs'
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 import {
@@ -133,11 +133,16 @@ export const music = {
     retag(entry, meta, false)
     return entry.persistentId
   },
-  tag(persistentId: string, fields: Partial<Pick<MusicEntry, 'grouping'>>): void {
+  tag(persistentId: string, fields: Partial<Pick<MusicEntry, 'grouping' | 'artist'>>): void {
     const entry = live(persistentId)
     if (!entry) throw new Error(`scenario: no Music entry ${persistentId}`)
     Object.assign(entry, fields)
     rewriteFile(entry)
+  },
+  relocate(persistentId: string, path: string): void {
+    const entry = live(persistentId)
+    if (!entry) throw new Error(`scenario: no Music entry ${persistentId}`)
+    entry.location = realpathSync(path)
   },
 }
 
