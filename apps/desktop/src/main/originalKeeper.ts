@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs'
 import { type BackupPolicy, keepsBackup } from '../shared/backupPolicy'
+import { errorWithKey } from '../shared/errorKeys'
 import type { TrashEntry, TrashReason } from '../shared/types'
 
 // The seam between the write paths and Surco's Originals. convertAudio,
@@ -18,6 +19,9 @@ export interface KeepContext {
   // A write whose own promise rests on the copy: the review's Undo, a removal the user
   // never phrased as a delete for good. The setting does not get to break that promise.
   regardlessOfPolicy?: boolean
+  // A file that stays on its path, playing in Music while Music rewrites it: short of
+  // room it is not sent to the system Trash, which would take it from under the entry.
+  staysInPlace?: boolean
 }
 
 export type OriginalKeeper = (
@@ -52,7 +56,8 @@ export function policyKeeper(
     const reencodes = ctx?.reencodes ?? true
     if (!ctx?.regardlessOfPolicy && !keepsBackup(policy(), { reencodes })) return null
     const kept = await stash(path, reason, outputPath, ctx)
-    if (!kept && !ctx?.regardlessOfPolicy && noRoom && existsSync(path)) await noRoom(path)
+    if (!kept && !ctx?.regardlessOfPolicy && !ctx?.staysInPlace && noRoom && existsSync(path))
+      await noRoom(path)
     return kept
   }
 }
@@ -71,6 +76,21 @@ export async function keepOriginal(
   ctx?: KeepContext,
 ): Promise<TrashEntry | null> {
   return keeper ? keeper(path, reason, outputPath, ctx) : null
+}
+
+// Music rewrites an entry's file as soon as a tag is set on it, so that file is copied
+// first, under the setting a tag-only rewrite follows. A copy the setting asks for and the
+// room refuses stops the rewrite rather than letting Music change the file with no way back.
+export async function keepBeforeMusicRewrite(path: string): Promise<TrashEntry | null> {
+  const kept = await keepOriginal(path, 'replaced', path, { reencodes: false, staysInPlace: true })
+  if (
+    !kept &&
+    keeper &&
+    existsSync(path) &&
+    keepsBackup(currentBackupPolicy(), { reencodes: false })
+  )
+    throw errorWithKey('noRoomForBackup', path)
+  return kept
 }
 
 // A replaced original is backed up by copy and never leaves its path, so a write that

@@ -1,3 +1,6 @@
+import { mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { BackupPolicy } from '../shared/backupPolicy'
 import type { TrashEntry } from '../shared/types'
@@ -235,6 +238,7 @@ describe('applemusic:update', () => {
     expect(order).toEqual(['backup', 'music'])
     expect(stash).toHaveBeenCalledWith('/m/c.aiff', 'replaced', '/m/c.aiff', {
       reencodes: false,
+      staysInPlace: true,
     })
   })
 
@@ -245,6 +249,27 @@ describe('applemusic:update', () => {
     await handlers.get('applemusic:update')?.(null, job)
     expect(stash).not.toHaveBeenCalled()
     expect(updateInAppleMusic).toHaveBeenCalled()
+  })
+
+  // Short of room, the keeper sends a file about to be replaced to the system Trash. This
+  // one stays where it is, playing in Music: moved there, Music would retag a file in the
+  // Trash. With no copy possible, Music is not asked.
+  it('leaves the file where it is and Music alone when the backup has no room', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-update-'))
+    const file = join(dir, 'c.aiff')
+    writeFileSync(file, 'audio')
+    appleMusicEntryLocation.mockResolvedValue(file)
+    const noRoom = vi.fn()
+    configureOriginalKeeper(
+      policyKeeper(
+        () => 'always',
+        async () => null,
+        noRoom,
+      ),
+    )
+    await expect(handlers.get('applemusic:update')?.(null, job)).rejects.toThrow('noRoomForBackup')
+    expect(noRoom).not.toHaveBeenCalled()
+    expect(updateInAppleMusic).not.toHaveBeenCalled()
   })
 
   it('drops the backup when the entry is gone and Music touched nothing', async () => {

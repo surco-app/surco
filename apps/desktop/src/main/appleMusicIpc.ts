@@ -42,7 +42,7 @@ import { removeDuplicateCopyLogged } from './musicDuplicates'
 import { prepareTagRewrite } from './musicFieldWrite'
 import { applyMusicFixes } from './musicReviewApply'
 import { musicReviewLog, setFieldLogged } from './musicReviewLog'
-import { discardBackup, keepOriginal } from './originalKeeper'
+import { discardBackup, keepBeforeMusicRewrite } from './originalKeeper'
 import { trashRecoverably } from './recoverableTrash'
 import { getSettings } from './settings'
 
@@ -363,9 +363,7 @@ export function registerAppleMusicIpc(
               })
             }
             const location = await appleMusicEntryLocation(job.persistentId).catch(() => '')
-            const kept = location
-              ? await keepOriginal(location, 'replaced', location, { reencodes: false })
-              : null
+            const kept = location ? await keepBeforeMusicRewrite(location) : null
             const updated = await updateInAppleMusic(job.persistentId, job.meta, prepared?.path)
             if (updated) return updated
             if (kept) await discardBackup(kept).catch(() => undefined)
