@@ -1,10 +1,11 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
 import { describe, expect, it } from 'vitest'
 import { automaticCueOffsetMs, automaticCueOffsetOfFiles } from './cueCalibration'
+import { leadingId3v2Size } from './id3Header'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-cue-calibration-'))
@@ -87,5 +88,53 @@ describe('automaticCueOffsetOfFiles', () => {
     const withoutXing = encode('bare-out.mp3', ['-c:a', 'libmp3lame', '-write_xing', '0'])
 
     expect(await automaticCueOffsetOfFiles(flac, withoutXing)).toBeCloseTo(ms(ENCODER_DELAY, 44100))
+  })
+})
+
+describe('automaticCueOffsetOfFiles past a large cover', () => {
+  it('finds the Xing header behind an ID3 tag bigger than the bytes it used to scan', async () => {
+    const cover = join(dir, 'noise.png')
+    execFileSync(FF, [
+      '-y',
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'color=c=gray:s=800x800,noise=alls=100:allf=t',
+      '-frames:v',
+      '1',
+      cover,
+    ])
+    const wav = encode('plain.wav', [])
+    const covered = join(dir, 'covered.mp3')
+    execFileSync(FF, [
+      '-y',
+      '-v',
+      'error',
+      '-i',
+      wav,
+      '-i',
+      cover,
+      '-map',
+      '0:a',
+      '-map',
+      '1:v',
+      '-c:a',
+      'libmp3lame',
+      '-c:v',
+      'copy',
+      '-disposition:v',
+      'attached_pic',
+      covered,
+    ])
+    expect(leadingId3v2Size(readFileSync(covered))).toBeGreaterThan(1 << 20)
+
+    expect(await automaticCueOffsetOfFiles(covered, wav)).toBeCloseTo(
+      -ms(XING_FRAME + ENCODER_DELAY, 44100),
+    )
+    expect(await automaticCueOffsetOfFiles(wav, covered)).toBeCloseTo(
+      ms(XING_FRAME + ENCODER_DELAY, 44100),
+    )
   })
 })

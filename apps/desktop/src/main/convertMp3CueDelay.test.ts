@@ -14,6 +14,7 @@ vi.mock('./settings', () => ({
 
 import type { TrackMetadata } from '../shared/types'
 import { convertAudio } from './ffmpeg'
+import { leadingId3v2Size } from './id3Header'
 import { mpeg1XingOfFile } from './rekordboxTimeline'
 import { readCueTree } from './tags'
 import { buildTraktorTree, injectWavPriv, readTraktorCueStart, traktorCue } from './traktor4Fixture'
@@ -81,6 +82,7 @@ function makeMp3(name: string, writeXing: boolean, tree: Uint8Array): string {
 let withXing: string
 let withoutXing: string
 let wav: string
+let noisyCover: string
 
 const XING_LEAD_MS = (2257 / 44100) * 1000
 
@@ -91,6 +93,19 @@ beforeAll(() => {
   wav = join(dir, 'source.wav')
   execFileSync(FF, ['-y', '-v', 'error', '-f', 'lavfi', '-i', 'sine=f=440:d=5', wav])
   injectWavPriv(wav, tree)
+  noisyCover = join(dir, 'noise.png')
+  execFileSync(FF, [
+    '-y',
+    '-v',
+    'error',
+    '-f',
+    'lavfi',
+    '-i',
+    'color=c=gray:s=800x800,noise=alls=100:allf=t',
+    '-frames:v',
+    '1',
+    noisyCover,
+  ])
 })
 
 function cueStart(file: string): number {
@@ -125,6 +140,14 @@ describe('Traktor cue calibration on the MP3 crossings', () => {
     await convertAudio(wav, out, 'mp3', meta)
 
     expect((await mpeg1XingOfFile(out))?.xing).toBe(true)
+    expect(cueStart(out)).toBeCloseTo(CUE_START_MS + XING_LEAD_MS, 1)
+  })
+
+  it('still finds its Xing header behind a cover larger than a megabyte', async () => {
+    const out = join(dir, 'from-wav-covered.mp3')
+    await convertAudio(wav, out, 'mp3', meta, noisyCover)
+
+    expect(leadingId3v2Size(readFileSync(out))).toBeGreaterThan(1 << 20)
     expect(cueStart(out)).toBeCloseTo(CUE_START_MS + XING_LEAD_MS, 1)
   })
 })

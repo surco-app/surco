@@ -3,6 +3,7 @@ import { extname } from 'node:path'
 import { leadingId3v2Size } from './id3Header'
 
 const HEAD_SCAN_BYTES = 1 << 20
+const ID3V2_HEADER_BYTES = 10
 const MPEG1_SAMPLE_RATES = [44100, 48000, 32000]
 const MPEG1_FRAME_SAMPLES = 1152
 const MP3_DECODER_DELAY = 529
@@ -104,8 +105,16 @@ async function mp3Head(file: string): Promise<Buffer | null> {
     return null
   }
   try {
+    const tagHeader = Buffer.alloc(ID3V2_HEADER_BYTES)
+    let audioAt = 0
+    for (;;) {
+      const { bytesRead } = await fh.read(tagHeader, 0, ID3V2_HEADER_BYTES, audioAt)
+      const size = leadingId3v2Size(tagHeader.subarray(0, bytesRead))
+      if (size === 0) break
+      audioAt += size
+    }
     const head = Buffer.alloc(HEAD_SCAN_BYTES)
-    const { bytesRead } = await fh.read(head, 0, HEAD_SCAN_BYTES, 0)
+    const { bytesRead } = await fh.read(head, 0, HEAD_SCAN_BYTES, audioAt)
     return head.subarray(0, bytesRead)
   } finally {
     await fh.close()

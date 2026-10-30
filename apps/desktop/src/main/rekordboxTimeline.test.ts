@@ -52,6 +52,8 @@ function id3(size: number): Buffer {
   tag[3] = 3
   tag[9] = size & 0x7f
   tag[8] = (size >> 7) & 0x7f
+  tag[7] = (size >> 14) & 0x7f
+  tag[6] = (size >> 21) & 0x7f
   return tag
 }
 
@@ -181,5 +183,21 @@ describe('rekordboxShiftOfFile', () => {
 
   it('reads no shift for a file it cannot open', async () => {
     expect(await rekordboxShiftOfFile(join(dir, 'gone.mp3'), 44100)).toBe(0)
+  })
+
+  it('reads the header behind an ID3 tag larger than a megabyte, as a big cover makes', async () => {
+    const file = join(dir, 'covered.mp3')
+    execFileSync(FF, [
+      '-y',
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=1',
+      file,
+    ])
+    writeFileSync(file, Buffer.concat([id3(3 << 20), readFileSync(file)]))
+    expect(await rekordboxShiftOfFile(file, 44100)).toBeCloseTo((1152 / 44100) * 1000, 3)
   })
 })
