@@ -1353,7 +1353,8 @@ lectura/escritura, no 300.
 
 **Los cues de Engine siguen al recorte.** Al reapuntar una pista convertida sin el silencio
 inicial, cada hot cue, el cue principal, cada loop y la rejilla se adelantan lo mismo que se
-cortó; lo que caía dentro del corte queda en el nuevo inicio, como en rekordbox y Traktor. Si
+cortó; lo que caía dentro del corte queda en el nuevo inicio, como en rekordbox y Traktor, y un
+loop que empezaba dentro conserva su duración, como en Traktor. Si
 además se cambió la frecuencia de muestreo, las posiciones se reescriben en la nueva
 (`shiftEnginePerformance`, `engineRepoint.ts:120`). La onda de vista general pierde las
 entradas del tramo cortado y su paso se cuenta en la nueva frecuencia. Antes la fila seguía al fichero pero cada

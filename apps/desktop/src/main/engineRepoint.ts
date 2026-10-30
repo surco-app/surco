@@ -115,9 +115,10 @@ function inflated(blob: Blob): Buffer | null {
 
 // Every position Engine keeps for a track, moved onto the converted file: the cut comes off
 // each one and each is rewritten at the new rate, and the overview drops the entries the cut
-// took. A cue or loop end inside the cut lands on the new start, as rekordbox's and
-// Traktor's do; grid markers keep their spacing, so they may sit before it. Unset slots (-1)
-// stay unset, and a blob that does not decode is left as Engine wrote it.
+// took. A cue or loop inside the cut lands on the new start, as rekordbox's and Traktor's
+// do, a loop keeping its length as Traktor's does; grid markers keep their spacing, so they
+// may sit before it. Unset slots (-1) stay unset, and a blob that does not decode is left
+// as Engine wrote it.
 export function shiftEnginePerformance(perf: Performance, shift: EngineShift): Performance {
   const track = inflated(perf.trackData)
   if (!track || track.length < 16) return perf
@@ -188,11 +189,16 @@ export function shiftEnginePerformance(perf: Performance, shift: EngineShift): P
   const loops = perf.loops && decodeLoops(Buffer.from(perf.loops))
   if (loops)
     next.loops = encodeLoops(
-      loops.map((loop) => ({
-        ...loop,
-        start: loop.startSet ? set(loop.start) : loop.start,
-        end: loop.endSet ? set(loop.end) : loop.end,
-      })),
+      loops.map((loop) => {
+        const start = loop.startSet ? set(loop.start) : loop.start
+        const end =
+          loop.startSet && loop.endSet
+            ? start + ((loop.end - loop.start) * to) / from
+            : loop.endSet
+              ? set(loop.end)
+              : loop.end
+        return { ...loop, start, end }
+      }),
     )
   return next
 }

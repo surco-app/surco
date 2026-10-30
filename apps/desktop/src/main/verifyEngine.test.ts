@@ -574,6 +574,31 @@ describe('checkEngine after a conversion that moved the audio', () => {
     })
   })
 
+  // The write keeps a loop's length when its start falls inside the cut, so the check reads
+  // that loop on the new start with its length, not collapsed to nothing.
+  it('a loop that started inside the cut, on the new start with its length, is ok', () => {
+    const dir = library()
+    write(dir, 'UPDATE PerformanceData SET loops = ?', loopsAt(0.5 * R, 1.5 * R))
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    moved(dir, CUT)
+    write(dir, 'UPDATE PerformanceData SET loops = ?', loopsAt(0, R))
+    expect(checkOne(dir, expectFor(before, trimmedBy(CUT)))[0].state).toBe('ok')
+  })
+
+  it('a loop that started inside the cut, collapsed to nothing, is engineCuesMisplaced', () => {
+    const dir = library()
+    write(dir, 'UPDATE PerformanceData SET loops = ?', loopsAt(0.5 * R, 1.5 * R))
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    moved(dir, CUT)
+    write(dir, 'UPDATE PerformanceData SET loops = ?', loopsAt(0, 0))
+    expect(checkOne(dir, expectFor(before, trimmedBy(CUT)))[0].detail).toEqual({
+      key: 'engineCuesMisplaced',
+      params: { field: 'loops' },
+    })
+  })
+
   it('cues moved by the cut twice are engineCuesMisplaced', () => {
     const dir = trimmable()
     const before = snapshot(dir)

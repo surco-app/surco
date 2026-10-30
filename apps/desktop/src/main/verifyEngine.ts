@@ -115,12 +115,15 @@ function performanceOf(db: EngineDb, id: number): Omit<EngineSnapshot, 'id'> {
 }
 
 // The positions a write that followed the conversion leaves: earlier by the cut, a cue or
-// loop end inside it on the new start, grid markers keeping their spacing.
+// loop inside it on the new start, a loop keeping its length, grid markers their spacing.
 function shifted(field: keyof Positions, before: (number | null)[], shift: EngineShift) {
   const cut = shift.trimmedMs / 1000
-  return before.map((s) =>
-    s === null ? null : field === 'beatData' ? s - cut : Math.max(0, s - cut),
-  )
+  return before.map((s, i) => {
+    if (s === null) return null
+    if (field === 'beatData') return s - cut
+    const start = field === 'loops' && i % 2 === 1 ? before[i - 1] : null
+    return start === null ? Math.max(0, s - cut) : Math.max(0, start - cut) + (s - start)
+  })
 }
 
 const POSITION_TOLERANCE_SEC = 0.001

@@ -532,6 +532,34 @@ describe.each(['2.18', '3.0.2'] as const)(
       expect(await readFile(lib.dbPath)).toEqual(bytes)
     })
 
+    // A loop is a length as much as a place: one set inside the lead-in, or across its end,
+    // collapsed onto the new start would be a zero-length loop Engine cannot play. It lands on
+    // the new start and keeps its length, as Traktor's loops do.
+    it('keeps the length of a loop that started inside the cut', async () => {
+      const lib = await analysedLibrary(schema)
+      const loop = (start: number, end: number) => ({
+        label: '',
+        start: start * RATE,
+        end: end * RATE,
+        startSet: true,
+        endSet: true,
+        argb: 0xff00cc00,
+      })
+      const db = await openDb(lib.dbPath)
+      db.run('UPDATE PerformanceData SET loops = ? WHERE trackId = 1', [
+        encodeLoops([loop(0.5, 1.5), loop(1.5, 3.5)]),
+      ])
+      await writeFile(lib.dbPath, db.export())
+      db.close()
+      await repointEngineTracks(lib.dir, [
+        { from: lib.oldFile, to: lib.newFile, engineShift: { trimmedMs: TRIM_MS } },
+      ])
+      expect((await positionsOf(lib)).loops).toEqual([
+        [0, expect.closeTo(1, 6)],
+        [0, expect.closeTo(2, 6)],
+      ])
+    })
+
     // The overview is the whole-track waveform Engine draws the cues over, one entry per
     // fixed run of samples. Left alone after a cut, the cues sit on the right beats while the
     // drawing under them still shows the lead-in; after a resample its run is counted at the
