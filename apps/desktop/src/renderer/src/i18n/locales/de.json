@@ -206,8 +206,6 @@
   },
   "trash": {
     "title": "Sicherungskopien",
-    "summary_one": "{{count}} Datei · {{size}}",
-    "summary_other": "{{count}} Dateien · {{size}}",
     "emptyTitle": "Nichts wiederherzustellen",
     "emptyBody": "Wenn eine Konvertierung ein Original ersetzt oder umbenennt, oder du einen Titel auf einem Laufwerk ohne Papierkorb löschst, erscheint er hier.",
     "reason": {
@@ -2847,7 +2845,10 @@
     "restored": "Fertig: {{program}} ist wieder auf dem Stand von {{when}}.",
     "music": {
       "title": "Musikdateien",
-      "state": "Originale gespeichert"
+      "state": "Originale gespeichert",
+      "kept": "Gespeichert",
+      "summary_one": "{{count}} Datei · {{size}} von {{max}}",
+      "summary_other": "{{count}} Dateien · {{size}} von {{max}}"
     },
     "footer": "Von jedem Programm behalten wir die letzten 5 Backups. Musikdateien {{days}} Tage.",
     "reveal": "Im Finder zeigen",

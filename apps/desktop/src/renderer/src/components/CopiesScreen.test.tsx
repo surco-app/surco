@@ -56,21 +56,25 @@ function when(ms: number): string {
   )
 }
 
+function musicTrash() {
+  return {
+    entries: [trashEntry],
+    retentionDays: 7,
+    maxBytes: 10 * 1024 * 1024 * 1024,
+    onRestore: vi.fn(),
+    onRemove: vi.fn(),
+    onEmpty: vi.fn(),
+    onReveal: vi.fn(),
+  }
+}
+
 function renderScreen(
   programs: ProgramCopies[],
   over: Partial<Parameters<typeof CopiesScreen>[0]> = {},
 ) {
   const props = {
     programs,
-    trash: {
-      entries: [trashEntry],
-      retentionDays: 7,
-      maxBytes: 10 * 1024 * 1024 * 1024,
-      onRestore: vi.fn(),
-      onRemove: vi.fn(),
-      onEmpty: vi.fn(),
-      onReveal: vi.fn(),
-    },
+    trash: musicTrash(),
     onRestore: vi.fn<(p: DjProgram, id: string) => Promise<RestoreResult>>(async () => ({
       ok: true,
     })),
@@ -114,6 +118,20 @@ describe('CopiesScreen', () => {
       i18n.t('copies.state.pending', { count: 3, program: i18n.t('sources.traktor') }),
     )
     expect(screen.getByTestId('copies-last-engine')).toHaveTextContent(i18n.t('copies.none'))
+  })
+
+  it('every section answers the same three questions, even before its first copy', () => {
+    renderScreen([program('engine')], { trash: { ...musicTrash(), entries: [] } })
+    expect(screen.getByTestId('copies-state-engine')).toBeInTheDocument()
+    expect(screen.getByTestId('copies-last-engine')).toHaveTextContent(i18n.t('copies.none'))
+    expect(screen.getByTestId('copies-kept-engine')).toHaveTextContent(
+      i18n.t('copies.kept', { count: 0, max: 5 }),
+    )
+    expect(screen.getByTestId('copies-state-music')).toBeInTheDocument()
+    expect(screen.getByTestId('copies-last-music')).toHaveTextContent(i18n.t('copies.none'))
+    expect(screen.getByTestId('copies-kept-music')).toHaveTextContent(
+      i18n.t('copies.music.summary', { count: 0, size: '0 B', max: '10 GB' }),
+    )
   })
 
   it('offers no buttons for a program with nothing to show or restore, so none of them is dead', () => {
@@ -331,10 +349,13 @@ describe('CopiesScreen', () => {
     expect(props.onRestore).toHaveBeenCalledWith('rekordbox', 'old')
   })
 
-  it('shows how many music originals are kept and how much they weigh', () => {
+  it('shows how many music originals are kept, how much they weigh and the room they get', () => {
     renderScreen([])
     expect(screen.getByTestId('copies-section-music')).toHaveTextContent(
-      i18n.t('trash.summary', { count: 1, size: '1 MB' }),
+      i18n.t('copies.music.kept'),
+    )
+    expect(screen.getByTestId('copies-kept-music')).toHaveTextContent(
+      i18n.t('copies.music.summary', { count: 1, size: '1 MB', max: '10 GB' }),
     )
     expect(screen.queryByTestId('trash-search')).not.toBeInTheDocument()
     fireEvent.click(screen.getByTestId('copies-toggle-music'))

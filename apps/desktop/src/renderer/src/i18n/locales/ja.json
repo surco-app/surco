@@ -206,8 +206,6 @@
   },
   "trash": {
     "title": "バックアップ",
-    "summary_one": "{{count}} ファイル · {{size}}",
-    "summary_other": "{{count}} ファイル · {{size}}",
     "emptyTitle": "復元するものがありません",
     "emptyBody": "変換で元のファイルが置き換えまたは名前変更された場合、またはゴミ箱のないディスクでトラックを削除した場合に表示されます。",
     "reason": {
@@ -2847,7 +2845,10 @@
     "restored": "完了：{{program}}を{{when}}の状態に戻しました。",
     "music": {
       "title": "音楽ファイル",
-      "state": "オリジナルを保存済み"
+      "state": "オリジナルを保存済み",
+      "kept": "保存数",
+      "summary_one": "{{count}} ファイル · {{size}} / {{max}}",
+      "summary_other": "{{count}} ファイル · {{size}} / {{max}}"
     },
     "footer": "各ソフトにつき、直近5件のバックアップを保存します。音楽ファイルは{{days}}日間です。",
     "reveal": "Finderで表示",

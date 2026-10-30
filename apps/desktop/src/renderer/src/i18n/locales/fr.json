@@ -206,8 +206,6 @@
   },
   "trash": {
     "title": "Copies de sauvegarde",
-    "summary_one": "{{count}} fichier · {{size}}",
-    "summary_other": "{{count}} fichiers · {{size}}",
     "emptyTitle": "Rien à restaurer",
     "emptyBody": "Quand une conversion remplace ou renomme un original, ou que tu supprimes une piste sur un disque sans corbeille, il apparaît ici.",
     "reason": {
@@ -2847,7 +2845,10 @@
     "restored": "C'est fait : {{program}} est revenu tel qu'il était {{when}}.",
     "music": {
       "title": "Fichiers de musique",
-      "state": "Originaux conservés"
+      "state": "Originaux conservés",
+      "kept": "Conservés",
+      "summary_one": "{{count}} fichier · {{size}} sur {{max}}",
+      "summary_other": "{{count}} fichiers · {{size}} sur {{max}}"
     },
     "footer": "Pour chaque logiciel, nous gardons les 5 dernières sauvegardes. Pour les fichiers de musique, {{days}} jours.",
     "reveal": "Afficher dans le Finder",

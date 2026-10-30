@@ -112,11 +112,9 @@ function ProgramSection({
           <Fact label={tr('copies.facts.last')} testId={`copies-last-${program}`}>
             {copies.length > 0 ? when(copies[0].takenAt) : tr('copies.none')}
           </Fact>
-          {copies.length > 0 && (
-            <Fact label={tr('copies.facts.kept')} testId={`copies-kept-${program}`}>
-              {tr('copies.kept', { count: copies.length, max: COPIES_KEEP })}
-            </Fact>
-          )}
+          <Fact label={tr('copies.facts.kept')} testId={`copies-kept-${program}`}>
+            {tr('copies.kept', { count: copies.length, max: COPIES_KEEP })}
+          </Fact>
         </div>
       </div>
       <div className="flex gap-2">
@@ -232,14 +230,13 @@ function MusicSection({
           <Fact label={tr('copies.facts.last')} testId="copies-last-music">
             {entries.length > 0 ? when(last) : tr('copies.none')}
           </Fact>
-          {entries.length > 0 && (
-            <Fact label={tr('copies.facts.kept')} testId="copies-kept-music">
-              {tr('trash.summary', {
-                count: entries.length,
-                size: formatBytes(total, i18n.language),
-              })}
-            </Fact>
-          )}
+          <Fact label={tr('copies.music.kept')} testId="copies-kept-music">
+            {tr('copies.music.summary', {
+              count: entries.length,
+              size: formatBytes(total, i18n.language),
+              max: formatBytes(trash.maxBytes, i18n.language),
+            })}
+          </Fact>
         </div>
       </div>
       <div className="flex gap-2">
