@@ -207,7 +207,7 @@ const run = (async (file: string, args: string[], opts?: RunOpts) => {
 // still finishes well under this, while a true stall is effectively infinite. Only the
 // analysis reads carry it — conversions can legitimately run for minutes, so they keep
 // their unbounded behavior.
-const ANALYSIS_TIMEOUT_MS = 120_000
+export const ANALYSIS_TIMEOUT_MS = 120_000
 
 interface ProbeTags {
   format?: { format_name?: string; tags?: Record<string, unknown> }
