@@ -4,6 +4,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
 import { encodeBase91 } from '../../main/base91'
+import { leadingId3v2Size } from '../../main/id3Header'
 import { writeTags } from '../../main/tags'
 import {
   buildTraktorTree,
@@ -103,6 +104,14 @@ function lyrics3Junk(): Buffer {
   return Buffer.concat([Buffer.from(block, 'latin1'), Buffer.alloc(512)])
 }
 
+export function leadingTagsEnd(bytes: Buffer): number {
+  let end = 0
+  for (let size = leadingId3v2Size(bytes); size > 0; size = leadingId3v2Size(bytes.subarray(end))) {
+    end += size
+  }
+  return end
+}
+
 export function makeSource(
   dir: string,
   origin: Origin,
@@ -129,10 +138,6 @@ export function makeSource(
     ...cues,
     path,
   ])
-  if (origin === 'mp3j') {
-    writeFileSync(path, Buffer.concat([lyrics3Junk(), readFileSync(path)]))
-    return { origin, path, tags, coverSha1: '', cuesMs: [] }
-  }
   if (origin === 'wav16' || origin === 'wav24') injectWavPriv(path, tree)
   else if (origin === 'aif' || origin === 'aiff') injectAiffPriv(path, tree)
   else if (ext === '.mp3')
@@ -146,6 +151,14 @@ export function makeSource(
     },
     cover,
   )
+  if (origin === 'mp3j') {
+    const bytes = readFileSync(path)
+    const tagEnd = leadingTagsEnd(bytes)
+    writeFileSync(
+      path,
+      Buffer.concat([bytes.subarray(0, tagEnd), lyrics3Junk(), bytes.subarray(tagEnd)]),
+    )
+  }
   const hasCues = origin !== 'alac' && origin !== 'aac'
   return {
     origin,

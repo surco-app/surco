@@ -7,9 +7,10 @@ import ffmpegStatic from 'ffmpeg-static'
 import { describe, expect, it } from 'vitest'
 import { leadingId3v2Size } from '../../main/id3Header'
 import { readTagLibFields } from '../../main/tags'
-import { scenarioDir } from '../fixtures'
+import { readTraktorCueStart, storedTree } from '../../main/traktor4Fixture'
+import { embeddedCover, scenarioDir } from '../fixtures'
 import type { Origin } from './cells'
-import { MARKER_SEC, makeSource, SEEDED_CUES_MS, TRICKY } from './sources'
+import { leadingTagsEnd, MARKER_SEC, makeSource, SEEDED_CUES_MS, TRICKY } from './sources'
 
 const FF = ffmpegStatic as unknown as string
 const PROBE = ffprobeInstaller.path
@@ -124,11 +125,17 @@ describe('matrix sources', () => {
     expect(Math.abs(at - MARKER_SEC * rate)).toBeLessThanOrEqual(slack)
   })
 
-  it.each(ORIGINS.filter((o) => o !== 'mp3j'))('reads the hard tags back from the %s', (origin) => {
+  it.each(ORIGINS)('reads the hard tags back from the %s', (origin) => {
     const read = readTagLibFields(sourceOf(origin).path).extras
     expect(read.title).toBeDefined()
     expect(read.title?.normalize('NFC')).toBe('Café Olé')
     expect(read.artist).toBe(TRICKY.artist)
+    expect(read.album).toBe(TRICKY.album)
+    expect(read.grouping).toBe(TRICKY.grouping)
+    expect(read.publisher).toBe(TRICKY.publisher)
+    if (extname(sourceOf(origin).path) !== '.m4a') {
+      expect(read.catalogNumber).toBe(TRICKY.catalogNumber)
+    }
     expect(read.genre?.split(/[,;]\s*/)).toEqual(['House', 'Deep House'])
     expect(read.trackNumber).toBe('3')
     expect(read.trackTotal).toBe('12')
@@ -145,21 +152,46 @@ describe('matrix sources', () => {
     expect(xing('mp3n')).toBe(false)
   })
 
-  it('opens the mp3j with junk, not an ID3 tag or a frame', () => {
+  it('puts the mp3j junk right after its ID3 tag and before the first frame', () => {
     const bytes = readFileSync(sourceOf('mp3j').path)
-    expect(bytes.subarray(0, 3).toString('latin1')).not.toBe('ID3')
-    expect(bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0).toBe(false)
-    expect(bytes.subarray(0, 4096).toString('latin1')).toContain('LYRICSBEGIN')
-    expect(bytes.subarray(0, 4096).includes(Buffer.alloc(512))).toBe(true)
+    const tagEnd = leadingTagsEnd(bytes)
+    expect(bytes.subarray(0, 3).toString('latin1')).toBe('ID3')
+    expect(bytes.subarray(tagEnd, tagEnd + 11).toString('latin1')).toBe('LYRICSBEGIN')
+    const junk = bytes.subarray(tagEnd, tagEnd + 4096)
+    expect(junk.includes(Buffer.alloc(512))).toBe(true)
+    const frame = bytes.indexOf(Buffer.from([0xff, 0xfb]), tagEnd)
+    expect(frame - tagEnd).toBeGreaterThan(512)
+    expect(leadingId3v2Size(bytes)).toBeGreaterThan(0)
   })
 
-  it('seeds the cues and cover the oracle will look for', () => {
-    expect(SEEDED_CUES_MS).toEqual([MARKER_SEC * 1000, 15000])
-    const flac = sourceOf('flac')
-    expect(flac.cuesMs).toEqual(SEEDED_CUES_MS)
-    expect(flac.coverSha1).toMatch(/^[0-9a-f]{40}$/)
-    const again = createHash('sha1').update(readFileSync(flac.path)).digest('hex')
-    expect(again).not.toBe(flac.coverSha1)
+  it.each(['flac', 'wav16', 'wav24', 'aif', 'aiff', 'mp3x', 'mp3n', 'mp3j'] as Origin[])(
+    'stores the seeded cues in the %s where Traktor keeps them',
+    (origin) => {
+      const track = sourceOf(origin)
+      const tree = storedTree(track.path)
+      expect(tree).not.toBeNull()
+      const positions = track.cuesMs.map((_, i) => readTraktorCueStart(tree as Uint8Array, i))
+      expect(positions).toEqual(SEEDED_CUES_MS)
+      expect(track.cuesMs).toEqual(SEEDED_CUES_MS)
+    },
+  )
+
+  it.each(['alac', 'aac'] as Origin[])(
+    'keeps no cues in the %s, as production has no path',
+    (origin) => {
+      expect(sourceOf(origin).cuesMs).toEqual([])
+    },
+  )
+
+  it.each(ORIGINS)('embeds the cover whose sha1 the %s reports', (origin) => {
+    const track = sourceOf(origin)
+    const cover = embeddedCover(track.path)
+    expect(cover).not.toBeNull()
+    expect(
+      createHash('sha1')
+        .update(cover as Buffer)
+        .digest('hex'),
+    ).toBe(track.coverSha1)
   })
 
   it('moves the click with the lead silence', () => {
