@@ -232,6 +232,10 @@ interface Props {
   readFullTrack: (id: string) => Promise<TrackItem | undefined>
   librarySources?: readonly PlaylistSource[]
   onRevealIn?: (source: PlaylistSource) => void
+  // Re-checks a conversion whose re-read did not add up; App owns the job runner.
+  onRetryVerification?: (trackId: string) => Promise<void>
+  // Opens the copies panel at this track's kept original.
+  onOpenBackup?: (track: TrackItem) => void
   // source; the trim section's own onKeyDown reads it to resolve its five commands.
 }
 
@@ -298,6 +302,8 @@ export const Editor = memo(function Editor({
   readFullTrack,
   librarySources = [],
   onRevealIn,
+  onRetryVerification,
+  onOpenBackup,
 }: Props): React.JSX.Element {
   // Every Settings-derived value the editor reads comes from the shared context in one
   // pull — this used to be a 17-prop wall App re-plumbed for each field (see
@@ -1855,6 +1861,8 @@ export const Editor = memo(function Editor({
           onExportCollection={onExportCollection}
           revealIn={revealIn}
           onRevealIn={onRevealIn}
+          onRetryVerification={onRetryVerification}
+          onOpenOriginals={onOpenBackup ? () => onOpenBackup(item) : undefined}
           // Single-select's menu never offers 'source' (format stays a real OutputFormat
           // there), so onProcess only ever sees one at runtime — the cast just satisfies
           // the shared FormatSetting signature ConvertFooter needs for the multi branch.

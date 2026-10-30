@@ -1,4 +1,4 @@
-import { Check, Clock, ShieldCheck } from 'lucide-react'
+import { Check, Clock, Loader2, ShieldAlert, ShieldCheck, TriangleAlert } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -10,8 +10,9 @@ import { useSplitMenu } from './SplitButton'
 import { Tooltip } from './Tooltip'
 
 // The few details whose params need the UI language before they read: a rate in the
-// language's decimal mark, the playlists as a spoken list, a cue count that picks its plural.
-function detailText(
+// language's decimal mark, the playlists as a spoken list, a cue count that picks its plural,
+// a field by the label the form gives it.
+export function detailText(
   { key, params = {} }: CheckDetail,
   tr: (key: string, options?: Record<string, unknown>) => string,
   language: string,
@@ -29,11 +30,22 @@ function detailText(
   }
   if (key === 'rekordboxOk')
     return tr('verify.detail.rekordboxOk', { ...params, count: params.cues })
+  if (key === 'fileTagDiffers' || key === 'musicTagDiffers')
+    return tr(`verify.detail.${key}`, { field: tr(`fields.${params.field}`) })
+  if (key === 'enginePerformanceChanged')
+    return tr('verify.detail.enginePerformanceChanged', {
+      field: tr(`verify.engineField.${params.field}`),
+    })
+  if (key === 'fileSourceGone')
+    return tr(
+      Number(params.kept) ? 'verify.detail.fileSourceGoneKept' : 'verify.detail.fileSourceGone',
+    )
   return tr(`verify.detail.${key}`, params)
 }
 
 // The shield beside the done line: what Surco re-read after the conversion, one line per
 // place it touched, in the order the work happened. Places it never wrote to never show.
+// A place that did not add up (or could not be read) is marked in amber, never checked.
 export function VerifiedPopover({ checks }: { checks: PlaceCheck[] }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const { open, setOpen, ref, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
@@ -46,6 +58,8 @@ export function VerifiedPopover({ checks }: { checks: PlaceCheck[] }): React.JSX
     (a, b) => PLACE_ORDER.indexOf(a.place) - PLACE_ORDER.indexOf(b.place),
   )
   const label = tr('verify.shieldLabel')
+  const failed = (c: PlaceCheck) => c.state === 'mismatch' || c.state === 'unreadable'
+  const Shield = checks.some(failed) ? ShieldAlert : ShieldCheck
 
   return (
     <div ref={ref} className="shrink-0">
@@ -63,7 +77,7 @@ export function VerifiedPopover({ checks }: { checks: PlaceCheck[] }): React.JSX
         }}
         className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg aria-expanded:text-[var(--color-accent)]"
       >
-        <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+        <Shield className="h-3.5 w-3.5" aria-hidden="true" />
         {!open && <Tooltip label={label} />}
       </button>
       {open &&
@@ -90,7 +104,18 @@ export function VerifiedPopover({ checks }: { checks: PlaceCheck[] }): React.JSX
                   data-place={c.place}
                   className="flex items-start gap-2 px-3 py-1.5 text-xs"
                 >
-                  {c.state === 'pending' ? (
+                  {failed(c) ? (
+                    <TriangleAlert
+                      data-testid="verify-line-mismatch"
+                      className="mt-px h-3.5 w-3.5 shrink-0 text-warn"
+                      aria-hidden="true"
+                    />
+                  ) : c.state === 'checking' ? (
+                    <Loader2
+                      className="mt-px h-3.5 w-3.5 shrink-0 animate-spin text-fg-dim"
+                      aria-hidden="true"
+                    />
+                  ) : c.state === 'pending' ? (
                     <Clock
                       data-testid="verify-line-pending"
                       className="mt-px h-3.5 w-3.5 shrink-0 text-fg-dim"

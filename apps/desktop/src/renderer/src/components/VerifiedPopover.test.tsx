@@ -119,6 +119,37 @@ describe('VerifiedPopover', () => {
     expect(screen.getByTestId('verify-popover').className).toMatch(/max-w-\[calc\(100vw/)
   })
 
+  // The footer's amber line names one place; here every place shows, the ones that did
+  // not add up marked in amber instead of the check mark that would vouch for them.
+  it('marks each place that does not add up and still lists the rest', () => {
+    const [file, rekordbox, engine] = open([
+      fileOk,
+      {
+        place: 'rekordbox',
+        state: 'mismatch',
+        detail: { key: 'rekordboxStillOld', params: { format: 'AIFF' } },
+      },
+      { place: 'engine', state: 'unreadable', detail: { key: 'engineUnreadable' } },
+    ])
+    expect(within(file).queryByTestId('verify-line-mismatch')).toBeNull()
+    expect(within(rekordbox).getByTestId('verify-line-mismatch')).toBeInTheDocument()
+    expect(rekordbox).toHaveTextContent('rekordbox sigue en el AIFF')
+    expect(within(engine).getByTestId('verify-line-mismatch')).toBeInTheDocument()
+    expect(engine).toHaveTextContent('No se pudo comprobar Engine DJ')
+  })
+
+  // A tag that did not stick is named the way the form names the field.
+  it('names a tag that differs by its field label', () => {
+    const [file] = open([
+      {
+        place: 'file',
+        state: 'mismatch',
+        detail: { key: 'fileTagDiffers', params: { field: 'albumArtist' } },
+      },
+    ])
+    expect(file).toHaveTextContent(`${i18n.t('fields.albumArtist')} distinto en el fichero`)
+  })
+
   // Focus moves in on open, so a keyboard user's Escape lands on the popover that
   // handles it, and closing hands it back.
   it('closes with Escape and hands focus back to the shield', () => {

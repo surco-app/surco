@@ -1,7 +1,15 @@
-import { ArrowUpRight, Clock, Loader2, Music, SlidersVertical, Trash2 } from 'lucide-react'
+import {
+  ArrowUpRight,
+  Clock,
+  Loader2,
+  Music,
+  SlidersVertical,
+  Trash2,
+  TriangleAlert,
+} from 'lucide-react'
 import type React from 'react'
-import { useLayoutEffect, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useLayoutEffect, useRef, useState } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
 import type {
   FormatSetting,
   NormalizeConfig,
@@ -9,6 +17,7 @@ import type {
   PlaylistSource,
   SpectrumVerdict,
 } from '../../../shared/types'
+import { PLACE_ORDER, type PlaceCheck } from '../../../shared/verification'
 import { type CleanupOffer, cleanupCount } from '../hooks/useConfirmFlows'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import type { Destination } from '../lib/destination'
@@ -25,7 +34,18 @@ import { ExportButton } from './ExportButton'
 import { SOURCE_ICON } from './SourceRail'
 import { FOOTER_BAR } from './SplitButton'
 import { Tooltip } from './Tooltip'
-import { VerifiedPopover } from './VerifiedPopover'
+import { detailText, VerifiedPopover } from './VerifiedPopover'
+
+// The one place the amber line names when several fail: a wrong answer before a place that
+// could not be read, then the file before the libraries that follow it, since a library
+// pointing at a bad file is fixed by fixing the file.
+function worstCheck(checks: PlaceCheck[]): PlaceCheck | undefined {
+  const rank = (c: PlaceCheck) =>
+    (c.state === 'mismatch' ? 0 : c.state === 'unreadable' ? 1 : 2) * PLACE_ORDER.length +
+    PLACE_ORDER.indexOf(c.place)
+  const failed = checks.filter((c) => c.state === 'mismatch' || c.state === 'unreadable')
+  return failed.sort((a, b) => rank(a) - rank(b))[0]
+}
 
 const ICON_BUTTON =
   'press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg-dim hover:bg-[var(--color-hover)]'
@@ -94,6 +114,10 @@ interface ConvertFooterProps {
   onExportCollection: () => void
   revealIn?: readonly PlaylistSource[]
   onRevealIn?: (source: PlaylistSource) => void
+  // Asks main to re-check (or rerun) the track whose re-read did not add up.
+  onRetryVerification?: (trackId: string) => Promise<void>
+  // Opens the copies of originals at this track, for a source a conversion in place retired.
+  onOpenOriginals?: () => void
 }
 
 // The editor's bottom bar: the error row, the normalization note, and either the
@@ -136,6 +160,8 @@ export function ConvertFooter({
   onExportCollection,
   revealIn = [],
   onRevealIn,
+  onRetryVerification,
+  onOpenOriginals,
 }: ConvertFooterProps): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const {
@@ -198,6 +224,23 @@ export function ConvertFooter({
       ? new Intl.ListFormat(i18n.language, { type: 'conjunction' }).format(pendingPlaces)
       : null
   const verifyMismatch = verification?.status === 'mismatch'
+  const worst = verifyMismatch ? worstCheck(verification.checks) : undefined
+  const keptOriginal =
+    worst?.detail.key === 'fileSourceGone' && Number(worst.detail.params?.kept) === 1
+  // A retry reads back as checking until its answer lands, and cannot be pressed twice.
+  // One main refused says only that the place could not be checked (its message is not
+  // the DJ's to read), and only until the next verification arrives with its own answer.
+  const [retrying, setRetrying] = useState(false)
+  const [retryFailedOn, setRetryFailedOn] = useState<typeof verification>(undefined)
+  const retryFailed = !!verification && retryFailedOn === verification
+  const retry = (): void => {
+    if (!onRetryVerification) return
+    const on = verification
+    setRetrying(true)
+    void onRetryVerification(item.id)
+      .catch(() => setRetryFailedOn(on))
+      .finally(() => setRetrying(false))
+  }
   const musicPrimary = destination === 'appleMusic' || hasMusicCopy
   const lossyToLossless =
     !isMulti &&
@@ -303,9 +346,37 @@ export function ConvertFooter({
             <div data-testid="done-row" className="@container flex min-w-0 items-center gap-1">
               <div data-testid="done-outcome" className="flex min-w-0 flex-1 items-center gap-1">
                 <div className="mr-auto flex min-w-0 items-center gap-0.5">
-                  {checking ? (
+                  {checking || retrying ? (
                     checkingLine
-                  ) : verifyMismatch ? null : (
+                  ) : verifyMismatch ? (
+                    <p
+                      data-testid="verify-mismatch"
+                      role="status"
+                      className="flex min-w-0 items-center gap-1 text-xs font-medium text-warn"
+                    >
+                      <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      <span className="min-w-0">
+                        {worst && retryFailed ? (
+                          tr(`verify.detail.${worst.place}Unreadable`)
+                        ) : keptOriginal ? (
+                          <Trans
+                            i18nKey="verify.sourceGoneKeptLine"
+                            components={[
+                              <button
+                                key="originals"
+                                type="button"
+                                data-testid="verify-open-originals"
+                                onClick={onOpenOriginals}
+                                className="underline underline-offset-2 hover:no-underline"
+                              />,
+                            ]}
+                          />
+                        ) : (
+                          worst && detailText(worst.detail, tr, i18n.language)
+                        )}
+                      </span>
+                    </p>
+                  ) : (
                     <p
                       data-testid="export-success"
                       role="status"
@@ -352,8 +423,19 @@ export function ConvertFooter({
                       )}
                     </p>
                   )}
-                  {(verification?.status === 'ok' || verification?.status === 'pending') && (
-                    <VerifiedPopover checks={verification.checks} />
+                  {(verification?.status === 'ok' ||
+                    verification?.status === 'pending' ||
+                    verifyMismatch) && <VerifiedPopover checks={verification.checks} />}
+                  {verifyMismatch && (
+                    <button
+                      type="button"
+                      data-testid="verify-retry"
+                      onClick={retry}
+                      disabled={retrying}
+                      className="press flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium text-fg hover:bg-[var(--color-hover)] disabled:opacity-60"
+                    >
+                      {tr('verify.retry')}
+                    </button>
                   )}
                 </div>
                 {revealsInMusic && !addedToMusic && (

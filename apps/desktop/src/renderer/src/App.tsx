@@ -1417,6 +1417,7 @@ export default function App(): React.JSX.Element {
   const {
     processOne,
     processAll,
+    retryVerification,
     addTrackToAppleMusic,
     addAllToAppleMusic,
     batching,
@@ -3466,6 +3467,8 @@ export default function App(): React.JSX.Element {
                             readFullTrack={readFullTrack}
                             librarySources={browser.sources}
                             onRevealIn={onRevealIn}
+                            onRetryVerification={retryVerification}
+                            onOpenBackup={onOpenBackup}
                           />
                         </Suspense>
                       </ErrorBoundary>

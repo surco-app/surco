@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { cloneElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { FormatSetting } from '../../../shared/types'
 import { type PlaceCheck, verificationStatus } from '../../../shared/verification'
 import i18n from '../i18n'
 import type { Destination } from '../lib/destination'
@@ -655,5 +656,167 @@ describe('ConvertFooter verification', () => {
     render(verified([fileOk, pending('rekordbox', 'rekordbox')]))
     expect(screen.queryByTestId('verify-mismatch')).toBeNull()
     expect(screen.queryByTestId('verify-retry')).toBeNull()
+  })
+
+  const bad = (
+    place: PlaceCheck['place'],
+    key: string,
+    params?: Record<string, string | number>,
+    state: PlaceCheck['state'] = 'mismatch',
+  ): PlaceCheck => ({ place, state, detail: params ? { key, params } : { key } })
+
+  function mismatched(
+    checks: PlaceCheck[],
+    props: Partial<React.ComponentProps<typeof ConvertFooter>> = {},
+  ): React.JSX.Element {
+    return cloneElement(verified(checks), props)
+  }
+
+  // Something did not add up: the line that promises it worked must not show, and the
+  // amber line names the one place that matters most. A wrong answer outranks a place
+  // that could not be read, and among wrong answers the file comes before the libraries
+  // that follow it, so the DJ fixes the root first.
+  it("a mismatch shows verify-mismatch with the worst place's text and no success line", () => {
+    render(
+      mismatched([
+        fileOk,
+        bad('rekordbox', 'rekordboxUnreadable', undefined, 'unreadable'),
+        bad('traktor', 'traktorStillOld', { format: 'AIFF' }),
+        bad('engine', 'engineStillOld', { format: 'AIFF' }),
+      ]),
+    )
+    expect(screen.getByTestId('verify-mismatch')).toHaveTextContent(/^Engine DJ sigue en el AIFF$/)
+    expect(screen.queryByTestId('export-success')).toBeNull()
+    expect(screen.getByTestId('done-row').textContent).not.toContain('✓')
+    expect(screen.queryByTestId('verify-pending-icon')).toBeNull()
+  })
+
+  // The amber line names one place; the shield still lists every one, so the DJ can see
+  // what else was checked and what still holds.
+  it('a mismatch keeps the shield beside the amber line', () => {
+    render(mismatched([fileOk, bad('rekordbox', 'rekordboxStillOld', { format: 'AIFF' })]))
+    expect(screen.getByTestId('verify-mismatch').nextElementSibling).toContainElement(
+      screen.getByTestId('verify-shield'),
+    )
+  })
+
+  it('Reintentar calls retryVerification once with the track id', () => {
+    const onRetryVerification = vi.fn<(id: string) => Promise<void>>(async () => {})
+    render(
+      mismatched([fileOk, bad('rekordbox', 'rekordboxStillOld', { format: 'AIFF' })], {
+        onRetryVerification,
+      }),
+    )
+    fireEvent.click(screen.getByTestId('verify-retry'))
+    expect(onRetryVerification).toHaveBeenCalledTimes(1)
+    expect(onRetryVerification).toHaveBeenCalledWith('t1')
+  })
+
+  // A second press while the first retry still runs would queue the same work twice; the
+  // line says it is checking again until the answer is back.
+  it('Reintentar is disabled while checking', async () => {
+    let settle = (): void => {}
+    const onRetryVerification = vi.fn<(id: string) => Promise<void>>(
+      () =>
+        new Promise<void>((resolve) => {
+          settle = resolve
+        }),
+    )
+    render(
+      mismatched([fileOk, bad('rekordbox', 'rekordboxStillOld', { format: 'AIFF' })], {
+        onRetryVerification,
+      }),
+    )
+    fireEvent.click(screen.getByTestId('verify-retry'))
+    expect(screen.getByTestId('verify-retry')).toBeDisabled()
+    expect(screen.getByTestId('verify-checking')).toHaveTextContent('Comprobando…')
+    expect(screen.queryByTestId('verify-mismatch')).toBeNull()
+    fireEvent.click(screen.getByTestId('verify-retry'))
+    expect(onRetryVerification).toHaveBeenCalledTimes(1)
+    await act(async () => settle())
+    expect(screen.getByTestId('verify-retry')).toBeEnabled()
+  })
+
+  // Main can refuse the retry with a bare Error whose message was never meant for the DJ:
+  // the line says only that the place could not be checked, and the button stays offered.
+  it('a retry that fails says it could not check, never the error, and can be tried again', async () => {
+    const onRetryVerification = vi.fn<(id: string) => Promise<void>>(async () => {
+      throw new Error('verifyUnknownTrack')
+    })
+    render(
+      mismatched([fileOk, bad('rekordbox', 'rekordboxStillOld', { format: 'AIFF' })], {
+        onRetryVerification,
+      }),
+    )
+    await act(async () => fireEvent.click(screen.getByTestId('verify-retry')))
+    expect(screen.getByTestId('verify-mismatch')).toHaveTextContent(
+      /^No se pudo comprobar rekordbox$/,
+    )
+    expect(screen.getByTestId('done-row').textContent).not.toContain('verifyUnknownTrack')
+    expect(screen.getByTestId('verify-retry')).toBeEnabled()
+  })
+
+  // Whatever main says next is the answer: a fresh verification replaces the failed retry's
+  // line instead of the footer holding on to it.
+  it("the next verification replaces a failed retry's line", async () => {
+    const checks = [fileOk, bad('rekordbox', 'rekordboxStillOld', { format: 'AIFF' })]
+    const onRetryVerification = vi.fn<(id: string) => Promise<void>>(async () => {
+      throw new Error('verifyUnknownTrack')
+    })
+    const { rerender } = render(mismatched(checks, { onRetryVerification }))
+    await act(async () => fireEvent.click(screen.getByTestId('verify-retry')))
+    rerender(mismatched([...checks], { onRetryVerification }))
+    expect(screen.getByTestId('verify-mismatch')).toHaveTextContent(/^rekordbox sigue en el AIFF$/)
+  })
+
+  it('an unreadable place reads No se pudo comprobar', () => {
+    render(mismatched([fileOk, bad('rekordbox', 'rekordboxUnreadable', undefined, 'unreadable')]))
+    expect(screen.getByTestId('verify-mismatch')).toHaveTextContent(
+      /^No se pudo comprobar rekordbox$/,
+    )
+    expect(screen.getByTestId('verify-retry')).toBeInTheDocument()
+  })
+
+  // Converted in place, the suspect file is the only source left: the line says so, and
+  // when a copy of the original was kept it takes the DJ straight to it.
+  it('with the source gone the amber line says the original is gone and points to Originales', () => {
+    const onOpenOriginals = vi.fn<() => void>()
+    render(
+      mismatched([bad('file', 'fileSourceGone', { kept: 1 })], {
+        onOpenOriginals,
+        onRetryVerification: async () => {},
+      }),
+    )
+    expect(screen.getByTestId('verify-mismatch')).toHaveTextContent(
+      /^El original ya no está, hay una copia en Originales$/,
+    )
+    fireEvent.click(screen.getByTestId('verify-open-originals'))
+    expect(onOpenOriginals).toHaveBeenCalledTimes(1)
+  })
+
+  it('without a kept copy it only says the original is gone', () => {
+    render(
+      mismatched([bad('file', 'fileSourceGone', { kept: 0 })], {
+        onOpenOriginals: vi.fn<() => void>(),
+      }),
+    )
+    expect(screen.getByTestId('verify-mismatch')).toHaveTextContent(/^El original ya no está$/)
+    expect(screen.queryByTestId('verify-open-originals')).toBeNull()
+  })
+
+  // Reconverting from the suspect file would bake its fault into a fresh copy: the footer
+  // only asks for the re-read, never for a new conversion.
+  it('Reintentar is still offered and only re-reads', () => {
+    const onRetryVerification = vi.fn<(id: string) => Promise<void>>(async () => {})
+    const onProcess = vi.fn<(format: FormatSetting) => void>()
+    render(
+      mismatched([bad('file', 'fileSourceGone', { kept: 0 })], {
+        onRetryVerification,
+        onProcess,
+      }),
+    )
+    fireEvent.click(screen.getByTestId('verify-retry'))
+    expect(onRetryVerification).toHaveBeenCalledWith('t1')
+    expect(onProcess).not.toHaveBeenCalled()
   })
 })
