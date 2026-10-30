@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { abandonNmlBatch, beginNmlBatch, endNmlBatch, recordNmlPatch } from './nmlBatch'
+import {
+  abandonNmlBatch,
+  beginNmlBatch,
+  endNmlBatch,
+  recordNmlPatch,
+  redirectNmlPatch,
+} from './nmlBatch'
 
 const patch = (file: string) => ({ volume: 'HD', dir: '/:M:/', file })
 
@@ -93,5 +99,46 @@ describe('nmlBatch', () => {
     beginNmlBatch()
     recordNmlPatch(patch('after-reload.aiff'))
     expect(endNmlBatch()).toEqual([patch('after-reload.aiff')])
+  })
+
+  // Apple Music copies the converted temp file into its Media folder, which is often the
+  // source's own folder: Traktor can only follow when FILE alone changes (DIR and VOLUME
+  // are never rewritten), so the patch learns the landed name only in that case.
+  describe('redirectNmlPatch', () => {
+    const recorded = () => {
+      beginNmlBatch()
+      recordNmlPatch(patch('x.aiff'), { input: '/m/A/x.aiff', output: '/tmp/surco-1/x.wav' })
+    }
+
+    it('points the patch at the landed file when it sits in the source folder', () => {
+      recorded()
+      redirectNmlPatch('/tmp/surco-1/x.wav', '/m/A/x.wav')
+
+      expect(endNmlBatch()[0].newFile).toBe('x.wav')
+    })
+
+    it('leaves the patch alone when the file landed in another folder', () => {
+      recorded()
+      redirectNmlPatch('/tmp/surco-1/x.wav', '/m/B/x.wav')
+
+      expect(endNmlBatch()[0].newFile).toBeUndefined()
+    })
+
+    it('ignores a destination no patch was recorded for', () => {
+      recorded()
+      redirectNmlPatch('/tmp/surco-9/y.wav', '/m/A/y.wav')
+
+      expect(endNmlBatch()[0].newFile).toBeUndefined()
+    })
+
+    it('does not redirect a patch from an abandoned batch', () => {
+      recorded()
+      abandonNmlBatch()
+      beginNmlBatch()
+      recordNmlPatch(patch('x.aiff'))
+      redirectNmlPatch('/tmp/surco-1/x.wav', '/m/A/x.wav')
+
+      expect(endNmlBatch()[0].newFile).toBeUndefined()
+    })
   })
 })

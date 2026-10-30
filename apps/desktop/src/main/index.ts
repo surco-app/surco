@@ -127,7 +127,7 @@ import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { isIssuedPair } from './musicDuplicates'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
-import { abandonNmlBatch, beginNmlBatch } from './nmlBatch'
+import { abandonNmlBatch, beginNmlBatch, redirectNmlPatch } from './nmlBatch'
 import { filesFromArgv, routeOpenedFile } from './openedFiles'
 import { configureBackupStore } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
@@ -1705,7 +1705,10 @@ function registerIpc(): void {
       deleteAppleMusic: deleteFromAppleMusic,
       carryAppleMusicHistory: (fromPid, toPid, label) =>
         appleMusicLimiter.run(() => carryOverToAppleMusicCopy(fromPid, toPid, label)),
-      redirectRepoint: redirectRekordboxRepoint,
+      redirectRepoint: (to, landed) => {
+        redirectRekordboxRepoint(to, landed)
+        redirectNmlPatch(to, landed)
+      },
     }),
   )
 

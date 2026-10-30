@@ -1875,40 +1875,43 @@ function recordConversionPatch(
     // silently at cuesToXml's `> 0` check, dropping the beatgrid without a trace.
     const parsedBpm = Number(meta.bpm)
     const bpm = meta.bpm.trim() !== '' && Number.isFinite(parsedBpm) ? parsedBpm : undefined
-    recordNmlPatch({
-      volume,
-      dir,
-      file,
-      newFile: sameDir && outputName !== file ? outputName : undefined,
-      cueTree: readCueTree(output) ?? undefined,
-      cueShift: cueShift && { shiftMs: cueShift.shiftMs, maxMs: cueShift.maxMs },
-      bpm,
-      // Traktor reads a library track's stars from the collection, not the file, so
-      // writing the POPM byte alone left the DJ looking at the ENTRY's stale RANKING —
-      // the reported AIFF that showed 2 stars where 5 were set. An empty rating normally
-      // means "preserve", matching what the file side does; only an explicit clear
-      // wipes it, and zero is how Traktor spells unrated.
-      ranking:
-        (meta.rating ?? '').trim() !== ''
-          ? starsToRating(Number.parseInt(meta.rating ?? '', 10))
-          : clearedExtras
-            ? 0
-            : undefined,
-      // Traktor draws the library's artwork from its own thumbnail cache, keyed by
-      // COVERARTID, and keeps serving it after the file on disk gets a new cover — the
-      // same stale-cache mechanism the cue handling above exists to fix. Any output
-      // that ends up WITH artwork needs those thumbnails rewritten, not just one the
-      // user picked a new cover for: a conversion that carried the source's own cover
-      // across (-map 0:v?) still wrote a different file, and the cached thumbnail
-      // belongs to the old one. Scoping this to a fresh coverPath is what left the
-      // reported case — convert, and Traktor keeps showing the previous artwork —
-      // unfixed. Only an explicit removeCover leaves nothing to redraw.
-      refreshCoverArt: keptArtwork || undefined,
-      outputPath: keptArtwork ? output : undefined,
-      outputVolume: outputLocation.volume,
-      outputDir: outputLocation.dir,
-      outputFile: outputLocation.file,
-    })
+    recordNmlPatch(
+      {
+        volume,
+        dir,
+        file,
+        newFile: sameDir && outputName !== file ? outputName : undefined,
+        cueTree: readCueTree(output) ?? undefined,
+        cueShift: cueShift && { shiftMs: cueShift.shiftMs, maxMs: cueShift.maxMs },
+        bpm,
+        // Traktor reads a library track's stars from the collection, not the file, so
+        // writing the POPM byte alone left the DJ looking at the ENTRY's stale RANKING —
+        // the reported AIFF that showed 2 stars where 5 were set. An empty rating normally
+        // means "preserve", matching what the file side does; only an explicit clear
+        // wipes it, and zero is how Traktor spells unrated.
+        ranking:
+          (meta.rating ?? '').trim() !== ''
+            ? starsToRating(Number.parseInt(meta.rating ?? '', 10))
+            : clearedExtras
+              ? 0
+              : undefined,
+        // Traktor draws the library's artwork from its own thumbnail cache, keyed by
+        // COVERARTID, and keeps serving it after the file on disk gets a new cover — the
+        // same stale-cache mechanism the cue handling above exists to fix. Any output
+        // that ends up WITH artwork needs those thumbnails rewritten, not just one the
+        // user picked a new cover for: a conversion that carried the source's own cover
+        // across (-map 0:v?) still wrote a different file, and the cached thumbnail
+        // belongs to the old one. Scoping this to a fresh coverPath is what left the
+        // reported case — convert, and Traktor keeps showing the previous artwork —
+        // unfixed. Only an explicit removeCover leaves nothing to redraw.
+        refreshCoverArt: keptArtwork || undefined,
+        outputPath: keptArtwork ? output : undefined,
+        outputVolume: outputLocation.volume,
+        outputDir: outputLocation.dir,
+        outputFile: outputLocation.file,
+      },
+      { input, output },
+    )
   } catch {
     // Best-effort: see comment above.
   }
