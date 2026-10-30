@@ -1,6 +1,6 @@
 import { realpathSync } from 'node:fs'
 import { BrowserWindow, ipcMain } from 'electron'
-import type { RekordboxQueueApplied } from '../shared/types'
+import type { CopyReason, RekordboxQueueApplied } from '../shared/types'
 import { serialLibraryFlush } from './libraryTagSync'
 import { readMembership } from './rekordboxMembership'
 import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
@@ -26,12 +26,14 @@ export interface QueueIpcHost {
   ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
   onWaiting?: () => void
   onReady?: () => void
+  beginMoment?: (reason: CopyReason) => void
 }
 
 export function registerRekordboxQueueIpc(queue: RekordboxQueue, host: QueueIpcHost): void {
   ipcMain.handle('rekordbox:queue', () => queue.state())
   ipcMain.handle('rekordbox:applyNow', (e) =>
     serialLibraryFlush(async () => {
+      host.beginMoment?.('queue')
       const result = await queue.apply(
         () => host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
         { manual: true },

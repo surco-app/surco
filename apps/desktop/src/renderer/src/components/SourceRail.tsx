@@ -1,8 +1,9 @@
-import { ListMusic } from 'lucide-react'
+import { ListMusic, ShieldAlert, ShieldCheck } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistSource } from '../../../shared/types'
+import { RAIL_WIDTH } from '../lib/columnLayout'
 import { AppleMusicIcon, EngineIcon, RekordboxIcon, TraktorIcon } from './SourceIcons'
 
 // Each program's own mark, the thing a DJ already recognises from the Dock, with its name
@@ -14,20 +15,23 @@ export const SOURCE_ICON: Record<PlaylistSource, typeof AppleMusicIcon> = {
   traktor: TraktorIcon,
 }
 
-// The column of places tracks come from, as rekordbox's own side panel has it. The first
-// entry is the working list every import has always landed in; the rest are the DJ
-// libraries found on this machine. A source this machine lacks is not drawn at all — the
-// same rule the Apple Music destination follows off macOS.
+// The column of places tracks come from, as rekordbox's own side panel has it, with Copias
+// pinned at the bottom. The first entry is the working list every import has always landed
+// in; then come the DJ libraries found on this machine. A source this machine lacks is not
+// drawn at all — the same rule the Apple Music destination follows off macOS — but the rail
+// always is, because Copias always has the music files to show.
 export function SourceRail({
   sources,
   active,
   onSelect,
   onHide,
+  copies,
 }: {
   sources: PlaylistSource[]
   active: PlaylistSource | null
   onSelect: (source: PlaylistSource | null) => void
   onHide: (source: PlaylistSource) => void
+  copies: { active: boolean; alert: 'none' | 'warn' | 'danger'; onOpen: () => void }
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [menu, setMenu] = useState<{ source: PlaylistSource; x: number; y: number } | null>(null)
@@ -53,7 +57,11 @@ export function SourceRail({
     icon: React.ReactNode,
     on: boolean,
     pick: () => void,
-    hideable?: PlaylistSource,
+    {
+      hideable,
+      className = '',
+      dot,
+    }: { hideable?: PlaylistSource; className?: string; dot?: React.ReactNode } = {},
   ) => (
     <button
       key={key}
@@ -80,11 +88,12 @@ export function SourceRail({
             }
           : undefined
       }
-      className={`flex w-[64px] flex-col items-center justify-center gap-0.5 rounded-lg pt-1.5 pb-1 ${
+      className={`${className} relative flex w-[64px] flex-col items-center justify-center gap-0.5 rounded-lg pt-1.5 pb-1 ${
         on ? 'bg-[var(--color-accent-soft)] text-fg' : 'text-fg-faint hover:bg-[var(--color-hover)]'
       }`}
     >
       {icon}
+      {dot}
       <span
         data-testid={`source-rail-label-${key}`}
         className="max-w-full truncate px-0.5 text-[11px] leading-tight"
@@ -97,13 +106,14 @@ export function SourceRail({
     <nav
       data-testid="source-rail"
       aria-label={tr('sources.rail')}
-      className="flex w-[76px] shrink-0 flex-col items-center gap-1 border-r border-[var(--color-line)] bg-[var(--color-ink)] pt-2.5"
+      style={{ width: RAIL_WIDTH }}
+      className="flex shrink-0 flex-col items-center gap-1 border-r border-[var(--color-line)] bg-[var(--color-ink)] pt-2.5 pb-2.5"
     >
       {item(
         'tracks',
         tr('sources.workingList'),
         <ListMusic size={22} strokeWidth={1.6} aria-hidden="true" />,
-        active === null,
+        !copies.active && active === null,
         () => onSelect(null),
       )}
       {sources.map((s) => {
@@ -112,11 +122,46 @@ export function SourceRail({
           s,
           tr(`sources.${s}`),
           <Icon size={22} data-testid={`source-rail-icon-${s}`} />,
-          active === s,
+          !copies.active && active === s,
           () => onSelect(s),
-          s,
+          { hideable: s },
         )
       })}
+      {item(
+        'copies',
+        tr('copies.rail'),
+        copies.alert === 'danger' ? (
+          <ShieldAlert
+            size={22}
+            strokeWidth={1.6}
+            aria-hidden="true"
+            data-testid="source-rail-copies-icon"
+            data-icon="alert"
+          />
+        ) : (
+          <ShieldCheck
+            size={22}
+            strokeWidth={1.6}
+            aria-hidden="true"
+            data-testid="source-rail-copies-icon"
+            data-icon="check"
+          />
+        ),
+        copies.active,
+        copies.onOpen,
+        {
+          className: 'mt-auto',
+          dot: copies.alert !== 'none' && (
+            <span
+              data-testid="source-rail-copies-dot"
+              data-alert={copies.alert}
+              className={`absolute top-1 right-[17px] h-2.5 w-2.5 rounded-full border-2 border-[var(--color-ink)] ${
+                copies.alert === 'danger' ? 'bg-[var(--color-danger)]' : 'bg-[var(--color-warn)]'
+              }`}
+            />
+          ),
+        },
+      )}
       {menu && (
         <div className="fixed inset-0 z-50">
           <button

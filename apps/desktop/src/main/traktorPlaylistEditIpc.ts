@@ -18,6 +18,7 @@ export function registerTraktorPlaylistEditIpc(host: {
   ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
+  beginLoose?: (collectionPath: string) => void
 }): void {
   ipcMain.handle('traktor:hasSeparator', () => {
     const path = host.collection()
@@ -46,6 +47,7 @@ export function registerTraktorPlaylistEditIpc(host: {
         ...(label ? { label } : {}),
       }
       host.queue.enqueue([op])
+      host.beginLoose?.(path)
       const result = await host.queue.apply(() =>
         host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
       )

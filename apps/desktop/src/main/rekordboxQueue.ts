@@ -92,6 +92,7 @@ export interface RekordboxQueue<R extends QueuedRepoint = RekordboxRepoint> {
   announce: () => void
   isEmpty: () => boolean
   discard: () => void
+  discardCurrent: () => void
   drop: (id: string) => void
   cuesOp: (contentId: string) => CuesOp | undefined
   busy: () => boolean
@@ -229,6 +230,15 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
     file.queues = file.queues.filter((q) => !isEmptyQueue(q) || q.halted)
     deps.store.write(JSON.stringify(file))
     deps.onChange(state())
+  }
+
+  const clear = (gone: CollectionQueue<R>[]): void => {
+    for (const q of gone) {
+      q.repoints = []
+      q.ops = []
+      delete q.halted
+    }
+    save()
   }
 
   const refused = (reason: RekordboxEditRefusal): QueueApply => ({ status: 'refused', reason })
@@ -375,13 +385,11 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
     isEmpty: () => file.queues.every(isEmptyQueue),
     discard() {
       const own = shown()
-      const gone = own && (!isEmptyQueue(own) || own.halted) ? [own] : file.queues
-      for (const q of gone) {
-        q.repoints = []
-        q.ops = []
-        delete q.halted
-      }
-      save()
+      clear(own && (!isEmptyQueue(own) || own.halted) ? [own] : file.queues)
+    },
+    discardCurrent() {
+      const own = shown()
+      clear(own ? [own] : [])
     },
     drop(id) {
       const q = shown()

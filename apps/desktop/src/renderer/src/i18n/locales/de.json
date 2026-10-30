@@ -223,7 +223,6 @@
     "emptyConfirm_one": "{{count}} Datei endgültig löschen?",
     "emptyConfirm_other": "{{count}} Dateien endgültig löschen?",
     "reveal": "Ordner öffnen",
-    "close": "Schließen",
     "restored": "„{{name}}“ in seinem Ordner wiederhergestellt",
     "restoreFailed": "„{{name}}“ konnte nicht wiederhergestellt werden: {{reason}}",
     "removeFailed": "„{{name}}“ konnte nicht gelöscht werden. {{reason}}",
@@ -243,7 +242,6 @@
     "selfEmpties": "Leert sich nach {{days}} Tagen von selbst.",
     "expiring_one": "noch {{count}} Tag",
     "expiring_other": "noch {{count}} Tage",
-    "summaryEmpty": "leer",
     "noMatches": "Nichts passt zur Suche"
   },
   "notices": {
@@ -2796,5 +2794,63 @@
       "one-at-32": "Ein Cue bei 32",
       "calls-only": "Nur CALL"
     }
+  },
+  "copies": {
+    "rail": "Backups",
+    "title": "Backups",
+    "intro": "Bevor Surco deine Programme oder Dateien anfasst, legt es eine Kopie an. Wenn etwas nicht stimmt, gehst du einfach zurück.",
+    "state": {
+      "ok": "Aktuell",
+      "pending_one": "{{count}} Änderung wartet darauf, dass du {{program}} schließt",
+      "pending_other": "{{count}} Änderungen warten darauf, dass du {{program}} schließt",
+      "halted": "Surco hat angehalten: Prüfe die ausstehenden Änderungen",
+      "failed": "Das letzte Backup ist fehlgeschlagen",
+      "untouched": "Surco fasst es nicht an (so in den Einstellungen gewählt)"
+    },
+    "facts": {
+      "state": "Status",
+      "last": "Letztes Backup",
+      "kept": "Gespeichert"
+    },
+    "kept": "{{count}} von {{max}}",
+    "none": "Noch keine Backups",
+    "reason": {
+      "run": "Vor dem Konvertieren",
+      "cues": "Vor dem Speichern von Cues",
+      "review": "Vor dem Korrigieren von Metadaten",
+      "queue": "Vor dem Anwenden der wartenden Änderungen",
+      "duplicates": "Vor dem Ersetzen von Duplikaten",
+      "playlists": "Vor deinen Playlist-Änderungen von heute",
+      "restore": "Vor dem Wiederherstellen"
+    },
+    "show": "Backups anzeigen",
+    "hide": "Backups ausblenden",
+    "restore": "Wiederherstellen…",
+    "restoreThis": "Dieses wiederherstellen",
+    "confirm": {
+      "title": "{{program}} auf den Stand von {{when}} zurücksetzen?",
+      "body": "Alles, was du nach diesem Zeitpunkt in {{program}} geändert hast, geht verloren, auch das, was du von {{program}} aus gemacht hast.",
+      "safety": "Vorher sichern wir den aktuellen Stand, falls du es dir anders überlegst.",
+      "queue_one": "Außerdem wird {{count}} Änderung verworfen, die darauf gewartet hat, dass du {{program}} schließt.",
+      "queue_other": "Außerdem werden {{count}} Änderungen verworfen, die darauf gewartet haben, dass du {{program}} schließt.",
+      "ok": "Wiederherstellen"
+    },
+    "refused": {
+      "running": "{{program}} ist noch geöffnet. Schließe es und versuche es erneut.",
+      "pending-log": "{{program}} speichert noch Änderungen. Warte einen Moment und versuche es erneut.",
+      "not-found": "Dieses Backup gehört nicht mehr zu deiner aktuellen Sammlung.",
+      "other-collection": "Dieses Backup gehört nicht mehr zu deiner aktuellen Sammlung.",
+      "failed": "Wiederherstellen nicht möglich. Deine Bibliothek ist unverändert.",
+      "busy": "Surco konvertiert gerade Tracks. Warte, bis es fertig ist, und versuche es erneut.",
+      "partial": "Die Wiederherstellung von {{program}} ist nur halb fertig geworden. Schließe es und stelle diese Kopie erneut wieder her, oder geh mit „Vor dem Wiederherstellen“ zurück."
+    },
+    "restored": "Fertig: {{program}} ist wieder auf dem Stand von {{when}}.",
+    "music": {
+      "title": "Musikdateien",
+      "state": "Originale gespeichert"
+    },
+    "footer": "Von jedem Programm behalten wir die letzten 5 Backups. Musikdateien {{days}} Tage.",
+    "reveal": "Im Finder zeigen",
+    "revealWin": "Im Explorer zeigen"
   }
 }

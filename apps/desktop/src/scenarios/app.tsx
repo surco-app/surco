@@ -160,6 +160,7 @@ export async function openApp(
   })
   stubBrowser()
   const { default: App } = await import('../renderer/src/App')
+  await (await import('../renderer/src/lib/lazyChunk')).preloadLazy()
   const container = document.body.appendChild(document.createElement('div'))
   const root = createRoot(container)
   act(() =>

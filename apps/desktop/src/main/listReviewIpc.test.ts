@@ -139,6 +139,54 @@ describe('listreview:applyFixes in Activity', () => {
   })
 })
 
+describe('listreview moments', () => {
+  it('applying fixes is a review momento, begun before the first file is rewritten', async () => {
+    const order: string[] = []
+    registerListReviewIpc({
+      apply: {
+        allowed: () => true,
+        exists: async () => true,
+        rewrite: async () => {
+          order.push('rewrite')
+          return { outcomes: ['written'] }
+        },
+      },
+      beginMoment: (r: string) => order.push(`begin:${r}`),
+    } as never)
+    await handlerFor('listreview:applyFixes')(
+      { sender },
+      { fixes: [{ id: '/m/a.aiff', field: 'artist', from: 'a', to: 'b' }], music: {}, titles: {} },
+    )
+    expect(order).toEqual(['begin:review', 'rewrite'])
+  })
+
+  it('removing duplicates is a duplicates momento, begun before the first copy is replaced', async () => {
+    const beginMoment = vi.fn()
+    const realpath = vi.fn(async (p: string) => p)
+    registerListReviewIpc({
+      isAllowed: () => false,
+      removal: () => ({
+        replace: {
+          libraries: {},
+          usedByLibrary: vi.fn().mockResolvedValue(false),
+          serial: (task: () => Promise<unknown>) => task(),
+          warn: vi.fn(),
+        },
+        realpath,
+        trash: vi.fn().mockResolvedValue('trash'),
+      }),
+      beginMoment,
+    } as never)
+    await handlerFor('listreview:removeDuplicates')({ sender }, [
+      { from: '/m/old.aiff', to: '/m/keep.aiff' },
+    ])
+    expect(beginMoment).toHaveBeenCalledWith('duplicates')
+    expect(beginMoment.mock.invocationCallOrder[0]).toBeLessThan(
+      realpath.mock.invocationCallOrder[0],
+    )
+  })
+})
+
 describe('listreview:removeDuplicates', () => {
   const removal = (from: string, to: string, music?: unknown) => ({
     from,

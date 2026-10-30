@@ -150,6 +150,20 @@ describe('DestinationTab FLAC restriction', () => {
   })
 })
 
+describe('DestinationTab on Windows', () => {
+  it('offers no Apple Music destination on Windows, whichever platform the tab was first loaded under, since Windows has no Music to add to', () => {
+    const mac = window.api
+    ;(window as unknown as { api: Partial<Api> }).api = { platform: 'win32' }
+    try {
+      renderTab()
+      expect(screen.getByTestId('settings-destination-folder')).toBeInTheDocument()
+      expect(screen.queryByTestId('settings-destination-appleMusic')).toBeNull()
+    } finally {
+      ;(window as unknown as { api: Api }).api = mac
+    }
+  })
+})
+
 describe('DestinationTab Engine DJ destination', () => {
   // "Next to the original" is the non-destructive sibling of overwrite: a fresh copy
   // beside the source, nothing in any library — one radio choice like the rest, so a

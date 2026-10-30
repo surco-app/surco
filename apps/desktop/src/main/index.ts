@@ -20,7 +20,7 @@ import {
   writeFile,
 } from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { Readable } from 'node:stream'
 import {
   app,
@@ -82,6 +82,7 @@ import { setBeatportSession } from './beatport'
 import { beatportSession, connectBeatport, disconnectBeatport } from './beatportCredentials'
 import { clipboardHasImage, readClipboardImage, writeClipboardImage } from './clipboardImage'
 import { createQuitIntent, handleGuardedClose } from './closeToQuit'
+import { registerCopiesIpc } from './copiesIpc'
 import type { CoverSource } from './cover'
 import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
 import { downloadCover, imageExt } from './coverDownload'
@@ -94,7 +95,8 @@ import { parseDockFrames } from './dockFrames'
 import { type ReplacePair, replaceDuplicates } from './duplicateReplace'
 import { registerEngineCueQueueIpc } from './engineCueQueueIpc'
 import { applyEngineCuesBatch } from './engineCuesWrite'
-import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
+import { addToEngineLibrary, dumpEngineLibrary, withEngineDatabase } from './engineLibrary'
+import { engineDatabasePath } from './enginePlaylists'
 import { registerEnginePlaylistsIpc } from './enginePlaylistsIpc'
 import { isEngineDjRunning, quitEngineDj } from './engineProcess'
 import { expandPaths } from './expand'
@@ -118,6 +120,8 @@ import {
   syncTagsInLibraries,
   traktorFlushDeps,
 } from './libraryFlushes'
+import { takeCopy } from './libraryHistory'
+import { enginePendingLog, rekordboxPendingLog } from './libraryRestore'
 import { serialLibraryFlush } from './libraryTagSync'
 import { registerListReviewIpc } from './listReviewIpc'
 import { listReviewDeps } from './listReviewWiring'
@@ -146,7 +150,7 @@ import {
 import { completeOnClose } from './rekordboxCompleteOnClose'
 import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
 import { markedTracks, readCollectionMarksAt } from './rekordboxLearnFlow'
-import { readNodeStamps } from './rekordboxMasterXml'
+import { playlistXmlPath, readNodeStamps } from './rekordboxMasterXml'
 import { findRekordboxCollection } from './rekordboxPath'
 import { keyOf, registerRekordboxPlaylistsIpc } from './rekordboxPlaylistsIpc'
 import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
@@ -155,6 +159,7 @@ import { adjustProvisional, createProvisionalList } from './rekordboxProvisional
 import { createRekordboxQueue, fileStore, type QueueApply } from './rekordboxQueue'
 import { appliedNotice, registerRekordboxQueueIpc } from './rekordboxQueueIpc'
 import { stillWaiting, watchRekordboxQueue } from './rekordboxQueueWatch'
+import { createMoments } from './moments'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { loadLastSession, saveLastSession } from './session'
@@ -182,7 +187,7 @@ import { snapshotTagsInWorker, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
 import { registerTraktorCueQueueIpc } from './traktorCueQueueIpc'
 import { applyTraktorBatch } from './traktorCuesWrite'
-import { bootVolumeName, syncCollection, traktorSessionBackup } from './traktorNmlLibrary'
+import { bootVolumeName, syncCollection } from './traktorNmlLibrary'
 import {
   collectionsTraktorUses,
   collectionTraktorUses,
@@ -256,13 +261,31 @@ let unsavedCueTracks: ReadonlySet<string> = new Set()
 // across the separate process:track IPC calls a batch fans out into, and cleared at the top
 // of each run (process:batch-begin) so it never leaks a stale choice into the next batch.
 const stickyConflict = createStickyConflict()
-// One copy of the rekordbox collection per conversion run, taken before the run's first
-// write. Module-scoped for the same reason as stickyConflict: a run fans out into separate
-// process:track calls, and they all have to agree that the copy is already taken.
-const rekordboxSessionBackup = createSessionBackup({})
+async function takeCopyAndAnnounce(...args: Parameters<typeof takeCopy>) {
+  try {
+    return await takeCopy(...args)
+  } finally {
+    broadcast('copies:changed', null)
+  }
+}
+// One dated copy of the rekordbox collection per momento (a conversion run, a cue save...),
+// taken before the momento's first write. Module-scoped for the same reason as
+// stickyConflict: a run fans out into separate process:track calls, and they all have to
+// agree that the copy is already taken.
+const rekordboxSessionBackup = createSessionBackup({
+  take: takeCopyAndAnnounce,
+  companionsOf: (path) => (basename(path) === 'master.db' ? [playlistXmlPath(path)] : []),
+  skip: (path) => basename(path) === 'masterPlaylists6.xml',
+})
 // The same for the Engine DJ library, which a run can repoint as well.
-const engineSessionBackup = createSessionBackup({})
-const sessions = { rekordbox: rekordboxSessionBackup, engine: engineSessionBackup }
+const engineSessionBackup = createSessionBackup({ take: takeCopyAndAnnounce })
+const traktorSessionBackup = createSessionBackup({ take: takeCopyAndAnnounce })
+const sessions = {
+  rekordbox: rekordboxSessionBackup,
+  traktor: traktorSessionBackup,
+  engine: engineSessionBackup,
+}
+const moments = createMoments(sessions)
 const broadcast = (channel: string, payload: unknown): void => {
   for (const win of BrowserWindow.getAllWindows())
     if (!win.webContents.isDestroyed()) win.webContents.send(channel, payload)
@@ -306,7 +329,11 @@ const announceApplied = (result: QueueApply): void => {
 const rekordboxQueueWatch = watchRekordboxQueue({
   queue: {
     isEmpty: () => rekordboxQueue.isEmpty(),
-    apply: (ensureClosed) => serialLibraryFlush(() => rekordboxQueue.apply(ensureClosed)),
+    apply: (ensureClosed) =>
+      serialLibraryFlush(() => {
+        moments.begin('queue', ['rekordbox'])
+        return rekordboxQueue.apply(ensureClosed)
+      }),
   },
   collection: rekordboxCollectionPath,
   isRunning: isRekordboxRunning,
@@ -327,17 +354,17 @@ const adjustProvisionalCuesOnLaunch = async (): Promise<void> => {
   if (provisionalCues.all().length > 0 && !(await isRekordboxRunning())) adjustProvisionalCues()
   rekordboxQueueWatch.poke()
 }
-const applyRekordboxQueueQuietly = (): void => {
+const applyRekordboxQueueQuietly = (serial = serialLibraryFlush): void => {
   if (!rekordboxCollectionPath()) {
     rekordboxQueueWatch.poke()
     return
   }
-  void serialLibraryFlush(() =>
-    rekordboxQueue.apply(async () => !(await isRekordboxRunning())),
-  ).then((result) => {
-    announceApplied(result)
-    if (stillWaiting(result)) rekordboxQueueWatch.poke()
-  })
+  void serial(() => rekordboxQueue.apply(async () => !(await isRekordboxRunning()))).then(
+    (result) => {
+      announceApplied(result)
+      if (stillWaiting(result)) rekordboxQueueWatch.poke()
+    },
+  )
 }
 const engineLibraryPath = (): string =>
   currentLibraryStatus().engine.found ? getSettings().engineLibraryDir : ''
@@ -362,23 +389,27 @@ const announceEngineApplied = (result: QueueApply): void => {
 const engineCueQueueWatch = watchRekordboxQueue({
   queue: {
     isEmpty: () => engineCueQueue.isEmpty(),
-    apply: (ensureClosed) => serialLibraryFlush(() => engineCueQueue.apply(ensureClosed)),
+    apply: (ensureClosed) =>
+      serialLibraryFlush(() => {
+        moments.begin('queue', ['engine'])
+        return engineCueQueue.apply(ensureClosed)
+      }),
   },
   collection: engineLibraryPath,
   isRunning: isEngineDjRunning,
   onApplied: announceEngineApplied,
 })
-const applyEngineCueQueueQuietly = (): void => {
+const applyEngineCueQueueQuietly = (serial = serialLibraryFlush): void => {
   if (!engineLibraryPath()) {
     engineCueQueueWatch.poke()
     return
   }
-  void serialLibraryFlush(() =>
-    engineCueQueue.apply(async () => !(await isEngineDjRunning())),
-  ).then((result) => {
-    announceEngineApplied(result)
-    if (stillWaiting(result)) engineCueQueueWatch.poke()
-  })
+  void serial(() => engineCueQueue.apply(async () => !(await isEngineDjRunning()))).then(
+    (result) => {
+      announceEngineApplied(result)
+      if (stillWaiting(result)) engineCueQueueWatch.poke()
+    },
+  )
 }
 // The tab reads the collection Settings names or, without one, the newest Traktor found;
 // cues are written only to the one the DJ confirmed in Settings (see traktorNmlPath.ts).
@@ -402,8 +433,10 @@ const traktorCueQueue = createRekordboxQueue<QueuedNmlPatch>({
   store: fileStore(join(app.getPath('userData'), 'traktor-cue-queue.json')),
   collection: traktorWritePath,
   configured: () => getSettings().traktorNmlPath,
-  applyBatch: (nml, ops, ensureClosed) => applyTraktorBatch(nml, ops, { ensureClosed }),
-  repoint: (nml, patches) => syncQueuedPatches(nml, patches, syncCollection),
+  applyBatch: (nml, ops, ensureClosed) =>
+    applyTraktorBatch(nml, ops, { ensureClosed, session: sessions.traktor }),
+  repoint: (nml, patches) =>
+    syncQueuedPatches(nml, patches, (path, list) => syncCollection(path, list, sessions.traktor)),
   nodeStamps: async () => ({}),
   onChange: (state) => broadcast('traktor:cueQueueChanged', state),
   addsTracks: false,
@@ -415,7 +448,11 @@ const announceTraktorApplied = (result: QueueApply): void => {
 const traktorCueQueueWatch = watchRekordboxQueue({
   queue: {
     isEmpty: () => traktorCueQueue.isEmpty(),
-    apply: (ensureClosed) => serialLibraryFlush(() => traktorCueQueue.apply(ensureClosed)),
+    apply: (ensureClosed) =>
+      serialLibraryFlush(() => {
+        moments.begin('queue', ['traktor'])
+        return traktorCueQueue.apply(ensureClosed)
+      }),
   },
   collection: traktorWritePath,
   isRunning: isTraktorRunning,
@@ -434,17 +471,17 @@ const applyTraktorCueQueueAsking = (win: BrowserWindow | null): void => {
 // A conversion run's collection patches held because Traktor stayed open or the write
 // failed: written as soon as Traktor is closed, without asking again. Held for a drive that
 // is unplugged, nothing is tried: the watch waits for the collection to be back.
-const applyTraktorCueQueueQuietly = (): void => {
+const applyTraktorCueQueueQuietly = (serial = serialLibraryFlush): void => {
   if (!traktorWritePath()) {
     traktorCueQueueWatch.poke()
     return
   }
-  void serialLibraryFlush(() =>
-    traktorCueQueue.apply(async () => !(await isTraktorRunning())),
-  ).then((result) => {
-    announceTraktorApplied(result)
-    if (stillWaiting(result)) traktorCueQueueWatch.poke()
-  })
+  void serial(() => traktorCueQueue.apply(async () => !(await isTraktorRunning()))).then(
+    (result) => {
+      announceTraktorApplied(result)
+      if (stillWaiting(result)) traktorCueQueueWatch.poke()
+    },
+  )
 }
 // A batch adding N tracks that share one album cover used to re-run the ffmpeg encode N
 // times. Shares one prepareProcessedCover per distinct (source, opts) across the
@@ -527,7 +564,11 @@ let engineQuitPrompt: Promise<boolean> | null = null
 // the library write, since Engine would not see it and could overwrite it on exit.
 async function ensureEngineDjClosed(
   win: BrowserWindow | null,
-  detail: 'engineQuitDetail' | 'engineQuitDetailCues' | 'engineQuitDetailUsb' = 'engineQuitDetail',
+  detail:
+    | 'engineQuitDetail'
+    | 'engineQuitDetailCues'
+    | 'engineQuitDetailUsb'
+    | 'engineQuitDetailRestore' = 'engineQuitDetail',
 ): Promise<boolean> {
   if (!(await isEngineDjRunning())) return true
   engineQuitPrompt ??= (async () => {
@@ -563,7 +604,8 @@ async function ensureTraktorClosed(
   detail:
     | 'traktorQuitDetail'
     | 'traktorQuitDetailCues'
-    | 'traktorQuitDetailPlaylists' = 'traktorQuitDetail',
+    | 'traktorQuitDetailPlaylists'
+    | 'traktorQuitDetailRestore' = 'traktorQuitDetail',
 ): Promise<boolean> {
   if (!(await isTraktorRunning())) return true
   traktorQuitPrompt ??= (async () => {
@@ -601,7 +643,11 @@ async function ensureTraktorClosed(
 // convert the whole track again to get another attempt.
 const rekordboxQuitPrompt = sharedPrompt(
   async (
-    detail: 'rekordboxQuitDetail' | 'rekordboxQuitDetailPlaylists' | 'rekordboxQuitDetailUsb',
+    detail:
+      | 'rekordboxQuitDetail'
+      | 'rekordboxQuitDetailPlaylists'
+      | 'rekordboxQuitDetailUsb'
+      | 'rekordboxQuitDetailRestore',
     win: BrowserWindow | null,
   ): Promise<boolean> => {
     if (!(await isRekordboxRunning())) return true
@@ -629,7 +675,8 @@ function ensureRekordboxClosed(
   detail:
     | 'rekordboxQuitDetail'
     | 'rekordboxQuitDetailPlaylists'
-    | 'rekordboxQuitDetailUsb' = 'rekordboxQuitDetail',
+    | 'rekordboxQuitDetailUsb'
+    | 'rekordboxQuitDetailRestore' = 'rekordboxQuitDetail',
 ): Promise<boolean> {
   return rekordboxQuitPrompt(detail, win)
 }
@@ -1269,6 +1316,7 @@ function registerIpc(): void {
       queue: rekordboxQueue,
       onApplied: announceApplied,
       onWaiting: rekordboxQueueWatch.poke,
+      beginLoose: moments.beginLoose,
       allowMedia: (paths) => mediaAccess.allowAll(paths),
     },
   )
@@ -1285,11 +1333,13 @@ function registerIpc(): void {
     ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
     onWaiting: rekordboxQueueWatch.poke,
     onReady: () => void adjustProvisionalCuesOnLaunch(),
+    beginMoment: (reason) => moments.begin(reason, ['rekordbox']),
   })
   registerRekordboxCuesIpc({
     collection: rekordboxCollectionPath,
     queue: rekordboxQueue,
-    applyQuietly: applyRekordboxQueueQuietly,
+    applyQuietly: () => applyRekordboxQueueQuietly(),
+    beginMoment: moments.begin,
     flow: () => activeCueFlow(getSettings()),
     beatGrid: cachedBeatGrid,
     words: cachedCueWaveWords,
@@ -1307,7 +1357,7 @@ function registerIpc(): void {
     engine: {
       libraryDir: () => getSettings().engineLibraryDir,
       queue: engineCueQueue,
-      applyQuietly: applyEngineCueQueueQuietly,
+      applyQuietly: () => applyEngineCueQueueQuietly(),
       words: cachedCueWaveWords,
     },
     traktor: {
@@ -1328,11 +1378,13 @@ function registerIpc(): void {
     ensureClosed: (win) => ensureEngineDjClosed(win, 'engineQuitDetailCues'),
     onWaiting: engineCueQueueWatch.poke,
     onReady: engineCueQueueWatch.poke,
+    beginMoment: (reason) => moments.begin(reason, ['engine']),
   })
   registerTraktorCueQueueIpc(traktorCueQueue, {
     ensureClosed: (win) => ensureTraktorClosed(win, 'traktorQuitDetailCues'),
     onWaiting: traktorCueQueueWatch.poke,
     onReady: traktorCueQueueWatch.poke,
+    beginMoment: (reason) => moments.begin(reason, ['traktor']),
   })
   ipcMain.handle('traktor:canSave', () => traktorWritePath() !== '')
   registerTraktorPlaylistEditIpc({
@@ -1341,6 +1393,7 @@ function registerIpc(): void {
     ensureClosed: (win) => ensureTraktorClosed(win, 'traktorQuitDetailPlaylists'),
     onApplied: announceTraktorApplied,
     onWaiting: traktorCueQueueWatch.poke,
+    beginLoose: moments.beginLoose,
   })
   registerRowWavesIpc(rekordboxCollectionPath)
   usbExport = registerUsbExportIpc({
@@ -1380,12 +1433,10 @@ function registerIpc(): void {
   // nesting is tracked there so a lone convert mid-batch can never wipe it.
   ipcMain.on('process:batch-begin', () => {
     beginNmlBatch()
-    // A new run gets a new pre-run copy; without this the stored one would describe the
-    // collection before the FIRST run since launch, not before the run in progress.
+    // A new run gets its own dated pre-run copy; without this the newest one would describe
+    // the collection before the FIRST run since launch, not before the run in progress.
     if (beginRekordboxBatch()) {
-      rekordboxSessionBackup.reset()
-      engineSessionBackup.reset()
-      traktorSessionBackup.reset()
+      moments.begin('run')
       stickyConflict.reset()
       coverMemo = createCoverMemo(prepareProcessedCover)
     }
@@ -1419,17 +1470,23 @@ function registerIpc(): void {
 
   // Queued behind any review sync still writing, and the other way round.
   ipcMain.on('process:batch-end', (e) =>
-    serialLibraryFlush(() =>
+    moments.runFlush(serialLibraryFlush, rekordboxBatchOpen, (later) =>
       flushConversionBatch(
         hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
         sessions,
-        { enqueue: rekordboxQueue.enqueue, applyQuietly: applyRekordboxQueueQuietly },
+        {
+          enqueue: rekordboxQueue.enqueue,
+          applyQuietly: () => applyRekordboxQueueQuietly(later),
+        },
         {
           enqueue: traktorCueQueue.enqueue,
           state: traktorCueQueue.state,
-          applyQuietly: applyTraktorCueQueueQuietly,
+          applyQuietly: () => applyTraktorCueQueueQuietly(later),
         },
-        { enqueue: engineCueQueue.enqueue, applyQuietly: applyEngineCueQueueQuietly },
+        {
+          enqueue: engineCueQueue.enqueue,
+          applyQuietly: () => applyEngineCueQueueQuietly(later),
+        },
       ),
     ),
   )
@@ -1439,6 +1496,7 @@ function registerIpc(): void {
       updates,
       hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
       sessions,
+      () => moments.begin('review'),
     ),
   )
 
@@ -1451,7 +1509,7 @@ function registerIpc(): void {
       {
         rekordbox: rekordboxFlushDeps(hostFor(win, e.sender)).collectionPath,
         engine: engineFlushDeps(hostFor(win, e.sender)).collectionPath,
-        traktor: traktorFlushDeps(hostFor(win, e.sender)).traktorNmlPath,
+        traktor: traktorFlushDeps(hostFor(win, e.sender), sessions.traktor).traktorNmlPath,
       },
       { realPath: (p: string) => realpathSync(p) },
     )
@@ -1464,6 +1522,7 @@ function registerIpc(): void {
     async (e, pairs: ReplacePair[]): Promise<DuplicateReplaceOutcome[]> => {
       if (process.platform !== 'darwin' || pairs.length === 0) return []
       if (!pairs.every(isIssuedPair)) throw errorWithKey('pathNotAllowed')
+      moments.begin('duplicates')
       return replaceDuplicates(pairs, {
         ...duplicateLibraryDeps(
           hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
@@ -1475,14 +1534,15 @@ function registerIpc(): void {
     },
   )
 
-  registerListReviewIpc(
-    listReviewDeps({
+  registerListReviewIpc({
+    ...listReviewDeps({
       mediaAccess,
       tmp: tmpManifest,
       hostFor: (sender) => hostFor(BrowserWindow.fromWebContents(sender), sender),
       sessions,
     }),
-  )
+    beginMoment: moments.begin,
+  })
 
   // Awaited by the renderer before it starts an in-place export: the surco:// stream
   // holds an OS handle on the very file the export renames over, and only main can
@@ -1658,7 +1718,7 @@ function registerIpc(): void {
               // Only with the toggle on: moving a row is keeping the library in step with
               // converted files, which the user opted into, not just adding new ones.
               s.syncEngineDj ? replaces : undefined,
-              (db) => engineSessionBackup.ensure(db),
+              (db) => engineSessionBackup.ensureForRun(db),
             )
           },
           { labelParams: { track } },
@@ -1844,6 +1904,45 @@ function registerIpc(): void {
   ipcMain.handle('clipboard:hasImage', () => clipboardHasImage())
 
   registerShellIpc(mediaAccess)
+  registerCopiesIpc(
+    {
+      rekordbox: {
+        collectionPath: () => rekordboxCollectionPath() || null,
+        untouched: () => !getSettings().syncRekordbox,
+        session: rekordboxSessionBackup,
+        queue: rekordboxQueue,
+        ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailRestore'),
+        isRunning: isRekordboxRunning,
+        pendingLog: rekordboxPendingLog,
+        exclusive: (_path, task) => task(),
+      },
+      traktor: {
+        collectionPath: () => traktorWritePath() || null,
+        untouched: () => !getSettings().syncTraktor,
+        session: traktorSessionBackup,
+        queue: traktorCueQueue,
+        ensureClosed: (win) => ensureTraktorClosed(win, 'traktorQuitDetailRestore'),
+        isRunning: isTraktorRunning,
+        pendingLog: () => false,
+        exclusive: (_path, task) => task(),
+      },
+      engine: {
+        collectionPath: () => {
+          const dir = engineLibraryPath()
+          return dir ? engineDatabasePath(dir) : null
+        },
+        untouched: () => !getSettings().syncEngineDj,
+        session: engineSessionBackup,
+        queue: engineCueQueue,
+        ensureClosed: (win) => ensureEngineDjClosed(win, 'engineQuitDetailRestore'),
+        isRunning: isEngineDjRunning,
+        pendingLog: enginePendingLog,
+        exclusive: withEngineDatabase,
+      },
+    },
+    broadcast,
+    rekordboxBatchOpen,
+  )
   registerTrashIpc(surcoTrash, mediaAccess)
   registerFeedbackIpc()
 

@@ -85,6 +85,21 @@ describe('createMenuT', () => {
     expect(createMenuT('es')('guide')).toBe('Guía de uso')
     expect(createMenuT('en')('guide')).toBe('User guide')
   })
+
+  it('asks to close each program for a restore and to keep it closed until Surco finishes', () => {
+    for (const lang of ['es', 'en', 'de', 'fr', 'pt-BR', 'ja']) {
+      const t = createMenuT(lang)
+      expect(t('rekordboxQuitDetailRestore')).toBeTruthy()
+      expect(t('rekordboxQuitDetailRestore')).not.toBe(t('rekordboxQuitDetailPlaylists'))
+      expect(t('traktorQuitDetailRestore')).toBeTruthy()
+      expect(t('traktorQuitDetailRestore')).not.toBe(t('traktorQuitDetailCues'))
+      expect(t('engineQuitDetailRestore')).toBeTruthy()
+      expect(t('engineQuitDetailRestore')).not.toBe(t('engineQuitDetailCues'))
+    }
+    expect(createMenuT('es')('rekordboxQuitDetailRestore')).toBe(
+      'Surco necesita cerrarlo para restaurar tu colección. rekordbox se cerrará de forma segura; no lo vuelvas a abrir hasta que Surco termine de restaurar.',
+    )
+  })
 })
 
 describe('resolveMenuLocale', () => {

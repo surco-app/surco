@@ -60,6 +60,7 @@ export interface PlaylistEditHost {
   queue: Pick<RekordboxQueue, 'enqueue' | 'apply' | 'drop'>
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
+  beginLoose?: (collectionPath: string) => void
   allowMedia?: (paths: string[]) => void
 }
 
@@ -132,6 +133,7 @@ export function registerRekordboxPlaylistsIpc(
         ...(label ? { label } : {}),
       }
       host.queue.enqueue([op])
+      host.beginLoose?.(path)
       const result = await host.queue.apply(() =>
         host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
       )

@@ -21,8 +21,10 @@ import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import type {
   ActivityEvent,
+  ProgramCopies,
   RekordboxSyncIssue,
   Release,
+  RestoreResult,
   Settings,
   UsbExportEvent,
   UsbVolume,
@@ -337,6 +339,8 @@ function setApi(over: Record<string, unknown> = {}): void {
     traktorCueQueueReady: vi.fn<Api['traktorCueQueueReady']>().mockResolvedValue(undefined),
     onTraktorCueQueueChanged: vi.fn<Api['onTraktorCueQueueChanged']>(() => () => {}),
     onTraktorCueQueueApplied: vi.fn<Api['onTraktorCueQueueApplied']>(() => () => {}),
+    copiesStatus: vi.fn<Api['copiesStatus']>().mockResolvedValue([]),
+    onCopiesChanged: vi.fn<Api['onCopiesChanged']>(() => () => {}),
     traktorCanSave: vi.fn<Api['traktorCanSave']>().mockResolvedValue(true),
     onWindowFocus: () => () => {},
     usbVolumes: vi.fn<Api['usbVolumes']>().mockResolvedValue({ volumes: [], lastKey: null }),
@@ -423,6 +427,7 @@ beforeEach(() => {
 // imported only after the bridge mock is in place — a dynamic import after beforeEach.
 async function renderApp(): Promise<QueryClient> {
   const { default: App } = await import('./App')
+  await (await import('./lib/lazyChunk')).preloadLazy()
   const client = createQueryClient()
   render(
     <QueryClientProvider client={client}>
@@ -719,7 +724,7 @@ describe('App column widths', () => {
   it('sizes the list as a share of the window, so a wider window gives every column room', async () => {
     await renderApp()
     await addTwoTracks()
-    expect(screen.getByTestId('sidebar')).toHaveStyle({ width: '370px' })
+    expect(screen.getByTestId('sidebar')).toHaveStyle({ width: '348px' })
   })
 
   it('saves the dragged list width as a share of the window, not as pixels', async () => {
@@ -730,11 +735,11 @@ describe('App column widths', () => {
     const at = (event: Event, clientX: number): Event =>
       Object.defineProperty(event, 'clientX', { value: clientX })
     const divider = screen.getAllByRole('separator')[0]
-    fireEvent(divider, at(createEvent.pointerDown(divider), 370))
-    fireEvent(window, at(createEvent.pointerMove(window), 420))
-    fireEvent(window, at(createEvent.pointerUp(window), 420))
+    fireEvent(divider, at(createEvent.pointerDown(divider), 350))
+    fireEvent(window, at(createEvent.pointerMove(window), 400))
+    fireEvent(window, at(createEvent.pointerUp(window), 400))
     const saved = saveSettings.mock.calls.find(([patch]) => patch.columnShares)?.[0]
-    expect(saved?.columnShares?.list).toBeCloseTo((420 * 0.83) / 1278)
+    expect(saved?.columnShares?.list).toBeCloseTo((400 * 0.83) / 1202)
     expect(saved?.resultsWidth).toBeUndefined()
   })
 
@@ -748,7 +753,7 @@ describe('App column widths', () => {
     await addTwoTracks()
     await waitFor(() =>
       expect(screen.getByTestId('sidebar')).toHaveStyle({
-        width: `${Math.round((1278 * 0.3) / 0.83)}px`,
+        width: `${Math.round((1202 * 0.3) / 0.83)}px`,
       }),
     )
   })
@@ -1068,9 +1073,10 @@ describe('App auto-match', () => {
     const button = screen.getByTestId('auto-match')
     expect(button).toHaveAccessibleName(i18n.t('header.autoMatchNoToken'))
     fireEvent.click(button)
-    expect(
-      await screen.findByTestId('settings-tab-search', undefined, { timeout: 3000 }),
-    ).toHaveAttribute('aria-selected', 'true')
+    expect(await screen.findByTestId('settings-tab-search')).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
   })
 
   // Auto-match on import runs the whole drop unattended: a folder of a thousand files is
@@ -1387,7 +1393,7 @@ describe('App source rail', () => {
     expect(await screen.findByTestId('source-rail-rekordbox')).toBeInTheDocument()
   })
 
-  it('is not drawn when every source this machine has is hidden', async () => {
+  it('the rail and Copias show even without any DJ program', async () => {
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ hiddenSources: ['rekordbox', 'engine'] })),
       rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
@@ -1395,7 +1401,18 @@ describe('App source rail', () => {
     await renderApp()
     await waitFor(() => expect(window.api.rekordboxAvailable).toHaveBeenCalled())
     await act(async () => {})
-    expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument()
+    expect(screen.getByTestId('source-rail')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-rail-rekordbox')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('source-rail-copies'))
+    expect(await screen.findByTestId('copies-screen')).toBeInTheDocument()
+    expect(screen.getByTestId('copies-section-music')).toBeInTheDocument()
+    expect(screen.queryByTestId('add-files')).not.toBeInTheDocument()
+    expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'false')
+
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    expect(screen.queryByTestId('copies-screen')).not.toBeInTheDocument()
+    expect(screen.getByTestId('add-files')).toBeInTheDocument()
   })
 
   it('hides a source from its right-click menu and keeps the choice in the settings', async () => {
@@ -3910,7 +3927,7 @@ describe('App maximized section', () => {
     await renderApp()
     const [row] = await addTwoTracks()
     fireEvent.click(row)
-    const trim = await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
+    const trim = await screen.findByTestId('editor-trim')
     fireEvent.click(within(trim).getByTestId('section-maximize'))
     await screen.findByTestId('section-maximized-overlay')
     fireEvent.keyDown(window, { key: 'Escape' })
@@ -3924,7 +3941,7 @@ describe('App maximized section', () => {
     await renderApp()
     const [row] = await addTwoTracks()
     fireEvent.click(row)
-    const trim = await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
+    const trim = await screen.findByTestId('editor-trim')
     fireEvent.click(within(trim).getByTestId('section-maximize'))
     await screen.findByTestId('section-maximized-overlay')
     fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
@@ -7493,7 +7510,7 @@ describe('App Music review', () => {
     await renderApp()
     const [row] = await addOneTrack()
     fireEvent.click(row)
-    await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
+    await screen.findByTestId('editor-trim')
     runMenu('music-review')
     await screen.findByTestId('music-review-empty')
     fireEvent.keyDown(window, { key: 'Backspace', metaKey: true })
@@ -7524,7 +7541,7 @@ describe('App Music review', () => {
     await renderApp()
     const [row] = await addOneTrack()
     fireEvent.click(row)
-    await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
+    await screen.findByTestId('editor-trim')
     runMenu('music-review')
     await screen.findByTestId('music-review-empty')
     fireEvent.keyDown(window, { key: 'Enter', metaKey: true })
@@ -7540,7 +7557,7 @@ describe('App Music review', () => {
     await renderApp()
     const [row] = await addOneTrack()
     fireEvent.click(row)
-    await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
+    await screen.findByTestId('editor-trim')
     fireEvent.keyDown(window, { key: 'Enter', metaKey: true })
     await waitFor(() => expect(processTrack).toHaveBeenCalled())
     runMenu('music-review')
@@ -7569,7 +7586,7 @@ describe('App Music review', () => {
     await renderApp()
     const [row] = await addOneTrack()
     fireEvent.click(row)
-    await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
+    await screen.findByTestId('editor-trim')
     runMenu('music-review')
     await stageGroup()
     fireEvent.click(screen.getByTestId('music-review-apply'))
@@ -8430,11 +8447,95 @@ describe('App empty screen offers a single way in', () => {
   })
 })
 
-describe('App Originals panel', () => {
+const rekordboxCopies: ProgramCopies = {
+  program: 'rekordbox',
+  collectionPath: '/lib/master.db',
+  copies: [
+    {
+      id: 'c1',
+      collectionPath: '/lib/master.db',
+      takenAt: Date.now(),
+      reason: 'run',
+      files: [],
+    },
+  ],
+  restore: null,
+  pending: 0,
+  halted: false,
+  copyFailed: false,
+  untouched: false,
+}
+
+describe('App Copias music files', () => {
+  it('Escape on the restore confirmation closes only the confirmation', async () => {
+    setApi({ copiesStatus: vi.fn().mockResolvedValue([rekordboxCopies]) })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-copies'))
+    fireEvent.click(await screen.findByTestId('copies-restore-rekordbox'))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByTestId('copies-screen')).toBeInTheDocument()
+  })
+
+  it('Escape on an inline trash confirmation cancels only that confirmation', async () => {
+    setApi({
+      trashList: vi.fn().mockResolvedValue([
+        {
+          id: 'e1',
+          name: 'a.wav',
+          originalPath: '/music/a.wav',
+          storedPath: '/ud/trash/items/e1-a.wav',
+          bytes: 1024,
+          trashedAt: Date.now(),
+          reason: 'replaced',
+        },
+      ]),
+    })
+    await renderApp()
+    act(() => menuListener?.('backups'))
+    fireEvent.click(await screen.findByTestId('trash-empty-button'))
+    expect(screen.getByTestId('trash-empty-confirm')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByTestId('trash-empty-confirm')).not.toBeInTheDocument()
+    expect(screen.getByTestId('copies-screen')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('trash-remove'))
+    expect(screen.getByTestId('trash-remove-confirm')).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByTestId('trash-remove-confirm')).not.toBeInTheDocument()
+    expect(screen.getByTestId('copies-screen')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByTestId('copies-screen')).not.toBeInTheDocument()
+  })
+
+  it('keeps Copias open on Escape while a restore is running, so its outcome is seen', async () => {
+    let finish: (r: RestoreResult) => void = () => {}
+    setApi({
+      copiesStatus: vi.fn().mockResolvedValue([rekordboxCopies]),
+      restoreCopy: vi.fn(() => new Promise<RestoreResult>((resolve) => (finish = resolve))),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-copies'))
+    fireEvent.click(await screen.findByTestId('copies-restore-rekordbox'))
+    fireEvent.click(screen.getByTestId('confirm-ok'))
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.getByTestId('copies-screen')).toBeInTheDocument()
+    await act(async () => finish({ ok: false, reason: 'running' }))
+    expect(await screen.findByTestId('copies-refused-rekordbox')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByTestId('copies-screen')).not.toBeInTheDocument()
+  })
+
   // The toolbar count is gone; a track Surco backed up says so on its own row, and that
-  // mark is the way into its backup: the panel opens searched to the file, not on the
-  // whole list of everything a crate conversion ever rewrote.
-  it('marks a backed-up track and opens its backups from the mark', async () => {
+  // mark is the way into its backup: Copias opens on the music files searched to that
+  // file, not on the whole list of everything a crate conversion ever rewrote.
+  it("a track's backup mark opens Copias on that file", async () => {
     setApi({
       trashList: vi.fn().mockResolvedValue([
         {
@@ -8455,11 +8556,14 @@ describe('App Originals panel', () => {
     expect(within(second).queryByTestId('track-backup')).toBeNull()
 
     fireEvent.click(mark)
-    await screen.findByTestId('trash-panel')
-    expect(screen.getByDisplayValue('a.wav')).toBeInTheDocument()
+    await screen.findByTestId('copies-screen')
+    expect(screen.getByTestId('copies-toggle-music')).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByTestId('trash-search')).toHaveValue('a.wav')
+    expect(screen.getAllByTestId('trash-row')).toHaveLength(1)
+    expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument()
   })
 
-  // The panel states how long originals stay and how much room they get; showing the
+  // Copias states how long originals stay and how much room they get; showing the
   // shipped defaults instead of the user's own choice tells them their setting did nothing.
   it('shows the retention and size cap the user chose', async () => {
     setApi({
@@ -8470,29 +8574,28 @@ describe('App Originals panel', () => {
     act(() => menuListener?.('backups'))
 
     const { default: i18n } = await import('./i18n')
-    const { formatBytes } = await import('./components/TrashPanel')
+    const { formatBytes } = await import('./components/TrashBrowser')
     expect(await screen.findByText(i18n.t('trash.selfEmpties', { days: 3 }))).toBeInTheDocument()
     expect(screen.getByTestId('trash-usage')).toHaveTextContent(
       formatBytes(2 * 1024 ** 3, i18n.language),
     )
   })
-  // Originals is a dialog, but it opened outside the modal registry, so nothing gated
-  // the global shortcuts or answered Escape: the arrows walked the list hidden behind it
-  // and the only way out was the close button.
+  // Copias opens outside the modal registry, so unless it gates the global shortcuts and
+  // answers Escape, the arrows walk the list hidden behind it.
   it('closes on Escape and keeps track shortcuts off the list behind it', async () => {
     setApi({ trashList: vi.fn().mockResolvedValue([]) })
     await renderApp()
     const [first, second] = await addTwoTracks()
     fireEvent.click(first)
     act(() => menuListener?.('backups'))
-    await screen.findByTestId('trash-panel')
+    await screen.findByTestId('copies-screen')
 
     fireEvent.keyDown(window, { key: 'ArrowDown', cancelable: true })
     expect(first).toHaveAttribute('aria-selected', 'true')
     expect(second).toHaveAttribute('aria-selected', 'false')
 
     fireEvent.keyDown(window, { key: 'Escape' })
-    expect(screen.queryByTestId('trash-panel')).toBeNull()
+    expect(screen.queryByTestId('copies-screen')).toBeNull()
     expect(first).toHaveAttribute('aria-selected', 'true')
   })
   // Emptying Originals with one copy held open used to close the confirm and say nothing,
@@ -8523,10 +8626,10 @@ describe('App Originals panel', () => {
     )
   })
 
-  // The keys behind a panel were already off, but the menu bar still reached the list: Convert
-  // all from the menu while Originals or a review is open ran a batch under it, two writers on
-  // the same files and libraries. The menu now waits for the panel like the keyboard does.
-  it('runs no track command from the menu bar while the panel is open', async () => {
+  // The keys behind Copias are off, but the menu bar could still reach the list: Convert
+  // all from the menu while Copias or a review is open ran a batch under it, two writers on
+  // the same files and libraries. The menu waits for Copias like the keyboard does.
+  it('runs no track command from the menu bar while Copias is open', async () => {
     const processTrack = vi.fn(async () => ({ outputPath: '/out/x.aiff', inPlace: false }))
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3']),
@@ -8537,7 +8640,7 @@ describe('App Originals panel', () => {
     await renderApp()
     await addTwoTracks()
     act(() => menuListener?.('backups'))
-    await screen.findByTestId('trash-panel')
+    await screen.findByTestId('copies-screen')
 
     runMenu('process-all')
     await act(async () => {})

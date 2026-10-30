@@ -223,7 +223,6 @@
     "emptyConfirm_one": "{{count}} ファイルを永久に削除しますか？",
     "emptyConfirm_other": "{{count}} ファイルを永久に削除しますか？",
     "reveal": "フォルダーを開く",
-    "close": "閉じる",
     "restored": "“{{name}}” をフォルダーに復元しました",
     "restoreFailed": "“{{name}}” の復元に失敗しました：{{reason}}",
     "removeFailed": "「{{name}}」を削除できませんでした。{{reason}}",
@@ -243,7 +242,6 @@
     "selfEmpties": "{{days}}日後に空になります。",
     "expiring_one": "{{count}}日残り",
     "expiring_other": "{{count}}日残り",
-    "summaryEmpty": "空",
     "noMatches": "検索結果に一致するものがありません"
   },
   "notices": {
@@ -2796,5 +2794,63 @@
       "one-at-32": "32 にキューを1つ",
       "calls-only": "CALL のみ"
     }
+  },
+  "copies": {
+    "rail": "バックアップ",
+    "title": "バックアップ",
+    "intro": "DJソフトやファイルに手を加える前に、Surcoがコピーを保存します。何かおかしいときは、元に戻せます。",
+    "state": {
+      "ok": "最新",
+      "pending_one": "{{program}}を閉じるのを待っている変更が{{count}}件あります",
+      "pending_other": "{{program}}を閉じるのを待っている変更が{{count}}件あります",
+      "halted": "Surcoは停止しました。保留中の変更を確認してください",
+      "failed": "直前のバックアップに失敗しました",
+      "untouched": "Surcoは触れません（設定で選択済み）"
+    },
+    "facts": {
+      "state": "状態",
+      "last": "最後のバックアップ",
+      "kept": "保存数"
+    },
+    "kept": "{{count}} / {{max}}",
+    "none": "バックアップはまだありません",
+    "reason": {
+      "run": "変換の前",
+      "cues": "キューを保存する前",
+      "review": "メタデータを修正する前",
+      "queue": "待機していた変更を適用する前",
+      "duplicates": "重複を置き換える前",
+      "playlists": "今日のプレイリスト変更の前",
+      "restore": "復元の前"
+    },
+    "show": "バックアップを表示",
+    "hide": "バックアップを隠す",
+    "restore": "復元…",
+    "restoreThis": "これを復元",
+    "confirm": {
+      "title": "{{program}}を{{when}}の状態に戻しますか？",
+      "body": "その時刻以降に{{program}}で変更した内容は失われます。{{program}}から行った操作も含まれます。",
+      "safety": "念のため、先に現在の状態のコピーを保存します。",
+      "queue_one": "{{program}}を閉じるのを待っていた{{count}}件の変更も破棄されます。",
+      "queue_other": "{{program}}を閉じるのを待っていた{{count}}件の変更も破棄されます。",
+      "ok": "復元"
+    },
+    "refused": {
+      "running": "{{program}}がまだ開いています。閉じてからもう一度お試しください。",
+      "pending-log": "{{program}}がまだ変更を保存中です。少し待ってからもう一度お試しください。",
+      "not-found": "このバックアップは現在のコレクションと一致しなくなりました。",
+      "other-collection": "このバックアップは現在のコレクションと一致しなくなりました。",
+      "failed": "復元できませんでした。ライブラリは変更されていません。",
+      "busy": "Surco がトラックを変換中です。終わるまで待ってから、もう一度お試しください。",
+      "partial": "{{program}} の復元が途中で止まりました。閉じてからこのコピーをもう一度復元するか、「復元の前」で元に戻してください。"
+    },
+    "restored": "完了：{{program}}を{{when}}の状態に戻しました。",
+    "music": {
+      "title": "音楽ファイル",
+      "state": "オリジナルを保存済み"
+    },
+    "footer": "各ソフトにつき、直近5件のバックアップを保存します。音楽ファイルは{{days}}日間です。",
+    "reveal": "Finderで表示",
+    "revealWin": "File Explorerで表示"
   }
 }

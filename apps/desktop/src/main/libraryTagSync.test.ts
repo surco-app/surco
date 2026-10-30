@@ -54,6 +54,24 @@ describe('syncLibraryTags', () => {
     expect(traktor).toHaveBeenCalled()
   })
 
+  it('begins the review momento only when its turn to write comes, so it cannot relabel a flush still writing', async () => {
+    let release: () => void = () => {}
+    const running = serialLibraryFlush(() => new Promise<void>((r) => (release = r)))
+    const begin = vi.fn()
+    const sync = syncLibraryTags({
+      traktor: async () => NOTHING,
+      rekordbox: async () => NOTHING,
+      engine: async () => NOTHING,
+      warn: vi.fn(),
+      begin,
+    })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(begin).not.toHaveBeenCalled()
+    release()
+    await Promise.all([running, sync])
+    expect(begin).toHaveBeenCalledTimes(1)
+  })
+
   it('runs the next flush after one rejects', async () => {
     await expect(serialLibraryFlush(() => Promise.reject(new Error('boom')))).rejects.toThrow()
     await expect(serialLibraryFlush(async () => 'next')).resolves.toBe('next')

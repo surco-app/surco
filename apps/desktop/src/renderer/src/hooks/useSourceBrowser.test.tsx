@@ -87,6 +87,16 @@ describe('useSourceBrowser', () => {
     )
   })
 
+  it('hands back the same sources on a render that changes none of them, so the memoized editor that reads them does not re-render on every keystroke', async () => {
+    const { result, rerender } = setup({})
+    await waitFor(() =>
+      expect(result.current.sources).toEqual(['appleMusic', 'rekordbox', 'engine']),
+    )
+    const before = result.current.sources
+    rerender()
+    expect(result.current.sources).toBe(before)
+  })
+
   it('leaves out a source the user hid, whichever one it is', async () => {
     const { result } = setup({}, 'darwin', () => {}, ['appleMusic', 'engine'])
     await waitFor(() => expect(result.current.sources).toEqual(['rekordbox']))

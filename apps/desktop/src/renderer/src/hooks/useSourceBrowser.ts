@@ -124,12 +124,16 @@ export function useSourceBrowser({
     queryFn: () => window.api.traktorAvailable(),
     staleTime: Number.POSITIVE_INFINITY,
   })
-  const sources: PlaylistSource[] = [
-    ...(isMac ? (['appleMusic'] as const) : []),
-    ...(rekordbox ? (['rekordbox'] as const) : []),
-    ...(engine.data ? (['engine'] as const) : []),
-    ...(traktor.data ? (['traktor'] as const) : []),
-  ].filter((s) => !hiddenSources.includes(s))
+  const sources = useMemo<PlaylistSource[]>(
+    () =>
+      [
+        ...(isMac ? (['appleMusic'] as const) : []),
+        ...(rekordbox ? (['rekordbox'] as const) : []),
+        ...(engine.data ? (['engine'] as const) : []),
+        ...(traktor.data ? (['traktor'] as const) : []),
+      ].filter((s) => !hiddenSources.includes(s)),
+    [isMac, rekordbox, engine.data, traktor.data, hiddenSources],
+  )
 
   const tree = useQuery({
     queryKey: ['source-tree', source],

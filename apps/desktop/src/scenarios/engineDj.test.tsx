@@ -7,7 +7,7 @@ vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 vi.mock('../main/engineProcess', () => ({ isEngineDjRunning: vi.fn(async () => false) }))
 
 import { buildEngineDatabase, loadSqlJs } from '../main/engine'
-import { backupOf } from '../main/libraryBackups'
+import { copyFolder, listCopies } from '../main/libraryHistory'
 import { coverJpg, listFiles, makeTrack, scenarioDir } from './fixtures'
 import { openSurco, type Scenario } from './harness'
 
@@ -78,8 +78,9 @@ describe('Take your tracks to Engine DJ', () => {
     expect(surco.errors).toEqual([])
   })
 
-  it('backs up the library as it was before writing to it', () => {
-    expect(readFileSync(backupOf(mdb, 'session')).equals(before)).toBe(true)
+  it('backs up the library as it was before writing to it', async () => {
+    const [copy] = await listCopies(mdb)
+    expect(readFileSync(join(copyFolder(copy), 'm.db')).equals(before)).toBe(true)
   })
 
   it('puts every track in the library, next to what was there, without filing them into a playlist', async () => {

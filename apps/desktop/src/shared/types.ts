@@ -1787,3 +1787,45 @@ export interface SaveCuesRequest {
   fingerprint: string
   provisional?: true
 }
+
+export type CopyReason =
+  | 'run'
+  | 'cues'
+  | 'review'
+  | 'queue'
+  | 'duplicates'
+  | 'playlists'
+  | 'restore'
+
+export interface LibraryCopy {
+  id: string
+  collectionPath: string
+  takenAt: number
+  reason: CopyReason
+  files: { name: string; target: string }[]
+  absent?: string[]
+}
+
+export type RestoreRefusal =
+  | 'running'
+  | 'pending-log'
+  | 'not-found'
+  | 'other-collection'
+  | 'failed'
+  | 'busy'
+  | 'partial'
+
+export type RestoreResult = { ok: true } | { ok: false; reason: RestoreRefusal }
+
+export type DjProgram = 'rekordbox' | 'traktor' | 'engine'
+
+export interface ProgramCopies {
+  program: DjProgram
+  collectionPath: string | null
+  copies: LibraryCopy[]
+  restore: LibraryCopy | null
+  pending: number
+  halted: boolean
+  copyFailed: boolean
+  untouched: boolean
+}
