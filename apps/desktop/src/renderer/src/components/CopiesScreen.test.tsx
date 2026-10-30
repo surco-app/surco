@@ -10,6 +10,7 @@ import type {
   TrashEntry,
 } from '../../../shared/types'
 import i18n from '../i18n'
+import { OpenSettingsProvider } from '../lib/openSettingsContext'
 import { installApi } from '../test/api'
 import { CopiesScreen } from './CopiesScreen'
 import { formatBytes } from './TrashBrowser'
@@ -327,6 +328,26 @@ describe('CopiesScreen', () => {
       i18n.t('copies.state.untouched'),
     )
     expect(screen.getByTestId('copies-restore-engine')).toBeEnabled()
+  })
+
+  it('says briefly that Surco leaves the program alone and links to where that is changed', () => {
+    const open = vi.fn()
+    render(
+      <OpenSettingsProvider open={open}>
+        <CopiesScreen
+          programs={[program('engine', { untouched: true }), program('rekordbox')]}
+          trash={musicTrash()}
+          onRestore={vi.fn()}
+          onReveal={vi.fn()}
+        />
+      </OpenSettingsProvider>,
+    )
+    expect(screen.getByTestId('copies-state-engine')).toHaveTextContent(
+      i18n.t('copies.state.untouched'),
+    )
+    expect(screen.queryByTestId('copies-settings-rekordbox')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('copies-settings-engine'))
+    expect(open).toHaveBeenCalledWith('destination')
   })
 
   it('lists the copy taken before restoring first and restores any copy from the list', () => {

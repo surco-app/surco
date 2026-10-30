@@ -2803,7 +2803,7 @@
       "pending_other": "{{count}} modifications attendent que tu fermes {{program}}",
       "halted": "Surco s'est arrêté : vérifie les modifications en attente",
       "failed": "La dernière sauvegarde a échoué",
-      "untouched": "Surco n'y touche pas (choix fait dans les Réglages)"
+      "untouched": "N'y touche pas"
     },
     "facts": {
       "state": "État",
@@ -2852,6 +2852,7 @@
     },
     "footer": "Pour chaque logiciel, nous gardons les 5 dernières sauvegardes. Pour les fichiers de musique, {{days}} jours.",
     "reveal": "Afficher dans le Finder",
-    "revealWin": "Afficher dans l'Explorateur"
+    "revealWin": "Afficher dans l'Explorateur",
+    "changeInSettings": "Modifier dans les Réglages"
   }
 }

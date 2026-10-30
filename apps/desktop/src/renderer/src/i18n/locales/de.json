@@ -2803,7 +2803,7 @@
       "pending_other": "{{count}} Änderungen warten darauf, dass du {{program}} schließt",
       "halted": "Surco hat angehalten: Prüfe die ausstehenden Änderungen",
       "failed": "Das letzte Backup ist fehlgeschlagen",
-      "untouched": "Surco fasst es nicht an (so in den Einstellungen gewählt)"
+      "untouched": "Fasst es nicht an"
     },
     "facts": {
       "state": "Status",
@@ -2852,6 +2852,7 @@
     },
     "footer": "Von jedem Programm behalten wir die letzten 5 Backups. Musikdateien {{days}} Tage.",
     "reveal": "Im Finder zeigen",
-    "revealWin": "Im Explorer zeigen"
+    "revealWin": "Im Explorer zeigen",
+    "changeInSettings": "In den Einstellungen ändern"
   }
 }

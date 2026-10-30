@@ -2803,7 +2803,7 @@
       "pending_other": "{{program}}を閉じるのを待っている変更が{{count}}件あります",
       "halted": "Surcoは停止しました。保留中の変更を確認してください",
       "failed": "直前のバックアップに失敗しました",
-      "untouched": "Surcoは触れません（設定で選択済み）"
+      "untouched": "触れません"
     },
     "facts": {
       "state": "状態",
@@ -2852,6 +2852,7 @@
     },
     "footer": "各ソフトにつき、直近5件のバックアップを保存します。音楽ファイルは{{days}}日間です。",
     "reveal": "Finderで表示",
-    "revealWin": "File Explorerで表示"
+    "revealWin": "File Explorerで表示",
+    "changeInSettings": "設定で変更"
   }
 }

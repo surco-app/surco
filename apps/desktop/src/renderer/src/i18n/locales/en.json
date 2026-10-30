@@ -2803,7 +2803,7 @@
       "pending_other": "{{count}} changes are waiting for you to close {{program}}",
       "halted": "Surco has stopped: review the pending changes",
       "failed": "The last backup failed",
-      "untouched": "Surco leaves it alone (you chose this in Settings)"
+      "untouched": "Leaves it alone"
     },
     "facts": {
       "state": "Status",
@@ -2852,6 +2852,7 @@
     },
     "footer": "We keep the last 5 backups of each program. Music files, {{days}} days.",
     "reveal": "Reveal in Finder",
-    "revealWin": "Show in File Explorer"
+    "revealWin": "Show in File Explorer",
+    "changeInSettings": "Change in Settings"
   }
 }

@@ -2803,7 +2803,7 @@
       "pending_other": "{{count}} cambios esperan a que cierres {{program}}",
       "halted": "Surco ha parado: revisa los cambios pendientes",
       "failed": "La última copia falló",
-      "untouched": "Surco no lo toca (lo has elegido en Ajustes)"
+      "untouched": "No lo toca"
     },
     "facts": {
       "state": "Estado",
@@ -2852,6 +2852,7 @@
     },
     "footer": "De cada programa guardamos las últimas 5 copias. Los archivos de música, {{days}} días.",
     "reveal": "Mostrar en Finder",
-    "revealWin": "Mostrar en el Explorador"
+    "revealWin": "Mostrar en el Explorador",
+    "changeInSettings": "Cambiar en Ajustes"
   }
 }

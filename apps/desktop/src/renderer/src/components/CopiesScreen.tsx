@@ -10,6 +10,7 @@ import type {
   RestoreResult,
 } from '../../../shared/types'
 import { COPIES_KEEP, type ProgramState, programState } from '../lib/copiesView'
+import { useOpenSettings } from '../lib/openSettingsContext'
 import { isWindows } from '../lib/platform'
 import { ConfirmDialog } from './ConfirmDialog'
 import { SOURCE_ICON } from './SourceRail'
@@ -87,6 +88,7 @@ function ProgramSection({
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const when = useWhen()
+  const openSettings = useOpenSettings()
   const [open, setOpen] = useState(false)
   const { program, copies } = entry
   const name = tr(`sources.${program}`)
@@ -108,6 +110,16 @@ function ProgramSection({
             className={STATE_TONE[state]}
           >
             {tr(`copies.state.${state}`, { count: entry.pending, program: name })}
+            {state === 'untouched' && (
+              <button
+                type="button"
+                data-testid={`copies-settings-${program}`}
+                onClick={() => openSettings('destination')}
+                className="press ml-2 text-[12.5px] text-[var(--color-accent)] hover:underline"
+              >
+                {tr('copies.changeInSettings')}
+              </button>
+            )}
           </Fact>
           <Fact label={tr('copies.facts.last')} testId={`copies-last-${program}`}>
             {copies.length > 0 ? when(copies[0].takenAt) : tr('copies.none')}
