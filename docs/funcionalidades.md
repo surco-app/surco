@@ -850,10 +850,12 @@ Meterlo en un átomo freeform escribiría bytes que no lee nadie, ni el propio S
 - **Carátulas en el Finder para FLAC** (opcional, solo macOS): Finder y QuickLook
   nunca leen el bloque PICTURE de FLAC. Anteponer un tag ID3 con la carátula es
   la única forma de conseguir miniatura sin romper la reproducción. Es
-  técnicamente off-spec, y por eso es opt-in (`flacFinderCover.ts:6-13`). **Con la
-  sincronización de Traktor activa no se aplica**: Traktor no reconoce un FLAC que
-  empieza por ID3 y quita su entrada de la colección al guardar
-  (`ffmpeg.ts:2126-2128`); Ajustes → Carátula lo muestra desactivado.
+  técnicamente off-spec, y por eso es opt-in (`flacFinderCover.ts:6-13`). **Desde
+  el 27/10 también se aplica con la sincronización de Traktor activa**: un DJ que
+  sincroniza con Traktor comprobó que Traktor conserva en su colección un FLAC con esa
+  cabecera (`flacFinderCover.test.ts:150-151`). Antes se desactivaba. Las etiquetas que
+  leen Traktor y rekordbox siguen en los comentarios Vorbis, y Surco los lee por delante
+  de la cabecera.
 - **APIC y GEOB son el mismo tipo para TagLib**, así que reemplazar la carátula
   con el setter genérico borraría los cues de Traktor. Se quita solo APIC
   (`tags.ts:519-524`).

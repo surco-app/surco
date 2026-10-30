@@ -30,7 +30,7 @@
       },
       {
         "text": "Quando o Apple Music reescreve um arquivo seu ao mudar uma tag, em “Revisar metadados”, “Atualizar no Apple Music” ou numa conversão, o Surco guarda uma cópia antes. Desfazer em “Revisar metadados” devolve o arquivo exatamente como estava e, se não houver espaço para a cópia, o Surco não deixa o Music mexer nele.",
-        "in": "1.18.1"
+        "in": "1.18.2"
       }
     ]
   },

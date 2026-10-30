@@ -8,6 +8,8 @@ vi.mock('electron', () => ({
   ipcMain: { handle: vi.fn() },
 }))
 
+vi.mock('./rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
+
 const OPENED = vi.hoisted(
   () => [] as { path: string; readonly: boolean; rawKey: boolean; closed: boolean }[],
 )

@@ -30,7 +30,7 @@
       },
       {
         "text": "Quand Apple Music réécrit un de tes fichiers en changeant un tag, depuis « Vérifier les métadonnées », « Mettre à jour dans Apple Music » ou lors d’une conversion, Surco garde d’abord une copie. Annuler dans « Vérifier les métadonnées » rend le fichier exactement comme il était, et s’il n’y a pas de place pour la copie, Surco ne laisse pas Music y toucher.",
-        "in": "1.18.1"
+        "in": "1.18.2"
       }
     ]
   },

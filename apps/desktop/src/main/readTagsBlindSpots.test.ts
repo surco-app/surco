@@ -17,7 +17,7 @@ vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 import { readTags } from './ffmpeg'
-import { readTagLibExtras } from './tags'
+import { readTagLibExtras, writeTags } from './tags'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-readtags-blind-'))
@@ -238,5 +238,52 @@ describe('readTagLibExtras', () => {
       [],
     )
     expect(extras.albumArtist).toBe('Tina Cousins')
+  })
+})
+
+// writeTags gives an m4a's extras "----" freeform atoms of their own, so a catalog number
+// survives the conversion to m4a. Written is not read: whatever the read cannot see, the
+// editor shows empty and the next save of that m4a writes empty, erasing it from disk.
+describe('readTags on the extras an m4a keeps in freeform atoms', () => {
+  const extras = {
+    catalogNumber: 'MQDRFREE015',
+    discogsReleaseId: '12345',
+    mood: 'Dark',
+    energy: '8',
+    style: 'Rawstyle',
+    country: 'Spain',
+    mediaType: 'File',
+    discogsUrl: 'https://www.discogs.com/release/12345',
+    originalArtist: 'The Original Band',
+    lyricist: 'A. Lyricist',
+    conductor: 'B. Conductor',
+    encodedBy: 'Surco',
+  }
+
+  it.each([
+    ['alac', ['-c:a', 'alac']],
+    ['aac', ['-c:a', 'aac', '-b:a', '128k']],
+  ])('reads back every extra writeTags put into an %s m4a', async (codec, args) => {
+    const file = join(dir, `extras-${codec}.m4a`)
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=1',
+      ...args,
+      file,
+    ])
+    writeTags(file, { ...(await readTags(file)), title: 'Rave Till My Grave', ...extras })
+
+    const tags = await readTags(file)
+
+    expect(tags.title, 'the write has to actually land').toBe('Rave Till My Grave')
+    const read = Object.fromEntries(
+      Object.keys(extras).map((k) => [k, tags[k as keyof typeof extras] ?? '']),
+    )
+    expect(read).toEqual(extras)
   })
 })

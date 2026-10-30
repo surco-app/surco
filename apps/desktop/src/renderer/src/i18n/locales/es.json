@@ -2112,7 +2112,7 @@
     "reviewDuplicateFileUnsettled": "Se queda en disco porque alguna biblioteca no se actualizó",
     "reviewDuplicateFileUsed": "Se queda en disco porque rekordbox, Engine DJ o Traktor lo usan",
     "reviewDuplicateFileTrash": "Movido a la Papelera",
-    "reviewDuplicateFileSurco": "Guardado en Copias de seguridad porque este disco no tiene Papelera",
+    "reviewDuplicateFileSurco": "Guardado en Copias porque este disco no tiene Papelera",
     "reviewDuplicateFileTrashFailed": "Se queda en disco porque no se pudo mover a la Papelera ({{error}})",
     "reviewDuplicateFileMusic": "Se queda en disco porque Music aún lo tiene",
     "listReviewDuplicateNotInMusic": "No estaba en Music",
@@ -2296,7 +2296,7 @@
       "trash": "Sus ficheros van a la Papelera, salvo los que rekordbox, Engine DJ o Traktor sigan usando",
       "untouched": "BPM, key, cues y rating no se tocan",
       "libraries": "rekordbox, Engine DJ y Traktor se actualizan como en un Actualizar, si su sincronización está activa",
-      "backup": "Se guarda una copia de cada fichero en Copias de seguridad.",
+      "backup": "Se guarda una copia de cada fichero en Copias.",
       "cancel": "Cancelar",
       "apply": "Aplicar",
       "libraryMissing": "{{library}} no se actualizará porque no se encuentra su colección."
