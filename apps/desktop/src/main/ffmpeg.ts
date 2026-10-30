@@ -603,7 +603,7 @@ export async function extractCover(
   }
 }
 
-const READMETA_NAMESPACE = 'readmeta-v5'
+const READMETA_NAMESPACE = 'readmeta-v6'
 const READMETA_LIGHT_NAMESPACE = 'readmeta-light-v1'
 
 const FAILED_READ: MetaRead = {
@@ -633,7 +633,9 @@ export async function readMeta(input: string): Promise<MetaRead> {
   // v4: a WAV's RIFF INFO strings no longer keep their trailing NUL (see tagLibExtrasOf). The
   // namespace is part of the cache key, so without this bump every library already probed
   // would keep serving the value cached before. v5: reads carry reviewRaw, the untrimmed
-  // review fields; a v4 entry would leave the list review blind to stray spaces.
+  // review fields; a v4 entry would leave the list review blind to stray spaces. v6: TagLib
+  // reads an ID3v2.3 genre whole instead of splitting it on ';' and '/' (see tags.ts), and a
+  // v5 entry would keep serving the genre it read split.
   const result = await cachedAnalysis(READMETA_NAMESPACE, input, () => readMetaUncached(input))
   if (result) return composed(result)
   // Flagged, not just empty: the caller cannot otherwise tell this fallback from a file
@@ -1610,8 +1612,10 @@ export async function deliveredDurationSec(
 // ended in a stray frame header numbered out of sequence; a stream copy carried it
 // across, every sample still decoded, and the clock jumped back to 191.84 s of a 405 s
 // file, so the conversion was thrown away as truncated. Restamping each frame by the
-// samples before it makes out_time_us the length of audio actually delivered.
-const COUNT_DELIVERED_SAMPLES = ['-af', 'asetpts=N/SR/TB']
+// samples before it makes out_time_us the length of audio actually delivered. That clock
+// still stops where the last frame STARTS, short by up to a whole FLAC block (104 ms at
+// 44.1 kHz): one padded sample after the end puts the last start on the true length.
+const COUNT_DELIVERED_SAMPLES = ['-af', 'asetpts=N/SR/TB,apad=pad_len=1']
 
 type DecodeForCheck =
   | { ok: true; stderr: string; stdout: string }

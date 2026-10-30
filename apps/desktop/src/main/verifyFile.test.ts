@@ -637,7 +637,7 @@ describe('checkFile — what convertAudio wrote reads back as written', () => {
     )
   }
 
-  // ID3v2.3 has no separator of its own, so TagLib reads a '/' (and a TCON ';') as one:
+  // ID3v2.3 has no separator of its own, so TagLib reads a '/' of an artist frame as one:
   // "AC/DC" comes back as the two values AC and DC, which is still what was written. The
   // comment sends the file through the TagLib pass, the one that writes TIT1.
   it.each(

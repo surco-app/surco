@@ -8,15 +8,17 @@ import {
   Id3v2FrameIdentifiers,
   Id3v2PopularimeterFrame,
   Id3v2PrivateFrame,
+  Id3v2Settings,
   type Id3v2Tag,
   Id3v2TextInformationFrame,
-  type Id3v2UnknownFrame,
+  Id3v2UnknownFrame,
   Id3v2UserTextInformationFrame,
   type InfoTag,
   type Mpeg4AppleTag,
   Mpeg4BoxType,
   Picture,
   PictureType,
+  StringType,
   File as TagFile,
   TagTypes,
   type XiphComment,
@@ -49,6 +51,11 @@ const GRP1 = new Id3v2FrameIdentifier('GRP1', 'GRP1', 'GP1')
 // WAV included: mp3tag only reads a RIFF "id3 " chunk when it holds v2.3, so the
 // v2.4 we used to leave there made Surco-tagged WAVs look empty in it.
 const ID3_V23 = new Set(['.mp3', '.aiff', '.wav'])
+
+// A v2.3 genre is one text. TagLib's default splits it on ';' and '/' when reading and, on
+// any later save, writes the parts back with the first turned into its ID3v1 number, so a
+// pass that only adds cues left "House; Deep House" as "(35) Deep House".
+Id3v2Settings.useNonStandardV2V3GenreSeparators = false
 
 // Traktor stores its cue points and beatgrid inside the audio file itself, in an
 // ID3 GEOB frame described "TRAKTOR4". ffmpeg rebuilds the whole tag even on a
@@ -376,6 +383,7 @@ export function copyCueFrames(source: string, dest: string, shift?: CueShift): v
       const tag = out.getTag(TagTypes.Id3v2, true) as Id3v2Tag
       removeCueFrames(tag)
       for (const frame of cues) tag.addFrame(frame)
+      keepGenreParentheses(tag)
       out.save()
     } finally {
       out.dispose()
@@ -507,6 +515,7 @@ export function copyCuesFromFlac(source: string, dest: string, shift?: CueShift)
         priv.privateData = ByteVector.fromByteArray(anchored)
         tag.addFrame(priv)
       }
+      keepGenreParentheses(tag)
       out.save()
     } finally {
       out.dispose()
@@ -918,6 +927,26 @@ export function dropBrokenUfids(id3: Id3v2Tag): void {
   }
 }
 
+// TagLib writes every '(' of a v2.3 genre as '((' (the spec's escape for a refinement
+// after an ID3v1 number), and it renders the genre on every save: Beatport's
+// "Techno (Peak Time / Driving)" came back "Techno ((Peak Time / Driving)", doubling again
+// on each later save. A genre holding one goes out as plain text instead, the way ffmpeg
+// writes it; the rest keep TagLib's rendering, which round-trips an ID3v1 "(35)".
+export function keepGenreParentheses(id3: Id3v2Tag): void {
+  if (id3.version !== 3) return
+  const [tcon] = id3.getFramesByIdentifier<Id3v2TextInformationFrame>(
+    Id3v2FrameClassType.TextInformationFrame,
+    Id3v2FrameIdentifiers.TCON,
+  )
+  const text = tcon?.text.join(';') ?? ''
+  if (!text.includes('(')) return
+  const data = ByteVector.concatenate(
+    StringType.UTF16,
+    ByteVector.fromString(text, StringType.UTF16),
+  )
+  id3.replaceFrame(tcon, Id3v2UnknownFrame.fromData(Id3v2FrameIdentifiers.TCON, data))
+}
+
 // Overwrites the metadata fields we manage and leaves every other frame — most
 // importantly Traktor's GEOB cue/beatgrid blob — untouched. An empty field is
 // written as empty so clearing a value in the editor clears it on disk too,
@@ -1198,6 +1227,7 @@ export function writeTags(
     // nothing here is stale, and grouping keeps round-tripping through ID3 via the TIT1
     // fallback in readItunesGrouping.
 
+    keepGenreParentheses(id3)
     f.save()
   } finally {
     f.dispose()
