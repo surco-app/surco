@@ -12,8 +12,14 @@ const pcmLimiter = createConcurrencyLimiter(2)
 
 const SLOW_SHARE_BYTES_PER_SECOND = 2_000_000
 
-export function pcmTimeoutMs(sizeBytes: number): number {
-  return Math.max(ANALYSIS_TIMEOUT_MS, Math.ceil((sizeBytes / SLOW_SHARE_BYTES_PER_SECOND) * 1000))
+const DECODE_MS_PER_AUDIO_SECOND = 100
+
+export function pcmTimeoutMs(sizeBytes: number, headerSeconds?: number): number {
+  return Math.max(
+    ANALYSIS_TIMEOUT_MS,
+    Math.ceil((sizeBytes / SLOW_SHARE_BYTES_PER_SECOND) * 1000),
+    Math.ceil((headerSeconds ?? 0) * DECODE_MS_PER_AUDIO_SECOND),
+  )
 }
 
 export interface PcmDigest {
@@ -50,7 +56,7 @@ export async function pcmDigest(
           'md5',
           '-',
         ],
-        { timeout: opts.timeoutMs ?? pcmTimeoutMs(size), signal },
+        { timeout: opts.timeoutMs ?? pcmTimeoutMs(size, probe.headerSeconds), signal },
       )
       const md5 = /^MD5=([0-9a-f]{32})/m.exec(stdout)?.[1]
       if (!md5) throw new Error(`no digest for ${file}`)

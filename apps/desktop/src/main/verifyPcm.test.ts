@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
@@ -45,9 +45,14 @@ beforeAll(() => {
   ff('-i', at('kick24.aiff'), '-c:a', 'pcm_s24le', at('kick24.wav'))
   ff('-i', at('kick24.aiff'), '-c:a', 'flac', at('kick.flac'))
   ff('-i', at('kick.flac'), '-c:a', 'alac', at('kick.m4a'))
+  ff('-f', 'lavfi', '-i', 'anullsrc=r=8000:cl=mono', '-t', '1200', '-c:a', 'pcm_u8', at('long.wav'))
 })
 
 describe('pcmDigest', () => {
+  afterEach(() => {
+    onSpawn = undefined
+  })
+
   // The self-check proves a conversion kept every sample, so byte order and container
   // must not leak into the fingerprint.
   it('an AIFF and the WAV transcoded from it digest the same', async () => {
@@ -114,11 +119,20 @@ describe('pcmDigest', () => {
   })
 
   // Half-read audio must never be vouched for: a kill mid-decode has to reject.
-  it('rejects when the decode is aborted right after it spawns', async () => {
+  it('rejects when the decode is aborted at the moment it spawns', async () => {
     const controller = new AbortController()
     onSpawn = () => controller.abort()
     await expect(pcmDigest(at('kick16.wav'), { signal: controller.signal })).rejects.toThrow()
-    onSpawn = undefined
+  })
+
+  it('rejects when the decode is aborted while its child is running', async () => {
+    const controller = new AbortController()
+    onSpawn = () => setTimeout(() => controller.abort(), 5)
+    await expect(pcmDigest(at('long.wav'), { signal: controller.signal })).rejects.toThrow()
+  })
+
+  it('rejects on a file that is not there', async () => {
+    await expect(pcmDigest(at('missing.wav'))).rejects.toThrow()
   })
 
   it('rejects when the decode outlives its timeout', async () => {
@@ -178,8 +192,25 @@ describe('pcmTimeoutMs', () => {
   })
 
   // A 4 GB WAV read from a slow share at 2 MB/s needs far more than two minutes.
+  it('grows with the header duration when the size is small', () => {
+    expect(pcmTimeoutMs(14_000_000, 3600)).toBe(360_000)
+  })
+
   it('grows with the size of a long mix', () => {
     expect(pcmTimeoutMs(4_000_000_000)).toBe(2_000_000)
+  })
+
+  // A long compressed file is small for its length, so its header duration has to scale
+  // the timeout where the size term would stay at the floor.
+  it('scales a long MP3 by its header duration', async () => {
+    ff('-f', 'lavfi', '-i', 'anullsrc=r=8000:cl=mono', '-t', '3600', '-b:a', '8k', at('hour.mp3'))
+    const size = statSync(at('hour.mp3')).size
+    expect(pcmTimeoutMs(size)).toBe(ANALYSIS_TIMEOUT_MS)
+    spawned.length = 0
+    await pcmDigest(at('hour.mp3'))
+    const timeout = digests()[0]?.timeout ?? 0
+    expect(timeout).toBeGreaterThanOrEqual(360_000)
+    expect(timeout).toBeLessThan(362_000)
   })
 
   // Asking for the duration of a file without one decodes it a second time under the
@@ -189,18 +220,20 @@ describe('pcmTimeoutMs', () => {
       '-f',
       'lavfi',
       '-i',
-      'anullsrc=r=48000:cl=stereo',
+      'anullsrc=r=96000:cl=stereo',
       '-t',
-      '1400',
+      '450',
       '-c:a',
-      'pcm_s16le',
+      'pcm_s24le',
       at('big.wav'),
     )
     const size = statSync(at('big.wav')).size
     spawned.length = 0
     await pcmDigest(at('big.wav'))
-    expect(digests().map((o) => o.timeout)).toEqual([pcmTimeoutMs(size)])
-    expect(pcmTimeoutMs(size)).toBeGreaterThan(ANALYSIS_TIMEOUT_MS)
+    const bySize = Math.ceil((size / 2_000_000) * 1000)
+    expect(digests().map((o) => o.timeout)).toEqual([bySize])
+    expect(bySize).toBeGreaterThan(ANALYSIS_TIMEOUT_MS)
+    expect(bySize).toBeGreaterThan(450 * 100)
     expect(spawned.filter((o) => o.args.includes('format=duration'))).toHaveLength(0)
     expect(digests()).toHaveLength(1)
   })

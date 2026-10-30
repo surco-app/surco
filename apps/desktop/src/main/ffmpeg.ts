@@ -722,6 +722,7 @@ interface ProbeResult {
   sampleRate: string
   channels: number
   bitRate?: number
+  headerSeconds?: number
 }
 
 export async function probeAudio(input: string): Promise<ProbeResult> {
@@ -733,7 +734,7 @@ export async function probeAudio(input: string): Promise<ProbeResult> {
       '-select_streams',
       'a:0',
       '-show_entries',
-      'stream=codec_name,sample_fmt,bits_per_raw_sample,sample_rate,channels,bit_rate',
+      'stream=codec_name,sample_fmt,bits_per_raw_sample,sample_rate,channels,bit_rate,duration:format=duration',
       '-of',
       'json',
       ...forcedInputArgs(input),
@@ -741,7 +742,9 @@ export async function probeAudio(input: string): Promise<ProbeResult> {
     ],
     { timeout: ANALYSIS_TIMEOUT_MS },
   )
-  const stream = JSON.parse(stdout).streams?.[0] ?? {}
+  const parsed = JSON.parse(stdout)
+  const stream = parsed.streams?.[0] ?? {}
+  const headerSeconds = Number(stream.duration ?? parsed.format?.duration)
   return {
     codecName: String(stream.codec_name ?? ''),
     sampleFmt: stream.sample_fmt ?? 's16',
@@ -749,6 +752,7 @@ export async function probeAudio(input: string): Promise<ProbeResult> {
     sampleRate: String(stream.sample_rate ?? ''),
     channels: Number(stream.channels) || 2,
     bitRate: Number(stream.bit_rate) || undefined,
+    headerSeconds: headerSeconds > 0 ? headerSeconds : undefined,
   }
 }
 
