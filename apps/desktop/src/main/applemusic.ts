@@ -329,6 +329,89 @@ export async function appleMusicEntry(
     : { label: stdout.slice(0, cut), path: stdout.slice(cut + 1) }
 }
 
+export type MusicEntryFacts = {
+  location: string
+  name: string
+  artist: string
+  album: string
+  artworks: number
+  playlists: string[]
+  oldExists?: boolean
+}
+
+// Re-reads an entry after the add or replace so the self-check compares what Music holds
+// with what was written. The track list is taken first and each property read from one
+// track: a property of "every track whose" throws -1728 with zero matches, and location
+// in bulk fails. Fields are separated by control characters because a tag may hold tabs
+// and newlines; the location leaves the tell block before POSIX path touches it.
+export function buildVerifyEntryScript(persistentId: string, oldPersistentId?: string): string {
+  return [
+    'set FS to ASCII character 31',
+    'set theLocation to missing value',
+    'set theOldFlag to ""',
+    'set thePlaylists to {}',
+    'tell application "Music"',
+    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${appleScriptString(persistentId)})`,
+    '  if (count of theMatches) is 0 then return "missing"',
+    '  set theTrack to item 1 of theMatches',
+    '  set theName to name of theTrack',
+    '  set theArtist to artist of theTrack',
+    '  set theAlbum to album of theTrack',
+    '  set theArtworks to count of artworks of theTrack',
+    '  try',
+    '    set theLocation to location of theTrack',
+    '  end try',
+    ...(oldPersistentId === undefined
+      ? []
+      : [
+          `  set theOldMatches to (every track of library playlist 1 whose persistent ID is ${appleScriptString(oldPersistentId)})`,
+          '  if (count of theOldMatches) is 0 then',
+          '    set theOldFlag to "0"',
+          '  else',
+          '    set theOldFlag to "1"',
+          '  end if',
+        ]),
+    '  set theLists to (every user playlist whose smart is false and special kind is none)',
+    '  repeat with p in theLists',
+    `    if (count of (every track of p whose persistent ID is ${appleScriptString(persistentId)})) is not 0 then set end of thePlaylists to (name of p)`,
+    '  end repeat',
+    'end tell',
+    'set theLocationText to ""',
+    'if theLocation is not missing value then set theLocationText to POSIX path of theLocation',
+    'set out to {"ok", theLocationText, theName, theArtist, theAlbum, (theArtworks as text), theOldFlag}',
+    'repeat with n in thePlaylists',
+    '  set end of out to (contents of n)',
+    'end repeat',
+    "set AppleScript's text item delimiters to FS",
+    'return out as text',
+  ].join('\n')
+}
+
+export function parseVerifyEntry(stdout: string): MusicEntryFacts | 'missing' {
+  const body = stdout.replace(/\n$/, '')
+  if (body === 'missing') return 'missing'
+  const [, location, name, artist, album, artworks, oldFlag, ...playlists] = body.split(REVIEW_FS)
+  const facts: MusicEntryFacts = {
+    location: location === 'missing value' ? '' : location,
+    name,
+    artist,
+    album,
+    artworks: Number(artworks) || 0,
+    playlists: playlists.filter(Boolean),
+  }
+  if (oldFlag) facts.oldExists = oldFlag === '1'
+  return facts
+}
+
+export function readMusicEntryFacts(
+  persistentId: string,
+  oldPersistentId?: string,
+): Promise<MusicEntryFacts | 'missing'> {
+  return appleMusicLimiter.run(async () =>
+    parseVerifyEntry(await runOsascript(buildVerifyEntryScript(persistentId, oldPersistentId))),
+  )
+}
+
 // Selects the library copy in the Music window and brings the app forward — the
 // "show in Apple Music" counterpart of revealing a file in Finder. Erroring when the
 // track is gone (rather than silently activating Music) lets the footer surface why

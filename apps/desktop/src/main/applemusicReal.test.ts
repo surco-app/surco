@@ -16,6 +16,7 @@ import {
   carryOverToAppleMusicCopy,
   deleteFromAppleMusic,
   markAppleMusicReplacing,
+  readMusicEntryFacts,
   runOsascript,
 } from './applemusic'
 import type { ConversionPlan } from './ffmpeg'
@@ -225,6 +226,23 @@ describe.skipIf(!real)('Apple Music against the real app', () => {
 
     expect(pid).toMatch(/^[0-9A-F]{16}$/)
     expect((await appleMusicEntry(pid)).label).toBe(`${ARTIST} - ${title}`)
+  }, 120_000)
+
+  it('reads back an entry it just added, and reports a missing one', async () => {
+    const title = `${PREFIX} Readback`
+    const pid = await addToAppleMusic(tone(join(dir, `${title}.aiff`), title), meta(title))
+
+    const facts = await readMusicEntryFacts(pid, 'FFFFFFFFFFFFFFFF')
+
+    expect(facts).not.toBe('missing')
+    expect(facts).toMatchObject({
+      name: title,
+      artist: ARTIST,
+      album: ALBUM,
+      oldExists: false,
+    })
+    expect((facts as { location: string }).location).toMatch(/\.aiff?$/i)
+    expect(await readMusicEntryFacts('FFFFFFFFFFFFFFFF')).toBe('missing')
   }, 120_000)
 
   // Measured 30/10: Music answers the add of a file matching an entry it has with that entry.

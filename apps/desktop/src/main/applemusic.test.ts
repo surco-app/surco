@@ -22,6 +22,7 @@ import {
   buildReviewDumpScript,
   buildSetFieldScript,
   buildUpdateScript,
+  buildVerifyEntryScript,
   carryOverToAppleMusicCopy,
   entriesForPaths,
   isAppleMusicOnly,
@@ -34,6 +35,7 @@ import {
   parseLibraryDump,
   parseMediaFolderUrl,
   parseReviewDump,
+  parseVerifyEntry,
   REPLACING_MARK,
   shouldAddToAppleMusic,
 } from './applemusic'
@@ -1280,5 +1282,95 @@ describe('musicFileLocations', () => {
   it('lets any other failure through', async () => {
     const run = vi.fn().mockRejectedValue(new Error('execution error: (-600)'))
     await expect(musicFileLocations(run)).rejects.toThrow('-600')
+  })
+})
+
+describe('buildVerifyEntryScript', () => {
+  it('embeds both persistent IDs through appleScriptString', () => {
+    const script = buildVerifyEntryScript('NEW"1234NEW12345', 'OLD\\1234OLD12345')
+
+    expect(script).toContain(`whose persistent ID is ${appleScriptString('NEW"1234NEW12345')}`)
+    expect(script).toContain(`whose persistent ID is ${appleScriptString('OLD\\1234OLD12345')}`)
+  })
+
+  it('asks nothing about an old entry when none was given', () => {
+    const script = buildVerifyEntryScript('NEW1234NEW123456')
+
+    expect(script).not.toContain('theOldMatches')
+  })
+
+  // Measured 30/10: a property of "every track whose" throws -1728 with zero matches, and
+  // location in bulk fails, so the list is taken first and each property read from one track.
+  it('takes the track list first and reads the properties from one track', () => {
+    const script = buildVerifyEntryScript('NEW1234NEW123456')
+
+    expect(script).toContain('set theMatches to (every track of library playlist 1 whose')
+    expect(script).not.toMatch(/(name|persistent ID|location) of \(every track/)
+    expect(script).toContain('location of theTrack')
+  })
+
+  it('coerces the location outside the Music tell block', () => {
+    const script = buildVerifyEntryScript('NEW1234NEW123456')
+    const tellBody = script.slice(script.indexOf('tell application'), script.indexOf('end tell'))
+
+    expect(tellBody).not.toContain('POSIX path')
+    expect(script).toContain('POSIX path')
+  })
+
+  it('lists only normal playlists', () => {
+    const script = buildVerifyEntryScript('NEW1234NEW123456')
+
+    expect(script).toContain('user playlist whose smart is false and special kind is none')
+  })
+})
+
+describe('parseVerifyEntry', () => {
+  const FS = '\u001f'
+
+  it('reads every field, keeping a tab and a newline inside the album', () => {
+    const stdout = [
+      'ok',
+      '/Music/A.aiff',
+      'Till I Come',
+      'ATB',
+      'Two\tparts\nof it',
+      '1',
+      '1',
+      'Mix',
+      'Fav',
+    ].join(FS)
+
+    expect(parseVerifyEntry(`${stdout}\n`)).toEqual({
+      location: '/Music/A.aiff',
+      name: 'Till I Come',
+      artist: 'ATB',
+      album: 'Two\tparts\nof it',
+      artworks: 1,
+      oldExists: true,
+      playlists: ['Mix', 'Fav'],
+    })
+  })
+
+  it('parses a missing value location as an empty one', () => {
+    const stdout = ['ok', 'missing value', 'N', 'A', 'B', '0', '', ''].join(FS)
+
+    expect(parseVerifyEntry(stdout)).toEqual({
+      location: '',
+      name: 'N',
+      artist: 'A',
+      album: 'B',
+      artworks: 0,
+      playlists: [],
+    })
+  })
+
+  it('reports an old entry that is gone', () => {
+    const stdout = ['ok', '/x.wav', 'N', 'A', 'B', '2', '0'].join(FS)
+
+    expect(parseVerifyEntry(stdout)).toMatchObject({ oldExists: false, playlists: [] })
+  })
+
+  it('answers the missing sentinel', () => {
+    expect(parseVerifyEntry('missing\n')).toBe('missing')
   })
 })
