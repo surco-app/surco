@@ -656,6 +656,13 @@ describe('CopiesScreen music files', () => {
     expect(es.copies.music.renamedTo).toBe('Renombrado por una conversión a «{{name}}»')
   })
 
+  it('spells out the whole new name of a long rename instead of cutting it', () => {
+    const long = 'HH Traxx – Nia Owen – The funk (Original mix) [Extended Club Version].aiff'
+    renderMusic([entry({ reason: 'renamed', outputPath: `/Music/Crate/${long}` })])
+    const reason = screen.getByTestId('trash-reason')
+    expect(reason.textContent).toBe(i18n.t('copies.music.renamedTo', { name: long }))
+  })
+
   it('says only what happened when the conversion kept the name', () => {
     renderMusic([entry({ reason: 'replaced', outputPath: '/Music/Crate/Track.aiff' })])
     expect(screen.getByTestId('trash-reason')).toHaveTextContent(

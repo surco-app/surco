@@ -398,7 +398,7 @@ function MusicFiles({
                       to find out which file took the original's place. */}
                     <div
                       data-testid="trash-reason"
-                      className="truncate text-[12.5px] text-fg-faint first-letter:uppercase"
+                      className="text-pretty text-[12.5px] text-fg-faint first-letter:uppercase"
                     >
                       {replacement && entry.reason === 'renamed'
                         ? tr('copies.music.renamedTo', { name: replacement })
