@@ -2564,7 +2564,10 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
 })
 
 describe('useTrackProcessing retryVerification', () => {
-  function retryHook(answer: 'rechecked' | 'requeued' | 'rerun-job') {
+  function retryHook(
+    answer: 'rechecked' | 'requeued' | 'rerun-job',
+    over: Partial<TrackItem> = {},
+  ) {
     const processTrack = vi
       .fn<Api['processTrack']>()
       .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
@@ -2573,9 +2576,10 @@ describe('useTrackProcessing retryVerification', () => {
     const hook = renderHook(
       () =>
         useTrackProcessing({
-          tracks: [track({ id: 'a' })],
+          tracks: [track({ id: 'a', ...over })],
           settings: null,
           updateTrack: vi.fn(),
+          rememberedPick: () => ({ destination: 'overwrite' }),
         }),
       { wrapper: withClient() },
     )
@@ -2600,5 +2604,17 @@ describe('useTrackProcessing retryVerification', () => {
       await hook.result.current.retryVerification('a')
     })
     expect(processTrack).not.toHaveBeenCalled()
+  })
+
+  // The Settings default may differ from what the user picked for this track, and an
+  // in-place export would rewrite the file in the wrong format.
+  it('retry that reruns the job keeps the track format and remembered destination', async () => {
+    const { processTrack, hook } = retryHook('rerun-job', { format: 'flac' })
+    await act(async () => {
+      await hook.result.current.retryVerification('a')
+    })
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ format: 'flac', overwriteOriginal: true }),
+    )
   })
 })

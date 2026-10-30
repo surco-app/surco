@@ -1430,6 +1430,7 @@ export default function App(): React.JSX.Element {
     settings,
     updateTrack,
     refreshTrackFromDisk,
+    rememberedPick,
     releaseFile: (path) => releaseFileRef.current(path),
     reclaimFile: (path) => reclaimFileRef.current(path),
     onConversion: () => {

@@ -36,6 +36,26 @@ function track(over: Partial<TrackItem> = {}): TrackItem {
 
 describe('exportedPatch', () => {
   // The row shows what main re-read, so the patch must carry it for both result shapes.
+  // An update can reach the row before the result of the same job does.
+  it('exportedPatch keeps a newer update of the same job over the result', () => {
+    const newer: Verification = { status: 'ok', checks: [], job: 'j1', seq: 3 }
+    const patch = exportedPatch(track({ verification: newer }), {
+      outputPath: '/out/a.aiff',
+      inPlace: false,
+      verification: { status: 'checking', checks: [], job: 'j1', seq: 0 },
+    })
+    expect(patch.verification).toEqual(newer)
+  })
+
+  it('exportedPatch replaces the verification of an older job', () => {
+    const fresh: Verification = { status: 'checking', checks: [], job: 'j2', seq: 0 }
+    const patch = exportedPatch(
+      track({ verification: { status: 'ok', checks: [], job: 'j1', seq: 3 } }),
+      { outputPath: '/out/a.aiff', inPlace: false, verification: fresh },
+    )
+    expect(patch.verification).toEqual(fresh)
+  })
+
   it('exportedPatch keeps the verification main returned', () => {
     const verification: Verification = { status: 'checking', checks: [] }
     expect(

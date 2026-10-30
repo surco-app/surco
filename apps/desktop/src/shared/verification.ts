@@ -15,6 +15,8 @@ export interface PlaceCheck {
 export interface Verification {
   status: 'checking' | 'ok' | 'mismatch' | 'pending'
   checks: PlaceCheck[]
+  job?: string
+  seq?: number
 }
 
 export const PLACE_ORDER: VerifyPlace[] = ['file', 'appleMusic', 'rekordbox', 'engine', 'traktor']

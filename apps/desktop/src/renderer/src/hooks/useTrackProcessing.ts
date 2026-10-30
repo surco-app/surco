@@ -25,6 +25,7 @@ import { autoNamesFile, renderOutputName } from '../lib/outputName'
 import { declickFor, declickForJob, jobAudio, normalizeFor, normalizeForJob } from '../lib/reapply'
 import type { TrackItem } from '../types'
 import { withMusicCover } from './useAppleMusicArtwork'
+import type { RememberedPick } from './useEditorPicks'
 import { useStableCallback } from './useStableCallback'
 
 // How many tracks convert at once in a bulk run. All logical cores but one (min 2): the
@@ -98,6 +99,9 @@ interface Params {
   // Hands the released file back to the player once the job no longer holds it, for every
   // outcome that leaves it at the same path: the release silenced it either way.
   reclaimFile?: (path: string) => void
+  // The destination the user picked for a track in the editor, which the row itself does
+  // not store; a retry that converts again must not fall back to the Settings default.
+  rememberedPick?: (id: string) => RememberedPick | undefined
 }
 
 interface TrackProcessing {
@@ -152,6 +156,7 @@ export function useTrackProcessing({
   concurrency = CONVERT_CONCURRENCY,
   releaseFile,
   reclaimFile,
+  rememberedPick,
 }: Params): TrackProcessing {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -743,7 +748,10 @@ export function useTrackProcessing({
 
   const retryVerification = useStableCallback(async (id: string): Promise<void> => {
     const answer = await window.api.retryVerification(id)
-    if (answer === 'rerun-job') await processOne(id)
+    if (answer !== 'rerun-job') return
+    const track = tracksRef.current.find((t) => t.id === id)
+    const pick = rememberedPick?.(id)
+    await processOne(id, pick?.format ?? track?.format, undefined, undefined, pick?.destination)
   })
 
   return {

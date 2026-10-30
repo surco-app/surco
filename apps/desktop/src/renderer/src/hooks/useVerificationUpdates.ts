@@ -11,7 +11,11 @@ export function useVerificationUpdates({ tracksRef, updateTrack }: Params): void
   useEffect(
     () =>
       window.api.onVerifyUpdate((trackId: string, verification: Verification) => {
-        if (!tracksRef.current.some((t) => t.id === trackId)) return
+        const track = tracksRef.current.find((t) => t.id === trackId)
+        if (!track) return
+        const held = track.verification
+        if (held && (held.job !== verification.job || (verification.seq ?? 0) <= (held.seq ?? 0)))
+          return
         updateTrack(trackId, { verification })
       }),
     [tracksRef, updateTrack],

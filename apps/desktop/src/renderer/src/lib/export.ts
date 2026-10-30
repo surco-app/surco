@@ -1,7 +1,16 @@
 import type { DeclickConfig, NormalizeConfig, ProcessResult } from '../../../shared/types'
+import type { Verification } from '../../../shared/verification'
 import type { TrackItem } from '../types'
 import { trackSignature } from './dirty'
 import { parseFileName } from './filename'
+
+function newerVerification(track: TrackItem, result: ProcessResult): Verification | undefined {
+  const held = track.verification
+  const returned = result.verification
+  if (held && returned && held.job === returned.job && (held.seq ?? 0) > (returned.seq ?? 0))
+    return held
+  return returned
+}
 
 // The track-state patch applied when an export finishes. After an in-place export
 // the source file was rewritten — and possibly renamed — so the track must point
@@ -24,7 +33,7 @@ export function exportedPatch(
     return {
       status: 'done',
       outputPath: undefined,
-      verification: result.verification,
+      verification: newerVerification(track, result),
       musicStatus: 'added',
       ...(result.musicPersistentId && { musicPersistentId: result.musicPersistentId }),
       oldMusicCopyKept: result.oldMusicCopyKept,
@@ -59,7 +68,7 @@ export function exportedPatch(
   return {
     status: 'done',
     outputPath: result.outputPath,
-    verification: result.verification,
+    verification: newerVerification(track, result),
     outputIdentity: result.outputIdentity,
     ...(result.inPlace && {
       inputPath: result.outputPath,
