@@ -13,9 +13,9 @@ vi.mock('./settings', () => ({
 }))
 
 import type { TrackMetadata } from '../shared/types'
+import { mp3TimingOfFile } from './cueCalibration'
 import { convertAudio } from './ffmpeg'
 import { leadingId3v2Size } from './id3Header'
-import { mpeg1XingOfFile } from './rekordboxTimeline'
 import { readCueTree } from './tags'
 import { buildTraktorTree, injectWavPriv, readTraktorCueStart, traktorCue } from './traktor4Fixture'
 
@@ -139,7 +139,11 @@ describe('Traktor cue calibration on the MP3 crossings', () => {
     const out = join(dir, 'from-wav.mp3')
     await convertAudio(wav, out, 'mp3', meta)
 
-    expect((await mpeg1XingOfFile(out))?.xing).toBe(true)
+    expect(await mp3TimingOfFile(out)).toEqual({
+      sampleRate: 44100,
+      headerSamples: 1152,
+      gaplessDelay: 1105,
+    })
     expect(cueStart(out)).toBeCloseTo(CUE_START_MS + XING_LEAD_MS, 1)
   })
 

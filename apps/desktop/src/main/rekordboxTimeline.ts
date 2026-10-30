@@ -49,18 +49,9 @@ function xingTagAt(head: Buffer, frame: number): number | null {
   return tag === 'Info' || tag === 'Xing' ? tagAt : null
 }
 
-export interface Mpeg1Xing {
-  xing: boolean
-  sampleRate: number
-}
-
-export function mpeg1Xing(head: Buffer): Mpeg1Xing | null {
+export function mpeg1SampleRate(head: Buffer): number | null {
   const frame = firstFrame(head)
-  if (frame === null) return null
-  return {
-    xing: xingTagAt(head, frame) !== null,
-    sampleRate: MPEG1_SAMPLE_RATES[(head[frame + 2] >> 2) & 3],
-  }
+  return frame === null ? null : MPEG1_SAMPLE_RATES[(head[frame + 2] >> 2) & 3]
 }
 
 export function mpeg1Info(head: Buffer): Mpeg1Info | null {
@@ -96,7 +87,7 @@ export function rekordboxShiftMs(ext: string, head: Buffer, sampleRate: number):
   return ((MPEG1_FRAME_SAMPLES + skipped) / info.sampleRate) * 1000
 }
 
-async function mp3Head(file: string): Promise<Buffer | null> {
+export async function mp3Head(file: string): Promise<Buffer | null> {
   if (extname(file).toLowerCase() !== '.mp3') return null
   let fh: Awaited<ReturnType<typeof open>>
   try {
@@ -119,11 +110,6 @@ async function mp3Head(file: string): Promise<Buffer | null> {
   } finally {
     await fh.close()
   }
-}
-
-export async function mpeg1XingOfFile(file: string): Promise<Mpeg1Xing | null> {
-  const head = await mp3Head(file)
-  return head ? mpeg1Xing(head) : null
 }
 
 export async function rekordboxLeadOfFile(file: string): Promise<number> {

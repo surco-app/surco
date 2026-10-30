@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -14,10 +14,11 @@ const XING_FRAME = 1152
 const ENCODER_DELAY = 1105
 const ms = (samples: number, rate: number) => (samples / rate) * 1000
 
-const xing44 = { xing: true, sampleRate: 44100 }
-const xing48 = { xing: true, sampleRate: 48000 }
-const bare44 = { xing: false, sampleRate: 44100 }
-const bare48 = { xing: false, sampleRate: 48000 }
+const xing44 = { sampleRate: 44100, headerSamples: XING_FRAME, gaplessDelay: ENCODER_DELAY }
+const xing48 = { sampleRate: 48000, headerSamples: XING_FRAME, gaplessDelay: ENCODER_DELAY }
+const bare44 = { sampleRate: 44100, headerSamples: 0, gaplessDelay: null }
+const bare48 = { sampleRate: 48000, headerSamples: 0, gaplessDelay: null }
+const unsigned44 = { sampleRate: 44100, headerSamples: XING_FRAME, gaplessDelay: null }
 
 function encode(name: string, args: string[]): string {
   const out = join(dir, name)
@@ -66,6 +67,15 @@ describe('automatic Traktor codec cue calibration', () => {
     )
   })
 
+  it('moves a cue out of an Info frame with no encoder signature by that frame alone, since ffmpeg then keeps the delay', () => {
+    expect(automaticCueOffsetMs(unsigned44, null)).toBeCloseTo(-ms(XING_FRAME, 44100))
+  })
+
+  it('takes the delay the encoder wrote into its tag rather than a fixed one', () => {
+    const late = { sampleRate: 44100, headerSamples: XING_FRAME, gaplessDelay: 1000 + 529 }
+    expect(automaticCueOffsetMs(late, null)).toBeCloseTo(-ms(XING_FRAME + 1000 + 529, 44100))
+  })
+
   it('does not move PCM to PCM', () => {
     expect(automaticCueOffsetMs(null, null)).toBe(0)
   })
@@ -81,6 +91,31 @@ describe('automaticCueOffsetOfFiles', () => {
       -ms(XING_FRAME + ENCODER_DELAY, 48000),
     )
     expect(await automaticCueOffsetOfFiles(withoutXing, wav)).toBe(0)
+  })
+
+  it('reads an Info tag whose encoder signature ffmpeg does not trust as the frame alone', async () => {
+    const wav = encode('unsigned.wav', [])
+    const signed = encode('signed.mp3', ['-c:a', 'libmp3lame'])
+    const bytes = readFileSync(signed)
+    bytes.write('XXXX', bytes.indexOf('Lavc'), 'latin1')
+    const unsigned = join(dir, 'unsigned.mp3')
+    writeFileSync(unsigned, bytes)
+
+    expect(await automaticCueOffsetOfFiles(unsigned, wav)).toBeCloseTo(-ms(XING_FRAME, 44100))
+  })
+
+  it('reads the delay out of the encoder tag', async () => {
+    const wav = encode('late.wav', [])
+    const bytes = readFileSync(encode('late-signed.mp3', ['-c:a', 'libmp3lame']))
+    const at = bytes.indexOf('Lavc')
+    bytes[at + 21] = 1000 >> 4
+    bytes[at + 22] = ((1000 & 0x0f) << 4) | (bytes[at + 22] & 0x0f)
+    const late = join(dir, 'late.mp3')
+    writeFileSync(late, bytes)
+
+    expect(await automaticCueOffsetOfFiles(late, wav)).toBeCloseTo(
+      -ms(XING_FRAME + 1000 + 529, 44100),
+    )
   })
 
   it('reads the output MP3 header the same way', async () => {
@@ -136,5 +171,52 @@ describe('automaticCueOffsetOfFiles past a large cover', () => {
     expect(await automaticCueOffsetOfFiles(wav, covered)).toBeCloseTo(
       ms(XING_FRAME + ENCODER_DELAY, 44100),
     )
+  })
+})
+
+function firstClick(file: string): number {
+  const pcm = execFileSync(FF, ['-v', 'error', '-i', file, '-f', 's16le', '-ac', '1', '-'], {
+    maxBuffer: 1 << 26,
+  })
+  const samples = new Int16Array(pcm.buffer, pcm.byteOffset, pcm.length / 2)
+  return samples.findIndex((s) => Math.abs(s) > 3000)
+}
+
+// The premise the rule stands on: what ffmpeg drops from the start of an MP3, which is what
+// the converted file is missing compared with what Traktor draws.
+describe('what ffmpeg drops from the start of an MP3', () => {
+  const click = () => {
+    const out = join(dir, 'click.wav')
+    execFileSync(FF, [
+      '-y',
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      "aevalsrc='if(between(t,1,1.002),0.9,0)':d=2:s=44100",
+      out,
+    ])
+    return out
+  }
+
+  it('drops the header frame and the signed delay, only the frame when unsigned, nothing without one', () => {
+    const wav = click()
+    const mp3 = (name: string, args: string[]) => {
+      const out = join(dir, name)
+      execFileSync(FF, ['-y', '-v', 'error', '-i', wav, '-c:a', 'libmp3lame', ...args, out])
+      return out
+    }
+    const signed = mp3('click-signed.mp3', [])
+    const bare = mp3('click-bare.mp3', ['-write_xing', '0'])
+    const bytes = readFileSync(signed)
+    bytes.write('XXXX', bytes.indexOf('Lavc'), 'latin1')
+    const unsigned = join(dir, 'click-unsigned.mp3')
+    writeFileSync(unsigned, bytes)
+
+    const at = firstClick(wav)
+    expect(Math.abs(firstClick(signed) - at)).toBeLessThanOrEqual(2)
+    expect(Math.abs(firstClick(bare) - (at + ENCODER_DELAY))).toBeLessThanOrEqual(2)
+    expect(Math.abs(firstClick(unsigned) - (at + ENCODER_DELAY))).toBeLessThanOrEqual(2)
   })
 })
