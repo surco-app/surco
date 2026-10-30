@@ -642,7 +642,7 @@ export async function readMeta(input: string): Promise<MetaRead> {
 }
 
 export async function readMetaLight(input: string): Promise<MetaRead & { partial: boolean }> {
-  const full = await peekAnalysis<MetaRead>(READMETA_NAMESPACE, input)
+  const full = await peekAnalysis<MetaRead>(READMETA_NAMESPACE, input, { urgent: true })
   if (full) return { ...composed(full), partial: false }
   const light = await cachedAnalysis(READMETA_LIGHT_NAMESPACE, input, () =>
     readMetaUncached(input, false),
