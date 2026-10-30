@@ -445,14 +445,16 @@ export function useTrackProcessing({
         // the source, so its (possibly different, when renamed) path is evicted too.
         removeAnalysisQueries(queryClient, [result.outputPath])
         if (result.outputPath && result.outputPath !== track.inputPath) movedRef.current = true
-        moved = result.inPlace && result.outputPath !== track.inputPath
-        if (result.inPlace) {
+        // "Apple Music only" can move the row too: to the copy Music landed (exportedPatch).
+        const movedTo = result.inPlace ? result.outputPath : result.musicLandedPath
+        moved = !!movedTo && movedTo !== track.inputPath
+        if (movedTo) {
           removeAnalysisQueries(queryClient, [track.inputPath])
           // The row's frozen label and the file's own artwork describe the bytes this
           // export just overwrote, so re-read them from the file at its final (possibly
           // renamed) path. Awaited so a batch's rows settle in order, but never allowed
           // to fail the conversion: the file is written either way and this only repaints.
-          await refreshTrackFromDisk?.(id, result.outputPath).catch(() => {})
+          await refreshTrackFromDisk?.(id, movedTo).catch(() => {})
         }
         // The file was written and the row now follows it; only the Engine DJ add failed,
         // which still fails the track so it is never taken for in the library.

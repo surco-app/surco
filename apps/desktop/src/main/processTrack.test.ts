@@ -2166,6 +2166,27 @@ describe('runProcessTrack — converting a library track to another format', () 
     expect(deps.updateInAppleMusic).not.toHaveBeenCalled()
   })
 
+  // The row was the AIFF Music played; once the entry is the WAV Music copied, the row has
+  // to follow it, or trashing the AIFF leaves a dead row and the next conversion repoints
+  // rekordbox from a file it no longer indexes.
+  it('moves the row to the file Music landed when the superseded file was its own source', async () => {
+    const deps = converting('/lib/A.aiff')
+
+    const result = await runProcessTrack(libraryJob(), deps)
+
+    expect(result.musicLandedPath).toBe('/Users/me/Music/Media/new.wav')
+    expect(deps.allowMedia).toHaveBeenCalledWith('/Users/me/Music/Media/new.wav')
+  })
+
+  it('leaves the row on its source when Music replaced a copy of another file', async () => {
+    const deps = converting('/Users/me/Music/Media/A.aiff')
+
+    const result = await runProcessTrack(libraryJob(), deps)
+
+    expect(result.supersededPath).toBe('/Users/me/Music/Media/A.aiff')
+    expect(result.musicLandedPath).toBeUndefined()
+  })
+
   // The batch this was measured for is auto-matched AIFFs: the job's tags are the match,
   // not what Music shows, and the delete only retires an entry whose live name it is told.
   it('retires the entry under the name Music shows, not the edited tags the job carries', async () => {

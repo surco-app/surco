@@ -26,6 +26,13 @@ export function exportedPatch(
       outputPath: undefined,
       musicStatus: 'added',
       ...(result.musicPersistentId && { musicPersistentId: result.musicPersistentId }),
+      // The row was the file the replaced entry played, so it follows the entry to the
+      // copy Music landed, as an in-place export follows its rewritten file.
+      ...(result.musicLandedPath && {
+        inputPath: result.musicLandedPath,
+        fileName: parseFileName(result.musicLandedPath).fileName,
+        movedFrom: [...(track.movedFrom ?? []), track.inputPath],
+      }),
       ...(result.supersededPath && {
         supersededPath: result.supersededPath,
         supersededTrashed: undefined,

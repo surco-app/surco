@@ -180,34 +180,45 @@ async function replaceAppleMusicCopy(
     persistentId: job.musicPersistentId,
     label: job.replacesLabel ?? metaLabel(job),
   },
-): Promise<{ added: string; oldCopyKept?: 'mismatch' | 'error' | 'carry' }> {
+): Promise<{
+  added: string
+  oldCopyKept?: 'mismatch' | 'error' | 'carry'
+  landed?: MediaCopy
+}> {
   const added = await deps.addToAppleMusic(target, job.meta, coverPath)
-  if (tmpDir)
-    await verifyMediaCopy(
-      added,
-      tmpDir,
-      target,
-      job,
-      deps,
-      old.persistentId ? 'appleMusicNoMediaCopyKept' : 'appleMusicNoMediaCopy',
-    )
-  if (!old.persistentId) return { added }
+  const landed = tmpDir
+    ? await verifyMediaCopy(
+        added,
+        tmpDir,
+        target,
+        job,
+        deps,
+        old.persistentId ? 'appleMusicNoMediaCopyKept' : 'appleMusicNoMediaCopy',
+      )
+    : undefined
+  if (!old.persistentId) return { added, landed }
   try {
     const carried = await deps.carryAppleMusicHistory(old.persistentId, added, old.label)
-    if (carried === 'mismatch') return { added, oldCopyKept: 'mismatch' }
+    if (carried === 'mismatch') return { added, oldCopyKept: 'mismatch', landed }
   } catch (e) {
     log.warn('process:track kept the old Music entry it could not carry over', e)
-    return { added, oldCopyKept: 'carry' }
+    return { added, oldCopyKept: 'carry', landed }
   }
   try {
     await deps.deleteAppleMusic(old.persistentId, old.label)
-    return { added }
+    return { added, landed }
   } catch (e) {
     return {
       added,
       oldCopyKept: String(e).includes('applemusic-delete-mismatch') ? 'mismatch' : 'error',
+      landed,
     }
   }
+}
+
+// Where Music copied the file.
+interface MediaCopy {
+  path: string
 }
 
 // "Apple Music only" removes the temp conversion in the finally below — safe only when
@@ -222,7 +233,7 @@ async function verifyMediaCopy(
   job: ProcessJob,
   deps: ProcessTrackDeps,
   errorKey: 'appleMusicNoMediaCopy' | 'appleMusicNoMediaCopyKept',
-): Promise<void> {
+): Promise<MediaCopy> {
   const entryPath = await deps.appleMusicEntryLocation(persistentId)
   if (entryPath.startsWith(tmpDir)) {
     await deps.deleteAppleMusic(persistentId, metaLabel(job))
@@ -233,6 +244,7 @@ async function verifyMediaCopy(
   // cleanup below deletes — the flush would then refuse it as output-missing and
   // leave the collection on the old file, which is what the user hit.
   if (entryPath) deps.redirectRepoint?.(target, entryPath)
+  return { path: entryPath }
 }
 
 function metaLabel(job: ProcessJob): string {
@@ -499,6 +511,7 @@ export async function runProcessTrack(
     let musicPersistentId: string | undefined
     let oldMusicCopyKept: ProcessResult['oldMusicCopyKept']
     let supersededPath: string | undefined
+    let musicLandedPath: string | undefined
     let appleMusicFailed: true | undefined
     if (shouldAddToAppleMusic(addToAppleMusic, deps.platform, format)) {
       stage('appleMusic')
@@ -550,6 +563,9 @@ export async function runProcessTrack(
             })
             musicPersistentId = replaced.added
             oldMusicCopyKept = replaced.oldCopyKept
+            const isSource = entry.path.normalize('NFC') === job.inputPath.normalize('NFC')
+            // The row was the file Music played, so it follows the entry to its new file.
+            if (isSource && replaced.landed?.path) musicLandedPath = replaced.landed.path
             if (!replaced.oldCopyKept) supersededPath = entry.path
             verified = true
           } else {
@@ -623,6 +639,7 @@ export async function runProcessTrack(
     // library folder, which a convert has no other reason to authorise.
     if (job.replacesPath) deps.allowMedia(job.replacesPath)
     if (supersededPath) deps.allowMedia(supersededPath)
+    if (musicLandedPath) deps.allowMedia(musicLandedPath)
     // The add succeeded (a failure would have thrown above), and the temp dir is
     // cleaned up in finally — tell the renderer there is no file to reveal, only an
     // Apple Music entry.
@@ -636,6 +653,7 @@ export async function runProcessTrack(
         declickedSamples,
         oldMusicCopyKept,
         supersededPath,
+        musicLandedPath,
         originalKept,
       }
 

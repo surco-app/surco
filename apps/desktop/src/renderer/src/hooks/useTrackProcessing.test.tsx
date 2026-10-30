@@ -297,6 +297,17 @@ describe('useTrackProcessing', () => {
       const reclaimFile = await run(async () => ({ outputPath: '/m/a.aiff', inPlace: true }))
       expect(reclaimFile).not.toHaveBeenCalled()
     })
+
+    it('does not hand back a source whose Music entry moved to the copy Music landed', async () => {
+      const reclaimFile = await run(async () => ({
+        outputPath: '',
+        inPlace: false,
+        addedToMusicOnly: true,
+        supersededPath: '/m/a.wav',
+        musicLandedPath: '/Music/Media/a.aiff',
+      }))
+      expect(reclaimFile).not.toHaveBeenCalled()
+    })
   })
 
   // The hook is wired through App, where the player may not exist yet on the first
@@ -2297,6 +2308,37 @@ describe('useTrackProcessing', () => {
       })
 
       expect(refreshTrackFromDisk).toHaveBeenCalledWith('a', '/m/a.wav')
+    })
+
+    // "Apple Music only" from the Music tab: the row moves to the copy Music landed, a file
+    // with other tags and art than the one it described.
+    it('refreshes the row from the copy Music landed when it moved there', async () => {
+      setApi({
+        processTrack: vi.fn<Api['processTrack']>().mockResolvedValue({
+          outputPath: '',
+          inPlace: false,
+          addedToMusicOnly: true,
+          supersededPath: '/m/a.wav',
+          musicLandedPath: '/Music/Media/a.aiff',
+        }),
+      })
+      const refreshTrackFromDisk = vi.fn().mockResolvedValue(undefined)
+      const { result } = renderHook(
+        () =>
+          useTrackProcessing({
+            tracks: [track({ id: 'a' })],
+            settings: null,
+            updateTrack: vi.fn(),
+            refreshTrackFromDisk,
+          }),
+        { wrapper: withClient() },
+      )
+
+      await act(async () => {
+        await result.current.processOne('a')
+      })
+
+      expect(refreshTrackFromDisk).toHaveBeenCalledWith('a', '/Music/Media/a.aiff')
     })
 
     // Exporting elsewhere leaves the original untouched, so refreshing its row would make

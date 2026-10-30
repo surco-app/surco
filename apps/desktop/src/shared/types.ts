@@ -1293,6 +1293,9 @@ export interface ProcessResult {
   // The file a library entry pointed at before a format change replaced that entry, set
   // only once the old entry is gone: the renderer offers it for trash as replacesPath.
   supersededPath?: string
+  // "Apple Music only" replaced the entry of the track's own source: where Music copied the
+  // new file, which the row moves to like an in-place conversion.
+  musicLandedPath?: string
   appleMusicFailed?: true
   // Set when the converted file landed but the original it replaced in a format change
   // could not be retired, so both are in the folder.

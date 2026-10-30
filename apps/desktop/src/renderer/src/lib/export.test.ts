@@ -237,4 +237,21 @@ describe('exportedPatch', () => {
     expect(patch.replacesPath).toBeUndefined()
     expect(supersededFile({ ...t, ...patch })).toBe('/lib/Till I Come.aiff')
   })
+
+  // Opened from the Music tab, the row IS the AIFF Music played. Left on it, trashing the
+  // AIFF leaves a row that plays nothing and the next conversion starts from a dead file.
+  it('moves the row to the file Music landed when the superseded file was its own source', () => {
+    const t = track({ inputPath: '/lib/Till I Come.aiff', fileName: 'Till I Come' })
+    const patch = exportedPatch(t, {
+      outputPath: '',
+      inPlace: false,
+      addedToMusicOnly: true,
+      supersededPath: '/lib/Till I Come.aiff',
+      musicLandedPath: '/Music/Media/ATB/Till I Come.wav',
+    })
+    expect(patch.inputPath).toBe('/Music/Media/ATB/Till I Come.wav')
+    expect(patch.fileName).toBe('Till I Come')
+    expect(patch.movedFrom).toEqual(['/lib/Till I Come.aiff'])
+    expect(supersededFile({ ...t, ...patch, status: 'done' })).toBe('/lib/Till I Come.aiff')
+  })
 })
