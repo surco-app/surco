@@ -1787,6 +1787,8 @@ function registerIpc(): void {
         return redirectNmlPatch(to, landed, toNmlLocation(landed))
       },
       verifyFile: (expect, signal) => checkFile(expect, fileReaders, { signal }),
+      fileSize: async (path) => (await stat(path)).size,
+      realPath: (p) => realpathSync(p),
       // Music exists only on macOS, where the Music step is the only caller.
       verifyMusic:
         process.platform === 'darwin'

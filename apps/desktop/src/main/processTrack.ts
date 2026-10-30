@@ -33,6 +33,7 @@ import {
   sanitizeOutputName,
   uniqueOutputPath,
 } from './inplace'
+import { pathKey } from './libraryPathKey'
 import type { EngineBefore } from './verifyEngine'
 import type { FileExpect } from './verifyFile'
 import type { MusicExpect } from './verifyMusic'
@@ -189,6 +190,10 @@ export interface ProcessTrackDeps {
   // the job's cancel; a cancelled read rejects with conversionCancelled.
   verifyFile: (e: FileExpect, signal: AbortSignal) => Promise<PlaceCheck>
   verifyMusic: (e: MusicExpect, signal: AbortSignal) => Promise<PlaceCheck>
+  // A file's size in bytes, and where a path really lands: Music's copy of the written file
+  // is told apart from an older file it already had by both.
+  fileSize?: (path: string) => Promise<number>
+  realPath?: (path: string) => string
   // Hands the job to the registry that checks the libraries once the batch is flushed.
   registerVerification?: (e: VerifyEntry) => void
 }
@@ -451,14 +456,29 @@ function settled(check: Promise<PlaceCheck>, place: VerifyPlace, key: string): P
 }
 
 // The file Music is held to when the output copy stays where it was written: Music may have
-// copied it into its own Media folder, and that copy is the one it plays. Anywhere else the
-// entry is still judged against the written file, so a wrong file still reads as one.
-async function musicPlays(entryAt: string, target: string, deps: ProcessTrackDeps) {
-  if (!entryAt) return target
+// copied it into its own Media folder, and that copy is the one it plays. Only a new entry
+// can be that copy, and only with the written file's bytes: an entry that was retagged, or
+// an add Music answered with an entry it already had, may sit in the Media folder on an
+// older file. Anything else is judged against the written file, so a wrong file still
+// reads as one.
+async function musicPlays(
+  entryAt: string,
+  target: string,
+  newEntry: boolean,
+  deps: ProcessTrackDeps,
+): Promise<string> {
+  if (!entryAt || !newEntry || !deps.fileSize) return target
   const media = await deps.appleMusicMediaFolder?.().catch(() => undefined)
-  const at = entryAt.normalize('NFC')
-  const inMedia = !!media && at.startsWith(`${media.normalize('NFC').replace(/\/+$/, '')}/`)
-  return at === target.normalize('NFC') || inMedia ? entryAt : target
+  if (!media) return target
+  const key = pathKey({ realPath: deps.realPath })
+  const at = key(entryAt.normalize('NFC')).normalize('NFC')
+  const folder = key(media.normalize('NFC')).normalize('NFC').replace(/\/+$/, '')
+  if (!at.startsWith(`${folder}/`)) return target
+  const [copied, written] = await Promise.all([
+    deps.fileSize(entryAt).catch(() => undefined),
+    deps.fileSize(target).catch(() => undefined),
+  ])
+  return copied !== undefined && copied === written ? entryAt : target
 }
 
 const checking = (place: VerifyPlace): PlaceCheck => ({
@@ -997,7 +1017,16 @@ export async function runProcessTrack(
         musicStep && musicPersistentId
           ? {
               pid: musicPersistentId,
-              file: musicOnly ? finalPath : await musicPlays(entryAt, target, deps),
+              file: musicOnly
+                ? finalPath
+                : await musicPlays(
+                    entryAt,
+                    target,
+                    musicPersistentId !== job.musicPersistentId &&
+                      musicPersistentId !== existingMusicEntry?.persistentId &&
+                      musicPersistentId !== musicReplaced?.oldPid,
+                    deps,
+                  ),
               ext: written.plan.ext,
               meta: { title: job.meta.title, artist: job.meta.artist, album: job.meta.album },
               coverSet: coverPath !== undefined,
