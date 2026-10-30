@@ -2963,7 +2963,7 @@
     },
     "retry": "Reintentar",
     "sourceGoneKeptLine": "El original ya no está, hay una copia en <0>{{panel}}</0>",
-    "heldOriginalLine": "Algo no cuadra, así que el original se ha guardado en <0>{{panel}}</0> aunque las copias de los originales estén en «Nunca»",
+    "heldOriginalLine": "Algo no cuadra, así que el original se ha guardado en <0>{{panel}}</0> aunque las copias de los originales están en «Nunca»",
     "heldOriginalNoRoomLine": "Algo no cuadra y no quedaba sitio en {{panel}} para guardar el original"
   }
 }

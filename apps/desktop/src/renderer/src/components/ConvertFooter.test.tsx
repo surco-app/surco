@@ -871,7 +871,7 @@ describe('ConvertFooter verification', () => {
   it('under Nunca the amber line says the original was kept in Copias because of the mismatch', () => {
     render(held([fileOk, bad('rekordbox', 'rekordboxStillOld', { format: 'AIFF' })], 'kept'))
     expect(screen.getByTestId('verify-mismatch')).toHaveTextContent(
-      /^Algo no cuadra, así que el original se ha guardado en Copias aunque las copias de los originales estén en «Nunca»$/,
+      /^Algo no cuadra, así que el original se ha guardado en Copias aunque las copias de los originales están en «Nunca»$/,
     )
     expect(screen.getByTestId('verify-open-originals')).toBeInTheDocument()
   })
