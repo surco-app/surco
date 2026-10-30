@@ -649,8 +649,8 @@ describe('the library review against a Music that rewrites the file', () => {
   }, 60000)
 
   // A file that held another value than Music is left alone by Surco, but Music has
-  // rewritten it all the same.
-  it('keeps the backup when Music changed a file that held another value', async () => {
+  // rewritten it all the same: it carries the fix now, and the libraries follow it.
+  it('keeps the backup and reports written when Music changed a file that held another value', async () => {
     const file = make('aiff', ['-c:a', 'pcm_s16be'], 'Someone Else')
     const original = readFileSync(file)
     const stored = copyingKeeper()
@@ -663,7 +663,7 @@ describe('the library review against a Music that rewrites the file', () => {
         prepare: (path) => prepareTagRewrite(path),
       },
     )
-    expect(out.file).toBe('unchanged')
+    expect(out).toMatchObject({ file: 'written', written: ['artist'] })
     expect(stored.get(out.backupId ?? '')?.equals(original)).toBe(true)
   }, 60000)
 
@@ -695,6 +695,30 @@ describe('the library review against a Music that rewrites the file', () => {
     expect(statSync(file).size).toBe(original.length)
     expect(out.file).toBe('failed')
     expect(stored.get(out.backupId ?? '')?.equals(original)).toBe(true)
+  }, 60000)
+
+  it('reports unchanged when what Music wrote is not the fix', async () => {
+    const file = make('aiff', ['-c:a', 'pcm_s16be'], 'Someone Else')
+    copyingKeeper()
+    const [out] = await applyMusicFixes(
+      [{ persistentId: 'A', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
+      {
+        setField: async () => {
+          const f = TagFile.createFromPath(file)
+          try {
+            f.tag.genres = ['House']
+            f.save()
+          } finally {
+            f.dispose()
+          }
+          return 'set'
+        },
+        locate: async () => file,
+        exists: async () => true,
+        prepare: (path) => prepareTagRewrite(path),
+      },
+    )
+    expect(out).toMatchObject({ file: 'unchanged', written: [] })
   }, 60000)
 
   it('reports the field as written, not as a file that differs', async () => {

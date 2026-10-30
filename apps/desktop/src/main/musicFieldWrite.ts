@@ -89,7 +89,11 @@ export async function prepareTagRewrite(
       const outcomes = await runInWorker<FieldWrite[]>({ type: 'setTagFields', file: tmp, changes })
       if (!outcomes.includes('written')) {
         await dropTemp(tmp, tracking)
-        return { outcomes, backup: archived ?? undefined }
+        const held = await runInWorker<boolean[]>({ type: 'tagFieldsHeld', file, changes })
+        return {
+          outcomes: outcomes.map((o, i): FieldWrite => (held[i] ? 'written' : o)),
+          backup: archived ?? undefined,
+        }
       }
       await assertDecodable(tmp, file)
       await renameWithRetry(tmp, file)

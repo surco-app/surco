@@ -7,7 +7,7 @@ import { runCueWaveWords } from './cueWaveWords'
 import { prependFlacId3 } from './flacFinderCover'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
-import { type FieldWrite, setTagFields, type TagFieldChange } from './tagFieldSet'
+import { type FieldWrite, setTagFields, type TagFieldChange, tagFieldsHeld } from './tagFieldSet'
 import { snapshotTagsOrNull } from './tagSnapshot'
 import {
   type CueShift,
@@ -90,6 +90,7 @@ export type WorkerJob =
       timeoutMs: number
     }
   | { type: 'setTagFields'; file: string; changes: TagFieldChange[] }
+  | { type: 'tagFieldsHeld'; file: string; changes: TagFieldChange[] }
   | { type: 'tagLibRead'; file: string }
   // The activity panel's before/after tag snapshot, a full synchronous TagLib parse.
   | { type: 'tagSnapshot'; file: string }
@@ -104,6 +105,7 @@ export type WorkerJobResult =
   | number[]
   | string[]
   | FieldWrite[]
+  | boolean[]
   | { peaks: number[]; rms: number[] }
   | FullScan
   | Uint16Array
@@ -162,6 +164,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return null
     case 'setTagFields':
       return setTagFields(job.file, job.changes)
+    case 'tagFieldsHeld':
+      return tagFieldsHeld(job.file, job.changes)
     case 'tagLibRead':
       return readTagLibFields(job.file)
     case 'tagSnapshot':
