@@ -1941,6 +1941,10 @@ todo cuadra, un escudo discreto junto al aviso abre la lista de lo comprobado
 (`VerifiedPopover.tsx`). En lote el pie dice cuántas se comprobaron y cuántas no cuadran, y la
 revisión tiene el filtro «No cuadran».
 
+En Engine DJ, tras un recorte o un cambio de frecuencia, comprueba que cues, loops y rejilla
+cayeron donde debían respecto a la foto, con un margen de 1 ms; si no, la pista sale en ámbar
+con «Los cues de Engine DJ no siguieron al audio» (`engineCuesMisplaced`, `verifyEngine.ts:236`).
+
 **Lo que no mira:** la posición exacta de cada cue de rekordbox (cuenta los cues, no dónde
 caen) ni las playlists de los programas de DJ.
 

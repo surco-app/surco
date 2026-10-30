@@ -204,6 +204,30 @@ describe('library readers', () => {
 
     expect(seen.map((e) => (e as { added: boolean }).added)).toEqual([true, false, false])
   })
+  // The check has to know the cut to tell cues that followed it from cues left behind.
+  it('hands the Engine check the cut the conversion made', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-verifyipc-engine-'))
+    const seen: unknown[] = []
+    const readers = libraryReaders(
+      { rekordbox: () => '', engine: () => dir, traktor: () => '' },
+      {
+        realPath,
+        bootVolume: () => 'Macintosh HD',
+        openEngine: () => ({ close: () => {} }) as never,
+        checkEngine: (_db, _dir, list) => {
+          seen.push(...list)
+          return list.map(() => ({ place: 'engine', state: 'ok', detail: { key: 'engineOk' } }))
+        },
+      },
+    )
+
+    await readers.readEngine([entry({ engineShift: { trimmedMs: 1900 } }), entry()])
+
+    expect(seen.map((e) => (e as { shift?: unknown }).shift)).toEqual([
+      { trimmedMs: 1900 },
+      undefined,
+    ])
+  })
 })
 
 describe('snapshotLibraries', () => {

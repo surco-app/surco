@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { mkdtempSync, readFileSync, statSync } from 'node:fs'
+import { mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
@@ -7,10 +7,19 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
+vi.mock('./engineProcess', () => ({ isEngineDjRunning: vi.fn(async () => false) }))
 
-import { analysedTrack, beatDataBlob, quickCuesBlob } from './enginePerformanceFixture'
+import { encodeLoops } from './engineBlobs'
+import {
+  analysedTrack,
+  beatDataBlob,
+  MAIN_CUE_TAIL,
+  quickCuesBlob,
+  trackDataBlob,
+} from './enginePerformanceFixture'
 import { type EngineDb, openEngineDb } from './enginePlaylists'
 import { engineDbPath, writeEngineLibraryFixture } from './enginePlaylistsFixture'
+import { repointEngineTracks } from './engineRepoint'
 import { pathKey } from './libraryPathKey'
 import {
   checkEngine,
@@ -104,6 +113,11 @@ describe('snapshotEngineRow', () => {
       quickCues: sha1(perf.quickCues as Buffer),
       beatData: sha1(perf.beatData as Buffer),
       loops: sha1(LOOPS),
+      positions: {
+        quickCues: [30, 50, null, null, null, null, null, null, 9695700 / 44100, 18900 / 44100],
+        beatData: [-0.5, 59.5],
+        loops: null,
+      },
     })
   })
 
@@ -460,5 +474,129 @@ describe('checkEngine', () => {
     expect(checkEngine(handle, dir, [expectFor(before)], key)[0].state).toBe('ok')
     expect(idOf(snapshotEngineRow(handle, dir, TO, key))).toBe(1)
     expect({ sha: sha(), mtime: statSync(file).mtimeMs }).toEqual(was)
+  })
+})
+
+describe('checkEngine after a conversion that moved the audio', () => {
+  const R = 44100
+  const CUT = 1.9
+  const LOOP = { label: 'Break', startSet: true, endSet: true, argb: 0xff00cc00 }
+  const loopsAt = (start: number, end: number) => encodeLoops([{ ...LOOP, start, end }])
+  const SIZE_SMALL = 4321
+  const FROM_LOCAL = (dir: string) => join(dir, '..', 'Title.aiff')
+
+  // The row as the DJ left it, with a real loop next to the cues and the grid.
+  function trimmable(): string {
+    const dir = library()
+    write(dir, 'UPDATE PerformanceData SET loops = ?', loopsAt(8 * R, 10 * R))
+    return dir
+  }
+
+  // What a correct write leaves: every position earlier by the cut, counted at `rate`, and a
+  // cue inside the cut on the new start.
+  function moved(dir: string, cut: number, rate = R) {
+    const at = (sample: number) => (sample / R - cut) * rate
+    const cue = (sample: number) => Math.max(0, at(sample))
+    const tail = Buffer.from(MAIN_CUE_TAIL)
+    tail.writeDoubleBE(cue(tail.readDoubleBE(0)), 0)
+    tail.writeDoubleBE(cue(tail.readDoubleBE(9)), 9)
+    write(
+      dir,
+      'UPDATE PerformanceData SET trackData = ?, beatData = ?, quickCues = ?, loops = ?',
+      trackDataBlob(rate, Math.round(at(R * 60))),
+      beatDataBlob(rate, at(R * 60), [
+        [at(-22050), -1],
+        [at(R * 60 - 22050), 119],
+      ]),
+      quickCuesBlob(
+        CUES.map((c) => ({ ...c, sample: cue(c.sample) })),
+        tail,
+      ),
+      loopsAt(cue(8 * R), cue(10 * R)),
+    )
+  }
+
+  const trimmedBy = (cut: number, sampleRateHz?: number) =>
+    ({
+      samplesKept: false,
+      shift: { trimmedMs: cut * 1000, ...(sampleRateHz ? { sampleRateHz } : {}) },
+    }) as const
+
+  it('cues, grid and loops moved earlier by the cut are ok', () => {
+    const dir = trimmable()
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    moved(dir, CUT)
+    expect(checkOne(dir, expectFor(before, trimmedBy(CUT)))[0]).toEqual({
+      place: 'engine',
+      state: 'ok',
+      detail: { key: 'engineOk', params: { format: 'WAV' } },
+    })
+  })
+
+  // The whole path: the repoint the flush runs, then the check, on one real row.
+  it('the repoint that carries the cut leaves a row the check reads as ok', async () => {
+    const dir = trimmable()
+    const to = join(dir, '..', 'Title.wav')
+    writeFileSync(to, Buffer.alloc(SIZE_SMALL))
+    write(dir, 'UPDATE Track SET path = ? WHERE id = 1', relative(dir, FROM_LOCAL(dir)))
+    writeFileSync(FROM_LOCAL(dir), Buffer.alloc(1))
+    const from = FROM_LOCAL(dir)
+    const before = snapshot(dir, from)
+    const shift = { trimmedMs: CUT * 1000, sampleRateHz: 48000 }
+    const [result] = await repointEngineTracks(dir, [{ from, to, engineShift: shift }])
+    expect(result.written).toBe(true)
+    expect(
+      checkOne(dir, expectFor(before, { from, to, size: SIZE_SMALL, samplesKept: false, shift })),
+    ).toEqual([
+      { place: 'engine', state: 'ok', detail: { key: 'engineOk', params: { format: 'WAV' } } },
+    ])
+  })
+
+  it('positions rewritten at the new sample rate are ok', () => {
+    const dir = trimmable()
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    moved(dir, CUT, 48000)
+    expect(checkOne(dir, expectFor(before, trimmedBy(CUT, 48000)))[0].state).toBe('ok')
+  })
+
+  // The bug this check exists for: the row followed the file and kept every blob intact,
+  // so nothing looked lost, but each pad fired the length of the cut late.
+  it('cues left where they were before the cut are engineCuesMisplaced', () => {
+    const dir = trimmable()
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    expect(checkOne(dir, expectFor(before, trimmedBy(CUT)))[0]).toEqual({
+      place: 'engine',
+      state: 'mismatch',
+      detail: { key: 'engineCuesMisplaced', params: { field: 'quickCues' } },
+    })
+  })
+
+  it('cues moved by the cut twice are engineCuesMisplaced', () => {
+    const dir = trimmable()
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    moved(dir, CUT * 2)
+    expect(checkOne(dir, expectFor(before, trimmedBy(CUT)))[0].detail).toEqual({
+      key: 'engineCuesMisplaced',
+      params: { field: 'quickCues' },
+    })
+  })
+
+  it.each([
+    ['beatData', 'beatData = ?', () => analysedTrack(1, CUES).beatData],
+    ['loops', 'loops = ?', () => loopsAt(8 * R, 10 * R)],
+  ] as const)('a %s left where it was is engineCuesMisplaced', (field, set, blob) => {
+    const dir = trimmable()
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    moved(dir, CUT)
+    write(dir, `UPDATE PerformanceData SET ${set}`, blob())
+    expect(checkOne(dir, expectFor(before, trimmedBy(CUT)))[0].detail).toEqual({
+      key: 'engineCuesMisplaced',
+      params: { field },
+    })
   })
 })
