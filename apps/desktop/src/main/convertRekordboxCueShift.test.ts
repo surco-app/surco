@@ -66,6 +66,21 @@ function lameMp3(path: string): void {
   writeFileSync(path, bytes)
 }
 
+function pcm(path: string, codec: string): void {
+  execFileSync(FF, [
+    '-y',
+    '-loglevel',
+    'error',
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=440:duration=2:sample_rate=44100',
+    '-c:a',
+    codec,
+    path,
+  ])
+}
+
 const recorded = () => vi.mocked(recordRekordboxRepoint).mock.calls.at(-1)?.[0]
 
 beforeAll(() => {
@@ -127,5 +142,27 @@ describe('what a conversion tells rekordbox about its cues', () => {
     await convertAudio(src, join(dir, 'copied-out.mp3'), 'mp3', meta)
     expect(recorded()).toBeDefined()
     expect(recorded()?.audio).toBeUndefined()
+  })
+
+  // Measured on a real track: AIFF→WAV decodes to the same samples, so the grid a DJ fixed by
+  // hand and the cues still sit on the right sound and rekordbox must not reanalyse it.
+  it.each([
+    ['aiff', 'wav', 'pcm_s16be'],
+    ['wav', 'aiff', 'pcm_s16le'],
+    ['wav', 'flac', 'pcm_s16le'],
+  ])('leaves the analysis and cues alone converting %s to %s', async (from, to, codec) => {
+    const src = join(dir, `same-${from}-to-${to}.${from}`)
+    pcm(src, codec)
+    const out = join(dir, `same-${from}-to-${to}.${to}`)
+    await convertAudio(src, out, to as 'wav' | 'aiff' | 'flac', meta)
+    expect(recorded()).toMatchObject({ from: src, to: out })
+    expect(recorded()?.audio).toBeUndefined()
+  })
+
+  it('still reports the audio when a lossy file is converted to WAV', async () => {
+    const src = join(dir, 'lossy-to-wav.mp3')
+    copyFileSync(lame, src)
+    await convertAudio(src, join(dir, 'lossy-to-wav.wav'), 'wav', meta)
+    expect(recorded()?.audio).toBeDefined()
   })
 })

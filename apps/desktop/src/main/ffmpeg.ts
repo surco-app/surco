@@ -2330,13 +2330,14 @@ export async function convertAudio(
     const sourceRate = [input, output].some((f) => extname(f).toLowerCase() === '.m4a')
       ? Number((await probeOnce(input)).sampleRate) || 44100
       : 44100
-    const rekordboxAudio = copiedVerbatim
-      ? undefined
-      : {
-          sourceShiftMs: await rekordboxShiftOfFile(input, sourceRate),
-          outputShiftMs: await rekordboxShiftOfFile(tmp, plan.sampleRateHz ?? sourceRate),
-          trimmedMs: trimAf !== undefined ? (trim?.startSec ?? 0) * 1000 : 0,
-        }
+    const rekordboxAudio =
+      copiedVerbatim || plan.samplesKept
+        ? undefined
+        : {
+            sourceShiftMs: await rekordboxShiftOfFile(input, sourceRate),
+            outputShiftMs: await rekordboxShiftOfFile(tmp, plan.sampleRateHz ?? sourceRate),
+            trimmedMs: trimAf !== undefined ? (trim?.startSec ?? 0) * 1000 : 0,
+          }
     // A rewrite lands on the source's own path, so the rename below would replace the
     // user's file with no way back. A copy of the original goes to Surco's trash first (see
     // surcoTrash.ts); unconfigured — the unit tests — keepOriginal keeps nothing and
