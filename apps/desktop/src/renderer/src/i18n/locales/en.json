@@ -2962,6 +2962,8 @@
       "traktorUnreadable": "Could not check Traktor"
     },
     "retry": "Try again",
-    "sourceGoneKeptLine": "The original is gone, but a copy is in <0>{{panel}}</0>"
+    "sourceGoneKeptLine": "The original is gone, but a copy is in <0>{{panel}}</0>",
+    "heldOriginalLine": "Something doesn’t add up, so the original was kept in <0>{{panel}}</0> even though copies of originals are set to Never",
+    "heldOriginalNoRoomLine": "Something doesn’t add up and there was no room in {{panel}} to keep the original"
   }
 }

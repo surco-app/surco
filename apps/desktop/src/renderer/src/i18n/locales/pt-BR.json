@@ -2962,6 +2962,8 @@
       "traktorUnreadable": "Não foi possível verificar o Traktor"
     },
     "retry": "Tentar de novo",
-    "sourceGoneKeptLine": "O original não existe mais, há uma cópia em <0>{{panel}}</0>"
+    "sourceGoneKeptLine": "O original não existe mais, há uma cópia em <0>{{panel}}</0>",
+    "heldOriginalLine": "Algo não bate, então o original foi guardado em <0>{{panel}}</0> mesmo com as cópias dos originais em “Nunca”",
+    "heldOriginalNoRoomLine": "Algo não bate e não havia espaço em {{panel}} para guardar o original"
   }
 }

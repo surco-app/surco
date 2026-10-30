@@ -2962,6 +2962,8 @@
       "traktorUnreadable": "Traktor konnte nicht geprüft werden"
     },
     "retry": "Erneut versuchen",
-    "sourceGoneKeptLine": "Das Original ist weg, eine Kopie liegt in <0>{{panel}}</0>"
+    "sourceGoneKeptLine": "Das Original ist weg, eine Kopie liegt in <0>{{panel}}</0>",
+    "heldOriginalLine": "Etwas stimmt nicht, daher liegt das Original in <0>{{panel}}</0>, obwohl die Kopien der Originale auf „Nie“ stehen",
+    "heldOriginalNoRoomLine": "Etwas stimmt nicht und in {{panel}} war kein Platz, um das Original aufzubewahren"
   }
 }

@@ -2962,6 +2962,8 @@
       "traktorUnreadable": "Traktorを確認できませんでした"
     },
     "retry": "再試行",
-    "sourceGoneKeptLine": "オリジナルはもうありません。コピーは<0>{{panel}}</0>にあります"
+    "sourceGoneKeptLine": "オリジナルはもうありません。コピーは<0>{{panel}}</0>にあります",
+    "heldOriginalLine": "一致しない項目があるため、元ファイルのコピーが「しない」でもオリジナルを<0>{{panel}}</0>に保存しました",
+    "heldOriginalNoRoomLine": "一致しない項目がありますが、{{panel}}に空きがなくオリジナルを保存できませんでした"
   }
 }
