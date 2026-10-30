@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { copyFileSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import ffprobeInstaller from '@ffprobe-installer/ffprobe'
 import ffmpegStatic from 'ffmpeg-static'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -21,6 +22,7 @@ import { recordRekordboxRepoint } from './rekordboxBatch'
 // in-place MP3 re-encode, and well off the beat after trimming the start. The conversion is
 // the only place that knows both files and the trim, so it is where the move is worked out.
 const FF = ffmpegStatic as unknown as string
+const PROBE = ffprobeInstaller.path
 const dir = mkdtempSync(join(tmpdir(), 'surco-rbshift-'))
 let lame: string
 
@@ -244,7 +246,7 @@ describe('what a conversion tells Engine DJ about its cues', () => {
       undefined, // declick
       { startSec: 0.5 },
     )
-    expect(recorded()?.engineShift).toEqual({ trimmedMs: 500 })
+    expect(recorded()?.engineShift).toEqual({ trimmedMs: 500, sampleCount: 66150 })
   })
 
   it('carries the new sample rate of a resampled conversion', async () => {
@@ -262,7 +264,72 @@ describe('what a conversion tells Engine DJ about its cues', () => {
         sampleRate: '48000',
       },
     )
-    expect(recorded()?.engineShift).toEqual({ trimmedMs: 0, sampleRateHz: 48000 })
+    expect(recorded()?.engineShift).toEqual({
+      trimmedMs: 0,
+      sampleRateHz: 48000,
+      sampleCount: 96000,
+    })
+  })
+
+  // Engine keeps the track's length as a sample count. Worked out from the head cut alone it
+  // stays long by whatever the end trim took, so the conversion hands over the count it
+  // actually wrote.
+  it('carries the exact length it wrote when the trim also cuts the end', async () => {
+    const src = join(dir, 'engine-tail.wav')
+    pcm(src, 'pcm_s16le')
+    const out = join(dir, 'engine-tail.aiff')
+    await convertAudio(
+      src,
+      out,
+      'aiff',
+      meta,
+      undefined, // coverPath
+      undefined, // normalize
+      undefined, // removeCover
+      undefined, // quality
+      undefined, // onChild
+      undefined, // onTmp
+      undefined, // finderCovers
+      undefined, // declick
+      { startSec: 0.25, endSec: 1.5 },
+    )
+    const written = Number(
+      execFileSync(PROBE, [
+        '-v',
+        'error',
+        '-show_entries',
+        'stream=duration_ts',
+        '-of',
+        'default=nw=1:nk=1',
+        out,
+      ])
+        .toString()
+        .trim(),
+    )
+    expect(written).toBeGreaterThan(44100)
+    expect(written).toBeLessThan(44100 * 1.5)
+    expect(recorded()?.engineShift).toEqual({ trimmedMs: 250, sampleCount: written })
+  })
+
+  it('carries the length of a trim that only cuts the end', async () => {
+    const src = join(dir, 'engine-tail-only.wav')
+    pcm(src, 'pcm_s16le')
+    await convertAudio(
+      src,
+      join(dir, 'engine-tail-only.aiff'),
+      'aiff',
+      meta,
+      undefined, // coverPath
+      undefined, // normalize
+      undefined, // removeCover
+      undefined, // quality
+      undefined, // onChild
+      undefined, // onTmp
+      undefined, // finderCovers
+      undefined, // declick
+      { endSec: 1.5 },
+    )
+    expect(recorded()?.engineShift).toEqual({ trimmedMs: 0, sampleCount: 66150 })
   })
 
   // A trim rewritten on the source's own path leaves Engine's row where it was: the size the

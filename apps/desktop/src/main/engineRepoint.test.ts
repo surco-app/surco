@@ -445,6 +445,39 @@ describe.each(['2.18', '3.0.2'] as const)(
       expect(after.grid).toEqual(before.grid?.map((s) => expect.closeTo(s, 6)))
     })
 
+    // Engine's length is the one figure a cut at the end changes, and only the conversion
+    // knows it exactly: the head cut alone leaves it long by whatever the end trim took.
+    it('records the length the conversion wrote, end trim included', async () => {
+      const lib = await analysedLibrary(schema)
+      const before = await positionsOf(lib)
+      await repointEngineTracks(lib.dir, [
+        {
+          from: lib.oldFile,
+          to: lib.newFile,
+          engineShift: { trimmedMs: 0, sampleCount: RATE * 50 },
+        },
+      ])
+      const after = await positionsOf(lib)
+      expect(after.lengthSec).toBe(50)
+      expect(after.gridLengthSec).toBe(50)
+      expect(after.hot).toEqual(before.hot)
+      expect(after.grid).toEqual(before.grid)
+    })
+
+    it('records the exact length at the new rate when a trim also resamples', async () => {
+      const lib = await analysedLibrary(schema)
+      await repointEngineTracks(lib.dir, [
+        {
+          from: lib.oldFile,
+          to: lib.newFile,
+          engineShift: { trimmedMs: TRIM_MS, sampleRateHz: 48000, sampleCount: 2_000_003 },
+        },
+      ])
+      const after = await positionsOf(lib)
+      expect(after.lengthSec * 48000).toBeCloseTo(2_000_003, 6)
+      expect(after.gridLengthSec * 48000).toBeCloseTo(2_000_003, 6)
+    })
+
     // The retry and the queue hand the same move again. The row already left the old path
     // with the first write, so the second finds nothing to move and nothing shifts twice.
     it('shifts once when the same move is handed again', async () => {

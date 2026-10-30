@@ -37,10 +37,12 @@ export type EngineRepointResult =
   | { written: false; reason: 'ambiguous'; ids: string[] }
 
 // How a conversion moved the audio under Engine's positions: the silence cut from the
-// start, and the converted file's sample rate when it was resampled.
+// start, the converted file's sample rate when it was resampled, and its exact length in
+// samples when the conversion measured it.
 export interface EngineShift {
   trimmedMs: number
   sampleRateHz?: number
+  sampleCount?: number
 }
 
 export interface EngineRepoint extends PathMatchOptions {
@@ -113,30 +115,31 @@ function inflated(blob: Blob): Buffer | null {
 
 // Every position Engine keeps for a track, moved onto the converted file: the cut comes off
 // each one and each is rewritten at the new rate, and the overview drops the entries the cut
-// took. A cue or loop end inside the cut lands on
-// the new start, as rekordbox's and Traktor's do; grid markers keep their spacing, so they
-// may sit before it. Unset slots (-1) stay unset, and a blob that does not decode is left
-// as Engine wrote it.
+// took. A cue or loop end inside the cut lands on the new start, as rekordbox's and
+// Traktor's do; grid markers keep their spacing, so they may sit before it. Unset slots (-1)
+// stay unset, and a blob that does not decode is left as Engine wrote it.
 export function shiftEnginePerformance(perf: Performance, shift: EngineShift): Performance {
   const track = inflated(perf.trackData)
   if (!track || track.length < 16) return perf
   const from = track.readDoubleBE(0)
   const to = shift.sampleRateHz ?? from
-  if (!(from > 0) || (shift.trimmedMs === 0 && to === from)) return perf
   const moved = (sample: number) => (sample / from - shift.trimmedMs / 1000) * to
   const set = (sample: number) => (sample < 0 ? sample : Math.max(0, moved(sample)))
+  const was = Number(track.readBigInt64BE(8))
+  const samples = shift.sampleCount ?? Math.max(0, Math.round(moved(was)))
+  if (!(from > 0) || (shift.trimmedMs === 0 && to === from && samples === was)) return perf
   const next = { ...perf }
 
   const length = Buffer.from(track)
   length.writeDoubleBE(to, 0)
-  length.writeBigInt64BE(BigInt(Math.max(0, Math.round(moved(Number(track.readBigInt64BE(8)))))), 8)
+  length.writeBigInt64BE(BigInt(samples), 8)
   next.trackData = deflateEngineBlob(length)
 
   const beats = inflated(perf.beatData)
   if (beats && beats.length >= 17) {
     const grid = Buffer.from(beats)
     grid.writeDoubleBE(to, 0)
-    grid.writeDoubleBE(Math.max(0, moved(grid.readDoubleBE(8))), 8)
+    grid.writeDoubleBE(shift.sampleCount ?? Math.max(0, moved(grid.readDoubleBE(8))), 8)
     let at = 17
     for (let g = 0; g < 2 && grid.length >= at + 8; g++) {
       const count = Number(grid.readBigInt64BE(at))
