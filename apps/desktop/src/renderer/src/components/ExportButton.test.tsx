@@ -233,7 +233,7 @@ describe('ExportButton', () => {
     const btn = screen.getByTestId('process-btn')
     expect(btn).toBeDisabled()
     expect(btn).toHaveTextContent('Adding to Apple Music…')
-    expect(screen.getByTestId('process-progress')).toHaveStyle({ width: '85%' })
+    expect(screen.getByTestId('process-progress')).toHaveStyle({ transform: 'scaleX(0.85)' })
   })
 
   // A long single convert used to be a dead progress bar with no escape. With a cancel
@@ -355,8 +355,7 @@ describe('ExportButton', () => {
       <ExportButton {...baseProps} incomplete={false} status="processing" stage="converting" />,
     )
     expect(screen.getByTestId('process-btn')).toHaveTextContent('Converting to AIFF…')
-    const width = screen.getByTestId('process-progress').style.width
-    expect(Number.parseFloat(width)).toBeCloseTo(55)
+    expect(screen.getByTestId('process-progress')).toHaveStyle({ transform: 'scaleX(0.55)' })
   })
 
   // The first progress event may not have landed yet: no stage, no fill — the

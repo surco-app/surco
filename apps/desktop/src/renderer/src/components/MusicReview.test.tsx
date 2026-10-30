@@ -552,7 +552,7 @@ describe('MusicReview', () => {
         />,
       )
       expect(bar().className).not.toContain('animate-top-progress')
-      expect(bar().style.width).toBe('25%')
+      expect(bar().style.transform).toBe('scaleX(0.25)')
     })
 
     // The libraries and the reread have no count to fill with; a full bar there would say
