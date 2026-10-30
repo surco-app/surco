@@ -57,21 +57,20 @@ async function applyTrack(
   fixes: MusicFieldFix[],
   deps: ApplyDeps,
 ): Promise<MusicFixOutcome> {
-  const path = await deps.locate(persistentId).catch(() => '')
+  let path = ''
   let prepared: PreparedRewrite | undefined
-  if (path && (await deps.exists(path))) {
-    try {
-      prepared = await deps.prepare(path)
-    } catch (e) {
-      return {
-        persistentId,
-        path,
-        fixes,
-        music: [],
-        file: 'failed',
-        written: [],
-        error: message(e),
-      }
+  try {
+    path = await deps.locate(persistentId)
+    if (path && (await deps.exists(path))) prepared = await deps.prepare(path)
+  } catch (e) {
+    return {
+      persistentId,
+      path: path || undefined,
+      fixes,
+      music: [],
+      file: 'failed',
+      written: [],
+      error: message(e),
     }
   }
   const music: MusicFieldOutcome[] = []

@@ -203,11 +203,20 @@ describe('applyMusicFixes', () => {
     expect(out).toMatchObject({ file: 'failed', error: 'EACCES', backupId: 'b1' })
   })
 
-  it('reports a missing file with no path when the location cannot be read', async () => {
-    const d = deps({ locate: vi.fn().mockRejectedValue(new Error('gone')) })
+  it('reports a missing file with no path when Music holds no file for the entry', async () => {
+    const d = deps({ locate: vi.fn().mockResolvedValue('') })
     const [out] = await applyMusicFixes([fix('A')], d)
-    expect(out).toMatchObject({ file: 'missing' })
+    expect(out).toMatchObject({ music: ['set'], file: 'missing' })
     expect(out.path).toBeUndefined()
+  })
+
+  // A location Music did not answer may well be a file: asked anyway, Music would rewrite
+  // it with no backup taken.
+  it('leaves Music alone when the location could not be read', async () => {
+    const d = deps({ locate: vi.fn().mockRejectedValue(new Error('osascript timed out')) })
+    const [out] = await applyMusicFixes([fix('A')], d)
+    expect(d.setField).not.toHaveBeenCalled()
+    expect(out).toMatchObject({ file: 'failed', error: 'osascript timed out', written: [] })
   })
 })
 
