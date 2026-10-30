@@ -458,7 +458,8 @@ function scenarioApi(
     cancelAnalysis: (path) => invokeMain('audio:cancelAnalysis', path),
     onWindowFocus: () => () => {},
     libraryStatus: async () => currentLibraryStatus(),
-    syncLibraryTags: (updates) => syncTagsInLibraries(updates, libraryHost(errors), sessions),
+    syncLibraryTags: (updates) =>
+      syncTagsInLibraries(updates, libraryHost(errors), sessions, () => {}),
     applyListFixes: (request) => invokeMain('listreview:applyFixes', request),
     cancelListFixes: () => invokeMain('listreview:cancelFixes'),
     onListFixProgress: (listener) => listen('listreview:fixProgress', listener),

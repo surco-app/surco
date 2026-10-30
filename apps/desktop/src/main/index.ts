@@ -358,17 +358,17 @@ const adjustProvisionalCuesOnLaunch = async (): Promise<void> => {
   if (provisionalCues.all().length > 0 && !(await isRekordboxRunning())) adjustProvisionalCues()
   rekordboxQueueWatch.poke()
 }
-const applyRekordboxQueueQuietly = (): void => {
+const applyRekordboxQueueQuietly = (serial = serialLibraryFlush): void => {
   if (!rekordboxCollectionPath()) {
     rekordboxQueueWatch.poke()
     return
   }
-  void serialLibraryFlush(() =>
-    rekordboxQueue.apply(async () => !(await isRekordboxRunning())),
-  ).then((result) => {
-    announceApplied(result)
-    if (stillWaiting(result)) rekordboxQueueWatch.poke()
-  })
+  void serial(() => rekordboxQueue.apply(async () => !(await isRekordboxRunning()))).then(
+    (result) => {
+      announceApplied(result)
+      if (stillWaiting(result)) rekordboxQueueWatch.poke()
+    },
+  )
 }
 const engineLibraryPath = (): string =>
   currentLibraryStatus().engine.found ? getSettings().engineLibraryDir : ''
@@ -403,17 +403,17 @@ const engineCueQueueWatch = watchRekordboxQueue({
   isRunning: isEngineDjRunning,
   onApplied: announceEngineApplied,
 })
-const applyEngineCueQueueQuietly = (): void => {
+const applyEngineCueQueueQuietly = (serial = serialLibraryFlush): void => {
   if (!engineLibraryPath()) {
     engineCueQueueWatch.poke()
     return
   }
-  void serialLibraryFlush(() =>
-    engineCueQueue.apply(async () => !(await isEngineDjRunning())),
-  ).then((result) => {
-    announceEngineApplied(result)
-    if (stillWaiting(result)) engineCueQueueWatch.poke()
-  })
+  void serial(() => engineCueQueue.apply(async () => !(await isEngineDjRunning()))).then(
+    (result) => {
+      announceEngineApplied(result)
+      if (stillWaiting(result)) engineCueQueueWatch.poke()
+    },
+  )
 }
 // The tab reads the collection Settings names or, without one, the newest Traktor found;
 // cues are written only to the one the DJ confirmed in Settings (see traktorNmlPath.ts).
@@ -473,17 +473,17 @@ const applyTraktorCueQueueAsking = (win: BrowserWindow | null): void => {
 // A conversion run's collection patches held because Traktor stayed open or the write
 // failed: written as soon as Traktor is closed, without asking again. Held for a drive that
 // is unplugged, nothing is tried: the watch waits for the collection to be back.
-const applyTraktorCueQueueQuietly = (): void => {
+const applyTraktorCueQueueQuietly = (serial = serialLibraryFlush): void => {
   if (!traktorWritePath()) {
     traktorCueQueueWatch.poke()
     return
   }
-  void serialLibraryFlush(() =>
-    traktorCueQueue.apply(async () => !(await isTraktorRunning())),
-  ).then((result) => {
-    announceTraktorApplied(result)
-    if (stillWaiting(result)) traktorCueQueueWatch.poke()
-  })
+  void serial(() => traktorCueQueue.apply(async () => !(await isTraktorRunning()))).then(
+    (result) => {
+      announceTraktorApplied(result)
+      if (stillWaiting(result)) traktorCueQueueWatch.poke()
+    },
+  )
 }
 // A batch adding N tracks that share one album cover used to re-run the ffmpeg encode N
 // times. Shares one prepareProcessedCover per distinct (source, opts) across the
@@ -1340,7 +1340,7 @@ function registerIpc(): void {
   registerRekordboxCuesIpc({
     collection: rekordboxCollectionPath,
     queue: rekordboxQueue,
-    applyQuietly: applyRekordboxQueueQuietly,
+    applyQuietly: () => applyRekordboxQueueQuietly(),
     beginMoment: moments.begin,
     flow: () => activeCueFlow(getSettings()),
     beatGrid: cachedBeatGrid,
@@ -1359,7 +1359,7 @@ function registerIpc(): void {
     engine: {
       libraryDir: () => getSettings().engineLibraryDir,
       queue: engineCueQueue,
-      applyQuietly: applyEngineCueQueueQuietly,
+      applyQuietly: () => applyEngineCueQueueQuietly(),
       words: cachedCueWaveWords,
     },
     traktor: {
@@ -1472,31 +1472,35 @@ function registerIpc(): void {
 
   // Queued behind any review sync still writing, and the other way round.
   ipcMain.on('process:batch-end', (e) =>
-    serialLibraryFlush(() =>
-      moments.duringRunFlush(() =>
-        flushConversionBatch(
-          hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
-          sessions,
-          { enqueue: rekordboxQueue.enqueue, applyQuietly: applyRekordboxQueueQuietly },
-          {
-            enqueue: traktorCueQueue.enqueue,
-            state: traktorCueQueue.state,
-            applyQuietly: applyTraktorCueQueueQuietly,
-          },
-          { enqueue: engineCueQueue.enqueue, applyQuietly: applyEngineCueQueueQuietly },
-        ),
+    moments.runFlush(serialLibraryFlush, rekordboxBatchOpen, (later) =>
+      flushConversionBatch(
+        hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
+        sessions,
+        {
+          enqueue: rekordboxQueue.enqueue,
+          applyQuietly: () => applyRekordboxQueueQuietly(later),
+        },
+        {
+          enqueue: traktorCueQueue.enqueue,
+          state: traktorCueQueue.state,
+          applyQuietly: () => applyTraktorCueQueueQuietly(later),
+        },
+        {
+          enqueue: engineCueQueue.enqueue,
+          applyQuietly: () => applyEngineCueQueueQuietly(later),
+        },
       ),
     ),
   )
 
-  ipcMain.handle('library:syncTags', (e, updates: LibraryTagUpdate[]) => {
-    moments.begin('review')
-    return syncTagsInLibraries(
+  ipcMain.handle('library:syncTags', (e, updates: LibraryTagUpdate[]) =>
+    syncTagsInLibraries(
       updates,
       hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
       sessions,
-    )
-  })
+      () => moments.begin('review'),
+    ),
+  )
 
   // Read only, for the duplicate detail: what each enabled library holds for each copy.
   ipcMain.handle('library:copyInfo', async (e, paths: string[]) => {
@@ -1716,7 +1720,7 @@ function registerIpc(): void {
               // Only with the toggle on: moving a row is keeping the library in step with
               // converted files, which the user opted into, not just adding new ones.
               s.syncEngineDj ? replaces : undefined,
-              (db) => engineSessionBackup.ensure(db),
+              (db) => engineSessionBackup.ensureForRun(db),
             )
           },
           { labelParams: { track } },

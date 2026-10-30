@@ -34,6 +34,8 @@ export interface SessionBackup {
   // Copies the collection if this momento has not already done so. Throws if the copy
   // fails — the caller must not write without one.
   ensure: (collectionPath: string) => Promise<void>
+  ensureForRun: (collectionPath: string) => Promise<void>
+  endRun: () => void
   begin: (reason: CopyReason) => void
   beginLoose: (collectionPath: string) => void
   inRunFlush: (active: boolean) => void
@@ -83,16 +85,23 @@ export function createSessionBackup(deps: {
     if (m.reason !== 'playlists') loose.delete(collectionPath)
   }
 
+  const ensureIn = async (m: Momento, collectionPath: string): Promise<void> => {
+    if (skip(collectionPath)) return
+    if (m.copied.has(collectionPath)) return
+    const inFlight = m.taking.get(collectionPath)
+    if (inFlight) return inFlight
+    const taking = copyInto(m, collectionPath).finally(() => m.taking.delete(collectionPath))
+    m.taking.set(collectionPath, taking)
+    return taking
+  }
+
   return {
-    async ensure(collectionPath: string): Promise<void> {
-      if (skip(collectionPath)) return
-      const m = (flushingRun && run) || waiting.get(collectionPath) || current
-      if (m.copied.has(collectionPath)) return
-      const inFlight = m.taking.get(collectionPath)
-      if (inFlight) return inFlight
-      const taking = copyInto(m, collectionPath).finally(() => m.taking.delete(collectionPath))
-      m.taking.set(collectionPath, taking)
-      return taking
+    ensure: (collectionPath) =>
+      ensureIn((flushingRun && run) || waiting.get(collectionPath) || current, collectionPath),
+    ensureForRun: (collectionPath) => ensureIn(run ?? current, collectionPath),
+    endRun(): void {
+      if (current === run) current = momento('run')
+      run = null
     },
     begin(next: CopyReason): void {
       current = momento(next)

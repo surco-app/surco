@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { CopyReason, DjProgram } from '../shared/types'
+import { serialLibraryFlush } from './libraryTagSync'
 import { createMoments } from './moments'
 import { createSessionBackup, type SessionBackup } from './rekordboxSessionBackup'
 
@@ -9,6 +10,8 @@ function fakeSession(): SessionBackup {
     begin: vi.fn(),
     beginLoose: vi.fn(),
     inRunFlush: vi.fn(),
+    ensureForRun: vi.fn(),
+    endRun: vi.fn(),
     failed: () => new Set(),
   }
 }
@@ -145,5 +148,69 @@ describe('moments', () => {
     beginLoose('/lib/a')
     expect(sessions.rekordbox.begin).toHaveBeenCalledWith('cues')
     expect(sessions.rekordbox.beginLoose).toHaveBeenCalledWith('/lib/a')
+  })
+
+  it("an Engine add after a review began mid-run stays on the run's copy instead of taking one labelled review", async () => {
+    const { labels, sessions, moments } = recorded()
+    moments.begin('run')
+    await sessions.engine.ensureForRun('/dj/m.db')
+    moments.begin('review')
+    await sessions.engine.ensureForRun('/dj/m.db')
+    expect(labels).toEqual(['/dj/m.db run'])
+  })
+
+  it("an Engine add after an Engine queue flush mid-run is copied as the run's, not absorbed by the queue copy", async () => {
+    const { labels, sessions, moments } = recorded()
+    moments.begin('run')
+    moments.begin('queue', ['engine'])
+    await sessions.engine.ensure('/dj/m.db')
+    await sessions.engine.ensureForRun('/dj/m.db')
+    expect(labels).toEqual(['/dj/m.db queue', '/dj/m.db run'])
+  })
+
+  it("the run's repoints applied after its flush stay on the run's copy though a playlist edit happened mid-run", async () => {
+    const { labels, sessions, moments } = recorded()
+    moments.begin('run')
+    moments.beginLoose('/dj/master.db')
+    await moments.runFlush(
+      serialLibraryFlush,
+      () => false,
+      async (later) => {
+        void later(() => sessions.rekordbox.ensure('/dj/master.db'))
+      },
+    )
+    await serialLibraryFlush(async () => undefined)
+    expect(labels).toEqual(['/dj/master.db run'])
+  })
+
+  it("a run flush with no run begun does not write on the last run's copy", async () => {
+    const { labels, sessions, moments } = recorded()
+    moments.begin('run')
+    await moments.runFlush(
+      serialLibraryFlush,
+      () => false,
+      () => sessions.rekordbox.ensure('/dj/master.db'),
+    )
+    await serialLibraryFlush(async () => undefined)
+    await moments.runFlush(
+      serialLibraryFlush,
+      () => false,
+      () => sessions.rekordbox.ensure('/dj/master.db'),
+    )
+    expect(labels).toEqual(['/dj/master.db run', '/dj/master.db run'])
+  })
+
+  it("the flush of a lone convert inside a running convert-all keeps the outer run's copy", async () => {
+    const { labels, sessions, moments } = recorded()
+    moments.begin('run')
+    await sessions.engine.ensureForRun('/dj/m.db')
+    await moments.runFlush(
+      serialLibraryFlush,
+      () => true,
+      async () => undefined,
+    )
+    await serialLibraryFlush(async () => undefined)
+    await sessions.engine.ensureForRun('/dj/m.db')
+    expect(labels).toEqual(['/dj/m.db run'])
   })
 })

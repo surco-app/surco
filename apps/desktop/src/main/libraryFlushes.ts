@@ -333,14 +333,13 @@ export async function repointEngineQueued(
 // an Update's do: same toggles, same prompt to close the app, same dialogs and Activity
 // rows as the end of a conversion run. Each library hears about every field Music took,
 // written to the file or not, and answers with what it did so the done sheet can say so.
-// Session backups stay the ones a conversion run uses and are NOT reset here: both share
-// the .surco-session suffix, so a reset would overwrite a running conversion's pre-run
-// copy. The guarantee for this flow is the fresh .surco-backup that updateRekordboxTags
-// and updateEngineTags take right before each write.
+// The review is its own momento, begun when its turn in the write chain comes so it never
+// relabels a flush still writing, and only when there is something to sync.
 export function syncTagsInLibraries(
   updates: LibraryTagUpdate[],
   host: LibraryHost,
   sessions: Sessions,
+  beginMoment: () => void,
 ) {
   const withRealPath = updates.map((u) => ({ ...u, realPath: (p: string) => realpathSync(p) }))
   return syncLibraryTags({
@@ -383,6 +382,7 @@ export function syncTagsInLibraries(
       return tagSyncOf(result, ENGINE_KEYS.runningReason)
     },
     warn: (library, error) => log.warn(`library:syncTags ${library} failed`, error),
+    ...(updates.length > 0 && { begin: beginMoment }),
   })
 }
 

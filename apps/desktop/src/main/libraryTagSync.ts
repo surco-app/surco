@@ -6,6 +6,7 @@ export interface LibraryTagFlushers {
   rekordbox: () => Promise<LibraryTagSync>
   engine: () => Promise<LibraryTagSync>
   warn: (library: string, error: unknown) => void
+  begin?: () => void
 }
 
 export function tagSyncOf(result: FlushResult, runningReason: string): LibraryTagSync {
@@ -31,6 +32,7 @@ export function serialLibraryFlush<T>(task: () => Promise<T>): Promise<T> {
 // back to the renderer. Each library's outcome goes back instead, failure included.
 export function syncLibraryTags(flushers: LibraryTagFlushers): Promise<LibraryTagSyncReport> {
   return serialLibraryFlush(async () => {
+    flushers.begin?.()
     const report = {} as LibraryTagSyncReport
     for (const library of ['traktor', 'rekordbox', 'engine'] as const) {
       try {
