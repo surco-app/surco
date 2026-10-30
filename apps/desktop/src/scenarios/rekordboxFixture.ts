@@ -75,7 +75,7 @@ export function makeRekordbox(dir: string, tracks: RekordboxSeed[]): string {
   db.exec(`CREATE TABLE djmdPlaylist (ID VARCHAR(255) PRIMARY KEY, Seq INTEGER, Name VARCHAR(255),
     ImagePath VARCHAR(255), Attribute INTEGER, ParentID VARCHAR(255), SmartList TEXT, ${LOOKUP})`)
   db.exec(`CREATE TABLE djmdSongPlaylist (ID VARCHAR(255) PRIMARY KEY, PlaylistID VARCHAR(255),
-    ContentID VARCHAR(255))`)
+    ContentID VARCHAR(255), TrackNo INTEGER, ${LOOKUP})`)
   db.exec(`CREATE TABLE djmdCue (ID VARCHAR(255) PRIMARY KEY, ContentID VARCHAR(255),
     InMsec INTEGER, InFrame INTEGER, InMpegFrame INTEGER, InMpegAbs INTEGER,
     OutMsec INTEGER DEFAULT -1, OutFrame INTEGER, OutMpegFrame INTEGER, OutMpegAbs INTEGER,
@@ -125,11 +125,9 @@ export function makeRekordbox(dir: string, tracks: RekordboxSeed[]): string {
       t.analysed ?? null,
     )
     for (const [i, playlist] of (t.playlists ?? []).entries())
-      db.prepare(`INSERT INTO djmdSongPlaylist VALUES (?, ?, ?)`).run(
-        `${t.id}-pl${i}`,
-        playlist,
-        t.id,
-      )
+      db.prepare(
+        `INSERT INTO djmdSongPlaylist (ID, PlaylistID, ContentID, rb_local_deleted) VALUES (?, ?, ?, 0)`,
+      ).run(`${t.id}-pl${i}`, playlist, t.id)
     for (const [i, ms] of (t.cuesMs ?? []).entries())
       db.prepare(
         `INSERT INTO djmdCue (ID, ContentID, InMsec, Kind, rb_local_deleted) VALUES (?, ?, ?, 0, 0)`,

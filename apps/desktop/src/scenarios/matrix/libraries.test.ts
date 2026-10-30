@@ -1,4 +1,4 @@
-import { copyFileSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { copyFileSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join, relative } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import { File as TagFile, TagTypes, type XiphComment } from 'node-taglib-sharp'
@@ -9,15 +9,23 @@ vi.mock('electron', async () => (await import('../electronFake')).electronFake()
 import { encodeBase91 } from '../../main/base91'
 import { quickCuesBlob } from '../../main/enginePerformanceFixture'
 import { engineDbPath } from '../../main/enginePlaylistsFixture'
+import { toNmlLocation } from '../../main/ffmpeg'
 import { setLibraryBackupRoot } from '../../main/libraryBackups'
 import { takeCopy } from '../../main/libraryHistory'
 import { openRekordboxDb } from '../../main/rekordboxDb'
 import { buildTraktorTree, traktorCue } from '../../main/traktor4Fixture'
+import { bootVolumeName } from '../../main/traktorNmlLibrary'
 import { music } from '../fakeMusic'
 import { scenarioDir } from '../fixtures'
 import { CELLS, type Cell, type Programs } from './cells'
 import { buildLibraries, type LibrarySet, type SeededTrack } from './libraries'
-import { type Broken, type Expected, libraryInvariants } from './oracle'
+import {
+  type Broken,
+  type Expected,
+  libraryInvariants,
+  nmlKeyPath,
+  nmlLocationPath,
+} from './oracle'
 import { makeSource, SEEDED_CUES_MS, type SourceTrack } from './sources'
 
 const BASE = CELLS.find((c) => c.id === 'C-flac-aiff') as Cell
@@ -113,7 +121,11 @@ describe('Synthetic libraries the matrix judges on its own', () => {
     it('sees a row left on the old file', () => {
       const elsewhere = join(dirname(track.path), 'nuevo.flac')
       copyFileSync(track.path, elsewhere)
-      seen(judge(only, untouched(track, { finalPath: elsewhere })), 'points', 'FolderPath')
+      try {
+        seen(judge(only, untouched(track, { finalPath: elsewhere })), 'points', 'FolderPath')
+      } finally {
+        rmSync(elsewhere)
+      }
     })
 
     it('sees a stale file name', () => {
@@ -149,11 +161,15 @@ describe('Synthetic libraries the matrix judges on its own', () => {
         `INSERT INTO djmdContent (ID, FolderPath, FileNameL, FileType, rb_local_deleted) VALUES ('5', ?, 'x', 5, 0)`,
         track.path,
       )
-      seen(
-        judge(only, untouched(track, { finalPath: moved, destGone: true })),
-        'points',
-        'ruta vieja',
-      )
+      try {
+        seen(
+          judge(only, untouched(track, { finalPath: moved, destGone: true })),
+          'points',
+          'ruta vieja',
+        )
+      } finally {
+        rmSync(moved)
+      }
     })
 
     it('sees one cue moved 500 ms with the count unchanged', () => {
@@ -187,6 +203,14 @@ describe('Synthetic libraries the matrix judges on its own', () => {
       seen(judge(only), 'playlists', 'rekordbox: playlists 80001')
     })
 
+    it('sees a playlist link soft-deleted the way rekordbox removes it', () => {
+      rekordbox(
+        `UPDATE djmdSongPlaylist SET rb_local_deleted = 1 WHERE ContentID = ? AND PlaylistID = '80002'`,
+        track.rekordboxId,
+      )
+      seen(judge(only), 'playlists', 'rekordbox: playlists 80001')
+    })
+
     it('sees the analysis emptied when the samples were kept', () => {
       rekordbox(
         `UPDATE djmdContent SET AnalysisDataPath = '', Analysed = 0 WHERE ID = ?`,
@@ -202,7 +226,9 @@ describe('Synthetic libraries the matrix judges on its own', () => {
         track.path.normalize('NFC'),
         basename(track.path),
       )
-      rekordbox(`INSERT INTO djmdSongPlaylist VALUES ('x6', '80001', '6')`)
+      rekordbox(
+        `INSERT INTO djmdSongPlaylist (ID, PlaylistID, ContentID, rb_local_deleted) VALUES ('x6', '80001', '6', 0)`,
+      )
       seen(judge(only), 'unique', 'rekordbox: 2 filas vivas')
     })
 
@@ -315,8 +341,20 @@ describe('Synthetic libraries the matrix judges on its own', () => {
     })
 
     it('finds the entry by title and artist once AUDIO_ID is gone', () => {
+      const [, twin] = set.tracks
       traktor((nml) => nml.replace(` AUDIO_ID="${track.traktorAudioId}"`, ''))
+      traktor((nml) => {
+        const start = nml.indexOf(`AUDIO_ID="${twin.traktorAudioId}"`)
+        return `${nml.slice(0, start)}${nml.slice(start).replace('TITLE="Café Olé"', 'TITLE="Otra"')}`
+      })
       expect(beyondCollateral(judge(only))).toEqual([])
+    })
+
+    it('calls it ambiguous when AUDIO_ID is gone and two entries share title and artist', () => {
+      traktor((nml) => nml.replace(` AUDIO_ID="${track.traktorAudioId}"`, ''))
+      const [, twin] = set.tracks
+      traktor((nml) => nml.replace(` AUDIO_ID="${twin.traktorAudioId}"`, ''))
+      seen(judge(only), 'points', 'Traktor: 2 entradas posibles')
     })
 
     it('sees a CUE_V2 moved 500 ms', () => {
@@ -373,6 +411,42 @@ describe('Synthetic libraries the matrix judges on its own', () => {
     })
   })
 
+  describe('NML locations read back as paths', () => {
+    it.each([
+      [
+        'the boot volume',
+        '<LOCATION DIR="/:Users/:dj/:Música/:" FILE="Café.flac" VOLUME="Macintosh HD" VOLUMEID="Macintosh HD">',
+        '/Volumes/Macintosh HD/Users/dj/Música/Café.flac',
+      ],
+      [
+        'another volume',
+        '<LOCATION DIR="/:Music/:" FILE="a.aiff" VOLUME="Public" VOLUMEID="Public">',
+        '/Volumes/Public/Music/a.aiff',
+      ],
+      ['no volume', '<LOCATION DIR="/:Users/:dj/:" FILE="a.mp3" VOLUME="">', '/Users/dj/a.mp3'],
+      [
+        'escaped names and colons inside a folder',
+        '<LOCATION DIR="/:A &amp; B/:Set: 1/:Live:/:" FILE="&quot;Mix&quot;.wav" VOLUME="Public">',
+        '/Volumes/Public/A & B/Set: 1/Live:/"Mix".wav',
+      ],
+    ])('reads a LOCATION on %s', (_, tag, path) => {
+      expect(nmlLocationPath(tag)).toBe(path)
+    })
+
+    it.each([
+      ['Macintosh HD/:Users/:dj/:a.flac', '/Volumes/Macintosh HD/Users/dj/a.flac'],
+      ['Public/:Music/:A &amp; B.aiff', '/Volumes/Public/Music/A & B.aiff'],
+    ])('reads the PRIMARYKEY %s', (key, path) => {
+      expect(nmlKeyPath(`<PRIMARYKEY TYPE="TRACK" KEY="${key}">`)).toBe(path)
+    })
+
+    it('lands on the file itself through the boot volume link', () => {
+      const { dir, file } = toNmlLocation(track.path)
+      const tag = `<LOCATION DIR="${dir}" FILE="${file}" VOLUME="${bootVolumeName()}">`
+      expect(realpathSync(nmlLocationPath(tag))).toBe(realpathSync(track.path))
+    })
+  })
+
   describe('Disk', () => {
     it('sees a temporary file left beside the result', () => {
       const tmp = join(dirname(track.path), '.x.tmp-1234abcd.aiff')
@@ -412,15 +486,58 @@ describe('Synthetic libraries the matrix judges on its own', () => {
       )
     })
 
-    it('sees a synced library written without a copy taken first, and accepts it with one', async () => {
-      rekordbox(`UPDATE djmdContent SET Title = 'x' WHERE ID = ?`, set.bystander.rekordboxId)
-      seen(judge(cellWith('rekordbox')), 'collateral', 'sin copia de seguridad previa')
+    it('sees a synced library written without a copy taken first, and accepts the repoint with one', async () => {
+      const only = cellWith('rekordbox')
+      const moved = join(dirname(track.path), 'movido.flac')
+      copyFileSync(track.path, moved)
+      try {
+        rekordbox(
+          `UPDATE djmdContent SET FolderPath = ?, FileNameL = ? WHERE ID = ?`,
+          moved,
+          basename(moved),
+          track.rekordboxId,
+        )
+        const repointed = untouched(track, { finalPath: moved })
+        seen(
+          judge(only, repointed),
+          'collateral',
+          'rekordbox: escrita sin copia de seguridad previa',
+        )
+        const db = set.rekordboxDb as string
+        await takeCopy(db, [], 'run')
+        seen(
+          judge(only, repointed),
+          'collateral',
+          'rekordbox: escrita sin copia de seguridad previa',
+        )
+        const written = readFileSync(db)
+        writeFileSync(db, saved.get(db) as Buffer)
+        await takeCopy(db, [], 'run')
+        writeFileSync(db, written)
+        expect(judge(only, repointed)).toEqual([])
+      } finally {
+        rmSync(moved)
+      }
+    })
+
+    it('sees a row of a track outside the batch changed even with a copy taken first', async () => {
       const db = set.rekordboxDb as string
-      const written = readFileSync(db)
-      writeFileSync(db, saved.get(db) as Buffer)
       await takeCopy(db, [], 'run')
-      writeFileSync(db, written)
-      expect(judge(cellWith('rekordbox'))).toEqual([])
+      rekordbox(`UPDATE djmdContent SET Title = 'x' WHERE ID = ?`, set.bystander.rekordboxId)
+      seen(judge(cellWith('rekordbox')), 'collateral', 'otra pista, rekordbox: sus filas cambiaron')
+    })
+
+    it('sees the Engine and Traktor rows of a track outside the batch changed', () => {
+      engine(`UPDATE Track SET rating = 3 WHERE id = ?`, set.bystander.engineId)
+      traktor((nml) =>
+        nml.replace(
+          `AUDIO_ID="${set.bystander.traktorAudioId}"`,
+          `AUDIO_ID="${set.bystander.traktorAudioId}" RANKING="255"`,
+        ),
+      )
+      const broken = judge(BASE)
+      seen(broken, 'collateral', 'otra pista, Engine: sus filas cambiaron')
+      seen(broken, 'collateral', 'otra pista, Traktor: sus filas cambiaron')
     })
   })
 

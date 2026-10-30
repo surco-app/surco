@@ -37,7 +37,7 @@ import {
 } from '../../main/engineBlobs'
 import { analysedTrack } from '../../main/enginePerformanceFixture'
 import { engineDbPath } from '../../main/enginePlaylistsFixture'
-import { backupOf } from '../../main/libraryBackups'
+import { libraryBackupRoot } from '../../main/libraryBackups'
 import { openRekordboxDb } from '../../main/rekordboxDb'
 import { readTraktorCueStart, storedTree } from '../../main/traktor4Fixture'
 import type { OutputFormat } from '../../shared/types'
@@ -45,6 +45,7 @@ import { music } from '../fakeMusic'
 import type { Cell, InvariantName } from './cells'
 import {
   analysisDataPathOf,
+  bystanderRows,
   engineSeededCues,
   type LibrarySet,
   type Program,
@@ -629,7 +630,9 @@ function rekordboxBroken(dbPath: string, t: SeededTrack, e: Expected): Found[] {
       found.push(['cues', `rekordbox: cues en ${msList(cues)} ms, se esperaba ${msList(want)}`])
     const lists = (
       db
-        .prepare(`SELECT PlaylistID FROM djmdSongPlaylist WHERE ContentID = ?`)
+        .prepare(
+          `SELECT PlaylistID FROM djmdSongPlaylist WHERE ContentID = ? AND coalesce(rb_local_deleted, 0) = 0`,
+        )
         .all(t.rekordboxId) as {
         PlaylistID: string
       }[]
@@ -656,7 +659,8 @@ function rekordboxNewRows(dbPath: string, set: LibrarySet): Found[] {
       db
         .prepare(
           `SELECT c.ID FROM djmdContent c WHERE c.rb_local_deleted = 0
-           AND NOT EXISTS (SELECT 1 FROM djmdSongPlaylist s WHERE s.ContentID = c.ID)`,
+           AND NOT EXISTS (SELECT 1 FROM djmdSongPlaylist s WHERE s.ContentID = c.ID
+             AND coalesce(s.rb_local_deleted, 0) = 0)`,
         )
         .all() as { ID: string }[]
     ).filter((r) => !seeded.has(r.ID))
@@ -768,6 +772,19 @@ function nmlPath(volume: string, dirAndFile: string): string {
   return volume ? `/Volumes/${volume}${path}` : path
 }
 
+export function nmlLocationPath(location: string): string {
+  return nmlPath(
+    nmlAttr(location, 'VOLUME') ?? '',
+    `${nmlAttr(location, 'DIR') ?? ''}${nmlAttr(location, 'FILE') ?? ''}`,
+  )
+}
+
+export function nmlKeyPath(primaryKey: string): string {
+  const value = nmlAttr(primaryKey, 'KEY') ?? ''
+  const cut = value.indexOf('/:')
+  return cut === -1 ? value : nmlPath(value.slice(0, cut), value.slice(cut))
+}
+
 interface NmlEntryRead {
   audioId?: string
   title?: string
@@ -785,10 +802,7 @@ function nmlCollection(nml: string): NmlEntryRead[] {
       audioId: nmlAttr(head, 'AUDIO_ID'),
       title: nmlAttr(head, 'TITLE'),
       artist: nmlAttr(head, 'ARTIST'),
-      path: nmlPath(
-        nmlAttr(location, 'VOLUME') ?? '',
-        `${nmlAttr(location, 'DIR') ?? ''}${nmlAttr(location, 'FILE') ?? ''}`,
-      ),
+      path: nmlLocationPath(location),
       starts: [...block.matchAll(/<CUE_V2\b[^>]*>/g)]
         .filter(([cue]) => nmlAttr(cue, 'TYPE') !== '4')
         .map(([cue]) => Number(nmlAttr(cue, 'START'))),
@@ -801,11 +815,7 @@ function nmlPlaylist(nml: string, uuid: string): string[] | null {
     ([block]) => nmlAttr(block.match(/<PLAYLIST\b[^>]*>/)?.[0] ?? '', 'UUID') === uuid,
   )
   if (!list) return null
-  return [...list[0].matchAll(/<PRIMARYKEY\b[^>]*>/g)].map(([key]) => {
-    const value = nmlAttr(key, 'KEY') ?? ''
-    const cut = value.indexOf('/:')
-    return cut === -1 ? value : nmlPath(value.slice(0, cut), value.slice(cut))
-  })
+  return [...list[0].matchAll(/<PRIMARYKEY\b[^>]*>/g)].map(([key]) => nmlKeyPath(key))
 }
 
 function traktorBroken(nmlFile: string, t: SeededTrack, e: Expected): Found[] {
@@ -818,9 +828,11 @@ function traktorBroken(nmlFile: string, t: SeededTrack, e: Expected): Found[] {
     (x) => x.title === t.tags.title.normalize('NFC') && x.artist === t.tags.artist,
   )
   const candidates = byId.length > 0 ? byId : byTags
-  const entry = candidates.find((x) => canonical(x.path) === final) ?? candidates[0]
+  const entry = candidates.length === 1 ? candidates[0] : undefined
   const want = SEEDED_CUES_MS.map((ms) => ms + e.lagMs)
-  if (!entry) found.push(['points', 'Traktor: la entrada ya no está'])
+  if (candidates.length > 1)
+    found.push(['points', `Traktor: ${candidates.length} entradas posibles para la pista`])
+  else if (!entry) found.push(['points', 'Traktor: la entrada ya no está'])
   else {
     if (canonical(entry.path) !== final)
       found.push(['points', `Traktor: LOCATION '${entry.path}', se esperaba '${e.finalPath}'`])
@@ -909,20 +921,30 @@ function libraryFile(
 }
 
 function backedUp(path: string, sha1: string): boolean {
-  let history: string
+  let root: string
   try {
-    history = join(dirname(backupOf(path, 'backup')), 'history')
+    root = libraryBackupRoot()
   } catch {
     return false
   }
-  try {
-    return readdirSync(history).some((copy) => {
-      const file = join(history, copy, basename(path))
-      return existsSync(file) && sha1Of(file) === sha1
-    })
-  } catch {
-    return false
+  const below = (dir: string): string[] => {
+    try {
+      return readdirSync(dir).map((name) => join(dir, name))
+    } catch {
+      return []
+    }
   }
+  return below(root)
+    .flatMap((collection) => below(join(collection, 'history')))
+    .map((copy) => join(copy, basename(path)))
+    .some((file) => existsSync(file) && sha1Of(file) === sha1)
+}
+
+function bystanderRowsBroken(set: LibrarySet): Found[] {
+  const now = bystanderRows(set, set.bystander)
+  return (['rekordbox', 'engine', 'traktor'] as const)
+    .filter((p) => set.bystanderRows[p] !== undefined && now[p] !== set.bystanderRows[p])
+    .map((p): Found => ['collateral', `otra pista, ${PROGRAM_NAME[p]}: sus filas cambiaron`])
 }
 
 function collateralBroken(cell: Cell, set: LibrarySet): Found[] {
@@ -973,6 +995,7 @@ export function libraryInvariants(
     ...(set.music ? musicNewEntries(set) : []),
     ...diskBroken(track, expected),
     ...collateralBroken(cell, set),
+    ...bystanderRowsBroken(set),
     ...programs
       .flatMap((p) => programBroken(p, set, other, untouched))
       .map(([, detail]): Found => ['collateral', `otra pista, ${detail}`]),

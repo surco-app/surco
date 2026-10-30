@@ -8,6 +8,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { basename, dirname, extname, join, relative } from 'node:path'
+import Database from 'better-sqlite3-multiple-ciphers'
 import type { EngineQuickCue } from '../../main/engineBlobs'
 import { analysedTrack } from '../../main/enginePerformanceFixture'
 import { engineDbPath, writeEngineLibraryFixture } from '../../main/enginePlaylistsFixture'
@@ -38,6 +39,7 @@ export interface LibrarySet {
   tracks: SeededTrack[]
   settings: Partial<Settings>
   sha1Before: Record<'rekordbox' | 'engine' | 'traktor', string | null>
+  bystanderRows: Partial<Record<'rekordbox' | 'engine' | 'traktor', string>>
 }
 
 export type Program = 'rekordbox' | 'engine' | 'traktor' | 'music'
@@ -244,6 +246,60 @@ function twinLinks(root: string, tracks: SourceTrack[]): Map<string, string> {
   return links
 }
 
+function rekordboxRowsOf(dbPath: string, t: SeededTrack): string {
+  const db = openRekordboxDb(dbPath, { readonly: true })
+  if (!db) return 'ilegible'
+  try {
+    return JSON.stringify([
+      db.prepare('SELECT * FROM djmdContent WHERE ID = ?').all(t.rekordboxId),
+      db.prepare('SELECT * FROM djmdCue WHERE ContentID = ? ORDER BY ID').all(t.rekordboxId),
+      db
+        .prepare('SELECT * FROM djmdSongPlaylist WHERE ContentID = ? ORDER BY ID')
+        .all(t.rekordboxId),
+    ])
+  } finally {
+    db.close()
+  }
+}
+
+function engineRowsOf(dir: string, t: SeededTrack): string {
+  const db = new Database(engineDbPath(dir), { readonly: true, fileMustExist: true })
+  try {
+    return JSON.stringify([
+      db.prepare('SELECT * FROM Track WHERE id = ?').all(t.engineId),
+      db.prepare('SELECT * FROM PerformanceData WHERE trackId = ?').all(t.engineId),
+      db.prepare('SELECT * FROM PlaylistEntity WHERE trackId = ? ORDER BY id').all(t.engineId),
+    ])
+  } finally {
+    db.close()
+  }
+}
+
+function traktorRowsOf(nmlFile: string, t: SeededTrack): string {
+  const nml = readFileSync(nmlFile, 'utf8')
+  const start = nml.indexOf(`AUDIO_ID="${t.traktorAudioId}"`)
+  const entry =
+    start === -1 ? '' : nml.slice(nml.lastIndexOf('<ENTRY', start), nml.indexOf('</ENTRY>', start))
+  const location = entry.match(/<LOCATION\b[^>]*>/)?.[0] ?? ''
+  const raw = (name: string) => location.match(new RegExp(` ${name}="([^"]*)"`))?.[1] ?? ''
+  const key = `KEY="${raw('VOLUME')}${raw('DIR')}${raw('FILE')}"`
+  const lists = [
+    ...nml.matchAll(/<PLAYLIST\b[^>]*UUID="([^"]*)"[^>]*>([\s\S]*?)<\/PLAYLIST>/g),
+  ].map(([, uuid, body]) => `${uuid}:${body.split(key).length - 1}`)
+  return JSON.stringify([entry, lists])
+}
+
+export function bystanderRows(
+  set: Pick<LibrarySet, 'rekordboxDb' | 'engineDir' | 'traktorNml'>,
+  t: SeededTrack,
+): LibrarySet['bystanderRows'] {
+  return {
+    ...(set.rekordboxDb && { rekordbox: rekordboxRowsOf(set.rekordboxDb, t) }),
+    ...(set.engineDir && { engine: engineRowsOf(set.engineDir, t) }),
+    ...(set.traktorNml && { traktor: traktorRowsOf(set.traktorNml, t) }),
+  }
+}
+
 export function buildLibraries(
   root: string,
   programs: Programs,
@@ -304,5 +360,6 @@ export function buildLibraries(
       engine: sha1Of(engineDbPath(engineDir)),
       traktor: sha1Of(traktorNml),
     },
+    bystanderRows: bystanderRows({ rekordboxDb, engineDir, traktorNml }, bystander),
   }
 }
