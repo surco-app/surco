@@ -28,6 +28,7 @@ import {
   repointEngineQueued,
   repointRekordbox,
   syncTagsInLibraries,
+  traktorWrite,
 } from '../main/libraryFlushes'
 import { registerListReviewIpc } from '../main/listReviewIpc'
 import { listReviewDeps } from '../main/listReviewWiring'
@@ -47,16 +48,20 @@ import { readNodeStamps } from '../main/rekordboxMasterXml'
 import { applyRekordboxBatch } from '../main/rekordboxPlaylistWrite'
 import { isRekordboxRunning } from '../main/rekordboxProcess'
 import { createRekordboxQueue, type QueueApply, type RekordboxQueue } from '../main/rekordboxQueue'
+import { stillWaiting } from '../main/rekordboxQueueWatch'
 import { createSessionBackup } from '../main/rekordboxSessionBackup'
 import { getSettings, recordConversion, recordStat, replaceSettings } from '../main/settings'
 import { registerShellIpc } from '../main/shellIpc'
 import { createSurcoTrash, type SurcoTrash } from '../main/surcoTrash'
 import { createTmpManifest } from '../main/tmpManifest'
-import { bootVolumeName } from '../main/traktorNmlLibrary'
+import { applyTraktorBatch } from '../main/traktorCuesWrite'
+import { bootVolumeName, syncCollection } from '../main/traktorNmlLibrary'
+import { type QueuedNmlPatch, syncQueuedPatches } from '../main/traktorPatchQueue'
+import { isTraktorRunning } from '../main/traktorProcess'
 import { registerTrashIpc } from '../main/trashIpc'
 import { checkFile, fileReaders } from '../main/verifyFile'
 import { appVerifyRegistry, queueVerification, snapshotLibraries } from '../main/verifyIpc'
-import type { FlushOutcome } from '../main/verifyRegistry'
+import type { FlushOutcome, TraktorWrite } from '../main/verifyRegistry'
 import { onWatchedFilesChanged } from '../main/watchedFiles'
 import { dirRoots, FolderWatcher } from '../main/watcher'
 import type { Api } from '../preload/api'
@@ -135,10 +140,14 @@ export interface Sabotage {
 
 type QueueChecks = ReturnType<typeof queueVerification>
 
+type Library = 'rekordbox' | 'engine' | 'traktor'
+
 interface VerifyWiring {
   registry: ReturnType<typeof appVerifyRegistry>
   checks: QueueChecks
   statuses: Map<string, Verification['status'][]>
+  retries: Map<string, 'rerun-job' | 'rechecked'>
+  inFlight: Set<Promise<unknown>>
 }
 
 const musicIsFake = (appleMusic as Record<string, unknown>).scenarioFake === true
@@ -342,7 +351,7 @@ const sessions = {
 
 function libraryHost(errors: string[]): LibraryHost {
   return {
-    ensureTraktorClosed: async () => true,
+    ensureTraktorClosed: async () => !(await isTraktorRunning()),
     ensureRekordboxClosed: async () => !(await isRekordboxRunning()),
     ensureEngineDjClosed: async () => {
       if (!(await isEngineDjRunning())) return true
@@ -390,6 +399,34 @@ function engineQueueInMemory(checks: { current?: QueueChecks }): RekordboxQueue 
   })
 }
 
+const traktorWritePath = (): string => {
+  const path = getSettings().traktorNmlPath
+  return path && existsSync(path) ? path : ''
+}
+
+function traktorQueueInMemory(checks: { current?: QueueChecks }): RekordboxQueue<QueuedNmlPatch> {
+  return createRekordboxQueue<QueuedNmlPatch>({
+    store: storeInMemory(),
+    collection: traktorWritePath,
+    configured: () => getSettings().traktorNmlPath,
+    applyBatch: (nml, ops, ensureClosed) =>
+      applyTraktorBatch(nml, ops, { ensureClosed, session: sessions.traktor }),
+    repoint: async (nml, patches) => {
+      let write: TraktorWrite = 'failed'
+      const results = await syncQueuedPatches(nml, patches, async (path, list) => {
+        const result = await syncCollection(path, list, sessions.traktor)
+        write = traktorWrite(list, result)
+        return result
+      })
+      checks.current?.repointed('traktor', results, write)
+      return results
+    },
+    nodeStamps: async () => ({}),
+    onChange: () => {},
+    addsTracks: false,
+  })
+}
+
 function rekordboxQueueInMemory(checks: { current?: QueueChecks }): RekordboxQueue {
   return createRekordboxQueue({
     store: storeInMemory(),
@@ -412,27 +449,66 @@ function rekordboxQueueInMemory(checks: { current?: QueueChecks }): RekordboxQue
   })
 }
 
-const settledBy =
-  (checks: QueueChecks, place: 'rekordbox' | 'engine') => (apply: Promise<QueueApply>) =>
-    void apply.then(
-      (result) => checks.settled(place, result),
-      () => checks.settled(place, 'threw'),
-    )
+interface Queues {
+  rekordbox: RekordboxQueue
+  engine: RekordboxQueue
+  traktor: RekordboxQueue<QueuedNmlPatch>
+}
 
-function verifyWiring(
-  rekordboxQueue: RekordboxQueue,
-  engineQueue: RekordboxQueue,
-  checks: { current?: QueueChecks },
-): VerifyWiring {
+const libraryAt: Record<Library, () => string> = {
+  rekordbox: rekordboxCollectionPath,
+  engine: engineLibraryPath,
+  traktor: traktorWritePath,
+}
+
+const programClosed: Record<Library, () => Promise<boolean>> = {
+  rekordbox: async () => !(await isRekordboxRunning()),
+  engine: async () => !(await isEngineDjRunning()),
+  traktor: async () => !(await isTraktorRunning()),
+}
+
+const applyQueue = (queues: Queues, place: Library): Promise<QueueApply> =>
+  queues[place].apply(programClosed[place])
+
+function tracked<T>(inFlight: Set<Promise<unknown>>, work: Promise<T>): Promise<T> {
+  inFlight.add(work)
+  const done = () => inFlight.delete(work)
+  work.then(done, done)
+  return work
+}
+
+// The app's quiet apply: nothing is tried while the library is not there.
+const applyQuietly = (verify: VerifyWiring, queues: Queues, place: Library) => {
+  if (!libraryAt[place]()) return
+  void tracked(verify.inFlight, applyQueue(queues, place)).then(
+    (result) => verify.checks.settled(place, result),
+    () => verify.checks.settled(place, 'threw'),
+  )
+}
+
+// What the app's queue watch does once the program is seen closed (rekordboxQueueWatch.ts):
+// an apply that finds it open again, or a queue with nothing in it, reports nothing.
+async function applyOnClose(queues: Queues, place: Library, checks?: QueueChecks) {
+  if (!libraryAt[place]() || queues[place].isEmpty()) return
+  let result: QueueApply
+  try {
+    result = await applyQueue(queues, place)
+  } catch {
+    checks?.settled(place, { status: 'refused', reason: 'write-failed' })
+    return
+  }
+  if (!stillWaiting(result) && result.status !== 'empty') checks?.settled(place, result)
+}
+
+function verifyWiring(queues: Queues, checks: { current?: QueueChecks }): VerifyWiring {
   const statuses = new Map<string, Verification['status'][]>()
-  const rekordboxClosed = async () => !(await isRekordboxRunning())
-  const engineClosed = async () => !(await isEngineDjRunning())
+  const inFlight = new Set<Promise<unknown>>()
   const registry = appVerifyRegistry({
     emit: (trackId, verification) => {
       statuses.set(trackId, [...(statuses.get(trackId) ?? []), verification.status])
       sender.send('verify:update', trackId, verification)
     },
-    paths: { rekordbox: rekordboxCollectionPath, engine: engineLibraryPath, traktor: () => '' },
+    paths: libraryAt,
     realPath: (p) => realpathSync(p),
     bootVolume: () => bootVolumeName(),
     readMusic: async () => ({
@@ -442,26 +518,36 @@ function verifyWiring(
     }),
     queues: {
       rekordbox: {
-        enqueue: rekordboxQueue.enqueue,
-        apply: () => settledBy(wired, 'rekordbox')(rekordboxQueue.apply(rekordboxClosed)),
-        at: rekordboxCollectionPath,
-        holds: rekordboxQueue.holdsRepoint,
+        enqueue: queues.rekordbox.enqueue,
+        apply: () => applyQuietly(verify, queues, 'rekordbox'),
+        at: libraryAt.rekordbox,
+        holds: queues.rekordbox.holdsRepoint,
       },
       engine: {
-        enqueue: engineQueue.enqueue,
-        apply: () => settledBy(wired, 'engine')(engineQueue.apply(engineClosed)),
-        at: engineLibraryPath,
-        holds: engineQueue.holdsRepoint,
+        enqueue: queues.engine.enqueue,
+        apply: () => applyQuietly(verify, queues, 'engine'),
+        at: libraryAt.engine,
+        holds: queues.engine.holdsRepoint,
       },
-      traktor: { enqueue: () => {}, apply: () => {}, at: () => '', holds: () => false },
+      traktor: {
+        enqueue: queues.traktor.enqueue,
+        apply: () => applyQuietly(verify, queues, 'traktor'),
+        at: libraryAt.traktor,
+        holds: queues.traktor.holdsRepoint,
+      },
     },
   })
-  const wired = queueVerification(registry)
+  const wired = queueVerification({
+    afterQueueApplied: (place, result, stillQueued) =>
+      tracked(inFlight, registry.afterQueueApplied(place, result, stillQueued)),
+    afterQueueWaits: (place) => tracked(inFlight, registry.afterQueueWaits(place)),
+  })
   checks.current = wired
-  return { registry, checks: wired, statuses }
+  const verify: VerifyWiring = { registry, checks: wired, statuses, retries: new Map(), inFlight }
+  return verify
 }
 
-type LaterApply = { place: 'rekordbox' | 'engine'; start: () => Promise<QueueApply> }
+type LaterApply = { place: Library; start: () => Promise<QueueApply> }
 
 // The batch end in the app's order: the flush writes, the sabotage lands on what it wrote,
 // the libraries are read back for the tracks registered before this end, and only then do
@@ -489,8 +575,7 @@ function scenarioApi(
   errors: string[],
   appleMusicSends: string[],
   flushes: Promise<void>[],
-  rekordboxQueue: RekordboxQueue,
-  engineQueue: RekordboxQueue,
+  queues: Queues,
   verify?: VerifyWiring,
 ): Api {
   const reservations = createOutputReservations()
@@ -548,6 +633,13 @@ function scenarioApi(
     engineMembership: async () => ({}),
     onRekordboxQueueChanged: () => () => {},
     onVerifyUpdate: (listener) => listen('verify:update', listener),
+    ...(verify && {
+      retryVerification: async (trackId) => {
+        const answer = await verify.registry.retry(trackId)
+        verify.retries.set(trackId, answer)
+        return answer
+      },
+    }),
     onRekordboxQueueApplied: () => () => {},
     engineCueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
     applyEngineCueQueue: async () => null,
@@ -661,29 +753,25 @@ function scenarioApi(
       sessions.engine.begin('run')
     },
     endConversionBatch: () => {
-      const applies: Partial<Record<'rekordbox' | 'engine', Promise<QueueApply>>> = {}
+      const applies: Partial<Record<Library, Promise<QueueApply>>> = {}
       const later: LaterApply[] = []
-      const applyRekordbox = () => rekordboxQueue.apply(async () => !(await isRekordboxRunning()))
-      const applyEngine = () => engineQueue.apply(async () => !(await isEngineDjRunning()))
+      const applyLater = (place: Library) => () => {
+        if (!libraryAt[place]()) return
+        const start = () => applyQueue(queues, place)
+        if (verify) later.push({ place, start })
+        else applies[place] = start()
+      }
       const flush = () =>
         flushConversionBatch(
           libraryHost(errors),
           sessions,
+          { enqueue: queues.rekordbox.enqueue, applyQuietly: applyLater('rekordbox') },
           {
-            enqueue: rekordboxQueue.enqueue,
-            applyQuietly: () => {
-              if (verify) later.push({ place: 'rekordbox', start: applyRekordbox })
-              else applies.rekordbox = applyRekordbox()
-            },
+            enqueue: queues.traktor.enqueue,
+            state: queues.traktor.state,
+            applyQuietly: applyLater('traktor'),
           },
-          undefined,
-          {
-            enqueue: engineQueue.enqueue,
-            applyQuietly: () => {
-              if (verify) later.push({ place: 'engine', start: applyEngine })
-              else applies.engine = applyEngine()
-            },
-          },
+          { enqueue: queues.engine.enqueue, applyQuietly: applyLater('engine') },
         )
       flushes.push(
         verify
@@ -748,6 +836,8 @@ export interface Scenario {
   rekordboxClosed: () => Promise<void>
   engineQueue: () => RekordboxQueueState
   engineClosed: () => Promise<void>
+  traktorClosed: () => Promise<void>
+  retry: (fileName: string) => Promise<'rerun-job' | 'rechecked'>
   verification: (fileName: string) => Verification | undefined
   statuses: (fileName: string) => Verification['status'][]
   settled: () => Promise<void>
@@ -762,8 +852,7 @@ export interface MainBoot {
   errors: string[]
   sentToAppleMusic: string[]
   flushes: Promise<void>[]
-  rekordboxQueue: RekordboxQueue
-  engineQueue: RekordboxQueue
+  queues: Queues
   verify?: VerifyWiring
   api: Api
 }
@@ -797,26 +886,20 @@ export function bootMain(options: ScenarioOptions): MainBoot {
   const sentToAppleMusic: string[] = []
   const flushes: Promise<void>[] = []
   const checks: { current?: QueueChecks } = {}
-  const rekordboxQueue = rekordboxQueueInMemory(checks)
-  const engineQueue = engineQueueInMemory(checks)
-  const verify = options.verify ? verifyWiring(rekordboxQueue, engineQueue, checks) : undefined
-  const api = scenarioApi(
-    options,
-    errors,
-    sentToAppleMusic,
-    flushes,
-    rekordboxQueue,
-    engineQueue,
-    verify,
-  )
+  const queues: Queues = {
+    rekordbox: rekordboxQueueInMemory(checks),
+    engine: engineQueueInMemory(checks),
+    traktor: traktorQueueInMemory(checks),
+  }
+  const verify = options.verify ? verifyWiring(queues, checks) : undefined
+  const api = scenarioApi(options, errors, sentToAppleMusic, flushes, queues, verify)
   return {
     settings,
     trash,
     errors,
     sentToAppleMusic,
     flushes,
-    rekordboxQueue,
-    engineQueue,
+    queues,
     verify,
     api,
   }
@@ -827,17 +910,8 @@ export function closeMain(): void {
 }
 
 export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
-  const {
-    settings,
-    trash,
-    errors,
-    sentToAppleMusic,
-    flushes,
-    rekordboxQueue,
-    engineQueue,
-    verify,
-    api,
-  } = bootMain(options)
+  const { settings, trash, errors, sentToAppleMusic, flushes, queues, verify, api } =
+    bootMain(options)
   const prompts: ConfirmModal[] = []
   const editorVerdicts = new Map<string, () => ReturnType<typeof useLibraryVerdict>>()
   let running: Promise<void> | undefined
@@ -1087,17 +1161,16 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
     trash,
     errors,
     sentToAppleMusic,
-    rekordboxWaiting: () => rekordboxQueue.state().tracks,
-    rekordboxClosed: async () => {
-      await rekordboxQueue.apply(async () => !(await isRekordboxRunning()))
-    },
-    engineQueue: () => engineQueue.state(),
+    rekordboxWaiting: () => queues.rekordbox.state().tracks,
+    rekordboxClosed: () => applyOnClose(queues, 'rekordbox', verify?.checks),
+    engineQueue: () => queues.engine.state(),
     verification: (fileName) => trackNamed(fileName).verification,
     statuses: (fileName) => verify?.statuses.get(trackNamed(fileName).id) ?? [],
     settled: async () => {
       if (!verify) throw new Error('scenario: settled() needs openSurco({ verify: true })')
       await act(async () => {
         await Promise.all(flushes)
+        while (verify.inFlight.size > 0) await Promise.allSettled([...verify.inFlight])
       })
       await waitFor(
         () =>
@@ -1110,8 +1183,19 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         { timeout: 10_000 },
       )
     },
-    engineClosed: async () => {
-      await engineQueue.apply(async () => !(await isEngineDjRunning()))
+    engineClosed: () => applyOnClose(queues, 'engine', verify?.checks),
+    traktorClosed: () => applyOnClose(queues, 'traktor', verify?.checks),
+    retry: async (fileName) => {
+      if (!verify) throw new Error('scenario: retry() needs openSurco({ verify: true })')
+      const id = trackNamed(fileName).id
+      verify.retries.delete(id)
+      await act(async () => {
+        await result.current.processing.retryVerification(id)
+        await Promise.all(flushes)
+      })
+      const answer = verify.retries.get(id)
+      if (!answer) throw new Error(`scenario: the retry of ${fileName} never reached main`)
+      return answer
     },
     prompts,
     drop: async (...paths) => {
