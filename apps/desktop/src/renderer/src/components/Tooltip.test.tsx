@@ -1,8 +1,11 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import type React from 'react'
+import { useRef, useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Tooltip } from './Tooltip'
+import { useFocusTrap } from './useFocusTrap'
 
 afterEach(cleanup)
 
@@ -84,6 +87,45 @@ describe('Tooltip', () => {
     const trigger = screen.getByTestId('trigger')
     fireEvent.pointerDown(trigger)
     fireEvent.focusIn(trigger)
+    expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+
+  // Closing a dialog hands focus back to the button that opened it. Nobody navigated to
+  // that button, so its hint popped up out of nowhere and stayed over the editor ("Ajustes ⌘,"
+  // covering the ISRC label) until something else took the focus.
+  it('does not appear when a closing dialog returns the focus to its trigger', async () => {
+    function Dialog(): React.JSX.Element {
+      const ref = useRef<HTMLDivElement>(null)
+      useFocusTrap(ref)
+      return (
+        <div ref={ref}>
+          <button type="button">Inside</button>
+        </div>
+      )
+    }
+    function Harness(): React.JSX.Element {
+      const [open, setOpen] = useState(false)
+      return (
+        <>
+          <button type="button" data-testid="trigger" onClick={() => setOpen(true)}>
+            Settings
+            <Tooltip label="Settings ⌘," />
+          </button>
+          <button type="button" data-testid="close" onClick={() => setOpen(false)}>
+            Close
+          </button>
+          {open && <Dialog />}
+        </>
+      )
+    }
+    render(<Harness />)
+    const trigger = screen.getByTestId('trigger')
+    fireEvent.pointerDown(trigger)
+    act(() => trigger.focus())
+    fireEvent.click(trigger)
+    await act(() => new Promise((r) => setTimeout(r, 0)))
+    fireEvent.click(screen.getByTestId('close'))
+    expect(document.activeElement).toBe(trigger)
     expect(screen.queryByRole('tooltip')).toBeNull()
   })
 

@@ -1,6 +1,12 @@
 import type React from 'react'
 import { useEffect, useState } from 'react'
 
+let returningFocus = false
+
+export function isReturningFocus(): boolean {
+  return returningFocus
+}
+
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
@@ -60,7 +66,12 @@ export function useFocusTrap(ref: React.RefObject<HTMLElement | null>): void {
       // Lifted before the focus goes back: an inert trigger refuses focus.
       for (const el of inerted) el.removeAttribute('inert')
       const back = previouslyFocused?.isConnected ? previouslyFocused : focusedAtOpen
-      back?.focus?.()
+      returningFocus = true
+      try {
+        back?.focus?.()
+      } finally {
+        returningFocus = false
+      }
     }
   }, [ref, previouslyFocused])
 }
