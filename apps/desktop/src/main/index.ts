@@ -155,6 +155,7 @@ import {
   redirectRekordboxRepoint,
   recordedRekordboxRepoint,
   rekordboxBatchOpen,
+  stackRepoint,
 } from './rekordboxBatch'
 import { completeOnClose } from './rekordboxCompleteOnClose'
 import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
@@ -411,6 +412,7 @@ const engineCueQueue = createRekordboxQueue({
   nodeStamps: async () => ({}),
   onChange: (state) => broadcast('engine:cueQueueChanged', state),
   addsTracks: false,
+  stack: stackRepoint,
 })
 const announceEngineApplied = (result: QueueApply): void => {
   const notice = appliedNotice(result)

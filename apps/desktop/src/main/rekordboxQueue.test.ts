@@ -2,7 +2,7 @@ import log from 'electron-log/main'
 import { describe, expect, it, vi } from 'vitest'
 import type { RekordboxQueueState } from '../shared/types'
 import type { LibraryRepointResult } from './libraryRepointFlush'
-import type { RekordboxRepoint } from './rekordboxBatch'
+import { type RekordboxRepoint, stackRepoint } from './rekordboxBatch'
 import { createRekordboxQueue, type QueueDeps, type QueueStore } from './rekordboxQueue'
 import type { BatchResult, CuesOp, QueueOp, TrackOp } from './rekordboxQueueOps'
 
@@ -385,6 +385,26 @@ describe('rekordbox queue', () => {
     vi.mocked(log.warn).mockClear()
     await q.apply(closed)
     expect(log.warn).toHaveBeenCalledWith(expect.stringMatching(/cues-slot-dropped.*Maniac/))
+  })
+
+  // Engine open across two batches that each rewrote the same file in place: the row still
+  // records the size from before the first, and owes both cuts. Replacing the first entry
+  // with the second left a size the row never had, so neither cut ever landed.
+  it('stacks a second rewrite in place onto the one already waiting for the same file', async () => {
+    const d = deps({ stack: stackRepoint })
+    const q = createRekordboxQueue(d)
+    q.enqueue(
+      [],
+      [{ from: '/m/b.mp3', to: '/m/b.mp3', engineShift: { trimmedMs: 1000 }, fromBytes: 100 }],
+    )
+    q.enqueue(
+      [],
+      [{ from: '/m/b.mp3', to: '/m/b.mp3', engineShift: { trimmedMs: 900 }, fromBytes: 90 }],
+    )
+    await q.apply(closed)
+    expect(d.repoint).toHaveBeenCalledWith(expect.any(String), [
+      { from: '/m/b.mp3', to: '/m/b.mp3', engineShift: { trimmedMs: 1900 }, fromBytes: 100 },
+    ])
   })
 
   // La colección vive en un disco desconectado. Lo que espera se ata a ella y se aplica al
