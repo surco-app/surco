@@ -57,6 +57,10 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     rm: vi.fn(async () => {}),
     confirmConflict: vi.fn(async () => 'overwrite' as const),
     appleMusicEntryLocation: vi.fn(async () => '/Users/me/Music/Media/f.aiff'),
+    appleMusicEntry: vi.fn(async () => ({
+      path: '/Users/me/Music/Media/f.aiff',
+      label: 'Artist - Title',
+    })),
     deleteAppleMusic: vi.fn(async () => {}),
     carryAppleMusicHistory: vi.fn(async () => 'carried' as const),
     isPathReserved: vi.fn(() => false),
@@ -2042,11 +2046,13 @@ describe('progress for a window that closed mid-job', () => {
 // it was added. Music can't repoint an entry at another file, so a format change has to
 // import the new file and retire the old entry; a same-format re-sync stays an update.
 describe('runProcessTrack — converting a library track to another format', () => {
-  const location = (entry: string) =>
-    vi.fn(async (id: string) => (id === 'PID' ? entry : '/Users/me/Music/Media/new.wav'))
-
   function converting(entry: string, overrides: Partial<ProcessTrackDeps> = {}) {
-    return makeDeps({ platform: 'darwin', appleMusicEntryLocation: location(entry), ...overrides })
+    return makeDeps({
+      platform: 'darwin',
+      appleMusicEntry: vi.fn(async () => ({ path: entry, label: 'Old Artist - Old Title' })),
+      appleMusicEntryLocation: vi.fn(async () => '/Users/me/Music/Media/new.wav'),
+      ...overrides,
+    })
   }
 
   const libraryJob = (over: Partial<ProcessJob> = {}) =>
@@ -2123,7 +2129,7 @@ describe('runProcessTrack — converting a library track to another format', () 
 
   it('falls back to updating the entry when Music cannot say where it points', async () => {
     const deps = converting('', {
-      appleMusicEntryLocation: vi.fn(async () => {
+      appleMusicEntry: vi.fn(async () => {
         throw new Error('Music got an error (-1728)')
       }),
     })
@@ -2134,6 +2140,27 @@ describe('runProcessTrack — converting a library track to another format', () 
     expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
     expect(result.musicPersistentId).toBe('updated-id')
     expect(result.supersededPath).toBeUndefined()
+  })
+
+  // The batch this was measured for is auto-matched AIFFs: the job's tags are the match,
+  // not what Music shows, and the delete only retires an entry whose live name it is told.
+  it('retires the entry under the name Music shows, not the edited tags the job carries', async () => {
+    const deps = converting('/lib/A.aiff')
+
+    const result = await runProcessTrack(
+      libraryJob({ meta: { artist: 'New Artist', title: 'New Title' } as TrackMetadata }),
+      deps,
+    )
+
+    expect(deps.appleMusicEntry).toHaveBeenCalledWith('PID')
+    expect(deps.carryAppleMusicHistory).toHaveBeenCalledWith(
+      'PID',
+      'added-id',
+      'Old Artist - Old Title',
+    )
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('PID', 'Old Artist - Old Title')
+    expect(result.oldMusicCopyKept).toBeUndefined()
+    expect(result.supersededPath).toBe('/lib/A.aiff')
   })
 
   it('offers nothing for trash when the old entry had to be kept', async () => {

@@ -32,6 +32,14 @@ describe('supersededFile', () => {
     )
   })
 
+  // A track opened from Apple Music and converted to another format replaces its entry
+  // without ever having had replacesPath stamped: main reports the old file afterwards.
+  it('offers the file a format change superseded in Apple Music', () => {
+    expect(supersededFile(track({ supersededPath: '/lib/A.aiff', outputPath: '/out/A.wav' }))).toBe(
+      '/lib/A.aiff',
+    )
+  })
+
   // Nothing was superseded: an ordinary conversion leaves its own source alone, which the
   // clean-up offer lists as the original.
   it('offers nothing when the conversion replaced no copy', () => {

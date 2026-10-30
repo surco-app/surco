@@ -54,6 +54,10 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     rm: vi.fn(async () => {}),
     confirmConflict: vi.fn(async () => 'overwrite' as const),
     appleMusicEntryLocation: vi.fn(async () => '/Users/me/Music/Media/f.aiff'),
+    appleMusicEntry: vi.fn(async () => ({
+      path: '/Users/me/Music/Media/f.aiff',
+      label: 'Artist - Title',
+    })),
     deleteAppleMusic: vi.fn(async () => {}),
     carryAppleMusicHistory: vi.fn(async () => 'carried' as const),
     isPathReserved: vi.fn(() => false),

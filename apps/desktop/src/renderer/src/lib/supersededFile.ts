@@ -12,9 +12,10 @@ import type { TrackItem } from '../types'
 // still running must leave every file exactly where it was.
 export function supersededFile(track: TrackItem): string | null {
   if (track.status !== 'done') return null
-  if (!track.replacesPath || track.supersededTrashed) return null
+  const superseded = track.replacesPath ?? track.supersededPath
+  if (!superseded || track.supersededTrashed) return null
   // Never offer the file the track now points at: a same-path conversion would otherwise
   // invite deleting the very output it just produced.
-  if (track.replacesPath === track.outputPath) return null
-  return track.replacesPath
+  if (superseded === track.outputPath) return null
+  return superseded
 }

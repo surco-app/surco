@@ -62,8 +62,11 @@ export function selectionStatus(
   // supersededFile applies per track.
   const superseded = isMulti
     ? multiTracks
-        .filter((t) => t.status === 'done' && t.replacesPath && !t.supersededTrashed)
-        .map((t) => ({ trackId: t.id, path: t.replacesPath as string }))
+        .filter(
+          (t) =>
+            t.status === 'done' && (t.replacesPath ?? t.supersededPath) && !t.supersededTrashed,
+        )
+        .map((t) => ({ trackId: t.id, path: (t.replacesPath ?? t.supersededPath) as string }))
     : []
   return {
     showDone,

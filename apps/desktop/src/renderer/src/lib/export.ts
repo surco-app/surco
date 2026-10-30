@@ -26,7 +26,10 @@ export function exportedPatch(
       outputPath: undefined,
       musicStatus: 'added',
       ...(result.musicPersistentId && { musicPersistentId: result.musicPersistentId }),
-      ...(result.supersededPath && { replacesPath: result.supersededPath }),
+      ...(result.supersededPath && {
+        supersededPath: result.supersededPath,
+        supersededTrashed: undefined,
+      }),
       stage: undefined,
       processedSignature: trackSignature(track),
       processedNormalize: normalize,
@@ -70,7 +73,10 @@ export function exportedPatch(
     ...(result.addedToEngineDj && { engineDjAdded: true }),
     // A format change replaced the Music entry, so its old file is now referenced by
     // nothing and is offered for trash like any other superseded copy.
-    ...(result.supersededPath && { replacesPath: result.supersededPath }),
+    ...(result.supersededPath && {
+      supersededPath: result.supersededPath,
+      supersededTrashed: undefined,
+    }),
     stage: undefined,
     processedSignature: trackSignature(settledTrack),
     processedNormalize: normalize,

@@ -67,6 +67,7 @@ import { analysisCacheStats, clearAnalysisCache, pruneAnalysisCache } from './an
 import { registerAppleMusicIpc } from './appleMusicIpc'
 import {
   addToAppleMusic,
+  appleMusicEntry,
   appleMusicEntryLocation,
   appleMusicLimiter,
   carryOverToAppleMusicCopy,
@@ -1700,6 +1701,7 @@ function registerIpc(): void {
           return { decision, remember: checkboxChecked }
         }),
       appleMusicEntryLocation,
+      appleMusicEntry: (persistentId) => appleMusicLimiter.run(() => appleMusicEntry(persistentId)),
       deleteAppleMusic: deleteFromAppleMusic,
       carryAppleMusicHistory: (fromPid, toPid, label) =>
         appleMusicLimiter.run(() => carryOverToAppleMusicCopy(fromPid, toPid, label)),

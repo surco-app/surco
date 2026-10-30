@@ -271,6 +271,39 @@ export async function appleMusicEntryLocation(persistentId: string): Promise<str
   return stdout.trim()
 }
 
+// The entry's file together with the "artist - name" Music shows for it, the label that
+// carrying it over and deleting it are verified against. Read live because a track opened
+// from Music may be converted with edited tags: the job's own label would never match.
+export function buildEntryScript(persistentId: string): string {
+  return [
+    'set theLocation to missing value',
+    'set theLabel to ""',
+    'tell application "Music"',
+    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${appleScriptString(persistentId)})`,
+    '  if (count of theMatches) is not 0 then',
+    '    set theTrack to item 1 of theMatches',
+    '    set theLabel to (artist of theTrack) & " - " & (name of theTrack)',
+    '    try',
+    '      set theLocation to location of theTrack',
+    '    end try',
+    '  end if',
+    'end tell',
+    'if theLocation is missing value then return theLabel & tab',
+    'return theLabel & tab & (POSIX path of theLocation)',
+  ].join('\n')
+}
+
+export async function appleMusicEntry(
+  persistentId: string,
+  run: typeof runOsascript = runOsascript,
+): Promise<{ path: string; label: string }> {
+  const stdout = (await run(buildEntryScript(persistentId))).replace(/\n$/, '')
+  const cut = stdout.indexOf('\t')
+  return cut === -1
+    ? { label: '', path: '' }
+    : { label: stdout.slice(0, cut), path: stdout.slice(cut + 1) }
+}
+
 // Selects the library copy in the Music window and brings the app forward — the
 // "show in Apple Music" counterpart of revealing a file in Finder. Erroring when the
 // track is gone (rather than silently activating Music) lets the footer surface why

@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
 import {
+  appleMusicEntry,
   appleScriptString,
   buildAddScript,
   buildCarryOverScript,
   buildDeleteScript,
+  buildEntryScript,
   buildFileLocationsScript,
   buildFileNamesScript,
   buildLibraryDumpScript,
@@ -337,6 +339,41 @@ describe('buildLocationScript', () => {
 
     expect(tellBody).not.toContain('POSIX path')
     expect(script).toContain('POSIX path')
+  })
+})
+
+// Retiring an entry is verified against its live "artist - name". A track opened from Music
+// and edited (or auto-matched) before converting carries new tags, so the label has to be
+// read from Music itself, with the file, or the delete refuses and both entries stay.
+describe('buildEntryScript', () => {
+  it('reads the entry label the delete compares, and its file outside the tell block', () => {
+    const script = buildEntryScript('ABCD1234ABCD1234')
+    const tellBody = script.slice(script.indexOf('tell application'), script.indexOf('end tell'))
+
+    expect(script).toContain('whose persistent ID is "ABCD1234ABCD1234"')
+    expect(tellBody).toContain('(artist of theTrack) & " - " & (name of theTrack)')
+    expect(tellBody).not.toContain('POSIX path')
+    expect(script).toContain('POSIX path')
+  })
+})
+
+describe('appleMusicEntry', () => {
+  it('splits the label from the file path', async () => {
+    const run = vi.fn(async () => 'ATB - Till I Come\t/Users/me/Music/Media/A.aiff\n')
+    expect(await appleMusicEntry('PID', run)).toEqual({
+      label: 'ATB - Till I Come',
+      path: '/Users/me/Music/Media/A.aiff',
+    })
+  })
+
+  it('answers an empty path when the entry holds no reachable file', async () => {
+    const run = vi.fn(async () => 'ATB - Till I Come\t\n')
+    expect(await appleMusicEntry('PID', run)).toEqual({ label: 'ATB - Till I Come', path: '' })
+  })
+
+  it('answers an empty path when the entry is gone', async () => {
+    const run = vi.fn(async () => '\n')
+    expect(await appleMusicEntry('PID', run)).toEqual({ label: '', path: '' })
   })
 })
 

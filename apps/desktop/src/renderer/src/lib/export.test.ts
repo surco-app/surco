@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { TrackItem } from '../types'
 import { trackSignature } from './dirty'
 import { exportedPatch } from './export'
+import { supersededFile } from './supersededFile'
 
 function track(over: Partial<TrackItem> = {}): TrackItem {
   return {
@@ -211,23 +212,29 @@ describe('exportedPatch', () => {
   })
 
   // A conversion that replaced the Music entry in another format leaves the old file
-  // referenced by nothing; recording it as replacesPath is what lets the trash offer it.
-  it('records the file a format change superseded so it can be offered for trash', () => {
-    const patch = exportedPatch(track(), {
+  // referenced by nothing, so it is offered for trash. It must not land in replacesPath:
+  // the next job sends that field, and a plain re-sync would replace the entry again and
+  // repoint rekordbox from a file no library indexes any more.
+  it('records the file a format change superseded apart from what the next job replaces', () => {
+    const t = track({ supersededTrashed: true })
+    const patch = exportedPatch(t, {
       outputPath: '/out/ATB - Till I Come.wav',
       inPlace: false,
       supersededPath: '/lib/Till I Come.aiff',
     })
-    expect(patch.replacesPath).toBe('/lib/Till I Come.aiff')
+    expect(patch.replacesPath).toBeUndefined()
+    expect(supersededFile({ ...t, ...patch })).toBe('/lib/Till I Come.aiff')
   })
 
   it('records the superseded file in Apple Music only mode too', () => {
-    const patch = exportedPatch(track(), {
+    const t = track()
+    const patch = exportedPatch(t, {
       outputPath: '',
       inPlace: false,
       addedToMusicOnly: true,
       supersededPath: '/lib/Till I Come.aiff',
     })
-    expect(patch.replacesPath).toBe('/lib/Till I Come.aiff')
+    expect(patch.replacesPath).toBeUndefined()
+    expect(supersededFile({ ...t, ...patch })).toBe('/lib/Till I Come.aiff')
   })
 })

@@ -242,4 +242,8 @@ export interface TrackItem {
   // from originalTrashed: that one is the track's own source, this one is the old library
   // copy the replacement retired.
   supersededTrashed?: boolean
+  // The file a conversion to another format superseded when it replaced the track's Apple
+  // Music entry. Kept apart from replacesPath, which the next job sends: a later re-sync
+  // must not replace the entry again from a file no library indexes any more.
+  supersededPath?: string
 }

@@ -135,6 +135,8 @@ export interface ProcessTrackDeps {
   // Where a fresh library entry's file lives, and the rollback for an add that must
   // not stand — both only exercised by the "Apple Music only" copy verification below.
   appleMusicEntryLocation: (persistentId: string) => Promise<string>
+  // The same file read with the "artist - name" Music shows for the entry right now.
+  appleMusicEntry: (persistentId: string) => Promise<{ path: string; label: string }>
   deleteAppleMusic: (persistentId: string, expectedLabel: string) => Promise<unknown>
   // Copies the superseded entry's normal playlists, play count, rating and favorite onto
   // the one that replaces it (see replaceAppleMusicCopy).
@@ -535,14 +537,18 @@ export async function runProcessTrack(
           // An entry in another format than the output can't be retagged into it: Music
           // keeps playing the old file. Compared by format, not path, since the file
           // written (a temp, or the output Music copies from) is never the entry's own.
-          const entryPath = job.musicPersistentId
-            ? await deps.appleMusicEntryLocation(job.musicPersistentId).catch(() => '')
-            : ''
-          if (entryPath && !formatMatchesInput(format, entryPath)) {
-            const replaced = await replaceAppleMusicCopy(job, target, coverPath, deps, tmpDir)
+          // Retired under the name Music shows: the job's tags may be edited or matched.
+          const entry = job.musicPersistentId
+            ? await deps.appleMusicEntry(job.musicPersistentId).catch(() => undefined)
+            : undefined
+          if (entry?.path && !formatMatchesInput(format, entry.path)) {
+            const replaced = await replaceAppleMusicCopy(job, target, coverPath, deps, tmpDir, {
+              persistentId: job.musicPersistentId,
+              label: entry.label,
+            })
             musicPersistentId = replaced.added
             oldMusicCopyKept = replaced.oldCopyKept
-            if (!replaced.oldCopyKept) supersededPath = entryPath
+            if (!replaced.oldCopyKept) supersededPath = entry.path
             verified = true
           } else {
             musicPersistentId = job.musicPersistentId
