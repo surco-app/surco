@@ -274,6 +274,15 @@ describe('applemusic:update', () => {
     expect(updateInAppleMusic).not.toHaveBeenCalled()
   })
 
+  // An unanswered location may well be a file Music would rewrite with no copy taken.
+  it('leaves Music alone when it could not say where the entry’s file is', async () => {
+    appleMusicEntryLocation.mockRejectedValue(new Error('AppleEvent timed out (-1712)'))
+    await expect(handlers.get('applemusic:update')?.(null, job)).rejects.toThrow(
+      'appleMusicEntryUnread',
+    )
+    expect(updateInAppleMusic).not.toHaveBeenCalled()
+  })
+
   it('drops the backup when the entry is gone and Music touched nothing', async () => {
     updateInAppleMusic.mockResolvedValue(null)
     addToAppleMusic.mockReset().mockResolvedValue('NEW')

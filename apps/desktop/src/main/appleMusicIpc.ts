@@ -2,6 +2,7 @@ import { access, realpath } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, ipcMain } from 'electron'
 import log from 'electron-log/main'
+import { errorWithKey } from '../shared/errorKeys'
 import type {
   AppleMusicAddJob,
   AppleMusicPlaylist,
@@ -362,7 +363,9 @@ export function registerAppleMusicIpc(
                 upscale: settings.coverUpscale,
               })
             }
-            const location = await appleMusicEntryLocation(job.persistentId).catch(() => '')
+            const location = await appleMusicEntryLocation(job.persistentId).catch((err) => {
+              throw errorWithKey('appleMusicEntryUnread', err instanceof Error ? err.message : '')
+            })
             const kept = location ? await keepBeforeMusicRewrite(location) : null
             const updated = await updateInAppleMusic(job.persistentId, job.meta, prepared?.path)
             if (updated) return updated

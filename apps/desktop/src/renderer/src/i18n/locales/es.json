@@ -180,6 +180,7 @@
     "engineDjOpen": "Cierra Engine DJ antes de convertir: tiene la biblioteca abierta.",
     "noRoomForBackup": "No hay sitio en el disco para la copia de seguridad del original y su disco no tiene Papelera, así que no se ha tocado. Libera espacio y vuelve a intentarlo.",
     "noRoomBeforeMusicRewrite": "No queda sitio en Copias para la copia que Surco guarda antes de que Música reescriba el archivo, así que no se ha tocado. Libera espacio y vuelve a intentarlo.",
+    "appleMusicEntryUnread": "Música no ha dicho dónde está el archivo de la pista, así que no se le ha pedido ningún cambio. Vuelve a intentarlo.",
     "conversionCancelled": "Conversión cancelada.",
     "verifyUnknownTrack": "Esta comprobación ya no está disponible. Vuelve a convertir la pista para repetirla.",
     "sourceTagsUnread": "No se han podido leer las etiquetas de este archivo, así que no se ha tocado: convertirlo habría borrado las que tiene. Vuelve a cargarlo e inténtalo de nuevo.",
