@@ -1730,6 +1730,7 @@ describe('runProcessTrack — Apple Music only into the Media folder', () => {
       existsSync: vi.fn((p: string) => p === media),
       mkdir: vi.fn(async () => `${media}/Music/Artist`),
       appleMusicEntryLocation: vi.fn(async () => filed),
+      appleMusicHoldsFile: vi.fn(async () => false),
       ...overrides,
     })
   const musicJob = (over: Partial<ProcessJob> = {}) =>
@@ -1797,6 +1798,39 @@ describe('runProcessTrack — Apple Music only into the Media folder', () => {
       `${media}/Music/Artist/Album`,
       `${media}/Music/Artist`,
     ])
+  })
+
+  // The add script can fail after Music imported the file: the 60 s wait for the tags, a
+  // refused field or artwork, an Apple Event timeout. The entry it made already plays this
+  // file, and deleting it left a row that plays nothing.
+  it('keeps the file when an entry already plays it although the add failed', async () => {
+    const deps = intoMedia({
+      addToAppleMusic: vi.fn(async () => {
+        throw new Error('Apple Music no terminó de importar la pista a tiempo.')
+      }),
+      appleMusicHoldsFile: vi.fn(async () => true),
+    })
+
+    await expect(runProcessTrack(musicJob(), deps)).rejects.toThrow('a tiempo')
+
+    expect(deps.appleMusicHoldsFile).toHaveBeenCalledWith(filed, ['Title', 'Artist - Title'])
+    expect(deps.rm).not.toHaveBeenCalled()
+    expect(deps.rmdir).not.toHaveBeenCalled()
+  })
+
+  it('keeps the file when Music cannot be asked whether an entry plays it', async () => {
+    const deps = intoMedia({
+      addToAppleMusic: vi.fn(async () => {
+        throw new Error('AppleEvent timed out (-1712)')
+      }),
+      appleMusicHoldsFile: vi.fn(async () => {
+        throw new Error('Music file lookup failed')
+      }),
+    })
+
+    await expect(runProcessTrack(musicJob(), deps)).rejects.toThrow('-1712')
+
+    expect(deps.rm).not.toHaveBeenCalled()
   })
 
   // Music answering with the entry it already had holds nothing of the new file.

@@ -5,6 +5,7 @@ import {
   ADD_RETURNED_EXISTING,
   addToAppleMusic,
   appleMusicEntry,
+  appleMusicHoldsFile,
   appleScriptString,
   buildAddScript,
   buildCarryOverScript,
@@ -1151,6 +1152,33 @@ describe('Music entries for loaded files', () => {
 // renamed in Music. Measured 09/10 on a 2045-track SMB library: `whose location is` never
 // matched (35-45 s each), one track at a time took 102 s, the bulk lists 47 s with pairs
 // identical to the one-at-a-time read.
+// Asked before Surco deletes a conversion it wrote into the Media folder after a failed add:
+// an entry the add made anyway must keep its file.
+describe('appleMusicHoldsFile', () => {
+  const RS = '\u001e'
+  const FS = '\u001f'
+  const PID = '6E592CFE07A6246A'
+
+  it('says whether an entry plays the file', async () => {
+    const run = vi
+      .fn()
+      .mockResolvedValueOnce([PID, 'A', 'Title', ''].join(FS))
+      .mockResolvedValueOnce([PID, '/m/A - Title.wav'].join(FS))
+    await expect(appleMusicHoldsFile('/m/A - Title.wav', ['Title'], run)).resolves.toBe(true)
+    await expect(
+      appleMusicHoldsFile('/m/A - Title.wav', ['Title'], async () => ['X', 'A', 'B', ''].join(RS)),
+    ).resolves.toBe(false)
+  })
+
+  it('rejects when Music could not be asked, so the caller keeps the file', async () => {
+    await expect(
+      appleMusicHoldsFile('/m/a.wav', ['T'], async () => {
+        throw new Error('AppleEvent timed out (-1712)')
+      }),
+    ).rejects.toThrow()
+  })
+})
+
 describe('musicFileLocations', () => {
   const RS = '\u001e'
   const FS = '\u001f'

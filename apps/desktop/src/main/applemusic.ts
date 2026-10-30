@@ -938,6 +938,22 @@ export async function musicFileEntries(
   }
 }
 
+// Whether any entry plays this file, found the way musicEntryForFile finds one. A lookup
+// Music could not answer rejects instead of reading as "no entry".
+export async function appleMusicHoldsFile(
+  path: string,
+  titles: string[],
+  run: typeof runOsascript = runOsascript,
+): Promise<boolean> {
+  const { consulted, entries } = await musicFileEntries(
+    titles.map((title) => ({ path, title })),
+    true,
+    run,
+  )
+  if (!consulted) throw new Error('Music could not say which entries play the file')
+  return (entries[path]?.length ?? 0) > 0
+}
+
 export async function musicEntryForFile(
   path: string,
   titles: string[],

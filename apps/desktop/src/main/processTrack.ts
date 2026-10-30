@@ -124,6 +124,9 @@ export interface ProcessTrackDeps {
   rmdir: (path: string) => Promise<void>
   // The folder Music copies imports into ("media-folder-url"), undefined when unreadable.
   appleMusicMediaFolder?: () => Promise<string | undefined>
+  // Whether any library entry plays this file, looked up by the names it may carry.
+  // Rejects when Music could not be asked.
+  appleMusicHoldsFile?: (path: string, titles: string[]) => Promise<boolean>
   // Shown only on a real output collision; returns the user's choice. Encapsulates the
   // Electron message box so the branches below stay unit-testable.
   // reservedOnly: nothing is on disk under that name yet, only another job's claim on it.
@@ -311,11 +314,27 @@ function musicFolder(name: string | undefined, fallback: string): string {
 
 // A conversion written into the Media folder that Music never took: the file goes, then each
 // folder made for it while it is empty (another job of the run may have filed a track there).
+// An add that failed may still have imported it (the 60 s wait for the tags, a refused field,
+// an Apple Event timeout), so after one the file stays when an entry plays it, or when Music
+// cannot say: deleting it would leave that entry playing nothing. Its name is the job's title,
+// or the file name when Music read no tags (WAV).
 async function removeUnheldMediaCopy(
   file: string,
   madeFrom: string | undefined,
+  addTried: boolean,
+  job: ProcessJob,
   deps: ProcessTrackDeps,
 ): Promise<void> {
+  if (addTried) {
+    const titles = [job.meta.title, basename(file, extname(file))].filter(Boolean)
+    const held = await (deps.appleMusicHoldsFile?.(file, titles) ?? Promise.resolve(true)).catch(
+      () => true,
+    )
+    if (held) {
+      log.warn('process:track kept the Media folder copy a Music entry may play', file)
+      return
+    }
+  }
   try {
     await deps.rm(file, { recursive: false, force: true })
   } catch (e) {
@@ -356,6 +375,7 @@ export async function runProcessTrack(
   let mediaTarget: string | undefined
   let mediaDirsFrom: string | undefined
   let mediaHeld = false
+  let mediaAddTried = false
   // The path reserved via deps.reservePath, if any — released in finally regardless
   // of how the job ends.
   let reserved: string | undefined
@@ -632,6 +652,7 @@ export async function runProcessTrack(
       ? {
           ...deps,
           addToAppleMusic: async (file, meta, cover) => {
+            mediaAddTried = true
             const pid = await deps.addToAppleMusic(file, meta, cover)
             if (pid !== job.musicPersistentId && pid !== existingMusicEntry?.persistentId)
               mediaHeld = true
@@ -831,7 +852,8 @@ export async function runProcessTrack(
     deps.endJob(job.id)
     if (prepared) await prepared.cleanup()
     if (tmpDir) await deps.rm(tmpDir, { recursive: true, force: true })
-    if (mediaTarget && !mediaHeld) await removeUnheldMediaCopy(mediaTarget, mediaDirsFrom, deps)
+    if (mediaTarget && !mediaHeld)
+      await removeUnheldMediaCopy(mediaTarget, mediaDirsFrom, mediaAddTried, job, deps)
     if (reserved) deps.releasePath(reserved)
   }
 }
