@@ -11,6 +11,7 @@ import {
   inflateEngineBlob,
   quickCueSlotBytes,
 } from './engineBlobs'
+import { shiftEnginePerformance } from './engineRepoint'
 
 const REAL_TRACK_DATA =
   '00000044789C7378DAD1C000030F2540A4A8FD439FD8054086FD5DD7F52049FB933296090CB80100CE5E09F2'
@@ -177,5 +178,92 @@ describe('Engine DJ performance blobs', () => {
 
   it('reads a loops blob that does not fit its layout as nothing', () => {
     expect(decodeLoops(Buffer.from('0000000801020304', 'hex'))).toBeNull()
+  })
+})
+
+const SET_LOOP = `05${Buffer.from('Break').toString('hex')}000000008088154100000000A0EA1A410101FF00CC00`
+const REAL_SHAPED_LOOPS = `0800000000000000${SET_LOOP}${EMPTY_LOOP.repeat(7)}`
+
+// The byte ranges that hold a position or a rate, walked straight off the bytes rather
+// than through the decoders under test.
+function positionRanges(blob: 'trackData' | 'beatData' | 'quickCues' | 'loops', raw: Buffer) {
+  const ranges: [number, number][] = []
+  if (blob === 'trackData') ranges.push([0, 16])
+  if (blob === 'beatData') {
+    ranges.push([0, 16])
+    let at = 17
+    for (let g = 0; g < 2; g++) {
+      const count = Number(raw.readBigInt64BE(at))
+      for (let i = 0; i < count; i++) ranges.push([at + 8 + i * 24, at + 16 + i * 24])
+      at += 8 + count * 24
+    }
+  }
+  if (blob === 'quickCues') {
+    let at = 8
+    for (let i = 0; i < Number(raw.readBigInt64BE(0)); i++) {
+      const labelEnd = at + 1 + raw[at]
+      ranges.push([labelEnd, labelEnd + 8])
+      at = labelEnd + 12
+    }
+    ranges.push([at, at + 8], [at + 9, at + 17])
+  }
+  if (blob === 'loops') {
+    let at = 8
+    for (let i = 0; i < Number(raw.readBigInt64LE(0)); i++) {
+      const labelEnd = at + 1 + raw[at]
+      ranges.push([labelEnd, labelEnd + 16])
+      at = labelEnd + 22
+    }
+  }
+  return ranges
+}
+
+const UNSET: Record<string, string> = {
+  quickCues: 'bff0000000000000',
+  loops: '000000000000f0bf000000000000f0bf',
+}
+
+function masked(raw: Buffer, ranges: [number, number][]): Buffer {
+  const copy = Buffer.from(raw)
+  for (const [start, end] of ranges) copy.fill(0, start, end)
+  return copy
+}
+
+describe('shifting real Engine DJ blobs', () => {
+  it('reads the set loop laid out as the real blob lays out its slots', () => {
+    expect(decodeLoops(Buffer.from(REAL_SHAPED_LOOPS, 'hex'))?.[0]).toEqual({
+      label: 'Break',
+      start: 8 * 44100,
+      end: 10 * 44100,
+      startSet: true,
+      endSet: true,
+      argb: 0xff00cc00,
+    })
+  })
+
+  // Engine reads these blobs back with no checksum and no tolerance: a flag, a label byte or
+  // the padding after the grid moved by the rewrite is a library Engine may refuse or misread.
+  // Only the positions and the rate may change, and every one of them must.
+  it('changes only the positions and the rate, byte for byte everywhere else', () => {
+    const before = {
+      trackData: Buffer.from(REAL_TRACK_DATA, 'hex'),
+      overviewWaveFormData: null,
+      beatData: Buffer.from(REAL_BEAT_DATA, 'hex'),
+      quickCues: Buffer.from(REAL_QUICK_CUES, 'hex'),
+      loops: Buffer.from(REAL_SHAPED_LOOPS, 'hex'),
+    }
+    const after = shiftEnginePerformance(before, { trimmedMs: 1900, sampleRateHz: 48000 })
+    for (const blob of ['trackData', 'beatData', 'quickCues', 'loops'] as const) {
+      const raw = (b: Uint8Array | null) =>
+        blob === 'loops' ? Buffer.from(b ?? []) : inflateEngineBlob(b ?? new Uint8Array(5))
+      const was = raw(before[blob])
+      const now = raw(after[blob])
+      const ranges = positionRanges(blob, was)
+      expect(now.length, blob).toBe(was.length)
+      expect(masked(now, ranges).equals(masked(was, ranges)), blob).toBe(true)
+      const moved = ranges.filter(([s, e]) => !now.subarray(s, e).equals(was.subarray(s, e)))
+      const unset = ranges.filter(([s, e]) => was.subarray(s, e).toString('hex') === UNSET[blob])
+      expect(moved.length + unset.length, blob).toBe(ranges.length)
+    }
   })
 })
