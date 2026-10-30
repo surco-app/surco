@@ -134,6 +134,13 @@ function judge(db: RekordboxDb, e: RekordboxExpect, find: FindOptions): PlaceChe
     return check('mismatch', 'rekordboxMissing')
   }
 
+  // The source had several rows: whichever one moved, the others are still in playlists on
+  // the old file or beside the new one, so it never reads as done, added or not.
+  if (e.before === 'ambiguous') {
+    const ids = new Set([...on, ...rowsOn(db, e.from, find)].map((r) => String(r.ID)))
+    return check('mismatch', 'rekordboxAmbiguous', { count: ids.size })
+  }
+
   const row = on[0]
   const id = String(row.ID)
   const before = typeof e.before === 'object' ? e.before : null

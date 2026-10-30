@@ -366,6 +366,16 @@ describe('checkRekordbox', () => {
     ])
   })
 
+  it('an added row over an ambiguous source is rekordboxAmbiguous, never ok', () => {
+    const db = collection([{}, {}, { path: TO, fileType: 11, cuesMs: [] }])
+    write(db, `UPDATE djmdContent SET FileSize = ? WHERE ID = '102'`, SIZE)
+    expect(checkOne(db, expectFor('ambiguous', { added: true }))[0]).toEqual({
+      place: 'rekordbox',
+      state: 'mismatch',
+      detail: { key: 'rekordboxAmbiguous', params: { count: 3 } },
+    })
+  })
+
   it('a check whose snapshot failed is unreadable whatever the row says', () => {
     const db = collection([{}])
     expect(checkOne(db, expectFor('unreadable'))[0]).toEqual({
@@ -382,8 +392,8 @@ describe('checkRekordbox', () => {
     repoint(db, '100')
     expect(checkOne(db, expectFor('ambiguous'))[0]).toEqual({
       place: 'rekordbox',
-      state: 'unreadable',
-      detail: { key: 'rekordboxUnreadable' },
+      state: 'mismatch',
+      detail: { key: 'rekordboxAmbiguous', params: { count: 2 } },
     })
   })
 
