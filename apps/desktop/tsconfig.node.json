@@ -15,6 +15,7 @@
   "include": [
     "src/testTmpRoot.ts",
     "src/testTmpRoot.test.ts",
+    "src/scenarios/rekordboxFixture.ts",
     "src/main/**/*",
     "src/shared/**/*",
     "src/preload/**/*",
