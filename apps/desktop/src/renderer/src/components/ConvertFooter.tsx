@@ -36,12 +36,12 @@ import { FOOTER_BAR } from './SplitButton'
 import { Tooltip } from './Tooltip'
 import { detailText, VerifiedPopover } from './VerifiedPopover'
 
-// The one place the amber line names when several fail: a wrong answer before a place that
-// could not be read, then the file before the libraries that follow it, since a library
-// pointing at a bad file is fixed by fixing the file.
 // The places whose detail keys carry another prefix than the place's own name.
 const DETAIL_PREFIX: Partial<Record<PlaceCheck['place'], string>> = { appleMusic: 'music' }
 
+// The one place the amber line names when several fail: a wrong answer before a place that
+// could not be read, then the file before the libraries that follow it, since a library
+// pointing at a bad file is fixed by fixing the file.
 function worstCheck(checks: PlaceCheck[]): PlaceCheck | undefined {
   const rank = (c: PlaceCheck) =>
     (c.state === 'mismatch' ? 0 : c.state === 'unreadable' ? 1 : 2) * PLACE_ORDER.length +
