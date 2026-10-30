@@ -538,8 +538,10 @@ export async function runProcessTrack(
           // keeps playing the old file. Compared by format, not path, since the file
           // written (a temp, or the output Music copies from) is never the entry's own.
           // Retired under the name Music shows: the job's tags may be edited or matched.
+          // Only an entry that is gone falls back to update ?? add; a read that fails is a
+          // failed Apple Music step, never a silent re-tag of the old file.
           const entry = job.musicPersistentId
-            ? await deps.appleMusicEntry(job.musicPersistentId).catch(() => undefined)
+            ? await deps.appleMusicEntry(job.musicPersistentId)
             : undefined
           if (entry?.path && !formatMatchesInput(format, entry.path)) {
             const replaced = await replaceAppleMusicCopy(job, target, coverPath, deps, tmpDir, {

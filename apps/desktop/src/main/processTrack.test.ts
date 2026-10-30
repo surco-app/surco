@@ -2127,12 +2127,8 @@ describe('runProcessTrack — converting a library track to another format', () 
     expect(result.supersededPath).toBeUndefined()
   })
 
-  it('falls back to updating the entry when Music cannot say where it points', async () => {
-    const deps = converting('', {
-      appleMusicEntry: vi.fn(async () => {
-        throw new Error('Music got an error (-1728)')
-      }),
-    })
+  it('falls back to updating the entry when it no longer exists in Music', async () => {
+    const deps = converting('')
 
     const result = await runProcessTrack(libraryJob({ keepOutputCopy: true }), deps)
 
@@ -2140,6 +2136,34 @@ describe('runProcessTrack — converting a library track to another format', () 
     expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
     expect(result.musicPersistentId).toBe('updated-id')
     expect(result.supersededPath).toBeUndefined()
+  })
+
+  // A read that fails is not an entry that is gone: falling back to the update re-tagged the
+  // AIFF, discarded the WAV and still reported the track added, the bug this replaces.
+  it('fails the Apple Music step when Music cannot be asked where the entry points', async () => {
+    const deps = converting('', {
+      appleMusicEntry: vi.fn(async () => {
+        throw new Error('AppleEvent timed out (-1712)')
+      }),
+    })
+
+    const result = await runProcessTrack(libraryJob({ keepOutputCopy: true }), deps)
+
+    expect(deps.updateInAppleMusic).not.toHaveBeenCalled()
+    expect(deps.addToAppleMusic).not.toHaveBeenCalled()
+    expect(result.appleMusicFailed).toBe(true)
+    expect(result.musicPersistentId).toBeUndefined()
+  })
+
+  it('fails the job in "Apple Music only" when Music cannot be asked where the entry points', async () => {
+    const deps = converting('', {
+      appleMusicEntry: vi.fn(async () => {
+        throw new Error('AppleEvent timed out (-1712)')
+      }),
+    })
+
+    await expect(runProcessTrack(libraryJob(), deps)).rejects.toThrow('-1712')
+    expect(deps.updateInAppleMusic).not.toHaveBeenCalled()
   })
 
   // The batch this was measured for is auto-matched AIFFs: the job's tags are the match,
