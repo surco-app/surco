@@ -289,6 +289,11 @@ const K_ROWS: Row[] = [
     programs: 'rekordbox',
     state: 'closed',
     quality: 'source',
+    expectedKey: 'rekordboxAmbiguous',
+    expectBroken: [
+      { invariant: 'points', why: 'con dos filas para el mismo fichero rekordbox no se toca' },
+      { invariant: 'unique', why: 'ninguna fila pasa al fichero nuevo porque no se escribe' },
+    ],
   },
   {
     id: 'K09',

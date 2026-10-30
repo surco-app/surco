@@ -189,6 +189,15 @@ describe('the results matrix cells', () => {
     }
   })
 
+  // Twin rows are one file reached two ways; Surco must not pick one, so the row stays on
+  // the old file and none points at the new one. Without declaring that, the cell could only
+  // be green if Surco wrote a guess, the bug it exists to catch.
+  it('expects the twin rows left alone and the ambiguity named', () => {
+    const twins = CELLS.find((cell) => cell.id === 'K08')
+    expect(twins?.expectedKey).toBe('rekordboxAmbiguous')
+    expect(twins?.expectBroken?.map((b) => b.invariant)).toEqual(['points', 'unique'])
+  })
+
   it('turns each quality into the settings that change the samples', () => {
     expect(qualitySettings('source')).toEqual({ keepMp3Sources: false })
     expect(qualitySettings('rate48')).toEqual({ keepMp3Sources: false, outputSampleRate: '48000' })
