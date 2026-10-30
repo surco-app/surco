@@ -2112,7 +2112,7 @@
     "reviewDuplicateFileUnsettled": "Reste sur le disque car une bibliothèque n'a pas été mise à jour",
     "reviewDuplicateFileUsed": "Reste sur le disque car rekordbox, Engine DJ ou Traktor l'utilisent",
     "reviewDuplicateFileTrash": "Mis à la Corbeille",
-    "reviewDuplicateFileSurco": "Gardé dans Copies de sauvegarde car ce disque n'a pas de Corbeille",
+    "reviewDuplicateFileSurco": "Gardé dans Sauvegardes car ce disque n'a pas de Corbeille",
     "reviewDuplicateFileTrashFailed": "Reste sur le disque car il n'a pas pu être mis à la Corbeille ({{error}})",
     "reviewDuplicateFileMusic": "Reste sur le disque car Music l'a encore",
     "listReviewDuplicateNotInMusic": "Pas dans Music",
