@@ -123,7 +123,7 @@ const baseName = (file: string): string => file.replace(/\.[^.]*$/, '')
 // ever contain — a space or "/" would let a value straddling the boundary collide
 // with a different split of the same three strings. NUL can't appear in any real
 // filesystem path, so it can't collide.
-const key = (volume: string, dir: string, file: string): string =>
+export const key = (volume: string, dir: string, file: string): string =>
   `${volume.normalize('NFC')}\0${dir.normalize('NFC')}\0${file.normalize('NFC')}`
 
 // A real collection can be tens of thousands of ENTRY blocks; scanning every patch
