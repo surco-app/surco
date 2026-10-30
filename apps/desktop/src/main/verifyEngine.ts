@@ -223,9 +223,9 @@ function judge(
   if (typeof before !== 'object')
     return check('ok', 'engineOk', { format: formatOf(extname(e.to)) })
 
-  // Engine's repoint only moves the file columns; with the samples kept, a cue, beat or
-  // loop that changed is one the DJ set and lost. A re-encode may move them, but what the
-  // row had must still be there.
+  // With the samples kept, Engine's repoint moves only the file columns, so a cue, beat or
+  // loop that changed is one the DJ set and lost. A trim or a resample moves them, checked
+  // below against the cut, but what the row had must still be there.
   const now = performanceOf(db, row.id)
   const changed = PERFORMANCE.find((field) =>
     e.samplesKept ? now[field] !== before[field] : before[field] !== EMPTY && now[field] === EMPTY,
