@@ -136,8 +136,8 @@ describe('syncCollection on the boot disk', () => {
   describe('a conversion into another folder', () => {
     const cue = (name: string, start: string, hotcue: number) =>
       `<CUE_V2 NAME="${name}" DISPL_ORDER="0" TYPE="0" START="${start}" LEN="0.000000" REPEATS="-1" HOTCUE="${hotcue}"></CUE_V2>`
-    const entryAt = (dir: string, file: string) =>
-      `<ENTRY TITLE="Uno"><LOCATION DIR="${dir}" FILE="${file}" VOLUME="Macintosh HD"></LOCATION>${cue('Intro', '10000.000000', 1)}${cue('Break', '15000.000000', 2)}</ENTRY>`
+    const entryAt = (dir: string, file: string, volume = 'Macintosh HD') =>
+      `<ENTRY TITLE="Uno"><LOCATION DIR="${dir}" FILE="${file}" VOLUME="${volume}"></LOCATION>${cue('Intro', '10000.000000', 1)}${cue('Break', '15000.000000', 2)}</ENTRY>`
     const source = entryAt('/:Users/:dj/:M/:', 'uno.mp3')
     const converted = {
       volume: '',
@@ -149,6 +149,55 @@ describe('syncCollection on the boot disk', () => {
       outputDir: '/:Users/:dj/:Out/:',
       outputFile: 'uno.aiff',
     }
+
+    // A NAS path names its volume and a boot-disk one leaves it empty: the two locations
+    // still differ, so the entry on the share keeps its cues.
+    it('leaves the cues of a source on a NAS when the output lands on the boot disk', async () => {
+      const shared = entryAt('/:M/:', 'uno.mp3', 'NAS')
+      writeFileSync(
+        nmlPath,
+        `<NML VERSION="19"><COLLECTION ENTRIES="1">\n${shared}\n</COLLECTION></NML>`,
+      )
+      const fromNas = { ...converted, volume: 'NAS', dir: '/:M/:' }
+
+      const result = await syncCollection(nmlPath, [fromNas], session, 'Macintosh HD')
+
+      const written = readFileSync(nmlPath, 'utf8')
+      expect(written).toContain(shared)
+      expect(
+        checkTraktor(
+          written,
+          [
+            {
+              patch: fromNas,
+              before: result.before?.[0] ?? null,
+              cues: result.cues?.[0],
+              stranded: false,
+            },
+          ],
+          'Macintosh HD',
+        )[0]?.detail.key,
+      ).toBe('traktorOk')
+    })
+
+    // Beside the source, but the collection already has the converted file: the entry is not
+    // moved onto a path another one holds, so it stays on the MP3 with its cues.
+    it('leaves the source cues when the converted file already has its own entry', async () => {
+      const output = entryAt('/:Users/:dj/:M/:', 'uno.aiff')
+      writeFileSync(
+        nmlPath,
+        `<NML VERSION="19"><COLLECTION ENTRIES="2">\n${source}\n${output}\n</COLLECTION></NML>`,
+      )
+
+      await syncCollection(
+        nmlPath,
+        [{ ...converted, newFile: 'uno.aiff', outputDir: converted.dir }],
+        session,
+        'Macintosh HD',
+      )
+
+      expect(readFileSync(nmlPath, 'utf8')).toContain(source)
+    })
 
     it('leaves the cues of the entry still on the source byte for byte', async () => {
       writeFileSync(
