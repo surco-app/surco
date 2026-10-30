@@ -2861,8 +2861,14 @@
     "shieldLabel": "Qué se comprobó",
     "title": "Qué se comprobó",
     "pendingLine": {
-      "addedToAppleMusic": "Añadido a Apple Music · {{programs}} al cerrarlo",
-      "exportedAs": "Exportado como {{format}} · {{programs}} al cerrarlo"
+      "addedToAppleMusic_one": "Añadido a Apple Music · {{programs}} al cerrarlo",
+      "addedToAppleMusic_other": "Añadido a Apple Music · {{programs}} al cerrarlos",
+      "exportedAs_one": "Exportado como {{format}} · {{programs}} al cerrarlo",
+      "exportedAs_other": "Exportado como {{format}} · {{programs}} al cerrarlos"
+    },
+    "plainLine": {
+      "addedToAppleMusic": "Añadido a Apple Music",
+      "exportedAs": "Exportado como {{format}}"
     },
     "places": {
       "file": "Fichero",

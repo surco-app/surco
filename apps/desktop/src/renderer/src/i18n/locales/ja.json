@@ -2861,8 +2861,14 @@
     "shieldLabel": "確認した内容",
     "title": "確認した内容",
     "pendingLine": {
-      "addedToAppleMusic": "Apple Musicに追加済み · {{programs}}は終了時に反映",
-      "exportedAs": "{{format}}で書き出し済み · {{programs}}は終了時に反映"
+      "addedToAppleMusic_one": "Apple Music に追加 · {{programs}}は終了時に反映",
+      "addedToAppleMusic_other": "Apple Music に追加 · {{programs}}は終了時に反映",
+      "exportedAs_one": "{{format}} としてエクスポート · {{programs}}は終了時に反映",
+      "exportedAs_other": "{{format}} としてエクスポート · {{programs}}は終了時に反映"
+    },
+    "plainLine": {
+      "addedToAppleMusic": "Apple Music に追加",
+      "exportedAs": "{{format}} としてエクスポート"
     },
     "places": {
       "file": "ファイル",

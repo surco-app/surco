@@ -2861,8 +2861,14 @@
     "shieldLabel": "What was checked",
     "title": "What was checked",
     "pendingLine": {
-      "addedToAppleMusic": "Added to Apple Music · {{programs}} once closed",
-      "exportedAs": "Exported as {{format}} · {{programs}} once closed"
+      "addedToAppleMusic_one": "Added to Apple Music · {{programs}} once closed",
+      "addedToAppleMusic_other": "Added to Apple Music · {{programs}} once closed",
+      "exportedAs_one": "Exported as {{format}} · {{programs}} once closed",
+      "exportedAs_other": "Exported as {{format}} · {{programs}} once closed"
+    },
+    "plainLine": {
+      "addedToAppleMusic": "Added to Apple Music",
+      "exportedAs": "Exported as {{format}}"
     },
     "places": {
       "file": "File",

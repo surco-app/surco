@@ -257,6 +257,7 @@ describe('ConvertFooter done layout', () => {
             inputPath: '/a.wav',
             meta: {},
             musicPersistentId: 'ABCD1234',
+            verification: { status: 'ok', checks: [] as PlaceCheck[] },
           } as TrackItem
         }
         status={{ ...status(true), inMusicLibraryOnly: libraryOnly, musicAdded: added }}
@@ -598,7 +599,14 @@ describe('ConvertFooter verification', () => {
       }),
     )
     expect(screen.getByTestId('export-success')).toHaveTextContent(
-      'Añadido a Apple Music · rekordbox y Engine DJ al cerrarlo',
+      'Añadido a Apple Music · rekordbox y Engine DJ al cerrarlos',
+    )
+  })
+
+  it('two programs pending on an exported file agree in number too', () => {
+    render(verified([fileOk, pending('rekordbox', 'rekordbox'), pending('engine', 'Engine DJ')]))
+    expect(screen.getByTestId('export-success')).toHaveTextContent(
+      /^Exportado como WAV · rekordbox y Engine DJ al cerrarlos$/,
     )
   })
 
@@ -623,6 +631,24 @@ describe('ConvertFooter verification', () => {
     rerender(verified([fileOk, ok('rekordbox')], { music: true }))
     expect(screen.getByTestId('export-success')).toHaveTextContent(/^✓ Añadido a Apple Music$/)
     expect(screen.queryByTestId('verify-pending-icon')).toBeNull()
+  })
+
+  // Nothing re-read is nothing vouched for: a done track without a verification (one the
+  // job never got to check) reads plain, with no ✓ and no shield, and never hangs on
+  // "Comprobando…" waiting for a result that is not coming.
+  it('a done track with no verification never shows ✓ nor stays on Comprobando', () => {
+    const plain = (music: boolean): React.JSX.Element =>
+      cloneElement(footer(true), {
+        item: { id: 't1', status: 'done', inputPath: '/a.aiff', meta: {} } as TrackItem,
+        exportedFormat: 'wav',
+        status: { ...status(true), inMusicLibraryOnly: music },
+      })
+    const { rerender } = render(plain(false))
+    expect(screen.getByTestId('export-success')).toHaveTextContent(/^Exportado como WAV$/)
+    expect(screen.queryByTestId('verify-checking')).toBeNull()
+    expect(screen.queryByTestId('verify-shield')).toBeNull()
+    rerender(plain(true))
+    expect(screen.getByTestId('export-success')).toHaveTextContent(/^Añadido a Apple Music$/)
   })
 
   it('a pending track never shows the amber line or Reintentar', () => {

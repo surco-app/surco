@@ -2861,8 +2861,14 @@
     "shieldLabel": "O que foi verificado",
     "title": "O que foi verificado",
     "pendingLine": {
-      "addedToAppleMusic": "Adicionado ao Apple Music · {{programs}} ao fechar",
-      "exportedAs": "Exportado como {{format}} · {{programs}} ao fechar"
+      "addedToAppleMusic_one": "Adicionada ao Apple Music · {{programs}} ao fechar",
+      "addedToAppleMusic_other": "Adicionada ao Apple Music · {{programs}} ao fechar",
+      "exportedAs_one": "Exportado como {{format}} · {{programs}} ao fechar",
+      "exportedAs_other": "Exportado como {{format}} · {{programs}} ao fechar"
+    },
+    "plainLine": {
+      "addedToAppleMusic": "Adicionada ao Apple Music",
+      "exportedAs": "Exportado como {{format}}"
     },
     "places": {
       "file": "Arquivo",

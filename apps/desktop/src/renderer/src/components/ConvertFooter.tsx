@@ -179,19 +179,23 @@ export function ConvertFooter({
   // A single track's re-read gates its done line: "Comprobando…" from the job's last stage
   // until every check is back, the line of always (with its ✓) only once all are ok, and
   // the programs still to apply a queued write named in place of the ✓. A mismatch keeps
-  // the success line away for the amber line that answers it. Multi keeps its counts.
+  // the success line away for the amber line that answers it. A track with no verification
+  // was never re-read, so it reads plain: no ✓, no shield. Multi keeps its counts.
   const verification = isMulti ? undefined : item.verification
+  const unverified = !isMulti && !verification
   const checking =
     !isMulti &&
     ((showDone && verification?.status === 'checking') ||
       (item.status === 'processing' && item.stage === 'verify'))
-  const pendingPrograms =
+  const pendingPlaces =
     verification?.status === 'pending'
-      ? new Intl.ListFormat(i18n.language, { type: 'conjunction' }).format(
-          verification.checks
-            .filter((c) => c.state === 'pending')
-            .map((c) => tr(`verify.places.${c.place}`)),
-        )
+      ? verification.checks
+          .filter((c) => c.state === 'pending')
+          .map((c) => tr(`verify.places.${c.place}`))
+      : []
+  const pendingPrograms =
+    pendingPlaces.length > 0
+      ? new Intl.ListFormat(i18n.language, { type: 'conjunction' }).format(pendingPlaces)
       : null
   const verifyMismatch = verification?.status === 'mismatch'
   const musicPrimary = destination === 'appleMusic' || hasMusicCopy
@@ -234,8 +238,13 @@ export function ConvertFooter({
       ?.focus()
   })
   const addedLine = pendingPrograms
-    ? tr('verify.pendingLine.addedToAppleMusic', { programs: pendingPrograms })
-    : tr('editor.addedToAppleMusic')
+    ? tr('verify.pendingLine.addedToAppleMusic', {
+        programs: pendingPrograms,
+        count: pendingPlaces.length,
+      })
+    : unverified
+      ? tr('verify.plainLine.addedToAppleMusic')
+      : tr('editor.addedToAppleMusic')
   const checkingLine = (
     <p
       data-testid="verify-checking"
@@ -334,9 +343,12 @@ export function ConvertFooter({
                         tr('verify.pendingLine.exportedAs', {
                           format: (exportedFormat ?? '').toUpperCase(),
                           programs: pendingPrograms,
+                          count: pendingPlaces.length,
                         })
                       ) : (
-                        tr('editor.exportedAs', { format: (exportedFormat ?? '').toUpperCase() })
+                        tr(unverified ? 'verify.plainLine.exportedAs' : 'editor.exportedAs', {
+                          format: (exportedFormat ?? '').toUpperCase(),
+                        })
                       )}
                     </p>
                   )}
