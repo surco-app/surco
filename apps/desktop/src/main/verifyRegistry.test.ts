@@ -507,6 +507,60 @@ describe('verify registry', () => {
     expect(deps.readRekordbox).not.toHaveBeenCalled()
   })
 
+  it('a track verified while the rest of its batch is still read is not forgotten before its emit', async () => {
+    let finish: (v: PlaceCheck[]) => void = () => {}
+    const { deps, registry } = setup()
+    deps.readEngine.mockReturnValueOnce(new Promise((r) => (finish = r)))
+    registry.register(entry('x'))
+    registry.register(
+      entry('y', {
+        places: new Set(['file', 'engine']),
+        engine: { id: 1, quickCues: 'q', beatData: 'b', loops: 'l' },
+      }),
+    )
+    const flushing = registry.afterFlush(written)
+    await new Promise((r) => setTimeout(r, 0))
+    registry.register(entry('z'))
+
+    finish([ok('engine')])
+    await flushing
+
+    expect(deps.emit).toHaveBeenCalledWith('x', {
+      status: 'ok',
+      checks: [ok('file', 'fileIdentical'), ok('rekordbox')],
+    })
+  })
+
+  it('a retry that turns ok while Music is still read is not forgotten before its emit', async () => {
+    let finish: (v: PlaceCheck) => void = () => {}
+    const { deps, registry } = setup({
+      exists: vi.fn<VerifyRegistryDeps['exists']>(async () => false),
+    })
+    deps.readMusic.mockReturnValueOnce(new Promise((r) => (finish = r)))
+    const checks = [mismatch('file', 'filePcmDiffers'), ok('appleMusic', 'musicOne')]
+    registry.register(
+      entry('m', {
+        music: musicExpect,
+        places: new Set(['file', 'appleMusic']),
+        verification: { status: 'mismatch', checks },
+      }),
+    )
+    await registry.afterFlush(written)
+    const retrying = registry.retry('m')
+    await new Promise((r) => setTimeout(r, 0))
+    registry.register(entry('n', { places: new Set(['file']) }))
+    await registry.afterFlush(written)
+    registry.register(entry('o', { places: new Set(['file']) }))
+
+    finish(ok('appleMusic', 'musicOne'))
+    await retrying
+
+    expect(deps.emit).toHaveBeenLastCalledWith('m', {
+      status: 'ok',
+      checks: [ok('file', 'fileIdentical'), ok('appleMusic', 'musicOne')],
+    })
+  })
+
   it('a new batch forgets the tracks already verified and keeps the open ones', async () => {
     const { deps, registry } = setup()
     deps.readRekordbox.mockResolvedValueOnce([

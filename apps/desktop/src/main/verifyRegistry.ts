@@ -132,6 +132,22 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     if (live(e)) deps.emit(e.trackId, e.verification)
   }
 
+  // Tracks a flush, a queue apply or a retry is still working on: a new batch must not clear
+  // one that turned ok halfway, or its emit would find it gone.
+  const working = new Map<VerifyEntry, number>()
+  async function during<T>(list: VerifyEntry[], work: () => Promise<T>): Promise<T> {
+    for (const e of list) working.set(e, (working.get(e) ?? 0) + 1)
+    try {
+      return await work()
+    } finally {
+      for (const e of list) {
+        const n = (working.get(e) ?? 1) - 1
+        if (n === 0) working.delete(e)
+        else working.set(e, n)
+      }
+    }
+  }
+
   const hold = (place: Library, e: VerifyEntry) => {
     awaiting[place].add(e)
     replace(e, pending(place), place)
@@ -193,7 +209,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     register(e: VerifyEntry): void {
       if (batch.size === 0)
         for (const [id, old] of entries)
-          if (old.verification.status === 'ok') {
+          if (old.verification.status === 'ok' && !working.has(old)) {
             entries.delete(id)
             traktorBefore.delete(id)
           }
@@ -207,24 +223,26 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     async afterFlush(outcome: FlushOutcome): Promise<void> {
       const flushed = [...batch].filter(live)
       batch = new Set()
-      await Promise.all(
-        LIBRARIES.map(async (place) => {
-          const listed = flushed.filter((e) => e.places.has(place))
-          const touched = listed.filter((e) => touches(e, place))
-          const result = outcome[place]
-          for (const e of listed)
-            if (!touched.includes(e) || result === 'off') replace(e, null, place)
-          if (result === 'off') return
-          if (result === 'queued') for (const e of touched) hold(place, e)
-          else await check(place, touched, result)
-        }),
+      await during(flushed, () =>
+        Promise.all(
+          LIBRARIES.map(async (place) => {
+            const listed = flushed.filter((e) => e.places.has(place))
+            const touched = listed.filter((e) => touches(e, place))
+            const result = outcome[place]
+            for (const e of listed)
+              if (!touched.includes(e) || result === 'off') replace(e, null, place)
+            if (result === 'off') return
+            if (result === 'queued') for (const e of touched) hold(place, e)
+            else await check(place, touched, result)
+          }),
+        ),
       )
       for (const e of flushed) emit(e)
     },
 
     async afterQueueApplied(place: Library, result: QueueApplied): Promise<void> {
       const held = [...awaiting[place]]
-      await check(place, held, result)
+      await during(held, () => check(place, held, result))
       for (const e of held) emit(e)
     },
 
@@ -235,42 +253,46 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     async retry(trackId: string): Promise<'rerun-job' | 'rechecked'> {
       const e = entries.get(trackId)
       if (!e) throw new Error('verifyUnknownTrack')
-      const bad = (place: VerifyPlace) => stateOf(e, place) === 'mismatch'
-      const sourceGone =
-        (bad('file') || bad('appleMusic')) &&
-        (e.from.normalize('NFC') === e.to.normalize('NFC') || !(await deps.exists(e.from)))
-      if ((bad('file') || bad('appleMusic')) && !sourceGone) return 'rerun-job'
-
-      const rereadFile = sourceGone || stateOf(e, 'file') === 'unreadable'
-      const rereadMusic =
-        e.music !== undefined && (sourceGone || stateOf(e, 'appleMusic') === 'unreadable')
-      if (rereadFile) replace(e, await deps.readFile(e.file), 'file')
-      if (rereadMusic && e.music) replace(e, await deps.readMusic(e.music), 'appleMusic')
-      if (sourceGone && bad('file'))
-        replace(
-          e,
-          {
-            place: 'file',
-            state: 'mismatch',
-            detail: { key: 'fileSourceGone', params: { kept: e.originalKept ? 1 : 0 } },
-          },
-          'file',
-        )
-      for (const place of LIBRARIES) {
-        const state = stateOf(e, place)
-        if (state === 'unreadable') await check(place, [e], null)
-        else if (state === 'mismatch') {
-          hold(place, e)
-          if (!deps.requeue(place, e) && stateOf(e, place) === 'pending')
-            replace(e, checking(place), place)
-        }
-      }
-      emit(e)
-      return 'rechecked'
+      return during([e], () => recheck(e))
     },
 
     get(trackId: string): Verification | undefined {
       return entries.get(trackId)?.verification
     },
+  }
+
+  async function recheck(e: VerifyEntry): Promise<'rerun-job' | 'rechecked'> {
+    const bad = (place: VerifyPlace) => stateOf(e, place) === 'mismatch'
+    const sourceGone =
+      (bad('file') || bad('appleMusic')) &&
+      (e.from.normalize('NFC') === e.to.normalize('NFC') || !(await deps.exists(e.from)))
+    if ((bad('file') || bad('appleMusic')) && !sourceGone) return 'rerun-job'
+
+    const rereadFile = sourceGone || stateOf(e, 'file') === 'unreadable'
+    const rereadMusic =
+      e.music !== undefined && (sourceGone || stateOf(e, 'appleMusic') === 'unreadable')
+    if (rereadFile) replace(e, await deps.readFile(e.file), 'file')
+    if (rereadMusic && e.music) replace(e, await deps.readMusic(e.music), 'appleMusic')
+    if (sourceGone && bad('file'))
+      replace(
+        e,
+        {
+          place: 'file',
+          state: 'mismatch',
+          detail: { key: 'fileSourceGone', params: { kept: e.originalKept ? 1 : 0 } },
+        },
+        'file',
+      )
+    for (const place of LIBRARIES) {
+      const state = stateOf(e, place)
+      if (state === 'unreadable') await check(place, [e], null)
+      else if (state === 'mismatch') {
+        hold(place, e)
+        if (!deps.requeue(place, e) && stateOf(e, place) === 'pending')
+          replace(e, checking(place), place)
+      }
+    }
+    emit(e)
+    return 'rechecked'
   }
 }
