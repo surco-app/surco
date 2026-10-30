@@ -106,7 +106,7 @@ export async function syncCollection(
   //
   await markNewerThanCollection(nmlPath, detachedOutputPaths(original, located, onDisk))
 
-  return { written: true, matched: matchedPatchCount(original, patches, onDisk), before }
+  return { written: true, matched: matchedPatchCount(original, located, onDisk), before }
 }
 
 // Traktor builds a track's cover only when it finds the audio newer than the collection it

@@ -108,6 +108,26 @@ describe('syncCollection on the boot disk', () => {
     expect(readFileSync(nmlPath, 'utf8')).toContain('uno.flac')
   })
 
+  // The count is what the DJ reads as "N tracks updated"; a boot-disk track the write did
+  // move has to be in it.
+  it('counts a boot-disk track the write moved', async () => {
+    writeFileSync(
+      nmlPath,
+      NML.replace('DIR="/:M/:"', 'DIR="/:Users/:dj/:M/:"').replace(
+        'VOLUME="HD"',
+        'VOLUME="Macintosh HD"',
+      ),
+    )
+    const result = await syncCollection(
+      nmlPath,
+      [{ volume: '', dir: '/:Users/:dj/:M/:', file: 'uno.aiff', newFile: 'uno.flac' }],
+      session,
+      'Macintosh HD',
+    )
+
+    expect(result).toMatchObject({ written: true, matched: 1 })
+  })
+
   // A boot-disk path records an empty volume for the output as well as for the source. Read
   // as "no output known", the converted file's calibrated cues landed on the entry still
   // naming the MP3 left in its folder: every cue 51 ms early over audio that never changed.
