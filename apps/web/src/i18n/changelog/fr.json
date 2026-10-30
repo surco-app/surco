@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.18",
+    "date": "October 30, 2026",
+    "title": "Surco vérifie ce qu’il fait",
+    "items": [
+      {
+        "text": "Après une conversion, Surco relit ce qu’il a écrit dans le fichier, dans Apple Music, rekordbox, Engine DJ et Traktor. Le ✓ n’apparaît que si tout correspond, et le bouclier à côté montre « Ce qui a été vérifié ». Si quelque chose ne correspond pas, une ligne orange te dit quoi et où, avec « Réessayer », et l’ancien fichier n’est pas proposé à la corbeille tant que quelque chose l’utilise. Sur plusieurs morceaux, tu vois combien sont vérifiés, et le filtre « Ne correspondent pas » t’emmène vers les autres.",
+        "in": "1.18.0"
+      },
+      {
+        "text": "Convertis dans un autre format un morceau que tu as déjà dans Apple Music et Surco le remplace au lieu d’en laisser deux. Il reste dans ses playlists, avec ses écoutes et sa note, et rekordbox, Engine DJ et Traktor passent au nouveau fichier sans le retirer de leurs playlists. Entre AIFF, WAV, FLAC et ALAC, quand l’audio ne change pas, rekordbox garde son analyse, sa grille et ses cues.",
+        "in": "1.18.0"
+      },
+      {
+        "text": "Les morceaux que Surco envoie à Apple Music sont rangés dans le dossier de leur artiste et de leur album, les WAV aussi, qui finissaient avant dans « Unknown Album ».",
+        "in": "1.18.0"
+      },
+      {
+        "text": "Nouvel écran « Sauvegardes » en bas de la barre latérale. Il garde les cinq dernières sauvegardes datées de tes collections rekordbox, Engine DJ et Traktor, et de là tu remets une collection comme elle était. Dans « Fichiers de musique », tu vois les morceaux d’origine que Surco a gardés en les remplaçant.",
+        "in": "1.18.0"
+      },
+      {
+        "text": "Les playlists d’Apple Music s’ouvrent tout de suite avec tous leurs morceaux, et celle de toutes tes chansons apparaît en premier sous « Tous les morceaux ».",
+        "in": "1.18.0"
+      },
+      {
+        "text": "Le regroupement des MP3 et AIFF arrive dans Traktor et Apple Music à chaque conversion, et un numéro de piste « 3/12 » ou de disque « 1/2 » est enregistré tel quel au lieu de devenir 312 ou de disparaître.",
+        "in": "1.18.0"
+      }
+    ]
+  },
+  {
     "version": "1.17",
     "date": "October 29, 2026",
     "title": "Chaque logiciel DJ, à ta façon",

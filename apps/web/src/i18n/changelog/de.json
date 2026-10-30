@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.18",
+    "date": "October 30, 2026",
+    "title": "Surco prüft, was es tut",
+    "items": [
+      {
+        "text": "Nach dem Konvertieren liest Surco nach, was es in die Datei, in Apple Music, rekordbox, Engine DJ und Traktor geschrieben hat. Das ✓ erscheint nur, wenn alles stimmt, und das Schild daneben zeigt „Was geprüft wurde“. Stimmt etwas nicht, sagt dir eine orange Zeile was und wo, mit „Erneut versuchen“, und die alte Datei wird nicht für den Papierkorb angeboten, solange noch etwas sie nutzt. Bei mehreren Titeln siehst du, wie viele geprüft sind, und der Filter „Stimmen nicht“ bringt dich zu den übrigen.",
+        "in": "1.18.0"
+      },
+      {
+        "text": "Konvertierst du einen Titel, den du schon in Apple Music hast, in ein anderes Format, ersetzt Surco ihn, statt zwei zu hinterlassen. Er bleibt in seinen Playlists, mit Wiedergaben und Bewertung, und rekordbox, Engine DJ und Traktor wechseln zur neuen Datei, ohne ihn aus ihren Playlists zu nehmen. Zwischen AIFF, WAV, FLAC und ALAC behält rekordbox Analyse, Beatgrid und Cues, wenn sich das Audio nicht ändert.",
+        "in": "1.18.0"
+      },
+      {
+        "text": "Titel, die Surco zu Apple Music bringt, landen im Ordner ihres Interpreten und Albums, auch WAVs, die früher unter „Unknown Album“ landeten.",
+        "in": "1.18.0"
+      },
+      {
+        "text": "Neuer Bildschirm „Backups“ unten in der Seitenleiste. Er behält die letzten fünf datierten Backups deiner Sammlungen in rekordbox, Engine DJ und Traktor, und von dort setzt du eine Sammlung auf ihren alten Stand zurück. Unter „Musikdateien“ siehst du die Originalsongs, die Surco beim Ersetzen aufbewahrt hat.",
+        "in": "1.18.0"
+      },
+      {
+        "text": "Playlists aus Apple Music öffnen sich sofort mit allen Titeln, und die Playlist mit allen Songs steht als „Alle Titel“ ganz oben.",
+        "in": "1.18.0"
+      },
+      {
+        "text": "Die Gruppierung von MP3 und AIFF kommt bei jeder Konvertierung in Traktor und Apple Music an, und eine Titelnummer „3/12“ oder Disc-Nummer „1/2“ bleibt erhalten, statt zu 312 zu werden oder zu verschwinden.",
+        "in": "1.18.0"
+      }
+    ]
+  },
+  {
     "version": "1.17",
     "date": "October 29, 2026",
     "title": "Jedes DJ-Programm, wie du willst",

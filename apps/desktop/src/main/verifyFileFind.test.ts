@@ -36,10 +36,13 @@ describe('fileReaders.exists', () => {
     expect(listed).toEqual([])
   })
 
-  it('lists the folder only when the name as asked is not found', async () => {
+  it('finds a file whose name is stored in another Unicode form', async () => {
     const nfd = join(dir, 'Café.wav')
     writeFileSync(nfd, '')
     expect(await fileReaders.exists(join(dir, 'Café.wav'))).not.toBeNull()
+  })
+
+  it('lists the folder when the name as asked is not found', async () => {
     expect(await fileReaders.exists(join(dir, 'gone.wav'))).toBeNull()
     expect(listed).toEqual([dir])
   })

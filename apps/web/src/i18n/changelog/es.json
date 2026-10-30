@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.18",
+    "date": "30 de octubre de 2026",
+    "title": "Surco comprueba lo que hace",
+    "items": [
+      {
+        "text": "Al terminar de convertir, Surco vuelve a leer lo que ha escrito en el archivo, en Apple Music, en rekordbox, en Engine DJ y en Traktor. El ✓ solo aparece cuando todo cuadra, y el escudo de al lado te enseña «Qué se comprobó». Si algo no cuadra, una línea en ámbar te dice qué y dónde, con «Reintentar», y el archivo anterior no se ofrece para la papelera mientras algo lo use. En un lote ves cuántas pistas están comprobadas, y el filtro «No cuadran» te lleva a las que no.",
+        "in": "1.18.0"
+      },
+      {
+        "text": "Si conviertes a otro formato una pista que ya tienes en Apple Music, Surco la sustituye en vez de dejar dos. Sigue en sus listas, con sus reproducciones y su valoración, y rekordbox, Engine DJ y Traktor pasan al archivo nuevo sin sacarla de sus playlists. Entre AIFF, WAV, FLAC y ALAC, si el audio no cambia, rekordbox conserva su análisis, su rejilla y sus cues.",
+        "in": "1.18.0"
+      },
+      {
+        "text": "Las pistas que Surco lleva a Apple Music se guardan en la carpeta de su artista y su álbum, también los WAV, que antes acababan en «Unknown Album».",
+        "in": "1.18.0"
+      },
+      {
+        "text": "Nueva pantalla «Copias», abajo en la barra lateral. Guarda las cinco últimas copias de tus colecciones de rekordbox, Engine DJ y Traktor, cada una con su fecha, y desde ahí devuelves una colección a como estaba. En «Archivos de música» ves las canciones originales que Surco guardó al sustituirlas.",
+        "in": "1.18.0"
+      },
+      {
+        "text": "Las playlists de Apple Music se abren al momento con todas sus pistas, y la de todas tus canciones aparece la primera como «Todas las pistas».",
+        "in": "1.18.0"
+      },
+      {
+        "text": "La agrupación de los MP3 y AIFF llega a Traktor y a Apple Music en todas las conversiones, y un número de pista «3/12» o de disco «1/2» se guarda tal cual en vez de convertirse en 312 o perderse.",
+        "in": "1.18.0"
+      }
+    ]
+  },
+  {
     "version": "1.17",
     "date": "29 de octubre de 2026",
     "title": "Cada programa DJ, a tu manera",
