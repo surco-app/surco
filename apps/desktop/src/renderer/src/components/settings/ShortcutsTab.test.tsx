@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// ShortcutsTab reads window.api.platform at module load, so stub it before import.
+// ShortcutsTab reads window.api.platform when it renders, so every test starts on macOS.
 vi.hoisted(() => {
   ;(globalThis.window as unknown as { api: unknown }).api = { platform: 'darwin' }
 })
@@ -31,6 +31,27 @@ function renderTab(patch: PatchSynced = vi.fn()): void {
     <ShortcutsTab synced={synced} patch={patch} bindings={bindings} conflictIds={conflictIds} />,
   )
 }
+
+describe('ShortcutsTab on Windows', () => {
+  it('shows and records Ctrl chords on Windows, whichever platform the tab was first loaded under', () => {
+    const mac = window.api
+    ;(window as unknown as { api: { platform: string } }).api = { platform: 'win32' }
+    try {
+      const patch = vi.fn()
+      renderTab(patch)
+      expect(screen.getByTestId('shortcut-record-find-replace')).toHaveTextContent('Ctrl+F')
+      fireEvent.click(screen.getByTestId('shortcut-record-find-replace'))
+      fireEvent.keyDown(screen.getByTestId('shortcut-record-find-replace'), {
+        key: 'j',
+        code: 'KeyJ',
+        ctrlKey: true,
+      })
+      expect(patch).toHaveBeenCalledWith('shortcutOverrides', { 'find-replace': ['mod', 'j'] })
+    } finally {
+      ;(window as unknown as { api: unknown }).api = mac
+    }
+  })
+})
 
 // The trim commands only fire with the focus on a silence-editor handle, unlike every
 // other row in this tab — a user rebinding one of them needs to see that scope called

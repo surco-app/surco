@@ -14,8 +14,6 @@ import type { PatchSynced } from '../../lib/settingsTabs'
 import { formatShortcut } from '../../lib/shortcuts'
 import { Tooltip } from '../Tooltip'
 
-const isMac = isMacOS()
-
 // Los ámbitos presentes en la tabla, en su orden de declaración. Derivados y no listados a
 // mano para que un comando con ámbito nuevo salga en el tab sin tocar esto: sin fila no se
 // puede reasignar, que es justo lo que necesita quien no tiene su tecla.
@@ -54,6 +52,7 @@ interface Props {
 
 export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const isMac = isMacOS()
   // The command whose next keystroke is being recorded, or null when idle.
   const [recording, setRecording] = useState<string | null>(null)
   const [confirmResetAll, setConfirmResetAll] = useState(false)
