@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
@@ -39,11 +39,13 @@ import type { WebContents } from 'electron'
 import { ipcMain } from 'electron'
 import { makeRekordbox, rekordboxRow } from '../scenarios/rekordboxFixture'
 import type { Verification } from '../shared/verification'
+import { FILE_TYPES, openRekordboxDb } from './rekordboxDb'
 import { repointTracks } from './rekordboxLibrary'
 import type { QueueApply } from './rekordboxQueue'
 import { applyPatches } from './traktorNml'
 import { nmlPatchOf, type QueuedNmlPatch } from './traktorPatchQueue'
 import {
+  appVerifyRegistry,
   libraryReaders,
   libraryRequeue,
   queueVerification,
@@ -518,5 +520,50 @@ describe('queueVerification', () => {
     q.settled('rekordbox', applied)
     q.settled('rekordbox', applied)
     expect(afterQueueApplied).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('appVerifyRegistry', () => {
+  it('reads rekordbox at the path it is handed, after a flush, and emits ok for a repointed row', async () => {
+    const path = collection()
+    const to = join(mkdtempSync(join(tmpdir(), 'surco-verifyipc-')), 'Title.wav')
+    writeFileSync(to, Buffer.alloc(64))
+    const db = openRekordboxDb(path)
+    db?.prepare(
+      'UPDATE djmdContent SET FolderPath = ?, FileNameL = ?, FileType = ?, FileSize = ? WHERE ID = ?',
+    ).run(to, 'Title.wav', FILE_TYPES.wav, statSync(to).size, '100')
+    db?.close()
+    const emit = vi.fn<VerifyRegistryDeps['emit']>()
+    const registry = appVerifyRegistry({
+      paths: { rekordbox: () => path, engine: () => '', traktor: () => '' },
+      queues: {
+        rekordbox: { enqueue: vi.fn(), apply: vi.fn(), at: () => path, holds: () => false },
+        engine: { enqueue: vi.fn(), apply: vi.fn(), at: () => '', holds: () => false },
+        traktor: { enqueue: vi.fn(), apply: vi.fn(), at: () => '', holds: () => false },
+      },
+      emit,
+      readMusic: vi.fn<VerifyRegistryDeps['readMusic']>(),
+      realPath,
+      bootVolume: () => 'Macintosh HD',
+    })
+    registry.register(
+      entry({
+        to,
+        places: new Set(['rekordbox']),
+        rekordbox: { id: '100', cues: 2, analysisDataPath: '', analysed: 0 },
+        size: statSync(to).size,
+      } as Partial<VerifyEntry>),
+    )
+
+    await registry.afterFlush({ rekordbox: 'written', engine: 'off', traktor: 'off' })
+
+    expect(emit.mock.lastCall?.[1].status).toBe('ok')
+    expect(emit.mock.lastCall?.[1].checks).toContainEqual(
+      expect.objectContaining({
+        place: 'rekordbox',
+        state: 'ok',
+        detail: expect.objectContaining({ key: 'rekordboxOk' }),
+      }),
+    )
   })
 })

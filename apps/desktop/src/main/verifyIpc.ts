@@ -1,4 +1,4 @@
-import { readFile, stat } from 'node:fs/promises'
+import { access, readFile, stat } from 'node:fs/promises'
 import { ipcMain, type WebContents } from 'electron'
 import log from 'electron-log/main'
 import type { Verification } from '../shared/verification'
@@ -10,7 +10,13 @@ import { COLLECTION_WIDE, type QueueApply } from './rekordboxQueue'
 import { stillWaiting } from './rekordboxQueueWatch'
 import { queuedNmlPatch } from './traktorPatchQueue'
 import { checkEngine, type EngineBefore, snapshotEngineRow } from './verifyEngine'
-import type { QueueApplied, VerifyEntry, VerifyRegistryDeps } from './verifyRegistry'
+import { checkFile, fileReaders } from './verifyFile'
+import {
+  createVerifyRegistry,
+  type QueueApplied,
+  type VerifyEntry,
+  type VerifyRegistryDeps,
+} from './verifyRegistry'
 import { checkRekordbox, type RekordboxBefore, snapshotRekordboxRow } from './verifyRekordbox'
 import { checkTraktor } from './verifyTraktor'
 
@@ -241,4 +247,32 @@ export function queueVerification(registry: {
       logged(registry.afterQueueApplied(place, 'failed', false))
     },
   }
+}
+
+export interface AppVerifyOptions {
+  paths: { rekordbox: () => string; engine: () => string; traktor: () => string }
+  queues: Parameters<typeof libraryRequeue>[0]
+  emit: VerifyRegistryDeps['emit']
+  readMusic: VerifyRegistryDeps['readMusic']
+  realPath: (p: string) => string
+  bootVolume: () => string
+}
+
+export function appVerifyRegistry(o: AppVerifyOptions): ReturnType<typeof createVerifyRegistry> {
+  return createVerifyRegistry({
+    emit: o.emit,
+    ...libraryReaders(o.paths, { realPath: o.realPath, bootVolume: o.bootVolume }),
+    readFile: (e) => checkFile(e, fileReaders),
+    readMusic: o.readMusic,
+    requeue: libraryRequeue(o.queues),
+    exists: (path) =>
+      access(path).then(
+        () => true,
+        () => false,
+      ),
+    samePath: (a, b) => {
+      const key = pathKey({ realPath: o.realPath })
+      return key(a).normalize('NFC') === key(b).normalize('NFC')
+    },
+  })
 }
