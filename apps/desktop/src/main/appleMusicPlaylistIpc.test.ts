@@ -42,6 +42,12 @@ vi.mock('./appleMusicLibraryCache', () => ({
   loadLibraryCache: vi.fn(),
   saveLibraryCache: vi.fn(),
 }))
+const savePlaylistCache = vi.fn()
+const loadPlaylistCache = vi.fn()
+vi.mock('./appleMusicPlaylistCache', () => ({
+  savePlaylistCache: (...a: unknown[]) => savePlaylistCache(...a),
+  loadPlaylistCache: (...a: unknown[]) => loadPlaylistCache(...a),
+}))
 vi.mock('./cover', () => ({ hasCoverSource: () => false, prepareProcessedCover: vi.fn() }))
 
 // ./ffmpeg pulls in ./binaries, which resolves the bundled ffprobe at import
@@ -69,6 +75,8 @@ beforeEach(() => {
   readAppleMusicPlaylist.mockReset()
   readAppleMusicEntry.mockReset()
   readLibraryPlaylist.mockReset()
+  savePlaylistCache.mockReset()
+  loadPlaylistCache.mockReset()
   setPlatform('darwin')
 })
 
@@ -130,6 +138,17 @@ describe('applemusic:libraryPlaylistTracks', () => {
     expect(out).toEqual({ paths: ['/m/a.aiff'], missing: 0, total: 1 })
   })
 
+  it('keeps the read, so the playlist opens at once next time', async () => {
+    readLibraryPlaylist.mockResolvedValue({ paths: ['/m/a.aiff'], missing: 0, total: 1 })
+    await register()
+    await handlers.get('applemusic:libraryPlaylistTracks')?.({}, 'A1B2C3D4E5F60718')
+    expect(savePlaylistCache).toHaveBeenCalledWith('A1B2C3D4E5F60718', {
+      paths: ['/m/a.aiff'],
+      missing: 0,
+      total: 1,
+    })
+  })
+
   // The database may not hold a playlist made seconds ago, or may be closed to Surco: the
   // renderer then asks Music, so a failed read must say so rather than fail the playlist.
   it('returns null when the database cannot give the playlist', async () => {
@@ -147,6 +166,22 @@ describe('applemusic:libraryPlaylistTracks', () => {
       await handlers.get('applemusic:libraryPlaylistTracks')?.({}, 'A1B2C3D4E5F60718'),
     ).toBeNull()
     expect(readLibraryPlaylist).not.toHaveBeenCalled()
+  })
+})
+
+describe('applemusic:playlistCached', () => {
+  it('returns the last whole read of the playlist', async () => {
+    loadPlaylistCache.mockReturnValue({ paths: ['/m/a.aiff'], missing: 0 })
+    await register()
+    const out = await handlers.get('applemusic:playlistCached')?.({}, 'A1B2C3D4E5F60718')
+    expect(loadPlaylistCache).toHaveBeenCalledWith('A1B2C3D4E5F60718')
+    expect(out).toEqual({ paths: ['/m/a.aiff'], missing: 0 })
+  })
+
+  it('returns null off macOS', async () => {
+    setPlatform('win32')
+    await register()
+    expect(await handlers.get('applemusic:playlistCached')?.({}, 'A1B2C3D4E5F60718')).toBeNull()
   })
 })
 
