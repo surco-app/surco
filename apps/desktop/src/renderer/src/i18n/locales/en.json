@@ -2955,6 +2955,7 @@
       "traktorStillOld": "Traktor is still on the {{format}}",
       "traktorMissing": "The track is not in Traktor",
       "traktorAmbiguous": "Traktor has {{count}} entries for this track",
+      "traktorCuesChanged": "The cues changed in Traktor",
       "traktorUnreadable": "Could not check Traktor"
     },
     "retry": "Try again",

@@ -2955,6 +2955,7 @@
       "traktorStillOld": "Traktorはまだ{{format}}を参照しています",
       "traktorMissing": "トラックがTraktorにありません",
       "traktorAmbiguous": "Traktorにこのトラックが{{count}}件あります",
+      "traktorCuesChanged": "Traktorのキューが変わりました",
       "traktorUnreadable": "Traktorを確認できませんでした"
     },
     "retry": "再試行",

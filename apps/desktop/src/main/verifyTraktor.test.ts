@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
-import { applyPatches, matchedEntryFiles, type NmlPatch } from './traktorNml'
+import { applyPatches, matchedEntryCues, matchedEntryFiles, type NmlPatch } from './traktorNml'
 import { checkTraktor, type TraktorExpect } from './verifyTraktor'
 
 const BOOT = 'Macintosh HD'
@@ -12,6 +12,12 @@ const entry = (file: string, volume = 'Public', dir = '/:Musica/:Artist/:') =>
   `<ENTRY MODIFIED_DATE="2026/10/30" TITLE="Title" ARTIST="Artist">
 <LOCATION DIR="${dir}" FILE="${file}" VOLUME="${volume}"></LOCATION>
 </ENTRY>`
+
+const withCue = (block: string, start: string) =>
+  block.replace(
+    '</LOCATION>',
+    `</LOCATION><CUE_V2 NAME="Drop" DISPL_ORDER="0" TYPE="0" START="${start}.000000" LEN="0.000000" REPEATS="-1" HOTCUE="1"></CUE_V2>`,
+  )
 
 const nml = (...entries: string[]) => `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <NML VERSION="19">
@@ -31,7 +37,13 @@ const patch = (over: Partial<NmlPatch> = {}): NmlPatch => ({
 // What the flush does: read which entry each patch matches, write, then check the result.
 function flush(original: string, patches: NmlPatch[], stranded = false) {
   const before = matchedEntryFiles(original, patches)
-  const list: TraktorExpect[] = patches.map((p, i) => ({ patch: p, before: before[i], stranded }))
+  const cues = matchedEntryCues(original, patches)
+  const list: TraktorExpect[] = patches.map((p, i) => ({
+    patch: p,
+    before: before[i],
+    cues: cues[i],
+    stranded,
+  }))
   return { list, written: applyPatches(original, patches) }
 }
 
@@ -112,9 +124,31 @@ describe('checkTraktor', () => {
     expect(checkTraktor(written, list, BOOT)[0]?.state).toBe('ok')
   })
 
-  it('a patch without newFile produces no check', () => {
-    const { list, written } = flush(nml(entry('Title.aiff')), [patch({ newFile: undefined })])
-    expect(checkTraktor(written, list, BOOT)).toEqual([null])
+  // The output landed in another folder, so the entry stays on the source, whose audio did
+  // not change: its cues have to read exactly as they did before the write.
+  it('an entry left on the source with its cues as they were is traktorOk', () => {
+    const { list, written } = flush(nml(withCue(entry('Title.mp3'), '10000')), [
+      patch({ file: 'Title.mp3', newFile: undefined }),
+    ])
+    expect(checkTraktor(written, list, BOOT)).toEqual([
+      { place: 'traktor', state: 'ok', detail: { key: 'traktorOk', params: { format: 'MP3' } } },
+    ])
+  })
+
+  it('an entry left on the source whose cues moved is traktorCuesChanged', () => {
+    const { list } = flush(nml(withCue(entry('Title.mp3'), '10000')), [
+      patch({ file: 'Title.mp3', newFile: undefined }),
+    ])
+    expect(checkTraktor(nml(withCue(entry('Title.mp3'), '9949')), list, BOOT)).toEqual([
+      { place: 'traktor', state: 'mismatch', detail: { key: 'traktorCuesChanged' } },
+    ])
+  })
+
+  it('an entry left on the source that is gone is traktorMissing', () => {
+    const { list } = flush(nml(entry('Title.mp3')), [
+      patch({ file: 'Title.mp3', newFile: undefined }),
+    ])
+    expect(checkTraktor(nml(entry('Other.mp3')), list, BOOT)[0]?.detail.key).toBe('traktorMissing')
   })
 
   // A patch is recorded for every conversion while the sync is on; a track Traktor never
@@ -158,13 +192,14 @@ describe('checkTraktor', () => {
     const c = patch({ file: 'C.aiff', newFile: undefined })
     const original = nml(entry('Title.aiff'), entry('B.aiff'), entry('C.aiff'))
     const before = matchedEntryFiles(original, [a, b, c])
+    const cues = matchedEntryCues(original, [a, b, c])
     const written = applyPatches(original, [a])
     expect(
       checkTraktor(
         written,
-        [a, b, c].map((p, i) => ({ patch: p, before: before[i], stranded: false })),
+        [a, b, c].map((p, i) => ({ patch: p, before: before[i], cues: cues[i], stranded: false })),
         BOOT,
       ).map((r) => r?.detail.key ?? null),
-    ).toEqual(['traktorOk', 'traktorStillOld', null])
+    ).toEqual(['traktorOk', 'traktorStillOld', 'traktorOk'])
   })
 })

@@ -180,12 +180,30 @@ export function matchedEntryFiles(
   patches: NmlPatch[],
   onDisk?: OnDisk,
 ): (string | null)[] {
+  return matchedEntries(nml, patches, onDisk).map((entry) => entry?.file ?? null)
+}
+
+// The cues of those same entries as the collection held them, so the check can tell an entry
+// the write was meant to leave alone from one it moved.
+export function matchedEntryCues(
+  nml: string,
+  patches: NmlPatch[],
+  onDisk?: OnDisk,
+): (string | null)[] {
+  return matchedEntries(nml, patches, onDisk).map((entry) =>
+    entry ? entryCues(nml.slice(entry.start, entry.end)) : null,
+  )
+}
+
+export const entryCues = (block: string): string => (block.match(CUE_V2_RE) ?? []).join('')
+
+function matchedEntries(nml: string, patches: NmlPatch[], onDisk?: OnDisk): (NmlEntry | null)[] {
   const entries = findEntries(nml)
   const index = indexPatches(patches, entries, onDisk)
-  const found = new Map<NmlPatch, string>()
+  const found = new Map<NmlPatch, NmlEntry>()
   for (const entry of entries) {
     const patch = matchPatch(entry, index)
-    if (patch) found.set(patch, entry.file)
+    if (patch) found.set(patch, entry)
   }
   return patches.map((p) => found.get(p) ?? null)
 }

@@ -17,6 +17,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron-log/main', () => ({ default: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }))
 vi.mock('./traktorProcess', () => ({ isTraktorRunning: vi.fn().mockResolvedValue(false) }))
+vi.mock('./verifyFile', () => ({ formatOf: (ext: string) => ext.slice(1).toUpperCase() }))
 
 // Only `rename`/`copyFile` are faked, and only for the tests that need one
 // of them to fail in isolation: every other test relies on the real read/copy/write/
@@ -64,6 +65,7 @@ import { createSessionBackup, type SessionBackup } from './rekordboxSessionBacku
 import { buildTraktorTree, traktorCue } from './traktor4Fixture'
 import { bootVolumeName, replaceDuplicatesInCollection, syncCollection } from './traktorNmlLibrary'
 import { isTraktorRunning } from './traktorProcess'
+import { checkTraktor } from './verifyTraktor'
 
 const NML = `<NML VERSION="19"><COLLECTION ENTRIES="1">
 <ENTRY TITLE="Uno"><LOCATION DIR="/:M/:" FILE="uno.aiff" VOLUME="HD"></LOCATION></ENTRY>
@@ -177,6 +179,33 @@ describe('syncCollection on the boot disk', () => {
       )
     })
 
+    // The self-check is what the DJ sees: a source entry the write moved must not read as ok.
+    it('checks the entry left on the source against its cues before the write', async () => {
+      writeFileSync(
+        nmlPath,
+        `<NML VERSION="19"><COLLECTION ENTRIES="1">\n${source}\n</COLLECTION></NML>`,
+      )
+
+      const result = await syncCollection(nmlPath, [converted], session, 'Macintosh HD')
+
+      expect(
+        checkTraktor(
+          readFileSync(nmlPath, 'utf8'),
+          [
+            {
+              patch: converted,
+              before: result.before?.[0] ?? null,
+              cues: result.cues?.[0],
+              stranded: false,
+            },
+          ],
+          'Macintosh HD',
+        ),
+      ).toEqual([
+        { place: 'traktor', state: 'ok', detail: { key: 'traktorOk', params: { format: 'MP3' } } },
+      ])
+    })
+
     it('gives the converted file its own cues on the entry that names it', async () => {
       const output = entryAt('/:Users/:dj/:Out/:', 'uno.aiff')
       writeFileSync(
@@ -222,7 +251,13 @@ describe('syncCollection on the boot disk', () => {
       session,
     )
 
-    expect(result).toEqual({ written: false, matched: 0, reason: 'no-matches', before: [null] })
+    expect(result).toEqual({
+      written: false,
+      matched: 0,
+      reason: 'no-matches',
+      before: [null],
+      cues: [null],
+    })
   })
 
   // Song.wav no está en Traktor y Song.mp3 sí, con sus cues y playlists. Convertir el WAV

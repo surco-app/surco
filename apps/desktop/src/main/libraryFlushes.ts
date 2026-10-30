@@ -349,7 +349,10 @@ function repointOutcome(
 export function traktorWrite(patches: NmlPatch[], result: SyncResult): TraktorWrite {
   const before = result.before
   if (!before) return 'failed'
-  return { before: new Map(patches.map((p, i) => [traktorPatchKey(p), before[i] ?? null])) }
+  const cues = result.cues
+  const keyed = <T>(values: T[]) =>
+    new Map(patches.map((p, i) => [traktorPatchKey(p), values[i] ?? null]))
+  return cues ? { before: keyed(before), cues: keyed(cues) } : { before: keyed(before) }
 }
 
 type LibraryHas = (path: string, from?: string) => boolean
