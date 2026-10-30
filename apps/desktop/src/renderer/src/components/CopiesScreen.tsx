@@ -207,7 +207,7 @@ function ProgramSection({
                 type="button"
                 data-testid={`copies-settings-${program}`}
                 onClick={() => openSettings('destination')}
-                className="press ml-2 text-[12.5px] text-[var(--color-accent)] hover:underline"
+                className="press mt-0.5 block text-[12.5px] text-[var(--color-accent)] hover:underline"
               >
                 {tr('copies.changeInSettings')}
               </button>
