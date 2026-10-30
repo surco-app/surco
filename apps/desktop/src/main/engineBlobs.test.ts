@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   decodeBeatGrid,
+  decodeLoops,
   decodeOverview,
   decodeQuickCues,
   decodeTrackData,
   deflateEngineBlob,
+  encodeLoops,
   encodeQuickCues,
   inflateEngineBlob,
   quickCueSlotBytes,
@@ -16,6 +18,9 @@ const REAL_BEAT_DATA =
   '0000008A789C7378DAD1C000048E39CA1F403423030430818886F5AF0FFCF90F0102CC0C30D050A19EE3C883E033702298E4EA636000003F501D7F'
 const REAL_QUICK_CUES =
   '0000008B789C636000030E56E7D254054347A77D5740DCFF5F2E5B80458C1C93EAAC1A4022EF1B0D18F67F6040004A393093191D2E958205000B8019FA'
+
+const EMPTY_LOOP = `00${'000000000000F0BF'.repeat(2)}000000000000`
+const REAL_LOOPS = `0800000000000000${EMPTY_LOOP.repeat(8)}`
 
 const real = (hex: string): Buffer => inflateEngineBlob(Buffer.from(hex, 'hex'))
 
@@ -142,5 +147,35 @@ describe('Engine DJ performance blobs', () => {
         cues.tail,
       ),
     ).toEqual(raw)
+  })
+
+  it('reads loops as Engine stores them, uncompressed and little-endian, eight unset slots on a track nobody looped', () => {
+    const loops = decodeLoops(Buffer.from(REAL_LOOPS, 'hex'))
+    expect(loops).toHaveLength(8)
+    expect(loops?.[0]).toEqual({
+      label: '',
+      start: -1,
+      end: -1,
+      startSet: false,
+      endSet: false,
+      argb: 0,
+    })
+    expect(encodeLoops(loops ?? [])).toEqual(Buffer.from(REAL_LOOPS, 'hex'))
+  })
+
+  it('writes a set loop back byte for byte, label and colour included', () => {
+    const loop = {
+      label: 'Break',
+      start: 220500,
+      end: 573300.5,
+      startSet: true,
+      endSet: true,
+      argb: 0xff00cc00,
+    }
+    expect(decodeLoops(encodeLoops([loop]))).toEqual([loop])
+  })
+
+  it('reads a loops blob that does not fit its layout as nothing', () => {
+    expect(decodeLoops(Buffer.from('0000000801020304', 'hex'))).toBeNull()
   })
 })

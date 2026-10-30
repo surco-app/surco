@@ -108,6 +108,56 @@ export function encodeQuickCues(slots: Buffer[], tail: Buffer): Buffer {
   return Buffer.concat([count, ...slots, tail])
 }
 
+export interface EngineLoop {
+  label: string
+  start: number
+  end: number
+  startSet: boolean
+  endSet: boolean
+  argb: number
+}
+
+export function decodeLoops(raw: Buffer): EngineLoop[] | null {
+  if (raw.length < 8) return null
+  const count = Number(raw.readBigInt64LE(0))
+  if (count < 0 || count > raw.length) return null
+  const loops: EngineLoop[] = []
+  let at = 8
+  for (let i = 0; i < count; i++) {
+    if (raw.length < at + 1) return null
+    const labelEnd = at + 1 + raw[at]
+    if (raw.length < labelEnd + 22) return null
+    loops.push({
+      label: raw.toString('utf8', at + 1, labelEnd),
+      start: raw.readDoubleLE(labelEnd),
+      end: raw.readDoubleLE(labelEnd + 8),
+      startSet: raw[labelEnd + 16] !== 0,
+      endSet: raw[labelEnd + 17] !== 0,
+      argb: raw.readUInt32BE(labelEnd + 18),
+    })
+    at = labelEnd + 22
+  }
+  return loops
+}
+
+export function encodeLoops(loops: EngineLoop[]): Buffer {
+  const count = Buffer.alloc(8)
+  count.writeBigInt64LE(BigInt(loops.length))
+  return Buffer.concat([
+    count,
+    ...loops.map((loop) => {
+      const label = Buffer.from(loop.label, 'utf8').subarray(0, 255)
+      const rest = Buffer.alloc(22)
+      rest.writeDoubleLE(loop.start, 0)
+      rest.writeDoubleLE(loop.end, 8)
+      rest[16] = loop.startSet ? 1 : 0
+      rest[17] = loop.endSet ? 1 : 0
+      rest.writeUInt32BE(loop.argb, 18)
+      return Buffer.concat([Buffer.from([label.length]), label, rest])
+    }),
+  ])
+}
+
 export type EngineBands = [number, number, number]
 
 export function decodeOverview(raw: Buffer): { entries: EngineBands[]; max: EngineBands } | null {
