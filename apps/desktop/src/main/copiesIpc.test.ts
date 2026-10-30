@@ -12,7 +12,7 @@ import { ipcMain } from 'electron'
 import type { DjProgram, ProgramCopies } from '../shared/types'
 import { type CopiesProgram, registerCopiesIpc } from './copiesIpc'
 import { setLibraryBackupRoot } from './libraryBackups'
-import { takeCopy } from './libraryHistory'
+import { stageRestoreCopy, takeCopy } from './libraryHistory'
 import { withEngineDatabase } from './engineLibrary'
 import { serialLibraryFlush } from './libraryTagSync'
 
@@ -150,6 +150,19 @@ describe('copies:status', () => {
     const [traktor] = await status()
     expect(traktor.untouched).toBe(true)
     expect(traktor.copies).toHaveLength(1)
+  })
+})
+
+describe('opening Surco', () => {
+  it('turns an undo copy a crash left staged into the undo copy, so «Antes de restaurar» holds the state before that restore', async () => {
+    const path = collection('collection.nml')
+    await takeCopy(path, [], 'restore', 1000)
+    writeFileSync(path, 'before the restore')
+    await stageRestoreCopy(path, [], 2000)
+    writeFileSync(path, 'restored')
+    registerCopiesIpc(programs({ traktor: { collectionPath: () => path } }), broadcast, () => false)
+    await serialLibraryFlush(async () => undefined)
+    expect((await status())[0].restore?.takenAt).toBe(2000)
   })
 })
 

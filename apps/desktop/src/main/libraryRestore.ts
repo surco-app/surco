@@ -4,7 +4,13 @@ import { join } from 'node:path'
 import log from 'electron-log/main'
 import type { LibraryCopy, RestoreRefusal, RestoreResult } from '../shared/types'
 import { collectionKey } from './libraryBackups'
-import { copyFolder, listCopies, restoreSlot, stageRestoreCopy } from './libraryHistory'
+import {
+  copyFolder,
+  listCopies,
+  restoreSlot,
+  type StagedRestoreCopy,
+  stageRestoreCopy,
+} from './libraryHistory'
 import { removeTemp, renameWithRetry } from './renameRetry'
 
 export type { RestoreRefusal, RestoreResult }
@@ -59,6 +65,21 @@ export async function restoreCopy(
   return deps.exclusive(() => replaceFiles(copy, req.collectionPath, deps))
 }
 
+async function putBack(undo: StagedRestoreCopy, target: string): Promise<boolean> {
+  const file = undo.copy.files.find((f) => f.target === target)
+  if (!file) return false
+  const temp = `${target}${TEMP}`
+  try {
+    await copyFile(join(undo.folder, file.name), temp)
+    await renameWithRetry(temp, target)
+    return true
+  } catch (err) {
+    log.error(`${target} could not be put back after its undo copy failed: ${String(err)}`)
+    await removeTemp(temp)
+    return false
+  }
+}
+
 async function replaceFiles(
   copy: LibraryCopy,
   collectionPath: string,
@@ -74,7 +95,7 @@ async function replaceFiles(
   const folder = copyFolder(copy)
   const pending = copy.files.map((file) => ({ from: `${file.target}${TEMP}`, to: file.target }))
   const clean = () => Promise.all(pending.map((file) => removeTemp(file.from)))
-  let undo: Awaited<ReturnType<typeof stageRestoreCopy>> | null = null
+  let undo: StagedRestoreCopy | null = null
   try {
     for (const [i, file] of copy.files.entries()) {
       await copyFile(join(folder, file.name), pending[i].from)
@@ -113,10 +134,20 @@ async function replaceFiles(
     } catch {
       return stop('failed')
     }
-    if (!replaced)
-      await undo
-        ?.commit()
-        .catch((err) => log.warn(`undo copy of ${copy.collectionPath} left staged: ${String(err)}`))
+    if (!replaced && undo) {
+      try {
+        await undo.commit()
+      } catch (err) {
+        log.warn(`undo copy of ${copy.collectionPath} could not be kept: ${String(err)}`)
+        if (await putBack(undo, pending[0].to)) {
+          await clean()
+          await undo.discard().catch(() => undefined)
+          return { ok: false, reason: 'failed' }
+        }
+        replaced = true
+        return stop('failed')
+      }
+    }
     replaced = true
     pending.shift()
   }

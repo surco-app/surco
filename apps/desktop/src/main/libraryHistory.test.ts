@@ -1,9 +1,23 @@
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setLibraryBackupRoot } from './libraryBackups'
-import { copyFolder, listCopies, restoreSlot, stageRestoreCopy, takeCopy } from './libraryHistory'
+import {
+  copyFolder,
+  listCopies,
+  recoverRestoreSlot,
+  restoreSlot,
+  stageRestoreCopy,
+  takeCopy,
+} from './libraryHistory'
 
 let dir: string
 
@@ -81,5 +95,39 @@ describe('libraryHistory', () => {
     expect((await restoreSlot(path))?.takenAt).toBe(3)
     expect(readFileSync(join(copyFolder(previous), 'collection.nml'), 'utf8')).toBe('newer state')
     expect(readdirSync(join(copyFolder(previous), '..')).sort()).toEqual(['history-restore'])
+  })
+
+  it('an undo copy left staged by a crash after the library was replaced becomes the undo copy instead of being deleted', async () => {
+    const path = collection('Traktor', 'collection.nml', 'first')
+    await takeCopy(path, [], 'restore', 1)
+    writeFileSync(path, 'second')
+    await stageRestoreCopy(path, [], 2)
+    writeFileSync(path, 'restored')
+    const next = await stageRestoreCopy(path, [], 3)
+    const slot = await restoreSlot(path)
+    expect(slot?.takenAt).toBe(2)
+    expect(readFileSync(join(copyFolder(slot as never), 'collection.nml'), 'utf8')).toBe('second')
+    await next.discard()
+    expect((await restoreSlot(path))?.takenAt).toBe(2)
+  })
+
+  it('an undo copy left staged before anything was replaced is dropped and the previous one kept', async () => {
+    const path = collection('Traktor', 'collection.nml', 'first')
+    const previous = await takeCopy(path, [], 'restore', 1)
+    writeFileSync(path, 'second')
+    await stageRestoreCopy(path, [], 2)
+    await recoverRestoreSlot(path)
+    expect(await restoreSlot(path)).toEqual(previous)
+    expect(readdirSync(join(copyFolder(previous), '..')).sort()).toEqual(['history-restore'])
+  })
+
+  it('an undo copy left aside by a swap whose rollback failed is put back', async () => {
+    const path = collection('Traktor', 'collection.nml', 'first')
+    const previous = await takeCopy(path, [], 'restore', 1)
+    renameSync(copyFolder(previous), `${copyFolder(previous)}.aside`)
+    expect(await restoreSlot(path)).toBeNull()
+    await stageRestoreCopy(path, [], 2)
+    expect(await restoreSlot(path)).toEqual(previous)
+    expect(readFileSync(join(copyFolder(previous), 'collection.nml'), 'utf8')).toBe('first')
   })
 })

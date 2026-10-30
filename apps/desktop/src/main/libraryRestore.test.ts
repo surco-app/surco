@@ -1,4 +1,12 @@
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -351,5 +359,33 @@ describe('restoreCopy', () => {
     const d = deps()
     await restoreCopy({ collectionPath: path, copyId: copy.id }, d)
     expect(d.discardQueue).toHaveBeenCalledTimes(1)
+  })
+
+  it('a failed undo-copy commit puts the library back and keeps the previous undo copy', async () => {
+    const path = collection('Traktor', 'collection.nml', 'first')
+    const copy = await takeCopy(path, [], 'run', 1)
+    writeFileSync(path, 'second')
+    await restoreCopy({ collectionPath: path, copyId: copy.id }, deps())
+    const slot = (await restoreSlot(path)) as LibraryCopy
+    writeFileSync(path, 'third')
+    const backups = dirname(copyFolder(slot))
+    try {
+      const result = await restoreCopy(
+        { collectionPath: path, copyId: copy.id },
+        deps({
+          isRunning: async () => {
+            chmodSync(backups, 0o555)
+            return false
+          },
+        }),
+      )
+      expect(result).toEqual({ ok: false, reason: 'failed' })
+    } finally {
+      chmodSync(backups, 0o755)
+    }
+    expect(readFileSync(path, 'utf8')).toBe('third')
+    expect(leftovers(path)).toEqual([])
+    expect(await restoreSlot(path)).toEqual(slot)
+    expect(readFileSync(join(copyFolder(slot), 'collection.nml'), 'utf8')).toBe('second')
   })
 })

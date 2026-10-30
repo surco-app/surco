@@ -109,18 +109,53 @@ export async function takeCopy(
   return copy
 }
 
+export interface StagedRestoreCopy {
+  copy: LibraryCopy
+  folder: string
+  commit: () => Promise<void>
+  discard: () => Promise<void>
+}
+
 export async function stageRestoreCopy(
   collectionPath: string,
   companions: string[],
   now: number = Date.now(),
-): Promise<{ commit: () => Promise<void>; discard: () => Promise<void> }> {
+): Promise<StagedRestoreCopy> {
+  await recoverRestoreSlot(collectionPath)
   const copy = describeCopy(collectionPath, companions, 'restore', now)
   const staged = `${restoreRoot(collectionPath)}${STAGED}`
   await writeCopy(copy, staged)
   return {
+    copy,
+    folder: staged,
     commit: () => swapIn(staged, copyFolder(copy)),
     discard: () => rm(staged, { recursive: true, force: true }),
   }
+}
+
+async function sameAsLibrary(copy: LibraryCopy, folder: string): Promise<boolean> {
+  for (const file of copy.files) {
+    const [kept, live] = await Promise.all([
+      readFile(join(folder, file.name)),
+      readFile(file.target).catch(() => null),
+    ])
+    if (!live?.equals(kept)) return false
+  }
+  return true
+}
+
+export async function recoverRestoreSlot(collectionPath: string): Promise<void> {
+  const slot = restoreRoot(collectionPath)
+  const aside = `${slot}${ASIDE}`
+  const staged = `${slot}${STAGED}`
+  if (!existsSync(slot) && existsSync(aside)) await renameWithRetry(aside, slot)
+  const left = await readCopy(staged)
+  if (left && !(await sameAsLibrary(left, staged))) {
+    const current = await readCopy(slot)
+    if (!current || left.takenAt > current.takenAt) await swapIn(staged, slot)
+  }
+  await rm(staged, { recursive: true, force: true })
+  await rm(aside, { recursive: true, force: true })
 }
 
 async function prune(collectionPath: string): Promise<void> {

@@ -1,6 +1,7 @@
 import { BrowserWindow, ipcMain } from 'electron'
+import log from 'electron-log/main'
 import type { DjProgram, ProgramCopies, RestoreResult } from '../shared/types'
-import { listCopies, restoreSlot } from './libraryHistory'
+import { listCopies, recoverRestoreSlot, restoreSlot } from './libraryHistory'
 import { restoreCopy } from './libraryRestore'
 import { serialLibraryFlush } from './libraryTagSync'
 import type { SessionBackup } from './rekordboxSessionBackup'
@@ -26,6 +27,15 @@ export function registerCopiesIpc(
   broadcast: (channel: string, payload: unknown) => void,
   converting: () => boolean,
 ): void {
+  void serialLibraryFlush(async () => {
+    for (const program of ORDER) {
+      const collectionPath = programs[program].collectionPath()
+      if (!collectionPath) continue
+      await recoverRestoreSlot(collectionPath).catch((err) =>
+        log.warn(`undo copy of ${collectionPath} could not be recovered: ${String(err)}`),
+      )
+    }
+  })
   ipcMain.handle('copies:status', async (): Promise<ProgramCopies[]> => {
     const found: ProgramCopies[] = []
     for (const program of ORDER) {
