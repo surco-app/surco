@@ -228,6 +228,49 @@ describe('CopiesScreen', () => {
     expect(screen.getByTestId('copies-refused-rekordbox')).toBeInTheDocument()
   })
 
+  it('every restore button waits while a restore is running, so two can never overlap', async () => {
+    let finish: (result: RestoreResult) => void = () => {}
+    const onRestore = vi.fn(
+      () =>
+        new Promise<RestoreResult>((resolve) => {
+          finish = resolve
+        }),
+    )
+    renderScreen(
+      [
+        program('rekordbox', { copies: [latest, older] }),
+        program('traktor', { copies: [copy({ id: 't1' })] }),
+      ],
+      { onRestore },
+    )
+    fireEvent.click(screen.getByTestId('copies-toggle-rekordbox'))
+    fireEvent.click(screen.getByTestId('copies-restore-rekordbox'))
+    fireEvent.click(screen.getByTestId('confirm-ok'))
+    expect(screen.getByTestId('copies-restore-rekordbox')).toBeDisabled()
+    expect(screen.getByTestId('copies-restore-traktor')).toBeDisabled()
+    expect(screen.getByTestId('copies-restore-item-old')).toBeDisabled()
+    await act(async () => finish({ ok: true }))
+    expect(screen.getByTestId('copies-restore-rekordbox')).toBeEnabled()
+    expect(screen.getByTestId('copies-restore-traktor')).toBeEnabled()
+    expect(screen.getByTestId('copies-restore-item-old')).toBeEnabled()
+  })
+
+  it('a restore refused during a conversion says to wait for it', async () => {
+    renderScreen([program('engine', { copies: [latest] })], {
+      onRestore: vi.fn(async () => ({ ok: false, reason: 'busy' }) as RestoreResult),
+    })
+    fireEvent.click(screen.getByTestId('copies-restore-engine'))
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('confirm-ok'))
+    })
+    expect(screen.getByTestId('copies-refused-engine')).toHaveTextContent(
+      i18n.t('copies.refused.busy'),
+    )
+    expect(i18n.t('copies.refused.busy')).toBe(
+      'Surco is converting tracks. Wait for it to finish and try again.',
+    )
+  })
+
   it('restore stays available for a program set to "No tocar"', () => {
     renderScreen([program('engine', { untouched: true, copies: [latest] })])
     expect(screen.getByTestId('copies-state-engine')).toHaveTextContent(

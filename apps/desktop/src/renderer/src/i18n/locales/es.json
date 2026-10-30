@@ -2840,7 +2840,8 @@
       "pending-log": "{{program}} aún está guardando cambios. Espera un momento y vuelve a intentarlo.",
       "not-found": "Esta copia ya no corresponde a tu colección actual.",
       "other-collection": "Esta copia ya no corresponde a tu colección actual.",
-      "failed": "No se pudo restaurar. Tu biblioteca no ha cambiado."
+      "failed": "No se pudo restaurar. Tu biblioteca no ha cambiado.",
+      "busy": "Surco está convirtiendo pistas. Espera a que termine y vuelve a intentarlo."
     },
     "restored": "Listo: {{program}} ha vuelto a como estaba {{when}}.",
     "music": {

@@ -5,7 +5,7 @@ vi.mock('electron', () => ({
   BrowserWindow: { fromWebContents: () => null },
 }))
 
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ipcMain } from 'electron'
@@ -13,6 +13,7 @@ import type { DjProgram, ProgramCopies } from '../shared/types'
 import { type CopiesProgram, registerCopiesIpc } from './copiesIpc'
 import { setLibraryBackupRoot } from './libraryBackups'
 import { takeCopy } from './libraryHistory'
+import { serialLibraryFlush } from './libraryTagSync'
 
 function handlerFor(channel: string): (e: unknown, ...args: unknown[]) => Promise<unknown> {
   const call = (ipcMain.handle as ReturnType<typeof vi.fn>).mock.calls.findLast(
@@ -75,14 +76,22 @@ describe('copies:status', () => {
     const oldNml = collection('traktor-4.4.nml')
     const newNml = collection('traktor-4.5.nml')
     await takeCopy(oldNml, [], 'run', 1000)
-    registerCopiesIpc(programs({ traktor: { collectionPath: () => newNml } }), broadcast)
+    registerCopiesIpc(
+      programs({ traktor: { collectionPath: () => newNml } }),
+      broadcast,
+      () => false,
+    )
     const [traktor] = await status()
     expect(traktor.collectionPath).toBe(newNml)
     expect(traktor.copies).toEqual([])
   })
 
   it('lists only programs found on this machine', async () => {
-    registerCopiesIpc(programs({ engine: { collectionPath: () => collection('m.db') } }), broadcast)
+    registerCopiesIpc(
+      programs({ engine: { collectionPath: () => collection('m.db') } }),
+      broadcast,
+      () => false,
+    )
     expect((await status()).map((p) => p.program)).toEqual(['engine'])
   })
 
@@ -96,6 +105,7 @@ describe('copies:status', () => {
         engine: { collectionPath: () => collection('m.db') },
       }),
       broadcast,
+      () => false,
     )
     const [rekordbox, engine] = await status()
     expect(rekordbox).toMatchObject({ pending: 5, halted: true })
@@ -117,6 +127,7 @@ describe('copies:status', () => {
         },
       }),
       broadcast,
+      () => false,
     )
     expect((await status())[0].copyFailed).toBe(true)
   })
@@ -127,6 +138,7 @@ describe('copies:status', () => {
     registerCopiesIpc(
       programs({ traktor: { collectionPath: () => path, untouched: () => true } }),
       broadcast,
+      () => false,
     )
     const [traktor] = await status()
     expect(traktor.untouched).toBe(true)
@@ -137,7 +149,7 @@ describe('copies:status', () => {
 describe('copies:restore', () => {
   it('restoring broadcasts copies:changed so the screen refreshes', async () => {
     const path = collection('collection.nml')
-    registerCopiesIpc(programs({ traktor: { collectionPath: () => path } }), broadcast)
+    registerCopiesIpc(programs({ traktor: { collectionPath: () => path } }), broadcast, () => false)
     const result = await handlerFor('copies:restore')({ sender: {} }, 'traktor', 'nope')
     expect(result).toEqual({ ok: false, reason: 'not-found' })
     expect(broadcast).toHaveBeenCalledWith('copies:changed', null)
@@ -156,9 +168,60 @@ describe('copies:restore', () => {
         },
       }),
       broadcast,
+      () => false,
     )
     const result = await handlerFor('copies:restore')({ sender: {} }, 'traktor', copy.id)
     expect(result).toEqual({ ok: true })
     expect(discard).toHaveBeenCalled()
+  })
+
+  it('a library flush that arrives during a restore waits for it and finds the waiting changes gone', async () => {
+    const path = collection('collection.nml')
+    const copy = await takeCopy(path, [], 'run', 1000)
+    writeFileSync(path, 'changed')
+    let waiting = ['cue']
+    let letClose: (closed: boolean) => void = () => {}
+    const closing = new Promise<boolean>((resolve) => {
+      letClose = resolve
+    })
+    registerCopiesIpc(
+      programs({
+        traktor: {
+          collectionPath: () => path,
+          ensureClosed: () => closing,
+          queue: {
+            state: () => ({ tracks: 0, changes: waiting.length }),
+            discard: () => {
+              waiting = []
+            },
+          },
+        },
+      }),
+      broadcast,
+      () => false,
+    )
+    const restoring = handlerFor('copies:restore')({ sender: {} }, 'traktor', copy.id)
+    await Promise.resolve()
+    const flushed = serialLibraryFlush(async () => {
+      const found = waiting.length
+      if (found > 0) writeFileSync(path, 'queued write')
+      return found
+    })
+    letClose(true)
+    expect(await restoring).toEqual({ ok: true })
+    expect(await flushed).toBe(0)
+    expect(readFileSync(path, 'utf8')).toBe('collection.nml')
+  })
+
+  it('refuses while Surco is converting, because the run writes the library outside the flush chain', async () => {
+    const path = collection('collection.nml')
+    const copy = await takeCopy(path, [], 'run', 1000)
+    writeFileSync(path, 'changed')
+    registerCopiesIpc(programs({ traktor: { collectionPath: () => path } }), broadcast, () => true)
+    expect(await handlerFor('copies:restore')({ sender: {} }, 'traktor', copy.id)).toEqual({
+      ok: false,
+      reason: 'busy',
+    })
+    expect(readFileSync(path, 'utf8')).toBe('changed')
   })
 })

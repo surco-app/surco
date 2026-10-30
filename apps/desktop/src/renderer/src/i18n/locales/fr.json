@@ -2840,7 +2840,8 @@
       "pending-log": "{{program}} enregistre encore des modifications. Patiente un instant et réessaie.",
       "not-found": "Cette sauvegarde ne correspond plus à ta collection actuelle.",
       "other-collection": "Cette sauvegarde ne correspond plus à ta collection actuelle.",
-      "failed": "La restauration a échoué. Ta bibliothèque n'a pas changé."
+      "failed": "La restauration a échoué. Ta bibliothèque n'a pas changé.",
+      "busy": "Surco est en train de convertir des morceaux. Attends que ce soit fini et réessaie."
     },
     "restored": "C'est fait : {{program}} est revenu tel qu'il était {{when}}.",
     "music": {

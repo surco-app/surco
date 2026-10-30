@@ -1920,6 +1920,7 @@ function registerIpc(): void {
       },
     },
     broadcast,
+    rekordboxBatchOpen,
   )
   registerTrashIpc(surcoTrash, mediaAccess)
   registerFeedbackIpc()

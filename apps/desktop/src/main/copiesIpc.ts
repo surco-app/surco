@@ -2,6 +2,7 @@ import { BrowserWindow, ipcMain } from 'electron'
 import type { DjProgram, ProgramCopies, RestoreResult } from '../shared/types'
 import { listCopies, restoreSlot } from './libraryHistory'
 import { restoreCopy } from './libraryRestore'
+import { serialLibraryFlush } from './libraryTagSync'
 import type { SessionBackup } from './rekordboxSessionBackup'
 
 export interface CopiesProgram {
@@ -22,6 +23,7 @@ const ORDER: DjProgram[] = ['rekordbox', 'traktor', 'engine']
 export function registerCopiesIpc(
   programs: Record<DjProgram, CopiesProgram>,
   broadcast: (channel: string, payload: unknown) => void,
+  converting: () => boolean,
 ): void {
   ipcMain.handle('copies:status', async (): Promise<ProgramCopies[]> => {
     const found: ProgramCopies[] = []
@@ -46,24 +48,26 @@ export function registerCopiesIpc(
 
   ipcMain.handle(
     'copies:restore',
-    async (e, program: DjProgram, copyId: string): Promise<RestoreResult> => {
-      const deps = programs[program]
-      const collectionPath = deps?.collectionPath()
-      if (!deps || !collectionPath) return { ok: false, reason: 'not-found' }
-      const win = BrowserWindow.fromWebContents((e as { sender: Electron.WebContents }).sender)
-      try {
-        return await restoreCopy(
-          { collectionPath, copyId },
-          {
-            ensureClosed: () => deps.ensureClosed(win),
-            isRunning: deps.isRunning,
-            pendingLog: deps.pendingLog,
-            discardQueue: deps.queue.discard,
-          },
-        )
-      } finally {
-        broadcast('copies:changed', null)
-      }
-    },
+    (e, program: DjProgram, copyId: string): Promise<RestoreResult> =>
+      serialLibraryFlush(async () => {
+        const deps = programs[program]
+        const collectionPath = deps?.collectionPath()
+        if (!deps || !collectionPath) return { ok: false, reason: 'not-found' }
+        if (converting()) return { ok: false, reason: 'busy' }
+        const win = BrowserWindow.fromWebContents((e as { sender: Electron.WebContents }).sender)
+        try {
+          return await restoreCopy(
+            { collectionPath, copyId },
+            {
+              ensureClosed: () => deps.ensureClosed(win),
+              isRunning: deps.isRunning,
+              pendingLog: deps.pendingLog,
+              discardQueue: deps.queue.discard,
+            },
+          )
+        } finally {
+          broadcast('copies:changed', null)
+        }
+      }),
   )
 }

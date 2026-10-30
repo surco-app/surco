@@ -2840,7 +2840,8 @@
       "pending-log": "{{program}} is still saving changes. Wait a moment and try again.",
       "not-found": "This backup no longer matches your current collection.",
       "other-collection": "This backup no longer matches your current collection.",
-      "failed": "Couldn't restore. Your library hasn't changed."
+      "failed": "Couldn't restore. Your library hasn't changed.",
+      "busy": "Surco is converting tracks. Wait for it to finish and try again."
     },
     "restored": "Done: {{program}} is back to how it was {{when}}.",
     "music": {

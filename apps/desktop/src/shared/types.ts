@@ -1803,7 +1803,13 @@ export interface LibraryCopy {
   files: { name: string; target: string }[]
 }
 
-export type RestoreRefusal = 'running' | 'pending-log' | 'not-found' | 'other-collection' | 'failed'
+export type RestoreRefusal =
+  | 'running'
+  | 'pending-log'
+  | 'not-found'
+  | 'other-collection'
+  | 'failed'
+  | 'busy'
 
 export type RestoreResult = { ok: true } | { ok: false; reason: RestoreRefusal }
 

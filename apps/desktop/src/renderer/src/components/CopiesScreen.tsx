@@ -76,10 +76,12 @@ function Fact({
 function ProgramSection({
   entry,
   outcome,
+  restoring,
   onAsk,
 }: {
   entry: ProgramCopies
   outcome?: Outcome
+  restoring: boolean
   onAsk: (copy: LibraryCopy) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -135,7 +137,7 @@ function ProgramSection({
         <button
           type="button"
           data-testid={`copies-restore-${program}`}
-          disabled={copies.length === 0}
+          disabled={copies.length === 0 || restoring}
           onClick={() => onAsk(copies[0])}
           className={PRIMARY}
         >
@@ -175,6 +177,7 @@ function ProgramSection({
               <button
                 type="button"
                 data-testid={`copies-restore-item-${c.id}`}
+                disabled={restoring}
                 onClick={() => onAsk(c)}
                 className={BUTTON}
               >
@@ -334,6 +337,7 @@ export function CopiesScreen({
             key={entry.program}
             entry={entry}
             outcome={outcomes[entry.program]}
+            restoring={restoring > 0}
             onAsk={(copy) => setAsking({ program: entry.program, copyId: copy.id })}
           />
         ))}

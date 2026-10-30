@@ -2840,7 +2840,8 @@
       "pending-log": "{{program}} speichert noch Änderungen. Warte einen Moment und versuche es erneut.",
       "not-found": "Dieses Backup gehört nicht mehr zu deiner aktuellen Sammlung.",
       "other-collection": "Dieses Backup gehört nicht mehr zu deiner aktuellen Sammlung.",
-      "failed": "Wiederherstellen nicht möglich. Deine Bibliothek ist unverändert."
+      "failed": "Wiederherstellen nicht möglich. Deine Bibliothek ist unverändert.",
+      "busy": "Surco konvertiert gerade Tracks. Warte, bis es fertig ist, und versuche es erneut."
     },
     "restored": "Fertig: {{program}} ist wieder auf dem Stand von {{when}}.",
     "music": {
