@@ -94,4 +94,36 @@ describe('createSessionBackup', () => {
 
     expect(take).toHaveBeenCalledTimes(2)
   })
+
+  it('two writes that ask at once share one copy instead of taking two', async () => {
+    let finish: () => void = () => {}
+    const take = vi.fn(
+      () =>
+        new Promise<never>((resolve) => {
+          finish = () => resolve({} as never)
+        }),
+    )
+    const backup = createSessionBackup({ take })
+    backup.begin('run')
+
+    const first = backup.ensure('/dj/m.db')
+    const second = backup.ensure('/dj/m.db')
+    finish()
+    await Promise.all([first, second])
+
+    expect(take).toHaveBeenCalledTimes(1)
+  })
+
+  it('two writes that ask at once both fail when the one copy fails', async () => {
+    const take = vi.fn(async (): Promise<never> => {
+      throw new Error('disk full')
+    })
+    const backup = createSessionBackup({ take })
+    backup.begin('run')
+
+    const results = await Promise.allSettled([backup.ensure('/dj/m.db'), backup.ensure('/dj/m.db')])
+
+    expect(results.map((r) => r.status)).toEqual(['rejected', 'rejected'])
+    expect(take).toHaveBeenCalledTimes(1)
+  })
 })

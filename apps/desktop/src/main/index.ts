@@ -284,7 +284,11 @@ const rekordboxSessionBackup = createSessionBackup({
 // The same for the Engine DJ library, which a run can repoint as well.
 const engineSessionBackup = createSessionBackup({ take: takeCopyAndAnnounce })
 const sessions = { rekordbox: rekordboxSessionBackup, engine: engineSessionBackup }
-const moments = createMoments([rekordboxSessionBackup, engineSessionBackup, traktorSessionBackup])
+const moments = createMoments({
+  rekordbox: rekordboxSessionBackup,
+  traktor: traktorSessionBackup,
+  engine: engineSessionBackup,
+})
 const broadcast = (channel: string, payload: unknown): void => {
   for (const win of BrowserWindow.getAllWindows())
     if (!win.webContents.isDestroyed()) win.webContents.send(channel, payload)
@@ -330,7 +334,7 @@ const rekordboxQueueWatch = watchRekordboxQueue({
     isEmpty: () => rekordboxQueue.isEmpty(),
     apply: (ensureClosed) =>
       serialLibraryFlush(() => {
-        moments.begin('queue')
+        moments.begin('queue', ['rekordbox'])
         return rekordboxQueue.apply(ensureClosed)
       }),
   },
@@ -390,7 +394,7 @@ const engineCueQueueWatch = watchRekordboxQueue({
     isEmpty: () => engineCueQueue.isEmpty(),
     apply: (ensureClosed) =>
       serialLibraryFlush(() => {
-        moments.begin('queue')
+        moments.begin('queue', ['engine'])
         return engineCueQueue.apply(ensureClosed)
       }),
   },
@@ -447,7 +451,7 @@ const traktorCueQueueWatch = watchRekordboxQueue({
     isEmpty: () => traktorCueQueue.isEmpty(),
     apply: (ensureClosed) =>
       serialLibraryFlush(() => {
-        moments.begin('queue')
+        moments.begin('queue', ['traktor'])
         return traktorCueQueue.apply(ensureClosed)
       }),
   },
@@ -1320,7 +1324,7 @@ function registerIpc(): void {
     ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
     onWaiting: rekordboxQueueWatch.poke,
     onReady: () => void adjustProvisionalCuesOnLaunch(),
-    beginMoment: moments.begin,
+    beginMoment: (reason) => moments.begin(reason, ['rekordbox']),
   })
   registerRekordboxCuesIpc({
     collection: rekordboxCollectionPath,
@@ -1365,13 +1369,13 @@ function registerIpc(): void {
     ensureClosed: (win) => ensureEngineDjClosed(win, 'engineQuitDetailCues'),
     onWaiting: engineCueQueueWatch.poke,
     onReady: engineCueQueueWatch.poke,
-    beginMoment: moments.begin,
+    beginMoment: (reason) => moments.begin(reason, ['engine']),
   })
   registerTraktorCueQueueIpc(traktorCueQueue, {
     ensureClosed: (win) => ensureTraktorClosed(win, 'traktorQuitDetailCues'),
     onWaiting: traktorCueQueueWatch.poke,
     onReady: traktorCueQueueWatch.poke,
-    beginMoment: moments.begin,
+    beginMoment: (reason) => moments.begin(reason, ['traktor']),
   })
   ipcMain.handle('traktor:canSave', () => traktorWritePath() !== '')
   registerTraktorPlaylistEditIpc({
@@ -1458,16 +1462,18 @@ function registerIpc(): void {
   // Queued behind any review sync still writing, and the other way round.
   ipcMain.on('process:batch-end', (e) =>
     serialLibraryFlush(() =>
-      flushConversionBatch(
-        hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
-        sessions,
-        { enqueue: rekordboxQueue.enqueue, applyQuietly: applyRekordboxQueueQuietly },
-        {
-          enqueue: traktorCueQueue.enqueue,
-          state: traktorCueQueue.state,
-          applyQuietly: applyTraktorCueQueueQuietly,
-        },
-        { enqueue: engineCueQueue.enqueue, applyQuietly: applyEngineCueQueueQuietly },
+      moments.duringRunFlush(() =>
+        flushConversionBatch(
+          hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
+          sessions,
+          { enqueue: rekordboxQueue.enqueue, applyQuietly: applyRekordboxQueueQuietly },
+          {
+            enqueue: traktorCueQueue.enqueue,
+            state: traktorCueQueue.state,
+            applyQuietly: applyTraktorCueQueueQuietly,
+          },
+          { enqueue: engineCueQueue.enqueue, applyQuietly: applyEngineCueQueueQuietly },
+        ),
       ),
     ),
   )

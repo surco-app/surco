@@ -93,12 +93,14 @@ const sessions = {
     ensure: vi.fn(async () => {}),
     begin: vi.fn(),
     beginLoose: vi.fn(),
+    inRunFlush: vi.fn(),
     failed: () => new Set<string>(),
   },
   engine: {
     ensure: vi.fn(async () => {}),
     begin: vi.fn(),
     beginLoose: vi.fn(),
+    inRunFlush: vi.fn(),
     failed: () => new Set<string>(),
   },
 }

@@ -6,6 +6,7 @@ import { isEngineContent } from '../shared/engineContent'
 import { isTraktorContent, traktorKey } from '../shared/traktorContent'
 import type {
   CopyReason,
+  DjProgram,
   LibraryTracks,
   QueuedCues,
   SaveCuesRequest,
@@ -43,7 +44,7 @@ export function registerRekordboxCuesIpc(host: {
   collection: () => string
   queue: CueQueue
   applyQuietly: () => void
-  beginMoment?: (reason: CopyReason) => void
+  beginMoment?: (reason: CopyReason, programs: DjProgram[]) => void
   flow: () => CueFlow
   beatGrid: (file: string) => Promise<BeatGridFit | null>
   words: (file: string) => Promise<Uint16Array | null>
@@ -218,12 +219,14 @@ export function registerRekordboxCuesIpc(host: {
     const targets = [
       {
         ...host,
+        program: 'rekordbox' as const,
         mine: reqs.filter((r) => !engineOf(r.contentId) && !traktorOf(r.contentId)),
       },
       ...(host.engine
         ? [
             {
               ...host.engine,
+              program: 'engine' as const,
               mine: reqs.filter((r) => engineOf(r.contentId)),
             },
           ]
@@ -232,12 +235,17 @@ export function registerRekordboxCuesIpc(host: {
         ? [
             {
               ...host.traktor,
+              program: 'traktor' as const,
               mine: reqs.filter((r) => traktorOf(r.contentId)),
             },
           ]
         : []),
     ].filter((t) => t.mine.length > 0)
-    if (targets.length > 0) host.beginMoment?.('cues')
+    if (targets.length > 0)
+      host.beginMoment?.(
+        'cues',
+        targets.map((t) => t.program),
+      )
     for (const t of targets) {
       t.queue.enqueue(t.mine.map((req) => ({ ...req, id: randomUUID(), kind: 'cues' })))
       for (const req of t.mine)

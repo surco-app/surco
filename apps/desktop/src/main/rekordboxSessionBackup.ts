@@ -34,13 +34,23 @@ export interface SessionBackup {
   // Copies the collection if this momento has not already done so. Throws if the copy
   // fails — the caller must not write without one.
   ensure: (collectionPath: string) => Promise<void>
-  // Starts a momento, so the next write takes its own fresh copy.
   begin: (reason: CopyReason) => void
-  // Small edits to one collection share a single copy for the whole Surco session.
   beginLoose: (collectionPath: string) => void
-  // Collections whose latest copy attempt failed.
+  inRunFlush: (active: boolean) => void
   failed: () => ReadonlySet<string>
 }
+
+interface Momento {
+  reason: CopyReason
+  copied: Set<string>
+  taking: Map<string, Promise<void>>
+}
+
+const momento = (reason: CopyReason): Momento => ({
+  reason,
+  copied: new Set(),
+  taking: new Map(),
+})
 
 export function createSessionBackup(deps: {
   take?: typeof takeCopy
@@ -50,37 +60,51 @@ export function createSessionBackup(deps: {
   const take = deps.take ?? takeCopy
   const companionsOf = deps.companionsOf ?? (() => [])
   const skip = deps.skip ?? (() => false)
-  const done = new Set<string>()
-  const loose = new Set<string>()
-  const pending = new Map<string, CopyReason>()
+  const loose = new Map<string, Momento>()
+  const waiting = new Map<string, Momento>()
   const failures = new Set<string>()
-  let reason: CopyReason = 'run'
+  let current = momento('run')
+  let run: Momento | null = null
+  let flushingRun = false
+
+  const copyInto = async (m: Momento, collectionPath: string): Promise<void> => {
+    try {
+      await take(collectionPath, companionsOf(collectionPath), m.reason)
+    } catch (err) {
+      failures.add(collectionPath)
+      throw err
+    }
+    failures.delete(collectionPath)
+    m.copied.add(collectionPath)
+    if (m.reason !== 'playlists') loose.delete(collectionPath)
+  }
+
   return {
     async ensure(collectionPath: string): Promise<void> {
-      if (skip(collectionPath) || done.has(collectionPath)) return
-      try {
-        await take(
-          collectionPath,
-          companionsOf(collectionPath),
-          pending.get(collectionPath) ?? reason,
-        )
-      } catch (err) {
-        failures.add(collectionPath)
-        throw err
-      }
-      failures.delete(collectionPath)
-      pending.delete(collectionPath)
-      done.add(collectionPath)
+      if (skip(collectionPath)) return
+      const m = (flushingRun && run) || waiting.get(collectionPath) || current
+      if (m.copied.has(collectionPath)) return
+      const inFlight = m.taking.get(collectionPath)
+      if (inFlight) return inFlight
+      const taking = copyInto(m, collectionPath).finally(() => m.taking.delete(collectionPath))
+      m.taking.set(collectionPath, taking)
+      return taking
     },
     begin(next: CopyReason): void {
-      reason = next
-      done.clear()
+      current = momento(next)
+      waiting.clear()
+      if (next === 'run') run = current
     },
     beginLoose(collectionPath: string): void {
-      if (loose.has(collectionPath)) return
-      loose.add(collectionPath)
-      done.delete(collectionPath)
-      pending.set(collectionPath, 'playlists')
+      let m = loose.get(collectionPath)
+      if (!m) {
+        m = momento('playlists')
+        loose.set(collectionPath, m)
+      }
+      waiting.set(collectionPath, m)
+    },
+    inRunFlush(active: boolean): void {
+      flushingRun = active
     },
     failed: () => failures,
   }
