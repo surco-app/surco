@@ -1107,10 +1107,12 @@ export function writeTags(
     for (const mirrored of TXXX_NATIVE_MIRRORS) setUserText(id3, mirrored, '')
     // The grouping's mirror goes the same way, and it rides GRP1 beside TIT1: Traktor and
     // every other tagger read TIT1, Apple Music its own GRP1, which also wins when Surco
-    // reads the file back, so a stale one would undo the edit.
+    // reads the file back, so a stale one would undo the edit. Not on a WAV: Apple Music
+    // reads no tags from one at import, so a GRP1 there would only shadow the TIT1 another
+    // tool edits.
     for (const fr of id3.frames.filter((frame) => frame.frameId.toString() === 'GRP1'))
       id3.removeFrame(fr)
-    if (meta.grouping.trim()) {
+    if (meta.grouping.trim() && extname(file).toLowerCase() !== '.wav') {
       const grp1 = Id3v2TextInformationFrame.fromIdentifier(GRP1)
       grp1.text = [meta.grouping]
       id3.addFrame(grp1)

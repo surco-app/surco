@@ -69,7 +69,6 @@ export const ALLOWED_UPDATE_CHANGES: Record<UpdateExt, { added: RegExp[]; remove
     added: [
       /^id3 TYER=/,
       /^id3 APIC\[type=3,mime=image\/jpeg,desc=/,
-      /^id3 GRP1=/,
       /^picture type=3 mime=image\/jpeg /,
       // ffmpeg's INFO spelling of the album and artist, written beside TagLib's DIRC/ISTR.
       /^riff IPRD=/,

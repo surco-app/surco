@@ -3,6 +3,7 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
+import { File as TagFile } from 'node-taglib-sharp'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
@@ -83,5 +84,20 @@ describe('convertAudio — grouping on ID3 targets', () => {
     writeTags(out, { ...emptyMetadata(), title: 'T', grouping: '' })
     expect(snapshotTags(out).filter((l) => /TIT1|GRP1/.test(l))).toEqual([])
     expect(readItunesGrouping(out)).toBe('')
+  }, 30_000)
+
+  // Apple Music reads no tags from a WAV at import, so a GRP1 there would only shadow the
+  // TIT1 another tool edits: Surco reads GRP1 first and would write the old value back.
+  it('a WAV carries the grouping in TIT1 alone, and an edit to TIT1 elsewhere reads back', async () => {
+    const { out, check } = await converted(wav, 'wav', {})
+    expect(check.state, JSON.stringify(check.detail)).toBe('ok')
+    expect(snapshotTags(out).filter((l) => /TIT1|GRP1|grouping/i.test(l))).toEqual([
+      'id3 TIT1=Wärm Up',
+    ])
+    const f = TagFile.createFromPath(out)
+    f.tag.grouping = 'Peak'
+    f.save()
+    f.dispose()
+    expect(readItunesGrouping(out)).toBe('Peak')
   }, 30_000)
 })
