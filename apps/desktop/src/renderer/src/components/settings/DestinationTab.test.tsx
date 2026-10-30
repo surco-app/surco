@@ -805,6 +805,7 @@ describe('DestinationTab originals', () => {
     const warning = screen.getByTestId('settings-backup-warning')
     expect(warning.textContent).toMatch(/trash/i)
     expect(warning.textContent).toMatch(/metadata review still keeps its copies/i)
+    expect(warning.textContent).toMatch(/doesn’t add up\. Then the original stays in Backups/i)
     cleanup()
     renderTab({ backupPolicy: 'audioChanges' })
     expect(screen.queryByTestId('settings-backup-warning')).not.toBeInTheDocument()
@@ -828,6 +829,11 @@ describe('DestinationTab originals', () => {
     renderTab({ backupPolicy: 'audioChanges' })
     expect(screen.getByTestId('settings-backup-hint')).toHaveTextContent(
       i18n.t('settings.originalBackupAudioChangesHint'),
+    )
+    cleanup()
+    renderTab({ backupPolicy: 'never' })
+    expect(screen.getByTestId('settings-backup-hint')).toHaveTextContent(
+      /unless the check after converting finds something that doesn’t add up/i,
     )
   })
 })
