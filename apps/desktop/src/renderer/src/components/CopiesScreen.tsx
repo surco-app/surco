@@ -550,9 +550,9 @@ function MusicSection({
           <Fact
             label={tr('copies.facts.state')}
             testId="copies-state-music"
-            className="text-[var(--color-good)]"
+            className={entries.length > 0 ? 'text-[var(--color-good)]' : 'text-fg-faint'}
           >
-            {tr('copies.music.state')}
+            {tr(entries.length > 0 ? 'copies.music.state' : 'copies.music.stateEmpty')}
           </Fact>
           <Fact label={tr('copies.facts.last')} testId="copies-last-music">
             {entries.length > 0 ? when(last) : tr('copies.none')}
@@ -584,10 +584,17 @@ function MusicSection({
           </button>
         )}
       </div>
-      {entries.length > 0 && (
+      {entries.length > 0 ? (
         <Collapse open={open} testId="copies-list-music">
           <MusicFiles {...trash} />
         </Collapse>
+      ) : (
+        <p
+          data-testid="copies-music-empty"
+          className="col-span-2 col-start-2 mt-2 text-pretty text-[12.5px] text-fg-faint"
+        >
+          {tr('trash.emptyBody')}
+        </p>
       )}
     </section>
   )

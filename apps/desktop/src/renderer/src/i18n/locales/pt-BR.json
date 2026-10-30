@@ -235,7 +235,8 @@
     "renamedTo": "renomeado para",
     "expiring_one": "resta {{count}} dia",
     "expiring_other": "restam {{count}} dias",
-    "noMatches": "Nada corresponde à busca"
+    "noMatches": "Nada corresponde à busca",
+    "emptyBody": "Quando uma conversão substituir ou renomear um original, ou você apagar uma faixa num disco sem lixeira, ela aparece aqui."
   },
   "notices": {
     "duplicatesSkipped": "Já estavam na lista, ignoradas: {{count}}",
@@ -2846,7 +2847,8 @@
       "summary_other": "{{count}} arquivos · {{size}} de {{max}}",
       "show": "Ver arquivos",
       "hide": "Ocultar arquivos",
-      "expires": "São apagados sozinhos após {{days}} dias."
+      "expires": "São apagados sozinhos após {{days}} dias.",
+      "stateEmpty": "Nada guardado"
     },
     "footer": "De cada programa guardamos as últimas 5 cópias. Os arquivos de música, {{days}} dias.",
     "reveal": "Mostrar no Finder",

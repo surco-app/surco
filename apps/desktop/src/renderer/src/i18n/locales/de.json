@@ -235,7 +235,8 @@
     "renamedTo": "umbenannt in",
     "expiring_one": "noch {{count}} Tag",
     "expiring_other": "noch {{count}} Tage",
-    "noMatches": "Nichts passt zur Suche"
+    "noMatches": "Nichts passt zur Suche",
+    "emptyBody": "Wenn eine Konvertierung ein Original ersetzt oder umbenennt, oder du einen Titel auf einem Laufwerk ohne Papierkorb löschst, erscheint er hier."
   },
   "notices": {
     "duplicatesSkipped": "Schon in der Liste, übersprungen: {{count}}",
@@ -2846,7 +2847,8 @@
       "summary_other": "{{count}} Dateien · {{size}} von {{max}}",
       "show": "Dateien anzeigen",
       "hide": "Dateien ausblenden",
-      "expires": "Werden nach {{days}} Tagen von selbst gelöscht."
+      "expires": "Werden nach {{days}} Tagen von selbst gelöscht.",
+      "stateEmpty": "Nichts gespeichert"
     },
     "footer": "Von jedem Programm behalten wir die letzten 5 Backups. Musikdateien {{days}} Tage.",
     "reveal": "Im Finder zeigen",

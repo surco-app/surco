@@ -633,6 +633,23 @@ describe('CopiesScreen music files', () => {
     expect(screen.queryByTestId('trash-list')).not.toBeInTheDocument()
   })
 
+  it('never says originals are kept when none is, and says what will land here', () => {
+    renderMusic([])
+    expect(screen.getByTestId('copies-state-music')).toHaveTextContent(
+      i18n.t('copies.music.stateEmpty'),
+    )
+    expect(screen.getByTestId('copies-state-music')).not.toHaveTextContent(
+      i18n.t('copies.music.state'),
+    )
+    expect(screen.getByTestId('copies-music-empty')).toHaveTextContent(i18n.t('trash.emptyBody'))
+  })
+
+  it('says originals are kept once there is one, without the empty explanation', () => {
+    renderMusic([entry()])
+    expect(screen.getByTestId('copies-state-music')).toHaveTextContent(i18n.t('copies.music.state'))
+    expect(screen.queryByTestId('copies-music-empty')).not.toBeInTheDocument()
+  })
+
   // The music list sits inside Copias like the program lists do: the rule that files go
   // by themselves is said under the files, not in a sidebar of a window inside the page.
   it('says under the files how long they stay', () => {

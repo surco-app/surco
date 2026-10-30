@@ -235,7 +235,8 @@
     "renamedTo": "変更後",
     "expiring_one": "{{count}}日残り",
     "expiring_other": "{{count}}日残り",
-    "noMatches": "検索結果に一致するものがありません"
+    "noMatches": "検索結果に一致するものがありません",
+    "emptyBody": "変換で元のファイルが置き換えまたは名前変更された場合、またはゴミ箱のないディスクでトラックを削除した場合に表示されます。"
   },
   "notices": {
     "duplicatesSkipped": "すでにリストにあります、スキップしました: {{count}}",
@@ -2846,7 +2847,8 @@
       "summary_other": "{{count}} ファイル · {{size}} / {{max}}",
       "show": "ファイルを表示",
       "hide": "ファイルを隠す",
-      "expires": "{{days}}日後に自動で削除されます。"
+      "expires": "{{days}}日後に自動で削除されます。",
+      "stateEmpty": "保存なし"
     },
     "footer": "各ソフトにつき、直近5件のバックアップを保存します。音楽ファイルは{{days}}日間です。",
     "reveal": "Finderで表示",

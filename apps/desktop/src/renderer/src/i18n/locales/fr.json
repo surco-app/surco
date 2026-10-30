@@ -235,7 +235,8 @@
     "renamedTo": "renommé en",
     "expiring_one": "{{count}} jour restant",
     "expiring_other": "{{count}} jours restants",
-    "noMatches": "Aucun résultat pour cette recherche"
+    "noMatches": "Aucun résultat pour cette recherche",
+    "emptyBody": "Quand une conversion remplace ou renomme un original, ou que tu supprimes une piste sur un disque sans corbeille, il apparaît ici."
   },
   "notices": {
     "duplicatesSkipped": "Déjà dans la liste, ignorés : {{count}}",
@@ -2846,7 +2847,8 @@
       "summary_other": "{{count}} fichiers · {{size}} sur {{max}}",
       "show": "Voir les fichiers",
       "hide": "Masquer les fichiers",
-      "expires": "Ils s'effacent d'eux-mêmes après {{days}} jours."
+      "expires": "Ils s'effacent d'eux-mêmes après {{days}} jours.",
+      "stateEmpty": "Rien de conservé"
     },
     "footer": "Pour chaque logiciel, nous gardons les 5 dernières sauvegardes. Pour les fichiers de musique, {{days}} jours.",
     "reveal": "Afficher dans le Finder",

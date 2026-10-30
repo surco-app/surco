@@ -235,7 +235,8 @@
     "renamedTo": "renombrado a",
     "expiring_one": "queda {{count}} día",
     "expiring_other": "quedan {{count}} días",
-    "noMatches": "Nada coincide con la búsqueda"
+    "noMatches": "Nada coincide con la búsqueda",
+    "emptyBody": "Cuando una conversión sustituya o renombre un original, o borres una pista en un disco sin papelera, aparecerá aquí."
   },
   "notices": {
     "duplicatesSkipped": "Ya en la lista, omitidas: {{count}}",
@@ -2846,7 +2847,8 @@
       "summary_other": "{{count}} archivos · {{size}} de {{max}}",
       "show": "Ver archivos",
       "hide": "Ocultar archivos",
-      "expires": "Se borran solos a los {{days}} días."
+      "expires": "Se borran solos a los {{days}} días.",
+      "stateEmpty": "Nada guardado"
     },
     "footer": "De cada programa guardamos las últimas 5 copias. Los archivos de música, {{days}} días.",
     "reveal": "Mostrar en Finder",
