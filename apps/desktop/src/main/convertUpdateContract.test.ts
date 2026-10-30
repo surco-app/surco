@@ -164,3 +164,50 @@ describe.each(FORMATS)('a typed value with a semicolon in a $ext', ({ ext, codec
     expect((await readTags(out)).catalogNumber).toBe('ABC;123')
   }, 60000)
 })
+
+// The extras an m4a keeps in "----" freeform atoms (see writeTags): an m4a that carries them
+// must hand every one on, whether it is updated in place or converted to another format.
+describe.each([
+  ['m4a', 'alac'],
+  ['flac', 'flac'],
+] as const)('an m4a carrying the extras, converted to %s', (outExt, format) => {
+  it('keeps every extra', async () => {
+    const src = join(dir, `extras-src-${outExt}.m4a`)
+    const out = join(dir, `extras-out.${outExt}`)
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=duration=1',
+      '-c:a',
+      'alac',
+      src,
+    ])
+    const extras = {
+      catalogNumber: 'MQDRFREE015',
+      discogsReleaseId: '12345',
+      mood: 'Dark',
+      energy: '8',
+      style: 'Rawstyle',
+      country: 'Spain',
+      mediaType: 'File',
+      discogsUrl: 'https://www.discogs.com/release/12345',
+      originalArtist: 'The Original Band',
+      lyricist: 'A. Lyricist',
+      conductor: 'B. Conductor',
+      encodedBy: 'Surco',
+    }
+    await convertAudio(src, src, 'alac', { ...(await readTags(src)), ...extras })
+
+    await convertAudio(src, out, format, await readTags(src))
+
+    const tags = await readTags(out)
+    const read = Object.fromEntries(
+      Object.keys(extras).map((k) => [k, tags[k as keyof typeof extras] ?? '']),
+    )
+    expect(read).toEqual(extras)
+  }, 60000)
+})
