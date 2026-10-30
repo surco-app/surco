@@ -3,6 +3,15 @@ import { basename, extname, join, relative, resolve } from 'node:path'
 import log from 'electron-log/main'
 import type { Database } from 'sql.js'
 import { loadSqlJs } from './engine'
+import {
+  decodeLoops,
+  decodeQuickCues,
+  deflateEngineBlob,
+  encodeLoops,
+  encodeQuickCues,
+  inflateEngineBlob,
+  quickCueSlotBytes,
+} from './engineBlobs'
 import { assertEngineClosed, withEngineDatabase } from './engineLibrary'
 import { backupOf } from './libraryBackups'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
@@ -26,10 +35,18 @@ export type EngineRepointResult =
   | { written: false; reason: 'engine-running' | 'backup-failed' | 'write-failed' }
   | { written: false; reason: 'ambiguous'; ids: string[] }
 
+// How a conversion moved the audio under Engine's positions: the silence cut from the
+// start, and the converted file's sample rate when it was resampled.
+export interface EngineShift {
+  trimmedMs: number
+  sampleRateHz?: number
+}
+
 export interface EngineRepoint extends PathMatchOptions {
   // The file the library points at now, and the one it should point at instead.
   from: string
   to: string
+  engineShift?: EngineShift
 }
 
 export interface EngineRepointOptions {
@@ -68,6 +85,104 @@ export function engineRowFinder<T extends { path: string }>(
     return (byName.get(basename(nfc).toLowerCase()) ?? [])
       .filter((c) => key(c.at) === target)
       .map((c) => c.row)
+  }
+}
+
+type Blob = Uint8Array | null
+
+interface Performance {
+  trackData: Blob
+  beatData: Blob
+  quickCues: Blob
+  loops: Blob
+}
+
+function inflated(blob: Blob): Buffer | null {
+  if (!blob || blob.length <= 4) return null
+  try {
+    return inflateEngineBlob(blob)
+  } catch {
+    return null
+  }
+}
+
+// Every position Engine keeps for a track, moved onto the converted file: the cut comes off
+// each one and each is rewritten at the new rate. A cue or loop end inside the cut lands on
+// the new start, as rekordbox's and Traktor's do; grid markers keep their spacing, so they
+// may sit before it. Unset slots (-1) stay unset, and a blob that does not decode is left
+// as Engine wrote it.
+export function shiftEnginePerformance(perf: Performance, shift: EngineShift): Performance {
+  const track = inflated(perf.trackData)
+  if (!track || track.length < 16) return perf
+  const from = track.readDoubleBE(0)
+  const to = shift.sampleRateHz ?? from
+  if (!(from > 0) || (shift.trimmedMs === 0 && to === from)) return perf
+  const moved = (sample: number) => (sample / from - shift.trimmedMs / 1000) * to
+  const set = (sample: number) => (sample < 0 ? sample : Math.max(0, moved(sample)))
+  const next = { ...perf }
+
+  const length = Buffer.from(track)
+  length.writeDoubleBE(to, 0)
+  length.writeBigInt64BE(BigInt(Math.max(0, Math.round(moved(Number(track.readBigInt64BE(8)))))), 8)
+  next.trackData = deflateEngineBlob(length)
+
+  const beats = inflated(perf.beatData)
+  if (beats && beats.length >= 17) {
+    const grid = Buffer.from(beats)
+    grid.writeDoubleBE(to, 0)
+    grid.writeDoubleBE(Math.max(0, moved(grid.readDoubleBE(8))), 8)
+    let at = 17
+    for (let g = 0; g < 2 && grid.length >= at + 8; g++) {
+      const count = Number(grid.readBigInt64BE(at))
+      if (count < 0 || grid.length < at + 8 + count * 24) break
+      for (let i = 0; i < count; i++) {
+        const m = at + 8 + i * 24
+        grid.writeDoubleLE(moved(grid.readDoubleLE(m)), m)
+      }
+      at += 8 + count * 24
+    }
+    next.beatData = deflateEngineBlob(grid)
+  }
+
+  const rawCues = inflated(perf.quickCues)
+  const cues = rawCues && decodeQuickCues(rawCues)
+  if (cues) {
+    const tail = Buffer.from(cues.tail)
+    if (tail.length >= 17) {
+      tail.writeDoubleBE(set(tail.readDoubleBE(0)), 0)
+      tail.writeDoubleBE(set(tail.readDoubleBE(9)), 9)
+    }
+    next.quickCues = deflateEngineBlob(
+      encodeQuickCues(
+        cues.slots.map((slot) =>
+          slot.cue ? quickCueSlotBytes({ ...slot.cue, sample: set(slot.cue.sample) }) : slot.bytes,
+        ),
+        tail,
+      ),
+    )
+  }
+
+  const loops = perf.loops && decodeLoops(Buffer.from(perf.loops))
+  if (loops)
+    next.loops = encodeLoops(
+      loops.map((loop) => ({
+        ...loop,
+        start: loop.startSet ? set(loop.start) : loop.start,
+        end: loop.endSet ? set(loop.end) : loop.end,
+      })),
+    )
+  return next
+}
+
+function performanceOf(db: Database, id: number): Performance | null {
+  const statement = db.prepare(
+    'SELECT trackData, beatData, quickCues, loops FROM PerformanceData WHERE trackId = ?',
+  )
+  try {
+    statement.bind([id])
+    return statement.step() ? (statement.getAsObject() as unknown as Performance) : null
+  } finally {
+    statement.free()
   }
 }
 
@@ -133,7 +248,7 @@ export async function writeEngineRepoints(
       }),
     )
     const find = engineRowFinder(libraryDir, stored)
-    const updates: { id: string; to: string; size: number }[] = []
+    const updates: { id: string; to: string; size: number; shift?: EngineShift }[] = []
     for (const [i, repoint] of repoints.entries()) {
       if (results[i]) continue
       const key = pathKey(repoint)
@@ -150,7 +265,12 @@ export async function writeEngineRepoints(
         results[i] = { written: false, reason: 'occupied' }
         continue
       }
-      updates.push({ id: matches[0].id, to: repoint.to, size: sizes[i] as number })
+      updates.push({
+        id: matches[0].id,
+        to: repoint.to,
+        size: sizes[i] as number,
+        shift: repoint.engineShift,
+      })
       results[i] = { written: true, id: matches[0].id }
     }
     if (updates.length === 0) return results as EngineRepointResult[]
@@ -179,6 +299,13 @@ export async function writeEngineRepoints(
           Number(u.id),
         ],
       )
+      const perf = u.shift ? performanceOf(db, Number(u.id)) : null
+      const next = perf && u.shift && shiftEnginePerformance(perf, u.shift)
+      if (next && next !== perf)
+        db.run(
+          'UPDATE PerformanceData SET trackData = ?, beatData = ?, quickCues = ?, loops = ? WHERE trackId = ?',
+          [next.trackData, next.beatData, next.quickCues, next.loops, Number(u.id)],
+        )
     }
 
     // Engine launched while the rows were being read would have loaded the old library and

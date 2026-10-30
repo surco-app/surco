@@ -10,6 +10,8 @@ export interface RekordboxRepoint {
   // The conversion rewrote the audio: rekordbox's analysis describes the old file, and its
   // cues land back on the beats they were set on once moved by cueShiftMs.
   audio?: { cueShiftMs: number }
+  // The same move as Engine DJ counts it (see shiftEnginePerformance).
+  engineShift?: EngineShift
   playlists?: RekordboxPlaylistTarget[]
   playlistsBase?: string[]
   traktorPlaylists?: LibraryPlaylistChoice
@@ -17,6 +19,7 @@ export interface RekordboxRepoint {
 }
 
 import type { LibraryPlaylistChoice, RekordboxPlaylistTarget } from '../shared/types'
+import type { EngineShift } from './engineRepoint'
 import type { RekordboxMeta } from './rekordboxMetadata'
 
 let repoints: RekordboxRepoint[] = []
@@ -43,10 +46,21 @@ export function recordRekordboxRepoint(repoint: RekordboxRepoint): void {
   const earlier = repoints[existing]
   // Only a second conversion of the first one's output stacks its move on top; one that
   // read the original again already measured from the file the cues were set on.
-  repoints[existing] =
-    earlier.audio && repoint.audio && earlier.to === repoint.from
+  const stacks = earlier.to === repoint.from
+  const engineShift =
+    stacks && earlier.engineShift
+      ? {
+          ...earlier.engineShift,
+          ...repoint.engineShift,
+          trimmedMs: earlier.engineShift.trimmedMs + (repoint.engineShift?.trimmedMs ?? 0),
+        }
+      : repoint.engineShift
+  repoints[existing] = {
+    ...(earlier.audio && repoint.audio && stacks
       ? { ...repoint, audio: { cueShiftMs: earlier.audio.cueShiftMs + repoint.audio.cueShiftMs } }
-      : repoint
+      : repoint),
+    ...(engineShift ? { engineShift } : {}),
+  }
 }
 
 // Moves a recorded repoint onto the path the file really ended up at, keyed by the path

@@ -48,6 +48,7 @@ export const VERIFY_DETAIL_KEYS = [
   'engineNoFileType',
   'engineSizeDiffers',
   'enginePerformanceChanged',
+  'engineCuesMisplaced',
   'engineUnreadable',
   'traktorOk',
   'traktorStillOld',

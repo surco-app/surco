@@ -138,6 +138,32 @@ describe('rekordbox batch', () => {
     ])
   })
 
+  // Engine's cues also still sit on the original: a trim in place followed by a trimmed
+  // conversion elsewhere moves them by both cuts, counted at the last file's rate.
+  it('adds up Engine’s cuts the same way, at the last conversion’s rate', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint({
+      from: '/m/one.wav',
+      to: '/m/one.wav',
+      audio: { cueShiftMs: -1000 },
+      engineShift: { trimmedMs: 1000 },
+    })
+    recordRekordboxRepoint({
+      from: '/m/one.wav',
+      to: '/out/one.aiff',
+      audio: { cueShiftMs: -900 },
+      engineShift: { trimmedMs: 900, sampleRateHz: 48000 },
+    })
+    expect(endRekordboxBatch()).toEqual([
+      {
+        from: '/m/one.wav',
+        to: '/out/one.aiff',
+        audio: { cueShiftMs: -1900 },
+        engineShift: { trimmedMs: 1900, sampleRateHz: 48000 },
+      },
+    ])
+  })
+
   // Converting into another folder leaves the original in place, and a second conversion
   // reads that original again: its move already counts from the cues' file.
   it('keeps only the last move when both conversions started from the original', () => {

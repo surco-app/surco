@@ -2538,6 +2538,7 @@ export async function convertAudio(
             sourceShiftMs,
             outputShiftMs,
             trimmedMs: trimAf !== undefined ? (trim?.startSec ?? 0) * 1000 : 0,
+            ...(plan.sampleRateHz ? { sampleRateHz: plan.sampleRateHz } : {}),
           }
     // A rewrite lands on the source's own path, so the rename below would replace the
     // user's file with no way back. A copy of the original goes to Surco's trash first (see

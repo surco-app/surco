@@ -1351,6 +1351,15 @@ la relee, así que una escritura sería invisible en el mejor caso y machacada e
 el peor (`engineLibrary.ts:166-169`). Un lote de 300 pistas paga una
 lectura/escritura, no 300.
 
+**Los cues de Engine siguen al recorte.** Al reapuntar una pista convertida sin el silencio
+inicial, cada hot cue, el cue principal, cada loop y la rejilla se adelantan lo mismo que se
+cortó; lo que caía dentro del corte queda en el nuevo inicio, como en rekordbox y Traktor. Si
+además se cambió la frecuencia de muestreo, las posiciones se reescriben en la nueva
+(`shiftEnginePerformance`, `engineRepoint.ts:114`). Antes la fila seguía al fichero pero cada
+cue sonaba tarde lo que durara el corte. Una pista recortada en su sitio, con la misma ruta, no
+se reapunta en Engine y sus cues no se mueven. El desfase de MP3 que se aplica a rekordbox y a
+Traktor al cambiar de formato no se aplica a Engine, porque no se ha medido en Engine.
+
 ### Cue points de Traktor
 
 Ingeniería inversa del formato: un árbol binario en un frame ID3 PRIV con owner
@@ -1931,6 +1940,10 @@ fichero viejo no se ofrece a la papelera mientras algo lo siga usando (`supersed
 todo cuadra, un escudo discreto junto al aviso abre la lista de lo comprobado
 (`VerifiedPopover.tsx`). En lote el pie dice cuántas se comprobaron y cuántas no cuadran, y la
 revisión tiene el filtro «No cuadran».
+
+En Engine DJ, tras un recorte o un cambio de frecuencia, comprueba que cues, loops y rejilla
+cayeron donde debían respecto a la foto, con un margen de 1 ms; si no, la pista sale en ámbar
+con «Los cues de Engine DJ no siguieron al audio» (`engineCuesMisplaced`, `verifyEngine.ts:236`).
 
 **Lo que no mira:** la posición exacta de cada cue de rekordbox (cuenta los cues, no dónde
 caen) ni las playlists de los programas de DJ.
