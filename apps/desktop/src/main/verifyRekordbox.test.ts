@@ -11,6 +11,7 @@ import { makeRekordbox, type RekordboxSeed, rekordboxRow } from '../scenarios/re
 import { type FindOptions, openRekordboxDb } from './rekordboxDb'
 import {
   checkRekordbox,
+  type RekordboxBefore,
   type RekordboxExpect,
   type RekordboxSnapshot,
   snapshotRekordboxRow,
@@ -78,7 +79,7 @@ const readOnly = (path: string) => {
 const snapshot = (path: string, from = FROM) => snapshotRekordboxRow(readOnly(path), from, find)
 
 const expectFor = (
-  before: RekordboxSnapshot | null,
+  before: RekordboxBefore,
   over: Partial<RekordboxExpect> = {},
 ): RekordboxExpect => ({
   from: FROM,
@@ -89,6 +90,9 @@ const expectFor = (
   size: SIZE,
   ...over,
 })
+
+const field = <K extends keyof RekordboxSnapshot>(b: RekordboxBefore, k: K) =>
+  typeof b === 'object' ? b[k] : b
 
 const checkOne = (path: string, e: RekordboxExpect) => checkRekordbox(readOnly(path), [e], find)
 
@@ -109,12 +113,25 @@ describe('snapshotRekordboxRow', () => {
   it('a deleted cue does not count', () => {
     const db = collection([{}])
     write(db, `UPDATE djmdCue SET rb_local_deleted = 1 WHERE ID = '100-cue0'`)
-    expect(snapshot(db)?.cues).toBe(12)
+    expect(field(snapshot(db), 'cues')).toBe(12)
   })
 
-  it('a file the collection does not have has no snapshot', () => {
+  // Absent means rekordbox does not have the track, so there is nothing there to check.
+  it('a file the collection does not have is absent', () => {
     const db = collection([{}])
-    expect(snapshot(db, '/Volumes/Music/Other.aiff')).toBeNull()
+    expect(snapshot(db, '/Volumes/Music/Other.aiff')).toBe('absent')
+  })
+
+  it('two rows on the file are ambiguous, not absent', () => {
+    expect(snapshot(collection([{}, {}]))).toBe('ambiguous')
+  })
+
+  // A failed read is not "rekordbox does not have it": the caller must mark the track
+  // unreadable rather than skip rekordbox.
+  it('a snapshot that fails to read is unreadable, not absent', () => {
+    const handle = readOnly(collection([{}]))
+    handle.close()
+    expect(snapshotRekordboxRow(handle, FROM, find)).toBe('unreadable')
   })
 })
 
@@ -265,8 +282,8 @@ describe('checkRekordbox', () => {
 
   it('two rows still on the source file are a mismatch, never ok', () => {
     const db = collection([{}, {}])
-    expect(snapshot(db)).toBeNull()
-    expect(checkOne(db, expectFor(null))[0].detail).toEqual({
+    expect(snapshot(db)).toBe('ambiguous')
+    expect(checkOne(db, expectFor('ambiguous'))[0].detail).toEqual({
       key: 'rekordboxAmbiguous',
       params: { count: 2 },
     })
@@ -279,7 +296,7 @@ describe('checkRekordbox', () => {
     const db = collection([{ path: from.normalize('NFD') }])
     analyse(db, '100')
     const before = snapshot(db, from)
-    expect(before?.id).toBe('100')
+    expect(field(before, 'id')).toBe('100')
     repoint(db, '100', to.normalize('NFD'))
     expect(checkOne(db, expectFor(before, { from, to }))[0].state).toBe('ok')
   })
@@ -323,7 +340,7 @@ describe('checkRekordbox', () => {
   it('a repoint with no snapshot is unreadable, never ok', () => {
     const db = collection([{}])
     repoint(db, '100')
-    expect(checkOne(db, expectFor(null))[0]).toEqual({
+    expect(checkOne(db, expectFor('absent'))[0]).toEqual({
       place: 'rekordbox',
       state: 'unreadable',
       detail: { key: 'rekordboxUnreadable' },
@@ -333,7 +350,7 @@ describe('checkRekordbox', () => {
   it('an added row on the file is ok with its cues', () => {
     const db = collection([{ path: TO, fileType: 11, cuesMs: [] }])
     write(db, `UPDATE djmdContent SET FileSize = ? WHERE ID = '100'`, SIZE)
-    expect(checkOne(db, expectFor(null, { added: true }))[0]).toEqual({
+    expect(checkOne(db, expectFor('absent', { added: true }))[0]).toEqual({
       place: 'rekordbox',
       state: 'ok',
       detail: { key: 'rekordboxOk', params: { format: 'WAV', cues: 0 } },
@@ -344,9 +361,30 @@ describe('checkRekordbox', () => {
     const db = collection([{}])
     const handle = readOnly(db)
     handle.close()
-    expect(checkRekordbox(handle, [expectFor(null, { added: true })], find)).toEqual([
+    expect(checkRekordbox(handle, [expectFor('absent', { added: true })], find)).toEqual([
       { place: 'rekordbox', state: 'unreadable', detail: { key: 'rekordboxUnreadable' } },
     ])
+  })
+
+  it('a check whose snapshot failed is unreadable whatever the row says', () => {
+    const db = collection([{}])
+    expect(checkOne(db, expectFor('unreadable'))[0]).toEqual({
+      place: 'rekordbox',
+      state: 'unreadable',
+      detail: { key: 'rekordboxUnreadable' },
+    })
+  })
+
+  // Two rows before the write is still a track rekordbox has; the repoint refused it, so it
+  // is checked and never reads as done.
+  it('an ambiguous snapshot with a row repointed is never ok', () => {
+    const db = collection([{}, {}])
+    repoint(db, '100')
+    expect(checkOne(db, expectFor('ambiguous'))[0]).toEqual({
+      place: 'rekordbox',
+      state: 'unreadable',
+      detail: { key: 'rekordboxUnreadable' },
+    })
   })
 
   it('judges every track of the batch in order', () => {
@@ -375,7 +413,7 @@ describe('checkRekordbox', () => {
     const handle = readOnly(db)
     expect(handle.readonly).toBe(true)
     expect(checkRekordbox(handle, [expectFor(before)], find)[0].state).toBe('ok')
-    expect(snapshotRekordboxRow(handle, TO, find)?.id).toBe('100')
+    expect(field(snapshotRekordboxRow(handle, TO, find), 'id')).toBe('100')
     handle.close()
     expect({ sha: sha(), mtime: statSync(db).mtimeMs }).toEqual(was)
     expect(rekordboxRow(db, '100').cuesMs).toHaveLength(13)

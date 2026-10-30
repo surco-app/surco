@@ -19,13 +19,17 @@ export interface RekordboxSnapshot {
   analysed: number
 }
 
-// before is the source's row read ahead of the conversion; added when the flush created a
-// row for the file instead of repointing one; size is the written file's size on disk.
+// What the collection said about the source before the conversion: its row, no row at all
+// (rekordbox does not have the track and is not checked), several rows, or a read that failed.
+export type RekordboxBefore = RekordboxSnapshot | 'absent' | 'ambiguous' | 'unreadable'
+
+// added when the flush created a row for the file instead of repointing one; size is the
+// written file's size on disk.
 export interface RekordboxExpect {
   from: string
   to: string
   samplesKept: boolean
-  before: RekordboxSnapshot | null
+  before: RekordboxBefore
   added: boolean
   size: number
 }
@@ -70,20 +74,25 @@ const liveCues = (db: RekordboxDb, id: string) =>
   ).n
 
 // The source's row as it is before anything writes, so the check can say the cues and the
-// grid survived. Null when the collection has no row, or more than one, for the file.
+// grid survived.
 export function snapshotRekordboxRow(
   db: RekordboxDb,
   from: string,
   find: FindOptions,
-): RekordboxSnapshot | null {
-  const rows = rowsOn(db, from, find)
-  if (rows.length !== 1) return null
-  const row = rows[0]
-  return {
-    id: String(row.ID),
-    cues: liveCues(db, String(row.ID)),
-    analysisDataPath: row.AnalysisDataPath ?? '',
-    analysed: row.Analysed ?? 0,
+): RekordboxBefore {
+  try {
+    const rows = rowsOn(db, from, find)
+    if (rows.length === 0) return 'absent'
+    if (rows.length > 1) return 'ambiguous'
+    const row = rows[0]
+    return {
+      id: String(row.ID),
+      cues: liveCues(db, String(row.ID)),
+      analysisDataPath: row.AnalysisDataPath ?? '',
+      analysed: row.Analysed ?? 0,
+    }
+  } catch {
+    return 'unreadable'
   }
 }
 
@@ -114,6 +123,7 @@ export function checkRekordbox(
 }
 
 function judge(db: RekordboxDb, e: RekordboxExpect, find: FindOptions): PlaceCheck {
+  if (e.before === 'unreadable') return check('unreadable', 'rekordboxUnreadable')
   const on = rowsOn(db, e.to, find)
   if (on.length > 1) return check('mismatch', 'rekordboxAmbiguous', { count: on.length })
   if (on.length === 0) {
@@ -126,26 +136,27 @@ function judge(db: RekordboxDb, e: RekordboxExpect, find: FindOptions): PlaceChe
 
   const row = on[0]
   const id = String(row.ID)
+  const before = typeof e.before === 'object' ? e.before : null
   if (!e.added) {
-    if (!e.before) return check('unreadable', 'rekordboxUnreadable')
-    if (id !== e.before.id) return check('mismatch', 'rekordboxOtherRow')
+    if (!before) return check('unreadable', 'rekordboxUnreadable')
+    if (id !== before.id) return check('mismatch', 'rekordboxOtherRow')
   }
   if (row.FileType !== FILE_TYPES[extname(e.to).slice(1).toLowerCase()])
     return check('mismatch', 'rekordboxStillOld', { format: formatOfType(row.FileType) })
   if (row.FileSize !== e.size) return check('mismatch', 'rekordboxSizeDiffers')
 
   const cues = liveCues(db, id)
-  if (!e.added && e.before) {
-    if (cues < e.before.cues)
-      return check('mismatch', 'rekordboxCuesLost', { before: e.before.cues, after: cues })
-    if (cues > e.before.cues)
-      return check('mismatch', 'rekordboxCuesChanged', { before: e.before.cues, after: cues })
+  if (!e.added && before) {
+    if (cues < before.cues)
+      return check('mismatch', 'rekordboxCuesLost', { before: before.cues, after: cues })
+    if (cues > before.cues)
+      return check('mismatch', 'rekordboxCuesChanged', { before: before.cues, after: cues })
     // The 30/10 report: a conversion that kept the samples emptied rekordbox's analysis,
     // and rekordbox drew a new grid over audio that had not moved.
     if (
       e.samplesKept &&
-      ((row.AnalysisDataPath ?? '') !== e.before.analysisDataPath ||
-        (row.Analysed ?? 0) !== e.before.analysed)
+      ((row.AnalysisDataPath ?? '') !== before.analysisDataPath ||
+        (row.Analysed ?? 0) !== before.analysed)
     )
       return check('mismatch', 'rekordboxAnalysisEmptied')
   }
