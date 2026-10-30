@@ -2434,6 +2434,60 @@ describe('runProcessTrack — Music answering an add with the entry it already h
     expect(result.appleMusicFailed).toBe(true)
   })
 
+  // A restore Music refused leaves " [surco-replacing]" at the end of a name in the DJ's
+  // library, and only the DJ can take it off: it has to be said, not only logged.
+  const restoreRefused = () =>
+    vi.fn(async (pid: string, _label: string, marked: boolean) => {
+      calls.push(`${marked ? 'mark' : 'unmark'} ${pid}`)
+      if (!marked) throw new Error('AppleEvent timed out (-1712)')
+      return 'set' as const
+    })
+
+  it('reports a name it could not restore after a replacement', async () => {
+    const result = await runProcessTrack(
+      replaceJob,
+      recording({ markAppleMusicReplacing: restoreRefused() }),
+    )
+
+    expect(result.musicNameLeftMarked).toBe(true)
+  })
+
+  it('reports a name it could not restore when the replacement failed', async () => {
+    const deps = recording({
+      markAppleMusicReplacing: restoreRefused(),
+      addToAppleMusic: vi.fn(async () => {
+        throw new Error('Music got an error: -2753')
+      }),
+    })
+
+    const result = await runProcessTrack(replaceJob, deps)
+
+    expect(result.appleMusicFailed).toBe(true)
+    expect(result.musicNameLeftMarked).toBe(true)
+  })
+
+  it('fails "Apple Music only" with the name it could not restore', async () => {
+    const deps = recording({
+      settings: settings({ keepOutputCopy: false }),
+      markAppleMusicReplacing: restoreRefused(),
+      addToAppleMusic: vi.fn(async () => {
+        throw new Error('Music got an error: -2753')
+      }),
+    })
+
+    const failure = await runProcessTrack({ ...replaceJob, keepOutputCopy: false }, deps).catch(
+      (e: Error) => e,
+    )
+
+    expect(errorKeyOf((failure as Error).message)).toBe('appleMusicNameLeftMarked')
+  })
+
+  it('reports nothing when the name came back', async () => {
+    const result = await runProcessTrack(replaceJob, recording())
+
+    expect(result.musicNameLeftMarked).toBeUndefined()
+  })
+
   // An entry that no longer carries the confirmed name is not renamed, so there is nothing to
   // restore; the add still runs and the label checks after it decide as before.
   it('restores nothing it did not rename', async () => {

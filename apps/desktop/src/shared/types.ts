@@ -1300,6 +1300,9 @@ export interface ProcessResult {
   // Set when the converted file landed but the original it replaced in a format change
   // could not be retired, so both are in the folder.
   originalKept?: true
+  // The replaced Apple Music entry kept the " [surco-replacing]" mark in its name: Music
+  // could not be asked to take it off, so the DJ has to.
+  musicNameLeftMarked?: true
 }
 
 // A fixed-length envelope of max-abs peaks (each 0..1) for drawing the track's

@@ -1,7 +1,7 @@
 import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
-import { errorWithKey } from '../shared/errorKeys'
+import { errorKeyOf, errorWithKey } from '../shared/errorKeys'
 import { foldAccents } from '../shared/foldAccents'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../shared/format'
 import type {
@@ -211,6 +211,8 @@ interface ReplacedCopy {
   added: string
   oldCopyKept?: 'mismatch' | 'error' | 'carry'
   landed?: MediaCopy
+  // The old entry's name still ends with the replacing mark.
+  nameLeftMarked?: true
 }
 
 // One replacement at a time across the jobs of a batch: Music only serializes each script,
@@ -249,13 +251,41 @@ async function replaceUnlocked(
           old.persistentId ? 'appleMusicNoMediaCopyKept' : 'appleMusicNoMediaCopy',
         )
       : undefined
-  } finally {
-    // A restore that fails leaves the mark in the name, never a lost entry: logged, not thrown.
-    if (marked && old.persistentId)
-      await deps
-        .markAppleMusicReplacing(old.persistentId, old.label, false)
-        .catch((e) => log.warn('process:track could not restore the old Music entry name', e))
+  } catch (e) {
+    // A restore that fails leaves the mark in the name, never a lost entry, but only the DJ
+    // can take it off, so the failure that reaches them names it (the cause is logged).
+    if (marked && !(await restoreName(old, deps))) {
+      log.warn('process:track Apple Music step failed', e)
+      throw errorWithKey('appleMusicNameLeftMarked', old.label)
+    }
+    throw e
   }
+  const nameLeftMarked = marked && !(await restoreName(old, deps))
+  const retired = await retireOldEntry(old, added, landed, deps)
+  return nameLeftMarked ? { ...retired, nameLeftMarked: true } : retired
+}
+
+// False when Music could not be asked to take the mark off the old entry's name.
+function restoreName(
+  old: { persistentId?: string; label: string },
+  deps: ProcessTrackDeps,
+): Promise<boolean> {
+  if (!old.persistentId) return Promise.resolve(true)
+  return deps.markAppleMusicReplacing(old.persistentId, old.label, false).then(
+    () => true,
+    (e) => {
+      log.warn('process:track could not restore the old Music entry name', e)
+      return false
+    },
+  )
+}
+
+async function retireOldEntry(
+  old: { persistentId?: string; label: string },
+  added: string,
+  landed: MediaCopy | undefined,
+  deps: ProcessTrackDeps,
+): Promise<ReplacedCopy> {
   if (!old.persistentId) return { added, landed }
   try {
     const carried = await deps.carryAppleMusicHistory(old.persistentId, added, old.label)
@@ -655,6 +685,7 @@ export async function runProcessTrack(
     let supersededPath: string | undefined
     let musicLandedPath: string | undefined
     let appleMusicFailed: true | undefined
+    let musicNameLeftMarked: true | undefined
     // The file in the Media folder is Music's once an add answers with an entry of its own;
     // one that answers with the entry being replaced imported nothing (see replaceAppleMusicCopy).
     const musicDeps: ProcessTrackDeps = mediaTarget
@@ -692,6 +723,7 @@ export async function runProcessTrack(
           )
           musicPersistentId = replaced.added
           oldMusicCopyKept = replaced.oldCopyKept
+          musicNameLeftMarked = replaced.nameLeftMarked
           verified = true
         } else if (existingMusicEntry && inPlace && outputIsInput) {
           musicPersistentId =
@@ -708,6 +740,7 @@ export async function runProcessTrack(
           )
           musicPersistentId = replaced.added
           oldMusicCopyKept = replaced.oldCopyKept
+          musicNameLeftMarked = replaced.nameLeftMarked
           verified = true
         } else {
           // An entry in another format than the output can't be retagged into it: Music
@@ -733,6 +766,7 @@ export async function runProcessTrack(
             )
             musicPersistentId = replaced.added
             oldMusicCopyKept = replaced.oldCopyKept
+            musicNameLeftMarked = replaced.nameLeftMarked
             const isSource = entry.path.normalize('NFC') === job.inputPath.normalize('NFC')
             // The row was the file Music played, so it follows the entry to its new file.
             if (isSource && replaced.landed?.path) musicLandedPath = replaced.landed.path
@@ -764,6 +798,8 @@ export async function runProcessTrack(
       } catch (e) {
         if (musicOnly) throw e
         log.warn('process:track Apple Music step failed after the file was written', target, e)
+        if (errorKeyOf(e instanceof Error ? e.message : '') === 'appleMusicNameLeftMarked')
+          musicNameLeftMarked = true
         musicPersistentId = undefined
         appleMusicFailed = true
       }
@@ -837,6 +873,7 @@ export async function runProcessTrack(
         supersededPath,
         musicLandedPath,
         originalKept,
+        musicNameLeftMarked,
       }
 
     // The conversion wrote a real file the renderer may play next — directly, or
@@ -856,6 +893,7 @@ export async function runProcessTrack(
       supersededPath,
       appleMusicFailed,
       originalKept,
+      musicNameLeftMarked,
     }
   } catch (e) {
     // The toast is all the user sees and it is gone once dismissed; the log is what a

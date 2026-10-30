@@ -24,6 +24,7 @@ export const ERROR_KEYS = [
   'appleMusicNoMediaCopy',
   'appleMusicNoMediaCopyKept',
   'appleMusicAddReturnedOld',
+  'appleMusicNameLeftMarked',
   'convertedOutputUnreadable',
   'convertedOutputTruncated',
   'engineDjOpen',

@@ -1154,6 +1154,32 @@ describe('useTrackProcessing', () => {
     expect(onOriginalKept).toHaveBeenCalledWith('a.wav')
   })
 
+  // The old Music entry kept " [surco-replacing]" in its name: only the DJ can take it off.
+  it('tells the user when an old Music entry kept the replacing mark in its name', async () => {
+    setApi({
+      processTrack: vi.fn<Api['processTrack']>().mockResolvedValue({
+        outputPath: '/m/Artist - Title.aiff',
+        inPlace: false,
+        musicNameLeftMarked: true,
+      }),
+    })
+    const onMusicNameLeftMarked = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: null,
+          updateTrack: vi.fn(),
+          onMusicNameLeftMarked,
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(onMusicNameLeftMarked).toHaveBeenCalledWith('a.wav')
+  })
+
   it('follows a renamed file and counts it converted when only the Apple Music step failed', async () => {
     setApi({
       processTrack: vi.fn<Api['processTrack']>().mockResolvedValue({

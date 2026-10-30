@@ -61,6 +61,8 @@ interface Params {
   // Surfaced when the converted file landed but the original it replaced in a format
   // change could not be removed, so both are in the folder.
   onOriginalKept?: (name: string) => void
+  // The replaced Music entry kept the replacing mark in its name (ProcessResult.musicNameLeftMarked).
+  onMusicNameLeftMarked?: (name: string) => void
   // Surfaced when 'source' skipped a track for having no output format equivalent
   // (.opus/.ogg/.oga/.aac/.mp4). A batch run shows this through batchSummary's "N
   // skipped" count, but a single-track convert has no summary to show it in — without
@@ -138,6 +140,7 @@ export function useTrackProcessing({
   onOldMusicCopyKept,
   onAppleMusicFailed,
   onOriginalKept,
+  onMusicNameLeftMarked,
   onFormatSkipped,
   onKeptAsIs,
   rereadTrackMeta,
@@ -423,6 +426,7 @@ export function useTrackProcessing({
         if (result.declickedSamples) onDeclicked?.(track.listLabel, result.declickedSamples)
         if (result.oldMusicCopyKept) onOldMusicCopyKept?.(result.oldMusicCopyKept)
         if (result.originalKept) onOriginalKept?.(track.listLabel)
+        if (result.musicNameLeftMarked) onMusicNameLeftMarked?.(track.listLabel)
         // Record the config main actually applied — same fallback processTrack uses
         // when the job carries none — so the stale check compares against reality.
         updateTrack(
