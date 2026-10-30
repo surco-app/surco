@@ -365,7 +365,9 @@ describe('queueVerification', () => {
     outcomes: [],
   }
   const setup = () => {
-    const afterQueueApplied = vi.fn(async () => {})
+    const afterQueueApplied = vi.fn(
+      async (_place: string, _result: unknown, _stillQueued?: boolean) => {},
+    )
     return { afterQueueApplied, q: queueVerification({ afterQueueApplied }) }
   }
 
@@ -402,6 +404,8 @@ describe('queueVerification', () => {
     expect(afterQueueApplied).not.toHaveBeenCalled()
   })
 
+  // A refusal or a throw leaves the repoints in the queue for the next apply; a discard
+  // takes them away.
   it('a refusal, a throw or a discard is a failed apply, never left pending', () => {
     const { afterQueueApplied, q } = setup()
     q.repointed('rekordbox', [{ written: false, reason: 'backup-failed' }])
@@ -409,9 +413,9 @@ describe('queueVerification', () => {
     q.settled('engine', 'threw')
     q.discarded('traktor')
     expect(afterQueueApplied.mock.calls).toEqual([
-      ['rekordbox', 'failed'],
-      ['engine', 'failed'],
-      ['traktor', 'failed'],
+      ['rekordbox', 'failed', true],
+      ['engine', 'failed', true],
+      ['traktor', 'failed', false],
     ])
   })
 

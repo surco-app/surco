@@ -810,6 +810,82 @@ describe('verify registry', () => {
     expect(stateOf(registry.get('a'), 'traktor')).toBe('ok')
   })
 
+  // A refused write leaves the patches in the queue: the next apply writes them, and the
+  // track held on them is read back then, against what that write matched.
+  it('a Traktor apply refused with its patches still queued is re-checked when they land', async () => {
+    const { deps, registry } = setup()
+    const p: NmlPatch = { volume: 'Public', dir: '/:Musica/:', file: 'a.aiff', newFile: 'a.wav' }
+    registry.register(entry('a', { places: new Set(['file', 'traktor']), traktorPatch: p }))
+    await registry.afterFlush({ ...written, traktor: 'queued' })
+
+    await registry.afterQueueApplied('traktor', 'failed', true)
+    expect(registry.get('a')?.checks[1]).toEqual(unreadable('traktor', 'traktorUnreadable'))
+    expect(deps.readTraktor).not.toHaveBeenCalled()
+
+    await registry.afterQueueApplied('traktor', {
+      before: new Map([[traktorPatchKey(p), 'a.aiff']]),
+    })
+    expect(deps.readTraktor.mock.calls[0][0]).toEqual([
+      { patch: p, before: 'a.aiff', stranded: false },
+    ])
+    expect(stateOf(registry.get('a'), 'traktor')).toBe('ok')
+  })
+
+  it('a discarded Traktor queue leaves nothing to re-check', async () => {
+    const { deps, registry } = setup()
+    const p: NmlPatch = { volume: 'Public', dir: '/:Musica/:', file: 'a.aiff', newFile: 'a.wav' }
+    registry.register(entry('a', { places: new Set(['file', 'traktor']), traktorPatch: p }))
+    await registry.afterFlush({ ...written, traktor: 'queued' })
+
+    await registry.afterQueueApplied('traktor', 'failed')
+    await registry.afterQueueApplied('traktor', {
+      before: new Map([[traktorPatchKey(p), 'a.aiff']]),
+    })
+    expect(deps.readTraktor).not.toHaveBeenCalled()
+  })
+
+  // A write that failed changed nothing: what the last one matched still holds, and a retry
+  // reads with it instead of answering unreadable without looking.
+  it('a failed Traktor write keeps what the last write matched for the retry', async () => {
+    const { deps, registry } = setup()
+    deps.readTraktor.mockResolvedValueOnce([mismatch('traktor', 'traktorStillOld')])
+    const p: NmlPatch = { volume: 'Public', dir: '/:Musica/:', file: 'a.aiff', newFile: 'a.wav' }
+    registry.register(entry('a', { places: new Set(['file', 'traktor']), traktorPatch: p }))
+    await registry.afterFlush({
+      ...written,
+      traktor: { before: new Map([[traktorPatchKey(p), 'a.aiff']]) },
+    })
+    await registry.retry('a')
+    await registry.afterQueueApplied('traktor', 'failed', true)
+    expect(registry.get('a')?.checks[1]).toEqual(unreadable('traktor', 'traktorUnreadable'))
+
+    await registry.retry('a')
+
+    expect(deps.readTraktor).toHaveBeenCalledTimes(2)
+    expect(deps.readTraktor.mock.calls[1][0]).toEqual([
+      { patch: p, before: 'a.aiff', stranded: false },
+    ])
+    expect(stateOf(registry.get('a'), 'traktor')).toBe('ok')
+  })
+
+  // Never written, there is nothing to read against: the retry hands the patch again.
+  it('retry on a Traktor patch never written hands it again instead of answering unreadable', async () => {
+    const { deps, registry } = setup()
+    const p: NmlPatch = { volume: 'Public', dir: '/:Musica/:', file: 'a.aiff', newFile: 'a.wav' }
+    const a = entry('a', { places: new Set(['file', 'traktor']), traktorPatch: p })
+    registry.register(a)
+    await registry.afterFlush({ ...written, traktor: 'failed' })
+
+    await registry.retry('a')
+
+    expect(deps.requeue).toHaveBeenCalledWith('traktor', a)
+    expect(stateOf(registry.get('a'), 'traktor')).toBe('pending')
+    await registry.afterQueueApplied('traktor', {
+      before: new Map([[traktorPatchKey(p), 'a.aiff']]),
+    })
+    expect(stateOf(registry.get('a'), 'traktor')).toBe('ok')
+  })
+
   // The renderer applies an update only for the conversion it holds and only when it is newer
   // than what it has: the result came back as seq 0, so every later word must count up.
   it('every emit names its conversion and counts up across the flush, a queue apply and a retry', async () => {

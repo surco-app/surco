@@ -200,9 +200,10 @@ export function libraryRequeue(queues: {
 // How each queue apply went, for the tracks held pending on it. Repoints that came back
 // without a collection-wide refusal left the queue: whatever the rest of the apply did,
 // they are read back. Otherwise a program still open keeps them pending, and any other
-// refusal, a throw or a discarded queue is a failed apply, never left pending.
+// refusal, a throw or a discarded queue is a failed apply, never left pending: a refusal or a
+// throw leaves them queued for the next apply to write, a discard does not.
 export function queueVerification(registry: {
-  afterQueueApplied: (place: Library, result: QueueApplied) => Promise<void>
+  afterQueueApplied: (place: Library, result: QueueApplied, stillQueued?: boolean) => Promise<void>
 }) {
   const repointed: Partial<Record<Library, QueueApplied>> = {}
   return {
@@ -215,11 +216,11 @@ export function queueVerification(registry: {
       delete repointed[place]
       if (written) void registry.afterQueueApplied(place, written)
       else if (result === 'threw' || (result.status === 'refused' && !stillWaiting(result)))
-        void registry.afterQueueApplied(place, 'failed')
+        void registry.afterQueueApplied(place, 'failed', true)
     },
     discarded(place: Library): void {
       delete repointed[place]
-      void registry.afterQueueApplied(place, 'failed')
+      void registry.afterQueueApplied(place, 'failed', false)
     },
   }
 }

@@ -126,6 +126,14 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
   const stillOld = (e: VerifyEntry, place: Library) =>
     !samePath(e.from, e.to) &&
     e.verification.checks.find((c) => c.place === place)?.detail.key === `${place}StillOld`
+  // A Traktor patch no write ever matched has nothing to be read against: only writing it
+  // again can tell.
+  const neverWritten = (e: VerifyEntry, place: Library) =>
+    place === 'traktor' &&
+    e.traktorPatch !== undefined &&
+    stateOf(e, place) === 'unreadable' &&
+    !traktorBefore.has(e.trackId) &&
+    !samePath(e.from, e.to)
   const entries = new Map<string, VerifyEntry>()
   // The Traktor fact each track was last written with, kept for a later re-read. A track
   // with none was never written, and its re-read cannot say anything.
@@ -216,14 +224,16 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     const expects: { e: VerifyEntry; expect: TraktorExpect }[] = []
     for (const e of list) {
       const patch = e.traktorPatch
-      if (result === 'failed' || result === 'written' || !patch) traktorBefore.delete(e.trackId)
-      else if (result) {
+      // A failed write changed nothing: what the last one matched still holds.
+      if (result === 'written' || !patch) traktorBefore.delete(e.trackId)
+      else if (result && result !== 'failed') {
         const key = traktorPatchKey(patch)
         if (result.before.has(key)) traktorBefore.set(e.trackId, result.before.get(key) ?? null)
         else traktorBefore.delete(e.trackId)
       }
       const before = traktorBefore.get(e.trackId)
-      if (!patch || before === undefined) replace(e, unreadable('traktor'), 'traktor')
+      if (result === 'failed' || !patch || before === undefined)
+        replace(e, unreadable('traktor'), 'traktor')
       else expects.push({ e, expect: { patch, before, stranded: e.traktorStranded ?? false } })
     }
     if (expects.length === 0) return
@@ -300,10 +310,19 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
       for (const e of flushed) emit(e)
     },
 
-    async afterQueueApplied(place: Library, result: QueueApplied): Promise<void> {
+    // stillQueued: the apply was refused and left the repoints in the queue, so the tracks
+    // held on them are re-checked when a later apply writes them.
+    async afterQueueApplied(
+      place: Library,
+      result: QueueApplied,
+      stillQueued = false,
+    ): Promise<void> {
       const held = [...awaiting[place]]
-      await during(held, () => check(place, held, result))
-      for (const e of held) emit(e)
+      await during(held, async () => {
+        await check(place, held, result)
+        if (result === 'failed' && stillQueued) for (const e of held) awaiting[place].add(e)
+        for (const e of held) emit(e)
+      })
     },
 
     // The worst place decides: a file or Music entry that does not add up is converted again
@@ -345,14 +364,13 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
       )
     for (const place of LIBRARIES) {
       const state = stateOf(e, place)
-      if (state === 'unreadable') await check(place, [e], null)
       // Only a library still on the old file is handed its repoint again: one that already
       // names the file would move its cues a second time.
-      else if (state === 'mismatch' && stillOld(e, place)) {
+      if (stillOld(e, place) || neverWritten(e, place)) {
         hold(place, e)
         if (!deps.requeue(place, e) && stateOf(e, place) === 'pending')
           replace(e, checking(place), place)
-      } else if (state === 'mismatch') await check(place, [e], null)
+      } else if (state === 'unreadable' || state === 'mismatch') await check(place, [e], null)
     }
     emit(e)
     return 'rechecked'
