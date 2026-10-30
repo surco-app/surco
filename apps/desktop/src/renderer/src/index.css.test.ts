@@ -310,6 +310,7 @@ describe('reduced motion', () => {
     '.player-section',
     '.press',
     '.animate-toast-countdown',
+    '.copies-collapse',
   ]) {
     it(`holds ${selector} still`, () => {
       expect(reduced).toContain(selector)
@@ -320,6 +321,20 @@ describe('reduced motion', () => {
     expect(reduced).toMatch(/\.animate-toast-countdown\s*\{[^}]*toast-countdown-fade/)
     const frames = css.slice(css.indexOf('@keyframes toast-countdown-fade'))
     expect(frames.slice(0, frames.indexOf('}\n}'))).toContain('opacity')
+  })
+})
+
+// A Copias list folds by its rows track alone: transitioning anything else, or everything,
+// would animate layout the fold never meant to move.
+describe('Copias list fold', () => {
+  it('transitions only the rows track and the fade', () => {
+    const rule = css.slice(css.indexOf('.copies-collapse {'))
+    const body = rule.slice(0, rule.indexOf('}'))
+    expect(body).toContain('grid-template-rows: 0fr')
+    expect(body).toMatch(
+      /transition:\s*grid-template-rows 200ms cubic-bezier\(0\.23, 1, 0\.32, 1\),\s*opacity 200ms/,
+    )
+    expect(body).not.toMatch(/transition:\s*all/)
   })
 })
 

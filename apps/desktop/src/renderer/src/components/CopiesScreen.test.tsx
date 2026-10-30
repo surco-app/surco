@@ -392,11 +392,25 @@ describe('CopiesScreen', () => {
     expect(open).toHaveBeenCalledWith('destination')
   })
 
+  // The list folds shut with an animation, so it stays mounted while closed; a closed list
+  // must still be out of the tab order and the accessibility tree, or Tab walks into
+  // buttons nobody can see.
+  it('keeps a closed list out of reach and gives it back when opened', () => {
+    renderScreen([program('rekordbox', { copies: [latest, older] })])
+    const list = screen.getByTestId('copies-list-rekordbox')
+    expect(list).toHaveAttribute('inert')
+    fireEvent.click(screen.getByTestId('copies-toggle-rekordbox'))
+    expect(list).not.toHaveAttribute('inert')
+    fireEvent.click(screen.getByTestId('copies-toggle-rekordbox'))
+    expect(list).toHaveAttribute('inert')
+  })
+
   it('lists the copy taken before restoring first and restores any copy from the list', () => {
     const before = copy({ id: 'pre', reason: 'restore', takenAt: Date.now() })
     const props = renderScreen([program('rekordbox', { copies: [latest, older], restore: before })])
-    expect(screen.queryByTestId('copies-item-old')).not.toBeInTheDocument()
+    expect(screen.getByTestId('copies-list-rekordbox')).toHaveAttribute('inert')
     fireEvent.click(screen.getByTestId('copies-toggle-rekordbox'))
+    expect(screen.getByTestId('copies-list-rekordbox')).not.toHaveAttribute('inert')
     const items = within(screen.getByTestId('copies-section-rekordbox')).getAllByTestId(
       /^copies-item-/,
     )
@@ -421,9 +435,9 @@ describe('CopiesScreen', () => {
       i18n.t('copies.music.summary', { count: 1, size: '1 MB', max: '10 GB' }),
     )
     expect(screen.getByTestId('copies-toggle-music')).toHaveTextContent(i18n.t('copies.music.show'))
-    expect(screen.queryByTestId('trash-list')).not.toBeInTheDocument()
+    expect(screen.getByTestId('copies-list-music')).toHaveAttribute('inert')
     fireEvent.click(screen.getByTestId('copies-toggle-music'))
-    expect(screen.getByTestId('trash-list')).toBeInTheDocument()
+    expect(screen.getByTestId('copies-list-music')).not.toHaveAttribute('inert')
     expect(screen.getByTestId('copies-toggle-music')).toHaveTextContent(i18n.t('copies.music.hide'))
   })
 

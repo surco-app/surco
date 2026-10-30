@@ -65,12 +65,11 @@ const BUTTON =
 const PRIMARY =
   'press whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-[12.5px] font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40 disabled:hover:bg-[var(--color-accent)]'
 const SECTION =
-  'grid grid-cols-[44px_1fr_auto] items-center gap-x-3.5 gap-y-2 border-t border-[var(--color-line)] py-4.5 first:border-t-0'
+  'grid grid-cols-[44px_1fr_auto] items-center gap-x-3.5 border-t border-[var(--color-line)] py-4.5 first:border-t-0'
 const BADGE =
   'flex h-11 w-11 items-center justify-center rounded-[10px] bg-[var(--color-hover)] text-fg-muted'
 const FACTS = 'mt-1.5 grid grid-cols-[13rem_11rem_minmax(0,1fr)] gap-x-5.5'
-const LIST =
-  'col-span-2 col-start-2 rounded-[10px] border border-[var(--color-line)] bg-[var(--color-ink)] px-3 py-1'
+const LIST = 'rounded-[10px] border border-[var(--color-line)] bg-[var(--color-ink)] px-3 py-1'
 
 export function formatBytes(bytes: number, lng: string): string {
   const units = ['B', 'KB', 'MB', 'GB']
@@ -123,6 +122,29 @@ function Fact({
       <div className="text-[11px] tracking-wide text-fg-faint uppercase">{label}</div>
       <div data-testid={testId} className={`text-[13px] ${className}`}>
         {children}
+      </div>
+    </div>
+  )
+}
+
+function Collapse({
+  open,
+  testId,
+  children,
+}: {
+  open: boolean
+  testId: string
+  children: React.ReactNode
+}): React.JSX.Element {
+  return (
+    <div
+      data-testid={testId}
+      data-open={open}
+      inert={!open}
+      className="copies-collapse col-span-2 col-start-2"
+    >
+      <div className="-mx-1 min-h-0 overflow-hidden px-1">
+        <div className="pt-2">{children}</div>
       </div>
     </div>
   )
@@ -215,7 +237,7 @@ function ProgramSection({
         <p
           role="status"
           data-testid={`copies-refused-${program}`}
-          className="col-span-2 col-start-2 text-[13px] text-[var(--color-danger)]"
+          className="col-span-2 col-start-2 mt-2 text-[13px] text-[var(--color-danger)]"
         >
           {tr(`copies.refused.${outcome.reason}`, { program: name })}
         </p>
@@ -224,35 +246,39 @@ function ProgramSection({
         <p
           role="status"
           data-testid={`copies-restored-${program}`}
-          className="col-span-2 col-start-2 text-[13px] text-[var(--color-good)]"
+          className="col-span-2 col-start-2 mt-2 text-[13px] text-[var(--color-good)]"
         >
           {tr('copies.restored', { program: name, when: when(outcome.takenAt) })}
         </p>
       )}
-      {open && listed.length > 0 && (
-        <ul className={LIST}>
-          {listed.map((c) => (
-            <li
-              key={c.id}
-              data-testid={`copies-item-${c.id}`}
-              className="flex items-center justify-between gap-3 border-t border-[var(--color-line)] py-2.5 first:border-t-0"
-            >
-              <div>
-                <div className="text-[13px] text-fg">{when(c.takenAt)}</div>
-                <div className="text-[12.5px] text-fg-faint">{tr(`copies.reason.${c.reason}`)}</div>
-              </div>
-              <button
-                type="button"
-                data-testid={`copies-restore-item-${c.id}`}
-                disabled={restoring}
-                onClick={() => onAsk(c)}
-                className={BUTTON}
+      {listed.length > 0 && (
+        <Collapse open={open} testId={`copies-list-${program}`}>
+          <ul className={LIST}>
+            {listed.map((c) => (
+              <li
+                key={c.id}
+                data-testid={`copies-item-${c.id}`}
+                className="flex items-center justify-between gap-3 border-t border-[var(--color-line)] py-2.5 first:border-t-0"
               >
-                {tr('copies.restoreThis')}
-              </button>
-            </li>
-          ))}
-        </ul>
+                <div>
+                  <div className="text-[13px] text-fg">{when(c.takenAt)}</div>
+                  <div className="text-[12.5px] text-fg-faint">
+                    {tr(`copies.reason.${c.reason}`)}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  data-testid={`copies-restore-item-${c.id}`}
+                  disabled={restoring}
+                  onClick={() => onAsk(c)}
+                  className={BUTTON}
+                >
+                  {tr('copies.restoreThis')}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Collapse>
       )}
     </section>
   )
@@ -541,10 +567,10 @@ function MusicSection({
           </button>
         )}
       </div>
-      {open && entries.length > 0 && (
-        <div className="col-span-2 col-start-2">
+      {entries.length > 0 && (
+        <Collapse open={open} testId="copies-list-music">
           <MusicFiles {...trash} />
-        </div>
+        </Collapse>
       )}
     </section>
   )
