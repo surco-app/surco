@@ -52,6 +52,7 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     mkdir: vi.fn(async () => undefined),
     mkdtemp: vi.fn(async () => '/tmp/surco-abc'),
     rm: vi.fn(async () => {}),
+    rmdir: vi.fn(async () => {}),
     confirmConflict: vi.fn(async () => 'overwrite' as const),
     appleMusicEntryLocation: vi.fn(async () => '/Users/me/Music/Media/f.aiff'),
     appleMusicEntry: vi.fn(async () => ({

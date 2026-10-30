@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs'
-import { access, mkdir, mkdtemp, rm, unlink } from 'node:fs/promises'
+import { access, mkdir, mkdtemp, rm, rmdir, unlink } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, renderHook, waitFor } from '@testing-library/react'
@@ -246,6 +246,7 @@ function processTrackInMain(
     mkdir,
     mkdtemp,
     rm,
+    rmdir,
     confirmConflict: async (outputName) => {
       if (!options.onConflict) {
         errors.push(`unexpected conflict prompt for ${outputName}`)

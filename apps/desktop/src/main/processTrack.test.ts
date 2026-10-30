@@ -55,6 +55,7 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     mkdir: vi.fn(async () => undefined),
     mkdtemp: vi.fn(async () => '/tmp/surco-abc'),
     rm: vi.fn(async () => {}),
+    rmdir: vi.fn(async () => {}),
     confirmConflict: vi.fn(async () => 'overwrite' as const),
     appleMusicEntryLocation: vi.fn(async () => '/Users/me/Music/Media/f.aiff'),
     appleMusicEntry: vi.fn(async () => ({
@@ -1710,6 +1711,172 @@ describe('runProcessTrack — Apple Music only', () => {
 
     await expect(runProcessTrack(job(), deps)).rejects.toThrow('Music unavailable')
     expect(deps.rm).toHaveBeenCalledWith('/tmp/surco-abc', { recursive: true, force: true })
+  })
+})
+
+// Measured 30/10: Music reads no tags from a WAV at import, so the copy it makes into its
+// Media folder lands in "Unknown Artist/Unknown Album" and tagging the entry afterwards never
+// moves it. A file already inside the Media folder is added where it is, so "Apple Music
+// only" writes the conversion straight into Music's own layout.
+describe('runProcessTrack — Apple Music only into the Media folder', () => {
+  const media = '/Volumes/Public/Music/Music/Media.localized'
+  const meta = { artist: 'Artist', title: 'Title', album: 'Album' } as TrackMetadata
+  const filed = `${media}/Music/Artist/Album/Artist - Title.wav`
+  const intoMedia = (overrides: Partial<ProcessTrackDeps> = {}) =>
+    makeDeps({
+      platform: 'darwin',
+      settings: settings({ addToAppleMusic: true, keepOutputCopy: false }),
+      appleMusicMediaFolder: vi.fn(async () => media),
+      existsSync: vi.fn((p: string) => p === media),
+      mkdir: vi.fn(async () => `${media}/Music/Artist`),
+      appleMusicEntryLocation: vi.fn(async () => filed),
+      ...overrides,
+    })
+  const musicJob = (over: Partial<ProcessJob> = {}) =>
+    job({ inputPath: '/in/song.aiff', meta, format: 'wav', ...over })
+
+  it('writes the conversion where Music files it and adds it from there, keeping it', async () => {
+    const deps = intoMedia()
+
+    const result = await runProcessTrack(musicJob(), deps)
+
+    expect(deps.mkdtemp).not.toHaveBeenCalled()
+    expect(deps.mkdir).toHaveBeenCalledWith(`${media}/Music/Artist/Album`, { recursive: true })
+    expect(vi.mocked(deps.convertAudio).mock.calls[0]?.[1]).toBe(filed)
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith(filed, meta, undefined)
+    expect(deps.reservePath).toHaveBeenCalledWith(filed)
+    expect(deps.releasePath).toHaveBeenCalledWith(filed)
+    expect(deps.rm).not.toHaveBeenCalled()
+    expect(deps.rmdir).not.toHaveBeenCalled()
+    expect(result).toMatchObject({ outputPath: '', addedToMusicOnly: true })
+  })
+
+  it('files under the album artist, and under Music’s own names when the tags are empty', async () => {
+    const deps = intoMedia()
+    await runProcessTrack(musicJob({ meta: { ...meta, albumArtist: 'Various' } }), deps)
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith(
+      `${media}/Music/Various/Album/Artist - Title.wav`,
+      expect.anything(),
+      undefined,
+    )
+
+    const bare = intoMedia()
+    await runProcessTrack(musicJob({ meta: { title: 'Title' } as TrackMetadata }), bare)
+    expect(bare.addToAppleMusic).toHaveBeenCalledWith(
+      `${media}/Music/Unknown Artist/Unknown Album/Artist - Title.wav`,
+      expect.anything(),
+      undefined,
+    )
+  })
+
+  // A slash would open a folder of its own and a colon is what Finder shows for one.
+  it('keeps a slash or colon in a tag from opening another folder', async () => {
+    const deps = intoMedia()
+    await runProcessTrack(
+      musicJob({ meta: { ...meta, artist: 'AC/DC', album: 'Live: 1991' } }),
+      deps,
+    )
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith(
+      `${media}/Music/AC_DC/Live_ 1991/Artist - Title.wav`,
+      expect.anything(),
+      undefined,
+    )
+  })
+
+  it('removes the file and the folders it made when the add fails', async () => {
+    const deps = intoMedia({
+      addToAppleMusic: vi.fn(async () => {
+        throw new Error('Music unavailable')
+      }),
+    })
+
+    await expect(runProcessTrack(musicJob(), deps)).rejects.toThrow('Music unavailable')
+
+    expect(deps.rm).toHaveBeenCalledWith(filed, { recursive: false, force: true })
+    expect(vi.mocked(deps.rmdir).mock.calls.map((c) => c[0])).toEqual([
+      `${media}/Music/Artist/Album`,
+      `${media}/Music/Artist`,
+    ])
+  })
+
+  // Music answering with the entry it already had holds nothing of the new file.
+  it('removes the file when Music answers the add with the entry being replaced', async () => {
+    const deps = intoMedia({ addToAppleMusic: vi.fn(async () => 'old-id') })
+
+    await expect(
+      runProcessTrack(
+        musicJob({
+          musicPersistentId: 'old-id',
+          replacesPath: '/m/old.aiff',
+          replacesLabel: 'A - T',
+        }),
+        deps,
+      ),
+    ).rejects.toThrow('appleMusicAddReturnedOld')
+
+    expect(deps.rm).toHaveBeenCalledWith(filed, { recursive: false, force: true })
+  })
+
+  it('still reads where the entry points and lets the collections follow it', async () => {
+    const redirectRepoint = vi.fn(() => true)
+    const deps = intoMedia({ redirectRepoint })
+
+    await runProcessTrack(
+      musicJob({
+        musicPersistentId: 'old-id',
+        replacesPath: '/m/old.aiff',
+        replacesLabel: 'A - T',
+      }),
+      deps,
+    )
+
+    expect(deps.appleMusicEntryLocation).toHaveBeenCalledWith('added-id')
+    expect(redirectRepoint).toHaveBeenCalledWith(filed, filed)
+  })
+
+  it('keeps the temp dir when the Media folder cannot be read', async () => {
+    const deps = intoMedia({ appleMusicMediaFolder: vi.fn(async () => undefined) })
+
+    await runProcessTrack(musicJob(), deps)
+
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith(
+      '/tmp/surco-abc/Artist - Title.wav',
+      meta,
+      undefined,
+    )
+    expect(deps.rm).toHaveBeenCalledWith('/tmp/surco-abc', { recursive: true, force: true })
+  })
+
+  // An unmounted NAS: creating the path would write a stray /Volumes folder on the boot disk.
+  it('keeps the temp dir when the Media folder is not there', async () => {
+    const deps = intoMedia({ existsSync: vi.fn(() => false) })
+
+    await runProcessTrack(musicJob(), deps)
+
+    expect(deps.mkdtemp).toHaveBeenCalledOnce()
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith(
+      '/tmp/surco-abc/Artist - Title.wav',
+      meta,
+      undefined,
+    )
+  })
+
+  it('keeps the temp dir rather than touch a file already at that place', async () => {
+    const deps = intoMedia({ existsSync: vi.fn((p: string) => p === media || p === filed) })
+
+    await runProcessTrack(musicJob(), deps)
+
+    expect(deps.mkdtemp).toHaveBeenCalledOnce()
+    expect(deps.rm).not.toHaveBeenCalledWith(filed, expect.anything())
+  })
+
+  it('keeps the temp dir when another job of the run already claimed that place', async () => {
+    const deps = intoMedia({ isPathReserved: vi.fn((p: string) => p === filed) })
+
+    await runProcessTrack(musicJob(), deps)
+
+    expect(deps.mkdtemp).toHaveBeenCalledOnce()
+    expect(deps.reservePath).not.toHaveBeenCalled()
   })
 })
 

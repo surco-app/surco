@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import log from 'electron-log/main'
 import type {
@@ -526,6 +527,30 @@ export async function markAppleMusicReplacing(
   const answer = (await run(buildReplacingMarkScript(persistentId, expectedLabel, marked))).trim()
   if (answer === 'set' || answer === 'missing' || answer === 'mismatch') return answer
   throw new Error(`unexpected Music answer: ${answer}`)
+}
+
+// The folder Music copies imports into, as its preferences store it ("media-folder-url",
+// a file URL). Read through `defaults`, which asks cfprefsd and so sees a change Music has
+// not flushed to the plist yet. Undefined when Music never set it or it is not a local path.
+export function parseMediaFolderUrl(stdout: string): string | undefined {
+  const url = stdout.trim()
+  if (!url.startsWith('file://')) return undefined
+  try {
+    return fileURLToPath(url).replace(/\/+$/, '')
+  } catch {
+    return undefined
+  }
+}
+
+export async function appleMusicMediaFolder(): Promise<string | undefined> {
+  try {
+    const { stdout } = await run('defaults', ['read', 'com.apple.Music', 'media-folder-url'], {
+      encoding: 'utf8',
+    })
+    return parseMediaFolderUrl(stdout)
+  } catch {
+    return undefined
+  }
 }
 
 // osascript and the Music AppleScript bridge only exist on macOS, so this gates

@@ -28,6 +28,7 @@ import {
   parseFileLocations,
   parseFileNames,
   parseLibraryDump,
+  parseMediaFolderUrl,
   parseReviewDump,
   REPLACING_MARK,
   shouldAddToAppleMusic,
@@ -874,6 +875,28 @@ describe('markAppleMusicReplacing', () => {
 
   it('fails on anything else', async () => {
     await expect(markAppleMusicReplacing('OLD', 'A - B', true, async () => '')).rejects.toThrow()
+  })
+})
+
+// The key Music keeps in its preferences, read 30/10 off the user's Mac:
+//   "media-folder-url" => "file:///Volumes/Public/Music/Music/Media.localized/"
+describe('parseMediaFolderUrl', () => {
+  it('turns the file URL into the folder path', () => {
+    expect(parseMediaFolderUrl('file:///Volumes/Public/Music/Music/Media.localized/\n')).toBe(
+      '/Volumes/Public/Music/Music/Media.localized',
+    )
+  })
+
+  it('decodes escaped characters', () => {
+    expect(parseMediaFolderUrl('file:///Users/me/Music/Mi%20M%C3%BAsica/')).toBe(
+      '/Users/me/Music/Mi Música',
+    )
+  })
+
+  it('gives nothing for anything that is not a local folder', () => {
+    expect(parseMediaFolderUrl('')).toBeUndefined()
+    expect(parseMediaFolderUrl('https://example.com/Media/')).toBeUndefined()
+    expect(parseMediaFolderUrl('file://server/share/')).toBeUndefined()
   })
 })
 

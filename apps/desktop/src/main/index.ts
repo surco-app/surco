@@ -15,6 +15,7 @@ import {
   mkdtemp,
   readFile,
   rm,
+  rmdir,
   stat,
   unlink,
   writeFile,
@@ -70,6 +71,7 @@ import {
   appleMusicEntry,
   appleMusicEntryLocation,
   appleMusicLimiter,
+  appleMusicMediaFolder,
   carryOverToAppleMusicCopy,
   deleteFromAppleMusic,
   markAppleMusicReplacing,
@@ -1675,6 +1677,8 @@ function registerIpc(): void {
       mkdir,
       mkdtemp,
       rm,
+      rmdir,
+      appleMusicMediaFolder,
       // The conflict prompt is the one Electron-bound branch: build the same warning
       // box as before and map its buttons back to the decision runProcessTrack expects.
       confirmConflict: (outputName, reservedOnly) =>
