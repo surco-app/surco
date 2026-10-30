@@ -125,6 +125,17 @@ describe('pcmDigest', () => {
     }
   })
 
+  // A batch checks each track while the next one converts: a conversion's source digest
+  // waiting behind the checks' would hold the whole batch back.
+  it('a high priority digest runs before the low ones queued ahead of it', async () => {
+    spawned.length = 0
+    const low = [1, 2, 3, 4].map(() => pcmDigest(at('kick24.wav')))
+    const high = pcmDigest(at('kick16.wav'), { priority: 'high' })
+    await Promise.all([...low, high])
+    const order = digests().map((o) => o.args.includes(at('kick16.wav')))
+    expect(order.indexOf(true)).toBeLessThan(4)
+  })
+
   // An aborted or timed out decode must reject, never hand back a digest of partial audio.
   it('rejects when the signal is already aborted', async () => {
     await expect(pcmDigest(at('kick16.wav'), { signal: AbortSignal.abort() })).rejects.toThrow()

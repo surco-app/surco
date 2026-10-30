@@ -4,6 +4,8 @@ import { createConcurrencyLimiter } from './analysisLimiter'
 import { ffmpegPath } from './binaries'
 import { ANALYSIS_TIMEOUT_MS, probeAudio, run } from './ffmpeg'
 
+// A conversion's source digest asks for 'high': the conversion waits on it, while the
+// checks of the tracks already converted can wait their turn.
 const pcmLimiter = createConcurrencyLimiter(2)
 
 const SLOW_SHARE_BYTES_PER_SECOND = 2_000_000
@@ -36,7 +38,7 @@ export function digestCodec(probe: { codecName: string; sampleFmt: string }): st
 
 export async function pcmDigest(
   file: string,
-  opts: { signal?: AbortSignal; timeoutMs?: number } = {},
+  opts: { signal?: AbortSignal; timeoutMs?: number; priority?: 'high' | 'low' } = {},
 ): Promise<PcmDigest> {
   const { signal } = opts
   return pcmLimiter.run(
@@ -66,7 +68,7 @@ export async function pcmDigest(
       if (!md5) throw new Error(`no digest for ${file}`)
       return { md5, sampleRate: Number(probe.sampleRate), channels: probe.channels }
     },
-    'low',
+    opts.priority ?? 'low',
     signal,
   )
 }

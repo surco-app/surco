@@ -2172,7 +2172,7 @@ export async function convertAudio(
       // source read raw starts 1105 samples early: the copy's own audio, digested before any
       // tag pass (which never touches a frame), is what the check compares against.
       if (ext === '.mp3' && (await absorbMp3HeadJunk(tmp)))
-        absorbedPcm = await pcmDigest(tmp).catch((err) => {
+        absorbedPcm = await pcmDigest(tmp, { priority: 'high' }).catch((err) => {
           log.warn(`source digest failed, the check cannot compare: ${err}`)
           return null
         })
@@ -2474,7 +2474,7 @@ export async function convertAudio(
       samplesKept && absorbedPcm !== undefined
         ? (absorbedPcm ?? undefined)
         : samplesKept
-          ? pcmDigest(input, { signal: measuring.signal }).catch((err) => {
+          ? pcmDigest(input, { signal: measuring.signal, priority: 'high' }).catch((err) => {
               log.warn(`source digest failed, the check cannot compare: ${err}`)
               return undefined
             })
