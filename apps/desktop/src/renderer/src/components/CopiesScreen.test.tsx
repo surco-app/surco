@@ -114,7 +114,22 @@ describe('CopiesScreen', () => {
       i18n.t('copies.state.pending', { count: 3, program: i18n.t('sources.traktor') }),
     )
     expect(screen.getByTestId('copies-last-engine')).toHaveTextContent(i18n.t('copies.none'))
-    expect(screen.getByTestId('copies-restore-engine')).toBeDisabled()
+  })
+
+  it('offers no buttons for a program with nothing to show or restore, so none of them is dead', () => {
+    renderScreen([program('rekordbox', { copies: [latest] }), program('engine')])
+    expect(screen.queryByTestId('copies-toggle-engine')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('copies-restore-engine')).not.toBeInTheDocument()
+    expect(screen.getByTestId('copies-toggle-rekordbox')).toBeEnabled()
+    expect(screen.getByTestId('copies-restore-rekordbox')).toBeEnabled()
+  })
+
+  it('lists the copy taken before restoring even when it is the only one, without a restore of the latest', () => {
+    const before = copy({ id: 'pre', reason: 'restore' })
+    renderScreen([program('traktor', { restore: before })])
+    expect(screen.queryByTestId('copies-restore-traktor')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('copies-toggle-traktor'))
+    expect(screen.getByTestId('copies-restore-item-pre')).toBeEnabled()
   })
 
   it('restoring asks first, says what is lost and that the current state is kept', () => {

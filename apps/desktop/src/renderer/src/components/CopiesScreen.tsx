@@ -120,30 +120,33 @@ function ProgramSection({
         </div>
       </div>
       <div className="flex gap-2">
-        <button
-          type="button"
-          data-testid={`copies-toggle-${program}`}
-          disabled={listed.length === 0}
-          aria-expanded={open}
-          onClick={() => setOpen(!open)}
-          className={BUTTON}
-        >
-          {tr(open ? 'copies.hide' : 'copies.show')}
-          {open ? (
-            <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
-          ) : (
-            <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
-          )}
-        </button>
-        <button
-          type="button"
-          data-testid={`copies-restore-${program}`}
-          disabled={copies.length === 0 || restoring}
-          onClick={() => onAsk(copies[0])}
-          className={PRIMARY}
-        >
-          {tr('copies.restore')}
-        </button>
+        {listed.length > 0 && (
+          <button
+            type="button"
+            data-testid={`copies-toggle-${program}`}
+            aria-expanded={open}
+            onClick={() => setOpen(!open)}
+            className={BUTTON}
+          >
+            {tr(open ? 'copies.hide' : 'copies.show')}
+            {open ? (
+              <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+            )}
+          </button>
+        )}
+        {copies.length > 0 && (
+          <button
+            type="button"
+            data-testid={`copies-restore-${program}`}
+            disabled={restoring}
+            onClick={() => onAsk(copies[0])}
+            className={PRIMARY}
+          >
+            {tr('copies.restore')}
+          </button>
+        )}
       </div>
       {outcome?.ok === false && (
         <p
