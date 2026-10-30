@@ -1,45 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import {
-  countDownloads,
-  fetchAllReleases,
-  fetchInstallerReleasesCached,
-  fetchReleasesCached,
-  pickInstallerRelease,
-} from './downloads'
-
-describe('countDownloads', () => {
-  // Only installers count. The release also carries .zip/.blockmap/.yml assets
-  // that electron-updater fetches on every auto-update; counting those would
-  // turn update traffic into phantom downloads.
-  it('counts only .dmg, .exe and .AppImage assets, ignoring update artifacts', () => {
-    const releases = [
-      {
-        assets: [
-          { name: 'Surco-0.1.2-arm64.dmg', download_count: 120 },
-          { name: 'Surco-0.1.2-x64.dmg', download_count: 18 },
-          { name: 'Surco-0.1.2-Setup.exe', download_count: 40 },
-          { name: 'Surco-0.1.2-x86_64.AppImage', download_count: 7 },
-          { name: 'Surco-0.1.2-arm64.zip', download_count: 999 },
-          { name: 'latest-mac.yml', download_count: 5000 },
-          { name: 'latest-linux.yml', download_count: 3000 },
-        ],
-      },
-    ]
-    expect(countDownloads(releases)).toBe(185)
-  })
-
-  it('sums across every release', () => {
-    const releases = [
-      { assets: [{ name: 'a-arm64.dmg', download_count: 60 }] },
-      { assets: [{ name: 'b-Setup.exe', download_count: 5 }] },
-    ]
-    expect(countDownloads(releases)).toBe(65)
-  })
-
-  it('is zero before any release is published', () => {
-    expect(countDownloads([])).toBe(0)
-  })
-})
+import { fetchAllReleases, fetchInstallerReleasesCached, pickInstallerRelease } from './downloads'
 
 describe('pickInstallerRelease', () => {
   // The reported bug: while a new release is building, its installer isn't uploaded yet, so
@@ -148,51 +108,6 @@ describe('fetchAllReleases', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     await expect(fetchAllReleases('surco-app/surco-releases')).rejects.toThrow()
-  })
-  // The unauthenticated limit is 60 requests/hour PER IP, and every page mounting the
-  // download button spends a whole pagination walk. Four pages in one visit (home →
-  // features → guide → changelog) burn eight of them, so an office, a campus or a
-  // CGNAT mobile network can reach the 403 — which drops the visitor onto the generic
-  // releases link instead of an installer. One walk per session is enough: this is a
-  // vanity count, not live data.
-  it('reuses the session cache instead of re-walking the pages', async () => {
-    // Stubbed, not the runtime's own storage: sessionStorage is native from Node ~25
-    // but absent on the CI runner's Node, where the cache correctly no-ops and this
-    // test read "called twice" — the assertion must not depend on which Node runs it.
-    const store = new Map<string, string>()
-    vi.stubGlobal('sessionStorage', {
-      getItem: (k: string) => store.get(k) ?? null,
-      setItem: (k: string, v: string) => void store.set(k, v),
-    })
-    const fetchMock = vi.fn().mockResolvedValue(page([release('v1.0.0')]))
-    vi.stubGlobal('fetch', fetchMock)
-
-    const first = await fetchReleasesCached('surco-app/surco-releases')
-    const second = await fetchReleasesCached('surco-app/surco-releases')
-
-    expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(second).toEqual(first)
-  })
-
-  // Same race the installer lookup had: two counts mounted in the same tick both miss the
-  // storage neither has written yet. Each miss is a whole pagination walk, the most
-  // expensive call the page makes.
-  it('shares one in-flight walk between counts that start together', async () => {
-    const store = new Map<string, string>()
-    vi.stubGlobal('sessionStorage', {
-      getItem: (k: string) => store.get(k) ?? null,
-      setItem: (k: string, v: string) => void store.set(k, v),
-    })
-    const fetchMock = vi.fn().mockResolvedValue(page([release('v1.0.0')]))
-    vi.stubGlobal('fetch', fetchMock)
-
-    const [a, b] = await Promise.all([
-      fetchReleasesCached('surco-app/surco-releases'),
-      fetchReleasesCached('surco-app/surco-releases'),
-    ])
-
-    expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(b).toEqual(a)
   })
 })
 

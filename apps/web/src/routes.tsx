@@ -14,6 +14,7 @@ import FlacToAiff from './components/FlacToAiff'
 import GoogleAnalytics from './components/GoogleAnalytics'
 import Guide from './components/Guide'
 import Privacy from './components/Privacy'
+import Stats from './components/Stats'
 import UseCasePage, { type UseCase } from './components/UseCase'
 import UseCases from './components/UseCases'
 import { createI18n, LANGUAGES, type Language } from './i18n'
@@ -28,6 +29,7 @@ const USE_CASES_PATHS = PAGES.useCases
 const CHANGELOG_PATHS = PAGES.changelog
 const FLAC_TO_AIFF_PATHS = PAGES.flacToAiff
 const PRIVACY_PATHS = PAGES.privacy
+const STATS_PATHS = PAGES.stats
 
 const I18N = Object.fromEntries(LANGUAGES.map((lng) => [lng, createI18n(lng)])) as Record<
   Language,
@@ -306,6 +308,35 @@ function LocalizedPrivacy({ lng }: { lng: Language }) {
   )
 }
 
+function StatsHead({ lng }: { lng: Language }) {
+  const t = I18N[lng].getFixedT(lng)
+  const url = SITE + STATS_PATHS[lng]
+  return (
+    <Head>
+      <html lang={t('meta.htmlLang')} />
+      <title>{t('stats.metaTitle')}</title>
+      <meta name="description" content={t('stats.metaDescription')} />
+      <link rel="canonical" href={url} />
+      {alternateLinks(STATS_PATHS)}
+      <meta property="og:locale" content={t('meta.ogLocale')} />
+      <meta property="og:url" content={url} />
+      <meta property="og:title" content={t('stats.metaTitle')} />
+      <meta property="og:description" content={t('stats.metaDescription')} />
+      <meta name="twitter:title" content={t('stats.metaTitle')} />
+      <meta name="twitter:description" content={t('stats.metaDescription')} />
+    </Head>
+  )
+}
+
+function LocalizedStats({ lng }: { lng: Language }) {
+  return (
+    <I18nextProvider i18n={I18N[lng]}>
+      <StatsHead lng={lng} />
+      <Stats />
+    </I18nextProvider>
+  )
+}
+
 function NoIndex({ children }: { children: ReactNode }) {
   return (
     <>
@@ -351,6 +382,7 @@ export const routes: RouteRecord[] = [
             [CHANGELOG_PATHS, LocalizedChangelog],
             [FLAC_TO_AIFF_PATHS, LocalizedFlacToAiff],
             [PRIVACY_PATHS, LocalizedPrivacy],
+            [STATS_PATHS, LocalizedStats],
           ] as const
         ).map(([paths, Page]) => ({
           path: paths[lng].slice(1),

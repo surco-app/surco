@@ -26,6 +26,7 @@
     "openMenu": "Ouvrir le menu",
     "closeMenu": "Fermer le menu",
     "cambios": "Nouveautés",
+    "estadisticas": "Statistiques",
     "donar": "Faire un don",
     "download": "Télécharger",
     "language": "Langue",
@@ -489,8 +490,7 @@
     "slogan": "ta musique, en ordre",
     "convertHeading": "Convertir",
     "flacToAiff": "FLAC en AIFF",
-    "privacy": "Confidentialité",
-    "downloads": "téléchargements"
+    "privacy": "Confidentialité"
   },
   "install": {
     "kicker": "Installer",
@@ -2538,5 +2538,34 @@
         "url": "https://vercel.com/legal/privacy-notice"
       }
     ]
+  },
+  "stats": {
+    "metaTitle": "Statistiques · Surco",
+    "metaDescription": "Combien de fois Surco a été téléchargé sur Mac, Windows et Linux sans compter les bots, et comment les installations progressent semaine après semaine.",
+    "kicker": "Statistiques",
+    "title": "Combien de personnes téléchargent Surco",
+    "lede": "Surco n'a pas de télémétrie, il ne sait donc pas qui l'utilise. Ce qui est public, c'est le nombre de téléchargements de chaque installateur sur GitHub. Ces chiffres en viennent.",
+    "total": "téléchargements depuis le {{date}}, sans les bots",
+    "mac": "Mac",
+    "windows": "Windows, mises à jour comprises",
+    "linux": "Linux, mises à jour comprises",
+    "macHeading": "Installations sur Mac",
+    "macLede": "Sur Mac, les mises à jour passent par un autre fichier. Chaque téléchargement ici est donc quelqu'un qui installe Surco.",
+    "lastWeek": "ces 7 derniers jours",
+    "lastMonth": "ces 30 derniers jours",
+    "chartLabel": "Installations cumulées sur Mac",
+    "estimatedLegend": "La partie en pointillés est reconstruite à partir de la date de chaque version. La partie continue est mesurée chaque jour.",
+    "weeklyHeading": "Nouvelles installations sur Mac par semaine",
+    "updatesHeading": "Mac qui passent à chaque version",
+    "updatesLede": "Combien de Mac ont téléchargé chaque mise à jour. C'est ce qui se rapproche le plus du nombre de personnes qui utilisent vraiment Surco.",
+    "howHeading": "Comment on compte",
+    "howItems": [
+      "Sur Mac, seul l'installateur .dmg compte. Les mises à jour téléchargent un autre fichier, les deux ne se mélangent donc pas.",
+      "Sur Windows et Linux, l'installateur sert aussi de mise à jour. Chaque nouvelle version ajoute donc un téléchargement par personne qui met à jour.",
+      "Chaque version reçoit un ou deux téléchargements de programmes automatiques qui récupèrent tous les fichiers. On les retire grâce à un fichier dont personne n'a besoin."
+    ],
+    "measuredSince": "GitHub ne garde que le total du jour. Tout ce qui précède le {{date}} est reconstruit à partir de la date de chaque version, et depuis on enregistre un relevé chaque jour.",
+    "loading": "Chargement des chiffres…",
+    "error": "Impossible de charger les chiffres. Essayez de recharger la page."
   }
 }
