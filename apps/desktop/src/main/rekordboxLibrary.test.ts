@@ -815,16 +815,16 @@ describe('a repoint across Unicode forms', () => {
     expect(row.cues).toBe(1)
   })
 
-  // Every non-ASCII path in the measured collection is composed, and a new row is written
-  // that way; a moved row must not be the one spelled differently.
-  it('writes the new path composed, as the collection stores paths', async () => {
+  // On NTFS the composed and decomposed names are two different files, so a Mac-copied
+  // decomposed name written back composed would leave rekordbox on a path that is not there.
+  it('writes the new path exactly as the file is named on disk', async () => {
     seed(FROM.normalize('NFC'))
     const to = await output('NFD')
 
     await repointTrack(dbPath, { from: FROM.normalize('NFD'), to })
 
     const row = readRow(dbPath)
-    expect(row.FolderPath).toBe(to.normalize('NFC'))
-    expect(row.FileNameL).toBe('Café.wav'.normalize('NFC'))
+    expect(row.FolderPath).toBe(to)
+    expect(row.FileNameL).toBe('Café.wav'.normalize('NFD'))
   })
 })

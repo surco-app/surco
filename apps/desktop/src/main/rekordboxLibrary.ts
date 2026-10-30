@@ -230,8 +230,8 @@ export async function repointTracks(
       for (const w of writes) {
         const { to, meta, audio, onWrite } = repoints[w.index]
         update.run(
-          rekordboxStoredPath(to.normalize('NFC')),
-          basename(to).normalize('NFC'),
+          rekordboxStoredPath(to),
+          basename(to),
           w.fileType,
           w.size,
           takeLocalUsn(write, stamp),
