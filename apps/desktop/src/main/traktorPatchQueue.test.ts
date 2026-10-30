@@ -68,7 +68,7 @@ describe('holdInQueue', () => {
   it('stores the patches in the queue and asks it to apply them when it can', async () => {
     const queue = { enqueue: vi.fn(() => true), state: () => state([]), applyQuietly: vi.fn() }
 
-    await holdInQueue(queue).hold([patch()], '/c.nml')
+    await holdInQueue(queue, () => 'Macintosh HD').hold([patch()], '/c.nml')
 
     expect(queue.enqueue).toHaveBeenCalledWith([], [queuedNmlPatch(patch())])
     expect(queue.applyQuietly).toHaveBeenCalledOnce()
@@ -83,9 +83,11 @@ describe('holdInQueue', () => {
       applyQuietly: vi.fn(),
     })
 
-    expect(holdInQueue(queue([])).waiting()).toBe(false)
-    expect(holdInQueue(queue([{ kind: 'cues' }])).waiting()).toBe(false)
-    expect(holdInQueue(queue([{ kind: 'cues' }, { kind: 'repoint' }])).waiting()).toBe(true)
+    expect(holdInQueue(queue([]), () => 'Macintosh HD').waiting()).toBe(false)
+    expect(holdInQueue(queue([{ kind: 'cues' }]), () => 'Macintosh HD').waiting()).toBe(false)
+    expect(
+      holdInQueue(queue([{ kind: 'cues' }, { kind: 'repoint' }]), () => 'Macintosh HD').waiting(),
+    ).toBe(true)
   })
 })
 
@@ -99,7 +101,7 @@ describe('syncQueuedPatches', () => {
     )
     const queued = [patch(), patch({ file: 'dos.aiff' })].map((p) => queuedNmlPatch(p))
 
-    const results = await syncQueuedPatches('/c.nml', queued, sync)
+    const results = await syncQueuedPatches('/c.nml', queued, sync, 'Macintosh HD')
 
     expect(sync).toHaveBeenCalledWith('/c.nml', [patch(), patch({ file: 'dos.aiff' })])
     expect(results).toEqual([{ written: true }, { written: true }])
@@ -115,16 +117,16 @@ describe('syncQueuedPatches', () => {
       reason,
     })
 
-    expect(await syncQueuedPatches('/c.nml', queued, answer('traktor-running'))).toEqual([
-      { written: false, reason: 'rekordbox-running' },
-    ])
+    expect(
+      await syncQueuedPatches('/c.nml', queued, answer('traktor-running'), 'Macintosh HD'),
+    ).toEqual([{ written: false, reason: 'rekordbox-running' }])
     for (const reason of ['backup-failed', 'unreadable', 'write-failed'] as const)
-      expect(await syncQueuedPatches('/c.nml', queued, answer(reason))).toEqual([
+      expect(await syncQueuedPatches('/c.nml', queued, answer(reason), 'Macintosh HD')).toEqual([
         { written: false, reason },
       ])
-    expect(await syncQueuedPatches('/c.nml', queued, answer('no-matches'))).toEqual([
-      { written: false, reason: 'no-match' },
-    ])
+    expect(await syncQueuedPatches('/c.nml', queued, answer('no-matches'), 'Macintosh HD')).toEqual(
+      [{ written: false, reason: 'no-match' }],
+    )
   })
 })
 
@@ -152,12 +154,12 @@ describe('the Traktor queue holding a run', () => {
         store,
         collection: () => '/c.nml',
         applyBatch: async () => ({ ok: true, wrote: false, outcomes: [] }),
-        repoint: (nml, list) => syncQueuedPatches(nml, list, sync),
+        repoint: (nml, list) => syncQueuedPatches(nml, list, sync, 'Macintosh HD'),
         nodeStamps: async () => ({}),
         onChange: () => {},
       })
     const tree = buildTraktorTree([traktorCue('Drop', 0, 1000, 1)])
-    const held = holdInQueue({ ...make(), applyQuietly: () => {} })
+    const held = holdInQueue({ ...make(), applyQuietly: () => {} }, () => 'Macintosh HD')
     await held.hold(
       [patch({ newFile: 'uno.mp3' }), patch({ file: 'dos.aiff', outputFile: 'dos.flac' })],
       '/c.nml',
@@ -208,7 +210,7 @@ describe('a held patch and the DJ’s edits in Traktor', () => {
       applyQuietly: vi.fn(),
     }
 
-    await holdInQueue(queue).hold([patch({ ranking: 51 })], nml.path)
+    await holdInQueue(queue, () => 'Macintosh HD').hold([patch({ ranking: 51 })], nml.path)
 
     const [[, held]] = queue.enqueue.mock.calls as unknown as [[unknown, QueuedNmlPatch[]]]
     expect(held[0].entryState).toEqual(expect.any(String))
@@ -221,11 +223,11 @@ describe('a held patch and the DJ’s edits in Traktor', () => {
       state: () => ({ tracks: 0, changes: 0, items: [] }),
       applyQuietly: vi.fn(),
     }
-    await holdInQueue(queue).hold([patch({ ranking: 51 })], nml.path)
+    await holdInQueue(queue, () => 'Macintosh HD').hold([patch({ ranking: 51 })], nml.path)
     const [[, held]] = queue.enqueue.mock.calls as unknown as [[unknown, QueuedNmlPatch[]]]
     const write = sync()
 
-    await syncQueuedPatches(nml.path, held, write)
+    await syncQueuedPatches(nml.path, held, write, 'Macintosh HD')
 
     expect(write.mock.calls[0][1]).toEqual([patch({ ranking: 51 })])
   })
@@ -237,14 +239,49 @@ describe('a held patch and the DJ’s edits in Traktor', () => {
       state: () => ({ tracks: 0, changes: 0, items: [] }),
       applyQuietly: vi.fn(),
     }
-    await holdInQueue(queue).hold([patch({ ranking: 51 })], nml.path)
+    await holdInQueue(queue, () => 'Macintosh HD').hold([patch({ ranking: 51 })], nml.path)
     const [[, held]] = queue.enqueue.mock.calls as unknown as [[unknown, QueuedNmlPatch[]]]
     nml.write('255')
     const write = sync()
 
-    await syncQueuedPatches(nml.path, held, write)
+    await syncQueuedPatches(nml.path, held, write, 'Macintosh HD')
 
     expect(write.mock.calls[0][1]).toEqual([patch()])
+  })
+
+  // A boot-disk path leaves the volume empty and Traktor names the disk. Matched without it,
+  // the entry was never noted, so a patch held while Traktor was open went in whole over the
+  // cue the DJ moved, and shifted the cues a second time.
+  it('leaves a cue the DJ moved on a boot-disk track while the patch waited', async () => {
+    const path = join(mkdtempSync(join(tmpdir(), 'surco-tq-')), 'collection.nml')
+    const write = (start: string) =>
+      writeFileSync(
+        path,
+        '<NML VERSION="19"><COLLECTION ENTRIES="1"><ENTRY TITLE="Uno">' +
+          '<LOCATION DIR="/:Musica/:" FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION>' +
+          `<CUE_V2 NAME="Drop" DISPL_ORDER="0" TYPE="0" START="${start}" LEN="0.000000" REPEATS="-1" HOTCUE="1"></CUE_V2>` +
+          '</ENTRY></COLLECTION></NML>',
+      )
+    write('10000.000000')
+    const queue = {
+      enqueue: vi.fn(() => true),
+      state: () => ({ tracks: 0, changes: 0, items: [] }),
+      applyQuietly: vi.fn(),
+    }
+    const onBoot = patch({ volume: '', outputVolume: '', cueShift: { shiftMs: 51 } })
+    await holdInQueue(queue, () => 'Macintosh HD').hold([onBoot], path)
+    const [[, held]] = queue.enqueue.mock.calls as unknown as [[unknown, QueuedNmlPatch[]]]
+    write('12000.000000')
+    const sync = vi.fn(
+      async (_path: string, _patches: NmlPatch[]): Promise<SyncResult> => ({
+        written: true,
+        matched: 1,
+      }),
+    )
+
+    await syncQueuedPatches(path, held, sync, 'Macintosh HD')
+
+    expect(sync.mock.calls[0][1]).toEqual([patch({ volume: '', outputVolume: '' })])
   })
 
   // Patches held for one collection cannot be written to another, and wait in that
@@ -256,7 +293,7 @@ describe('a held patch and the DJ’s edits in Traktor', () => {
       applyQuietly: vi.fn(),
       state: () => ({ tracks: 0, changes: 0, elsewhere: 1, items: [] }),
     }
-    expect(holdInQueue(queue).waiting()).toBe(false)
+    expect(holdInQueue(queue, () => 'Macintosh HD').waiting()).toBe(false)
   })
 
   it('holds a run behind patches waiting for this collection while another collection waits too', () => {
@@ -270,6 +307,6 @@ describe('a held patch and the DJ’s edits in Traktor', () => {
         items: [{ key: 'track:0', label: '', parts: [{ kind: 'repoint' as const }] }],
       }),
     }
-    expect(holdInQueue(queue).waiting()).toBe(true)
+    expect(holdInQueue(queue, () => 'Macintosh HD').waiting()).toBe(true)
   })
 })

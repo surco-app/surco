@@ -469,11 +469,16 @@ const traktorCueQueue = createRekordboxQueue<QueuedNmlPatch>({
     applyTraktorBatch(nml, ops, { ensureClosed, session: sessions.traktor }),
   repoint: async (nml, patches) => {
     let write: TraktorWrite = 'failed'
-    const results = await syncQueuedPatches(nml, patches, async (path, list) => {
-      const result = await syncCollection(path, list, sessions.traktor)
-      write = traktorWrite(list, result)
-      return result
-    })
+    const results = await syncQueuedPatches(
+      nml,
+      patches,
+      async (path, list) => {
+        const result = await syncCollection(path, list, sessions.traktor)
+        write = traktorWrite(list, result)
+        return result
+      },
+      bootVolumeName(),
+    )
     queueChecks.repointed('traktor', results, write)
     return results
   },

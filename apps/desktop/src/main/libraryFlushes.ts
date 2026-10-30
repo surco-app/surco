@@ -180,7 +180,7 @@ export async function flushConversionBatch(
   engineQueue?: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void },
 ): Promise<FlushOutcome> {
   const traktorDeps = traktorFlushDeps(host, sessions.traktor)
-  const traktorHold = traktorQueue && holdInQueue(traktorQueue)
+  const traktorHold = traktorQueue && holdInQueue(traktorQueue, bootVolumeName)
   let patches: NmlPatch[] = []
   let synced: { patches: NmlPatch[]; result: SyncResult } | undefined
   let traktorHeld = false

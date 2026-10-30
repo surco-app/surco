@@ -679,17 +679,23 @@ function editableState(block: string): string {
 }
 
 // The state of the entry each patch matches when it is held, to be compared when it is
-// written (see spareEditedEntries). Undefined for a patch no entry matches.
-export function entryStates(nml: string, patches: NmlPatch[]): (string | undefined)[] {
+// written (see spareEditedEntries). Undefined for a patch no entry matches. bootVolume names
+// the internal disk, which Traktor stores by name and a patch leaves empty.
+export function entryStates(
+  nml: string,
+  patches: NmlPatch[],
+  bootVolume: string,
+): (string | undefined)[] {
   const entries = findEntries(nml)
-  const index = indexPatches(patches, entries)
+  const located = patches.map((p) => (p.volume ? p : { ...p, volume: bootVolume }))
+  const index = indexPatches(located, entries)
   const states = new Map<NmlPatch, string>()
   for (const entry of entries) {
     const patch = matchPatch(entry, index)
     if (patch && !states.has(patch))
       states.set(patch, editableState(nml.slice(entry.start, entry.end)))
   }
-  return patches.map((p) => states.get(p))
+  return located.map((p) => states.get(p))
 }
 
 // A patch held while Traktor stayed open is written once it closes, and by then the DJ may
@@ -701,8 +707,9 @@ export function spareEditedEntries(
   nml: string,
   patches: NmlPatch[],
   states: (string | undefined)[],
+  bootVolume: string,
 ): NmlPatch[] {
-  const now = entryStates(nml, patches)
+  const now = entryStates(nml, patches, bootVolume)
   return patches.map((patch, i) => {
     const held = states[i]
     if (held === undefined || now[i] === undefined || now[i] === held) return patch
