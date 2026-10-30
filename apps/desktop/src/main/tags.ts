@@ -8,6 +8,7 @@ import {
   Id3v2FrameIdentifiers,
   Id3v2PopularimeterFrame,
   Id3v2PrivateFrame,
+  Id3v2Settings,
   type Id3v2Tag,
   Id3v2TextInformationFrame,
   type Id3v2UnknownFrame,
@@ -49,6 +50,11 @@ const GRP1 = new Id3v2FrameIdentifier('GRP1', 'GRP1', 'GP1')
 // WAV included: mp3tag only reads a RIFF "id3 " chunk when it holds v2.3, so the
 // v2.4 we used to leave there made Surco-tagged WAVs look empty in it.
 const ID3_V23 = new Set(['.mp3', '.aiff', '.wav'])
+
+// A v2.3 genre is one text. TagLib's default splits it on ';' and '/' when reading and, on
+// any later save, writes the parts back with the first turned into its ID3v1 number, so a
+// pass that only adds cues left "House; Deep House" as "(35) Deep House".
+Id3v2Settings.useNonStandardV2V3GenreSeparators = false
 
 // Traktor stores its cue points and beatgrid inside the audio file itself, in an
 // ID3 GEOB frame described "TRAKTOR4". ffmpeg rebuilds the whole tag even on a
