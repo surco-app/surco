@@ -327,35 +327,37 @@ export function CopiesScreen({
       data-testid="copies-screen"
       className="h-full overflow-y-auto bg-[var(--color-panel)] px-6.5 py-5.5"
     >
-      <header>
-        <h1 className="text-[17px] font-semibold text-fg">{tr('copies.title')}</h1>
-        <p className="mt-0.5 text-[12.5px] text-fg-faint">{tr('copies.intro')}</p>
-      </header>
-      <div className="mt-2.5">
-        {sorted.map((entry) => (
-          <ProgramSection
-            key={entry.program}
-            entry={entry}
-            outcome={outcomes[entry.program]}
-            restoring={restoring > 0}
-            onAsk={(copy) => setAsking({ program: entry.program, copyId: copy.id })}
-          />
-        ))}
-        <MusicSection trash={trash} openMusic={openMusic} />
+      <div className="max-w-[920px]">
+        <header>
+          <h1 className="text-[17px] font-semibold text-fg">{tr('copies.title')}</h1>
+          <p className="mt-0.5 text-[12.5px] text-fg-faint">{tr('copies.intro')}</p>
+        </header>
+        <div className="mt-2.5">
+          {sorted.map((entry) => (
+            <ProgramSection
+              key={entry.program}
+              entry={entry}
+              outcome={outcomes[entry.program]}
+              restoring={restoring > 0}
+              onAsk={(copy) => setAsking({ program: entry.program, copyId: copy.id })}
+            />
+          ))}
+          <MusicSection trash={trash} openMusic={openMusic} />
+        </div>
+        <footer className="mt-1.5 flex items-center justify-between gap-4 border-t border-[var(--color-line)] pt-3.5">
+          <span className="text-[12.5px] text-fg-faint">
+            {tr('copies.footer', { days: trash.retentionDays })}
+          </span>
+          <button
+            type="button"
+            data-testid="copies-reveal"
+            onClick={onReveal}
+            className="press text-[12.5px] text-[var(--color-accent)] hover:underline"
+          >
+            {tr(isWindows() ? 'copies.revealWin' : 'copies.reveal')}
+          </button>
+        </footer>
       </div>
-      <footer className="mt-1.5 flex items-center justify-between gap-4 border-t border-[var(--color-line)] pt-3.5">
-        <span className="text-[12.5px] text-fg-faint">
-          {tr('copies.footer', { days: trash.retentionDays })}
-        </span>
-        <button
-          type="button"
-          data-testid="copies-reveal"
-          onClick={onReveal}
-          className="press text-[12.5px] text-[var(--color-accent)] hover:underline"
-        >
-          {tr(isWindows() ? 'copies.revealWin' : 'copies.reveal')}
-        </button>
-      </footer>
       {askedEntry && askedCopy && (
         <ConfirmDialog
           title={tr('copies.confirm.title', {
