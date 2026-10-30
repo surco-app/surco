@@ -25,6 +25,7 @@ function deps({
     prepare: vi.fn(async (file: string) => ({
       write: (changes: TagFieldChange[]) => rewrite(file, changes),
       abandon,
+      backup: () => undefined,
     })),
     ...over,
     rewrite,
@@ -163,7 +164,11 @@ describe('applyMusicFixes', () => {
       }),
       prepare: async () => {
         order.push('backup')
-        return { write: async () => ({ outcomes: ['written'] }), abandon: async () => {} }
+        return {
+          write: async () => ({ outcomes: ['written'] }),
+          abandon: async () => {},
+          backup: () => undefined,
+        }
       },
     })
     await applyMusicFixes([fix('A')], d)
@@ -182,6 +187,20 @@ describe('applyMusicFixes', () => {
     const [out] = await applyMusicFixes([fix('A')], d)
     expect(d.setField).not.toHaveBeenCalled()
     expect(out).toMatchObject({ file: 'failed', error: 'no-backup', written: [] })
+  })
+
+  it('carries the backup of a failed write that kept it, so Undo can restore it', async () => {
+    const d = deps({
+      prepare: async () => ({
+        write: async () => {
+          throw new Error('EACCES')
+        },
+        abandon: async () => {},
+        backup: () => ({ id: 'b1' }) as TrashEntry,
+      }),
+    })
+    const [out] = await applyMusicFixes([fix('A')], d)
+    expect(out).toMatchObject({ file: 'failed', error: 'EACCES', backupId: 'b1' })
   })
 
   it('reports a missing file with no path when the location cannot be read', async () => {

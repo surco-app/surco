@@ -198,7 +198,10 @@ function makeMp3WithBrokenUfid(shape: 'empty-id' | 'extra-nulls'): string {
   return file
 }
 
-afterEach(() => configureOriginalKeeper(null))
+afterEach(() => {
+  configureOriginalKeeper(null)
+  configureBackupDiscarder(null)
+})
 
 describe.each(FORMATS)('rewriting the artist of a $ext', ({ ext, codec }) => {
   let file: string
@@ -581,6 +584,9 @@ describe('the library review against a Music that rewrites the file', () => {
       stored.set(id, readFileSync(path))
       return { id, name: id, originalPath: path, storedPath: '', bytes: 0, trashedAt: 0, reason }
     })
+    configureBackupDiscarder(async (entry) => {
+      stored.delete(entry.id)
+    })
     return stored
   }
 
@@ -616,6 +622,65 @@ describe('the library review against a Music that rewrites the file', () => {
     expect(untrack).toHaveBeenCalledWith(track.mock.calls[0][0])
     expect(snapshotTags(file)).toEqual(before)
     configureBackupDiscarder(null)
+  }, 60000)
+
+  // Music has already changed the file, so the copy is the only way back to it.
+  it('keeps the backup when its own write fails after Music changed the file', async () => {
+    const file = make('aiff', ['-c:a', 'pcm_s16be'], 'Dj Lara')
+    const original = readFileSync(file)
+    const stored = copyingKeeper()
+    const temps: string[] = []
+    const music = musicThatRewrites(file)
+    const [out] = await applyMusicFixes(
+      [{ persistentId: 'A', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
+      {
+        setField: async (pid, field, from, to) => {
+          writeFileSync(temps[0], 'not audio')
+          return music(pid, field, from, to)
+        },
+        locate: async () => file,
+        exists: async () => true,
+        prepare: (path) =>
+          prepareTagRewrite(path, { track: (tmp) => temps.push(tmp), untrack: () => {} }),
+      },
+    )
+    expect(out.file).toBe('failed')
+    expect(stored.get(out.backupId ?? '')?.equals(original)).toBe(true)
+  }, 60000)
+
+  // A file that held another value than Music is left alone by Surco, but Music has
+  // rewritten it all the same.
+  it('keeps the backup when Music changed a file that held another value', async () => {
+    const file = make('aiff', ['-c:a', 'pcm_s16be'], 'Someone Else')
+    const original = readFileSync(file)
+    const stored = copyingKeeper()
+    const [out] = await applyMusicFixes(
+      [{ persistentId: 'A', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
+      {
+        setField: musicThatRewrites(file),
+        locate: async () => file,
+        exists: async () => true,
+        prepare: (path) => prepareTagRewrite(path),
+      },
+    )
+    expect(out.file).toBe('unchanged')
+    expect(stored.get(out.backupId ?? '')?.equals(original)).toBe(true)
+  }, 60000)
+
+  it('drops the backup when neither Music nor Surco changed the file', async () => {
+    const file = make('aiff', ['-c:a', 'pcm_s16be'], 'Someone Else')
+    const stored = copyingKeeper()
+    const [out] = await applyMusicFixes(
+      [{ persistentId: 'A', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
+      {
+        setField: async () => 'set',
+        locate: async () => file,
+        exists: async () => true,
+        prepare: (path) => prepareTagRewrite(path),
+      },
+    )
+    expect(out.file).toBe('unchanged')
+    expect(stored.size).toBe(0)
   }, 60000)
 
   it('reports the field as written, not as a file that differs', async () => {

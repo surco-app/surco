@@ -1,5 +1,5 @@
-import { constants as fsConstants } from 'node:fs'
-import { copyFile } from 'node:fs/promises'
+import { constants as fsConstants, type Stats } from 'node:fs'
+import { copyFile, stat } from 'node:fs/promises'
 import { extname } from 'node:path'
 import log from 'electron-log/main'
 import type { TrashEntry } from '../shared/types'
@@ -53,6 +53,7 @@ export async function rewriteTagFields(
 export interface PreparedRewrite {
   write: (changes: TagFieldChange[]) => Promise<{ outcomes: FieldWrite[]; backup?: TrashEntry }>
   abandon: () => Promise<void>
+  backup: () => TrashEntry | undefined
 }
 
 // rewriteTagFields with the copy and the backup taken up front, for a write that follows
@@ -65,11 +66,21 @@ export async function prepareTagRewrite(
   const tmp = convertTmpPath(file, extname(file))
   tracking?.track(tmp)
   let archived: TrashEntry | null = null
+  let before: Stats | null = null
   const abandon = async () => {
     if (archived) await discardBackup(archived).catch(() => undefined)
+    archived = null
     await dropTemp(tmp, tracking)
   }
+  // Music may have rewritten the file by the time the write gives up: then the copy is
+  // the only way back to it and stays.
+  const settle = async () => {
+    const now = await stat(file).catch(() => null)
+    if (now && before && now.size === before.size && now.mtimeMs === before.mtimeMs) await abandon()
+    else await dropTemp(tmp, tracking)
+  }
   try {
+    before = await stat(file)
     await copyFile(file, tmp, fsConstants.COPYFILE_FICLONE)
     archived = await keepOriginal(file, 'replaced', file, {
       reencodes: false,
@@ -84,19 +95,19 @@ export async function prepareTagRewrite(
     try {
       const outcomes = await runInWorker<FieldWrite[]>({ type: 'setTagFields', file: tmp, changes })
       if (!outcomes.includes('written')) {
-        await abandon()
-        return { outcomes }
+        await settle()
+        return { outcomes, backup: archived ?? undefined }
       }
       await assertDecodable(tmp, file)
       await renameWithRetry(tmp, file)
       tracking?.untrack(tmp)
       return { outcomes, backup: archived ?? undefined }
     } catch (e) {
-      await abandon()
+      await settle()
       throw e
     }
   }
-  return { write, abandon }
+  return { write, abandon, backup: () => archived ?? undefined }
 }
 
 // A temp that will not delete (a network volume still holding the handle) stays in the

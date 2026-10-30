@@ -94,7 +94,16 @@ async function applyTrack(
     const written = accepted.filter((_, i) => outcomes[i] === 'written').map((f) => f.field)
     return { persistentId, path, fixes, music, file, written, backupId: backup?.id }
   } catch (e) {
-    return { persistentId, path, fixes, music, file: 'failed', written: [], error: message(e) }
+    return {
+      persistentId,
+      path,
+      fixes,
+      music,
+      file: 'failed',
+      written: [],
+      error: message(e),
+      backupId: prepared.backup()?.id,
+    }
   }
 }
 
