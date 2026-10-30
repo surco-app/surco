@@ -4,6 +4,7 @@ import log from 'electron-log/main'
 import { describe, expect, it, vi } from 'vitest'
 import { errorKeyOf, errorWithKey, splitNameLeftMarked } from '../shared/errorKeys'
 import type { ProcessJob, Settings, TrackMetadata } from '../shared/types'
+import type { ConversionWritten } from './ffmpeg'
 import { createOutputReservations } from './outputReservations'
 import { type ProcessTrackDeps, runProcessTrack } from './processTrack'
 
@@ -32,6 +33,14 @@ function job(overrides: Partial<ProcessJob> = {}): ProcessJob {
   }
 }
 
+const written: ConversionWritten = {
+  samplesKept: false,
+  originalKept: false,
+  plan: { ext: '.aiff', codec: 'pcm_s16be', bitDepth: 16 },
+  sourceDurationSec: 2,
+  trimmedSec: 0,
+}
+
 function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
   return {
     settings: settings(),
@@ -42,7 +51,10 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
       path: '/tmp/cover.jpg',
       cleanup: vi.fn(async () => {}),
     })),
-    convertAudio: vi.fn(async () => ({ normalizeSkipped: false })),
+    convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async () => ({
+      normalizeSkipped: false,
+      written,
+    })),
     recordConversion: vi.fn(),
     removeRenamedOriginal: vi.fn(async () => {}),
     addToAppleMusic: vi.fn(async () => 'added-id'),
@@ -170,14 +182,23 @@ describe('runProcessTrack — plain conversion', () => {
 
   it('surfaces the repaired-sample count the encoder reported', async () => {
     const deps = makeDeps({
-      convertAudio: vi.fn(async () => ({ normalizeSkipped: false, declickedSamples: 42 })),
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async () => ({
+        normalizeSkipped: false,
+        declickedSamples: 42,
+        written,
+      })),
     })
     const result = await runProcessTrack(job(), deps)
     expect(result.declickedSamples).toBe(42)
   })
 
   it('surfaces a failed loudness pass through normalizeSkipped', async () => {
-    const deps = makeDeps({ convertAudio: vi.fn(async () => ({ normalizeSkipped: true })) })
+    const deps = makeDeps({
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async () => ({
+        normalizeSkipped: true,
+        written,
+      })),
+    })
     const result = await runProcessTrack(job(), deps)
     expect(result.normalizeSkipped).toBe(true)
   })
@@ -526,10 +547,10 @@ describe('runProcessTrack — output conflict', () => {
       reservePath: reservations.reserve,
       releasePath: reservations.release,
       confirmConflict: vi.fn(async () => 'overwrite' as const),
-      convertAudio: vi.fn(
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(
         () =>
-          new Promise<{ normalizeSkipped: boolean }>((resolve) =>
-            release.push(() => resolve({ normalizeSkipped: false })),
+          new Promise((resolve) =>
+            release.push(() => resolve({ normalizeSkipped: false, written })),
           ),
       ),
     })
@@ -555,10 +576,10 @@ describe('runProcessTrack — output conflict', () => {
       isPathReserved: reservations.isReserved,
       reservePath: reservations.reserve,
       releasePath: reservations.release,
-      convertAudio: vi.fn(
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(
         () =>
-          new Promise<{ normalizeSkipped: boolean }>((resolve) =>
-            release.push(() => resolve({ normalizeSkipped: false })),
+          new Promise((resolve) =>
+            release.push(() => resolve({ normalizeSkipped: false, written })),
           ),
       ),
     })
@@ -590,10 +611,10 @@ describe('runProcessTrack — output conflict', () => {
       isPathReserved: reservations.isReserved,
       reservePath: reservations.reserve,
       releasePath: reservations.release,
-      convertAudio: vi.fn(
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(
         () =>
-          new Promise<{ normalizeSkipped: boolean }>((resolve) =>
-            release.push(() => resolve({ normalizeSkipped: false })),
+          new Promise((resolve) =>
+            release.push(() => resolve({ normalizeSkipped: false, written })),
           ),
       ),
     })
@@ -695,10 +716,10 @@ describe('runProcessTrack — cancel reaches the running encode', () => {
   // must know which child belongs to which job for exactly the window it runs.
   it('registers the child under the job id and unregisters it once the job settles, success or failure', async () => {
     const deps = makeDeps({
-      convertAudio: vi.fn(async (...args: unknown[]) => {
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async (...args: unknown[]) => {
         const onChild = args[7] as (child: { kill: (s: string) => void }) => void
         onChild({ kill: vi.fn() })
-        return { normalizeSkipped: false }
+        return { normalizeSkipped: false, written }
       }),
     })
     await runProcessTrack(job(), deps)
@@ -733,7 +754,10 @@ describe('runProcessTrack — cancel reaches the running encode', () => {
   // with it. Exactly the loss quitGuard exists to prevent.
   it('counts a stream-copy job that never spawns a child as in flight', async () => {
     const deps = makeDeps({
-      convertAudio: vi.fn(async () => ({ normalizeSkipped: false })),
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async () => ({
+        normalizeSkipped: false,
+        written,
+      })),
     })
 
     await runProcessTrack(job(), deps)
@@ -765,10 +789,10 @@ describe('runProcessTrack — orphaned tmp trail', () => {
   // launch sweeps.
   it('tracks the tmp path the instant convertAudio picks it, untracking it once the job settles', async () => {
     const deps = makeDeps({
-      convertAudio: vi.fn(async (...args: unknown[]) => {
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async (...args: unknown[]) => {
         const onTmp = args[8] as (path: string) => void
         onTmp('/out/Artist - Title.tmp-a1b2c3d4.aiff')
-        return { normalizeSkipped: false }
+        return { normalizeSkipped: false, written }
       }),
     })
     await runProcessTrack(job(), deps)
@@ -779,7 +803,7 @@ describe('runProcessTrack — orphaned tmp trail', () => {
 
   it('still untracks the tmp path when the encode throws', async () => {
     const deps = makeDeps({
-      convertAudio: vi.fn(async (...args: unknown[]) => {
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async (...args: unknown[]) => {
         const onTmp = args[8] as (path: string) => void
         onTmp('/out/Artist - Title.tmp-a1b2c3d4.aiff')
         throw new Error('disk full')
@@ -796,7 +820,7 @@ describe('runProcessTrack — orphaned tmp trail', () => {
   // parked in the user's music folder for good, read as "a file that never finished".
   it('keeps the tmp path listed when the cleanup could not delete it', async () => {
     const deps = makeDeps({
-      convertAudio: vi.fn(async (...args: unknown[]) => {
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async (...args: unknown[]) => {
         const onTmp = args[8] as (path: string) => void
         onTmp('/nas/Artist - Title.tmp-a1b2c3d4.flac')
         throw Object.assign(new Error('EBUSY: resource busy'), { tmpSurvived: true })
@@ -811,7 +835,7 @@ describe('runProcessTrack — orphaned tmp trail', () => {
   // the manifest naming files that do not exist, and every later sweep chasing ghosts.
   it('untracks normally when the temp was already gone', async () => {
     const deps = makeDeps({
-      convertAudio: vi.fn(async (...args: unknown[]) => {
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async (...args: unknown[]) => {
         const onTmp = args[8] as (path: string) => void
         onTmp('/out/Artist - Title.tmp-a1b2c3d4.aiff')
         throw new Error('encode died before writing anything')
@@ -2001,6 +2025,7 @@ describe('runProcessTrack — replacing a library copy', () => {
   it('hands the superseded path to the conversion', async () => {
     const convertAudio = vi.fn<ProcessTrackDeps['convertAudio']>(async () => ({
       normalizeSkipped: false,
+      written,
     }))
     const deps = replacing({ convertAudio })
 

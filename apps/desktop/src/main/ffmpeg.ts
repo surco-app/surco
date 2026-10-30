@@ -117,6 +117,7 @@ import {
 } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
+import { type PcmDigest, pcmDigest } from './verifyPcm'
 import { WAVEFORM_BUCKETS, WAVEFORM_SAMPLE_RATE } from './waveform'
 import { isMalformedInputError, repairWav } from './wavRepair'
 import { runInWorker, signalWorkers } from './worker'
@@ -1091,7 +1092,24 @@ export interface ConversionPlan extends EncodeArgs {
   // appends the aresample stage when this is set.
   dither?: boolean
   samplesKept?: true
+  // The width the written file stores, when the plan knows it: what the self-check
+  // reads back. Absent for lossy targets (no bit depth) and unprobed copies.
+  bitDepth?: number
   ext: '.aiff' | '.mp3' | '.wav' | '.flac' | '.m4a'
+}
+
+// Measured with the bundled ffmpeg: FLAC and ALAC store an s32 input at 24 bits whatever
+// the source's width, and PCM codecs at their own.
+function encodedBits(codec: string, sampleFmt?: string): number | undefined {
+  const pcm = /^pcm_[sf](\d+)/.exec(codec)
+  if (pcm) return Number(pcm[1])
+  return sampleFmt ? (sampleFmt.startsWith('s16') ? 16 : 24) : undefined
+}
+
+// A copy stores exactly the source's width, read the way the self-check reads it back.
+function copiedBits(probe: ProbeResult): { bitDepth?: number } {
+  const bits = probe.bitsPerRawSample || Number(/^pcm_[suf](\d+)/.exec(probe.codecName)?.[1])
+  return bits ? { bitDepth: bits } : {}
 }
 
 // Decides how to render a source into the chosen output format. A source already in
@@ -1213,10 +1231,12 @@ export async function planConversion(
     const same = WAV_INPUT.test(input) && copyOk
     if (same && !pinned) return { codec: 'copy', samplesKept: true, ext: '.wav' }
     const plan = await losslessPlan()
-    if (same && (await keepsSource(plan))) return { codec: 'copy', samplesKept: true, ext: '.wav' }
+    if (same && (await keepsSource(plan)))
+      return { codec: 'copy', samplesKept: true, ...copiedBits(await probeOnce()), ext: '.wav' }
     const { depth, ...rest } = plan
     return {
       codec: pcmCodec(depth, 'le'),
+      bitDepth: encodedBits(pcmCodec(depth, 'le')),
       ...rest,
       ...((await samplesSurvive(plan)) ? { samplesKept: true as const } : {}),
       ext: '.wav',
@@ -1226,13 +1246,16 @@ export async function planConversion(
     const same = FLAC_INPUT.test(input) && copyOk
     if (same && !pinned) return { codec: 'copy', samplesKept: true, ext: '.flac' }
     const plan = await losslessPlan()
-    if (same && (await keepsSource(plan))) return { codec: 'copy', samplesKept: true, ext: '.flac' }
+    if (same && (await keepsSource(plan)))
+      return { codec: 'copy', samplesKept: true, ...copiedBits(await probeOnce()), ext: '.flac' }
     const { depth, ...rest } = plan
     // FLAC holds integers only (its s32 input writes 24-bit), so a float source
     // lands on the encoder's widest width rather than keeping float.
+    const sampleFmt = !depth.float && depth.bits <= 16 ? 's16' : 's32'
     return {
       codec: 'flac',
-      sampleFmt: !depth.float && depth.bits <= 16 ? 's16' : 's32',
+      sampleFmt,
+      bitDepth: encodedBits('flac', sampleFmt),
       compressionLevel: q.flacCompression,
       ...rest,
       ...((await samplesSurvive(plan, (d) => !d.float && d.bits <= 24))
@@ -1260,11 +1283,14 @@ export async function planConversion(
     }
     if (same && !pinned) return { codec: 'copy', samplesKept: true, ext: '.m4a' }
     const plan = await losslessPlan()
-    if (same && (await keepsSource(plan))) return { codec: 'copy', samplesKept: true, ext: '.m4a' }
+    if (same && (await keepsSource(plan)))
+      return { codec: 'copy', samplesKept: true, ...copiedBits(await probeOnce()), ext: '.m4a' }
     const { depth, ...rest } = plan
+    const sampleFmt = !depth.float && depth.bits <= 16 ? 's16p' : 's32p'
     return {
       codec: 'alac',
-      sampleFmt: !depth.float && depth.bits <= 16 ? 's16p' : 's32p',
+      sampleFmt,
+      bitDepth: encodedBits('alac', sampleFmt),
       ...rest,
       ...((await samplesSurvive(plan, (d) => !d.float)) ? { samplesKept: true as const } : {}),
       ext: '.m4a',
@@ -1273,10 +1299,12 @@ export async function planConversion(
   const same = AIFF_INPUT.test(input) && copyOk
   if (same && !pinned) return { codec: 'copy', samplesKept: true, ext: '.aiff' }
   const plan = await losslessPlan()
-  if (same && (await keepsSource(plan))) return { codec: 'copy', samplesKept: true, ext: '.aiff' }
+  if (same && (await keepsSource(plan)))
+    return { codec: 'copy', samplesKept: true, ...copiedBits(await probeOnce()), ext: '.aiff' }
   const { depth, ...rest } = plan
   return {
     codec: pcmCodec(depth, 'be'),
+    bitDepth: encodedBits(pcmCodec(depth, 'be')),
     ...rest,
     ...((await samplesSurvive(plan)) ? { samplesKept: true as const } : {}),
     ext: '.aiff',
@@ -1921,6 +1949,18 @@ function recordConversionPatch(
   }
 }
 
+// What a finished conversion put on disk, for the self-check that reads it back
+// (verifyFile.ts). The source's side is measured before the rename: rewritten in place,
+// the source is gone once it lands.
+export interface ConversionWritten {
+  samplesKept: boolean
+  originalKept: boolean
+  sourcePcm?: PcmDigest
+  plan: Pick<ConversionPlan, 'ext' | 'codec' | 'sampleRateHz' | 'bitDepth'>
+  sourceDurationSec?: number
+  trimmedSec: number
+}
+
 export async function convertAudio(
   input: string,
   output: string,
@@ -1961,7 +2001,11 @@ export async function convertAudio(
   isCancelled?: () => boolean,
   // The user answered "Overwrite" for a different file already at the destination.
   keepOverwritten?: boolean,
-): Promise<{ normalizeSkipped: boolean; declickedSamples?: number }> {
+): Promise<{
+  normalizeSkipped: boolean
+  declickedSamples?: number
+  written: ConversionWritten
+}> {
   const meta = composeMeta(sourceMeta)
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
@@ -2039,6 +2083,10 @@ export async function convertAudio(
   // when declick is off so "not run" and "ran, found 0" stay distinct upstream.
   let declickedSamples: number | undefined
   let archived: TrashEntry | null = null
+  const samplesKept = copiedVerbatim || plan.samplesKept === true
+  let sourcePcm: PcmDigest | undefined
+  let sourceDurationSec: number | undefined
+  let originalKept = false
 
   try {
     // A cancel during the measures and probes above has no child to kill yet.
@@ -2329,7 +2377,21 @@ export async function convertAudio(
     // reported as a finished conversion. Immediately before the rename is the one point
     // both branches share and nothing further writes to the temp, which is exactly what
     // the rename's own comment below already claims to be true of it.
-    await assertDecodable(tmp, copiedVerbatim ? input : undefined)
+    //
+    // The source is measured alongside, for the self-check after the job: its digest when
+    // the samples should come out identical, its decoded length otherwise. Here because an
+    // in-place rename replaces it. A failed digest only leaves the check without a
+    // comparison (it says so); it never costs a conversion that went fine.
+    ;[, sourcePcm, sourceDurationSec] = await Promise.all([
+      assertDecodable(tmp, copiedVerbatim ? input : undefined),
+      samplesKept
+        ? pcmDigest(input).catch((err) => {
+            log.warn(`source digest failed, the check cannot compare: ${err}`)
+            return undefined
+          })
+        : undefined,
+      samplesKept ? undefined : deliveredDurationSec(input).then((d) => d ?? undefined),
+    ])
     if (isCancelled?.()) throw errorWithKey('conversionCancelled')
     // rekordbox keeps cues in milliseconds of its own timeline, which starts at a different
     // point on each kind of file (see rekordboxTimeline.ts). Read on both files here, the
@@ -2372,6 +2434,7 @@ export async function convertAudio(
     // taken back: checked once more right before it, the original stays as it was and
     // the catch drops the backup.
     if (isCancelled?.()) throw errorWithKey('conversionCancelled')
+    originalKept = archived !== null
     // Logged because this failure only reproduces on Windows machines we cannot
     // attach a debugger to: when a user reports "another program is using the file",
     // these lines are the whole evidence — whether the destination was still held,
@@ -2444,7 +2507,27 @@ export async function convertAudio(
     }
     throw e
   }
-  return { normalizeSkipped, declickedSamples }
+  const cutTail =
+    trim?.endSec !== undefined && sourceDurationSec !== undefined
+      ? Math.max(0, sourceDurationSec - trim.endSec)
+      : 0
+  return {
+    normalizeSkipped,
+    declickedSamples,
+    written: {
+      samplesKept,
+      originalKept,
+      ...(sourcePcm ? { sourcePcm } : {}),
+      plan: {
+        ext,
+        codec,
+        ...(plan.sampleRateHz ? { sampleRateHz: plan.sampleRateHz } : {}),
+        ...(plan.bitDepth ? { bitDepth: plan.bitDepth } : {}),
+      },
+      ...(sourceDurationSec !== undefined ? { sourceDurationSec } : {}),
+      trimmedSec: trimAf !== undefined ? (trim?.startSec ?? 0) + cutTail : 0,
+    },
+  }
 }
 
 // The renderer's <audio> element decodes WAV/FLAC/MP3 but not AIFF, so an AIFF

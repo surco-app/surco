@@ -20,6 +20,7 @@ import type {
 import { createConcurrencyLimiter } from './analysisLimiter'
 import { isAppleMusicOnly, shouldAddToAppleMusic } from './applemusic'
 import type { CoverSource, PreparedCover } from './cover'
+import type { ConversionWritten } from './ffmpeg'
 import {
   isOutputConflict,
   resolveOutputTarget,
@@ -58,7 +59,7 @@ export interface ProcessTrackDeps {
     foreignRemoved?: string[],
     replacesPath?: string,
     keepOverwritten?: boolean,
-  ) => Promise<{ normalizeSkipped: boolean; declickedSamples?: number }>
+  ) => Promise<{ normalizeSkipped: boolean; declickedSamples?: number; written: ConversionWritten }>
   // Lets a cancel reach the encode already in flight for this job, not just ones
   // not yet started. Registered around the convertAudio call and unregistered in
   // finally so a cancel after the job settles is a no-op.

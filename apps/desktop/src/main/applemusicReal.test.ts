@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
 import { mkdir, mkdtemp, rm, rmdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { extname, join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
 import { afterAll, describe, expect, it } from 'vitest'
 import { errorKeyOf } from '../shared/errorKeys'
@@ -18,6 +18,7 @@ import {
   markAppleMusicReplacing,
   runOsascript,
 } from './applemusic'
+import type { ConversionPlan } from './ffmpeg'
 import { type ProcessTrackDeps, runProcessTrack } from './processTrack'
 
 // Opt-in: drives the real Music app with throwaway tones, for the measurements the unit
@@ -117,7 +118,15 @@ function deps(): ProcessTrackDeps {
         `album=${m.album}`,
         output,
       ])
-      return { normalizeSkipped: false }
+      return {
+        normalizeSkipped: false,
+        written: {
+          samplesKept: false,
+          originalKept: false,
+          plan: { ext: extname(output) as ConversionPlan['ext'], codec: 'pcm_s16be' },
+          trimmedSec: 0,
+        },
+      }
     },
     registerActiveConversion: () => {},
     unregisterActiveConversion: () => {},

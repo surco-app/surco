@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { ProcessJob, Settings, TrackMetadata } from '../shared/types'
+import type { ConversionWritten } from './ffmpeg'
 import { type ProcessTrackDeps, runProcessTrack } from './processTrack'
 
 // Fixture helpers mirror processTrack.test.ts exactly, so this file reads like a direct
@@ -29,6 +30,14 @@ function job(overrides: Partial<ProcessJob> = {}): ProcessJob {
   }
 }
 
+const written: ConversionWritten = {
+  samplesKept: false,
+  originalKept: false,
+  plan: { ext: '.aiff', codec: 'pcm_s16be', bitDepth: 16 },
+  sourceDurationSec: 2,
+  trimmedSec: 0,
+}
+
 function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
   return {
     settings: settings(),
@@ -39,7 +48,10 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
       path: '/tmp/cover.jpg',
       cleanup: vi.fn(async () => {}),
     })),
-    convertAudio: vi.fn(async () => ({ normalizeSkipped: false })),
+    convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async () => ({
+      normalizeSkipped: false,
+      written,
+    })),
     recordConversion: vi.fn(),
     removeRenamedOriginal: vi.fn(async () => {}),
     addToAppleMusic: vi.fn(async () => 'added-id'),

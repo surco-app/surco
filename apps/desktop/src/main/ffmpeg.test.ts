@@ -645,12 +645,13 @@ describe('planConversion', () => {
     })
     expect(
       await planConversion('/in.m4a', 'alac', alac24, false, { bitDepth: '16' }, notPadded),
-    ).toEqual({ codec: 'alac', sampleFmt: 's16p', dither: true, ext: '.m4a' })
+    ).toEqual({ codec: 'alac', bitDepth: 16, sampleFmt: 's16p', dither: true, ext: '.m4a' })
   })
 
   it('encodes an ALAC target from another format, pinned to the source width', async () => {
     expect(await planConversion('/in.flac', 'alac', probe16)).toEqual({
       codec: 'alac',
+      bitDepth: 16,
       sampleFmt: 's16p',
       samplesKept: true,
       ext: '.m4a',
@@ -708,6 +709,7 @@ describe('planConversion', () => {
       await planConversion('/in.flac', 'flac', probe96, false, { sampleRate: '48000' }),
     ).toEqual({
       codec: 'flac',
+      bitDepth: 24,
       sampleFmt: 's32',
       compressionLevel: '5',
       sampleRateHz: 48000,
@@ -715,6 +717,7 @@ describe('planConversion', () => {
     })
     expect(await planConversion('/in.wav', 'wav', probe96, false, { bitDepth: '16' })).toEqual({
       codec: 'pcm_s16le',
+      bitDepth: 16,
       dither: true,
       ext: '.wav',
     })
@@ -728,12 +731,12 @@ describe('planConversion', () => {
         bitDepth: '16',
         sampleRate: '44100',
       }),
-    ).toEqual({ codec: 'copy', samplesKept: true, ext: '.flac' })
+    ).toEqual({ codec: 'copy', samplesKept: true, bitDepth: 16, ext: '.flac' })
     expect(
       await planConversion('/in.aiff', 'aiff', probe, false, { bitDepth: 'corrected' }, () =>
         Promise.resolve({ usage: 'full' }),
       ),
-    ).toEqual({ codec: 'copy', samplesKept: true, ext: '.aiff' })
+    ).toEqual({ codec: 'copy', samplesKept: true, bitDepth: 24, ext: '.aiff' })
   })
 
   // The default depth policy: a 24-bit container proven to carry 16-bit audio is
@@ -743,7 +746,7 @@ describe('planConversion', () => {
       await planConversion('/in.aiff', 'aiff', probe, false, { bitDepth: 'corrected' }, () =>
         Promise.resolve({ usage: 'padded16' }),
       ),
-    ).toEqual({ codec: 'pcm_s16be', ext: '.aiff' })
+    ).toEqual({ codec: 'pcm_s16be', bitDepth: 16, ext: '.aiff' })
   })
 
   it('never re-encodes a same-format MP3, whatever rate is pinned', async () => {
@@ -764,10 +767,12 @@ describe('planConversion', () => {
     })
     expect(await planConversion('/in.aiff', 'aiff', probe, true)).toEqual({
       codec: 'pcm_s24be',
+      bitDepth: 24,
       ext: '.aiff',
     })
     expect(await planConversion('/in.flac', 'flac', probe, true)).toEqual({
       codec: 'flac',
+      bitDepth: 24,
       sampleFmt: 's32',
       compressionLevel: '5',
       ext: '.flac',
@@ -781,6 +786,7 @@ describe('planConversion', () => {
   it('keeps a 16-bit source at 16 bits when normalizing to FLAC/ALAC', async () => {
     expect(await planConversion('/in.flac', 'flac', probe16, true)).toEqual({
       codec: 'flac',
+      bitDepth: 16,
       sampleFmt: 's16',
       compressionLevel: '5',
       dither: true,
@@ -788,6 +794,7 @@ describe('planConversion', () => {
     })
     expect(await planConversion('/in.wav', 'alac', probe16, true)).toEqual({
       codec: 'alac',
+      bitDepth: 16,
       sampleFmt: 's16p',
       dither: true,
       ext: '.m4a',
@@ -810,16 +817,19 @@ describe('planConversion', () => {
     }))
     expect(await planConversion('/in.mp3', 'wav', lossy)).toEqual({
       codec: 'pcm_s16le',
+      bitDepth: 16,
       dither: true,
       ext: '.wav',
     })
     expect(await planConversion('/in.mp3', 'aiff', lossy)).toEqual({
       codec: 'pcm_s16be',
+      bitDepth: 16,
       dither: true,
       ext: '.aiff',
     })
     expect(await planConversion('/in.mp3', 'flac', lossy)).toEqual({
       codec: 'flac',
+      bitDepth: 16,
       sampleFmt: 's16',
       dither: true,
       compressionLevel: '5',
@@ -842,6 +852,7 @@ describe('planConversion', () => {
     }))
     expect(await planConversion('/in.mp3', 'wav', lossy)).toEqual({
       codec: 'pcm_s16le',
+      bitDepth: 16,
       dither: true,
       ext: '.wav',
     })
@@ -859,6 +870,7 @@ describe('planConversion', () => {
     }))
     expect(await planConversion('/in.wav', 'aiff', f32)).toEqual({
       codec: 'pcm_f32be',
+      bitDepth: 32,
       samplesKept: true,
       ext: '.aiff',
     })
@@ -867,12 +879,14 @@ describe('planConversion', () => {
   it('pins the output bit depth when the settings ask for one, dithering only reductions to 16', async () => {
     expect(await planConversion('/in.flac', 'wav', probe, false, { bitDepth: '16' })).toEqual({
       codec: 'pcm_s16le',
+      bitDepth: 16,
       dither: true,
       ext: '.wav',
     })
     // Pinning 24 on a 16-bit source pads (the user's explicit ask) — nothing to dither.
     expect(await planConversion('/in.wav', 'flac', probe16, false, { bitDepth: '24' })).toEqual({
       codec: 'flac',
+      bitDepth: 24,
       sampleFmt: 's32',
       compressionLevel: '5',
       ext: '.flac',
@@ -880,6 +894,7 @@ describe('planConversion', () => {
     // 16→16 with no filter passes the samples through untouched: dither would only add noise.
     expect(await planConversion('/in.wav', 'flac', probe16, false, { bitDepth: '16' })).toEqual({
       codec: 'flac',
+      bitDepth: 16,
       sampleFmt: 's16',
       compressionLevel: '5',
       samplesKept: true,
@@ -899,6 +914,7 @@ describe('planConversion', () => {
       await planConversion('/in.flac', 'wav', probe48, false, { sampleRate: '44100' }),
     ).toEqual({
       codec: 'pcm_s16le',
+      bitDepth: 16,
       sampleRateHz: 44100,
       dither: true,
       ext: '.wav',
@@ -908,6 +924,7 @@ describe('planConversion', () => {
       await planConversion('/in.flac', 'wav', probe48, false, { sampleRate: '48000' }),
     ).toEqual({
       codec: 'pcm_s16le',
+      bitDepth: 16,
       samplesKept: true,
       ext: '.wav',
     })
@@ -926,6 +943,7 @@ describe('planConversion', () => {
     expect(await planConversion('/in.wav', 'flac', probe, false, { flacCompression: '8' })).toEqual(
       {
         codec: 'flac',
+        bitDepth: 24,
         sampleFmt: 's32',
         compressionLevel: '8',
         samplesKept: true,
@@ -944,6 +962,7 @@ describe('planConversion', () => {
     })
     expect(await planConversion('/in.m4a', 'flac', probe)).toEqual({
       codec: 'flac',
+      bitDepth: 24,
       sampleFmt: 's32',
       compressionLevel: '5',
       samplesKept: true,
@@ -951,11 +970,13 @@ describe('planConversion', () => {
     })
     expect(await planConversion('/in.m4a', 'wav', probe)).toEqual({
       codec: 'pcm_s24le',
+      bitDepth: 24,
       samplesKept: true,
       ext: '.wav',
     })
     expect(await planConversion('/in.m4a', 'aiff', probe)).toEqual({
       codec: 'pcm_s24be',
+      bitDepth: 24,
       samplesKept: true,
       ext: '.aiff',
     })
@@ -964,6 +985,7 @@ describe('planConversion', () => {
   it('transcodes an Opus/Ogg source too rather than stream-copying', async () => {
     expect(await planConversion('/in.opus', 'flac', probe)).toEqual({
       codec: 'flac',
+      bitDepth: 24,
       sampleFmt: 's32',
       compressionLevel: '5',
       samplesKept: true,
@@ -971,6 +993,7 @@ describe('planConversion', () => {
     })
     expect(await planConversion('/in.ogg', 'aiff', probe)).toEqual({
       codec: 'pcm_s24be',
+      bitDepth: 24,
       samplesKept: true,
       ext: '.aiff',
     })
@@ -981,6 +1004,7 @@ describe('planConversion', () => {
     // chain hands it — float in the normalize/lossy cases — silently widening 16→24.
     expect(await planConversion('/in.wav', 'flac', probe)).toEqual({
       codec: 'flac',
+      bitDepth: 24,
       sampleFmt: 's32',
       compressionLevel: '5',
       samplesKept: true,
@@ -1003,6 +1027,7 @@ describe('planConversion', () => {
     // AIFF must preserve the exact bit depth, which only ffprobe can reveal
     expect(await planConversion('/in.wav', 'aiff', probe)).toEqual({
       codec: 'pcm_s24be',
+      bitDepth: 24,
       samplesKept: true,
       ext: '.aiff',
     })
@@ -1015,6 +1040,7 @@ describe('planConversion', () => {
     // source as pcm_s24be inside a WAV would corrupt every sample
     expect(await planConversion('/in.flac', 'wav', probe)).toEqual({
       codec: 'pcm_s24le',
+      bitDepth: 24,
       samplesKept: true,
       ext: '.wav',
     })
