@@ -101,14 +101,20 @@ function renderField(
   )
 }
 
-// Bounded fields that follow each other in the user's order share a row, two at most, so a
-// longer run starts each line on its own label instead of wrapping wherever the column ends;
-// any other field stands alone. The order itself is never rearranged to pack them together.
+// A field shares a row only with the one that completes it, and only when the user's order
+// already puts them side by side; any other field stands alone. The order itself is never
+// rearranged to pack them together.
+const ROW_PARTNER: Record<string, string> = {
+  trackNumber: 'trackTotal',
+  discNumber: 'discTotal',
+  bpm: 'key',
+}
+
 function toRows(fields: FieldSpec[]): FieldSpec[][] {
   const rows: FieldSpec[][] = []
   for (const f of fields) {
     const last = rows.at(-1)
-    if (f.width && last?.[0].width && last.length < 2) last.push(f)
+    if (last?.length === 1 && ROW_PARTNER[last[0].key] === f.key) last.push(f)
     else rows.push([f])
   }
   return rows

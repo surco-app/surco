@@ -1,4 +1,5 @@
 import type { TrackItem } from '../types'
+import { supersededFile } from './supersededFile'
 
 // A stranded file and the track whose replacement stranded it, so trashing it marks
 // that track and no other.
@@ -58,12 +59,14 @@ export function selectionStatus(
   // The files a batch of replacements stranded: each one left Apple Music and rekordbox
   // now follows its successor, so nothing references them. Single-select has its own
   // per-track link (supersededFile), so this stays empty there and the two offers can
-  // never both appear. Unfinished and already-trashed tracks drop out for the same reasons
-  // supersededFile applies per track.
+  // never both appear. Each track is judged by supersededFile itself, so the batch drops
+  // exactly what the single-track link would: unfinished, already trashed, the source the
+  // footer offers as original, and a file the old Music entry may still play.
   const superseded = isMulti
-    ? multiTracks
-        .filter((t) => t.status === 'done' && t.replacesPath && !t.supersededTrashed)
-        .map((t) => ({ trackId: t.id, path: t.replacesPath as string }))
+    ? multiTracks.flatMap((t) => {
+        const path = supersededFile(t)
+        return path ? [{ trackId: t.id, path }] : []
+      })
     : []
   return {
     showDone,

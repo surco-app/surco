@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { processesAudio } from '../../../shared/audioProcessing'
 import { effectiveMeta, strayTags } from '../../../shared/customFields'
 import { DEFAULT_FIELDS } from '../../../shared/defaults'
+import { splitNameLeftMarked } from '../../../shared/errorKeys'
 import { batchKeepMp3, hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
 import type { DeclickConfig, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
 import { removeAnalysisQueries } from '../lib/analysisQueries'
@@ -61,6 +62,8 @@ interface Params {
   // Surfaced when the converted file landed but the original it replaced in a format
   // change could not be removed, so both are in the folder.
   onOriginalKept?: (name: string) => void
+  // The replaced Music entry kept the replacing mark in its name (ProcessResult.musicNameLeftMarked).
+  onMusicNameLeftMarked?: (name: string) => void
   // Surfaced when 'source' skipped a track for having no output format equivalent
   // (.opus/.ogg/.oga/.aac/.mp4). A batch run shows this through batchSummary's "N
   // skipped" count, but a single-track convert has no summary to show it in — without
@@ -138,6 +141,7 @@ export function useTrackProcessing({
   onOldMusicCopyKept,
   onAppleMusicFailed,
   onOriginalKept,
+  onMusicNameLeftMarked,
   onFormatSkipped,
   onKeptAsIs,
   rereadTrackMeta,
@@ -423,6 +427,7 @@ export function useTrackProcessing({
         if (result.declickedSamples) onDeclicked?.(track.listLabel, result.declickedSamples)
         if (result.oldMusicCopyKept) onOldMusicCopyKept?.(result.oldMusicCopyKept)
         if (result.originalKept) onOriginalKept?.(track.listLabel)
+        if (result.musicNameLeftMarked) onMusicNameLeftMarked?.(track.listLabel)
         // Record the config main actually applied — same fallback processTrack uses
         // when the job carries none — so the stale check compares against reality.
         updateTrack(
@@ -445,14 +450,16 @@ export function useTrackProcessing({
         // the source, so its (possibly different, when renamed) path is evicted too.
         removeAnalysisQueries(queryClient, [result.outputPath])
         if (result.outputPath && result.outputPath !== track.inputPath) movedRef.current = true
-        moved = result.inPlace && result.outputPath !== track.inputPath
-        if (result.inPlace) {
+        // "Apple Music only" can move the row too: to the copy Music landed (exportedPatch).
+        const movedTo = result.inPlace ? result.outputPath : result.musicLandedPath
+        moved = !!movedTo && movedTo !== track.inputPath
+        if (movedTo) {
           removeAnalysisQueries(queryClient, [track.inputPath])
           // The row's frozen label and the file's own artwork describe the bytes this
           // export just overwrote, so re-read them from the file at its final (possibly
           // renamed) path. Awaited so a batch's rows settle in order, but never allowed
           // to fail the conversion: the file is written either way and this only repaints.
-          await refreshTrackFromDisk?.(id, result.outputPath).catch(() => {})
+          await refreshTrackFromDisk?.(id, movedTo).catch(() => {})
         }
         // The file was written and the row now follows it; only the Engine DJ add failed,
         // which still fails the track so it is never taken for in the library.
@@ -468,7 +475,9 @@ export function useTrackProcessing({
         }
         return 'converted'
       } catch (e) {
-        const raw = e instanceof Error ? cleanIpcError(e.message) : ''
+        const marked = splitNameLeftMarked(e instanceof Error ? cleanIpcError(e.message) : '')
+        if (marked.left) onMusicNameLeftMarked?.(track.listLabel)
+        const raw = marked.message
         if (errorKeyOf(raw) === 'conversionCancelled') {
           updateTrack(id, {
             status: 'idle',
@@ -482,7 +491,7 @@ export function useTrackProcessing({
         // the leading key mainErrorMessage reads.
         const message = isFileInUseMessage(raw)
           ? tr('editor.fileInUseError')
-          : mainErrorMessage(e, tr, tr('editor.processError'))
+          : mainErrorMessage(marked.left ? new Error(raw) : e, tr, tr('editor.processError'))
         updateTrack(id, {
           status: 'error',
           error: message,

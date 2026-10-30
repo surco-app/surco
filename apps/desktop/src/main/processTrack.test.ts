@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import log from 'electron-log/main'
 import { describe, expect, it, vi } from 'vitest'
-import { errorKeyOf } from '../shared/errorKeys'
+import { errorKeyOf, errorWithKey, splitNameLeftMarked } from '../shared/errorKeys'
 import type { ProcessJob, Settings, TrackMetadata } from '../shared/types'
 import { createOutputReservations } from './outputReservations'
 import { type ProcessTrackDeps, runProcessTrack } from './processTrack'
@@ -55,10 +55,16 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     mkdir: vi.fn(async () => undefined),
     mkdtemp: vi.fn(async () => '/tmp/surco-abc'),
     rm: vi.fn(async () => {}),
+    rmdir: vi.fn(async () => {}),
     confirmConflict: vi.fn(async () => 'overwrite' as const),
     appleMusicEntryLocation: vi.fn(async () => '/Users/me/Music/Media/f.aiff'),
+    appleMusicEntry: vi.fn(async () => ({
+      path: '/Users/me/Music/Media/f.aiff',
+      label: 'Artist - Title',
+    })),
     deleteAppleMusic: vi.fn(async () => {}),
     carryAppleMusicHistory: vi.fn(async () => 'carried' as const),
+    markAppleMusicReplacing: vi.fn(async () => 'set' as const),
     isPathReserved: vi.fn(() => false),
     reservePath: vi.fn(),
     releasePath: vi.fn(),
@@ -1431,6 +1437,43 @@ describe('runProcessTrack — Apple Music', () => {
     expect(result.musicPersistentId).toBe('added-id')
   })
 
+  // The old entry plays the original until the replacement retires it. Retiring the original
+  // first left that entry playing a file that was gone whenever the replacement then failed
+  // or had to keep the old entry: Music handing back an entry, a refused carry, a timeout.
+  it('retires the renamed original only once its Music entry has been replaced', async () => {
+    const deps = mac({ overwriteOriginal: true })
+    deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    await runProcessTrack(job(), deps)
+
+    expect(vi.mocked(deps.removeRenamedOriginal).mock.invocationCallOrder[0]).toBeGreaterThan(
+      vi.mocked(deps.deleteAppleMusic).mock.invocationCallOrder[0],
+    )
+  })
+
+  it('keeps the renamed original when its Music entry could not be replaced', async () => {
+    const deps = mac({ overwriteOriginal: true })
+    deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    deps.addToAppleMusic = vi.fn(async () => {
+      throw new Error('SURCO_ERR:appleMusicAddReturnedOld: lib-9')
+    })
+    const result = await runProcessTrack(job(), deps)
+
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result.appleMusicFailed).toBe(true)
+    expect(result.originalKept).toBe(true)
+  })
+
+  it('keeps the renamed original when the old Music entry had to be kept', async () => {
+    const deps = mac({ overwriteOriginal: true })
+    deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    deps.carryAppleMusicHistory = vi.fn(async () => 'mismatch' as const)
+    const result = await runProcessTrack(job(), deps)
+
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result.oldMusicCopyKept).toBe('mismatch')
+    expect(result.originalKept).toBe(true)
+  })
+
   it("carries the renamed file's playlists, play count and rating onto its new Music entry", async () => {
     const deps = mac({ overwriteOriginal: true })
     deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
@@ -1708,6 +1751,229 @@ describe('runProcessTrack — Apple Music only', () => {
   })
 })
 
+// Measured 30/10: Music reads no tags from a WAV at import, so the copy it makes into its
+// Media folder lands in "Unknown Artist/Unknown Album" and tagging the entry afterwards never
+// moves it. A file already inside the Media folder is added where it is, so "Apple Music
+// only" writes the conversion straight into Music's own layout.
+describe('runProcessTrack — Apple Music only into the Media folder', () => {
+  const media = '/Volumes/Public/Music/Music/Media.localized'
+  const meta = { artist: 'Artist', title: 'Title', album: 'Album' } as TrackMetadata
+  const filed = `${media}/Music/Artist/Album/Artist - Title.wav`
+  const intoMedia = (overrides: Partial<ProcessTrackDeps> = {}) =>
+    makeDeps({
+      platform: 'darwin',
+      settings: settings({ addToAppleMusic: true, keepOutputCopy: false }),
+      appleMusicMediaFolder: vi.fn(async () => media),
+      existsSync: vi.fn((p: string) => p === media),
+      mkdir: vi.fn(async () => `${media}/Music/Artist`),
+      appleMusicEntryLocation: vi.fn(async () => filed),
+      appleMusicHoldsFile: vi.fn(async () => false),
+      ...overrides,
+    })
+  const musicJob = (over: Partial<ProcessJob> = {}) =>
+    job({ inputPath: '/in/song.aiff', meta, format: 'wav', ...over })
+
+  it('writes the conversion where Music files it and adds it from there, keeping it', async () => {
+    const deps = intoMedia()
+
+    const result = await runProcessTrack(musicJob(), deps)
+
+    expect(deps.mkdtemp).not.toHaveBeenCalled()
+    expect(deps.mkdir).toHaveBeenCalledWith(`${media}/Music/Artist/Album`, { recursive: true })
+    expect(vi.mocked(deps.convertAudio).mock.calls[0]?.[1]).toBe(filed)
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith(filed, meta, undefined)
+    expect(deps.reservePath).toHaveBeenCalledWith(filed)
+    expect(deps.releasePath).toHaveBeenCalledWith(filed)
+    expect(deps.rm).not.toHaveBeenCalled()
+    expect(deps.rmdir).not.toHaveBeenCalled()
+    expect(result).toMatchObject({ outputPath: '', addedToMusicOnly: true })
+  })
+
+  it('files under the album artist, and under Music’s own names when the tags are empty', async () => {
+    const deps = intoMedia()
+    await runProcessTrack(musicJob({ meta: { ...meta, albumArtist: 'Various' } }), deps)
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith(
+      `${media}/Music/Various/Album/Artist - Title.wav`,
+      expect.anything(),
+      undefined,
+    )
+
+    const bare = intoMedia()
+    await runProcessTrack(musicJob({ meta: { title: 'Title' } as TrackMetadata }), bare)
+    expect(bare.addToAppleMusic).toHaveBeenCalledWith(
+      `${media}/Music/Unknown Artist/Unknown Album/Artist - Title.wav`,
+      expect.anything(),
+      undefined,
+    )
+  })
+
+  // A slash would open a folder of its own and a colon is what Finder shows for one.
+  it('keeps a slash or colon in a tag from opening another folder', async () => {
+    const deps = intoMedia()
+    await runProcessTrack(
+      musicJob({ meta: { ...meta, artist: 'AC/DC', album: 'Live: 1991' } }),
+      deps,
+    )
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith(
+      `${media}/Music/AC_DC/Live_ 1991/Artist - Title.wav`,
+      expect.anything(),
+      undefined,
+    )
+  })
+
+  // A blank album artist is no album artist: Music files under the artist then. A folder
+  // ending in a dot is renamed by an SMB share, and one starting with it is hidden.
+  it('files a blank album artist under the artist and keeps dots off the folder ends', async () => {
+    const deps = intoMedia()
+    await runProcessTrack(
+      musicJob({ meta: { ...meta, albumArtist: '   ', artist: 'Mr. Oizo.', album: '...Baby' } }),
+      deps,
+    )
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith(
+      `${media}/Music/Mr. Oizo/Baby/Artist - Title.wav`,
+      expect.anything(),
+      undefined,
+    )
+
+    const dots = intoMedia()
+    await runProcessTrack(musicJob({ meta: { ...meta, artist: '...', album: '.' } }), dots)
+    expect(dots.addToAppleMusic).toHaveBeenCalledWith(
+      `${media}/Music/Unknown Artist/Unknown Album/Artist - Title.wav`,
+      expect.anything(),
+      undefined,
+    )
+  })
+
+  it('removes the file and the folders it made when the add fails', async () => {
+    const deps = intoMedia({
+      addToAppleMusic: vi.fn(async () => {
+        throw new Error('Music unavailable')
+      }),
+    })
+
+    await expect(runProcessTrack(musicJob(), deps)).rejects.toThrow('Music unavailable')
+
+    expect(deps.rm).toHaveBeenCalledWith(filed, { recursive: false, force: true })
+    expect(vi.mocked(deps.rmdir).mock.calls.map((c) => c[0])).toEqual([
+      `${media}/Music/Artist/Album`,
+      `${media}/Music/Artist`,
+    ])
+  })
+
+  // The add script can fail after Music imported the file: the 60 s wait for the tags, a
+  // refused field or artwork, an Apple Event timeout. The entry it made already plays this
+  // file, and deleting it left a row that plays nothing.
+  it('keeps the file when an entry already plays it although the add failed', async () => {
+    const deps = intoMedia({
+      addToAppleMusic: vi.fn(async () => {
+        throw new Error('Apple Music no terminó de importar la pista a tiempo.')
+      }),
+      appleMusicHoldsFile: vi.fn(async () => true),
+    })
+
+    await expect(runProcessTrack(musicJob(), deps)).rejects.toThrow('a tiempo')
+
+    expect(deps.appleMusicHoldsFile).toHaveBeenCalledWith(filed, ['Title', 'Artist - Title'])
+    expect(deps.rm).not.toHaveBeenCalled()
+    expect(deps.rmdir).not.toHaveBeenCalled()
+  })
+
+  it('keeps the file when Music cannot be asked whether an entry plays it', async () => {
+    const deps = intoMedia({
+      addToAppleMusic: vi.fn(async () => {
+        throw new Error('AppleEvent timed out (-1712)')
+      }),
+      appleMusicHoldsFile: vi.fn(async () => {
+        throw new Error('Music file lookup failed')
+      }),
+    })
+
+    await expect(runProcessTrack(musicJob(), deps)).rejects.toThrow('-1712')
+
+    expect(deps.rm).not.toHaveBeenCalled()
+  })
+
+  // Music answering with the entry it already had holds nothing of the new file.
+  it('removes the file when Music answers the add with the entry being replaced', async () => {
+    const deps = intoMedia({ addToAppleMusic: vi.fn(async () => 'old-id') })
+
+    await expect(
+      runProcessTrack(
+        musicJob({
+          musicPersistentId: 'old-id',
+          replacesPath: '/m/old.aiff',
+          replacesLabel: 'A - T',
+        }),
+        deps,
+      ),
+    ).rejects.toThrow('appleMusicAddReturnedOld')
+
+    expect(deps.rm).toHaveBeenCalledWith(filed, { recursive: false, force: true })
+  })
+
+  it('still reads where the entry points and lets the collections follow it', async () => {
+    const redirectRepoint = vi.fn(() => true)
+    const deps = intoMedia({ redirectRepoint })
+
+    await runProcessTrack(
+      musicJob({
+        musicPersistentId: 'old-id',
+        replacesPath: '/m/old.aiff',
+        replacesLabel: 'A - T',
+      }),
+      deps,
+    )
+
+    expect(deps.appleMusicEntryLocation).toHaveBeenCalledWith('added-id')
+    expect(redirectRepoint).toHaveBeenCalledWith(filed, filed)
+  })
+
+  it('keeps the temp dir when the Media folder cannot be read', async () => {
+    const deps = intoMedia({ appleMusicMediaFolder: vi.fn(async () => undefined) })
+
+    await runProcessTrack(musicJob(), deps)
+
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith(
+      '/tmp/surco-abc/Artist - Title.wav',
+      meta,
+      undefined,
+    )
+    expect(deps.rm).toHaveBeenCalledWith('/tmp/surco-abc', { recursive: true, force: true })
+  })
+
+  // An unmounted NAS: creating the path would write a stray /Volumes folder on the boot disk.
+  it('keeps the temp dir when the Media folder is not there', async () => {
+    const deps = intoMedia({ existsSync: vi.fn(() => false) })
+
+    await runProcessTrack(musicJob(), deps)
+
+    expect(deps.mkdtemp).toHaveBeenCalledOnce()
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith(
+      '/tmp/surco-abc/Artist - Title.wav',
+      meta,
+      undefined,
+    )
+  })
+
+  it('keeps the temp dir rather than touch a file already at that place', async () => {
+    const deps = intoMedia({ existsSync: vi.fn((p: string) => p === media || p === filed) })
+
+    await runProcessTrack(musicJob(), deps)
+
+    expect(deps.mkdtemp).toHaveBeenCalledOnce()
+    expect(deps.rm).not.toHaveBeenCalledWith(filed, expect.anything())
+  })
+
+  it('keeps the temp dir when another job of the run already claimed that place', async () => {
+    const deps = intoMedia({ isPathReserved: vi.fn((p: string) => p === filed) })
+
+    await runProcessTrack(musicJob(), deps)
+
+    expect(deps.mkdtemp).toHaveBeenCalledOnce()
+    expect(deps.reservePath).not.toHaveBeenCalled()
+  })
+})
+
 // Upgrading a library copy to a better format. Reported 14/09 after two failed attempts:
 // the button offered "Sustituir por AIFF" and the library kept the MP3, because updating
 // an entry only writes tags and can never repoint it at another file. A real replacement
@@ -1958,6 +2224,332 @@ describe('runProcessTrack — replacing a library copy', () => {
   })
 })
 
+// Measured 30/10 on the user's library: Music answers an `add` whose name, artist and album
+// match an entry it already has with THAT entry, importing nothing, even when the new file is
+// another format. A WAV converted to AIFF came back with the WAV's own ID, the history was
+// carried onto itself and the delete took the track out of Music. The old entry is renamed
+// for the length of the add, and an add that still answers with it touches nothing.
+describe('runProcessTrack — Music answering an add with the entry it already has', () => {
+  const replaceJob = job({
+    meta: { artist: 'Artist', title: 'Title' } as TrackMetadata,
+    addToAppleMusic: true,
+    musicPersistentId: 'old-id',
+    replacesPath: '/m/old.wav',
+    replacesLabel: 'Artist - Title',
+  })
+  const calls: string[] = []
+  function recording(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
+    calls.length = 0
+    return makeDeps({
+      platform: 'darwin',
+      markAppleMusicReplacing: vi.fn(async (pid: string, _label: string, marked: boolean) => {
+        calls.push(`${marked ? 'mark' : 'unmark'} ${pid}`)
+        return 'set' as const
+      }),
+      addToAppleMusic: vi.fn(async () => {
+        calls.push('add')
+        return 'added-id'
+      }),
+      carryAppleMusicHistory: vi.fn(async () => {
+        calls.push('carry')
+        return 'carried' as const
+      }),
+      deleteAppleMusic: vi.fn(async (pid: string) => {
+        calls.push(`delete ${pid}`)
+      }),
+      ...overrides,
+    })
+  }
+
+  it('renames the old entry for the add and restores it before carrying anything over', async () => {
+    const deps = recording()
+
+    const result = await runProcessTrack(replaceJob, deps)
+
+    expect(calls).toEqual(['mark old-id', 'add', 'unmark old-id', 'carry', 'delete old-id'])
+    expect(deps.markAppleMusicReplacing).toHaveBeenCalledWith('old-id', 'Artist - Title', true)
+    expect(deps.markAppleMusicReplacing).toHaveBeenCalledWith('old-id', 'Artist - Title', false)
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith(
+      '/out/Artist - Title.aiff',
+      replaceJob.meta,
+      undefined,
+    )
+    expect(deps.carryAppleMusicHistory).toHaveBeenCalledWith('old-id', 'added-id', 'Artist - Title')
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('old-id', 'Artist - Title')
+    expect(result.musicPersistentId).toBe('added-id')
+  })
+
+  it('touches nothing and fails the Music step when the add still answers with the old entry', async () => {
+    const deps = recording({
+      addToAppleMusic: vi.fn(async () => {
+        calls.push('add')
+        return 'old-id'
+      }),
+    })
+
+    const result = await runProcessTrack(replaceJob, deps)
+
+    expect(calls).toEqual(['mark old-id', 'add', 'unmark old-id'])
+    expect(deps.carryAppleMusicHistory).not.toHaveBeenCalled()
+    expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
+    expect(result.appleMusicFailed).toBe(true)
+    expect(result.musicPersistentId).toBeUndefined()
+    expect(result.supersededPath).toBeUndefined()
+  })
+
+  // In "Apple Music only" the copy check would roll back the entry the add answered with,
+  // which is the old one: the same loss through another door.
+  it('fails "Apple Music only" out loud without rolling back the old entry', async () => {
+    const deps = recording({
+      settings: settings({ keepOutputCopy: false }),
+      addToAppleMusic: vi.fn(async () => {
+        calls.push('add')
+        return 'old-id'
+      }),
+    })
+
+    const failure = await runProcessTrack({ ...replaceJob, keepOutputCopy: false }, deps).catch(
+      (e: Error) => e,
+    )
+
+    expect(errorKeyOf((failure as Error).message)).toBe('appleMusicAddReturnedOld')
+    expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
+    expect(deps.carryAppleMusicHistory).not.toHaveBeenCalled()
+    expect(calls).toContain('unmark old-id')
+  })
+
+  it('restores the old name when the add fails', async () => {
+    const deps = recording({
+      addToAppleMusic: vi.fn(async () => {
+        calls.push('add')
+        throw new Error('Music got an error: -2753')
+      }),
+    })
+
+    const result = await runProcessTrack(replaceJob, deps)
+
+    expect(calls).toEqual(['mark old-id', 'add', 'unmark old-id'])
+    expect(result.appleMusicFailed).toBe(true)
+  })
+
+  it('restores the old name when the new entry is rolled back for pointing at the temp file', async () => {
+    const deps = recording({
+      settings: settings({ keepOutputCopy: false }),
+      appleMusicEntryLocation: vi.fn(async () => '/tmp/surco-abc/Artist - Title.aiff'),
+    })
+
+    await expect(runProcessTrack({ ...replaceJob, keepOutputCopy: false }, deps)).rejects.toThrow(
+      'appleMusicNoMediaCopyKept',
+    )
+
+    expect(calls).toEqual(['mark old-id', 'add', 'delete added-id', 'unmark old-id'])
+  })
+
+  it('keeps the old entry under its own name when its history could not be carried', async () => {
+    const deps = recording({
+      carryAppleMusicHistory: vi.fn(async () => {
+        calls.push('carry')
+        throw new Error('Music got an error: -54')
+      }),
+    })
+
+    const result = await runProcessTrack(replaceJob, deps)
+
+    expect(calls).toEqual(['mark old-id', 'add', 'unmark old-id', 'carry'])
+    expect(result.oldMusicCopyKept).toBe('carry')
+  })
+
+  // The renderer runs a batch's conversions in parallel and Music only serializes single
+  // scripts: a second job's add landing between this one's rename and its restore is the
+  // window where Music hands back a copy that is not the one being replaced.
+  it('runs one replacement at a time so two jobs cannot interleave rename, add and delete', async () => {
+    let release = () => {}
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const deps = recording({
+      addToAppleMusic: vi.fn(async (file: string) => {
+        calls.push(`add ${file}`)
+        if (file.includes('One')) await gate
+        return file.includes('One') ? 'new-1' : 'new-2'
+      }),
+    })
+    const replaceOf = (id: string, name: string, pid: string) =>
+      runProcessTrack(
+        job({
+          id,
+          outputName: name,
+          meta: { artist: 'A', title: name } as TrackMetadata,
+          addToAppleMusic: true,
+          musicPersistentId: pid,
+          replacesPath: `/m/${name}.wav`,
+          replacesLabel: `A - ${name}`,
+        }),
+        deps,
+      )
+
+    const one = replaceOf('a', 'One', 'old-1')
+    const two = replaceOf('b', 'Two', 'old-2')
+    await vi.waitFor(() => expect(calls).toContain('add /out/One.aiff'))
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(calls).not.toContain('mark old-2')
+    release()
+    await Promise.all([one, two])
+
+    expect(calls.indexOf('delete old-1')).toBeLessThan(calls.indexOf('mark old-2'))
+  })
+
+  // Every add refuses an answer that was already in the library (appleMusic.ts), the plain
+  // add included: verified against that entry's own file, it reported success while the
+  // collections were redirected to the old file.
+  it('fails "Apple Music only" when a plain add is answered with an entry already there', async () => {
+    const redirectRepoint = vi.fn(() => true)
+    const deps = recording({
+      settings: settings({ keepOutputCopy: false }),
+      redirectRepoint,
+      addToAppleMusic: vi.fn(async () => {
+        throw errorWithKey('appleMusicAddReturnedOld', '/tmp/x')
+      }),
+    })
+
+    await expect(
+      runProcessTrack(
+        job({ meta: replaceJob.meta, addToAppleMusic: true, keepOutputCopy: false }),
+        deps,
+      ),
+    ).rejects.toThrow('appleMusicAddReturnedOld')
+
+    expect(redirectRepoint).not.toHaveBeenCalled()
+    expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
+  })
+
+  it('reports the Music step failed when a plain add with an output copy is answered with an entry already there', async () => {
+    const deps = recording({
+      addToAppleMusic: vi.fn(async () => {
+        throw errorWithKey('appleMusicAddReturnedOld', '/out/x')
+      }),
+    })
+
+    const result = await runProcessTrack(
+      job({ meta: replaceJob.meta, addToAppleMusic: true }),
+      deps,
+    )
+
+    expect(result.appleMusicFailed).toBe(true)
+    expect(result.musicPersistentId).toBeUndefined()
+  })
+
+  // The rename can land in Music and the script still fail on the way back (a timeout):
+  // the restore is label-guarded, so asking for it is harmless when nothing was renamed.
+  it('still restores the name when the rename itself failed', async () => {
+    const deps = recording({
+      markAppleMusicReplacing: vi.fn(async (pid: string, _label: string, marked: boolean) => {
+        calls.push(`${marked ? 'mark' : 'unmark'} ${pid}`)
+        if (marked) throw new Error('AppleEvent timed out (-1712)')
+        return 'set' as const
+      }),
+    })
+
+    const result = await runProcessTrack(replaceJob, deps)
+
+    expect(calls).toEqual(['mark old-id', 'unmark old-id'])
+    expect(deps.addToAppleMusic).not.toHaveBeenCalled()
+    expect(result.appleMusicFailed).toBe(true)
+  })
+
+  // A restore Music refused leaves " [surco-replacing]" at the end of a name in the DJ's
+  // library, and only the DJ can take it off: it has to be said, not only logged.
+  const restoreRefused = () =>
+    vi.fn(async (pid: string, _label: string, marked: boolean) => {
+      calls.push(`${marked ? 'mark' : 'unmark'} ${pid}`)
+      if (!marked) throw new Error('AppleEvent timed out (-1712)')
+      return 'set' as const
+    })
+
+  it('reports a name it could not restore after a replacement', async () => {
+    const result = await runProcessTrack(
+      replaceJob,
+      recording({ markAppleMusicReplacing: restoreRefused() }),
+    )
+
+    expect(result.musicNameLeftMarked).toBe(true)
+  })
+
+  it('reports a name it could not restore when the replacement failed', async () => {
+    const deps = recording({
+      markAppleMusicReplacing: restoreRefused(),
+      addToAppleMusic: vi.fn(async () => {
+        throw new Error('Music got an error: -2753')
+      }),
+    })
+
+    const result = await runProcessTrack(replaceJob, deps)
+
+    expect(result.appleMusicFailed).toBe(true)
+    expect(result.musicNameLeftMarked).toBe(true)
+  })
+
+  // The cause is what the DJ can act on; the leftover mark rides along so the renderer can
+  // say it too, without the failure losing its own message or key.
+  it('fails "Apple Music only" with the real cause, carrying the name it could not restore', async () => {
+    const deps = recording({
+      settings: settings({ keepOutputCopy: false }),
+      markAppleMusicReplacing: restoreRefused(),
+      addToAppleMusic: vi.fn(async () => {
+        throw new Error('Music got an error: -2753')
+      }),
+    })
+
+    const failure = await runProcessTrack({ ...replaceJob, keepOutputCopy: false }, deps).catch(
+      (e: Error) => e,
+    )
+
+    expect((failure as Error).message).toContain('Music got an error: -2753')
+    expect(splitNameLeftMarked((failure as Error).message)).toEqual({
+      message: 'Music got an error: -2753',
+      left: true,
+    })
+  })
+
+  it('keeps a translatable cause readable when the name was left marked', async () => {
+    const deps = recording({
+      settings: settings({ keepOutputCopy: false }),
+      markAppleMusicReplacing: restoreRefused(),
+      addToAppleMusic: vi.fn(async () => {
+        throw errorWithKey('appleMusicAddReturnedOld', '/tmp/x')
+      }),
+    })
+
+    const failure = await runProcessTrack({ ...replaceJob, keepOutputCopy: false }, deps).catch(
+      (e: Error) => e,
+    )
+
+    expect(errorKeyOf((failure as Error).message)).toBe('appleMusicAddReturnedOld')
+    expect(splitNameLeftMarked((failure as Error).message).left).toBe(true)
+  })
+
+  it('reports nothing when the name came back', async () => {
+    const result = await runProcessTrack(replaceJob, recording())
+
+    expect(result.musicNameLeftMarked).toBeUndefined()
+  })
+
+  // An entry that no longer carries the confirmed name is not renamed, so there is nothing to
+  // restore; the add still runs and the label checks after it decide as before.
+  it('restores nothing it did not rename', async () => {
+    const deps = recording({
+      markAppleMusicReplacing: vi.fn(async (pid: string, _label: string, marked: boolean) => {
+        calls.push(`${marked ? 'mark' : 'unmark'} ${pid}`)
+        return 'mismatch' as const
+      }),
+    })
+
+    await runProcessTrack(replaceJob, deps)
+
+    expect(calls).toEqual(['mark old-id', 'add', 'carry', 'delete old-id'])
+  })
+})
+
 describe('runProcessTrack: file names without accents', () => {
   it('writes the plain spelling when the setting is on, so a NAS search for "royksopp" finds it', async () => {
     const deps = makeDeps({ settings: settings({ asciiFileNames: true }) })
@@ -2034,5 +2626,283 @@ describe('progress for a window that closed mid-job', () => {
     const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
     const wiring = source.match(/sendProgress: \(stage\) =>[^\n]*(\n[^\n]*){0,2}/)?.[0] ?? ''
     expect(wiring).toContain('e.sender.isDestroyed()')
+  })
+})
+
+// Measured 30/10 on the user's library: an AIFF opened from the Music tab and converted to
+// WAV with "Apple Music only" only re-tagged the AIFF entry, deleted the WAV and still said
+// it was added. Music can't repoint an entry at another file, so a format change has to
+// import the new file and retire the old entry; a same-format re-sync stays an update.
+describe('runProcessTrack — converting a library track to another format', () => {
+  function converting(entry: string, overrides: Partial<ProcessTrackDeps> = {}) {
+    return makeDeps({
+      platform: 'darwin',
+      appleMusicEntry: vi.fn(async () => ({ path: entry, label: 'Old Artist - Old Title' })),
+      appleMusicEntryLocation: vi.fn(async () => '/Users/me/Music/Media/new.wav'),
+      ...overrides,
+    })
+  }
+
+  const libraryJob = (over: Partial<ProcessJob> = {}) =>
+    job({
+      inputPath: '/lib/A.aiff',
+      format: 'wav',
+      musicPersistentId: 'PID',
+      addToAppleMusic: true,
+      keepOutputCopy: false,
+      ...over,
+    })
+
+  it('replaces the AIFF entry with the WAV in "Apple Music only" and offers the AIFF for trash', async () => {
+    const deps = converting('/lib/A.aiff')
+
+    const result = await runProcessTrack(libraryJob(), deps)
+
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith(
+      '/tmp/surco-abc/Artist - Title.wav',
+      {},
+      undefined,
+    )
+    expect(deps.carryAppleMusicHistory).toHaveBeenCalledWith('PID', 'added-id', expect.any(String))
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('PID', expect.any(String))
+    expect(deps.updateInAppleMusic).not.toHaveBeenCalled()
+    expect(deps.allowMedia).toHaveBeenCalledWith('/lib/A.aiff')
+    expect(result).toMatchObject({ musicPersistentId: 'added-id', supersededPath: '/lib/A.aiff' })
+  })
+
+  it('replaces the entry the same way when the WAV is also kept in the output folder', async () => {
+    const deps = converting('/lib/A.aiff')
+
+    const result = await runProcessTrack(libraryJob({ keepOutputCopy: true }), deps)
+
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith('/out/Artist - Title.wav', {}, undefined)
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('PID', expect.any(String))
+    expect(deps.updateInAppleMusic).not.toHaveBeenCalled()
+    expect(result).toMatchObject({
+      outputPath: '/out/Artist - Title.wav',
+      musicPersistentId: 'added-id',
+      supersededPath: '/lib/A.aiff',
+    })
+  })
+
+  it('replaces a WAV entry converted to AIFF', async () => {
+    const deps = converting('/lib/A.wav')
+
+    const result = await runProcessTrack(
+      libraryJob({ inputPath: '/lib/A.wav', format: 'aiff' }),
+      deps,
+    )
+
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith(
+      '/tmp/surco-abc/Artist - Title.aiff',
+      {},
+      undefined,
+    )
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('PID', expect.any(String))
+    expect(result.supersededPath).toBe('/lib/A.wav')
+  })
+
+  // The temp file in "Apple Music only", or Music's own Media copy of an earlier add, is
+  // never the file the entry points at: comparing paths would churn every re-sync.
+  it('only updates the entry when the format stays the same, even though the file written is another one', async () => {
+    const deps = converting('/Users/me/Music/Media/A.aiff')
+
+    const result = await runProcessTrack(libraryJob({ format: 'aiff' }), deps)
+
+    expect(deps.updateInAppleMusic).toHaveBeenCalledWith('PID', {}, undefined)
+    expect(deps.addToAppleMusic).not.toHaveBeenCalled()
+    expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
+    expect(result.supersededPath).toBeUndefined()
+  })
+
+  it('falls back to updating the entry when it no longer exists in Music', async () => {
+    const deps = converting('')
+
+    const result = await runProcessTrack(libraryJob({ keepOutputCopy: true }), deps)
+
+    expect(deps.updateInAppleMusic).toHaveBeenCalledWith('PID', {}, undefined)
+    expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
+    expect(result.musicPersistentId).toBe('updated-id')
+    expect(result.supersededPath).toBeUndefined()
+  })
+
+  // A read that fails is not an entry that is gone: falling back to the update re-tagged the
+  // AIFF, discarded the WAV and still reported the track added, the bug this replaces.
+  it('fails the Apple Music step when Music cannot be asked where the entry points', async () => {
+    const deps = converting('', {
+      appleMusicEntry: vi.fn(async () => {
+        throw new Error('AppleEvent timed out (-1712)')
+      }),
+    })
+
+    const result = await runProcessTrack(libraryJob({ keepOutputCopy: true }), deps)
+
+    expect(deps.updateInAppleMusic).not.toHaveBeenCalled()
+    expect(deps.addToAppleMusic).not.toHaveBeenCalled()
+    expect(result.appleMusicFailed).toBe(true)
+    expect(result.musicPersistentId).toBeUndefined()
+  })
+
+  it('fails the job in "Apple Music only" when Music cannot be asked where the entry points', async () => {
+    const deps = converting('', {
+      appleMusicEntry: vi.fn(async () => {
+        throw new Error('AppleEvent timed out (-1712)')
+      }),
+    })
+
+    await expect(runProcessTrack(libraryJob(), deps)).rejects.toThrow('-1712')
+    expect(deps.updateInAppleMusic).not.toHaveBeenCalled()
+  })
+
+  // The row was the AIFF Music played; once the entry is the WAV Music copied, the row has
+  // to follow it, or trashing the AIFF leaves a dead row and the next conversion repoints
+  // rekordbox from a file it no longer indexes.
+  it('moves the row to the file Music landed when the superseded file was its own source', async () => {
+    const deps = converting('/lib/A.aiff')
+
+    const result = await runProcessTrack(libraryJob(), deps)
+
+    expect(result.musicLandedPath).toBe('/Users/me/Music/Media/new.wav')
+    expect(deps.allowMedia).toHaveBeenCalledWith('/Users/me/Music/Media/new.wav')
+  })
+
+  it('leaves the row on its source when Music replaced a copy of another file', async () => {
+    const deps = converting('/Users/me/Music/Media/A.aiff')
+
+    const result = await runProcessTrack(libraryJob(), deps)
+
+    expect(result.supersededPath).toBe('/Users/me/Music/Media/A.aiff')
+    expect(result.musicLandedPath).toBeUndefined()
+  })
+
+  // The in-place rename already retired the AIFF: offering it again would trash nothing.
+  it('offers nothing for trash when the conversion overwrote the original in place', async () => {
+    const deps = converting('/lib/A.aiff')
+
+    const result = await runProcessTrack(
+      libraryJob({ overwriteOriginal: true, keepOutputCopy: true }),
+      deps,
+    )
+
+    expect(result.inPlace).toBe(true)
+    expect(deps.removeRenamedOriginal).toHaveBeenCalled()
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('PID', expect.any(String))
+    expect(result.supersededPath).toBeUndefined()
+  })
+
+  // The entry plays the original until it is replaced: retired first, a replacement that
+  // failed or kept the old entry left that entry playing a file that was gone.
+  it('retires the in-place original only after its Music entry was replaced', async () => {
+    const deps = converting('/lib/A.aiff')
+
+    await runProcessTrack(libraryJob({ overwriteOriginal: true, keepOutputCopy: true }), deps)
+
+    expect(vi.mocked(deps.removeRenamedOriginal).mock.invocationCallOrder[0]).toBeGreaterThan(
+      vi.mocked(deps.deleteAppleMusic).mock.invocationCallOrder[0],
+    )
+  })
+
+  it('keeps the in-place original when the old entry had to be kept', async () => {
+    const deps = converting('/lib/A.aiff', {
+      carryAppleMusicHistory: vi.fn(async () => 'mismatch' as const),
+    })
+
+    const result = await runProcessTrack(
+      libraryJob({ overwriteOriginal: true, keepOutputCopy: true }),
+      deps,
+    )
+
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result.originalKept).toBe(true)
+    expect(result.supersededPath).toBeUndefined()
+  })
+
+  it('keeps the in-place original when Music could not be asked about its entry', async () => {
+    const deps = converting('/lib/A.aiff', {
+      appleMusicEntry: vi.fn(async () => {
+        throw new Error('AppleEvent timed out (-1712)')
+      }),
+    })
+
+    const result = await runProcessTrack(
+      libraryJob({ overwriteOriginal: true, keepOutputCopy: true }),
+      deps,
+    )
+
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result.appleMusicFailed).toBe(true)
+    expect(result.originalKept).toBe(true)
+  })
+
+  // A retire that fails on its own (a Windows lock) after a good replacement still leaves
+  // the old file to offer, as before.
+  it('offers the in-place original when the replacement worked but retiring it failed', async () => {
+    const deps = converting('/lib/A.aiff', {
+      removeRenamedOriginal: vi.fn(async () => {
+        throw new Error('EBUSY')
+      }),
+    })
+
+    const result = await runProcessTrack(
+      libraryJob({ overwriteOriginal: true, keepOutputCopy: true }),
+      deps,
+    )
+
+    expect(result.originalKept).toBe(true)
+    expect(result.supersededPath).toBe('/lib/A.aiff')
+  })
+
+  // Traktor rewrites FILE only, so a WAV Music landed in another folder leaves its entry
+  // on the AIFF: trashing that would drop the track from Traktor.
+  it('keeps the old file out of the trash offer when Traktor could not follow the landed file', async () => {
+    const deps = converting('/lib/A.aiff', { redirectRepoint: vi.fn(() => false) })
+
+    const result = await runProcessTrack(libraryJob(), deps)
+
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('PID', expect.any(String))
+    expect(result.supersededPath).toBeUndefined()
+    expect(deps.allowMedia).not.toHaveBeenCalledWith('/lib/A.aiff')
+  })
+
+  it('offers the old file when Traktor followed the landed file', async () => {
+    const deps = converting('/lib/A.aiff', { redirectRepoint: vi.fn(() => true) })
+
+    const result = await runProcessTrack(libraryJob(), deps)
+
+    expect(result.supersededPath).toBe('/lib/A.aiff')
+  })
+
+  // The batch this was measured for is auto-matched AIFFs: the job's tags are the match,
+  // not what Music shows, and the delete only retires an entry whose live name it is told.
+  it('retires the entry under the name Music shows, not the edited tags the job carries', async () => {
+    const deps = converting('/lib/A.aiff')
+
+    const result = await runProcessTrack(
+      libraryJob({ meta: { artist: 'New Artist', title: 'New Title' } as TrackMetadata }),
+      deps,
+    )
+
+    expect(deps.appleMusicEntry).toHaveBeenCalledWith('PID')
+    expect(deps.carryAppleMusicHistory).toHaveBeenCalledWith(
+      'PID',
+      'added-id',
+      'Old Artist - Old Title',
+    )
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('PID', 'Old Artist - Old Title')
+    expect(result.oldMusicCopyKept).toBeUndefined()
+    expect(result.supersededPath).toBe('/lib/A.aiff')
+  })
+
+  it('offers nothing for trash when the old entry had to be kept', async () => {
+    const deps = converting('/lib/A.aiff', {
+      carryAppleMusicHistory: vi.fn(async () => 'mismatch' as const),
+    })
+
+    const result = await runProcessTrack(libraryJob(), deps)
+
+    expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
+    expect(result.oldMusicCopyKept).toBe('mismatch')
+    expect(result.supersededPath).toBeUndefined()
+    expect(deps.allowMedia).not.toHaveBeenCalledWith('/lib/A.aiff')
   })
 })

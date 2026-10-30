@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { TrackItem } from '../types'
 import { trackSignature } from './dirty'
 import { exportedPatch } from './export'
+import { supersededFile } from './supersededFile'
 
 function track(over: Partial<TrackItem> = {}): TrackItem {
   return {
@@ -39,6 +40,30 @@ describe('exportedPatch', () => {
       inPlace: true,
     })
     expect(patch.movedFrom).toEqual(['/music/older.wav', '/music/old name.wav'])
+  })
+
+  // supersededFile reads it: an old Music entry that was kept still plays the old file.
+  it('remembers that the old Music copy was kept, and forgets it on the next export', () => {
+    expect(
+      exportedPatch(track(), {
+        outputPath: '/out/a.aiff',
+        inPlace: false,
+        oldMusicCopyKept: 'carry',
+      }).oldMusicCopyKept,
+    ).toBe('carry')
+    expect(
+      exportedPatch(track(), {
+        outputPath: '',
+        inPlace: false,
+        addedToMusicOnly: true,
+        oldMusicCopyKept: 'mismatch',
+      }).oldMusicCopyKept,
+    ).toBe('mismatch')
+    const later = exportedPatch(track({ oldMusicCopyKept: 'carry' }), {
+      outputPath: '/out/a.aiff',
+      inPlace: false,
+    })
+    expect('oldMusicCopyKept' in later && later.oldMusicCopyKept === undefined).toBe(true)
   })
 
   it('remembers no move when the in-place export kept the path', () => {
@@ -208,5 +233,49 @@ describe('exportedPatch', () => {
       musicPersistentId: 'ABCD1234',
     })
     expect(patch.musicPersistentId).toBe('ABCD1234')
+  })
+
+  // A conversion that replaced the Music entry in another format leaves the old file
+  // referenced by nothing, so it is offered for trash. It must not land in replacesPath:
+  // the next job sends that field, and a plain re-sync would replace the entry again and
+  // repoint rekordbox from a file no library indexes any more.
+  it('records the file a format change superseded apart from what the next job replaces', () => {
+    const t = track({ supersededTrashed: true })
+    const patch = exportedPatch(t, {
+      outputPath: '/out/ATB - Till I Come.wav',
+      inPlace: false,
+      supersededPath: '/lib/Till I Come.aiff',
+    })
+    expect(patch.replacesPath).toBeUndefined()
+    expect(supersededFile({ ...t, ...patch })).toBe('/lib/Till I Come.aiff')
+  })
+
+  it('records the superseded file in Apple Music only mode too', () => {
+    const t = track()
+    const patch = exportedPatch(t, {
+      outputPath: '',
+      inPlace: false,
+      addedToMusicOnly: true,
+      supersededPath: '/lib/Till I Come.aiff',
+    })
+    expect(patch.replacesPath).toBeUndefined()
+    expect(supersededFile({ ...t, ...patch })).toBe('/lib/Till I Come.aiff')
+  })
+
+  // Opened from the Music tab, the row IS the AIFF Music played. Left on it, trashing the
+  // AIFF leaves a row that plays nothing and the next conversion starts from a dead file.
+  it('moves the row to the file Music landed when the superseded file was its own source', () => {
+    const t = track({ inputPath: '/lib/Till I Come.aiff', fileName: 'Till I Come' })
+    const patch = exportedPatch(t, {
+      outputPath: '',
+      inPlace: false,
+      addedToMusicOnly: true,
+      supersededPath: '/lib/Till I Come.aiff',
+      musicLandedPath: '/Music/Media/ATB/Till I Come.wav',
+    })
+    expect(patch.inputPath).toBe('/Music/Media/ATB/Till I Come.wav')
+    expect(patch.fileName).toBe('Till I Come')
+    expect(patch.movedFrom).toEqual(['/lib/Till I Come.aiff'])
+    expect(supersededFile({ ...t, ...patch, status: 'done' })).toBe('/lib/Till I Come.aiff')
   })
 })

@@ -15,6 +15,7 @@ import {
   mkdtemp,
   readFile,
   rm,
+  rmdir,
   stat,
   unlink,
   writeFile,
@@ -67,10 +68,14 @@ import { analysisCacheStats, clearAnalysisCache, pruneAnalysisCache } from './an
 import { registerAppleMusicIpc } from './appleMusicIpc'
 import {
   addToAppleMusic,
+  appleMusicEntry,
   appleMusicEntryLocation,
+  appleMusicHoldsFile,
   appleMusicLimiter,
+  appleMusicMediaFolder,
   carryOverToAppleMusicCopy,
   deleteFromAppleMusic,
+  markAppleMusicReplacing,
   musicEntryForFile,
   updateInAppleMusic,
 } from './applemusic'
@@ -102,7 +107,7 @@ import { isEngineDjRunning, quitEngineDj } from './engineProcess'
 import { expandPaths } from './expand'
 import { registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
-import { convertAudio, readMeta } from './ffmpeg'
+import { convertAudio, readMeta, toNmlLocation } from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { fileIdentity, isSameFile, removeRenamedOriginal } from './inplace'
 import { setLibraryBackupRoot } from './libraryBackups'
@@ -130,7 +135,7 @@ import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { isIssuedPair } from './musicDuplicates'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
-import { abandonNmlBatch, beginNmlBatch } from './nmlBatch'
+import { abandonNmlBatch, beginNmlBatch, redirectNmlPatch } from './nmlBatch'
 import { filesFromArgv, routeOpenedFile } from './openedFiles'
 import { configureBackupStore } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
@@ -1733,6 +1738,10 @@ function registerIpc(): void {
       mkdir,
       mkdtemp,
       rm,
+      rmdir,
+      appleMusicMediaFolder,
+      appleMusicHoldsFile: (path, titles) =>
+        appleMusicLimiter.run(() => appleMusicHoldsFile(path, titles)),
       // The conflict prompt is the one Electron-bound branch: build the same warning
       // box as before and map its buttons back to the decision runProcessTrack expects.
       confirmConflict: (outputName, reservedOnly) =>
@@ -1760,10 +1769,16 @@ function registerIpc(): void {
           return { decision, remember: checkboxChecked }
         }),
       appleMusicEntryLocation,
+      appleMusicEntry: (persistentId) => appleMusicLimiter.run(() => appleMusicEntry(persistentId)),
       deleteAppleMusic: deleteFromAppleMusic,
       carryAppleMusicHistory: (fromPid, toPid, label) =>
         appleMusicLimiter.run(() => carryOverToAppleMusicCopy(fromPid, toPid, label)),
-      redirectRepoint: redirectRekordboxRepoint,
+      markAppleMusicReplacing: (pid, label, marked) =>
+        appleMusicLimiter.run(() => markAppleMusicReplacing(pid, label, marked)),
+      redirectRepoint: (to, landed) => {
+        redirectRekordboxRepoint(to, landed)
+        return redirectNmlPatch(to, landed, toNmlLocation(landed))
+      },
     }),
   )
 

@@ -1,6 +1,9 @@
 import { execFile } from 'node:child_process'
+import { basename, extname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import log from 'electron-log/main'
+import { errorWithKey } from '../shared/errorKeys'
 import type {
   AppleMusicLookupCandidate,
   MusicFileEntry,
@@ -112,6 +115,9 @@ function numericFields(meta: TrackMetadata): [string, string][] {
 // re-raise any other error, and fail loud if it never becomes writable. The
 // 600 tries × 0.1s give a 60s window: a 10s one was not enough for a large
 // extended-mix AIFF copied into the library, which gave up and landed untagged.
+// What the add answers when Music handed back an entry that was already in the library.
+export const ADD_RETURNED_EXISTING = 'surco-add-returned-existing'
+
 export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?: string): string {
   const sets: string[] = []
 
@@ -173,6 +179,22 @@ export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?
     // Two seconds of slack: date added has second resolution, and an import that
     // races the clock edge must still fall inside the recovery window.
     ...(canRecover ? ['    set importStarted to (current date) - 2'] : []),
+    // Music answers an add whose file matches an entry it already has with that entry,
+    // importing nothing (measured 30/10, even across formats). Any copy carrying the same
+    // name and artist can be that entry, and so can one named after the file (Music reads
+    // no tags from a WAV), so the answer is checked against all of them, before a single
+    // tag is written to it. The IDs come from the track list: asked of an empty `every
+    // track whose`, `persistent ID of` raises -1728, and nothing matching is the usual case.
+    '    set preexisting to {}',
+    ...[
+      `whose name is ${appleScriptString(meta.title)} and artist is ${appleScriptString(meta.artist)}`,
+      `whose name is ${appleScriptString(basename(filePath, extname(filePath)))}`,
+    ].flatMap((filter) => [
+      `    set candidates to (every track of library playlist 1 ${filter})`,
+      '    repeat with candidate in candidates',
+      '      set end of preexisting to persistent ID of candidate',
+      '    end repeat',
+    ]),
     `    set theTrack to add POSIX file ${appleScriptString(filePath)}`,
     '    set gotTrack to true',
     '    try',
@@ -185,6 +207,7 @@ export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?
     '    set metaSet to false',
     '    repeat 600 times',
     '      try',
+    `        if preexisting contains (persistent ID of theTrack) then return "${ADD_RETURNED_EXISTING}"`,
     ...sets.map((line) => `  ${line}`),
     '        set metaSet to true',
     '        exit repeat',
@@ -271,6 +294,39 @@ export function buildLocationScript(persistentId: string): string {
 export async function appleMusicEntryLocation(persistentId: string): Promise<string> {
   const stdout = await runOsascript(buildLocationScript(persistentId))
   return stdout.trim()
+}
+
+// The entry's file together with the "artist - name" Music shows for it, the label that
+// carrying it over and deleting it are verified against. Read live because a track opened
+// from Music may be converted with edited tags: the job's own label would never match.
+export function buildEntryScript(persistentId: string): string {
+  return [
+    'set theLocation to missing value',
+    'set theLabel to ""',
+    'tell application "Music"',
+    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${appleScriptString(persistentId)})`,
+    '  if (count of theMatches) is not 0 then',
+    '    set theTrack to item 1 of theMatches',
+    '    set theLabel to (artist of theTrack) & " - " & (name of theTrack)',
+    '    try',
+    '      set theLocation to location of theTrack',
+    '    end try',
+    '  end if',
+    'end tell',
+    'if theLocation is missing value then return theLabel & tab',
+    'return theLabel & tab & (POSIX path of theLocation)',
+  ].join('\n')
+}
+
+export async function appleMusicEntry(
+  persistentId: string,
+  run: typeof runOsascript = runOsascript,
+): Promise<{ path: string; label: string }> {
+  const stdout = (await run(buildEntryScript(persistentId))).replace(/\n$/, '')
+  const cut = stdout.indexOf('\t')
+  return cut === -1
+    ? { label: '', path: '' }
+    : { label: stdout.slice(0, cut), path: stdout.slice(cut + 1) }
 }
 
 // Selects the library copy in the Music window and brings the app forward — the
@@ -451,6 +507,74 @@ export async function carryOverToAppleMusicCopy(
   if (answer === 'missing' || answer === 'mismatch') return answer
   if (/^carried\t\d+$/.test(answer)) return 'carried'
   throw new Error(`unexpected Music answer: ${answer}`)
+}
+
+// Music answers an `add` of a file whose name, artist and album match an entry it already
+// has with that entry, importing nothing, even across formats (measured 30/10). Marking the
+// old entry's name for the length of the add makes Music import the new file. Both ways
+// check the live label first, so only the entry the DJ confirmed is renamed or restored.
+export const REPLACING_MARK = ' [surco-replacing]'
+
+export function buildReplacingMarkScript(
+  persistentId: string,
+  expectedLabel: string,
+  marked: boolean,
+): string {
+  const label = marked ? expectedLabel : `${expectedLabel}${REPLACING_MARK}`
+  return [
+    'tell application "Music"',
+    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${appleScriptString(persistentId)})`,
+    '  if (count of theMatches) is 0 then return "missing"',
+    '  set theTrack to item 1 of theMatches',
+    `  if (artist of theTrack) & " - " & (name of theTrack) is not ${appleScriptString(label)} then return "mismatch"`,
+    ...(marked
+      ? [`  set name of theTrack to (name of theTrack) & ${appleScriptString(REPLACING_MARK)}`]
+      : [
+          '  set theName to name of theTrack',
+          `  if (length of theName) > ${REPLACING_MARK.length} then`,
+          `    set name of theTrack to text 1 thru -${REPLACING_MARK.length + 1} of theName`,
+          '  else',
+          '    set name of theTrack to ""',
+          '  end if',
+        ]),
+    '  return "set"',
+    'end tell',
+  ].join('\n')
+}
+
+export async function markAppleMusicReplacing(
+  persistentId: string,
+  expectedLabel: string,
+  marked: boolean,
+  run: typeof runOsascript = runOsascript,
+): Promise<MusicSetResult> {
+  const answer = (await run(buildReplacingMarkScript(persistentId, expectedLabel, marked))).trim()
+  if (answer === 'set' || answer === 'missing' || answer === 'mismatch') return answer
+  throw new Error(`unexpected Music answer: ${answer}`)
+}
+
+// The folder Music copies imports into, as its preferences store it ("media-folder-url",
+// a file URL). Read through `defaults`, which asks cfprefsd and so sees a change Music has
+// not flushed to the plist yet. Undefined when Music never set it or it is not a local path.
+export function parseMediaFolderUrl(stdout: string): string | undefined {
+  const url = stdout.trim()
+  if (!url.startsWith('file://')) return undefined
+  try {
+    return fileURLToPath(url).replace(/\/+$/, '')
+  } catch {
+    return undefined
+  }
+}
+
+export async function appleMusicMediaFolder(): Promise<string | undefined> {
+  try {
+    const { stdout } = await run('defaults', ['read', 'com.apple.Music', 'media-folder-url'], {
+      encoding: 'utf8',
+    })
+    return parseMediaFolderUrl(stdout)
+  } catch {
+    return undefined
+  }
 }
 
 // osascript and the Music AppleScript bridge only exist on macOS, so this gates
@@ -828,6 +952,22 @@ export async function musicFileEntries(
   }
 }
 
+// Whether any entry plays this file, found the way musicEntryForFile finds one. A lookup
+// Music could not answer rejects instead of reading as "no entry".
+export async function appleMusicHoldsFile(
+  path: string,
+  titles: string[],
+  run: typeof runOsascript = runOsascript,
+): Promise<boolean> {
+  const { consulted, entries } = await musicFileEntries(
+    titles.map((title) => ({ path, title })),
+    true,
+    run,
+  )
+  if (!consulted) throw new Error('Music could not say which entries play the file')
+  return (entries[path]?.length ?? 0) > 0
+}
+
 export async function musicEntryForFile(
   path: string,
   titles: string[],
@@ -943,9 +1083,11 @@ export async function addToAppleMusic(
   filePath: string,
   meta: TrackMetadata,
   coverPath?: string,
+  run: typeof runOsascript = runOsascript,
 ): Promise<string> {
-  const stdout = await runOsascript(buildAddScript(filePath, meta, coverPath))
-  return stdout.trim()
+  const answer = (await run(buildAddScript(filePath, meta, coverPath))).trim()
+  if (answer === ADD_RETURNED_EXISTING) throw errorWithKey('appleMusicAddReturnedOld', filePath)
+  return answer
 }
 
 // null means the library copy is gone (the script's "missing"): the caller decides

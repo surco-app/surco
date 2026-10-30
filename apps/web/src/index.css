@@ -146,10 +146,10 @@ button:not(:disabled) {
    so the shown state wins the transform at equal specificity. */
 .reveal-init {
   opacity: 0;
-  transform: translateY(22px);
+  transform: translateY(12px);
   transition:
-    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .reveal-from-left {
   transform: translateX(-28px);
@@ -168,8 +168,8 @@ button:not(:disabled) {
    first paint and only slide up, so the choreography survives without costing LCP or
    hiding text when JS is slow/absent. */
 .reveal-eager {
-  transform: translateY(16px);
-  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translateY(8px);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .reveal-eager.reveal-in {
   transform: none;
@@ -196,25 +196,14 @@ button:not(:disabled) {
   color: transparent;
 }
 
-/* Stage light behind the hero window: blue at the centre, purple and cyan to the sides,
-   so the product is what glows and the headline above stays on flat ground. */
+/* Stage light behind the hero window: one soft blue pool at the centre, so the product is
+   what glows and the headline above stays on flat ground. */
 .hero-light {
-  background:
-    radial-gradient(
-      ellipse 45% 50% at 50% 50%,
-      color-mix(in srgb, var(--color-blue) 28%, transparent),
-      transparent 70%
-    ),
-    radial-gradient(
-      ellipse 35% 40% at 28% 55%,
-      color-mix(in srgb, var(--color-purple) 18%, transparent),
-      transparent 70%
-    ),
-    radial-gradient(
-      ellipse 35% 40% at 72% 55%,
-      color-mix(in srgb, var(--color-cyan) 14%, transparent),
-      transparent 70%
-    );
+  background: radial-gradient(
+    ellipse 45% 50% at 50% 50%,
+    color-mix(in srgb, var(--color-blue) 22%, transparent),
+    transparent 70%
+  );
 }
 
 @media (prefers-reduced-motion: reduce) {

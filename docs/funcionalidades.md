@@ -1864,6 +1864,15 @@ y reproducciones, y solo entonces borrar la vieja. Si Music dejó la nueva sobre
 deshace solo la nueva y la vieja queda intacta (`errors.appleMusicNoMediaCopyKept`). Antes la
 comprobación iba después del borrado y la pista desaparecía de Music.
 
+**Una pista abierta desde Apple Music y convertida a otro formato se sustituye igual**
+(`processTrack.ts`, `formatMatchesInput`). Antes solo se reetiquetaba la entrada vieja, el
+fichero nuevo se borraba y Music seguía sonando el de siempre aunque la app dijera que estaba
+añadido. Ahora, si la entrada de Music está en otro formato que la salida, se añade la nueva,
+hereda listas y reproducciones, se borra la vieja y su fichero se ofrece a la papelera. Si el
+formato es el mismo sigue siendo una simple actualización de etiquetas. Cuando la conversión es
+de sin pérdida a sin pérdida con la misma frecuencia y profundidad las muestras no cambian, y
+rekordbox conserva la rejilla, la onda y los cues que ya tenía analizados.
+
 **Avisa de la pérdida de calidad, nunca bloquea** (`replaceWarning.ts`): sin pérdida que
 pasa a con pérdida, corte de frecuencias peor entre dos con pérdida, o lossless falso. El
 margen para llamar «peor» a un corte son 2100 Hz, la dispersión medida sobre 39

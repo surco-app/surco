@@ -1,16 +1,23 @@
 import { describe, expect, it, vi } from 'vitest'
+import { errorKeyOf } from '../shared/errorKeys'
 import type { TrackMetadata } from '../shared/types'
 import {
+  ADD_RETURNED_EXISTING,
+  addToAppleMusic,
+  appleMusicEntry,
+  appleMusicHoldsFile,
   appleScriptString,
   buildAddScript,
   buildCarryOverScript,
   buildDeleteScript,
+  buildEntryScript,
   buildFileLocationsScript,
   buildFileNamesScript,
   buildLibraryDumpScript,
   buildLocationScript,
   buildMusicRunningScript,
   buildPlaylistTransferScript,
+  buildReplacingMarkScript,
   buildRevealScript,
   buildReviewDumpScript,
   buildSetFieldScript,
@@ -18,13 +25,16 @@ import {
   carryOverToAppleMusicCopy,
   entriesForPaths,
   isAppleMusicOnly,
+  markAppleMusicReplacing,
   musicEntryForFile,
   musicFileEntries,
   musicFileLocations,
   parseFileLocations,
   parseFileNames,
   parseLibraryDump,
+  parseMediaFolderUrl,
   parseReviewDump,
+  REPLACING_MARK,
   shouldAddToAppleMusic,
 } from './applemusic'
 
@@ -219,6 +229,80 @@ describe('buildAddScript', () => {
   })
 })
 
+// Measured 30/10: Music answers an `add` whose file matches an entry it already has with
+// that entry, importing nothing. Any copy with the same name and artist can be the one it
+// answers with, a second copy in the library or one renamed by another job of the batch,
+// so every add checks the answer against the entries that were there before it.
+describe('buildAddScript refusing an entry that was already there', () => {
+  const s = buildAddScript('/x/a.aiff', base)
+
+  it('lists the entries with the same name and artist before adding', () => {
+    const list = s.indexOf(
+      'set candidates to (every track of library playlist 1 whose name is "ATB (Till I Come)" and artist is "Tom Hafman")',
+    )
+    expect(list).toBeGreaterThan(-1)
+    expect(list).toBeLessThan(s.indexOf('add POSIX file'))
+  })
+
+  // Measured 30/10 on the real app: `persistent ID of (every track whose ...)` raises -1728
+  // when nothing matches, which is every new track and every replacement (the old entry is
+  // renamed first), so every add failed. The element list is {} when empty; the IDs are read
+  // one track at a time from it, never through a try that would quietly drop the guard.
+  it('reads the IDs from the track list, so an add with no same-named entry still runs', () => {
+    expect(s).not.toMatch(/persistent ID of \(every track/)
+    expect(s).toContain('set preexisting to {}')
+    expect(s).toContain('repeat with candidate in candidates')
+    expect(s).toContain('set end of preexisting to persistent ID of candidate')
+    const head = s.slice(0, s.indexOf('add POSIX file'))
+    expect(head).not.toContain('try')
+  })
+
+  // Music reads no tags from a WAV and names its entry after the file, with no artist, so an
+  // older untagged copy of the same file is found by that name alone.
+  it('also lists the entries named after the file being added', () => {
+    const wav = buildAddScript('/x/Tom Hafman - ATB.wav', base)
+    const list = wav.indexOf(
+      'set candidates to (every track of library playlist 1 whose name is "Tom Hafman - ATB")',
+    )
+    expect(list).toBeGreaterThan(-1)
+    expect(list).toBeLessThan(wav.indexOf('add POSIX file'))
+  })
+
+  // Before any tag is written: writing them first would retag the entry Music handed back.
+  it('answers with the sentinel before writing a single tag to an entry from that list', () => {
+    const check = s.indexOf(
+      `if preexisting contains (persistent ID of theTrack) then return "${ADD_RETURNED_EXISTING}"`,
+    )
+    expect(check).toBeGreaterThan(s.indexOf('repeat 600 times'))
+    expect(check).toBeLessThan(s.indexOf('set name of theTrack'))
+    expect(check).toBeGreaterThan(s.indexOf('if not gotTrack then error'))
+  })
+
+  it('checks the answer even when the add has no title or artist to recover by', () => {
+    expect(buildAddScript('/x/a.aiff', { ...base, title: '', artist: '' })).toContain(
+      'if preexisting contains (persistent ID of theTrack)',
+    )
+  })
+})
+
+describe('addToAppleMusic', () => {
+  it('fails with a translatable key when Music answered with an entry that was already there', async () => {
+    const failure = await addToAppleMusic(
+      '/x/a.aiff',
+      base,
+      undefined,
+      async () => `${ADD_RETURNED_EXISTING}\n`,
+    ).catch((e: Error) => e)
+    expect(errorKeyOf((failure as Error).message)).toBe('appleMusicAddReturnedOld')
+  })
+
+  it('returns the new entry’s persistent ID', async () => {
+    await expect(
+      addToAppleMusic('/x/a.aiff', base, undefined, async () => 'ABCDEF0123456789\n'),
+    ).resolves.toBe('ABCDEF0123456789')
+  })
+})
+
 describe('buildUpdateScript', () => {
   it('targets the library copy by persistent ID and reports "missing" instead of erroring when the user deleted it from Music, so the caller can fall back to a fresh add', () => {
     const script = buildUpdateScript('ABCD1234', base)
@@ -337,6 +421,41 @@ describe('buildLocationScript', () => {
 
     expect(tellBody).not.toContain('POSIX path')
     expect(script).toContain('POSIX path')
+  })
+})
+
+// Retiring an entry is verified against its live "artist - name". A track opened from Music
+// and edited (or auto-matched) before converting carries new tags, so the label has to be
+// read from Music itself, with the file, or the delete refuses and both entries stay.
+describe('buildEntryScript', () => {
+  it('reads the entry label the delete compares, and its file outside the tell block', () => {
+    const script = buildEntryScript('ABCD1234ABCD1234')
+    const tellBody = script.slice(script.indexOf('tell application'), script.indexOf('end tell'))
+
+    expect(script).toContain('whose persistent ID is "ABCD1234ABCD1234"')
+    expect(tellBody).toContain('(artist of theTrack) & " - " & (name of theTrack)')
+    expect(tellBody).not.toContain('POSIX path')
+    expect(script).toContain('POSIX path')
+  })
+})
+
+describe('appleMusicEntry', () => {
+  it('splits the label from the file path', async () => {
+    const run = vi.fn(async () => 'ATB - Till I Come\t/Users/me/Music/Media/A.aiff\n')
+    expect(await appleMusicEntry('PID', run)).toEqual({
+      label: 'ATB - Till I Come',
+      path: '/Users/me/Music/Media/A.aiff',
+    })
+  })
+
+  it('answers an empty path when the entry holds no reachable file', async () => {
+    const run = vi.fn(async () => 'ATB - Till I Come\t\n')
+    expect(await appleMusicEntry('PID', run)).toEqual({ label: 'ATB - Till I Come', path: '' })
+  })
+
+  it('answers an empty path when the entry is gone', async () => {
+    const run = vi.fn(async () => '\n')
+    expect(await appleMusicEntry('PID', run)).toEqual({ label: '', path: '' })
   })
 })
 
@@ -777,6 +896,88 @@ describe('buildCarryOverScript', () => {
   })
 })
 
+// Music answers an `add` of a file whose name, artist and album match an entry it already
+// has with that entry, importing nothing, even across formats (measured 30/10: an AIFF added
+// over its WAV came back with the WAV's persistent ID). Renaming the old entry for the length
+// of the add is what makes Music import the new file.
+describe('buildReplacingMarkScript', () => {
+  it('appends the mark to the name of the entry the DJ confirmed, and only that one', () => {
+    const s = buildReplacingMarkScript('OLD0000000000000', 'A - B', true)
+    expect(s).toContain('whose persistent ID is "OLD0000000000000"')
+    const check = s.indexOf(
+      'if (artist of theTrack) & " - " & (name of theTrack) is not "A - B" then return "mismatch"',
+    )
+    expect(check).toBeGreaterThan(-1)
+    expect(check).toBeLessThan(s.indexOf('set name of theTrack'))
+    expect(s).toContain(`set name of theTrack to (name of theTrack) & "${REPLACING_MARK}"`)
+  })
+
+  // Restoring checks for the marked name, so an entry Music or the DJ renamed meanwhile is
+  // left as it is instead of losing the tail of its new name.
+  it('takes the mark off only an entry that still carries it', () => {
+    const s = buildReplacingMarkScript('OLD0000000000000', 'A - B', false)
+    expect(s).toContain(
+      `if (artist of theTrack) & " - " & (name of theTrack) is not "A - B${REPLACING_MARK}" then return "mismatch"`,
+    )
+    expect(s).toContain(
+      `set name of theTrack to text 1 thru -${REPLACING_MARK.length + 1} of theName`,
+    )
+  })
+
+  // `text 1 thru -19` of a name that is only the mark raises instead of giving "".
+  it('restores an empty name without slicing past its start', () => {
+    const s = buildReplacingMarkScript('OLD0000000000000', 'A - ', false)
+    expect(s).toContain(`if (length of theName) > ${REPLACING_MARK.length} then`)
+    expect(s).toContain('set name of theTrack to ""')
+  })
+
+  it('escapes quotes in the label', () => {
+    expect(buildReplacingMarkScript('OLD', 'Mr "Big" - Hit', true)).toContain(
+      'is not "Mr \\"Big\\" - Hit" then return "mismatch"',
+    )
+  })
+})
+
+describe('markAppleMusicReplacing', () => {
+  it('reads what Music answered', async () => {
+    const run = vi.fn(async () => 'set\n')
+    await expect(markAppleMusicReplacing('OLD', 'A - B', true, run)).resolves.toBe('set')
+    expect(run).toHaveBeenCalledWith(buildReplacingMarkScript('OLD', 'A - B', true))
+    await expect(
+      markAppleMusicReplacing('OLD', 'A - B', true, async () => 'mismatch'),
+    ).resolves.toBe('mismatch')
+    await expect(
+      markAppleMusicReplacing('OLD', 'A - B', true, async () => 'missing'),
+    ).resolves.toBe('missing')
+  })
+
+  it('fails on anything else', async () => {
+    await expect(markAppleMusicReplacing('OLD', 'A - B', true, async () => '')).rejects.toThrow()
+  })
+})
+
+// The key Music keeps in its preferences, read 30/10 off the user's Mac:
+//   "media-folder-url" => "file:///Volumes/Public/Music/Music/Media.localized/"
+describe('parseMediaFolderUrl', () => {
+  it('turns the file URL into the folder path', () => {
+    expect(parseMediaFolderUrl('file:///Volumes/Public/Music/Music/Media.localized/\n')).toBe(
+      '/Volumes/Public/Music/Music/Media.localized',
+    )
+  })
+
+  it('decodes escaped characters', () => {
+    expect(parseMediaFolderUrl('file:///Users/me/Music/Mi%20M%C3%BAsica/')).toBe(
+      '/Users/me/Music/Mi Música',
+    )
+  })
+
+  it('gives nothing for anything that is not a local folder', () => {
+    expect(parseMediaFolderUrl('')).toBeUndefined()
+    expect(parseMediaFolderUrl('https://example.com/Media/')).toBeUndefined()
+    expect(parseMediaFolderUrl('file://server/share/')).toBeUndefined()
+  })
+})
+
 describe('carryOverToAppleMusicCopy', () => {
   it('reads how many playlists got the new entry', async () => {
     const run = vi.fn(async () => 'carried\t2\n')
@@ -975,6 +1176,33 @@ describe('Music entries for loaded files', () => {
 // renamed in Music. Measured 09/10 on a 2045-track SMB library: `whose location is` never
 // matched (35-45 s each), one track at a time took 102 s, the bulk lists 47 s with pairs
 // identical to the one-at-a-time read.
+// Asked before Surco deletes a conversion it wrote into the Media folder after a failed add:
+// an entry the add made anyway must keep its file.
+describe('appleMusicHoldsFile', () => {
+  const RS = '\u001e'
+  const FS = '\u001f'
+  const PID = '6E592CFE07A6246A'
+
+  it('says whether an entry plays the file', async () => {
+    const run = vi
+      .fn()
+      .mockResolvedValueOnce([PID, 'A', 'Title', ''].join(FS))
+      .mockResolvedValueOnce([PID, '/m/A - Title.wav'].join(FS))
+    await expect(appleMusicHoldsFile('/m/A - Title.wav', ['Title'], run)).resolves.toBe(true)
+    await expect(
+      appleMusicHoldsFile('/m/A - Title.wav', ['Title'], async () => ['X', 'A', 'B', ''].join(RS)),
+    ).resolves.toBe(false)
+  })
+
+  it('rejects when Music could not be asked, so the caller keeps the file', async () => {
+    await expect(
+      appleMusicHoldsFile('/m/a.wav', ['T'], async () => {
+        throw new Error('AppleEvent timed out (-1712)')
+      }),
+    ).rejects.toThrow()
+  })
+})
+
 describe('musicFileLocations', () => {
   const RS = '\u001e'
   const FS = '\u001f'

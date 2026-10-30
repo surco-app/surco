@@ -255,7 +255,7 @@ export default function DownloadButton({
             <p className={`mt-3.5 text-sm text-muted ${center ? 'text-center' : ''}`}>{note}</p>
           )}
           <div
-            className={`${note ? 'mt-1.5' : 'mt-3.5'} flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-faint ${
+            className={`${note ? 'mt-1.5' : 'mt-3.5'} flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem] text-faint ${
               center ? 'justify-center' : ''
             }`}
           >

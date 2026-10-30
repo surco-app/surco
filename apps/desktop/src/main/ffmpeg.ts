@@ -1079,11 +1079,14 @@ export function convertArgs(
   return args
 }
 
+const LOSSLESS_CODEC = /^(pcm_(?!alaw|mulaw)|flac$|alac$)/
+
 export interface ConversionPlan extends EncodeArgs {
   // A reduction to 16 bits from a wider/float pipeline needs TPDF dither at the
   // requantization (ffmpeg's swresample doesn't dither on its own); convertAudio
   // appends the aresample stage when this is set.
   dither?: boolean
+  samplesKept?: true
   ext: '.aiff' | '.mp3' | '.wav' | '.flac' | '.m4a'
 }
 
@@ -1130,7 +1133,7 @@ export async function planConversion(
   if (format === 'mp3') {
     // A source already in MP3 still stream-copies whatever the quality setting says:
     // re-encoding lossy-to-lossy only degrades it.
-    if (MP3_INPUT.test(input) && copyOk) return { codec: 'copy', ext: '.mp3' }
+    if (MP3_INPUT.test(input) && copyOk) return { codec: 'copy', samplesKept: true, ext: '.mp3' }
     const rate = await pinnedRate()
     const vbr = MP3_VBR[q.mp3Quality]
     return {
@@ -1193,19 +1196,33 @@ export async function planConversion(
     )
   }
 
+  const samplesSurvive = async (
+    plan: Awaited<ReturnType<typeof losslessPlan>>,
+    encoderHolds: (depth: SampleDepth) => boolean = () => true,
+  ): Promise<boolean> =>
+    copyOk &&
+    LOSSLESS_CODEC.test((await probeOnce()).codecName) &&
+    (await keepsSource(plan)) &&
+    encoderHolds(plan.depth)
+
   if (format === 'wav') {
     const same = WAV_INPUT.test(input) && copyOk
-    if (same && !pinned) return { codec: 'copy', ext: '.wav' }
+    if (same && !pinned) return { codec: 'copy', samplesKept: true, ext: '.wav' }
     const plan = await losslessPlan()
-    if (same && (await keepsSource(plan))) return { codec: 'copy', ext: '.wav' }
+    if (same && (await keepsSource(plan))) return { codec: 'copy', samplesKept: true, ext: '.wav' }
     const { depth, ...rest } = plan
-    return { codec: pcmCodec(depth, 'le'), ...rest, ext: '.wav' }
+    return {
+      codec: pcmCodec(depth, 'le'),
+      ...rest,
+      ...((await samplesSurvive(plan)) ? { samplesKept: true as const } : {}),
+      ext: '.wav',
+    }
   }
   if (format === 'flac') {
     const same = FLAC_INPUT.test(input) && copyOk
-    if (same && !pinned) return { codec: 'copy', ext: '.flac' }
+    if (same && !pinned) return { codec: 'copy', samplesKept: true, ext: '.flac' }
     const plan = await losslessPlan()
-    if (same && (await keepsSource(plan))) return { codec: 'copy', ext: '.flac' }
+    if (same && (await keepsSource(plan))) return { codec: 'copy', samplesKept: true, ext: '.flac' }
     const { depth, ...rest } = plan
     // FLAC holds integers only (its s32 input writes 24-bit), so a float source
     // lands on the encoder's widest width rather than keeping float.
@@ -1214,6 +1231,9 @@ export async function planConversion(
       sampleFmt: !depth.float && depth.bits <= 16 ? 's16' : 's32',
       compressionLevel: q.flacCompression,
       ...rest,
+      ...((await samplesSurvive(plan, (d) => !d.float && d.bits <= 24))
+        ? { samplesKept: true as const }
+        : {}),
       ext: '.flac',
     }
   }
@@ -1222,7 +1242,8 @@ export async function planConversion(
     // say, like an MP3: decoding a lossy stream to ALAC only makes the file bigger (an
     // 11 MB AAC came back at 44 MB). Holding ALAC it is lossless like the rest.
     const same = M4A_INPUT.test(input) && copyOk
-    if (same && (await probeOnce()).codecName !== 'alac') return { codec: 'copy', ext: '.m4a' }
+    if (same && (await probeOnce()).codecName !== 'alac')
+      return { codec: 'copy', samplesKept: true, ext: '.m4a' }
     if (M4A_INPUT.test(input) && (await probeOnce()).codecName !== 'alac') {
       const kbps = Math.round(((await probeOnce()).bitRate ?? 256000) / 1000)
       const rate = await pinnedRate()
@@ -1233,23 +1254,29 @@ export async function planConversion(
         ext: '.m4a',
       }
     }
-    if (same && !pinned) return { codec: 'copy', ext: '.m4a' }
+    if (same && !pinned) return { codec: 'copy', samplesKept: true, ext: '.m4a' }
     const plan = await losslessPlan()
-    if (same && (await keepsSource(plan))) return { codec: 'copy', ext: '.m4a' }
+    if (same && (await keepsSource(plan))) return { codec: 'copy', samplesKept: true, ext: '.m4a' }
     const { depth, ...rest } = plan
     return {
       codec: 'alac',
       sampleFmt: !depth.float && depth.bits <= 16 ? 's16p' : 's32p',
       ...rest,
+      ...((await samplesSurvive(plan, (d) => !d.float)) ? { samplesKept: true as const } : {}),
       ext: '.m4a',
     }
   }
   const same = AIFF_INPUT.test(input) && copyOk
-  if (same && !pinned) return { codec: 'copy', ext: '.aiff' }
+  if (same && !pinned) return { codec: 'copy', samplesKept: true, ext: '.aiff' }
   const plan = await losslessPlan()
-  if (same && (await keepsSource(plan))) return { codec: 'copy', ext: '.aiff' }
+  if (same && (await keepsSource(plan))) return { codec: 'copy', samplesKept: true, ext: '.aiff' }
   const { depth, ...rest } = plan
-  return { codec: pcmCodec(depth, 'be'), ...rest, ext: '.aiff' }
+  return {
+    codec: pcmCodec(depth, 'be'),
+    ...rest,
+    ...((await samplesSurvive(plan)) ? { samplesKept: true as const } : {}),
+    ext: '.aiff',
+  }
 }
 
 // Resolves the audio filter for the chosen normalization, running the required
@@ -1848,40 +1875,43 @@ function recordConversionPatch(
     // silently at cuesToXml's `> 0` check, dropping the beatgrid without a trace.
     const parsedBpm = Number(meta.bpm)
     const bpm = meta.bpm.trim() !== '' && Number.isFinite(parsedBpm) ? parsedBpm : undefined
-    recordNmlPatch({
-      volume,
-      dir,
-      file,
-      newFile: sameDir && outputName !== file ? outputName : undefined,
-      cueTree: readCueTree(output) ?? undefined,
-      cueShift: cueShift && { shiftMs: cueShift.shiftMs, maxMs: cueShift.maxMs },
-      bpm,
-      // Traktor reads a library track's stars from the collection, not the file, so
-      // writing the POPM byte alone left the DJ looking at the ENTRY's stale RANKING —
-      // the reported AIFF that showed 2 stars where 5 were set. An empty rating normally
-      // means "preserve", matching what the file side does; only an explicit clear
-      // wipes it, and zero is how Traktor spells unrated.
-      ranking:
-        (meta.rating ?? '').trim() !== ''
-          ? starsToRating(Number.parseInt(meta.rating ?? '', 10))
-          : clearedExtras
-            ? 0
-            : undefined,
-      // Traktor draws the library's artwork from its own thumbnail cache, keyed by
-      // COVERARTID, and keeps serving it after the file on disk gets a new cover — the
-      // same stale-cache mechanism the cue handling above exists to fix. Any output
-      // that ends up WITH artwork needs those thumbnails rewritten, not just one the
-      // user picked a new cover for: a conversion that carried the source's own cover
-      // across (-map 0:v?) still wrote a different file, and the cached thumbnail
-      // belongs to the old one. Scoping this to a fresh coverPath is what left the
-      // reported case — convert, and Traktor keeps showing the previous artwork —
-      // unfixed. Only an explicit removeCover leaves nothing to redraw.
-      refreshCoverArt: keptArtwork || undefined,
-      outputPath: keptArtwork ? output : undefined,
-      outputVolume: outputLocation.volume,
-      outputDir: outputLocation.dir,
-      outputFile: outputLocation.file,
-    })
+    recordNmlPatch(
+      {
+        volume,
+        dir,
+        file,
+        newFile: sameDir && outputName !== file ? outputName : undefined,
+        cueTree: readCueTree(output) ?? undefined,
+        cueShift: cueShift && { shiftMs: cueShift.shiftMs, maxMs: cueShift.maxMs },
+        bpm,
+        // Traktor reads a library track's stars from the collection, not the file, so
+        // writing the POPM byte alone left the DJ looking at the ENTRY's stale RANKING —
+        // the reported AIFF that showed 2 stars where 5 were set. An empty rating normally
+        // means "preserve", matching what the file side does; only an explicit clear
+        // wipes it, and zero is how Traktor spells unrated.
+        ranking:
+          (meta.rating ?? '').trim() !== ''
+            ? starsToRating(Number.parseInt(meta.rating ?? '', 10))
+            : clearedExtras
+              ? 0
+              : undefined,
+        // Traktor draws the library's artwork from its own thumbnail cache, keyed by
+        // COVERARTID, and keeps serving it after the file on disk gets a new cover — the
+        // same stale-cache mechanism the cue handling above exists to fix. Any output
+        // that ends up WITH artwork needs those thumbnails rewritten, not just one the
+        // user picked a new cover for: a conversion that carried the source's own cover
+        // across (-map 0:v?) still wrote a different file, and the cached thumbnail
+        // belongs to the old one. Scoping this to a fresh coverPath is what left the
+        // reported case — convert, and Traktor keeps showing the previous artwork —
+        // unfixed. Only an explicit removeCover leaves nothing to redraw.
+        refreshCoverArt: keptArtwork || undefined,
+        outputPath: keptArtwork ? output : undefined,
+        outputVolume: outputLocation.volume,
+        outputDir: outputLocation.dir,
+        outputFile: outputLocation.file,
+      },
+      { input, output },
+    )
   } catch {
     // Best-effort: see comment above.
   }
@@ -2303,13 +2333,17 @@ export async function convertAudio(
     const sourceRate = [input, output].some((f) => extname(f).toLowerCase() === '.m4a')
       ? Number((await probeOnce(input)).sampleRate) || 44100
       : 44100
-    const rekordboxAudio = copiedVerbatim
-      ? undefined
-      : {
-          sourceShiftMs: await rekordboxShiftOfFile(input, sourceRate),
-          outputShiftMs: await rekordboxShiftOfFile(tmp, plan.sampleRateHz ?? sourceRate),
-          trimmedMs: trimAf !== undefined ? (trim?.startSec ?? 0) * 1000 : 0,
-        }
+    const sourceShiftMs = await rekordboxShiftOfFile(input, sourceRate)
+    const outputShiftMs = await rekordboxShiftOfFile(tmp, plan.sampleRateHz ?? sourceRate)
+    // Kept samples still move in rekordbox's timeline when only one side is an .m4a (ALAC↔WAV).
+    const rekordboxAudio =
+      copiedVerbatim || (plan.samplesKept && sourceShiftMs === outputShiftMs)
+        ? undefined
+        : {
+            sourceShiftMs,
+            outputShiftMs,
+            trimmedMs: trimAf !== undefined ? (trim?.startSec ?? 0) * 1000 : 0,
+          }
     // A rewrite lands on the source's own path, so the rename below would replace the
     // user's file with no way back. A copy of the original goes to Surco's trash first (see
     // surcoTrash.ts); unconfigured — the unit tests — keepOriginal keeps nothing and

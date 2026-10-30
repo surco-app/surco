@@ -173,6 +173,7 @@
     "settingsFileNotSurco": "That file doesn't hold a Surco configuration.",
     "appleMusicNoMediaCopy": "Music didn’t copy the file into its media folder, so “Apple Music only” would leave it with no audio. Turn on “Copy files to the Media folder when adding” in Music, or turn off “Apple Music only”.",
     "appleMusicNoMediaCopyKept": "Music didn’t copy the file into its media folder, so “Apple Music only” would leave it with no audio. Your previous copy is still in Music as it was, and nothing was lost. Turn on “Copy files to the Media folder when adding” in Music, or turn off “Apple Music only”.",
+    "appleMusicAddReturnedOld": "Music handed back a track already in your library instead of importing the new file, so it wasn’t added. No track was removed from your library. If it happens again, look in Music for another track with the same title and artist, or named after the file.",
     "convertedOutputUnreadable": "The converted file came out unreadable, so it was discarded and the original left untouched. Try again with different conversion settings.",
     "convertedOutputTruncated": "The converted file came out shorter than the original, so it was discarded and the original left untouched. Try again with different conversion settings.",
     "engineDjOpen": "Close Engine DJ before converting: it has the library open.",
@@ -244,6 +245,7 @@
     "normalizeSkipped": "Couldn't measure the loudness of “{{name}}”, so it was converted without normalization.",
     "keptAsIs": "“{{name}}” stays as it is because “Keep MP3 and M4A files as they are” is on with “Next to the original”.",
     "originalKept": "“{{name}}” was converted, but the original could not be removed and is still in its folder.",
+    "musicNameLeftMarked": "In Music, the previous entry of “{{name}}” still has “[surco-replacing]” at the end of its name. Remove it by hand in Music.",
     "formatSkipped": "“{{name}}” has no equivalent output format for Same as source, so it was skipped.",
     "appleMusicFailedAfterConvert": "“{{name}}” was converted, but Apple Music could not be updated. Try adding it to Apple Music again.",
     "convertFailed": "Couldn't convert “{{name}}”: {{reason}}",
@@ -1037,9 +1039,9 @@
     "rowHide": "Hide {{name}}",
     "rowShow": "Show {{name}}",
     "rowToken": "Internal name {{token}}",
-    "rekordboxPlaylists": "Playlists",
-    "traktorPlaylists": "Playlists",
-    "enginePlaylists": "Playlists"
+    "rekordboxPlaylists": "rekordbox playlists",
+    "traktorPlaylists": "Traktor playlists",
+    "enginePlaylists": "Engine DJ playlists"
   },
   "declick": {
     "cueWarning": "ALAC does not keep Traktor cues or the beatgrid: converting loses them.",

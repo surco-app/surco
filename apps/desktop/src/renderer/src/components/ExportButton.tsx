@@ -261,8 +261,8 @@ export function ExportButton({
             <span
               data-testid="process-progress"
               aria-hidden="true"
-              className="progress-sweep absolute inset-y-0 left-0 bg-[var(--color-accent)] transition-[width] duration-500"
-              style={{ width: `${STAGE_PROGRESS[liveStage] * 100}%` }}
+              className="progress-sweep absolute inset-0 origin-left bg-[var(--color-accent)] transition-transform duration-[250ms] ease-[cubic-bezier(0.2,0,0,1)]"
+              style={{ transform: `scaleX(${STAGE_PROGRESS[liveStage]})` }}
             />
           )}
           {/* Converting: the stage names progress by default, and a hover or keyboard focus

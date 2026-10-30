@@ -23,6 +23,7 @@ export const ERROR_KEYS = [
   'settingsFileNotSurco',
   'appleMusicNoMediaCopy',
   'appleMusicNoMediaCopyKept',
+  'appleMusicAddReturnedOld',
   'convertedOutputUnreadable',
   'convertedOutputTruncated',
   'engineDjOpen',
@@ -53,6 +54,21 @@ export type ErrorKey = (typeof ERROR_KEYS)[number]
 // bug report; the renderer shows the translated string and never this text.
 export function errorWithKey(key: ErrorKey, detail?: string): Error {
   return new Error(detail ? `${PREFIX}${key}: ${detail}` : `${PREFIX}${key}`)
+}
+
+// Rides the end of a failure's message when the replaced Apple Music entry kept the
+// replacing mark in its name: the renderer tells the DJ about the name and still shows the
+// real cause, key or text, which the marker never replaces.
+export const NAME_LEFT_MARKED = ' SURCO_MUSIC_NAME_LEFT_MARKED'
+
+export function withNameLeftMarked(e: unknown): Error {
+  return new Error(`${e instanceof Error ? e.message : String(e)}${NAME_LEFT_MARKED}`)
+}
+
+export function splitNameLeftMarked(message: string): { message: string; left: boolean } {
+  return message.endsWith(NAME_LEFT_MARKED)
+    ? { message: message.slice(0, -NAME_LEFT_MARKED.length), left: true }
+    : { message, left: false }
 }
 
 // The key a message carries, or null for an ordinary failure. Anchored at the start so

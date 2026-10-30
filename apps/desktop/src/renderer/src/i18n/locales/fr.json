@@ -173,6 +173,7 @@
     "settingsFileNotSurco": "Ce fichier ne contient pas de configuration Surco.",
     "appleMusicNoMediaCopy": "Musique n’a pas copié le fichier dans son dossier multimédia : avec « Apple Music uniquement », il resterait sans audio. Active « Copier les fichiers dans le dossier Musique » dans Musique, ou désactive « Apple Music uniquement ».",
     "appleMusicNoMediaCopyKept": "Musique n’a pas copié le fichier dans son dossier multimédia : avec « Apple Music uniquement », il resterait sans audio. Ta copie précédente est toujours dans Musique telle quelle, rien n’est perdu. Active « Copier les fichiers dans le dossier Musique » dans Musique, ou désactive « Apple Music uniquement ».",
+    "appleMusicAddReturnedOld": "Musique a renvoyé un morceau déjà présent dans ta bibliothèque au lieu d’importer le nouveau fichier, donc il n’a pas été ajouté. Aucun morceau n’a été retiré de ta bibliothèque. Si cela se reproduit, cherche dans Musique un autre morceau avec le même titre et le même artiste, ou portant le nom du fichier.",
     "convertedOutputUnreadable": "Le fichier converti est sorti illisible, il a donc été écarté et l'original laissé intact. Réessayez avec d'autres réglages de conversion.",
     "convertedOutputTruncated": "Le fichier converti est sorti plus court que l'original, il a donc été écarté et l'original laissé intact. Réessayez avec d'autres réglages de conversion.",
     "engineDjOpen": "Ferme Engine DJ avant de convertir : sa bibliothèque est ouverte.",
@@ -244,6 +245,7 @@
     "normalizeSkipped": "Impossible de mesurer le loudness de « {{name}} », il a été converti sans normalisation.",
     "keptAsIs": "« {{name}} » reste tel quel car « Conserver les MP3 et M4A tels quels » est activé avec « À côté de l'original ».",
     "originalKept": "« {{name}} » a été converti, mais l'original n'a pas pu être retiré et reste dans son dossier.",
+    "musicNameLeftMarked": "Dans Musique, l’ancienne entrée de « {{name}} » porte encore « [surco-replacing] » à la fin de son nom. Retire-le à la main dans Musique.",
     "formatSkipped": "« {{name}} » n'a pas de format de sortie équivalent pour Comme la source, il a été ignoré.",
     "appleMusicFailedAfterConvert": "« {{name}} » a été converti, mais Apple Music n'a pas pu être mis à jour. Essayez de l'ajouter à nouveau à Apple Music.",
     "convertFailed": "Impossible de convertir « {{name}} » : {{reason}}",
@@ -1037,9 +1039,9 @@
     "rowHide": "Masquer {{name}}",
     "rowShow": "Afficher {{name}}",
     "rowToken": "Nom interne {{token}}",
-    "rekordboxPlaylists": "Playlists",
-    "traktorPlaylists": "Playlists",
-    "enginePlaylists": "Playlists"
+    "rekordboxPlaylists": "Playlists rekordbox",
+    "traktorPlaylists": "Playlists Traktor",
+    "enginePlaylists": "Playlists Engine DJ"
   },
   "declick": {
     "cueWarning": "ALAC ne conserve ni les cues ni le beatgrid de Traktor : la conversion les perd.",

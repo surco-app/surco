@@ -1,3 +1,4 @@
+import { basename, dirname } from 'node:path'
 import type { NmlPatch } from './traktorNml'
 
 // collection.nml can weigh tens of megabytes, so a conversion batch of 300 tracks
@@ -5,6 +6,12 @@ import type { NmlPatch } from './traktorNml'
 // cue tree already lives as binary data — shipping it to the renderer and back over
 // IPC would cross the boundary twice for nothing.
 let patches: NmlPatch[] = []
+
+// Parallel to `patches`, same index: where each conversion read from and wrote to, so a
+// later redirect can find its patch by the destination it was recorded under. It is
+// reset wherever `patches` is, or a nested or abandoned batch would redirect a patch
+// that is no longer in the pool.
+let origins: ({ input: string; output: string } | undefined)[] = []
 
 // The renderer's begin/end calls are not guaranteed to nest cleanly: processAll opens
 // one begin/end pair around its whole run, but processOne (⌘⏎, the editor's convert
@@ -17,8 +24,40 @@ let patches: NmlPatch[] = []
 // just adds its patch to the same pool and defers the flush to whoever closes last.
 let depth = 0
 
-export function recordNmlPatch(patch: NmlPatch): void {
+export function recordNmlPatch(patch: NmlPatch, paths?: { input: string; output: string }): void {
   patches.push(patch)
+  origins.push(paths)
+}
+
+// With "Apple Music only" the conversion lands in a private temp folder, so the patch is
+// recorded without a newFile; Music then copies the file into its Media folder. Traktor
+// rewrites FILE only, never DIR or VOLUME, so the entry can follow only when the landed
+// file sits in the source's own folder.
+// Finder and NAS paths come back decomposed while Music's AppleScript location can be
+// composed, so the same accented folder must still count as the same folder.
+const sameFolder = (a: string, b: string) => a.normalize('NFC') === b.normalize('NFC')
+
+// False only when a patch was recorded and its entry has to stay on the source file. The
+// output fields always move: the temp they named is deleted before the collection is saved.
+export function redirectNmlPatch(
+  currentTo: string,
+  landedAt: string,
+  landedLocation?: { volume: string; dir: string; file: string },
+): boolean {
+  const index = origins.findIndex((o) => o?.output === currentTo)
+  const found = origins[index]
+  if (!found) return true
+  const patch = patches[index]
+  if (patch.outputPath) patch.outputPath = landedAt
+  if (landedLocation) {
+    patch.outputVolume = landedLocation.volume
+    patch.outputDir = landedLocation.dir
+    patch.outputFile = landedLocation.file
+  }
+  if (!sameFolder(dirname(landedAt), dirname(found.input))) return false
+  const name = basename(landedAt)
+  if (name !== patch.file) patch.newFile = name
+  return true
 }
 
 // The renderer can vanish between a begin and its end — a reload, or the crash-and-
@@ -29,11 +68,15 @@ export function recordNmlPatch(patch: NmlPatch): void {
 // which is recoverable) and returns the accumulator to a state that works.
 export function abandonNmlBatch(): void {
   patches = []
+  origins = []
   depth = 0
 }
 
 export function beginNmlBatch(): void {
-  if (depth === 0) patches = []
+  if (depth === 0) {
+    patches = []
+    origins = []
+  }
   depth += 1
 }
 
@@ -46,5 +89,6 @@ export function endNmlBatch(): NmlPatch[] {
   if (depth > 0) return []
   const result = patches
   patches = []
+  origins = []
   return result
 }

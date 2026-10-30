@@ -68,7 +68,7 @@ export default function DonateCancel() {
   const t = COPY[lng]
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6 py-16 text-fg">
+    <main className="mx-auto flex min-h-svh max-w-lg flex-col justify-center px-6 py-16 text-fg">
       <a href={HOME[lng]} className="mb-6 inline-block w-fit">
         <img src="/logo.svg" alt="Surco" width={48} height={48} className="h-14 w-14" />
       </a>

@@ -173,6 +173,7 @@
     "settingsFileNotSurco": "Diese Datei enthält keine Surco-Konfiguration.",
     "appleMusicNoMediaCopy": "Musik hat die Datei nicht in seinen Medienordner kopiert, daher bliebe sie mit „Nur Apple Music“ ohne Audio. Aktiviere in Musik „Dateien beim Hinzufügen in den Medienordner kopieren“ oder deaktiviere „Nur Apple Music“.",
     "appleMusicNoMediaCopyKept": "Musik hat die Datei nicht in seinen Medienordner kopiert, daher bliebe sie mit „Nur Apple Music“ ohne Audio. Deine bisherige Kopie ist unverändert in Musik, nichts ist verloren. Aktiviere in Musik „Dateien beim Hinzufügen in den Medienordner kopieren“ oder deaktiviere „Nur Apple Music“.",
+    "appleMusicAddReturnedOld": "Musik hat einen Titel zurückgegeben, der schon in deiner Mediathek war, statt die neue Datei zu importieren, daher wurde sie nicht hinzugefügt. Aus deiner Mediathek wurde kein Titel entfernt. Wenn es wieder passiert, suche in Musik nach einem weiteren Titel mit demselben Namen und Interpreten oder mit dem Namen der Datei.",
     "convertedOutputUnreadable": "Die konvertierte Datei war nicht lesbar, daher wurde sie verworfen und das Original unverändert gelassen. Versuche es mit anderen Konvertierungseinstellungen.",
     "convertedOutputTruncated": "Die konvertierte Datei war kürzer als das Original, daher wurde sie verworfen und das Original unverändert gelassen. Versuche es mit anderen Konvertierungseinstellungen.",
     "engineDjOpen": "Schließ Engine DJ vor dem Konvertieren: Es hat die Bibliothek geöffnet.",
@@ -244,6 +245,7 @@
     "normalizeSkipped": "Die Lautheit von „{{name}}“ konnte nicht gemessen werden: ohne Normalisierung konvertiert.",
     "keptAsIs": "„{{name}}“ bleibt, wie es ist, weil „MP3- und M4A-Dateien behalten“ mit „Neben dem Original“ aktiv ist.",
     "originalKept": "„{{name}}“ wurde konvertiert, aber das Original konnte nicht entfernt werden und liegt noch in seinem Ordner.",
+    "musicNameLeftMarked": "In Musik trägt der bisherige Eintrag von „{{name}}“ noch „[surco-replacing]“ am Ende des Namens. Entferne es von Hand in Musik.",
     "formatSkipped": "„{{name}}“ hat kein passendes Ausgabeformat für Wie die Quelle und wurde übersprungen.",
     "appleMusicFailedAfterConvert": "„{{name}}“ wurde konvertiert, aber Apple Music konnte nicht aktualisiert werden. Versuche, den Titel erneut zu Apple Music hinzuzufügen.",
     "convertFailed": "„{{name}}“ konnte nicht konvertiert werden: {{reason}}",
@@ -1037,9 +1039,9 @@
     "rowHide": "{{name}} ausblenden",
     "rowShow": "{{name}} anzeigen",
     "rowToken": "Interner Name {{token}}",
-    "rekordboxPlaylists": "Playlists",
-    "traktorPlaylists": "Playlists",
-    "enginePlaylists": "Playlists"
+    "rekordboxPlaylists": "rekordbox-Playlists",
+    "traktorPlaylists": "Traktor-Playlists",
+    "enginePlaylists": "Engine DJ-Playlists"
   },
   "declick": {
     "cueWarning": "ALAC speichert keine Traktor-Cues und kein Beatgrid: Beim Konvertieren gehen sie verloren.",

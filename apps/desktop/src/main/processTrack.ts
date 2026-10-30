@@ -1,9 +1,9 @@
 import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
-import { errorWithKey } from '../shared/errorKeys'
+import { errorWithKey, splitNameLeftMarked, withNameLeftMarked } from '../shared/errorKeys'
 import { foldAccents } from '../shared/foldAccents'
-import { editsInPlace, resolveJobFormat } from '../shared/format'
+import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../shared/format'
 import type {
   DeclickConfig,
   LibraryPlaylistChoice,
@@ -17,6 +17,7 @@ import type {
   TrackMetadata,
   TrimRange,
 } from '../shared/types'
+import { createConcurrencyLimiter } from './analysisLimiter'
 import { isAppleMusicOnly, shouldAddToAppleMusic } from './applemusic'
 import type { CoverSource, PreparedCover } from './cover'
 import {
@@ -119,6 +120,13 @@ export interface ProcessTrackDeps {
   mkdir: (path: string, opts: { recursive: boolean }) => Promise<unknown>
   mkdtemp: (prefix: string) => Promise<string>
   rm: (path: string, opts: { recursive: boolean; force: boolean }) => Promise<void>
+  // Removes an empty folder; rejects when it still holds anything.
+  rmdir: (path: string) => Promise<void>
+  // The folder Music copies imports into ("media-folder-url"), undefined when unreadable.
+  appleMusicMediaFolder?: () => Promise<string | undefined>
+  // Whether any library entry plays this file, looked up by the names it may carry.
+  // Rejects when Music could not be asked.
+  appleMusicHoldsFile?: (path: string, titles: string[]) => Promise<boolean>
   // Shown only on a real output collision; returns the user's choice. Encapsulates the
   // Electron message box so the branches below stay unit-testable.
   // reservedOnly: nothing is on disk under that name yet, only another job's claim on it.
@@ -135,6 +143,8 @@ export interface ProcessTrackDeps {
   // Where a fresh library entry's file lives, and the rollback for an add that must
   // not stand — both only exercised by the "Apple Music only" copy verification below.
   appleMusicEntryLocation: (persistentId: string) => Promise<string>
+  // The same file read with the "artist - name" Music shows for the entry right now.
+  appleMusicEntry: (persistentId: string) => Promise<{ path: string; label: string }>
   deleteAppleMusic: (persistentId: string, expectedLabel: string) => Promise<unknown>
   // Copies the superseded entry's normal playlists, play count, rating and favorite onto
   // the one that replaces it (see replaceAppleMusicCopy).
@@ -143,10 +153,18 @@ export interface ProcessTrackDeps {
     toPid: string,
     expectedLabel: string,
   ) => Promise<'carried' | 'missing' | 'mismatch'>
+  // Renames the superseded entry for the length of the add (marked) and back, each only
+  // while the entry still carries the expected label (see replaceAppleMusicCopy).
+  markAppleMusicReplacing: (
+    persistentId: string,
+    expectedLabel: string,
+    marked: boolean,
+  ) => Promise<'set' | 'missing' | 'mismatch'>
   // Corrects the recorded repoint once Music has copied the file into its Media folder.
   // The conversion only knows the temp path it wrote, which no longer exists when the
   // flush runs — the collection would be told to follow a file that is already gone.
-  redirectRepoint?: (currentTo: string, landedAt: string) => void
+  // False when Traktor's entry stays on the source: Music landed the file in another folder.
+  redirectRepoint?: (currentTo: string, landedAt: string) => boolean
 }
 
 // Imports the converted file and retires the copy it supersedes, returning the new
@@ -168,61 +186,145 @@ export interface ProcessTrackDeps {
 // Deleting removes the library row only, never the file: the superseded MP3 stays on disk
 // for the user's own "trash original" to decide. A delete that fails after the add leaves
 // a duplicate, not a failed conversion: the file is already converted and in Music.
+//
+// Music answers an add whose name, artist and album match an entry it already has with that
+// entry, importing nothing (measured 30/10, even across formats): carrying onto it and
+// deleting it took the track out of Music. So the old entry is renamed for the length of the
+// add and restored right after, before the label-checked carry and delete; an add that still
+// answers with the old entry changes nothing and fails the step.
 async function replaceAppleMusicCopy(
   job: ProcessJob,
   target: string,
   coverPath: string | undefined,
   deps: ProcessTrackDeps,
-  tmpDir: string | undefined,
+  // Set in "Apple Music only": the entry is checked before anything else (verifyMediaCopy).
+  handedOver: { tmpDir?: string } | undefined,
   old: { persistentId?: string; label: string } = {
     persistentId: job.musicPersistentId,
     label: job.replacesLabel ?? metaLabel(job),
   },
-): Promise<{ added: string; oldCopyKept?: 'mismatch' | 'error' | 'carry' }> {
-  const added = await deps.addToAppleMusic(target, job.meta, coverPath)
-  if (tmpDir)
-    await verifyMediaCopy(
-      added,
-      tmpDir,
-      target,
-      job,
-      deps,
-      old.persistentId ? 'appleMusicNoMediaCopyKept' : 'appleMusicNoMediaCopy',
-    )
-  if (!old.persistentId) return { added }
+): Promise<ReplacedCopy> {
+  return replaceLock.run(() => replaceUnlocked(job, target, coverPath, deps, handedOver, old))
+}
+
+interface ReplacedCopy {
+  added: string
+  oldCopyKept?: 'mismatch' | 'error' | 'carry'
+  landed?: MediaCopy
+  // The old entry's name still ends with the replacing mark.
+  nameLeftMarked?: true
+}
+
+// One replacement at a time across the jobs of a batch: Music only serializes each script,
+// and another job's add landing between this one's rename and restore is the window where
+// Music hands back a copy other than the one being replaced.
+const replaceLock = createConcurrencyLimiter(1)
+
+async function replaceUnlocked(
+  job: ProcessJob,
+  target: string,
+  coverPath: string | undefined,
+  deps: ProcessTrackDeps,
+  handedOver: { tmpDir?: string } | undefined,
+  old: { persistentId?: string; label: string },
+): Promise<ReplacedCopy> {
+  // Stays true when the rename throws: it may have landed before the script failed, and the
+  // restore only touches an entry that still carries the mark.
+  let marked = false
+  let added: string
+  let landed: MediaCopy | undefined
+  try {
+    if (old.persistentId) {
+      marked = true
+      marked = (await deps.markAppleMusicReplacing(old.persistentId, old.label, true)) === 'set'
+    }
+    added = await deps.addToAppleMusic(target, job.meta, coverPath)
+    if (old.persistentId && added === old.persistentId)
+      throw errorWithKey('appleMusicAddReturnedOld', added)
+    landed = handedOver
+      ? await verifyMediaCopy(
+          added,
+          handedOver.tmpDir,
+          target,
+          job,
+          deps,
+          old.persistentId ? 'appleMusicNoMediaCopyKept' : 'appleMusicNoMediaCopy',
+        )
+      : undefined
+  } catch (e) {
+    // A restore that fails leaves the mark in the name, never a lost entry, but only the DJ
+    // can take it off, so the failure carries that along with its own cause.
+    if (marked && !(await restoreName(old, deps))) throw withNameLeftMarked(e)
+    throw e
+  }
+  const nameLeftMarked = marked && !(await restoreName(old, deps))
+  const retired = await retireOldEntry(old, added, landed, deps)
+  return nameLeftMarked ? { ...retired, nameLeftMarked: true } : retired
+}
+
+// False when Music could not be asked to take the mark off the old entry's name.
+function restoreName(
+  old: { persistentId?: string; label: string },
+  deps: ProcessTrackDeps,
+): Promise<boolean> {
+  if (!old.persistentId) return Promise.resolve(true)
+  return deps.markAppleMusicReplacing(old.persistentId, old.label, false).then(
+    () => true,
+    (e) => {
+      log.warn('process:track could not restore the old Music entry name', e)
+      return false
+    },
+  )
+}
+
+async function retireOldEntry(
+  old: { persistentId?: string; label: string },
+  added: string,
+  landed: MediaCopy | undefined,
+  deps: ProcessTrackDeps,
+): Promise<ReplacedCopy> {
+  if (!old.persistentId) return { added, landed }
   try {
     const carried = await deps.carryAppleMusicHistory(old.persistentId, added, old.label)
-    if (carried === 'mismatch') return { added, oldCopyKept: 'mismatch' }
+    if (carried === 'mismatch') return { added, oldCopyKept: 'mismatch', landed }
   } catch (e) {
     log.warn('process:track kept the old Music entry it could not carry over', e)
-    return { added, oldCopyKept: 'carry' }
+    return { added, oldCopyKept: 'carry', landed }
   }
   try {
     await deps.deleteAppleMusic(old.persistentId, old.label)
-    return { added }
+    return { added, landed }
   } catch (e) {
     return {
       added,
       oldCopyKept: String(e).includes('applemusic-delete-mismatch') ? 'mismatch' : 'error',
+      landed,
     }
   }
+}
+
+// Where Music copied the file, and whether Traktor's entry could follow it there.
+interface MediaCopy {
+  path: string
+  traktorFollowed: boolean
 }
 
 // "Apple Music only" removes the temp conversion in the finally below — safe only when
 // Music COPIED the file into its Media folder. With "Copy files to the Media folder when
 // adding" off, the fresh entry still references the temp path, and the cleanup would leave
 // a library row that plays nothing. Verify where the entry points; a temp reference rolls
-// the add back and fails the job out loud.
+// the add back and fails the job out loud. Written straight into the Media folder there is
+// no temp to check, only where the entry points for the collections to follow.
 async function verifyMediaCopy(
   persistentId: string,
-  tmpDir: string,
+  tmpDir: string | undefined,
   target: string,
   job: ProcessJob,
   deps: ProcessTrackDeps,
   errorKey: 'appleMusicNoMediaCopy' | 'appleMusicNoMediaCopyKept',
-): Promise<void> {
+): Promise<MediaCopy> {
   const entryPath = await deps.appleMusicEntryLocation(persistentId)
-  if (entryPath.startsWith(tmpDir)) {
+  if (tmpDir && entryPath.startsWith(tmpDir)) {
     await deps.deleteAppleMusic(persistentId, metaLabel(job))
     throw errorWithKey(errorKey, entryPath)
   }
@@ -230,7 +332,58 @@ async function verifyMediaCopy(
   // The repoint recorded during the conversion still names the temp path, which the
   // cleanup below deletes — the flush would then refuse it as output-missing and
   // leave the collection on the old file, which is what the user hit.
-  if (entryPath) deps.redirectRepoint?.(target, entryPath)
+  const traktorFollowed = entryPath ? deps.redirectRepoint?.(target, entryPath) !== false : true
+  return { path: entryPath, traktorFollowed }
+}
+
+// Music files a copy under <Media>/Music/<album artist, else artist>/<album>/. A slash or
+// colon in a tag would open another folder (Finder shows "/" as ":"), so both become "_"
+// the way Music writes them, and the rest follows the output name's own rules. Dots go off
+// both ends: an SMB share renames a folder ending in one, and one starting with it is hidden.
+function musicFolder(name: string | undefined, fallback: string): string {
+  const folder = sanitizeOutputName((name ?? '').replace(/[/:]/g, '_'))
+    .replace(/^[.\s]+|[.\s]+$/g, '')
+    .normalize('NFD')
+  return folder || fallback
+}
+
+// A conversion written into the Media folder that Music never took: the file goes, then each
+// folder made for it while it is empty (another job of the run may have filed a track there).
+// An add that failed may still have imported it (the 60 s wait for the tags, a refused field,
+// an Apple Event timeout), so after one the file stays when an entry plays it, or when Music
+// cannot say: deleting it would leave that entry playing nothing. Its name is the job's title,
+// or the file name when Music read no tags (WAV).
+async function removeUnheldMediaCopy(
+  file: string,
+  madeFrom: string | undefined,
+  addTried: boolean,
+  job: ProcessJob,
+  deps: ProcessTrackDeps,
+): Promise<void> {
+  if (addTried) {
+    const titles = [job.meta.title, basename(file, extname(file))].filter(Boolean)
+    const held = await (deps.appleMusicHoldsFile?.(file, titles) ?? Promise.resolve(true)).catch(
+      () => true,
+    )
+    if (held) {
+      log.warn('process:track kept the Media folder copy a Music entry may play', file)
+      return
+    }
+  }
+  try {
+    await deps.rm(file, { recursive: false, force: true })
+  } catch (e) {
+    log.warn('process:track could not remove the copy Music never took', file, e)
+    return
+  }
+  if (!madeFrom) return
+  for (let dir = dirname(file); dir.startsWith(madeFrom); dir = dirname(dir)) {
+    try {
+      await deps.rmdir(dir)
+    } catch {
+      return
+    }
+  }
 }
 
 function metaLabel(job: ProcessJob): string {
@@ -252,6 +405,12 @@ export async function runProcessTrack(
   // Set only in "Apple Music only" mode (see below); cleaned up in finally so a failed
   // Apple Music add never leaves the temp conversion behind.
   let tmpDir: string | undefined
+  // "Apple Music only" written straight into Music's Media folder: removed in finally,
+  // along with the folders made for it, unless Music now holds it.
+  let mediaTarget: string | undefined
+  let mediaDirsFrom: string | undefined
+  let mediaHeld = false
+  let mediaAddTried = false
   // The path reserved via deps.reservePath, if any — released in finally regardless
   // of how the job ends.
   let reserved: string | undefined
@@ -315,8 +474,9 @@ export async function runProcessTrack(
     let inPlace = resolved.inPlace
     // "Apple Music only": the user wants the track in Apple Music and no copy left in
     // the output folder. Apple Music still imports a real path, so write the conversion
-    // to a private temp dir (never the output folder — it can't collide with or clobber
-    // anything there), hand it over, then remove it below.
+    // where Music files its own copies, or else to a private temp dir (never the output
+    // folder — it can't collide with or clobber anything there), hand it over, then remove
+    // the temp below.
     const musicOnly = isAppleMusicOnly(
       addToAppleMusic,
       keepOutputCopy,
@@ -353,11 +513,32 @@ export async function runProcessTrack(
     let keepOverwritten = false
     const outputIsInput =
       !musicOnly && !besideOriginal && inPlace && (await deps.isSameFile(job.inputPath, outputPath))
-    // musicOnly writes to a private tmpDir unique per job (via mkdtemp below), so it
-    // can't collide with another job and needs no reservation.
+    // Music reads no tags from a WAV at import, so its own copy of a temp file landed in
+    // "Unknown Artist/Unknown Album" and tagging the entry never moved it (measured 30/10).
+    // A file already inside the Media folder is added where it is, so the conversion goes
+    // straight to Music's layout. Only into a folder that is there (an unmounted NAS would
+    // grow a stray /Volumes folder) and onto a name nobody holds; otherwise the temp dir,
+    // unique per job (via mkdtemp), which can't collide with another job and needs no
+    // reservation.
     if (musicOnly) {
-      tmpDir = await deps.mkdtemp(join(tmpdir(), 'surco-'))
-      target = join(tmpDir, basename(outputPath))
+      const media = await deps.appleMusicMediaFolder?.().catch(() => undefined)
+      const filed =
+        media && deps.existsSync(media)
+          ? join(
+              media,
+              'Music',
+              musicFolder(job.meta.albumArtist?.trim() || job.meta.artist, 'Unknown Artist'),
+              musicFolder(job.meta.album, 'Unknown Album'),
+              basename(outputPath),
+            )
+          : undefined
+      if (filed && !deps.existsSync(filed) && !deps.isPathReserved(filed)) {
+        mediaTarget = filed
+        target = filed
+      } else {
+        tmpDir = await deps.mkdtemp(join(tmpdir(), 'surco-'))
+        target = join(tmpDir, basename(outputPath))
+      }
     } else if (besideOriginal) {
       // The mode's whole contract is "never touch an existing file", so a collision is
       // resolved silently with the same "(n)" suffix keep-both uses — prompting would
@@ -411,14 +592,15 @@ export async function runProcessTrack(
     // Claimed for the rest of the job — including the convertAudio write, which is
     // exactly the window existsSync can't see yet (temp file + rename). Released in
     // finally so a thrown error still frees it for the next job or retry.
-    if (!musicOnly) {
+    if (!musicOnly || mediaTarget) {
       deps.reservePath(target)
       reserved = target
     }
 
     // Create the target's folder (and any subfolders the file-name template asks for)
     // before writing; recursive so it's a no-op when the directory already exists.
-    await deps.mkdir(dirname(target), { recursive: true })
+    const madeFrom = await deps.mkdir(dirname(target), { recursive: true })
+    if (mediaTarget && typeof madeFrom === 'string') mediaDirsFrom = madeFrom
     let normalizeSkipped: boolean
     let declickedSamples: number | undefined
     let tmpPath: string | undefined
@@ -476,11 +658,21 @@ export async function runProcessTrack(
     // on the unlink that ends a copy into the trash) must not fail the job: the user
     // keeps both files and is told so.
     let originalKept: true | undefined
-    if (inPlace)
-      await deps.removeRenamedOriginal(job.inputPath, target).catch((e) => {
+    const retireOriginal = (): Promise<void> =>
+      deps.removeRenamedOriginal(job.inputPath, target).catch((e) => {
         log.warn('process:track kept the original it could not retire', job.inputPath, e)
         originalKept = true
       })
+    // A Music entry that plays the original may be replaced below, and until then the original
+    // is the file it plays: retired first, a replacement that failed or kept the old entry
+    // left that entry playing a file that was gone. So it waits for the Music step, whether
+    // the entry was found by its file or is the one the track already knew.
+    const retireAfterMusic =
+      inPlace &&
+      !outputIsInput &&
+      shouldAddToAppleMusic(addToAppleMusic, deps.platform, format) &&
+      (!!existingMusicEntry || (!!job.musicPersistentId && !job.replacesPath))
+    if (inPlace && !retireAfterMusic) await retireOriginal()
     // The file has landed and the original may be gone: a stats write that fails (a locked
     // or synced settings file) must not turn a finished conversion into a failed one.
     try {
@@ -496,7 +688,29 @@ export async function runProcessTrack(
     // file get imported, which also re-establishes the persistent ID.
     let musicPersistentId: string | undefined
     let oldMusicCopyKept: ProcessResult['oldMusicCopyKept']
+    let supersededPath: string | undefined
+    let musicLandedPath: string | undefined
     let appleMusicFailed: true | undefined
+    let musicNameLeftMarked: true | undefined
+    // The source a replacement superseded in place: offered only if retiring it fails.
+    let supersededIfKept: string | undefined
+    // Until Music says where the track's own entry points, it may be playing the original.
+    let entryMayPlaySource = retireAfterMusic
+    // The file in the Media folder is Music's once an add answers with an entry of its own;
+    // one that answers with the entry being replaced imported nothing (see replaceAppleMusicCopy).
+    const musicDeps: ProcessTrackDeps = mediaTarget
+      ? {
+          ...deps,
+          addToAppleMusic: async (file, meta, cover) => {
+            mediaAddTried = true
+            const pid = await deps.addToAppleMusic(file, meta, cover)
+            if (pid !== job.musicPersistentId && pid !== existingMusicEntry?.persistentId)
+              mediaHeld = true
+            return pid
+          },
+        }
+      : deps
+    const handedOver = musicOnly ? { tmpDir } : undefined
     if (shouldAddToAppleMusic(addToAppleMusic, deps.platform, format)) {
       stage('appleMusic')
       try {
@@ -510,9 +724,16 @@ export async function runProcessTrack(
         // replaceAppleMusicCopy); its position inside each playlist does not.
         let verified = false
         if (job.replacesPath) {
-          const replaced = await replaceAppleMusicCopy(job, target, coverPath, deps, tmpDir)
+          const replaced = await replaceAppleMusicCopy(
+            job,
+            target,
+            coverPath,
+            musicDeps,
+            handedOver,
+          )
           musicPersistentId = replaced.added
           oldMusicCopyKept = replaced.oldCopyKept
+          musicNameLeftMarked = replaced.nameLeftMarked
           verified = true
         } else if (existingMusicEntry && inPlace && outputIsInput) {
           musicPersistentId =
@@ -523,20 +744,59 @@ export async function runProcessTrack(
             job,
             target,
             coverPath,
-            deps,
-            tmpDir,
+            musicDeps,
+            handedOver,
             existingMusicEntry,
           )
           musicPersistentId = replaced.added
           oldMusicCopyKept = replaced.oldCopyKept
+          musicNameLeftMarked = replaced.nameLeftMarked
           verified = true
         } else {
-          musicPersistentId = job.musicPersistentId
-            ? ((await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)) ??
-              (await deps.addToAppleMusic(target, job.meta, coverPath)))
-            : await deps.addToAppleMusic(target, job.meta, coverPath)
+          // An entry in another format than the output can't be retagged into it: Music
+          // keeps playing the old file. Compared by format, not path, since the file
+          // written (a temp, or the output Music copies from) is never the entry's own.
+          // Retired under the name Music shows: the job's tags may be edited or matched.
+          // Only an entry that is gone falls back to update ?? add; a read that fails is a
+          // failed Apple Music step, never a silent re-tag of the old file.
+          const entry = job.musicPersistentId
+            ? await deps.appleMusicEntry(job.musicPersistentId)
+            : undefined
+          entryMayPlaySource =
+            retireAfterMusic && entry?.path.normalize('NFC') === job.inputPath.normalize('NFC')
+          if (entry?.path && !formatMatchesInput(format, entry.path)) {
+            const replaced = await replaceAppleMusicCopy(
+              job,
+              target,
+              coverPath,
+              musicDeps,
+              handedOver,
+              {
+                persistentId: job.musicPersistentId,
+                label: entry.label,
+              },
+            )
+            musicPersistentId = replaced.added
+            oldMusicCopyKept = replaced.oldCopyKept
+            musicNameLeftMarked = replaced.nameLeftMarked
+            const isSource = entry.path.normalize('NFC') === job.inputPath.normalize('NFC')
+            // The row was the file Music played, so it follows the entry to its new file.
+            if (isSource && replaced.landed?.path) musicLandedPath = replaced.landed.path
+            // Not offered when the in-place rename retires it below, or when Traktor's entry
+            // is still on it.
+            if (!replaced.oldCopyKept && replaced.landed?.traktorFollowed !== false) {
+              if (isSource && inPlace) supersededIfKept = entry.path
+              else supersededPath = entry.path
+            }
+            verified = true
+          } else {
+            musicPersistentId = job.musicPersistentId
+              ? ((await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)) ??
+                (await musicDeps.addToAppleMusic(target, job.meta, coverPath)))
+              : await musicDeps.addToAppleMusic(target, job.meta, coverPath)
+          }
         }
-        if (tmpDir && musicPersistentId && !verified)
+        if (musicOnly && musicPersistentId && !verified)
           await verifyMediaCopy(
             musicPersistentId,
             tmpDir,
@@ -548,10 +808,18 @@ export async function runProcessTrack(
       } catch (e) {
         if (musicOnly) throw e
         log.warn('process:track Apple Music step failed after the file was written', target, e)
+        if (splitNameLeftMarked(e instanceof Error ? e.message : '').left)
+          musicNameLeftMarked = true
         musicPersistentId = undefined
         appleMusicFailed = true
       }
     }
+
+    if (retireAfterMusic) {
+      if (entryMayPlaySource && (appleMusicFailed || oldMusicCopyKept)) originalKept = true
+      else await retireOriginal()
+    }
+    if (supersededIfKept && originalKept) supersededPath = supersededIfKept
 
     // Adding to Engine DJ points a library row at the file just written; a failed
     // registration fails the job — never a silent "converted but not in the library".
@@ -599,6 +867,8 @@ export async function runProcessTrack(
     // shell guard rejects any path it was never handed, and this one lives in the user's
     // library folder, which a convert has no other reason to authorise.
     if (job.replacesPath) deps.allowMedia(job.replacesPath)
+    if (supersededPath) deps.allowMedia(supersededPath)
+    if (musicLandedPath) deps.allowMedia(musicLandedPath)
     // The add succeeded (a failure would have thrown above), and the temp dir is
     // cleaned up in finally — tell the renderer there is no file to reveal, only an
     // Apple Music entry.
@@ -611,7 +881,10 @@ export async function runProcessTrack(
         normalizeSkipped,
         declickedSamples,
         oldMusicCopyKept,
+        supersededPath,
+        musicLandedPath,
         originalKept,
+        musicNameLeftMarked,
       }
 
     // The conversion wrote a real file the renderer may play next — directly, or
@@ -628,8 +901,10 @@ export async function runProcessTrack(
       ...(engineDjQueued ? { engineDjQueued: true as const } : {}),
       outputIdentity,
       oldMusicCopyKept,
+      supersededPath,
       appleMusicFailed,
       originalKept,
+      musicNameLeftMarked,
     }
   } catch (e) {
     // The toast is all the user sees and it is gone once dismissed; the log is what a
@@ -640,6 +915,8 @@ export async function runProcessTrack(
     deps.endJob(job.id)
     if (prepared) await prepared.cleanup()
     if (tmpDir) await deps.rm(tmpDir, { recursive: true, force: true })
+    if (mediaTarget && !mediaHeld)
+      await removeUnheldMediaCopy(mediaTarget, mediaDirsFrom, mediaAddTried, job, deps)
     if (reserved) deps.releasePath(reserved)
   }
 }

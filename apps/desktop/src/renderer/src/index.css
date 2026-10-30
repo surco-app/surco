@@ -679,7 +679,7 @@ button:hover > .process-fill {
 }
 
 .animate-top-progress {
-  animation: top-progress 1.1s ease-in-out infinite;
+  animation: top-progress 1.1s linear infinite;
 }
 
 /* The discreet countdown bar under an auto-dismissing toast: drains left-to-right over the

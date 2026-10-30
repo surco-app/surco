@@ -59,7 +59,7 @@ export default function HeroApp({ video }: { video?: boolean }) {
               loop
               playsInline
               preload="none"
-              className={`absolute inset-0 size-full object-cover transition-opacity duration-700 ${
+              className={`absolute inset-0 size-full object-cover transition-opacity duration-300 ease-out ${
                 playing ? 'opacity-100' : 'opacity-0'
               }`}
             >

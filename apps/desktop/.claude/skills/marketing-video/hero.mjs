@@ -126,6 +126,7 @@ async function record(lang) {
     .first()
     .click()
   await page.waitForTimeout(1800)
+  const resolved = frames.at(-1).t
   await page.click('[data-testid="process-btn"]')
   await page.locator('[data-testid="export-success"]').waitFor({ timeout: 120000 })
   await page.waitForTimeout(1600)
@@ -134,17 +135,22 @@ async function record(lang) {
   app.process().kill('SIGKILL')
 
   // A screencast only emits when something repaints, so the frames are resampled onto a
-  // fixed 25 fps grid (the last frame shown at each tick) before encoding.
+  // fixed 25 fps grid (the last frame shown at each tick) before encoding. The loop opens
+  // on the resolved track, so the still under it shows the result, not an empty editor.
   const seq = join(work, 'seq')
   mkdirSync(seq)
   const t0 = frames[0].t
   const total = frames.at(-1).t - t0
   let k = 0
+  const ticks = []
   for (let i = 0; i * (1 / FPS) <= total; i++) {
     const t = t0 + i / FPS
     while (k + 1 < frames.length && frames[k + 1].t <= t) k++
-    symlinkSync(frames[k].file, join(seq, `${String(i).padStart(5, '0')}.jpg`))
+    ticks.push(frames[k].file)
   }
+  const start = Math.round((resolved - t0) * FPS)
+  const loop = [...ticks.slice(start), ...ticks.slice(0, start)]
+  loop.forEach((file, i) => symlinkSync(file, join(seq, `${String(i).padStart(5, '0')}.jpg`)))
   const scale = `scale=1360:-2:flags=lanczos`
   const input = ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-i', join(seq, '%05d.jpg')]
   execFileSync(FFMPEG, [
@@ -156,7 +162,7 @@ async function record(lang) {
     '-movflags', '+faststart', '-an', join(OUT, `hero-app-${lang}.mp4`),
   ])
   execFileSync('cwebp', [
-    '-quiet', '-q', '82', '-resize', '2000', '0', frames[0].file, '-o', join(OUT, `hero-app-${lang}.webp`),
+    '-quiet', '-q', '82', '-resize', '2000', '0', loop[0], '-o', join(OUT, `hero-app-${lang}.webp`),
   ])
   rmSync(work, { recursive: true, force: true })
   console.log(`hero ${lang}: ${total.toFixed(1)} s`)

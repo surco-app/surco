@@ -1422,7 +1422,7 @@ describe('TrackList swipe to remove', () => {
       expect(row.className).toMatch(/transition-\[[^\]]*transform/)
     expect(screen.getAllByTestId('track-row')[1].className).not.toMatch(/background-color/)
     expect(screen.getByRole('button', { name: i18n.t('trackList.remove') }).className).toMatch(
-      /transition-\[width\]/,
+      /transition-\[width[,\]]/,
     )
   })
 

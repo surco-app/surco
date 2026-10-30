@@ -1458,6 +1458,7 @@ export default function App(): React.JSX.Element {
     onFormatSkipped: (name) => setNotice(tr('notices.formatSkipped', { name })),
     onKeptAsIs: (name) => setNotice(tr('notices.keptAsIs', { name })),
     onOriginalKept: (name) => setNotice(tr('notices.originalKept', { name })),
+    onMusicNameLeftMarked: (name) => setNotice(tr('notices.musicNameLeftMarked', { name })),
     rereadTrackMeta,
     completeTrackMeta,
     // Keyed so a bulk run failing on every track (e.g. Engine DJ open) raises one

@@ -66,6 +66,21 @@ function lameMp3(path: string): void {
   writeFileSync(path, bytes)
 }
 
+function pcm(path: string, codec: string): void {
+  execFileSync(FF, [
+    '-y',
+    '-loglevel',
+    'error',
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=440:duration=2:sample_rate=44100',
+    '-c:a',
+    codec,
+    path,
+  ])
+}
+
 const recorded = () => vi.mocked(recordRekordboxRepoint).mock.calls.at(-1)?.[0]
 
 beforeAll(() => {
@@ -127,5 +142,82 @@ describe('what a conversion tells rekordbox about its cues', () => {
     await convertAudio(src, join(dir, 'copied-out.mp3'), 'mp3', meta)
     expect(recorded()).toBeDefined()
     expect(recorded()?.audio).toBeUndefined()
+  })
+
+  // Measured on a real track: AIFF→WAV decodes to the same samples, so the grid a DJ fixed by
+  // hand and the cues still sit on the right sound and rekordbox must not reanalyse it.
+  it.each([
+    ['aiff', 'wav', 'pcm_s16be'],
+    ['wav', 'aiff', 'pcm_s16le'],
+    ['wav', 'flac', 'pcm_s16le'],
+  ])('leaves the analysis and cues alone converting %s to %s', async (from, to, codec) => {
+    const src = join(dir, `same-${from}-to-${to}.${from}`)
+    pcm(src, codec)
+    const out = join(dir, `same-${from}-to-${to}.${to}`)
+    await convertAudio(src, out, to as 'wav' | 'aiff' | 'flac', meta)
+    expect(recorded()).toMatchObject({ from: src, to: out })
+    expect(recorded()?.audio).toBeUndefined()
+  })
+
+  // rekordbox starts every .m4a's timeline 2112 samples in (rekordboxTimeline.ts), ALAC as
+  // much as AAC, so the same samples moved into or out of one still sit 48 ms elsewhere.
+  it.each([
+    ['wav', 'alac', 'pcm_s16le', 'm4a', 48],
+    ['m4a', 'wav', 'alac', 'wav', -48],
+  ])(
+    'moves the cues converting %s to %s though the samples are kept',
+    async (from, to, codec, ext, ms) => {
+      const src = join(dir, `alac-${from}-to-${to}.${from}`)
+      pcm(src, codec)
+      await convertAudio(
+        src,
+        join(dir, `alac-${from}-to-${to}-out.${ext}`),
+        to as 'wav' | 'alac',
+        meta,
+      )
+      expect(recorded()?.audio).toEqual({ cueShiftMs: ms })
+    },
+  )
+
+  // Trimming or normalizing changes the samples between two lossless formats, so rekordbox
+  // has to reanalyse and the cues have to follow the trim.
+  it('still reports the audio when a lossless conversion is trimmed', async () => {
+    const src = join(dir, 'trim-wav-to-flac.wav')
+    pcm(src, 'pcm_s16le')
+    await convertAudio(
+      src,
+      join(dir, 'trim-wav-to-flac.flac'),
+      'flac',
+      meta,
+      undefined, // coverPath
+      undefined, // normalize
+      undefined, // removeCover
+      undefined, // quality
+      undefined, // onChild
+      undefined, // onTmp
+      undefined, // finderCovers
+      undefined, // declick
+      { startSec: 0.5 },
+    )
+    expect(recorded()?.audio).toEqual({ cueShiftMs: -500 })
+  })
+
+  it('still reports the audio when a lossless conversion is normalized', async () => {
+    const src = join(dir, 'normalized-wav-to-aiff.wav')
+    pcm(src, 'pcm_s16le')
+    await convertAudio(src, join(dir, 'normalized-wav-to-aiff.aiff'), 'aiff', meta, undefined, {
+      mode: 'peak',
+      peakDb: -1,
+      targetLufs: -14,
+      truePeakDb: -1,
+    })
+    expect(recorded()?.audio).toEqual({ cueShiftMs: 0 })
+  })
+
+  it('still reports the audio when a lossy file is converted to WAV', async () => {
+    const src = join(dir, 'lossy-to-wav.mp3')
+    copyFileSync(lame, src)
+    await convertAudio(src, join(dir, 'lossy-to-wav.wav'), 'wav', meta)
+    expect(recorded()?.audio).toBeDefined()
   })
 })

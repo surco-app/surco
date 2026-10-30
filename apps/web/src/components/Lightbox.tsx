@@ -84,7 +84,7 @@ export default function Lightbox({
           <img
             src={src}
             alt={alt}
-            className={`max-h-[85vh] max-w-full rounded-xl border border-line transition-[scale] duration-200 ${
+            className={`max-h-[85svh] max-w-full rounded-xl border border-line transition-[scale] duration-200 ease-out ${
               open ? 'scale-100' : 'scale-[0.97]'
             }`}
           />

@@ -4,6 +4,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
+import { NAME_LEFT_MARKED } from '../../../shared/errorKeys'
 import type { Settings, TrackMetadata } from '../../../shared/types'
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
@@ -295,6 +296,17 @@ describe('useTrackProcessing', () => {
     // The old path no longer exists; the player follows the row to the new one itself.
     it('does not hand back a path an in-place export moved away from', async () => {
       const reclaimFile = await run(async () => ({ outputPath: '/m/a.aiff', inPlace: true }))
+      expect(reclaimFile).not.toHaveBeenCalled()
+    })
+
+    it('does not hand back a source whose Music entry moved to the copy Music landed', async () => {
+      const reclaimFile = await run(async () => ({
+        outputPath: '',
+        inPlace: false,
+        addedToMusicOnly: true,
+        supersededPath: '/m/a.wav',
+        musicLandedPath: '/Music/Media/a.aiff',
+      }))
       expect(reclaimFile).not.toHaveBeenCalled()
     })
   })
@@ -1141,6 +1153,62 @@ describe('useTrackProcessing', () => {
     })
     expect(outcome).toBe('converted')
     expect(onOriginalKept).toHaveBeenCalledWith('a.wav')
+  })
+
+  // The old Music entry kept " [surco-replacing]" in its name: only the DJ can take it off.
+  it('tells the user when an old Music entry kept the replacing mark in its name', async () => {
+    setApi({
+      processTrack: vi.fn<Api['processTrack']>().mockResolvedValue({
+        outputPath: '/m/Artist - Title.aiff',
+        inPlace: false,
+        musicNameLeftMarked: true,
+      }),
+    })
+    const onMusicNameLeftMarked = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: null,
+          updateTrack: vi.fn(),
+          onMusicNameLeftMarked,
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(onMusicNameLeftMarked).toHaveBeenCalledWith('a.wav')
+  })
+
+  // A failed "Apple Music only" job carries the leftover mark in its error: the DJ reads the
+  // real cause on the row and is told about the name as well.
+  it('tells the user about a marked name a failed job left, showing the real cause', async () => {
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockRejectedValue(new Error(`Music got an error: -2753${NAME_LEFT_MARKED}`)),
+    })
+    const onMusicNameLeftMarked = vi.fn()
+    const updateTrack = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: null,
+          updateTrack,
+          onMusicNameLeftMarked,
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(onMusicNameLeftMarked).toHaveBeenCalledWith('a.wav')
+    expect(updateTrack).toHaveBeenCalledWith(
+      'a',
+      expect.objectContaining({ status: 'error', error: 'Music got an error: -2753' }),
+    )
   })
 
   it('follows a renamed file and counts it converted when only the Apple Music step failed', async () => {
@@ -2297,6 +2365,37 @@ describe('useTrackProcessing', () => {
       })
 
       expect(refreshTrackFromDisk).toHaveBeenCalledWith('a', '/m/a.wav')
+    })
+
+    // "Apple Music only" from the Music tab: the row moves to the copy Music landed, a file
+    // with other tags and art than the one it described.
+    it('refreshes the row from the copy Music landed when it moved there', async () => {
+      setApi({
+        processTrack: vi.fn<Api['processTrack']>().mockResolvedValue({
+          outputPath: '',
+          inPlace: false,
+          addedToMusicOnly: true,
+          supersededPath: '/m/a.wav',
+          musicLandedPath: '/Music/Media/a.aiff',
+        }),
+      })
+      const refreshTrackFromDisk = vi.fn().mockResolvedValue(undefined)
+      const { result } = renderHook(
+        () =>
+          useTrackProcessing({
+            tracks: [track({ id: 'a' })],
+            settings: null,
+            updateTrack: vi.fn(),
+            refreshTrackFromDisk,
+          }),
+        { wrapper: withClient() },
+      )
+
+      await act(async () => {
+        await result.current.processOne('a')
+      })
+
+      expect(refreshTrackFromDisk).toHaveBeenCalledWith('a', '/Music/Media/a.aiff')
     })
 
     // Exporting elsewhere leaves the original untouched, so refreshing its row would make

@@ -21,13 +21,15 @@ export default function Footer() {
         <div>
           <div className="flex items-center gap-2.5">
             <img src="/logo.svg" alt="Surco" width={48} height={48} className="h-9 w-9" />
-            <span className="text-lg font-semibold tracking-tight">Surco</span>
+            <span className="text-xl font-semibold tracking-tight">Surco</span>
           </div>
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">{t('footer.tagline')}</p>
-          <p className="mt-5 inline-flex rounded-full border border-line bg-surface/40 px-3 py-1 text-xs font-medium text-muted">
+          <p className="mt-5 inline-flex rounded-full border border-line bg-surface/40 px-3 py-1 text-[0.8125rem] font-medium text-muted">
             {t('available')}
           </p>
-          <p className="mt-4 max-w-xs text-xs leading-relaxed text-faint">{t('footerNote')}</p>
+          <p className="mt-4 max-w-xs text-[0.8125rem] leading-relaxed text-faint">
+            {t('footerNote')}
+          </p>
         </div>
 
         <div>
@@ -129,7 +131,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-line/60">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 sm:px-10 py-6 text-xs text-faint sm:flex-row">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 sm:px-10 py-6 text-[0.8125rem] text-faint sm:flex-row">
           <span>{t('footer.copyright')}</span>
           <a
             href={privacyHref}

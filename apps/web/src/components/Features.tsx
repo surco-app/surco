@@ -83,11 +83,10 @@ export default function Features() {
                   <p className="mt-1 text-sm text-faint">{g.replaces}</p>
                   <ul className="mt-4 space-y-3">
                     {g.items.map((it) => (
-                      <li key={it.t} className="flex gap-2.5 text-sm leading-relaxed">
+                      <li key={it.t} className="flex gap-2.5 leading-relaxed">
                         <span className="text-cyan">·</span>
                         <span>
-                          <span className="font-medium text-fg">{it.t}</span>{' '}
-                          <span className="text-muted">{it.d}</span>
+                          <span className="font-medium text-fg">{it.t}</span> <span>{it.d}</span>
                         </span>
                       </li>
                     ))}

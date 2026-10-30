@@ -88,6 +88,16 @@ describe('selectionStatus superseded files', () => {
     ])
   })
 
+  it('collects the file a format change superseded in Apple Music', () => {
+    const a = replaced('a')
+    const b = track({ id: 'b', status: 'done', supersededPath: '/lib/b.aiff' })
+
+    expect(selectionStatus(a, [a, b], true).superseded).toEqual([
+      { trackId: 'a', path: '/m/a-old.mp3' },
+      { trackId: 'b', path: '/lib/b.aiff' },
+    ])
+  })
+
   // A track still converting has not superseded anything yet, and one that failed must
   // leave every file where it was — offering those would invite deleting an original
   // whose replacement never happened.
@@ -107,6 +117,18 @@ describe('selectionStatus superseded files', () => {
     const gone = { ...replaced('b'), supersededTrashed: true }
 
     expect(selectionStatus(a, [a, gone], true).superseded).toEqual([
+      { trackId: 'a', path: '/m/a-old.mp3' },
+    ])
+  })
+
+  // Same rule as the single-track link: while the old Music entry may still play the file
+  // (the Music step failed, or the old entry had to be kept) it is not stranded at all.
+  it('leaves out files the old Music entry may still play', () => {
+    const a = replaced('a')
+    const failed = { ...replaced('b'), musicStatus: 'error' as const }
+    const kept = { ...replaced('c'), oldMusicCopyKept: 'carry' as const }
+
+    expect(selectionStatus(a, [a, failed, kept], true).superseded).toEqual([
       { trackId: 'a', path: '/m/a-old.mp3' },
     ])
   })

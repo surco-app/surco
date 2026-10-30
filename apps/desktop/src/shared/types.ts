@@ -1292,10 +1292,19 @@ export interface ProcessResult {
   // the live entry no longer carries the offered name; 'error' that the delete failed;
   // 'carry' that its playlists, play count and rating could not be copied, so it stayed.
   oldMusicCopyKept?: 'mismatch' | 'error' | 'carry'
+  // The file a library entry pointed at before a format change replaced that entry, set
+  // only once the old entry is gone: the renderer offers it for trash as replacesPath.
+  supersededPath?: string
+  // "Apple Music only" replaced the entry of the track's own source: where Music copied the
+  // new file, which the row moves to like an in-place conversion.
+  musicLandedPath?: string
   appleMusicFailed?: true
   // Set when the converted file landed but the original it replaced in a format change
   // could not be retired, so both are in the folder.
   originalKept?: true
+  // The replaced Apple Music entry kept the " [surco-replacing]" mark in its name: Music
+  // could not be asked to take it off, so the DJ has to.
+  musicNameLeftMarked?: true
 }
 
 // A fixed-length envelope of max-abs peaks (each 0..1) for drawing the track's
