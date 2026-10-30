@@ -52,6 +52,24 @@ describe('VerifiedPopover', () => {
 
   // A queued write is not a failure and not a pass: the DJ has to know it lands only once
   // the program closes, so the line says when, behind a clock instead of a check mark.
+  // The checked shield vouches that everything was read back; one still waiting for its
+  // program is a plain shield until then, and one that failed carries the alert.
+  it('the shield is checked only once every place is ok', () => {
+    const { rerender } = render(<VerifiedPopover checks={[fileOk, rekordboxPending]} />)
+    expect(screen.getByTestId('verify-shield')).toHaveAttribute('data-icon', 'plain')
+    rerender(<VerifiedPopover checks={[fileOk, rekordboxOk]} />)
+    expect(screen.getByTestId('verify-shield')).toHaveAttribute('data-icon', 'check')
+    rerender(
+      <VerifiedPopover
+        checks={[
+          fileOk,
+          { ...rekordboxOk, state: 'mismatch', detail: { key: 'rekordboxMissing' } },
+        ]}
+      />,
+    )
+    expect(screen.getByTestId('verify-shield')).toHaveAttribute('data-icon', 'alert')
+  })
+
   it('the popover marks the pending place with the clock and its text', () => {
     const [file, rekordbox] = open([fileOk, rekordboxPending])
     expect(within(rekordbox).getByTestId('verify-line-pending')).toBeInTheDocument()

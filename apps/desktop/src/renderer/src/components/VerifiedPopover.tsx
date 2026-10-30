@@ -1,4 +1,12 @@
-import { Check, Clock, Loader2, ShieldAlert, ShieldCheck, TriangleAlert } from 'lucide-react'
+import {
+  Check,
+  Clock,
+  Loader2,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  TriangleAlert,
+} from 'lucide-react'
 import type React from 'react'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -59,13 +67,20 @@ export function VerifiedPopover({ checks }: { checks: PlaceCheck[] }): React.JSX
   )
   const label = tr('verify.shieldLabel')
   const failed = (c: PlaceCheck) => c.state === 'mismatch' || c.state === 'unreadable'
-  const Shield = checks.some(failed) ? ShieldAlert : ShieldCheck
+  // Checked only once every place came back ok: one still on its way is a plain shield.
+  const icon = checks.some(failed)
+    ? 'alert'
+    : checks.every((c) => c.state === 'ok')
+      ? 'check'
+      : 'plain'
+  const ShieldIcon = { alert: ShieldAlert, check: ShieldCheck, plain: Shield }[icon]
 
   return (
     <div ref={ref} className="shrink-0">
       <button
         type="button"
         data-testid="verify-shield"
+        data-icon={icon}
         ref={toggleRef}
         aria-label={label}
         aria-haspopup="dialog"
@@ -77,7 +92,7 @@ export function VerifiedPopover({ checks }: { checks: PlaceCheck[] }): React.JSX
         }}
         className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg aria-expanded:text-[var(--color-accent)]"
       >
-        <Shield className="h-3.5 w-3.5" aria-hidden="true" />
+        <ShieldIcon className="h-3.5 w-3.5" aria-hidden="true" />
         {!open && <Tooltip label={label} />}
       </button>
       {open &&
