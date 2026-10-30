@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
 import {
   existsSync,
   mkdirSync,
@@ -48,12 +49,22 @@ import { checkAppleMusic, musicReaders } from './verifyMusic'
 // is named with a random prefix and deleted, with its file, afterwards.
 const real = process.env.SURCO_REAL_MUSIC === '1'
 const FF = ffmpegStatic as unknown as string
-const PREFIX = `Surco Real Test ${Math.random().toString(36).slice(2, 8)}`
+const PREFIX = `Surco Real Test ${randomUUID().slice(0, 8)}`
 const ARTIST = 'Surco Real Test'
 const ALBUM = 'Surco Real Test Album'
 const dir = real ? mkdtempSync(join(tmpdir(), 'surco-real-music-')) : ''
 // Deleting an entry leaves its file, which may be Music's own Media copy.
 const deletedFiles: string[] = []
+// Killed below every test timeout, and awaited before the cleanup: an add still running
+// when the cleanup lists the library would land its entry and Media copy after it.
+const OSASCRIPT_MS = 100_000
+const running = new Set<Promise<string>>()
+
+function musicScript(script: string): Promise<string> {
+  const call = runOsascript(script, { timeout: OSASCRIPT_MS })
+  running.add(call)
+  return call.finally(() => running.delete(call))
+}
 
 function meta(title: string): TrackMetadata {
   return { ...emptyMetadata(), title, artist: ARTIST, album: ALBUM }
@@ -81,7 +92,7 @@ function tone(file: string, title: string, frequency = 440): string {
 }
 
 async function entriesNamed(name: string): Promise<{ pid: string; path: string }[]> {
-  const out = await runOsascript(
+  const out = await musicScript(
     [
       'set out to ""',
       'tell application "Music"',
@@ -107,8 +118,9 @@ async function entriesNamed(name: string): Promise<{ pid: string; path: string }
 }
 
 async function plainAdd(path: string, m: TrackMetadata): Promise<string> {
+  deletedFiles.push(path)
   const pid = (
-    await runOsascript(
+    await musicScript(
       [
         'tell application "Music"',
         '  with timeout of 300 seconds',
@@ -142,7 +154,7 @@ async function entryFields(pid: string) {
 
 const realMusic: MusicUnderTest = {
   add: plainAdd,
-  markReplacing: (pid, label) => markAppleMusicReplacing(pid, label, true),
+  markReplacing: (pid, label) => markAppleMusicReplacing(pid, label, true, musicScript),
   location: appleMusicEntryLocation,
   tagGrouping: async (pid, grouping) => {
     const { name, artist, album } = await entryFields(pid)
@@ -155,7 +167,7 @@ const realMusic: MusicUnderTest = {
   },
   relocate: async (pid, path) => {
     deletedFiles.push(await appleMusicEntryLocation(pid))
-    await runOsascript(
+    await musicScript(
       [
         'tell application "Music"',
         `  set t to (first track of library playlist 1 whose persistent ID is ${appleScriptString(pid)})`,
@@ -250,7 +262,7 @@ function deps(): ProcessTrackDeps {
     untrackTmp: () => {},
     recordConversion: () => {},
     removeRenamedOriginal: async () => {},
-    addToAppleMusic: (target, m, cover) => addToAppleMusic(target, m, cover),
+    addToAppleMusic: (target, m, cover) => addToAppleMusic(target, m, cover, musicScript),
     updateInAppleMusic: async () => {
       throw new Error('a replacement must never fall back to an update')
     },
@@ -275,7 +287,8 @@ function deps(): ProcessTrackDeps {
       return file
     },
     carryAppleMusicHistory: (from, to, label) => carryOverToAppleMusicCopy(from, to, label),
-    markAppleMusicReplacing: (pid, label, marked) => markAppleMusicReplacing(pid, label, marked),
+    markAppleMusicReplacing: (pid, label, marked) =>
+      markAppleMusicReplacing(pid, label, marked, musicScript),
     appleMusicPlaylists: (pid) =>
       readMusicEntryFacts(pid, undefined, { withPlaylists: true }).then((facts) =>
         facts === 'missing' ? [] : facts.playlists,
@@ -291,7 +304,7 @@ function deps(): ProcessTrackDeps {
 
 async function replaceCase(from: 'wav' | 'aiff', to: OutputFormat, title: string): Promise<void> {
   const source = tone(join(dir, `${title}.${from}`), title, 523)
-  const oldPid = await addToAppleMusic(source, meta(title))
+  const oldPid = await addToAppleMusic(source, meta(title), undefined, musicScript)
 
   const result = await runProcessTrack(
     {
@@ -356,35 +369,82 @@ describe('the opt-in Music test deps', () => {
 
 describe.skipIf(!real)('Apple Music against the real app', () => {
   afterAll(async () => {
-    const out = await runOsascript(
-      [
-        'set out to ""',
-        'tell application "Music"',
-        `  set found to (every track of library playlist 1 whose name starts with ${appleScriptString(PREFIX)})`,
-        '  set pids to {}',
-        '  repeat with t in found',
-        '    set end of pids to persistent ID of t',
-        '    try',
-        '      set out to out & (POSIX path of (get location of t)) & linefeed',
-        '    end try',
-        '  end repeat',
-        '  repeat with p in pids',
-        '    delete (every track of library playlist 1 whose persistent ID is (contents of p))',
-        '  end repeat',
-        'end tell',
-        'return out',
-      ].join('\n'),
-    )
-    for (const file of [...out.split('\n').filter(Boolean), ...deletedFiles])
-      if (basename(file).startsWith(PREFIX)) rmSync(file, { force: true })
-    rmSync(dir, { recursive: true, force: true })
+    await Promise.allSettled(running)
+    const left: string[] = []
+    const failed = (what: string) => (e: unknown) => {
+      left.push(`${what}: ${e instanceof Error ? e.message : String(e)}`)
+    }
+    const listing = [
+      'set out to ""',
+      'tell application "Music"',
+      `  repeat with t in (every track of library playlist 1 whose name starts with ${appleScriptString(PREFIX)})`,
+      '    set loc to ""',
+      '    try',
+      '      set loc to POSIX path of (get location of t)',
+      '    end try',
+      '    set out to out & (persistent ID of t) & tab & loc & linefeed',
+      '  end repeat',
+      'end tell',
+      'return out',
+    ].join('\n')
+    const listed = async () =>
+      (await runOsascript(listing, { timeout: OSASCRIPT_MS }))
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => line.split('\t') as [string, string])
+    const entries = await listed().catch((e) => {
+      failed(`listing the Music entries named ${PREFIX}`)(e)
+      return []
+    })
+    for (const [pid] of entries) {
+      await runOsascript(
+        [
+          'tell application "Music"',
+          `  delete (every track of library playlist 1 whose persistent ID is ${appleScriptString(pid)})`,
+          'end tell',
+        ].join('\n'),
+        { timeout: OSASCRIPT_MS },
+      ).catch(failed(`deleting Music entry ${pid}`))
+    }
+    if (entries.length > 0) {
+      await listed().then(
+        (still) => {
+          for (const [pid, loc] of still) left.push(`Music entry ${pid} is still there (${loc})`)
+        },
+        failed(`checking the Music entries named ${PREFIX} are gone`),
+      )
+    }
+    for (const file of new Set([...entries.map(([, loc]) => loc), ...deletedFiles])) {
+      if (!basename(file).startsWith(PREFIX)) continue
+      try {
+        rmSync(file, { force: true })
+      } catch (e) {
+        failed(file)(e)
+      }
+    }
+    try {
+      rmSync(dir, { recursive: true, force: true })
+    } catch (e) {
+      failed(dir)(e)
+    }
     const media = await appleMusicMediaFolder()
     const folders = media ? join(media, 'Music') : ''
-    for (const name of folders ? readdirSync(folders).filter((n) => n.startsWith(PREFIX)) : []) {
-      for (const inner of readdirSync(join(folders, name))) rmdirSync(join(folders, name, inner))
-      rmdirSync(join(folders, name))
+    let names: string[] = []
+    try {
+      names = folders ? readdirSync(folders).filter((n) => n.startsWith(PREFIX)) : []
+    } catch (e) {
+      failed(`listing ${folders}`)(e)
     }
-  }, 120_000)
+    for (const name of names) {
+      try {
+        for (const inner of readdirSync(join(folders, name))) rmdirSync(join(folders, name, inner))
+        rmdirSync(join(folders, name))
+      } catch (e) {
+        failed(join(folders, name))(e)
+      }
+    }
+    if (left.length > 0) throw new Error(`the cleanup left behind\n${left.join('\n')}`)
+  }, 600_000)
 
   describe('the Music facts hold in the real app', () => {
     for (const fact of MUSIC_FACTS) {
@@ -394,7 +454,12 @@ describe.skipIf(!real)('Apple Music against the real app', () => {
 
   it('adds a new track nothing in the library shares a name with', async () => {
     const title = `${PREFIX} Plain`
-    const pid = await addToAppleMusic(tone(join(dir, `${title}.aiff`), title), meta(title))
+    const pid = await addToAppleMusic(
+      tone(join(dir, `${title}.aiff`), title),
+      meta(title),
+      undefined,
+      musicScript,
+    )
 
     expect(pid).toMatch(/^[0-9A-F]{16}$/)
     expect((await appleMusicEntry(pid)).label).toBe(`${ARTIST} - ${title}`)
@@ -402,7 +467,12 @@ describe.skipIf(!real)('Apple Music against the real app', () => {
 
   it('reads back an entry it just added, and reports a missing one', async () => {
     const title = `${PREFIX} Readback`
-    const pid = await addToAppleMusic(tone(join(dir, `${title}.aiff`), title), meta(title))
+    const pid = await addToAppleMusic(
+      tone(join(dir, `${title}.aiff`), title),
+      meta(title),
+      undefined,
+      musicScript,
+    )
 
     const facts = await readMusicEntryFacts(pid, 'FFFFFFFFFFFFFFFF', { withPlaylists: true })
 
@@ -420,11 +490,18 @@ describe.skipIf(!real)('Apple Music against the real app', () => {
   // Measured 30/10: Music answers the add of a file matching an entry it has with that entry.
   it('refuses an add Music answers with the entry it already had, importing nothing', async () => {
     const title = `${PREFIX} Dup`
-    const first = await addToAppleMusic(tone(join(dir, `${title}.wav`), title), meta(title))
+    const first = await addToAppleMusic(
+      tone(join(dir, `${title}.wav`), title),
+      meta(title),
+      undefined,
+      musicScript,
+    )
     mkdirSync(join(dir, 'second'), { recursive: true })
     const second = tone(join(dir, 'second', `${title}.aiff`), title, 660)
 
-    const failure = await addToAppleMusic(second, meta(title)).catch((e: Error) => e)
+    const failure = await addToAppleMusic(second, meta(title), undefined, musicScript).catch(
+      (e: Error) => e,
+    )
 
     expect(errorKeyOf((failure as Error).message)).toBe('appleMusicAddReturnedOld')
     const left = await entriesNamed(title)
@@ -441,7 +518,12 @@ describe.skipIf(!real)('Apple Music against the real app', () => {
 
   it('checks a fresh add ok against the real entry', async () => {
     const title = `${PREFIX} CheckPlain`
-    const pid = await addToAppleMusic(tone(join(dir, `${title}.aiff`), title), meta(title))
+    const pid = await addToAppleMusic(
+      tone(join(dir, `${title}.aiff`), title),
+      meta(title),
+      undefined,
+      musicScript,
+    )
 
     const verdict = await checkEntry(pid, title)
 
@@ -451,15 +533,22 @@ describe.skipIf(!real)('Apple Music against the real app', () => {
 
   it('checks musicDuplicate when two entries play one file', async () => {
     const title = `${PREFIX} CheckTwice`
-    const first = await addToAppleMusic(tone(join(dir, `${title}.aiff`), title), meta(title))
+    const first = await addToAppleMusic(
+      tone(join(dir, `${title}.aiff`), title),
+      meta(title),
+      undefined,
+      musicScript,
+    )
     const otherTitle = `${title} other`
     const second = await addToAppleMusic(
       tone(join(dir, `${otherTitle}.aiff`), otherTitle, 660),
       meta(otherTitle),
+      undefined,
+      musicScript,
     )
     const file = await locationOf(first)
     deletedFiles.push(await locationOf(second))
-    await runOsascript(
+    await musicScript(
       [
         'tell application "Music"',
         `  set t to (first track of library playlist 1 whose persistent ID is ${appleScriptString(second)})`,
@@ -477,7 +566,12 @@ describe.skipIf(!real)('Apple Music against the real app', () => {
 
   it('never checks ok an entry whose file was deleted', async () => {
     const title = `${PREFIX} CheckGone`
-    const pid = await addToAppleMusic(tone(join(dir, `${title}.aiff`), title), meta(title))
+    const pid = await addToAppleMusic(
+      tone(join(dir, `${title}.aiff`), title),
+      meta(title),
+      undefined,
+      musicScript,
+    )
     const file = await locationOf(pid)
     rmSync(file, { force: true })
 
@@ -489,11 +583,16 @@ describe.skipIf(!real)('Apple Music against the real app', () => {
 
   it('checks musicWrongFile when a WAV entry is pointed at an AIFF', async () => {
     const title = `${PREFIX} CheckWrong`
-    const wavPid = await addToAppleMusic(tone(join(dir, `${title}.wav`), title), meta(title))
+    const wavPid = await addToAppleMusic(
+      tone(join(dir, `${title}.wav`), title),
+      meta(title),
+      undefined,
+      musicScript,
+    )
     const wav = await locationOf(wavPid)
     deletedFiles.push(wav)
     const aiff = tone(join(dir, `${title} sibling.aiff`), title, 660)
-    await runOsascript(
+    await musicScript(
       [
         'tell application "Music"',
         `  set t to (first track of library playlist 1 whose persistent ID is ${appleScriptString(wavPid)})`,
