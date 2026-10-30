@@ -116,12 +116,12 @@ jobs:
       # otherwise-healthy builds.
       fail-fast: false
       matrix:
-        # macos-14 = Apple Silicon (arm64), macos-15-intel = Intel (x64). Each
+        # macos-15 = Apple Silicon (arm64), macos-15-intel = Intel (x64). Each
         # runner installs ffmpeg/ffprobe natively for its arch, so its .dmg bundles
         # the matching binary — no cross-arch fetching. Windows and Linux stay
         # x64-only. (macos-13 was the old Intel image; GitHub retired it in Dec 2025.
         # The macos-15-intel label is the last x86_64 runner, available until Aug 2027.)
-        os: [macos-14, macos-15-intel, windows-latest, ubuntu-latest]
+        os: [macos-15, macos-15-intel, windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7

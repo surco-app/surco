@@ -117,7 +117,7 @@ jobs:
   # ID and covered by notarization like the app. Verified here, by hand-launched build, before
   # a release tag ever runs: nothing is published.
   mac-signed:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v7
         with:
