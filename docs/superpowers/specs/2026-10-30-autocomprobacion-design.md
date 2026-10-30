@@ -103,19 +103,22 @@ Ejemplos de `detail` (claves bajo `verify.detail.*` en los 6 idiomas):
 - Music ok: `musicOne` {playlists} → «Una sola entrada · en 24 y All»; mal: `musicMissing`, `musicWrongFile`
   {format} («Apple Music sigue en el AIFF»), `musicDuplicate` {count}, `musicTagDiffers` {field}, `musicNoArtwork`,
   `musicPlaylistLost` {playlist}.
-- rekordbox ok: `rekordboxOk` {format, cues} → «Apunta al WAV · 13 cues · rejilla intacta»; mal: `rekordboxStillOld`
+- rekordbox ok: `rekordboxOk` {format, cues} → «Apunta al WAV · 13 cues»; mal: `rekordboxStillOld`
   {format}, `rekordboxCuesLost` {before, after}, `rekordboxAnalysisEmptied`, `rekordboxSizeDiffers`.
 - Engine: `engineOk`, `engineStillOld`, `enginePerformanceChanged`.
 - Traktor: `traktorOk`, `traktorStillOld`.
 - `pending` {program} → «Pendiente, se aplica al cerrar rekordbox» (en el escudo, con `Clock` delante).
-- `fileSourceGone` {kept} → «El original ya no está» / «El original ya no está, hay una copia en Originales» (con
-  «Originales» como botón que abre ese panel).
+- `fileSourceGone` {kept} → «El original ya no está» / «El original ya no está, hay una copia en Copias» (el panel
+  con el nombre que da `copies.rail`, como botón que lo abre).
 
 Línea de hecho con algo pendiente (claves nuevas, sin ✓ porque las de siempre lo llevan dentro del texto):
 `verify.pendingLine.addedToAppleMusic` «Añadido a Apple Music · {{programs}} al cerrarlo»,
-`verify.pendingLine.exportedAs` «Exportado como {{format}} · {{programs}} al cerrarlo», y las variantes de lote
-`verify.batchPending` «{{verified}} comprobadas · {{pending}} pendientes». `programs` se une con `Intl.ListFormat` del
-idioma activo («rekordbox y Engine DJ»).
+`verify.pendingLine.exportedAs` «Exportado como {{format}} · {{programs}} al cerrarlo» (las dos con `_one`/`_other`
+por el número de programas, «al cerrarlo» o «al cerrarlos»). El lote une sus cuentas con « · », cada una bajo
+`verify.batch.*`, que son `verified` «38 comprobadas», `mismatch` «2 no cuadran», `pending` «2 al cerrar rekordbox»,
+`checking` «10 comprobándose», `unverified` «3 sin comprobar» («✓ 38 comprobadas · 2 no cuadran» lleva el ✓ solo
+cuando no queda nada pendiente ni comprobándose). `programs` se une con `Intl.ListFormat` del idioma activo
+(«rekordbox y Engine DJ»).
 
 ### Qué verifica cada comprobación
 
