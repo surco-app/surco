@@ -103,4 +103,9 @@ describe('The self-check reads back what each library ended up pointing at', () 
     expect(file?.state).toBe('mismatch')
     expect(file?.detail.key).toBe('filePcmDiffers')
   }, 60_000)
+
+  it('refuses to wait for a verdict on a scenario opened without the self-check', async () => {
+    const surco = await openSurco({ settings: { outputFormat: 'aiff' } })
+    await expect(surco.settled()).rejects.toThrow('verify: true')
+  })
 })

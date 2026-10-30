@@ -461,13 +461,15 @@ function verifyWiring(
   return { registry, checks: wired, statuses }
 }
 
-// The batch end as the app's: the flush and the queue applies it started write first, the
-// sabotage lands on what they wrote, then the libraries are read back for the tracks
-// registered before this end, and only then are the applies judged.
+type LaterApply = { place: 'rekordbox' | 'engine'; start: () => Promise<QueueApply> }
+
+// The batch end in the app's order: the flush writes, the sabotage lands on what it wrote,
+// the libraries are read back for the tracks registered before this end, and only then do
+// the queue applies the flush asked for run, one after another, each judged as it lands.
 async function judgedFlush(
   verify: VerifyWiring,
   flush: () => Promise<FlushOutcome>,
-  applies: Partial<Record<'rekordbox' | 'engine', Promise<QueueApply>>>,
+  later: LaterApply[],
   sabotage: Sabotage | undefined,
 ): Promise<void> {
   const upTo = verify.registry.cut()
@@ -475,15 +477,11 @@ async function judgedFlush(
   try {
     outcome = await flush()
   } finally {
-    const applied = await Promise.all(
-      (['rekordbox', 'engine'] as const).map(
-        async (place) => [place, await applies[place]?.catch(() => 'threw' as const)] as const,
-      ),
-    )
     await sabotage?.beforeLibraryCheck?.()
     await verify.registry.afterFlush(outcome, upTo)
-    for (const [place, result] of applied) if (result) verify.checks.settled(place, result)
   }
+  for (const { place, start } of later)
+    verify.checks.settled(place, await start().catch(() => 'threw' as const))
 }
 
 function scenarioApi(
@@ -664,6 +662,9 @@ function scenarioApi(
     },
     endConversionBatch: () => {
       const applies: Partial<Record<'rekordbox' | 'engine', Promise<QueueApply>>> = {}
+      const later: LaterApply[] = []
+      const applyRekordbox = () => rekordboxQueue.apply(async () => !(await isRekordboxRunning()))
+      const applyEngine = () => engineQueue.apply(async () => !(await isEngineDjRunning()))
       const flush = () =>
         flushConversionBatch(
           libraryHost(errors),
@@ -671,20 +672,22 @@ function scenarioApi(
           {
             enqueue: rekordboxQueue.enqueue,
             applyQuietly: () => {
-              applies.rekordbox = rekordboxQueue.apply(async () => !(await isRekordboxRunning()))
+              if (verify) later.push({ place: 'rekordbox', start: applyRekordbox })
+              else applies.rekordbox = applyRekordbox()
             },
           },
           undefined,
           {
             enqueue: engineQueue.enqueue,
             applyQuietly: () => {
-              applies.engine = engineQueue.apply(async () => !(await isEngineDjRunning()))
+              if (verify) later.push({ place: 'engine', start: applyEngine })
+              else applies.engine = applyEngine()
             },
           },
         )
       flushes.push(
         verify
-          ? judgedFlush(verify, flush, applies, options.sabotage)
+          ? judgedFlush(verify, flush, later, options.sabotage)
           : flush().then(() => Promise.all(Object.values(applies)).then(() => {})),
       )
     },
@@ -1092,6 +1095,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
     verification: (fileName) => trackNamed(fileName).verification,
     statuses: (fileName) => verify?.statuses.get(trackNamed(fileName).id) ?? [],
     settled: async () => {
+      if (!verify) throw new Error('scenario: settled() needs openSurco({ verify: true })')
       await act(async () => {
         await Promise.all(flushes)
       })
