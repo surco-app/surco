@@ -217,21 +217,24 @@ describe('libraryRequeue', () => {
     },
   })
 
-  // The repoint is handed again only to move the row onto the file: the cues were moved
-  // with the first one, and moving them again would put every cue off its beat.
-  it('hands rekordbox and Engine the path alone, never the cue shift', () => {
+  // Still on the old file, the first repoint never touched the row, and its cue shift went
+  // with it: handed again, the move carries the same shift, and nothing else.
+  it('hands rekordbox and Engine the move with the original cue shift', () => {
     const q = queues()
     const requeue = libraryRequeue(q)
 
-    expect(requeue('rekordbox', entry())).toBe(false)
+    expect(requeue('rekordbox', entry({ cueShiftMs: 25 }))).toBe(false)
     expect(requeue('engine', entry())).toBe(true)
 
-    expect(q.rekordbox.enqueue).toHaveBeenCalledWith([], [{ from: FROM, to: TO }])
+    expect(q.rekordbox.enqueue).toHaveBeenCalledWith(
+      [],
+      [{ from: FROM, to: TO, audio: { cueShiftMs: 25 } }],
+    )
     expect(q.engine.enqueue).toHaveBeenCalledWith([], [{ from: FROM, to: TO }])
     expect(q.rekordbox.apply).toHaveBeenCalledOnce()
   })
 
-  it('hands Traktor the rename alone, without cue tree, shift, grid or stars', () => {
+  it('hands Traktor the rename and its cue shift, without cue tree, grid or stars', () => {
     const q = queues()
     const patch = {
       volume: 'HD',
@@ -247,34 +250,57 @@ describe('libraryRequeue', () => {
     libraryRequeue(q)('traktor', entry({ traktorPatch: patch }))
 
     const [, [queued]] = q.traktor.enqueue.mock.calls[0]
-    expect(queued.patch).toEqual({ volume: 'HD', dir: '/:M/:', file: 'a.aiff', newFile: 'a.wav' })
+    expect(queued.patch).toEqual({
+      volume: 'HD',
+      dir: '/:M/:',
+      file: 'a.aiff',
+      newFile: 'a.wav',
+      cueShift: { shiftMs: 25, maxMs: 50 },
+    })
   })
 
-  it('the repoint it hands rekordbox leaves the cues where they are', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'surco-verifyipc-requeue-'))
-    const from = join(dir, 'Title.aiff')
-    const to = join(dir, 'Title.wav')
-    writeFileSync(from, 'aiff')
-    writeFileSync(to, 'wav')
-    const path = makeRekordbox(join(dir, 'rekordbox'), [
-      {
-        id: '100',
-        path: from,
-        title: 'Title',
-        artist: 'Artist',
-        fileType: 12,
-        cuesMs: [1000, 2000],
-      },
-    ])
-    const q = queues()
-    libraryRequeue(q)('rekordbox', entry({ from, to }))
-    const [, [item]] = q.rekordbox.enqueue.mock.calls[0]
+  describe('on a real collection', () => {
+    function setupCollection(rowPath: 'from' | 'to', fileType = 12) {
+      const dir = mkdtempSync(join(tmpdir(), 'surco-verifyipc-requeue-'))
+      const from = join(dir, 'Title.aiff')
+      const to = join(dir, 'Title.wav')
+      writeFileSync(from, 'aiff')
+      writeFileSync(to, 'wav')
+      const path = makeRekordbox(join(dir, 'rekordbox'), [
+        {
+          id: '100',
+          path: rowPath === 'from' ? from : to,
+          title: 'Title',
+          artist: 'Artist',
+          fileType,
+          cuesMs: [1000, 2000],
+        },
+      ])
+      const q = queues()
+      libraryRequeue(q)('rekordbox', entry({ from, to, cueShiftMs: 25 }))
+      const [, [item]] = q.rekordbox.enqueue.mock.calls[0]
+      const apply = () => repointTracks(path, [{ ...item, realPath, quiet: true }])
+      return { path, to, apply }
+    }
 
-    await repointTracks(path, [{ ...item, realPath, quiet: true }])
+    it('moves the cues by the shift exactly once', async () => {
+      const { path, to, apply } = setupCollection('from')
 
-    const row = rekordboxRow(path, '100')
-    expect(row.path).toBe(to)
-    expect(row.cuesMs).toEqual([1000, 2000])
+      await apply()
+      expect(rekordboxRow(path, '100')).toMatchObject({ path: to, cuesMs: [1025, 2025] })
+
+      await apply()
+      expect(rekordboxRow(path, '100').cuesMs).toEqual([1025, 2025])
+    })
+
+    // A row already on the new path with the old type is not found by the old path: the
+    // repoint finds nothing to move, and the cues stay.
+    it('moves nothing for a row already on the new path', async () => {
+      const { path, apply } = setupCollection('to', 12)
+
+      await apply()
+      expect(rekordboxRow(path, '100')).toMatchObject({ fileType: 12, cuesMs: [1000, 2000] })
+    })
   })
 })
 

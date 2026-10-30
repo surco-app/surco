@@ -377,6 +377,20 @@ describe('verify registry', () => {
     expect(stateOf(registry.get('a'), place)).toBe('ok')
   })
 
+  // A row found on the written path is never handed the repoint again, whatever it says:
+  // from and to being the same file, the repoint would find it and move its cues twice.
+  it('retry on a conversion written over its own path never repoints, only re-reads', async () => {
+    const { deps, registry } = setup()
+    deps.readRekordbox.mockResolvedValueOnce([mismatch('rekordbox', 'rekordboxStillOld')])
+    registry.register(entry('a', { from: '/Music/a.wav', source: '/Music/a.wav' }))
+    await registry.afterFlush(written)
+
+    await registry.retry('a')
+
+    expect(deps.requeue).not.toHaveBeenCalled()
+    expect(deps.readRekordbox).toHaveBeenCalledTimes(2)
+  })
+
   // A batch that began while the last one was still flushing: each flush judges only the
   // tracks registered before its own batch ended, against what it did.
   it('overlapping batches: each flush judges only the tracks its batch registered', async () => {

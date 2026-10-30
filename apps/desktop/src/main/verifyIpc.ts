@@ -150,12 +150,14 @@ interface RequeueTarget<T> {
   at: () => string
 }
 
-// A retry hands a library still on the old file the move alone: the cues, grid and stars
-// went with the first repoint, and sending them again would move the cues twice. True when
-// the library is not there to take it now.
+// A retry hands a library still on the old file the move again, with the cue shift the
+// first repoint carried: that one never touched the row, and the shift goes with the move in
+// the same write. A row already moved is not found by the old path, so nothing shifts twice.
+// Tags, grid and stars are left out. True when the library is not there to take it now.
+type Move = { from: string; to: string; audio?: { cueShiftMs: number } }
 export function libraryRequeue(queues: {
-  rekordbox: RequeueTarget<{ from: string; to: string }>
-  engine: RequeueTarget<{ from: string; to: string }>
+  rekordbox: RequeueTarget<Move>
+  engine: RequeueTarget<Move>
   traktor: RequeueTarget<ReturnType<typeof queuedNmlPatch>>
 }): VerifyRegistryDeps['requeue'] {
   return (place, e) => {
@@ -164,9 +166,27 @@ export function libraryRequeue(queues: {
       if (p)
         queues.traktor.enqueue(
           [],
-          [queuedNmlPatch({ volume: p.volume, dir: p.dir, file: p.file, newFile: p.newFile })],
+          [
+            queuedNmlPatch({
+              volume: p.volume,
+              dir: p.dir,
+              file: p.file,
+              newFile: p.newFile,
+              ...(p.cueShift ? { cueShift: p.cueShift } : {}),
+            }),
+          ],
         )
-    } else queues[place].enqueue([], [{ from: e.from, to: e.to }])
+    } else
+      queues[place].enqueue(
+        [],
+        [
+          {
+            from: e.from,
+            to: e.to,
+            ...(e.cueShiftMs === undefined ? {} : { audio: { cueShiftMs: e.cueShiftMs } }),
+          },
+        ],
+      )
     queues[place].apply()
     return !queues[place].at()
   }

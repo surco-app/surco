@@ -8,6 +8,7 @@ import {
   attachRekordboxPlaylists,
   beginRekordboxBatch,
   endRekordboxBatch,
+  recordedRekordboxRepoint,
   recordRekordboxRepoint,
   redirectRekordboxRepoint,
   rekordboxBatchOpen,
@@ -27,6 +28,16 @@ describe('rekordbox batch', () => {
     recordRekordboxRepoint(a)
     recordRekordboxRepoint(b)
     expect(endRekordboxBatch()).toEqual([a, b])
+  })
+
+  // The check after the batch hands a library still on the old file this same move again,
+  // with the cue shift it carried, found by where the file landed.
+  it('hands back the repoint recorded for a converted file, after its redirect', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint({ ...a, audio: { cueShiftMs: 25 } })
+    redirectRekordboxRepoint(a.to, '/Media/one.wav')
+    expect(recordedRekordboxRepoint('/Media/one.wav')).toMatchObject({ audio: { cueShiftMs: 25 } })
+    expect(recordedRekordboxRepoint(a.to)).toBeUndefined()
   })
 
   // A tags-only update keeps the path, but the entry still has to learn the new title.

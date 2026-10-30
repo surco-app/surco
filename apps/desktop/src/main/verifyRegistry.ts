@@ -34,6 +34,9 @@ export interface VerifyEntry {
   traktorPatch?: NmlPatch
   traktorStranded?: boolean
   engineStep?: boolean
+  // How the conversion moved the cues in rekordbox's timeline (the repoint's audio), handed
+  // again with a repoint the library never applied.
+  cueShiftMs?: number
   verification: Verification
 }
 
@@ -112,7 +115,10 @@ function touches(e: VerifyEntry, place: VerifyPlace): boolean {
 const stateOf = (e: VerifyEntry, place: VerifyPlace) =>
   e.verification.checks.find((c) => c.place === place)?.state
 
+// A conversion written over its own path is found by the repoint on the row it already
+// moved, which would shift its cues again.
 const stillOld = (e: VerifyEntry, place: Library) =>
+  e.from.normalize('NFC') !== e.to.normalize('NFC') &&
   e.verification.checks.find((c) => c.place === place)?.detail.key === `${place}StillOld`
 
 export function createVerifyRegistry(deps: VerifyRegistryDeps) {

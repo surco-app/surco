@@ -152,6 +152,7 @@ import {
   attachRekordboxPlaylists,
   beginRekordboxBatch,
   redirectRekordboxRepoint,
+  recordedRekordboxRepoint,
   rekordboxBatchOpen,
 } from './rekordboxBatch'
 import { completeOnClose } from './rekordboxCompleteOnClose'
@@ -1895,7 +1896,11 @@ function registerIpc(): void {
       },
       // The Traktor patch is recorded inside the conversion; the job never sees it.
       registerVerification: (entry) =>
-        verifyRegistry.register({ ...entry, traktorPatch: recordedNmlPatch(entry.source) }),
+        verifyRegistry.register({
+          ...entry,
+          traktorPatch: recordedNmlPatch(entry.source),
+          cueShiftMs: recordedRekordboxRepoint(entry.to)?.audio?.cueShiftMs,
+        }),
       realPath: (p) => realpathSync(p),
       // Music exists only on macOS, where the Music step is the only caller.
       verifyMusic:

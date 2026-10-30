@@ -104,6 +104,11 @@ export function endRekordboxBatch(): RekordboxRepoint[] {
   return result
 }
 
+// The repoint the batch holds for a converted file, by where it landed.
+export function recordedRekordboxRepoint(to: string): RekordboxRepoint | undefined {
+  return repoints.find((r) => r.to === to)
+}
+
 export function attachRekordboxPlaylists(
   to: string,
   playlists: RekordboxPlaylistTarget[],
