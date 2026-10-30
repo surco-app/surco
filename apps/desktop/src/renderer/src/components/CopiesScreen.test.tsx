@@ -12,8 +12,7 @@ import type {
 import i18n from '../i18n'
 import { OpenSettingsProvider } from '../lib/openSettingsContext'
 import { installApi } from '../test/api'
-import { CopiesScreen } from './CopiesScreen'
-import { formatBytes } from './TrashBrowser'
+import { CopiesScreen, formatBytes } from './CopiesScreen'
 
 const NOW = new Date(2026, 10, 20, 12, 0)
 
@@ -421,26 +420,23 @@ describe('CopiesScreen', () => {
     expect(screen.getByTestId('copies-kept-music')).toHaveTextContent(
       i18n.t('copies.music.summary', { count: 1, size: '1 MB', max: '10 GB' }),
     )
-    expect(screen.queryByTestId('trash-search')).not.toBeInTheDocument()
+    expect(screen.getByTestId('copies-toggle-music')).toHaveTextContent(i18n.t('copies.music.show'))
+    expect(screen.queryByTestId('trash-list')).not.toBeInTheDocument()
     fireEvent.click(screen.getByTestId('copies-toggle-music'))
-    expect(screen.getByTestId('trash-search')).toBeInTheDocument()
+    expect(screen.getByTestId('trash-list')).toBeInTheDocument()
+    expect(screen.getByTestId('copies-toggle-music')).toHaveTextContent(i18n.t('copies.music.hide'))
   })
 
-  it("opening from a track's backup mark lands on the music files with the search filled", () => {
-    const base = {
-      entries: [trashEntry],
-      retentionDays: 7,
-      maxBytes: 1024,
-      onRestore: vi.fn(),
-      onRemove: vi.fn(),
-      onEmpty: vi.fn(),
-      onReveal: vi.fn(),
-    }
+  it("opening from a track's backup mark lands on that file, even in a short list, and lets it go", () => {
+    const other = { ...trashEntry, id: 't2', name: 'Jaguar.wav', originalPath: '/Music/Jaguar.wav' }
     renderScreen([program('rekordbox')], {
       openMusic: true,
-      trash: { ...base, initialQuery: 'Around the World' },
+      trash: { ...musicTrash(), entries: [trashEntry, other], initialQuery: 'Around the World' },
     })
     expect(screen.getByTestId('trash-search')).toHaveValue('Around the World')
+    expect(screen.getAllByTestId('trash-row')).toHaveLength(1)
+    fireEvent.change(screen.getByTestId('trash-search'), { target: { value: '' } })
+    expect(screen.getAllByTestId('trash-row')).toHaveLength(2)
   })
 
   it('shows the folder with every copy', () => {
@@ -465,6 +461,9 @@ const entry = (over: Partial<TrashEntry> = {}): TrashEntry => ({
   reason: 'replaced',
   ...over,
 })
+
+const crate = (n: number, over: Partial<TrashEntry> = {}): TrashEntry[] =>
+  Array.from({ length: n }, (_, i) => entry({ id: `c${i}`, name: `Crate ${i}.aiff`, ...over }))
 
 function renderMusic(entries: TrashEntry[]) {
   const trash = {
@@ -516,25 +515,44 @@ describe('CopiesScreen music files', () => {
     expect(row).toHaveTextContent(/deleted from Surco/i)
   })
 
-  // The sidebar navigates by reason, which is the only axis this list has. Its counts read
-  // the whole trash, so they keep answering "what is in here" while a search narrows the rows.
-  it('filters by reason from the sidebar without changing the counts', () => {
-    renderMusic([
-      entry({ id: 'a', reason: 'replaced' }),
-      entry({ id: 'b', name: 'Renamed.mp3', reason: 'renamed' }),
-    ])
-    expect(screen.getByTestId('trash-filter-replaced')).toHaveTextContent('1')
+  // Reason is the only axis this list has. The counts read the whole trash, so they keep
+  // answering "what is in here" while a search narrows the rows.
+  it('filters by reason from the chips without changing the counts', () => {
+    renderMusic([...crate(8), entry({ id: 'b', name: 'Renamed.mp3', reason: 'renamed' })])
+    expect(screen.getByTestId('trash-filter-replaced')).toHaveTextContent('8')
     fireEvent.click(screen.getByTestId('trash-filter-renamed'))
     const rows = screen.getAllByTestId('trash-row')
     expect(rows).toHaveLength(1)
     expect(rows[0]).toHaveTextContent('Renamed.mp3')
-    expect(screen.getByTestId('trash-filter-replaced')).toHaveTextContent('1')
+    expect(screen.getByTestId('trash-filter-replaced')).toHaveTextContent('8')
+    expect(screen.getByTestId('trash-filter-renamed')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  // A chip that can only lead to an empty list is noise on a screen that has to read calm.
+  it('offers a chip only for the reasons that hold something', () => {
+    renderMusic([...crate(8), entry({ id: 'b', reason: 'renamed' })])
+    expect(screen.getByTestId('trash-filter-all')).toHaveTextContent('9')
+    expect(screen.getByTestId('trash-filter-renamed')).toBeInTheDocument()
+    expect(screen.queryByTestId('trash-filter-deleted')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('trash-filter-restored-over')).not.toBeInTheDocument()
+  })
+
+  // A handful of files is read at a glance; filters and a search box over three rows are
+  // furniture. They arrive once the list is long enough to need them.
+  it('keeps a short list plain and brings filters and search to a long one', () => {
+    renderMusic(crate(8))
+    expect(screen.queryByTestId('trash-search')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('trash-filter-all')).not.toBeInTheDocument()
+    cleanup()
+    renderMusic(crate(9))
+    expect(screen.getByTestId('trash-search')).toBeInTheDocument()
+    expect(screen.getByTestId('trash-filter-all')).toBeInTheDocument()
   })
 
   // A replaced crate is looked up by the crate, not by each file's name.
   it('searches the name and the folder', () => {
     renderMusic([
-      entry({ id: 'a', name: 'Pray.aiff', originalPath: '/Music/House/Pray.aiff' }),
+      ...crate(8, { originalPath: '/Music/House/Crate.aiff' }),
       entry({ id: 'b', name: 'Jaguar.wav', originalPath: '/Music/Detroit/Jaguar.wav' }),
     ])
     fireEvent.change(screen.getByTestId('trash-search'), { target: { value: 'detroit' } })
@@ -543,13 +561,12 @@ describe('CopiesScreen music files', () => {
     expect(rows[0]).toHaveTextContent('Jaguar.wav')
   })
 
-  // A search that matches nothing is not an empty trash: saying "nothing to restore" there
-  // would tell the user their files are gone.
-  it('tells a fruitless search apart from an empty trash', () => {
-    renderMusic([entry()])
+  // A search that matches nothing must say so: an empty list would read as files gone.
+  it('says when a search matches nothing', () => {
+    renderMusic(crate(9))
     fireEvent.change(screen.getByTestId('trash-search'), { target: { value: 'zzzz' } })
-    expect(screen.getByTestId('trash-no-matches')).toBeInTheDocument()
-    expect(screen.queryByTestId('trash-empty')).not.toBeInTheDocument()
+    expect(screen.getByTestId('trash-no-matches')).toHaveTextContent(i18n.t('trash.noMatches'))
+    expect(screen.queryByTestId('trash-row')).not.toBeInTheDocument()
   })
 
   // The trash deletes files by itself, which no OS trash does by default. The warning is
@@ -578,17 +595,28 @@ describe('CopiesScreen music files', () => {
     expect(lanes[1]).not.toBeEmptyDOMElement()
   })
 
-  it('shows how much room the trash takes when it is empty', () => {
+  // With nothing kept there is nothing to open: a toggle onto an empty list is a dead button.
+  it('has no list to open when no music file is kept', () => {
     renderMusic([])
-    expect(screen.getByTestId('trash-empty')).toBeInTheDocument()
-    expect(screen.getByTestId('trash-usage')).toHaveTextContent('10 GB')
+    expect(screen.queryByTestId('copies-toggle-music')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('trash-list')).not.toBeInTheDocument()
   })
 
-  // Settings' rule: a control that is not available stays visible and disabled, so the
-  // footer never changes shape between an empty and a full trash.
-  it('keeps emptying visible but disabled when there is nothing to empty', () => {
-    renderMusic([])
-    expect(screen.getByTestId('trash-empty-button')).toBeDisabled()
+  // The music list sits inside Copias like the program lists do: the rule that files go
+  // by themselves is said under the files, not in a sidebar of a window inside the page.
+  it('says under the files how long they stay', () => {
+    renderMusic([entry()])
+    expect(screen.getByTestId('trash-footer')).toHaveTextContent(
+      i18n.t('copies.music.expires', { days: 30 }),
+    )
+    expect(screen.queryByTestId('trash-usage')).not.toBeInTheDocument()
+  })
+
+  it('names what a renamed original became, starting the line as a sentence', () => {
+    renderMusic([entry({ reason: 'renamed', outputPath: '/Music/Crate/Track.flac' })])
+    expect(screen.getByTestId('trash-reason')).toHaveTextContent(
+      `${i18n.t('trash.renamedTo')} Track.flac`,
+    )
   })
 
   // Emptying is the one irreversible action here, so it asks once, in place, and only

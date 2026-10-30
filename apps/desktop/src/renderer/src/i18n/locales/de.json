@@ -206,8 +206,6 @@
   },
   "trash": {
     "title": "Sicherungskopien",
-    "emptyTitle": "Nichts wiederherzustellen",
-    "emptyBody": "Wenn eine Konvertierung ein Original ersetzt oder umbenennt, oder du einen Titel auf einem Laufwerk ohne Papierkorb löschst, erscheint er hier.",
     "reason": {
       "replaced": "durch eine Konvertierung ersetzt",
       "renamed": "durch eine Konvertierung umbenannt",
@@ -232,12 +230,9 @@
       "deleted": "Gelöscht",
       "restored-over": "Beiseitegelegt"
     },
-    "filtersLabel": "Kopien",
     "search": "Nach Titel oder Ordner suchen",
     "replacedBy": "ersetzt durch",
     "renamedTo": "umbenannt in",
-    "usage": "{{used}} von {{size}}",
-    "selfEmpties": "Leert sich nach {{days}} Tagen von selbst.",
     "expiring_one": "noch {{count}} Tag",
     "expiring_other": "noch {{count}} Tage",
     "noMatches": "Nichts passt zur Suche"
@@ -2848,7 +2843,10 @@
       "state": "Originale gespeichert",
       "kept": "Gespeichert",
       "summary_one": "{{count}} Datei · {{size}} von {{max}}",
-      "summary_other": "{{count}} Dateien · {{size}} von {{max}}"
+      "summary_other": "{{count}} Dateien · {{size}} von {{max}}",
+      "show": "Dateien anzeigen",
+      "hide": "Dateien ausblenden",
+      "expires": "Werden nach {{days}} Tagen von selbst gelöscht."
     },
     "footer": "Von jedem Programm behalten wir die letzten 5 Backups. Musikdateien {{days}} Tage.",
     "reveal": "Im Finder zeigen",

@@ -1,9 +1,9 @@
 import type { TrashEntry, TrashReason } from '../../../shared/types'
 import { foldText } from './normalizeText'
 
-// What the trash panel shows out of what the trash holds: the reason filter behind the
-// sidebar, the search box, and the countdown a row prints. Kept out of the component so
-// the rules can be stated once and tested without rendering a dialog.
+// What the Copias music list shows out of what the trash holds: the reason chips, the
+// search box, and the countdown a row prints. Kept out of the component so the rules can
+// be stated once and tested without rendering the screen.
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -18,7 +18,7 @@ export const TRASH_FILTERS: TrashFilter[] = [
 ]
 
 // The last week of the retention, and the only span a row says anything about time in.
-// A day count on every row repeats what the sidebar already says once; drawn only here,
+// A day count on every row repeats what the list footer already says once; drawn only here,
 // it reads as a warning instead of decoration.
 export const EXPIRING_SOON_DAYS = 7
 
@@ -48,7 +48,7 @@ export function visibleEntries(
   })
 }
 
-// The sidebar's counts. Taken from the whole trash, never from the filtered rows: a
+// The reason chips' counts. Taken from the whole trash, never from the filtered rows: a
 // count that shrinks as you type stops answering "what is in here".
 export function countByReason(entries: TrashEntry[]): Record<TrashFilter, number> {
   const counts: Record<TrashFilter, number> = {

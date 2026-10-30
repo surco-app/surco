@@ -206,8 +206,6 @@
   },
   "trash": {
     "title": "Copias de seguridad",
-    "emptyTitle": "No hay nada que restaurar",
-    "emptyBody": "Cuando una conversión sustituya o renombre un original, o borres una pista en un disco sin papelera, aparecerá aquí.",
     "reason": {
       "replaced": "sustituido por una conversión",
       "renamed": "renombrado por una conversión",
@@ -232,12 +230,9 @@
       "deleted": "Borrados",
       "restored-over": "Apartados"
     },
-    "filtersLabel": "Copias",
     "search": "Buscar por título o carpeta",
     "replacedBy": "sustituido por",
     "renamedTo": "renombrado a",
-    "usage": "{{used}} de {{size}}",
-    "selfEmpties": "Se vacía sola a los {{days}} días.",
     "expiring_one": "queda {{count}} día",
     "expiring_other": "quedan {{count}} días",
     "noMatches": "Nada coincide con la búsqueda"
@@ -2848,7 +2843,10 @@
       "state": "Originales guardados",
       "kept": "Guardados",
       "summary_one": "{{count}} archivo · {{size}} de {{max}}",
-      "summary_other": "{{count}} archivos · {{size}} de {{max}}"
+      "summary_other": "{{count}} archivos · {{size}} de {{max}}",
+      "show": "Ver archivos",
+      "hide": "Ocultar archivos",
+      "expires": "Se borran solos a los {{days}} días."
     },
     "footer": "De cada programa guardamos las últimas 5 copias. Los archivos de música, {{days}} días.",
     "reveal": "Mostrar en Finder",

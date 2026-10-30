@@ -86,9 +86,9 @@ describe('visibleEntries', () => {
 })
 
 describe('countByReason', () => {
-  // The sidebar shows a count per reason, and it must count the whole trash rather than
+  // The chips show a count per reason, and they must count the whole trash rather than
   // what the search left on screen — otherwise typing a query makes the totals shrink and
-  // the sidebar stops saying what is actually in there.
+  // the chips stop saying what is actually in there.
   it('counts every entry by reason plus a total', () => {
     const counts = countByReason([
       entry({ id: 'a', reason: 'replaced' }),

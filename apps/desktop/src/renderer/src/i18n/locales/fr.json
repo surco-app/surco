@@ -206,8 +206,6 @@
   },
   "trash": {
     "title": "Copies de sauvegarde",
-    "emptyTitle": "Rien à restaurer",
-    "emptyBody": "Quand une conversion remplace ou renomme un original, ou que tu supprimes une piste sur un disque sans corbeille, il apparaît ici.",
     "reason": {
       "replaced": "remplacé par une conversion",
       "renamed": "renommé par une conversion",
@@ -232,12 +230,9 @@
       "deleted": "Supprimés",
       "restored-over": "Mis de côté"
     },
-    "filtersLabel": "Copies",
     "search": "Rechercher par titre ou dossier",
     "replacedBy": "remplacé par",
     "renamedTo": "renommé en",
-    "usage": "{{used}} sur {{size}}",
-    "selfEmpties": "Se vide seule après {{days}} jours.",
     "expiring_one": "{{count}} jour restant",
     "expiring_other": "{{count}} jours restants",
     "noMatches": "Aucun résultat pour cette recherche"
@@ -2848,7 +2843,10 @@
       "state": "Originaux conservés",
       "kept": "Conservés",
       "summary_one": "{{count}} fichier · {{size}} sur {{max}}",
-      "summary_other": "{{count}} fichiers · {{size}} sur {{max}}"
+      "summary_other": "{{count}} fichiers · {{size}} sur {{max}}",
+      "show": "Voir les fichiers",
+      "hide": "Masquer les fichiers",
+      "expires": "Ils s'effacent d'eux-mêmes après {{days}} jours."
     },
     "footer": "Pour chaque logiciel, nous gardons les 5 dernières sauvegardes. Pour les fichiers de musique, {{days}} jours.",
     "reveal": "Afficher dans le Finder",
