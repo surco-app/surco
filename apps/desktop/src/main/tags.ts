@@ -787,8 +787,13 @@ const toTrackNumber = (value: string): number => {
   return ofTotal ? Number(ofTotal[1]) : toNumber(value.replace(/\D/g, ''))
 }
 
-// The total a "3/12" track number carries, for when no total of its own was given.
-const totalInTrackNumber = (value: string): number =>
+// A disc given as "1/2" is disc 1 of 2; Number() alone dropped it.
+const toDiscNumber = (value: string): number =>
+  toNumber(value) || Number(/^\s*(\d+)\s*\/\s*\d*\s*$/.exec(value)?.[1] ?? 0)
+
+// The total a "3/12" track or "1/2" disc number carries, for when no total of its own was
+// given.
+const totalInNumber = (value: string): number =>
   Number(/^\s*\d+\s*\/\s*(\d+)\s*$/.exec(value)?.[1] ?? 0)
 
 // The fields no tag family gives a dedicated box: they ride TXXX descriptions in ID3 and
@@ -972,9 +977,9 @@ export function writeTags(
     tag.grouping = meta.grouping
     tag.comment = meta.comment
     tag.track = toTrackNumber(meta.trackNumber)
-    tag.trackCount = toNumber(meta.trackTotal ?? '') || totalInTrackNumber(meta.trackNumber)
-    tag.disc = toNumber(meta.discNumber)
-    tag.discCount = toNumber(meta.discTotal ?? '')
+    tag.trackCount = toNumber(meta.trackTotal ?? '') || totalInNumber(meta.trackNumber)
+    tag.disc = toDiscNumber(meta.discNumber)
+    tag.discCount = toNumber(meta.discTotal ?? '') || totalInNumber(meta.discNumber)
     tag.beatsPerMinute = Math.round(toNumber(meta.bpm))
     tag.initialKey = meta.key
     tag.remixedBy = meta.remixArtist
