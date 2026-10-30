@@ -1,5 +1,6 @@
 import { readdir } from 'node:fs/promises'
 import { basename, dirname, extname, join } from 'node:path'
+import { File as TagFile } from 'node-taglib-sharp'
 import { errorKeyOf } from '../shared/errorKeys'
 import type { TrackMetadata } from '../shared/types'
 import type { PlaceCheck } from '../shared/verification'
@@ -30,6 +31,7 @@ export interface FileReaders {
   pcmDigest(path: string): Promise<PcmDigest>
   snapshotTags(path: string): string[] | Promise<string[]>
   readEmbeddedCover(path: string): Buffer | null
+  m4aNumbers(path: string): { track: number; bpm: number }
 }
 
 async function findOnDisk(path: string): Promise<string | null> {
@@ -50,6 +52,14 @@ export const fileReaders: FileReaders = {
   pcmDigest: (path) => pcmDigest(path),
   snapshotTags,
   readEmbeddedCover,
+  m4aNumbers(path) {
+    const f = TagFile.createFromPath(path)
+    try {
+      return { track: f.tag.track, bpm: f.tag.beatsPerMinute }
+    } finally {
+      f.dispose()
+    }
+  },
 }
 
 const FORMAT_BY_EXT: Record<string, string> = {
@@ -65,7 +75,12 @@ const PROBE_CODEC: Record<string, string> = { libmp3lame: 'mp3' }
 
 const DURATION_TOLERANCE_SEC = 0.05
 const DURATION_TOLERANCE_RATIO = 0.001
-const LAST_FRAME_CLOCK_SLACK_SEC = 0.12
+const LAST_FRAME_SAMPLES: Record<string, number> = {
+  flac: 4608,
+  alac: 4096,
+  mp3: 1152,
+  aac: 1024,
+}
 
 const formatOf = (ext: string) =>
   FORMAT_BY_EXT[ext.toLowerCase()] ?? ext.replace('.', '').toUpperCase()
@@ -90,8 +105,6 @@ const TAG_LINES: Partial<Record<keyof TrackMetadata, RegExp>> = {
   comment: /^(id3 COMM\[[^\]]*\]|xiph (COMMENT|DESCRIPTION)|mp4 ©cmt|riff ICMT)=/,
 }
 
-const FIELDS_UNREADABLE_IN_M4A = new Set<keyof TrackMetadata>(['trackNumber', 'bpm'])
-
 const norm = (s: string) => s.normalize('NFC').trim()
 
 function valueMatches(field: keyof TrackMetadata, expected: string, stored: string): boolean {
@@ -99,22 +112,33 @@ function valueMatches(field: keyof TrackMetadata, expected: string, stored: stri
   const have = norm(stored)
   if (field === 'trackNumber') return Number.parseInt(have, 10) === Number.parseInt(want, 10)
   if (field === 'bpm') return Number(have) === Number(want)
-  if (field === 'year') return have.startsWith(want) || want.startsWith(have)
+  if (field === 'year')
+    return have.length >= 4 && want.length >= 4 && (have.startsWith(want) || want.startsWith(have))
   return have.split('|').some((v) => norm(v) === want)
 }
 
 function differingTag(
   lines: string[],
   tags: Partial<TrackMetadata>,
-  ext: string,
+  m4a: { track: number; bpm: number } | null,
 ): keyof TrackMetadata | null {
   for (const field of Object.keys(TAG_LINES) as (keyof TrackMetadata)[]) {
     const expected = tags[field]
-    if (typeof expected !== 'string' || norm(expected) === '') continue
-    if (ext === '.m4a' && FIELDS_UNREADABLE_IN_M4A.has(field)) continue
+    if (typeof expected !== 'string') continue
+    const want = norm(expected)
+    if (m4a && (field === 'trackNumber' || field === 'bpm')) {
+      const stored = field === 'trackNumber' ? m4a.track : m4a.bpm
+      const meant = want === '' ? 0 : Math.round(Number.parseFloat(want))
+      if (stored !== meant) return field
+      continue
+    }
     const pattern = TAG_LINES[field] as RegExp
-    const stored = lines.filter((l) => pattern.test(l)).map((l) => l.slice(l.indexOf('=') + 1))
-    if (!stored.some((s) => valueMatches(field, expected, s))) return field
+    const stored = lines
+      .filter((l) => pattern.test(l))
+      .map((l) => l.slice(l.indexOf('=') + 1))
+      .filter((v) => norm(v) !== '')
+    if (want === '' ? stored.length > 0 : !stored.some((v) => valueMatches(field, want, v)))
+      return field
   }
   return null
 }
@@ -146,6 +170,7 @@ async function judge(e: FileExpect, r: FileReaders): Promise<PlaceCheck> {
     })
 
   const probe = await r.probe(found)
+  if (probe.codecName === '') return check('unreadable', 'fileUnreadable')
   const wantCodec = PROBE_CODEC[e.codec] ?? e.codec
   if (e.codec !== 'copy' && probe.codecName !== wantCodec)
     return check('mismatch', 'fileWrongFormat', {
@@ -154,9 +179,10 @@ async function judge(e: FileExpect, r: FileReaders): Promise<PlaceCheck> {
     })
   const rate = Number(probe.sampleRate)
   const bits = bitsOf(probe)
+  if (e.bitDepth !== undefined && bits === 0) return check('unreadable', 'fileUnreadable')
   if (
     (e.sampleRateHz !== undefined && rate !== e.sampleRateHz) ||
-    (e.bitDepth !== undefined && bits > 0 && bits !== e.bitDepth)
+    (e.bitDepth !== undefined && bits !== e.bitDepth)
   )
     return check('mismatch', 'fileWrongFormat', {
       expected: `${expectedFormat} ${e.sampleRateHz ?? rate} Hz ${e.bitDepth ?? bits} bits`,
@@ -172,23 +198,31 @@ async function judge(e: FileExpect, r: FileReaders): Promise<PlaceCheck> {
     throw err
   }
 
-  const identical = e.samplesKept && e.sourcePcm !== undefined
+  if (e.samplesKept && e.sourcePcm === undefined) return check('unreadable', 'fileUnreadable')
+  if (!e.samplesKept && e.sourceDurationSec === undefined)
+    return check('unreadable', 'fileUnreadable')
+
+  const identical = e.samplesKept
   if (identical) {
     const out = await r.pcmDigest(found)
     const src = e.sourcePcm as PcmDigest
     if (out.md5 !== src.md5 || out.sampleRate !== src.sampleRate || out.channels !== src.channels)
       return check('mismatch', 'filePcmDiffers')
-  } else if (e.sourceDurationSec !== undefined) {
+  } else {
     const delivered = await r.deliveredDurationSec(found)
     if (delivered === null) return check('unreadable', 'fileUnreadable')
-    const wanted = e.sourceDurationSec - e.trimmedSec
+    const wanted = (e.sourceDurationSec as number) - e.trimmedSec
     const tolerance = Math.max(DURATION_TOLERANCE_SEC, wanted * DURATION_TOLERANCE_RATIO)
-    if (delivered < wanted - tolerance - LAST_FRAME_CLOCK_SLACK_SEC)
-      return check('mismatch', 'fileTruncated')
+    const lastFrame = (LAST_FRAME_SAMPLES[probe.codecName] ?? 0) / rate
+    if (delivered < wanted - tolerance - lastFrame) return check('mismatch', 'fileTruncated')
     if (delivered > wanted + tolerance) return check('mismatch', 'filePcmDiffers')
   }
 
-  const field = differingTag(await r.snapshotTags(found), e.tags, e.ext)
+  const field = differingTag(
+    await r.snapshotTags(found),
+    e.tags,
+    e.ext === '.m4a' ? r.m4aNumbers(found) : null,
+  )
   if (field !== null) return check('mismatch', 'fileTagDiffers', { field })
 
   const cover = r.readEmbeddedCover(found)

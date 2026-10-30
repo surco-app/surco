@@ -99,7 +99,7 @@ Ejemplos de `detail` (claves bajo `verify.detail.*` en los 6 idiomas):
 - Fichero ok: `fileIdentical` {format: 'WAV'} → «WAV · audio idéntico al original»; `fileReencoded` {format, rate, bits}
   → «FLAC · 44,1 kHz · 24 bits · decodifica entero».
 - Fichero mal: `fileMissing`, `fileWrongFormat` {expected, actual}, `fileTruncated`, `filePcmDiffers`,
-  `fileTagDiffers` {field}, `fileNoCover`, `fileCoverKept`.
+  `fileTagDiffers` {field}, `fileNoCover`, `fileCoverKept`; no se pudo releer: `fileUnreadable`.
 - Music ok: `musicOne` {playlists} → «Una sola entrada · en 24 y All»; mal: `musicMissing`, `musicWrongFile`
   {format} («Apple Music sigue en el AIFF»), `musicDuplicate` {count}, `musicTagDiffers` {field}, `musicNoArtwork`,
   `musicPlaylistLost` {playlist}.

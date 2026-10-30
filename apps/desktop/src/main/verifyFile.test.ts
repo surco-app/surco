@@ -206,4 +206,172 @@ describe('checkFile', () => {
     const check = await checkFile(await expectFor(at('source.wav')), readers)
     expect(check.state).toBe('unreadable')
   })
+
+  it('samples that had to be kept but have no source digest are unreadable, never ok', async () => {
+    const check = await checkFile(
+      await expectFor(at('source.wav'), { sourcePcm: undefined }),
+      fileReaders,
+    )
+    expect(check).toMatchObject({ state: 'unreadable', detail: { key: 'fileUnreadable' } })
+  })
+
+  it('a reencode with no source duration is unreadable, never ok', async () => {
+    const check = await checkFile(
+      await expectFor(at('source.wav'), { samplesKept: false, sourceDurationSec: undefined }),
+      fileReaders,
+    )
+    expect(check.state).toBe('unreadable')
+  })
+
+  it('a PCM file 0.1 s short of the source is fileTruncated', async () => {
+    ff('-t', '3.9', '-i', at('source.wav'), '-c:a', 'pcm_s16le', at('short.wav'))
+    const check = await checkFile(
+      await expectFor(at('short.wav'), { samplesKept: false, sourcePcm: undefined }),
+      fileReaders,
+    )
+    expect(check.detail.key).toBe('fileTruncated')
+  })
+
+  it('a 22.05 kHz FLAC 0.4 s short of the source is fileTruncated', async () => {
+    ff('-t', '3.6', '-i', at('source.wav'), '-ar', '22050', '-c:a', 'flac', at('short22.flac'))
+    const check = await checkFile(
+      await expectFor(at('short22.flac'), {
+        ext: '.flac',
+        codec: 'flac',
+        samplesKept: false,
+        sourcePcm: undefined,
+      }),
+      fileReaders,
+    )
+    expect(check.detail.key).toBe('fileTruncated')
+  })
+
+  const WRITTEN: Partial<TrackMetadata> = {
+    title: 'Tít',
+    artist: 'Art',
+    album: 'Alb',
+    albumArtist: 'AA',
+    year: '2020',
+    genre: 'Gen',
+    grouping: 'Grp',
+    comment: 'Com',
+    trackNumber: '3',
+    bpm: '128',
+    key: '8A',
+  }
+  const OTHER: Partial<TrackMetadata> = {
+    title: 'Otro',
+    artist: 'Otra',
+    album: 'Otro',
+    albumArtist: 'Otro',
+    year: '1999',
+    genre: 'Otro',
+    grouping: 'Otro',
+    comment: 'Otro',
+    trackNumber: '9',
+    bpm: '90',
+    key: '1B',
+  }
+  const FORMATS = [
+    ['wav', 'pcm_s16le'],
+    ['aiff', 'pcm_s16be'],
+    ['flac', 'flac'],
+    ['mp3', 'libmp3lame'],
+    ['m4a', 'aac'],
+  ]
+  const cases = FORMATS.flatMap(([ext, codec]) =>
+    Object.keys(WRITTEN).map((field) => [ext, codec, field]),
+  )
+
+  it.each(cases)(
+    'a %s whose %s... field %s was not written is fileTagDiffers',
+    async (ext, codec, field) => {
+      const file = at(`field-${field}.${ext}`)
+      ff('-i', at('source.wav'), '-c:a', codec, file)
+      writeTags(file, meta({ ...WRITTEN, [field]: OTHER[field as keyof TrackMetadata] }))
+      const check = await checkFile(
+        await expectFor(file, {
+          ext: `.${ext}` as FileExpect['ext'],
+          codec: 'copy',
+          samplesKept: false,
+          tags: WRITTEN,
+        }),
+        fileReaders,
+      )
+      expect(check.detail).toEqual({ key: 'fileTagDiffers', params: { field } })
+    },
+  )
+
+  it.each(FORMATS)(
+    'a %s whose title was meant to be cleared but is still there is fileTagDiffers',
+    async (ext, codec) => {
+      const file = at(`cleared.${ext}`)
+      ff('-i', at('source.wav'), '-c:a', codec, file)
+      writeTags(file, meta({ title: 'Stays', trackNumber: '4', bpm: '120' }))
+      const fields: (keyof TrackMetadata)[] = ['title', 'trackNumber', 'bpm']
+      for (const field of fields) {
+        const check = await checkFile(
+          await expectFor(file, {
+            ext: `.${ext}` as FileExpect['ext'],
+            codec: 'copy',
+            samplesKept: false,
+            tags: { [field]: '' },
+          }),
+          fileReaders,
+        )
+        expect(check.detail, `${ext} ${field}`).toEqual({
+          key: 'fileTagDiffers',
+          params: { field },
+        })
+      }
+    },
+  )
+
+  it('a field meant to be cleared and absent is ok', async () => {
+    const file = at('bare.wav')
+    ff('-i', at('source.wav'), '-c:a', 'pcm_s16le', file)
+    writeTags(file, meta())
+    const check = await checkFile(
+      await expectFor(file, { samplesKept: false, tags: { title: '', year: '' } }),
+      fileReaders,
+    )
+    expect(check.state).toBe('ok')
+  })
+
+  it.each(['id3 TYER=', 'id3 TYER=20'])(
+    'a stored year of "%s" never matches an expected 2020',
+    async (line) => {
+      const readers: FileReaders = { ...fileReaders, snapshotTags: () => [line] }
+      const check = await checkFile(
+        await expectFor(at('source.wav'), { tags: { year: '2020' } }),
+        readers,
+      )
+      expect(check.detail).toEqual({ key: 'fileTagDiffers', params: { field: 'year' } })
+    },
+  )
+
+  it('a bit depth that cannot be read is unreadable, never skipped', async () => {
+    const readers: FileReaders = {
+      ...fileReaders,
+      probe: async () => ({
+        ...(await fileReaders.probe(at('source.wav'))),
+        codecName: 'mp3',
+        bitsPerRawSample: 0,
+      }),
+    }
+    const check = await checkFile(
+      await expectFor(at('source.wav'), { codec: 'mp3', bitDepth: 16 }),
+      readers,
+    )
+    expect(check.state).toBe('unreadable')
+  })
+
+  it('an empty codec name is unreadable, not a format mismatch', async () => {
+    const readers: FileReaders = {
+      ...fileReaders,
+      probe: async () => ({ ...(await fileReaders.probe(at('source.wav'))), codecName: '' }),
+    }
+    const check = await checkFile(await expectFor(at('source.wav')), readers)
+    expect(check.state).toBe('unreadable')
+  })
 })
