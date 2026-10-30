@@ -1,9 +1,11 @@
-import { readFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { BackupPolicy } from '../shared/backupPolicy'
 import type { TrashReason } from '../shared/types'
 import {
+  claimHeldOriginal,
   configureBackupDiscarder,
   configureBackupStore,
   configureOriginalKeeper,
@@ -183,88 +185,141 @@ describe('configureBackupStore', () => {
 // leaves the original in Copias. The verdict lands after the original is gone, so the
 // copy is taken anyway and dropped only once the new file is shown to add up.
 describe('an overwrite under never, until the self-check answers', () => {
-  function store(room = true) {
+  const dir = mkdtempSync(join(tmpdir(), 'surco-held-'))
+  let n = 0
+
+  function store(room: 'room' | 'none' | 'throws' = 'room') {
     return {
-      stash: vi.fn(async (path: string, reason: TrashReason, outputPath?: string) =>
-        room
-          ? {
-              id: `kept:${path}`,
-              name: 'x',
-              originalPath: path,
-              storedPath: '',
-              bytes: 0,
-              trashedAt: 0,
-              reason,
-              ...(outputPath ? { outputPath } : {}),
-            }
-          : null,
+      stash: vi.fn(
+        async (
+          path: string,
+          reason: TrashReason,
+          outputPath?: string,
+          _trashedAt?: number,
+          _held?: boolean,
+        ) => {
+          if (room === 'throws') throw Object.assign(new Error('EACCES'), { code: 'EACCES' })
+          if (room === 'none') return null
+          const storedPath = join(dir, `stored-${n++}`)
+          writeFileSync(storedPath, '')
+          return {
+            id: `kept:${path}`,
+            name: 'x',
+            originalPath: path,
+            storedPath,
+            bytes: 0,
+            trashedAt: 0,
+            reason,
+            ...(outputPath ? { outputPath } : {}),
+          }
+        },
       ),
       remove: vi.fn(async (_id: string) => {}),
+      release: vi.fn((_id: string) => {}),
     }
+  }
+
+  async function hold(path: string, output: string, reencodes = true): Promise<string | undefined> {
+    await keepOriginal(path, 'renamed', output, { reencodes, untilChecked: true })
+    return claimHeldOriginal(output)
   }
 
   it('keeps the original in Copias when something does not match', async () => {
     const s = store()
     configureBackupStore(s, () => 'never')
-    const kept = await keepOriginal('/a.aiff', 'replaced', '/a.aiff', {
-      reencodes: true,
-      untilChecked: true,
-    })
-    expect(kept?.originalPath).toBe('/a.aiff')
-    expect(settleHeldOriginal('/a.aiff', 'mismatch')).toBe('kept')
+    const token = await hold('/a.wav', '/a.flac')
+    expect(s.stash).toHaveBeenCalledWith('/a.wav', 'renamed', '/a.flac', undefined, true)
+    expect(settleHeldOriginal(token, 'mismatch')).toBe('kept')
     expect(s.remove).not.toHaveBeenCalled()
+    expect(s.release).toHaveBeenCalledWith('kept:/a.wav')
   })
 
   it('drops the copy once everything matches, leaving nothing as never promises', async () => {
     const s = store()
     configureBackupStore(s, () => 'never')
-    await keepOriginal('/b.wav', 'renamed', '/b.flac', { untilChecked: true })
-    expect(settleHeldOriginal('/b.flac', 'ok')).toBeUndefined()
+    const token = await hold('/b.wav', '/b.flac')
+    expect(settleHeldOriginal(token, 'ok')).toBeUndefined()
     expect(s.remove).toHaveBeenCalledWith('kept:/b.wav')
   })
 
   it('keeps the original while the verdict has not arrived', async () => {
     const s = store()
     configureBackupStore(s, () => 'never')
-    await keepOriginal('/c.wav', 'renamed', '/c.flac', { untilChecked: true })
-    expect(settleHeldOriginal('/c.flac', 'checking')).toBeUndefined()
-    expect(settleHeldOriginal('/c.flac', 'pending')).toBeUndefined()
+    const token = await hold('/c.wav', '/c.flac')
+    expect(claimHeldOriginal('/c.flac')).toBeUndefined()
+    expect(settleHeldOriginal(token, 'checking')).toBeUndefined()
+    expect(settleHeldOriginal(token, 'pending')).toBeUndefined()
     expect(s.stash).toHaveBeenCalledTimes(1)
     expect(s.remove).not.toHaveBeenCalled()
   })
 
-  it('stays kept once a mismatch was reported, whatever a later check says', async () => {
+  // A retry is the DJ's way to clear a mismatch: once it reads back ok there is nothing
+  // the copy is insurance against, and never asked for none.
+  it('drops the copy when a retry turns the mismatch into ok', async () => {
     const s = store()
     configureBackupStore(s, () => 'never')
-    await keepOriginal('/d.aiff', 'replaced', '/d.aiff', { reencodes: true, untilChecked: true })
-    settleHeldOriginal('/d.aiff', 'mismatch')
-    expect(settleHeldOriginal('/d.aiff', 'ok')).toBe('kept')
-    expect(s.remove).not.toHaveBeenCalled()
+    const token = await hold('/d.wav', '/d.flac')
+    expect(settleHeldOriginal(token, 'mismatch')).toBe('kept')
+    expect(settleHeldOriginal(token, 'ok')).toBeUndefined()
+    expect(s.remove).toHaveBeenCalledWith('kept:/d.wav')
+    expect(settleHeldOriginal(token, 'mismatch')).toBeUndefined()
+  })
+
+  it('never says kept for a copy that is no longer in Copias', async () => {
+    const s = store()
+    configureBackupStore(s, () => 'never')
+    const token = await hold('/e.wav', '/e.flac')
+    const stored = (await s.stash.mock.results[0].value)?.storedPath as string
+    rmSync(stored)
+    expect(settleHeldOriginal(token, 'mismatch')).toBeUndefined()
   })
 
   it('says so when Copias has no room for it, and deletes as never does', async () => {
-    const s = store(false)
+    const s = store('none')
     const overflow = vi.fn(async (_path: string) => {})
     configureBackupStore(s, () => 'never', overflow)
-    expect(
-      await keepOriginal(join(process.cwd(), 'package.json'), 'renamed', '/e.flac', {
-        untilChecked: true,
-      }),
-    ).toBeNull()
+    const present = join(process.cwd(), 'package.json')
+    expect(await keepOriginal(present, 'renamed', '/f.flac', { untilChecked: true })).toBeNull()
     expect(overflow).not.toHaveBeenCalled()
-    expect(settleHeldOriginal('/e.flac', 'mismatch')).toBe('noRoom')
+    expect(settleHeldOriginal(claimHeldOriginal('/f.flac'), 'mismatch')).toBe('noRoom')
+  })
+
+  // The conversion has landed by the time the original is retired: a copy that fails
+  // halfway (a permission, a disk filling up) is no reason to report it as failed.
+  it('treats a copy that throws as no room, never failing the conversion', async () => {
+    const s = store('throws')
+    configureBackupStore(s, () => 'never')
+    await expect(
+      keepOriginal('/g.wav', 'renamed', '/g.flac', { untilChecked: true }),
+    ).resolves.toBeNull()
+    expect(settleHeldOriginal(claimHeldOriginal('/g.flac'), 'mismatch')).toBe('noRoom')
+  })
+
+  // The decision was about conversions: a tag-only update copies the audio through, and
+  // never treats it as «Solo si cambia el audio» does.
+  it('holds nothing for a tag-only update', async () => {
+    const s = store()
+    configureBackupStore(s, () => 'never')
+    expect(claimHeldOriginal('/h.aiff')).toBeUndefined()
+    await hold('/h.aiff', '/h.aiff', false)
+    expect(s.stash).not.toHaveBeenCalled()
   })
 
   it('leaves the other levels as they were', async () => {
     for (const policy of ['always', 'audioChanges'] as const) {
       const s = store()
       configureBackupStore(s, () => policy)
-      await keepOriginal('/f.aiff', 'replaced', '/f.aiff', { reencodes: true, untilChecked: true })
-      await keepOriginal('/g.aiff', 'replaced', '/g.aiff', { reencodes: false, untilChecked: true })
-      expect(settleHeldOriginal('/f.aiff', 'ok')).toBeUndefined()
-      expect(settleHeldOriginal('/g.aiff', 'mismatch')).toBeUndefined()
-      expect(s.stash.mock.calls.map(([path]) => path)).toEqual(
-        policy === 'always' ? ['/f.aiff', '/g.aiff'] : ['/f.aiff'],
+      const f = await hold('/f.aiff', '/f.aiff')
+      const g = await hold('/g.aiff', '/g.aiff', false)
+      expect(settleHeldOriginal(f, 'ok')).toBeUndefined()
+      expect(settleHeldOriginal(g, 'mismatch')).toBeUndefined()
+      expect(s.stash.mock.calls.map(([path, , , , held]) => [path, held])).toEqual(
+        policy === 'always'
+          ? [
+              ['/f.aiff', undefined],
+              ['/g.aiff', undefined],
+            ]
+          : [['/f.aiff', undefined]],
       )
       expect(s.remove).not.toHaveBeenCalled()
     }
@@ -276,6 +331,22 @@ describe('an overwrite under never, until the self-check answers', () => {
     expect(await keepOriginal('/h.aiff', 'replaced', '/h.aiff')).toBeNull()
     expect(await keepOriginal('/i.wav', 'deleted')).toBeNull()
     expect(s.stash).not.toHaveBeenCalled()
+  })
+
+  // The same track converted again before its first verdict: the first original is kept
+  // for good, and a late word about the first job cannot decide the second one's copy.
+  it('keeps an earlier hold for good when the same file is overwritten again', async () => {
+    const s = store()
+    configureBackupStore(s, () => 'never')
+    const first = await hold('/j.wav', '/j.flac')
+    const second = await hold('/j2.wav', '/j.flac')
+    expect(second).not.toBe(first)
+    expect(s.release).toHaveBeenCalledWith('kept:/j.wav')
+    expect(settleHeldOriginal(first, 'ok')).toBeUndefined()
+    expect(s.remove).not.toHaveBeenCalled()
+    expect(settleHeldOriginal(second, 'ok')).toBeUndefined()
+    expect(s.remove).toHaveBeenCalledWith('kept:/j2.wav')
+    expect(s.remove).toHaveBeenCalledTimes(1)
   })
 })
 

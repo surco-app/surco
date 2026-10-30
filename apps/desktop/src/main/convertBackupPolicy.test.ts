@@ -106,6 +106,12 @@ describe('backup policy on an in-place rewrite', () => {
   // 'never' removes the net only once the self-check has read the new file back: the
   // rename lands before that verdict, so the original is held until it answers (see
   // settleHeldOriginal), and a file that does not add up still has its original.
+  // A tag-only update copies the audio through: never treats it as audioChanges does and
+  // holds nothing for the self-check.
+  it('holds nothing under never when only the tags change', async () => {
+    expect(await rewriteInPlace({ backupPolicy: 'never' })).toEqual([])
+  })
+
   it('holds the original under never until the self-check answers', async () => {
     expect(await rewriteInPlace({ backupPolicy: 'never', normalize: PEAK })).toEqual([
       'the original',

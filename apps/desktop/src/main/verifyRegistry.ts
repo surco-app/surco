@@ -42,6 +42,8 @@ export interface VerifyEntry {
   cueShiftMs?: number
   // The same move as Engine DJ counts it, handed again with the repoint and expected of the row.
   engineShift?: EngineShift
+  // The original held under «Nunca» for this verdict (claimHeldOriginal).
+  heldOriginal?: string
   verification: Verification
 }
 
@@ -180,7 +182,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     const stamp = stamps.get(e) ?? { job: e.verification.job, seq: 0 }
     stamps.set(e, stamp)
     stamp.seq += 1
-    const originalHeld = settleHeldOriginal(e.to, e.verification.status)
+    const originalHeld = settleHeldOriginal(e.heldOriginal, e.verification.status)
     deps.emit(e.trackId, {
       ...e.verification,
       job: stamp.job,

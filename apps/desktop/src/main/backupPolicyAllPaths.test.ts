@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -10,7 +10,14 @@ vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 import type { BackupPolicy } from '../shared/backupPolicy'
 import { removeRenamedOriginal } from './inplace'
-import { configureOriginalKeeper, policyKeeper } from './originalKeeper'
+import {
+  claimHeldOriginal,
+  configureBackupStore,
+  configureOriginalKeeper,
+  policyKeeper,
+  settleHeldOriginal,
+} from './originalKeeper'
+import { createSurcoTrash } from './surcoTrash'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-allpaths-'))
@@ -82,6 +89,21 @@ describe('a format change under the backup policy', () => {
     const kept = install('never')
     await removeRenamedOriginal(input, output)
     expect(kept).toEqual([input])
+  })
+
+  // Through the real store: once the self-check says the new file adds up, nothing of the
+  // original is left, neither on its path nor in Copias.
+  it('leaves nothing under never once the self-check says everything matches', async () => {
+    const { input, output } = pair()
+    const store = createSurcoTrash(mkdtempSync(join(tmpdir(), 'surco-allpaths-trash-')))
+    configureBackupStore(store, () => 'never')
+    await removeRenamedOriginal(input, output)
+    expect(existsSync(input)).toBe(false)
+    const [held] = await store.list()
+    expect(held.originalPath).toBe(input)
+    settleHeldOriginal(claimHeldOriginal(output), 'ok')
+    await vi.waitFor(async () => expect(await store.list()).toEqual([]))
+    expect(existsSync(held.storedPath)).toBe(false)
   })
 
   // A format change re-encodes by definition, so the middle level has no reason to skip

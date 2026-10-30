@@ -1114,6 +1114,8 @@ describe('runProcessTrack — in-place rewrite', () => {
   // Under never the file read back right away can already be wrong: the original the
   // rename retired was held for that answer, and the row says it stayed in Copias.
   it('reports the original kept under never when the file does not add up', async () => {
+    const stored = join(mkdtempSync(join(tmpdir(), 'surco-held-')), 'song.wav')
+    writeFileSync(stored, '')
     configureOriginalKeeper(
       policyKeeper(
         () => 'never',
@@ -1121,7 +1123,7 @@ describe('runProcessTrack — in-place rewrite', () => {
           id: 'held',
           name: 'x',
           originalPath: path,
-          storedPath: '',
+          storedPath: stored,
           bytes: 0,
           trashedAt: 0,
           reason,
@@ -1138,10 +1140,14 @@ describe('runProcessTrack — in-place rewrite', () => {
         state: 'mismatch',
         detail: { key: 'fileTruncated' },
       })),
+      registerVerification: vi.fn(),
     })
     try {
       const result = await runProcessTrack(job(), deps)
       expect(result.verification).toMatchObject({ status: 'mismatch', originalHeld: 'kept' })
+      expect(vi.mocked(deps.registerVerification)?.mock.calls[0][0].heldOriginal).toEqual(
+        expect.any(String),
+      )
     } finally {
       configureOriginalKeeper(null)
     }

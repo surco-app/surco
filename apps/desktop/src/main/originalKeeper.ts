@@ -26,6 +26,8 @@ export interface KeepContext {
   // The original a conversion writes over. Under 'never' it is kept anyway until the
   // checks of the new file answer (settleHeldOriginal), which happens after it is gone.
   untilChecked?: boolean
+  // Set by policyKeeper on that copy: the store pins it, evicting nothing for it.
+  held?: boolean
 }
 
 export type OriginalKeeper = (
@@ -37,14 +39,49 @@ export type OriginalKeeper = (
 
 let keeper: OriginalKeeper | null = null
 let livePolicy: (() => BackupPolicy) | null = null
-// The originals held under 'never', by the file written over them: null when Copias had no
-// room. `settled` once the checks found something wrong, after which it is a copy like any.
-const held = new Map<string, { entry: TrashEntry | null; settled?: HeldOriginal }>()
+// The originals held under 'never', by a token the job that wrote over them claims, so a
+// late word about an earlier job on the same path cannot settle them. `entry` is null when
+// Copias had no room. `unclaimed` is the hold each output path is waiting to hand over.
+const holds = new Map<string, { key: string; entry: TrashEntry | null }>()
+const unclaimed = new Map<string, string>()
+let holdCount = 0
+let releaser: ((id: string) => void) | null = null
 const heldKey = (outputPath: string) => outputPath.normalize('NFC')
 
 export function configureOriginalKeeper(next: OriginalKeeper | null): void {
   keeper = next
-  held.clear()
+  holds.clear()
+  unclaimed.clear()
+  releaser = null
+}
+
+// The same path written over again before its verdict: the earlier original stays, as a
+// copy like any other, and only the new one waits for the checks.
+async function holdUntilChecked(
+  stash: OriginalKeeper,
+  path: string,
+  reason: TrashReason,
+  outputPath: string,
+  ctx: KeepContext,
+): Promise<TrashEntry | null> {
+  const key = heldKey(outputPath)
+  for (const [token, hold] of holds)
+    if (hold.key === key) {
+      holds.delete(token)
+      if (hold.entry) releaser?.(hold.entry.id)
+    }
+  const entry = await stash(path, reason, outputPath, { ...ctx, held: true }).catch(() => null)
+  const token = `held-${++holdCount}`
+  holds.set(token, { key, entry })
+  unclaimed.set(key, token)
+  return entry
+}
+
+// What the job that wrote `outputPath` hands its checks, once: the hold it left there.
+export function claimHeldOriginal(outputPath: string): string | undefined {
+  const token = unclaimed.get(heldKey(outputPath))
+  unclaimed.delete(heldKey(outputPath))
+  return token
 }
 
 // Wraps the real store with the user's setting, so ONE decision covers all three write
@@ -64,10 +101,8 @@ export function policyKeeper(
     // re-encoded, but nothing can be re-run either, so only 'never' skips these.
     const reencodes = ctx?.reencodes ?? true
     if (!ctx?.regardlessOfPolicy && !keepsBackup(policy(), { reencodes })) {
-      if (!ctx?.untilChecked || !outputPath || policy() !== 'never') return null
-      const entry = await stash(path, reason, outputPath, ctx)
-      held.set(heldKey(outputPath), { entry })
-      return entry
+      if (!ctx?.untilChecked || !reencodes || !outputPath || policy() !== 'never') return null
+      return holdUntilChecked(stash, path, reason, outputPath, ctx)
     }
     const kept = await stash(path, reason, outputPath, ctx)
     if (!kept && !ctx?.regardlessOfPolicy && !ctx?.staysInPlace && noRoom && existsSync(path))
@@ -117,33 +152,44 @@ export function configureBackupDiscarder(next: BackupDiscarder | null): void {
 }
 
 export async function discardBackup(entry: TrashEntry): Promise<void> {
-  for (const [key, hold] of held) if (hold.entry?.id === entry.id) held.delete(key)
+  for (const [token, hold] of holds) if (hold.entry?.id === entry.id) holds.delete(token)
   if (discarder) await discarder(entry)
 }
 
-// The checks' word on the file written at `outputPath`. Everything adding up drops the
-// held original, as 'never' asks; something wrong keeps it for good, and says whether it is
-// there. No word at all (the app quit, a library that never answered) leaves it in Copias.
+// The checks' word on a held original. Everything adding up drops it, as 'never' asks,
+// even after a retry cleared a mismatch; something wrong frees it to stay like any copy,
+// and says so only while it is really there. No word at all (the app quit, a library that
+// never answered) leaves it in Copias.
 export function settleHeldOriginal(
-  outputPath: string,
+  token: string | undefined,
   status: Verification['status'],
 ): HeldOriginal | undefined {
-  const hold = held.get(heldKey(outputPath))
-  if (!hold || hold.settled) return hold?.settled
-  if (status === 'mismatch') hold.settled = hold.entry ? 'kept' : 'noRoom'
+  const hold = token ? holds.get(token) : undefined
+  if (!token || !hold) return undefined
   if (status === 'ok') {
-    held.delete(heldKey(outputPath))
+    holds.delete(token)
     if (hold.entry) void discardBackup(hold.entry).catch(() => undefined)
+    return undefined
   }
-  return hold.settled
+  if (status !== 'mismatch') return undefined
+  if (!hold.entry) return 'noRoom'
+  releaser?.(hold.entry.id)
+  return existsSync(hold.entry.storedPath) ? 'kept' : undefined
 }
 
 // What launch installs: the real store behind the user's setting, and the same store
 // for dropping a copy a failed write no longer needs.
 export function configureBackupStore(
   store: {
-    stash: (path: string, reason: TrashReason, outputPath?: string) => Promise<TrashEntry | null>
+    stash: (
+      path: string,
+      reason: TrashReason,
+      outputPath?: string,
+      trashedAt?: number,
+      held?: boolean,
+    ) => Promise<TrashEntry | null>
     remove: (id: string) => Promise<void>
+    release?: (id: string) => void
   },
   policy: () => BackupPolicy,
   noRoom?: (path: string) => Promise<void>,
@@ -152,10 +198,14 @@ export function configureBackupStore(
   configureOriginalKeeper(
     policyKeeper(
       policy,
-      (path, reason, outputPath) => store.stash(path, reason, outputPath),
+      (path, reason, outputPath, ctx) =>
+        ctx?.held
+          ? store.stash(path, reason, outputPath, undefined, true)
+          : store.stash(path, reason, outputPath),
       noRoom,
     ),
   )
+  releaser = store.release ?? null
   configureBackupDiscarder((entry) => store.remove(entry.id))
 }
 

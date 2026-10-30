@@ -42,7 +42,12 @@ import {
   uniqueOutputPath,
 } from './inplace'
 import { pathKey } from './libraryPathKey'
-import { discardBackup, keepBeforeMusicRewrite, settleHeldOriginal } from './originalKeeper'
+import {
+  claimHeldOriginal,
+  discardBackup,
+  keepBeforeMusicRewrite,
+  settleHeldOriginal,
+} from './originalKeeper'
 import type { EngineBefore } from './verifyEngine'
 import type { FileExpect } from './verifyFile'
 import type { MusicExpect } from './verifyMusic'
@@ -1109,7 +1114,8 @@ export async function runProcessTrack(
       ...(engineListed ? [library('engine')] : []),
       ...(traktor ? [library('traktor')] : []),
     ])
-    const originalHeld = settleHeldOriginal(finalPath, checked.status)
+    const heldOriginal = claimHeldOriginal(finalPath)
+    const originalHeld = settleHeldOriginal(heldOriginal, checked.status)
     const verification = {
       ...checked,
       job: randomUUID(),
@@ -1130,6 +1136,7 @@ export async function runProcessTrack(
       engine: before.engine,
       traktorStranded: landed?.traktorFollowed === false,
       engineStep: addedToEngineDj,
+      heldOriginal,
       verification,
     })
 
