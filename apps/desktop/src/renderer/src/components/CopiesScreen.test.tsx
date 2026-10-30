@@ -717,6 +717,23 @@ describe('CopiesScreen music files', () => {
     expect(props.onRemove).not.toHaveBeenCalled()
   })
 
+  it('drops an armed confirmation when the list is hidden, so it neither eats Escape nor comes back armed', () => {
+    const props = renderMusic([entry()])
+    fireEvent.click(screen.getByTestId('trash-remove'))
+    fireEvent.click(screen.getByTestId('trash-empty-button'))
+    fireEvent.click(screen.getByTestId('copies-toggle-music'))
+    const press = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true })
+    window.dispatchEvent(press)
+    expect(press.defaultPrevented).toBe(false)
+    fireEvent.click(screen.getByTestId('copies-toggle-music'))
+    expect(screen.queryByTestId('trash-remove-confirm')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('trash-empty-confirm')).not.toBeInTheDocument()
+    expect(screen.getByTestId('trash-remove')).toBeInTheDocument()
+    expect(screen.getByTestId('trash-empty-button')).toBeInTheDocument()
+    expect(props.onRemove).not.toHaveBeenCalled()
+    expect(props.onEmpty).not.toHaveBeenCalled()
+  })
+
   it('reveals the folder', () => {
     const props = renderMusic([entry()])
     fireEvent.click(screen.getByTestId('trash-reveal'))

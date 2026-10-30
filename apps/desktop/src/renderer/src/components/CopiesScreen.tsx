@@ -309,7 +309,8 @@ function MusicFiles({
   onEmpty,
   onReveal,
   initialQuery = '',
-}: MusicFilesProps): React.JSX.Element {
+  open,
+}: MusicFilesProps & { open: boolean }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const lng = i18n.language
   const [confirmEmpty, setConfirmEmpty] = useState(false)
@@ -321,6 +322,12 @@ function MusicFiles({
   const active = counts[filter] > 0 ? filter : 'all'
   const rows = tools ? visibleEntries(entries, active, query) : entries
   const confirming = confirmEmpty || confirmRemove !== null
+
+  useEffect(() => {
+    if (open) return
+    setConfirmEmpty(false)
+    setConfirmRemove(null)
+  }, [open])
 
   useEffect(() => {
     if (!confirming) return
@@ -583,7 +590,7 @@ function MusicSection({
       </div>
       {entries.length > 0 ? (
         <Collapse open={open} testId="copies-list-music">
-          <MusicFiles {...trash} />
+          <MusicFiles {...trash} open={open} />
         </Collapse>
       ) : (
         <p
