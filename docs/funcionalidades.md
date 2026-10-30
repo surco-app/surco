@@ -1420,6 +1420,23 @@ matriz es solo de Traktor, cuyos cues viajan **dentro del fichero**. Los de reko
 su colección y no dependen del formato (ver §8.5 y el editor de cues más abajo). Al
 convertir, Surco **conserva** los cues de Traktor del fichero pero no los edita.
 
+**Calibración al cruzar MP3** (medida el 2026-10-31 en Traktor Pro 4.5.1). Método: una pista
+de clics a 120 BPM codificada como WAV, AIFF, FLAC, MP3 con cabecera Xing/LAME y MP3 sin
+ella, analizada por Traktor; se comparó el ancla AutoGrid que escribió en el `.nml`. WAV, AIFF
+y FLAC comparten línea de tiempo al microsegundo. El MP3 con Xing sale 51,14 ms tarde y el
+MP3 sin Xing 24,88 ms tarde. Traktor reproduce la trama Xing como 1152 muestras de silencio y
+conserva el retardo del encoder (1105 muestras); ffmpeg se salta las dos cosas si hay cabecera
+y ninguna si no la hay, y el fichero convertido guarda lo que ffmpeg decodificó. La regla
+(`cueCalibration.ts`), en muestras a la frecuencia de cada fichero, es lo que Traktor pinta por
+delante del audio de la salida (MP3 con Xing 2257, sin Xing 1105, PCM 0) menos lo que pintaba
+por delante del audio que ffmpeg sacó del origen (MP3 con Xing 2257, sin Xing 0, PCM 0). A
+44,1 kHz queda así. MP3 con Xing → WAV/AIFF/FLAC −51,18 ms. MP3 sin Xing → WAV/AIFF/FLAC 0.
+WAV/AIFF/FLAC → MP3 +51,18 ms, porque el MP3 de Surco lleva Xing. MP3 → MP3 recodificado 0 si
+el origen tenía Xing y +51,18 ms si no. La copia sin recodificar no se mueve. La cabecera y la
+frecuencia se leen del origen y del fichero ya codificado, no de la extensión. El ajuste de
+cues de Ajustes se suma encima. Solo afecta a los cues de Traktor; rekordbox y Engine DJ van
+por su lado.
+
 **El editor de cues escribe en la colección de Traktor** (nuevo en v1.12.0), nunca en el
 fichero. Solo hot cues: Traktor no tiene CALL, así que no se escribe ninguno, y se escriben
 como tipo 0, que Traktor pinta en azul sea cual sea el color elegido

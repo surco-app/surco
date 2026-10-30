@@ -12,7 +12,7 @@ import {
 import { describe, expect, it, vi } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
 import { encodeBase91 } from './base91'
-import { automaticCueOffsetMs } from './cueCalibration'
+import { automaticCueOffsetOfFiles } from './cueCalibration'
 import { convertAudio } from './ffmpeg'
 import {
   buildTraktorTree,
@@ -146,7 +146,7 @@ describe('the cue carry-over matrix', () => {
         expect(
           readTraktorCueStart(tree as Uint8Array, 1),
           `${src} → ${target.ext} moved the cue`,
-        ).toBeCloseTo(DROP_MS + automaticCueOffsetMs(src, target.ext), 0)
+        ).toBeCloseTo(DROP_MS + (await automaticCueOffsetOfFiles(input, out)), 0)
         expect(hasTextMirror(out), `${src} → ${target.ext} left ffmpeg's TXXX behind`).toBe(false)
       })
     }
@@ -188,7 +188,7 @@ describe('the cue offset reaches every conversion', () => {
         expect(
           readTraktorCueStart(tree as Uint8Array, 1),
           `${src} → ${target.ext} ignored the cue offset`,
-        ).toBeCloseTo(DROP_MS + OFFSET_MS + automaticCueOffsetMs(src, target.ext), 0)
+        ).toBeCloseTo(DROP_MS + OFFSET_MS + (await automaticCueOffsetOfFiles(input, out)), 0)
       })
     }
   }

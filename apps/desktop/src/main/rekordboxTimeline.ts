@@ -41,13 +41,32 @@ export interface Mpeg1Info {
   delay: number
 }
 
-export function mpeg1Info(head: Buffer): Mpeg1Info | null {
-  const frame = firstFrame(head)
-  if (frame === null) return null
+function xingTagAt(head: Buffer, frame: number): number | null {
   const mono = head[frame + 3] >> 6 === 3
   const tagAt = frame + 4 + (mono ? 17 : 32)
   const tag = head.toString('latin1', tagAt, tagAt + 4)
-  if (tag !== 'Info' && tag !== 'Xing') return null
+  return tag === 'Info' || tag === 'Xing' ? tagAt : null
+}
+
+export interface Mpeg1Xing {
+  xing: boolean
+  sampleRate: number
+}
+
+export function mpeg1Xing(head: Buffer): Mpeg1Xing | null {
+  const frame = firstFrame(head)
+  if (frame === null) return null
+  return {
+    xing: xingTagAt(head, frame) !== null,
+    sampleRate: MPEG1_SAMPLE_RATES[(head[frame + 2] >> 2) & 3],
+  }
+}
+
+export function mpeg1Info(head: Buffer): Mpeg1Info | null {
+  const frame = firstFrame(head)
+  if (frame === null) return null
+  const tagAt = xingTagAt(head, frame)
+  if (tagAt === null) return null
   const flags = head.readUInt32BE(tagAt + 4)
   const encoderAt = XING_FIELD_BYTES.reduce(
     (at, [flag, bytes]) => (flags & flag ? at + bytes : at),
@@ -91,6 +110,11 @@ async function mp3Head(file: string): Promise<Buffer | null> {
   } finally {
     await fh.close()
   }
+}
+
+export async function mpeg1XingOfFile(file: string): Promise<Mpeg1Xing | null> {
+  const head = await mp3Head(file)
+  return head ? mpeg1Xing(head) : null
 }
 
 export async function rekordboxLeadOfFile(file: string): Promise<number> {
