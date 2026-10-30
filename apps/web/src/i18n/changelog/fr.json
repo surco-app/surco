@@ -31,6 +31,18 @@
       {
         "text": "Quand Apple Music réécrit un de tes fichiers en changeant un tag, depuis « Vérifier les métadonnées », « Mettre à jour dans Apple Music » ou lors d’une conversion, Surco garde d’abord une copie. Annuler dans « Vérifier les métadonnées » rend le fichier exactement comme il était, et s’il n’y a pas de place pour la copie, Surco ne laisse pas Music y toucher.",
         "in": "1.18.2"
+      },
+      {
+        "text": "Quand tu convertis un MP3 en AIFF ou FLAC, les cues du morceau d’origine dans Traktor restent à leur place, et si tu convertis avec Traktor ouvert, les cues que tu modifies entre-temps sont conservés.",
+        "in": "1.18.3"
+      },
+      {
+        "text": "Les morceaux rekordbox avec des accents dans leur nom suivent leur version convertie avec leurs cues et leurs playlists, et Engine DJ déplace hot cues, boucles et grille quand tu coupes le silence du début.",
+        "in": "1.18.3"
+      },
+      {
+        "text": "Les genres à plusieurs valeurs ou avec des parenthèses, comme « Techno (Peak Time / Driving) », sont enregistrés tels quels en MP3, AIFF et WAV, et la vérification après conversion ne signale plus par erreur un FLAC converti en MP3.",
+        "in": "1.18.3"
       }
     ]
   },

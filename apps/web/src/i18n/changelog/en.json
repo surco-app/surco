@@ -31,6 +31,18 @@
       {
         "text": "When Apple Music rewrites one of your files as a tag changes, from “Review metadata”, “Update in Apple Music” or a conversion, Surco keeps a copy first. Undo in “Review metadata” brings the file back exactly as it was, and if there is no room for the copy, Surco does not let Music touch it.",
         "in": "1.18.2"
+      },
+      {
+        "text": "Converting an MP3 to AIFF or FLAC leaves the original track's cues in Traktor where they were, and if you convert with Traktor open, cues you edit in the meantime are kept.",
+        "in": "1.18.3"
+      },
+      {
+        "text": "rekordbox tracks with accents in their name follow their converted version with their cues and playlists, and Engine DJ moves hot cues, loops and the grid when you trim leading silence.",
+        "in": "1.18.3"
+      },
+      {
+        "text": "Genres with several values or with parentheses, like “Techno (Peak Time / Driving)”, are saved as they are in MP3, AIFF and WAV, and the check after converting no longer flags a FLAC converted to MP3 by mistake.",
+        "in": "1.18.3"
       }
     ]
   },

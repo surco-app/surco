@@ -31,6 +31,18 @@
       {
         "text": "Wenn Apple Music eine deiner Dateien beim Ändern eines Tags neu schreibt, über „Metadaten prüfen“, „In Apple Music aktualisieren“ oder beim Konvertieren, legt Surco vorher eine Kopie an. Rückgängig in „Metadaten prüfen“ bringt die Datei genau so zurück, wie sie war, und ist kein Platz für die Kopie, lässt Surco Music die Datei nicht anrühren.",
         "in": "1.18.2"
+      },
+      {
+        "text": "Beim Konvertieren einer MP3 in AIFF oder FLAC bleiben die Cues des Originaltracks in Traktor, wo sie waren, und wenn du bei geöffnetem Traktor konvertierst, bleiben Cues erhalten, die du in der Zwischenzeit bearbeitest.",
+        "in": "1.18.3"
+      },
+      {
+        "text": "rekordbox-Tracks mit Akzenten im Namen folgen ihrer konvertierten Version mit Cues und Playlists, und Engine DJ verschiebt Hot Cues, Loops und Grid, wenn du die Stille am Anfang kürzt.",
+        "in": "1.18.3"
+      },
+      {
+        "text": "Genres mit mehreren Werten oder mit Klammern wie „Techno (Peak Time / Driving)“ werden in MP3, AIFF und WAV unverändert gespeichert, und die Prüfung nach dem Konvertieren markiert eine in MP3 konvertierte FLAC nicht mehr fälschlich.",
+        "in": "1.18.3"
       }
     ]
   },
