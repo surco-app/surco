@@ -165,7 +165,9 @@ describe('VerifiedPopover', () => {
         detail: { key: 'fileTagDiffers', params: { field: 'albumArtist' } },
       },
     ])
-    expect(file).toHaveTextContent(`No cuadra ${i18n.t('fields.albumArtist')} en el fichero`)
+    expect(file).toHaveTextContent(
+      `No cuadra el campo ${i18n.t('fields.albumArtist')} en el fichero`,
+    )
   })
 
   // The check sees the column change, not who changed it, so the line says what changed

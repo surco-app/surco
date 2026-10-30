@@ -945,6 +945,15 @@ describe('ConvertFooter batch verification', () => {
     expect(screen.getByTestId('verify-pending-icon')).toBeInTheDocument()
   })
 
+  // The batch says what waits the way the single line does, in English as in Spanish.
+  it('the English batch line names the pending tracks the way the single line does', async () => {
+    await i18n.changeLanguage('en')
+    render(batchFooter({ ok: 36, pending: 2, pendingPlaces: ['rekordbox'] }))
+    expect(screen.getByTestId('export-success')).toHaveTextContent(
+      /^36 checked · 2 in rekordbox once closed$/,
+    )
+  })
+
   it('names every program the pending tracks wait on', () => {
     render(batchFooter({ ok: 3, pending: 2, pendingPlaces: ['rekordbox', 'engine'] }))
     expect(screen.getByTestId('export-success')).toHaveTextContent(

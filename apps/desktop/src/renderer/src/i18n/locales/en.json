@@ -2878,7 +2878,7 @@
       "verified_other": "{{count}} checked",
       "mismatch_one": "{{count}} doesn’t add up",
       "mismatch_other": "{{count}} don’t add up",
-      "pending": "{{count}} once you close {{programs}}",
+      "pending": "{{count}} in {{programs}} once closed",
       "checking": "{{count}} still checking",
       "unverified": "{{count}} not checked"
     },
