@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type React from 'react'
 import {
-  lazy,
   Suspense,
   useCallback,
   useDeferredValue,
@@ -143,6 +142,7 @@ import { DEFAULT_REQUIRED_FIELDS, missingRequiredOf } from './lib/fields'
 import { pushImportNotice } from './lib/importNotices'
 import { mainErrorMessage } from './lib/ipcError'
 import { columnOf, isTypingTarget, nextColumn } from './lib/keymap'
+import { lazyChunk } from './lib/lazyChunk'
 import { librarySourceOf } from './lib/librarySource'
 import { listReviewSource } from './lib/listReviewSource'
 import { OpenSettingsProvider } from './lib/openSettingsContext'
@@ -226,7 +226,7 @@ const SEEN_SETTLE_MS = 250
 // paint, which shows the empty pane — split it into its own chunk, loaded the first
 // time a track is selected. The .then unwraps the named export React.lazy needs as a
 // default, same convention as the on-demand overlays in Overlays.tsx.
-const Editor = lazy(() => import('./components/Editor').then((m) => ({ default: m.Editor })))
+const Editor = lazyChunk(() => import('./components/Editor').then((m) => ({ default: m.Editor })))
 
 // Stable fallback while settings load, so the memoized Editor doesn't see a new array
 // each render. Mirrors the persisted default (Discogs only).
