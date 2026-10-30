@@ -3,6 +3,7 @@ import { ipcMain, type WebContents } from 'electron'
 import log from 'electron-log/main'
 import type { Verification } from '../shared/verification'
 import { type EngineDb, openEngineDb } from './enginePlaylists'
+import type { EngineShift } from './engineRepoint'
 import { pathKey } from './libraryPathKey'
 import type { LibraryRepointResult } from './libraryRepointFlush'
 import { type FindOptions, openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
@@ -170,7 +171,12 @@ interface RequeueTarget<T> {
 // Tags, grid and stars are left out, so a repoint still queued for the source, which may
 // carry them, is left as it is and only applied. True when the library is not there to take
 // it now.
-type Move = { from: string; to: string; audio?: { cueShiftMs: number } }
+type Move = {
+  from: string
+  to: string
+  audio?: { cueShiftMs: number }
+  engineShift?: EngineShift
+}
 export function libraryRequeue(queues: {
   rekordbox: RequeueTarget<Move>
   engine: RequeueTarget<Move>
@@ -202,6 +208,7 @@ export function libraryRequeue(queues: {
             from: e.from,
             to: e.to,
             ...(e.cueShiftMs === undefined ? {} : { audio: { cueShiftMs: e.cueShiftMs } }),
+            ...(e.engineShift ? { engineShift: e.engineShift } : {}),
           },
         ],
       )

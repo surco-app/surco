@@ -277,6 +277,20 @@ describe('libraryRequeue', () => {
     expect(q.rekordbox.apply).toHaveBeenCalledOnce()
   })
 
+  // Engine's row also never moved, so its cues still wait for the cut: the retry is the
+  // only write that can still bring it, once, along with the move.
+  it('hands Engine the move with the cut its cues still wait for', () => {
+    const q = queues()
+    const shift = { trimmedMs: 1900, sampleRateHz: 48000 }
+
+    libraryRequeue(q)('engine', entry({ cueShiftMs: -1900, engineShift: shift }))
+
+    expect(q.engine.enqueue).toHaveBeenCalledWith(
+      [],
+      [{ from: FROM, to: TO, audio: { cueShiftMs: -1900 }, engineShift: shift }],
+    )
+  })
+
   it('hands Traktor the rename and its cue shift, without cue tree, grid or stars', () => {
     const q = queues()
     const patch = {

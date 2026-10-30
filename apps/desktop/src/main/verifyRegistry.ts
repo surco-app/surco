@@ -6,6 +6,7 @@ import {
   verificationStatus,
   withChecks,
 } from '../shared/verification'
+import type { EngineShift } from './engineRepoint'
 import type { NmlPatch } from './traktorNml'
 import type { EngineBefore } from './verifyEngine'
 import type { FileExpect } from './verifyFile'
@@ -38,6 +39,8 @@ export interface VerifyEntry {
   // How the conversion moved the cues in rekordbox's timeline (the repoint's audio), handed
   // again with a repoint the library never applied.
   cueShiftMs?: number
+  // The same move as Engine DJ counts it, handed again with the repoint and expected of the row.
+  engineShift?: EngineShift
   verification: Verification
 }
 
