@@ -40,6 +40,14 @@ describe('rekordbox batch', () => {
     expect(recordedRekordboxRepoint(a.to)).toBeUndefined()
   })
 
+  // Two conversions landing on one file: the check of the later one is handed its own shift.
+  it('finds the last repoint recorded for a converted file', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint({ ...a, audio: { cueShiftMs: 25 } })
+    recordRekordboxRepoint({ from: '/m/one.flac', to: a.to, audio: { cueShiftMs: 10 } })
+    expect(recordedRekordboxRepoint(a.to)).toMatchObject({ audio: { cueShiftMs: 10 } })
+  })
+
   // A tags-only update keeps the path, but the entry still has to learn the new title.
   it('keeps a same-path update that carries tags', () => {
     const update = {

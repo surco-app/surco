@@ -104,9 +104,10 @@ export function endRekordboxBatch(): RekordboxRepoint[] {
   return result
 }
 
-// The repoint the batch holds for a converted file, by where it landed.
+// The repoint the batch holds for a converted file, by where it landed: the last one, like
+// recordedNmlPatch.
 export function recordedRekordboxRepoint(to: string): RekordboxRepoint | undefined {
-  return repoints.find((r) => r.to === to)
+  return repoints.findLast((r) => r.to === to)
 }
 
 export function attachRekordboxPlaylists(
