@@ -18,6 +18,8 @@ export interface CopiesProgram {
   isRunning: () => Promise<boolean>
   pendingLog: (collectionPath: string) => boolean
   exclusive: <T>(collectionPath: string, task: () => Promise<T>) => Promise<T>
+  // The waiting queue a restore discarded, for the tracks held pending on it.
+  onDiscarded?: () => void
 }
 
 const ORDER: DjProgram[] = ['rekordbox', 'traktor', 'engine']
@@ -75,7 +77,10 @@ export function registerCopiesIpc(
               ensureClosed: () => deps.ensureClosed(win),
               isRunning: deps.isRunning,
               pendingLog: deps.pendingLog,
-              discardQueue: deps.queue.discardCurrent,
+              discardQueue: () => {
+                deps.queue.discardCurrent()
+                deps.onDiscarded?.()
+              },
               busy: converting,
               exclusive: (task) => deps.exclusive(collectionPath, task),
             },

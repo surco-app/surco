@@ -273,6 +273,30 @@ describe('copies:restore', () => {
     expect(discard).toHaveBeenCalled()
   })
 
+  // The tracks a conversion left pending on that queue will never see it apply: they are
+  // settled as failed, never left pending.
+  it('tells the verification the waiting queue was discarded by the restore', async () => {
+    const path = collection('collection.nml')
+    const copy = await takeCopy(path, [], 'run', 1000)
+    const order: string[] = []
+    registerCopiesIpc(
+      programs({
+        traktor: {
+          collectionPath: () => path,
+          queue: {
+            state: () => ({ tracks: 0, changes: 0 }),
+            discardCurrent: () => order.push('discard'),
+          },
+          onDiscarded: () => order.push('settled'),
+        },
+      }),
+      broadcast,
+      () => false,
+    )
+    await handlerFor('copies:restore')({ sender: {} }, 'traktor', copy.id)
+    expect(order).toEqual(['discard', 'settled'])
+  })
+
   it('a library flush that arrives during a restore waits for it and finds the waiting changes gone', async () => {
     const path = collection('collection.nml')
     const copy = await takeCopy(path, [], 'run', 1000)

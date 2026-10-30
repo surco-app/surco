@@ -2057,6 +2057,7 @@ function registerIpc(): void {
         isRunning: isRekordboxRunning,
         pendingLog: rekordboxPendingLog,
         exclusive: (_path, task) => task(),
+        onDiscarded: () => queueChecks.discarded('rekordbox'),
       },
       traktor: {
         collectionPath: () => traktorWritePath() || null,
@@ -2067,6 +2068,7 @@ function registerIpc(): void {
         isRunning: isTraktorRunning,
         pendingLog: () => false,
         exclusive: (_path, task) => task(),
+        onDiscarded: () => queueChecks.discarded('traktor'),
       },
       engine: {
         collectionPath: () => {
@@ -2080,6 +2082,7 @@ function registerIpc(): void {
         isRunning: isEngineDjRunning,
         pendingLog: enginePendingLog,
         exclusive: withEngineDatabase,
+        onDiscarded: () => queueChecks.discarded('engine'),
       },
     },
     broadcast,
