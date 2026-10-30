@@ -254,6 +254,52 @@ export async function readAppleMusicPlaylist(
   return parsePlaylistTracks(stdout)
 }
 
+// The same rows buildPlaylistTracksScript gives, read from the library database through
+// macOS's iTunesLibrary framework instead of asked of Music. Measured on a 2,044-track
+// playlist on a NAS: Music took about a minute, 200 tracks at a time, while the database
+// gave every row in 0.5 s (17 s the first time after the NAS has gone idle), in the same
+// order and with the same fields. Fields go through a bulk key path per column: one bridge
+// call per track per field cost 17 s on its own.
+export function buildLibraryPlaylistScript(persistentId: string): string {
+  return [
+    "ObjC.import('iTunesLibrary')",
+    "const hex = (n) => BigInt(n).toString(16).toUpperCase().padStart(16, '0')",
+    "const lib = $.ITLibrary.libraryWithAPIVersionError('1.0', null)",
+    'const lists = lib.allPlaylists',
+    'let found = null',
+    'for (let i = 0; i < lists.count && !found; i++) {',
+    '  const p = lists.objectAtIndex(i)',
+    `  if (hex(p.persistentID.description.js) === ${JSON.stringify(persistentId)}) found = p`,
+    '}',
+    "if (!found) throw new Error('playlist not in the library database')",
+    'const col = (key) => ObjC.deepUnwrap(found.items.valueForKeyPath(key))',
+    "const paths = col('location.path')",
+    "const pids = col('persistentID.description')",
+    "const groupings = col('grouping')",
+    "const years = col('year')",
+    "const comments = col('comments')",
+    "const trackNos = col('trackNumber')",
+    "const discNos = col('album.discNumber')",
+    "const bpms = col('beatsPerMinute')",
+    "const ratings = col('rating')",
+    "const computed = col('ratingComputed')",
+    "const text = (v) => (v === null || v === undefined ? '' : String(v))",
+    'const rows = pids.map((pid, i) =>',
+    '  [text(paths[i]), hex(pid), text(groupings[i]), text(years[i]), text(comments[i]),',
+    '   text(trackNos[i]), text(discNos[i]), text(bpms[i]), text(ratings[i]),',
+    "   computed[i] ? 'computed' : 'user'].join('\\u001f'))",
+    "pids.length + '\\u001d' + rows.join('\\u001e')",
+  ].join('\n')
+}
+
+export async function readLibraryPlaylist(persistentId: string): Promise<AppleMusicPlaylistTracks> {
+  const stdout = await runOsascript(buildLibraryPlaylistScript(persistentId), {
+    maxBuffer: 64 * 1024 * 1024,
+    language: 'JavaScript',
+  })
+  return parsePlaylistTracks(stdout)
+}
+
 // The same row shape as buildPlaylistTracksScript, for a handful of library entries named
 // by persistent ID rather than a whole playlist: a file loaded on its own, not imported from
 // Music, still gets what Music knows about it. Measured on a real library: its WAVs carry

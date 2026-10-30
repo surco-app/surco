@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildEntriesScript,
+  buildLibraryPlaylistScript,
   buildPlaylistDumpScript,
   buildPlaylistTracksScript,
   entryForFile,
@@ -119,6 +120,24 @@ describe('parsePlaylistDump', () => {
 
   it('keeps an empty playlist, which is a real thing to pick and must not look like a parse failure', () => {
     expect(parsePlaylistDump('Por clasificar\t0\tA1B2C3D4E5F60718')[0].count).toBe(0)
+  })
+})
+
+// Asked through Music, a 2,044-track playlist took a minute to list its files, 200 at a
+// time, and every count in the app climbed while it did. The library's own database
+// lists the same rows, in the same order, in half a second.
+describe('buildLibraryPlaylistScript', () => {
+  it('reads the playlist from the library database without asking Music', () => {
+    const script = buildLibraryPlaylistScript('A1B2C3D4E5F60718')
+    expect(script).toContain("ObjC.import('iTunesLibrary')")
+    expect(script).toContain('"A1B2C3D4E5F60718"')
+    expect(script).not.toContain('Application("Music")')
+  })
+
+  // The rows must read exactly as Music's do, or the same playlist would import different
+  // ratings depending on which way it was read.
+  it('marks each rating as given or computed, as Music does', () => {
+    expect(buildLibraryPlaylistScript('A1B2C3D4E5F60718')).toContain("'ratingComputed'")
   })
 })
 
