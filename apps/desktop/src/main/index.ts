@@ -1595,7 +1595,9 @@ function registerIpc(): void {
           },
         )
       } finally {
-        await verifyRegistry.afterFlush(outcome, upTo)
+        await verifyRegistry
+          .afterFlush(outcome, upTo)
+          .catch((err) => log.warn(`verification after the batch failed: ${String(err)}`))
       }
     })
   })
