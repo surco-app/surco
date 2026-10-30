@@ -142,6 +142,55 @@ describe('nmlBatch', () => {
       expect(endNmlBatch()[0].newFile).toBeUndefined()
     })
 
+    // processTrack keeps the old file out of the trash offer when Traktor stays on it.
+    it('reports whether Traktor follows the landed file', () => {
+      recorded()
+      recordNmlPatch(patch('y.aiff'), { input: '/m/A/y.aiff', output: '/tmp/surco-2/y.wav' })
+      expect(redirectNmlPatch('/tmp/surco-1/x.wav', '/m/A/x.wav')).toBe(true)
+      expect(redirectNmlPatch('/tmp/surco-2/y.wav', '/m/B/y.wav')).toBe(false)
+      expect(redirectNmlPatch('/tmp/surco-9/z.wav', '/m/B/z.wav')).toBe(true)
+      endNmlBatch()
+    })
+
+    // The temp the conversion wrote is deleted before the collection is saved, so the
+    // thumbnails and the coexisting-entry check must read the file Music landed.
+    it('points the output fields at the landed file, wherever it landed', () => {
+      beginNmlBatch()
+      recordNmlPatch(
+        {
+          ...patch('x.aiff'),
+          outputPath: '/tmp/surco-1/x.wav',
+          outputVolume: '',
+          outputDir: '/:tmp/:surco-1/:',
+          outputFile: 'x.wav',
+        },
+        { input: '/m/A/x.aiff', output: '/tmp/surco-1/x.wav' },
+      )
+      redirectNmlPatch('/tmp/surco-1/x.wav', '/m/B/x.wav', {
+        volume: '',
+        dir: '/:m/:B/:',
+        file: 'x.wav',
+      })
+
+      expect(endNmlBatch()[0]).toMatchObject({
+        outputPath: '/m/B/x.wav',
+        outputVolume: '',
+        outputDir: '/:m/:B/:',
+        outputFile: 'x.wav',
+      })
+    })
+
+    it('leaves outputPath unset when the conversion had no artwork to redraw', () => {
+      recorded()
+      redirectNmlPatch('/tmp/surco-1/x.wav', '/m/A/x.wav', {
+        volume: '',
+        dir: '/:m/:A/:',
+        file: 'x.wav',
+      })
+
+      expect(endNmlBatch()[0].outputPath).toBeUndefined()
+    })
+
     it('does not redirect a patch from an abandoned batch', () => {
       recorded()
       abandonNmlBatch()

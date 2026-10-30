@@ -37,12 +37,27 @@ export function recordNmlPatch(patch: NmlPatch, paths?: { input: string; output:
 // composed, so the same accented folder must still count as the same folder.
 const sameFolder = (a: string, b: string) => a.normalize('NFC') === b.normalize('NFC')
 
-export function redirectNmlPatch(currentTo: string, landedAt: string): void {
+// False only when a patch was recorded and its entry has to stay on the source file. The
+// output fields always move: the temp they named is deleted before the collection is saved.
+export function redirectNmlPatch(
+  currentTo: string,
+  landedAt: string,
+  landedLocation?: { volume: string; dir: string; file: string },
+): boolean {
   const index = origins.findIndex((o) => o?.output === currentTo)
   const found = origins[index]
-  if (!found || !sameFolder(dirname(landedAt), dirname(found.input))) return
+  if (!found) return true
+  const patch = patches[index]
+  if (patch.outputPath) patch.outputPath = landedAt
+  if (landedLocation) {
+    patch.outputVolume = landedLocation.volume
+    patch.outputDir = landedLocation.dir
+    patch.outputFile = landedLocation.file
+  }
+  if (!sameFolder(dirname(landedAt), dirname(found.input))) return false
   const name = basename(landedAt)
-  if (name !== patches[index].file) patches[index].newFile = name
+  if (name !== patch.file) patch.newFile = name
+  return true
 }
 
 // The renderer can vanish between a begin and its end — a reload, or the crash-and-

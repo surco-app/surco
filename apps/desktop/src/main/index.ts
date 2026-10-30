@@ -101,7 +101,7 @@ import { isEngineDjRunning, quitEngineDj } from './engineProcess'
 import { expandPaths } from './expand'
 import { registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
-import { convertAudio, readMeta } from './ffmpeg'
+import { convertAudio, readMeta, toNmlLocation } from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { fileIdentity, isSameFile, removeRenamedOriginal } from './inplace'
 import { setLibraryBackupRoot } from './libraryBackups'
@@ -1707,7 +1707,7 @@ function registerIpc(): void {
         appleMusicLimiter.run(() => carryOverToAppleMusicCopy(fromPid, toPid, label)),
       redirectRepoint: (to, landed) => {
         redirectRekordboxRepoint(to, landed)
-        redirectNmlPatch(to, landed)
+        return redirectNmlPatch(to, landed, toNmlLocation(landed))
       },
     }),
   )

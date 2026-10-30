@@ -2202,6 +2202,26 @@ describe('runProcessTrack — converting a library track to another format', () 
     expect(result.supersededPath).toBeUndefined()
   })
 
+  // Traktor rewrites FILE only, so a WAV Music landed in another folder leaves its entry
+  // on the AIFF: trashing that would drop the track from Traktor.
+  it('keeps the old file out of the trash offer when Traktor could not follow the landed file', async () => {
+    const deps = converting('/lib/A.aiff', { redirectRepoint: vi.fn(() => false) })
+
+    const result = await runProcessTrack(libraryJob(), deps)
+
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('PID', expect.any(String))
+    expect(result.supersededPath).toBeUndefined()
+    expect(deps.allowMedia).not.toHaveBeenCalledWith('/lib/A.aiff')
+  })
+
+  it('offers the old file when Traktor followed the landed file', async () => {
+    const deps = converting('/lib/A.aiff', { redirectRepoint: vi.fn(() => true) })
+
+    const result = await runProcessTrack(libraryJob(), deps)
+
+    expect(result.supersededPath).toBe('/lib/A.aiff')
+  })
+
   // The batch this was measured for is auto-matched AIFFs: the job's tags are the match,
   // not what Music shows, and the delete only retires an entry whose live name it is told.
   it('retires the entry under the name Music shows, not the edited tags the job carries', async () => {

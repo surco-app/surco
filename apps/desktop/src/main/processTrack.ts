@@ -148,7 +148,8 @@ export interface ProcessTrackDeps {
   // Corrects the recorded repoint once Music has copied the file into its Media folder.
   // The conversion only knows the temp path it wrote, which no longer exists when the
   // flush runs — the collection would be told to follow a file that is already gone.
-  redirectRepoint?: (currentTo: string, landedAt: string) => void
+  // False when Traktor's entry stays on the source: Music landed the file in another folder.
+  redirectRepoint?: (currentTo: string, landedAt: string) => boolean
 }
 
 // Imports the converted file and retires the copy it supersedes, returning the new
@@ -216,9 +217,10 @@ async function replaceAppleMusicCopy(
   }
 }
 
-// Where Music copied the file.
+// Where Music copied the file, and whether Traktor's entry could follow it there.
 interface MediaCopy {
   path: string
+  traktorFollowed: boolean
 }
 
 // "Apple Music only" removes the temp conversion in the finally below — safe only when
@@ -243,8 +245,8 @@ async function verifyMediaCopy(
   // The repoint recorded during the conversion still names the temp path, which the
   // cleanup below deletes — the flush would then refuse it as output-missing and
   // leave the collection on the old file, which is what the user hit.
-  if (entryPath) deps.redirectRepoint?.(target, entryPath)
-  return { path: entryPath }
+  const traktorFollowed = entryPath ? deps.redirectRepoint?.(target, entryPath) !== false : true
+  return { path: entryPath, traktorFollowed }
 }
 
 function metaLabel(job: ProcessJob): string {
@@ -566,8 +568,13 @@ export async function runProcessTrack(
             const isSource = entry.path.normalize('NFC') === job.inputPath.normalize('NFC')
             // The row was the file Music played, so it follows the entry to its new file.
             if (isSource && replaced.landed?.path) musicLandedPath = replaced.landed.path
-            // Not offered when the in-place rename already retired it.
-            if (!replaced.oldCopyKept && !(isSource && inPlace && !originalKept))
+            // Not offered when the in-place rename already retired it, or when Traktor's
+            // entry is still on it.
+            if (
+              !replaced.oldCopyKept &&
+              !(isSource && inPlace && !originalKept) &&
+              replaced.landed?.traktorFollowed !== false
+            )
               supersededPath = entry.path
             verified = true
           } else {
