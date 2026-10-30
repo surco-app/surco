@@ -8950,3 +8950,61 @@ describe('App clean-up of a space the read already trimmed', () => {
     await waitFor(() => expect(lastEdits(saveLastSession)).toEqual({}), { timeout: 3000 })
   })
 })
+
+// The footer's check is fed from main and answered through it: each piece is tested alone,
+// and this pins that App hands them to the footer of the track that was converted.
+describe('App verification', () => {
+  it('a check from main reaches the footer, and its retry and Originales reach main and Copias', async () => {
+    let push: Parameters<Api['onVerifyUpdate']>[0] = () => {}
+    const retryVerification = vi.fn<Api['retryVerification']>().mockResolvedValue('rechecked')
+    const processTrack = vi.fn<Api['processTrack']>().mockResolvedValue({
+      outputPath: '/out/x.aiff',
+      inPlace: false,
+      verification: {
+        status: 'checking',
+        checks: [{ place: 'file', state: 'checking', detail: { key: 'checking' } }],
+        job: 'j1',
+        seq: 0,
+      },
+    })
+    setApi({
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+      retryVerification,
+      onVerifyUpdate: vi.fn<Api['onVerifyUpdate']>((cb) => {
+        push = cb
+        return () => {}
+      }),
+      trashList: vi.fn().mockResolvedValue([]),
+    })
+    await renderApp()
+    const [row] = await addTwoTracks()
+    fireEvent.click(row)
+    fireEvent.click(await screen.findByTestId('process-btn'))
+    await screen.findByTestId('verify-checking')
+    const id = processTrack.mock.calls[0][0].id
+
+    act(() =>
+      push(id, {
+        status: 'mismatch',
+        checks: [
+          {
+            place: 'file',
+            state: 'mismatch',
+            detail: { key: 'fileSourceGone', params: { kept: 1 } },
+          },
+          { place: 'rekordbox', state: 'mismatch', detail: { key: 'rekordboxStillOld' } },
+        ],
+        job: 'j1',
+        seq: 1,
+      }),
+    )
+    expect(await screen.findByTestId('verify-mismatch')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('verify-retry'))
+    await waitFor(() => expect(retryVerification).toHaveBeenCalledWith(id))
+
+    fireEvent.click(await screen.findByTestId('verify-open-originals'))
+    expect(await screen.findByTestId('copies-screen')).toBeInTheDocument()
+  })
+})
