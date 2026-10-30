@@ -121,6 +121,18 @@ describe('selectionStatus superseded files', () => {
     ])
   })
 
+  // Same rule as the single-track link: while the old Music entry may still play the file
+  // (the Music step failed, or the old entry had to be kept) it is not stranded at all.
+  it('leaves out files the old Music entry may still play', () => {
+    const a = replaced('a')
+    const failed = { ...replaced('b'), musicStatus: 'error' as const }
+    const kept = { ...replaced('c'), oldMusicCopyKept: 'carry' as const }
+
+    expect(selectionStatus(a, [a, failed, kept], true).superseded).toEqual([
+      { trackId: 'a', path: '/m/a-old.mp3' },
+    ])
+  })
+
   // An ordinary batch supersedes nothing, so there is no offer at all.
   it('collects nothing when the batch replaced no copies', () => {
     const a = track({ id: 'a', status: 'done', outputPath: '/m/a.aiff' })
