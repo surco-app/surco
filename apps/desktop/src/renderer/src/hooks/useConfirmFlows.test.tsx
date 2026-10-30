@@ -266,7 +266,7 @@ describe('useConfirmFlows delete for good', () => {
     await flows.askTrash([a])
     expect(opened[0].title).toBe('Delete file permanently?')
     expect(opened[0].message).toBe(
-      'This disk has no Trash and Music files is set to Never, so “Artist - a.wav” will be deleted for good. You won’t be able to get it back.',
+      'This disk has no Trash and copies of originals are set to Never, so “Artist - a.wav” will be deleted for good. You won’t be able to get it back.',
     )
     expect(opened[0].confirmLabel).toBe('Delete permanently')
     expect(trashFile).not.toHaveBeenCalled()
@@ -286,7 +286,7 @@ describe('useConfirmFlows delete for good', () => {
     await flows.askTrash([a, b])
     expect(opened[0].title).toBe('Move 2 files to the Trash or delete them for good?')
     expect(opened[0].message).toBe(
-      'This removes 2 files from the list. Those on a disk with a Trash go to the Trash. The rest are deleted for good because Music files is set to Never, and you won’t be able to get them back.',
+      'This removes 2 files from the list. Those on a disk with a Trash go to the Trash. The rest are deleted for good because copies of originals are set to Never, and you won’t be able to get them back.',
     )
     expect(opened[0].confirmLabel).toBe('Move and delete')
     opened[0].onConfirm()
@@ -328,7 +328,7 @@ describe('useConfirmFlows delete for good', () => {
     })
     expect(opened[0].title).toBe('Delete 2 files permanently?')
     expect(opened[0].message).toBe(
-      'Your converted file stays where it is. The items below are deleted for good because their disk has no Trash and Music files is set to Never. You won’t be able to get them back.',
+      'Your converted file stays where it is. The items below are deleted for good because their disk has no Trash and copies of originals are set to Never. You won’t be able to get them back.',
     )
     expect(opened[0].confirmLabel).toBe('Delete permanently')
     opened[0].onConfirm()
@@ -347,7 +347,7 @@ describe('useConfirmFlows delete for good', () => {
     })
     expect(opened[0].title).toBe('Move 2 files to the Trash or delete them for good?')
     expect(opened[0].message).toBe(
-      'Your converted file stays where it is. Items on a disk with a Trash go to the Trash. The rest are deleted for good because Music files is set to Never, and you won’t be able to get them back.',
+      'Your converted file stays where it is. Items on a disk with a Trash go to the Trash. The rest are deleted for good because copies of originals are set to Never, and you won’t be able to get them back.',
     )
   })
 })
