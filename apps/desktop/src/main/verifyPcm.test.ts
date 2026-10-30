@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -9,6 +9,7 @@ vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 const spawned: { args: string[]; signal?: AbortSignal; timeout?: number }[] = []
+let onSpawn: (() => void) | undefined
 const digests = () => spawned.filter((o) => o.args.includes('md5'))
 
 vi.mock('node:child_process', async (importOriginal) => {
@@ -18,6 +19,7 @@ vi.mock('node:child_process', async (importOriginal) => {
   const execFile = Object.assign(actual.execFile.bind(actual), {
     [promisify.custom]: (file: string, args: string[], opts: never) => {
       spawned.push({ ...(opts as object), args } as (typeof spawned)[number])
+      if (args.includes('md5')) onSpawn?.()
       return real(file, args, opts)
     },
   })
@@ -111,7 +113,19 @@ describe('pcmDigest', () => {
     await expect(pcmDigest(at('kick16.wav'), { signal: AbortSignal.abort() })).rejects.toThrow()
   })
 
-  it('hands the signal to the decode so an abort mid-way kills it', async () => {
+  // Half-read audio must never be vouched for: a kill mid-decode has to reject.
+  it('rejects when the decode is aborted right after it spawns', async () => {
+    const controller = new AbortController()
+    onSpawn = () => controller.abort()
+    await expect(pcmDigest(at('kick16.wav'), { signal: controller.signal })).rejects.toThrow()
+    onSpawn = undefined
+  })
+
+  it('rejects when the decode outlives its timeout', async () => {
+    await expect(pcmDigest(at('kick16.wav'), { timeoutMs: 1 })).rejects.toThrow()
+  })
+
+  it('forwards the signal of the caller to the decode', async () => {
     const controller = new AbortController()
     spawned.length = 0
     await pcmDigest(at('kick16.wav'), { signal: controller.signal })
@@ -159,30 +173,35 @@ describe('pcmDigest', () => {
 
 describe('pcmTimeoutMs', () => {
   it('never drops below the analysis timeout', () => {
-    expect(pcmTimeoutMs(null)).toBe(ANALYSIS_TIMEOUT_MS)
-    expect(pcmTimeoutMs(60)).toBe(ANALYSIS_TIMEOUT_MS)
+    expect(pcmTimeoutMs(0)).toBe(ANALYSIS_TIMEOUT_MS)
+    expect(pcmTimeoutMs(10_000_000)).toBe(ANALYSIS_TIMEOUT_MS)
   })
 
-  // A 4 GB 96 kHz WAV is almost two hours and takes about 130 s to read from a NAS.
-  it('grows with the length of a long mix', () => {
-    expect(pcmTimeoutMs(6944)).toBeGreaterThan(600_000)
+  // A 4 GB WAV read from a slow share at 2 MB/s needs far more than two minutes.
+  it('grows with the size of a long mix', () => {
+    expect(pcmTimeoutMs(4_000_000_000)).toBe(2_000_000)
   })
 
-  it('gives the decode the timeout of its duration', async () => {
-    spawned.length = 0
+  // Asking for the duration of a file without one decodes it a second time under the
+  // very timeout that is too short, so the size alone must carry the scaling.
+  it('scales by size and never decodes a second time to learn the duration', async () => {
     ff(
       '-f',
       'lavfi',
       '-i',
-      'anullsrc=r=8000:cl=mono',
+      'anullsrc=r=48000:cl=stereo',
       '-t',
-      '1500',
+      '1400',
       '-c:a',
-      'pcm_u8',
-      at('long.wav'),
+      'pcm_s16le',
+      at('big.wav'),
     )
-    await pcmDigest(at('long.wav'))
-    expect(digests().map((o) => o.timeout)).toEqual([pcmTimeoutMs(1500)])
-    expect(pcmTimeoutMs(1500)).toBeGreaterThan(ANALYSIS_TIMEOUT_MS)
+    const size = statSync(at('big.wav')).size
+    spawned.length = 0
+    await pcmDigest(at('big.wav'))
+    expect(digests().map((o) => o.timeout)).toEqual([pcmTimeoutMs(size)])
+    expect(pcmTimeoutMs(size)).toBeGreaterThan(ANALYSIS_TIMEOUT_MS)
+    expect(spawned.filter((o) => o.args.includes('format=duration'))).toHaveLength(0)
+    expect(digests()).toHaveLength(1)
   })
 })

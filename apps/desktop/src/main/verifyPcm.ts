@@ -1,18 +1,19 @@
 import { execFile } from 'node:child_process'
+import { stat } from 'node:fs/promises'
 import { promisify } from 'node:util'
 import { forcedInputArgs } from '../shared/inputFormat'
 import { createConcurrencyLimiter } from './analysisLimiter'
 import { ffmpegPath } from './binaries'
-import { ANALYSIS_TIMEOUT_MS, probeAudio, probeDuration } from './ffmpeg'
+import { ANALYSIS_TIMEOUT_MS, probeAudio } from './ffmpeg'
 
 const execFileAsync = promisify(execFile)
 
 const pcmLimiter = createConcurrencyLimiter(2)
 
-const DECODE_MS_PER_AUDIO_SECOND = 100
+const SLOW_SHARE_BYTES_PER_SECOND = 2_000_000
 
-export function pcmTimeoutMs(durationSeconds: number | null): number {
-  return Math.max(ANALYSIS_TIMEOUT_MS, (durationSeconds ?? 0) * DECODE_MS_PER_AUDIO_SECOND)
+export function pcmTimeoutMs(sizeBytes: number): number {
+  return Math.max(ANALYSIS_TIMEOUT_MS, Math.ceil((sizeBytes / SLOW_SHARE_BYTES_PER_SECOND) * 1000))
 }
 
 export interface PcmDigest {
@@ -23,12 +24,12 @@ export interface PcmDigest {
 
 export async function pcmDigest(
   file: string,
-  opts: { signal?: AbortSignal } = {},
+  opts: { signal?: AbortSignal; timeoutMs?: number } = {},
 ): Promise<PcmDigest> {
   const { signal } = opts
   return pcmLimiter.run(
     async () => {
-      const [probe, duration] = await Promise.all([probeAudio(file), probeDuration(file, signal)])
+      const [probe, { size }] = await Promise.all([probeAudio(file), stat(file)])
       const float =
         probe.codecName.startsWith('pcm_f') ||
         probe.sampleFmt.startsWith('f') ||
@@ -49,7 +50,7 @@ export async function pcmDigest(
           'md5',
           '-',
         ],
-        { timeout: pcmTimeoutMs(duration), signal },
+        { timeout: opts.timeoutMs ?? pcmTimeoutMs(size), signal },
       )
       const md5 = /^MD5=([0-9a-f]{32})/m.exec(stdout)?.[1]
       if (!md5) throw new Error(`no digest for ${file}`)
