@@ -2937,7 +2937,9 @@
       "engineOtherRow": "Engine DJでは別のトラックになっています",
       "engineNoFileType": "Engine DJがファイル形式を認識していません",
       "engineSizeDiffers": "Engine DJのサイズが新しいファイルと違います",
-      "enginePerformanceChanged": "Engine DJの{{field}}が変わりました",
+      "enginePerformanceChanged_quickCues": "Engine DJのキューが変わりました",
+      "enginePerformanceChanged_beatData": "Engine DJのグリッドが変わりました",
+      "enginePerformanceChanged_loops": "Engine DJのループが変わりました",
       "engineUnreadable": "Engine DJを確認できませんでした",
       "traktorStillOld": "Traktorはまだ{{format}}を参照しています",
       "traktorMissing": "トラックがTraktorにありません",
@@ -2945,11 +2947,6 @@
       "traktorUnreadable": "Traktorを確認できませんでした"
     },
     "retry": "再試行",
-    "sourceGoneKeptLine": "オリジナルはもうありません。コピーは<0>{{panel}}</0>にあります",
-    "engineField": {
-      "quickCues": "キュー",
-      "beatData": "グリッド",
-      "loops": "ループ"
-    }
+    "sourceGoneKeptLine": "オリジナルはもうありません。コピーは<0>{{panel}}</0>にあります"
   }
 }

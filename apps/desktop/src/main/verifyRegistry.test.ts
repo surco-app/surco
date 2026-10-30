@@ -17,11 +17,12 @@ import {
 } from './verifyRegistry'
 import type { TraktorExpect } from './verifyTraktor'
 
-const ok = (place: VerifyPlace, key = `${place}Ok` as VerifyDetailKey): PlaceCheck => ({
+const ok = (place: VerifyPlace, key: VerifyDetailKey): PlaceCheck => ({
   place,
   state: 'ok',
   detail: { key },
 })
+const libraryOk = (place: 'rekordbox' | 'engine' | 'traktor'): PlaceCheck => ok(place, `${place}Ok`)
 const checking = (place: VerifyPlace): PlaceCheck => ({
   place,
   state: 'checking',
@@ -82,11 +83,13 @@ function entry(trackId: string, over: Partial<VerifyEntry> = {}): VerifyEntry {
 const mocks = () => ({
   emit: vi.fn<VerifyRegistryDeps['emit']>(),
   readRekordbox: vi.fn<VerifyRegistryDeps['readRekordbox']>(async (list) =>
-    list.map(() => ok('rekordbox')),
+    list.map(() => libraryOk('rekordbox')),
   ),
-  readEngine: vi.fn<VerifyRegistryDeps['readEngine']>(async (list) => list.map(() => ok('engine'))),
+  readEngine: vi.fn<VerifyRegistryDeps['readEngine']>(async (list) =>
+    list.map(() => libraryOk('engine')),
+  ),
   readTraktor: vi.fn<VerifyRegistryDeps['readTraktor']>(async (list) =>
-    list.map(() => ok('traktor')),
+    list.map(() => libraryOk('traktor')),
   ),
   readFile: vi.fn<VerifyRegistryDeps['readFile']>(async () => ok('file', 'fileIdentical')),
   readMusic: vi.fn<VerifyRegistryDeps['readMusic']>(async () => ok('appleMusic', 'musicOne')),
@@ -127,12 +130,12 @@ describe('verify registry', () => {
     expect(deps.emit).toHaveBeenCalledTimes(2)
     expect(deps.emit).toHaveBeenCalledWith('a', {
       status: 'ok',
-      checks: [ok('file', 'fileIdentical'), ok('rekordbox')],
+      checks: [ok('file', 'fileIdentical'), libraryOk('rekordbox')],
       seq: 1,
     })
     expect(registry.get('b')).toEqual({
       status: 'ok',
-      checks: [ok('file', 'fileIdentical'), ok('rekordbox'), ok('engine')],
+      checks: [ok('file', 'fileIdentical'), libraryOk('rekordbox'), libraryOk('engine')],
     })
   })
 
@@ -237,7 +240,7 @@ describe('verify registry', () => {
   it('Traktor is judged against the entry the write matched, and dropped where it had none', async () => {
     const { deps, registry } = setup({
       readTraktor: vi.fn<VerifyRegistryDeps['readTraktor']>(async (list) =>
-        list.map((e) => (e.before === null ? null : ok('traktor'))),
+        list.map((e) => (e.before === null ? null : libraryOk('traktor'))),
       ),
     })
     const had: NmlPatch = { volume: 'Public', dir: '/:Musica/:', file: 'a.aiff', newFile: 'a.wav' }
@@ -322,7 +325,7 @@ describe('verify registry', () => {
     expect(deps.requeue).not.toHaveBeenCalled()
     expect(deps.emit).toHaveBeenCalledWith('a', {
       status: 'ok',
-      checks: [ok('file', 'fileIdentical'), ok('rekordbox'), ok('engine')],
+      checks: [ok('file', 'fileIdentical'), libraryOk('rekordbox'), libraryOk('engine')],
       seq: 2,
     })
   })
@@ -541,7 +544,7 @@ describe('verify registry', () => {
       expect(deps.readEngine).toHaveBeenCalledWith([expect.objectContaining({ trackId: 'e' })])
       expect(registry.get('e')).toEqual({
         status: 'ok',
-        checks: [ok('file', 'fileIdentical'), ok('engine')],
+        checks: [ok('file', 'fileIdentical'), libraryOk('engine')],
       })
     },
   )
@@ -614,7 +617,7 @@ describe('verify registry', () => {
 
   it('a reader that answers for another number of tracks marks them all unreadable', async () => {
     const { deps, registry } = setup()
-    deps.readRekordbox.mockResolvedValueOnce([ok('rekordbox')])
+    deps.readRekordbox.mockResolvedValueOnce([libraryOk('rekordbox')])
     registry.register(entry('a'))
     registry.register(entry('b'))
 
@@ -683,12 +686,12 @@ describe('verify registry', () => {
     await new Promise((r) => setTimeout(r, 0))
     registry.register(entry('z'))
 
-    finish([ok('engine')])
+    finish([libraryOk('engine')])
     await flushing
 
     expect(deps.emit).toHaveBeenCalledWith('x', {
       status: 'ok',
-      checks: [ok('file', 'fileIdentical'), ok('rekordbox')],
+      checks: [ok('file', 'fileIdentical'), libraryOk('rekordbox')],
       seq: 1,
     })
   })
@@ -727,7 +730,7 @@ describe('verify registry', () => {
   it('a new batch forgets the tracks already verified and keeps the open ones', async () => {
     const { deps, registry } = setup()
     deps.readRekordbox.mockResolvedValueOnce([
-      ok('rekordbox'),
+      libraryOk('rekordbox'),
       mismatch('rekordbox', 'rekordboxStillOld'),
     ])
     registry.register(entry('done'))
@@ -768,7 +771,7 @@ describe('verify registry', () => {
 
     expect(registry.get('a')).toEqual({
       status: 'ok',
-      checks: [ok('file', 'fileIdentical'), ok('rekordbox')],
+      checks: [ok('file', 'fileIdentical'), libraryOk('rekordbox')],
     })
   })
 

@@ -2924,7 +2924,7 @@
       "rekordboxMissing": "Le morceau n’est pas dans rekordbox",
       "rekordboxAmbiguous": "rekordbox a {{count}} lignes pour ce morceau",
       "rekordboxOtherRow": "rekordbox le voit comme un autre morceau",
-      "rekordboxSizeDiffers": "rekordbox n’a pas la taille du nouveau fichier",
+      "rekordboxSizeDiffers": "rekordbox a une autre taille pour le nouveau fichier",
       "rekordboxCuesLost_one": "rekordbox avait {{count}} cue et en a maintenant {{after}}",
       "rekordboxCuesLost_other": "rekordbox avait {{count}} cues et en a maintenant {{after}}",
       "rekordboxCuesChanged_one": "rekordbox avait {{count}} cue et en a maintenant {{after}}",
@@ -2936,8 +2936,10 @@
       "engineAmbiguous": "Engine DJ a {{count}} lignes pour ce morceau",
       "engineOtherRow": "Engine DJ le voit comme un autre morceau",
       "engineNoFileType": "Engine DJ ne connaît pas le format du fichier",
-      "engineSizeDiffers": "Engine DJ n’a pas la taille du nouveau fichier",
-      "enginePerformanceChanged": "Engine DJ a changé {{field}}",
+      "engineSizeDiffers": "Engine DJ a une autre taille pour le nouveau fichier",
+      "enginePerformanceChanged_quickCues": "Les cues ont changé dans Engine DJ",
+      "enginePerformanceChanged_beatData": "La grille a changé dans Engine DJ",
+      "enginePerformanceChanged_loops": "Les boucles ont changé dans Engine DJ",
       "engineUnreadable": "Impossible de vérifier Engine DJ",
       "traktorStillOld": "Traktor pointe toujours vers le {{format}}",
       "traktorMissing": "Le morceau n’est pas dans Traktor",
@@ -2945,11 +2947,6 @@
       "traktorUnreadable": "Impossible de vérifier Traktor"
     },
     "retry": "Réessayer",
-    "sourceGoneKeptLine": "L’original n’est plus là, une copie est dans <0>{{panel}}</0>",
-    "engineField": {
-      "quickCues": "les cues",
-      "beatData": "la grille",
-      "loops": "les boucles"
-    }
+    "sourceGoneKeptLine": "L’original n’est plus là, une copie est dans <0>{{panel}}</0>"
   }
 }

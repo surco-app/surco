@@ -180,7 +180,7 @@
     "engineDjOpen": "Close Engine DJ before converting: it has the library open.",
     "noRoomForBackup": "There is no disk space for a backup of the original and its disk has no Trash, so it was left alone. Free up some space and try again.",
     "conversionCancelled": "Conversion cancelled.",
-    "verifyUnknownTrack": "This check is no longer around. Convert the track again to repeat it.",
+    "verifyUnknownTrack": "This check is no longer available. Convert the track again to repeat it.",
     "sourceTagsUnread": "This file's tags could not be read, so it was left alone: converting it would have wiped the ones it has. Load it again and retry.",
     "coverDownloadFailed": "The artwork couldn't be downloaded.",
     "coverNotImage": "That address doesn't point to an image.",
@@ -2910,7 +2910,7 @@
       "fileCoverKept": "The file still has the cover you removed",
       "fileUnreadable": "Could not check the file",
       "fileSourceGone": "The original is gone",
-      "fileSourceGoneKept": "The original is gone, a copy is in {{panel}}",
+      "fileSourceGoneKept": "The original is gone, but a copy is in {{panel}}",
       "musicMissing": "The track is not in Apple Music",
       "musicNoFile": "Apple Music cannot find the file",
       "musicOtherFile": "Apple Music points to another file",
@@ -2924,7 +2924,7 @@
       "rekordboxMissing": "The track is not in rekordbox",
       "rekordboxAmbiguous": "rekordbox has {{count}} rows for this track",
       "rekordboxOtherRow": "rekordbox sees it as another track",
-      "rekordboxSizeDiffers": "rekordbox has a different size for the new file",
+      "rekordboxSizeDiffers": "rekordbox lists a different size for the new file",
       "rekordboxCuesLost_one": "rekordbox had {{count}} cue and now has {{after}}",
       "rekordboxCuesLost_other": "rekordbox had {{count}} cues and now has {{after}}",
       "rekordboxCuesChanged_one": "rekordbox had {{count}} cue and now has {{after}}",
@@ -2936,8 +2936,10 @@
       "engineAmbiguous": "Engine DJ has {{count}} rows for this track",
       "engineOtherRow": "Engine DJ sees it as another track",
       "engineNoFileType": "Engine DJ does not know the file’s format",
-      "engineSizeDiffers": "Engine DJ has a different size for the new file",
-      "enginePerformanceChanged": "Engine DJ changed {{field}}",
+      "engineSizeDiffers": "Engine DJ lists a different size for the new file",
+      "enginePerformanceChanged_quickCues": "The cues changed in Engine DJ",
+      "enginePerformanceChanged_beatData": "The grid changed in Engine DJ",
+      "enginePerformanceChanged_loops": "The loops changed in Engine DJ",
       "engineUnreadable": "Could not check Engine DJ",
       "traktorStillOld": "Traktor is still on the {{format}}",
       "traktorMissing": "The track is not in Traktor",
@@ -2945,11 +2947,6 @@
       "traktorUnreadable": "Could not check Traktor"
     },
     "retry": "Try again",
-    "sourceGoneKeptLine": "The original is gone, a copy is in <0>{{panel}}</0>",
-    "engineField": {
-      "quickCues": "the cues",
-      "beatData": "the grid",
-      "loops": "the loops"
-    }
+    "sourceGoneKeptLine": "The original is gone, but a copy is in <0>{{panel}}</0>"
   }
 }

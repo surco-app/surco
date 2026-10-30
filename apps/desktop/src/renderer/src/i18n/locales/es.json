@@ -180,7 +180,7 @@
     "engineDjOpen": "Cierra Engine DJ antes de convertir: tiene la biblioteca abierta.",
     "noRoomForBackup": "No hay sitio en el disco para la copia de seguridad del original y su disco no tiene Papelera, así que no se ha tocado. Libera espacio y vuelve a intentarlo.",
     "conversionCancelled": "Conversión cancelada.",
-    "verifyUnknownTrack": "Esta comprobación ya no está. Vuelve a convertir la pista para repetirla.",
+    "verifyUnknownTrack": "Esta comprobación ya no está disponible. Vuelve a convertir la pista para repetirla.",
     "sourceTagsUnread": "No se han podido leer las etiquetas de este archivo, así que no se ha tocado: convertirlo habría borrado las que tiene. Vuelve a cargarlo e inténtalo de nuevo.",
     "coverDownloadFailed": "No se pudo descargar la carátula.",
     "coverNotImage": "Esa dirección no apunta a una imagen.",
@@ -2924,7 +2924,7 @@
       "rekordboxMissing": "La pista no está en rekordbox",
       "rekordboxAmbiguous": "rekordbox tiene {{count}} filas de esta pista",
       "rekordboxOtherRow": "rekordbox la ve como otra pista",
-      "rekordboxSizeDiffers": "rekordbox no tiene el tamaño del fichero nuevo",
+      "rekordboxSizeDiffers": "rekordbox tiene otro tamaño para el fichero nuevo",
       "rekordboxCuesLost_one": "rekordbox tenía {{count}} cue y ahora {{after}}",
       "rekordboxCuesLost_other": "rekordbox tenía {{count}} cues y ahora {{after}}",
       "rekordboxCuesChanged_one": "rekordbox tenía {{count}} cue y ahora {{after}}",
@@ -2936,8 +2936,10 @@
       "engineAmbiguous": "Engine DJ tiene {{count}} filas de esta pista",
       "engineOtherRow": "Engine DJ la ve como otra pista",
       "engineNoFileType": "Engine DJ no sabe el formato del fichero",
-      "engineSizeDiffers": "Engine DJ no tiene el tamaño del fichero nuevo",
-      "enginePerformanceChanged": "Engine DJ cambió {{field}}",
+      "engineSizeDiffers": "Engine DJ tiene otro tamaño para el fichero nuevo",
+      "enginePerformanceChanged_quickCues": "Los cues cambiaron en Engine DJ",
+      "enginePerformanceChanged_beatData": "La rejilla cambió en Engine DJ",
+      "enginePerformanceChanged_loops": "Los loops cambiaron en Engine DJ",
       "engineUnreadable": "No se pudo comprobar Engine DJ",
       "traktorStillOld": "Traktor sigue en el {{format}}",
       "traktorMissing": "La pista no está en Traktor",
@@ -2945,11 +2947,6 @@
       "traktorUnreadable": "No se pudo comprobar Traktor"
     },
     "retry": "Reintentar",
-    "sourceGoneKeptLine": "El original ya no está, hay una copia en <0>{{panel}}</0>",
-    "engineField": {
-      "quickCues": "los cues",
-      "beatData": "la rejilla",
-      "loops": "los loops"
-    }
+    "sourceGoneKeptLine": "El original ya no está, hay una copia en <0>{{panel}}</0>"
   }
 }

@@ -33,9 +33,7 @@ export function detailText(
   if (key === 'fileTagDiffers' || key === 'musicTagDiffers')
     return tr(`verify.detail.${key}`, { field: tr(`fields.${params.field}`) })
   if (key === 'enginePerformanceChanged')
-    return tr('verify.detail.enginePerformanceChanged', {
-      field: tr(`verify.engineField.${params.field}`),
-    })
+    return tr('verify.detail.enginePerformanceChanged', { context: params.field })
   if (key === 'rekordboxCuesLost' || key === 'rekordboxCuesChanged')
     return tr(`verify.detail.${key}`, { ...params, count: params.before })
   if (key === 'fileSourceGone')

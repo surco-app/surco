@@ -2860,13 +2860,13 @@
     "shieldLabel": "O que foi verificado",
     "title": "O que foi verificado",
     "pendingLine": {
-      "addedToAppleMusic_one": "Adicionada ao Apple Music · {{programs}} ao fechar",
-      "addedToAppleMusic_other": "Adicionada ao Apple Music · {{programs}} ao fechar",
+      "addedToAppleMusic_one": "Adicionado ao Apple Music · {{programs}} ao fechar",
+      "addedToAppleMusic_other": "Adicionado ao Apple Music · {{programs}} ao fechar",
       "exportedAs_one": "Exportado como {{format}} · {{programs}} ao fechar",
       "exportedAs_other": "Exportado como {{format}} · {{programs}} ao fechar"
     },
     "plainLine": {
-      "addedToAppleMusic": "Adicionada ao Apple Music",
+      "addedToAppleMusic": "Adicionado ao Apple Music",
       "exportedAs": "Exportado como {{format}}",
       "exportedCount_one": "{{count}} faixa exportada",
       "exportedCount_other": "{{count}} faixas exportadas",
@@ -2924,7 +2924,7 @@
       "rekordboxMissing": "A faixa não está no rekordbox",
       "rekordboxAmbiguous": "O rekordbox tem {{count}} linhas desta faixa",
       "rekordboxOtherRow": "O rekordbox a vê como outra faixa",
-      "rekordboxSizeDiffers": "O rekordbox não tem o tamanho do arquivo novo",
+      "rekordboxSizeDiffers": "O rekordbox tem outro tamanho para o arquivo novo",
       "rekordboxCuesLost_one": "O rekordbox tinha {{count}} cue e agora tem {{after}}",
       "rekordboxCuesLost_other": "O rekordbox tinha {{count}} cues e agora tem {{after}}",
       "rekordboxCuesChanged_one": "O rekordbox tinha {{count}} cue e agora tem {{after}}",
@@ -2936,8 +2936,10 @@
       "engineAmbiguous": "O Engine DJ tem {{count}} linhas desta faixa",
       "engineOtherRow": "O Engine DJ a vê como outra faixa",
       "engineNoFileType": "O Engine DJ não sabe o formato do arquivo",
-      "engineSizeDiffers": "O Engine DJ não tem o tamanho do arquivo novo",
-      "enginePerformanceChanged": "O Engine DJ mudou {{field}}",
+      "engineSizeDiffers": "O Engine DJ tem outro tamanho para o arquivo novo",
+      "enginePerformanceChanged_quickCues": "Os cues mudaram no Engine DJ",
+      "enginePerformanceChanged_beatData": "O grid mudou no Engine DJ",
+      "enginePerformanceChanged_loops": "Os loops mudaram no Engine DJ",
       "engineUnreadable": "Não foi possível verificar o Engine DJ",
       "traktorStillOld": "O Traktor continua apontando para o {{format}}",
       "traktorMissing": "A faixa não está no Traktor",
@@ -2945,11 +2947,6 @@
       "traktorUnreadable": "Não foi possível verificar o Traktor"
     },
     "retry": "Tentar de novo",
-    "sourceGoneKeptLine": "O original não existe mais, há uma cópia em <0>{{panel}}</0>",
-    "engineField": {
-      "quickCues": "os cues",
-      "beatData": "o grid",
-      "loops": "os loops"
-    }
+    "sourceGoneKeptLine": "O original não existe mais, há uma cópia em <0>{{panel}}</0>"
   }
 }

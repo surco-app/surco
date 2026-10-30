@@ -150,6 +150,19 @@ describe('VerifiedPopover', () => {
     expect(file).toHaveTextContent(`No cuadra ${i18n.t('fields.albumArtist')} en el fichero`)
   })
 
+  // The check sees the column change, not who changed it, so the line says what changed
+  // where and never that Engine did it.
+  it('names what changed in Engine DJ without saying Engine changed it', () => {
+    const [engine] = open([
+      {
+        place: 'engine',
+        state: 'mismatch',
+        detail: { key: 'enginePerformanceChanged', params: { field: 'beatData' } },
+      },
+    ])
+    expect(engine).toHaveTextContent('La rejilla cambió en Engine DJ')
+  })
+
   // One cue is a cue: the count picks its plural like the ok line does.
   it('counts lost cues in the singular when there was one', () => {
     const [rekordbox] = open([
