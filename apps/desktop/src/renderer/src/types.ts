@@ -246,4 +246,7 @@ export interface TrackItem {
   // Music entry. Kept apart from replacesPath, which the next job sends: a later re-sync
   // must not replace the entry again from a file no library indexes any more.
   supersededPath?: string
+  // Set when a replacement had to keep the old Apple Music entry, which still plays the
+  // superseded file. Cleared by the next export.
+  oldMusicCopyKept?: 'mismatch' | 'error' | 'carry'
 }

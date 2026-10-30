@@ -42,6 +42,30 @@ describe('exportedPatch', () => {
     expect(patch.movedFrom).toEqual(['/music/older.wav', '/music/old name.wav'])
   })
 
+  // supersededFile reads it: an old Music entry that was kept still plays the old file.
+  it('remembers that the old Music copy was kept, and forgets it on the next export', () => {
+    expect(
+      exportedPatch(track(), {
+        outputPath: '/out/a.aiff',
+        inPlace: false,
+        oldMusicCopyKept: 'carry',
+      }).oldMusicCopyKept,
+    ).toBe('carry')
+    expect(
+      exportedPatch(track(), {
+        outputPath: '',
+        inPlace: false,
+        addedToMusicOnly: true,
+        oldMusicCopyKept: 'mismatch',
+      }).oldMusicCopyKept,
+    ).toBe('mismatch')
+    const later = exportedPatch(track({ oldMusicCopyKept: 'carry' }), {
+      outputPath: '/out/a.aiff',
+      inPlace: false,
+    })
+    expect('oldMusicCopyKept' in later && later.oldMusicCopyKept === undefined).toBe(true)
+  })
+
   it('remembers no move when the in-place export kept the path', () => {
     const patch = exportedPatch(track(), { outputPath: '/music/old name.wav', inPlace: true })
     expect(patch.movedFrom).toBeUndefined()

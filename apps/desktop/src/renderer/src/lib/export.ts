@@ -26,6 +26,7 @@ export function exportedPatch(
       outputPath: undefined,
       musicStatus: 'added',
       ...(result.musicPersistentId && { musicPersistentId: result.musicPersistentId }),
+      oldMusicCopyKept: result.oldMusicCopyKept,
       // The row was the file the replaced entry played, so it follows the entry to the
       // copy Music landed, as an in-place export follows its rewritten file.
       ...(result.musicLandedPath && {
@@ -78,6 +79,7 @@ export function exportedPatch(
     // The conversion put this track in the Engine DJ library, so the membership badge
     // and filter read it owned without waiting for the library snapshot to refresh.
     ...(result.addedToEngineDj && { engineDjAdded: true }),
+    oldMusicCopyKept: result.oldMusicCopyKept,
     // A format change replaced the Music entry, so its old file is now referenced by
     // nothing and is offered for trash like any other superseded copy.
     ...(result.supersededPath && {

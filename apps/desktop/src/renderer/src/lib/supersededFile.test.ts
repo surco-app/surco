@@ -54,6 +54,24 @@ describe('supersededFile', () => {
     ).toBeNull()
   })
 
+  // The old Music entry still plays the file whenever the replacement did not retire it:
+  // the Music step failed (Music handed back the old entry, a script error) or the old copy
+  // had to be kept. Trashing it then left that entry playing nothing.
+  it('offers nothing while the old Music entry may still play the file', () => {
+    const done = { replacesPath: '/m/old.wav', outputPath: '/out/new.aiff' }
+    expect(supersededFile(track({ ...done, musicStatus: 'error' }))).toBeNull()
+    expect(supersededFile(track({ ...done, oldMusicCopyKept: 'carry' }))).toBeNull()
+    expect(
+      supersededFile(
+        track({
+          supersededPath: '/lib/A.aiff',
+          outputPath: '/out/A.wav',
+          oldMusicCopyKept: 'error',
+        }),
+      ),
+    ).toBeNull()
+  })
+
   // Nothing was superseded: an ordinary conversion leaves its own source alone, which the
   // clean-up offer lists as the original.
   it('offers nothing when the conversion replaced no copy', () => {

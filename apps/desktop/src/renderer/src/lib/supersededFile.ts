@@ -14,6 +14,9 @@ export function supersededFile(track: TrackItem): string | null {
   if (track.status !== 'done') return null
   const superseded = track.replacesPath ?? track.supersededPath
   if (!superseded || track.supersededTrashed) return null
+  // A replacement that failed in Music or had to keep the old entry left that entry still
+  // playing the file: trashing it would leave a row in Music that plays nothing.
+  if (track.musicStatus === 'error' || track.oldMusicCopyKept) return null
   // Never offer the file the track now points at: a same-path conversion would otherwise
   // invite deleting the very output it just produced.
   if (superseded === track.outputPath) return null
