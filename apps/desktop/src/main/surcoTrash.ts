@@ -18,13 +18,17 @@ export interface SurcoTrash {
   // Moves the file into the trash and records it. Null when there is no such file (a
   // caller cleaning up after a rename that changed only the case of the name asks for a
   // path that no longer exists, and that is not an error) or when the file does not fit
-  // the room the cap and the disk leave.
+  // the room the cap and the disk leave. A `held` copy (an original waiting for the
+  // self-check under «Nunca») only takes room that is free: it evicts nothing, and nothing
+  // evicts it until it is released.
   stash(
     path: string,
     reason: TrashReason,
     outputPath?: string,
     trashedAt?: number,
+    held?: boolean,
   ): Promise<TrashEntry | null>
+  release(id: string): void
   list(): Promise<TrashEntry[]>
   // Puts the file back on its original path. Whatever occupies that path now — the
   // converted file, typically — goes into the trash in its turn, so restoring never
@@ -137,9 +141,10 @@ export function createSurcoTrash(
 
   // Drops what is past the retention, then the oldest entries until the rest fits in
   // `room` bytes.
+  const pinned = new Set<string>()
   const prune = async (now: number, room: number): Promise<TrashEntry[]> => {
     const { retentionMs } = limits()
-    const entries = newestFirst(read())
+    const entries = newestFirst(read()).filter((e) => !pinned.has(e.id))
     const dropped: TrashEntry[] = []
     let kept: TrashEntry[] = []
     for (const entry of entries) {
@@ -148,7 +153,9 @@ export function createSurcoTrash(
     }
     // Newest first, so the running total keeps the recent ones and drops from the
     // old end once the room is used up.
-    let total = 0
+    let total = read()
+      .filter((e) => pinned.has(e.id))
+      .reduce((sum, e) => sum + e.bytes, 0)
     kept = kept.filter((entry) => {
       total += entry.bytes
       if (total <= room) return true
@@ -206,14 +213,20 @@ export function createSurcoTrash(
   // failed rename restores from, and a sweep behind it could discard exactly that one.
   // The disk bounds it as well as the cap. A file that fits in neither even with the
   // trash emptied gets no copy, and nothing is dropped to make room it would not use.
-  const stashNow: SurcoTrash['stash'] = async (path, reason, outputPath, trashedAt) => {
+  const stashNow: SurcoTrash['stash'] = async (path, reason, outputPath, trashedAt, hold) => {
     const info = await stat(path).catch(() => null)
     if (!info) return null
-    const held = read().reduce((sum, entry) => sum + entry.bytes, 0)
+    const entries = read()
+    const held = entries.reduce((sum, entry) => sum + entry.bytes, 0)
     const budget = Math.min(limits().maxBytes, held + (await freeBytes()) - TRASH_MIN_FREE_BYTES)
-    if (info.size > budget) return null
-    await prune(Date.now(), budget - info.size)
-    return keep(path, reason, outputPath, trashedAt)
+    const untouchable = hold
+      ? held
+      : entries.filter((e) => pinned.has(e.id)).reduce((sum, e) => sum + e.bytes, 0)
+    if (info.size + untouchable > budget) return null
+    if (!hold) await prune(Date.now(), budget - info.size)
+    const entry = await keep(path, reason, outputPath, trashedAt)
+    if (entry && hold) pinned.add(entry.id)
+    return entry
   }
   // One at a time: a batch stashes several originals at once, and each sized its room
   // from the trash as it stood before the others had written, so together they went
@@ -240,7 +253,11 @@ export function createSurcoTrash(
       write(read().filter((e) => e.id !== id))
       return { restoredTo: entry.originalPath, displaced }
     },
+    release: (id) => {
+      pinned.delete(id)
+    },
     remove: async (id) => {
+      pinned.delete(id)
       const entry = read().find((e) => e.id === id)
       if (!entry) return
       await discard(entry)
