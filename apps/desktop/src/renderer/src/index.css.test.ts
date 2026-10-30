@@ -311,6 +311,7 @@ describe('reduced motion', () => {
     '.press',
     '.animate-toast-countdown',
     '.copies-collapse',
+    '.copies-feedback',
   ]) {
     it(`holds ${selector} still`, () => {
       expect(reduced).toContain(selector)
@@ -335,6 +336,18 @@ describe('Copias list fold', () => {
       /transition:\s*grid-template-rows 200ms cubic-bezier\(0\.23, 1, 0\.32, 1\),\s*opacity 200ms/,
     )
     expect(body).not.toMatch(/transition:\s*all/)
+  })
+})
+
+// A restore's outcome line arrives the moment the restore settles; easing it in tells the
+// eye something new appeared without making the answer wait.
+describe('Copias outcome line', () => {
+  it('rises in from just below as it fades in', () => {
+    const start = css.slice(css.indexOf('@starting-style'))
+    expect(start.slice(0, start.indexOf('}\n}'))).toMatch(
+      /\.copies-feedback\s*\{[^}]*opacity: 0;[^}]*transform: translateY\(4px\)/,
+    )
+    expect(css).toMatch(/\.copies-feedback\s*\{[^}]*transition:[^}]*opacity 180ms ease-out/)
   })
 })
 

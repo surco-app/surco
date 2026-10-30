@@ -1169,3 +1169,22 @@ button:hover > .process-fill {
     transition: none;
   }
 }
+
+.copies-feedback {
+  transition:
+    opacity 180ms ease-out,
+    transform 180ms ease-out;
+}
+
+@starting-style {
+  .copies-feedback {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .copies-feedback {
+    transition: opacity 180ms ease-out;
+  }
+}

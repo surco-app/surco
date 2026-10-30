@@ -237,7 +237,7 @@ function ProgramSection({
         <p
           role="status"
           data-testid={`copies-refused-${program}`}
-          className="col-span-2 col-start-2 mt-2 text-[13px] text-[var(--color-danger)]"
+          className="copies-feedback col-span-2 col-start-2 mt-2 text-[13px] text-[var(--color-danger)]"
         >
           {tr(`copies.refused.${outcome.reason}`, { program: name })}
         </p>
@@ -246,7 +246,7 @@ function ProgramSection({
         <p
           role="status"
           data-testid={`copies-restored-${program}`}
-          className="col-span-2 col-start-2 mt-2 text-[13px] text-[var(--color-good)]"
+          className="copies-feedback col-span-2 col-start-2 mt-2 text-[13px] text-[var(--color-good)]"
         >
           {tr('copies.restored', { program: name, when: when(outcome.takenAt) })}
         </p>
