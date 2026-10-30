@@ -190,9 +190,7 @@ export interface ProcessTrackDeps {
   // the job's cancel; a cancelled read rejects with conversionCancelled.
   verifyFile: (e: FileExpect, signal: AbortSignal) => Promise<PlaceCheck>
   verifyMusic: (e: MusicExpect, signal: AbortSignal) => Promise<PlaceCheck>
-  // A file's size in bytes, and where a path really lands: Music's copy of the written file
-  // is told apart from an older file it already had by both.
-  fileSize?: (path: string) => Promise<number>
+  // Where a path really lands, so a Media folder reached through a link is still the one.
   realPath?: (path: string) => string
   // Hands the job to the registry that checks the libraries once the batch is flushed.
   registerVerification?: (e: VerifyEntry) => void
@@ -456,29 +454,24 @@ function settled(check: Promise<PlaceCheck>, place: VerifyPlace, key: string): P
 }
 
 // The file Music is held to when the output copy stays where it was written: Music may have
-// copied it into its own Media folder, and that copy is the one it plays. Only a new entry
-// can be that copy, and only with the written file's bytes: an entry that was retagged, or
-// an add Music answered with an entry it already had, may sit in the Media folder on an
-// older file. Anything else is judged against the written file, so a wrong file still
-// reads as one.
+// copied it into its own Media folder, and that copy is the one it plays. Only the entry this
+// job's add answered with can be that copy (an add answered with an entry Music already had
+// fails the replace); its bytes are no proof, since Music rewrites the copy when the add sets
+// its tags and artwork. A retagged entry keeps whatever file it had. Anything else is judged
+// against the written file, so a wrong file still reads as one.
 async function musicPlays(
   entryAt: string,
   target: string,
-  newEntry: boolean,
+  addedByJob: boolean,
   deps: ProcessTrackDeps,
 ): Promise<string> {
-  if (!entryAt || !newEntry || !deps.fileSize) return target
+  if (!entryAt || !addedByJob) return target
   const media = await deps.appleMusicMediaFolder?.().catch(() => undefined)
   if (!media) return target
   const key = pathKey({ realPath: deps.realPath })
   const at = key(entryAt.normalize('NFC')).normalize('NFC')
   const folder = key(media.normalize('NFC')).normalize('NFC').replace(/\/+$/, '')
-  if (!at.startsWith(`${folder}/`)) return target
-  const [copied, written] = await Promise.all([
-    deps.fileSize(entryAt).catch(() => undefined),
-    deps.fileSize(target).catch(() => undefined),
-  ])
-  return copied !== undefined && copied === written ? entryAt : target
+  return at.startsWith(`${folder}/`) ? entryAt : target
 }
 
 const checking = (place: VerifyPlace): PlaceCheck => ({
@@ -807,18 +800,24 @@ export async function runProcessTrack(
     let entryMayPlaySource = retireAfterMusic
     // The file in the Media folder is Music's once an add answers with an entry of its own;
     // one that answers with the entry being replaced imported nothing (see replaceAppleMusicCopy).
-    const musicDeps: ProcessTrackDeps = mediaTarget
-      ? {
-          ...deps,
-          addToAppleMusic: async (file, meta, cover) => {
-            mediaAddTried = true
-            const pid = await deps.addToAppleMusic(file, meta, cover)
-            if (pid !== job.musicPersistentId && pid !== existingMusicEntry?.persistentId)
-              mediaHeld = true
-            return pid
-          },
-        }
-      : deps
+    // The entries this job's own adds answered with: only one of them can be Music's import
+    // of the file just written.
+    const addedByJob = new Set<string>()
+    const musicDeps: ProcessTrackDeps = {
+      ...deps,
+      addToAppleMusic: async (file, meta, cover) => {
+        if (mediaTarget) mediaAddTried = true
+        const pid = await deps.addToAppleMusic(file, meta, cover)
+        addedByJob.add(pid)
+        if (
+          mediaTarget &&
+          pid !== job.musicPersistentId &&
+          pid !== existingMusicEntry?.persistentId
+        )
+          mediaHeld = true
+        return pid
+      },
+    }
     const handedOver = musicOnly ? { tmpDir } : undefined
     const musicStep = shouldAddToAppleMusic(addToAppleMusic, deps.platform, format)
     if (musicStep) {
@@ -850,7 +849,7 @@ export async function runProcessTrack(
         } else if (existingMusicEntry && inPlace && outputIsInput) {
           musicPersistentId =
             (await deps.updateInAppleMusic(existingMusicEntry.persistentId, job.meta, coverPath)) ??
-            (await deps.addToAppleMusic(target, job.meta, coverPath))
+            (await musicDeps.addToAppleMusic(target, job.meta, coverPath))
         } else if (existingMusicEntry && inPlace) {
           const replaced = await replaceAppleMusicCopy(
             job,
@@ -1019,14 +1018,7 @@ export async function runProcessTrack(
               pid: musicPersistentId,
               file: musicOnly
                 ? finalPath
-                : await musicPlays(
-                    entryAt,
-                    target,
-                    musicPersistentId !== job.musicPersistentId &&
-                      musicPersistentId !== existingMusicEntry?.persistentId &&
-                      musicPersistentId !== musicReplaced?.oldPid,
-                    deps,
-                  ),
+                : await musicPlays(entryAt, target, addedByJob.has(musicPersistentId), deps),
               ext: written.plan.ext,
               meta: { title: job.meta.title, artist: job.meta.artist, album: job.meta.album },
               coverSet: coverPath !== undefined,

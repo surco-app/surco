@@ -3400,18 +3400,17 @@ describe('runProcessTrack — checking what it wrote', () => {
   // plays that copy: the entry is held to the copy, the file check to what was written.
   const MEDIA = '/Users/me/Music/Media'
   const copy = `${MEDIA}/Music/Artist/Album/Artist - Title.aiff`
-  const inMedia = (sizes: Record<string, number>, over: Partial<ProcessTrackDeps> = {}) =>
+  const inMedia = (over: Partial<ProcessTrackDeps> = {}) =>
     makeDeps({
       platform: 'darwin',
       appleMusicMediaFolder: vi.fn(async () => MEDIA),
       appleMusicEntryLocation: vi.fn(async () => copy),
-      fileSize: vi.fn(async (p: string) => sizes[p] ?? 0),
       ...over,
     })
   const heldTo = (deps: ProcessTrackDeps) => vi.mocked(deps.verifyMusic).mock.calls[0][0].file
 
   it('Music is held to its Media folder copy when it made one, the file to the written one', async () => {
-    const deps = inMedia({ [copy]: 100, '/out/Artist - Title.aiff': 100 })
+    const deps = inMedia()
 
     await runProcessTrack(job({ meta, addToAppleMusic: true }), deps)
 
@@ -3425,10 +3424,9 @@ describe('runProcessTrack — checking what it wrote', () => {
   // Retagging an entry never moves it: it keeps playing its old Media file, which is not
   // the conversion, however much it looks like Music's own copy.
   it('a retagged entry on an older Media file is held to the written file', async () => {
-    const deps = inMedia(
-      { [copy]: 100, '/out/Artist - Title.aiff': 100 },
-      { appleMusicEntry: vi.fn(async () => ({ path: copy, label: 'Artist - Title' })) },
-    )
+    const deps = inMedia({
+      appleMusicEntry: vi.fn(async () => ({ path: copy, label: 'Artist - Title' })),
+    })
 
     await runProcessTrack(
       job({ meta, addToAppleMusic: true, musicPersistentId: 'updated-id' }),
@@ -3439,24 +3437,50 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect(heldTo(deps)).toBe('/out/Artist - Title.aiff')
   })
 
-  // Music answers an add matching an entry it already has with that entry, importing
-  // nothing: its Media file holds other bytes than the conversion.
-  it('an add Music answered with an older Media file is held to the written file', async () => {
-    const deps = inMedia({ [copy]: 90, '/out/Artist - Title.aiff': 100 })
+  // A replacement's new entry is this job's own import, so its Media copy is the one.
+  it('a replacement is held to the Media copy its add answered with', async () => {
+    const deps = inMedia()
 
-    await runProcessTrack(job({ meta, addToAppleMusic: true }), deps)
+    await runProcessTrack(
+      job({ meta, addToAppleMusic: true, musicPersistentId: 'old-id', replacesPath: '/m/old.mp3' }),
+      deps,
+    )
 
+    expect(heldTo(deps)).toBe(copy)
+  })
+
+  // An update that finds its entry gone falls back to an add: only that add's entry counts.
+  it('an entry this job did not add is held to the written file', async () => {
+    const deps = inMedia({ updateInAppleMusic: vi.fn(async () => 'kept-id') })
+
+    await runProcessTrack(job({ meta, addToAppleMusic: true, musicPersistentId: 'kept-id' }), deps)
+
+    expect(deps.addToAppleMusic).not.toHaveBeenCalled()
     expect(heldTo(deps)).toBe('/out/Artist - Title.aiff')
   })
 
-  it('the Media folder is compared where it really lands', async () => {
-    const deps = inMedia(
-      { [copy]: 100, '/out/Artist - Title.aiff': 100 },
-      {
-        appleMusicMediaFolder: vi.fn(async () => '/Users/me/Music/Link'),
-        realPath: (p: string) => p.replace('/Users/me/Music/Link', MEDIA),
-      },
+  it('an in-place rewrite whose entry was gone is held to the Media copy of its add', async () => {
+    const deps = inMedia({
+      settings: settings({ overwriteOriginal: true }),
+      isSameFile: vi.fn(async () => true),
+      findAppleMusicEntry: vi.fn(async () => ({ persistentId: 'gone-id', label: 'A - T' })),
+      updateInAppleMusic: vi.fn(async () => null),
+    })
+
+    await runProcessTrack(
+      job({ meta, addToAppleMusic: true, inputPath: '/in/song.aiff', format: 'aiff' }),
+      deps,
     )
+
+    expect(deps.addToAppleMusic).toHaveBeenCalled()
+    expect(heldTo(deps)).toBe(copy)
+  })
+
+  it('the Media folder is compared where it really lands', async () => {
+    const deps = inMedia({
+      appleMusicMediaFolder: vi.fn(async () => '/Users/me/Music/Link'),
+      realPath: (p: string) => p.replace('/Users/me/Music/Link', MEDIA),
+    })
 
     await runProcessTrack(job({ meta, addToAppleMusic: true }), deps)
 

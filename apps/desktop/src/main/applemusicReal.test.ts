@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync } from 'node:fs'
-import { mkdir, mkdtemp, rm, rmdir, stat } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, rmdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { extname, join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -205,7 +205,6 @@ function deps(): ProcessTrackDeps {
       readMusicEntryFacts(pid, undefined, { withPlaylists: true }).then((facts) =>
         facts === 'missing' ? [] : facts.playlists,
       ),
-    fileSize: async (path) => (await stat(path)).size,
     realPath: (p) => realpathSync(p),
     verifyFile: (e, signal) => checkFile(e, fileReaders, { signal }),
     verifyMusic: (e, signal) => checkAppleMusic(e, musicReaders, { signal }),
