@@ -1072,9 +1072,10 @@ describe('App auto-match', () => {
     const button = screen.getByTestId('auto-match')
     expect(button).toHaveAccessibleName(i18n.t('header.autoMatchNoToken'))
     fireEvent.click(button)
-    expect(
-      await screen.findByTestId('settings-tab-search', undefined, { timeout: 3000 }),
-    ).toHaveAttribute('aria-selected', 'true')
+    expect(await screen.findByTestId('settings-tab-search')).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
   })
 
   // Auto-match on import runs the whole drop unattended: a folder of a thousand files is
@@ -3925,7 +3926,7 @@ describe('App maximized section', () => {
     await renderApp()
     const [row] = await addTwoTracks()
     fireEvent.click(row)
-    const trim = await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
+    const trim = await screen.findByTestId('editor-trim')
     fireEvent.click(within(trim).getByTestId('section-maximize'))
     await screen.findByTestId('section-maximized-overlay')
     fireEvent.keyDown(window, { key: 'Escape' })
@@ -3939,7 +3940,7 @@ describe('App maximized section', () => {
     await renderApp()
     const [row] = await addTwoTracks()
     fireEvent.click(row)
-    const trim = await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
+    const trim = await screen.findByTestId('editor-trim')
     fireEvent.click(within(trim).getByTestId('section-maximize'))
     await screen.findByTestId('section-maximized-overlay')
     fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
@@ -7508,7 +7509,7 @@ describe('App Music review', () => {
     await renderApp()
     const [row] = await addOneTrack()
     fireEvent.click(row)
-    await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
+    await screen.findByTestId('editor-trim')
     runMenu('music-review')
     await screen.findByTestId('music-review-empty')
     fireEvent.keyDown(window, { key: 'Backspace', metaKey: true })
@@ -7539,7 +7540,7 @@ describe('App Music review', () => {
     await renderApp()
     const [row] = await addOneTrack()
     fireEvent.click(row)
-    await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
+    await screen.findByTestId('editor-trim')
     runMenu('music-review')
     await screen.findByTestId('music-review-empty')
     fireEvent.keyDown(window, { key: 'Enter', metaKey: true })
@@ -7555,7 +7556,7 @@ describe('App Music review', () => {
     await renderApp()
     const [row] = await addOneTrack()
     fireEvent.click(row)
-    await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
+    await screen.findByTestId('editor-trim')
     fireEvent.keyDown(window, { key: 'Enter', metaKey: true })
     await waitFor(() => expect(processTrack).toHaveBeenCalled())
     runMenu('music-review')
@@ -7584,7 +7585,7 @@ describe('App Music review', () => {
     await renderApp()
     const [row] = await addOneTrack()
     fireEvent.click(row)
-    await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
+    await screen.findByTestId('editor-trim')
     runMenu('music-review')
     await stageGroup()
     fireEvent.click(screen.getByTestId('music-review-apply'))
