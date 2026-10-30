@@ -2169,7 +2169,7 @@
     "loadingPlaylist": "プレイリストを読み込み中…",
     "separator": "区切り線",
     "gone": {
-      "appleMusic": "「{{name}}」はミュージックにもうありません",
+      "appleMusic": "「{{name}}」は Music にもうありません",
       "rekordbox": "「{{name}}」は rekordbox にもうありません",
       "engine": "「{{name}}」は Engine DJ にもうありません",
       "traktor": "「{{name}}」は Traktor にもうありません"
