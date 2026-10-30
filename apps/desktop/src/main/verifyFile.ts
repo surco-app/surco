@@ -62,7 +62,17 @@ function bounded<T>(read: Promise<T>, { signal, timeoutMs }: ReadOpts): Promise<
   })
 }
 
+// The file as asked first: a folder on a NAS can hold thousands of tracks, and listing it
+// is only needed when the name was written in another Unicode form than it is asked in.
 async function findOnDisk(path: string): Promise<string | null> {
+  const asked = await stat(path).then(
+    () => true,
+    (e: NodeJS.ErrnoException) => {
+      if (e.code === 'ENOENT' || e.code === 'ENOTDIR') return false
+      throw e
+    },
+  )
+  if (asked) return path
   const wanted = basename(path).normalize('NFC')
   const names = await readdir(dirname(path)).catch((e: NodeJS.ErrnoException) => {
     if (e.code === 'ENOENT' || e.code === 'ENOTDIR') return []
