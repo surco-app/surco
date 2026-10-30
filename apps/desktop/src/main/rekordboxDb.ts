@@ -127,16 +127,16 @@ interface ContentRow {
 // a network volume, so the rows are narrowed by file name first — indexed or not, that
 // is one cheap comparison against a column rekordbox always fills — and only the handful
 // that share the name get resolved and compared in full.
-function candidateRows(db: RekordboxDb, fileName: string): ContentRow[] {
+function candidateRows(db: RekordboxDb, path: string): ContentRow[] {
   return db
     .prepare(
       `SELECT ID, FolderPath, FileNameL, FileType, FileSize
          FROM djmdContent
-        WHERE FileNameL = ? COLLATE NOCASE
+        WHERE ${SAME_FILE_NAME}
           AND FileType <> ?
           AND (rb_local_deleted IS NULL OR rb_local_deleted = 0)`,
     )
-    .all(fileName, STREAMING_FILE_TYPE) as ContentRow[]
+    .all(...fileNameForms(path), STREAMING_FILE_TYPE) as ContentRow[]
 }
 
 // Finds the collection entry for a file Surco is about to replace.
@@ -153,17 +153,32 @@ function candidateRows(db: RekordboxDb, fileName: string): ContentRow[] {
 export const rekordboxStoredPath = (path: string): string =>
   /^[A-Za-z]:[\\/]/.test(path) ? path.replace(/\\/g, '/') : path
 
+// What two paths must share to name one file, for the writer and the self-check alike.
+export const rekordboxPathKey = (options: PathMatchOptions = {}): ((path: string) => string) => {
+  const key = pathKey(options)
+  return (p) => rekordboxStoredPath(key(p))
+}
+
+// SQLite's NOCASE folds neither case beyond ASCII nor Unicode forms, and macOS and the NAS
+// hand Surco decomposed names while rekordbox keeps whichever form it was given. The name
+// is asked for in both forms; rekordboxPathKey compares what comes back.
+export const SAME_FILE_NAME = 'FileNameL COLLATE NOCASE IN (?, ?)'
+
+export function fileNameForms(path: string): [string, string] {
+  const stored = rekordboxStoredPath(path)
+  const name = stored.slice(stored.lastIndexOf('/') + 1)
+  return [name.normalize('NFC'), name.normalize('NFD')]
+}
+
 export function findTrackByPath(
   db: RekordboxDb,
   path: string,
   options: FindOptions = {},
 ): RekordboxTrack | AmbiguousMatch | null {
-  const key = pathKey(options)
-  const safeResolve = (p: string): string => rekordboxStoredPath(key(p))
+  const safeResolve = rekordboxPathKey(options)
   const target = safeResolve(path)
-  const stored = rekordboxStoredPath(path)
-  const fileName = stored.slice(stored.lastIndexOf('/') + 1)
-  const rows = candidateRows(db, fileName)
+  const [fileName] = fileNameForms(path)
+  const rows = candidateRows(db, path)
   const matches = rows.filter((r) => safeResolve(r.FolderPath) === target)
   // Logged on every miss, because a miss is indistinguishable from "the collection never
   // had this track" without it: the user hit "none of these tracks are in the collection"

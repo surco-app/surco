@@ -22,15 +22,15 @@ function linkPrefixes(options: PathMatchOptions): [string, string][] {
   const home = options.homeMusicDir ?? `${homedir()}/Music/Music`
   try {
     const target = resolve(home)
-    if (target !== home) return [[home, target]]
+    if (target !== home) return [[home.normalize('NFC'), target.normalize('NFC')]]
   } catch {
     // No such folder, or not resolvable: there is no prefix rule to apply.
   }
   return []
 }
 
-// The comparable form of a path a DJ library stored: resolved, link prefix rewritten and
-// lowercased, since the library's import and Surco's scan can spell the same file
+// The comparable form of a path a DJ library stored: resolved, composed (NFC), link prefix
+// rewritten and lowercased, since the library's import and Surco's scan can spell the same file
 // differently on macOS and Windows.
 //
 // Resolution answers where a path really lands, but only while the file is still there:
@@ -49,6 +49,7 @@ export function pathKey(options: PathMatchOptions = {}): (path: string) => strin
     } catch {
       // Unresolvable: keep the literal path and let the prefix rules below do the work.
     }
+    out = out.normalize('NFC')
     for (const [from, to] of prefixes) {
       if (out.toLowerCase().startsWith(from.toLowerCase())) {
         out = to + out.slice(from.length)
