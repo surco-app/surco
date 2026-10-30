@@ -549,16 +549,19 @@ const verifyRegistry = createVerifyRegistry({
       enqueue: rekordboxQueue.enqueue,
       apply: () => applyRekordboxQueueQuietly(),
       at: rekordboxCollectionPath,
+      holds: rekordboxQueue.holdsRepoint,
     },
     engine: {
       enqueue: engineCueQueue.enqueue,
       apply: () => applyEngineCueQueueQuietly(),
       at: engineLibraryPath,
+      holds: engineCueQueue.holdsRepoint,
     },
     traktor: {
       enqueue: traktorCueQueue.enqueue,
       apply: () => applyTraktorCueQueueQuietly(),
       at: traktorWritePath,
+      holds: traktorCueQueue.holdsRepoint,
     },
   }),
   exists: (path) =>

@@ -148,12 +148,15 @@ interface RequeueTarget<T> {
   apply: () => void
   // Where the library is now, empty while it is not there.
   at: () => string
+  holds: (from: string) => boolean
 }
 
 // A retry hands a library still on the old file the move again, with the cue shift the
 // first repoint carried: that one never touched the row, and the shift goes with the move in
 // the same write. A row already moved is not found by the old path, so nothing shifts twice.
-// Tags, grid and stars are left out. True when the library is not there to take it now.
+// Tags, grid and stars are left out, so a repoint still queued for the source, which may
+// carry them, is left as it is and only applied. True when the library is not there to take
+// it now.
 type Move = { from: string; to: string; audio?: { cueShiftMs: number } }
 export function libraryRequeue(queues: {
   rekordbox: RequeueTarget<Move>
@@ -163,25 +166,22 @@ export function libraryRequeue(queues: {
   return (place, e) => {
     if (place === 'traktor') {
       const p = e.traktorPatch
-      if (p)
-        queues.traktor.enqueue(
-          [],
-          [
-            queuedNmlPatch({
-              volume: p.volume,
-              dir: p.dir,
-              file: p.file,
-              newFile: p.newFile,
-              ...(p.cueShift ? { cueShift: p.cueShift } : {}),
-              // Where the file is: an entry that cannot take the new name (another holds
-              // it) keeps its cues, so a retry shifts them only along with the move.
-              outputVolume: p.outputVolume,
-              outputDir: p.outputDir,
-              outputFile: p.outputFile,
-            }),
-          ],
-        )
-    } else
+      const queued =
+        p &&
+        queuedNmlPatch({
+          volume: p.volume,
+          dir: p.dir,
+          file: p.file,
+          newFile: p.newFile,
+          ...(p.cueShift ? { cueShift: p.cueShift } : {}),
+          // Where the file is: an entry that cannot take the new name (another holds
+          // it) keeps its cues, so a retry shifts them only along with the move.
+          outputVolume: p.outputVolume,
+          outputDir: p.outputDir,
+          outputFile: p.outputFile,
+        })
+      if (queued && !queues.traktor.holds(queued.from)) queues.traktor.enqueue([], [queued])
+    } else if (!queues[place].holds(e.from))
       queues[place].enqueue(
         [],
         [

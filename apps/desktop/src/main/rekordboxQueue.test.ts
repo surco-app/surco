@@ -719,6 +719,23 @@ describe('rekordbox queue', () => {
   })
 })
 
+describe('repoints the queue holds', () => {
+  // A retry asks before handing a move again: one already queued may carry the tags and
+  // artwork the run gave it, and a bare move by the same source would replace it.
+  it('tells a source whose repoint waits for this collection, and forgets it once applied', async () => {
+    let at = '/c/master.db'
+    const q = createRekordboxQueue(deps({ collection: () => at }))
+    q.enqueue([], [{ from: '/m/b.mp3', to: '/m/b.flac' }])
+    expect(q.holdsRepoint('/m/b.mp3')).toBe(true)
+    expect(q.holdsRepoint('/m/c.mp3')).toBe(false)
+    at = '/d/master.db'
+    expect(q.holdsRepoint('/m/b.mp3')).toBe(false)
+    at = '/c/master.db'
+    await q.apply(closed)
+    expect(q.holdsRepoint('/m/b.mp3')).toBe(false)
+  })
+})
+
 describe('cues in the queue', () => {
   const cues = (id: string, drops: number[], over: Partial<CuesOp> = {}): CuesOp => ({
     id,

@@ -212,15 +212,33 @@ describe('snapshotLibraries', () => {
 })
 
 describe('libraryRequeue', () => {
-  const queues = () => ({
-    rekordbox: { enqueue: vi.fn(), apply: vi.fn(), at: () => '/c/master.db' },
-    engine: { enqueue: vi.fn(), apply: vi.fn(), at: () => '' },
+  const queues = (holds = (_from: string) => false) => ({
+    rekordbox: { enqueue: vi.fn(), apply: vi.fn(), at: () => '/c/master.db', holds },
+    engine: { enqueue: vi.fn(), apply: vi.fn(), at: () => '', holds },
     traktor: {
       enqueue: vi.fn<(ops: [], patches: QueuedNmlPatch[]) => void>(),
       apply: vi.fn(),
       at: () => '/t/collection.nml',
+      holds,
     },
   })
+
+  // The run's repoint still queued carries its tags, artwork, grid or stars: a bare move by
+  // the same source would replace it, and the apply would leave them out.
+  it.each(['rekordbox', 'engine', 'traktor'] as const)(
+    'leaves a %s repoint already queued for the source as it is and only applies',
+    (place) => {
+      const holds = vi.fn((_from: string) => true)
+      const q = queues(holds)
+      const patch = { volume: 'HD', dir: '/:M/:', file: 'a.aiff', newFile: 'a.wav' }
+
+      libraryRequeue(q)(place, entry({ traktorPatch: patch }))
+
+      expect(q[place].enqueue).not.toHaveBeenCalled()
+      expect(q[place].apply).toHaveBeenCalledOnce()
+      expect(holds).toHaveBeenCalledWith(place === 'traktor' ? 'HD\0/:M/:\0a.aiff' : FROM)
+    },
+  )
 
   // Still on the old file, the first repoint never touched the row, and its cue shift went
   // with it: handed again, the move carries the same shift, and nothing else.
