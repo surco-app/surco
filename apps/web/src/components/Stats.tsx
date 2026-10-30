@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { type Day, installsInLast, type Stats, weeklyMacInstalls } from '../lib/stats'
+import {
+  type Day,
+  installsInLast,
+  lastTwelveMonths,
+  type Stats,
+  weeklyMacInstalls,
+} from '../lib/stats'
 import Footer from './Footer'
 import Header from './Header'
 import Kicker from './Kicker'
@@ -248,7 +254,7 @@ export function StatsView({ stats }: { stats: Stats }) {
             </span>
           </div>
           <div className="mt-8">
-            <CumulativeChart days={days} />
+            <CumulativeChart days={lastTwelveMonths(days)} />
           </div>
           <p className="mt-3 text-xs text-faint">{t('stats.estimatedLegend')}</p>
         </Reveal>

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   type Day,
   installsInLast,
+  lastTwelveMonths,
   macUpdates,
   recordSnapshot,
   releaseTotals,
@@ -192,5 +193,29 @@ describe('weeklyMacInstalls', () => {
   it('carries a week with no snapshot as zero instead of dropping it', () => {
     const days = [day('2026-10-05', 10), day('2026-10-19', 12)]
     expect(weeklyMacInstalls(days).map((w) => w.count)).toEqual([10, 0, 2])
+  })
+})
+
+describe('lastTwelveMonths', () => {
+  // The curve starts on the first day ever stored, so every month added squeezes the rest
+  // into the same width until the month labels collide. A year keeps the recent pace
+  // readable.
+  it('keeps the days from the same date a year before the latest one', () => {
+    const days = [
+      day('2025-10-29', 1),
+      day('2025-10-30', 2),
+      day('2026-03-01', 50),
+      day('2026-10-30', 273),
+    ]
+    expect(lastTwelveMonths(days).map((d) => d.date)).toEqual([
+      '2025-10-30',
+      '2026-03-01',
+      '2026-10-30',
+    ])
+  })
+
+  it('keeps a history shorter than a year whole', () => {
+    const days = [day('2026-06-02', 4), day('2026-10-30', 273)]
+    expect(lastTwelveMonths(days)).toEqual(days)
   })
 })

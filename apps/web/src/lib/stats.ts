@@ -156,6 +156,13 @@ export function recordSnapshot(
   }
 }
 
+export function lastTwelveMonths(days: Day[]): Day[] {
+  const last = days.at(-1)
+  if (!last) return days
+  const cutoff = `${Number(last.date.slice(0, 4)) - 1}${last.date.slice(4)}`
+  return days.filter((d) => d.date >= cutoff)
+}
+
 export function installsInLast(days: Day[], count: number): number {
   const last = days.at(-1)
   if (!last) return 0
