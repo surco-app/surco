@@ -29,6 +29,8 @@ beforeEach(() => {
     removeListDuplicates: vi.fn().mockResolvedValue([]),
     onListRemovalPhase: vi.fn(() => () => {}),
     setMusicField: vi.fn().mockResolvedValue('set'),
+    scanDamage: vi.fn().mockResolvedValue({ findings: [], unread: [] }),
+    repairDamage: vi.fn().mockResolvedValue([]),
   }
   ;(window as unknown as { api: unknown }).api = api
 })
@@ -497,5 +499,23 @@ describe('listReviewSource', () => {
       rows = [analyzed]
       expect(s.facts?.('/m/a.aiff')).toBe(analyzed)
     })
+  })
+})
+
+// The damage scan reads the files the review reads: a row whose tags could not be read is
+// left out here as it is from spellings and duplicates.
+describe('listReviewSource damage', () => {
+  it('scans the read rows only', async () => {
+    const s = source([row('/m/a.mp3', 'A'), row('/m/b.mp3', 'A', { metaReadFailed: true })])
+    await s.loadDamage?.()
+    expect(api.scanDamage).toHaveBeenCalledWith(['/m/a.mp3'])
+  })
+
+  it('hands the staged repairs to main', async () => {
+    const items = [
+      { id: 'x', repair: { target: 'genre' as const, path: '/m/a.mp3', from: 'a', to: 'b' } },
+    ]
+    await source([row('/m/a.mp3', 'A')]).repairDamage?.(items)
+    expect(api.repairDamage).toHaveBeenCalledWith(items)
   })
 })
