@@ -1,9 +1,7 @@
 import { ipcMain, type WebContents } from 'electron'
 import type { DamageFinding, DamageRepairItem, DamageScan } from '../shared/types'
-import { type DamageRepairDeps, pendingDamage, repairDamage } from './damageRepair'
+import { type DamageRepairDeps, repairDamage } from './damageRepair'
 import { type DamageScanDeps, scanDamage } from './damageScan'
-
-export { pendingDamage }
 
 export interface QueuedRepairs {
   engine: {
@@ -40,7 +38,7 @@ function queuedFor(f: DamageFinding, queued: QueuedRepairs): boolean {
 }
 
 function markPending(scan: DamageScan, queued?: QueuedRepairs): DamageScan {
-  const pending = (f: DamageFinding) => (queued ? queuedFor(f, queued) : pendingDamage.has(f.id))
+  const pending = (f: DamageFinding) => queued !== undefined && queuedFor(f, queued)
   return {
     ...scan,
     findings: scan.findings.map((f) => (pending(f) ? { ...f, pending: true } : f)),

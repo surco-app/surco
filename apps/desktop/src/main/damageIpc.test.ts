@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() }, app: { isPackaged: false } }))
 
 import { ipcMain } from 'electron'
-import { pendingDamage, registerDamageIpc } from './damageIpc'
+import { registerDamageIpc } from './damageIpc'
 
 function handlerFor(channel: string): (e: unknown, ...args: unknown[]) => unknown {
   const call = vi.mocked(ipcMain.handle).mock.calls.find(([ch]) => ch === channel)
@@ -13,30 +13,50 @@ function handlerFor(channel: string): (e: unknown, ...args: unknown[]) => unknow
 
 const MP3 = '/m/uno.mp3'
 
-beforeEach(() => {
-  vi.clearAllMocks()
-  pendingDamage.clear()
-})
+beforeEach(() => vi.clearAllMocks())
 
 // A repair held while Traktor or Engine DJ stays open lands later. Until it does, the scan
 // still finds the damage, and staging it again would queue the same shift twice.
 describe('damage:scan', () => {
-  it('marks a finding whose repair is still queued, and keeps one this scan did not reach', async () => {
+  it('marks a Traktor finding whose entry patch waits in the queue', async () => {
+    const entry = { volume: 'Macintosh HD', dir: '/:m/:', file: 'uno.mp3', entryState: 'S' }
     registerDamageIpc({
       scanDeps: () => ({
         isAllowed: () => true,
-        readGenre: async () => ({ raw: '(35) Deep House' }),
+        readGenre: async () => null,
         libraryGenres: async () => ({}),
+        traktor: async () => [
+          {
+            path: MP3,
+            sibling: '/m/uno.aiff',
+            judgement: {
+              kind: 'traktor-source-cues' as const,
+              certainty: 'sure' as const,
+              addMs: 51.18,
+              fixEntry: 'source' as const,
+              fixTree: false,
+              provenance: true,
+            },
+            before: [{ type: 0, hotcue: 0, ms: 9948.82 }],
+            entry,
+          },
+        ],
       }),
       repairDeps: () => ({}) as never,
+      queued: () => ({
+        engine: [],
+        traktor: [
+          {
+            from: ['Macintosh HD', '/:m/:', 'uno.mp3'].join('\0'),
+            patch: { cueShift: { shiftMs: -51.18 } },
+          },
+        ],
+      }),
     })
-    pendingDamage.add(`genre-number\0${MP3}`)
-    pendingDamage.add('engine-cues\0/m/gone.wav')
     const scan = (await handlerFor('damage:scan')({ sender: {} }, [MP3])) as {
       findings: { pending?: true }[]
     }
     expect(scan.findings[0].pending).toBe(true)
-    expect(pendingDamage.has('engine-cues\0/m/gone.wav')).toBe(true)
   })
 })
 
@@ -50,16 +70,7 @@ describe('damage:scan pending state', () => {
     expectTrackData: { sampleRate: 48000, sampleCount: 480000 },
     trimmedMs: 0,
   }
-  const engineFinding = {
-    id: 'engine-cues\0/m/e.wav',
-    kind: 'engine-cues' as const,
-    path: '/m/e.wav',
-    certainty: 'sure' as const,
-    evidence: [],
-    before: { key: 'x' },
-    options: [],
-    repair: ENGINE_REPAIR,
-  }
+
   const scanDeps = (found: boolean) => ({
     isAllowed: () => true,
     readGenre: async () => null,
@@ -83,10 +94,18 @@ describe('damage:scan pending state', () => {
         : [],
   })
 
-  it('keeps a pending id through a scan that did not find it', async () => {
+  it('keeps a finding pending through a scan that did not reach it', async () => {
     let found = false
-    registerDamageIpc({ scanDeps: () => scanDeps(found), repairDeps: () => ({}) as never })
-    pendingDamage.add(engineFinding.id)
+    registerDamageIpc({
+      scanDeps: () => scanDeps(found),
+      repairDeps: () => ({}) as never,
+      queued: () => ({
+        engine: [
+          { from: '/m/e.wav', to: '/m/e.wav', expectTrackData: ENGINE_REPAIR.expectTrackData },
+        ],
+        traktor: [],
+      }),
+    })
     await handlerFor('damage:scan')({ sender: {} }, ['/m/other.wav'])
     found = true
     const scan = (await handlerFor('damage:scan')({ sender: {} }, ['/m/e.wav'])) as {
@@ -113,7 +132,6 @@ describe('damage:scan pending state', () => {
   })
 
   it('is no longer pending once the queue let the repair go', async () => {
-    pendingDamage.add(engineFinding.id)
     registerDamageIpc({
       scanDeps: () => scanDeps(true),
       repairDeps: () => ({}) as never,

@@ -6,8 +6,6 @@ import { applyListFixes, type ListApplyDeps } from './listReviewApply'
 import { entryStates, type NmlPatch } from './traktorNml'
 import { type FlushTraktorSyncDeps, flushTraktorSync } from './traktorSyncFlush'
 
-export const pendingDamage = new Set<string>()
-
 export interface DamageRepairDeps {
   beginMoment: () => void
   genre: ListApplyDeps
@@ -257,6 +255,5 @@ export async function repairDamage(
     ...(traktor.length === 0 ? [] : await repairTraktor(traktor, deps)),
     ...(genres.length > 0 ? await repairGenres(genres, deps.genre) : []),
   ]
-  for (const o of outcomes) if (o.state === 'pending') pendingDamage.add(o.id)
   return items.map(({ id }) => outcomes.find((o) => o.id === id) ?? { id, state: 'unchanged' })
 }

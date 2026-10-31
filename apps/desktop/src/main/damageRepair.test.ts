@@ -1,7 +1,7 @@
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() }, app: { isPackaged: false } }))
 vi.mock('electron-log/main', () => ({ default: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }))
@@ -9,7 +9,6 @@ vi.mock('./traktorProcess', () => ({ isTraktorRunning: vi.fn().mockResolvedValue
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 import type { DamageRepair, TrashEntry } from '../shared/types'
-import { pendingDamage } from './damageIpc'
 import { type DamageRepairDeps, repairDamage } from './damageRepair'
 import type { EngineRepoint } from './engineRepoint'
 import type { LibraryRepointResult } from './libraryRepointFlush'
@@ -77,8 +76,6 @@ function engineDeps(results: LibraryRepointResult[]) {
   }
 }
 
-beforeEach(() => pendingDamage.clear())
-
 describe('repairDamage — genres', () => {
   it('reports a written genre as repaired with its backup', async () => {
     const d = deps()
@@ -135,7 +132,6 @@ describe('repairDamage — Traktor', () => {
     const hold = vi.fn(async () => {})
     const out = await repairDamage([item('t', traktor)], deps({ traktor: { ...t, hold } }))
     expect(out).toEqual([{ id: 't', state: 'pending' }])
-    expect(pendingDamage.has('t')).toBe(true)
     expect(hold).toHaveBeenCalledWith(expect.any(Array), ['S'], '/t/collection.nml')
   })
 })
@@ -206,7 +202,6 @@ describe('repairDamage — Engine DJ', () => {
     const out = await repairDamage([item('e', engine)], deps({ engine: e }))
     expect(out).toEqual([{ id: 'e', state: 'pending' }])
     expect(e.enqueue).toHaveBeenCalledWith(e.repointTracks.mock.calls[0][1])
-    expect(pendingDamage.has('e')).toBe(true)
   })
 
   it('reports a row that no longer holds the scanned trackData as unchanged', async () => {
