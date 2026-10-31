@@ -140,6 +140,44 @@ describe('repairDamage — Traktor', () => {
   })
 })
 
+describe("repairDamage — a converted file's own Traktor tree", () => {
+  const tree: DamageRepair = {
+    target: 'traktor',
+    path: WAV,
+    addMs: -51.18,
+    treeFile: WAV,
+    treeMs: [10000],
+  }
+
+  it('moves the tree the scan read and reports its backup', async () => {
+    const rewriteTree = vi.fn(async () => ({ written: true, backup: { id: 'b2' } as TrashEntry }))
+    const out = await repairDamage([item('w', tree)], deps({ rewriteTree }))
+    expect(rewriteTree).toHaveBeenCalledWith(WAV, -51.18, [10000])
+    expect(out).toEqual([{ id: 'w', state: 'repaired', backupId: 'b2' }])
+  })
+
+  it('reports a tree that moved since the scan as unchanged', async () => {
+    const rewriteTree = vi.fn(async () => ({ written: false }))
+    expect(await repairDamage([item('w', tree)], deps({ rewriteTree }))).toEqual([
+      { id: 'w', state: 'unchanged' },
+    ])
+  })
+
+  it('moves the tree and the entry together, pending while Traktor is open', async () => {
+    const rewriteTree = vi.fn(async () => ({ written: true, backup: { id: 'b2' } as TrashEntry }))
+    const t = {
+      ...traktorDeps(async () => ({ written: true, matched: 1 })),
+      ensureTraktorClosed: async () => false,
+      hold: vi.fn(async () => {}),
+    }
+    const out = await repairDamage(
+      [item('w', { ...tree, entry: { ...ENTRY, file: 'dos.wav' } })],
+      deps({ rewriteTree, traktor: t }),
+    )
+    expect(out).toEqual([{ id: 'w', state: 'pending', backupId: 'b2' }])
+  })
+})
+
 describe('repairDamage — Engine DJ', () => {
   it('repairs the row in place, guarded by the trackData the scan read', async () => {
     const e = engineDeps([{ written: true }])

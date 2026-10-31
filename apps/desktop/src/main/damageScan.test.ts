@@ -141,11 +141,16 @@ describe('scanDamage', () => {
               fixEntry: 'sibling' as const,
               fixTree: true,
             },
+            tree: [{ type: 0, hotcue: 0, ms: 10000 }],
           },
         ]),
       }),
     )
-    expect(scan.findings[0].repair).toMatchObject({ treeFile: '/m/uno.wav', addMs: -51.18 })
+    expect(scan.findings[0].repair).toMatchObject({
+      treeFile: '/m/uno.wav',
+      treeMs: [10000],
+      addMs: -51.18,
+    })
   })
 
   it('carries the trackData the scan read for an Engine repair', async () => {

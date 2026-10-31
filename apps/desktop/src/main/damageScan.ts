@@ -123,7 +123,7 @@ function traktorFinding(d: TraktorDamage): DamageFinding {
             path: d.path,
             addMs: j.addMs,
             ...(d.entry ? { entry: d.entry } : {}),
-            ...(treeFile ? { treeFile } : {}),
+            ...(treeFile ? { treeFile, treeMs: (d.tree ?? []).map((c) => c.ms) } : {}),
           }
         : null,
   }

@@ -148,7 +148,7 @@ import { createMediaAccess } from './mediaAccess'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { createMoments } from './moments'
 import { isIssuedPair } from './musicDuplicates'
-import { rewriteTagFields } from './musicFieldWrite'
+import { rewriteCueTree, rewriteTagFields } from './musicFieldWrite'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { abandonNmlBatch, beginNmlBatch, recordedNmlPatch, redirectNmlPatch } from './nmlBatch'
@@ -1709,6 +1709,7 @@ function registerIpc(): void {
             ),
           rewrite: (file, changes) => rewriteTagFields(file, changes, tmpManifest, 'setGenreFrame'),
         },
+        rewriteTree: (file, addMs, expected) => rewriteCueTree(file, addMs, expected, tmpManifest),
         traktor: {
           ...traktor,
           bootVolume: bootVolumeName(),

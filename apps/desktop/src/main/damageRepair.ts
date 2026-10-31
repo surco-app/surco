@@ -11,7 +11,11 @@ export const pendingDamage = new Set<string>()
 export interface DamageRepairDeps {
   beginMoment: () => void
   genre: ListApplyDeps
-  rewriteTree?: (file: string, addMs: number) => Promise<{ written: boolean; backup?: TrashEntry }>
+  rewriteTree?: (
+    file: string,
+    addMs: number,
+    expected: number[],
+  ) => Promise<{ written: boolean; backup?: TrashEntry }>
   traktor?: Omit<FlushTraktorSyncDeps, 'endNmlBatch' | 'queue'> & {
     bootVolume: string
     readCollection: () => Promise<string | null>
@@ -50,7 +54,7 @@ async function repairGenres(items: Of<'genre'>[], deps: ListApplyDeps): Promise<
   })
 }
 
-async function repairTraktor(
+async function repairEntries(
   items: Of<'traktor'>[],
   deps: NonNullable<DamageRepairDeps['traktor']>,
 ): Promise<DamageOutcome[]> {
@@ -113,6 +117,51 @@ async function repairTraktor(
   return located.map(({ id }) =>
     kept.some((l) => l.id === id) ? { id, state } : { id, state: 'unchanged' },
   )
+}
+
+const RANK: DamageOutcome['state'][] = ['failed', 'pending', 'repaired', 'unchanged']
+
+async function repairTraktor(
+  items: Of<'traktor'>[],
+  deps: DamageRepairDeps,
+): Promise<DamageOutcome[]> {
+  const trees = new Map<string, DamageOutcome>()
+  for (const { id, repair } of items) {
+    if (!repair.treeFile) continue
+    if (!deps.rewriteTree) {
+      trees.set(id, { id, state: 'failed', error: 'libraryOff' })
+      continue
+    }
+    try {
+      const r = await deps.rewriteTree(repair.treeFile, repair.addMs, repair.treeMs ?? [])
+      trees.set(
+        id,
+        r.written
+          ? { id, state: 'repaired', ...(r.backup ? { backupId: r.backup.id } : {}) }
+          : { id, state: 'unchanged' },
+      )
+    } catch (e) {
+      trees.set(id, { id, state: 'failed', error: e instanceof Error ? e.message : String(e) })
+    }
+  }
+  const withEntry = items.filter((i) => i.repair.entry)
+  const entries =
+    withEntry.length === 0
+      ? []
+      : deps.traktor
+        ? await repairEntries(withEntry, deps.traktor)
+        : withEntry.map(({ id }): DamageOutcome => ({ id, state: 'failed', error: 'libraryOff' }))
+  return items.map(({ id }) => {
+    const parts = [trees.get(id), entries.find((o) => o.id === id)].filter(
+      (o): o is DamageOutcome => o !== undefined,
+    )
+    const [first] = [...parts].sort((a, b) => RANK.indexOf(a.state) - RANK.indexOf(b.state))
+    const backupId = trees.get(id)?.backupId
+    return {
+      ...(first ?? { id, state: 'unchanged' }),
+      ...(backupId ? { backupId } : {}),
+    }
+  })
 }
 
 async function repairEngine(
@@ -196,11 +245,7 @@ export async function repairDamage(
   const engine = of('engine')
   const outcomes = [
     ...(genres.length > 0 ? await repairGenres(genres, deps.genre) : []),
-    ...(traktor.length === 0
-      ? []
-      : deps.traktor
-        ? await repairTraktor(traktor, deps.traktor)
-        : unsupported(traktor)),
+    ...(traktor.length === 0 ? [] : await repairTraktor(traktor, deps)),
     ...(engine.length === 0
       ? []
       : deps.engine

@@ -434,6 +434,7 @@ export type DamageRepair =
       addMs: number
       entry?: { volume: string; dir: string; file: string; entryState: string }
       treeFile?: string
+      treeMs?: number[]
     }
   | {
       target: 'engine'

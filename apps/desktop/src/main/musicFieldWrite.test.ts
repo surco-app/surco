@@ -18,11 +18,15 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
+import { encodeBase91 } from './base91'
 import { readGenreFrame } from './genreFrame'
-import { prepareTagRewrite, rewriteTagFields } from './musicFieldWrite'
+import { prepareTagRewrite, rewriteCueTree, rewriteTagFields } from './musicFieldWrite'
 import { applyMusicFixes } from './musicReviewApply'
 import { configureBackupDiscarder, configureOriginalKeeper, policyKeeper } from './originalKeeper'
 import { diffSnapshots, snapshotTags } from './tagSnapshot'
+import { readCueTree } from './tags'
+import { readTraktorMarkers } from './traktor4'
+import { buildTraktorTree, injectWavPriv, storedTree, traktorCue } from './traktor4Fixture'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-field-write-'))
@@ -608,6 +612,82 @@ describe('rewriteTagFields with the raw genre frame job', () => {
     expect(backup).toEqual({ id: 'b1' })
     expect(kept).toEqual(damagedBytes)
     expect(readGenreFrame(file)?.raw).toBe('House; Deep House')
+  }, 60000)
+})
+
+// A file converted with the old MP3 calibration keeps its own Traktor cues off by what the
+// rule missed. Only the tree moves, through the same copy, check, backup and rename.
+describe('rewriteCueTree', () => {
+  const tree = buildTraktorTree([
+    traktorCue('Intro', 0, 10000, 0),
+    traktorCue('Break', 0, 15000, 1),
+  ])
+  const starts = (file: string) =>
+    readTraktorMarkers(readCueTree(file) ?? new Uint8Array()).map((m) => m.startMs)
+
+  function wavWithTree(): string {
+    const file = join(dir, `tree-${Math.random().toString(36).slice(2)}.wav`)
+    execFileSync(FF, ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'anoisesrc=d=20', file])
+    injectWavPriv(file, tree)
+    return file
+  }
+
+  function flacWithTree(): string {
+    const file = join(dir, `tree-${Math.random().toString(36).slice(2)}.flac`)
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'anoisesrc=d=20',
+      '-metadata',
+      `TRAKTOR4=${encodeBase91(tree)}`,
+      file,
+    ])
+    return file
+  }
+
+  it.each([
+    ['wav', wavWithTree],
+    ['flac', flacWithTree],
+  ])(
+    'moves every cue of a %s by the ms it missed and keeps the old tree in the backup',
+    async (_ext, make) => {
+      const file = make()
+      const md5 = audioMd5(file)
+      const old = storedTree(file)
+      let kept: Uint8Array | null = null
+      configureOriginalKeeper(async (path) => {
+        kept = storedTree(path)
+        return { id: 'b1' } as never
+      })
+      const { written, backup } = await rewriteCueTree(file, -51.18, [10000, 15000])
+      expect(written).toBe(true)
+      expect(backup).toEqual({ id: 'b1' })
+      expect(starts(file).map((ms) => ms.toFixed(2))).toEqual(['9948.82', '14948.82'])
+      expect(kept).toEqual(old)
+      expect(audioMd5(file)).toBe(md5)
+    },
+    60000,
+  )
+
+  it('writes nothing to a file with no tree', async () => {
+    const file = join(dir, `bare-${Math.random().toString(36).slice(2)}.wav`)
+    execFileSync(FF, ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'anoisesrc=d=2', file])
+    const keeper = vi.fn()
+    configureOriginalKeeper(keeper)
+    expect(await rewriteCueTree(file, -51.18, [10000])).toEqual({ written: false })
+    expect(keeper).not.toHaveBeenCalled()
+  }, 60000)
+
+  it('writes nothing when the tree is no longer what the scan read', async () => {
+    const file = wavWithTree()
+    const before = readFileSync(file)
+    configureOriginalKeeper(vi.fn())
+    expect(await rewriteCueTree(file, -51.18, [9948.82, 14948.82])).toEqual({ written: false })
+    expect(readFileSync(file)).toEqual(before)
   }, 60000)
 })
 

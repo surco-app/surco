@@ -15,6 +15,7 @@ export interface TraktorDamage {
   judgement: TraktorJudgement
   sibling: string
   before: CueMark[]
+  tree?: CueMark[]
   entry?: { volume: string; dir: string; file: string; entryState: string }
 }
 
@@ -129,6 +130,7 @@ export async function scanTraktorDamage(
         judgement,
         sibling: onSource ? sibling : source,
         before: (onSource ? marks.sourceEntry : (marks.siblingEntry ?? marks.siblingTree)) ?? [],
+        ...(judgement.fixTree && marks.siblingTree ? { tree: marks.siblingTree } : {}),
         ...(fixed && state
           ? { entry: { volume: fixed.volume, dir: fixed.dir, file: fixed.file, entryState: state } }
           : {}),
