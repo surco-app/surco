@@ -348,6 +348,19 @@ describe('matrix file oracle', () => {
     expect(details).toContain("título: TIT2 'Café Olé', se esperaba 'Señal'")
   })
 
+  // A file from a real collection lacks tags a synthetic source always has; what it never
+  // had is not something Surco could lose, so it is not judged.
+  it('leaves unjudged a tag the source never had', () => {
+    const bare = makeSource(dir, 'flac', {
+      fileName: 'bare',
+      tags: { album: '', trackNumber: '', publisher: '', catalogNumber: '', grouping: '', bpm: '' },
+    })
+    const out = convertByHand(bare, 'aiff', dir, 'bare-out')
+    expect(fileInvariants(cellOf('C-flac-aiff'), bare, out.path, out.coverSha1)).toEqual([])
+    const unpadded = { ...cellOf('C-flac-flac'), settings: { zeroPadTrack: false } }
+    expect(fileInvariants(unpadded, bare, bare.path, bare.coverSha1)).toEqual([])
+  })
+
   it('reports a WAV with a wrong TIT1 and a GRP1 as two grouping problems', () => {
     const wav = convertByHand(flac, 'wav', dir, 'grp1-and-tit1')
     editId3(wav.path, (id3) => {

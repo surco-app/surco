@@ -26,7 +26,7 @@ import {
 } from './oracle'
 import type { CellOutcome } from './report'
 import { SABOTAGES } from './sabotage'
-import { makeSource, type TrickyTags } from './sources'
+import { makeSource, type SourceTrack, type TrickyTags } from './sources'
 
 const EXTENSION: Record<OutputFormat, string> = {
   aiff: '.aiff',
@@ -149,6 +149,14 @@ export interface RunHooks {
   prepared?: (set: LibrarySet) => Promise<void>
   sabotages?: Partial<Record<SabotageId, MakeSabotage>>
   beforeJudge?: (set: LibrarySet) => Promise<void>
+  lagMs?: (witness: string, output: string) => number
+}
+
+export interface GroupFixture {
+  root: string
+  sources: SourceTrack[]
+  witnesses: SourceTrack[]
+  set: LibrarySet
 }
 
 function sabotageOf(id: SabotageId, hooks: RunHooks): MakeSabotage {
@@ -163,10 +171,23 @@ function programsOpen(open: boolean): void {
   vi.mocked(isTraktorRunning).mockResolvedValue(open)
 }
 
+export function witnessesOf(root: string, sources: SourceTrack[]): SourceTrack[] {
+  return sources.map((s) => {
+    const witness = join(root, 'Testigo', basename(s.path))
+    mkdirSync(dirname(witness), { recursive: true })
+    copyFileSync(s.path, witness)
+    return { ...s, path: witness }
+  })
+}
+
+export function startMusic(cell: Cell, root: string): void {
+  music.reset()
+  if (toMusic(cell)) music.state.mediaFolder = join(root, 'Music Media')
+}
+
 export async function runGroup(group: CellGroup, hooks: RunHooks = {}): Promise<CellOutcome[]> {
   const [first] = group.cells
   const root = scenarioDir(`matriz-${first.id}`)
-  const outputDir = join(root, 'Salida')
   const sources = group.cells.map((cell) =>
     makeSource(join(root, 'Origen'), cell.origin, {
       fileName: hooks.prefix ? `${hooks.prefix} ${cell.id} Café Olé` : `${cell.id} Café Olé`,
@@ -174,14 +195,8 @@ export async function runGroup(group: CellGroup, hooks: RunHooks = {}): Promise<
       tags: hooks.tags,
     }),
   )
-  const witnesses = sources.map((s) => {
-    const witness = join(root, 'Testigo', basename(s.path))
-    mkdirSync(dirname(witness), { recursive: true })
-    copyFileSync(s.path, witness)
-    return { ...s, path: witness }
-  })
-  music.reset()
-  if (toMusic(first)) music.state.mediaFolder = join(root, 'Music Media')
+  const witnesses = witnessesOf(root, sources)
+  startMusic(first, root)
   const set = buildLibraries(root, first.programs, sources, {
     ...LIBRARY_EXTRA[first.id],
     prefix: hooks.prefix,
@@ -193,6 +208,16 @@ export async function runGroup(group: CellGroup, hooks: RunHooks = {}): Promise<
         fileName: basename(sources[i].path, extname(sources[i].path)),
         tags: { title: 'Ocupado', artist: 'Nadie' },
       })
+  return runFixture(group, { root, sources, witnesses, set }, hooks)
+}
+
+export async function runFixture(
+  group: CellGroup,
+  { root, sources, witnesses, set }: GroupFixture,
+  hooks: RunHooks = {},
+): Promise<CellOutcome[]> {
+  const [first] = group.cells
+  const outputDir = join(root, 'Salida')
   const written = group.cells.map((cell, i) =>
     writtenPath(judgedAs(cell), sources[i].path, outputDir),
   )
@@ -269,7 +294,7 @@ export async function runGroup(group: CellGroup, hooks: RunHooks = {}): Promise<
           traktor:
             spelled(dirname(finalPath)) === spelled(dirname(source.path)) ? finalPath : source.path,
         },
-        lagMs: fileExists ? markerLagMs(witness.path, finalPath) : 0,
+        lagMs: fileExists ? (hooks.lagMs ?? markerLagMs)(witness.path, finalPath) : 0,
         rekordboxStartMovedMs: fileExists
           ? rekordboxTimelineMs(finalPath) - rekordboxTimelineMs(witness.path)
           : 0,

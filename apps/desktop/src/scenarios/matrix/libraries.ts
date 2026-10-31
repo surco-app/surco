@@ -21,12 +21,26 @@ import { makeRekordbox } from '../rekordboxFixture'
 import type { Programs } from './cells'
 import { makeSource, SEEDED_CUES_MS, type SourceTrack, TRICKY } from './sources'
 
+export interface EnginePerf {
+  trackData: Buffer | null
+  beatData: Buffer | null
+  quickCues: Buffer | null
+  overviewWaveFormData: Buffer | null
+}
+
+export interface TrackBaseline {
+  rekordbox?: { cuesMs: number[]; analysisDataPath: string | null; analysed: number | null }
+  engine?: { cuesMs: number[]; perf: EnginePerf; positions: Record<number, number> }
+  traktor?: { cuesMs: number[] }
+}
+
 export interface SeededTrack extends SourceTrack {
   rekordboxId: string
   engineId: number
   traktorAudioId: string
   musicPid?: string
   playlists: { rekordbox: string[]; engine: number[]; traktor: string[]; music: string[] }
+  baseline?: TrackBaseline
 }
 
 export interface LibrarySet {
@@ -41,6 +55,7 @@ export interface LibrarySet {
   sha1Before: Record<'rekordbox' | 'engine' | 'traktor', string | null>
   bystanderRows: Partial<Record<'rekordbox' | 'engine' | 'traktor', string>>
   traktorEntries: Record<string, string>
+  knownRekordboxIds?: string[]
 }
 
 export type Program = 'rekordbox' | 'engine' | 'traktor' | 'music'
@@ -213,7 +228,7 @@ ${playlists.join('\n')}
   )
 }
 
-function seedMusic(seeded: SeededTrack[]): string[] {
+export function seedMusic(seeded: SeededTrack[]): string[] {
   for (const t of seeded)
     t.musicPid = music.addEntry({
       location: realpathSync(t.path),
