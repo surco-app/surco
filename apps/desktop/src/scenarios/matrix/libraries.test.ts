@@ -20,7 +20,7 @@ import { bootVolumeName } from '../../main/traktorNmlLibrary'
 import { music } from '../fakeMusic'
 import { scenarioDir } from '../fixtures'
 import { CELLS, type Cell, type Programs } from './cells'
-import { buildLibraries, type LibrarySet, type SeededTrack } from './libraries'
+import { buildLibraries, type LibrarySet, type SeededTrack, traktorEntryOf } from './libraries'
 import {
   type Broken,
   type Expected,
@@ -732,6 +732,120 @@ describe('Synthetic libraries the matrix judges on its own', () => {
       const broken = judge(BASE)
       seen(broken, 'collateral', 'otra pista, Engine: sus filas cambiaron')
       seen(broken, 'collateral', 'otra pista, Traktor: sus filas cambiaron')
+    })
+  })
+
+  // A copy of a real collection holds its own cues, analysis and playlist order, so its
+  // tracks are judged against what the copy held before Surco ran, not the synthetic seed.
+  describe('A track from a copy of a real collection', () => {
+    const REAL_CUES = [1234, 5678]
+    const ANLZ = '/PIONEER/USBANLZ/real/ANLZ0000.DAT'
+
+    function engineBlobs() {
+      const db = new Database(engineDbPath(set.engineDir as string), { readonly: true })
+      try {
+        return db
+          .prepare(
+            'SELECT trackData, beatData, quickCues, overviewWaveFormData FROM PerformanceData WHERE trackId = ?',
+          )
+          .get(track.engineId) as Record<
+          'trackData' | 'beatData' | 'quickCues' | 'overviewWaveFormData',
+          Buffer | null
+        >
+      } finally {
+        db.close()
+      }
+    }
+
+    it('judges rekordbox cues and analysis against what the copy held', () => {
+      rekordbox(
+        `UPDATE djmdCue SET InMsec = CASE WHEN InMsec = ? THEN ? ELSE ? END WHERE ContentID = ?`,
+        SEEDED_CUES_MS[0],
+        REAL_CUES[0],
+        REAL_CUES[1],
+        track.rekordboxId,
+      )
+      rekordbox(
+        `UPDATE djmdContent SET AnalysisDataPath = ?, Analysed = 1 WHERE ID = ?`,
+        ANLZ,
+        track.rekordboxId,
+      )
+      const real: SeededTrack = {
+        ...track,
+        baseline: { rekordbox: { cuesMs: REAL_CUES, analysisDataPath: ANLZ, analysed: 1 } },
+      }
+      const only = cellWith('rekordbox')
+      expect(beyondCollateral(libraryInvariants(only, set, real, untouched(real)))).toEqual([])
+      rekordbox(
+        `UPDATE djmdCue SET InMsec = InMsec + 500 WHERE ContentID = ? AND InMsec = ?`,
+        track.rekordboxId,
+        REAL_CUES[0],
+      )
+      seen(libraryInvariants(only, set, real, untouched(real)), 'cues', 'se esperaba 1234, 5678')
+    })
+
+    it('accepts rows the copy already had without playlists, and still sees a new one', () => {
+      rekordbox(
+        `INSERT INTO djmdContent (ID, FolderPath, FileNameL, FileType, rb_local_deleted)
+         VALUES ('777', '/Música/vieja.wav', 'vieja.wav', 11, 0)`,
+      )
+      const only = cellWith('rekordbox')
+      const known: LibrarySet = { ...set, knownRekordboxIds: ['777'] }
+      expect(beyondCollateral(libraryInvariants(only, known, track, untouched(track)))).toEqual([])
+      seen(libraryInvariants(only, set, track, untouched(track)), 'unique', 'fila nueva 777')
+    })
+
+    it('judges Engine cues, analysis and playlist order against what the copy held', () => {
+      engine(
+        `UPDATE PerformanceData SET quickCues = ? WHERE trackId = ?`,
+        quickCuesBlob(
+          REAL_CUES.map((ms) => ({ label: 'c', sample: (ms / 1000) * 44100, argb: 0 })),
+        ),
+        track.engineId,
+      )
+      const shuffled: LibrarySet = { ...set, tracks: [...set.tracks].reverse() }
+      const real: SeededTrack = {
+        ...track,
+        baseline: { engine: { cuesMs: REAL_CUES, perf: engineBlobs(), positions: { 1: 0, 2: 0 } } },
+      }
+      const only = cellWith('engine')
+      const judged = (samplesKept: boolean) =>
+        beyondCollateral(libraryInvariants(only, shuffled, real, untouched(real, { samplesKept })))
+      expect(judged(true)).toEqual([])
+      expect(judged(false)).toEqual([])
+    })
+
+    it('judges Traktor cues against what the copy held', () => {
+      traktor((nml) => {
+        const entry = traktorEntryOf(nml, track.traktorAudioId)
+        return nml.replace(
+          entry,
+          entry
+            .replace(
+              `START="${SEEDED_CUES_MS[0].toFixed(6)}"`,
+              `START="${REAL_CUES[0].toFixed(6)}"`,
+            )
+            .replace(
+              `START="${SEEDED_CUES_MS[1].toFixed(6)}"`,
+              `START="${REAL_CUES[1].toFixed(6)}"`,
+            ),
+        )
+      })
+      const real: SeededTrack = { ...track, baseline: { traktor: { cuesMs: REAL_CUES } } }
+      expect(
+        beyondCollateral(libraryInvariants(cellWith('traktor'), set, real, untouched(real))),
+      ).toEqual([])
+    })
+
+    it('leaves a library that never held the track unjudged there', () => {
+      const real: SeededTrack = {
+        ...track,
+        rekordboxId: '',
+        engineId: 0,
+        traktorAudioId: '',
+        tags: { ...track.tags, title: 'Nadie la tiene' },
+      }
+      expect(beyondCollateral(libraryInvariants(BASE, set, real, untouched(real)))).toEqual([])
     })
   })
 

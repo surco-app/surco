@@ -47,6 +47,7 @@ import type { Cell, InvariantName } from './cells'
 import {
   analysisDataPathOf,
   bystanderRows,
+  type EnginePerf,
   engineSeededCues,
   type LibrarySet,
   type Program,
@@ -233,7 +234,7 @@ function sameList(a: string[], b: string[]): boolean {
 }
 
 function check(label: string, where: string, got: string[], want: string | undefined): string[] {
-  if (want === undefined) return []
+  if (!want) return []
   if (got.length === 0) return [`${label}: ${where} ausente`]
   return sameList(got, [want]) ? [] : [`${label}: ${where} ${quoted(got)}, se esperaba '${want}'`]
 }
@@ -287,10 +288,10 @@ function id3Broken(id3: Id3v2Tag | null, t: TrickyTags, isWav: boolean): string[
   const tit1 = id3Frames(id3, 'TIT1')[0] ?? []
   const grp1 = id3Frames(id3, 'GRP1')[0]
   const tit1Label = tit1.length ? `TIT1 ${quoted(tit1)}` : 'TIT1 ausente'
-  if (!sameList(tit1, [t.grouping]))
+  if (t.grouping && !sameList(tit1, [t.grouping]))
     broken.push(`grouping: ${tit1Label}, se esperaba '${t.grouping}'`)
   if (isWav && grp1) broken.push(`grouping: GRP1 ${quoted(grp1)} en un WAV`)
-  if (!isWav && !grp1) broken.push(`grouping: ${tit1Label}, GRP1 ausente`)
+  if (t.grouping && !isWav && !grp1) broken.push(`grouping: ${tit1Label}, GRP1 ausente`)
   if (!isWav && grp1 && !sameList(grp1, [t.grouping]))
     broken.push(`grouping: GRP1 ${quoted(grp1)}, se esperaba '${t.grouping}'`)
   const catalog = id3.frames
@@ -312,7 +313,7 @@ function xiphField(
   keys: string[],
   want: string | undefined,
 ): string[] {
-  if (want === undefined) return []
+  if (!want) return []
   const present = keys.filter((k) => xiph.getField(k).length > 0)
   if (present.length === 0) return [`${label}: ${keys.join('/')} ausente`]
   return present.flatMap((k) => check(label, k, xiph.getField(k), want))
@@ -404,7 +405,7 @@ function probeTagsBroken(
     want.push(['album', t.album], ['track', t.trackNumber], ['disc', t.discNumber])
   }
   return want.flatMap(([key, value]) =>
-    value === undefined || tags[key] === value
+    !value || tags[key] === value
       ? []
       : [`ffprobe: ${key} '${tags[key] ?? ''}', se esperaba '${value}'`],
   )
@@ -423,7 +424,7 @@ function withTagFile<T>(path: string, read: (f: TagFile) => T): T | string {
 }
 
 function paddedTrack(t: TrickyTags): TrickyTags {
-  if (/[A-Za-z]/.test(t.trackNumber)) return t
+  if (!t.trackNumber || /[A-Za-z]/.test(t.trackNumber)) return t
   const pad = (v: string) => v.replace(/\D/g, '').padStart(2, '0')
   const [number, total] = t.trackNumber.split('/')
   return { ...t, trackNumber: total === undefined ? pad(number) : `${pad(number)}/${pad(total)}` }
@@ -635,10 +636,13 @@ function rekordboxBroken(dbPath: string, t: SeededTrack, e: Expected): Found[] {
       const size = sizeOf(e.at.rekordbox)
       if (size !== null && row.FileSize !== size)
         found.push(['points', `rekordbox: FileSize ${row.FileSize}, el fichero mide ${size}`])
+      const analysis = t.baseline?.rekordbox ?? {
+        analysisDataPath: analysisDataPathOf(t.rekordboxId),
+        analysed: SEEDED_ANALYSED,
+      }
       if (
         e.samplesKept &&
-        (row.AnalysisDataPath !== analysisDataPathOf(t.rekordboxId) ||
-          row.Analysed !== SEEDED_ANALYSED)
+        (row.AnalysisDataPath !== analysis.analysisDataPath || row.Analysed !== analysis.analysed)
       )
         found.push(['cues', 'rekordbox: análisis borrado con las muestras conservadas'])
     }
@@ -656,7 +660,7 @@ function rekordboxBroken(dbPath: string, t: SeededTrack, e: Expected): Found[] {
         .all(t.rekordboxId) as { InMsec: number }[]
     ).map((c) => c.InMsec)
     const moved = canonical(e.at.rekordbox) === canonical(e.finalPath) ? e.rekordboxStartMovedMs : 0
-    const want = SEEDED_CUES_MS.map((ms) => ms + e.lagMs + moved)
+    const want = (t.baseline?.rekordbox?.cuesMs ?? SEEDED_CUES_MS).map((ms) => ms + e.lagMs + moved)
     if (!cuesAt(cues, want))
       found.push(['cues', `rekordbox: cues en ${msList(cues)} ms, se esperaba ${msList(want)}`])
     const lists = (
@@ -683,9 +687,10 @@ function rekordboxNewRows(dbPath: string, set: LibrarySet): Found[] {
   const db = openRekordboxDb(dbPath, { readonly: true })
   if (!db) return []
   try {
-    const seeded = new Set(
-      [...set.tracks, set.bystander].flatMap((t) => [t.rekordboxId, twinIdOf(t.rekordboxId)]),
-    )
+    const seeded = new Set([
+      ...[...set.tracks, set.bystander].flatMap((t) => [t.rekordboxId, twinIdOf(t.rekordboxId)]),
+      ...(set.knownRekordboxIds ?? []),
+    ])
     const orphans = (
       db
         .prepare(
@@ -699,13 +704,6 @@ function rekordboxNewRows(dbPath: string, set: LibrarySet): Found[] {
   } finally {
     db.close()
   }
-}
-
-interface EnginePerf {
-  trackData: Buffer | null
-  beatData: Buffer | null
-  quickCues: Buffer | null
-  overviewWaveFormData: Buffer | null
 }
 
 function engineChain(entities: { id: number; trackId: number; nextEntityId: number }[]): number[] {
@@ -744,7 +742,8 @@ function engineBroken(dir: string, set: LibrarySet, t: SeededTrack, e: Expected)
         'SELECT trackData, beatData, quickCues, overviewWaveFormData FROM PerformanceData WHERE trackId = ?',
       )
       .get(t.engineId) as EnginePerf | undefined
-    const seeded = analysedTrack(t.engineId, engineSeededCues())
+    const seeded: Partial<EnginePerf> =
+      t.baseline?.engine?.perf ?? analysedTrack(t.engineId, engineSeededCues())
     if (!perf?.quickCues || !perf.trackData) found.push(['cues', 'Engine: sin análisis'])
     else if (e.samplesKept) {
       const changed = (
@@ -757,7 +756,7 @@ function engineBroken(dir: string, set: LibrarySet, t: SeededTrack, e: Expected)
       const cues = (decodeQuickCues(inflateEngineBlob(perf.quickCues))?.slots ?? []).flatMap((s) =>
         s.cue ? [(s.cue.sample / rate) * 1000] : [],
       )
-      const want = SEEDED_CUES_MS.map((ms) => ms + e.lagMs)
+      const want = (t.baseline?.engine?.cuesMs ?? SEEDED_CUES_MS).map((ms) => ms + e.lagMs)
       if (!cuesAt(cues, want))
         found.push(['cues', `Engine: cues en ${msList(cues)} ms, se esperaba ${msList(want)}`])
       const grid = perf.beatData ? decodeBeatGrid(inflateEngineBlob(perf.beatData)) : null
@@ -773,11 +772,12 @@ function engineBroken(dir: string, set: LibrarySet, t: SeededTrack, e: Expected)
       found.push(['playlists', `Engine: playlists ${lists.join(', ') || 'ninguna'}`])
     const position = [...set.tracks, set.bystander].indexOf(t)
     for (const listId of t.playlists.engine) {
+      const was = t.baseline?.engine?.positions[listId] ?? position
       const at = engineChain(entities.filter((x) => x.listId === listId)).indexOf(t.engineId)
-      if (at !== -1 && at !== position)
+      if (at !== -1 && at !== was)
         found.push([
           'playlists',
-          `Engine: posición ${at + 1} en la playlist ${listId}, era ${position + 1}`,
+          `Engine: posición ${at + 1} en la playlist ${listId}, era ${was + 1}`,
         ])
     }
     const paths = db.prepare('SELECT path FROM Track').all() as { path: string }[]
@@ -960,7 +960,7 @@ function traktorBroken(nmlFile: string, set: LibrarySet, t: SeededTrack, e: Expe
   const candidates = byId.length > 0 ? byId : byTags
   const entry = candidates.length === 1 ? candidates[0] : undefined
   const shift = e.lagMs + e.traktorStartMovedMs
-  const want = SEEDED_CUES_MS.map((ms) => ms + shift)
+  const want = (t.baseline?.traktor?.cuesMs ?? SEEDED_CUES_MS).map((ms) => ms + shift)
   if (candidates.length > 1)
     found.push(['points', `Traktor: ${candidates.length} entradas posibles para la pista`])
   else if (!entry) found.push(['points', 'Traktor: la entrada ya no está'])
@@ -1061,9 +1061,12 @@ function musicNewEntries(set: LibrarySet): Found[] {
 }
 
 function programBroken(program: Program, set: LibrarySet, t: SeededTrack, e: Expected): Found[] {
-  if (program === 'rekordbox') return set.rekordboxDb ? rekordboxBroken(set.rekordboxDb, t, e) : []
-  if (program === 'engine') return set.engineDir ? engineBroken(set.engineDir, set, t, e) : []
-  if (program === 'traktor') return set.traktorNml ? traktorBroken(set.traktorNml, set, t, e) : []
+  if (program === 'rekordbox')
+    return set.rekordboxDb && t.rekordboxId ? rekordboxBroken(set.rekordboxDb, t, e) : []
+  if (program === 'engine')
+    return set.engineDir && t.engineId ? engineBroken(set.engineDir, set, t, e) : []
+  if (program === 'traktor')
+    return set.traktorNml && t.traktorAudioId ? traktorBroken(set.traktorNml, set, t, e) : []
   return set.music ? musicBroken(t, e) : []
 }
 

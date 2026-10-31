@@ -135,6 +135,7 @@ export interface ScenarioOptions {
   onConflict?: (outputName: string) => ConflictChoice
   verify?: boolean
   sabotage?: Sabotage
+  realMusic?: boolean
 }
 
 // What a scenario does to a file or a library after Surco wrote it and before the self-check
@@ -158,6 +159,7 @@ interface VerifyWiring {
 }
 
 const musicIsFake = (appleMusic as Record<string, unknown>).scenarioFake === true
+const drivesMusic = (options: ScenarioOptions): boolean => musicIsFake || options.realMusic === true
 
 function noMusic(): Promise<never> {
   return Promise.reject(new Error('scenario: this test did not load the Apple Music fake'))
@@ -205,6 +207,7 @@ function processTrackInMain(
         () => false,
       ),
   })
+  const withMusic = drivesMusic(options)
   return runProcessTrack(job, {
     settings: getSettings(),
     platform: process.platform,
@@ -272,12 +275,12 @@ function processTrackInMain(
     removeRenamedOriginal,
     addToAppleMusic: async (target, meta, coverPath) => {
       appleMusicSends.push(target)
-      return musicIsFake
+      return withMusic
         ? appleMusic.addToAppleMusic(target, meta, coverPath)
         : `scenario-pid-${appleMusicSends.length}`
     },
     updateInAppleMusic: (pid, meta, coverPath) =>
-      musicIsFake ? appleMusic.updateInAppleMusic(pid, meta, coverPath) : noMusic(),
+      withMusic ? appleMusic.updateInAppleMusic(pid, meta, coverPath) : noMusic(),
     isEngineDjRunning,
     addToEngineDj: (target, meta, coverPath, replaces) => {
       const s = getSettings()
@@ -306,22 +309,21 @@ function processTrackInMain(
       return options.onConflict(outputName)
     },
     appleMusicEntryLocation: (pid) =>
-      musicIsFake ? appleMusic.appleMusicEntryLocation(pid) : noMusic(),
-    appleMusicMediaFolder: async () =>
-      musicIsFake ? appleMusic.appleMusicMediaFolder() : undefined,
-    appleMusicEntry: (pid) => (musicIsFake ? appleMusic.appleMusicEntry(pid) : noMusic()),
+      withMusic ? appleMusic.appleMusicEntryLocation(pid) : noMusic(),
+    appleMusicMediaFolder: async () => (withMusic ? appleMusic.appleMusicMediaFolder() : undefined),
+    appleMusicEntry: (pid) => (withMusic ? appleMusic.appleMusicEntry(pid) : noMusic()),
     deleteAppleMusic: (pid, label) =>
-      musicIsFake ? appleMusic.deleteFromAppleMusic(pid, label) : noMusic(),
+      withMusic ? appleMusic.deleteFromAppleMusic(pid, label) : noMusic(),
     carryAppleMusicHistory: (fromPid, toPid, label) =>
-      musicIsFake ? appleMusic.carryOverToAppleMusicCopy(fromPid, toPid, label) : noMusic(),
+      withMusic ? appleMusic.carryOverToAppleMusicCopy(fromPid, toPid, label) : noMusic(),
     markAppleMusicReplacing: async (pid, label, marked) =>
-      musicIsFake
+      withMusic
         ? appleMusic.appleMusicLimiter.run(() =>
             appleMusic.markAppleMusicReplacing(pid, label, marked),
           )
         : 'missing',
     appleMusicPlaylists: async (pid) =>
-      musicIsFake
+      withMusic
         ? appleMusic
             .readMusicEntryFacts(pid, undefined, { withPlaylists: true })
             .then((facts) => (facts === 'missing' ? [] : facts.playlists))
@@ -335,7 +337,7 @@ function processTrackInMain(
     verifyFile: (expect, signal) => checkFile(expect, fileReaders, { signal }),
     verifyMusic: async (expect, signal) => {
       await options.sabotage?.beforeMusicCheck?.()
-      return musicIsFake
+      return withMusic
         ? checkAppleMusic(expect, musicReaders, { signal })
         : { place: 'appleMusic', state: 'ok', detail: { key: 'musicOneNoPlaylists' } }
     },
@@ -764,7 +766,7 @@ function scenarioApi(
     keepsTrash: (path) => invokeMain('shell:keepsTrash', path),
     retireSuperseded: (path, titles) => invokeMain('shell:retireSuperseded', path, titles),
     properties: (path) => invokeMain('audio:properties', path),
-    ...(musicIsFake && {
+    ...(drivesMusic(options) && {
       appleMusicEntryLocation: (pid) => invokeMain('applemusic:entryLocation', pid),
       appleMusicEntryMeta: (path, pids) => invokeMain('applemusic:entryMeta', path, pids),
       loadAppleMusicLibrary: () => invokeMain('applemusic:library'),
@@ -919,10 +921,10 @@ export function bootMain(options: ScenarioOptions): MainBoot {
     registerShellIpc(mediaAccess, (path, titles) =>
       usedByAnyLibrary(path, titles, {
         traktorRead: traktorWritePath,
-        ...(musicIsFake && { musicEntries: musicReaders.entriesForFile }),
+        ...(drivesMusic(options) && { musicEntries: musicReaders.entriesForFile }),
       }),
     )
-    if (musicIsFake) registerAppleMusicIpc({ followEngineSize })
+    if (drivesMusic(options)) registerAppleMusicIpc({ followEngineSize })
     registerListReviewIpc(
       listReviewDeps({
         mediaAccess,

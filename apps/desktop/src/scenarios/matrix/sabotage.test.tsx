@@ -194,9 +194,14 @@ describe.skipIf(process.platform !== 'darwin')('a result broken on purpose', () 
     '%s is seen by the oracle and lands where the self-check reads',
     async (id, cell) => {
       let landed = false
-      const [outcome] = await runGroup({ key: cell.id, cells: [cell] }, (set, written) => {
-        landed = REREAD[id](set, set.tracks[0], written[0])
-      })
+      const [outcome] = await runGroup(
+        { key: cell.id, cells: [cell] },
+        {
+          afterSettled: (set, written) => {
+            landed = REREAD[id](set, set.tracks[0], written[0])
+          },
+        },
+      )
       expect(outcome.broken, id).not.toEqual([])
       expect(landed, `${id}: the library read after the batch is not the sabotaged one`).toBe(true)
       if (cell.expectBroken) expect(agreement(outcome)).toBe('falseOk')

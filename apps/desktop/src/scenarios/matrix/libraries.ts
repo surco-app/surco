@@ -19,7 +19,20 @@ import type { Settings } from '../../shared/types'
 import { music } from '../fakeMusic'
 import { makeRekordbox } from '../rekordboxFixture'
 import type { Programs } from './cells'
-import { makeSource, SEEDED_CUES_MS, type SourceTrack } from './sources'
+import { makeSource, SEEDED_CUES_MS, type SourceTrack, TRICKY } from './sources'
+
+export interface EnginePerf {
+  trackData: Buffer | null
+  beatData: Buffer | null
+  quickCues: Buffer | null
+  overviewWaveFormData: Buffer | null
+}
+
+export interface TrackBaseline {
+  rekordbox?: { cuesMs: number[]; analysisDataPath: string | null; analysed: number | null }
+  engine?: { cuesMs: number[]; perf: EnginePerf; positions: Record<number, number> }
+  traktor?: { cuesMs: number[] }
+}
 
 export interface SeededTrack extends SourceTrack {
   rekordboxId: string
@@ -27,6 +40,7 @@ export interface SeededTrack extends SourceTrack {
   traktorAudioId: string
   musicPid?: string
   playlists: { rekordbox: string[]; engine: number[]; traktor: string[]; music: string[] }
+  baseline?: TrackBaseline
 }
 
 export interface LibrarySet {
@@ -41,6 +55,7 @@ export interface LibrarySet {
   sha1Before: Record<'rekordbox' | 'engine' | 'traktor', string | null>
   bystanderRows: Partial<Record<'rekordbox' | 'engine' | 'traktor', string>>
   traktorEntries: Record<string, string>
+  knownRekordboxIds?: string[]
 }
 
 export type Program = 'rekordbox' | 'engine' | 'traktor' | 'music'
@@ -213,7 +228,7 @@ ${playlists.join('\n')}
   )
 }
 
-function seedMusic(seeded: SeededTrack[]): string[] {
+export function seedMusic(seeded: SeededTrack[]): string[] {
   for (const t of seeded)
     t.musicPid = music.addEntry({
       location: realpathSync(t.path),
@@ -310,12 +325,13 @@ export function buildLibraries(
   root: string,
   programs: Programs,
   sources: SourceTrack[],
-  extra: { nfdRow?: boolean; twinRows?: boolean } = {},
+  extra: { nfdRow?: boolean; twinRows?: boolean; prefix?: string } = {},
 ): LibrarySet {
   mkdirSync(root, { recursive: true })
+  const named = (text: string) => (extra.prefix ? `${extra.prefix} ${text}` : text)
   const other = makeSource(join(root, 'Otra carpeta'), 'wav16', {
-    fileName: 'Otra pista',
-    tags: { title: 'Otra pista', artist: 'Nadie' },
+    fileName: named('Otra pista'),
+    tags: { title: named('Otra pista'), artist: named('Nadie'), album: named(TRICKY.album) },
   })
   const seeded: SeededTrack[] = [...sources, other].map((s, i) => ({
     ...s,

@@ -61,7 +61,7 @@ export interface SourceTrack {
   origin: Origin
   path: string
   tags: TrickyTags
-  coverSha1: string
+  coverSha1: string | null
   cuesMs: number[]
 }
 

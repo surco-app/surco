@@ -26,7 +26,7 @@ import {
 } from './oracle'
 import type { CellOutcome } from './report'
 import { SABOTAGES } from './sabotage'
-import { makeSource } from './sources'
+import { makeSource, type SourceTrack, type TrickyTags } from './sources'
 
 const EXTENSION: Record<OutputFormat, string> = {
   aiff: '.aiff',
@@ -139,8 +139,28 @@ function unreadableOnce(set: LibrarySet, cell: Cell): { sabotage: Sabotage; rest
   }
 }
 
-function sabotageOf(id: SabotageId): (typeof SABOTAGES)[SabotageId] {
-  const make = SABOTAGES[id]
+type MakeSabotage = (typeof SABOTAGES)[SabotageId]
+
+export interface RunHooks {
+  afterSettled?: (set: LibrarySet, written: string[]) => void
+  realMusic?: boolean
+  prefix?: string
+  tags?: Partial<TrickyTags>
+  prepared?: (set: LibrarySet) => Promise<void>
+  sabotages?: Partial<Record<SabotageId, MakeSabotage>>
+  beforeJudge?: (set: LibrarySet) => Promise<void>
+  lagMs?: (witness: string, output: string) => number
+}
+
+export interface GroupFixture {
+  root: string
+  sources: SourceTrack[]
+  witnesses: SourceTrack[]
+  set: LibrarySet
+}
+
+function sabotageOf(id: SabotageId, hooks: RunHooks): MakeSabotage {
+  const make = hooks.sabotages?.[id] ?? SABOTAGES[id]
   if (!make) throw new Error(`scenario: no sabotage ${id}`)
   return make
 }
@@ -151,42 +171,64 @@ function programsOpen(open: boolean): void {
   vi.mocked(isTraktorRunning).mockResolvedValue(open)
 }
 
-export async function runGroup(
-  group: CellGroup,
-  afterSettled?: (set: LibrarySet, written: string[]) => void,
-): Promise<CellOutcome[]> {
-  const [first] = group.cells
-  const root = scenarioDir(`matriz-${first.id}`)
-  const outputDir = join(root, 'Salida')
-  const sources = group.cells.map((cell) =>
-    makeSource(join(root, 'Origen'), cell.origin, {
-      fileName: `${cell.id} Café Olé`,
-      leadSilenceSec: cell.quality === 'trim' ? TRIM_LEAD_SEC : 0,
-    }),
-  )
-  const witnesses = sources.map((s) => {
+export function witnessesOf(root: string, sources: SourceTrack[]): SourceTrack[] {
+  return sources.map((s) => {
     const witness = join(root, 'Testigo', basename(s.path))
     mkdirSync(dirname(witness), { recursive: true })
     copyFileSync(s.path, witness)
     return { ...s, path: witness }
   })
+}
+
+export function startMusic(cell: Cell, root: string): void {
   music.reset()
-  if (toMusic(first)) music.state.mediaFolder = join(root, 'Music Media')
-  const set = buildLibraries(root, first.programs, sources, LIBRARY_EXTRA[first.id])
+  if (toMusic(cell)) music.state.mediaFolder = join(root, 'Music Media')
+}
+
+export async function runGroup(group: CellGroup, hooks: RunHooks = {}): Promise<CellOutcome[]> {
+  const [first] = group.cells
+  const root = scenarioDir(`matriz-${first.id}`)
+  const sources = group.cells.map((cell) =>
+    makeSource(join(root, 'Origen'), cell.origin, {
+      fileName: hooks.prefix ? `${hooks.prefix} ${cell.id} Café Olé` : `${cell.id} Café Olé`,
+      leadSilenceSec: cell.quality === 'trim' ? TRIM_LEAD_SEC : 0,
+      tags: hooks.tags,
+    }),
+  )
+  const witnesses = witnessesOf(root, sources)
+  startMusic(first, root)
+  const set = buildLibraries(root, first.programs, sources, {
+    ...LIBRARY_EXTRA[first.id],
+    prefix: hooks.prefix,
+  })
+  await hooks.prepared?.(set)
   for (const [i, cell] of group.cells.entries())
     if (NAME_TAKEN.has(cell.id))
       makeSource(dirname(sources[i].path), OCCUPIER[cell.target], {
         fileName: basename(sources[i].path, extname(sources[i].path)),
         tags: { title: 'Ocupado', artist: 'Nadie' },
       })
+  return runFixture(group, { root, sources, witnesses, set }, hooks)
+}
+
+export async function runFixture(
+  group: CellGroup,
+  { root, sources, witnesses, set }: GroupFixture,
+  hooks: RunHooks = {},
+): Promise<CellOutcome[]> {
+  const [first] = group.cells
+  const outputDir = join(root, 'Salida')
   const written = group.cells.map((cell, i) =>
     writtenPath(judgedAs(cell), sources[i].path, outputDir),
   )
   const retry = first.state === 'retry' ? unreadableOnce(set, first) : undefined
-  const sabotage = first.sabotage ? sabotageOf(first.sabotage)(set, set.tracks[0]) : undefined
+  const sabotage = first.sabotage
+    ? sabotageOf(first.sabotage, hooks)(set, set.tracks[0])
+    : undefined
   const keepBoth = group.cells.some((cell) => NAME_TAKEN.has(cell.id))
   const surco = await openSurco({
     verify: true,
+    realMusic: hooks.realMusic,
     sabotage: retry?.sabotage ?? sabotage,
     onConflict: keepBoth ? (): ConflictChoice => 'keepBoth' : undefined,
     settings: {
@@ -209,7 +251,7 @@ export async function runGroup(
     if (toMusic(first)) for (const name of names) await surco.convertInEditor(name)
     else await surco.convertAll('confirm', first.target)
     await surco.settled()
-    afterSettled?.(set, written)
+    hooks.afterSettled?.(set, written)
     if (first.state === 'open') {
       for (const [i, s] of sources.entries())
         openUntil[i] = surco.statuses(rowName(surco, s.path, written[i])).length
@@ -230,6 +272,7 @@ export async function runGroup(
     retry?.restore()
     surco.close()
   }
+  await hooks.beforeJudge?.(set)
   return Promise.all(
     group.cells.map(async (asked, i): Promise<CellOutcome> => {
       const cell = judgedAs(asked)
@@ -251,7 +294,7 @@ export async function runGroup(
           traktor:
             spelled(dirname(finalPath)) === spelled(dirname(source.path)) ? finalPath : source.path,
         },
-        lagMs: fileExists ? markerLagMs(witness.path, finalPath) : 0,
+        lagMs: fileExists ? (hooks.lagMs ?? markerLagMs)(witness.path, finalPath) : 0,
         rekordboxStartMovedMs: fileExists
           ? rekordboxTimelineMs(finalPath) - rekordboxTimelineMs(witness.path)
           : 0,
