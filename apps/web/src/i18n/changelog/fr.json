@@ -67,6 +67,10 @@
       {
         "text": "Avec la destination Apple Music plus une copie dans le dossier, convertir un morceau depuis l’éditeur garde la copie dans le dossier comme en convertissant la liste.",
         "in": "1.18.5"
+      },
+      {
+        "text": "Quand tu convertis dans un autre format un morceau déjà dans ta bibliothèque, Surco retire l’ancien fichier seulement quand la vérification est bonne et que ni rekordbox, ni Engine DJ, ni Traktor, ni Apple Music ne l’utilisent encore. Il va dans la Corbeille, ou dans Sauvegardes sur un disque sans Corbeille, et si les copies des originaux sont sur « Jamais » il y est supprimé.",
+        "in": "1.18.6"
       }
     ]
   },

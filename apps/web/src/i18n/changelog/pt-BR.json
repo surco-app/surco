@@ -67,6 +67,10 @@
       {
         "text": "Com o destino Apple Music mais uma cópia na pasta, converter uma faixa pelo editor mantém a cópia na pasta, igual a converter a lista.",
         "in": "1.18.5"
+      },
+      {
+        "text": "Ao converter para outro formato uma faixa que você já tinha na biblioteca, o Surco retira o arquivo antigo só quando a verificação dá certo e nem o rekordbox, nem o Engine DJ, nem o Traktor, nem o Apple Music ainda o usam. Ele vai para o Lixo, ou para Cópias num disco sem Lixo, e se as cópias dos originais estiverem em “Nunca” ele é apagado ali.",
+        "in": "1.18.6"
       }
     ]
   },

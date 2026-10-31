@@ -67,6 +67,10 @@
       {
         "text": "Con el destino Apple Music y copia en la carpeta, convertir una pista desde el editor deja la copia en la carpeta igual que al convertir la lista.",
         "in": "1.18.5"
+      },
+      {
+        "text": "Al convertir a otro formato una pista que ya tenías en la biblioteca, Surco retira el archivo antiguo solo cuando la comprobación sale bien y ni rekordbox, ni Engine DJ, ni Traktor, ni Apple Music lo siguen usando. Va a la Papelera, o a Copias en un disco sin Papelera, y si las copias de los originales están en «Nunca» allí se borra.",
+        "in": "1.18.6"
       }
     ]
   },

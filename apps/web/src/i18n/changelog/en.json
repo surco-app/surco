@@ -67,6 +67,10 @@
       {
         "text": "With the Apple Music destination plus a copy in the folder, converting a track from the editor keeps the folder copy just like converting the list.",
         "in": "1.18.5"
+      },
+      {
+        "text": "When you convert a track you already had in your library to another format, Surco retires the old file only once the check comes back fine and neither rekordbox, Engine DJ, Traktor nor Apple Music still uses it. It goes to the Trash, or to Backups on a disk without a Trash, and if copies of originals are set to Never it's deleted there.",
+        "in": "1.18.6"
       }
     ]
   },
