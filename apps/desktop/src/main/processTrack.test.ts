@@ -1921,6 +1921,33 @@ describe('runProcessTrack — Apple Music only', () => {
   })
 })
 
+// The legacy "Apple Music + keep a copy in the output folder" (old installs only). Ruled
+// 31/10: rekordbox and Engine follow the folder copy, the file the DJ manages, as in any
+// conversion that is not to Music; Music swaps its own entry the way a replacement does,
+// so the DJ keeps that entry's playlists and plays.
+describe('runProcessTrack — Apple Music keeping the output-folder copy', () => {
+  it('replaces the Music entry with its history while the libraries follow the folder copy', async () => {
+    const redirectRepoint = vi.fn(() => true)
+    const deps = makeDeps({
+      platform: 'darwin',
+      settings: settings({ addToAppleMusic: true, keepOutputCopy: true, addToEngineDj: true }),
+      redirectRepoint,
+    })
+
+    const result = await runProcessTrack(
+      job({ musicPersistentId: 'old-id', replacesPath: '/m/old.mp3', replacesLabel: 'A - T' }),
+      deps,
+    )
+
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, undefined)
+    expect(deps.carryAppleMusicHistory).toHaveBeenCalledWith('old-id', 'added-id', 'A - T')
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('old-id', 'A - T')
+    expect(vi.mocked(deps.addToEngineDj).mock.calls[0]?.[0]).toBe('/out/Artist - Title.aiff')
+    expect(redirectRepoint).not.toHaveBeenCalled()
+    expect(result).toMatchObject({ outputPath: '/out/Artist - Title.aiff', inPlace: false })
+  })
+})
+
 // Measured 30/10: Music reads no tags from a WAV at import, so the copy it makes into its
 // Media folder lands in "Unknown Artist/Unknown Album" and tagging the entry afterwards never
 // moves it. A file already inside the Media folder is added where it is, so "Apple Music

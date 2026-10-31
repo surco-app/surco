@@ -1011,6 +1011,56 @@ describe('useTrackProcessing', () => {
     )
   })
 
+  // Old installs still store "Apple Music + keep a copy in the output folder". The editor
+  // reads that back as Apple Music, and a convert from it must keep the copy the batch keeps,
+  // or the same track loses its folder copy (and what rekordbox and Engine follow) only
+  // because it was converted from the editor.
+  it('keeps the legacy output-folder copy when the editor converts to Apple Music', async () => {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    setApi({ processTrack })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: { addToAppleMusic: true, keepOutputCopy: true } as unknown as Settings,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a', undefined, undefined, undefined, 'appleMusic')
+    })
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ addToAppleMusic: true, keepOutputCopy: true }),
+    )
+  })
+
+  // A folder setting stores keepOutputCopy true too, so the flag alone is no legacy choice:
+  // picking Apple Music by hand there still means Music only.
+  it('drops the output-folder copy when Apple Music is picked over a folder setting', async () => {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    setApi({ processTrack })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: { addToAppleMusic: false, keepOutputCopy: true } as unknown as Settings,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a', undefined, undefined, undefined, 'appleMusic')
+    })
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ addToAppleMusic: true, keepOutputCopy: false }),
+    )
+  })
+
   it('leaves Engine DJ to Settings when the DJ picks another destination for one track', async () => {
     const processTrack = vi
       .fn<Api['processTrack']>()
