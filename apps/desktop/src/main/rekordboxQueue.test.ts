@@ -407,6 +407,25 @@ describe('rekordbox queue', () => {
     ])
   })
 
+  // A damage repair queued while Engine DJ was open and staged again from a fresh scan is the
+  // same repair: summed, it moved every cue twice.
+  it('keeps one damage repair when the same one is queued again', async () => {
+    const d = deps({ stack: stackRepoint })
+    const q = createRekordboxQueue(d)
+    const repair = {
+      from: '/m/b.wav',
+      to: '/m/b.wav',
+      fromBytes: 100,
+      expectTrackData: { sampleRate: 48000, sampleCount: 480000 },
+      engineShift: { trimmedMs: 1240, sampleCount: 441000 },
+    }
+    q.enqueue([], [repair])
+    q.enqueue([], [{ ...repair }])
+    expect(q.queuedRepoints()).toEqual([repair])
+    await q.apply(closed)
+    expect(d.repoint).toHaveBeenCalledWith(expect.any(String), [repair])
+  })
+
   // An Undo restores the original while the fix's own size write is being applied. Stacked
   // onto that entry, the restore kept the fix's starting size and stayed queued after the
   // apply took the entry it had read, so the next apply asked for a size the row no longer

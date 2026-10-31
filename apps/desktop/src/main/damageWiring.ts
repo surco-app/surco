@@ -40,6 +40,7 @@ export interface DamageEnv {
   engineQueue?: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void }
   serial?: DamageIpcDeps['serial']
   followEngineSize?: Rewritten
+  queued?: DamageIpcDeps['queued']
 }
 
 export function damageDeps(env: DamageEnv): DamageIpcDeps {
@@ -132,5 +133,6 @@ export function damageDeps(env: DamageEnv): DamageIpcDeps {
       }
     },
     ...(env.serial && { serial: env.serial }),
+    ...(env.queued && { queued: env.queued }),
   }
 }

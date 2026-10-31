@@ -1666,6 +1666,10 @@ function registerIpc(): void {
         applyQuietly: () => applyEngineCueQueueQuietly(),
       },
       serial: serialLibraryFlush,
+      queued: () => ({
+        engine: engineCueQueue.queuedRepoints(),
+        traktor: traktorCueQueue.queuedRepoints(),
+      }),
     }),
   )
 
