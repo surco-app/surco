@@ -18,6 +18,7 @@ import {
   isAmbiguous,
   openRekordboxDb,
   rekordboxStoredPath,
+  sameFileOnDisk,
 } from './rekordboxDb'
 import { applyRekordboxMeta, type RekordboxMeta } from './rekordboxMetadata'
 import { isRekordboxRunning } from './rekordboxProcess'
@@ -114,6 +115,11 @@ function stageCovers(
   return staged
 }
 
+const twinPaths = (db: NonNullable<ReturnType<typeof openRekordboxDb>>, ids: string[]) => {
+  const folder = db.prepare('SELECT FolderPath FROM djmdContent WHERE ID = ?')
+  return ids.map((id) => (folder.get(id) as { FolderPath: string }).FolderPath)
+}
+
 const heldByAnother = (holder: ReturnType<typeof findTrackByPath>, ids: string[]): boolean =>
   holder !== null && (isAmbiguous(holder) || !ids.includes(holder.id))
 
@@ -177,6 +183,13 @@ export async function repointTracks(
       // library, and nothing — not even a backup — should be written for it.
       if (match === null) {
         results[p.index] = { written: false, reason: 'no-match' }
+        continue
+      }
+      if (
+        isAmbiguous(match) &&
+        !sameFileOnDisk([repoint.from, ...twinPaths(db, match.ambiguous)])
+      ) {
+        results[p.index] = { written: false, reason: 'ambiguous', ids: match.ambiguous }
         continue
       }
       const ids = isAmbiguous(match) ? match.ambiguous : [match.id]
