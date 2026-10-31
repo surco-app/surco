@@ -164,7 +164,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineQuitDetail:
       'Surco necesita cerrarlo para escribir en su biblioteca. Engine DJ se cerrará de forma segura; puedes volver a abrirlo cuando termine la conversión.',
     engineQuitDetailCues:
-      'Surco necesita cerrarlo para guardar las cues en su biblioteca. Engine DJ se cerrará de forma segura y puedes volver a abrirlo enseguida.',
+      'Surco necesita cerrarlo para guardar los cues en su biblioteca. Engine DJ se cerrará de forma segura y puedes volver a abrirlo enseguida.',
     engineQuitDetailUsb:
       'Surco necesita cerrarlo para exportar tus playlists al USB. Engine DJ se cerrará de forma segura y puedes volver a abrirlo cuando termine la exportación al USB.',
     engineQuitDetailRestore:
@@ -176,7 +176,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitDetail:
       'Surco necesita cerrarlo para escribir en collection.nml. Traktor se cerrará de forma segura; puedes volver a abrirlo cuando termine la conversión.',
     traktorQuitDetailCues:
-      'Surco necesita cerrarlo para guardar las cues en collection.nml. Traktor se cerrará de forma segura y puedes volver a abrirlo enseguida.',
+      'Surco necesita cerrarlo para guardar los cues en collection.nml. Traktor se cerrará de forma segura y puedes volver a abrirlo enseguida.',
     traktorQuitDetailPlaylists:
       'Surco necesita cerrarlo para guardar el cambio en tus playlists. Traktor se cerrará de forma segura y puedes volver a abrirlo enseguida.',
     traktorQuitDetailRestore:

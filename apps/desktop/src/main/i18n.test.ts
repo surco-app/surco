@@ -35,7 +35,7 @@ describe('createMenuT', () => {
       expect(t('engineQuitDetailCues')).not.toBe(t('engineQuitDetail'))
     }
     expect(createMenuT('es')('engineQuitDetailCues')).toBe(
-      'Surco necesita cerrarlo para guardar las cues en su biblioteca. Engine DJ se cerrará de forma segura y puedes volver a abrirlo enseguida.',
+      'Surco necesita cerrarlo para guardar los cues en su biblioteca. Engine DJ se cerrará de forma segura y puedes volver a abrirlo enseguida.',
     )
   })
 
@@ -45,7 +45,7 @@ describe('createMenuT', () => {
       expect(t('traktorQuitDetailCues')).not.toBe(t('traktorQuitDetail'))
     }
     expect(createMenuT('es')('traktorQuitDetailCues')).toBe(
-      'Surco necesita cerrarlo para guardar las cues en collection.nml. Traktor se cerrará de forma segura y puedes volver a abrirlo enseguida.',
+      'Surco necesita cerrarlo para guardar los cues en collection.nml. Traktor se cerrará de forma segura y puedes volver a abrirlo enseguida.',
     )
   })
 

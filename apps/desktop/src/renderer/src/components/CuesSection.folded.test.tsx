@@ -292,7 +292,7 @@ describe('CuesSection folded', () => {
     outside.remove()
   })
 
-  it('offers Descartar cambios in the flow menu below Borrar todas las cues, only once there are changes, and keeps it out of the row where it read as undo', async () => {
+  it('offers Descartar cambios in the flow menu below Borrar todos los cues, only once there are changes, and keeps it out of the row where it read as undo', async () => {
     setup()
     await ready()
     fireEvent.click(screen.getByTestId('cues-flow'))

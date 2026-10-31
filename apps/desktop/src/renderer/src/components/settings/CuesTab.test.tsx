@@ -134,7 +134,7 @@ describe('CuesTab', () => {
     expect(toggle).toBeChecked()
     expect(screen.getByText('Letras en orden de la pista')).toBeInTheDocument()
     expect(screen.getByTestId('settings-cue-letters-hint')).toHaveTextContent(
-      'La A siempre es la primera cue de la pista. Apágalo si cada letra es un pad fijo para ti.',
+      'La A siempre es el primer cue de la pista. Apágalo si cada letra es un pad fijo para ti.',
     )
     fireEvent.click(toggle)
     expect(last?.cueLettersByTime).toBe(false)
@@ -180,7 +180,7 @@ describe('CuesTab', () => {
     openPicker()
     expect(screen.getByTestId('cue-flow-mine')).toHaveTextContent('Mi flujo')
     expect(screen.getByTestId('cue-flow-mine')).toHaveTextContent('Por defecto')
-    expect(screen.getByTestId('cue-flow-one-at-32')).toHaveTextContent('Una cue a 32')
+    expect(screen.getByTestId('cue-flow-one-at-32')).toHaveTextContent('Un cue a 32')
     expect(screen.getByTestId('cue-flow-calls-only')).toHaveTextContent('Solo CALL')
   })
 
