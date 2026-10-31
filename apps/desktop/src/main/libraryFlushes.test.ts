@@ -751,6 +751,69 @@ describe('flushConversionBatch outcome', () => {
     }
   })
 
+  // A retag or a normalize in place moves no cue, but the file under Engine's row is not the
+  // one it recorded the size of: the row has to learn the new size, and the check to read it.
+  it('hands Engine DJ a file rewritten in place even when no cue moved', async () => {
+    Object.assign(SETTINGS, { syncEngineDj: true, engineLibraryDir: '/e/Engine Library' })
+    STATUS.engine = { enabled: true, found: true }
+    const first = REPOINTS[0] as Record<string, unknown>
+    const to = REPOINTS[0].to
+    Object.assign(first, { to: REPOINTS[0].from, fromBytes: 100 })
+    WRITERS.repointEngineTracks.mockClear()
+    try {
+      const outcome = await flushConversionBatch(host(), sessions, quiet(), undefined, quiet())
+      expect(outcome.engine).toBe('written')
+      expect(WRITERS.repointEngineTracks).toHaveBeenCalledWith(
+        '/e/Engine Library',
+        [expect.objectContaining({ from: first.from, to: first.from, fromBytes: 100 })],
+        expect.anything(),
+      )
+    } finally {
+      Object.assign(first, { to, fromBytes: undefined })
+      Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
+      STATUS.engine = { enabled: false, found: false }
+    }
+  })
+
+  // The write keeps the row's bitrate on a file rewritten in place, and only sets it when the
+  // file says what Engine would show for it now.
+  it('lets Engine DJ’s write read the bitrate of the file it repoints', async () => {
+    Object.assign(SETTINGS, { syncEngineDj: true, engineLibraryDir: '/e/Engine Library' })
+    STATUS.engine = { enabled: true, found: true }
+    WRITERS.repointEngineTracks.mockClear()
+    const wav = join(await mkdtemp(join(tmpdir(), 'surco-bitrate-')), 'a.wav')
+    const header = Buffer.alloc(44)
+    header.write('RIFF', 0)
+    header.writeUInt32LE(36 + 4410 * 4, 4)
+    header.write('WAVEfmt ', 8)
+    header.writeUInt32LE(16, 16)
+    header.writeUInt16LE(1, 20)
+    header.writeUInt16LE(2, 22)
+    header.writeUInt32LE(44100, 24)
+    header.writeUInt32LE(44100 * 4, 28)
+    header.writeUInt16LE(4, 32)
+    header.writeUInt16LE(16, 34)
+    header.write('data', 36)
+    header.writeUInt32LE(4410 * 4, 40)
+    await writeFile(wav, Buffer.concat([header, Buffer.alloc(4410 * 4)]))
+    try {
+      await flushConversionBatch(host(), sessions, quiet(), undefined, quiet())
+      const [[, , options]] = WRITERS.repointEngineTracks.mock.calls as unknown as [
+        [
+          unknown,
+          unknown,
+          {
+            bitrateOf?: (file: string) => Promise<number | undefined>
+          },
+        ],
+      ]
+      expect(await options.bitrateOf?.(wav)).toBe(1411)
+    } finally {
+      Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
+      STATUS.engine = { enabled: false, found: false }
+    }
+  })
+
   // An end nested in a batch still open takes nothing: the outer end flushes, and judges.
   it('says every library is for a later end when an outer batch is still open', async () => {
     Object.assign(SETTINGS, { syncEngineDj: true, engineLibraryDir: '/e/Engine Library' })

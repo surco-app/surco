@@ -47,6 +47,8 @@ export const VERIFY_DETAIL_KEYS = [
   'engineOtherRow',
   'engineNoFileType',
   'engineSizeDiffers',
+  'engineSizeStale',
+  'engineSizeStaleCues',
   'enginePerformanceChanged',
   'engineCuesMisplaced',
   'engineUnreadable',

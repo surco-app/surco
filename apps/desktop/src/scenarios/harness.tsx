@@ -16,6 +16,7 @@ import { replaceDuplicates } from '../main/duplicateReplace'
 import { applyEngineCuesBatch } from '../main/engineCuesWrite'
 import { addToEngineLibrary } from '../main/engineLibrary'
 import { isEngineDjRunning } from '../main/engineProcess'
+import { engineSizeFollower } from '../main/engineSizeFollow'
 import { expandPaths } from '../main/expand'
 import { convertAudio, toNmlLocation } from '../main/ffmpeg'
 import { fileIdentity, isSameFile, removeRenamedOriginal } from '../main/inplace'
@@ -38,7 +39,7 @@ import { configureBackupStore } from '../main/originalKeeper'
 import { createOutputReservations } from '../main/outputReservations'
 import { runProcessTrack } from '../main/processTrack'
 import { trashRecoverably } from '../main/recoverableTrash'
-import { beginRekordboxBatch, redirectRekordboxRepoint } from '../main/rekordboxBatch'
+import { beginRekordboxBatch, redirectRekordboxRepoint, stackRepoint } from '../main/rekordboxBatch'
 import { readNodeStamps } from '../main/rekordboxMasterXml'
 import { applyRekordboxBatch } from '../main/rekordboxPlaylistWrite'
 import { isRekordboxRunning } from '../main/rekordboxProcess'
@@ -300,6 +301,17 @@ function libraryHost(errors: string[]): LibraryHost {
 
 let watcher: FolderWatcher | undefined
 
+// The IPC handlers are registered once, so the file follower reaches the Engine queue of
+// whichever scenario is running, as index.ts's reaches the app's.
+let engineQueueNow: RekordboxQueue | undefined
+const followEngineSize = engineSizeFollower({
+  enabled: () => getSettings().syncEngineDj,
+  enqueue: (ops, repoints) => engineQueueNow?.enqueue(ops, repoints),
+  apply: () => {
+    void engineQueueNow?.apply(async () => !(await isEngineDjRunning()))
+  },
+})
+
 function storeInMemory() {
   let stored: string | null = null
   return {
@@ -326,6 +338,7 @@ function engineQueueInMemory(): RekordboxQueue {
     nodeStamps: async () => ({}),
     onChange: () => {},
     addsTracks: false,
+    stack: stackRepoint,
   })
 }
 
@@ -630,15 +643,16 @@ export function bootMain(options: ScenarioOptions): MainBoot {
   configureBackupStore(trash, () => getSettings().backupPolicy)
   if (!ipcHandlers.has('audio:meta')) {
     registerAudioIpc((path) => mediaAccess.allow(path))
-    registerTrashIpc(trash, mediaAccess)
+    registerTrashIpc(trash, mediaAccess, { followEngineSize })
     registerShellIpc(mediaAccess)
-    if (musicIsFake) registerAppleMusicIpc()
+    if (musicIsFake) registerAppleMusicIpc({ followEngineSize })
     registerListReviewIpc(
       listReviewDeps({
         mediaAccess,
         tmp: { track: () => {}, untrack: () => {} },
         hostFor: () => libraryHost(errors),
         sessions,
+        followEngineSize,
       }),
     )
   }
@@ -647,6 +661,7 @@ export function bootMain(options: ScenarioOptions): MainBoot {
   const flushes: Promise<void>[] = []
   const rekordboxQueue = rekordboxQueueInMemory()
   const engineQueue = engineQueueInMemory()
+  engineQueueNow = engineQueue
   const api = scenarioApi(options, errors, sentToAppleMusic, flushes, rekordboxQueue, engineQueue)
   return { settings, trash, errors, sentToAppleMusic, flushes, rekordboxQueue, engineQueue, api }
 }

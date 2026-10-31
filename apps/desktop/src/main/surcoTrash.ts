@@ -27,13 +27,18 @@ export interface SurcoTrash {
     outputPath?: string,
     trashedAt?: number,
     held?: boolean,
+    extra?: Pick<TrashEntry, 'engine'>,
   ): Promise<TrashEntry | null>
   release(id: string): void
   list(): Promise<TrashEntry[]>
   // Puts the file back on its original path. Whatever occupies that path now — the
   // converted file, typically — goes into the trash in its turn, so restoring never
   // destroys a version either.
-  restore(id: string): Promise<{ restoredTo: string; displaced: TrashEntry | null }>
+  restore(id: string): Promise<{
+    restoredTo: string
+    displaced: TrashEntry | null
+    engine?: TrashEntry['engine']
+  }>
   remove(id: string): Promise<void>
   empty(): Promise<void>
   // Drops what is older than the retention, then the oldest entries until the rest fits
@@ -183,7 +188,7 @@ export function createSurcoTrash(
     }
   }
 
-  const keep: SurcoTrash['stash'] = async (path, reason, outputPath, trashedAt) => {
+  const keep: SurcoTrash['stash'] = async (path, reason, outputPath, trashedAt, _held, extra) => {
     const info = await stat(path).catch(() => null)
     if (!info) return null
     await mkdir(items, { recursive: true })
@@ -204,6 +209,7 @@ export function createSurcoTrash(
       trashedAt: trashedAt ?? Date.now(),
       reason,
       ...(outputPath ? { outputPath } : {}),
+      ...(extra?.engine ? { engine: extra.engine } : {}),
     }
     write([...read(), entry])
     return entry
@@ -213,7 +219,14 @@ export function createSurcoTrash(
   // failed rename restores from, and a sweep behind it could discard exactly that one.
   // The disk bounds it as well as the cap. A file that fits in neither even with the
   // trash emptied gets no copy, and nothing is dropped to make room it would not use.
-  const stashNow: SurcoTrash['stash'] = async (path, reason, outputPath, trashedAt, hold) => {
+  const stashNow: SurcoTrash['stash'] = async (
+    path,
+    reason,
+    outputPath,
+    trashedAt,
+    hold,
+    extra,
+  ) => {
     const info = await stat(path).catch(() => null)
     if (!info) return null
     const entries = read()
@@ -224,7 +237,7 @@ export function createSurcoTrash(
       : entries.filter((e) => pinned.has(e.id)).reduce((sum, e) => sum + e.bytes, 0)
     if (info.size + untouchable > budget) return null
     if (!hold) await prune(Date.now(), budget - info.size)
-    const entry = await keep(path, reason, outputPath, trashedAt)
+    const entry = await keep(path, reason, outputPath, trashedAt, hold, extra)
     if (entry && hold) pinned.add(entry.id)
     return entry
   }
@@ -248,10 +261,27 @@ export function createSurcoTrash(
       if (!entry) throw new Error(`no such trash entry: ${id}`)
       await mkdir(dirname(entry.originalPath), { recursive: true })
       const occupant = await stat(entry.originalPath).catch(() => null)
-      const displaced = occupant ? await keep(entry.originalPath, 'restored-over') : null
+      // What this restore sets aside goes back with the move this one undoes, over the file
+      // this one puts back.
+      const displaced = occupant
+        ? await keep(
+            entry.originalPath,
+            'restored-over',
+            undefined,
+            undefined,
+            undefined,
+            entry.engine && {
+              engine: { shift: entry.engine.undo, over: entry.bytes, undo: entry.engine.shift },
+            },
+          )
+        : null
       await move(entry.storedPath, entry.originalPath, 'leave')
       write(read().filter((e) => e.id !== id))
-      return { restoredTo: entry.originalPath, displaced }
+      return {
+        restoredTo: entry.originalPath,
+        displaced,
+        ...(entry.engine ? { engine: entry.engine } : {}),
+      }
     },
     release: (id) => {
       pinned.delete(id)

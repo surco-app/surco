@@ -407,6 +407,71 @@ describe('rekordbox queue', () => {
     ])
   })
 
+  // An Undo restores the original while the fix's own size write is being applied. Stacked
+  // onto that entry, the restore kept the fix's starting size and stayed queued after the
+  // apply took the entry it had read, so the next apply asked for a size the row no longer
+  // had and the row kept the fix's size for good.
+  it('queues a rewrite that arrives while the same file’s repoint is being applied on its own', async () => {
+    let release: () => void = () => {}
+    const d = deps({ stack: stackRepoint })
+    d.repoint.mockImplementationOnce(async (_c, list) => {
+      await new Promise<void>((resolve) => {
+        release = resolve
+      })
+      return list.map((): LibraryRepointResult => ({ written: true }))
+    })
+    const q = createRekordboxQueue(d)
+    q.enqueue([], [{ from: '/m/b.mp3', to: '/m/b.mp3', fromBytes: 100 }])
+    const first = q.apply(closed)
+    await vi.waitFor(() => expect(d.repoint).toHaveBeenCalledTimes(1))
+    q.enqueue([], [{ from: '/m/b.mp3', to: '/m/b.mp3', fromBytes: 150 }])
+    release()
+    await first
+    await q.apply(closed)
+    expect(d.repoint).toHaveBeenLastCalledWith(expect.any(String), [
+      { from: '/m/b.mp3', to: '/m/b.mp3', fromBytes: 150 },
+    ])
+  })
+
+  // The same, with the program found open: the entry being written stays queued, so the one
+  // that arrived meanwhile stacks onto it after all and the row gets both, once.
+  it.each([
+    ['refused', false],
+    ['threw', true],
+  ])(
+    'stacks a rewrite that arrived during an apply that %s onto the entry it waited behind',
+    async (_, throws) => {
+      let release: () => void = () => {}
+      const d = deps({ stack: stackRepoint })
+      d.repoint.mockImplementationOnce(async (_c, list) => {
+        await new Promise<void>((resolve) => {
+          release = resolve
+        })
+        if (throws) throw new Error('disk gone')
+        return list.map(
+          (): LibraryRepointResult => ({ written: false, reason: 'rekordbox-running' }),
+        )
+      })
+      const q = createRekordboxQueue(d)
+      q.enqueue(
+        [],
+        [{ from: '/m/b.mp3', to: '/m/b.mp3', engineShift: { trimmedMs: 1000 }, fromBytes: 100 }],
+      )
+      const first = q.apply(closed)
+      await vi.waitFor(() => expect(d.repoint).toHaveBeenCalledTimes(1))
+      q.enqueue(
+        [],
+        [{ from: '/m/b.mp3', to: '/m/b.mp3', engineShift: { trimmedMs: -1000 }, fromBytes: 150 }],
+      )
+      release()
+      await first.catch(() => undefined)
+      await q.apply(closed)
+      expect(d.repoint).toHaveBeenLastCalledWith(expect.any(String), [
+        { from: '/m/b.mp3', to: '/m/b.mp3', engineShift: { trimmedMs: 0 }, fromBytes: 100 },
+      ])
+    },
+  )
+
   // La colección vive en un disco desconectado. Lo que espera se ata a ella y se aplica al
   // volver el disco, no en otra colección que el DJ tenga montada mientras tanto.
   it('binds what waits for an unplugged collection to it, so it lands there when the drive is back', async () => {

@@ -28,6 +28,8 @@ export interface KeepContext {
   untilChecked?: boolean
   // Set by policyKeeper on that copy: the store pins it, evicting nothing for it.
   held?: boolean
+  // Kept on the copy, for a restore to move Engine DJ's row back (TrashEntry.engine).
+  engine?: TrashEntry['engine']
 }
 
 export type OriginalKeeper = (
@@ -187,6 +189,7 @@ export function configureBackupStore(
       outputPath?: string,
       trashedAt?: number,
       held?: boolean,
+      extra?: Pick<TrashEntry, 'engine'>,
     ) => Promise<TrashEntry | null>
     remove: (id: string) => Promise<void>
     release?: (id: string) => void
@@ -199,9 +202,11 @@ export function configureBackupStore(
     policyKeeper(
       policy,
       (path, reason, outputPath, ctx) =>
-        ctx?.held
-          ? store.stash(path, reason, outputPath, undefined, true)
-          : store.stash(path, reason, outputPath),
+        ctx?.engine
+          ? store.stash(path, reason, outputPath, undefined, ctx.held, { engine: ctx.engine })
+          : ctx?.held
+            ? store.stash(path, reason, outputPath, undefined, true)
+            : store.stash(path, reason, outputPath),
       noRoom,
     ),
   )

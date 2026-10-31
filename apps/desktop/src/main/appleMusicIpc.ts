@@ -1,4 +1,4 @@
-import { access, realpath } from 'node:fs/promises'
+import { access, realpath, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, ipcMain } from 'electron'
 import log from 'electron-log/main'
@@ -40,7 +40,7 @@ import { hasCoverSource, prepareProcessedCover } from './cover'
 import { readMeta } from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { removeDuplicateCopyLogged } from './musicDuplicates'
-import { prepareTagRewrite } from './musicFieldWrite'
+import { prepareTagRewrite, type Rewritten } from './musicFieldWrite'
 import { applyMusicFixes } from './musicReviewApply'
 import { musicReviewLog, setFieldLogged } from './musicReviewLog'
 import { discardBackup, keepBeforeMusicRewrite } from './originalKeeper'
@@ -59,7 +59,11 @@ function trackLabel(meta: TrackMetadata): string {
 // handler short-circuits off macOS rather than spawning a missing osascript. Self-contained
 // — no window or session state — so it lives apart from the stateful handlers in index.ts.
 export function registerAppleMusicIpc(
-  deps: { trackTmp?: (path: string) => void; untrackTmp?: (path: string) => void } = {},
+  deps: {
+    trackTmp?: (path: string) => void
+    untrackTmp?: (path: string) => void
+    followEngineSize?: Rewritten
+  } = {},
 ): void {
   // The whole-library snapshot the renderer matches the crate against to flag which
   // tracks are already owned; empty off macOS, where there is no library to read.
@@ -121,6 +125,7 @@ export function registerAppleMusicIpc(
           prepareTagRewrite(
             file,
             trackTmp && untrackTmp ? { track: trackTmp, untrack: untrackTmp } : undefined,
+            deps.followEngineSize,
           ),
       },
       {
@@ -367,7 +372,10 @@ export function registerAppleMusicIpc(
               throw errorWithKey('appleMusicEntryUnread', err instanceof Error ? err.message : '')
             })
             const kept = location ? await keepBeforeMusicRewrite(location) : null
+            const fromBytes = location ? (await stat(location).catch(() => null))?.size : undefined
             const updated = await updateInAppleMusic(job.persistentId, job.meta, prepared?.path)
+            if (updated && location && fromBytes !== undefined)
+              deps.followEngineSize?.(location, fromBytes)
             if (updated) return updated
             if (kept) await discardBackup(kept).catch(() => undefined)
             if (!job.outputPath) {

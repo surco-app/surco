@@ -14,6 +14,7 @@ vi.mock('./rekordboxBatch', () => ({ recordRekordboxRepoint: vi.fn() }))
 
 import type { TrackMetadata } from '../shared/types'
 import { convertAudio } from './ffmpeg'
+import { configureOriginalKeeper } from './originalKeeper'
 import { recordRekordboxRepoint } from './rekordboxBatch'
 
 // Reported 23/10 by a DJ ("the cues get lost on MP3s") and measured in the user's own
@@ -362,6 +363,91 @@ describe('what a conversion tells Engine DJ about its cues', () => {
     )
     expect(readFileSync(src).length).not.toBe(size)
     expect(recorded()).toMatchObject({ from: src, to: src, fromBytes: size })
+  })
+
+  // Retagging or normalizing in place moves no cue but still changes the file under Engine's
+  // row, which records its size: the write needs the old one to tell it is still owed.
+  it('carries the source’s size from before a rewrite in place that moved no cue', async () => {
+    const src = join(dir, 'engine-retag.wav')
+    pcm(src, 'pcm_s16le')
+    const size = readFileSync(src).length
+    await convertAudio(src, src, 'wav', { ...meta, title: 'A much longer title than before' })
+    expect(readFileSync(src).length).not.toBe(size)
+    expect(recorded()).toMatchObject({ from: src, to: src, fromBytes: size })
+    expect(recorded()?.engineShift).toBeUndefined()
+  })
+
+  // The original kept for a restore carries the way back (the cut put back, the source's
+  // rate and its length) over the file this conversion wrote, and the move it made, so
+  // Engine's row can follow the original when it returns and the cut file if it comes back.
+  it.each([
+    [
+      'a cut',
+      { startSec: 0.5 },
+      undefined,
+      { trimmedMs: -500, sampleCount: 88200 },
+      { trimmedMs: 500, sampleCount: 66150 },
+    ],
+    [
+      'a resample',
+      undefined,
+      { sampleRate: '48000' },
+      { trimmedMs: 0, sampleRateHz: 44100, sampleCount: 88200 },
+      { trimmedMs: 0, sampleRateHz: 48000, sampleCount: 96000 },
+    ],
+  ] as const)(
+    'keeps with the original the way back from %s in place',
+    async (_, trim, quality, back, forward) => {
+      const src = join(dir, `engine-back-${quality ? 'rate' : 'cut'}.wav`)
+      pcm(src, 'pcm_s16le')
+      const keeper = vi.fn(async () => null)
+      configureOriginalKeeper(keeper)
+      try {
+        await convertAudio(
+          src,
+          src,
+          'wav',
+          meta,
+          undefined, // coverPath
+          undefined, // normalize
+          undefined, // removeCover
+          quality,
+          undefined, // onChild
+          undefined, // onTmp
+          undefined, // finderCovers
+          undefined, // declick
+          trim,
+        )
+      } finally {
+        configureOriginalKeeper(null)
+      }
+      expect(keeper).toHaveBeenCalledWith(
+        src,
+        'replaced',
+        src,
+        expect.objectContaining({
+          engine: { shift: back, over: readFileSync(src).length, undo: forward },
+        }),
+      )
+    },
+  )
+
+  it('keeps no way back with an original whose audio moved nowhere', async () => {
+    const src = join(dir, 'engine-back-none.wav')
+    pcm(src, 'pcm_s16le')
+    const keeper = vi.fn(async () => null)
+    configureOriginalKeeper(keeper)
+    try {
+      await convertAudio(src, src, 'wav', { ...meta, title: 'Retagged' })
+    } finally {
+      configureOriginalKeeper(null)
+    }
+    expect(keeper).toHaveBeenCalledWith(
+      src,
+      'replaced',
+      src,
+      expect.not.objectContaining({ engine: expect.anything() }),
+    )
   })
 
   it('carries no size when the conversion lands on another path', async () => {
