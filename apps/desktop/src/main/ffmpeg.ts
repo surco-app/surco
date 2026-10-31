@@ -1503,19 +1503,29 @@ export async function assertDecodable(
 // assertDecodable, with the same pass also digesting the samples the way pcmDigest does
 // when `digestAs` (the file's probe) is given: a whole decode that succeeds hands both
 // back, so a check that finds these bytes again needs no decode of its own. A verdict
-// that took another pass carries no digest.
+// that took another pass carries no digest. `countSamples` has the same pass count the
+// samples it decoded, exactly: the clock above is a whole sample long from ffmpeg 7 on.
 export async function proveDecodable(
   file: string,
   copiedFrom?: string,
   opts?: RunOpts,
   digestAs?: ProbeResult,
-): Promise<{ durationSec: number | null; pcm?: PcmDigest }> {
-  const whole = await decodeForCheck(file, undefined, opts, digestAs && digestCodec(digestAs))
+  countSamples?: boolean,
+): Promise<{ durationSec: number | null; pcm?: PcmDigest; samples?: number }> {
+  const whole = await decodeForCheck(
+    file,
+    undefined,
+    opts,
+    digestAs && digestCodec(digestAs),
+    countSamples,
+  )
   if (whole.ok) {
     assertNotTruncated(file, whole.stderr, whole.stdout)
     const md5 = /^MD5=([0-9a-f]{32})/m.exec(whole.stdout)?.[1]
+    const samples = [...whole.stderr.matchAll(/Number of samples: (\d+)/g)].at(-1)?.[1]
     return {
       durationSec: decodedDurationSec(whole.stdout),
+      ...(samples ? { samples: Number(samples) } : {}),
       ...(md5 && digestAs
         ? {
             pcm: { md5, sampleRate: Number(digestAs.sampleRate), channels: digestAs.channels },
@@ -1617,6 +1627,14 @@ export async function deliveredDurationSec(
 // 44.1 kHz): one padded sample after the end puts the last start on the true length.
 const COUNT_DELIVERED_SAMPLES = ['-af', 'asetpts=N/SR/TB,apad=pad_len=1']
 
+// That padded clock ends one sample long on ffmpeg 7 and later (the Linux build in
+// ffmpeg-static is 7.0.2), which reports where the last frame ends rather than where it
+// starts. astats counts the samples themselves, before the pad, on every version.
+const COUNT_EXACT_SAMPLES = [
+  '-af',
+  'asetpts=N/SR/TB,astats=measure_perchannel=none:measure_overall=Number_of_samples,apad=pad_len=1',
+]
+
 type DecodeForCheck =
   | { ok: true; stderr: string; stdout: string }
   | { ok: false; stderr: string; error: Error }
@@ -1626,6 +1644,7 @@ async function decodeForCheck(
   untilSec?: number,
   opts?: RunOpts,
   digestCodec?: string,
+  countSamples?: boolean,
 ): Promise<DecodeForCheck> {
   try {
     const { stderr, stdout } = await run(
@@ -1639,7 +1658,7 @@ async function decodeForCheck(
         file,
         '-map',
         '0:a',
-        ...COUNT_DELIVERED_SAMPLES,
+        ...(countSamples ? COUNT_EXACT_SAMPLES : COUNT_DELIVERED_SAMPLES),
         ...(untilSec === undefined ? [] : ['-t', untilSec.toFixed(3)]),
         '-progress',
         '-',
@@ -2151,6 +2170,8 @@ export async function convertAudio(
   let absorbedPcm: PcmDigest | null | undefined
   let sourceDurationSec: number | undefined
   let proven: DecodeProof | undefined
+  // The length the decode delivered, as the samples Engine counts it in.
+  let sampleCount: number | undefined
   let originalKept = false
   let codecCueOffsetMs = 0
 
@@ -2484,6 +2505,7 @@ export async function convertAudio(
         copiedVerbatim ? input : undefined,
         { signal: measuring.signal },
         digestAs,
+        trimAf !== undefined || !!plan.sampleRateHz,
       ),
       samplesKept && absorbedPcm !== undefined
         ? (absorbedPcm ?? undefined)
@@ -2499,7 +2521,9 @@ export async function convertAudio(
       let proof: Awaited<ReturnType<typeof proveDecodable>>
       ;[proof, sourcePcm, sourceDurationSec] = await Promise.all(measures)
       const { size, mtimeMs, ino } = await stat(tmp)
-      proven = { size, mtimeMs, ino, ...proof }
+      const { samples, ...decoded } = proof
+      sampleCount = samples
+      proven = { size, mtimeMs, ino, ...decoded }
     } catch (err) {
       if (isCancelled?.()) throw errorWithKey('conversionCancelled')
       throw err
@@ -2517,17 +2541,6 @@ export async function convertAudio(
       : 44100
     const sourceShiftMs = await rekordboxShiftOfFile(input, sourceRate)
     const outputShiftMs = await rekordboxShiftOfFile(tmp, plan.sampleRateHz ?? sourceRate)
-    // The length the decode above delivered, as the samples Engine counts it in.
-    const writtenSec =
-      (trimAf !== undefined || plan.sampleRateHz) && proven?.durationSec
-        ? proven.durationSec
-        : undefined
-    const sampleCount =
-      writtenSec === undefined
-        ? undefined
-        : Math.round(
-            writtenSec * (plan.sampleRateHz ?? Number((await probeOnce(input)).sampleRate)),
-          )
     // Kept samples still move in rekordbox's timeline when only one side is an .m4a (ALAC↔WAV).
     const rekordboxAudio =
       copiedVerbatim || (plan.samplesKept && sourceShiftMs === outputShiftMs)
