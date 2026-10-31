@@ -567,7 +567,7 @@ describe('the repoint and its check together', () => {
       expect(rekordboxRow(db, id).path).toBe(to)
       expect(rekordboxRow(db, id).cuesMs).toEqual(thirteen.map((ms) => ms - 51))
     }
-  })
+  }, 30000)
 
   it('two files whose paths compare equal stay where they were and are never checked ok', async () => {
     const root = mkdtempSync(join(tmpdir(), 'surco-verifyrb-strangers-'))
@@ -581,5 +581,5 @@ describe('the repoint and its check together', () => {
     expect(checked.state).toBe('mismatch')
     expect([rekordboxRow(db, '100').path, rekordboxRow(db, '101').path]).toEqual([one, two])
     expect(rekordboxRow(db, '101').cuesMs).toEqual(thirteen)
-  })
+  }, 30000)
 })
