@@ -272,6 +272,8 @@ const optionalDeps: Record<OptionalDepKey, 'wired' | 'notNeeded'> = {
   snapshotLibraries: 'notNeeded',
   realPath: 'wired',
   registerVerification: 'notNeeded',
+  fileBytes: 'notNeeded',
+  followEngineSize: 'notNeeded',
 }
 
 describe('the opt-in Music test deps', () => {
