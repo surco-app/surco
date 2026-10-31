@@ -580,11 +580,24 @@ describe('matrix file oracle', () => {
   })
 
   // Surco's Originals are a way back, not a loss: only the system Trash, a file gone for
-  // good, or an offer to delete it count, and only while the self-check has not said ok.
+  // good, or an offer to delete it count, and only while the self-check has not said ok. The
+  // one exception is the auto-retire of 31/10: once the check is ok, a source whose format
+  // changed and that no library still uses goes to the system Trash without asking
+  // (autoRetiredFile.test.ts, "retires the library copy a replacement stamped, when it was in
+  // another format" and "keeps a superseded file in the same format").
   describe('what became of the original', () => {
     const source = join(dir, 'orig.flac')
     const final = join(dir, 'orig.aiff')
-    const base = { sourcePath: source, finalPath: final, originals: [], osTrash: [], offered: null }
+    const base = {
+      sourcePath: source,
+      finalPath: final,
+      originals: [],
+      osTrash: [],
+      offered: null,
+      formatChanged: true,
+      consumed: false,
+      stillUsed: false,
+    }
 
     it('accepts an original kept in Originals whatever the verdict', () => {
       expect(originalBroken({ ...base, status: 'mismatch', originals: [source] })).toEqual([])
@@ -597,13 +610,39 @@ describe('matrix file oracle', () => {
           detail: 'papelera: el original fue a la Papelera con el veredicto mismatch',
         },
       ])
+    })
+
+    it('accepts the system Trash once the check is ok and the format changed', () => {
       expect(originalBroken({ ...base, status: 'ok', osTrash: [source] })).toEqual([])
     })
 
-    it('sees the original gone for good before the verdict was ok', () => {
+    it('sees an ok original sent to the Trash with the same format or still in a library', () => {
+      expect(
+        originalBroken({ ...base, status: 'ok', osTrash: [source], formatChanged: false }),
+      ).toEqual([
+        {
+          invariant: 'unique',
+          detail: 'papelera: el original fue a la Papelera sin cambiar de formato',
+        },
+      ])
+      expect(originalBroken({ ...base, status: 'ok', osTrash: [source], stillUsed: true })).toEqual(
+        [
+          {
+            invariant: 'unique',
+            detail: 'papelera: el original fue a la Papelera con una biblioteca que aún lo usa',
+          },
+        ],
+      )
+    })
+
+    it('sees the original gone for good unless the conversion replaced it in place with ok', () => {
       expect(originalBroken({ ...base, status: 'pending' })).toEqual([
         { invariant: 'unique', detail: 'papelera: el original se borró con el veredicto pending' },
       ])
+      expect(originalBroken({ ...base, status: 'ok' })).toEqual([
+        { invariant: 'unique', detail: 'papelera: el original se borró con el veredicto ok' },
+      ])
+      expect(originalBroken({ ...base, status: 'ok', consumed: true })).toEqual([])
     })
 
     it('sees a deletion offered before the verdict was ok', () => {

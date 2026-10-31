@@ -279,6 +279,11 @@ export async function runGroup(
             originals: (await surco.trash.list()).map((entry) => entry.originalPath),
             osTrash,
             offered: row ? supersededFile(row) : null,
+            formatChanged: !sameFormat(cell, source.path),
+            consumed,
+            stillUsed: syncedPrograms(cell.programs).some(
+              (program) => spelled(expected.at[program]) === spelled(source.path),
+            ),
           }),
         ],
       }

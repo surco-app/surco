@@ -659,14 +659,6 @@ describe('Synthetic libraries the matrix judges on its own', () => {
         rmSync(tmp)
       }
     })
-
-    it('sees the original gone when the destination keeps it', () => {
-      rmSync(track.path)
-      seen(judge(cellWith('rekordbox')), 'unique', 'el original ya no está')
-      expect(judge(cellWith('rekordbox'), untouched(track, { destGone: true }))).not.toContainEqual(
-        expect.objectContaining({ detail: 'disco: el original ya no está' }),
-      )
-    })
   })
 
   describe('Collateral', () => {

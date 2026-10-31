@@ -1123,7 +1123,7 @@ function collateralBroken(cell: Cell, set: LibrarySet): Found[] {
   })
 }
 
-function diskBroken(t: SeededTrack, e: Expected): Found[] {
+function diskBroken(e: Expected): Found[] {
   const found: Found[] = []
   let names: string[] = []
   try {
@@ -1131,7 +1131,6 @@ function diskBroken(t: SeededTrack, e: Expected): Found[] {
   } catch {}
   for (const name of names.filter((n) => n.includes('.tmp-')))
     found.push(['unique', `disco: queda el temporal ${name}`])
-  if (!e.destGone && !located(t.path)) found.push(['unique', 'disco: el original ya no está'])
   return found
 }
 
@@ -1158,7 +1157,7 @@ export function libraryInvariants(
       ? rekordboxNewRows(set.rekordboxDb, set)
       : []),
     ...(set.music ? musicNewEntries(set) : []),
-    ...diskBroken(track, expected),
+    ...diskBroken(expected),
     ...collateralBroken(cell, set),
     ...bystanderRowsBroken(set),
     ...programs
@@ -1175,25 +1174,35 @@ export interface OriginalFate {
   originals: string[]
   osTrash: string[]
   offered: string | null
+  formatChanged: boolean
+  consumed: boolean
+  stillUsed: boolean
+}
+
+function trashedWhy(o: OriginalFate, said: string): string | null {
+  if (o.status !== 'ok') return `con el veredicto ${said}`
+  if (!o.formatChanged) return 'sin cambiar de formato'
+  if (o.stillUsed) return 'con una biblioteca que aún lo usa'
+  return null
 }
 
 export function originalBroken(o: OriginalFate): Broken[] {
   const source = canonical(o.sourcePath)
-  if (o.status === 'ok' || source === canonical(o.finalPath)) return []
+  if (source === canonical(o.finalPath)) return []
   const said = o.status ?? 'ninguno'
+  const ok = o.status === 'ok'
   const isSource = (path: string) => canonical(path) === source
   const found: Broken[] = []
-  if (o.osTrash.some(isSource))
-    found.push({
-      invariant: 'unique',
-      detail: `papelera: el original fue a la Papelera con el veredicto ${said}`,
-    })
-  else if (!located(o.sourcePath) && !o.originals.some(isSource))
+  if (o.osTrash.some(isSource)) {
+    const why = trashedWhy(o, said)
+    if (why)
+      found.push({ invariant: 'unique', detail: `papelera: el original fue a la Papelera ${why}` })
+  } else if (!located(o.sourcePath) && !o.originals.some(isSource) && !(ok && o.consumed))
     found.push({
       invariant: 'unique',
       detail: `papelera: el original se borró con el veredicto ${said}`,
     })
-  if (o.offered && isSource(o.offered))
+  if (!ok && o.offered && isSource(o.offered))
     found.push({
       invariant: 'unique',
       detail: `papelera: se ofrece borrar el original con el veredicto ${said}`,
