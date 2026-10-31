@@ -23,6 +23,7 @@ import type {
   ReviewSpellingGroup,
 } from '../hooks/useMusicReview'
 import { damageKey } from '../lib/damageReview'
+import { errorKeyOf } from '../lib/ipcError'
 import { isTypingTarget } from '../lib/keymap'
 import { INVISIBLE } from '../lib/musicSpelling'
 import { REVIEW_COPY } from '../lib/reviewSource'
@@ -272,6 +273,8 @@ function damageDestinations(t: TFunction, outcomes: DamageOutcome[]): Destinatio
               mine.some((o) => o.state === 'failed' && o.error === error) &&
               t(`damage.done.error.${error}`),
           ),
+          mine.some((o) => o.state === 'failed' && o.error && errorKeyOf(o.error) === 'noBackup') &&
+            t('errors.noBackup'),
         ]),
       },
     ]
