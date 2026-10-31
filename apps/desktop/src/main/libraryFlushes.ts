@@ -277,9 +277,7 @@ export async function flushConversionBatch(
   // rekordbox's does: the dialog asked to convert again, which an in-place conversion
   // cannot, its source being gone. A check that cannot tell counts as Engine being open.
   const engineRepoints = repoints.filter(
-    (repoint) =>
-      repoint.from !== repoint.to ||
-      (repoint.engineShift !== undefined && repoint.fromBytes !== undefined),
+    (repoint) => repoint.from !== repoint.to || repoint.fromBytes !== undefined,
   )
   const engineUnplugged = onUnpluggedDrive(getSettings().engineLibraryDir)
   const engineDeps = engineFlushDeps(host)

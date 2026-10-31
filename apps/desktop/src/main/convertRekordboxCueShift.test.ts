@@ -357,6 +357,18 @@ describe('what a conversion tells Engine DJ about its cues', () => {
     expect(recorded()).toMatchObject({ from: src, to: src, fromBytes: size })
   })
 
+  // Retagging or normalizing in place moves no cue but still changes the file under Engine's
+  // row, which records its size: the write needs the old one to tell it is still owed.
+  it('carries the source’s size from before a rewrite in place that moved no cue', async () => {
+    const src = join(dir, 'engine-retag.wav')
+    pcm(src, 'pcm_s16le')
+    const size = readFileSync(src).length
+    await convertAudio(src, src, 'wav', { ...meta, title: 'A much longer title than before' })
+    expect(readFileSync(src).length).not.toBe(size)
+    expect(recorded()).toMatchObject({ from: src, to: src, fromBytes: size })
+    expect(recorded()?.engineShift).toBeUndefined()
+  })
+
   it('carries no size when the conversion lands on another path', async () => {
     const src = join(dir, 'engine-moved.wav')
     pcm(src, 'pcm_s16le')

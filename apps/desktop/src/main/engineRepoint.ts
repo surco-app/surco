@@ -52,7 +52,7 @@ export interface EngineRepoint extends PathMatchOptions {
   to: string
   engineShift?: EngineShift
   // The source's size before a conversion rewrote it on its own path, what the row still
-  // records until the shift lands.
+  // records until the new size, and the shift if any, land.
   fromBytes?: number
 }
 
@@ -306,8 +306,8 @@ export async function writeEngineRepoints(
         results[i] = { written: false, reason: 'occupied' }
         continue
       }
-      // A row already on the file moves only its shift, and only while it still records the
-      // source's size: the same write records the new one, so the shift lands once.
+      // A row already on the file takes only its new size and shift, and only while it still
+      // records the source's size: the same write records the new one, so the shift lands once.
       if (
         onTarget.length > 0 &&
         (repoint.fromBytes === undefined || matches[0].fileBytes !== repoint.fromBytes)
