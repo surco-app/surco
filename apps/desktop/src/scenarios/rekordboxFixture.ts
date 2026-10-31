@@ -18,6 +18,9 @@ export interface RekordboxSeed {
   keyId?: string
   playlists?: string[]
   cuesMs?: number[]
+  fileSize?: number
+  analysisDataPath?: string
+  analysed?: number
 }
 
 export interface RekordboxRow {
@@ -32,6 +35,9 @@ export interface RekordboxRow {
   year: number | null
   bpm: number | null
   keyId: string | null
+  fileSize: number | null
+  analysisDataPath: string | null
+  analysed: number | null
   playlists: string[]
   cuesMs: number[]
 }
@@ -69,7 +75,7 @@ export function makeRekordbox(dir: string, tracks: RekordboxSeed[]): string {
   db.exec(`CREATE TABLE djmdPlaylist (ID VARCHAR(255) PRIMARY KEY, Seq INTEGER, Name VARCHAR(255),
     ImagePath VARCHAR(255), Attribute INTEGER, ParentID VARCHAR(255), SmartList TEXT, ${LOOKUP})`)
   db.exec(`CREATE TABLE djmdSongPlaylist (ID VARCHAR(255) PRIMARY KEY, PlaylistID VARCHAR(255),
-    ContentID VARCHAR(255))`)
+    ContentID VARCHAR(255), TrackNo INTEGER, ${LOOKUP})`)
   db.exec(`CREATE TABLE djmdCue (ID VARCHAR(255) PRIMARY KEY, ContentID VARCHAR(255),
     InMsec INTEGER, InFrame INTEGER, InMpegFrame INTEGER, InMpegAbs INTEGER,
     OutMsec INTEGER DEFAULT -1, OutFrame INTEGER, OutMpegFrame INTEGER, OutMpegAbs INTEGER,
@@ -103,24 +109,25 @@ export function makeRekordbox(dir: string, tracks: RekordboxSeed[]): string {
       )
     db.prepare(
       `INSERT INTO djmdContent (ID, FolderPath, FileNameL, FileType, FileSize, Title, ArtistID,
-       BPM, KeyID, GenreID) VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?)`,
+       BPM, KeyID, GenreID, AnalysisDataPath, Analysed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       t.id,
       t.path,
       basename(t.path),
       t.fileType,
+      t.fileSize ?? 1,
       t.title,
       artistId,
       t.bpm ?? null,
       t.keyId ?? null,
       genreId,
+      t.analysisDataPath ?? null,
+      t.analysed ?? null,
     )
     for (const [i, playlist] of (t.playlists ?? []).entries())
-      db.prepare(`INSERT INTO djmdSongPlaylist VALUES (?, ?, ?)`).run(
-        `${t.id}-pl${i}`,
-        playlist,
-        t.id,
-      )
+      db.prepare(
+        `INSERT INTO djmdSongPlaylist (ID, PlaylistID, ContentID, rb_local_deleted) VALUES (?, ?, ?, 0)`,
+      ).run(`${t.id}-pl${i}`, playlist, t.id)
     for (const [i, ms] of (t.cuesMs ?? []).entries())
       db.prepare(
         `INSERT INTO djmdCue (ID, ContentID, InMsec, Kind, rb_local_deleted) VALUES (?, ?, ?, 0, 0)`,
@@ -138,7 +145,8 @@ export function rekordboxRow(dbPath: string, id: string): RekordboxRow {
       .prepare(
         `SELECT c.FolderPath AS path, c.FileType AS fileType, c.Title AS title,
          ar.Name AS artist, al.Name AS album, lb.Name AS label, gn.Name AS genre,
-         c.Commnt AS comment, c.ReleaseYear AS year, c.BPM AS bpm, c.KeyID AS keyId
+         c.Commnt AS comment, c.ReleaseYear AS year, c.BPM AS bpm, c.KeyID AS keyId,
+         c.FileSize AS fileSize, c.AnalysisDataPath AS analysisDataPath, c.Analysed AS analysed
          FROM djmdContent c
          LEFT JOIN djmdArtist ar ON ar.ID = c.ArtistID
          LEFT JOIN djmdAlbum al ON al.ID = c.AlbumID

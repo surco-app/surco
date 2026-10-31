@@ -129,13 +129,13 @@ import {
   traktorWrite,
 } from './libraryFlushes'
 import { takeCopy } from './libraryHistory'
-import { pathKey } from './libraryPathKey'
 import { enginePendingLog, rekordboxPendingLog } from './libraryRestore'
 import { serialLibraryFlush } from './libraryTagSync'
 import { registerListReviewIpc } from './listReviewIpc'
 import { listReviewDeps } from './listReviewWiring'
 import { createMediaAccess } from './mediaAccess'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
+import { createMoments } from './moments'
 import { isIssuedPair } from './musicDuplicates'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
@@ -153,8 +153,8 @@ import {
   attachLibraryPlaylists,
   attachRekordboxPlaylists,
   beginRekordboxBatch,
-  redirectRekordboxRepoint,
   recordedRekordboxRepoint,
+  redirectRekordboxRepoint,
   rekordboxBatchOpen,
   stackRepoint,
 } from './rekordboxBatch'
@@ -170,7 +170,6 @@ import { adjustProvisional, createProvisionalList } from './rekordboxProvisional
 import { createRekordboxQueue, fileStore, type QueueApply } from './rekordboxQueue'
 import { appliedNotice, registerRekordboxQueueIpc } from './rekordboxQueueIpc'
 import { stillWaiting, watchRekordboxQueue } from './rekordboxQueueWatch'
-import { createMoments } from './moments'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { loadLastSession, saveLastSession } from './session'
@@ -219,15 +218,14 @@ import { createUpdateRetry } from './updateRetry'
 import { registerUsbExportIpc } from './usbExportIpc'
 import { checkFile, fileReaders } from './verifyFile'
 import {
-  libraryReaders,
-  libraryRequeue,
+  appVerifyRegistry,
   queueVerification,
   registerVerifyIpc,
   snapshotLibraries,
   verifyUpdateSender,
 } from './verifyIpc'
 import { checkAppleMusic, type MusicExpect, musicReaders } from './verifyMusic'
-import { createVerifyRegistry, type FlushOutcome, type TraktorWrite } from './verifyRegistry'
+import type { FlushOutcome, TraktorWrite } from './verifyRegistry'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
 import { loadWindowState, resolveWindowBounds, saveWindowState } from './windowState'
@@ -545,19 +543,21 @@ const applyTraktorCueQueueQuietly = (serial = serialLibraryFlush): void => {
 // verifyRegistry.ts).
 const musicUnreadable = async () =>
   ({ place: 'appleMusic', state: 'unreadable', detail: { key: 'musicUnreadable' } }) as const
-const verifyRegistry = createVerifyRegistry({
+const verifyRegistry = appVerifyRegistry({
   emit: verifyUpdateSender(() => BrowserWindow.getAllWindows().map((w) => w.webContents)),
-  ...libraryReaders(
-    { rekordbox: rekordboxCollectionPath, engine: engineLibraryPath, traktor: traktorWritePath },
-    { realPath: (p) => realpathSync(p), bootVolume: () => bootVolumeName() },
-  ),
-  readFile: (e) => checkFile(e, fileReaders),
+  paths: {
+    rekordbox: rekordboxCollectionPath,
+    engine: engineLibraryPath,
+    traktor: traktorWritePath,
+  },
+  realPath: (p) => realpathSync(p),
+  bootVolume: () => bootVolumeName(),
   // Music exists only on macOS.
   readMusic:
     process.platform === 'darwin'
       ? (e: MusicExpect) => checkAppleMusic(e, musicReaders)
       : musicUnreadable,
-  requeue: libraryRequeue({
+  queues: {
     rekordbox: {
       enqueue: rekordboxQueue.enqueue,
       apply: () => applyRekordboxQueueQuietly(),
@@ -576,15 +576,6 @@ const verifyRegistry = createVerifyRegistry({
       at: traktorWritePath,
       holds: traktorCueQueue.holdsRepoint,
     },
-  }),
-  exists: (path) =>
-    access(path).then(
-      () => true,
-      () => false,
-    ),
-  samePath: (a, b) => {
-    const key = pathKey({ realPath: (p) => realpathSync(p) })
-    return key(a).normalize('NFC') === key(b).normalize('NFC')
   },
 })
 const queueChecks = queueVerification(verifyRegistry)

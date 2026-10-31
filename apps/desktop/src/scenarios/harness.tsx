@@ -29,28 +29,42 @@ import {
   repointEngineQueued,
   repointRekordbox,
   syncTagsInLibraries,
+  traktorWrite,
 } from '../main/libraryFlushes'
 import { registerListReviewIpc } from '../main/listReviewIpc'
 import { listReviewDeps } from '../main/listReviewWiring'
 import { createMediaAccess } from '../main/mediaAccess'
 import { musicReviewLog } from '../main/musicReviewLog'
-import { beginNmlBatch, redirectNmlPatch } from '../main/nmlBatch'
+import { beginNmlBatch, recordedNmlPatch, redirectNmlPatch } from '../main/nmlBatch'
 import { configureBackupStore } from '../main/originalKeeper'
 import { createOutputReservations } from '../main/outputReservations'
 import { runProcessTrack } from '../main/processTrack'
 import { trashRecoverably } from '../main/recoverableTrash'
-import { beginRekordboxBatch, redirectRekordboxRepoint, stackRepoint } from '../main/rekordboxBatch'
+import {
+  beginRekordboxBatch,
+  recordedRekordboxRepoint,
+  redirectRekordboxRepoint,
+  stackRepoint,
+} from '../main/rekordboxBatch'
 import { readNodeStamps } from '../main/rekordboxMasterXml'
 import { applyRekordboxBatch } from '../main/rekordboxPlaylistWrite'
 import { isRekordboxRunning } from '../main/rekordboxProcess'
-import { createRekordboxQueue, type RekordboxQueue } from '../main/rekordboxQueue'
+import { createRekordboxQueue, type QueueApply, type RekordboxQueue } from '../main/rekordboxQueue'
+import { stillWaiting } from '../main/rekordboxQueueWatch'
 import { createSessionBackup } from '../main/rekordboxSessionBackup'
 import { getSettings, recordConversion, recordStat, replaceSettings } from '../main/settings'
 import { registerShellIpc } from '../main/shellIpc'
 import { createSurcoTrash, type SurcoTrash } from '../main/surcoTrash'
 import { createTmpManifest } from '../main/tmpManifest'
+import { applyTraktorBatch } from '../main/traktorCuesWrite'
+import { bootVolumeName, syncCollection } from '../main/traktorNmlLibrary'
+import { type QueuedNmlPatch, syncQueuedPatches } from '../main/traktorPatchQueue'
+import { isTraktorRunning } from '../main/traktorProcess'
 import { registerTrashIpc } from '../main/trashIpc'
 import { checkFile, fileReaders } from '../main/verifyFile'
+import { appVerifyRegistry, queueVerification, snapshotLibraries } from '../main/verifyIpc'
+import { checkAppleMusic, musicReaders } from '../main/verifyMusic'
+import type { FlushOutcome, TraktorWrite } from '../main/verifyRegistry'
 import { onWatchedFilesChanged } from '../main/watchedFiles'
 import { dirRoots, FolderWatcher } from '../main/watcher'
 import type { Api } from '../preload/api'
@@ -70,6 +84,7 @@ import { useQualityAnalysis } from '../renderer/src/hooks/useQualityAnalysis'
 import { useTrackLibrary } from '../renderer/src/hooks/useTrackLibrary'
 import { useTrackProcessing } from '../renderer/src/hooks/useTrackProcessing'
 import { useTracksView } from '../renderer/src/hooks/useTracksView'
+import { useVerificationUpdates } from '../renderer/src/hooks/useVerificationUpdates'
 import { waveformOptions } from '../renderer/src/hooks/useWaveform'
 import { removeAnalysisQueries } from '../renderer/src/lib/analysisQueries'
 import {
@@ -103,6 +118,7 @@ import type {
   SearchResult,
   Settings,
 } from '../shared/types'
+import type { Verification } from '../shared/verification'
 import { ipcHandlers } from './electronFake'
 import '../renderer/src/i18n'
 
@@ -114,6 +130,28 @@ export interface ScenarioOptions {
   settings: Partial<Settings>
   destination?: Destination
   onConflict?: (outputName: string) => ConflictChoice
+  verify?: boolean
+  sabotage?: Sabotage
+}
+
+// What a scenario does to a file or a library after Surco wrote it and before the self-check
+// reads it back, so the check has something real to catch.
+export interface Sabotage {
+  afterConvert?: (finalPath: string) => void | Promise<void>
+  beforeMusicCheck?: () => void | Promise<void>
+  beforeLibraryCheck?: () => void | Promise<void>
+}
+
+type QueueChecks = ReturnType<typeof queueVerification>
+
+type Library = 'rekordbox' | 'engine' | 'traktor'
+
+interface VerifyWiring {
+  registry: ReturnType<typeof appVerifyRegistry>
+  checks: QueueChecks
+  statuses: Map<string, Verification['status'][]>
+  retries: Map<string, 'rerun-job' | 'rechecked'>
+  inFlight: Set<Promise<unknown>>
 }
 
 const musicIsFake = (appleMusic as Record<string, unknown>).scenarioFake === true
@@ -150,6 +188,7 @@ function processTrackInMain(
   options: ScenarioOptions,
   errors: string[],
   appleMusicSends: string[],
+  verify?: VerifyWiring,
 ): Promise<ProcessResult> {
   const manifest = createTmpManifest(join(app.getPath('userData'), 'pending-tmp.json'), {
     readFileSync: (p) => readFileSync(p, 'utf8'),
@@ -195,7 +234,7 @@ function processTrackInMain(
       replacesPath,
     ) => {
       const s = getSettings()
-      return convertAudio(
+      const converting = convertAudio(
         input,
         output,
         format,
@@ -218,6 +257,13 @@ function processTrackInMain(
         foreignRemoved,
         replacesPath,
       )
+      const afterConvert = options.sabotage?.afterConvert
+      return afterConvert
+        ? converting.then(async (result) => {
+            await afterConvert(output)
+            return result
+          })
+        : converting
     },
     recordConversion,
     removeRenamedOriginal,
@@ -258,13 +304,25 @@ function processTrackInMain(
     },
     appleMusicEntryLocation: (pid) =>
       musicIsFake ? appleMusic.appleMusicEntryLocation(pid) : noMusic(),
+    appleMusicMediaFolder: async () =>
+      musicIsFake ? appleMusic.appleMusicMediaFolder() : undefined,
     appleMusicEntry: (pid) => (musicIsFake ? appleMusic.appleMusicEntry(pid) : noMusic()),
     deleteAppleMusic: (pid, label) =>
       musicIsFake ? appleMusic.deleteFromAppleMusic(pid, label) : noMusic(),
     carryAppleMusicHistory: (fromPid, toPid, label) =>
       musicIsFake ? appleMusic.carryOverToAppleMusicCopy(fromPid, toPid, label) : noMusic(),
-    markAppleMusicReplacing: async () => 'missing',
-    appleMusicPlaylists: async () => [],
+    markAppleMusicReplacing: async (pid, label, marked) =>
+      musicIsFake
+        ? appleMusic.appleMusicLimiter.run(() =>
+            appleMusic.markAppleMusicReplacing(pid, label, marked),
+          )
+        : 'missing',
+    appleMusicPlaylists: async (pid) =>
+      musicIsFake
+        ? appleMusic
+            .readMusicEntryFacts(pid, undefined, { withPlaylists: true })
+            .then((facts) => (facts === 'missing' ? [] : facts.playlists))
+        : [],
     fileBytes: (path) =>
       stat(path).then(
         (s) => s.size,
@@ -272,17 +330,41 @@ function processTrackInMain(
       ),
     followEngineSize,
     verifyFile: (expect, signal) => checkFile(expect, fileReaders, { signal }),
-    verifyMusic: async () => ({
-      place: 'appleMusic',
-      state: 'ok',
-      detail: { key: 'musicOneNoPlaylists' },
-    }),
+    verifyMusic: async (expect, signal) => {
+      await options.sabotage?.beforeMusicCheck?.()
+      return musicIsFake
+        ? checkAppleMusic(expect, musicReaders, { signal })
+        : { place: 'appleMusic', state: 'ok', detail: { key: 'musicOneNoPlaylists' } }
+    },
     redirectRepoint: (to, landed) => {
       redirectRekordboxRepoint(to, landed)
       return redirectNmlPatch(to, landed, toNmlLocation(landed))
     },
+    ...(verify && {
+      snapshotLibraries: (from: string) => {
+        const s = getSettings()
+        return snapshotLibraries(
+          from,
+          {
+            rekordbox: s.syncRekordbox ? rekordboxCollectionPath() : '',
+            engine: s.syncEngineDj ? engineLibraryPath() : '',
+          },
+          (p) => realpathSync(p),
+        )
+      },
+      registerVerification: (entry) =>
+        verify.registry.register({
+          ...entry,
+          traktorPatch: recordedNmlPatch(entry.source),
+          cueShiftMs: recordedRekordboxRepoint(entry.to)?.audio?.cueShiftMs,
+        }),
+      realPath: (p: string) => realpathSync(p),
+    }),
   })
 }
+
+const engineLibraryPath = (): string =>
+  currentLibraryStatus().engine.found ? getSettings().engineLibraryDir : ''
 
 const sessions = {
   rekordbox: createSessionBackup({}),
@@ -292,7 +374,7 @@ const sessions = {
 
 function libraryHost(errors: string[]): LibraryHost {
   return {
-    ensureTraktorClosed: async () => true,
+    ensureTraktorClosed: async () => !(await isTraktorRunning()),
     ensureRekordboxClosed: async () => !(await isRekordboxRunning()),
     ensureEngineDjClosed: async () => {
       if (!(await isEngineDjRunning())) return true
@@ -331,7 +413,7 @@ function storeInMemory() {
   }
 }
 
-function engineQueueInMemory(): RekordboxQueue {
+function engineQueueInMemory(checks: { current?: QueueChecks }): RekordboxQueue {
   return createRekordboxQueue({
     store: storeInMemory(),
     collection: () => getSettings().engineLibraryDir,
@@ -340,7 +422,11 @@ function engineQueueInMemory(): RekordboxQueue {
         ensureClosed,
         sessionBackup: (path) => sessions.engine.ensure(path),
       }),
-    repoint: (libraryDir, list) => repointEngineQueued(libraryDir, list, sessions),
+    repoint: async (libraryDir, list) => {
+      const results = await repointEngineQueued(libraryDir, list, sessions)
+      checks.current?.repointed('engine', results)
+      return results
+    },
     nodeStamps: async () => ({}),
     onChange: () => {},
     addsTracks: false,
@@ -348,7 +434,40 @@ function engineQueueInMemory(): RekordboxQueue {
   })
 }
 
-function rekordboxQueueInMemory(): RekordboxQueue {
+const traktorWritePath = (): string => {
+  const path = getSettings().traktorNmlPath
+  return path && existsSync(path) ? path : ''
+}
+
+function traktorQueueInMemory(checks: { current?: QueueChecks }): RekordboxQueue<QueuedNmlPatch> {
+  return createRekordboxQueue<QueuedNmlPatch>({
+    store: storeInMemory(),
+    collection: traktorWritePath,
+    configured: () => getSettings().traktorNmlPath,
+    applyBatch: (nml, ops, ensureClosed) =>
+      applyTraktorBatch(nml, ops, { ensureClosed, session: sessions.traktor }),
+    repoint: async (nml, patches) => {
+      let write: TraktorWrite = 'failed'
+      const results = await syncQueuedPatches(
+        nml,
+        patches,
+        async (path, list) => {
+          const result = await syncCollection(path, list, sessions.traktor)
+          write = traktorWrite(list, result)
+          return result
+        },
+        bootVolumeName(),
+      )
+      checks.current?.repointed('traktor', results, write)
+      return results
+    },
+    nodeStamps: async () => ({}),
+    onChange: () => {},
+    addsTracks: false,
+  })
+}
+
+function rekordboxQueueInMemory(checks: { current?: QueueChecks }): RekordboxQueue {
   return createRekordboxQueue({
     store: storeInMemory(),
     collection: rekordboxCollectionPath,
@@ -360,10 +479,135 @@ function rekordboxQueueInMemory(): RekordboxQueue {
         sessionBackup: (path) => sessions.rekordbox.ensure(path),
         realPath: (p: string) => realpathSync(p),
       }),
-    repoint: (collectionPath, list) => repointRekordbox(collectionPath, list, sessions),
+    repoint: async (collectionPath, list) => {
+      const results = await repointRekordbox(collectionPath, list, sessions)
+      checks.current?.repointed('rekordbox', results)
+      return results
+    },
     nodeStamps: async (collectionPath) => readNodeStamps(collectionPath),
     onChange: () => {},
   })
+}
+
+interface Queues {
+  rekordbox: RekordboxQueue
+  engine: RekordboxQueue
+  traktor: RekordboxQueue<QueuedNmlPatch>
+}
+
+const libraryAt: Record<Library, () => string> = {
+  rekordbox: rekordboxCollectionPath,
+  engine: engineLibraryPath,
+  traktor: traktorWritePath,
+}
+
+const programClosed: Record<Library, () => Promise<boolean>> = {
+  rekordbox: async () => !(await isRekordboxRunning()),
+  engine: async () => !(await isEngineDjRunning()),
+  traktor: async () => !(await isTraktorRunning()),
+}
+
+const applyQueue = (queues: Queues, place: Library): Promise<QueueApply> =>
+  queues[place].apply(programClosed[place])
+
+function tracked<T>(inFlight: Set<Promise<unknown>>, work: Promise<T>): Promise<T> {
+  inFlight.add(work)
+  const done = () => inFlight.delete(work)
+  work.then(done, done)
+  return work
+}
+
+// The app's quiet apply: nothing is tried while the library is not there.
+const applyQuietly = (verify: VerifyWiring, queues: Queues, place: Library) => {
+  if (!libraryAt[place]()) return
+  void tracked(verify.inFlight, applyQueue(queues, place)).then(
+    (result) => verify.checks.settled(place, result),
+    () => verify.checks.settled(place, 'threw'),
+  )
+}
+
+// What the app's queue watch does once the program is seen closed (rekordboxQueueWatch.ts):
+// an apply that finds it open again, or a queue with nothing in it, reports nothing.
+async function applyOnClose(queues: Queues, place: Library, checks?: QueueChecks) {
+  if (!libraryAt[place]() || queues[place].isEmpty()) return
+  let result: QueueApply
+  try {
+    result = await applyQueue(queues, place)
+  } catch {
+    checks?.settled(place, { status: 'refused', reason: 'write-failed' })
+    return
+  }
+  if (!stillWaiting(result) && result.status !== 'empty') checks?.settled(place, result)
+}
+
+function verifyWiring(queues: Queues, checks: { current?: QueueChecks }): VerifyWiring {
+  const statuses = new Map<string, Verification['status'][]>()
+  const inFlight = new Set<Promise<unknown>>()
+  const registry = appVerifyRegistry({
+    emit: (trackId, verification) => {
+      statuses.set(trackId, [...(statuses.get(trackId) ?? []), verification.status])
+      sender.send('verify:update', trackId, verification)
+    },
+    paths: libraryAt,
+    realPath: (p) => realpathSync(p),
+    bootVolume: () => bootVolumeName(),
+    readMusic: async () => ({
+      place: 'appleMusic',
+      state: 'ok',
+      detail: { key: 'musicOneNoPlaylists' },
+    }),
+    queues: {
+      rekordbox: {
+        enqueue: queues.rekordbox.enqueue,
+        apply: () => applyQuietly(verify, queues, 'rekordbox'),
+        at: libraryAt.rekordbox,
+        holds: queues.rekordbox.holdsRepoint,
+      },
+      engine: {
+        enqueue: queues.engine.enqueue,
+        apply: () => applyQuietly(verify, queues, 'engine'),
+        at: libraryAt.engine,
+        holds: queues.engine.holdsRepoint,
+      },
+      traktor: {
+        enqueue: queues.traktor.enqueue,
+        apply: () => applyQuietly(verify, queues, 'traktor'),
+        at: libraryAt.traktor,
+        holds: queues.traktor.holdsRepoint,
+      },
+    },
+  })
+  const wired = queueVerification({
+    afterQueueApplied: (place, result, stillQueued) =>
+      tracked(inFlight, registry.afterQueueApplied(place, result, stillQueued)),
+    afterQueueWaits: (place) => tracked(inFlight, registry.afterQueueWaits(place)),
+  })
+  checks.current = wired
+  const verify: VerifyWiring = { registry, checks: wired, statuses, retries: new Map(), inFlight }
+  return verify
+}
+
+type LaterApply = { place: Library; start: () => Promise<QueueApply> }
+
+// The batch end in the app's order: the flush writes, the sabotage lands on what it wrote,
+// the libraries are read back for the tracks registered before this end, and only then do
+// the queue applies the flush asked for run, one after another, each judged as it lands.
+async function judgedFlush(
+  verify: VerifyWiring,
+  flush: () => Promise<FlushOutcome>,
+  later: LaterApply[],
+  sabotage: Sabotage | undefined,
+): Promise<void> {
+  const upTo = verify.registry.cut()
+  let outcome: FlushOutcome = { rekordbox: 'failed', engine: 'failed', traktor: 'failed' }
+  try {
+    outcome = await flush()
+  } finally {
+    await sabotage?.beforeLibraryCheck?.()
+    await verify.registry.afterFlush(outcome, upTo)
+  }
+  for (const { place, start } of later)
+    verify.checks.settled(place, await start().catch(() => 'threw' as const))
 }
 
 function scenarioApi(
@@ -371,8 +615,8 @@ function scenarioApi(
   errors: string[],
   appleMusicSends: string[],
   flushes: Promise<void>[],
-  rekordboxQueue: RekordboxQueue,
-  engineQueue: RekordboxQueue,
+  queues: Queues,
+  verify?: VerifyWiring,
 ): Api {
   const reservations = createOutputReservations()
   const expandedListeners = new Set<(paths: string[]) => void>()
@@ -428,7 +672,14 @@ function scenarioApi(
     traktorMembership: async () => ({}),
     engineMembership: async () => ({}),
     onRekordboxQueueChanged: () => () => {},
-    onVerifyUpdate: () => () => {},
+    onVerifyUpdate: (listener) => listen('verify:update', listener),
+    ...(verify && {
+      retryVerification: async (trackId) => {
+        const answer = await verify.registry.retry(trackId)
+        verify.retries.set(trackId, answer)
+        return answer
+      },
+    }),
     onRekordboxQueueApplied: () => () => {},
     engineCueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
     applyEngineCueQueue: async () => null,
@@ -542,29 +793,34 @@ function scenarioApi(
       sessions.engine.begin('run')
     },
     endConversionBatch: () => {
-      let applying: Promise<unknown> = Promise.resolve()
-      let applyingEngine: Promise<unknown> = Promise.resolve()
-      flushes.push(
+      const applies: Partial<Record<Library, Promise<QueueApply>>> = {}
+      const later: LaterApply[] = []
+      const applyLater = (place: Library) => () => {
+        if (!libraryAt[place]()) return
+        const start = () => applyQueue(queues, place)
+        if (verify) later.push({ place, start })
+        else applies[place] = start()
+      }
+      const flush = () =>
         flushConversionBatch(
           libraryHost(errors),
           sessions,
+          { enqueue: queues.rekordbox.enqueue, applyQuietly: applyLater('rekordbox') },
           {
-            enqueue: rekordboxQueue.enqueue,
-            applyQuietly: () => {
-              applying = rekordboxQueue.apply(async () => !(await isRekordboxRunning()))
-            },
+            enqueue: queues.traktor.enqueue,
+            state: queues.traktor.state,
+            applyQuietly: applyLater('traktor'),
           },
-          undefined,
-          {
-            enqueue: engineQueue.enqueue,
-            applyQuietly: () => {
-              applyingEngine = engineQueue.apply(async () => !(await isEngineDjRunning()))
-            },
-          },
-        ).then(() => Promise.all([applying, applyingEngine]).then(() => {})),
+          { enqueue: queues.engine.enqueue, applyQuietly: applyLater('engine') },
+        )
+      flushes.push(
+        verify
+          ? judgedFlush(verify, flush, later, options.sabotage)
+          : flush().then(() => Promise.all(Object.values(applies)).then(() => {})),
       )
     },
-    processTrack: (job) => processTrackInMain(job, reservations, options, errors, appleMusicSends),
+    processTrack: (job) =>
+      processTrackInMain(job, reservations, options, errors, appleMusicSends, verify),
   }
   return new Proxy(wired as Api, {
     get(target, key) {
@@ -620,6 +876,11 @@ export interface Scenario {
   rekordboxClosed: () => Promise<void>
   engineQueue: () => RekordboxQueueState
   engineClosed: () => Promise<void>
+  traktorClosed: () => Promise<void>
+  retry: (fileName: string) => Promise<'rerun-job' | 'rechecked'>
+  verification: (fileName: string) => Verification | undefined
+  statuses: (fileName: string) => Verification['status'][]
+  settled: () => Promise<void>
 }
 
 // The main process every scenario runs against: settings, the backup store, the real IPC
@@ -631,8 +892,8 @@ export interface MainBoot {
   errors: string[]
   sentToAppleMusic: string[]
   flushes: Promise<void>[]
-  rekordboxQueue: RekordboxQueue
-  engineQueue: RekordboxQueue
+  queues: Queues
+  verify?: VerifyWiring
   api: Api
 }
 
@@ -665,11 +926,25 @@ export function bootMain(options: ScenarioOptions): MainBoot {
   const errors: string[] = []
   const sentToAppleMusic: string[] = []
   const flushes: Promise<void>[] = []
-  const rekordboxQueue = rekordboxQueueInMemory()
-  const engineQueue = engineQueueInMemory()
-  engineQueueNow = engineQueue
-  const api = scenarioApi(options, errors, sentToAppleMusic, flushes, rekordboxQueue, engineQueue)
-  return { settings, trash, errors, sentToAppleMusic, flushes, rekordboxQueue, engineQueue, api }
+  const checks: { current?: QueueChecks } = {}
+  const queues: Queues = {
+    rekordbox: rekordboxQueueInMemory(checks),
+    engine: engineQueueInMemory(checks),
+    traktor: traktorQueueInMemory(checks),
+  }
+  engineQueueNow = queues.engine
+  const verify = options.verify ? verifyWiring(queues, checks) : undefined
+  const api = scenarioApi(options, errors, sentToAppleMusic, flushes, queues, verify)
+  return {
+    settings,
+    trash,
+    errors,
+    sentToAppleMusic,
+    flushes,
+    queues,
+    verify,
+    api,
+  }
 }
 
 export function closeMain(): void {
@@ -677,7 +952,7 @@ export function closeMain(): void {
 }
 
 export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
-  const { settings, trash, errors, sentToAppleMusic, flushes, rekordboxQueue, engineQueue, api } =
+  const { settings, trash, errors, sentToAppleMusic, flushes, queues, verify, api } =
     bootMain(options)
   const prompts: ConfirmModal[] = []
   const editorVerdicts = new Map<string, () => ReturnType<typeof useLibraryVerdict>>()
@@ -720,6 +995,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         rereadTrackMeta: library.rereadTrackMeta,
         onProcessError: (message, name) => errors.push(`${name}: ${message}`),
       })
+      useVerificationUpdates({ tracksRef: library.tracksRef, updateTrack: library.updateTrack })
       const quality = useQualityAnalysis({
         targetsRef: library.tracksRef,
         onErrors: (ids) => errors.push(`${ids.length} tracks could not be analysed`),
@@ -927,13 +1203,41 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
     trash,
     errors,
     sentToAppleMusic,
-    rekordboxWaiting: () => rekordboxQueue.state().tracks,
-    rekordboxClosed: async () => {
-      await rekordboxQueue.apply(async () => !(await isRekordboxRunning()))
+    rekordboxWaiting: () => queues.rekordbox.state().tracks,
+    rekordboxClosed: () => applyOnClose(queues, 'rekordbox', verify?.checks),
+    engineQueue: () => queues.engine.state(),
+    verification: (fileName) => trackNamed(fileName).verification,
+    statuses: (fileName) => verify?.statuses.get(trackNamed(fileName).id) ?? [],
+    settled: async () => {
+      if (!verify) throw new Error('scenario: settled() needs openSurco({ verify: true })')
+      await act(async () => {
+        await Promise.all(flushes)
+        while (verify.inFlight.size > 0) await Promise.allSettled([...verify.inFlight])
+      })
+      await waitFor(
+        () =>
+          expect(
+            tracks()
+              .filter((t) => t.status === 'done')
+              .map((t) => t.verification?.status ?? 'undefined')
+              .filter((status) => status === 'checking' || status === 'undefined'),
+          ).toEqual([]),
+        { timeout: 10_000 },
+      )
     },
-    engineQueue: () => engineQueue.state(),
-    engineClosed: async () => {
-      await engineQueue.apply(async () => !(await isEngineDjRunning()))
+    engineClosed: () => applyOnClose(queues, 'engine', verify?.checks),
+    traktorClosed: () => applyOnClose(queues, 'traktor', verify?.checks),
+    retry: async (fileName) => {
+      if (!verify) throw new Error('scenario: retry() needs openSurco({ verify: true })')
+      const id = trackNamed(fileName).id
+      verify.retries.delete(id)
+      await act(async () => {
+        await result.current.processing.retryVerification(id)
+        await Promise.all(flushes)
+      })
+      const answer = verify.retries.get(id)
+      if (!answer) throw new Error(`scenario: the retry of ${fileName} never reached main`)
+      return answer
     },
     prompts,
     drop: async (...paths) => {

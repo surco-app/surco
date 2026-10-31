@@ -1,9 +1,20 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync } from 'node:fs'
 import { readFile, stat, writeFile } from 'node:fs/promises'
-import { basename, join } from 'node:path'
+import { basename, extname, join } from 'node:path'
+import {
+  ByteVector,
+  Id3v2FrameIdentifier,
+  type Id3v2Tag,
+  Id3v2TextInformationFrame,
+  Picture,
+  PictureType,
+  File as TagFile,
+  TagTypes,
+} from 'node-taglib-sharp'
 import { vi } from 'vitest'
-import type { MusicSetResult } from '../main/applemusic'
+import type { MusicEntryFacts, MusicSetResult } from '../main/applemusic'
 import { coverThumbUrlForBytes } from '../main/coverThumbs'
+import { errorWithKey } from '../shared/errorKeys'
 import type { MusicReviewField, TrackMetadata } from '../shared/types'
 
 type AppleMusic = typeof import('../main/applemusic')
@@ -117,6 +128,121 @@ export const music = {
   playlist(persistentId: string): MusicPlaylist | undefined {
     return state.playlists.find((p) => p.persistentId === persistentId)
   },
+  add(filePath: string, meta: TrackMetadata): string {
+    const entry = importFile(filePath, meta)
+    retag(entry, meta, false)
+    return entry.persistentId
+  },
+  tag(persistentId: string, fields: Partial<Pick<MusicEntry, 'grouping' | 'artist'>>): void {
+    const entry = live(persistentId)
+    if (!entry) throw new Error(`scenario: no Music entry ${persistentId}`)
+    Object.assign(entry, fields)
+    rewriteFile(entry)
+  },
+  relocate(persistentId: string, path: string): void {
+    const entry = live(persistentId)
+    if (!entry) throw new Error(`scenario: no Music entry ${persistentId}`)
+    entry.location = realpathSync(path)
+  },
+}
+
+const isWav = (path: string) => extname(path).toLowerCase() === '.wav'
+const sameTags = (a: MusicEntry, b: Pick<MusicEntry, 'title' | 'artist' | 'album'>) =>
+  sameIgnoringCase(a.title, b.title) &&
+  sameIgnoringCase(a.artist, b.artist) &&
+  sameIgnoringCase(a.album, b.album)
+
+function importFile(filePath: string, meta: TrackMetadata): MusicEntry {
+  if (!existsSync(filePath) || filePath.toLowerCase().endsWith('.flac'))
+    throw new Error(TAHOE_NO_ADD)
+  const read = isWav(filePath)
+    ? { title: basename(filePath, extname(filePath)), artist: '', album: '' }
+    : { title: meta.title, artist: meta.artist, album: meta.album }
+  const existing = fileTracks().find((e) => sameTags(e, read))
+  if (existing) return existing
+  const entry = music.addEntry({ location: landing(filePath) })
+  if (isWav(filePath)) entry.title = read.title
+  else writeTags(entry, meta, false)
+  return entry
+}
+
+function landing(filePath: string): string {
+  const media = state.mediaFolder
+  if (!media || filePath.normalize('NFC').startsWith(`${media.normalize('NFC')}/`)) return filePath
+  const folder = isWav(filePath) ? join(media, 'Music', 'Unknown Artist', 'Unknown Album') : media
+  mkdirSync(folder, { recursive: true })
+  const location = join(folder, basename(filePath))
+  copyFileSync(filePath, location)
+  return location
+}
+
+const GRP1 = new Id3v2FrameIdentifier('GRP1', 'GRP1', 'GP1')
+const ID3_FILES = new Set(['.mp3', '.aiff', '.aif'])
+
+function rewriteFile(entry: MusicEntry): void {
+  const path = fileOf(entry)
+  if (!path || isWav(path)) return
+  const file = TagFile.createFromPath(path)
+  try {
+    const id3 = ID3_FILES.has(extname(path).toLowerCase())
+    const tag = id3 ? (file.getTag(TagTypes.Id3v2, true) as Id3v2Tag) : file.tag
+    tag.title = entry.title
+    tag.performers = entry.artist ? [entry.artist] : []
+    tag.albumArtists = entry.albumArtist ? [entry.albumArtist] : []
+    tag.album = entry.album
+    tag.genres = entry.genre ? [entry.genre] : []
+    tag.comment = entry.comment
+    tag.year = entry.year
+    tag.track = entry.trackNumber
+    tag.disc = entry.discNumber
+    tag.beatsPerMinute = entry.bpm
+    if (id3) {
+      const frames = tag as Id3v2Tag
+      for (const fr of frames.frames.filter((f) => f.frameId.toString() === 'GRP1'))
+        frames.removeFrame(fr)
+      if (entry.grouping) {
+        const grp1 = Id3v2TextInformationFrame.fromIdentifier(GRP1)
+        grp1.text = [entry.grouping]
+        frames.addFrame(grp1)
+      }
+    } else tag.grouping = entry.grouping
+    if (entry.artwork) {
+      const picture = Picture.fromData(ByteVector.fromByteArray(entry.artwork))
+      picture.type = PictureType.FrontCover
+      tag.pictures = [picture]
+    }
+    file.save()
+  } finally {
+    file.dispose()
+  }
+}
+
+function retag(entry: MusicEntry, meta: TrackMetadata, clear: boolean, coverPath?: string) {
+  writeTags(entry, meta, clear, coverPath)
+  rewriteFile(entry)
+}
+
+function entryFacts(
+  persistentId: string,
+  oldPersistentId?: string,
+  withPlaylists = false,
+): MusicEntryFacts | 'missing' {
+  const entry = live(persistentId)
+  if (!entry) return 'missing'
+  const facts: MusicEntryFacts = {
+    location: fileOf(entry),
+    name: entry.title,
+    artist: entry.artist,
+    album: entry.album,
+    artworks: entry.artwork ? 1 : 0,
+    playlists: withPlaylists
+      ? state.playlists
+          .filter((p) => !p.smart && p.entries.includes(persistentId))
+          .map((p) => p.name)
+      : [],
+  }
+  if (oldPersistentId !== undefined) facts.oldExists = live(oldPersistentId) !== undefined
+  return facts
 }
 
 function secondsOnly(date: Date): string {
@@ -272,29 +398,47 @@ export function appleMusicModule(real: AppleMusic): AppleMusic {
       throw new Error(`scenario: unexpected osascript\n${script}`)
     },
     addToAppleMusic: async (filePath, meta, coverPath) => {
-      if (!existsSync(filePath) || filePath.toLowerCase().endsWith('.flac'))
-        throw new Error(TAHOE_NO_ADD)
-      let location = filePath
-      if (state.mediaFolder) {
-        mkdirSync(state.mediaFolder, { recursive: true })
-        location = join(state.mediaFolder, basename(filePath))
-        copyFileSync(filePath, location)
-      }
-      const entry = music.addEntry({ location })
-      writeTags(entry, meta, false, coverPath)
+      const name = basename(filePath, extname(filePath))
+      const preexisting = state.entries
+        .filter(
+          (e) =>
+            (sameIgnoringCase(e.title, meta.title) && sameIgnoringCase(e.artist, meta.artist)) ||
+            sameIgnoringCase(e.title, name),
+        )
+        .map((e) => e.persistentId)
+      const entry = importFile(filePath, meta)
+      if (preexisting.includes(entry.persistentId))
+        throw errorWithKey('appleMusicAddReturnedOld', filePath)
+      retag(entry, meta, false, coverPath)
       state.added.push({ path: filePath, meta, coverPath, persistentId: entry.persistentId })
       return entry.persistentId
     },
     updateInAppleMusic: async (persistentId, meta, coverPath) => {
       const entry = live(persistentId)
       if (!entry) return null
-      writeTags(entry, meta, true, coverPath)
+      retag(entry, meta, true, coverPath)
       state.updated.push({ persistentId, meta, coverPath })
       return entry.persistentId
     },
     appleMusicEntryLocation: async (persistentId) => {
       const entry = live(persistentId)
       return entry ? fileOf(entry) : ''
+    },
+    appleMusicEntry: async (persistentId) => {
+      const entry = live(persistentId)
+      return entry ? { label: label(entry), path: fileOf(entry) } : { label: '', path: '' }
+    },
+    appleMusicMediaFolder: async () => state.mediaFolder ?? undefined,
+    readMusicEntryFacts: async (persistentId, oldPersistentId, options) =>
+      entryFacts(persistentId, oldPersistentId, options?.withPlaylists),
+    markAppleMusicReplacing: async (persistentId, expectedLabel, marked) => {
+      const entry = live(persistentId)
+      if (!entry) return 'missing'
+      const mark = real.REPLACING_MARK
+      if (!sameIgnoringCase(label(entry), marked ? expectedLabel : `${expectedLabel}${mark}`))
+        return 'mismatch'
+      entry.title = marked ? `${entry.title}${mark}` : entry.title.slice(0, -mark.length)
+      return 'set'
     },
     revealInAppleMusic: async (persistentId) => {
       if (!live(persistentId)) throw new Error(REVEAL_GONE)
@@ -332,7 +476,8 @@ export function appleMusicModule(real: AppleMusic): AppleMusic {
     },
     dumpAppleMusicLibrary: async () => real.parseLibraryDump(libraryDump()),
     dumpMusicReview: async () => real.parseReviewDump(reviewDump()),
-    musicFileEntries: (candidates, launch) => real.musicFileEntries(candidates, launch, run),
+    musicFileEntries: (candidates, launch, _run, keyOf) =>
+      real.musicFileEntries(candidates, launch, run, keyOf),
     musicFileLocations: () => real.musicFileLocations(run),
     setAppleMusicField: async (
       persistentId,
@@ -346,6 +491,7 @@ export function appleMusicModule(real: AppleMusic): AppleMusic {
       if (location !== undefined && !same(fileOf(entry), location)) return 'mismatch'
       if (!same(entry[field], from)) return 'mismatch'
       entry[field] = to
+      rewriteFile(entry)
       state.fieldsSet.push({ persistentId, field, from, to })
       return 'set'
     },
