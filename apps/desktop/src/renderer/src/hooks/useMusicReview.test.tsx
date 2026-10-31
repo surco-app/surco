@@ -2084,6 +2084,22 @@ describe('damage in the list review', () => {
     expect(api.syncLibraryTags).not.toHaveBeenCalled()
   })
 
+  // The list shows what was read before the repair; without a re-read the row kept the
+  // damaged genre until the file was loaded again.
+  it('re-reads the row of a repaired genre, and again after undoing it', async () => {
+    const onFilesChanged = vi.fn()
+    damageApi()
+    const { result } = hook({ onFilesChanged })
+    await waitFor(() => expect(result.current.damage).toHaveLength(2))
+    await act(() => result.current.apply())
+    expect(onFilesChanged).toHaveBeenCalledWith([
+      { path: '/m/a.aiff', fields: { genre: { from: '', to: 'House; Deep House' } } },
+    ])
+    onFilesChanged.mockClear()
+    await act(() => result.current.undo())
+    expect(onFilesChanged).toHaveBeenCalledWith([{ path: '/m/a.aiff', fields: {} }])
+  })
+
   it('hides an ignored finding the way it hides a spelling', async () => {
     const saveIgnored = vi.fn()
     damageApi()

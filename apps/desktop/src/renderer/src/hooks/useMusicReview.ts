@@ -645,7 +645,20 @@ export function useMusicReview({
         )
         if (librarySync !== 'failed') librarySync = synced
       }
-      const changedFiles = tagUpdatesOf(outcomes, 'apply')
+      const repairedGenres = damageOutcomes.flatMap((o): LibraryTagUpdate[] => {
+        const repair = repairs.find((r) => r.id === o.id)?.repair
+        return o.state === 'repaired' && repair?.target === 'genre'
+          ? [
+              {
+                path: repair.path,
+                fields: {
+                  genre: { from: byId.get(repair.path)?.genre ?? repair.from, to: repair.to },
+                },
+              },
+            ]
+          : []
+      })
+      const changedFiles = [...tagUpdatesOf(outcomes, 'apply'), ...repairedGenres]
       const trashed = replaced.filter((r) => r.fileTrashed).map((r) => r.from)
       if (changedFiles.length || trashed.length) source.settle?.(changedFiles, trashed)
       if (changedFiles.length) onFilesChanged(changedFiles)
@@ -682,6 +695,7 @@ export function useMusicReview({
     fixes,
     removals,
     repairs,
+    byId,
     load,
     scanDamage,
     onFilesChanged,
@@ -765,7 +779,12 @@ export function useMusicReview({
           },
           () => 'failed' as const,
         )
-      const back = tagUpdatesOf(restored, 'undo')
+      const back = [
+        ...tagUpdatesOf(restored, 'undo'),
+        ...backedUp
+          .filter((d) => d.id.startsWith('genre-') && !damageLeft.includes(d))
+          .map((d): LibraryTagUpdate => ({ path: d.id.slice(d.id.indexOf('\0') + 1), fields: {} })),
+      ]
       if (back.length) source.settle?.(back, [])
       if (back.length) onFilesChanged(back)
       setPhase({ name: 'verifying' })
