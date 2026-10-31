@@ -1,9 +1,9 @@
 name: Stats
 
 # GitHub keeps only today's download totals, so the stats page's history is whatever this
-# stores each day. It lives on its own `stats` branch, which the page reads straight from
-# raw.githubusercontent.com: a daily commit on main would redeploy the site every day and
-# leave every local main behind origin.
+# stores each day. It lives on a `stats` branch of the releases repo, which the page reads
+# straight from raw.githubusercontent.com: a commit on main would redeploy the site every
+# time, and a branch of this repo gets a failed Vercel build per commit.
 on:
   schedule:
     - cron: '17 * * * *'
@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency: stats
 
@@ -27,12 +27,18 @@ jobs:
         with:
           node-version: 24
 
-      - name: Check out the stats branch, or start it
+      - name: Check out the stats branch of the releases repo, or start it
+        env:
+          RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: |
-          if git fetch --depth=1 origin stats:stats; then
-            git worktree add "$RUNNER_TEMP/stats" stats
-          else
-            git worktree add --orphan -b stats "$RUNNER_TEMP/stats"
+          dir="$RUNNER_TEMP/stats"
+          git init -q -b stats "$dir"
+          git -C "$dir" remote add origin \
+            "https://x-access-token:${RELEASES_TOKEN}@github.com/surco-app/surco-releases.git"
+          if git -C "$dir" fetch --depth=1 origin stats; then
+            git -C "$dir" reset --hard FETCH_HEAD
+          elif git fetch --depth=1 origin stats; then
+            git show FETCH_HEAD:stats.json > "$dir/stats.json"
           fi
 
       - name: Record today's totals

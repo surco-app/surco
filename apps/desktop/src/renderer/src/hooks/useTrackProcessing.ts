@@ -400,7 +400,12 @@ export function useTrackProcessing({
           trim: track.trim,
           overwriteOriginal: overwriteOverride ?? destination?.overwriteOriginal,
           addToAppleMusic: destination?.addToAppleMusic,
-          keepOutputCopy: destination?.keepOutputCopy,
+          keepOutputCopy:
+            destination &&
+            (destination.keepOutputCopy ||
+              (destination.addToAppleMusic &&
+                !!settings?.addToAppleMusic &&
+                !!settings.keepOutputCopy)),
           convertBesideOriginal: destination?.convertBesideOriginal,
           previousOutputPath: track.outputPath,
           previousOutputIdentity: track.outputIdentity,

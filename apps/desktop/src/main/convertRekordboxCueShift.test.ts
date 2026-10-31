@@ -14,6 +14,7 @@ vi.mock('./rekordboxBatch', () => ({ recordRekordboxRepoint: vi.fn() }))
 
 import type { TrackMetadata } from '../shared/types'
 import { convertAudio } from './ffmpeg'
+import { configureOriginalKeeper } from './originalKeeper'
 import { recordRekordboxRepoint } from './rekordboxBatch'
 
 // Reported 23/10 by a DJ ("the cues get lost on MP3s") and measured in the user's own
@@ -161,25 +162,32 @@ describe('what a conversion tells rekordbox about its cues', () => {
     expect(recorded()?.audio).toBeUndefined()
   })
 
-  // rekordbox starts every .m4a's timeline 2112 samples in (rekordboxTimeline.ts), ALAC as
-  // much as AAC, so the same samples moved into or out of one still sit 48 ms elsewhere.
+  // Measured in rekordbox 7 on 31/10: an ALAC .m4a, from ffmpeg or from Apple, put its first
+  // beat at the same millisecond as the AIFF it was made from, so it is one more PCM format.
   it.each([
-    ['wav', 'alac', 'pcm_s16le', 'm4a', 48],
-    ['m4a', 'wav', 'alac', 'wav', -48],
-  ])(
-    'moves the cues converting %s to %s though the samples are kept',
-    async (from, to, codec, ext, ms) => {
-      const src = join(dir, `alac-${from}-to-${to}.${from}`)
-      pcm(src, codec)
-      await convertAudio(
-        src,
-        join(dir, `alac-${from}-to-${to}-out.${ext}`),
-        to as 'wav' | 'alac',
-        meta,
-      )
-      expect(recorded()?.audio).toEqual({ cueShiftMs: ms })
-    },
-  )
+    ['wav', 'alac', 'pcm_s16le', 'm4a'],
+    ['m4a', 'wav', 'alac', 'wav'],
+  ])('leaves the analysis and cues alone converting %s to %s', async (from, to, codec, ext) => {
+    const src = join(dir, `alac-${from}-to-${to}.${from}`)
+    pcm(src, codec)
+    await convertAudio(
+      src,
+      join(dir, `alac-${from}-to-${to}-out.${ext}`),
+      to as 'wav' | 'alac',
+      meta,
+    )
+    expect(recorded()).toBeDefined()
+    expect(recorded()?.audio).toBeUndefined()
+  })
+
+  // The same session measured an AAC that ffmpeg encodes 23 ms late in rekordbox, the 1024
+  // samples of priming its edit list declares, not the 48 ms of Apple's 2112.
+  it('moves the cues by the priming an ffmpeg AAC declares converting it to WAV', async () => {
+    const src = join(dir, 'aac-to-wav.m4a')
+    pcm(src, 'aac')
+    await convertAudio(src, join(dir, 'aac-to-wav.wav'), 'wav', meta)
+    expect(recorded()?.audio).toEqual({ cueShiftMs: -23 })
+  })
 
   // Trimming or normalizing changes the samples between two lossless formats, so rekordbox
   // has to reanalyse and the cues have to follow the trim.
@@ -355,6 +363,91 @@ describe('what a conversion tells Engine DJ about its cues', () => {
     )
     expect(readFileSync(src).length).not.toBe(size)
     expect(recorded()).toMatchObject({ from: src, to: src, fromBytes: size })
+  })
+
+  // Retagging or normalizing in place moves no cue but still changes the file under Engine's
+  // row, which records its size: the write needs the old one to tell it is still owed.
+  it('carries the source’s size from before a rewrite in place that moved no cue', async () => {
+    const src = join(dir, 'engine-retag.wav')
+    pcm(src, 'pcm_s16le')
+    const size = readFileSync(src).length
+    await convertAudio(src, src, 'wav', { ...meta, title: 'A much longer title than before' })
+    expect(readFileSync(src).length).not.toBe(size)
+    expect(recorded()).toMatchObject({ from: src, to: src, fromBytes: size })
+    expect(recorded()?.engineShift).toBeUndefined()
+  })
+
+  // The original kept for a restore carries the way back (the cut put back, the source's
+  // rate and its length) over the file this conversion wrote, and the move it made, so
+  // Engine's row can follow the original when it returns and the cut file if it comes back.
+  it.each([
+    [
+      'a cut',
+      { startSec: 0.5 },
+      undefined,
+      { trimmedMs: -500, sampleCount: 88200 },
+      { trimmedMs: 500, sampleCount: 66150 },
+    ],
+    [
+      'a resample',
+      undefined,
+      { sampleRate: '48000' },
+      { trimmedMs: 0, sampleRateHz: 44100, sampleCount: 88200 },
+      { trimmedMs: 0, sampleRateHz: 48000, sampleCount: 96000 },
+    ],
+  ] as const)(
+    'keeps with the original the way back from %s in place',
+    async (_, trim, quality, back, forward) => {
+      const src = join(dir, `engine-back-${quality ? 'rate' : 'cut'}.wav`)
+      pcm(src, 'pcm_s16le')
+      const keeper = vi.fn(async () => null)
+      configureOriginalKeeper(keeper)
+      try {
+        await convertAudio(
+          src,
+          src,
+          'wav',
+          meta,
+          undefined, // coverPath
+          undefined, // normalize
+          undefined, // removeCover
+          quality,
+          undefined, // onChild
+          undefined, // onTmp
+          undefined, // finderCovers
+          undefined, // declick
+          trim,
+        )
+      } finally {
+        configureOriginalKeeper(null)
+      }
+      expect(keeper).toHaveBeenCalledWith(
+        src,
+        'replaced',
+        src,
+        expect.objectContaining({
+          engine: { shift: back, over: readFileSync(src).length, undo: forward },
+        }),
+      )
+    },
+  )
+
+  it('keeps no way back with an original whose audio moved nowhere', async () => {
+    const src = join(dir, 'engine-back-none.wav')
+    pcm(src, 'pcm_s16le')
+    const keeper = vi.fn(async () => null)
+    configureOriginalKeeper(keeper)
+    try {
+      await convertAudio(src, src, 'wav', { ...meta, title: 'Retagged' })
+    } finally {
+      configureOriginalKeeper(null)
+    }
+    expect(keeper).toHaveBeenCalledWith(
+      src,
+      'replaced',
+      src,
+      expect.not.objectContaining({ engine: expect.anything() }),
+    )
   })
 
   it('carries no size when the conversion lands on another path', async () => {

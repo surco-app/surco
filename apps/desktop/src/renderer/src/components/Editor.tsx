@@ -231,6 +231,7 @@ interface Props {
   onExportCollection: () => void
   readFullTrack: (id: string) => Promise<TrackItem | undefined>
   librarySources?: readonly PlaylistSource[]
+  openSource?: PlaylistSource | null
   onRevealIn?: (source: PlaylistSource) => void
   // Re-checks a conversion whose re-read did not add up; App owns the job runner.
   onRetryVerification?: (trackId: string) => Promise<void>
@@ -301,6 +302,7 @@ export const Editor = memo(function Editor({
   onExportCollection,
   readFullTrack,
   librarySources = [],
+  openSource = null,
   onRevealIn,
   onRetryVerification,
   onOpenBackup,
@@ -1830,6 +1832,7 @@ export const Editor = memo(function Editor({
           tagsOnly={tagsOnlyExport}
           addToAppleMusic={picked.addToAppleMusic}
           djTargets={reachedPrograms({ addToRekordbox, addToTraktor, addToEngineDj }, reachable)}
+          openSource={openSource}
           destination={destination}
           destinations={destinationChoices}
           outputFolder={baseName(outputDir.replace(/[\\/]+$/, ''))}

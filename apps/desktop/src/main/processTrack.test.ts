@@ -1921,6 +1921,33 @@ describe('runProcessTrack — Apple Music only', () => {
   })
 })
 
+// The default Mac destination, "Apple Music + keep a copy in the output folder". Ruled
+// 31/10: rekordbox and Engine follow the folder copy, the file the DJ manages, as in any
+// conversion that is not to Music; Music swaps its own entry the way a replacement does,
+// so the DJ keeps that entry's playlists and plays.
+describe('runProcessTrack — Apple Music keeping the output-folder copy', () => {
+  it('replaces the Music entry with its history while the libraries follow the folder copy', async () => {
+    const redirectRepoint = vi.fn(() => true)
+    const deps = makeDeps({
+      platform: 'darwin',
+      settings: settings({ addToAppleMusic: true, keepOutputCopy: true, addToEngineDj: true }),
+      redirectRepoint,
+    })
+
+    const result = await runProcessTrack(
+      job({ musicPersistentId: 'old-id', replacesPath: '/m/old.mp3', replacesLabel: 'A - T' }),
+      deps,
+    )
+
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, undefined)
+    expect(deps.carryAppleMusicHistory).toHaveBeenCalledWith('old-id', 'added-id', 'A - T')
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('old-id', 'A - T')
+    expect(vi.mocked(deps.addToEngineDj).mock.calls[0]?.[0]).toBe('/out/Artist - Title.aiff')
+    expect(redirectRepoint).not.toHaveBeenCalled()
+    expect(result).toMatchObject({ outputPath: '/out/Artist - Title.aiff', inPlace: false })
+  })
+})
+
 // Measured 30/10: Music reads no tags from a WAV at import, so the copy it makes into its
 // Media folder lands in "Unknown Artist/Unknown Album" and tagging the entry afterwards never
 // moves it. A file already inside the Media folder is added where it is, so "Apple Music
@@ -3043,6 +3070,58 @@ describe('runProcessTrack — converting a library track to another format', () 
     expect(discarded).toHaveBeenCalledWith(kept)
   })
 
+  // Engine DJ's row records the size of the file it plays. Music's retag changes that size,
+  // and a row left on the old one reads as a file Surco broke.
+  it('tells Engine DJ the size the file an updated entry plays had before Music retagged it', async () => {
+    const followEngineSize = vi.fn()
+    const fileBytes = vi.fn(async () => 4096)
+    const deps = converting('/lib/A.aiff', { fileBytes, followEngineSize })
+
+    await runProcessTrack(
+      libraryJob({ inputPath: '/lib/A.wav', format: 'aiff', keepOutputCopy: true }),
+      deps,
+    )
+
+    expect(followEngineSize).toHaveBeenCalledWith('/lib/A.aiff', 4096)
+    expect(fileBytes.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(deps.updateInAppleMusic).mock.invocationCallOrder[0],
+    )
+  })
+
+  it('tells Engine DJ nothing when the entry was gone and Music retagged nothing', async () => {
+    const followEngineSize = vi.fn()
+    const deps = converting('/lib/A.aiff', {
+      updateInAppleMusic: vi.fn(async () => null),
+      fileBytes: vi.fn(async () => 4096),
+      followEngineSize,
+    })
+
+    await runProcessTrack(
+      libraryJob({ inputPath: '/lib/A.wav', format: 'aiff', keepOutputCopy: true }),
+      deps,
+    )
+
+    expect(followEngineSize).not.toHaveBeenCalled()
+  })
+
+  // The original the in-place rename retires is the row's own source: the conversion's
+  // repoint moves the row off it, and only while the row still holds the size it had.
+  it('leaves the size of the original the conversion retires to the conversion', async () => {
+    const followEngineSize = vi.fn()
+    const deps = converting('/lib/A.aiff', {
+      fileBytes: vi.fn(async () => 4096),
+      followEngineSize,
+    })
+
+    await runProcessTrack(
+      libraryJob({ format: 'aiff', overwriteOriginal: true, keepOutputCopy: true }),
+      deps,
+    )
+
+    expect(deps.updateInAppleMusic).toHaveBeenCalled()
+    expect(followEngineSize).not.toHaveBeenCalled()
+  })
+
   it('leaves Music alone when the renamed original has no room for its copy', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-pt-'))
     const source = join(dir, 'A.aiff')
@@ -3624,25 +3703,6 @@ describe('runProcessTrack — checking what it wrote', () => {
     )
   })
 
-  it('Traktor is marked stranded when its entry could not follow the landed file', async () => {
-    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
-    const deps = makeDeps({
-      platform: 'darwin',
-      settings: settings({
-        addToAppleMusic: true,
-        keepOutputCopy: false,
-        syncTraktor: true,
-        traktorNmlPath: '/t/collection.nml',
-      }),
-      redirectRepoint: vi.fn(() => false),
-      registerVerification,
-    })
-
-    await runProcessTrack(job({ meta }), deps)
-
-    expect(registerVerification.mock.calls[0][0].traktorStranded).toBe(true)
-  })
-
   // Music copies the file into its Media folder when its preference says so, and then
   // plays that copy: the entry is held to the copy, the file check to what was written.
   const MEDIA = '/Users/me/Music/Media'
@@ -3792,7 +3852,6 @@ describe('runProcessTrack — checking what it wrote', () => {
   // moves them to the file Music plays, or the libraries would be pointed at nothing.
   it('Music only points the libraries at a location read late', async () => {
     const redirectRepoint = vi.fn<NonNullable<ProcessTrackDeps['redirectRepoint']>>(() => false)
-    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
     const deps = makeDeps({
       platform: 'darwin',
       settings: settings({ addToAppleMusic: true, keepOutputCopy: false }),
@@ -3801,7 +3860,6 @@ describe('runProcessTrack — checking what it wrote', () => {
         .mockResolvedValueOnce('')
         .mockResolvedValue('/Users/me/Music/Media/Late.aiff'),
       redirectRepoint,
-      registerVerification,
     })
 
     await runProcessTrack(job({ meta }), deps)
@@ -3810,7 +3868,6 @@ describe('runProcessTrack — checking what it wrote', () => {
       expect.stringMatching(/Artist - Title\.aiff$/),
       '/Users/me/Music/Media/Late.aiff',
     )
-    expect(registerVerification.mock.calls[0][0].traktorStranded).toBe(true)
   })
 
   // With no file to follow, what the libraries hold cannot be judged: their repoints still

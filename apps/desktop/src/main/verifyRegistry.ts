@@ -19,9 +19,8 @@ type Library = 'rekordbox' | 'engine' | 'traktor'
 
 // One conversion as the job left it: the file and Music already judged in verification, the
 // libraries it will touch still checking. from is the file the libraries followed (the copy
-// replaced, else the source), source the file converted. traktorStranded marks a patch that
-// could not follow its file (see redirectNmlPatch). engineStep marks an Engine row the job's
-// own Engine DJ step wrote, which is there whatever the flush did.
+// replaced, else the source), source the file converted. engineStep marks an Engine row the
+// job's own Engine DJ step wrote, which is there whatever the flush did.
 export interface VerifyEntry {
   trackId: string
   from: string
@@ -35,14 +34,13 @@ export interface VerifyEntry {
   rekordbox?: RekordboxBefore
   engine?: EngineBefore
   traktorPatch?: NmlPatch
-  traktorStranded?: boolean
   engineStep?: boolean
   // How the conversion moved the cues in rekordbox's timeline (the repoint's audio), handed
   // again with a repoint the library never applied.
   cueShiftMs?: number
   // The same move as Engine DJ counts it, handed again with the repoint and expected of the row.
   engineShift?: EngineShift
-  // The source's size before a rewrite in place, handed again with that shift.
+  // The source's size before a rewrite in place, handed again with the repoint.
   fromBytes?: number
   // The original held under «Nunca» for this verdict (claimHeldOriginal).
   heldOriginal?: string
@@ -263,7 +261,6 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
             patch,
             before,
             cues: traktorCues.get(e.trackId),
-            stranded: e.traktorStranded ?? false,
           },
         })
     }

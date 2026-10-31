@@ -154,6 +154,10 @@ export interface ProcessTrackDeps {
   // Whether any library entry plays this file, looked up by the names it may carry.
   // Rejects when Music could not be asked.
   appleMusicHoldsFile?: (path: string, titles: string[]) => Promise<boolean>
+  // A file's size on disk, undefined when it cannot be read.
+  fileBytes?: (path: string) => Promise<number | undefined>
+  // Engine DJ's row for a file rewritten on its own path takes its new size (engineSizeFollow).
+  followEngineSize?: (file: string, fromBytes: number) => void
   // Shown only on a real output collision; returns the user's choice. Encapsulates the
   // Electron message box so the branches below stay unit-testable.
   // reservedOnly: nothing is on disk under that name yet, only another job's claim on it.
@@ -930,20 +934,27 @@ export async function runProcessTrack(
             // just write is copied first. The original a rename retires below is copied now,
             // as it was, and the retirement only removes it.
             let preMusic: TrashEntry | null = null
-            if (
+            const retagged =
               job.musicPersistentId &&
               entry?.path &&
               entry.path.normalize('NFC') !== target.normalize('NFC')
-            )
+                ? entry.path
+                : undefined
+            if (retagged)
               preMusic = entryMayPlaySource
                 ? await keepBeforeMusicRewrite(job.inputPath, {
                     outputPath: target,
                     reencodes: true,
                   })
-                : await keepBeforeMusicRewrite(entry.path)
+                : await keepBeforeMusicRewrite(retagged)
+            // The original the rename retires is left to the conversion's own repoint.
+            const fromBytes =
+              retagged && !entryMayPlaySource ? await deps.fileBytes?.(retagged) : undefined
             const updated = job.musicPersistentId
               ? await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)
               : null
+            if (updated && retagged && fromBytes !== undefined)
+              deps.followEngineSize?.(retagged, fromBytes)
             if (!updated && preMusic) {
               await discardBackup(preMusic).catch(() => undefined)
               preMusic = null
@@ -1134,7 +1145,6 @@ export async function runProcessTrack(
       music: musicExpect,
       rekordbox: before.rekordbox,
       engine: before.engine,
-      traktorStranded: landed?.traktorFollowed === false,
       engineStep: addedToEngineDj,
       heldOriginal,
       verification,

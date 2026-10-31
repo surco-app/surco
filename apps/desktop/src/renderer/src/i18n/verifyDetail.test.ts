@@ -91,6 +91,8 @@ const SENT: Record<VerifyDetailKey, CheckDetail['params'][]> = {
   engineOtherRow: [undefined],
   engineNoFileType: [undefined],
   engineSizeDiffers: [undefined],
+  engineSizeStale: [undefined],
+  engineSizeStaleCues: [{ field: 'quickCues' }, { field: 'beatData' }, { field: 'loops' }],
   enginePerformanceChanged: [{ field: 'quickCues' }, { field: 'beatData' }, { field: 'loops' }],
   engineCuesMisplaced: [{ field: 'quickCues' }, { field: 'beatData' }, { field: 'loops' }],
   engineUnreadable: [undefined],
@@ -129,4 +131,19 @@ describe('verification details', () => {
       expect(unread).toEqual([])
     },
   )
+
+  // A stale row left the cues, the grid or the loops behind: the line names which.
+  it.each(LOCALES)('%s names what of a stale Engine DJ row did not follow', (lng, locale) => {
+    const i18n = i18next.createInstance()
+    void i18n.init({
+      lng,
+      resources: { [lng]: { translation: locale } },
+      fallbackLng: false,
+      interpolation: { escapeValue: false },
+    })
+    const texts = ['quickCues', 'beatData', 'loops'].map((field) =>
+      detailText({ key: 'engineSizeStaleCues', params: { field } }, (k, o) => i18n.t(k, o), lng),
+    )
+    expect(new Set(texts).size).toBe(3)
+  })
 })

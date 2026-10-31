@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs'
-import { access, mkdir, mkdtemp, rm, rmdir, unlink } from 'node:fs/promises'
+import { access, mkdir, mkdtemp, rm, rmdir, stat, unlink } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, renderHook, waitFor } from '@testing-library/react'
@@ -16,6 +16,7 @@ import { replaceDuplicates } from '../main/duplicateReplace'
 import { applyEngineCuesBatch } from '../main/engineCuesWrite'
 import { addToEngineLibrary } from '../main/engineLibrary'
 import { isEngineDjRunning } from '../main/engineProcess'
+import { engineSizeFollower } from '../main/engineSizeFollow'
 import { expandPaths } from '../main/expand'
 import { convertAudio, toNmlLocation } from '../main/ffmpeg'
 import { fileIdentity, isSameFile, removeRenamedOriginal } from '../main/inplace'
@@ -43,6 +44,7 @@ import {
   beginRekordboxBatch,
   recordedRekordboxRepoint,
   redirectRekordboxRepoint,
+  stackRepoint,
 } from '../main/rekordboxBatch'
 import { readNodeStamps } from '../main/rekordboxMasterXml'
 import { applyRekordboxBatch } from '../main/rekordboxPlaylistWrite'
@@ -319,6 +321,12 @@ function processTrackInMain(
             .readMusicEntryFacts(pid, undefined, { withPlaylists: true })
             .then((facts) => (facts === 'missing' ? [] : facts.playlists))
         : [],
+    fileBytes: (path) =>
+      stat(path).then(
+        (s) => s.size,
+        () => undefined,
+      ),
+    followEngineSize,
     verifyFile: (expect, signal) => checkFile(expect, fileReaders, { signal }),
     verifyMusic: async (expect, signal) => {
       await options.sabotage?.beforeMusicCheck?.()
@@ -379,6 +387,17 @@ function libraryHost(errors: string[]): LibraryHost {
 
 let watcher: FolderWatcher | undefined
 
+// The IPC handlers are registered once, so the file follower reaches the Engine queue of
+// whichever scenario is running, as index.ts's reaches the app's.
+let engineQueueNow: RekordboxQueue | undefined
+const followEngineSize = engineSizeFollower({
+  enabled: () => getSettings().syncEngineDj,
+  enqueue: (ops, repoints) => engineQueueNow?.enqueue(ops, repoints),
+  apply: () => {
+    void engineQueueNow?.apply(async () => !(await isEngineDjRunning()))
+  },
+})
+
 function storeInMemory() {
   let stored: string | null = null
   return {
@@ -409,6 +428,7 @@ function engineQueueInMemory(checks: { current?: QueueChecks }): RekordboxQueue 
     nodeStamps: async () => ({}),
     onChange: () => {},
     addsTracks: false,
+    stack: stackRepoint,
   })
 }
 
@@ -888,15 +908,16 @@ export function bootMain(options: ScenarioOptions): MainBoot {
   configureBackupStore(trash, () => getSettings().backupPolicy)
   if (!ipcHandlers.has('audio:meta')) {
     registerAudioIpc((path) => mediaAccess.allow(path))
-    registerTrashIpc(trash, mediaAccess)
+    registerTrashIpc(trash, mediaAccess, { followEngineSize })
     registerShellIpc(mediaAccess)
-    if (musicIsFake) registerAppleMusicIpc()
+    if (musicIsFake) registerAppleMusicIpc({ followEngineSize })
     registerListReviewIpc(
       listReviewDeps({
         mediaAccess,
         tmp: { track: () => {}, untrack: () => {} },
         hostFor: () => libraryHost(errors),
         sessions,
+        followEngineSize,
       }),
     )
   }
@@ -909,6 +930,7 @@ export function bootMain(options: ScenarioOptions): MainBoot {
     engine: engineQueueInMemory(checks),
     traktor: traktorQueueInMemory(checks),
   }
+  engineQueueNow = queues.engine
   const verify = options.verify ? verifyWiring(queues, checks) : undefined
   const api = scenarioApi(options, errors, sentToAppleMusic, flushes, queues, verify)
   return {

@@ -46,6 +46,7 @@ export const ERROR_KEYS = [
   'musicbrainzRateLimit',
   'noRoomForBackup',
   'noRoomBeforeMusicRewrite',
+  'noBackup',
   'appleMusicEntryUnread',
   'conversionCancelled',
   'verifyUnknownTrack',

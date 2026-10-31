@@ -15,7 +15,7 @@ import ScrollProgress from './ScrollProgress'
 
 // Written once a day by .github/workflows/stats.yml on its own branch, so the page reads
 // fresh figures without a redeploy.
-const STATS_URL = 'https://raw.githubusercontent.com/surco-app/surco/stats/stats.json'
+const STATS_URL = 'https://raw.githubusercontent.com/surco-app/surco-releases/stats/stats.json'
 
 const W = 720
 const LEFT = 52

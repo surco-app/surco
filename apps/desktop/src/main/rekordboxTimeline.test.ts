@@ -57,6 +57,71 @@ function id3(size: number): Buffer {
   return tag
 }
 
+function box(type: string, ...body: Buffer[]): Buffer {
+  const head = Buffer.alloc(8)
+  head.writeUInt32BE(8 + body.reduce((n, b) => n + b.length, 0), 0)
+  head.write(type, 4, 'latin1')
+  return Buffer.concat([head, ...body])
+}
+
+interface TrackSpec {
+  codec: string
+  handler?: string
+  timescale?: number
+  edits?: number[]
+  wideEdits?: boolean
+  truncatedEdits?: boolean
+}
+
+function track(t: TrackSpec): Buffer {
+  const mdhd = Buffer.alloc(24)
+  mdhd.writeUInt32BE(t.timescale ?? 44100, 12)
+  const hdlr = Buffer.alloc(25)
+  hdlr.write(t.handler ?? 'soun', 8, 'latin1')
+  const stsd = box('stsd', Buffer.from([0, 0, 0, 0, 0, 0, 0, 1]), box(t.codec, Buffer.alloc(28)))
+  const media = box('mdia', box('mdhd', mdhd), box('hdlr', hdlr), box('minf', box('stbl', stsd)))
+  if (t.truncatedEdits) return box('trak', media, box('edts', box('elst')))
+  if (!t.edits) return box('trak', media)
+  const entry = t.wideEdits ? 20 : 12
+  const elst = Buffer.alloc(8 + t.edits.length * entry)
+  elst[0] = t.wideEdits ? 1 : 0
+  elst.writeUInt32BE(t.edits.length, 4)
+  t.edits.forEach((mediaTime, i) => {
+    const at = 8 + i * entry
+    if (t.wideEdits) elst.writeBigInt64BE(BigInt(mediaTime), at + 8)
+    else elst.writeInt32BE(mediaTime, at + 4)
+  })
+  return box('trak', box('edts', box('elst', elst)), media)
+}
+
+function itunSmpb(priming: number): Buffer {
+  const smpb = ` 00000000 ${priming.toString(16).toUpperCase().padStart(8, '0')} 00000338 0000000000015888`
+  return box(
+    'udta',
+    box(
+      'meta',
+      Buffer.alloc(4),
+      box(
+        'ilst',
+        box(
+          '----',
+          box('mean', Buffer.alloc(4), Buffer.from('com.apple.iTunes')),
+          box('name', Buffer.alloc(4), Buffer.from('iTunSMPB')),
+          box('data', Buffer.from([0, 0, 0, 1, 0, 0, 0, 0]), Buffer.from(smpb)),
+        ),
+      ),
+    ),
+  )
+}
+
+function moov(...children: Buffer[]): Buffer {
+  return box('moov', ...children)
+}
+
+function appleM4a(codec: string, priming: number): Buffer {
+  return moov(track({ codec }), itunSmpb(priming))
+}
+
 describe('rekordboxLeadMs', () => {
   it('puts rekordbox one frame ahead of the editor on a LAME MP3, because rekordbox plays the Info frame as silence and Chromium skips it', () => {
     expect(rekordboxLeadMs(infoFrame(MPEG1_44K_STEREO, 32, 'LAME3.100'))).toBeCloseTo(
@@ -163,9 +228,62 @@ describe('rekordboxShiftMs', () => {
     expect(rekordboxShiftMs('.mp3', plain, 44100)).toBe(0)
   })
 
-  it('puts rekordbox the AAC priming ahead of ffmpeg on an M4A, which ffmpeg trims and rekordbox plays', () => {
+  it('puts rekordbox the priming an Apple AAC declares ahead of ffmpeg, which ffmpeg trims and rekordbox plays, measured +48 ms in rekordbox 7 on 31/10', () => {
+    expect(rekordboxShiftMs('.m4a', appleM4a('mp4a', 2112), 44100)).toBeCloseTo(
+      (2112 / 44100) * 1000,
+      3,
+    )
+    expect(rekordboxShiftMs('.m4a', appleM4a('mp4a', 1600), 44100)).toBeCloseTo(
+      (1600 / 44100) * 1000,
+      3,
+    )
+  })
+
+  it('keeps ALAC in step with PCM, measured at the same millisecond as the AIFF in rekordbox 7 on 31/10', () => {
+    expect(rekordboxShiftMs('.m4a', appleM4a('alac', 0), 44100)).toBe(0)
+    expect(rekordboxShiftMs('.m4a', appleM4a('alac', 2112), 44100)).toBe(0)
+  })
+
+  it('reads no priming on an AAC whose moov declares none, since ffmpeg then trims nothing and rekordbox sits where ffmpeg does', () => {
+    expect(rekordboxShiftMs('.m4a', moov(track({ codec: 'mp4a' })), 44100)).toBe(0)
+  })
+
+  it("falls back to Apple's 2112 samples only when the moov cannot be read, the AAC the collection held when measured", () => {
     expect(rekordboxShiftMs('.m4a', Buffer.alloc(0), 44100)).toBeCloseTo((2112 / 44100) * 1000, 3)
     expect(rekordboxShiftMs('.m4a', Buffer.alloc(0), 48000)).toBeCloseTo(44, 3)
+    expect(rekordboxShiftMs('.m4a', Buffer.from('not an mp4 at all'), 44100)).toBeCloseTo(
+      (2112 / 44100) * 1000,
+      3,
+    )
+  })
+
+  it('falls back instead of throwing on an edit list cut short at the end of the moov, so a malformed file never fails a conversion', () => {
+    expect(
+      rekordboxShiftMs('.m4a', moov(track({ codec: 'mp4a', truncatedEdits: true })), 44100),
+    ).toBe(0)
+  })
+
+  it('reads the sound track, not a chapter or cover track the file lists first', () => {
+    const file = moov(
+      track({ codec: 'text', handler: 'text', edits: [5000] }),
+      track({ codec: 'mp4a', edits: [1024] }),
+    )
+    expect(rekordboxShiftMs('.m4a', file, 44100)).toBeCloseTo((1024 / 44100) * 1000, 3)
+  })
+
+  it("counts the edit list in the track's own timescale, which need not be the sample rate", () => {
+    const file = moov(track({ codec: 'mp4a', timescale: 88200, edits: [2048] }))
+    expect(rekordboxShiftMs('.m4a', file, 44100)).toBeCloseTo((2048 / 88200) * 1000, 3)
+  })
+
+  it('reads a 64-bit edit list and skips an empty edit to the first one that plays media', () => {
+    const file = moov(track({ codec: 'mp4a', edits: [-1, 1024], wideEdits: true }))
+    expect(rekordboxShiftMs('.m4a', file, 44100)).toBeCloseTo((1024 / 44100) * 1000, 3)
+  })
+
+  it('takes the edit list over an iTunSMPB, the one ffmpeg follows when both are there', () => {
+    const file = moov(track({ codec: 'mp4a', edits: [1024] }), itunSmpb(2112))
+    expect(rekordboxShiftMs('.m4a', file, 44100)).toBeCloseTo((1024 / 44100) * 1000, 3)
   })
 
   it('keeps PCM formats in step, measured within 2 ms on WAV and AIFF', () => {
@@ -179,6 +297,76 @@ describe('rekordboxShiftOfFile', () => {
     const file = join(dir, 'shift.mp3')
     execFileSync(FF, ['-y', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1', file])
     expect(await rekordboxShiftOfFile(file, 44100)).toBeCloseTo((1152 / 44100) * 1000, 3)
+  })
+
+  it("keeps an ALAC that Surco's ffmpeg writes in step with PCM, whatever priming its edit list declares", async () => {
+    const file = join(dir, 'shift-alac.m4a')
+    execFileSync(FF, [
+      '-y',
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=duration=1',
+      '-c:a',
+      'alac',
+      file,
+    ])
+    const bytes = readFileSync(file)
+    bytes.writeInt32BE(1024, bytes.indexOf('elst', 0, 'latin1') + 4 + 8 + 4)
+    writeFileSync(file, bytes)
+    expect(await rekordboxShiftOfFile(file, 44100)).toBe(0)
+  })
+
+  it('finds the moov ahead of the audio, where Apple and a faststart file put it', async () => {
+    const file = join(dir, 'shift-aac-faststart.m4a')
+    execFileSync(FF, [
+      '-y',
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=duration=1',
+      '-c:a',
+      'aac',
+      '-movflags',
+      '+faststart',
+      file,
+    ])
+    const bytes = readFileSync(file)
+    expect(bytes.indexOf('moov', 0, 'latin1')).toBeLessThan(bytes.indexOf('mdat', 0, 'latin1'))
+    expect(await rekordboxShiftOfFile(file, 44100)).toBeCloseTo((1024 / 44100) * 1000, 3)
+  })
+
+  it("falls back to Apple's 2112 samples on an .m4a it cannot read", async () => {
+    const garbage = join(dir, 'garbage.m4a')
+    writeFileSync(garbage, Buffer.alloc(64, 0xff))
+    expect(await rekordboxShiftOfFile(garbage, 44100)).toBeCloseTo((2112 / 44100) * 1000, 3)
+    expect(await rekordboxShiftOfFile(join(dir, 'gone.m4a'), 44100)).toBeCloseTo(
+      (2112 / 44100) * 1000,
+      3,
+    )
+  })
+
+  it('reads the 1024 samples of priming an ffmpeg AAC declares in its edit list, measured +23 ms in rekordbox 7 on 31/10', async () => {
+    for (const rate of [44100, 48000]) {
+      const file = join(dir, `shift-aac-${rate}.m4a`)
+      execFileSync(FF, [
+        '-y',
+        '-v',
+        'error',
+        '-f',
+        'lavfi',
+        '-i',
+        `sine=duration=1:sample_rate=${rate}`,
+        '-c:a',
+        'aac',
+        file,
+      ])
+      expect(await rekordboxShiftOfFile(file, rate)).toBeCloseTo((1024 / rate) * 1000, 3)
+    }
   })
 
   it('reads no shift for a file it cannot open', async () => {

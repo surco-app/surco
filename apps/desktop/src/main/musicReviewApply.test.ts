@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { errorWithKey } from '../shared/errorKeys'
 import type { ActivityEvent, MusicFieldFix, TrashEntry } from '../shared/types'
 import { createActivity } from './activity'
 import type { PreparedRewrite, TagFieldChange } from './musicFieldWrite'
@@ -340,6 +341,25 @@ describe('applyMusicFixes in Activity', () => {
         phase: 'error',
         detailKey: 'activity.reviewFixFileFailed',
         detailParams: { error: 'no-backup' },
+      }),
+    ])
+  })
+
+  // The backup is taken before Music is asked, so a refused one leaves Music and the file as
+  // they were. Saying "changed in Music" there sends the DJ looking for a change never made.
+  it('says nothing changed when the backup was refused before Music was asked', async () => {
+    const { events, log } = logged()
+    const refused = errorWithKey('noBackup', '/m/A.mp3').message
+    await applyMusicFixes(
+      [fix('A')],
+      deps({ prepare: vi.fn().mockRejectedValue(new Error(refused)) }),
+      { log },
+    )
+    expect(ends(events)).toEqual([
+      expect.objectContaining({
+        phase: 'error',
+        detailKey: 'activity.reviewFixUntouched',
+        detailParams: { error: refused },
       }),
     ])
   })

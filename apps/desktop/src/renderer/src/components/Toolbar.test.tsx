@@ -371,6 +371,57 @@ describe('Toolbar', () => {
     expect(screen.getByTestId('convert-all')).toBeDisabled()
   })
 
+  it('stays quiet over a whole library, where the work at hand is one track and a click would rewrite thousands', () => {
+    renderBar({ inLibrary: true, convertibleCount: 801, batchSize: 2040, trackCount: 2040 })
+    expect(screen.getByTestId('convert-all')).toHaveAttribute('data-variant', 'secondary')
+    expect(screen.getByTestId('convert-all')).toBeEnabled()
+  })
+
+  it('takes the lead in a library once the user picks several tracks, naming them as the selection', () => {
+    renderBar({ inLibrary: true, multiSelected: true, convertibleCount: 12, batchSize: 12 })
+    const button = screen.getByTestId('convert-all')
+    expect(button).toHaveAttribute('data-variant', 'primary')
+    expect(button).toHaveAccessibleName(i18n.t('header.convertSelected', { count: 12 }))
+  })
+
+  it('says how many of the selection are ready when some are not, so the count matches the work', () => {
+    renderBar({ inLibrary: true, multiSelected: true, convertibleCount: 10, batchSize: 12 })
+    expect(screen.getByTestId('convert-all')).toHaveAccessibleName(
+      i18n.t('header.convertSomeSelected', { ready: 10, total: 12 }),
+    )
+  })
+
+  it('waits out a library read without a count, which would climb under the cursor while the files arrive', () => {
+    renderBar({
+      inLibrary: true,
+      importing: { done: 827, total: 2047 },
+      convertibleCount: 801,
+      batchSize: 2040,
+    })
+    const button = screen.getByTestId('convert-all')
+    expect(button).toBeDisabled()
+    expect(button).toHaveAccessibleName(i18n.t('header.convertNone'))
+  })
+
+  it('still converts a picked selection while the library is being read, since those tracks are already there', () => {
+    renderBar({
+      inLibrary: true,
+      multiSelected: true,
+      importing: { done: 827, total: 2047 },
+      convertibleCount: 12,
+      batchSize: 12,
+    })
+    expect(screen.getByTestId('convert-all')).toBeEnabled()
+  })
+
+  it('keeps counting while dropped files are read in Tracks, where converting the list is the whole job', () => {
+    renderBar({ importing: { done: 5, total: 24 }, convertibleCount: 5, batchSize: 24 })
+    const button = screen.getByTestId('convert-all')
+    expect(button).toBeEnabled()
+    expect(button).toHaveAttribute('data-variant', 'primary')
+    expect(button).toHaveAccessibleName(i18n.t('header.convertSome', { ready: 5, total: 24 }))
+  })
+
   // It acts on the list, which doesn't exist until the crate has tracks.
   it('hides the convert button when the list is empty', () => {
     renderBar({ trackCount: 0 })

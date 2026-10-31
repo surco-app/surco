@@ -149,6 +149,7 @@ export function libraryReaders(
             size: size[i],
             added: e.engineStep === true && typeof e.engine !== 'object',
             shift: e.engineShift,
+            ...(e.fromBytes === undefined ? {} : { fromBytes: e.fromBytes }),
           })),
           key,
         ),

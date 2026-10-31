@@ -11,7 +11,7 @@ import {
 import { duplicateLibraryDeps, type LibraryHost, type Sessions } from './libraryFlushes'
 import type { ListReviewIpcDeps } from './listReviewIpc'
 import type { MediaAccess } from './mediaAccess'
-import { rewriteTagFields } from './musicFieldWrite'
+import { type Rewritten, rewriteTagFields } from './musicFieldWrite'
 import { musicReviewLog } from './musicReviewLog'
 import { trashRecoverably } from './recoverableTrash'
 import { volumeKeepsTrash } from './trashSupport'
@@ -21,6 +21,7 @@ export interface ListReviewEnv {
   tmp: { track: (path: string) => void; untrack: (path: string) => void }
   hostFor: (sender: WebContents) => LibraryHost
   sessions: Sessions
+  followEngineSize?: Rewritten
 }
 
 export function listReviewDeps(env: ListReviewEnv): ListReviewIpcDeps {
@@ -32,7 +33,7 @@ export function listReviewDeps(env: ListReviewEnv): ListReviewIpcDeps {
           () => true,
           () => false,
         ),
-      rewrite: (file, changes) => rewriteTagFields(file, changes, env.tmp),
+      rewrite: (file, changes) => rewriteTagFields(file, changes, env.tmp, env.followEngineSize),
       ...(process.platform === 'darwin' && {
         setMusicField: (pid, field, from, to, location) =>
           appleMusicLimiter.run(() => setAppleMusicField(pid, field, from, to, location)),

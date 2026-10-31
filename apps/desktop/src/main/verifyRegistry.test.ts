@@ -259,7 +259,6 @@ describe('verify registry', () => {
       entry('a', {
         places: new Set(['file', 'traktor']),
         traktorPatch: had,
-        traktorStranded: true,
       }),
     )
     registry.register(entry('b', { places: new Set(['file', 'traktor']), traktorPatch: none }))
@@ -283,8 +282,8 @@ describe('verify registry', () => {
     })
 
     expect(deps.readTraktor.mock.calls[0][0]).toEqual<TraktorExpect[]>([
-      { patch: had, before: 'A.AIFF', stranded: true },
-      { patch: none, before: null, stranded: false },
+      { patch: had, before: 'A.AIFF' },
+      { patch: none, before: null },
     ])
     expect(stateOf(registry.get('a'), 'traktor')).toBe('ok')
     expect(registry.get('b')).toEqual({ status: 'ok', checks: [ok('file', 'fileIdentical')] })
@@ -309,7 +308,7 @@ describe('verify registry', () => {
 
     await registry.retry('a')
 
-    const expected = { patch: p, before: 'a.mp3', cues: '<CUE_V2 START="10000"/>', stranded: false }
+    const expected = { patch: p, before: 'a.mp3', cues: '<CUE_V2 START="10000"/>' }
     expect(deps.readTraktor.mock.calls.map((c) => c[0])).toEqual([[expected], [expected]])
   })
 
@@ -873,9 +872,7 @@ describe('verify registry', () => {
 
     await registry.retry('a')
 
-    expect(deps.readTraktor.mock.calls[1][0]).toEqual([
-      { patch: p, before: 'a.aiff', stranded: false },
-    ])
+    expect(deps.readTraktor.mock.calls[1][0]).toEqual([{ patch: p, before: 'a.aiff' }])
     expect(stateOf(registry.get('a'), 'traktor')).toBe('ok')
   })
 
@@ -894,9 +891,7 @@ describe('verify registry', () => {
     await registry.afterQueueApplied('traktor', {
       before: new Map([[traktorPatchKey(p), 'a.aiff']]),
     })
-    expect(deps.readTraktor.mock.calls[0][0]).toEqual([
-      { patch: p, before: 'a.aiff', stranded: false },
-    ])
+    expect(deps.readTraktor.mock.calls[0][0]).toEqual([{ patch: p, before: 'a.aiff' }])
     expect(stateOf(registry.get('a'), 'traktor')).toBe('ok')
   })
 
@@ -931,9 +926,7 @@ describe('verify registry', () => {
     await registry.retry('a')
 
     expect(deps.readTraktor).toHaveBeenCalledTimes(2)
-    expect(deps.readTraktor.mock.calls[1][0]).toEqual([
-      { patch: p, before: 'a.aiff', stranded: false },
-    ])
+    expect(deps.readTraktor.mock.calls[1][0]).toEqual([{ patch: p, before: 'a.aiff' }])
     expect(stateOf(registry.get('a'), 'traktor')).toBe('ok')
   })
 

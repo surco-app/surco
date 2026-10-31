@@ -26,7 +26,7 @@ import { useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ActivityKind } from '../../../shared/types'
 import { type ActivityStore, useActivityRows } from '../hooks/useActivityLog'
-import { type ActivityRow, activityFeedText } from '../lib/activityLog'
+import { type ActivityRow, activityFeedText, rowDetailText } from '../lib/activityLog'
 import { MIN_HEIGHT, MIN_WIDTH, type PanelGeometry } from '../lib/panelGeometry'
 
 type Translate = ReturnType<typeof useTranslation>['t']
@@ -36,10 +36,6 @@ type Translate = ReturnType<typeof useTranslation>['t']
 function rowLabel(tr: Translate, row: ActivityRow): string {
   if (row.labelKey) return tr(row.labelKey, row.labelParams)
   return row.label ?? ''
-}
-function rowDetail(tr: Translate, row: ActivityRow): string | undefined {
-  if (row.detailKey) return tr(row.detailKey, row.detailParams)
-  return row.detail
 }
 
 interface Props {
@@ -160,7 +156,7 @@ function DetailText({ text }: { text: string }): React.JSX.Element {
 function ChildRow({ row }: { row: ActivityRow }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
-  const detail = rowDetail(tr, row)
+  const detail = rowDetailText(row, tr)
   const expandable = Boolean(detail)
   return (
     <li>
@@ -209,7 +205,7 @@ function Row({ row }: { row: ActivityRow }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const Icon = KIND_ICON[row.kind] ?? Radio
   const grouped = Boolean(row.children?.length)
-  const detail = rowDetail(tr, row)
+  const detail = rowDetailText(row, tr)
   const expandable = grouped || Boolean(detail)
   return (
     <li className="border-b border-[var(--color-line)] last:border-0">
