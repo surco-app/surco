@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs'
-import { access, mkdir, mkdtemp, rm, rmdir, unlink } from 'node:fs/promises'
+import { access, mkdir, mkdtemp, rm, rmdir, stat, unlink } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, renderHook, waitFor } from '@testing-library/react'
@@ -267,6 +267,12 @@ function processTrackInMain(
       musicIsFake ? appleMusic.carryOverToAppleMusicCopy(fromPid, toPid, label) : noMusic(),
     markAppleMusicReplacing: async () => 'missing',
     appleMusicPlaylists: async () => [],
+    fileBytes: (path) =>
+      stat(path).then(
+        (s) => s.size,
+        () => undefined,
+      ),
+    followEngineSize,
     verifyFile: (expect, signal) => checkFile(expect, fileReaders, { signal }),
     verifyMusic: async () => ({
       place: 'appleMusic',

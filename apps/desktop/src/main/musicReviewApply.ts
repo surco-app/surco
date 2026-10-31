@@ -39,7 +39,8 @@ function endingOf(o: MusicFixOutcome, index: number): FieldEnding {
     }
   if (o.file === 'failed')
     return {
-      detailKey: 'activity.reviewFixFileFailed',
+      detailKey:
+        o.music.length === 0 ? 'activity.reviewFixUntouched' : 'activity.reviewFixFileFailed',
       detailParams: { error: o.error ?? '' },
       status: 'error',
     }

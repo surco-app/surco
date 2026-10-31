@@ -2,6 +2,7 @@ import { constants as fsConstants } from 'node:fs'
 import { copyFile, stat } from 'node:fs/promises'
 import { extname } from 'node:path'
 import log from 'electron-log/main'
+import { errorWithKey } from '../shared/errorKeys'
 import type { TrashEntry } from '../shared/types'
 import type { EngineShift } from './engineRepoint'
 import { assertDecodable, convertTmpPath } from './ffmpeg'
@@ -49,7 +50,7 @@ export async function rewriteTagFields(
       reencodes: false,
       regardlessOfPolicy: true,
     })
-    if (!archived && hasOriginalKeeper()) throw new Error('no-backup')
+    if (!archived && hasOriginalKeeper()) throw errorWithKey('noBackup', file)
     await renameWithRetry(tmp, file)
     tracking?.untrack(tmp)
     rewritten?.(file, fromBytes)
@@ -148,7 +149,7 @@ export async function prepareTagRewrite(
       reencodes: false,
       regardlessOfPolicy: true,
     })
-    if (!archived && hasOriginalKeeper()) throw new Error('no-backup')
+    if (!archived && hasOriginalKeeper()) throw errorWithKey('noBackup', file)
   } catch (e) {
     await abandon()
     throw e
