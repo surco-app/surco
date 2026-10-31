@@ -23,13 +23,14 @@ export async function rewriteTagFields(
   file: string,
   changes: TagFieldChange[],
   tracking?: TmpTracking,
+  job: 'setTagFields' | 'setGenreFrame' = 'setTagFields',
 ): Promise<{ outcomes: FieldWrite[]; backup?: TrashEntry }> {
   const tmp = convertTmpPath(file, extname(file))
   tracking?.track(tmp)
   let archived: TrashEntry | null = null
   try {
     await copyFile(file, tmp, fsConstants.COPYFILE_FICLONE)
-    const outcomes = await runInWorker<FieldWrite[]>({ type: 'setTagFields', file: tmp, changes })
+    const outcomes = await runInWorker<FieldWrite[]>({ type: job, file: tmp, changes })
     if (!outcomes.includes('written')) {
       await dropTemp(tmp, tracking)
       return { outcomes }

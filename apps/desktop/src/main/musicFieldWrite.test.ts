@@ -6,6 +6,7 @@ import ffmpegStatic from 'ffmpeg-static'
 import {
   ByteVector,
   Id3v2PrivateFrame,
+  Id3v2Settings,
   type Id3v2Tag,
   type InfoTag,
   StringType,
@@ -17,6 +18,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
+import { readGenreFrame } from './genreFrame'
 import { prepareTagRewrite, rewriteTagFields } from './musicFieldWrite'
 import { applyMusicFixes } from './musicReviewApply'
 import { configureBackupDiscarder, configureOriginalKeeper, policyKeeper } from './originalKeeper'
@@ -558,6 +560,54 @@ describe('rewriteTagFields', () => {
     expect(outcomes).toEqual(['written'])
     expect(backup?.id).toBe('kept')
     expect(snapshotTags(file).join('\n')).toContain('DJ Lara')
+  }, 60000)
+})
+
+// A damaged genre is repaired through the same copy, check, backup and rename as any review
+// fix, so Undo can hand back the file exactly as the scan found it.
+describe('rewriteTagFields with the raw genre frame job', () => {
+  it('backs up the damaged file before writing the genre back', async () => {
+    const file = join(dir, `damaged-${Math.random().toString(36).slice(2)}.mp3`)
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'anoisesrc=d=1',
+      '-id3v2_version',
+      '3',
+      '-metadata',
+      'genre=House; Deep House',
+      file,
+    ])
+    Id3v2Settings.useNonStandardV2V3GenreSeparators = true
+    const f = TagFile.createFromPath(file)
+    try {
+      void f.tag.genres
+      f.tag.comment = 'cue pass'
+      f.save()
+    } finally {
+      f.dispose()
+      Id3v2Settings.useNonStandardV2V3GenreSeparators = false
+    }
+    const damagedBytes = readFileSync(file)
+    let kept: Buffer | null = null
+    configureOriginalKeeper(async (path) => {
+      kept = readFileSync(path)
+      return { id: 'b1' } as never
+    })
+    const { outcomes, backup } = await rewriteTagFields(
+      file,
+      [{ field: 'genre', from: '(35) Deep House', to: 'House; Deep House' }],
+      undefined,
+      'setGenreFrame',
+    )
+    expect(outcomes).toEqual(['written'])
+    expect(backup).toEqual({ id: 'b1' })
+    expect(kept).toEqual(damagedBytes)
+    expect(readGenreFrame(file)?.raw).toBe('House; Deep House')
   }, 60000)
 })
 
