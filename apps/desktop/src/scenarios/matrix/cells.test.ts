@@ -15,8 +15,6 @@ const STATES = ['closed', 'open', 'retry']
 const CLASSES = ['keep', 'toLossy', 'fromLossy']
 const toMusic = (dest: string) => dest.startsWith('appleMusic')
 
-const KNOWN_OPEN: string[] = []
-
 // The matrix is only worth its run time if a red cell today is the same cell tomorrow and
 // the 131 combinations it claims are the ones it runs. These are fixed data, so the proof
 // that they cover what the spec promises can be pure.
@@ -108,13 +106,12 @@ describe('the results matrix cells', () => {
   })
 
   // The core runs in every `npm test`: a cell red for a bug already known would leave the
-  // normal suite red until that bug is fixed, which hides every new red behind it. No cell
-  // copying to a folder and adding to Music comes out green yet, so that destination waits.
-  it('keeps 19 cells in the core and none with a known open bug', () => {
+  // normal suite red until that bug is fixed, which hides every new red behind it. The
+  // appleMusicCopy destination stays out of the core, though its cells run green.
+  it('keeps 19 cells in the core and none expected broken', () => {
     const core = CELLS.filter((cell) => cell.core)
     expect(core).toHaveLength(19)
     for (const cell of core) {
-      expect(KNOWN_OPEN, cell.id).not.toContain(cell.id)
       expect(cell.expectBroken, cell.id).toBeUndefined()
     }
     const sabotages = core.flatMap((cell) => (cell.sabotage ? [cell.sabotage] : []))
