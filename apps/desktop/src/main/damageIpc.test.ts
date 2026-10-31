@@ -28,6 +28,7 @@ describe('damage:scan', () => {
         readGenre: async () => ({ raw: '(35) Deep House' }),
         libraryGenres: async () => ({}),
       }),
+      repairDeps: () => ({}) as never,
     })
     pendingDamage.add(`genre-number\0${MP3}`)
     pendingDamage.add('engine-cues\0/m/gone.wav')

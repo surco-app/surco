@@ -462,6 +462,10 @@ export interface DamageOutcome {
   backupId?: string
   error?: string
 }
+export interface DamageRepairItem {
+  id: string
+  repair: DamageRepair
+}
 export interface DamageScan {
   findings: DamageFinding[]
   unread: ('traktor' | 'engine')[]

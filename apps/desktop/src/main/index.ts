@@ -107,6 +107,7 @@ import { addToEngineLibrary, dumpEngineLibrary, withEngineDatabase } from './eng
 import { engineDatabasePath } from './enginePlaylists'
 import { registerEnginePlaylistsIpc } from './enginePlaylistsIpc'
 import { isEngineDjRunning, quitEngineDj } from './engineProcess'
+import { repointEngineTracks } from './engineRepoint'
 import { expandPaths } from './expand'
 import { registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
@@ -115,6 +116,7 @@ import {
   headOffsetMs,
   probeAudio,
   probeDuration,
+  proveDecodable,
   readMeta,
   toNmlLocation,
 } from './ffmpeg'
@@ -146,6 +148,7 @@ import { createMediaAccess } from './mediaAccess'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { createMoments } from './moments'
 import { isIssuedPair } from './musicDuplicates'
+import { rewriteTagFields } from './musicFieldWrite'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { abandonNmlBatch, beginNmlBatch, recordedNmlPatch, redirectNmlPatch } from './nmlBatch'
@@ -214,7 +217,12 @@ import {
   detectTraktorNmlPaths,
   sameCollection,
 } from './traktorNmlPath'
-import { type QueuedNmlPatch, syncQueuedPatches } from './traktorPatchQueue'
+import {
+  holdInQueue,
+  type QueuedNmlPatch,
+  queuedNmlPatch,
+  syncQueuedPatches,
+} from './traktorPatchQueue'
 import { registerTraktorPlaylistEditIpc } from './traktorPlaylistEditIpc'
 import { nmlPath } from './traktorPlaylists'
 import { registerTraktorPlaylistsIpc } from './traktorPlaylistsIpc'
@@ -1679,6 +1687,61 @@ function registerIpc(): void {
         }),
       }
     },
+    repairDeps: (sender) => {
+      const host = hostFor(BrowserWindow.fromWebContents(sender), sender)
+      const traktor = traktorFlushDeps(host, sessions.traktor)
+      const traktorHold = holdInQueue(
+        {
+          enqueue: traktorCueQueue.enqueue,
+          state: traktorCueQueue.state,
+          applyQuietly: () => applyTraktorCueQueueQuietly(),
+        },
+        bootVolumeName,
+      )
+      return {
+        beginMoment: () => moments.begin('review'),
+        genre: {
+          allowed: (path) => mediaAccess.isAllowed(path),
+          exists: (path) =>
+            access(path).then(
+              () => true,
+              () => false,
+            ),
+          rewrite: (file, changes) => rewriteTagFields(file, changes, tmpManifest, 'setGenreFrame'),
+        },
+        traktor: {
+          ...traktor,
+          bootVolume: bootVolumeName(),
+          readCollection: () => readFile(traktor.traktorNmlPath, 'utf8').catch(() => null),
+          waiting: traktorHold.waiting,
+          hold: async (patches, states) => {
+            traktorCueQueue.enqueue(
+              [],
+              patches.map((p, i) => queuedNmlPatch(p, states[i])),
+            )
+            applyTraktorCueQueueQuietly()
+          },
+        },
+        engine: {
+          ...engineFlushDeps(host),
+          ensureClosed: async () => !(await isEngineDjRunning().catch(() => true)),
+          showBlockedDialog: () => {},
+          countSamples: async (path) =>
+            (await proveDecodable(path, undefined, undefined, undefined, true)).samples ?? null,
+          repointTracks: (libraryDir, list) =>
+            repointEngineTracks(
+              libraryDir,
+              list.map((r) => ({ ...r, realPath: (p: string) => realpathSync(p) })),
+              { sessionBackup: (path) => sessions.engine.ensure(path) },
+            ),
+          enqueue: (repoints) => {
+            engineCueQueue.enqueue([], repoints)
+            applyEngineCueQueueQuietly()
+          },
+        },
+      }
+    },
+    serial: serialLibraryFlush,
   })
 
   // A review removed duplicate copies from Music: the libraries follow, and a removed copy's
