@@ -1353,11 +1353,17 @@ lectura/escritura, no 300.
 
 **Los cues de Engine siguen al recorte.** Al reapuntar una pista convertida sin el silencio
 inicial, cada hot cue, el cue principal, cada loop y la rejilla se adelantan lo mismo que se
-cortó; lo que caía dentro del corte queda en el nuevo inicio, como en rekordbox y Traktor. Si
+cortó; lo que caía dentro del corte queda en el nuevo inicio, como en rekordbox y Traktor, y un
+loop que empezaba dentro conserva su duración, como en Traktor. Si
 además se cambió la frecuencia de muestreo, las posiciones se reescriben en la nueva
-(`shiftEnginePerformance`, `engineRepoint.ts:114`). Antes la fila seguía al fichero pero cada
-cue sonaba tarde lo que durara el corte. Una pista recortada en su sitio, con la misma ruta, no
-se reapunta en Engine y sus cues no se mueven. El desfase de MP3 que se aplica a rekordbox y a
+(`shiftEnginePerformance`, `engineRepoint.ts:120`). La onda de vista general pierde las
+entradas del tramo cortado y su paso se cuenta en la nueva frecuencia. Antes la fila seguía al fichero pero cada
+cue sonaba tarde lo que durara el corte. Una pista recortada en su sitio, con la misma ruta,
+también mueve sus cues en Engine. Como la fila no cambia de ruta, lo que dice que el corte sigue
+pendiente es que Engine aún guarde el tamaño del original, y la misma escritura guarda el nuevo,
+así que un reintento no los mueve dos veces (`engineRepoint.ts`, `fromBytes`). Si ese tamaño ya
+no coincide, por ejemplo porque las etiquetas se cambiaron antes en el fichero sin que Engine lo
+supiera, los cues se quedan como estaban. El desfase de MP3 que se aplica a rekordbox y a
 Traktor al cambiar de formato no se aplica a Engine, porque no se ha medido en Engine.
 
 ### Cue points de Traktor
@@ -1970,9 +1976,11 @@ todo cuadra, un escudo discreto junto al aviso abre la lista de lo comprobado
 (`VerifiedPopover.tsx`). En lote el pie dice cuántas se comprobaron y cuántas no cuadran, y la
 revisión tiene el filtro «No cuadran».
 
-En Engine DJ, tras un recorte o un cambio de frecuencia, comprueba que cues, loops y rejilla
-cayeron donde debían respecto a la foto, con un margen de 1 ms; si no, la pista sale en ámbar
-con «Los cues de Engine DJ no siguieron al audio» (`engineCuesMisplaced`, `verifyEngine.ts:236`).
+En Engine DJ, tras un recorte o un cambio de frecuencia, comprueba que cues, loops y las dos
+rejillas (la ajustada y la de por defecto) cayeron donde debían respecto a la foto, con un
+margen de 1 ms; si no, la pista sale en ámbar con «Los cues de Engine DJ no siguieron al audio» (`engineCuesMisplaced`, `verifyEngine.ts:255`). También sale
+así una pista recortada en su sitio cuyos cues Engine no dejó mover, aunque lo primero que
+no cuadre sea el tamaño.
 
 **Lo que no mira:** la posición exacta de cada cue de rekordbox (cuenta los cues, no dónde
 caen) ni las playlists de los programas de DJ.

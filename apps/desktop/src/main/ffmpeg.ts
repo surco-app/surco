@@ -2517,6 +2517,17 @@ export async function convertAudio(
       : 44100
     const sourceShiftMs = await rekordboxShiftOfFile(input, sourceRate)
     const outputShiftMs = await rekordboxShiftOfFile(tmp, plan.sampleRateHz ?? sourceRate)
+    // The length the decode above delivered, as the samples Engine counts it in.
+    const writtenSec =
+      (trimAf !== undefined || plan.sampleRateHz) && proven?.durationSec
+        ? proven.durationSec
+        : undefined
+    const sampleCount =
+      writtenSec === undefined
+        ? undefined
+        : Math.round(
+            writtenSec * (plan.sampleRateHz ?? Number((await probeOnce(input)).sampleRate)),
+          )
     // Kept samples still move in rekordbox's timeline when only one side is an .m4a (ALAC↔WAV).
     const rekordboxAudio =
       copiedVerbatim || (plan.samplesKept && sourceShiftMs === outputShiftMs)
@@ -2526,6 +2537,7 @@ export async function convertAudio(
             outputShiftMs,
             trimmedMs: trimAf !== undefined ? (trim?.startSec ?? 0) * 1000 : 0,
             ...(plan.sampleRateHz ? { sampleRateHz: plan.sampleRateHz } : {}),
+            ...(sampleCount ? { sampleCount } : {}),
           }
     // A rewrite lands on the source's own path, so the rename below would replace the
     // user's file with no way back. A copy of the original goes to Surco's trash first (see
@@ -2535,7 +2547,9 @@ export async function convertAudio(
     // the other two write paths (a format change, a NAS delete) ignoring it. What only
     // this scope knows is what the encode did — `codec` is the planner's own verdict,
     // 'copy' exactly when the audio passes through untouched — so that rides along.
-    if (await isSameFile(input, output)) {
+    const inPlace = await isSameFile(input, output)
+    const fromBytes = inPlace ? (await stat(input)).size : undefined
+    if (inPlace) {
       archived = await keepOriginal(input, 'replaced', output, {
         reencodes:
           codec !== 'copy' || (extname(output).toLowerCase() === '.wav' && dropsForeignCues(input)),
@@ -2589,6 +2603,7 @@ export async function convertAudio(
       replaces: replacesPath,
       meta: rekordboxMetaFrom(meta),
       audio: rekordboxAudio,
+      fromBytes,
     })
     if (repoint) recordRekordboxRepoint(repoint)
   } catch (e) {

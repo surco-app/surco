@@ -41,6 +41,8 @@ export interface VerifyEntry {
   cueShiftMs?: number
   // The same move as Engine DJ counts it, handed again with the repoint and expected of the row.
   engineShift?: EngineShift
+  // The source's size before a rewrite in place, handed again with that shift.
+  fromBytes?: number
   verification: Verification
 }
 

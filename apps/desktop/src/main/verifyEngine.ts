@@ -78,13 +78,13 @@ function decoded<T>(read: () => T | null | undefined): T | null {
 function positionsOf(
   row: Record<(typeof PERFORMANCE)[number] | 'trackData', Uint8Array | null> | undefined,
 ): Positions {
-  const rate = decoded(
-    () => row?.trackData && decodeTrackData(inflateEngineBlob(row.trackData)),
-  )?.sampleRate
+  const grid = decoded(() => row?.beatData && decodeBeatGrid(inflateEngineBlob(row.beatData)))
+  const rate =
+    decoded(() => row?.trackData && decodeTrackData(inflateEngineBlob(row.trackData)))
+      ?.sampleRate || grid?.sampleRate
   if (!row || !rate) return { quickCues: null, beatData: null, loops: null }
   const sec = (sample: number) => (sample < 0 ? null : sample / rate)
   const cues = decoded(() => row.quickCues && decodeQuickCues(inflateEngineBlob(row.quickCues)))
-  const grid = decoded(() => row.beatData && decodeBeatGrid(inflateEngineBlob(row.beatData)))
   const loops = decoded(() => row.loops && decodeLoops(Buffer.from(row.loops)))
   return {
     quickCues:
@@ -95,10 +95,12 @@ function positionsOf(
             sec(cues.tail.readDoubleBE(9)),
           ]
         : null,
-    beatData: grid?.markers.map((m) => m.sample / rate) ?? null,
+    beatData: grid ? [...grid.defaultMarkers, ...grid.markers].map((m) => m.sample / rate) : null,
     loops:
-      loops?.flatMap((l) => [l.startSet ? sec(l.start) : null, l.endSet ? sec(l.end) : null]) ??
-      null,
+      loops?.loops.flatMap((l) => [
+        l.startSet ? sec(l.start) : null,
+        l.endSet ? sec(l.end) : null,
+      ]) ?? null,
   }
 }
 
@@ -115,12 +117,15 @@ function performanceOf(db: EngineDb, id: number): Omit<EngineSnapshot, 'id'> {
 }
 
 // The positions a write that followed the conversion leaves: earlier by the cut, a cue or
-// loop end inside it on the new start, grid markers keeping their spacing.
+// loop inside it on the new start, a loop keeping its length, grid markers their spacing.
 function shifted(field: keyof Positions, before: (number | null)[], shift: EngineShift) {
   const cut = shift.trimmedMs / 1000
-  return before.map((s) =>
-    s === null ? null : field === 'beatData' ? s - cut : Math.max(0, s - cut),
-  )
+  return before.map((s, i) => {
+    if (s === null) return null
+    if (field === 'beatData') return s - cut
+    const start = field === 'loops' && i % 2 === 1 ? before[i - 1] : null
+    return start === null ? Math.max(0, s - cut) : Math.max(0, start - cut) + (s - start)
+  })
 }
 
 const POSITION_TOLERANCE_SEC = 0.001
@@ -152,6 +157,21 @@ export function snapshotEngineRow(
   } catch {
     return 'unreadable'
   }
+}
+
+// The first field whose positions did not move by the cut the conversion made.
+function misplacedField(
+  db: EngineDb,
+  id: number,
+  before: EngineSnapshot,
+  shift: EngineShift | undefined,
+  now = performanceOf(db, id),
+): (typeof PERFORMANCE)[number] | undefined {
+  if (!shift) return undefined
+  return PERFORMANCE.find((field) => {
+    const was = before.positions?.[field] ?? null
+    return was !== null && !sameAt(shifted(field, was, shift), now.positions?.[field] ?? null)
+  })
 }
 
 const check = (
@@ -214,25 +234,24 @@ function judge(
   if (!fileType) return check('mismatch', 'engineNoFileType')
   if (fileType !== extname(e.to).slice(1).toLowerCase())
     return check('mismatch', 'engineStillOld', { format: formatOf(`.${fileType}`) })
-  if (row.fileBytes !== e.size) return check('mismatch', 'engineSizeDiffers')
+  if (row.fileBytes !== e.size) {
+    const late = typeof before === 'object' && misplacedField(db, row.id, before, e.shift)
+    return late
+      ? check('mismatch', 'engineCuesMisplaced', { field: late })
+      : check('mismatch', 'engineSizeDiffers')
+  }
   if (typeof before !== 'object')
     return check('ok', 'engineOk', { format: formatOf(extname(e.to)) })
 
-  // Engine's repoint only moves the file columns; with the samples kept, a cue, beat or
-  // loop that changed is one the DJ set and lost. A re-encode may move them, but what the
-  // row had must still be there.
+  // With the samples kept, Engine's repoint moves only the file columns, so a cue, beat or
+  // loop that changed is one the DJ set and lost. A trim or a resample moves them, checked
+  // below against the cut, but what the row had must still be there.
   const now = performanceOf(db, row.id)
   const changed = PERFORMANCE.find((field) =>
     e.samplesKept ? now[field] !== before[field] : before[field] !== EMPTY && now[field] === EMPTY,
   )
   if (changed) return check('mismatch', 'enginePerformanceChanged', { field: changed })
-  const shift = e.shift
-  const misplaced =
-    shift &&
-    PERFORMANCE.find((field) => {
-      const was = before.positions?.[field] ?? null
-      return was !== null && !sameAt(shifted(field, was, shift), now.positions?.[field] ?? null)
-    })
+  const misplaced = misplacedField(db, row.id, before, e.shift, now)
   if (misplaced) return check('mismatch', 'engineCuesMisplaced', { field: misplaced })
   return check('ok', 'engineOk', { format: formatOf(extname(e.to)) })
 }

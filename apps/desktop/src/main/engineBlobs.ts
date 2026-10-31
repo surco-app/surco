@@ -39,14 +39,20 @@ function readGrid(raw: Buffer, at: number): { markers: EngineBeatMarker[]; end: 
   return { markers, end }
 }
 
-export function decodeBeatGrid(
-  raw: Buffer,
-): { sampleRate: number; markers: EngineBeatMarker[] } | null {
+export function decodeBeatGrid(raw: Buffer): {
+  sampleRate: number
+  markers: EngineBeatMarker[]
+  defaultMarkers: EngineBeatMarker[]
+} | null {
   if (raw.length < 17) return null
   const base = readGrid(raw, 17)
   const adjusted = base ? readGrid(raw, base.end) : null
-  if (!adjusted) return null
-  return { sampleRate: raw.readDoubleBE(0), markers: adjusted.markers }
+  if (!base || !adjusted) return null
+  return {
+    sampleRate: raw.readDoubleBE(0),
+    markers: adjusted.markers,
+    defaultMarkers: base.markers,
+  }
 }
 
 export interface EngineQuickCue {
@@ -115,9 +121,16 @@ export interface EngineLoop {
   startSet: boolean
   endSet: boolean
   argb: number
+  // The slot as Engine stored it, written back with only its positions replaced.
+  bytes?: Buffer
 }
 
-export function decodeLoops(raw: Buffer): EngineLoop[] | null {
+export interface EngineLoops {
+  loops: EngineLoop[]
+  tail: Buffer
+}
+
+export function decodeLoops(raw: Buffer): EngineLoops | null {
   if (raw.length < 8) return null
   const count = Number(raw.readBigInt64LE(0))
   if (count < 0 || count > raw.length) return null
@@ -134,28 +147,34 @@ export function decodeLoops(raw: Buffer): EngineLoop[] | null {
       startSet: raw[labelEnd + 16] !== 0,
       endSet: raw[labelEnd + 17] !== 0,
       argb: raw.readUInt32BE(labelEnd + 18),
+      bytes: raw.subarray(at, labelEnd + 22),
     })
     at = labelEnd + 22
   }
-  return loops
+  return { loops, tail: raw.subarray(at) }
 }
 
-export function encodeLoops(loops: EngineLoop[]): Buffer {
+function loopSlotBytes(loop: EngineLoop): Buffer {
+  if (loop.bytes) {
+    const slot = Buffer.from(loop.bytes)
+    slot.writeDoubleLE(loop.start, 1 + slot[0])
+    slot.writeDoubleLE(loop.end, 9 + slot[0])
+    return slot
+  }
+  const label = Buffer.from(loop.label, 'utf8').subarray(0, 255)
+  const rest = Buffer.alloc(22)
+  rest.writeDoubleLE(loop.start, 0)
+  rest.writeDoubleLE(loop.end, 8)
+  rest[16] = loop.startSet ? 1 : 0
+  rest[17] = loop.endSet ? 1 : 0
+  rest.writeUInt32BE(loop.argb, 18)
+  return Buffer.concat([Buffer.from([label.length]), label, rest])
+}
+
+export function encodeLoops(loops: EngineLoop[], tail: Buffer = Buffer.alloc(0)): Buffer {
   const count = Buffer.alloc(8)
   count.writeBigInt64LE(BigInt(loops.length))
-  return Buffer.concat([
-    count,
-    ...loops.map((loop) => {
-      const label = Buffer.from(loop.label, 'utf8').subarray(0, 255)
-      const rest = Buffer.alloc(22)
-      rest.writeDoubleLE(loop.start, 0)
-      rest.writeDoubleLE(loop.end, 8)
-      rest[16] = loop.startSet ? 1 : 0
-      rest[17] = loop.endSet ? 1 : 0
-      rest.writeUInt32BE(loop.argb, 18)
-      return Buffer.concat([Buffer.from([label.length]), label, rest])
-    }),
-  ])
+  return Buffer.concat([count, ...loops.map(loopSlotBytes), tail])
 }
 
 export type EngineBands = [number, number, number]
