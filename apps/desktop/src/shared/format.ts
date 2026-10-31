@@ -20,10 +20,6 @@ export function formatMatchesInput(format: OutputFormat, input: string): boolean
   return INPUT_EXT[format].test(input)
 }
 
-export function sameAudioFormat(a: string, b: string): boolean {
-  return Object.values(INPUT_EXT).some((ext) => ext.test(a) && ext.test(b))
-}
-
 // The on-disk extension for a chosen output format. Every format names its own
 // extension except ALAC, which lives in an MPEG-4 container (.m4a).
 export function formatExtension(format: OutputFormat): string {
