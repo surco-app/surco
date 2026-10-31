@@ -86,7 +86,8 @@ const cueBytes = (quickCues: unknown, loops: unknown): string =>
     .join('|')
 
 // Whether the row's cues and loops are still what the newest library copy taken no later
-// than the conversion holds for it. Null when no such copy has the row.
+// than the conversion holds for it. Null when no such copy has the row, or when nothing dates
+// the conversion (a resample leaves no backup), since a later copy may hold hand edits.
 async function cuesKeptSince(
   path: string,
   cues: string,
@@ -94,9 +95,10 @@ async function cuesKeptSince(
   libraryDir: string,
   deps: EngineDamageDeps,
 ): Promise<boolean | null> {
+  if (convertedAt === undefined) return null
   const copies = (await deps.copies?.().catch(() => [])) ?? []
   const before = copies
-    .filter((c) => convertedAt === undefined || c.takenAt <= convertedAt)
+    .filter((c) => c.takenAt <= convertedAt)
     .sort((a, b) => b.takenAt - a.takenAt)
   const SQL = await loadSqlJs()
   for (const copy of before) {

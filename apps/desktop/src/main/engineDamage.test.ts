@@ -221,17 +221,51 @@ describe('scanEngineDamage against the library copies', () => {
     return join(copy.dir, 'Database2', 'm.db')
   }
 
-  it.each([
-    [96000, 'sure'],
-    [97000, 'likely'],
-  ])('a copy with the cue at %i makes it %s', async (inCopy, certainty) => {
+  // A resample leaves nothing in Copias that dates the conversion, so no copy can be told
+  // apart from one taken after the DJ moved the cues by hand.
+  it('is only likely for a resample, even with a copy that matches', async () => {
     const lib = await library([{ ...ROW, cues: cues(96000) }])
-    const dbPath = await copyOf({ ...ROW, cues: cues(inCopy) })
+    const dbPath = await copyOf({ ...ROW, cues: cues(96000) })
     const [found] = await scanEngineDamage(
       [join(lib.music, 'a.mp3')],
       lib.dir,
       deps({ copies: async () => [{ takenAt: 1, dbPath }] }),
     )
-    expect(found.judgement).toMatchObject({ certainty })
+    expect(found.judgement).toMatchObject({ certainty: 'likely', cuesKept: null })
+  })
+
+  it.each([
+    [96000, 'sure'],
+    [97000, 'likely'],
+  ])('a trim with a copy from before it holding the cue at %i is %s', async (inCopy, certainty) => {
+    const trimmed = { path: '../music/a.mp3', rate: 44100, count: 13230000 }
+    const lib = await library([{ ...trimmed, cues: cues(96000) }])
+    const dbPath = await copyOf({ ...trimmed, cues: cues(inCopy) })
+    const path = join(lib.music, 'a.mp3')
+    const [found] = await scanEngineDamage(
+      [path],
+      lib.dir,
+      deps({
+        probe: vi.fn(async () => ({ sampleRate: 44100, durationSec: 298.76 })),
+        backups: vi.fn(async () => [
+          {
+            id: 'b1',
+            name: 'a.mp3',
+            originalPath: path,
+            storedPath: '/trash/b1',
+            bytes: 1,
+            trashedAt: 5,
+            reason: 'replaced',
+          } as TrashEntry,
+        ]),
+        durationOf: vi.fn(async () => 300),
+        headOffsetMs: vi.fn(async () => 1240),
+        copies: async () => [
+          { takenAt: 1, dbPath },
+          { takenAt: 9, dbPath: join(lib.dir, 'Database2', 'm.db') },
+        ],
+      }),
+    )
+    expect(found.judgement).toMatchObject({ certainty, trimmedMs: 1240 })
   })
 })
