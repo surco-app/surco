@@ -184,13 +184,17 @@ export function shiftEnginePerformance(perf: Performance, shift: EngineShift): P
   const runSamples = overview && decodeOverview(overview) ? overview.readDoubleBE(16) : 0
   if (overview && runSamples > 0) {
     const count = Number(overview.readBigInt64BE(0))
-    const dropped = Math.min(count, Math.round(((shift.trimmedMs / 1000) * from) / runSamples))
+    const runs = Math.round(((shift.trimmedMs / 1000) * from) / runSamples)
+    // A cut put back (a negative trim) comes back as silent entries: the ones it dropped are gone.
+    const dropped = Math.min(count, Math.max(0, runs))
+    const added = Math.max(0, -runs)
     const head = Buffer.from(overview.subarray(0, 24))
-    head.writeBigInt64BE(BigInt(count - dropped), 0)
-    if (Number(head.readBigInt64BE(8)) === count) head.writeBigInt64BE(BigInt(count - dropped), 8)
+    head.writeBigInt64BE(BigInt(count - dropped + added), 0)
+    if (Number(head.readBigInt64BE(8)) === count)
+      head.writeBigInt64BE(BigInt(count - dropped + added), 8)
     head.writeDoubleBE((runSamples * to) / from, 16)
     next.overviewWaveFormData = deflateEngineBlob(
-      Buffer.concat([head, overview.subarray(24 + dropped * 3)]),
+      Buffer.concat([head, Buffer.alloc(added * 3), overview.subarray(24 + dropped * 3)]),
     )
   }
 

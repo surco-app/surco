@@ -2005,6 +2005,25 @@ const CANCEL_POLL_MS = 50
 
 // The source's decoded length, bounded like its digest: a timeout sized to the file
 // and the job's cancel. Anything that keeps it from answering leaves it unknown.
+// The move that takes Engine DJ's positions from a cut or resampled file back to the original
+// kept for it (TrashEntry.engineShift): the cut put back, the source's rate and its decoded
+// length. Nothing when the conversion moved nothing under them.
+async function engineShiftBack(
+  moved: { trimmedMs: number; sampleRateHz?: number; sampleCount?: number },
+  probeSource: () => Promise<ProbeResult>,
+  sourceSec: number | undefined,
+): Promise<{ engineShift?: TrashEntry['engineShift'] }> {
+  if (!(moved.trimmedMs > 0) && !moved.sampleRateHz && !moved.sampleCount) return {}
+  const rate = Number((await probeSource()).sampleRate) || undefined
+  return {
+    engineShift: {
+      trimmedMs: moved.trimmedMs > 0 ? -moved.trimmedMs : 0,
+      ...(moved.sampleRateHz && rate ? { sampleRateHz: rate } : {}),
+      ...(sourceSec !== undefined && rate ? { sampleCount: Math.round(sourceSec * rate) } : {}),
+    },
+  }
+}
+
 async function decodedSourceSec(
   input: string,
   probeOnce: (file: string) => Promise<ProbeResult>,
@@ -2567,6 +2586,9 @@ export async function convertAudio(
         reencodes:
           codec !== 'copy' || (extname(output).toLowerCase() === '.wav' && dropsForeignCues(input)),
         untilChecked: true,
+        ...(rekordboxAudio && !replacesPath
+          ? await engineShiftBack(rekordboxAudio, () => probeOnce(input), sourceDurationSec)
+          : {}),
       })
       originalKept = archived !== null
     }

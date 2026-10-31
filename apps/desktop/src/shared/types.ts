@@ -424,6 +424,9 @@ export interface TrashEntry {
   reason: TrashReason
   // The file that took the original's place, when a conversion caused the stash.
   outputPath?: string
+  // The move that puts Engine DJ's positions back on this original, when the conversion
+  // that replaced it moved them (a cut or a resample, see engineRepoint.ts).
+  engineShift?: { trimmedMs: number; sampleRateHz?: number; sampleCount?: number }
 }
 
 export interface TrackMetadata {

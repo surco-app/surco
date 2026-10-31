@@ -3,6 +3,7 @@ import { copyFile, stat } from 'node:fs/promises'
 import { extname } from 'node:path'
 import log from 'electron-log/main'
 import type { TrashEntry } from '../shared/types'
+import type { EngineShift } from './engineRepoint'
 import { assertDecodable, convertTmpPath } from './ffmpeg'
 import { discardBackup, hasOriginalKeeper, keepOriginal } from './originalKeeper'
 import { removeTemp, renameWithRetry } from './renameRetry'
@@ -16,9 +17,9 @@ export interface TmpTracking {
   untrack: (path: string) => void
 }
 
-// Told of a file rewritten on its own path, with the size it had before, so Engine DJ's row
-// can follow it (see engineSizeFollow.ts).
-export type Rewritten = (file: string, fromBytes: number) => void
+// Told of a file rewritten on its own path, with the size it had before and how its audio
+// moved under Engine's positions, so Engine DJ's row can follow it (see engineSizeFollow.ts).
+export type Rewritten = (file: string, fromBytes: number, engineShift?: EngineShift) => void
 
 // The same copy, check, back up and rename that convertAudio does for an in-place update,
 // minus everything else it does: no ffmpeg pass, no full retag, no cues to carry. TagLib

@@ -760,6 +760,63 @@ describe.each(['2.18', '3.0.2'] as const)(
       })
     })
 
+    // Restoring the original a cut replaced moves the row back: the cut put back before every
+    // position and the source's rate and length. The overview's dropped entries are gone, so
+    // the lead-in comes back as silence, which is what a cut lead-in is.
+    it('moves a cut and resampled row back onto the original', async () => {
+      const lib = await analysedLibrary(schema)
+      const head = Buffer.alloc(24)
+      head.writeBigInt64BE(10n, 0)
+      head.writeBigInt64BE(10n, 8)
+      head.writeDoubleBE(RATE / 2, 16)
+      const entries = Array.from({ length: 10 }, (_, i) => [i, i + 1, i + 2]).flat()
+      const raw = Buffer.concat([head, Buffer.from(entries), Buffer.from([9, 10, 11])])
+      const seed = await openDb(lib.dbPath)
+      seed.run('UPDATE PerformanceData SET overviewWaveFormData = ? WHERE trackId = 1', [
+        deflateEngineBlob(raw),
+      ])
+      await writeFile(lib.dbPath, seed.export())
+      seed.close()
+      const before = await positionsOf(lib)
+      await repointEngineTracks(lib.dir, [
+        {
+          from: lib.oldFile,
+          to: lib.newFile,
+          engineShift: { trimmedMs: TRIM_MS, sampleRateHz: 48000 },
+        },
+      ])
+      await repointEngineTracks(lib.dir, [
+        {
+          from: lib.newFile,
+          to: lib.oldFile,
+          engineShift: { trimmedMs: -TRIM_MS, sampleRateHz: RATE, sampleCount: RATE * 60 },
+        },
+      ])
+      const back = await positionsOf(lib)
+      expect(back.rate).toBe(RATE)
+      expect(back.lengthSec).toBe(60)
+      expect(back.hot?.slice(1, 3)).toEqual([
+        expect.closeTo(HOT_SEC[1], 6),
+        expect.closeTo(HOT_SEC[2], 6),
+      ])
+      expect(back.grid).toEqual(before.grid?.map((s) => expect.closeTo(s, 6)))
+      const after = await openDb(lib.dbPath)
+      const overview = inflateEngineBlob(
+        one(after, 'SELECT overviewWaveFormData FROM PerformanceData WHERE trackId = 1')
+          .overviewWaveFormData as Uint8Array,
+      )
+      after.close()
+      expect(Number(overview.readBigInt64BE(8))).toBe(10)
+      expect(overview.readDoubleBE(16)).toBeCloseTo(RATE / 2, 6)
+      expect(decodeOverview(overview)).toEqual({
+        entries: [
+          ...Array.from({ length: 4 }, () => [0, 0, 0]),
+          ...[4, 5, 6, 7, 8, 9].map((i) => [i, i + 1, i + 2]),
+        ],
+        max: [9, 10, 11],
+      })
+    })
+
     // A blob Surco cannot read is kept as Engine wrote it: guessing at its layout could only
     // corrupt it, and the path still has to follow the file.
     it('moves the row and leaves blobs it cannot read as they were', async () => {

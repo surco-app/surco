@@ -43,7 +43,16 @@ describe('trash:restore', () => {
   it('tells Engine DJ the size of the file the original was restored over', async () => {
     restore.mockResolvedValue({ restoredTo: '/m/c.aiff', displaced })
     await handlers.get('trash:restore')?.(null, 'b1', 'undo')
-    expect(followEngineSize).toHaveBeenCalledWith('/m/c.aiff', 5678)
+    expect(followEngineSize).toHaveBeenCalledWith('/m/c.aiff', 5678, undefined)
+  })
+
+  // The conversion that replaced it cut or resampled the audio under Engine's positions: the
+  // original goes back with the way back it was kept with.
+  it('hands Engine DJ the way back an original was kept with', async () => {
+    const back = { trimmedMs: -1900, sampleCount: 882000 }
+    restore.mockResolvedValue({ restoredTo: '/m/c.aiff', displaced, engineShift: back })
+    await handlers.get('trash:restore')?.(null, 'b1')
+    expect(followEngineSize).toHaveBeenCalledWith('/m/c.aiff', 5678, back)
   })
 
   it('tells Engine DJ nothing when the original came back to an empty path', async () => {

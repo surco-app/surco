@@ -24,7 +24,8 @@ export function registerTrashIpc(
     )
     // The row that pointed at this file can stream it again straight away.
     mediaAccess.allow(result.restoredTo)
-    if (result.displaced) deps.followEngineSize?.(result.restoredTo, result.displaced.bytes)
+    if (result.displaced)
+      deps.followEngineSize?.(result.restoredTo, result.displaced.bytes, result.engineShift)
     return result
   })
   ipcMain.handle('trash:remove', (_e, id: string) => trash.remove(id))
