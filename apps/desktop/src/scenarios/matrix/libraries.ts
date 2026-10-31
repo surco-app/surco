@@ -19,7 +19,7 @@ import type { Settings } from '../../shared/types'
 import { music } from '../fakeMusic'
 import { makeRekordbox } from '../rekordboxFixture'
 import type { Programs } from './cells'
-import { makeSource, SEEDED_CUES_MS, type SourceTrack } from './sources'
+import { makeSource, SEEDED_CUES_MS, type SourceTrack, TRICKY } from './sources'
 
 export interface SeededTrack extends SourceTrack {
   rekordboxId: string
@@ -310,12 +310,13 @@ export function buildLibraries(
   root: string,
   programs: Programs,
   sources: SourceTrack[],
-  extra: { nfdRow?: boolean; twinRows?: boolean } = {},
+  extra: { nfdRow?: boolean; twinRows?: boolean; prefix?: string } = {},
 ): LibrarySet {
   mkdirSync(root, { recursive: true })
+  const named = (text: string) => (extra.prefix ? `${extra.prefix} ${text}` : text)
   const other = makeSource(join(root, 'Otra carpeta'), 'wav16', {
-    fileName: 'Otra pista',
-    tags: { title: 'Otra pista', artist: 'Nadie' },
+    fileName: named('Otra pista'),
+    tags: { title: named('Otra pista'), artist: named('Nadie'), album: named(TRICKY.album) },
   })
   const seeded: SeededTrack[] = [...sources, other].map((s, i) => ({
     ...s,
