@@ -554,6 +554,7 @@ export interface Expected {
   at: Record<Program, string>
   lagMs: number
   rekordboxStartMovedMs: number
+  traktorStartMovedMs: number
   samplesKept: boolean
   destGone: boolean
 }
@@ -848,19 +849,30 @@ function nmlPlaylist(nml: string, uuid: string): string[] | null {
   return [...list[0].matchAll(/<PRIMARYKEY\b[^>]*>/g)].map(([key]) => nmlKeyPath(key))
 }
 
-const TRAKTOR_CALIBRATION_MS: [string[], string[], number][] = [
-  [['.mp3'], ['.aif', '.aiff', '.flac'], -51],
-  [['.wav', '.aif', '.aiff', '.flac'], ['.mp3'], 51],
-]
-
-export function traktorCalibrationMs(sourceExt: string, outputExt: string): number {
-  const from = sourceExt.toLowerCase()
-  const to = outputExt.toLowerCase()
-  return (
-    TRAKTOR_CALIBRATION_MS.find(
-      ([sources, outputs]) => sources.includes(from) && outputs.includes(to),
-    )?.[2] ?? 0
+export function traktorTimelineMs(path: string): number {
+  if (extname(path).toLowerCase() !== '.mp3') return 0
+  const out = JSON.parse(
+    execFileSync(PROBE, [
+      '-v',
+      'error',
+      '-select_streams',
+      'a:0',
+      '-read_intervals',
+      '%+#1',
+      '-show_entries',
+      'packet=pos,duration_time:stream=start_time',
+      '-of',
+      'json',
+      path,
+    ]).toString(),
   )
+  const first = out.packets?.[0] ?? {}
+  const bytes = readFileSync(path)
+  let sync = leadingId3End(bytes)
+  while (sync + 1 < bytes.length && !(bytes[sync] === 0xff && (bytes[sync + 1] & 0xe0) === 0xe0))
+    sync++
+  const headerFrame = sync < Number(first.pos) ? Number(first.duration_time) : 0
+  return (Number(out.streams?.[0]?.start_time ?? 0) + headerFrame) * 1000
 }
 
 const MP3_FRAME_SAMPLES = 1152
@@ -911,7 +923,7 @@ function traktorBroken(nmlFile: string, set: LibrarySet, t: SeededTrack, e: Expe
   )
   const candidates = byId.length > 0 ? byId : byTags
   const entry = candidates.length === 1 ? candidates[0] : undefined
-  const shift = e.lagMs + traktorCalibrationMs(extname(t.path), extname(e.finalPath))
+  const shift = e.lagMs + e.traktorStartMovedMs
   const want = SEEDED_CUES_MS.map((ms) => ms + shift)
   if (candidates.length > 1)
     found.push(['points', `Traktor: ${candidates.length} entradas posibles para la pista`])
@@ -1100,6 +1112,7 @@ export function libraryInvariants(
     at: pointingAt(other.path),
     lagMs: 0,
     rekordboxStartMovedMs: 0,
+    traktorStartMovedMs: 0,
     samplesKept: true,
     destGone: false,
   }

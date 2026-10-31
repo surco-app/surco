@@ -28,6 +28,7 @@ import {
   nmlKeyPath,
   nmlLocationPath,
   pointingAt,
+  traktorTimelineMs,
 } from './oracle'
 import { makeSource, SEEDED_CUES_MS, type SourceTrack } from './sources'
 
@@ -38,6 +39,7 @@ const untouched = (t: SeededTrack, more: Partial<Expected> = {}): Expected => ({
   at: pointingAt(more.finalPath ?? t.path),
   lagMs: 0,
   rekordboxStartMovedMs: 0,
+  traktorStartMovedMs: 0,
   samplesKept: true,
   destGone: false,
   ...more,
@@ -580,7 +582,12 @@ describe('Synthetic libraries the matrix judges on its own', () => {
       const mp3 = mp3Beside(wav, 51)
       try {
         repoint(wav, 51)
-        const broken = libraryInvariants(only, set, wav, untouched(wav, { finalPath: mp3 }))
+        const broken = libraryInvariants(
+          only,
+          set,
+          wav,
+          untouched(wav, { finalPath: mp3, traktorStartMovedMs: traktorTimelineMs(mp3) }),
+        )
         expect(beyondCollateral(broken)).toEqual([])
       } finally {
         rmSync(mp3)
@@ -592,7 +599,12 @@ describe('Synthetic libraries the matrix judges on its own', () => {
       const mp3 = mp3Beside(wav, 0)
       try {
         repoint(wav, 0)
-        const broken = libraryInvariants(only, set, wav, untouched(wav, { finalPath: mp3 }))
+        const broken = libraryInvariants(
+          only,
+          set,
+          wav,
+          untouched(wav, { finalPath: mp3, traktorStartMovedMs: traktorTimelineMs(mp3) }),
+        )
         seen(broken, 'cues', 'Traktor: CUE_V2')
         seen(broken, 'cues', 'Traktor: TRAKTOR4')
       } finally {

@@ -22,6 +22,7 @@ import {
   originalBroken,
   pointingAt,
   rekordboxTimelineMs,
+  traktorTimelineMs,
 } from './oracle'
 import type { CellOutcome } from './report'
 import { SABOTAGES } from './sabotage'
@@ -245,6 +246,9 @@ export async function runGroup(
         lagMs: fileExists ? markerLagMs(witness.path, finalPath) : 0,
         rekordboxStartMovedMs: fileExists
           ? rekordboxTimelineMs(finalPath) - rekordboxTimelineMs(witness.path)
+          : 0,
+        traktorStartMovedMs: fileExists
+          ? traktorTimelineMs(finalPath) - traktorTimelineMs(witness.path)
           : 0,
         samplesKept:
           cell.quality === 'source' &&

@@ -28,7 +28,7 @@ import {
   originalBroken,
   pcmSha1,
   rekordboxTimelineMs,
-  traktorCalibrationMs,
+  traktorTimelineMs,
 } from './oracle'
 import { makeSource, type SourceTrack, TRICKY, type TrickyTags } from './sources'
 
@@ -457,18 +457,38 @@ describe('matrix file oracle', () => {
     })
   })
 
-  it('shifts Traktor cues by the calibration djotas measured in Traktor', () => {
-    expect(traktorCalibrationMs('.mp3', '.aiff')).toBe(-51)
-    expect(traktorCalibrationMs('.mp3', '.aif')).toBe(-51)
-    expect(traktorCalibrationMs('.MP3', '.flac')).toBe(-51)
-    expect(traktorCalibrationMs('.wav', '.mp3')).toBe(51)
-    expect(traktorCalibrationMs('.flac', '.mp3')).toBe(51)
-    expect(traktorCalibrationMs('.aiff', '.mp3')).toBe(51)
-    expect(traktorCalibrationMs('.mp3', '.wav')).toBe(0)
-    expect(traktorCalibrationMs('.mp3', '.mp3')).toBe(0)
-    expect(traktorCalibrationMs('.mp3', '.m4a')).toBe(0)
-    expect(traktorCalibrationMs('.m4a', '.mp3')).toBe(0)
-    expect(traktorCalibrationMs('.flac', '.aiff')).toBe(0)
+  // Traktor plays an MP3 from its first frame and trims nothing (measured in Traktor 4.5.1):
+  // its timeline runs ahead of ffmpeg's by whatever ffmpeg skips at the start, the
+  // Info/Xing frame and the encoder delay it trusts. PCM and FLAC have nothing to skip.
+  it("places Traktor's timeline where Traktor starts counting on each kind of file", () => {
+    const mp3x = makeSource(dir, 'mp3x', { fileName: 'traktor-x' })
+    const lame = join(dir, 'traktor-lame.mp3')
+    const bytes = readFileSync(mp3x.path)
+    bytes.write('LAME', bytes.indexOf('Lavc', bytes.indexOf('Info')), 'latin1')
+    writeFileSync(lame, bytes)
+    const mp3at48k = join(dir, 'traktor-48k.mp3')
+    execFileSync(FF, [
+      '-y',
+      '-v',
+      'error',
+      '-i',
+      mp3x.path,
+      '-ar',
+      '48000',
+      ...ENCODE.mp3.args,
+      mp3at48k,
+    ])
+    const table: [string, number][] = [
+      [mp3x.path, ((1152 + 576 + 529) / 44100) * 1000],
+      [lame, ((1152 + 576 + 529) / 44100) * 1000],
+      [mp3at48k, ((1152 + 576 + 529) / 48000) * 1000],
+      [makeSource(dir, 'mp3n', { fileName: 'traktor-n' }).path, 0],
+      [makeSource(dir, 'mp3j', { fileName: 'traktor-j' }).path, 0],
+      [makeSource(dir, 'alac', { fileName: 'traktor-alac' }).path, 0],
+      [makeSource(dir, 'wav16', { fileName: 'traktor-wav' }).path, 0],
+      [flac.path, 0],
+    ]
+    for (const [path, ms] of table) expect(traktorTimelineMs(path), path).toBeCloseTo(ms, 1)
   })
 
   // rekordbox counts cue milliseconds from its own start, which is not where ffmpeg starts:
