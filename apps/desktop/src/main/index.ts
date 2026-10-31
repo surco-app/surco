@@ -105,6 +105,7 @@ import { addToEngineLibrary, dumpEngineLibrary, withEngineDatabase } from './eng
 import { engineDatabasePath } from './enginePlaylists'
 import { registerEnginePlaylistsIpc } from './enginePlaylistsIpc'
 import { isEngineDjRunning, quitEngineDj } from './engineProcess'
+import { engineSizeFollower } from './engineSizeFollow'
 import { expandPaths } from './expand'
 import { registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
@@ -431,6 +432,11 @@ const engineCueQueueWatch = watchRekordboxQueue({
   collection: engineLibraryPath,
   isRunning: isEngineDjRunning,
   onApplied: announceEngineApplied,
+})
+const followEngineSize = engineSizeFollower({
+  enabled: () => getSettings().syncEngineDj,
+  enqueue: engineCueQueue.enqueue,
+  apply: () => applyEngineCueQueueQuietly(),
 })
 const applyEngineCueQueueQuietly = (serial = serialLibraryFlush): void => {
   if (!engineLibraryPath()) {
@@ -1407,7 +1413,11 @@ function registerIpc(): void {
     getProvider(provider).getRelease(ref, priority),
   )
 
-  registerAppleMusicIpc({ trackTmp: tmpManifest.track, untrackTmp: tmpManifest.untrack })
+  registerAppleMusicIpc({
+    trackTmp: tmpManifest.track,
+    untrackTmp: tmpManifest.untrack,
+    followEngineSize,
+  })
   registerRekordboxPlaylistsIpc(
     () => findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),
     {
@@ -1660,6 +1670,7 @@ function registerIpc(): void {
       tmp: tmpManifest,
       hostFor: (sender) => hostFor(BrowserWindow.fromWebContents(sender), sender),
       sessions,
+      followEngineSize,
     }),
     beginMoment: moments.begin,
   })
@@ -2112,7 +2123,7 @@ function registerIpc(): void {
     broadcast,
     rekordboxBatchOpen,
   )
-  registerTrashIpc(surcoTrash, mediaAccess)
+  registerTrashIpc(surcoTrash, mediaAccess, { followEngineSize })
   registerFeedbackIpc()
 
   // Restarts into the already-downloaded update. Paired with the update:downloaded

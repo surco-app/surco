@@ -1,5 +1,5 @@
 import { constants as fsConstants } from 'node:fs'
-import { copyFile } from 'node:fs/promises'
+import { copyFile, stat } from 'node:fs/promises'
 import { extname } from 'node:path'
 import log from 'electron-log/main'
 import type { TrashEntry } from '../shared/types'
@@ -16,6 +16,10 @@ export interface TmpTracking {
   untrack: (path: string) => void
 }
 
+// Told of a file rewritten on its own path, with the size it had before, so Engine DJ's row
+// can follow it (see engineSizeFollow.ts).
+export type Rewritten = (file: string, fromBytes: number) => void
+
 // The same copy, check, back up and rename that convertAudio does for an in-place update,
 // minus everything else it does: no ffmpeg pass, no full retag, no cues to carry. TagLib
 // only rewrites the frames it was handed, so DJ data it was not handed stays byte for byte.
@@ -23,11 +27,13 @@ export async function rewriteTagFields(
   file: string,
   changes: TagFieldChange[],
   tracking?: TmpTracking,
+  rewritten?: Rewritten,
 ): Promise<{ outcomes: FieldWrite[]; backup?: TrashEntry }> {
   const tmp = convertTmpPath(file, extname(file))
   tracking?.track(tmp)
   let archived: TrashEntry | null = null
   try {
+    const fromBytes = (await stat(file)).size
     await copyFile(file, tmp, fsConstants.COPYFILE_FICLONE)
     const outcomes = await runInWorker<FieldWrite[]>({ type: 'setTagFields', file: tmp, changes })
     if (!outcomes.includes('written')) {
@@ -42,6 +48,7 @@ export async function rewriteTagFields(
     if (!archived && hasOriginalKeeper()) throw new Error('no-backup')
     await renameWithRetry(tmp, file)
     tracking?.untrack(tmp)
+    rewritten?.(file, fromBytes)
     return { outcomes, backup: archived ?? undefined }
   } catch (e) {
     if (archived) await discardBackup(archived).catch(() => undefined)
@@ -63,16 +70,19 @@ export interface PreparedRewrite {
 export async function prepareTagRewrite(
   file: string,
   tracking?: TmpTracking,
+  rewritten?: Rewritten,
 ): Promise<PreparedRewrite> {
   const tmp = convertTmpPath(file, extname(file))
   tracking?.track(tmp)
   let archived: TrashEntry | null = null
+  let fromBytes = 0
   const abandon = async () => {
     if (archived) await discardBackup(archived).catch(() => undefined)
     archived = null
     await dropTemp(tmp, tracking)
   }
   try {
+    fromBytes = (await stat(file)).size
     await copyFile(file, tmp, fsConstants.COPYFILE_FICLONE)
     archived = await keepOriginal(file, 'replaced', file, {
       reencodes: false,
@@ -103,10 +113,13 @@ export async function prepareTagRewrite(
     } catch (e) {
       await dropTemp(tmp, tracking)
       throw e
+    } finally {
+      rewritten?.(file, fromBytes)
     }
   }
   const keep = async () => {
     await dropTemp(tmp, tracking)
+    rewritten?.(file, fromBytes)
     return archived ?? undefined
   }
   return { write, abandon, keep, backup: () => archived ?? undefined }
