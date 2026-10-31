@@ -206,6 +206,9 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
   const file = load<R>(deps.store)
   let chain: Promise<unknown> = Promise.resolve()
   let pending = 0
+  // The repoints an apply has read and is writing: a later one for the same file waits on
+  // its own, measured from what that write leaves, instead of stacking onto it.
+  const writing = new Set<R>()
 
   // The collection in use, or the one the settings name while its drive is unplugged. A
   // queue made while no collection was known belongs to whichever is found.
@@ -275,9 +278,33 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
     if (repoints.length > 0) {
       if (!(await ensureClosed())) return refused('cancelled')
       askBatch = async () => true
-      const results = await deps.repoint(collectionPath, repoints)
+      // What arrived for a file while its repoint was written waited on its own; a write that
+      // did not happen leaves both queued, and the later one goes back onto the earlier.
+      const restack = () => {
+        for (const r of repoints) {
+          const at = q.repoints.indexOf(r)
+          if (at === -1) continue
+          const later = q.repoints.filter((x, i) => i > at && x.from === r.from)
+          q.repoints[at] = later.reduce((a, b) => (deps.stack ? deps.stack(a, b) : b), r)
+          q.repoints = q.repoints.filter((x) => !later.includes(x))
+        }
+        save()
+      }
+      for (const r of repoints) writing.add(r)
+      let results: LibraryRepointResult[]
+      try {
+        results = await deps.repoint(collectionPath, repoints)
+      } catch (err) {
+        restack()
+        throw err
+      } finally {
+        for (const r of repoints) writing.delete(r)
+      }
       const wide = results.find((r) => !r.written && COLLECTION_WIDE.has(r.reason))
-      if (wide && !wide.written) return refused(wide.reason as RekordboxEditRefusal)
+      if (wide && !wide.written) {
+        restack()
+        return refused(wide.reason as RekordboxEditRefusal)
+      }
       for (const [i, r] of results.entries()) {
         if (r.written) repointedTo.add(repoints[i].to)
         else if (r.reason === 'ambiguous')
@@ -375,7 +402,7 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
       }
       if (isEmptyQueue(q)) q.collection = at || undefined
       for (const r of repoints) {
-        const at = q.repoints.findIndex((x) => x.from === r.from)
+        const at = q.repoints.findIndex((x) => x.from === r.from && !writing.has(x))
         if (at === -1) q.repoints.push(r)
         else q.repoints[at] = deps.stack ? deps.stack(q.repoints[at], r) : r
       }
