@@ -42,7 +42,7 @@ import { foldWal, restoreCollection, writeBackup } from './rekordboxSessionBacku
 // net. rekordbox keeps its own rotating backups beside it as well.
 
 export type RepointResult =
-  | { written: true; id: string }
+  | { written: true; id: string; ids?: string[] }
   | { written: false; reason: 'no-match' | 'output-missing' | 'unreadable' | 'occupied' }
   | { written: false; reason: 'rekordbox-running' | 'backup-failed' | 'write-failed' }
   | { written: false; reason: 'read-only' }
@@ -195,7 +195,11 @@ export async function repointTracks(
       const ids = isAmbiguous(match) ? match.ambiguous : [match.id]
       if (heldByAnother(findTrackByPath(db, repoint.to, repoint), ids))
         results[p.index] = { written: false, reason: 'occupied' }
-      else for (const id of ids) writes.push({ ...p, id })
+      else {
+        const unclaimed = ids.filter((id) => !writes.some((w) => w.id === id))
+        if (unclaimed.length === 0) results[p.index] = { written: false, reason: 'occupied' }
+        else for (const id of unclaimed) writes.push({ ...p, id })
+      }
     }
     if (writes.length > 0) {
       foldWal(db)
@@ -272,7 +276,11 @@ export async function repointTracks(
         onWrite?.()
       }
     })()
-    for (const w of writes) results[w.index] ??= { written: true, id: w.id }
+    for (const w of writes) {
+      const ids = writes.filter((o) => o.index === w.index).map((o) => o.id)
+      results[w.index] ??=
+        ids.length > 1 ? { written: true, id: w.id, ids } : { written: true, id: w.id }
+    }
     return settle({ written: false, reason: 'no-match' })
   } catch (err) {
     for (const artwork of staged.values()) discardArtwork(artwork)

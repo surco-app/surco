@@ -818,9 +818,27 @@ describe('a repoint whose audio was rewritten', () => {
         ...find,
       })
 
-      expect(result).toEqual({ written: true, id: '900001' })
+      expect(result).toEqual({ written: true, id: '900001', ids: ['900001', '900002'] })
       expect(readRow(dbPath).FolderPath).toBe(output)
       expect(readRow(dbPath, '900002')).toMatchObject({ FolderPath: output, FileSize: 5000 })
+      expect(cuesOf(dbPath)).toEqual([
+        { ID: 'c1', InMsec: 31949 },
+        { ID: 'c2', InMsec: 39949 },
+      ])
+    })
+
+    it('shifts each row once when the run names the file twice, under both spellings', async () => {
+      const { real, linked, output } = await twins()
+
+      const results = await repointTracks(dbPath, [
+        { from: real, to: output, audio: { cueShiftMs: -51 }, ...find },
+        { from: linked, to: output, audio: { cueShiftMs: -51 }, ...find },
+      ])
+
+      expect(results).toEqual([
+        { written: true, id: '900001', ids: ['900001', '900002'] },
+        { written: false, reason: 'occupied' },
+      ])
       expect(cuesOf(dbPath)).toEqual([
         { ID: 'c1', InMsec: 31949 },
         { ID: 'c2', InMsec: 39949 },
