@@ -80,6 +80,10 @@ export function stackRepoint(
       : repoint),
     ...(engineShift ? { engineShift } : {}),
     ...(stacks && earlier.fromBytes !== undefined ? { fromBytes: earlier.fromBytes } : {}),
+    ...(earlier.expectTrackData && !repoint.expectTrackData
+      ? { expectTrackData: earlier.expectTrackData }
+      : {}),
+    ...(earlier.fixLength ? { fixLength: true } : {}),
   }
 }
 

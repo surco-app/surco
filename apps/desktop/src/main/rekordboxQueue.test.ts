@@ -426,6 +426,46 @@ describe('rekordbox queue', () => {
     expect(d.repoint).toHaveBeenCalledWith(expect.any(String), [repair])
   })
 
+  // A genre rewrite while Engine DJ is open queues the file's new size behind the repair. The
+  // stacked entry still has to be the guarded repair, length included.
+  it('keeps a damage repair guarded when a size follow stacks on it', async () => {
+    const d = deps({ stack: stackRepoint })
+    const q = createRekordboxQueue(d)
+    const guard = { sampleRate: 44100, sampleCount: 441000 }
+    q.enqueue([], [{ from: '/m/b.wav', to: '/m/b.wav', expectTrackData: guard, fixLength: true }])
+    q.enqueue([], [{ from: '/m/b.wav', to: '/m/b.wav', fromBytes: 120 }])
+    expect(q.queuedRepoints()).toEqual([
+      { from: '/m/b.wav', to: '/m/b.wav', fromBytes: 120, expectTrackData: guard, fixLength: true },
+    ])
+  })
+
+  it('keeps the size follow under a damage repair queued after it', async () => {
+    const d = deps({ stack: stackRepoint })
+    const q = createRekordboxQueue(d)
+    const guard = { sampleRate: 44100, sampleCount: 441000 }
+    q.enqueue([], [{ from: '/m/b.wav', to: '/m/b.wav', fromBytes: 120 }])
+    q.enqueue(
+      [],
+      [
+        {
+          from: '/m/b.wav',
+          to: '/m/b.wav',
+          expectTrackData: guard,
+          engineShift: { trimmedMs: 0, sampleRateHz: 48000 },
+        },
+      ],
+    )
+    expect(q.queuedRepoints()).toEqual([
+      {
+        from: '/m/b.wav',
+        to: '/m/b.wav',
+        fromBytes: 120,
+        expectTrackData: guard,
+        engineShift: { trimmedMs: 0, sampleRateHz: 48000 },
+      },
+    ])
+  })
+
   // An Undo restores the original while the fix's own size write is being applied. Stacked
   // onto that entry, the restore kept the fix's starting size and stayed queued after the
   // apply took the entry it had read, so the next apply asked for a size the row no longer
