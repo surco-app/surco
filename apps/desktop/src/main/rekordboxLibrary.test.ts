@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs'
+import { mkdirSync, realpathSync } from 'node:fs'
 import {
   chmod,
   copyFile,
@@ -7,6 +7,7 @@ import {
   readdir,
   readFile,
   stat,
+  symlink,
   writeFile,
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -448,27 +449,47 @@ describe('repointTrack', () => {
     await expect(stat(backupOf(dbPath, 'backup'))).rejects.toThrow()
   })
 
-  it('moves every row of one file, since each is a twin in its own playlists and any left behind breaks once the old file goes (Bamio 31/10: DJ Swisherman and DJ SWISHERMAN)', async () => {
-    const db = openRekordboxDb(dbPath)
-    if (!db) throw new Error('could not open the collection')
-    db.prepare(
-      `INSERT INTO djmdContent (ID, FolderPath, FileNameL, FileType, FileSize, OrgFolderPath)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-    ).run('900002', MP3.replace('/Volumes/Public/Music', '/mirror'), '02 Everybody.mp3', 1, 999, '')
-    db.close()
+  it('refuses to move two rows whose paths compare equal but name two different files', async () => {
+    const one = join(audioDir, 'DJ Swisherman', '02 Everybody.mp3')
+    const two = join(audioDir, 'DJ Swisherman-other', '02 Everybody.mp3')
+    for (const f of [one, two]) {
+      await mkdir(dirname(f), { recursive: true })
+      await writeFile(f, Buffer.alloc(100))
+    }
+    seedTwins(dbPath, one, two)
     const output = join(audioDir, '02 Everybody.wav')
     await writeFile(output, Buffer.alloc(5000))
 
     const result = await repointTrack(dbPath, {
-      from: MP3,
+      from: one,
       to: output,
-      realPath: (p) => p.replace('/mirror', '/Volumes/Public/Music'),
-      homeMusicDir: '/mirror',
+      realPath: (p) => p.replace('DJ Swisherman-other', 'DJ Swisherman'),
+      homeMusicDir: '/nowhere',
     })
 
-    expect(result).toEqual({ written: true, id: '900001' })
-    expect(readRow(dbPath).FolderPath).toBe(output)
-    expect(readRow(dbPath, '900002')).toMatchObject({ FolderPath: output, FileSize: 5000 })
+    expect(result).toEqual({ written: false, reason: 'ambiguous', ids: ['900001', '900002'] })
+    expect(readRow(dbPath).FolderPath).toBe(one)
+    expect(readRow(dbPath, '900002').FolderPath).toBe(two)
+    await expect(stat(backupOf(dbPath, 'backup'))).rejects.toThrow()
+  })
+
+  it('refuses to move two rows when one of them cannot be read from disk', async () => {
+    const one = join(audioDir, '02 Everybody.mp3')
+    await writeFile(one, Buffer.alloc(100))
+    const gone = join(audioDir, 'gone', '02 Everybody.mp3')
+    seedTwins(dbPath, one, gone)
+    const output = join(audioDir, '02 Everybody.wav')
+    await writeFile(output, Buffer.alloc(5000))
+
+    const result = await repointTrack(dbPath, {
+      from: one,
+      to: output,
+      realPath: (p) => p.replace('/gone', ''),
+      homeMusicDir: '/nowhere',
+    })
+
+    expect(result).toEqual({ written: false, reason: 'ambiguous', ids: ['900001', '900002'] })
+    expect(readRow(dbPath).FolderPath).toBe(one)
   })
 
   it('refuses to move an entry onto a file the collection already holds', async () => {
@@ -565,6 +586,22 @@ describe('repointTrack', () => {
     expect(songPlaylistIds(backupOf(dbPath, 'backup'))).toEqual(['1', '2', 'w1'])
   })
 })
+
+function seedTwins(path: string, first: string, second: string): void {
+  const db = openRekordboxDb(path)
+  if (!db) throw new Error('could not reopen the collection')
+  db.prepare(`UPDATE djmdContent SET FolderPath = ? WHERE ID = '900001'`).run(first)
+  db.prepare(
+    `INSERT INTO djmdContent (ID, FolderPath, FileNameL, FileType, FileSize, OrgFolderPath)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).run('900002', second, '02 Everybody.mp3', 1, 999, '')
+  db.prepare(`INSERT INTO djmdCue (ID, ContentID, InMsec) VALUES (?, ?, ?)`).run(
+    'c2',
+    '900002',
+    40000,
+  )
+  db.close()
+}
 
 // Adds a second and third track the collection knows, for the runs below.
 function addTrack(path: string, id: string, file: string): void {
@@ -748,6 +785,67 @@ describe('a repoint whose audio was rewritten', () => {
 
   // A tags-only update leaves the audio as it was: its analysis is still true, and making
   // rekordbox redo it would throw away a grid the DJ may have corrected by hand.
+  describe('a file with a row under each spelling', () => {
+    async function twins() {
+      const real = join(audioDir, 'real', '02 Everybody.mp3')
+      await mkdir(dirname(real), { recursive: true })
+      await writeFile(real, Buffer.alloc(100))
+      await symlink(join(audioDir, 'real'), join(audioDir, 'link'))
+      const linked = join(audioDir, 'link', '02 Everybody.mp3')
+      seedTwins(dbPath, real, linked)
+      const output = join(audioDir, '02 Everybody.aiff')
+      await writeFile(output, Buffer.alloc(5000))
+      return { real, linked, output }
+    }
+
+    const cuesOf = (path: string) => {
+      const db = openRekordboxDb(path)
+      if (!db) throw new Error('could not reopen the collection')
+      const rows = db.prepare(`SELECT ID, InMsec FROM djmdCue ORDER BY ID`).all()
+      db.close()
+      return rows
+    }
+
+    const find = { realPath: (p: string) => realpathSync(p), homeMusicDir: '/nowhere' }
+
+    it('moves both rows and shifts the cues of each exactly once', async () => {
+      const { real, output } = await twins()
+
+      const result = await repointTrack(dbPath, {
+        from: real,
+        to: output,
+        audio: { cueShiftMs: -51 },
+        ...find,
+      })
+
+      expect(result).toEqual({ written: true, id: '900001', ids: ['900001', '900002'] })
+      expect(readRow(dbPath).FolderPath).toBe(output)
+      expect(readRow(dbPath, '900002')).toMatchObject({ FolderPath: output, FileSize: 5000 })
+      expect(cuesOf(dbPath)).toEqual([
+        { ID: 'c1', InMsec: 31949 },
+        { ID: 'c2', InMsec: 39949 },
+      ])
+    })
+
+    it('shifts each row once when the run names the file twice, under both spellings', async () => {
+      const { real, linked, output } = await twins()
+
+      const results = await repointTracks(dbPath, [
+        { from: real, to: output, audio: { cueShiftMs: -51 }, ...find },
+        { from: linked, to: output, audio: { cueShiftMs: -51 }, ...find },
+      ])
+
+      expect(results).toEqual([
+        { written: true, id: '900001', ids: ['900001', '900002'] },
+        { written: false, reason: 'occupied' },
+      ])
+      expect(cuesOf(dbPath)).toEqual([
+        { ID: 'c1', InMsec: 31949 },
+        { ID: 'c2', InMsec: 39949 },
+      ])
+    })
+  })
+
   it('keeps the analysis and the cues when the audio was not rewritten', async () => {
     const output = join(audioDir, '02 Everybody.wav')
     await writeFile(output, Buffer.alloc(5000))

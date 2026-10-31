@@ -1,4 +1,5 @@
 import { pbkdf2 } from 'node:crypto'
+import { statSync } from 'node:fs'
 import { open } from 'node:fs/promises'
 import { promisify } from 'node:util'
 import Database from 'better-sqlite3-multiple-ciphers'
@@ -45,6 +46,15 @@ export function isAmbiguous(m: RekordboxTrack | AmbiguousMatch | null): m is Amb
 }
 
 export type FindOptions = PathMatchOptions & { quiet?: boolean }
+
+export function sameFileOnDisk(paths: string[]): boolean {
+  try {
+    const [first, ...rest] = paths.map((p) => statSync(p, { bigint: true }))
+    return first.ino !== 0n && rest.every((s) => s.dev === first.dev && s.ino === first.ino)
+  } catch {
+    return false
+  }
+}
 
 // rekordbox stores the format as a number, verified against a real 1,962-track
 // collection rather than taken from third-party notes, which list mp3 as "0 or 1".

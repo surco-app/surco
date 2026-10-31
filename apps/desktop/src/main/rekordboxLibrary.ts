@@ -18,6 +18,7 @@ import {
   isAmbiguous,
   openRekordboxDb,
   rekordboxStoredPath,
+  sameFileOnDisk,
 } from './rekordboxDb'
 import { applyRekordboxMeta, type RekordboxMeta } from './rekordboxMetadata'
 import { isRekordboxRunning } from './rekordboxProcess'
@@ -41,7 +42,7 @@ import { foldWal, restoreCollection, writeBackup } from './rekordboxSessionBacku
 // net. rekordbox keeps its own rotating backups beside it as well.
 
 export type RepointResult =
-  | { written: true; id: string }
+  | { written: true; id: string; ids?: string[] }
   | { written: false; reason: 'no-match' | 'output-missing' | 'unreadable' | 'occupied' }
   | { written: false; reason: 'rekordbox-running' | 'backup-failed' | 'write-failed' }
   | { written: false; reason: 'read-only' }
@@ -114,6 +115,11 @@ function stageCovers(
   return staged
 }
 
+const twinPaths = (db: NonNullable<ReturnType<typeof openRekordboxDb>>, ids: string[]) => {
+  const folder = db.prepare('SELECT FolderPath FROM djmdContent WHERE ID = ?')
+  return ids.map((id) => (folder.get(id) as { FolderPath: string }).FolderPath)
+}
+
 const heldByAnother = (holder: ReturnType<typeof findTrackByPath>, ids: string[]): boolean =>
   holder !== null && (isAmbiguous(holder) || !ids.includes(holder.id))
 
@@ -179,10 +185,21 @@ export async function repointTracks(
         results[p.index] = { written: false, reason: 'no-match' }
         continue
       }
+      if (
+        isAmbiguous(match) &&
+        !sameFileOnDisk([repoint.from, ...twinPaths(db, match.ambiguous)])
+      ) {
+        results[p.index] = { written: false, reason: 'ambiguous', ids: match.ambiguous }
+        continue
+      }
       const ids = isAmbiguous(match) ? match.ambiguous : [match.id]
       if (heldByAnother(findTrackByPath(db, repoint.to, repoint), ids))
         results[p.index] = { written: false, reason: 'occupied' }
-      else for (const id of ids) writes.push({ ...p, id })
+      else {
+        const unclaimed = ids.filter((id) => !writes.some((w) => w.id === id))
+        if (unclaimed.length === 0) results[p.index] = { written: false, reason: 'occupied' }
+        else for (const id of unclaimed) writes.push({ ...p, id })
+      }
     }
     if (writes.length > 0) {
       foldWal(db)
@@ -259,7 +276,11 @@ export async function repointTracks(
         onWrite?.()
       }
     })()
-    for (const w of writes) results[w.index] ??= { written: true, id: w.id }
+    for (const w of writes) {
+      const ids = writes.filter((o) => o.index === w.index).map((o) => o.id)
+      results[w.index] ??=
+        ids.length > 1 ? { written: true, id: w.id, ids } : { written: true, id: w.id }
+    }
     return settle({ written: false, reason: 'no-match' })
   } catch (err) {
     for (const artwork of staged.values()) discardArtwork(artwork)

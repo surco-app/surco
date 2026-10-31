@@ -1,14 +1,24 @@
 import { createHash } from 'node:crypto'
-import { mkdtempSync, readFileSync, statSync } from 'node:fs'
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
+vi.mock('./rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
 
 import { makeRekordbox, type RekordboxSeed, rekordboxRow } from '../scenarios/rekordboxFixture'
 import { type FindOptions, openRekordboxDb } from './rekordboxDb'
+import { repointTracks } from './rekordboxLibrary'
 import {
   checkRekordbox,
   type RekordboxBefore,
@@ -17,8 +27,15 @@ import {
   snapshotRekordboxRow,
 } from './verifyRekordbox'
 
-const FROM = '/Volumes/Music/Artist/Title.aiff'
-const TO = '/Volumes/Music/Artist/Title.wav'
+function onDisk(path: string, bytes = 100): string {
+  mkdirSync(dirname(path), { recursive: true })
+  writeFileSync(path, Buffer.alloc(bytes))
+  return path
+}
+
+const MUSIC = mkdtempSync(join(tmpdir(), 'surco-verifyrb-music-'))
+const FROM = onDisk(join(MUSIC, 'Artist', 'Title.aiff'))
+const TO = join(MUSIC, 'Artist', 'Title.wav')
 const SIZE = 52_000_123
 const find: FindOptions = { realPath: (p) => p, homeMusicDir: '/nowhere', quiet: true }
 const thirteen = Array.from({ length: 13 }, (_, i) => 1000 * (i + 1))
@@ -127,6 +144,13 @@ describe('snapshotRekordboxRow', () => {
       { id: '100', cues: 13, analysisDataPath: '', analysed: 0 },
       { id: '101', cues: 13, analysisDataPath: '', analysed: 0 },
     ])
+  })
+
+  it('two rows that compare equal but are two files on disk are ambiguous, not twins', () => {
+    const other = onDisk(join(mkdtempSync(join(tmpdir(), 'surco-verifyrb-')), 'Title.aiff'))
+    const db = collection([{}, { path: other }])
+    const options: FindOptions = { ...find, realPath: (p) => (p === other ? FROM : p) }
+    expect(snapshotRekordboxRow(readOnly(db), FROM, options)).toBe('ambiguous')
   })
 
   // A failed read is not "rekordbox does not have it": the caller must mark the track
@@ -317,7 +341,7 @@ describe('checkRekordbox', () => {
   it('a row on the ~/Music/Music spelling of the file is the same file', () => {
     const link = '/Users/dj/Music/Music'
     const options: FindOptions = {
-      realPath: (p) => (p === link ? '/Volumes/Music' : p),
+      realPath: (p) => (p === link ? MUSIC : p),
       homeMusicDir: link,
       quiet: true,
     }
@@ -504,4 +528,58 @@ describe('checkRekordbox', () => {
     expect({ sha: sha(), mtime: statSync(db).mtimeMs }).toEqual(was)
     expect(rekordboxRow(db, '100').cuesMs).toHaveLength(13)
   })
+})
+
+describe('the repoint and its check together', () => {
+  const real = (p: string) => realpathSync(p)
+
+  async function run(first: string, second: string, keyOf: (p: string) => string) {
+    const db = collection([{ path: first }, { path: second }])
+    const options: FindOptions = { realPath: keyOf, homeMusicDir: '/nowhere', quiet: true }
+    const before = snapshotRekordboxRow(readOnly(db), first, options)
+    const to = onDisk(join(dirname(first), 'Title.wav'), 4321)
+    const [result] = await repointTracks(
+      db,
+      [{ from: first, to, audio: { cueShiftMs: -51 }, ...options }],
+      { backup: async () => {} },
+    )
+    const [checked] = checkRekordbox(
+      readOnly(db),
+      [{ from: first, to, samplesKept: false, before, added: false, size: 4321 }],
+      options,
+    )
+    return { db, result, checked, to }
+  }
+
+  it('two spellings of one file through a symlink are both moved, cues shifted once, and check ok', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'surco-verifyrb-twin-'))
+    const file = onDisk(join(root, 'real', 'Title.aiff'))
+    symlinkSync(join(root, 'real'), join(root, 'link'))
+    const { db, result, checked, to } = await run(file, join(root, 'link', 'Title.aiff'), real)
+
+    expect(result.written).toBe(true)
+    expect(checked).toEqual({
+      place: 'rekordbox',
+      state: 'ok',
+      detail: { key: 'rekordboxOk', params: { format: 'WAV', cues: 13 } },
+    })
+    for (const id of ['100', '101']) {
+      expect(rekordboxRow(db, id).path).toBe(to)
+      expect(rekordboxRow(db, id).cuesMs).toEqual(thirteen.map((ms) => ms - 51))
+    }
+  }, 30000)
+
+  it('two files whose paths compare equal stay where they were and are never checked ok', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'surco-verifyrb-strangers-'))
+    const one = onDisk(join(root, 'DJ Swisherman', 'Title.aiff'))
+    const two = onDisk(join(root, 'DJ Swisherman-other', 'Title.aiff'))
+    const { db, result, checked } = await run(one, two, (p) =>
+      p.replace('DJ Swisherman-other', 'DJ Swisherman'),
+    )
+
+    expect(result).toEqual({ written: false, reason: 'ambiguous', ids: ['100', '101'] })
+    expect(checked.state).toBe('mismatch')
+    expect([rekordboxRow(db, '100').path, rekordboxRow(db, '101').path]).toEqual([one, two])
+    expect(rekordboxRow(db, '101').cuesMs).toEqual(thirteen)
+  }, 30000)
 })
