@@ -247,3 +247,67 @@ describe('exportButtonLabel', () => {
     ).toBe('editor.convert')
   })
 })
+
+describe('exportButtonLabel inside a library tab', () => {
+  it.each([
+    [{ ...base, withAppleMusic: true, openSource: 'appleMusic' as const }, 'editor.convertNoMusic'],
+    [
+      { ...base, inPlace: true, withAppleMusic: true, openSource: 'appleMusic' as const },
+      'editor.update',
+    ],
+    [
+      { ...base, count: 2, withAppleMusic: true, openSource: 'appleMusic' as const },
+      'editor.convertAll',
+    ],
+  ])('leaves Apple Music unnamed when the track is already in Music: %o → %s', (state, key) => {
+    expect(exportButtonLabel(state).key).toBe(key)
+  })
+
+  it('keeps the place unnamed in Music, where the file still lands in the library and not beside the original', () => {
+    expect(
+      exportButtonLabel({
+        ...base,
+        withAppleMusic: true,
+        destination: 'beside',
+        openSource: 'appleMusic',
+      }).key,
+    ).toBe('editor.convertNoMusic')
+  })
+
+  it('still names a second library the conversion reaches, since that one is not where the user is', () => {
+    expect(
+      exportButtonLabel({
+        ...base,
+        withAppleMusic: true,
+        djTargets: ['rekordbox'],
+        openSource: 'appleMusic',
+      }),
+    ).toEqual({ key: 'editor.convertTo', options: { format: 'AIFF', programs: 'rekordbox' } })
+  })
+
+  it('leaves the DJ library of the open tab unnamed and names the rest', () => {
+    expect(
+      exportButtonLabel({
+        ...base,
+        withAppleMusic: true,
+        djTargets: ['rekordbox', 'traktor'],
+        openSource: 'rekordbox',
+      }),
+    ).toEqual({
+      key: 'editor.convertTo',
+      options: { format: 'AIFF', programs: 'Apple Music + Traktor' },
+    })
+  })
+
+  it('drops to the plain label when the open tab is the only library it reaches', () => {
+    expect(exportButtonLabel({ ...base, djTargets: ['engine'], openSource: 'engine' }).key).toBe(
+      'editor.convertNoMusic',
+    )
+  })
+
+  it('names Apple Music in Tracks, where adding to it is a choice the button has to state', () => {
+    expect(exportButtonLabel({ ...base, withAppleMusic: true, openSource: null }).key).toBe(
+      'editor.convert',
+    )
+  })
+})

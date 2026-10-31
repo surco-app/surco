@@ -3,7 +3,12 @@ import type React from 'react'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FORMAT_SETTINGS, OUTPUT_FORMATS } from '../../../shared/outputFormats'
-import type { FormatSetting, OutputFormat, ProcessStage } from '../../../shared/types'
+import type {
+  FormatSetting,
+  OutputFormat,
+  PlaylistSource,
+  ProcessStage,
+} from '../../../shared/types'
 import type { Destination } from '../lib/destination'
 import type { DjLibraryId } from '../lib/djLibraries'
 import { exportButtonLabel } from '../lib/exportLabel'
@@ -37,6 +42,7 @@ interface ExportButtonProps {
   exportedFormat: OutputFormat | null
   withAppleMusic: boolean
   djTargets: DjLibraryId[]
+  openSource?: PlaylistSource | null
   incomplete: boolean
   // The reason the convert is blocked (the empty required fields), shown as a tooltip on
   // the disabled button so it explains itself. Only meaningful while incomplete.
@@ -102,6 +108,7 @@ export function ExportButton({
   exportedFormat,
   withAppleMusic,
   djTargets,
+  openSource,
   incomplete,
   incompleteReason,
   blockedLabel,
@@ -150,6 +157,7 @@ export function ExportButton({
     done,
     withAppleMusic,
     djTargets,
+    openSource,
     format: formatLabel,
     exportedFormat: exportedFormat?.toUpperCase() ?? null,
     destination,
