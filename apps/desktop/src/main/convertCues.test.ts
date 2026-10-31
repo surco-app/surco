@@ -32,6 +32,7 @@ import { buildTraktorTree, readTraktorCueStart, traktorCue } from './traktor4Fix
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-cues-'))
 const src = join(dir, 'in.aiff')
+const XING_LEAD_MS = (2257 / 44100) * 1000
 
 const meta: TrackMetadata = {
   title: 'Till I Come',
@@ -350,7 +351,9 @@ describe('convertAudio cue preservation', () => {
     await convertAudio(cued, out, 'mp3', meta)
 
     expect(traktorPrivTree(out)).not.toBeNull()
-    expect(readTraktorCueStart(traktorPrivTree(out) as Uint8Array, 1)).toBeCloseTo(79672.64 + 51)
+    expect(readTraktorCueStart(traktorPrivTree(out) as Uint8Array, 1)).toBeCloseTo(
+      79672.64 + XING_LEAD_MS,
+    )
     // The TXXX ffmpeg wrote is the wrong alphabet for Traktor; carrying the tree over
     // must replace it, not sit alongside it as a second copy that tools disagree about.
     expect(hasTraktorTxxx(out)).toBe(false)
@@ -449,7 +452,7 @@ describe('convertAudio cue preservation', () => {
 
     const tree2 = traktorPrivTree(out)
     expect(tree2).not.toBeNull()
-    expect(readTraktorCueStart(tree2 as Uint8Array, 1)).toBeCloseTo(78372.64 + 51)
+    expect(readTraktorCueStart(tree2 as Uint8Array, 1)).toBeCloseTo(78372.64 + XING_LEAD_MS)
   })
 
   // The re-encode path folds the cue carry-over into the same writeTags call as the

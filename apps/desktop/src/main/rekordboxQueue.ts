@@ -71,6 +71,9 @@ export interface QueueDeps<R extends QueuedRepoint = RekordboxRepoint> {
   nodeStamps: (collectionPath: string) => Promise<Record<string, number>>
   onChange: (state: RekordboxQueueState) => void
   addsTracks?: boolean
+  // How a repoint for a file already waiting joins the one there; the later replaces it
+  // otherwise.
+  stack?: (earlier: R, later: R) => R
 }
 
 export type QueueApply =
@@ -374,7 +377,7 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
       for (const r of repoints) {
         const at = q.repoints.findIndex((x) => x.from === r.from)
         if (at === -1) q.repoints.push(r)
-        else q.repoints[at] = r
+        else q.repoints[at] = deps.stack ? deps.stack(q.repoints[at], r) : r
       }
       for (const op of ops) {
         const at = q.ops.findIndex((x) => keyOf(x) === keyOf(op))

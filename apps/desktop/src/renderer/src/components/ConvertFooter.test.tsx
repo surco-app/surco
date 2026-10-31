@@ -858,6 +858,32 @@ describe('ConvertFooter verification', () => {
     expect(onOpenOriginals).toHaveBeenCalledTimes(1)
   })
 
+  // Under «Nunca» nothing is normally kept, so a DJ who finds the original in Copias
+  // needs to know why it is there and that it is the way back from a file that is wrong.
+  function held(checks: PlaceCheck[], originalHeld: 'kept' | 'noRoom'): React.JSX.Element {
+    const el = mismatched(checks, { onOpenOriginals: vi.fn<() => void>() })
+    const item = (el.props as { item: TrackItem }).item
+    return cloneElement(el, {
+      item: { ...item, verification: { ...item.verification, originalHeld } } as TrackItem,
+    })
+  }
+
+  it('under Nunca the amber line says the original was kept in Copias because of the mismatch', () => {
+    render(held([fileOk, bad('rekordbox', 'rekordboxStillOld', { format: 'AIFF' })], 'kept'))
+    expect(screen.getByTestId('verify-mismatch')).toHaveTextContent(
+      /^Algo no cuadra, así que el original se ha guardado en Copias aunque las copias de los originales están en «Nunca»$/,
+    )
+    expect(screen.getByTestId('verify-open-originals')).toBeInTheDocument()
+  })
+
+  it('under Nunca with no room in Copias the amber line says the original could not be kept', () => {
+    render(held([bad('file', 'fileTruncated')], 'noRoom'))
+    expect(screen.getByTestId('verify-mismatch')).toHaveTextContent(
+      /^Algo no cuadra y no quedaba sitio en Copias para guardar el original$/,
+    )
+    expect(screen.queryByTestId('verify-open-originals')).toBeNull()
+  })
+
   it('without a kept copy it only says the original is gone', () => {
     render(
       mismatched([bad('file', 'fileSourceGone', { kept: 0 })], {

@@ -9,7 +9,7 @@ vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 vi.mock('./engineProcess', () => ({ isEngineDjRunning: vi.fn(async () => false) }))
 
-import { encodeLoops } from './engineBlobs'
+import { deflateEngineBlob, encodeLoops, inflateEngineBlob } from './engineBlobs'
 import {
   analysedTrack,
   beatDataBlob,
@@ -115,7 +115,7 @@ describe('snapshotEngineRow', () => {
       loops: sha1(LOOPS),
       positions: {
         quickCues: [30, 50, null, null, null, null, null, null, 9695700 / 44100, 18900 / 44100],
-        beatData: [-0.5, 59.5],
+        beatData: [-0.5, 59.5, -0.5, 59.5],
         loops: null,
       },
     })
@@ -553,6 +553,36 @@ describe('checkEngine after a conversion that moved the audio', () => {
     ])
   })
 
+  // A rewrite in place moves Engine's cues only while the row still records the source's
+  // size. A size Engine never kept up to date, or none at all, leaves them where they were,
+  // and what the DJ needs to hear is that the cues did not follow, not that a size differs.
+  it.each([
+    ['a stale size', 999],
+    ['no size', null],
+  ])('a rewrite in place the row refused for %s is engineCuesMisplaced', async (_, stored) => {
+    const dir = trimmable()
+    const file = FROM_LOCAL(dir)
+    writeFileSync(file, Buffer.alloc(1))
+    write(dir, 'UPDATE Track SET path = ?, fileBytes = ? WHERE id = 1', relative(dir, file), stored)
+    const before = snapshot(dir, file)
+    writeFileSync(file, Buffer.alloc(SIZE_SMALL))
+    const shift = { trimmedMs: CUT * 1000 }
+    const [result] = await repointEngineTracks(dir, [
+      { from: file, to: file, fromBytes: 1, engineShift: shift },
+    ])
+    expect(result).toEqual({ written: false, reason: 'no-match' })
+    expect(
+      checkOne(
+        dir,
+        expectFor(before, { from: file, to: file, size: SIZE_SMALL, samplesKept: false, shift }),
+      )[0],
+    ).toEqual({
+      place: 'engine',
+      state: 'mismatch',
+      detail: { key: 'engineCuesMisplaced', params: { field: 'quickCues' } },
+    })
+  })
+
   it('positions rewritten at the new sample rate are ok', () => {
     const dir = trimmable()
     const before = snapshot(dir)
@@ -571,6 +601,66 @@ describe('checkEngine after a conversion that moved the audio', () => {
       place: 'engine',
       state: 'mismatch',
       detail: { key: 'engineCuesMisplaced', params: { field: 'quickCues' } },
+    })
+  })
+
+  // The write keeps a loop's length when its start falls inside the cut, so the check reads
+  // that loop on the new start with its length, not collapsed to nothing.
+  it('a loop that started inside the cut, on the new start with its length, is ok', () => {
+    const dir = library()
+    write(dir, 'UPDATE PerformanceData SET loops = ?', loopsAt(0.5 * R, 1.5 * R))
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    moved(dir, CUT)
+    write(dir, 'UPDATE PerformanceData SET loops = ?', loopsAt(0, R))
+    expect(checkOne(dir, expectFor(before, trimmedBy(CUT)))[0].state).toBe('ok')
+  })
+
+  it('a loop that started inside the cut, collapsed to nothing, is engineCuesMisplaced', () => {
+    const dir = library()
+    write(dir, 'UPDATE PerformanceData SET loops = ?', loopsAt(0.5 * R, 1.5 * R))
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    moved(dir, CUT)
+    write(dir, 'UPDATE PerformanceData SET loops = ?', loopsAt(0, 0))
+    expect(checkOne(dir, expectFor(before, trimmedBy(CUT)))[0].detail).toEqual({
+      key: 'engineCuesMisplaced',
+      params: { field: 'loops' },
+    })
+  })
+
+  // The write moves a row with no trackData by its grid's rate, so the check reads it by
+  // the same rate rather than saying nothing about its cues.
+  it('cues left behind on a row with no trackData are engineCuesMisplaced', () => {
+    const dir = trimmable()
+    write(dir, 'UPDATE PerformanceData SET trackData = NULL')
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    expect(checkOne(dir, expectFor(before, trimmedBy(CUT)))[0].detail).toEqual({
+      key: 'engineCuesMisplaced',
+      params: { field: 'quickCues' },
+    })
+  })
+
+  // Engine falls back to the default grid when the DJ resets theirs, so a default grid left
+  // where it was is a reset away from a grid the length of the cut late.
+  it('a default grid left where it was is engineCuesMisplaced', () => {
+    const dir = trimmable()
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    moved(dir, CUT)
+    const read = new Database(engineDbPath(dir), { readonly: true })
+    const row = read.prepare('SELECT beatData FROM PerformanceData').get() as {
+      beatData: Uint8Array
+    }
+    read.close()
+    const grid = inflateEngineBlob(row.beatData)
+    const original = inflateEngineBlob(analysedTrack(1, CUES).beatData as Buffer)
+    original.copy(grid, 17, 17, 17 + 8 + 2 * 24)
+    write(dir, 'UPDATE PerformanceData SET beatData = ?', deflateEngineBlob(grid))
+    expect(checkOne(dir, expectFor(before, trimmedBy(CUT)))[0].detail).toEqual({
+      key: 'engineCuesMisplaced',
+      params: { field: 'beatData' },
     })
   })
 

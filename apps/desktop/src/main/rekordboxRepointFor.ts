@@ -27,7 +27,11 @@ export function rekordboxRepointFor(
       outputShiftMs: number
       trimmedMs: number
       sampleRateHz?: number
+      // The output's exact length in samples, when a trim or a resample changed it.
+      sampleCount?: number
     }
+    // The source's size before the conversion rewrote it on its own path.
+    fromBytes?: number
   } = {},
 ): RekordboxRepoint | null {
   const from = options.replaces ?? input
@@ -41,16 +45,18 @@ export function rekordboxRepointFor(
   const engineShift: EngineShift | undefined =
     options.audio &&
     !options.replaces &&
-    (options.audio.trimmedMs > 0 || options.audio.sampleRateHz)
+    (options.audio.trimmedMs > 0 || options.audio.sampleRateHz || options.audio.sampleCount)
       ? {
           trimmedMs: options.audio.trimmedMs,
           ...(options.audio.sampleRateHz ? { sampleRateHz: options.audio.sampleRateHz } : {}),
+          ...(options.audio.sampleCount ? { sampleCount: options.audio.sampleCount } : {}),
         }
       : undefined
   const extra = {
     ...(options.meta ? { meta: options.meta } : {}),
     ...(audio ? { audio } : {}),
     ...(engineShift ? { engineShift } : {}),
+    ...(engineShift && options.fromBytes !== undefined ? { fromBytes: options.fromBytes } : {}),
   }
   if (from === output && !options.meta && !audio) return null
   return { from, to: output, ...extra }

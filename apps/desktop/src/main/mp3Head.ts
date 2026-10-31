@@ -28,7 +28,7 @@ function layer3FrameLength(buf: Buffer, at: number): number | null {
   return Math.floor(((mpeg1 ? 144 : 72) * bitrate) / sampleRate) + padding
 }
 
-function firstFramePair(buf: Buffer, from: number): number | null {
+export function firstFramePair(buf: Buffer, from: number): number | null {
   for (let at = from; at + MPEG_HEADER_BYTES <= buf.length; at++) {
     const length = layer3FrameLength(buf, at)
     if (length !== null && layer3FrameLength(buf, at + length) !== null) return at
@@ -36,7 +36,7 @@ function firstFramePair(buf: Buffer, from: number): number | null {
   return null
 }
 
-function leadingTags(buf: Buffer): { lastStart: number | null; end: number } {
+export function leadingTags(buf: Buffer): { lastStart: number | null; end: number } {
   let lastStart: number | null = null
   let end = 0
   for (;;) {

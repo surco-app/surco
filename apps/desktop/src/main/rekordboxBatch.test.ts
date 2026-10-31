@@ -164,6 +164,36 @@ describe('rekordbox batch', () => {
     ])
   })
 
+  // Engine still records the size the file had before the first rewrite, so that is the size
+  // that says the stacked shift is owed; the second rewrite's own source size is one the row
+  // never had.
+  it('keeps the size from before the first rewrite when a file is rewritten in place twice', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint({
+      from: '/m/one.mp3',
+      to: '/m/one.mp3',
+      audio: { cueShiftMs: -1000 },
+      engineShift: { trimmedMs: 1000 },
+      fromBytes: 100,
+    })
+    recordRekordboxRepoint({
+      from: '/m/one.mp3',
+      to: '/m/one.mp3',
+      audio: { cueShiftMs: -900 },
+      engineShift: { trimmedMs: 900 },
+      fromBytes: 90,
+    })
+    expect(endRekordboxBatch()).toEqual([
+      {
+        from: '/m/one.mp3',
+        to: '/m/one.mp3',
+        audio: { cueShiftMs: -1900 },
+        engineShift: { trimmedMs: 1900 },
+        fromBytes: 100,
+      },
+    ])
+  })
+
   // Converting into another folder leaves the original in place, and a second conversion
   // reads that original again: its move already counts from the cues' file.
   it('keeps only the last move when both conversions started from the original', () => {

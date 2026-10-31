@@ -1586,8 +1586,8 @@
     },
     "originalBackupAlwaysHint": "Editar só as etiquetas também guarda uma cópia inteira do arquivo.",
     "originalBackupAudioChangesHint": "Converter ou normalizar guarda uma cópia; editar só as etiquetas, não.",
-    "originalBackupNeverHint": "O que uma conversão substituir não poderá ser recuperado. Apagar uma faixa num disco sem lixeira também será definitivo, e o aviso dirá isso antes de você confirmar. A revisão de metadados guarda suas cópias mesmo assim para poder desfazer.",
-    "originalBackupNeverLine": "Nenhuma cópia é guardada, nem ao converter nem ao normalizar.",
+    "originalBackupNeverHint": "O que uma conversão substituir não poderá ser recuperado, a não ser que a verificação depois de converter encontre algo que não bata. Aí o original fica em Cópias. Apagar uma faixa num disco sem lixeira também será definitivo, e o aviso dirá isso antes de você confirmar. A revisão de metadados guarda suas cópias mesmo assim para poder desfazer.",
+    "originalBackupNeverLine": "Nenhuma cópia é guardada ao converter nem ao normalizar, a não ser que a verificação depois de converter encontre algo que não bata.",
     "originals": "Cópias dos originais",
     "originalsHint": "Quando o Surco reescreve, renomeia ou apaga um arquivo seu, pode guardar o anterior aqui para você poder desfazer.",
     "originalBackupDays": "Por",
@@ -2962,6 +2962,8 @@
       "traktorUnreadable": "Não foi possível verificar o Traktor"
     },
     "retry": "Tentar de novo",
-    "sourceGoneKeptLine": "O original não existe mais, há uma cópia em <0>{{panel}}</0>"
+    "sourceGoneKeptLine": "O original não existe mais, há uma cópia em <0>{{panel}}</0>",
+    "heldOriginalLine": "Algo não bate, então o original foi guardado em <0>{{panel}}</0> mesmo com as cópias dos originais em “Nunca”",
+    "heldOriginalNoRoomLine": "Algo não bate e não havia espaço em {{panel}} para guardar o original"
   }
 }

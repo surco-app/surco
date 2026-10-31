@@ -1586,8 +1586,8 @@
     },
     "originalBackupAlwaysHint": "Actualizar solo las etiquetas también guarda una copia entera del archivo.",
     "originalBackupAudioChangesHint": "Convertir o normalizar guarda una copia; actualizar solo las etiquetas, no.",
-    "originalBackupNeverHint": "Lo que una conversión reemplace no se podrá recuperar. Borrar una pista en un disco sin papelera también será definitivo, y el aviso lo dirá antes de confirmar. La revisión de metadatos guarda igualmente sus copias para poder deshacer.",
-    "originalBackupNeverLine": "No se guardará ninguna copia, ni al convertir ni al normalizar.",
+    "originalBackupNeverHint": "Lo que una conversión reemplace no se podrá recuperar, salvo que la comprobación tras convertir encuentre algo que no cuadre. Entonces el original se queda en Copias. Borrar una pista en un disco sin papelera también será definitivo, y el aviso lo dirá antes de confirmar. La revisión de metadatos guarda igualmente sus copias para poder deshacer.",
+    "originalBackupNeverLine": "No se guarda copia al convertir ni al normalizar, salvo que la comprobación tras convertir encuentre algo que no cuadre.",
     "originals": "Copias de los originales",
     "originalsHint": "Cuando Surco reescribe, renombra o borra un archivo tuyo, puede guardar el anterior aquí para que puedas deshacerlo.",
     "originalBackupDays": "Durante",
@@ -2962,6 +2962,8 @@
       "traktorUnreadable": "No se pudo comprobar Traktor"
     },
     "retry": "Reintentar",
-    "sourceGoneKeptLine": "El original ya no está, hay una copia en <0>{{panel}}</0>"
+    "sourceGoneKeptLine": "El original ya no está, hay una copia en <0>{{panel}}</0>",
+    "heldOriginalLine": "Algo no cuadra, así que el original se ha guardado en <0>{{panel}}</0> aunque las copias de los originales están en «Nunca»",
+    "heldOriginalNoRoomLine": "Algo no cuadra y no quedaba sitio en {{panel}} para guardar el original"
   }
 }

@@ -1353,11 +1353,17 @@ lectura/escritura, no 300.
 
 **Los cues de Engine siguen al recorte.** Al reapuntar una pista convertida sin el silencio
 inicial, cada hot cue, el cue principal, cada loop y la rejilla se adelantan lo mismo que se
-cortó; lo que caía dentro del corte queda en el nuevo inicio, como en rekordbox y Traktor. Si
+cortó; lo que caía dentro del corte queda en el nuevo inicio, como en rekordbox y Traktor, y un
+loop que empezaba dentro conserva su duración, como en Traktor. Si
 además se cambió la frecuencia de muestreo, las posiciones se reescriben en la nueva
-(`shiftEnginePerformance`, `engineRepoint.ts:114`). Antes la fila seguía al fichero pero cada
-cue sonaba tarde lo que durara el corte. Una pista recortada en su sitio, con la misma ruta, no
-se reapunta en Engine y sus cues no se mueven. El desfase de MP3 que se aplica a rekordbox y a
+(`shiftEnginePerformance`, `engineRepoint.ts:120`). La onda de vista general pierde las
+entradas del tramo cortado y su paso se cuenta en la nueva frecuencia. Antes la fila seguía al fichero pero cada
+cue sonaba tarde lo que durara el corte. Una pista recortada en su sitio, con la misma ruta,
+también mueve sus cues en Engine. Como la fila no cambia de ruta, lo que dice que el corte sigue
+pendiente es que Engine aún guarde el tamaño del original, y la misma escritura guarda el nuevo,
+así que un reintento no los mueve dos veces (`engineRepoint.ts`, `fromBytes`). Si ese tamaño ya
+no coincide, por ejemplo porque las etiquetas se cambiaron antes en el fichero sin que Engine lo
+supiera, los cues se quedan como estaban. El desfase de MP3 que se aplica a rekordbox y a
 Traktor al cambiar de formato no se aplica a Engine, porque no se ha medido en Engine.
 
 ### Cue points de Traktor
@@ -1419,6 +1425,35 @@ Revisada el 2026-10-21 para v1.9.0. Las celdas no cambian, solo las líneas cita
 matriz es solo de Traktor, cuyos cues viajan **dentro del fichero**. Los de rekordbox viven en
 su colección y no dependen del formato (ver §8.5 y el editor de cues más abajo). Al
 convertir, Surco **conserva** los cues de Traktor del fichero pero no los edita.
+
+**Calibración al cruzar MP3** (medida el 2026-10-31 en Traktor Pro 4.5.1). Método: una pista
+de clics a 120 BPM codificada como WAV, AIFF, FLAC, MP3 con cabecera Xing/LAME y MP3 sin
+ella, analizada por Traktor; se comparó el ancla AutoGrid que escribió en el `.nml`. WAV, AIFF
+y FLAC comparten línea de tiempo al microsegundo. El MP3 con Xing sale 51,14 ms tarde y el
+MP3 sin Xing 24,88 ms tarde. Traktor reproduce el MP3 desde su primera trama, la de la
+cabecera incluida (1152 muestras de silencio), y no recorta el retardo del encoder.
+
+Lo que ffmpeg se salta, medido con un clic en muestra conocida (`cueCalibration.test.ts`):
+la trama de cabecera (Xing, Info o VBRI) siempre que la hay, y además el retardo
+(`delay` de la etiqueta + 529) solo si la etiqueta va justo detrás del ID3 y lleva firma
+`LAME`, `Lavf` o `Lavc`. Una Info sin firma, una cabecera VBRI o basura entre el ID3 y la
+primera trama dejan el retardo dentro del audio. El fichero convertido guarda lo que ffmpeg
+decodificó.
+
+La regla (`cueCalibration.ts`), en muestras a la frecuencia de cada fichero, es lo que
+Traktor pinta por delante del audio de la salida (trama de cabecera más el retardo de su
+etiqueta, o el de libmp3lame, 1105, si no lo declara; PCM 0) menos lo que ffmpeg se saltó del
+origen (PCM 0). La trama son 1152 muestras en MPEG-1 y 576 en MPEG-2 y 2.5. A 44,1 kHz con
+MP3 de LAME o de ffmpeg queda así. MP3 con Xing → WAV/AIFF/FLAC −51,18 ms. MP3 sin Xing →
+WAV/AIFF/FLAC 0. MP3 con Info sin firma o con VBRI → WAV/AIFF/FLAC −26,12 ms.
+WAV/AIFF/FLAC → MP3 +51,18 ms, porque el MP3 de Surco lleva Info firmada `Lavc`. MP3 → MP3
+recodificado 0 si el origen tenía Xing firmada y +51,18 ms si no tenía cabecera. La copia sin
+recodificar no se mueve. Todo se lee del origen y del fichero ya codificado, saltando el ID3
+entero aunque una carátula lo haga pasar del mega. El ajuste de cues de Ajustes se suma
+encima. Solo afecta a los cues de Traktor; rekordbox y Engine DJ van por su lado.
+
+Sin medir en Traktor: VBRI, MPEG-2 y la basura delante de la primera trama. Se asume que
+Traktor las trata como la Xing medida (no se salta nada).
 
 **El editor de cues escribe en la colección de Traktor** (nuevo en v1.12.0), nunca en el
 fichero. Solo hot cues: Traktor no tiene CALL, así que no se escribe ninguno, y se escriben
@@ -1941,9 +1976,11 @@ todo cuadra, un escudo discreto junto al aviso abre la lista de lo comprobado
 (`VerifiedPopover.tsx`). En lote el pie dice cuántas se comprobaron y cuántas no cuadran, y la
 revisión tiene el filtro «No cuadran».
 
-En Engine DJ, tras un recorte o un cambio de frecuencia, comprueba que cues, loops y rejilla
-cayeron donde debían respecto a la foto, con un margen de 1 ms; si no, la pista sale en ámbar
-con «Los cues de Engine DJ no siguieron al audio» (`engineCuesMisplaced`, `verifyEngine.ts:236`).
+En Engine DJ, tras un recorte o un cambio de frecuencia, comprueba que cues, loops y las dos
+rejillas (la ajustada y la de por defecto) cayeron donde debían respecto a la foto, con un
+margen de 1 ms; si no, la pista sale en ámbar con «Los cues de Engine DJ no siguieron al audio» (`engineCuesMisplaced`, `verifyEngine.ts:255`). También sale
+así una pista recortada en su sitio cuyos cues Engine no dejó mover, aunque lo primero que
+no cuadre sea el tamaño.
 
 **Lo que no mira:** la posición exacta de cada cue de rekordbox (cuenta los cues, no dónde
 caen) ni las playlists de los programas de DJ.
@@ -2158,7 +2195,17 @@ comparación»* (`useDeclickAb.ts:60-67`).
   arranque pone el almacén detrás de `policyKeeper` (`main/index.ts:229`,
   `originalKeeper.ts:85-97`). «Siempre» guarda todo, «Solo si cambia el audio» se salta las
   reescrituras que copian el audio sin tocarlo (solo etiquetas) y «Nunca» no guarda nada al
-  convertir, normalizar ni cambiar de formato. Dos excepciones guardan siempre: las
+  convertir, normalizar ni cambiar de formato una vez la autocomprobación da todo por bueno.
+  Desde el 31/10/2026, con «Nunca» el original que una conversión sobrescribe (en su sitio o
+  al cambiar de formato, no una actualización solo de etiquetas) entra igualmente en Copias
+  hasta que llega el veredicto (`untilChecked`, `originalKeeper.ts`): si todo cuadra se
+  borra, también cuando un Reintentar lo deja en orden; si algo no cuadra se queda y la línea
+  ámbar lo dice (`verify.heldOriginalLine`), y si el veredicto no llega (la app se cierra,
+  una biblioteca que nunca responde) también se queda. Mientras espera está fijado
+  (`surcoTrash.ts`): no expulsa ninguna otra copia para caber ni lo expulsa nadie. Si no cabe
+  en el sitio libre, o la copia falla, se borra como siempre y, si luego algo no cuadra, la
+  línea dice que no había sitio (`verify.heldOriginalNoRoomLine`). Reconvertir la misma pista
+  antes del veredicto deja la copia anterior como una más. Dos excepciones guardan siempre: las
   correcciones de la revisión de metadatos, cuyo Deshacer depende de la copia
   (`musicFieldWrite.ts:38-42`), y los borrados automáticos de arriba. Los límites de días y
   espacio se aplican igual.
@@ -2310,7 +2357,9 @@ Recopilado de los cinco informes. Cada punto está verificado.
     de metadatos y los borrados automáticos guardan su copia igualmente
     (`musicFieldWrite.ts:38-42`, `recoverableTrash.ts:17`). Y con «Nunca» solo es definitivo
     el borrado que el usuario confirma en un disco sin papelera, tras un aviso que lo dice;
-    un duplicado quitado en la revisión va a Copias de seguridad.
+    un duplicado quitado en la revisión va a Copias de seguridad. El original que una
+    conversión sobrescribe espera en Copias a la autocomprobación y se queda si algo no
+    cuadra.
 34. **Auto marcar propone, no decide.** Encuentra en torno al 68 % de los drops y en torno
     al 70 % de sus propuestas aciertan; el usuario acepta o quita cada una. No decir «pone los
     cues solo» ni «detecta el drop». Necesita el análisis de rekordbox. Del ajuste a cada DJ

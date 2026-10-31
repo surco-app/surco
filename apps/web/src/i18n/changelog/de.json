@@ -43,6 +43,18 @@
       {
         "text": "Genres mit mehreren Werten oder mit Klammern wie „Techno (Peak Time / Driving)“ werden in MP3, AIFF und WAV unverändert gespeichert, und die Prüfung nach dem Konvertieren markiert eine in MP3 konvertierte FLAC nicht mehr fälschlich.",
         "in": "1.18.3"
+      },
+      {
+        "text": "Beim Konvertieren einer MP3 in WAV setzt Surco die Traktor-Cues genauso wie bei AIFF oder FLAC und liest den Header jeder MP3, damit die Cues auch bei MP3s ohne Header, mit großem Cover oder niedriger Abtastrate richtig sitzen. Wir haben es in Traktor gemessen.",
+        "in": "1.18.4"
+      },
+      {
+        "text": "Engine DJ verschiebt Hot Cues, Loops und Grid auch, wenn du die Stille kürzt, ohne die Datei zu wechseln, und passt Wellenform und Tracklänge an.",
+        "in": "1.18.4"
+      },
+      {
+        "text": "Wenn du das Original überschreibst und die Prüfung nach dem Konvertieren etwas findet, das nicht stimmt, bleibt das Original in Backups, auch wenn die Kopien der Originale auf „Nie“ stehen.",
+        "in": "1.18.4"
       }
     ]
   },

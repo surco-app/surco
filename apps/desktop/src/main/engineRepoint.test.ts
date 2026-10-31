@@ -10,8 +10,10 @@ import { ENGINE_3_SCHEMA } from './engine3Fixture'
 import {
   decodeBeatGrid,
   decodeLoops,
+  decodeOverview,
   decodeQuickCues,
   decodeTrackData,
+  deflateEngineBlob,
   encodeLoops,
   inflateEngineBlob,
 } from './engineBlobs'
@@ -347,7 +349,7 @@ async function positionsOf(lib: Library) {
       hot: cues?.slots.map((s) => (s.cue ? s.cue.sample / rate : null)),
       main: [sec(cues?.tail.readDoubleBE(0) ?? 0), sec(cues?.tail.readDoubleBE(9) ?? 0)],
       mainAdjusted: cues?.tail[8],
-      loops: decodeLoops(Buffer.from(row.loops as Uint8Array))?.map((l) => [
+      loops: decodeLoops(Buffer.from(row.loops as Uint8Array))?.loops.map((l) => [
         sec(l.start),
         sec(l.end),
       ]),
@@ -443,6 +445,39 @@ describe.each(['2.18', '3.0.2'] as const)(
       expect(after.grid).toEqual(before.grid?.map((s) => expect.closeTo(s, 6)))
     })
 
+    // Engine's length is the one figure a cut at the end changes, and only the conversion
+    // knows it exactly: the head cut alone leaves it long by whatever the end trim took.
+    it('records the length the conversion wrote, end trim included', async () => {
+      const lib = await analysedLibrary(schema)
+      const before = await positionsOf(lib)
+      await repointEngineTracks(lib.dir, [
+        {
+          from: lib.oldFile,
+          to: lib.newFile,
+          engineShift: { trimmedMs: 0, sampleCount: RATE * 50 },
+        },
+      ])
+      const after = await positionsOf(lib)
+      expect(after.lengthSec).toBe(50)
+      expect(after.gridLengthSec).toBe(50)
+      expect(after.hot).toEqual(before.hot)
+      expect(after.grid).toEqual(before.grid)
+    })
+
+    it('records the exact length at the new rate when a trim also resamples', async () => {
+      const lib = await analysedLibrary(schema)
+      await repointEngineTracks(lib.dir, [
+        {
+          from: lib.oldFile,
+          to: lib.newFile,
+          engineShift: { trimmedMs: TRIM_MS, sampleRateHz: 48000, sampleCount: 2_000_003 },
+        },
+      ])
+      const after = await positionsOf(lib)
+      expect(after.lengthSec * 48000).toBeCloseTo(2_000_003, 6)
+      expect(after.gridLengthSec * 48000).toBeCloseTo(2_000_003, 6)
+    })
+
     // The retry and the queue hand the same move again. The row already left the old path
     // with the first write, so the second finds nothing to move and nothing shifts twice.
     it('shifts once when the same move is handed again', async () => {
@@ -453,6 +488,139 @@ describe.each(['2.18', '3.0.2'] as const)(
       const [again] = await repointEngineTracks(lib.dir, [move])
       expect(again).toEqual({ written: false, reason: 'no-match' })
       expect(await positionsOf(lib)).toEqual(once)
+    })
+
+    // A same-format reconvert with a trim rewrites the file on its own path, so the row never
+    // moves and the path alone cannot say whether the cut already came off. The size Engine
+    // recorded can: the source's size before the write means the shift is still owed, and the
+    // write swaps it for the new one, so a retry or a queued apply finds it and shifts nothing.
+    it('shifts a row rewritten in place once, while it still has the source’s size', async () => {
+      const lib = await analysedLibrary(schema)
+      const before = await positionsOf(lib)
+      await writeFile(lib.oldFile, Buffer.alloc(4321))
+      const move = {
+        from: lib.oldFile,
+        to: lib.oldFile,
+        fromBytes: 100,
+        engineShift: { trimmedMs: TRIM_MS },
+      }
+      const [result] = await repointEngineTracks(lib.dir, [move])
+      expect(result).toEqual({ written: true, id: '1' })
+      const once = await positionsOf(lib)
+      expect(once.hot?.[1]).toBeCloseTo(HOT_SEC[1] - TRIM_MS / 1000, 6)
+      expect(once.grid).toEqual(before.grid?.map((s) => expect.closeTo(s - TRIM_MS / 1000, 6)))
+      const db = await openDb(lib.dbPath)
+      expect(one(db, 'SELECT path, fileBytes FROM Track')).toEqual({
+        path: '../music/old.mp3',
+        fileBytes: 4321,
+      })
+      db.close()
+      const [again] = await repointEngineTracks(lib.dir, [move])
+      expect(again).toEqual({ written: false, reason: 'no-match' })
+      expect(await positionsOf(lib)).toEqual(once)
+    })
+
+    it('leaves a row rewritten in place alone when nothing says the cut is still owed', async () => {
+      const lib = await analysedLibrary(schema)
+      const before = await positionsOf(lib)
+      const bytes = await readFile(lib.dbPath)
+      const [result] = await repointEngineTracks(lib.dir, [
+        { from: lib.oldFile, to: lib.oldFile, engineShift: { trimmedMs: TRIM_MS } },
+      ])
+      expect(result).toEqual({ written: false, reason: 'no-match' })
+      expect(await positionsOf(lib)).toEqual(before)
+      expect(await readFile(lib.dbPath)).toEqual(bytes)
+    })
+
+    // A loop is a length as much as a place: one set inside the lead-in, or across its end,
+    // collapsed onto the new start would be a zero-length loop Engine cannot play. It lands on
+    // the new start and keeps its length, as Traktor's loops do.
+    it('keeps the length of a loop that started inside the cut', async () => {
+      const lib = await analysedLibrary(schema)
+      const loop = (start: number, end: number) => ({
+        label: '',
+        start: start * RATE,
+        end: end * RATE,
+        startSet: true,
+        endSet: true,
+        argb: 0xff00cc00,
+      })
+      const db = await openDb(lib.dbPath)
+      db.run('UPDATE PerformanceData SET loops = ? WHERE trackId = 1', [
+        encodeLoops([loop(0.5, 1.5), loop(1.5, 3.5)]),
+      ])
+      await writeFile(lib.dbPath, db.export())
+      db.close()
+      await repointEngineTracks(lib.dir, [
+        { from: lib.oldFile, to: lib.newFile, engineShift: { trimmedMs: TRIM_MS } },
+      ])
+      expect((await positionsOf(lib)).loops).toEqual([
+        [0, expect.closeTo(1, 6)],
+        [0, expect.closeTo(2, 6)],
+      ])
+    })
+
+    // Engine can hold a row's cues and grid without its trackData. The grid carries the same
+    // rate, so the cues still have a unit to move in, and missing it would leave them late.
+    it('moves the cues of a row with no trackData by the rate its grid carries', async () => {
+      const lib = await analysedLibrary(schema)
+      const db = await openDb(lib.dbPath)
+      db.run('UPDATE PerformanceData SET trackData = NULL WHERE trackId = 1')
+      await writeFile(lib.dbPath, db.export())
+      db.close()
+      await repointEngineTracks(lib.dir, [
+        { from: lib.oldFile, to: lib.newFile, engineShift: { trimmedMs: TRIM_MS } },
+      ])
+      const after = await openDb(lib.dbPath)
+      const row = one(after, 'SELECT trackData, quickCues FROM PerformanceData WHERE trackId = 1')
+      after.close()
+      expect(row.trackData).toBeNull()
+      const cues = decodeQuickCues(inflateEngineBlob(row.quickCues as Uint8Array))
+      expect(cues?.slots.map((s) => (s.cue ? s.cue.sample / RATE : null)).slice(0, 3)).toEqual([
+        0,
+        expect.closeTo(HOT_SEC[1] - TRIM_MS / 1000, 6),
+        expect.closeTo(HOT_SEC[2] - TRIM_MS / 1000, 6),
+      ])
+    })
+
+    // The overview is the whole-track waveform Engine draws the cues over, one entry per
+    // fixed run of samples. Left alone after a cut, the cues sit on the right beats while the
+    // drawing under them still shows the lead-in; after a resample its run is counted at the
+    // old rate and the drawing stretches.
+    it('drops the overview’s entries for the cut and counts its run at the new rate', async () => {
+      const lib = await analysedLibrary(schema)
+      const head = Buffer.alloc(24)
+      head.writeBigInt64BE(10n, 0)
+      head.writeBigInt64BE(10n, 8)
+      head.writeDoubleBE(RATE / 2, 16)
+      const entries = Array.from({ length: 10 }, (_, i) => [i, i + 1, i + 2]).flat()
+      const raw = Buffer.concat([head, Buffer.from(entries), Buffer.from([9, 10, 11])])
+      const db = await openDb(lib.dbPath)
+      db.run('UPDATE PerformanceData SET overviewWaveFormData = ? WHERE trackId = 1', [
+        deflateEngineBlob(raw),
+      ])
+      await writeFile(lib.dbPath, db.export())
+      db.close()
+      await repointEngineTracks(lib.dir, [
+        {
+          from: lib.oldFile,
+          to: lib.newFile,
+          engineShift: { trimmedMs: TRIM_MS, sampleRateHz: 48000 },
+        },
+      ])
+      const after = await openDb(lib.dbPath)
+      const overview = inflateEngineBlob(
+        one(after, 'SELECT overviewWaveFormData FROM PerformanceData WHERE trackId = 1')
+          .overviewWaveFormData as Uint8Array,
+      )
+      after.close()
+      expect(Number(overview.readBigInt64BE(0))).toBe(6)
+      expect(Number(overview.readBigInt64BE(8))).toBe(6)
+      expect(overview.readDoubleBE(16)).toBeCloseTo((RATE / 2) * (48000 / RATE), 6)
+      expect(decodeOverview(overview)).toEqual({
+        entries: [4, 5, 6, 7, 8, 9].map((i) => [i, i + 1, i + 2]),
+        max: [9, 10, 11],
+      })
     })
 
     // A blob Surco cannot read is kept as Engine wrote it: guessing at its layout could only

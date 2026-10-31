@@ -43,7 +43,7 @@ import { isAbortError } from './analysisCancel'
 import type { BeatGridFit } from './beatGrid'
 import { ffmpegPath, ffprobePath } from './binaries'
 import type { FullScan } from './channelScan'
-import { automaticCueOffsetMs } from './cueCalibration'
+import { automaticCueOffsetOfFiles } from './cueCalibration'
 import {
   BAND_WIDTH_HZ,
   bandFrequencies,
@@ -1767,23 +1767,8 @@ function cueShiftFor(
   trim: TrimRange | undefined,
   active: boolean,
   bpm: string,
-  input: string,
-  outputExt: string,
+  codecCueOffsetMs: number,
 ): CueShift | undefined {
-  // The DJ reported (10/09/2026), converting and watching Traktor, that the marker sits
-  // 51 ms out going into MP3 and the other way coming out of it. That is where Traktor
-  // DRAWS the marker; the audio itself does not move, measured with a click on a known
-  // sample through every one of these routes (mp3DelayIsNotReal.test.ts). He has Traktor
-  // in front of him, so the figure is his.
-  //
-  // It used to stand aside for an "encoder delay" correction on an MP3 whose Xing/LAME
-  // header was stripped, which is why rips and edits came out 76 ms from where his build
-  // put them. That 1105-sample figure was measured between two encodes of one WAV, with
-  // and without the header — not across a conversion. It is 529 + 576: the encoder
-  // priming plus the MDCT half-overlap the comparison itself introduced. The real 529
-  // belongs to the file, sits there before any conversion and is unchanged by one, and
-  // Traktor placed its cues against that same decoded audio. Nothing to correct.
-  const codecCueOffsetMs = automaticCueOffsetMs(extname(input), outputExt)
   // Free-text in the UI, so a blank or garbage value has to read as "no adjustment"
   // rather than a NaN that would silently drop every cue at shiftTraktorCues.
   const configured = Number(getSettings().traktorCueOffsetMs)
@@ -2167,6 +2152,7 @@ export async function convertAudio(
   let sourceDurationSec: number | undefined
   let proven: DecodeProof | undefined
   let originalKept = false
+  let codecCueOffsetMs = 0
 
   try {
     // A cancel during the measures and probes above has no child to kill yet.
@@ -2212,7 +2198,7 @@ export async function convertAudio(
       // MP3 it converts does not have the -51 ms applied" — the offset was wired into the
       // re-encode call sites below and this one was missed. copyCueFrames re-reads the
       // source and writes the shifted frames over the copy's own.
-      const copyShift = cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext)
+      const copyShift = cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs)
       if (copyShift && !clearExtras)
         await runInWorker({ type: 'copyCueFrames', source: input, dest: tmp, shift: copyShift })
     } else {
@@ -2284,6 +2270,7 @@ export async function convertAudio(
             ),
         })
       if (declickAf) declickedSamples = parseDeclickedSamples(String(stderr)) ?? undefined
+      codecCueOffsetMs = await automaticCueOffsetOfFiles(input, tmp)
       // The flac muxer just wrote the comment as DESCRIPTION whatever metadataArgs called
       // it; put it under the name the DJ software reads (see setFlacComment).
       if (ext === '.flac')
@@ -2321,7 +2308,7 @@ export async function convertAudio(
             clearExtras,
             foreignRemoved,
             cueSource: input,
-            cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
+            cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
           })
         } finally {
           // Only the extracted copy is ours to delete; a caller-supplied coverPath is
@@ -2338,7 +2325,7 @@ export async function convertAudio(
             type: 'copyCuesFromFlac',
             source: input,
             dest: tmp,
-            shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
+            shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
           })
         // The markers, loops and headers ffmpeg leaves out of a WAV it rewrites (see
         // riffCarry.ts). Only when the audio is copied through: their positions count
@@ -2373,7 +2360,7 @@ export async function convertAudio(
           clearExtras,
           foreignRemoved,
           cueSource: input,
-          cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
+          cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
         })
         // cueSource only knows how to clone ID3 frames, so a FLAC source hands it nothing
         // and the rated file would keep ffmpeg's TXXX — the same loss the unrated path had,
@@ -2384,7 +2371,7 @@ export async function convertAudio(
             type: 'copyCuesFromFlac',
             source: input,
             dest: tmp,
-            shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
+            shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
           })
       }
       // Any re-encode through ffmpeg drops Traktor's cue/beatgrid frames — a
@@ -2406,13 +2393,13 @@ export async function convertAudio(
                 type: 'copyCuesFromFlac',
                 source: input,
                 dest: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
+                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
               }
             : {
                 type: 'copyCueFrames',
                 source: input,
                 dest: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
+                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
               },
         )
       // FLAC needs the mirror image: its armored TRAKTOR4 comment rides the
@@ -2435,12 +2422,12 @@ export async function convertAudio(
                 type: 'copyCuesToFlac',
                 source: input,
                 dest: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
+                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
               }
             : {
                 type: 'shiftFlacCues',
                 file: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
+                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
               },
         )
       // The cue sheet and application blocks ffmpeg leaves out of a FLAC it rewrites
@@ -2530,6 +2517,17 @@ export async function convertAudio(
       : 44100
     const sourceShiftMs = await rekordboxShiftOfFile(input, sourceRate)
     const outputShiftMs = await rekordboxShiftOfFile(tmp, plan.sampleRateHz ?? sourceRate)
+    // The length the decode above delivered, as the samples Engine counts it in.
+    const writtenSec =
+      (trimAf !== undefined || plan.sampleRateHz) && proven?.durationSec
+        ? proven.durationSec
+        : undefined
+    const sampleCount =
+      writtenSec === undefined
+        ? undefined
+        : Math.round(
+            writtenSec * (plan.sampleRateHz ?? Number((await probeOnce(input)).sampleRate)),
+          )
     // Kept samples still move in rekordbox's timeline when only one side is an .m4a (ALAC↔WAV).
     const rekordboxAudio =
       copiedVerbatim || (plan.samplesKept && sourceShiftMs === outputShiftMs)
@@ -2539,6 +2537,7 @@ export async function convertAudio(
             outputShiftMs,
             trimmedMs: trimAf !== undefined ? (trim?.startSec ?? 0) * 1000 : 0,
             ...(plan.sampleRateHz ? { sampleRateHz: plan.sampleRateHz } : {}),
+            ...(sampleCount ? { sampleCount } : {}),
           }
     // A rewrite lands on the source's own path, so the rename below would replace the
     // user's file with no way back. A copy of the original goes to Surco's trash first (see
@@ -2548,10 +2547,13 @@ export async function convertAudio(
     // the other two write paths (a format change, a NAS delete) ignoring it. What only
     // this scope knows is what the encode did — `codec` is the planner's own verdict,
     // 'copy' exactly when the audio passes through untouched — so that rides along.
-    if (await isSameFile(input, output)) {
+    const inPlace = await isSameFile(input, output)
+    const fromBytes = inPlace ? (await stat(input)).size : undefined
+    if (inPlace) {
       archived = await keepOriginal(input, 'replaced', output, {
         reencodes:
           codec !== 'copy' || (extname(output).toLowerCase() === '.wav' && dropsForeignCues(input)),
+        untilChecked: true,
       })
       originalKept = archived !== null
     }
@@ -2593,7 +2595,7 @@ export async function convertAudio(
       meta,
       !removeCover,
       clearExtras ?? false,
-      cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
+      cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
     )
     // rekordbox indexes by path too, and unlike Traktor it stores the whole path in one
     // column, so the entry can follow the file even into another folder. Recorded here
@@ -2602,6 +2604,7 @@ export async function convertAudio(
       replaces: replacesPath,
       meta: rekordboxMetaFrom(meta),
       audio: rekordboxAudio,
+      fromBytes,
     })
     if (repoint) recordRekordboxRepoint(repoint)
   } catch (e) {

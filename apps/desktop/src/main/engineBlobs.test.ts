@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
   decodeBeatGrid,
@@ -11,6 +13,7 @@ import {
   inflateEngineBlob,
   quickCueSlotBytes,
 } from './engineBlobs'
+import { shiftEnginePerformance } from './engineRepoint'
 
 const REAL_TRACK_DATA =
   '00000044789C7378DAD1C000030F2540A4A8FD439FD8054086FD5DD7F52049FB933296090CB80100CE5E09F2'
@@ -41,6 +44,10 @@ describe('Engine DJ performance blobs', () => {
     expect(decodeBeatGrid(real(REAL_BEAT_DATA))).toEqual({
       sampleRate: 44100,
       markers: [
+        { sample: -56700, beat: -4 },
+        { sample: 14760900, beat: 780 },
+      ],
+      defaultMarkers: [
         { sample: -56700, beat: -4 },
         { sample: 14760900, beat: 780 },
       ],
@@ -100,6 +107,7 @@ describe('Engine DJ performance blobs', () => {
         { sample: 1200, beat: 0 },
         { sample: 481200, beat: 16 },
       ],
+      defaultMarkers: [{ sample: 0, beat: 0 }],
     })
   })
 
@@ -151,8 +159,8 @@ describe('Engine DJ performance blobs', () => {
 
   it('reads loops as Engine stores them, uncompressed and little-endian, eight unset slots on a track nobody looped', () => {
     const loops = decodeLoops(Buffer.from(REAL_LOOPS, 'hex'))
-    expect(loops).toHaveLength(8)
-    expect(loops?.[0]).toEqual({
+    expect(loops?.loops).toHaveLength(8)
+    expect(loops?.loops[0]).toMatchObject({
       label: '',
       start: -1,
       end: -1,
@@ -160,7 +168,7 @@ describe('Engine DJ performance blobs', () => {
       endSet: false,
       argb: 0,
     })
-    expect(encodeLoops(loops ?? [])).toEqual(Buffer.from(REAL_LOOPS, 'hex'))
+    expect(encodeLoops(loops?.loops ?? [], loops?.tail)).toEqual(Buffer.from(REAL_LOOPS, 'hex'))
   })
 
   it('writes a set loop back byte for byte, label and colour included', () => {
@@ -172,10 +180,149 @@ describe('Engine DJ performance blobs', () => {
       endSet: true,
       argb: 0xff00cc00,
     }
-    expect(decodeLoops(encodeLoops([loop]))).toEqual([loop])
+    expect(decodeLoops(encodeLoops([loop]))?.loops).toMatchObject([loop])
+  })
+
+  // Like the main cue after the quick cues, whatever a later Engine keeps after the loops,
+  // or a flag byte it sets to something other than 1, has to survive a rewrite of them.
+  it('writes loops back with the bytes after them and their own flag bytes', () => {
+    const flagged = `${SET_LOOP.slice(0, -12)}0201${SET_LOOP.slice(-8)}`
+    const raw = Buffer.from(`0100000000000000${flagged}cafe`, 'hex')
+    const loops = decodeLoops(raw)
+    expect(loops?.loops[0]).toMatchObject({ startSet: true, endSet: true, start: 8 * 44100 })
+    expect(encodeLoops(loops?.loops ?? [], loops?.tail)).toEqual(raw)
+    const shifted = shiftEnginePerformance(
+      {
+        trackData: Buffer.from(REAL_TRACK_DATA, 'hex'),
+        overviewWaveFormData: null,
+        beatData: null,
+        quickCues: null,
+        loops: raw,
+      },
+      { trimmedMs: 1000 },
+    ).loops
+    const after = Buffer.from(shifted ?? [])
+    expect(after.subarray(-2).toString('hex')).toBe('cafe')
+    expect(after[8 + 6 + 16]).toBe(2)
+    expect(decodeLoops(after)?.loops[0].start).toBe(7 * 44100)
   })
 
   it('reads a loops blob that does not fit its layout as nothing', () => {
     expect(decodeLoops(Buffer.from('0000000801020304', 'hex'))).toBeNull()
+  })
+})
+
+const SET_LOOP = `05${Buffer.from('Break').toString('hex')}000000008088154100000000A0EA1A410101FF00CC00`
+const REAL_SHAPED_LOOPS = `0800000000000000${SET_LOOP}${EMPTY_LOOP.repeat(7)}`
+
+// The byte ranges that hold a position or a rate, walked straight off the bytes rather
+// than through the decoders under test.
+function positionRanges(blob: 'trackData' | 'beatData' | 'quickCues' | 'loops', raw: Buffer) {
+  const ranges: [number, number][] = []
+  if (blob === 'trackData') ranges.push([0, 16])
+  if (blob === 'beatData') {
+    ranges.push([0, 16])
+    let at = 17
+    for (let g = 0; g < 2; g++) {
+      const count = Number(raw.readBigInt64BE(at))
+      for (let i = 0; i < count; i++) ranges.push([at + 8 + i * 24, at + 16 + i * 24])
+      at += 8 + count * 24
+    }
+  }
+  if (blob === 'quickCues') {
+    let at = 8
+    for (let i = 0; i < Number(raw.readBigInt64BE(0)); i++) {
+      const labelEnd = at + 1 + raw[at]
+      ranges.push([labelEnd, labelEnd + 8])
+      at = labelEnd + 12
+    }
+    ranges.push([at, at + 8], [at + 9, at + 17])
+  }
+  if (blob === 'loops') {
+    let at = 8
+    for (let i = 0; i < Number(raw.readBigInt64LE(0)); i++) {
+      const labelEnd = at + 1 + raw[at]
+      ranges.push([labelEnd, labelEnd + 16])
+      at = labelEnd + 22
+    }
+  }
+  return ranges
+}
+
+const UNSET: Record<string, string> = {
+  quickCues: 'bff0000000000000',
+  loops: '000000000000f0bf000000000000f0bf',
+}
+
+function masked(raw: Buffer, ranges: [number, number][]): Buffer {
+  const copy = Buffer.from(raw)
+  for (const [start, end] of ranges) copy.fill(0, start, end)
+  return copy
+}
+
+const REAL_OVERVIEW = readFileSync(join(import.meta.dirname, 'fixtures', 'engine-4-overview.bin'))
+
+describe('shifting real Engine DJ blobs', () => {
+  // The overview Engine drew for the same track as REAL_TRACK_DATA. A cut drops the entries
+  // that drew the lead-in and nothing else: every remaining entry, and the peak after them,
+  // has to come through byte for byte, with only the count and the run per entry rewritten.
+  it('drops only the cut’s entries from a real overview and recounts its header', () => {
+    const was = inflateEngineBlob(REAL_OVERVIEW)
+    expect(decodeOverview(was)?.entries).toHaveLength(1024)
+    const run = was.readDoubleBE(16)
+    const after = shiftEnginePerformance(
+      {
+        trackData: Buffer.from(REAL_TRACK_DATA, 'hex'),
+        overviewWaveFormData: REAL_OVERVIEW,
+        beatData: null,
+        quickCues: null,
+        loops: null,
+      },
+      { trimmedMs: 1700, sampleRateHz: 48000 },
+    )
+    const now = inflateEngineBlob(after.overviewWaveFormData ?? new Uint8Array(5))
+    const dropped = Math.round((1.7 * 44100) / run)
+    expect(dropped).toBe(5)
+    expect(Number(now.readBigInt64BE(0))).toBe(1024 - dropped)
+    expect(Number(now.readBigInt64BE(8))).toBe(1024 - dropped)
+    expect(now.readDoubleBE(16)).toBeCloseTo((run * 48000) / 44100, 9)
+    expect(now.subarray(24).equals(was.subarray(24 + dropped * 3))).toBe(true)
+  })
+
+  it('reads the set loop laid out as the real blob lays out its slots', () => {
+    expect(decodeLoops(Buffer.from(REAL_SHAPED_LOOPS, 'hex'))?.loops[0]).toMatchObject({
+      label: 'Break',
+      start: 8 * 44100,
+      end: 10 * 44100,
+      startSet: true,
+      endSet: true,
+      argb: 0xff00cc00,
+    })
+  })
+
+  // Engine reads these blobs back with no checksum and no tolerance: a flag, a label byte or
+  // the padding after the grid moved by the rewrite is a library Engine may refuse or misread.
+  // Only the positions and the rate may change, and every one of them must.
+  it('changes only the positions and the rate, byte for byte everywhere else', () => {
+    const before = {
+      trackData: Buffer.from(REAL_TRACK_DATA, 'hex'),
+      overviewWaveFormData: null,
+      beatData: Buffer.from(REAL_BEAT_DATA, 'hex'),
+      quickCues: Buffer.from(REAL_QUICK_CUES, 'hex'),
+      loops: Buffer.from(REAL_SHAPED_LOOPS, 'hex'),
+    }
+    const after = shiftEnginePerformance(before, { trimmedMs: 1900, sampleRateHz: 48000 })
+    for (const blob of ['trackData', 'beatData', 'quickCues', 'loops'] as const) {
+      const raw = (b: Uint8Array | null) =>
+        blob === 'loops' ? Buffer.from(b ?? []) : inflateEngineBlob(b ?? new Uint8Array(5))
+      const was = raw(before[blob])
+      const now = raw(after[blob])
+      const ranges = positionRanges(blob, was)
+      expect(now.length, blob).toBe(was.length)
+      expect(masked(now, ranges).equals(masked(was, ranges)), blob).toBe(true)
+      const moved = ranges.filter(([s, e]) => !now.subarray(s, e).equals(was.subarray(s, e)))
+      const unset = ranges.filter(([s, e]) => was.subarray(s, e).toString('hex') === UNSET[blob])
+      expect(moved.length + unset.length, blob).toBe(ranges.length)
+    }
   })
 })

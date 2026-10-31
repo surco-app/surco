@@ -12,6 +12,8 @@ export interface RekordboxRepoint {
   audio?: { cueShiftMs: number }
   // The same move as Engine DJ counts it (see shiftEnginePerformance).
   engineShift?: EngineShift
+  // The source's size before a conversion rewrote it in place (see EngineRepoint).
+  fromBytes?: number
   playlists?: RekordboxPlaylistTarget[]
   playlistsBase?: string[]
   traktorPlaylists?: LibraryPlaylistChoice
@@ -43,9 +45,16 @@ export function recordRekordboxRepoint(repoint: RekordboxRepoint): void {
     repoints.push(repoint)
     return
   }
-  const earlier = repoints[existing]
-  // Only a second conversion of the first one's output stacks its move on top; one that
-  // read the original again already measured from the file the cues were set on.
+  repoints[existing] = stackRepoint(repoints[existing], repoint)
+}
+
+// A later conversion of a file whose repoint is still waiting. Only a second conversion of
+// the first one's output stacks its move on top; one that read the original again already
+// measured from the file the cues were set on.
+export function stackRepoint(
+  earlier: RekordboxRepoint,
+  repoint: RekordboxRepoint,
+): RekordboxRepoint {
   const stacks = earlier.to === repoint.from
   const engineShift =
     stacks && earlier.engineShift
@@ -55,11 +64,12 @@ export function recordRekordboxRepoint(repoint: RekordboxRepoint): void {
           trimmedMs: earlier.engineShift.trimmedMs + (repoint.engineShift?.trimmedMs ?? 0),
         }
       : repoint.engineShift
-  repoints[existing] = {
+  return {
     ...(earlier.audio && repoint.audio && stacks
       ? { ...repoint, audio: { cueShiftMs: earlier.audio.cueShiftMs + repoint.audio.cueShiftMs } }
       : repoint),
     ...(engineShift ? { engineShift } : {}),
+    ...(stacks && earlier.fromBytes !== undefined ? { fromBytes: earlier.fromBytes } : {}),
   }
 }
 

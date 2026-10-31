@@ -3,6 +3,7 @@ import { extname } from 'node:path'
 import { leadingId3v2Size } from './id3Header'
 
 const HEAD_SCAN_BYTES = 1 << 20
+const ID3V2_HEADER_BYTES = 10
 const MPEG1_SAMPLE_RATES = [44100, 48000, 32000]
 const MPEG1_FRAME_SAMPLES = 1152
 const MP3_DECODER_DELAY = 529
@@ -41,23 +42,32 @@ export interface Mpeg1Info {
   delay: number
 }
 
-export function mpeg1Info(head: Buffer): Mpeg1Info | null {
-  const frame = firstFrame(head)
-  if (frame === null) return null
+export function xingTagAt(head: Buffer, frame: number): number | null {
+  const mpeg1 = ((head[frame + 1] >> 3) & 3) === 3
   const mono = head[frame + 3] >> 6 === 3
-  const tagAt = frame + 4 + (mono ? 17 : 32)
+  const tagAt = frame + 4 + (mpeg1 ? (mono ? 17 : 32) : mono ? 9 : 17)
   const tag = head.toString('latin1', tagAt, tagAt + 4)
-  if (tag !== 'Info' && tag !== 'Xing') return null
+  return tag === 'Info' || tag === 'Xing' ? tagAt : null
+}
+
+export function xingEncoder(head: Buffer, tagAt: number): { encoder: string; delay: number } {
   const flags = head.readUInt32BE(tagAt + 4)
   const encoderAt = XING_FIELD_BYTES.reduce(
     (at, [flag, bytes]) => (flags & flag ? at + bytes : at),
     tagAt + 8,
   )
   return {
-    sampleRate: MPEG1_SAMPLE_RATES[(head[frame + 2] >> 2) & 3],
     encoder: head.toString('latin1', encoderAt, encoderAt + 4),
     delay: (head[encoderAt + 21] << 4) | (head[encoderAt + 22] >> 4),
   }
+}
+
+export function mpeg1Info(head: Buffer): Mpeg1Info | null {
+  const frame = firstFrame(head)
+  if (frame === null) return null
+  const tagAt = xingTagAt(head, frame)
+  if (tagAt === null) return null
+  return { sampleRate: MPEG1_SAMPLE_RATES[(head[frame + 2] >> 2) & 3], ...xingEncoder(head, tagAt) }
 }
 
 export function rekordboxLeadMs(head: Buffer): number {
@@ -76,7 +86,7 @@ export function rekordboxShiftMs(ext: string, head: Buffer, sampleRate: number):
   return ((MPEG1_FRAME_SAMPLES + skipped) / info.sampleRate) * 1000
 }
 
-async function mp3Head(file: string): Promise<Buffer | null> {
+export async function mp3Head(file: string): Promise<Buffer | null> {
   if (extname(file).toLowerCase() !== '.mp3') return null
   let fh: Awaited<ReturnType<typeof open>>
   try {
@@ -85,8 +95,16 @@ async function mp3Head(file: string): Promise<Buffer | null> {
     return null
   }
   try {
+    const tagHeader = Buffer.alloc(ID3V2_HEADER_BYTES)
+    let audioAt = 0
+    for (;;) {
+      const { bytesRead } = await fh.read(tagHeader, 0, ID3V2_HEADER_BYTES, audioAt)
+      const size = leadingId3v2Size(tagHeader.subarray(0, bytesRead))
+      if (size === 0) break
+      audioAt += size
+    }
     const head = Buffer.alloc(HEAD_SCAN_BYTES)
-    const { bytesRead } = await fh.read(head, 0, HEAD_SCAN_BYTES, 0)
+    const { bytesRead } = await fh.read(head, 0, HEAD_SCAN_BYTES, audioAt)
     return head.subarray(0, bytesRead)
   } finally {
     await fh.close()
