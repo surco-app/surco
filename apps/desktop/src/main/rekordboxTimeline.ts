@@ -129,11 +129,12 @@ function itunSmpbPriming(buf: Buffer): number | undefined {
 }
 
 export function m4aPrimingSamples(moov: Buffer): number {
+  if (!mp4Child(moov, ['moov'])) return APPLE_AAC_PRIMING
   const trak = mp4Child(moov, ['moov', 'trak'])
   const stsd = trak && mp4Child(moov, ['mdia', 'minf', 'stbl', 'stsd'], trak.body, trak.end)
   if (stsd && moov.toString('latin1', stsd.body + 12, stsd.body + 16) === 'alac') return 0
   const elst = trak && mp4Child(moov, ['edts', 'elst'], trak.body, trak.end)
-  return (elst && editListStart(moov, elst)) ?? itunSmpbPriming(moov) ?? APPLE_AAC_PRIMING
+  return (elst && editListStart(moov, elst)) ?? itunSmpbPriming(moov) ?? 0
 }
 
 export function rekordboxShiftMs(ext: string, head: Buffer, sampleRate: number): number {

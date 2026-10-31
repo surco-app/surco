@@ -64,23 +64,62 @@ function box(type: string, ...body: Buffer[]): Buffer {
   return Buffer.concat([head, ...body])
 }
 
-function appleM4a(codec: string, priming: number): Buffer {
-  const stsd = box('stsd', Buffer.from([0, 0, 0, 0, 0, 0, 0, 1]), box(codec, Buffer.alloc(28)))
+interface TrackSpec {
+  codec: string
+  handler?: string
+  timescale?: number
+  edits?: number[]
+  wideEdits?: boolean
+  truncatedEdits?: boolean
+}
+
+function track(t: TrackSpec): Buffer {
+  const mdhd = Buffer.alloc(24)
+  mdhd.writeUInt32BE(t.timescale ?? 44100, 12)
+  const hdlr = Buffer.alloc(25)
+  hdlr.write(t.handler ?? 'soun', 8, 'latin1')
+  const stsd = box('stsd', Buffer.from([0, 0, 0, 0, 0, 0, 0, 1]), box(t.codec, Buffer.alloc(28)))
+  const media = box('mdia', box('mdhd', mdhd), box('hdlr', hdlr), box('minf', box('stbl', stsd)))
+  if (t.truncatedEdits) return box('trak', media, box('edts', box('elst')))
+  if (!t.edits) return box('trak', media)
+  const entry = t.wideEdits ? 20 : 12
+  const elst = Buffer.alloc(8 + t.edits.length * entry)
+  elst[0] = t.wideEdits ? 1 : 0
+  elst.writeUInt32BE(t.edits.length, 4)
+  t.edits.forEach((mediaTime, i) => {
+    const at = 8 + i * entry
+    if (t.wideEdits) elst.writeBigInt64BE(BigInt(mediaTime), at + 8)
+    else elst.writeInt32BE(mediaTime, at + 4)
+  })
+  return box('trak', box('edts', box('elst', elst)), media)
+}
+
+function itunSmpb(priming: number): Buffer {
   const smpb = ` 00000000 ${priming.toString(16).toUpperCase().padStart(8, '0')} 00000338 0000000000015888`
-  const ilst = box(
-    'ilst',
+  return box(
+    'udta',
     box(
-      '----',
-      box('mean', Buffer.alloc(4), Buffer.from('com.apple.iTunes')),
-      box('name', Buffer.alloc(4), Buffer.from('iTunSMPB')),
-      box('data', Buffer.from([0, 0, 0, 1, 0, 0, 0, 0]), Buffer.from(smpb)),
+      'meta',
+      Buffer.alloc(4),
+      box(
+        'ilst',
+        box(
+          '----',
+          box('mean', Buffer.alloc(4), Buffer.from('com.apple.iTunes')),
+          box('name', Buffer.alloc(4), Buffer.from('iTunSMPB')),
+          box('data', Buffer.from([0, 0, 0, 1, 0, 0, 0, 0]), Buffer.from(smpb)),
+        ),
+      ),
     ),
   )
-  return box(
-    'moov',
-    box('trak', box('mdia', box('minf', box('stbl', stsd)))),
-    box('udta', box('meta', Buffer.alloc(4), ilst)),
-  )
+}
+
+function moov(...children: Buffer[]): Buffer {
+  return box('moov', ...children)
+}
+
+function appleM4a(codec: string, priming: number): Buffer {
+  return moov(track({ codec }), itunSmpb(priming))
 }
 
 describe('rekordboxLeadMs', () => {
@@ -205,9 +244,17 @@ describe('rekordboxShiftMs', () => {
     expect(rekordboxShiftMs('.m4a', appleM4a('alac', 2112), 44100)).toBe(0)
   })
 
-  it("falls back to Apple's 2112 samples on an M4A that declares no priming, the only AAC the collection held when measured", () => {
+  it('reads no priming on an AAC whose moov declares none, since ffmpeg then trims nothing and rekordbox sits where ffmpeg does', () => {
+    expect(rekordboxShiftMs('.m4a', moov(track({ codec: 'mp4a' })), 44100)).toBe(0)
+  })
+
+  it("falls back to Apple's 2112 samples only when the moov cannot be read, the AAC the collection held when measured", () => {
     expect(rekordboxShiftMs('.m4a', Buffer.alloc(0), 44100)).toBeCloseTo((2112 / 44100) * 1000, 3)
     expect(rekordboxShiftMs('.m4a', Buffer.alloc(0), 48000)).toBeCloseTo(44, 3)
+    expect(rekordboxShiftMs('.m4a', Buffer.from('not an mp4 at all'), 44100)).toBeCloseTo(
+      (2112 / 44100) * 1000,
+      3,
+    )
   })
 
   it('keeps PCM formats in step, measured within 2 ms on WAV and AIFF', () => {
