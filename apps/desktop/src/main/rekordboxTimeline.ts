@@ -105,6 +105,7 @@ function mp4Child(buf: Buffer, path: string[], start = 0, end = buf.length): Mp4
 }
 
 function editListStart(buf: Buffer, elst: Mp4Box): number | undefined {
+  if (elst.body + 8 > elst.end) return undefined
   const wide = buf[elst.body] === 1
   const count = buf.readUInt32BE(elst.body + 4)
   for (let i = 0, at = elst.body + 8; i < count && at + (wide ? 20 : 12) <= elst.end; i++) {

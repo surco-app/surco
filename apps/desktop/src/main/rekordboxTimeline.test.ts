@@ -257,6 +257,12 @@ describe('rekordboxShiftMs', () => {
     )
   })
 
+  it('falls back instead of throwing on an edit list cut short at the end of the moov, so a malformed file never fails a conversion', () => {
+    expect(
+      rekordboxShiftMs('.m4a', moov(track({ codec: 'mp4a', truncatedEdits: true })), 44100),
+    ).toBe(0)
+  })
+
   it('keeps PCM formats in step, measured within 2 ms on WAV and AIFF', () => {
     expect(rekordboxShiftMs('.wav', lame44, 44100)).toBe(0)
     expect(rekordboxShiftMs('.aiff', Buffer.alloc(0), 44100)).toBe(0)
