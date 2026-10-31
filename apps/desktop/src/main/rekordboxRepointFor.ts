@@ -56,7 +56,9 @@ export function rekordboxRepointFor(
     ...(options.meta ? { meta: options.meta } : {}),
     ...(audio ? { audio } : {}),
     ...(engineShift ? { engineShift } : {}),
-    ...(engineShift && options.fromBytes !== undefined ? { fromBytes: options.fromBytes } : {}),
+    ...(!options.replaces && options.fromBytes !== undefined
+      ? { fromBytes: options.fromBytes }
+      : {}),
   }
   if (from === output && !options.meta && !audio) return null
   return { from, to: output, ...extra }

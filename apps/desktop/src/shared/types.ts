@@ -482,6 +482,17 @@ export interface TrashEntry {
   reason: TrashReason
   // The file that took the original's place, when a conversion caused the stash.
   outputPath?: string
+  // How Engine DJ's positions move when this file is put back, when the write that set it
+  // aside moved them (a cut or a resample, see engineRepoint.ts): shift applies only over the
+  // file of `over` bytes that write left, and undo is the move back, kept with whatever this
+  // restore sets aside in its turn.
+  engine?: { shift: EngineMoveShift; over: number; undo: EngineMoveShift }
+}
+
+export interface EngineMoveShift {
+  trimmedMs: number
+  sampleRateHz?: number
+  sampleCount?: number
 }
 
 export interface TrackMetadata {

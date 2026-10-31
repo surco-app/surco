@@ -12,10 +12,10 @@ import {
 import { loadSqlJs } from './engine'
 import { replaceEngineDuplicates } from './engineDuplicates'
 import { isEngineDjRunning } from './engineProcess'
-import { engineRowFinder, repointEngineTracks } from './engineRepoint'
+import { engineBitrateKbps, engineRowFinder, repointEngineTracks } from './engineRepoint'
 import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
 import { updateEngineTags } from './engineTags'
-import { probeDuration, probeProperties, toNmlLocation } from './ffmpeg'
+import { probeAudio, probeDuration, probeProperties, toNmlLocation } from './ffmpeg'
 import { djLibraryFileUse } from './libraryFileUse'
 import { pathKey } from './libraryPathKey'
 import { flushLibraryRepoints, type LibraryRepointResult } from './libraryRepointFlush'
@@ -277,9 +277,7 @@ export async function flushConversionBatch(
   // rekordbox's does: the dialog asked to convert again, which an in-place conversion
   // cannot, its source being gone. A check that cannot tell counts as Engine being open.
   const engineRepoints = repoints.filter(
-    (repoint) =>
-      repoint.from !== repoint.to ||
-      (repoint.engineShift !== undefined && repoint.fromBytes !== undefined),
+    (repoint) => repoint.from !== repoint.to || repoint.fromBytes !== undefined,
   )
   const engineUnplugged = onUnpluggedDrive(getSettings().engineLibraryDir)
   const engineDeps = engineFlushDeps(host)
@@ -411,7 +409,10 @@ function repointEngine(
   return repointEngineTracks(
     libraryDir,
     list.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
-    { sessionBackup: (path) => sessions.engine.ensure(path) },
+    {
+      sessionBackup: (path) => sessions.engine.ensure(path),
+      bitrateOf: async (file) => engineBitrateKbps(await probeAudio(file)),
+    },
   )
 }
 

@@ -1,4 +1,4 @@
-import { mkdirSync, realpathSync } from 'node:fs'
+import { existsSync, mkdirSync, realpathSync } from 'node:fs'
 import { chmod, mkdir, mkdtemp, readFile, stat, symlink, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
@@ -19,7 +19,7 @@ import {
 } from './engineBlobs'
 import { analysedTrack, quickCuesBlob } from './enginePerformanceFixture'
 import { isEngineDjRunning } from './engineProcess'
-import { engineLengthOf, repointEngineTracks } from './engineRepoint'
+import { engineBitrateKbps, engineLengthOf, repointEngineTracks } from './engineRepoint'
 import { backupOf } from './libraryBackups'
 
 // The real probe shells out to pgrep/tasklist; tests pin it so they never depend on what
@@ -162,6 +162,111 @@ describe.each(['2.18', '3.0.2'] as const)('repointEngineTracks on a %s library',
     const perf = performance(db, schema)
     expect(perf.quickCues).toEqual(CUES)
     expect(perf.beatData).toEqual(GRID)
+  })
+
+  // A rewrite in place keeps the row's file, and Engine shows its bitrate in the track list
+  // and does not analyze an analyzed track again: cleared, it stayed blank for good.
+  it('keeps the bitrate of a row rewritten in place when nothing says what it is now', async () => {
+    const lib = await library(schema)
+    await writeFile(lib.oldFile, Buffer.alloc(150))
+    const [result] = await repointEngineTracks(lib.dir, [
+      { from: lib.oldFile, to: lib.oldFile, fromBytes: 100 },
+    ])
+    expect(result).toEqual({ written: true, id: '1' })
+    const db = await openDb(lib.dbPath)
+    expect(one(db, 'SELECT fileBytes, bitrate FROM Track')).toEqual({
+      fileBytes: 150,
+      bitrate: 320,
+    })
+    db.close()
+  })
+
+  it('records the bitrate a row rewritten in place has now, when the file says', async () => {
+    const lib = await library(schema)
+    await writeFile(lib.oldFile, Buffer.alloc(150))
+    const bitrateOf = vi.fn(async () => 1411)
+    await repointEngineTracks(lib.dir, [{ from: lib.oldFile, to: lib.oldFile, fromBytes: 100 }], {
+      bitrateOf,
+    })
+    expect(bitrateOf).toHaveBeenCalledWith(lib.oldFile)
+    const db = await openDb(lib.dbPath)
+    expect(one(db, 'SELECT bitrate FROM Track')).toEqual({ bitrate: 1411 })
+    db.close()
+  })
+
+  // A moved row describes another file: it takes that file's bitrate when it can be told,
+  // and none otherwise, never the old file's.
+  it.each([
+    ['the new file’s bitrate', 1411, 1411],
+    ['none when the file cannot say', undefined, null],
+  ])('records %s on a moved row', async (_, said, stored) => {
+    const lib = await library(schema)
+    const bitrateOf = vi.fn(async () => said)
+    await repointEngineTracks(lib.dir, [{ from: lib.oldFile, to: lib.newFile }], { bitrateOf })
+    expect(bitrateOf).toHaveBeenCalledWith(lib.newFile)
+    const db = await openDb(lib.dbPath)
+    expect(one(db, 'SELECT bitrate FROM Track')).toEqual({ bitrate: stored })
+    db.close()
+  })
+
+  // A lossy file re-encoded in place at another quality: the old figure would be wrong.
+  it('clears the bitrate of a row rewritten in place whose file reports none', async () => {
+    const lib = await library(schema)
+    await writeFile(lib.oldFile, Buffer.alloc(150))
+    await repointEngineTracks(lib.dir, [{ from: lib.oldFile, to: lib.oldFile, fromBytes: 100 }], {
+      bitrateOf: async () => null,
+    })
+    const db = await openDb(lib.dbPath)
+    expect(one(db, 'SELECT bitrate FROM Track')).toEqual({ bitrate: null })
+    db.close()
+  })
+
+  // FLAC is never probed: no figure Engine keeps for it was measured.
+  it('does not probe a FLAC', async () => {
+    const lib = await library(schema)
+    const flac = join(lib.music, 'new.flac')
+    await writeFile(flac, Buffer.alloc(10))
+    const bitrateOf = vi.fn(async () => 900)
+    await repointEngineTracks(lib.dir, [{ from: lib.oldFile, to: flac }], { bitrateOf })
+    expect(bitrateOf).not.toHaveBeenCalled()
+  })
+
+  // A retag that fits in the tag's padding leaves the file the size it was: the row already
+  // says everything true about it, so Engine's library is not backed up nor written at all.
+  it('writes nothing for a row rewritten in place that still describes the file', async () => {
+    const lib = await library(schema)
+    const bytes = await readFile(lib.dbPath)
+    const [result] = await repointEngineTracks(
+      lib.dir,
+      [{ from: lib.oldFile, to: lib.oldFile, fromBytes: 100 }],
+      { bitrateOf: async () => 320 },
+    )
+    expect(result).toEqual({ written: false, reason: 'no-match' })
+    expect(await readFile(lib.dbPath)).toEqual(bytes)
+    expect(existsSync(backupOf(lib.dbPath, 'backup'))).toBe(false)
+  })
+
+  it('still writes a row rewritten in place to the same size when its bitrate changed', async () => {
+    const lib = await library(schema)
+    const [result] = await repointEngineTracks(
+      lib.dir,
+      [{ from: lib.oldFile, to: lib.oldFile, fromBytes: 100 }],
+      { bitrateOf: async () => 256 },
+    )
+    expect(result).toEqual({ written: true, id: '1' })
+    const db = await openDb(lib.dbPath)
+    expect(one(db, 'SELECT fileBytes, bitrate FROM Track')).toEqual({
+      fileBytes: 100,
+      bitrate: 256,
+    })
+    db.close()
+  })
+
+  it('still moves a row to a new file of the same size', async () => {
+    const lib = await library(schema)
+    await writeFile(lib.newFile, Buffer.alloc(100))
+    const [result] = await repointEngineTracks(lib.dir, [{ from: lib.oldFile, to: lib.newFile }])
+    expect(result).toEqual({ written: true, id: '1' })
   })
 
   // Engine imported only part of the user's music, so most conversions have no row there.
@@ -464,6 +569,26 @@ describe.each(['2.18', '3.0.2'] as const)(
       expect(after.grid).toEqual(before.grid)
     })
 
+    // Engine's track list shows Track.length, whole seconds rounded the way a real library
+    // stores them (334.507 s of samples is 335), so a cut left it showing the old duration.
+    it('records the length the track list shows, in rounded seconds', async () => {
+      const lib = await analysedLibrary(schema)
+      const seed = await openDb(lib.dbPath)
+      seed.run('UPDATE Track SET length = 60')
+      await writeFile(lib.dbPath, seed.export())
+      seed.close()
+      await repointEngineTracks(lib.dir, [
+        {
+          from: lib.oldFile,
+          to: lib.newFile,
+          engineShift: { trimmedMs: 0, sampleCount: Math.round(RATE * 50.6) },
+        },
+      ])
+      const db = await openDb(lib.dbPath)
+      expect(one(db, 'SELECT length FROM Track')).toEqual({ length: 51 })
+      db.close()
+    })
+
     it('records the exact length at the new rate when a trim also resamples', async () => {
       const lib = await analysedLibrary(schema)
       await repointEngineTracks(lib.dir, [
@@ -518,6 +643,18 @@ describe.each(['2.18', '3.0.2'] as const)(
       const [again] = await repointEngineTracks(lib.dir, [move])
       expect(again).toEqual({ written: false, reason: 'no-match' })
       expect(await positionsOf(lib)).toEqual(once)
+    })
+
+    it('still shifts a row rewritten in place to the size it already had', async () => {
+      const lib = await analysedLibrary(schema)
+      const before = await positionsOf(lib)
+      const [result] = await repointEngineTracks(lib.dir, [
+        { from: lib.oldFile, to: lib.oldFile, fromBytes: 100, engineShift: { trimmedMs: TRIM_MS } },
+      ])
+      expect(result).toEqual({ written: true, id: '1' })
+      expect((await positionsOf(lib)).grid).toEqual(
+        before.grid?.map((s) => expect.closeTo(s - TRIM_MS / 1000, 6)),
+      )
     })
 
     it('leaves a row rewritten in place alone when nothing says the cut is still owed', async () => {
@@ -623,6 +760,63 @@ describe.each(['2.18', '3.0.2'] as const)(
       })
     })
 
+    // Restoring the original a cut replaced moves the row back: the cut put back before every
+    // position and the source's rate and length. The overview's dropped entries are gone, so
+    // the lead-in comes back as silence, which is what a cut lead-in is.
+    it('moves a cut and resampled row back onto the original', async () => {
+      const lib = await analysedLibrary(schema)
+      const head = Buffer.alloc(24)
+      head.writeBigInt64BE(10n, 0)
+      head.writeBigInt64BE(10n, 8)
+      head.writeDoubleBE(RATE / 2, 16)
+      const entries = Array.from({ length: 10 }, (_, i) => [i, i + 1, i + 2]).flat()
+      const raw = Buffer.concat([head, Buffer.from(entries), Buffer.from([9, 10, 11])])
+      const seed = await openDb(lib.dbPath)
+      seed.run('UPDATE PerformanceData SET overviewWaveFormData = ? WHERE trackId = 1', [
+        deflateEngineBlob(raw),
+      ])
+      await writeFile(lib.dbPath, seed.export())
+      seed.close()
+      const before = await positionsOf(lib)
+      await repointEngineTracks(lib.dir, [
+        {
+          from: lib.oldFile,
+          to: lib.newFile,
+          engineShift: { trimmedMs: TRIM_MS, sampleRateHz: 48000 },
+        },
+      ])
+      await repointEngineTracks(lib.dir, [
+        {
+          from: lib.newFile,
+          to: lib.oldFile,
+          engineShift: { trimmedMs: -TRIM_MS, sampleRateHz: RATE, sampleCount: RATE * 60 },
+        },
+      ])
+      const back = await positionsOf(lib)
+      expect(back.rate).toBe(RATE)
+      expect(back.lengthSec).toBe(60)
+      expect(back.hot?.slice(1, 3)).toEqual([
+        expect.closeTo(HOT_SEC[1], 6),
+        expect.closeTo(HOT_SEC[2], 6),
+      ])
+      expect(back.grid).toEqual(before.grid?.map((s) => expect.closeTo(s, 6)))
+      const after = await openDb(lib.dbPath)
+      const overview = inflateEngineBlob(
+        one(after, 'SELECT overviewWaveFormData FROM PerformanceData WHERE trackId = 1')
+          .overviewWaveFormData as Uint8Array,
+      )
+      after.close()
+      expect(Number(overview.readBigInt64BE(8))).toBe(10)
+      expect(overview.readDoubleBE(16)).toBeCloseTo(RATE / 2, 6)
+      expect(decodeOverview(overview)).toEqual({
+        entries: [
+          ...Array.from({ length: 4 }, () => [0, 0, 0]),
+          ...[4, 5, 6, 7, 8, 9].map((i) => [i, i + 1, i + 2]),
+        ],
+        max: [9, 10, 11],
+      })
+    })
+
     // A blob Surco cannot read is kept as Engine wrote it: guessing at its layout could only
     // corrupt it, and the path still has to follow the file.
     it('moves the row and leaves blobs it cannot read as they were', async () => {
@@ -672,9 +866,9 @@ describe.each(['2.18', '3.0.2'] as const)('a damage repair on a %s library', (sc
     ...extra,
   })
 
-  it('sets the length a repair hands', async () => {
+  it("sets the length from the row's own trackData when the repair asks", async () => {
     const lib = await analysedLibrary(schema)
-    const [result] = await repointEngineTracks(lib.dir, [repair(lib, { length: 60 })])
+    const [result] = await repointEngineTracks(lib.dir, [repair(lib, { fixLength: true })])
     expect(result).toEqual({ written: true, id: '1' })
     expect(await lengthOf(lib)).toBe(60)
   })
@@ -705,5 +899,30 @@ describe.each(['2.18', '3.0.2'] as const)('a damage repair on a %s library', (sc
       reason: 'no-match',
     })
     expect(await positionsOf(lib)).toEqual(once)
+  })
+})
+
+// Engine's own rows for PCM, read from a real library (30/10), are the stream's bitrate in
+// rounded kbps (rate × depth × channels). A lossy file's is its stream bitrate too. What it
+// stores for FLAC or ALAC was not measured, so those say nothing.
+describe('engineBitrateKbps', () => {
+  it.each([
+    ['pcm_s16le', 1_411_200, 1411],
+    ['pcm_s24be', 2_116_800, 2117],
+    ['pcm_s16be', 1_536_000, 1536],
+    ['pcm_s24le', 2_304_000, 2304],
+    ['pcm_s16le', 2_822_400, 2822],
+    ['mp3', 320_000, 320],
+    ['aac', 255_896, 256],
+  ])('is %s at %i b/s = %i', (codecName, bitRate, kbps) => {
+    expect(engineBitrateKbps({ codecName, bitRate })).toBe(kbps)
+  })
+
+  it('is none for a lossy stream that reports no bitrate', () => {
+    expect(engineBitrateKbps({ codecName: 'mp3' })).toBeNull()
+  })
+
+  it.each(['flac', 'alac'])('says nothing for %s', (codecName) => {
+    expect(engineBitrateKbps({ codecName, bitRate: 900_000 })).toBeUndefined()
   })
 })

@@ -2005,6 +2005,35 @@ const CANCEL_POLL_MS = 50
 
 // The source's decoded length, bounded like its digest: a timeout sized to the file
 // and the job's cancel. Anything that keeps it from answering leaves it unknown.
+// How Engine DJ's positions move between a cut or resampled file and the original kept for
+// it (TrashEntry.engine): back to the original, the cut put back with the source's rate and
+// decoded length, over the file of the size this conversion wrote; and the move it made, for
+// when that file is put back in turn. Nothing when the conversion moved nothing under them.
+async function engineMoveKept(
+  moved: { trimmedMs: number; sampleRateHz?: number; sampleCount?: number },
+  probeSource: () => Promise<ProbeResult>,
+  sourceSec: number | undefined,
+  written: string,
+): Promise<{ engine?: TrashEntry['engine'] }> {
+  if (!(moved.trimmedMs > 0) && !moved.sampleRateHz && !moved.sampleCount) return {}
+  const rate = Number((await probeSource()).sampleRate) || undefined
+  return {
+    engine: {
+      shift: {
+        trimmedMs: moved.trimmedMs > 0 ? -moved.trimmedMs : 0,
+        ...(moved.sampleRateHz && rate ? { sampleRateHz: rate } : {}),
+        ...(sourceSec !== undefined && rate ? { sampleCount: Math.round(sourceSec * rate) } : {}),
+      },
+      over: (await stat(written)).size,
+      undo: {
+        trimmedMs: moved.trimmedMs,
+        ...(moved.sampleRateHz ? { sampleRateHz: moved.sampleRateHz } : {}),
+        ...(moved.sampleCount ? { sampleCount: moved.sampleCount } : {}),
+      },
+    },
+  }
+}
+
 async function decodedSourceSec(
   input: string,
   probeOnce: (file: string) => Promise<ProbeResult>,
@@ -2541,17 +2570,17 @@ export async function convertAudio(
       : 44100
     const sourceShiftMs = await rekordboxShiftOfFile(input, sourceRate)
     const outputShiftMs = await rekordboxShiftOfFile(tmp, plan.sampleRateHz ?? sourceRate)
-    // Kept samples still move in rekordbox's timeline when only one side is an .m4a (ALAC↔WAV).
-    const rekordboxAudio =
-      copiedVerbatim || (plan.samplesKept && sourceShiftMs === outputShiftMs)
-        ? undefined
-        : {
-            sourceShiftMs,
-            outputShiftMs,
-            trimmedMs: trimAf !== undefined ? (trim?.startSec ?? 0) * 1000 : 0,
-            ...(plan.sampleRateHz ? { sampleRateHz: plan.sampleRateHz } : {}),
-            ...(sampleCount ? { sampleCount } : {}),
-          }
+    // rekordbox's timeline follows the stream it decodes, so kept samples never move in it
+    // (ALAC↔WAV measured 31/10), the same rule the self-check holds the analysis to.
+    const rekordboxAudio = samplesKept
+      ? undefined
+      : {
+          sourceShiftMs,
+          outputShiftMs,
+          trimmedMs: trimAf !== undefined ? (trim?.startSec ?? 0) * 1000 : 0,
+          ...(plan.sampleRateHz ? { sampleRateHz: plan.sampleRateHz } : {}),
+          ...(sampleCount ? { sampleCount } : {}),
+        }
     // A rewrite lands on the source's own path, so the rename below would replace the
     // user's file with no way back. A copy of the original goes to Surco's trash first (see
     // surcoTrash.ts); unconfigured — the unit tests — keepOriginal keeps nothing and
@@ -2567,6 +2596,9 @@ export async function convertAudio(
         reencodes:
           codec !== 'copy' || (extname(output).toLowerCase() === '.wav' && dropsForeignCues(input)),
         untilChecked: true,
+        ...(rekordboxAudio && !replacesPath
+          ? await engineMoveKept(rekordboxAudio, () => probeOnce(input), sourceDurationSec, tmp)
+          : {}),
       })
       originalKept = archived !== null
     }

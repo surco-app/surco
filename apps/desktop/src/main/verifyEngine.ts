@@ -18,6 +18,7 @@ type Positions = Record<(typeof PERFORMANCE)[number], (number | null)[] | null>
 
 export interface EngineSnapshot {
   id: number
+  fileBytes?: number | null
   quickCues: string
   beatData: string
   loops: string
@@ -40,6 +41,8 @@ export interface EngineExpect {
   size: number
   added?: boolean
   shift?: EngineShift
+  // The size the write expected the row to hold, for a rewrite in place.
+  fromBytes?: number
 }
 
 interface Row {
@@ -153,7 +156,7 @@ export function snapshotEngineRow(
     const rows = rowsFinder(db, libraryDir)(from, key)
     if (rows.length === 0) return 'absent'
     if (rows.length > 1) return 'ambiguous'
-    return { id: rows[0].id, ...performanceOf(db, rows[0].id) }
+    return { id: rows[0].id, fileBytes: rows[0].fileBytes, ...performanceOf(db, rows[0].id) }
   } catch {
     return 'unreadable'
   }
@@ -235,6 +238,21 @@ function judge(
   if (fileType !== extname(e.to).slice(1).toLowerCase())
     return check('mismatch', 'engineStillOld', { format: formatOf(`.${fileType}`) })
   if (row.fileBytes !== e.size) {
+    // A row still on a size it had before the conversion, other than the one the write
+    // expected, is one Surco's write refused to trust (see writeEngineRepoints): it is as the
+    // DJ left it.
+    if (
+      typeof before === 'object' &&
+      e.fromBytes !== undefined &&
+      'fileBytes' in before &&
+      before.fileBytes !== e.fromBytes &&
+      row.fileBytes === before.fileBytes
+    ) {
+      const field = misplacedField(db, row.id, before, e.shift)
+      return field
+        ? check('mismatch', 'engineSizeStaleCues', { field })
+        : check('mismatch', 'engineSizeStale')
+    }
     const late = typeof before === 'object' && misplacedField(db, row.id, before, e.shift)
     return late
       ? check('mismatch', 'engineCuesMisplaced', { field: late })

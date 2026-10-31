@@ -58,7 +58,10 @@ vi.mock('./i18n', () => ({ createMenuT: () => (k: string) => k }))
 vi.mock('./settings', () => ({ getSettings: () => ({}) }))
 
 const readMeta = vi.fn()
-vi.mock('./ffmpeg', () => ({ readMeta: (...args: unknown[]) => readMeta(...args) }))
+vi.mock('./ffmpeg', () => ({
+  readMeta: (...args: unknown[]) => readMeta(...args),
+  convertTmpPath: (file: string) => `${file}.surco-tmp`,
+}))
 const fetchAppleMusicArtwork = vi.fn()
 vi.mock('./appleMusicArtwork', () => ({
   artworkDir: async () => '/tmp/art',
@@ -187,6 +190,41 @@ describe('applemusic:setField', () => {
   })
 })
 
+// The review's fix rewrites the entry's file twice, Music first and Surco's own write after:
+// Engine DJ's row follows it with the size it had before either.
+describe('applemusic:applyFixes', () => {
+  const original = process.platform
+
+  afterEach(() => {
+    Object.defineProperty(process, 'platform', { value: original, configurable: true })
+  })
+
+  it('tells Engine DJ the size the file had before the fix', async () => {
+    handlers.clear()
+    Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true })
+    const dir = mkdtempSync(join(tmpdir(), 'surco-fixes-'))
+    const file = join(dir, 'c.aiff')
+    writeFileSync(file, 'audio')
+    appleMusicEntryLocation.mockReset().mockResolvedValue(file)
+    setAppleMusicField.mockReset().mockResolvedValue('mismatch')
+    const followEngineSize = vi.fn()
+    const { registerAppleMusicIpc } = await import('./appleMusicIpc')
+    registerAppleMusicIpc({ followEngineSize })
+    await handlers.get('applemusic:applyFixes')?.({ sender: { isDestroyed: () => true } }, [
+      { persistentId: 'PID', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' },
+    ])
+    expect(followEngineSize).not.toHaveBeenCalled()
+    setAppleMusicField.mockImplementation(async () => {
+      writeFileSync(file, 'audio retagged by Music')
+      throw new Error('AppleEvent timed out (-1712)')
+    })
+    await handlers.get('applemusic:applyFixes')?.({ sender: { isDestroyed: () => true } }, [
+      { persistentId: 'PID', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' },
+    ])
+    expect(followEngineSize).toHaveBeenCalledWith(file, 'audio'.length)
+  })
+})
+
 // Measured on 30/10: Music rewrites the entry's file the moment a tag is set on it, so the
 // update is a rewrite of the user's file and is backed up like the conversion's own.
 describe('applemusic:update', () => {
@@ -281,6 +319,38 @@ describe('applemusic:update', () => {
       'appleMusicEntryUnread',
     )
     expect(updateInAppleMusic).not.toHaveBeenCalled()
+  })
+
+  // Music rewrites the entry's file as it retags it, so Engine DJ's row, which records the
+  // file's size, has to follow it to the size it ends up with.
+  it('tells Engine DJ the size the file had before Music retagged it', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-update-'))
+    const file = join(dir, 'c.aiff')
+    writeFileSync(file, 'audio')
+    appleMusicEntryLocation.mockResolvedValue(file)
+    updateInAppleMusic.mockImplementation(async () => {
+      writeFileSync(file, 'audio with longer tags')
+      return 'PID'
+    })
+    const followEngineSize = vi.fn()
+    const { registerAppleMusicIpc } = await import('./appleMusicIpc')
+    registerAppleMusicIpc({ followEngineSize })
+    await handlers.get('applemusic:update')?.(null, job)
+    expect(followEngineSize).toHaveBeenCalledWith(file, 'audio'.length)
+  })
+
+  it('tells Engine DJ nothing when the entry is gone and Music touched nothing', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-update-'))
+    const file = join(dir, 'c.aiff')
+    writeFileSync(file, 'audio')
+    appleMusicEntryLocation.mockResolvedValue(file)
+    updateInAppleMusic.mockResolvedValue(null)
+    addToAppleMusic.mockReset().mockResolvedValue('NEW')
+    const followEngineSize = vi.fn()
+    const { registerAppleMusicIpc } = await import('./appleMusicIpc')
+    registerAppleMusicIpc({ followEngineSize })
+    await handlers.get('applemusic:update')?.(null, { ...job, outputPath: '/m/out.aiff' })
+    expect(followEngineSize).not.toHaveBeenCalled()
   })
 
   it('drops the backup when the entry is gone and Music touched nothing', async () => {

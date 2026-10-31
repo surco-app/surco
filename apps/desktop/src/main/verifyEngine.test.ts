@@ -110,6 +110,7 @@ describe('snapshotEngineRow', () => {
     const perf = analysedTrack(1, CUES)
     expect(snapshot(dir)).toEqual({
       id: 1,
+      fileBytes: 40000000,
       quickCues: sha1(perf.quickCues as Buffer),
       beatData: sha1(perf.beatData as Buffer),
       loops: sha1(LOOPS),
@@ -554,12 +555,13 @@ describe('checkEngine after a conversion that moved the audio', () => {
   })
 
   // A rewrite in place moves Engine's cues only while the row still records the source's
-  // size. A size Engine never kept up to date, or none at all, leaves them where they were,
-  // and what the DJ needs to hear is that the cues did not follow, not that a size differs.
+  // size. A size Engine never kept up to date, or none at all, leaves the row as it was: the
+  // DJ hears that its size was already another one, that Surco left it alone, and that its
+  // cues therefore did not follow, never that Surco broke them.
   it.each([
     ['a stale size', 999],
     ['no size', null],
-  ])('a rewrite in place the row refused for %s is engineCuesMisplaced', async (_, stored) => {
+  ])('a rewrite in place the row refused for %s is engineSizeStaleCues', async (_, stored) => {
     const dir = trimmable()
     const file = FROM_LOCAL(dir)
     writeFileSync(file, Buffer.alloc(1))
@@ -574,13 +576,73 @@ describe('checkEngine after a conversion that moved the audio', () => {
     expect(
       checkOne(
         dir,
-        expectFor(before, { from: file, to: file, size: SIZE_SMALL, samplesKept: false, shift }),
+        expectFor(before, {
+          from: file,
+          to: file,
+          size: SIZE_SMALL,
+          samplesKept: false,
+          shift,
+          fromBytes: 1,
+        }),
       )[0],
     ).toEqual({
       place: 'engine',
       state: 'mismatch',
-      detail: { key: 'engineCuesMisplaced', params: { field: 'quickCues' } },
+      detail: { key: 'engineSizeStaleCues', params: { field: 'quickCues' } },
     })
+  })
+
+  // The row still had the source's size, so the write would have taken it: one that did not
+  // land is not the DJ's stale row, and the check says what is wrong with it as it is.
+  it('a row left on the source’s size by a write that never landed is not called stale', () => {
+    const dir = trimmable()
+    const file = FROM_LOCAL(dir)
+    writeFileSync(file, Buffer.alloc(1))
+    write(dir, 'UPDATE Track SET path = ?, fileBytes = 1 WHERE id = 1', relative(dir, file))
+    const before = snapshot(dir, file)
+    writeFileSync(file, Buffer.alloc(SIZE_SMALL))
+    const shift = { trimmedMs: CUT * 1000 }
+    expect(
+      checkOne(
+        dir,
+        expectFor(before, {
+          from: file,
+          to: file,
+          size: SIZE_SMALL,
+          samplesKept: false,
+          shift,
+          fromBytes: 1,
+        }),
+      )[0].detail,
+    ).toEqual({ key: 'engineCuesMisplaced', params: { field: 'quickCues' } })
+  })
+
+  it('a retag in place the row refused for a stale size is engineSizeStale', async () => {
+    const dir = library()
+    const file = FROM_LOCAL(dir)
+    writeFileSync(file, Buffer.alloc(1))
+    write(dir, 'UPDATE Track SET path = ?, fileBytes = 999 WHERE id = 1', relative(dir, file))
+    const before = snapshot(dir, file)
+    writeFileSync(file, Buffer.alloc(SIZE_SMALL))
+    const [result] = await repointEngineTracks(dir, [{ from: file, to: file, fromBytes: 1 }])
+    expect(result).toEqual({ written: false, reason: 'no-match' })
+    expect(
+      checkOne(dir, expectFor(before, { from: file, to: file, size: SIZE_SMALL, fromBytes: 1 }))[0],
+    ).toEqual({
+      place: 'engine',
+      state: 'mismatch',
+      detail: { key: 'engineSizeStale' },
+    })
+  })
+
+  it('a row on its old size with no size the write expected is not called stale', () => {
+    const dir = library()
+    const file = FROM_LOCAL(dir)
+    write(dir, 'UPDATE Track SET path = ?, fileBytes = 999 WHERE id = 1', relative(dir, file))
+    const before = snapshot(dir, file)
+    expect(
+      checkOne(dir, expectFor(before, { from: file, to: file, size: SIZE_SMALL }))[0].detail,
+    ).toEqual({ key: 'engineSizeDiffers' })
   })
 
   it('positions rewritten at the new sample rate are ok', () => {

@@ -504,6 +504,40 @@ describe('rewriteTagFields', () => {
     expect(existsSync(track.mock.calls[0][0])).toBe(false)
   }, 60000)
 
+  // Engine DJ records each file's size, so a fix written over the file reaches its row with
+  // the size the row still holds, and only when the file really changed.
+  it('tells Engine DJ the size the file had before the fix was written', async () => {
+    const file = make('mp3', ['-c:a', 'libmp3lame'], 'Dj Lara')
+    const size = statSync(file).size
+    const rewritten = vi.fn()
+    await rewriteTagFields(
+      file,
+      [
+        {
+          field: 'artist',
+          from: 'Dj Lara',
+          to: `DJ Lara ${'and The Long Named Band '.repeat(200)}`,
+        },
+      ],
+      undefined,
+      rewritten,
+    )
+    expect(statSync(file).size).not.toBe(size)
+    expect(rewritten).toHaveBeenCalledWith(file, size)
+  }, 60000)
+
+  it('tells Engine DJ nothing when the fix wrote nothing', async () => {
+    const file = make('mp3', ['-c:a', 'libmp3lame'], 'Someone Else')
+    const rewritten = vi.fn()
+    await rewriteTagFields(
+      file,
+      [{ field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
+      undefined,
+      rewritten,
+    )
+    expect(rewritten).not.toHaveBeenCalled()
+  }, 60000)
+
   it('writes several fields in one pass with one backup', async () => {
     const file = make('mp3', ['-c:a', 'libmp3lame'], 'Dj Lara')
     const keeper = vi.fn().mockResolvedValue({ id: 'b1' })
@@ -605,6 +639,7 @@ describe('rewriteTagFields with the raw genre frame job', () => {
     const { outcomes, backup } = await rewriteTagFields(
       file,
       [{ field: 'genre', from: '(35) Deep House', to: 'House; Deep House' }],
+      undefined,
       undefined,
       'setGenreFrame',
     )
@@ -872,6 +907,63 @@ describe('the library review against a Music that rewrites the file', () => {
     )
     expect(stored.get(out.backupId ?? '')?.equals(original)).toBe(true)
     expect(existsSync(temps[0])).toBe(false)
+  }, 60000)
+
+  // Music rewrote the file as it took the field, whatever Surco's own write did after: Engine
+  // DJ is told the size from before Music, once the file is as it stays.
+  it.each([
+    ['Surco wrote the fix', 'Dj Lara', false],
+    ['the file held another value', 'Someone Else', false],
+    ['Music did not answer', 'Dj Lara', true],
+  ])(
+    'tells Engine DJ the size from before Music when %s',
+    async (_, artist, silent) => {
+      const file = make('aiff', ['-c:a', 'pcm_s16be'], artist)
+      const size = statSync(file).size
+      copyingKeeper()
+      const music = musicThatRewrites(file)
+      const rewritten = vi.fn()
+      await applyMusicFixes(
+        [
+          {
+            persistentId: 'A',
+            field: 'artist',
+            from: 'Dj Lara',
+            to: `DJ Lara ${'and The Long Band '.repeat(200)}`,
+          },
+        ],
+        {
+          setField: async (pid, field, from, to) => {
+            const answer = await music(pid, field, from, to)
+            if (silent) throw new Error('AppleEvent timed out (-1712)')
+            return answer
+          },
+          locate: async () => file,
+          exists: async () => true,
+          prepare: (path) => prepareTagRewrite(path, undefined, rewritten),
+        },
+      )
+      expect(statSync(file).size).not.toBe(size)
+      expect(rewritten).toHaveBeenCalledTimes(1)
+      expect(rewritten).toHaveBeenCalledWith(file, size)
+    },
+    60000,
+  )
+
+  it('tells Engine DJ nothing when Music refused the fix', async () => {
+    const file = make('aiff', ['-c:a', 'pcm_s16be'], 'Dj Lara')
+    copyingKeeper()
+    const rewritten = vi.fn()
+    await applyMusicFixes(
+      [{ persistentId: 'A', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
+      {
+        setField: async () => 'mismatch',
+        locate: async () => file,
+        exists: async () => true,
+        prepare: (path) => prepareTagRewrite(path, undefined, rewritten),
+      },
+    )
+    expect(rewritten).not.toHaveBeenCalled()
   }, 60000)
 
   it('reports the field as written, not as a file that differs', async () => {

@@ -16,7 +16,12 @@ import {
   traktorFlushDeps,
 } from './libraryFlushes'
 import type { MediaAccess } from './mediaAccess'
-import { rewriteCueTree, rewriteTagFields, type TmpTracking } from './musicFieldWrite'
+import {
+  type Rewritten,
+  rewriteCueTree,
+  rewriteTagFields,
+  type TmpTracking,
+} from './musicFieldWrite'
 import type { RekordboxQueue } from './rekordboxQueue'
 import { scanTraktorDamage } from './traktorCueDamageScan'
 import type { NmlPatch } from './traktorNml'
@@ -34,6 +39,7 @@ export interface DamageEnv {
   traktorQueue?: Parameters<typeof holdInQueue>[0]
   engineQueue?: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void }
   serial?: DamageIpcDeps['serial']
+  followEngineSize?: Rewritten
 }
 
 export function damageDeps(env: DamageEnv): DamageIpcDeps {
@@ -85,7 +91,8 @@ export function damageDeps(env: DamageEnv): DamageIpcDeps {
               () => true,
               () => false,
             ),
-          rewrite: (file, changes) => rewriteTagFields(file, changes, env.tmp, 'setGenreFrame'),
+          rewrite: (file, changes) =>
+            rewriteTagFields(file, changes, env.tmp, env.followEngineSize, 'setGenreFrame'),
         },
         rewriteTree: (file, addMs, expected) => rewriteCueTree(file, addMs, expected, env.tmp),
         traktor: {

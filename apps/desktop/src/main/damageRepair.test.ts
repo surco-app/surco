@@ -190,7 +190,6 @@ describe('repairDamage — Engine DJ', () => {
         fromBytes: 1234,
         expectTrackData: { sampleRate: 48000, sampleCount: 14400000 },
         engineShift: { trimmedMs: 0, sampleRateHz: 44100, sampleCount: 13230000 },
-        length: 300,
       },
     ])
     expect(out).toEqual([{ id: 'e', state: 'repaired' }])

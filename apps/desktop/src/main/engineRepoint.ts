@@ -1,7 +1,7 @@
 import { readFile, stat, unlink, writeFile } from 'node:fs/promises'
 import { basename, extname, join, relative, resolve } from 'node:path'
 import log from 'electron-log/main'
-import type { Database } from 'sql.js'
+import type { Database, SqlValue } from 'sql.js'
 import { loadSqlJs } from './engine'
 import {
   decodeLoops,
@@ -52,12 +52,12 @@ export interface EngineRepoint extends PathMatchOptions {
   to: string
   engineShift?: EngineShift
   // The source's size before a conversion rewrote it on its own path, what the row still
-  // records until the shift lands.
+  // records until the new size, and the shift if any, land.
   fromBytes?: number
   // A repair in place: the trackData the row held when it was judged, without which the
-  // repair already landed, and the length Engine should show.
+  // repair already landed, and whether the length is rewritten from the row's own trackData.
   expectTrackData?: { sampleRate: number; sampleCount: number }
-  length?: number
+  fixLength?: boolean
 }
 
 export const engineLengthOf = (sampleCount: number, sampleRate: number): number =>
@@ -67,7 +67,24 @@ export interface EngineRepointOptions {
   // Takes the run's single pre-run copy, before the first write. A failure here refuses
   // the write like any other missing backup.
   sessionBackup?: (dbPath: string) => Promise<void>
+  // The bitrate Engine would show for a file (engineBitrateKbps): null for none, undefined
+  // when it cannot be told.
+  bitrateOf?: (file: string) => Promise<number | null | undefined>
 }
+
+// Engine's bitrate is the stream's in rounded kbps: its own PCM rows are rate × depth ×
+// channels (1411, 2117, 1536, 2304, 2822 in a real library), and a lossy stream says its
+// own. What it keeps for FLAC or ALAC was never measured, so those cannot be told.
+export function engineBitrateKbps(probe: {
+  codecName: string
+  bitRate?: number
+}): number | null | undefined {
+  if (probe.codecName === 'flac' || probe.codecName === 'alac') return undefined
+  return probe.bitRate ? Math.round(probe.bitRate / 1000) : null
+}
+
+// Only these can yield a bitrate, so only they are probed.
+const BITRATE_EXTENSIONS = new Set(['wav', 'aif', 'aiff', 'mp3', 'm4a', 'aac', 'ogg', 'opus'])
 
 // Engine stores each path relative to the library folder, forward-slashed. Matching
 // compares the absolute, resolved form; NFC first, because APFS treats NFC and NFD names as
@@ -174,13 +191,17 @@ export function shiftEnginePerformance(perf: Performance, shift: EngineShift): P
   const runSamples = overview && decodeOverview(overview) ? overview.readDoubleBE(16) : 0
   if (overview && runSamples > 0) {
     const count = Number(overview.readBigInt64BE(0))
-    const dropped = Math.min(count, Math.round(((shift.trimmedMs / 1000) * from) / runSamples))
+    const runs = Math.round(((shift.trimmedMs / 1000) * from) / runSamples)
+    // A cut put back (a negative trim) comes back as silent entries: the ones it dropped are gone.
+    const dropped = Math.min(count, Math.max(0, runs))
+    const added = Math.max(0, -runs)
     const head = Buffer.from(overview.subarray(0, 24))
-    head.writeBigInt64BE(BigInt(count - dropped), 0)
-    if (Number(head.readBigInt64BE(8)) === count) head.writeBigInt64BE(BigInt(count - dropped), 8)
+    head.writeBigInt64BE(BigInt(count - dropped + added), 0)
+    if (Number(head.readBigInt64BE(8)) === count)
+      head.writeBigInt64BE(BigInt(count - dropped + added), 8)
     head.writeDoubleBE((runSamples * to) / from, 16)
     next.overviewWaveFormData = deflateEngineBlob(
-      Buffer.concat([head, overview.subarray(24 + dropped * 3)]),
+      Buffer.concat([head, Buffer.alloc(added * 3), overview.subarray(24 + dropped * 3)]),
     )
   }
 
@@ -246,13 +267,21 @@ function relativeTo(libraryDir: string, file: string): string {
   return relative(libraryDir, file).split('\\').join('/')
 }
 
-export function repointEngineTracks(
+// The files are probed before the library is locked: a probe on a NAS holds no write back.
+export async function repointEngineTracks(
   libraryDir: string,
   repoints: EngineRepoint[],
   options: EngineRepointOptions = {},
 ): Promise<EngineRepointResult[]> {
+  const bitrates = await Promise.all(
+    repoints.map((r) =>
+      options.bitrateOf && BITRATE_EXTENSIONS.has(extname(r.to).slice(1).toLowerCase())
+        ? options.bitrateOf(r.to).catch(() => undefined)
+        : undefined,
+    ),
+  )
   return withEngineDatabase(join(libraryDir, 'Database2', 'm.db'), () =>
-    writeEngineRepoints(libraryDir, repoints, options),
+    writeEngineRepoints(libraryDir, repoints, options, bitrates),
   )
 }
 
@@ -260,6 +289,7 @@ export async function writeEngineRepoints(
   libraryDir: string,
   repoints: EngineRepoint[],
   options: EngineRepointOptions = {},
+  bitrates: (number | null | undefined)[] = [],
 ): Promise<EngineRepointResult[]> {
   const dbPath = join(libraryDir, 'Database2', 'm.db')
   const results: (EngineRepointResult | null)[] = repoints.map(() => null)
@@ -298,11 +328,12 @@ export async function writeEngineRepoints(
 
   try {
     const stored = (
-      db.exec('SELECT id, path, fileBytes FROM Track ORDER BY id')[0]?.values ?? []
-    ).map(([id, path, fileBytes]) => ({
+      db.exec('SELECT id, path, fileBytes, bitrate FROM Track ORDER BY id')[0]?.values ?? []
+    ).map(([id, path, fileBytes, bitrate]) => ({
       id: String(id),
       path: String(path),
       fileBytes,
+      bitrate,
     }))
     const find = engineRowFinder(libraryDir, stored)
     const updates: {
@@ -310,7 +341,9 @@ export async function writeEngineRepoints(
       to: string
       size: number
       shift?: EngineShift
-      length?: number
+      inPlace: boolean
+      bitrate: number | null | undefined
+      fixLength?: boolean
     }[] = []
     for (const [i, repoint] of repoints.entries()) {
       if (results[i]) continue
@@ -329,8 +362,8 @@ export async function writeEngineRepoints(
         results[i] = { written: false, reason: 'occupied' }
         continue
       }
-      // A row already on the file moves only its shift, and only while it still records the
-      // source's size: the same write records the new one, so the shift lands once.
+      // A row already on the file takes only its new size and shift, and only while it still
+      // records the source's size: the same write records the new one, so the shift lands once.
       if (
         onTarget.length > 0 &&
         (repoint.fromBytes === undefined || matches[0].fileBytes !== repoint.fromBytes)
@@ -342,12 +375,25 @@ export async function writeEngineRepoints(
         results[i] = { written: false, reason: 'no-match' }
         continue
       }
+      // A retag inside the tag's padding leaves the row true as it is: nothing to write.
+      if (
+        onTarget.length > 0 &&
+        !repoint.engineShift &&
+        !repoint.fixLength &&
+        sizes[i] === matches[0].fileBytes &&
+        (bitrates[i] === undefined || bitrates[i] === matches[0].bitrate)
+      ) {
+        results[i] = { written: false, reason: 'no-match' }
+        continue
+      }
       updates.push({
         id: matches[0].id,
         to: repoint.to,
         size: sizes[i] as number,
         shift: repoint.engineShift,
-        length: repoint.length,
+        inPlace: onTarget.length > 0,
+        bitrate: bitrates[i],
+        fixLength: repoint.fixLength,
       })
       results[i] = { written: true, id: matches[0].id }
     }
@@ -364,21 +410,34 @@ export async function writeEngineRepoints(
     }
 
     for (const u of updates) {
-      // Only the file columns. The bitrate is cleared rather than kept, as Surco's own
-      // inserts leave it: the old file's value would describe the new one wrongly, and
-      // Engine fills it in when it next analyzes the track.
-      db.run(
-        'UPDATE Track SET path = ?, filename = ?, fileType = ?, fileBytes = ?, bitrate = NULL WHERE id = ?',
-        [
-          relativeTo(libraryDir, u.to),
-          basename(u.to),
-          extname(u.to).slice(1).toLowerCase(),
-          u.size,
-          Number(u.id),
-        ],
-      )
-      const perf = u.shift ? performanceOf(db, Number(u.id)) : null
+      const perf = u.shift || u.fixLength ? performanceOf(db, Number(u.id)) : null
       const next = perf && u.shift && shiftEnginePerformance(perf, u.shift)
+      const lengthFrom =
+        next && next.trackData !== perf.trackData
+          ? next.trackData
+          : u.fixLength
+            ? perf?.trackData
+            : null
+      const track = lengthFrom ? decodeTrackData(inflateEngineBlob(lengthFrom)) : null
+      // Only the file columns, and the length the track list shows when the samples changed,
+      // in whole seconds as Engine rounds it. A row moved to another file takes that file's
+      // bitrate, or none when it cannot be told: the old file's would describe the new one
+      // wrongly. A row rewritten in place keeps its bitrate unless the file says what it is now.
+      const bitrate = u.inPlace ? u.bitrate : (u.bitrate ?? null)
+      const set: [string, SqlValue][] = [
+        ['path', relativeTo(libraryDir, u.to)],
+        ['filename', basename(u.to)],
+        ['fileType', extname(u.to).slice(1).toLowerCase()],
+        ['fileBytes', u.size],
+        ...(bitrate === undefined ? [] : [['bitrate', bitrate] as [string, SqlValue]]),
+        ...(track
+          ? [['length', engineLengthOf(track.sampleCount, track.sampleRate)] as [string, SqlValue]]
+          : []),
+      ]
+      db.run(`UPDATE Track SET ${set.map(([column]) => `${column} = ?`).join(', ')} WHERE id = ?`, [
+        ...set.map(([, value]) => value),
+        Number(u.id),
+      ])
       if (next && next !== perf)
         db.run(
           'UPDATE PerformanceData SET trackData = ?, overviewWaveFormData = ?, beatData = ?, quickCues = ?, loops = ? WHERE trackId = ?',
@@ -391,8 +450,6 @@ export async function writeEngineRepoints(
             Number(u.id),
           ],
         )
-      if (u.length !== undefined)
-        db.run('UPDATE Track SET length = ? WHERE id = ?', [u.length, Number(u.id)])
     }
 
     // Engine launched while the rows were being read would have loaded the old library and

@@ -228,6 +228,28 @@ describe('library readers', () => {
       undefined,
     ])
   })
+
+  // Only the size the write expected tells a row the DJ left stale from one a write missed.
+  it('hands the Engine check the size a rewrite in place expected the row to hold', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-verifyipc-engine-'))
+    const seen: unknown[] = []
+    const readers = libraryReaders(
+      { rekordbox: () => '', engine: () => dir, traktor: () => '' },
+      {
+        realPath,
+        bootVolume: () => 'Macintosh HD',
+        openEngine: () => ({ close: () => {} }) as never,
+        checkEngine: (_db, _dir, list) => {
+          seen.push(...list)
+          return list.map(() => ({ place: 'engine', state: 'ok', detail: { key: 'engineOk' } }))
+        },
+      },
+    )
+
+    await readers.readEngine([entry({ fromBytes: 100 }), entry()])
+
+    expect(seen.map((e) => (e as { fromBytes?: number }).fromBytes)).toEqual([100, undefined])
+  })
 })
 
 describe('snapshotLibraries', () => {

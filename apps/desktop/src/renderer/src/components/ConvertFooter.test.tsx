@@ -53,6 +53,7 @@ function footer(
       tagsOnly={false}
       addToAppleMusic={false}
       djTargets={[]}
+      openSource={null}
       destination={'beside' as Destination}
       destinations={['beside' as Destination]}
       format="aiff"
@@ -1048,5 +1049,22 @@ describe('ConvertFooter batch verification', () => {
   it('the batch line is never cut short', () => {
     render(batchFooter({ ok: 36, mismatch: 1, checking: 2, unverified: 3 }))
     expect(screen.getByTestId('export-success').className).not.toMatch(/\btruncate\b/)
+  })
+})
+
+describe('ConvertFooter inside a library tab', () => {
+  beforeEach(() => {
+    ;(window as unknown as { api: Record<string, unknown> }).api = { platform: 'darwin' }
+  })
+
+  it('does not tack Apple Music onto the convert of a track the user opened from Music', () => {
+    render(cloneElement(footer(false), { addToAppleMusic: true, openSource: 'appleMusic' }))
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF')
+    expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Apple Music')
+  })
+
+  it('names Apple Music from Tracks, where adding the file to it is what the click also does', () => {
+    render(cloneElement(footer(false), { addToAppleMusic: true, openSource: null }))
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Apple Music')
   })
 })

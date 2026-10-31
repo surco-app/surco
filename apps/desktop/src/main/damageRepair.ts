@@ -1,5 +1,5 @@
 import type { DamageOutcome, DamageRepair, DamageRepairItem, TrashEntry } from '../shared/types'
-import { type EngineRepoint, engineLengthOf } from './engineRepoint'
+import type { EngineRepoint } from './engineRepoint'
 import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
 import type { FlushLibraryDeps, LibraryRepointResult } from './libraryRepointFlush'
 import { applyListFixes, type ListApplyDeps } from './listReviewApply'
@@ -180,8 +180,7 @@ async function repairEngine(
       expectTrackData: repair.expectTrackData,
     }
     if (repair.trimmedMs === 0 && !repair.sampleRateHz) {
-      const { sampleCount, sampleRate } = repair.expectTrackData
-      repoints.push({ ...base, length: engineLengthOf(sampleCount, sampleRate) })
+      repoints.push({ ...base, fixLength: true })
       counted.push(item)
       continue
     }
@@ -190,7 +189,6 @@ async function repairEngine(
       outcomes.push({ id: item.id, state: 'failed', error: 'unreadable' })
       continue
     }
-    const rate = repair.sampleRateHz ?? repair.expectTrackData.sampleRate
     repoints.push({
       ...base,
       engineShift: {
@@ -198,7 +196,6 @@ async function repairEngine(
         ...(repair.sampleRateHz ? { sampleRateHz: repair.sampleRateHz } : {}),
         sampleCount,
       },
-      length: engineLengthOf(sampleCount, rate),
     })
     counted.push(item)
   }
