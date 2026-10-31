@@ -2695,6 +2695,28 @@ describe('damage findings in the list review', () => {
     )
   })
 
+  it('says a Traktor repair failed for lack of room in Backups', () => {
+    render(
+      <Panes
+        review={listReview({
+          status: 'done',
+          lastRun: run({
+            damage: [
+              {
+                id: 'traktor-calibration\0/m/b.aiff',
+                state: 'failed',
+                error: 'SURCO_ERR:noBackup: /m/b.aiff',
+              },
+            ],
+          }),
+        })}
+      />,
+    )
+    expect(screen.getByTestId('music-review-done-dest-damage-traktor')).toHaveTextContent(
+      '1 failed · Make room in Backups for its backup and try again',
+    )
+  })
+
   it('offers no Undo when only a Traktor tree has a backup', () => {
     render(
       <Panes
