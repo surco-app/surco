@@ -129,9 +129,18 @@ function itunSmpbPriming(buf: Buffer): number | undefined {
   return Number.isNaN(priming) ? undefined : priming
 }
 
+function soundTrack(buf: Buffer, moov: Mp4Box): Mp4Box | undefined {
+  for (const trak of mp4Boxes(buf, moov.body, moov.end)) {
+    const hdlr = trak.type === 'trak' && mp4Child(buf, ['mdia', 'hdlr'], trak.body, trak.end)
+    if (hdlr && buf.toString('latin1', hdlr.body + 8, hdlr.body + 12) === 'soun') return trak
+  }
+  return undefined
+}
+
 export function m4aPrimingSamples(moov: Buffer): number {
-  if (!mp4Child(moov, ['moov'])) return APPLE_AAC_PRIMING
-  const trak = mp4Child(moov, ['moov', 'trak'])
+  const root = mp4Child(moov, ['moov'])
+  if (!root) return APPLE_AAC_PRIMING
+  const trak = soundTrack(moov, root)
   const stsd = trak && mp4Child(moov, ['mdia', 'minf', 'stbl', 'stsd'], trak.body, trak.end)
   if (stsd && moov.toString('latin1', stsd.body + 12, stsd.body + 16) === 'alac') return 0
   const elst = trak && mp4Child(moov, ['edts', 'elst'], trak.body, trak.end)

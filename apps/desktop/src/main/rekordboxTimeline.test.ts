@@ -263,6 +263,14 @@ describe('rekordboxShiftMs', () => {
     ).toBe(0)
   })
 
+  it('reads the sound track, not a chapter or cover track the file lists first', () => {
+    const file = moov(
+      track({ codec: 'text', handler: 'text', edits: [5000] }),
+      track({ codec: 'mp4a', edits: [1024] }),
+    )
+    expect(rekordboxShiftMs('.m4a', file, 44100)).toBeCloseTo((1024 / 44100) * 1000, 3)
+  })
+
   it('keeps PCM formats in step, measured within 2 ms on WAV and AIFF', () => {
     expect(rekordboxShiftMs('.wav', lame44, 44100)).toBe(0)
     expect(rekordboxShiftMs('.aiff', Buffer.alloc(0), 44100)).toBe(0)
