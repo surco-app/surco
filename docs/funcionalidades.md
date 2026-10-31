@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 30 de octubre de 2026** (v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
+**Última revisión: 31 de octubre de 2026** (filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -2075,6 +2075,39 @@ toca ninguna.
 
 **Cada paso queda en Actividad** mientras se aplica, y el resumen final tiene una fila por
 destino (fichero, Music y cada biblioteca DJ) con lo que hizo o por qué no.
+
+**Daños** (filtro de «Revisar metadatos de la lista…», no del de Music). Busca en las pistas
+cargadas lo que dejaron mal los cinco bugs que arreglaron v1.18.3 y v1.18.4, y lo repara
+con copia antes de escribir. Diseño en `docs/superpowers/specs/2026-10-31-reparar-danos-design.md`.
+
+- **Géneros ID3v2.3** (MP3, AIFF, WAV) que TagLib reescribió como número de ID3v1
+  (`(35) Deep House`) o con los paréntesis doblados. Se leen del frame crudo, porque ni
+  ffprobe ni TagLib lo ven (`genreFrame.ts`), y solo se listan con señal: un `(N)` de la
+  tabla de ID3v1 o `((`. `damageV23` reproduce el daño y se compara con TagLib real en un
+  test (`genreDamage.ts`).
+- **Cues de Traktor**: la entrada del MP3 que se quedó con los cues calibrados de su AIFF,
+  FLAC o WAV, y el fichero convertido con la regla vieja de calibración (−51 ms fijo o 0)
+  (`traktorCueDamage.ts`, `traktorCueDamageScan.ts`).
+- **Engine DJ**: posiciones que no siguieron a un cambio de frecuencia o a un recorte, y
+  `Track.length` que no cuadra con su propio `trackData` (`engineDamage.ts`). El recorte se
+  mide contra la copia del original en Copias, a nivel de muestra (`headOffsetMs`).
+
+**Dos niveles.** «Seguro» entra en la tanda al abrir: el género que guarda una biblioteca o
+el INFO del WAV y que el daño reproduce exacto, o un árbol de cues que lo prueba. «Probable»
+nunca entra solo, como una errata: un género antiguo como `(35)Deep House` puede estar
+escrito así a propósito. Cada hallazgo enseña su prueba con números.
+
+**Guardas.** Cada reparación lleva lo que se leyó al escanear y no escribe si ya no está:
+el texto exacto del TCON, el estado de la entrada de Traktor, el `trackData` de Engine DJ y
+las posiciones del árbol de cues del fichero (`damageRepair.ts`, `engineRepoint.ts`). Con
+Traktor o Engine DJ abiertos queda **Pendiente** en su cola y no se puede volver a poner en
+la tanda. La comprobación final vuelve a escanear y lo que sigue apareciendo sale como
+«No cuadra». **Deshacer** devuelve los géneros desde sus copias; los cues de Traktor y Engine
+DJ se recuperan con «Restaurar esta» en Copias.
+
+**No repara**: lo que no está en la lista cargada, un recorte de Engine DJ sin copia del
+original (solo avisa para volver a analizarla en Engine DJ), un `/` cambiado por `;` sin otra
+señal, Apple Music como prueba de géneros ni nada de rekordbox, que ningún bug tocó.
 
 ---
 

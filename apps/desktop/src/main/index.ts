@@ -98,32 +98,23 @@ import { createCueTaste } from './cueTaste'
 import { registerCueTasteIpc } from './cueTasteIpc'
 import { cachedCueWaveWords } from './cueWaveWordsCache'
 import { registerDamageIpc } from './damageIpc'
+import { damageDeps } from './damageWiring'
 import { parseDockFrames } from './dockFrames'
 import { type ReplacePair, replaceDuplicates } from './duplicateReplace'
 import { registerEngineCueQueueIpc } from './engineCueQueueIpc'
 import { applyEngineCuesBatch } from './engineCuesWrite'
-import { scanEngineDamage } from './engineDamage'
 import { addToEngineLibrary, dumpEngineLibrary, withEngineDatabase } from './engineLibrary'
 import { engineDatabasePath } from './enginePlaylists'
 import { registerEnginePlaylistsIpc } from './enginePlaylistsIpc'
 import { isEngineDjRunning, quitEngineDj } from './engineProcess'
-import { repointEngineTracks } from './engineRepoint'
 import { expandPaths } from './expand'
 import { registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
-import {
-  convertAudio,
-  headOffsetMs,
-  probeAudio,
-  probeDuration,
-  proveDecodable,
-  readMeta,
-  toNmlLocation,
-} from './ffmpeg'
+import { convertAudio, readMeta, toNmlLocation } from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { fileIdentity, isSameFile, removeRenamedOriginal } from './inplace'
 import { setLibraryBackupRoot } from './libraryBackups'
-import { libraryCopyInfo, libraryGenresOf, libraryTracksOf } from './libraryFileUse'
+import { libraryCopyInfo, libraryTracksOf } from './libraryFileUse'
 import {
   currentLibraryStatus,
   duplicateLibraryDeps,
@@ -148,7 +139,6 @@ import { createMediaAccess } from './mediaAccess'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { createMoments } from './moments'
 import { isIssuedPair } from './musicDuplicates'
-import { rewriteCueTree, rewriteTagFields } from './musicFieldWrite'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { abandonNmlBatch, beginNmlBatch, recordedNmlPatch, redirectNmlPatch } from './nmlBatch'
@@ -207,7 +197,6 @@ import { createStickyConflict } from './stickyConflict'
 import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsInWorker, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
-import { scanTraktorDamage } from './traktorCueDamageScan'
 import { registerTraktorCueQueueIpc } from './traktorCueQueueIpc'
 import { applyTraktorBatch } from './traktorCuesWrite'
 import { bootVolumeName, syncCollection } from './traktorNmlLibrary'
@@ -217,12 +206,7 @@ import {
   detectTraktorNmlPaths,
   sameCollection,
 } from './traktorNmlPath'
-import {
-  holdInQueue,
-  type QueuedNmlPatch,
-  queuedNmlPatch,
-  syncQueuedPatches,
-} from './traktorPatchQueue'
+import { type QueuedNmlPatch, syncQueuedPatches } from './traktorPatchQueue'
 import { registerTraktorPlaylistEditIpc } from './traktorPlaylistEditIpc'
 import { nmlPath } from './traktorPlaylists'
 import { registerTraktorPlaylistsIpc } from './traktorPlaylistsIpc'
@@ -1653,97 +1637,26 @@ function registerIpc(): void {
     )
   })
 
-  registerDamageIpc({
-    scanDeps: (sender) => {
-      const host = hostFor(BrowserWindow.fromWebContents(sender), sender)
-      const libraries = {
-        rekordbox: rekordboxFlushDeps(host).collectionPath,
-        engine: engineFlushDeps(host).collectionPath,
-        traktor: traktorFlushDeps(host, sessions.traktor).traktorNmlPath,
-      }
-      return {
-        isAllowed: mediaAccess.isAllowed,
-        readGenre: (path) =>
-          runInWorker<{ raw: string; info?: string } | null>({ type: 'genreFrame', file: path }),
-        libraryGenres: (paths) =>
-          libraryGenresOf(paths, libraries, { realPath: (p: string) => realpathSync(p) }),
-        ...(libraries.traktor && {
-          traktor: (paths: string[]) => scanTraktorDamage(paths, libraries.traktor),
-        }),
-        ...(libraries.engine && {
-          engine: (paths: string[]) =>
-            scanEngineDamage(paths, libraries.engine, {
-              probe: async (path) => {
-                const probe = await probeAudio(path).catch(() => null)
-                const sampleRate = Number(probe?.sampleRate)
-                return probe?.headerSeconds && sampleRate > 0
-                  ? { sampleRate, durationSec: probe.headerSeconds }
-                  : null
-              },
-              backups: () => surcoTrash.list(),
-              headOffsetMs,
-              durationOf: (path) => probeDuration(path),
-            }),
-        }),
-      }
-    },
-    repairDeps: (sender) => {
-      const host = hostFor(BrowserWindow.fromWebContents(sender), sender)
-      const traktor = traktorFlushDeps(host, sessions.traktor)
-      const traktorHold = holdInQueue(
-        {
-          enqueue: traktorCueQueue.enqueue,
-          state: traktorCueQueue.state,
-          applyQuietly: () => applyTraktorCueQueueQuietly(),
-        },
-        bootVolumeName,
-      )
-      return {
-        beginMoment: () => moments.begin('review'),
-        genre: {
-          allowed: (path) => mediaAccess.isAllowed(path),
-          exists: (path) =>
-            access(path).then(
-              () => true,
-              () => false,
-            ),
-          rewrite: (file, changes) => rewriteTagFields(file, changes, tmpManifest, 'setGenreFrame'),
-        },
-        rewriteTree: (file, addMs, expected) => rewriteCueTree(file, addMs, expected, tmpManifest),
-        traktor: {
-          ...traktor,
-          bootVolume: bootVolumeName(),
-          readCollection: () => readFile(traktor.traktorNmlPath, 'utf8').catch(() => null),
-          waiting: traktorHold.waiting,
-          hold: async (patches, states) => {
-            traktorCueQueue.enqueue(
-              [],
-              patches.map((p, i) => queuedNmlPatch(p, states[i])),
-            )
-            applyTraktorCueQueueQuietly()
-          },
-        },
-        engine: {
-          ...engineFlushDeps(host),
-          ensureClosed: async () => !(await isEngineDjRunning().catch(() => true)),
-          showBlockedDialog: () => {},
-          countSamples: async (path) =>
-            (await proveDecodable(path, undefined, undefined, undefined, true)).samples ?? null,
-          repointTracks: (libraryDir, list) =>
-            repointEngineTracks(
-              libraryDir,
-              list.map((r) => ({ ...r, realPath: (p: string) => realpathSync(p) })),
-              { sessionBackup: (path) => sessions.engine.ensure(path) },
-            ),
-          enqueue: (repoints) => {
-            engineCueQueue.enqueue([], repoints)
-            applyEngineCueQueueQuietly()
-          },
-        },
-      }
-    },
-    serial: serialLibraryFlush,
-  })
+  registerDamageIpc(
+    damageDeps({
+      mediaAccess,
+      tmp: tmpManifest,
+      hostFor: (sender) => hostFor(BrowserWindow.fromWebContents(sender), sender),
+      sessions,
+      beginMoment: () => moments.begin('review'),
+      backups: () => surcoTrash.list(),
+      traktorQueue: {
+        enqueue: traktorCueQueue.enqueue,
+        state: traktorCueQueue.state,
+        applyQuietly: () => applyTraktorCueQueueQuietly(),
+      },
+      engineQueue: {
+        enqueue: engineCueQueue.enqueue,
+        applyQuietly: () => applyEngineCueQueueQuietly(),
+      },
+      serial: serialLibraryFlush,
+    }),
+  )
 
   // A review removed duplicate copies from Music: the libraries follow, and a removed copy's
   // file goes to the Trash only once no library needs it.
