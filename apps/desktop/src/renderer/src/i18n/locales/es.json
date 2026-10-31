@@ -3006,7 +3006,12 @@
       "unchanged_other": "{{count}} sin cambios",
       "failed_one": "{{count}} con error",
       "failed_other": "{{count}} con error",
-      "undoNote": "Los cues se devuelven desde Copias"
+      "undoNote": "Los cues se devuelven desde Copias",
+      "error": {
+        "pathNotAllowed": "Surco no abrió ese fichero",
+        "libraryOff": "su sincronización está apagada",
+        "unreadable": "no se pudo leer"
+      }
     },
     "value": {
       "text": "{{value}}",

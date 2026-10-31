@@ -3006,7 +3006,12 @@
       "unchanged_other": "{{count}} inchangés",
       "failed_one": "{{count}} en erreur",
       "failed_other": "{{count}} en erreur",
-      "undoNote": "Les cues reviennent depuis Sauvegardes"
+      "undoNote": "Les cues reviennent depuis Sauvegardes",
+      "error": {
+        "pathNotAllowed": "Surco n’a jamais ouvert ce fichier",
+        "libraryOff": "sa synchronisation est désactivée",
+        "unreadable": "illisible"
+      }
     },
     "value": {
       "text": "{{value}}",

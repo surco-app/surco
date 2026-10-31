@@ -3006,7 +3006,12 @@
       "unchanged_other": "{{count}} unverändert",
       "failed_one": "{{count}} mit Fehler",
       "failed_other": "{{count}} mit Fehler",
-      "undoNote": "Die Cues kommen aus Backups zurück"
+      "undoNote": "Die Cues kommen aus Backups zurück",
+      "error": {
+        "pathNotAllowed": "Surco hat diese Datei nie geöffnet",
+        "libraryOff": "die Synchronisierung ist aus",
+        "unreadable": "konnte nicht gelesen werden"
+      }
     },
     "value": {
       "text": "{{value}}",

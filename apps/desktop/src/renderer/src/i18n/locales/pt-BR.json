@@ -3006,7 +3006,12 @@
       "unchanged_other": "{{count}} sem mudanças",
       "failed_one": "{{count}} com erro",
       "failed_other": "{{count}} com erro",
-      "undoNote": "Os cues voltam a partir de Cópias"
+      "undoNote": "Os cues voltam a partir de Cópias",
+      "error": {
+        "pathNotAllowed": "O Surco nunca abriu esse arquivo",
+        "libraryOff": "a sincronização está desligada",
+        "unreadable": "não foi possível ler"
+      }
     },
     "value": {
       "text": "{{value}}",

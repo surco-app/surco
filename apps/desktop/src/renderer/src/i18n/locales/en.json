@@ -3006,7 +3006,12 @@
       "unchanged_other": "{{count}} unchanged",
       "failed_one": "{{count}} failed",
       "failed_other": "{{count}} failed",
-      "undoNote": "Cues go back from Backups"
+      "undoNote": "Cues go back from Backups",
+      "error": {
+        "pathNotAllowed": "Surco never opened that file",
+        "libraryOff": "its sync is off",
+        "unreadable": "couldn't be read"
+      }
     },
     "value": {
       "text": "{{value}}",

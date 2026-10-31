@@ -3006,7 +3006,12 @@
       "unchanged_other": "{{count}}件変更なし",
       "failed_one": "{{count}}件エラー",
       "failed_other": "{{count}}件エラー",
-      "undoNote": "キューはバックアップから戻します"
+      "undoNote": "キューはバックアップから戻します",
+      "error": {
+        "pathNotAllowed": "Surcoはそのファイルを開いていません",
+        "libraryOff": "同期がオフです",
+        "unreadable": "読み込めませんでした"
+      }
     },
     "value": {
       "text": "{{value}}",

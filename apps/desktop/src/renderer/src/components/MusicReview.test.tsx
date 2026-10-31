@@ -2676,6 +2676,25 @@ describe('damage findings in the list review', () => {
     )
   })
 
+  it('says why a repair failed', () => {
+    render(
+      <Panes
+        review={listReview({
+          status: 'done',
+          lastRun: run({
+            damage: [
+              { id: 'engine-cues\0/m/e.wav', state: 'failed', error: 'pathNotAllowed' },
+              { id: 'engine-length\0/m/f.wav', state: 'failed', error: 'libraryOff' },
+            ],
+          }),
+        })}
+      />,
+    )
+    expect(screen.getByTestId('music-review-done-dest-damage-engine')).toHaveTextContent(
+      '2 failed · Surco never opened that file · its sync is off',
+    )
+  })
+
   it('offers no Undo when only a Traktor tree has a backup', () => {
     render(
       <Panes

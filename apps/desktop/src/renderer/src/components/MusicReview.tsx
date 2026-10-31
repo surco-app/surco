@@ -246,6 +246,7 @@ const DAMAGE_TARGETS = [
   ['engine', 'engine-'],
 ] as const
 const DAMAGE_STATES = ['repaired', 'pending', 'mismatch', 'unchanged', 'failed'] as const
+const DAMAGE_ERRORS = ['pathNotAllowed', 'libraryOff', 'unreadable'] as const
 
 function damageDestinations(t: TFunction, outcomes: DamageOutcome[]): Destination[] {
   return DAMAGE_TARGETS.flatMap(([target, prefix]): Destination[] => {
@@ -262,11 +263,16 @@ function damageDestinations(t: TFunction, outcomes: DamageOutcome[]): Destinatio
               ? 'Traktor'
               : 'Engine DJ',
         state: count('repaired') + count('unchanged') === mine.length ? 'ok' : 'warn',
-        detail: joined(
-          DAMAGE_STATES.map(
+        detail: joined([
+          ...DAMAGE_STATES.map(
             (state) => count(state) > 0 && t(`damage.done.${state}`, { count: count(state) }),
           ),
-        ),
+          ...DAMAGE_ERRORS.map(
+            (error) =>
+              mine.some((o) => o.state === 'failed' && o.error === error) &&
+              t(`damage.done.error.${error}`),
+          ),
+        ]),
       },
     ]
   })
