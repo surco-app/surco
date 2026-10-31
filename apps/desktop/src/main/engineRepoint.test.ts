@@ -1,4 +1,4 @@
-import { mkdirSync, realpathSync } from 'node:fs'
+import { existsSync, mkdirSync, realpathSync } from 'node:fs'
 import { chmod, mkdir, mkdtemp, readFile, stat, symlink, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
@@ -229,6 +229,44 @@ describe.each(['2.18', '3.0.2'] as const)('repointEngineTracks on a %s library',
     const bitrateOf = vi.fn(async () => 900)
     await repointEngineTracks(lib.dir, [{ from: lib.oldFile, to: flac }], { bitrateOf })
     expect(bitrateOf).not.toHaveBeenCalled()
+  })
+
+  // A retag that fits in the tag's padding leaves the file the size it was: the row already
+  // says everything true about it, so Engine's library is not backed up nor written at all.
+  it('writes nothing for a row rewritten in place that still describes the file', async () => {
+    const lib = await library(schema)
+    const bytes = await readFile(lib.dbPath)
+    const [result] = await repointEngineTracks(
+      lib.dir,
+      [{ from: lib.oldFile, to: lib.oldFile, fromBytes: 100 }],
+      { bitrateOf: async () => 320 },
+    )
+    expect(result).toEqual({ written: false, reason: 'no-match' })
+    expect(await readFile(lib.dbPath)).toEqual(bytes)
+    expect(existsSync(backupOf(lib.dbPath, 'backup'))).toBe(false)
+  })
+
+  it('still writes a row rewritten in place to the same size when its bitrate changed', async () => {
+    const lib = await library(schema)
+    const [result] = await repointEngineTracks(
+      lib.dir,
+      [{ from: lib.oldFile, to: lib.oldFile, fromBytes: 100 }],
+      { bitrateOf: async () => 256 },
+    )
+    expect(result).toEqual({ written: true, id: '1' })
+    const db = await openDb(lib.dbPath)
+    expect(one(db, 'SELECT fileBytes, bitrate FROM Track')).toEqual({
+      fileBytes: 100,
+      bitrate: 256,
+    })
+    db.close()
+  })
+
+  it('still moves a row to a new file of the same size', async () => {
+    const lib = await library(schema)
+    await writeFile(lib.newFile, Buffer.alloc(100))
+    const [result] = await repointEngineTracks(lib.dir, [{ from: lib.oldFile, to: lib.newFile }])
+    expect(result).toEqual({ written: true, id: '1' })
   })
 
   // Engine imported only part of the user's music, so most conversions have no row there.
@@ -605,6 +643,18 @@ describe.each(['2.18', '3.0.2'] as const)(
       const [again] = await repointEngineTracks(lib.dir, [move])
       expect(again).toEqual({ written: false, reason: 'no-match' })
       expect(await positionsOf(lib)).toEqual(once)
+    })
+
+    it('still shifts a row rewritten in place to the size it already had', async () => {
+      const lib = await analysedLibrary(schema)
+      const before = await positionsOf(lib)
+      const [result] = await repointEngineTracks(lib.dir, [
+        { from: lib.oldFile, to: lib.oldFile, fromBytes: 100, engineShift: { trimmedMs: TRIM_MS } },
+      ])
+      expect(result).toEqual({ written: true, id: '1' })
+      expect((await positionsOf(lib)).grid).toEqual(
+        before.grid?.map((s) => expect.closeTo(s - TRIM_MS / 1000, 6)),
+      )
     })
 
     it('leaves a row rewritten in place alone when nothing says the cut is still owed', async () => {

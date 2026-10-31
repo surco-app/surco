@@ -307,11 +307,12 @@ export async function writeEngineRepoints(
 
   try {
     const stored = (
-      db.exec('SELECT id, path, fileBytes FROM Track ORDER BY id')[0]?.values ?? []
-    ).map(([id, path, fileBytes]) => ({
+      db.exec('SELECT id, path, fileBytes, bitrate FROM Track ORDER BY id')[0]?.values ?? []
+    ).map(([id, path, fileBytes, bitrate]) => ({
       id: String(id),
       path: String(path),
       fileBytes,
+      bitrate,
     }))
     const find = engineRowFinder(libraryDir, stored)
     const updates: {
@@ -344,6 +345,16 @@ export async function writeEngineRepoints(
       if (
         onTarget.length > 0 &&
         (repoint.fromBytes === undefined || matches[0].fileBytes !== repoint.fromBytes)
+      ) {
+        results[i] = { written: false, reason: 'no-match' }
+        continue
+      }
+      // A retag inside the tag's padding leaves the row true as it is: nothing to write.
+      if (
+        onTarget.length > 0 &&
+        !repoint.engineShift &&
+        sizes[i] === matches[0].fileBytes &&
+        (bitrates[i] === undefined || bitrates[i] === matches[0].bitrate)
       ) {
         results[i] = { written: false, reason: 'no-match' }
         continue
