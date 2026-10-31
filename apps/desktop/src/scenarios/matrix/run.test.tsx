@@ -43,4 +43,14 @@ describe.skipIf(process.platform !== 'darwin')('a matrix batch through the real 
     const [outcome] = await runGroup({ key: cell.id, cells: [cell] })
     expect(cellFailure(outcome)).toBeNull()
   }, 120_000)
+
+  // With MP3 sources kept, the MP3 is left as it is: no AIFF, and every program still
+  // plays the MP3 with its cues where they were.
+  it('runs the cell that keeps MP3 sources green', async () => {
+    const cell = CELLS.find((c) => c.id === 'K13')
+    if (!cell) throw new Error('no K13 cell')
+    const [outcome] = await runGroup({ key: cell.id, cells: [cell] })
+    expect(outcome.finalPath.endsWith('.mp3')).toBe(true)
+    expect(cellFailure(outcome)).toBeNull()
+  }, 120_000)
 })

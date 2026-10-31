@@ -332,7 +332,7 @@ const K_ROWS: Row[] = [
   },
   {
     id: 'K13',
-    name: 'MP3 sin cabecera Xing a AIFF conservando los MP3 no toca el fichero ni las bibliotecas',
+    name: 'MP3 sin cabecera Xing a AIFF conservando los MP3 se queda en MP3 en su sitio',
     origin: 'mp3n',
     target: 'aiff',
     dest: 'folder',

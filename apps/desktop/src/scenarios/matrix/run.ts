@@ -104,6 +104,9 @@ function musicPlays(set: LibrarySet, t: SeededTrack): string | null | undefined 
   return (added ?? (kept && named(kept.location) ? kept : undefined))?.location
 }
 
+const judgedAs = (cell: Cell): Cell =>
+  cell.settings?.keepMp3Sources && cell.origin.startsWith('mp3') ? { ...cell, target: 'mp3' } : cell
+
 function rowName(surco: Scenario, source: string, written: string): string {
   const row = surco
     .tracks()
@@ -176,7 +179,9 @@ export async function runGroup(
         fileName: basename(sources[i].path, extname(sources[i].path)),
         tags: { title: 'Ocupado', artist: 'Nadie' },
       })
-  const written = group.cells.map((cell, i) => writtenPath(cell, sources[i].path, outputDir))
+  const written = group.cells.map((cell, i) =>
+    writtenPath(judgedAs(cell), sources[i].path, outputDir),
+  )
   const retry = first.state === 'retry' ? unreadableOnce(set, first) : undefined
   const sabotage = first.sabotage ? sabotageOf(first.sabotage)(set, set.tracks[0]) : undefined
   const keepBoth = group.cells.some((cell) => NAME_TAKEN.has(cell.id))
@@ -226,7 +231,8 @@ export async function runGroup(
     surco.close()
   }
   return Promise.all(
-    group.cells.map(async (cell, i): Promise<CellOutcome> => {
+    group.cells.map(async (asked, i): Promise<CellOutcome> => {
+      const cell = judgedAs(asked)
       const source = sources[i]
       const witness = witnesses[i]
       const track = set.tracks[i]
@@ -256,7 +262,7 @@ export async function runGroup(
         destGone: consumed,
       }
       return {
-        cell,
+        cell: asked,
         finalPath,
         fileExists,
         verdict,
