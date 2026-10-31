@@ -11,15 +11,12 @@ import {
 import { formatOf } from './verifyFile'
 
 // before is the FILE of the entry the patch matched in the collection read ahead of the
-// write (matchedEntryFiles), null when Traktor had no entry for the track. stranded marks a
-// patch that could not follow its file (it landed in another folder, see redirectNmlPatch):
-// Traktor rewrites FILE only, so its entry stays on the old name. cues are that entry's cues
-// as the same read found them (matchedEntryFacts).
+// write (matchedEntryFiles), null when Traktor had no entry for the track. cues are that
+// entry's cues as the same read found them (matchedEntryFacts).
 export interface TraktorExpect {
   patch: NmlPatch
   before: string | null
   cues?: string | null
-  stranded: boolean
 }
 
 const check = (
@@ -67,10 +64,11 @@ function judge(
   const { patch, before } = e
   if (before === null) return null
   const volume = patch.volume || bootVolume
-  // The output went to another folder and the entry stays on the source, whose audio did
-  // not change: the write was to leave its cues exactly as they were. A conversion in place
-  // under the same name rewrote the source itself, cues included, so there is nothing to hold.
-  if (!patch.newFile && !e.stranded) {
+  // The output went to another folder (Music's own included, see redirectNmlPatch) and the
+  // entry stays on the source, whose audio did not change: the write was to leave its cues
+  // exactly as they were. A conversion in place under the same name rewrote the source
+  // itself, cues included, so there is nothing to hold.
+  if (!patch.newFile) {
     if (e.cues == null || !patch.outputDir || !patch.outputFile) return null
     const output = locationKey(patch.outputVolume || bootVolume, patch.outputDir, patch.outputFile)
     if (output === locationKey(volume, patch.dir, patch.file)) return null
@@ -87,8 +85,6 @@ function judge(
   const oldKey = locationKey(volume, patch.dir, before).toLowerCase()
   const old = atAnyCase.get(oldKey) ?? 0
   const stillOld = check('mismatch', 'traktorStillOld', { format: formatOf(extname(before)) })
-  if (!patch.newFile) return old > 0 ? stillOld : check('mismatch', 'traktorMissing')
-
   const newKey = locationKey(volume, patch.dir, patch.newFile)
   const on = at.get(newKey) ?? 0
   if (on > 1) return check('mismatch', 'traktorAmbiguous', { count: on })

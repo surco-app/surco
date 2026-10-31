@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
+import { beginNmlBatch, endNmlBatch, recordNmlPatch, redirectNmlPatch } from './nmlBatch'
 import { applyPatches, matchedEntryFacts, type NmlPatch } from './traktorNml'
 import { checkTraktor, type TraktorExpect } from './verifyTraktor'
 
@@ -43,13 +44,12 @@ const elsewhere: Partial<NmlPatch> = {
 }
 
 // What the flush does: read which entry each patch matches, write, then check the result.
-function flush(original: string, patches: NmlPatch[], stranded = false) {
+function flush(original: string, patches: NmlPatch[]) {
   const { before, cues } = matchedEntryFacts(original, patches)
   const list: TraktorExpect[] = patches.map((p, i) => ({
     patch: p,
     before: before[i],
     cues: cues[i],
-    stranded,
   }))
   return { list, written: applyPatches(original, patches) }
 }
@@ -242,15 +242,53 @@ describe('checkTraktor', () => {
     expect(checkTraktor(written, list, BOOT)).toEqual([null])
   })
 
-  // The file landed in Music's folder, and Traktor can only rename within the same one.
-  it('a stranded patch whose entry stays on the AIFF is traktorStillOld', () => {
-    const { list, written } = flush(nml(entry('Title.aiff')), [patch({ newFile: undefined })], true)
-    expect(checkTraktor(written, list, BOOT)).toEqual([stillOld('AIFF')])
+  // "Apple Music only": the conversion is recorded on a temp, then Music files it in its own
+  // folder, where Traktor cannot follow (it renames FILE only). By design the entry stays on
+  // the source, whose audio did not change, with its cues as they were.
+  function landInMusic(collection: string) {
+    const temp = '/private/tmp/surco-x/Artist - Title.mp3'
+    const media = '/Users/me/Music/Media/Music/Artist/Album/Artist - Title.mp3'
+    beginNmlBatch()
+    recordNmlPatch(
+      {
+        ...patch({ file: 'Title.flac', newFile: undefined }),
+        outputVolume: '',
+        outputDir: '/:private/:tmp/:surco-x/:',
+        outputFile: 'Artist - Title.mp3',
+      },
+      { input: '/Volumes/Public/Musica/Artist/Title.flac', output: temp },
+    )
+    const followed = redirectNmlPatch(temp, media, {
+      volume: '',
+      dir: '/:Users/:me/:Music/:Media/:Music/:Artist/:Album/:',
+      file: 'Artist - Title.mp3',
+    })
+    const patches = endNmlBatch().map((p) => ({
+      ...p,
+      volume: p.volume || BOOT,
+      outputVolume: p.outputVolume || BOOT,
+    }))
+    expect(followed).toBe(false)
+    return flush(collection, patches)
+  }
+
+  it('an entry left on the source by a conversion to Music is traktorOk', () => {
+    const { list, written } = landInMusic(nml(withCue(entry('Title.flac'), '10000')))
+    expect(checkTraktor(written, list, BOOT)).toEqual([
+      { place: 'traktor', state: 'ok', detail: { key: 'traktorOk', params: { format: 'FLAC' } } },
+    ])
   })
 
-  it('a stranded patch whose entry is gone is traktorMissing', () => {
-    const { list } = flush(nml(entry('Title.aiff')), [patch({ newFile: undefined })], true)
-    expect(checkTraktor(nml(entry('Other.aiff')), list, BOOT)[0]?.detail.key).toBe('traktorMissing')
+  it('an entry left on the source by a conversion to Music whose cues moved is traktorCuesChanged', () => {
+    const { list } = landInMusic(nml(withCue(entry('Title.flac'), '10000')))
+    expect(checkTraktor(nml(withCue(entry('Title.flac'), '9949')), list, BOOT)).toEqual([
+      { place: 'traktor', state: 'mismatch', detail: { key: 'traktorCuesChanged' } },
+    ])
+  })
+
+  it('an entry left on the source by a conversion to Music that is gone is traktorMissing', () => {
+    const { list } = landInMusic(nml(withCue(entry('Title.flac'), '10000')))
+    expect(checkTraktor(nml(entry('Other.flac')), list, BOOT)[0]?.detail.key).toBe('traktorMissing')
   })
 
   it('two entries on the WAV are traktorAmbiguous, never ok', () => {
@@ -265,7 +303,7 @@ describe('checkTraktor', () => {
   // Traktor stores the internal disk by name; a patch built from the path leaves it empty.
   it('a patch on the boot volume matches the entry under its name', () => {
     const p = patch({ volume: '' })
-    const list: TraktorExpect[] = [{ patch: p, before: 'Title.aiff', stranded: false }]
+    const list: TraktorExpect[] = [{ patch: p, before: 'Title.aiff' }]
     expect(checkTraktor(nml(entry('Title.wav', BOOT)), list, BOOT)[0]?.state).toBe('ok')
   })
 
@@ -279,7 +317,7 @@ describe('checkTraktor', () => {
     expect(
       checkTraktor(
         written,
-        [a, b, c].map((p, i) => ({ patch: p, before: before[i], cues: cues[i], stranded: false })),
+        [a, b, c].map((p, i) => ({ patch: p, before: before[i], cues: cues[i] })),
         BOOT,
       ).map((r) => r?.detail.key ?? null),
     ).toEqual(['traktorOk', 'traktorStillOld', 'traktorOk'])

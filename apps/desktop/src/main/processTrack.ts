@@ -1134,7 +1134,6 @@ export async function runProcessTrack(
       music: musicExpect,
       rekordbox: before.rekordbox,
       engine: before.engine,
-      traktorStranded: landed?.traktorFollowed === false,
       engineStep: addedToEngineDj,
       heldOriginal,
       verification,
