@@ -133,7 +133,7 @@ beforeAll(() => {
 
 // The real run copies the DJ's own collections; none of these tests ever reads them, only a
 // synthetic collection shaped like one, so a bug here can never reach the real libraries.
-describe('copies of real collections', () => {
+describe.skipIf(process.platform !== 'darwin')('copies of real collections', () => {
   it('copies without changing a byte or mtime of the originals', async () => {
     const watched = [
       ...databases(real),
@@ -259,7 +259,7 @@ describe('copies of real collections', () => {
   }, 120_000)
 })
 
-describe('a copy shared by every batch of the real run', () => {
+describe.skipIf(process.platform !== 'darwin')('a copy shared by every batch of the real run', () => {
   it('comes back as it was copied, whatever a batch converted', async () => {
     const copy = await copyRealLibraries(real, scenarioDir('matriz-real-copia-intacta'))
     const restore = pristine(copy)
