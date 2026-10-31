@@ -304,6 +304,8 @@ function processTrackInMain(
     },
     appleMusicEntryLocation: (pid) =>
       musicIsFake ? appleMusic.appleMusicEntryLocation(pid) : noMusic(),
+    appleMusicMediaFolder: async () =>
+      musicIsFake ? appleMusic.appleMusicMediaFolder() : undefined,
     appleMusicEntry: (pid) => (musicIsFake ? appleMusic.appleMusicEntry(pid) : noMusic()),
     deleteAppleMusic: (pid, label) =>
       musicIsFake ? appleMusic.deleteFromAppleMusic(pid, label) : noMusic(),

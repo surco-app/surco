@@ -206,7 +206,7 @@ export async function runGroup(
     if (first.state === 'open') programsOpen(true)
     await surco.drop(...sources.map((s) => s.path))
     if (first.quality === 'trim') await surco.trimDetectedSilence()
-    if (first.dest === 'appleMusic') for (const name of names) await surco.convertInEditor(name)
+    if (toMusic(first)) for (const name of names) await surco.convertInEditor(name)
     else await surco.convertAll('confirm', first.target)
     await surco.settled()
     afterSettled?.(set, written)
@@ -236,7 +236,8 @@ export async function runGroup(
       const source = sources[i]
       const witness = witnesses[i]
       const track = set.tracks[i]
-      const finalPath = (toMusic(cell) && musicPlays(set, track)) || written[i]
+      const musicFile = (toMusic(cell) && musicPlays(set, track)) || undefined
+      const finalPath = cell.dest === 'appleMusicCopy' ? written[i] : (musicFile ?? written[i])
       const name = rowName(surco, source.path, written[i])
       const row = surco.tracks().find((t) => basename(t.inputPath) === name)
       const verdict = surco.verification(name)
@@ -246,6 +247,7 @@ export async function runGroup(
         finalPath,
         at: {
           ...pointingAt(finalPath),
+          music: musicFile ?? finalPath,
           traktor:
             spelled(dirname(finalPath)) === spelled(dirname(source.path)) ? finalPath : source.path,
         },
