@@ -23,7 +23,9 @@ export function useRetireSuperseded({ tracks, updateTrack, reportTrashFailure }:
           ? { supersededTrashed: true, originalTrashed: true }
           : { supersededTrashed: true }
       const name = baseName(path).replace(/\.[^.]+$/, '')
-      const titles = [...new Set([track.meta.title, name, track.replacesLabel])].filter(
+      const label = track.replacesLabel ?? ''
+      const musicNames = label.split(' - ').map((_, i, parts) => parts.slice(i).join(' - '))
+      const titles = [...new Set([track.meta.title, name, ...musicNames])].filter(
         (t): t is string => !!t,
       )
       window.api

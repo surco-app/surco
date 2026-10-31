@@ -20,7 +20,7 @@ import { addToEngineLibrary } from '../main/engineLibrary'
 import { isEngineDjRunning } from '../main/engineProcess'
 import { engineSizeFollower } from '../main/engineSizeFollow'
 import { expandPaths } from '../main/expand'
-import { convertAudio, toNmlLocation } from '../main/ffmpeg'
+import { convertAudio, readTags, toNmlLocation } from '../main/ffmpeg'
 import { fileIdentity, isSameFile, removeRenamedOriginal } from '../main/inplace'
 import {
   currentLibraryStatus,
@@ -920,6 +920,7 @@ export function bootMain(options: ScenarioOptions): MainBoot {
       usedByAnyLibrary(path, titles, {
         traktorRead: traktorWritePath,
         ...(musicIsFake && { musicEntries: musicReaders.entriesForFile }),
+        fileTitle: async (file) => (await readTags(file)).title,
       }),
     )
     if (musicIsFake) registerAppleMusicIpc({ followEngineSize })

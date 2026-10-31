@@ -111,7 +111,7 @@ import { engineSizeFollower } from './engineSizeFollow'
 import { expandPaths } from './expand'
 import { registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
-import { convertAudio, readMeta, toNmlLocation } from './ffmpeg'
+import { convertAudio, readMeta, readTags, toNmlLocation } from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { fileIdentity, isSameFile, removeRenamedOriginal } from './inplace'
 import { setLibraryBackupRoot } from './libraryBackups'
@@ -2110,6 +2110,7 @@ function registerIpc(): void {
     usedByAnyLibrary(path, titles, {
       traktorRead: traktorReadPath,
       ...(process.platform === 'darwin' && { musicEntries: musicReaders.entriesForFile }),
+      fileTitle: async (file) => (await readTags(file)).title,
     }),
   )
   registerCopiesIpc(

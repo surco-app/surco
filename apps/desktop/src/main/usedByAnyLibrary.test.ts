@@ -86,9 +86,46 @@ describe('usedByAnyLibrary', () => {
   it('keeps the file a second Apple Music entry still plays', async () => {
     const musicEntries = vi.fn(async () => ['P2'])
     expect(
-      await usedByAnyLibrary(FILE, ['A', 'A.mp3'], { traktorRead: noTraktor, musicEntries }),
+      await usedByAnyLibrary(FILE, ['A', 'A.mp3'], {
+        traktorRead: noTraktor,
+        musicEntries,
+        fileTitle: async () => 'A',
+      }),
     ).toBe(true)
     expect(musicEntries).toHaveBeenCalledWith(FILE, ['A', 'A.mp3'])
+  })
+
+  it('finds the Music entry by the title the old file carries, since the DJ may have retitled the track in Surco since', async () => {
+    const musicEntries = vi.fn(async (_path: string, titles: string[]) =>
+      titles.includes('A (Original Mix)') ? ['P1'] : [],
+    )
+    expect(
+      await usedByAnyLibrary(FILE, ['A (Extended Mix)'], {
+        traktorRead: noTraktor,
+        musicEntries,
+        fileTitle: async () => 'A (Original Mix)',
+      }),
+    ).toBe(true)
+  })
+
+  it('keeps the file when its title cannot be read, since Music may list it under a name nobody sent', async () => {
+    const musicEntries = vi.fn(async () => [])
+    expect(
+      await usedByAnyLibrary(FILE, ['A'], {
+        traktorRead: noTraktor,
+        musicEntries,
+        fileTitle: async () => {
+          throw new Error('ffprobe failed')
+        },
+      }),
+    ).toBe(true)
+    expect(
+      await usedByAnyLibrary(FILE, ['A'], {
+        traktorRead: noTraktor,
+        musicEntries,
+        fileTitle: async () => '  ',
+      }),
+    ).toBe(true)
   })
 
   it('reads as used when Music cannot say which entries play the file', async () => {
@@ -96,14 +133,22 @@ describe('usedByAnyLibrary', () => {
       throw new Error('Music could not say which entries play the file')
     })
     await expect(
-      usedByAnyLibrary(FILE, ['A'], { traktorRead: noTraktor, musicEntries }),
+      usedByAnyLibrary(FILE, ['A'], {
+        traktorRead: noTraktor,
+        musicEntries,
+        fileTitle: async () => 'A',
+      }),
     ).rejects.toThrow()
   })
 
   it('retires a file no Music entry plays', async () => {
     const musicEntries = vi.fn(async () => [])
-    expect(await usedByAnyLibrary(FILE, ['A'], { traktorRead: noTraktor, musicEntries })).toBe(
-      false,
-    )
+    expect(
+      await usedByAnyLibrary(FILE, ['A'], {
+        traktorRead: noTraktor,
+        musicEntries,
+        fileTitle: async () => 'A',
+      }),
+    ).toBe(false)
   })
 })

@@ -58,6 +58,20 @@ describe('useRetireSuperseded', () => {
     )
   })
 
+  it('names the old file by the name its Music entry showed, which the DJ may have retitled since', async () => {
+    const relabeled = {
+      ...replaced,
+      meta: { title: 'A (Extended Mix)' },
+      replacesLabel: 'Artist - Remix - A (Original Mix)',
+      replacesPath: '/Volumes/Public/Music/A.mp3',
+    } as TrackItem
+    const { retireSuperseded } = setup([relabeled])
+    await waitFor(() => expect(retireSuperseded).toHaveBeenCalled())
+    expect(retireSuperseded.mock.calls[0][1]).toEqual(
+      expect.arrayContaining(['Remix - A (Original Mix)', 'A (Original Mix)']),
+    )
+  })
+
   it('keeps a file a DJ library still uses and hands it back to the manual offer, since that library would otherwise point at nothing', async () => {
     const { updateTrack, reportTrashFailure } = setup([replaced], { answer: 'used' })
     await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('t1', { supersededKept: true }))
