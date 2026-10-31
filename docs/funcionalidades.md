@@ -1420,6 +1420,35 @@ matriz es solo de Traktor, cuyos cues viajan **dentro del fichero**. Los de reko
 su colección y no dependen del formato (ver §8.5 y el editor de cues más abajo). Al
 convertir, Surco **conserva** los cues de Traktor del fichero pero no los edita.
 
+**Calibración al cruzar MP3** (medida el 2026-10-31 en Traktor Pro 4.5.1). Método: una pista
+de clics a 120 BPM codificada como WAV, AIFF, FLAC, MP3 con cabecera Xing/LAME y MP3 sin
+ella, analizada por Traktor; se comparó el ancla AutoGrid que escribió en el `.nml`. WAV, AIFF
+y FLAC comparten línea de tiempo al microsegundo. El MP3 con Xing sale 51,14 ms tarde y el
+MP3 sin Xing 24,88 ms tarde. Traktor reproduce el MP3 desde su primera trama, la de la
+cabecera incluida (1152 muestras de silencio), y no recorta el retardo del encoder.
+
+Lo que ffmpeg se salta, medido con un clic en muestra conocida (`cueCalibration.test.ts`):
+la trama de cabecera (Xing, Info o VBRI) siempre que la hay, y además el retardo
+(`delay` de la etiqueta + 529) solo si la etiqueta va justo detrás del ID3 y lleva firma
+`LAME`, `Lavf` o `Lavc`. Una Info sin firma, una cabecera VBRI o basura entre el ID3 y la
+primera trama dejan el retardo dentro del audio. El fichero convertido guarda lo que ffmpeg
+decodificó.
+
+La regla (`cueCalibration.ts`), en muestras a la frecuencia de cada fichero, es lo que
+Traktor pinta por delante del audio de la salida (trama de cabecera más el retardo de su
+etiqueta, o el de libmp3lame, 1105, si no lo declara; PCM 0) menos lo que ffmpeg se saltó del
+origen (PCM 0). La trama son 1152 muestras en MPEG-1 y 576 en MPEG-2 y 2.5. A 44,1 kHz con
+MP3 de LAME o de ffmpeg queda así. MP3 con Xing → WAV/AIFF/FLAC −51,18 ms. MP3 sin Xing →
+WAV/AIFF/FLAC 0. MP3 con Info sin firma o con VBRI → WAV/AIFF/FLAC −26,12 ms.
+WAV/AIFF/FLAC → MP3 +51,18 ms, porque el MP3 de Surco lleva Info firmada `Lavc`. MP3 → MP3
+recodificado 0 si el origen tenía Xing firmada y +51,18 ms si no tenía cabecera. La copia sin
+recodificar no se mueve. Todo se lee del origen y del fichero ya codificado, saltando el ID3
+entero aunque una carátula lo haga pasar del mega. El ajuste de cues de Ajustes se suma
+encima. Solo afecta a los cues de Traktor; rekordbox y Engine DJ van por su lado.
+
+Sin medir en Traktor: VBRI, MPEG-2 y la basura delante de la primera trama. Se asume que
+Traktor las trata como la Xing medida (no se salta nada).
+
 **El editor de cues escribe en la colección de Traktor** (nuevo en v1.12.0), nunca en el
 fichero. Solo hot cues: Traktor no tiene CALL, así que no se escribe ninguno, y se escriben
 como tipo 0, que Traktor pinta en azul sea cual sea el color elegido
