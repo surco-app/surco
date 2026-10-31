@@ -7,10 +7,12 @@ import {
   existsSync,
   lstatSync,
   mkdirSync,
+  mkdtempSync,
   readdirSync,
   readFileSync,
   realpathSync,
   rmSync,
+  statfsSync,
   statSync,
   symlinkSync,
   writeFileSync,
@@ -114,7 +116,7 @@ function mirrorDir(mirror: string, dir: string): void {
   }
 }
 
-interface Watched {
+export interface Watched {
   path: string
   sha1: string
   mtimeMs: number
@@ -125,6 +127,52 @@ const fingerprint = (path: string): Watched => ({
   sha1: sha1Of(path),
   mtimeMs: statSync(path).mtimeMs,
 })
+
+const RUN_ROOT_PREFIX = 'surco-matriz-real-'
+const SPACE_MARGIN = 1.2
+
+export function createRunRoot(base: string): string {
+  mkdirSync(base, { recursive: true })
+  return mkdtempSync(join(base, RUN_ROOT_PREFIX))
+}
+
+export function removeRunRoot(root: string): void {
+  if (!basename(root).startsWith(RUN_ROOT_PREFIX))
+    throw new Error(`scenario: refusing to remove ${root}, it is not a folder this run created`)
+  rmSync(root, { recursive: true, force: true })
+}
+
+export function assertRoomFor(
+  dir: string,
+  bytes: number,
+  freeBytes: (dir: string) => number = (d) => {
+    const fs = statfsSync(d)
+    return fs.bavail * fs.bsize
+  },
+): void {
+  const needed = Math.ceil(bytes * SPACE_MARGIN)
+  const free = freeBytes(dir)
+  if (free < needed)
+    throw new Error(`scenario: ${dir} has ${free} bytes free and the copies need ${needed}`)
+}
+
+const watch = (list: Watched[], path: string): void => {
+  if (!list.some((w) => w.path === path)) list.push(fingerprint(path))
+}
+
+export function engineDatabases(engineDir: string): string[] {
+  return listed(join(engineDir, 'Database2'))
+    .filter((n) => n.endsWith('.db'))
+    .map((n) => join(engineDir, 'Database2', n))
+}
+
+export function watchSources(src: RealSources, watched: Watched[]): void {
+  if (src.rekordboxDb) watch(watched, src.rekordboxDb)
+  if (src.engineDir) for (const db of engineDatabases(src.engineDir)) watch(watched, db)
+  if (src.traktorNml) watch(watched, src.traktorNml)
+}
+
+const sizeOf = (paths: string[]): number => paths.reduce((sum, p) => sum + statSync(p).size, 0)
 
 function writable(path: string): string {
   chmodSync(path, 0o644)
@@ -469,27 +517,33 @@ export async function copyRealLibraries(
   src: RealSources,
   root: string,
   perFormat = 3,
+  originals: Watched[] = [],
 ): Promise<RealCopy> {
   const mirror = join(root, 'espejo')
-  const originals: Watched[] = []
+  mkdirSync(root, { recursive: true })
+  watchSources(src, originals)
+  assertRoomFor(
+    root,
+    sizeOf([
+      ...(src.rekordboxDb ? [src.rekordboxDb] : []),
+      ...(src.engineDir ? engineDatabases(src.engineDir) : []),
+      ...(src.traktorNml ? [src.traktorNml] : []),
+    ]),
+  )
   const rewrites: string[] = []
   const boot = bootVolumeName()
 
   const rekordboxDb = src.rekordboxDb && join(root, 'rekordbox', 'master.db')
   if (src.rekordboxDb && rekordboxDb) {
-    originals.push(fingerprint(src.rekordboxDb))
     copyRekordbox(src.rekordboxDb, rekordboxDb)
   }
   const engineDir = src.engineDir && mirrored(mirror, src.engineDir)
   if (src.engineDir && engineDir) {
     mirrorDir(mirror, src.engineDir)
-    for (const name of listed(join(src.engineDir, 'Database2')).filter((n) => n.endsWith('.db')))
-      originals.push(fingerprint(join(src.engineDir, 'Database2', name)))
     await copyEngine(src.engineDir, engineDir)
   }
   const traktorNml = src.traktorNml && join(root, 'Traktor', 'collection.nml')
   if (src.traktorNml && traktorNml) {
-    originals.push(fingerprint(src.traktorNml))
     mkdirSync(dirname(traktorNml), { recursive: true })
     copyFileSync(src.traktorNml, traktorNml)
     writable(traktorNml)
@@ -566,7 +620,7 @@ export async function copyRealLibraries(
   }
 
   const mirrorFile = (s: Sampled): void => {
-    originals.push(fingerprint(s.key))
+    watch(originals, s.key)
     const dir = dirname(s.key)
     mirrorDir(mirror, dir)
     const stored = [
@@ -583,6 +637,7 @@ export async function copyRealLibraries(
   }
 
   const everyone = [...sampled.values(), bystander]
+  assertRoomFor(root, sizeOf(everyone.map((s) => s.key)))
   for (const s of everyone) mirrorFile(s)
 
   if (rekordboxDb) {
@@ -711,7 +766,7 @@ export async function copyRealLibraries(
   }
 }
 
-export function assertOriginalsUntouched(copy: RealCopy): void {
+export function assertOriginalsUntouched(copy: Pick<RealCopy, 'originals'>): void {
   const changed = copy.originals.flatMap((o) => {
     if (!existsSync(o.path)) return [`${o.path}: ya no está`]
     const now = fingerprint(o.path)

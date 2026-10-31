@@ -25,9 +25,13 @@ import {
   assertOriginalsUntouched,
   copyRealLibraries,
   correlationLagMs,
+  createRunRoot,
   pristine,
   type RealCopy,
   realSourcesFromEnv,
+  removeRunRoot,
+  type Watched,
+  watchSources,
 } from './realLibraries'
 import { type CellOutcome, cellFailure, writeReport } from './report'
 import { runFixture, startMusic, witnessesOf } from './run'
@@ -82,81 +86,91 @@ function groupSet(copy: RealCopy, first: Cell, tracks: SeededTrack[]): LibrarySe
 // rekordbox, Engine and Traktor collections and of a sample of their files. The originals are
 // only ever opened read-only to copy them, and their bytes and dates are checked after the
 // run before anything else is reported.
-describe.skipIf(!process.env.SURCO_MATRIX_REAL)('Matriz de resultados (copias reales)', () => {
-  const outcomes: CellOutcome[] = []
-  let root = ''
-  let copy: RealCopy | undefined
-  let restore: () => void = () => {}
+describe.skipIf(process.env.SURCO_MATRIX_REAL !== '1')(
+  'Matriz de resultados (copias reales)',
+  () => {
+    const outcomes: CellOutcome[] = []
+    let root = ''
+    let copy: RealCopy | undefined
+    const watched: Watched[] = []
+    let restore: () => void = () => {}
 
-  beforeAll(async () => {
-    root =
-      process.env.SURCO_MATRIX_ROOT ||
-      join(process.env.SURCO_SYSTEM_TMPDIR || tmpdir(), `surco-matriz-real-${Date.now()}`)
-    copy = await copyRealLibraries(realSourcesFromEnv(), root)
-    restore = pristine(copy)
-  }, 3_600_000)
+    beforeAll(async () => {
+      const sources = realSourcesFromEnv()
+      watchSources(sources, watched)
+      root = createRunRoot(
+        process.env.SURCO_MATRIX_ROOT || process.env.SURCO_SYSTEM_TMPDIR || tmpdir(),
+      )
+      copy = await copyRealLibraries(sources, root, undefined, watched)
+      restore = pristine(copy)
+    }, 3_600_000)
 
-  afterAll(() => {
-    let touched: unknown
-    try {
-      if (copy) assertOriginalsUntouched(copy)
-    } catch (e) {
-      touched = e
-    }
-    try {
-      if (outcomes.length > 0 && copy) {
-        const path = writeReport(outcomes)
-        appendFileSync(
-          path,
-          ['## Preparación de las copias', '', ...copy.rewrites.map((r) => `- ${r}`), ''].join(
-            '\n',
-          ),
-        )
+    afterAll(() => {
+      let touched: unknown
+      try {
+        assertOriginalsUntouched({ originals: watched })
+      } catch (e) {
+        touched = e
       }
-    } finally {
-      if (root && process.env.SURCO_MATRIX_KEEP !== '1')
-        rmSync(root, { recursive: true, force: true })
-    }
-    if (touched) throw touched
-  }, 600_000)
-
-  for (const group of groupsOf(CELLS.filter((c) => c.layer === 'C' || c.layer === 'D'))) {
-    describe(group.key, () => {
-      const byId = new Map<string, CellOutcome>()
-
-      beforeAll(async () => {
-        if (!copy) throw new Error('las colecciones no se copiaron')
-        const picked = sampledFor(group, copy.set.tracks)
-        if (picked.length === 0) return
-        const cells = picked.map(([cell]) => cell)
-        restore()
-        rmSync(join(root, 'Salida'), { recursive: true, force: true })
-        rmSync(join(root, 'Testigo'), { recursive: true, force: true })
-        startMusic(cells[0], root)
-        const set = groupSet(
-          copy,
-          cells[0],
-          picked.map(([, t]) => t),
-        )
-        const fixture = { root, sources: set.tracks, witnesses: witnessesOf(root, set.tracks), set }
-        for (const outcome of await runFixture({ key: group.key, cells }, fixture, {
-          lagMs: correlationLagMs,
-        })) {
-          byId.set(outcome.cell.id, outcome)
-          outcomes.push(outcome)
+      try {
+        if (outcomes.length > 0 && copy) {
+          const path = writeReport(outcomes)
+          appendFileSync(
+            path,
+            ['## Preparación de las copias', '', ...copy.rewrites.map((r) => `- ${r}`), ''].join(
+              '\n',
+            ),
+          )
         }
-      }, 1_800_000)
-
-      for (const cell of group.cells) {
-        it(cell.name, (ctx) => {
-          const outcome = byId.get(cell.id)
-          if (!outcome)
-            return ctx.skip(
-              `las colecciones no tienen una pista ${cell.origin} con cues y playlists`,
-            )
-          expect(cellFailure(outcome)).toBeNull()
-        })
+      } finally {
+        if (root && process.env.SURCO_MATRIX_KEEP !== '1') removeRunRoot(root)
       }
-    })
-  }
-})
+      if (touched) throw touched
+    }, 600_000)
+
+    for (const group of groupsOf(CELLS.filter((c) => c.layer === 'C' || c.layer === 'D'))) {
+      describe(group.key, () => {
+        const byId = new Map<string, CellOutcome>()
+
+        beforeAll(async () => {
+          if (!copy) throw new Error('las colecciones no se copiaron')
+          const picked = sampledFor(group, copy.set.tracks)
+          if (picked.length === 0) return
+          const cells = picked.map(([cell]) => cell)
+          restore()
+          rmSync(join(root, 'Salida'), { recursive: true, force: true })
+          rmSync(join(root, 'Testigo'), { recursive: true, force: true })
+          startMusic(cells[0], root)
+          const set = groupSet(
+            copy,
+            cells[0],
+            picked.map(([, t]) => t),
+          )
+          const fixture = {
+            root,
+            sources: set.tracks,
+            witnesses: witnessesOf(root, set.tracks),
+            set,
+          }
+          for (const outcome of await runFixture({ key: group.key, cells }, fixture, {
+            lagMs: correlationLagMs,
+          })) {
+            byId.set(outcome.cell.id, outcome)
+            outcomes.push(outcome)
+          }
+        }, 1_800_000)
+
+        for (const cell of group.cells) {
+          it(cell.name, (ctx) => {
+            const outcome = byId.get(cell.id)
+            if (!outcome)
+              return ctx.skip(
+                `las colecciones no tienen una pista ${cell.origin} con cues y playlists`,
+              )
+            expect(cellFailure(outcome)).toBeNull()
+          })
+        }
+      })
+    }
+  },
+)

@@ -3,13 +3,16 @@ import {
   chmodSync,
   copyFileSync,
   existsSync,
+  mkdtempSync,
   readdirSync,
   readFileSync,
   realpathSync,
+  rmSync,
   statSync,
   utimesSync,
   writeFileSync,
 } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import ffmpegStatic from 'ffmpeg-static'
@@ -25,10 +28,14 @@ import { buildLibraries, type LibrarySet, sha1Of } from './libraries'
 import { libraryInvariants, markerLagMs, nmlLocationPath, pointingAt } from './oracle'
 import {
   assertOriginalsUntouched,
+  assertRoomFor,
   copyRealLibraries,
   correlationLagMs,
+  createRunRoot,
   pristine,
   type RealSources,
+  removeRunRoot,
+  type Watched,
 } from './realLibraries'
 import { makeSource, SEEDED_CUES_MS, type SourceTrack, TRICKY } from './sources'
 
@@ -289,4 +296,63 @@ describe('the lag of real audio', () => {
       ),
     ).toBeLessThan(1)
   }, 60_000)
+})
+
+describe('the folder of a real run', () => {
+  it('is always a new subfolder, so removing it never touches what the base already held', () => {
+    const base = mkdtempSync(join(tmpdir(), 'surco-base-'))
+    const sentinel = join(base, 'keep.txt')
+    writeFileSync(sentinel, 'mine')
+    try {
+      const root = createRunRoot(base)
+      expect(root).not.toBe(base)
+      expect(dirname(root)).toBe(base)
+      removeRunRoot(root)
+      expect(existsSync(root)).toBe(false)
+      expect(readFileSync(sentinel, 'utf8')).toBe('mine')
+    } finally {
+      rmSync(base, { recursive: true, force: true })
+    }
+  })
+
+  it('refuses to remove a folder this run did not create', () => {
+    const base = mkdtempSync(join(tmpdir(), 'surco-base-'))
+    try {
+      expect(() => removeRunRoot(base)).toThrow('refusing')
+      expect(existsSync(base)).toBe(true)
+    } finally {
+      rmSync(base, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('originals watched outside the copy', () => {
+  it('are still checked when the copy throws midway', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-src-'))
+    const db = join(dir, 'collection.nml')
+    writeFileSync(db, '<NML></NML>')
+    const watched: Watched[] = []
+    const root = mkdtempSync(join(tmpdir(), 'surco-dst-'))
+    try {
+      await expect(copyRealLibraries({ traktorNml: db }, root, 3, watched)).rejects.toThrow()
+      expect(watched.map((w) => w.path)).toContain(db)
+      writeFileSync(db, '<NML>changed</NML>')
+      expect(() => assertOriginalsUntouched({ originals: watched })).toThrow(db)
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('free space before copying', () => {
+  it('fails clearly when the destination cannot hold the copies plus 20%', () => {
+    expect(() => assertRoomFor('/dest', 1000, () => 1199)).toThrow('/dest has 1199 bytes free')
+    expect(() => assertRoomFor('/dest', 1000, () => 1200)).not.toThrow()
+  })
+
+  it('reads the real free space of the folder by default', () => {
+    expect(() => assertRoomFor(tmpdir(), 1)).not.toThrow()
+    expect(() => assertRoomFor(tmpdir(), Number.MAX_SAFE_INTEGER)).toThrow('bytes free')
+  })
 })
