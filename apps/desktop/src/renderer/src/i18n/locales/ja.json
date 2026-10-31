@@ -2948,6 +2948,8 @@
       "engineOtherRow": "Engine DJでは別のトラックになっています",
       "engineNoFileType": "Engine DJがファイル形式を認識していません",
       "engineSizeDiffers": "Engine DJのサイズが新しいファイルと違います",
+      "engineSizeStale": "Engine DJには以前から別のサイズが登録されていたため、Surcoはこのエントリを変更していません",
+      "engineSizeStaleCues": "Engine DJには以前から別のサイズが登録されていたため、Surcoはこのエントリを変更しておらず、キューも音声に合わせて動いていません",
       "enginePerformanceChanged_quickCues": "Engine DJのキューが変わりました",
       "enginePerformanceChanged_beatData": "Engine DJのグリッドが変わりました",
       "enginePerformanceChanged_loops": "Engine DJのループが変わりました",

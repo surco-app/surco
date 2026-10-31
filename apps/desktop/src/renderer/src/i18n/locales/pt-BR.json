@@ -2948,6 +2948,8 @@
       "engineOtherRow": "O Engine DJ a vê como outra faixa",
       "engineNoFileType": "O Engine DJ não sabe o formato do arquivo",
       "engineSizeDiffers": "O Engine DJ tem outro tamanho para o arquivo novo",
+      "engineSizeStale": "O Engine DJ já tinha outro tamanho para este arquivo, então o Surco não mexeu na entrada dele",
+      "engineSizeStaleCues": "O Engine DJ já tinha outro tamanho para este arquivo, então o Surco não mexeu na entrada dele e os cues não acompanharam o áudio",
       "enginePerformanceChanged_quickCues": "Os cues mudaram no Engine DJ",
       "enginePerformanceChanged_beatData": "O grid mudou no Engine DJ",
       "enginePerformanceChanged_loops": "Os loops mudaram no Engine DJ",

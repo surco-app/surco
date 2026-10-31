@@ -91,6 +91,8 @@ const SENT: Record<VerifyDetailKey, CheckDetail['params'][]> = {
   engineOtherRow: [undefined],
   engineNoFileType: [undefined],
   engineSizeDiffers: [undefined],
+  engineSizeStale: [undefined],
+  engineSizeStaleCues: [undefined],
   enginePerformanceChanged: [{ field: 'quickCues' }, { field: 'beatData' }, { field: 'loops' }],
   engineCuesMisplaced: [{ field: 'quickCues' }, { field: 'beatData' }, { field: 'loops' }],
   engineUnreadable: [undefined],
