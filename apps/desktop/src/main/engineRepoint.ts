@@ -7,6 +7,7 @@ import {
   decodeLoops,
   decodeOverview,
   decodeQuickCues,
+  decodeTrackData,
   deflateEngineBlob,
   encodeLoops,
   encodeQuickCues,
@@ -335,21 +336,27 @@ export async function writeEngineRepoints(
     }
 
     for (const u of updates) {
-      // Only the file columns. The bitrate is cleared rather than kept, as Surco's own
-      // inserts leave it: the old file's value would describe the new one wrongly, and
-      // Engine fills it in when it next analyzes the track.
+      const perf = u.shift ? performanceOf(db, Number(u.id)) : null
+      const next = perf && u.shift && shiftEnginePerformance(perf, u.shift)
+      const track =
+        next && next.trackData !== perf.trackData && next.trackData
+          ? decodeTrackData(inflateEngineBlob(next.trackData))
+          : null
+      // Only the file columns, and the length the track list shows when the samples changed,
+      // in whole seconds as Engine rounds it. The bitrate is cleared rather than kept, as
+      // Surco's own inserts leave it: the old file's value would describe the new one
+      // wrongly, and Engine fills it in when it next analyzes the track.
       db.run(
-        'UPDATE Track SET path = ?, filename = ?, fileType = ?, fileBytes = ?, bitrate = NULL WHERE id = ?',
+        `UPDATE Track SET path = ?, filename = ?, fileType = ?, fileBytes = ?, bitrate = NULL${track ? ', length = ?' : ''} WHERE id = ?`,
         [
           relativeTo(libraryDir, u.to),
           basename(u.to),
           extname(u.to).slice(1).toLowerCase(),
           u.size,
+          ...(track ? [Math.round(track.sampleCount / track.sampleRate)] : []),
           Number(u.id),
         ],
       )
-      const perf = u.shift ? performanceOf(db, Number(u.id)) : null
-      const next = perf && u.shift && shiftEnginePerformance(perf, u.shift)
       if (next && next !== perf)
         db.run(
           'UPDATE PerformanceData SET trackData = ?, overviewWaveFormData = ?, beatData = ?, quickCues = ?, loops = ? WHERE trackId = ?',

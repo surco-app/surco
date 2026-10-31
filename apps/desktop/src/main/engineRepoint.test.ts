@@ -464,6 +464,26 @@ describe.each(['2.18', '3.0.2'] as const)(
       expect(after.grid).toEqual(before.grid)
     })
 
+    // Engine's track list shows Track.length, whole seconds rounded the way a real library
+    // stores them (334.507 s of samples is 335), so a cut left it showing the old duration.
+    it('records the length the track list shows, in rounded seconds', async () => {
+      const lib = await analysedLibrary(schema)
+      const seed = await openDb(lib.dbPath)
+      seed.run('UPDATE Track SET length = 60')
+      await writeFile(lib.dbPath, seed.export())
+      seed.close()
+      await repointEngineTracks(lib.dir, [
+        {
+          from: lib.oldFile,
+          to: lib.newFile,
+          engineShift: { trimmedMs: 0, sampleCount: Math.round(RATE * 50.6) },
+        },
+      ])
+      const db = await openDb(lib.dbPath)
+      expect(one(db, 'SELECT length FROM Track')).toEqual({ length: 51 })
+      db.close()
+    })
+
     it('records the exact length at the new rate when a trim also resamples', async () => {
       const lib = await analysedLibrary(schema)
       await repointEngineTracks(lib.dir, [

@@ -183,7 +183,7 @@ describe('Cut the silence before a record rewritten over itself, with its Engine
         ),
       ],
     })
-    db.prepare("UPDATE Track SET fileType = 'flac', fileBytes = ? WHERE id = 1").run(
+    db.prepare("UPDATE Track SET fileType = 'flac', fileBytes = ?, length = 20 WHERE id = 1").run(
       statSync(source).size,
     )
     db.close()
@@ -218,6 +218,16 @@ describe('Cut the silence before a record rewritten over itself, with its Engine
       expect(db.exec('SELECT path, fileBytes FROM Track')[0].values).toEqual([
         [relative(library, source), statSync(source).size],
       ])
+    } finally {
+      db.close()
+    }
+  })
+
+  it('shows the cut record’s duration in Engine’s track list', async () => {
+    const SQL = await loadSqlJs()
+    const db = new SQL.Database(readFileSync(engineDbPath(library)))
+    try {
+      expect(db.exec('SELECT length FROM Track')[0].values).toEqual([[Math.round(20 - TRIM_SEC)]])
     } finally {
       db.close()
     }
