@@ -17,13 +17,13 @@ const replaced = {
 
 function setup(
   tracks: TrackItem[],
-  { answer = 'retired' as 'retired' | 'used', fails = false } = {},
+  { answer = 'retired' as 'retired' | 'used', fails = false, platform = 'darwin' } = {},
 ) {
   const retireSuperseded = vi.fn<Api['retireSuperseded']>(async () => {
     if (fails) throw new Error('EBUSY')
     return answer
   })
-  ;(window as unknown as { api: unknown }).api = { retireSuperseded }
+  ;(window as unknown as { api: unknown }).api = { retireSuperseded, platform }
   const updateTrack = vi.fn()
   const reportTrashFailure = vi.fn()
   const hook = renderHook(
@@ -58,11 +58,70 @@ describe('useRetireSuperseded', () => {
     )
   })
 
+  it('names the old file by the name its Music entry showed, which the DJ may have retitled since', async () => {
+    const relabeled = {
+      ...replaced,
+      meta: { title: 'A (Extended Mix)' },
+      replacesLabel: 'Artist - Remix - A (Original Mix)',
+      replacesPath: '/Volumes/Public/Music/A.mp3',
+    } as TrackItem
+    const { retireSuperseded } = setup([relabeled])
+    await waitFor(() => expect(retireSuperseded).toHaveBeenCalled())
+    expect(retireSuperseded.mock.calls[0][1]).toEqual(
+      expect.arrayContaining(['Remix - A (Original Mix)', 'A (Original Mix)']),
+    )
+  })
+
   it('keeps a file a DJ library still uses and hands it back to the manual offer, since that library would otherwise point at nothing', async () => {
     const { updateTrack, reportTrashFailure } = setup([replaced], { answer: 'used' })
     await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('t1', { supersededKept: true }))
     expect(updateTrack).toHaveBeenCalledTimes(1)
     expect(reportTrashFailure).not.toHaveBeenCalled()
+  })
+
+  it('leaves a file another row of the list still loads to the manual offer, since retiring it would break that row', async () => {
+    const loaded = { ...replaced, id: 't2', inputPath: replaced.supersededPath } as TrackItem
+    const converted = {
+      ...replaced,
+      id: 't3',
+      inputPath: '/Users/v/Downloads/B.flac',
+      outputPath: replaced.supersededPath,
+      supersededPath: undefined,
+    } as TrackItem
+    for (const other of [loaded, converted]) {
+      const { retireSuperseded, updateTrack } = setup([replaced, other])
+      await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('t1', { supersededKept: true }))
+      expect(retireSuperseded).not.toHaveBeenCalledWith(replaced.supersededPath, expect.anything())
+    }
+  })
+
+  it('sees another row on the old file however its path is spelled, since macOS and Windows open it under any case or Unicode form', async () => {
+    const accented = '/Volumes/Public/Music/T/Café/03 Olé.aiff'
+    const old = { ...replaced, supersededPath: accented } as TrackItem
+    const loaded = {
+      ...replaced,
+      id: 't2',
+      inputPath: accented.normalize('NFD').toUpperCase(),
+      supersededPath: undefined,
+    } as TrackItem
+    for (const platform of ['darwin', 'win32']) {
+      const { retireSuperseded, updateTrack } = setup([old, loaded], { platform })
+      await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('t1', { supersededKept: true }))
+      expect(retireSuperseded).not.toHaveBeenCalled()
+    }
+  })
+
+  it('tells a case variant apart on Linux, where it is another file', async () => {
+    const loaded = {
+      ...replaced,
+      id: 't2',
+      inputPath: replaced.supersededPath?.toUpperCase(),
+      supersededPath: undefined,
+    } as TrackItem
+    const { retireSuperseded } = setup([replaced, loaded], { platform: 'linux' })
+    await waitFor(() =>
+      expect(retireSuperseded).toHaveBeenCalledWith(replaced.supersededPath, ['03 A']),
+    )
   })
 
   it('marks the source trashed too when the retired file is the row’s own source', async () => {

@@ -1,7 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { autoRetiredFile } from '../lib/autoRetiredFile'
 import { baseName } from '../lib/baseName'
+import { isMacOS, isWindows } from '../lib/platform'
 import type { TrackItem } from '../types'
+
+const sameFileKey = (path: string) => {
+  const composed = path.normalize('NFC')
+  return isMacOS() || isWindows() ? composed.toLowerCase() : composed
+}
 
 interface Params {
   tracks: TrackItem[]
@@ -18,12 +24,25 @@ export function useRetireSuperseded({ tracks, updateTrack, reportTrashFailure }:
       const key = `${track.id}\0${path}`
       if (started.current.has(key)) continue
       started.current.add(key)
+      const old = sameFileKey(path)
+      if (
+        tracks.some(
+          (t) =>
+            t.id !== track.id &&
+            [t.inputPath, t.outputPath].some((p) => !!p && sameFileKey(p) === old),
+        )
+      ) {
+        updateTrack(track.id, { supersededKept: true })
+        continue
+      }
       const patch: Partial<TrackItem> =
         path === track.inputPath
           ? { supersededTrashed: true, originalTrashed: true }
           : { supersededTrashed: true }
       const name = baseName(path).replace(/\.[^.]+$/, '')
-      const titles = [...new Set([track.meta.title, name, track.replacesLabel])].filter(
+      const label = track.replacesLabel ?? ''
+      const musicNames = label.split(' - ').map((_, i, parts) => parts.slice(i).join(' - '))
+      const titles = [...new Set([track.meta.title, name, ...musicNames])].filter(
         (t): t is string => !!t,
       )
       window.api

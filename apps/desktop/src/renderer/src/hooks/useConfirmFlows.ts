@@ -308,9 +308,11 @@ export function useConfirmFlows({
     })
   }
 
-  // Nothing here is automatic: three runs on 15/09 looked like a correct replacement and
+  // This offer is never automatic: three runs on 15/09 looked like a correct replacement and
   // were not, and an automatic delete in any of them would have destroyed the only copy.
-  // So one confirmed dialog names every file it moves, to the OS Trash rather than a hard
+  // The one exception lives apart (useRetireSuperseded): a file a format change superseded,
+  // once its check is ok and no library or other row uses it. Everything else waits for
+  // one confirmed dialog that names every file it moves, to the OS Trash rather than a hard
   // delete unless it says otherwise (see trashCopy). The old library copy goes first because its file can BE the listed original
   // (Music's "copy files to the Media folder" off): that removal already trashed it, and
   // a second trash would fail on a missing file. Each row is marked only once its own file
