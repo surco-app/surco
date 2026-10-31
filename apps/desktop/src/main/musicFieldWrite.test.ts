@@ -716,6 +716,16 @@ describe('rewriteCueTree', () => {
     60000,
   )
 
+  // The file grew or shrank with its new tree: Engine DJ holds its size and has to follow it.
+  it('tells Engine DJ the size the file had before the rewrite', async () => {
+    const file = wavWithTree()
+    const size = statSync(file).size
+    configureOriginalKeeper(async () => ({ id: 'b1' }) as never)
+    const rewritten = vi.fn()
+    await rewriteCueTree(file, -51.18, [10000, 15000], undefined, rewritten)
+    expect(rewritten).toHaveBeenCalledWith(file, size)
+  }, 60000)
+
   it('writes nothing to a file with no tree', async () => {
     const file = join(dir, `bare-${Math.random().toString(36).slice(2)}.wav`)
     execFileSync(FF, ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'anoisesrc=d=2', file])

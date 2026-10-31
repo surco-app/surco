@@ -85,6 +85,7 @@ export async function rewriteCueTree(
   addMs: number,
   expected: number[],
   tracking?: TmpTracking,
+  rewritten?: Rewritten,
 ): Promise<{ written: boolean; backup?: TrashEntry }> {
   const before = cueStarts(file)
   if (!before || !same(expected, before)) return { written: false }
@@ -92,6 +93,7 @@ export async function rewriteCueTree(
   tracking?.track(tmp)
   let archived: TrashEntry | null = null
   try {
+    const fromBytes = (await stat(file)).size
     await copyFile(file, tmp, fsConstants.COPYFILE_FICLONE)
     const shift: CueShift = { shiftMs: -addMs }
     if (extname(file).toLowerCase() === '.flac')
@@ -110,6 +112,7 @@ export async function rewriteCueTree(
     if (!archived && hasOriginalKeeper()) throw new Error('no-backup')
     await renameWithRetry(tmp, file)
     tracking?.untrack(tmp)
+    rewritten?.(file, fromBytes)
     return { written: true, backup: archived ?? undefined }
   } catch (e) {
     if (archived) await discardBackup(archived).catch(() => undefined)

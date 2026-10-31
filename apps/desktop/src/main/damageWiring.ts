@@ -103,7 +103,8 @@ export function damageDeps(env: DamageEnv): DamageIpcDeps {
           rewrite: (file, changes) =>
             rewriteTagFields(file, changes, env.tmp, env.followEngineSize, 'setGenreFrame'),
         },
-        rewriteTree: (file, addMs, expected) => rewriteCueTree(file, addMs, expected, env.tmp),
+        rewriteTree: (file, addMs, expected) =>
+          rewriteCueTree(file, addMs, expected, env.tmp, env.followEngineSize),
         traktor: {
           ...traktor,
           bootVolume: bootVolumeName(),
