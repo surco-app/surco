@@ -2115,15 +2115,19 @@ con copia antes de escribir. Diseño en `docs/superpowers/specs/2026-10-31-repar
   mide contra la copia del original en Copias, a nivel de muestra (`headOffsetMs`).
 
 **Dos niveles.** «Seguro» entra en la tanda al abrir: el género que guarda una biblioteca o
-el INFO del WAV y que el daño reproduce exacto, o un árbol de cues que lo prueba. «Probable»
-nunca entra solo, como una errata: un género antiguo como `(35)Deep House` puede estar
-escrito así a propósito. Cada hallazgo enseña su prueba con números.
+el INFO del WAV, sin daño propio, y que el daño reproduce exacto; en Traktor, el árbol de
+cues del MP3, al menos dos cues con el mismo desfase y el registro de Copias que une el MP3
+con su conversión; en Engine DJ, cues y loops iguales que en la copia de la biblioteca
+anterior a la conversión. «Probable» nunca entra solo, como una errata: un género antiguo
+como `(35)Deep House` puede estar escrito así a propósito, y unos cues pueden haberse movido
+a mano. Cada hallazgo enseña su prueba con números.
 
 **Guardas.** Cada reparación lleva lo que se leyó al escanear y no escribe si ya no está:
 el texto exacto del TCON, el estado de la entrada de Traktor, el `trackData` de Engine DJ y
 las posiciones del árbol de cues del fichero (`damageRepair.ts`, `engineRepoint.ts`). Con
 Traktor o Engine DJ abiertos queda **Pendiente** en su cola y no se puede volver a poner en
-la tanda. La comprobación final vuelve a escanear y lo que sigue apareciendo sale como
+la tanda, aunque se escanee otra carpeta o se reinicie la app: lo pendiente se lee de la
+propia cola, y una reparación repetida no se suma a la que ya espera. La comprobación final vuelve a escanear y lo que sigue apareciendo sale como
 «No cuadra». **Deshacer** devuelve los géneros desde sus copias; los cues de Traktor y Engine
 DJ se recuperan con «Restaurar esta» en Copias.
 
