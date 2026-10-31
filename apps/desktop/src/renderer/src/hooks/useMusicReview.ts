@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
+  DamageFinding,
+  DamageKind,
+  DamageOutcome,
+  DamageScan,
   DuplicateReplaceOutcome,
   LibraryStatus,
   LibraryTagSyncReport,
@@ -12,6 +16,13 @@ import type {
   ReviewOutcome,
 } from '../../../shared/types'
 import { copyQuality, qualityRank } from '../lib/copyQuality'
+import {
+  damageKey,
+  defaultStaged,
+  repairsOf,
+  settleDamage,
+  summarizeDamage,
+} from '../lib/damageReview'
 import { type DuplicateGroup, duplicateGroups } from '../lib/duplicates'
 import { libraryUpdatesOf, tagUpdatesOf } from '../lib/libraryTagUpdates'
 import { prefersReducedMotion } from '../lib/motion'
@@ -33,7 +44,7 @@ import { useToast } from '../lib/toastContext'
 import type { TrackItem } from '../types'
 import { useLatest } from './useLatest'
 
-export type ReviewFilter = 'all' | 'spelling' | 'duplicates'
+export type ReviewFilter = 'all' | 'spelling' | 'duplicates' | 'damage'
 
 export interface ReviewSpellingGroup {
   key: string
@@ -67,6 +78,7 @@ export interface ReviewRun {
   undoFailures?: number
   // What an undo sent the libraries when one was open or failed: the next Undo sends it again.
   libraryUndo?: LibraryTagUpdate[]
+  damage?: DamageOutcome[]
 }
 
 export type ReviewPhase =
@@ -85,6 +97,9 @@ export interface MusicReview {
   setFilter: (f: ReviewFilter) => void
   spelling: ReviewSpellingGroup[]
   duplicates: DuplicateCard[]
+  damage: DamageFinding[]
+  damageLoading: boolean
+  damageUnread: DamageScan['unread']
   choice: (key: string) => string | null
   choose: (key: string, value: string) => void
   staged: ReadonlySet<string>
@@ -94,6 +109,7 @@ export interface MusicReview {
     tracks: number
     byField: ReturnType<typeof summarizeFixes>['byField']
     duplicates: number
+    damage: Partial<Record<DamageKind, number>>
   }
   progress: { done: number; total: number } | null
   phase: ReviewPhase | null
@@ -266,6 +282,10 @@ export function useMusicReview({
   const running = useRef(false)
   const cancelled = useRef(false)
 
+  const [allDamage, setAllDamage] = useState<DamageFinding[]>([])
+  const [damageLoading, setDamageLoading] = useState(false)
+  const [damageUnread, setDamageUnread] = useState<DamageScan['unread']>([])
+
   const [libraries, setLibraries] = useState<LibraryStatus | null>(null)
   const [loaded, setLoaded] = useState<{ skipped: number; musicConsulted?: boolean }>({
     skipped: 0,
@@ -290,12 +310,33 @@ export function useMusicReview({
   )
   const facts = useCallback((id: string) => source.facts?.(id), [source])
 
+  const scanDamage = useCallback(async (): Promise<DamageFinding[] | null> => {
+    if (!source.loadDamage) return null
+    setDamageLoading(true)
+    try {
+      const scan = await Promise.resolve()
+        .then(() => source.loadDamage?.())
+        .catch(() => null)
+      setAllDamage(scan?.findings ?? [])
+      setDamageUnread(scan?.unread ?? [])
+      return scan?.findings ?? null
+    } finally {
+      setDamageLoading(false)
+    }
+  }, [source])
+
   useEffect(() => {
     load().then(
-      (next) => setStatus(next.length === 0 ? 'empty' : 'ready'),
+      (next) => {
+        setStatus(next.length === 0 ? 'empty' : 'ready')
+        void scanDamage().then((found) => {
+          const sure = defaultStaged(found ?? [])
+          if (sure.size) setStaged((s) => new Set([...s, ...sure]))
+        })
+      },
       () => setStatus('error'),
     )
-  }, [load])
+  }, [load, scanDamage])
 
   const byId = useMemo(() => new Map(entries.map((e) => [e.id, e])), [entries])
   const allSpelling = useMemo(() => spellingGroups(entries), [entries])
@@ -307,6 +348,10 @@ export function useMusicReview({
   const dupGroups = useMemo(
     () => allDuplicates.filter((g) => !hidden.has(g.key)),
     [allDuplicates, hidden],
+  )
+  const damage = useMemo(
+    () => allDamage.filter((f) => !hidden.has(damageKey(f))),
+    [allDamage, hidden],
   )
 
   // A failed lookup is not "no file": it stays out of `locations` (unknown) and is tried
@@ -359,6 +404,8 @@ export function useMusicReview({
     (key: string): string | null => {
       const d = dupGroups.find((g) => g.key === key)
       if (choices[key] && !(d && keepsNoFile(d.ids, choices[key], locations))) return choices[key]
+      const found = damage.find((f) => damageKey(f) === key)
+      if (found) return found.options[0] ?? null
       const s = spelling.find((g) => g.key === key)
       if (s) return s.suggested
       if (!d) return null
@@ -370,7 +417,7 @@ export function useMusicReview({
         better(id, best) < 0 ? id : best,
       )
     },
-    [choices, spelling, dupGroups, formats, locations, facts],
+    [choices, spelling, dupGroups, formats, locations, facts, damage],
   )
 
   // Picks the hook froze at staging, as opposed to ones the user made: only those go when
@@ -389,6 +436,16 @@ export function useMusicReview({
 
   const toggleStaged = useCallback(
     (key: string) => {
+      const found = damage.find((f) => damageKey(f) === key)
+      if (found) {
+        if (!found.repair || found.pending) return
+        setStaged((s) => {
+          const next = new Set(s)
+          if (!next.delete(key)) next.add(key)
+          return next
+        })
+        return
+      }
       const picked = choice(key)
       if (!picked) return
       // The copy the card shows as kept is the one removed against: a verdict or format
@@ -429,7 +486,7 @@ export function useMusicReview({
       setStaged(next)
       release(displaced.map((g) => g.key))
     },
-    [choice, choices, spelling, dupGroups, locations, staged, release],
+    [choice, choices, spelling, dupGroups, locations, staged, release, damage],
   )
 
   // Undo runs from a toast some renders later, so it reads the hidden set of that moment
@@ -500,9 +557,18 @@ export function useMusicReview({
     [spelling, choice, entries, byId],
   )
 
+  const repairs = useMemo(
+    () => repairsOf(damage, staged, (key) => choices[key] ?? null),
+    [damage, staged, choices],
+  )
+
   const summary = useMemo(
-    () => ({ ...summarizeFixes(fixes), duplicates: removals.length }),
-    [fixes, removals],
+    () => ({
+      ...summarizeFixes(fixes),
+      duplicates: removals.length,
+      damage: summarizeDamage(repairs),
+    }),
+    [fixes, removals, repairs],
   )
 
   const fill = useCallback(async (total: number) => {
@@ -518,11 +584,11 @@ export function useMusicReview({
     setStatus('applying')
     const before = pendingCount(allSpelling, allDuplicates, hidden)
     const writes = new Set(fixes.map((f) => f.id)).size
-    const total = writes + removals.length
+    const total = writes + repairs.length + removals.length
     setProgress({ done: 0, total })
     setPhase(
-      writes
-        ? { name: 'writing', current: 1, total: writes }
+      writes || repairs.length
+        ? { name: 'writing', current: 1, total: writes + repairs.length }
         : { name: 'duplicates', current: 1, total: removals.length },
     )
     const off = source.onProgress((p) => {
@@ -538,6 +604,14 @@ export function useMusicReview({
         } catch (error) {
           applyError = error instanceof Error ? error.message : String(error)
         }
+      let damageOutcomes: DamageOutcome[] = []
+      if (applyError === undefined && repairs.length && source.repairDamage) {
+        setPhase({ name: 'writing', current: writes + 1, total: writes + repairs.length })
+        damageOutcomes = await source
+          .repairDamage(repairs)
+          .catch(() => repairs.map(({ id }): DamageOutcome => ({ id, state: 'failed' })))
+        setProgress({ done: writes + repairs.length, total })
+      }
       let librariesPhase = false
       let removal: ReviewRemovalRun = {
         removed: [],
@@ -549,7 +623,7 @@ export function useMusicReview({
         removal = await source.removeCopies(removals, {
           isCancelled: () => cancelled.current,
           onStep: (current) => setPhase({ name: 'duplicates', current, total: removals.length }),
-          onDone: (done) => setProgress({ done: writes + done, total }),
+          onDone: (done) => setProgress({ done: writes + repairs.length + done, total }),
           onLibraries: () => {
             librariesPhase = true
             setPhase({ name: 'libraries' })
@@ -571,12 +645,26 @@ export function useMusicReview({
         )
         if (librarySync !== 'failed') librarySync = synced
       }
-      const changedFiles = tagUpdatesOf(outcomes, 'apply')
+      const repairedGenres = damageOutcomes.flatMap((o): LibraryTagUpdate[] => {
+        const repair = repairs.find((r) => r.id === o.id)?.repair
+        return o.state === 'repaired' && repair?.target === 'genre'
+          ? [
+              {
+                path: repair.path,
+                fields: {
+                  genre: { from: byId.get(repair.path)?.genre ?? repair.from, to: repair.to },
+                },
+              },
+            ]
+          : []
+      })
+      const changedFiles = [...tagUpdatesOf(outcomes, 'apply'), ...repairedGenres]
       const trashed = replaced.filter((r) => r.fileTrashed).map((r) => r.from)
       if (changedFiles.length || trashed.length) source.settle?.(changedFiles, trashed)
       if (changedFiles.length) onFilesChanged(changedFiles)
       setPhase({ name: 'verifying' })
       const next = await load().catch(() => null)
+      const rescanned = repairs.length ? await scanDamage() : null
       setStaged(new Set())
       setChoices({})
       frozen.current.clear()
@@ -590,6 +678,7 @@ export function useMusicReview({
         librarySync,
         ...(tagSync ? { tagSync } : {}),
         ...(applyError === undefined ? {} : { applyError }),
+        ...(damageOutcomes.length ? { damage: settleDamage(damageOutcomes, rescanned ?? []) } : {}),
       })
       if (!cancelled.current) await fill(total)
     } finally {
@@ -599,7 +688,20 @@ export function useMusicReview({
       running.current = false
       setStatus('done')
     }
-  }, [allSpelling, allDuplicates, hidden, fixes, removals, load, onFilesChanged, fill, source])
+  }, [
+    allSpelling,
+    allDuplicates,
+    hidden,
+    fixes,
+    removals,
+    repairs,
+    byId,
+    load,
+    scanDamage,
+    onFilesChanged,
+    fill,
+    source,
+  ])
 
   const cancel = useCallback(() => {
     cancelled.current = true
@@ -611,7 +713,8 @@ export function useMusicReview({
     running.current = true
     setUndoing(true)
     setStatus('applying')
-    const total = lastRun.outcomes.length
+    const backedUp = (lastRun.damage ?? []).filter((d) => d.backupId && d.id.startsWith('genre-'))
+    const total = lastRun.outcomes.length + backedUp.length
     setProgress({ done: 0, total })
     setPhase({ name: 'restoring', current: 1, total })
     try {
@@ -655,6 +758,15 @@ export function useMusicReview({
         if (music.includes('set'))
           failed.push({ ...o, music, backupId: undefined, file: 'unchanged' })
       }
+      const damageLeft: DamageOutcome[] = []
+      for (const [i, d] of backedUp.entries()) {
+        const at = lastRun.outcomes.length + i
+        setPhase({ name: 'restoring', current: at + 1, total })
+        setProgress({ done: at, total })
+        await window.api.trashRestore(d.backupId as string, 'undo').catch(() => {
+          damageLeft.push(d)
+        })
+      }
       const updates = [...(lastRun.libraryUndo ?? []), ...libraryUpdatesOf(reverted, 'undo')]
       let librarySync: ReviewRun['librarySync'] = 'none'
       let tagSync: LibraryTagSyncReport | undefined
@@ -667,16 +779,22 @@ export function useMusicReview({
           },
           () => 'failed' as const,
         )
-      const back = tagUpdatesOf(restored, 'undo')
+      const back = [
+        ...tagUpdatesOf(restored, 'undo'),
+        ...backedUp
+          .filter((d) => d.id.startsWith('genre-') && !damageLeft.includes(d))
+          .map((d): LibraryTagUpdate => ({ path: d.id.slice(d.id.indexOf('\0') + 1), fields: {} })),
+      ]
       if (back.length) source.settle?.(back, [])
       if (back.length) onFilesChanged(back)
       setPhase({ name: 'verifying' })
       await load().catch(() => null)
+      if (backedUp.length) await scanDamage()
       const libraryLeft =
         librarySync === 'failed' ||
         Object.values(tagSync ?? {}).some((s) => s.outcome === 'failed' || s.outcome === 'open')
       setLastRun(
-        failed.length === 0 && !libraryLeft
+        failed.length === 0 && damageLeft.length === 0 && !libraryLeft
           ? null
           : {
               // Built afresh: the apply's own flags (a stopped run, a refused batch) are not
@@ -688,8 +806,9 @@ export function useMusicReview({
               after: lastRun.after,
               librarySync,
               tagSync,
-              undoFailures: failed.length,
+              undoFailures: failed.length + damageLeft.length,
               libraryUndo: libraryLeft ? updates : [],
+              ...(damageLeft.length ? { damage: damageLeft } : {}),
             },
       )
       await fill(total)
@@ -700,7 +819,7 @@ export function useMusicReview({
       running.current = false
       setStatus('ready')
     }
-  }, [lastRun, load, onFilesChanged, fill, source])
+  }, [lastRun, load, scanDamage, onFilesChanged, fill, source])
 
   // Stable between renders because the provider keeps it in state: a fresh object each
   // render would set that state again and never settle.
@@ -712,6 +831,9 @@ export function useMusicReview({
       setFilter,
       spelling,
       duplicates,
+      damage,
+      damageLoading,
+      damageUnread,
       choice,
       choose,
       staged,
@@ -739,6 +861,9 @@ export function useMusicReview({
       filter,
       spelling,
       duplicates,
+      damage,
+      damageLoading,
+      damageUnread,
       choice,
       choose,
       staged,

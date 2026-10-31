@@ -54,7 +54,14 @@ export interface EngineRepoint extends PathMatchOptions {
   // The source's size before a conversion rewrote it on its own path, what the row still
   // records until the new size, and the shift if any, land.
   fromBytes?: number
+  // A repair in place: the trackData the row held when it was judged, without which the
+  // repair already landed, and whether the length is rewritten from the row's own trackData.
+  expectTrackData?: { sampleRate: number; sampleCount: number }
+  fixLength?: boolean
 }
+
+export const engineLengthOf = (sampleCount: number, sampleRate: number): number =>
+  Math.round(sampleCount / sampleRate)
 
 export interface EngineRepointOptions {
   // Takes the run's single pre-run copy, before the first write. A failure here refuses
@@ -246,6 +253,16 @@ function performanceOf(db: Database, id: number): Performance | null {
   }
 }
 
+function holdsTrackData(
+  db: Database,
+  id: string,
+  expected: { sampleRate: number; sampleCount: number },
+): boolean {
+  const raw = performanceOf(db, Number(id))?.trackData
+  const track = raw ? decodeTrackData(inflateEngineBlob(raw)) : null
+  return track?.sampleRate === expected.sampleRate && track.sampleCount === expected.sampleCount
+}
+
 function relativeTo(libraryDir: string, file: string): string {
   return relative(libraryDir, file).split('\\').join('/')
 }
@@ -326,6 +343,7 @@ export async function writeEngineRepoints(
       shift?: EngineShift
       inPlace: boolean
       bitrate: number | null | undefined
+      fixLength?: boolean
     }[] = []
     for (const [i, repoint] of repoints.entries()) {
       if (results[i]) continue
@@ -346,10 +364,16 @@ export async function writeEngineRepoints(
       }
       // A row already on the file takes only its new size and shift, and only while it still
       // records the source's size: the same write records the new one, so the shift lands once.
+      const sizeUnknown = repoint.expectTrackData !== undefined && matches[0].fileBytes == null
       if (
         onTarget.length > 0 &&
+        !sizeUnknown &&
         (repoint.fromBytes === undefined || matches[0].fileBytes !== repoint.fromBytes)
       ) {
+        results[i] = { written: false, reason: 'no-match' }
+        continue
+      }
+      if (repoint.expectTrackData && !holdsTrackData(db, matches[0].id, repoint.expectTrackData)) {
         results[i] = { written: false, reason: 'no-match' }
         continue
       }
@@ -357,6 +381,7 @@ export async function writeEngineRepoints(
       if (
         onTarget.length > 0 &&
         !repoint.engineShift &&
+        !repoint.fixLength &&
         sizes[i] === matches[0].fileBytes &&
         (bitrates[i] === undefined || bitrates[i] === matches[0].bitrate)
       ) {
@@ -370,6 +395,7 @@ export async function writeEngineRepoints(
         shift: repoint.engineShift,
         inPlace: onTarget.length > 0,
         bitrate: bitrates[i],
+        fixLength: repoint.fixLength,
       })
       results[i] = { written: true, id: matches[0].id }
     }
@@ -386,12 +412,15 @@ export async function writeEngineRepoints(
     }
 
     for (const u of updates) {
-      const perf = u.shift ? performanceOf(db, Number(u.id)) : null
+      const perf = u.shift || u.fixLength ? performanceOf(db, Number(u.id)) : null
       const next = perf && u.shift && shiftEnginePerformance(perf, u.shift)
-      const track =
-        next && next.trackData !== perf.trackData && next.trackData
-          ? decodeTrackData(inflateEngineBlob(next.trackData))
-          : null
+      const lengthFrom =
+        next && next.trackData !== perf.trackData
+          ? next.trackData
+          : u.fixLength
+            ? perf?.trackData
+            : null
+      const track = lengthFrom ? decodeTrackData(inflateEngineBlob(lengthFrom)) : null
       // Only the file columns, and the length the track list shows when the samples changed,
       // in whole seconds as Engine rounds it. A row moved to another file takes that file's
       // bitrate, or none when it cannot be told: the old file's would describe the new one
@@ -404,7 +433,7 @@ export async function writeEngineRepoints(
         ['fileBytes', u.size],
         ...(bitrate === undefined ? [] : [['bitrate', bitrate] as [string, SqlValue]]),
         ...(track
-          ? [['length', Math.round(track.sampleCount / track.sampleRate)] as [string, SqlValue]]
+          ? [['length', engineLengthOf(track.sampleCount, track.sampleRate)] as [string, SqlValue]]
           : []),
       ]
       db.run(`UPDATE Track SET ${set.map(([column]) => `${column} = ?`).join(', ')} WHERE id = ?`, [

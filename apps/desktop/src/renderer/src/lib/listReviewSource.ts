@@ -155,6 +155,13 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
       }
       return snapshot.byPath.get(id)
     },
+    loadDamage: () =>
+      window.api.scanDamage(
+        listReviewEntries(deps.rows())
+          .entries.map((e) => e.id)
+          .filter((path) => !gone.has(path)),
+      ),
+    repairDamage: (items) => window.api.repairDamage(items),
     settle: (updates, trashed) => {
       forget(updates.map((u) => u.path))
       changes.push(...updates)

@@ -1,4 +1,7 @@
 import type {
+  DamageOutcome,
+  DamageRepairItem,
+  DamageScan,
   DuplicateReplaceOutcome,
   LibraryTagUpdate,
   MusicFixOutcome,
@@ -59,6 +62,8 @@ export interface ReviewSource {
   musicConsulted?: () => boolean | undefined
   facts?: (id: string) => TrackItem | undefined
   settle?: (updates: LibraryTagUpdate[], trashed: string[]) => void
+  loadDamage?: () => Promise<DamageScan>
+  repairDamage?: (items: DamageRepairItem[]) => Promise<DamageOutcome[]>
 }
 
 // The texts that name where the review reads and writes: Music and its library, or the

@@ -8,7 +8,7 @@ import { engineRowFinder } from './engineRepoint'
 import { toNmlLocation } from './ffmpeg'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
 import { findTrackByPath, isAmbiguous, openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
-import { findEntries, type NmlEntry, nmlCopyInfo } from './traktorNml'
+import { attr, findEntries, type NmlEntry, nmlCopyInfo } from './traktorNml'
 
 // Each library's location, or '' when its sync is off.
 export interface SyncedLibraries {
@@ -172,6 +172,93 @@ export async function libraryCopyInfo(
     } catch {}
   }
   return info
+}
+
+export interface LibraryGenre {
+  source: 'rekordbox' | 'traktor' | 'engine'
+  value: string
+}
+
+// Read only, for the damage scan: the genre each library keeps for each file. A library that
+// cannot be read, lacks the file or holds it twice is left out, as in libraryCopyInfo.
+export async function libraryGenresOf(
+  paths: string[],
+  libraries: SyncedLibraries,
+  options: PathMatchOptions = {},
+): Promise<Record<string, LibraryGenre[]>> {
+  const out: Record<string, LibraryGenre[]> = Object.fromEntries(paths.map((p) => [p, []]))
+  const add = (source: LibraryGenre['source'], found: (string | null)[]) =>
+    paths.forEach((p, i) => {
+      if (found[i]) out[p].push({ source, value: found[i] })
+    })
+  if (libraries.rekordbox) {
+    try {
+      const db = openRekordboxDb(libraries.rekordbox, {
+        readonly: true,
+        key: await rekordboxRawKey(libraries.rekordbox),
+      })
+      if (db)
+        try {
+          const genre = db.prepare(
+            'SELECT g.Name AS name FROM djmdContent c JOIN djmdGenre g ON g.ID = c.GenreID WHERE c.ID = ?',
+          )
+          add(
+            'rekordbox',
+            paths.map((p) => {
+              const match = findTrackByPath(db, p, { ...options, quiet: true })
+              if (match === null || isAmbiguous(match)) return null
+              return (genre.get(match.id) as { name: string } | undefined)?.name ?? null
+            }),
+          )
+        } finally {
+          db.close()
+        }
+    } catch {}
+  }
+  if (libraries.engine) {
+    try {
+      const SQL = await loadSqlJs()
+      const db = new SQL.Database(await readFile(join(libraries.engine, 'Database2', 'm.db')))
+      try {
+        const rows = (db.exec('SELECT id, path, genre FROM Track')[0]?.values ?? []).map(
+          ([id, stored, genre]) => ({ id: Number(id), path: String(stored), genre }),
+        )
+        const find = engineRowFinder(libraries.engine, rows)
+        add(
+          'engine',
+          paths.map((p) => {
+            const found = find(p, pathKey(options))
+            return found.length === 1 && found[0].genre ? String(found[0].genre) : null
+          }),
+        )
+      } finally {
+        db.close()
+      }
+    } catch {}
+  }
+  if (libraries.traktor) {
+    try {
+      const nml = await readFile(libraries.traktor, 'utf8')
+      const entries = findEntries(nml)
+      const same = (a: string, b: string) => a.normalize('NFC') === b.normalize('NFC')
+      add(
+        'traktor',
+        paths.map((p) => {
+          const at = toNmlLocation(p)
+          const found = entries.filter(
+            (e) =>
+              same(e.dir, at.dir) &&
+              same(e.file, at.file) &&
+              (!at.volume || same(e.volume, at.volume)),
+          )
+          if (found.length !== 1) return null
+          const info = nml.slice(found[0].start, found[0].end).match(/<INFO\b[^>]*>/)?.[0]
+          return info ? attr(info, 'GENRE') || null : null
+        }),
+      )
+    } catch {}
+  }
+  return out
 }
 
 // Read only: the id each library gives the file, for the cue editor to place a flow on the

@@ -183,3 +183,11 @@ describe('scopedMusicSource', () => {
     expect(source.revertMusic).toBe(musicSource.revertMusic)
   })
 })
+
+// Damage is a list review filter only: the Music review has neither a scan nor a repair.
+describe('musicSource damage', () => {
+  it('offers no damage scan or repair', () => {
+    expect(musicSource.loadDamage).toBeUndefined()
+    expect(musicSource.repairDamage).toBeUndefined()
+  })
+})

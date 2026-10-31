@@ -12,6 +12,8 @@ import { registerAppleMusicIpc } from '../main/appleMusicIpc'
 import * as appleMusic from '../main/applemusic'
 import { registerAudioIpc } from '../main/audioIpc'
 import { hasCoverSource, prepareProcessedCover } from '../main/cover'
+import { registerDamageIpc } from '../main/damageIpc'
+import { damageDeps } from '../main/damageWiring'
 import { replaceDuplicates } from '../main/duplicateReplace'
 import { applyEngineCuesBatch } from '../main/engineCuesWrite'
 import { addToEngineLibrary } from '../main/engineLibrary'
@@ -754,6 +756,8 @@ function scenarioApi(
     onListFixProgress: (listener) => listen('listreview:fixProgress', listener),
     removeListDuplicates: (removals) => invokeMain('listreview:removeDuplicates', removals),
     onListRemovalPhase: (listener) => listen('listreview:removalPhase', listener),
+    scanDamage: (paths) => invokeMain('damage:scan', paths),
+    repairDamage: (items) => invokeMain('damage:repair', items),
     trashRestore: (id, from) => invokeMain('trash:restore', id, from),
     trashFile: (path, permanent) => invokeMain('shell:trash', path, permanent),
     keepsTrash: (path) => invokeMain('shell:keepsTrash', path),
@@ -919,6 +923,17 @@ export function bootMain(options: ScenarioOptions): MainBoot {
         tmp: { track: () => {}, untrack: () => {} },
         hostFor: () => libraryHost(errors),
         sessions,
+        followEngineSize,
+      }),
+    )
+    registerDamageIpc(
+      damageDeps({
+        mediaAccess,
+        tmp: { track: () => {}, untrack: () => {} },
+        hostFor: () => libraryHost(errors),
+        sessions,
+        beginMoment: () => {},
+        backups: () => trash.list(),
         followEngineSize,
       }),
     )

@@ -3292,8 +3292,7 @@ const PAIR_SILENT_RMS = 1e-6
 // best matches the 5 s of a from `from`, by normalised cross-correlation at every sample.
 // Done through the FFT: the direct sum is ~1e10 multiply-adds at this rate. Null when the
 // window is silent, since silence lines up with anything.
-function bestLag(a: Float32Array, b: Float32Array, from: number): number | null {
-  const reach = PAIR_RATE
+function bestLag(a: Float32Array, b: Float32Array, from: number, reach = PAIR_RATE): number | null {
   const width = Math.min(a.length, from + 5 * PAIR_RATE) - from
   const silent = width * PAIR_SILENT_RMS ** 2
   const span = width + 2 * reach
@@ -3336,6 +3335,49 @@ function bestLag(a: Float32Array, b: Float32Array, from: number): number | null 
     }
   }
   return best
+}
+
+const HEAD_WINDOW_SECONDS = 5
+const HEAD_SAME_CORRELATION = 0.9
+
+// Where the current file's audio starts inside the original it was trimmed from, in ms at
+// 44.1 kHz sample precision, looked for up to maxSec in. Null when either is silent there,
+// when the best fit would start before the original, or when it does not correlate as the
+// same master.
+export async function headOffsetMs(
+  original: string,
+  current: string,
+  maxSec: number,
+  signal?: AbortSignal,
+): Promise<number | null> {
+  const decode = (input: string): Promise<Float32Array> =>
+    decodePcm(input, {
+      sampleRate: PAIR_RATE,
+      seconds: maxSec + HEAD_WINDOW_SECONDS + 1,
+      maxBufferMb: 16,
+      signal,
+    })
+  let orig: Float32Array
+  let cur: Float32Array
+  try {
+    ;[orig, cur] = await Promise.all([decode(original), decode(current)])
+  } catch (err) {
+    if (isAbortError(err)) throw err
+    return null
+  }
+  const lag = bestLag(cur, orig, 0, Math.round(maxSec * PAIR_RATE))
+  if (lag === null || lag < 0) return null
+  const end = Math.min(HEAD_WINDOW_SECONDS * PAIR_RATE, cur.length, orig.length - lag)
+  let xx = 0
+  let yy = 0
+  let xy = 0
+  for (let i = 0; i < end; i++) {
+    xx += cur[i] * cur[i]
+    yy += orig[i + lag] * orig[i + lag]
+    xy += cur[i] * orig[i + lag]
+  }
+  if (xx === 0 || yy === 0 || xy / Math.sqrt(xx * yy) < HEAD_SAME_CORRELATION) return null
+  return (lag / PAIR_RATE) * 1000
 }
 
 // Aligns two copies and says how alike they are over a minute of both (from 30 s, or from

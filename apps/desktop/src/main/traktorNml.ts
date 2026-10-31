@@ -384,7 +384,7 @@ function gridBpmFor(block: string, bpm: number | undefined): number | undefined 
 
 // A cue within this of a file marker of the same kind is that marker: the NML keeps six
 // decimals of the same double the tree holds.
-const SAME_CUE_MS = 1
+export const SAME_CUE_MS = 1
 
 // The entry's own cues that the file does not carry, moved the way the conversion moved
 // the file's. The file wins a hotcue slot both sides use, since it is what was just

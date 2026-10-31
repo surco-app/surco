@@ -2264,7 +2264,8 @@
     "filter": {
       "all": "すべて",
       "spelling": "スペル",
-      "duplicates": "重複"
+      "duplicates": "重複",
+      "damage": "破損"
     },
     "copyTitle": "タイトルをコピー",
     "field": {
@@ -2974,5 +2975,69 @@
     "sourceGoneKeptLine": "オリジナルはもうありません。コピーは<0>{{panel}}</0>にあります",
     "heldOriginalLine": "一致しない項目があるため、元ファイルのコピーが「しない」でもオリジナルを<0>{{panel}}</0>に保存しました",
     "heldOriginalNoRoomLine": "一致しない項目がありますが、{{panel}}に空きがなくオリジナルを保存できませんでした"
+  },
+  "damage": {
+    "kind": {
+      "genre": "ジャンル",
+      "traktor": "Traktorのキュー",
+      "engineCues": "Engine DJのキュー",
+      "engineLength": "Engine DJの長さ"
+    },
+    "certainty": {
+      "sure": "確実",
+      "likely": "推定"
+    },
+    "pending": "保留中",
+    "loading": "破損を検索中…",
+    "unread": "{{library}}を読み込めませんでした",
+    "evidenceTitle": "根拠",
+    "repair": "修復",
+    "warnOnly": "ここから修復できるものはありません",
+    "confirmBackup": "すべてのファイルとライブラリのコピーをバックアップに保存します",
+    "done": {
+      "file": "ファイル",
+      "repaired_one": "{{count}}件修復",
+      "repaired_other": "{{count}}件修復",
+      "pending_one": "{{count}}件保留中",
+      "pending_other": "{{count}}件保留中",
+      "mismatch_one": "{{count}}件一致せず",
+      "mismatch_other": "{{count}}件一致せず",
+      "unchanged_one": "{{count}}件変更なし",
+      "unchanged_other": "{{count}}件変更なし",
+      "failed_one": "{{count}}件エラー",
+      "failed_other": "{{count}}件エラー",
+      "undoNote": "キューはバックアップから戻します",
+      "error": {
+        "pathNotAllowed": "Surcoはそのファイルを開いていません",
+        "libraryOff": "同期がオフです",
+        "unreadable": "読み込めませんでした"
+      }
+    },
+    "value": {
+      "text": "{{value}}",
+      "cueAt": "最初のキュー {{sec}} 秒",
+      "engineAnalysis": "{{khz}} kHz、{{sec}} 秒",
+      "seconds": "{{sec}} 秒"
+    },
+    "evidence": {
+      "libraryKept": "{{library}}には「{{value}}」があります",
+      "infoKept": "WAVのINFOには「{{value}}」があります",
+      "id3v1Number": "ID3v1では{{number}}は{{name}}です",
+      "doubledParens": "保存のたびに括弧が二重になっていました",
+      "maybeLegacy": "意図的にこう書かれた古いジャンルの可能性があります",
+      "traktorTree": "MP3の最初のキューは{{fileSec}}秒、Traktorでは{{entrySec}}秒で、{{sibling}}と同じです",
+      "traktorTookSibling": "Traktorは{{sibling}}のキューを割り当てており、このMP3とは{{ms}}ミリ秒ずれています",
+      "traktorOldRule": "{{file}}は以前のルールで変換され、キューが{{ms}}ミリ秒ずれています",
+      "engineRate": "Engine DJは{{engineKhz}} kHzで解析し、ファイルは{{fileKhz}} kHzです",
+      "engineBackup": "{{date}}のバックアップでは、音声が{{sec}}秒遅れて始まります",
+      "engineNoBackup": "Engine DJは{{sec}}秒長く記憶しており、元のファイルはもうありません。Engine DJで再解析してください",
+      "engineLength": "Engine DJの表示は{{length}}秒、自身の解析では{{sec}}秒です",
+      "engineSizeUnknown": "Engine DJはファイルサイズを保存していないため、修復は解析だけを頼りにします",
+      "engineCuesKept": "Engine DJのキューは変換前のライブラリのコピーと同じままです",
+      "engineCuesChanged": "Engine DJのキューはライブラリのコピーから変わっています。手で動かした可能性があります",
+      "engineNoCopy": "キューを手で動かしたかを確かめるライブラリのコピーがありません",
+      "traktorRecord": "バックアップには{{sibling}}がこのMP3からSurcoで変換された記録があります",
+      "traktorNoRecord": "{{sibling}}がこのMP3から作られたというSurcoの記録はありません"
+    }
   }
 }

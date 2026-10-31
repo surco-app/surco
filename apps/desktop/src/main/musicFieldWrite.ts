@@ -9,6 +9,8 @@ import { assertDecodable, convertTmpPath } from './ffmpeg'
 import { discardBackup, hasOriginalKeeper, keepOriginal } from './originalKeeper'
 import { removeTemp, renameWithRetry } from './renameRetry'
 import { type FieldWrite, setTagFields, type TagFieldChange } from './tagFieldSet'
+import { type CueShift, readCueTree } from './tags'
+import { readTraktorMarkers } from './traktor4'
 import { runInWorker } from './worker'
 
 export { type FieldWrite, setTagFields, type TagFieldChange }
@@ -30,6 +32,7 @@ export async function rewriteTagFields(
   changes: TagFieldChange[],
   tracking?: TmpTracking,
   rewritten?: Rewritten,
+  job: 'setTagFields' | 'setGenreFrame' = 'setTagFields',
 ): Promise<{ outcomes: FieldWrite[]; backup?: TrashEntry }> {
   const tmp = convertTmpPath(file, extname(file))
   tracking?.track(tmp)
@@ -37,7 +40,7 @@ export async function rewriteTagFields(
   try {
     const fromBytes = (await stat(file)).size
     await copyFile(file, tmp, fsConstants.COPYFILE_FICLONE)
-    const outcomes = await runInWorker<FieldWrite[]>({ type: 'setTagFields', file: tmp, changes })
+    const outcomes = await runInWorker<FieldWrite[]>({ type: job, file: tmp, changes })
     if (!outcomes.includes('written')) {
       await dropTemp(tmp, tracking)
       return { outcomes }
@@ -52,6 +55,65 @@ export async function rewriteTagFields(
     tracking?.untrack(tmp)
     rewritten?.(file, fromBytes)
     return { outcomes, backup: archived ?? undefined }
+  } catch (e) {
+    if (archived) await discardBackup(archived).catch(() => undefined)
+    await dropTemp(tmp, tracking)
+    throw e
+  }
+}
+
+const GRID_TYPE = 4
+const SAME_MS = 0.01
+
+const cueStarts = (file: string): number[] | null => {
+  const tree = readCueTree(file)
+  const starts = tree
+    ? readTraktorMarkers(tree)
+        .filter((m) => m.type !== GRID_TYPE)
+        .map((m) => m.startMs)
+    : []
+  return starts.length > 0 ? starts : null
+}
+
+const same = (a: number[], b: number[], addMs = 0): boolean =>
+  a.length === b.length && a.every((ms, i) => Math.abs(b[i] - ms - addMs) <= SAME_MS)
+
+// A converted file's own Traktor cues moved by addMs, only while they are still at
+// `expected`, and only kept when every one of them moved by exactly that much.
+export async function rewriteCueTree(
+  file: string,
+  addMs: number,
+  expected: number[],
+  tracking?: TmpTracking,
+  rewritten?: Rewritten,
+): Promise<{ written: boolean; backup?: TrashEntry }> {
+  const before = cueStarts(file)
+  if (!before || !same(expected, before)) return { written: false }
+  const tmp = convertTmpPath(file, extname(file))
+  tracking?.track(tmp)
+  let archived: TrashEntry | null = null
+  try {
+    const fromBytes = (await stat(file)).size
+    await copyFile(file, tmp, fsConstants.COPYFILE_FICLONE)
+    const shift: CueShift = { shiftMs: -addMs }
+    if (extname(file).toLowerCase() === '.flac')
+      await runInWorker({ type: 'shiftFlacCues', file: tmp, shift })
+    else await runInWorker({ type: 'copyCueFrames', source: file, dest: tmp, shift })
+    const after = cueStarts(tmp)
+    if (!after || !same(before, after, addMs)) {
+      await dropTemp(tmp, tracking)
+      return { written: false }
+    }
+    await assertDecodable(tmp, file)
+    archived = await keepOriginal(file, 'replaced', file, {
+      reencodes: false,
+      regardlessOfPolicy: true,
+    })
+    if (!archived && hasOriginalKeeper()) throw new Error('no-backup')
+    await renameWithRetry(tmp, file)
+    tracking?.untrack(tmp)
+    rewritten?.(file, fromBytes)
+    return { written: true, backup: archived ?? undefined }
   } catch (e) {
     if (archived) await discardBackup(archived).catch(() => undefined)
     await dropTemp(tmp, tracking)

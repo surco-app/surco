@@ -2264,7 +2264,8 @@
     "filter": {
       "all": "Tudo",
       "spelling": "Grafias",
-      "duplicates": "Duplicados"
+      "duplicates": "Duplicados",
+      "damage": "Danos"
     },
     "copyTitle": "Copiar título",
     "field": {
@@ -2974,5 +2975,69 @@
     "sourceGoneKeptLine": "O original não existe mais, há uma cópia em <0>{{panel}}</0>",
     "heldOriginalLine": "Algo não bate, então o original foi guardado em <0>{{panel}}</0> mesmo com as cópias dos originais em “Nunca”",
     "heldOriginalNoRoomLine": "Algo não bate e não havia espaço em {{panel}} para guardar o original"
+  },
+  "damage": {
+    "kind": {
+      "genre": "Gênero",
+      "traktor": "Cues do Traktor",
+      "engineCues": "Cues do Engine DJ",
+      "engineLength": "Duração no Engine DJ"
+    },
+    "certainty": {
+      "sure": "Certo",
+      "likely": "Provável"
+    },
+    "pending": "Pendente",
+    "loading": "Procurando danos…",
+    "unread": "Não foi possível ler {{library}}",
+    "evidenceTitle": "Prova",
+    "repair": "Reparar",
+    "warnOnly": "Não há nada para reparar daqui",
+    "confirmBackup": "Uma cópia de cada arquivo e de cada biblioteca fica em Cópias",
+    "done": {
+      "file": "Arquivo",
+      "repaired_one": "{{count}} reparado",
+      "repaired_other": "{{count}} reparados",
+      "pending_one": "{{count}} pendente",
+      "pending_other": "{{count}} pendentes",
+      "mismatch_one": "{{count}} não confere",
+      "mismatch_other": "{{count}} não conferem",
+      "unchanged_one": "{{count}} sem mudanças",
+      "unchanged_other": "{{count}} sem mudanças",
+      "failed_one": "{{count}} com erro",
+      "failed_other": "{{count}} com erro",
+      "undoNote": "Os cues voltam a partir de Cópias",
+      "error": {
+        "pathNotAllowed": "O Surco nunca abriu esse arquivo",
+        "libraryOff": "a sincronização está desligada",
+        "unreadable": "não foi possível ler"
+      }
+    },
+    "value": {
+      "text": "{{value}}",
+      "cueAt": "Primeiro cue em {{sec}} s",
+      "engineAnalysis": "{{khz}} kHz, {{sec}} s",
+      "seconds": "{{sec}} s"
+    },
+    "evidence": {
+      "libraryKept": "{{library}} tem “{{value}}”",
+      "infoKept": "O INFO do WAV guarda “{{value}}”",
+      "id3v1Number": "No ID3v1, {{number}} é {{name}}",
+      "doubledParens": "Cada salvamento dobrava os parênteses",
+      "maybeLegacy": "Pode ser um gênero antigo escrito assim de propósito",
+      "traktorTree": "O MP3 guarda o primeiro cue em {{fileSec}} s e o Traktor o tem em {{entrySec}} s, igual a {{sibling}}",
+      "traktorTookSibling": "O Traktor deu a ele os cues de {{sibling}}, que se desviam {{ms}} ms deste MP3",
+      "traktorOldRule": "{{file}} foi convertido com a regra anterior e seus cues se desviam {{ms}} ms",
+      "engineRate": "O Engine DJ o analisou a {{engineKhz}} kHz e o arquivo está a {{fileKhz}} kHz",
+      "engineBackup": "Cópia de {{date}}, o áudio começa {{sec}} s mais tarde nela",
+      "engineNoBackup": "O Engine DJ se lembra dele {{sec}} s mais longo e o original não existe mais. Analise de novo no Engine DJ",
+      "engineLength": "O Engine DJ mostra {{length}} s e sua própria análise diz {{sec}} s",
+      "engineSizeUnknown": "O Engine DJ não guarda o tamanho do arquivo, então o reparo se guia só pela análise dele",
+      "engineCuesKept": "Os cues do Engine DJ continuam como na cópia da biblioteca de antes da conversão",
+      "engineCuesChanged": "Os cues do Engine DJ mudaram desde a cópia da biblioteca, talvez você os tenha movido à mão",
+      "engineNoCopy": "Nenhuma cópia da biblioteca mostra se você moveu os cues à mão",
+      "traktorRecord": "Cópias registra que {{sibling}} foi convertido deste MP3 com o Surco",
+      "traktorNoRecord": "Nenhum registro do Surco diz que {{sibling}} vem deste MP3"
+    }
   }
 }

@@ -5,6 +5,7 @@ import { type FullScan, killScansFor, runChannelScan } from './channelScan'
 import { detectClicks } from './clickDetect'
 import { runCueWaveWords } from './cueWaveWords'
 import { prependFlacId3 } from './flacFinderCover'
+import { readGenreFrame, setGenreFrame } from './genreFrame'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
 import { type FieldWrite, setTagFields, type TagFieldChange, tagFieldsHeld } from './tagFieldSet'
@@ -90,6 +91,8 @@ export type WorkerJob =
       timeoutMs: number
     }
   | { type: 'setTagFields'; file: string; changes: TagFieldChange[] }
+  | { type: 'genreFrame'; file: string }
+  | { type: 'setGenreFrame'; file: string; changes: TagFieldChange[] }
   | { type: 'tagFieldsHeld'; file: string; changes: TagFieldChange[] }
   | { type: 'tagLibRead'; file: string }
   // The activity panel's before/after tag snapshot, a full synchronous TagLib parse.
@@ -112,6 +115,7 @@ export type WorkerJobResult =
   | TagLibRead
   | TunedTaste
   | { cover: boolean; track: number; bpm: number }
+  | { raw: string; info?: string }
   | null
 
 export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJobResult> {
@@ -164,6 +168,10 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return null
     case 'setTagFields':
       return setTagFields(job.file, job.changes)
+    case 'genreFrame':
+      return readGenreFrame(job.file)
+    case 'setGenreFrame':
+      return setGenreFrame(job.file, job.changes)
     case 'tagFieldsHeld':
       return tagFieldsHeld(job.file, job.changes)
     case 'tagLibRead':

@@ -97,6 +97,8 @@ import { installCrashGuards, logHandlerFailures, wireRendererRecovery } from './
 import { createCueTaste } from './cueTaste'
 import { registerCueTasteIpc } from './cueTasteIpc'
 import { cachedCueWaveWords } from './cueWaveWordsCache'
+import { registerDamageIpc } from './damageIpc'
+import { damageDeps } from './damageWiring'
 import { parseDockFrames } from './dockFrames'
 import { type ReplacePair, replaceDuplicates } from './duplicateReplace'
 import { registerEngineCueQueueIpc } from './engineCueQueueIpc'
@@ -1635,6 +1637,32 @@ function registerIpc(): void {
       { realPath: (p: string) => realpathSync(p) },
     )
   })
+
+  registerDamageIpc(
+    damageDeps({
+      mediaAccess,
+      tmp: tmpManifest,
+      hostFor: (sender) => hostFor(BrowserWindow.fromWebContents(sender), sender),
+      sessions,
+      beginMoment: () => moments.begin('review'),
+      backups: () => surcoTrash.list(),
+      followEngineSize,
+      traktorQueue: {
+        enqueue: traktorCueQueue.enqueue,
+        state: traktorCueQueue.state,
+        applyQuietly: () => applyTraktorCueQueueQuietly(),
+      },
+      engineQueue: {
+        enqueue: engineCueQueue.enqueue,
+        applyQuietly: () => applyEngineCueQueueQuietly(),
+      },
+      serial: serialLibraryFlush,
+      queued: () => ({
+        engine: engineCueQueue.queuedRepoints(),
+        traktor: traktorCueQueue.queuedRepoints(),
+      }),
+    }),
+  )
 
   // A review removed duplicate copies from Music: the libraries follow, and a removed copy's
   // file goes to the Trash only once no library needs it.

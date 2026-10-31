@@ -14,6 +14,9 @@ export interface RekordboxRepoint {
   engineShift?: EngineShift
   // The source's size before a conversion rewrote it in place (see EngineRepoint).
   fromBytes?: number
+  // A damage repair's guard and length fix (see EngineRepoint).
+  expectTrackData?: { sampleRate: number; sampleCount: number }
+  fixLength?: boolean
   playlists?: RekordboxPlaylistTarget[]
   playlistsBase?: string[]
   traktorPlaylists?: LibraryPlaylistChoice
@@ -48,6 +51,11 @@ export function recordRekordboxRepoint(repoint: RekordboxRepoint): void {
   repoints[existing] = stackRepoint(repoints[existing], repoint)
 }
 
+const sameTrackData = (
+  a: RekordboxRepoint['expectTrackData'],
+  b: NonNullable<RekordboxRepoint['expectTrackData']>,
+): boolean => a?.sampleRate === b.sampleRate && a.sampleCount === b.sampleCount
+
 // A later conversion of a file whose repoint is still waiting. Only a second conversion of
 // the first one's output stacks its move on top; one that read the original again already
 // measured from the file the cues were set on.
@@ -55,6 +63,8 @@ export function stackRepoint(
   earlier: RekordboxRepoint,
   repoint: RekordboxRepoint,
 ): RekordboxRepoint {
+  if (repoint.expectTrackData && sameTrackData(earlier.expectTrackData, repoint.expectTrackData))
+    return repoint
   const stacks = earlier.to === repoint.from
   const engineShift =
     stacks && earlier.engineShift
@@ -70,6 +80,10 @@ export function stackRepoint(
       : repoint),
     ...(engineShift ? { engineShift } : {}),
     ...(stacks && earlier.fromBytes !== undefined ? { fromBytes: earlier.fromBytes } : {}),
+    ...(earlier.expectTrackData && !repoint.expectTrackData
+      ? { expectTrackData: earlier.expectTrackData }
+      : {}),
+    ...(earlier.fixLength ? { fixLength: true } : {}),
   }
 }
 

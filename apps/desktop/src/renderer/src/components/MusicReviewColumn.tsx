@@ -51,7 +51,8 @@ function useSelection(review: Review | null, search: string, sort: ReviewSort) {
   // typing stays responsive on a big library) and the column reads the same result.
   const query = useDeferredValue(search)
   const visible = useMemo(
-    () => (review ? visibleGroups(review, query, sort) : { spelling: [], duplicates: [] }),
+    () =>
+      review ? visibleGroups(review, query, sort) : { spelling: [], duplicates: [], damage: [] },
     [review, query, sort],
   )
   const keys = useMemo(() => visibleKeys(visible), [visible])

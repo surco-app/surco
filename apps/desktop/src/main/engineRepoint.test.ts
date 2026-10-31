@@ -19,7 +19,7 @@ import {
 } from './engineBlobs'
 import { analysedTrack, quickCuesBlob } from './enginePerformanceFixture'
 import { isEngineDjRunning } from './engineProcess'
-import { engineBitrateKbps, repointEngineTracks } from './engineRepoint'
+import { engineBitrateKbps, engineLengthOf, repointEngineTracks } from './engineRepoint'
 import { backupOf } from './libraryBackups'
 
 // The real probe shells out to pgrep/tasklist; tests pin it so they never depend on what
@@ -831,6 +831,100 @@ describe.each(['2.18', '3.0.2'] as const)(
     })
   },
 )
+
+// Measured on 23 analysed rows of a real m.db on 31/10: Engine shows the length rounded to the
+// nearest second of what its own trackData holds.
+describe('engineLengthOf', () => {
+  it.each([
+    [9609216, 44100, 218],
+    [13248522, 44100, 300],
+    [14751744, 44100, 335],
+  ])('%i samples at %i Hz → %i s', (count, rate, sec) => {
+    expect(engineLengthOf(count, rate)).toBe(sec)
+  })
+})
+
+// The damage review repairs a row in place: from and to are the same file and its size never
+// changes, so the only proof the repair has not landed yet is the trackData the scan read.
+describe.each(['2.18', '3.0.2'] as const)('a damage repair on a %s library', (schema) => {
+  const scanned = { sampleRate: RATE, sampleCount: RATE * 60 }
+
+  async function lengthOf(lib: Library): Promise<unknown> {
+    const db = await openDb(lib.dbPath)
+    try {
+      return one(db, 'SELECT length FROM Track WHERE id = 1').length
+    } finally {
+      db.close()
+    }
+  }
+
+  const repair = (lib: Library, extra: object) => ({
+    from: lib.oldFile,
+    to: lib.oldFile,
+    fromBytes: 100,
+    expectTrackData: scanned,
+    ...extra,
+  })
+
+  it("sets the length from the row's own trackData when the repair asks", async () => {
+    const lib = await analysedLibrary(schema)
+    const [result] = await repointEngineTracks(lib.dir, [repair(lib, { fixLength: true })])
+    expect(result).toEqual({ written: true, id: '1' })
+    expect(await lengthOf(lib)).toBe(60)
+  })
+
+  // Engine leaves fileBytes empty on some rows: the size cannot vouch for the repair there,
+  // and the trackData the scan read is what keeps it from landing twice.
+  it('repairs a row with no size by its trackData alone and records the size', async () => {
+    const lib = await analysedLibrary(schema)
+    const db = await openDb(lib.dbPath)
+    db.run('UPDATE Track SET fileBytes = NULL')
+    await writeFile(lib.dbPath, db.export())
+    db.close()
+    const move = {
+      from: lib.oldFile,
+      to: lib.oldFile,
+      expectTrackData: scanned,
+      engineShift: { trimmedMs: 0, sampleRateHz: 48000, sampleCount: 48000 * 60 },
+    }
+    expect((await repointEngineTracks(lib.dir, [move]))[0]).toEqual({ written: true, id: '1' })
+    const after = await openDb(lib.dbPath)
+    expect(one(after, 'SELECT fileBytes FROM Track').fileBytes).toBe(100)
+    after.close()
+    expect((await repointEngineTracks(lib.dir, [move]))[0]).toEqual({
+      written: false,
+      reason: 'no-match',
+    })
+  })
+
+  it('writes nothing when the row no longer holds the trackData the scan read', async () => {
+    const lib = await analysedLibrary(schema)
+    const bytes = await readFile(lib.dbPath)
+    const [result] = await repointEngineTracks(lib.dir, [
+      repair(lib, {
+        expectTrackData: { sampleRate: 48000, sampleCount: 48000 * 60 },
+        engineShift: { trimmedMs: 0, sampleRateHz: 48000, sampleCount: 48000 * 60 },
+      }),
+    ])
+    expect(result).toEqual({ written: false, reason: 'no-match' })
+    expect(await readFile(lib.dbPath)).toEqual(bytes)
+  })
+
+  it('moves the positions once when the same repair is handed again', async () => {
+    const lib = await analysedLibrary(schema)
+    const move = repair(lib, {
+      engineShift: { trimmedMs: 0, sampleRateHz: 48000, sampleCount: 48000 * 60 },
+    })
+    expect((await repointEngineTracks(lib.dir, [move]))[0]).toEqual({ written: true, id: '1' })
+    const once = await positionsOf(lib)
+    expect(once.rate).toBe(48000)
+    expect((await repointEngineTracks(lib.dir, [move]))[0]).toEqual({
+      written: false,
+      reason: 'no-match',
+    })
+    expect(await positionsOf(lib)).toEqual(once)
+  })
+})
 
 // Engine's own rows for PCM, read from a real library (30/10), are the stream's bitrate in
 // rounded kbps (rate × depth × channels). A lossy file's is its stream bitrate too. What it

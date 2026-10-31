@@ -6,6 +6,7 @@ import ffmpegStatic from 'ffmpeg-static'
 import {
   ByteVector,
   Id3v2PrivateFrame,
+  Id3v2Settings,
   type Id3v2Tag,
   type InfoTag,
   StringType,
@@ -17,10 +18,15 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
-import { prepareTagRewrite, rewriteTagFields } from './musicFieldWrite'
+import { encodeBase91 } from './base91'
+import { readGenreFrame } from './genreFrame'
+import { prepareTagRewrite, rewriteCueTree, rewriteTagFields } from './musicFieldWrite'
 import { applyMusicFixes } from './musicReviewApply'
 import { configureBackupDiscarder, configureOriginalKeeper, policyKeeper } from './originalKeeper'
 import { diffSnapshots, snapshotTags } from './tagSnapshot'
+import { readCueTree } from './tags'
+import { readTraktorMarkers } from './traktor4'
+import { buildTraktorTree, injectWavPriv, storedTree, traktorCue } from './traktor4Fixture'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-field-write-'))
@@ -600,6 +606,141 @@ describe('rewriteTagFields', () => {
     expect(outcomes).toEqual(['written'])
     expect(backup?.id).toBe('kept')
     expect(snapshotTags(file).join('\n')).toContain('DJ Lara')
+  }, 60000)
+})
+
+// A damaged genre is repaired through the same copy, check, backup and rename as any review
+// fix, so Undo can hand back the file exactly as the scan found it.
+describe('rewriteTagFields with the raw genre frame job', () => {
+  it('backs up the damaged file before writing the genre back', async () => {
+    const file = join(dir, `damaged-${Math.random().toString(36).slice(2)}.mp3`)
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'anoisesrc=d=1',
+      '-id3v2_version',
+      '3',
+      '-metadata',
+      'genre=House; Deep House',
+      file,
+    ])
+    Id3v2Settings.useNonStandardV2V3GenreSeparators = true
+    const f = TagFile.createFromPath(file)
+    try {
+      void f.tag.genres
+      f.tag.comment = 'cue pass'
+      f.save()
+    } finally {
+      f.dispose()
+      Id3v2Settings.useNonStandardV2V3GenreSeparators = false
+    }
+    const damagedBytes = readFileSync(file)
+    let kept: Buffer | null = null
+    configureOriginalKeeper(async (path) => {
+      kept = readFileSync(path)
+      return { id: 'b1' } as never
+    })
+    const { outcomes, backup } = await rewriteTagFields(
+      file,
+      [{ field: 'genre', from: '(35) Deep House', to: 'House; Deep House' }],
+      undefined,
+      undefined,
+      'setGenreFrame',
+    )
+    expect(outcomes).toEqual(['written'])
+    expect(backup).toEqual({ id: 'b1' })
+    expect(kept).toEqual(damagedBytes)
+    expect(readGenreFrame(file)?.raw).toBe('House; Deep House')
+  }, 60000)
+})
+
+// A file converted with the old MP3 calibration keeps its own Traktor cues off by what the
+// rule missed. Only the tree moves, through the same copy, check, backup and rename.
+describe('rewriteCueTree', () => {
+  const tree = buildTraktorTree([
+    traktorCue('Intro', 0, 10000, 0),
+    traktorCue('Break', 0, 15000, 1),
+  ])
+  const starts = (file: string) =>
+    readTraktorMarkers(readCueTree(file) ?? new Uint8Array()).map((m) => m.startMs)
+
+  function wavWithTree(): string {
+    const file = join(dir, `tree-${Math.random().toString(36).slice(2)}.wav`)
+    execFileSync(FF, ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'anoisesrc=d=20', file])
+    injectWavPriv(file, tree)
+    return file
+  }
+
+  function flacWithTree(): string {
+    const file = join(dir, `tree-${Math.random().toString(36).slice(2)}.flac`)
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'anoisesrc=d=20',
+      '-metadata',
+      `TRAKTOR4=${encodeBase91(tree)}`,
+      file,
+    ])
+    return file
+  }
+
+  it.each([
+    ['wav', wavWithTree],
+    ['flac', flacWithTree],
+  ])(
+    'moves every cue of a %s by the ms it missed and keeps the old tree in the backup',
+    async (_ext, make) => {
+      const file = make()
+      const md5 = audioMd5(file)
+      const old = storedTree(file)
+      let kept: Uint8Array | null = null
+      configureOriginalKeeper(async (path) => {
+        kept = storedTree(path)
+        return { id: 'b1' } as never
+      })
+      const { written, backup } = await rewriteCueTree(file, -51.18, [10000, 15000])
+      expect(written).toBe(true)
+      expect(backup).toEqual({ id: 'b1' })
+      expect(starts(file).map((ms) => ms.toFixed(2))).toEqual(['9948.82', '14948.82'])
+      expect(kept).toEqual(old)
+      expect(audioMd5(file)).toBe(md5)
+    },
+    60000,
+  )
+
+  // The file grew or shrank with its new tree: Engine DJ holds its size and has to follow it.
+  it('tells Engine DJ the size the file had before the rewrite', async () => {
+    const file = wavWithTree()
+    const size = statSync(file).size
+    configureOriginalKeeper(async () => ({ id: 'b1' }) as never)
+    const rewritten = vi.fn()
+    await rewriteCueTree(file, -51.18, [10000, 15000], undefined, rewritten)
+    expect(rewritten).toHaveBeenCalledWith(file, size)
+  }, 60000)
+
+  it('writes nothing to a file with no tree', async () => {
+    const file = join(dir, `bare-${Math.random().toString(36).slice(2)}.wav`)
+    execFileSync(FF, ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'anoisesrc=d=2', file])
+    const keeper = vi.fn()
+    configureOriginalKeeper(keeper)
+    expect(await rewriteCueTree(file, -51.18, [10000])).toEqual({ written: false })
+    expect(keeper).not.toHaveBeenCalled()
+  }, 60000)
+
+  it('writes nothing when the tree is no longer what the scan read', async () => {
+    const file = wavWithTree()
+    const before = readFileSync(file)
+    configureOriginalKeeper(vi.fn())
+    expect(await rewriteCueTree(file, -51.18, [9948.82, 14948.82])).toEqual({ written: false })
+    expect(readFileSync(file)).toEqual(before)
   }, 60000)
 })
 

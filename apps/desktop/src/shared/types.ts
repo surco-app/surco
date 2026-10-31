@@ -414,6 +414,64 @@ export interface LifetimeStats {
 // so a bad write is a restore rather than a loss.
 export type TrashReason = 'replaced' | 'renamed' | 'deleted' | 'restored-over'
 
+export type DamageKind =
+  | 'genre-number'
+  | 'genre-parens'
+  | 'traktor-source-cues'
+  | 'traktor-calibration'
+  | 'engine-cues'
+  | 'engine-length'
+export type DamageCertainty = 'sure' | 'likely'
+export interface DamageNote {
+  key: string
+  params?: Record<string, string | number>
+}
+export type DamageRepair =
+  | { target: 'genre'; path: string; from: string; to: string }
+  | {
+      target: 'traktor'
+      path: string
+      addMs: number
+      entry?: { volume: string; dir: string; file: string; entryState: string }
+      treeFile?: string
+      treeMs?: number[]
+    }
+  | {
+      target: 'engine'
+      path: string
+      fileBytes: number | null
+      expectTrackData: { sampleRate: number; sampleCount: number }
+      trimmedMs: number
+      sampleRateHz?: number
+    }
+export interface DamageFinding {
+  id: string
+  kind: DamageKind
+  path: string
+  certainty: DamageCertainty
+  evidence: DamageNote[]
+  before: DamageNote
+  after?: DamageNote
+  options: string[]
+  repair: DamageRepair | null
+  pending?: true
+}
+export type DamageOutcomeState = 'repaired' | 'pending' | 'unchanged' | 'failed' | 'mismatch'
+export interface DamageOutcome {
+  id: string
+  state: DamageOutcomeState
+  backupId?: string
+  error?: string
+}
+export interface DamageRepairItem {
+  id: string
+  repair: DamageRepair
+}
+export interface DamageScan {
+  findings: DamageFinding[]
+  unread: ('traktor' | 'engine')[]
+}
+
 export interface TrashEntry {
   id: string
   name: string

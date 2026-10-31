@@ -23,6 +23,7 @@ vi.mock('node:fs/promises', async (importOriginal) => {
 import {
   djLibraryFileUse,
   libraryCopyInfo,
+  libraryGenresOf,
   libraryTracksOf,
   usedByDjLibrary,
 } from './libraryFileUse'
@@ -329,5 +330,83 @@ describe('libraryTracksOf', () => {
         traktor: join(root, 'missing.nml'),
       }),
     ).toEqual({ rekordbox: '1' })
+  })
+})
+
+describe('libraryGenresOf', () => {
+  const PATH = '/Volumes/M/Música/a.mp3'
+
+  async function rekordboxWithGenre(folderPath: string, genre: string): Promise<string> {
+    const path = await rekordbox(folderPath)
+    const db = new Database(path)
+    db.pragma(`cipher='sqlcipher'`)
+    db.pragma('legacy=4')
+    db.pragma(`key='${REKORDBOX_KEY}'`)
+    db.exec('ALTER TABLE djmdContent ADD COLUMN GenreID VARCHAR(255)')
+    db.exec('CREATE TABLE djmdGenre (ID VARCHAR(255) PRIMARY KEY, Name VARCHAR(255))')
+    db.prepare('INSERT INTO djmdGenre (ID, Name) VALUES (?, ?)').run('7', genre)
+    db.exec("UPDATE djmdContent SET GenreID = '7'")
+    db.close()
+    return path
+  }
+
+  async function engineWithGenre(stored: string, genre: string): Promise<string> {
+    const dir = await engine(stored)
+    const require = createRequire(import.meta.url)
+    const buf = await readFile(require.resolve('sql.js/dist/sql-wasm.wasm'))
+    const SQL = await initSqlJs({
+      wasmBinary: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+    })
+    const db = new SQL.Database(await readFile(join(dir, 'Database2', 'm.db')))
+    db.run('ALTER TABLE Track ADD COLUMN genre TEXT')
+    db.run('UPDATE Track SET genre = ?', [genre])
+    await writeFile(join(dir, 'Database2', 'm.db'), db.export())
+    return dir
+  }
+
+  async function traktorWithGenre(file: string, genre: string): Promise<string> {
+    const path = join(root, `collection-${Math.random().toString(36).slice(2)}.nml`)
+    await writeFile(
+      path,
+      `<NML><COLLECTION ENTRIES="1"><ENTRY TITLE="X"><LOCATION DIR="/:Música/:" FILE="${file}" VOLUME="M"></LOCATION><INFO GENRE="${genre}"></INFO></ENTRY></COLLECTION></NML>`,
+    )
+    return path
+  }
+
+  // A damaged genre is repaired for sure only when a library kept the text the user wrote,
+  // so each library's value for the file is the evidence the damage scan weighs.
+  it('brings back what every library keeps for the file', async () => {
+    const libraries = {
+      rekordbox: await rekordboxWithGenre(PATH, 'House; Deep House'),
+      engine: await engineWithGenre(PATH, 'House; Deep House'),
+      traktor: await traktorWithGenre('a.mp3', 'House; Deep House'),
+    }
+    expect(await libraryGenresOf([PATH], libraries)).toEqual({
+      [PATH]: [
+        { source: 'rekordbox', value: 'House; Deep House' },
+        { source: 'engine', value: 'House; Deep House' },
+        { source: 'traktor', value: 'House; Deep House' },
+      ],
+    })
+  })
+
+  it('leaves out only the library it cannot read', async () => {
+    const libraries = {
+      ...OFF,
+      engine: await engineWithGenre(PATH, 'House'),
+      traktor: join(root, 'missing.nml'),
+    }
+    expect(await libraryGenresOf([PATH], libraries)).toEqual({
+      [PATH]: [{ source: 'engine', value: 'House' }],
+    })
+  })
+
+  it('finds an entry Traktor stored with a decomposed file name', async () => {
+    const nfd = 'Canción.mp3'.normalize('NFD')
+    const path = '/Volumes/M/Música/Canción.mp3'
+    const libraries = { ...OFF, traktor: await traktorWithGenre(nfd, 'Techno') }
+    expect(await libraryGenresOf([path], libraries)).toEqual({
+      [path]: [{ source: 'traktor', value: 'Techno' }],
+    })
   })
 })
