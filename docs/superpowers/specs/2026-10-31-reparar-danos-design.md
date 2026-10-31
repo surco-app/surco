@@ -1,6 +1,6 @@
 # Reparar daños de versiones anteriores
 
-Fecha: 31/10/2026. Estado: diseño pendiente de revisión, sin implementar. Rama `reparar-danos`.
+Fecha: 31/10/2026. Estado: preguntas respondidas, en implementación. Rama `reparar-danos`.
 
 ## Por qué
 
@@ -246,14 +246,13 @@ traducibles»).
   ffprobe por fila de Engine. Las decodificaciones (correlación, recuento exacto) solo para
   filas con copia o al reparar.
 
-## Preguntas para el usuario
+## Preguntas para el usuario (respondidas el 31/10/2026)
 
-1. **Alcance.** ¿Basta con las pistas cargadas, como el resto de «Revisar metadatos de la lista»,
-   o quieres barrer la colección entera de Traktor y Engine DJ aunque las pistas no estén en la
-   lista?
-2. **Deshacer.** ¿Vale que Deshacer devuelva los géneros y que los cues se devuelvan con
-   «Restaurar esta» en Copias, o quieres que Deshacer también devuelva los cues?
-3. **Engine recortado sin copia** (más de 7 días o Copias en «Nunca»). ¿Solo aviso para que la
-   vuelvas a analizar en Engine DJ, o te sirve una estimación «probable» a partir de la rejilla?
-4. **Géneros probables** como `(35)Deep House`, que también puede ser un género antiguo puesto
-   así a propósito. ¿Los listo como probables fuera de la tanda, o prefieres no verlos?
+1. **Alcance.** Solo las pistas cargadas en la lista, como el resto de «Revisar metadatos de la
+   lista». No se barren colecciones enteras de Traktor ni de Engine DJ.
+2. **Deshacer.** Deshacer devuelve los géneros. Los cues de Traktor y de Engine DJ se recuperan con
+   «Restaurar esta» desde la copia de la biblioteca en Copias.
+3. **Engine recortado sin copia.** Solo aviso para volver a analizarla en Engine DJ, sin tocar
+   nada. Sin estimación a partir de la rejilla.
+4. **Géneros probables** como `(35)Deep House`, que pueden ser un género antiguo puesto así a
+   propósito. Se listan como «Probable» y nunca entran solos en la tanda.
