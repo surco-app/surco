@@ -91,6 +91,7 @@ import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useRekordboxEdits } from './hooks/useRekordboxEdits'
 import { useLibraryAvailable, useOfferPlaylistFields } from './hooks/useRekordboxPlaylists'
 import { ENGINE_CUE_QUEUE, TRAKTOR_CUE_QUEUE, useRekordboxQueue } from './hooks/useRekordboxQueue'
+import { useRetireSuperseded } from './hooks/useRetireSuperseded'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
 import { useSettings } from './hooks/useSettings'
 import { useSourceBrowser } from './hooks/useSourceBrowser'
@@ -1413,6 +1414,10 @@ export default function App(): React.JSX.Element {
   }
 
   useVerificationUpdates({ tracksRef, updateTrack })
+  const reportRetireFailure = useStableCallback((fileName: string) =>
+    setAppError({ kind: 'trash', detail: fileName }),
+  )
+  useRetireSuperseded({ tracks, settings, updateTrack, reportTrashFailure: reportRetireFailure })
 
   const {
     processOne,
