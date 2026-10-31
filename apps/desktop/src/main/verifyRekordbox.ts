@@ -8,6 +8,7 @@ import {
   rekordboxPathKey,
   SAME_FILE_NAME,
   STREAMING_FILE_TYPE,
+  sameFileOnDisk,
 } from './rekordboxDb'
 import { formatOf } from './verifyFile'
 
@@ -86,6 +87,8 @@ export function snapshotRekordboxRow(
   try {
     const rows = rowsOn(db, from, find)
     if (rows.length === 0) return 'absent'
+    if (rows.length > 1 && !sameFileOnDisk([from, ...rows.map((r) => r.FolderPath)]))
+      return 'ambiguous'
     const snaps = rows.map((row) => ({
       id: String(row.ID),
       cues: liveCues(db, String(row.ID)),
