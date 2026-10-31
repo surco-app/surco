@@ -369,7 +369,7 @@ function Done({
       (o) => o.backupId !== undefined || (o.file !== 'written' && o.music.includes('set')),
     ) ||
     (run.libraryUndo?.length ?? 0) > 0 ||
-    (run.damage ?? []).some((d) => d.backupId !== undefined)
+    (run.damage ?? []).some((d) => d.backupId !== undefined && d.id.startsWith('genre-'))
   const musicFailed =
     run.outcomes.filter((o) => o.music.some((m) => m === 'failed' || (!list && m === 'mismatch')))
       .length +

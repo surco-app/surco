@@ -2084,6 +2084,25 @@ describe('damage in the list review', () => {
     expect(api.syncLibraryTags).not.toHaveBeenCalled()
   })
 
+  // Undoing a calibration repair would bring the converted file's old cues back while its
+  // collection entry keeps the corrected ones: the next scan would call that pair damaged for
+  // sure and shift the entry a second time. Only genres go back on Undo; cues go back from
+  // Backups with the library copy.
+  it('undoes only the genres, never a Traktor tree a calibration repair rewrote', async () => {
+    const TREE = 'traktor-calibration\0/m/b.aiff'
+    const api = damageApi({
+      repairDamage: vi.fn<Api['repairDamage']>().mockResolvedValue([
+        { id: SURE.id, state: 'repaired', backupId: 'd1' },
+        { id: TREE, state: 'repaired', backupId: 't1' },
+      ]),
+    })
+    const { result } = hook()
+    await waitFor(() => expect(result.current.damage).toHaveLength(2))
+    await act(() => result.current.apply())
+    await act(() => result.current.undo())
+    expect(vi.mocked(api.trashRestore as Api['trashRestore']).mock.calls).toEqual([['d1', 'undo']])
+  })
+
   // The list shows what was read before the repair; without a re-read the row kept the
   // damaged genre until the file was loaded again.
   it('re-reads the row of a repaired genre, and again after undoing it', async () => {

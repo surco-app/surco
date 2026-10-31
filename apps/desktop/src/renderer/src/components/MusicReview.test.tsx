@@ -2669,6 +2669,20 @@ describe('damage findings in the list review', () => {
     )
   })
 
+  it('offers no Undo when only a Traktor tree has a backup', () => {
+    render(
+      <Panes
+        review={listReview({
+          status: 'done',
+          lastRun: run({
+            damage: [{ id: 'traktor-calibration\0/m/b.aiff', state: 'repaired', backupId: 't1' }],
+          }),
+        })}
+      />,
+    )
+    expect(screen.queryByTestId('music-review-undo')).toBeNull()
+  })
+
   it('reports each destination and says library cues come back from Backups', () => {
     render(
       <Panes

@@ -713,7 +713,7 @@ export function useMusicReview({
     running.current = true
     setUndoing(true)
     setStatus('applying')
-    const backedUp = (lastRun.damage ?? []).filter((d) => d.backupId)
+    const backedUp = (lastRun.damage ?? []).filter((d) => d.backupId && d.id.startsWith('genre-'))
     const total = lastRun.outcomes.length + backedUp.length
     setProgress({ done: 0, total })
     setPhase({ name: 'restoring', current: 1, total })
