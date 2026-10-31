@@ -17,13 +17,13 @@ const replaced = {
 
 function setup(
   tracks: TrackItem[],
-  { answer = 'retired' as 'retired' | 'used', fails = false } = {},
+  { answer = 'retired' as 'retired' | 'used', fails = false, platform = 'darwin' } = {},
 ) {
   const retireSuperseded = vi.fn<Api['retireSuperseded']>(async () => {
     if (fails) throw new Error('EBUSY')
     return answer
   })
-  ;(window as unknown as { api: unknown }).api = { retireSuperseded }
+  ;(window as unknown as { api: unknown }).api = { retireSuperseded, platform }
   const updateTrack = vi.fn()
   const reportTrashFailure = vi.fn()
   const hook = renderHook(
@@ -93,6 +93,35 @@ describe('useRetireSuperseded', () => {
       await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('t1', { supersededKept: true }))
       expect(retireSuperseded).not.toHaveBeenCalledWith(replaced.supersededPath, expect.anything())
     }
+  })
+
+  it('sees another row on the old file however its path is spelled, since macOS and Windows open it under any case or Unicode form', async () => {
+    const accented = '/Volumes/Public/Music/T/Café/03 Olé.aiff'
+    const old = { ...replaced, supersededPath: accented } as TrackItem
+    const loaded = {
+      ...replaced,
+      id: 't2',
+      inputPath: accented.normalize('NFD').toUpperCase(),
+      supersededPath: undefined,
+    } as TrackItem
+    for (const platform of ['darwin', 'win32']) {
+      const { retireSuperseded, updateTrack } = setup([old, loaded], { platform })
+      await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('t1', { supersededKept: true }))
+      expect(retireSuperseded).not.toHaveBeenCalled()
+    }
+  })
+
+  it('tells a case variant apart on Linux, where it is another file', async () => {
+    const loaded = {
+      ...replaced,
+      id: 't2',
+      inputPath: replaced.supersededPath?.toUpperCase(),
+      supersededPath: undefined,
+    } as TrackItem
+    const { retireSuperseded } = setup([replaced, loaded], { platform: 'linux' })
+    await waitFor(() =>
+      expect(retireSuperseded).toHaveBeenCalledWith(replaced.supersededPath, ['03 A']),
+    )
   })
 
   it('marks the source trashed too when the retired file is the row’s own source', async () => {
