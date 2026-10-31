@@ -15,7 +15,7 @@ const STATES = ['closed', 'open', 'retry']
 const CLASSES = ['keep', 'toLossy', 'fromLossy']
 const toMusic = (dest: string) => dest.startsWith('appleMusic')
 
-const KNOWN_OPEN = ['K05', 'K07', 'C-aiff-alac', 'D27']
+const KNOWN_OPEN: string[] = []
 
 // The matrix is only worth its run time if a red cell today is the same cell tomorrow and
 // the 131 combinations it claims are the ones it runs. These are fixed data, so the proof
