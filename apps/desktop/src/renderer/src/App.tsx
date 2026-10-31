@@ -3089,6 +3089,8 @@ export default function App(): React.JSX.Element {
                   convertibleCount={eligibleCount}
                   batchSize={bulkTracks.length}
                   canConvertAll={canProcessAll}
+                  inLibrary={browser.source !== null}
+                  multiSelected={selectedTracks.length > 1}
                   onConvertAll={onConvertAllTracks}
                   importing={importProgress}
                   batchSummary={batchSummary}
