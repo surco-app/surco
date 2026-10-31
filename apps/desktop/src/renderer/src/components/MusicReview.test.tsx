@@ -6,8 +6,9 @@ import { useMemo, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { Api } from '../../../preload/api'
-import type { LibraryTagSyncReport } from '../../../shared/types'
+import type { DamageFinding, LibraryTagSyncReport } from '../../../shared/types'
 import type { MusicReview as Review, ReviewRun } from '../hooks/useMusicReview'
+import { damageKey } from '../lib/damageReview'
 import { createQueryClient } from '../lib/queryClient'
 import { stubApi } from '../test/api'
 import {
@@ -2028,7 +2029,7 @@ describe('MusicReview', () => {
 describe('list review', () => {
   const listReview = (over: Partial<Review> = {}) => review({ kind: 'list', ...over })
   const columnProps = {
-    visible: { spelling: [], duplicates: [] },
+    visible: { spelling: [], duplicates: [], damage: [] },
     selectedKey: null,
     onSelect: vi.fn(),
     onClose: vi.fn(),
@@ -2592,5 +2593,105 @@ describe('list review', () => {
         '1 file no longer said what was read and was left as it was.',
       )
     })
+  })
+})
+
+describe('damage findings in the list review', () => {
+  const finding = (path: string, over: Partial<DamageFinding> = {}): DamageFinding => ({
+    id: `genre-number\0${path}`,
+    kind: 'genre-number',
+    path,
+    certainty: 'sure',
+    evidence: [],
+    before: { key: 'damage.value.text', params: { value: '(35) Deep House' } },
+    options: ['House; Deep House'],
+    repair: { target: 'genre', path, from: '(35) Deep House', to: 'House; Deep House' },
+    ...over,
+  })
+  const SURE = finding('/m/a.mp3')
+  const LIKELY = finding('/m/b.mp3', { certainty: 'likely' })
+  const PENDING = finding('/m/c.mp3', { pending: true })
+  const listReview = (over: Partial<Review> = {}) =>
+    review({ kind: 'list', spelling: [], damage: [SURE, LIKELY, PENDING], ...over })
+  const damageRows = () => screen.getAllByTestId('damage-row')
+
+  it('offers the damage filter only in the list review', () => {
+    const { unmount } = render(<Panes review={review()} />)
+    fireEvent.click(screen.getByTestId('music-review-filter-trigger'))
+    expect(screen.queryByTestId('music-review-filter-damage')).toBeNull()
+    unmount()
+    render(<Panes review={listReview()} />)
+    fireEvent.click(screen.getByTestId('music-review-filter-trigger'))
+    expect(screen.getByTestId('music-review-filter-damage')).toHaveTextContent('Damage3')
+  })
+
+  // Sure is staged like a safe spelling and reads green; likely waits for the user in amber;
+  // a repair still queued says so and cannot be staged again.
+  it('shows each finding with its certainty, staged or pending', () => {
+    render(<Panes review={listReview({ staged: new Set([damageKey(SURE)]) })} />)
+    const [sure, likely, pending] = damageRows()
+    expect(sure).toHaveAttribute('data-staged', 'true')
+    expect(within(sure).getByTestId('damage-row-certainty')).toHaveAttribute('data-tone', 'good')
+    expect(within(likely).getByTestId('damage-row-certainty')).toHaveAttribute('data-tone', 'warn')
+    expect(likely).not.toHaveAttribute('data-staged')
+    expect(within(pending).getByTestId('damage-row-pending')).toHaveTextContent('Pending')
+  })
+
+  it('says the scan is still running on the scope line', () => {
+    render(<Panes review={listReview({ damageLoading: true, damageUnread: ['engine'] })} />)
+    expect(screen.getByTestId('list-review-scope')).toHaveTextContent("Couldn't read Engine DJ")
+    expect(screen.getByTestId('list-review-damage-loading')).toHaveTextContent(
+      'Looking for damage…',
+    )
+  })
+
+  it('counts each kind of repair in the confirmation and says every copy is kept', () => {
+    render(
+      <Panes
+        review={listReview({
+          staged: new Set([damageKey(SURE)]),
+          summary: {
+            tracks: 0,
+            byField: {},
+            duplicates: 0,
+            damage: { 'genre-number': 1, 'genre-parens': 1, 'engine-cues': 2 },
+          },
+        })}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('music-review-apply'))
+    expect(screen.getByTestId('music-review-confirm-damage-genre')).toHaveTextContent('Genre2')
+    expect(screen.getByTestId('music-review-confirm-damage-engineCues')).toHaveTextContent(
+      'Engine DJ cues2',
+    )
+    expect(screen.getByTestId('music-review-confirm')).toHaveTextContent(
+      'A copy of every file and every library is kept in Backups',
+    )
+  })
+
+  it('reports each destination and says library cues come back from Backups', () => {
+    render(
+      <Panes
+        review={listReview({
+          status: 'done',
+          lastRun: run({
+            damage: [
+              { id: SURE.id, state: 'repaired', backupId: 'b1' },
+              { id: 'traktor-source-cues\0/m/a.mp3', state: 'pending' },
+              { id: 'engine-cues\0/m/e.wav', state: 'mismatch' },
+            ],
+          }),
+        })}
+      />,
+    )
+    expect(screen.getByTestId('music-review-done-dest-damage-file')).toHaveTextContent('1 repaired')
+    expect(screen.getByTestId('music-review-done-dest-damage-traktor')).toHaveTextContent(
+      '1 pending',
+    )
+    expect(screen.getByTestId('music-review-done-dest-damage-engine')).toHaveTextContent(
+      "1 doesn't match",
+    )
+    expect(screen.getByTestId('damage-undo-note')).toHaveTextContent('Cues go back from Backups')
+    expect(screen.getByTestId('music-review-undo')).toBeInTheDocument()
   })
 })

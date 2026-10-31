@@ -14,7 +14,7 @@ import {
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ListMusicStep } from '../../../shared/types'
+import type { DamageFinding, DamageOutcome, ListMusicStep } from '../../../shared/types'
 import type {
   DuplicateCard,
   MusicReview as Review,
@@ -22,10 +22,12 @@ import type {
   ReviewPhase,
   ReviewSpellingGroup,
 } from '../hooks/useMusicReview'
+import { damageKey } from '../lib/damageReview'
 import { isTypingTarget } from '../lib/keymap'
 import { INVISIBLE } from '../lib/musicSpelling'
 import { REVIEW_COPY } from '../lib/reviewSource'
 import { DIALOG_BUTTON, DIALOG_CANCEL, DIALOG_OK, DIALOG_PANEL } from './ConfirmDialog'
+import { DamageCertainty, damageKindLabel, damageTitle } from './DamageDetail'
 import { FilterBar, FilterOption } from './FilterBar'
 import {
   CoverPlaceholder,
@@ -104,6 +106,15 @@ function Confirm({
   const { t } = useTranslation()
   const copy = REVIEW_COPY[review.kind]
   const { tracks, byField, duplicates } = review.summary
+  const damage = Object.entries(review.summary.damage).reduce<Record<string, number>>(
+    (out, [kind, n]) => {
+      const label = damageKindLabel(kind as DamageFinding['kind'])
+      out[label] = (out[label] ?? 0) + (n ?? 0)
+      return out
+    },
+    {},
+  )
+  const repairs = Object.values(damage).reduce((a, b) => a + b, 0)
   const noMusic = review.kind === 'list' && review.musicConsulted === undefined
   const applyRef = useRef<HTMLButtonElement>(null)
   const cancelRef = useRef<HTMLButtonElement>(null)
@@ -118,7 +129,7 @@ function Confirm({
       primaryRef={destructive ? cancelRef : applyRef}
     >
       <h3 id="music-review-confirm-title" className="text-base font-semibold">
-        {t('musicReview.confirm.title', { count: tracks + duplicates })}
+        {t('musicReview.confirm.title', { count: tracks + duplicates + repairs })}
       </h3>
       <dl className="grid gap-1 text-sm">
         {Object.entries(byField).map(([field, n]) => (
@@ -136,6 +147,16 @@ function Confirm({
             <dd className="tabular-nums">{duplicates}</dd>
           </div>
         )}
+        {Object.entries(damage).map(([label, n]) => (
+          <div
+            key={label}
+            data-testid={`music-review-confirm-damage-${label}`}
+            className="flex justify-between border-b border-[var(--color-line)] py-1"
+          >
+            <dt>{t(`damage.kind.${label}`)}</dt>
+            <dd className="tabular-nums">{n}</dd>
+          </div>
+        ))}
       </dl>
       {duplicates > 0 && (
         <p className="text-xs text-fg-dim">
@@ -156,7 +177,9 @@ function Confirm({
           {t('musicReview.confirm.libraryMissing', { library: name })}
         </p>
       ))}
-      <p className="text-xs text-fg-dim">{t('musicReview.confirm.backup')}</p>
+      <p className="text-xs text-fg-dim">
+        {t(repairs > 0 ? 'damage.confirmBackup' : 'musicReview.confirm.backup')}
+      </p>
       <div className="flex justify-end gap-1.5">
         <button
           type="button"
@@ -216,6 +239,38 @@ const DESTINATION_TONE: Record<DestinationState, string> = {
 }
 
 const joined = (parts: (string | false)[]) => parts.filter(Boolean).join(' · ')
+
+const DAMAGE_TARGETS = [
+  ['file', 'genre-'],
+  ['traktor', 'traktor-'],
+  ['engine', 'engine-'],
+] as const
+const DAMAGE_STATES = ['repaired', 'pending', 'mismatch', 'unchanged', 'failed'] as const
+
+function damageDestinations(t: TFunction, outcomes: DamageOutcome[]): Destination[] {
+  return DAMAGE_TARGETS.flatMap(([target, prefix]): Destination[] => {
+    const mine = outcomes.filter((o) => o.id.startsWith(prefix))
+    if (mine.length === 0) return []
+    const count = (state: DamageOutcome['state']) => mine.filter((o) => o.state === state).length
+    return [
+      {
+        id: `damage-${target}`,
+        label:
+          target === 'file'
+            ? t('damage.done.file')
+            : target === 'traktor'
+              ? 'Traktor'
+              : 'Engine DJ',
+        state: count('repaired') + count('unchanged') === mine.length ? 'ok' : 'warn',
+        detail: joined(
+          DAMAGE_STATES.map(
+            (state) => count(state) > 0 && t(`damage.done.${state}`, { count: count(state) }),
+          ),
+        ),
+      },
+    ]
+  })
+}
 
 function Stat({ testId, value, label }: { testId: string; value: number; label: string }) {
   return (
@@ -299,7 +354,9 @@ function Done({
   const musicSet = run.outcomes.filter((o) => o.music.includes('set')).length
   // The list writes the file first and Music only after, so a list fix is done once its
   // file is; the Music review is done once Music is, whatever its file said.
-  const corrected = list ? run.outcomes.filter((o) => o.file === 'written').length : musicSet
+  const corrected =
+    (list ? run.outcomes.filter((o) => o.file === 'written').length : musicSet) +
+    (run.damage ?? []).filter((d) => d.state === 'repaired').length
   const partial = run.outcomes.filter((o) =>
     list
       ? o.file === 'unchanged'
@@ -310,7 +367,9 @@ function Done({
   const undoable =
     run.outcomes.some(
       (o) => o.backupId !== undefined || (o.file !== 'written' && o.music.includes('set')),
-    ) || (run.libraryUndo?.length ?? 0) > 0
+    ) ||
+    (run.libraryUndo?.length ?? 0) > 0 ||
+    (run.damage ?? []).some((d) => d.backupId !== undefined)
   const musicFailed =
     run.outcomes.filter((o) => o.music.some((m) => m === 'failed' || (!list && m === 'mismatch')))
       .length +
@@ -388,6 +447,10 @@ function Done({
   }
   const written = run.outcomes.filter((o) => o.file === 'written').length
   const backups = run.outcomes.filter((o) => o.backupId !== undefined).length
+  const damageRows = damageDestinations(t, run.damage ?? [])
+  const libraryRepairs = (run.damage ?? []).some(
+    (d) => !d.id.startsWith('genre-') && (d.state === 'repaired' || d.state === 'pending'),
+  )
   const destinations: Destination[] = undone
     ? []
     : [
@@ -461,6 +524,7 @@ function Done({
               } as const,
             ]
           : []),
+        ...damageRows,
         ...(inBackups
           ? [
               {
@@ -624,6 +688,11 @@ function Done({
           </div>
         </>
       )}
+      {!undone && libraryRepairs && (
+        <p data-testid="damage-undo-note" className="text-xs text-fg-faint">
+          {t('damage.done.undoNote')}
+        </p>
+      )}
       {(removed > 0 || leftMusic > 0) && (
         <p data-testid="music-review-done-note" className="text-xs text-fg-faint">
           {t('musicReview.removedNoUndo')}
@@ -655,7 +724,10 @@ function Done({
   )
 }
 
-const FILTERS: ReviewFilter[] = ['all', 'spelling', 'duplicates']
+const FILTERS: Record<Review['kind'], ReviewFilter[]> = {
+  music: ['all', 'spelling', 'duplicates'],
+  list: ['all', 'spelling', 'duplicates', 'damage'],
+}
 const FILTER_ICONS: Record<ReviewFilter, LucideIcon> = {
   all: List,
   spelling: SpellCheck,
@@ -679,37 +751,50 @@ export function visibleGroups(
   review: Review,
   search: string,
   sort: ReviewSort,
-): { spelling: ReviewSpellingGroup[]; duplicates: DuplicateCard[] } {
+): {
+  spelling: ReviewSpellingGroup[]
+  duplicates: DuplicateCard[]
+  damage: DamageFinding[]
+} {
   const query = fold(search.trim())
   const hit = (texts: string[]) => !query || texts.some((text) => fold(text).includes(query))
   const spelling =
-    review.filter === 'duplicates'
+    review.filter === 'duplicates' || review.filter === 'damage'
       ? []
       : review.spelling.filter((g) => hit([nameOf(review, g), ...g.variants.map((v) => v.value)]))
   const duplicates =
-    review.filter === 'spelling'
+    review.filter === 'spelling' || review.filter === 'damage'
       ? []
       : review.duplicates.filter((c) =>
           hit(c.entries.flatMap((e) => [e.artist, e.title, e.album ?? ''])),
         )
+  const damage =
+    review.filter === 'all' || review.filter === 'damage'
+      ? review.damage.filter((f) => hit([damageTitle(review, f.path), f.path]))
+      : []
   if (sort === 'name')
     return {
       spelling: [...spelling].sort((a, b) => nameOf(review, a).localeCompare(nameOf(review, b))),
       duplicates: [...duplicates].sort((a, b) => duplicateName(a).localeCompare(duplicateName(b))),
+      damage: [...damage].sort((a, b) =>
+        damageTitle(review, a.path).localeCompare(damageTitle(review, b.path)),
+      ),
     }
   if (sort === 'tracks')
     return {
       spelling: [...spelling].sort((a, b) => trackCount(b) - trackCount(a)),
       duplicates: [...duplicates].sort((a, b) => b.entries.length - a.entries.length),
+      damage,
     }
-  return { spelling, duplicates }
+  return { spelling, duplicates, damage }
 }
 
 export type VisibleGroups = ReturnType<typeof visibleGroups>
 
-export const visibleKeys = ({ spelling, duplicates }: VisibleGroups) => [
+export const visibleKeys = ({ spelling, duplicates, damage }: VisibleGroups) => [
   ...spelling.map((g) => g.key),
   ...duplicates.map((c) => c.group.key),
+  ...damage.map(damageKey),
 ]
 
 const RISKY_KINDS = new Set(['typo', 'version'])
@@ -782,6 +867,61 @@ function Row({
   )
 }
 
+function DamageRow({
+  finding,
+  selected,
+  staged,
+  name,
+  onSelect,
+}: {
+  finding: DamageFinding
+  selected: boolean
+  staged: boolean
+  name: string
+  onSelect: () => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <div
+      role="option"
+      data-testid="damage-row"
+      data-staged={staged || undefined}
+      aria-selected={selected}
+      tabIndex={selected ? 0 : -1}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return
+        e.preventDefault()
+        onSelect()
+      }}
+      className={`cursor-default ${listRowClass(selected, false)}`}
+    >
+      <span className="relative shrink-0">
+        <CoverPlaceholder testid="music-review-row-cover" />
+        {staged && <ToneBadge testid="music-review-row-staged" tone="attention" />}
+      </span>
+      <span data-fit className="relative min-w-0 flex-1">
+        <span className="flex items-center gap-2">
+          <span className="relative block min-w-0 flex-1 truncate">
+            <span data-testid="music-review-row-name" title={name} className={ROW_TITLE}>
+              {name}
+            </span>
+          </span>
+        </span>
+        <span className="flex items-center gap-2">
+          <span data-testid="music-review-row-detail" className={ROW_DETAIL}>
+            {t(`damage.kind.${damageKindLabel(finding.kind)}`)}
+            {staged && ` · ${t('musicReview.inTray')}`}
+          </span>
+          <span className="flex shrink-0 justify-end">
+            <DamageCertainty finding={finding} />
+          </span>
+        </span>
+      </span>
+    </div>
+  )
+}
+
 // `busy` is a conversion running elsewhere in the app: it writes the same files and the
 // same library databases, so nothing here may start a write until it ends.
 export function MusicReview({
@@ -821,7 +961,7 @@ export function MusicReview({
   const [doneSeen, setDoneSeen] = useState<object | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const counts = {
-    all: review.spelling.length + review.duplicates.length,
+    all: review.spelling.length + review.duplicates.length + review.damage.length,
     spelling: review.spelling.length,
     duplicates: review.duplicates.length,
     damage: review.damage.length,
@@ -884,7 +1024,7 @@ export function MusicReview({
           listLabel={t('musicReview.title')}
           focusTestId={`music-review-filter-${review.filter}`}
           options={(close) =>
-            FILTERS.map((f) => (
+            FILTERS[review.kind].map((f) => (
               <FilterOption
                 key={f}
                 testid={`music-review-filter-${f}`}
@@ -930,7 +1070,15 @@ export function MusicReview({
                 : t('listReview.scopePlaylist', { count: review.reviewed, name: scopeName }),
               ...(review.skipped > 0 ? [t('listReview.skipped', { count: review.skipped })] : []),
               ...(review.musicConsulted === false ? [t('listReview.musicUnchecked')] : []),
+              ...review.damageUnread.map((library) =>
+                t('damage.unread', { library: library === 'traktor' ? 'Traktor' : 'Engine DJ' }),
+              ),
             ].join(' · ')}
+            {review.damageLoading && (
+              <span data-testid="list-review-damage-loading" aria-live="polite">
+                {` · ${t('damage.loading')}`}
+              </span>
+            )}
           </p>
         )}
       </div>
@@ -1012,6 +1160,16 @@ export function MusicReview({
               onSelect={() => onSelect(c.group.key)}
             />
           ))}
+          {visible.damage.map((f) => (
+            <DamageRow
+              key={damageKey(f)}
+              finding={f}
+              selected={damageKey(f) === selectedKey}
+              staged={review.staged.has(damageKey(f))}
+              name={damageTitle(review, f.path)}
+              onSelect={() => onSelect(damageKey(f))}
+            />
+          ))}
         </div>
       </div>
       {confirming && <Confirm review={review} busy={busy} onCancel={() => onConfirming(false)} />}
@@ -1065,7 +1223,10 @@ export function MusicReviewAction({
         testid="music-review-apply"
         Icon={ListChecks}
         label={t('musicReview.applyCount', {
-          count: review.summary.tracks + review.summary.duplicates,
+          count:
+            review.summary.tracks +
+            review.summary.duplicates +
+            Object.values(review.summary.damage).reduce((a, b) => a + (b ?? 0), 0),
         })}
         running={running}
         runningLabel={

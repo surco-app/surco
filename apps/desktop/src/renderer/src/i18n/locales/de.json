@@ -2259,7 +2259,8 @@
     "filter": {
       "all": "Alle",
       "spelling": "Schreibweisen",
-      "duplicates": "Duplikate"
+      "duplicates": "Duplikate",
+      "damage": "Schäden"
     },
     "copyTitle": "Titel kopieren",
     "field": {
@@ -2965,5 +2966,58 @@
     "sourceGoneKeptLine": "Das Original ist weg, eine Kopie liegt in <0>{{panel}}</0>",
     "heldOriginalLine": "Etwas stimmt nicht, daher liegt das Original in <0>{{panel}}</0>, obwohl die Kopien der Originale auf „Nie“ stehen",
     "heldOriginalNoRoomLine": "Etwas stimmt nicht und in {{panel}} war kein Platz, um das Original aufzubewahren"
+  },
+  "damage": {
+    "kind": {
+      "genre": "Genre",
+      "traktor": "Traktor-Cues",
+      "engineCues": "Engine-DJ-Cues",
+      "engineLength": "Länge in Engine DJ"
+    },
+    "certainty": {
+      "sure": "Sicher",
+      "likely": "Wahrscheinlich"
+    },
+    "pending": "Ausstehend",
+    "loading": "Suche nach Schäden…",
+    "unread": "{{library}} konnte nicht gelesen werden",
+    "evidenceTitle": "Nachweis",
+    "repair": "Reparieren",
+    "warnOnly": "Von hier aus gibt es nichts zu reparieren",
+    "confirmBackup": "Von jeder Datei und jeder Bibliothek wird eine Kopie in Backups abgelegt",
+    "done": {
+      "file": "Datei",
+      "repaired_one": "{{count}} repariert",
+      "repaired_other": "{{count}} repariert",
+      "pending_one": "{{count}} ausstehend",
+      "pending_other": "{{count}} ausstehend",
+      "mismatch_one": "{{count}} passt nicht",
+      "mismatch_other": "{{count}} passen nicht",
+      "unchanged_one": "{{count}} unverändert",
+      "unchanged_other": "{{count}} unverändert",
+      "failed_one": "{{count}} mit Fehler",
+      "failed_other": "{{count}} mit Fehler",
+      "undoNote": "Die Cues kommen aus Backups zurück"
+    },
+    "value": {
+      "text": "{{value}}",
+      "cueAt": "Erster Cue bei {{sec}} s",
+      "engineAnalysis": "{{khz}} kHz, {{sec}} s",
+      "seconds": "{{sec}} s"
+    },
+    "evidence": {
+      "libraryKept": "{{library}} hat „{{value}}“",
+      "infoKept": "Das INFO des WAV enthält „{{value}}“",
+      "id3v1Number": "In ID3v1 ist {{number}} {{name}}",
+      "doubledParens": "Jedes Speichern hat die Klammern verdoppelt",
+      "maybeLegacy": "Es kann ein altes Genre sein, das absichtlich so geschrieben wurde",
+      "traktorTree": "Die MP3 hat den ersten Cue bei {{fileSec}} s und Traktor bei {{entrySec}} s, wie {{sibling}}",
+      "traktorTookSibling": "Traktor hat ihr die Cues von {{sibling}} gegeben, die für diese MP3 um {{ms}} ms abweichen",
+      "traktorOldRule": "{{file}} wurde mit der vorherigen Regel konvertiert und seine Cues weichen um {{ms}} ms ab",
+      "engineRate": "Engine DJ hat sie mit {{engineKhz}} kHz analysiert und die Datei läuft mit {{fileKhz}} kHz",
+      "engineBackup": "Sicherung vom {{date}}, das Audio beginnt darin {{sec}} s später",
+      "engineNoBackup": "Engine DJ kennt sie {{sec}} s länger und das Original ist nicht mehr da. Analysiere sie in Engine DJ neu",
+      "engineLength": "Engine DJ zeigt {{length}} s und seine eigene Analyse sagt {{sec}} s"
+    }
   }
 }

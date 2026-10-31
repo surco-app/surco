@@ -9,12 +9,14 @@ import type {
 } from '../hooks/useMusicReview'
 import { useTrackProperties } from '../hooks/useTrackProperties'
 import { copyQuality } from '../lib/copyQuality'
+import { damageKey } from '../lib/damageReview'
 import { INVISIBLE } from '../lib/musicSpelling'
 import { formatFileSize } from '../lib/properties'
 import { formatKHz, type Verdict } from '../lib/quality'
 import { REVIEW_COPY } from '../lib/reviewSource'
 import type { TrackItem } from '../types'
 import { DIALOG_CANCEL } from './ConfirmDialog'
+import { DamageDetail } from './DamageDetail'
 import { fieldsLabel } from './MusicReview'
 import { SectionBody } from './SectionBody'
 import { SectionGroupHeading } from './SectionGroupHeading'
@@ -91,7 +93,7 @@ function CopyTitleButton({ title, testId }: { title: string; testId: string }) {
   )
 }
 
-function Header({ name, detail }: { name: string; detail: string }) {
+export function Header({ name, detail }: { name: string; detail: string }) {
   return (
     <header className="mb-6">
       <SectionGroupHeading label={name} testid="music-review-detail-heading" first />
@@ -102,7 +104,8 @@ function Header({ name, detail }: { name: string; detail: string }) {
 
 // The group's own action, where the editor puts Convert: the full-width split button at the
 // foot of the pane, with the rarer choice behind its chevron.
-function GroupFooter({
+export function GroupFooter({
+  testid = 'music-review-stage',
   label,
   quiet = false,
   disabled,
@@ -111,6 +114,7 @@ function GroupFooter({
   menuDisabled,
   onMenu,
 }: {
+  testid?: string
   label: string
   quiet?: boolean
   disabled: boolean
@@ -126,7 +130,7 @@ function GroupFooter({
       <div ref={ref} className="group relative flex flex-1">
         <button
           type="button"
-          data-testid="music-review-stage"
+          data-testid={testid}
           disabled={disabled}
           onClick={onStage}
           className={`${SPLIT_BODY} ${quiet ? SPLIT_BODY_QUIET : SPLIT_BODY_READY}`}
@@ -799,6 +803,7 @@ export function MusicReviewDetail({
   const { t } = useTranslation()
   const spelling = review.spelling.find((g) => g.key === selectedKey)
   const duplicate = review.duplicates.find((c) => c.group.key === selectedKey)
+  const damage = review.damage.find((f) => damageKey(f) === selectedKey)
   // Held above the groups, like the editor's fold state, so a section folded on one group
   // stays folded on the next.
   const [open, setOpen] = useState<Sections>({ options: true, affected: true, copies: true })
@@ -808,28 +813,30 @@ export function MusicReviewDetail({
   }
   return (
     <section data-testid="music-review-detail" className="flex h-full min-h-0 flex-col">
-      {review.status === 'ready' && review.spelling.length + review.duplicates.length === 0 && (
-        <div
-          data-testid="music-review-all-clear"
-          className="flex h-full flex-col items-center justify-center p-8 text-center"
-        >
-          <Check className="h-6 w-6 text-[var(--color-accent)]" aria-hidden="true" />
-          <p className="mt-3 text-base font-semibold text-fg">{t('musicReview.allClear')}</p>
-          <p className="mt-1 text-sm text-fg-dim">{t('musicReview.allClearHint')}</p>
-          <button
-            type="button"
-            data-testid="music-review-back"
-            className={`mt-5 ${DIALOG_CANCEL}`}
-            onClick={onClose}
+      {review.status === 'ready' &&
+        review.spelling.length + review.duplicates.length + review.damage.length === 0 && (
+          <div
+            data-testid="music-review-all-clear"
+            className="flex h-full flex-col items-center justify-center p-8 text-center"
           >
-            {t('musicReview.back')}
-          </button>
-        </div>
-      )}
+            <Check className="h-6 w-6 text-[var(--color-accent)]" aria-hidden="true" />
+            <p className="mt-3 text-base font-semibold text-fg">{t('musicReview.allClear')}</p>
+            <p className="mt-1 text-sm text-fg-dim">{t('musicReview.allClearHint')}</p>
+            <button
+              type="button"
+              data-testid="music-review-back"
+              className={`mt-5 ${DIALOG_CANCEL}`}
+              onClick={onClose}
+            >
+              {t('musicReview.back')}
+            </button>
+          </div>
+        )}
       {spelling && (
         <SpellingDetail group={spelling} review={review} sync={sync} folding={folding} />
       )}
       {duplicate && <DuplicateDetail card={duplicate} review={review} folding={folding} />}
+      {damage && <DamageDetail finding={damage} review={review} />}
     </section>
   )
 }
