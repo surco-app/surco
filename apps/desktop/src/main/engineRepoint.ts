@@ -7,6 +7,7 @@ import {
   decodeLoops,
   decodeOverview,
   decodeQuickCues,
+  decodeTrackData,
   deflateEngineBlob,
   encodeLoops,
   encodeQuickCues,
@@ -53,7 +54,14 @@ export interface EngineRepoint extends PathMatchOptions {
   // The source's size before a conversion rewrote it on its own path, what the row still
   // records until the shift lands.
   fromBytes?: number
+  // A repair in place: the trackData the row held when it was judged, without which the
+  // repair already landed, and the length Engine should show.
+  expectTrackData?: { sampleRate: number; sampleCount: number }
+  length?: number
 }
+
+export const engineLengthOf = (sampleCount: number, sampleRate: number): number =>
+  Math.round(sampleCount / sampleRate)
 
 export interface EngineRepointOptions {
   // Takes the run's single pre-run copy, before the first write. A failure here refuses
@@ -224,6 +232,16 @@ function performanceOf(db: Database, id: number): Performance | null {
   }
 }
 
+function holdsTrackData(
+  db: Database,
+  id: string,
+  expected: { sampleRate: number; sampleCount: number },
+): boolean {
+  const raw = performanceOf(db, Number(id))?.trackData
+  const track = raw ? decodeTrackData(inflateEngineBlob(raw)) : null
+  return track?.sampleRate === expected.sampleRate && track.sampleCount === expected.sampleCount
+}
+
 function relativeTo(libraryDir: string, file: string): string {
   return relative(libraryDir, file).split('\\').join('/')
 }
@@ -287,7 +305,13 @@ export async function writeEngineRepoints(
       fileBytes,
     }))
     const find = engineRowFinder(libraryDir, stored)
-    const updates: { id: string; to: string; size: number; shift?: EngineShift }[] = []
+    const updates: {
+      id: string
+      to: string
+      size: number
+      shift?: EngineShift
+      length?: number
+    }[] = []
     for (const [i, repoint] of repoints.entries()) {
       if (results[i]) continue
       const key = pathKey(repoint)
@@ -314,11 +338,16 @@ export async function writeEngineRepoints(
         results[i] = { written: false, reason: 'no-match' }
         continue
       }
+      if (repoint.expectTrackData && !holdsTrackData(db, matches[0].id, repoint.expectTrackData)) {
+        results[i] = { written: false, reason: 'no-match' }
+        continue
+      }
       updates.push({
         id: matches[0].id,
         to: repoint.to,
         size: sizes[i] as number,
         shift: repoint.engineShift,
+        length: repoint.length,
       })
       results[i] = { written: true, id: matches[0].id }
     }
@@ -362,6 +391,8 @@ export async function writeEngineRepoints(
             Number(u.id),
           ],
         )
+      if (u.length !== undefined)
+        db.run('UPDATE Track SET length = ? WHERE id = ?', [u.length, Number(u.id)])
     }
 
     // Engine launched while the rows were being read would have loaded the old library and
