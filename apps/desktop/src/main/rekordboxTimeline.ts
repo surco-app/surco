@@ -137,19 +137,28 @@ function soundTrack(buf: Buffer, moov: Mp4Box): Mp4Box | undefined {
   return undefined
 }
 
-export function m4aPrimingSamples(moov: Buffer): number {
+function mediaTimescale(buf: Buffer, trak: Mp4Box): number | undefined {
+  const mdhd = mp4Child(buf, ['mdia', 'mdhd'], trak.body, trak.end)
+  if (!mdhd) return undefined
+  const at = mdhd.body + (buf[mdhd.body] === 1 ? 20 : 12)
+  return at + 4 <= mdhd.end ? buf.readUInt32BE(at) || undefined : undefined
+}
+
+export function m4aPrimingMs(moov: Buffer, sampleRate: number): number {
   const root = mp4Child(moov, ['moov'])
-  if (!root) return APPLE_AAC_PRIMING
+  if (!root) return (APPLE_AAC_PRIMING / sampleRate) * 1000
   const trak = soundTrack(moov, root)
   const stsd = trak && mp4Child(moov, ['mdia', 'minf', 'stbl', 'stsd'], trak.body, trak.end)
   if (stsd && moov.toString('latin1', stsd.body + 12, stsd.body + 16) === 'alac') return 0
   const elst = trak && mp4Child(moov, ['edts', 'elst'], trak.body, trak.end)
-  return (elst && editListStart(moov, elst)) ?? itunSmpbPriming(moov) ?? 0
+  const edit = elst && editListStart(moov, elst)
+  if (trak && edit !== undefined) return (edit / (mediaTimescale(moov, trak) ?? sampleRate)) * 1000
+  return ((itunSmpbPriming(moov) ?? 0) / sampleRate) * 1000
 }
 
 export function rekordboxShiftMs(ext: string, head: Buffer, sampleRate: number): number {
   const kind = ext.toLowerCase()
-  if (kind === '.m4a') return (m4aPrimingSamples(head) / sampleRate) * 1000
+  if (kind === '.m4a') return m4aPrimingMs(head, sampleRate)
   if (kind !== '.mp3') return 0
   const info = mpeg1Info(head)
   if (!info) return 0

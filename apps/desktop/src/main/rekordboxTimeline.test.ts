@@ -271,6 +271,11 @@ describe('rekordboxShiftMs', () => {
     expect(rekordboxShiftMs('.m4a', file, 44100)).toBeCloseTo((1024 / 44100) * 1000, 3)
   })
 
+  it("counts the edit list in the track's own timescale, which need not be the sample rate", () => {
+    const file = moov(track({ codec: 'mp4a', timescale: 88200, edits: [2048] }))
+    expect(rekordboxShiftMs('.m4a', file, 44100)).toBeCloseTo((2048 / 88200) * 1000, 3)
+  })
+
   it('keeps PCM formats in step, measured within 2 ms on WAV and AIFF', () => {
     expect(rekordboxShiftMs('.wav', lame44, 44100)).toBe(0)
     expect(rekordboxShiftMs('.aiff', Buffer.alloc(0), 44100)).toBe(0)
