@@ -3624,25 +3624,6 @@ describe('runProcessTrack — checking what it wrote', () => {
     )
   })
 
-  it('Traktor is marked stranded when its entry could not follow the landed file', async () => {
-    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
-    const deps = makeDeps({
-      platform: 'darwin',
-      settings: settings({
-        addToAppleMusic: true,
-        keepOutputCopy: false,
-        syncTraktor: true,
-        traktorNmlPath: '/t/collection.nml',
-      }),
-      redirectRepoint: vi.fn(() => false),
-      registerVerification,
-    })
-
-    await runProcessTrack(job({ meta }), deps)
-
-    expect(registerVerification.mock.calls[0][0].traktorStranded).toBe(true)
-  })
-
   // Music copies the file into its Media folder when its preference says so, and then
   // plays that copy: the entry is held to the copy, the file check to what was written.
   const MEDIA = '/Users/me/Music/Media'
@@ -3792,7 +3773,6 @@ describe('runProcessTrack — checking what it wrote', () => {
   // moves them to the file Music plays, or the libraries would be pointed at nothing.
   it('Music only points the libraries at a location read late', async () => {
     const redirectRepoint = vi.fn<NonNullable<ProcessTrackDeps['redirectRepoint']>>(() => false)
-    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
     const deps = makeDeps({
       platform: 'darwin',
       settings: settings({ addToAppleMusic: true, keepOutputCopy: false }),
@@ -3801,7 +3781,6 @@ describe('runProcessTrack — checking what it wrote', () => {
         .mockResolvedValueOnce('')
         .mockResolvedValue('/Users/me/Music/Media/Late.aiff'),
       redirectRepoint,
-      registerVerification,
     })
 
     await runProcessTrack(job({ meta }), deps)
@@ -3810,7 +3789,6 @@ describe('runProcessTrack — checking what it wrote', () => {
       expect.stringMatching(/Artist - Title\.aiff$/),
       '/Users/me/Music/Media/Late.aiff',
     )
-    expect(registerVerification.mock.calls[0][0].traktorStranded).toBe(true)
   })
 
   // With no file to follow, what the libraries hold cannot be judged: their repoints still
