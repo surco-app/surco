@@ -41,12 +41,15 @@ function review(over: Partial<Review> = {}): Review {
     setFilter: vi.fn(),
     spelling: [group],
     duplicates: [],
+    damage: [],
+    damageLoading: false,
+    damageUnread: [],
     choice: () => 'DJ Lara',
     choose: vi.fn(),
     staged: new Set(),
     toggleStaged: vi.fn(),
     ignore: vi.fn(),
-    summary: { tracks: 0, byField: {}, duplicates: 0 },
+    summary: { tracks: 0, byField: {}, duplicates: 0, damage: {} },
     progress: null,
     phase: null,
     undoing: false,
@@ -471,7 +474,7 @@ describe('MusicReview', () => {
   it('asks before applying and lists what stays untouched', () => {
     const r = review({
       staged: new Set([group.key]),
-      summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0 },
+      summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0, damage: {} },
     })
     render(<Panes review={r} />)
     fireEvent.click(screen.getByTestId('music-review-apply'))
@@ -488,7 +491,7 @@ describe('MusicReview', () => {
       <Panes
         review={review({
           staged: new Set([group.key]),
-          summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0 },
+          summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0, damage: {} },
         })}
       />,
     )
@@ -503,7 +506,7 @@ describe('MusicReview', () => {
   it('holds Apply and Undo while a conversion is running', () => {
     const staged = review({
       staged: new Set([group.key]),
-      summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0 },
+      summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0, damage: {} },
     })
     const { unmount } = render(<Panes review={staged} busy />)
     expect(screen.getByTestId('music-review-apply')).toBeDisabled()
@@ -521,7 +524,7 @@ describe('MusicReview', () => {
       <Panes
         review={review({
           staged: new Set([group.key]),
-          summary: { tracks: 2, byField: { artist: 2 }, duplicates: 1 },
+          summary: { tracks: 2, byField: { artist: 2 }, duplicates: 1, damage: {} },
         })}
       />,
     )
@@ -1111,7 +1114,7 @@ describe('MusicReview', () => {
   it('warns before applying that removed copies do not come back with Undo', () => {
     const r = review({
       staged: new Set([group.key]),
-      summary: { tracks: 0, byField: {}, duplicates: 1 },
+      summary: { tracks: 0, byField: {}, duplicates: 1, damage: {} },
     })
     render(<Panes review={r} />)
     fireEvent.click(screen.getByTestId('music-review-apply'))
@@ -1124,7 +1127,7 @@ describe('MusicReview', () => {
   it('says before applying that a file a DJ library still uses stays on disk', () => {
     const r = review({
       staged: new Set([group.key]),
-      summary: { tracks: 0, byField: {}, duplicates: 1 },
+      summary: { tracks: 0, byField: {}, duplicates: 1, damage: {} },
     })
     render(<Panes review={r} />)
     fireEvent.click(screen.getByTestId('music-review-apply'))
@@ -1228,7 +1231,7 @@ describe('MusicReview', () => {
     const staged = () =>
       review({
         staged: new Set([group.key]),
-        summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0 },
+        summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0, damage: {} },
         libraries: status({ rekordbox: false }),
         affected: () => [
           { id: 'C', title: 'Song C', field: 'artist' as const, from: 'a', to: 'b' },
@@ -1371,7 +1374,7 @@ describe('MusicReview', () => {
   it('names the confirmation by its title, focuses Apply and cancels on Escape', () => {
     const r = review({
       staged: new Set([group.key]),
-      summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0 },
+      summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0, damage: {} },
     })
     render(<Panes review={r} />)
     fireEvent.click(screen.getByTestId('music-review-apply'))
@@ -1387,7 +1390,7 @@ describe('MusicReview', () => {
   it('focuses Cancel and paints Apply as dangerous when duplicates will be removed', () => {
     const r = review({
       staged: new Set([group.key]),
-      summary: { tracks: 1, byField: { artist: 1 }, duplicates: 2 },
+      summary: { tracks: 1, byField: { artist: 1 }, duplicates: 2, damage: {} },
     })
     render(<Panes review={r} />)
     fireEvent.click(screen.getByTestId('music-review-apply'))
@@ -1398,7 +1401,7 @@ describe('MusicReview', () => {
   it('keeps Apply as the ordinary default when nothing is removed', () => {
     const r = review({
       staged: new Set([group.key]),
-      summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0 },
+      summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0, damage: {} },
     })
     render(<Panes review={r} />)
     fireEvent.click(screen.getByTestId('music-review-apply'))
@@ -2121,7 +2124,7 @@ describe('list review', () => {
     render(
       <MusicReview
         review={listReview({
-          summary: { tracks: 0, byField: {}, duplicates: 1 },
+          summary: { tracks: 0, byField: {}, duplicates: 1, damage: {} },
           musicConsulted: true,
         })}
         {...columnProps}
@@ -2142,7 +2145,7 @@ describe('list review', () => {
   it('leaves Apple Music out of what happens to the copies where there is no Music', () => {
     render(
       <MusicReview
-        review={listReview({ summary: { tracks: 0, byField: {}, duplicates: 1 } })}
+        review={listReview({ summary: { tracks: 0, byField: {}, duplicates: 1, damage: {} } })}
         {...columnProps}
         confirming
       />,
@@ -2160,7 +2163,7 @@ describe('list review', () => {
   // With Music left unasked at load, removing opens it and reads every file it holds,
   // which takes a while on a large library; Apply should not look frozen.
   it('says the removal will open Apple Music to check when the load did not ask it', () => {
-    const summary = { tracks: 0, byField: {}, duplicates: 1 }
+    const summary = { tracks: 0, byField: {}, duplicates: 1, damage: {} }
     const { unmount } = render(
       <MusicReview
         review={listReview({ summary, musicConsulted: false })}

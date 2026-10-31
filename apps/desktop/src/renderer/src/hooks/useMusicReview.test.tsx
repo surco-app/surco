@@ -4,7 +4,13 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { emptyMetadata } from '../../../shared/metadata'
-import type { MusicReviewEntry, RemoveCopyResult } from '../../../shared/types'
+import type {
+  DamageFinding,
+  DamageScan,
+  MusicReviewEntry,
+  RemoveCopyResult,
+} from '../../../shared/types'
+import { damageKey } from '../lib/damageReview'
 import { trackSignature } from '../lib/dirty'
 import { listReviewSource } from '../lib/listReviewSource'
 import { ToastProvider } from '../lib/toastContext'
@@ -1954,5 +1960,137 @@ describe('with the list as source', () => {
     ])
     await located(result)
     expect(result.current.choice(result.current.duplicates[0].group.key)).toBe('/m/b.aiff')
+  })
+})
+
+describe('damage in the list review', () => {
+  const row = (path: string, artist: string, title = 'Song') => {
+    const meta = { ...emptyMetadata(), title, artist }
+    return {
+      id: path,
+      inputPath: path,
+      fileName: path,
+      listLabel: title,
+      query: '',
+      status: 'idle',
+      meta,
+      diskSignature: trackSignature({ meta }),
+    } as TrackItem
+  }
+  const ROWS = [
+    row('/m/a.aiff', 'DJ Lara', 'Ta'),
+    row('/m/b.aiff', 'DJ Lara', 'Tb'),
+    row('/m/c.aiff', 'Dj Lara', 'Tc'),
+  ]
+  const finding = (path: string, certainty: 'sure' | 'likely'): DamageFinding => ({
+    id: `genre-number\0${path}`,
+    kind: 'genre-number',
+    path,
+    certainty,
+    evidence: [],
+    before: { key: 'damage.value.text', params: { value: '(35) Deep House' } },
+    options: ['House; Deep House'],
+    repair: { target: 'genre', path, from: '(35) Deep House', to: 'House; Deep House' },
+  })
+  const SURE = finding('/m/a.aiff', 'sure')
+  const LIKELY = finding('/m/b.aiff', 'likely')
+  const damageApi = (over = {}) =>
+    setApi({
+      appleMusicFileEntries: vi.fn().mockResolvedValue({ consulted: true, entries: {} }),
+      applyListFixes: vi.fn().mockResolvedValue([]),
+      onListFixProgress: vi.fn(() => () => {}),
+      cancelListFixes: vi.fn().mockResolvedValue(undefined),
+      scanDamage: vi
+        .fn<Api['scanDamage']>()
+        .mockResolvedValue({ findings: [SURE, LIKELY], unread: [] }),
+      repairDamage: vi
+        .fn<Api['repairDamage']>()
+        .mockResolvedValue([{ id: SURE.id, state: 'repaired', backupId: 'd1' }]),
+      ...over,
+    })
+  const hook = (over = {}) => {
+    const source = listReviewSource({
+      rows: () => ROWS,
+      mac: true,
+      launchMusic: () => true,
+      onRowsRemoved: vi.fn(),
+    })
+    return renderHook(() => useMusicReview(props({ source, ...over })))
+  }
+
+  // The scan reads every file's genre frame and both libraries: spellings must not wait on it.
+  it('shows the spellings while the damage scan is still running', async () => {
+    let finish: (scan: DamageScan) => void = () => {}
+    damageApi({
+      scanDamage: vi.fn<Api['scanDamage']>(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve
+          }),
+      ),
+    })
+    const { result } = hook()
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    expect(result.current.spelling).toHaveLength(1)
+    expect(result.current.damageLoading).toBe(true)
+    await act(async () => finish({ findings: [SURE], unread: ['traktor'] }))
+    expect(result.current.damageLoading).toBe(false)
+    expect(result.current.damage).toEqual([SURE])
+    expect(result.current.damageUnread).toEqual(['traktor'])
+  })
+
+  it('stages what is sure and leaves what is likely to the user', async () => {
+    damageApi()
+    const { result } = hook()
+    await waitFor(() => expect(result.current.damage).toHaveLength(2))
+    expect(result.current.staged.has(damageKey(SURE))).toBe(true)
+    expect(result.current.staged.has(damageKey(LIKELY))).toBe(false)
+    expect(result.current.summary.damage).toEqual({ 'genre-number': 1 })
+  })
+
+  it('repairs after the spellings, re-scans and calls a repair still found a mismatch', async () => {
+    const order: string[] = []
+    const api = damageApi({
+      applyListFixes: vi.fn(async () => {
+        order.push('fixes')
+        return []
+      }),
+      repairDamage: vi.fn<Api['repairDamage']>(async () => {
+        order.push('damage')
+        return [{ id: SURE.id, state: 'repaired', backupId: 'd1' }]
+      }),
+    })
+    const { result } = hook()
+    await waitFor(() => expect(result.current.damage).toHaveLength(2))
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    expect(order).toEqual(['fixes', 'damage'])
+    expect(api.repairDamage).toHaveBeenCalledWith([{ id: SURE.id, repair: SURE.repair }])
+    expect(api.scanDamage).toHaveBeenCalledTimes(2)
+    expect(result.current.lastRun?.damage).toEqual([
+      { id: SURE.id, state: 'mismatch', backupId: 'd1' },
+    ])
+  })
+
+  // The libraries keep the good genre or the damaged one: sending them the restored text would
+  // put the damage back where it was good.
+  it('undoes a genre repair from its backup and tells no library', async () => {
+    const api = damageApi()
+    const { result } = hook()
+    await waitFor(() => expect(result.current.damage).toHaveLength(2))
+    await act(() => result.current.apply())
+    await act(() => result.current.undo())
+    expect(api.trashRestore).toHaveBeenCalledWith('d1', 'undo')
+    expect(api.syncLibraryTags).not.toHaveBeenCalled()
+  })
+
+  it('hides an ignored finding the way it hides a spelling', async () => {
+    const saveIgnored = vi.fn()
+    damageApi()
+    const { result } = hook({ saveIgnored })
+    await waitFor(() => expect(result.current.damage).toHaveLength(2))
+    act(() => result.current.ignore(damageKey(LIKELY)))
+    expect(result.current.damage).toEqual([SURE])
+    expect(saveIgnored).toHaveBeenCalledWith([damageKey(LIKELY)])
   })
 })

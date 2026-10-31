@@ -8,6 +8,7 @@ import {
   ListChecks,
   ListMusic,
   type LucideIcon,
+  ShieldAlert,
   SpellCheck,
 } from 'lucide-react'
 import type React from 'react'
@@ -659,6 +660,7 @@ const FILTER_ICONS: Record<ReviewFilter, LucideIcon> = {
   all: List,
   spelling: SpellCheck,
   duplicates: CopyIcon,
+  damage: ShieldAlert,
 }
 
 export type ReviewSort = 'default' | 'tracks' | 'name'
@@ -822,6 +824,7 @@ export function MusicReview({
     all: review.spelling.length + review.duplicates.length,
     spelling: review.spelling.length,
     duplicates: review.duplicates.length,
+    damage: review.damage.length,
   }
   const keys = visibleKeys(visible)
   const at = selectedKey === null ? -1 : keys.indexOf(selectedKey)
