@@ -95,7 +95,7 @@ const declaredOf = (cell: Cell) => new Set(cell.expectBroken?.map((b) => b.invar
 
 function gateFailure(o: CellOutcome): string | null {
   const seen = o.statuses.join(' → ') || 'sin estados'
-  if (o.cell.state === 'open') {
+  if (o.cell.state === 'open' && o.cell.programs !== 'music') {
     const whileOpen = o.statuses.slice(0, o.openUntil ?? o.statuses.length)
     if (whileOpen.includes('ok')) return `veredicto ok antes de cerrar el programa (${seen})`
     if (!whileOpen.includes('pending'))

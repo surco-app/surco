@@ -153,6 +153,12 @@ describe('a matrix cell is judged by whether the oracle and the self-check agree
     expect(cellFailure(neverWaited)).toContain('nunca quedó pendiente')
   })
 
+  // Only rekordbox, Engine and Traktor hold a library Surco must wait on; Music is driven
+  // while it runs, so a cell syncing only Music has no program to wait for (D21).
+  it('asks nothing of the open state when the cell syncs only Music', () => {
+    expect(agreement(outcome('D21', [], ok, ['checking', 'ok'], { openUntil: 2 }))).toBe('green')
+  })
+
   it('does not call a missing verdict green, even over a declared blind spot', () => {
     const moved: Broken[] = [{ invariant: 'cues', detail: 'rekordbox: un cue movido 500 ms' }]
     const silent = outcome('S-blindRekordboxCueMoved', moved, undefined)
