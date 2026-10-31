@@ -275,3 +275,27 @@ describe('repairDamage — on a real collection', () => {
     expect(readFileSync(nmlPath, 'utf8')).toBe(once)
   })
 })
+
+// Paths come from the renderer: a file the app was never handed is never written, whichever
+// writer the repair goes through.
+describe('repairDamage — paths the app was not handed', () => {
+  it('writes no tree and no library row for them', async () => {
+    const rewriteTree = vi.fn(async () => ({ written: true }))
+    const e = engineDeps([{ written: true }])
+    const d = deps({ rewriteTree, engine: e })
+    d.genre.allowed = () => false
+    const out = await repairDamage(
+      [
+        item('w', { target: 'traktor', path: WAV, addMs: -51.18, treeFile: WAV, treeMs: [10000] }),
+        item('e', engine),
+      ],
+      d,
+    )
+    expect(out).toEqual([
+      { id: 'w', state: 'failed', error: 'pathNotAllowed' },
+      { id: 'e', state: 'failed', error: 'pathNotAllowed' },
+    ])
+    expect(rewriteTree).not.toHaveBeenCalled()
+    expect(e.repointTracks).not.toHaveBeenCalled()
+  })
+})

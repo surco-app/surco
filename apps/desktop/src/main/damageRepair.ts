@@ -236,14 +236,22 @@ export async function repairDamage(
 ): Promise<DamageOutcome[]> {
   if (items.length === 0) return []
   deps.beginMoment()
+  const allowed = ({ repair }: DamageRepairItem) =>
+    repair.target === 'genre' ||
+    (deps.genre.allowed(repair.path) &&
+      (repair.target !== 'traktor' || !repair.treeFile || deps.genre.allowed(repair.treeFile)))
+  const refused = items
+    .filter((i) => !allowed(i))
+    .map(({ id }): DamageOutcome => ({ id, state: 'failed', error: 'pathNotAllowed' }))
   const of = <T extends DamageRepair['target']>(target: T) =>
-    items.filter((i): i is Of<T> => i.repair.target === target)
+    items.filter((i): i is Of<T> => i.repair.target === target && allowed(i))
   const unsupported = (list: DamageRepairItem[]) =>
     list.map(({ id }): DamageOutcome => ({ id, state: 'failed', error: 'libraryOff' }))
   const genres = of('genre')
   const traktor = of('traktor')
   const engine = of('engine')
   const outcomes = [
+    ...refused,
     ...(genres.length > 0 ? await repairGenres(genres, deps.genre) : []),
     ...(traktor.length === 0 ? [] : await repairTraktor(traktor, deps)),
     ...(engine.length === 0
