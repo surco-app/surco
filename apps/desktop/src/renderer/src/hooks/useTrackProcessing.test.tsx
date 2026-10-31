@@ -1011,11 +1011,11 @@ describe('useTrackProcessing', () => {
     )
   })
 
-  // Old installs still store "Apple Music + keep a copy in the output folder". The editor
+  // Every Mac starts on "Apple Music + keep a copy in the output folder". The editor
   // reads that back as Apple Music, and a convert from it must keep the copy the batch keeps,
   // or the same track loses its folder copy (and what rekordbox and Engine follow) only
   // because it was converted from the editor.
-  it('keeps the legacy output-folder copy when the editor converts to Apple Music', async () => {
+  it('keeps the default Mac output-folder copy when the editor converts to Apple Music', async () => {
     const processTrack = vi
       .fn<Api['processTrack']>()
       .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
@@ -1037,8 +1037,8 @@ describe('useTrackProcessing', () => {
     )
   })
 
-  // A folder setting stores keepOutputCopy true too, so the flag alone is no legacy choice:
-  // picking Apple Music by hand there still means Music only.
+  // A folder setting stores keepOutputCopy true too, so the flag alone is not the Mac
+  // default, and picking Apple Music by hand there still means Music only.
   it('drops the output-folder copy when Apple Music is picked over a folder setting', async () => {
     const processTrack = vi
       .fn<Api['processTrack']>()

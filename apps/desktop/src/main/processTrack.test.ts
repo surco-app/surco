@@ -1921,7 +1921,7 @@ describe('runProcessTrack — Apple Music only', () => {
   })
 })
 
-// The legacy "Apple Music + keep a copy in the output folder" (old installs only). Ruled
+// The default Mac destination, "Apple Music + keep a copy in the output folder". Ruled
 // 31/10: rekordbox and Engine follow the folder copy, the file the DJ manages, as in any
 // conversion that is not to Music; Music swaps its own entry the way a replacement does,
 // so the DJ keeps that entry's playlists and plays.
