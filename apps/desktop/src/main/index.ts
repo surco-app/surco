@@ -136,7 +136,6 @@ import { registerListReviewIpc } from './listReviewIpc'
 import { listReviewDeps } from './listReviewWiring'
 import { createMediaAccess } from './mediaAccess'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
-import { createMoments } from './moments'
 import { isIssuedPair } from './musicDuplicates'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
@@ -154,8 +153,8 @@ import {
   attachLibraryPlaylists,
   attachRekordboxPlaylists,
   beginRekordboxBatch,
-  recordedRekordboxRepoint,
   redirectRekordboxRepoint,
+  recordedRekordboxRepoint,
   rekordboxBatchOpen,
   stackRepoint,
 } from './rekordboxBatch'
@@ -171,6 +170,7 @@ import { adjustProvisional, createProvisionalList } from './rekordboxProvisional
 import { createRekordboxQueue, fileStore, type QueueApply } from './rekordboxQueue'
 import { appliedNotice, registerRekordboxQueueIpc } from './rekordboxQueueIpc'
 import { stillWaiting, watchRekordboxQueue } from './rekordboxQueueWatch'
+import { createMoments } from './moments'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { loadLastSession, saveLastSession } from './session'
