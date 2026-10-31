@@ -58,8 +58,28 @@ describe('DamageDetail', () => {
   it('lists the evidence with its numbers in the locale', () => {
     render(<DamageDetail finding={traktor} review={review()} />)
     expect(screen.getByTestId('damage-evidence')).toHaveTextContent('51,18 ms')
-    expect(screen.getByTestId('damage-before')).toHaveTextContent('9,949 s')
+    expect(screen.getByTestId('damage-before')).toHaveTextContent('Primer cue en 9,949 s')
     expect(screen.getByTestId('damage-after')).toHaveTextContent('10 s')
+  })
+
+  it('names the cue in the masculine, as the rest of the app does', () => {
+    render(
+      <DamageDetail
+        finding={{
+          ...traktor,
+          evidence: [
+            {
+              key: 'damage.evidence.traktorTree',
+              params: { fileSec: 10, entrySec: 9.949, sibling: 'uno.aiff' },
+            },
+          ],
+        }}
+        review={review()}
+      />,
+    )
+    expect(screen.getByTestId('damage-evidence')).toHaveTextContent(
+      'El MP3 guarda el primer cue en 10 s y Traktor lo tiene en 9,949 s, igual que uno.aiff',
+    )
   })
 
   it('offers the other spellings of a genre and stages the chosen one', () => {

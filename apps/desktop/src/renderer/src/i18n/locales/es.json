@@ -3015,7 +3015,7 @@
     },
     "value": {
       "text": "{{value}}",
-      "cueAt": "Primera cue en {{sec}} s",
+      "cueAt": "Primer cue en {{sec}} s",
       "engineAnalysis": "{{khz}} kHz, {{sec}} s",
       "seconds": "{{sec}} s"
     },
@@ -3025,7 +3025,7 @@
       "id3v1Number": "En ID3v1, {{number}} es {{name}}",
       "doubledParens": "Cada guardado doblaba los paréntesis",
       "maybeLegacy": "Puede ser un género antiguo escrito así a propósito",
-      "traktorTree": "El MP3 guarda la primera cue en {{fileSec}} s y Traktor la tiene en {{entrySec}} s, igual que {{sibling}}",
+      "traktorTree": "El MP3 guarda el primer cue en {{fileSec}} s y Traktor lo tiene en {{entrySec}} s, igual que {{sibling}}",
       "traktorTookSibling": "Traktor le dio los cues de {{sibling}}, que se desvían {{ms}} ms de este MP3",
       "traktorOldRule": "{{file}} se convirtió con la regla anterior y sus cues se desvían {{ms}} ms",
       "engineRate": "Engine DJ la analizó a {{engineKhz}} kHz y el fichero va a {{fileKhz}} kHz",
