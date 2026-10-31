@@ -161,25 +161,32 @@ describe('what a conversion tells rekordbox about its cues', () => {
     expect(recorded()?.audio).toBeUndefined()
   })
 
-  // rekordbox starts every .m4a's timeline 2112 samples in (rekordboxTimeline.ts), ALAC as
-  // much as AAC, so the same samples moved into or out of one still sit 48 ms elsewhere.
+  // Measured in rekordbox 7 on 31/10: an ALAC .m4a, from ffmpeg or from Apple, put its first
+  // beat at the same millisecond as the AIFF it was made from, so it is one more PCM format.
   it.each([
-    ['wav', 'alac', 'pcm_s16le', 'm4a', 48],
-    ['m4a', 'wav', 'alac', 'wav', -48],
-  ])(
-    'moves the cues converting %s to %s though the samples are kept',
-    async (from, to, codec, ext, ms) => {
-      const src = join(dir, `alac-${from}-to-${to}.${from}`)
-      pcm(src, codec)
-      await convertAudio(
-        src,
-        join(dir, `alac-${from}-to-${to}-out.${ext}`),
-        to as 'wav' | 'alac',
-        meta,
-      )
-      expect(recorded()?.audio).toEqual({ cueShiftMs: ms })
-    },
-  )
+    ['wav', 'alac', 'pcm_s16le', 'm4a'],
+    ['m4a', 'wav', 'alac', 'wav'],
+  ])('leaves the analysis and cues alone converting %s to %s', async (from, to, codec, ext) => {
+    const src = join(dir, `alac-${from}-to-${to}.${from}`)
+    pcm(src, codec)
+    await convertAudio(
+      src,
+      join(dir, `alac-${from}-to-${to}-out.${ext}`),
+      to as 'wav' | 'alac',
+      meta,
+    )
+    expect(recorded()).toBeDefined()
+    expect(recorded()?.audio).toBeUndefined()
+  })
+
+  // The same session measured an AAC that ffmpeg encodes 23 ms late in rekordbox, the 1024
+  // samples of priming its edit list declares, not the 48 ms of Apple's 2112.
+  it('moves the cues by the priming an ffmpeg AAC declares converting it to WAV', async () => {
+    const src = join(dir, 'aac-to-wav.m4a')
+    pcm(src, 'aac')
+    await convertAudio(src, join(dir, 'aac-to-wav.wav'), 'wav', meta)
+    expect(recorded()?.audio).toEqual({ cueShiftMs: -23 })
+  })
 
   // Trimming or normalizing changes the samples between two lossless formats, so rekordbox
   // has to reanalyse and the cues have to follow the trim.

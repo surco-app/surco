@@ -57,6 +57,32 @@ function id3(size: number): Buffer {
   return tag
 }
 
+function box(type: string, ...body: Buffer[]): Buffer {
+  const head = Buffer.alloc(8)
+  head.writeUInt32BE(8 + body.reduce((n, b) => n + b.length, 0), 0)
+  head.write(type, 4, 'latin1')
+  return Buffer.concat([head, ...body])
+}
+
+function appleM4a(codec: string, priming: number): Buffer {
+  const stsd = box('stsd', Buffer.from([0, 0, 0, 0, 0, 0, 0, 1]), box(codec, Buffer.alloc(28)))
+  const smpb = ` 00000000 ${priming.toString(16).toUpperCase().padStart(8, '0')} 00000338 0000000000015888`
+  const ilst = box(
+    'ilst',
+    box(
+      '----',
+      box('mean', Buffer.alloc(4), Buffer.from('com.apple.iTunes')),
+      box('name', Buffer.alloc(4), Buffer.from('iTunSMPB')),
+      box('data', Buffer.from([0, 0, 0, 1, 0, 0, 0, 0]), Buffer.from(smpb)),
+    ),
+  )
+  return box(
+    'moov',
+    box('trak', box('mdia', box('minf', box('stbl', stsd)))),
+    box('udta', box('meta', Buffer.alloc(4), ilst)),
+  )
+}
+
 describe('rekordboxLeadMs', () => {
   it('puts rekordbox one frame ahead of the editor on a LAME MP3, because rekordbox plays the Info frame as silence and Chromium skips it', () => {
     expect(rekordboxLeadMs(infoFrame(MPEG1_44K_STEREO, 32, 'LAME3.100'))).toBeCloseTo(
@@ -163,7 +189,23 @@ describe('rekordboxShiftMs', () => {
     expect(rekordboxShiftMs('.mp3', plain, 44100)).toBe(0)
   })
 
-  it('puts rekordbox the AAC priming ahead of ffmpeg on an M4A, which ffmpeg trims and rekordbox plays', () => {
+  it('puts rekordbox the priming an Apple AAC declares ahead of ffmpeg, which ffmpeg trims and rekordbox plays, measured +48 ms in rekordbox 7 on 31/10', () => {
+    expect(rekordboxShiftMs('.m4a', appleM4a('mp4a', 2112), 44100)).toBeCloseTo(
+      (2112 / 44100) * 1000,
+      3,
+    )
+    expect(rekordboxShiftMs('.m4a', appleM4a('mp4a', 1600), 44100)).toBeCloseTo(
+      (1600 / 44100) * 1000,
+      3,
+    )
+  })
+
+  it('keeps ALAC in step with PCM, measured at the same millisecond as the AIFF in rekordbox 7 on 31/10', () => {
+    expect(rekordboxShiftMs('.m4a', appleM4a('alac', 0), 44100)).toBe(0)
+    expect(rekordboxShiftMs('.m4a', appleM4a('alac', 2112), 44100)).toBe(0)
+  })
+
+  it("falls back to Apple's 2112 samples on an M4A that declares no priming, the only AAC the collection held when measured", () => {
     expect(rekordboxShiftMs('.m4a', Buffer.alloc(0), 44100)).toBeCloseTo((2112 / 44100) * 1000, 3)
     expect(rekordboxShiftMs('.m4a', Buffer.alloc(0), 48000)).toBeCloseTo(44, 3)
   })
@@ -179,6 +221,42 @@ describe('rekordboxShiftOfFile', () => {
     const file = join(dir, 'shift.mp3')
     execFileSync(FF, ['-y', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1', file])
     expect(await rekordboxShiftOfFile(file, 44100)).toBeCloseTo((1152 / 44100) * 1000, 3)
+  })
+
+  it("keeps an ALAC that Surco's ffmpeg writes in step with PCM", async () => {
+    const file = join(dir, 'shift-alac.m4a')
+    execFileSync(FF, [
+      '-y',
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=duration=1',
+      '-c:a',
+      'alac',
+      file,
+    ])
+    expect(await rekordboxShiftOfFile(file, 44100)).toBe(0)
+  })
+
+  it('reads the 1024 samples of priming an ffmpeg AAC declares in its edit list, measured +23 ms in rekordbox 7 on 31/10', async () => {
+    for (const rate of [44100, 48000]) {
+      const file = join(dir, `shift-aac-${rate}.m4a`)
+      execFileSync(FF, [
+        '-y',
+        '-v',
+        'error',
+        '-f',
+        'lavfi',
+        '-i',
+        `sine=duration=1:sample_rate=${rate}`,
+        '-c:a',
+        'aac',
+        file,
+      ])
+      expect(await rekordboxShiftOfFile(file, rate)).toBeCloseTo((1024 / rate) * 1000, 3)
+    }
   })
 
   it('reads no shift for a file it cannot open', async () => {
