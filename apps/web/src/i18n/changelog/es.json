@@ -143,7 +143,7 @@
         "in": "1.16.0"
       },
       {
-        "text": "En los flujos con cuenta atrás, la cue que cae donde empieza un estribillo se queda, porque es donde entras a mezclar, y la cuenta atrás termina ahí. Entre dos estribillos seguidos ya no pone ninguna.",
+        "text": "En los flujos con cuenta atrás, el cue que cae donde empieza un estribillo se queda, porque es donde entras a mezclar, y la cuenta atrás termina ahí. Entre dos estribillos seguidos ya no pone ninguno.",
         "in": "1.16.0"
       }
     ]
@@ -154,7 +154,7 @@
     "title": "Auto marcar aprende de ti",
     "items": [
       {
-        "text": "Auto marcar aprende tu forma de marcar. En Ajustes › Cues, «Aprender de mis pistas» lee las cues que ya pusiste en rekordbox y ajusta Auto a ti. Solo se queda con el ajuste si encuentra mejor tus marcas en pistas que aparta para comprobarlo, y te dice cuántos de cada 10 sitios donde marcas encuentra.",
+        "text": "Auto marcar aprende tu forma de marcar. En Ajustes › Cues, «Aprender de mis pistas» lee los cues que ya pusiste en rekordbox y ajusta Auto a ti. Solo se queda con el ajuste si encuentra mejor tus marcas en pistas que aparta para comprobarlo, y te dice cuántos de cada 10 sitios donde marcas encuentra.",
         "in": "1.15.0"
       },
       {
@@ -189,7 +189,7 @@
         "in": "1.14.0"
       },
       {
-        "text": "El flujo que marcas llega a los demás programas como lo marcaste. Cada drop va con el flujo que elegiste para él, cae en el mismo golpe de la música aunque cada programa cuente el compás a su manera, y las cues que ya tenías allí no se tocan.",
+        "text": "El flujo que marcas llega a los demás programas como lo marcaste. Cada drop va con el flujo que elegiste para él, cae en el mismo golpe de la música aunque cada programa cuente el compás a su manera, y los cues que ya tenías allí no se tocan.",
         "in": "1.14.0"
       },
       {
@@ -220,7 +220,7 @@
     "title": "Un flujo para todos tus programas",
     "items": [
       {
-        "text": "Marcas un drop una vez y, al guardar, el flujo llega también a la misma pista en rekordbox, Traktor y Engine DJ. Cada programa lo pone con su propia rejilla y respeta las cues que ya tiene allí, y el editor te dice antes de guardar qué recibirá cada uno. Si esa pista tiene cambios sin guardar en otro programa, Surco no los toca. Eliges a qué programas llega en Ajustes, Cues.",
+        "text": "Marcas un drop una vez y, al guardar, el flujo llega también a la misma pista en rekordbox, Traktor y Engine DJ. Cada programa lo pone con su propia rejilla y respeta los cues que ya tiene allí, y el editor te dice antes de guardar qué recibirá cada uno. Si esa pista tiene cambios sin guardar en otro programa, Surco no los toca. Eliges a qué programas llega en Ajustes, Cues.",
         "in": "1.13.0"
       },
       {
@@ -251,7 +251,7 @@
         "in": "1.12.0"
       },
       {
-        "text": "⌘K llega a todo lo nuevo. Vas a cualquier pestaña de biblioteca, creas una playlist, auto marcas las pistas seleccionadas, guardas sus cues o borras todas las de una pista sin tocar el ratón. Y conviertes editando el original solo esa vez.",
+        "text": "⌘K llega a todo lo nuevo. Vas a cualquier pestaña de biblioteca, creas una playlist, auto marcas las pistas seleccionadas, guardas sus cues o borras todos los de una pista sin tocar el ratón. Y conviertes editando el original solo esa vez.",
         "in": "1.12.0"
       },
       {
@@ -334,7 +334,7 @@
         "in": "1.11.2"
       },
       {
-        "text": "Nuevo botón «Borrar todas las cues» en el editor a pantalla completa. Quita los hot cues y los CALL de una vez, y ⌘Z los recupera si te arrepientes.",
+        "text": "Nuevo botón «Borrar todos los cues» en el editor a pantalla completa. Quita los hot cues y los CALL de una vez, y ⌘Z los recupera si te arrepientes.",
         "in": "1.11.2"
       },
       {

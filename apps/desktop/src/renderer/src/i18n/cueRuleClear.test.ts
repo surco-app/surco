@@ -6,7 +6,7 @@ import fr from './locales/fr.json'
 import ptBR from './locales/pt-BR.json'
 
 const READS = {
-  es: [es, 'si no hay otra cue en ese compás'],
+  es: [es, 'si no hay otro cue en ese compás'],
   en: [en, 'if there is no other cue in that bar'],
   de: [de, 'wenn in diesem Takt keine andere Cue liegt'],
   fr: [fr, 'si aucune autre cue ne tombe sur cette mesure'],
