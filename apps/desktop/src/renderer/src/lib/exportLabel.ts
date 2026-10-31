@@ -1,3 +1,4 @@
+import type { PlaylistSource } from '../../../shared/types'
 import i18n from '../i18n'
 import type { Destination } from './destination'
 import type { DjLibraryId } from './djLibraries'
@@ -32,6 +33,7 @@ export interface ExportLabelState {
   inMusic?: boolean
   // Where the file lands, named on the button unless Apple Music already names it.
   destination?: Destination
+  openSource?: PlaylistSource | null
 }
 
 function placeSuffix(state: ExportLabelState): 'Beside' | 'Overwrite' | null {
@@ -61,9 +63,11 @@ export function exportButtonLabel(state: ExportLabelState): {
     return { key: 'editor.reexport' }
   }
   const place = placeSuffix(state)
-  const programs = programNames(state)
+  const namesMusic = state.withAppleMusic && state.openSource !== 'appleMusic'
+  const namedDj = state.djTargets.filter((id) => id !== state.openSource)
+  const programs = programNames(namesMusic, namedDj)
   if (state.count !== undefined) {
-    if (state.djTargets.length > 0) {
+    if (namedDj.length > 0) {
       return {
         key: place ? `editor.convertAll${place}To` : 'editor.convertAllTo',
         options: { count: state.count, format: state.format, programs },
@@ -76,12 +80,12 @@ export function exportButtonLabel(state: ExportLabelState): {
       }
     }
     return {
-      key: state.withAppleMusic ? 'editor.convertAllMusic' : 'editor.convertAll',
+      key: namesMusic ? 'editor.convertAllMusic' : 'editor.convertAll',
       options: { count: state.count, format: state.format },
     }
   }
   if (state.inPlace && state.tagsOnly)
-    return { key: state.withAppleMusic ? 'editor.updateMusic' : 'editor.update' }
+    return { key: namesMusic ? 'editor.updateMusic' : 'editor.update' }
   if (state.stale && state.tagsOnly) return { key: 'editor.update' }
   if (state.stale && state.withAppleMusic && state.inMusic)
     return { key: 'editor.appleMusicUpdate' }
@@ -91,7 +95,7 @@ export function exportButtonLabel(state: ExportLabelState): {
       return { key: 'editor.libraryHasBetter', options: { format: state.format } }
     return { key: 'editor.replaceMusic', options: { format: state.format } }
   }
-  if (state.djTargets.length > 0) {
+  if (namedDj.length > 0) {
     return {
       key: place ? `editor.convert${place}To` : 'editor.convertTo',
       options: { format: state.format, programs },
@@ -101,12 +105,12 @@ export function exportButtonLabel(state: ExportLabelState): {
     return { key: `editor.convert${place}`, options: { format: state.format } }
   }
   return {
-    key: state.withAppleMusic ? 'editor.convert' : 'editor.convertNoMusic',
+    key: namesMusic ? 'editor.convert' : 'editor.convertNoMusic',
     options: { format: state.format },
   }
 }
 
-function programNames(state: ExportLabelState): string {
-  const ids = [...(state.withAppleMusic ? ['appleMusic'] : []), ...state.djTargets]
+function programNames(namesMusic: boolean, djTargets: DjLibraryId[]): string {
+  const ids = [...(namesMusic ? ['appleMusic'] : []), ...djTargets]
   return ids.map((id) => i18n.t(`settings.source.${id}`)).join(' + ')
 }

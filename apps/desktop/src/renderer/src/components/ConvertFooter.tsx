@@ -79,6 +79,7 @@ interface ConvertFooterProps {
   tagsOnly: boolean
   addToAppleMusic: boolean
   djTargets: DjLibraryId[]
+  openSource: PlaylistSource | null
   // The editor's one-shot destination pick and the choices its split-button menu
   // offers, pre-filtered by the editor (platform, configured overwrite).
   destination: Destination
@@ -144,6 +145,7 @@ export function ConvertFooter({
   tagsOnly,
   addToAppleMusic,
   djTargets,
+  openSource,
   destination,
   destinations,
   outputFolder,
@@ -656,6 +658,7 @@ export function ConvertFooter({
                 exportedFormat={isMulti ? null : exportedFormat}
                 withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
                 djTargets={djTargets}
+                openSource={openSource}
                 incomplete={incomplete}
                 incompleteReason={incompleteReason}
                 blockedLabel={incompleteSummary}
