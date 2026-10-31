@@ -29,6 +29,7 @@ import { scanTraktorDamage } from './traktorCueDamageScan'
 import type { NmlPatch } from './traktorNml'
 import { bootVolumeName } from './traktorNmlLibrary'
 import { holdInQueue, queuedNmlPatch } from './traktorPatchQueue'
+import { isTraktorRunning } from './traktorProcess'
 import { runInWorker } from './worker'
 
 export interface DamageEnv {
@@ -107,6 +108,8 @@ export function damageDeps(env: DamageEnv): DamageIpcDeps {
           rewriteCueTree(file, addMs, expected, env.tmp, env.followEngineSize),
         traktor: {
           ...traktor,
+          ensureTraktorClosed: async () => !(await isTraktorRunning().catch(() => true)),
+          showBlockedDialog: () => {},
           bootVolume: bootVolumeName(),
           readCollection: () => readFile(traktor.traktorNmlPath, 'utf8').catch(() => null),
           ...(queue && {
