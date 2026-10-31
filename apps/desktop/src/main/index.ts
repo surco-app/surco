@@ -1868,6 +1868,12 @@ function registerIpc(): void {
       appleMusicMediaFolder,
       appleMusicHoldsFile: (path, titles) =>
         appleMusicLimiter.run(() => appleMusicHoldsFile(path, titles)),
+      fileBytes: (path) =>
+        stat(path).then(
+          (s) => s.size,
+          () => undefined,
+        ),
+      followEngineSize,
       // The conflict prompt is the one Electron-bound branch: build the same warning
       // box as before and map its buttons back to the decision runProcessTrack expects.
       confirmConflict: (outputName, reservedOnly) =>
