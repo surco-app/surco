@@ -1591,8 +1591,16 @@ export async function deliveredDurationSec(
   file: string,
   opts?: { timeout?: number; signal?: AbortSignal },
 ): Promise<number | null> {
+  return (await deliveredLength(file, opts)).durationSec
+}
+
+async function deliveredLength(
+  file: string,
+  opts?: { timeout?: number; signal?: AbortSignal },
+  countSamples?: boolean,
+): Promise<{ durationSec: number | null; samples?: number }> {
   try {
-    const { stdout } = await run(
+    const { stdout, stderr } = await run(
       ffmpegPath,
       [
         '-hide_banner',
@@ -1602,7 +1610,7 @@ export async function deliveredDurationSec(
         file,
         '-map',
         '0:a',
-        ...COUNT_DELIVERED_SAMPLES,
+        ...(countSamples ? COUNT_EXACT_SAMPLES : COUNT_DELIVERED_SAMPLES),
         '-progress',
         '-',
         '-f',
@@ -1611,9 +1619,13 @@ export async function deliveredDurationSec(
       ],
       { maxBuffer: 1024 * 1024 * 16, ...opts },
     )
-    return decodedDurationSec(String(stdout))
+    const samples = [...String(stderr).matchAll(/Number of samples: (\d+)/g)].at(-1)?.[1]
+    return {
+      durationSec: decodedDurationSec(String(stdout)),
+      ...(samples ? { samples: Number(samples) } : {}),
+    }
   } catch {
-    return null
+    return { durationSec: null }
   }
 }
 
@@ -2007,12 +2019,12 @@ const CANCEL_POLL_MS = 50
 // and the job's cancel. Anything that keeps it from answering leaves it unknown.
 // How Engine DJ's positions move between a cut or resampled file and the original kept for
 // it (TrashEntry.engine): back to the original, the cut put back with the source's rate and
-// decoded length, over the file of the size this conversion wrote; and the move it made, for
+// the samples it decoded, over the file of the size this conversion wrote; and the move it made, for
 // when that file is put back in turn. Nothing when the conversion moved nothing under them.
 async function engineMoveKept(
   moved: { trimmedMs: number; sampleRateHz?: number; sampleCount?: number },
   probeSource: () => Promise<ProbeResult>,
-  sourceSec: number | undefined,
+  sourceSamples: number | undefined,
   written: string,
 ): Promise<{ engine?: TrashEntry['engine'] }> {
   if (!(moved.trimmedMs > 0) && !moved.sampleRateHz && !moved.sampleCount) return {}
@@ -2022,7 +2034,7 @@ async function engineMoveKept(
       shift: {
         trimmedMs: moved.trimmedMs > 0 ? -moved.trimmedMs : 0,
         ...(moved.sampleRateHz && rate ? { sampleRateHz: rate } : {}),
-        ...(sourceSec !== undefined && rate ? { sampleCount: Math.round(sourceSec * rate) } : {}),
+        ...(sourceSamples ? { sampleCount: sourceSamples } : {}),
       },
       over: (await stat(written)).size,
       undo: {
@@ -2034,17 +2046,19 @@ async function engineMoveKept(
   }
 }
 
-async function decodedSourceSec(
+async function decodedSource(
   input: string,
   probeOnce: (file: string) => Promise<ProbeResult>,
   signal: AbortSignal,
-): Promise<number | undefined> {
+  countSamples: boolean,
+): Promise<{ durationSec?: number; samples?: number }> {
   try {
     const [{ size }, probe] = await Promise.all([stat(input), probeOnce(input)])
     const timeout = pcmTimeoutMs(size, probe.headerSeconds)
-    return (await deliveredDurationSec(input, { timeout, signal })) ?? undefined
+    const { durationSec, samples } = await deliveredLength(input, { timeout, signal }, countSamples)
+    return { ...(durationSec !== null ? { durationSec } : {}), ...(samples ? { samples } : {}) }
   } catch {
-    return undefined
+    return {}
   }
 }
 
@@ -2198,6 +2212,7 @@ export async function convertAudio(
   let sourcePcm: PcmDigest | undefined
   let absorbedPcm: PcmDigest | null | undefined
   let sourceDurationSec: number | undefined
+  let sourceSamples: number | undefined
   let proven: DecodeProof | undefined
   // The length the decode delivered, as the samples Engine counts it in.
   let sampleCount: number | undefined
@@ -2528,13 +2543,14 @@ export async function convertAudio(
       if (isCancelled?.()) measuring.abort()
     }, CANCEL_POLL_MS)
     const digestAs = samplesKept ? await probeAudio(tmp).catch(() => undefined) : undefined
+    const countSamples = trimAf !== undefined || !!plan.sampleRateHz
     const measures = [
       proveDecodable(
         tmp,
         copiedVerbatim ? input : undefined,
         { signal: measuring.signal },
         digestAs,
-        trimAf !== undefined || !!plan.sampleRateHz,
+        countSamples,
       ),
       samplesKept && absorbedPcm !== undefined
         ? (absorbedPcm ?? undefined)
@@ -2544,11 +2560,14 @@ export async function convertAudio(
               return undefined
             })
           : undefined,
-      samplesKept ? undefined : decodedSourceSec(input, probeOnce, measuring.signal),
+      samplesKept ? undefined : decodedSource(input, probeOnce, measuring.signal, countSamples),
     ] as const
     try {
       let proof: Awaited<ReturnType<typeof proveDecodable>>
-      ;[proof, sourcePcm, sourceDurationSec] = await Promise.all(measures)
+      let source: Awaited<ReturnType<typeof decodedSource>> | undefined
+      ;[proof, sourcePcm, source] = await Promise.all(measures)
+      sourceDurationSec = source?.durationSec
+      sourceSamples = source?.samples
       const { size, mtimeMs, ino } = await stat(tmp)
       const { samples, ...decoded } = proof
       sampleCount = samples
@@ -2597,7 +2616,7 @@ export async function convertAudio(
           codec !== 'copy' || (extname(output).toLowerCase() === '.wav' && dropsForeignCues(input)),
         untilChecked: true,
         ...(rekordboxAudio && !replacesPath
-          ? await engineMoveKept(rekordboxAudio, () => probeOnce(input), sourceDurationSec, tmp)
+          ? await engineMoveKept(rekordboxAudio, () => probeOnce(input), sourceSamples, tmp)
           : {}),
       })
       originalKept = archived !== null
