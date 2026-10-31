@@ -119,7 +119,9 @@ export function judgeGenre(
 ): GenreJudgement | null {
   if (!hasGenreMarker(raw)) return null
   const kind = leadingNumber(raw) ? 'genre-number' : 'genre-parens'
-  const proof = evidence.find((e) => e.value !== raw && replaysTo(e.value, raw))
+  const proof = evidence.find(
+    (e) => e.value !== raw && !hasGenreMarker(e.value) && replaysTo(e.value, raw),
+  )
   if (proof) return { kind, certainty: 'sure', options: [proof.value], source: proof.source }
   const options = candidates(raw).filter((c) => c !== raw && replaysTo(c, raw))
   return options.length > 0 ? { kind, certainty: 'likely', options } : null

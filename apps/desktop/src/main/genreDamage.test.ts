@@ -36,6 +36,16 @@ describe('judgeGenre', () => {
     expect(judgeGenre(raw, [])).toBeNull()
   })
 
+  // Engine DJ read the file after an earlier save had already damaged it: its value replays
+  // to the bytes on disk, but proposing it would write damage back as the repair.
+  it('takes no proof from a library value that is itself damaged', () => {
+    const j = judgeGenre('Techno ((((Peak Time ; Driving)', [
+      { source: 'engine', value: 'Techno ((Peak Time ; Driving)' },
+    ])
+    expect(j?.certainty).toBe('likely')
+    expect(j?.options[0]).toBe('Techno (Peak Time / Driving)')
+  })
+
   it('ignores a library value the damage does not replay to the bytes on disk', () => {
     expect(judgeGenre('(35) Deep House', [{ source: 'engine', value: 'House' }])?.certainty).toBe(
       'likely',
