@@ -74,11 +74,16 @@ export interface PlaceCheck {
   final?: true
 }
 
+// What became of the original an overwrite replaced under «Nunca» once the checks found
+// something wrong: kept in Copias, or not, for want of room (see settleHeldOriginal).
+export type HeldOriginal = 'kept' | 'noRoom'
+
 export interface Verification {
   status: 'checking' | 'ok' | 'mismatch' | 'pending'
   checks: PlaceCheck[]
   job?: string
   seq?: number
+  originalHeld?: HeldOriginal
 }
 
 export const PLACE_ORDER: VerifyPlace[] = ['file', 'appleMusic', 'rekordbox', 'engine', 'traktor']

@@ -42,7 +42,12 @@ import {
   uniqueOutputPath,
 } from './inplace'
 import { pathKey } from './libraryPathKey'
-import { discardBackup, keepBeforeMusicRewrite } from './originalKeeper'
+import {
+  claimHeldOriginal,
+  discardBackup,
+  keepBeforeMusicRewrite,
+  settleHeldOriginal,
+} from './originalKeeper'
 import type { EngineBefore } from './verifyEngine'
 import type { FileExpect } from './verifyFile'
 import type { MusicExpect } from './verifyMusic'
@@ -1102,16 +1107,20 @@ export async function runProcessTrack(
     if (followed && (before.engine || addedToEngineDj)) places.add('engine')
     if (followed && traktor) places.add('traktor')
     // Named per conversion, not per track: a track converted again starts its own count.
+    const checked = withChecks({ status: 'checking', checks: [] }, [
+      fileCheck,
+      ...(musicCheck ? [musicCheck] : []),
+      ...(before.rekordbox && before.rekordbox !== 'absent' ? [library('rekordbox')] : []),
+      ...(engineListed ? [library('engine')] : []),
+      ...(traktor ? [library('traktor')] : []),
+    ])
+    const heldOriginal = claimHeldOriginal(finalPath)
+    const originalHeld = settleHeldOriginal(heldOriginal, checked.status)
     const verification = {
-      ...withChecks({ status: 'checking', checks: [] }, [
-        fileCheck,
-        ...(musicCheck ? [musicCheck] : []),
-        ...(before.rekordbox && before.rekordbox !== 'absent' ? [library('rekordbox')] : []),
-        ...(engineListed ? [library('engine')] : []),
-        ...(traktor ? [library('traktor')] : []),
-      ]),
+      ...checked,
       job: randomUUID(),
       seq: 0,
+      ...(originalHeld ? { originalHeld } : {}),
     }
     deps.registerVerification?.({
       trackId: job.id,
@@ -1127,6 +1136,7 @@ export async function runProcessTrack(
       engine: before.engine,
       traktorStranded: landed?.traktorFollowed === false,
       engineStep: addedToEngineDj,
+      heldOriginal,
       verification,
     })
 

@@ -435,6 +435,22 @@ export function ConvertFooter({
                       <span className="min-w-0">
                         {worst && retryFailed ? (
                           tr(`verify.detail.${DETAIL_PREFIX[worst.place] ?? worst.place}Unreadable`)
+                        ) : verification.originalHeld === 'kept' ? (
+                          <Trans
+                            i18nKey="verify.heldOriginalLine"
+                            values={{ panel: tr('copies.rail') }}
+                            components={[
+                              <button
+                                key="originals"
+                                type="button"
+                                data-testid="verify-open-originals"
+                                onClick={onOpenOriginals}
+                                className="underline underline-offset-2 hover:no-underline"
+                              />,
+                            ]}
+                          />
+                        ) : verification.originalHeld === 'noRoom' ? (
+                          tr('verify.heldOriginalNoRoomLine', { panel: tr('copies.rail') })
                         ) : keptOriginal ? (
                           <Trans
                             i18nKey="verify.sourceGoneKeptLine"

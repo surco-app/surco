@@ -1,4 +1,7 @@
-import { describe, expect, it, vi } from 'vitest'
+import { mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   type PlaceCheck,
   type Verification,
@@ -6,6 +9,13 @@ import {
   type VerifyPlace,
   verificationStatus,
 } from '../shared/verification'
+import {
+  claimHeldOriginal,
+  configureBackupDiscarder,
+  configureOriginalKeeper,
+  keepOriginal,
+  policyKeeper,
+} from './originalKeeper'
 import type { NmlPatch } from './traktorNml'
 import type { FileExpect } from './verifyFile'
 import type { MusicExpect } from './verifyMusic'
@@ -1017,5 +1027,79 @@ describe('verify registry', () => {
   it('retry on a track it does not know rejects with an error key', async () => {
     const { registry } = setup()
     await expect(registry.retry('nope')).rejects.toThrow(/^SURCO_ERR:verifyUnknownTrack$/)
+  })
+})
+
+// Under never the original an overwrite replaced waits in Copias for this verdict: the
+// libraries answer last, so it is their read that keeps or drops it, and the DJ is told
+// it stayed when it did.
+describe('the original held under never', () => {
+  afterEach(() => {
+    configureOriginalKeeper(null)
+    configureBackupDiscarder(null)
+  })
+
+  async function holdFor(to: string) {
+    const storedPath = join(mkdtempSync(join(tmpdir(), 'surco-held-')), 'a.aiff')
+    writeFileSync(storedPath, '')
+    const store = {
+      stash: vi.fn(async (path: string) => ({
+        id: 'held',
+        name: 'x',
+        originalPath: path,
+        storedPath,
+        bytes: 0,
+        trashedAt: 0,
+        reason: 'renamed' as const,
+      })),
+      remove: vi.fn(async (_id: string) => {}),
+    }
+    configureOriginalKeeper(policyKeeper(() => 'never', store.stash))
+    configureBackupDiscarder((e) => store.remove(e.id))
+    await keepOriginal('/Music/a.aiff', 'renamed', to, { untilChecked: true })
+    return { store, token: claimHeldOriginal(to) }
+  }
+
+  it('is reported kept with the library mismatch that kept it', async () => {
+    const { store, token } = await holdFor('/Music/a.wav')
+    const { deps, registry } = setup()
+    deps.readRekordbox.mockResolvedValueOnce([mismatch('rekordbox', 'rekordboxStillOld')])
+    registry.register(entry('a', { heldOriginal: token }))
+    await registry.afterFlush(written)
+    expect(deps.emit.mock.calls[0][1]).toMatchObject({
+      status: 'mismatch',
+      originalHeld: 'kept',
+    })
+    expect(store.remove).not.toHaveBeenCalled()
+  })
+
+  it('is dropped when every place adds up', async () => {
+    const { store, token } = await holdFor('/Music/a.wav')
+    const { deps, registry } = setup()
+    registry.register(entry('a', { heldOriginal: token }))
+    await registry.afterFlush(written)
+    expect(deps.emit.mock.calls[0][1]).not.toHaveProperty('originalHeld')
+    expect(store.remove).toHaveBeenCalledWith('held')
+  })
+
+  it('is dropped when a retry reads back ok, and the line stops saying it was kept', async () => {
+    const { store, token } = await holdFor('/Music/a.wav')
+    const { deps, registry } = setup()
+    deps.readRekordbox.mockResolvedValueOnce([unreadable('rekordbox', 'rekordboxUnreadable')])
+    registry.register(entry('a', { heldOriginal: token }))
+    await registry.afterFlush(written)
+    expect(deps.emit.mock.calls[0][1]).toMatchObject({ originalHeld: 'kept' })
+    await registry.retry('a')
+    expect(deps.emit.mock.calls[1][1]).toMatchObject({ status: 'ok' })
+    expect(deps.emit.mock.calls[1][1]).not.toHaveProperty('originalHeld')
+    expect(store.remove).toHaveBeenCalledWith('held')
+  })
+
+  it('is not settled by a track whose entry holds no copy', async () => {
+    const { store } = await holdFor('/Music/a.wav')
+    const { registry } = setup()
+    registry.register(entry('a'))
+    await registry.afterFlush(written)
+    expect(store.remove).not.toHaveBeenCalled()
   })
 })

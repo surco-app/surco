@@ -7,6 +7,7 @@ import {
   withChecks,
 } from '../shared/verification'
 import type { EngineShift } from './engineRepoint'
+import { settleHeldOriginal } from './originalKeeper'
 import type { NmlPatch } from './traktorNml'
 import type { EngineBefore } from './verifyEngine'
 import type { FileExpect } from './verifyFile'
@@ -43,6 +44,8 @@ export interface VerifyEntry {
   engineShift?: EngineShift
   // The source's size before a rewrite in place, handed again with that shift.
   fromBytes?: number
+  // The original held under «Nunca» for this verdict (claimHeldOriginal).
+  heldOriginal?: string
   verification: Verification
 }
 
@@ -181,7 +184,13 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     const stamp = stamps.get(e) ?? { job: e.verification.job, seq: 0 }
     stamps.set(e, stamp)
     stamp.seq += 1
-    deps.emit(e.trackId, { ...e.verification, job: stamp.job, seq: stamp.seq })
+    const originalHeld = settleHeldOriginal(e.heldOriginal, e.verification.status)
+    deps.emit(e.trackId, {
+      ...e.verification,
+      job: stamp.job,
+      seq: stamp.seq,
+      ...(originalHeld ? { originalHeld } : {}),
+    })
   }
 
   // Tracks a flush, a queue apply or a retry is still working on: a new batch must not clear

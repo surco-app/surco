@@ -2553,6 +2553,7 @@ export async function convertAudio(
       archived = await keepOriginal(input, 'replaced', output, {
         reencodes:
           codec !== 'copy' || (extname(output).toLowerCase() === '.wav' && dropsForeignCues(input)),
+        untilChecked: true,
       })
       originalKept = archived !== null
     }

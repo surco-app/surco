@@ -282,6 +282,51 @@ describe('sweeping', () => {
   })
 })
 
+// Under «Nunca» an overwritten original waits in Copias for the self-check (see
+// settleHeldOriginal). It must not cost the copies never still keeps, such as the review's
+// Undo, nor be swept away before its verdict says whether the DJ needs it.
+describe('an original held for the self-check', () => {
+  it('never evicts a copy already in Copias to make room for itself', async () => {
+    const review = await trash.stash(song('review.mp3', 600), 'replaced')
+    const held = await trash.stash(song('big.wav', 600), 'renamed', '/big.flac', undefined, true)
+    expect(held).toBeNull()
+    expect((await trash.list()).map((e) => e.id)).toEqual([review?.id])
+    expect(existsSync(review?.storedPath as string)).toBe(true)
+  })
+
+  it('a batch of large files holds what fits and leaves the review copy in place', async () => {
+    const review = await trash.stash(song('review.mp3', 200), 'replaced')
+    const held = []
+    for (let i = 0; i < 4; i++)
+      held.push(await trash.stash(song(`${i}.wav`, 300), 'renamed', `/${i}.flac`, undefined, true))
+    expect(held.map((e) => e !== null)).toEqual([true, true, false, false])
+    expect((await trash.list()).map((e) => e.id).sort()).toEqual(
+      [review?.id, held[0]?.id, held[1]?.id].sort(),
+    )
+  })
+
+  it('leaves even an expired copy for the sweep, taking only free room', async () => {
+    const old = await trash.stash(song('old.mp3'), 'deleted', undefined, Date.now() - 40 * DAY)
+    await trash.stash(song('big.wav', 300), 'renamed', '/big.flac', undefined, true)
+    expect((await trash.list()).map((e) => e.id)).toContain(old?.id)
+  })
+
+  it('is never pruned while held, by a later copy or by the sweep', async () => {
+    const held = await trash.stash(song('big.wav', 600), 'renamed', '/big.flac', undefined, true)
+    expect(await trash.stash(song('next.mp3', 600), 'replaced')).toBeNull()
+    await trash.sweep(Date.now() + 40 * DAY)
+    expect((await trash.list()).map((e) => e.id)).toEqual([held?.id])
+    expect(existsSync(held?.storedPath as string)).toBe(true)
+  })
+
+  it('is a copy like any other once released', async () => {
+    const held = await trash.stash(song('big.wav', 600), 'renamed', '/big.flac', undefined, true)
+    trash.release(held?.id as string)
+    const next = await trash.stash(song('next.mp3', 600), 'replaced')
+    expect((await trash.list()).map((e) => e.id)).toEqual([next?.id])
+  })
+})
+
 describe('stashes that overlap', () => {
   it('keeps the entry of a copy taken while an earlier stash was still pruning', async () => {
     for (let i = 0; i < 9; i++)

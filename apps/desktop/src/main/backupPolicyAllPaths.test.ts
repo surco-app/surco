@@ -10,7 +10,14 @@ vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 import type { BackupPolicy } from '../shared/backupPolicy'
 import { removeRenamedOriginal } from './inplace'
-import { configureOriginalKeeper, policyKeeper } from './originalKeeper'
+import {
+  claimHeldOriginal,
+  configureBackupStore,
+  configureOriginalKeeper,
+  policyKeeper,
+  settleHeldOriginal,
+} from './originalKeeper'
+import { createSurcoTrash } from './surcoTrash'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-allpaths-'))
@@ -74,15 +81,29 @@ describe('a format change under the backup policy', () => {
   })
 
   // What the user asked for on 21/09/2026: "Never" has to mean never, whichever write
-  // path the conversion happens to take.
-  it('deletes it outright under never, keeping nothing', async () => {
+  // path the conversion happens to take. Since 31/10/2026 only once the self-check has
+  // answered: until then the old-format file is held, so a conversion that does not add
+  // up still has its original.
+  it('holds it under never until the self-check answers', async () => {
     const { input, output } = pair()
     const kept = install('never')
     await removeRenamedOriginal(input, output)
-    expect(kept).toEqual([])
-    // Not kept AND not left behind: the file the user replaced is gone, which is the
-    // whole point of the level and why Settings warns before it is chosen.
+    expect(kept).toEqual([input])
+  })
+
+  // Through the real store: once the self-check says the new file adds up, nothing of the
+  // original is left, neither on its path nor in Copias.
+  it('leaves nothing under never once the self-check says everything matches', async () => {
+    const { input, output } = pair()
+    const store = createSurcoTrash(mkdtempSync(join(tmpdir(), 'surco-allpaths-trash-')))
+    configureBackupStore(store, () => 'never')
+    await removeRenamedOriginal(input, output)
     expect(existsSync(input)).toBe(false)
+    const [held] = await store.list()
+    expect(held.originalPath).toBe(input)
+    settleHeldOriginal(claimHeldOriginal(output), 'ok')
+    await vi.waitFor(async () => expect(await store.list()).toEqual([]))
+    expect(existsSync(held.storedPath)).toBe(false)
   })
 
   // A format change re-encodes by definition, so the middle level has no reason to skip
