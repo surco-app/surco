@@ -814,7 +814,8 @@ export function MusicReviewDetail({
   return (
     <section data-testid="music-review-detail" className="flex h-full min-h-0 flex-col">
       {review.status === 'ready' &&
-        review.spelling.length + review.duplicates.length + review.damage.length === 0 && (
+        review.spelling.length + review.duplicates.length + review.damage.length === 0 &&
+        !review.damageLoading && (
           <div
             data-testid="music-review-all-clear"
             className="flex h-full flex-col items-center justify-center p-8 text-center"

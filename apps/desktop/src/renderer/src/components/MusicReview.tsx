@@ -968,7 +968,7 @@ export function MusicReview({
   }
   const keys = visibleKeys(visible)
   const at = selectedKey === null ? -1 : keys.indexOf(selectedKey)
-  const nothing = review.status === 'ready' && counts.all === 0
+  const nothing = review.status === 'ready' && counts.all === 0 && !review.damageLoading
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || e.defaultPrevented || applying) return

@@ -2637,6 +2637,13 @@ describe('damage findings in the list review', () => {
     expect(within(pending).getByTestId('damage-row-pending')).toHaveTextContent('Pending')
   })
 
+  // Clean spellings and duplicates say nothing about damage still being looked for.
+  it('does not call the list clean while the damage scan runs', () => {
+    render(<Panes review={listReview({ damage: [], damageLoading: true })} />)
+    expect(screen.queryByTestId('music-review-clean')).toBeNull()
+    expect(screen.queryByTestId('music-review-all-clear')).toBeNull()
+  })
+
   it('says the scan is still running on the scope line', () => {
     render(<Panes review={listReview({ damageLoading: true, damageUnread: ['engine'] })} />)
     expect(screen.getByTestId('list-review-scope')).toHaveTextContent("Couldn't read Engine DJ")
