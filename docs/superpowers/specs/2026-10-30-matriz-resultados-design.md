@@ -129,7 +129,7 @@ Cada una nombra el bug o la medida que la justifica:
 | `K10` `trim` + Reintentar | El reintento no desplaza los cues dos veces |
 | `K11` `overwrite` mismo formato (FLAC→FLAC) | El fichero es su propio origen; el digest debe tomarse antes del rename |
 | `K12` `beside` con nombre que ya existe | El "(2)": todos los programas apuntan al "(2)", no al otro |
-| `K13` MP3 origen con `keepMp3Sources: true` | No se toca nada, ni fichero ni bibliotecas |
+| `K13` MP3 origen con `keepMp3Sources: true` | El MP3 sigue siendo MP3 en su sitio, sin reconvertir el audio, pero se reescriben sus etiquetas (`resolveJobFormat` deja el trabajo en MP3, como MP3→MP3); las bibliotecas siguen apuntando a él |
 | `K14` rekordbox abierto todo el lote, se cierra, se aplica | queued → pending → applied sin ✓ intermedio |
 
 ### Capa S — comprobación cruzada del verificador (27 celdas)
