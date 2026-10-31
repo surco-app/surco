@@ -378,6 +378,8 @@ const api: Api = {
   trashFile: (path: string, permanentConfirmed: boolean): Promise<void> =>
     ipcRenderer.invoke('shell:trash', path, permanentConfirmed),
   keepsTrash: (path: string): Promise<boolean> => ipcRenderer.invoke('shell:keepsTrash', path),
+  retireSuperseded: (path: string, titles: string[]): Promise<'retired' | 'used'> =>
+    ipcRenderer.invoke('shell:retireSuperseded', path, titles),
   trashList: (): Promise<TrashEntry[]> => ipcRenderer.invoke('trash:list'),
   trashRestore: (id: string, from?: 'undo'): Promise<{ restoredTo: string }> =>
     ipcRenderer.invoke('trash:restore', id, from),

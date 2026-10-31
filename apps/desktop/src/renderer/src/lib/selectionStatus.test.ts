@@ -66,6 +66,24 @@ describe('selectionStatus', () => {
     expect(offered(ok)).toBe(true)
   })
 
+  // The source the Mac default superseded in Music goes on its own once the check is ok: an
+  // offer beside it raced that retirement and reported a Trash failure for a file already gone.
+  it('does not offer the original while Surco retires it on its own, and offers it again once that kept it', () => {
+    const source = {
+      id: 'a',
+      status: 'done',
+      inputPath: '/lib/a.aiff',
+      outputPath: '/out/a.wav',
+      supersededPath: '/lib/a.aiff',
+      verification: ok,
+    } as const
+    expect(selectionStatus(track(source), undefined, true).canDeleteOriginal).toBe(false)
+    expect(
+      selectionStatus(track({ ...source, supersededKept: true }), undefined, true)
+        .canDeleteOriginal,
+    ).toBe(true)
+  })
+
   // The done footer must only appear once EVERY selected track converted — showing it
   // while one is still pending would offer reveal/add actions for files that don't
   // exist yet.
@@ -129,6 +147,7 @@ describe('selectionStatus superseded files', () => {
       outputPath: `/m/${id}.aiff`,
       replacesPath: `/m/${id}-old.mp3`,
       verification: ok,
+      supersededKept: true,
     })
 
   it('collects every superseded file across the selection with the track that replaced it', () => {
@@ -148,6 +167,7 @@ describe('selectionStatus superseded files', () => {
       status: 'done',
       supersededPath: '/lib/b.aiff',
       verification: ok,
+      supersededKept: true,
     })
 
     expect(selectionStatus(a, [a, b], true).superseded).toEqual([

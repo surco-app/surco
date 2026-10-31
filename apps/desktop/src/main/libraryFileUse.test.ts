@@ -161,6 +161,63 @@ describe('usedByDjLibrary', () => {
     open.mockRestore()
   })
 
+  // Music hands Surco the volume path while a library may have imported the same file
+  // through the ~/Music/Music link, or the other way round: a miss either way trashed a
+  // file the library still plays.
+  describe('the same file spelled another way', () => {
+    const home = '/Users/v/Music/Music'
+    const options = {
+      homeMusicDir: home,
+      realPath: (p: string) => (p === home ? '/Volumes/Public/Music' : p),
+    }
+    const onVolume = '/Volumes/Public/Music/T/Café.mp3'
+    const throughLink = `${home}/T/Café.mp3`
+
+    it.each([
+      ['through the link', throughLink, onVolume],
+      ['on the volume', onVolume, throughLink],
+    ])('finds a rekordbox row stored %s', async (_, stored, asked) => {
+      const collection = await rekordbox(stored)
+      expect(await usedByDjLibrary(asked, { ...OFF, rekordbox: collection }, options)).toBe(true)
+    })
+
+    it.each([
+      ['through the link', throughLink, onVolume],
+      ['on the volume', onVolume, throughLink],
+    ])('finds an Engine DJ row stored %s', async (_, stored, asked) => {
+      const dir = await engine(stored)
+      expect(await usedByDjLibrary(asked, { ...OFF, engine: dir }, options)).toBe(true)
+    })
+
+    it('finds a Traktor entry imported through the link from the boot disk', async () => {
+      const nml = await traktor('Macintosh HD', '/:Users/:v/:Music/:Music/:T/:', 'Café.mp3')
+      expect(await usedByDjLibrary(onVolume, { ...OFF, traktor: nml }, options)).toBe(true)
+    })
+
+    it('finds a Traktor entry on the volume when asked through the link', async () => {
+      const nml = await traktor('Public', '/:Music/:T/:', 'Café.mp3')
+      expect(await usedByDjLibrary(throughLink, { ...OFF, traktor: nml }, options)).toBe(true)
+    })
+
+    it('finds each library’s row stored decomposed, as the NAS keeps names', async () => {
+      const nfd = onVolume.normalize('NFD')
+      const collection = await rekordbox(nfd)
+      const dir = await engine(nfd)
+      const nml = await traktor('Public', '/:Music/:T/:', 'Café.mp3'.normalize('NFD'))
+      for (const libraries of [
+        { ...OFF, rekordbox: collection },
+        { ...OFF, engine: dir },
+        { ...OFF, traktor: nml },
+      ])
+        expect(await usedByDjLibrary(onVolume, libraries, options)).toBe(true)
+    })
+
+    it('finds a Traktor entry whose case differs, as macOS and Windows disks ignore it', async () => {
+      const nml = await traktor('Public', '/:music/:t/:', 'café.MP3')
+      expect(await usedByDjLibrary(onVolume, { ...OFF, traktor: nml }, options)).toBe(true)
+    })
+  })
+
   // A library that cannot be read may still use the file.
   it('throws when a library with its sync on cannot be read', async () => {
     const junk = join(root, 'junk.db')

@@ -1,4 +1,5 @@
 import type { TrackItem } from '../types'
+import { autoRetiredFile } from './autoRetiredFile'
 
 // The file a finished replacement left behind, or null when there is nothing to offer.
 //
@@ -25,5 +26,7 @@ export function supersededFile(track: TrackItem): string | null {
   if (superseded === track.outputPath) return null
   // A source with a separate output is already offered as the original (selectionStatus).
   if (superseded === track.inputPath && track.outputPath) return null
+  // A format change retires it on its own: offered only if that left it in place.
+  if (autoRetiredFile(track) === superseded) return null
   return superseded
 }

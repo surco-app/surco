@@ -28,17 +28,21 @@ function track(over: Partial<TrackItem> = {}): TrackItem {
 
 describe('supersededFile', () => {
   it('offers the replaced file once the conversion is done', () => {
-    expect(supersededFile(track({ replacesPath: '/m/old.mp3', outputPath: '/m/new.aiff' }))).toBe(
-      '/m/old.mp3',
-    )
+    expect(
+      supersededFile(
+        track({ replacesPath: '/m/old.mp3', outputPath: '/m/new.aiff', supersededKept: true }),
+      ),
+    ).toBe('/m/old.mp3')
   })
 
   // A track opened from Apple Music and converted to another format replaces its entry
   // without ever having had replacesPath stamped: main reports the old file afterwards.
   it('offers the file a format change superseded in Apple Music', () => {
-    expect(supersededFile(track({ supersededPath: '/lib/A.aiff', outputPath: '/out/A.wav' }))).toBe(
-      '/lib/A.aiff',
-    )
+    expect(
+      supersededFile(
+        track({ supersededPath: '/lib/A.aiff', outputPath: '/out/A.wav', supersededKept: true }),
+      ),
+    ).toBe('/lib/A.aiff')
   })
 
   // A kept output copy leaves the source beside it, and the footer already offers that as
@@ -120,6 +124,17 @@ describe('supersededFile', () => {
       ).toBeNull()
     },
   )
+
+  // The automatic retirement of a format change is under way: a click on the offer then
+  // raced it and reported a Trash failure for a file that was already gone.
+  it('offers nothing while Surco retires the file on its own, and offers it again once that kept it', () => {
+    const changed = { replacesPath: '/m/old.mp3', outputPath: '/m/new.aiff' }
+    expect(supersededFile(track(changed))).toBeNull()
+    expect(supersededFile(track({ ...changed, supersededKept: true }))).toBe('/m/old.mp3')
+    expect(supersededFile(track({ replacesPath: '/m/old.wav', outputPath: '/m/new.wav' }))).toBe(
+      '/m/old.wav',
+    )
+  })
 
   it('offers nothing when the track has no verification', () => {
     expect(

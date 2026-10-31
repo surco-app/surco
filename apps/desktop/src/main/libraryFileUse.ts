@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { engineContentId } from '../shared/engineContent'
 import { traktorContentId } from '../shared/traktorContent'
 import type { LibraryCopyInfo, LibraryCopyPresence, LibraryTracks } from '../shared/types'
@@ -8,7 +8,8 @@ import { engineRowFinder } from './engineRepoint'
 import { toNmlLocation } from './ffmpeg'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
 import { findTrackByPath, isAmbiguous, openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
-import { attr, findEntries, type NmlEntry, nmlCopyInfo } from './traktorNml'
+import { attr, findEntries, nmlCopyInfo } from './traktorNml'
+import { traktorFileOf } from './traktorPlaylists'
 
 // Each library's location, or '' when its sync is off.
 export interface SyncedLibraries {
@@ -37,7 +38,7 @@ export function djLibraryFileUse(
   const key = pathKey(options)
   let rekordboxKey: Promise<string> | undefined
   let engineRows: ReturnType<typeof readEngineRows> | undefined
-  let nmlEntries: Promise<NmlEntry[]> | undefined
+  let nmlFiles: Promise<Map<string, string[]>> | undefined
   return async (path) => {
     if (libraries.rekordbox) {
       rekordboxKey ??= rekordboxRawKey(libraries.rekordbox)
@@ -54,22 +55,29 @@ export function djLibraryFileUse(
       if ((await engineRows)(path, key).length > 0) return true
     }
     if (libraries.traktor) {
-      nmlEntries ??= readFile(libraries.traktor, 'utf8').then(findEntries)
-      const at = toNmlLocation(path)
-      const same = (a: string, b: string) => a.normalize('NFC') === b.normalize('NFC')
-      // An empty volume is the boot disk, which Traktor stores under its own name.
-      if (
-        (await nmlEntries).some(
-          (e) =>
-            same(e.dir, at.dir) &&
-            same(e.file, at.file) &&
-            (!at.volume || same(e.volume, at.volume)),
-        )
-      )
-        return true
+      nmlFiles ??= readFile(libraries.traktor, 'utf8').then(traktorFiles)
+      const nfc = path.normalize('NFC')
+      const target = key(nfc)
+      const sameName = (await nmlFiles).get(basename(nfc).toLowerCase()) ?? []
+      if (sameName.some((file) => key(file) === target)) return true
     }
     return false
   }
+}
+
+// Every file the collection holds, by lowercased composed name, so only the entries that
+// share the name pay a resolve. An entry on a named volume may be the boot disk under its
+// own name or a mounted one, and the boot disk's name is not asked: both spellings are kept.
+function traktorFiles(nml: string): Map<string, string[]> {
+  const byName = new Map<string, string[]>()
+  for (const entry of findEntries(nml)) {
+    if (!entry.file) continue
+    const block = nml.slice(entry.start, entry.end)
+    const name = entry.file.normalize('NFC').toLowerCase()
+    const spellings = [traktorFileOf(block, entry.volume), traktorFileOf(block, '')]
+    byName.set(name, [...(byName.get(name) ?? []), ...new Set(spellings)])
+  }
+  return byName
 }
 
 async function readEngineRows(libraryDir: string) {

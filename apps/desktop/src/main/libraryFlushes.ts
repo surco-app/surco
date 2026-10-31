@@ -16,7 +16,7 @@ import { engineBitrateKbps, engineRowFinder, repointEngineTracks } from './engin
 import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
 import { updateEngineTags } from './engineTags'
 import { probeAudio, probeDuration, probeProperties, toNmlLocation } from './ffmpeg'
-import { djLibraryFileUse } from './libraryFileUse'
+import { djLibraryFileUse, usedByDjLibrary } from './libraryFileUse'
 import { pathKey } from './libraryPathKey'
 import { flushLibraryRepoints, type LibraryRepointResult } from './libraryRepointFlush'
 import { libraryStatus } from './libraryStatus'
@@ -79,6 +79,36 @@ export function rekordboxCollectionPath(): string {
   return currentLibraryStatus().rekordbox.found
     ? findRekordboxCollection({ configured: getSettings().rekordboxDbPath })
     : ''
+}
+
+// Whether any library may still use the file, before Surco retires it on its own. Every
+// library found counts, its sync on or not: one the DJ only reads from still loses the track
+// when the file goes. One whose sync is on but cannot be read counts as using it. Music is
+// asked by the titles the entry may carry, and rejects when it cannot answer.
+export async function usedByAnyLibrary(
+  path: string,
+  titles: string[],
+  deps: {
+    traktorRead: () => string
+    musicEntries?: (path: string, titles: string[]) => Promise<string[]>
+  },
+): Promise<boolean> {
+  const settings = getSettings()
+  const status = currentLibraryStatus()
+  const used = await usedByDjLibrary(
+    path,
+    {
+      rekordbox:
+        settings.syncRekordbox || status.rekordbox.found
+          ? findRekordboxCollection({ configured: settings.rekordboxDbPath })
+          : '',
+      engine: settings.syncEngineDj || status.engine.found ? settings.engineLibraryDir : '',
+      traktor: (settings.syncTraktor && settings.traktorNmlPath) || deps.traktorRead(),
+    },
+    { realPath: (p: string) => realpathSync(p) },
+  )
+  if (used || !deps.musicEntries) return used
+  return (await deps.musicEntries(path, titles)).length > 0
 }
 
 export function repointRekordbox(

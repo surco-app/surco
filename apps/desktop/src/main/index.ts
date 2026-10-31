@@ -129,6 +129,7 @@ import {
   syncTagsInLibraries,
   traktorFlushDeps,
   traktorWrite,
+  usedByAnyLibrary,
 } from './libraryFlushes'
 import { takeCopy } from './libraryHistory'
 import { enginePendingLog, rekordboxPendingLog } from './libraryRestore'
@@ -2105,7 +2106,12 @@ function registerIpc(): void {
   // Lets the cover well show its paste affordance only when there's an image to paste.
   ipcMain.handle('clipboard:hasImage', () => clipboardHasImage())
 
-  registerShellIpc(mediaAccess)
+  registerShellIpc(mediaAccess, (path, titles) =>
+    usedByAnyLibrary(path, titles, {
+      traktorRead: traktorReadPath,
+      ...(process.platform === 'darwin' && { musicEntries: musicReaders.entriesForFile }),
+    }),
+  )
   registerCopiesIpc(
     {
       rekordbox: {

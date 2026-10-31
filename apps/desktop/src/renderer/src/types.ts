@@ -243,6 +243,9 @@ export interface TrackItem {
   // from originalTrashed: that one is the track's own source, this one is the old library
   // copy the replacement retired.
   supersededTrashed?: boolean
+  // Set when the automatic retirement left that copy in place, because a DJ library still
+  // uses it or it could not be moved: the manual offer then takes over.
+  supersededKept?: boolean
   verification?: Verification
   // The file a conversion to another format superseded when it replaced the track's Apple
   // Music entry. Kept apart from replacesPath, which the next job sends: a later re-sync
