@@ -276,6 +276,16 @@ describe('rekordboxShiftMs', () => {
     expect(rekordboxShiftMs('.m4a', file, 44100)).toBeCloseTo((2048 / 88200) * 1000, 3)
   })
 
+  it('reads a 64-bit edit list and skips an empty edit to the first one that plays media', () => {
+    const file = moov(track({ codec: 'mp4a', edits: [-1, 1024], wideEdits: true }))
+    expect(rekordboxShiftMs('.m4a', file, 44100)).toBeCloseTo((1024 / 44100) * 1000, 3)
+  })
+
+  it('takes the edit list over an iTunSMPB, the one ffmpeg follows when both are there', () => {
+    const file = moov(track({ codec: 'mp4a', edits: [1024] }), itunSmpb(2112))
+    expect(rekordboxShiftMs('.m4a', file, 44100)).toBeCloseTo((1024 / 44100) * 1000, 3)
+  })
+
   it('keeps PCM formats in step, measured within 2 ms on WAV and AIFF', () => {
     expect(rekordboxShiftMs('.wav', lame44, 44100)).toBe(0)
     expect(rekordboxShiftMs('.aiff', Buffer.alloc(0), 44100)).toBe(0)
@@ -289,7 +299,7 @@ describe('rekordboxShiftOfFile', () => {
     expect(await rekordboxShiftOfFile(file, 44100)).toBeCloseTo((1152 / 44100) * 1000, 3)
   })
 
-  it("keeps an ALAC that Surco's ffmpeg writes in step with PCM", async () => {
+  it("keeps an ALAC that Surco's ffmpeg writes in step with PCM, whatever priming its edit list declares", async () => {
     const file = join(dir, 'shift-alac.m4a')
     execFileSync(FF, [
       '-y',
@@ -303,7 +313,41 @@ describe('rekordboxShiftOfFile', () => {
       'alac',
       file,
     ])
+    const bytes = readFileSync(file)
+    bytes.writeInt32BE(1024, bytes.indexOf('elst', 0, 'latin1') + 4 + 8 + 4)
+    writeFileSync(file, bytes)
     expect(await rekordboxShiftOfFile(file, 44100)).toBe(0)
+  })
+
+  it('finds the moov ahead of the audio, where Apple and a faststart file put it', async () => {
+    const file = join(dir, 'shift-aac-faststart.m4a')
+    execFileSync(FF, [
+      '-y',
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=duration=1',
+      '-c:a',
+      'aac',
+      '-movflags',
+      '+faststart',
+      file,
+    ])
+    const bytes = readFileSync(file)
+    expect(bytes.indexOf('moov', 0, 'latin1')).toBeLessThan(bytes.indexOf('mdat', 0, 'latin1'))
+    expect(await rekordboxShiftOfFile(file, 44100)).toBeCloseTo((1024 / 44100) * 1000, 3)
+  })
+
+  it("falls back to Apple's 2112 samples on an .m4a it cannot read", async () => {
+    const garbage = join(dir, 'garbage.m4a')
+    writeFileSync(garbage, Buffer.alloc(64, 0xff))
+    expect(await rekordboxShiftOfFile(garbage, 44100)).toBeCloseTo((2112 / 44100) * 1000, 3)
+    expect(await rekordboxShiftOfFile(join(dir, 'gone.m4a'), 44100)).toBeCloseTo(
+      (2112 / 44100) * 1000,
+      3,
+    )
   })
 
   it('reads the 1024 samples of priming an ffmpeg AAC declares in its edit list, measured +23 ms in rekordbox 7 on 31/10', async () => {
