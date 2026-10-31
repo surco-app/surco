@@ -22,7 +22,12 @@ export interface RekordboxSnapshot {
 
 // What the collection said about the source before the conversion: its row, no row at all
 // (rekordbox does not have the track and is not checked), several rows, or a read that failed.
-export type RekordboxBefore = RekordboxSnapshot | 'absent' | 'ambiguous' | 'unreadable'
+export type RekordboxBefore =
+  | RekordboxSnapshot
+  | RekordboxSnapshot[]
+  | 'absent'
+  | 'ambiguous'
+  | 'unreadable'
 
 // added when the flush created a row for the file instead of repointing one; size is the
 // written file's size on disk.
@@ -81,14 +86,13 @@ export function snapshotRekordboxRow(
   try {
     const rows = rowsOn(db, from, find)
     if (rows.length === 0) return 'absent'
-    if (rows.length > 1) return 'ambiguous'
-    const row = rows[0]
-    return {
+    const snaps = rows.map((row) => ({
       id: String(row.ID),
       cues: liveCues(db, String(row.ID)),
       analysisDataPath: row.AnalysisDataPath ?? '',
       analysed: row.Analysed ?? 0,
-    }
+    }))
+    return snaps.length > 1 ? snaps : snaps[0]
   } catch {
     return 'unreadable'
   }
@@ -126,6 +130,7 @@ export function checkRekordbox(
 function judge(db: RekordboxDb, e: RekordboxExpect, find: FindOptions): PlaceCheck {
   if (e.before === 'unreadable') return noPhoto()
   const on = rowsOn(db, e.to, find)
+  if (Array.isArray(e.before)) return judgeTwins(db, e, e.before, on, find)
   if (on.length > 1) return check('mismatch', 'rekordboxAmbiguous', { count: on.length })
   if (on.length === 0) {
     const old = rowsOn(db, e.from, find)
@@ -142,9 +147,33 @@ function judge(db: RekordboxDb, e: RekordboxExpect, find: FindOptions): PlaceChe
     return check('mismatch', 'rekordboxAmbiguous', { count: ids.size })
   }
 
-  const row = on[0]
+  return judgeRow(db, e, on[0], typeof e.before === 'object' ? e.before : null)
+}
+
+function judgeTwins(
+  db: RekordboxDb,
+  e: RekordboxExpect,
+  twins: RekordboxSnapshot[],
+  on: Row[],
+  find: FindOptions,
+): PlaceCheck {
+  const left = rowsOn(db, e.from, find)
+  const ids = new Set([...twins.map((t) => t.id), ...[...on, ...left].map((r) => String(r.ID))])
+  if (ids.size !== twins.length || on.length !== twins.length)
+    return check('mismatch', 'rekordboxAmbiguous', { count: ids.size })
+  const checks = on.map((row) =>
+    judgeRow(db, e, row, twins.find((t) => t.id === String(row.ID)) ?? null),
+  )
+  return checks.find((c) => c.state !== 'ok') ?? checks[0]
+}
+
+function judgeRow(
+  db: RekordboxDb,
+  e: RekordboxExpect,
+  row: Row,
+  before: RekordboxSnapshot | null,
+): PlaceCheck {
   const id = String(row.ID)
-  const before = typeof e.before === 'object' ? e.before : null
   if (!e.added) {
     if (!before) return noPhoto()
     if (id !== before.id) return check('mismatch', 'rekordboxOtherRow')

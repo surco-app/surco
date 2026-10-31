@@ -448,10 +448,7 @@ describe('repointTrack', () => {
     await expect(stat(backupOf(dbPath, 'backup'))).rejects.toThrow()
   })
 
-  // 35 files in the real collection have two rows apiece and 67 of those rows are in
-  // playlists. Repointing one would leave its twin on the replaced file, so the caller is
-  // told to ask rather than being handed a guess.
-  it('refuses to choose between two rows for one file', async () => {
+  it('moves every row of one file, since each is a twin in its own playlists and any left behind breaks once the old file goes (Bamio 31/10: DJ Swisherman and DJ SWISHERMAN)', async () => {
     const db = openRekordboxDb(dbPath)
     if (!db) throw new Error('could not open the collection')
     db.prepare(
@@ -469,8 +466,9 @@ describe('repointTrack', () => {
       homeMusicDir: '/mirror',
     })
 
-    expect(result).toEqual({ written: false, reason: 'ambiguous', ids: ['900001', '900002'] })
-    expect(readRow(dbPath).FolderPath).toBe(MP3)
+    expect(result).toEqual({ written: true, id: '900001' })
+    expect(readRow(dbPath).FolderPath).toBe(output)
+    expect(readRow(dbPath, '900002')).toMatchObject({ FolderPath: output, FileSize: 5000 })
   })
 
   it('refuses to move an entry onto a file the collection already holds', async () => {
