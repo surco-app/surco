@@ -52,7 +52,7 @@
     "tailwindcss": "^4.1.13",
     "typescript": "^7.0.2",
     "vite": "^7.3.7",
-    "vitest": "4.1.10"
+    "vitest": "5.0.5"
   },
   "dependencies": {
     "@ffprobe-installer/ffprobe": "^2.1.2",
