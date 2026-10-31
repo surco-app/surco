@@ -26,7 +26,7 @@
     "mutate": "stryker run"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.7",
+    "@biomejs/biome": "2.6.3",
     "@stryker-mutator/core": "^10.1.1",
     "@stryker-mutator/vitest-runner": "^10.1.1",
     "@tailwindcss/vite": "^4.3.3",
