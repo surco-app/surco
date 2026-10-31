@@ -180,6 +180,7 @@
     "engineDjOpen": "Close Engine DJ before converting: it has the library open.",
     "noRoomForBackup": "There is no disk space for a backup of the original and its disk has no Trash, so it was left alone. Free up some space and try again.",
     "noRoomBeforeMusicRewrite": "There is no room in Backups for the copy Surco keeps before Music rewrites the file, so it was left alone. Free up some space and try again.",
+    "noBackup": "There is no room in Backups for a backup of this file, so it was left alone. Free up some space and try again.",
     "appleMusicEntryUnread": "Music didn’t say where the track’s file is, so it wasn’t asked to change anything. Try again.",
     "conversionCancelled": "Conversion cancelled.",
     "verifyUnknownTrack": "This check is no longer available. Convert the track again to repeat it.",

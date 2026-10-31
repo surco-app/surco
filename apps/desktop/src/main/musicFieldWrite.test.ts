@@ -562,7 +562,7 @@ describe('rewriteTagFields', () => {
         track,
         untrack,
       }),
-    ).rejects.toThrow('no-backup')
+    ).rejects.toThrow('SURCO_ERR:noBackup')
     expect(snapshotTags(file)).toEqual(before)
     expect(untrack).toHaveBeenCalledWith(track.mock.calls[0][0])
     expect(existsSync(track.mock.calls[0][0])).toBe(false)
@@ -570,6 +570,14 @@ describe('rewriteTagFields', () => {
 
   // The review's Undo restores these copies, so "Never" in Settings cannot be allowed to
   // turn a review fix into a write with no way back, nor into a refusal to write at all.
+  // Electron hands the renderer only the message, so the refusal travels as a key the review
+  // can say in the DJ's language instead of a bare "no-backup".
+  it('refuses with a translatable key when the backup taken before Music was refused', async () => {
+    const file = make('mp3', ['-c:a', 'libmp3lame'], 'Dj Lara')
+    configureOriginalKeeper(vi.fn().mockResolvedValue(null))
+    await expect(prepareTagRewrite(file)).rejects.toThrow('SURCO_ERR:noBackup')
+  }, 60000)
+
   it('still writes the fix with a backup when the setting says never', async () => {
     const file = make('mp3', ['-c:a', 'libmp3lame'], 'Dj Lara')
     configureOriginalKeeper(

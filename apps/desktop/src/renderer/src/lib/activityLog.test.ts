@@ -309,3 +309,22 @@ describe('activityFeedText', () => {
     expect(activityFeedText(rows, tr)).toBe('[error] Loading release\n  Discogs devolvió 500')
   })
 })
+
+// A failure from main reaches a row as its raw message. One stamped with a key is a sentence
+// in every catalogue, and a DJ reading the row or the pasted feed gets that sentence instead.
+describe('activity detail with a main-process error', () => {
+  it('says a stamped error in the reader language', () => {
+    const row: ActivityRow = {
+      id: 'r',
+      kind: 'applemusic',
+      status: 'error',
+      label: 'Funk Freak',
+      detailKey: 'activity.reviewFixFileFailed',
+      detailParams: { error: 'SURCO_ERR:noBackup: /m/Funk Freak.mp3' },
+    }
+    const text = activityFeedText([row], (key, params) =>
+      key === 'errors.noBackup' ? 'NO ROOM IN BACKUPS' : `${key} (${params?.error})`,
+    )
+    expect(text.split('\n')[1]).toBe('  activity.reviewFixFileFailed (NO ROOM IN BACKUPS)')
+  })
+})

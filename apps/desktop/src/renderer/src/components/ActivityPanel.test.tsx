@@ -208,6 +208,23 @@ describe('ActivityPanel accessibility', () => {
     expect(child).toHaveAttribute('aria-expanded', 'true')
   })
 
+  it('shows a failure stamped by main as its translated sentence', () => {
+    renderRows([
+      {
+        id: 'r',
+        kind: 'applemusic',
+        status: 'error',
+        label: 'Funk Freak',
+        detailKey: 'activity.reviewFixFileFailed',
+        detailParams: { error: 'SURCO_ERR:noBackup: /m/Funk Freak.mp3' },
+      },
+    ])
+    fireEvent.click(screen.getByTestId('activity-row'))
+    const detail = screen.getByTestId('activity-row-detail')
+    expect(detail).toHaveTextContent(i18n.t('errors.noBackup'))
+    expect(detail).not.toHaveTextContent('SURCO_ERR')
+  })
+
   // The open-in-browser button only faded in on mouse hover, so a keyboard user tabbing
   // onto it pressed an invisible control.
   it('shows the open-in-browser button when the keyboard reaches it', () => {

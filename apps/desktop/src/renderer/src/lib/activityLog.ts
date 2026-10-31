@@ -1,4 +1,5 @@
 import type { ActivityEvent, ActivityParams } from '../../../shared/types'
+import { errorKeyOf } from './ipcError'
 
 // One row in the activity panel: a single unit of background work, folding its
 // start and its later done/error into one entry the user watches resolve in
@@ -158,6 +159,21 @@ function applyGrouped(rows: ActivityRow[], event: ActivityEvent): ActivityRow[] 
 // the very details (URLs, errors, per-step timings) the panel folds away.
 type Translate = (key: string, params?: ActivityParams) => string
 
+// A param carrying a failure main stamped with a key is said with the catalogue's sentence,
+// the way mainErrorMessage says one a rejected call carries.
+export function rowDetailText(row: ActivityRow, tr: Translate): string | undefined {
+  if (!row.detailKey) return row.detail
+  const params = row.detailParams
+    ? Object.fromEntries(
+        Object.entries(row.detailParams).map(([name, value]) => {
+          const key = typeof value === 'string' ? errorKeyOf(value) : null
+          return [name, key ? tr(`errors.${key}`) : value]
+        }),
+      )
+    : undefined
+  return tr(row.detailKey, params)
+}
+
 const STATUS_TAG: Record<ActivityRow['status'], string> = {
   done: '[ok]',
   warn: '[warn]',
@@ -170,7 +186,7 @@ function rowLine(row: ActivityRow, tr: Translate, depth: number): string[] {
   const ms = row.ms !== undefined ? ` — ${tr('activity.elapsedMs', { ms: row.ms })}` : ''
   const pad = '  '.repeat(depth)
   const lines = [`${pad}${STATUS_TAG[row.status]} ${label}${ms}`]
-  const detail = row.detailKey ? tr(row.detailKey, row.detailParams) : row.detail
+  const detail = rowDetailText(row, tr)
   if (detail) lines.push(`${'  '.repeat(depth + 1)}${detail}`)
   for (const child of row.children ?? []) lines.push(...rowLine(child, tr, depth + 1))
   return lines
