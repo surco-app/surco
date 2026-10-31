@@ -27,7 +27,7 @@ export interface SurcoTrash {
     outputPath?: string,
     trashedAt?: number,
     held?: boolean,
-    extra?: Pick<TrashEntry, 'engineShift'>,
+    extra?: Pick<TrashEntry, 'engine'>,
   ): Promise<TrashEntry | null>
   release(id: string): void
   list(): Promise<TrashEntry[]>
@@ -37,7 +37,7 @@ export interface SurcoTrash {
   restore(id: string): Promise<{
     restoredTo: string
     displaced: TrashEntry | null
-    engineShift?: TrashEntry['engineShift']
+    engine?: TrashEntry['engine']
   }>
   remove(id: string): Promise<void>
   empty(): Promise<void>
@@ -209,7 +209,7 @@ export function createSurcoTrash(
       trashedAt: trashedAt ?? Date.now(),
       reason,
       ...(outputPath ? { outputPath } : {}),
-      ...(extra?.engineShift ? { engineShift: extra.engineShift } : {}),
+      ...(extra?.engine ? { engine: extra.engine } : {}),
     }
     write([...read(), entry])
     return entry
@@ -261,13 +261,26 @@ export function createSurcoTrash(
       if (!entry) throw new Error(`no such trash entry: ${id}`)
       await mkdir(dirname(entry.originalPath), { recursive: true })
       const occupant = await stat(entry.originalPath).catch(() => null)
-      const displaced = occupant ? await keep(entry.originalPath, 'restored-over') : null
+      // What this restore sets aside goes back with the move this one undoes, over the file
+      // this one puts back.
+      const displaced = occupant
+        ? await keep(
+            entry.originalPath,
+            'restored-over',
+            undefined,
+            undefined,
+            undefined,
+            entry.engine && {
+              engine: { shift: entry.engine.undo, over: entry.bytes, undo: entry.engine.shift },
+            },
+          )
+        : null
       await move(entry.storedPath, entry.originalPath, 'leave')
       write(read().filter((e) => e.id !== id))
       return {
         restoredTo: entry.originalPath,
         displaced,
-        ...(entry.engineShift ? { engineShift: entry.engineShift } : {}),
+        ...(entry.engine ? { engine: entry.engine } : {}),
       }
     },
     release: (id) => {

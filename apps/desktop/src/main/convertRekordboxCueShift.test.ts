@@ -370,19 +370,27 @@ describe('what a conversion tells Engine DJ about its cues', () => {
     expect(recorded()?.engineShift).toBeUndefined()
   })
 
-  // The original kept for a restore carries the way back: the cut put back, the source's
-  // rate and its length, so Engine's row can follow the original when it returns.
+  // The original kept for a restore carries the way back (the cut put back, the source's
+  // rate and its length) over the file this conversion wrote, and the move it made, so
+  // Engine's row can follow the original when it returns and the cut file if it comes back.
   it.each([
-    ['a cut', { startSec: 0.5 }, undefined, { trimmedMs: -500, sampleCount: 88200 }],
+    [
+      'a cut',
+      { startSec: 0.5 },
+      undefined,
+      { trimmedMs: -500, sampleCount: 88200 },
+      { trimmedMs: 500, sampleCount: 66150 },
+    ],
     [
       'a resample',
       undefined,
       { sampleRate: '48000' },
       { trimmedMs: 0, sampleRateHz: 44100, sampleCount: 88200 },
+      { trimmedMs: 0, sampleRateHz: 48000, sampleCount: 96000 },
     ],
   ] as const)(
     'keeps with the original the way back from %s in place',
-    async (_, trim, quality, back) => {
+    async (_, trim, quality, back, forward) => {
       const src = join(dir, `engine-back-${quality ? 'rate' : 'cut'}.wav`)
       pcm(src, 'pcm_s16le')
       const keeper = vi.fn(async () => null)
@@ -410,7 +418,9 @@ describe('what a conversion tells Engine DJ about its cues', () => {
         src,
         'replaced',
         src,
-        expect.objectContaining({ engineShift: back }),
+        expect.objectContaining({
+          engine: { shift: back, over: readFileSync(src).length, undo: forward },
+        }),
       )
     },
   )
@@ -429,7 +439,7 @@ describe('what a conversion tells Engine DJ about its cues', () => {
       src,
       'replaced',
       src,
-      expect.not.objectContaining({ engineShift: expect.anything() }),
+      expect.not.objectContaining({ engine: expect.anything() }),
     )
   })
 

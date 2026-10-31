@@ -1,5 +1,6 @@
 import { mkdir } from 'node:fs/promises'
 import { ipcMain, shell } from 'electron'
+import log from 'electron-log/main'
 import { activity } from './activity'
 import type { MediaAccess } from './mediaAccess'
 import type { Rewritten } from './musicFieldWrite'
@@ -24,8 +25,16 @@ export function registerTrashIpc(
     )
     // The row that pointed at this file can stream it again straight away.
     mediaAccess.allow(result.restoredTo)
-    if (result.displaced)
-      deps.followEngineSize?.(result.restoredTo, result.displaced.bytes, result.engineShift)
+    // A move written for another file than the one set aside (a later cut, a retag between)
+    // would land half right: the row is left as it is, for the next check to call stale.
+    const displaced = result.displaced
+    if (displaced && !result.engine) deps.followEngineSize?.(result.restoredTo, displaced.bytes)
+    else if (displaced && result.engine?.over === displaced.bytes)
+      deps.followEngineSize?.(result.restoredTo, displaced.bytes, result.engine.shift)
+    else if (displaced)
+      log.warn(
+        `restore of ${result.restoredTo} left Engine DJ's row: the file set aside is not the one its move was for`,
+      )
     return result
   })
   ipcMain.handle('trash:remove', (_e, id: string) => trash.remove(id))

@@ -17,6 +17,7 @@ import {
 } from '../main/engineBlobs'
 import { analysedTrack } from '../main/enginePerformanceFixture'
 import { engineDbPath, writeEngineLibraryFixture } from '../main/enginePlaylistsFixture'
+import type { TrashEntry } from '../shared/types'
 import { makeTrack, scenarioDir } from './fixtures'
 import { invokeMain, openSurco, type Scenario } from './harness'
 
@@ -314,5 +315,110 @@ describe('Put back the original of a record cut over itself, with its Engine DJ 
   // the original it lands where the music starts, the nearest the row still knows.
   it('leaves a cue the cut had moved to the new start where the music starts', () => {
     expect(after.cues[0]).toBeCloseTo(TRIM_SEC, 3)
+  })
+})
+
+async function cutInPlace(name: string) {
+  const root = scenarioDir(name)
+  const source = join(root, 'Crate', 'Record.flac')
+  const library = join(root, 'Engine Library')
+  makeTrack(source, {
+    title: 'Record',
+    artist: 'A',
+    lavfi: `aevalsrc=0.3*sin(2*PI*220*t):s=${RATE}:d=20`,
+  })
+  const db = writeEngineLibraryFixture(library, {
+    tracks: [{ id: 1, path: relative(library, source) }],
+    playlists: [],
+    entities: [],
+    performance: [
+      analysedTrack(
+        1,
+        CUE_SEC.map((s, i) => ({ label: `C${i}`, sample: s * RATE, argb: 0xffcc0000 })),
+      ),
+    ],
+  })
+  db.prepare("UPDATE Track SET fileType = 'flac', fileBytes = ?, length = 20 WHERE id = 1").run(
+    statSync(source).size,
+  )
+  db.close()
+  const surco = await openSurco({
+    settings: { outputFormat: 'source', engineLibraryDir: library, syncEngineDj: true },
+    destination: 'overwrite',
+  })
+  await surco.drop(join(root, 'Crate'))
+  surco.patchTrack('Record.flac', { trim: { startSec: TRIM_SEC } })
+  await surco.convertAll()
+  const restore = async (pick: (kept: TrashEntry[]) => TrashEntry) => {
+    const mine = (await surco.trash.list()).filter((e) => e.originalPath === source)
+    await invokeMain('trash:restore', pick(mine).id)
+    await surco.engineClosed()
+  }
+  const row = async () => {
+    const SQL = await loadSqlJs()
+    const opened = new SQL.Database(readFileSync(engineDbPath(library)))
+    try {
+      const [[fileBytes, length]] = opened.exec('SELECT fileBytes, length FROM Track')[0].values
+      return { fileBytes, length, ...(await performance(library)) }
+    } finally {
+      opened.close()
+    }
+  }
+  return { surco, source, restore, row }
+}
+
+const oldest = (kept: TrashEntry[]) => [...kept].sort((a, b) => a.trashedAt - b.trashedAt)[0]
+
+// Cut twice, the original from before both is a backup two moves away from the record now
+// playing. Its way back undoes only the first, so it is not applied: the row stays as the
+// second cut left it, a size the next check calls stale, never cues moved by half the cuts.
+describe('Put back the original from before two cuts over itself, with Engine DJ', () => {
+  let run: Awaited<ReturnType<typeof cutInPlace>>
+  let twiceCut: Awaited<ReturnType<typeof run.row>>
+
+  beforeAll(async () => {
+    run = await cutInPlace('engine-trim-twice-restore')
+    run.surco.patchTrack('Record.flac', { trim: { startSec: TRIM_SEC } })
+    await run.surco.convertAll()
+    twiceCut = await run.row()
+    await run.restore(oldest)
+  }, 120_000)
+
+  it('cut the record twice before the restore', () => {
+    expect(twiceCut.cues[2]).toBeCloseTo(CUE_SEC[2] - 2 * TRIM_SEC, 3)
+  })
+
+  it('leaves the Engine row as the second cut left it', async () => {
+    expect(await run.row()).toEqual(twiceCut)
+    expect(run.surco.engineQueue().tracks).toBe(0)
+  })
+})
+
+// Restoring the original sets the cut record aside in its turn; putting that one back is a
+// redo, and the row follows it again: cues on the cut audio, its size and length.
+describe('Put the cut record back after restoring its original, with Engine DJ', () => {
+  let run: Awaited<ReturnType<typeof cutInPlace>>
+  let cut: Awaited<ReturnType<typeof run.row>>
+
+  beforeAll(async () => {
+    run = await cutInPlace('engine-trim-redo')
+    cut = await run.row()
+    await run.restore((kept) => kept.find((e) => e.reason === 'replaced') as TrashEntry)
+    await run.restore((kept) => kept.find((e) => e.reason === 'restored-over') as TrashEntry)
+  }, 120_000)
+
+  it('runs without a single error the user would see', () => {
+    expect(run.surco.errors).toEqual([])
+  })
+
+  it('puts the row back on the cut record', async () => {
+    const after = await run.row()
+    expect(after.fileBytes).toBe(statSync(run.source).size)
+    expect(after.fileBytes).toBe(cut.fileBytes)
+    expect(after.length).toBe(cut.length)
+    expect(after.cues.slice(0, 3)).toEqual(
+      cut.cues.slice(0, 3).map((s) => expect.closeTo(s ?? Number.NaN, 3)),
+    )
+    expect(after.grid).toEqual(cut.grid.map((s) => expect.closeTo(s, 3)))
   })
 })

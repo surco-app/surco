@@ -2005,21 +2005,31 @@ const CANCEL_POLL_MS = 50
 
 // The source's decoded length, bounded like its digest: a timeout sized to the file
 // and the job's cancel. Anything that keeps it from answering leaves it unknown.
-// The move that takes Engine DJ's positions from a cut or resampled file back to the original
-// kept for it (TrashEntry.engineShift): the cut put back, the source's rate and its decoded
-// length. Nothing when the conversion moved nothing under them.
-async function engineShiftBack(
+// How Engine DJ's positions move between a cut or resampled file and the original kept for
+// it (TrashEntry.engine): back to the original, the cut put back with the source's rate and
+// decoded length, over the file of the size this conversion wrote; and the move it made, for
+// when that file is put back in turn. Nothing when the conversion moved nothing under them.
+async function engineMoveKept(
   moved: { trimmedMs: number; sampleRateHz?: number; sampleCount?: number },
   probeSource: () => Promise<ProbeResult>,
   sourceSec: number | undefined,
-): Promise<{ engineShift?: TrashEntry['engineShift'] }> {
+  written: string,
+): Promise<{ engine?: TrashEntry['engine'] }> {
   if (!(moved.trimmedMs > 0) && !moved.sampleRateHz && !moved.sampleCount) return {}
   const rate = Number((await probeSource()).sampleRate) || undefined
   return {
-    engineShift: {
-      trimmedMs: moved.trimmedMs > 0 ? -moved.trimmedMs : 0,
-      ...(moved.sampleRateHz && rate ? { sampleRateHz: rate } : {}),
-      ...(sourceSec !== undefined && rate ? { sampleCount: Math.round(sourceSec * rate) } : {}),
+    engine: {
+      shift: {
+        trimmedMs: moved.trimmedMs > 0 ? -moved.trimmedMs : 0,
+        ...(moved.sampleRateHz && rate ? { sampleRateHz: rate } : {}),
+        ...(sourceSec !== undefined && rate ? { sampleCount: Math.round(sourceSec * rate) } : {}),
+      },
+      over: (await stat(written)).size,
+      undo: {
+        trimmedMs: moved.trimmedMs,
+        ...(moved.sampleRateHz ? { sampleRateHz: moved.sampleRateHz } : {}),
+        ...(moved.sampleCount ? { sampleCount: moved.sampleCount } : {}),
+      },
     },
   }
 }
@@ -2587,7 +2597,7 @@ export async function convertAudio(
           codec !== 'copy' || (extname(output).toLowerCase() === '.wav' && dropsForeignCues(input)),
         untilChecked: true,
         ...(rekordboxAudio && !replacesPath
-          ? await engineShiftBack(rekordboxAudio, () => probeOnce(input), sourceDurationSec)
+          ? await engineMoveKept(rekordboxAudio, () => probeOnce(input), sourceDurationSec, tmp)
           : {}),
       })
       originalKept = archived !== null
