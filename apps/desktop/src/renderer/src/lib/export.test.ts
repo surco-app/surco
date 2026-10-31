@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { Verification } from '../../../shared/verification'
 import type { TrackItem } from '../types'
+import { autoRetiredFile } from './autoRetiredFile'
 import { trackSignature } from './dirty'
 import { exportedPatch } from './export'
-import { supersededFile } from './supersededFile'
 
 function track(over: Partial<TrackItem> = {}): TrackItem {
   return {
@@ -258,7 +258,7 @@ describe('exportedPatch', () => {
   // the next job sends that field, and a plain re-sync would replace the entry again and
   // repoint rekordbox from a file no library indexes any more.
   it('records the file a format change superseded apart from what the next job replaces', () => {
-    const t = track({ supersededTrashed: true })
+    const t = track({ supersededTrashed: true, supersededKept: true })
     const patch = exportedPatch(t, {
       outputPath: '/out/ATB - Till I Come.wav',
       inPlace: false,
@@ -266,7 +266,7 @@ describe('exportedPatch', () => {
       verification: { status: 'ok', checks: [] },
     })
     expect(patch.replacesPath).toBeUndefined()
-    expect(supersededFile({ ...t, ...patch })).toBe('/lib/Till I Come.aiff')
+    expect(autoRetiredFile({ ...t, ...patch })).toBe('/lib/Till I Come.aiff')
   })
 
   it('records the superseded file in Apple Music only mode too', () => {
@@ -279,7 +279,7 @@ describe('exportedPatch', () => {
       verification: { status: 'ok', checks: [] },
     })
     expect(patch.replacesPath).toBeUndefined()
-    expect(supersededFile({ ...t, ...patch })).toBe('/lib/Till I Come.aiff')
+    expect(autoRetiredFile({ ...t, ...patch })).toBe('/lib/Till I Come.aiff')
   })
 
   // Opened from the Music tab, the row IS the AIFF Music played. Left on it, trashing the
@@ -297,6 +297,6 @@ describe('exportedPatch', () => {
     expect(patch.inputPath).toBe('/Music/Media/ATB/Till I Come.wav')
     expect(patch.fileName).toBe('Till I Come')
     expect(patch.movedFrom).toEqual(['/lib/Till I Come.aiff'])
-    expect(supersededFile({ ...t, ...patch, status: 'done' })).toBe('/lib/Till I Come.aiff')
+    expect(autoRetiredFile({ ...t, ...patch, status: 'done' })).toBe('/lib/Till I Come.aiff')
   })
 })

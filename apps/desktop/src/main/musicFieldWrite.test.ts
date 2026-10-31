@@ -716,6 +716,14 @@ describe('rewriteCueTree', () => {
     60000,
   )
 
+  it('refuses with a translatable key and keeps the tree when the backup was refused', async () => {
+    const file = wavWithTree()
+    const before = starts(file)
+    configureOriginalKeeper(vi.fn().mockResolvedValue(null))
+    await expect(rewriteCueTree(file, -51.18, [10000, 15000])).rejects.toThrow('SURCO_ERR:noBackup')
+    expect(starts(file)).toEqual(before)
+  }, 60000)
+
   // The file grew or shrank with its new tree: Engine DJ holds its size and has to follow it.
   it('tells Engine DJ the size the file had before the rewrite', async () => {
     const file = wavWithTree()

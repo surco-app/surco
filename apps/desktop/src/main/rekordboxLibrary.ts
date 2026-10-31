@@ -114,8 +114,8 @@ function stageCovers(
   return staged
 }
 
-const heldByAnother = (holder: ReturnType<typeof findTrackByPath>, id: string): boolean =>
-  holder !== null && (isAmbiguous(holder) || holder.id !== id)
+const heldByAnother = (holder: ReturnType<typeof findTrackByPath>, ids: string[]): boolean =>
+  holder !== null && (isAmbiguous(holder) || !ids.includes(holder.id))
 
 // A whole run at once: one check that rekordbox is closed, one read to find every track,
 // one backup, one more check, and one write for all of them. Each track used to pay all of
@@ -175,12 +175,14 @@ export async function repointTracks(
       const match = findTrackByPath(db, repoint.from, repoint)
       // A collection that never had this track is the normal case for a partly-imported
       // library, and nothing — not even a backup — should be written for it.
-      if (match === null) results[p.index] = { written: false, reason: 'no-match' }
-      else if (isAmbiguous(match))
-        results[p.index] = { written: false, reason: 'ambiguous', ids: match.ambiguous }
-      else if (heldByAnother(findTrackByPath(db, repoint.to, repoint), match.id))
+      if (match === null) {
+        results[p.index] = { written: false, reason: 'no-match' }
+        continue
+      }
+      const ids = isAmbiguous(match) ? match.ambiguous : [match.id]
+      if (heldByAnother(findTrackByPath(db, repoint.to, repoint), ids))
         results[p.index] = { written: false, reason: 'occupied' }
-      else writes.push({ ...p, id: match.id })
+      else for (const id of ids) writes.push({ ...p, id })
     }
     if (writes.length > 0) {
       foldWal(db)
@@ -257,7 +259,7 @@ export async function repointTracks(
         onWrite?.()
       }
     })()
-    for (const w of writes) results[w.index] = { written: true, id: w.id }
+    for (const w of writes) results[w.index] ??= { written: true, id: w.id }
     return settle({ written: false, reason: 'no-match' })
   } catch (err) {
     for (const artwork of staged.values()) discardArtwork(artwork)

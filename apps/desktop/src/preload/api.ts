@@ -384,6 +384,10 @@ export interface Api {
   // volume rather than guessed from the path: a NAS often has no Trash, and macOS then
   // deletes outright — which a dialog promising recovery once turned into a lost file.
   keepsTrash: (path: string) => Promise<boolean>
+  // The file a format change superseded, once its check came back ok: 'used' leaves it where
+  // it is because a library still uses it, or one could not be read. `titles` are the names
+  // an Apple Music entry on it may carry.
+  retireSuperseded: (path: string, titles: string[]) => Promise<'retired' | 'used'>
   // Surco's own trash (main/surcoTrash.ts): the originals conversions replaced, kept
   // for a while. restore puts one back where it was and returns where it landed.
   trashList: () => Promise<TrashEntry[]>

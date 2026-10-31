@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { existsSync } from 'node:fs'
 import { basename, join } from 'node:path'
+import { waitFor } from '@testing-library/react'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
@@ -30,7 +31,7 @@ describe.skipIf(process.platform !== 'darwin')(
     let oldPid: string
     let warmUp: string
     let row: RekordboxRow
-    let osTrashAfterCleanUp: string[]
+    let osTrashAfterRetire: string[]
 
     beforeAll(async () => {
       const root = scenarioDir('replace')
@@ -76,8 +77,8 @@ describe.skipIf(process.platform !== 'darwin')(
       await surco.drop(join(root, 'Downloads'))
       replaces = (await surco.convertInEditor('Robin S - Show Me Love.flac')).replaces
       row = rekordboxRow(db, '900001')
-      await surco.cleanUp('Robin S - Show Me Love.flac')
-      osTrashAfterCleanUp = osTrash.map((p) => basename(p))
+      await waitFor(() => expect(osTrash.map((p) => basename(p))).toContain('Show Me Love.mp3'))
+      osTrashAfterRetire = osTrash.map((p) => basename(p))
     }, 120_000)
 
     it('offers to swap, since it found the song in Apple Music', () => {
@@ -106,8 +107,8 @@ describe.skipIf(process.platform !== 'darwin')(
       expect(music.playlist(warmUp)?.entries).toEqual([music.state.added[0].persistentId])
     })
 
-    it('offers to send the old file to the Trash when it is done', () => {
-      expect(osTrashAfterCleanUp).toContain('Show Me Love.mp3')
+    it('sends the old file to the Trash on its own once the check is ok and no library still uses it', () => {
+      expect(osTrashAfterRetire).toContain('Show Me Love.mp3')
     })
 
     it('runs without a single error the user would see', () => {

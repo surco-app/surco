@@ -1,5 +1,6 @@
 import { PLACE_ORDER, type VerifyPlace } from '../../../shared/verification'
 import type { TrackItem } from '../types'
+import { autoRetiredFile } from './autoRetiredFile'
 import { supersededFile } from './supersededFile'
 
 // A stranded file and the track whose replacement stranded it, so trashing it marks
@@ -82,7 +83,8 @@ export function selectionStatus(
     !!item.outputPath &&
     item.outputPath !== item.inputPath &&
     !item.originalTrashed &&
-    item.verification?.status === 'ok'
+    item.verification?.status === 'ok' &&
+    autoRetiredFile(item) !== item.inputPath
   const musicAdding = isMulti
     ? multiTracks.some((t) => t.musicStatus === 'adding')
     : item.musicStatus === 'adding'

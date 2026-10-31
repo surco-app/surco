@@ -109,7 +109,7 @@ export async function rewriteCueTree(
       reencodes: false,
       regardlessOfPolicy: true,
     })
-    if (!archived && hasOriginalKeeper()) throw new Error('no-backup')
+    if (!archived && hasOriginalKeeper()) throw errorWithKey('noBackup', file)
     await renameWithRetry(tmp, file)
     tracking?.untrack(tmp)
     rewritten?.(file, fromBytes)

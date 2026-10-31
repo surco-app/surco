@@ -1,10 +1,13 @@
+import { existsSync } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 import { clipboard, ipcMain, shell } from 'electron'
 import log from 'electron-log/main'
 import { errorWithKey } from '../shared/errorKeys'
 import { libraryBackupRoot } from './libraryBackups'
 import type { MediaAccess } from './mediaAccess'
+import { currentBackupPolicy } from './originalKeeper'
 import { trashAsConfirmed } from './recoverableTrash'
+import { retireSuperseded } from './retireSuperseded'
 import { volumeKeepsTrash } from './trashSupport'
 
 // The OS pass-throughs (reveal/open/trash + plain clipboard text), split out of
@@ -14,7 +17,10 @@ import { volumeKeepsTrash } from './trashSupport'
 // app actually knows about. mediaAccess already tracks every path the app has
 // handed the renderer as a real track or conversion output (see mediaAccess.ts),
 // so it doubles as the allowlist here.
-export function registerShellIpc(mediaAccess: MediaAccess): void {
+export function registerShellIpc(
+  mediaAccess: MediaAccess,
+  usedByLibrary: (path: string, titles: string[]) => Promise<boolean>,
+): void {
   ipcMain.handle('shell:reveal', (_e, path: string) => {
     if (!mediaAccess.isAllowed(path)) return
     return shell.showItemInFolder(path)
@@ -28,6 +34,20 @@ export function registerShellIpc(mediaAccess: MediaAccess): void {
   ipcMain.handle('shell:trash', async (_e, path: string, permanentConfirmed?: unknown) => {
     if (!mediaAccess.isAllowed(path)) throw errorWithKey('pathNotAllowed')
     await trashAsConfirmed(path, { permanentConfirmed: permanentConfirmed === true })
+  })
+  // The file a format change superseded, once its check came back ok: no dialog asks first,
+  // so it goes only when no DJ library uses it, recoverably unless «Nunca» on a disk with no
+  // Trash, where the user chose to delete it for good.
+  ipcMain.handle('shell:retireSuperseded', async (_e, path: string, titles?: unknown) => {
+    if (!mediaAccess.isAllowed(path)) throw errorWithKey('pathNotAllowed')
+    const names = Array.isArray(titles) ? titles.filter((t) => typeof t === 'string') : []
+    return retireSuperseded(path, {
+      usedByLibrary: (file) => usedByLibrary(file, names),
+      exists: existsSync,
+      keepsTrash: volumeKeepsTrash,
+      policy: currentBackupPolicy,
+      trash: (file, permanentConfirmed) => trashAsConfirmed(file, { permanentConfirmed }),
+    })
   })
   // Whether a delete of this file can be described as recoverable. Asked of the
   // filesystem, not guessed from the path: /Volumes/Macintosh HD is the local disk while

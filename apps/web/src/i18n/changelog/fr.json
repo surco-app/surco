@@ -55,6 +55,18 @@
       {
         "text": "Si tu écrases l’original et que la vérification après conversion trouve quelque chose qui ne correspond pas, l’original reste dans Sauvegardes même si les copies des originaux sont sur « Jamais ».",
         "in": "1.18.4"
+      },
+      {
+        "text": "« Vérifier les métadonnées » a un filtre « Dégâts » qui trouve ce que les versions précédentes ont laissé de travers dans tes morceaux chargés, comme des genres modifiés, des cues Traktor décalés ou des cues Engine DJ qui n’ont pas suivi une coupe. Il montre la preuve, ne marque comme sûr que ce qui l’est et répare ce que tu confirmes, avec une copie dans Sauvegardes.",
+        "in": "1.18.5"
+      },
+      {
+        "text": "rekordbox garde son analyse et ses cues en convertissant en ALAC, place les cues d’un AAC d’après le fichier lui-même et déplace ensemble les entrées en double d’un même fichier. Engine DJ suit la taille et la durée du fichier chaque fois que Surco le réécrit, et restaurer l’original remet ses cues en place.",
+        "in": "1.18.5"
+      },
+      {
+        "text": "Avec la destination Apple Music plus une copie dans le dossier, convertir un morceau depuis l’éditeur garde la copie dans le dossier comme en convertissant la liste.",
+        "in": "1.18.5"
       }
     ]
   },

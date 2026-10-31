@@ -55,6 +55,18 @@
       {
         "text": "Si sobrescribes el original y la comprobación tras convertir encuentra algo que no cuadra, el original se queda en Copias aunque las copias de los originales estén en «Nunca».",
         "in": "1.18.4"
+      },
+      {
+        "text": "«Revisar metadatos» tiene un filtro «Daños» que encuentra lo que versiones anteriores dejaron mal en tus pistas cargadas, como géneros cambiados, cues de Traktor desplazados o cues de Engine DJ que no siguieron un recorte. Te enseña la prueba, marca como seguro solo lo que lo es y repara lo que confirmes, con copia en Copias.",
+        "in": "1.18.5"
+      },
+      {
+        "text": "rekordbox conserva el análisis y los cues al convertir a ALAC, coloca los cues de un AAC según el propio archivo y mueve juntas las entradas repetidas de un mismo archivo. Engine DJ sigue el tamaño y la duración del archivo cada vez que Surco lo reescribe, y restaurar el original devuelve sus cues a su sitio.",
+        "in": "1.18.5"
+      },
+      {
+        "text": "Con el destino Apple Music y copia en la carpeta, convertir una pista desde el editor deja la copia en la carpeta igual que al convertir la lista.",
+        "in": "1.18.5"
       }
     ]
   },

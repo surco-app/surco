@@ -32,6 +32,7 @@ import {
   repointRekordbox,
   syncTagsInLibraries,
   traktorWrite,
+  usedByAnyLibrary,
 } from '../main/libraryFlushes'
 import { registerListReviewIpc } from '../main/listReviewIpc'
 import { listReviewDeps } from '../main/listReviewWiring'
@@ -83,6 +84,7 @@ import {
 } from '../renderer/src/hooks/useMusicReview'
 import type { ConfirmModal } from '../renderer/src/hooks/useOverlays'
 import { useQualityAnalysis } from '../renderer/src/hooks/useQualityAnalysis'
+import { useRetireSuperseded } from '../renderer/src/hooks/useRetireSuperseded'
 import { useTrackLibrary } from '../renderer/src/hooks/useTrackLibrary'
 import { useTrackProcessing } from '../renderer/src/hooks/useTrackProcessing'
 import { useTracksView } from '../renderer/src/hooks/useTracksView'
@@ -105,7 +107,6 @@ import { createQueryClient } from '../renderer/src/lib/queryClient'
 import { replacePatch } from '../renderer/src/lib/replaceBeforeConvert'
 import { musicSource, type ReviewSource } from '../renderer/src/lib/reviewSource'
 import { SettingsProvider } from '../renderer/src/lib/settingsContext'
-import { supersededFile } from '../renderer/src/lib/supersededFile'
 import { detectTrim } from '../renderer/src/lib/trim'
 import type { TrackItem } from '../renderer/src/types'
 import { trashLimits } from '../shared/backupPolicy'
@@ -763,6 +764,7 @@ function scenarioApi(
     trashRestore: (id, from) => invokeMain('trash:restore', id, from),
     trashFile: (path, permanent) => invokeMain('shell:trash', path, permanent),
     keepsTrash: (path) => invokeMain('shell:keepsTrash', path),
+    retireSuperseded: (path, titles) => invokeMain('shell:retireSuperseded', path, titles),
     properties: (path) => invokeMain('audio:properties', path),
     ...(drivesMusic(options) && {
       appleMusicEntryLocation: (pid) => invokeMain('applemusic:entryLocation', pid),
@@ -868,7 +870,6 @@ export interface Scenario {
   convertInEditor: (
     fileName: string,
   ) => Promise<{ replaces: boolean; target: ReplaceCandidate | null }>
-  cleanUp: (fileName: string) => Promise<void>
   openMusicReview: (filter?: ReviewFilter) => Promise<() => MusicReview>
   waitForNewTracks: () => Promise<string[]>
   loadNewTracks: () => Promise<void>
@@ -917,7 +918,12 @@ export function bootMain(options: ScenarioOptions): MainBoot {
   if (!ipcHandlers.has('audio:meta')) {
     registerAudioIpc((path) => mediaAccess.allow(path))
     registerTrashIpc(trash, mediaAccess, { followEngineSize })
-    registerShellIpc(mediaAccess)
+    registerShellIpc(mediaAccess, (path, titles) =>
+      usedByAnyLibrary(path, titles, {
+        traktorRead: traktorWritePath,
+        ...(drivesMusic(options) && { musicEntries: musicReaders.entriesForFile }),
+      }),
+    )
     if (drivesMusic(options)) registerAppleMusicIpc({ followEngineSize })
     registerListReviewIpc(
       listReviewDeps({
@@ -972,7 +978,6 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
   const { settings, trash, errors, sentToAppleMusic, flushes, queues, verify, api } =
     bootMain(options)
   const prompts: ConfirmModal[] = []
-  const editorVerdicts = new Map<string, () => ReturnType<typeof useLibraryVerdict>>()
   let running: Promise<void> | undefined
   ;(window as unknown as { api: Api }).api = api
 
@@ -1013,6 +1018,11 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         onProcessError: (message, name) => errors.push(`${name}: ${message}`),
       })
       useVerificationUpdates({ tracksRef: library.tracksRef, updateTrack: library.updateTrack })
+      useRetireSuperseded({
+        tracks: library.tracks,
+        updateTrack: library.updateTrack,
+        reportTrashFailure: (fileName) => errors.push(`retire failed: ${fileName}`),
+      })
       const quality = useQualityAnalysis({
         targetsRef: library.tracksRef,
         onErrors: (ids) => errors.push(`${ids.length} tracks could not be analysed`),
@@ -1128,7 +1138,6 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         })
         return verdict
       })
-      editorVerdicts.set(fileName, () => editor.result.current)
       const target = editor.result.current.replaceTarget
       if (target && !isAmbiguousCandidate(target))
         await waitFor(() =>
@@ -1173,26 +1182,6 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         await Promise.all(flushes)
       })
       return { replaces, target: offered }
-    },
-    cleanUp: async (fileName) => {
-      const track = trackNamed(fileName)
-      const superseded = supersededFile(track)
-      const asked = prompts.length
-      await act(async () => {
-        await result.current.confirmFlows.askCleanUp(track, {
-          originalPath: null,
-          superseded: superseded ? [{ trackId: track.id, path: superseded }] : [],
-          staleMusicCopy:
-            track.verification?.status === 'ok'
-              ? (editorVerdicts.get(fileName)?.().staleMusicCopy ?? null)
-              : null,
-        })
-      })
-      await waitFor(() => expect(prompts.length).toBeGreaterThan(asked))
-      await act(async () => {
-        prompts[prompts.length - 1].onConfirm()
-        await new Promise((resolve) => setTimeout(resolve, 200))
-      })
     },
     waitForNewTracks: async () => {
       await waitFor(() => expect(result.current.library.pendingNew).not.toBeNull(), {

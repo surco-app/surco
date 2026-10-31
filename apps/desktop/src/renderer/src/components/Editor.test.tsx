@@ -2658,6 +2658,7 @@ describe('Editor clean up previous files', () => {
       outputPath: '/out/a.aiff',
       replacesPath: '/old/a.mp3',
       verification: { status: 'ok', checks: [] },
+      supersededKept: true,
     })
     expect(screen.getAllByTestId('clean-up-previous')).toHaveLength(1)
     expect(screen.getByTestId('clean-up-previous')).toHaveAccessibleName(/2/)

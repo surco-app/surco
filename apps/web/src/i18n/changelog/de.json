@@ -55,6 +55,18 @@
       {
         "text": "Wenn du das Original überschreibst und die Prüfung nach dem Konvertieren etwas findet, das nicht stimmt, bleibt das Original in Backups, auch wenn die Kopien der Originale auf „Nie“ stehen.",
         "in": "1.18.4"
+      },
+      {
+        "text": "„Metadaten prüfen“ hat einen Filter „Schäden“, der findet, was frühere Versionen in deinen geladenen Tracks falsch hinterlassen haben, etwa geänderte Genres, verschobene Traktor-Cues oder Engine-DJ-Cues, die einer Kürzung nicht gefolgt sind. Er zeigt den Nachweis, markiert nur Sicheres als sicher und repariert, was du bestätigst, mit einer Kopie in Backups.",
+        "in": "1.18.5"
+      },
+      {
+        "text": "rekordbox behält Analyse und Cues beim Konvertieren in ALAC, setzt die Cues einer AAC anhand der Datei selbst und verschiebt doppelte Einträge derselben Datei gemeinsam. Engine DJ folgt Größe und Länge der Datei, wann immer Surco sie neu schreibt, und das Wiederherstellen des Originals bringt seine Cues zurück.",
+        "in": "1.18.5"
+      },
+      {
+        "text": "Mit dem Ziel Apple Music plus Kopie im Ordner behält das Konvertieren eines Tracks im Editor die Ordnerkopie, genau wie beim Konvertieren der Liste.",
+        "in": "1.18.5"
       }
     ]
   },

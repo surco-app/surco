@@ -55,6 +55,18 @@
       {
         "text": "If you overwrite the original and the check after converting finds something that doesn’t add up, the original stays in Backups even when copies of originals are set to Never.",
         "in": "1.18.4"
+      },
+      {
+        "text": "“Review metadata” has a “Damage” filter that finds what earlier versions left wrong in your loaded tracks, such as changed genres, shifted Traktor cues or Engine DJ cues that didn’t follow a trim. It shows the proof, marks as sure only what is, and repairs what you confirm, with a copy in Backups.",
+        "in": "1.18.5"
+      },
+      {
+        "text": "rekordbox keeps its analysis and cues when converting to ALAC, places an AAC’s cues from the file itself and moves repeated entries of the same file together. Engine DJ follows the file’s size and length every time Surco rewrites it, and restoring the original puts its cues back.",
+        "in": "1.18.5"
+      },
+      {
+        "text": "With the Apple Music destination plus a copy in the folder, converting a track from the editor keeps the folder copy just like converting the list.",
+        "in": "1.18.5"
       }
     ]
   },

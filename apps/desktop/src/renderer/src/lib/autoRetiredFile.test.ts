@@ -83,6 +83,32 @@ describe('autoRetiredFile', () => {
     expect(autoRetiredFile(track({ oldMusicCopyKept: 'carry' }))).toBeNull()
   })
 
+  it('keeps a replaced Music copy whose entry this run never re-read, since Music may still play it', () => {
+    const replacement = {
+      inputPath: '/downloads/A.flac',
+      outputPath: '/out/A.aiff',
+      supersededPath: undefined,
+      replacesPath: '/lib/A.mp3',
+      musicPersistentId: 'P1',
+    }
+    expect(autoRetiredFile(track(replacement))).toBeNull()
+    expect(
+      autoRetiredFile(
+        track({
+          ...replacement,
+          verification: {
+            status: 'ok',
+            checks: [{ place: 'appleMusic', state: 'ok', detail: { key: 'musicOne' } }],
+          },
+        }),
+      ),
+    ).toBe('/lib/A.mp3')
+  })
+
+  it('stops once main kept the file for a library that still uses it, so the manual offer takes over', () => {
+    expect(autoRetiredFile(track({ supersededKept: true }))).toBeNull()
+  })
+
   it('does not retire a file twice', () => {
     expect(autoRetiredFile(track({ supersededTrashed: true }))).toBeNull()
     expect(
