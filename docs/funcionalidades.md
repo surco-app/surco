@@ -1624,15 +1624,16 @@ remuestreo), Surco mueve los cues lo que se movió el sonido y vacía el anális
 rekordbox lo rehaga (`ffmpeg.ts:2546`, `rekordboxLibrary.ts:243`). Si conserva las muestras
 no mueve nada y el análisis se queda, que es la misma regla con la que lo juzga la
 autocomprobación (`rekordboxAnalysisEmptied`, `verifyRekordbox.ts:169`). En un .m4a manda
-el códec y no la extensión (`m4aPrimingSamples`, `rekordboxTimeline.ts:131`). **ALAC va como
-PCM, sin desplazamiento.** **AAC va adelantado el priming que declara el fichero**, en
-muestras a su frecuencia, leído de la lista de edición (`elst`) o, si no la hay, del
-`iTunSMPB` de Apple. El AAC de iTunes declara 2112 muestras (48 ms a 44,1 kHz) y el que
-escribe el ffmpeg de Surco 1024 (23 ms). Un AAC que no declara nada se toma como 2112, que
-es el único caso de la colección medida el 22/10, y es una suposición sin medir. Medido el
-31/10/2026 en el rekordbox 7 del usuario con una señal sintética (bombo a 120 BPM con el
-primer golpe en 2,100 s, 44,1 kHz/16 bits) importada en cinco ficheros, leyendo la rejilla
-del `ANLZ0000.DAT`. El primer golpe cae en 2099 ms en AIFF y en los ALAC de ffmpeg y de
+el códec y no la extensión, leído de la pista de sonido del `moov` (`m4aPrimingMs`,
+`rekordboxTimeline.ts:147`). **ALAC va como PCM, sin desplazamiento.** **AAC va adelantado el
+priming que declara el fichero.** Se toma de la lista de edición (`elst`, en la escala de
+tiempo de la pista) y, si no la hay, del `iTunSMPB` de Apple, en muestras a su frecuencia. El
+AAC de iTunes declara 2112 muestras (48 ms a 44,1 kHz) y el que escribe el ffmpeg de Surco
+1024 (23 ms). Un AAC que no declara nada va a 0, porque ffmpeg entonces no recorta nada y
+rekordbox queda donde ffmpeg. Solo si el `moov` no se puede leer se supone el AAC de Apple
+(2112). Medido el 31/10/2026 en el rekordbox 7 del usuario con una señal sintética (bombo a
+120 BPM con el primer golpe en 2,100 s, 44,1 kHz/16 bits) importada en cinco ficheros,
+leyendo la rejilla del `ANLZ0000.DAT`. El primer golpe cae en 2099 ms en AIFF y en los ALAC de ffmpeg y de
 Apple, a +23 ms en el AAC de ffmpeg y a +48 ms en el AAC de Apple. ffmpeg decodifica los
 cinco con el golpe en la misma muestra, así que el desfase es solo de rekordbox. Hasta
 entonces todo .m4a se trataba como AAC de 2112, y una conversión entre PCM y ALAC movía los
@@ -1752,7 +1753,7 @@ Nuevo en v1.10.0. Se pueden poner cues sin abrir rekordbox.
 golpe se busca en la subida más brusca de la energía plegada por periodo, no en su pico, que
 cae unos 100 ms después del bombo (`fitBeatGrid`, `beatGrid.ts:49`). Luego se pasa al tiempo
 de rekordbox según el formato y el codificador del MP3 (`rekordboxShiftMs`,
-`rekordboxTimeline.ts:139`). Medido contra el análisis de rekordbox en 2006 pistas de una
+`rekordboxTimeline.ts:159`). Medido contra el análisis de rekordbox en 2006 pistas de una
 colección real: la BPM coincide a ±0,02 en el 93 % y el golpe cae a 10 ms o menos en el
 83 %. **El compás no se sabe**: todos los golpes van sin número (`provisionalGrid`,
 `beatGrid.ts:57`), así que no hay líneas de compás y «Cuantizar a compás» se ve pero queda
