@@ -576,13 +576,45 @@ describe('checkEngine after a conversion that moved the audio', () => {
     expect(
       checkOne(
         dir,
-        expectFor(before, { from: file, to: file, size: SIZE_SMALL, samplesKept: false, shift }),
+        expectFor(before, {
+          from: file,
+          to: file,
+          size: SIZE_SMALL,
+          samplesKept: false,
+          shift,
+          fromBytes: 1,
+        }),
       )[0],
     ).toEqual({
       place: 'engine',
       state: 'mismatch',
-      detail: { key: 'engineSizeStaleCues' },
+      detail: { key: 'engineSizeStaleCues', params: { field: 'quickCues' } },
     })
+  })
+
+  // The row still had the source's size, so the write would have taken it: one that did not
+  // land is not the DJ's stale row, and the check says what is wrong with it as it is.
+  it('a row left on the source’s size by a write that never landed is not called stale', () => {
+    const dir = trimmable()
+    const file = FROM_LOCAL(dir)
+    writeFileSync(file, Buffer.alloc(1))
+    write(dir, 'UPDATE Track SET path = ?, fileBytes = 1 WHERE id = 1', relative(dir, file))
+    const before = snapshot(dir, file)
+    writeFileSync(file, Buffer.alloc(SIZE_SMALL))
+    const shift = { trimmedMs: CUT * 1000 }
+    expect(
+      checkOne(
+        dir,
+        expectFor(before, {
+          from: file,
+          to: file,
+          size: SIZE_SMALL,
+          samplesKept: false,
+          shift,
+          fromBytes: 1,
+        }),
+      )[0].detail,
+    ).toEqual({ key: 'engineCuesMisplaced', params: { field: 'quickCues' } })
   })
 
   it('a retag in place the row refused for a stale size is engineSizeStale', async () => {
@@ -594,13 +626,23 @@ describe('checkEngine after a conversion that moved the audio', () => {
     writeFileSync(file, Buffer.alloc(SIZE_SMALL))
     const [result] = await repointEngineTracks(dir, [{ from: file, to: file, fromBytes: 1 }])
     expect(result).toEqual({ written: false, reason: 'no-match' })
-    expect(checkOne(dir, expectFor(before, { from: file, to: file, size: SIZE_SMALL }))[0]).toEqual(
-      {
-        place: 'engine',
-        state: 'mismatch',
-        detail: { key: 'engineSizeStale' },
-      },
-    )
+    expect(
+      checkOne(dir, expectFor(before, { from: file, to: file, size: SIZE_SMALL, fromBytes: 1 }))[0],
+    ).toEqual({
+      place: 'engine',
+      state: 'mismatch',
+      detail: { key: 'engineSizeStale' },
+    })
+  })
+
+  it('a row on its old size with no size the write expected is not called stale', () => {
+    const dir = library()
+    const file = FROM_LOCAL(dir)
+    write(dir, 'UPDATE Track SET path = ?, fileBytes = 999 WHERE id = 1', relative(dir, file))
+    const before = snapshot(dir, file)
+    expect(
+      checkOne(dir, expectFor(before, { from: file, to: file, size: SIZE_SMALL }))[0].detail,
+    ).toEqual({ key: 'engineSizeDiffers' })
   })
 
   it('positions rewritten at the new sample rate are ok', () => {

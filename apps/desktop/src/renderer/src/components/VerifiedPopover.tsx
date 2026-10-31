@@ -40,7 +40,11 @@ export function detailText(
     return tr('verify.detail.rekordboxOk', { ...params, count: params.cues })
   if (key === 'fileTagDiffers' || key === 'musicTagDiffers')
     return tr(`verify.detail.${key}`, { field: tr(`fields.${params.field}`) })
-  if (key === 'enginePerformanceChanged' || key === 'engineCuesMisplaced')
+  if (
+    key === 'enginePerformanceChanged' ||
+    key === 'engineCuesMisplaced' ||
+    key === 'engineSizeStaleCues'
+  )
     return tr(`verify.detail.${key}`, { context: params.field })
   if (key === 'rekordboxCuesLost' || key === 'rekordboxCuesChanged')
     return tr(`verify.detail.${key}`, { ...params, count: params.before })
