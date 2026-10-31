@@ -493,9 +493,13 @@ describe('matrix file oracle', () => {
 
   // rekordbox counts cue milliseconds from its own start, which is not where ffmpeg starts:
   // an MP3 with an Info/Xing frame starts one frame (1152 samples) later, plus the encoder
-  // delay and the decoder's 529 when the frame is LAME-signed, and an .m4a after the 2112
-  // AAC priming samples. Seen in C-flac-mp3 and D12 (cues at 10026, 15026 on a Lavc MP3),
-  // K09 (9974, 14974 from an mp3x) and C-aiff-alac (10048, 15048 on an .m4a).
+  // delay and the decoder's 529 when the frame is LAME-signed. Seen in C-flac-mp3 and D12
+  // (cues at 10026, 15026 on a Lavc MP3) and K09 (9974, 14974 from an mp3x). In an .m4a the
+  // codec decides, measured in rekordbox 7 on 31/10 with a kick at 2.100 s in five files:
+  // ALAC lands where AIFF does (2099 ms), so it is PCM, and AAC lands later by the priming the
+  // file declares, +23 ms on ffmpeg's (1024 samples in its edit list) and +48 ms on Apple's
+  // (2112 in iTunSMPB). An AAC that declares none starts where ffmpeg does, and only a moov
+  // that cannot be read is taken for Apple's.
   it("places rekordbox's timeline where rekordbox starts counting on each kind of file", () => {
     const mp3x = makeSource(dir, 'mp3x', { fileName: 'timeline-x' })
     const lame = join(dir, 'timeline-lame.mp3')
@@ -525,6 +529,36 @@ describe('matrix file oracle', () => {
       ...ENCODE.mp3.args,
       mp3at48k,
     ])
+    const m4a = (name: string, codec: string, args: string[]) => {
+      const path = join(dir, name)
+      execFileSync(FF, [
+        '-y',
+        '-v',
+        'error',
+        '-f',
+        'lavfi',
+        '-i',
+        'sine=d=3',
+        '-c:a',
+        codec,
+        ...args,
+        path,
+      ])
+      return path
+    }
+    const appleSmpb = [
+      '-use_editlist',
+      '0',
+      '-movflags',
+      'use_metadata_tags',
+      '-metadata',
+      'iTunSMPB= 00000000 00000840 00000000 0000000000020000 00000000',
+    ]
+    const aacUndeclared = m4a('timeline-aac-sin-elst.m4a', 'aac', ['-use_editlist', '0'])
+    const aacApple = m4a('timeline-aac-apple.m4a', 'aac', appleSmpb)
+    const alacApple = m4a('timeline-alac-apple.m4a', 'alac', appleSmpb)
+    const aacNoMoov = join(dir, 'timeline-aac-sin-moov.m4a')
+    writeFileSync(aacNoMoov, readFileSync(aacUndeclared).subarray(0, 2000))
     const table: [string, number][] = [
       [mp3x.path, (1152 / 44100) * 1000],
       [lame, ((1152 + 576 + 529) / 44100) * 1000],
@@ -532,7 +566,12 @@ describe('matrix file oracle', () => {
       [mp3at48k, (1152 / 48000) * 1000],
       [makeSource(dir, 'mp3n', { fileName: 'timeline-n' }).path, 0],
       [makeSource(dir, 'mp3j', { fileName: 'timeline-j' }).path, 0],
-      [makeSource(dir, 'alac', { fileName: 'timeline-alac' }).path, (2112 / 44100) * 1000],
+      [makeSource(dir, 'alac', { fileName: 'timeline-alac' }).path, 0],
+      [makeSource(dir, 'aac', { fileName: 'timeline-aac' }).path, (1024 / 44100) * 1000],
+      [aacUndeclared, 0],
+      [aacApple, (2112 / 44100) * 1000],
+      [alacApple, 0],
+      [aacNoMoov, (2112 / 44100) * 1000],
       [makeSource(dir, 'wav16', { fileName: 'timeline-wav' }).path, 0],
       [makeSource(dir, 'aiff', { fileName: 'timeline-aiff' }).path, 0],
       [flac.path, 0],

@@ -900,14 +900,50 @@ function mp3TimelineSamples(bytes: Buffer): number {
   return MP3_FRAME_SAMPLES + delay + MP3_DECODER_DELAY
 }
 
+const UNREAD_MOOV_RATE = 44100
+
+function m4aTimelineMs(path: string): number {
+  let out: {
+    packets?: { pts_time?: string }[]
+    streams?: { codec_name?: string; sample_rate?: string }[]
+    format?: { tags?: Record<string, string> }
+  }
+  try {
+    out = JSON.parse(
+      execFileSync(
+        PROBE,
+        [
+          '-v',
+          'error',
+          '-select_streams',
+          'a:0',
+          '-read_intervals',
+          '%+#1',
+          '-show_entries',
+          'packet=pts_time:stream=codec_name,sample_rate:format_tags',
+          '-of',
+          'json',
+          path,
+        ],
+        { stdio: ['ignore', 'pipe', 'ignore'] },
+      ).toString(),
+    )
+  } catch {
+    return (AAC_PRIMING_SAMPLES / UNREAD_MOOV_RATE) * 1000
+  }
+  const stream = out.streams?.[0]
+  if (stream?.codec_name !== 'aac') return 0
+  const edited = -Number(out.packets?.[0]?.pts_time ?? 0)
+  if (edited > 0) return edited * 1000
+  const smpb = Object.entries(out.format?.tags ?? {}).find(([k]) => k.toLowerCase() === 'itunsmpb')
+  const declared = smpb ? Number.parseInt(smpb[1].trim().split(/\s+/)[1] ?? '0', 16) : 0
+  return declared > 0 ? (declared / Number(stream.sample_rate)) * 1000 : 0
+}
+
 export function rekordboxTimelineMs(path: string): number {
   const ext = extname(path).toLowerCase()
-  const samples =
-    ext === '.m4a'
-      ? AAC_PRIMING_SAMPLES
-      : ext === '.mp3'
-        ? mp3TimelineSamples(readFileSync(path))
-        : 0
+  if (ext === '.m4a') return m4aTimelineMs(path)
+  const samples = ext === '.mp3' ? mp3TimelineSamples(readFileSync(path)) : 0
   return samples === 0 ? 0 : (samples / probe(path).rate) * 1000
 }
 
