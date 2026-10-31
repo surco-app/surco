@@ -165,6 +165,7 @@ const api: Api = {
   replaceDuplicatesInLibraries: (pairs) => ipcRenderer.invoke('library:replaceDuplicates', pairs),
   libraryStatus: () => ipcRenderer.invoke('library:status'),
   libraryCopyInfo: (paths) => ipcRenderer.invoke('library:copyInfo', paths),
+  scanDamage: (paths) => ipcRenderer.invoke('damage:scan', paths),
   setMusicField: (
     pid: string,
     field: MusicReviewField,

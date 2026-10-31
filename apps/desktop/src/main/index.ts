@@ -97,10 +97,12 @@ import { installCrashGuards, logHandlerFailures, wireRendererRecovery } from './
 import { createCueTaste } from './cueTaste'
 import { registerCueTasteIpc } from './cueTasteIpc'
 import { cachedCueWaveWords } from './cueWaveWordsCache'
+import { registerDamageIpc } from './damageIpc'
 import { parseDockFrames } from './dockFrames'
 import { type ReplacePair, replaceDuplicates } from './duplicateReplace'
 import { registerEngineCueQueueIpc } from './engineCueQueueIpc'
 import { applyEngineCuesBatch } from './engineCuesWrite'
+import { scanEngineDamage } from './engineDamage'
 import { addToEngineLibrary, dumpEngineLibrary, withEngineDatabase } from './engineLibrary'
 import { engineDatabasePath } from './enginePlaylists'
 import { registerEnginePlaylistsIpc } from './enginePlaylistsIpc'
@@ -108,11 +110,18 @@ import { isEngineDjRunning, quitEngineDj } from './engineProcess'
 import { expandPaths } from './expand'
 import { registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
-import { convertAudio, readMeta, toNmlLocation } from './ffmpeg'
+import {
+  convertAudio,
+  headOffsetMs,
+  probeAudio,
+  probeDuration,
+  readMeta,
+  toNmlLocation,
+} from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { fileIdentity, isSameFile, removeRenamedOriginal } from './inplace'
 import { setLibraryBackupRoot } from './libraryBackups'
-import { libraryCopyInfo, libraryTracksOf } from './libraryFileUse'
+import { libraryCopyInfo, libraryGenresOf, libraryTracksOf } from './libraryFileUse'
 import {
   currentLibraryStatus,
   duplicateLibraryDeps,
@@ -135,6 +144,7 @@ import { registerListReviewIpc } from './listReviewIpc'
 import { listReviewDeps } from './listReviewWiring'
 import { createMediaAccess } from './mediaAccess'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
+import { createMoments } from './moments'
 import { isIssuedPair } from './musicDuplicates'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
@@ -152,8 +162,8 @@ import {
   attachLibraryPlaylists,
   attachRekordboxPlaylists,
   beginRekordboxBatch,
-  redirectRekordboxRepoint,
   recordedRekordboxRepoint,
+  redirectRekordboxRepoint,
   rekordboxBatchOpen,
   stackRepoint,
 } from './rekordboxBatch'
@@ -169,7 +179,6 @@ import { adjustProvisional, createProvisionalList } from './rekordboxProvisional
 import { createRekordboxQueue, fileStore, type QueueApply } from './rekordboxQueue'
 import { appliedNotice, registerRekordboxQueueIpc } from './rekordboxQueueIpc'
 import { stillWaiting, watchRekordboxQueue } from './rekordboxQueueWatch'
-import { createMoments } from './moments'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { loadLastSession, saveLastSession } from './session'
@@ -195,6 +204,7 @@ import { createStickyConflict } from './stickyConflict'
 import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsInWorker, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
+import { scanTraktorDamage } from './traktorCueDamageScan'
 import { registerTraktorCueQueueIpc } from './traktorCueQueueIpc'
 import { applyTraktorBatch } from './traktorCuesWrite'
 import { bootVolumeName, syncCollection } from './traktorNmlLibrary'
@@ -1633,6 +1643,42 @@ function registerIpc(): void {
       },
       { realPath: (p: string) => realpathSync(p) },
     )
+  })
+
+  registerDamageIpc({
+    scanDeps: (sender) => {
+      const host = hostFor(BrowserWindow.fromWebContents(sender), sender)
+      const libraries = {
+        rekordbox: rekordboxFlushDeps(host).collectionPath,
+        engine: engineFlushDeps(host).collectionPath,
+        traktor: traktorFlushDeps(host, sessions.traktor).traktorNmlPath,
+      }
+      return {
+        isAllowed: mediaAccess.isAllowed,
+        readGenre: (path) =>
+          runInWorker<{ raw: string; info?: string } | null>({ type: 'genreFrame', file: path }),
+        libraryGenres: (paths) =>
+          libraryGenresOf(paths, libraries, { realPath: (p: string) => realpathSync(p) }),
+        ...(libraries.traktor && {
+          traktor: (paths: string[]) => scanTraktorDamage(paths, libraries.traktor),
+        }),
+        ...(libraries.engine && {
+          engine: (paths: string[]) =>
+            scanEngineDamage(paths, libraries.engine, {
+              probe: async (path) => {
+                const probe = await probeAudio(path).catch(() => null)
+                const sampleRate = Number(probe?.sampleRate)
+                return probe?.headerSeconds && sampleRate > 0
+                  ? { sampleRate, durationSec: probe.headerSeconds }
+                  : null
+              },
+              backups: () => surcoTrash.list(),
+              headOffsetMs,
+              durationOf: (path) => probeDuration(path),
+            }),
+        }),
+      }
+    },
   })
 
   // A review removed duplicate copies from Music: the libraries follow, and a removed copy's

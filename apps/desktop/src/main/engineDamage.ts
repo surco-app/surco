@@ -21,6 +21,7 @@ export interface EngineDamage {
   path: string
   judgement: EngineJudgement
   fileBytes: number
+  length: number
   trackData: { sampleRate: number; sampleCount: number }
 }
 
@@ -136,7 +137,14 @@ export async function scanEngineDamage(
         ? await backupFor(path, engineSec, missingSec, await trash, deps)
         : null
     const judgement = judgeEngineRow({ ...trackData, length: found[0].length }, file, backup)
-    if (judgement) out.push({ path, judgement, fileBytes: found[0].fileBytes, trackData })
+    if (judgement)
+      out.push({
+        path,
+        judgement,
+        fileBytes: found[0].fileBytes,
+        length: found[0].length,
+        trackData,
+      })
   }
   return out
 }

@@ -16,6 +16,7 @@ import type {
   BpmResult,
   CoverExportJob,
   CoverRead,
+  DamageScan,
   DeclickConfig,
   DjProgram,
   DockIconFrames,
@@ -181,6 +182,8 @@ export interface Api {
   // Read only: per DJ library, whether its sync is on and its collection is on disk.
   libraryStatus: () => Promise<LibraryStatus>
   libraryCopyInfo: (paths: string[]) => Promise<Record<string, LibraryCopyInfo>>
+  // Read only: what the v1.18 fixes left damaged among these files and their libraries.
+  scanDamage: (paths: string[]) => Promise<DamageScan>
   cancelMusicFixes: () => Promise<void>
   // With `location`, only while the entry still points at that file (a list undo).
   setMusicField: (
