@@ -92,7 +92,7 @@ const expectFor = (
 })
 
 const field = <K extends keyof RekordboxSnapshot>(b: RekordboxBefore, k: K) =>
-  typeof b === 'object' ? b[k] : b
+  typeof b === 'object' && !Array.isArray(b) ? b[k] : b
 
 const checkOne = (path: string, e: RekordboxExpect) => checkRekordbox(readOnly(path), [e], find)
 
@@ -122,8 +122,11 @@ describe('snapshotRekordboxRow', () => {
     expect(snapshot(db, '/Volumes/Music/Other.aiff')).toBe('absent')
   })
 
-  it('two rows on the file are ambiguous, not absent', () => {
-    expect(snapshot(collection([{}, {}]))).toBe('ambiguous')
+  it('two rows on the file are each read, so the check can follow both twins the repoint moves', () => {
+    expect(snapshot(collection([{}, {}]))).toEqual([
+      { id: '100', cues: 13, analysisDataPath: '', analysed: 0 },
+      { id: '101', cues: 13, analysisDataPath: '', analysed: 0 },
+    ])
   })
 
   // A failed read is not "rekordbox does not have it": the caller must mark the track
@@ -282,8 +285,7 @@ describe('checkRekordbox', () => {
 
   it('two rows still on the source file are a mismatch, never ok', () => {
     const db = collection([{}, {}])
-    expect(snapshot(db)).toBe('ambiguous')
-    expect(checkOne(db, expectFor('ambiguous'))[0].detail).toEqual({
+    expect(checkOne(db, expectFor(snapshot(db)))[0].detail).toEqual({
       key: 'rekordboxAmbiguous',
       params: { count: 2 },
     })
@@ -408,6 +410,66 @@ describe('checkRekordbox', () => {
       place: 'rekordbox',
       state: 'mismatch',
       detail: { key: 'rekordboxAmbiguous', params: { count: 2 } },
+    })
+  })
+
+  it('one twin left on the old file is never ok, since it breaks once that file goes', () => {
+    const db = collection([{}, {}])
+    const before = snapshot(db)
+    repoint(db, '100')
+    expect(checkOne(db, expectFor(before))[0]).toEqual({
+      place: 'rekordbox',
+      state: 'mismatch',
+      detail: { key: 'rekordboxAmbiguous', params: { count: 2 } },
+    })
+  })
+
+  it('both twins moved with their cues is ok, so the superseded file can be retired (Bamio 31/10)', () => {
+    const db = collection([{}, {}])
+    const before = snapshot(db)
+    repoint(db, '100')
+    repoint(db, '101')
+    expect(checkOne(db, expectFor(before))[0]).toEqual({
+      place: 'rekordbox',
+      state: 'ok',
+      detail: { key: 'rekordboxOk', params: { format: 'WAV', cues: 13 } },
+    })
+  })
+
+  it('a twin that lost cues on the way is a mismatch even when the other kept them', () => {
+    const db = collection([{}, {}])
+    const before = snapshot(db)
+    repoint(db, '100')
+    repoint(db, '101')
+    write(db, `UPDATE djmdCue SET rb_local_deleted = 1 WHERE ID = '101-cue0'`)
+    expect(checkOne(db, expectFor(before))[0]).toEqual({
+      place: 'rekordbox',
+      state: 'mismatch',
+      detail: { key: 'rekordboxCuesLost', params: { before: 13, after: 12 } },
+    })
+  })
+
+  it('a stranger on the new file does not stand in for a twin left on the old one', () => {
+    const db = collection([{}, {}, { path: TO, fileType: 11, cuesMs: thirteen }])
+    write(db, `UPDATE djmdContent SET FileSize = ? WHERE ID = '102'`, SIZE)
+    const before = snapshotRekordboxRow(readOnly(db), FROM, find)
+    repoint(db, '100')
+    expect(checkOne(db, expectFor(before))[0]).toEqual({
+      place: 'rekordbox',
+      state: 'mismatch',
+      detail: { key: 'rekordboxAmbiguous', params: { count: 3 } },
+    })
+  })
+
+  it('a third row already on the new file is not taken for a twin', () => {
+    const db = collection([{}, {}, { path: TO, fileType: 11, cuesMs: [] }])
+    const before = snapshot(db)
+    repoint(db, '100')
+    repoint(db, '101')
+    expect(checkOne(db, expectFor(before))[0]).toEqual({
+      place: 'rekordbox',
+      state: 'mismatch',
+      detail: { key: 'rekordboxAmbiguous', params: { count: 3 } },
     })
   })
 
