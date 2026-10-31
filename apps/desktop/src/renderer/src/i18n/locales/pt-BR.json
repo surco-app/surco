@@ -3027,7 +3027,10 @@
       "engineBackup": "Cópia de {{date}}, o áudio começa {{sec}} s mais tarde nela",
       "engineNoBackup": "O Engine DJ se lembra dele {{sec}} s mais longo e o original não existe mais. Analise de novo no Engine DJ",
       "engineLength": "O Engine DJ mostra {{length}} s e sua própria análise diz {{sec}} s",
-      "engineSizeUnknown": "O Engine DJ não guarda o tamanho do arquivo, então o reparo se guia só pela análise dele"
+      "engineSizeUnknown": "O Engine DJ não guarda o tamanho do arquivo, então o reparo se guia só pela análise dele",
+      "engineCuesKept": "Os cues do Engine DJ continuam como na cópia da biblioteca de antes da conversão",
+      "engineCuesChanged": "Os cues do Engine DJ mudaram desde a cópia da biblioteca, talvez você os tenha movido à mão",
+      "engineNoCopy": "Nenhuma cópia da biblioteca mostra se você moveu os cues à mão"
     }
   }
 }

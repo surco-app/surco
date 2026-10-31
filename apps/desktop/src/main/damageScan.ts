@@ -186,11 +186,19 @@ function engineFinding(d: EngineDamage): DamageFinding {
           },
         ]
       : []),
+    {
+      key:
+        j.cuesKept === true
+          ? 'damage.evidence.engineCuesKept'
+          : j.cuesKept === false
+            ? 'damage.evidence.engineCuesChanged'
+            : 'damage.evidence.engineNoCopy',
+    },
     ...sizeUnknown,
   ]
   return {
     ...base,
-    certainty: 'sure',
+    certainty: j.certainty,
     evidence,
     before: analysis(trackData.sampleRate / 1000, engineSec),
     after: analysis(

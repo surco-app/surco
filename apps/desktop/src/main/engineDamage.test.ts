@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { TrashEntry } from '../shared/types'
 import { ENGINE_3_SCHEMA } from './engine3Fixture'
 import { judgeEngineRow, scanEngineDamage } from './engineDamage'
-import { trackDataBlob } from './enginePerformanceFixture'
+import { quickCuesBlob, trackDataBlob } from './enginePerformanceFixture'
 
 const row = (
   sampleRate: number,
@@ -25,12 +25,13 @@ const row = (
 describe('judgeEngineRow', () => {
   it('rescales the positions to the rate the file has now', () => {
     expect(
-      judgeEngineRow(row(48000, 14400000), { sampleRate: 44100, durationSec: 300 }, null),
+      judgeEngineRow(row(48000, 14400000), { sampleRate: 44100, durationSec: 300 }, null, true),
     ).toEqual({
       kind: 'engine-cues',
       certainty: 'sure',
       trimmedMs: 0,
       sampleRateHz: 44100,
+      cuesKept: true,
     })
   })
 
@@ -40,13 +41,26 @@ describe('judgeEngineRow', () => {
         row(44100, 13230000),
         { sampleRate: 44100, durationSec: 298.76 },
         { id: 'b1', trashedAt: 5, durationSec: 300, headMs: 1240 },
+        true,
       ),
     ).toEqual({
       kind: 'engine-cues',
       certainty: 'sure',
       trimmedMs: 1240,
       backup: { id: 'b1', trashedAt: 5 },
+      cuesKept: true,
     })
+  })
+
+  // Engine keeps its analysis when the DJ moves a cue by hand, so the rate and the length
+  // alone cannot tell a cue the bug left behind from one the DJ already put right.
+  it.each<[boolean | null, string]>([
+    [false, 'the cues changed since the library copy'],
+    [null, 'no library copy holds the row'],
+  ])('is only likely when %s (%s)', (cuesKept, _why) => {
+    expect(
+      judgeEngineRow(row(48000, 14400000), { sampleRate: 44100, durationSec: 300 }, null, cuesKept),
+    ).toMatchObject({ kind: 'engine-cues', certainty: 'likely', cuesKept })
   })
 
   it('only warns when no backup holds the trimmed audio', () => {
@@ -82,7 +96,9 @@ describe('judgeEngineRow', () => {
   })
 })
 
-async function library(rows: { path: string; rate: number; count: number; length?: number }[]) {
+async function library(
+  rows: { path: string; rate: number; count: number; length?: number; cues?: Buffer }[],
+) {
   const require = createRequire(import.meta.url)
   const buf = await readFile(require.resolve('sql.js/dist/sql-wasm.wasm'))
   const SQL = await initSqlJs({
@@ -99,8 +115,9 @@ async function library(rows: { path: string; rate: number; count: number; length
       [r.path, r.length ?? Math.round(r.count / r.rate)],
     )
     const id = db.exec('SELECT last_insert_rowid()')[0].values[0][0]
-    db.run('UPDATE PerformanceData SET trackData = ? WHERE trackId = ?', [
+    db.run('UPDATE PerformanceData SET trackData = ?, quickCues = ? WHERE trackId = ?', [
       trackDataBlob(r.rate, r.count),
+      r.cues ?? null,
       id,
     ])
   }
@@ -190,5 +207,31 @@ describe('scanEngineDamage', () => {
       trimmedMs: 1240,
       backup: { id: 'full', trashedAt: 5 },
     })
+  })
+})
+
+// The library copy Surco took before the conversion holds the cues as the DJ set them on the
+// old file. Still the same now, nobody moved them since: the repair is sure.
+describe('scanEngineDamage against the library copies', () => {
+  const ROW = { path: '../music/a.mp3', rate: 48000, count: 14400000 }
+  const cues = (sample: number) => quickCuesBlob([{ label: 'Drop', sample, argb: 0xffcc0000 }])
+
+  async function copyOf(row: typeof ROW & { cues: Buffer }) {
+    const copy = await library([row])
+    return join(copy.dir, 'Database2', 'm.db')
+  }
+
+  it.each([
+    [96000, 'sure'],
+    [97000, 'likely'],
+  ])('a copy with the cue at %i makes it %s', async (inCopy, certainty) => {
+    const lib = await library([{ ...ROW, cues: cues(96000) }])
+    const dbPath = await copyOf({ ...ROW, cues: cues(inCopy) })
+    const [found] = await scanEngineDamage(
+      [join(lib.music, 'a.mp3')],
+      lib.dir,
+      deps({ copies: async () => [{ takenAt: 1, dbPath }] }),
+    )
+    expect(found.judgement).toMatchObject({ certainty })
   })
 })

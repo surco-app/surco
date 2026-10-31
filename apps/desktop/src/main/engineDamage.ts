@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import type { Database } from 'sql.js'
 import type { TrashEntry } from '../shared/types'
 import { loadSqlJs } from './engine'
 import { decodeTrackData, inflateEngineBlob } from './engineBlobs'
@@ -10,10 +11,11 @@ import { pathKey } from './libraryPathKey'
 export type EngineJudgement =
   | {
       kind: 'engine-cues' | 'engine-length'
-      certainty: 'sure'
+      certainty: 'sure' | 'likely'
       trimmedMs: number
       sampleRateHz?: number
       backup?: { id: string; trashedAt: number }
+      cuesKept?: boolean | null
     }
   | { kind: 'engine-cues'; unrepairable: true; missingSec: number }
 
@@ -30,6 +32,7 @@ interface EngineDamageDeps {
   backups: () => Promise<TrashEntry[]>
   headOffsetMs: typeof headOffsetMs
   durationOf: (p: string) => Promise<number | null>
+  copies?: () => Promise<{ takenAt: number; dbPath: string }[]>
 }
 
 const ENGINE_SAME_SEC = 0.1
@@ -39,12 +42,14 @@ export function judgeEngineRow(
   row: { sampleRate: number; sampleCount: number; length: number },
   file: { sampleRate: number; durationSec: number },
   backup: { id: string; trashedAt: number; durationSec: number; headMs: number | null } | null,
+  cuesKept: boolean | null = null,
 ): EngineJudgement | null {
+  const cues = { certainty: cuesKept ? ('sure' as const) : ('likely' as const), cuesKept }
   const engineSec = row.sampleCount / row.sampleRate
   const missingSec = engineSec - file.durationSec
   const rate = file.sampleRate !== row.sampleRate ? { sampleRateHz: file.sampleRate } : {}
   if (Math.abs(missingSec) <= ENGINE_SAME_SEC && file.sampleRate !== row.sampleRate)
-    return { kind: 'engine-cues', certainty: 'sure', trimmedMs: 0, ...rate }
+    return { kind: 'engine-cues', ...cues, trimmedMs: 0, ...rate }
   if (missingSec > ENGINE_SAME_SEC) {
     const head = backup?.headMs ?? null
     if (
@@ -56,10 +61,11 @@ export function judgeEngineRow(
     )
       return {
         kind: 'engine-cues',
-        certainty: 'sure',
+        certainty: cues.certainty,
         trimmedMs: head,
         ...rate,
         backup: { id: backup.id, trashedAt: backup.trashedAt },
+        cuesKept,
       }
     return {
       kind: 'engine-cues',
@@ -73,6 +79,47 @@ export function judgeEngineRow(
 }
 
 const nfc = (s: string) => s.normalize('NFC')
+
+const cueBytes = (quickCues: unknown, loops: unknown): string =>
+  [quickCues, loops]
+    .map((b) => (b instanceof Uint8Array ? Buffer.from(b).toString('base64') : ''))
+    .join('|')
+
+// Whether the row's cues and loops are still what the newest library copy taken no later
+// than the conversion holds for it. Null when no such copy has the row.
+async function cuesKeptSince(
+  path: string,
+  cues: string,
+  convertedAt: number | undefined,
+  libraryDir: string,
+  deps: EngineDamageDeps,
+): Promise<boolean | null> {
+  const copies = (await deps.copies?.().catch(() => [])) ?? []
+  const before = copies
+    .filter((c) => convertedAt === undefined || c.takenAt <= convertedAt)
+    .sort((a, b) => b.takenAt - a.takenAt)
+  const SQL = await loadSqlJs()
+  for (const copy of before) {
+    let db: Database | null = null
+    try {
+      db = new SQL.Database(await readFile(copy.dbPath))
+      const rows = (
+        db.exec(
+          'SELECT t.path, p.quickCues, p.loops FROM Track t JOIN PerformanceData p ON p.trackId = t.id',
+        )[0]?.values ?? []
+      ).map(([stored, quickCues, loops]) => ({
+        path: String(stored),
+        cues: cueBytes(quickCues, loops),
+      }))
+      const found = engineRowFinder(libraryDir, rows)(path, pathKey())
+      if (found.length === 1) return found[0].cues === cues
+    } catch {
+    } finally {
+      db?.close()
+    }
+  }
+  return null
+}
 
 async function backupFor(
   path: string,
@@ -106,9 +153,10 @@ export async function scanEngineDamage(
     try {
       return (
         db.exec(
-          'SELECT t.id, t.path, t.length, t.fileBytes, p.trackData FROM Track t JOIN PerformanceData p ON p.trackId = t.id',
+          'SELECT t.id, t.path, t.length, t.fileBytes, p.trackData, p.quickCues, p.loops FROM Track t JOIN PerformanceData p ON p.trackId = t.id',
         )[0]?.values ?? []
-      ).map(([id, path, length, fileBytes, trackData]) => ({
+      ).map(([id, path, length, fileBytes, trackData, quickCues, loops]) => ({
+        cues: cueBytes(quickCues, loops),
         id: Number(id),
         path: String(path),
         length: Number(length),
@@ -136,7 +184,11 @@ export async function scanEngineDamage(
       missingSec > ENGINE_SAME_SEC
         ? await backupFor(path, engineSec, missingSec, await trash, deps)
         : null
-    const judgement = judgeEngineRow({ ...trackData, length: found[0].length }, file, backup)
+    const moved = file.sampleRate !== trackData.sampleRate || missingSec > ENGINE_SAME_SEC
+    const kept = moved
+      ? await cuesKeptSince(path, found[0].cues, backup?.trashedAt, libraryDir, deps)
+      : null
+    const judgement = judgeEngineRow({ ...trackData, length: found[0].length }, file, backup, kept)
     if (judgement)
       out.push({
         path,

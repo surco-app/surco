@@ -1,5 +1,6 @@
 import { realpathSync } from 'node:fs'
 import { access, readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import type { WebContents } from 'electron'
 import type { TrashEntry } from '../shared/types'
 import type { DamageIpcDeps } from './damageIpc'
@@ -15,6 +16,7 @@ import {
   type Sessions,
   traktorFlushDeps,
 } from './libraryFlushes'
+import { copyFolder, listCopies } from './libraryHistory'
 import type { MediaAccess } from './mediaAccess'
 import {
   type Rewritten,
@@ -74,6 +76,11 @@ export function damageDeps(env: DamageEnv): DamageIpcDeps {
               backups: env.backups,
               headOffsetMs,
               durationOf: (path) => probeDuration(path),
+              copies: async () =>
+                (await listCopies(join(libraries.engine, 'Database2', 'm.db'))).map((copy) => ({
+                  takenAt: copy.takenAt,
+                  dbPath: join(copyFolder(copy), 'm.db'),
+                })),
             }),
         }),
       }

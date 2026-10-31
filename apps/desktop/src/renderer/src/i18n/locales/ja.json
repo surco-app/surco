@@ -3027,7 +3027,10 @@
       "engineBackup": "{{date}}のバックアップでは、音声が{{sec}}秒遅れて始まります",
       "engineNoBackup": "Engine DJは{{sec}}秒長く記憶しており、元のファイルはもうありません。Engine DJで再解析してください",
       "engineLength": "Engine DJの表示は{{length}}秒、自身の解析では{{sec}}秒です",
-      "engineSizeUnknown": "Engine DJはファイルサイズを保存していないため、修復は解析だけを頼りにします"
+      "engineSizeUnknown": "Engine DJはファイルサイズを保存していないため、修復は解析だけを頼りにします",
+      "engineCuesKept": "Engine DJのキューは変換前のライブラリのコピーと同じままです",
+      "engineCuesChanged": "Engine DJのキューはライブラリのコピーから変わっています。手で動かした可能性があります",
+      "engineNoCopy": "キューを手で動かしたかを確かめるライブラリのコピーがありません"
     }
   }
 }

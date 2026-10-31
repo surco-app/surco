@@ -171,7 +171,10 @@ describe('scanDamage', () => {
     expect(scan.findings[0]).toMatchObject({
       kind: 'engine-cues',
       certainty: 'sure',
-      evidence: [{ key: 'damage.evidence.engineRate', params: { engineKhz: 48, fileKhz: 44.1 } }],
+      evidence: [
+        { key: 'damage.evidence.engineRate', params: { engineKhz: 48, fileKhz: 44.1 } },
+        { key: 'damage.evidence.engineNoCopy' },
+      ],
       repair: {
         target: 'engine',
         path: WAV,
@@ -203,6 +206,30 @@ describe('scanDamage', () => {
     )
     expect(scan.findings[0].evidence).toContainEqual({ key: 'damage.evidence.engineSizeUnknown' })
     expect(scan.findings[0].repair).toMatchObject({ fileBytes: null })
+  })
+
+  it.each([
+    [true, 'sure', 'damage.evidence.engineCuesKept'],
+    [false, 'likely', 'damage.evidence.engineCuesChanged'],
+    [null, 'likely', 'damage.evidence.engineNoCopy'],
+  ] as const)('says whether the cues were moved by hand (%s)', async (cuesKept, certainty, key) => {
+    const scan = await scanDamage(
+      [WAV],
+      deps({
+        readGenre: vi.fn(async () => null),
+        engine: vi.fn(async () => [
+          engineDamage({
+            kind: 'engine-cues',
+            certainty,
+            trimmedMs: 0,
+            sampleRateHz: 44100,
+            cuesKept,
+          }),
+        ]),
+      }),
+    )
+    expect(scan.findings[0].certainty).toBe(certainty)
+    expect(scan.findings[0].evidence).toContainEqual({ key })
   })
 
   it('lists an Engine trim with no backup as a warning with nothing to stage', async () => {
