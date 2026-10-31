@@ -34,4 +34,13 @@ describe.skipIf(process.platform !== 'darwin')('a matrix batch through the real 
     expect(cellFailure(outcome)).toBeNull()
     expect(outcome.statuses).toEqual(['ok'])
   }, 120_000)
+
+  // Same format with another extension is rewritten in place: the .aif becomes an .aiff in
+  // its own folder and the .aif goes to Surco's Originals, which is no loss.
+  it('runs an AIF made into an AIFF in its own folder green', async () => {
+    const cell = CELLS.find((c) => c.id === 'C-aif-aiff')
+    if (!cell) throw new Error('no C-aif-aiff cell')
+    const [outcome] = await runGroup({ key: cell.id, cells: [cell] })
+    expect(cellFailure(outcome)).toBeNull()
+  }, 120_000)
 })

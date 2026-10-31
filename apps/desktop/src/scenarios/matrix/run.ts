@@ -235,7 +235,7 @@ export async function runGroup(
       const row = surco.tracks().find((t) => basename(t.inputPath) === name)
       const verdict = surco.verification(name)
       const fileExists = existsSync(finalPath)
-      const consumed = cell.dest === 'overwrite' && inPlace(cell, source.path)
+      const consumed = inPlace(cell, source.path)
       const expected: Expected = {
         finalPath,
         at: {
