@@ -3030,7 +3030,9 @@
       "engineSizeUnknown": "Engine DJ speichert keine Dateigröße, daher richtet sich die Reparatur nur nach seiner Analyse",
       "engineCuesKept": "Die Cues in Engine DJ sind noch wie in der Bibliothekskopie vor der Konvertierung",
       "engineCuesChanged": "Die Cues in Engine DJ haben sich seit der Bibliothekskopie geändert, vielleicht hast du sie von Hand verschoben",
-      "engineNoCopy": "Keine Bibliothekskopie zeigt, ob du die Cues von Hand verschoben hast"
+      "engineNoCopy": "Keine Bibliothekskopie zeigt, ob du die Cues von Hand verschoben hast",
+      "traktorRecord": "Backups belegt, dass {{sibling}} mit Surco aus dieser MP3 konvertiert wurde",
+      "traktorNoRecord": "Kein Surco-Eintrag sagt, dass {{sibling}} aus dieser MP3 stammt"
     }
   }
 }

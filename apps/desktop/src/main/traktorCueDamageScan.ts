@@ -1,6 +1,7 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { basename, dirname, extname, join } from 'node:path'
+import type { TrashEntry } from '../shared/types'
 import { automaticCueOffsetOfFiles } from './cueCalibration'
 import { readCueTree } from './tags'
 import { readTraktorMarkers } from './traktor4'
@@ -20,6 +21,7 @@ export interface TraktorDamage {
 }
 
 interface ScanDeps {
+  backups?: () => Promise<TrashEntry[]>
   bootVolume?: string
   exists?: (p: string) => boolean
   readdir?: (dir: string) => string[]
@@ -92,6 +94,15 @@ export async function scanTraktorDamage(
     return [...found.values()]
   }
 
+  const records = (await deps.backups?.().catch(() => [])) ?? []
+  const converted = (source: string, sibling: string) =>
+    records.some(
+      (r) =>
+        r.outputPath !== undefined &&
+        nfc(r.originalPath) === nfc(source) &&
+        nfc(r.outputPath) === nfc(sibling),
+    )
+
   const sources = new Map<string, string>()
   for (const p of paths) {
     const candidates =
@@ -116,6 +127,7 @@ export async function scanTraktorDamage(
     const judgements = judgeTraktorPair({
       ...marks,
       k: await automaticCueOffsetOfFiles(source, sibling),
+      provenance: converted(source, sibling),
       sourceOnBootDisk:
         sourceEntry !== null && (sourceEntry.volume === boot || sourceEntry.volume === ''),
     })

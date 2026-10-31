@@ -204,8 +204,10 @@ describe('Repair what earlier versions left damaged', () => {
       certainty: f.certainty,
       staged: review().staged.has(`damage:${f.id}`),
     }))
-    const engineKey = `damage:${review().damage.find((f) => f.kind === 'engine-cues')?.id}`
-    act(() => review().toggleStaged(engineKey))
+    for (const kind of ['engine-cues', 'traktor-source-cues']) {
+      const key = `damage:${review().damage.find((f) => f.kind === kind)?.id}`
+      act(() => review().toggleStaged(key))
+    }
     await act(async () => review().apply())
     outcomes = review().lastRun?.damage ?? []
     genreAfter = (await readTags(join(folder, 'damaged.mp3'))).genre
@@ -214,13 +216,13 @@ describe('Repair what earlier versions left damaged', () => {
     await act(async () => review().undo())
   }, 180_000)
 
-  // No library copy says whether the DJ moved Engine's cues by hand, so that one waits for
-  // the user, who stages it.
+  // No library copy says whether the DJ moved Engine's cues by hand, and no Copias record
+  // links the MP3 to its AIFF: those two wait for the user, who stages them.
   it('finds the three, staging the proven ones', () => {
     expect(found.sort((a, b) => a.kind.localeCompare(b.kind))).toEqual([
       { kind: 'engine-cues', certainty: 'likely', staged: false },
       { kind: 'genre-number', certainty: 'sure', staged: true },
-      { kind: 'traktor-source-cues', certainty: 'sure', staged: true },
+      { kind: 'traktor-source-cues', certainty: 'likely', staged: false },
     ])
   })
 

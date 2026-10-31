@@ -3030,7 +3030,9 @@
       "engineSizeUnknown": "Engine DJ keeps no size for the file, so the repair goes by its analysis alone",
       "engineCuesKept": "Engine DJ's cues are still as in the library copy from before the conversion",
       "engineCuesChanged": "Engine DJ's cues changed since the library copy, you may have moved them by hand",
-      "engineNoCopy": "No library copy shows whether you moved the cues by hand"
+      "engineNoCopy": "No library copy shows whether you moved the cues by hand",
+      "traktorRecord": "Backups records that {{sibling}} was converted from this MP3 with Surco",
+      "traktorNoRecord": "No Surco record says {{sibling}} comes from this MP3"
     }
   }
 }

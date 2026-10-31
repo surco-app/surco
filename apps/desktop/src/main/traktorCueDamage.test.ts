@@ -13,6 +13,7 @@ const pair = (p: Partial<TraktorPair>): TraktorPair => ({
   siblingTree: null,
   k: K,
   sourceOnBootDisk: true,
+  provenance: true,
   ...p,
 })
 
@@ -55,6 +56,7 @@ describe('judgeTraktorPair', () => {
         addMs: 51.18,
         fixEntry: 'source',
         fixTree: false,
+        provenance: true,
       },
     ])
   })
@@ -110,6 +112,7 @@ describe('judgeTraktorPair', () => {
         addMs: -51.18,
         fixEntry: 'sibling',
         fixTree: true,
+        provenance: true,
       },
     ])
   })
@@ -136,6 +139,28 @@ describe('judgeTraktorPair', () => {
       }),
     )
     expect(j).toMatchObject({ kind: 'traktor-calibration', certainty: 'likely', fixTree: false })
+  })
+
+  // Two files sharing a name are not proof that one came from the other, and one cue moving
+  // by the right amount can be chance: sure needs Surco's own record and two cues.
+  it('is only likely when no Surco record links the two files', () => {
+    const [j] = judgeTraktorPair(
+      pair({
+        provenance: false,
+        sourceTree: cues(10000, 15000),
+        sourceEntry: cues(9948.82, 14948.82),
+        siblingTree: cues(9948.82, 14948.82),
+      }),
+    )
+    expect(j).toMatchObject({ certainty: 'likely', provenance: false })
+  })
+
+  it('is only likely when a single cue carries the offset', () => {
+    const one = (ms: number): CueMark[] => [{ type: 0, hotcue: 0, ms }]
+    const [j] = judgeTraktorPair(
+      pair({ sourceTree: one(10000), sourceEntry: one(9948.82), siblingTree: one(9948.82) }),
+    )
+    expect(j.certainty).toBe('likely')
   })
 
   it('leaves a sibling off by an amount no old rule produced', () => {

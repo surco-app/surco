@@ -106,6 +106,10 @@ function traktorFinding(d: TraktorDamage): DamageFinding {
               params: { sibling: basename(d.sibling), ms: abs(j.addMs) },
             },
           ]
+  evidence.push({
+    key: j.provenance ? 'damage.evidence.traktorRecord' : 'damage.evidence.traktorNoRecord',
+    params: { sibling: basename(d.sibling) },
+  })
   const treeFile = j.fixTree ? d.path : undefined
   return {
     id: idOf(j.kind, d.path),

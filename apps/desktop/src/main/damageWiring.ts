@@ -61,7 +61,8 @@ export function damageDeps(env: DamageEnv): DamageIpcDeps {
         libraryGenres: (paths) =>
           libraryGenresOf(paths, libraries, { realPath: (p: string) => realpathSync(p) }),
         ...(libraries.traktor && {
-          traktor: (paths: string[]) => scanTraktorDamage(paths, libraries.traktor),
+          traktor: (paths: string[]) =>
+            scanTraktorDamage(paths, libraries.traktor, { backups: env.backups }),
         }),
         ...(libraries.engine && {
           engine: (paths: string[]) =>

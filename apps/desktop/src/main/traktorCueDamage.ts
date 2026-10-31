@@ -13,6 +13,7 @@ export interface TraktorPair {
   siblingTree: CueMark[] | null
   k: number
   sourceOnBootDisk: boolean
+  provenance: boolean
 }
 
 export type TraktorJudgement = {
@@ -21,9 +22,11 @@ export type TraktorJudgement = {
   addMs: number
   fixEntry: 'source' | 'sibling'
   fixTree: boolean
+  provenance: boolean
 }
 
 const OLD_RULES = [-51, 0]
+const SURE_CUES = 2
 
 const near = (a: number, b: number) => Math.abs(a - b) <= SAME_CUE_MS
 
@@ -41,6 +44,9 @@ export function offsetBetween(a: CueMark[], b: CueMark[]): number | null {
 const offsetOf = (a: CueMark[] | null, b: CueMark[] | null): number | null =>
   a && b ? offsetBetween(a, b) : null
 
+const sure = (pair: TraktorPair, fromTree: boolean, cues: CueMark[] | null): boolean =>
+  fromTree && pair.provenance && (cues?.length ?? 0) >= SURE_CUES
+
 function sourceMoved(pair: TraktorPair): TraktorJudgement | null {
   const { sourceEntry, sourceTree, siblingEntry, siblingTree, k } = pair
   if (!pair.sourceOnBootDisk || near(k, 0)) return null
@@ -53,10 +59,11 @@ function sourceMoved(pair: TraktorPair): TraktorJudgement | null {
   if (sourceTree && (fromTree === null || !near(fromTree, k))) return null
   return {
     kind: 'traktor-source-cues',
-    certainty: sourceTree ? 'sure' : 'likely',
+    certainty: sure(pair, sourceTree !== null, sourceEntry) ? 'sure' : 'likely',
     addMs: -k,
     fixEntry: 'source',
     fixTree: false,
+    provenance: pair.provenance,
   }
 }
 
@@ -66,10 +73,11 @@ function calibrationMissed(pair: TraktorPair): TraktorJudgement | null {
   if (d === null || near(d, pair.k) || !OLD_RULES.some((rule) => near(d, rule))) return null
   return {
     kind: 'traktor-calibration',
-    certainty: pair.sourceTree ? 'sure' : 'likely',
+    certainty: sure(pair, pair.sourceTree !== null, reference) ? 'sure' : 'likely',
     addMs: pair.k - d,
     fixEntry: 'sibling',
     fixTree: pair.siblingTree !== null,
+    provenance: pair.provenance,
   }
 }
 

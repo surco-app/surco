@@ -3030,7 +3030,9 @@
       "engineSizeUnknown": "Engine DJはファイルサイズを保存していないため、修復は解析だけを頼りにします",
       "engineCuesKept": "Engine DJのキューは変換前のライブラリのコピーと同じままです",
       "engineCuesChanged": "Engine DJのキューはライブラリのコピーから変わっています。手で動かした可能性があります",
-      "engineNoCopy": "キューを手で動かしたかを確かめるライブラリのコピーがありません"
+      "engineNoCopy": "キューを手で動かしたかを確かめるライブラリのコピーがありません",
+      "traktorRecord": "バックアップには{{sibling}}がこのMP3からSurcoで変換された記録があります",
+      "traktorNoRecord": "{{sibling}}がこのMP3から作られたというSurcoの記録はありません"
     }
   }
 }

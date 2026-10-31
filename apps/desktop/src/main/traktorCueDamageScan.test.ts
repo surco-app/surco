@@ -8,6 +8,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
+import type { TrashEntry } from '../shared/types'
 import { toNmlLocation } from './ffmpeg'
 import { buildTraktorTree, id3WithPriv, injectAiffPriv, traktorCue } from './traktor4Fixture'
 import { scanTraktorDamage } from './traktorCueDamageScan'
@@ -96,7 +97,10 @@ describe('scanTraktorDamage', () => {
   it("finds the MP3 entry that took its AIFF sibling's cues", async () => {
     const { mp3, aiff } = setup()
     const nml = nmlOf([entry(mp3, -51.18), entry(aiff, -51.18)])
-    const found = await scanTraktorDamage([mp3], nml, { bootVolume: BOOT })
+    const found = await scanTraktorDamage([mp3], nml, {
+      bootVolume: BOOT,
+      backups: async () => [{ originalPath: mp3, outputPath: aiff } as TrashEntry],
+    })
     expect(found).toHaveLength(1)
     expect(found[0]).toMatchObject({
       path: mp3,
@@ -143,4 +147,13 @@ describe('scanTraktorDamage', () => {
       scanTraktorDamage(['/x/uno.mp3'], join(root, 'missing.nml'), { bootVolume: BOOT }),
     ).rejects.toThrow()
   })
+})
+
+describe('scanTraktorDamage provenance', () => {
+  it('is only likely when Copias holds no record of the conversion', async () => {
+    const { mp3, aiff } = setup()
+    const nml = nmlOf([entry(mp3, -51.18), entry(aiff, -51.18)])
+    const [found] = await scanTraktorDamage([mp3], nml, { bootVolume: BOOT })
+    expect(found.judgement).toMatchObject({ certainty: 'likely', provenance: false })
+  }, 30000)
 })

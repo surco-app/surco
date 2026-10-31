@@ -22,6 +22,7 @@ const traktorDamage: TraktorDamage = {
     addMs: 51.18,
     fixEntry: 'source',
     fixTree: false,
+    provenance: true,
   },
   before: [{ type: 0, hotcue: 0, ms: 9948.82 }],
   entry: { volume: 'Macintosh HD', dir: '/:m/:', file: 'uno.mp3', entryState: 'S' },
@@ -124,6 +125,29 @@ describe('scanDamage', () => {
     })
   })
 
+  it('says whether Copias records the conversion between the two files', async () => {
+    const run = async (provenance: boolean) =>
+      (
+        await scanDamage(
+          [MP3],
+          deps({
+            readGenre: vi.fn(async () => null),
+            traktor: vi.fn(async () => [
+              { ...traktorDamage, judgement: { ...traktorDamage.judgement, provenance } },
+            ]),
+          }),
+        )
+      ).findings[0].evidence
+    expect(await run(true)).toContainEqual({
+      key: 'damage.evidence.traktorRecord',
+      params: { sibling: 'uno.aiff' },
+    })
+    expect(await run(false)).toContainEqual({
+      key: 'damage.evidence.traktorNoRecord',
+      params: { sibling: 'uno.aiff' },
+    })
+  })
+
   it('names the converted file a calibration repair also moves', async () => {
     const scan = await scanDamage(
       [MP3],
@@ -140,6 +164,7 @@ describe('scanDamage', () => {
               addMs: -51.18,
               fixEntry: 'sibling' as const,
               fixTree: true,
+              provenance: true,
             },
             tree: [{ type: 0, hotcue: 0, ms: 10000 }],
           },
