@@ -43,6 +43,18 @@
       {
         "text": "Les genres à plusieurs valeurs ou avec des parenthèses, comme « Techno (Peak Time / Driving) », sont enregistrés tels quels en MP3, AIFF et WAV, et la vérification après conversion ne signale plus par erreur un FLAC converti en MP3.",
         "in": "1.18.3"
+      },
+      {
+        "text": "Quand tu convertis un MP3 en WAV, les cues de Traktor sont placés comme vers AIFF ou FLAC, et Surco lit l’en-tête de chaque MP3 pour qu’ils tombent juste aussi sur les MP3 sans en-tête, avec une grande pochette ou à basse fréquence. Nous l’avons mesuré dans Traktor.",
+        "in": "1.18.4"
+      },
+      {
+        "text": "Engine DJ déplace hot cues, boucles et grille aussi quand tu coupes le silence sans changer de fichier, et ajuste sa forme d’onde et la durée du morceau.",
+        "in": "1.18.4"
+      },
+      {
+        "text": "Si tu écrases l’original et que la vérification après conversion trouve quelque chose qui ne correspond pas, l’original reste dans Sauvegardes même si les copies des originaux sont sur « Jamais ».",
+        "in": "1.18.4"
       }
     ]
   },

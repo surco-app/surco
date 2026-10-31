@@ -43,6 +43,18 @@
       {
         "text": "Gêneros com vários valores ou com parênteses, como “Techno (Peak Time / Driving)”, são salvos como estão em MP3, AIFF e WAV, e a verificação após converter não marca mais por engano um FLAC convertido para MP3.",
         "in": "1.18.3"
+      },
+      {
+        "text": "Ao converter um MP3 para WAV, os cues do Traktor ficam no mesmo lugar que ao converter para AIFF ou FLAC, e o Surco lê o cabeçalho de cada MP3 para que caiam no lugar certo também em MP3 sem cabeçalho, com capa grande ou taxa baixa. Medimos isso no Traktor.",
+        "in": "1.18.4"
+      },
+      {
+        "text": "O Engine DJ move hot cues, loops e grid também quando você corta o silêncio sem trocar de arquivo, e ajusta a forma de onda e a duração da faixa.",
+        "in": "1.18.4"
+      },
+      {
+        "text": "Se você sobrescrever o original e a verificação após converter encontrar algo que não bate, o original fica em Cópias mesmo com as cópias dos originais em “Nunca”.",
+        "in": "1.18.4"
       }
     ]
   },

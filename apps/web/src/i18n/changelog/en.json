@@ -43,6 +43,18 @@
       {
         "text": "Genres with several values or with parentheses, like “Techno (Peak Time / Driving)”, are saved as they are in MP3, AIFF and WAV, and the check after converting no longer flags a FLAC converted to MP3 by mistake.",
         "in": "1.18.3"
+      },
+      {
+        "text": "Converting an MP3 to WAV places Traktor cues the same way as converting to AIFF or FLAC, and Surco reads each MP3's header so cues land in place also for MP3s without a header, with large artwork or at low sample rates. We measured it in Traktor.",
+        "in": "1.18.4"
+      },
+      {
+        "text": "Engine DJ moves hot cues, loops and the grid also when you trim silence without changing the file, and adjusts its waveform and the track length.",
+        "in": "1.18.4"
+      },
+      {
+        "text": "If you overwrite the original and the check after converting finds something that doesn’t add up, the original stays in Backups even when copies of originals are set to Never.",
+        "in": "1.18.4"
       }
     ]
   },
