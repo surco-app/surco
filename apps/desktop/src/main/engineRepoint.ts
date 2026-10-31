@@ -1,7 +1,8 @@
 import { readFile, stat, unlink, writeFile } from 'node:fs/promises'
 import { basename, extname, join, relative, resolve } from 'node:path'
 import log from 'electron-log/main'
-import type { Database } from 'sql.js'
+import type { Database, SqlValue } from 'sql.js'
+import type { TrackProperties } from '../shared/types'
 import { loadSqlJs } from './engine'
 import {
   decodeLoops,
@@ -60,6 +61,18 @@ export interface EngineRepointOptions {
   // Takes the run's single pre-run copy, before the first write. A failure here refuses
   // the write like any other missing backup.
   sessionBackup?: (dbPath: string) => Promise<void>
+  // The bitrate Engine would show for a file, when it can be told (engineBitrateKbps).
+  bitrateOf?: (file: string) => Promise<number | undefined>
+}
+
+// Engine's bitrate for PCM, as its own rows store it: rate × depth × channels in rounded
+// kbps (1411, 2117, 1536, 2304, 2822 in a real library). FLAC, ALAC and lossy files were
+// never measured, so they have none.
+export function engineBitrateKbps(
+  p: Pick<TrackProperties, 'codec' | 'sampleRateHz' | 'bitDepth' | 'channels'>,
+): number | undefined {
+  if (!p.codec.startsWith('pcm_') || !p.bitDepth) return undefined
+  return Math.round((p.sampleRateHz * p.bitDepth * p.channels) / 1000)
 }
 
 // Engine stores each path relative to the library folder, forward-slashed. Matching
@@ -288,7 +301,13 @@ export async function writeEngineRepoints(
       fileBytes,
     }))
     const find = engineRowFinder(libraryDir, stored)
-    const updates: { id: string; to: string; size: number; shift?: EngineShift }[] = []
+    const updates: {
+      id: string
+      to: string
+      size: number
+      shift?: EngineShift
+      inPlace: boolean
+    }[] = []
     for (const [i, repoint] of repoints.entries()) {
       if (results[i]) continue
       const key = pathKey(repoint)
@@ -320,6 +339,7 @@ export async function writeEngineRepoints(
         to: repoint.to,
         size: sizes[i] as number,
         shift: repoint.engineShift,
+        inPlace: onTarget.length > 0,
       })
       results[i] = { written: true, id: matches[0].id }
     }
@@ -343,20 +363,25 @@ export async function writeEngineRepoints(
           ? decodeTrackData(inflateEngineBlob(next.trackData))
           : null
       // Only the file columns, and the length the track list shows when the samples changed,
-      // in whole seconds as Engine rounds it. The bitrate is cleared rather than kept, as
-      // Surco's own inserts leave it: the old file's value would describe the new one
-      // wrongly, and Engine fills it in when it next analyzes the track.
-      db.run(
-        `UPDATE Track SET path = ?, filename = ?, fileType = ?, fileBytes = ?, bitrate = NULL${track ? ', length = ?' : ''} WHERE id = ?`,
-        [
-          relativeTo(libraryDir, u.to),
-          basename(u.to),
-          extname(u.to).slice(1).toLowerCase(),
-          u.size,
-          ...(track ? [Math.round(track.sampleCount / track.sampleRate)] : []),
-          Number(u.id),
-        ],
-      )
+      // in whole seconds as Engine rounds it. A row moved to another file has its bitrate
+      // cleared, as Surco's own inserts leave it: the old file's value would describe the new
+      // one wrongly, and Engine fills it in when it next analyzes the track. A row rewritten
+      // in place keeps its file, so it keeps its bitrate unless the file says what it is now.
+      const bitrate = u.inPlace ? await options.bitrateOf?.(u.to).catch(() => undefined) : null
+      const set: [string, SqlValue][] = [
+        ['path', relativeTo(libraryDir, u.to)],
+        ['filename', basename(u.to)],
+        ['fileType', extname(u.to).slice(1).toLowerCase()],
+        ['fileBytes', u.size],
+        ...(bitrate === undefined ? [] : [['bitrate', bitrate] as [string, SqlValue]]),
+        ...(track
+          ? [['length', Math.round(track.sampleCount / track.sampleRate)] as [string, SqlValue]]
+          : []),
+      ]
+      db.run(`UPDATE Track SET ${set.map(([column]) => `${column} = ?`).join(', ')} WHERE id = ?`, [
+        ...set.map(([, value]) => value),
+        Number(u.id),
+      ])
       if (next && next !== perf)
         db.run(
           'UPDATE PerformanceData SET trackData = ?, overviewWaveFormData = ?, beatData = ?, quickCues = ?, loops = ? WHERE trackId = ?',

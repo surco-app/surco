@@ -19,7 +19,7 @@ import {
 } from './engineBlobs'
 import { analysedTrack, quickCuesBlob } from './enginePerformanceFixture'
 import { isEngineDjRunning } from './engineProcess'
-import { repointEngineTracks } from './engineRepoint'
+import { engineBitrateKbps, repointEngineTracks } from './engineRepoint'
 import { backupOf } from './libraryBackups'
 
 // The real probe shells out to pgrep/tasklist; tests pin it so they never depend on what
@@ -162,6 +162,36 @@ describe.each(['2.18', '3.0.2'] as const)('repointEngineTracks on a %s library',
     const perf = performance(db, schema)
     expect(perf.quickCues).toEqual(CUES)
     expect(perf.beatData).toEqual(GRID)
+  })
+
+  // A rewrite in place keeps the row's file, and Engine shows its bitrate in the track list
+  // and does not analyze an analyzed track again: cleared, it stayed blank for good.
+  it('keeps the bitrate of a row rewritten in place when nothing says what it is now', async () => {
+    const lib = await library(schema)
+    await writeFile(lib.oldFile, Buffer.alloc(150))
+    const [result] = await repointEngineTracks(lib.dir, [
+      { from: lib.oldFile, to: lib.oldFile, fromBytes: 100 },
+    ])
+    expect(result).toEqual({ written: true, id: '1' })
+    const db = await openDb(lib.dbPath)
+    expect(one(db, 'SELECT fileBytes, bitrate FROM Track')).toEqual({
+      fileBytes: 150,
+      bitrate: 320,
+    })
+    db.close()
+  })
+
+  it('records the bitrate a row rewritten in place has now, when the file says', async () => {
+    const lib = await library(schema)
+    await writeFile(lib.oldFile, Buffer.alloc(150))
+    const bitrateOf = vi.fn(async () => 1411)
+    await repointEngineTracks(lib.dir, [{ from: lib.oldFile, to: lib.oldFile, fromBytes: 100 }], {
+      bitrateOf,
+    })
+    expect(bitrateOf).toHaveBeenCalledWith(lib.oldFile)
+    const db = await openDb(lib.dbPath)
+    expect(one(db, 'SELECT bitrate FROM Track')).toEqual({ bitrate: 1411 })
+    db.close()
   })
 
   // Engine imported only part of the user's music, so most conversions have no row there.
@@ -657,3 +687,29 @@ describe.each(['2.18', '3.0.2'] as const)(
     })
   },
 )
+
+// Engine's own rows for PCM, read from a real library (30/10): the rate times the depth
+// times the channels, in rounded kbps. What it stores for FLAC, ALAC or a lossy file was not
+// measured, so those leave the column as it is.
+describe('engineBitrateKbps', () => {
+  it.each([
+    [44100, 16, 2, 1411],
+    [44100, 24, 2, 2117],
+    [48000, 16, 2, 1536],
+    [48000, 24, 2, 2304],
+    [88200, 16, 2, 2822],
+  ])('is %i Hz × %i bit × %i channels = %i for PCM', (sampleRateHz, bitDepth, channels, kbps) => {
+    expect(engineBitrateKbps({ codec: 'pcm_s16le', sampleRateHz, bitDepth, channels })).toBe(kbps)
+  })
+
+  it.each(['flac', 'alac', 'mp3', 'aac'])('says nothing for %s', (codec) => {
+    expect(
+      engineBitrateKbps({
+        codec,
+        sampleRateHz: 44100,
+        bitDepth: 16,
+        channels: 2,
+      }),
+    ).toBeUndefined()
+  })
+})
