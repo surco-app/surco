@@ -18,6 +18,12 @@ export function useRetireSuperseded({ tracks, updateTrack, reportTrashFailure }:
       const key = `${track.id}\0${path}`
       if (started.current.has(key)) continue
       started.current.add(key)
+      if (
+        tracks.some((t) => t.id !== track.id && (t.inputPath === path || t.outputPath === path))
+      ) {
+        updateTrack(track.id, { supersededKept: true })
+        continue
+      }
       const patch: Partial<TrackItem> =
         path === track.inputPath
           ? { supersededTrashed: true, originalTrashed: true }

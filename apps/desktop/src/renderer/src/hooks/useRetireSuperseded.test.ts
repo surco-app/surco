@@ -79,6 +79,22 @@ describe('useRetireSuperseded', () => {
     expect(reportTrashFailure).not.toHaveBeenCalled()
   })
 
+  it('leaves a file another row of the list still loads to the manual offer, since retiring it would break that row', async () => {
+    const loaded = { ...replaced, id: 't2', inputPath: replaced.supersededPath } as TrackItem
+    const converted = {
+      ...replaced,
+      id: 't3',
+      inputPath: '/Users/v/Downloads/B.flac',
+      outputPath: replaced.supersededPath,
+      supersededPath: undefined,
+    } as TrackItem
+    for (const other of [loaded, converted]) {
+      const { retireSuperseded, updateTrack } = setup([replaced, other])
+      await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('t1', { supersededKept: true }))
+      expect(retireSuperseded).not.toHaveBeenCalledWith(replaced.supersededPath, expect.anything())
+    }
+  })
+
   it('marks the source trashed too when the retired file is the row’s own source', async () => {
     const source = {
       ...replaced,
