@@ -2,7 +2,6 @@ import { readFile, stat, unlink, writeFile } from 'node:fs/promises'
 import { basename, extname, join, relative, resolve } from 'node:path'
 import log from 'electron-log/main'
 import type { Database, SqlValue } from 'sql.js'
-import type { TrackProperties } from '../shared/types'
 import { loadSqlJs } from './engine'
 import {
   decodeLoops,
@@ -61,19 +60,24 @@ export interface EngineRepointOptions {
   // Takes the run's single pre-run copy, before the first write. A failure here refuses
   // the write like any other missing backup.
   sessionBackup?: (dbPath: string) => Promise<void>
-  // The bitrate Engine would show for a file, when it can be told (engineBitrateKbps).
-  bitrateOf?: (file: string) => Promise<number | undefined>
+  // The bitrate Engine would show for a file (engineBitrateKbps): null for none, undefined
+  // when it cannot be told.
+  bitrateOf?: (file: string) => Promise<number | null | undefined>
 }
 
-// Engine's bitrate for PCM, as its own rows store it: rate × depth × channels in rounded
-// kbps (1411, 2117, 1536, 2304, 2822 in a real library). FLAC, ALAC and lossy files were
-// never measured, so they have none.
-export function engineBitrateKbps(
-  p: Pick<TrackProperties, 'codec' | 'sampleRateHz' | 'bitDepth' | 'channels'>,
-): number | undefined {
-  if (!p.codec.startsWith('pcm_') || !p.bitDepth) return undefined
-  return Math.round((p.sampleRateHz * p.bitDepth * p.channels) / 1000)
+// Engine's bitrate is the stream's in rounded kbps: its own PCM rows are rate × depth ×
+// channels (1411, 2117, 1536, 2304, 2822 in a real library), and a lossy stream says its
+// own. What it keeps for FLAC or ALAC was never measured, so those cannot be told.
+export function engineBitrateKbps(probe: {
+  codecName: string
+  bitRate?: number
+}): number | null | undefined {
+  if (probe.codecName === 'flac' || probe.codecName === 'alac') return undefined
+  return probe.bitRate ? Math.round(probe.bitRate / 1000) : null
 }
+
+// Only these can yield a bitrate, so only they are probed.
+const BITRATE_EXTENSIONS = new Set(['wav', 'aif', 'aiff', 'mp3', 'm4a', 'aac', 'ogg', 'opus'])
 
 // Engine stores each path relative to the library folder, forward-slashed. Matching
 // compares the absolute, resolved form; NFC first, because APFS treats NFC and NFD names as
@@ -242,13 +246,21 @@ function relativeTo(libraryDir: string, file: string): string {
   return relative(libraryDir, file).split('\\').join('/')
 }
 
-export function repointEngineTracks(
+// The files are probed before the library is locked: a probe on a NAS holds no write back.
+export async function repointEngineTracks(
   libraryDir: string,
   repoints: EngineRepoint[],
   options: EngineRepointOptions = {},
 ): Promise<EngineRepointResult[]> {
+  const bitrates = await Promise.all(
+    repoints.map((r) =>
+      options.bitrateOf && BITRATE_EXTENSIONS.has(extname(r.to).slice(1).toLowerCase())
+        ? options.bitrateOf(r.to).catch(() => undefined)
+        : undefined,
+    ),
+  )
   return withEngineDatabase(join(libraryDir, 'Database2', 'm.db'), () =>
-    writeEngineRepoints(libraryDir, repoints, options),
+    writeEngineRepoints(libraryDir, repoints, options, bitrates),
   )
 }
 
@@ -256,6 +268,7 @@ export async function writeEngineRepoints(
   libraryDir: string,
   repoints: EngineRepoint[],
   options: EngineRepointOptions = {},
+  bitrates: (number | null | undefined)[] = [],
 ): Promise<EngineRepointResult[]> {
   const dbPath = join(libraryDir, 'Database2', 'm.db')
   const results: (EngineRepointResult | null)[] = repoints.map(() => null)
@@ -307,6 +320,7 @@ export async function writeEngineRepoints(
       size: number
       shift?: EngineShift
       inPlace: boolean
+      bitrate: number | null | undefined
     }[] = []
     for (const [i, repoint] of repoints.entries()) {
       if (results[i]) continue
@@ -340,6 +354,7 @@ export async function writeEngineRepoints(
         size: sizes[i] as number,
         shift: repoint.engineShift,
         inPlace: onTarget.length > 0,
+        bitrate: bitrates[i],
       })
       results[i] = { written: true, id: matches[0].id }
     }
@@ -363,11 +378,10 @@ export async function writeEngineRepoints(
           ? decodeTrackData(inflateEngineBlob(next.trackData))
           : null
       // Only the file columns, and the length the track list shows when the samples changed,
-      // in whole seconds as Engine rounds it. A row moved to another file has its bitrate
-      // cleared, as Surco's own inserts leave it: the old file's value would describe the new
-      // one wrongly, and Engine fills it in when it next analyzes the track. A row rewritten
-      // in place keeps its file, so it keeps its bitrate unless the file says what it is now.
-      const bitrate = u.inPlace ? await options.bitrateOf?.(u.to).catch(() => undefined) : null
+      // in whole seconds as Engine rounds it. A row moved to another file takes that file's
+      // bitrate, or none when it cannot be told: the old file's would describe the new one
+      // wrongly. A row rewritten in place keeps its bitrate unless the file says what it is now.
+      const bitrate = u.inPlace ? u.bitrate : (u.bitrate ?? null)
       const set: [string, SqlValue][] = [
         ['path', relativeTo(libraryDir, u.to)],
         ['filename', basename(u.to)],

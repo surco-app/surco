@@ -15,7 +15,7 @@ import { isEngineDjRunning } from './engineProcess'
 import { engineBitrateKbps, engineRowFinder, repointEngineTracks } from './engineRepoint'
 import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
 import { updateEngineTags } from './engineTags'
-import { probeDuration, probeProperties, toNmlLocation } from './ffmpeg'
+import { probeAudio, probeDuration, probeProperties, toNmlLocation } from './ffmpeg'
 import { djLibraryFileUse } from './libraryFileUse'
 import { pathKey } from './libraryPathKey'
 import { flushLibraryRepoints, type LibraryRepointResult } from './libraryRepointFlush'
@@ -411,7 +411,7 @@ function repointEngine(
     list.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
     {
       sessionBackup: (path) => sessions.engine.ensure(path),
-      bitrateOf: async (file) => engineBitrateKbps(await probeProperties(file)),
+      bitrateOf: async (file) => engineBitrateKbps(await probeAudio(file)),
     },
   )
 }

@@ -194,6 +194,43 @@ describe.each(['2.18', '3.0.2'] as const)('repointEngineTracks on a %s library',
     db.close()
   })
 
+  // A moved row describes another file: it takes that file's bitrate when it can be told,
+  // and none otherwise, never the old file's.
+  it.each([
+    ['the new file’s bitrate', 1411, 1411],
+    ['none when the file cannot say', undefined, null],
+  ])('records %s on a moved row', async (_, said, stored) => {
+    const lib = await library(schema)
+    const bitrateOf = vi.fn(async () => said)
+    await repointEngineTracks(lib.dir, [{ from: lib.oldFile, to: lib.newFile }], { bitrateOf })
+    expect(bitrateOf).toHaveBeenCalledWith(lib.newFile)
+    const db = await openDb(lib.dbPath)
+    expect(one(db, 'SELECT bitrate FROM Track')).toEqual({ bitrate: stored })
+    db.close()
+  })
+
+  // A lossy file re-encoded in place at another quality: the old figure would be wrong.
+  it('clears the bitrate of a row rewritten in place whose file reports none', async () => {
+    const lib = await library(schema)
+    await writeFile(lib.oldFile, Buffer.alloc(150))
+    await repointEngineTracks(lib.dir, [{ from: lib.oldFile, to: lib.oldFile, fromBytes: 100 }], {
+      bitrateOf: async () => null,
+    })
+    const db = await openDb(lib.dbPath)
+    expect(one(db, 'SELECT bitrate FROM Track')).toEqual({ bitrate: null })
+    db.close()
+  })
+
+  // FLAC is never probed: no figure Engine keeps for it was measured.
+  it('does not probe a FLAC', async () => {
+    const lib = await library(schema)
+    const flac = join(lib.music, 'new.flac')
+    await writeFile(flac, Buffer.alloc(10))
+    const bitrateOf = vi.fn(async () => 900)
+    await repointEngineTracks(lib.dir, [{ from: lib.oldFile, to: flac }], { bitrateOf })
+    expect(bitrateOf).not.toHaveBeenCalled()
+  })
+
   // Engine imported only part of the user's music, so most conversions have no row there.
   // Nothing may be written for them, not even an unchanged copy of the library.
   it('leaves the library untouched for a file it never had', async () => {
@@ -688,28 +725,27 @@ describe.each(['2.18', '3.0.2'] as const)(
   },
 )
 
-// Engine's own rows for PCM, read from a real library (30/10): the rate times the depth
-// times the channels, in rounded kbps. What it stores for FLAC, ALAC or a lossy file was not
-// measured, so those leave the column as it is.
+// Engine's own rows for PCM, read from a real library (30/10), are the stream's bitrate in
+// rounded kbps (rate × depth × channels). A lossy file's is its stream bitrate too. What it
+// stores for FLAC or ALAC was not measured, so those say nothing.
 describe('engineBitrateKbps', () => {
   it.each([
-    [44100, 16, 2, 1411],
-    [44100, 24, 2, 2117],
-    [48000, 16, 2, 1536],
-    [48000, 24, 2, 2304],
-    [88200, 16, 2, 2822],
-  ])('is %i Hz × %i bit × %i channels = %i for PCM', (sampleRateHz, bitDepth, channels, kbps) => {
-    expect(engineBitrateKbps({ codec: 'pcm_s16le', sampleRateHz, bitDepth, channels })).toBe(kbps)
+    ['pcm_s16le', 1_411_200, 1411],
+    ['pcm_s24be', 2_116_800, 2117],
+    ['pcm_s16be', 1_536_000, 1536],
+    ['pcm_s24le', 2_304_000, 2304],
+    ['pcm_s16le', 2_822_400, 2822],
+    ['mp3', 320_000, 320],
+    ['aac', 255_896, 256],
+  ])('is %s at %i b/s = %i', (codecName, bitRate, kbps) => {
+    expect(engineBitrateKbps({ codecName, bitRate })).toBe(kbps)
   })
 
-  it.each(['flac', 'alac', 'mp3', 'aac'])('says nothing for %s', (codec) => {
-    expect(
-      engineBitrateKbps({
-        codec,
-        sampleRateHz: 44100,
-        bitDepth: 16,
-        channels: 2,
-      }),
-    ).toBeUndefined()
+  it('is none for a lossy stream that reports no bitrate', () => {
+    expect(engineBitrateKbps({ codecName: 'mp3' })).toBeNull()
+  })
+
+  it.each(['flac', 'alac'])('says nothing for %s', (codecName) => {
+    expect(engineBitrateKbps({ codecName, bitRate: 900_000 })).toBeUndefined()
   })
 })
