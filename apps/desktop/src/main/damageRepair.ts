@@ -249,13 +249,13 @@ export async function repairDamage(
   const engine = of('engine')
   const outcomes = [
     ...refused,
-    ...(genres.length > 0 ? await repairGenres(genres, deps.genre) : []),
-    ...(traktor.length === 0 ? [] : await repairTraktor(traktor, deps)),
     ...(engine.length === 0
       ? []
       : deps.engine
         ? await repairEngine(engine, deps.engine)
         : unsupported(engine)),
+    ...(traktor.length === 0 ? [] : await repairTraktor(traktor, deps)),
+    ...(genres.length > 0 ? await repairGenres(genres, deps.genre) : []),
   ]
   for (const o of outcomes) if (o.state === 'pending') pendingDamage.add(o.id)
   return items.map(({ id }) => outcomes.find((o) => o.id === id) ?? { id, state: 'unchanged' })

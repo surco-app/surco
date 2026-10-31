@@ -298,3 +298,23 @@ describe('repairDamage — paths the app was not handed', () => {
     expect(e.repointTracks).not.toHaveBeenCalled()
   })
 })
+
+// Engine DJ repairs a row only while it still records the file's size. Rewriting the genre
+// first changes that size, so the Engine repair has to land before the file is rewritten.
+describe('repairDamage — a file with genre and Engine damage', () => {
+  it('repairs the Engine row before it rewrites the file', async () => {
+    const order: string[] = []
+    const e = engineDeps([{ written: true }])
+    e.repointTracks.mockImplementation(async () => {
+      order.push('engine')
+      return [{ written: true }]
+    })
+    const d = deps({ engine: e })
+    d.genre.rewrite = vi.fn(async () => {
+      order.push('genre')
+      return { outcomes: ['written' as const] }
+    })
+    await repairDamage([item('g', { ...genre, path: WAV }), item('e', engine)], d)
+    expect(order).toEqual(['engine', 'genre'])
+  })
+})
