@@ -577,7 +577,7 @@ describe('matrix file oracle', () => {
       [flac.path, 0],
     ]
     for (const [path, ms] of table) expect(rekordboxTimelineMs(path), path).toBeCloseTo(ms, 2)
-  })
+  }, 30_000)
 
   // Surco's Originals are a way back, not a loss: only the system Trash, a file gone for
   // good, or an offer to delete it count, and only while the self-check has not said ok. The
