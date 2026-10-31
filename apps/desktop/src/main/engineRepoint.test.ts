@@ -873,6 +873,30 @@ describe.each(['2.18', '3.0.2'] as const)('a damage repair on a %s library', (sc
     expect(await lengthOf(lib)).toBe(60)
   })
 
+  // Engine leaves fileBytes empty on some rows: the size cannot vouch for the repair there,
+  // and the trackData the scan read is what keeps it from landing twice.
+  it('repairs a row with no size by its trackData alone and records the size', async () => {
+    const lib = await analysedLibrary(schema)
+    const db = await openDb(lib.dbPath)
+    db.run('UPDATE Track SET fileBytes = NULL')
+    await writeFile(lib.dbPath, db.export())
+    db.close()
+    const move = {
+      from: lib.oldFile,
+      to: lib.oldFile,
+      expectTrackData: scanned,
+      engineShift: { trimmedMs: 0, sampleRateHz: 48000, sampleCount: 48000 * 60 },
+    }
+    expect((await repointEngineTracks(lib.dir, [move]))[0]).toEqual({ written: true, id: '1' })
+    const after = await openDb(lib.dbPath)
+    expect(one(after, 'SELECT fileBytes FROM Track').fileBytes).toBe(100)
+    after.close()
+    expect((await repointEngineTracks(lib.dir, [move]))[0]).toEqual({
+      written: false,
+      reason: 'no-match',
+    })
+  })
+
   it('writes nothing when the row no longer holds the trackData the scan read', async () => {
     const lib = await analysedLibrary(schema)
     const bytes = await readFile(lib.dbPath)

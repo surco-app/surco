@@ -130,6 +130,20 @@ describe('scanEngineDamage', () => {
     })
   })
 
+  it('says when Engine keeps no size for the row', async () => {
+    const lib = await library([{ path: '../music/a.mp3', rate: 48000, count: 14400000 }])
+    const buf = await readFile(createRequire(import.meta.url).resolve('sql.js/dist/sql-wasm.wasm'))
+    const SQL = await initSqlJs({
+      wasmBinary: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+    })
+    const db = new SQL.Database(await readFile(join(lib.dir, 'Database2', 'm.db')))
+    db.run('UPDATE Track SET fileBytes = NULL')
+    await writeFile(join(lib.dir, 'Database2', 'm.db'), db.export())
+    db.close()
+    const [found] = await scanEngineDamage([join(lib.music, 'a.mp3')], lib.dir, deps())
+    expect(found.fileBytes).toBeNull()
+  })
+
   it('matches a row Engine stored with a decomposed name', async () => {
     const lib = await library([
       { path: '../music/Canción.mp3'.normalize('NFD'), rate: 48000, count: 14400000 },

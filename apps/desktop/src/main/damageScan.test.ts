@@ -183,6 +183,28 @@ describe('scanDamage', () => {
     })
   })
 
+  it('says the size could not vouch for an Engine repair when Engine keeps none', async () => {
+    const scan = await scanDamage(
+      [WAV],
+      deps({
+        readGenre: vi.fn(async () => null),
+        engine: vi.fn(async () => [
+          {
+            ...engineDamage({
+              kind: 'engine-cues',
+              certainty: 'sure',
+              trimmedMs: 0,
+              sampleRateHz: 44100,
+            }),
+            fileBytes: null,
+          },
+        ]),
+      }),
+    )
+    expect(scan.findings[0].evidence).toContainEqual({ key: 'damage.evidence.engineSizeUnknown' })
+    expect(scan.findings[0].repair).toMatchObject({ fileBytes: null })
+  })
+
   it('lists an Engine trim with no backup as a warning with nothing to stage', async () => {
     const scan = await scanDamage(
       [WAV],

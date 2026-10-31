@@ -364,8 +364,10 @@ export async function writeEngineRepoints(
       }
       // A row already on the file takes only its new size and shift, and only while it still
       // records the source's size: the same write records the new one, so the shift lands once.
+      const sizeUnknown = repoint.expectTrackData !== undefined && matches[0].fileBytes == null
       if (
         onTarget.length > 0 &&
+        !sizeUnknown &&
         (repoint.fromBytes === undefined || matches[0].fileBytes !== repoint.fromBytes)
       ) {
         results[i] = { written: false, reason: 'no-match' }

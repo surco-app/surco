@@ -176,7 +176,7 @@ async function repairEngine(
     const base = {
       from: repair.path,
       to: repair.path,
-      fromBytes: repair.fileBytes,
+      ...(repair.fileBytes === null ? {} : { fromBytes: repair.fileBytes }),
       expectTrackData: repair.expectTrackData,
     }
     if (repair.trimmedMs === 0 && !repair.sampleRateHz) {

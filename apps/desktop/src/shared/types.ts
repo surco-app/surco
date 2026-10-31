@@ -439,7 +439,7 @@ export type DamageRepair =
   | {
       target: 'engine'
       path: string
-      fileBytes: number
+      fileBytes: number | null
       expectTrackData: { sampleRate: number; sampleCount: number }
       trimmedMs: number
       sampleRateHz?: number

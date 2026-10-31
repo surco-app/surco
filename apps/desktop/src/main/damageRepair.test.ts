@@ -195,6 +195,12 @@ describe('repairDamage — Engine DJ', () => {
     expect(out).toEqual([{ id: 'e', state: 'repaired' }])
   })
 
+  it('hands no size guard for a row Engine keeps no size for', async () => {
+    const e = engineDeps([{ written: true }])
+    await repairDamage([item('e', { ...engine, fileBytes: null })], deps({ engine: e }))
+    expect(e.repointTracks.mock.calls[0][1][0]).not.toHaveProperty('fromBytes')
+  })
+
   it('queues the repair while Engine DJ is open', async () => {
     const e = engineDeps([{ written: false, reason: 'engine-running' }])
     const out = await repairDamage([item('e', engine)], deps({ engine: e }))

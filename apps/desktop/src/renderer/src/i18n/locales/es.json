@@ -3024,7 +3024,8 @@
       "engineRate": "Engine DJ la analizó a {{engineKhz}} kHz y el fichero va a {{fileKhz}} kHz",
       "engineBackup": "Copia del {{date}}, el audio empieza {{sec}} s más tarde en ella",
       "engineNoBackup": "Engine DJ la recuerda {{sec}} s más larga y ya no queda el original. Vuelve a analizarla en Engine DJ",
-      "engineLength": "Engine DJ muestra {{length}} s y su propio análisis dice {{sec}} s"
+      "engineLength": "Engine DJ muestra {{length}} s y su propio análisis dice {{sec}} s",
+      "engineSizeUnknown": "Engine DJ no guarda el tamaño del fichero, así que la reparación se guía solo por su análisis"
     }
   }
 }

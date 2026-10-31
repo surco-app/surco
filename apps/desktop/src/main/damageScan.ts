@@ -153,6 +153,8 @@ function engineFinding(d: EngineDamage): DamageFinding {
     trimmedMs: j.trimmedMs,
     ...(j.sampleRateHz ? { sampleRateHz: j.sampleRateHz } : {}),
   }
+  const sizeUnknown: DamageNote[] =
+    d.fileBytes === null ? [{ key: 'damage.evidence.engineSizeUnknown' }] : []
   if (j.kind === 'engine-length') {
     const length = engineLengthOf(trackData.sampleCount, trackData.sampleRate)
     return {
@@ -160,6 +162,7 @@ function engineFinding(d: EngineDamage): DamageFinding {
       certainty: 'sure',
       evidence: [
         { key: 'damage.evidence.engineLength', params: { length: d.length, sec: length } },
+        ...sizeUnknown,
       ],
       before: { key: 'damage.value.seconds', params: { sec: d.length } },
       after: { key: 'damage.value.seconds', params: { sec: length } },
@@ -183,6 +186,7 @@ function engineFinding(d: EngineDamage): DamageFinding {
           },
         ]
       : []),
+    ...sizeUnknown,
   ]
   return {
     ...base,

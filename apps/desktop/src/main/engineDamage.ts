@@ -20,7 +20,7 @@ export type EngineJudgement =
 export interface EngineDamage {
   path: string
   judgement: EngineJudgement
-  fileBytes: number
+  fileBytes: number | null
   length: number
   trackData: { sampleRate: number; sampleCount: number }
 }
@@ -112,7 +112,7 @@ export async function scanEngineDamage(
         id: Number(id),
         path: String(path),
         length: Number(length),
-        fileBytes: Number(fileBytes),
+        fileBytes: fileBytes == null ? null : Number(fileBytes),
         trackData:
           trackData instanceof Uint8Array ? decodeTrackData(inflateEngineBlob(trackData)) : null,
       }))
