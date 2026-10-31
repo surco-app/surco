@@ -429,7 +429,10 @@ describe.skipIf(!real)('Apple Music against the real app', () => {
     } catch (e) {
       failed(dir)(e)
     }
-    const media = await appleMusicMediaFolder()
+    const media = await appleMusicMediaFolder().catch((e) => {
+      failed('finding the Music media folder')(e)
+      return ''
+    })
     const folders = media ? join(media, 'Music') : ''
     let names: string[] = []
     try {
