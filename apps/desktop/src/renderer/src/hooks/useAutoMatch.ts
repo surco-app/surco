@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import type {
   MetaTextKey,
+  RememberedAutoMatch,
   SearchHints,
   SearchPriority,
   SearchProviderId,
@@ -14,6 +15,7 @@ import {
   matchActivityReport,
   matchTargetOf,
   type ProbedCandidate,
+  type ProbeMatch,
   type SearchApi,
   searchHintsFor,
   tracksToAutoMatch,
@@ -156,6 +158,44 @@ export function useAutoMatch({
     [searchProvidersRef],
   )
 
+  // Each file's verdict as kept on disk, read once per file: a file found unchanged with the
+  // same search, title and providers replays it instead of asking the providers again.
+  const verdicts = useRef<Map<string, RememberedAutoMatch<ProbeMatch> | null>>(new Map())
+  const probedWith = useCallback(
+    (t: TrackItem) => ({
+      query: t.query,
+      title: t.meta.title,
+      providers: [...searchProvidersRef.current].sort(),
+    }),
+    [searchProvidersRef],
+  )
+  const replays = useCallback(
+    (t: TrackItem): boolean => {
+      const kept = verdicts.current.get(t.inputPath)
+      const now = probedWith(t)
+      return (
+        !!kept &&
+        kept.query === now.query &&
+        kept.title === now.title &&
+        kept.providers?.join('\n') === now.providers.join('\n')
+      )
+    },
+    [probedWith],
+  )
+  // One recall for every queued file not read yet, so replaying a whole library costs a
+  // single round trip instead of one per track.
+  const recallVerdicts = useCallback(async (tracks: TrackItem[]): Promise<void> => {
+    const paths = [...new Set(tracks.map((t) => t.inputPath))].filter(
+      (p) => !verdicts.current.has(p),
+    )
+    if (paths.length === 0) return
+    const kept = (await window.api.recallAutoMatches(paths)) as Record<
+      string,
+      RememberedAutoMatch<ProbeMatch>
+    >
+    for (const p of paths) verdicts.current.set(p, kept[p] ?? null)
+  }, [])
+
   // Probes Discogs for one track and applies a high-confidence release outright (the bar
   // autoMatchRelease enforces). Keeps the file's own cover — the release's is often smaller —
   // and only fills from the release when the file carries none, mirroring the editor's apply.
@@ -166,18 +206,26 @@ export function useAutoMatch({
       // show the full trail — what was considered and rejected, not just the winner.
       const probes: ProbedCandidate[] = []
       const startedAt = performance.now()
-      const target = matchTargetOf(t, matchCleanupRef.current)
-      const m = await autoMatchRelease(
-        t.query,
-        target,
-        searchApiAt(priority, searchHintsFor(t, matchCleanupRef.current)),
-        MAX_AUTO_PROBE,
-        (c) => probes.push(c),
-      )
-      if (matchCancel.current) return
+      const kept = verdicts.current.get(t.inputPath)
+      const replayed = replays(t)
+      let m: ProbeMatch | undefined
+      if (kept && replayed) m = kept.match ?? undefined
+      else {
+        m = await autoMatchRelease(
+          t.query,
+          matchTargetOf(t, matchCleanupRef.current),
+          searchApiAt(priority, searchHintsFor(t, matchCleanupRef.current)),
+          MAX_AUTO_PROBE,
+          (c) => probes.push(c),
+        )
+        if (matchCancel.current) return
+        const verdict = { ...probedWith(t), match: m ?? null }
+        verdicts.current.set(t.inputPath, verdict)
+        void window.api.rememberAutoMatch(t.inputPath, verdict)
+      }
       const ms = Math.round(performance.now() - startedAt)
       if (!m) {
-        reportActivity(matchActivityReport(t.meta.title, undefined, probes, ms))
+        if (!replayed) reportActivity(matchActivityReport(t.meta.title, undefined, probes, ms))
         return
       }
       // The probe ran against a snapshot taken when the pump drained the queue; an edit,
@@ -190,7 +238,7 @@ export function useAutoMatch({
       const live = tracksRef.current.find((x) => x.id === t.id)
       if (!live || live.meta !== t.meta || editingRef.current === t.id) return
       if (m.tier === 'high' && live.metaPartial) return
-      reportActivity(matchActivityReport(t.meta.title, m, probes, ms))
+      if (!replayed) reportActivity(matchActivityReport(t.meta.title, m, probes, ms))
       // A 'review'-tier match is plausible but unconfirmed: flag the row with its confidence
       // for the user to confirm in the editor, but don't write the metadata — the file keeps
       // its own tags until the user accepts the suggestion. The probe's guarded tier decides,
@@ -241,10 +289,12 @@ export function useAutoMatch({
         matchProvider: m.release.provider,
         ...(resolvedOwned ? { inLibraryResolved: true } : {}),
       })
-      window.api.recordStat(matchStatKey(m.release.provider))
+      if (!replayed) window.api.recordStat(matchStatKey(m.release.provider))
     },
     [
       searchApiAt,
+      replays,
+      probedWith,
       updateTrack,
       completeTrackMeta,
       tracksRef,
@@ -297,12 +347,16 @@ export function useAutoMatch({
       while (!matchCancel.current) {
         const ready = readyMatchTargets()
         if (ready.length === 0) break
-        // Take only the top-priority slice each pass, then re-evaluate: a row scrolled into
-        // view (or a freshly selected one) jumps ahead of the rest of the crate on the very
-        // next pass, instead of being stranded behind a whole batch already in flight.
-        const batch = ready.slice(0, AUTO_MATCH_CONCURRENCY)
+        await recallVerdicts(ready)
+        if (matchCancel.current) break
+        // Remembered verdicts cost no provider call, so they all go at once. Otherwise take
+        // only the top-priority slice each pass, then re-evaluate: a row scrolled into view
+        // (or a freshly selected one) jumps ahead of the rest of the crate on the very next
+        // pass, instead of being stranded behind a whole batch already in flight.
+        const replay = ready.filter(replays)
+        const batch = replay.length > 0 ? replay : ready.slice(0, AUTO_MATCH_CONCURRENCY)
         for (const t of batch) matchQueue.current.delete(t.id)
-        await mapWithConcurrency(batch, AUTO_MATCH_CONCURRENCY, async (t) => {
+        await mapWithConcurrency(batch, Math.max(batch.length, 1), async (t) => {
           try {
             if (!matchCancel.current) await applyAutoMatch(t)
           } catch {
@@ -341,7 +395,7 @@ export function useAutoMatch({
       // Otherwise rows remain queued whose tracks the list has not committed yet — keep the
       // progress shown and let the next enqueue, onTrackVisible or focusTrack pump again.
     }
-  }, [applyAutoMatch, readyMatchTargets, resetProgress])
+  }, [applyAutoMatch, readyMatchTargets, recallVerdicts, replays, resetProgress])
 
   // Queues tracks for auto-match and kicks the drain.
   const enqueueAutoMatch = useCallback(

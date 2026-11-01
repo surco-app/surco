@@ -23,6 +23,7 @@ import {
   peekAnalysis,
   peekVerdict,
   pruneAnalysisCache,
+  storeAnalysis,
 } from './analysisCache'
 
 const work = mkdtempSync(join(tmpdir(), 'surco-analysis-src-'))
@@ -150,6 +151,37 @@ describe('cachedAnalysis', () => {
     await dropAnalysis('redo-ns', src)
     expect(await cachedAnalysis('redo-ns', src, compute)).toEqual({ v: 2 })
     expect(compute).toHaveBeenCalledTimes(2)
+  })
+})
+
+// A verdict reached outside the main process (the renderer's auto-match) is kept the same
+// way as an analysis: it holds only while the file is the one it was reached for.
+describe('storeAnalysis', () => {
+  beforeEach(() => {
+    rmSync(join(app.getPath('userData'), 'analysis-cache'), { recursive: true, force: true })
+  })
+
+  it('keeps a value for the unchanged file and replaces it when stored again', async () => {
+    const file = await makeFile()
+    await storeAnalysis('demo', file, { value: 1 })
+    expect(await peekAnalysis('demo', file)).toEqual({ value: 1 })
+
+    await storeAnalysis('demo', file, { value: 2 })
+    expect(await peekAnalysis('demo', file)).toEqual({ value: 2 })
+  })
+
+  it('stops serving the value once the file changes', async () => {
+    const file = await makeFile()
+    await storeAnalysis('demo', file, { value: 1 })
+    const later = new Date(Date.now() + 60_000)
+    await utimes(file, later, later)
+
+    expect(await peekAnalysis('demo', file)).toBeNull()
+  })
+
+  it('stores nothing for a file that is gone', async () => {
+    await storeAnalysis('demo', join(work, 'gone.aiff'), { value: 1 })
+    expect(existsSync(join(app.getPath('userData'), 'analysis-cache'))).toBe(false)
   })
 })
 

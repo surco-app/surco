@@ -347,6 +347,22 @@ describe('audio:peek hands the editor what the disk already knows, before the se
   })
 })
 
+// The auto-match verdict is reached in the renderer and kept on disk per file, so a
+// launch that finds the file unchanged replays it instead of asking the providers again.
+describe('audio:rememberAutoMatch / audio:recallAutoMatches', () => {
+  it('hands back, by path, the verdicts kept for the unchanged files and leaves out the rest', async () => {
+    const kept = await makeFile()
+    const never = await makeFile()
+    const verdict = { query: 'a b', title: 'B', providers: ['discogs'], match: null }
+
+    await handlerFor('audio:rememberAutoMatch')({}, kept, verdict)
+
+    expect(await handlerFor('audio:recallAutoMatches')({}, [kept, never])).toEqual({
+      [kept]: verdict,
+    })
+  })
+})
+
 // The import reads every track's embedded cover, and the thumbnail used to cross IPC and
 // sit in the renderer's state as a base64 data URL (~30 KB each). It now crosses as a
 // short URL to the copy on disk, which the list and the editor load like any image.
