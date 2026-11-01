@@ -1,14 +1,17 @@
 import { realpathSync } from 'node:fs'
+import { stat } from 'node:fs/promises'
 import { extname } from 'node:path'
 import { errorWithKey } from '../shared/errorKeys'
 import type { TrackMetadata } from '../shared/types'
 import type { PlaceCheck, VerifyDetailKey } from '../shared/verification'
 import {
   appleMusicLimiter,
+  type FileLike,
   musicFileEntries,
   readMusicEntryFacts,
   runOsascript,
 } from './applemusic'
+import { probeDuration } from './ffmpeg'
 import { pathKey } from './libraryPathKey'
 import { formatOf } from './verifyFile'
 
@@ -26,8 +29,13 @@ export interface MusicExpect {
 export interface MusicReaders {
   entry: typeof readMusicEntryFacts
   // Persistent IDs of every entry playing the file, under any spelling of its path.
-  // Rejects when Music could not be asked.
-  entriesForFile: (path: string, titles: string[]) => Promise<string[]>
+  // Rejects when Music could not be asked. With the file's length and size, also finds an
+  // entry whose name no longer matches any title.
+  entriesForFile: (
+    path: string,
+    titles: string[],
+    like?: Omit<FileLike, 'path'>,
+  ) => Promise<string[]>
   realPath: (p: string) => string
   // Rejects as soon as the signal aborts.
   wait: (ms: number, signal?: AbortSignal) => Promise<void>
@@ -46,13 +54,14 @@ export function musicEntriesForFile(options: {
   homeMusicDir?: string
 }): MusicReaders['entriesForFile'] {
   const keyOf = comparablePath(options)
-  return async (path, titles) => {
+  return async (path, titles, like) => {
     const { consulted, entries } = await appleMusicLimiter.run(() =>
       musicFileEntries(
         titles.map((title) => ({ path, title })),
         true,
         options.run,
         keyOf,
+        like && { path, ...like },
       ),
     )
     if (!consulted) throw new Error('Music could not say which entries play the file')
@@ -61,6 +70,13 @@ export function musicEntriesForFile(options: {
 }
 
 const realPath = (p: string) => realpathSync(p)
+
+// What entriesForFile matches an entry renamed inside Music by; null when the length
+// cannot be read.
+export async function fileLikeForMusic(path: string): Promise<Omit<FileLike, 'path'> | null> {
+  const [durationSec, { size }] = await Promise.all([probeDuration(path), stat(path)])
+  return durationSec === null ? null : { durationSec, size }
+}
 
 export const musicReaders: MusicReaders = {
   entry: readMusicEntryFacts,

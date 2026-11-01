@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs'
 import { extname, join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -185,6 +185,44 @@ describe('the fake Music library answers like the real scripts', () => {
     expect(await fake.musicFileLocations()).toEqual([{ persistentId: entry.persistentId, path }])
     music.state.changeNextLocationsRead = true
     await expect(fake.musicFileLocations()).rejects.toThrow('music-library-changed')
+  })
+
+  it('finds an entry renamed in Music by the length or size of its file', async () => {
+    const path = file('r.aiff')
+    const entry = music.addEntry({ location: path, title: 'Renamed', durationSec: 241 })
+    const like = (durationSec: number, size: number) => ({ path, durationSec, size })
+    const found = {
+      consulted: true,
+      entries: { [path]: [expect.objectContaining({ persistentId: entry.persistentId })] },
+    }
+
+    expect(
+      await fake.musicFileEntries(
+        [{ path, title: 'Original' }],
+        true,
+        undefined,
+        undefined,
+        like(240.2, 1),
+      ),
+    ).toEqual(found)
+    expect(
+      await fake.musicFileEntries(
+        [{ path, title: 'Original' }],
+        true,
+        undefined,
+        undefined,
+        like(10, statSync(path).size),
+      ),
+    ).toEqual(found)
+    expect(
+      await fake.musicFileEntries(
+        [{ path, title: 'Original' }],
+        true,
+        undefined,
+        undefined,
+        like(10, 1),
+      ),
+    ).toEqual({ consulted: true, entries: {} })
   })
 
   it('guards a field write on the value the review read', async () => {

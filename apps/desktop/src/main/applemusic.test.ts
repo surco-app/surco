@@ -11,6 +11,7 @@ import {
   buildCarryOverScript,
   buildDeleteScript,
   buildEntryScript,
+  buildFileFactsScript,
   buildFileLocationsScript,
   buildFileNamesScript,
   buildLibraryDumpScript,
@@ -1136,6 +1137,87 @@ describe('Music entries for loaded files', () => {
       consulted: false,
       entries: {},
     })
+  })
+
+  // A DJ who renamed the track inside Music leaves no title to match, and the file it plays
+  // must not be trashed from under it. Its length and byte count still point at it.
+  it('finds an entry renamed inside Music by the length or size of the file', async () => {
+    const RENAMED = 'AAAAAAAAAAAAAAAA'
+    const BY_SIZE = 'BBBBBBBBBBBBBBBB'
+    const run = vi
+      .fn()
+      .mockResolvedValueOnce(
+        [
+          row(RENAMED, 'A', 'Renamed in Music', ''),
+          row(BY_SIZE, 'B', 'Else', ''),
+          row(OTHER, 'C', 'Third', ''),
+        ].join(RS),
+      )
+      .mockResolvedValueOnce(
+        [
+          row(RENAMED, '241,7', '1000'),
+          row(BY_SIZE, '99', '9000000'),
+          row(OTHER, '320', '1000'),
+        ].join(RS),
+      )
+      .mockResolvedValueOnce([row(RENAMED, '/m/a.mp3'), row(BY_SIZE, '/m/b.mp3')].join(RS))
+    const out = await musicFileEntries(
+      [{ path: '/m/a.mp3', title: 'Original Title' }],
+      true,
+      run,
+      undefined,
+      {
+        path: '/m/a.mp3',
+        durationSec: 240.9,
+        size: 9000000,
+      },
+    )
+    expect(out).toEqual({
+      consulted: true,
+      entries: { '/m/a.mp3': [{ persistentId: RENAMED, label: 'A - Renamed in Music' }] },
+    })
+    expect(run.mock.calls[1][0]).toBe(buildFileFactsScript())
+    expect(run.mock.calls[2][0]).toBe(buildFileLocationsScript([RENAMED, BY_SIZE]))
+  })
+
+  // The answer gates a trash: a Music that hangs must not hold the file forever, and a
+  // timeout reads as "could not ask", which keeps it.
+  it('bounds a lookup by length and size in time and keeps the file when it runs out', async () => {
+    const run = vi
+      .fn()
+      .mockResolvedValueOnce(row(PID, 'A', 'Other', ''))
+      .mockRejectedValueOnce(new Error('Command failed: osascript (timeout)'))
+    const out = await musicFileEntries([{ path: '/m/a.mp3', title: 'T' }], true, run, undefined, {
+      path: '/m/a.mp3',
+      durationSec: 240,
+      size: 1,
+    })
+    expect(out).toEqual({ consulted: false, entries: {} })
+    expect(run.mock.calls[1][1]).toMatchObject({ timeout: expect.any(Number) })
+  })
+
+  // The lists pair by position: a track added between two reads would shift every length
+  // onto the next entry's ID and miss the one that plays the file.
+  it('fails the lookup when the library changed while its lengths were read', async () => {
+    const run = vi
+      .fn()
+      .mockResolvedValueOnce(row(PID, 'A', 'Other', ''))
+      .mockResolvedValueOnce('changed\n')
+    const out = await musicFileEntries([{ path: '/m/a.mp3', title: 'T' }], true, run, undefined, {
+      path: '/m/a.mp3',
+      durationSec: 240,
+      size: 1,
+    })
+    expect(out).toEqual({ consulted: false, entries: {} })
+  })
+
+  it('reads lengths and sizes in bulk, refusing a library that changed between reads', () => {
+    const script = buildFileFactsScript()
+    expect(script).toContain('duration of every file track of library playlist 1')
+    expect(script).toContain('size of every file track of library playlist 1')
+    expect(script).toContain('if pidsBefore is not pidsAfter then return "changed"')
+    expect(script).toContain('if (count of file tracks of library playlist 1) is 0 then return ""')
+    expect(script).not.toContain('location')
   })
 
   it('reads the names in bulk and guards the empty library', () => {

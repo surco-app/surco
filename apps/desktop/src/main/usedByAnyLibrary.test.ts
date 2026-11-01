@@ -90,9 +90,13 @@ describe('usedByAnyLibrary', () => {
         traktorRead: noTraktor,
         musicEntries,
         fileTitle: async () => 'A',
+        fileLike: async () => ({ durationSec: 241.5, size: 4096 }),
       }),
     ).toBe(true)
-    expect(musicEntries).toHaveBeenCalledWith(FILE, ['A', 'A.mp3'])
+    expect(musicEntries).toHaveBeenCalledWith(FILE, ['A', 'A.mp3'], {
+      durationSec: 241.5,
+      size: 4096,
+    })
   })
 
   it('finds the Music entry by the title the old file carries, since the DJ may have retitled the track in Surco since', async () => {
@@ -104,6 +108,7 @@ describe('usedByAnyLibrary', () => {
         traktorRead: noTraktor,
         musicEntries,
         fileTitle: async () => 'A (Original Mix)',
+        fileLike: async () => ({ durationSec: 241.5, size: 4096 }),
       }),
     ).toBe(true)
   })
@@ -137,8 +142,47 @@ describe('usedByAnyLibrary', () => {
         traktorRead: noTraktor,
         musicEntries,
         fileTitle: async () => 'A',
+        fileLike: async () => ({ durationSec: 241.5, size: 4096 }),
       }),
     ).rejects.toThrow()
+  })
+
+  // A track renamed inside Music matches no title Surco knows; its length and size do.
+  it('asks Music by the length and size of the file too, so an entry renamed there still keeps it', async () => {
+    const musicEntries = vi.fn(
+      async (_path: string, _titles: string[], like?: { durationSec: number; size: number }) =>
+        like?.size === 4096 ? ['RENAMED'] : [],
+    )
+    expect(
+      await usedByAnyLibrary(FILE, ['A'], {
+        traktorRead: noTraktor,
+        musicEntries,
+        fileTitle: async () => 'A',
+        fileLike: async () => ({ durationSec: 241.5, size: 4096 }),
+      }),
+    ).toBe(true)
+  })
+
+  it('keeps the file when its length cannot be read, since the names alone miss a renamed entry', async () => {
+    const musicEntries = vi.fn(async () => [])
+    expect(
+      await usedByAnyLibrary(FILE, ['A'], {
+        traktorRead: noTraktor,
+        musicEntries,
+        fileTitle: async () => 'A',
+        fileLike: async () => null,
+      }),
+    ).toBe(true)
+    expect(
+      await usedByAnyLibrary(FILE, ['A'], {
+        traktorRead: noTraktor,
+        musicEntries,
+        fileTitle: async () => 'A',
+        fileLike: async () => {
+          throw new Error('stat failed')
+        },
+      }),
+    ).toBe(true)
   })
 
   it('retires a file no Music entry plays', async () => {
@@ -148,6 +192,7 @@ describe('usedByAnyLibrary', () => {
         traktorRead: noTraktor,
         musicEntries,
         fileTitle: async () => 'A',
+        fileLike: async () => ({ durationSec: 241.5, size: 4096 }),
       }),
     ).toBe(false)
   })

@@ -91,8 +91,13 @@ export async function usedByAnyLibrary(
   titles: string[],
   deps: {
     traktorRead: () => string
-    musicEntries?: (path: string, titles: string[]) => Promise<string[]>
+    musicEntries?: (
+      path: string,
+      titles: string[],
+      like?: { durationSec: number; size: number },
+    ) => Promise<string[]>
     fileTitle?: (path: string) => Promise<string | undefined>
+    fileLike?: (path: string) => Promise<{ durationSec: number; size: number } | null>
   },
 ): Promise<boolean> {
   const settings = getSettings()
@@ -112,7 +117,9 @@ export async function usedByAnyLibrary(
   if (used || !deps.musicEntries) return used
   const tagged = (await deps.fileTitle?.(path).catch(() => undefined))?.trim()
   if (!tagged) return true
-  return (await deps.musicEntries(path, [...new Set([...titles, tagged])])).length > 0
+  const like = await deps.fileLike?.(path).catch(() => null)
+  if (!like) return true
+  return (await deps.musicEntries(path, [...new Set([...titles, tagged])], like)).length > 0
 }
 
 export function repointRekordbox(

@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 import {
@@ -319,6 +319,21 @@ function fileNames(): string {
   )
 }
 
+function fileFacts(): string {
+  const tracks = fileTracks()
+  if (tracks.length === 0) return '\n'
+  return printed(
+    tracks.map((e) =>
+      [
+        e.persistentId,
+        String(e.durationSec),
+        String(fileOf(e) ? statSync(fileOf(e)).size : 0),
+      ].join(FS),
+    ),
+    RS,
+  )
+}
+
 function fileLocations(wanted?: string[]): string {
   return printed(
     fileTracks()
@@ -353,6 +368,7 @@ function osascript(real: AppleMusic): Run {
     if (script === real.buildMusicRunningScript()) return `${state.running}\n`
     state.running = true
     if (script === real.buildFileNamesScript()) return fileNames()
+    if (script === real.buildFileFactsScript()) return fileFacts()
     if (script === real.buildFileLocationsAllScript()) {
       if (!state.changeNextLocationsRead) return fileLocations()
       state.changeNextLocationsRead = false
@@ -476,8 +492,8 @@ export function appleMusicModule(real: AppleMusic): AppleMusic {
     },
     dumpAppleMusicLibrary: async () => real.parseLibraryDump(libraryDump()),
     dumpMusicReview: async () => real.parseReviewDump(reviewDump()),
-    musicFileEntries: (candidates, launch, _run, keyOf) =>
-      real.musicFileEntries(candidates, launch, run, keyOf),
+    musicFileEntries: (candidates, launch, _run, keyOf, like) =>
+      real.musicFileEntries(candidates, launch, run, keyOf, like),
     musicFileLocations: () => real.musicFileLocations(run),
     setAppleMusicField: async (
       persistentId,
