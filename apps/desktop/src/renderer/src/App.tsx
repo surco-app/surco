@@ -87,6 +87,7 @@ import { useMetadataClipboard } from './hooks/useMetadataClipboard'
 import { useMetaUndo } from './hooks/useMetaUndo'
 import { type SettingsTab, useOverlays } from './hooks/useOverlays'
 import { usePlayer } from './hooks/usePlayer'
+import { usePlaylistReadPriority } from './hooks/usePlaylistReadPriority'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useRekordboxEdits } from './hooks/useRekordboxEdits'
 import { useLibraryAvailable, useOfferPlaylistFields } from './hooks/useRekordboxPlaylists'
@@ -1700,6 +1701,11 @@ export default function App(): React.JSX.Element {
   const playlistScope = useMemo(
     () => (browser.playlist && browser.entries ? playlistView(tracksView, browser.entries) : null),
     [browser.playlist, browser.entries, tracksView],
+  )
+  usePlaylistReadPriority(
+    browser.playlist?.id ?? null,
+    playlistScope?.tracks ?? [],
+    prioritizeReads,
   )
   const filesView = useMemo(() => tracksView.filter(inFiles), [tracksView])
   // A source with no playlist applied yet (none picked, or its entries still loading) shows
