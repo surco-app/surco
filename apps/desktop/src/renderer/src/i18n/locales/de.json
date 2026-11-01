@@ -287,6 +287,8 @@
     "trimApplied_other": "Kürzung auf {{count}} Tracks angewendet",
     "trimUndo": "Rückgängig",
     "undo": "Rückgängig",
+    "clearedMeta_one": "Metadaten in {{count}} Track gelöscht",
+    "clearedMeta_other": "Metadaten in {{count}} Tracks gelöscht",
     "undoneMeta_one": "Metadaten in {{count}} Track wiederhergestellt",
     "undoneMeta_other": "Metadaten in {{count}} Tracks wiederhergestellt",
     "redoneMeta_one": "Metadaten-Änderung in {{count}} Track wiederholt",

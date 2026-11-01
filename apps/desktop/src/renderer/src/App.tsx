@@ -2605,6 +2605,10 @@ export default function App(): React.JSX.Element {
       updateTracksMeta(selectedIds, emptyMetadata())
       onClearExtras(selectedIds)
     } else updateTrack(selected.id, clearedTrackPatch(selected))
+    toastReporter.reportUndo(
+      tr('notices.clearedMeta', { count: Math.max(selectedTracks.length, 1) }),
+      undoMeta,
+    )
   })
   const deriveTags = useStableCallback(() => {
     const targets = editScope(selectedTracks, selected)

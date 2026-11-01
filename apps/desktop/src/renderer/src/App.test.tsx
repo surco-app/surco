@@ -6375,6 +6375,25 @@ describe('App metadata undo', () => {
     await waitFor(() => expect(screen.getByTestId('cover-preview')).toBeInTheDocument())
   })
 
+  // The Eraser wipes every field with one click and its only way back was ⌘Z, which
+  // nothing on screen mentioned: the clear now says what it did and offers the undo.
+  it('offers an undo right after the Eraser clears a track', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+
+    fireEvent.click(await screen.findByTestId('clear-meta-btn'))
+    expect(await screen.findByTestId('app-notice-message')).toHaveTextContent(
+      i18n.t('notices.clearedMeta', { count: 1 }),
+    )
+    fireEvent.click(screen.getByTestId('app-notice-action'))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Imported Title'))
+  })
+
   // The ⌘K clear is the Eraser button's twin and has to clear the same things. It set
   // coverRemoved without dropping coverUrl, so the artwork stayed on screen: the clear
   // read as "it didn't touch the cover" while the conversion was already staged to wipe

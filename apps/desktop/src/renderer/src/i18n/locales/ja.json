@@ -287,6 +287,8 @@
     "trimApplied_other": "{{count}} トラックにトリムを適用しました",
     "trimUndo": "元に戻す",
     "undo": "元に戻す",
+    "clearedMeta_one": "{{count}} トラックのメタデータを消去しました",
+    "clearedMeta_other": "{{count}} トラックのメタデータを消去しました",
     "undoneMeta_one": "{{count}} トラックのメタデータを復元しました",
     "undoneMeta_other": "{{count}} トラックのメタデータを復元しました",
     "redoneMeta_one": "{{count}} トラックのメタデータ編集をやり直しました",

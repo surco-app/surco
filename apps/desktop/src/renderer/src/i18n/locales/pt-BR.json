@@ -287,6 +287,8 @@
     "trimApplied_other": "Corte aplicado em {{count}} faixas",
     "trimUndo": "Desfazer",
     "undo": "Desfazer",
+    "clearedMeta_one": "Metadados apagados em {{count}} faixa",
+    "clearedMeta_other": "Metadados apagados em {{count}} faixas",
     "undoneMeta_one": "Metadados restaurados em {{count}} faixa",
     "undoneMeta_other": "Metadados restaurados em {{count}} faixas",
     "redoneMeta_one": "Edição de metadados refeita em {{count}} faixa",

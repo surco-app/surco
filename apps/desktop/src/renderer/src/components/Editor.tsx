@@ -917,7 +917,7 @@ export const Editor = memo(function Editor({
   // whole tag: the artwork rides coverRemoved and the rating rides metaCleared, so
   // the file keeps none of the fields the app manages (Traktor cues aside).
   function clearAllMeta(): void {
-    if (isMulti) {
+    if (isMulti || onClearAll) {
       onClearAll?.()
       return
     }
@@ -1189,16 +1189,16 @@ export const Editor = memo(function Editor({
     ],
   )
 
-  // One-click "empty every tag", next to the fill button so set-and-clear read as a
-  // pair. Icon-only (like the output-name pencil) because the Apple Music badge
-  // already crowds the header; the tooltip and aria-label carry the name.
+  // One-click "empty every tag", set apart at the end of the header so a reach for fill
+  // never lands on it. Icon-only (like the output-name pencil) because the Apple Music
+  // badge already crowds the header; the tooltip and aria-label carry the name.
   const clearButton = (
     <button
       type="button"
       data-testid="clear-meta-btn"
       aria-label={tr('editor.clearMeta')}
       onClick={clearAllMeta}
-      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
+      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-danger"
     >
       <Eraser className="h-3.5 w-3.5" aria-hidden="true" />
       <Tooltip label={tr('editor.clearMetaHint')} align="end" />
@@ -1472,10 +1472,18 @@ export const Editor = memo(function Editor({
                 )}
                 {formOpen && (
                   <div className="flex items-center gap-0.5">
-                    {clearButton}
                     {deriveButton}
                     {titleFormatButton}
                   </div>
+                )}
+                {formOpen && (
+                  <>
+                    <div
+                      aria-hidden="true"
+                      className="mx-2 h-4 w-px self-center bg-[var(--color-line)]"
+                    />
+                    {clearButton}
+                  </>
                 )}
               </div>
             }

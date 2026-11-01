@@ -287,6 +287,8 @@
     "trimApplied_other": "Trim applied to {{count}} tracks",
     "trimUndo": "Undo",
     "undo": "Undo",
+    "clearedMeta_one": "Metadata cleared on {{count}} track",
+    "clearedMeta_other": "Metadata cleared on {{count}} tracks",
     "undoneMeta_one": "Metadata restored on {{count}} track",
     "undoneMeta_other": "Metadata restored on {{count}} tracks",
     "redoneMeta_one": "Metadata edit redone on {{count}} track",
