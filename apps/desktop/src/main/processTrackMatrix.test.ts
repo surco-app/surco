@@ -56,6 +56,7 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     removeRenamedOriginal: vi.fn(async () => {}),
     addToAppleMusic: vi.fn(async () => 'added-id'),
     updateInAppleMusic: vi.fn(async () => 'updated-id'),
+    relinkAppleMusicEntry: vi.fn(async () => {}),
     addToEngineDj: vi.fn(async () => {}),
     allowMedia: vi.fn(),
     existsSync: vi.fn(() => false),

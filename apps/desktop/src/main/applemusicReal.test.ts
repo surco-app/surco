@@ -266,6 +266,9 @@ function deps(): ProcessTrackDeps {
     updateInAppleMusic: async () => {
       throw new Error('a replacement must never fall back to an update')
     },
+    relinkAppleMusicEntry: async () => {
+      throw new Error('a replacement must never relink the old entry')
+    },
     addToEngineDj: async () => {},
     allowMedia: () => {},
     existsSync,

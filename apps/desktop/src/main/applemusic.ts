@@ -470,6 +470,18 @@ export function buildRevealScript(persistentId: string): string {
   ].join('\n')
 }
 
+// Points an entry at another file, keeping its persistent ID, playlists and history. Music
+// never follows a file renamed on disk (measured 30/10), so a rename has to tell it.
+export function buildRelinkScript(persistentId: string, path: string): string {
+  return [
+    'tell application "Music"',
+    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${appleScriptString(persistentId)})`,
+    '  if (count of theMatches) is 0 then error "La pista ya no está en tu biblioteca de Apple Music."',
+    `  set location of item 1 of theMatches to POSIX file ${appleScriptString(path)}`,
+    'end tell',
+  ].join('\n')
+}
+
 // Removes a library copy by persistent ID — the "replace the old rip" tail: once the
 // freshly converted file is in the library, the copy it supersedes is deleted. Returns
 // "missing" instead of erroring when the copy is already gone (the user beat us to it in
@@ -1301,6 +1313,10 @@ export async function updateInAppleMusic(
   const stdout = await runOsascript(buildUpdateScript(persistentId, meta, coverPath))
   const result = stdout.trim()
   return result === 'missing' ? null : result
+}
+
+export async function relinkAppleMusicEntry(persistentId: string, path: string): Promise<void> {
+  await runOsascript(buildRelinkScript(persistentId, path))
 }
 
 export async function revealInAppleMusic(persistentId: string): Promise<void> {

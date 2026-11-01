@@ -78,6 +78,7 @@ import {
   markAppleMusicReplacing,
   musicEntryForFile,
   readMusicEntryFacts,
+  relinkAppleMusicEntry,
   updateInAppleMusic,
 } from './applemusic'
 import { appMenuTemplate } from './appMenu'
@@ -1846,6 +1847,13 @@ function registerIpc(): void {
           ),
         )
       },
+      relinkAppleMusicEntry: (persistentId, path) =>
+        appleMusicLimiter.run(() =>
+          relinkAppleMusicEntry(persistentId, path).catch((err) => {
+            log.error('process:appleMusic relink failed', persistentId, path, err)
+            throw err
+          }),
+        ),
       findAppleMusicEntry: async (path, meta) => {
         const own = await readMeta(path)
         const titles = [...new Set([meta.title, own.tags.title].filter(Boolean))]
