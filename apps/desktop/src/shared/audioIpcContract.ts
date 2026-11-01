@@ -4,6 +4,7 @@ import type {
   LimiterGlimpse,
   LoudnessResult,
   PairFacts,
+  RememberedAutoMatch,
   ScanVerdict,
   SpectrumResult,
   SpectrumVerdict,
@@ -43,6 +44,14 @@ export interface AudioAnalysisIpc {
   'audio:peek': {
     args: [family: keyof PeekableAnalyses, inputPath: string]
     result: PeekableAnalyses[keyof PeekableAnalyses] | null
+  }
+  'audio:recallAutoMatch': {
+    args: [inputPath: string]
+    result: RememberedAutoMatch | null
+  }
+  'audio:rememberAutoMatch': {
+    args: [inputPath: string, verdict: RememberedAutoMatch]
+    result: null
   }
   'audio:loudness': {
     args: [inputPath: string, priority?: 'high' | 'low']

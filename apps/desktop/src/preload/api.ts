@@ -54,6 +54,7 @@ import type {
   RekordboxQueueState,
   RekordboxSyncIssue,
   Release,
+  RememberedAutoMatch,
   RemoveCopyResult,
   RestoreResult,
   ReviewOutcome,
@@ -420,6 +421,9 @@ export interface Api {
     family: F,
     path: string,
   ) => Promise<PeekableAnalyses[F] | null>
+  // The auto-match verdict kept for the file as it is now (see audio:rememberAutoMatch).
+  recallAutoMatch: (path: string) => Promise<RememberedAutoMatch | null>
+  rememberAutoMatch: (path: string, verdict: RememberedAutoMatch) => Promise<null>
   loudness: (path: string, priority?: 'high' | 'low') => Promise<LoudnessResult | null>
   fingerprint: (path: string, priority?: 'high' | 'low') => Promise<string | null>
   comparePair: (a: string, b: string) => Promise<PairFacts | null>

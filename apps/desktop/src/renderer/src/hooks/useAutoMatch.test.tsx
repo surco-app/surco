@@ -28,6 +28,8 @@ function setApi(over: Record<string, unknown> = {}): void {
   ;(window as unknown as { api: unknown }).api = {
     search: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
     getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(release),
+    recallAutoMatch: vi.fn<Api['recallAutoMatch']>().mockResolvedValue(null),
+    rememberAutoMatch: vi.fn<Api['rememberAutoMatch']>().mockResolvedValue(null),
     ...over,
   }
 }
@@ -102,6 +104,84 @@ describe('useAutoMatch', () => {
     expect(updateTrack).toHaveBeenCalledWith('a', expect.objectContaining({ autoMatched: true }))
     expect(updateTrack).toHaveBeenCalledWith('b', expect.objectContaining({ autoMatched: true }))
     await waitFor(() => expect(result.current.matching).toBeNull())
+  })
+
+  // Measured 01/11 on a 2042-track Music library: every launch probed every track again,
+  // 795 provider requests in six minutes for 49 tracks, though no file had changed.
+  describe('remembering a verdict per file', () => {
+    function diskMemory() {
+      const stored = new Map<string, unknown>()
+      return {
+        stored,
+        recallAutoMatch: vi.fn<Api['recallAutoMatch']>(
+          async (p) => (stored.get(p) as never) ?? null,
+        ),
+        rememberAutoMatch: vi.fn<Api['rememberAutoMatch']>(async (p, v) => {
+          stored.set(p, v)
+          return null
+        }),
+      }
+    }
+
+    it('replays the match an unchanged file got last time without asking any provider', async () => {
+      const memory = diskMemory()
+      setApi(memory)
+      const first = setup([track('a')])
+      act(() => first.result.current.enqueueAutoMatch([track('a')]))
+      await waitFor(() => expect(memory.rememberAutoMatch).toHaveBeenCalledOnce())
+      cleanup()
+
+      const search = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
+      setApi({ ...memory, search })
+      const again = setup([track('a')])
+      act(() => again.result.current.enqueueAutoMatch([track('a')]))
+
+      await waitFor(() =>
+        expect(again.updateTrack).toHaveBeenCalledWith(
+          'a',
+          expect.objectContaining({
+            autoMatched: true,
+            meta: expect.objectContaining({ album: 'Album' }),
+          }),
+        ),
+      )
+      expect(search).not.toHaveBeenCalled()
+    })
+
+    it('remembers that nothing matched, so the next launch leaves the file alone', async () => {
+      const memory = diskMemory()
+      setApi({ ...memory, search: vi.fn().mockResolvedValue([]) })
+      const first = setup([track('a')])
+      act(() => first.result.current.enqueueAutoMatch([track('a')]))
+      await waitFor(() => expect(memory.rememberAutoMatch).toHaveBeenCalledOnce())
+      cleanup()
+
+      const search = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
+      setApi({ ...memory, search })
+      const again = setup([track('a')])
+      act(() => again.result.current.enqueueAutoMatch([track('a')]))
+      await waitFor(() => expect(again.result.current.matching).toBeNull())
+
+      expect(search).not.toHaveBeenCalled()
+      expect(again.updateTrack).not.toHaveBeenCalled()
+    })
+
+    it('probes again once the tags it was probed with changed', async () => {
+      const memory = diskMemory()
+      setApi({ ...memory, search: vi.fn().mockResolvedValue([]) })
+      const first = setup([track('a')])
+      act(() => first.result.current.enqueueAutoMatch([track('a')]))
+      await waitFor(() => expect(memory.rememberAutoMatch).toHaveBeenCalledOnce())
+      cleanup()
+
+      const search = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
+      setApi({ ...memory, search })
+      const renamed = { ...track('a'), query: 'artist other song' }
+      const again = setup([renamed])
+      act(() => again.result.current.enqueueAutoMatch([renamed]))
+
+      await waitFor(() => expect(search).toHaveBeenCalled())
+    })
   })
 
   it('skips a track whose auto-match the user undid until they ask for it again, so revisiting the row does not redo what ⌘Z took back', async () => {

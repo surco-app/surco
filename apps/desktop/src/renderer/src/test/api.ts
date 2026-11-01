@@ -339,6 +339,8 @@ export function stubApi(over: Partial<Api> = {}): Api {
     }),
     loadCachedAnalyses: async () => ({}),
     peekAnalysis: async () => null,
+    recallAutoMatch: async () => null,
+    rememberAutoMatch: async () => null,
     loudness: async () => null,
     fingerprint: async () => null,
     comparePair: async () => null,

@@ -6,6 +6,7 @@ import type { AudioAnalysisIpc, PeekableAnalyses } from '../shared/audioIpcContr
 import { yearFromDate } from '../shared/tagFields'
 import type {
   DeclickConfig,
+  RememberedAutoMatch,
   ScanVerdict,
   SpectrumResult,
   SpectrumVerdict,
@@ -18,6 +19,7 @@ import {
   LOUDNESS_NAMESPACE,
   peekAnalysis,
   peekVerdict,
+  storeAnalysis,
   WAVEFORM_NAMESPACE,
 } from './analysisCache'
 import { analysisCancels, isAbortError } from './analysisCancel'
@@ -101,6 +103,9 @@ function spectrogramNamespace(inputPath: string): string {
     ? `${SPECTROGRAM_NAMESPACE}-codec`
     : SPECTROGRAM_NAMESPACE
 }
+
+// Bumped when what a verdict means changes, so verdicts reached before are probed again.
+const AUTO_MATCH_NAMESPACE = 'automatch-v1'
 
 const PEEK_NAMESPACES: Record<keyof PeekableAnalyses, string> = {
   spectrogram: SPECTROGRAM_NAMESPACE,
@@ -304,6 +309,14 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     const { cutoffFailed: _cutoffFailed, ...entry } = hit
     return entry
   })
+
+  handleAudio('audio:recallAutoMatch', (_e, inputPath) =>
+    peekAnalysis<RememberedAutoMatch>(AUTO_MATCH_NAMESPACE, inputPath),
+  )
+
+  handleAudio('audio:rememberAutoMatch', (_e, inputPath, verdict) =>
+    storeAnalysis(AUTO_MATCH_NAMESPACE, inputPath, verdict).then(() => null),
+  )
 
   handleAudio('audio:loudness', async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
     try {

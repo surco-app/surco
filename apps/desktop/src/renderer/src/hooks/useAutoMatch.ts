@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import type {
   MetaTextKey,
+  RememberedAutoMatch,
   SearchHints,
   SearchPriority,
   SearchProviderId,
@@ -14,6 +15,7 @@ import {
   matchActivityReport,
   matchTargetOf,
   type ProbedCandidate,
+  type ProbeMatch,
   type SearchApi,
   searchHintsFor,
   tracksToAutoMatch,
@@ -166,18 +168,28 @@ export function useAutoMatch({
       // show the full trail — what was considered and rejected, not just the winner.
       const probes: ProbedCandidate[] = []
       const startedAt = performance.now()
-      const target = matchTargetOf(t, matchCleanupRef.current)
-      const m = await autoMatchRelease(
-        t.query,
-        target,
-        searchApiAt(priority, searchHintsFor(t, matchCleanupRef.current)),
-        MAX_AUTO_PROBE,
-        (c) => probes.push(c),
-      )
+      const probedWith = { query: t.query, title: t.meta.title }
+      const kept = (await window.api.recallAutoMatch(
+        t.inputPath,
+      )) as RememberedAutoMatch<ProbeMatch> | null
+      const replayed = !!kept && kept.query === probedWith.query && kept.title === probedWith.title
+      let m: ProbeMatch | undefined
+      if (kept && replayed) m = kept.match ?? undefined
+      else {
+        m = await autoMatchRelease(
+          t.query,
+          matchTargetOf(t, matchCleanupRef.current),
+          searchApiAt(priority, searchHintsFor(t, matchCleanupRef.current)),
+          MAX_AUTO_PROBE,
+          (c) => probes.push(c),
+        )
+        if (matchCancel.current) return
+        void window.api.rememberAutoMatch(t.inputPath, { ...probedWith, match: m ?? null })
+      }
       if (matchCancel.current) return
       const ms = Math.round(performance.now() - startedAt)
       if (!m) {
-        reportActivity(matchActivityReport(t.meta.title, undefined, probes, ms))
+        if (!replayed) reportActivity(matchActivityReport(t.meta.title, undefined, probes, ms))
         return
       }
       // The probe ran against a snapshot taken when the pump drained the queue; an edit,
@@ -190,7 +202,7 @@ export function useAutoMatch({
       const live = tracksRef.current.find((x) => x.id === t.id)
       if (!live || live.meta !== t.meta || editingRef.current === t.id) return
       if (m.tier === 'high' && live.metaPartial) return
-      reportActivity(matchActivityReport(t.meta.title, m, probes, ms))
+      if (!replayed) reportActivity(matchActivityReport(t.meta.title, m, probes, ms))
       // A 'review'-tier match is plausible but unconfirmed: flag the row with its confidence
       // for the user to confirm in the editor, but don't write the metadata — the file keeps
       // its own tags until the user accepts the suggestion. The probe's guarded tier decides,
@@ -241,7 +253,7 @@ export function useAutoMatch({
         matchProvider: m.release.provider,
         ...(resolvedOwned ? { inLibraryResolved: true } : {}),
       })
-      window.api.recordStat(matchStatKey(m.release.provider))
+      if (!replayed) window.api.recordStat(matchStatKey(m.release.provider))
     },
     [
       searchApiAt,

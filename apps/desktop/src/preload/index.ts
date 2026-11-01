@@ -31,6 +31,7 @@ import type {
   RekordboxQueueApplied,
   RekordboxQueueState,
   RekordboxSyncIssue,
+  RememberedAutoMatch,
   RestoreResult,
   RowWaveRequest,
   SaveCuesRequest,
@@ -409,6 +410,9 @@ const api: Api = {
     invokeAudio('audio:cached-batch', paths),
   peekAnalysis: <F extends keyof PeekableAnalyses>(family: F, path: string) =>
     invokeAudio('audio:peek', family, path) as Promise<PeekableAnalyses[F] | null>,
+  recallAutoMatch: (path: string) => invokeAudio('audio:recallAutoMatch', path),
+  rememberAutoMatch: (path: string, verdict: RememberedAutoMatch) =>
+    invokeAudio('audio:rememberAutoMatch', path, verdict),
   loudness: (path: string, priority: 'high' | 'low' = 'low'): Promise<LoudnessResult | null> =>
     invokeAudio('audio:loudness', path, priority),
   fingerprint: (path: string, priority: 'high' | 'low' = 'low'): Promise<string | null> =>
