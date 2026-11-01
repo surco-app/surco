@@ -15,6 +15,7 @@ import { fillFromAppleMusic } from '../lib/appleMusicFill'
 import { createPriorityLimit } from '../lib/concurrency'
 import { trackSignature, withSignatureCover, withSignatureMeta } from '../lib/dirty'
 import { parseFileName } from '../lib/filename'
+import { diskMeta } from '../lib/listReviewEntries'
 import { newTrackPaths } from '../lib/newTracks'
 import { mergeReadMeta } from '../lib/readMerge'
 import { withReviewedFields } from '../lib/reviewedFields'
@@ -168,6 +169,7 @@ interface TrackLibrary {
   // name-parsed value) and clearing the failed mark. Resolves true once the row holds the
   // file's tags; false leaves the mark in place, and the conversion refuses the row.
   rereadTrackMeta: (id: string) => Promise<boolean>
+  refreshChangedTrack: (id: string) => Promise<boolean>
   completeTrackMeta: (id: string) => Promise<void>
   // Re-reads the file after an in-place export rewrote it, so the row stops describing
   // bytes that no longer exist. Only the fields the row renders — everything the user
@@ -679,6 +681,21 @@ export function useTrackLibrary({
     return ok
   })
 
+  // The file changed after the row was read: merged against that earlier read, so the fields
+  // the user left alone take the file's new values and the ones they typed stay.
+  const refreshChangedTrack = useStableCallback(async (id: string): Promise<boolean> => {
+    const current = tracksRef.current.find((t) => t.id === id)
+    if (!current) return false
+    const read = diskMeta(current)
+    const ok = await loadTrackMeta({
+      ...newTrack(current.inputPath),
+      id: current.id,
+      ...(read && { meta: read }),
+    })
+    flushMetaPatches()
+    return ok
+  })
+
   const completing = useRef(new Map<string, Promise<void>>())
   const completeTrackMeta = useStableCallback((id: string): Promise<void> => {
     const inFlight = completing.current.get(id)
@@ -795,6 +812,20 @@ export function useTrackLibrary({
   useEffect(
     () => window.api.onExpandedBatch((paths) => void addPathsRef.current(paths, undefined, true)),
     [],
+  )
+
+  // A row read under a date remembered from last launch shows the file as it was then; the
+  // background check reports the ones changed or gone since, and those are read again (what
+  // the user typed stays). A row being converted is left to its conversion.
+  useEffect(
+    () =>
+      window.api.onFilesChanged((paths) => {
+        const changed = new Set(paths.map((p) => p.normalize('NFC')))
+        for (const t of tracksRef.current)
+          if (t.status !== 'processing' && changed.has(t.inputPath.normalize('NFC')))
+            void refreshChangedTrack(t.id)
+      }),
+    [refreshChangedTrack],
   )
 
   // The main process watches the folders a crate was loaded from and reports each one's
@@ -1186,6 +1217,7 @@ export function useTrackLibrary({
     deriveTracks,
     startOverTrack,
     rereadTrackMeta,
+    refreshChangedTrack,
     completeTrackMeta,
     refreshTrackFromDisk,
     patchReviewedFields,

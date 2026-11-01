@@ -64,7 +64,12 @@ import type {
 } from '../shared/types'
 import { createActiveConversions } from './activeConversions'
 import { activity } from './activity'
-import { analysisCacheStats, clearAnalysisCache, pruneAnalysisCache } from './analysisCache'
+import {
+  analysisCacheStats,
+  clearAnalysisCache,
+  configureFileSignatures,
+  pruneAnalysisCache,
+} from './analysisCache'
 import { registerAppleMusicIpc } from './appleMusicIpc'
 import {
   addToAppleMusic,
@@ -113,6 +118,7 @@ import { expandPaths } from './expand'
 import { registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
 import { convertAudio, readMeta, readTags, toNmlLocation } from './ffmpeg'
+import { createFileSignatures } from './fileSignatures'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { fileIdentity, isSameFile, removeRenamedOriginal } from './inplace'
 import { setLibraryBackupRoot } from './libraryBackups'
@@ -195,6 +201,7 @@ import {
 } from './settings'
 import { sharedPrompt } from './sharedPrompt'
 import { registerShellIpc } from './shellIpc'
+import { sourceStat } from './sourceStat'
 import { createStickyConflict } from './stickyConflict'
 import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsInWorker, tagChangeDetail } from './tagChanges'
@@ -320,6 +327,27 @@ const broadcast = (channel: string, payload: unknown): void => {
   for (const win of BrowserWindow.getAllWindows())
     if (!win.webContents.isDestroyed()) win.webContents.send(channel, payload)
 }
+// The file dates seen last launch answer the cache lookups at once; each is checked against
+// the disk in the background once the opening reads have had their head start.
+const FILE_CHECK_DELAY_MS = 3000
+const fileDatesStore = fileStore(join(app.getPath('userData'), 'file-dates.json'))
+const fileSignatures = createFileSignatures({
+  load: () => {
+    try {
+      return JSON.parse(fileDatesStore.read() ?? '{}')
+    } catch {
+      return {}
+    }
+  },
+  save: (dates) => fileDatesStore.write(JSON.stringify(dates)),
+  stat: (path) => stat(path),
+  verifyStat: (path) => sourceStat(path),
+  onChanged: (paths) => broadcast('files:changed', paths),
+  defer: (run) => setTimeout(() => void run(), FILE_CHECK_DELAY_MS),
+})
+configureFileSignatures(fileSignatures)
+setInterval(() => fileSignatures.flush(), 5000).unref()
+app.on('will-quit', () => fileSignatures.flush())
 const rekordboxQueue = createRekordboxQueue({
   store: fileStore(join(app.getPath('userData'), 'rekordbox-queue.json')),
   collection: rekordboxCollectionPath,
@@ -1257,6 +1285,11 @@ function registerIpc(): void {
     return filePaths
   })
 
+  // Asked right before a conversion: a row read under a remembered date may show tags the
+  // file no longer has, and those must be read again before anything is written.
+  ipcMain.handle('files:sourceChanged', (_e, path: string) =>
+    mediaAccess.isAllowed(path) ? fileSignatures.changed(path) : false,
+  )
   ipcMain.handle('files:expand', async (e, paths: string[], reportNotAudio = false) => {
     // One feed row per drop/pick: the folder walk is the import's visible unit of work
     // (per-file tag reads flow through the analyze rows already).

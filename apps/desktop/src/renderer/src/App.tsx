@@ -642,6 +642,7 @@ export default function App(): React.JSX.Element {
     deriveTracks,
     startOverTrack,
     rereadTrackMeta,
+    refreshChangedTrack,
     completeTrackMeta,
     refreshTrackFromDisk,
     patchReviewedFields,
@@ -1471,6 +1472,7 @@ export default function App(): React.JSX.Element {
     onOriginalKept: (name) => setNotice(tr('notices.originalKept', { name })),
     onMusicNameLeftMarked: (name) => setNotice(tr('notices.musicNameLeftMarked', { name })),
     rereadTrackMeta,
+    refreshChangedTrack,
     completeTrackMeta,
     // Keyed so a bulk run failing on every track (e.g. Engine DJ open) raises one
     // card, not thirty; persistent like every failure toast. The card names the track

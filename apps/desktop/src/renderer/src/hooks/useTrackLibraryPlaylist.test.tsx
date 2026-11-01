@@ -33,6 +33,7 @@ function setup(
     onOpenFiles: vi.fn(() => () => {}),
     onExpandedBatch: vi.fn(() => () => {}),
     onFoldersChanged: vi.fn(() => () => {}),
+    onFilesChanged: vi.fn(() => () => {}),
     unwatchFolders: vi.fn().mockResolvedValue(undefined),
     expandPaths,
     readMeta: vi.fn().mockResolvedValue({ tags: {}, duration: null, cover: null, foreignTags: [] }),

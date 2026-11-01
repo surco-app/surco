@@ -19,6 +19,7 @@ import {
   analysisCacheStats,
   cachedAnalysis,
   clearAnalysisCache,
+  configureFileSignatures,
   dropAnalysis,
   peekAnalysis,
   peekVerdict,
@@ -182,6 +183,58 @@ describe('storeAnalysis', () => {
   it('stores nothing for a file that is gone', async () => {
     await storeAnalysis('demo', join(work, 'gone.aiff'), { value: 1 })
     expect(existsSync(join(app.getPath('userData'), 'analysis-cache'))).toBe(false)
+  })
+})
+
+// With the dates seen last time, a lookup asks the disk nothing; anything computed is still
+// keyed by the date the disk gives now, so a changed file never lends its result an old key.
+describe('analysis cache with remembered dates', () => {
+  beforeEach(() => {
+    rmSync(join(app.getPath('userData'), 'analysis-cache'), { recursive: true, force: true })
+  })
+  afterAll(() => configureFileSignatures(null))
+
+  it('finds an entry by the remembered date, before the disk is asked', async () => {
+    const file = await makeFile()
+    const seen = (await stat(file)).mtimeMs
+    await cachedAnalysis('demo', file, vi.fn().mockResolvedValue({ value: 1 }))
+    const later = new Date(Date.now() + 60_000)
+    await utimes(file, later, later)
+    const fresh = vi.fn(async (p: string) => (await stat(p)).mtimeMs)
+    configureFileSignatures({ mtimeOf: async () => seen, fresh })
+
+    expect(await peekAnalysis('demo', file)).toEqual({ value: 1 })
+    expect(await cachedAnalysis('demo', file, vi.fn())).toEqual({ value: 1 })
+    expect(fresh).not.toHaveBeenCalled()
+    configureFileSignatures(null)
+  })
+
+  it('keys a fresh computation by the date the disk gives now', async () => {
+    const file = await makeFile()
+    const stale = (await stat(file)).mtimeMs - 60_000
+    const fresh = vi.fn(async (p: string) => (await stat(p)).mtimeMs)
+    configureFileSignatures({ mtimeOf: async () => stale, fresh })
+
+    await cachedAnalysis('demo', file, vi.fn().mockResolvedValue({ value: 2 }))
+    configureFileSignatures(null)
+
+    expect(fresh).toHaveBeenCalledWith(file)
+    expect(await peekAnalysis('demo', file)).toEqual({ value: 2 })
+  })
+
+  it('serves an entry already kept under the date the disk gives now instead of computing', async () => {
+    const file = await makeFile()
+    await cachedAnalysis('demo', file, vi.fn().mockResolvedValue({ value: 3 }))
+    const stale = (await stat(file)).mtimeMs - 60_000
+    configureFileSignatures({
+      mtimeOf: async () => stale,
+      fresh: async (p) => (await stat(p)).mtimeMs,
+    })
+    const compute = vi.fn()
+
+    expect(await cachedAnalysis('demo', file, compute)).toEqual({ value: 3 })
+    expect(compute).not.toHaveBeenCalled()
+    configureFileSignatures(null)
   })
 })
 

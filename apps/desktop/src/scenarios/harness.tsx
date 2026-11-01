@@ -741,6 +741,8 @@ function scenarioApi(
       folderListeners.add(listener)
       return () => folderListeners.delete(listener)
     },
+    onFilesChanged: () => () => {},
+    sourceChanged: async () => false,
     takePendingFiles: async () => [],
     unwatchFolders: async () => watcher?.close(),
     recordStat: (key, by) => recordStat(key, by),
