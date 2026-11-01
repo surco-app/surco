@@ -1211,6 +1211,47 @@ describe('Music entries for loaded files', () => {
     expect(out).toEqual({ consulted: false, entries: {} })
   })
 
+  // Only the names read can mean "empty library" by -1728. The same code from any later
+  // read, after a title already matched, says nothing about the file and must keep it.
+  it('fails the lookup when a read after the names raises -1728', async () => {
+    for (const late of [1, 2]) {
+      const run = vi.fn().mockResolvedValueOnce(row(PID, 'A', 'T', ''))
+      if (late === 2) run.mockResolvedValueOnce('')
+      run.mockRejectedValueOnce(new Error("Can't get location of item 1. (-1728)"))
+      const out = await musicFileEntries([{ path: '/m/a.mp3', title: 'T' }], true, run, undefined, {
+        path: '/m/a.mp3',
+        durationSec: 240,
+        size: 1,
+      })
+      expect(out).toEqual({ consulted: false, entries: {} })
+    }
+  })
+
+  // A row Music gave no usable length or size for cannot be ruled out, so it is asked.
+  it('asks the location of a track whose length or size did not read as a number', async () => {
+    const BLANK = 'AAAAAAAAAAAAAAAA'
+    const ZERO = 'BBBBBBBBBBBBBBBB'
+    const run = vi
+      .fn()
+      .mockResolvedValueOnce(
+        [row(BLANK, 'A', 'X', ''), row(ZERO, 'B', 'Y', ''), row(OTHER, 'C', 'Z', '')].join(RS),
+      )
+      .mockResolvedValueOnce(
+        [
+          row(BLANK, 'missing value', '1000'),
+          row(ZERO, '320', '0'),
+          row(OTHER, '320', '1000'),
+        ].join(RS),
+      )
+      .mockResolvedValueOnce('')
+    await musicFileEntries([{ path: '/m/a.mp3', title: 'T' }], true, run, undefined, {
+      path: '/m/a.mp3',
+      durationSec: 240,
+      size: 9,
+    })
+    expect(run.mock.calls[2][0]).toBe(buildFileLocationsScript([BLANK, ZERO]))
+  })
+
   it('reads lengths and sizes in bulk, refusing a library that changed between reads', () => {
     const script = buildFileFactsScript()
     expect(script).toContain('duration of every file track of library playlist 1')

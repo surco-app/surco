@@ -1023,7 +1023,7 @@ export interface FileLike {
 
 // Music measures a length its own way and keeps the size it saw at import, so either one
 // alone can drift: a VBR MP3 without a header, a tag rewritten since. A track is asked for
-// its location when either still agrees.
+// its location when either still agrees, or when either did not read as a number.
 const LIKE_DURATION_SLACK_SEC = 2
 const LIKE_LOOKUP_TIMEOUT_MS = 60_000
 
@@ -1035,8 +1035,10 @@ function parseLikeFile(stdout: string, like: Omit<FileLike, 'path'>): string[] {
     const [persistentId, duration, size] = line.split(REVIEW_FS)
     if (!/^[0-9A-F]{16}$/.test(persistentId ?? '')) return []
     const number = (text = '') => Number(text.replace(',', '.'))
-    const near = Math.abs(number(duration) - like.durationSec) <= LIKE_DURATION_SLACK_SEC
-    return near || number(size) === like.size ? [persistentId] : []
+    const [seconds, bytes] = [number(duration), number(size)]
+    if (!(seconds > 0) || !(bytes > 0)) return [persistentId]
+    const near = Math.abs(seconds - like.durationSec) <= LIKE_DURATION_SLACK_SEC
+    return near || bytes === like.size ? [persistentId] : []
   })
 }
 
@@ -1107,9 +1109,15 @@ export async function musicFileEntries(
       return { consulted: false, entries: {} }
     const bounded = like ? { timeout: LIKE_LOOKUP_TIMEOUT_MS } : {}
     const titles = new Set(candidates.map((c) => nameKey(c.title)))
-    const all = parseFileNames(
-      await run(buildFileNamesScript(), { maxBuffer: 64 * 1024 * 1024, ...bounded }),
-    )
+    const namesOut = await run(buildFileNamesScript(), {
+      maxBuffer: 64 * 1024 * 1024,
+      ...bounded,
+    }).catch((err: unknown) => {
+      if (String(err instanceof Error ? err.message : err).includes('-1728')) return null
+      throw err
+    })
+    if (namesOut === null) return { consulted: true, entries: {} }
+    const all = parseFileNames(namesOut)
     const liked = like
       ? new Set(
           parseLikeFile(
@@ -1140,7 +1148,6 @@ export async function musicFileEntries(
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    if (message.includes('-1728')) return { consulted: true, entries: {} }
     log.warn('Music file lookup failed', message)
     return { consulted: false, entries: {} }
   }
