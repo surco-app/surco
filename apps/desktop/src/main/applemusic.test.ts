@@ -18,6 +18,7 @@ import {
   buildLocationScript,
   buildMusicRunningScript,
   buildPlaylistTransferScript,
+  buildRelinkScript,
   buildReplacingMarkScript,
   buildRevealScript,
   buildReviewDumpScript,
@@ -348,6 +349,19 @@ describe('buildRevealScript', () => {
     expect(script).toContain('if (count of theMatches) is 0 then error')
     expect(script).toContain('reveal item 1 of theMatches')
     expect(script).toContain('activate')
+  })
+})
+
+describe('buildRelinkScript', () => {
+  it('points the entry at the new file by persistent ID, failing loud when the entry is gone so the original is kept', () => {
+    const script = buildRelinkScript('ABCD1234', '/Volumes/NAS/Music/A - "B".mp3')
+    expect(script).toContain(
+      'set theMatches to (every track of library playlist 1 whose persistent ID is "ABCD1234")',
+    )
+    expect(script).toContain('if (count of theMatches) is 0 then error')
+    expect(script).toContain(
+      'set location of item 1 of theMatches to POSIX file "/Volumes/NAS/Music/A - \\"B\\".mp3"',
+    )
   })
 })
 

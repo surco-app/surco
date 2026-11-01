@@ -68,6 +68,7 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     removeRenamedOriginal: vi.fn(async () => {}),
     addToAppleMusic: vi.fn(async () => 'added-id'),
     updateInAppleMusic: vi.fn(async () => 'updated-id'),
+    relinkAppleMusicEntry: vi.fn(async () => {}),
     addToEngineDj: vi.fn(async () => {}),
     allowMedia: vi.fn(),
     existsSync: vi.fn(() => false),
@@ -3182,6 +3183,56 @@ describe('runProcessTrack — converting a library track to another format', () 
       '/lib/Artist - Title.aiff',
       true,
     )
+  })
+
+  // Measured 01/11 on the user's library: "Update tags" renamed Es De Puta Madre.mp3 by the
+  // naming pattern, retagged its entry and retired the old name, and Music was left with an
+  // entry whose file was gone. Music never follows a rename on its own.
+  it('points the Music entry at the renamed file before retiring the original', async () => {
+    const deps = converting('/lib/A.aiff')
+
+    await runProcessTrack(
+      libraryJob({ format: 'aiff', overwriteOriginal: true, keepOutputCopy: true }),
+      deps,
+    )
+
+    expect(deps.relinkAppleMusicEntry).toHaveBeenCalledWith('PID', '/lib/Artist - Title.aiff')
+    expect(vi.mocked(deps.relinkAppleMusicEntry).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(deps.removeRenamedOriginal).mock.invocationCallOrder[0],
+    )
+  })
+
+  it('keeps the renamed original when Music cannot point its entry at the new file', async () => {
+    const deps = converting('/lib/A.aiff', {
+      relinkAppleMusicEntry: vi.fn(async () => {
+        throw new Error('Music got an error (-1728)')
+      }),
+    })
+
+    const result = await runProcessTrack(
+      libraryJob({ format: 'aiff', overwriteOriginal: true, keepOutputCopy: true }),
+      deps,
+    )
+
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result).toMatchObject({ appleMusicFailed: true, originalKept: true })
+  })
+
+  it('leaves the entry where it is when the rewrite keeps the file its name', async () => {
+    const deps = converting('/lib/A.aiff', { isSameFile: vi.fn(async () => true) })
+
+    await runProcessTrack(
+      libraryJob({
+        format: 'aiff',
+        overwriteOriginal: true,
+        keepOutputCopy: true,
+        outputName: 'A',
+      }),
+      deps,
+    )
+
+    expect(deps.updateInAppleMusic).toHaveBeenCalled()
+    expect(deps.relinkAppleMusicEntry).not.toHaveBeenCalled()
   })
 
   // The in-place rename already retired the AIFF: offering it again would trash nothing.

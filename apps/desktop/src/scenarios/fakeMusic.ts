@@ -436,6 +436,9 @@ export function appleMusicModule(real: AppleMusic): AppleMusic {
       state.updated.push({ persistentId, meta, coverPath })
       return entry.persistentId
     },
+    relinkAppleMusicEntry: async (persistentId, path) => {
+      music.relocate(persistentId, path)
+    },
     appleMusicEntryLocation: async (persistentId) => {
       const entry = live(persistentId)
       return entry ? fileOf(entry) : ''

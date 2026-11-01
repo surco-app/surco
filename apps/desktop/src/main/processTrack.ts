@@ -111,6 +111,7 @@ export interface ProcessTrackDeps {
     meta: TrackMetadata,
     coverPath?: string,
   ) => Promise<string | null>
+  relinkAppleMusicEntry: (persistentId: string, path: string) => Promise<void>
   findAppleMusicEntry?: (
     path: string,
     meta: TrackMetadata,
@@ -955,6 +956,9 @@ export async function runProcessTrack(
               : null
             if (updated && retagged && fromBytes !== undefined)
               deps.followEngineSize?.(retagged, fromBytes)
+            // Music never follows a rename: the entry stays on the name about to be retired.
+            if (updated && entryMayPlaySource && job.musicPersistentId)
+              await deps.relinkAppleMusicEntry(job.musicPersistentId, target)
             if (!updated && preMusic) {
               await discardBackup(preMusic).catch(() => undefined)
               preMusic = null

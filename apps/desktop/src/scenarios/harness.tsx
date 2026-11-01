@@ -286,6 +286,8 @@ function processTrackInMain(
     },
     updateInAppleMusic: (pid, meta, coverPath) =>
       withMusic ? appleMusic.updateInAppleMusic(pid, meta, coverPath) : noMusic(),
+    relinkAppleMusicEntry: (pid, path) =>
+      withMusic ? appleMusic.relinkAppleMusicEntry(pid, path) : noMusic(),
     isEngineDjRunning,
     addToEngineDj: (target, meta, coverPath, replaces) => {
       const s = getSettings()
