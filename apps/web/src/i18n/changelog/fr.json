@@ -71,6 +71,10 @@
       {
         "text": "Quand tu convertis dans un autre format un morceau déjà dans ta bibliothèque, Surco retire l’ancien fichier seulement quand la vérification est bonne et que ni rekordbox, ni Engine DJ, ni Traktor, ni Apple Music ne l’utilisent encore. Il va dans la Corbeille, ou dans Sauvegardes sur un disque sans Corbeille, et si les copies des originaux sont sur « Jamais » il y est supprimé.",
         "in": "1.18.6"
+      },
+      {
+        "text": "En retirant l’ancien fichier après un changement de format, Surco reconnaît aussi les entrées Apple Music que tu as renommées dans Music et les fichiers sans titre, et ne retire donc jamais un fichier que Music utilise encore.",
+        "in": "1.18.7"
       }
     ]
   },

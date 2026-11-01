@@ -71,6 +71,10 @@
       {
         "text": "Al convertir a otro formato una pista que ya tenías en la biblioteca, Surco retira el archivo antiguo solo cuando la comprobación sale bien y ni rekordbox, ni Engine DJ, ni Traktor, ni Apple Music lo siguen usando. Va a la Papelera, o a Copias en un disco sin Papelera, y si las copias de los originales están en «Nunca» allí se borra.",
         "in": "1.18.6"
+      },
+      {
+        "text": "Al retirar el archivo antiguo tras cambiar de formato, Surco reconoce también las entradas de Apple Music que renombraste dentro de Music y los archivos sin título, así que nunca retira uno que Music siga usando.",
+        "in": "1.18.7"
       }
     ]
   },

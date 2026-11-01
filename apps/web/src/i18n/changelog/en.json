@@ -71,6 +71,10 @@
       {
         "text": "When you convert a track you already had in your library to another format, Surco retires the old file only once the check comes back fine and neither rekordbox, Engine DJ, Traktor nor Apple Music still uses it. It goes to the Trash, or to Backups on a disk without a Trash, and if copies of originals are set to Never it's deleted there.",
         "in": "1.18.6"
+      },
+      {
+        "text": "When retiring the old file after a format change, Surco also recognises Apple Music entries you renamed inside Music and files without a title, so it never retires one Music still uses.",
+        "in": "1.18.7"
       }
     ]
   },

@@ -71,6 +71,10 @@
       {
         "text": "Wenn du einen Track aus deiner Bibliothek in ein anderes Format konvertierst, entfernt Surco die alte Datei erst, wenn die Prüfung stimmt und weder rekordbox, Engine DJ, Traktor noch Apple Music sie noch verwenden. Sie kommt in den Papierkorb oder auf einem Laufwerk ohne Papierkorb in Backups, und stehen die Kopien der Originale auf „Nie“, wird sie dort gelöscht.",
         "in": "1.18.6"
+      },
+      {
+        "text": "Beim Entfernen der alten Datei nach einem Formatwechsel erkennt Surco auch Apple-Music-Einträge, die du in Music umbenannt hast, und Dateien ohne Titel, sodass es nie eine entfernt, die Music noch verwendet.",
+        "in": "1.18.7"
       }
     ]
   },
