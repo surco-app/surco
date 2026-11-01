@@ -988,6 +988,60 @@ export function buildFileLocationsScript(persistentIds: string[]): string {
   ].join('\n')
 }
 
+// The length and byte count of every file track, for the entry a DJ renamed inside Music:
+// its name matches no title Surco knows, its file still does. Bulk reads like the names,
+// so no location is touched. The lists pair by position, so a library that changed in
+// between fails the read instead of pairing a length with the next track's ID.
+export function buildFileFactsScript(): string {
+  const of = (prop: string) => `${prop} of every file track of library playlist 1`
+  return [
+    'tell application "Music"',
+    '  if (count of file tracks of library playlist 1) is 0 then return ""',
+    `  set pidsBefore to ${of('persistent ID')}`,
+    `  set theDurations to ${of('duration')}`,
+    `  set theSizes to ${of('size')}`,
+    `  set pidsAfter to ${of('persistent ID')}`,
+    'end tell',
+    'if pidsBefore is not pidsAfter then return "changed"',
+    'set FS to ASCII character 31',
+    'set out to {}',
+    'repeat with i from 1 to count of pidsBefore',
+    '  try',
+    '    set end of out to (item i of pidsBefore) & FS & ((item i of theDurations) as text) & FS & ((item i of theSizes) as text)',
+    '  end try',
+    'end repeat',
+    "set AppleScript's text item delimiters to (ASCII character 30)",
+    'return out as text',
+  ].join('\n')
+}
+
+export interface FileLike {
+  path: string
+  durationSec: number
+  size: number
+}
+
+// Music measures a length its own way and keeps the size it saw at import, so either one
+// alone can drift: a VBR MP3 without a header, a tag rewritten since. A track is asked for
+// its location when either still agrees, or when either did not read as a number.
+const LIKE_DURATION_SLACK_SEC = 2
+const LIKE_LOOKUP_TIMEOUT_MS = 60_000
+
+function parseLikeFile(stdout: string, like: Omit<FileLike, 'path'>): string[] {
+  if (stdout.trim() === 'changed') throw new Error('music-library-changed')
+  const body = stdout.replace(/\n$/, '')
+  if (!body) return []
+  return body.split(REVIEW_RS).flatMap((line) => {
+    const [persistentId, duration, size] = line.split(REVIEW_FS)
+    if (!/^[0-9A-F]{16}$/.test(persistentId ?? '')) return []
+    const number = (text = '') => Number(text.replace(',', '.'))
+    const [seconds, bytes] = [number(duration), number(size)]
+    if (!(seconds > 0) || !(bytes > 0)) return [persistentId]
+    const near = Math.abs(seconds - like.durationSec) <= LIKE_DURATION_SLACK_SEC
+    return near || bytes === like.size ? [persistentId] : []
+  })
+}
+
 type FileName = { persistentId: string; name: string; label: string; dateAdded?: string }
 
 export function parseFileNames(stdout: string): FileName[] {
@@ -1041,25 +1095,44 @@ const nameKey = (text: string) => text.normalize('NFC').trim().toLowerCase()
 
 // A Music track whose name differs from the file's title tag (beyond case and surrounding
 // spaces, which is what the review fixes) is not found, so the file counts as not in Music.
-// That fails safe: nothing in Music is updated or removed for it.
+// That fails safe: nothing in Music is updated or removed for it. A caller about to trash
+// the file passes `like`, and an entry renamed in Music is then found by its file instead.
 export async function musicFileEntries(
   candidates: { path: string; title: string }[],
   launch: boolean,
   run: typeof runOsascript = runOsascript,
   keyOf?: (path: string) => string,
+  like?: FileLike,
 ): Promise<MusicFileLookup> {
   try {
     if (!launch && (await run(buildMusicRunningScript())).trim() !== 'true')
       return { consulted: false, entries: {} }
+    const bounded = like ? { timeout: LIKE_LOOKUP_TIMEOUT_MS } : {}
     const titles = new Set(candidates.map((c) => nameKey(c.title)))
-    const names = parseFileNames(
-      await run(buildFileNamesScript(), { maxBuffer: 64 * 1024 * 1024 }),
-    ).filter((r) => titles.has(nameKey(r.name)))
+    const namesOut = await run(buildFileNamesScript(), {
+      maxBuffer: 64 * 1024 * 1024,
+      ...bounded,
+    }).catch((err: unknown) => {
+      if (String(err instanceof Error ? err.message : err).includes('-1728')) return null
+      throw err
+    })
+    if (namesOut === null) return { consulted: true, entries: {} }
+    const all = parseFileNames(namesOut)
+    const liked = like
+      ? new Set(
+          parseLikeFile(
+            await run(buildFileFactsScript(), { maxBuffer: 64 * 1024 * 1024, ...bounded }),
+            like,
+          ),
+        )
+      : new Set<string>()
+    const names = all.filter((r) => titles.has(nameKey(r.name)) || liked.has(r.persistentId))
     if (names.length === 0) return { consulted: true, entries: {} }
     const byPid = new Map(names.map(({ name, ...entry }) => [entry.persistentId, entry]))
     const located = parseFileLocations(
       await run(buildFileLocationsScript(names.map((r) => r.persistentId)), {
         maxBuffer: 64 * 1024 * 1024,
+        ...bounded,
       }),
     ).flatMap((r) => {
       const entry = byPid.get(r.persistentId)
@@ -1069,13 +1142,12 @@ export async function musicFileEntries(
       consulted: true,
       entries: entriesForPaths(
         located,
-        candidates.map((c) => c.path),
+        [...candidates.map((c) => c.path), ...(like ? [like.path] : [])],
         keyOf,
       ),
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    if (message.includes('-1728')) return { consulted: true, entries: {} }
     log.warn('Music file lookup failed', message)
     return { consulted: false, entries: {} }
   }

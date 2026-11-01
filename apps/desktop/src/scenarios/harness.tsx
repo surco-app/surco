@@ -66,7 +66,12 @@ import { isTraktorRunning } from '../main/traktorProcess'
 import { registerTrashIpc } from '../main/trashIpc'
 import { checkFile, fileReaders } from '../main/verifyFile'
 import { appVerifyRegistry, queueVerification, snapshotLibraries } from '../main/verifyIpc'
-import { checkAppleMusic, musicReaders } from '../main/verifyMusic'
+import {
+  checkAppleMusic,
+  fileLikeForMusic,
+  musicHoldsFile,
+  musicReaders,
+} from '../main/verifyMusic'
 import type { FlushOutcome, TraktorWrite } from '../main/verifyRegistry'
 import { onWatchedFilesChanged } from '../main/watchedFiles'
 import { dirRoots, FolderWatcher } from '../main/watcher'
@@ -923,6 +928,8 @@ export function bootMain(options: ScenarioOptions): MainBoot {
         traktorRead: traktorWritePath,
         ...(drivesMusic(options) && { musicEntries: musicReaders.entriesForFile }),
         fileTitle: async (file) => (await readTags(file)).title,
+        fileLike: fileLikeForMusic,
+        ...(drivesMusic(options) && { musicHolds: musicHoldsFile }),
       }),
     )
     if (drivesMusic(options)) registerAppleMusicIpc({ followEngineSize })

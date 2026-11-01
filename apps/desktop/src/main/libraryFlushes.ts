@@ -85,14 +85,21 @@ export function rekordboxCollectionPath(): string {
 // library found counts, its sync on or not: one the DJ only reads from still loses the track
 // when the file goes. One whose sync is on but cannot be read counts as using it. Music is
 // asked by the titles the entry may carry, the one the file itself is tagged with among them,
-// and rejects when it cannot answer. A file whose title cannot be read counts as used.
+// and rejects when it cannot answer. A file with no title is looked for in every location
+// Music holds, and counts as used when that cannot be read.
 export async function usedByAnyLibrary(
   path: string,
   titles: string[],
   deps: {
     traktorRead: () => string
-    musicEntries?: (path: string, titles: string[]) => Promise<string[]>
+    musicEntries?: (
+      path: string,
+      titles: string[],
+      like?: { durationSec: number; size: number },
+    ) => Promise<string[]>
     fileTitle?: (path: string) => Promise<string | undefined>
+    fileLike?: (path: string) => Promise<{ durationSec: number; size: number } | null>
+    musicHolds?: (path: string) => Promise<boolean>
   },
 ): Promise<boolean> {
   const settings = getSettings()
@@ -111,8 +118,10 @@ export async function usedByAnyLibrary(
   )
   if (used || !deps.musicEntries) return used
   const tagged = (await deps.fileTitle?.(path).catch(() => undefined))?.trim()
-  if (!tagged) return true
-  return (await deps.musicEntries(path, [...new Set([...titles, tagged])])).length > 0
+  if (!tagged) return deps.musicHolds ? deps.musicHolds(path) : true
+  const like = await deps.fileLike?.(path).catch(() => null)
+  if (!like) return true
+  return (await deps.musicEntries(path, [...new Set([...titles, tagged])], like)).length > 0
 }
 
 export function repointRekordbox(
