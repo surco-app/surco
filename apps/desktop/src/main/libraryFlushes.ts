@@ -116,10 +116,10 @@ export async function usedByAnyLibrary(
   )
   if (used || !deps.musicEntries) return used
   const tagged = (await deps.fileTitle?.(path).catch(() => undefined))?.trim()
-  if (!tagged) return true
   const like = await deps.fileLike?.(path).catch(() => null)
   if (!like) return true
-  return (await deps.musicEntries(path, [...new Set([...titles, tagged])], like)).length > 0
+  const names = tagged ? [...titles, tagged] : titles
+  return (await deps.musicEntries(path, [...new Set(names)], like)).length > 0
 }
 
 export function repointRekordbox(

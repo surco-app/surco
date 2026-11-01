@@ -113,8 +113,11 @@ describe('usedByAnyLibrary', () => {
     ).toBe(true)
   })
 
-  it('keeps the file when its title cannot be read, since Music may list it under a name nobody sent', async () => {
+  // Many DJ files carry no title tag. The lookup by length and size finds an entry Music
+  // lists under any name, so a missing title no longer has to keep the file forever.
+  it('retires a file with no title once Music, asked by its length and size, has no entry for it', async () => {
     const musicEntries = vi.fn(async () => [])
+    const like = { durationSec: 241.5, size: 4096 }
     expect(
       await usedByAnyLibrary(FILE, ['A'], {
         traktorRead: noTraktor,
@@ -122,15 +125,18 @@ describe('usedByAnyLibrary', () => {
         fileTitle: async () => {
           throw new Error('ffprobe failed')
         },
+        fileLike: async () => like,
       }),
-    ).toBe(true)
+    ).toBe(false)
     expect(
       await usedByAnyLibrary(FILE, ['A'], {
         traktorRead: noTraktor,
         musicEntries,
         fileTitle: async () => '  ',
+        fileLike: async () => like,
       }),
-    ).toBe(true)
+    ).toBe(false)
+    expect(musicEntries).toHaveBeenLastCalledWith(FILE, ['A'], like)
   })
 
   it('reads as used when Music cannot say which entries play the file', async () => {
