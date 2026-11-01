@@ -96,6 +96,10 @@ export interface Api {
   version: string
   getPathForFile: (file: File) => string
   expandPaths: (paths: string[], reportNotAudio?: boolean) => Promise<string[]>
+  // Whether the file changed or went away since Surco last saw its date (see fileSignatures).
+  sourceChanged: (path: string) => Promise<boolean>
+  // Files the background check found changed or gone since their rows were read.
+  onFilesChanged: (cb: (paths: string[]) => void) => () => void
   // Fires with each batch of audio files an in-flight expandPaths uncovers, so the list
   // fills during a slow (network) folder walk instead of only when it finishes. The
   // batches add up to the same set expandPaths resolves with — an early view, not extra.

@@ -395,6 +395,13 @@ const api: Api = {
   copiesStatus: (): Promise<ProgramCopies[]> => ipcRenderer.invoke('copies:status'),
   restoreCopy: (program: DjProgram, copyId: string): Promise<RestoreResult> =>
     ipcRenderer.invoke('copies:restore', program, copyId),
+  sourceChanged: (path: string): Promise<boolean> =>
+    ipcRenderer.invoke('files:sourceChanged', path),
+  onFilesChanged: (cb: (paths: string[]) => void): (() => void) => {
+    const handler = (_e: unknown, paths: string[]) => cb(paths)
+    ipcRenderer.on('files:changed', handler)
+    return () => ipcRenderer.removeListener('files:changed', handler)
+  },
   onCopiesChanged: (cb: () => void): (() => void) => {
     const handler = () => cb()
     ipcRenderer.on('copies:changed', handler)

@@ -55,6 +55,7 @@ function setApi(over: Record<string, unknown>): void {
   ;(window as unknown as { api: unknown }).api = {
     beginConversionBatch: vi.fn(),
     endConversionBatch: vi.fn(),
+    sourceChanged: vi.fn<Api['sourceChanged']>().mockResolvedValue(false),
     ...over,
   }
 }
@@ -435,6 +436,59 @@ describe('useTrackProcessing', () => {
     expect(outcome).toBe('failed')
     expect(processTrack).not.toHaveBeenCalled()
     expect(updateTrack).toHaveBeenCalledWith('a', expect.objectContaining({ status: 'error' }))
+  })
+
+  // A row can be read under a file date remembered from last launch, and the file can have
+  // changed outside Surco since. Converting the row as it stands would write the old tags
+  // back over the new ones, so the file is asked first and a changed one read again.
+  describe('a track whose file changed since its row was read', () => {
+    it('is read again and converts from the fresh read', async () => {
+      const processTrack = vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+      setApi({ processTrack, sourceChanged: vi.fn<Api['sourceChanged']>().mockResolvedValue(true) })
+      const row = track({ id: 'a' })
+      const refreshChangedTrack = vi.fn(async () => {
+        row.meta = { ...row.meta, title: 'New' }
+        return true
+      })
+      const { result } = renderHook(
+        () =>
+          useTrackProcessing({
+            tracks: [row],
+            settings: null,
+            updateTrack: vi.fn(),
+            refreshChangedTrack,
+          }),
+        { wrapper: withClient() },
+      )
+      await act(async () => {
+        await result.current.processOne('a')
+      })
+      expect(refreshChangedTrack).toHaveBeenCalledWith('a')
+      expect(processTrack.mock.calls[0][0].meta.title).toBe('New')
+    })
+
+    it('fails without converting when the file is gone', async () => {
+      const processTrack = vi.fn()
+      setApi({ processTrack, sourceChanged: vi.fn<Api['sourceChanged']>().mockResolvedValue(true) })
+      const { result } = renderHook(
+        () =>
+          useTrackProcessing({
+            tracks: [track({ id: 'a' })],
+            settings: null,
+            updateTrack: vi.fn(),
+            refreshChangedTrack: vi.fn(async () => false),
+          }),
+        { wrapper: withClient() },
+      )
+      let outcome: string | undefined
+      await act(async () => {
+        outcome = await result.current.processOne('a')
+      })
+      expect(outcome).toBe('failed')
+      expect(processTrack).not.toHaveBeenCalled()
+    })
   })
 
   // The import marks a row whose tags could not be read (metaReadFailed) and leaves it

@@ -303,6 +303,8 @@ function setApi(over: Record<string, unknown> = {}): void {
     onExpandedBatch: () => () => {},
     onNotAudioSkipped: () => () => {},
     onFoldersChanged: () => () => {},
+    onFilesChanged: () => () => {},
+    sourceChanged: vi.fn<Api['sourceChanged']>().mockResolvedValue(false),
     unwatchFolders: vi.fn().mockResolvedValue(undefined),
     takePendingFiles: vi.fn().mockResolvedValue([]),
     getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
