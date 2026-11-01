@@ -11,6 +11,7 @@ import {
   type MusicExpect,
   type MusicReaders,
   musicEntriesForFile,
+  musicFileHolder,
   musicReaders,
 } from './verifyMusic'
 
@@ -367,6 +368,38 @@ describe('musicEntriesForFile', () => {
     const run = vi.fn<typeof runOsascript>().mockRejectedValue(new Error('-1712'))
 
     await expect(lookup(run)('/Volumes/Music/Media/Title.wav', ['Title'])).rejects.toThrow()
+  })
+})
+
+describe('musicFileHolder', () => {
+  const RS = '\u001e'
+  const FS = '\u001f'
+  const home = '/Users/dj/Music/Music'
+  const realPath = (p: string) => (p.startsWith(home) ? `/Volumes/Music${p.slice(home.length)}` : p)
+  const holds = (run: Mock<typeof runOsascript>) =>
+    musicFileHolder({ run, realPath, homeMusicDir: home })
+
+  // An untitled file has no name to narrow by, so every location is read and compared the
+  // way the title lookup compares them.
+  it('finds the file under any spelling Music stored it with', async () => {
+    const run = vi.fn<typeof runOsascript>().mockResolvedValue(
+      [
+        ['AAAAAAAAAAAAAAAA', `${home}/Media/Untitled.wav`.normalize('NFD')],
+        ['BBBBBBBBBBBBBBBB', '/Volumes/Music/Media/Other.wav'],
+      ]
+        .map((r) => r.join(FS))
+        .join(RS),
+    )
+    expect(await holds(run)('/Volumes/Music/Media/UNTITLED.wav')).toBe(true)
+    expect(await holds(run)('/Volumes/Music/Media/Nobody.wav')).toBe(false)
+  })
+
+  // Reading every location takes about a minute on a 2000-track SMB library. A Music that
+  // hangs past the bound must not hold the trash forever, and rejecting keeps the file.
+  it('bounds the read in time and rejects when it fails', async () => {
+    const run = vi.fn<typeof runOsascript>().mockRejectedValue(new Error('timed out'))
+    await expect(holds(run)('/Volumes/Music/Media/Untitled.wav')).rejects.toThrow()
+    expect(run.mock.calls[0][1]).toMatchObject({ timeout: expect.any(Number) })
   })
 })
 

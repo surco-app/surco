@@ -8,6 +8,7 @@ import {
   appleMusicLimiter,
   type FileLike,
   musicFileEntries,
+  musicFileLocations,
   readMusicEntryFacts,
   runOsascript,
 } from './applemusic'
@@ -77,6 +78,31 @@ export async function fileLikeForMusic(path: string): Promise<Omit<FileLike, 'pa
   const [durationSec, { size }] = await Promise.all([probeDuration(path), stat(path)])
   return durationSec === null ? null : { durationSec, size }
 }
+
+// Whether any entry plays the file, read from every location in Music: a file with no
+// title gives no name to narrow by, and its stored length and size are no guide (a tag
+// rewrite leaves the size stale, a VBR MP3 without a header is seconds off). Measured
+// 09/10 at 47 s for 2045 tracks on SMB; past the bound it rejects, which keeps the file.
+const ALL_LOCATIONS_TIMEOUT_MS = 120_000
+
+export function musicFileHolder(options: {
+  run: typeof runOsascript
+  realPath: (p: string) => string
+  homeMusicDir?: string
+}): (path: string) => Promise<boolean> {
+  const keyOf = comparablePath(options)
+  return async (path) => {
+    const rows = await appleMusicLimiter.run(() =>
+      musicFileLocations((script, opts) =>
+        options.run(script, { ...opts, timeout: ALL_LOCATIONS_TIMEOUT_MS }),
+      ),
+    )
+    const key = keyOf(path)
+    return rows.some((r) => keyOf(r.path) === key)
+  }
+}
+
+export const musicHoldsFile = musicFileHolder({ run: runOsascript, realPath })
 
 export const musicReaders: MusicReaders = {
   entry: readMusicEntryFacts,

@@ -10,7 +10,7 @@ vi.mock('../main/applemusic', async (original) => ({
 
 import * as realArtwork from '../main/appleMusicArtwork'
 import { coverThumbUrlForBytes } from '../main/coverThumbs'
-import { checkAppleMusic, musicReaders } from '../main/verifyMusic'
+import { checkAppleMusic, musicHoldsFile, musicReaders } from '../main/verifyMusic'
 import type { TrackMetadata } from '../shared/types'
 import { scenarioRoot } from './electronFake'
 import { appleMusicModule, artworkModule, music, playlistsModule } from './fakeMusic'
@@ -223,6 +223,16 @@ describe('the fake Music library answers like the real scripts', () => {
         like(10, 1),
       ),
     ).toEqual({ consulted: true, entries: {} })
+  })
+
+  it('finds the entry playing an untitled file by its location alone, whatever its length and size', async () => {
+    const path = file('u.aiff')
+    music.addEntry({ location: path, title: 'Anything', durationSec: 999 })
+
+    expect(await musicHoldsFile(path)).toBe(true)
+    expect(await musicHoldsFile(file('nobody.aiff'))).toBe(false)
+    music.state.changeNextLocationsRead = true
+    await expect(musicHoldsFile(path)).rejects.toThrow()
   })
 
   it('guards a field write on the value the review read', async () => {

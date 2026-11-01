@@ -227,7 +227,13 @@ import {
   snapshotLibraries,
   verifyUpdateSender,
 } from './verifyIpc'
-import { checkAppleMusic, fileLikeForMusic, type MusicExpect, musicReaders } from './verifyMusic'
+import {
+  checkAppleMusic,
+  fileLikeForMusic,
+  type MusicExpect,
+  musicHoldsFile,
+  musicReaders,
+} from './verifyMusic'
 import type { FlushOutcome, TraktorWrite } from './verifyRegistry'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
@@ -2112,6 +2118,7 @@ function registerIpc(): void {
       ...(process.platform === 'darwin' && { musicEntries: musicReaders.entriesForFile }),
       fileTitle: async (file) => (await readTags(file)).title,
       fileLike: fileLikeForMusic,
+      ...(process.platform === 'darwin' && { musicHolds: musicHoldsFile }),
     }),
   )
   registerCopiesIpc(

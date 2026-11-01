@@ -113,30 +113,59 @@ describe('usedByAnyLibrary', () => {
     ).toBe(true)
   })
 
-  // Many DJ files carry no title tag. The lookup by length and size finds an entry Music
-  // lists under any name, so a missing title no longer has to keep the file forever.
-  it('retires a file with no title once Music, asked by its length and size, has no entry for it', async () => {
+  // Many DJ files carry no title tag. Without a name to start from, the stored length and
+  // size are no guide either: a tag rewrite leaves Music's size stale, and a VBR MP3 without
+  // a header or a FLAC without a sample count can be seconds off. Only every location is.
+  it('checks every Music location for a file with no title, so an entry of another length and size still keeps it', async () => {
     const musicEntries = vi.fn(async () => [])
-    const like = { durationSec: 241.5, size: 4096 }
+    const musicHolds = vi.fn(async (file: string) => file === FILE)
+    for (const fileTitle of [
+      async () => '  ',
+      async () => {
+        throw new Error('ffprobe failed')
+      },
+    ])
+      expect(
+        await usedByAnyLibrary(FILE, ['A'], {
+          traktorRead: noTraktor,
+          musicEntries,
+          musicHolds,
+          fileTitle,
+          fileLike: async () => ({ durationSec: 241.5, size: 4096 }),
+        }),
+      ).toBe(true)
+    expect(musicEntries).not.toHaveBeenCalled()
+  })
+
+  it('retires a file with no title once no Music location points at it', async () => {
     expect(
       await usedByAnyLibrary(FILE, ['A'], {
         traktorRead: noTraktor,
-        musicEntries,
-        fileTitle: async () => {
-          throw new Error('ffprobe failed')
+        musicEntries: async () => [],
+        musicHolds: async () => false,
+        fileTitle: async () => '',
+      }),
+    ).toBe(false)
+  })
+
+  it('keeps a file with no title when the locations cannot be read in time', async () => {
+    await expect(
+      usedByAnyLibrary(FILE, ['A'], {
+        traktorRead: noTraktor,
+        musicEntries: async () => [],
+        musicHolds: async () => {
+          throw new Error('osascript timed out')
         },
-        fileLike: async () => like,
+        fileTitle: async () => '',
       }),
-    ).toBe(false)
+    ).rejects.toThrow()
     expect(
       await usedByAnyLibrary(FILE, ['A'], {
         traktorRead: noTraktor,
-        musicEntries,
-        fileTitle: async () => '  ',
-        fileLike: async () => like,
+        musicEntries: async () => [],
+        fileTitle: async () => '',
       }),
-    ).toBe(false)
-    expect(musicEntries).toHaveBeenLastCalledWith(FILE, ['A'], like)
+    ).toBe(true)
   })
 
   it('reads as used when Music cannot say which entries play the file', async () => {
