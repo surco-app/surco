@@ -637,11 +637,13 @@ export interface SessionData {
   edits: Record<string, SessionEdit>
 }
 
-// An auto-match verdict kept per file: the search and title it was reached with, and the
-// match (null when nothing matched). Main stores it opaquely; the renderer names the match.
+// An auto-match verdict kept per file: the search, title and providers it was reached
+// with, and the match (null when nothing matched). Main stores it opaquely; the renderer
+// names the match.
 export interface RememberedAutoMatch<M = unknown> {
   query: string
   title: string
+  providers: string[]
   match: M | null
 }
 

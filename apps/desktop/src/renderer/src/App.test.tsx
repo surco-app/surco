@@ -285,7 +285,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     clearCache: vi.fn().mockResolvedValue(undefined),
     detectTraktorNmlPath: vi.fn().mockResolvedValue(null),
     appleMusicArtwork: vi.fn<Api['appleMusicArtwork']>().mockResolvedValue({}),
-    recallAutoMatch: vi.fn<Api['recallAutoMatch']>().mockResolvedValue(null),
+    recallAutoMatches: vi.fn<Api['recallAutoMatches']>().mockResolvedValue({}),
     rememberAutoMatch: vi.fn<Api['rememberAutoMatch']>().mockResolvedValue(null),
     onMenuCommand: (cb: (id: string) => void) => {
       menuListener = cb

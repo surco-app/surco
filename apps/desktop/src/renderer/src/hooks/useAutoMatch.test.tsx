@@ -28,7 +28,7 @@ function setApi(over: Record<string, unknown> = {}): void {
   ;(window as unknown as { api: unknown }).api = {
     search: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
     getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(release),
-    recallAutoMatch: vi.fn<Api['recallAutoMatch']>().mockResolvedValue(null),
+    recallAutoMatches: vi.fn<Api['recallAutoMatches']>().mockResolvedValue({}),
     rememberAutoMatch: vi.fn<Api['rememberAutoMatch']>().mockResolvedValue(null),
     ...over,
   }
@@ -54,6 +54,7 @@ function setup(
   importFields: MetaTextKey[] = [...DEFAULT_IMPORT_FIELDS],
   genrePresets: string[] = [],
   fullReleaseDate = false,
+  providers: SearchProviderId[] = ['discogs'],
 ): {
   result: { current: ReturnType<typeof useAutoMatch> }
   updateTrack: ReturnType<typeof vi.fn>
@@ -66,7 +67,7 @@ function setup(
   const recordUndo = vi.fn()
   const tracksRef = { current: tracks }
   const libraryIndexRef = { current: libraryIndex }
-  const searchProvidersRef: { current: SearchProviderId[] } = { current: ['discogs'] }
+  const searchProvidersRef: { current: SearchProviderId[] } = { current: providers }
   const importFieldsRef = { current: importFields }
   const genrePresetsRef = { current: genrePresets }
   const fullReleaseDateRef = { current: fullReleaseDate }
@@ -113,8 +114,10 @@ describe('useAutoMatch', () => {
       const stored = new Map<string, unknown>()
       return {
         stored,
-        recallAutoMatch: vi.fn<Api['recallAutoMatch']>(
-          async (p) => (stored.get(p) as never) ?? null,
+        recallAutoMatches: vi.fn<Api['recallAutoMatches']>(async (paths) =>
+          Object.fromEntries(
+            paths.filter((p) => stored.has(p)).map((p) => [p, stored.get(p) as never]),
+          ),
         ),
         rememberAutoMatch: vi.fn<Api['rememberAutoMatch']>(async (p, v) => {
           stored.set(p, v)
@@ -164,6 +167,60 @@ describe('useAutoMatch', () => {
 
       expect(search).not.toHaveBeenCalled()
       expect(again.updateTrack).not.toHaveBeenCalled()
+    })
+
+    it('replays every remembered file from one recall, none of them waiting for a probe slot', async () => {
+      const memory = diskMemory()
+      const tracks = ['a', 'b', 'c', 'd', 'e'].map(track)
+      setApi(memory)
+      const first = setup(tracks)
+      act(() => first.result.current.enqueueAutoMatch(tracks))
+      await waitFor(() => expect(memory.rememberAutoMatch).toHaveBeenCalledTimes(5))
+      cleanup()
+
+      const search = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
+      const recall = vi.fn<Api['recallAutoMatches']>((paths) => memory.recallAutoMatches(paths))
+      setApi({ ...memory, recallAutoMatches: recall, search })
+      const again = setup(tracks)
+      act(() => again.result.current.enqueueAutoMatch(tracks))
+
+      await waitFor(() => expect(again.updateTrack).toHaveBeenCalledTimes(5))
+      expect(recall).toHaveBeenCalledOnce()
+      expect(recall.mock.calls[0][0]).toEqual(tracks.map((t) => t.inputPath))
+      expect(search).not.toHaveBeenCalled()
+    })
+
+    it('probes again a file that found nothing once another provider is switched on', async () => {
+      const memory = diskMemory()
+      setApi({ ...memory, search: vi.fn().mockResolvedValue([]) })
+      const first = setup([track('a')])
+      act(() => first.result.current.enqueueAutoMatch([track('a')]))
+      await waitFor(() => expect(memory.rememberAutoMatch).toHaveBeenCalledOnce())
+      cleanup()
+
+      const search = vi.fn().mockResolvedValue([])
+      setApi({ ...memory, search })
+      const again = setup([track('a')], null, { current: null }, undefined, [], false, [
+        'discogs',
+        'bandcamp',
+      ])
+      act(() => again.result.current.enqueueAutoMatch([track('a')]))
+
+      await waitFor(() => expect(search).toHaveBeenCalled())
+    })
+
+    it('does not probe a file that found nothing twice in one session', async () => {
+      const search = vi.fn().mockResolvedValue([])
+      setApi({ ...diskMemory(), search })
+      const { result } = setup([track('a')])
+      act(() => result.current.enqueueAutoMatch([track('a')]))
+      await waitFor(() => expect(result.current.matching).toBeNull())
+      const probed = search.mock.calls.length
+
+      act(() => result.current.enqueueAutoMatch([track('a')]))
+      await waitFor(() => expect(result.current.matching).toBeNull())
+
+      expect(search).toHaveBeenCalledTimes(probed)
     })
 
     it('probes again once the tags it was probed with changed', async () => {
@@ -491,7 +548,8 @@ describe('useAutoMatch', () => {
     act(() => result.current.onTrackVisible('c', true))
 
     await new Promise((r) => setTimeout(r, 300))
-    expect(search).toHaveBeenCalledTimes(2)
+    // The cancel lands while the sweep still reads what it remembers, before any probe left.
+    expect(search).not.toHaveBeenCalled()
     expect(search).not.toHaveBeenCalledWith(
       'still queued',
       expect.anything(),

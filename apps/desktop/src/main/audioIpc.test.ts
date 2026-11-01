@@ -349,18 +349,17 @@ describe('audio:peek hands the editor what the disk already knows, before the se
 
 // The auto-match verdict is reached in the renderer and kept on disk per file, so a
 // launch that finds the file unchanged replays it instead of asking the providers again.
-describe('audio:rememberAutoMatch / audio:recallAutoMatch', () => {
-  it('hands back the verdict kept for the unchanged file', async () => {
-    const file = await makeFile()
-    const verdict = { query: 'a b', title: 'B', match: null }
+describe('audio:rememberAutoMatch / audio:recallAutoMatches', () => {
+  it('hands back, by path, the verdicts kept for the unchanged files and leaves out the rest', async () => {
+    const kept = await makeFile()
+    const never = await makeFile()
+    const verdict = { query: 'a b', title: 'B', providers: ['discogs'], match: null }
 
-    await handlerFor('audio:rememberAutoMatch')({}, file, verdict)
+    await handlerFor('audio:rememberAutoMatch')({}, kept, verdict)
 
-    expect(await handlerFor('audio:recallAutoMatch')({}, file)).toEqual(verdict)
-  })
-
-  it('answers null for a file never probed', async () => {
-    expect(await handlerFor('audio:recallAutoMatch')({}, await makeFile())).toBeNull()
+    expect(await handlerFor('audio:recallAutoMatches')({}, [kept, never])).toEqual({
+      [kept]: verdict,
+    })
   })
 })
 

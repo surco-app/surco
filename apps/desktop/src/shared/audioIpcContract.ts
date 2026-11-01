@@ -45,9 +45,9 @@ export interface AudioAnalysisIpc {
     args: [family: keyof PeekableAnalyses, inputPath: string]
     result: PeekableAnalyses[keyof PeekableAnalyses] | null
   }
-  'audio:recallAutoMatch': {
-    args: [inputPath: string]
-    result: RememberedAutoMatch | null
+  'audio:recallAutoMatches': {
+    args: [paths: string[]]
+    result: Record<string, RememberedAutoMatch>
   }
   'audio:rememberAutoMatch': {
     args: [inputPath: string, verdict: RememberedAutoMatch]

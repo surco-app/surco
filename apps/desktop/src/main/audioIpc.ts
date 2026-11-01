@@ -310,9 +310,12 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     return entry
   })
 
-  handleAudio('audio:recallAutoMatch', (_e, inputPath) =>
-    peekAnalysis<RememberedAutoMatch>(AUTO_MATCH_NAMESPACE, inputPath),
-  )
+  handleAudio('audio:recallAutoMatches', async (_e, paths) => {
+    const kept = await Promise.all(
+      paths.map((p) => peekAnalysis<RememberedAutoMatch>(AUTO_MATCH_NAMESPACE, p)),
+    )
+    return Object.fromEntries(paths.flatMap((p, i) => (kept[i] ? [[p, kept[i]]] : [])))
+  })
 
   handleAudio('audio:rememberAutoMatch', (_e, inputPath, verdict) =>
     storeAnalysis(AUTO_MATCH_NAMESPACE, inputPath, verdict).then(() => null),
