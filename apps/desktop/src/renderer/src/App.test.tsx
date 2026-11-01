@@ -8726,6 +8726,20 @@ describe('App list header', () => {
     }
   })
 
+  // The list menu reads the palette's own registry, so numbering runs from it exactly as
+  // ⌘K runs it, on the same tracks.
+  it('numbers the list from the list menu', async () => {
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(screen.getByTestId('list-actions-more'))
+    fireEvent.click(screen.getByTestId('list-command-number-tracks'))
+    await waitFor(() =>
+      expect(screen.getAllByTestId('app-notice-message').map((el) => el.textContent)).toContain(
+        i18n.t('notices.numberedTracks', { count: 2 }),
+      ),
+    )
+  })
+
   // The button sends the selection to the OS Trash; with nothing selected a click did
   // nothing at all, which reads as a broken button rather than an empty selection.
   it('disables the trash button while nothing is selected', async () => {

@@ -3294,6 +3294,7 @@ export default function App(): React.JSX.Element {
                             onFillAll={onFillAll}
                             onFindReplace={onFindReplace}
                             onReviewList={() => openTargetReview('all')}
+                            listCommands={getCommands}
                             canReviewList={canReviewList}
                             reviewDetail={reviewDetail(tr, target)}
                             duplicates={
