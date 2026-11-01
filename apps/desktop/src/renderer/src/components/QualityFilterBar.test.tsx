@@ -550,6 +550,15 @@ describe('QualityFilterBar', () => {
     expect(screen.queryByTestId('track-position')).toBeNull()
   })
 
+  // The header's crosshair is gone, so the counter is the one way back to the open track
+  // in every state; during a multi-select that track is as easy to scroll away from.
+  it('reveals the open track from the selection count too', () => {
+    const onRevealSelected = vi.fn()
+    renderBar({ selectedCount: 3, selectedPosition: 2, visibleCount: 498, onRevealSelected })
+    fireEvent.click(screen.getByTestId('track-selected-count'))
+    expect(onRevealSelected).toHaveBeenCalledOnce()
+  })
+
   // The payoff of the quality sweep at the exact moment the DJ is looking at it: once they've
   // filtered to the suspect bucket, a one-click "trash them all" sits right there in the bar,
   // so acting on the fakes doesn't mean opening ⌘K or the row menu one file at a time.

@@ -8692,7 +8692,7 @@ describe('App list header', () => {
     for (const id of [
       'add-files',
       'select-all',
-      'reveal-selected',
+      'track-position',
       'fill-all',
       'open-find-replace',
       'clear-all',

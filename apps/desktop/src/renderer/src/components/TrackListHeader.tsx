@@ -8,7 +8,6 @@ import {
   CaseSensitive,
   Clock,
   Copy,
-  Crosshair,
   Ellipsis,
   FileAudio,
   FilePlus,
@@ -321,18 +320,6 @@ export function TrackListHeader({
               <SquareCheckBig className="h-3.5 w-3.5" aria-hidden="true" />
               <Tooltip label={tr('header.selectAll')} hint={hintFor('select-all')} />
             </button>
-            {selectedId && (
-              <button
-                type="button"
-                data-testid="reveal-selected"
-                onClick={scrollToSelected}
-                aria-label={tr('header.revealSelected')}
-                className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
-              >
-                <Crosshair className="h-3.5 w-3.5" aria-hidden="true" />
-                <Tooltip label={tr('header.revealSelected')} />
-              </button>
-            )}
             <span className="flex-1" />
             <button
               type="button"

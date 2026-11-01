@@ -226,12 +226,15 @@ export function FilterBar({
       </div>
       {children}
       {selectedCount > 1 ? (
-        <span
+        <button
+          type="button"
           data-testid={`${counterTestId}-selected-count`}
-          className="relative ml-auto self-center pr-0.5 pl-1 text-xs tabular-nums text-fg-dim"
+          onClick={onRevealSelected}
+          className="press relative ml-auto self-center rounded pr-0.5 pl-1 text-xs tabular-nums text-fg-dim outline-none hover:text-fg"
         >
           {tr('sidebar.selectedCount', { count: selectedCount })}
-        </span>
+          <Tooltip label={tr('header.revealSelected')} />
+        </button>
       ) : (
         visibleCount > 0 &&
         (selectedPosition !== null ? (

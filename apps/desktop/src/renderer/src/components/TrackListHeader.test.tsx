@@ -64,7 +64,7 @@ const openMenu = (): HTMLElement => {
 describe('TrackListHeader actions row', () => {
   it('keeps the everyday actions one click away as icons and names the occasional list-wide ones in a ⋯ menu', () => {
     renderHeader()
-    for (const id of ['add-files', 'select-all', 'reveal-selected', 'remove-selected']) {
+    for (const id of ['add-files', 'select-all', 'remove-selected']) {
       expect(screen.getByTestId(id)).toBeVisible()
     }
     for (const id of [
