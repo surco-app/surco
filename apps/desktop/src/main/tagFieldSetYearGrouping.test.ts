@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync } from 'node:fs'
+import { copyFileSync, mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -152,5 +152,70 @@ describe('setTagFields — filling a missing year or grouping', () => {
       'written',
     ])
     expect(lines(file, YEAR)).toEqual(['id3 TYER=1995'])
+  })
+})
+
+describe('setTagFields — a WAV that only carries INFO', () => {
+  const infoWav = () => {
+    const file = join(dir, `t${n++}.wav`)
+    execFileSync(FF, [
+      '-y',
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=d=1',
+      '-metadata',
+      'title=Lead',
+      '-metadata',
+      'artist=Bo',
+      '-metadata',
+      'genre=Techno',
+      file,
+    ])
+    return file
+  }
+  const onDisk = (file: string) => {
+    const f = TagFile.createFromPath(file)
+    try {
+      return f.tagTypesOnDisk
+    } finally {
+      f.dispose()
+    }
+  }
+  const id3Only = (file: string) => {
+    const copy = join(dir, `t${n++}.wav`)
+    copyFileSync(file, copy)
+    const f = TagFile.createFromPath(copy)
+    f.removeTags(TagTypes.RiffInfo)
+    f.save()
+    f.dispose()
+    return snapshotTags(copy).filter((l) => l.startsWith('id3 '))
+  }
+
+  // INFO has no grouping; Update writes it to an ID3 chunk, so the review does the same.
+  it('writes the grouping to a new ID3 chunk, where Update puts it', () => {
+    const file = infoWav()
+    expect(onDisk(file) & TagTypes.Id3v2).toBe(0)
+    expect(setTagFields(file, [{ field: 'grouping', from: '', to: 'Warm' }])).toEqual(['written'])
+    expect(onDisk(file) & TagTypes.Id3v2).toBe(TagTypes.Id3v2)
+    expect(id3Only(file)).toContain('id3 TIT1=Warm')
+  })
+
+  // A player that reads the ID3 chunk first would otherwise see a track with no title.
+  it('carries what INFO says into the new chunk and leaves INFO as it was', () => {
+    const file = infoWav()
+    const info = snapshotTags(file).filter((l) => l.startsWith('info '))
+    setTagFields(file, [{ field: 'grouping', from: '', to: 'Warm' }])
+    expect(snapshotTags(file).filter((l) => l.startsWith('info '))).toEqual(info)
+    expect(id3Only(file)).toEqual(expect.arrayContaining(['id3 TIT2=Lead', 'id3 TCON=Techno']))
+    expect(id3Only(file).some((l) => /^id3 TPE[12]=Bo$/.test(l))).toBe(true)
+  })
+
+  it('still adds no chunk for a field INFO holds', () => {
+    const file = infoWav()
+    setTagFields(file, [{ field: 'album', from: '', to: 'Metals' }])
+    expect(onDisk(file) & TagTypes.Id3v2).toBe(0)
   })
 })
