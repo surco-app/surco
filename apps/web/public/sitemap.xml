@@ -91,6 +91,24 @@
     <loc>https://getsurco.app/ja/changelog</loc>
   </url>
   <url>
+    <loc>https://getsurco.app/convertir</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/en/convert</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/convert</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/convert</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/convert</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/ja/convert</loc>
+  </url>
+  <url>
     <loc>https://getsurco.app/convertir/flac-a-aiff</loc>
   </url>
   <url>
@@ -107,6 +125,60 @@
   </url>
   <url>
     <loc>https://getsurco.app/ja/convert/flac-to-aiff</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/convertir/wav-a-aiff</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/en/convert/wav-to-aiff</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/convert/wav-to-aiff</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/convert/wav-to-aiff</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/convert/wav-to-aiff</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/ja/convert/wav-to-aiff</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/convertir/flac-a-mp3</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/en/convert/flac-to-mp3</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/convert/flac-to-mp3</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/convert/flac-to-mp3</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/convert/flac-to-mp3</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/ja/convert/flac-to-mp3</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/convertir/wav-a-mp3</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/en/convert/wav-to-mp3</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/convert/wav-to-mp3</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/convert/wav-to-mp3</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/convert/wav-to-mp3</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/ja/convert/wav-to-mp3</loc>
   </url>
   <url>
     <loc>https://getsurco.app/privacidad</loc>
@@ -157,6 +229,9 @@
     <loc>https://getsurco.app/casos-de-uso/pasar-a-aiff-sin-perder-cue-points</loc>
   </url>
   <url>
+    <loc>https://getsurco.app/casos-de-uso/convertir-m4a-aac-ogg-opus</loc>
+  </url>
+  <url>
     <loc>https://getsurco.app/casos-de-uso/comprobar-calidad</loc>
   </url>
   <url>
@@ -164,6 +239,9 @@
   </url>
   <url>
     <loc>https://getsurco.app/casos-de-uso/preparar-usb-para-el-club</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/casos-de-uso/pasar-a-mp3-para-que-quepa</loc>
   </url>
   <url>
     <loc>https://getsurco.app/casos-de-uso/unificar-nombres-apple-music</loc>
@@ -211,6 +289,9 @@
     <loc>https://getsurco.app/en/use-cases/convert-to-aiff-keeping-cue-points</loc>
   </url>
   <url>
+    <loc>https://getsurco.app/en/use-cases/convert-m4a-aac-ogg-opus</loc>
+  </url>
+  <url>
     <loc>https://getsurco.app/en/use-cases/check-audio-quality</loc>
   </url>
   <url>
@@ -218,6 +299,9 @@
   </url>
   <url>
     <loc>https://getsurco.app/en/use-cases/prepare-usb-for-the-club</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/en/use-cases/convert-to-mp3-to-save-space</loc>
   </url>
   <url>
     <loc>https://getsurco.app/en/use-cases/unify-apple-music-spellings</loc>
@@ -265,6 +349,9 @@
     <loc>https://getsurco.app/de/use-cases/convert-to-aiff-keeping-cue-points</loc>
   </url>
   <url>
+    <loc>https://getsurco.app/de/use-cases/convert-m4a-aac-ogg-opus</loc>
+  </url>
+  <url>
     <loc>https://getsurco.app/de/use-cases/check-audio-quality</loc>
   </url>
   <url>
@@ -272,6 +359,9 @@
   </url>
   <url>
     <loc>https://getsurco.app/de/use-cases/prepare-usb-for-the-club</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/de/use-cases/convert-to-mp3-to-save-space</loc>
   </url>
   <url>
     <loc>https://getsurco.app/de/use-cases/unify-apple-music-spellings</loc>
@@ -319,6 +409,9 @@
     <loc>https://getsurco.app/fr/use-cases/convert-to-aiff-keeping-cue-points</loc>
   </url>
   <url>
+    <loc>https://getsurco.app/fr/use-cases/convert-m4a-aac-ogg-opus</loc>
+  </url>
+  <url>
     <loc>https://getsurco.app/fr/use-cases/check-audio-quality</loc>
   </url>
   <url>
@@ -326,6 +419,9 @@
   </url>
   <url>
     <loc>https://getsurco.app/fr/use-cases/prepare-usb-for-the-club</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/fr/use-cases/convert-to-mp3-to-save-space</loc>
   </url>
   <url>
     <loc>https://getsurco.app/fr/use-cases/unify-apple-music-spellings</loc>
@@ -373,6 +469,9 @@
     <loc>https://getsurco.app/pt/use-cases/convert-to-aiff-keeping-cue-points</loc>
   </url>
   <url>
+    <loc>https://getsurco.app/pt/use-cases/convert-m4a-aac-ogg-opus</loc>
+  </url>
+  <url>
     <loc>https://getsurco.app/pt/use-cases/check-audio-quality</loc>
   </url>
   <url>
@@ -380,6 +479,9 @@
   </url>
   <url>
     <loc>https://getsurco.app/pt/use-cases/prepare-usb-for-the-club</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/pt/use-cases/convert-to-mp3-to-save-space</loc>
   </url>
   <url>
     <loc>https://getsurco.app/pt/use-cases/unify-apple-music-spellings</loc>
@@ -427,6 +529,9 @@
     <loc>https://getsurco.app/ja/use-cases/convert-to-aiff-keeping-cue-points</loc>
   </url>
   <url>
+    <loc>https://getsurco.app/ja/use-cases/convert-m4a-aac-ogg-opus</loc>
+  </url>
+  <url>
     <loc>https://getsurco.app/ja/use-cases/check-audio-quality</loc>
   </url>
   <url>
@@ -434,6 +539,9 @@
   </url>
   <url>
     <loc>https://getsurco.app/ja/use-cases/prepare-usb-for-the-club</loc>
+  </url>
+  <url>
+    <loc>https://getsurco.app/ja/use-cases/convert-to-mp3-to-save-space</loc>
   </url>
   <url>
     <loc>https://getsurco.app/ja/use-cases/unify-apple-music-spellings</loc>

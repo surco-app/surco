@@ -7,10 +7,10 @@ import type { RouteRecord } from 'vite-react-ssg'
 import { Head } from 'vite-react-ssg'
 import App from './App'
 import Changelog from './components/Changelog'
+import ConvertPageView from './components/ConvertPage'
 import DonateCancel from './components/DonateCancel'
 import DonateCompleted from './components/DonateCompleted'
 import Features from './components/Features'
-import FlacToAiff from './components/FlacToAiff'
 import GoogleAnalytics from './components/GoogleAnalytics'
 import Guide from './components/Guide'
 import Privacy from './components/Privacy'
@@ -18,6 +18,7 @@ import Stats from './components/Stats'
 import UseCasePage, { type UseCase } from './components/UseCase'
 import UseCases from './components/UseCases'
 import { createI18n, LANGUAGES, type Language } from './i18n'
+import { CONVERT_PAGES, type ConvertPage } from './lib/convertPages'
 import { HOME, PAGES } from './lib/nav'
 import { SITE } from './lib/sitemap'
 import { type RecipePage, recipePages } from './lib/useCases'
@@ -27,7 +28,6 @@ const FEATURE_PATHS = PAGES.features
 const GUIDE_PATHS = PAGES.guide
 const USE_CASES_PATHS = PAGES.useCases
 const CHANGELOG_PATHS = PAGES.changelog
-const FLAC_TO_AIFF_PATHS = PAGES.flacToAiff
 const PRIVACY_PATHS = PAGES.privacy
 const STATS_PATHS = PAGES.stats
 
@@ -238,10 +238,11 @@ function LocalizedChangelog({ lng }: { lng: Language }) {
   )
 }
 
-function FlacToAiffHead({ lng }: { lng: Language }) {
+function ConvertHead({ lng, page }: { lng: Language; page: ConvertPage }) {
   const t = I18N[lng].getFixedT(lng)
-  const url = SITE + FLAC_TO_AIFF_PATHS[lng]
-  const faq = t('flacToAiff.faq.items', { returnObjects: true }) as { q: string; a: string }[]
+  const paths = PAGES[page]
+  const url = SITE + paths[lng]
+  const faq = t(`${page}.faq.items`, { returnObjects: true }) as { q: string; a: string }[]
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -255,26 +256,26 @@ function FlacToAiffHead({ lng }: { lng: Language }) {
   return (
     <Head>
       <html lang={t('meta.htmlLang')} />
-      <title>{t('flacToAiff.metaTitle')}</title>
-      <meta name="description" content={t('flacToAiff.metaDescription')} />
+      <title>{t(`${page}.metaTitle`)}</title>
+      <meta name="description" content={t(`${page}.metaDescription`)} />
       <link rel="canonical" href={url} />
-      {alternateLinks(FLAC_TO_AIFF_PATHS)}
+      {alternateLinks(paths)}
       <meta property="og:locale" content={t('meta.ogLocale')} />
       <meta property="og:url" content={url} />
-      <meta property="og:title" content={t('flacToAiff.metaTitle')} />
-      <meta property="og:description" content={t('flacToAiff.metaDescription')} />
-      <meta name="twitter:title" content={t('flacToAiff.metaTitle')} />
-      <meta name="twitter:description" content={t('flacToAiff.metaDescription')} />
+      <meta property="og:title" content={t(`${page}.metaTitle`)} />
+      <meta property="og:description" content={t(`${page}.metaDescription`)} />
+      <meta name="twitter:title" content={t(`${page}.metaTitle`)} />
+      <meta name="twitter:description" content={t(`${page}.metaDescription`)} />
       <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
     </Head>
   )
 }
 
-function LocalizedFlacToAiff({ lng }: { lng: Language }) {
+function LocalizedConvert({ lng, page }: { lng: Language; page: ConvertPage }) {
   return (
     <I18nextProvider i18n={I18N[lng]}>
-      <FlacToAiffHead lng={lng} />
-      <FlacToAiff />
+      <ConvertHead lng={lng} page={page} />
+      <ConvertPageView page={page} />
     </I18nextProvider>
   )
 }
@@ -380,13 +381,17 @@ export const routes: RouteRecord[] = [
             [GUIDE_PATHS, LocalizedGuide],
             [USE_CASES_PATHS, LocalizedUseCases],
             [CHANGELOG_PATHS, LocalizedChangelog],
-            [FLAC_TO_AIFF_PATHS, LocalizedFlacToAiff],
             [PRIVACY_PATHS, LocalizedPrivacy],
             [STATS_PATHS, LocalizedStats],
           ] as const
         ).map(([paths, Page]) => ({
           path: paths[lng].slice(1),
           element: <Page lng={lng} />,
+          entry: 'src/routes.tsx',
+        })),
+        ...CONVERT_PAGES.map((page) => ({
+          path: PAGES[page][lng].slice(1),
+          element: <LocalizedConvert lng={lng} page={page} />,
           entry: 'src/routes.tsx',
         })),
       ]),

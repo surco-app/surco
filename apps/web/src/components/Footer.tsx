@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { DONATE_URL } from '../config'
 import type { Language } from '../i18n'
 import { trackDonate } from '../lib/analytics'
+import { CONVERT_PAGES } from '../lib/convertPages'
 import { PAGES } from '../lib/nav'
 
 export default function Footer() {
@@ -11,7 +12,6 @@ export default function Footer() {
   const guideHref = PAGES.guide[lang]
   const useCasesHref = PAGES.useCases[lang]
   const changelogHref = PAGES.changelog[lang]
-  const flacToAiffHref = PAGES.flacToAiff[lang]
   const privacyHref = PAGES.privacy[lang]
   const statsHref = PAGES.stats[lang]
 
@@ -96,15 +96,17 @@ export default function Footer() {
         <div>
           <h3 className="text-sm font-medium text-faint">{t('footer.convertHeading')}</h3>
           <ul className="mt-4 space-y-2.5 text-sm text-muted">
-            <li>
-              <a
-                href={flacToAiffHref}
-                data-testid="footer-flac-to-aiff"
-                className="transition-colors hover:text-fg"
-              >
-                {t('footer.flacToAiff')}
-              </a>
-            </li>
+            {CONVERT_PAGES.map((page) => (
+              <li key={page}>
+                <a
+                  href={PAGES[page][lang]}
+                  data-testid={`footer-${page}`}
+                  className="transition-colors hover:text-fg"
+                >
+                  {t(`footer.${page}`)}
+                </a>
+              </li>
+            ))}
           </ul>
         </div>
 
