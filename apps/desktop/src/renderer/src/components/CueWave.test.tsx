@@ -319,7 +319,7 @@ describe('CueWave', () => {
     error.mockRestore()
   })
 
-  it('draws the cues the flow would add see-through and dims the ones it would take away, none of them clickable', () => {
+  it('draws the cues the flow would add as outlines and dims the ones it would take away, none of them clickable', () => {
     setup({
       ghost: {
         added: [
@@ -330,12 +330,11 @@ describe('CueWave', () => {
       },
     })
     const ghost = screen.getByTestId('cue-wave-ghost-hot-B')
-    const fill = ghost.querySelector<HTMLElement>('[data-ghost-fill]')
     expect(ghost).toHaveTextContent(/^[A-H]$/)
-    expect(ghost.style.borderStyle).not.toBe('dashed')
+    expect(ghost.querySelector('[data-ghost-fill]')).toBeNull()
+    expect(ghost).toHaveStyle({ borderStyle: 'solid', borderColor: hotCueColor(22) })
     expect(ghost.style.opacity).toBe('')
     expect(ghost.style.backgroundColor).not.toBe('')
-    expect(fill).toHaveStyle({ backgroundColor: hotCueColor(22), opacity: '0.5' })
     expect(screen.getByTestId('cue-wave-ghost-hot-B').tagName).toBe('SPAN')
     expect(screen.getByTestId('cue-wave-ghost-call-32000')).toHaveStyle({ opacity: '0.5' })
     expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-gone', 'true')

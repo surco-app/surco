@@ -242,7 +242,7 @@ describe('CueWaveDetail', () => {
     expect(onHover).not.toHaveBeenCalledWith(bar(36))
   })
 
-  it('draws the flow see-through and dims what it would take away', () => {
+  it('draws the flow as outlines and dims what it would take away', () => {
     setup({
       cues: [{ key: 'b', ms: bar(30), kind: 2, color: 22, pending: false }],
       ghost: {
@@ -254,12 +254,11 @@ describe('CueWaveDetail', () => {
       },
     })
     const ghost = screen.getByTestId('cue-detail-ghost-hot-A')
-    const fill = ghost.querySelector<HTMLElement>('[data-ghost-fill]')
     expect(ghost).toHaveTextContent(/^[A-H]$/)
-    expect(ghost.style.borderStyle).not.toBe('dashed')
+    expect(ghost.querySelector('[data-ghost-fill]')).toBeNull()
+    expect(ghost).toHaveStyle({ borderStyle: 'solid', borderColor: hotCueColor(42) })
     expect(ghost.style.opacity).toBe('')
     expect(ghost.style.backgroundColor).not.toBe('')
-    expect(fill).toHaveStyle({ backgroundColor: hotCueColor(42), opacity: '0.5' })
     expect(screen.getByTestId(`cue-detail-ghost-call-${bar(36)}`)).toHaveStyle({
       opacity: '0.5',
     })

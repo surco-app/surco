@@ -653,42 +653,52 @@ describe('CuesSection', () => {
     )
     await ready()
     expect(screen.queryAllByTestId(/^cue-wave-hot-/)).toHaveLength(0)
-    playheadAt(bar(200))
+    hoverAt(bar(200))
     expect(screen.getAllByTestId(/^cue-wave-ghost-hot-/)).toHaveLength(2)
     markAt(bar(200))
     expect(screen.getAllByTestId(/^cue-wave-hot-/)).toHaveLength(2)
     expect(screen.queryByTestId(`cue-wave-call-${bar(200)}`)).toBeNull()
   })
 
+  const previewed = () => [
+    ...new Set(
+      screen
+        .queryAllByTestId(/^cue-(wave|detail)-ghost-(hot|call)-/)
+        .map((el) => el.dataset.testid?.replace(/^cue-(wave|detail)-ghost-/, '')),
+    ),
+  ].sort()
+  const placed = () =>
+    screen
+      .queryAllByTestId(/^cue-wave-(hot|call)-/)
+      .map((el) => el.dataset.testid?.replace(/^cue-wave-/, ''))
+      .sort()
   const marks = (re: RegExp) =>
     screen
       .queryAllByTestId(re)
       .map((el) => `${el.dataset.testid?.replace('ghost-', '')} ${el.style.left}`)
       .sort()
-  const hoverAt = playheadAt
+  const hoverAt = (ms: number) => {
+    playheadAt(ms)
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 200 })
+  }
 
   it('draws on hover what a click would place with Mi flujo, see-through, and the click places exactly that', async () => {
     setup()
     await ready()
     hoverAt(bar(64))
-    const shown = marks(/^cue-wave-ghost-(hot|call)-/)
+    const shown = previewed()
     expect(shown).toHaveLength(7)
-    expect(marks(/^cue-wave-(hot|call)-/)).toEqual([])
+    expect(placed()).toEqual([])
     markAt(bar(64))
-    expect(marks(/^cue-wave-(hot|call)-/)).toEqual(shown)
-    expect(marks(/^cue-wave-ghost-/)).toEqual([])
+    expect(placed()).toEqual(shown)
+    expect(previewed()).toEqual([])
   })
 
   it('draws only the CALL of the point and the hot cue 32 bars before with Una cue a 32', async () => {
     setup(READ, null, { activeCueFlow: 'one-at-32' })
     await ready()
     hoverAt(bar(64))
-    expect(
-      screen
-        .queryAllByTestId(/^cue-wave-ghost-/)
-        .map((el) => el.dataset.testid)
-        .sort(),
-    ).toEqual([`cue-wave-ghost-call-${bar(64)}`, 'cue-wave-ghost-hot-A'])
+    expect(previewed()).toEqual([`call-${bar(64)}`, 'hot-A'])
   })
 
   it('draws dimmed and dashed what the flow drops with the point at the playhead and writes no count, folded or full screen, since the dashed marks already say it and a count beside the flow menu confused', async () => {
@@ -697,7 +707,7 @@ describe('CuesSection', () => {
     markAt(bar(64))
     markAt(bar(128))
     hoverAt(bar(192))
-    const dropped = screen.queryAllByTestId(/^cue-wave-ghost-dropped-/)
+    const dropped = screen.queryAllByTestId(/^cue-(wave|detail)-ghost-dropped-/)
     expect(dropped.length).toBeGreaterThan(0)
     for (const el of dropped) expect(el).toHaveStyle({ borderStyle: 'dashed', opacity: '0.3' })
     expect(screen.queryByTestId('cues-rejected')).toBeNull()
@@ -705,7 +715,7 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cues-flow-menu').previousElementSibling).toBeNull()
     await openFull()
     hoverAt(bar(192))
-    expect(screen.queryAllByTestId(/^cue-wave-ghost-dropped-/).length).toBeGreaterThan(0)
+    expect(screen.queryAllByTestId(/^cue-(wave|detail)-ghost-dropped-/).length).toBeGreaterThan(0)
     expect(screen.queryByTestId('cues-rejected')).toBeNull()
     expect(screen.queryByTestId('cues-rejected-slot')).toBeNull()
   })
@@ -739,10 +749,11 @@ describe('CuesSection', () => {
       false,
     )
     expect(screen.queryByTestId('cues-apply-track')).toBeNull()
+    const placedBefore = placed()
     hoverAt(bar(160))
-    const shown = marks(/^cue-wave-ghost-(hot|call)-/)
+    const shown = previewed()
     markAt(bar(160))
-    expect(marks(/^cue-wave-(hot|call)-/)).toEqual([...before, ...shown].sort())
+    expect(placed()).toEqual([...placedBefore, ...shown].sort())
     expect(screen.getByTestId('cue-wave-hot-B')).toBeInTheDocument()
     expect(screen.getByTestId(`cue-wave-call-${bar(32)}`)).toBeInTheDocument()
   })
@@ -755,19 +766,50 @@ describe('CuesSection', () => {
     )
   })
 
-  it('draws no ghost in Manual and draws it again at the playhead once a flow is chosen', async () => {
+  it('draws no ghost in Manual and draws it again under the pointer once a flow is chosen', async () => {
     const { changeSettings } = setup()
     await ready()
     hoverAt(bar(64))
     expect(screen.queryAllByTestId(/^cue-wave-ghost-/).length).toBeGreaterThan(0)
     changeSettings({ activeCueFlow: 'manual' })
-    expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
     expect(screen.queryAllByTestId(/^cue-wave-ghost-/)).toHaveLength(0)
     changeSettings({ activeCueFlow: 'mine' })
+    hoverAt(bar(64))
     expect(screen.queryAllByTestId(/^cue-wave-ghost-/).length).toBeGreaterThan(0)
   })
 
-  it('draws the whole result of a flow that does not depend on the point as soon as it is chosen', async () => {
+  // The user reads the preview where the pointer is. On the strip above, the same preview
+  // mixed with the real cues there; it keeps only what the zoomed wave cannot show, plus a
+  // line where the pointer is, so the strip still says where and what lands off screen.
+  it('keeps on the strip only the ghost that falls outside the zoomed wave, and a line at the pointer', async () => {
+    setup()
+    await ready()
+    hoverAt(bar(64))
+    expect(screen.getByTestId(`cue-detail-ghost-call-${bar(64)}`)).toBeInTheDocument()
+    expect(screen.queryByTestId(`cue-wave-ghost-call-${bar(64)}`)).toBeNull()
+    expect(screen.queryAllByTestId(/^cue-wave-ghost-hot-/).length).toBeGreaterThan(0)
+    expect(screen.queryAllByTestId(/^cue-wave-ghost-dropped-/)).toHaveLength(0)
+    expect(screen.getByTestId('cue-wave-cursor').style.left).toBe(
+      `${(bar(64) / READ.durationMs) * 100}%`,
+    )
+    fireEvent.mouseLeave(screen.getByTestId('cue-detail'))
+    expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
+  })
+
+  // A preview drawn while the user is not about to place anything sits among the real cues
+  // and reads as cues that are already there; it shows only while the pointer is on the wave.
+  it('draws no ghost at rest and takes it away when the pointer leaves the wave', async () => {
+    setup()
+    await ready()
+    playheadAt(bar(64))
+    expect(screen.queryAllByTestId(/^cue-(wave|detail)-ghost-/)).toHaveLength(0)
+    hoverAt(bar(64))
+    expect(screen.queryAllByTestId(/^cue-(wave|detail)-ghost-/).length).toBeGreaterThan(0)
+    fireEvent.mouseLeave(screen.getByTestId('cue-detail'))
+    expect(screen.queryAllByTestId(/^cue-(wave|detail)-ghost-/)).toHaveLength(0)
+  })
+
+  it('draws the whole result of a flow that does not depend on the point as soon as the pointer is on the wave', async () => {
     const chorus: CueFlow = {
       id: 'chorus',
       name: 'Estribillos',
@@ -796,6 +838,7 @@ describe('CuesSection', () => {
       { cueFlows: [MY_FLOW, chorus], activeCueFlow: 'chorus' },
     )
     await ready()
+    hoverAt(bar(10))
     expect(screen.queryAllByTestId(/^cue-wave-ghost-hot-/)).toHaveLength(2)
     expect(screen.queryAllByTestId(/^cue-wave-hot-/)).toHaveLength(0)
   })

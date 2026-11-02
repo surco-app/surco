@@ -487,15 +487,6 @@ function Editing({
     manual ? { type: 'remove', key } : { type: 'remove-point', key }
   const moveOf = (key: string, ms: number): DraftAction =>
     manual ? { type: 'move', key, ms } : { type: 'move-point', key, ms }
-  // A drop lands on the nearest beat, so the ghost only changes when the playhead crosses
-  // to another one; keyed on the beat it is not worked out again on every playing frame.
-  const playheadBeatMs =
-    ctx.snapTo.length > 0 ? ctx.snapTo[nearestBeat(ctx.snapTo, playheadMs)] : playheadMs
-  const playheadGhost = useMemo<DraftGhost | null>(
-    () =>
-      placing ? ghostOf(state, { type: 'mark-drop', ms: playheadBeatMs, byHand: true }, ctx) : null,
-    [placing, playheadBeatMs, state, ctx],
-  )
   const [hoverMs, setHoverMs] = useState<number | null>(null)
   useEffect(() => {
     if (!placing) setHoverMs(null)
@@ -600,9 +591,7 @@ function Editing({
     dropProposal(ms)
   }
   const [pointDrag, setPointDrag] = useState(false)
-  const anyGhost = pointDrag
-    ? undefined
-    : (hoverGhost ?? proposalGhost ?? playheadGhost ?? undefined)
+  const anyGhost = pointDrag ? undefined : (hoverGhost ?? proposalGhost ?? undefined)
   // A proposal is drawn as it would land: in Traktor that is the plain cue's blue, whatever
   // colour the flow's rule names.
   const ghost =
@@ -1088,6 +1077,19 @@ function Editing({
       </button>
     </div>
   )
+  const stripView = detailWindow(ctx.beats, playheadMs, zoom)
+  const offView = (ms: number) => ms < stripView.fromMs || ms > stripView.toMs
+  const stripGhost =
+    hoverGhost && ghost
+      ? {
+          added: ghost.added.filter((c) => offView(c.ms)),
+          gone: ghost.gone.filter((key) => {
+            const cue = state.cues.find((c) => c.key === key)
+            return cue !== undefined && offView(cue.ms)
+          }),
+          rejected: ghost.rejected?.filter((r) => offView(r.ms)),
+        }
+      : ghost
   const strip = (
     <CueWave
       wave={read.wave}
@@ -1098,13 +1100,14 @@ function Editing({
       selected={state.selected}
       trimmed={state.trimmed}
       proposals={proposals}
-      ghost={ghost}
+      ghost={stripGhost}
+      cursorMs={hoverGhost && ghost ? (hoverMs ?? undefined) : undefined}
       onSelect={(key) => dispatch({ type: 'select', key })}
       onMenu={maximized ? setMenu : undefined}
       onMarkMenu={openMarkMenu}
       playheadMs={playheadMs}
       onSeek={seekTo}
-      view={detailWindow(ctx.beats, playheadMs, zoom)}
+      view={stripView}
       slim={!maximized}
       detail={words}
     />

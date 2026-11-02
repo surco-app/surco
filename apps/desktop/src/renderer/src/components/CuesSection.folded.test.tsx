@@ -126,15 +126,17 @@ const seekStrip = (x: number) => {
   fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: x })
   fireEvent.mouseUp(window, { clientX: x })
 }
-const ghostMarks = () =>
-  screen
-    .queryAllByTestId(/^cue-wave-ghost-(hot|call)-/)
-    .map((el) => `${el.dataset.testid?.replace('ghost-', '')} ${el.style.left}`)
-    .sort()
+const ghostMarks = () => [
+  ...new Set(
+    screen
+      .queryAllByTestId(/^cue-(wave|detail)-ghost-(hot|call)-/)
+      .map((el) => el.dataset.testid?.replace(/^cue-(wave|detail)-ghost-/, '')),
+  ),
+].sort()
 const placedMarks = () =>
   screen
     .queryAllByTestId(/^cue-wave-(hot|call)-/)
-    .map((el) => `${el.dataset.testid} ${el.style.left}`)
+    .map((el) => el.dataset.testid?.replace(/^cue-wave-/, ''))
     .sort()
 const placeAtPlayhead = () => clickDetail(200)
 const clickDetail = (x: number) => {
@@ -244,18 +246,18 @@ describe('CuesSection folded', () => {
     expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'false')
   })
 
-  it('draws the flow at the playhead, follows the pointer over the zoomed wave, and a click there places exactly what it showed in one undo step without moving the playhead', async () => {
+  it('draws the flow only under the pointer over the zoomed wave, and a click there places exactly what it showed in one undo step without moving the playhead', async () => {
     setup()
     await ready()
     seekStrip(128.3)
-    expect(screen.getByTestId('cue-wave-ghost-call-128000')).toBeInTheDocument()
+    expect(screen.queryAllByTestId(/^cue-(wave|detail)-ghost-/)).toHaveLength(0)
     fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 300 })
-    expect(screen.queryByTestId('cue-wave-ghost-call-128000')).toBeNull()
     const shown = ghostMarks()
-    expect(screen.getByTestId('cue-wave-ghost-call-136000')).toBeInTheDocument()
+    expect(screen.getByTestId('cue-detail-ghost-call-136000')).toBeInTheDocument()
+    expect(screen.getByTestId('cue-wave-cursor')).toBeInTheDocument()
     expect(shown.length).toBeGreaterThan(1)
     fireEvent.mouseLeave(screen.getByTestId('cue-detail'))
-    expect(screen.getByTestId('cue-wave-ghost-call-128000')).toBeInTheDocument()
+    expect(screen.queryAllByTestId(/^cue-(wave|detail)-ghost-/)).toHaveLength(0)
     fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 300 })
     clickDetail(300)
     expect(placedMarks()).toEqual(shown)

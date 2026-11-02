@@ -57,6 +57,7 @@ export function CueWave({
   slim,
   view,
   ghost: rawGhost,
+  cursorMs,
   detail,
 }: {
   wave: CueWaveColumn[] | null
@@ -76,6 +77,7 @@ export function CueWave({
   slim?: boolean
   view?: { fromMs: number; toMs: number }
   ghost?: CueGhost
+  cursorMs?: number
   detail?: Uint16Array | null
 }): React.JSX.Element {
   const { t } = useTranslation()
@@ -265,6 +267,13 @@ export function CueWave({
         )}
         {waveSvg}
         {ticks}
+        {cursorMs !== undefined && (
+          <span
+            data-testid="cue-wave-cursor"
+            style={{ left: pct(cursorMs) }}
+            className="absolute top-0 bottom-0 w-px bg-[var(--color-fg)]/40"
+          />
+        )}
         {playheadMs !== undefined && (
           <span
             data-testid="cue-wave-playhead"
@@ -375,15 +384,16 @@ export function CueWave({
           key={`gh${h.key}`}
           data-testid={`cue-wave-ghost-hot-${h.letter}`}
           aria-hidden="true"
-          style={{ ...markStyle(h.at), backgroundColor: 'var(--color-panel-2)' }}
-          className="pointer-events-none absolute z-10 h-3 w-3 overflow-hidden rounded-[3px] text-center text-[11px] font-semibold leading-3"
+          style={{
+            ...markStyle(h.at),
+            backgroundColor: 'var(--color-panel-2)',
+            borderColor: h.colour,
+            borderStyle: 'solid',
+            borderWidth: '1.5px',
+          }}
+          className="pointer-events-none absolute z-10 h-3 w-3 rounded-[3px] text-center text-[10px] font-semibold leading-[9px] text-[var(--color-fg)]"
         >
-          <span
-            data-ghost-fill
-            style={{ backgroundColor: h.colour, opacity: GHOST_OPACITY }}
-            className="absolute inset-0"
-          />
-          <span className="relative text-[var(--color-fg)]">{h.letter}</span>
+          {h.letter}
         </span>
       ))}
       {(ghost?.rejected ?? [])

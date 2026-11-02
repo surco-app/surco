@@ -530,15 +530,16 @@ export function CueWaveDetail({
               key={`gh${h.key}`}
               data-testid={`cue-detail-ghost-hot-${h.letter}`}
               aria-hidden="true"
-              style={{ ...markStyle(h.at), backgroundColor: 'var(--color-panel-2)' }}
-              className="pointer-events-none absolute z-10 h-3.5 w-3.5 overflow-hidden rounded-[3px] text-center text-[11px] font-bold leading-[14px]"
+              style={{
+                ...markStyle(h.at),
+                backgroundColor: 'var(--color-panel-2)',
+                borderColor: h.colour,
+                borderStyle: 'solid',
+                borderWidth: '1.5px',
+              }}
+              className="pointer-events-none absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-[11px] font-bold leading-[11px] text-[var(--color-fg)]"
             >
-              <span
-                data-ghost-fill
-                style={{ backgroundColor: h.colour, opacity: GHOST_OPACITY }}
-                className="absolute inset-0"
-              />
-              <span className="relative text-[var(--color-fg)]">{h.letter}</span>
+              {h.letter}
             </span>
           ))}
           {(ghost?.rejected ?? [])
