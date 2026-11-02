@@ -126,7 +126,8 @@
       "unsaved": "Non enregistrées",
       "trashSuspects_one": "Mettre le fichier douteux à la corbeille",
       "trashSuspects_other": "Mettre les {{count}} fichiers douteux à la corbeille",
-      "current": "Filtre : {{filter}} {{count}}"
+      "current": "Filtre : {{filter}} {{count}}",
+      "reviewIncomplete": "Les compléter dans Vérifier les métadonnées"
     },
     "search": {
       "placeholder": "Rechercher des morceaux",

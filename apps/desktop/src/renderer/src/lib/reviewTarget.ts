@@ -57,7 +57,7 @@ export function reviewTarget({
 // which for Music says the whole library is empty.
 export function reviewOpening(
   target: ReviewTarget,
-  filter: 'all' | 'duplicates',
+  filter: 'all' | 'duplicates' | 'incomplete',
 ): ReviewOpening | null {
   if (target.count === 0) return null
   if (target.kind === 'music')

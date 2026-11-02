@@ -574,4 +574,36 @@ describe('QualityFilterBar', () => {
     renderBar({ value: sel({ quality: 'suspect' }), tally: tally({ suspect: 0 }) })
     expect(screen.queryByTestId('trash-suspects')).toBeNull()
   })
+
+  // The list only shows what lacks a field; the review is where it gets filled, all at once.
+  it('offers to fill the tracks missing required data in the review', () => {
+    const onReviewIncomplete = vi.fn()
+    renderBar({
+      value: sel({ tags: 'missingRequired' }),
+      tally: tally({ missingRequired: 4 }),
+      onReviewIncomplete,
+    })
+    fireEvent.click(screen.getByTestId('review-incomplete'))
+    expect(onReviewIncomplete).toHaveBeenCalledOnce()
+  })
+
+  it('offers the review only on that filter, with something in it and a review to open', () => {
+    const onReviewIncomplete = vi.fn()
+    renderBar({
+      value: sel({ tags: 'noCover' }),
+      tally: tally({ missingRequired: 4 }),
+      onReviewIncomplete,
+    })
+    expect(screen.queryByTestId('review-incomplete')).toBeNull()
+    cleanup()
+    renderBar({
+      value: sel({ tags: 'missingRequired' }),
+      tally: tally({ missingRequired: 0 }),
+      onReviewIncomplete,
+    })
+    expect(screen.queryByTestId('review-incomplete')).toBeNull()
+    cleanup()
+    renderBar({ value: sel({ tags: 'missingRequired' }), tally: tally({ missingRequired: 4 }) })
+    expect(screen.queryByTestId('review-incomplete')).toBeNull()
+  })
 })

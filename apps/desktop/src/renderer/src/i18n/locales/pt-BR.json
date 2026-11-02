@@ -126,7 +126,8 @@
       "unsaved": "Não salvas",
       "trashSuspects_one": "Mover o arquivo duvidoso para a Lixeira",
       "trashSuspects_other": "Mover os {{count}} arquivos duvidosos para a Lixeira",
-      "current": "Filtro: {{filter}} {{count}}"
+      "current": "Filtro: {{filter}} {{count}}",
+      "reviewIncomplete": "Completar em Revisar metadados"
     },
     "search": {
       "placeholder": "Buscar faixas",

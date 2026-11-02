@@ -126,7 +126,8 @@
       "unsaved": "未保存",
       "trashSuspects_one": "疑わしいファイルをゴミ箱へ移動",
       "trashSuspects_other": "{{count}} の疑わしいファイルをゴミ箱へ移動",
-      "current": "フィルター: {{filter}} {{count}}"
+      "current": "フィルター: {{filter}} {{count}}",
+      "reviewIncomplete": "「メタデータを確認」で入力する"
     },
     "search": {
       "placeholder": "トラックを検索",
