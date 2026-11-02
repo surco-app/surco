@@ -977,7 +977,7 @@ function IncompleteRow({
         e.preventDefault()
         onSelect()
       }}
-      className={`cursor-default ${listRowClass(selected, false)}`}
+      className={`cursor-default min-w-0 ${listRowClass(selected, false)}`}
     >
       <span className="relative shrink-0">
         <CoverPlaceholder testid="music-review-row-cover" />
