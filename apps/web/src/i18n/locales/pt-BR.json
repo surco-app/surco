@@ -540,7 +540,7 @@
       },
       {
         "q": "Minha biblioteca está cheia de MP3. Dá para passar para lossless sem perder as minhas playlists?",
-        "a": "Sim, é para isso que serve substituir. Carregue o AIFF ou o FLAC da mesma faixa e, se o Surco a encontrar na sua biblioteca, o botão diz “Substituir” em vez de “Adicionar”. Ao converter, a entrada do Apple Music deixa de apontar para o MP3 e passa a apontar para o arquivo novo, e no rekordbox a mesma linha é redirecionada. Ela mantém as playlists e os cue points, porque o rekordbox vincula pela faixa e não pelo caminho. Um porém, o rekordbox analisa o arquivo novo e pode mover o beatgrid, então confira a grade depois. O rekordbox precisa estar fechado para gravar no banco de dados dele; o Surco se oferece para fechá-lo e faz uma cópia de segurança antes. Quando a verificação do arquivo novo dá certo e nenhum programa continua usando o antigo, o Surco retira o antigo sozinho. Ele vai para a Lixeira, ou para Cópias › Arquivos de música se estiver num disco sem Lixeira, como um NAS. Com “Nunca” em Ajustes → Saída ele é apagado de vez."
+        "a": "Sim, é para isso que serve substituir. Carregue o AIFF ou o FLAC da mesma faixa e, se o Surco a encontrar na sua biblioteca, o botão diz “Substituir” em vez de “Adicionar”. Ao converter, a entrada do Apple Music deixa de apontar para o MP3 e passa a apontar para o arquivo novo, e no rekordbox a mesma linha é redirecionada. Ela mantém as playlists e os cue points, porque o rekordbox vincula pela faixa e não pelo caminho. Só tem um porém. O rekordbox analisa o arquivo novo e pode mover o beatgrid, então confira a grade depois. O rekordbox precisa estar fechado para gravar no banco de dados dele; o Surco se oferece para fechá-lo e faz uma cópia de segurança antes. Quando a verificação do arquivo novo dá certo e nenhum programa continua usando o antigo, o Surco retira o antigo sozinho. Ele vai para a Lixeira, ou para Cópias › Arquivos de música se estiver num disco sem Lixeira, como um NAS. Com “Nunca” em Ajustes → Saída ele é apagado de vez."
       },
       {
         "q": "Funciona com equipamentos Denon (Engine DJ)?",
@@ -552,7 +552,7 @@
       },
       {
         "q": "Quais formatos ele suporta?",
-        "a": "Ele converte entre AIFF, WAV, FLAC, ALAC e MP3, de qualquer um para qualquer um. De lossless para MP3 para economizar espaço, de MP3 para AIFF para o seu programa ou de FLAC para WAV, como você precisar. A qualidade é você quem escolhe, com o bitrate do MP3 (de 320 a 128 kbps, ou VBR V0/V2), a profundidade de bits e a taxa de amostragem. Por padrão, mantêm-se os da origem, menos o áudio de 16 bits preenchido até 24, que é salvo como 16 bits reais sem perda. Ele também lê M4A, AAC, OGG e OPUS e os converte para qualquer um desses cinco."
+        "a": "Ele converte entre AIFF, WAV, FLAC, ALAC e MP3, de qualquer um para qualquer um. De lossless para MP3 para economizar espaço, de MP3 para AIFF para o seu programa ou de FLAC para WAV, como você precisar. A qualidade é você quem escolhe, com o bitrate do MP3 (de 320 a 128 kbps, ou VBR V0/V2), a profundidade de bits e a taxa de amostragem. Por padrão, são mantidos os valores da origem, menos o áudio de 16 bits preenchido até 24, que é salvo como 16 bits reais sem perda. Ele também lê M4A, AAC, OGG e OPUS e os converte para qualquer um desses cinco."
       },
       {
         "q": "E os arquivos WAV quebrados?",
@@ -665,7 +665,9 @@
           "As faixas de uma playlist que não têm arquivo no disco, como as de streaming, são contadas à parte.",
           "Se você não usa algum desses programas, oculte-o e o painel fica mais limpo.",
           "Ao lado do nome do rekordbox ou do Engine DJ, o ícone de USB exporta as playlists dele para um USB."
-        ]
+        ],
+        "shot": "fuentes-pt-BR.webp",
+        "shotCaption": "rekordbox aberto em Fontes, com uma das playlists carregada na lista."
       },
       {
         "id": "editor",
@@ -850,7 +852,7 @@
         "title": "Converta a faixa",
         "body": [
           "O botão na parte de baixo do editor converte a faixa selecionada e diz para qual formato vai gravar antes de você clicar. O menu à direita dele escolhe o formato, em qualquer direção. AIFF, WAV, FLAC ou ALAC sem perdas, ou MP3 para ocupar menos, também se a faixa já era lossless. Se a faixa já está nesse formato, o Surco a copia como está na hora, sem recodificar, a não ser que os seus ajustes de qualidade ou um filtro de áudio mudem o áudio.",
-          "A qualidade se define em Ajustes → Formato, com o bitrate do MP3 (de 320 a 128 kbps, ou VBR V0/V2), a profundidade de bits, a taxa de amostragem e a compressão do FLAC. Por padrão, mantêm-se os do original, menos a profundidade de bits. “Corrigido” salva um arquivo de 16 bits preenchido até 24 como 16 bits reais, sem perda. Em Ajustes → Saída você decide para onde vai, seja uma pasta de saída, a sua biblioteca do Apple Music, ao lado do original (exportações no mesmo formato levam um nome com “(2)” e a origem fica intacta) ou “Editar o original”, que regrava o arquivo no lugar. Atenção, com “Editar o original” mudar de formato elimina o original. Ali mesmo você escolhe, separadamente para o rekordbox, o Engine DJ e o Traktor, se a conversão não mexe neles (“Não mexer”), deixa em dia as faixas que eles já têm (“Atualizar”) ou também adiciona as novas (“Atualizar e adicionar”). Se quiser, ligue a normalização (volume ou pico, com predefinições para streaming, clube ou broadcast) para igualar o volume. Quando terminar, “Mostrar arquivo” leva você ao resultado no Finder ou no Explorer."
+          "A qualidade se define em Ajustes → Formato, com o bitrate do MP3 (de 320 a 128 kbps, ou VBR V0/V2), a profundidade de bits, a taxa de amostragem e a compressão do FLAC. Por padrão, são mantidos os valores do original, menos a profundidade de bits. “Corrigido” salva um arquivo de 16 bits preenchido até 24 como 16 bits reais, sem perda. Em Ajustes → Saída você decide para onde vai, seja uma pasta de saída, a sua biblioteca do Apple Music, ao lado do original (exportações no mesmo formato levam um nome com “(2)” e a origem fica intacta) ou “Editar o original”, que regrava o arquivo no lugar. Atenção, com “Editar o original” mudar de formato elimina o original. Ali mesmo você escolhe, separadamente para o rekordbox, o Engine DJ e o Traktor, se a conversão não mexe neles (“Não mexer”), deixa em dia as faixas que eles já têm (“Atualizar”) ou também adiciona as novas (“Atualizar e adicionar”). Se quiser, ligue a normalização (volume ou pico, com predefinições para streaming, clube ou broadcast) para igualar o volume. Quando terminar, “Mostrar arquivo” leva você ao resultado no Finder ou no Explorer."
         ],
         "points": [
           "Formatos: AIFF, WAV, FLAC e ALAC (sem perdas) e MP3, de qualquer um para qualquer um. M4A, AAC, OGG e OPUS são lidos e convertidos para qualquer um deles. MP3 de 320 a 128 kbps, ou VBR V0/V2.",
@@ -933,7 +935,9 @@
           "“Apagar do USB a música que não é mais exportada” remove o que você tirou das suas playlists.",
           "O rekordbox ou o Engine DJ precisam estar fechados. Se você cancelar ou o USB se desconectar, ele fica com a biblioteca anterior.",
           "Só no macOS e no Windows."
-        ]
+        ],
+        "shot": "usb-pt-BR.webp",
+        "shotCaption": "Exportar para USB com as playlists do rekordbox."
       },
       {
         "id": "traktor",
@@ -986,7 +990,9 @@
           "Incompletas lista as faixas que não têm um campo obrigatório e propõe como preenchê-lo, pelo app, por uma busca ou pelo nome do arquivo. “Pôr N propostas no lote” adiciona todas de uma vez.",
           "Se o que falta é um campo que a revisão não grava, como o BPM ou o tom, “Abrir no editor” leva você à faixa.",
           "BPM, tom, cues e avaliação ficam intactos ao aplicar."
-        ]
+        ],
+        "shot": "revisar-pt-BR.webp",
+        "shotCaption": "Revisão de uma playlist do rekordbox, com um espaço sobrando no nome de um álbum."
       },
       {
         "id": "atajos",
@@ -1348,7 +1354,7 @@
       "title": "Cada formato para o seu uso",
       "items": [
         {
-          "title": "AIFF, o que tudo lê",
+          "title": "AIFF, o que todos leem",
           "text": "Sem perdas, com tags e capa, e qualquer CDJ e qualquer programa de DJ o lê."
         },
         {
@@ -1375,7 +1381,7 @@
         },
         {
           "title": "Converta",
-          "text": "As cópias vão para Music/Surco, para o lado do original ou para o Apple Music, e o rekordbox, o Engine DJ e o Traktor ficam em dia se você os sincroniza."
+          "text": "As cópias vão para Music/Surco, para junto do original ou para o Apple Music, e o rekordbox, o Engine DJ e o Traktor ficam em dia se você os sincroniza."
         }
       ],
       "guide": "Passo a passo no guia"
@@ -1383,7 +1389,7 @@
     "quality": {
       "kicker": "Antes de converter",
       "title": "O seu lossless é mesmo sem perdas?",
-      "lede": "Um MP3 convertido para FLAC ou WAV pesa o mesmo que o autêntico. O espectro o entrega, porque o som para numa parede seca. O Surco confere cada faixa antes de você convertê-la."
+      "lede": "Um MP3 convertido para FLAC ou WAV pesa o mesmo que o autêntico. O espectro o entrega, porque o som é cortado de forma abrupta. O Surco confere cada faixa antes de você convertê-la."
     },
     "faq": {
       "kicker": "Perguntas frequentes",
@@ -1510,7 +1516,7 @@
     "quality": {
       "kicker": "Antes de converter",
       "title": "Esse FLAC é mesmo sem perdas?",
-      "lede": "Um MP3 convertido para FLAC pesa o mesmo e parece igual numa lista de arquivos. O espectro o entrega: o som para numa parede seca. O Surco confere cada faixa antes de você convertê-la."
+      "lede": "Um MP3 convertido para FLAC pesa o mesmo e parece igual numa lista de arquivos. O espectro o entrega: o som é cortado de forma abrupta. O Surco confere cada faixa antes de você convertê-la."
     },
     "faq": {
       "kicker": "Perguntas frequentes",
@@ -1637,7 +1643,7 @@
     "quality": {
       "kicker": "Antes de converter",
       "title": "Esse WAV é mesmo sem perdas?",
-      "lede": "Um MP3 salvo como WAV pesa o mesmo que um autêntico. O espectro o entrega, porque o som para numa parede seca. O Surco confere cada faixa antes de você convertê-la."
+      "lede": "Um MP3 salvo como WAV pesa o mesmo que um autêntico. O espectro o entrega, porque o som é cortado de forma abrupta. O Surco confere cada faixa antes de você convertê-la."
     },
     "faq": {
       "kicker": "Perguntas frequentes",
@@ -1759,7 +1765,7 @@
     "quality": {
       "kicker": "Antes de converter",
       "title": "Esse FLAC é mesmo sem perdas?",
-      "lede": "Um MP3 convertido para FLAC pesa o mesmo e parece igual numa lista de arquivos. O espectro o entrega, porque o som para numa parede seca. O Surco confere cada faixa antes de você convertê-la."
+      "lede": "Um MP3 convertido para FLAC pesa o mesmo e parece igual numa lista de arquivos. O espectro o entrega, porque o som é cortado de forma abrupta. O Surco confere cada faixa antes de você convertê-la."
     },
     "faq": {
       "kicker": "Perguntas frequentes",
@@ -1886,7 +1892,7 @@
     "quality": {
       "kicker": "Antes de converter",
       "title": "Esse WAV é mesmo sem perdas?",
-      "lede": "Um MP3 salvo como WAV pesa o mesmo que um autêntico. O espectro o entrega, porque o som para numa parede seca. O Surco confere cada faixa antes de você convertê-la."
+      "lede": "Um MP3 salvo como WAV pesa o mesmo que um autêntico. O espectro o entrega, porque o som é cortado de forma abrupta. O Surco confere cada faixa antes de você convertê-la."
     },
     "faq": {
       "kicker": "Perguntas frequentes",
@@ -2290,7 +2296,7 @@
         "group": "organize",
         "title": "Converta seus M4A, AAC, OGG e OPUS",
         "body": [
-          "Você tem faixas do Apple Music, do Bandcamp ou de outras lojas em M4A, AAC, OGG ou OPUS, e o seu programa de DJ ou os seus CDJs não as leem. Quer passá-las para um formato que tudo lê, com as tags e a capa."
+          "Você tem faixas do Apple Music, do Bandcamp ou de outras lojas em M4A, AAC, OGG ou OPUS, e o seu programa de DJ ou os seus CDJs não as leem. Quer passá-las para um formato que todos leem, com as tags e a capa."
         ],
         "keywords": "m4a aac ogg opus vorbis itunes bandcamp converter convert",
         "settings": [
@@ -2298,7 +2304,7 @@
             "tab": "Formato",
             "setting": "Formato padrão",
             "value": "AIFF",
-            "note": "Qualquer CDJ e qualquer programa de DJ lê. Se preferir que ocupem pouco, escolha MP3."
+            "note": "Qualquer CDJ e qualquer programa de DJ o lê. Se preferir que ocupem pouco, escolha MP3."
           },
           {
             "tab": "Saída",

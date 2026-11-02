@@ -337,6 +337,36 @@ export const REKORDBOX_SCENE = {
   },
 }
 
+// Fuentes, USB and Revisar read the same rekordbox clone and never write: the USB dialog
+// is closed before exporting and the review before applying.
+export const LIBRARY_SCENES = {
+  fuentes: {
+    run: async (_app, page) => {
+      await openFromRekordbox(page)
+      await page
+        .locator('[data-testid="import-progress"]')
+        .waitFor({ state: 'detached', timeout: 900000 })
+      await wait(page, 3000)
+    },
+  },
+  usb: {
+    run: async (_app, page) => {
+      await page.click('[data-testid="source-tree-export-usb"]')
+      await page.locator('[role="dialog"]').waitFor({ timeout: 30000 })
+      await wait(page, 3000)
+    },
+    after: close,
+  },
+  revisar: {
+    run: async (_app, page) => {
+      await page.click('[data-testid="toolbar-review"]')
+      await page.locator('[data-testid="music-review"]').waitFor({ timeout: 30000 })
+      await wait(page, 5000)
+    },
+    after: close,
+  },
+}
+
 async function shoot(app, page, lang, id, scene) {
   await scene.run(app, page)
   await save(page, `${id}-${lang}`)
@@ -367,6 +397,12 @@ async function main() {
     if (want('rekordbox')) {
       const { app, page } = await launch(lang, { rekordboxDbPath: rekordboxClone() })
       await shoot(app, page, lang, 'rekordbox', REKORDBOX_SCENE)
+      app.process().kill('SIGKILL')
+    }
+    const library = Object.entries(LIBRARY_SCENES).filter(([id]) => want(id))
+    if (library.length) {
+      const { app, page } = await launch(lang, { rekordboxDbPath: rekordboxClone() })
+      for (const [id, scene] of library) await shoot(app, page, lang, id, scene)
       app.process().kill('SIGKILL')
     }
     const album = Object.entries(ALBUM_SCENES).filter(([id]) => want(id))
