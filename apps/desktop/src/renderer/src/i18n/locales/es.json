@@ -2487,8 +2487,9 @@
       "useForOthers_one": "Usar en la otra",
       "useForOthers_other": "Usar en las otras {{count}}",
       "note": "Solo se rellenan campos vacíos. Si el fichero ya tiene un valor, no se toca.",
-      "editorNote": "Revisar no escribe {{fields}}. Rellénalos en el editor.",
-      "openEditor": "Abrir en el editor"
+      "openEditor": "Abrir en el editor",
+      "editorNote_one": "Revisar no escribe {{fields}}. Rellénalo en el editor.",
+      "editorNote_other": "Revisar no escribe {{fields}}. Rellénalos en el editor."
     }
   },
   "listReview": {

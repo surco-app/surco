@@ -2487,8 +2487,9 @@
       "useForOthers_one": "Use on the other one",
       "useForOthers_other": "Use on the other {{count}}",
       "note": "Only empty fields are filled. A value the file already holds is left alone.",
-      "editorNote": "The review does not write {{fields}}. Fill them in the editor.",
-      "openEditor": "Open in the editor"
+      "openEditor": "Open in the editor",
+      "editorNote_one": "The review does not write {{fields}}. Fill it in the editor.",
+      "editorNote_other": "The review does not write {{fields}}. Fill them in the editor."
     }
   },
   "listReview": {

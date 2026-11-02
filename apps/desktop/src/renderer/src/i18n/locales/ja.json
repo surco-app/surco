@@ -2487,8 +2487,9 @@
       "useForOthers_one": "ほかの{{count}}件にも使う",
       "useForOthers_other": "ほかの{{count}}件にも使う",
       "note": "空のフィールドだけを埋めます。ファイルにすでにある値は変更しません。",
-      "editorNote": "確認では{{fields}}を書き込みません。エディタで入力してください。",
-      "openEditor": "エディタで開く"
+      "openEditor": "エディタで開く",
+      "editorNote_one": "確認では{{fields}}を書き込みません。エディタで入力してください。",
+      "editorNote_other": "確認では{{fields}}を書き込みません。エディタで入力してください。"
     }
   },
   "listReview": {

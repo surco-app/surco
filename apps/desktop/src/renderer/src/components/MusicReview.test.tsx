@@ -2982,6 +2982,9 @@ describe('incomplete fields only the editor fills', () => {
     render(<Panes review={editorReview({ toggleStaged })} onOpenTrack={onOpenTrack} />)
     fireEvent.click(rows()[1])
     expect(screen.queryAllByTestId('incomplete-value')).toHaveLength(0)
+    expect(screen.getByTestId('incomplete-editor-note')).toHaveTextContent(
+      'The review does not write BPM. Fill it in the editor.',
+    )
     const main = screen.getByTestId('incomplete-stage')
     expect(main).toHaveTextContent('Open in the editor')
     fireEvent.click(main)

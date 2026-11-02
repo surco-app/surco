@@ -2487,8 +2487,9 @@
       "useForOthers_one": "Usar na outra",
       "useForOthers_other": "Usar nas outras {{count}}",
       "note": "Só os campos vazios são preenchidos. Um valor que o arquivo já tem não é alterado.",
-      "editorNote": "A revisão não grava {{fields}}. Preencha no editor.",
-      "openEditor": "Abrir no editor"
+      "openEditor": "Abrir no editor",
+      "editorNote_one": "A revisão não grava {{fields}}. Preencha no editor.",
+      "editorNote_other": "A revisão não grava {{fields}}. Preencha no editor."
     }
   },
   "listReview": {

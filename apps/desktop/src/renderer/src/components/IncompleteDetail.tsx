@@ -74,7 +74,10 @@ export function IncompleteDetail({
         </div>
         {card.editor && (
           <p data-testid="incomplete-editor-note" className="mt-6 text-sm text-fg-dim">
-            {t('musicReview.incomplete.editorNote', { fields: editorNames(t, card).join(', ') })}
+            {t('musicReview.incomplete.editorNote', {
+              count: card.editor.fields.length,
+              fields: editorNames(t, card).join(', '),
+            })}
             {!editorOnly && (
               <>
                 {' '}
