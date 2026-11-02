@@ -2493,6 +2493,8 @@ describe('App source playlists', () => {
         ...over,
       })
     }
+    // The rows of the new playlist can paint a commit before the selection carried over to
+    // them, so a test reading the selection waits for it rather than for the rows alone.
     const openHouse = async () => {
       fireEvent.click(screen.getByTestId('source-node-h'))
       await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
@@ -2514,10 +2516,12 @@ describe('App source playlists', () => {
       fireEvent.click(rows[1], { metaKey: true })
       fireEvent.click(rows[2], { metaKey: true })
       await openHouse()
-      expect(selectedTitles()).toEqual([
-        expect.stringContaining('Bravo'),
-        expect.stringContaining('Charlie'),
-      ])
+      await waitFor(() =>
+        expect(selectedTitles()).toEqual([
+          expect.stringContaining('Bravo'),
+          expect.stringContaining('Charlie'),
+        ]),
+      )
       fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
       fireEvent.click(await screen.findByTestId('track-menu-add-to'))
       fireEvent.click(screen.getByTestId('track-menu-playlist-g'))
@@ -2548,7 +2552,7 @@ describe('App source playlists', () => {
       fireEvent.click(screen.getAllByTestId('track-row')[1])
       await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
       await openHouse()
-      expect(selectedTitles()).toEqual([expect.stringContaining('Bravo')])
+      await waitFor(() => expect(selectedTitles()).toEqual([expect.stringContaining('Bravo')]))
       expect(screen.getByTestId('field-title')).toHaveValue('Bravo')
     })
 
