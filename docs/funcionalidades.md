@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 31 de octubre de 2026** (filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
+**Última revisión: 2 de noviembre de 2026** (v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -117,8 +117,13 @@ FLAC/ALAC eligen su formato más ancho en cuanto el decode o un filtro les entre
 float: un rip 44.1/16 salía a 24 bits. Surco fija la profundidad resuelta
 (`ffmpeg.ts:759-762`, test de bytes `convertDepth.test.ts:81-102`).
 
-**Float genuino vs float de decodificación.** Un WAV f32 de grabadora conserva su
-precisión; un MP3 decodificado también entrega float, pero eso es un artefacto
+**32 bits bajo «Corregido» → 24** (v1.19.0). Con «Corregido», el valor por defecto, un
+origen de 32 bits, float o entero, sale a 24 bits enteros sin dither, lo más ancho que
+cargan los CDJ-3000, CDJ-3000X y XDJ-AZ en WAV y AIFF (`capped`, `ffmpeg.ts:1197`). Solo
+«Igual que el origen» conserva los 32 bits.
+
+**Float genuino vs float de decodificación.** Con «Igual que el origen», un WAV f32 de
+grabadora conserva su precisión; un MP3 decodificado también entrega float, pero eso es un artefacto
 del decode, no precisión del origen, así que mapea a 24 bits enteros — el más
 ancho que reproduce el equipo de DJ real (los CDJ rechazan WAV de 32 bits float)
 (`ffmpeg.ts:582-595`).
@@ -704,6 +709,12 @@ parten (`bulkEdit.ts:46`). Al aplicar Discogs, Género sigue recibiendo solo el
 principal. Un plegado «Por
 pista · N» lista cada pista con sus propias pastillas, y las activas se ordenan
 delante para que el recorte «+N» no las esconda.
+
+**Un campo mezclado enseña sus valores** (v1.19.0). Con varias pistas, un campo de texto
+cuyo valor difiere entre ellas cuenta cuántos valores distintos lleva, los lista con
+cuántas pistas tiene cada uno y deja elegir uno para toda la selección (`mixedValues`,
+`Field.tsx:43`). La carátula dice antes de soltar una nueva cuántas distintas hay en la
+selección, o cuántas de las N pistas llevan una (`CoverPicker.tsx:129-130`).
 
 **Cada lista elige su separador.** Género y Grouping se unen por separado con coma
 (por defecto), punto y coma, barra o un separador propio de hasta tres caracteres,
@@ -2135,6 +2146,19 @@ DJ se recuperan con «Restaurar esta» en Copias.
 original (solo avisa para volver a analizarla en Engine DJ), un `/` cambiado por `;` sin otra
 señal, Apple Music como prueba de géneros ni nada de rekordbox, que ningún bug tocó.
 
+**Incompletas** (v1.19.0, en las dos revisiones). Las pistas a cuyo fichero le falta un
+campo obligatorio de Ajustes → Campos. La revisión escribe siete: título, artista, artista
+del álbum, álbum, género, año y grouping (`REVIEW_WRITE_FIELDS`, `incompleteReview.ts:14`).
+Para cada hueco propone, por este orden, lo que la app ya muestra en la fila, la sugerencia
+de búsqueda o lo que sale del nombre del fichero (`proposalOf`, `incompleteReview.ts:51`), y
+se puede usar el mismo valor en las demás pistas. **Solo rellena lo vacío**: un valor que
+el fichero ya tiene no se toca. Escribe en el fichero y en Music si la pista está allí,
+nunca en rekordbox, Engine DJ ni Traktor; si Music ya tenía el valor, se escribe solo el
+fichero y Deshacer no toca Music. Un obligatorio que la revisión no escribe (un campo
+propio, por ejemplo) se manda al editor con «Abrir en el editor». El filtro «Faltan
+obligatorios» de la barra lateral lleva a esta pestaña con «Completarlas en Revisar
+metadatos».
+
 ---
 
 ## 12. La aplicación
@@ -2195,6 +2219,20 @@ comparación»* (`useDeclickAb.ts:60-67`).
   caché (onda, espectro, loudness, clics, BPM y clave) se pinta sin esperar turno
   (`audio:peek`, `useDiskCacheSeed.ts`), y lo que falta arranca en el acto, sin
   la espera fija de antes.
+- **Fechas recordadas entre arranques** (v1.19.0). La caché se busca con la fecha de
+  modificación vista la última vez en vez de preguntársela al disco: en un NAS pedir 2.000
+  fechas antes de enseñar la lista costaba 11-19 s (medido el 01/11). Cada fecha servida así
+  se comprueba en segundo plano una vez por sesión, una fila cuyo fichero cambió se vuelve a
+  leer, una que desapareció sale de la playlist, y antes de convertir se pregunta siempre al
+  disco (`fileSignatures.ts`).
+- **Auto-match recordado** (v1.19.0). El resultado de cada fichero se guarda y se repite
+  mientras el fichero y sus etiquetas no cambien, y se vuelve a buscar si cambian las
+  fuentes (`useAutoMatch.ts:161`). La cola solo busca las filas que dejan a la vista el
+  filtro y la búsqueda.
+- **Apple Music al momento** (v1.19.0). Las playlists se enseñan como se listaron la última
+  vez y Music se relee al abrir su pestaña, no en cada vuelta a la ventana
+  (`appleMusicPlaylistCache.ts`); las carátulas ya traídas salen de su copia y solo se pide a
+  Music el resto (`artworkCopies.ts`).
 
 ### Otros
 
@@ -2280,6 +2318,8 @@ comparación»* (`useDeclickAb.ts:60-67`).
   posterior sobrevive, en una edición sobre varias pistas cada una recupera su propio
   valor, se saltan los pasos que no cambiaron nada, y un auto-emparejado deshecho no se
   vuelve a aplicar al volver a la pista. No cubre operaciones de fichero ni conversiones.
+  «Borrar metadatos» ofrece además «Deshacer» en el aviso que sale al vaciar
+  (`notices.clearedMeta`, `App.tsx:2636`), y el botón está apartado del de rellenar.
 - **Buscar en Ajustes** (v1.17.0). Un campo «Buscar ajustes» sobre las pestañas encuentra
   cualquier ajuste por su etiqueta o por sinónimos por idioma, sin distinguir mayúsculas
   ni tildes, y lleva a él resaltándolo (`searchSettings`, `lib/settingsSearch.ts:28`;
