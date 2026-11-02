@@ -2489,7 +2489,8 @@
         "suggested": "Correspondance suggérée",
         "name": "Du nom de fichier",
         "none": "Aucune proposition",
-        "typed": "Saisi à la main"
+        "typed": "Saisi à la main",
+        "editor": "Dans l’éditeur"
       },
       "stageAll_one": "Ajouter {{count}} proposition au lot",
       "stageAll_other": "Ajouter {{count}} propositions au lot",
@@ -2497,7 +2498,10 @@
       "empty": "Vide",
       "useForOthers_one": "Utiliser pour l’autre",
       "useForOthers_other": "Utiliser pour les {{count}} autres",
-      "note": "Seuls les champs vides sont remplis. Une valeur déjà présente dans le fichier n’est pas modifiée."
+      "note": "Seuls les champs vides sont remplis. Une valeur déjà présente dans le fichier n’est pas modifiée.",
+      "openEditor": "Ouvrir dans l’éditeur",
+      "editorNote_one": "La vérification n’écrit pas {{fields}}. Complète-le dans l’éditeur.",
+      "editorNote_other": "La vérification n’écrit pas {{fields}}. Complète-les dans l’éditeur."
     }
   },
   "listReview": {

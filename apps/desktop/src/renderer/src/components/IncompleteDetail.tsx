@@ -4,15 +4,25 @@ import {
   incompleteKey,
   type MusicReview as Review,
 } from '../hooks/useMusicReview'
-import { missingLabel } from './MusicReview'
+import { editorNames, missingLabel } from './MusicReview'
 import { GroupFooter, Header } from './MusicReviewDetail'
 
 const INPUT =
   'w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)]/30 px-2.5 py-1.5 text-sm outline-none transition-colors placeholder:text-fg-faint hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)]/50 focus:border-[var(--color-accent)] focus:bg-[var(--color-field)]'
 const HINT = 'mt-1 block text-[11.5px] text-fg-faint'
 
-export function IncompleteDetail({ card, review }: { card: IncompleteCard; review: Review }) {
+export function IncompleteDetail({
+  card,
+  review,
+  onOpenTrack,
+}: {
+  card: IncompleteCard
+  review: Review
+  onOpenTrack: (rowId: string) => void
+}) {
   const { t } = useTranslation()
+  const editorOnly = card.fields.length === 0
+  const openEditor = () => card.editor && onOpenTrack(card.editor.rowId)
   const key = incompleteKey(card.id)
   const busy = review.status === 'applying'
   const staged = review.staged.has(key)
@@ -62,13 +72,43 @@ export function IncompleteDetail({ card, review }: { card: IncompleteCard; revie
             )
           })}
         </div>
-        <p className="mt-6 text-xs text-fg-faint">{t('musicReview.incomplete.note')}</p>
+        {card.editor && (
+          <p data-testid="incomplete-editor-note" className="mt-6 text-sm text-fg-dim">
+            {t('musicReview.incomplete.editorNote', {
+              count: card.editor.fields.length,
+              fields: editorNames(t, card).join(', '),
+            })}
+            {!editorOnly && (
+              <>
+                {' '}
+                <button
+                  type="button"
+                  data-testid="incomplete-open-editor"
+                  disabled={busy}
+                  className="text-[var(--color-accent)] hover:underline"
+                  onClick={openEditor}
+                >
+                  {t('musicReview.incomplete.openEditor')}
+                </button>
+              </>
+            )}
+          </p>
+        )}
+        {!editorOnly && (
+          <p className="mt-6 text-xs text-fg-faint">{t('musicReview.incomplete.note')}</p>
+        )}
       </div>
       <GroupFooter
         testid="incomplete-stage"
-        label={staged ? t('musicReview.staged') : t('musicReview.incomplete.stage')}
-        disabled={busy || (!staged && !fillable)}
-        onStage={() => review.toggleStaged(key)}
+        label={
+          editorOnly
+            ? t('musicReview.incomplete.openEditor')
+            : staged
+              ? t('musicReview.staged')
+              : t('musicReview.incomplete.stage')
+        }
+        disabled={busy || (!editorOnly && !staged && !fillable)}
+        onStage={editorOnly ? openEditor : () => review.toggleStaged(key)}
         menuLabel={t('musicReview.ignore')}
         menuDisabled={busy}
         onMenu={() => review.ignore(key)}

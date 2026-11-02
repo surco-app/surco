@@ -1,7 +1,13 @@
 import { fieldValue } from '../../../shared/customFields'
-import type { ReviewedFileUpdate, ReviewWriteField, TrackMetadata } from '../../../shared/types'
+import type {
+  CustomField,
+  ReviewedFileUpdate,
+  ReviewWriteField,
+  TrackMetadata,
+} from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { smartDeriveTags } from './deriveTags'
+import { missingRequiredOf } from './fields'
 import { diskMeta } from './listReviewEntries'
 import { patchMeta } from './reviewedFields'
 
@@ -22,9 +28,15 @@ export interface IncompleteField {
   proposal?: { value: string; source: IncompleteSource }
 }
 
+export interface EditorField {
+  key: string
+  label?: string
+}
+
 export interface IncompleteFinding {
   id: string
   fields: IncompleteField[]
+  editor?: { rowId: string; fields: EditorField[] }
 }
 
 export interface IncompleteInput {
@@ -33,6 +45,7 @@ export interface IncompleteInput {
   shown: TrackMetadata
   suggested?: TrackMetadata
   fromName: Partial<TrackMetadata>
+  editor?: IncompleteFinding['editor']
 }
 
 function proposalOf(row: IncompleteInput, field: ReviewWriteField): IncompleteField['proposal'] {
@@ -63,7 +76,8 @@ export function incompleteFindings(
         const proposal = proposalOf(row, field)
         return proposal ? { field, proposal } : { field }
       })
-    if (fields.length > 0) findings.push({ id: row.id, fields })
+    if (row.editor) findings.push({ id: row.id, fields, editor: row.editor })
+    else if (fields.length > 0) findings.push({ id: row.id, fields })
   }
   return findings
 }
@@ -71,6 +85,7 @@ export function incompleteFindings(
 export interface IncompleteRowDeps {
   required: () => readonly string[]
   suggest: (row: TrackItem) => TrackMetadata | undefined
+  customFields?: () => readonly CustomField[]
 }
 
 export function incompleteOfRows(
@@ -81,6 +96,17 @@ export function incompleteOfRows(
 ): IncompleteFinding[] {
   const inputs: IncompleteInput[] = []
   const seen = new Set<string>()
+  const required = deps.required()
+  const custom = deps.customFields?.() ?? []
+  const editorOf = (row: TrackItem): IncompleteInput['editor'] => {
+    const fields = missingRequiredOf(row, [...required], custom)
+      .filter((key) => !REVIEW_WRITE_FIELDS.includes(key as ReviewWriteField))
+      .map((key): EditorField => {
+        const label = custom.find((f) => f.key === key)?.label
+        return label ? { key, label } : { key }
+      })
+    return fields.length > 0 ? { rowId: row.id, fields } : undefined
+  }
   for (const row of rows) {
     const id = idOf(row)
     if (!id || seen.has(id) || row.loadingMeta || row.metaReadFailed) continue
@@ -102,7 +128,8 @@ export function incompleteOfRows(
       shown: row.meta,
       suggested: deps.suggest(row),
       fromName: smartDeriveTags(row.fileName),
+      editor: editorOf(row),
     })
   }
-  return incompleteFindings(inputs, deps.required())
+  return incompleteFindings(inputs, required)
 }

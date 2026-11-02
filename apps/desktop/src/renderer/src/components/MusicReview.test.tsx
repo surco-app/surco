@@ -123,11 +123,13 @@ function Panes({
   busy,
   sync = NO_SYNC,
   onClose = vi.fn(),
+  onOpenTrack = vi.fn(),
 }: {
   review: Review
   busy?: boolean
   sync?: ReviewSync
   onClose?: () => void
+  onOpenTrack?: (rowId: string) => void
 }) {
   const [staged, setStaged] = useState(base.staged)
   // Stable between renders like the real hook's value, so memos keyed on it hold.
@@ -168,7 +170,13 @@ function Panes({
       />
       <MusicReviewAction review={r} busy={busy ?? false} onConfirm={() => setConfirming(true)} />
       <MusicReviewProgress review={r} />
-      <MusicReviewDetail review={r} selectedKey={selectedKey} sync={sync} onClose={vi.fn()} />
+      <MusicReviewDetail
+        review={r}
+        selectedKey={selectedKey}
+        sync={sync}
+        onClose={vi.fn()}
+        onOpenTrack={onOpenTrack}
+      />
     </>
   )
 }
@@ -2239,6 +2247,7 @@ describe('list review', () => {
         selectedKey={group.key}
         sync={NO_SYNC}
         onClose={vi.fn()}
+        onOpenTrack={vi.fn()}
       />,
     )
     const [a, b] = screen.getAllByTestId('music-review-affected')
@@ -2259,6 +2268,7 @@ describe('list review', () => {
         selectedKey={group.key}
         sync={NO_SYNC}
         onClose={vi.fn()}
+        onOpenTrack={vi.fn()}
       />,
     )
     const row = screen.getByTestId('music-review-affected')
@@ -2313,6 +2323,7 @@ describe('list review', () => {
             selectedKey="k#1"
             sync={NO_SYNC}
             onClose={vi.fn()}
+            onOpenTrack={vi.fn()}
           />
         </QueryClientProvider>,
       )
@@ -2352,6 +2363,7 @@ describe('list review', () => {
             selectedKey="k#1"
             sync={NO_SYNC}
             onClose={vi.fn()}
+            onOpenTrack={vi.fn()}
           />
         </QueryClientProvider>,
       )
@@ -2916,5 +2928,67 @@ describe('incomplete tracks', () => {
     render(<Panes review={incompleteReview({ filter: 'all' })} />)
     expect(screen.queryByTestId('music-review-clean')).toBeNull()
     expect(screen.queryByTestId('music-review-all-clear')).toBeNull()
+  })
+})
+
+describe('incomplete fields only the editor fills', () => {
+  const BOTH: IncompleteCard = {
+    id: '/m/a.aiff',
+    name: 'Song',
+    fields: [{ field: 'album', proposal: { value: 'LP', source: 'name' } }],
+    editor: { rowId: 'row-a', fields: [{ key: 'bpm' }, { key: 'mood', label: 'Mood' }] },
+  }
+  const ONLY: IncompleteCard = {
+    id: '/m/b.aiff',
+    name: 'Other',
+    fields: [],
+    editor: { rowId: 'row-b', fields: [{ key: 'bpm' }] },
+  }
+  const editorReview = (over: Partial<Review> = {}) =>
+    review({
+      kind: 'list',
+      spelling: [],
+      filter: 'incomplete',
+      incomplete: [BOTH, ONLY],
+      fillValue: (id, field) => (id === BOTH.id && field === 'album' ? 'LP' : ''),
+      ...over,
+    })
+  const rows = () => screen.getAllByTestId('incomplete-row')
+
+  it('names every missing field on the row, the editor ones by their own label', () => {
+    render(<Panes review={editorReview()} />)
+    expect(within(rows()[0]).getByTestId('music-review-row-detail')).toHaveTextContent(
+      'Missing Album, BPM, Mood',
+    )
+    expect(within(rows()[1]).getByTestId('incomplete-row-source')).toHaveTextContent(
+      'In the editor',
+    )
+  })
+
+  it('says the review does not write them and opens the track in the editor', () => {
+    const onOpenTrack = vi.fn()
+    render(<Panes review={editorReview()} onOpenTrack={onOpenTrack} />)
+    fireEvent.click(rows()[0])
+    expect(screen.getByTestId('incomplete-editor-note')).toHaveTextContent('BPM, Mood')
+    fireEvent.click(screen.getByTestId('incomplete-open-editor'))
+    expect(onOpenTrack).toHaveBeenCalledWith('row-a')
+    expect(screen.getByTestId('incomplete-stage')).toHaveTextContent('Fill in')
+  })
+
+  // Nothing here can be staged, so the pane's main action is the way to the fix.
+  it('makes opening the editor the main action when the review can fill nothing', () => {
+    const onOpenTrack = vi.fn()
+    const toggleStaged = vi.fn()
+    render(<Panes review={editorReview({ toggleStaged })} onOpenTrack={onOpenTrack} />)
+    fireEvent.click(rows()[1])
+    expect(screen.queryAllByTestId('incomplete-value')).toHaveLength(0)
+    expect(screen.getByTestId('incomplete-editor-note')).toHaveTextContent(
+      'The review does not write BPM. Fill it in the editor.',
+    )
+    const main = screen.getByTestId('incomplete-stage')
+    expect(main).toHaveTextContent('Open in the editor')
+    fireEvent.click(main)
+    expect(onOpenTrack).toHaveBeenCalledWith('row-b')
+    expect(toggleStaged).not.toHaveBeenCalled()
   })
 })
