@@ -84,6 +84,10 @@ export function TagListBulkField({
           suggestions={summaryTags}
           isOn={(tag) => tagListState(tracks, list, tag) === 'all'}
           isPartial={(tag) => tagListState(tracks, list, tag) === 'some'}
+          partialLabel={(tag) =>
+            `${tracks.filter((t) => csvHas(t.meta[list.key] ?? '', tag, list.whole, list.separator)).length}/${tracks.length}`
+          }
+          addable
           onPick={(tag) => onChangeTracks(toggleTagListAll(tracks, list, tag))}
         />
       </fieldset>

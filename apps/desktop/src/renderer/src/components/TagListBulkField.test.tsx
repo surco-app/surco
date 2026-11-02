@@ -84,6 +84,24 @@ describe('TagListBulkField', () => {
     expect(screen.getByTestId('chip-Discazos')).toHaveAttribute('data-state', 'some')
   })
 
+  // A partial tag was a dashed outline and an absent one a solid outline, so the tag no
+  // track carried looked the more present of the two. A partial chip now says on how many
+  // tracks it sits, and an absent one reads as something to add.
+  it('counts a partial tag across the selection and marks an absent one as an addition', () => {
+    render(
+      <TagListBulkField
+        label="Grouping"
+        list={GROUPING_TAGS}
+        presets={['Bases', 'Cantaditas', 'Vocals']}
+        tracks={[a1, a2, b1]}
+        onChangeTracks={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('chip-Cantaditas')).toHaveTextContent('Cantaditas2/3')
+    expect(screen.getByTestId('chip-Vocals')).toHaveAttribute('data-state', 'off')
+    expect(screen.getByTestId('chip-Vocals')).toHaveTextContent('+Vocals')
+  })
+
   it('completes a partial tag on the tracks missing it without touching the rest', () => {
     const { onChangeTracks } = renderField()
     fireEvent.click(screen.getByTestId('chip-Cantaditas'))
