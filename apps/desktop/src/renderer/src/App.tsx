@@ -204,6 +204,7 @@ import {
   filterWithSticky,
   formatBuckets,
   holdOrder,
+  matchesFilter,
   outsideFilter,
   qualityCounts,
   searchMatcher,
@@ -1770,9 +1771,8 @@ export default function App(): React.JSX.Element {
     return (t: TrackItem): boolean => seenInAll.has(t.id) && inPlaylist(t)
   }, [browser.source, browser.playlist, browser.entries, seenInAll])
   useEffect(() => {
-    scopeAutoMatch(sweepScope)
     scopeAnalysis(sweepScope)
-  }, [sweepScope, scopeAutoMatch, scopeAnalysis])
+  }, [sweepScope, scopeAnalysis])
   // What "Revisar metadatos" would read with the rail as it is: the rows shown, which are
   // the open playlist's once they are applied, reviewed in Apple Music for a Music playlist
   // and through the files otherwise.
@@ -1825,6 +1825,16 @@ export default function App(): React.JSX.Element {
     }),
     [settings?.requiredFields, settings?.customFields, playlistScope, unsavedCues],
   )
+  const filterFactsRef = useRef(filterFacts)
+  filterFactsRef.current = filterFacts
+  const autoMatchScope = useMemo(() => {
+    const searched = searchMatcher(deferredSearch)
+    return (t: TrackItem): boolean =>
+      sweepScope(t) && searched(t) && matchesFilter(t, filterSelection, filterFactsRef.current)
+  }, [sweepScope, deferredSearch, filterSelection])
+  useEffect(() => {
+    scopeAutoMatch(autoMatchScope)
+  }, [autoMatchScope, scopeAutoMatch])
   const qualityTally = useMemo(
     () => qualityCounts(scopeTracks, filterFacts),
     [scopeTracks, filterFacts],
