@@ -400,61 +400,6 @@
     "metaTitle": "Alles, was Surco kann · Funktionen",
     "metaDescription": "Konvertieren, aus Discogs, Bandcamp, Deezer, Beatport oder MusicBrainz taggen, Qualität analysieren, Knackser reparieren, Stille kürzen und nach rekordbox, Engine DJ, Traktor oder Serato exportieren. Kostenlos."
   },
-  "stopwatch": {
-    "kicker": "Gemessen, nicht versprochen",
-    "title": "Wie lange Surco wirklich braucht, mit der Stoppuhr",
-    "lede": "Jeder Balken füllt seine Spur in genau der Zeit, die der Vorgang bei einem sechsminütigen Track braucht. Kein Kameratrick: Was hier 0,2 s dauert, dauert auf deinem Mac 0,2 s.",
-    "board": "Ein Track, von Anfang bis Ende",
-    "boardSpec": "FLAC · 6:23 · 51 MB",
-    "ops": {
-      "import": {
-        "label": "Importieren und Tags lesen",
-        "detail": "Analyse, Cover und Tags anderer Programme"
-      },
-      "update": {
-        "label": "Tags und Cover aktualisieren",
-        "detail": "Kopie, TagLib und eine Prüfung, dass die Datei noch dekodiert"
-      },
-      "convert": {
-        "label": "In AIFF konvertieren",
-        "detail": "kodieren, taggen, Traktor-Cues, prüfen"
-      },
-      "verdict": {
-        "label": "Qualitätsurteil",
-        "detail": "12 Spektrum-Proben, Shelf-Prüfung und Spektrogramm"
-      },
-      "normalize": {
-        "label": "Lautheit normalisieren und konvertieren",
-        "detail": "EBU-R128-Messung mit True Peak, dann kodieren"
-      }
-    },
-    "ms": "ms",
-    "s": "s",
-    "replay": "↻ in Echtzeit wiederholen",
-    "foot": "Fünf Vorgänge in gut drei Sekunden. Ist der Lautheitsbereich schon geöffnet, sinkt das Normalisieren auf {{warm}} s.",
-    "tiles": [
-      {
-        "big": "600 Tracks",
-        "label": "in etwa 15 s von einer lokalen Festplatte importiert",
-        "how": "25 ms pro Track · Kaltstart, 3 Prozesse pro Datei · lineare Hochrechnung"
-      },
-      {
-        "big": "0,76 s",
-        "label": "um einen Track zu normalisieren, den der Editor schon gemessen hat",
-        "how": "Bereich und Konvertierung teilen sich die Messung"
-      },
-      {
-        "big": "3×",
-        "label": "schneller beim Normalisieren als die vorige Version",
-        "how": "6,45 s → 2,06 s · derselbe Track, dasselbe Ergebnis bei −14 LUFS"
-      }
-    ],
-    "before": "Normalisieren, vorher",
-    "beforeHow": "gemessen mit loudnorm (5,7 s) + Kodierung",
-    "after": "Normalisieren, jetzt",
-    "afterHow": "gemessen mit ebur128 (1,3 s) + Kodierung · {{warm}} s, wenn schon gemessen",
-    "footnote": "* Gemessen am 18.09.2026 auf einem Mac mit M-Chip und lokaler Festplatte, mit Surcos eigenem Code: ein FLAC mit 6:23 (51 MB) und einem Cover in 700×700. Die Werte hängen vom Rechner, vom Format, von der Länge und davon ab, ob die Bibliothek auf einer Netzwerkfreigabe liegt."
-  },
   "shortcuts": {
     "kicker": "Tastatur zuerst",
     "title": "Flieg durch, ohne die Maus anzufassen",
@@ -467,56 +412,6 @@
       "Durch Tracks navigieren",
       "Discogs durchsuchen"
     ]
-  },
-  "speed": {
-    "kicker": "Eine App statt fünf",
-    "title": "Die Arbeit von fünf Apps mit einem Klick",
-    "lede": "Konverter, Discogs, Tag-Editor und Apple Music: fünf Programme, rund fünf Minuten pro Track, und in Music musst du die Tags samt Cover noch einmal machen. Surco packt diesen ganzen Ablauf in einen Button.",
-    "manual": "Von Hand",
-    "manualTime": "~2 h 45 min",
-    "manualSteps": [
-      {
-        "app": "Konverter",
-        "label": "Format wechseln"
-      },
-      {
-        "app": "Browser",
-        "label": "Infos auf Discogs nachschlagen"
-      },
-      {
-        "app": "Tag-Editor",
-        "label": "Metadaten eintragen"
-      },
-      {
-        "app": "Music",
-        "label": "In Apple Music kopieren"
-      },
-      {
-        "app": "Music",
-        "label": "Tags in Music neu eintragen"
-      },
-      {
-        "app": "Music",
-        "label": "Cover hineinziehen"
-      }
-    ],
-    "manualCaption": "Konvertieren und Importieren laufen im Stapel · der Rest wiederholt sich bei jedem Track",
-    "withSurco": "Mit Surco",
-    "withSurcoTime": "7 s",
-    "combo": "Konvertieren + taggen + Apple Music oder Engine DJ",
-    "bullets": [
-      "von jedem Format in AIFF, WAV, FLAC, ALAC oder MP3",
-      "Metadaten von Discogs",
-      "eingebettetes Cover",
-      "Gruppierung und Tags",
-      "Spektrumanalyse",
-      "an Apple Music oder Engine DJ"
-    ],
-    "oneClick": "ein Klick · 7 s für alle 40 · bis zu 13 Konvertierungen gleichzeitig",
-    "footnote": "* Der manuelle Ablauf entspricht dem, den der Entwickler tatsächlich nutzt: konvertieren, auf Discogs nachschlagen, taggen, nach Music kopieren und dort Tags und Cover noch einmal machen. Schritte und Werkzeuge sind bei jedem anders. Surco: 40 Tracks mit 7:08 konvertiert und getaggt (WAV 16/44,1 → AIFF), gemessen auf einem Mac mit 14 Kernen. Die Werte hängen von Rechner, Format und Länge ab.",
-    "replay": "↻ wiederholen",
-    "tracksReady": "bereit",
-    "trackCount": "{{count}} Tracks"
   },
   "how": {
     "kicker": "So funktioniert's",

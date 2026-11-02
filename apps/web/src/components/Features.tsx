@@ -7,8 +7,6 @@ import Header from './Header'
 import InstallSection from './InstallSection'
 import Kicker from './Kicker'
 import Reveal from './Reveal'
-import Speed from './Speed'
-import Stopwatch from './Stopwatch'
 
 const GROUP_IDS = ['convert', 'tag', 'analyze', 'dj', 'library', 'safety']
 
@@ -115,10 +113,6 @@ export default function Features() {
             </section>
           ))}
         </div>
-
-        <Speed />
-
-        <Stopwatch />
 
         <section id="atajos" className="scroll-mt-24 py-16">
           <Reveal>
