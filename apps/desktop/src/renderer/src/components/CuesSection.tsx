@@ -1091,6 +1091,7 @@ function Editing({
       selected={state.selected}
       trimmed={state.trimmed}
       proposals={proposals}
+      onDropProposal={dropProposal}
       ghost={stripGhost}
       cursorMs={hoverGhost && ghost ? (hoverMs ?? undefined) : undefined}
       onSelect={(key) => dispatch({ type: 'select', key })}

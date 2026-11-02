@@ -21,6 +21,7 @@ import {
 import { snapToBeat } from '../lib/cuePlayhead'
 import { barLines, peakBars, quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
+import { CueDeleteBadge } from './CueDeleteBadge'
 import { WaveBars } from './WaveBars'
 
 export interface WaveCue {
@@ -47,6 +48,7 @@ export function CueWave({
   cues,
   selected,
   proposals,
+  onDropProposal,
   trimmed,
   readOnly,
   onSelect,
@@ -67,6 +69,7 @@ export function CueWave({
   cues: WaveCue[]
   selected?: string | null
   proposals?: DropProposal[]
+  onDropProposal?: (ms: number) => void
   trimmed?: number[]
   readOnly?: boolean
   onSelect?: (key: string | null) => void
@@ -81,6 +84,7 @@ export function CueWave({
   detail?: Uint16Array | null
 }): React.JSX.Element {
   const { t } = useTranslation()
+  const [hoverProposal, setHoverProposal] = useState<number | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const [seeking, setSeeking] = useState(false)
   const sought = useRef<number | null>(null)
@@ -303,6 +307,31 @@ export function CueWave({
               sure ? '' : 'border-dashed'
             }`}
           />
+        ))}
+      {!readOnly &&
+        onDropProposal &&
+        (proposals ?? []).map(({ ms }) => (
+          // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only reveal of the ✕ over a thin line; the same suggestion is accepted or removed by keyboard from its pill on the zoomed wave
+          <span
+            key={`ph${ms}`}
+            data-testid={`cue-wave-suggestion-hit-${ms}`}
+            style={{ left: pct(ms) }}
+            onMouseEnter={() => setHoverProposal(ms)}
+            onMouseLeave={() => setHoverProposal(null)}
+            className="absolute top-0 bottom-0 z-[5] w-3 -translate-x-1/2"
+          >
+            {hoverProposal === ms && (
+              <CueDeleteBadge
+                testId={`cue-wave-suggestion-drop-${ms}`}
+                label={t('editor.cues.auto.drop')}
+                onDelete={() => {
+                  setHoverProposal(null)
+                  onDropProposal(ms)
+                }}
+                className="bottom-0 left-1/2 -translate-x-1/2"
+              />
+            )}
+          </span>
         ))}
       {calls.map((c) => {
         const pending = pendingOf.get(c.key) ?? false

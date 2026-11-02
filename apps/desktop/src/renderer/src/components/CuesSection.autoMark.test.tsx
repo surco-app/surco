@@ -278,6 +278,17 @@ describe('Auto marcar', () => {
     expect(autoButton()).toBeInTheDocument()
   })
 
+  it('removes one suggestion from the overview without moving the playhead to it', async () => {
+    setup()
+    await ready()
+    await autoMark()
+    fireEvent.mouseEnter(screen.getByTestId(`cue-wave-suggestion-hit-${bar(128)}`))
+    fireEvent.click(screen.getByTestId(`cue-wave-suggestion-drop-${bar(128)}`))
+    expect(proposals()).toEqual([`cue-wave-proposal-${bar(64)}`])
+    expect(screen.getByTestId('cues-auto-review')).toHaveTextContent('1 suggestion')
+    expect(realMarks()).toHaveLength(0)
+  })
+
   it('removes the suggestions and leaves the draft as it was', async () => {
     setup()
     await ready()
