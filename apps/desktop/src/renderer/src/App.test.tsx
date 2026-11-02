@@ -7771,6 +7771,37 @@ const addThree = async () => {
 }
 
 describe('App list review', () => {
+  it('opens a track missing a field only the editor fills in the editor', async () => {
+    vi.resetModules()
+    listApi({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(settings({ requiredFields: ['title', 'artist', 'bpm'] })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn(async (path: string) =>
+        path === '/music/a.wav'
+          ? { title: 'Alpha', artist: 'DJ Lara', bpm: '124' }
+          : { title: 'Bravo', artist: 'Ann' },
+      ),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() =>
+      expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Alpha'),
+    )
+    runMenu('list-review')
+    fireEvent.click(await screen.findByTestId('music-review-filter-trigger'))
+    fireEvent.click(await screen.findByTestId('music-review-filter-incomplete'))
+    fireEvent.click((await screen.findAllByTestId('incomplete-row'))[0])
+    fireEvent.click(screen.getByTestId('incomplete-stage'))
+    await waitFor(() => expect(screen.queryByTestId('music-review')).not.toBeInTheDocument())
+    await waitFor(() =>
+      expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Bravo'),
+    )
+  })
+
   // The user's ask: pick the tracks missing required data in the list and fix them all at once.
   it('fills a track missing required data from the filter, in the review', async () => {
     vi.resetModules()

@@ -2477,7 +2477,8 @@
         "suggested": "検索の候補",
         "name": "ファイル名から",
         "none": "提案なし",
-        "typed": "手入力"
+        "typed": "手入力",
+        "editor": "エディタで"
       },
       "stageAll_one": "{{count}}件の提案をステージ",
       "stageAll_other": "{{count}}件の提案をステージ",
@@ -2485,7 +2486,9 @@
       "empty": "空",
       "useForOthers_one": "ほかの{{count}}件にも使う",
       "useForOthers_other": "ほかの{{count}}件にも使う",
-      "note": "空のフィールドだけを埋めます。ファイルにすでにある値は変更しません。"
+      "note": "空のフィールドだけを埋めます。ファイルにすでにある値は変更しません。",
+      "editorNote": "確認では{{fields}}を書き込みません。エディタで入力してください。",
+      "openEditor": "エディタで開く"
     }
   },
   "listReview": {

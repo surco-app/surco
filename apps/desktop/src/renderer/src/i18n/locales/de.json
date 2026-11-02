@@ -2477,7 +2477,8 @@
         "suggested": "Vorgeschlagener Treffer",
         "name": "Aus dem Dateinamen",
         "none": "Kein Vorschlag",
-        "typed": "Von Hand ausgefüllt"
+        "typed": "Von Hand ausgefüllt",
+        "editor": "Im Editor"
       },
       "stageAll_one": "{{count}} Vorschlag vormerken",
       "stageAll_other": "{{count}} Vorschläge vormerken",
@@ -2485,7 +2486,9 @@
       "empty": "Leer",
       "useForOthers_one": "Für den anderen übernehmen",
       "useForOthers_other": "Für die anderen {{count}} übernehmen",
-      "note": "Nur leere Felder werden ausgefüllt. Ein Wert, den die Datei schon hat, bleibt unberührt."
+      "note": "Nur leere Felder werden ausgefüllt. Ein Wert, den die Datei schon hat, bleibt unberührt.",
+      "editorNote": "Die Prüfung schreibt {{fields}} nicht. Fülle sie im Editor aus.",
+      "openEditor": "Im Editor öffnen"
     }
   },
   "listReview": {

@@ -203,9 +203,11 @@ export function MusicReviewColumn({
 export function MusicReviewDetailPane({
   sync,
   onClose,
+  onOpenTrack,
 }: {
   sync: ReviewSync
   onClose: () => void
+  onOpenTrack: (rowId: string) => void
 }) {
   const shared = useContext(ReviewContext)
   if (!shared) return <section data-testid="music-review-detail" className="h-full" />
@@ -215,6 +217,7 @@ export function MusicReviewDetailPane({
       selectedKey={shared.selectedKey}
       sync={sync}
       onClose={onClose}
+      onOpenTrack={onOpenTrack}
     />
   )
 }

@@ -943,9 +943,15 @@ function DamageRow({
   )
 }
 
+export const editorNames = (t: TFunction, card: IncompleteCard) =>
+  (card.editor?.fields ?? []).map((f) => f.label ?? t(`fields.${f.key}`))
+
 export const missingLabel = (t: TFunction, card: IncompleteCard) =>
   t('musicReview.incomplete.missing', {
-    fields: card.fields.map((f) => t(`musicReview.field.${f.field}`)).join(', '),
+    fields: [
+      ...card.fields.map((f) => t(`musicReview.field.${f.field}`)),
+      ...editorNames(t, card),
+    ].join(', '),
   })
 
 function IncompleteRow({
@@ -963,7 +969,8 @@ function IncompleteRow({
 }) {
   const { t } = useTranslation()
   const source =
-    card.fields.find((f) => f.proposal)?.proposal?.source ?? (filled ? 'typed' : undefined)
+    card.fields.find((f) => f.proposal)?.proposal?.source ??
+    (filled ? 'typed' : card.fields.length === 0 ? 'editor' : undefined)
   return (
     <div
       role="option"
@@ -997,7 +1004,10 @@ function IncompleteRow({
             {staged && ` · ${t('musicReview.inTray')}`}
           </span>
           <span className="flex shrink-0 justify-end">
-            <TonePill testid="music-review-row-pill" tone={source ? 'good' : 'warn'}>
+            <TonePill
+              testid="music-review-row-pill"
+              tone={source && source !== 'editor' ? 'good' : 'warn'}
+            >
               <span data-testid="incomplete-row-source" className={PILL_TEXT}>
                 {t(`musicReview.incomplete.source.${source ?? 'none'}`)}
               </span>

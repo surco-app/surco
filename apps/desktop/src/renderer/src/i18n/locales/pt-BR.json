@@ -2477,7 +2477,8 @@
         "suggested": "Correspondência sugerida",
         "name": "Do nome do arquivo",
         "none": "Sem proposta",
-        "typed": "Preenchido à mão"
+        "typed": "Preenchido à mão",
+        "editor": "No editor"
       },
       "stageAll_one": "Pôr {{count}} proposta no lote",
       "stageAll_other": "Pôr {{count}} propostas no lote",
@@ -2485,7 +2486,9 @@
       "empty": "Vazio",
       "useForOthers_one": "Usar na outra",
       "useForOthers_other": "Usar nas outras {{count}}",
-      "note": "Só os campos vazios são preenchidos. Um valor que o arquivo já tem não é alterado."
+      "note": "Só os campos vazios são preenchidos. Um valor que o arquivo já tem não é alterado.",
+      "editorNote": "A revisão não grava {{fields}}. Preencha no editor.",
+      "openEditor": "Abrir no editor"
     }
   },
   "listReview": {

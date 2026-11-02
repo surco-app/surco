@@ -796,11 +796,13 @@ export function MusicReviewDetail({
   selectedKey,
   sync,
   onClose,
+  onOpenTrack,
 }: {
   review: Review
   selectedKey: string | null
   sync: ReviewSync
   onClose: () => void
+  onOpenTrack: (rowId: string) => void
 }) {
   const { t } = useTranslation()
   const spelling = review.spelling.find((g) => g.key === selectedKey)
@@ -845,7 +847,9 @@ export function MusicReviewDetail({
       )}
       {duplicate && <DuplicateDetail card={duplicate} review={review} folding={folding} />}
       {damage && <DamageDetail finding={damage} review={review} />}
-      {incomplete && <IncompleteDetail card={incomplete} review={review} />}
+      {incomplete && (
+        <IncompleteDetail card={incomplete} review={review} onOpenTrack={onOpenTrack} />
+      )}
     </section>
   )
 }

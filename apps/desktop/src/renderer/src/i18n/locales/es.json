@@ -2477,7 +2477,8 @@
         "suggested": "Sugerencia de búsqueda",
         "name": "Del nombre",
         "none": "Sin propuesta",
-        "typed": "Escrito a mano"
+        "typed": "Escrito a mano",
+        "editor": "En el editor"
       },
       "stageAll_one": "Meter {{count}} propuesta en la tanda",
       "stageAll_other": "Meter {{count}} propuestas en la tanda",
@@ -2485,7 +2486,9 @@
       "empty": "Vacío",
       "useForOthers_one": "Usar en la otra",
       "useForOthers_other": "Usar en las otras {{count}}",
-      "note": "Solo se rellenan campos vacíos. Si el fichero ya tiene un valor, no se toca."
+      "note": "Solo se rellenan campos vacíos. Si el fichero ya tiene un valor, no se toca.",
+      "editorNote": "Revisar no escribe {{fields}}. Rellénalos en el editor.",
+      "openEditor": "Abrir en el editor"
     }
   },
   "listReview": {

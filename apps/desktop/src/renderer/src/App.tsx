@@ -3029,6 +3029,7 @@ export default function App(): React.JSX.Element {
   const reviewSource = useMemo(() => {
     const incomplete = {
       required: () => settingsRef.current?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+      customFields: () => settingsRef.current?.customFields ?? [],
       suggest: (row: TrackItem) =>
         acceptReviewPatch(
           row,
@@ -3460,6 +3461,10 @@ export default function App(): React.JSX.Element {
                           traktor: settings?.syncTraktor ?? false,
                         }}
                         onClose={() => setReview(null)}
+                        onOpenTrack={(rowId) => {
+                          setReview(null)
+                          onSelectTrack(rowId, {})
+                        }}
                       />
                     ) : selected ? (
                       // Its own boundary so a render bug in the editor degrades to "this panel

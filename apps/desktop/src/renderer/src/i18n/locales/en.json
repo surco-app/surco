@@ -2477,7 +2477,8 @@
         "suggested": "Suggested match",
         "name": "From file name",
         "none": "No proposal",
-        "typed": "Filled in by hand"
+        "typed": "Filled in by hand",
+        "editor": "In the editor"
       },
       "stageAll_one": "Stage {{count}} proposal",
       "stageAll_other": "Stage {{count}} proposals",
@@ -2485,7 +2486,9 @@
       "empty": "Empty",
       "useForOthers_one": "Use on the other one",
       "useForOthers_other": "Use on the other {{count}}",
-      "note": "Only empty fields are filled. A value the file already holds is left alone."
+      "note": "Only empty fields are filled. A value the file already holds is left alone.",
+      "editorNote": "The review does not write {{fields}}. Fill them in the editor.",
+      "openEditor": "Open in the editor"
     }
   },
   "listReview": {
