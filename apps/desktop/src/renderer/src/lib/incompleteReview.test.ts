@@ -166,3 +166,41 @@ describe('incompleteOfRows', () => {
     expect(incompleteOfRows(rows, (r) => r.inputPath, [], deps(['album']))).toHaveLength(1)
   })
 })
+
+describe('incompleteOfRows required fields the review cannot write', () => {
+  const editorDeps = (required: string[]) => ({
+    ...deps(required),
+    customFields: () => [{ key: 'mood', label: 'Mood' }],
+  })
+
+  it('names them for the editor next to the fields it can fill', () => {
+    const row = track({ inputPath: '/a.mp3' })
+    expect(incompleteOfRows([row], (r) => r.inputPath, [], editorDeps(['album', 'bpm']))).toEqual([
+      {
+        id: '/a.mp3',
+        fields: [{ field: 'album' }],
+        editor: { rowId: row.id, fields: [{ key: 'bpm' }] },
+      },
+    ])
+  })
+
+  // Otherwise a track missing only its BPM would vanish from the review while the list's
+  // filter still counts it.
+  it('lists a track that lacks only such fields', () => {
+    const row = track({ inputPath: '/a.mp3' })
+    expect(incompleteOfRows([row], (r) => r.inputPath, [], editorDeps(['bpm', 'mood']))).toEqual([
+      {
+        id: '/a.mp3',
+        fields: [],
+        editor: { rowId: row.id, fields: [{ key: 'bpm' }, { key: 'mood', label: 'Mood' }] },
+      },
+    ])
+  })
+
+  // The editor writes what the app shows, as the list's filter counts it.
+  it('reads them off the app, where an unsaved value is already on its way to the file', () => {
+    const row = track({ inputPath: '/a.mp3' })
+    const shown = { ...row, meta: { ...row.meta, bpm: '124' } }
+    expect(incompleteOfRows([shown], (r) => r.inputPath, [], editorDeps(['bpm']))).toEqual([])
+  })
+})
