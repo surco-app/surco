@@ -364,10 +364,13 @@ function Done({
     (r) => r.outcome === 'playlist-failed' || r.outcome === 'failed' || r.outcome === 'mismatch',
   ).length
   const musicSet = run.outcomes.filter((o) => o.music.includes('set')).length
+  const tracksFixed = run.outcomes.filter(
+    (o) => o.music.includes('set') || (o.music.includes('held') && o.file === 'written'),
+  ).length
   // The list writes the file first and Music only after, so a list fix is done once its
   // file is; the Music review is done once Music is, whatever its file said.
   const corrected =
-    (list ? run.outcomes.filter((o) => o.file === 'written').length : musicSet) +
+    (list ? run.outcomes.filter((o) => o.file === 'written').length : tracksFixed) +
     (run.damage ?? []).filter((d) => d.state === 'repaired').length
   const partial = run.outcomes.filter((o) =>
     list

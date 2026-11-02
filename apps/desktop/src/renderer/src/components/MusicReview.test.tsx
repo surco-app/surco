@@ -738,6 +738,14 @@ describe('MusicReview', () => {
       expect(detailOf('engine')).toBe('not synced')
     })
 
+    // Music already held the value and only the file took it: the track is fixed all the same.
+    it('counts a track whose file was filled with what Music already held', () => {
+      render(<Panes review={done(run({ outcomes: [{ ...written, music: ['held'] }] }))} />)
+      expect(screen.getByTestId('music-review-done-stat-corrected')).toHaveTextContent(
+        '1track corrected',
+      )
+    })
+
     // The summary says what was done; what is still left to review is the list behind it.
     it('counts corrected tracks and removed copies and nothing still left', () => {
       render(
