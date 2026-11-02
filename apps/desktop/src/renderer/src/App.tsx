@@ -997,6 +997,7 @@ export default function App(): React.JSX.Element {
       anchor: kept?.anchor && alive.has(kept.anchor) ? kept.anchor : null,
     })
     browser.selectSource(next)
+    closePlayer()
   })
   // Files the user adds go to the working list, which a source does not show, so Tracks
   // comes forward with them on screen; a cancelled picker added nothing and stays. A drop on
