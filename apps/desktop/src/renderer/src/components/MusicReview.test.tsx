@@ -11,6 +11,7 @@ import type { MusicReview as Review, ReviewRun } from '../hooks/useMusicReview'
 import { damageKey } from '../lib/damageReview'
 import { createQueryClient } from '../lib/queryClient'
 import { stubApi } from '../test/api'
+import { MODAL_EXIT_MS } from './ModalShell'
 import {
   MusicReview,
   MusicReviewAction,
@@ -1313,6 +1314,38 @@ describe('MusicReview', () => {
       "Couldn't apply in Apple Music.",
       "rekordbox, Engine DJ or Traktor weren't updated. Check Activity.",
     ])
+  })
+
+  // The review's sheets rise in like every other dialog, so they leave the same way: a click
+  // close keeps them on screen for the exit instead of cutting them out in one frame.
+  it('lets the confirm sheet play its exit after Cancel, then unmounts it', () => {
+    vi.useFakeTimers()
+    render(
+      <Panes
+        review={review({
+          staged: new Set([group.key]),
+          summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0, damage: {} },
+        })}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('music-review-apply'))
+    fireEvent.pointerDown(window)
+    fireEvent.click(screen.getByTestId('music-review-confirm-cancel'))
+    expect(screen.getByTestId('music-review-confirm')).toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(MODAL_EXIT_MS))
+    expect(screen.queryByTestId('music-review-confirm')).toBeNull()
+    vi.useRealTimers()
+  })
+
+  it('lets the done sheet play its exit after Continue, then unmounts it', () => {
+    vi.useFakeTimers()
+    render(<Panes review={done(run())} />)
+    fireEvent.pointerDown(window)
+    fireEvent.click(screen.getByTestId('music-review-continue'))
+    expect(screen.getByTestId('music-review-done')).toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(MODAL_EXIT_MS))
+    expect(screen.queryByTestId('music-review-done')).toBeNull()
+    vi.useRealTimers()
   })
 
   it('keeps the sheet open after a partial undo and says how many changes stayed', () => {
