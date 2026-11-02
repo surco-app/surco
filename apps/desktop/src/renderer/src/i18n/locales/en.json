@@ -2274,7 +2274,8 @@
       "all": "All",
       "spelling": "Spellings",
       "duplicates": "Duplicates",
-      "damage": "Damage"
+      "damage": "Damage",
+      "incomplete": "Incomplete"
     },
     "copyTitle": "Copy title",
     "field": {
@@ -2467,7 +2468,23 @@
     "unifyCount_one": "Unify in {{count}} track",
     "unifyCount_other": "Unify in {{count}} tracks",
     "removeCopies_one": "Remove {{count}} copy",
-    "removeCopies_other": "Remove {{count}} copies"
+    "removeCopies_other": "Remove {{count}} copies",
+    "incomplete": {
+      "missing": "Missing {{fields}}",
+      "source": {
+        "shown": "In the app",
+        "suggested": "Suggested match",
+        "name": "From file name",
+        "none": "No proposal"
+      },
+      "stageAll_one": "Stage {{count}} proposal",
+      "stageAll_other": "Stage {{count}} proposals",
+      "stage": "Fill in",
+      "empty": "Empty",
+      "useForOthers_one": "Use on the other one",
+      "useForOthers_other": "Use on the other {{count}}",
+      "note": "Only empty fields are filled. A value the file already holds is left alone."
+    }
   },
   "listReview": {
     "loading": "Reading the list…",

@@ -47,7 +47,9 @@ import { useToast } from '../lib/toastContext'
 import type { TrackItem } from '../types'
 import { useLatest } from './useLatest'
 
-export type ReviewFilter = 'all' | 'spelling' | 'duplicates' | 'damage'
+export type ReviewFilter = 'all' | 'spelling' | 'duplicates' | 'damage' | 'incomplete'
+
+export type IncompleteCard = IncompleteFinding & { name: string }
 
 export const incompleteKey = (id: string) => `incomplete\0${id}`
 const fillKey = (id: string, field: ReviewWriteField) => `${incompleteKey(id)}\0${field}`
@@ -106,7 +108,7 @@ export interface MusicReview {
   damage: DamageFinding[]
   damageLoading: boolean
   damageUnread: DamageScan['unread']
-  incomplete: IncompleteFinding[]
+  incomplete: IncompleteCard[]
   fillValue: (id: string, field: ReviewWriteField) => string
   setFillValue: (id: string, field: ReviewWriteField, value: string) => void
   stageProposals: () => void
@@ -366,7 +368,12 @@ export function useMusicReview({
     [allDamage, hidden],
   )
   const incomplete = useMemo(
-    () => allIncomplete.filter((f) => byId.has(f.id) && !hidden.has(incompleteKey(f.id))),
+    () =>
+      allIncomplete.flatMap((f): IncompleteCard[] => {
+        const e = byId.get(f.id)
+        if (!e || hidden.has(incompleteKey(f.id))) return []
+        return [{ ...f, name: [e.artist, e.title].filter(Boolean).join(' - ') || f.id }]
+      }),
     [allIncomplete, byId, hidden],
   )
   const fillValue = useCallback(

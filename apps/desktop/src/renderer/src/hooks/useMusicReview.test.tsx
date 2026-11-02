@@ -2244,6 +2244,12 @@ describe('incomplete tracks in the review', () => {
     expect(result.current.summary.tracks).toBe(0)
   })
 
+  it('names each track by its artist and title, whichever it still has', async () => {
+    incompleteApi()
+    const { result } = await loaded()
+    expect(result.current.incomplete.map((f) => f.name)).toEqual(['Song', 'Song'])
+  })
+
   it('hides an ignored track', async () => {
     incompleteApi()
     const { result } = await loaded()

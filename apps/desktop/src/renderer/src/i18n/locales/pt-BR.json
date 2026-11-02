@@ -2274,7 +2274,8 @@
       "all": "Tudo",
       "spelling": "Grafias",
       "duplicates": "Duplicados",
-      "damage": "Danos"
+      "damage": "Danos",
+      "incomplete": "Incompletas"
     },
     "copyTitle": "Copiar título",
     "field": {
@@ -2467,7 +2468,23 @@
     "unifyCount_one": "Unificar em {{count}} faixa",
     "unifyCount_other": "Unificar em {{count}} faixas",
     "removeCopies_one": "Remover {{count}} cópia",
-    "removeCopies_other": "Remover {{count}} cópias"
+    "removeCopies_other": "Remover {{count}} cópias",
+    "incomplete": {
+      "missing": "Falta {{fields}}",
+      "source": {
+        "shown": "No app",
+        "suggested": "Correspondência sugerida",
+        "name": "Do nome do arquivo",
+        "none": "Sem proposta"
+      },
+      "stageAll_one": "Pôr {{count}} proposta no lote",
+      "stageAll_other": "Pôr {{count}} propostas no lote",
+      "stage": "Completar",
+      "empty": "Vazio",
+      "useForOthers_one": "Usar na outra",
+      "useForOthers_other": "Usar nas outras {{count}}",
+      "note": "Só os campos vazios são preenchidos. Um valor que o arquivo já tem não é alterado."
+    }
   },
   "listReview": {
     "loading": "Lendo a lista…",

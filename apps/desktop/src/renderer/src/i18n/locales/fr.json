@@ -2274,7 +2274,8 @@
       "all": "Tout",
       "spelling": "Graphies",
       "duplicates": "Doublons",
-      "damage": "Dégâts"
+      "damage": "Dégâts",
+      "incomplete": "Incomplètes"
     },
     "copyTitle": "Copier le titre",
     "field": {
@@ -2467,7 +2468,23 @@
     "unifyCount_one": "Unifier dans {{count}} piste",
     "unifyCount_other": "Unifier dans {{count}} pistes",
     "removeCopies_one": "Retirer {{count}} copie",
-    "removeCopies_other": "Retirer {{count}} copies"
+    "removeCopies_other": "Retirer {{count}} copies",
+    "incomplete": {
+      "missing": "Manque {{fields}}",
+      "source": {
+        "shown": "Dans l’app",
+        "suggested": "Correspondance suggérée",
+        "name": "Du nom de fichier",
+        "none": "Aucune proposition"
+      },
+      "stageAll_one": "Ajouter {{count}} proposition au lot",
+      "stageAll_other": "Ajouter {{count}} propositions au lot",
+      "stage": "Compléter",
+      "empty": "Vide",
+      "useForOthers_one": "Utiliser pour l’autre",
+      "useForOthers_other": "Utiliser pour les {{count}} autres",
+      "note": "Seuls les champs vides sont remplis. Une valeur déjà présente dans le fichier n’est pas modifiée."
+    }
   },
   "listReview": {
     "loading": "Lecture de la liste…",

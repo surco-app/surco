@@ -2274,7 +2274,8 @@
       "all": "Todo",
       "spelling": "Grafías",
       "duplicates": "Duplicados",
-      "damage": "Daños"
+      "damage": "Daños",
+      "incomplete": "Incompletas"
     },
     "copyTitle": "Copiar título",
     "field": {
@@ -2467,7 +2468,23 @@
     "unifyCount_one": "Unificar en {{count}} pista",
     "unifyCount_other": "Unificar en {{count}} pistas",
     "removeCopies_one": "Quitar {{count}} copia",
-    "removeCopies_other": "Quitar {{count}} copias"
+    "removeCopies_other": "Quitar {{count}} copias",
+    "incomplete": {
+      "missing": "Falta {{fields}}",
+      "source": {
+        "shown": "En la app",
+        "suggested": "Sugerencia de búsqueda",
+        "name": "Del nombre",
+        "none": "Sin propuesta"
+      },
+      "stageAll_one": "Meter {{count}} propuesta en la tanda",
+      "stageAll_other": "Meter {{count}} propuestas en la tanda",
+      "stage": "Completar",
+      "empty": "Vacío",
+      "useForOthers_one": "Usar en la otra",
+      "useForOthers_other": "Usar en las otras {{count}}",
+      "note": "Solo se rellenan campos vacíos. Si el fichero ya tiene un valor, no se toca."
+    }
   },
   "listReview": {
     "loading": "Leyendo la lista…",
