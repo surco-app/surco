@@ -1440,7 +1440,7 @@
       "source": "Comme la source",
       "corrected": "Corrigé"
     },
-    "bitDepthHint": "« Comme la source » conserve la profondeur exacte du fichier, remplissage compris. Réduire à 16 bits applique un dither. « Corrigé » écrit en vrai 16 bits, sans perte, un fichier dont l'audio 16 bits rembourré en 24 est prouvé ; l'audio 24 bits authentique conserve sa profondeur.",
+    "bitDepthHint": "« Comme la source » conserve la profondeur exacte du fichier, remplissage compris. Réduire à 16 bits applique un dither. « Corrigé » écrit en vrai 16 bits, sans perte, un fichier dont l'audio 16 bits rembourré en 24 est prouvé ; l'audio 24 bits authentique conserve sa profondeur. Un fichier 32 bits est écrit en 24 bits, le maximum que chargent les lecteurs DJ.",
     "bitDepthApplies": "S'applique à la conversion en AIFF, WAV, FLAC ou ALAC ; le MP3 n'a pas de profondeur de bits.",
     "sampleRate": "Fréquence d'échantillonnage",
     "sampleRates": {

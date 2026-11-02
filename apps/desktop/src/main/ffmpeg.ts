@@ -1190,7 +1190,16 @@ export async function planConversion(
       !src.float &&
       src.bits > 16 &&
       (await bitsProbe(input).catch(() => null))?.usage === 'padded16'
-    const depth = padded ? { float: false, bits: 16 } : targetDepth(src, q.bitDepth)
+    // It also writes no more than the 24 bits DJ players load: the CDJ-3000, CDJ-3000X and
+    // XDJ-AZ read WAV and AIFF at 16 or 24 bits, and a 32-bit file, float or integer, is
+    // outside that (110 of the user's tracks, 02/11). 24 bits is past what any club system
+    // reproduces, so it needs no dither.
+    const capped = q.bitDepth === 'corrected' && (src.float || src.bits > 24)
+    const depth = padded
+      ? { float: false, bits: 16 }
+      : capped
+        ? { float: false, bits: 24 }
+        : targetDepth(src, q.bitDepth)
     const rate = await pinnedRate()
     const dither =
       depth.bits === 16 &&
