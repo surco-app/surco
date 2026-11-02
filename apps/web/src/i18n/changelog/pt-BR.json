@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.20",
+    "date": "November 2, 2026",
+    "title": "Cues à vista",
+    "items": [
+      {
+        "text": "Quando o Surco compara a faixa que você tem com a cópia da sua biblioteca e é o espectro que decide qual é melhor, a comparação mostra os dois espectros um acima do outro, na mesma escala e cada um com seu corte, para você ver onde cada cópia termina.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "O editor de cues só mostra os seus cues enquanto você não aponta para a forma de onda. A prévia do que um fluxo colocaria aparece sob o cursor, desenhada em contorno para nunca parecer um cue que você já tem, e a visão geral só acrescenta o que a forma de onda ampliada não mostra.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "As sugestões do “Marcar automático” têm uma barra própria acima das formas de onda, com quantas são, quantas são certas e quantas duvidosas, e “Aceitar” e “Remover sugestões”. Você também pode remover uma só sugestão na visão geral com o ✕ que aparece em cima dela.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "No editor de cues recolhido há um só botão “Salvar”. O menu dele salva esta faixa, salva todas as faixas com cues não salvos ou descarta as suas alterações. O menu “Fluxo” agora só lista fluxos, e “Apagar todas as cues” é um botão ao lado de desfazer.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "Trocar de aba na barra lateral fecha o player, que não continua tocando uma faixa que essa aba não mostra.",
+        "in": "1.20.0"
+      }
+    ]
+  },
+  {
     "version": "1.19",
     "date": "November 2, 2026",
     "title": "Complete o que falta",

@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.20",
+    "date": "November 2, 2026",
+    "title": "Cues auf einen Blick",
+    "items": [
+      {
+        "text": "Wenn Surco deinen Titel mit der Kopie in deiner Bibliothek vergleicht und das Spektrum entscheidet, welche besser ist, zeigt der Vergleich beide Spektren übereinander im selben Maßstab, jeweils mit ihrer Grenzfrequenz, damit du siehst, wo jede Kopie aufhört.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "Der Cue-Editor zeigt nur deine Cues, solange du nicht auf die Wellenform zeigst. Die Vorschau dessen, was ein Ablauf setzen würde, erscheint unter dem Mauszeiger, als Umriss gezeichnet, damit sie nie wie ein Cue aussieht, den du schon hast, und die Übersicht ergänzt nur, was die vergrößerte Wellenform nicht zeigt.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "Die Vorschläge von „Auto-Markieren“ haben eine eigene Leiste über den Wellenformen, mit ihrer Anzahl, wie viele sicher und wie viele unsicher sind, und „Übernehmen“ und „Vorschläge entfernen“. Einen einzelnen Vorschlag entfernst du auch in der Übersicht mit dem ✕, das darüber erscheint.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "Im eingeklappten Cue-Editor gibt es einen einzigen „Speichern“-Knopf. Sein Menü speichert diesen Titel, alle Titel mit ungespeicherten Cues oder verwirft deine Änderungen. Das Menü „Ablauf“ listet nur noch Abläufe, und „Alle Cues löschen“ ist ein Knopf neben Rückgängig.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "Wenn du in der Seitenleiste den Tab wechselst, schließt sich der Player, damit er keinen Titel weiterspielt, den dieser Tab nicht zeigt.",
+        "in": "1.20.0"
+      }
+    ]
+  },
+  {
     "version": "1.19",
     "date": "November 2, 2026",
     "title": "Ergänze, was fehlt",

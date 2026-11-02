@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.20",
+    "date": "November 2, 2026",
+    "title": "Cues at a glance",
+    "items": [
+      {
+        "text": "When Surco compares the track you have with the copy in your library and the spectrum decides which one is better, the comparison shows both spectra stacked on the same scale, each with its cutoff, so you see where each copy stops.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "The cue editor shows only your cues while you’re not pointing at the wave. The preview of what a flow would place appears under the pointer, drawn as outlines so it never looks like a cue you already have, and the overview only adds what the zoomed wave can’t show.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "“Auto mark” suggestions have a bar of their own above the waves, with how many there are, how many are sure and how many doubtful, and “Accept” and “Remove suggestions”. You can also remove a single suggestion from the overview with the ✕ that appears over it.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "In the folded cue editor there is one “Save” button. Its menu saves this track, saves every track with unsaved cues, or discards your changes. The “Flow” menu now only lists flows, and “Clear all cues” is a button next to undo.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "Switching tab in the sidebar closes the player, so it no longer keeps playing a track that tab doesn’t show.",
+        "in": "1.20.0"
+      }
+    ]
+  },
+  {
     "version": "1.19",
     "date": "November 2, 2026",
     "title": "Fill in what’s missing",

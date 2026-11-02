@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.20",
+    "date": "2 de noviembre de 2026",
+    "title": "Cues a la vista",
+    "items": [
+      {
+        "text": "Cuando Surco compara la pista que tienes con la copia de tu biblioteca y es el espectro el que decide cuál es mejor, la comparación te enseña los dos espectros uno encima del otro, a la misma escala y con el corte de cada uno, para que veas dónde se acaba cada copia.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "El editor de cues solo te enseña tus cues mientras no apuntas a la onda. La vista previa de lo que pondría un flujo sale bajo el cursor, dibujada en contorno para que nunca parezca un cue que ya tienes, y la onda general solo añade lo que la onda ampliada no deja ver.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "Las propuestas de «Auto marcar» tienen su propia barra encima de las ondas, con cuántas hay, cuántas son seguras y cuántas dudosas, y con «Aceptar» y «Quitar propuestas». También puedes quitar una sola desde la onda general con la ✕ que sale encima.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "En el editor de cues plegado hay un solo botón «Guardar». Su menú guarda esta pista, guarda todas las pistas con cues sin guardar o descarta tus cambios. El menú «Flujo» ya solo lista flujos, y «Borrar todos los cues» es un botón junto a deshacer.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "Al cambiar de pestaña en la barra lateral se cierra el reproductor, así que ya no sigue sonando una pista que esa pestaña no enseña.",
+        "in": "1.20.0"
+      }
+    ]
+  },
+  {
     "version": "1.19",
     "date": "2 de noviembre de 2026",
     "title": "Completa lo que falta",

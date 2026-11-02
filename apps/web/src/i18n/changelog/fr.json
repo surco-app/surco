@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.20",
+    "date": "November 2, 2026",
+    "title": "Les cues en un coup d’œil",
+    "items": [
+      {
+        "text": "Quand Surco compare le morceau que vous avez avec la copie de votre bibliothèque et que le spectre décide laquelle est meilleure, la comparaison affiche les deux spectres l’un au-dessus de l’autre, à la même échelle et chacun avec sa coupure, pour voir où s’arrête chaque copie.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "L’éditeur de cues n’affiche que vos cues tant que vous ne pointez pas la forme d’onde. L’aperçu de ce qu’un flux placerait apparaît sous le pointeur, dessiné en contour pour ne jamais ressembler à une cue que vous avez déjà, et la vue d’ensemble n’ajoute que ce que la forme d’onde agrandie ne montre pas.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "Les propositions de « Marquage auto » ont leur propre barre au-dessus des formes d’onde, avec leur nombre, combien sont sûres et combien douteuses, et « Accepter » et « Retirer les propositions ». Vous pouvez aussi retirer une seule proposition depuis la vue d’ensemble avec le ✕ qui apparaît au-dessus.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "Dans l’éditeur de cues replié, il n’y a plus qu’un bouton « Enregistrer ». Son menu enregistre ce morceau, enregistre tous les morceaux aux cues non enregistrées ou annule vos changements. Le menu « Flux » ne liste plus que les flux, et « Effacer toutes les cues » est un bouton à côté d’annuler.",
+        "in": "1.20.0"
+      },
+      {
+        "text": "Changer d’onglet dans la barre latérale ferme le lecteur, qui ne continue plus à jouer un morceau que cet onglet n’affiche pas.",
+        "in": "1.20.0"
+      }
+    ]
+  },
+  {
     "version": "1.19",
     "date": "November 2, 2026",
     "title": "Complétez ce qui manque",
