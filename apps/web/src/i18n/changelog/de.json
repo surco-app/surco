@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.19",
+    "date": "November 2, 2026",
+    "title": "Ergänze, was fehlt",
+    "items": [
+      {
+        "text": "„Metadaten prüfen“ hat einen Filter „Unvollständig“ mit den Tracks, deren Datei ein Pflichtfeld fehlt, etwa das Jahr oder das Grouping. Surco schlägt für jedes einen Wert vor, aus dem, was die App anzeigt, aus einem vorgeschlagenen Treffer oder aus dem Dateinamen, und füllt nur, was leer ist, in der Datei und in Apple Music, ohne anzutasten, was die Datei schon hat. Vom Filter „Pflichtfelder fehlen“ bringt dich „In „Metadaten prüfen“ ausfüllen“ direkt dorthin, und was nur der Editor füllt, öffnet den Track im Editor.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "Bei mehreren ausgewählten Tracks zeigt ein Feld mit unterschiedlichen Werten alle an, damit du einen für die ganze Auswahl wählst. Bevor du ein neues Cover ablegst, sagt dir Surco, wie viele verschiedene Cover es gibt und wie viele Tracks eines haben.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "„Metadaten löschen“ bietet direkt danach „Rückgängig“ an und steht abseits der Füllen-Schaltfläche, damit du es nicht versehentlich triffst.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "Einen Ordner oder eine Playlist, die du schon geladen hattest, erneut zu öffnen geht schneller. Surco merkt sich die Analyse und das Auto-Match-Ergebnis jedes Tracks, solange sich die Datei nicht ändert, und Auto-Match sucht nur die Tracks, die Filter und Suche sichtbar lassen. Playlists und Cover von Apple Music erscheinen sofort, so wie du sie zuletzt gesehen hast. Hat sich eine Datei inzwischen geändert, liest Surco sie vor dem Konvertieren neu.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "Wenn du eine Auswahl konvertierst, zeigt die Fußleiste den Plan mit wie vielen Tracks, in welches Format und wohin, und am Ende steht, was wirklich passiert ist, ob konvertiert, Tags aktualisiert oder in Apple Music aktualisiert oder ersetzt, statt immer exportiert.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "Mit der Bittiefe auf „Korrigiert“ wird eine 32-Bit-Datei mit 24 Bit gespeichert, dem Höchsten, was die meisten DJ-Player laden.",
+        "in": "1.19.0"
+      }
+    ]
+  },
+  {
     "version": "1.18",
     "date": "October 30, 2026",
     "title": "Surco prüft, was es tut",

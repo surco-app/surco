@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.19",
+    "date": "2 de noviembre de 2026",
+    "title": "Completa lo que falta",
+    "items": [
+      {
+        "text": "«Revisar metadatos» tiene un filtro «Incompletas» con las pistas a las que les falta un campo obligatorio en el archivo, como el año o el grouping. Surco propone un valor para cada uno, sacado de lo que muestra la app, de una sugerencia de búsqueda o del nombre del archivo, y solo rellena lo que está vacío, en el archivo y en Apple Music, sin tocar lo que el archivo ya tiene. Desde el filtro «Faltan obligatorios», «Completarlas en Revisar metadatos» te lleva directo, y lo que solo se rellena en el editor abre la pista en el editor.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "Con varias pistas seleccionadas, un campo con valores distintos te los enseña todos para que elijas uno para toda la selección. Antes de soltar una carátula nueva, Surco te dice cuántas carátulas distintas hay y cuántas pistas tienen una.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "«Borrar metadatos» ofrece «Deshacer» justo después, y está separado del botón de rellenar para que no lo pulses sin querer.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "Volver a abrir una carpeta o una playlist que ya habías cargado es más rápido. Surco recuerda el análisis y el resultado del auto-match de cada pista mientras el archivo no cambie, y el auto-match solo busca las pistas que dejan a la vista el filtro y la búsqueda. Las playlists y carátulas de Apple Music salen al momento tal como las viste la última vez. Si un archivo ha cambiado entretanto, Surco lo vuelve a leer antes de convertir.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "Al convertir una selección, el pie te enseña el plan con cuántas pistas, a qué formato y a dónde, y al terminar dice lo que ha hecho de verdad, si convirtió, actualizó etiquetas o actualizó o sustituyó en Apple Music, en vez de decir siempre exportado.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "Con la profundidad de bits en «Corregido», un archivo de 32 bits se guarda a 24 bits, lo máximo que cargan la mayoría de reproductores de DJ.",
+        "in": "1.19.0"
+      }
+    ]
+  },
+  {
     "version": "1.18",
     "date": "30 de octubre de 2026",
     "title": "Surco comprueba lo que hace",

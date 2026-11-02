@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.19",
+    "date": "November 2, 2026",
+    "title": "Fill in what’s missing",
+    "items": [
+      {
+        "text": "“Review metadata” has an “Incomplete” filter with the tracks whose file is missing a required field, such as the year or the grouping. Surco proposes a value for each one, taken from what the app shows, a suggested match or the file name, and fills only what is empty, in the file and in Apple Music, never touching what the file already has. From the “Missing required fields” filter, “Fill them in Review metadata” takes you straight there, and what only the editor fills opens the track in the editor.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "With several tracks selected, a field with different values shows you all of them so you can pick one for the whole selection. Before you drop new artwork, Surco tells you how many distinct covers there are and how many tracks have one.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "“Clear metadata” offers “Undo” right after, and sits apart from the fill button so you don’t hit it by mistake.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "Opening a folder or playlist you already loaded is quicker. Surco remembers each track’s analysis and auto-match result while the file doesn’t change, and auto-match only searches the tracks the filter and search leave on screen. Apple Music playlists and covers show at once, as you last saw them. If a file changed in the meantime, Surco reads it again before converting.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "When you convert a selection, the footer shows the plan with how many tracks, to which format and where, and when it finishes it says what it actually did, whether it converted, updated tags or updated or replaced in Apple Music, instead of always saying exported.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "With bit depth set to “Corrected”, a 32-bit file is saved at 24 bits, the highest depth most DJ players load.",
+        "in": "1.19.0"
+      }
+    ]
+  },
+  {
     "version": "1.18",
     "date": "October 30, 2026",
     "title": "Surco checks its own work",

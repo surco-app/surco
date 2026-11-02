@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.19",
+    "date": "November 2, 2026",
+    "title": "Complete o que falta",
+    "items": [
+      {
+        "text": "“Revisar metadados” tem um filtro “Incompletas” com as faixas cujo arquivo não tem um campo obrigatório, como o ano ou o grouping. O Surco propõe um valor para cada um, tirado do que o app mostra, de uma correspondência sugerida ou do nome do arquivo, e só preenche o que está vazio, no arquivo e no Apple Music, sem mexer no que o arquivo já tem. No filtro “Faltam obrigatórios”, “Completar em Revisar metadados” leva você direto, e o que só o editor preenche abre a faixa no editor.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "Com várias faixas selecionadas, um campo com valores diferentes mostra todos para você escolher um para a seleção inteira. Antes de soltar uma capa nova, o Surco diz quantas capas diferentes há e quantas faixas têm uma.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "“Limpar metadados” oferece “Desfazer” logo depois, e fica separado do botão de preencher para você não clicar sem querer.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "Reabrir uma pasta ou playlist que você já tinha carregado é mais rápido. O Surco lembra a análise e o resultado do auto-match de cada faixa enquanto o arquivo não muda, e o auto-match só busca as faixas que o filtro e a busca deixam na tela. As playlists e capas do Apple Music aparecem na hora, como você as viu da última vez. Se um arquivo mudou nesse meio-tempo, o Surco o relê antes de converter.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "Ao converter uma seleção, o rodapé mostra o plano com quantas faixas, para qual formato e para onde, e no fim diz o que de fato fez, se converteu, atualizou tags ou atualizou ou substituiu no Apple Music, em vez de sempre dizer exportado.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "Com a profundidade de bits em “Corrigido”, um arquivo de 32 bits é salvo em 24 bits, o máximo que a maioria dos players de DJ carrega.",
+        "in": "1.19.0"
+      }
+    ]
+  },
+  {
     "version": "1.18",
     "date": "October 30, 2026",
     "title": "O Surco confere o que faz",

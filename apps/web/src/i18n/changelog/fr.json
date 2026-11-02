@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.19",
+    "date": "November 2, 2026",
+    "title": "Complétez ce qui manque",
+    "items": [
+      {
+        "text": "« Vérifier les métadonnées » a un filtre « Incomplètes » avec les morceaux dont le fichier n’a pas un champ obligatoire, comme l’année ou le grouping. Surco propose une valeur pour chacun, tirée de ce qu’affiche l’app, d’une correspondance suggérée ou du nom de fichier, et ne remplit que ce qui est vide, dans le fichier et dans Apple Music, sans toucher à ce que le fichier a déjà. Depuis le filtre « Champs obligatoires manquants », « Les compléter dans Vérifier les métadonnées » vous y mène directement, et ce que seul l’éditeur remplit ouvre le morceau dans l’éditeur.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "Avec plusieurs morceaux sélectionnés, un champ aux valeurs différentes vous les montre toutes pour en choisir une pour toute la sélection. Avant de déposer une nouvelle pochette, Surco vous dit combien de pochettes distinctes il y a et combien de morceaux en ont une.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "« Effacer les métadonnées » propose « Annuler » juste après, et se tient à l’écart du bouton de remplissage pour ne pas le toucher par erreur.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "Rouvrir un dossier ou une playlist déjà chargés est plus rapide. Surco se souvient de l’analyse et du résultat de l’auto-match de chaque morceau tant que le fichier ne change pas, et l’auto-match ne cherche que les morceaux que le filtre et la recherche laissent à l’écran. Les playlists et pochettes d’Apple Music s’affichent tout de suite, comme vous les avez vues la dernière fois. Si un fichier a changé entre-temps, Surco le relit avant de convertir.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "Quand vous convertissez une sélection, le pied de page montre le plan avec combien de morceaux, vers quel format et où, et à la fin il dit ce qu’il a vraiment fait, converti, mis à jour les tags ou mis à jour ou remplacé dans Apple Music, au lieu de toujours dire exporté.",
+        "in": "1.19.0"
+      },
+      {
+        "text": "Avec la profondeur de bits sur « Corrigé », un fichier 32 bits est enregistré en 24 bits, le maximum que chargent la plupart des lecteurs DJ.",
+        "in": "1.19.0"
+      }
+    ]
+  },
+  {
     "version": "1.18",
     "date": "October 30, 2026",
     "title": "Surco vérifie ce qu’il fait",
