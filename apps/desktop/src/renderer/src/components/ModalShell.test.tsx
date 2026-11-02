@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
-import { ModalShell } from './ModalShell'
+import { MODAL_EXIT_MS, ModalExit, ModalShell } from './ModalShell'
 import { ToastStack } from './ToastStack'
 
 afterEach(cleanup)
@@ -128,5 +129,66 @@ describe('ModalShell entrance', () => {
     open()
     expect(screen.getByRole('dialog').className).toContain('animate-pop')
     expect(screen.getByTestId('shell-backdrop').className).toContain('animate-overlay')
+  })
+})
+
+describe('ModalShell exit', () => {
+  afterEach(() => vi.useRealTimers())
+
+  function Harness({ open }: { open: boolean }): React.JSX.Element {
+    return (
+      <div>
+        <button type="button" data-testid="opener">
+          open
+        </button>
+        <ModalExit>
+          {open && (
+            <ModalShell onClose={() => {}} backdropTestId="shell-backdrop" className="w-80">
+              <button type="button">inside</button>
+            </ModalShell>
+          )}
+        </ModalExit>
+      </div>
+    )
+  }
+
+  function openByClick(): ReturnType<typeof render> {
+    fireEvent.pointerDown(window)
+    screen.queryByTestId('opener')?.focus()
+    return render(<Harness open />)
+  }
+
+  // A dialog that vanishes in one frame after rising in breaks the path it arrived on: Apple's
+  // rule is that what came from somewhere goes back there. A click close keeps it on screen for
+  // the exit and only then lets it go.
+  it('stays on screen for the exit after a click closes it, then unmounts', () => {
+    vi.useFakeTimers()
+    const { rerender } = openByClick()
+    fireEvent.pointerDown(window)
+    rerender(<Harness open={false} />)
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(MODAL_EXIT_MS))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  // The exit is decoration, never a wait: the app behind is usable from the first frame of it,
+  // and the leaving dialog itself takes no more clicks.
+  it('hands the app back the moment the exit starts', () => {
+    vi.useFakeTimers()
+    const { rerender } = openByClick()
+    expect(screen.getByTestId('opener')).toHaveAttribute('inert')
+    fireEvent.pointerDown(window)
+    rerender(<Harness open={false} />)
+    expect(screen.getByTestId('opener')).not.toHaveAttribute('inert')
+    expect(screen.getByRole('dialog').closest('[inert]')).not.toBeNull()
+  })
+
+  // Escape expects its answer on the next frame, the same reason a keyed open has no entrance.
+  it('goes at once when a key closed it', () => {
+    vi.useFakeTimers()
+    const { rerender } = openByClick()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    rerender(<Harness open={false} />)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })

@@ -45,6 +45,7 @@ import { Confetti } from './components/Confetti'
 import { CopiesScreen } from './components/CopiesScreen'
 import { EmptyDisc } from './components/EmptyDisc'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { ModalExit } from './components/ModalShell'
 import {
   MusicReviewColumn,
   MusicReviewDetailPane,
@@ -3616,17 +3617,19 @@ export default function App(): React.JSX.Element {
                 }
               />
             )}
-            {usbModal && (
-              <UsbExportModal
-                nodes={usbTree.data}
-                volumes={usbVolumes}
-                preselect={usbModal.preselect}
-                source={usbModal.source === 'engine' ? 'engine' : undefined}
-                onStart={(req) => window.api.usbExport(req)}
-                onCancelExport={() => void window.api.usbCancel()}
-                onClose={closeUsbExport}
-              />
-            )}
+            <ModalExit>
+              {usbModal && (
+                <UsbExportModal
+                  nodes={usbTree.data}
+                  volumes={usbVolumes}
+                  preselect={usbModal.preselect}
+                  source={usbModal.source === 'engine' ? 'engine' : undefined}
+                  onStart={(req) => window.api.usbExport(req)}
+                  onCancelExport={() => void window.api.usbCancel()}
+                  onClose={closeUsbExport}
+                />
+              )}
+            </ModalExit>
             {confettiBurst > 0 && <Confetti key={confettiBurst} />}
           </div>
         </ToastProvider>

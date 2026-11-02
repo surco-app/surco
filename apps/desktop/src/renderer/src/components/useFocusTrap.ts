@@ -14,11 +14,11 @@ const FOCUSABLE =
 // before it opened. Without this, Tab walks straight out to the controls behind
 // the backdrop and the trigger loses focus when the dialog closes — both standard
 // modal accessibility expectations.
-export function useFocusTrap(ref: React.RefObject<HTMLElement | null>): void {
+export function useFocusTrap(ref: React.RefObject<HTMLElement | null>, active = true): void {
   const [previouslyFocused] = useState(() => document.activeElement as HTMLElement | null)
   useEffect(() => {
     const node = ref.current
-    if (!node) return
+    if (!node || !active) return
     const focusedAtOpen = document.activeElement as HTMLElement | null
     const focusables = (): HTMLElement[] =>
       Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE))
@@ -73,5 +73,5 @@ export function useFocusTrap(ref: React.RefObject<HTMLElement | null>): void {
         returningFocus = false
       }
     }
-  }, [ref, previouslyFocused])
+  }, [ref, previouslyFocused, active])
 }

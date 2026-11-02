@@ -23,6 +23,7 @@ import {
   visibleEntries,
 } from '../lib/trashView'
 import { ConfirmDialog } from './ConfirmDialog'
+import { ModalExit } from './ModalShell'
 import { SOURCE_ICON } from './SourceRail'
 
 export interface MusicFilesProps {
@@ -703,18 +704,20 @@ export function CopiesScreen({
           </button>
         </footer>
       </div>
-      {askedEntry && askedCopy && (
-        <ConfirmDialog
-          title={tr('copies.confirm.title', {
-            program: tr(`sources.${askedEntry.program}`),
-            when: whenInSentence(askedCopy.takenAt),
-          })}
-          message={confirmText(askedEntry)}
-          confirmLabel={tr('copies.confirm.ok')}
-          onConfirm={() => void restore(askedEntry.program, askedCopy)}
-          onClose={() => setAsking(null)}
-        />
-      )}
+      <ModalExit>
+        {askedEntry && askedCopy && (
+          <ConfirmDialog
+            title={tr('copies.confirm.title', {
+              program: tr(`sources.${askedEntry.program}`),
+              when: whenInSentence(askedCopy.takenAt),
+            })}
+            message={confirmText(askedEntry)}
+            confirmLabel={tr('copies.confirm.ok')}
+            onConfirm={() => void restore(askedEntry.program, askedCopy)}
+            onClose={() => setAsking(null)}
+          />
+        )}
+      </ModalExit>
     </div>
   )
 }

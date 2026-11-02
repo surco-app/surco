@@ -10,6 +10,8 @@ import { useDeclickAb } from '../hooks/useDeclickAb'
 import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
 import { useWaveform } from '../hooks/useWaveform'
 import { clickMarks, nextClick } from '../lib/clickMarks'
+import { DECELERATION_PER_MS, releaseVelocity, type TrailPoint } from '../lib/momentum'
+import { prefersReducedMotion } from '../lib/motion'
 import { formatFixed } from '../lib/numberFormat'
 import { claimKeys } from '../lib/spaceClaim'
 import { DeclickControls, NoiseControls } from './DeclickControls'
@@ -27,6 +29,7 @@ const PLAYHEAD_COARSE_STEP_SEC = 0.25
 // How far a press on the zoomed wave may wander and still count as a click that places
 // the cursor; past it the press is a hand dragging the view.
 const PAN_SLOP_PX = 4
+const COAST_REST_PX_PER_MS = 0.01
 // Where a playhead brought back into view lands, as a fraction of the view from its left
 // edge: enough wave ahead of it to see what is coming.
 const FOLLOW_LEAD = 0.15
@@ -94,7 +97,36 @@ export function DeclickSection({
   const [zoom, setZoom] = useState(1)
   const [view, setView] = useState({ from: 0, to: 1 })
   const scrollerRef = useRef<HTMLDivElement>(null)
-  const panRef = useRef<{ x: number; left: number; moved: boolean } | null>(null)
+  const panRef = useRef<{ x: number; left: number; moved: boolean; trail: TrailPoint[] } | null>(
+    null,
+  )
+  const coastRef = useRef(0)
+  useEffect(() => () => cancelAnimationFrame(coastRef.current), [])
+  // A mouse flick carries the view on and slows to a rest, as a trackpad already does through
+  // the wheel. Motion the OS was asked to reduce stays where the hand left it. Anything else
+  // that moves the view meanwhile (the overview, the wheel, a walk to a click) wins: the coast
+  // gives up the moment the view is not where it last put it.
+  const coast = (el: HTMLElement, velocity: number): void => {
+    if (velocity === 0 || prefersReducedMotion()) return
+    let v = velocity
+    let prev = performance.now()
+    let placed = el.scrollLeft
+    const step = (): void => {
+      if (Math.abs(el.scrollLeft - placed) > 1) return
+      const now = performance.now()
+      const dt = now - prev
+      prev = now
+      const max = el.scrollWidth - el.clientWidth
+      const next = Math.min(max, Math.max(0, el.scrollLeft + v * dt))
+      el.scrollLeft = next
+      placed = el.scrollLeft
+      v *= DECELERATION_PER_MS ** dt
+      if (next > 0 && next < max && Math.abs(v) > COAST_REST_PX_PER_MS) {
+        coastRef.current = requestAnimationFrame(step)
+      }
+    }
+    coastRef.current = requestAnimationFrame(step)
+  }
 
   const [preview, setPreview] = useState<string | null>(null)
   const [rendering, setRendering] = useState(false)
@@ -380,9 +412,15 @@ export function DeclickSection({
                   aria-valuetext={`${formatFixed(ab.at, 2, i18n.language)} s`}
                   onPointerDown={(e) => {
                     e.currentTarget.setPointerCapture?.(e.pointerId)
+                    cancelAnimationFrame(coastRef.current)
                     const el = scrollerRef.current
                     if (zoom > 1 && el) {
-                      panRef.current = { x: e.clientX, left: el.scrollLeft, moved: false }
+                      panRef.current = {
+                        x: e.clientX,
+                        left: el.scrollLeft,
+                        moved: false,
+                        trail: [{ at: el.scrollLeft, t: performance.now() }],
+                      }
                       return
                     }
                     scrubFrom(e.clientX, e.currentTarget)
@@ -399,11 +437,14 @@ export function DeclickSection({
                       el.scrollWidth - el.clientWidth,
                       Math.max(0, pan.left - dx),
                     )
+                    pan.trail.push({ at: el.scrollLeft, t: performance.now() })
                   }}
                   onPointerUp={(e) => {
                     const pan = panRef.current
                     panRef.current = null
                     if (pan && !pan.moved) scrubFrom(pan.x, e.currentTarget)
+                    const el = scrollerRef.current
+                    if (pan?.moved && el) coast(el, releaseVelocity(pan.trail, performance.now()))
                   }}
                   onPointerCancel={() => {
                     panRef.current = null
