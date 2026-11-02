@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 2 de noviembre de 2026** (v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
+**Última revisión: 2 de noviembre de 2026** (v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -1732,6 +1732,13 @@ se muestran pero Surco no los mueve ni los cambia (`editor.cues.loop`). Deshacer
 hot cue A a H, ⌫ borra la seleccionada, + − hacen zoom (`cueKeyAction`, `lib/cueKeys.ts`).
 Estas teclas viven en la sección, no en la tabla de atajos rebindables.
 
+**Guardar, descartar y borrar** (v1.20.0). En el editor plegado hay un solo «Guardar», que
+guarda la pista abierta. Una flecha a su lado abre un menú con «Guardar esta pista» y «Guardar N
+pistas en rekordbox» cuando hay otras pistas con cues sin guardar, y «Descartar cambios» cuando
+hay algo que descartar (`cues-save-more`, `CuesSection.tsx`). «Borrar todos los cues» es una
+papelera junto a deshacer. El menú «Flujo» solo lista flujos y Manual. A pantalla completa
+siguen los botones de siempre en la cabecera y la barra.
+
 **Se escribe solo en la colección de rekordbox.** «Guardar en rekordbox» escribe
 `djmdCue`, actualiza `contentCue` y sube `CueUpdated` de la pista (`applyCueChanges`,
 `rekordboxCues.ts:216`), como hace rekordbox al poner un cue a mano. No se escriben en el
@@ -1810,14 +1817,24 @@ cabe», la cue que cae donde empieza una racha de estribillos se queda, porque e
 entra a mezclar, y la cuenta atrás termina ahí; entre dos estribillos seguidos no se pone
 ninguna, porque la energía aún no ha bajado (`startsStrongRun`, `shared/cueRules.ts:125`).
 
-**Vista previa y clic.** Al pasar el ratón por la onda se ve en transparente lo que pondría el
-flujo (`CueFlowPreview.tsx`) y un clic lo coloca en ese punto; lo que no cabe se dice en vez de
-callarlo (`editor.cues.trimmed*`, `tooMany`). Hay también un modo Manual sin flujo.
+**Vista previa y clic.** Al pasar el ratón por la onda ampliada se ve lo que pondría el flujo en
+ese punto, y un clic lo coloca ahí; lo que no cabe se dibuja en discontinuo en vez de callarlo
+(`editor.cues.trimmed*`, `tooMany`). Desde v1.20.0 la vista previa solo existe mientras el
+cursor está sobre la onda ampliada: en reposo las dos ondas enseñan solo los cues de verdad
+(`CuesSection.tsx`, `hoverGhost`). La onda general, mientras tanto, solo añade lo que cae fuera
+de la ventana ampliada y una línea donde está el cursor (`stripGhost`). Las hot cues de la
+vista previa se dibujan en contorno del color del cue, nunca rellenas (`CueWave.tsx`,
+`CueWaveDetail.tsx`). Intro y M colocan el flujo en el cabezal sin vista previa; se deshace con
+⌘Z. Hay también un modo Manual sin flujo.
 
 **Auto marcar** (nuevo en v1.10.0). Propone dónde rompe la pista a partir del análisis de
-rekordbox (frases y onda) y la rejilla (`detectDrops`, `shared/dropDetect.ts:216`), y dibuja
-en transparente lo que pondría el flujo. Las propuestas se aceptan con Intro, todas o de una
-en una, y no se guarda nada hasta aceptarlas. Con varias filas seleccionadas de una playlist,
+rekordbox (frases y onda) y la rejilla (`dropProposals`, `shared/dropDetect.ts:229`), y dibuja
+lo que pondría el flujo. Desde v1.20.0 las propuestas tienen su propia barra encima de las ondas,
+igual plegado y a pantalla completa, con cuántas hay, cuántas seguras y cuántas dudosas,
+«Aceptar» e «Quitar propuestas» (`cues-auto-review`, `CuesSection.tsx`). Se aceptan con Intro,
+todas o de una en una, y no se guarda nada hasta aceptarlas. Una propuesta se quita sola con el
+✕ de su etiqueta en la onda ampliada o con el ✕ que sale al pasar el ratón por su línea en la
+onda general (`onDropProposal`, `CueWave.tsx`). Con varias filas seleccionadas de una playlist,
 «Auto marcar las seleccionadas» las calcula todas y cada fila dice lo que dejó
 (`autoMarkTracks`, `lib/cueAutoMark.ts:56`); «Guardar N pistas en rekordbox» guarda de una
 vez las revisadas. Medido sobre pistas apartadas de una colección real con los drops que
@@ -1931,7 +1948,14 @@ desde rekordbox antes de que Surco escriba. Ese consejo no aparece dentro de la 
 ### Sustituir la copia de la biblioteca
 
 Cuando la pista cargada ya está en la biblioteca, el botón ofrece **sustituir** en vez de
-añadir una segunda copia (`exportLabel.ts`, `useLibraryVerdict.ts`). En Apple Music, por
+añadir una segunda copia (`exportLabel.ts`, `useLibraryVerdict.ts`). Antes de sustituir, «Calidad de audio» compara las
+dos copias y dice cuál es mejor (`compareCopies`, `lib/bestCopy.ts`); el veredicto abre una
+tarjeta con la frase que lo justifica y una tabla con corte, volumen, dinámica y muestras en el
+techo. Si el veredicto lo decidió un limitador, la tarjeta dibuja las ondas de las dos copias
+(`LimiterGlimpse.tsx`); si lo decidió el espectro (corte, fuente con pérdidas, agudos
+reprocesados o upsampleo), desde v1.20.0 dibuja los dos espectros apilados a la misma escala,
+cada uno con su corte y con la banda que le falta a la peor copia teñida
+(`SpectrumGlimpse.tsx`). En Apple Music, por
 debajo, es añadir y luego borrar — Music deja leer la ubicación de una pista, nunca
 escribirla — pero en un solo paso (`processTrack.ts:322`).
 
@@ -2175,6 +2199,9 @@ siguiente arranque vuelve a preguntar (`useSessionPersistence.ts`). Desde v1.0 l
 volumen y la reparación de clics de cada pista (`main/session.ts`, `lib/sessionEdits.ts`).
 
 ### Reproductor
+
+Al cambiar de pestaña en la barra lateral el reproductor se cierra y la pista deja de sonar
+(`selectSource`, `App.tsx`, v1.20.0); antes seguía sonando una pista que esa pestaña no enseña.
 
 Servidor propio con soporte real de rangos HTTP: el elemento `<audio>` busca
 re-pidiendo un rango de bytes, y solo respeta el salto si el servidor responde 206
