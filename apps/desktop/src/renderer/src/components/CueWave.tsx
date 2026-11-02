@@ -328,7 +328,9 @@ export function CueWave({
                   setHoverProposal(null)
                   onDropProposal(ms)
                 }}
-                className="bottom-0 left-1/2 -translate-x-1/2"
+                className={
+                  ms / Math.max(durationMs, 1) > 0.95 ? 'top-0 right-full' : 'top-0 left-full'
+                }
               />
             )}
           </span>
