@@ -917,6 +917,8 @@
       },
       "resetColour": "Redefinir",
       "saveShort": "Salvar",
+      "saveThis": "Salvar esta faixa",
+      "saveMore": "Mais formas de salvar",
       "saveFailed": "Não foi possível salvar no rekordbox. Os cues continuam sem salvar",
       "saveAll_one": "Salvar {{count}} faixa no rekordbox",
       "saveAll_other": "Salvar {{count}} faixas no rekordbox",

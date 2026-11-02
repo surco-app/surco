@@ -917,6 +917,8 @@
       },
       "resetColour": "リセット",
       "saveShort": "保存",
+      "saveThis": "このトラックを保存",
+      "saveMore": "ほかの保存方法",
       "saveFailed": "rekordbox に保存できませんでした。キューはまだ保存されていません",
       "saveAll_one": "{{count}} トラックを rekordbox に保存",
       "saveAll_other": "{{count}} トラックを rekordbox に保存",

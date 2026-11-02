@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Check,
+  ChevronDown,
   CircleAlert,
   Keyboard,
   Minimize2,
@@ -98,6 +99,7 @@ import { CueWaveDetail, CueZoom } from './CueWaveDetail'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { Select } from './Select'
+import { SPLIT_ITEM, SPLIT_MENU, useSplitMenu } from './SplitButton'
 
 interface CueTarget {
   contentId: string
@@ -926,6 +928,7 @@ function Editing({
       actionsRef.current = null
     }
   })
+  const saveMenu = useSplitMenu()
   const saveAllButton = unsavedTracks > 1 && (
     <button
       type="button"
@@ -1207,20 +1210,76 @@ function Editing({
       <span className="flex-1" />
       {addCallButton}
       {undoButton}
-      <button
-        type="button"
-        data-testid="cues-save"
-        disabled={unchanged || blocked}
-        aria-label={tr(copy.save)}
-        onClick={() => void save()}
-        className={`press h-6 shrink-0 whitespace-nowrap rounded-full px-3 text-xs font-semibold ${
-          unchanged
-            ? 'text-fg-dim'
-            : 'bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]'
-        }`}
-      >
-        {tr('editor.cues.saveShort')}
-      </button>
+      <div ref={saveMenu.ref} className="relative flex shrink-0">
+        <button
+          type="button"
+          data-testid="cues-save"
+          disabled={unchanged || blocked}
+          aria-label={tr(copy.save)}
+          onClick={() => void save()}
+          className={`press h-6 shrink-0 whitespace-nowrap px-3 text-xs font-semibold ${
+            saveAllButton ? 'rounded-l-full' : 'rounded-full'
+          } ${
+            unchanged
+              ? 'text-fg-dim'
+              : 'bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]'
+          }`}
+        >
+          {tr('editor.cues.saveShort')}
+        </button>
+        {saveAllButton && (
+          <button
+            type="button"
+            data-testid="cues-save-more"
+            ref={saveMenu.toggleRef}
+            disabled={savingAll}
+            aria-label={tr('editor.cues.saveMore')}
+            aria-haspopup="menu"
+            aria-expanded={saveMenu.open}
+            onClick={() => saveMenu.setOpen((v) => !v)}
+            className="press flex h-6 shrink-0 items-center gap-0.5 rounded-r-full border-l border-[var(--color-on-accent)]/30 bg-[var(--color-accent)] pr-2 pl-1.5 text-xs font-semibold tabular-nums text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+          >
+            {unsavedTracks}
+            <ChevronDown className="h-3 w-3" aria-hidden="true" />
+          </button>
+        )}
+        {saveAllButton && saveMenu.open && (
+          <div
+            ref={saveMenu.menuRef}
+            role="menu"
+            aria-label={tr('editor.cues.saveMore')}
+            onKeyDown={saveMenu.onMenuKeyDown}
+            className={`${SPLIT_MENU} w-auto min-w-56`}
+          >
+            <button
+              type="button"
+              data-testid="cues-save-this"
+              role="menuitem"
+              disabled={unchanged || blocked}
+              onClick={() => {
+                saveMenu.setOpen(false)
+                void save()
+              }}
+              className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40`}
+            >
+              {tr('editor.cues.saveThis')}
+            </button>
+            <button
+              type="button"
+              data-testid="cues-save-all"
+              role="menuitem"
+              disabled={savingAll}
+              onClick={() => {
+                saveMenu.setOpen(false)
+                void saveAll()
+              }}
+              className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40`}
+            >
+              {saveAllLabel}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
   const header = (
@@ -1364,7 +1423,6 @@ function Editing({
           </div>
           {foldedRow}
           <TwinRows plans={twins} onOverwrite={overwriteTwin} />
-          {saveAllButton && <div className="mt-2 flex justify-end">{saveAllButton}</div>}
         </>
       )}
       {!maximized && headerSlot && createPortal(flowControl, headerSlot)}
