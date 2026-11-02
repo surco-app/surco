@@ -1,5 +1,9 @@
 import { fieldValue } from '../../../shared/customFields'
-import type { ReviewWriteField, TrackMetadata } from '../../../shared/types'
+import type { ReviewedFileUpdate, ReviewWriteField, TrackMetadata } from '../../../shared/types'
+import type { TrackItem } from '../types'
+import { smartDeriveTags } from './deriveTags'
+import { diskMeta } from './listReviewEntries'
+import { withReviewedFields } from './reviewedFields'
 
 export const REVIEW_WRITE_FIELDS: readonly ReviewWriteField[] = [
   'title',
@@ -62,4 +66,38 @@ export function incompleteFindings(
     if (fields.length > 0) findings.push({ id: row.id, fields })
   }
   return findings
+}
+
+export interface IncompleteRowDeps {
+  required: () => readonly string[]
+  suggest: (row: TrackItem) => TrackMetadata | undefined
+}
+
+export function incompleteOfRows(
+  rows: TrackItem[],
+  idOf: (row: TrackItem) => string | undefined,
+  changes: readonly ReviewedFileUpdate[],
+  deps: IncompleteRowDeps,
+): IncompleteFinding[] {
+  const inputs: IncompleteInput[] = []
+  const seen = new Set<string>()
+  for (const row of rows) {
+    const id = idOf(row)
+    if (!id || seen.has(id) || row.loadingMeta || row.metaReadFailed) continue
+    if (row.status === 'processing') continue
+    const settled = changes
+      .filter((c) => c.path === row.inputPath)
+      .reduce((r, c) => withReviewedFields(r, c.fields), row)
+    const disk = diskMeta(settled)
+    if (!disk) continue
+    seen.add(id)
+    inputs.push({
+      id,
+      disk,
+      shown: row.meta,
+      suggested: deps.suggest(row),
+      fromName: smartDeriveTags(row.fileName),
+    })
+  }
+  return incompleteFindings(inputs, deps.required())
 }
