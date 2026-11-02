@@ -1,8 +1,8 @@
-import { Check, ChevronDown, RotateCw } from 'lucide-react'
+import { ChevronDown, RotateCw } from 'lucide-react'
 import type React from 'react'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FORMAT_SETTINGS, OUTPUT_FORMATS } from '../../../shared/outputFormats'
+import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
 import type {
   FormatSetting,
   OutputFormat,
@@ -18,13 +18,12 @@ import {
   SPLIT_BODY,
   SPLIT_BODY_QUIET,
   SPLIT_BODY_READY,
-  SPLIT_ITEM,
-  SPLIT_MENU,
   SPLIT_TOGGLE,
   SPLIT_TOGGLE_QUIET,
   SPLIT_TOGGLE_READY,
   useSplitMenu,
 } from './SplitButton'
+import { FormatDestinationMenu } from './FormatDestinationMenu'
 import { Tooltip } from './Tooltip'
 
 export const FORMATS = OUTPUT_FORMATS
@@ -136,8 +135,6 @@ export function ExportButton({
   // button in the Tab order, so the keyboard can reach it and hear why it won't run.
   const softBlocked = incomplete && !processing
   const reasonId = useId()
-  const formatHeadingId = useId()
-  const destinationHeadingId = useId()
 
   // 'source' names no real format, so its display text is the translated setting label
   // ("Same as source") rather than the uppercased extension every real format shows.
@@ -348,68 +345,17 @@ export function ExportButton({
           </span>
         )}
         {open && (
-          <div
-            ref={menuRef}
-            role="menu"
-            aria-label={tr('editor.chooseFormat')}
-            onKeyDown={onMenuKeyDown}
-            className={SPLIT_MENU}
-          >
-            <fieldset aria-labelledby={formatHeadingId} className="min-w-0">
-              <p
-                id={formatHeadingId}
-                className="px-3 pt-1 pb-0.5 text-[11px] font-medium text-fg-dim"
-              >
-                {tr('editor.menuFormat')}
-              </p>
-              {/* "Same as source" only means something over several files at once — a single
-              track's own format IS its own format, so resolving it there is equivalent
-              and more informative. Offered only when converting a selection (count set). */}
-              {(count !== undefined ? FORMAT_SETTINGS : FORMATS).map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  data-testid={`process-format-${id}`}
-                  role="menuitemradio"
-                  aria-checked={id === outputFormat}
-                  onClick={() => pick(id)}
-                  className={`${SPLIT_ITEM} ${
-                    id === outputFormat ? 'font-medium text-[var(--color-accent)]' : ''
-                  }`}
-                >
-                  {tr(`settings.formats.${id}`)}
-                  {id === exportedFormat && (
-                    <Check className="h-3.5 w-3.5 text-good" strokeWidth={2.5} aria-hidden="true" />
-                  )}
-                </button>
-              ))}
-            </fieldset>
-            <fieldset aria-labelledby={destinationHeadingId} className="min-w-0">
-              <p
-                id={destinationHeadingId}
-                className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-[11px] font-medium text-fg-dim"
-              >
-                {tr('editor.menuDestination')}
-              </p>
-              {destinations.map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  data-testid={`process-destination-${d}`}
-                  role="menuitemradio"
-                  aria-checked={d === destination}
-                  // Music can't ingest FLAC — the same pin the Settings radio applies.
-                  disabled={d === 'appleMusic' && outputFormat === 'flac'}
-                  onClick={() => pickDestination(d)}
-                  className={`${SPLIT_ITEM} disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent ${
-                    d === destination ? 'font-medium text-[var(--color-accent)]' : ''
-                  }`}
-                >
-                  {tr(`settings.destinations.${d}`)}
-                </button>
-              ))}
-            </fieldset>
-          </div>
+          <FormatDestinationMenu
+            menuRef={menuRef}
+            onMenuKeyDown={onMenuKeyDown}
+            offerSource={count !== undefined}
+            outputFormat={outputFormat}
+            exportedFormat={exportedFormat}
+            destination={destination}
+            destinations={destinations}
+            onPickFormat={pick}
+            onPickDestination={pickDestination}
+          />
         )}
       </div>
       {!quiet && destination === 'folder' && outputFolder && (
