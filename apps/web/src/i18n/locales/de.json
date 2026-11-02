@@ -1070,8 +1070,8 @@
       "reading": "Lese {{read}}/{{total}}"
     },
     "quality": {
-      "title": "Dieses FLAC war ein MP3.",
-      "lede": "Verlustfrei gekauft heißt nicht, dass es verlustfrei ist. Hat jemand ein MP3 in FLAC umgewandelt, ist die Datei genauso groß, aber das Spektrum zeigt die Wand. Surco markiert es, bevor der Track das Haus verlässt.",
+      "title": "Diese verlustfreie Datei war ein MP3.",
+      "lede": "Verlustfrei gekauft heißt nicht, dass es verlustfrei ist. Hat jemand ein MP3 in FLAC, WAV oder AIFF umgewandelt, ist die Datei genauso groß, aber das Spektrum zeigt die Wand. Surco markiert es, bevor der Track das Haus verlässt.",
       "goodAlt": "Spektrum eines echten FLAC: Die Energie reicht ohne Abschnitt bis ganz nach oben",
       "fakeAlt": "Spektrum eines in FLAC umgewandelten MP3: leeres Band über 16 kHz mit einer geraden Kante",
       "section": "Audioqualität",
