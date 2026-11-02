@@ -170,6 +170,32 @@ describe('CueWave', () => {
     expect(screen.getByTestId('cue-wave-proposal-16000').style.left).toBe('20%')
   })
 
+  // A wrong suggestion was only removable from its pill on the zoomed wave, after moving the
+  // playhead to it; the overview shows them all, so each one is removable from there too.
+  it('offers a ✕ on a proposal while the pointer is over it, and removes only that one', () => {
+    const onDropProposal = vi.fn()
+    setup({
+      proposals: [
+        { ms: 16000, sure: true, quietBars: 8 },
+        { ms: 32000, sure: false, quietBars: 1 },
+      ],
+      onDropProposal,
+    })
+    expect(screen.queryByTestId('cue-wave-suggestion-drop-32000')).toBeNull()
+    fireEvent.mouseEnter(screen.getByTestId('cue-wave-suggestion-hit-32000'))
+    const drop = screen.getByTestId('cue-wave-suggestion-drop-32000')
+    expect(drop).toHaveAccessibleName('Remove')
+    expect(screen.queryByTestId('cue-wave-suggestion-drop-16000')).toBeNull()
+    fireEvent.click(drop)
+    expect(onDropProposal).toHaveBeenCalledWith(32000)
+    expect(onDropProposal).toHaveBeenCalledTimes(1)
+  })
+
+  it('offers no ✕ on a proposal in a read-only overview', () => {
+    setup({ proposals: [{ ms: 16000, sure: true, quietBars: 8 }], readOnly: true })
+    expect(screen.queryByTestId('cue-wave-suggestion-hit-16000')).toBeNull()
+  })
+
   it('draws a doubtful proposal dashed and a sure one solid, so the DJ checks the doubtful first', () => {
     setup({
       proposals: [
