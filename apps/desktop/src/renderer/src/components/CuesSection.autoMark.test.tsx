@@ -26,6 +26,7 @@ import {
 } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
+import { saveAllItem } from '../test/cueSaveAll'
 import { CuesSection } from './CuesSection'
 
 const recordCueEdits = vi.hoisted(() => vi.fn())
@@ -587,13 +588,41 @@ describe('saving several tracks', () => {
       fingerprint: 'f0',
     })
 
+  // Two buttons that both said Save, one on a line of its own, left the user guessing which
+  // one saved what. The folded row keeps one Save for this track; saving every pending track
+  // sits in its menu, beside "this track", each saying what it saves.
+  it('keeps one Save in the folded row and offers every pending track from its menu', async () => {
+    other()
+    setup()
+    await ready()
+    await autoMark()
+    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    const more = await screen.findByTestId('cues-save-more')
+    expect(more).toHaveTextContent('2')
+    expect(screen.queryByTestId('cues-save-all')).toBeNull()
+    fireEvent.click(more)
+    expect(screen.getByTestId('cues-save-this')).toHaveTextContent('Save this track')
+    expect(await saveAllItem()).toHaveTextContent('Save 2 tracks to rekordbox')
+    expect((await saveAllItem()).closest('[data-testid="cues-folded-row"]')).not.toBeNull()
+  })
+
+  it('offers no menu when this is the only track with unsaved cues', async () => {
+    setup()
+    await ready()
+    await autoMark()
+    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    await screen.findByTestId('cues-unsaved')
+    expect(screen.getByTestId('cues-save')).toBeEnabled()
+    expect(screen.queryByTestId('cues-save-more')).toBeNull()
+  })
+
   it('saves every reviewed track to rekordbox in one go, so the collection is written once', async () => {
     other()
     const { saveRekordboxCues } = setup()
     await ready()
     await autoMark()
     fireEvent.click(screen.getByTestId('cues-auto-accept'))
-    const all = await screen.findByTestId('cues-save-all')
+    const all = await saveAllItem()
     expect(all).toHaveTextContent('Save 2 tracks to rekordbox')
     fireEvent.click(all)
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
@@ -625,7 +654,7 @@ describe('saving several tracks', () => {
     await ready()
     await autoMark()
     fireEvent.click(screen.getByTestId('cues-auto-accept'))
-    fireEvent.click(await screen.findByTestId('cues-save-all'))
+    fireEvent.click(await saveAllItem())
     await waitFor(() => expect([...unsavedCueTracks()]).toEqual([]))
     const saved = saveRekordboxCues.mock.calls.flatMap(([reqs]) => reqs.map((r) => r.contentId))
     expect(saved.sort()).toEqual(['103', '104'])
@@ -638,10 +667,11 @@ describe('saving several tracks', () => {
     await ready()
     await autoMark()
     fireEvent.click(screen.getByTestId('cues-auto-accept'))
-    const all = await screen.findByTestId('cues-save-all')
-    fireEvent.click(all)
-    await waitFor(() => expect(all).toBeDisabled())
-    fireEvent.click(all)
+    fireEvent.click(await saveAllItem())
+    const more = screen.getByTestId('cues-save-more')
+    await waitFor(() => expect(more).toBeDisabled())
+    fireEvent.click(more)
+    expect(screen.queryByTestId('cues-save-all')).toBeNull()
     await new Promise((r) => setTimeout(r, 20))
     expect(saveRekordboxCues).toHaveBeenCalledTimes(1)
   })
@@ -655,10 +685,10 @@ describe('saving several tracks', () => {
     await ready()
     await autoMark()
     fireEvent.click(screen.getByTestId('cues-auto-accept'))
-    fireEvent.click(await screen.findByTestId('cues-save-all'))
+    fireEvent.click(await saveAllItem())
     expect(await screen.findByTestId('cues-save-failed')).toHaveTextContent(said)
     expect([...unsavedCueTracks()].sort()).toEqual(['103', '104'])
-    expect(screen.getByTestId('cues-save-all')).toBeEnabled()
+    expect(await saveAllItem()).toBeEnabled()
   })
 
   it.each([
@@ -682,7 +712,7 @@ describe('saving several tracks', () => {
     await autoMark()
     expect(actionsRef.current?.saveAll).toBeUndefined()
     fireEvent.click(screen.getByTestId('cues-auto-accept'))
-    const all = await screen.findByTestId('cues-save-all')
+    const all = await saveAllItem()
     expect(actionsRef.current?.saveAll).toMatchObject({ label: all.textContent, saving: false })
     actionsRef.current?.saveAll?.run()
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
@@ -698,7 +728,7 @@ describe('saving several tracks', () => {
     await ready()
     await autoMark()
     fireEvent.click(screen.getByTestId('cues-auto-accept'))
-    await screen.findByTestId('cues-save-all')
+    await saveAllItem()
     cleanup()
     expect(actionsRef.current).toBeNull()
   })
@@ -719,7 +749,7 @@ describe('saving several tracks', () => {
     await autoMark()
     seekStrip(bar(64))
     fireEvent.click(screen.getByTestId(`cue-proposal-accept-${bar(64)}`))
-    fireEvent.click(await screen.findByTestId('cues-save-all'))
+    fireEvent.click(await saveAllItem())
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
     const [reqs] = saveRekordboxCues.mock.calls[0]
     expect(reqs.map((r) => r.contentId).sort()).toEqual(['103', '104'])

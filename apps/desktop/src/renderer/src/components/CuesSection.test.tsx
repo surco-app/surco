@@ -660,13 +660,14 @@ describe('CuesSection', () => {
     expect(screen.queryByTestId(`cue-wave-call-${bar(200)}`)).toBeNull()
   })
 
-  const previewed = () => [
-    ...new Set(
-      screen
-        .queryAllByTestId(/^cue-(wave|detail)-ghost-(hot|call)-/)
-        .map((el) => el.dataset.testid?.replace(/^cue-(wave|detail)-ghost-/, '')),
-    ),
-  ].sort()
+  const previewed = () =>
+    [
+      ...new Set(
+        screen
+          .queryAllByTestId(/^cue-(wave|detail)-ghost-(hot|call)-/)
+          .map((el) => el.dataset.testid?.replace(/^cue-(wave|detail)-ghost-/, '')),
+      ),
+    ].sort()
   const placed = () =>
     screen
       .queryAllByTestId(/^cue-wave-(hot|call)-/)

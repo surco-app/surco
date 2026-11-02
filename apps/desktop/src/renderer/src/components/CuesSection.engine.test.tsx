@@ -18,6 +18,7 @@ import { startDraft } from '../lib/cueDraft'
 import { autoMarkOf, keepDraft, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
+import { saveAllItem } from '../test/cueSaveAll'
 import { CuesSection } from './CuesSection'
 
 const dropProposals = vi.hoisted(() =>
@@ -199,11 +200,7 @@ describe('CuesSection on an Engine DJ track', () => {
     const target = { path: '/m/x.wav', label: 'x', fingerprint: 'f0' }
     keepDraft('103', '103|f0|null', startDraft([], 'mine'), target)
     keepDraft('engine:9', 'engine:9|f0|null', startDraft([], 'mine'), target)
-    await waitFor(() =>
-      expect(screen.getByTestId('cues-save-all')).toHaveTextContent(
-        'Save 2 tracks to rekordbox and Engine DJ',
-      ),
-    )
+    expect(await saveAllItem()).toHaveTextContent('Save 2 tracks to rekordbox and Engine DJ')
   })
 
   it('says Save all to Engine DJ when every unsaved track is Engine’s', async () => {
@@ -212,8 +209,6 @@ describe('CuesSection on an Engine DJ track', () => {
     const target = { path: '/m/x.wav', label: 'x', fingerprint: 'f0' }
     keepDraft('engine:8', 'engine:8|f0|null', startDraft([], 'mine'), target)
     keepDraft('engine:9', 'engine:9|f0|null', startDraft([], 'mine'), target)
-    await waitFor(() =>
-      expect(screen.getByTestId('cues-save-all')).toHaveTextContent('Save 2 tracks to Engine DJ'),
-    )
+    expect(await saveAllItem()).toHaveTextContent('Save 2 tracks to Engine DJ')
   })
 })

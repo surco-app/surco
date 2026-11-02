@@ -126,13 +126,14 @@ const seekStrip = (x: number) => {
   fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: x })
   fireEvent.mouseUp(window, { clientX: x })
 }
-const ghostMarks = () => [
-  ...new Set(
-    screen
-      .queryAllByTestId(/^cue-(wave|detail)-ghost-(hot|call)-/)
-      .map((el) => el.dataset.testid?.replace(/^cue-(wave|detail)-ghost-/, '')),
-  ),
-].sort()
+const ghostMarks = () =>
+  [
+    ...new Set(
+      screen
+        .queryAllByTestId(/^cue-(wave|detail)-ghost-(hot|call)-/)
+        .map((el) => el.dataset.testid?.replace(/^cue-(wave|detail)-ghost-/, '')),
+    ),
+  ].sort()
 const placedMarks = () =>
   screen
     .queryAllByTestId(/^cue-wave-(hot|call)-/)
@@ -321,7 +322,7 @@ describe('CuesSection folded', () => {
     await ready()
     const undo = screen.getByTestId('cues-step-back')
     expect(screen.getByTestId('cues-folded-row')).toContainElement(undo)
-    expect(undo.nextElementSibling).toBe(screen.getByTestId('cues-save'))
+    expect(undo.nextElementSibling).toContainElement(screen.getByTestId('cues-save'))
     expect(undo).toHaveAccessibleName('Undo')
     expect(undo).toHaveAttribute('title', 'Undo ⌘Z')
     expect(undo).toBeDisabled()

@@ -917,6 +917,8 @@
       },
       "resetColour": "Restablecer",
       "saveShort": "Guardar",
+      "saveThis": "Guardar esta pista",
+      "saveMore": "Más formas de guardar",
       "saveFailed": "No se pudo guardar en rekordbox. Los cues siguen sin guardar",
       "saveAll_one": "Guardar {{count}} pista en rekordbox",
       "saveAll_other": "Guardar {{count}} pistas en rekordbox",

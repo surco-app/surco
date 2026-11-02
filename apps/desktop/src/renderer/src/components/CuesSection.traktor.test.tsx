@@ -15,6 +15,7 @@ import { startDraft } from '../lib/cueDraft'
 import { cueDraftKey, keepDraft, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
+import { saveAllItem } from '../test/cueSaveAll'
 import { CuesSection } from './CuesSection'
 
 const dropProposals = vi.hoisted(() =>
@@ -206,7 +207,7 @@ describe('CuesSection on a Traktor track', () => {
     const { saveRekordboxCues } = setup(READ, 'traktor:HD/:m/:e.wav', async () => null, false)
     await ready()
     markAt(bar(8))
-    const all = await screen.findByTestId('cues-save-all')
+    const all = await saveAllItem()
     await waitFor(() => expect(all).toBeEnabled())
     fireEvent.click(all)
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())

@@ -13,6 +13,7 @@ import { reduceDraft, startDraft } from '../lib/cueDraft'
 import { cueDraftKey, keepDraft, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
+import { saveAllItem } from '../test/cueSaveAll'
 import { CuesSection } from './CuesSection'
 
 afterEach(cleanup)
@@ -213,7 +214,7 @@ describe('a flow placed in the cue editor reaches the other DJ programs', () => 
     await ready()
     markAt(bar(64))
     await screen.findByTestId('cues-twin-traktor')
-    fireEvent.click(screen.getByTestId('cues-save-all'))
+    fireEvent.click(await saveAllItem())
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
     expect(savedIds(saveRekordboxCues).sort()).toEqual(
       ['103', '104', TRAKTOR, 'traktor:M/:Music/:h.wav'].sort(),

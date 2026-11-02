@@ -917,6 +917,8 @@
       },
       "resetColour": "Zurücksetzen",
       "saveShort": "Speichern",
+      "saveThis": "Diesen Titel speichern",
+      "saveMore": "Weitere Speicheroptionen",
       "saveFailed": "Speichern in rekordbox fehlgeschlagen. Die Cues sind weiter nicht gespeichert",
       "saveAll_one": "{{count}} Titel in rekordbox speichern",
       "saveAll_other": "{{count}} Titel in rekordbox speichern",
