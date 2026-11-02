@@ -2036,15 +2036,15 @@
         ],
         "related": [
           {
-            "label": "Auto-match",
+            "label": "Auto-associar",
             "anchor": "automatch"
           },
           {
-            "label": "Tag without re-encoding",
+            "label": "Tags sem recodificar",
             "anchor": "igual-origen"
           },
           {
-            "label": "Convert every track",
+            "label": "Converta todas as faixas",
             "anchor": "lote"
           }
         ]
@@ -2121,11 +2121,11 @@
         ],
         "related": [
           {
-            "label": "Take it to your decks",
+            "label": "Leve tudo para os seus decks",
             "anchor": "exportar"
           },
           {
-            "label": "Convert the track",
+            "label": "Converta a faixa",
             "anchor": "convertir"
           }
         ]
@@ -2193,11 +2193,11 @@
         ],
         "related": [
           {
-            "label": "Take it to your decks",
+            "label": "Leve tudo para os seus decks",
             "anchor": "exportar"
           },
           {
-            "label": "Edit the metadata",
+            "label": "Edite os metadados",
             "anchor": "editor"
           }
         ]
@@ -2272,11 +2272,11 @@
         ],
         "related": [
           {
-            "label": "Convert the track",
+            "label": "Converta a faixa",
             "anchor": "convertir"
           },
           {
-            "label": "Make Traktor actually see your changes",
+            "label": "Faça o Traktor enxergar de verdade as suas mudanças",
             "anchor": "traktor"
           }
         ]
@@ -2379,11 +2379,11 @@
         ],
         "related": [
           {
-            "label": "Check the real quality",
+            "label": "Confira a qualidade real",
             "anchor": "calidad"
           },
           {
-            "label": "Get to know the track list",
+            "label": "Conheça a lista de faixas",
             "anchor": "lista"
           }
         ]
@@ -2454,15 +2454,15 @@
         ],
         "related": [
           {
-            "label": "Clean up the vinyl",
+            "label": "Limpe o vinil",
             "anchor": "declick"
           },
           {
-            "label": "Trim the silence",
+            "label": "Corte o silêncio",
             "anchor": "recorte"
           },
           {
-            "label": "Match a whole release",
+            "label": "Associe um release inteiro",
             "anchor": "album"
           }
         ]
@@ -2765,7 +2765,7 @@
         ],
         "related": [
           {
-            "label": "Fly with the keyboard",
+            "label": "Voe pelo teclado",
             "anchor": "atajos"
           }
         ]
@@ -2816,7 +2816,7 @@
         ],
         "related": [
           {
-            "label": "Tag from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz",
+            "label": "Tags do Discogs, Bandcamp, Deezer, Beatport e MusicBrainz",
             "anchor": "discogs"
           }
         ]
@@ -2862,7 +2862,7 @@
         ],
         "related": [
           {
-            "label": "Auto-match",
+            "label": "Auto-associar",
             "anchor": "automatch"
           }
         ]
@@ -2914,7 +2914,7 @@
         ],
         "related": [
           {
-            "label": "Convert the track",
+            "label": "Converta a faixa",
             "anchor": "convertir"
           }
         ]
@@ -2968,7 +2968,7 @@
         ],
         "related": [
           {
-            "label": "Take it to your decks",
+            "label": "Leve tudo para os seus decks",
             "anchor": "exportar"
           }
         ]
@@ -3074,7 +3074,7 @@
         ],
         "related": [
           {
-            "label": "Convert every track",
+            "label": "Converta todas as faixas",
             "anchor": "lote"
           }
         ]
@@ -3124,7 +3124,7 @@
         ],
         "related": [
           {
-            "label": "Name and organize the files",
+            "label": "Nomeie e organize os arquivos",
             "anchor": "nombres"
           }
         ]
