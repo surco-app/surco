@@ -111,6 +111,12 @@ describe('the undo in Activity', () => {
     expect(events[1]).toMatchObject({ phase: 'warn', detailKey })
   })
 
+  it('logs Music already holding the old value as put back, not as a warning', async () => {
+    const { events, log, track } = setup()
+    await setFieldLogged('A', 'artist', async () => 'held', { track, log })
+    expect(events[1]).toMatchObject({ phase: 'done', detailKey: 'activity.reviewUndoMusic' })
+  })
+
   it('says a file came back from its backup', async () => {
     const { events, log, run, track } = setup()
     const result = await restoreLogged(

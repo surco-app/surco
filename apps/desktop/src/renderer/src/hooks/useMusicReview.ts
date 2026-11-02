@@ -814,7 +814,7 @@ export function useMusicReview({
             continue
           }
           const answer = await source.revertMusic(o, f).catch(() => 'failed' as const)
-          if (answer !== 'set') continue
+          if (answer !== 'set' && answer !== 'held') continue
           music[i] = 'none'
           back.push(f.field)
         }

@@ -121,7 +121,7 @@ export function setFieldLogged(
     group,
     groupLabelKey: log.undoLabelOf(group),
     summary: (answer) =>
-      answer === 'set'
+      answer === 'set' || answer === 'held'
         ? { detailKey: 'activity.reviewUndoMusic' }
         : answer === 'mismatch'
           ? { detailKey: 'activity.reviewUndoMusicMismatch', status: 'warn' }

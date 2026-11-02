@@ -201,7 +201,7 @@ export interface Api {
     from: string,
     to: string,
     location?: string,
-  ) => Promise<'set' | 'missing' | 'mismatch'>
+  ) => Promise<'set' | 'held' | 'missing' | 'mismatch'>
   removeMusicDuplicate: (req: {
     removePid: string
     keepPid: string
