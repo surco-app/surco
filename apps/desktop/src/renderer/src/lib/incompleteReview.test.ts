@@ -136,6 +136,31 @@ describe('incompleteOfRows', () => {
     expect(incompleteOfRows(rows, (r) => r.inputPath, [], deps(['album']))).toEqual([])
   })
 
+  it('counts a field the row took from the file name as missing, with that value proposed', () => {
+    const named = track({ inputPath: '/a.mp3' })
+    const rows = [
+      {
+        ...named,
+        notInFile: { signature: named.diskSignature ?? '', fields: ['artist' as const] },
+      },
+    ]
+    expect(incompleteOfRows(rows, (r) => r.inputPath, [], deps(['artist']))).toEqual([
+      { id: '/a.mp3', fields: [{ field: 'artist', proposal: { value: 'A', source: 'shown' } }] },
+    ])
+    const filled = [{ path: '/a.mp3', fields: { artist: { from: '', to: 'A' } } }]
+    expect(incompleteOfRows(rows, (r) => r.inputPath, filled, deps(['artist']))).toEqual([])
+  })
+
+  it('trusts the row again once it was read from the file anew', () => {
+    const rows = [
+      {
+        ...track({ inputPath: '/a.mp3' }),
+        notInFile: { signature: 'old', fields: ['artist' as const] },
+      },
+    ]
+    expect(incompleteOfRows(rows, (r) => r.inputPath, [], deps(['artist']))).toEqual([])
+  })
+
   it('lists a file the list holds twice once', () => {
     const rows = [track({ inputPath: '/a.mp3' }), { ...track({ inputPath: '/a.mp3' }), id: 'x' }]
     expect(incompleteOfRows(rows, (r) => r.inputPath, [], deps(['album']))).toHaveLength(1)

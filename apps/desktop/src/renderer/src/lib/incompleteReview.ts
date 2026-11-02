@@ -3,7 +3,7 @@ import type { ReviewedFileUpdate, ReviewWriteField, TrackMetadata } from '../../
 import type { TrackItem } from '../types'
 import { smartDeriveTags } from './deriveTags'
 import { diskMeta } from './listReviewEntries'
-import { withReviewedFields } from './reviewedFields'
+import { patchMeta } from './reviewedFields'
 
 export const REVIEW_WRITE_FIELDS: readonly ReviewWriteField[] = [
   'title',
@@ -85,11 +85,16 @@ export function incompleteOfRows(
     const id = idOf(row)
     if (!id || seen.has(id) || row.loadingMeta || row.metaReadFailed) continue
     if (row.status === 'processing') continue
-    const settled = changes
+    const read = diskMeta(row)
+    if (!read) continue
+    const blank =
+      row.notInFile?.signature === row.diskSignature ? (row.notInFile?.fields ?? []) : []
+    const disk = changes
       .filter((c) => c.path === row.inputPath)
-      .reduce((r, c) => withReviewedFields(r, c.fields), row)
-    const disk = diskMeta(settled)
-    if (!disk) continue
+      .reduce(
+        (meta, c) => patchMeta(meta, c.fields),
+        blank.reduce((meta, f) => ({ ...meta, [f]: '' }), read),
+      )
     seen.add(id)
     inputs.push({
       id,

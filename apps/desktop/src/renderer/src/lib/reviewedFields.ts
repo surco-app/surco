@@ -3,7 +3,7 @@ import type { TrackItem } from '../types'
 
 type Fields = ReviewedFileUpdate['fields']
 
-function patchMeta<T extends ReviewRawFields>(meta: T, fields: Fields): T {
+export function patchMeta<T extends ReviewRawFields>(meta: T, fields: Fields): T {
   let next = meta
   for (const [field, change] of Object.entries(fields) as [keyof Fields, Fields[keyof Fields]][])
     if (

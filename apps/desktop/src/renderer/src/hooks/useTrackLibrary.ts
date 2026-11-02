@@ -15,6 +15,7 @@ import { fillFromAppleMusic } from '../lib/appleMusicFill'
 import { createPriorityLimit } from '../lib/concurrency'
 import { trackSignature, withSignatureCover, withSignatureMeta } from '../lib/dirty'
 import { parseFileName } from '../lib/filename'
+import { REVIEW_WRITE_FIELDS } from '../lib/incompleteReview'
 import { diskMeta } from '../lib/listReviewEntries'
 import { newTrackPaths } from '../lib/newTracks'
 import { mergeReadMeta } from '../lib/readMerge'
@@ -599,6 +600,11 @@ export function useTrackLibrary({
       )
       if (Object.keys(rawFields).length > 0 && patch.diskSignature)
         patch.reviewRaw = { signature: patch.diskSignature, fields: rawFields }
+      const notInFile = REVIEW_WRITE_FIELDS.filter(
+        (f) => readMeta[f].trim() && !(tags[f] ?? '').trim(),
+      )
+      if (notInFile.length > 0 && patch.diskSignature)
+        patch.notInFile = { signature: patch.diskSignature, fields: notInFile }
       if (saved) Object.assign(patch, restoredPatch(saved))
       // The row paints from embeddedCover, so a cover restored from the session has to
       // land there too — otherwise reopening showed the placeholder in the crate while the

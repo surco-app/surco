@@ -11,6 +11,7 @@ import type {
   Release,
   ReleaseTrack,
   ReviewRawFields,
+  ReviewWriteField,
   SearchProviderId,
   SearchResult,
   SourcePreview,
@@ -195,6 +196,7 @@ export interface TrackItem {
   // The review fields as the file spells them where that differs from the trimmed read,
   // valid only while diskSignature still equals `signature` (the read it came from).
   reviewRaw?: { signature: string; fields: ReviewRawFields }
+  notInFile?: { signature: string; fields: ReviewWriteField[] }
   // What the load-time clean-up staged per field, so the row, the counter and the editor can
   // show it and undo it. Dropped once an export writes the values out.
   cleaned?: Partial<Record<MusicReviewField, FieldCleanup>>
