@@ -7,10 +7,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { Api } from '../../../preload/api'
 import type { DamageFinding, LibraryTagSyncReport } from '../../../shared/types'
-import type { MusicReview as Review, ReviewRun } from '../hooks/useMusicReview'
+import {
+  type IncompleteCard,
+  incompleteKey,
+  type MusicReview as Review,
+  type ReviewRun,
+} from '../hooks/useMusicReview'
 import { damageKey } from '../lib/damageReview'
 import { createQueryClient } from '../lib/queryClient'
 import { stubApi } from '../test/api'
+import { MODAL_EXIT_MS } from './ModalShell'
 import {
   MusicReview,
   MusicReviewAction,
@@ -43,6 +49,10 @@ function review(over: Partial<Review> = {}): Review {
     spelling: [group],
     duplicates: [],
     damage: [],
+    incomplete: [],
+    fillValue: () => '',
+    setFillValue: vi.fn(),
+    stageProposals: vi.fn(),
     damageLoading: false,
     damageUnread: [],
     choice: () => 'DJ Lara',
@@ -1315,6 +1325,38 @@ describe('MusicReview', () => {
     ])
   })
 
+  // The review's sheets rise in like every other dialog, so they leave the same way: a click
+  // close keeps them on screen for the exit instead of cutting them out in one frame.
+  it('lets the confirm sheet play its exit after Cancel, then unmounts it', () => {
+    vi.useFakeTimers()
+    render(
+      <Panes
+        review={review({
+          staged: new Set([group.key]),
+          summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0, damage: {} },
+        })}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('music-review-apply'))
+    fireEvent.pointerDown(window)
+    fireEvent.click(screen.getByTestId('music-review-confirm-cancel'))
+    expect(screen.getByTestId('music-review-confirm')).toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(MODAL_EXIT_MS))
+    expect(screen.queryByTestId('music-review-confirm')).toBeNull()
+    vi.useRealTimers()
+  })
+
+  it('lets the done sheet play its exit after Continue, then unmounts it', () => {
+    vi.useFakeTimers()
+    render(<Panes review={done(run())} />)
+    fireEvent.pointerDown(window)
+    fireEvent.click(screen.getByTestId('music-review-continue'))
+    expect(screen.getByTestId('music-review-done')).toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(MODAL_EXIT_MS))
+    expect(screen.queryByTestId('music-review-done')).toBeNull()
+    vi.useRealTimers()
+  })
+
   it('keeps the sheet open after a partial undo and says how many changes stayed', () => {
     render(<Panes review={review({ status: 'ready', lastRun: run({ undoFailures: 2 }) })} />)
     expect(warnings()).toEqual(['2 changes could not be undone'])
@@ -2029,7 +2071,7 @@ describe('MusicReview', () => {
 describe('list review', () => {
   const listReview = (over: Partial<Review> = {}) => review({ kind: 'list', ...over })
   const columnProps = {
-    visible: { spelling: [], duplicates: [], damage: [] },
+    visible: { spelling: [], duplicates: [], damage: [], incomplete: [] },
     selectedKey: null,
     onSelect: vi.fn(),
     onClose: vi.fn(),
@@ -2755,5 +2797,124 @@ describe('damage findings in the list review', () => {
     )
     expect(screen.getByTestId('damage-undo-note')).toHaveTextContent('Cues go back from Backups')
     expect(screen.getByTestId('music-review-undo')).toBeInTheDocument()
+  })
+})
+
+describe('incomplete tracks', () => {
+  const A: IncompleteCard = {
+    id: '/m/a.aiff',
+    name: 'Song',
+    fields: [{ field: 'artist', proposal: { value: 'Lara', source: 'name' } }, { field: 'year' }],
+  }
+  const B: IncompleteCard = { id: '/m/b.aiff', name: 'Other', fields: [{ field: 'year' }] }
+  const values: Record<string, string> = { '/m/a.aiff\0artist': 'Lara' }
+  const incompleteReview = (over: Partial<Review> = {}) =>
+    review({
+      kind: 'list',
+      spelling: [],
+      filter: 'incomplete',
+      incomplete: [A, B],
+      fillValue: (id, field) => values[`${id}\0${field}`] ?? '',
+      ...over,
+    })
+  const rows = () => screen.getAllByTestId('incomplete-row')
+
+  it('offers the filter in both reviews with how many tracks lack a field', () => {
+    const { unmount } = render(<Panes review={incompleteReview({ kind: 'music' })} />)
+    fireEvent.click(screen.getByTestId('music-review-filter-trigger'))
+    expect(screen.getByTestId('music-review-filter-incomplete')).toHaveTextContent('Incomplete2')
+    unmount()
+    render(<Panes review={incompleteReview()} />)
+    fireEvent.click(screen.getByTestId('music-review-filter-trigger'))
+    expect(screen.getByTestId('music-review-filter-incomplete')).toHaveTextContent('Incomplete2')
+  })
+
+  it('names what each track lacks and where its proposal comes from', () => {
+    render(<Panes review={incompleteReview()} />)
+    const [a, b] = rows()
+    expect(within(a).getByTestId('music-review-row-detail')).toHaveTextContent(
+      'Missing Artist, Year',
+    )
+    expect(within(a).getByTestId('incomplete-row-source')).toHaveTextContent('From file name')
+    expect(within(a).getByTestId('music-review-row-pill')).toHaveAttribute('data-tone', 'good')
+    expect(within(b).getByTestId('incomplete-row-source')).toHaveTextContent('No proposal')
+    expect(within(b).getByTestId('music-review-row-pill')).toHaveAttribute('data-tone', 'warn')
+  })
+
+  // A value the user wrote or copied is what gets written: the row must not still say none.
+  it('calls a track the user filled by hand ready, not without a proposal', () => {
+    render(
+      <Panes
+        review={incompleteReview({
+          fillValue: (id, field) =>
+            (({ ...values, '/m/b.aiff\0year': '1995' }) as Record<string, string>)[
+              `${id}\0${field}`
+            ] ?? '',
+        })}
+      />,
+    )
+    const b = rows()[1]
+    expect(within(b).getByTestId('incomplete-row-source')).toHaveTextContent('Filled in by hand')
+    expect(within(b).getByTestId('music-review-row-pill')).toHaveAttribute('data-tone', 'good')
+  })
+
+  // The user's ask: fix them all at once, without opening each track.
+  it('stages every track with a proposal from one button over the list', () => {
+    const stageProposals = vi.fn()
+    render(<Panes review={incompleteReview({ stageProposals })} />)
+    fireEvent.click(screen.getByTestId('incomplete-stage-all'))
+    expect(stageProposals).toHaveBeenCalled()
+    expect(screen.getByTestId('incomplete-stage-all')).toHaveTextContent('Stage 1 proposal')
+  })
+
+  it('offers no bulk staging once every proposal is in the tray', () => {
+    render(<Panes review={incompleteReview({ staged: new Set([incompleteKey(A.id)]) })} />)
+    expect(screen.queryByTestId('incomplete-stage-all')).toBeNull()
+  })
+
+  it('lets the user write or change each missing value before staging', () => {
+    const setFillValue = vi.fn()
+    render(<Panes review={incompleteReview({ setFillValue })} />)
+    fireEvent.click(rows()[0])
+    const [artist, year] = screen.getAllByTestId('incomplete-value')
+    expect(artist).toHaveValue('Lara')
+    expect(year).toHaveValue('')
+    fireEvent.change(year, { target: { value: '1995' } })
+    expect(setFillValue).toHaveBeenCalledWith('/m/a.aiff', 'year', '1995')
+  })
+
+  it('stages the track from its footer, and not while it has nothing to write', () => {
+    const toggleStaged = vi.fn()
+    render(<Panes review={incompleteReview({ toggleStaged })} />)
+    fireEvent.click(rows()[0])
+    fireEvent.click(screen.getByTestId('incomplete-stage'))
+    expect(toggleStaged).toHaveBeenCalledWith(incompleteKey(A.id))
+    fireEvent.click(rows()[1])
+    expect(screen.getByTestId('incomplete-stage')).toBeDisabled()
+  })
+
+  // A label's year or a set's grouping is usually the same on every track of it.
+  it('copies a value to the other tracks that lack the same field', () => {
+    const setFillValue = vi.fn()
+    const typed: Record<string, string> = { ...values, '/m/a.aiff\0year': '1995' }
+    render(
+      <Panes
+        review={incompleteReview({
+          setFillValue,
+          fillValue: (id, field) => typed[`${id}\0${field}`] ?? '',
+        })}
+      />,
+    )
+    fireEvent.click(rows()[0])
+    expect(screen.queryByTestId('incomplete-use-others-artist')).toBeNull()
+    fireEvent.click(screen.getByTestId('incomplete-use-others-year'))
+    expect(setFillValue).toHaveBeenCalledWith('/m/b.aiff', 'year', '1995')
+    expect(setFillValue).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not call the review clean while tracks still lack a field', () => {
+    render(<Panes review={incompleteReview({ filter: 'all' })} />)
+    expect(screen.queryByTestId('music-review-clean')).toBeNull()
+    expect(screen.queryByTestId('music-review-all-clear')).toBeNull()
   })
 })

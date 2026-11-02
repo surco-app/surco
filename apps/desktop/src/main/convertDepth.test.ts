@@ -108,6 +108,18 @@ describe('convertAudio output bit depth', () => {
     expect(depthOf(out).sampleFmt).toBe('s32')
   }, 30000)
 
+  // The CDJ-3000, CDJ-3000X and XDJ-AZ load WAV and AIFF at 16 or 24 bits only; a float
+  // 32-bit export from a DAW is written at 24 bits under Corrected, the bytes included.
+  it('writes a float 32-bit AIFF as 24-bit integer under Corrected', async () => {
+    const float32 = join(dir, 'float32.aiff')
+    execFileSync(FF, ['-y', '-v', 'error', '-i', src, '-c:a', 'pcm_f32be', float32])
+    const out = join(dir, 'out-float32.wav')
+    await convertAudio(float32, out, 'wav', meta, undefined, undefined, undefined, {
+      bitDepth: 'corrected',
+    })
+    expect(depthOf(out)).toMatchObject({ sampleFmt: 's32', bits: 24 })
+  }, 30000)
+
   it('keeps genuinely 24-bit audio at 24 bits under Same as source', async () => {
     const noisy = join(dir, 'true24.flac')
     execFileSync(FF, [

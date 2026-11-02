@@ -350,32 +350,6 @@ textarea {
   }
 }
 
-@keyframes player-in {
-  from {
-    transform: translateY(calc(100% + 0.75rem));
-    opacity: 0;
-  }
-  to {
-    transform: none;
-    opacity: 1;
-  }
-}
-
-.animate-player-in {
-  animation: player-in 0.26s cubic-bezier(0.2, 0, 0, 1);
-}
-
-@keyframes player-out {
-  to {
-    transform: translateY(calc(100% + 0.75rem));
-    opacity: 0;
-  }
-}
-
-.animate-player-out {
-  animation: player-out 0.2s cubic-bezier(0.2, 0, 0, 1) forwards;
-}
-
 /* Carries the height tween when the player swaps its waveform strip for the slim
    transport row; Player.tsx drives the from/to heights inline. */
 .player-section {
@@ -541,6 +515,37 @@ textarea {
 @media (prefers-reduced-motion: reduce) {
   .donate-pop {
     animation: overlay-in 0.2s ease;
+  }
+}
+
+/* A card dialog leaving (see ModalExit): back down the path pop-in rose along, shorter and
+   accelerating, since closing needs no ceremony. Declared after .donate-pop so the donate
+   nudge, whose own entrance overrides .animate-pop, still leaves the same way. 150 ms keeps
+   step with MODAL_EXIT_MS, the timer that unmounts it. */
+@keyframes pop-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@keyframes overlay-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-pop-out {
+  animation: pop-out 0.15s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.animate-overlay-out {
+  animation: overlay-out 0.15s ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pop-out {
+    animation: overlay-out 0.15s ease forwards;
   }
 }
 
@@ -901,16 +906,14 @@ button:hover > .process-fill {
      up, and listing it here too would win on source order and silently override whatever
      that rule says the day someone tunes it. */
   .animate-pop,
-  .animate-pop-flat,
-  .animate-player-in {
+  .animate-pop-flat {
     animation: overlay-in 0.2s ease;
   }
 
   /* The toast's exit still has to END invisible — it is the timer in ToastStack, not this
      animation, that unmounts the card, so a card that merely stopped moving would sit there
      fully opaque until its leave timer fired. Fade in place, same duration. */
-  .animate-toast-leave,
-  .animate-player-out {
+  .animate-toast-leave {
     animation: toast-fade-out 0.2s ease forwards;
   }
 
@@ -1186,5 +1189,39 @@ button:hover > .process-fill {
 @media (prefers-reduced-motion: reduce) {
   .copies-feedback {
     transition: opacity 180ms ease-out;
+  }
+}
+
+/* The player arriving at the foot of the library column and leaving it again. A transition
+   rather than a pair of keyframes, because a transition starts from the value on screen:
+   reopening the player while it slides out turns it around where it is, where the entrance
+   keyframes restarted from the very bottom and the half-gone card jumped down first. The
+   exit is 200 ms to match PLAYER_LEAVE_MS in App.tsx, the timer that unmounts it. This sits
+   at the end of the file so the Copias line keeps the first @starting-style. */
+.player-card {
+  transition:
+    transform 0.26s cubic-bezier(0.2, 0, 0, 1),
+    opacity 0.26s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.player-card[data-leaving] {
+  transform: translateY(calc(100% + 0.75rem));
+  opacity: 0;
+  transition-duration: 0.2s;
+}
+
+@starting-style {
+  .player-card {
+    transform: translateY(calc(100% + 0.75rem));
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .player-card {
+    transition: opacity 0.2s ease;
+  }
+  .player-card[data-leaving] {
+    transform: none;
   }
 }

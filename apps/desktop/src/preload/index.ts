@@ -21,7 +21,6 @@ import type {
   MusicFileLookup,
   MusicFixProgress,
   MusicReviewEntry,
-  MusicReviewField,
   PairFacts,
   ProcessProgress,
   ProgramCopies,
@@ -33,6 +32,7 @@ import type {
   RekordboxSyncIssue,
   RememberedAutoMatch,
   RestoreResult,
+  ReviewWriteField,
   RowWaveRequest,
   SaveCuesRequest,
   ScanVerdict,
@@ -170,7 +170,7 @@ const api: Api = {
   repairDamage: (items) => ipcRenderer.invoke('damage:repair', items),
   setMusicField: (
     pid: string,
-    field: MusicReviewField,
+    field: ReviewWriteField,
     from: string,
     to: string,
     location?: string,
@@ -209,6 +209,8 @@ const api: Api = {
     persistentId: string,
   ): Promise<AppleMusicPlaylistTracks | null> =>
     ipcRenderer.invoke('applemusic:libraryPlaylistTracks', persistentId),
+  loadAppleMusicPlaylistsCached: (): Promise<AppleMusicPlaylist[] | null> =>
+    ipcRenderer.invoke('applemusic:playlistsCached'),
   loadAppleMusicPlaylistCached: (persistentId: string): Promise<AppleMusicPlaylistTracks | null> =>
     ipcRenderer.invoke('applemusic:playlistCached', persistentId),
   appleMusicArtwork: (
@@ -388,6 +390,7 @@ const api: Api = {
   trashEmpty: (): Promise<void> => ipcRenderer.invoke('trash:empty'),
   trashReveal: (): Promise<void> => ipcRenderer.invoke('trash:reveal'),
   copyText: (text: string): Promise<void> => ipcRenderer.invoke('clipboard:write', text),
+  logInfo: (message: string): void => ipcRenderer.send('log:info', message),
   logError: (message: string, stack?: string): void =>
     ipcRenderer.send('log:renderer', message, stack),
   revealLog: (): Promise<void> => ipcRenderer.invoke('log:reveal'),
@@ -395,6 +398,13 @@ const api: Api = {
   copiesStatus: (): Promise<ProgramCopies[]> => ipcRenderer.invoke('copies:status'),
   restoreCopy: (program: DjProgram, copyId: string): Promise<RestoreResult> =>
     ipcRenderer.invoke('copies:restore', program, copyId),
+  sourceChanged: (path: string): Promise<boolean> =>
+    ipcRenderer.invoke('files:sourceChanged', path),
+  onFilesChanged: (cb: (files: { changed: string[]; gone: string[] }) => void): (() => void) => {
+    const handler = (_e: unknown, files: { changed: string[]; gone: string[] }) => cb(files)
+    ipcRenderer.on('files:changed', handler)
+    return () => ipcRenderer.removeListener('files:changed', handler)
+  },
   onCopiesChanged: (cb: () => void): (() => void) => {
     const handler = () => cb()
     ipcRenderer.on('copies:changed', handler)

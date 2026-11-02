@@ -2,9 +2,9 @@ import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type {
   AppleMusicTrackMeta,
-  LibraryTagUpdate,
   PlaylistSource,
   ProcessProgress,
+  ReviewedFileUpdate,
   ReviewRawFields,
   SessionEdit,
   SourcePlaylistEntry,
@@ -15,6 +15,8 @@ import { fillFromAppleMusic } from '../lib/appleMusicFill'
 import { createPriorityLimit } from '../lib/concurrency'
 import { trackSignature, withSignatureCover, withSignatureMeta } from '../lib/dirty'
 import { parseFileName } from '../lib/filename'
+import { REVIEW_WRITE_FIELDS } from '../lib/incompleteReview'
+import { diskMeta } from '../lib/listReviewEntries'
 import { newTrackPaths } from '../lib/newTracks'
 import { mergeReadMeta } from '../lib/readMerge'
 import { withReviewedFields } from '../lib/reviewedFields'
@@ -106,6 +108,9 @@ interface Params {
   // say so — those rows silently showing only file-name data used to read as "this
   // file has no tags" when the real tags were just unreadable.
   onMetaReadFailed: (count: number) => void
+  // How many rows of an open playlist went because the background check found their files
+  // gone, so App can say so as it does for the ones missing when the playlist opens.
+  onSourceFilesGone?: (count: number) => void
   // Fired once per addPaths call with the deduped batch of genuinely new paths, right
   // after they're known and before their metadata reads resolve — App's hook for seeding
   // the disk-cached quality/clipping verdicts (seedCachedAnalyses) in one round trip so
@@ -168,6 +173,7 @@ interface TrackLibrary {
   // name-parsed value) and clearing the failed mark. Resolves true once the row holds the
   // file's tags; false leaves the mark in place, and the conversion refuses the row.
   rereadTrackMeta: (id: string) => Promise<boolean>
+  refreshChangedTrack: (id: string) => Promise<boolean>
   completeTrackMeta: (id: string) => Promise<void>
   // Re-reads the file after an in-place export rewrote it, so the row stops describing
   // bytes that no longer exist. Only the fields the row renders — everything the user
@@ -175,7 +181,7 @@ interface TrackLibrary {
   refreshTrackFromDisk: (id: string, path: string) => Promise<void>
   // The review rewrote these fields on the file: rows of that file take the new values
   // and their disk snapshot moves with them, so the fix is not left looking like an edit.
-  patchReviewedFields: (path: string, fields: LibraryTagUpdate['fields']) => void
+  patchReviewedFields: (path: string, fields: ReviewedFileUpdate['fields']) => void
   removeTrack: (id: string, everywhere?: boolean) => void
   removeTracks: (ids: string[], everywhere?: boolean) => void
   clearTracks: () => void
@@ -192,6 +198,7 @@ export function useTrackLibrary({
   onDuplicatesSkipped,
   onNoAudioFound,
   onMetaReadFailed,
+  onSourceFilesGone,
   onPathsAdded,
   filesOpen = true,
 }: Params): TrackLibrary {
@@ -593,6 +600,11 @@ export function useTrackLibrary({
       )
       if (Object.keys(rawFields).length > 0 && patch.diskSignature)
         patch.reviewRaw = { signature: patch.diskSignature, fields: rawFields }
+      const notInFile = REVIEW_WRITE_FIELDS.filter(
+        (f) => readMeta[f].trim() && !(tags[f] ?? '').trim(),
+      )
+      if (notInFile.length > 0 && patch.diskSignature)
+        patch.notInFile = { signature: patch.diskSignature, fields: notInFile }
       if (saved) Object.assign(patch, restoredPatch(saved))
       // The row paints from embeddedCover, so a cover restored from the session has to
       // land there too — otherwise reopening showed the placeholder in the crate while the
@@ -675,6 +687,21 @@ export function useTrackLibrary({
     const current = tracksRef.current.find((t) => t.id === id)
     if (!current) return false
     const ok = await loadTrackMeta({ ...newTrack(current.inputPath), id: current.id })
+    flushMetaPatches()
+    return ok
+  })
+
+  // The file changed after the row was read: merged against that earlier read, so the fields
+  // the user left alone take the file's new values and the ones they typed stay.
+  const refreshChangedTrack = useStableCallback(async (id: string): Promise<boolean> => {
+    const current = tracksRef.current.find((t) => t.id === id)
+    if (!current) return false
+    const read = diskMeta(current)
+    const ok = await loadTrackMeta({
+      ...newTrack(current.inputPath),
+      id: current.id,
+      ...(read && { meta: read }),
+    })
     flushMetaPatches()
     return ok
   })
@@ -774,7 +801,7 @@ export function useTrackLibrary({
   })
 
   const patchReviewedFields = useCallback(
-    (path: string, fields: LibraryTagUpdate['fields']): void =>
+    (path: string, fields: ReviewedFileUpdate['fields']): void =>
       setTracks((prev) =>
         prev.map((t) => (t.inputPath === path ? withReviewedFields(t, fields) : t)),
       ),
@@ -1128,6 +1155,32 @@ export function useTrackLibrary({
     [setSelection],
   )
 
+  // A row read under a date remembered from last launch shows the file as it was then; the
+  // background check reports the ones changed or gone since. Those are read again (what the
+  // user typed stays), except a playlist row whose file went: it goes, as it would have had
+  // the file been missing when the playlist opened. A row being converted is left to it.
+  const onSourceFilesGoneRef = useRef(onSourceFilesGone)
+  onSourceFilesGoneRef.current = onSourceFilesGone
+  useEffect(
+    () =>
+      window.api.onFilesChanged(({ changed, gone }) => {
+        const same = (p: string): string => p.normalize('NFC')
+        const went = new Set(gone.map(same))
+        const touched = new Set([...changed.map(same), ...went])
+        const dropped: string[] = []
+        for (const t of tracksRef.current) {
+          if (t.status === 'processing' || !touched.has(same(t.inputPath))) continue
+          if (went.has(same(t.inputPath)) && !t.inFiles) dropped.push(t.id)
+          else void refreshChangedTrack(t.id)
+        }
+        if (dropped.length === 0) return
+        for (const p of went) listedBySource.current.delete(p)
+        removeTracks(dropped)
+        onSourceFilesGoneRef.current?.(dropped.length)
+      }),
+    [refreshChangedTrack, removeTracks],
+  )
+
   function clearTracks(): void {
     const cleared = tracksRef.current
     // An import still reading is reading for a crate that no longer exists: without
@@ -1186,6 +1239,7 @@ export function useTrackLibrary({
     deriveTracks,
     startOverTrack,
     rereadTrackMeta,
+    refreshChangedTrack,
     completeTrackMeta,
     refreshTrackFromDisk,
     patchReviewedFields,

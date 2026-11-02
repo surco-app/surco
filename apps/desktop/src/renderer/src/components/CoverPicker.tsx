@@ -20,6 +20,7 @@ import { stepImageIndex } from '../lib/release'
 import { useToast } from '../lib/toastContext'
 import type { TrackItem } from '../types'
 import { CoverLightbox } from './CoverLightbox'
+import { ModalExit } from './ModalShell'
 import { Tooltip } from './Tooltip'
 
 // One icon button in the cover's hover action bar. pointer-events-auto so it stays
@@ -566,28 +567,30 @@ export function CoverPicker({
             </button>
           </div>
         )}
-        {lightboxOpen && displayCover && (
-          <CoverLightbox
-            src={displayCover}
-            // Mirrors coverSourceOf: only when the shown cover is the file's own
-            // embedded thumbnail does the audio file hold a better original.
-            fullResFrom={
-              !isMulti && displayCover === item.embeddedCover ? item.inputPath : undefined
-            }
-            // Same gate and stepper as the well's inline arrows, so the lightbox can
-            // browse the file's art and the release's images and close on whichever.
-            nav={
-              coverChoices.length > 1
-                ? {
-                    position: coverChoices.findIndex((c) => c.uri === displayCover) + 1,
-                    count: coverChoices.length,
-                    onStep: pickCoverImage,
-                  }
-                : undefined
-            }
-            onClose={() => setLightboxOpen(false)}
-          />
-        )}
+        <ModalExit>
+          {lightboxOpen && displayCover && (
+            <CoverLightbox
+              src={displayCover}
+              // Mirrors coverSourceOf: only when the shown cover is the file's own
+              // embedded thumbnail does the audio file hold a better original.
+              fullResFrom={
+                !isMulti && displayCover === item.embeddedCover ? item.inputPath : undefined
+              }
+              // Same gate and stepper as the well's inline arrows, so the lightbox can
+              // browse the file's art and the release's images and close on whichever.
+              nav={
+                coverChoices.length > 1
+                  ? {
+                      position: coverChoices.findIndex((c) => c.uri === displayCover) + 1,
+                      count: coverChoices.length,
+                      onStep: pickCoverImage,
+                    }
+                  : undefined
+              }
+              onClose={() => setLightboxOpen(false)}
+            />
+          )}
+        </ModalExit>
         {displayCover && coverDims && (
           <div
             data-testid="cover-resolution"

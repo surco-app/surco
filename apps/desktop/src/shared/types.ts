@@ -874,6 +874,8 @@ export interface AppleMusicUpdateJob {
 
 export type MusicReviewField = 'title' | 'artist' | 'albumArtist' | 'album' | 'genre'
 
+export type ReviewWriteField = MusicReviewField | 'year' | 'grouping'
+
 export type ReviewRawFields = Partial<Record<MusicReviewField, string>>
 
 export interface TagChange {
@@ -884,6 +886,11 @@ export interface TagChange {
 export interface LibraryTagUpdate {
   path: string
   fields: Partial<Record<MusicReviewField, TagChange>>
+}
+
+export interface ReviewedFileUpdate {
+  path: string
+  fields: Partial<Record<ReviewWriteField, TagChange>>
 }
 
 export interface MusicReviewEntry {
@@ -899,7 +906,7 @@ export interface MusicReviewEntry {
 
 export interface MusicFieldFix {
   persistentId: string
-  field: MusicReviewField
+  field: ReviewWriteField
   from: string
   to: string
 }
@@ -1006,7 +1013,7 @@ export interface MusicFixOutcome {
   music: MusicFieldOutcome[]
   file: 'written' | 'unchanged' | 'missing' | 'failed' | 'skipped'
   // The fields that reached the file; what the libraries follow.
-  written: MusicReviewField[]
+  written: ReviewWriteField[]
   backupId?: string
   error?: string
 }
@@ -1026,7 +1033,7 @@ export interface ReviewEntry {
 
 export interface ReviewFix {
   id: string
-  field: MusicReviewField
+  field: ReviewWriteField
   from: string
   to: string
 }
@@ -1059,7 +1066,7 @@ export interface ReviewOutcome {
   fixes: ReviewFix[]
   music: (MusicFieldOutcome | 'none')[]
   file: MusicFixOutcome['file']
-  written: MusicReviewField[]
+  written: ReviewWriteField[]
   backupId?: string
   error?: string
 }
@@ -1264,7 +1271,17 @@ export type RekordboxQueueNotice =
   | { code: 'cues-adjusted'; track: string; moved: number; maxMs: number }
   | { code: 'cues-unfit'; track: string; count: number; contentId: string; ms: number }
 
-export type ProcessStage = 'cover' | 'converting' | 'appleMusic' | 'engineDj' | 'verify'
+export type ProcessStage =
+  | 'cover'
+  | 'converting'
+  | 'tags'
+  | 'appleMusic'
+  | 'appleMusicUpdate'
+  | 'appleMusicReplace'
+  | 'engineDj'
+  | 'verify'
+
+export type MusicOp = 'added' | 'updated' | 'replaced'
 
 export interface ProcessProgress {
   id: string
@@ -1358,6 +1375,11 @@ export interface ProcessResult {
   // conversion added or updated one. The renderer stores it so later syncs,
   // manual updates and reveals address this exact copy.
   musicPersistentId?: string
+  // What the Apple Music step did to the library, so the done line names it. Absent when
+  // there was no Music step or it failed.
+  musicOp?: MusicOp
+  // The format stayed and no filter ran, so only the tags were rewritten.
+  tagsOnly?: true
   verification?: Verification
   // True when the conversion registered the track in the Engine DJ library, so the
   // renderer can mark it owned there without waiting for a library snapshot refresh.

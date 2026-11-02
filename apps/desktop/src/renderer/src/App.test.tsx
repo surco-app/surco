@@ -273,6 +273,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     version: '0.0.0-test',
     getSettings: vi.fn().mockResolvedValue(settings()),
     loadAppleMusicLibraryPlaylistTracks: vi.fn().mockResolvedValue(null),
+    loadAppleMusicPlaylistsCached: vi.fn().mockResolvedValue(null),
     loadAppleMusicPlaylistCached: vi.fn().mockResolvedValue(null),
     keepsTrash: vi.fn().mockResolvedValue(true),
     saveSettings: vi.fn<Api['saveSettings']>().mockResolvedValue(settings()),
@@ -303,6 +304,8 @@ function setApi(over: Record<string, unknown> = {}): void {
     onExpandedBatch: () => () => {},
     onNotAudioSkipped: () => () => {},
     onFoldersChanged: () => () => {},
+    onFilesChanged: () => () => {},
+    sourceChanged: vi.fn<Api['sourceChanged']>().mockResolvedValue(false),
     unwatchFolders: vi.fn().mockResolvedValue(undefined),
     takePendingFiles: vi.fn().mockResolvedValue([]),
     getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
@@ -2138,7 +2141,7 @@ describe('App source playlists', () => {
       a: [entry('/m/a1.wav'), entry('/m/a2.wav'), entry('/m/a3.wav')],
       b: [entry('/m/b1.wav'), entry('/m/b2.wav')],
     }
-    function setupPlaylists(): { probed: string[]; release: () => void } {
+    function setupPlaylists(noArtist: string[] = []): { probed: string[]; release: () => void } {
       const probed: string[] = []
       let release: () => void = () => {}
       const gate = new Promise<void>((r) => {
@@ -2146,10 +2149,10 @@ describe('App source playlists', () => {
       })
       setApi({
         getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok', autoMatch: true })),
-        readTags: vi.fn(async (path: string) => ({
-          title: path.replace(/^\/m\/|\.wav$/g, ''),
-          artist: 'DJ',
-        })),
+        readTags: vi.fn(async (path: string) => {
+          const title = path.replace(/^\/m\/|\.wav$/g, '')
+          return { title, artist: noArtist.includes(title) ? '' : 'DJ' }
+        }),
         search: vi.fn(async (_q: string, _p: unknown, _pr: unknown, hints?: { title?: string }) => {
           if (hints?.title && !probed.includes(hints.title)) probed.push(hints.title)
           await gate
@@ -2199,6 +2202,46 @@ describe('App source playlists', () => {
       fireEvent.click(screen.getByTestId('source-node-a'))
 
       await waitFor(() => expect(probed).toEqual(expect.arrayContaining(['a2', 'a3'])))
+    })
+
+    it('matches only the filtered rows while a filter is on, and the hidden ones once it is off', async () => {
+      const { probed, release } = setupPlaylists(['a3'])
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-a'))
+      await waitFor(() => expect(probed).toEqual(['a1']))
+
+      fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+      fireEvent.click(await screen.findByTestId('quality-filter-missingRequired'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      await waitFor(() =>
+        expect(screen.getByTestId('auto-match-progress')).toHaveTextContent('0/1'),
+      )
+      release()
+      await waitFor(() => expect(probed).toContain('a3'))
+      await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
+      expect(probed).not.toContain('a2')
+
+      fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+      fireEvent.click(await screen.findByTestId('quality-filter-all'))
+
+      await waitFor(() => expect(probed).toContain('a2'))
+    })
+
+    it('matches only the rows the search leaves on screen', async () => {
+      const { probed, release } = setupPlaylists()
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-a'))
+      await waitFor(() => expect(probed).toEqual(['a1']))
+
+      fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'a3' } })
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      release()
+      await waitFor(() => expect(probed).toContain('a3'))
+      await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
+
+      expect(probed).not.toContain('a2')
     })
 
     // Tracks holds only what the user put there: the rows a playlist set aside are not on
@@ -7748,6 +7791,40 @@ const addThree = async () => {
 }
 
 describe('App list review', () => {
+  // The user's ask: pick the tracks missing required data in the list and fix them all at once.
+  it('fills a track missing required data from the filter, in the review', async () => {
+    vi.resetModules()
+    listApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn(async (path: string) =>
+        path === '/music/a.wav'
+          ? { title: 'Alpha', artist: 'DJ Lara' }
+          : { title: 'Bravo', artist: '' },
+      ),
+      applyListFixes: vi.fn().mockResolvedValue([]),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(await screen.findByTestId('quality-filter-missingRequired'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getByTestId('review-incomplete'))
+    expect(await screen.findByTestId('music-review-filter-trigger')).toHaveTextContent('Incomplete')
+    expect(await screen.findAllByTestId('incomplete-row')).toHaveLength(1)
+    fireEvent.click(screen.getAllByTestId('incomplete-row')[0])
+    fireEvent.change(screen.getByTestId('incomplete-value'), { target: { value: 'Lara' } })
+    fireEvent.click(screen.getByTestId('incomplete-stage'))
+    fireEvent.click(screen.getByTestId('music-review-apply'))
+    fireEvent.click(screen.getByTestId('music-review-confirm-apply'))
+    await screen.findByTestId('music-review-done')
+    expect(window.api.applyListFixes).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fixes: [{ id: '/music/b.wav', field: 'artist', from: '', to: 'Lara' }],
+      }),
+    )
+  })
+
   // Windows has no Music, but it has the list and the DJ libraries.
   it('opens over the list on Windows and gives the list back as it was', async () => {
     vi.resetModules()
@@ -8382,13 +8459,8 @@ describe('App empty screen offers a single way in', () => {
       meta: {},
       missing: rows.filter((r) => !r.path).length,
     })
-    const openMusic = async (
-      rows: { path: string | null }[],
-      onFocus?: (cb: () => void) => void,
-      later = rows,
-    ) => {
+    const openMusic = async (rows: { path: string | null }[], later = rows) => {
       vi.resetModules()
-      const focusListeners: ((focused: boolean) => void)[] = []
       reviewApi({
         loadAppleMusicPlaylists: vi
           .fn()
@@ -8397,19 +8469,10 @@ describe('App empty screen offers a single way in', () => {
           .fn()
           .mockResolvedValueOnce(reply(rows))
           .mockResolvedValue(reply(later)),
-        onWindowFocus: (cb: (focused: boolean) => void) => {
-          focusListeners.push(cb)
-          return () => {}
-        },
       })
       await renderApp()
       fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
       fireEvent.click(await screen.findByTestId('source-node-P1'))
-      onFocus?.(() =>
-        act(() => {
-          for (const cb of focusListeners) cb(true)
-        }),
-      )
     }
 
     it('tells the user how many tracks of the opened playlist have no file', async () => {
@@ -8419,19 +8482,16 @@ describe('App empty screen offers a single way in', () => {
       )
     })
 
-    it('says it once per opened playlist, not again when a refocus re-reads it', async () => {
-      let refocus = () => {}
+    it('says it once per opened playlist, not again when opening the Music tab re-reads it', async () => {
       await openMusic(
         [{ path: '/m/a.wav' }, { path: null }],
-        (fn) => {
-          refocus = fn
-        },
         [{ path: '/m/a.wav' }, { path: null }, { path: null }],
       )
       const notice = await screen.findByTestId('app-notice')
       fireEvent.click(within(notice).getByTestId('app-notice-dismiss'))
       await waitFor(() => expect(screen.queryByTestId('app-notice')).not.toBeInTheDocument())
-      refocus()
+      fireEvent.click(screen.getByTestId('source-rail-tracks'))
+      fireEvent.click(screen.getByTestId('source-rail-appleMusic'))
       await waitFor(() => expect(window.api.loadAppleMusicPlaylistTracks).toHaveBeenCalledTimes(2))
       await act(async () => {})
       expect(screen.queryByTestId('app-notice')).not.toBeInTheDocument()

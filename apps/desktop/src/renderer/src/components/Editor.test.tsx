@@ -517,14 +517,14 @@ describe('Editor cover picker', () => {
 
   // The 160px well can't show whether art is actually sharp or what it depicts;
   // clicking it opens the artwork big, and the backdrop click puts it away.
-  it('opens the cover large when the thumbnail is clicked and closes it from the backdrop', () => {
+  it('opens the cover large when the thumbnail is clicked and closes it from the backdrop', async () => {
     ;(window as unknown as { api: Record<string, unknown> }).api.prepareCoverDrag = () =>
       Promise.resolve(null)
     renderEditor({ id: 'a', coverUrl: 'blob:cover' })
     fireEvent.click(screen.getByTestId('cover-zoom'))
     expect(screen.getByTestId('cover-lightbox-img')).toHaveAttribute('src', 'blob:cover')
     fireEvent.click(screen.getByTestId('cover-lightbox-backdrop'))
-    expect(screen.queryByTestId('cover-lightbox-img')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByTestId('cover-lightbox-img')).not.toBeInTheDocument())
   })
 
   // App's global Escape only closes App-owned modals; the lightbox is editor-local,

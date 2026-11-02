@@ -16,6 +16,7 @@ import {
   ImageOff,
   KeyRound,
   List,
+  ListChecks,
   type LucideIcon,
   PencilLine,
   Plus,
@@ -177,6 +178,7 @@ interface Props {
   // only while the suspect bucket is the active filter and holds fakes, so the destructive
   // action appears exactly when the DJ is looking at the fakes it would purge.
   onTrashSuspects: () => void
+  onReviewIncomplete?: () => void
   // Controls that share the filter row — the track sort and its direction toggle — sitting
   // beside the filter trigger so the search box above can take the full width.
   children?: React.ReactNode
@@ -205,6 +207,7 @@ export function QualityFilterBar({
   selectedCount,
   onRevealSelected,
   onTrashSuspects,
+  onReviewIncomplete,
   children,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -444,6 +447,18 @@ export function QualityFilterBar({
         >
           <Trash2 className="h-4 w-4" aria-hidden="true" />
           <Tooltip label={tr('sidebar.filter.trashSuspects', { count: tally.suspect })} />
+        </button>
+      )}
+      {value.tags === 'missingRequired' && tally.missingRequired > 0 && onReviewIncomplete && (
+        <button
+          type="button"
+          data-testid="review-incomplete"
+          aria-label={tr('sidebar.filter.reviewIncomplete')}
+          onClick={onReviewIncomplete}
+          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-dim outline-none hover:bg-[var(--color-hover)] hover:text-[var(--color-accent)]"
+        >
+          <ListChecks className="h-4 w-4" aria-hidden="true" />
+          <Tooltip label={tr('sidebar.filter.reviewIncomplete')} />
         </button>
       )}
     </FilterBar>

@@ -25,12 +25,12 @@ import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
   DeclickConfig,
   FormatSetting,
-  LibraryTagUpdate,
   MetaTextKey,
   NormalizeConfig,
   PlaylistSource,
   PlaylistTrackRef,
   RekordboxQueueWritten,
+  ReviewedFileUpdate,
   SearchHints,
   SearchProviderId,
   Settings,
@@ -45,6 +45,7 @@ import { Confetti } from './components/Confetti'
 import { CopiesScreen } from './components/CopiesScreen'
 import { EmptyDisc } from './components/EmptyDisc'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { ModalExit } from './components/ModalShell'
 import {
   MusicReviewColumn,
   MusicReviewDetailPane,
@@ -112,6 +113,7 @@ import { type AppError, type AppStore, createAppStore, useAppStore } from './lib
 import { activeCleanups, cleanupPatcher, planAutoClean } from './lib/autoClean'
 import {
   acceptReviewOf,
+  acceptReviewPatch,
   clearedTrackPatch,
   holdsAutoMatch,
   type MatchCleanup,
@@ -203,6 +205,7 @@ import {
   filterWithSticky,
   formatBuckets,
   holdOrder,
+  matchesFilter,
   outsideFilter,
   qualityCounts,
   searchMatcher,
@@ -642,6 +645,7 @@ export default function App(): React.JSX.Element {
     deriveTracks,
     startOverTrack,
     rereadTrackMeta,
+    refreshChangedTrack,
     completeTrackMeta,
     refreshTrackFromDisk,
     patchReviewedFields,
@@ -726,6 +730,19 @@ export default function App(): React.JSX.Element {
     onNoAudioFound: () => pushImportNotice(store, 'no-audio-found', tr('notices.noAudioFound')),
     onMetaReadFailed: (count) =>
       pushImportNotice(store, 'meta-read-failed', tr('notices.metaReadFailed', { count })),
+    // Same card as the files missing when the playlist opened: the background check found
+    // these gone later, since the files Surco knows are taken as there at the opening.
+    onSourceFilesGone: (count) => {
+      const name = browser.playlist?.name
+      if (!name) return
+      pushToast(store, {
+        key: 'source-missing-files',
+        tone: 'neutral',
+        message: tr('sources.missing', { count, name }),
+        duration: 4000,
+        testid: 'app-notice',
+      })
+    },
     // One disk-cache round trip for the whole freshly-dropped batch, so the list's quality
     // dot and clipping flag can appear before any per-track probe runs. Fire-and-forget:
     // a hydration failure just leaves the normal lazy probes to fill the verdicts in, same
@@ -1471,6 +1488,7 @@ export default function App(): React.JSX.Element {
     onOriginalKept: (name) => setNotice(tr('notices.originalKept', { name })),
     onMusicNameLeftMarked: (name) => setNotice(tr('notices.musicNameLeftMarked', { name })),
     rereadTrackMeta,
+    refreshChangedTrack,
     completeTrackMeta,
     // Keyed so a bulk run failing on every track (e.g. Engine DJ open) raises one
     // card, not thirty; persistent like every failure toast. The card names the track
@@ -1754,9 +1772,8 @@ export default function App(): React.JSX.Element {
     return (t: TrackItem): boolean => seenInAll.has(t.id) && inPlaylist(t)
   }, [browser.source, browser.playlist, browser.entries, seenInAll])
   useEffect(() => {
-    scopeAutoMatch(sweepScope)
     scopeAnalysis(sweepScope)
-  }, [sweepScope, scopeAutoMatch, scopeAnalysis])
+  }, [sweepScope, scopeAnalysis])
   // What "Revisar metadatos" would read with the rail as it is: the rows shown, which are
   // the open playlist's once they are applied, reviewed in Apple Music for a Music playlist
   // and through the files otherwise.
@@ -1775,7 +1792,7 @@ export default function App(): React.JSX.Element {
   // One rule for the list menu and the palette: something to review in the open target,
   // and no conversion writing the same files.
   const canReviewList = target.count > 0 && !batching
-  const openTargetReview = useStableCallback((filter: 'all' | 'duplicates') => {
+  const openTargetReview = useStableCallback((filter: 'all' | 'duplicates' | 'incomplete') => {
     const next = reviewOpening(target, filter)
     if (next) setReview(next)
   })
@@ -1810,6 +1827,16 @@ export default function App(): React.JSX.Element {
     }),
     [settings?.requiredFields, settings?.customFields, playlistScope, unsavedCues],
   )
+  const filterFactsRef = useRef(filterFacts)
+  filterFactsRef.current = filterFacts
+  const autoMatchScope = useMemo(() => {
+    const searched = searchMatcher(deferredSearch)
+    return (t: TrackItem): boolean =>
+      sweepScope(t) && searched(t) && matchesFilter(t, filterSelection, filterFactsRef.current)
+  }, [sweepScope, deferredSearch, filterSelection])
+  useEffect(() => {
+    scopeAutoMatch(autoMatchScope)
+  }, [autoMatchScope, scopeAutoMatch])
   const qualityTally = useMemo(
     () => qualityCounts(scopeTracks, filterFacts),
     [scopeTracks, filterFacts],
@@ -2057,7 +2084,7 @@ export default function App(): React.JSX.Element {
   // later Update does not write the old spelling back over the fix. Rows it did not touch
   // are left alone; the disk read only refreshes the label and the art.
   const onReviewFilesChanged = useStableCallback(
-    async (updates: LibraryTagUpdate[]): Promise<void> => {
+    async (updates: ReviewedFileUpdate[]): Promise<void> => {
       for (const { path, fields } of updates) {
         patchReviewedFields(path, fields)
         for (const row of tracksRef.current.filter((r) => r.inputPath === path))
@@ -3005,10 +3032,26 @@ export default function App(): React.JSX.Element {
   const reviewIds = review?.source === 'music' ? review.scope?.ids : undefined
   const reviewMode = review?.source === 'music' ? review.scope?.mode : undefined
   const reviewSource = useMemo(() => {
+    const incomplete = {
+      required: () => settingsRef.current?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+      suggest: (row: TrackItem) =>
+        acceptReviewPatch(
+          row,
+          importFieldsRef.current,
+          genrePresetsRef.current,
+          fullReleaseDateRef.current,
+        )?.meta,
+    }
     if (reviewKind === 'music')
-      return reviewIds && reviewMode ? scopedMusicSource(reviewIds, reviewMode) : undefined
+      return reviewIds && reviewMode
+        ? scopedMusicSource(reviewIds, reviewMode, {
+            ...incomplete,
+            rows: () => tracksViewRef.current,
+          })
+        : undefined
     if (reviewKind !== 'list') return undefined
     return listReviewSource({
+      incomplete,
       rows: reviewPaths
         ? () => tracksViewRef.current.filter((t) => reviewPaths.has(t.inputPath))
         : () => tracksViewRef.current.filter(inFiles),
@@ -3309,6 +3352,9 @@ export default function App(): React.JSX.Element {
                             onRemoveSelected={onRemoveSelected}
                             onTrashSelected={onTrashSelected}
                             onTrashSuspects={onTrashSuspects}
+                            onReviewIncomplete={
+                              canReviewList ? () => openTargetReview('incomplete') : undefined
+                            }
                           />
                           {crateOpen && !reorderEnabled && (
                             <p
@@ -3609,17 +3655,19 @@ export default function App(): React.JSX.Element {
                 }
               />
             )}
-            {usbModal && (
-              <UsbExportModal
-                nodes={usbTree.data}
-                volumes={usbVolumes}
-                preselect={usbModal.preselect}
-                source={usbModal.source === 'engine' ? 'engine' : undefined}
-                onStart={(req) => window.api.usbExport(req)}
-                onCancelExport={() => void window.api.usbCancel()}
-                onClose={closeUsbExport}
-              />
-            )}
+            <ModalExit>
+              {usbModal && (
+                <UsbExportModal
+                  nodes={usbTree.data}
+                  volumes={usbVolumes}
+                  preselect={usbModal.preselect}
+                  source={usbModal.source === 'engine' ? 'engine' : undefined}
+                  onStart={(req) => window.api.usbExport(req)}
+                  onCancelExport={() => void window.api.usbCancel()}
+                  onClose={closeUsbExport}
+                />
+              )}
+            </ModalExit>
             {confettiBurst > 0 && <Confetti key={confettiBurst} />}
           </div>
         </ToastProvider>

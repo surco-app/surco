@@ -15,7 +15,7 @@ import { trackSignature } from '../lib/dirty'
 import { listReviewSource } from '../lib/listReviewSource'
 import { ToastProvider } from '../lib/toastContext'
 import type { TrackItem } from '../types'
-import { type MusicReview, useMusicReview } from './useMusicReview'
+import { incompleteKey, type MusicReview, useMusicReview } from './useMusicReview'
 
 const e = (
   persistentId: string,
@@ -2127,5 +2127,133 @@ describe('damage in the list review', () => {
     act(() => result.current.ignore(damageKey(LIKELY)))
     expect(result.current.damage).toEqual([SURE])
     expect(saveIgnored).toHaveBeenCalledWith([damageKey(LIKELY)])
+  })
+})
+
+describe('incomplete tracks in the review', () => {
+  const row = (path: string, fileName: string, over: Partial<TrackItem['meta']> = {}) => {
+    const meta = { ...emptyMetadata(), title: 'Song', artist: 'Ann', ...over }
+    return {
+      id: path,
+      inputPath: path,
+      fileName,
+      listLabel: 'Song',
+      query: '',
+      status: 'idle',
+      meta,
+      diskSignature: trackSignature({ meta }),
+    } as TrackItem
+  }
+  const NAMED = row('/m/a.aiff', 'Lara - Song', { artist: '' })
+  const UNNAMED = row('/m/b.aiff', 'b', { artist: '' })
+  const FULL = row('/m/c.aiff', 'c')
+  const FILL = { id: '/m/a.aiff', field: 'artist', from: '', to: 'Lara' }
+  const incompleteApi = (over = {}) =>
+    setApi({
+      appleMusicFileEntries: vi.fn().mockResolvedValue({ consulted: true, entries: {} }),
+      applyListFixes: vi.fn().mockResolvedValue([
+        {
+          id: '/m/a.aiff',
+          path: '/m/a.aiff',
+          fixes: [FILL],
+          music: ['none'],
+          file: 'written',
+          written: ['artist'],
+          backupId: 'b1',
+        },
+      ]),
+      onListFixProgress: vi.fn(() => () => {}),
+      cancelListFixes: vi.fn().mockResolvedValue(undefined),
+      ...over,
+    })
+  const hook = (over = {}) => {
+    const source = listReviewSource({
+      rows: () => [NAMED, UNNAMED, FULL],
+      mac: true,
+      launchMusic: () => true,
+      onRowsRemoved: vi.fn(),
+      incomplete: { required: () => ['artist'], suggest: () => undefined },
+    })
+    return renderHook(() => useMusicReview(props({ source, ...over })))
+  }
+  const loaded = async () => {
+    const h = hook()
+    await waitFor(() => expect(h.result.current.incomplete).toHaveLength(2))
+    return h
+  }
+
+  // A proposal from the file name can be wrong: nothing is written until the user puts it in.
+  it('lists what the files lack and stages nothing on its own', async () => {
+    incompleteApi()
+    const { result } = await loaded()
+    expect(result.current.incomplete.map((f) => f.id)).toEqual(['/m/a.aiff', '/m/b.aiff'])
+    expect(result.current.staged.size).toBe(0)
+    expect(result.current.fillValue('/m/a.aiff', 'artist')).toBe('Lara')
+    expect(result.current.fillValue('/m/b.aiff', 'artist')).toBe('')
+  })
+
+  it('puts every track with a proposal in the tray at once and leaves the rest', async () => {
+    incompleteApi()
+    const { result } = await loaded()
+    act(() => result.current.stageProposals())
+    expect([...result.current.staged]).toEqual([incompleteKey('/m/a.aiff')])
+    expect(result.current.summary.byField).toMatchObject({ artist: 1 })
+  })
+
+  it('writes the fill as a change from empty and stops listing the track', async () => {
+    const api = incompleteApi()
+    const onFilesChanged = vi.fn()
+    const { result } = hook({ onFilesChanged })
+    await waitFor(() => expect(result.current.incomplete).toHaveLength(2))
+    act(() => result.current.stageProposals())
+    await act(() => result.current.apply())
+    expect(api.applyListFixes).toHaveBeenCalledWith(expect.objectContaining({ fixes: [FILL] }))
+    expect(onFilesChanged).toHaveBeenCalledWith([
+      { path: '/m/a.aiff', fields: { artist: { from: '', to: 'Lara' } } },
+    ])
+    expect(result.current.incomplete.map((f) => f.id)).toEqual(['/m/b.aiff'])
+  })
+
+  it('takes a value the user typed over the proposal', async () => {
+    const api = incompleteApi()
+    const { result } = await loaded()
+    act(() => result.current.setFillValue('/m/a.aiff', 'artist', 'DJ Lara'))
+    act(() => result.current.toggleStaged(incompleteKey('/m/a.aiff')))
+    await act(() => result.current.apply())
+    expect(api.applyListFixes).toHaveBeenCalledWith(
+      expect.objectContaining({ fixes: [{ ...FILL, to: 'DJ Lara' }] }),
+    )
+  })
+
+  // An empty value would write nothing; staging it would promise a fix that never comes.
+  it('stages a track with nothing to write only once the user types a value', async () => {
+    incompleteApi()
+    const { result } = await loaded()
+    act(() => result.current.toggleStaged(incompleteKey('/m/b.aiff')))
+    expect(result.current.staged.size).toBe(0)
+    act(() => result.current.setFillValue('/m/b.aiff', 'artist', 'Bo'))
+    act(() => result.current.toggleStaged(incompleteKey('/m/b.aiff')))
+    expect(result.current.staged.has(incompleteKey('/m/b.aiff'))).toBe(true)
+  })
+
+  it('drops a staged track from the run when the user empties its value', async () => {
+    incompleteApi()
+    const { result } = await loaded()
+    act(() => result.current.stageProposals())
+    act(() => result.current.setFillValue('/m/a.aiff', 'artist', ''))
+    expect(result.current.summary.tracks).toBe(0)
+  })
+
+  it('names each track by its artist and title, whichever it still has', async () => {
+    incompleteApi()
+    const { result } = await loaded()
+    expect(result.current.incomplete.map((f) => f.name)).toEqual(['Song', 'Song'])
+  })
+
+  it('hides an ignored track', async () => {
+    incompleteApi()
+    const { result } = await loaded()
+    act(() => result.current.ignore(incompleteKey('/m/b.aiff')))
+    expect(result.current.incomplete.map((f) => f.id)).toEqual(['/m/a.aiff'])
   })
 })

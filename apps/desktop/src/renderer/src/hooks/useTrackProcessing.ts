@@ -6,7 +6,13 @@ import { effectiveMeta, strayTags } from '../../../shared/customFields'
 import { DEFAULT_FIELDS } from '../../../shared/defaults'
 import { splitNameLeftMarked } from '../../../shared/errorKeys'
 import { batchKeepMp3, hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
-import type { DeclickConfig, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
+import type {
+  DeclickConfig,
+  FormatSetting,
+  MusicOp,
+  NormalizeConfig,
+  Settings,
+} from '../../../shared/types'
 import { removeAnalysisQueries } from '../lib/analysisQueries'
 import {
   type BatchOutcome,
@@ -78,6 +84,9 @@ interface Params {
   // empty over the file; the read has to succeed first. Without this wired up the job
   // still tells main the metadata never came from the file, and main refuses it.
   rereadTrackMeta?: (id: string) => Promise<boolean>
+  // A row read under a remembered file date shows the file as it was then; a file changed
+  // since is read again before anything is written over it (see fileSignatures in main).
+  refreshChangedTrack?: (id: string) => Promise<boolean>
   completeTrackMeta?: (id: string) => Promise<void>
   // Fired once after a convert-all run that produced at least one conversion — the
   // moment of value the donate nudge rides. Fires per run, never per track, so a
@@ -151,6 +160,7 @@ export function useTrackProcessing({
   onFormatSkipped,
   onKeptAsIs,
   rereadTrackMeta,
+  refreshChangedTrack,
   completeTrackMeta,
   onConversion,
   onProcessError,
@@ -231,6 +241,20 @@ export function useTrackProcessing({
       // A read that failed must never become a write (see Params.rereadTrackMeta). The row
       // is re-resolved after the read because the library patches it in place; a row still
       // flagged afterwards, or with no re-read available, is refused rather than written.
+      if (refreshChangedTrack && (await window.api.sourceChanged(track.inputPath))) {
+        const ok = await refreshChangedTrack(id)
+        const fresh = ok ? tracksRef.current.find((t) => t.id === id) : undefined
+        if (!fresh || fresh.metaReadFailed) {
+          updateTrack(id, {
+            status: 'error',
+            error: tr('errors.sourceTagsUnread'),
+            skipReason: undefined,
+            stage: undefined,
+          })
+          return 'failed'
+        }
+        track = fresh
+      }
       if (track.metaPartial && completeTrackMeta) {
         await completeTrackMeta(id)
         const fresh = tracksRef.current.find((t) => t.id === id)
@@ -583,6 +607,7 @@ export function useTrackProcessing({
     })
     try {
       let persistentId: string | undefined
+      let musicOp: MusicOp = 'added'
       if (musicPersistentId) {
         persistentId = await window.api.updateAppleMusic({
           persistentId: musicPersistentId,
@@ -593,6 +618,7 @@ export function useTrackProcessing({
         // The library copy was deleted in Music (update found nothing): re-add the file so
         // it lands back in the library, instead of falsely reporting "added" on a track
         // that's gone. Mirrors the automatic convert path's update-or-add fallback.
+        if (persistentId) musicOp = 'updated'
         if (!persistentId && outputPath) {
           persistentId = await window.api.addToAppleMusic({
             outputPath,
@@ -609,6 +635,7 @@ export function useTrackProcessing({
       }
       updateTrack(id, {
         musicStatus: 'added',
+        musicOp,
         musicPersistentId: persistentId ?? musicPersistentId,
       })
       // A check that read Music before this add is read again for the entry it made.

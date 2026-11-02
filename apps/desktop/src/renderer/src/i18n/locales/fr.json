@@ -128,7 +128,8 @@
       "unsaved": "Non enregistrées",
       "trashSuspects_one": "Mettre le fichier douteux à la corbeille",
       "trashSuspects_other": "Mettre les {{count}} fichiers douteux à la corbeille",
-      "current": "Filtre : {{filter}} {{count}}"
+      "current": "Filtre : {{filter}} {{count}}",
+      "reviewIncomplete": "Les compléter dans Vérifier les métadonnées"
     },
     "search": {
       "placeholder": "Rechercher des morceaux",
@@ -488,7 +489,10 @@
     "stage": {
       "cover": "Préparation de la pochette…",
       "converting": "Conversion en {{format}}…",
+      "tags": "Écriture des étiquettes…",
       "appleMusic": "Ajout à Apple Music…",
+      "appleMusicUpdate": "Mise à jour dans Apple Music…",
+      "appleMusicReplace": "Remplacement dans Apple Music…",
       "engineDj": "Ajout à Engine DJ…",
       "verify": "Vérification…"
     },
@@ -698,12 +702,16 @@
     "update": "Mettre à jour les étiquettes",
     "updateMusic": "Mettre à jour les étiquettes + Apple Music",
     "processing": "Conversion…",
-    "exportedAs": "✓ Exporté en {{format}}",
+    "exportedAs": "✓ Converti en {{format}}",
     "addedToAppleMusic": "✓ Ajouté à Apple Music",
+    "updatedInAppleMusic": "✓ Mis à jour dans Apple Music",
+    "replacedInAppleMusic": "✓ Remplacé dans Apple Music",
+    "tagsUpdated": "✓ Étiquettes mises à jour",
     "moreActions": "Plus d'actions",
     "showFile": "Afficher le fichier",
     "reexport": "Convertir à nouveau",
     "reexportAs": "Convertir à nouveau en {{format}}",
+    "updateAgain": "Mettre à jour à nouveau",
     "exportCollection": "Exporter vers une autre app…",
     "cleanUpPrevious_one": "Nettoyer le fichier précédent",
     "cleanUpPrevious_other": "Nettoyer {{count}} fichiers précédents",
@@ -1445,7 +1453,7 @@
       "source": "Comme la source",
       "corrected": "Corrigé"
     },
-    "bitDepthHint": "« Comme la source » conserve la profondeur exacte du fichier, remplissage compris. Réduire à 16 bits applique un dither. « Corrigé » écrit en vrai 16 bits, sans perte, un fichier dont l'audio 16 bits rembourré en 24 est prouvé ; l'audio 24 bits authentique conserve sa profondeur.",
+    "bitDepthHint": "« Comme la source » conserve la profondeur exacte du fichier, remplissage compris. Réduire à 16 bits applique un dither. « Corrigé » écrit en vrai 16 bits, sans perte, un fichier dont l'audio 16 bits rembourré en 24 est prouvé ; l'audio 24 bits authentique conserve sa profondeur. Un fichier 32 bits est écrit en 24 bits, le maximum que chargent les lecteurs DJ.",
     "bitDepthApplies": "S'applique à la conversion en AIFF, WAV, FLAC ou ALAC ; le MP3 n'a pas de profondeur de bits.",
     "sampleRate": "Fréquence d'échantillonnage",
     "sampleRates": {
@@ -2093,7 +2101,9 @@
       "artist": "{{title}} · Artiste",
       "album": "{{title}} · Album",
       "albumArtist": "{{title}} · Artiste de l'album",
-      "genre": "{{title}} · Genre"
+      "genre": "{{title}} · Genre",
+      "year": "{{title}} · Année",
+      "grouping": "{{title}} · Regroupement"
     },
     "reviewFixWrittenBackup": "Modifié dans Music et dans le fichier, avec une sauvegarde",
     "reviewFixWritten": "Modifié dans Music et dans le fichier",
@@ -2277,7 +2287,8 @@
       "all": "Tout",
       "spelling": "Graphies",
       "duplicates": "Doublons",
-      "damage": "Dégâts"
+      "damage": "Dégâts",
+      "incomplete": "Incomplètes"
     },
     "copyTitle": "Copier le titre",
     "field": {
@@ -2285,7 +2296,9 @@
       "albumArtist": "Artiste de l'album",
       "album": "Album",
       "genre": "Genre",
-      "title": "Titre"
+      "title": "Titre",
+      "year": "Année",
+      "grouping": "Regroupement"
     },
     "kind": {
       "invisible": "espaces en trop ou caractères invisibles",
@@ -2468,7 +2481,24 @@
     "unifyCount_one": "Unifier dans {{count}} piste",
     "unifyCount_other": "Unifier dans {{count}} pistes",
     "removeCopies_one": "Retirer {{count}} copie",
-    "removeCopies_other": "Retirer {{count}} copies"
+    "removeCopies_other": "Retirer {{count}} copies",
+    "incomplete": {
+      "missing": "Manque {{fields}}",
+      "source": {
+        "shown": "Dans l’app",
+        "suggested": "Correspondance suggérée",
+        "name": "Du nom de fichier",
+        "none": "Aucune proposition",
+        "typed": "Saisi à la main"
+      },
+      "stageAll_one": "Ajouter {{count}} proposition au lot",
+      "stageAll_other": "Ajouter {{count}} propositions au lot",
+      "stage": "Compléter",
+      "empty": "Vide",
+      "useForOthers_one": "Utiliser pour l’autre",
+      "useForOthers_other": "Utiliser pour les {{count}} autres",
+      "note": "Seuls les champs vides sont remplis. Une valeur déjà présente dans le fichier n’est pas modifiée."
+    }
   },
   "listReview": {
     "loading": "Lecture de la liste…",
@@ -2891,16 +2921,33 @@
     "pendingLine": {
       "addedToAppleMusic_one": "Ajouté à Apple Music · {{programs}} à la fermeture",
       "addedToAppleMusic_other": "Ajouté à Apple Music · {{programs}} à la fermeture",
-      "exportedAs_one": "Exporté en {{format}} · {{programs}} à la fermeture",
-      "exportedAs_other": "Exporté en {{format}} · {{programs}} à la fermeture"
+      "exportedAs_one": "Converti en {{format}} · {{programs}} à la fermeture",
+      "exportedAs_other": "Converti en {{format}} · {{programs}} à la fermeture",
+      "updatedInAppleMusic_one": "Mis à jour dans Apple Music · {{programs}} à la fermeture",
+      "updatedInAppleMusic_other": "Mis à jour dans Apple Music · {{programs}} à la fermeture",
+      "replacedInAppleMusic_one": "Remplacé dans Apple Music · {{programs}} à la fermeture",
+      "replacedInAppleMusic_other": "Remplacé dans Apple Music · {{programs}} à la fermeture",
+      "tagsUpdated_one": "Étiquettes mises à jour · {{programs}} à la fermeture",
+      "tagsUpdated_other": "Étiquettes mises à jour · {{programs}} à la fermeture"
     },
     "plainLine": {
       "addedToAppleMusic": "Ajouté à Apple Music",
-      "exportedAs": "Exporté en {{format}}",
-      "exportedCount_one": "{{count}} morceau exporté",
-      "exportedCount_other": "{{count}} morceaux exportés",
+      "exportedAs": "Converti en {{format}}",
+      "exportedCount_one": "{{count}} morceau converti",
+      "exportedCount_other": "{{count}} morceaux convertis",
       "addedToAppleMusicCount_one": "{{count}} morceau ajouté à Apple Music",
-      "addedToAppleMusicCount_other": "{{count}} morceaux ajoutés à Apple Music"
+      "addedToAppleMusicCount_other": "{{count}} morceaux ajoutés à Apple Music",
+      "updatedInAppleMusic": "Mis à jour dans Apple Music",
+      "replacedInAppleMusic": "Remplacé dans Apple Music",
+      "tagsUpdated": "Étiquettes mises à jour",
+      "updatedInAppleMusicCount_one": "{{count}} morceau mis à jour dans Apple Music",
+      "updatedInAppleMusicCount_other": "{{count}} morceaux mis à jour dans Apple Music",
+      "replacedInAppleMusicCount_one": "{{count}} morceau remplacé dans Apple Music",
+      "replacedInAppleMusicCount_other": "{{count}} morceaux remplacés dans Apple Music",
+      "inAppleMusicCount_one": "{{count}} morceau dans Apple Music",
+      "inAppleMusicCount_other": "{{count}} morceaux dans Apple Music",
+      "tagsUpdatedCount_one": "Étiquettes mises à jour sur {{count}} morceau",
+      "tagsUpdatedCount_other": "Étiquettes mises à jour sur {{count}} morceaux"
     },
     "batch": {
       "verified_one": "{{count}} vérifié",

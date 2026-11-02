@@ -1676,6 +1676,127 @@ describe('runProcessTrack — Apple Music', () => {
   })
 })
 
+describe('runProcessTrack — naming what it did', () => {
+  const mac = (over: Partial<Settings> = {}) =>
+    makeDeps({ platform: 'darwin', settings: settings({ addToAppleMusic: true, ...over }) })
+  const stagesOf = (deps: ProcessTrackDeps): unknown[] =>
+    vi.mocked(deps.sendProgress).mock.calls.map((c) => c[0])
+
+  // The button says "Update tags" for a same-format edit with no filter, so the step in
+  // flight and the done line must not claim a conversion that never re-encoded anything.
+  it('says it writes tags, not that it converts, when the format stays and no filter runs', async () => {
+    const deps = makeDeps()
+    const result = await runProcessTrack(job({ format: 'wav' }), deps)
+
+    expect(stagesOf(deps)).toEqual(['tags', 'verify'])
+    expect(result.tagsOnly).toBe(true)
+  })
+
+  it('still says it converts when a filter re-renders the audio of a same-format file', async () => {
+    const deps = makeDeps()
+    const result = await runProcessTrack(
+      job({
+        format: 'wav',
+        normalize: { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+      }),
+      deps,
+    )
+
+    expect(stagesOf(deps)).toEqual(['converting', 'verify'])
+    expect(result.tagsOnly).toBeUndefined()
+  })
+
+  it('says it converts when a same-format copy is written beside the original', async () => {
+    const deps = makeDeps({ settings: settings({ convertBesideOriginal: true }) })
+    const result = await runProcessTrack(job({ format: 'wav' }), deps)
+
+    expect(stagesOf(deps)).toEqual(['converting', 'verify'])
+    expect(result.tagsOnly).toBeUndefined()
+  })
+
+  it('says it converts when the format changes', async () => {
+    const deps = makeDeps()
+    const result = await runProcessTrack(job(), deps)
+
+    expect(stagesOf(deps)).toEqual(['converting', 'verify'])
+    expect(result.tagsOnly).toBeUndefined()
+  })
+
+  // Editing a track already in Music retags its entry. "Adding to Apple Music…" and
+  // "Added to Apple Music" read as a second copy landing in the library.
+  it('says it updates the Music entry the track already has', async () => {
+    const deps = mac()
+    const result = await runProcessTrack(job({ musicPersistentId: 'lib-7' }), deps)
+
+    expect(stagesOf(deps)).toContain('appleMusicUpdate')
+    expect(stagesOf(deps)).not.toContain('appleMusic')
+    expect(result.musicOp).toBe('updated')
+  })
+
+  it('says it updates the Music entry that already holds the rewritten file', async () => {
+    const deps = mac({ overwriteOriginal: true })
+    deps.isSameFile = vi.fn(async () => true)
+    deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    const result = await runProcessTrack(job({ outputName: 'song', format: 'wav' }), deps)
+
+    expect(stagesOf(deps)).toContain('appleMusicUpdate')
+    expect(result.musicOp).toBe('updated')
+  })
+
+  it('says it added once the entry it meant to update was gone and the file went in anew', async () => {
+    const deps = mac()
+    deps.updateInAppleMusic = vi.fn(async () => null)
+    const result = await runProcessTrack(job({ musicPersistentId: 'lib-7' }), deps)
+
+    expect(stagesOf(deps)).toContain('appleMusic')
+    expect(result.musicOp).toBe('added')
+  })
+
+  it('says it adds a track Music does not have yet', async () => {
+    const deps = mac()
+    const result = await runProcessTrack(job(), deps)
+
+    expect(stagesOf(deps)).toEqual(['converting', 'appleMusic', 'verify'])
+    expect(result.musicOp).toBe('added')
+  })
+
+  it('says it replaces the Music entry of a file the conversion renamed', async () => {
+    const deps = mac({ overwriteOriginal: true })
+    deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    const result = await runProcessTrack(job(), deps)
+
+    expect(stagesOf(deps)).toContain('appleMusicReplace')
+    expect(stagesOf(deps)).not.toContain('appleMusic')
+    expect(result.musicOp).toBe('replaced')
+  })
+
+  it('says it replaces the library copy a conversion supersedes', async () => {
+    const deps = makeDeps({ platform: 'darwin' })
+    const result = await runProcessTrack(
+      job({
+        addToAppleMusic: true,
+        musicPersistentId: 'old-id',
+        replacesPath: '/m/old.mp3',
+        replacesLabel: 'Old Artist - Old Title',
+      }),
+      deps,
+    )
+
+    expect(stagesOf(deps)).toContain('appleMusicReplace')
+    expect(result.musicOp).toBe('replaced')
+  })
+
+  it('claims nothing about Music when its step failed', async () => {
+    const deps = mac()
+    deps.addToAppleMusic = vi.fn(async () => {
+      throw new Error('Music got an error (1000)')
+    })
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result.musicOp).toBeUndefined()
+  })
+})
+
 describe('runProcessTrack — Engine DJ', () => {
   // The Engine DJ destination registers the written file (the path the library row
   // points at) after the conversion lands, and announces itself as its own stage so
@@ -1887,6 +2008,7 @@ describe('runProcessTrack — Apple Music only', () => {
       inPlace: false,
       addedToMusicOnly: true,
       musicPersistentId: 'added-id',
+      musicOp: 'added',
       normalizeSkipped: false,
       verification: {
         status: 'ok',
@@ -2867,6 +2989,23 @@ describe('runProcessTrack — converting a library track to another format', () 
     expect(deps.updateInAppleMusic).not.toHaveBeenCalled()
     expect(deps.allowMedia).toHaveBeenCalledWith('/lib/A.aiff')
     expect(result).toMatchObject({ musicPersistentId: 'added-id', supersededPath: '/lib/A.aiff' })
+  })
+
+  // Do it.aiff stayed behind after its conversion on 01/11 with no trace of why. When the
+  // replacement keeps the old entry, the original is never offered nor retired: the log says so.
+  it('says in the log why the original of a replacement that kept the old entry stays', async () => {
+    const info = vi.spyOn(log, 'info').mockImplementation(() => {})
+    const deps = converting('/lib/A.aiff', {
+      carryAppleMusicHistory: vi.fn(async () => 'mismatch' as const),
+    })
+
+    const result = await runProcessTrack(libraryJob(), deps)
+
+    expect(result.supersededPath).toBeUndefined()
+    expect(info).toHaveBeenCalledWith(
+      'retire: kept /lib/A.aiff: Apple Music kept the old entry (mismatch)',
+    )
+    info.mockRestore()
   })
 
   it('replaces the entry the same way when the WAV is also kept in the output folder', async () => {

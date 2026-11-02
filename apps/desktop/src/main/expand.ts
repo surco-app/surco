@@ -61,16 +61,22 @@ export type OnBatch = (paths: string[]) => void
 // after ~1s. onBatch reports files the moment they are identified so the import can
 // start on them; the returned array is unchanged, so callers that ignore it (and the
 // awaited result everything still uses) behave exactly as before.
+// A file Surco has read and whose date it remembers (see fileSignatures) is taken as there
+// without asking the disk: opening a 2041-track Music playlist asked the NAS about each one
+// again, 17-20 s (measured 01/11). The check of those dates takes back a file that went.
 export async function expandPaths(
   paths: string[],
   onBatch?: OnBatch,
   onNotAudio?: (path: string) => void,
+  knownFile: (path: string) => boolean = () => false,
 ): Promise<string[]> {
   const expanded = await Promise.all(
     paths.map(async (p) => {
-      const info = await sourceStat(p).catch(async (err: NodeJS.ErrnoException) =>
-        (await isMissing(p, err)) ? null : undefined,
-      )
+      const info = knownFile(p)
+        ? undefined
+        : await sourceStat(p).catch(async (err: NodeJS.ErrnoException) =>
+            (await isMissing(p, err)) ? null : undefined,
+          )
       if (info === null) return []
       if (info?.isDirectory()) return collectAudio(p, onBatch)
       const name = basename(p)

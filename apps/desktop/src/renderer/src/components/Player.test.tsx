@@ -533,6 +533,7 @@ describe('LivePlayer', () => {
       />,
     )
     expect(screen.getByTestId('player')).toHaveAttribute('inert')
+    expect(screen.getByTestId('player')).toHaveAttribute('data-leaving')
   })
 
   it('stays interactive while it is showing', () => {

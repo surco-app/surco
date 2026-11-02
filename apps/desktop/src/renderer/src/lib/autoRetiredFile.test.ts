@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackItem } from '../types'
-import { autoRetiredFile } from './autoRetiredFile'
+import { autoRetiredFile, retireDecision } from './autoRetiredFile'
 
 function track(over: Partial<TrackItem> = {}): TrackItem {
   return {
@@ -130,5 +130,47 @@ describe('autoRetiredFile', () => {
     expect(
       autoRetiredFile(track({ supersededPath: undefined, outputPath: '/out/A.wav' })),
     ).toBeNull()
+  })
+})
+
+// Converting Do it.aiff to WAV on 01/11 left the AIFF behind, and nothing said why: the
+// decision kept no trace. Every original a format change should retire and does not now
+// carries its reason, so the next one can be read in the log.
+describe('retireDecision', () => {
+  it('names the check that did not come back ok', () => {
+    expect(
+      retireDecision(
+        track({
+          verification: {
+            status: 'mismatch',
+            checks: [
+              { place: 'appleMusic', state: 'mismatch', detail: { key: 'musicPlaylistLost' } },
+            ],
+          },
+        }),
+      ),
+    ).toEqual({
+      keep: '/lib/old/03 A.aiff',
+      reason: 'the check came back mismatch: appleMusic musicPlaylistLost',
+    })
+  })
+
+  it('names an old Music entry that had to be kept', () => {
+    expect(retireDecision(track({ oldMusicCopyKept: 'carry' }))).toEqual({
+      keep: '/lib/old/03 A.aiff',
+      reason: 'Apple Music kept the old entry (carry)',
+    })
+  })
+
+  it('says nothing while the check is still running', () => {
+    expect(retireDecision(track({ verification: { status: 'checking', checks: [] } }))).toBeNull()
+  })
+
+  it('says nothing for an original in the same format, which is never retired on its own', () => {
+    expect(retireDecision(track({ supersededPath: '/lib/old/03 A.wav' }))).toBeNull()
+  })
+
+  it('retires what the checks cleared', () => {
+    expect(retireDecision(track())).toEqual({ retire: '/lib/old/03 A.aiff' })
   })
 })

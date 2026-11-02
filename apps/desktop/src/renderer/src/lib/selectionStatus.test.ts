@@ -132,6 +132,19 @@ describe('selectionStatus', () => {
     expect(selectionStatus(added, [added, added], true).musicAdded).toBe(true)
     expect(selectionStatus(added, [added, failed], true).musicError).toBe('denied')
   })
+
+  // A batch reads "updated" or "added" only when every track went that way; a mix says
+  // where they are without claiming one action for all.
+  it('names the Music step the whole selection shares, or none when it mixes', () => {
+    const upd = track({ id: 'a', status: 'done', musicOp: 'updated', exportedTagsOnly: true })
+    const upd2 = track({ id: 'b', status: 'done', musicOp: 'updated', exportedTagsOnly: true })
+    const add = track({ id: 'c', status: 'done', musicOp: 'added' })
+    expect(selectionStatus(upd, undefined, true).musicOp).toBe('updated')
+    expect(selectionStatus(upd, [upd, upd2], true).musicOp).toBe('updated')
+    expect(selectionStatus(upd, [upd, add], true).musicOp).toBeUndefined()
+    expect(selectionStatus(upd, [upd, upd2], true).tagsOnly).toBe(true)
+    expect(selectionStatus(upd, [upd, add], true).tagsOnly).toBe(false)
+  })
 })
 
 // A batch of replacements leaves one orphan per track: each superseded file is out of

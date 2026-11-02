@@ -17,7 +17,8 @@ describe('exportButtonLabel', () => {
   // apply, so adding a new state can't silently reshuffle the existing ones.
   it.each([
     [{ ...base, processing: true, quiet: true, count: 2, done: true }, 'editor.processing'],
-    [{ ...base, quiet: true, count: 2, inPlace: true }, 'editor.reexport'],
+    [{ ...base, quiet: true, count: 2, inPlace: true }, 'editor.updateAgain'],
+    [{ ...base, quiet: true, count: 2 }, 'editor.reexport'],
     [{ ...base, count: 2, inPlace: true, withAppleMusic: true }, 'editor.convertAllMusic'],
     [{ ...base, count: 2, inPlace: true }, 'editor.convertAll'],
     [{ ...base, inPlace: true, stale: true, withAppleMusic: true }, 'editor.updateMusic'],
@@ -44,6 +45,16 @@ describe('exportButtonLabel', () => {
     const spec = exportButtonLabel({ ...base, quiet: true, format: 'FLAC', exportedFormat: 'WAV' })
     expect(spec.key).toBe('editor.reexportAs')
     expect(spec.options).toEqual({ format: 'FLAC' })
+  })
+
+  // A tags update repeats as an update: "Convert again" promised a conversion the next
+  // click never runs, while the button that started it said "Update tags".
+  it('repeats a tags update as an update, and a conversion as a conversion', () => {
+    const again = (over: Partial<ExportLabelState>): string =>
+      exportButtonLabel({ ...base, quiet: true, ...over }).key
+    expect(again({ inPlace: true, tagsOnly: true })).toBe('editor.updateAgain')
+    expect(again({ inPlace: true, tagsOnly: false })).toBe('editor.reexport')
+    expect(again({ inPlace: false, tagsOnly: true })).toBe('editor.reexport')
   })
 
   it('keeps the plain re-export label while the format matches what was exported', () => {

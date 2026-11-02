@@ -519,3 +519,42 @@ describe('listReviewSource damage', () => {
     expect(api.repairDamage).toHaveBeenCalledWith(items)
   })
 })
+
+describe('listReviewSource incomplete', () => {
+  const incomplete = { required: () => ['album'], suggest: () => undefined }
+
+  it('hands the review the read files that lack a required field', async () => {
+    const full = row('/m/b.aiff', 'B', {
+      meta: { ...emptyMetadata(), title: 'Song', artist: 'B', album: 'LP' },
+      diskSignature: trackSignature({
+        meta: { ...emptyMetadata(), title: 'Song', artist: 'B', album: 'LP' },
+      }),
+    })
+    const loaded = await source([row('/m/a.aiff', 'A'), full], { incomplete }).load()
+    expect(loaded.incomplete).toEqual([{ id: '/m/a.aiff', fields: [{ field: 'album' }] }])
+  })
+
+  it('asks Music about an incomplete file, since the fill is written there too', async () => {
+    await source([row('/m/a.aiff', 'A')], { incomplete }).load()
+    expect(api.appleMusicFileEntries).toHaveBeenCalledWith(
+      [{ path: '/m/a.aiff', title: 'Song' }],
+      false,
+    )
+  })
+
+  it('stops listing a field it filled once the reload comes, before the row catches up', async () => {
+    const s = source([row('/m/a.aiff', 'A')], { incomplete })
+    s.settle?.([{ path: '/m/a.aiff', fields: { album: { from: '', to: 'LP' } } }], [])
+    expect((await s.load()).incomplete).toEqual([])
+  })
+
+  it('leaves the trashed copies out', async () => {
+    const s = source([row('/m/a.aiff', 'A')], { incomplete })
+    s.settle?.([], ['/m/a.aiff'])
+    expect((await s.load()).incomplete).toEqual([])
+  })
+
+  it('looks for nothing when the opening has no required fields to check', async () => {
+    expect((await source([row('/m/a.aiff', 'A')]).load()).incomplete).toBeUndefined()
+  })
+})

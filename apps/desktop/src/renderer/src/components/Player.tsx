@@ -232,7 +232,8 @@ export function Player({
       // shadow: the player is the foot of the library column, and the lifted slab was the
       // heaviest thing in it. The wave is the one part that needs to stand out, and does.
       inert={leaving}
-      className={`group/player relative shrink-0 ${leaving ? 'animate-player-out' : 'animate-player-in'} overflow-hidden border-t border-[var(--color-line)] bg-[var(--color-ink)]`}
+      data-leaving={leaving || undefined}
+      className={`player-card group/player relative shrink-0 overflow-hidden border-t border-[var(--color-line)] bg-[var(--color-ink)]`}
     >
       {/* Dismissal belongs to the card, so it sits in the card's own top-right corner the
           way any closable panel does — not in the transport, where an exit sat one stray

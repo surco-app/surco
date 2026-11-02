@@ -168,7 +168,8 @@ export function ExportButton({
   // and a click stops the job. Only when a cancel handler is wired (single, non-quiet) and
   // the job is in the encode, the one stage a cancel reaches — writing the cover or adding
   // to a library runs to the end, so offering Cancel there promised a stop that never came.
-  const cancellable = !quiet && processing && !!onCancel && stage === 'converting'
+  const cancellable =
+    !quiet && processing && !!onCancel && (stage === 'converting' || stage === 'tags')
   const label = liveStage
     ? tr(`trackList.stage.${liveStage}`, { format: formatLabel })
     : tr(labelSpec.key, labelSpec.options)

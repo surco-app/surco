@@ -128,7 +128,8 @@
       "unsaved": "未保存",
       "trashSuspects_one": "疑わしいファイルをゴミ箱へ移動",
       "trashSuspects_other": "{{count}} の疑わしいファイルをゴミ箱へ移動",
-      "current": "フィルター: {{filter}} {{count}}"
+      "current": "フィルター: {{filter}} {{count}}",
+      "reviewIncomplete": "「メタデータを確認」で入力する"
     },
     "search": {
       "placeholder": "トラックを検索",
@@ -488,7 +489,10 @@
     "stage": {
       "cover": "アートワークを準備中…",
       "converting": "{{format}}へ変換中…",
+      "tags": "タグを書き込み中…",
       "appleMusic": "Apple Musicに追加中…",
+      "appleMusicUpdate": "Apple Music で更新中…",
+      "appleMusicReplace": "Apple Music で置き換え中…",
       "engineDj": "Engine DJに追加中…",
       "verify": "確認中…"
     },
@@ -698,12 +702,16 @@
     "update": "タグを更新",
     "updateMusic": "タグを更新 + Apple Music",
     "processing": "変換中…",
-    "exportedAs": "✓ {{format}} としてエクスポート",
+    "exportedAs": "✓ {{format}} に変換",
     "addedToAppleMusic": "✓ Apple Music に追加",
+    "updatedInAppleMusic": "✓ Apple Music で更新",
+    "replacedInAppleMusic": "✓ Apple Music で置き換え",
+    "tagsUpdated": "✓ タグを更新",
     "moreActions": "その他の操作",
     "showFile": "ファイルを表示",
     "reexport": "再度変換",
     "reexportAs": "再度 {{format}} に変換",
+    "updateAgain": "再度更新",
     "exportCollection": "DJ アプリへエクスポート…",
     "cleanUpPrevious_one": "前のファイルをクリーンアップ",
     "cleanUpPrevious_other": "前のファイル {{count}} 件をクリーンアップ",
@@ -1445,7 +1453,7 @@
       "source": "ソースと同じ",
       "corrected": "修正済み"
     },
-    "bitDepthHint": "「ソースと同じ」はファイルの正確なビット深度（パディング含む）を保持します。16 ビットに削減するとディザーが適用されます。「修正済み」は 16 ビット音声を 24 にパディングした真の 16 ビットとしてロスレスで書き出すファイルを作成します；本物の 24 ビット音声は深度を保持します。",
+    "bitDepthHint": "「ソースと同じ」はファイルの正確なビット深度（パディング含む）を保持します。16 ビットに削減するとディザーが適用されます。「修正済み」は 16 ビット音声を 24 にパディングした真の 16 ビットとしてロスレスで書き出すファイルを作成します；本物の 24 ビット音声は深度を保持します。 32 ビットのファイルは、DJ プレーヤーが読み込める最大の 24 ビットで書き出します。",
     "bitDepthApplies": "AIFF、WAV、FLAC、ALAC に変換するときに使用されます；MP3 にはビット深度はありません。",
     "sampleRate": "サンプリングレート",
     "sampleRates": {
@@ -2093,7 +2101,9 @@
       "artist": "{{title}} · アーティスト",
       "album": "{{title}} · アルバム",
       "albumArtist": "{{title}} · アルバムアーティスト",
-      "genre": "{{title}} · ジャンル"
+      "genre": "{{title}} · ジャンル",
+      "year": "{{title}} · 年",
+      "grouping": "{{title}} · グループ"
     },
     "reviewFixWrittenBackup": "音楽とファイルで変更され、バックアップされました",
     "reviewFixWritten": "音楽とファイルで変更されました",
@@ -2277,7 +2287,8 @@
       "all": "すべて",
       "spelling": "スペル",
       "duplicates": "重複",
-      "damage": "破損"
+      "damage": "破損",
+      "incomplete": "不完全"
     },
     "copyTitle": "タイトルをコピー",
     "field": {
@@ -2285,7 +2296,9 @@
       "albumArtist": "アルバムアーティスト",
       "album": "アルバム",
       "genre": "ジャンル",
-      "title": "タイトル"
+      "title": "タイトル",
+      "year": "年",
+      "grouping": "グループ"
     },
     "kind": {
       "invisible": "余分なスペースや見えない文字",
@@ -2468,7 +2481,24 @@
     "unifyCount_one": "{{count}} トラックを統一",
     "unifyCount_other": "{{count}} トラックを統一",
     "removeCopies_one": "{{count}} コピーを削除",
-    "removeCopies_other": "{{count}} コピーを削除"
+    "removeCopies_other": "{{count}} コピーを削除",
+    "incomplete": {
+      "missing": "{{fields}}がありません",
+      "source": {
+        "shown": "アプリ内",
+        "suggested": "検索の候補",
+        "name": "ファイル名から",
+        "none": "提案なし",
+        "typed": "手入力"
+      },
+      "stageAll_one": "{{count}}件の提案をステージ",
+      "stageAll_other": "{{count}}件の提案をステージ",
+      "stage": "入力する",
+      "empty": "空",
+      "useForOthers_one": "ほかの{{count}}件にも使う",
+      "useForOthers_other": "ほかの{{count}}件にも使う",
+      "note": "空のフィールドだけを埋めます。ファイルにすでにある値は変更しません。"
+    }
   },
   "listReview": {
     "loading": "リストを読み取り中…",
@@ -2891,16 +2921,33 @@
     "pendingLine": {
       "addedToAppleMusic_one": "Apple Music に追加 · {{programs}}は終了時に反映",
       "addedToAppleMusic_other": "Apple Music に追加 · {{programs}}は終了時に反映",
-      "exportedAs_one": "{{format}} としてエクスポート · {{programs}}は終了時に反映",
-      "exportedAs_other": "{{format}} としてエクスポート · {{programs}}は終了時に反映"
+      "exportedAs_one": "{{format}} に変換 · {{programs}}は終了時に反映",
+      "exportedAs_other": "{{format}} に変換 · {{programs}}は終了時に反映",
+      "updatedInAppleMusic_one": "Apple Music で更新 · {{programs}}は終了時に反映",
+      "updatedInAppleMusic_other": "Apple Music で更新 · {{programs}}は終了時に反映",
+      "replacedInAppleMusic_one": "Apple Music で置き換え · {{programs}}は終了時に反映",
+      "replacedInAppleMusic_other": "Apple Music で置き換え · {{programs}}は終了時に反映",
+      "tagsUpdated_one": "タグを更新 · {{programs}}は終了時に反映",
+      "tagsUpdated_other": "タグを更新 · {{programs}}は終了時に反映"
     },
     "plainLine": {
       "addedToAppleMusic": "Apple Music に追加",
-      "exportedAs": "{{format}} としてエクスポート",
-      "exportedCount_one": "{{count}} トラックをエクスポート",
-      "exportedCount_other": "{{count}} トラックをエクスポート",
+      "exportedAs": "{{format}} に変換",
+      "exportedCount_one": "{{count}} トラックを変換",
+      "exportedCount_other": "{{count}} トラックを変換",
       "addedToAppleMusicCount_one": "{{count}} トラックを Apple Music に追加",
-      "addedToAppleMusicCount_other": "{{count}} トラックを Apple Music に追加"
+      "addedToAppleMusicCount_other": "{{count}} トラックを Apple Music に追加",
+      "updatedInAppleMusic": "Apple Music で更新",
+      "replacedInAppleMusic": "Apple Music で置き換え",
+      "tagsUpdated": "タグを更新",
+      "updatedInAppleMusicCount_one": "{{count}} トラックを Apple Music で更新",
+      "updatedInAppleMusicCount_other": "{{count}} トラックを Apple Music で更新",
+      "replacedInAppleMusicCount_one": "{{count}} トラックを Apple Music で置き換え",
+      "replacedInAppleMusicCount_other": "{{count}} トラックを Apple Music で置き換え",
+      "inAppleMusicCount_one": "{{count}} トラックが Apple Music に",
+      "inAppleMusicCount_other": "{{count}} トラックが Apple Music に",
+      "tagsUpdatedCount_one": "{{count}} トラックのタグを更新",
+      "tagsUpdatedCount_other": "{{count}} トラックのタグを更新"
     },
     "batch": {
       "verified_one": "{{count}} 件確認済み",

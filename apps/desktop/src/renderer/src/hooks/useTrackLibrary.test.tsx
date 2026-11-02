@@ -17,9 +17,11 @@ type ExpandedBatchCb = (paths: string[]) => void
 function setApi(over: Record<string, unknown> = {}): {
   fire: FoldersChangedCb
   fireBatch: ExpandedBatchCb
+  fireChanged: (files: { changed: string[]; gone: string[] }) => void
 } {
   let cb: FoldersChangedCb = () => {}
   let batchCb: ExpandedBatchCb = () => {}
+  let changedCb: (files: { changed: string[]; gone: string[] }) => void = () => {}
   ;(window as unknown as { api: unknown }).api = {
     takePendingFiles: vi.fn().mockResolvedValue([]),
     onOpenFiles: vi.fn(() => () => {}),
@@ -29,6 +31,10 @@ function setApi(over: Record<string, unknown> = {}): {
     }),
     onFoldersChanged: vi.fn((fn: FoldersChangedCb) => {
       cb = fn
+      return () => {}
+    }),
+    onFilesChanged: vi.fn((fn: (files: { changed: string[]; gone: string[] }) => void) => {
+      changedCb = fn
       return () => {}
     }),
     unwatchFolders: vi.fn().mockResolvedValue(undefined),
@@ -42,7 +48,11 @@ function setApi(over: Record<string, unknown> = {}): {
     recordStat: vi.fn(),
     ...over,
   }
-  return { fire: (root, files) => cb(root, files), fireBatch: (paths) => batchCb(paths) }
+  return {
+    fire: (root, files) => cb(root, files),
+    fireBatch: (paths) => batchCb(paths),
+    fireChanged: (files) => changedCb(files),
+  }
 }
 
 function setup(): {
@@ -445,6 +455,52 @@ describe('useTrackLibrary read cap across imports', () => {
   })
 })
 
+// A row read under a date remembered from last launch shows the file as it was then. When
+// the background check finds the file changed outside Surco, the row is read again.
+describe('useTrackLibrary files changed outside Surco', () => {
+  it('reads a changed file again, keeping what the user typed', async () => {
+    const readMeta = vi.fn().mockResolvedValue({
+      tags: { title: 'Old', artist: 'A', album: 'X' },
+      duration: 180,
+      cover: null,
+      foreignTags: [],
+    })
+    const { fireChanged } = setApi({ readMeta })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() => result.current.addPaths(['/m/a.wav']))
+    const id = result.current.tracks[0].id
+    act(() =>
+      result.current.updateTrack(id, {
+        meta: { ...result.current.tracks[0].meta, album: 'Typed' },
+      }),
+    )
+    readMeta.mockResolvedValue({
+      tags: { title: 'New', artist: 'A', album: 'X' },
+      duration: 180,
+      cover: null,
+      foreignTags: [],
+    })
+
+    await act(async () => {
+      fireChanged({ changed: ['/m/a.wav'], gone: [] })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+    expect(result.current.tracks[0].meta).toMatchObject({ title: 'New', album: 'Typed' })
+  })
+})
+
 describe('useTrackLibrary removed tracks vs watcher', () => {
   // Removing a track with the X takes it out of the crate but not off the disk, so the
   // watcher's next report (a folder change, or the 60s safety poll) still lists its file.
@@ -735,6 +791,31 @@ describe('useTrackLibrary untrimmed review fields', () => {
     })
     await act(() => result.current.addPaths(['/m/Marea - Shore.wav']))
     expect(result.current.tracks[0].reviewRaw).toBeUndefined()
+  })
+
+  // The row shows a title and artist taken from the file name, but the file holds neither:
+  // the review must still see them as missing to write them.
+  it('notes the fields the row took from somewhere other than the file', async () => {
+    const result = readWith({
+      tags: { title: '', artist: '', genre: 'House' },
+      duration: 20,
+      cover: null,
+      foreignTags: [],
+    })
+    await act(() => result.current.addPaths(['/m/Marea - Shore.wav']))
+    const row = result.current.tracks[0]
+    expect(row.notInFile).toEqual({ signature: row.diskSignature, fields: ['title', 'artist'] })
+  })
+
+  it('notes nothing when the file holds every value the row shows', async () => {
+    const result = readWith({
+      tags: { title: 'Shore', artist: 'Marea' },
+      duration: 20,
+      cover: null,
+      foreignTags: [],
+    })
+    await act(() => result.current.addPaths(['/m/Marea - Shore.wav']))
+    expect(result.current.tracks[0].notInFile).toBeUndefined()
   })
 })
 

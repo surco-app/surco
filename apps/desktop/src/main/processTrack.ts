@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
+import { tagsOnly as tagsOnlyExport } from '../shared/audioProcessing'
 import {
   type ErrorKey,
   errorKeyOf,
@@ -14,6 +15,7 @@ import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../shared/fo
 import type {
   DeclickConfig,
   LibraryPlaylistChoice,
+  MusicOp,
   NormalizeConfig,
   OutputFormat,
   ProcessJob,
@@ -495,6 +497,12 @@ async function musicPlays(
   return at.startsWith(`${folder}/`) ? entryAt : target
 }
 
+const MUSIC_STAGE: Record<MusicOp, ProcessStage> = {
+  added: 'appleMusic',
+  updated: 'appleMusicUpdate',
+  replaced: 'appleMusicReplace',
+}
+
 const checking = (place: VerifyPlace): PlaceCheck => ({
   place,
   state: 'checking',
@@ -545,7 +553,6 @@ export async function runProcessTrack(
     }
     const coverPath = prepared?.path
 
-    stage('converting')
     // job.format is always set by the renderer's job builder; this fallback only
     // guards the type, since settings.outputFormat may be 'source' and 'source' must
     // never reach the conversion pipeline.
@@ -573,6 +580,14 @@ export async function runProcessTrack(
     // the name (in place); a new file beside it is spelled the way the setting asks.
     const overwriteOriginal = job.overwriteOriginal ?? settings.overwriteOriginal
     const inPlaceWrite = !besideOriginal && editsInPlace(format, job.inputPath, overwriteOriginal)
+    const tagsOnly =
+      inPlaceWrite &&
+      tagsOnlyExport(formatMatchesInput(format, job.inputPath), {
+        normalize: job.normalize ?? settings.normalize,
+        declick: job.declick ?? settings.declick,
+        trim: job.trim,
+      })
+    stage(tagsOnly ? 'tags' : 'converting')
     const currentName =
       besideOriginal || inPlaceWrite ? basename(job.inputPath, extname(job.inputPath)) : undefined
     const keepsName =
@@ -844,10 +859,14 @@ export async function runProcessTrack(
         return pid
       },
     }
+    let musicOp: MusicOp | undefined
+    const musicStage = (op: MusicOp): void => {
+      musicOp = op
+      stage(MUSIC_STAGE[op])
+    }
     const handedOver = musicOnly ? { tmpDir } : undefined
     const musicStep = shouldAddToAppleMusic(addToAppleMusic, deps.platform, format)
     if (musicStep) {
-      stage('appleMusic')
       try {
         // Replacing a DIFFERENT file, not re-converting our own earlier output. Updating an
         // entry only rewrites its tags — Music offers no way to repoint one at another file
@@ -859,6 +878,7 @@ export async function runProcessTrack(
         // replaceAppleMusicCopy); its position inside each playlist does not.
         let verified = false
         if (job.replacesPath) {
+          musicStage('replaced')
           const replaced = await replaceAppleMusicCopy(
             job,
             target,
@@ -873,10 +893,17 @@ export async function runProcessTrack(
           landed = replaced.landed
           verified = true
         } else if (existingMusicEntry && inPlace && outputIsInput) {
+          musicStage('updated')
+          const updated = await deps.updateInAppleMusic(
+            existingMusicEntry.persistentId,
+            job.meta,
+            coverPath,
+          )
+          if (!updated) musicStage('added')
           musicPersistentId =
-            (await deps.updateInAppleMusic(existingMusicEntry.persistentId, job.meta, coverPath)) ??
-            (await musicDeps.addToAppleMusic(target, job.meta, coverPath))
+            updated ?? (await musicDeps.addToAppleMusic(target, job.meta, coverPath))
         } else if (existingMusicEntry && inPlace) {
+          musicStage('replaced')
           const replaced = await replaceAppleMusicCopy(
             job,
             target,
@@ -904,6 +931,7 @@ export async function runProcessTrack(
           entryMayPlaySource =
             retireAfterMusic && entry?.path.normalize('NFC') === job.inputPath.normalize('NFC')
           if (entry?.path && !formatMatchesInput(format, entry.path)) {
+            musicStage('replaced')
             const replaced = await replaceAppleMusicCopy(
               job,
               target,
@@ -928,12 +956,20 @@ export async function runProcessTrack(
             if (!replaced.oldCopyKept && replaced.landed?.traktorFollowed !== false) {
               if (isSource && inPlace) supersededIfKept = entry.path
               else supersededPath = entry.path
-            }
+            } else
+              log.info(
+                `retire: kept ${entry.path}: ${
+                  replaced.oldCopyKept
+                    ? `Apple Music kept the old entry (${replaced.oldCopyKept})`
+                    : 'Traktor still plays it'
+                }`,
+              )
             verified = true
           } else {
             // Music rewrites the entry's file as it retags it, so a file this job did not
             // just write is copied first. The original a rename retires below is copied now,
             // as it was, and the retirement only removes it.
+            musicStage(job.musicPersistentId ? 'updated' : 'added')
             let preMusic: TrashEntry | null = null
             const retagged =
               job.musicPersistentId &&
@@ -964,6 +1000,7 @@ export async function runProcessTrack(
               preMusic = null
             }
             keptBeforeMusic = entryMayPlaySource && preMusic !== null
+            if (!updated && job.musicPersistentId) musicStage('added')
             musicPersistentId =
               updated ?? (await musicDeps.addToAppleMusic(target, job.meta, coverPath))
           }
@@ -983,6 +1020,7 @@ export async function runProcessTrack(
         if (splitNameLeftMarked(e instanceof Error ? e.message : '').left)
           musicNameLeftMarked = true
         musicPersistentId = undefined
+        musicOp = undefined
         appleMusicFailed = true
         appleMusicErrorKey = errorKeyOf(e instanceof Error ? e.message : '') ?? undefined
       }
@@ -1169,6 +1207,8 @@ export async function runProcessTrack(
         inPlace,
         addedToMusicOnly: true,
         musicPersistentId,
+        musicOp,
+        ...(tagsOnly ? { tagsOnly: true as const } : {}),
         normalizeSkipped,
         declickedSamples,
         oldMusicCopyKept,
@@ -1186,6 +1226,8 @@ export async function runProcessTrack(
       outputPath: target,
       inPlace,
       musicPersistentId,
+      musicOp,
+      ...(tagsOnly ? { tagsOnly: true as const } : {}),
       normalizeSkipped,
       declickedSamples,
       addedToEngineDj,

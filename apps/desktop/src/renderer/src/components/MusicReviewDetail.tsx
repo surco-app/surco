@@ -2,10 +2,11 @@ import { Check, ChevronDown, Copy } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LibraryCopyInfo, LibraryStatus, ReviewEntry } from '../../../shared/types'
-import type {
-  DuplicateCard,
-  MusicReview as Review,
-  ReviewSpellingGroup,
+import {
+  type DuplicateCard,
+  incompleteKey,
+  type MusicReview as Review,
+  type ReviewSpellingGroup,
 } from '../hooks/useMusicReview'
 import { useTrackProperties } from '../hooks/useTrackProperties'
 import { copyQuality } from '../lib/copyQuality'
@@ -17,6 +18,7 @@ import { REVIEW_COPY } from '../lib/reviewSource'
 import type { TrackItem } from '../types'
 import { DIALOG_CANCEL } from './ConfirmDialog'
 import { DamageDetail } from './DamageDetail'
+import { IncompleteDetail } from './IncompleteDetail'
 import { fieldsLabel } from './MusicReview'
 import { SectionBody } from './SectionBody'
 import { SectionGroupHeading } from './SectionGroupHeading'
@@ -804,6 +806,7 @@ export function MusicReviewDetail({
   const spelling = review.spelling.find((g) => g.key === selectedKey)
   const duplicate = review.duplicates.find((c) => c.group.key === selectedKey)
   const damage = review.damage.find((f) => damageKey(f) === selectedKey)
+  const incomplete = review.incomplete.find((f) => incompleteKey(f.id) === selectedKey)
   // Held above the groups, like the editor's fold state, so a section folded on one group
   // stays folded on the next.
   const [open, setOpen] = useState<Sections>({ options: true, affected: true, copies: true })
@@ -814,7 +817,11 @@ export function MusicReviewDetail({
   return (
     <section data-testid="music-review-detail" className="flex h-full min-h-0 flex-col">
       {review.status === 'ready' &&
-        review.spelling.length + review.duplicates.length + review.damage.length === 0 &&
+        review.spelling.length +
+          review.duplicates.length +
+          review.damage.length +
+          review.incomplete.length ===
+          0 &&
         !review.damageLoading && (
           <div
             data-testid="music-review-all-clear"
@@ -838,6 +845,7 @@ export function MusicReviewDetail({
       )}
       {duplicate && <DuplicateDetail card={duplicate} review={review} folding={folding} />}
       {damage && <DamageDetail finding={damage} review={review} />}
+      {incomplete && <IncompleteDetail card={incomplete} review={review} />}
     </section>
   )
 }

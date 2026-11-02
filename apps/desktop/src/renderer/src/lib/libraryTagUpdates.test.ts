@@ -92,3 +92,34 @@ describe('libraryUpdatesOf', () => {
     expect(libraryUpdatesOf([outcome({ path: undefined, file: 'missing' })], 'apply')).toEqual([])
   })
 })
+
+describe('a year or grouping the review filled', () => {
+  const filled = outcome({
+    fixes: [
+      { id: 'C', field: 'year', from: '', to: '1995' },
+      { id: 'C', field: 'grouping', from: '', to: 'Warm' },
+      { id: 'C', field: 'artist', from: '', to: 'DJ Lara' },
+    ],
+    music: ['set', 'set', 'set'],
+    written: ['year', 'grouping', 'artist'],
+  })
+
+  it('moves the row with every field written to the file', () => {
+    expect(tagUpdatesOf([filled], 'apply')).toEqual([
+      {
+        path: '/m/c.mp3',
+        fields: {
+          year: { from: '', to: '1995' },
+          grouping: { from: '', to: 'Warm' },
+          artist: { from: '', to: 'DJ Lara' },
+        },
+      },
+    ])
+  })
+
+  it('leaves them out of the DJ libraries, which an Update does not send them to either', () => {
+    expect(libraryUpdatesOf([filled], 'apply')).toEqual([
+      { path: '/m/c.mp3', fields: { artist: { from: '', to: 'DJ Lara' } } },
+    ])
+  })
+})

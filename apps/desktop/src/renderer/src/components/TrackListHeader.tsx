@@ -85,6 +85,7 @@ interface Props {
   onRemoveSelected: () => void
   onTrashSelected: () => void
   onTrashSuspects: () => void
+  onReviewIncomplete?: () => void
 }
 
 const LIST_COMMAND_ICONS: [string, LucideIcon][] = [
@@ -192,6 +193,7 @@ export function TrackListHeader({
   onRemoveSelected,
   onTrashSelected,
   onTrashSuspects,
+  onReviewIncomplete,
 }: Props): React.JSX.Element {
   const { open, setOpen, ref: moreRef, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
   // Portaled out of the sticky header, whose layer would hold it under the activity panel
@@ -277,6 +279,7 @@ export function TrackListHeader({
         selectedCount={selectedIds.length}
         onRevealSelected={scrollToSelected}
         onTrashSuspects={onTrashSuspects}
+        onReviewIncomplete={onReviewIncomplete}
       >
         <Select
           testid="track-sort"

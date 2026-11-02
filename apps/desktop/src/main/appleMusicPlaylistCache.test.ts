@@ -12,7 +12,12 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
 import type { AppleMusicPlaylistTracks } from '../shared/types'
-import { loadPlaylistCache, savePlaylistCache } from './appleMusicPlaylistCache'
+import {
+  loadPlaylistCache,
+  loadPlaylistListCache,
+  savePlaylistCache,
+  savePlaylistListCache,
+} from './appleMusicPlaylistCache'
 
 afterAll(() => rmSync(app.getPath('userData'), { recursive: true, force: true }))
 
@@ -51,5 +56,22 @@ describe('appleMusicPlaylistCache', () => {
     expect(loadPlaylistCache('FFEEDDCCBBAA9988')).toBeNull()
     writeFileSync(join(dir, 'FFEEDDCCBBAA9988.json'), '{"paths": [')
     expect(loadPlaylistCache('FFEEDDCCBBAA9988')).toBeNull()
+  })
+})
+
+// Listing the playlists took 1.8 s (measured 01/11); the list kept from last time lets the
+// Music tab show its tree at once while Music lists them again.
+describe('the playlist list', () => {
+  it('gives back the last list Music gave', () => {
+    const lists = [{ persistentId: 'A1B2C3D4E5F60718', name: 'Friday', count: 450 }]
+    savePlaylistListCache(lists)
+    expect(loadPlaylistListCache()).toEqual(lists)
+  })
+
+  it('gives nothing back for a list that is not one', () => {
+    const file = join(app.getPath('userData'), 'apple-music-playlists', 'list.json')
+    mkdirSync(join(file, '..'), { recursive: true })
+    writeFileSync(file, '{"not":"a list"}')
+    expect(loadPlaylistListCache()).toBeNull()
   })
 })

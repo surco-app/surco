@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   DjProgram,
@@ -269,7 +269,7 @@ describe('CopiesScreen', () => {
     expect(screen.getByTestId('copies-refused-rekordbox')).toHaveTextContent(
       i18n.t('copies.refused.running', { program: i18n.t('sources.rekordbox') }),
     )
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(screen.getByTestId('copies-kept-rekordbox')).toHaveTextContent(
       i18n.t('copies.kept', { count: 1, max: 5 }),
     )
@@ -298,11 +298,11 @@ describe('CopiesScreen', () => {
     expect(view.onRestore).toHaveBeenCalledWith('rekordbox', 'new')
   })
 
-  it('closes the confirmation when the copy it would restore is gone', () => {
+  it('closes the confirmation when the copy it would restore is gone', async () => {
     const view = renderScreen([program('rekordbox', { copies: [latest] })])
     fireEvent.click(screen.getByTestId('copies-restore-rekordbox'))
     view.rerender([program('rekordbox', { copies: [older] })])
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     view.rerender([program('rekordbox', { copies: [latest, older] })])
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })

@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
+import { emptyMetadata } from '../../../shared/metadata'
 import type { ReviewEntry } from '../../../shared/types'
+import type { TrackItem } from '../types'
+import { trackSignature } from './dirty'
 import { duplicateGroups } from './duplicates'
 import { musicSource, scopedMusicSource, scopeMusicEntries } from './reviewSource'
 
@@ -189,5 +192,45 @@ describe('musicSource damage', () => {
   it('offers no damage scan or repair', () => {
     expect(musicSource.loadDamage).toBeUndefined()
     expect(musicSource.repairDamage).toBeUndefined()
+  })
+})
+
+describe('scopedMusicSource incomplete', () => {
+  const dump = () =>
+    vi.fn().mockResolvedValue(library.map(({ id, ...rest }) => ({ persistentId: id, ...rest })))
+  const track = (path: string, persistentId?: string): TrackItem => {
+    const meta = { ...emptyMetadata(), title: 'Gold', artist: 'DJ Lara' }
+    return {
+      id: path,
+      inputPath: path,
+      fileName: 'Gold',
+      listLabel: '',
+      query: '',
+      status: 'idle',
+      meta,
+      diskSignature: trackSignature({ meta }),
+      ...(persistentId && { musicPersistentId: persistentId }),
+    }
+  }
+  const incomplete = (rows: TrackItem[]) => ({
+    rows: () => rows,
+    required: () => ['album'],
+    suggest: () => undefined,
+  })
+
+  // Music writes by its own ID; the playlist rows carry it, and a row Music does not hold
+  // in this playlist is not the review's to fill.
+  it('names each incomplete playlist row by its Music ID', async () => {
+    setApi({ loadMusicReview: dump() })
+    const rows = [track('/m/a.mp3', '01'), track('/m/b.mp3', '06'), track('/m/c.mp3')]
+    const loaded = await scopedMusicSource(playlist, 'tracks', incomplete(rows)).load()
+    expect(loaded.incomplete).toEqual([{ id: '01', fields: [{ field: 'album' }] }])
+  })
+
+  it('stops listing a field it filled once the reload comes, before the row catches up', async () => {
+    setApi({ loadMusicReview: dump() })
+    const s = scopedMusicSource(playlist, 'tracks', incomplete([track('/m/a.mp3', '01')]))
+    s.settle?.([{ path: '/m/a.mp3', fields: { album: { from: '', to: 'LP' } } }], [])
+    expect((await s.load()).incomplete).toEqual([])
   })
 })

@@ -749,6 +749,46 @@ describe('planConversion', () => {
     ).toEqual({ codec: 'pcm_s16be', bitDepth: 16, ext: '.aiff' })
   })
 
+  // The CDJ-3000, CDJ-3000X and XDJ-AZ read WAV and AIFF at 16 or 24 bits; a 32-bit file,
+  // float or integer, is outside what they load. 110 of the user's tracks were 32-bit (02/11).
+  // "Corrected" writes them at 24 bits, which no club system can tell apart; "Same as source"
+  // still keeps the 32 bits it promises.
+  describe('a 32-bit source under the corrected depth', () => {
+    const float32 = vi.fn(async () => ({
+      codecName: 'pcm_f32be',
+      sampleFmt: 'flt',
+      bitsPerRawSample: 0,
+      sampleRate: '44100',
+      channels: 2,
+    }))
+    const int32 = vi.fn(async () => ({
+      codecName: 'pcm_s32le',
+      sampleFmt: 's32',
+      bitsPerRawSample: 32,
+      sampleRate: '44100',
+      channels: 2,
+    }))
+    const full = () => Promise.resolve({ usage: 'full' as const })
+
+    it('writes a float 32-bit AIFF at 24 bits, even when it stays an AIFF', async () => {
+      expect(
+        await planConversion('/in.aiff', 'aiff', float32, false, { bitDepth: 'corrected' }, full),
+      ).toEqual({ codec: 'pcm_s24be', bitDepth: 24, ext: '.aiff' })
+    })
+
+    it('writes an integer 32-bit WAV at 24 bits', async () => {
+      expect(
+        await planConversion('/in.wav', 'wav', int32, false, { bitDepth: 'corrected' }, full),
+      ).toEqual({ codec: 'pcm_s24le', bitDepth: 24, ext: '.wav' })
+    })
+
+    it('keeps the 32 bits under "Same as source"', async () => {
+      expect(
+        await planConversion('/in.aiff', 'wav', float32, false, { bitDepth: 'source' }, full),
+      ).toMatchObject({ codec: 'pcm_f32le' })
+    })
+  })
+
   it('never re-encodes a same-format MP3, whatever rate is pinned', async () => {
     expect(await planConversion('/in.mp3', 'mp3', probe, false, { sampleRate: '48000' })).toEqual({
       codec: 'copy',

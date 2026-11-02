@@ -30,6 +30,7 @@ function setup(
       .fn()
       .mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }]),
     loadAppleMusicPlaylists: vi.fn().mockResolvedValue([]),
+    loadAppleMusicPlaylistsCached: vi.fn().mockResolvedValue(null),
     loadAppleMusicPlaylistTracks: vi.fn(),
     loadAppleMusicLibraryPlaylistTracks: vi.fn().mockResolvedValue(null),
     loadAppleMusicPlaylistCached: vi.fn().mockResolvedValue(null),
@@ -340,19 +341,73 @@ describe('useSourceBrowser', () => {
       ])
     })
 
-    it('keeps every row on screen while a refocus reads the playlist again', async () => {
+    it('keeps every row on screen while opening the Music tab again reads the playlist again', async () => {
       let rereading: ReturnType<typeof pending<ReturnType<typeof stretch>>> | null = null
       const load = vi.fn(async (_id: string, from: number) => {
         if (from === 1) return stretch(1, 200, 450)
         if (from === 201 && rereading) return rereading.promise
         return from === 201 ? stretch(201, 200, 450) : stretch(401, 50, 450)
       })
-      const { result, focus } = openFriday(load)
+      const { result } = openFriday(load)
       await waitFor(() => expect(result.current.entries).toHaveLength(450))
       rereading = pending()
-      act(() => focus())
+      act(() => result.current.selectSource(null))
+      act(() => result.current.selectSource('appleMusic'))
       await waitFor(() => expect(load).toHaveBeenCalledTimes(5))
       expect(result.current.entries).toHaveLength(450)
+    })
+
+    // Measured 01/11: listing the playlists took 1.8 s and reading the open one again up to
+    // 19 s, and both ran every time the window got the focus back. Music's playlists change
+    // in Music, not while Surco is in front, so they are read again when the tab is opened.
+    it('asks Music nothing when Surco gets the focus back', async () => {
+      const library = vi.fn().mockResolvedValue(stretch(1, 450, 450))
+      const { result, focus } = openFriday(vi.fn(), false, library)
+      await waitFor(() => expect(result.current.entries).toHaveLength(450))
+      const lists = vi.mocked(window.api.loadAppleMusicPlaylists)
+      const listed = lists.mock.calls.length
+
+      act(() => focus())
+      await new Promise((r) => setTimeout(r, 20))
+
+      expect(lists).toHaveBeenCalledTimes(listed)
+      expect(library).toHaveBeenCalledOnce()
+    })
+
+    it('lists the playlists and reads the open one again when the Music tab is opened again', async () => {
+      const library = vi.fn().mockResolvedValue(stretch(1, 450, 450))
+      const { result } = openFriday(vi.fn(), false, library)
+      await waitFor(() => expect(result.current.entries).toHaveLength(450))
+      const lists = vi.mocked(window.api.loadAppleMusicPlaylists)
+      const listed = lists.mock.calls.length
+
+      act(() => result.current.selectSource(null))
+      act(() => result.current.selectSource('appleMusic'))
+
+      await waitFor(() => expect(library).toHaveBeenCalledTimes(2))
+      expect(lists).toHaveBeenCalledTimes(listed + 1)
+    })
+
+    it('shows the playlists as last listed while Music lists them again', async () => {
+      const fresh = pending<{ persistentId: string; name: string; count: number }[]>()
+      const hook = setup({
+        loadAppleMusicPlaylists: vi.fn(() => fresh.promise),
+        loadAppleMusicPlaylistsCached: vi
+          .fn()
+          .mockResolvedValue([{ persistentId: 'P1', name: 'Friday', count: 450 }]),
+      })
+      act(() => hook.result.current.selectSource('appleMusic'))
+
+      await waitFor(() => expect(hook.result.current.tree?.map((n) => n.name)).toContain('Friday'))
+      act(() =>
+        fresh.resolve([
+          { persistentId: 'P1', name: 'Friday', count: 450 },
+          { persistentId: 'P2', name: 'Saturday', count: 1 },
+        ]),
+      )
+      await waitFor(() =>
+        expect(hook.result.current.tree?.map((n) => n.name)).toContain('Saturday'),
+      )
     })
   })
 
