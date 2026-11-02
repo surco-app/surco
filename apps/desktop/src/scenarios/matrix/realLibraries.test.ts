@@ -259,27 +259,30 @@ describe.skipIf(process.platform !== 'darwin')('copies of real collections', () 
   }, 120_000)
 })
 
-describe.skipIf(process.platform !== 'darwin')('a copy shared by every batch of the real run', () => {
-  it('comes back as it was copied, whatever a batch converted', async () => {
-    const copy = await copyRealLibraries(real, scenarioDir('matriz-real-copia-intacta'))
-    const restore = pristine(copy)
-    const [t] = copy.set.tracks
-    const file = realpathSync(t.path)
-    const bytes = sha1Of(file)
-    const db = openRekordboxDb(copy.set.rekordboxDb as string)
-    db?.prepare(`UPDATE djmdContent SET Commnt = 'convertida'`).run()
-    db?.close()
-    writeFileSync(file, 'otra cosa')
-    const converted = join(dirname(file), 'convertida.aiff')
-    writeFileSync(converted, 'nuevo')
+describe.skipIf(process.platform !== 'darwin')(
+  'a copy shared by every batch of the real run',
+  () => {
+    it('comes back as it was copied, whatever a batch converted', async () => {
+      const copy = await copyRealLibraries(real, scenarioDir('matriz-real-copia-intacta'))
+      const restore = pristine(copy)
+      const [t] = copy.set.tracks
+      const file = realpathSync(t.path)
+      const bytes = sha1Of(file)
+      const db = openRekordboxDb(copy.set.rekordboxDb as string)
+      db?.prepare(`UPDATE djmdContent SET Commnt = 'convertida'`).run()
+      db?.close()
+      writeFileSync(file, 'otra cosa')
+      const converted = join(dirname(file), 'convertida.aiff')
+      writeFileSync(converted, 'nuevo')
 
-    restore()
+      restore()
 
-    expect(sha1Of(copy.set.rekordboxDb as string)).toBe(copy.set.sha1Before.rekordbox)
-    expect(sha1Of(file)).toBe(bytes)
-    expect(existsSync(converted)).toBe(false)
-  }, 120_000)
-})
+      expect(sha1Of(copy.set.rekordboxDb as string)).toBe(copy.set.sha1Before.rekordbox)
+      expect(sha1Of(file)).toBe(bytes)
+      expect(existsSync(converted)).toBe(false)
+    }, 120_000)
+  },
+)
 
 describe('the lag of real audio', () => {
   it('measures a shift by correlation as the click marker does on the synthetic sources', () => {

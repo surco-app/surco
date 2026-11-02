@@ -24,9 +24,9 @@ import { join } from 'node:path'
 import { ipcMain } from 'electron'
 import type { DjProgram, ProgramCopies } from '../shared/types'
 import { type CopiesProgram, registerCopiesIpc } from './copiesIpc'
+import { withEngineDatabase } from './engineLibrary'
 import { setLibraryBackupRoot } from './libraryBackups'
 import { stageRestoreCopy, takeCopy } from './libraryHistory'
-import { withEngineDatabase } from './engineLibrary'
 import { serialLibraryFlush } from './libraryTagSync'
 
 function handlerFor(channel: string): (e: unknown, ...args: unknown[]) => Promise<unknown> {

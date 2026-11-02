@@ -8,8 +8,8 @@
 // exactly why the result is only ever surfaced as a suggestion the user
 // confirms, never written unattended.
 
-import type { KeyResult } from '../shared/types'
 import { MAJOR_CAMELOT, MAJOR_NAMES, MINOR_CAMELOT, MINOR_NAMES } from '../shared/keyNames'
+import type { KeyResult } from '../shared/types'
 import { fft } from './fft'
 
 // ~0.74 s frames at the 11025 Hz analysis rate give 1.35 Hz bins — enough to

@@ -3,8 +3,8 @@ import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import type { CopyReason, LibraryCopy } from '../shared/types'
 import { backupOf, collectionKey } from './libraryBackups'
-import { renameWithRetry } from './renameRetry'
 import { writeBackup } from './rekordboxSessionBackup'
+import { renameWithRetry } from './renameRetry'
 
 export const HISTORY_KEEP = 5
 
