@@ -397,6 +397,25 @@ describe('checkFile', () => {
     expect(check.state).toBe('ok')
   })
 
+  it.each(FORMATS)(
+    'a %s whose source said BPM 0 is ok, since 0 is no tempo and the writer stores none',
+    async (ext, codec) => {
+      const file = at(`bpm-zero.${ext}`)
+      ff('-i', at('source.wav'), '-c:a', codec, file)
+      writeTags(file, meta({ bpm: '0' }))
+      const check = await checkFile(
+        await expectFor(file, {
+          ext: `.${ext}` as FileExpect['ext'],
+          codec: 'copy',
+          samplesKept: false,
+          tags: { bpm: '0' },
+        }),
+        fileReaders,
+      )
+      expect(check.state, ext).toBe('ok')
+    },
+  )
+
   it.each(['id3 TYER=', 'id3 TYER=20'])(
     'a stored year of "%s" never matches an expected 2020',
     async (line) => {
