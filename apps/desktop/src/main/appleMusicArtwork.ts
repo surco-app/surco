@@ -45,6 +45,13 @@ export async function fetchAppleMusicArtwork(
   await promisify(execFile)('osascript', ['-e', buildArtworkScript(jobs)], {
     maxBuffer: 64 * 1024 * 1024,
   })
+  return keptArtwork(jobs)
+}
+
+// The covers already in the artwork folder, served without asking Music.
+export async function keptArtwork(
+  jobs: { outPath: string }[],
+): Promise<{ path: string; url: string }[]> {
   const landed = await Promise.all(
     jobs.map(async ({ outPath }) => {
       try {

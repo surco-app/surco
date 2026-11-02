@@ -1,4 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
+
+const forgetArtworkCopy = vi.fn(async (_persistentId: string) => {})
+vi.mock('./artworkCopies', () => ({
+  forgetArtworkCopy: (persistentId: string) => forgetArtworkCopy(persistentId),
+}))
+
 import { errorKeyOf } from '../shared/errorKeys'
 import type { TrackMetadata } from '../shared/types'
 import {
@@ -42,6 +48,7 @@ import {
   readMusicEntryFacts,
   type runOsascript,
   shouldAddToAppleMusic,
+  updateInAppleMusic,
 } from './applemusic'
 
 const base: TrackMetadata = {
@@ -306,6 +313,33 @@ describe('addToAppleMusic', () => {
     await expect(
       addToAppleMusic('/x/a.aiff', base, undefined, async () => 'ABCDEF0123456789\n'),
     ).resolves.toBe('ABCDEF0123456789')
+  })
+})
+
+// A cover fetched from Music is served from its copy afterwards (see artworkCopies); a cover
+// Surco puts on the entry, including one Music's add hands back, takes the copy with it.
+describe('putting a cover on a Music entry', () => {
+  it('forgets the copy of the entry an add with a cover answers with', async () => {
+    forgetArtworkCopy.mockClear()
+    await addToAppleMusic('/x/a.aiff', base, '/tmp/cover.jpg', async () => 'ABCDEF0123456789\n')
+    expect(forgetArtworkCopy).toHaveBeenCalledWith('ABCDEF0123456789')
+  })
+
+  it('forgets the copy of the entry an update with a cover retags', async () => {
+    forgetArtworkCopy.mockClear()
+    await updateInAppleMusic(
+      'ABCDEF0123456789',
+      base,
+      '/tmp/cover.jpg',
+      async () => 'ABCDEF0123456789\n',
+    )
+    expect(forgetArtworkCopy).toHaveBeenCalledWith('ABCDEF0123456789')
+  })
+
+  it('keeps the copy when no cover is put on the entry', async () => {
+    forgetArtworkCopy.mockClear()
+    await updateInAppleMusic('ABCDEF0123456789', base, undefined, async () => 'ABCDEF0123456789\n')
+    expect(forgetArtworkCopy).not.toHaveBeenCalled()
   })
 })
 

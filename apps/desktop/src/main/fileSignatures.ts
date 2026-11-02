@@ -10,6 +10,9 @@ export interface FileSignatures {
   fresh: (path: string) => Promise<number>
   // Whether the file changed or went away since its date was last seen; asked before a write.
   changed: (path: string) => Promise<boolean>
+  // Whether the file's date is remembered: a file Surco has read, taken as there without
+  // asking the disk; the background check reports it gone if it went.
+  knows: (path: string) => boolean
   flush: () => void
 }
 
@@ -19,7 +22,7 @@ interface Deps {
   stat: (path: string) => Promise<{ mtimeMs: number }>
   // The background check's way of asking: a queue that never floods a NAS.
   verifyStat: (path: string) => Promise<{ mtimeMs: number }>
-  onChanged: (paths: string[]) => void
+  onChanged: (files: { changed: string[]; gone: string[] }) => void
   defer: (run: () => Promise<void>) => void
 }
 
@@ -55,6 +58,7 @@ export function createFileSignatures(deps: Deps): FileSignatures {
     const paths = [...queued]
     queued.clear()
     const changed: string[] = []
+    const gone: string[] = []
     await Promise.all(
       paths.map(async (path) => {
         try {
@@ -62,11 +66,11 @@ export function createFileSignatures(deps: Deps): FileSignatures {
         } catch (error) {
           if (!isGone(error)) return
           forget(path)
-          changed.push(path)
+          gone.push(path)
         }
       }),
     )
-    if (changed.length > 0) deps.onChanged(changed)
+    if (changed.length > 0 || gone.length > 0) deps.onChanged({ changed, gone })
   }
 
   const checkLater = (path: string): void => {
@@ -90,7 +94,7 @@ export function createFileSignatures(deps: Deps): FileSignatures {
     },
     async fresh(path) {
       const mtimeMs = (await deps.stat(path)).mtimeMs
-      if (record(path, mtimeMs)) deps.onChanged([path])
+      if (record(path, mtimeMs)) deps.onChanged({ changed: [path], gone: [] })
       return mtimeMs
     },
     async changed(path) {
@@ -101,6 +105,11 @@ export function createFileSignatures(deps: Deps): FileSignatures {
         forget(path)
         return true
       }
+    },
+    knows(path) {
+      if (!dates.has(path)) return false
+      checkLater(path)
+      return true
     },
     flush() {
       if (!dirty) return

@@ -42,6 +42,24 @@ function readTree(source: PlaylistSource, allTracksName: string): Promise<Source
     : window.api.loadAppleMusicPlaylists().then((lists) => musicTree(lists, allTracksName))
 }
 
+// Music lists its playlists in 1.8 s on a good day; the list kept from last time shows at
+// once and the fresh one replaces it.
+async function readMusicTree(
+  allTracksName: string,
+  onLastRead: (tree: SourceNode[]) => void,
+): Promise<SourceNode[]> {
+  const listing = window.api.loadAppleMusicPlaylists()
+  const last = await window.api.loadAppleMusicPlaylistsCached()
+  if (last) onLastRead(musicTree(last, allTracksName))
+  return musicTree(await listing, allTracksName)
+}
+
+// Music's playlists change in Music, not while Surco is in front, and reading them again
+// cost up to 19 s (measured 01/11): they are read again when the Music tab is opened, and
+// the window getting the focus back leaves them alone.
+const notMusic = (query: { queryKey: readonly unknown[] }): boolean =>
+  query.queryKey[1] !== 'appleMusic'
+
 function readRecentCount(source: PlaylistSource): Promise<number> {
   if (source === 'traktor') return window.api.traktorRecentCount()
   return source === 'engine' ? window.api.engineRecentCount() : window.api.rekordboxRecentCount()
@@ -91,7 +109,7 @@ export function readPlaylist(source: PlaylistSource, id: string): Promise<Source
 // Which source and playlist the list is showing, and their data. The DJ library is the
 // single truth, so nothing here is kept beyond the session: the tree and the open playlist
 // are re-read whenever Surco gets the focus back, which is when a change made in rekordbox
-// can have happened. Null source is the working list every import has always used.
+// can have happened; Music's, when its tab is opened (see notMusic). Null source is the working list every import has always used.
 // Each source keeps the playlist it had open, so leaving for another source and coming
 // back finds the set where the DJ left it.
 export function useSourceBrowser({
@@ -135,9 +153,16 @@ export function useSourceBrowser({
     [isMac, rekordbox, engine.data, traktor.data, hiddenSources],
   )
 
+  const treeKey = ['source-tree', source]
   const tree = useQuery({
-    queryKey: ['source-tree', source],
-    queryFn: () => readTree(source as PlaylistSource, tr('sources.allTracks')),
+    queryKey: treeKey,
+    queryFn: () =>
+      source === 'appleMusic'
+        ? readMusicTree(tr('sources.allTracks'), (last) => {
+            if (queryClient.getQueryData(treeKey) === undefined)
+              queryClient.setQueryData(treeKey, last)
+          })
+        : readTree(source as PlaylistSource, tr('sources.allTracks')),
     enabled: source !== null,
     staleTime: Number.POSITIVE_INFINITY,
   })
@@ -220,8 +245,8 @@ export function useSourceBrowser({
   useWindowFocus((focused) => {
     if (!focused) return
     queryClient.invalidateQueries({ queryKey: ['source-available'] })
-    queryClient.invalidateQueries({ queryKey: ['source-tree'] })
-    queryClient.invalidateQueries({ queryKey: ['source-playlist'] })
+    queryClient.invalidateQueries({ queryKey: ['source-tree'], predicate: notMusic })
+    queryClient.invalidateQueries({ queryKey: ['source-playlist'], predicate: notMusic })
     queryClient.invalidateQueries({ queryKey: ['source-separator'] })
     queryClient.invalidateQueries({ queryKey: ['rekordbox-membership'] })
     queryClient.invalidateQueries({ queryKey: ['traktor-membership'] })
@@ -248,7 +273,13 @@ export function useSourceBrowser({
     entriesFailed: source !== null && playlist !== null && entries.isError,
     entriesFetching: entries.isFetching,
     canInsertSeparator: separator.data ?? false,
-    selectSource: setSource,
+    selectSource: (next) => {
+      if (next === 'appleMusic' && source !== 'appleMusic') {
+        queryClient.invalidateQueries({ queryKey: ['source-tree', 'appleMusic'] })
+        queryClient.invalidateQueries({ queryKey: ['source-playlist', 'appleMusic'] })
+      }
+      setSource(next)
+    },
     selectPlaylist: (node, folders) => {
       if (!source) return
       setPlaylists((all) => ({ ...all, [source]: { id: node.id, name: node.name, folders } }))

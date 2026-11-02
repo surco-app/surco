@@ -67,7 +67,7 @@ describe('fileSignatures', () => {
 
     await verify()
 
-    expect(onChanged).toHaveBeenCalledExactlyOnceWith(['/nas/a.wav'])
+    expect(onChanged).toHaveBeenCalledExactlyOnceWith({ changed: ['/nas/a.wav'], gone: [] })
     expect(await signatures.mtimeOf('/nas/a.wav')).toBe(200)
   })
 
@@ -77,7 +77,7 @@ describe('fileSignatures', () => {
 
     await verify()
 
-    expect(onChanged).toHaveBeenCalledExactlyOnceWith(['/nas/a.wav'])
+    expect(onChanged).toHaveBeenCalledExactlyOnceWith({ changed: [], gone: ['/nas/a.wav'] })
   })
 
   it('checks each file once per session, however often it is looked up', async () => {
@@ -97,7 +97,7 @@ describe('fileSignatures', () => {
     expect(await signatures.fresh('/nas/a.wav')).toBe(200)
 
     expect(stat).toHaveBeenCalledOnce()
-    expect(onChanged).toHaveBeenCalledExactlyOnceWith(['/nas/a.wav'])
+    expect(onChanged).toHaveBeenCalledExactlyOnceWith({ changed: ['/nas/a.wav'], gone: [] })
     expect(await signatures.mtimeOf('/nas/a.wav')).toBe(200)
   })
 
@@ -141,6 +141,24 @@ describe('fileSignatures', () => {
     it('says an unchanged file did not', async () => {
       const { signatures } = setup({ '/nas/a.wav': 100 }, { '/nas/a.wav': 100 })
       expect(await signatures.changed('/nas/a.wav')).toBe(false)
+    })
+  })
+
+  // Opening a playlist asks which of its files are on disk: a file whose date is remembered
+  // counts as there at once, and the background check takes back the ones that went.
+  describe('knows', () => {
+    it('knows a file with a remembered date, and checks it in the background', async () => {
+      const { signatures, verify, onChanged } = setup({ '/nas/a.wav': 100 }, {})
+
+      expect(signatures.knows('/nas/a.wav')).toBe(true)
+      await verify()
+
+      expect(onChanged).toHaveBeenCalledExactlyOnceWith({ changed: [], gone: ['/nas/a.wav'] })
+    })
+
+    it('does not know a file never seen', () => {
+      const { signatures } = setup({}, { '/nas/a.wav': 100 })
+      expect(signatures.knows('/nas/a.wav')).toBe(false)
     })
   })
 })

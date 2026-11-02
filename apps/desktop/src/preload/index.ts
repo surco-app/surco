@@ -209,6 +209,8 @@ const api: Api = {
     persistentId: string,
   ): Promise<AppleMusicPlaylistTracks | null> =>
     ipcRenderer.invoke('applemusic:libraryPlaylistTracks', persistentId),
+  loadAppleMusicPlaylistsCached: (): Promise<AppleMusicPlaylist[] | null> =>
+    ipcRenderer.invoke('applemusic:playlistsCached'),
   loadAppleMusicPlaylistCached: (persistentId: string): Promise<AppleMusicPlaylistTracks | null> =>
     ipcRenderer.invoke('applemusic:playlistCached', persistentId),
   appleMusicArtwork: (
@@ -397,8 +399,8 @@ const api: Api = {
     ipcRenderer.invoke('copies:restore', program, copyId),
   sourceChanged: (path: string): Promise<boolean> =>
     ipcRenderer.invoke('files:sourceChanged', path),
-  onFilesChanged: (cb: (paths: string[]) => void): (() => void) => {
-    const handler = (_e: unknown, paths: string[]) => cb(paths)
+  onFilesChanged: (cb: (files: { changed: string[]; gone: string[] }) => void): (() => void) => {
+    const handler = (_e: unknown, files: { changed: string[]; gone: string[] }) => cb(files)
     ipcRenderer.on('files:changed', handler)
     return () => ipcRenderer.removeListener('files:changed', handler)
   },

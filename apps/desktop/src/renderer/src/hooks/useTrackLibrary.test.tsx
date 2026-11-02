@@ -17,11 +17,11 @@ type ExpandedBatchCb = (paths: string[]) => void
 function setApi(over: Record<string, unknown> = {}): {
   fire: FoldersChangedCb
   fireBatch: ExpandedBatchCb
-  fireChanged: (paths: string[]) => void
+  fireChanged: (files: { changed: string[]; gone: string[] }) => void
 } {
   let cb: FoldersChangedCb = () => {}
   let batchCb: ExpandedBatchCb = () => {}
-  let changedCb: (paths: string[]) => void = () => {}
+  let changedCb: (files: { changed: string[]; gone: string[] }) => void = () => {}
   ;(window as unknown as { api: unknown }).api = {
     takePendingFiles: vi.fn().mockResolvedValue([]),
     onOpenFiles: vi.fn(() => () => {}),
@@ -33,7 +33,7 @@ function setApi(over: Record<string, unknown> = {}): {
       cb = fn
       return () => {}
     }),
-    onFilesChanged: vi.fn((fn: (paths: string[]) => void) => {
+    onFilesChanged: vi.fn((fn: (files: { changed: string[]; gone: string[] }) => void) => {
       changedCb = fn
       return () => {}
     }),
@@ -51,7 +51,7 @@ function setApi(over: Record<string, unknown> = {}): {
   return {
     fire: (root, files) => cb(root, files),
     fireBatch: (paths) => batchCb(paths),
-    fireChanged: (paths) => changedCb(paths),
+    fireChanged: (files) => changedCb(files),
   }
 }
 
@@ -493,7 +493,7 @@ describe('useTrackLibrary files changed outside Surco', () => {
     })
 
     await act(async () => {
-      fireChanged(['/m/a.wav'])
+      fireChanged({ changed: ['/m/a.wav'], gone: [] })
       await new Promise((r) => setTimeout(r, 0))
     })
 

@@ -99,7 +99,7 @@ export interface Api {
   // Whether the file changed or went away since Surco last saw its date (see fileSignatures).
   sourceChanged: (path: string) => Promise<boolean>
   // Files the background check found changed or gone since their rows were read.
-  onFilesChanged: (cb: (paths: string[]) => void) => () => void
+  onFilesChanged: (cb: (files: { changed: string[]; gone: string[] }) => void) => () => void
   // Fires with each batch of audio files an in-flight expandPaths uncovers, so the list
   // fills during a slow (network) folder walk instead of only when it finishes. The
   // batches add up to the same set expandPaths resolves with — an early view, not extra.
@@ -232,6 +232,8 @@ export interface Api {
     persistentId: string,
   ) => Promise<AppleMusicPlaylistTracks | null>
   // The playlist as last read whole; null when it never was.
+  // The last list of playlists Music gave, shown while Music lists them again.
+  loadAppleMusicPlaylistsCached: () => Promise<AppleMusicPlaylist[] | null>
   loadAppleMusicPlaylistCached: (persistentId: string) => Promise<AppleMusicPlaylistTracks | null>
   appleMusicArtwork: (
     persistentIds: string[],

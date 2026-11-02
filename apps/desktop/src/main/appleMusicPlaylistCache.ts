@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
-import type { AppleMusicPlaylistTracks } from '../shared/types'
+import type { AppleMusicPlaylist, AppleMusicPlaylistTracks } from '../shared/types'
 
 // The last whole read of each Music playlist, so opening one shows it at once with every
 // count right while the database reads it again: measured on a NAS, the same 2,044-track
@@ -45,6 +45,38 @@ export function loadPlaylistCache(persistentId: string): AppleMusicPlaylistTrack
       missing,
       ...(typeof total === 'number' ? { total } : {}),
     }
+  } catch {
+    return null
+  }
+}
+
+// The last list of playlists Music gave, so the Music tab shows its tree at once while Music
+// lists them again (1.8 s, measured 01/11).
+const listFile = (): string => join(app.getPath('userData'), 'apple-music-playlists', 'list.json')
+
+export function savePlaylistListCache(lists: AppleMusicPlaylist[]): void {
+  try {
+    const file = listFile()
+    mkdirSync(join(file, '..'), { recursive: true })
+    writeFileSync(`${file}.tmp`, JSON.stringify(lists))
+    renameSync(`${file}.tmp`, file)
+  } catch {
+    return
+  }
+}
+
+export function loadPlaylistListCache(): AppleMusicPlaylist[] | null {
+  try {
+    const raw: unknown = JSON.parse(readFileSync(listFile(), 'utf-8'))
+    if (!Array.isArray(raw)) return null
+    const lists = raw.filter(
+      (l): l is AppleMusicPlaylist =>
+        isRecord(l) &&
+        typeof l.name === 'string' &&
+        typeof l.count === 'number' &&
+        typeof l.persistentId === 'string',
+    )
+    return lists.length === raw.length ? lists : null
   } catch {
     return null
   }

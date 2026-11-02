@@ -273,6 +273,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     version: '0.0.0-test',
     getSettings: vi.fn().mockResolvedValue(settings()),
     loadAppleMusicLibraryPlaylistTracks: vi.fn().mockResolvedValue(null),
+    loadAppleMusicPlaylistsCached: vi.fn().mockResolvedValue(null),
     loadAppleMusicPlaylistCached: vi.fn().mockResolvedValue(null),
     keepsTrash: vi.fn().mockResolvedValue(true),
     saveSettings: vi.fn<Api['saveSettings']>().mockResolvedValue(settings()),
@@ -8364,13 +8365,8 @@ describe('App empty screen offers a single way in', () => {
       meta: {},
       missing: rows.filter((r) => !r.path).length,
     })
-    const openMusic = async (
-      rows: { path: string | null }[],
-      onFocus?: (cb: () => void) => void,
-      later = rows,
-    ) => {
+    const openMusic = async (rows: { path: string | null }[], later = rows) => {
       vi.resetModules()
-      const focusListeners: ((focused: boolean) => void)[] = []
       reviewApi({
         loadAppleMusicPlaylists: vi
           .fn()
@@ -8379,19 +8375,10 @@ describe('App empty screen offers a single way in', () => {
           .fn()
           .mockResolvedValueOnce(reply(rows))
           .mockResolvedValue(reply(later)),
-        onWindowFocus: (cb: (focused: boolean) => void) => {
-          focusListeners.push(cb)
-          return () => {}
-        },
       })
       await renderApp()
       fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
       fireEvent.click(await screen.findByTestId('source-node-P1'))
-      onFocus?.(() =>
-        act(() => {
-          for (const cb of focusListeners) cb(true)
-        }),
-      )
     }
 
     it('tells the user how many tracks of the opened playlist have no file', async () => {
@@ -8401,19 +8388,16 @@ describe('App empty screen offers a single way in', () => {
       )
     })
 
-    it('says it once per opened playlist, not again when a refocus re-reads it', async () => {
-      let refocus = () => {}
+    it('says it once per opened playlist, not again when opening the Music tab re-reads it', async () => {
       await openMusic(
         [{ path: '/m/a.wav' }, { path: null }],
-        (fn) => {
-          refocus = fn
-        },
         [{ path: '/m/a.wav' }, { path: null }, { path: null }],
       )
       const notice = await screen.findByTestId('app-notice')
       fireEvent.click(within(notice).getByTestId('app-notice-dismiss'))
       await waitFor(() => expect(screen.queryByTestId('app-notice')).not.toBeInTheDocument())
-      refocus()
+      fireEvent.click(screen.getByTestId('source-rail-tracks'))
+      fireEvent.click(screen.getByTestId('source-rail-appleMusic'))
       await waitFor(() => expect(window.api.loadAppleMusicPlaylistTracks).toHaveBeenCalledTimes(2))
       await act(async () => {})
       expect(screen.queryByTestId('app-notice')).not.toBeInTheDocument()

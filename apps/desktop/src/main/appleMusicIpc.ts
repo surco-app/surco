@@ -13,10 +13,15 @@ import type {
 } from '../shared/types'
 import { activity } from './activity'
 import { createConcurrencyLimiter } from './analysisLimiter'
-import { artworkDir, fetchAppleMusicArtwork } from './appleMusicArtwork'
+import { artworkDir, fetchAppleMusicArtwork, keptArtwork } from './appleMusicArtwork'
 import { loadLibraryCache, saveLibraryCache } from './appleMusicLibraryCache'
 import { attachMissingArtwork } from './appleMusicPlaylistArt'
-import { loadPlaylistCache, savePlaylistCache } from './appleMusicPlaylistCache'
+import {
+  loadPlaylistCache,
+  loadPlaylistListCache,
+  savePlaylistCache,
+  savePlaylistListCache,
+} from './appleMusicPlaylistCache'
 import {
   dumpAppleMusicPlaylists,
   readAppleMusicEntry,
@@ -193,7 +198,11 @@ export function registerAppleMusicIpc(
       .track(
         'applemusic',
         'activity.appleMusicPlaylists',
-        () => musicReads.run(dumpAppleMusicPlaylists, 'high'),
+        async () => {
+          const lists = await musicReads.run(dumpAppleMusicPlaylists, 'high')
+          savePlaylistListCache(lists)
+          return lists
+        },
         {
           summary: (rows) => ({
             detailKey: 'activity.playlistCount',
@@ -266,6 +275,10 @@ export function registerAppleMusicIpc(
       : null,
   )
 
+  // The list of playlists as Music last gave it, to show while Music lists them again.
+  ipcMain.handle('applemusic:playlistsCached', () =>
+    process.platform === 'darwin' ? loadPlaylistListCache() : null,
+  )
   // The playlist as last read whole, to show while it is read again. A plain file read.
   ipcMain.handle('applemusic:playlistCached', (_e, persistentId: string) =>
     process.platform === 'darwin' ? loadPlaylistCache(persistentId) : null,
@@ -278,8 +291,12 @@ export function registerAppleMusicIpc(
       persistentId,
       outPath: join(dir, `${persistentId}.jpg`),
     }))
-    const fetched = await musicReads.run(() => fetchAppleMusicArtwork(jobs), 'low')
-    const landed = new Map(fetched.map((c) => [c.path, c.url]))
+    const kept = await keptArtwork(jobs)
+    const held = new Set(kept.map((c) => c.path))
+    const missing = jobs.filter((job) => !held.has(job.outPath))
+    const fetched =
+      missing.length > 0 ? await musicReads.run(() => fetchAppleMusicArtwork(missing), 'low') : []
+    const landed = new Map([...kept, ...fetched].map((c) => [c.path, c.url]))
     const covers: Record<string, { coverPath: string; coverUrl: string }> = {}
     for (const { persistentId, outPath } of jobs) {
       const url = landed.get(outPath)

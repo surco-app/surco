@@ -63,9 +63,11 @@ vi.mock('./ffmpeg', () => ({
   convertTmpPath: (file: string) => `${file}.surco-tmp`,
 }))
 const fetchAppleMusicArtwork = vi.fn()
+const keptArtwork = vi.fn(async (): Promise<{ path: string; url: string }[]> => [])
 vi.mock('./appleMusicArtwork', () => ({
   artworkDir: async () => '/tmp/art',
   fetchAppleMusicArtwork: (...args: unknown[]) => fetchAppleMusicArtwork(...args),
+  keptArtwork: (...args: unknown[]) => keptArtwork(...(args as [])),
 }))
 const readAppleMusicPlaylist = vi.fn()
 const dumpAppleMusicPlaylists = vi.fn()
@@ -414,6 +416,31 @@ describe('applemusic:artwork', () => {
       { persistentId: 'PB', outPath: '/tmp/art/PB.jpg' },
     ])
     expect(out).toEqual({ PB: { coverPath: '/tmp/art/PB.jpg', coverUrl: 'thumb://pb' } })
+  })
+
+  // Measured 01/11: 109 scripts on every launch, holding Music's one-at-a-time queue for
+  // 143 s, to fetch covers already sitting in the artwork folder.
+  it('serves a cover already fetched from its copy and asks Music only for the rest', async () => {
+    keptArtwork.mockResolvedValueOnce([{ path: '/tmp/art/PA.jpg', url: 'thumb://pa' }])
+    fetchAppleMusicArtwork.mockResolvedValue([{ path: '/tmp/art/PB.jpg', url: 'thumb://pb' }])
+
+    const out = await handlers.get('applemusic:artwork')?.({}, ['PA', 'PB'])
+
+    expect(fetchAppleMusicArtwork).toHaveBeenCalledExactlyOnceWith([
+      { persistentId: 'PB', outPath: '/tmp/art/PB.jpg' },
+    ])
+    expect(out).toEqual({
+      PA: { coverPath: '/tmp/art/PA.jpg', coverUrl: 'thumb://pa' },
+      PB: { coverPath: '/tmp/art/PB.jpg', coverUrl: 'thumb://pb' },
+    })
+  })
+
+  it('asks Music nothing when every cover has its copy', async () => {
+    keptArtwork.mockResolvedValueOnce([{ path: '/tmp/art/PA.jpg', url: 'thumb://pa' }])
+
+    await handlers.get('applemusic:artwork')?.({}, ['PA'])
+
+    expect(fetchAppleMusicArtwork).not.toHaveBeenCalled()
   })
 })
 

@@ -727,6 +727,19 @@ export default function App(): React.JSX.Element {
     onNoAudioFound: () => pushImportNotice(store, 'no-audio-found', tr('notices.noAudioFound')),
     onMetaReadFailed: (count) =>
       pushImportNotice(store, 'meta-read-failed', tr('notices.metaReadFailed', { count })),
+    // Same card as the files missing when the playlist opened: the background check found
+    // these gone later, since the files Surco knows are taken as there at the opening.
+    onSourceFilesGone: (count) => {
+      const name = browser.playlist?.name
+      if (!name) return
+      pushToast(store, {
+        key: 'source-missing-files',
+        tone: 'neutral',
+        message: tr('sources.missing', { count, name }),
+        duration: 4000,
+        testid: 'app-notice',
+      })
+    },
     // One disk-cache round trip for the whole freshly-dropped batch, so the list's quality
     // dot and clipping flag can appear before any per-track probe runs. Fire-and-forget:
     // a hydration failure just leaves the normal lazy probes to fill the verdicts in, same
