@@ -295,24 +295,27 @@ describe('CuesSection folded', () => {
     outside.remove()
   })
 
-  it('offers Descartar cambios in the flow menu below Borrar todos los cues, only once there are changes, and keeps it out of the row where it read as undo', async () => {
+  // Discard sat in the row first, where it read as undo, then in the flow menu among the
+  // modes. It sits in the Save menu now, as the other answer to unsaved changes.
+  it('offers Descartar cambios in the Save menu once there are changes, and keeps it out of the row and the flow menu', async () => {
     setup()
     await ready()
+    expect(screen.queryByTestId('cues-save-more')).toBeNull()
     fireEvent.click(screen.getByTestId('cues-flow'))
-    const clear = screen.getByTestId('cues-flow-option-clear-cues')
-    const discard = screen.getByTestId('cues-flow-option-discard-cues')
-    expect(discard).toHaveTextContent('Discard changes')
-    expect(clear.compareDocumentPosition(discard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(discard).toHaveAttribute('aria-disabled', 'true')
-    fireEvent.keyDown(discard, { key: 'Escape' })
+    expect(screen.queryByTestId('cues-flow-option-discard-cues')).toBeNull()
+    expect(screen.queryByTestId('cues-flow-option-clear-cues')).toBeNull()
+    fireEvent.keyDown(screen.getByTestId('cues-flow-listbox'), { key: 'Escape' })
     seekStrip(128)
     placeAtPlayhead()
     expect(screen.getByTestId('cues-folded-row')).not.toContainElement(
       screen.queryByTestId('cues-undo'),
     )
-    fireEvent.click(screen.getByTestId('cues-flow'))
-    expect(screen.getByTestId('cues-flow-option-discard-cues')).not.toHaveAttribute('aria-disabled')
-    fireEvent.click(screen.getByTestId('cues-flow-option-discard-cues'))
+    const more = screen.getByTestId('cues-save-more')
+    expect(more).toHaveTextContent('')
+    fireEvent.click(more)
+    const discard = screen.getByTestId('cues-discard')
+    expect(discard).toHaveTextContent('Discard changes')
+    fireEvent.click(discard)
     expect(marks()).toHaveLength(0)
     expect(screen.getByTestId('cues-save')).toBeDisabled()
   })

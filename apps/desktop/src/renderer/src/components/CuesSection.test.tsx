@@ -112,16 +112,16 @@ const markAt = (ms: number) => {
 const discard = () => {
   const button = screen.queryByTestId('cues-undo')
   if (button) return fireEvent.click(button)
-  fireEvent.click(screen.getByTestId('cues-flow'))
-  fireEvent.click(screen.getByTestId('cues-flow-option-discard-cues'))
+  fireEvent.click(screen.getByTestId('cues-save-more'))
+  fireEvent.click(screen.getByTestId('cues-discard'))
 }
 const discardOffered = () => {
   if (screen.queryByTestId('cues-undo')) return true
-  if (!screen.queryByTestId('cues-flow-option-discard-cues'))
-    fireEvent.click(screen.getByTestId('cues-flow'))
-  const option = screen.getByTestId('cues-flow-option-discard-cues')
-  const offered = option.getAttribute('aria-disabled') !== 'true'
-  fireEvent.keyDown(option, { key: 'Escape' })
+  const more = screen.queryByTestId('cues-save-more')
+  if (!more) return false
+  if (!screen.queryByTestId('cues-discard')) fireEvent.click(more)
+  const offered = !(screen.getByTestId('cues-discard') as HTMLButtonElement).disabled
+  fireEvent.keyDown(screen.getByTestId('cues-discard'), { key: 'Escape' })
   return offered
 }
 const openFull = async () => {
@@ -295,13 +295,16 @@ describe('CuesSection', () => {
     await waitFor(() => expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull())
   })
 
-  it('clears every cue but the loops from the flow menu, keeps the flow, and cmd Z restores', async () => {
+  // Clearing every cue sat among the flows in the flow menu, where a pick meant to change
+  // the mode could wipe the track. It is a button of its own in the row beside undo.
+  it('clears every cue but the loops from the trash button in the row, keeps the flow, and cmd Z restores', async () => {
     const loop = { id: 'l', ms: bar(32), kind: 1, color: 1, loop: true }
     setup({ ...READ, cues: [loop, { id: 'h', ms: bar(64), kind: 2, color: 1 }] })
     await ready()
     expect(screen.getByTestId('cue-wave-hot-B')).toBeInTheDocument()
-    fireEvent.click(screen.getByTestId('cues-flow'))
-    fireEvent.click(screen.getByTestId('cues-flow-option-clear-cues'))
+    const clear = within(screen.getByTestId('cues-folded-row')).getByTestId('cues-clear-all')
+    expect(clear).toHaveAccessibleName('Clear all cues')
+    fireEvent.click(clear)
     expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
     expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
     expect(screen.getByTestId('cues-flow')).toHaveAccessibleName('Flow: My flow')
@@ -310,15 +313,11 @@ describe('CuesSection', () => {
     await waitFor(() => expect(screen.getByTestId('cue-wave-hot-B')).toBeInTheDocument())
   })
 
-  it('disables the clear item when the draft has no cue to remove', async () => {
+  it('disables the clear button when the draft has no cue to remove', async () => {
     setup({ ...READ, cues: [{ id: 'l', ms: bar(32), kind: 1, color: 1, loop: true }] })
     await ready()
-    fireEvent.click(screen.getByTestId('cues-flow'))
-    expect(screen.getByTestId('cues-flow-option-clear-cues')).toHaveAttribute(
-      'aria-disabled',
-      'true',
-    )
-    fireEvent.click(screen.getByTestId('cues-flow-option-clear-cues'))
+    expect(screen.getByTestId('cues-clear-all')).toBeDisabled()
+    fireEvent.click(screen.getByTestId('cues-clear-all'))
     expect(discardOffered()).toBe(false)
   })
 
@@ -506,7 +505,7 @@ describe('CuesSection', () => {
     const names = within(screen.getByTestId('cues-flow-listbox'))
       .getAllByRole('option')
       .map((o) => o.textContent)
-    expect(names).toEqual(['Mix in 64', 'Mix in 32', 'Manual', 'Clear all cues', 'Discard changes'])
+    expect(names).toEqual(['Mix in 64', 'Mix in 32', 'Manual'])
   })
 
   it('lists two flows that share a name apart and picks the one chosen, since flows are told apart by id', async () => {
@@ -544,8 +543,6 @@ describe('CuesSection', () => {
       'One cue at 32',
       'CALL only',
       'Manual',
-      'Clear all cues',
-      'Discard changes',
     ])
   })
 
@@ -851,8 +848,7 @@ describe('CuesSection', () => {
     }
     const { saveRekordboxCues } = setup(read)
     await ready()
-    fireEvent.click(screen.getByTestId('cues-flow'))
-    fireEvent.click(screen.getByTestId('cues-flow-option-clear-cues'))
+    fireEvent.click(screen.getByTestId('cues-clear-all'))
     chooseFlow('calls-only')
     markAt(bar(64))
     fireEvent.click(screen.getByTestId('cues-save'))
