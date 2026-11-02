@@ -937,3 +937,73 @@ describe('DeclickSection zoomed navigation', () => {
     expect(scroller.scrollLeft).toBe(800)
   })
 })
+
+// Panned with a mouse, the wave stopped dead the moment the button came up, where a trackpad
+// carries the view on. A flick now coasts on at the speed it was let go with and slows to a
+// rest, and grabbing the wave again stops it where it is.
+describe('DeclickSection zoomed pan momentum', () => {
+  afterEach(() => vi.useRealTimers())
+
+  async function zoomedWithClock(): Promise<{ scroller: HTMLElement; overlay: HTMLElement }> {
+    const zoomed = await zoomedIn()
+    vi.useFakeTimers({ toFake: ['performance', 'requestAnimationFrame', 'cancelAnimationFrame'] })
+    return zoomed
+  }
+
+  async function flick(overlay: HTMLElement, holdBeforeRelease = 0): Promise<void> {
+    pointerAt(overlay, 'pointerDown', 900)
+    for (const x of [860, 820, 780]) {
+      vi.advanceTimersByTime(16)
+      pointerAt(overlay, 'pointerMove', x)
+    }
+    vi.advanceTimersByTime(holdBeforeRelease)
+    pointerAt(overlay, 'pointerUp', 780)
+  }
+
+  it('carries the view on after a flick and brings it to rest', async () => {
+    const { scroller, overlay } = await zoomedWithClock()
+    scroller.scrollLeft = 0
+    await flick(overlay)
+    const released = scroller.scrollLeft
+    act(() => vi.advanceTimersByTime(300))
+    const coasting = scroller.scrollLeft
+    expect(coasting).toBeGreaterThan(released)
+    act(() => vi.advanceTimersByTime(3000))
+    const rest = scroller.scrollLeft
+    act(() => vi.advanceTimersByTime(1000))
+    expect(scroller.scrollLeft).toBe(rest)
+    expect(rest).toBeGreaterThan(coasting)
+    expect(rest).toBeLessThanOrEqual(1000)
+  })
+
+  it('stays where the hand left it when the hand held still before letting go', async () => {
+    const { scroller, overlay } = await zoomedWithClock()
+    scroller.scrollLeft = 0
+    await flick(overlay, 200)
+    const released = scroller.scrollLeft
+    act(() => vi.advanceTimersByTime(1000))
+    expect(scroller.scrollLeft).toBe(released)
+  })
+
+  it('stops where it is when the wave is grabbed mid-coast', async () => {
+    const { scroller, overlay } = await zoomedWithClock()
+    scroller.scrollLeft = 0
+    await flick(overlay)
+    act(() => vi.advanceTimersByTime(100))
+    pointerAt(overlay, 'pointerDown', 500)
+    const grabbed = scroller.scrollLeft
+    act(() => vi.advanceTimersByTime(1000))
+    expect(scroller.scrollLeft).toBe(grabbed)
+  })
+  // The overview, the wheel and a walk to a click move the same view; the coast must not drag
+  // it back toward where the flick was heading.
+  it('gives way to anything else that moves the view mid-coast', async () => {
+    const { scroller, overlay } = await zoomedWithClock()
+    scroller.scrollLeft = 0
+    await flick(overlay)
+    act(() => vi.advanceTimersByTime(100))
+    scroller.scrollLeft = 100
+    act(() => vi.advanceTimersByTime(1000))
+    expect(scroller.scrollLeft).toBe(100)
+  })
+})
