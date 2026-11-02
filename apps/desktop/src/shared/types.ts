@@ -874,6 +874,8 @@ export interface AppleMusicUpdateJob {
 
 export type MusicReviewField = 'title' | 'artist' | 'albumArtist' | 'album' | 'genre'
 
+export type ReviewWriteField = MusicReviewField | 'year' | 'grouping'
+
 export type ReviewRawFields = Partial<Record<MusicReviewField, string>>
 
 export interface TagChange {

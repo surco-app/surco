@@ -162,12 +162,16 @@ export function readItunesGrouping(file: string): string {
 
 export function itunesGroupingOf(f: TagFile): string {
   const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
-  const grp1 = id3?.frames.find((fr) => fr.frameId.toString() === 'GRP1')
+  return id3 ? id3GroupingOf(id3) : ''
+}
+
+export function id3GroupingOf(id3: Id3v2Tag): string {
+  const grp1 = id3.frames.find((fr) => fr.frameId.toString() === 'GRP1')
   // No GRP1: fall back to the standard TIT1 frame, which is where TagLib puts a
   // grouping and where every non-iTunes tagger looks for one. A WAV keeps its
   // grouping only in ID3 (RIFF INFO has no field for it), and ffmpeg's WAV demuxer
   // reads INFO — so without this the probe and this fallback would both miss it.
-  if (!grp1) return id3?.grouping ?? ''
+  if (!grp1) return id3.grouping ?? ''
   return id3TextOf((grp1 as Id3v2UnknownFrame).data.toByteArray())
 }
 
@@ -778,7 +782,7 @@ const toNumber = (value: string): number => {
 // often a full date ("2024-03-01") that Number() turns into NaN — writing 0 and
 // destroying the year. Take the leading 4-digit year; anything else falls back to the
 // plain numeric parse.
-const toYear = (value: string): number => {
+export const toYear = (value: string): number => {
   const dated = value.trim().match(/^(\d{4})\b/)
   return dated ? Number(dated[1]) : toNumber(value)
 }
