@@ -400,61 +400,6 @@
     "metaTitle": "Tudo o que o Surco faz · Funções",
     "metaDescription": "Converta, etiquete com Discogs, Bandcamp, Deezer, Beatport ou MusicBrainz, analise a qualidade, repare clicks, corte silêncios e exporte para rekordbox, Engine DJ, Traktor ou Serato. Grátis."
   },
-  "stopwatch": {
-    "kicker": "Medido, não prometido",
-    "title": "Quanto o Surco leva de verdade, no cronômetro",
-    "lede": "Cada barra enche sua pista no tempo real que a operação leva numa faixa de seis minutos. Sem truque de câmera: o que aqui dura 0,2 s também dura 0,2 s no seu Mac.",
-    "board": "Uma faixa, do início ao fim",
-    "boardSpec": "FLAC · 6:23 · 51 MB",
-    "ops": {
-      "import": {
-        "label": "Importar e ler as tags",
-        "detail": "análise, capa e tags de outros programas"
-      },
-      "update": {
-        "label": "Atualizar tags e capa",
-        "detail": "cópia, TagLib e checagem de que ainda decodifica"
-      },
-      "convert": {
-        "label": "Converter para AIFF",
-        "detail": "codificar, etiquetar, cues do Traktor, verificar"
-      },
-      "verdict": {
-        "label": "Veredito de qualidade",
-        "detail": "12 sondas do espectro, passada de shelf e espectrograma"
-      },
-      "normalize": {
-        "label": "Normalizar o volume e converter",
-        "detail": "medição EBU R128 com true peak e depois codificação"
-      }
-    },
-    "ms": "ms",
-    "s": "s",
-    "replay": "↻ repetir em tempo real",
-    "foot": "Cinco operações em pouco mais de três segundos. Com a seção de volume já aberta, normalizar cai para {{warm}} s.",
-    "tiles": [
-      {
-        "big": "600 faixas",
-        "label": "importadas em uns 15 s de um disco local",
-        "how": "25 ms por faixa · leitura a frio, 3 processos por arquivo · projeção linear"
-      },
-      {
-        "big": "0,76 s",
-        "label": "para normalizar uma faixa que o editor já mediu",
-        "how": "a medição é compartilhada entre a seção e a conversão"
-      },
-      {
-        "big": "3×",
-        "label": "mais rápido para normalizar que a versão anterior",
-        "how": "6,45 s → 2,06 s · mesma faixa, mesmo resultado a −14 LUFS"
-      }
-    ],
-    "before": "Normalizar, antes",
-    "beforeHow": "medido com loudnorm (5,7 s) + codificação",
-    "after": "Normalizar, agora",
-    "afterHow": "medido com ebur128 (1,3 s) + codificação · {{warm}} s se já estiver medida",
-    "footnote": "* Medido em 18/09/2026 num Mac com chip da série M e disco local, com o próprio código do Surco: um FLAC de 6:23 (51 MB) com capa de 700×700. Varia conforme a máquina, o formato, a duração e se a biblioteca está numa pasta de rede."
-  },
   "shortcuts": {
     "kicker": "Teclado primeiro",
     "title": "Voe sem tocar no mouse",
@@ -467,56 +412,6 @@
       "Navegar pelas faixas",
       "Buscar no Discogs"
     ]
-  },
-  "speed": {
-    "kicker": "Um app, não cinco",
-    "title": "O trabalho de cinco apps, em um clique",
-    "lede": "Conversor, Discogs, editor de tags e Apple Music: cinco programas, uns cinco minutos por faixa, e ainda é preciso refazer as tags dentro do Music, capa incluída. O Surco junta todo esse fluxo em um botão.",
-    "manual": "Na mão",
-    "manualTime": "~2 h 45 min",
-    "manualSteps": [
-      {
-        "app": "conversor",
-        "label": "Mudar de formato"
-      },
-      {
-        "app": "navegador",
-        "label": "Buscar as informações no Discogs"
-      },
-      {
-        "app": "editor de tags",
-        "label": "Escrever os metadados"
-      },
-      {
-        "app": "Music",
-        "label": "Copiar para o Apple Music"
-      },
-      {
-        "app": "Music",
-        "label": "Refazer as tags dentro do Music"
-      },
-      {
-        "app": "Music",
-        "label": "Arrastar a capa"
-      }
-    ],
-    "manualCaption": "converter e importar vão em lote · o resto se repete a cada faixa",
-    "withSurco": "Com o Surco",
-    "withSurcoTime": "7 s",
-    "combo": "Converter + etiquetar + Apple Music ou Engine DJ",
-    "bullets": [
-      "de qualquer formato para AIFF, WAV, FLAC, ALAC ou MP3",
-      "metadados do Discogs",
-      "capa embutida",
-      "agrupamento e tags",
-      "análise do espectro",
-      "para o Apple Music ou o Engine DJ"
-    ],
-    "oneClick": "um clique · 7 s para as 40 · até 13 conversões ao mesmo tempo",
-    "footnote": "* O fluxo manual segue o que o autor usa de verdade: converter, buscar no Discogs, etiquetar, copiar para o Music e depois refazer lá as tags e a capa; os passos e as ferramentas variam de pessoa para pessoa. Surco: converter e etiquetar 40 faixas de 7:08 (WAV 16/44.1 → AIFF), medido num Mac de 14 núcleos; varia conforme a máquina, o formato e a duração.",
-    "replay": "↻ repetir",
-    "tracksReady": "prontas",
-    "trackCount": "{{count}} faixas"
   },
   "how": {
     "kicker": "Como funciona",
