@@ -911,9 +911,12 @@
         "centre": "centre on the grid",
         "memory": "CALL at the playhead",
         "hot": "hot cue A to H at the playhead",
+        "enter": "place the flow at the playhead, or accept the suggestions",
         "remove": "delete the selected one",
         "undo": "undo",
-        "zoom": "zoom"
+        "redo": "redo",
+        "zoom": "zoom",
+        "esc": "close the open menu"
       },
       "resetColour": "Reset",
       "saveShort": "Save",

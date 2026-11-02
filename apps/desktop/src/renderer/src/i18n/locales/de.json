@@ -911,9 +911,12 @@
         "centre": "auf das Raster zentrieren",
         "memory": "CALL am Abspielkopf",
         "hot": "Hot Cue A bis H am Abspielkopf",
+        "enter": "den Ablauf am Abspielkopf setzen oder die Vorschläge übernehmen",
         "remove": "die ausgewählte löschen",
         "undo": "rückgängig",
-        "zoom": "Zoom"
+        "redo": "wiederholen",
+        "zoom": "Zoom",
+        "esc": "das offene Menü schließen"
       },
       "resetColour": "Zurücksetzen",
       "saveShort": "Speichern",

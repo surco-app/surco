@@ -911,9 +911,12 @@
         "centre": "centralizar na grade",
         "memory": "CALL no cursor",
         "hot": "hot cue A a H no cursor",
+        "enter": "colocar o fluxo no cursor, ou aceitar as sugestões",
         "remove": "apagar a selecionada",
         "undo": "desfazer",
-        "zoom": "zoom"
+        "redo": "refazer",
+        "zoom": "zoom",
+        "esc": "fechar o menu aberto"
       },
       "resetColour": "Redefinir",
       "saveShort": "Salvar",

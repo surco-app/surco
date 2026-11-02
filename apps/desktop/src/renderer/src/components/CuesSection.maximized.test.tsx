@@ -538,6 +538,18 @@ describe('CuesSection maximized', () => {
     expect(screen.queryByTestId('cues-legend')).toBeNull()
   })
 
+  // Enter is the key that places the flow and accepts the suggestions, and the list left it
+  // out with redo and Esc; a key that does something and is not listed is never found.
+  it('lists Enter, redo and Esc with the other keys', async () => {
+    setup()
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-keys'))
+    const legend = screen.getByTestId('cues-legend')
+    expect(legend).toHaveTextContent('place the flow at the playhead, or accept the suggestions')
+    expect(legend).toHaveTextContent('redo')
+    expect(legend).toHaveTextContent('close the open menu')
+  })
+
   it('closes the key list on Escape without restoring the full editor and gives the keys back to it', async () => {
     setup()
     await maximize()
