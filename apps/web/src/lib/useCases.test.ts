@@ -98,6 +98,21 @@ describe('use case settings name what the app shows', () => {
       expect(cases(locale).map((c) => c.group)).toEqual(cases(en).map((c) => c.group))
     }
   })
+
+  it('links each recipe to the guide in the reader’s language, not in English', () => {
+    const relatedLabels = (locale: unknown) =>
+      (locale as { useCases: { cases: { related?: { label: string }[] }[] } }).useCases.cases.map(
+        (c) => (c.related ?? []).map((r) => r.label),
+      )
+    const english = relatedLabels(en)
+    for (const [name, web] of SITE_LANGUAGES) {
+      if (name === 'en') continue
+      const untranslated = relatedLabels(web).flatMap((labels, i) =>
+        labels.filter((label, j) => label === english[i]?.[j] && label !== 'Auto-match'),
+      )
+      expect(untranslated, name).toEqual([])
+    }
+  })
 })
 
 type Findable = { id: string; title: string; body: string[]; keywords: string }
