@@ -57,6 +57,7 @@ export function CueWave({
   slim,
   view,
   ghost: rawGhost,
+  cursorMs,
   detail,
 }: {
   wave: CueWaveColumn[] | null
@@ -76,6 +77,7 @@ export function CueWave({
   slim?: boolean
   view?: { fromMs: number; toMs: number }
   ghost?: CueGhost
+  cursorMs?: number
   detail?: Uint16Array | null
 }): React.JSX.Element {
   const { t } = useTranslation()
@@ -265,6 +267,13 @@ export function CueWave({
         )}
         {waveSvg}
         {ticks}
+        {cursorMs !== undefined && (
+          <span
+            data-testid="cue-wave-cursor"
+            style={{ left: pct(cursorMs) }}
+            className="absolute top-0 bottom-0 w-px bg-[var(--color-fg)]/40"
+          />
+        )}
         {playheadMs !== undefined && (
           <span
             data-testid="cue-wave-playhead"

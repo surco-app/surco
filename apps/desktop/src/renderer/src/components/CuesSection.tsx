@@ -1077,6 +1077,19 @@ function Editing({
       </button>
     </div>
   )
+  const stripView = detailWindow(ctx.beats, playheadMs, zoom)
+  const offView = (ms: number) => ms < stripView.fromMs || ms > stripView.toMs
+  const stripGhost =
+    hoverGhost && ghost
+      ? {
+          added: ghost.added.filter((c) => offView(c.ms)),
+          gone: ghost.gone.filter((key) => {
+            const cue = state.cues.find((c) => c.key === key)
+            return cue !== undefined && offView(cue.ms)
+          }),
+          rejected: ghost.rejected?.filter((r) => offView(r.ms)),
+        }
+      : ghost
   const strip = (
     <CueWave
       wave={read.wave}
@@ -1087,13 +1100,14 @@ function Editing({
       selected={state.selected}
       trimmed={state.trimmed}
       proposals={proposals}
-      ghost={ghost}
+      ghost={stripGhost}
+      cursorMs={hoverGhost && ghost ? (hoverMs ?? undefined) : undefined}
       onSelect={(key) => dispatch({ type: 'select', key })}
       onMenu={maximized ? setMenu : undefined}
       onMarkMenu={openMarkMenu}
       playheadMs={playheadMs}
       onSeek={seekTo}
-      view={detailWindow(ctx.beats, playheadMs, zoom)}
+      view={stripView}
       slim={!maximized}
       detail={words}
     />
