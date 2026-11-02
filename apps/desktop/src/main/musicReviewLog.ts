@@ -1,8 +1,8 @@
 import type {
   ActivityKind,
   MusicFixOutcome,
-  MusicReviewField,
   ReviewOutcome,
+  ReviewWriteField,
 } from '../shared/types'
 import type { Activity } from './activity'
 import type { MusicSetResult } from './applemusic'
@@ -88,7 +88,7 @@ export type FieldEnding = {
 // and ended by what became of that field.
 export async function logFieldRows<O>(
   work: Promise<O>,
-  { id, fields }: { id: string; fields: MusicReviewField[] },
+  { id, fields }: { id: string; fields: ReviewWriteField[] },
   log: RunLog,
   run: { labelKey: string; count: number },
   endingOf: (outcome: O, index: number) => FieldEnding,
@@ -111,7 +111,7 @@ export async function logFieldRows<O>(
 // One field put back in Music by an undo, under the run it undoes.
 export function setFieldLogged(
   persistentId: string,
-  field: MusicReviewField,
+  field: ReviewWriteField,
   set: () => Promise<MusicSetResult>,
   { track, log }: UndoDeps,
 ): Promise<MusicSetResult> {

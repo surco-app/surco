@@ -2088,7 +2088,9 @@
       "artist": "{{title}} · アーティスト",
       "album": "{{title}} · アルバム",
       "albumArtist": "{{title}} · アルバムアーティスト",
-      "genre": "{{title}} · ジャンル"
+      "genre": "{{title}} · ジャンル",
+      "year": "{{title}} · 年",
+      "grouping": "{{title}} · グループ"
     },
     "reviewFixWrittenBackup": "音楽とファイルで変更され、バックアップされました",
     "reviewFixWritten": "音楽とファイルで変更されました",
@@ -2280,7 +2282,9 @@
       "albumArtist": "アルバムアーティスト",
       "album": "アルバム",
       "genre": "ジャンル",
-      "title": "タイトル"
+      "title": "タイトル",
+      "year": "年",
+      "grouping": "グループ"
     },
     "kind": {
       "invisible": "余分なスペースや見えない文字",

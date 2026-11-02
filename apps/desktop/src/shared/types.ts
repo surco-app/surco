@@ -888,6 +888,11 @@ export interface LibraryTagUpdate {
   fields: Partial<Record<MusicReviewField, TagChange>>
 }
 
+export interface ReviewedFileUpdate {
+  path: string
+  fields: Partial<Record<ReviewWriteField, TagChange>>
+}
+
 export interface MusicReviewEntry {
   persistentId: string
   title: string
@@ -901,7 +906,7 @@ export interface MusicReviewEntry {
 
 export interface MusicFieldFix {
   persistentId: string
-  field: MusicReviewField
+  field: ReviewWriteField
   from: string
   to: string
 }
@@ -1008,7 +1013,7 @@ export interface MusicFixOutcome {
   music: MusicFieldOutcome[]
   file: 'written' | 'unchanged' | 'missing' | 'failed' | 'skipped'
   // The fields that reached the file; what the libraries follow.
-  written: MusicReviewField[]
+  written: ReviewWriteField[]
   backupId?: string
   error?: string
 }
@@ -1028,7 +1033,7 @@ export interface ReviewEntry {
 
 export interface ReviewFix {
   id: string
-  field: MusicReviewField
+  field: ReviewWriteField
   from: string
   to: string
 }
@@ -1061,7 +1066,7 @@ export interface ReviewOutcome {
   fixes: ReviewFix[]
   music: (MusicFieldOutcome | 'none')[]
   file: MusicFixOutcome['file']
-  written: MusicReviewField[]
+  written: ReviewWriteField[]
   backupId?: string
   error?: string
 }

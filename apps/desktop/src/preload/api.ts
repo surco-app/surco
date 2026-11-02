@@ -41,7 +41,6 @@ import type {
   MusicFixOutcome,
   MusicFixProgress,
   MusicReviewEntry,
-  MusicReviewField,
   PairFacts,
   ProcessJob,
   ProcessProgress,
@@ -58,6 +57,7 @@ import type {
   RemoveCopyResult,
   RestoreResult,
   ReviewOutcome,
+  ReviewWriteField,
   RowWaveRequest,
   SaveCuesRequest,
   ScanVerdict,
@@ -197,7 +197,7 @@ export interface Api {
   // With `location`, only while the entry still points at that file (a list undo).
   setMusicField: (
     persistentId: string,
-    field: MusicReviewField,
+    field: ReviewWriteField,
     from: string,
     to: string,
     location?: string,
