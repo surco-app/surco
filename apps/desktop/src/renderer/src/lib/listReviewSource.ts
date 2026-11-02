@@ -1,12 +1,13 @@
 import type {
   DuplicateReplaceOutcome,
-  LibraryTagUpdate,
   ListRemoval,
   MusicFileEntry,
   MusicFileLookup,
+  ReviewedFileUpdate,
 } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { duplicateGroups } from './duplicates'
+import { type IncompleteRowDeps, incompleteOfRows } from './incompleteReview'
 import { listReviewEntries, withListChanges } from './listReviewEntries'
 import { spellingGroups } from './musicSpelling'
 import type { ReviewSource } from './reviewSource'
@@ -17,12 +18,13 @@ export interface ListSourceDeps {
   // Whether Music may be opened to answer; otherwise it is asked only if already open.
   launchMusic: () => boolean
   onRowsRemoved: (paths: string[]) => void
+  incomplete?: IncompleteRowDeps
 }
 
 export function listReviewSource(deps: ListSourceDeps): ReviewSource {
   let lookup: MusicFileLookup | null = null
   let snapshot: { rows: TrackItem[]; byPath: Map<string, TrackItem> } | null = null
-  const changes: LibraryTagUpdate[] = []
+  const changes: ReviewedFileUpdate[] = []
   const gone = new Set<string>()
   let titles = new Map<string, string>()
   // What Music answered for each file under each title, for this opening: a reload asks only
@@ -55,13 +57,23 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
       const read = listReviewEntries(deps.rows())
       const entries = withListChanges(read.entries, changes, gone)
       titles = new Map(entries.map((e) => [e.id, e.title]))
-      if (!deps.mac) return { entries, skipped: read.skipped }
+      const incomplete =
+        deps.incomplete &&
+        incompleteOfRows(
+          deps.rows().filter((row) => !gone.has(row.inputPath)),
+          (row) => row.inputPath,
+          changes,
+          deps.incomplete,
+        )
+      const found = incomplete ? { incomplete } : {}
+      if (!deps.mac) return { entries, skipped: read.skipped, ...found }
       lookup = { consulted: false, entries: {} }
       // Only a grouped file is ever written or removed, so only those need Music; the rest of
       // a large list would cost about 15 ms each on a NAS library for nothing.
       const grouped = new Set([
         ...spellingGroups(entries).flatMap((g) => g.variants.flatMap((v) => v.ids)),
         ...duplicateGroups(entries).flatMap((g) => g.ids),
+        ...(incomplete ?? []).map((f) => f.id),
       ])
       const asked = entries.filter(
         (e) => grouped.has(e.id) && !answered.has(answerKey(e.id, e.title)),
@@ -92,6 +104,7 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
         }),
         skipped: read.skipped,
         musicConsulted: lookup.consulted,
+        ...found,
       }
     },
     locate: async (id) => id,

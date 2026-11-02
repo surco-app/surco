@@ -3,23 +3,29 @@ import type {
   DamageRepairItem,
   DamageScan,
   DuplicateReplaceOutcome,
-  LibraryTagUpdate,
   MusicFixOutcome,
   MusicFixProgress,
   MusicReviewEntry,
   RemoveCopyResult,
   ReviewEntry,
+  ReviewedFileUpdate,
   ReviewFix,
   ReviewOutcome,
 } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { recordingKey } from './duplicates'
+import {
+  type IncompleteFinding,
+  type IncompleteRowDeps,
+  incompleteOfRows,
+} from './incompleteReview'
 
 export interface ReviewLoad {
   entries: ReviewEntry[]
   skipped: number
   // Undefined where there is no Music; false when it was closed and not opened to ask.
   musicConsulted?: boolean
+  incomplete?: IncompleteFinding[]
 }
 
 export interface ReviewRemoval {
@@ -61,7 +67,7 @@ export interface ReviewSource {
   // Whether the Music answer inMusic reads came from Music; undefined where there is none.
   musicConsulted?: () => boolean | undefined
   facts?: (id: string) => TrackItem | undefined
-  settle?: (updates: LibraryTagUpdate[], trashed: string[]) => void
+  settle?: (updates: ReviewedFileUpdate[], trashed: string[]) => void
   loadDamage?: () => Promise<DamageScan>
   repairDamage?: (items: DamageRepairItem[]) => Promise<DamageOutcome[]>
 }
@@ -217,12 +223,28 @@ export function scopeMusicEntries(
 // Music answers for the whole library in one bulk dump, and the duplicates of a playlist
 // need that whole library anyway, so the dump is read as before and narrowed here instead of
 // a second AppleScript that reads one playlist. Everything else is the library review.
-export function scopedMusicSource(ids: ReadonlySet<string>, mode: MusicScopeMode): ReviewSource {
+export function scopedMusicSource(
+  ids: ReadonlySet<string>,
+  mode: MusicScopeMode,
+  incomplete?: IncompleteRowDeps & { rows: () => TrackItem[] },
+): ReviewSource {
+  const changes: ReviewedFileUpdate[] = []
+  const idOf = (row: TrackItem) =>
+    row.musicPersistentId && ids.has(row.musicPersistentId) ? row.musicPersistentId : undefined
   return {
     ...musicSource,
     load: async () => {
       const loaded = await musicSource.load()
-      return { ...loaded, entries: scopeMusicEntries(loaded.entries, ids, mode) }
+      return {
+        ...loaded,
+        entries: scopeMusicEntries(loaded.entries, ids, mode),
+        ...(incomplete && {
+          incomplete: incompleteOfRows(incomplete.rows(), idOf, changes, incomplete),
+        }),
+      }
+    },
+    settle: (updates) => {
+      changes.push(...updates)
     },
   }
 }

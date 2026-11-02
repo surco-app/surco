@@ -7771,6 +7771,40 @@ const addThree = async () => {
 }
 
 describe('App list review', () => {
+  // The user's ask: pick the tracks missing required data in the list and fix them all at once.
+  it('fills a track missing required data from the filter, in the review', async () => {
+    vi.resetModules()
+    listApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn(async (path: string) =>
+        path === '/music/a.wav'
+          ? { title: 'Alpha', artist: 'DJ Lara' }
+          : { title: 'Bravo', artist: '' },
+      ),
+      applyListFixes: vi.fn().mockResolvedValue([]),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(await screen.findByTestId('quality-filter-missingRequired'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getByTestId('review-incomplete'))
+    expect(await screen.findByTestId('music-review-filter-trigger')).toHaveTextContent('Incomplete')
+    expect(await screen.findAllByTestId('incomplete-row')).toHaveLength(1)
+    fireEvent.click(screen.getAllByTestId('incomplete-row')[0])
+    fireEvent.change(screen.getByTestId('incomplete-value'), { target: { value: 'Lara' } })
+    fireEvent.click(screen.getByTestId('incomplete-stage'))
+    fireEvent.click(screen.getByTestId('music-review-apply'))
+    fireEvent.click(screen.getByTestId('music-review-confirm-apply'))
+    await screen.findByTestId('music-review-done')
+    expect(window.api.applyListFixes).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fixes: [{ id: '/music/b.wav', field: 'artist', from: '', to: 'Lara' }],
+      }),
+    )
+  })
+
   // Windows has no Music, but it has the list and the DJ libraries.
   it('opens over the list on Windows and gives the list back as it was', async () => {
     vi.resetModules()

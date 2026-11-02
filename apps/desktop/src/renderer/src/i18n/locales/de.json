@@ -126,7 +126,8 @@
       "unsaved": "Nicht gespeichert",
       "trashSuspects_one": "Die zweifelhafte Datei in den Papierkorb legen",
       "trashSuspects_other": "Die {{count}} zweifelhaften Dateien in den Papierkorb legen",
-      "current": "Filter: {{filter}} {{count}}"
+      "current": "Filter: {{filter}} {{count}}",
+      "reviewIncomplete": "In „Metadaten prüfen“ ausfüllen"
     },
     "search": {
       "placeholder": "Tracks suchen",
@@ -2274,7 +2275,8 @@
       "all": "Alle",
       "spelling": "Schreibweisen",
       "duplicates": "Duplikate",
-      "damage": "Schäden"
+      "damage": "Schäden",
+      "incomplete": "Unvollständig"
     },
     "copyTitle": "Titel kopieren",
     "field": {
@@ -2467,7 +2469,24 @@
     "unifyCount_one": "In {{count}} Titel vereinheitlichen",
     "unifyCount_other": "In {{count}} Titeln vereinheitlichen",
     "removeCopies_one": "{{count}} Kopie entfernen",
-    "removeCopies_other": "{{count}} Kopien entfernen"
+    "removeCopies_other": "{{count}} Kopien entfernen",
+    "incomplete": {
+      "missing": "Es fehlt {{fields}}",
+      "source": {
+        "shown": "In der App",
+        "suggested": "Vorgeschlagener Treffer",
+        "name": "Aus dem Dateinamen",
+        "none": "Kein Vorschlag",
+        "typed": "Von Hand ausgefüllt"
+      },
+      "stageAll_one": "{{count}} Vorschlag vormerken",
+      "stageAll_other": "{{count}} Vorschläge vormerken",
+      "stage": "Ausfüllen",
+      "empty": "Leer",
+      "useForOthers_one": "Für den anderen übernehmen",
+      "useForOthers_other": "Für die anderen {{count}} übernehmen",
+      "note": "Nur leere Felder werden ausgefüllt. Ein Wert, den die Datei schon hat, bleibt unberührt."
+    }
   },
   "listReview": {
     "loading": "Liste wird gelesen…",

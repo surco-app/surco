@@ -25,12 +25,12 @@ import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
   DeclickConfig,
   FormatSetting,
-  LibraryTagUpdate,
   MetaTextKey,
   NormalizeConfig,
   PlaylistSource,
   PlaylistTrackRef,
   RekordboxQueueWritten,
+  ReviewedFileUpdate,
   SearchHints,
   SearchProviderId,
   Settings,
@@ -113,6 +113,7 @@ import { type AppError, type AppStore, createAppStore, useAppStore } from './lib
 import { activeCleanups, cleanupPatcher, planAutoClean } from './lib/autoClean'
 import {
   acceptReviewOf,
+  acceptReviewPatch,
   clearedTrackPatch,
   holdsAutoMatch,
   type MatchCleanup,
@@ -1791,7 +1792,7 @@ export default function App(): React.JSX.Element {
   // One rule for the list menu and the palette: something to review in the open target,
   // and no conversion writing the same files.
   const canReviewList = target.count > 0 && !batching
-  const openTargetReview = useStableCallback((filter: 'all' | 'duplicates') => {
+  const openTargetReview = useStableCallback((filter: 'all' | 'duplicates' | 'incomplete') => {
     const next = reviewOpening(target, filter)
     if (next) setReview(next)
   })
@@ -2082,7 +2083,7 @@ export default function App(): React.JSX.Element {
   // later Update does not write the old spelling back over the fix. Rows it did not touch
   // are left alone; the disk read only refreshes the label and the art.
   const onReviewFilesChanged = useStableCallback(
-    async (updates: LibraryTagUpdate[]): Promise<void> => {
+    async (updates: ReviewedFileUpdate[]): Promise<void> => {
       for (const { path, fields } of updates) {
         patchReviewedFields(path, fields)
         for (const row of tracksRef.current.filter((r) => r.inputPath === path))
@@ -3026,10 +3027,26 @@ export default function App(): React.JSX.Element {
   const reviewIds = review?.source === 'music' ? review.scope?.ids : undefined
   const reviewMode = review?.source === 'music' ? review.scope?.mode : undefined
   const reviewSource = useMemo(() => {
+    const incomplete = {
+      required: () => settingsRef.current?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+      suggest: (row: TrackItem) =>
+        acceptReviewPatch(
+          row,
+          importFieldsRef.current,
+          genrePresetsRef.current,
+          fullReleaseDateRef.current,
+        )?.meta,
+    }
     if (reviewKind === 'music')
-      return reviewIds && reviewMode ? scopedMusicSource(reviewIds, reviewMode) : undefined
+      return reviewIds && reviewMode
+        ? scopedMusicSource(reviewIds, reviewMode, {
+            ...incomplete,
+            rows: () => tracksViewRef.current,
+          })
+        : undefined
     if (reviewKind !== 'list') return undefined
     return listReviewSource({
+      incomplete,
       rows: reviewPaths
         ? () => tracksViewRef.current.filter((t) => reviewPaths.has(t.inputPath))
         : () => tracksViewRef.current.filter(inFiles),
@@ -3327,6 +3344,9 @@ export default function App(): React.JSX.Element {
                             onRemoveSelected={onRemoveSelected}
                             onTrashSelected={onTrashSelected}
                             onTrashSuspects={onTrashSuspects}
+                            onReviewIncomplete={
+                              canReviewList ? () => openTargetReview('incomplete') : undefined
+                            }
                           />
                           {crateOpen && !reorderEnabled && (
                             <p

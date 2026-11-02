@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import type { LibraryTagUpdate } from '../../../shared/types'
+import type { ReviewedFileUpdate } from '../../../shared/types'
 import {
   type MusicReview as Review,
   type ReviewFilter,
@@ -52,7 +52,9 @@ function useSelection(review: Review | null, search: string, sort: ReviewSort) {
   const query = useDeferredValue(search)
   const visible = useMemo(
     () =>
-      review ? visibleGroups(review, query, sort) : { spelling: [], duplicates: [], damage: [] },
+      review
+        ? visibleGroups(review, query, sort)
+        : { spelling: [], duplicates: [], damage: [], incomplete: [] },
     [review, query, sort],
   )
   const keys = useMemo(() => visibleKeys(visible), [visible])
@@ -85,7 +87,7 @@ interface Options {
   source?: ReviewSource
   ignored: string[]
   saveIgnored: (keys: string[]) => void
-  onFilesChanged: (updates: LibraryTagUpdate[]) => void
+  onFilesChanged: (updates: ReviewedFileUpdate[]) => void
 }
 
 function Owner({

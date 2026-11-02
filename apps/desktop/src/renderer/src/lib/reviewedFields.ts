@@ -1,12 +1,16 @@
-import type { LibraryTagUpdate, ReviewRawFields, TrackMetadata } from '../../../shared/types'
+import type { ReviewedFileUpdate, ReviewRawFields, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 
-type Fields = LibraryTagUpdate['fields']
+type Fields = ReviewedFileUpdate['fields']
 
-function patchMeta<T extends ReviewRawFields>(meta: T, fields: Fields): T {
+export function patchMeta<T extends ReviewRawFields>(meta: T, fields: Fields): T {
   let next = meta
   for (const [field, change] of Object.entries(fields) as [keyof Fields, Fields[keyof Fields]][])
-    if (change && meta[field]?.normalize('NFC') === change.from.normalize('NFC'))
+    if (
+      change &&
+      (meta as Partial<Record<keyof Fields, string>>)[field]?.normalize('NFC') ===
+        change.from.normalize('NFC')
+    )
       next = { ...next, [field]: change.to }
   return next
 }

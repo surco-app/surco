@@ -126,7 +126,8 @@
       "unsaved": "未保存",
       "trashSuspects_one": "疑わしいファイルをゴミ箱へ移動",
       "trashSuspects_other": "{{count}} の疑わしいファイルをゴミ箱へ移動",
-      "current": "フィルター: {{filter}} {{count}}"
+      "current": "フィルター: {{filter}} {{count}}",
+      "reviewIncomplete": "「メタデータを確認」で入力する"
     },
     "search": {
       "placeholder": "トラックを検索",
@@ -2274,7 +2275,8 @@
       "all": "すべて",
       "spelling": "スペル",
       "duplicates": "重複",
-      "damage": "破損"
+      "damage": "破損",
+      "incomplete": "不完全"
     },
     "copyTitle": "タイトルをコピー",
     "field": {
@@ -2467,7 +2469,24 @@
     "unifyCount_one": "{{count}} トラックを統一",
     "unifyCount_other": "{{count}} トラックを統一",
     "removeCopies_one": "{{count}} コピーを削除",
-    "removeCopies_other": "{{count}} コピーを削除"
+    "removeCopies_other": "{{count}} コピーを削除",
+    "incomplete": {
+      "missing": "{{fields}}がありません",
+      "source": {
+        "shown": "アプリ内",
+        "suggested": "検索の候補",
+        "name": "ファイル名から",
+        "none": "提案なし",
+        "typed": "手入力"
+      },
+      "stageAll_one": "{{count}}件の提案をステージ",
+      "stageAll_other": "{{count}}件の提案をステージ",
+      "stage": "入力する",
+      "empty": "空",
+      "useForOthers_one": "ほかの{{count}}件にも使う",
+      "useForOthers_other": "ほかの{{count}}件にも使う",
+      "note": "空のフィールドだけを埋めます。ファイルにすでにある値は変更しません。"
+    }
   },
   "listReview": {
     "loading": "リストを読み取り中…",

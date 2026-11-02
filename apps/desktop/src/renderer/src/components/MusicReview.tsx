@@ -3,6 +3,7 @@ import {
   ArrowDownUp,
   CaseSensitive,
   ChevronLeft,
+  CircleDashed,
   Copy as CopyIcon,
   List,
   ListChecks,
@@ -15,12 +16,14 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { DamageFinding, DamageOutcome, ListMusicStep } from '../../../shared/types'
-import type {
-  DuplicateCard,
-  MusicReview as Review,
-  ReviewFilter,
-  ReviewPhase,
-  ReviewSpellingGroup,
+import {
+  type DuplicateCard,
+  type IncompleteCard,
+  incompleteKey,
+  type MusicReview as Review,
+  type ReviewFilter,
+  type ReviewPhase,
+  type ReviewSpellingGroup,
 } from '../hooks/useMusicReview'
 import { damageKey } from '../lib/damageReview'
 import { errorKeyOf } from '../lib/ipcError'
@@ -734,14 +737,15 @@ function Done({
 }
 
 const FILTERS: Record<Review['kind'], ReviewFilter[]> = {
-  music: ['all', 'spelling', 'duplicates'],
-  list: ['all', 'spelling', 'duplicates', 'damage'],
+  music: ['all', 'spelling', 'duplicates', 'incomplete'],
+  list: ['all', 'spelling', 'duplicates', 'damage', 'incomplete'],
 }
 const FILTER_ICONS: Record<ReviewFilter, LucideIcon> = {
   all: List,
   spelling: SpellCheck,
   duplicates: CopyIcon,
   damage: ShieldAlert,
+  incomplete: CircleDashed,
 }
 
 export type ReviewSort = 'default' | 'tracks' | 'name'
@@ -764,15 +768,16 @@ export function visibleGroups(
   spelling: ReviewSpellingGroup[]
   duplicates: DuplicateCard[]
   damage: DamageFinding[]
+  incomplete: IncompleteCard[]
 } {
   const query = fold(search.trim())
   const hit = (texts: string[]) => !query || texts.some((text) => fold(text).includes(query))
   const spelling =
-    review.filter === 'duplicates' || review.filter === 'damage'
+    review.filter === 'duplicates' || review.filter === 'damage' || review.filter === 'incomplete'
       ? []
       : review.spelling.filter((g) => hit([nameOf(review, g), ...g.variants.map((v) => v.value)]))
   const duplicates =
-    review.filter === 'spelling' || review.filter === 'damage'
+    review.filter === 'spelling' || review.filter === 'damage' || review.filter === 'incomplete'
       ? []
       : review.duplicates.filter((c) =>
           hit(c.entries.flatMap((e) => [e.artist, e.title, e.album ?? ''])),
@@ -781,6 +786,10 @@ export function visibleGroups(
     review.filter === 'all' || review.filter === 'damage'
       ? review.damage.filter((f) => hit([damageTitle(review, f.path), f.path]))
       : []
+  const incomplete =
+    review.filter === 'all' || review.filter === 'incomplete'
+      ? review.incomplete.filter((f) => hit([f.name]))
+      : []
   if (sort === 'name')
     return {
       spelling: [...spelling].sort((a, b) => nameOf(review, a).localeCompare(nameOf(review, b))),
@@ -788,22 +797,25 @@ export function visibleGroups(
       damage: [...damage].sort((a, b) =>
         damageTitle(review, a.path).localeCompare(damageTitle(review, b.path)),
       ),
+      incomplete: [...incomplete].sort((a, b) => a.name.localeCompare(b.name)),
     }
   if (sort === 'tracks')
     return {
       spelling: [...spelling].sort((a, b) => trackCount(b) - trackCount(a)),
       duplicates: [...duplicates].sort((a, b) => b.entries.length - a.entries.length),
       damage,
+      incomplete,
     }
-  return { spelling, duplicates, damage }
+  return { spelling, duplicates, damage, incomplete }
 }
 
 export type VisibleGroups = ReturnType<typeof visibleGroups>
 
-export const visibleKeys = ({ spelling, duplicates, damage }: VisibleGroups) => [
+export const visibleKeys = ({ spelling, duplicates, damage, incomplete }: VisibleGroups) => [
   ...spelling.map((g) => g.key),
   ...duplicates.map((c) => c.group.key),
   ...damage.map(damageKey),
+  ...incomplete.map((f) => incompleteKey(f.id)),
 ]
 
 const RISKY_KINDS = new Set(['typo', 'version'])
@@ -931,6 +943,72 @@ function DamageRow({
   )
 }
 
+export const missingLabel = (t: TFunction, card: IncompleteCard) =>
+  t('musicReview.incomplete.missing', {
+    fields: card.fields.map((f) => t(`musicReview.field.${f.field}`)).join(', '),
+  })
+
+function IncompleteRow({
+  card,
+  filled,
+  selected,
+  staged,
+  onSelect,
+}: {
+  card: IncompleteCard
+  filled: boolean
+  selected: boolean
+  staged: boolean
+  onSelect: () => void
+}) {
+  const { t } = useTranslation()
+  const source =
+    card.fields.find((f) => f.proposal)?.proposal?.source ?? (filled ? 'typed' : undefined)
+  return (
+    <div
+      role="option"
+      data-testid="incomplete-row"
+      data-staged={staged || undefined}
+      aria-selected={selected}
+      tabIndex={selected ? 0 : -1}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return
+        e.preventDefault()
+        onSelect()
+      }}
+      className={`cursor-default min-w-0 ${listRowClass(selected, false)}`}
+    >
+      <span className="relative shrink-0">
+        <CoverPlaceholder testid="music-review-row-cover" />
+        {staged && <ToneBadge testid="music-review-row-staged" tone="attention" />}
+      </span>
+      <span data-fit className="relative min-w-0 flex-1">
+        <span className="flex items-center gap-2">
+          <span className="relative block min-w-0 flex-1 truncate">
+            <span data-testid="music-review-row-name" title={card.name} className={ROW_TITLE}>
+              {card.name}
+            </span>
+          </span>
+        </span>
+        <span className="flex items-center gap-2">
+          <span data-testid="music-review-row-detail" className={ROW_DETAIL}>
+            {missingLabel(t, card)}
+            {staged && ` · ${t('musicReview.inTray')}`}
+          </span>
+          <span className="flex shrink-0 justify-end">
+            <TonePill testid="music-review-row-pill" tone={source ? 'good' : 'warn'}>
+              <span data-testid="incomplete-row-source" className={PILL_TEXT}>
+                {t(`musicReview.incomplete.source.${source ?? 'none'}`)}
+              </span>
+            </TonePill>
+          </span>
+        </span>
+      </span>
+    </div>
+  )
+}
+
 // `busy` is a conversion running elsewhere in the app: it writes the same files and the
 // same library databases, so nothing here may start a write until it ends.
 export function MusicReview({
@@ -970,14 +1048,24 @@ export function MusicReview({
   const [doneSeen, setDoneSeen] = useState<object | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const counts = {
-    all: review.spelling.length + review.duplicates.length + review.damage.length,
+    all:
+      review.spelling.length +
+      review.duplicates.length +
+      review.damage.length +
+      review.incomplete.length,
     spelling: review.spelling.length,
     duplicates: review.duplicates.length,
     damage: review.damage.length,
+    incomplete: review.incomplete.length,
   }
   const keys = visibleKeys(visible)
   const at = selectedKey === null ? -1 : keys.indexOf(selectedKey)
   const nothing = review.status === 'ready' && counts.all === 0 && !review.damageLoading
+  const proposals = review.incomplete.filter(
+    (f) =>
+      !review.staged.has(incompleteKey(f.id)) &&
+      f.fields.some((x) => review.fillValue(f.id, x.field).trim()),
+  ).length
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || e.defaultPrevented || applying) return
@@ -1124,6 +1212,17 @@ export function MusicReview({
             {t('musicReview.noMatch')}
           </p>
         )}
+        {visible.incomplete.length > 0 && proposals > 0 && (
+          <button
+            type="button"
+            data-testid="incomplete-stage-all"
+            disabled={applying}
+            onClick={review.stageProposals}
+            className="press justify-self-start rounded px-1.5 py-1 text-xs font-medium text-[var(--color-accent)] outline-none transition-colors hover:bg-[var(--color-hover)] disabled:opacity-40"
+          >
+            {t('musicReview.incomplete.stageAll', { count: proposals })}
+          </button>
+        )}
         <div
           ref={listRef}
           role="listbox"
@@ -1177,6 +1276,16 @@ export function MusicReview({
               staged={review.staged.has(damageKey(f))}
               name={damageTitle(review, f.path)}
               onSelect={() => onSelect(damageKey(f))}
+            />
+          ))}
+          {visible.incomplete.map((f) => (
+            <IncompleteRow
+              key={incompleteKey(f.id)}
+              card={f}
+              filled={f.fields.some((x) => review.fillValue(f.id, x.field).trim())}
+              selected={incompleteKey(f.id) === selectedKey}
+              staged={review.staged.has(incompleteKey(f.id))}
+              onSelect={() => onSelect(incompleteKey(f.id))}
             />
           ))}
         </div>

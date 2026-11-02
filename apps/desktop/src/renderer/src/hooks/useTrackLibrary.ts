@@ -2,9 +2,9 @@ import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type {
   AppleMusicTrackMeta,
-  LibraryTagUpdate,
   PlaylistSource,
   ProcessProgress,
+  ReviewedFileUpdate,
   ReviewRawFields,
   SessionEdit,
   SourcePlaylistEntry,
@@ -15,6 +15,7 @@ import { fillFromAppleMusic } from '../lib/appleMusicFill'
 import { createPriorityLimit } from '../lib/concurrency'
 import { trackSignature, withSignatureCover, withSignatureMeta } from '../lib/dirty'
 import { parseFileName } from '../lib/filename'
+import { REVIEW_WRITE_FIELDS } from '../lib/incompleteReview'
 import { diskMeta } from '../lib/listReviewEntries'
 import { newTrackPaths } from '../lib/newTracks'
 import { mergeReadMeta } from '../lib/readMerge'
@@ -180,7 +181,7 @@ interface TrackLibrary {
   refreshTrackFromDisk: (id: string, path: string) => Promise<void>
   // The review rewrote these fields on the file: rows of that file take the new values
   // and their disk snapshot moves with them, so the fix is not left looking like an edit.
-  patchReviewedFields: (path: string, fields: LibraryTagUpdate['fields']) => void
+  patchReviewedFields: (path: string, fields: ReviewedFileUpdate['fields']) => void
   removeTrack: (id: string, everywhere?: boolean) => void
   removeTracks: (ids: string[], everywhere?: boolean) => void
   clearTracks: () => void
@@ -599,6 +600,11 @@ export function useTrackLibrary({
       )
       if (Object.keys(rawFields).length > 0 && patch.diskSignature)
         patch.reviewRaw = { signature: patch.diskSignature, fields: rawFields }
+      const notInFile = REVIEW_WRITE_FIELDS.filter(
+        (f) => readMeta[f].trim() && !(tags[f] ?? '').trim(),
+      )
+      if (notInFile.length > 0 && patch.diskSignature)
+        patch.notInFile = { signature: patch.diskSignature, fields: notInFile }
       if (saved) Object.assign(patch, restoredPatch(saved))
       // The row paints from embeddedCover, so a cover restored from the session has to
       // land there too — otherwise reopening showed the placeholder in the crate while the
@@ -795,7 +801,7 @@ export function useTrackLibrary({
   })
 
   const patchReviewedFields = useCallback(
-    (path: string, fields: LibraryTagUpdate['fields']): void =>
+    (path: string, fields: ReviewedFileUpdate['fields']): void =>
       setTracks((prev) =>
         prev.map((t) => (t.inputPath === path ? withReviewedFields(t, fields) : t)),
       ),
