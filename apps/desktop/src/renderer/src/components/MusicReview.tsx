@@ -41,7 +41,7 @@ import {
   ToneBadge,
   TonePill,
 } from './ListRow'
-import { ModalShell } from './ModalShell'
+import { ModalExit, ModalShell } from './ModalShell'
 import { SearchInput } from './SearchInput'
 import { Select } from './Select'
 import { PrimaryAction } from './Toolbar'
@@ -1181,12 +1181,16 @@ export function MusicReview({
           ))}
         </div>
       </div>
-      {confirming && <Confirm review={review} busy={busy} onCancel={() => onConfirming(false)} />}
-      {(review.status === 'done' || review.status === 'ready') &&
-        review.lastRun &&
-        doneSeen !== review.lastRun && (
-          <Done review={review} busy={busy} onContinue={() => setDoneSeen(review.lastRun)} />
-        )}
+      <ModalExit>
+        {confirming && <Confirm review={review} busy={busy} onCancel={() => onConfirming(false)} />}
+      </ModalExit>
+      <ModalExit>
+        {(review.status === 'done' || review.status === 'ready') &&
+          review.lastRun &&
+          doneSeen !== review.lastRun && (
+            <Done review={review} busy={busy} onContinue={() => setDoneSeen(review.lastRun)} />
+          )}
+      </ModalExit>
     </div>
   )
 }
