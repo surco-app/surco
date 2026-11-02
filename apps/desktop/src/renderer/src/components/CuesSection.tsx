@@ -997,32 +997,33 @@ function Editing({
           })}
         </span>
       )}
-      <span className="flex-1" />
-      <button
-        type="button"
-        data-testid="cues-auto-accept"
-        onClick={() => {
-          acceptProposals()
-          focusEditor()
-        }}
-        className="press flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md bg-[var(--color-accent)] px-2.5 font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
-      >
-        {acceptLabel}
-        <kbd className="rounded border border-[var(--color-on-accent)]/40 px-1 font-sans text-[11px]">
-          ↵
-        </kbd>
-      </button>
-      <button
-        type="button"
-        data-testid="cues-auto-discard"
-        onClick={() => {
-          setProposed(null)
-          focusEditor()
-        }}
-        className="press shrink-0 whitespace-nowrap rounded px-1 text-fg-dim hover:text-fg"
-      >
-        {tr('editor.cues.auto.discard')}
-      </button>
+      <span className="ml-auto flex items-center gap-3">
+        <button
+          type="button"
+          data-testid="cues-auto-accept"
+          onClick={() => {
+            acceptProposals()
+            focusEditor()
+          }}
+          className="press flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md bg-[var(--color-accent)] px-2.5 font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
+        >
+          {acceptLabel}
+          <kbd className="rounded border border-[var(--color-on-accent)]/40 px-1 font-sans text-[11px]">
+            ↵
+          </kbd>
+        </button>
+        <button
+          type="button"
+          data-testid="cues-auto-discard"
+          onClick={() => {
+            setProposed(null)
+            focusEditor()
+          }}
+          className="press shrink-0 whitespace-nowrap rounded px-1 text-fg-dim hover:text-fg"
+        >
+          {tr('editor.cues.auto.discard', { count: proposals.length })}
+        </button>
+      </span>
     </div>
   )
   const autoControl = (

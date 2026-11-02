@@ -278,6 +278,21 @@ describe('Auto marcar', () => {
     expect(autoButton()).toBeInTheDocument()
   })
 
+  // In a narrow panel the bar wraps; the two answers stay side by side on the line they wrap
+  // to, and with one suggestion both speak of one, as Accept already did.
+  it('keeps accept and remove together and in the singular for a single suggestion', async () => {
+    dropProposals.mockReturnValue([sure(bar(64))])
+    setup()
+    await ready()
+    await autoMark()
+    const review = screen.getByTestId('cues-auto-review')
+    const accept = screen.getByTestId('cues-auto-accept')
+    const remove = screen.getByTestId('cues-auto-discard')
+    expect(accept.parentElement).toBe(remove.parentElement)
+    expect(accept.parentElement).not.toBe(review)
+    expect(remove).toHaveTextContent('Remove the suggestion')
+  })
+
   it('removes one suggestion from the overview without moving the playhead to it', async () => {
     setup()
     await ready()

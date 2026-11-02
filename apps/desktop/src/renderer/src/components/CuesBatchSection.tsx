@@ -223,7 +223,7 @@ export function CuesBatchSection({
             onClick={discard}
             className="press px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
           >
-            {tr('editor.cues.auto.discard')}
+            {tr('editor.cues.auto.discard', { count: proposals })}
           </button>
         </div>
       )}
