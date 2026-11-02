@@ -620,14 +620,19 @@ describe('saving several tracks', () => {
     expect((await saveAllItem()).closest('[data-testid="cues-folded-row"]')).not.toBeNull()
   })
 
-  it('offers no menu when this is the only track with unsaved cues', async () => {
+  it('offers only Discard, with no track count, when this is the only track with unsaved cues', async () => {
     setup()
     await ready()
     await autoMark()
     fireEvent.click(screen.getByTestId('cues-auto-accept'))
     await screen.findByTestId('cues-unsaved')
     expect(screen.getByTestId('cues-save')).toBeEnabled()
-    expect(screen.queryByTestId('cues-save-more')).toBeNull()
+    const more = screen.getByTestId('cues-save-more')
+    expect(more).toHaveTextContent('')
+    fireEvent.click(more)
+    expect(screen.queryByTestId('cues-save-all')).toBeNull()
+    expect(screen.queryByTestId('cues-save-this')).toBeNull()
+    expect(screen.getByTestId('cues-discard')).toBeEnabled()
   })
 
   it('saves every reviewed track to rekordbox in one go, so the collection is written once', async () => {

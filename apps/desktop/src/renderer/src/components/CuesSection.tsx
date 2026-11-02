@@ -170,8 +170,6 @@ export function saveAllKey(unsaved: ReadonlySet<string>): string {
   if (engine === 0) return 'editor.cues.saveAll'
   return engine === unsaved.size ? 'editor.cues.engine.saveAll' : 'editor.cues.saveAllBoth'
 }
-const CLEAR_CUES = 'clear-cues'
-const DISCARD_CUES = 'discard-cues'
 
 const HIDDEN_SECTION_KEYS: Parameters<typeof claimKeys>[0] = {
   'trim-start-back': ignore,
@@ -480,9 +478,7 @@ function Editing({
     onFlow?.(id)
   }
   const pickOption = (id: string) => {
-    if (id === CLEAR_CUES) dispatch({ type: 'clear' })
-    else if (id === DISCARD_CUES) onDiscard()
-    else pickMode(id)
+    pickMode(id)
   }
   const removeOf = (key: string): DraftAction =>
     manual ? { type: 'remove', key } : { type: 'remove-point', key }
@@ -928,6 +924,7 @@ function Editing({
     }
   })
   const saveMenu = useSplitMenu()
+  const discardable = !unchanged || queued !== null
   const saveAllButton = unsavedTracks > 1 && (
     <button
       type="button"
@@ -944,23 +941,9 @@ function Editing({
   const flowOptions = [
     ...flows.map((f) => ({ value: f.id, label: flowName(f, tr) })),
     { value: MANUAL_CUE_FLOW, label: tr('editor.cues.manualMode'), divided: true },
-    {
-      value: CLEAR_CUES,
-      label: tr('editor.cues.clearAll'),
-      divided: true,
-      disabled: !clearable,
-    },
-    ...(maximized
-      ? []
-      : [
-          {
-            value: DISCARD_CUES,
-            label: tr('editor.cues.discard'),
-            disabled: unchanged && queued === null,
-          },
-        ]),
   ]
-  const discardButton = (!unchanged || queued !== null) && (
+  const saveMenuShown = !!saveAllButton || discardable
+  const discardButton = discardable && (
     <button
       type="button"
       data-testid="cues-undo"
@@ -1211,6 +1194,17 @@ function Editing({
       )}
       <span className="flex-1" />
       {addCallButton}
+      <button
+        type="button"
+        data-testid="cues-clear-all"
+        aria-label={tr('editor.cues.clearAll')}
+        title={tr('editor.cues.clearAll')}
+        disabled={!clearable}
+        onClick={clearAll}
+        className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:pointer-events-none disabled:opacity-40"
+      >
+        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
       {undoButton}
       <div ref={saveMenu.ref} className="relative flex shrink-0">
         <button
@@ -1220,7 +1214,7 @@ function Editing({
           aria-label={tr(copy.save)}
           onClick={() => void save()}
           className={`press h-6 shrink-0 whitespace-nowrap px-3 text-xs font-semibold ${
-            saveAllButton ? 'rounded-l-full' : 'rounded-full'
+            saveMenuShown ? 'rounded-l-full' : 'rounded-full'
           } ${
             unchanged
               ? 'text-fg-dim'
@@ -1229,7 +1223,7 @@ function Editing({
         >
           {tr('editor.cues.saveShort')}
         </button>
-        {saveAllButton && (
+        {saveMenuShown && (
           <button
             type="button"
             data-testid="cues-save-more"
@@ -1241,11 +1235,11 @@ function Editing({
             onClick={() => saveMenu.setOpen((v) => !v)}
             className="press flex h-6 shrink-0 items-center gap-0.5 rounded-r-full border-l border-[var(--color-on-accent)]/30 bg-[var(--color-accent)] pr-2 pl-1.5 text-xs font-semibold tabular-nums text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
           >
-            {unsavedTracks}
+            {saveAllButton && unsavedTracks}
             <ChevronDown className="h-3 w-3" aria-hidden="true" />
           </button>
         )}
-        {saveAllButton && saveMenu.open && (
+        {saveMenuShown && saveMenu.open && (
           <div
             ref={saveMenu.menuRef}
             role="menu"
@@ -1253,31 +1247,50 @@ function Editing({
             onKeyDown={saveMenu.onMenuKeyDown}
             className={`${SPLIT_MENU} w-auto min-w-56`}
           >
+            {saveAllButton && (
+              <>
+                <button
+                  type="button"
+                  data-testid="cues-save-this"
+                  role="menuitem"
+                  disabled={unchanged || blocked}
+                  onClick={() => {
+                    saveMenu.setOpen(false)
+                    void save()
+                  }}
+                  className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40`}
+                >
+                  {tr('editor.cues.saveThis')}
+                </button>
+                <button
+                  type="button"
+                  data-testid="cues-save-all"
+                  role="menuitem"
+                  disabled={savingAll}
+                  onClick={() => {
+                    saveMenu.setOpen(false)
+                    void saveAll()
+                  }}
+                  className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40`}
+                >
+                  {saveAllLabel}
+                </button>
+              </>
+            )}
             <button
               type="button"
-              data-testid="cues-save-this"
+              data-testid="cues-discard"
               role="menuitem"
-              disabled={unchanged || blocked}
+              disabled={!discardable}
               onClick={() => {
                 saveMenu.setOpen(false)
-                void save()
+                onDiscard()
               }}
-              className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40`}
+              className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40 ${
+                saveAllButton ? 'mt-1 border-t border-[var(--color-line)]' : ''
+              }`}
             >
-              {tr('editor.cues.saveThis')}
-            </button>
-            <button
-              type="button"
-              data-testid="cues-save-all"
-              role="menuitem"
-              disabled={savingAll}
-              onClick={() => {
-                saveMenu.setOpen(false)
-                void saveAll()
-              }}
-              className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40`}
-            >
-              {saveAllLabel}
+              {tr('editor.cues.discard')}
             </button>
           </div>
         )}
