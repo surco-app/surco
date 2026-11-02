@@ -55,7 +55,7 @@ import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
 import { clearedTrackPatch, matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
 import { baseName } from '../lib/baseName'
-import { compareCopies } from '../lib/bestCopy'
+import { type CopyReason, compareCopies } from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
 import type { CueActions } from '../lib/commands'
 import type { AutoMarkTarget } from '../lib/cueAutoMark'
@@ -121,6 +121,7 @@ import { SectionBody } from './SectionBody'
 import { SectionGroupHeading } from './SectionGroupHeading'
 import { SectionHeader } from './SectionHeader'
 import { SectionPill } from './SectionPill'
+import { SpectrumGlimpse } from './SpectrumGlimpse'
 import { Tooltip } from './Tooltip'
 import { TrimSection } from './TrimSection'
 
@@ -242,6 +243,13 @@ interface Props {
 
 // macOS paths compare without case, and Music may hand back the other Unicode form.
 const pathKey = (path: string): string => path.normalize('NFC').toLowerCase()
+
+const SPECTRUM_REASONS: ReadonlySet<CopyReason> = new Set([
+  'transcode',
+  'cutoff',
+  'processed',
+  'upsampled',
+])
 
 const COPY_STATE_LABEL = {
   here: 'editor.copyHereBetter',
@@ -1303,6 +1311,8 @@ export const Editor = memo(function Editor({
     copyVerdict && 'reason' in copyVerdict && copyVerdict.reason === 'peakCount'
       ? (copyVerdict.winner === 'a' ? libraryFacts : hereFacts)?.sampleRateHz
       : undefined
+  const spectrumDecided =
+    !!copyVerdict && 'reason' in copyVerdict && SPECTRUM_REASONS.has(copyVerdict.reason)
   const copyLine =
     !isMulti && inLibrary === 'yes' && copyState ? (
       <>
@@ -1355,6 +1365,14 @@ export const Editor = memo(function Editor({
                       label: `${libraryName} · ${libraryFacts.ext}`,
                     },
                   ]}
+                />
+              ) : spectrumDecided ? (
+                <SpectrumGlimpse
+                  herePath={item.inputPath}
+                  libraryPath={comparedCopyPath}
+                  hereLabel={`${tr('editor.copyThisFile')} · ${hereFacts.ext}`}
+                  libraryLabel={`${libraryName} · ${libraryFacts.ext}`}
+                  loser={copyVerdict.winner === 'a' ? 'library' : 'here'}
                 />
               ) : undefined
             }
