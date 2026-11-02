@@ -1179,11 +1179,19 @@
       "review": {
         "lead": "Et ta bibliothèque, en ordre.",
         "rest": "Fautes, graphies et doublons."
+      },
+      "cues": {
+        "lead": "Et tes cues, placés.",
+        "rest": "Marque le drop, ton flux place le reste."
+      },
+      "replace": {
+        "lead": "Et tes playlists, intactes.",
+        "rest": "Remplace le MP3 par un AIFF, il reste partout."
       }
     },
     "replace": {
       "title": "Améliore le fichier. Tes playlists n'y voient que du feu.",
-      "lede": "Si le morceau est déjà dans ton Apple Music, le bouton indique « Remplacer ». N'importe quel format convient, le même compris, d'un MP3 vers un AIFF ou d'un MP3 128 vers un 320. Apple Music passe au nouveau fichier, tout comme rekordbox, Engine DJ et Traktor si tu les synchronises. Le morceau reste dans les dix playlists où il était, cues compris. Pas besoin de le rajouter à la main dans chacune.",
+      "lede": "Si le morceau est déjà dans ton Apple Music, le bouton indique « Remplacer ». Surco change le fichier et chaque logiciel pointe vers le nouveau, alors tu n'as jamais à rajouter le morceau à la main dans chaque playlist.",
       "convertAll": "Convertir 1 morceau",
       "search": "Rechercher des morceaux",
       "file": "Fichier",
@@ -1205,11 +1213,25 @@
       "cuesLabel": "Cue points",
       "intact": "intacts",
       "inPlace": "en place",
-      "fieldYear": "Année"
+      "fieldYear": "Année",
+      "points": {
+        "anyFormat": {
+          "title": "Du MP3 à l'AIFF, ou ce que tu veux",
+          "text": "N'importe quel format convient, le même compris, d'un MP3 128 vers un 320."
+        },
+        "playlists": {
+          "title": "Playlists intactes",
+          "text": "Le morceau reste dans toutes les playlists où il était, cues compris."
+        },
+        "programs": {
+          "title": "Dans tous tes logiciels",
+          "text": "Apple Music, et aussi rekordbox, Engine DJ et Traktor si tu les synchronises."
+        }
+      }
     },
     "cues": {
-      "title": "Tes cues rekordbox, Engine DJ et Traktor, en un clic.",
-      "lede": "Clique là où le morceau décolle, ou laisse Marquage auto te le proposer. Ton flux place le reste des cues et Surco les enregistre dans rekordbox, Engine DJ ou Traktor. Engine DJ et Traktor ne prennent que les hot cues.",
+      "title": "Marque le drop. Le reste des cues se place tout seul.",
+      "lede": "Clique là où le morceau décolle, ou laisse Marquage auto le trouver. Ton flux place les autres cues de la même façon sur chaque morceau et Surco les enregistre dans rekordbox, Engine DJ ou Traktor.",
       "unsaved": "Non enregistré",
       "flow": "Flux",
       "flowName": "Subidón",
@@ -1217,7 +1239,21 @@
       "save": "Enregistrer dans rekordbox",
       "addCall": "+ CALL",
       "autoButton": "Marquage auto",
-      "ask": "Ça décolle ici ?"
+      "ask": "Ça décolle ici ?",
+      "points": {
+        "oneClick": {
+          "title": "Un clic, pas huit",
+          "text": "Tu marques où le morceau décolle et ton flux place tous les autres cues."
+        },
+        "yourFlow": {
+          "title": "Ton flux, pas celui d'un autre",
+          "text": "Les cues tombent là où tu les mets toujours, pareil sur chaque morceau."
+        },
+        "programs": {
+          "title": "Directement dans ton logiciel",
+          "text": "rekordbox, Engine DJ et Traktor. Engine DJ et Traktor ne prennent que les hot cues."
+        }
+      }
     },
     "app": {
       "search": "Rechercher des morceaux",

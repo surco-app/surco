@@ -60,6 +60,12 @@ const GLYPHS = {
       <line x1="12" y1="4" x2="12" y2="16" />
     </>
   ),
+  cue: (
+    <>
+      <path d="M7 4h10l-5 6Z" />
+      <path d="M12 10v10" />
+    </>
+  ),
   // a circled check — done
   check: (
     <>
