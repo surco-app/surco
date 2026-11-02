@@ -181,7 +181,7 @@ function differingTag(
   for (const field of Object.keys(TAG_LINES) as (keyof TrackMetadata)[]) {
     const expected = tags[field]
     if (typeof expected !== 'string') continue
-    const want = norm(expected)
+    const want = field === 'bpm' && Number(norm(expected)) === 0 ? '' : norm(expected)
     if (m4a && (field === 'trackNumber' || field === 'bpm')) {
       const stored = field === 'trackNumber' ? m4a.track : m4a.bpm
       const meant =
