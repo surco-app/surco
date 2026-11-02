@@ -233,9 +233,7 @@ describe('CuesSection on a Traktor track', () => {
       expect(screen.getAllByTestId(/^cue-wave-ghost-hot-/).length).toBeGreaterThan(0),
     )
     for (const mark of screen.getAllByTestId(/^cue-wave-ghost-hot-/))
-      expect((mark.querySelector('[data-ghost-fill]') as HTMLElement).style.backgroundColor).toBe(
-        traktorBlue,
-      )
+      expect(mark.style.borderColor).toBe(traktorBlue)
   })
 
   it('offers no colour for a Traktor hot cue, from its button or its marker', async () => {
