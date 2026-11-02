@@ -22,7 +22,11 @@ export const PAGES = {
   guide: localized('/guia', '/guide'),
   useCases: localized('/casos-de-uso', '/use-cases'),
   changelog: localized('/cambios', '/changelog'),
+  convert: localized('/convertir', '/convert'),
   flacToAiff: localized('/convertir/flac-a-aiff', '/convert/flac-to-aiff'),
+  wavToAiff: localized('/convertir/wav-a-aiff', '/convert/wav-to-aiff'),
+  flacToMp3: localized('/convertir/flac-a-mp3', '/convert/flac-to-mp3'),
+  wavToMp3: localized('/convertir/wav-a-mp3', '/convert/wav-to-mp3'),
   privacy: localized('/privacidad', '/privacy'),
   stats: localized('/estadisticas', '/stats'),
 }

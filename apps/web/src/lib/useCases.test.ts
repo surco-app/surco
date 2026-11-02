@@ -154,7 +154,7 @@ describe('finding a use case', () => {
 
   it('narrows to the recipes for where the music lives', () => {
     expect(found(es, '', 'nas')).toEqual(['nas'])
-    expect(found(es, '', 'usb')).toEqual(['usb', 'music-playlist-set'])
+    expect(found(es, '', 'usb')).toEqual(['usb', 'to-mp3', 'music-playlist-set'])
   })
 
   // A recipe that only mentions a program in an optional setting still answers the question

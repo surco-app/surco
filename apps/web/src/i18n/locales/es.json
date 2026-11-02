@@ -7,10 +7,10 @@
     "ogLocale": "es_ES",
     "inLanguage": "es",
     "title": "Surco: Prepara tus pistas de DJ en segundos",
-    "description": "Surco automatiza la preparación de pistas para DJ: convierte a AIFF, WAV, FLAC o ALAC lossless (o a un MP3 más ligero), edita etiquetas y metadatos desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, y manda a Apple Music o a tu biblioteca de Engine DJ (Denon) en segundos. Y detecta MP3 recomprimidos disfrazados de lossless.",
+    "description": "Surco prepara tus pistas de DJ en segundos. Convierte entre AIFF, WAV, FLAC, ALAC y MP3 en cualquier dirección, edita etiquetas y metadatos desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, y lleva las pistas a Apple Music, rekordbox, Engine DJ o Traktor. Y detecta MP3 recomprimidos disfrazados de lossless.",
     "ogTitle": "Surco: Prepara tus pistas de DJ en segundos",
-    "ogDescription": "Menos preparar, más pinchar: convierte a AIFF, WAV, FLAC o ALAC lossless (o a un MP3 más ligero), etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, y organiza en segundos. Y detecta MP3 disfrazados de lossless.",
-    "jsonLdDescription": "Organizador de pistas de audio para DJ: convierte a AIFF, WAV, FLAC o ALAC lossless, etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, manda a Apple Music o Engine DJ (Denon) y analiza el espectro para detectar MP3 recomprimidos."
+    "ogDescription": "Menos preparar, más pinchar. Convierte entre AIFF, WAV, FLAC, ALAC y MP3 en cualquier dirección, etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, y organiza en segundos. Y detecta MP3 disfrazados de lossless.",
+    "jsonLdDescription": "Organizador de pistas de audio para DJ. Convierte entre AIFF, WAV, FLAC, ALAC y MP3 en cualquier dirección, etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, lleva las pistas a Apple Music, rekordbox, Engine DJ o Traktor y analiza el espectro para detectar MP3 recomprimidos."
   },
   "nav": {
     "velocidad": "Velocidad",
@@ -58,7 +58,7 @@
         "items": [
           {
             "t": "Cualquier formato a cualquiera",
-            "d": "AIFF, WAV, FLAC, ALAC o MP3. Lee además M4A, AAC, OGG y OPUS. Un M4A puede quedarse como está; los otros tres siempre se transcodifican."
+            "d": "AIFF, WAV, FLAC, ALAC o MP3, en cualquier dirección. De FLAC a MP3 para que quepa en el USB, de WAV a AIFF para llevar la carátula, de MP3 a lo que pida tu programa. Lee además M4A, AAC, OGG y OPUS. Un M4A puede quedarse como está; los otros tres siempre se transcodifican."
           },
           {
             "t": "Sin recodificar si no hace falta",
@@ -400,7 +400,7 @@
     "manualSteps": [
       {
         "app": "conversor",
-        "label": "Convertir FLAC a WAV"
+        "label": "Cambiar de formato"
       },
       {
         "app": "navegador",
@@ -428,7 +428,7 @@
     "withSurcoTime": "7 s",
     "combo": "Convertir + etiquetar + Apple Music o Engine DJ",
     "bullets": [
-      "AIFF, WAV, FLAC o ALAC lossless, o MP3",
+      "de cualquier formato a AIFF, WAV, FLAC, ALAC o MP3",
       "metadatos Discogs",
       "carátula embebida",
       "grouping y tags",
@@ -494,7 +494,12 @@
     "slogan": "tu música, en orden",
     "convertHeading": "Convertir",
     "flacToAiff": "FLAC a AIFF",
-    "privacy": "Privacidad"
+    "privacy": "Privacidad",
+    "convert": "Todos los formatos",
+    "wavToAiff": "WAV a AIFF",
+    "flacToMp3": "FLAC a MP3",
+    "wavToMp3": "WAV a MP3",
+    "convertMore": "Otras conversiones"
   },
   "install": {
     "kicker": "Instalar",
@@ -515,15 +520,15 @@
       },
       {
         "q": "¿Es un editor de etiquetas y metadatos?",
-        "a": "Sí, y más. Surco edita las etiquetas y los metadatos de tu música (artista, título, álbum, año, carátula…) y los completa desde Discogs, Bandcamp, Deezer, Beatport o MusicBrainz. Pero además convierte entre formatos lossless, comprueba la calidad del audio y ordena tu biblioteca: lo que harías con un editor de etiquetas y tres apps más, en una."
+        "a": "Sí, y más. Surco edita las etiquetas y los metadatos de tu música (artista, título, álbum, año, carátula…) y los completa desde Discogs, Bandcamp, Deezer, Beatport o MusicBrainz. Pero además convierte entre AIFF, WAV, FLAC, ALAC y MP3 en cualquier dirección, comprueba la calidad del audio y ordena tu biblioteca: lo que harías con un editor de etiquetas y tres apps más, en una."
       },
       {
         "q": "¿Toca mis archivos originales?",
-        "a": "Depende de si cambias de formato. Si conviertes a un formato distinto del que ya tiene, el original queda intacto y la copia va a una carpeta aparte (Música/Surco). Si reexportas al mismo formato, Surco reescribe ese fichero donde está, es lo que le permite actualizar las etiquetas sin recodificar el audio. Y con «Editar el original» activado, reescribe siempre. Cuando el audio cambia (convertir, normalizar, recortar), Surco guarda antes una copia de seguridad del original que restauras desde la propia pista; en Ajustes → Destino eliges si la quieres siempre, solo cuando cambia el audio o nunca, y cuántos días y cuánto espacio ocupan."
+        "a": "Depende de si cambias de formato. Si conviertes a un formato distinto del que ya tiene, el original queda intacto y la copia va a una carpeta aparte (Música/Surco). Hay dos excepciones. Si la copia nueva sustituye a la vieja en tu biblioteca, Surco retira el archivo viejo en cuanto comprueba que el nuevo está bien, y lo manda a la papelera o a Copias. Y con «Editar el original» el fichero se reescribe en su sitio, así que cambiar de formato elimina el original. Si reexportas al mismo formato, Surco reescribe ese fichero donde está, que es como actualiza las etiquetas sin recodificar el audio. Cuando el audio cambia (convertir, normalizar, recortar), Surco guarda antes una copia de seguridad del original que restauras desde la propia pista; en Ajustes → Destino eliges si la quieres siempre, solo cuando cambia el audio o nunca, y cuántos días y cuánto espacio ocupan."
       },
       {
         "q": "¿Conserva los cue points?",
-        "a": "Depende del formato de destino. Se conservan al convertir entre MP3 y AIFF, y al pasar cualquiera de los tres (MP3, AIFF o FLAC) a FLAC: Surco lee el árbol que Traktor guarda dentro del fichero y lo vuelve a escribir en el formato que toca. Se conservan también al convertir a WAV, y al pasar de FLAC a MP3 o AIFF. Solo se pierden en ALAC, que no tiene dónde guardarlo. Si recortas silencio, los cues se recolocan solos según lo que hayas cortado (incluida la rejilla, que se reancla por fase para que no se descuadre), y si algo no se puede recolocar con garantías se descarta en vez de quedar mal puesto. Surco te lo avisa antes de convertir."
+        "a": "Los de Traktor, sí. Se conservan entre MP3, AIFF, FLAC y WAV en cualquier combinación, porque Surco lee el árbol que Traktor guarda dentro del fichero y lo vuelve a escribir en el formato de destino. Solo se pierden en ALAC, que no tiene dónde guardarlo. Los de rekordbox y Engine DJ viven en su biblioteca y siguen con la pista si actualizas esa biblioteca al convertir. Si recortas silencio, los cues se recolocan solos según lo que hayas cortado (incluida la rejilla, que se reancla por fase para que no se descuadre), y si algo no se puede recolocar con garantías se descarta en vez de quedar mal puesto. Surco te lo avisa antes de convertir."
       },
       {
         "q": "¿Puedo recortar el silencio de mis rips?",
@@ -535,7 +540,7 @@
       },
       {
         "q": "Tengo MP3 en mi biblioteca. ¿Puedo pasarlos a lossless sin perder las playlists?",
-        "a": "Sí, eso es sustituir. Carga el AIFF o el FLAC del mismo tema y, si Surco lo encuentra en tu biblioteca, el botón dice «Sustituir» en vez de «Añadir». Al convertir, la entrada de Apple Music deja de apuntar al MP3 y apunta al archivo nuevo, y en rekordbox se reapunta la misma ficha: conserva sus playlists y sus cue points, porque rekordbox enlaza por pista y no por ruta. Un aviso: rekordbox analiza el archivo nuevo y puede recolocar el beatgrid, así que conviene revisar la rejilla. rekordbox tiene que estar cerrado para escribir en su base de datos; Surco se ofrece a cerrarlo y hace copia de seguridad antes. Al acabar te ofrece mandar el archivo viejo a la papelera, y si está en un disco sin papelera, como un NAS, lo guarda en Copias › Archivos de música. Con «Nunca» en Ajustes → Destino se borra del todo, y el aviso lo dice antes."
+        "a": "Sí, eso es sustituir. Carga el AIFF o el FLAC del mismo tema y, si Surco lo encuentra en tu biblioteca, el botón dice «Sustituir» en vez de «Añadir». Al convertir, la entrada de Apple Music deja de apuntar al MP3 y apunta al archivo nuevo, y en rekordbox se reapunta la misma ficha: conserva sus playlists y sus cue points, porque rekordbox enlaza por pista y no por ruta. Un aviso: rekordbox analiza el archivo nuevo y puede recolocar el beatgrid, así que conviene revisar la rejilla. rekordbox tiene que estar cerrado para escribir en su base de datos; Surco se ofrece a cerrarlo y hace copia de seguridad antes. Cuando la comprobación del archivo nuevo sale bien y ningún programa sigue usando el viejo, Surco retira el viejo solo. Va a la papelera, o a Copias › Archivos de música si está en un disco sin papelera, como un NAS. Con «Nunca» en Ajustes → Destino se borra del todo."
       },
       {
         "q": "¿Funciona con equipos Denon (Engine DJ)?",
@@ -547,7 +552,7 @@
       },
       {
         "q": "¿Qué formatos admite?",
-        "a": "Convierte entre AIFF, WAV, FLAC y ALAC lossless y MP3, de cualquiera a cualquiera. La calidad la eliges tú: bitrate del MP3 (de 320 a 128 kbps, o VBR V0/V2), profundidad de bits y frecuencia de muestreo. Por defecto se conservan las del original, salvo un audio de 16 bits rellenado a 24, que se guarda como 16 bits reales sin pérdida. Además lee M4A, AAC, OGG y OPUS."
+        "a": "Convierte entre AIFF, WAV, FLAC, ALAC y MP3, de cualquiera a cualquiera. De lossless a MP3 para ahorrar espacio, de MP3 a AIFF para tu programa o de FLAC a WAV, como lo necesites. La calidad la eliges tú: bitrate del MP3 (de 320 a 128 kbps, o VBR V0/V2), profundidad de bits y frecuencia de muestreo. Por defecto se conservan las del original, salvo un audio de 16 bits rellenado a 24, que se guarda como 16 bits reales sin pérdida. Además lee M4A, AAC, OGG y OPUS y los convierte a cualquiera de esos cinco."
       },
       {
         "q": "¿Y los WAV rotos?",
@@ -603,7 +608,7 @@
           "Disponible para macOS (Apple Silicon e Intel, notarizado por Apple), Windows y Linux (en Linux como AppImage), en seis idiomas.",
           "El asistente de bienvenida son solo cuatro pasos (cinco si Surco encuentra tu colección de rekordbox, Engine DJ o Traktor); el nombrado, los géneros y los campos del editor te esperan en Ajustes.",
           "¿Lo despachaste rápido? Puedes volver a abrirlo cuando quieras desde el menú Ayuda o ⌘K: arranca con tus ajustes actuales y solo cambia lo que toques.",
-          "De serie ya viene con lo importante encendido: analiza la calidad al importar y busca en Discogs, Bandcamp, Deezer y MusicBrainz sin que configures nada.",
+          "De serie ya viene con lo importante encendido. Analiza todo al importar y busca en Discogs, Bandcamp, Deezer y MusicBrainz sin que configures nada.",
           "Puedes cambiar cualquier ajuste después en Ajustes (⌘ ,)."
         ],
         "shot": "instalar-es.webp",
@@ -617,7 +622,7 @@
           "Surco lee al vuelo las etiquetas, la duración y la carátula de cada archivo, y los muestra en la lista al instante. El mismo archivo nunca se añade dos veces."
         ],
         "points": [
-          "Formatos: WAV, FLAC, AIFF, ALAC, MP3, M4A, AAC, OGG, OPUS y más.",
+          "Formatos: WAV, FLAC, AIFF, ALAC, MP3, M4A, AAC, OGG y OPUS.",
           "Suelta carpetas enteras: Surco las recorre y añade todo el audio que encuentre, y te avisa si luego aparecen archivos nuevos en ellas.",
           "Las pistas van apareciendo según se encuentran, así que una carpeta grande o en red se empieza a ver enseguida en vez de dejarte ante una pantalla vacía.",
           "Un contador y una barra de progreso te dicen por dónde va la lectura de cada archivo.",
@@ -648,6 +653,21 @@
         "shotCaption": "La lista de pistas con filtros y estados."
       },
       {
+        "id": "fuentes",
+        "title": "Abre tus bibliotecas en Surco",
+        "body": [
+          "La barra lateral tiene un panel Fuentes con tu Apple Music (en macOS), rekordbox, Engine DJ y Traktor. Abre cualquier playlist y sus pistas entran en la lista con sus archivos de verdad, para etiquetarlas, revisarlas o convertirlas como cualquier otra.",
+          "En rekordbox la lista empieza por «Todas las pistas», con tu colección entera, también lo que no está en ninguna playlist, y sigue con «Añadidas recientemente», lo que metiste los últimos 30 días."
+        ],
+        "points": [
+          "Las playlists de rekordbox y Traktor se organizan desde aquí. Creas, renombras y borras playlists y carpetas, y añades, quitas y reordenas pistas.",
+          "Si el programa está abierto, el cambio espera a que lo cierres, y antes de escribir Surco guarda una copia en Copias.",
+          "Las pistas de una playlist que no tienen fichero en el disco, como las de streaming, se cuentan aparte.",
+          "Si no usas alguno de esos programas, ocúltalo y el panel queda más limpio.",
+          "Junto al nombre de rekordbox o de Engine DJ, el icono de USB exporta sus playlists a un USB."
+        ]
+      },
+      {
         "id": "editor",
         "title": "Edita los metadatos",
         "body": [
@@ -666,7 +686,7 @@
           "¿Pista misteriosa? Un botón la busca en Google con el nombre del archivo ya escrito (también desde el menú contextual de la lista), y un comando numera la selección en orden de lista (1, 2, 3…).",
           "Arrastra el divisor entre resultados y editor para repartir el espacio como te convenga; cada equipo recuerda el suyo.",
           "La sección Propiedades te enseña la ficha técnica del archivo (códec, frecuencia, bits, canales, bitrate, ruta y tamaño) y te avisa si el archivo no coincide con la calidad que pides en Ajustes, por si quieres reconvertirlo.",
-          "Las secciones del editor se pliegan, se reordenan y se ocultan a tu gusto en Ajustes → Editor; plegadas resumen su estado, y cualquiera se agranda a pantalla completa (Esc para volver)."
+          "Las secciones del editor se pliegan, se reordenan y se ocultan a tu gusto en Ajustes → Secciones; plegadas resumen su estado, y cualquiera se agranda a pantalla completa (Esc para volver)."
         ],
         "shot": "editor-es.webp",
         "shotCaption": "El editor de metadatos con las sugerencias de Discogs."
@@ -701,9 +721,9 @@
           "«Posible reprocesado» es un aviso distinto, en ámbar: el espectro muestra agudos que parecen regenerados sobre un corte anterior. Es una sospecha medida, no una prueba; unos agudos solo planos salen como observación, sin veredicto.",
           "Detecta también el lossless falso, un FLAC o un WAV que en realidad es un MP3 reempaquetado. Y a todo archivo que diga ir por encima de 44,1 kHz le contesta siempre por su frecuencia: hi-res de verdad, estirado desde 44,1, o un honesto «no se ha podido verificar» cuando no hay nada arriba que medir.",
           "Un retículo sobre el espectro te dice la frecuencia exacta bajo el cursor.",
-          "La sección de loudness dibuja la onda con el clipping marcado en rojo, se amplía hasta el detalle de la muestra, separa los dos canales y previsualiza cómo quedará al normalizar. Y, una vez convertida, compara el antes y el después lado a lado o superpuestos.",
+          "La sección Igualar volumen dibuja la onda con el clipping marcado en rojo, se amplía hasta el detalle de la muestra, separa los dos canales y previsualiza cómo quedará al normalizar. Y, una vez convertida, compara el antes y el después lado a lado o superpuestos.",
           "Guarda un informe del espectro en PNG, con su veredicto y su línea de corte, para compartirlo cuando alguien te pregunte por esa pista.",
-          "Con «Analizar la calidad al importar» activado, cada archivo que sueltes se analiza entero en segundo plano y todo está listo cuando abres la pista.",
+          "Con «Analizar todo al importar» activado (Ajustes → Editor), cada archivo que sueltes se analiza entero en segundo plano y todo está listo cuando abres la pista.",
           "El análisis se guarda en caché para no repetirlo; puedes vaciarla en Ajustes para recalcularlo todo desde cero."
         ],
         "shot": "calidad-es.webp",
@@ -829,19 +849,19 @@
         "id": "convertir",
         "title": "Convierte la pista",
         "body": [
-          "El botón de abajo del editor convierte la pista seleccionada, y te dice a qué formato va a escribir antes de que lo pulses. El desplegable de su derecha elige el formato: AIFF, WAV, FLAC o ALAC sin pérdida, MP3, o «Igual que el origen». Si la pista ya está en ese formato, Surco la copia tal cual al instante, sin recodificar, salvo que tus ajustes de calidad o un filtro de audio cambien su audio.",
-          "La calidad se ajusta en Ajustes → Formato: bitrate del MP3 (de 320 a 128 kbps, o VBR V0/V2), profundidad de bits, frecuencia de muestreo y compresión FLAC. Por defecto se conservan las del original, salvo la profundidad: «Corregido» guarda como 16 bits reales, sin pérdida, un archivo de 16 bits rellenado a 24. En Ajustes → Destino decides adónde va: una carpeta de salida, tu biblioteca de Apple Music, junto al original (los exports al mismo formato toman un nombre «(2)» y la fuente no se toca), o sobrescribir el original en su sitio, que Surco te confirma antes de hacerlo. Ahí mismo eliges, para rekordbox, Engine DJ y Traktor por separado, si la conversión no los toca («No tocar»), pone al día las pistas que ya tienen («Actualizar») o además les añade las nuevas («Actualizar y añadir»). Si quieres, activa la normalización (loudness o pico, con presets de streaming, club o broadcast) para igualar el volumen. Al terminar, «Mostrar archivo» te lleva al resultado en el Finder o el Explorador."
+          "El botón de abajo del editor convierte la pista seleccionada, y te dice a qué formato va a escribir antes de que lo pulses. El desplegable de su derecha elige el formato, en cualquier dirección. AIFF, WAV, FLAC o ALAC sin pérdida, o MP3 para que ocupe menos, también si la pista ya era lossless. Si la pista ya está en ese formato, Surco la copia tal cual al instante, sin recodificar, salvo que tus ajustes de calidad o un filtro de audio cambien su audio.",
+          "La calidad se ajusta en Ajustes → Formato: bitrate del MP3 (de 320 a 128 kbps, o VBR V0/V2), profundidad de bits, frecuencia de muestreo y compresión FLAC. Por defecto se conservan las del original, salvo la profundidad: «Corregido» guarda como 16 bits reales, sin pérdida, un archivo de 16 bits rellenado a 24. En Ajustes → Destino decides adónde va: una carpeta de salida, tu biblioteca de Apple Music, junto al original (los exports al mismo formato toman un nombre «(2)» y la fuente no se toca), o «Editar el original», que reescribe el fichero en su sitio. Ojo, con «Editar el original» cambiar de formato elimina el original. Ahí mismo eliges, para rekordbox, Engine DJ y Traktor por separado, si la conversión no los toca («No tocar»), pone al día las pistas que ya tienen («Actualizar») o además les añade las nuevas («Actualizar y añadir»). Si quieres, activa la normalización (loudness o pico, con presets de streaming, club o broadcast) para igualar el volumen. Al terminar, «Mostrar archivo» te lleva al resultado en el Finder o el Explorador."
         ],
         "points": [
-          "Formatos: AIFF, WAV, FLAC y ALAC (lossless) y MP3. De 320 a 128 kbps, o VBR V0/V2.",
+          "Formatos: AIFF, WAV, FLAC y ALAC (lossless) y MP3, de cualquiera a cualquiera. M4A, AAC, OGG y OPUS se leen y se convierten a cualquiera de ellos. MP3 de 320 a 128 kbps, o VBR V0/V2.",
           "Reexportar al mismo formato, sin tocar el audio, conserva los cue points de Traktor.",
           "La normalización, el recorte y la reparación de clics recodifican el audio: los cues de Traktor sobreviven entre MP3, AIFF, FLAC y WAV en cualquier combinación; solo se pierden en ALAC, que no tiene dónde guardarlos. Vienen desactivados y Surco te lo avisa antes de convertir.",
           "Reexportar una pista sobre sí misma no vuelve a aplicar la normalización ni el declick que ya lleva dentro: cambiar solo los metadatos no reprocesa el audio, así que no acumulas ganancia ni pierdes una generación.",
           "Si bajas a 16 bits, Surco aplica dither; y respeta la profundidad del original en vez de ensancharla por su cuenta.",
-          "«Mantener MP3 y M4A como están» evita que tus MP3 y M4A engorden sin ganar nada al exportar a un formato sin pérdidas. Se quedan como están y solo se les actualizan los tags, salvo que iguales el volumen, repares clics o recortes, que vuelven a codificar el audio.",
+          "«Mantener MP3 y M4A como están» evita que tus MP3 y M4A engorden sin ganar nada cuando el formato de salida es sin pérdidas. Se quedan como están y solo se les actualizan los tags, salvo que iguales el volumen, repares clics o recortes, que vuelven a codificar el audio.",
           "Puedes cancelar una conversión a medias, y aplicar de una vez la misma decisión al resto cuando un archivo ya existe.",
           "Si la conversión cambia el audio de un original, Surco guarda antes una copia de seguridad; la marca de la fila (o ⌘K) te devuelve al original. En Ajustes → Destino decides si se guarda siempre, solo cuando cambia el audio (así viene) o nunca, durante cuántos días y hasta cuánto espacio.",
-          "Tras convertir, puedes mandar los originales a la papelera con una sola acción. A la papelera, o a Copias › Archivos de música en un disco sin ella. Solo con «Nunca» en Ajustes → Destino se borran del todo, y el aviso lo dice antes de confirmar."
+          "Tras convertir, puedes mandar los originales a la papelera con una sola acción. Si la pista nueva sustituye a otra en tu biblioteca con otro formato, Surco retira la vieja él solo, en cuanto comprueba la nueva y ningún programa la sigue usando. Todo va a la papelera, o a Copias › Archivos de música en un disco sin ella. Solo con «Nunca» en Ajustes → Destino se borra del todo."
         ],
         "shot": "convertir-es.webp",
         "shotCaption": "El botón de convertir con su selector de formato."
@@ -855,8 +875,8 @@
         ],
         "points": [
           "Elígelo en Ajustes → Formato o desde el asistente de bienvenida, y también en el desplegable del botón de convertir cuando tienes varias pistas seleccionadas.",
-          "Funciona con cualquier destino, incluido sobrescribir el original en su sitio.",
-          "Un archivo cuyo formato no se puede conservar se salta con un aviso, en vez de convertirse a otra cosa sin decírtelo.",
+          "Funciona con cualquier destino, incluido «Editar el original».",
+          "OGG, OPUS, AAC y MP4 no tienen formato de salida equivalente, así que se saltan con un aviso en vez de convertirse a otra cosa sin decírtelo. Un M4A sale como ALAC.",
           "Si activas un filtro que obligue a recodificar un MP3 sobre sí mismo, Surco te lo pregunta antes."
         ],
         "shot": "igual-origen-es.webp",
@@ -866,7 +886,7 @@
         "id": "lote",
         "title": "Convierte todas las pistas",
         "body": [
-          "Cuando tengas la cola lista, «Convertir todas» (⌘⇧Enter) procesa de una todas las pistas convertibles y se salta las que ya están hechas. Verás el progreso en la barra de herramientas y, al final, un resumen de cuántas se convirtieron, se saltaron o dieron error.",
+          "Cuando tengas la cola lista, el botón «Convertir N pistas» de la barra (⌘⇧Enter) procesa de una todas las pistas convertibles y se salta las que ya están hechas. Verás el progreso en la barra de herramientas y, al final, un resumen de cuántas se convirtieron, se saltaron o dieron error.",
           "Ojo: convertir todas solo convierte y renombra con los metadatos que ya tienen, nunca va a buscar a tus fuentes por su cuenta. Si quieres datos frescos antes, usa primero «Auto-emparejar» (⌘⇧D) en la barra de herramientas."
         ],
         "points": [
@@ -874,7 +894,7 @@
           "Si has filtrado la lista, el lote convierte solo lo que ves.",
           "Las conversiones van en paralelo, aprovechando los núcleos del equipo; en el mismo formato son casi instantáneas.",
           "Solo usa los metadatos actuales: no descarga nada de tus fuentes en el lote.",
-          "La flecha junto al botón de convertir cambia el formato y el destino solo para esa tanda, tus ajustes por defecto se quedan como estaban."
+          "«Formato y destino», al pie del editor, cambia el formato y el destino solo para esa tanda. Tus ajustes por defecto se quedan como estaban."
         ],
         "shot": "lote-es.webp",
         "shotCaption": "Tres pistas seleccionadas, listas para convertirlas de una vez."
@@ -883,21 +903,37 @@
         "id": "exportar",
         "title": "Llévala a tus platos",
         "body": [
-          "Surco no se queda en convertir: manda las pistas directas a tu biblioteca de Apple Music (en macOS) o de Engine DJ (Denon) mientras las conviertes, o exporta la cola como colección de rekordbox (.xml), Traktor (.nml), Serato (.crate) o lista M3U8. La exportación vive en el editor, justo donde acaba la conversión.",
+          "Surco no se queda en convertir. Manda las pistas directas a Apple Music (en macOS), y a rekordbox, Engine DJ o Traktor si en Ajustes → Destino los pones en «Actualizar y añadir», mientras las conviertes. También exporta la cola como colección de rekordbox (.xml), Traktor (.nml), Serato (.crate) o lista M3U8. La exportación vive en el editor, justo donde acaba la conversión.",
           "Los tags y la carátula viajan dentro del propio archivo, así que tu software de DJ los lee sin pasos extra. Los archivos puente son otra cosa: llevan los metadatos y las rutas, pero ni cue points, ni valoración, ni carátula. Eso lo saca cada programa del archivo o de su propia base de datos."
         ],
         "points": [
-          "A Apple Music o Engine DJ con un clic, durante la conversión.",
-          "A Engine DJ llegan también la valoración y la carátula, y la pista entra en la playlist que tú elijas. Los cue points y el beatgrid no: Engine los analiza él mismo al primer load.",
+          "A Apple Music, rekordbox, Engine DJ o Traktor con un clic, durante la conversión.",
+          "A Engine DJ llegan también la valoración y la carátula, y la pista entra en las playlists que elijas en el editor. Una pista nueva entra sin análisis y Engine la analiza al abrirla. Una que ya estaba conserva sus cue points, y los hot cues que pongas en Surco se guardan en Engine.",
           "Traktor tiene que estar cerrado para escribir en su colección; Surco se ofrece a cerrarlo y hace copia de seguridad antes de tocar nada. Con Engine DJ abierto, lo que Surco tiene que escribir espera su turno y entra cuando lo cierras, también con copia de seguridad.",
           "Surco te avisa si una pista ya está en tu biblioteca, mirando la que corresponda a tu destino. Es un indicio muy afinado, no una garantía.",
           "Si editas una pista después, Surco actualiza su copia de Apple Music en vez de duplicarla, y si ya había una copia antigua te ofrece eliminarla.",
-          "Puedes sustituir una pista que ya tengas: carga otra copia de un tema que esté en tu biblioteca, en cualquier formato y también en el mismo (de un MP3 a un AIFF, o de un MP3 de 128 a uno de 320), y el botón pasa a decir «Sustituir». La entrada de Apple Music y la ficha de rekordbox pasan a apuntar al archivo nuevo, con sus playlists y sus cue points, y en Apple Music también con sus reproducciones, tu valoración y el favorito. rekordbox puede recalcular el beatgrid al ver un archivo distinto, así que revisa la rejilla. Al terminar, Surco te ofrece mandar el archivo viejo a la papelera.",
-          "Con «Actualizar la colección de rekordbox al convertir» activado (Ajustes › Destino), la ficha de rekordbox recibe también el título, el artista, el álbum, el género, el sello, el remixer, el comentario, el año, los números de pista y disco y la carátula, tanto al convertir como al actualizar solo las etiquetas. El BPM, la tonalidad y los cue points se quedan como los tenga rekordbox, y un campo que dejas vacío en Surco no borra el suyo. rekordbox tiene que estar cerrado, y Surco se ofrece a cerrarlo.",
+          "Puedes sustituir una pista que ya tengas: carga otra copia de un tema que esté en tu biblioteca, en cualquier formato y también en el mismo (de un MP3 a un AIFF, o de un MP3 de 128 a uno de 320), y el botón pasa a decir «Sustituir». La entrada de Apple Music y la ficha de rekordbox pasan a apuntar al archivo nuevo, con sus playlists y sus cue points, y en Apple Music también con sus reproducciones, tu valoración y el favorito. rekordbox puede recalcular el beatgrid al ver un archivo distinto, así que revisa la rejilla. Si cambia el formato, Surco retira el archivo viejo en cuanto comprueba el nuevo.",
+          "Con «Actualizar la colección de rekordbox al convertir» en «Actualizar» o «Actualizar y añadir» (Ajustes › Destino), la ficha de rekordbox recibe también el título, el artista, el álbum, el género, el sello, el remixer, el comentario, el año, los números de pista y disco y la carátula, tanto al convertir como al actualizar solo las etiquetas. El BPM, la tonalidad y los cue points se quedan como los tenga rekordbox, y un campo que dejas vacío en Surco no borra el suyo. rekordbox tiene que estar cerrado, y Surco se ofrece a cerrarlo.",
           "A Apple Music no llegan la tonalidad, el sello, el catálogo ni el remixer (solo viven en el tag del archivo) y los FLAC no se envían nunca, porque Music no puede con ellos."
         ],
         "shot": "exportar-es.webp",
         "shotCaption": "Enviar la pista a Apple Music o exportar la colección."
+      },
+      {
+        "id": "usb",
+        "title": "Lleva tus playlists a un USB",
+        "body": [
+          "Surco exporta tus playlists de rekordbox o de Engine DJ a un USB, con la biblioteca que leen los reproductores. Ábrelo desde el icono de USB junto al nombre del programa en Fuentes, desde «Exportar a USB…» en ⌘K, o desde el aviso que sale al conectar un USB.",
+          "Marcas las playlists y eliges el USB, y antes de copiar nada te dice cuántas pistas son nuevas, cuántas ya estaban, cuántas se quitaron desde la última vez y si cabe todo."
+        ],
+        "points": [
+          "Desde rekordbox, el USB lleva los cues, la rejilla y las ondas, y rekordbox lo puede seguir sincronizando. Desde Engine DJ, lleva su biblioteca de Engine.",
+          "La música se copia tal como está. Si tu CDJ es antiguo, convierte antes a AIFF lo que sea FLAC o pase de 24 bits o 48 kHz.",
+          "Te avisa de un USB en exFAT, NTFS o GPT, que algunos CDJ no leen, y de las pistas que puede que no suenen en un CDJ-2000.",
+          "«Borrar del USB la música que ya no se exporta» quita lo que sacaste de tus playlists.",
+          "rekordbox o Engine DJ tienen que estar cerrados. Si cancelas o el USB se desconecta, se queda con su biblioteca anterior.",
+          "Solo en macOS y Windows."
+        ]
       },
       {
         "id": "traktor",
@@ -935,6 +971,22 @@
         ],
         "shot": "rekordbox-es.webp",
         "shotCaption": "Auto marcar propone dónde rompe la pista, con tu flujo listo para aceptar."
+      },
+      {
+        "id": "revisar",
+        "title": "Revisa tu biblioteca",
+        "body": [
+          "«Revisar», en la barra de herramientas, repasa tu Apple Music, la lista que tienes cargada o una playlist, y junta en un solo sitio lo que está mal. Para cada caso ves cómo está y cómo queda, metes en la tanda lo que quieres arreglar y lo aplicas de una vez.",
+          "Los cambios llegan a los ficheros, a Apple Music y, si los sincronizas, a rekordbox, Engine DJ y Traktor. Antes de escribir, Surco guarda una copia de cada fichero y de cada biblioteca, y la revisión tiene Deshacer."
+        ],
+        "points": [
+          "Grafías junta lo que está escrito de varias formas, como DJ Lara y Dj Lara, los acentos que no casan y los espacios o caracteres invisibles. Una posible errata nunca entra sola en la tanda.",
+          "Duplicados encuentra la misma pista dos veces. Eliges cuál se queda, y esa entra en las playlists de la que quitas. Los ficheros de la que quitas van a la papelera, salvo los que otro programa siga usando.",
+          "Daños detecta problemas en los cues de Traktor y de Engine DJ, en la duración que guarda Engine DJ y en el género, y los repara con una copia antes.",
+          "Incompletas lista las pistas a las que les falta un campo obligatorio y propone cómo rellenarlo, desde la app, desde una búsqueda o desde el nombre del fichero. «Meter N propuestas en la tanda» las añade de una vez.",
+          "Si lo que falta es un campo que la revisión no escribe, como el BPM o la tonalidad, «Abrir en el editor» te lleva a la pista.",
+          "El BPM, la tonalidad, los cues y la valoración no se tocan al aplicar."
+        ]
       },
       {
         "id": "atajos",
@@ -1100,8 +1152,8 @@
     "closeNote": "Sin nube, sin límites y sin nada que registrar. Se actualiza solo.",
     "closeSafety": "Tus originales no se tocan: al cambiar de formato, la copia va a una carpeta aparte. Solo reescribe el fichero si reexportas al mismo formato, que es como actualiza las etiquetas sin recodificar. Notarizado por Apple.",
     "closeDirect": "Descarga directa",
-    "closeSafeLead": "Tus originales no se tocan.",
-    "closeSafeRest": "Al cambiar de formato, la copia va a una carpeta aparte. Solo reescribe el fichero si reexportas al mismo formato, que es como actualiza las etiquetas sin recodificar. Notarizado por Apple.",
+    "closeSafeLead": "Tus originales, a salvo.",
+    "closeSafeRest": "Al cambiar de formato, la copia va a una carpeta aparte. Si la copia sustituye a la vieja en tu biblioteca, la vieja va a la papelera o a Copias después de comprobar la nueva. Notarizado por Apple.",
     "allFeatures": "Ver todo lo que hace →",
     "worksWith": "Funciona con",
     "heroLede": "Lo que hacías saltando entre cuatro o cinco apps, Surco lo hace en una.",
@@ -1235,6 +1287,135 @@
       "done": "rekordbox · 4 pistas actualizadas, playlists y cues intactas"
     }
   },
+  "convert": {
+    "metaTitle": "Convertir audio entre AIFF, WAV, FLAC, ALAC y MP3 para DJ",
+    "metaDescription": "Convierte en cualquier dirección entre AIFF, WAV, FLAC, ALAC y MP3, por lotes y sin perder etiquetas, carátula ni cues de Traktor. Lee también M4A, AAC, OGG y OPUS. Para Mac, Windows y Linux.",
+    "h1a": "Convierte tu música",
+    "h1b": "al formato que necesites.",
+    "lede": "De FLAC a AIFF para el CDJ, de WAV a MP3 para que quepa en el USB o de MP3 a lo que pida tu programa. Surco convierte en cualquier dirección y lleva con el audio las etiquetas, la carátula y los cues de Traktor.",
+    "note": "macOS, Windows y Linux. Sin cuenta y sin suscripción.",
+    "example": {
+      "label": "Formatos que entran y salen",
+      "arrow": "en cualquier dirección",
+      "in": "Entra",
+      "out": "Sale",
+      "keeps": [
+        "Etiquetas y carátula",
+        "Cues y beatgrid de Traktor",
+        "Bits y frecuencia, salvo que los cambies",
+        "Por lotes y en paralelo"
+      ]
+    },
+    "carry": {
+      "kicker": "Qué pasa al otro lado",
+      "title": "Lo que lleva el archivo llega al otro formato",
+      "lede": "Cada formato guarda las etiquetas a su manera. Surco las reescribe en la forma que espera el de destino.",
+      "head": {
+        "what": "En el origen",
+        "result": "En la copia",
+        "how": "Cómo"
+      },
+      "rows": [
+        {
+          "what": "Audio",
+          "result": "Sin pérdida entre lossless",
+          "how": "Entre AIFF, WAV, FLAC y ALAC las muestras son las mismas. A MP3 eliges la calidad, de 320 a 128 kbps o VBR V0/V2."
+        },
+        {
+          "what": "Etiquetas",
+          "result": "Se conservan",
+          "how": "Pasan a la forma del formato de destino, ID3 en AIFF, WAV y MP3, comentarios Vorbis en FLAC y átomos de MP4 en ALAC."
+        },
+        {
+          "what": "Carátula",
+          "result": "Se conserva",
+          "how": "Va incrustada en la copia, también en un WAV."
+        },
+        {
+          "what": "Cues de Traktor",
+          "result": "Se conservan",
+          "how": "Entre MP3, AIFF, FLAC y WAV en cualquier combinación, con el desfase del MP3 compensado. Solo ALAC no tiene dónde guardarlos."
+        },
+        {
+          "what": "Mismo formato",
+          "result": "Sin recodificar",
+          "how": "Si el archivo ya está en ese formato, se copia tal cual y solo se reescriben las etiquetas."
+        }
+      ]
+    },
+    "why": {
+      "kicker": "Para qué",
+      "title": "Cada formato, para lo suyo",
+      "items": [
+        {
+          "title": "AIFF, el que lee todo",
+          "text": "Sin pérdida, con etiquetas y carátula, y lo lee cualquier CDJ y cualquier programa de DJ."
+        },
+        {
+          "title": "MP3, para que quepa",
+          "text": "Un MP3 de 320 kbps ocupa unas cuatro veces menos que un AIFF. Para un USB pequeño o para escuchar fuera de cabina."
+        },
+        {
+          "title": "FLAC y ALAC, para archivar",
+          "text": "Sin pérdida y comprimidos, ocupan bastante menos que un AIFF. ALAC además suena en Apple Music, y FLAC no."
+        }
+      ]
+    },
+    "steps": {
+      "kicker": "Cómo se hace",
+      "title": "Convertir en tres pasos",
+      "items": [
+        {
+          "title": "Suelta los ficheros",
+          "text": "Arrastra a Surco un archivo en el formato que sea, una selección o una carpeta entera."
+        },
+        {
+          "title": "Elige el formato",
+          "text": "AIFF, WAV, FLAC, ALAC o MP3, en el menú junto al botón de convertir. Con varias pistas, también «Igual que el origen»."
+        },
+        {
+          "title": "Convierte",
+          "text": "Las copias van a Música/Surco, junto al original o a Apple Music, y rekordbox, Engine DJ y Traktor se ponen al día si los sincronizas."
+        }
+      ],
+      "guide": "Paso a paso en la guía"
+    },
+    "quality": {
+      "kicker": "Antes de convertir",
+      "title": "¿Tu lossless es de verdad sin pérdida?",
+      "lede": "Un MP3 convertido a FLAC o a WAV pesa lo mismo que el auténtico. El espectro lo delata, porque el sonido se corta en seco. Surco revisa cada pista antes de que la conviertas."
+    },
+    "faq": {
+      "kicker": "Preguntas",
+      "title": "Preguntas sobre convertir",
+      "items": [
+        {
+          "q": "¿Qué formatos puedo convertir?",
+          "a": "Entran WAV, FLAC, AIFF, ALAC, MP3, M4A, AAC, OGG y OPUS. Salen AIFF, WAV, FLAC, ALAC y MP3, de cualquiera a cualquiera."
+        },
+        {
+          "q": "¿Pierdo calidad al convertir?",
+          "a": "Entre formatos sin pérdida, no, porque las muestras son las mismas. Al pasar a MP3 se pierde algo, como en cualquier MP3, y tú eliges cuánto con el bitrate. Pasar un MP3 a AIFF no le devuelve la calidad, solo lo hace más grande."
+        },
+        {
+          "q": "¿Se tocan mis originales?",
+          "a": "Al cambiar de formato, la copia va a una carpeta aparte y el original se queda donde estaba. Si la copia sustituye a la vieja en tu biblioteca, Surco retira la vieja después de comprobar la nueva, a la papelera o a Copias."
+        },
+        {
+          "q": "¿Puedo convertir una carpeta entera de golpe?",
+          "a": "Sí. Suelta la carpeta y conviértelo todo de una vez. Las conversiones van en paralelo."
+        },
+        {
+          "q": "¿Funciona en Windows?",
+          "a": "Sí. Surco funciona en macOS (Apple Silicon e Intel), Windows y Linux."
+        }
+      ]
+    },
+    "outro": {
+      "title": "Convierte tu música",
+      "lede": "Surco además etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz y lo archiva todo en tu biblioteca."
+    }
+  },
   "flacToAiff": {
     "metaTitle": "Convertir FLAC a AIFF en Mac y Windows, sin perder etiquetas ni cues",
     "metaDescription": "Convierte FLAC a AIFF sin pérdida y por lotes para rekordbox, Serato o CDJ. Surco conserva etiquetas, carátula y cues de Traktor, y detecta los FLAC falsos que en realidad son MP3.",
@@ -1362,6 +1543,382 @@
       "lede": "Surco además etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz y lo archiva todo en tu biblioteca."
     }
   },
+  "wavToAiff": {
+    "metaTitle": "Convertir WAV a AIFF sin perder etiquetas, carátula ni cues",
+    "metaDescription": "Convierte WAV a AIFF sin pérdida y por lotes. El audio es idéntico, y Surco lleva al AIFF las etiquetas, la carátula y los cues de Traktor para rekordbox, Serato, Traktor y Apple Music.",
+    "h1a": "Convierte WAV a AIFF",
+    "h1b": "con sus etiquetas puestas.",
+    "lede": "El WAV y el AIFF llevan el mismo audio, muestra a muestra. La diferencia está en las etiquetas, que en un AIFF lee cualquier programa de DJ. Surco pasa la carpeta entera y lleva con ella la carátula y los cues de Traktor.",
+    "note": "macOS, Windows y Linux. Sin cuenta y sin suscripción.",
+    "example": {
+      "label": "Ejemplo de conversión",
+      "arrow": "mismo audio, mismo tamaño",
+      "keeps": [
+        "Artista, título, álbum y el resto de etiquetas",
+        "Carátula",
+        "Cues y beatgrid de Traktor",
+        "Profundidad de bits y frecuencia"
+      ]
+    },
+    "carry": {
+      "kicker": "Qué pasa al otro lado",
+      "title": "Todo lo que lleva el WAV acaba en el AIFF",
+      "lede": "Muchos conversores te dan el audio y se dejan las etiquetas por el camino. Surco las escribe donde el AIFF las guarda.",
+      "head": {
+        "what": "En el WAV",
+        "result": "En el AIFF",
+        "how": "Cómo"
+      },
+      "rows": [
+        {
+          "what": "Audio",
+          "result": "Idéntico",
+          "how": "Los dos son PCM sin comprimir. Las muestras, la profundidad de bits y la frecuencia no cambian, y el archivo pesa lo mismo."
+        },
+        {
+          "what": "Etiquetas",
+          "result": "Se conservan",
+          "how": "Lo que el WAV guarde, en ID3 o en INFO, pasa a etiquetas ID3 en el AIFF, las que leen rekordbox, Serato y Traktor."
+        },
+        {
+          "what": "Carátula",
+          "result": "Se conserva",
+          "how": "La portada va incrustada en el AIFF."
+        },
+        {
+          "what": "Cues de Traktor",
+          "result": "Se conservan",
+          "how": "Surco lee el árbol de cues que Traktor guarda en el WAV y lo escribe donde Traktor lo busca en un AIFF."
+        },
+        {
+          "what": "Cabeceras rotas",
+          "result": "Se reparan",
+          "how": "Un WAV con la cabecera malformada se repara sobre una copia al leerlo. Tu original no se toca."
+        }
+      ]
+    },
+    "why": {
+      "kicker": "Por qué AIFF",
+      "title": "Por qué pasar de WAV a AIFF",
+      "items": [
+        {
+          "title": "Etiquetas que se leen",
+          "text": "El WAV nació sin un sitio estándar para etiquetas y cada programa las busca en un lugar distinto. En un AIFF, rekordbox, Serato, Traktor y Apple Music leen las mismas."
+        },
+        {
+          "title": "Carátula en cabina",
+          "text": "Con la portada incrustada en el AIFF, la ves en tu programa y en el reproductor."
+        },
+        {
+          "title": "Nada que perder",
+          "text": "Mismo audio y mismo tamaño. Pasar de WAV a AIFF no cuesta calidad ni espacio."
+        }
+      ]
+    },
+    "steps": {
+      "kicker": "Cómo se hace",
+      "title": "De WAV a AIFF en tres pasos",
+      "items": [
+        {
+          "title": "Suelta los ficheros",
+          "text": "Arrastra a Surco un WAV, una selección o una carpeta entera."
+        },
+        {
+          "title": "Elige AIFF",
+          "text": "Es el formato por defecto. La profundidad de bits y la frecuencia siguen a las del origen."
+        },
+        {
+          "title": "Convierte",
+          "text": "Los AIFF van a Música/Surco, o directos a Apple Music o Engine DJ. Los WAV se quedan donde estaban."
+        }
+      ],
+      "guide": "Paso a paso en la guía"
+    },
+    "quality": {
+      "kicker": "Antes de convertir",
+      "title": "¿Ese WAV es de verdad sin pérdida?",
+      "lede": "Un MP3 guardado como WAV pesa lo mismo que uno auténtico. El espectro lo delata, porque el sonido se corta en seco. Surco revisa cada pista antes de que la conviertas."
+    },
+    "faq": {
+      "kicker": "Preguntas",
+      "title": "Preguntas sobre WAV a AIFF",
+      "items": [
+        {
+          "q": "¿Se pierde calidad al convertir WAV a AIFF?",
+          "a": "No. Los dos guardan el audio sin comprimir, así que el AIFF lleva exactamente las mismas muestras que el WAV."
+        },
+        {
+          "q": "¿Y si prefiero quedarme en WAV?",
+          "a": "Puedes. Surco también le pone etiquetas y carátula a un WAV. El AIFF es más seguro si cambias de programa o de equipo, porque todos leen sus etiquetas igual."
+        },
+        {
+          "q": "¿Puedo convertir una carpeta entera de golpe?",
+          "a": "Sí. Suelta la carpeta y conviértelo todo de una vez. Las conversiones van en paralelo."
+        },
+        {
+          "q": "¿Se conservan mis cues?",
+          "a": "Los de Traktor sí. Surco los lleva a donde Traktor los lee en un AIFF. Los de rekordbox viven en su biblioteca. Carga el AIFF con «Sustituir» y la misma ficha de rekordbox pasa a apuntar al archivo nuevo, con sus cues y sus listas."
+        },
+        {
+          "q": "¿Funciona en Windows?",
+          "a": "Sí. Surco funciona en macOS (Apple Silicon e Intel), Windows y Linux."
+        }
+      ]
+    },
+    "outro": {
+      "title": "Pasa tus WAV a AIFF",
+      "lede": "Surco además etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz y lo archiva todo en tu biblioteca."
+    }
+  },
+  "flacToMp3": {
+    "metaTitle": "Convertir FLAC a MP3 de 320 kbps sin perder etiquetas ni cues",
+    "metaDescription": "Convierte FLAC a MP3 por lotes, a 320 kbps o la calidad que elijas. Surco conserva etiquetas, carátula y cues de Traktor, con el desfase del MP3 compensado.",
+    "h1a": "Convierte FLAC a MP3",
+    "h1b": "y que quepa en el USB.",
+    "lede": "Pasa tus FLAC a MP3 de 320 kbps, o a la calidad que elijas, para un USB pequeño, un equipo que no lee FLAC o el móvil. Las etiquetas, la carátula y los cues de Traktor pasan con el audio.",
+    "note": "macOS, Windows y Linux. Sin cuenta y sin suscripción.",
+    "example": {
+      "label": "Ejemplo de conversión",
+      "arrow": "MP3 de 320 kbps, menos de la mitad de peso",
+      "keeps": [
+        "Artista, título, álbum y el resto de etiquetas",
+        "Carátula",
+        "Cues y beatgrid de Traktor",
+        "Calidad del MP3 a tu elección"
+      ]
+    },
+    "carry": {
+      "kicker": "Qué pasa al otro lado",
+      "title": "Todo lo que lleva el FLAC acaba en el MP3",
+      "lede": "Los conversores online te dan el audio y tiran el resto. Surco reescribe cada etiqueta en la forma que espera el MP3.",
+      "head": {
+        "what": "En el FLAC",
+        "result": "En el MP3",
+        "how": "Cómo"
+      },
+      "rows": [
+        {
+          "what": "Audio",
+          "result": "MP3 de 320 kbps",
+          "how": "Por defecto a 320 kbps. En Ajustes → Formato eliges de 320 a 128 kbps, o VBR V0/V2."
+        },
+        {
+          "what": "Etiquetas",
+          "result": "Se conservan",
+          "how": "Los comentarios Vorbis pasan a ID3v2.3, las etiquetas que leen los CDJ, rekordbox, Serato y Traktor."
+        },
+        {
+          "what": "Carátula",
+          "result": "Se conserva",
+          "how": "La portada va incrustada en el MP3."
+        },
+        {
+          "what": "Cues de Traktor",
+          "result": "Se conservan",
+          "how": "Surco lleva el árbol de cues de Traktor al MP3 y compensa el desfase que añade el códec, para que cada cue caiga donde estaba."
+        }
+      ]
+    },
+    "why": {
+      "kicker": "Por qué MP3",
+      "title": "Por qué pasar de FLAC a MP3",
+      "items": [
+        {
+          "title": "Cabe mucho más",
+          "text": "Un MP3 de 320 kbps ocupa menos de la mitad que un FLAC. En el mismo USB caben más del doble de pistas."
+        },
+        {
+          "title": "Lo lee cualquier equipo",
+          "text": "Los CDJ antiguos, el coche y casi cualquier reproductor leen MP3. No todos leen FLAC."
+        },
+        {
+          "title": "Tu FLAC sigue siendo el máster",
+          "text": "Convierte a una carpeta aparte y guarda el FLAC para casa. Si un día quieres AIFF, sale del FLAC y no del MP3."
+        }
+      ]
+    },
+    "steps": {
+      "kicker": "Cómo se hace",
+      "title": "De FLAC a MP3 en tres pasos",
+      "items": [
+        {
+          "title": "Suelta los ficheros",
+          "text": "Arrastra a Surco un FLAC, una selección o una carpeta entera."
+        },
+        {
+          "title": "Elige MP3",
+          "text": "En el menú de formato junto al botón de convertir. La calidad, en Ajustes → Formato, viene en 320 kbps."
+        },
+        {
+          "title": "Convierte",
+          "text": "Los MP3 van a Música/Surco o a la carpeta que elijas, como la de tu USB. Los FLAC se quedan donde estaban."
+        }
+      ],
+      "guide": "Paso a paso en la guía"
+    },
+    "quality": {
+      "kicker": "Antes de convertir",
+      "title": "¿Ese FLAC es de verdad sin pérdida?",
+      "lede": "Un MP3 convertido a FLAC pesa lo mismo y se ve igual en una lista de ficheros. El espectro lo delata, porque el sonido se corta en seco. Surco revisa cada pista antes de que la conviertas."
+    },
+    "faq": {
+      "kicker": "Preguntas",
+      "title": "Preguntas sobre FLAC a MP3",
+      "items": [
+        {
+          "q": "¿Se nota la diferencia entre un FLAC y un MP3 de 320?",
+          "a": "En la mayoría de equipos cuesta oírla. El MP3 recorta sobre todo los agudos más altos. Para el máster y para archivar, quédate con el FLAC."
+        },
+        {
+          "q": "¿Qué calidad de MP3 elijo?",
+          "a": "320 kbps, que es como viene. Si te falta espacio, VBR V0 suena casi igual y ocupa algo menos."
+        },
+        {
+          "q": "¿Puedo convertir una carpeta entera de golpe?",
+          "a": "Sí. Suelta la carpeta y conviértelo todo de una vez. Las conversiones van en paralelo."
+        },
+        {
+          "q": "¿Se conservan mis cues?",
+          "a": "Los de Traktor sí, con el desfase del códec compensado para que caigan donde estaban. Los de rekordbox y Engine DJ viven en su biblioteca y no viajan dentro del archivo."
+        },
+        {
+          "q": "¿Funciona en Windows?",
+          "a": "Sí. Surco funciona en macOS (Apple Silicon e Intel), Windows y Linux."
+        }
+      ]
+    },
+    "outro": {
+      "title": "Pasa tus FLAC a MP3",
+      "lede": "Surco además etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz y lo archiva todo en tu biblioteca."
+    }
+  },
+  "wavToMp3": {
+    "metaTitle": "Convertir WAV a MP3 de 320 kbps sin perder etiquetas ni cues",
+    "metaDescription": "Convierte WAV a MP3 por lotes, a 320 kbps o la calidad que elijas, con archivos cuatro veces más ligeros. Surco conserva etiquetas, carátula y cues de Traktor.",
+    "h1a": "Convierte WAV a MP3",
+    "h1b": "cuatro veces más ligero.",
+    "lede": "Un WAV ocupa unos 10 MB por minuto y un MP3 de 320 kbps unos 2,4. Surco pasa tus WAV a MP3 por lotes y lleva con ellos las etiquetas, la carátula y los cues de Traktor.",
+    "note": "macOS, Windows y Linux. Sin cuenta y sin suscripción.",
+    "example": {
+      "label": "Ejemplo de conversión",
+      "arrow": "MP3 de 320 kbps, cuatro veces más ligero",
+      "keeps": [
+        "Artista, título, álbum y el resto de etiquetas",
+        "Carátula",
+        "Cues y beatgrid de Traktor",
+        "Calidad del MP3 a tu elección"
+      ]
+    },
+    "carry": {
+      "kicker": "Qué pasa al otro lado",
+      "title": "Todo lo que lleva el WAV acaba en el MP3",
+      "lede": "Muchos conversores te dan el audio y se dejan las etiquetas por el camino. Surco las escribe donde el MP3 las guarda.",
+      "head": {
+        "what": "En el WAV",
+        "result": "En el MP3",
+        "how": "Cómo"
+      },
+      "rows": [
+        {
+          "what": "Audio",
+          "result": "MP3 de 320 kbps",
+          "how": "Por defecto a 320 kbps. En Ajustes → Formato eliges de 320 a 128 kbps, o VBR V0/V2."
+        },
+        {
+          "what": "Etiquetas",
+          "result": "Se conservan",
+          "how": "Lo que el WAV guarde, en ID3 o en INFO, pasa a ID3v2.3, las etiquetas que leen los CDJ, rekordbox, Serato y Traktor."
+        },
+        {
+          "what": "Carátula",
+          "result": "Se conserva",
+          "how": "La portada va incrustada en el MP3."
+        },
+        {
+          "what": "Cues de Traktor",
+          "result": "Se conservan",
+          "how": "Surco lleva el árbol de cues de Traktor al MP3 y compensa el desfase que añade el códec, para que cada cue caiga donde estaba."
+        },
+        {
+          "what": "Cabeceras rotas",
+          "result": "Se reparan",
+          "how": "Un WAV con la cabecera malformada se repara sobre una copia al leerlo. Tu original no se toca."
+        }
+      ]
+    },
+    "why": {
+      "kicker": "Por qué MP3",
+      "title": "Por qué pasar de WAV a MP3",
+      "items": [
+        {
+          "title": "Cuatro veces menos espacio",
+          "text": "Un WAV de 16 bits a 44,1 kHz ocupa unos 10 MB por minuto. El MP3 de 320 kbps, unos 2,4."
+        },
+        {
+          "title": "Etiquetas que se leen",
+          "text": "El MP3 lleva sus etiquetas en ID3, que lee cualquier programa y cualquier reproductor."
+        },
+        {
+          "title": "Tu WAV sigue siendo el máster",
+          "text": "Convierte a una carpeta aparte y guarda el WAV. Si un día quieres AIFF o FLAC, sale del WAV y no del MP3."
+        }
+      ]
+    },
+    "steps": {
+      "kicker": "Cómo se hace",
+      "title": "De WAV a MP3 en tres pasos",
+      "items": [
+        {
+          "title": "Suelta los ficheros",
+          "text": "Arrastra a Surco un WAV, una selección o una carpeta entera."
+        },
+        {
+          "title": "Elige MP3",
+          "text": "En el menú de formato junto al botón de convertir. La calidad, en Ajustes → Formato, viene en 320 kbps."
+        },
+        {
+          "title": "Convierte",
+          "text": "Los MP3 van a Música/Surco o a la carpeta que elijas, como la de tu USB. Los WAV se quedan donde estaban."
+        }
+      ],
+      "guide": "Paso a paso en la guía"
+    },
+    "quality": {
+      "kicker": "Antes de convertir",
+      "title": "¿Ese WAV es de verdad sin pérdida?",
+      "lede": "Un MP3 guardado como WAV pesa lo mismo que uno auténtico. El espectro lo delata, porque el sonido se corta en seco. Surco revisa cada pista antes de que la conviertas."
+    },
+    "faq": {
+      "kicker": "Preguntas",
+      "title": "Preguntas sobre WAV a MP3",
+      "items": [
+        {
+          "q": "¿Se nota la diferencia entre un WAV y un MP3 de 320?",
+          "a": "En la mayoría de equipos cuesta oírla. El MP3 recorta sobre todo los agudos más altos. Para el máster y para archivar, quédate con el WAV."
+        },
+        {
+          "q": "¿Qué calidad de MP3 elijo?",
+          "a": "320 kbps, que es como viene. Si te falta espacio, VBR V0 suena casi igual y ocupa algo menos."
+        },
+        {
+          "q": "¿Puedo convertir una carpeta entera de golpe?",
+          "a": "Sí. Suelta la carpeta y conviértelo todo de una vez. Las conversiones van en paralelo."
+        },
+        {
+          "q": "¿Se conservan mis cues?",
+          "a": "Los de Traktor sí, con el desfase del códec compensado para que caigan donde estaban. Los de rekordbox y Engine DJ viven en su biblioteca y no viajan dentro del archivo."
+        },
+        {
+          "q": "¿Funciona en Windows?",
+          "a": "Sí. Surco funciona en macOS (Apple Silicon e Intel), Windows y Linux."
+        }
+      ]
+    },
+    "outro": {
+      "title": "Pasa tus WAV a MP3",
+      "lede": "Surco además etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz y lo archiva todo en tu biblioteca."
+    }
+  },
   "useCases": {
     "metaTitle": "Casos de uso de Surco: cómo configurarlo para cada trabajo",
     "metaDescription": "Recetas paso a paso para Surco. Qué ajustes tocar y qué pulsar para etiquetar una carpeta entera, quitar duplicados de Apple Music, igualar el volumen o llevar tus pistas a rekordbox y Engine DJ.",
@@ -1434,13 +1991,13 @@
           {
             "tab": "Fuentes",
             "setting": "Auto-emparejar al importar",
-            "note": "Al soltar las pistas, Surco busca cada una y le pone sus datos y su carátula cuando está seguro."
+            "note": "Viene apagado. Al soltar las pistas, Surco busca cada una y le pone sus datos y su carátula cuando está seguro. Si Discogs está entre tus fuentes, primero añade su token."
           },
           {
             "tab": "Formato",
             "setting": "Formato por defecto",
             "value": "Igual que el origen",
-            "note": "Cada archivo se queda en su formato. Un MP3 sigue siendo MP3."
+            "note": "Cada archivo se queda en su formato. Un MP3 sigue siendo MP3. OGG, OPUS y AAC se saltan, y un M4A sale como ALAC."
           },
           {
             "tab": "Destino",
@@ -1529,6 +2086,7 @@
             "tab": "Destino",
             "section": "Colección de rekordbox",
             "setting": "Actualizar la colección de rekordbox al convertir",
+            "value": "Actualizar",
             "optional": true,
             "note": "Si usas rekordbox. La pista sigue en sus playlists y con sus cue points."
           },
@@ -1536,6 +2094,7 @@
             "tab": "Destino",
             "section": "Biblioteca de Engine DJ",
             "setting": "Actualizar la biblioteca de Engine DJ al convertir",
+            "value": "Actualizar",
             "optional": true,
             "note": "Si usas Engine DJ. La pista sigue en sus playlists y con sus cue points."
           }
@@ -1602,6 +2161,7 @@
             "tab": "Destino",
             "section": "Colección de rekordbox",
             "setting": "Actualizar la colección de rekordbox al convertir",
+            "value": "Actualizar",
             "note": "Es lo que mantiene rekordbox al día. Sin esto, rekordbox seguiría con los datos y el archivo de antes."
           },
           {
@@ -1677,6 +2237,7 @@
             "tab": "Destino",
             "section": "Colección de rekordbox",
             "setting": "Actualizar la colección de rekordbox al convertir",
+            "value": "Actualizar",
             "optional": true,
             "note": "Si usas rekordbox. La pista pasa al AIFF sin salir de sus playlists."
           },
@@ -1684,8 +2245,9 @@
             "tab": "Destino",
             "section": "Colección de Traktor",
             "setting": "Actualizar la colección de Traktor al convertir",
+            "value": "Actualizar",
             "optional": true,
-            "note": "Si usas Traktor. Elige tu collection.nml justo debajo, y Traktor verá los cue points en el AIFF."
+            "note": "Si usas Traktor. Primero elige tu collection.nml justo debajo, y Traktor verá los cue points en el AIFF."
           }
         ],
         "steps": [
@@ -1719,6 +2281,56 @@
           {
             "label": "Que Traktor vea de verdad tus cambios",
             "anchor": "traktor"
+          }
+        ]
+      },
+      {
+        "id": "other-formats",
+        "slug": "convertir-m4a-aac-ogg-opus",
+        "group": "organize",
+        "title": "Convierte tus M4A, AAC, OGG y OPUS",
+        "body": [
+          "Tienes pistas de Apple Music, de Bandcamp o de otras tiendas en M4A, AAC, OGG u OPUS, y tu programa de DJ o tus CDJ no las leen. Quieres pasarlas a un formato que lea todo, con sus etiquetas y su carátula."
+        ],
+        "keywords": "m4a aac ogg opus vorbis itunes bandcamp convertir",
+        "settings": [
+          {
+            "tab": "Formato",
+            "setting": "Formato por defecto",
+            "value": "AIFF",
+            "note": "Lo lee cualquier CDJ y cualquier programa de DJ. Si prefieres que ocupen poco, elige MP3."
+          },
+          {
+            "tab": "Destino",
+            "setting": "Destino de los archivos convertidos",
+            "value": "Junto al original",
+            "note": "La copia se guarda al lado y el original no se toca."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Arrastra las pistas a Surco",
+            "text": "O la carpeta entera, con sus subcarpetas."
+          },
+          {
+            "title": "Pulsa «Convertir»",
+            "text": "Es el botón de la barra de arriba. Cada pista sale en el formato que elegiste."
+          }
+        ],
+        "points": [
+          "Pasar un formato con pérdida a AIFF no le devuelve la calidad, solo lo hace legible para tu equipo. Si te basta con eso, un MP3 de 320 ocupa menos.",
+          "Con «Mantener MP3 y M4A como están» activado, los M4A no cambian de formato. Desactívalo para convertirlos.",
+          "Con «Igual que el origen», los OGG, OPUS y AAC se saltan porque no hay un formato de salida equivalente, y un M4A sale como ALAC.",
+          "Las etiquetas y la carátula pasan al archivo nuevo."
+        ],
+        "related": [
+          {
+            "label": "Convierte la pista",
+            "anchor": "convertir"
+          },
+          {
+            "label": "Etiqueta sin reconvertir",
+            "anchor": "igual-origen"
           }
         ]
       },
@@ -1864,48 +2476,23 @@
         "group": "go",
         "title": "Prepara un USB para el club",
         "body": [
-          "Quieres llevarte una selección en un USB, con nombres claros y en un formato que lea cualquier CDJ. Tus archivos de casa no se tocan."
+          "Quieres llevarte tus playlists de rekordbox o de Engine DJ en un USB, con sus cues, su rejilla y sus ondas, listo para los reproductores. Tus archivos de casa no se tocan.",
+          "Funciona en Mac y en Windows."
         ],
-        "keywords": "pendrive cdj club exportar",
-        "settings": [
-          {
-            "tab": "Destino",
-            "setting": "Destino de los archivos convertidos",
-            "value": "Carpeta de salida",
-            "note": "Debajo te deja elegir la carpeta. Elige tu USB."
-          },
-          {
-            "tab": "Formato",
-            "setting": "Formato por defecto",
-            "value": "AIFF",
-            "note": "Lo lee cualquier CDJ. Si te falta espacio, elige MP3 y en «Calidad MP3» elige 320."
-          },
-          {
-            "tab": "Nombres",
-            "setting": "Aplicar el patrón automáticamente",
-            "optional": true,
-            "note": "Pone a cada archivo un nombre a partir de sus datos. El patrón se edita justo encima, y una / crea carpetas."
-          },
-          {
-            "tab": "Procesado",
-            "setting": "Igualar volumen",
-            "value": "Club −9",
-            "optional": true,
-            "note": "Deja todas las pistas a un volumen parecido. Para llegar, a veces limita los picos y se pierde algo de pegada."
-          }
-        ],
+        "keywords": "pendrive cdj club exportar usb playlists rekordbox engine",
+        "settings": [],
         "steps": [
           {
             "title": "Conecta el USB",
-            "text": "Tiene que ser la misma carpeta que elegiste en los ajustes."
+            "text": "Surco lo detecta y te ofrece exportar. Si no, abre Fuentes, elige rekordbox o Engine DJ y pulsa el icono de USB junto a su nombre, o busca «Exportar a USB…» con ⌘K."
           },
           {
-            "title": "Arrastra las pistas a Surco",
-            "text": "Las de tu selección, de donde las tengas."
+            "title": "Marca las playlists",
+            "text": "Las que te llevas. Surco te dice cuántas pistas son nuevas, cuántas ya estaban y si cabe todo."
           },
           {
-            "title": "Pulsa «Convertir»",
-            "text": "Es el botón de la barra de arriba. Las copias van al USB y los originales se quedan como estaban."
+            "title": "Pulsa «Exportar»",
+            "text": "Cierra rekordbox o Engine DJ si te lo pide. Surco copia la música y escribe la biblioteca que leen los reproductores."
           },
           {
             "title": "Expulsa el USB",
@@ -1913,17 +2500,76 @@
           }
         ],
         "points": [
-          "Los archivos de casa no cambian. Todo lo que hace Surco va a la copia del USB.",
-          "Si vuelves a usar Surco para casa, recuerda poner el destino de antes en los ajustes."
+          "Desde rekordbox, el USB lleva los cues, la rejilla y las ondas de cada pista, y rekordbox lo puede seguir sincronizando. Desde Engine DJ, lleva su biblioteca de Engine lista para el reproductor.",
+          "La exportación copia los archivos tal como están. Si tu CDJ es antiguo y tienes FLAC o pistas de más de 24 bits o 48 kHz, conviértelas antes a AIFF.",
+          "Antes de exportar te avisa si el USB está en exFAT, NTFS o GPT, que algunos CDJ no leen, y de las pistas que puede que no suenen en un CDJ-2000.",
+          "«Borrar del USB la música que ya no se exporta» limpia lo que quitaste de tus playlists desde la última vez.",
+          "Si cancelas o el USB se desconecta, se queda con su biblioteca anterior."
         ],
         "related": [
           {
-            "label": "Nombra y ordena los archivos",
-            "anchor": "nombres"
+            "label": "Lleva tus playlists a un USB",
+            "anchor": "usb"
           },
+          {
+            "label": "Abre tus bibliotecas en Surco",
+            "anchor": "fuentes"
+          }
+        ]
+      },
+      {
+        "id": "to-mp3",
+        "slug": "pasar-a-mp3-para-que-quepa",
+        "group": "go",
+        "title": "Pasa tus pistas a MP3 para que quepan",
+        "body": [
+          "Tienes la música en FLAC, WAV o AIFF y quieres una copia en MP3 para un USB pequeño, el móvil o un equipo que no lee FLAC. Tus archivos sin pérdida se quedan como están.",
+          "Un MP3 de 320 kbps ocupa unas cuatro veces menos que un WAV o un AIFF."
+        ],
+        "keywords": "mp3 320 convertir comprimir espacio ligero flac wav aiff",
+        "settings": [
+          {
+            "tab": "Formato",
+            "setting": "Formato por defecto",
+            "value": "MP3",
+            "note": "Todo lo que conviertas saldrá en MP3."
+          },
+          {
+            "tab": "Formato",
+            "setting": "Calidad MP3",
+            "value": "320",
+            "note": "La mejor calidad de MP3. Si te falta mucho espacio, V0 ocupa algo menos y suena casi igual."
+          },
+          {
+            "tab": "Destino",
+            "setting": "Destino de los archivos convertidos",
+            "value": "Carpeta de salida",
+            "note": "Debajo eliges la carpeta. Los originales no se tocan."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Arrastra las pistas a Surco",
+            "text": "O la carpeta entera, con sus subcarpetas."
+          },
+          {
+            "title": "Pulsa «Convertir»",
+            "text": "Es el botón de la barra de arriba. Los MP3 van a la carpeta de salida."
+          }
+        ],
+        "points": [
+          "Los cue points de Traktor pasan al MP3, con el desfase del códec compensado.",
+          "Las etiquetas y la carátula van en ID3v2.3, las que leen los CDJ.",
+          "Pasar a MP3 no se deshace. Guarda los originales sin pérdida para casa."
+        ],
+        "related": [
           {
             "label": "Convierte la pista",
             "anchor": "convertir"
+          },
+          {
+            "label": "Lleva tus playlists a un USB",
+            "anchor": "usb"
           }
         ]
       },
@@ -1942,6 +2588,7 @@
             "tab": "Destino",
             "section": "Colección de rekordbox",
             "setting": "Actualizar la colección de rekordbox al convertir",
+            "value": "Actualizar",
             "optional": true,
             "note": "Si usas rekordbox. La corrección llega también allí."
           },
@@ -1949,6 +2596,7 @@
             "tab": "Destino",
             "section": "Biblioteca de Engine DJ",
             "setting": "Actualizar la biblioteca de Engine DJ al convertir",
+            "value": "Actualizar",
             "optional": true,
             "note": "Si usas Engine DJ. La corrección llega también allí."
           },
@@ -1956,6 +2604,7 @@
             "tab": "Destino",
             "section": "Colección de Traktor",
             "setting": "Actualizar la colección de Traktor al convertir",
+            "value": "Actualizar",
             "optional": true,
             "note": "Si usas Traktor. La corrección llega también allí."
           }
@@ -2001,6 +2650,7 @@
             "tab": "Destino",
             "section": "Colección de rekordbox",
             "setting": "Actualizar la colección de rekordbox al convertir",
+            "value": "Actualizar",
             "optional": true,
             "note": "Si usas rekordbox. Verás qué copia tiene allí cues y playlists, y sus playlists pasan a la que se queda."
           },
@@ -2008,6 +2658,7 @@
             "tab": "Destino",
             "section": "Biblioteca de Engine DJ",
             "setting": "Actualizar la biblioteca de Engine DJ al convertir",
+            "value": "Actualizar",
             "optional": true,
             "note": "Si usas Engine DJ. Verás qué copia tiene allí cues y playlists, y sus playlists pasan a la que se queda."
           },
@@ -2015,6 +2666,7 @@
             "tab": "Destino",
             "section": "Colección de Traktor",
             "setting": "Actualizar la colección de Traktor al convertir",
+            "value": "Actualizar",
             "optional": true,
             "note": "Si usas Traktor. Verás qué copia tiene allí cues y playlists, y sus playlists pasan a la que se queda."
           }
@@ -2185,7 +2837,7 @@
           {
             "tab": "Fuentes",
             "setting": "Auto-emparejar al importar",
-            "note": "Busca cada pista nueva en tus fuentes y le pone sus datos cuando está seguro."
+            "note": "Viene apagado. Busca cada pista nueva en tus fuentes y le pone sus datos cuando está seguro. Si Discogs está entre tus fuentes, primero añade su token."
           }
         ],
         "steps": [
@@ -2259,7 +2911,7 @@
         "points": [
           "El techo de picos viene en −1 dBTP. Es un límite de seguridad, no un segundo objetivo.",
           "Si para llegar hay que limitar mucho, la tarjeta te avisa de que se pierde algo de pegada.",
-          "Igualar vuelve a codificar el audio. Antes de hacerlo sobre un MP3, Surco te lo pregunta.",
+          "Igualar vuelve a codificar el audio. Si el formato de salida es MP3 y escribes sobre el original, Surco te lo pregunta antes. Con el formato por defecto, cada pista sale en AIFF.",
           "Guardar otra vez una pista ya igualada no la vuelve a subir.",
           "Los cue points de Traktor se conservan, salvo en ALAC."
         ],
@@ -2276,23 +2928,17 @@
         "group": "library",
         "title": "Lleva tus pistas a Engine DJ",
         "body": [
-          "Pinchas con Denon y quieres que lo que preparas en Surco aparezca en tu biblioteca de Engine DJ, con su carátula y en una playlist.",
+          "Pinchas con Denon y quieres que lo que preparas en Surco aparezca en tu biblioteca de Engine DJ, con su carátula y en sus playlists.",
           "Funciona en Mac y en Windows."
         ],
         "keywords": "denon engine prime playlist",
         "settings": [
           {
             "tab": "Destino",
-            "setting": "Destino de los archivos convertidos",
-            "value": "Engine DJ",
-            "note": "Justo debajo eliges tu biblioteca y la playlist donde entran las pistas, que se llama «Surco» si no la cambias."
-          },
-          {
-            "tab": "Destino",
             "section": "Biblioteca de Engine DJ",
             "setting": "Actualizar la biblioteca de Engine DJ al convertir",
-            "optional": true,
-            "note": "Si conviertes una pista que ya está en Engine, sigue siendo la misma pista, con sus playlists y sus cue points."
+            "value": "Actualizar y añadir",
+            "note": "Con «Actualizar y añadir», las pistas que Engine aún no tiene entran en tu biblioteca al convertirlas. Las que ya tiene siguen siendo la misma pista, con sus playlists y sus cue points."
           }
         ],
         "steps": [
@@ -2305,8 +2951,12 @@
             "text": "Las que quieres llevar a Engine."
           },
           {
+            "title": "Elige sus playlists",
+            "text": "En el editor, el campo «Playlists Engine DJ» dice en qué playlists entra cada pista, también si Engine aún no la tiene."
+          },
+          {
             "title": "Pulsa «Convertir»",
-            "text": "El botón dice «+ Engine DJ». Cada pista entra en tu biblioteca y en la playlist."
+            "text": "El botón dice «+ Engine DJ». Cada pista entra en tu biblioteca y en sus playlists."
           },
           {
             "title": "Abre Engine DJ",
@@ -2315,9 +2965,9 @@
         ],
         "points": [
           "A Engine llegan los datos, la valoración y la carátula.",
-          "Los cue points y la rejilla no. Engine los calcula al cargar la pista.",
+          "Una pista nueva entra sin análisis y Engine calcula la rejilla al abrirla. Los hot cues puedes ponerlos desde Surco, con tu flujo y Auto marcar.",
           "Antes de escribir, Surco guarda una copia de seguridad de la biblioteca, que restauras desde Copias.",
-          "En el editor, el campo «Playlists» de Engine DJ elige en qué playlists entra cada pista, también si Engine aún no la tiene. Surco la añade al convertirla. Al terminar, el icono de Engine DJ junto al resultado te lleva a la pista con sus cues abiertas."
+          "Al terminar, el icono de Engine DJ junto al resultado te lleva a la pista con sus cues abiertas."
         ],
         "related": [
           {
@@ -2339,7 +2989,6 @@
         "settings": [
           {
             "tab": "Cues",
-            "section": "Nuevo flujo",
             "setting": "Poner un CALL donde marcas",
             "note": "Ponle nombre a tu flujo, por ejemplo Subidón. Su regla ya cuenta hacia atrás desde donde marcas cada 16 compases y pone hot cue + CALL. Cambia «1 vez» por «3 veces» y elige «un color por repetición» con azul, verde y rojo. Esta casilla, que viene puesta, añade el CALL del punto."
           },
@@ -2407,15 +3056,15 @@
         "steps": [
           {
             "title": "Importa la playlist",
-            "text": "Desde la pantalla de inicio o con ⌘K, elige «Importar de Apple Music» y luego la lista."
+            "text": "Desde la pantalla de inicio o con ⌘K, elige «Abrir playlists de Apple Music» y luego la lista."
           },
           {
             "title": "Mira si falta alguna",
-            "text": "Surco carga los archivos que tienes en el disco. Las pistas de streaming o sin descargar se cuentan aparte, como «sin fichero»."
+            "text": "Surco carga los archivos que tienes en el disco. Las pistas de streaming o sin descargar se cuentan aparte, como pistas sin fichero en el disco."
           },
           {
             "title": "Elige el formato",
-            "text": "En la flecha del botón de convertir, por ejemplo AIFF. Si no, cada pista se queda en su formato."
+            "text": "En «Formato y destino», al pie del editor, por ejemplo AIFF, o MP3 si va a un USB con poco sitio. Si no, cada pista se queda en su formato."
           },
           {
             "title": "Pulsa «Convertir»",
