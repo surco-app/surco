@@ -544,6 +544,37 @@ textarea {
   }
 }
 
+/* A card dialog leaving (see ModalExit): back down the path pop-in rose along, shorter and
+   accelerating, since closing needs no ceremony. Declared after .donate-pop so the donate
+   nudge, whose own entrance overrides .animate-pop, still leaves the same way. 150 ms keeps
+   step with MODAL_EXIT_MS, the timer that unmounts it. */
+@keyframes pop-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@keyframes overlay-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-pop-out {
+  animation: pop-out 0.15s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.animate-overlay-out {
+  animation: overlay-out 0.15s ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pop-out {
+    animation: overlay-out 0.15s ease forwards;
+  }
+}
+
 /* The editor footer's state swap: the convert button giving way to the done line (and
    back on a re-export). The incoming block rises in briefly so the change reads as a
    transition instead of a snap — same brisk curve as pop-in, travel instead of scale

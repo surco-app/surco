@@ -18,6 +18,7 @@ import type { NewPlaylist } from '../lib/commands'
 import { subtreeCounts } from '../lib/playlistEdits'
 import { carriesOnlyFiles, draggedRows } from '../lib/reorderDrag'
 import { ConfirmDialog } from './ConfirmDialog'
+import { ModalExit } from './ModalShell'
 import { Tooltip } from './Tooltip'
 
 const SKELETON_NAME_WIDTHS = ['42%', '28%', '55%', '36%', '47%', '31%', '51%', '24%']
@@ -544,16 +545,18 @@ export function SourceTree({
           </div>
         </div>
       )}
-      {deleting && (
-        <ConfirmDialog
-          title={tr('sources.tree.deleteTitle')}
-          message={deleteMessage(deleting)}
-          confirmLabel={tr('sources.tree.delete')}
-          destructive
-          onConfirm={() => edit?.onDelete(deleting)}
-          onClose={() => setDeleting(null)}
-        />
-      )}
+      <ModalExit>
+        {deleting && (
+          <ConfirmDialog
+            title={tr('sources.tree.deleteTitle')}
+            message={deleteMessage(deleting)}
+            confirmLabel={tr('sources.tree.delete')}
+            destructive
+            onConfirm={() => edit?.onDelete(deleting)}
+            onClose={() => setDeleting(null)}
+          />
+        )}
+      </ModalExit>
     </div>
   )
 }

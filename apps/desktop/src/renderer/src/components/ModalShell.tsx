@@ -1,8 +1,28 @@
 import type React from 'react'
-import { useRef, useState } from 'react'
+import { createContext, useContext, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useExitPresence } from '../hooks/useExitPresence'
 import { lastInputWasKeyboard } from '../lib/inputModality'
 import { useFocusTrap } from './useFocusTrap'
+
+// Shorter than the 220 ms entrance and accelerating out: leaving needs no ceremony.
+// .animate-pop-out in index.css runs for the same time.
+export const MODAL_EXIT_MS = 150
+
+const ModalLeaving = createContext(false)
+
+// Keeps a dialog on screen for its exit after the condition that rendered it goes false, the
+// way useExitPresence does for the toasts and the player, so a dialog leaves along the path it
+// came in on instead of vanishing in one frame. Wrap the conditional itself:
+// <ModalExit>{open && <SomeModal />}</ModalExit>.
+export function ModalExit({ children }: { children: React.ReactNode }): React.JSX.Element | null {
+  const present = Boolean(children)
+  const last = useRef(children)
+  if (present) last.current = children
+  const { mounted, leaving } = useExitPresence(present, MODAL_EXIT_MS)
+  if (!mounted) return null
+  return <ModalLeaving value={leaving}>{present ? children : last.current}</ModalLeaving>
+}
 
 interface Props {
   onClose: () => void
@@ -42,12 +62,15 @@ export function ModalShell({
   onSubmit,
   instant = false,
   children,
-}: Props): React.JSX.Element {
+}: Props): React.JSX.Element | null {
   const { t: tr } = useTranslation()
   const dialogRef = useRef<HTMLDivElement>(null)
   const [keyed] = useState(lastInputWasKeyboard)
   const bare = instant || keyed
-  useFocusTrap(dialogRef)
+  const leaving = useContext(ModalLeaving)
+  // The trap lets go as the exit starts, not when it ends: the app behind is live and focus is
+  // back on the trigger from the first frame, so the exit never costs a click or a keystroke.
+  useFocusTrap(dialogRef, !leaving)
   const body = onSubmit ? (
     <form
       className="contents"
@@ -61,18 +84,21 @@ export function ModalShell({
   ) : (
     children
   )
+  // A key closed it, or it is a surface that opens bare: the answer is the next frame.
+  if (leaving && (instant || lastInputWasKeyboard())) return null
   return (
     <div
+      inert={leaving}
       className={`fixed inset-0 z-50 flex justify-center ${
         align === 'top' ? 'items-start pt-[8vh]' : 'items-center'
-      }`}
+      }${leaving ? ' pointer-events-none' : ''}`}
     >
       <button
         type="button"
         data-testid={backdropTestId}
         aria-label={tr('common.close')}
         onClick={onClose}
-        className={`${bare ? '' : 'animate-overlay '}absolute inset-0 bg-scrim/60 backdrop-blur-sm`}
+        className={`${leaving ? 'animate-overlay-out ' : bare ? '' : 'animate-overlay '}absolute inset-0 bg-scrim/60 backdrop-blur-sm`}
       />
       <div
         ref={dialogRef}
@@ -81,7 +107,7 @@ export function ModalShell({
         data-testid={dialogTestId}
         aria-labelledby={labelledBy}
         aria-label={label}
-        className={`${bare ? '' : 'animate-pop '}relative z-10 ${className}`}
+        className={`${leaving ? 'animate-pop-out ' : bare ? '' : 'animate-pop '}relative z-10 ${className}`}
       >
         {body}
       </div>

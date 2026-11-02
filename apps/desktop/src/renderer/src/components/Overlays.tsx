@@ -14,6 +14,7 @@ import type { Command } from '../lib/commands'
 import { lazyChunk } from '../lib/lazyChunk'
 import type { TrackItem } from '../types'
 import { ConfirmDialog } from './ConfirmDialog'
+import { ModalExit } from './ModalShell'
 
 // On-demand overlays: none is part of the first paint (each renders only behind its
 // activeModal branch), so each is split into its own chunk and kept out of the startup
@@ -119,85 +120,105 @@ export function Overlays({
 
   return (
     <Suspense fallback={null}>
-      {activeModal?.type === 'settings' && settings && (
-        <SettingsModal
-          settings={settings}
-          onClose={closeSettings}
-          onSave={saveSettings}
-          onPreviewTheme={setThemePreview}
-          onSettingsReplaced={setSettings}
-          initialTab={activeModal.tab}
-          playlistLibraries={playlistLibraries}
-        />
-      )}
+      <ModalExit>
+        {activeModal?.type === 'settings' && settings && (
+          <SettingsModal
+            settings={settings}
+            onClose={closeSettings}
+            onSave={saveSettings}
+            onPreviewTheme={setThemePreview}
+            onSettingsReplaced={setSettings}
+            initialTab={activeModal.tab}
+            playlistLibraries={playlistLibraries}
+          />
+        )}
+      </ModalExit>
 
       {activeModal?.type === 'onboarding' && settings && (
         <OnboardingWizard settings={settings} onFinish={finishOnboarding} />
       )}
 
-      {activeModal?.type === 'donateNudge' && (
-        <DonateNudgeModal
-          conversionCount={settings?.conversionCount ?? 0}
-          onClose={(dismissForever) => {
-            if (dismissForever) saveSettings({ donateNudgeDismissed: true })
-            close()
-          }}
-        />
-      )}
+      <ModalExit>
+        {activeModal?.type === 'donateNudge' && (
+          <DonateNudgeModal
+            conversionCount={settings?.conversionCount ?? 0}
+            onClose={(dismissForever) => {
+              if (dismissForever) saveSettings({ donateNudgeDismissed: true })
+              close()
+            }}
+          />
+        )}
+      </ModalExit>
 
-      {activeModal?.type === 'whatsNew' && (
-        <WhatsNewModal lastSeen={activeModal.lastSeen} onClose={close} />
-      )}
+      <ModalExit>
+        {activeModal?.type === 'whatsNew' && (
+          <WhatsNewModal lastSeen={activeModal.lastSeen} onClose={close} />
+        )}
+      </ModalExit>
 
-      {activeModal?.type === 'help' && <HelpModal onClose={close} />}
-      {activeModal?.type === 'loudnessHelp' && <LoudnessHelpModal onClose={close} />}
-      {activeModal?.type === 'findReplace' && (
-        <FindReplaceModal
-          tracks={bulkTracks}
-          scope={bulkScope}
-          customFields={settings?.customFields}
-          onApply={deriveTracksUndoable}
-          onClose={close}
-        />
-      )}
-      {activeModal?.type === 'stripNumbering' && (
-        <StripNumberingModal tracks={bulkTracks} onApply={deriveTracksUndoable} onClose={close} />
-      )}
-      {activeModal?.type === 'rename' && selected && (
-        <RenameModal
-          meta={effectiveMeta(selected, settings?.customFields ?? [])}
-          customFields={settings?.customFields ?? []}
-          initialFormat={settings?.filenameFormat ?? '{artist} - {title}'}
-          extension={formatExtension(
-            resolveJobFormat(
-              editorFormatRef.current ?? settings?.outputFormat ?? 'aiff',
-              selected.inputPath,
-              'aiff',
-              editorFormatRef.current === null && (settings?.keepMp3Sources ?? false),
-              selected.fromAppleMusic,
-              editorFormatRef.current !== null,
-            ),
-          )}
-          onApply={(outputName) => updateTrack(selected.id, { outputName })}
-          onClose={close}
-        />
-      )}
-      {activeModal?.type === 'info' && <InfoModal track={activeModal.track} onClose={close} />}
-      {activeModal?.type === 'export' && (
-        <ExportModal tracks={bulkTracks} scope={bulkScope} onClose={close} />
-      )}
-      {activeModal?.type === 'confirm' && (
-        <ConfirmDialog
-          title={activeModal.confirm.title}
-          message={activeModal.confirm.message}
-          items={activeModal.confirm.items}
-          confirmLabel={activeModal.confirm.confirmLabel}
-          confirmDisabled={activeModal.confirm.confirmDisabled}
-          destructive={activeModal.confirm.destructive}
-          onConfirm={activeModal.confirm.onConfirm}
-          onClose={close}
-        />
-      )}
+      <ModalExit>{activeModal?.type === 'help' && <HelpModal onClose={close} />}</ModalExit>
+      <ModalExit>
+        {activeModal?.type === 'loudnessHelp' && <LoudnessHelpModal onClose={close} />}
+      </ModalExit>
+      <ModalExit>
+        {activeModal?.type === 'findReplace' && (
+          <FindReplaceModal
+            tracks={bulkTracks}
+            scope={bulkScope}
+            customFields={settings?.customFields}
+            onApply={deriveTracksUndoable}
+            onClose={close}
+          />
+        )}
+      </ModalExit>
+      <ModalExit>
+        {activeModal?.type === 'stripNumbering' && (
+          <StripNumberingModal tracks={bulkTracks} onApply={deriveTracksUndoable} onClose={close} />
+        )}
+      </ModalExit>
+      <ModalExit>
+        {activeModal?.type === 'rename' && selected && (
+          <RenameModal
+            meta={effectiveMeta(selected, settings?.customFields ?? [])}
+            customFields={settings?.customFields ?? []}
+            initialFormat={settings?.filenameFormat ?? '{artist} - {title}'}
+            extension={formatExtension(
+              resolveJobFormat(
+                editorFormatRef.current ?? settings?.outputFormat ?? 'aiff',
+                selected.inputPath,
+                'aiff',
+                editorFormatRef.current === null && (settings?.keepMp3Sources ?? false),
+                selected.fromAppleMusic,
+                editorFormatRef.current !== null,
+              ),
+            )}
+            onApply={(outputName) => updateTrack(selected.id, { outputName })}
+            onClose={close}
+          />
+        )}
+      </ModalExit>
+      <ModalExit>
+        {activeModal?.type === 'info' && <InfoModal track={activeModal.track} onClose={close} />}
+      </ModalExit>
+      <ModalExit>
+        {activeModal?.type === 'export' && (
+          <ExportModal tracks={bulkTracks} scope={bulkScope} onClose={close} />
+        )}
+      </ModalExit>
+      <ModalExit>
+        {activeModal?.type === 'confirm' && (
+          <ConfirmDialog
+            title={activeModal.confirm.title}
+            message={activeModal.confirm.message}
+            items={activeModal.confirm.items}
+            confirmLabel={activeModal.confirm.confirmLabel}
+            confirmDisabled={activeModal.confirm.confirmDisabled}
+            destructive={activeModal.confirm.destructive}
+            onConfirm={activeModal.confirm.onConfirm}
+            onClose={close}
+          />
+        )}
+      </ModalExit>
 
       {activeModal?.type === 'palette' && (
         <CommandPalette
