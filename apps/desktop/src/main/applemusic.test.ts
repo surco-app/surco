@@ -822,6 +822,24 @@ describe('buildSetFieldScript', () => {
   it('leaves the Music review write unchanged, without a location check', () => {
     expect(buildSetFieldScript('6E592CFE07A6246A', 'artist', 'a', 'b')).not.toContain('theLoc')
   })
+
+  it('fills a year Music holds as the number 0 with the year of the date', () => {
+    const script = buildSetFieldScript('6E592CFE07A6246A', 'year', '', '1995-04-12')
+    expect(script).toContain('if (year of theTrack) is not 0 then return "mismatch"')
+    expect(script).toContain('set year of theTrack to 1995')
+  })
+
+  it('guards a year on the number Music keeps, even when the review read a full date', () => {
+    const script = buildSetFieldScript('6E592CFE07A6246A', 'year', '1990-01-02', '')
+    expect(script).toContain('if (year of theTrack) is not 1990 then return "mismatch"')
+    expect(script).toContain('set year of theTrack to 0')
+  })
+
+  it('writes the grouping through its own property', () => {
+    const script = buildSetFieldScript('6E592CFE07A6246A', 'grouping', '', 'Warm Up')
+    expect(script).toContain('if (grouping of theTrack) is not "" then return "mismatch"')
+    expect(script).toContain('set grouping of theTrack to "Warm Up"')
+  })
 })
 
 describe('buildPlaylistTransferScript', () => {

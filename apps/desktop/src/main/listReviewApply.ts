@@ -2,9 +2,9 @@ import type {
   ListFixRequest,
   MusicFieldOutcome,
   MusicFixProgress,
-  MusicReviewField,
   ReviewFix,
   ReviewOutcome,
+  ReviewWriteField,
   TrashEntry,
 } from '../shared/types'
 import type { MusicSetResult } from './applemusic'
@@ -20,7 +20,7 @@ export interface ListApplyDeps {
   ) => Promise<{ outcomes: FieldWrite[]; backup?: TrashEntry }>
   setMusicField?: (
     persistentId: string,
-    field: MusicReviewField,
+    field: ReviewWriteField,
     from: string,
     to: string,
     location: string,

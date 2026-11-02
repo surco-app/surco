@@ -14,6 +14,7 @@ import type {
   ReviewEntry,
   ReviewFix,
   ReviewOutcome,
+  ReviewWriteField,
 } from '../../../shared/types'
 import { copyQuality, qualityRank } from '../lib/copyQuality'
 import {
@@ -733,7 +734,7 @@ export function useMusicReview({
         // it was, and the libraries stay with it. Music goes first: it rewrites the file as
         // it sets the value back, so the backup restored after it is what stays on disk.
         const music = [...o.music]
-        const back: MusicReviewField[] = []
+        const back: ReviewWriteField[] = []
         for (const [i, f] of o.fixes.entries()) {
           if (o.music[i] !== 'set') {
             if (o.backupId && o.written.includes(f.field)) back.push(f.field)

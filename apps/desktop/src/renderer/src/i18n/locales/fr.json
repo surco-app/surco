@@ -2088,7 +2088,9 @@
       "artist": "{{title}} · Artiste",
       "album": "{{title}} · Album",
       "albumArtist": "{{title}} · Artiste de l'album",
-      "genre": "{{title}} · Genre"
+      "genre": "{{title}} · Genre",
+      "year": "{{title}} · Année",
+      "grouping": "{{title}} · Regroupement"
     },
     "reviewFixWrittenBackup": "Modifié dans Music et dans le fichier, avec une sauvegarde",
     "reviewFixWritten": "Modifié dans Music et dans le fichier",
@@ -2280,7 +2282,9 @@
       "albumArtist": "Artiste de l'album",
       "album": "Album",
       "genre": "Genre",
-      "title": "Titre"
+      "title": "Titre",
+      "year": "Année",
+      "grouping": "Regroupement"
     },
     "kind": {
       "invisible": "espaces en trop ou caractères invisibles",

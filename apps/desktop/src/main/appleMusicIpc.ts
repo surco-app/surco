@@ -8,7 +8,7 @@ import type {
   AppleMusicPlaylist,
   AppleMusicUpdateJob,
   MusicFieldFix,
-  MusicReviewField,
+  ReviewWriteField,
   TrackMetadata,
 } from '../shared/types'
 import { activity } from './activity'
@@ -149,7 +149,7 @@ export function registerAppleMusicIpc(
   })
   ipcMain.handle(
     'applemusic:setField',
-    (_e, pid: string, field: MusicReviewField, from: string, to: string, location?: string) =>
+    (_e, pid: string, field: ReviewWriteField, from: string, to: string, location?: string) =>
       process.platform === 'darwin'
         ? setFieldLogged(
             pid,

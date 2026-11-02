@@ -1,28 +1,39 @@
 import { extname } from 'node:path'
 import {
   CombinedTag,
-  type Id3v2Tag,
+  Id3v2Tag,
   InfoTag,
+  Mpeg4AppleTag,
+  Mpeg4BoxType,
   type Tag,
   File as TagFile,
   TagTypes,
+  XiphComment,
 } from 'node-taglib-sharp'
-import type { MusicReviewField } from '../shared/types'
-import { dropBrokenUfids, keepGenreParentheses } from './tags'
+import { fullDateOf } from '../shared/tagFields'
+import type { ReviewWriteField } from '../shared/types'
+import {
+  dropBrokenUfids,
+  id3GroupingOf,
+  keepGenreParentheses,
+  setId3Date,
+  setId3Grouping,
+  toYear,
+} from './tags'
 
 // Kept apart from musicFieldWrite so the analysis worker can load it without dragging in
 // ffmpeg.ts, which pulls electron and the ffmpeg binaries into the worker thread.
 export type FieldWrite = 'written' | 'unchanged'
 
 export interface TagFieldChange {
-  field: MusicReviewField
+  field: ReviewWriteField
   from: string
   to: string
 }
 
 const same = (a: string, b: string): boolean => a.normalize('NFC') === b.normalize('NFC')
 
-function valuesOf(tag: Tag, field: MusicReviewField): string[] {
+function valuesOf(tag: Tag, field: ReviewWriteField): string[] {
   switch (field) {
     case 'title':
       return tag.title ? [tag.title] : []
@@ -34,6 +45,12 @@ function valuesOf(tag: Tag, field: MusicReviewField): string[] {
       return tag.albumArtists
     case 'genre':
       return tag.genres
+    case 'year':
+      return tag.year ? [String(tag.year)] : []
+    case 'grouping': {
+      const grouping = tag instanceof Id3v2Tag ? id3GroupingOf(tag) : tag.grouping
+      return grouping ? [grouping] : []
+    }
   }
 }
 
@@ -42,21 +59,26 @@ function valuesOf(tag: Tag, field: MusicReviewField): string[] {
 // view of an INFO list reads a different file than the one every DJ program shows. TagLib's
 // spellings are still checked and rewritten when present, since mp3tag and Surco's own
 // writeTags put them there. No INFO id holds an album artist anyone reads.
-const INFO_IDS: Record<MusicReviewField, string[]> = {
+const INFO_IDS: Record<ReviewWriteField, string[]> = {
   title: ['INAM'],
   artist: ['IART', 'ISTR'],
   album: ['IPRD', 'DIRC'],
   albumArtist: [],
   genre: ['IGNR'],
+  year: ['ICRD'],
+  grouping: [],
 }
 
-const TAGLIB_INFO_ID: Record<MusicReviewField, string> = {
+const TAGLIB_INFO_ID: Partial<Record<ReviewWriteField, string>> = {
   title: 'INAM',
   artist: 'ISTR',
   album: 'DIRC',
   albumArtist: 'IART',
   genre: 'IGNR',
+  year: 'ICRD',
 }
+
+const yearOf = (value: string): string => value.trim().match(/^\d{4}/)?.[0] ?? value.trim()
 
 const infoValues = (tag: InfoTag, id: string): string[] =>
   tag
@@ -64,15 +86,15 @@ const infoValues = (tag: InfoTag, id: string): string[] =>
     .map((v) => v.replace(/\0+$/, ''))
     .filter((v) => v !== '')
 
-const heldIds = (tag: InfoTag, field: MusicReviewField): string[] =>
+const heldIds = (tag: InfoTag, field: ReviewWriteField): string[] =>
   INFO_IDS[field].filter((id) => infoValues(tag, id).length > 0)
 
-function readValues(tag: Tag, field: MusicReviewField): string[][] {
+function readValues(tag: Tag, field: ReviewWriteField): string[][] {
   if (!(tag instanceof InfoTag)) return [valuesOf(tag, field)]
   return heldIds(tag, field).map((id) => infoValues(tag, id))
 }
 
-const firstHeld = (f: TagFile, field: MusicReviewField): string[] => {
+const firstHeld = (f: TagFile, field: ReviewWriteField): string[] => {
   const tags = f.tag instanceof CombinedTag ? f.tag.tags : [f.tag]
   for (const tag of tags) {
     const held = readValues(tag, field).find((values) => values.length > 0)
@@ -81,20 +103,24 @@ const firstHeld = (f: TagFile, field: MusicReviewField): string[] => {
   return []
 }
 
-function assignInfo(tag: InfoTag, field: MusicReviewField, to: string): void {
+function assignInfo(tag: InfoTag, field: ReviewWriteField, to: string): void {
   const held = heldIds(tag, field)
   const targets = held.length > 0 ? held : INFO_IDS[field].slice(0, 1)
   for (const id of targets) {
     const nul = tag.getValuesAsStrings(id)[0]?.endsWith('\0') ? '\0' : ''
-    if (to === '') tag.removeValue(id)
-    else tag.setValuesFromStrings(id, [to + nul])
+    const value = field === 'year' ? yearOf(to) : to
+    if (value === '') tag.removeValue(id)
+    else tag.setValuesFromStrings(id, [value + nul])
   }
 }
 
-const matches = (values: string[], from: string): boolean =>
-  from === '' ? values.length === 0 : values.length === 1 && same(values[0], from)
+const matches = (field: ReviewWriteField, values: string[], from: string): boolean => {
+  if (from === '') return values.length === 0
+  if (values.length !== 1) return false
+  return field === 'year' ? yearOf(values[0]) === yearOf(from) : same(values[0], from)
+}
 
-function assign(tag: Tag, field: MusicReviewField, to: string): void {
+function assign(tag: Tag, field: ReviewWriteField, to: string): void {
   switch (field) {
     case 'title':
       tag.title = to
@@ -111,7 +137,31 @@ function assign(tag: Tag, field: MusicReviewField, to: string): void {
     case 'genre':
       tag.genres = [to]
       return
+    case 'year':
+      tag.year = toYear(to)
+      return
+    case 'grouping':
+      tag.grouping = to
+      return
   }
+}
+
+function assignNative(f: TagFile, field: ReviewWriteField, to: string, ext: string): void {
+  if (field !== 'year' && field !== 'grouping') return
+  const id3 = f.getTag(TagTypes.Id3v2, false)
+  if (id3 instanceof Id3v2Tag) {
+    if (field === 'year') setId3Date(id3, to)
+    else setId3Grouping(id3, to, ext)
+  }
+  const xiph = f.getTag(TagTypes.Xiph, false)
+  if (field === 'year' && xiph instanceof XiphComment) {
+    if (to.trim()) xiph.setFieldAsStrings('DATE', to)
+    else xiph.removeField('DATE')
+  }
+  const apple = f.getTag(TagTypes.Apple, false)
+  const date = fullDateOf(to)
+  if (field === 'year' && date && apple instanceof Mpeg4AppleTag)
+    apple.setQuickTimeString(Mpeg4BoxType.DAY, date)
 }
 
 // The combined view answers with the first tag that has a value, so a WAV whose ID3 chunk
@@ -130,38 +180,40 @@ function onDiskTags(f: TagFile): Tag[] {
   return tags
 }
 
-function holds(f: TagFile, field: MusicReviewField, value: string): boolean {
-  if (!matches(firstHeld(f, field), value)) return false
+function holds(f: TagFile, field: ReviewWriteField, value: string): boolean {
+  if (!matches(field, firstHeld(f, field), value)) return false
   for (const tag of onDiskTags(f)) {
     for (const values of readValues(tag, field)) {
-      if (values.length > 0 && !matches(values, value)) return false
+      if (values.length > 0 && !matches(field, values, value)) return false
     }
   }
   return true
 }
 
-function setOne(f: TagFile, { field, from, to }: TagFieldChange): FieldWrite {
+function setOne(f: TagFile, { field, from, to }: TagFieldChange, ext: string): FieldWrite {
   if (!holds(f, field, from)) return 'unchanged'
   const info = f.getTag(TagTypes.RiffInfo, false)
   if (info instanceof InfoTag) {
     const elsewhere = f.tagTypesOnDisk & ~(TagTypes.RiffInfo | TagTypes.Id3v1)
     if (INFO_IDS[field].length === 0 && !elsewhere) return 'unchanged'
     const taglibId = TAGLIB_INFO_ID[field]
-    const before = info.getValues(taglibId)
+    const before = taglibId ? info.getValues(taglibId) : []
     assign(f.tag, field, to)
-    if (before.length > 0) info.setValues(taglibId, before)
-    else info.removeValue(taglibId)
+    if (taglibId && before.length > 0) info.setValues(taglibId, before)
+    else if (taglibId) info.removeValue(taglibId)
     assignInfo(info, field, to)
+    assignNative(f, field, to, ext)
     return 'written'
   }
   assign(f.tag, field, to)
+  assignNative(f, field, to, ext)
   return 'written'
 }
 
 export function setTagFields(file: string, changes: TagFieldChange[]): FieldWrite[] {
   const f = TagFile.createFromPath(file)
   try {
-    const outcomes = changes.map((change) => setOne(f, change))
+    const outcomes = changes.map((change) => setOne(f, change, extname(file).toLowerCase()))
     if (!outcomes.includes('written')) return outcomes
     // The combined setter materializes a tag of every type the format could carry, and
     // save() writes them all: an MP3 with no ID3v1 gained one (the ghost of v0.99.6) and a

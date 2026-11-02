@@ -9,8 +9,8 @@ import type {
   MusicFileEntry,
   MusicFileLookup,
   MusicReviewEntry,
-  MusicReviewField,
   OutputFormat,
+  ReviewWriteField,
   TrackMetadata,
 } from '../shared/types'
 import { createConcurrencyLimiter } from './analysisLimiter'
@@ -1238,22 +1238,28 @@ export async function musicFileLocations(
 
 export type MusicSetResult = 'set' | 'missing' | 'mismatch'
 
-const MUSIC_PROPERTY: Record<MusicReviewField, string> = {
+const MUSIC_PROPERTY: Record<ReviewWriteField, string> = {
   title: 'name',
   artist: 'artist',
   albumArtist: 'album artist',
   album: 'album',
   genre: 'genre',
+  year: 'year',
+  grouping: 'grouping',
 }
+
+const musicYear = (value: string): string => String(Number(value.trim().match(/^\d{4}/)?.[0] ?? 0))
 
 export function buildSetFieldScript(
   persistentId: string,
-  field: MusicReviewField,
+  field: ReviewWriteField,
   from: string,
   to: string,
   location?: string,
 ): string {
   const prop = MUSIC_PROPERTY[field]
+  const literal = (value: string) =>
+    field === 'year' ? musicYear(value) : appleScriptString(value)
   return [
     'tell application "Music"',
     `  set theMatches to (every track of library playlist 1 whose persistent ID is ${appleScriptString(persistentId)})`,
@@ -1271,9 +1277,9 @@ export function buildSetFieldScript(
     ...(location === undefined
       ? []
       : [`    if theLoc is not ${appleScriptString(location)} then return "mismatch"`]),
-    `    if (${prop} of theTrack) is not ${appleScriptString(from)} then return "mismatch"`,
+    `    if (${prop} of theTrack) is not ${literal(from)} then return "mismatch"`,
     '  end considering',
-    `  set ${prop} of theTrack to ${appleScriptString(to)}`,
+    `  set ${prop} of theTrack to ${literal(to)}`,
     '  return "set"',
     'end tell',
   ].join('\n')
@@ -1281,7 +1287,7 @@ export function buildSetFieldScript(
 
 export async function setAppleMusicField(
   persistentId: string,
-  field: MusicReviewField,
+  field: ReviewWriteField,
   from: string,
   to: string,
   location?: string,

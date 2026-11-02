@@ -162,12 +162,16 @@ export function readItunesGrouping(file: string): string {
 
 export function itunesGroupingOf(f: TagFile): string {
   const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
-  const grp1 = id3?.frames.find((fr) => fr.frameId.toString() === 'GRP1')
+  return id3 ? id3GroupingOf(id3) : ''
+}
+
+export function id3GroupingOf(id3: Id3v2Tag): string {
+  const grp1 = id3.frames.find((fr) => fr.frameId.toString() === 'GRP1')
   // No GRP1: fall back to the standard TIT1 frame, which is where TagLib puts a
   // grouping and where every non-iTunes tagger looks for one. A WAV keeps its
   // grouping only in ID3 (RIFF INFO has no field for it), and ffmpeg's WAV demuxer
   // reads INFO — so without this the probe and this fallback would both miss it.
-  if (!grp1) return id3?.grouping ?? ''
+  if (!grp1) return id3.grouping ?? ''
   return id3TextOf((grp1 as Id3v2UnknownFrame).data.toByteArray())
 }
 
@@ -778,7 +782,7 @@ const toNumber = (value: string): number => {
 // often a full date ("2024-03-01") that Number() turns into NaN — writing 0 and
 // destroying the year. Take the leading 4-digit year; anything else falls back to the
 // plain numeric parse.
-const toYear = (value: string): number => {
+export const toYear = (value: string): number => {
   const dated = value.trim().match(/^(\d{4})\b/)
   return dated ? Number(dated[1]) : toNumber(value)
 }
@@ -877,6 +881,45 @@ function setUserText(tag: Id3v2Tag, description: string, text: string): void {
     tag.addFrame(frame)
   }
   frame.text = [text]
+}
+
+// The numeric year setter rewrites only the year, so a date the file already carried
+// kept its old day and month beside the new year (TDAT in v2.3). The date frames are
+// rebuilt from the field instead. By hand, because TagLib's own v2.3 rendering of a
+// TDRC writes TDAT month-first, where the spec (and ffmpeg) put the day first.
+export function setId3Date(id3: Id3v2Tag, value: string): void {
+  for (const id of ['TYER', 'TDAT', 'TIME', 'TDRC'] as const)
+    id3.removeFrames(Id3v2FrameIdentifiers[id])
+  const date = fullDateOf(value)
+  const year = toYear(value)
+  const dateFrames: Array<[keyof typeof Id3v2FrameIdentifiers, string]> =
+    id3.version === 3
+      ? [
+          ['TYER', year ? String(year) : ''],
+          ['TDAT', date ? `${date.slice(8, 10)}${date.slice(5, 7)}` : ''],
+        ]
+      : [['TDRC', date || (year ? String(year) : '')]]
+  for (const [id, text] of dateFrames) {
+    if (!text) continue
+    const frame = Id3v2TextInformationFrame.fromIdentifier(Id3v2FrameIdentifiers[id])
+    frame.text = [text]
+    id3.addFrame(frame)
+  }
+}
+
+// The grouping's mirror goes the same way, and it rides GRP1 beside TIT1: Traktor and
+// every other tagger read TIT1, Apple Music its own GRP1, which also wins when Surco
+// reads the file back, so a stale one would undo the edit. Not on a WAV: Apple Music
+// reads no tags from one at import, so a GRP1 there would only shadow the TIT1 another
+// tool edits.
+export function setId3Grouping(id3: Id3v2Tag, value: string, ext: string): void {
+  for (const fr of id3.frames.filter((frame) => frame.frameId.toString() === 'GRP1'))
+    id3.removeFrame(fr)
+  if (value.trim() && ext !== '.wav') {
+    const grp1 = Id3v2TextInformationFrame.fromIdentifier(GRP1)
+    grp1.text = [value]
+    id3.addFrame(grp1)
+  }
 }
 
 // Upserts one POPM frame (keyed by its user/email) with the given 0–255 byte.
@@ -1078,27 +1121,7 @@ export function writeTags(
     // and stays readable on the CDJ/rekordbox/Serato setups that mishandle v2.4 —
     // and, for WAV, in mp3tag, which ignores a v2.4 "id3 " chunk entirely.
     if (ID3_V23.has(extname(file).toLowerCase())) id3.version = 3
-    // The numeric year setter rewrites only the year, so a date the file already carried
-    // kept its old day and month beside the new year (TDAT in v2.3). The date frames are
-    // rebuilt from the field instead. By hand, because TagLib's own v2.3 rendering of a
-    // TDRC writes TDAT month-first, where the spec (and ffmpeg) put the day first.
-    for (const id of ['TYER', 'TDAT', 'TIME', 'TDRC'] as const)
-      id3.removeFrames(Id3v2FrameIdentifiers[id])
-    const date = fullDateOf(meta.year)
-    const year = toYear(meta.year)
-    const dateFrames: Array<[keyof typeof Id3v2FrameIdentifiers, string]> =
-      id3.version === 3
-        ? [
-            ['TYER', year ? String(year) : ''],
-            ['TDAT', date ? `${date.slice(8, 10)}${date.slice(5, 7)}` : ''],
-          ]
-        : [['TDRC', date || (year ? String(year) : '')]]
-    for (const [id, text] of dateFrames) {
-      if (!text) continue
-      const frame = Id3v2TextInformationFrame.fromIdentifier(Id3v2FrameIdentifiers[id])
-      frame.text = [text]
-      id3.addFrame(frame)
-    }
+    setId3Date(id3, meta.year)
     dropBrokenUfids(id3)
     // The foreign tags the user marked in the inspector: remove them by name. Covers
     // the free-text TXXX route (setUserText with '' clears it) and any frame whose id
@@ -1134,18 +1157,7 @@ export function writeTags(
     // rating printed as its raw byte next to the same rating printed as stars. The native
     // frame is the one every DJ tool reads, so the text mirror goes.
     for (const mirrored of TXXX_NATIVE_MIRRORS) setUserText(id3, mirrored, '')
-    // The grouping's mirror goes the same way, and it rides GRP1 beside TIT1: Traktor and
-    // every other tagger read TIT1, Apple Music its own GRP1, which also wins when Surco
-    // reads the file back, so a stale one would undo the edit. Not on a WAV: Apple Music
-    // reads no tags from one at import, so a GRP1 there would only shadow the TIT1 another
-    // tool edits.
-    for (const fr of id3.frames.filter((frame) => frame.frameId.toString() === 'GRP1'))
-      id3.removeFrame(fr)
-    if (meta.grouping.trim() && extname(file).toLowerCase() !== '.wav') {
-      const grp1 = Id3v2TextInformationFrame.fromIdentifier(GRP1)
-      grp1.text = [meta.grouping]
-      id3.addFrame(grp1)
-    }
+    setId3Grouping(id3, meta.grouping, extname(file).toLowerCase())
     // Mood and energy ride that same shared list. Mood's standard frame (TMOO) is
     // ID3v2.4-only — TagLib has no v2.3 equivalent, so on the v2.3 tags pinned above it
     // would be silently dropped on save. TXXX "MOOD" is what ffmpeg writes for a mood tag

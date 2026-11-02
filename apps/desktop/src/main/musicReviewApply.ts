@@ -3,7 +3,7 @@ import type {
   MusicFieldOutcome,
   MusicFixOutcome,
   MusicFixProgress,
-  MusicReviewField,
+  ReviewWriteField,
 } from '../shared/types'
 import type { MusicSetResult } from './applemusic'
 import type { PreparedRewrite } from './musicFieldWrite'
@@ -12,7 +12,7 @@ import { type FieldEnding, logFieldRows, type RunLog } from './musicReviewLog'
 export interface ApplyDeps {
   setField: (
     persistentId: string,
-    field: MusicReviewField,
+    field: ReviewWriteField,
     from: string,
     to: string,
   ) => Promise<MusicSetResult>

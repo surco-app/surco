@@ -1,4 +1,9 @@
-import type { MusicReviewField, ReviewEntry, ReviewFix } from '../../../shared/types'
+import type {
+  MusicReviewField,
+  ReviewEntry,
+  ReviewFix,
+  ReviewWriteField,
+} from '../../../shared/types'
 import { replaceAct, type SpellingGroup } from './musicSpelling'
 
 export interface GroupChoice {
@@ -39,9 +44,9 @@ export function planFixes(entries: ReviewEntry[], choices: GroupChoice[]): Revie
 
 export function summarizeFixes(fixes: ReviewFix[]): {
   tracks: number
-  byField: Partial<Record<MusicReviewField, number>>
+  byField: Partial<Record<ReviewWriteField, number>>
 } {
-  const byField: Partial<Record<MusicReviewField, number>> = {}
+  const byField: Partial<Record<ReviewWriteField, number>> = {}
   for (const fix of fixes) byField[fix.field] = (byField[fix.field] ?? 0) + 1
   return { tracks: new Set(fixes.map((f) => f.id)).size, byField }
 }
