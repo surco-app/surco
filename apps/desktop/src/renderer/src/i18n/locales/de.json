@@ -941,9 +941,11 @@
       "zoomOut": "Verkleinern",
       "auto": {
         "button": "Auto-Markieren",
+        "count_one": "{{count}} Vorschlag",
+        "count_other": "{{count}} Vorschläge",
         "accept_one": "Vorschlag übernehmen",
         "accept_other": "{{count}} Vorschläge übernehmen",
-        "discard": "Verwerfen",
+        "discard": "Vorschläge entfernen",
         "ask": "Bricht es hier los? {{time}}",
         "acceptOne": "Übernehmen",
         "drop": "Entfernen",

@@ -941,9 +941,11 @@
       "zoomOut": "ズームアウト",
       "auto": {
         "button": "自動マーク",
+        "count_one": "提案 {{count}} 件",
+        "count_other": "提案 {{count}} 件",
         "accept_one": "提案を採用",
         "accept_other": "{{count}} 件の提案を採用",
-        "discard": "破棄",
+        "discard": "提案を取り消す",
         "ask": "ここでブレイクしますか？ {{time}}",
         "acceptOne": "採用",
         "drop": "削除",

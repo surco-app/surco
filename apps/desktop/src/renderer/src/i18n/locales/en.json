@@ -941,9 +941,11 @@
       "zoomOut": "Zoom out",
       "auto": {
         "button": "Auto mark",
+        "count_one": "{{count}} suggestion",
+        "count_other": "{{count}} suggestions",
         "accept_one": "Accept the suggestion",
         "accept_other": "Accept the {{count}} suggestions",
-        "discard": "Discard",
+        "discard": "Remove suggestions",
         "ask": "Does it break here? {{time}}",
         "acceptOne": "Accept",
         "drop": "Remove",
