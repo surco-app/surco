@@ -3126,7 +3126,7 @@
           },
           {
             "title": "Mark where the track drops",
-            "text": "Hovering over the waveform shows a see-through preview of what the flow would place. On click, Surco counts back from that point and places a red hot cue at 48 bars, a green one at 32 and a blue one at 16, each with its own CALL, plus a CALL at the point. If you'd rather Surco looked for it, press “Auto mark”. It suggests where the track drops, with the flow shown see-through, and you accept them all at once with Return or one by one."
+            "text": "Hovering over the zoomed waveform shows an outline preview of what the flow would place. On click, Surco counts back from that point and places a red hot cue at 48 bars, a green one at 32 and a blue one at 16, each with its own CALL, plus a CALL at the point. If you'd rather Surco looked for it, press “Auto mark”. It suggests where the track drops, with the flow shown in outline, and you accept them all at once with Return or one by one."
           },
           {
             "title": "Click “Save to rekordbox”",

@@ -3126,7 +3126,7 @@
           },
           {
             "title": "Marca dónde rompe la pista",
-            "text": "Al pasar el ratón por la onda ves en transparente lo que pondría el flujo. Con el clic, Surco cuenta hacia atrás desde ese punto y pone un hot cue rojo a 48 compases, uno verde a 32 y uno azul a 16, cada uno con su CALL, y otro CALL en el punto. Si prefieres que lo busque Surco, pulsa «Auto marcar». Te propone dónde rompe, con el flujo en transparente, y aceptas con Intro todas a la vez o cada una por separado."
+            "text": "Al pasar el ratón por la onda ampliada ves en contorno lo que pondría el flujo. Con el clic, Surco cuenta hacia atrás desde ese punto y pone un hot cue rojo a 48 compases, uno verde a 32 y uno azul a 16, cada uno con su CALL, y otro CALL en el punto. Si prefieres que lo busque Surco, pulsa «Auto marcar». Te propone dónde rompe, con el flujo dibujado en contorno, y aceptas con Intro todas a la vez o cada una por separado."
           },
           {
             "title": "Pulsa «Guardar en rekordbox»",

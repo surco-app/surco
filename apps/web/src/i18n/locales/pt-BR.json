@@ -3126,7 +3126,7 @@
           },
           {
             "title": "Marque onde a faixa sobe",
-            "text": "Passar o mouse sobre a onda mostra uma prévia transparente do que o fluxo colocaria. Ao clicar, o Surco conta para trás a partir desse ponto e coloca um hot cue vermelho a 48 compassos, um verde a 32 e um azul a 16, cada um com seu CALL, mais um CALL no ponto. Se preferir que o Surco procure, aperte “Marcar automático”. Ele sugere onde a faixa sobe, com o fluxo em transparência, e você aceita todas de uma vez com Return ou uma por uma."
+            "text": "Passar o mouse sobre a onda ampliada mostra uma prévia em contorno do que o fluxo colocaria. Ao clicar, o Surco conta para trás a partir desse ponto e coloca um hot cue vermelho a 48 compassos, um verde a 32 e um azul a 16, cada um com seu CALL, mais um CALL no ponto. Se preferir que o Surco procure, aperte “Marcar automático”. Ele sugere onde a faixa sobe, com o fluxo desenhado em contorno, e você aceita todas de uma vez com Return ou uma por uma."
           },
           {
             "title": "Clique em “Salvar no rekordbox”",

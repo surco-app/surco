@@ -3126,7 +3126,7 @@
           },
           {
             "title": "Markiere, wo der Track losbricht",
-            "text": "Fährst du über die Wellenform, zeigt eine durchscheinende Vorschau, was der Ablauf setzen würde. Beim Klick zählt Surco von diesem Punkt zurück und setzt einen roten Hot Cue bei 48 Takten, einen grünen bei 32 und einen blauen bei 16, jeden mit eigenem CALL, plus ein CALL am Punkt. Soll Surco ihn lieber selbst suchen, drück „Auto-Markieren“. Es schlägt vor, wo der Track losbricht, mit dem Ablauf durchscheinend dargestellt, und du übernimmst alle auf einmal mit Return oder einzeln."
+            "text": "Fährst du über die vergrößerte Wellenform, zeigt eine Vorschau in Umrissen, was der Ablauf setzen würde. Beim Klick zählt Surco von diesem Punkt zurück und setzt einen roten Hot Cue bei 48 Takten, einen grünen bei 32 und einen blauen bei 16, jeden mit eigenem CALL, plus ein CALL am Punkt. Soll Surco ihn lieber selbst suchen, drück „Auto-Markieren“. Es schlägt vor, wo der Track losbricht, mit dem Ablauf als Umriss dargestellt, und du übernimmst alle auf einmal mit Return oder einzeln."
           },
           {
             "title": "Klicke auf „In rekordbox speichern“",

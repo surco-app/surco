@@ -3126,7 +3126,7 @@
           },
           {
             "title": "Marque l'endroit où le morceau décolle",
-            "text": "En survolant la forme d'onde, tu vois un aperçu transparent de ce que le flux placerait. Au clic, Surco compte à rebours depuis ce point et place un hot cue rouge à 48 mesures, un vert à 32 et un bleu à 16, chacun avec son CALL, plus un CALL au point. Si tu préfères que Surco le cherche, appuie sur « Marquage auto ». Il suggère où le morceau décolle, avec le flux en transparence, et tu les acceptes toutes d'un coup avec Entrée ou une par une."
+            "text": "En survolant la forme d'onde agrandie, tu vois un aperçu en contour de ce que le flux placerait. Au clic, Surco compte à rebours depuis ce point et place un hot cue rouge à 48 mesures, un vert à 32 et un bleu à 16, chacun avec son CALL, plus un CALL au point. Si tu préfères que Surco le cherche, appuie sur « Marquage auto ». Il suggère où le morceau décolle, avec le flux dessiné en contour, et tu les acceptes toutes d'un coup avec Entrée ou une par une."
           },
           {
             "title": "Clique sur « Enregistrer dans rekordbox »",
