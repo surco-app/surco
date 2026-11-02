@@ -4,6 +4,7 @@ import { HOT_KINDS, validWantedSet, type WantedCue } from '../shared/cueRules'
 import { TRAKTOR_HOT_OFFSET, traktorKey } from '../shared/traktorContent'
 import type { RekordboxEditRefusal, RekordboxQueueNotice } from '../shared/types'
 import type { BatchResult, CuesOp, OpOutcome, QueueOp } from './rekordboxQueueOps'
+import type { SessionBackup } from './rekordboxSessionBackup'
 import {
   readTraktorTrackCues,
   traktorCueElements,
@@ -12,7 +13,6 @@ import {
   traktorEntryBlock,
 } from './traktorCues'
 import { withAttr } from './traktorNml'
-import type { SessionBackup } from './rekordboxSessionBackup'
 import { bootVolumeName, markNewerThanCollection, writeCollection } from './traktorNmlLibrary'
 import { applyTraktorEdits } from './traktorPlaylistEdit'
 

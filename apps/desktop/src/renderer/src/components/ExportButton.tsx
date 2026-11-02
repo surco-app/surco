@@ -14,6 +14,7 @@ import type { DjLibraryId } from '../lib/djLibraries'
 import { exportButtonLabel } from '../lib/exportLabel'
 import { STAGE_PROGRESS } from '../lib/progress'
 import type { TrackItem } from '../types'
+import { FormatDestinationMenu } from './FormatDestinationMenu'
 import {
   SPLIT_BODY,
   SPLIT_BODY_QUIET,
@@ -23,7 +24,6 @@ import {
   SPLIT_TOGGLE_READY,
   useSplitMenu,
 } from './SplitButton'
-import { FormatDestinationMenu } from './FormatDestinationMenu'
 import { Tooltip } from './Tooltip'
 
 export const FORMATS = OUTPUT_FORMATS
