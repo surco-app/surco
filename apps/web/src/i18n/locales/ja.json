@@ -3120,9 +3120,7 @@
         "slug": "music-on-a-nas",
         "group": "go",
         "title": "NAS上の音楽",
-        "body": [
-          "ネットワークドライブに音楽を保存し、SurcoでMacまたはWindowsから操作します。"
-        ],
+        "body": ["ネットワークドライブに音楽を保存し、SurcoでMacまたはWindowsから操作します。"],
         "keywords": "ネットワークSMBサーバードライブWindows",
         "settings": [
           {
