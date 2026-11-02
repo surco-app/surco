@@ -4271,6 +4271,36 @@ describe('Editor Apple Music library badge', () => {
     })
   })
 
+  // A cutoff or a lossy source is read off the spectrum, so the card shows both copies'
+  // spectra on one scale: the claim "cut at 16 kHz" becomes something the user sees.
+  describe('shows both spectra when the spectrum decided the verdict', () => {
+    it('stacks both copies and marks the Apple Music one as the cut one', async () => {
+      renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness, libraryLossy: true })
+      await waitFor(() =>
+        expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+      )
+      fireEvent.click(screen.getByTestId('copy-verdict'))
+      expect(await screen.findByTestId('spectrum-glimpse')).toBeInTheDocument()
+      const here = screen.getByTestId('spectrum-glimpse-here')
+      const library = screen.getByTestId('spectrum-glimpse-library')
+      expect(here).toHaveTextContent('This file · AIF')
+      expect(library).toHaveTextContent('Apple Music · WAV')
+      expect(library.querySelector('[data-testid="spectrum-glimpse-lost"]')).not.toBeNull()
+      expect(here.querySelector('[data-testid="spectrum-glimpse-lost"]')).toBeNull()
+    })
+
+    it('draws no spectra when a limiter decided it', async () => {
+      const { api } = renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
+      api.limiterGlimpse = vi.fn(async () => ({ worse: [-0.5, 0.5], better: [-0.6, 0.6] }))
+      await waitFor(() =>
+        expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+      )
+      fireEvent.click(screen.getByTestId('copy-verdict'))
+      expect(await screen.findByTestId('limiter-glimpse')).toBeInTheDocument()
+      expect(screen.queryByTestId('spectrum-glimpse')).toBeNull()
+    })
+  })
+
   // Until the measured verdict lands, the quick format-and-cutoff check is the only warning
   // there is, so it keeps speaking beside "Comparing…".
   it('keeps the quick warning while the copies are still being measured', async () => {
