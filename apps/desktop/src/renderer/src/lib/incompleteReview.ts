@@ -117,10 +117,10 @@ export function incompleteOfRows(
       row.notInFile?.signature === row.diskSignature ? (row.notInFile?.fields ?? []) : []
     const disk = changes
       .filter((c) => c.path === row.inputPath)
-      .reduce(
-        (meta, c) => patchMeta(meta, c.fields),
-        blank.reduce((meta, f) => ({ ...meta, [f]: '' }), read),
-      )
+      .reduce((meta, c) => patchMeta(meta, c.fields), {
+        ...read,
+        ...Object.fromEntries(blank.map((f) => [f, ''])),
+      })
     seen.add(id)
     inputs.push({
       id,
