@@ -390,6 +390,7 @@ const api: Api = {
   trashEmpty: (): Promise<void> => ipcRenderer.invoke('trash:empty'),
   trashReveal: (): Promise<void> => ipcRenderer.invoke('trash:reveal'),
   copyText: (text: string): Promise<void> => ipcRenderer.invoke('clipboard:write', text),
+  logInfo: (message: string): void => ipcRenderer.send('log:info', message),
   logError: (message: string, stack?: string): void =>
     ipcRenderer.send('log:renderer', message, stack),
   revealLog: (): Promise<void> => ipcRenderer.invoke('log:reveal'),

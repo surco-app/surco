@@ -956,7 +956,14 @@ export async function runProcessTrack(
             if (!replaced.oldCopyKept && replaced.landed?.traktorFollowed !== false) {
               if (isSource && inPlace) supersededIfKept = entry.path
               else supersededPath = entry.path
-            }
+            } else
+              log.info(
+                `retire: kept ${entry.path}: ${
+                  replaced.oldCopyKept
+                    ? `Apple Music kept the old entry (${replaced.oldCopyKept})`
+                    : 'Traktor still plays it'
+                }`,
+              )
             verified = true
           } else {
             // Music rewrites the entry's file as it retags it, so a file this job did not
