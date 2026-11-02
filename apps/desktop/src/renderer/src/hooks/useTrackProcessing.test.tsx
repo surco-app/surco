@@ -2043,6 +2043,7 @@ describe('useTrackProcessing', () => {
     await act(() => result.current.addTrackToAppleMusic('a'))
     expect(updateTrack).toHaveBeenLastCalledWith('a', {
       musicStatus: 'added',
+      musicOp: 'added',
       musicPersistentId: 'ABCD1234',
     })
   })
@@ -2092,6 +2093,34 @@ describe('useTrackProcessing', () => {
       expect.objectContaining({ persistentId: 'ABCD1234', outputPath: '/out/a.aiff' }),
     )
     expect(addToAppleMusic).not.toHaveBeenCalled()
+  })
+
+  // The done line reads what the button did: an update of the library copy is not an add.
+  it('records whether the button updated the library copy or added one', async () => {
+    const updateTrack = vi.fn()
+    const run = async (updated: string | undefined): Promise<void> => {
+      setApi({
+        updateAppleMusic: vi.fn().mockResolvedValue(updated),
+        addToAppleMusic: vi.fn().mockResolvedValue('NEW5678'),
+      })
+      const { result } = renderHook(
+        () =>
+          useTrackProcessing({
+            tracks: [track({ id: 'a', outputPath: '/out/a.aiff', musicPersistentId: 'ABCD1234' })],
+            settings: null,
+            updateTrack,
+          }),
+        { wrapper: withClient() },
+      )
+      await act(() => result.current.addTrackToAppleMusic('a'))
+    }
+    await run('ABCD1234')
+    expect(updateTrack).toHaveBeenLastCalledWith(
+      'a',
+      expect.objectContaining({ musicOp: 'updated' }),
+    )
+    await run(undefined)
+    expect(updateTrack).toHaveBeenLastCalledWith('a', expect.objectContaining({ musicOp: 'added' }))
   })
 
   // The refusal crosses IPC as a stamped key wrapped in Electron's own prefix; painted as

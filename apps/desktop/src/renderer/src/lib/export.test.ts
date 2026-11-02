@@ -242,6 +242,30 @@ describe('exportedPatch', () => {
     expect(patch.musicStatus).toBeUndefined()
   })
 
+  // The done line names what happened in Music and to the file. Kept on the track so it
+  // still reads right after switching away and back, and cleared by the next export.
+  it('records what the Music step did and whether only the tags were written', () => {
+    const t = track({ musicOp: 'added', exportedTagsOnly: true })
+    const updated = exportedPatch(t, {
+      outputPath: '/in/a.wav',
+      inPlace: true,
+      musicPersistentId: 'ABCD1234',
+      musicOp: 'updated',
+      tagsOnly: true,
+    })
+    expect(updated.musicOp).toBe('updated')
+    expect(updated.exportedTagsOnly).toBe(true)
+    const converted = exportedPatch(t, { outputPath: '/out/a.aiff', inPlace: false })
+    expect(converted).toMatchObject({ musicOp: undefined, exportedTagsOnly: false })
+    const musicOnly = exportedPatch(t, {
+      outputPath: '',
+      inPlace: false,
+      addedToMusicOnly: true,
+      musicOp: 'replaced',
+    })
+    expect(musicOnly.musicOp).toBe('replaced')
+  })
+
   it('stores the persistent ID in Apple Music only mode too', () => {
     const t = track()
     const patch = exportedPatch(t, {

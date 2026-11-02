@@ -2,6 +2,7 @@ import type {
   AppliedRelease,
   DeclickConfig,
   ForeignTag,
+  MusicOp,
   MusicReviewField,
   NormalizeConfig,
   OutputFormat,
@@ -203,6 +204,10 @@ export interface TrackItem {
   // stays 'done' while it adds. 'error' carries the reason in musicError.
   musicStatus?: 'adding' | 'added' | 'error'
   musicError?: string
+  // What the last Music step did to the library, so the done line names it.
+  musicOp?: MusicOp
+  // The last export rewrote only the tags, so the done line does not call it a conversion.
+  exportedTagsOnly?: boolean
   // The persistent ID of this track's Apple Music library copy, returned by the
   // add. Later syncs update (and reveals select) that exact copy — without it a
   // re-add after editing would duplicate the song in the library.

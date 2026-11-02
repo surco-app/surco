@@ -6,7 +6,13 @@ import { effectiveMeta, strayTags } from '../../../shared/customFields'
 import { DEFAULT_FIELDS } from '../../../shared/defaults'
 import { splitNameLeftMarked } from '../../../shared/errorKeys'
 import { batchKeepMp3, hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
-import type { DeclickConfig, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
+import type {
+  DeclickConfig,
+  FormatSetting,
+  MusicOp,
+  NormalizeConfig,
+  Settings,
+} from '../../../shared/types'
 import { removeAnalysisQueries } from '../lib/analysisQueries'
 import {
   type BatchOutcome,
@@ -601,6 +607,7 @@ export function useTrackProcessing({
     })
     try {
       let persistentId: string | undefined
+      let musicOp: MusicOp = 'added'
       if (musicPersistentId) {
         persistentId = await window.api.updateAppleMusic({
           persistentId: musicPersistentId,
@@ -611,6 +618,7 @@ export function useTrackProcessing({
         // The library copy was deleted in Music (update found nothing): re-add the file so
         // it lands back in the library, instead of falsely reporting "added" on a track
         // that's gone. Mirrors the automatic convert path's update-or-add fallback.
+        if (persistentId) musicOp = 'updated'
         if (!persistentId && outputPath) {
           persistentId = await window.api.addToAppleMusic({
             outputPath,
@@ -627,6 +635,7 @@ export function useTrackProcessing({
       }
       updateTrack(id, {
         musicStatus: 'added',
+        musicOp,
         musicPersistentId: persistentId ?? musicPersistentId,
       })
       // A check that read Music before this add is read again for the entry it made.

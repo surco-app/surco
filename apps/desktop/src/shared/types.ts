@@ -1264,7 +1264,17 @@ export type RekordboxQueueNotice =
   | { code: 'cues-adjusted'; track: string; moved: number; maxMs: number }
   | { code: 'cues-unfit'; track: string; count: number; contentId: string; ms: number }
 
-export type ProcessStage = 'cover' | 'converting' | 'appleMusic' | 'engineDj' | 'verify'
+export type ProcessStage =
+  | 'cover'
+  | 'converting'
+  | 'tags'
+  | 'appleMusic'
+  | 'appleMusicUpdate'
+  | 'appleMusicReplace'
+  | 'engineDj'
+  | 'verify'
+
+export type MusicOp = 'added' | 'updated' | 'replaced'
 
 export interface ProcessProgress {
   id: string
@@ -1358,6 +1368,11 @@ export interface ProcessResult {
   // conversion added or updated one. The renderer stores it so later syncs,
   // manual updates and reveals address this exact copy.
   musicPersistentId?: string
+  // What the Apple Music step did to the library, so the done line names it. Absent when
+  // there was no Music step or it failed.
+  musicOp?: MusicOp
+  // The format stayed and no filter ran, so only the tags were rewritten.
+  tagsOnly?: true
   verification?: Verification
   // True when the conversion registered the track in the Engine DJ library, so the
   // renderer can mark it owned there without waiting for a library snapshot refresh.
