@@ -26,6 +26,7 @@ import {
   summarizeDamage,
 } from '../lib/damageReview'
 import { type DuplicateGroup, duplicateGroups } from '../lib/duplicates'
+import type { IncompleteFinding } from '../lib/incompleteReview'
 import { libraryUpdatesOf, tagUpdatesOf } from '../lib/libraryTagUpdates'
 import { prefersReducedMotion } from '../lib/motion'
 import { planFixes, summarizeFixes } from '../lib/musicFixPlan'
@@ -47,6 +48,9 @@ import type { TrackItem } from '../types'
 import { useLatest } from './useLatest'
 
 export type ReviewFilter = 'all' | 'spelling' | 'duplicates' | 'damage'
+
+export const incompleteKey = (id: string) => `incomplete\0${id}`
+const fillKey = (id: string, field: ReviewWriteField) => `${incompleteKey(id)}\0${field}`
 
 export interface ReviewSpellingGroup {
   key: string
@@ -102,6 +106,10 @@ export interface MusicReview {
   damage: DamageFinding[]
   damageLoading: boolean
   damageUnread: DamageScan['unread']
+  incomplete: IncompleteFinding[]
+  fillValue: (id: string, field: ReviewWriteField) => string
+  setFillValue: (id: string, field: ReviewWriteField, value: string) => void
+  stageProposals: () => void
   choice: (key: string) => string | null
   choose: (key: string, value: string) => void
   staged: ReadonlySet<string>
@@ -287,6 +295,7 @@ export function useMusicReview({
   const [allDamage, setAllDamage] = useState<DamageFinding[]>([])
   const [damageLoading, setDamageLoading] = useState(false)
   const [damageUnread, setDamageUnread] = useState<DamageScan['unread']>([])
+  const [allIncomplete, setAllIncomplete] = useState<IncompleteFinding[]>([])
 
   const [libraries, setLibraries] = useState<LibraryStatus | null>(null)
   const [loaded, setLoaded] = useState<{ skipped: number; musicConsulted?: boolean }>({
@@ -302,6 +311,7 @@ export function useMusicReview({
       throw error
     })
     setEntries(result.entries)
+    setAllIncomplete(result.incomplete ?? [])
     setLoaded({ skipped: result.skipped, musicConsulted: consulted(result.musicConsulted) })
     return result.entries
   }, [source])
@@ -355,6 +365,30 @@ export function useMusicReview({
     () => allDamage.filter((f) => !hidden.has(damageKey(f))),
     [allDamage, hidden],
   )
+  const incomplete = useMemo(
+    () => allIncomplete.filter((f) => byId.has(f.id) && !hidden.has(incompleteKey(f.id))),
+    [allIncomplete, byId, hidden],
+  )
+  const fillValue = useCallback(
+    (id: string, field: ReviewWriteField): string => {
+      const key = fillKey(id, field)
+      if (key in choices) return choices[key]
+      const found = incomplete.find((f) => f.id === id)?.fields.find((f) => f.field === field)
+      return found?.proposal?.value ?? ''
+    },
+    [choices, incomplete],
+  )
+  const fillable = useCallback(
+    (f: IncompleteFinding) => f.fields.some((x) => fillValue(f.id, x.field).trim()),
+    [fillValue],
+  )
+  const setFillValue = useCallback((id: string, field: ReviewWriteField, value: string) => {
+    setChoices((c) => ({ ...c, [fillKey(id, field)]: value }))
+  }, [])
+  const stageProposals = useCallback(() => {
+    const keys = incomplete.filter(fillable).map((f) => incompleteKey(f.id))
+    setStaged((s) => new Set([...s, ...keys]))
+  }, [incomplete, fillable])
 
   // A failed lookup is not "no file": it stays out of `locations` (unknown) and is tried
   // once more, so only an answer from Music can mark a copy as having no file.
@@ -438,6 +472,15 @@ export function useMusicReview({
 
   const toggleStaged = useCallback(
     (key: string) => {
+      const unfilled = incomplete.find((f) => incompleteKey(f.id) === key)
+      if (unfilled) {
+        setStaged((s) => {
+          const next = new Set(s)
+          if (!next.delete(key) && fillable(unfilled)) next.add(key)
+          return next
+        })
+        return
+      }
       const found = damage.find((f) => damageKey(f) === key)
       if (found) {
         if (!found.repair || found.pending) return
@@ -488,7 +531,18 @@ export function useMusicReview({
       setStaged(next)
       release(displaced.map((g) => g.key))
     },
-    [choice, choices, spelling, dupGroups, locations, staged, release, damage],
+    [
+      choice,
+      choices,
+      spelling,
+      dupGroups,
+      locations,
+      staged,
+      release,
+      damage,
+      incomplete,
+      fillable,
+    ],
   )
 
   // Undo runs from a toast some renders later, so it reads the hidden set of that moment
@@ -538,13 +592,24 @@ export function useMusicReview({
 
   const fixes = useMemo(() => {
     const removing = new Set(removals.map((r) => r.removeId))
-    return planFixes(
-      entries.filter((e) => !removing.has(e.id)),
-      spelling
-        .filter((g) => staged.has(g.key))
-        .flatMap((g) => g.parts.map((group) => ({ group, to: choice(g.key) as string }))),
-    )
-  }, [entries, removals, spelling, staged, choice])
+    const fills = incomplete
+      .filter((f) => staged.has(incompleteKey(f.id)) && !removing.has(f.id))
+      .flatMap((f) =>
+        f.fields.flatMap(({ field }): ReviewFix[] => {
+          const to = fillValue(f.id, field).trim()
+          return to ? [{ id: f.id, field, from: '', to }] : []
+        }),
+      )
+    return [
+      ...planFixes(
+        entries.filter((e) => !removing.has(e.id)),
+        spelling
+          .filter((g) => staged.has(g.key))
+          .flatMap((g) => g.parts.map((group) => ({ group, to: choice(g.key) as string }))),
+      ),
+      ...fills,
+    ]
+  }, [entries, removals, spelling, staged, choice, incomplete, fillValue])
 
   const affected = useCallback(
     (key: string) => {
@@ -836,6 +901,10 @@ export function useMusicReview({
       damage,
       damageLoading,
       damageUnread,
+      incomplete,
+      fillValue,
+      setFillValue,
+      stageProposals,
       choice,
       choose,
       staged,
@@ -866,6 +935,10 @@ export function useMusicReview({
       damage,
       damageLoading,
       damageUnread,
+      incomplete,
+      fillValue,
+      setFillValue,
+      stageProposals,
       choice,
       choose,
       staged,
