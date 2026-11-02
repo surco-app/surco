@@ -627,7 +627,18 @@ describe('QualityFilterBar', () => {
     expect(onReviewIncomplete).toHaveBeenCalledOnce()
   })
 
-  it('offers the review only on that filter, with something in it and a review to open', () => {
+  // The filter counts what the app shows: once a match fills the rows unsaved it empties,
+  // while the files still lack those fields. The way to the review must stay.
+  it('keeps offering the review when the filter has emptied', () => {
+    renderBar({
+      value: sel({ tags: 'missingRequired' }),
+      tally: tally({ missingRequired: 0 }),
+      onReviewIncomplete: vi.fn(),
+    })
+    expect(screen.getByTestId('review-incomplete')).toBeInTheDocument()
+  })
+
+  it('offers the review only on that filter and with a review to open', () => {
     const onReviewIncomplete = vi.fn()
     renderBar({
       value: sel({ tags: 'noCover' }),
@@ -636,12 +647,7 @@ describe('QualityFilterBar', () => {
     })
     expect(screen.queryByTestId('review-incomplete')).toBeNull()
     cleanup()
-    renderBar({
-      value: sel({ tags: 'missingRequired' }),
-      tally: tally({ missingRequired: 0 }),
-      onReviewIncomplete,
-    })
-    expect(screen.queryByTestId('review-incomplete')).toBeNull()
+
     cleanup()
     renderBar({ value: sel({ tags: 'missingRequired' }), tally: tally({ missingRequired: 4 }) })
     expect(screen.queryByTestId('review-incomplete')).toBeNull()

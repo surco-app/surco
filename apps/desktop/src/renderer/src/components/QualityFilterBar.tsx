@@ -449,7 +449,7 @@ export function QualityFilterBar({
           <Tooltip label={tr('sidebar.filter.trashSuspects', { count: tally.suspect })} />
         </button>
       )}
-      {value.tags === 'missingRequired' && tally.missingRequired > 0 && onReviewIncomplete && (
+      {value.tags === 'missingRequired' && onReviewIncomplete && (
         <button
           type="button"
           data-testid="review-incomplete"
