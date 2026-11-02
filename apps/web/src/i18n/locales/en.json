@@ -1179,11 +1179,19 @@
       "review": {
         "lead": "And your library, tidied.",
         "rest": "Typos, spellings and duplicates."
+      },
+      "cues": {
+        "lead": "And your cues, placed.",
+        "rest": "Mark the drop and your flow does the rest."
+      },
+      "replace": {
+        "lead": "And your playlists, untouched.",
+        "rest": "Swap the MP3 for an AIFF and it stays in all of them."
       }
     },
     "replace": {
       "title": "Upgrade the file. Your playlists never notice.",
-      "lede": "If the track is already in your Apple Music, the button reads “Replace”. Any format works, the same one included, from an MP3 to an AIFF or from a 128 MP3 to a 320. Apple Music moves to the new file, and so do rekordbox, Engine DJ and Traktor if you sync them. The track stays in the ten playlists you had it in, cues included. No adding it back to each one by hand.",
+      "lede": "If the track is already in your Apple Music, the button reads “Replace”. Surco swaps the file and every program points to the new one, so you never add the track back to each playlist by hand.",
       "convertAll": "Convert 1 track",
       "search": "Search tracks",
       "file": "File",
@@ -1205,11 +1213,25 @@
       "cuesLabel": "Cue points",
       "intact": "untouched",
       "inPlace": "in place",
-      "fieldYear": "Year"
+      "fieldYear": "Year",
+      "points": {
+        "anyFormat": {
+          "title": "MP3 to AIFF, or whatever you like",
+          "text": "Any format works, the same one included, from a 128 MP3 to a 320."
+        },
+        "playlists": {
+          "title": "Playlists, untouched",
+          "text": "The track stays in every playlist it was in, cues included."
+        },
+        "programs": {
+          "title": "In every program",
+          "text": "Apple Music, and rekordbox, Engine DJ and Traktor too if you sync them."
+        }
+      }
     },
     "cues": {
-      "title": "Your rekordbox, Engine DJ and Traktor cues, in one click.",
-      "lede": "Click where the track drops, or let Auto mark suggest it. Your flow places the rest of the cues and Surco saves them to rekordbox, Engine DJ or Traktor. Engine DJ and Traktor take the hot cues only.",
+      "title": "Mark the drop. The rest of the cues place themselves.",
+      "lede": "Click where the track drops, or let Auto mark find it. Your flow places the other cues the same way on every track and Surco saves them to rekordbox, Engine DJ or Traktor.",
       "unsaved": "Not saved",
       "flow": "Flow",
       "flowName": "Subidón",
@@ -1217,7 +1239,21 @@
       "save": "Save to rekordbox",
       "addCall": "+ CALL",
       "autoButton": "Auto mark",
-      "ask": "Does it break here?"
+      "ask": "Does it break here?",
+      "points": {
+        "oneClick": {
+          "title": "One click, not eight",
+          "text": "Mark where the track drops and your flow places every other cue."
+        },
+        "yourFlow": {
+          "title": "Your flow, not someone else's",
+          "text": "The cues land where you always put them, the same on every track."
+        },
+        "programs": {
+          "title": "Straight to your program",
+          "text": "rekordbox, Engine DJ and Traktor. Engine DJ and Traktor take the hot cues only."
+        }
+      }
     },
     "app": {
       "search": "Search tracks",

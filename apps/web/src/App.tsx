@@ -10,9 +10,13 @@ import LibraryReview from './components/LibraryReview'
 import Reveal from './components/Reveal'
 import ScrollProgress from './components/ScrollProgress'
 import SectionView from './components/SectionView'
+import Spotlight from './components/Spotlight'
+import CuesScene from './components/scenes/CuesScene'
+import ReplaceScene from './components/scenes/ReplaceScene'
 import Walkthrough from './components/Walkthrough'
 import type { Language } from './i18n'
 import { PAGES } from './lib/nav'
+import { SCENE_ANCHORS } from './lib/sceneAnchors'
 
 // The home page is three things: what this is, what it does to a track, and how to
 // get it. Everything that used to sit below — the feature lists, the five-app
@@ -104,6 +108,18 @@ export default function App() {
             step from a 1152px hero to a 1024px body, and the seam landed exactly on
             the heading that introduces the steps. */}
         <div className="mx-auto max-w-6xl px-6 sm:px-10">
+          <Spotlight
+            id={SCENE_ANCHORS.cues}
+            copy="cues"
+            points={['oneClick', 'yourFlow', 'programs']}
+            scene={<CuesScene />}
+          />
+          <Spotlight
+            id={SCENE_ANCHORS.replace}
+            copy="replace"
+            points={['anyFormat', 'playlists', 'programs']}
+            scene={<ReplaceScene />}
+          />
           <Walkthrough />
           <LibraryReview />
         </div>

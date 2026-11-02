@@ -1179,11 +1179,19 @@
       "review": {
         "lead": "ライブラリも、すっきり整理。",
         "rest": "誤字、表記ゆれ、重複をまとめて確認。"
+      },
+      "cues": {
+        "lead": "キューも、自動で配置。",
+        "rest": "ドロップを指定すれば、残りはフローが置きます。"
+      },
+      "replace": {
+        "lead": "プレイリストは、そのまま。",
+        "rest": "MP3をAIFFに替えても、すべてのプレイリストに残ります。"
       }
     },
     "replace": {
       "title": "ファイルをアップグレード。プレイリストはそのまま。",
-      "lede": "すでにApple Musicにあるトラックなら、ボタンは「置き換える」に変わります。MP3からAIFF、128のMP3から320など、同じ形式も含めて置き換えられます。Apple Musicの参照先が新しいファイルに変わり、同期していればrekordbox、Engine DJ、Traktorも同様です。元の10個のプレイリストやキューはそのまま。各プレイリストに手作業で追加し直す必要はありません。",
+      "lede": "すでにApple Musicにあるトラックなら、ボタンは「置き換える」に変わります。Surcoがファイルを差し替え、各アプリが新しいファイルを参照するので、プレイリストごとに手作業で追加し直す必要はありません。",
       "convertAll": "1 トラックを変換",
       "search": "トラックを検索",
       "file": "ファイル",
@@ -1205,11 +1213,25 @@
       "cuesLabel": "キューポイント",
       "intact": "未変更",
       "inPlace": "そのまま",
-      "fieldYear": "年"
+      "fieldYear": "年",
+      "points": {
+        "anyFormat": {
+          "title": "MP3からAIFFへ、どの形式にも",
+          "text": "同じ形式も含めてどの形式でもOK。128のMP3から320への置き換えもできます。"
+        },
+        "playlists": {
+          "title": "プレイリストはそのまま",
+          "text": "トラックは元のすべてのプレイリストに、キューごと残ります。"
+        },
+        "programs": {
+          "title": "すべてのアプリで",
+          "text": "Apple Musicに加え、同期していればrekordbox、Engine DJ、Traktorも。"
+        }
+      }
     },
     "cues": {
-      "title": "rekordbox、Engine DJ、Traktorのキューをワンクリックで。",
-      "lede": "トラックのドロップ位置をクリックするか、自動マークに提案させましょう。残りのキューはフローが配置し、Surcoがrekordbox、Engine DJ、Traktorに保存します。Engine DJとTraktorにはホットキューのみが保存されます。",
+      "title": "ドロップを指定するだけ。残りのキューは自動で配置。",
+      "lede": "トラックのドロップ位置をクリックするか、自動マークに探させましょう。残りのキューはフローがどのトラックにも同じように配置し、Surcoがrekordbox、Engine DJ、Traktorに保存します。",
       "unsaved": "未保存",
       "flow": "フロー",
       "flowName": "Subidón",
@@ -1217,7 +1239,21 @@
       "save": "rekordboxに保存",
       "addCall": "+ CALL",
       "autoButton": "自動マーク",
-      "ask": "ここでブレイク？"
+      "ask": "ここでブレイク？",
+      "points": {
+        "oneClick": {
+          "title": "8回ではなく、1クリック",
+          "text": "ドロップ位置を指定すれば、ほかのキューはすべてフローが配置します。"
+        },
+        "yourFlow": {
+          "title": "あなた自身のフロー",
+          "text": "キューはいつもあなたが置く位置に、どのトラックにも同じように入ります。"
+        },
+        "programs": {
+          "title": "いつものアプリへ直接",
+          "text": "rekordbox、Engine DJ、Traktor。Engine DJとTraktorにはホットキューのみが保存されます。"
+        }
+      }
     },
     "app": {
       "search": "トラックを検索",

@@ -4,12 +4,10 @@ import { PAGES } from '../lib/nav'
 import { SCENE_ANCHORS } from '../lib/sceneAnchors'
 import Reveal from './Reveal'
 import BatchScene from './scenes/BatchScene'
-import CuesScene from './scenes/CuesScene'
 import DeclickScene from './scenes/DeclickScene'
 import DropScene from './scenes/DropScene'
 import NormalizeScene from './scenes/NormalizeScene'
 import QualityScene from './scenes/QualityScene'
-import ReplaceScene from './scenes/ReplaceScene'
 import { AnchorLink, Replayable } from './scenes/Replay'
 import SceneLayout from './scenes/SceneLayout'
 import TagScene from './scenes/TagScene'
@@ -120,20 +118,6 @@ export default function Walkthrough() {
 
       <SceneLayout id={SCENE_ANCHORS.batch} title={t('home.batch.title')} app={<BatchScene />}>
         {t('home.batch.lede')}
-      </SceneLayout>
-
-      {/* After the flow, because it comes after it in the work: the track is already in
-          the library when a better file turns up. */}
-      <SceneLayout
-        id={SCENE_ANCHORS.replace}
-        title={t('home.replace.title')}
-        app={<ReplaceScene />}
-      >
-        {t('home.replace.lede')}
-      </SceneLayout>
-
-      <SceneLayout id={SCENE_ANCHORS.cues} title={t('home.cues.title')} app={<CuesScene />}>
-        {t('home.cues.lede')}
       </SceneLayout>
 
       <Reveal>

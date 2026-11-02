@@ -18,7 +18,9 @@ import Icon, { type GlyphName } from './Icon'
 const ANCHORS: { key: string; icon: GlyphName; lead?: boolean }[] = [
   { key: 'tag', icon: 'tag', lead: true },
   { key: 'audio', icon: 'spectrum' },
+  { key: 'cues', icon: 'cue' },
   { key: 'export', icon: 'upload' },
+  { key: 'replace', icon: 'convert' },
   { key: 'review', icon: 'check' },
 ]
 
@@ -26,7 +28,7 @@ export default function HeroAnchors() {
   const { t } = useTranslation()
 
   return (
-    <ul className="mx-auto mt-10 grid max-w-5xl gap-4 text-left sm:grid-cols-2 sm:gap-8 lg:grid-cols-4">
+    <ul className="mx-auto mt-10 grid max-w-5xl gap-4 text-left sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
       {ANCHORS.map(({ key, icon, lead }) => (
         <li key={key} className="flex items-start gap-3">
           <Icon
