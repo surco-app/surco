@@ -243,9 +243,12 @@ function CueKeys({
     ['C', tr('editor.cues.keys.centre')],
     ['M', tr('editor.cues.keys.memory')],
     ['1…8', tr('editor.cues.keys.hot')],
+    ['↵', tr('editor.cues.keys.enter')],
     [formatShortcut(['backspace'], mac), tr('editor.cues.keys.remove')],
     [formatShortcut(['mod', 'z'], mac), tr('editor.cues.keys.undo')],
+    [formatShortcut(['shift', 'mod', 'z'], mac), tr('editor.cues.keys.redo')],
     ['+ −', tr('editor.cues.keys.zoom')],
+    ['Esc', tr('editor.cues.keys.esc')],
   ]
   return (
     <div ref={rootRef} className="relative shrink-0">

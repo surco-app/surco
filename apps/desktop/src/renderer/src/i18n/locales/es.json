@@ -911,9 +911,12 @@
         "centre": "centrar en la rejilla",
         "memory": "CALL en el cabezal",
         "hot": "hot cue A a H en el cabezal",
+        "enter": "colocar el flujo en el cabezal, o aceptar las propuestas",
         "remove": "borrar la seleccionada",
         "undo": "deshacer",
-        "zoom": "zoom"
+        "redo": "rehacer",
+        "zoom": "zoom",
+        "esc": "cerrar el menú abierto"
       },
       "resetColour": "Restablecer",
       "saveShort": "Guardar",

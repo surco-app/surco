@@ -911,9 +911,12 @@
         "centre": "centrer sur la grille",
         "memory": "CALL sur la tête de lecture",
         "hot": "hot cue A à H sur la tête de lecture",
+        "enter": "placer le flux sur la tête de lecture, ou accepter les propositions",
         "remove": "supprimer la sélection",
         "undo": "annuler",
-        "zoom": "zoom"
+        "redo": "rétablir",
+        "zoom": "zoom",
+        "esc": "fermer le menu ouvert"
       },
       "resetColour": "Réinitialiser",
       "saveShort": "Enregistrer",
