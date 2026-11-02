@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import type { LibraryTagUpdate } from '../../../shared/types'
+import type { ReviewedFileUpdate } from '../../../shared/types'
 import {
   type MusicReview as Review,
   type ReviewFilter,
@@ -85,7 +85,7 @@ interface Options {
   source?: ReviewSource
   ignored: string[]
   saveIgnored: (keys: string[]) => void
-  onFilesChanged: (updates: LibraryTagUpdate[]) => void
+  onFilesChanged: (updates: ReviewedFileUpdate[]) => void
 }
 
 function Owner({

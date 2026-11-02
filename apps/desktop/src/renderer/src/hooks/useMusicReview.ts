@@ -12,6 +12,7 @@ import type {
   MusicReviewField,
   RemoveCopyResult,
   ReviewEntry,
+  ReviewedFileUpdate,
   ReviewFix,
   ReviewOutcome,
   ReviewWriteField,
@@ -263,7 +264,7 @@ export function useMusicReview({
   initialFilter: ReviewFilter
   ignored: string[]
   saveIgnored: (keys: string[]) => void
-  onFilesChanged: (updates: LibraryTagUpdate[]) => void
+  onFilesChanged: (updates: ReviewedFileUpdate[]) => void
 }): MusicReview {
   const { t } = useTranslation()
   const { reportUndo } = useToast()

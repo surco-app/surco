@@ -44,6 +44,22 @@ describe('withReviewedFields', () => {
     expect(hasStagedEdits(next)).toBe(false)
   })
 
+  it('takes a year and grouping the review filled, so the row stops counting as incomplete', () => {
+    const next = withReviewedFields(row(), {
+      year: { from: '', to: '1995' },
+      grouping: { from: '', to: 'Warm' },
+    })
+    expect([next.meta.year, next.meta.grouping]).toEqual(['1995', 'Warm'])
+    expect(hasStagedEdits(next)).toBe(false)
+  })
+
+  it('keeps an unsaved value the app shows when the review filled the file with another', () => {
+    const shown = row({ meta: { ...row().meta, year: '1996' } })
+    const next = withReviewedFields(shown, { year: { from: '', to: '1995' } })
+    expect(next.meta.year).toBe('1996')
+    expect(hasStagedEdits(next)).toBe(true)
+  })
+
   it('matches the value read in any Unicode form', () => {
     const decomposed = 'José'
     const t = row({ meta: { ...row().meta, artist: decomposed } })

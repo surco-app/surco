@@ -25,12 +25,12 @@ import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
   DeclickConfig,
   FormatSetting,
-  LibraryTagUpdate,
   MetaTextKey,
   NormalizeConfig,
   PlaylistSource,
   PlaylistTrackRef,
   RekordboxQueueWritten,
+  ReviewedFileUpdate,
   SearchHints,
   SearchProviderId,
   Settings,
@@ -2082,7 +2082,7 @@ export default function App(): React.JSX.Element {
   // later Update does not write the old spelling back over the fix. Rows it did not touch
   // are left alone; the disk read only refreshes the label and the art.
   const onReviewFilesChanged = useStableCallback(
-    async (updates: LibraryTagUpdate[]): Promise<void> => {
+    async (updates: ReviewedFileUpdate[]): Promise<void> => {
       for (const { path, fields } of updates) {
         patchReviewedFields(path, fields)
         for (const row of tracksRef.current.filter((r) => r.inputPath === path))
