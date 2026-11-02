@@ -23,14 +23,15 @@ function setup(
     if (fails) throw new Error('EBUSY')
     return answer
   })
-  ;(window as unknown as { api: unknown }).api = { retireSuperseded, platform }
+  const logInfo = vi.fn<Api['logInfo']>()
+  ;(window as unknown as { api: unknown }).api = { retireSuperseded, platform, logInfo }
   const updateTrack = vi.fn()
   const reportTrashFailure = vi.fn()
   const hook = renderHook(
     ({ list }) => useRetireSuperseded({ tracks: list, updateTrack, reportTrashFailure }),
     { initialProps: { list: tracks } },
   )
-  return { retireSuperseded, updateTrack, reportTrashFailure, hook }
+  return { retireSuperseded, updateTrack, reportTrashFailure, logInfo, hook }
 }
 
 afterEach(() => vi.restoreAllMocks())
@@ -157,5 +158,65 @@ describe('useRetireSuperseded', () => {
     const { retireSuperseded } = setup([checking as TrackItem])
     await new Promise((r) => setTimeout(r, 0))
     expect(retireSuperseded).not.toHaveBeenCalled()
+  })
+
+  // Do it.aiff stayed behind after its conversion on 01/11 and the log said nothing: every
+  // original a format change should retire and does not now leaves its reason there, once.
+  describe('saying in the log why an original stays', () => {
+    it('gives the check that did not come back ok, once however often the row renders', async () => {
+      const failed = {
+        ...replaced,
+        verification: {
+          status: 'mismatch',
+          checks: [
+            { place: 'appleMusic', state: 'mismatch', detail: { key: 'musicPlaylistLost' } },
+          ],
+        },
+      } as TrackItem
+      const { logInfo, hook } = setup([failed])
+      hook.rerender({ list: [{ ...failed }] })
+      await waitFor(() => expect(logInfo).toHaveBeenCalledOnce())
+      expect(logInfo.mock.calls[0][0]).toBe(
+        `retire: kept ${replaced.supersededPath}: the check came back mismatch: appleMusic musicPlaylistLost`,
+      )
+    })
+
+    it('says another row loads the file', async () => {
+      const loaded = { ...replaced, id: 't2', inputPath: replaced.supersededPath } as TrackItem
+      const { logInfo } = setup([replaced, loaded])
+      await waitFor(() =>
+        expect(logInfo).toHaveBeenCalledWith(
+          `retire: kept ${replaced.supersededPath}: another row of the list loads it`,
+        ),
+      )
+    })
+
+    it('says a library or Apple Music still uses the file', async () => {
+      const { logInfo } = setup([replaced], { answer: 'used' })
+      await waitFor(() =>
+        expect(logInfo).toHaveBeenCalledWith(
+          `retire: kept ${replaced.supersededPath}: a DJ library or Apple Music uses it, or could not be asked`,
+        ),
+      )
+    })
+
+    it('still retires the original once a check run again comes back ok', async () => {
+      const failed = {
+        ...replaced,
+        verification: { status: 'mismatch', checks: [] },
+      } as unknown as TrackItem
+      const { hook, retireSuperseded, logInfo } = setup([failed])
+      await waitFor(() => expect(logInfo).toHaveBeenCalledOnce())
+
+      hook.rerender({ list: [replaced] })
+
+      await waitFor(() => expect(retireSuperseded).toHaveBeenCalledOnce())
+    })
+
+    it('says nothing when the original is retired', async () => {
+      const { logInfo, updateTrack } = setup([replaced])
+      await waitFor(() => expect(updateTrack).toHaveBeenCalled())
+      expect(logInfo).not.toHaveBeenCalled()
+    })
   })
 })

@@ -1209,6 +1209,10 @@ function registerIpc(): void {
     if (typeof message !== 'string') return
     log.error('[renderer]', message, typeof stack === 'string' ? stack : '')
   })
+  // A decision the renderer takes that the log should keep (why an original stayed).
+  ipcMain.on('log:info', (_e, message: unknown) => {
+    if (typeof message === 'string') log.info('[renderer]', message)
+  })
 
   // The reopen-last-session pair: the renderer saves the loaded paths and staged
   // edits as they change and asks for them back at launch to offer restoring the

@@ -407,6 +407,7 @@ export interface Api {
   // Fire-and-forget: renderer crashes land in main's log file, the only forensic
   // artifact in an app with no telemetry.
   logError: (message: string, stack?: string) => void
+  logInfo: (message: string) => void
   // Shows the log file in the OS file manager so a user can attach it to a report.
   revealLog: () => Promise<void>
   revealBackups: () => Promise<string>

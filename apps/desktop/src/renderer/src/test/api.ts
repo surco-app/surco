@@ -325,6 +325,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     trashReveal: async () => {},
     copyText: async () => {},
     logError: noop,
+    logInfo: noop,
     revealLog: async () => {},
     revealBackups: async () => '',
     copiesStatus: async () => [],

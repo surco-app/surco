@@ -2991,6 +2991,23 @@ describe('runProcessTrack — converting a library track to another format', () 
     expect(result).toMatchObject({ musicPersistentId: 'added-id', supersededPath: '/lib/A.aiff' })
   })
 
+  // Do it.aiff stayed behind after its conversion on 01/11 with no trace of why. When the
+  // replacement keeps the old entry, the original is never offered nor retired: the log says so.
+  it('says in the log why the original of a replacement that kept the old entry stays', async () => {
+    const info = vi.spyOn(log, 'info').mockImplementation(() => {})
+    const deps = converting('/lib/A.aiff', {
+      carryAppleMusicHistory: vi.fn(async () => 'mismatch' as const),
+    })
+
+    const result = await runProcessTrack(libraryJob(), deps)
+
+    expect(result.supersededPath).toBeUndefined()
+    expect(info).toHaveBeenCalledWith(
+      'retire: kept /lib/A.aiff: Apple Music kept the old entry (mismatch)',
+    )
+    info.mockRestore()
+  })
+
   it('replaces the entry the same way when the WAV is also kept in the output folder', async () => {
     const deps = converting('/lib/A.aiff')
 
