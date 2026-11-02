@@ -743,6 +743,8 @@
     "convertAllOverwriteTo": "Converter ({{count}}) · {{format}} sobre o original + {{programs}}",
     "editingMultiple": "Editando {{count}} faixas",
     "multipleValues": "Vários valores",
+    "valuesCount_one": "{{count}} valor",
+    "valuesCount_other": "{{count}} valores",
     "groupingAllTracks": "todas as faixas",
     "groupingPerTrack": "Por faixa · {{count}}",
     "groupingVarying_one": "{{count}} etiqueta varia",

@@ -1,3 +1,4 @@
+import { ChevronDown } from 'lucide-react'
 import type React from 'react'
 import { memo, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -39,6 +40,7 @@ interface FieldProps {
   // The selection's tracks disagree: described in words, since the placeholder saying so
   // is dropped by screen readers once the field has focus.
   mixed?: boolean
+  mixedValues?: { value: string; count: number }[]
   placeholder?: string
   suggestions?: string[]
   tagList?: TagList
@@ -67,6 +69,7 @@ export const Field = memo(function Field({
   required,
   invalid,
   mixed,
+  mixedValues,
   placeholder,
   suggestions,
   tagList,
@@ -88,6 +91,17 @@ export const Field = memo(function Field({
   // The text the input shows while the user types, kept local so a keystroke doesn't
   // touch the global track array (and its O(n) pipeline) until they pause or leave.
   const [draft, setDraft] = useState(value)
+  const [valuesOpen, setValuesOpen] = useState(false)
+  const valuesRef = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    if (!valuesOpen) return
+    const close = (e: MouseEvent) => {
+      if (!valuesRef.current?.contains(e.target as Node)) setValuesOpen(false)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [valuesOpen])
+  const listsValues = mixed === true && (mixedValues?.length ?? 0) > 0
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   // Whether the user has an edit in flight the global state hasn't caught up to yet
   // (typed but the debounce hasn't fired). The Editor remounts per track (key={track.id}),
@@ -188,7 +202,7 @@ export const Field = memo(function Field({
   )
   const control = (
     <>
-      <span className={`relative block ${width ? '' : '@[24rem]:col-start-2'}`}>
+      <span ref={valuesRef} className={`relative block ${width ? '' : '@[24rem]:col-start-2'}`}>
         <input
           ref={inputRef}
           id={inputId}
@@ -210,9 +224,51 @@ export const Field = memo(function Field({
           // A column of empty Album/Year/Genre boxes used to read as heavy black slabs
           // that dominated the form; now they wait quietly until you engage one.
           className={`w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)]/30 px-2.5 py-1.5 text-sm outline-none transition-colors placeholder:text-fg-faint hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)]/50 focus:border-[var(--color-accent)] focus:bg-[var(--color-field)] ${
-            hasMenu ? 'pr-8' : ''
+            hasMenu || listsValues ? 'pr-8' : ''
           }`}
         />
+        {listsValues && (
+          <>
+            <button
+              type="button"
+              data-testid={`field-values-${name}`}
+              aria-label={`${label}: ${placeholder ?? ''}`}
+              aria-haspopup="listbox"
+              aria-expanded={valuesOpen}
+              onClick={() => setValuesOpen((o) => !o)}
+              className="press absolute top-1/2 right-1 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
+            >
+              <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+            {valuesOpen && (
+              <div
+                role="listbox"
+                aria-label={label}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') setValuesOpen(false)
+                }}
+                className="animate-pop-flat absolute top-full right-0 left-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
+              >
+                {mixedValues?.map(({ value: v, count }) => (
+                  <button
+                    key={v}
+                    type="button"
+                    role="option"
+                    aria-selected={false}
+                    onClick={() => {
+                      setValuesOpen(false)
+                      commit(v)
+                    }}
+                    className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+                  >
+                    <span className="min-w-0 flex-1 truncate">{v}</span>
+                    <span className="shrink-0 text-xs tabular-nums text-fg-faint">{count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        )}
         {hasMenu && (
           <FieldInsertMenu
             fieldName={name}

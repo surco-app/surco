@@ -743,6 +743,8 @@
     "convertAllOverwriteTo": "変換 ({{count}}) · {{format}} 元ファイルの上に + {{programs}}",
     "editingMultiple": "{{count}} トラックの編集",
     "multipleValues": "複数の値",
+    "valuesCount_one": "{{count}} 件の値",
+    "valuesCount_other": "{{count}} 件の値",
     "groupingAllTracks": "すべてのトラック",
     "groupingPerTrack": "トラックごと · {{count}}",
     "groupingVarying_one": "{{count}} タグは異なります",
