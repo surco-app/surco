@@ -719,9 +719,9 @@
         ],
         "points": [
           "Verde «buena calidad»: el sonido llega arriba del todo, no falta nada. Ámbar «Dudosa»: corte antes de tiempo. Rojo: «Mala calidad», o «Fuente con pérdidas» si es un archivo sin pérdida con el corte de un códec dentro.",
-          "Un MP3 no se juzga contra la vara de un lossless: su corte es el formato, no un defecto, así que sale limpio si lo está. Lo que sí se acusa es un FLAC o un WAV con el corte de un códec dentro.",
+          "Un MP3 no se juzga contra la vara de un lossless: su corte es el formato, no un defecto, así que sale limpio si lo está. Lo que sí se acusa es un FLAC, un WAV o un AIFF con el corte de un códec dentro.",
           "«Posible reprocesado» es un aviso distinto, en ámbar: el espectro muestra agudos que parecen regenerados sobre un corte anterior. Es una sospecha medida, no una prueba; unos agudos solo planos salen como observación, sin veredicto.",
-          "Detecta también el lossless falso, un FLAC o un WAV que en realidad es un MP3 reempaquetado. Y a todo archivo que diga ir por encima de 44,1 kHz le contesta siempre por su frecuencia: hi-res de verdad, estirado desde 44,1, o un honesto «no se ha podido verificar» cuando no hay nada arriba que medir.",
+          "Detecta también el lossless falso, un FLAC, un WAV o un AIFF que en realidad es un MP3 reempaquetado. Y a todo archivo que diga ir por encima de 44,1 kHz le contesta siempre por su frecuencia: hi-res de verdad, estirado desde 44,1, o un honesto «no se ha podido verificar» cuando no hay nada arriba que medir.",
           "Un retículo sobre el espectro te dice la frecuencia exacta bajo el cursor.",
           "La sección Igualar volumen dibuja la onda con el clipping marcado en rojo, se amplía hasta el detalle de la muestra, separa los dos canales y previsualiza cómo quedará al normalizar. Y, una vez convertida, compara el antes y el después lado a lado o superpuestos.",
           "Guarda un informe del espectro en PNG, con su veredicto y su línea de corte, para compartirlo cuando alguien te pregunte por esa pista.",

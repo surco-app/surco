@@ -719,9 +719,9 @@
         ],
         "points": [
           "Grün „Gute Qualität“: Der Klang reicht bis ganz oben, nichts fehlt. Gelb „Zweifelhaft“: Er bricht zu früh ab. Rot: „Schlechte Qualität“ oder „Verlustbehaftete Quelle“, wenn eine verlustfreie Datei den Abschnitt eines Codecs in sich trägt.",
-          "Ein MP3 wird nicht an einem verlustfreien Maßstab gemessen: Sein Abschnitt gehört zum Format und ist kein Fehler, deshalb kommt es sauber heraus, wenn es sauber ist. Angeprangert wird ein FLAC oder WAV mit dem Abschnitt eines Codecs darin.",
+          "Ein MP3 wird nicht an einem verlustfreien Maßstab gemessen: Sein Abschnitt gehört zum Format und ist kein Fehler, deshalb kommt es sauber heraus, wenn es sauber ist. Angeprangert wird ein FLAC, WAV oder AIFF mit dem Abschnitt eines Codecs darin.",
           "„Möglicherweise nachbearbeitet“ ist eine andere Warnung, in Gelb: Das Spektrum zeigt Höhen, die über einem früheren Abschnitt neu erzeugt aussehen. Das ist ein gemessener Verdacht, kein Beweis. Höhen, die nur flach sind, erscheinen als Beobachtung, ohne Bewertung.",
-          "Es erkennt auch falsches Lossless, also ein FLAC oder WAV, das eigentlich ein umverpacktes MP3 ist. Und jede Datei, die mehr als 44,1 kHz angibt, bekommt immer eine Antwort zu ihrer Rate: echtes Hi-Res, von 44,1 hochgerechnet oder ein ehrliches „ließ sich nicht prüfen“, wenn dort oben nichts zu messen ist.",
+          "Es erkennt auch falsches Lossless, also ein FLAC, WAV oder AIFF, das eigentlich ein umverpacktes MP3 ist. Und jede Datei, die mehr als 44,1 kHz angibt, bekommt immer eine Antwort zu ihrer Rate: echtes Hi-Res, von 44,1 hochgerechnet oder ein ehrliches „ließ sich nicht prüfen“, wenn dort oben nichts zu messen ist.",
           "Ein Fadenkreuz über dem Spektrum zeigt die genaue Frequenz unter deinem Cursor.",
           "Der Bereich „Lautheitsnormalisierung“ zeichnet die Wellenform mit Clipping in Rot, zoomt bis auf einzelne Samples, trennt die beiden Kanäle und zeigt vorab, wie der Track nach dem Normalisieren aussieht. Nach dem Konvertieren vergleicht er vorher und nachher nebeneinander oder übereinandergelegt.",
           "Speichere einen Spektrumbericht als PNG, mit Bewertung und Abschnittslinie, um ihn zu teilen, wenn dich jemand nach diesem Track fragt.",

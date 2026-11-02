@@ -719,9 +719,9 @@
         ],
         "points": [
           "Vert « Bonne qualité » : le son monte jusqu'en haut, rien ne manque. Ambre « Douteux » : il coupe trop tôt. Rouge : « Mauvaise qualité », ou « Source avec pertes » quand un fichier sans perte porte en lui la coupure d'un codec.",
-          "Un MP3 n'est pas jugé à l'aune du sans perte : sa coupure vient du format, ce n'est pas un défaut, il ressort donc propre quand il l'est. Ce qui est signalé, c'est un FLAC ou un WAV qui cache la coupure d'un codec.",
+          "Un MP3 n'est pas jugé à l'aune du sans perte : sa coupure vient du format, ce n'est pas un défaut, il ressort donc propre quand il l'est. Ce qui est signalé, c'est un FLAC, un WAV ou un AIFF qui cache la coupure d'un codec.",
           "« Retraitement possible » est un autre avertissement, en ambre : le spectre montre des aigus qui semblent régénérés par-dessus une coupure antérieure. C'est un soupçon mesuré, pas une preuve ; des aigus simplement plats apparaissent comme une observation, sans verdict.",
-          "Il repère aussi le faux sans perte, un FLAC ou un WAV qui n'est en réalité qu'un MP3 reconditionné. Et tout fichier annonçant plus de 44,1 kHz reçoit toujours une réponse sur sa fréquence : vraie haute résolution, étirée depuis 44,1, ou un honnête « impossible à vérifier » quand il n'y a rien à mesurer là-haut.",
+          "Il repère aussi le faux sans perte, un FLAC, un WAV ou un AIFF qui n'est en réalité qu'un MP3 reconditionné. Et tout fichier annonçant plus de 44,1 kHz reçoit toujours une réponse sur sa fréquence : vraie haute résolution, étirée depuis 44,1, ou un honnête « impossible à vérifier » quand il n'y a rien à mesurer là-haut.",
           "Un réticule sur le spectre indique la fréquence exacte sous ton curseur.",
           "La section Normalisation du loudness dessine la forme d'onde avec l'écrêtage marqué en rouge, zoome jusqu'au détail de l'échantillon, sépare les deux canaux et prévisualise le résultat de la normalisation. Et, une fois le morceau converti, elle compare l'avant et l'après côte à côte ou superposés.",
           "Enregistre un rapport du spectre en PNG, avec son verdict et sa ligne de coupure, pour le partager quand on t'interroge sur ce morceau.",

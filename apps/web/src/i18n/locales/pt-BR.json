@@ -719,9 +719,9 @@
         ],
         "points": [
           "Verde “Boa qualidade”: o som chega até o topo, sem faltar nada. Âmbar “Duvidosa”: corta antes da hora. Vermelho: “Má qualidade”, ou “Fonte com perdas” quando um arquivo lossless traz dentro o corte de um codec.",
-          "Um MP3 não é medido com a régua do lossless: o corte dele é o formato, não um defeito, então ele sai limpo quando é o caso. O que é apontado é um FLAC ou um WAV com o corte de um codec dentro.",
+          "Um MP3 não é medido com a régua do lossless: o corte dele é o formato, não um defeito, então ele sai limpo quando é o caso. O que é apontado é um FLAC, um WAV ou um AIFF com o corte de um codec dentro.",
           "“Possível reprocessamento” é outro aviso, em âmbar: o espectro mostra agudos que parecem regenerados sobre um corte anterior. É uma suspeita medida, não uma prova; agudos apenas planos aparecem como observação, sem veredito.",
-          "Também pega o falso lossless, um FLAC ou WAV que na verdade é um MP3 reempacotado. E todo arquivo que diz ter mais de 44,1 kHz sempre recebe uma resposta sobre a sua taxa: hi-res genuíno, esticado a partir de 44,1, ou um honesto \"não foi possível verificar\" quando não há nada lá em cima para medir.",
+          "Também pega o falso lossless, um FLAC, WAV ou AIFF que na verdade é um MP3 reempacotado. E todo arquivo que diz ter mais de 44,1 kHz sempre recebe uma resposta sobre a sua taxa: hi-res genuíno, esticado a partir de 44,1, ou um honesto \"não foi possível verificar\" quando não há nada lá em cima para medir.",
           "Uma mira sobre o espectro mostra a frequência exata sob o cursor.",
           "A seção Normalização de volume desenha a forma de onda com o clipping marcado em vermelho, amplia até o detalhe da amostra, separa os dois canais e mostra como vai ficar ao normalizar. E, depois de convertida, compara o antes e o depois lado a lado ou sobrepostos.",
           "Salve um relatório do espectro em PNG, com o veredito e a linha de corte, para compartilhar quando alguém perguntar sobre aquela faixa.",
