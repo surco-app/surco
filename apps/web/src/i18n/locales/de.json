@@ -524,7 +524,7 @@
       },
       {
         "q": "Rührt es meine Originaldateien an?",
-        "a": "Das hängt davon ab, ob sich das Format ändert. Konvertierst du in ein anderes Format, bleibt das Original in Ruhe, und die Kopie landet in einem eigenen Ordner (Musik/Surco). Es gibt zwei Ausnahmen. Ersetzt die neue Kopie die alte in deiner Bibliothek, entfernt Surco die alte Datei, sobald es geprüft hat, dass die neue in Ordnung ist, und legt sie in den Papierkorb oder unter Backups. Und mit „Original bearbeiten“ wird die Datei an Ort und Stelle neu geschrieben, ein Formatwechsel löscht also das Original. Exportierst du erneut im selben Format, schreibt Surco die Datei an Ort und Stelle neu, so aktualisiert es die Tags, ohne das Audio neu zu kodieren. Wenn sich das Audio ändert (Konvertieren, Normalisieren, Kürzen), legt Surco zuerst eine Sicherungskopie des Originals an, die du direkt am Track wiederherstellst. Unter Einstellungen → Ausgabe wählst du, ob immer eine behalten wird, nur wenn sich das Audio ändert oder nie, und wie viele Tage lang und mit wie viel Platz."
+        "a": "Das hängt davon ab, ob sich das Format ändert. Konvertierst du in ein anderes Format, bleibt das Original in Ruhe, und die Kopie landet in einem eigenen Ordner (Musik/Surco). Es gibt zwei Ausnahmen. Ersetzt die neue Kopie die alte in deiner Bibliothek, entfernt Surco die alte Datei, sobald es geprüft hat, dass die neue in Ordnung ist, und legt sie in den Papierkorb oder unter Backups. Und mit „Original bearbeiten“ wird die Datei an Ort und Stelle neu geschrieben, ein Formatwechsel löscht also das Original. Exportierst du erneut im selben Format, schreibt Surco die Datei an Ort und Stelle neu, so aktualisiert es die Tags, ohne das Audio neu zu kodieren. Wenn sich das Audio ändert (Konvertieren, Normalisieren, Kürzen), legt Surco zuerst eine Sicherungskopie des Originals an, die du direkt am Track wiederherstellst. Unter Einstellungen → Ausgabe wählst du, ob du sie immer willst, nur wenn sich das Audio ändert, oder nie, und wie viele Tage und wie viel Platz sie belegen dürfen."
       },
       {
         "q": "Bleiben die Cue-Punkte erhalten?",
@@ -540,7 +540,7 @@
       },
       {
         "q": "Meine Bibliothek ist voller MP3s. Kann ich sie auf verlustfrei umstellen, ohne meine Playlists zu verlieren?",
-        "a": "Ja, genau dafür ist das Ersetzen da. Lade das AIFF oder FLAC desselben Tracks, und wenn Surco ihn in deiner Bibliothek findet, steht auf dem Button „Ersetzen“ statt „Hinzufügen“. Beim Konvertieren zeigt der Eintrag in Apple Music nicht mehr auf das MP3, sondern auf die neue Datei, und in rekordbox wird dieselbe Zeile umgeleitet. Sie behält ihre Playlists und Cue-Points, weil rekordbox über den Track verknüpft und nicht über den Pfad. Ein Vorbehalt. rekordbox analysiert die neue Datei und verschiebt womöglich das Beatgrid, also prüf das Grid danach. rekordbox muss geschlossen sein, damit in seine Datenbank geschrieben werden kann. Surco bietet an, es zu schließen, und legt vorher eine Sicherung an. Ist die Prüfung der neuen Datei in Ordnung und nutzt kein Programm mehr die alte, entfernt Surco die alte von selbst. Sie kommt in den Papierkorb, oder unter Backups › Musikdateien, wenn sie auf einem Laufwerk ohne Papierkorb liegt, etwa einem NAS. Mit „Nie“ in Einstellungen → Ausgabe wird sie endgültig gelöscht."
+        "a": "Ja, genau dafür ist das Ersetzen da. Lade das AIFF oder FLAC desselben Tracks, und wenn Surco ihn in deiner Bibliothek findet, steht auf dem Button „Ersetzen“ statt „Hinzufügen“. Beim Konvertieren zeigt der Eintrag in Apple Music nicht mehr auf das MP3, sondern auf die neue Datei, und in rekordbox wird derselbe Eintrag umgeleitet. Er behält seine Playlists und Cue-Points, weil rekordbox über den Track verknüpft und nicht über den Pfad. Beachte aber, dass rekordbox die neue Datei analysiert und womöglich das Beatgrid verschiebt, also prüf das Grid danach. rekordbox muss geschlossen sein, damit in seine Datenbank geschrieben werden kann. Surco bietet an, es zu schließen, und legt vorher eine Sicherung an. Ist die Prüfung der neuen Datei in Ordnung und nutzt kein Programm mehr die alte, entfernt Surco die alte von selbst. Sie kommt in den Papierkorb, oder unter Backups › Musikdateien, wenn sie auf einem Laufwerk ohne Papierkorb liegt, etwa einem NAS. Mit „Nie“ in Einstellungen → Ausgabe wird sie endgültig gelöscht."
       },
       {
         "q": "Funktioniert es mit Denon-Geräten (Engine DJ)?",
@@ -622,7 +622,7 @@
           "Surco liest Tags, Dauer und Cover jeder Datei im Handumdrehen und zeigt sie sofort in der Liste. Dieselbe Datei wird nie zweimal hinzugefügt."
         ],
         "points": [
-          "Formate sind WAV, FLAC, AIFF, ALAC, MP3, M4A, AAC, OGG und OPUS.",
+          "Unterstützte Formate sind WAV, FLAC, AIFF, ALAC, MP3, M4A, AAC, OGG und OPUS.",
           "Zieh ganze Ordner hinein: Surco durchsucht sie, fügt jede gefundene Audiodatei hinzu und meldet sich, wenn später neue Dateien darin auftauchen.",
           "Tracks erscheinen, sobald sie gefunden werden. Ein großer Ordner oder einer im Netzwerk füllt die Liste also sofort, statt dich vor einem leeren Bildschirm warten zu lassen.",
           "Ein Live-Zähler und ein Fortschrittsbalken zeigen, wie weit das Einlesen ist.",
@@ -664,8 +664,10 @@
           "Ist das Programm offen, wartet die Änderung, bis du es schließt, und vor dem Schreiben legt Surco eine Kopie unter Backups an.",
           "Tracks einer Playlist ohne Datei auf der Festplatte, etwa Streaming-Tracks, werden getrennt gezählt.",
           "Nutzt du eines dieser Programme nicht, blende es aus, dann bleibt die Spalte aufgeräumter.",
-          "Neben dem Namen von rekordbox oder Engine DJ exportiert das USB-Symbol seine Playlists auf einen USB-Stick."
-        ]
+          "Das USB-Symbol neben dem Namen von rekordbox oder Engine DJ exportiert deren Playlists auf einen USB-Stick."
+        ],
+        "shot": "fuentes-de.webp",
+        "shotCaption": "rekordbox in den Quellen geöffnet, mit einer Playlist in der Liste."
       },
       {
         "id": "editor",
@@ -721,7 +723,7 @@
           "„Möglicherweise nachbearbeitet“ ist eine andere Warnung, in Gelb: Das Spektrum zeigt Höhen, die über einem früheren Abschnitt neu erzeugt aussehen. Das ist ein gemessener Verdacht, kein Beweis. Höhen, die nur flach sind, erscheinen als Beobachtung, ohne Bewertung.",
           "Es erkennt auch falsches Lossless, also ein FLAC oder WAV, das eigentlich ein umverpacktes MP3 ist. Und jede Datei, die mehr als 44,1 kHz angibt, bekommt immer eine Antwort zu ihrer Rate: echtes Hi-Res, von 44,1 hochgerechnet oder ein ehrliches „ließ sich nicht prüfen“, wenn dort oben nichts zu messen ist.",
           "Ein Fadenkreuz über dem Spektrum zeigt die genaue Frequenz unter deinem Cursor.",
-          "Der Lautheitsbereich zeichnet die Wellenform mit Clipping in Rot, zoomt bis auf einzelne Samples, trennt die beiden Kanäle und zeigt vorab, wie die Normalisierung ihn hinterlässt. Nach dem Konvertieren vergleicht er vorher und nachher nebeneinander oder übereinandergelegt.",
+          "Der Bereich „Lautheitsnormalisierung“ zeichnet die Wellenform mit Clipping in Rot, zoomt bis auf einzelne Samples, trennt die beiden Kanäle und zeigt vorab, wie der Track nach dem Normalisieren aussieht. Nach dem Konvertieren vergleicht er vorher und nachher nebeneinander oder übereinandergelegt.",
           "Speichere einen Spektrumbericht als PNG, mit Bewertung und Abschnittslinie, um ihn zu teilen, wenn dich jemand nach diesem Track fragt.",
           "Mit „Beim Import alles analysieren“ (Einstellungen → Editor) wird jede Datei, die du hineinziehst, im Hintergrund vollständig analysiert, und alles ist fertig, wenn du den Track öffnest.",
           "Die Analyse wird zwischengespeichert, damit sie sich nicht wiederholt. Du kannst den Cache in den Einstellungen leeren, um alles von Grund auf neu zu berechnen."
@@ -853,7 +855,7 @@
           "Die Qualität stellst du unter Einstellungen → Format ein. MP3-Bitrate (320 bis 128 kbps oder VBR V0/V2), Bittiefe, Samplerate und FLAC-Kompression. Standardmäßig bleiben die Werte des Originals erhalten, außer der Bittiefe. „Korrigiert“ speichert eine auf 24 aufgefüllte 16-Bit-Datei verlustfrei als echtes 16 Bit. Unter Einstellungen → Ausgabe entscheidest du, wohin es geht. In einen Ausgabeordner, in deine Apple-Music-Bibliothek, neben das Original (Exporte im selben Format bekommen ein „(2)“ im Namen, die Quelle bleibt unberührt) oder „Original bearbeiten“, das die Datei an Ort und Stelle neu schreibt. Vorsicht, mit „Original bearbeiten“ löscht ein Formatwechsel das Original. Dort wählst du auch für rekordbox, Engine DJ und Traktor getrennt, ob eine Konvertierung sie in Ruhe lässt („Nicht anfassen“), die Tracks, die sie schon haben, auf den neuesten Stand bringt („Aktualisieren“) oder ihnen außerdem die neuen hinzufügt („Aktualisieren und hinzufügen“). Wenn du willst, schalte die Normalisierung ein (Lautheit oder Peak, mit Presets für Streaming, Club oder Broadcast), um die Lautstärke anzugleichen. Ist alles fertig, bringt dich „Datei zeigen“ im Finder oder Explorer zum Ergebnis."
         ],
         "points": [
-          "Formate sind AIFF, WAV, FLAC und ALAC (verlustfrei) und MP3, jedes in jedes. M4A, AAC, OGG und OPUS werden gelesen und in jedes davon konvertiert. MP3 mit 320 bis 128 kbps oder VBR V0/V2.",
+          "Konvertiert wird zwischen AIFF, WAV, FLAC und ALAC (verlustfrei) und MP3, jedes in jedes. M4A, AAC, OGG und OPUS werden gelesen und in jedes davon konvertiert. MP3 mit 320 bis 128 kbps oder VBR V0/V2.",
           "Ein erneuter Export im selben Format, ohne das Audio anzufassen, behält die Cue-Punkte von Traktor.",
           "Normalisierung, Kürzen und Klick-Reparatur kodieren das Audio neu: Die Traktor-Cues überstehen MP3, AIFF, FLAC und WAV in jeder Kombination. Verloren gehen sie nur bei ALAC, das keinen Platz dafür hat. Ab Werk sind diese Funktionen aus, und Surco warnt dich vor dem Konvertieren.",
           "Exportierst du einen Track auf sich selbst, werden bereits eingerechnete Normalisierung oder Declick nicht erneut angewendet: Ändern sich nur die Metadaten, wird das Audio nicht neu verarbeitet. So stapelst du nie Gain und verlierst keine Generation.",
@@ -894,7 +896,7 @@
           "Hast du die Liste gefiltert, konvertiert der Stapel nur, was du siehst.",
           "Konvertierungen laufen parallel auf den Kernen deines Rechners. Die im selben Format sind fast sofort fertig.",
           "Es nutzt nur die aktuellen Metadaten: Während des Stapels wird nichts aus deinen Quellen geladen.",
-          "„Format und Ziel“ unten im Editor ändert Format und Ziel nur für diesen Durchlauf. Deine Standards bleiben, wie sie waren."
+          "„Format und Ziel“ unten im Editor ändert Format und Ziel nur für diesen Durchlauf. Deine Standardeinstellungen bleiben, wie sie waren."
         ],
         "shot": "lote-de.webp",
         "shotCaption": "Drei Tracks ausgewählt, bereit zum Konvertieren in einem Rutsch."
@@ -912,8 +914,8 @@
           "Traktor muss geschlossen sein, damit in seine Sammlung geschrieben werden kann. Surco bietet an, es zu schließen, und legt eine Sicherung an, bevor es etwas anfasst. Ist Engine DJ offen, wartet, was Surco schreiben muss, bis es dran ist, und kommt beim Schließen hinein, ebenfalls mit Sicherung.",
           "Surco sagt dir, wenn ein Track schon in deiner Bibliothek ist, und prüft dabei die, die zu deinem Ziel passt. Das ist ein gut abgestimmter Hinweis, keine Garantie.",
           "Bearbeitest du einen Track später, aktualisiert Surco seine Kopie in Apple Music, statt sie zu duplizieren, und gibt es dort schon eine ältere Kopie, bietet es an, sie zu entfernen.",
-          "Du kannst einen Track ersetzen, den du schon hast. Lade eine andere Kopie von etwas aus deiner Bibliothek, in jedem Format, auch im selben (ein MP3 durch ein AIFF oder ein MP3 mit 128 durch eins mit 320), und der Button wird zu „Ersetzen“. Der Eintrag in Apple Music und die Zeile in rekordbox zeigen dann auf die neue Datei und behalten ihre Playlists und Cue-Points, in Apple Music außerdem Wiedergabezähler, deine Bewertung und den Favoriten. rekordbox berechnet das Beatgrid möglicherweise neu, wenn es eine andere Datei sieht, also prüf das Grid. Ändert sich das Format, entfernt Surco die alte Datei, sobald es die neue geprüft hat.",
-          "Steht „rekordbox-Sammlung beim Konvertieren aktualisieren“ auf „Aktualisieren“ oder „Aktualisieren und hinzufügen“ (Einstellungen › Ausgabe), bekommt die rekordbox-Zeile auch Titel, Artist, Album, Genre, Label, Remixer, Kommentar, Jahr, Track- und Discnummer und das Cover, sowohl beim Konvertieren als auch beim reinen Aktualisieren der Tags. BPM, Tonart und Cue-Points bleiben so, wie rekordbox sie hat, und ein Feld, das du in Surco leer lässt, löscht nicht das von rekordbox. rekordbox muss geschlossen sein, und Surco bietet an, es zu schließen.",
+          "Du kannst einen Track ersetzen, den du schon hast. Lade eine andere Kopie eines Tracks aus deiner Bibliothek, in jedem Format, auch im selben (ein MP3 durch ein AIFF oder ein MP3 mit 128 durch eins mit 320), und der Button wird zu „Ersetzen“. Die Einträge in Apple Music und rekordbox zeigen dann auf die neue Datei und behalten ihre Playlists und Cue-Points, in Apple Music außerdem Wiedergabezähler, deine Bewertung und die Favoritenmarkierung. rekordbox berechnet das Beatgrid möglicherweise neu, wenn es eine andere Datei sieht, also prüf das Grid. Ändert sich das Format, entfernt Surco die alte Datei, sobald es die neue geprüft hat.",
+          "Steht „rekordbox-Sammlung beim Konvertieren aktualisieren“ auf „Aktualisieren“ oder „Aktualisieren und hinzufügen“ (Einstellungen › Ausgabe), bekommt der rekordbox-Eintrag auch Titel, Artist, Album, Genre, Label, Remixer, Kommentar, Jahr, Track- und Discnummer und das Cover, sowohl beim Konvertieren als auch beim reinen Aktualisieren der Tags. BPM, Tonart und Cue-Points bleiben so, wie rekordbox sie hat, und ein Feld, das du in Surco leer lässt, löscht nicht das von rekordbox. rekordbox muss geschlossen sein, und Surco bietet an, es zu schließen.",
           "Tonart, Label, Katalognummer und Remixer kommen nicht bei Apple Music an (sie leben nur in den Tags der Datei), und FLAC wird nie geschickt, weil Musik damit nicht umgehen kann."
         ],
         "shot": "exportar-de.webp",
@@ -927,13 +929,15 @@
           "Du markierst die Playlists und wählst den USB-Stick, und bevor etwas kopiert wird, sagt dir Surco, wie viele Tracks neu sind, wie viele schon drauf waren, wie viele seit dem letzten Mal entfernt wurden und ob alles passt."
         ],
         "points": [
-          "Aus rekordbox trägt der USB-Stick Cues, Raster und Wellenformen, und rekordbox kann ihn weiter synchronisieren. Aus Engine DJ trägt er dessen Engine-Bibliothek.",
+          "Beim Export aus rekordbox bekommt der USB-Stick Cues, Raster und Wellenformen, und rekordbox kann ihn weiter synchronisieren. Beim Export aus Engine DJ bekommt er die Engine-Bibliothek.",
           "Die Musik wird so kopiert, wie sie ist. Ist dein CDJ älter, konvertiere vorher in AIFF, was FLAC ist oder über 24 Bit oder 48 kHz liegt.",
           "Surco warnt dich bei einem USB-Stick in exFAT, NTFS oder GPT, den manche CDJs nicht lesen, und bei Tracks, die auf einem CDJ-2000 vielleicht nicht laufen.",
           "„Musik vom USB-Stick löschen, die nicht mehr exportiert wird“ entfernt, was du aus deinen Playlists genommen hast.",
           "rekordbox oder Engine DJ müssen geschlossen sein. Brichst du ab oder wird der USB-Stick getrennt, behält er seine vorherige Bibliothek.",
           "Nur unter macOS und Windows."
-        ]
+        ],
+        "shot": "usb-de.webp",
+        "shotCaption": "„Auf USB exportieren“ mit den rekordbox-Playlists."
       },
       {
         "id": "traktor",
@@ -977,16 +981,18 @@
         "title": "Deine Bibliothek prüfen",
         "body": [
           "„Prüfen“ in der Werkzeugleiste geht deine Apple-Music-Mediathek, die geladene Liste oder eine Playlist durch und sammelt an einem Ort, was nicht stimmt. Bei jedem Fall siehst du, wie es ist und wie es wird, merkst vor, was du korrigieren willst, und wendest alles auf einmal an.",
-          "Die Änderungen landen in den Dateien, in Apple Music und, wenn du sie synchronisierst, in rekordbox, Engine DJ und Traktor. Vor dem Schreiben legt Surco eine Kopie jeder Datei und jeder Bibliothek an, und die Prüfung hat Rückgängig."
+          "Die Änderungen landen in den Dateien, in Apple Music und, wenn du sie synchronisierst, in rekordbox, Engine DJ und Traktor. Vor dem Schreiben legt Surco eine Kopie jeder Datei und jeder Bibliothek an, und in der Prüfung gibt es „Rückgängig“."
         ],
         "points": [
           "Schreibweisen fasst zusammen, was auf mehrere Arten geschrieben ist, etwa DJ Lara und Dj Lara, nicht passende Akzente und unsichtbare Leerzeichen oder Zeichen. Ein möglicher Tippfehler wird nie von selbst vorgemerkt.",
           "Duplikate findet denselben Track zweimal. Du wählst, welcher bleibt, und er übernimmt die Playlists des entfernten. Die Dateien des entfernten kommen in den Papierkorb, außer denen, die ein anderes Programm noch nutzt.",
-          "Schäden erkennt Probleme in den Cues von Traktor und Engine DJ, in der Dauer, die Engine DJ speichert, und im Genre, und repariert sie mit vorheriger Kopie.",
+          "Schäden erkennt Probleme in den Cues von Traktor und Engine DJ, in der Dauer, die Engine DJ speichert, und im Genre, und repariert sie, nachdem es eine Kopie angelegt hat.",
           "Unvollständig listet die Tracks, denen ein Pflichtfeld fehlt, und schlägt vor, wie es gefüllt wird, aus der App, aus einer Suche oder aus dem Dateinamen. „N Vorschläge vormerken“ fügt sie auf einmal hinzu.",
           "Fehlt ein Feld, das die Prüfung nicht schreibt, etwa BPM oder Tonart, bringt dich „Im Editor öffnen“ zum Track.",
           "BPM, Tonart, Cues und Bewertung bleiben beim Anwenden unverändert."
-        ]
+        ],
+        "shot": "revisar-de.webp",
+        "shotCaption": "„Prüfen“ auf einer rekordbox-Playlist, mit einem überzähligen Leerzeichen in einem Album."
       },
       {
         "id": "atajos",
@@ -1348,7 +1354,7 @@
       "title": "Jedes Format für seinen Zweck",
       "items": [
         {
-          "title": "AIFF, das alles liest",
+          "title": "AIFF, das überall läuft",
           "text": "Verlustfrei, mit Tags und Cover, und jeder CDJ und jede DJ-Software liest es."
         },
         {
@@ -2247,7 +2253,7 @@
             "setting": "Traktor-Sammlung beim Konvertieren aktualisieren",
             "value": "Aktualisieren",
             "optional": true,
-            "note": "Falls du Traktor nutzt. Wähle zuerst direkt darunter deine collection.nml, dann sieht Traktor die Cue-Points in der AIFF."
+            "note": "Falls du Traktor nutzt. Wähle zuerst direkt darunter deine collection.nml, dann sieht Traktor die Cue-Points im AIFF."
           }
         ],
         "steps": [
@@ -2500,7 +2506,7 @@
           }
         ],
         "points": [
-          "Aus rekordbox trägt der USB-Stick Cues, Raster und Wellenformen jedes Tracks, und rekordbox kann ihn weiter synchronisieren. Aus Engine DJ trägt er dessen Engine-Bibliothek, bereit für den Player.",
+          "Beim Export aus rekordbox bekommt der USB-Stick Cues, Raster und Wellenformen jedes Tracks, und rekordbox kann ihn weiter synchronisieren. Beim Export aus Engine DJ bekommt er die Engine-Bibliothek, bereit für den Player.",
           "Der Export kopiert die Dateien so, wie sie sind. Ist dein CDJ älter und hast du FLACs oder Tracks über 24 Bit oder 48 kHz, konvertiere sie vorher in AIFF.",
           "Vor dem Export warnt Surco dich, wenn der USB-Stick in exFAT, NTFS oder GPT formatiert ist, was manche CDJs nicht lesen, und bei Tracks, die auf einem CDJ-2000 vielleicht nicht laufen.",
           "„Musik vom USB-Stick löschen, die nicht mehr exportiert wird“ räumt auf, was du seit dem letzten Mal aus deinen Playlists genommen hast.",
@@ -3060,7 +3066,7 @@
           },
           {
             "title": "Prüfe, ob welche fehlen",
-            "text": "Surco lädt die Dateien, die du auf der Festplatte hast. Streaming-Tracks oder nicht geladene Tracks werden getrennt gezählt, als Tracks ohne Datei auf der Festplatte."
+            "text": "Surco lädt die Dateien, die du auf der Festplatte hast. Streaming-Tracks oder nicht heruntergeladene Tracks werden getrennt gezählt, als Tracks ohne Datei auf der Festplatte."
           },
           {
             "title": "Wähle das Format",

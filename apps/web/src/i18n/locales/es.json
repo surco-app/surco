@@ -665,7 +665,9 @@
           "Las pistas de una playlist que no tienen fichero en el disco, como las de streaming, se cuentan aparte.",
           "Si no usas alguno de esos programas, ocúltalo y el panel queda más limpio.",
           "Junto al nombre de rekordbox o de Engine DJ, el icono de USB exporta sus playlists a un USB."
-        ]
+        ],
+        "shot": "fuentes-es.webp",
+        "shotCaption": "rekordbox abierto en Fuentes, con una de sus playlists cargada en la lista."
       },
       {
         "id": "editor",
@@ -933,7 +935,9 @@
           "«Borrar del USB la música que ya no se exporta» quita lo que sacaste de tus playlists.",
           "rekordbox o Engine DJ tienen que estar cerrados. Si cancelas o el USB se desconecta, se queda con su biblioteca anterior.",
           "Solo en macOS y Windows."
-        ]
+        ],
+        "shot": "usb-es.webp",
+        "shotCaption": "Exportar a USB con las playlists de rekordbox."
       },
       {
         "id": "traktor",
@@ -986,7 +990,9 @@
           "Incompletas lista las pistas a las que les falta un campo obligatorio y propone cómo rellenarlo, desde la app, desde una búsqueda o desde el nombre del fichero. «Meter N propuestas en la tanda» las añade de una vez.",
           "Si lo que falta es un campo que la revisión no escribe, como el BPM o la tonalidad, «Abrir en el editor» te lleva a la pista.",
           "El BPM, la tonalidad, los cues y la valoración no se tocan al aplicar."
-        ]
+        ],
+        "shot": "revisar-es.webp",
+        "shotCaption": "Revisar sobre una playlist de rekordbox, con un espacio de más en un álbum."
       },
       {
         "id": "atajos",
