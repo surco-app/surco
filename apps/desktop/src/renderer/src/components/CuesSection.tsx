@@ -9,7 +9,6 @@ import {
   Play,
   Trash2,
   Undo2,
-  X,
 } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
@@ -993,71 +992,74 @@ function Editing({
   )
   const autoHeight = maximized ? 'h-8 rounded-lg px-3' : 'h-6 rounded-md px-2'
   const acceptLabel = tr('editor.cues.auto.accept', { count: proposals.length })
-  const autoControl =
-    proposals.length > 0 ? (
-      <>
-        <button
-          type="button"
-          data-testid="cues-auto-accept"
-          aria-label={maximized ? undefined : acceptLabel}
-          title={maximized ? undefined : acceptLabel}
-          onClick={() => {
-            acceptProposals()
-            if (maximized) focusEditor()
-          }}
-          className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-dashed border-[var(--color-accent)] text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] ${autoHeight}`}
-        >
-          {maximized ? (
-            acceptLabel
-          ) : (
-            <>
-              <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />
-              {proposals.length}
-            </>
-          )}
-          <kbd className="rounded border border-[var(--color-accent)] px-1 font-sans text-[11px]">
-            ↵
-          </kbd>
-        </button>
-        <button
-          type="button"
-          data-testid="cues-auto-discard"
-          aria-label={maximized ? undefined : tr('editor.cues.auto.discard')}
-          title={maximized ? undefined : tr('editor.cues.auto.discard')}
-          onClick={() => {
-            setProposed(null)
-            if (maximized) focusEditor()
-          }}
-          className="press flex shrink-0 items-center whitespace-nowrap px-1 text-xs text-fg-dim hover:text-fg"
-        >
-          {maximized ? (
-            tr('editor.cues.auto.discard')
-          ) : (
-            <X className="h-3.5 w-3.5" aria-hidden="true" />
-          )}
-        </button>
-      </>
-    ) : (
+  const sureCount = proposals.filter((p) => p.sure).length
+  const reviewBar = proposals.length > 0 && (
+    <div
+      data-testid="cues-auto-review"
+      className={`flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border border-[var(--color-accent)]/35 bg-[var(--color-accent)]/10 px-3 py-1.5 text-xs ${
+        maximized ? 'shrink-0' : 'mb-2'
+      }`}
+    >
+      <span className="font-semibold text-fg">
+        {tr('editor.cues.auto.count', { count: proposals.length })}
+      </span>
+      {sureCount > 0 && sureCount < proposals.length && (
+        <span className="text-fg-dim">
+          {tr('editor.cues.batch.confidence', {
+            sure: tr('editor.cues.batch.sure', { count: sureCount }),
+            doubtful: tr('editor.cues.batch.doubtful', { count: proposals.length - sureCount }),
+          })}
+        </span>
+      )}
+      <span className="flex-1" />
       <button
         type="button"
-        data-testid="cues-auto-mark"
-        disabled={provisional || blocked ? true : engine ? readingAudio : !words}
-        title={
-          provisional
-            ? tr('editor.cues.provisional.auto')
-            : engine || words
-              ? undefined
-              : tr(copy.autoUnanalysed)
-        }
-        onClick={autoMark}
-        className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-accent)] text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] disabled:opacity-40 ${autoHeight}`}
+        data-testid="cues-auto-accept"
+        onClick={() => {
+          acceptProposals()
+          focusEditor()
+        }}
+        className="press flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md bg-[var(--color-accent)] px-2.5 font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
       >
-        <svg viewBox="0 0 16 16" className="h-3 w-3" aria-hidden="true">
-          <path d="M8 1 9.6 6.4 15 8 9.6 9.6 8 15 6.4 9.6 1 8 6.4 6.4Z" fill="currentColor" />
-        </svg>
-        {readingAudio ? tr('editor.cues.engine.autoReading') : tr('editor.cues.auto.button')}
+        {acceptLabel}
+        <kbd className="rounded border border-[var(--color-on-accent)]/40 px-1 font-sans text-[11px]">
+          ↵
+        </kbd>
       </button>
-    )
+      <button
+        type="button"
+        data-testid="cues-auto-discard"
+        onClick={() => {
+          setProposed(null)
+          focusEditor()
+        }}
+        className="press shrink-0 whitespace-nowrap rounded px-1 text-fg-dim hover:text-fg"
+      >
+        {tr('editor.cues.auto.discard')}
+      </button>
+    </div>
+  )
+  const autoControl = (
+    <button
+      type="button"
+      data-testid="cues-auto-mark"
+      disabled={provisional || blocked ? true : engine ? readingAudio : !words}
+      title={
+        provisional
+          ? tr('editor.cues.provisional.auto')
+          : engine || words
+            ? undefined
+            : tr(copy.autoUnanalysed)
+      }
+      onClick={autoMark}
+      className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-accent)] text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] disabled:opacity-40 ${autoHeight}`}
+    >
+      <svg viewBox="0 0 16 16" className="h-3 w-3" aria-hidden="true">
+        <path d="M8 1 9.6 6.4 15 8 9.6 9.6 8 15 6.4 9.6 1 8 6.4 6.4Z" fill="currentColor" />
+      </svg>
+      {readingAudio ? tr('editor.cues.engine.autoReading') : tr('editor.cues.auto.button')}
+    </button>
+  )
   const actions = (
     <div data-testid="cues-actions" className="flex shrink-0 items-center gap-1">
       {!unchanged && <UnsavedMark />}
@@ -1405,6 +1407,7 @@ function Editing({
       {maximized ? (
         <>
           {toolbar}
+          {reviewBar}
           <div className="flex shrink-0 flex-col gap-1">
             {strip}
             <CuePhraseBand sections={read.sections ?? []} durationMs={read.durationMs} />
@@ -1414,6 +1417,7 @@ function Editing({
         </>
       ) : (
         <>
+          {reviewBar}
           <div
             data-testid="cues-surface"
             className="overflow-hidden rounded-md bg-[var(--color-panel-2)]"

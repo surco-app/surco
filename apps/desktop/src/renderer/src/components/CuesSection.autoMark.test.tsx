@@ -254,20 +254,48 @@ describe('Auto marcar', () => {
     expect(proposals()).toHaveLength(2)
   })
 
-  it('offers to accept them all and to discard in full screen, and Descartar leaves the draft as it was', async () => {
+  // The suggestions are a review the DJ is in the middle of, not a state of the Auto mark
+  // button. A bar of their own says how many there are and what accepting or removing them
+  // does, in words, the same folded and in full screen.
+  it.each([
+    ['folded', async () => {}],
+    ['full screen', async () => openFull()],
+  ])('shows the suggestions in a bar of their own over the waves, %s', async (_, layout) => {
+    setup()
+    await ready()
+    await layout()
+    await autoMark()
+    const review = screen.getByTestId('cues-auto-review')
+    expect(review).toHaveTextContent('2 suggestions')
+    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent('Accept the 2 suggestions↵')
+    expect(screen.getByTestId('cues-auto-discard')).toHaveTextContent('Remove suggestions')
+    expect(review).toContainElement(screen.getByTestId('cues-auto-accept'))
+    expect(review).toContainElement(screen.getByTestId('cues-auto-discard'))
+    expect(
+      review.compareDocumentPosition(screen.getByTestId('cue-wave')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(autoButton()).toBeInTheDocument()
+  })
+
+  it('removes the suggestions and leaves the draft as it was', async () => {
     setup()
     await ready()
     await openFull()
     await autoMark()
-    expect(screen.queryByTestId('cues-auto-mark')).toBeNull()
-    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent('Accept the 2 suggestions')
-    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent('↵')
-    expect(screen.getByTestId('cues-auto-discard')).toHaveTextContent('Discard')
     fireEvent.click(screen.getByTestId('cues-auto-discard'))
     expect(proposals()).toEqual([])
+    expect(screen.queryByTestId('cues-auto-review')).toBeNull()
     expect(realMarks()).toHaveLength(0)
     expect(screen.getByTestId('cues-step-back')).toBeDisabled()
-    expect(autoButton()).toBeInTheDocument()
+  })
+
+  it('says how many are sure and how many doubtful when both kinds are there', async () => {
+    dropProposals.mockReturnValue([sure(bar(64)), doubt(bar(128))])
+    setup()
+    await ready()
+    await autoMark()
+    expect(screen.getByTestId('cues-auto-review')).toHaveTextContent('1 sure, 1 doubtful')
   })
 
   it('opens the pill toward the middle of the zoomed wave, so ✓ and ✕ never fall off its edge', async () => {
@@ -291,23 +319,8 @@ describe('Auto marcar', () => {
     seekStrip(bar(64))
     fireEvent.click(screen.getByTestId(`cue-proposal-drop-${bar(64)}`))
     expect(proposals()).toEqual([`cue-wave-proposal-${bar(128)}`])
-    expect(screen.getByTestId('cues-auto-accept')).toHaveAccessibleName('Accept the suggestion')
+    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent('Accept the suggestion↵')
     expect(realMarks()).toHaveLength(0)
-  })
-
-  it('keeps accept and discard to an icon and the count in the folded header, so the header holds one line with the maximize button', async () => {
-    setup()
-    await ready()
-    await autoMark()
-    const accept = screen.getByTestId('cues-auto-accept')
-    expect(accept).toHaveAccessibleName('Accept the 2 suggestions')
-    expect(accept).toHaveAttribute('title', 'Accept the 2 suggestions')
-    expect(accept).toHaveTextContent(/^2↵$/)
-    const discard = screen.getByTestId('cues-auto-discard')
-    expect(discard).toHaveAccessibleName('Discard')
-    expect(discard).toHaveTextContent('')
-    fireEvent.click(discard)
-    expect(proposals()).toEqual([])
   })
 
   it('leaves out a proposal in the bar of a CALL already there, so it never moves or doubles a point', async () => {
@@ -382,7 +395,8 @@ describe('Auto marcar', () => {
     const actions = screen.getByTestId('cues-toolbar')
     expect(within(actions).getByTestId('cues-auto-mark')).toBeInTheDocument()
     await autoMark()
-    expect(within(actions).getByTestId('cues-auto-accept')).toBeInTheDocument()
+    expect(within(actions).getByTestId('cues-auto-mark')).toBeInTheDocument()
+    expect(within(actions).queryByTestId('cues-auto-accept')).toBeNull()
   })
 })
 

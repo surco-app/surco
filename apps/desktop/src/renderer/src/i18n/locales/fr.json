@@ -941,9 +941,11 @@
       "zoomOut": "Zoom arrière",
       "auto": {
         "button": "Marquage auto",
+        "count_one": "{{count}} proposition",
+        "count_other": "{{count}} propositions",
         "accept_one": "Accepter la proposition",
         "accept_other": "Accepter les {{count}} propositions",
-        "discard": "Ignorer",
+        "discard": "Retirer les propositions",
         "ask": "Ça décolle ici ? {{time}}",
         "acceptOne": "Accepter",
         "drop": "Retirer",

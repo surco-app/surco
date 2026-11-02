@@ -941,9 +941,11 @@
       "zoomOut": "Alejar",
       "auto": {
         "button": "Auto marcar",
+        "count_one": "{{count}} propuesta",
+        "count_other": "{{count}} propuestas",
         "accept_one": "Aceptar la propuesta",
         "accept_other": "Aceptar las {{count}} propuestas",
-        "discard": "Descartar",
+        "discard": "Quitar propuestas",
         "ask": "¿Rompe aquí? {{time}}",
         "acceptOne": "Aceptar",
         "drop": "Quitar",

@@ -941,9 +941,11 @@
       "zoomOut": "Afastar",
       "auto": {
         "button": "Marcar automático",
+        "count_one": "{{count}} sugestão",
+        "count_other": "{{count}} sugestões",
         "accept_one": "Aceitar a sugestão",
         "accept_other": "Aceitar as {{count}} sugestões",
-        "discard": "Descartar",
+        "discard": "Remover sugestões",
         "ask": "Explode aqui? {{time}}",
         "acceptOne": "Aceitar",
         "drop": "Remover",
