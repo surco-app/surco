@@ -1059,7 +1059,7 @@
     "anchorLink": "Link zu diesem Beispiel",
     "walkthrough": {
       "title": "Ein Track, von Anfang bis Ende",
-      "lede": "Sieben Schritte, ein Fenster. Unterwegs erfährst du, welche deiner FLACs in Wahrheit MP3s sind."
+      "lede": "Sieben Schritte, ein Fenster. Unterwegs erfährst du, welche deiner verlustfreien Dateien in Wahrheit MP3s sind."
     },
     "drop": {
       "title": "Reinziehen, und sie sind drin.",
@@ -1166,9 +1166,9 @@
       },
       "audio": {
         "title": "Und nebenbei besserer Sound",
-        "note": "Erkennt FLACs, die aus einem MP3 stammen, kürzt Stille, entfernt Knackser und Rauschen von Vinyl und gleicht die Lautstärke an.",
+        "note": "Erkennt verlustfreie Dateien, die aus einem MP3 stammen, kürzt Stille, entfernt Knackser und Rauschen von Vinyl und gleicht die Lautstärke an.",
         "lead": "Und nebenbei besserer Sound.",
-        "rest": "Erkennt FLACs, die aus einem MP3 stammen."
+        "rest": "Erkennt verlustfreie Dateien, die aus einem MP3 stammen."
       },
       "export": {
         "title": "Und sie landen in deinem Programm",

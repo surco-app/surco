@@ -1059,7 +1059,7 @@
     "anchorLink": "Link para este exemplo",
     "walkthrough": {
       "title": "Uma faixa, do início ao fim",
-      "lede": "Sete passos, uma janela. No caminho, você vai descobrir quais dos seus FLAC são na verdade MP3."
+      "lede": "Sete passos, uma janela. No caminho, você vai descobrir quais dos seus arquivos lossless são na verdade MP3."
     },
     "drop": {
       "title": "Soltou, entrou.",
@@ -1166,9 +1166,9 @@
       },
       "audio": {
         "title": "E um áudio melhor de quebra",
-        "note": "Descobre os FLAC que vieram de um MP3, corta silêncios, limpa clicks e ruído do vinil e nivela o volume.",
+        "note": "Descobre os arquivos lossless que vieram de um MP3, corta silêncios, limpa clicks e ruído do vinil e nivela o volume.",
         "lead": "E um áudio melhor de quebra.",
-        "rest": "Descobre os FLAC que vieram de um MP3."
+        "rest": "Descobre os arquivos lossless que vieram de um MP3."
       },
       "export": {
         "title": "E elas caem no seu programa",

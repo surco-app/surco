@@ -1059,7 +1059,7 @@
     "anchorLink": "Link to this example",
     "walkthrough": {
       "title": "One track, start to finish",
-      "lede": "Seven steps, one window. Along the way you'll find out which of your FLACs are really MP3s."
+      "lede": "Seven steps, one window. Along the way you'll find out which of your lossless files are really MP3s."
     },
     "drop": {
       "title": "Drop them and they're in.",
@@ -1166,9 +1166,9 @@
       },
       "audio": {
         "title": "And better audio while it does",
-        "note": "Catches the FLACs that came from an MP3, trims silence, cleans clicks and noise off vinyl and levels the volume.",
+        "note": "Catches the lossless files that came from an MP3, trims silence, cleans clicks and noise off vinyl and levels the volume.",
         "lead": "And better audio while it does.",
-        "rest": "Catches the FLACs that came from an MP3."
+        "rest": "Catches the lossless files that came from an MP3."
       },
       "export": {
         "title": "And they land in your program",
