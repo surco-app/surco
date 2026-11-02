@@ -643,3 +643,30 @@ describe('macOS Reduce transparency keeps the dim behind a modal but drops the f
     })
   }
 })
+
+// Reopening the player while it slides out ran its entrance keyframes from the very bottom,
+// so the half-gone card jumped down before rising again. A transition starts from the value
+// on screen, so a change of mind mid-exit turns the card around where it is.
+describe('player arrival and exit', () => {
+  const rule = (selector: string): string => {
+    const at = css.indexOf(`${selector} {`)
+    return at < 0 ? '' : css.slice(at, css.indexOf('}', at))
+  }
+
+  it('moves the card with a transition, never with keyframes', () => {
+    expect(rule('.player-card')).toMatch(/transition:[^;]*transform/)
+    expect(rule('.player-card')).not.toContain('animation')
+    expect(css).not.toContain('.animate-player-in')
+    expect(css).not.toContain('.animate-player-out')
+  })
+
+  it('rises from below its own height on arrival and leaves back down the same way', () => {
+    const start = css.slice(css.lastIndexOf('@starting-style'))
+    expect(start).toMatch(
+      /\.player-card\s*\{[^}]*transform: translateY\(calc\(100% \+ 0\.75rem\)\)/,
+    )
+    expect(rule('.player-card[data-leaving]')).toContain(
+      'transform: translateY(calc(100% + 0.75rem))',
+    )
+  })
+})
