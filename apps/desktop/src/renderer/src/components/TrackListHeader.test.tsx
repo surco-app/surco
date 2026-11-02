@@ -49,6 +49,7 @@ function renderHeader(over: Partial<Parameters<typeof TrackListHeader>[0]> = {})
       selectedPosition={1}
       canReviewList
       reviewDetail="The 1 track in the list. Changes the file"
+      listCommands={() => []}
       {...handlers}
       {...over}
     />,
@@ -64,7 +65,7 @@ const openMenu = (): HTMLElement => {
 describe('TrackListHeader actions row', () => {
   it('keeps the everyday actions one click away as icons and names the occasional list-wide ones in a ⋯ menu', () => {
     renderHeader()
-    for (const id of ['add-files', 'select-all', 'reveal-selected', 'remove-selected']) {
+    for (const id of ['add-files', 'select-all', 'remove-selected']) {
       expect(screen.getByTestId(id)).toBeVisible()
     }
     for (const id of [
@@ -102,6 +103,49 @@ describe('TrackListHeader actions row', () => {
       i18n.t('header.menu.trash'),
     )
     expect(within(menu).getByTestId('clear-all')).toHaveTextContent(i18n.t('header.menu.clear'))
+  })
+
+  // Numbering, trimming, renaming and the exports lived only in ⌘K: whoever never opened
+  // the palette never learned they existed. The menu lists them from the same registry, so
+  // a command greys here exactly when it greys in the palette.
+  it('lists the palette-only list tools between the edits and the destructive items', () => {
+    const run = vi.fn()
+    const command = (id: string, enabled = true) => ({
+      id,
+      title: `title ${id}`,
+      enabled,
+      group: 'tags' as const,
+      run,
+    })
+    renderHeader({
+      listCommands: () => [
+        command('number-tracks'),
+        command('strip-numbering', false),
+        command('export'),
+      ],
+    })
+    const menu = openMenu()
+    expect(
+      within(menu)
+        .getAllByRole('menuitem')
+        .map((el) => el.dataset.testid),
+    ).toEqual([
+      'list-review-open',
+      'fill-all',
+      'open-find-replace',
+      'list-command-number-tracks',
+      'list-command-strip-numbering',
+      'list-command-export',
+      'trash-selected',
+      'clear-all',
+    ])
+    expect(within(menu).getByTestId('list-command-number-tracks')).toHaveTextContent(
+      'title number-tracks',
+    )
+    expect(within(menu).getByTestId('list-command-strip-numbering')).toBeDisabled()
+    fireEvent.click(within(menu).getByTestId('list-command-export'))
+    expect(run).toHaveBeenCalledOnce()
+    expect(screen.queryByRole('menu')).toBeNull()
   })
 
   it('marks clearing the list as destructive, since it is the one item that throws work away', () => {

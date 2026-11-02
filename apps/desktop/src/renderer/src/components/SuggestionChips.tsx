@@ -7,6 +7,8 @@ interface SuggestionChipsProps {
   suggestions: string[]
   isOn: (s: string) => boolean
   isPartial?: (s: string) => boolean
+  partialLabel?: (s: string) => string
+  addable?: boolean
   onPick: (s: string) => void
   scope?: string
   dim?: boolean
@@ -19,6 +21,8 @@ export function SuggestionChips({
   suggestions,
   isOn,
   isPartial,
+  partialLabel,
+  addable,
   onPick,
   scope,
   dim,
@@ -39,6 +43,19 @@ export function SuggestionChips({
     revealFromRef.current = null
     firstRevealedRef.current?.focus()
   }, [chipsExpanded])
+  const stateOf = (s: string) => (isOn(s) ? 'on' : isPartial?.(s) ? 'some' : 'off')
+  const content = (s: string): React.ReactNode => {
+    const state = stateOf(s)
+    return (
+      <>
+        {addable && state === 'off' && <span aria-hidden="true">+</span>}
+        {s}
+        {partialLabel && state === 'some' && (
+          <span className="ml-1 tabular-nums text-fg-faint">{partialLabel(s)}</span>
+        )}
+      </>
+    )
+  }
   return (
     <span
       ref={containerRef}
@@ -52,7 +69,7 @@ export function SuggestionChips({
       }`}
     >
       {(chipsExpanded ? suggestions : suggestions.slice(0, visibleCount)).map((s, i) => {
-        const state = isOn(s) ? 'on' : isPartial?.(s) ? 'some' : 'off'
+        const state = stateOf(s)
         return (
           <button
             key={s}
@@ -72,15 +89,19 @@ export function SuggestionChips({
               state === 'on'
                 ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-fg'
                 : state === 'some'
-                  ? 'border-dashed border-[color-mix(in_srgb,var(--color-accent)_60%,transparent)] text-[var(--color-accent)]'
-                  : dim
-                    ? 'border-[var(--color-line)] text-fg-faint hover:bg-[var(--color-hover)]'
-                    : audioDerived
-                      ? 'border-dashed border-[var(--color-line-strong)] text-fg-faint hover:bg-[var(--color-hover)]'
-                      : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-hover)]'
+                  ? addable
+                    ? 'border-[var(--color-accent)] text-fg'
+                    : 'border-dashed border-[color-mix(in_srgb,var(--color-accent)_60%,transparent)] text-[var(--color-accent)]'
+                  : addable
+                    ? 'border-dashed border-[var(--color-line-strong)] text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg'
+                    : dim
+                      ? 'border-[var(--color-line)] text-fg-faint hover:bg-[var(--color-hover)]'
+                      : audioDerived
+                        ? 'border-dashed border-[var(--color-line-strong)] text-fg-faint hover:bg-[var(--color-hover)]'
+                        : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-hover)]'
             }`}
           >
-            {s}
+            {content(s)}
           </button>
         )
       })}
@@ -112,7 +133,7 @@ export function SuggestionChips({
         >
           {suggestions.map((s) => (
             <span key={s} className="rounded-full border px-2 py-0.5 text-[11px]">
-              {s}
+              {content(s)}
             </span>
           ))}
           <span className="rounded-full border px-2 py-0.5 text-[11px]">

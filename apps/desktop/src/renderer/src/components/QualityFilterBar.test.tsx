@@ -460,6 +460,37 @@ describe('QualityFilterBar', () => {
     )
   })
 
+  // Where the tags came from is not how far the conversion got: "To confirm" and the
+  // per-catalog buckets sat inside the conversion group, so finding the matches to check
+  // meant reading through the backlog. They get their own group after the missing-tag one,
+  // and the format axis, a fact about the files rather than work left, moves near the end.
+  it('groups the buckets as work left, quality, missing tags, matches, library, then format', () => {
+    renderBar({
+      tally: tally({
+        unconverted: 4,
+        good: 3,
+        noCover: 2,
+        matchReview: 2,
+        automatched: 3,
+        notInLibrary: 1,
+        inLibrary: 1,
+      }),
+      formats: [
+        { format: 'FLAC', count: 5 },
+        { format: 'WAV', count: 5 },
+      ],
+    })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    const order = screen.getAllByRole('option').map((el) => el.getAttribute('data-testid'))
+    const at = (id: string): number => order.indexOf(`quality-filter-${id}`)
+    expect(at('unconverted')).toBeLessThan(at('good'))
+    expect(at('good')).toBeLessThan(at('noCover'))
+    expect(at('noCover')).toBeLessThan(at('matchReview'))
+    expect(at('automatched')).toBeLessThan(at('notInLibrary'))
+    expect(at('inLibrary')).toBeLessThan(at('ext:FLAC'))
+    expect(screen.getAllByTestId('quality-filter-separator')).toHaveLength(6)
+  })
+
   // The buckets span several dimensions (quality, conversion, library, format); a divider
   // between each group keeps the now-long menu scannable instead of one flat run. The
   // dividers track the groups that actually show, so an extra dimension adds exactly one.
@@ -548,6 +579,15 @@ describe('QualityFilterBar', () => {
     renderBar({ selectedCount: 3, selectedPosition: 2, visibleCount: 498 })
     expect(screen.getByTestId('track-selected-count')).toHaveTextContent('3 selected')
     expect(screen.queryByTestId('track-position')).toBeNull()
+  })
+
+  // The header's crosshair is gone, so the counter is the one way back to the open track
+  // in every state; during a multi-select that track is as easy to scroll away from.
+  it('reveals the open track from the selection count too', () => {
+    const onRevealSelected = vi.fn()
+    renderBar({ selectedCount: 3, selectedPosition: 2, visibleCount: 498, onRevealSelected })
+    fireEvent.click(screen.getByTestId('track-selected-count'))
+    expect(onRevealSelected).toHaveBeenCalledOnce()
   })
 
   // The payoff of the quality sweep at the exact moment the DJ is looking at it: once they've

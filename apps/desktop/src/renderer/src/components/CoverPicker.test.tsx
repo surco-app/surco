@@ -4,7 +4,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
-import '../i18n'
+import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { CoverPicker } from './CoverPicker'
 
@@ -656,12 +656,64 @@ describe('CoverPicker multi-select', () => {
       item({ inputPath: '/music/b.flac', coverUrl: 'blob:two' }),
     ])
     expect(screen.getByTestId('cover-pick')).toHaveAccessibleDescription(
-      'The selected tracks have different artwork',
+      i18n.t('editor.coversDistinct', { count: 2 }),
     )
   })
 
   it('says nothing extra when none of the selected tracks has artwork', () => {
     renderMulti([item(), item({ inputPath: '/music/b.flac' })])
     expect(screen.getByTestId('cover-pick')).not.toHaveAccessibleDescription()
+  })
+})
+
+describe('CoverPicker multi-select with different artwork', () => {
+  function renderMulti(covers: (string | undefined)[]) {
+    const tracks = covers.map((coverUrl, i) => item({ inputPath: `/music/${i}.flac`, coverUrl }))
+    render(
+      <CoverPicker
+        item={tracks[0]}
+        isMulti
+        selectedTracks={tracks}
+        release={null}
+        coverDims={null}
+        setCoverDims={vi.fn()}
+        onChange={vi.fn()}
+        onApplyCoverAll={vi.fn()}
+      />,
+    )
+  }
+
+  // Tracks whose covers differ showed the same empty "add artwork" well as tracks with
+  // none, so a selection full of artwork read as bare and a drop looked like filling gaps
+  // rather than replacing every cover. The well now shows the covers it would replace.
+  it('shows the distinct covers it would replace, and says how many there are', () => {
+    renderMulti(['http://img/a.jpg', 'http://img/b.jpg', 'http://img/a.jpg', 'http://img/c.jpg'])
+    const stack = screen.getByTestId('cover-stack')
+    expect(stack.querySelectorAll('img')).toHaveLength(3)
+    expect(screen.getByTestId('cover-pick')).toHaveTextContent(
+      i18n.t('editor.coversDistinct', { count: 3 }),
+    )
+  })
+
+  it('caps the stack at three covers however many differ', () => {
+    renderMulti(['http://img/a.jpg', 'http://img/b.jpg', 'http://img/c.jpg', 'http://img/d.jpg'])
+    expect(screen.getByTestId('cover-stack').querySelectorAll('img')).toHaveLength(3)
+    expect(screen.getByTestId('cover-pick')).toHaveTextContent(
+      i18n.t('editor.coversDistinct', { count: 4 }),
+    )
+  })
+
+  // One cover shared by some tracks and missing on the rest is not "different covers":
+  // the count of tracks that carry it is what tells the user what a drop would touch.
+  it('counts the tracks that carry artwork when only some do', () => {
+    renderMulti(['http://img/a.jpg', undefined, 'http://img/a.jpg'])
+    expect(screen.getByTestId('cover-pick')).toHaveTextContent(
+      i18n.t('editor.coversSome', { count: 2, total: 3 }),
+    )
+  })
+
+  it('keeps the plain empty well when no track has artwork', () => {
+    renderMulti([undefined, undefined])
+    expect(screen.queryByTestId('cover-stack')).toBeNull()
   })
 })

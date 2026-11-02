@@ -1796,6 +1796,7 @@ export default function App(): React.JSX.Element {
     const next = reviewOpening(target, filter)
     if (next) setReview(next)
   })
+  const onReviewAll = useStableCallback(() => openTargetReview('all'))
   tracksViewRef.current = tracksView
   settingsRef.current = settings
   // Feed the snapshot to the background sweep so it can re-check ownership against each
@@ -2631,6 +2632,10 @@ export default function App(): React.JSX.Element {
       updateTracksMeta(selectedIds, emptyMetadata())
       onClearExtras(selectedIds)
     } else updateTrack(selected.id, clearedTrackPatch(selected))
+    toastReporter.reportUndo(
+      tr('notices.clearedMeta', { count: Math.max(selectedTracks.length, 1) }),
+      undoMeta,
+    )
   })
   const deriveTags = useStableCallback(() => {
     const targets = editScope(selectedTracks, selected)
@@ -3168,6 +3173,8 @@ export default function App(): React.JSX.Element {
                   onFixToken={onFixToken}
                   onCancelBatch={cancelBatch}
                   onCancelImport={cancelImport}
+                  onReview={onReviewAll}
+                  canReview={canReviewList}
                   onPalette={onOpenPalette}
                   onStats={onOpenStats}
                   onActivity={onToggleActivity}
@@ -3330,6 +3337,7 @@ export default function App(): React.JSX.Element {
                             onFillAll={onFillAll}
                             onFindReplace={onFindReplace}
                             onReviewList={() => openTargetReview('all')}
+                            listCommands={getCommands}
                             canReviewList={canReviewList}
                             reviewDetail={reviewDetail(tr, target)}
                             duplicates={

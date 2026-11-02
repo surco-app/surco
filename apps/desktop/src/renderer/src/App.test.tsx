@@ -2536,6 +2536,8 @@ describe('App source playlists', () => {
         ...over,
       })
     }
+    // The rows of the new playlist can paint a commit before the selection carried over to
+    // them, so a test reading the selection waits for it rather than for the rows alone.
     const openHouse = async () => {
       fireEvent.click(screen.getByTestId('source-node-h'))
       await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
@@ -2557,10 +2559,12 @@ describe('App source playlists', () => {
       fireEvent.click(rows[1], { metaKey: true })
       fireEvent.click(rows[2], { metaKey: true })
       await openHouse()
-      expect(selectedTitles()).toEqual([
-        expect.stringContaining('Bravo'),
-        expect.stringContaining('Charlie'),
-      ])
+      await waitFor(() =>
+        expect(selectedTitles()).toEqual([
+          expect.stringContaining('Bravo'),
+          expect.stringContaining('Charlie'),
+        ]),
+      )
       fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
       fireEvent.click(await screen.findByTestId('track-menu-add-to'))
       fireEvent.click(screen.getByTestId('track-menu-playlist-g'))
@@ -2591,7 +2595,7 @@ describe('App source playlists', () => {
       fireEvent.click(screen.getAllByTestId('track-row')[1])
       await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
       await openHouse()
-      expect(selectedTitles()).toEqual([expect.stringContaining('Bravo')])
+      await waitFor(() => expect(selectedTitles()).toEqual([expect.stringContaining('Bravo')]))
       expect(screen.getByTestId('field-title')).toHaveValue('Bravo')
     })
 
@@ -4548,9 +4552,8 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    // Multi-select reuses the single editor; its convert button reads "Convert (2)".
-    const convert = await screen.findByTestId('process-btn')
-    expect(convert).toHaveTextContent('Convert (2)')
+    const convert = await screen.findByTestId('convert-all')
+    expect(convert).toHaveAccessibleName(i18n.t('header.convertAll', { count: 2 }))
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     const converted = processTrack.mock.calls.map((c) => c[0].inputPath).sort()
@@ -4577,7 +4580,7 @@ describe('App multi-select convert', () => {
     // Selects all three: the anchor (a.wav) plus b.mp3 and c.flac via range-select.
     fireEvent.click(rows[0])
     fireEvent.click(rows[2], { shiftKey: true })
-    const convert = await screen.findByTestId('process-btn')
+    const convert = await screen.findByTestId('convert-all')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(3))
     const byInput = Object.fromEntries(
@@ -4620,7 +4623,7 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(await screen.findByTestId('process-btn'))
+    fireEvent.click(await screen.findByTestId('convert-all'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     expect(processTrack.mock.calls.map((c) => c[0].format)).toEqual(['wav', 'wav'])
   })
@@ -4675,7 +4678,7 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(await screen.findByTestId('process-btn'))
+    fireEvent.click(await screen.findByTestId('convert-all'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     const mp3Job = processTrack.mock.calls.find((c) => c[0].inputPath === '/music/b.mp3')?.[0]
     expect(mp3Job.addToAppleMusic).toBeUndefined()
@@ -4697,12 +4700,12 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    await screen.findByTestId('process-btn')
+    await screen.findByTestId('convert-all')
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-format-wav'))
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-destination-beside'))
-    fireEvent.click(screen.getByTestId('process-btn'))
+    fireEvent.click(screen.getByTestId('convert-all'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     for (const [job] of processTrack.mock.calls) {
       expect(job.format).toBe('wav')
@@ -4972,7 +4975,7 @@ describe('App Default format x input extension matrix', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { shiftKey: true })
-    const convert = await screen.findByTestId('process-btn')
+    const convert = await screen.findByTestId('convert-all')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     const byInput = Object.fromEntries(
@@ -4999,7 +5002,7 @@ describe('App Default format x input extension matrix', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { shiftKey: true })
-    const convert = await screen.findByTestId('process-btn')
+    const convert = await screen.findByTestId('convert-all')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
     expect(processTrack.mock.calls[0][0].inputPath).toBe('/music/a.wav')
@@ -5154,7 +5157,7 @@ describe('App normalize peak preferences', () => {
     fireEvent.click(screen.getAllByTestId('track-row')[1], { shiftKey: true })
     await screen.findByTestId('normalize-scope')
     fireEvent.click(screen.getByTestId('normalize-mode-loudness'))
-    fireEvent.click(await screen.findByTestId('process-btn'))
+    fireEvent.click(await screen.findByTestId('convert-all'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     expect(processTrack.mock.calls.map((c) => c[0].normalize?.mode)).toEqual([
       'loudness',
@@ -5266,10 +5269,9 @@ describe('App keyboard shortcuts', () => {
   // The palette button is a bare glyph, so its hover hint is the only place the bar shows
   // its shortcut. ⌘K is a fixed menu accelerator outside the rebindable table, and the hint
   // read only that table, so the tooltip said "Command palette" with no keys at all.
-  it('shows the palette shortcut in the palette button tooltip', async () => {
+  it('shows the palette shortcut on the palette button', async () => {
     await renderApp()
-    fireEvent.focus(screen.getByTestId('open-palette'))
-    expect(screen.getByRole('tooltip')).toHaveTextContent(/(⌘|Ctrl\+)K/)
+    expect(screen.getByTestId('open-palette')).toHaveTextContent(/(⌘|Ctrl\+)K/)
   })
 })
 
@@ -5932,8 +5934,7 @@ describe('App donate nudge', () => {
     const rows = await addTwoTracks()
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    // Convert from the editor footer (the toolbar's convert button was removed as a duplicate).
-    fireEvent.click(await screen.findByTestId('process-btn'))
+    fireEvent.click(await screen.findByTestId('convert-all'))
   }
 
   // The nudge moved off app launch onto the moment of value: opening Surco is when the
@@ -6417,6 +6418,25 @@ describe('App metadata undo', () => {
 
     fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
     await waitFor(() => expect(screen.getByTestId('cover-preview')).toBeInTheDocument())
+  })
+
+  // The Eraser wipes every field with one click and its only way back was ⌘Z, which
+  // nothing on screen mentioned: the clear now says what it did and offers the undo.
+  it('offers an undo right after the Eraser clears a track', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+
+    fireEvent.click(await screen.findByTestId('clear-meta-btn'))
+    expect(await screen.findByTestId('app-notice-message')).toHaveTextContent(
+      i18n.t('notices.clearedMeta', { count: 1 }),
+    )
+    fireEvent.click(screen.getByTestId('app-notice-action'))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Imported Title'))
   })
 
   // The ⌘K clear is the Eraser button's twin and has to clear the same things. It set
@@ -8753,7 +8773,7 @@ describe('App list header', () => {
     for (const id of [
       'add-files',
       'select-all',
-      'reveal-selected',
+      'track-position',
       'fill-all',
       'open-find-replace',
       'clear-all',
@@ -8766,6 +8786,20 @@ describe('App list header', () => {
     for (const row of screen.getAllByTestId('track-row')) {
       expect(row).toHaveAttribute('aria-selected', 'true')
     }
+  })
+
+  // The list menu reads the palette's own registry, so numbering runs from it exactly as
+  // ⌘K runs it, on the same tracks.
+  it('numbers the list from the list menu', async () => {
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(screen.getByTestId('list-actions-more'))
+    fireEvent.click(screen.getByTestId('list-command-number-tracks'))
+    await waitFor(() =>
+      expect(screen.getAllByTestId('app-notice-message').map((el) => el.textContent)).toContain(
+        i18n.t('notices.numberedTracks', { count: 2 }),
+      ),
+    )
   })
 
   // The button sends the selection to the OS Trash; with nothing selected a click did

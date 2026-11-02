@@ -93,6 +93,7 @@ function renderField(
       required={f.required}
       invalid={f.invalid}
       mixed={f.mixed}
+      mixedValues={f.mixedValues}
       suggestions={f.suggestions}
       tagList={f.tagList}
       suggesting={f.suggesting}

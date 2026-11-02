@@ -69,6 +69,7 @@ const CONVERSION_MODES: ConversionMode[] = [
   'matchedDiscogs',
   'matchedBandcamp',
 ]
+const MATCH_MODES: Mode[] = ['automatched', 'matchReview', 'matchedDiscogs', 'matchedBandcamp']
 const TAGS_MODES: TagsMode[] = ['missingRequired', 'noCover', 'smallCover', 'noBpm', 'noKey']
 const LIBRARY_MODES: LibraryMode[] = ['notInLibrary', 'inLibrary']
 const DUPLICATES_MODES: DuplicatesMode[] = ['duplicates']
@@ -222,32 +223,37 @@ export function QualityFilterBar({
   // of trailing them. The auto-matched bucket joins only once something has been auto-filled
   // — and each per-provider bucket only once that catalog has matched something — so the
   // menu isn't padded with permanently-empty filters.
-  const conversionSection: Mode[] = CONVERSION_MODES.filter(
+  const shownConversion: Mode[] = CONVERSION_MODES.filter(
     (m) => m === 'unconverted' || tally[m] > 0,
   )
+  const conversionSection = shownConversion.filter((m) => !MATCH_MODES.includes(m))
+  const matchSection = shownConversion.filter((m) => MATCH_MODES.includes(m))
   // The remaining buckets that follow the format axis, in logical groups rendered with a
   // thin divider between them so the menu reads by dimension. Empty groups drop out, so the
   // dividers only ever separate groups that actually have something to show.
   const primarySections: Mode[][] = [
     // The quality verdict.
     QUALITY_MODES,
+    // The tag work matching a release fixes, on its own axis so it stacks with the retouch
+    // buckets: artwork missing or too soft, no tempo, no key. Listed per bucket like those.
+    ...(TAGS_MODES.some((m) => tally[m] > 0) ? [TAGS_MODES.filter((m) => tally[m] > 0)] : []),
+    // Where the tags came from, apart from how far the conversion got, though both filter
+    // on the conversion axis.
+    ...(matchSection.length > 0 ? [matchSection] : []),
     // The retouch buckets (silence left to trim, true clipping, cues left to mark), each
     // listed only once some track is actually in it — permanently-empty rows would just
     // pad the menu, and the facts only exist once waves are decoded or a library is read.
     ...(ATTENTION_MODES.some((m) => tally[m] > 0)
       ? [ATTENTION_MODES.filter((m) => tally[m] > 0)]
       : []),
-    // The tag work matching a release fixes, on its own axis so it stacks with the retouch
-    // buckets: artwork missing or too soft, no tempo, no key. Listed per bucket like those.
-    ...(TAGS_MODES.some((m) => tally[m] > 0) ? [TAGS_MODES.filter((m) => tally[m] > 0)] : []),
     // Apple Music library buckets, listed only once the snapshot has resolved a verdict
     // for at least one track — which also keeps them off Windows, where there is no
     // library to read. "Not in library" leads: it's the actionable bucket.
     ...(tally.inLibrary + tally.notInLibrary > 0 ? [LIBRARY_MODES] : []),
-    // Only once the crate actually holds the same song twice — a permanently-empty
-    // duplicates bucket would just pad the menu.
-    ...(tally.duplicates > 0 ? [DUPLICATES_MODES] : []),
   ]
+  // Only once the crate actually holds the same song twice — a permanently-empty
+  // duplicates bucket would just pad the menu.
+  const duplicatesSection: Mode[] = tally.duplicates > 0 ? DUPLICATES_MODES : []
   const countOf = (mode: Mode): number => tally[mode as keyof Tally]
   const isActive = (mode: Mode): boolean => value[axisOf(mode)] === mode
   // "All" reads as selected only when nothing is filtered on any axis, so picking a bucket
@@ -395,8 +401,8 @@ export function QualityFilterBar({
       options={(close) => (
         <>
           {/* "All" leads as the reset, then the conversion buckets right under it (the
-              primary "what's left to convert" action), then the format axis, then the
-              quality/library buckets. Fragments keep every option a direct child of the
+              primary "what's left to convert" action), then the quality, tag, match and
+              library buckets, then the format axis. Fragments keep every option a direct child of the
               listbox, with a divider between sections; empty sections (no formats, no
               library) drop their divider too. */}
           {renderPrimary('all', close)}
@@ -404,18 +410,24 @@ export function QualityFilterBar({
             <FilterDivider testid="quality-filter-separator" />
             {conversionSection.map((m) => renderPrimary(m, close))}
           </Fragment>
-          {formats.length > 0 && (
-            <Fragment key="formats">
-              <FilterDivider testid="quality-filter-separator" />
-              {formats.map((f) => renderFormat(f, close))}
-            </Fragment>
-          )}
           {primarySections.map((group) => (
             <Fragment key={group[0]}>
               <FilterDivider testid="quality-filter-separator" />
               {group.map((m) => renderPrimary(m, close))}
             </Fragment>
           ))}
+          {formats.length > 0 && (
+            <Fragment key="formats">
+              <FilterDivider testid="quality-filter-separator" />
+              {formats.map((f) => renderFormat(f, close))}
+            </Fragment>
+          )}
+          {duplicatesSection.length > 0 && (
+            <Fragment key="duplicates">
+              <FilterDivider testid="quality-filter-separator" />
+              {duplicatesSection.map((m) => renderPrimary(m, close))}
+            </Fragment>
+          )}
         </>
       )}
       counterTestId="track"

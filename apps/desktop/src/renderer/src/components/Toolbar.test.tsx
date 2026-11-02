@@ -40,6 +40,8 @@ function renderBar(over: Partial<Props> = {}): Props {
     onCancelAutoMatch: vi.fn(),
     onCancelBatch: vi.fn(),
     onCancelImport: vi.fn(),
+    onReview: vi.fn(),
+    canReview: true,
     onPalette: vi.fn(),
     onStats: vi.fn(),
     onActivity: vi.fn(),
@@ -422,6 +424,40 @@ describe('Toolbar', () => {
     expect(button).toHaveAccessibleName(i18n.t('header.convertSome', { ready: 5, total: 24 }))
   })
 
+  // The three sweeps read in the order the work happens: judge the files, fill their tags,
+  // then fix what is still wrong. Review used to sit two levels down in the list's menu,
+  // the least visible of the three although it is where every fix ends up.
+  it('lays the sweeps out as analyze, then auto-match, then review', () => {
+    renderBar()
+    const analyze = screen.getByTestId('analyze-quality')
+    const match = screen.getByTestId('auto-match')
+    const review = screen.getByTestId('toolbar-review')
+    expect(analyze.compareDocumentPosition(match) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(match.compareDocumentPosition(review) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('opens the review from the bar, and greys it while there is nothing it may review', () => {
+    const props = renderBar()
+    const review = screen.getByTestId('toolbar-review')
+    expect(review).toHaveAccessibleName(i18n.t('header.menu.review'))
+    expect(review).toHaveTextContent(i18n.t('header.reviewLabel'))
+    fireEvent.click(review)
+    expect(props.onReview).toHaveBeenCalledOnce()
+    cleanup()
+    renderBar({ canReview: false })
+    expect(screen.getByTestId('toolbar-review')).toBeDisabled()
+  })
+
+  // A bare magnifier read as "search", with the list's own search field right below it;
+  // naming it and showing its chord tells it apart and teaches the shortcut.
+  it('names the palette in words and shows its chord, so it is not taken for the list search', () => {
+    renderBar({ hintFor: (id) => (id === 'palette' ? '⌘K' : '') })
+    const palette = screen.getByTestId('open-palette')
+    expect(palette).toHaveAccessibleName(i18n.t('header.palette'))
+    expect(palette).toHaveTextContent(i18n.t('header.paletteLabel'))
+    expect(palette).toHaveTextContent('⌘K')
+  })
+
   // It acts on the list, which doesn't exist until the crate has tracks.
   it('hides the convert button when the list is empty', () => {
     renderBar({ trackCount: 0 })
@@ -448,17 +484,6 @@ describe('Toolbar', () => {
     renderBar()
     expect(screen.queryByTestId('open-trash')).toBeNull()
     expect(screen.queryByTestId('trash-count')).toBeNull()
-  })
-
-  // The palette button is a glyph like its neighbours, so its name says what it opens and
-  // the shortcut moves to the hover hint: "⌘ K" as text was the one word in a row of icons.
-  it('names the palette button for what it opens and keeps its shortcut on hover', () => {
-    renderBar({ hintFor: (id) => (id === 'palette' ? '⌘K' : '') })
-    const button = screen.getByTestId('open-palette')
-    expect(button).toHaveAccessibleName(i18n.t('header.palette'))
-    expect(button).not.toHaveTextContent('K')
-    fireEvent.focus(button)
-    expect(screen.getByRole('tooltip')).toHaveTextContent('⌘K')
   })
 
   // With nothing to convert the button still sits where the user expects it, but "Convert

@@ -284,6 +284,41 @@ describe('buildFieldSpecs (single mode)', () => {
 })
 
 describe('buildFieldSpecs (bulk mode)', () => {
+  // "Multiple values" said the tracks disagree but not on what, so checking an artist
+  // across a selection meant clicking through every row. The field now carries the values
+  // it holds, most common first, for the form to offer as picks.
+  it('lists the values a mixed field holds, most common first, and counts them', () => {
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [
+          track('a', { artist: 'Aaron Sevilla' }),
+          track('b', { artist: 'Oliver Gil' }),
+          track('c', { artist: 'Oliver Gil' }),
+          track('d', { artist: '' }),
+        ],
+        visibleFields: ['artist'],
+      }),
+    )
+    const artist = specs.find((s) => s.key === 'artist')
+    expect(artist?.mixedValues).toEqual([
+      { value: 'Oliver Gil', count: 2 },
+      { value: 'Aaron Sevilla', count: 1 },
+    ])
+    expect(artist?.placeholder).toBe('editor.valuesCount')
+  })
+
+  it('offers no values when the selection agrees', () => {
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [track('a', { artist: 'X' }), track('b', { artist: 'X' })],
+        visibleFields: ['artist'],
+      }),
+    )
+    expect(specs.find((s) => s.key === 'artist')?.mixedValues).toBeUndefined()
+  })
+
   it('reads the selection common value and writes through onChangeAllMeta', () => {
     const onChangeAllMeta = vi.fn()
     const specs = buildFieldSpecs(
@@ -300,7 +335,7 @@ describe('buildFieldSpecs (bulk mode)', () => {
     expect(onChangeAllMeta).toHaveBeenCalledWith({ genre: 'House' })
   })
 
-  it('shows a "multiple values" placeholder when the selection disagrees', () => {
+  it('shows how many values the selection holds when it disagrees', () => {
     const specs = buildFieldSpecs(
       params({
         isMulti: true,
@@ -310,7 +345,7 @@ describe('buildFieldSpecs (bulk mode)', () => {
     )
     const genre = specs.find((s) => s.key === 'genre')
     expect(genre?.value).toBe('')
-    expect(genre?.placeholder).toBe('editor.multipleValues')
+    expect(genre?.placeholder).toBe('editor.valuesCount')
   })
 
   // "Multiple values" does not fit a box sized for four digits and got cut to "Multi". A

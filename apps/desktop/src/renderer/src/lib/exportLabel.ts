@@ -111,7 +111,7 @@ export function exportButtonLabel(state: ExportLabelState): {
   }
 }
 
-function programNames(namesMusic: boolean, djTargets: DjLibraryId[]): string {
+export function programNames(namesMusic: boolean, djTargets: DjLibraryId[]): string {
   const ids = [...(namesMusic ? ['appleMusic'] : []), ...djTargets]
   return ids.map((id) => i18n.t(`settings.source.${id}`)).join(' + ')
 }

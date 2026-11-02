@@ -1720,6 +1720,13 @@ describe('Editor multi-select', () => {
     }
   }
 
+  // "File" heads the single-track form; over "Editing 2 tracks" it read as one file
+  // sitting above a selection of several, so the multi form starts at its own title.
+  it('drops the File heading above the multi-select form', () => {
+    renderMulti()
+    expect(screen.queryByTestId('editor-group-metadata')).toBeNull()
+  })
+
   it('completes a playlist only some of the tracks hold into per-track patches for all of them', async () => {
     rekordboxApiWith(
       vi.fn<Api['rekordboxMembership']>().mockResolvedValue({ '/music/a.wav': ['3000'] }),
@@ -1851,13 +1858,24 @@ describe('Editor multi-select', () => {
     expect(landed).toBe('declick')
   })
 
-  it('shows shared album fields and a convert-all action with the format picker', () => {
+  // The toolbar's "Convert 2 selected" and the footer's "Convert (2)" ran the same batch,
+  // so a selection showed two convert buttons and no way to tell them apart. The footer
+  // keeps the plan and its format menu; converting is the toolbar's.
+  it('plans the batch in the footer and leaves converting to the toolbar', () => {
     renderMulti()
     expect(screen.getByTestId('field-album')).toHaveValue('Shared')
     expect(screen.queryByTestId('field-title')).toBeNull()
-    // The convert button keeps the format split-control, but converts the whole selection.
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert (2)')
+    expect(screen.queryByTestId('process-btn')).toBeNull()
+    expect(screen.getByTestId('batch-plan')).toHaveTextContent('2')
+    expect(screen.getByTestId('batch-plan')).toHaveTextContent('AIFF')
     expect(screen.getByTestId('process-format-toggle')).toBeInTheDocument()
+  })
+
+  it('picks the batch format from the footer menu and names it in the plan', () => {
+    renderMulti()
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('process-format-wav'))
+    expect(screen.getByTestId('batch-plan')).toHaveTextContent('WAV')
   })
 
   // The bulk form must honour the same visible-fields setting as the single editor:
@@ -1871,55 +1889,31 @@ describe('Editor multi-select', () => {
     expect(screen.queryByTestId('field-year')).toBeNull()
   })
 
-  it('converts every selected track in the chosen format', () => {
-    const { onProcessAll } = renderMulti()
-    fireEvent.click(screen.getByTestId('process-btn'))
-    expect(onProcessAll).toHaveBeenCalledWith('aiff')
-  })
-
-  // "Convert (2)" must convert 2 or say why it can't. The batch silently drops tracks
-  // with empty required fields (eligibleForBatch), so a selection where any track is
-  // incomplete used to run an empty batch — the click looked like it did nothing.
-  // The gate mirrors the single-track button: disabled until the selection is complete.
-  it('disables the convert button while any selected track is missing a required field', () => {
-    const { onProcessAll } = renderMulti({
+  // The batch drops tracks with empty required fields (eligibleForBatch), and the
+  // toolbar's count says so ("1 of 2"); the footer is where the selection says which
+  // field is missing, so the gap is named, not only counted.
+  it('names the required field a selected track is missing', () => {
+    renderMulti({
       requiredFields: ['artist'],
       metaA: { artist: 'Kumara' },
     })
-    const btn = screen.getByTestId('process-btn')
-    expect(btn).toHaveAttribute('aria-disabled', 'true')
-    fireEvent.click(btn)
-    expect(onProcessAll).not.toHaveBeenCalled()
+    expect(screen.getByTestId('batch-plan-blocked')).toBeInTheDocument()
   })
 
-  it('enables the convert button once every selected track has the required fields', () => {
+  it('names nothing once every selected track has the required fields', () => {
     renderMulti({
       requiredFields: ['artist'],
       metaA: { artist: 'Kumara' },
       metaB: { artist: 'Cortina' },
     })
-    expect(screen.getByTestId('process-btn')).not.toHaveAttribute('aria-disabled')
+    expect(screen.queryByTestId('batch-plan-blocked')).toBeNull()
   })
 
-  // The disabled button must explain itself: the tooltip names the fields still
-  // empty somewhere in the selection, same phrasing as the single-track gate.
-  it('names the missing fields on the blocked convert button', () => {
-    vi.useFakeTimers()
-    try {
-      renderMulti({ requiredFields: ['artist'], metaA: { artist: 'Kumara' } })
-      // jsdom's synthetic PointerEvent drops clientX/clientY, so drive the tooltip with
-      // MouseEvents as pointer events — same dance as the ExportButton tooltip test.
-      const wrap = screen.getByTestId('process-btn-wrap')
-      for (const type of ['pointerenter', 'pointermove']) {
-        wrap.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
-      }
-      act(() => vi.advanceTimersByTime(400))
-      expect(screen.getByRole('tooltip')).toHaveTextContent(
-        i18n.t('editor.missingRequired', { fields: i18n.t('fields.artist') }),
-      )
-    } finally {
-      vi.useRealTimers()
-    }
+  // The plan must say which fields are still empty somewhere in the selection, the
+  // same names the single-track gate gives.
+  it('names the missing fields in the batch plan', () => {
+    renderMulti({ requiredFields: ['artist'], metaA: { artist: 'Kumara' } })
+    expect(screen.getByTestId('batch-plan-blocked')).toHaveTextContent(i18n.t('fields.artist'))
   })
 
   // Bulk edits write ONE value to every track, but each track's fields differ, so
@@ -1939,11 +1933,11 @@ describe('Editor multi-select', () => {
     expect(loudness).not.toHaveBeenCalled()
   })
 
-  // With the Apple Music setting on, the convert button must say so for the selection just
-  // like the single-track button does, so the user knows the batch will be added too.
-  it('shows the convert-all button includes Apple Music when the setting is on', () => {
+  // With the Apple Music setting on, the plan must say so for the selection just like the
+  // single-track button does, so the user knows the batch will be added too.
+  it('says the batch is added to Apple Music when the setting is on', () => {
     renderMulti({ platform: 'darwin', music: true })
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Apple Music')
+    expect(screen.getByTestId('batch-plan')).toHaveTextContent('Apple Music')
   })
 
   it('writes a shared-field edit to every selected track', () => {

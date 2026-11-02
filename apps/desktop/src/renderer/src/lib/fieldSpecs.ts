@@ -40,6 +40,15 @@ export interface PlaylistsSpec {
   }
 }
 
+function valueCounts(tracks: TrackItem[], key: MetaTextKey): { value: string; count: number }[] {
+  const counts = new Map<string, number>()
+  for (const t of tracks) {
+    const value = t.meta[key] ?? ''
+    if (value !== '') counts.set(value, (counts.get(value) ?? 0) + 1)
+  }
+  return [...counts].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count)
+}
+
 // One renderable form field. The editor builds these per mode — bulk specs read the
 // selection's common value and write through onChangeAllMeta, single specs read the
 // open track and write through setField — so the form itself renders a single tree
@@ -57,6 +66,7 @@ export interface FieldSpec {
   // A selection whose tracks disagree on this field: the value shows blank, so the Field
   // says so in words where the placeholder alone would not reach a screen reader.
   mixed?: boolean
+  mixedValues?: { value: string; count: number }[]
   suggestions?: string[]
   tagList?: TagList
   // True while an audio-derived suggestion (BPM/Key) is still being detected: no chip
@@ -125,7 +135,7 @@ export interface BuildFieldSpecsParams {
   // The title rebuilt from the settings' title format, when that changes anything —
   // offered as a whole-value rewrite in the title field's menu.
   titleFormatResult: string | undefined
-  tr: (key: string) => string
+  tr: (key: string, options?: Record<string, unknown>) => string
   // Pre-built per-key onChange, one map per mode — not setField/onChangeAllMeta
   // themselves. Closing over `key` inline here (`(v) => setField(key, v)`) would
   // hand every FieldSpec a fresh onChange on every call, even though setField
@@ -235,6 +245,7 @@ export function buildFieldSpecs({
               ? { list, tracks: selectedTracks, onChangeTracks: onChangeTracksMeta }
               : undefined
           const mixed = shared === undefined && !perTrack
+          const mixedValues = mixed ? valueCounts(selectedTracks, key) : undefined
           const width = widthOf(key)
           return {
             key,
@@ -242,9 +253,14 @@ export function buildFieldSpecs({
             value: shared ?? '',
             // "Multiple values" does not fit a box sized for its value; the mixed flag
             // still says it in words to a screen reader.
-            placeholder: mixed ? (width ? '…' : tr('editor.multipleValues')) : undefined,
+            placeholder: mixed
+              ? width
+                ? '…'
+                : tr('editor.valuesCount', { count: mixedValues?.length ?? 0 })
+              : undefined,
             width,
             mixed,
+            mixedValues,
             onChange: bulkOnChange.get(key) ?? (() => {}),
             suggestions:
               key === 'genre'

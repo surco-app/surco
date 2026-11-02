@@ -1,15 +1,16 @@
 import {
-  Activity,
   ArrowRightLeft,
   ChartColumn,
+  Command,
   FilePlus,
+  Gauge,
   Loader2,
   type LucideIcon,
   Pause,
   Radio,
-  Search,
   Settings as SettingsIcon,
   Sparkles,
+  SpellCheck,
 } from 'lucide-react'
 import type React from 'react'
 import { memo } from 'react'
@@ -74,6 +75,8 @@ interface Props {
   // ones already in ffmpeg finish.
   onCancelBatch: () => void
   onCancelImport: () => void
+  onReview: () => void
+  canReview: boolean
   onPalette: () => void
   onStats: () => void
   onActivity: () => void
@@ -126,6 +129,8 @@ export const Toolbar = memo(function Toolbar({
   onFixToken,
   onCancelBatch,
   onCancelImport,
+  onReview,
+  canReview,
   onPalette,
   onStats,
   onActivity,
@@ -260,9 +265,57 @@ export const Toolbar = memo(function Toolbar({
         )}
         {trackCount > 0 && (
           <>
-            {/* Auto-match and analyze are the two crate-wide "intelligence" sweeps. Add files
+            {/* Analyze, auto-match and review are the crate-wide sweeps, in the order the work
+                happens. Add files
                 and the per-list edit tools (select/fill/find/clear) now live in the list's own
                 header, so the toolbar keeps only crate-wide sweeps and global actions. */}
+            <button
+              type="button"
+              data-testid="analyze-quality"
+              onClick={analysis ? onCancelAnalyze : onAnalyzeAll}
+              disabled={!analysis && allAnalyzed}
+              aria-label={
+                analysis
+                  ? tr('header.cancelAnalyze')
+                  : allAnalyzed
+                    ? tr('header.allAnalyzed')
+                    : tr('header.analyzeQuality')
+              }
+              className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-medium hover:bg-[var(--color-hover)] disabled:opacity-40 ${
+                analysis
+                  ? 'min-w-[3.25rem] text-[var(--color-accent)]'
+                  : 'text-fg-muted hover:text-fg'
+              }`}
+            >
+              {analysisPaused ? (
+                <Pause data-testid="analyze-paused" className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Gauge
+                  className={`h-4 w-4 ${analysis ? 'animate-pulse' : ''}`}
+                  aria-hidden="true"
+                />
+              )}
+              {analysis ? (
+                <SteadyWidth
+                  testid="analyze-progress-sizer"
+                  widest={`${analysis.total}/${analysis.total}`}
+                >
+                  <span data-testid="analyze-progress" className="text-xs tabular-nums">
+                    {analysis.done}/{analysis.total}
+                  </span>
+                </SteadyWidth>
+              ) : (
+                <span>{tr('header.analyzeQualityLabel')}</span>
+              )}
+              <Tooltip
+                label={
+                  analysisLabel ||
+                  (allAnalyzed ? tr('header.allAnalyzed') : tr('header.analyzeQuality'))
+                }
+                hint={analysis ? undefined : hintFor('analyze-quality')}
+                align="end"
+              />
+            </button>
             <button
               type="button"
               data-testid="auto-match"
@@ -334,50 +387,15 @@ export const Toolbar = memo(function Toolbar({
             )}
             <button
               type="button"
-              data-testid="analyze-quality"
-              onClick={analysis ? onCancelAnalyze : onAnalyzeAll}
-              disabled={!analysis && allAnalyzed}
-              aria-label={
-                analysis
-                  ? tr('header.cancelAnalyze')
-                  : allAnalyzed
-                    ? tr('header.allAnalyzed')
-                    : tr('header.analyzeQuality')
-              }
-              className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-medium hover:bg-[var(--color-hover)] disabled:opacity-40 ${
-                analysis
-                  ? 'min-w-[3.25rem] text-[var(--color-accent)]'
-                  : 'text-fg-muted hover:text-fg'
-              }`}
+              data-testid="toolbar-review"
+              onClick={onReview}
+              disabled={!canReview}
+              aria-label={tr('header.menu.review')}
+              className="press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40"
             >
-              {analysisPaused ? (
-                <Pause data-testid="analyze-paused" className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <Activity
-                  className={`h-4 w-4 ${analysis ? 'animate-pulse' : ''}`}
-                  aria-hidden="true"
-                />
-              )}
-              {analysis ? (
-                <SteadyWidth
-                  testid="analyze-progress-sizer"
-                  widest={`${analysis.total}/${analysis.total}`}
-                >
-                  <span data-testid="analyze-progress" className="text-xs tabular-nums">
-                    {analysis.done}/{analysis.total}
-                  </span>
-                </SteadyWidth>
-              ) : (
-                <span>{tr('header.analyzeQualityLabel')}</span>
-              )}
-              <Tooltip
-                label={
-                  analysisLabel ||
-                  (allAnalyzed ? tr('header.allAnalyzed') : tr('header.analyzeQuality'))
-                }
-                hint={analysis ? undefined : hintFor('analyze-quality')}
-                align="end"
-              />
+              <SpellCheck className="h-4 w-4" aria-hidden="true" />
+              <span>{tr('header.reviewLabel')}</span>
+              <Tooltip label={tr('header.menu.review')} hint={hintFor('list-review')} align="end" />
             </button>
           </>
         )}
@@ -386,11 +404,17 @@ export const Toolbar = memo(function Toolbar({
           type="button"
           data-testid="open-palette"
           onClick={onPalette}
-          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
+          className="press group relative flex h-8 items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)] pr-1.5 pl-2.5 text-xs font-medium text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
           aria-label={tr('header.palette')}
         >
-          <Search className="h-4 w-4" aria-hidden="true" />
-          <Tooltip label={tr('header.palette')} hint={hintFor('palette')} align="end" />
+          <Command className="h-3.5 w-3.5" aria-hidden="true" />
+          <span>{tr('header.paletteLabel')}</span>
+          {hintFor('palette') && (
+            <kbd className="rounded border border-[var(--color-line-strong)] px-1 font-sans text-[11px] text-fg-faint">
+              {hintFor('palette')}
+            </kbd>
+          )}
+          <Tooltip label={tr('header.palette')} align="end" />
         </button>
         {/* Split the command launcher from the app-level views (stats, activity, settings)
             so the header reads as three groups (track actions, command, app) instead of one

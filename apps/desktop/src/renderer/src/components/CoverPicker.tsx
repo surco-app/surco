@@ -118,6 +118,16 @@ export function CoverPicker({
   const coversDiffer =
     isMulti && !!selectedTracks?.some((t) => t.coverUrl !== selectedTracks[0].coverUrl)
   const coversDifferId = useId()
+  const carried = isMulti
+    ? (selectedTracks ?? []).flatMap((t) => (t.coverUrl ? [t.coverUrl] : []))
+    : []
+  const distinctCovers = [...new Set(carried)]
+  const coversLabel =
+    !coversDiffer || distinctCovers.length === 0
+      ? null
+      : distinctCovers.length > 1
+        ? tr('editor.coversDistinct', { count: distinctCovers.length })
+        : tr('editor.coversSome', { count: carried.length, total: selectedTracks?.length ?? 0 })
   const [coverDragging, setCoverDragging] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   // The artwork the file arrived with: its embedded cover, not whatever coverUrl
@@ -468,21 +478,43 @@ export function CoverPicker({
                 : 'text-fg-faint outline-on-scrim/10 hover:text-fg-dim'
             }`}
           >
-            <ImageIcon className="h-7 w-7" strokeWidth={1.5} aria-hidden="true" />
-            <span aria-hidden="true" className="hidden @[26rem]:block">
-              {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
-            </span>
+            {coversLabel && !coverDragging ? (
+              <>
+                <span data-testid="cover-stack" aria-hidden="true" className="relative h-12 w-16">
+                  {distinctCovers.slice(0, 3).map((uri, i) => (
+                    <img
+                      key={uri}
+                      src={uri}
+                      alt=""
+                      draggable={false}
+                      style={{ left: `${i * 8}px`, zIndex: 3 - i }}
+                      className="absolute top-0 h-12 w-12 rounded-md object-cover shadow-[var(--shadow-float)] outline outline-1 -outline-offset-1 outline-on-scrim/10"
+                    />
+                  ))}
+                </span>
+                <span aria-hidden="true" className="leading-tight">
+                  {coversLabel}
+                </span>
+              </>
+            ) : (
+              <>
+                <ImageIcon className="h-7 w-7" strokeWidth={1.5} aria-hidden="true" />
+                <span aria-hidden="true" className="hidden @[26rem]:block">
+                  {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
+                </span>
+              </>
+            )}
           </button>
           {coversDiffer && (
             <span id={coversDifferId} className="sr-only">
-              {tr('editor.coverMixed')}
+              {coversLabel ?? tr('editor.coverMixed')}
             </span>
           )}
           {coverActions}
         </div>
       )}
       <div className="flex min-w-0 flex-col items-start gap-1.5 @[26rem]:items-stretch @[26rem]:gap-0">
-        {!displayCover && (
+        {!displayCover && !coversLabel && (
           <p aria-hidden="true" className="text-xs text-fg-faint @[26rem]:hidden">
             {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
           </p>

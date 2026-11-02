@@ -41,18 +41,27 @@ describe('locale key usage', () => {
     // `settings.provider.${p}` or `editor.channelMode${mode}` — so any key that
     // extends one of those prefixes counts as referenced.
     const dynamicPrefixes = [...source.matchAll(/[`'"]([A-Za-z0-9_.]+\.?)\$\{/g)].map((m) => m[1])
+    // Every dotted word in the source and each of its dot-suffixes, read in one pass: a key
+    // found here is referenced. One regex per key over the whole source took 6 s alone and
+    // past the timeout under the full suite's load, so the regex only runs for the few keys
+    // this set does not hold.
+    const tokens = new Set(
+      [...source.matchAll(/[\w-]+(?:\.[\w-]+)+/g)].flatMap((m) =>
+        m[0].split('.').map((_, i, parts) => parts.slice(i).join('.')),
+      ),
+    )
     const orphans = leafKeys(en)
       // i18next resolves plural forms from the bare key, so the suffix never
       // appears in source.
       .map((key) => key.replace(/_(zero|one|two|few|many|other)$/, ''))
       .filter((key) => {
+        if (tokens.has(key) || dynamicPrefixes.some((p) => key.startsWith(p))) return false
         // Substring alone would let a dead key hide behind a longer sibling
         // ('header.convert' inside 'header.convertingCount'), so the match must
         // end at a key boundary.
         const literal = new RegExp(`${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w.])`)
-        return !literal.test(source) && !dynamicPrefixes.some((p) => key.startsWith(p))
+        return !literal.test(source)
       })
     expect(orphans).toEqual([])
-    // One regex per key over the whole source: past 1500 keys it ran 5.4 s on CI's runner.
-  }, 30_000)
+  })
 })

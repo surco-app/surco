@@ -111,7 +111,10 @@ afterEach(() => {
   for (const [path, bytes] of saved) writeFileSync(path, bytes)
 })
 
-describe('Synthetic libraries the matrix judges on its own', () => {
+// Each judgement opens the encrypted rekordbox database, whose key derivation is slow on
+// purpose: a test takes about a second alone and passed the default 5 s while the full
+// suite loaded the machine.
+describe('Synthetic libraries the matrix judges on its own', { timeout: 30_000 }, () => {
   it('builds a set whose oracle passes untouched against the sources', () => {
     for (const t of set.tracks) expect(libraryInvariants(BASE, set, t, untouched(t))).toEqual([])
     expect(set.settings).toMatchObject({

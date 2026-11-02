@@ -8,26 +8,31 @@ import {
   CaseSensitive,
   Clock,
   Copy,
-  Crosshair,
   Ellipsis,
+  ExternalLink,
   FileAudio,
+  FilePen,
   FilePlus,
   Gauge,
+  Hash,
   KeyRound,
   ListMinus,
   ListOrdered,
   ListX,
   type LucideIcon,
   Replace,
+  Scissors,
   SpellCheck,
   SquareCheckBig,
   Tag,
   Trash2,
+  Usb,
   User,
 } from 'lucide-react'
 import type React from 'react'
 import { useId, useState } from 'react'
 import { createPortal } from 'react-dom'
+import type { Command } from '../lib/commands'
 import type { LibrarySource } from '../lib/librarySource'
 import type { FilterSelection, TrackSort } from '../lib/triage'
 import type { TrackItem } from '../types'
@@ -76,11 +81,21 @@ interface Props {
   // Only with an Apple Music playlist open: its copies across the whole library.
   duplicates?: { detail: string; onShow: () => void }
   onClearAll: () => void
+  listCommands: () => Command[]
   onRemoveSelected: () => void
   onTrashSelected: () => void
   onTrashSuspects: () => void
   onReviewIncomplete?: () => void
 }
+
+const LIST_COMMAND_ICONS: [string, LucideIcon][] = [
+  ['number-tracks', ListOrdered],
+  ['strip-numbering', Hash],
+  ['trim-detected', Scissors],
+  ['regenerate-names', FilePen],
+  ['export', ExternalLink],
+  ['export-usb', Usb],
+]
 
 function MenuAction({
   testid,
@@ -174,6 +189,7 @@ export function TrackListHeader({
   reviewDetail,
   duplicates,
   onClearAll,
+  listCommands,
   onRemoveSelected,
   onTrashSelected,
   onTrashSuspects,
@@ -197,6 +213,24 @@ export function TrackListHeader({
     setOpen(false)
     action()
   }
+
+  const registry = open ? listCommands() : []
+  const listTools = LIST_COMMAND_ICONS.flatMap(([id, icon]) => {
+    const command = registry.find((c) => c.id === id)
+    return command ? [{ command, icon }] : []
+  })
+  const listTool = ({ command, icon }: (typeof listTools)[number]): React.JSX.Element => (
+    <MenuAction
+      key={command.id}
+      testid={`list-command-${command.id}`}
+      icon={icon}
+      label={command.title}
+      hint={command.hint}
+      disabled={!command.enabled}
+      onClick={() => run(command.run)}
+    />
+  )
+  const exportTools = listTools.filter(({ command }) => command.id.startsWith('export'))
 
   return (
     // The ref measures the WHOLE sticky header (search + filter + sort), not just the filter
@@ -324,18 +358,6 @@ export function TrackListHeader({
               <SquareCheckBig className="h-3.5 w-3.5" aria-hidden="true" />
               <Tooltip label={tr('header.selectAll')} hint={hintFor('select-all')} />
             </button>
-            {selectedId && (
-              <button
-                type="button"
-                data-testid="reveal-selected"
-                onClick={scrollToSelected}
-                aria-label={tr('header.revealSelected')}
-                className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
-              >
-                <Crosshair className="h-3.5 w-3.5" aria-hidden="true" />
-                <Tooltip label={tr('header.revealSelected')} />
-              </button>
-            )}
             <span className="flex-1" />
             <button
               type="button"
@@ -411,6 +433,13 @@ export function TrackListHeader({
                       hint={hintFor('find-replace')}
                       onClick={() => run(onFindReplace)}
                     />
+                    {listTools
+                      .filter(({ command }) => !command.id.startsWith('export'))
+                      .map(listTool)}
+                    {exportTools.length > 0 && (
+                      <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
+                    )}
+                    {exportTools.map(listTool)}
                     <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
                     <MenuAction
                       testid="trash-selected"

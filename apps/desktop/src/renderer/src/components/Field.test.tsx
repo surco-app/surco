@@ -477,3 +477,45 @@ describe('Field previous value', () => {
     expect(onRestore).toHaveBeenCalledTimes(1)
   })
 })
+
+// A mixed field in a multi-select showed a blank box: the values it held were only
+// reachable by clicking through the rows. The chevron lists them, most common first, and
+// picking one writes it to every selected track like typing it would.
+describe('Field mixed values', () => {
+  const values = [
+    { value: 'Oliver Gil', count: 3 },
+    { value: 'Aaron Sevilla', count: 1 },
+  ]
+
+  it('lists the values the selection holds with how many tracks carry each', () => {
+    render(
+      <Field name="artist" label="Artist" value="" mixed mixedValues={values} onChange={vi.fn()} />,
+    )
+    fireEvent.click(screen.getByTestId('field-values-artist'))
+    const options = screen.getAllByRole('option')
+    expect(options.map((o) => o.textContent)).toEqual(['Oliver Gil3', 'Aaron Sevilla1'])
+  })
+
+  it('writes the picked value and closes the list', () => {
+    const onChange = vi.fn()
+    render(
+      <Field
+        name="artist"
+        label="Artist"
+        value=""
+        mixed
+        mixedValues={values}
+        onChange={onChange}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('field-values-artist'))
+    fireEvent.click(screen.getByRole('option', { name: /Aaron Sevilla/ }))
+    expect(onChange).toHaveBeenCalledWith('Aaron Sevilla')
+    expect(screen.queryByRole('listbox')).toBeNull()
+  })
+
+  it('offers no list when the field is not mixed', () => {
+    render(<Field name="artist" label="Artist" value="X" onChange={vi.fn()} />)
+    expect(screen.queryByTestId('field-values-artist')).toBeNull()
+  })
+})
