@@ -2141,7 +2141,7 @@ describe('App source playlists', () => {
       a: [entry('/m/a1.wav'), entry('/m/a2.wav'), entry('/m/a3.wav')],
       b: [entry('/m/b1.wav'), entry('/m/b2.wav')],
     }
-    function setupPlaylists(): { probed: string[]; release: () => void } {
+    function setupPlaylists(noArtist: string[] = []): { probed: string[]; release: () => void } {
       const probed: string[] = []
       let release: () => void = () => {}
       const gate = new Promise<void>((r) => {
@@ -2149,10 +2149,10 @@ describe('App source playlists', () => {
       })
       setApi({
         getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok', autoMatch: true })),
-        readTags: vi.fn(async (path: string) => ({
-          title: path.replace(/^\/m\/|\.wav$/g, ''),
-          artist: 'DJ',
-        })),
+        readTags: vi.fn(async (path: string) => {
+          const title = path.replace(/^\/m\/|\.wav$/g, '')
+          return { title, artist: noArtist.includes(title) ? '' : 'DJ' }
+        }),
         search: vi.fn(async (_q: string, _p: unknown, _pr: unknown, hints?: { title?: string }) => {
           if (hints?.title && !probed.includes(hints.title)) probed.push(hints.title)
           await gate
@@ -2202,6 +2202,46 @@ describe('App source playlists', () => {
       fireEvent.click(screen.getByTestId('source-node-a'))
 
       await waitFor(() => expect(probed).toEqual(expect.arrayContaining(['a2', 'a3'])))
+    })
+
+    it('matches only the filtered rows while a filter is on, and the hidden ones once it is off', async () => {
+      const { probed, release } = setupPlaylists(['a3'])
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-a'))
+      await waitFor(() => expect(probed).toEqual(['a1']))
+
+      fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+      fireEvent.click(await screen.findByTestId('quality-filter-missingRequired'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      await waitFor(() =>
+        expect(screen.getByTestId('auto-match-progress')).toHaveTextContent('0/1'),
+      )
+      release()
+      await waitFor(() => expect(probed).toContain('a3'))
+      await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
+      expect(probed).not.toContain('a2')
+
+      fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+      fireEvent.click(await screen.findByTestId('quality-filter-all'))
+
+      await waitFor(() => expect(probed).toContain('a2'))
+    })
+
+    it('matches only the rows the search leaves on screen', async () => {
+      const { probed, release } = setupPlaylists()
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-a'))
+      await waitFor(() => expect(probed).toEqual(['a1']))
+
+      fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'a3' } })
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      release()
+      await waitFor(() => expect(probed).toContain('a3'))
+      await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
+
+      expect(probed).not.toContain('a2')
     })
 
     // Tracks holds only what the user put there: the rows a playlist set aside are not on
