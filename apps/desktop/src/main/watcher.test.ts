@@ -44,6 +44,13 @@ describe('dirRoots', () => {
   it('ignores paths that no longer exist instead of throwing', async () => {
     expect(await dirRoots([join(dir, 'gone')])).toEqual([])
   })
+
+  // A file Surco knows is a file, so it needs no visit to the disk to be left out.
+  it('leaves out a known file without asking the disk', async () => {
+    const known = join(dir, 'album')
+    await mkdir(known)
+    expect(await dirRoots([known], (p) => p === known)).toEqual([])
+  })
 })
 
 describe('FolderWatcher', () => {

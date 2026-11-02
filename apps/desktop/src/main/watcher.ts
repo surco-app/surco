@@ -6,9 +6,13 @@ import { collectAudio } from './expand'
 // can grow when tracks are copied into it later, a single dropped file cannot. We filter
 // here rather than in the renderer because main is the only side that sees the original
 // drop before expandPaths flattens folders to their files.
-export async function dirRoots(paths: string[]): Promise<string[]> {
+export async function dirRoots(
+  paths: string[],
+  knownFile: (path: string) => boolean = () => false,
+): Promise<string[]> {
   const flags = await Promise.all(
     paths.map(async (p) => {
+      if (knownFile(p)) return null
       const info = await stat(p).catch(() => null)
       return info?.isDirectory() ? p : null
     }),

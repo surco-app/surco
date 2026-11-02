@@ -26,14 +26,19 @@ function setup(
 ): {
   result: { current: ReturnType<typeof useTrackLibrary> }
   expandPaths: ReturnType<typeof vi.fn>
+  fireChanged: (files: { changed: string[]; gone: string[] }) => void
 } {
   const expandPaths = vi.fn((paths: string[]) => Promise.resolve(paths))
+  let changedCb: (files: { changed: string[]; gone: string[] }) => void = () => {}
   ;(window as unknown as { api: unknown }).api = {
     takePendingFiles: vi.fn().mockResolvedValue([]),
     onOpenFiles: vi.fn(() => () => {}),
     onExpandedBatch: vi.fn(() => () => {}),
     onFoldersChanged: vi.fn(() => () => {}),
-    onFilesChanged: vi.fn(() => () => {}),
+    onFilesChanged: vi.fn((fn: typeof changedCb) => {
+      changedCb = fn
+      return () => {}
+    }),
     unwatchFolders: vi.fn().mockResolvedValue(undefined),
     expandPaths,
     readMeta: vi.fn().mockResolvedValue({ tags: {}, duration: null, cover: null, foreignTags: [] }),
@@ -56,8 +61,52 @@ function setup(
       ...opts,
     }),
   )
-  return { result, expandPaths }
+  return { result, expandPaths, fireChanged: (files) => changedCb(files) }
 }
+
+// A playlist's files Surco knows are taken as there when it opens, and the background check
+// of their dates finds the ones that went: a playlist row with no file goes, as it would have
+// at the opening, and the user is told how many; a Files row stays, flagged by its re-read.
+describe('files found gone after a playlist opened', () => {
+  const entries = (paths: string[]) => paths.map((path) => ({ path, separator: false, meta: {} }))
+
+  it('drops the playlist rows whose files went and says how many', async () => {
+    const onSourceFilesGone = vi.fn()
+    const { result, fireChanged } = setup({}, { onSourceFilesGone })
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff', '/m/b.aiff']), 'appleMusic')
+    })
+
+    act(() => fireChanged({ changed: [], gone: ['/m/b.aiff'] }))
+
+    expect(result.current.tracks.map((t) => t.inputPath)).toEqual(['/m/a.aiff'])
+    expect(onSourceFilesGone).toHaveBeenCalledExactlyOnceWith(1)
+  })
+
+  it('keeps a Files row whose file went, read again so it shows it could not be read', async () => {
+    const readMeta = vi.fn().mockResolvedValue({
+      tags: tags({ title: 'A' }),
+      duration: null,
+      cover: null,
+      foreignTags: [],
+    })
+    const onSourceFilesGone = vi.fn()
+    const { result, fireChanged } = setup({ readMeta }, { onSourceFilesGone })
+    await act(async () => {
+      await result.current.addPaths(['/m/a.aiff'])
+    })
+    readMeta.mockRejectedValue(new Error('ENOENT'))
+
+    await act(async () => {
+      fireChanged({ changed: [], gone: ['/m/a.aiff'] })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+    expect(result.current.tracks).toHaveLength(1)
+    expect(result.current.tracks[0].metaReadFailed).toBe(true)
+    expect(onSourceFilesGone).not.toHaveBeenCalled()
+  })
+})
 
 describe('opening a source playlist', () => {
   const entries = (paths: string[]) => paths.map((path) => ({ path, separator: false, meta: {} }))

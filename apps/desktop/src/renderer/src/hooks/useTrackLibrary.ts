@@ -107,6 +107,9 @@ interface Params {
   // say so — those rows silently showing only file-name data used to read as "this
   // file has no tags" when the real tags were just unreadable.
   onMetaReadFailed: (count: number) => void
+  // How many rows of an open playlist went because the background check found their files
+  // gone, so App can say so as it does for the ones missing when the playlist opens.
+  onSourceFilesGone?: (count: number) => void
   // Fired once per addPaths call with the deduped batch of genuinely new paths, right
   // after they're known and before their metadata reads resolve — App's hook for seeding
   // the disk-cached quality/clipping verdicts (seedCachedAnalyses) in one round trip so
@@ -194,6 +197,7 @@ export function useTrackLibrary({
   onDuplicatesSkipped,
   onNoAudioFound,
   onMetaReadFailed,
+  onSourceFilesGone,
   onPathsAdded,
   filesOpen = true,
 }: Params): TrackLibrary {
@@ -814,20 +818,6 @@ export function useTrackLibrary({
     [],
   )
 
-  // A row read under a date remembered from last launch shows the file as it was then; the
-  // background check reports the ones changed or gone since, and those are read again (what
-  // the user typed stays). A row being converted is left to its conversion.
-  useEffect(
-    () =>
-      window.api.onFilesChanged((paths) => {
-        const changed = new Set(paths.map((p) => p.normalize('NFC')))
-        for (const t of tracksRef.current)
-          if (t.status !== 'processing' && changed.has(t.inputPath.normalize('NFC')))
-            void refreshChangedTrack(t.id)
-      }),
-    [refreshChangedTrack],
-  )
-
   // The main process watches the folders a crate was loaded from and reports each one's
   // current audio list when it changes. Diff against the live crate (tracksRef, not a render
   // snapshot, since a watch can fire long after mount) and park anything genuinely new for
@@ -1157,6 +1147,32 @@ export function useTrackLibrary({
       onRemoveRef.current(removed)
     },
     [setSelection],
+  )
+
+  // A row read under a date remembered from last launch shows the file as it was then; the
+  // background check reports the ones changed or gone since. Those are read again (what the
+  // user typed stays), except a playlist row whose file went: it goes, as it would have had
+  // the file been missing when the playlist opened. A row being converted is left to it.
+  const onSourceFilesGoneRef = useRef(onSourceFilesGone)
+  onSourceFilesGoneRef.current = onSourceFilesGone
+  useEffect(
+    () =>
+      window.api.onFilesChanged(({ changed, gone }) => {
+        const same = (p: string): string => p.normalize('NFC')
+        const went = new Set(gone.map(same))
+        const touched = new Set([...changed.map(same), ...went])
+        const dropped: string[] = []
+        for (const t of tracksRef.current) {
+          if (t.status === 'processing' || !touched.has(same(t.inputPath))) continue
+          if (went.has(same(t.inputPath)) && !t.inFiles) dropped.push(t.id)
+          else void refreshChangedTrack(t.id)
+        }
+        if (dropped.length === 0) return
+        for (const p of went) listedBySource.current.delete(p)
+        removeTracks(dropped)
+        onSourceFilesGoneRef.current?.(dropped.length)
+      }),
+    [refreshChangedTrack, removeTracks],
   )
 
   function clearTracks(): void {

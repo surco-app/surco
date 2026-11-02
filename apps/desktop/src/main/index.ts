@@ -342,7 +342,7 @@ const fileSignatures = createFileSignatures({
   save: (dates) => fileDatesStore.write(JSON.stringify(dates)),
   stat: (path) => stat(path),
   verifyStat: (path) => sourceStat(path),
-  onChanged: (paths) => broadcast('files:changed', paths),
+  onChanged: (files) => broadcast('files:changed', files),
   defer: (run) => setTimeout(() => void run(), FILE_CHECK_DELAY_MS),
 })
 configureFileSignatures(fileSignatures)
@@ -1305,7 +1305,7 @@ function registerIpc(): void {
     const expanded = await activity.track(
       'import',
       'activity.import',
-      () => expandPaths(paths, streamBatch, () => notAudio++),
+      () => expandPaths(paths, streamBatch, () => notAudio++, fileSignatures.knows),
       {
         summary: (files) => ({
           detailKey: 'activity.trackCount',
@@ -1320,7 +1320,7 @@ function registerIpc(): void {
     // "N new tracks"; a single dropped file has no folder to grow, so dirRoots drops it.
     const win = BrowserWindow.fromWebContents(e.sender)
     if (win) {
-      const roots = await dirRoots(paths)
+      const roots = await dirRoots(paths, fileSignatures.knows)
       if (roots.length) watcherFor(win).watch(roots)
     }
     return expanded

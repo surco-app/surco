@@ -215,4 +215,25 @@ describe('expandPaths', () => {
 
     expect(seen).toEqual([join(dir, 'track.flac')])
   })
+
+  // Opening a 2041-track Music playlist asked the NAS about every file again, 17-20 s after
+  // the list was already on screen (measured 01/11). A file whose date Surco remembers is one
+  // it has read: taken as there, and the background check of those dates takes it back.
+  describe('with the files Surco knows', () => {
+    it('takes a known file as there without asking the disk', async () => {
+      const known = join(dir, 'gone-since.wav')
+      expect(await expandPaths([known], undefined, undefined, (p) => p === known)).toEqual([known])
+    })
+
+    it('still leaves out a known path that is not audio', async () => {
+      const known = join(dir, 'notes.txt')
+      expect(await expandPaths([known], undefined, undefined, () => true)).toEqual([])
+    })
+
+    it('asks the disk about a path it does not know', async () => {
+      expect(
+        await expandPaths([join(dir, 'never.wav')], undefined, undefined, () => false),
+      ).toEqual([])
+    })
+  })
 })
