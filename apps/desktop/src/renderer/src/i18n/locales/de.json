@@ -2476,7 +2476,8 @@
         "shown": "In der App",
         "suggested": "Vorgeschlagener Treffer",
         "name": "Aus dem Dateinamen",
-        "none": "Kein Vorschlag"
+        "none": "Kein Vorschlag",
+        "typed": "Von Hand ausgefüllt"
       },
       "stageAll_one": "{{count}} Vorschlag vormerken",
       "stageAll_other": "{{count}} Vorschläge vormerken",

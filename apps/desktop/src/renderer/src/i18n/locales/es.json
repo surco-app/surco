@@ -2476,7 +2476,8 @@
         "shown": "En la app",
         "suggested": "Sugerencia de búsqueda",
         "name": "Del nombre",
-        "none": "Sin propuesta"
+        "none": "Sin propuesta",
+        "typed": "Escrito a mano"
       },
       "stageAll_one": "Meter {{count}} propuesta en la tanda",
       "stageAll_other": "Meter {{count}} propuestas en la tanda",

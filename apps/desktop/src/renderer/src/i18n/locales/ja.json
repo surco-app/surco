@@ -2476,7 +2476,8 @@
         "shown": "アプリ内",
         "suggested": "検索の候補",
         "name": "ファイル名から",
-        "none": "提案なし"
+        "none": "提案なし",
+        "typed": "手入力"
       },
       "stageAll_one": "{{count}}件の提案をステージ",
       "stageAll_other": "{{count}}件の提案をステージ",

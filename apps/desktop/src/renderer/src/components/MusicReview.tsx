@@ -950,17 +950,20 @@ export const missingLabel = (t: TFunction, card: IncompleteCard) =>
 
 function IncompleteRow({
   card,
+  filled,
   selected,
   staged,
   onSelect,
 }: {
   card: IncompleteCard
+  filled: boolean
   selected: boolean
   staged: boolean
   onSelect: () => void
 }) {
   const { t } = useTranslation()
-  const source = card.fields.find((f) => f.proposal)?.proposal?.source
+  const source =
+    card.fields.find((f) => f.proposal)?.proposal?.source ?? (filled ? 'typed' : undefined)
   return (
     <div
       role="option"
@@ -1279,6 +1282,7 @@ export function MusicReview({
             <IncompleteRow
               key={incompleteKey(f.id)}
               card={f}
+              filled={f.fields.some((x) => review.fillValue(f.id, x.field).trim())}
               selected={incompleteKey(f.id) === selectedKey}
               staged={review.staged.has(incompleteKey(f.id))}
               onSelect={() => onSelect(incompleteKey(f.id))}

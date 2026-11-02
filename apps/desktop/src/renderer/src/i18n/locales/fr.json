@@ -2476,7 +2476,8 @@
         "shown": "Dans l’app",
         "suggested": "Correspondance suggérée",
         "name": "Du nom de fichier",
-        "none": "Aucune proposition"
+        "none": "Aucune proposition",
+        "typed": "Saisi à la main"
       },
       "stageAll_one": "Ajouter {{count}} proposition au lot",
       "stageAll_other": "Ajouter {{count}} propositions au lot",

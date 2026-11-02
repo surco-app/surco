@@ -2476,7 +2476,8 @@
         "shown": "No app",
         "suggested": "Correspondência sugerida",
         "name": "Do nome do arquivo",
-        "none": "Sem proposta"
+        "none": "Sem proposta",
+        "typed": "Preenchido à mão"
       },
       "stageAll_one": "Pôr {{count}} proposta no lote",
       "stageAll_other": "Pôr {{count}} propostas no lote",

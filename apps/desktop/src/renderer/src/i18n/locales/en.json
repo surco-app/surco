@@ -2476,7 +2476,8 @@
         "shown": "In the app",
         "suggested": "Suggested match",
         "name": "From file name",
-        "none": "No proposal"
+        "none": "No proposal",
+        "typed": "Filled in by hand"
       },
       "stageAll_one": "Stage {{count}} proposal",
       "stageAll_other": "Stage {{count}} proposals",

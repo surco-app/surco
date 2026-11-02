@@ -2808,6 +2808,23 @@ describe('incomplete tracks', () => {
     expect(within(b).getByTestId('music-review-row-pill')).toHaveAttribute('data-tone', 'warn')
   })
 
+  // A value the user wrote or copied is what gets written: the row must not still say none.
+  it('calls a track the user filled by hand ready, not without a proposal', () => {
+    render(
+      <Panes
+        review={incompleteReview({
+          fillValue: (id, field) =>
+            (({ ...values, '/m/b.aiff\0year': '1995' }) as Record<string, string>)[
+              `${id}\0${field}`
+            ] ?? '',
+        })}
+      />,
+    )
+    const b = rows()[1]
+    expect(within(b).getByTestId('incomplete-row-source')).toHaveTextContent('Filled in by hand')
+    expect(within(b).getByTestId('music-review-row-pill')).toHaveAttribute('data-tone', 'good')
+  })
+
   // The user's ask: fix them all at once, without opening each track.
   it('stages every track with a proposal from one button over the list', () => {
     const stageProposals = vi.fn()
