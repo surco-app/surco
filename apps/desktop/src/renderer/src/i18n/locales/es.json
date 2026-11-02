@@ -1440,7 +1440,7 @@
       "source": "Igual que el origen",
       "corrected": "Corregido"
     },
-    "bitDepthHint": "«Igual que el origen» conserva la profundidad exacta del archivo, relleno incluido. Al reducir a 16 bits se aplica dither. «Corregido» escribe como 16 bits reales, sin pérdidas, un fichero con audio de 16 bits demostrado y rellenado a 24; el audio de 24 bits genuino conserva su profundidad.",
+    "bitDepthHint": "«Igual que el origen» conserva la profundidad exacta del archivo, relleno incluido. Al reducir a 16 bits se aplica dither. «Corregido» escribe como 16 bits reales, sin pérdidas, un fichero con audio de 16 bits demostrado y rellenado a 24; el audio de 24 bits genuino conserva su profundidad. Un fichero de 32 bits se escribe a 24, lo máximo que cargan los reproductores DJ.",
     "bitDepthApplies": "Se usa al convertir a AIFF, WAV, FLAC o ALAC; el MP3 no tiene profundidad de bits.",
     "sampleRate": "Frecuencia de muestreo",
     "sampleRates": {

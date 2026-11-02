@@ -1440,7 +1440,7 @@
       "source": "Wie die Quelle",
       "corrected": "Korrigiert"
     },
-    "bitDepthHint": "„Wie die Quelle“ behält die exakte Tiefe der Datei, samt Auffüllung. Die Reduktion auf 16 Bit wendet Dither an. „Korrigiert“ schreibt eine Datei, deren 16-Bit-Audio nachweislich auf 24 Bit aufgefüllt ist, verlustfrei als echte 16 Bit; echtes 24-Bit-Audio behält seine Tiefe.",
+    "bitDepthHint": "„Wie die Quelle“ behält die exakte Tiefe der Datei, samt Auffüllung. Die Reduktion auf 16 Bit wendet Dither an. „Korrigiert“ schreibt eine Datei, deren 16-Bit-Audio nachweislich auf 24 Bit aufgefüllt ist, verlustfrei als echte 16 Bit; echtes 24-Bit-Audio behält seine Tiefe. Eine 32-Bit-Datei wird mit 24 Bit geschrieben, dem Höchsten, was DJ-Player laden.",
     "bitDepthApplies": "Gilt beim Konvertieren nach AIFF, WAV, FLAC oder ALAC; MP3 hat keine Bittiefe.",
     "sampleRate": "Abtastrate",
     "sampleRates": {

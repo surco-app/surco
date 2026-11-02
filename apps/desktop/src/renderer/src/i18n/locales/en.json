@@ -1440,7 +1440,7 @@
       "source": "Same as source",
       "corrected": "Corrected"
     },
-    "bitDepthHint": "“Same as source” keeps the file's exact depth, padding included. Reducing to 16-bit applies dither. “Corrected” writes a file proven to carry 16-bit audio padded to 24 as true 16-bit, losslessly; genuine 24-bit audio keeps its depth.",
+    "bitDepthHint": "“Same as source” keeps the file's exact depth, padding included. Reducing to 16-bit applies dither. “Corrected” writes a file proven to carry 16-bit audio padded to 24 as true 16-bit, losslessly; genuine 24-bit audio keeps its depth. A 32-bit file is written at 24 bits, the most DJ players load.",
     "bitDepthApplies": "Used when converting to AIFF, WAV, FLAC or ALAC; MP3 has no bit depth.",
     "sampleRate": "Sample rate",
     "sampleRates": {
