@@ -16,7 +16,12 @@ import { createConcurrencyLimiter } from './analysisLimiter'
 import { artworkDir, fetchAppleMusicArtwork } from './appleMusicArtwork'
 import { loadLibraryCache, saveLibraryCache } from './appleMusicLibraryCache'
 import { attachMissingArtwork } from './appleMusicPlaylistArt'
-import { loadPlaylistCache, savePlaylistCache } from './appleMusicPlaylistCache'
+import {
+  loadPlaylistCache,
+  loadPlaylistListCache,
+  savePlaylistCache,
+  savePlaylistListCache,
+} from './appleMusicPlaylistCache'
 import {
   dumpAppleMusicPlaylists,
   readAppleMusicEntry,
@@ -193,7 +198,11 @@ export function registerAppleMusicIpc(
       .track(
         'applemusic',
         'activity.appleMusicPlaylists',
-        () => musicReads.run(dumpAppleMusicPlaylists, 'high'),
+        async () => {
+          const lists = await musicReads.run(dumpAppleMusicPlaylists, 'high')
+          savePlaylistListCache(lists)
+          return lists
+        },
         {
           summary: (rows) => ({
             detailKey: 'activity.playlistCount',
@@ -267,6 +276,9 @@ export function registerAppleMusicIpc(
   )
 
   // The playlist as last read whole, to show while it is read again. A plain file read.
+  ipcMain.handle('applemusic:playlistsCached', () =>
+    process.platform === 'darwin' ? loadPlaylistListCache() : null,
+  )
   ipcMain.handle('applemusic:playlistCached', (_e, persistentId: string) =>
     process.platform === 'darwin' ? loadPlaylistCache(persistentId) : null,
   )

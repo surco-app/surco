@@ -276,6 +276,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
       missing: 0,
     }),
     loadAppleMusicLibraryPlaylistTracks: async () => null,
+    loadAppleMusicPlaylistsCached: async () => null,
     loadAppleMusicPlaylistCached: async () => null,
     loadEngineLibrary: async () => [],
     addToAppleMusic: async () => undefined,

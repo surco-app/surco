@@ -232,6 +232,8 @@ export interface Api {
     persistentId: string,
   ) => Promise<AppleMusicPlaylistTracks | null>
   // The playlist as last read whole; null when it never was.
+  // The last list of playlists Music gave, shown while Music lists them again.
+  loadAppleMusicPlaylistsCached: () => Promise<AppleMusicPlaylist[] | null>
   loadAppleMusicPlaylistCached: (persistentId: string) => Promise<AppleMusicPlaylistTracks | null>
   appleMusicArtwork: (
     persistentIds: string[],

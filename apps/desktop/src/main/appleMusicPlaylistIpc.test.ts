@@ -47,6 +47,8 @@ const loadPlaylistCache = vi.fn()
 vi.mock('./appleMusicPlaylistCache', () => ({
   savePlaylistCache: (...a: unknown[]) => savePlaylistCache(...a),
   loadPlaylistCache: (...a: unknown[]) => loadPlaylistCache(...a),
+  savePlaylistListCache: () => {},
+  loadPlaylistListCache: () => null,
 }))
 vi.mock('./cover', () => ({ hasCoverSource: () => false, prepareProcessedCover: vi.fn() }))
 
