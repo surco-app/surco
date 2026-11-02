@@ -6,7 +6,10 @@ import type { ProcessStage } from '../../../shared/types'
 export const STAGE_PROGRESS: Record<ProcessStage, number> = {
   cover: 0.2,
   converting: 0.55,
+  tags: 0.55,
   appleMusic: 0.85,
+  appleMusicUpdate: 0.85,
+  appleMusicReplace: 0.85,
   engineDj: 0.85,
   verify: 0.95,
 }

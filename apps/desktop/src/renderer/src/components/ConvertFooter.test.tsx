@@ -315,6 +315,7 @@ describe('ConvertFooter done layout', () => {
           ...status(true),
           revealPath: '/crate/a.aiff',
           musicAdded: true,
+          musicOp: 'added',
           superseded: [],
         }}
       />
@@ -333,9 +334,60 @@ describe('ConvertFooter done layout', () => {
     expect(screen.queryByTestId('show-file')).toBeNull()
   })
 
+  // Reported 02/11 with a screenshot: editing a track already in Apple Music, the button
+  // said "Update" and the line said "Added to Apple Music", as if a second copy landed.
+  function didInMusic(
+    musicOp: 'added' | 'updated' | 'replaced' | undefined,
+    isMulti = false,
+  ): React.JSX.Element {
+    const el = sentToMusic('appleMusic', isMulti)
+    return cloneElement(el, {
+      item: { ...el.props.item, musicOp },
+      status: { ...el.props.status, musicOp },
+    })
+  }
+
+  it.each([
+    ['added', '✓ Added to Apple Music'],
+    ['updated', '✓ Updated in Apple Music'],
+    ['replaced', '✓ Replaced in Apple Music'],
+  ] as const)('says the track was %s in Apple Music', (op, line) => {
+    render(didInMusic(op))
+    expect(screen.getByRole('status')).toHaveTextContent(line)
+  })
+
+  it.each([
+    ['updated', /^9 tracks updated in Apple Music$/],
+    ['replaced', /^9 tracks replaced in Apple Music$/],
+    [undefined, /^9 tracks in Apple Music$/],
+  ] as const)('counts a batch %s in Apple Music', (op, line) => {
+    render(didInMusic(op, true))
+    expect(screen.getByRole('status')).toHaveTextContent(line)
+  })
+
+  // The file was not converted when only its tags were rewritten.
+  it('says the tags were updated when only the tags were written', () => {
+    const el = sentToMusic('folder')
+    render(cloneElement(el, { status: { ...el.props.status, tagsOnly: true } }))
+    expect(screen.getByRole('status')).toHaveTextContent('✓ Tags updated')
+  })
+
+  it('counts a batch whose tags were updated', () => {
+    const el = sentToMusic('folder', true)
+    render(cloneElement(el, { status: { ...el.props.status, tagsOnly: true } }))
+    expect(screen.getByRole('status')).toHaveTextContent(/^Tags updated on 9 tracks$/)
+  })
+
+  it('offers the next tags update as an update, not as a conversion', () => {
+    const el = sentToMusic('folder')
+    render(cloneElement(el, { tagsOnly: true, willEditInPlace: true }))
+    fireEvent.click(screen.getByTestId('done-more'))
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update again')
+  })
+
   it('still shows the file when the destination is a folder', () => {
     render(sentToMusic('folder'))
-    expect(screen.getByRole('status')).toHaveTextContent('Exported as AIFF')
+    expect(screen.getByRole('status')).toHaveTextContent('Converted to AIFF')
     fireEvent.click(screen.getByTestId('done-more'))
     expect(screen.getByTestId('show-file')).toBeInTheDocument()
   })
@@ -579,7 +631,7 @@ describe('ConvertFooter verification', () => {
 
   it('once ok the success line shows with the verify-shield button', () => {
     render(verified([fileOk]))
-    expect(screen.getByTestId('export-success')).toHaveTextContent('✓ Exportado como WAV')
+    expect(screen.getByTestId('export-success')).toHaveTextContent('✓ Convertido a WAV')
     expect(screen.queryByTestId('verify-checking')).toBeNull()
     // Beside the line it vouches for, not lost among the library icons at the far end.
     expect(screen.getByTestId('export-success').nextElementSibling).toContainElement(
@@ -598,6 +650,33 @@ describe('ConvertFooter verification', () => {
     expect(screen.getByTestId('verify-shield')).toBeInTheDocument()
   })
 
+  it.each([
+    ['updated', /^Actualizado en Apple Music · rekordbox al cerrarlo$/],
+    ['replaced', /^Sustituido en Apple Music · rekordbox al cerrarlo$/],
+  ] as const)('a pending line keeps what was %s in Apple Music', (musicOp, line) => {
+    const el = verified([fileOk, pending('rekordbox', 'rekordbox')], { music: true })
+    render(cloneElement(el, { status: { ...el.props.status, musicOp } }))
+    expect(screen.getByTestId('export-success')).toHaveTextContent(line)
+  })
+
+  it('a pending tags update says so instead of naming a conversion', () => {
+    const el = verified([fileOk, pending('rekordbox', 'rekordbox')])
+    render(cloneElement(el, { status: { ...el.props.status, tagsOnly: true } }))
+    expect(screen.getByTestId('export-success')).toHaveTextContent(
+      /^Etiquetas actualizadas · rekordbox al cerrarlo$/,
+    )
+  })
+
+  it('a tags update never re-read reads without the check mark', () => {
+    render(
+      cloneElement(footer(true), {
+        item: { id: 't1', status: 'done', inputPath: '/a.aiff', meta: {} } as TrackItem,
+        status: { ...status(true), tagsOnly: true },
+      }),
+    )
+    expect(screen.getByTestId('export-success')).toHaveTextContent(/^Etiquetas actualizadas$/)
+  })
+
   it('two programs pending are joined in the line', () => {
     render(
       verified([fileOk, pending('rekordbox', 'rekordbox'), pending('engine', 'Engine DJ')], {
@@ -612,14 +691,14 @@ describe('ConvertFooter verification', () => {
   it('two programs pending on an exported file agree in number too', () => {
     render(verified([fileOk, pending('rekordbox', 'rekordbox'), pending('engine', 'Engine DJ')]))
     expect(screen.getByTestId('export-success')).toHaveTextContent(
-      /^Exportado como WAV · rekordbox y Engine DJ al cerrarlos$/,
+      /^Convertido a WAV · rekordbox y Engine DJ al cerrarlos$/,
     )
   })
 
-  it('a pending exported file reads Exportado como WAV · rekordbox al cerrarlo without ✓', () => {
+  it('a pending converted file reads Convertido a WAV · rekordbox al cerrarlo without ✓', () => {
     render(verified([fileOk, pending('rekordbox', 'rekordbox')]))
     const line = screen.getByTestId('export-success')
-    expect(line).toHaveTextContent(/^Exportado como WAV · rekordbox al cerrarlo$/)
+    expect(line).toHaveTextContent(/^Convertido a WAV · rekordbox al cerrarlo$/)
     expect(line.textContent).not.toContain('✓')
   })
 
@@ -650,7 +729,7 @@ describe('ConvertFooter verification', () => {
         status: { ...status(true), inMusicLibraryOnly: music },
       })
     const { rerender } = render(plain(false))
-    expect(screen.getByTestId('export-success')).toHaveTextContent(/^Exportado como WAV$/)
+    expect(screen.getByTestId('export-success')).toHaveTextContent(/^Convertido a WAV$/)
     expect(screen.queryByTestId('verify-checking')).toBeNull()
     expect(screen.queryByTestId('verify-shield')).toBeNull()
     rerender(plain(true))
@@ -941,6 +1020,7 @@ describe('ConvertFooter batch verification', () => {
         ...status(true),
         revealPath: '/out/a.wav',
         musicAdded: destination === 'appleMusic',
+        musicOp: destination === 'appleMusic' ? 'added' : undefined,
         superseded: [],
         batch: tally,
       },
@@ -1012,7 +1092,7 @@ describe('ConvertFooter batch verification', () => {
   // Nothing re-read is nothing vouched for: the sent count stays, without the check mark.
   it('a batch never re-read counts what was sent without the check mark', () => {
     const { rerender } = render(batchFooter({ unverified: 9 }))
-    expect(screen.getByTestId('export-success')).toHaveTextContent(/^9 pistas exportadas$/)
+    expect(screen.getByTestId('export-success')).toHaveTextContent(/^9 pistas convertidas$/)
     rerender(batchFooter({ unverified: 9 }, 'appleMusic' as Destination))
     expect(screen.getByTestId('export-success')).toHaveTextContent(
       /^9 pistas añadidas a Apple Music$/,

@@ -12,6 +12,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type {
   FormatSetting,
+  MusicOp,
   NormalizeConfig,
   OutputFormat,
   PlaylistSource,
@@ -37,6 +38,12 @@ import { Tooltip } from './Tooltip'
 import { detailText, VerifiedPopover } from './VerifiedPopover'
 
 // The places whose detail keys carry another prefix than the place's own name.
+const MUSIC_LINE: Record<MusicOp, string> = {
+  added: 'addedToAppleMusic',
+  updated: 'updatedInAppleMusic',
+  replaced: 'replacedInAppleMusic',
+}
+
 const DETAIL_PREFIX: Partial<Record<PlaceCheck['place'], string>> = { appleMusic: 'music' }
 
 // The one place the amber line names when several fail: a wrong answer before a place that
@@ -177,6 +184,8 @@ export function ConvertFooter({
     musicAdding,
     musicAdded,
     musicError,
+    musicOp,
+    tagsOnly: exportedTagsOnly,
   } = status
   // The Apple Music slot plays three roles for a single track that has a library
   // copy (the persistent ID a previous add stored): out of sync it offers "Update"
@@ -359,14 +368,15 @@ export function ConvertFooter({
   // Green vouches only for what came back ok: a batch's other counts, a line still pending
   // and a line never re-read are told in the quiet tone.
   const successTone = !isMulti && verification?.status === 'ok' ? 'good' : 'dim'
+  const musicLine = MUSIC_LINE[musicOp ?? 'added']
   const addedLine = pendingPrograms
-    ? tr('verify.pendingLine.addedToAppleMusic', {
+    ? tr(`verify.pendingLine.${musicLine}`, {
         programs: pendingPrograms,
         count: pendingPlaces.length,
       })
     : unverified
-      ? tr('verify.plainLine.addedToAppleMusic')
-      : tr('editor.addedToAppleMusic')
+      ? tr(`verify.plainLine.${musicLine}`)
+      : tr(`editor.${musicLine}`)
   const checkingLine = (
     <p
       data-testid="verify-checking"
@@ -503,18 +513,33 @@ export function ConvertFooter({
                         </button>
                       ) : addedToMusic ? (
                         isMulti ? (
-                          tr('verify.plainLine.addedToAppleMusicCount', { count: selectedCount })
+                          tr(
+                            `verify.plainLine.${musicOp ? MUSIC_LINE[musicOp] : 'inAppleMusic'}Count`,
+                            { count: selectedCount },
+                          )
                         ) : (
                           addedLine
                         )
                       ) : isMulti ? (
-                        tr('verify.plainLine.exportedCount', { count: selectedCount })
+                        tr(
+                          exportedTagsOnly
+                            ? 'verify.plainLine.tagsUpdatedCount'
+                            : 'verify.plainLine.exportedCount',
+                          { count: selectedCount },
+                        )
                       ) : pendingPrograms ? (
-                        tr('verify.pendingLine.exportedAs', {
-                          format: (exportedFormat ?? '').toUpperCase(),
-                          programs: pendingPrograms,
-                          count: pendingPlaces.length,
-                        })
+                        tr(
+                          exportedTagsOnly
+                            ? 'verify.pendingLine.tagsUpdated'
+                            : 'verify.pendingLine.exportedAs',
+                          {
+                            format: (exportedFormat ?? '').toUpperCase(),
+                            programs: pendingPrograms,
+                            count: pendingPlaces.length,
+                          },
+                        )
+                      ) : exportedTagsOnly ? (
+                        tr(unverified ? 'verify.plainLine.tagsUpdated' : 'editor.tagsUpdated')
                       ) : (
                         tr(unverified ? 'verify.plainLine.exportedAs' : 'editor.exportedAs', {
                           format: (exportedFormat ?? '').toUpperCase(),
@@ -614,6 +639,8 @@ export function ConvertFooter({
                   multi={isMulti}
                   outputFormat={format}
                   exportedFormat={isMulti ? null : exportedFormat}
+                  inPlace={!isMulti && willEditInPlace}
+                  tagsOnly={!isMulti && tagsOnly}
                   incomplete={incomplete}
                   incompleteReason={incompleteReason}
                   destination={destination}

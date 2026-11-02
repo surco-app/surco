@@ -60,6 +60,7 @@ export function exportButtonLabel(state: ExportLabelState): {
     if (state.exportedFormat && state.format !== state.exportedFormat) {
       return { key: 'editor.reexportAs', options: { format: state.format } }
     }
+    if (state.inPlace && state.tagsOnly) return { key: 'editor.updateAgain' }
     return { key: 'editor.reexport' }
   }
   const place = placeSuffix(state)

@@ -1,3 +1,4 @@
+import type { MusicOp } from '../../../shared/types'
 import { PLACE_ORDER, type VerifyPlace } from '../../../shared/verification'
 import type { TrackItem } from '../types'
 import { autoRetiredFile } from './autoRetiredFile'
@@ -50,6 +51,10 @@ export interface SelectionStatus {
   musicAdding: boolean
   musicAdded: boolean
   musicError: string | undefined
+  // What the Music step did, when every selected track went the same way.
+  musicOp: MusicOp | undefined
+  // Every selected track had only its tags rewritten.
+  tagsOnly: boolean
   // The files a multi-select batch of replacements left stranded: out of Apple Music,
   // with rekordbox following their successors. Empty in single-select, where the footer
   // offers the one file through supersededFile instead.
@@ -91,6 +96,11 @@ export function selectionStatus(
   const musicAdded = isMulti
     ? multiTracks.length > 0 && multiTracks.every((t) => t.musicStatus === 'added')
     : item.musicStatus === 'added'
+  const tracks = isMulti ? multiTracks : [item]
+  const musicOp = tracks.every((t) => t.musicOp === tracks[0]?.musicOp)
+    ? tracks[0]?.musicOp
+    : undefined
+  const tagsOnly = tracks.length > 0 && tracks.every((t) => t.exportedTagsOnly)
   const musicError = isMulti
     ? multiTracks.find((t) => t.musicStatus === 'error')?.musicError
     : item.musicError
@@ -114,6 +124,8 @@ export function selectionStatus(
     musicAdding,
     musicAdded,
     musicError,
+    musicOp,
+    tagsOnly,
     superseded,
     batch: isMulti ? batchVerification(multiTracks) : undefined,
   }

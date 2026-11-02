@@ -14,6 +14,8 @@ interface DoneMenuProps {
   multi: boolean
   outputFormat: FormatSetting
   exportedFormat: OutputFormat | null
+  inPlace: boolean
+  tagsOnly: boolean
   incomplete: boolean
   incompleteReason?: string
   destination: Destination
@@ -35,6 +37,8 @@ export function DoneMenu({
   multi,
   outputFormat,
   exportedFormat,
+  inPlace,
+  tagsOnly,
   incomplete,
   incompleteReason,
   destination,
@@ -55,7 +59,8 @@ export function DoneMenu({
   const again = exportButtonLabel({
     processing: false,
     quiet: true,
-    inPlace: false,
+    inPlace,
+    tagsOnly,
     stale: false,
     done: false,
     withAppleMusic: false,

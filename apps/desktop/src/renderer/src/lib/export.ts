@@ -26,6 +26,8 @@ export function exportedPatch(
       outputPath: undefined,
       verification: result.verification,
       musicStatus: 'added',
+      musicOp: result.musicOp,
+      exportedTagsOnly: false,
       ...(result.musicPersistentId && { musicPersistentId: result.musicPersistentId }),
       oldMusicCopyKept: result.oldMusicCopyKept,
       // The row was the file the replaced entry played, so it follows the entry to the
@@ -79,6 +81,8 @@ export function exportedPatch(
       musicPersistentId: result.musicPersistentId,
       musicStatus: 'added' as const,
     }),
+    musicOp: result.musicOp,
+    exportedTagsOnly: !!result.tagsOnly,
     // The conversion put this track in the Engine DJ library, so the membership badge
     // and filter read it owned without waiting for the library snapshot to refresh.
     ...(result.addedToEngineDj && { engineDjAdded: true }),

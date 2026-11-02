@@ -236,6 +236,32 @@ describe('ExportButton', () => {
     expect(screen.getByTestId('process-progress')).toHaveStyle({ transform: 'scaleX(0.85)' })
   })
 
+  // Reported 02/11: editing a track already in Music read "Adding to Apple Music…" under
+  // an "Update tags" button. Each step names what the job really does.
+  it.each([
+    ['tags', 'Writing tags…'],
+    ['appleMusicUpdate', 'Updating in Apple Music…'],
+    ['appleMusicReplace', 'Replacing in Apple Music…'],
+  ] as const)('names the %s step for what it does', (stage, label) => {
+    render(<ExportButton {...baseProps} incomplete={false} status="processing" stage={stage} />)
+    expect(screen.getByTestId('process-btn')).toHaveTextContent(label)
+  })
+
+  it('lets a tags write be cancelled like an encode', () => {
+    const onCancel = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        status="processing"
+        stage="tags"
+        onCancel={onCancel}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onCancel).toHaveBeenCalledOnce()
+  })
+
   // A long single convert used to be a dead progress bar with no escape. With a cancel
   // handler the button stays live while converting: clicking it stops the job instead of
   // firing another convert, so the single flow has the escape a batch always had.
