@@ -1059,7 +1059,7 @@
     "anchorLink": "Lien vers cet exemple",
     "walkthrough": {
       "title": "Un morceau, du début à la fin",
-      "lede": "Sept étapes, une seule fenêtre. En chemin, tu découvriras lesquels de tes FLAC sont en réalité des MP3."
+      "lede": "Sept étapes, une seule fenêtre. En chemin, tu découvriras lesquels de tes fichiers sans perte sont en réalité des MP3."
     },
     "drop": {
       "title": "Tu les déposes, ils sont là.",
@@ -1166,9 +1166,9 @@
       },
       "audio": {
         "title": "Et un meilleur son au passage",
-        "note": "Démasque les FLAC issus d'un MP3, rogne les silences, nettoie les clics et le bruit du vinyle et nivelle le volume.",
+        "note": "Démasque les fichiers sans perte issus d'un MP3, rogne les silences, nettoie les clics et le bruit du vinyle et nivelle le volume.",
         "lead": "Et un meilleur son au passage.",
-        "rest": "Démasque les FLAC issus d'un MP3."
+        "rest": "Démasque les fichiers sans perte issus d'un MP3."
       },
       "export": {
         "title": "Et ils arrivent dans ton logiciel",
