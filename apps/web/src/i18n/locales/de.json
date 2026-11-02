@@ -1380,7 +1380,7 @@
     "quality": {
       "kicker": "Bevor du konvertierst",
       "title": "Ist dein verlustfreies Audio wirklich verlustfrei?",
-      "lede": "Ein in FLAC oder WAV umgewandeltes MP3 ist genauso groß wie das echte. Das Spektrum verrät es, weil der Klang abrupt abbricht. Surco prüft jeden Track, bevor du ihn konvertierst."
+      "lede": "Ein in FLAC, WAV oder AIFF umgewandeltes MP3 ist genauso groß wie das echte. Das Spektrum verrät es, weil der Klang abrupt abbricht. Surco prüft jeden Track, bevor du ihn konvertierst."
     },
     "faq": {
       "kicker": "FAQ",
