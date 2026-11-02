@@ -249,6 +249,23 @@ describe('the fake Music library answers like the real scripts', () => {
     expect(await fake.setAppleMusicField('00000000000000FF', 'genre', 'a', 'b')).toBe('missing')
   })
 
+  // Music keeps the year as a number, so the real writer compares and sets the year a full
+  // date starts with; a fake that compared the text would refuse every year the review fills.
+  it('guards and sets the year as the number Music keeps, and the grouping as text', async () => {
+    const entry = music.addEntry({
+      location: makeTrack(join(dir, 'y.aiff'), { title: 'T', artist: 'A' }),
+      year: 1999,
+      grouping: 'Warm up',
+    })
+    const set = (field: 'year' | 'grouping', from: string, to: string) =>
+      fake.setAppleMusicField(entry.persistentId, field, from, to)
+    expect(await set('year', '2000', '2001')).toBe('mismatch')
+    expect(await set('year', '1999-01-01', '2001-05-03')).toBe('set')
+    expect(music.state.entries[0].year).toBe(2001)
+    expect(await set('grouping', 'Warm up', 'Peak')).toBe('set')
+    expect(music.state.entries[0].grouping).toBe('Peak')
+  })
+
   it('writes the entry artwork to the job path and hands back a thumbnail url', async () => {
     const entry = music.addEntry({ location: file('c.aiff'), artwork: file('cover.jpg') })
     const outPath = join(dir, 'out.jpg')

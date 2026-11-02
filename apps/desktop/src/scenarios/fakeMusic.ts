@@ -15,7 +15,7 @@ import { vi } from 'vitest'
 import type { MusicEntryFacts, MusicSetResult } from '../main/applemusic'
 import { coverThumbUrlForBytes } from '../main/coverThumbs'
 import { errorWithKey } from '../shared/errorKeys'
-import type { MusicReviewField, TrackMetadata } from '../shared/types'
+import type { ReviewWriteField, TrackMetadata } from '../shared/types'
 
 type AppleMusic = typeof import('../main/applemusic')
 type Playlists = typeof import('../main/appleMusicPlaylists')
@@ -72,7 +72,7 @@ function freshState() {
     updated: [] as { persistentId: string; meta: TrackMetadata; coverPath?: string }[],
     deleted: [] as { persistentId: string; location: string }[],
     transfers: [] as { from: string; to: string; answer: string }[],
-    fieldsSet: [] as { persistentId: string; field: MusicReviewField; from: string; to: string }[],
+    fieldsSet: [] as { persistentId: string; field: ReviewWriteField; from: string; to: string }[],
     revealed: [] as string[],
   }
 }
@@ -259,6 +259,7 @@ const label = (e: MusicEntry) => `${e.artist} - ${e.title}`
 const sameIgnoringCase = (a: string, b: string) =>
   a.localeCompare(b, undefined, { sensitivity: 'accent' }) === 0
 const same = (a: string, b: string) => a.normalize('NFC') === b.normalize('NFC')
+const musicYear = (value: string) => Number(value.trim().match(/^\d{4}/)?.[0] ?? 0)
 const printed = (rows: string[], separator: string) => `${rows.join(separator)}\n`
 
 function wallClock(iso: string): string {
@@ -508,8 +509,13 @@ export function appleMusicModule(real: AppleMusic): AppleMusic {
       const entry = live(persistentId)
       if (!entry) return 'missing'
       if (location !== undefined && !same(fileOf(entry), location)) return 'mismatch'
-      if (!same(entry[field], from)) return 'mismatch'
-      entry[field] = to
+      if (field === 'year') {
+        if (entry.year !== musicYear(from)) return 'mismatch'
+        entry.year = musicYear(to)
+      } else {
+        if (!same(entry[field], from)) return 'mismatch'
+        entry[field] = to
+      }
       rewriteFile(entry)
       state.fieldsSet.push({ persistentId, field, from, to })
       return 'set'
