@@ -1380,7 +1380,7 @@
     "quality": {
       "kicker": "Antes de convertir",
       "title": "¿Tu lossless es de verdad sin pérdida?",
-      "lede": "Un MP3 convertido a FLAC o a WAV pesa lo mismo que el auténtico. El espectro lo delata, porque el sonido se corta en seco. Surco revisa cada pista antes de que la conviertas."
+      "lede": "Un MP3 convertido a FLAC, a WAV o a AIFF pesa lo mismo que el auténtico. El espectro lo delata, porque el sonido se corta en seco. Surco revisa cada pista antes de que la conviertas."
     },
     "faq": {
       "kicker": "Preguntas",

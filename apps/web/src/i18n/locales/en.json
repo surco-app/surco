@@ -1380,7 +1380,7 @@
     "quality": {
       "kicker": "Before you convert",
       "title": "Is your lossless really lossless?",
-      "lede": "An MP3 converted to FLAC or WAV weighs the same as the real thing. The spectrum gives it away, because the sound stops at a hard wall. Surco checks every track before you convert it."
+      "lede": "An MP3 converted to FLAC, WAV or AIFF weighs the same as the real thing. The spectrum gives it away, because the sound stops at a hard wall. Surco checks every track before you convert it."
     },
     "faq": {
       "kicker": "FAQ",

@@ -1380,7 +1380,7 @@
     "quality": {
       "kicker": "Avant de convertir",
       "title": "Ton sans perte l'est-il vraiment ?",
-      "lede": "Un MP3 converti en FLAC ou en WAV pèse autant que le vrai. Le spectre le trahit, car le son s'arrête net. Surco vérifie chaque morceau avant que tu le convertisses."
+      "lede": "Un MP3 converti en FLAC, en WAV ou en AIFF pèse autant que le vrai. Le spectre le trahit, car le son s'arrête net. Surco vérifie chaque morceau avant que tu le convertisses."
     },
     "faq": {
       "kicker": "FAQ",
