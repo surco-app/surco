@@ -14,6 +14,7 @@ import type {
   TrackMetadata,
 } from '../shared/types'
 import { createConcurrencyLimiter } from './analysisLimiter'
+import { forgetArtworkCopy } from './artworkCopies'
 
 const run = promisify(execFile)
 
@@ -1300,6 +1301,7 @@ export async function addToAppleMusic(
 ): Promise<string> {
   const answer = (await run(buildAddScript(filePath, meta, coverPath))).trim()
   if (answer === ADD_RETURNED_EXISTING) throw errorWithKey('appleMusicAddReturnedOld', filePath)
+  if (coverPath?.trim()) await forgetArtworkCopy(answer)
   return answer
 }
 
@@ -1309,10 +1311,13 @@ export async function updateInAppleMusic(
   persistentId: string,
   meta: TrackMetadata,
   coverPath?: string,
+  run: typeof runOsascript = runOsascript,
 ): Promise<string | null> {
-  const stdout = await runOsascript(buildUpdateScript(persistentId, meta, coverPath))
+  const stdout = await run(buildUpdateScript(persistentId, meta, coverPath))
   const result = stdout.trim()
-  return result === 'missing' ? null : result
+  if (result === 'missing') return null
+  if (coverPath?.trim()) await forgetArtworkCopy(result)
+  return result
 }
 
 export async function relinkAppleMusicEntry(persistentId: string, path: string): Promise<void> {
