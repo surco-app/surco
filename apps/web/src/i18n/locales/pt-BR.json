@@ -50,6 +50,9 @@
   "features": {
     "kicker": "Funções",
     "title": "O fluxo inteiro, em um só app",
+    "lede": "O que o Surco faz, uma linha por função. Abra qualquer uma para ver o detalhe completo.",
+    "count_one": "{{count}} função",
+    "count_other": "{{count}} funções",
     "groups": [
       {
         "kick": "converter",
@@ -58,118 +61,120 @@
         "items": [
           {
             "t": "Qualquer formato para qualquer um",
+            "s": "AIFF, WAV, FLAC, ALAC e MP3 em qualquer direção, e também lê M4A, AAC, OGG e OPUS.",
             "d": "AIFF, WAV, FLAC, ALAC ou MP3, em qualquer direção. De FLAC para MP3 para caber no pendrive, de WAV para AIFF para levar a capa, de MP3 para o que o seu programa pedir. Também lê M4A, AAC, OGG e OPUS. Um M4A pode ficar como está; os outros três sempre são transcodificados."
           },
           {
             "t": "Sem recodificar quando não precisa",
+            "s": "Se o arquivo já está nesse formato, ele é copiado como está em vez de ser recodificado.",
             "d": "Um arquivo que já está no formato é copiado byte a byte, a não ser que seus ajustes de qualidade ou um filtro de áudio mudem o áudio; em MP3 e AIFF sobre APFS é um clone instantâneo, de qualquer tamanho."
           },
           {
             "t": "Qualidade do seu jeito",
+            "s": "Você escolhe bitrate, bits e taxa de amostragem, ou mantém os da origem.",
             "d": "Bitrate do MP3, profundidade de bits e taxa de amostragem. Por padrão mantém os da origem, menos o áudio de 16 bits preenchido até 24, que é salvo como 16 bits reais sem perda."
           },
           {
             "t": "Nada de alargar em silêncio",
+            "s": "Um rip de 16 bits não sai em 24 sem você pedir.",
             "d": "Fixe a profundidade para que um rip de 16 bits nunca saia em 24 sem você perceber."
           },
           {
             "t": "Volume nivelado",
+            "s": "Todas as faixas no mesmo volume, com limitador só quando não tem outro jeito.",
             "d": "Um ganho constante, e um limitador só quando não dá para chegar ao alvo de outro jeito."
           },
           {
             "t": "Ele avisa antes o que vai fazer",
+            "s": "Antes de converter você vê quanto cada faixa vai subir e se o limitador entra.",
             "d": "Quanto esta faixa vai se mover, se o limitador entra e em quantos decibéis os picos passariam do teto."
           },
           {
             "t": "Corte de silêncio",
+            "s": "Tira o silêncio do início e do fim vendo o corte na onda.",
             "d": "O corte visível na onda, com ajuste fino ao milissegundo."
           },
           {
-            "t": "Resgata WAVs quebrados",
-            "d": "O cabeçalho que trava outros apps, reparado numa cópia. Seu arquivo nunca é tocado."
-          },
-          {
             "t": "Você escolhe onde vai parar",
+            "s": "Uma pasta, ao lado do original, Apple Music, rekordbox, Engine DJ ou Traktor.",
             "d": "Uma pasta, ao lado do original ou Apple Music. E no rekordbox, no Engine DJ e no Traktor você escolhe se a faixa é atualizada ou também adicionada."
           },
           {
             "t": "Taxa de amostragem corrigida",
+            "s": "Devolve a 44,1 e a 16 bits o que estava inflado e deixa intacto o que é genuíno.",
             "d": "O modo \"Corrigido\" regrava em 44,1 só as faixas medidas como reamostradas para cima; os arquivos genuínos e os que não dá para verificar saem intactos. E a profundidade \"Corrigido\" salva o áudio de 16 bits preenchido até 24 como 16 bits reais, sem perdas; \"Igual à origem\" mantém o contêiner como está."
-          },
-          {
-            "t": "Confere a cópia antes de confiar nela",
-            "d": "Um arquivo gravado pela metade declara a mesma duração que o inteiro. O Surco compara o que ele promete com o que toca de verdade, e nunca publica uma conversão truncada."
           }
         ]
       },
       {
         "kick": "etiquetar",
         "title": "Etiquetar",
-        "replaces": "no lugar de Discogs, Bandcamp, Deezer, Beatport e MusicBrainz no navegador mais um editor de tags",
+        "replaces": "no lugar de cinco sites e um editor de tags",
         "items": [
           {
             "t": "Discogs, Bandcamp, Deezer, Beatport, MusicBrainz",
+            "s": "Busca artista, álbum, ano, BPM, tom, selo e catálogo em cinco fontes.",
             "d": "Artista, álbum, ano, BPM e tom. Selo e número de catálogo vêm do Discogs, do Beatport e do MusicBrainz, e o Beatport acrescenta o mix e o ISRC."
           },
           {
             "t": "Associa um release inteiro",
+            "s": "Reconhece cada faixa pela duração, mesmo quando o título não ajuda.",
             "d": "Pela duração das faixas, que distingue duas versões quando o título não consegue."
           },
           {
             "t": "Auto-associação",
+            "s": "Aplica só o que é seguro e deixa o duvidoso para você confirmar.",
             "d": "Percorre a lista inteira, aplica só as associações de alta confiança e deixa as duvidosas para você confirmar. Se aplicou o release errado, ⌘Z devolve as tags de todas as faixas dele."
           },
           {
             "t": "Edição em lote",
+            "s": "Edita os campos de um release inteiro de uma vez, com localizar e substituir.",
             "d": "Os campos que um release compartilha, mais localizar e substituir com regex."
           },
           {
             "t": "Capa",
+            "s": "Traz a capa de qualquer fonte ou usa a sua, recortada do seu jeito.",
             "d": "Do Discogs, Bandcamp, Deezer, Beatport, MusicBrainz ou sua, com recorte quadrado e um tamanho máximo que você define."
           },
           {
             "t": "ID3v2.3, não v2.4",
+            "s": "Grava a versão de tags que CDJs e rekordbox leem sem surpresas.",
             "d": "Para que CDJs e rekordbox leiam sem surpresas."
           },
           {
             "t": "Avaliações que vão e voltam",
+            "s": "Suas estrelas são lidas e gravadas do jeito que o Traktor e o Windows entendem.",
             "d": "Nos dois frames que o Traktor e o Windows Media Player leem. E as estrelas que você já deu no Traktor aparecem aqui."
           },
           {
             "t": "Campos de colecionador",
+            "s": "Estilo, país, mídia e URL do release, com os nomes do mp3tag.",
             "d": "Estilo, país, tipo de mídia e a URL do release, com os nomes que o mp3tag usa para nunca duplicarem."
           },
           {
             "t": "Seus próprios campos",
+            "s": "Crie o campo que falta e use-o no editor e nos nomes de arquivo.",
             "d": "Crie o campo que está faltando com um nome e uma chave, e use-o no editor, no nome do arquivo e em localizar e substituir. Ele é salvo em todos os formatos."
           },
           {
             "t": "A data completa, se você quiser",
+            "s": "Salva a data completa, como 2020-12-01, se a fonte a trouxer.",
             "d": "Ano como 2020-12-01 quando o arquivo ou o Discogs, Bandcamp, Deezer, Beatport ou MusicBrainz trazem a data inteira. Os nomes de arquivo e o rekordbox continuam recebendo só o ano."
           },
           {
             "t": "Gênero e agrupamento com várias tags",
+            "s": "Vários gêneros numa faixa, com o separador que você preferir.",
             "d": "Cada lista escolhe seu separador: vírgula, ponto e vírgula, barra ou um seu. Editando várias faixas, cada tag diz se está em todas ou em algumas."
           },
           {
             "t": "Você decide o que uma associação toca",
+            "s": "Um interruptor por campo para que uma associação não apague o que você pôs à mão.",
             "d": "Um interruptor por campo: o gênero que você pôs à mão sobrevive à aplicação de um release."
           },
           {
-            "t": "Agrupamento do Apple Music",
-            "d": "Ele grava isso no seu próprio frame, invisível para quase todas as outras ferramentas."
-          },
-          {
-            "t": "Traga uma playlist do Apple Music",
-            "d": "Carregue a playlist e trabalhe nos arquivos dela. Mantém o formato deles e preenche o que só existe no Music, como o agrupamento, também nas faixas que você abre soltas. Só no macOS."
-          },
-          {
             "t": "Tags que outros programas deixaram",
+            "s": "Você vê as tags que outros programas deixaram e remove as que sobram.",
             "d": "Inspecione e remova uma por uma, ou limpe a ficha inteira."
-          },
-          {
-            "t": "Nada se perde",
-            "d": "As edições se salvam sozinhas: a sessão volta mesmo se o app morrer no meio da caixa de discos."
           }
         ]
       },
@@ -180,142 +185,214 @@
         "items": [
           {
             "t": "Pega MP3 disfarçado",
+            "s": "Detecta os MP3 que se passam por FLAC ou WAV.",
             "d": "Desenha o espectro com o corte do codec marcado na imagem."
           },
           {
             "t": "Três coisas, não uma",
+            "s": "Distingue transcodes, agudos regenerados e falsos hi-res.",
             "d": "Um transcode, agudos possivelmente regenerados por um enhancer e hi-res que era um 44,1 esticado."
           },
           {
             "t": "Sem falsos positivos",
+            "s": "Um master abafado não conta como falso, calibrado com 6000 faixas reais.",
             "d": "Primeiro confere se há um corte real, um despenhadeiro dentro de um quilohertz: um master abafado não é falso. Calibrado com 6000 faixas lossless reais."
           },
           {
             "t": "Ele mostra as contas",
+            "s": "Cada veredito vem com as medições que o justificam.",
             "d": "Cada veredito vem com a medição por trás: até onde chega a energia, onde fica o corte e quanto ela cai dentro de um quilohertz."
           },
           {
             "t": "Um MP3 não é defeito",
+            "s": "Um MP3 é avaliado como MP3 e sai limpo se estiver.",
             "d": "O corte dele é o formato, não uma falha: é avaliado na sua própria escala e sai limpo quando está."
           },
           {
             "t": "Leitura por cores",
+            "s": "Loudness, picos, dinâmica, balanço e piso de ruído, em cores.",
             "d": "LUFS, true peak, dinâmica, balanço L/R e piso de ruído."
           },
           {
             "t": "Clipping como no Audacity",
+            "s": "Marca o clipping com o mesmo critério do Audacity.",
             "d": "O mesmo limiar amostra por amostra, então as marcas vermelhas batem com as dele."
           },
           {
             "t": "Zoom ×256 na onda",
+            "s": "Aproxima a onda até 256 vezes sem pixelar.",
             "d": "Decodifica de novo o trecho visível em vez de esticar pixels."
           },
           {
             "t": "Vinil limpo",
+            "s": "Tira estalos, ruído e ronco do vinil e compara o antes e o depois.",
             "d": "Estalos, ruído de fundo e ronco, com um A/B sem cortes para ouvir o que foi tirado."
           },
           {
             "t": "BPM e tom",
+            "s": "Calcula BPM e tom a partir do áudio e os sugere para você confirmar.",
             "d": "Do próprio áudio, sempre como sugestão que você confirma."
           },
           {
             "t": "O que você já tem",
+            "s": "Avisa se uma faixa já está no seu Apple Music ou Engine DJ.",
             "d": "Diz se uma faixa está no seu Apple Music ou Engine DJ, e filtra o resto."
           },
           {
             "t": "Bits conferidos",
+            "s": "Confere se um arquivo de 24 bits é mesmo de 24 bits.",
             "d": "Um arquivo declarado de 24 bits é verificado contra as próprias amostras: se quase nenhuma amostra do primeiro minuto usa o byte baixo, é áudio de 16 bits preenchido. Não é defeito, soa igual, e com as explicações ativadas você vê a proporção medida."
           }
         ]
       },
       {
-        "kick": "organizar",
-        "title": "Organizar e exportar",
+        "kick": "programas de dj",
+        "title": "rekordbox, Traktor e Engine DJ",
         "replaces": "no lugar do seu gerenciador de biblioteca",
         "items": [
           {
-            "t": "Apple Music",
-            "d": "Com tags e capa, até em WAV. Só no macOS, e nunca FLAC: o Music não aceita."
-          },
-          {
-            "t": "Engine DJ (Denon)",
-            "d": "Capa, avaliação e playlist na sua biblioteca. Faz uma cópia de segurança antes, e não mexe nela com o Engine aberto."
-          },
-          {
-            "t": "Substitui o que você já tem",
-            "d": "Carregue outra cópia de uma faixa que você já tem, em qualquer formato, inclusive o mesmo, e ela ocupa o lugar da antiga no Apple Music e no rekordbox, em vez de deixar você com duas. A faixa continua nas playlists, sem adicioná-la de novo a cada uma à mão, e no Apple Music mantém o número de reproduções e a sua avaliação. O selo do Apple Music mostra em que formato está a sua cópia, para você saber se vale a pena."
-          },
-          {
-            "t": "Erros de grafia e duplicados na biblioteca",
-            "d": "Agrupa o que a sua biblioteca do Apple Music ou a sua lista escreve de mais de um jeito, os caracteres invisíveis e as faixas que você tem em dobro. Cada correção chega ao arquivo, ao Apple Music e, se você sincroniza com eles, ao rekordbox, Engine DJ e Traktor, com uma cópia antes de gravar, que você restaura em Cópias, e Desfazer. A cópia que você remove passa as playlists dela para a que você mantém. Apple Music só no macOS."
-          },
-          {
-            "t": "Capa dentro de um WAV",
-            "d": "Que sozinho não guarda nem capa nem metadados."
-          },
-          {
-            "t": "Cue points do Traktor",
-            "d": "Intactos entre MP3, AIFF, FLAC e WAV, em qualquer combinação. Corte o silêncio e a grade se reancora pela fase."
-          },
-          {
-            "t": "Cues do Mixed In Key, e o offset do MP3",
-            "d": "Os cues do Mixed In Key são traduzidos para os do Traktor ao converter. E ao passar de MP3 para outro formato, ou o contrário, o Surco compensa o offset do codec para que caiam onde você os vê."
-          },
-          {
-            "t": "Sua coleção do Traktor",
-            "d": "Atualiza o .nml com uma cópia antes, que você restaura em Cópias, e uma gravação por lote. Precisa do Traktor fechado."
-          },
-          {
-            "t": "Sua coleção do rekordbox",
-            "d": "Depois de converter, a faixa continua sendo a mesma faixa no rekordbox, com suas playlists, cue points e histórico, e editar as tags nunca renomeia o arquivo. Ative em Ajustes. Faz uma cópia de segurança antes, e se o rekordbox estiver aberto espera você fechá-lo."
-          },
-          {
             "t": "Suas playlists do rekordbox",
+            "s": "Abra e organize suas playlists do rekordbox sem sair do Surco.",
             "d": "Abra-as no Surco com suas pastas e na sua ordem, com a onda e os cues do rekordbox em cada faixa. E organize-as daqui. Crie, renomeie e apague playlists e pastas, adicione, remova e reordene faixas, e escolha no editor em quais playlists cada faixa está. Se o rekordbox estiver aberto, as mudanças esperam você fechá-lo. «Todas as faixas» vem primeiro, com a sua coleção inteira, inclusive o que não está em nenhuma playlist, e depois «Adicionadas recentemente», com o que você adicionou à coleção nos últimos 30 dias. Se você não usa rekordbox ou Apple Music, oculte essa fonte."
           },
           {
             "t": "Cues do rekordbox",
+            "s": "Coloque hot cues sobre a onda do rekordbox, à mão ou com o seu fluxo.",
             "d": "Hot cues de A a H e CALLs, sobre a onda e a grade do rekordbox. Arraste-os, eles se encaixam no compasso ou no tempo, e você pode desfazer. Escolha um fluxo, como Mix in 64, Mix in 32 ou um seu, montado com blocos ou aprendido da sua coleção, e passar o mouse sobre a onda mostra uma sombra do que ele colocaria. Um clique o coloca e diz o que não cabe. O Marcar automático sugere onde cada faixa sobe, em várias de uma vez também. Ele aprende seu jeito de marcar com os cues que você já colocou e os que você salva, e separa o que vê como certo do que é duvidoso. E se você marcar os CALLs no rekordbox, o Surco coloca os hot cues do seu fluxo quando você o fecha. Numa faixa que o rekordbox ainda não analisou você trabalha sobre a grade do Surco, e quando o rekordbox a analisa, seus cues passam para a grade dele. As letras seguem a ordem da faixa, e se cada letra for um pad fixo para você, desative isso em Ajustes. Se a mesma faixa estiver no Traktor ou no Engine DJ, salvar coloca o fluxo lá também, sobre a grade dele e em volta dos cues dele. Gravado no rekordbox depois de uma cópia de segurança."
           },
           {
+            "t": "Sua coleção do rekordbox",
+            "s": "Ao converter, a faixa continua a mesma no rekordbox, com suas playlists e cues.",
+            "d": "Depois de converter, a faixa continua sendo a mesma faixa no rekordbox, com suas playlists, cue points e histórico, e editar as tags nunca renomeia o arquivo. Ative em Ajustes. Faz uma cópia de segurança antes, e se o rekordbox estiver aberto espera você fechá-lo."
+          },
+          {
             "t": "Um pendrive para as suas CDJs",
+            "s": "Prepara um pendrive para as suas CDJs com cues, grade e ondas.",
             "d": "Exporte suas playlists do rekordbox para um pendrive com cues, grade e ondas, e o rekordbox pode continuar sincronizando com ele. Precisa do rekordbox fechado. No macOS e no Windows."
           },
           {
-            "t": "Suas playlists do Engine DJ",
-            "d": "Abra-as no Surco e coloque hot cues nas faixas delas com o mesmo editor, Marcar automático incluído. Pontos CALL não, porque o Engine DJ só guarda hot cues. E exporte-as para um drive USB com a biblioteca do Engine, prontas para o player. No editor você escolhe em quais playlists cada faixa entra, e se o Engine DJ não a tinha, o Surco a adiciona à sua biblioteca ao convertê-la."
-          },
-          {
             "t": "Suas playlists do Traktor",
+            "s": "Organize suas playlists do Traktor e coloque hot cues nelas com o mesmo editor.",
             "d": "Abra-as no Surco, organize-as como as do rekordbox e coloque hot cues nas faixas delas com o mesmo editor, Marcar automático incluído. O Traktor os recebe em azul, nos botões 2 a 8, e o Surco pede para você fechá-lo antes de salvar. No editor você escolhe em quais playlists cada faixa entra, depois de confirmar a coleção em Ajustes. E se o Traktor não a tinha, o Surco a adiciona à sua coleção ao convertê-la, com a capa."
           },
           {
+            "t": "Sua coleção do Traktor",
+            "s": "Atualiza sua coleção do Traktor com uma cópia de segurança antes.",
+            "d": "Atualiza o .nml com uma cópia antes, que você restaura em Cópias, e uma gravação por lote. Precisa do Traktor fechado."
+          },
+          {
+            "t": "Cue points do Traktor",
+            "s": "Os cue points do Traktor sobrevivem a qualquer conversão.",
+            "d": "Intactos entre MP3, AIFF, FLAC e WAV, em qualquer combinação. Corte o silêncio e a grade se reancora pela fase."
+          },
+          {
+            "t": "Cues do Mixed In Key, e o offset do MP3",
+            "s": "Leva os cues do Mixed In Key para o Traktor e corrige o offset do MP3.",
+            "d": "Os cues do Mixed In Key são traduzidos para os do Traktor ao converter. E ao passar de MP3 para outro formato, ou o contrário, o Surco compensa o offset do codec para que caiam onde você os vê."
+          },
+          {
+            "t": "Suas playlists do Engine DJ",
+            "s": "Abra suas playlists do Engine DJ, coloque hot cues e exporte-as para um drive USB.",
+            "d": "Abra-as no Surco e coloque hot cues nas faixas delas com o mesmo editor, Marcar automático incluído. Pontos CALL não, porque o Engine DJ só guarda hot cues. E exporte-as para um drive USB com a biblioteca do Engine, prontas para o player. No editor você escolhe em quais playlists cada faixa entra, e se o Engine DJ não a tinha, o Surco a adiciona à sua biblioteca ao convertê-la."
+          },
+          {
+            "t": "Engine DJ (Denon)",
+            "s": "Leva capa, avaliação e playlist para a sua biblioteca do Engine DJ.",
+            "d": "Capa, avaliação e playlist na sua biblioteca. Faz uma cópia de segurança antes, e não mexe nela com o Engine aberto."
+          },
+          {
             "t": "Arquivos para rekordbox, Serato, M3U8",
+            "s": "Exporta listas para rekordbox, Serato e M3U8.",
             "d": "Caminhos e metadados, sem cues, sem avaliações. A crate do Serato, só caminhos."
+          }
+        ]
+      },
+      {
+        "kick": "biblioteca",
+        "title": "Apple Music e suas pastas",
+        "replaces": "sem duas cópias de nada",
+        "items": [
+          {
+            "t": "Apple Music",
+            "s": "Adiciona suas faixas ao Apple Music com tags e capa, até em WAV.",
+            "d": "Com tags e capa, até em WAV. Só no macOS, e nunca FLAC: o Music não aceita."
+          },
+          {
+            "t": "Substitui o que você já tem",
+            "s": "Uma cópia melhor ocupa o lugar da antiga no Apple Music e no rekordbox, com suas playlists.",
+            "d": "Carregue outra cópia de uma faixa que você já tem, em qualquer formato, inclusive o mesmo, e ela ocupa o lugar da antiga no Apple Music e no rekordbox, em vez de deixar você com duas. A faixa continua nas playlists, sem adicioná-la de novo a cada uma à mão, e no Apple Music mantém o número de reproduções e a sua avaliação. O selo do Apple Music mostra em que formato está a sua cópia, para você saber se vale a pena."
+          },
+          {
+            "t": "Erros de grafia e duplicados na biblioteca",
+            "s": "Encontra erros de grafia, caracteres invisíveis e faixas duplicadas na sua biblioteca.",
+            "d": "Agrupa o que a sua biblioteca do Apple Music ou a sua lista escreve de mais de um jeito, os caracteres invisíveis e as faixas que você tem em dobro. Cada correção chega ao arquivo, ao Apple Music e, se você sincroniza com eles, ao rekordbox, Engine DJ e Traktor, com uma cópia antes de gravar, que você restaura em Cópias, e Desfazer. A cópia que você remove passa as playlists dela para a que você mantém. Apple Music só no macOS."
+          },
+          {
+            "t": "Traga uma playlist do Apple Music",
+            "s": "Você abre uma playlist do Music e trabalha direto nos arquivos dela.",
+            "d": "Carregue a playlist e trabalhe nos arquivos dela. Mantém o formato deles e preenche o que só existe no Music, como o agrupamento, também nas faixas que você abre soltas. Só no macOS."
+          },
+          {
+            "t": "Agrupamento do Apple Music",
+            "s": "Grava o agrupamento onde o Apple Music o lê.",
+            "d": "Ele grava isso no seu próprio frame, invisível para quase todas as outras ferramentas."
           },
           {
             "t": "Seus downloads em dia",
+            "s": "Vigia suas pastas de downloads e oferece cada faixa nova.",
             "d": "As pastas que você carrega ficam vigiadas, e quando chega uma faixa nova o Surco a oferece sem você precisar arrastar nada de novo."
           },
           {
             "t": "O que falta fazer",
+            "s": "Filtra duplicados, falhas ao converter e associações por confirmar.",
             "d": "Filtre os duplicados (a mesma música em FLAC e em MP3), as que falharam ao converter e as associações esperando a sua confirmação."
           },
           {
             "t": "Modelos de nome",
+            "s": "Nomeia arquivos e títulos com modelos como {artist} - {title}.",
             "d": "Arquivos e títulos a partir de {artist} - {title}. Uma barra dentro de um campo nunca cria pasta, e se o seu NAS engasga com acentos, nomes de arquivo sem acentos."
           },
           {
+            "t": "Capa dentro de um WAV",
+            "s": "Põe capa e metadados num WAV, que sozinho não os guarda.",
+            "d": "Que sozinho não guarda nem capa nem metadados."
+          }
+        ]
+      },
+      {
+        "kick": "rede de segurança",
+        "title": "Nada se perde",
+        "replaces": "cópias antes de cada gravação",
+        "items": [
+          {
             "t": "Cópias das suas bibliotecas",
+            "s": "Guarda uma cópia do rekordbox, do Traktor e do Engine DJ antes de mexer neles.",
             "d": "Antes de gravar no rekordbox, no Traktor ou no Engine DJ, o Surco guarda uma cópia com data e mantém as últimas 5 de cada programa. Em Cópias, no fim da barra lateral esquerda, você vê as de cada um e restaura qualquer uma com um clique: ele pede para fechar o programa, guarda uma cópia de como estava para você poder voltar atrás e descarta só as alterações em espera dessa biblioteca."
           },
           {
             "t": "Arquivos de áudio originais",
+            "s": "Guarda os arquivos que substitui ou renomeia para você poder recuperá-los.",
             "d": "Os arquivos que o Surco substitui ou renomeia ficam em Cópias › Arquivos de música; você os restaura de lá ou pela marca de cópia da faixa. Você escolhe sempre, só se o áudio mudar ou nunca. Por padrão, 7 dias ou até 2 GB. Se o disco ficar com menos de 5 GB livres, os mais antigos saem primeiro."
           },
           {
             "t": "Nada apagado sem aviso",
+            "s": "O que você remove vai para a Lixeira, ou para Cópias se o disco não tiver uma.",
             "d": "O que você remove vai para a Lixeira do sistema. Num disco sem Lixeira, como um NAS, e no Windows, vai para Cópias › Arquivos de música, de onde você pode restaurar. Se você escolher Nunca em Ajustes → Saída, ele é apagado de vez, e o diálogo avisa antes de você confirmar."
+          },
+          {
+            "t": "Nada se perde",
+            "s": "As edições se salvam sozinhas, mesmo se o app fechar de repente.",
+            "d": "As edições se salvam sozinhas: a sessão volta mesmo se o app morrer no meio da caixa de discos."
+          },
+          {
+            "t": "Confere a cópia antes de confiar nela",
+            "s": "Não dá como boa uma conversão que ficou pela metade.",
+            "d": "Um arquivo gravado pela metade declara a mesma duração que o inteiro. O Surco compara o que ele promete com o que toca de verdade, e nunca publica uma conversão truncada."
+          },
+          {
+            "t": "Resgata WAVs quebrados",
+            "s": "Repara numa cópia o cabeçalho que outros apps não conseguem ler.",
+            "d": "O cabeçalho que trava outros apps, reparado numa cópia. Seu arquivo nunca é tocado."
           }
         ]
       }

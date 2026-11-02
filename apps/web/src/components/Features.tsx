@@ -4,15 +4,13 @@ import DownloadButton from './DownloadButton'
 import Faq from './Faq'
 import Footer from './Footer'
 import Header from './Header'
-import HeroApp from './HeroApp'
-import Icon, { type GlyphName } from './Icon'
 import InstallSection from './InstallSection'
 import Kicker from './Kicker'
 import Reveal from './Reveal'
 import Speed from './Speed'
 import Stopwatch from './Stopwatch'
 
-const FEATURE_ICONS: GlyphName[] = ['convert', 'tag', 'spectrum', 'upload']
+const GROUP_IDS = ['convert', 'tag', 'analyze', 'dj', 'library', 'safety']
 
 function Kbd({ k }: { k: string }) {
   return (
@@ -22,17 +20,13 @@ function Kbd({ k }: { k: string }) {
   )
 }
 
-// Everything the home page deliberately doesn't say. This is the page for someone
-// who has already decided they're interested and now wants to check whether their
-// format, their gear and their workflow are covered — so density is the point here,
-// where on the home page it was the problem.
 export default function Features() {
   const { t } = useTranslation()
   const featureGroups = t('features.groups', { returnObjects: true }) as {
     kick: string
     title: string
     replaces: string
-    items: { t: string; d: string }[]
+    items: { t: string; s: string; d: string }[]
   }[]
   const shortcutLabels = t('shortcuts.items', { returnObjects: true }) as string[]
   const shortcutKeys: string[][] = [
@@ -57,45 +51,70 @@ export default function Features() {
             <h1 className="mt-4 max-w-2xl text-4xl font-bold tracking-tight text-balance sm:text-5xl">
               {t('features.title')}
             </h1>
+            <p className="mt-4 max-w-2xl leading-relaxed text-pretty text-muted">
+              {t('features.lede')}
+            </p>
           </Reveal>
-          {/* The page used to go from this title straight into twenty bullets, with no
-              picture of the thing being described until the walkthrough far below. The
-              window says what kind of program this is faster than the list can, and it
-              is the home's own asset, already cached for anyone arriving from there.
-              No video here: on this page the still does the job and the loop would be
-              a second copy of a megabyte for a decoration. */}
           <Reveal eager delay={120}>
-            <div className="mt-10">
-              <HeroApp />
-            </div>
+            <nav
+              data-testid="features-index"
+              aria-label={t('features.kicker')}
+              className="mt-10 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6"
+            >
+              {featureGroups.map((g, i) => (
+                <a
+                  key={GROUP_IDS[i]}
+                  href={`#${GROUP_IDS[i]}`}
+                  className="flex flex-col gap-0.5 rounded-xl border border-line bg-surface px-4 py-3 transition-colors hover:border-blue focus-visible:outline-2 focus-visible:outline-blue"
+                >
+                  <span className="text-sm font-semibold text-fg">{g.title}</span>
+                  <span className="text-xs text-faint tabular-nums">
+                    {t('features.count', { count: g.items.length })}
+                  </span>
+                </a>
+              ))}
+            </nav>
           </Reveal>
         </section>
 
-        <section id="funciones" className="scroll-mt-24 pt-6 pb-20">
-          <div className="grid gap-12 sm:grid-cols-2">
-            {featureGroups.map((g, i) => (
-              <Reveal key={g.title} delay={(i % 2) * 90}>
-                <div className="h-full">
-                  <div className="mb-4 flex size-9 items-center justify-center rounded-lg border border-blue/30 bg-blue/10 text-blue">
-                    <Icon name={FEATURE_ICONS[i]} className="size-4.5" />
-                  </div>
-                  <h2 className="text-lg font-semibold text-fg">{g.title}</h2>
-                  <p className="mt-1 text-sm text-faint">{g.replaces}</p>
-                  <ul className="mt-4 space-y-3">
-                    {g.items.map((it) => (
-                      <li key={it.t} className="flex gap-2.5 leading-relaxed">
-                        <span className="text-cyan">·</span>
-                        <span>
-                          <span className="font-medium text-fg">{it.t}</span> <span>{it.d}</span>
+        <div id="funciones" className="pb-20">
+          {featureGroups.map((g, i) => (
+            <section
+              key={GROUP_IDS[i]}
+              id={GROUP_IDS[i]}
+              data-testid={`features-group-${GROUP_IDS[i]}`}
+              className="grid scroll-mt-24 gap-x-14 gap-y-4 pt-16 lg:grid-cols-[16rem_minmax(0,1fr)]"
+            >
+              <Reveal className="lg:sticky lg:top-24 lg:self-start">
+                <h2 className="text-2xl font-semibold tracking-tight text-balance text-fg">
+                  {g.title}
+                </h2>
+                <p className="mt-1.5 text-sm text-faint">{g.replaces}</p>
+              </Reveal>
+              <Reveal>
+                <div className="max-w-2xl border-t border-line">
+                  {g.items.map((it) => (
+                    <details key={it.t} className="group border-b border-line">
+                      <summary className="relative cursor-pointer list-none py-3.5 pr-8 focus-visible:outline-2 focus-visible:outline-blue [&::-webkit-details-marker]:hidden">
+                        <span className="block font-semibold text-fg">{it.t}</span>
+                        <span className="block text-[15px] text-muted">{it.s}</span>
+                        <span
+                          aria-hidden="true"
+                          className="absolute top-3.5 right-1 font-mono text-lg text-faint transition-transform group-open:rotate-45"
+                        >
+                          +
                         </span>
-                      </li>
-                    ))}
-                  </ul>
+                      </summary>
+                      <p className="pb-4 text-[15px] leading-relaxed text-pretty text-muted">
+                        {it.d}
+                      </p>
+                    </details>
+                  ))}
                 </div>
               </Reveal>
-            ))}
-          </div>
-        </section>
+            </section>
+          ))}
+        </div>
 
         <Speed />
 
