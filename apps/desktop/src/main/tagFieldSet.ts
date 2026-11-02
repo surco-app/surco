@@ -190,12 +190,24 @@ function holds(f: TagFile, field: ReviewWriteField, value: string): boolean {
   return true
 }
 
-function setOne(f: TagFile, { field, from, to }: TagFieldChange, ext: string): FieldWrite {
+function setOne(
+  f: TagFile,
+  { field, from, to }: TagFieldChange,
+  ext: string,
+  keep: { types: number },
+): FieldWrite {
   if (!holds(f, field, from)) return 'unchanged'
   const info = f.getTag(TagTypes.RiffInfo, false)
   if (info instanceof InfoTag) {
     const elsewhere = f.tagTypesOnDisk & ~(TagTypes.RiffInfo | TagTypes.Id3v1)
-    if (INFO_IDS[field].length === 0 && !elsewhere) return 'unchanged'
+    if (INFO_IDS[field].length === 0 && !elsewhere) {
+      if (field !== 'grouping' || ext !== '.wav') return 'unchanged'
+      const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+      id3.grouping = to
+      setId3Grouping(id3, to, ext)
+      keep.types |= TagTypes.Id3v2
+      return 'written'
+    }
     const taglibId = TAGLIB_INFO_ID[field]
     const before = taglibId ? info.getValues(taglibId) : []
     assign(f.tag, field, to)
@@ -213,13 +225,14 @@ function setOne(f: TagFile, { field, from, to }: TagFieldChange, ext: string): F
 export function setTagFields(file: string, changes: TagFieldChange[]): FieldWrite[] {
   const f = TagFile.createFromPath(file)
   try {
-    const outcomes = changes.map((change) => setOne(f, change, extname(file).toLowerCase()))
+    const keep = { types: f.tagTypesOnDisk }
+    const outcomes = changes.map((change) => setOne(f, change, extname(file).toLowerCase(), keep))
     if (!outcomes.includes('written')) return outcomes
     // The combined setter materializes a tag of every type the format could carry, and
     // save() writes them all: an MP3 with no ID3v1 gained one (the ghost of v0.99.6) and a
     // WAV with only an "id3 " chunk gained LIST INFO, MID and IDVX chunks. Only tags the
     // file already had are rewritten.
-    f.removeTags(f.tagTypes & ~f.tagTypesOnDisk)
+    f.removeTags(f.tagTypes & ~keep.types)
     const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
     if (id3 && extname(file).toLowerCase() === '.mp3') dropBrokenUfids(id3)
     if (id3) keepGenreParentheses(id3)
