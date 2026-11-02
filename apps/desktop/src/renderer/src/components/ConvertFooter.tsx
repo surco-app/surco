@@ -30,6 +30,7 @@ import type { SelectionStatus } from '../lib/selectionStatus'
 import { trackQuality } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { DoneMenu } from './DoneMenu'
+import { BatchPlan } from './BatchPlan'
 import { ExportButton } from './ExportButton'
 import { SOURCE_ICON } from './SourceRail'
 import { FOOTER_BAR } from './SplitButton'
@@ -646,6 +647,20 @@ export function ConvertFooter({
             )}
             {checking ? (
               <div className="flex h-10 items-center justify-center">{checkingLine}</div>
+            ) : isMulti ? (
+              <BatchPlan
+                count={selectedCount}
+                format={format}
+                destination={destination}
+                destinations={destinations}
+                withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
+                djTargets={djTargets}
+                openSource={openSource}
+                blocked={incomplete ? incompleteSummary : undefined}
+                onBlockedPress={onBlockedPress}
+                onSelectFormat={onSelectFormat}
+                onSelectDestination={onSelectDestination}
+              />
             ) : (
               <ExportButton
                 status={isMulti ? 'idle' : item.status}

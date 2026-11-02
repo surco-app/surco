@@ -4505,9 +4505,8 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    // Multi-select reuses the single editor; its convert button reads "Convert (2)".
-    const convert = await screen.findByTestId('process-btn')
-    expect(convert).toHaveTextContent('Convert (2)')
+    const convert = await screen.findByTestId('convert-all')
+    expect(convert).toHaveAccessibleName(i18n.t('header.convertAll', { count: 2 }))
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     const converted = processTrack.mock.calls.map((c) => c[0].inputPath).sort()
@@ -4534,7 +4533,7 @@ describe('App multi-select convert', () => {
     // Selects all three: the anchor (a.wav) plus b.mp3 and c.flac via range-select.
     fireEvent.click(rows[0])
     fireEvent.click(rows[2], { shiftKey: true })
-    const convert = await screen.findByTestId('process-btn')
+    const convert = await screen.findByTestId('convert-all')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(3))
     const byInput = Object.fromEntries(
@@ -4577,7 +4576,7 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(await screen.findByTestId('process-btn'))
+    fireEvent.click(await screen.findByTestId('convert-all'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     expect(processTrack.mock.calls.map((c) => c[0].format)).toEqual(['wav', 'wav'])
   })
@@ -4632,7 +4631,7 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(await screen.findByTestId('process-btn'))
+    fireEvent.click(await screen.findByTestId('convert-all'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     const mp3Job = processTrack.mock.calls.find((c) => c[0].inputPath === '/music/b.mp3')?.[0]
     expect(mp3Job.addToAppleMusic).toBeUndefined()
@@ -4654,12 +4653,12 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    await screen.findByTestId('process-btn')
+    await screen.findByTestId('convert-all')
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-format-wav'))
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-destination-beside'))
-    fireEvent.click(screen.getByTestId('process-btn'))
+    fireEvent.click(screen.getByTestId('convert-all'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     for (const [job] of processTrack.mock.calls) {
       expect(job.format).toBe('wav')
@@ -4929,7 +4928,7 @@ describe('App Default format x input extension matrix', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { shiftKey: true })
-    const convert = await screen.findByTestId('process-btn')
+    const convert = await screen.findByTestId('convert-all')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     const byInput = Object.fromEntries(
@@ -4956,7 +4955,7 @@ describe('App Default format x input extension matrix', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { shiftKey: true })
-    const convert = await screen.findByTestId('process-btn')
+    const convert = await screen.findByTestId('convert-all')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
     expect(processTrack.mock.calls[0][0].inputPath).toBe('/music/a.wav')
@@ -5111,7 +5110,7 @@ describe('App normalize peak preferences', () => {
     fireEvent.click(screen.getAllByTestId('track-row')[1], { shiftKey: true })
     await screen.findByTestId('normalize-scope')
     fireEvent.click(screen.getByTestId('normalize-mode-loudness'))
-    fireEvent.click(await screen.findByTestId('process-btn'))
+    fireEvent.click(await screen.findByTestId('convert-all'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     expect(processTrack.mock.calls.map((c) => c[0].normalize?.mode)).toEqual([
       'loudness',
@@ -5888,8 +5887,7 @@ describe('App donate nudge', () => {
     const rows = await addTwoTracks()
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    // Convert from the editor footer (the toolbar's convert button was removed as a duplicate).
-    fireEvent.click(await screen.findByTestId('process-btn'))
+    fireEvent.click(await screen.findByTestId('convert-all'))
   }
 
   // The nudge moved off app launch onto the moment of value: opening Surco is when the
