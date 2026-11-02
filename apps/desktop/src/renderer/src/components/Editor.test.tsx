@@ -1720,6 +1720,13 @@ describe('Editor multi-select', () => {
     }
   }
 
+  // "File" heads the single-track form; over "Editing 2 tracks" it read as one file
+  // sitting above a selection of several, so the multi form starts at its own title.
+  it('drops the File heading above the multi-select form', () => {
+    renderMulti()
+    expect(screen.queryByTestId('editor-group-metadata')).toBeNull()
+  })
+
   it('completes a playlist only some of the tracks hold into per-track patches for all of them', async () => {
     rekordboxApiWith(
       vi.fn<Api['rekordboxMembership']>().mockResolvedValue({ '/music/a.wav': ['3000'] }),

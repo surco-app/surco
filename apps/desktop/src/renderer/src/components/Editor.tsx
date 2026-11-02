@@ -1431,11 +1431,13 @@ export const Editor = memo(function Editor({
         >
           {/* The pinned metadata form opens the "File" phase; the mapped sections
               below label "Audio" and "Output" as the group changes down the list. */}
-          <SectionGroupHeading
-            label={tr('editor.groupMetadata')}
-            testid="editor-group-metadata"
-            first
-          />
+          {!isMulti && (
+            <SectionGroupHeading
+              label={tr('editor.groupMetadata')}
+              testid="editor-group-metadata"
+              first
+            />
+          )}
           <SectionHeader
             title={
               isMulti
