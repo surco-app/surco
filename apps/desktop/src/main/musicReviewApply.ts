@@ -79,7 +79,7 @@ async function applyTrack(
     music.push(
       await deps.setField(persistentId, f.field, f.from, f.to).catch(() => 'failed' as const),
     )
-  const accepted = fixes.filter((_, i) => music[i] === 'set')
+  const accepted = fixes.filter((_, i) => music[i] === 'set' || music[i] === 'held')
   if (accepted.length === 0) {
     // Music refused every field, so it wrote nothing; one that did not answer may have.
     if (!music.includes('failed')) {

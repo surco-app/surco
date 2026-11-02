@@ -997,7 +997,7 @@ export interface ListMusicOutcome {
   entryRemoved?: true
 }
 
-export type MusicFieldOutcome = 'set' | 'missing' | 'mismatch' | 'failed'
+export type MusicFieldOutcome = 'set' | 'held' | 'missing' | 'mismatch' | 'failed'
 
 // `current` is the 1-based track being worked on; `done` counts the finished ones.
 export interface MusicFixProgress {

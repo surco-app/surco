@@ -686,7 +686,7 @@ export async function markAppleMusicReplacing(
   expectedLabel: string,
   marked: boolean,
   run: typeof runOsascript = runOsascript,
-): Promise<MusicSetResult> {
+): Promise<'set' | 'missing' | 'mismatch'> {
   const answer = (await run(buildReplacingMarkScript(persistentId, expectedLabel, marked))).trim()
   if (answer === 'set' || answer === 'missing' || answer === 'mismatch') return answer
   throw new Error(`unexpected Music answer: ${answer}`)
@@ -1236,7 +1236,7 @@ export async function musicFileLocations(
   return parseFileLocations(stdout)
 }
 
-export type MusicSetResult = 'set' | 'missing' | 'mismatch'
+export type MusicSetResult = 'set' | 'held' | 'missing' | 'mismatch'
 
 const MUSIC_PROPERTY: Record<ReviewWriteField, string> = {
   title: 'name',
@@ -1277,6 +1277,7 @@ export function buildSetFieldScript(
     ...(location === undefined
       ? []
       : [`    if theLoc is not ${appleScriptString(location)} then return "mismatch"`]),
+    `    if (${prop} of theTrack) is ${literal(to)} then return "held"`,
     `    if (${prop} of theTrack) is not ${literal(from)} then return "mismatch"`,
     '  end considering',
     `  set ${prop} of theTrack to ${literal(to)}`,
@@ -1295,7 +1296,8 @@ export async function setAppleMusicField(
   const result = (
     await runOsascript(buildSetFieldScript(persistentId, field, from, to, location))
   ).trim()
-  if (result === 'set' || result === 'missing' || result === 'mismatch') return result
+  if (result === 'set' || result === 'held' || result === 'missing' || result === 'mismatch')
+    return result
   throw new Error(`unexpected Music answer: ${result}`)
 }
 

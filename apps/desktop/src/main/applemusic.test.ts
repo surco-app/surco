@@ -774,6 +774,15 @@ describe('buildReviewDumpScript', () => {
 })
 
 describe('buildSetFieldScript', () => {
+  // A field the app took from Music is missing only from the file: Music already holds it, and
+  // the file must still be written. Asked before the guard, which would call it changed.
+  it('answers held, without writing, when Music already holds the new value', () => {
+    const script = buildSetFieldScript('6E592CFE07A6246A', 'year', '', '1999')
+    const held = script.indexOf('if (year of theTrack) is 1999 then return "held"')
+    expect(held).toBeGreaterThan(script.indexOf('considering case'))
+    expect(held).toBeLessThan(script.indexOf('return "mismatch"'))
+  })
+
   it('maps the field onto the Music property and guards on the value the review read', () => {
     const script = buildSetFieldScript('6E592CFE07A6246A', 'albumArtist', 'Dj Lara', 'DJ Lara')
     expect(script).toContain('whose persistent ID is "6E592CFE07A6246A"')

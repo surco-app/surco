@@ -60,6 +60,13 @@ describe('applyMusicFixes', () => {
 
   // The entry changed in Music after the review read it: the review no longer knows what
   // the right value is, so neither Music nor the file is touched for that field.
+  it('writes the file when Music already held the value, and says Music was left as it was', async () => {
+    const d = deps({ setField: vi.fn().mockResolvedValue('held') })
+    const [out] = await applyMusicFixes([fix('A')], d)
+    expect(out).toMatchObject({ music: ['held'], file: 'written', written: ['artist'] })
+    expect(d.rewrite).toHaveBeenCalled()
+  })
+
   it('touches nothing on disk when Music no longer holds the value', async () => {
     const d = deps({ setField: vi.fn().mockResolvedValue('mismatch') })
     const [out] = await applyMusicFixes([fix('A')], d)

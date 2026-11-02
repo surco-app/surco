@@ -509,6 +509,7 @@ export function appleMusicModule(real: AppleMusic): AppleMusic {
       const entry = live(persistentId)
       if (!entry) return 'missing'
       if (location !== undefined && !same(fileOf(entry), location)) return 'mismatch'
+      if (field === 'year' ? entry.year === musicYear(to) : same(entry[field], to)) return 'held'
       if (field === 'year') {
         if (entry.year !== musicYear(from)) return 'mismatch'
         entry.year = musicYear(to)

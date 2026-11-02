@@ -197,6 +197,39 @@ describe('useMusicReview', () => {
     expect(result.current.status).toBe('done')
   })
 
+  // Music held the value before the run: putting it back would wipe what was there.
+  it('undoes a field Music already held from the backup alone, leaving Music as it is', async () => {
+    const api = setApi({
+      applyMusicFixes: vi.fn<Api['applyMusicFixes']>().mockResolvedValue([
+        {
+          persistentId: 'C',
+          path: '/m/c.mp3',
+          fixes: [{ persistentId: 'C', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
+          music: ['held'],
+          file: 'written',
+          written: ['artist'],
+          backupId: 'b1',
+        },
+      ]),
+    })
+    const { result } = await ready()
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    await act(() => result.current.undo())
+    expect(api.trashRestore).toHaveBeenCalledWith('b1', 'undo')
+    expect(api.setMusicField).not.toHaveBeenCalled()
+    expect(result.current.lastRun?.undoFailures).toBeFalsy()
+  })
+
+  it('counts an undo done when Music already holds the old value again', async () => {
+    setApi({ setMusicField: vi.fn<Api['setMusicField']>().mockResolvedValue('held') })
+    const { result } = await ready()
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    await act(() => result.current.undo())
+    expect(result.current.lastRun?.undoFailures).toBeFalsy()
+  })
+
   it('undoes a run by restoring the backups and setting Music back', async () => {
     const api = setApi()
     const onFilesChanged = vi.fn()
