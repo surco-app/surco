@@ -4242,7 +4242,9 @@ describe('App row playback', () => {
     await waitFor(() => expect(screen.queryByTestId('player')).toBeNull())
   })
 
-  it('keeps the playing card on screen in a source with no list, so closing it there keeps it closed back in Music', async () => {
+  // The card sits in the list column of the tab it was started from; on another tab it
+  // kept sounding a track that tab does not show, with no row to say where it came from.
+  it('closes the player when another tab is picked, so a track never keeps playing from a tab that does not show it', async () => {
     setApi({
       platform: 'darwin',
       readTags: vi.fn(async () => ({ title: 'Bravo', artist: 'DJ' })),
@@ -4270,7 +4272,6 @@ describe('App row playback', () => {
 
     fireEvent.click(screen.getByTestId('source-rail-rekordbox'))
     await screen.findByTestId('source-node-f')
-    fireEvent.click(screen.getByTestId('player-close'))
     await waitFor(() => expect(screen.queryByTestId('player')).toBeNull())
 
     fireEvent.click(screen.getByTestId('source-rail-appleMusic'))
