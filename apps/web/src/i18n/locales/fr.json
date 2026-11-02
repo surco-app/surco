@@ -1058,12 +1058,10 @@
     "replay": "Rejouer l'animation",
     "anchorLink": "Lien vers cet exemple",
     "walkthrough": {
-      "kicker": "Étape par étape",
       "title": "Un morceau, du début à la fin",
       "lede": "Sept étapes, une seule fenêtre. En chemin, tu découvriras lesquels de tes FLAC sont en réalité des MP3."
     },
     "drop": {
-      "step": "Étape 1 · Importés",
       "title": "Tu les déposes, ils sont là.",
       "lede": "Des dossiers entiers. Surco lit les tags, la durée et la pochette à la volée, et n'ajoute jamais deux fois le même morceau.",
       "emptyTitle": "Dépose tes morceaux ici",
@@ -1072,7 +1070,6 @@
       "reading": "Lecture {{read}}/{{total}}"
     },
     "quality": {
-      "step": "Étape 3 · Vérifiés",
       "title": "Ce FLAC était un MP3.",
       "lede": "Acheter en sans perte ne garantit pas que ça le soit. Si quelqu'un a converti un MP3 en FLAC, le fichier pèse pareil mais le spectre montre le mur. Surco le signale avant même que le morceau sorte de chez toi.",
       "goodAlt": "Spectre d'un vrai FLAC : l'énergie monte jusqu'en haut sans coupure",
@@ -1089,12 +1086,10 @@
       "fakeBadge": "● Faux sans perte"
     },
     "audioGroup": {
-      "step": "Étapes 4 à 6 · La finition",
       "title": "Et un meilleur son au passage.",
       "lede": "Trois corrections que Surco apporte au même morceau : il nettoie les clics et le bruit du vinyle, rogne le silence de la fin et met tous les morceaux au même volume."
     },
     "tag": {
-      "step": "Étape 2 · Tagués",
       "title": "Les tags, depuis Discogs, en un clic.",
       "lede": "Discogs pour les labels, Bandcamp pour l'autoproduction, Deezer pour les charts, Beatport pour le club, MusicBrainz pour tout le reste. Un clic remplit tout : artiste, label, année, BPM et pochette.",
       "all": "Toutes ({{count}})"
@@ -1141,7 +1136,6 @@
       "explain": "Il va bouger de {{gain}} dB vers {{target}} LUFS avec un gain constant. Rien n'est limité ni compressé ; la dynamique reste intacte."
     },
     "batch": {
-      "step": "Étape 7 · Exportés",
       "title": "Et il atterrit dans ton Apple Music.",
       "lede": "Choisis un format et une destination et convertis tout le dossier. Avec Apple Music et Engine DJ, tu n'importes rien : le morceau apparaît dans ta bibliothèque avec sa pochette, et dans Engine DJ, avec sa note et sa playlist. Pour le reste, chacun reçoit le fichier qu'il attend.",
       "stage": "Conversion en AIFF…",
@@ -1211,11 +1205,9 @@
       "cuesLabel": "Cue points",
       "intact": "intacts",
       "inPlace": "en place",
-      "fieldYear": "Année",
-      "step": "Plus tard · Remplacé"
+      "fieldYear": "Année"
     },
     "cues": {
-      "step": "Dans ton logiciel · Cues posés",
       "title": "Tes cues rekordbox, Engine DJ et Traktor, en un clic.",
       "lede": "Clique là où le morceau décolle, ou laisse Marquage auto te le proposer. Ton flux place le reste des cues et Surco les enregistre dans rekordbox, Engine DJ ou Traktor. Engine DJ et Traktor ne prennent que les hot cues.",
       "unsaved": "Non enregistré",
@@ -1243,7 +1235,6 @@
       "missingArtist": "Artiste manquant"
     },
     "review": {
-      "kicker": "Ta bibliothèque",
       "title": "Repère les fautes et les doublons de ta bibliothèque",
       "lede": "Surco parcourt ta bibliothèque Apple Music, le dossier que tu déposes ou une playlist rekordbox, Engine DJ ou Traktor, et regroupe ce qui s'écrit de plusieurs façons, les espaces et caractères invisibles qui se glissent quand tu copies depuis un site web, et les morceaux que tu as en double. Tu choisis la bonne écriture et le changement arrive jusqu'aux fichiers, à Apple Music et, si tu les synchronises, à rekordbox, Engine DJ et Traktor.",
       "points": {

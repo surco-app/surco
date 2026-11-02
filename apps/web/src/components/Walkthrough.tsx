@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next'
 import type { Language } from '../i18n'
 import { PAGES } from '../lib/nav'
 import { SCENE_ANCHORS } from '../lib/sceneAnchors'
-import Kicker from './Kicker'
 import Reveal from './Reveal'
 import BatchScene from './scenes/BatchScene'
 import CuesScene from './scenes/CuesScene'
@@ -37,8 +36,7 @@ export default function Walkthrough() {
             edge, on the one link whose job is to show what the app does. */}
         <div className="pt-24">
           <div id="como" className="scroll-mt-8 text-center">
-            <Kicker>{t('home.walkthrough.kicker')}</Kicker>
-            <h2 className="mt-3 text-[min(1.875rem,6.15vw)] font-semibold tracking-tight text-balance sm:text-5xl">
+            <h2 className="text-[min(1.875rem,6.15vw)] font-semibold tracking-tight text-balance sm:text-5xl">
               {t('home.walkthrough.title')}
             </h2>
             <p className="mx-auto mt-3 max-w-xl leading-relaxed text-pretty text-muted">
@@ -48,29 +46,19 @@ export default function Walkthrough() {
         </div>
       </Reveal>
 
-      <SceneLayout
-        id={SCENE_ANCHORS.drop}
-        step={t('home.drop.step')}
-        title={t('home.drop.title')}
-        app={<DropScene />}
-      >
+      <SceneLayout id={SCENE_ANCHORS.drop} title={t('home.drop.title')} app={<DropScene />}>
         {t('home.drop.lede')}
       </SceneLayout>
 
-      <SceneLayout
-        id={SCENE_ANCHORS.tag}
-        step={t('home.tag.step')}
-        title={t('home.tag.title')}
-        app={<TagScene />}
-      >
+      <SceneLayout id={SCENE_ANCHORS.tag} title={t('home.tag.title')} app={<TagScene />}>
         {t('home.tag.lede')}
       </SceneLayout>
 
       <SceneLayout
         id={SCENE_ANCHORS.quality}
-        step={t('home.quality.step')}
         title={t('home.quality.title')}
         app={<QualityScene />}
+        field
       >
         {t('home.quality.lede')}
       </SceneLayout>
@@ -81,13 +69,14 @@ export default function Walkthrough() {
           what a visitor comes for, and they were being crowded out by their own footnotes. */}
       <section id={SCENE_ANCHORS.audio} className="scroll-mt-12 py-16 sm:py-24">
         <Reveal>
-          <Kicker>{t('home.audioGroup.step')}</Kicker>
-          <h2 className="group/title mt-3 max-w-3xl text-[min(1.875rem,6.15vw)] font-semibold tracking-tight text-balance sm:text-4xl">
-            {t('home.audioGroup.title')}
-            <AnchorLink id={SCENE_ANCHORS.audio} />
-          </h2>
-          <div className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">
-            {t('home.audioGroup.lede')}
+          <div className="lg:grid lg:grid-cols-2 lg:items-end lg:gap-16">
+            <h2 className="group/title text-[min(1.875rem,6.15vw)] font-semibold tracking-tight text-balance sm:text-4xl">
+              {t('home.audioGroup.title')}
+              <AnchorLink id={SCENE_ANCHORS.audio} />
+            </h2>
+            <div className="mt-3 leading-relaxed text-pretty text-muted lg:mt-0">
+              {t('home.audioGroup.lede')}
+            </div>
           </div>
         </Reveal>
         <Reveal delay={120} className="mt-10">
@@ -129,12 +118,7 @@ export default function Walkthrough() {
         </Reveal>
       </section>
 
-      <SceneLayout
-        id={SCENE_ANCHORS.batch}
-        step={t('home.batch.step')}
-        title={t('home.batch.title')}
-        app={<BatchScene />}
-      >
+      <SceneLayout id={SCENE_ANCHORS.batch} title={t('home.batch.title')} app={<BatchScene />}>
         {t('home.batch.lede')}
       </SceneLayout>
 
@@ -142,19 +126,13 @@ export default function Walkthrough() {
           the library when a better file turns up. */}
       <SceneLayout
         id={SCENE_ANCHORS.replace}
-        step={t('home.replace.step')}
         title={t('home.replace.title')}
         app={<ReplaceScene />}
       >
         {t('home.replace.lede')}
       </SceneLayout>
 
-      <SceneLayout
-        id={SCENE_ANCHORS.cues}
-        step={t('home.cues.step')}
-        title={t('home.cues.title')}
-        app={<CuesScene />}
-      >
+      <SceneLayout id={SCENE_ANCHORS.cues} title={t('home.cues.title')} app={<CuesScene />}>
         {t('home.cues.lede')}
       </SceneLayout>
 

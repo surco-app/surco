@@ -1058,12 +1058,10 @@
     "replay": "Repetir a animação",
     "anchorLink": "Link para este exemplo",
     "walkthrough": {
-      "kicker": "Passo a passo",
       "title": "Uma faixa, do início ao fim",
       "lede": "Sete passos, uma janela. No caminho, você vai descobrir quais dos seus FLAC são na verdade MP3."
     },
     "drop": {
-      "step": "Passo 1 · Dentro",
       "title": "Soltou, entrou.",
       "lede": "Pastas inteiras. O Surco lê tags, duração e capa na hora e nunca adiciona a mesma faixa duas vezes.",
       "emptyTitle": "Arraste suas faixas para cá",
@@ -1072,7 +1070,6 @@
       "reading": "Lendo {{read}}/{{total}}"
     },
     "quality": {
-      "step": "Passo 3 · Conferida",
       "title": "Aquele FLAC era um MP3.",
       "lede": "Comprar lossless não garante que seja. Se alguém converteu um MP3 para FLAC, o arquivo pesa o mesmo, mas o espectro mostra a parede. O Surco avisa antes de a faixa sair de casa.",
       "goodAlt": "Espectro de um FLAC genuíno: a energia chega ao topo sem corte",
@@ -1089,12 +1086,10 @@
       "fakeBadge": "● Falso lossless"
     },
     "audioGroup": {
-      "step": "Passos 4 a 6 · O acabamento",
       "title": "E um áudio melhor de quebra.",
       "lede": "Três ajustes que o Surco faz na mesma faixa: limpa os clicks e o ruído do vinil, corta o silêncio do final e deixa todas as faixas no mesmo volume."
     },
     "tag": {
-      "step": "Passo 2 · Etiquetada",
       "title": "As tags do Discogs, em um clique.",
       "lede": "Discogs para os selos, Bandcamp para os lançamentos independentes, Deezer para as paradas, Beatport para a pista, MusicBrainz para todo o resto. Um clique preenche tudo: artista, selo, ano, BPM e capa.",
       "all": "Todas ({{count}})"
@@ -1141,7 +1136,6 @@
       "explain": "Vai mudar {{gain}} dB até {{target}} LUFS com um ganho constante. Nada é limitado nem comprimido; a dinâmica fica intacta."
     },
     "batch": {
-      "step": "Passo 7 · Saída",
       "title": "E cai direto no seu Apple Music.",
       "lede": "Escolha um formato e um destino e converta a pasta inteira. Com o Apple Music e o Engine DJ você não importa nada: a faixa aparece na sua biblioteca com a capa e, no Engine DJ, com avaliação e playlist. Todo o resto recebe o arquivo que espera.",
       "stage": "Convertendo para AIFF…",
@@ -1211,11 +1205,9 @@
       "cuesLabel": "Cue points",
       "intact": "intactos",
       "inPlace": "no lugar",
-      "fieldYear": "Ano",
-      "step": "Depois · Substituída"
+      "fieldYear": "Ano"
     },
     "cues": {
-      "step": "No seu app · Com cues",
       "title": "Seus cues do rekordbox, Engine DJ e Traktor, em um clique.",
       "lede": "Clique onde a faixa explode ou deixe o Marcar automático sugerir. Seu fluxo posiciona o resto dos cues e o Surco os salva no rekordbox, Engine DJ ou Traktor. O Engine DJ e o Traktor recebem só os hot cues.",
       "unsaved": "Não salvo",
@@ -1243,7 +1235,6 @@
       "missingArtist": "Falta Artista"
     },
     "review": {
-      "kicker": "Sua biblioteca",
       "title": "Encontre os erros e os duplicados da sua biblioteca",
       "lede": "O Surco percorre sua biblioteca do Apple Music, a pasta que você soltar ou uma playlist do rekordbox, Engine DJ ou Traktor e agrupa o que está escrito de mais de um jeito, os espaços e caracteres invisíveis que entram quando você copia de um site e as faixas que você tem em dobro. Você escolhe como deve ficar e a mudança chega aos arquivos, ao Apple Music e, se você os sincroniza, ao rekordbox, Engine DJ e Traktor.",
       "points": {
