@@ -1070,8 +1070,8 @@
       "reading": "Lendo {{read}}/{{total}}"
     },
     "quality": {
-      "title": "Aquele FLAC era um MP3.",
-      "lede": "Comprar lossless não garante que seja. Se alguém converteu um MP3 para FLAC, o arquivo pesa o mesmo, mas o espectro mostra a parede. O Surco avisa antes de a faixa sair de casa.",
+      "title": "Aquele lossless era um MP3.",
+      "lede": "Comprar lossless não garante que seja. Se alguém converteu um MP3 para FLAC, WAV ou AIFF, o arquivo pesa o mesmo, mas o espectro mostra a parede. O Surco avisa antes de a faixa sair de casa.",
       "goodAlt": "Espectro de um FLAC genuíno: a energia chega ao topo sem corte",
       "fakeAlt": "Espectro de um MP3 convertido para FLAC: faixa vazia acima de 16 kHz com borda reta",
       "section": "Qualidade de áudio",

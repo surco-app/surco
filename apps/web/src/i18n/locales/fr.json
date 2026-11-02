@@ -1070,8 +1070,8 @@
       "reading": "Lecture {{read}}/{{total}}"
     },
     "quality": {
-      "title": "Ce FLAC était un MP3.",
-      "lede": "Acheter en sans perte ne garantit pas que ça le soit. Si quelqu'un a converti un MP3 en FLAC, le fichier pèse pareil mais le spectre montre le mur. Surco le signale avant même que le morceau sorte de chez toi.",
+      "title": "Ce fichier sans perte était un MP3.",
+      "lede": "Acheter en sans perte ne garantit pas que ça le soit. Si quelqu'un a converti un MP3 en FLAC, WAV ou AIFF, le fichier pèse pareil mais le spectre montre le mur. Surco le signale avant même que le morceau sorte de chez toi.",
       "goodAlt": "Spectre d'un vrai FLAC : l'énergie monte jusqu'en haut sans coupure",
       "fakeAlt": "Spectre d'un MP3 transcodé en FLAC : bande vide au-dessus de 16 kHz avec un bord net",
       "section": "Qualité audio",
