@@ -719,9 +719,9 @@
         ],
         "points": [
           "Green “good quality”: the sound reaches all the way up, nothing missing. Amber “Doubtful”: it cuts off early. Red: “Bad quality”, or “Lossy source” when a lossless file carries a codec's cutoff inside.",
-          "An MP3 isn't measured against a lossless yardstick: its cut is the format, not a flaw, so it comes out clean when it is. What does get called out is a FLAC or a WAV with a codec's cut inside it.",
+          "An MP3 isn't measured against a lossless yardstick: its cut is the format, not a flaw, so it comes out clean when it is. What does get called out is a FLAC, a WAV or an AIFF with a codec's cut inside it.",
           "“Possibly reprocessed” is a different warning, in amber: the spectrum shows highs that look regenerated over an earlier cutoff. It's a measured suspicion, not proof; highs that are merely flat show up as an observation, with no verdict.",
-          "It also catches fake lossless, a FLAC or WAV that's really a repackaged MP3. And any file claiming more than 44.1 kHz always gets an answer about its rate: genuine hi-res, stretched up from 44.1, or an honest \"could not be verified\" when there is nothing up there to measure.",
+          "It also catches fake lossless, a FLAC, WAV or AIFF that's really a repackaged MP3. And any file claiming more than 44.1 kHz always gets an answer about its rate: genuine hi-res, stretched up from 44.1, or an honest \"could not be verified\" when there is nothing up there to measure.",
           "A crosshair over the spectrum reads out the exact frequency under your cursor.",
           "The Loudness normalization section draws the waveform with clipping marked in red, zooms in down to sample detail, splits the two channels and previews how it will sound once normalized. And, once converted, it compares before and after side by side or overlaid.",
           "Save a spectrum report as a PNG, with its verdict and cutoff line, to share when someone asks you about that track.",
