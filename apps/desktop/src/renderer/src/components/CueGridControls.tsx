@@ -51,6 +51,7 @@ export function CueGridControls({
   playheadMs,
   onChange,
   onDone,
+  zones = true,
 }: {
   grid: EditableGrid | null
   disabledReason: string | null
@@ -59,6 +60,7 @@ export function CueGridControls({
   playheadMs: number
   onChange: (grid: EditableGrid) => void
   onDone?: () => void
+  zones?: boolean
 }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const [menu, setMenu] = useState(false)
@@ -247,7 +249,7 @@ export function CueGridControls({
         data-testid="cues-grid-anchor"
         aria-label={tr(atAnchor ? 'editor.cues.grid.anchorRemove' : 'editor.cues.grid.anchorAdd')}
         title={tr(atAnchor ? 'editor.cues.grid.anchorRemove' : 'editor.cues.grid.anchorAdd')}
-        disabled={off}
+        disabled={off || !zones}
         onClick={() => grid && onChange(toggleAnchor(grid, playheadMs))}
         className={ICON}
       >

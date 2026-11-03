@@ -1051,7 +1051,8 @@
         "varying": "Raster mit mehreren Tempi, im Programm anpassen",
         "surcoDraft": "Diese Cues wurden auf dem Surco-Raster gesetzt. Speichere oder verwirf sie, um das Raster anzupassen",
         "anchorAdd": "Anker am Abspielkopf, beginnt eine Zone",
-        "anchorRemove": "Anker am Abspielkopf entfernen"
+        "anchorRemove": "Anker am Abspielkopf entfernen",
+        "locked": "Das Programm hat dieses Raster gesperrt"
       },
       "offGrid": {
         "before": "{{ms}} ms zu früh",

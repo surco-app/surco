@@ -1051,7 +1051,8 @@
         "varying": "Grade com vários andamentos, ajuste no programa",
         "surcoDraft": "Estes cues foram colocados na grade do Surco. Salve ou descarte-os para ajustar a grade",
         "anchorAdd": "Âncora no cursor, começa uma zona",
-        "anchorRemove": "Remover a âncora do cursor"
+        "anchorRemove": "Remover a âncora do cursor",
+        "locked": "O programa tem esta grade bloqueada"
       },
       "offGrid": {
         "before": "{{ms}} ms antes",

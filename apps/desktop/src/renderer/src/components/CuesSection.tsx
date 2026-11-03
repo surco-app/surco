@@ -180,6 +180,8 @@ const COPY: Record<DjProgram, typeof REKORDBOX_COPY> = {
 
 const copyOf = (contentId: string) => COPY[programOf(contentId)]
 
+const SAME_CLOCK_FILE = /\.(wav|aif|aiff|flac)$/i
+
 export function saveAllKey(unsaved: ReadonlySet<string>): string {
   const programs = new Set([...unsaved].map(programOf))
   if (programs.size === 0) return CUE_PROGRAMS.rekordbox.saveAllKey
@@ -499,16 +501,19 @@ function Editing({
       provisional !== undefined ||
       (keptDraftOn(cue.contentId, read, queued) !== undefined && keptOnSurcoGrid(cue.contentId)),
   )
+  const rekordboxGrid = programOf(cue.contentId) === 'rekordbox'
   const gridOff =
-    programOf(cue.contentId) !== 'rekordbox'
+    !rekordboxGrid && !SAME_CLOCK_FILE.test(cue.path)
       ? tr('editor.cues.grid.unmeasured')
       : provisional
         ? tr('editor.cues.grid.provisional')
         : onSurcoGrid
           ? tr('editor.cues.grid.surcoDraft')
-          : state.grid === null
-            ? tr('editor.cues.grid.varying')
-            : null
+          : read.gridLocked
+            ? tr('editor.cues.grid.locked')
+            : state.grid === null || (!rekordboxGrid && state.grid.zones)
+              ? tr('editor.cues.grid.varying')
+              : null
   const gridFit = useGridFit(cue.contentId, maximized && gridOff === null)
   const offsets =
     gridFit && state.grid ? gridOffsets(state.grid, gridFit, playheadMs, read.durationMs) : null
@@ -1804,6 +1809,7 @@ function Editing({
               playheadMs={playheadMs}
               onChange={setGrid}
               onDone={focusEditor}
+              zones={rekordboxGrid}
             />
           }
         />

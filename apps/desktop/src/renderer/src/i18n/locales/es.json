@@ -1051,7 +1051,8 @@
         "varying": "Rejilla con varios tempos, se ajusta en el programa",
         "surcoDraft": "Estos cues se pusieron sobre la rejilla de Surco. Guárdalos o descártalos para ajustar la rejilla",
         "anchorAdd": "Ancla en el cabezal, empieza una zona",
-        "anchorRemove": "Quitar el ancla del cabezal"
+        "anchorRemove": "Quitar el ancla del cabezal",
+        "locked": "El programa tiene esta rejilla bloqueada"
       },
       "offGrid": {
         "before": "{{ms}} ms antes",

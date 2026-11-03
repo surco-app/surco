@@ -71,6 +71,7 @@ function setup(
   dropInput: Api['rekordboxCueDropInput'] = async () => null,
   over: Partial<Api> = {},
   traktorNmlPath = '',
+  path = '/m/e.wav',
 ) {
   const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
   installApi({
@@ -87,11 +88,7 @@ function setup(
   render(
     <QueryClientProvider client={client}>
       <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine', traktorNmlPath }}>
-        <CuesSection
-          cue={{ contentId, path: '/m/e.wav', label: 'Tengo' }}
-          open
-          onToggle={vi.fn()}
-        />
+        <CuesSection cue={{ contentId, path, label: 'Tengo' }} open onToggle={vi.fn()} />
       </SettingsProvider>
     </QueryClientProvider>,
   )
@@ -283,17 +280,37 @@ describe('CuesSection on an Engine DJ track', () => {
     expect(traktorCollectionInUse).not.toHaveBeenCalled()
   })
 
-  it('shows the grid row greyed out with its reason, because the waveform clock is not measured for this program yet', async () => {
-    const getGridFit = vi.fn<Api['rekordboxGridFit']>(async () => ({ bpm: 120, firstMs: 0 }))
+  it('edits the grid of a WAV, whose clock is the one Surco draws, but opens no zones here', async () => {
     setup()
+    await ready()
+    fireEvent.click(screen.getByTestId('section-maximize'))
+    await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())
+    expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'false')
+    expect(screen.getByTestId('cues-grid-right')).toBeEnabled()
+    expect(screen.getByTestId('cues-grid-anchor')).toBeDisabled()
+  })
+
+  it('greys out the grid row of a compressed file, whose clock is not measured for this program yet', async () => {
+    const getGridFit = vi.fn<Api['rekordboxGridFit']>(async () => ({ bpm: 120, firstMs: 0 }))
+    setup(READ, undefined, undefined, {}, '', '/m/e.mp3')
     window.api.rekordboxGridFit = getGridFit
     await ready()
     fireEvent.click(screen.getByTestId('section-maximize'))
     await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())
     expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
     expect(screen.getByTestId('cues-grid')).toHaveAttribute('title', expect.stringMatching(/Surco/))
-    expect(screen.getByTestId('cues-grid-right')).toBeDisabled()
-    expect(screen.queryByTestId('cues-grid-offsets')).toBeNull()
     expect(getGridFit).not.toHaveBeenCalled()
+  })
+
+  it('leaves a grid the DJ locked in the program alone, and says so', async () => {
+    setup({ ...READ, gridLocked: true })
+    await ready()
+    fireEvent.click(screen.getByTestId('section-maximize'))
+    await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())
+    expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByTestId('cues-grid')).toHaveAttribute(
+      'title',
+      expect.stringMatching(/locked/i),
+    )
   })
 })
