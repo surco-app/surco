@@ -15,6 +15,7 @@ import ptBR from '../i18n/locales/pt-BR.json'
 import {
   filtersFromSearch,
   matchesUseCase,
+  recipeIndex,
   recipePages,
   recipePathForAnchor,
   searchForFilters,
@@ -350,5 +351,33 @@ describe('use case settings by tab', () => {
       )
       expect(wanted.filter((f) => !USE_CASE_SHOTS[f])).toEqual([])
     }
+  })
+})
+
+describe('recipeIndex', () => {
+  const groups = es.useCases.groups
+  const cases = es.useCases.cases
+  const index = recipeIndex(groups, cases)
+
+  it('reaches every recipe from the side index exactly once, so none is a dead end', () => {
+    expect(index.flatMap((g) => g.cases.map((c) => c.id)).sort()).toEqual(
+      cases.map((c) => c.id).sort(),
+    )
+  })
+
+  it('follows the list page order, groups first and then each group in its own order', () => {
+    expect(index.map((g) => g.id)).toEqual(
+      groups.filter((g) => cases.some((c) => c.group === g.id)).map((g) => g.id),
+    )
+    for (const g of index) {
+      expect(g.cases.map((c) => c.id)).toEqual(
+        cases.filter((c) => c.group === g.id).map((c) => c.id),
+      )
+    }
+  })
+
+  it('leaves out a group with no recipes rather than show an empty heading', () => {
+    const extra = [...groups, { id: 'empty', title: 'Empty', lede: '' }]
+    expect(recipeIndex(extra, cases).map((g) => g.id)).not.toContain('empty')
   })
 })
