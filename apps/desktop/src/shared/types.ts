@@ -1880,6 +1880,7 @@ export interface TrackCues {
   phrases: FlowPhrase[]
   sections?: PhraseSection[]
   cues: TrackCueRow[]
+  loops?: { id: string; startMs: number; endMs: number; name?: string }[]
   wave: CueWaveColumn[] | null
   durationMs: number
   fingerprint: string

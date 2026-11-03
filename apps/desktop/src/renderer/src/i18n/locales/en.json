@@ -996,7 +996,8 @@
         "readOnly": "Serato is read-only in Surco",
         "running": "Serato is open. The cues may be out of date until you close it.",
         "unreadable": "Could not read the cues from Serato",
-        "none": "Serato has no hot cues on this track"
+        "none": "Serato has no hot cues on this track",
+        "loop": "Loop {{start}} to {{end}}"
       },
       "traktor": {
         "save": "Save to Traktor",

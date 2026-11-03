@@ -1844,7 +1844,7 @@ function SeratoCues({
     )
   return (
     <div className="grid gap-2">
-      {read.cues.length === 0 ? (
+      {read.cues.length === 0 && !read.loops?.length ? (
         <p data-testid="cues-serato-none" className="text-xs text-fg-dim">
           {tr(copyOf(contentId).unanalysed)}
         </p>
@@ -1870,6 +1870,21 @@ function SeratoCues({
               </li>
             )
           })}
+          {(read.loops ?? []).map((l) => (
+            <li
+              key={`loop${l.id}`}
+              data-testid={`cues-serato-loop-${l.id}`}
+              className="flex min-w-0 items-center gap-2"
+            >
+              <span className="shrink-0 tabular-nums text-fg">
+                {tr('editor.cues.serato.loop', {
+                  start: cueClock(l.startMs),
+                  end: cueClock(l.endMs),
+                })}
+              </span>
+              {l.name && <span className="min-w-0 truncate text-fg-dim">{l.name}</span>}
+            </li>
+          ))}
         </ul>
       )}
       <p data-testid="cues-read-only" className="text-xs text-fg-dim">

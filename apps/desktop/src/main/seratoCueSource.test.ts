@@ -77,6 +77,14 @@ describe('seratoCueSource', () => {
     expect(read?.contentId).toBe(`serato:${file}`)
   })
 
+  it('reads the loops Serato saved beside the hot cues, with their start and end', async () => {
+    const read = await source().trackCues(`serato:${withMarkers(mp3())}`)
+    expect(read?.loops?.map((l) => [l.startMs, l.endMs])).toEqual([
+      [57612, 71941],
+      [64777, 79105],
+    ])
+  })
+
   it('offers no beat grid, since Serato keeps its own and Surco reads none in this phase', async () => {
     const read = await source().trackCues(`serato:${withMarkers(mp3())}`)
     expect(read?.analysed).toBe(false)

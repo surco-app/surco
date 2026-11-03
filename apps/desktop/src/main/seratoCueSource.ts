@@ -31,6 +31,12 @@ export function seratoCueSource(host: {
         strong: [],
         phrases: [],
         cues,
+        loops: (track.markers?.loops ?? []).map((l) => ({
+          id: String(l.index),
+          startMs: l.startMs,
+          endMs: l.endMs,
+          ...(l.name && { name: l.name }),
+        })),
         wave: null,
         durationMs: track.durationMs,
         fingerprint: cueFingerprint(cues),

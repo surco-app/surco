@@ -996,7 +996,8 @@
         "readOnly": "Serato ist in Surco schreibgeschützt",
         "running": "Serato ist geöffnet. Die Cues sind vielleicht nicht aktuell, bis du es schließt.",
         "unreadable": "Die Cues aus Serato konnten nicht gelesen werden",
-        "none": "Serato hat keine Hot Cues auf diesem Titel"
+        "none": "Serato hat keine Hot Cues auf diesem Titel",
+        "loop": "Loop {{start}} bis {{end}}"
       },
       "traktor": {
         "save": "In Traktor speichern",

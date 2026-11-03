@@ -29,6 +29,10 @@ const READ: TrackCues = {
     { id: '0', ms: 57606, kind: HOT_KINDS[0], color: 2, name: 'Intro' },
     { id: '1', ms: 71553, kind: HOT_KINDS[1], color: 5 },
   ],
+  loops: [
+    { id: '0', startMs: 57612, endMs: 71941, name: 'Build' },
+    { id: '1', startMs: 64777, endMs: 79105 },
+  ],
   wave: null,
   durationMs: 300000,
   fingerprint: 'f0',
@@ -59,7 +63,7 @@ function setup(read: TrackCues | null | Error = READ, running = false) {
       </SettingsProvider>
     </QueryClientProvider>,
   )
-  return { saveRekordboxCues, seratoRunning }
+  return { saveRekordboxCues, seratoRunning, client }
 }
 
 describe('CuesSection on a Serato track', () => {
@@ -73,6 +77,15 @@ describe('CuesSection on a Serato track', () => {
       backgroundColor: hotCueColor(2),
     })
     expect(screen.getByTestId('cues-serato-B')).toHaveTextContent('1:11.5')
+  })
+
+  it('shows the loops Serato saved with where each starts and ends', async () => {
+    setup()
+    expect(await screen.findByTestId('cues-serato-loop-0')).toHaveTextContent(
+      'Loop 0:57.6 to 1:11.9',
+    )
+    expect(screen.getByTestId('cues-serato-loop-0')).toHaveTextContent('Build')
+    expect(screen.getByTestId('cues-serato-loop-1')).toHaveTextContent('Loop 1:04.7 to 1:19.1')
   })
 
   it('offers no way to change or save them, and says Serato is read-only, so nothing is ever written to Serato', async () => {
@@ -93,14 +106,16 @@ describe('CuesSection on a Serato track', () => {
   })
 
   it('does not warn when Serato is closed', async () => {
-    const { seratoRunning } = setup(READ, false)
+    const { client } = setup(READ, false)
     await screen.findByTestId('cues-serato-A')
-    await waitFor(() => expect(seratoRunning).toHaveBeenCalled())
-    await waitFor(() => expect(screen.queryByTestId('cues-serato-running')).toBeNull())
+    await waitFor(() =>
+      expect(client.getQueryState(['serato-running', ID])?.status).toBe('success'),
+    )
+    expect(screen.queryByTestId('cues-serato-running')).toBeNull()
   })
 
   it('says the track has no hot cues when Serato marked none', async () => {
-    setup({ ...READ, cues: [] })
+    setup({ ...READ, cues: [], loops: [] })
     expect(await screen.findByTestId('cues-serato-none')).toHaveTextContent(
       'Serato has no hot cues on this track',
     )

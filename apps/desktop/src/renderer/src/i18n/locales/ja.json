@@ -996,7 +996,8 @@
         "readOnly": "Surco では Serato は読み取り専用です",
         "running": "Serato が開いています。閉じるまでキューが最新でない可能性があります。",
         "unreadable": "Serato からキューを読み取れませんでした",
-        "none": "このトラックには Serato のホットキューがありません"
+        "none": "このトラックには Serato のホットキューがありません",
+        "loop": "ループ {{start}}〜{{end}}"
       },
       "traktor": {
         "save": "Traktor に保存",

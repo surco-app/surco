@@ -996,7 +996,8 @@
         "readOnly": "O Serato é somente leitura no Surco",
         "running": "O Serato está aberto. Os cues podem não estar atualizados até você fechá-lo.",
         "unreadable": "Não foi possível ler os cues do Serato",
-        "none": "O Serato não tem hot cues nesta faixa"
+        "none": "O Serato não tem hot cues nesta faixa",
+        "loop": "Loop de {{start}} a {{end}}"
       },
       "traktor": {
         "save": "Salvar no Traktor",
