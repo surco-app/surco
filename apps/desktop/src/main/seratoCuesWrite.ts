@@ -11,7 +11,7 @@ import { cueFingerprint } from './rekordboxCues'
 import { renameWithRetry } from './renameRetry'
 import { seratoLeadOfFile } from './seratoClock'
 import { seratoCueRows } from './seratoCueSource'
-import { readSeratoPayload, readSeratoTrack } from './seratoTags'
+import { readSeratoTrack } from './seratoTags'
 import { runInWorker } from './worker'
 
 export interface SeratoWriteDeps {
@@ -28,23 +28,25 @@ export async function writeSeratoCues(
   expectedFingerprint: string,
   { tracking, rewritten }: SeratoWriteDeps = {},
 ): Promise<'written' | 'changed' | 'failed'> {
-  const track = readSeratoTrack(file)
-  if (!track) return 'failed'
-  const lead = await seratoLeadOfFile(file, track.sampleRate)
-  if (cueFingerprint(seratoCueRows(track.markers?.cues ?? [], lead)) !== expectedFingerprint)
-    return 'changed'
   const tmp = convertTmpPath(file, extname(file))
   tracking?.track(tmp)
   let archived: TrashEntry | null = null
   try {
-    const payload = withSeratoCues(
-      readSeratoPayload(file),
-      wanted.map((cue) => ({ ...cue, ms: Math.max(0, Math.round(cue.ms + lead)) })),
-    )
     const fromBytes = (await stat(file)).size
     await copyFile(file, tmp, fsConstants.COPYFILE_FICLONE)
+    const track = readSeratoTrack(tmp)
+    if (!track) throw new Error(`no tags read from ${tmp}`)
+    const lead = await seratoLeadOfFile(tmp, track.sampleRate)
+    if (cueFingerprint(seratoCueRows(track.markers?.cues ?? [], lead)) !== expectedFingerprint) {
+      await dropTemp(tmp, tracking)
+      return 'changed'
+    }
+    const payload = withSeratoCues(
+      track.payload,
+      wanted.map((cue) => ({ ...cue, ms: Math.max(0, Math.round(cue.ms + lead)) })),
+    )
     await runInWorker({ type: 'setSeratoMarkers', file: tmp, payload })
-    if (!sameBytes(readSeratoPayload(tmp), payload))
+    if (!sameBytes(readSeratoTrack(tmp)?.payload ?? null, payload))
       throw new Error(`Serato cues did not read back from ${tmp}`)
     await assertDecodable(tmp, file)
     archived = await keepOriginal(file, 'replaced', file, {

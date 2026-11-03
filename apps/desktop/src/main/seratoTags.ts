@@ -117,6 +117,7 @@ export function readSeratoMarkers(file: string): SeratoMarkers | null {
 }
 
 export function readSeratoTrack(file: string): {
+  payload: Uint8Array | null
   markers: SeratoMarkers | null
   tempoMap: SeratoTempoMap | null
   durationMs: number
@@ -128,7 +129,9 @@ export function readSeratoTrack(file: string): {
   try {
     const f = TagFile.createFromPath(file)
     try {
+      const source = markersSource(f, ext)
       return {
+        payload: source ? seratoPayloadOf(source) : null,
         markers: read ? read(f) : null,
         tempoMap: readTempo ? readTempo(f) : null,
         durationMs: f.properties?.durationMilliseconds ?? 0,
@@ -153,16 +156,6 @@ function markersSource(f: TagFile, ext: string): Uint8Array | string | null {
   return null
 }
 
-export function readSeratoPayload(file: string): Uint8Array | null {
-  const f = TagFile.createFromPath(file)
-  try {
-    const source = markersSource(f, extname(file).toLowerCase())
-    return source ? seratoPayloadOf(source) : null
-  } finally {
-    f.dispose()
-  }
-}
-
 function markers2Frame(payload: Uint8Array): Id3v2AttachmentFrame {
   const picture = Picture.fromFullData(
     ByteVector.fromByteArray(seratoGeobBody(payload)),
@@ -176,9 +169,10 @@ function markers2Frame(payload: Uint8Array): Id3v2AttachmentFrame {
   return frame
 }
 
-function setId3Markers(f: TagFile, ext: string, payload: Uint8Array): void {
+function setId3Markers(f: TagFile, payload: Uint8Array): void {
+  const fresh = (f.tagTypesOnDisk & TagTypes.Id3v2) === 0
   const tag = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
-  tag.version = ext === '.mp3' ? 3 : 4
+  if (fresh) tag.version = 3
   for (const frame of tag.frames.slice()) {
     if (frame.frameId.toString() !== 'GEOB') continue
     const description = descriptionAndPayload(frame)?.description
@@ -193,7 +187,7 @@ export function setSeratoMarkers(file: string, payload: Uint8Array): void {
   const ext = extname(file).toLowerCase()
   const f = TagFile.createFromPath(file)
   try {
-    if (ID3_EXTENSIONS.has(ext)) setId3Markers(f, ext, payload)
+    if (ID3_EXTENSIONS.has(ext)) setId3Markers(f, payload)
     else if (ext === '.flac')
       (f.getTag(TagTypes.Xiph, true) as XiphComment).setFieldAsStrings(
         FLAC_MARKERS2,
