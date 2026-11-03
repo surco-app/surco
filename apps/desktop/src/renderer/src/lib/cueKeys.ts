@@ -13,7 +13,7 @@ export type CueKey =
   | { type: 'redo' }
   | { type: 'zoom'; dir: 'in' | 'out' }
   | { type: 'swallow' }
-  | { type: 'grid-shift'; ms: 1 | -1 | 10 | -10 }
+  | { type: 'grid-shift'; ms: 1 | -1 | 5 | -5 }
 
 const LIST_KEYS = ['ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']
 const TRACK_CHORDS = ['backspace', 'enter', 'e', 't']
@@ -40,8 +40,8 @@ export function cueKeyAction(e: {
 }): CueKey | null {
   if (e.metaKey || e.ctrlKey) return commandChord(e)
   if (e.altKey) {
-    if (e.key === 'ArrowLeft') return { type: 'grid-shift', ms: e.shiftKey ? -10 : -1 }
-    if (e.key === 'ArrowRight') return { type: 'grid-shift', ms: e.shiftKey ? 10 : 1 }
+    if (e.key === 'ArrowLeft') return { type: 'grid-shift', ms: e.shiftKey ? -1 : -5 }
+    if (e.key === 'ArrowRight') return { type: 'grid-shift', ms: e.shiftKey ? 1 : 5 }
     return null
   }
   if (e.key === ' ') return { type: 'play' }
