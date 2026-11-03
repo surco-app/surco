@@ -2,7 +2,7 @@ import { HOT_KINDS } from '../shared/cueRules'
 import { gridFingerprint } from '../shared/gridEdit'
 import { nearestHotCueColor } from '../shared/rekordboxCueColors'
 import { seratoFileOf } from '../shared/seratoContent'
-import type { SeratoTempoMap } from '../shared/seratoMarkers'
+import type { SeratoCue, SeratoTempoMap } from '../shared/seratoMarkers'
 import type { TrackCueRow } from '../shared/types'
 import type { CueReader } from './cueSource'
 import { cueFingerprint } from './rekordboxCues'
@@ -27,6 +27,18 @@ function tempoGrid(
   return grid
 }
 
+export function seratoCueRows(cues: SeratoCue[], leadMs: number): TrackCueRow[] {
+  return cues
+    .filter((c) => c.index < HOT_KINDS.length)
+    .map((c) => ({
+      id: String(c.index),
+      ms: c.ms - leadMs,
+      kind: HOT_KINDS[c.index],
+      color: nearestHotCueColor((0xff000000 | c.color) >>> 0),
+      ...(c.name && { name: c.name }),
+    }))
+}
+
 export function seratoCueSource(host: {
   words: (file: string) => Promise<Uint16Array | null>
 }): CueReader {
@@ -37,15 +49,7 @@ export function seratoCueSource(host: {
       if (!track) return null
       const lead = await seratoLeadOfFile(file, track.sampleRate)
       const grid = track.tempoMap ? tempoGrid(track.tempoMap, lead, track.durationMs) : []
-      const cues: TrackCueRow[] = (track.markers?.cues ?? [])
-        .filter((c) => c.index < HOT_KINDS.length)
-        .map((c) => ({
-          id: String(c.index),
-          ms: c.ms - lead,
-          kind: HOT_KINDS[c.index],
-          color: nearestHotCueColor((0xff000000 | c.color) >>> 0),
-          ...(c.name && { name: c.name }),
-        }))
+      const cues = seratoCueRows(track.markers?.cues ?? [], lead)
       return {
         contentId,
         analysed: track.tempoMap !== null,

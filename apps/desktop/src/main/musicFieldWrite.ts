@@ -191,7 +191,7 @@ export async function prepareTagRewrite(
 
 // A temp that will not delete (a network volume still holding the handle) stays in the
 // manifest so the next launch sweeps it, as convertAudio does.
-async function dropTemp(tmp: string, tracking?: TmpTracking): Promise<void> {
+export async function dropTemp(tmp: string, tracking?: TmpTracking): Promise<void> {
   if (await removeTemp(tmp)) log.warn(`temp cleanup failed, left behind: ${tmp}`)
   else tracking?.untrack(tmp)
 }
