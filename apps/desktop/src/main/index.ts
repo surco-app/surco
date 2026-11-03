@@ -1389,11 +1389,9 @@ function registerIpc(): void {
         appPath: app.getAppPath(),
         exists: existsSync,
       }),
-    ensureRekordboxClosed: (win, detail) =>
-      ensureClosed('rekordbox', win, reasonOfDetail('rekordbox', detail)),
+    ensureClosed: (program, win, detail) =>
+      ensureClosed(program, win, reasonOfDetail(program, detail)),
     engineLibrary: engineLibraryPath,
-    ensureEngineDjClosed: (win, detail) =>
-      ensureClosed('engine', win, reasonOfDetail('engine', detail)),
   })
 
   // Reaches an encode already in flight: cancelBatch's own flag only stops jobs

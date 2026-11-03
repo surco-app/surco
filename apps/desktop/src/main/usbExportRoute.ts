@@ -1,3 +1,4 @@
+import { DJ_PROGRAMS, type DjProgram } from '../shared/djProgram'
 import type { UsbExportRequest, UsbPlanResult, UsbStartResult } from '../shared/types'
 
 export interface UsbExporter {
@@ -8,22 +9,38 @@ export interface UsbExporter {
   busy: () => boolean
 }
 
-export function routeUsbExports(rekordbox: UsbExporter, engine: UsbExporter): UsbExporter {
-  const pick = (req: UsbExportRequest): [UsbExporter, UsbExporter] =>
-    req.source === 'engine' ? [engine, rekordbox] : [rekordbox, engine]
+export type UsbProgram = Exclude<DjProgram, 'traktor'>
+
+export type UsbExporters = Partial<Record<DjProgram, UsbExporter>> & Record<UsbProgram, UsbExporter>
+
+export function usbProgramOf(req: UsbExportRequest): UsbProgram {
+  return req.source === 'engine' ? 'engine' : 'rekordbox'
+}
+
+export function routeUsbExports(exporters: UsbExporters): UsbExporter {
+  const registered = DJ_PROGRAMS.flatMap((p) => {
+    const exporter = exporters[p]
+    return exporter ? [{ program: p, exporter }] : []
+  })
+  const otherBusy = (program: DjProgram): boolean =>
+    registered.some((r) => r.program !== program && r.exporter.busy())
   return {
     plan: (req) => {
-      const [chosen, other] = pick(req)
-      return other.busy() ? Promise.resolve({ ok: false, reason: 'busy' }) : chosen.plan(req)
+      const program = usbProgramOf(req)
+      return otherBusy(program)
+        ? Promise.resolve({ ok: false, reason: 'busy' })
+        : exporters[program].plan(req)
     },
     start: (req) => {
-      const [chosen, other] = pick(req)
-      return other.busy() ? Promise.resolve({ ok: false, reason: 'busy' }) : chosen.start(req)
+      const program = usbProgramOf(req)
+      return otherBusy(program)
+        ? Promise.resolve({ ok: false, reason: 'busy' })
+        : exporters[program].start(req)
     },
-    cancel: () => rekordbox.cancel() || engine.cancel(),
+    cancel: () => registered.some((r) => r.exporter.cancel()),
     stop: async () => {
-      await Promise.all([rekordbox.stop(), engine.stop()])
+      await Promise.all(registered.map((r) => r.exporter.stop()))
     },
-    busy: () => rekordbox.busy() || engine.busy(),
+    busy: () => registered.some((r) => r.exporter.busy()),
   }
 }

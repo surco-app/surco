@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { UsbExportRequest } from '../shared/types'
-import { routeUsbExports, type UsbExporter } from './usbExportRoute'
+import { routeUsbExports, type UsbExporter, usbProgramOf } from './usbExportRoute'
 
 const fake = (busy = false): UsbExporter => ({
   plan: vi.fn(async () => ({ ok: false as const, reason: 'unsupported' as const })),
@@ -22,7 +22,7 @@ describe('routeUsbExports', () => {
   it('sends an Engine DJ export to the Engine exporter and everything else to rekordbox, as before', async () => {
     const rekordbox = fake()
     const engine = fake()
-    const route = routeUsbExports(rekordbox, engine)
+    const route = routeUsbExports({ rekordbox, engine })
     await route.start(req('engine'))
     await route.plan(req())
     expect(engine.start).toHaveBeenCalledOnce()
@@ -32,21 +32,28 @@ describe('routeUsbExports', () => {
   })
 
   it('refuses either export while the other one writes, since both would write the same drive at once', async () => {
-    const route = routeUsbExports(fake(true), fake())
+    const route = routeUsbExports({ rekordbox: fake(true), engine: fake() })
     expect(await route.start(req('engine'))).toEqual({ ok: false, reason: 'busy' })
     expect(await route.plan(req('engine'))).toEqual({ ok: false, reason: 'busy' })
     expect(route.busy()).toBe(true)
-    const other = routeUsbExports(fake(), fake(true))
+    const other = routeUsbExports({ rekordbox: fake(), engine: fake(true) })
     expect(await other.start(req())).toEqual({ ok: false, reason: 'busy' })
   })
 
   it('cancels and settles whichever export runs, so Cancel and quitting work for both', async () => {
     const rekordbox = fake()
     const engine = fake(true)
-    const route = routeUsbExports(rekordbox, engine)
+    const route = routeUsbExports({ rekordbox, engine })
     expect(route.cancel()).toBe(true)
     await route.stop()
     expect(engine.stop).toHaveBeenCalledOnce()
     expect(rekordbox.stop).toHaveBeenCalledOnce()
+  })
+})
+
+describe('usbProgramOf', () => {
+  it('reads Engine DJ from the request and rekordbox from a request without a source, the format the renderer sends', () => {
+    expect(usbProgramOf(req('engine'))).toBe('engine')
+    expect(usbProgramOf(req())).toBe('rekordbox')
   })
 })
