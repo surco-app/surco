@@ -13,10 +13,7 @@ export function encodePqtz(beats: { ms: number; beat: number }[], bpm: number): 
   out.writeUInt32BE(beats.length, 20)
   const tempo = Math.round(bpm * 100)
   beats.forEach((b, i) => {
-    const at = PQTZ_HEADER + i * PQTZ_ENTRY
-    out.writeUInt16BE(b.beat, at)
-    out.writeUInt16BE(tempo, at + 2)
-    out.writeUInt32BE(Math.round(b.ms), at + 4)
+    writeBeat(out, PQTZ_HEADER + i * PQTZ_ENTRY, b, tempo)
   })
   return out
 }
@@ -30,5 +27,26 @@ export function replaceSection(file: Buffer, tag: string, section: Buffer): Buff
     file.subarray(found.start + found.length),
   ])
   out.writeUInt32BE(out.length, 8)
+  return out
+}
+
+const PQT2_FIRST = 24
+const PQT2_LAST = 32
+
+function writeBeat(out: Buffer, at: number, beat: { ms: number; beat: number }, tempo: number) {
+  out.writeUInt16BE(beat.beat, at)
+  out.writeUInt16BE(tempo, at + 2)
+  out.writeUInt32BE(Math.round(beat.ms), at + 4)
+}
+
+export function pqt2WithGrid(
+  section: Buffer,
+  beats: { ms: number; beat: number }[],
+  bpm: number,
+): Buffer {
+  const out = Buffer.from(section)
+  const tempo = Math.round(bpm * 100)
+  writeBeat(out, PQT2_FIRST, beats[0], tempo)
+  writeBeat(out, PQT2_LAST, beats[beats.length - 1], tempo)
   return out
 }

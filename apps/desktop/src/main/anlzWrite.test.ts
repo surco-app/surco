@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { anlzSections, beatGrid } from './anlz'
 import { anlzFile, pqtzSection, pwavSection } from './anlzFixture'
-import { encodePqtz, replaceSection } from './anlzWrite'
+import { encodePqtz, pqt2WithGrid, replaceSection } from './anlzWrite'
 
 const numbered = (ms: number[]) => ms.map((m, i) => ({ ms: m, beat: (i % 4) + 1 }))
 
@@ -52,5 +52,38 @@ describe('replaceSection', () => {
 
   it('refuses a file without that section instead of writing a grid nobody reads', () => {
     expect(() => replaceSection(anlzFile(pwavSection([1])), 'PQTZ', pqtzSection([1]))).toThrow()
+  })
+})
+
+const WHATS_UP_PQT2 = Buffer.from(
+  '5051543200000038000000400000000001000002000000000001' +
+    '3a900000007000043a900005459600000360' +
+    '09abd75f0000000000000000006c0122023202e7',
+  'hex',
+)
+
+describe('pqt2WithGrid', () => {
+  it('rewrites the first and last beat of the extended grid, the variant rekordbox took in the spike', () => {
+    const beats = [
+      { ms: 152, beat: 1 },
+      { ms: 552, beat: 2 },
+      { ms: 345534, beat: 4 },
+    ]
+    const out = pqt2WithGrid(WHATS_UP_PQT2, beats, 149.93)
+    expect(out.subarray(24, 40).toString('hex')).toBe(
+      '0001' + '3a91' + '00000098' + '0004' + '3a91' + '000545be',
+    )
+  })
+
+  it('keeps the beat count, the unknown field and the per-beat body as they were, since nobody knows how to encode them', () => {
+    const out = pqt2WithGrid(WHATS_UP_PQT2, [{ ms: 10, beat: 1 }], 150)
+    expect(out.subarray(0, 24).equals(WHATS_UP_PQT2.subarray(0, 24))).toBe(true)
+    expect(out.subarray(40).equals(WHATS_UP_PQT2.subarray(40))).toBe(true)
+  })
+
+  it('leaves the section it was given untouched', () => {
+    const copy = Buffer.from(WHATS_UP_PQT2)
+    pqt2WithGrid(WHATS_UP_PQT2, [{ ms: 10, beat: 1 }], 150)
+    expect(WHATS_UP_PQT2.equals(copy)).toBe(true)
   })
 })
