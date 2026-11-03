@@ -75,6 +75,7 @@ function setup(
   })
   return {
     ...hook,
+    client,
     focus: () => focus(true),
     hide: (next: PlaylistSource[]) => {
       state.hidden = next
@@ -197,8 +198,10 @@ describe('useSourceBrowser', () => {
 
   it('leaves Serato out on a machine without a Serato library, so no tab shows for an app the DJ does not have', async () => {
     const seratoAvailable = vi.fn().mockResolvedValue(false)
-    const { result } = setup({ seratoAvailable })
-    await waitFor(() => expect(seratoAvailable).toHaveBeenCalled())
+    const { result, client } = setup({ seratoAvailable })
+    await waitFor(() =>
+      expect(client.getQueryState(['source-available', 'serato'])?.status).toBe('success'),
+    )
     await waitFor(() =>
       expect(result.current.sources).toEqual(['appleMusic', 'rekordbox', 'engine']),
     )
