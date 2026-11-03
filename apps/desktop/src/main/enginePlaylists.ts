@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import { ALL_TRACKS_ID } from '../shared/allTracks'
+import { cuesOffGrid } from '../shared/cueGrid'
 import { engineContentId } from '../shared/engineContent'
 import { mediaUrl } from '../shared/media'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
@@ -248,6 +249,13 @@ export function readEnginePlaylist(
       durationSec: r.length ?? 0,
       ...(cover ? { coverUrl: mediaUrl(cover) } : {}),
       ...(read?.analysed ? {} : { unanalysed: true }),
+      ...(read &&
+      cuesOffGrid(
+        read.cues.map((c) => c.ms),
+        read.grid.map((b) => b.ms),
+      )
+        ? { offGrid: true }
+        : {}),
       cues: (read?.cues ?? []).map(({ ms, kind, color }) => ({ ms, kind, color })),
     }
     return {

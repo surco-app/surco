@@ -118,6 +118,7 @@
       "silence": "トリミングする無音部分",
       "clipping": "クリッピング",
       "noCues": "キューなし",
+      "offGrid": "グリッドからずれたキュー",
       "unanalysedRekordbox": "rekordbox で未分析",
       "unanalysedEngine": "Engine DJ で未分析",
       "noCover": "アートワークなし",

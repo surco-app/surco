@@ -1176,6 +1176,7 @@ export interface SourcePreview {
   coverUrl?: string
   analysisPath?: string
   unanalysed?: true
+  offGrid?: true
   cues: RowCue[]
 }
 

@@ -1,4 +1,5 @@
 import { ALL_TRACKS_ID } from '../shared/allTracks'
+import { cuesOffGrid } from '../shared/cueGrid'
 import { HOT_KINDS } from '../shared/cueRules'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import {
@@ -116,10 +117,25 @@ function cuesOf(block: string): RowCue[] {
     })
 }
 
+function gridBeatsOf(block: string): number[] {
+  const marker = block
+    .match(/<CUE_V2\b[^>]*>\s*<GRID\b[^>]*>/g)
+    ?.find((el) => Number(attr(el, 'TYPE')) === GRID_TYPE)
+  const bpm = Number(attr(marker?.match(/<GRID\b[^>]*>/)?.[0] ?? '', 'BPM'))
+  if (!marker || !(bpm > 0)) return []
+  const anchor = Number(attr(marker, 'START'))
+  return [anchor, anchor + 60000 / bpm]
+}
+
 function entryOf(track: Track | undefined, bootVolume: string): SourcePlaylistEntry {
   if (!track) return { path: null, separator: false, meta: {} }
   const head = track.block.match(/<ENTRY\b[^>]*>/)?.[0] ?? ''
   const info = track.block.match(/<INFO\b[^>]*>/)?.[0] ?? ''
+  const cues = cuesOf(track.block)
+  const offGrid = cuesOffGrid(
+    cues.map((c) => c.ms),
+    gridBeatsOf(track.block),
+  )
   return {
     path: traktorFileOf(track.block, bootVolume),
     separator: false,
@@ -129,7 +145,8 @@ function entryOf(track: Track | undefined, bootVolume: string): SourcePlaylistEn
       title: attr(head, 'TITLE').trim(),
       artist: attr(head, 'ARTIST').trim(),
       durationSec: Number(attr(info, 'PLAYTIME_FLOAT') || attr(info, 'PLAYTIME')) || 0,
-      cues: cuesOf(track.block),
+      ...(offGrid ? { offGrid: true } : {}),
+      cues,
     },
   }
 }

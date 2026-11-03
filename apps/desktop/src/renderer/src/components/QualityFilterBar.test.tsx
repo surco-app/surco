@@ -26,6 +26,7 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   silence: 0,
   clipping: 0,
   noCues: 0,
+  offGrid: 0,
   unanalysedRekordbox: 0,
   unanalysedEngine: 0,
   noCover: 0,
@@ -187,6 +188,18 @@ describe('QualityFilterBar', () => {
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-noCues'))
     expect(onChange).toHaveBeenCalledWith(sel({ attention: 'noCues' }))
+  })
+
+  it('offers the tracks whose cues miss the grid only when a library playlist has some, with the amber nudge to fix them', () => {
+    renderBar({ tally: tally() })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.queryByTestId('quality-filter-offGrid')).toBeNull()
+    cleanup()
+    const { onChange } = renderBar({ tally: tally({ offGrid: 2 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByTestId('quality-filter-offGrid-dot')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('quality-filter-offGrid'))
+    expect(onChange).toHaveBeenCalledWith(sel({ attention: 'offGrid' }))
   })
 
   it('names the DJ program a track is waiting on in its unanalysed bucket', () => {

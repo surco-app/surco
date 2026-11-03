@@ -215,6 +215,7 @@ describe('matchesFilter / qualityCounts', () => {
       silence: 0,
       clipping: 0,
       noCues: 0,
+      offGrid: 0,
       unanalysedRekordbox: 0,
       unanalysedEngine: 0,
       noCover: 5,
@@ -282,6 +283,31 @@ describe('no cues filter', () => {
   it('isolates the library tracks that carry no cue and leaves loose files out', () => {
     expect(by(tracks, { attention: 'noCues' }).map((x) => x.id)).toEqual(['bare'])
     expect(qualityCounts(tracks).noCues).toBe(1)
+  })
+})
+
+describe('cues off the grid filter', () => {
+  const row = (id: string, offGrid: boolean): TrackItem =>
+    ({
+      id,
+      status: 'idle',
+      sourcePreview: {
+        title: id,
+        artist: '',
+        durationSec: 300,
+        cues: [{ ms: 1000, kind: 1, color: null }],
+        ...(offGrid && { offGrid: true }),
+      },
+    }) as TrackItem
+  const tracks = [
+    row('snapped', false),
+    row('drifted', true),
+    { id: 'loose', status: 'idle' } as TrackItem,
+  ]
+
+  it('isolates the library tracks whose cues the DJ app would not fire on the beat', () => {
+    expect(by(tracks, { attention: 'offGrid' }).map((x) => x.id)).toEqual(['drifted'])
+    expect(qualityCounts(tracks).offGrid).toBe(1)
   })
 })
 

@@ -118,6 +118,7 @@
       "silence": "Silencio por recortar",
       "clipping": "Clipping",
       "noCues": "Sin cues",
+      "offGrid": "Cues fuera de la rejilla",
       "unanalysedRekordbox": "Sin analizar en rekordbox",
       "unanalysedEngine": "Sin analizar en Engine DJ",
       "noCover": "Sin carátula",

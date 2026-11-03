@@ -243,6 +243,26 @@ describe('readEnginePlaylist', () => {
     db.close()
   })
 
+  it('marks the rows whose hot cues miss Engine’s own beat grid, so they can be fixed before they fire off the beat', async () => {
+    const dir = await library({
+      tracks: TRACKS,
+      playlists: [{ id: 1, title: 'P', parentListId: 0, nextListId: 0 }],
+      entities: [
+        { id: 1, listId: 1, trackId: 1, nextEntityId: 2 },
+        { id: 2, listId: 1, trackId: 2, nextEntityId: 3 },
+        { id: 3, listId: 1, trackId: 3, nextEntityId: 0 },
+      ],
+      performance: [
+        analysedTrack(2, [{ label: 'On', sample: 44100 * 4, argb: 0xff28e214 }]),
+        analysedTrack(3, [{ label: 'Off', sample: 44100 * 4.25, argb: 0xff28e214 }]),
+      ],
+    })
+    const db = opened(dir)
+    const rows = readEnginePlaylist(db, dir, '1', join(dir, 'art'))
+    expect(rows.map((r) => r.preview?.offGrid)).toEqual([undefined, undefined, true])
+    db.close()
+  })
+
   it('marks the rows Engine has not analysed, so the list can say so before the editor opens', async () => {
     const dir = await library({
       tracks: TRACKS,

@@ -118,6 +118,7 @@
       "silence": "Stille zum Kürzen",
       "clipping": "Clipping",
       "noCues": "Ohne Cues",
+      "offGrid": "Cues neben dem Raster",
       "unanalysedRekordbox": "In rekordbox nicht analysiert",
       "unanalysedEngine": "In Engine DJ nicht analysiert",
       "noCover": "Ohne Cover",

@@ -75,6 +75,7 @@ export type AttentionFilter =
   | 'silence'
   | 'clipping'
   | 'noCues'
+  | 'offGrid'
   | 'unanalysedRekordbox'
   | 'unanalysedEngine'
 // The tag work matching a release fixes: no artwork, artwork too small for a CDJ screen
@@ -183,6 +184,7 @@ export function matchesFilter(
   if (sel.attention === 'silence' && track.audioIssues?.silence !== true) return false
   if (sel.attention === 'clipping' && track.audioIssues?.clipping !== true) return false
   if (sel.attention === 'noCues' && !hasNoCues(track)) return false
+  if (sel.attention === 'offGrid' && track.sourcePreview?.offGrid !== true) return false
   if (sel.attention === 'unanalysedRekordbox' && unanalysedIn(track) !== 'rekordbox') return false
   if (sel.attention === 'unanalysedEngine' && unanalysedIn(track) !== 'engine') return false
   if (sel.tags && !matchesTags(track, sel.tags, facts)) return false
@@ -459,6 +461,7 @@ export function qualityCounts(
   silence: number
   clipping: number
   noCues: number
+  offGrid: number
   unanalysedRekordbox: number
   unanalysedEngine: number
   noCover: number
@@ -486,6 +489,7 @@ export function qualityCounts(
   let silence = 0
   let clipping = 0
   let noCues = 0
+  let offGrid = 0
   let unanalysedRekordbox = 0
   let unanalysedEngine = 0
   let noCover = 0
@@ -514,6 +518,7 @@ export function qualityCounts(
     if (t.audioIssues?.silence) silence += 1
     if (t.audioIssues?.clipping) clipping += 1
     if (hasNoCues(t)) noCues += 1
+    if (t.sourcePreview?.offGrid) offGrid += 1
     const waitingOn = unanalysedIn(t)
     if (waitingOn === 'rekordbox') unanalysedRekordbox += 1
     else if (waitingOn === 'engine') unanalysedEngine += 1
@@ -543,6 +548,7 @@ export function qualityCounts(
     silence,
     clipping,
     noCues,
+    offGrid,
     unanalysedRekordbox,
     unanalysedEngine,
     noCover,

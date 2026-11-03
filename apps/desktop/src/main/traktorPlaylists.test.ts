@@ -184,6 +184,23 @@ describe('readTraktorPlaylist', () => {
     ])
   })
 
+  it('marks the rows whose cues miss the grid Traktor extends from its marker, so they can be fixed before they fire off the beat', () => {
+    const grid =
+      '<CUE_V2 NAME="AutoGrid" TYPE="4" START="16.2" LEN="0" REPEATS="-1" HOTCUE="-1"><GRID BPM="124"></GRID></CUE_V2>'
+    const cue = (start: number, hotcue: number) =>
+      `<CUE_V2 NAME="n.n." TYPE="0" START="${start}" LEN="0" REPEATS="-1" HOTCUE="${hotcue}"></CUE_V2>`
+    const beat = 60000 / 124
+    const onGrid: Track = {
+      ...A,
+      extra: grid + cue(16.2 + 16 * beat, 2) + cue(16.2 + 64 * beat, -1),
+    }
+    const offGrid: Track = { ...B, extra: grid + cue(16.2 + 16 * beat, 2) + cue(8088.7, 3) }
+    const gridless: Track = { ...A, file: 'c.mp3', extra: cue(8088.7, 2) }
+    const tracks = [onGrid, offGrid, gridless]
+    const rows = readTraktorPlaylist(nml(tracks, [playlist('L', 'p1', tracks)]), 'p1', '')
+    expect(rows.map((r) => r.preview?.offGrid)).toEqual([undefined, true, undefined])
+  })
+
   it('paints each hot cue in the colour Traktor gives its type, since Traktor stores no colour of its own for them', () => {
     const djotas: Track = {
       ...A,

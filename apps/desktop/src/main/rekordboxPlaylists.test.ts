@@ -1,3 +1,4 @@
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, posix, win32 } from 'node:path'
@@ -5,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { mediaUrl } from '../shared/media'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
+import { anlzFile, pqtzSection } from './anlzFixture'
 import { openRekordboxDb } from './rekordboxDb'
 import {
   coverFileOf,
@@ -283,6 +285,54 @@ describe('readRekordboxPlaylistWithPreview', () => {
     expect(play.preview?.coverUrl).toBeUndefined()
     expect(play.preview?.analysisPath).toBeUndefined()
     expect(play.preview?.artist).toBe('')
+  })
+})
+
+describe('readRekordboxPlaylistWithPreview off-grid cues', () => {
+  it('marks the rows whose cues miss the grid rekordbox analysed, so they can be fixed before they fire off the beat', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-rbgrid-'))
+    const share = join(dir, 'share')
+    const beats = Array.from({ length: 400 }, (_, i) => 120 + i * 500)
+    for (const folder of ['on', 'off']) {
+      mkdirSync(join(share, 'PIONEER/USBANLZ', folder), { recursive: true })
+      writeFileSync(
+        join(share, 'PIONEER/USBANLZ', folder, 'ANLZ0000.DAT'),
+        anlzFile(pqtzSection(beats, 120)),
+      )
+    }
+    const path = join(dir, 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      content: [
+        { ...NIGHT, AnalysisDataPath: '/PIONEER/USBANLZ/on/ANLZ0000.DAT' },
+        { ...PLAY, AnalysisDataPath: '/PIONEER/USBANLZ/off/ANLZ0000.DAT' },
+        {
+          ...NIGHT,
+          ID: 'c4',
+          FolderPath: '/Music/x.aiff',
+          AnalysisDataPath: '/PIONEER/USBANLZ/none/ANLZ0000.DAT',
+        },
+      ],
+      keys: [],
+      artists: [],
+      playlists: [{ ID: 'p', Name: 'P', Attribute: 0, ParentID: 'root', Seq: 1 }],
+      links: [
+        { PlaylistID: 'p', ContentID: 'c1', TrackNo: 1 },
+        { PlaylistID: 'p', ContentID: 'c2', TrackNo: 2 },
+        { PlaylistID: 'p', ContentID: 'c4', TrackNo: 3 },
+      ],
+      cueRows: [
+        { ID: 'q1', ContentID: 'c1', InMsec: 120, Kind: 1, ColorTableIndex: 1 },
+        { ID: 'q2', ContentID: 'c1', InMsec: 32120, Kind: 0, ColorTableIndex: null },
+        { ID: 'q3', ContentID: 'c2', InMsec: 120, Kind: 1, ColorTableIndex: 1 },
+        { ID: 'q4', ContentID: 'c2', InMsec: 32370, Kind: 0, ColorTableIndex: null },
+        { ID: 'q5', ContentID: 'c4', InMsec: 32370, Kind: 0, ColorTableIndex: null },
+      ],
+    })
+    const db = openRekordboxDb(path, { readonly: true })
+    if (!db) throw new Error('fixture did not open')
+    const rows = readRekordboxPlaylistWithPreview(db, share, 'p')
+    db.close()
+    expect(rows.map((r) => r.preview?.offGrid)).toEqual([undefined, true, undefined])
   })
 })
 

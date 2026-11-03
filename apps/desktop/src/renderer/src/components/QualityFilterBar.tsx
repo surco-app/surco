@@ -18,6 +18,7 @@ import {
   List,
   ListChecks,
   type LucideIcon,
+  Magnet,
   PencilLine,
   Plus,
   RefreshCw,
@@ -53,7 +54,13 @@ type ConversionMode =
   | 'matchedBandcamp'
 type LibraryMode = 'inLibrary' | 'notInLibrary'
 type DuplicatesMode = 'duplicates'
-type AttentionMode = 'silence' | 'clipping' | 'noCues' | 'unanalysedRekordbox' | 'unanalysedEngine'
+type AttentionMode =
+  | 'silence'
+  | 'clipping'
+  | 'noCues'
+  | 'offGrid'
+  | 'unanalysedRekordbox'
+  | 'unanalysedEngine'
 type TagsMode = 'missingRequired' | 'noCover' | 'smallCover' | 'noBpm' | 'noKey'
 type Mode = QualityMode | ConversionMode | LibraryMode | DuplicatesMode | AttentionMode | TagsMode
 
@@ -77,6 +84,7 @@ const ATTENTION_MODES: AttentionMode[] = [
   'silence',
   'clipping',
   'noCues',
+  'offGrid',
   'unanalysedRekordbox',
   'unanalysedEngine',
 ]
@@ -103,6 +111,7 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   silence: Scissors,
   clipping: Zap,
   noCues: FlagOff,
+  offGrid: Magnet,
   unanalysedRekordbox: Hourglass,
   unanalysedEngine: Hourglass,
   missingRequired: Asterisk,
@@ -142,6 +151,7 @@ function attentionDot(mode: Mode, tally: Tally): string | null {
   if (mode === 'silence' && tally.silence > 0) return 'bg-warn'
   if (mode === 'clipping' && tally.clipping > 0) return 'bg-warn'
   if (mode === 'noCues' && tally.noCues > 0) return 'bg-warn'
+  if (mode === 'offGrid' && tally.offGrid > 0) return 'bg-warn'
   if (mode === 'missingRequired' && tally.missingRequired > 0) return 'bg-warn'
   if (mode === 'unsaved' && tally.unsaved > 0) return 'bg-[var(--color-accent)]'
   if (mode === 'mismatch' && tally.mismatch > 0) return 'bg-warn'

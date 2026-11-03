@@ -1,6 +1,7 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path, { resolve } from 'node:path'
 import { ALL_TRACKS_ID } from '../shared/allTracks'
+import { cuesOffGrid } from '../shared/cueGrid'
 import { mediaUrl } from '../shared/media'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import type {
@@ -10,6 +11,7 @@ import type {
   SourcePlaylistEntry,
   SourcePreview,
 } from '../shared/types'
+import { beatGrid } from './anlz'
 import { insideShare } from './rekordboxArtwork'
 import { type openRekordboxDb, STREAMING_FILE_TYPE } from './rekordboxDb'
 import { localDate } from './rekordboxRows'
@@ -197,6 +199,14 @@ export function coverFileOf(
   return exists(full) ? full : null
 }
 
+function gridOf(analysisPath: string): number[] {
+  try {
+    return beatGrid(readFileSync(analysisPath)).map((b) => b.ms)
+  } catch {
+    return []
+  }
+}
+
 export function readRekordboxPlaylistWithPreview(
   db: RekordboxDb,
   share: string,
@@ -241,13 +251,22 @@ export function readRekordboxPlaylistWithPreview(
   for (const r of rows) {
     const cover = coverFileOf(share, r.ImagePath, exists)
     const analysis = shareFile(share, r.AnalysisDataPath)
+    const rowCues = cues.get(String(r.contentId)) ?? []
     previews.set(String(r.contentId), {
       title: r.Title?.trim() ?? '',
       artist: r.Artist?.trim() ?? '',
       durationSec: r.Length ?? 0,
       ...(cover ? { coverUrl: mediaUrl(cover) } : {}),
       ...(analysis ? { analysisPath: analysis } : {}),
-      cues: cues.get(String(r.contentId)) ?? [],
+      ...(analysis &&
+      rowCues.length > 0 &&
+      cuesOffGrid(
+        rowCues.map((c) => c.ms),
+        gridOf(analysis),
+      )
+        ? { offGrid: true }
+        : {}),
+      cues: rowCues,
     })
   }
   return entries.map((e) => {
