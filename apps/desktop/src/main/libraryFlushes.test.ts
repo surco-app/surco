@@ -40,6 +40,7 @@ vi.mock('./rekordboxBatch', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./rekordboxBatch')>()),
   endRekordboxBatch: () => {
     BATCH.ends += 1
+    EFFECTS.push('rekordbox take')
     return BATCH.open ? [] : REPOINTS
   },
   rekordboxBatchOpen: () => BATCH.open,
@@ -1016,6 +1017,7 @@ describe('flushConversionBatch order across the three programs', () => {
       })
       expect(EFFECTS).toEqual([
         'traktor sync',
+        'rekordbox take',
         'traktor enqueue',
         'rekordbox enqueue',
         'engine repoint',
@@ -1023,6 +1025,7 @@ describe('flushConversionBatch order across the three programs', () => {
       ])
       expect(BATCH.ends).toBe(1)
     } finally {
+      WRITERS.repointEngineTracks.mockReset()
       const first = REPOINTS[0] as Record<string, unknown>
       delete first.traktorPlaylists
       delete first.enginePlaylists
