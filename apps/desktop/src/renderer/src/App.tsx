@@ -19,6 +19,7 @@ import type { CueQuantize } from '../../shared/cueQuantize'
 import { effectiveMeta } from '../../shared/customFields'
 import { normalizeImportFields } from '../../shared/defaults'
 import { DJ_PROGRAMS, type DjProgram, programOf, programsInOrder } from '../../shared/djProgram'
+import { SAME_CLOCK_FILE } from '../../shared/gridEdit'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import { resolveBindings } from '../../shared/shortcutDefaults'
@@ -1832,13 +1833,13 @@ export default function App(): React.JSX.Element {
   })
 
   const unsavedCues = useUnsavedCueTracks()
-  const gridEntries = useMemo(
-    () =>
-      [...(playlistScope?.contentOf ?? new Map<string, string>())].filter(
-        ([, contentId]) => programOf(contentId) === 'rekordbox',
-      ),
-    [playlistScope],
-  )
+  const gridEntries = useMemo(() => {
+    const pathOf = new Map((playlistScope?.tracks ?? []).map((t) => [t.id, t.inputPath]))
+    return [...(playlistScope?.contentOf ?? new Map<string, string>())].filter(
+      ([trackId, contentId]) =>
+        programOf(contentId) === 'rekordbox' || SAME_CLOCK_FILE.test(pathOf.get(trackId) ?? ''),
+    )
+  }, [playlistScope])
   const gridVerdicts = useGridVerdicts(gridEntries, filterSelection.attention === 'badGrid')
   const gridNoteOf = useMemo(() => {
     if (filterSelection.attention !== 'badGrid') return undefined

@@ -502,4 +502,14 @@ describe('saving an edited grid to Traktor', () => {
     })
     expect(result).toMatchObject({ outcomes: [{ applied: false }] })
   })
+
+  it('refuses a grid on a compressed file, whose clock in Traktor is not measured yet', async () => {
+    const file = await onDisk(doc)
+    const result = await applyTraktorBatch(file, [gridOp({ path: '/Users/dj/Music/power.mp3' })], {
+      session,
+      ensureClosed: async () => true,
+      write,
+    })
+    expect(result).toMatchObject({ outcomes: [{ applied: false }] })
+  })
 })

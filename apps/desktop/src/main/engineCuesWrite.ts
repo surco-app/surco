@@ -5,13 +5,15 @@ import log from 'electron-log/main'
 import type { Database } from 'sql.js'
 import { HOT_KINDS, validWantedSet, type WantedCue } from '../shared/cueRules'
 import { engineTrackId } from '../shared/engineContent'
+import { GRID_BPM_MAX, GRID_BPM_MIN, SAME_CLOCK_FILE } from '../shared/gridEdit'
 import { hotCueArgb, nearestHotCueColor } from '../shared/rekordboxCueColors'
-import type { RekordboxQueueNotice, TrackCueRow } from '../shared/types'
+import type { RekordboxQueueNotice, TrackCueRow, TrackCues } from '../shared/types'
 import { loadSqlJs } from './engine'
 import {
   decodeQuickCues,
   deflateEngineBlob,
   type EngineQuickCues,
+  encodeAdjustedGrid,
   encodeQuickCues,
   inflateEngineBlob,
   quickCueSlotBytes,
@@ -22,7 +24,7 @@ import { engineDatabasePath } from './enginePlaylists'
 import { planEngineTrackPlaylists } from './engineTrackPlaylists'
 import { backupOf } from './libraryBackups'
 import { pathKey } from './libraryPathKey'
-import type { BatchResult, OpOutcome, QueueOp } from './rekordboxQueueOps'
+import type { BatchResult, CuesOp, OpOutcome, QueueOp } from './rekordboxQueueOps'
 import { writeBackup } from './rekordboxSessionBackup'
 import { renameWithRetry } from './renameRetry'
 
@@ -81,7 +83,8 @@ type Plan = { outcome: OpOutcome } | Planned
 
 function row(db: Database, trackId: number): EnginePerformance | null {
   const statement = db.prepare(
-    `SELECT t.length, p.trackData, p.beatData, p.quickCues, p.overviewWaveFormData
+    `SELECT t.length, coalesce(t.isBeatGridLocked, 0) AS gridLocked, p.trackData, p.beatData,
+            p.quickCues, p.overviewWaveFormData
        FROM Track t LEFT JOIN PerformanceData p ON p.trackId = t.id WHERE t.id = ?`,
   )
   try {
@@ -126,6 +129,8 @@ function plan(db: Database, op: QueueOp, libraryDir: string): Plan {
     log.warn(`Engine DJ cues: refused the queued set for ${op.contentId} (${valid.reason})`)
     return refused('cues-invalid')
   }
+  const gridWrite = op.grid ? gridWriteOf(op, perf, read) : null
+  if (gridWrite === 'refused') return refused('cues-changed')
   const hot = op.wanted.filter((c) => c.kind !== 0)
   const calls = op.wanted.filter((c) => c.kind === 0).map((c) => c.ms)
   const notices: RekordboxQueueNotice[] =
@@ -136,18 +141,54 @@ function plan(db: Database, op: QueueOp, libraryDir: string): Plan {
     stored.slots.map((s) => s.bytes),
     stored.tail,
   )
-  if (perf.quickCues && next.equals(before))
-    return { outcome: { id: op.id, applied: true, notices } }
+  const cuesSame = perf.quickCues && next.equals(before)
+  if (cuesSame && !gridWrite) return { outcome: { id: op.id, applied: true, notices } }
   const quickCues = deflateEngineBlob(next)
   return {
     op,
-    write: (target) =>
-      target.run('UPDATE PerformanceData SET quickCues = ? WHERE trackId = ?', [
-        quickCues,
-        trackId,
-      ]),
+    write: (target) => {
+      if (!cuesSame)
+        target.run('UPDATE PerformanceData SET quickCues = ? WHERE trackId = ?', [
+          quickCues,
+          trackId,
+        ])
+      if (gridWrite) {
+        target.run('UPDATE PerformanceData SET beatData = ? WHERE trackId = ?', [
+          gridWrite.beatData,
+          trackId,
+        ])
+        target.run('UPDATE Track SET bpm = ?, bpmAnalyzed = ? WHERE id = ?', [
+          Math.round(gridWrite.bpm),
+          gridWrite.bpm,
+          trackId,
+        ])
+      }
+    },
     notices,
   }
+}
+
+function gridWriteOf(
+  op: CuesOp,
+  perf: EnginePerformance,
+  read: TrackCues,
+): { beatData: Buffer; bpm: number } | 'refused' {
+  const grid = op.grid
+  if (
+    !grid ||
+    grid.zones ||
+    !SAME_CLOCK_FILE.test(op.path) ||
+    perf.gridLocked ||
+    read.gridFingerprint !== op.gridFingerprint ||
+    !Number.isFinite(grid.bpm) ||
+    grid.bpm < GRID_BPM_MIN ||
+    grid.bpm > GRID_BPM_MAX ||
+    !Number.isFinite(grid.anchorMs) ||
+    !perf.beatData
+  )
+    return 'refused'
+  const raw = encodeAdjustedGrid(inflateEngineBlob(perf.beatData), grid, read.durationMs)
+  return raw ? { beatData: deflateEngineBlob(raw), bpm: grid.bpm } : 'refused'
 }
 
 function sampleRateOf(perf: EnginePerformance): number {
