@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import initSqlJs from 'sql.js'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
@@ -159,6 +159,47 @@ describe('usedByDjLibrary', () => {
     for (const call of open.mock.calls)
       expect(call).toEqual([collection, { readonly: true, key: expect.stringMatching(/^x'/) }])
     open.mockRestore()
+  })
+
+  it('looks in rekordbox, then Engine DJ, then Traktor, and stops at the first that has the file', async () => {
+    const dir = await engine('../../music/a.mp3')
+    const file = join(dir, '..', '..', 'music', 'a.mp3')
+    const collection = await rekordbox(file)
+    const nml = await traktor(
+      'Macintosh HD',
+      `/:${dirname(file).split('/').filter(Boolean).join('/:')}/:`,
+      'a.mp3',
+    )
+    for (const one of [{ rekordbox: collection }, { engine: dir }, { traktor: nml }])
+      expect(await usedByDjLibrary(file, { ...OFF, ...one })).toBe(true)
+
+    reads.length = 0
+    expect(await usedByDjLibrary(file, { rekordbox: collection, engine: dir, traktor: nml })).toBe(
+      true,
+    )
+    expect(reads.filter((p) => p.endsWith('m.db') || p === nml)).toEqual([])
+
+    reads.length = 0
+    expect(await usedByDjLibrary(file, { ...OFF, engine: dir, traktor: nml })).toBe(true)
+    expect(reads.filter((p) => p.endsWith('m.db') || p === nml)).toEqual([
+      join(dir, 'Database2', 'm.db'),
+    ])
+  })
+
+  it('throws on an unreadable rekordbox before it looks in Engine DJ or Traktor', async () => {
+    const junk = join(root, 'junk-first.db')
+    await writeFile(junk, 'not a database')
+    const dir = await engine('../../music/a.mp3')
+    const nml = await traktor('M', '/:Music/:', 'a.mp3')
+    reads.length = 0
+    await expect(
+      usedByDjLibrary(join(dir, '..', '..', 'music', 'a.mp3'), {
+        rekordbox: junk,
+        engine: dir,
+        traktor: nml,
+      }),
+    ).rejects.toThrow('rekordbox collection unreadable')
+    expect(reads.filter((p) => p.endsWith('m.db') || p === nml)).toEqual([])
   })
 
   // Music hands Surco the volume path while a library may have imported the same file
