@@ -1,6 +1,6 @@
 # Mapa de Serato: lo que el compilador obliga a decidir
 
-Medido el 03/11 tras el bloque 6b añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
+Medido el 03/11 tras el bloque 6c añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
 
 ## Añadidos a mano (el compilador no los ve)
 
@@ -12,6 +12,8 @@ Medido el 03/11 tras el bloque 6b añadiendo `'serato'` a `DjProgram` (y revirti
 
 - Claves de traducción por programa que el compilador no ve (se forman con plantillas): `sources.<programa>`, `sources.failed.<programa>`, `sources.notFound.<programa>`, `sources.hide.<programa>`, `settings.source<Programa>Unavailable`, y las de cues `editor.cues.<programa>.*`.
 - Recordatorio para Serato (a): `cuesOpen` en `App.tsx` y la bandera de filas nuevas de `useTrackLibrary` siguen escritos a mano; sin ellos Serato no abriría el editor de cues.
+
+- Vaciado tras convertir: `repointEngineQueued` renombra `engine-running` a `'rekordbox-running'` y `queueConversionRun` compara con `'rekordbox-running'`; el tipo `ConversionQueues` tiene claves fijas (el flusher de Serato exigirá su cola en la práctica).
 
 ## Errores del compilador
 
@@ -50,12 +52,12 @@ src/main/duplicateReplace.ts:17 TS2345
 src/main/duplicateReplace.ts:174 TS7053
 src/main/index.ts:1382 TS2741
 src/main/index.ts:1521 TS2741
-src/main/index.ts:1550 TS2741
-src/main/index.ts:1561 TS2741
-src/main/index.ts:1575 TS2741
-src/main/index.ts:1607 TS2741
-src/main/index.ts:1620 TS2741
-src/main/index.ts:2053 TS2741
+src/main/index.ts:1552 TS2741
+src/main/index.ts:1563 TS2741
+src/main/index.ts:1577 TS2741
+src/main/index.ts:1609 TS2741
+src/main/index.ts:1622 TS2741
+src/main/index.ts:2055 TS2741
 src/main/index.ts:323 TS2741
 src/main/libraryFileUse.test.ts:104 TS2741
 src/main/libraryFileUse.test.ts:105 TS2741
@@ -90,45 +92,50 @@ src/main/libraryFileUse.test.ts:84 TS2741
 src/main/libraryFileUse.test.ts:89 TS2741
 src/main/libraryFileUse.test.ts:90 TS2741
 src/main/libraryFileUse.test.ts:96 TS2741
-src/main/libraryFlushes.test.ts:114 TS7053
-src/main/libraryFlushes.test.ts:161 TS2741
-src/main/libraryFlushes.test.ts:174 TS2741
-src/main/libraryFlushes.test.ts:188 TS2741
-src/main/libraryFlushes.test.ts:227 TS2741
-src/main/libraryFlushes.test.ts:251 TS2741
-src/main/libraryFlushes.test.ts:268 TS2741
-src/main/libraryFlushes.test.ts:283 TS2741
-src/main/libraryFlushes.test.ts:304 TS2741
-src/main/libraryFlushes.test.ts:339 TS2741
+src/main/libraryFlushes.test.ts:1010 TS2741
+src/main/libraryFlushes.test.ts:129 TS7053
+src/main/libraryFlushes.test.ts:176 TS2741
+src/main/libraryFlushes.test.ts:189 TS2741
+src/main/libraryFlushes.test.ts:203 TS2741
+src/main/libraryFlushes.test.ts:242 TS2741
+src/main/libraryFlushes.test.ts:263 TS2741
+src/main/libraryFlushes.test.ts:279 TS2741
+src/main/libraryFlushes.test.ts:294 TS2741
+src/main/libraryFlushes.test.ts:312 TS2741
 src/main/libraryFlushes.test.ts:346 TS2741
-src/main/libraryFlushes.test.ts:356 TS2741
+src/main/libraryFlushes.test.ts:353 TS2741
 src/main/libraryFlushes.test.ts:365 TS2741
-src/main/libraryFlushes.test.ts:372 TS2741
-src/main/libraryFlushes.test.ts:383 TS2741
-src/main/libraryFlushes.test.ts:391 TS2741
-src/main/libraryFlushes.test.ts:407 TS2741
-src/main/libraryFlushes.test.ts:432 TS2741
-src/main/libraryFlushes.test.ts:465 TS2741
-src/main/libraryFlushes.test.ts:580 TS2741
-src/main/libraryFlushes.test.ts:693 TS2741
-src/main/libraryFlushes.test.ts:699 TS2741
-src/main/libraryFlushes.test.ts:708 TS2741
+src/main/libraryFlushes.test.ts:374 TS2741
+src/main/libraryFlushes.test.ts:381 TS2741
+src/main/libraryFlushes.test.ts:392 TS2741
+src/main/libraryFlushes.test.ts:400 TS2741
+src/main/libraryFlushes.test.ts:416 TS2741
+src/main/libraryFlushes.test.ts:439 TS2741
+src/main/libraryFlushes.test.ts:472 TS2741
+src/main/libraryFlushes.test.ts:588 TS2741
+src/main/libraryFlushes.test.ts:700 TS2741
+src/main/libraryFlushes.test.ts:706 TS2741
 src/main/libraryFlushes.test.ts:715 TS2741
-src/main/libraryFlushes.test.ts:727 TS2741
-src/main/libraryFlushes.test.ts:728 TS2741
-src/main/libraryFlushes.test.ts:743 TS2741
-src/main/libraryFlushes.test.ts:767 TS2741
-src/main/libraryFlushes.test.ts:791 TS2741
-src/main/libraryFlushes.test.ts:827 TS2741
-src/main/libraryFlushes.test.ts:853 TS2741
-src/main/libraryFlushes.test.ts:894 TS2741
-src/main/libraryFlushes.test.ts:913 TS2741
-src/main/libraryFlushes.test.ts:923 TS2741
-src/main/libraryFlushes.test.ts:930 TS2741
+src/main/libraryFlushes.test.ts:722 TS2741
+src/main/libraryFlushes.test.ts:734 TS2741
+src/main/libraryFlushes.test.ts:738 TS2741
+src/main/libraryFlushes.test.ts:756 TS2741
+src/main/libraryFlushes.test.ts:783 TS2741
+src/main/libraryFlushes.test.ts:810 TS2741
+src/main/libraryFlushes.test.ts:849 TS2741
+src/main/libraryFlushes.test.ts:875 TS2741
+src/main/libraryFlushes.test.ts:920 TS2741
+src/main/libraryFlushes.test.ts:942 TS2741
+src/main/libraryFlushes.test.ts:955 TS2741
+src/main/libraryFlushes.test.ts:965 TS2741
 src/main/libraryFlushes.ts:120 TS2741
+src/main/libraryFlushes.ts:228 TS2536
+src/main/libraryFlushes.ts:237 TS2345
+src/main/libraryFlushes.ts:253 TS2741
+src/main/libraryFlushes.ts:278 TS2536
 src/main/libraryFlushes.ts:53 TS2741
 src/main/libraryFlushes.ts:59 TS2741
-src/main/libraryFlushes.ts:617 TS2741
+src/main/libraryFlushes.ts:692 TS2741
 src/main/libraryStatus.ts:22 TS2741
 src/main/libraryTagSync.ts:42 TS7053
 src/main/libraryTagSync.ts:5 TS2345
@@ -237,9 +244,9 @@ src/scenarios/harness.tsx:530 TS7053
 src/scenarios/harness.tsx:551 TS7053
 src/scenarios/harness.tsx:772 TS2741
 src/scenarios/harness.tsx:801 TS2741
-src/scenarios/harness.tsx:831 TS2741
-src/scenarios/harness.tsx:952 TS2741
-src/scenarios/harness.tsx:961 TS2741
+src/scenarios/harness.tsx:829 TS2741
+src/scenarios/harness.tsx:950 TS2741
+src/scenarios/harness.tsx:959 TS2741
 src/scenarios/matrix/cells.ts:360 TS2741
 src/scenarios/matrix/cells.ts:91 TS2741
 src/scenarios/matrix/libraries.ts:26 TS2345
