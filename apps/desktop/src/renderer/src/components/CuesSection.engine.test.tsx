@@ -281,7 +281,7 @@ describe('CuesSection on an Engine DJ track', () => {
   })
 
   it('edits the grid of a WAV, whose clock is the one Surco draws, but opens no zones here', async () => {
-    setup()
+    setup({ ...READ, clockLeadMs: 0 })
     await ready()
     fireEvent.click(screen.getByTestId('section-maximize'))
     await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())
@@ -290,7 +290,7 @@ describe('CuesSection on an Engine DJ track', () => {
     expect(screen.getByTestId('cues-grid-anchor')).toBeDisabled()
   })
 
-  it('greys out the grid row of a compressed file, whose clock is not measured for this program yet', async () => {
+  it('greys out the grid row of a file whose clock in this program is not measured yet', async () => {
     const getGridFit = vi.fn<Api['rekordboxGridFit']>(async () => ({ bpm: 120, firstMs: 0 }))
     setup(READ, undefined, undefined, {}, '', '/m/e.mp3')
     window.api.rekordboxGridFit = getGridFit
@@ -303,7 +303,7 @@ describe('CuesSection on an Engine DJ track', () => {
   })
 
   it('leaves a grid the DJ locked in the program alone, and says so', async () => {
-    setup({ ...READ, gridLocked: true })
+    setup({ ...READ, clockLeadMs: 0, gridLocked: true })
     await ready()
     fireEvent.click(screen.getByTestId('section-maximize'))
     await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())

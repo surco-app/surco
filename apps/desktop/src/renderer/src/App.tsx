@@ -1837,7 +1837,9 @@ export default function App(): React.JSX.Element {
     const pathOf = new Map((playlistScope?.tracks ?? []).map((t) => [t.id, t.inputPath]))
     return [...(playlistScope?.contentOf ?? new Map<string, string>())].filter(
       ([trackId, contentId]) =>
-        programOf(contentId) === 'rekordbox' || SAME_CLOCK_FILE.test(pathOf.get(trackId) ?? ''),
+        programOf(contentId) === 'rekordbox' ||
+        SAME_CLOCK_FILE.test(pathOf.get(trackId) ?? '') ||
+        (programOf(contentId) === 'traktor' && /\.mp3$/i.test(pathOf.get(trackId) ?? '')),
     )
   }, [playlistScope])
   const gridVerdicts = useGridVerdicts(gridEntries, filterSelection.attention === 'badGrid')

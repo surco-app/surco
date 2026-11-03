@@ -982,9 +982,7 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
         rekordbox?: ReturnType<typeof queue>
         engine?: ReturnType<typeof queue>
         traktor?: ReturnType<typeof queue>
-        beatGrid?: (
-          file: string,
-        ) => Promise<{
+        beatGrid?: (file: string) => Promise<{
           bpm: number
           firstMs: number
           phases?: { ms: number; firstMs: number }[]
@@ -1025,7 +1023,10 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
       const { nml } = await registerAll()
       const read = await handler('rekordbox:trackCues')({}, ID)
       expect(read).not.toBeNull()
-      expect(read).toEqual(readTraktorTrackCues(readFileSync(nml, 'utf8'), ID))
+      expect(read).toEqual({
+        ...readTraktorTrackCues(readFileSync(nml, 'utf8'), ID),
+        clockLeadMs: 0,
+      })
     })
 
     it('draws a Traktor track’s detailed wave from its file', async () => {

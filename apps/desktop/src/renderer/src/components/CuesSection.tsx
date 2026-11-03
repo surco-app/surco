@@ -28,7 +28,6 @@ import {
   gridAnchors,
   gridBeats,
   gridOffsets,
-  SAME_CLOCK_FILE,
   shiftGrid,
 } from '../../../shared/gridEdit'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
@@ -502,7 +501,7 @@ function Editing({
   )
   const rekordboxGrid = programOf(cue.contentId) === 'rekordbox'
   const gridOff =
-    !rekordboxGrid && !SAME_CLOCK_FILE.test(cue.path)
+    !rekordboxGrid && (read.clockLeadMs === undefined || read.clockLeadMs === null)
       ? tr('editor.cues.grid.unmeasured')
       : provisional
         ? tr('editor.cues.grid.provisional')

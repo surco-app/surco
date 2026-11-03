@@ -1,5 +1,4 @@
 import type { GridFit } from '../shared/gridEdit'
-import { SAME_CLOCK_FILE } from '../shared/gridEdit'
 import { type GridVerdict, gridVerdictOf } from '../shared/gridVerdict'
 import { type BeatGridFit, REKORDBOX_BEAT_AFTER_RISE_MS } from './beatGrid'
 
@@ -8,12 +7,13 @@ export type BeatGridOf = (file: string, priority?: 'high' | 'low') => Promise<Be
 export async function sameClockFit(
   file: string | null,
   beatGrid: BeatGridOf,
-  priority: 'high' | 'low' = 'high',
+  priority: 'high' | 'low',
+  leadMs: number | null,
 ): Promise<GridFit | null> {
-  if (!file || !SAME_CLOCK_FILE.test(file)) return null
+  if (!file || leadMs === null) return null
   const fit = await beatGrid(file, priority)
   if (!fit) return null
-  const lead = REKORDBOX_BEAT_AFTER_RISE_MS
+  const lead = leadMs + REKORDBOX_BEAT_AFTER_RISE_MS
   return {
     bpm: fit.bpm,
     firstMs: fit.firstMs + lead,

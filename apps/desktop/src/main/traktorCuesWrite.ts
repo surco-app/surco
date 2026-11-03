@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import log from 'electron-log/main'
 import { HOT_KINDS, validWantedSet, type WantedCue } from '../shared/cueRules'
-import { type EditableGrid, GRID_BPM_MAX, GRID_BPM_MIN, SAME_CLOCK_FILE } from '../shared/gridEdit'
+import { type EditableGrid, GRID_BPM_MAX, GRID_BPM_MIN } from '../shared/gridEdit'
 import { TRAKTOR_HOT_OFFSET, traktorKey } from '../shared/traktorContent'
 import type { RekordboxEditRefusal, RekordboxQueueNotice } from '../shared/types'
 import type { BatchResult, CuesOp, OpOutcome, QueueOp } from './rekordboxQueueOps'
@@ -68,6 +68,7 @@ export function withTraktorCues(block: string, wanted: WantedCue[]): string {
   return `${block.slice(0, first.start)}${all.join(separator)}${block.slice(last.end)}`
 }
 
+const TRAKTOR_GRID_FILE = /\.(wav|aif|aiff|flac|mp3)$/i
 const GRID_MARKER_RE = /<CUE_V2\b[^>]*\bTYPE="4"[^>]*>[\s\S]*?<\/CUE_V2>/
 const TEMPO_RE = /<TEMPO\b[^>]*>/
 
@@ -150,7 +151,7 @@ function planBatch(
     const notices: RekordboxQueueNotice[] = op.wanted.some((w) => w.kind === NO_BUTTON)
       ? [{ code: 'cues-slot-dropped', track: op.label }]
       : []
-    if (op.grid && (!saneGrid(op.grid) || !SAME_CLOCK_FILE.test(op.path)))
+    if (op.grid && (!saneGrid(op.grid) || !TRAKTOR_GRID_FILE.test(op.path)))
       return refused('cues-invalid')
     if (op.grid && (read.gridLocked || read.gridFingerprint !== op.gridFingerprint))
       return refused('cues-changed')
