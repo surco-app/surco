@@ -1049,6 +1049,14 @@ function Editing({
     <CueOffGridBar
       off={offGrid}
       spaced={!maximized}
+      onShiftGrid={
+        maximized && gridOff === null && state.grid
+          ? (ms) => {
+              if (state.grid) setGrid(shiftGrid(state.grid, ms))
+              focusEditor()
+            }
+          : undefined
+      }
       onGo={(ms) => {
         seekTo(ms)
         focusEditor()

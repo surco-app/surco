@@ -1046,12 +1046,14 @@
         "surcoDraft": "Ces cues ont été posés sur la grille de Surco. Enregistrez-les ou annulez-les pour régler la grille"
       },
       "offGrid": {
-        "count_one": "{{count}} cue ne tombe pas sur le temps",
-        "count_other": "{{count}} cues ne tombent pas sur le temps",
         "before": "{{ms}} ms en avance",
         "after": "{{ms}} ms en retard",
         "go": "Aller au cue",
-        "snap": "Caler sur le temps"
+        "snap": "Sur le temps",
+        "position": "{{at}} sur {{total}}",
+        "prev": "Cue précédent hors du temps",
+        "next": "Cue suivant hors du temps",
+        "shiftGrid": "Déplacer la grille de {{ms}} ms"
       }
     }
   },

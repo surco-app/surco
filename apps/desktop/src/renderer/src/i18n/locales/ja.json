@@ -1046,12 +1046,14 @@
         "surcoDraft": "これらのキューはSurcoのグリッド上に置かれました。グリッドを調整するには保存するか破棄してください"
       },
       "offGrid": {
-        "count_one": "拍からずれたキューが{{count}}個あります",
-        "count_other": "拍からずれたキューが{{count}}個あります",
         "before": "{{ms}} ms 早い",
         "after": "{{ms}} ms 遅い",
         "go": "キューへ移動",
-        "snap": "拍に合わせる"
+        "snap": "拍に合わせる",
+        "position": "{{at}} / {{total}}",
+        "prev": "前のずれたキュー",
+        "next": "次のずれたキュー",
+        "shiftGrid": "グリッドを {{ms}} ms 動かす"
       }
     }
   },

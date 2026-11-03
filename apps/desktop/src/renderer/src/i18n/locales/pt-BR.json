@@ -1046,12 +1046,14 @@
         "surcoDraft": "Estes cues foram colocados na grade do Surco. Salve ou descarte-os para ajustar a grade"
       },
       "offGrid": {
-        "count_one": "{{count}} cue fora da batida",
-        "count_other": "{{count}} cues fora da batida",
         "before": "{{ms}} ms antes",
         "after": "{{ms}} ms depois",
         "go": "Ir ao cue",
-        "snap": "Levar para a batida"
+        "snap": "Na batida",
+        "position": "{{at}} de {{total}}",
+        "prev": "Cue anterior fora da batida",
+        "next": "Próximo cue fora da batida",
+        "shiftGrid": "Mover a grade {{ms}} ms"
       }
     }
   },

@@ -1046,12 +1046,14 @@
         "surcoDraft": "Diese Cues wurden auf dem Surco-Raster gesetzt. Speichere oder verwirf sie, um das Raster anzupassen"
       },
       "offGrid": {
-        "count_one": "{{count}} Cue liegt nicht auf dem Schlag",
-        "count_other": "{{count}} Cues liegen nicht auf dem Schlag",
         "before": "{{ms}} ms zu früh",
         "after": "{{ms}} ms zu spät",
         "go": "Zum Cue",
-        "snap": "Auf den Schlag setzen"
+        "snap": "Auf den Schlag",
+        "position": "{{at}} von {{total}}",
+        "prev": "Vorheriger Cue neben dem Schlag",
+        "next": "Nächster Cue neben dem Schlag",
+        "shiftGrid": "Raster um {{ms}} ms verschieben"
       }
     }
   },

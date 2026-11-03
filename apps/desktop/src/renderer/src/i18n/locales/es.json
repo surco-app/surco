@@ -1046,12 +1046,14 @@
         "surcoDraft": "Estos cues se pusieron sobre la rejilla de Surco. Guárdalos o descártalos para ajustar la rejilla"
       },
       "offGrid": {
-        "count_one": "{{count}} cue no cae en el golpe",
-        "count_other": "{{count}} cues no caen en el golpe",
         "before": "{{ms}} ms antes",
         "after": "{{ms}} ms después",
         "go": "Ir al cue",
-        "snap": "Llevar al golpe"
+        "snap": "Al golpe",
+        "position": "{{at}} de {{total}}",
+        "prev": "Cue anterior fuera del golpe",
+        "next": "Siguiente cue fuera del golpe",
+        "shiftGrid": "Mover la rejilla {{ms}} ms"
       }
     }
   },
