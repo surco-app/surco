@@ -112,7 +112,7 @@ function concat(parts: Uint8Array[]): Uint8Array {
 }
 
 function encodeBase64Wrapped(bytes: Uint8Array): string {
-  const text = btoa(latin1(bytes)).replace(/=+$/, '')
+  const text = btoa(latin1(bytes))
   const lines: string[] = []
   for (let at = 0; at < text.length; at += LINE_LENGTH) lines.push(text.slice(at, at + LINE_LENGTH))
   return lines.join('\n')
@@ -159,7 +159,6 @@ export function withSeratoCues(payload: Uint8Array | null, cues: SeratoCue[]): U
       entryBytes('COLOR', Uint8Array.from([0, 255, 255, 255])),
       ...fresh,
       entryBytes('BPMLOCK', Uint8Array.from([0])),
-      Uint8Array.from([0]),
     ])
   const kept: { name: string; raw: Uint8Array }[] = []
   let insertAt = -1
@@ -205,7 +204,10 @@ export function seratoArmored(payload: Uint8Array): string {
 export function readSeratoTempoMap(data: Uint8Array): { firstBeatMs: number; bpm: number } | null {
   if (data.length < 32 || data[0] !== 2 || data[1] !== 0) return null
   if (((data[2] << 8) | data[3]) !== 1) return null
-  return { firstBeatMs: f64(data, 4) * 1000, bpm: f64(data, 24) }
+  const firstBeatMs = f64(data, 4) * 1000
+  const bpm = f64(data, 24)
+  if (!Number.isFinite(firstBeatMs) || !Number.isFinite(bpm) || bpm <= 0) return null
+  return { firstBeatMs, bpm }
 }
 
 export function readSeratoTempoMapArmored(

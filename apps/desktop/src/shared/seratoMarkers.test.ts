@@ -192,6 +192,7 @@ describe('withSeratoCues', () => {
     expect(entriesOf(result).map((e) => e.name)).toEqual(['COLOR', 'CUE', 'BPMLOCK'])
     expect(entriesOf(result)[0].body).toEqual(Uint8Array.from([0, 255, 255, 255]))
     expect(entriesOf(result)[2].body).toEqual(Uint8Array.from([0]))
+    expect(result).toHaveLength(51)
     expect(Array.from(entriesOf(result)[1].body)).toEqual([
       0, 0, 0, 0, 1, 244, 0, 204, 0, 0, 0, 0, 65, 0,
     ])
@@ -200,14 +201,13 @@ describe('withSeratoCues', () => {
 })
 
 describe('seratoGeobBody', () => {
-  it('pads to at least 470 bytes with NUL and wraps the base64 in lines of 72 without padding', () => {
+  it('pads to at least 470 bytes with NUL and wraps the base64 in lines of 72', () => {
     const body = seratoGeobBody(
       withSeratoCues(null, [cue(0, 500, 0xcc0000), cue(1, 900, 0x00cc00), cue(2, 1300, 0x0000cc)]),
     )
     expect(body.length).toBeGreaterThanOrEqual(470)
     expect(body.slice(0, 2)).toEqual(Uint8Array.from([1, 1]))
     const text = String.fromCharCode(...body.subarray(2)).split('\0')[0]
-    expect(text).not.toContain('=')
     for (const line of text.split('\n')) expect(line.length).toBeLessThanOrEqual(72)
     expect(text.split('\n').length).toBeGreaterThan(1)
     expect(String.fromCharCode(...body.subarray(2 + text.length))).toMatch(/^\0+$/)
@@ -221,12 +221,39 @@ describe('seratoGeobBody', () => {
   })
 })
 
+describe('byte-for-byte parity with what Serato wrote', () => {
+  const geobFixtures = { MP3, AIFF, WAV }
+  const armoredFixtures = { FLAC, M4A }
+
+  for (const [name, fixture] of Object.entries(geobFixtures))
+    it(`re-encodes the ${name} GEOB body exactly, with its padding and wrapping`, () => {
+      const original = bytes(fixture)
+      const payload = seratoPayloadOf(original) as Uint8Array
+      expect(seratoGeobBody(payload)).toEqual(original)
+      const cues = markersFromGeob(original)?.cues ?? []
+      expect(withSeratoCues(payload, cues)).toEqual(payload)
+    })
+
+  for (const [name, fixture] of Object.entries(armoredFixtures))
+    it(`re-encodes the ${name} armored value exactly`, () => {
+      const payload = seratoPayloadOf(fixture) as Uint8Array
+      expect(seratoArmored(payload)).toBe(fixture)
+      const cues = markersFromArmored(fixture)?.cues ?? []
+      expect(withSeratoCues(payload, cues)).toEqual(payload)
+    })
+
+  it('ends a fresh payload on the BPMLOCK body, like the payloads Serato wrote', () => {
+    const fixturePayload = seratoPayloadOf(bytes(AIFF)) as Uint8Array
+    const fresh = withSeratoCues(null, [])
+    expect(Array.from(fresh.slice(-6))).toEqual(Array.from(fixturePayload.slice(-6)))
+  })
+})
+
 describe('seratoArmored', () => {
   it('produces the FLAC and M4A value that markersFromArmored reads back, wrapped at 72 characters', () => {
     const cues = [cue(0, 1234, 0xcc0000, 'A'), cue(1, 5678, 0x00cc00)]
     const value = seratoArmored(withSeratoCues(null, cues))
     expect(markersFromArmored(value)?.cues).toEqual(cues)
-    expect(value).not.toContain('=')
     for (const line of value.split('\n')) expect(line.length).toBeLessThanOrEqual(72)
   })
 })
@@ -243,6 +270,20 @@ describe('readSeratoTempoMap', () => {
     const two = Uint8Array.from(PRAY_MP3_TEMPO)
     two[3] = 2
     expect(readSeratoTempoMap(two)).toBeNull()
+  })
+
+  it('returns null when the position or the BPM is not a usable number', () => {
+    const withF64 = (at: number, value: number) => {
+      const data = Uint8Array.from(PRAY_MP3_TEMPO)
+      new DataView(data.buffer).setFloat64(at, value)
+      return data
+    }
+    expect(readSeratoTempoMap(withF64(24, 0))).toBeNull()
+    expect(readSeratoTempoMap(withF64(24, -120))).toBeNull()
+    expect(readSeratoTempoMap(withF64(24, Number.NaN))).toBeNull()
+    expect(readSeratoTempoMap(withF64(24, Number.POSITIVE_INFINITY))).toBeNull()
+    expect(readSeratoTempoMap(withF64(4, Number.NaN))).toBeNull()
+    expect(readSeratoTempoMap(withF64(4, Number.POSITIVE_INFINITY))).toBeNull()
   })
 
   it('returns null for data that is not a tempo map', () => {
