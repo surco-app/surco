@@ -456,6 +456,63 @@ describe('registerRekordboxCuesIpc', () => {
     expect(out.grid.at(-1)?.ms).toBeLessThan(256000)
   })
 
+  it('fits the grid of an analysed WAV on rekordbox time, where the beat sits 2 ms after the rise like the provisional grid', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-rbfit-'))
+    const path = join(dir, 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      ...ORGANISE_FIXTURE,
+      content: ORGANISE_FIXTURE.content.map((c) =>
+        c.ID === '101' ? { ...c, FolderPath: join(dir, 'track.wav') } : c,
+      ),
+    })
+    registerRekordboxCuesIpc({
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => ({ bpm: 150, firstMs: 10 }),
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+    })
+    expect(await handler('rekordbox:gridFit')({}, '101')).toEqual({ bpm: 150, firstMs: 12 })
+  })
+
+  it('moves the fit of a LAME MP3 by the frames rekordbox skips, so Auto lands on its beats and not 51 ms early', async () => {
+    const path = await collectionWithMp3('LAME')
+    registerRekordboxCuesIpc({
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => ({ bpm: 120, firstMs: 100 }),
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+    })
+    const out = (await handler('rekordbox:gridFit')({}, '101')) as { bpm: number; firstMs: number }
+    expect(out.bpm).toBe(120)
+    expect(out.firstMs).toBeCloseTo(100 + ((1152 + 576 + 529) / 44100) * 1000 + 2, 3)
+  })
+
+  it('fits nothing when Surco hears no beat or the track is not in the collection', async () => {
+    const path = await collectionWithMp3('LAME')
+    const beatGrid = vi.fn(async () => null)
+    registerRekordboxCuesIpc({
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+    })
+    expect(await handler('rekordbox:gridFit')({}, '101')).toBeNull()
+    expect(await handler('rekordbox:gridFit')({}, '999')).toBeNull()
+    expect(beatGrid).toHaveBeenCalledTimes(1)
+  })
+
   it('draws the wave Surco measured, moved into rekordbox time so the kick sits on its beat line', async () => {
     const path = await collectionWithMp3('LAME')
     registerRekordboxCuesIpc({
@@ -907,6 +964,13 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
       await registerAll()
       expect(await handler('rekordbox:auditionLead')({}, ID)).toBe(0)
       expect(await handler('rekordbox:auditionLead')({}, 'engine:4')).toBe(0)
+    })
+
+    it('fits no grid for a Traktor or Engine track, whose waveform clock is not measured yet', async () => {
+      const { beatGrid } = await registerAll()
+      expect(await handler('rekordbox:gridFit')({}, ID)).toBeNull()
+      expect(await handler('rekordbox:gridFit')({}, 'engine:4')).toBeNull()
+      expect(beatGrid).not.toHaveBeenCalled()
     })
 
     it('builds no Surco grid for a Traktor or Engine track', async () => {

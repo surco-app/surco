@@ -3,7 +3,7 @@ import { detectBpm } from './tempo'
 const HOP = 32
 const BINS = 96
 const COARSE_SECONDS = 240
-const REKORDBOX_BEAT_AFTER_RISE_MS = 2
+export const REKORDBOX_BEAT_AFTER_RISE_MS = 2
 
 export interface BeatGridFit {
   bpm: number

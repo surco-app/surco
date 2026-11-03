@@ -4,6 +4,7 @@ import { BrowserWindow, ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
 import { programOf, programsInOrder } from '../shared/djProgram'
 import type { DropInput } from '../shared/dropDetect'
+import type { GridFit } from '../shared/gridEdit'
 import { traktorKey } from '../shared/traktorContent'
 import type {
   CopyReason,
@@ -14,7 +15,7 @@ import type {
   SurcoGrid,
   TrackCues,
 } from '../shared/types'
-import { type BeatGridFit, provisionalGrid } from './beatGrid'
+import { type BeatGridFit, provisionalGrid, REKORDBOX_BEAT_AFTER_RISE_MS } from './beatGrid'
 import { readEngineTrackCues } from './engineCues'
 import { engineDropInput } from './engineDropInput'
 import { withEngineLibrary } from './enginePlaylistsIpc'
@@ -202,6 +203,25 @@ export function registerRekordboxCuesIpc(host: {
       }
     }
   })
+  const audioRowOf = async (
+    contentId: string,
+  ): Promise<{ FolderPath: string; SampleRate: number | null; Length: number } | undefined> => {
+    const path = host.collection()
+    return withCollection(
+      path,
+      (db) =>
+        db
+          .prepare(
+            `SELECT FolderPath, SampleRate, Length FROM djmdContent
+                WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0`,
+          )
+          .get(contentId) as
+          | { FolderPath: string; SampleRate: number | null; Length: number }
+          | undefined,
+      undefined,
+      await keyOf(path),
+    )
+  }
   ipcMain.handle(
     'rekordbox:surcoGrid',
     async (_e, contentId: string): Promise<SurcoGrid | null> => {
@@ -210,21 +230,7 @@ export function registerRekordboxCuesIpc(host: {
         case 'engine':
           return null
         case 'rekordbox': {
-          const path = host.collection()
-          const row = withCollection(
-            path,
-            (db) =>
-              db
-                .prepare(
-                  `SELECT FolderPath, SampleRate, Length FROM djmdContent
-                WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0`,
-                )
-                .get(contentId) as
-                | { FolderPath: string; SampleRate: number | null; Length: number }
-                | undefined,
-            undefined,
-            await keyOf(path),
-          )
+          const row = await audioRowOf(contentId)
           if (!row) return null
           const fit = await host.beatGrid(row.FolderPath)
           if (!fit) return null
@@ -239,6 +245,15 @@ export function registerRekordboxCuesIpc(host: {
       }
     },
   )
+  ipcMain.handle('rekordbox:gridFit', async (_e, contentId: string): Promise<GridFit | null> => {
+    if (programOf(contentId) !== 'rekordbox') return null
+    const row = await audioRowOf(contentId)
+    if (!row) return null
+    const fit = await host.beatGrid(row.FolderPath)
+    if (!fit) return null
+    const shiftMs = await rekordboxShiftOfFile(row.FolderPath, row.SampleRate || 44100)
+    return { bpm: fit.bpm, firstMs: fit.firstMs + shiftMs + REKORDBOX_BEAT_AFTER_RISE_MS }
+  })
   ipcMain.handle('rekordbox:countCompletable', () => {
     const path = host.collection()
     return withCollection(
