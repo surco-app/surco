@@ -230,60 +230,68 @@ describe('runProcessTrack — plain conversion', () => {
   })
 
   it('attaches the job playlists to the file it wrote so the rekordbox batch can queue them', async () => {
-    const attachRekordboxPlaylists = vi.fn()
+    const attachPlaylists = vi.fn()
     const result = await runProcessTrack(
       job({ rekordboxPlaylists: [{ id: '3000', name: 'Makina' }] }),
-      makeDeps({ attachRekordboxPlaylists }),
+      makeDeps({ attachPlaylists }),
     )
-    expect(attachRekordboxPlaylists).toHaveBeenCalledWith(
-      result.outputPath,
-      [{ id: '3000', name: 'Makina' }],
-      undefined,
-    )
+    expect(attachPlaylists).toHaveBeenCalledWith(result.outputPath, 'rekordbox', {
+      wanted: [{ id: '3000', name: 'Makina' }],
+      base: undefined,
+    })
   })
 
   it('attaches the membership the user edited against with the playlists', async () => {
-    const attachRekordboxPlaylists = vi.fn()
+    const attachPlaylists = vi.fn()
     const result = await runProcessTrack(
       job({
         rekordboxPlaylists: [{ id: '3000', name: 'Makina' }],
         rekordboxPlaylistsBase: ['2000'],
       }),
-      makeDeps({ attachRekordboxPlaylists }),
+      makeDeps({ attachPlaylists }),
     )
-    expect(attachRekordboxPlaylists).toHaveBeenCalledWith(
-      result.outputPath,
-      [{ id: '3000', name: 'Makina' }],
-      ['2000'],
-    )
+    expect(attachPlaylists).toHaveBeenCalledWith(result.outputPath, 'rekordbox', {
+      wanted: [{ id: '3000', name: 'Makina' }],
+      base: ['2000'],
+    })
   })
 
   it('attaches the Traktor and Engine DJ playlists with the membership they were edited against', async () => {
-    const attachLibraryPlaylists = vi.fn()
+    const attachPlaylists = vi.fn()
     const result = await runProcessTrack(
       job({
         traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
         traktorPlaylistsBase: ['old'],
         enginePlaylists: [{ id: '7', name: 'House' }],
       }),
-      makeDeps({ attachLibraryPlaylists }),
+      makeDeps({ attachPlaylists }),
     )
-    expect(attachLibraryPlaylists).toHaveBeenCalledWith(result.outputPath, 'traktor', {
+    expect(attachPlaylists).toHaveBeenCalledWith(result.outputPath, 'traktor', {
       wanted: [{ id: 'fri', name: 'Friday' }],
       base: ['old'],
     })
-    expect(attachLibraryPlaylists).toHaveBeenCalledWith(result.outputPath, 'engine', {
+    expect(attachPlaylists).toHaveBeenCalledWith(result.outputPath, 'engine', {
       wanted: [{ id: '7', name: 'House' }],
       base: [],
     })
   })
 
+  it('attaches an empty membership for Traktor when the job carries none, unlike rekordbox which leaves it unset', async () => {
+    const attachPlaylists = vi.fn()
+    const result = await runProcessTrack(
+      job({ traktorPlaylists: [{ id: 'fri', name: 'Friday' }] }),
+      makeDeps({ attachPlaylists }),
+    )
+    expect(attachPlaylists).toHaveBeenCalledWith(result.outputPath, 'traktor', {
+      wanted: [{ id: 'fri', name: 'Friday' }],
+      base: [],
+    })
+  })
+
   it('attaches nothing when the field was never touched', async () => {
-    const attachRekordboxPlaylists = vi.fn()
-    const attachLibraryPlaylists = vi.fn()
-    await runProcessTrack(job(), makeDeps({ attachRekordboxPlaylists, attachLibraryPlaylists }))
-    expect(attachRekordboxPlaylists).not.toHaveBeenCalled()
-    expect(attachLibraryPlaylists).not.toHaveBeenCalled()
+    const attachPlaylists = vi.fn()
+    await runProcessTrack(job(), makeDeps({ attachPlaylists }))
+    expect(attachPlaylists).not.toHaveBeenCalled()
   })
 })
 

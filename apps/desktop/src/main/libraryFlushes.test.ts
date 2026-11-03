@@ -36,7 +36,8 @@ const STATUS = vi.hoisted(() => ({
 }))
 vi.mock('./libraryStatus', () => ({ libraryStatus: () => STATUS }))
 const BATCH = vi.hoisted(() => ({ open: false }))
-vi.mock('./rekordboxBatch', () => ({
+vi.mock('./rekordboxBatch', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./rekordboxBatch')>()),
   endRekordboxBatch: () => (BATCH.open ? [] : REPOINTS),
   rekordboxBatchOpen: () => BATCH.open,
 }))

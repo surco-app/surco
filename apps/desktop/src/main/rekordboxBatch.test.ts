@@ -4,8 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { emptyMetadata } from '../shared/metadata'
 import {
   abandonRekordboxBatch,
-  attachLibraryPlaylists,
-  attachRekordboxPlaylists,
+  attachPlaylists,
   beginRekordboxBatch,
   endRekordboxBatch,
   recordedRekordboxRepoint,
@@ -289,14 +288,17 @@ describe('playlists on a repoint', () => {
   it('attaches the wanted playlists to the repoint of the file just written', () => {
     beginRekordboxBatch()
     recordRekordboxRepoint(a)
-    attachRekordboxPlaylists('/m/one.wav', [{ id: '3000', name: 'Makina' }])
+    attachPlaylists('/m/one.wav', 'rekordbox', { wanted: [{ id: '3000', name: 'Makina' }] })
     expect(endRekordboxBatch()).toEqual([{ ...a, playlists: [{ id: '3000', name: 'Makina' }] }])
   })
 
   it('carries the membership the user edited against so the queue judges removals by it', () => {
     beginRekordboxBatch()
     recordRekordboxRepoint(a)
-    attachRekordboxPlaylists('/m/one.wav', [{ id: '3000', name: 'Makina' }], ['3000'])
+    attachPlaylists('/m/one.wav', 'rekordbox', {
+      wanted: [{ id: '3000', name: 'Makina' }],
+      base: ['3000'],
+    })
     expect(endRekordboxBatch()).toEqual([
       { ...a, playlists: [{ id: '3000', name: 'Makina' }], playlistsBase: ['3000'] },
     ])
@@ -305,10 +307,10 @@ describe('playlists on a repoint', () => {
   it('carries the Traktor and Engine DJ choices beside the rekordbox one, each for its own queue', () => {
     beginRekordboxBatch()
     recordRekordboxRepoint(a)
-    attachRekordboxPlaylists('/m/one.wav', [{ id: '3000', name: 'Makina' }])
-    attachLibraryPlaylists('/m/one.wav', 'traktor', { wanted: [{ name: 'Friday' }], base: [] })
-    attachLibraryPlaylists('/m/one.wav', 'engine', { wanted: [], base: ['7'] })
-    attachLibraryPlaylists('/m/elsewhere.wav', 'engine', { wanted: [], base: [] })
+    attachPlaylists('/m/one.wav', 'rekordbox', { wanted: [{ id: '3000', name: 'Makina' }] })
+    attachPlaylists('/m/one.wav', 'traktor', { wanted: [{ name: 'Friday' }], base: [] })
+    attachPlaylists('/m/one.wav', 'engine', { wanted: [], base: ['7'] })
+    attachPlaylists('/m/elsewhere.wav', 'engine', { wanted: [], base: [] })
     expect(endRekordboxBatch()).toEqual([
       {
         ...a,
@@ -319,10 +321,44 @@ describe('playlists on a repoint', () => {
     ])
   })
 
+  it('writes no membership base for rekordbox when the job had none, and the base when it had one', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint(a)
+    recordRekordboxRepoint(b)
+    attachPlaylists('/m/one.wav', 'rekordbox', { wanted: [{ id: '3000', name: 'Makina' }] })
+    attachPlaylists('/m/two.wav', 'rekordbox', {
+      wanted: [{ id: '3000', name: 'Makina' }],
+      base: [],
+    })
+    const [first, second] = endRekordboxBatch()
+    expect(Object.keys(first).sort()).toEqual(['from', 'playlists', 'to'])
+    expect(Object.keys(second).sort()).toEqual(['from', 'playlists', 'playlistsBase', 'to'])
+  })
+
+  it('writes each library choice only to its own field', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint(a)
+    recordRekordboxRepoint(b)
+    attachPlaylists('/m/one.wav', 'traktor', { wanted: [{ name: 'Friday' }], base: [] })
+    attachPlaylists('/m/two.wav', 'engine', { wanted: [], base: ['7'] })
+    const [first, second] = endRekordboxBatch()
+    expect(Object.keys(first).sort()).toEqual(['from', 'to', 'traktorPlaylists'])
+    expect(Object.keys(second).sort()).toEqual(['enginePlaylists', 'from', 'to'])
+  })
+
+  it('changes nothing when no repoint was recorded for the file', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint(a)
+    attachPlaylists('/m/elsewhere.wav', 'rekordbox', { wanted: [{ name: 'Bolos' }], base: ['1'] })
+    attachPlaylists('/m/elsewhere.wav', 'traktor', { wanted: [], base: [] })
+    attachPlaylists('/m/elsewhere.wav', 'engine', { wanted: [], base: [] })
+    expect(endRekordboxBatch()).toStrictEqual([a])
+  })
+
   it('keeps the playlists when Apple Music moves the file and the repoint is redirected', () => {
     beginRekordboxBatch()
     recordRekordboxRepoint(a)
-    attachRekordboxPlaylists('/m/one.wav', [{ name: 'Bolos' }])
+    attachPlaylists('/m/one.wav', 'rekordbox', { wanted: [{ name: 'Bolos' }] })
     redirectRekordboxRepoint('/m/one.wav', '/Media/one.wav')
     expect(endRekordboxBatch()).toEqual([
       { ...a, to: '/Media/one.wav', playlists: [{ name: 'Bolos' }] },

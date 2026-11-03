@@ -23,6 +23,7 @@ export interface RekordboxRepoint {
   enginePlaylists?: LibraryPlaylistChoice
 }
 
+import type { DjProgram } from '../shared/djProgram'
 import type { LibraryPlaylistChoice, RekordboxPlaylistTarget } from '../shared/types'
 import type { EngineShift } from './engineRepoint'
 import type { RekordboxMeta } from './rekordboxMetadata'
@@ -148,21 +149,40 @@ export function recordedRekordboxRepoint(to: string): RekordboxRepoint | undefin
   return repoints.findLast((r) => r.to === to)
 }
 
-export function attachRekordboxPlaylists(
-  to: string,
-  playlists: RekordboxPlaylistTarget[],
-  playlistsBase?: string[],
-): void {
-  const index = repoints.findIndex((r) => r.to === to)
-  if (index !== -1)
-    repoints[index] = { ...repoints[index], playlists, ...(playlistsBase ? { playlistsBase } : {}) }
+export interface PlaylistChoice {
+  wanted: RekordboxPlaylistTarget[]
+  base?: string[]
 }
 
-export function attachLibraryPlaylists(
-  to: string,
-  library: 'traktor' | 'engine',
-  choice: LibraryPlaylistChoice,
-): void {
+export const REPOINT_PLAYLISTS: Record<
+  DjProgram,
+  (r: RekordboxRepoint) => PlaylistChoice | undefined
+> = {
+  rekordbox: (r) => (r.playlists ? { wanted: r.playlists, base: r.playlistsBase } : undefined),
+  traktor: (r) => r.traktorPlaylists,
+  engine: (r) => r.enginePlaylists,
+}
+
+const ATTACH_PLAYLISTS: Record<
+  DjProgram,
+  (repoint: RekordboxRepoint, choice: PlaylistChoice) => RekordboxRepoint
+> = {
+  rekordbox: (repoint, { wanted, base }) => ({
+    ...repoint,
+    playlists: wanted,
+    ...(base ? { playlistsBase: base } : {}),
+  }),
+  traktor: (repoint, { wanted, base }) => ({
+    ...repoint,
+    traktorPlaylists: { wanted, base: base ?? [] },
+  }),
+  engine: (repoint, { wanted, base }) => ({
+    ...repoint,
+    enginePlaylists: { wanted, base: base ?? [] },
+  }),
+}
+
+export function attachPlaylists(to: string, program: DjProgram, choice: PlaylistChoice): void {
   const index = repoints.findIndex((r) => r.to === to)
-  if (index !== -1) repoints[index] = { ...repoints[index], [`${library}Playlists`]: choice }
+  if (index !== -1) repoints[index] = ATTACH_PLAYLISTS[program](repoints[index], choice)
 }

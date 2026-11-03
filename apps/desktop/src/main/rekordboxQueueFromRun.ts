@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { basename } from 'node:path'
 import log from 'electron-log/main'
 import type { FlushResult } from './libraryRepointFlush'
-import type { RekordboxRepoint } from './rekordboxBatch'
+import { REPOINT_PLAYLISTS, type RekordboxRepoint } from './rekordboxBatch'
 import { type ContentProbe, readContentFacts } from './rekordboxContentAdd'
 import { type FindOptions, openRekordboxDb } from './rekordboxDb'
 import { nodeTimestamp, playlistXmlPath } from './rekordboxMasterXml'
@@ -87,7 +87,7 @@ export function libraryTrackOps(
   known?: (path: string, from?: string) => boolean,
 ): TrackOp[] {
   return repoints.flatMap((r) => {
-    const choice = library === 'traktor' ? r.traktorPlaylists : r.enginePlaylists
+    const choice = REPOINT_PLAYLISTS[library](r)
     const adding = !choice && addNew && !!r.meta
     if (!choice && !adding) return []
     if (adding && known?.(r.to, r.from)) return []

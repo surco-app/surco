@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
 import { tagsOnly as tagsOnlyExport } from '../shared/audioProcessing'
-import type { DjProgram } from '../shared/djProgram'
+import { DJ_PROGRAMS, type DjProgram } from '../shared/djProgram'
 import {
   type ErrorKey,
   errorKeyOf,
@@ -15,14 +15,12 @@ import { foldAccents } from '../shared/foldAccents'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../shared/format'
 import type {
   DeclickConfig,
-  LibraryPlaylistChoice,
   MusicOp,
   NormalizeConfig,
   OutputFormat,
   ProcessJob,
   ProcessResult,
   ProcessStage,
-  RekordboxPlaylistTarget,
   Settings,
   TrackMetadata,
   TrashEntry,
@@ -51,6 +49,7 @@ import {
   keepBeforeMusicRewrite,
   settleHeldOriginal,
 } from './originalKeeper'
+import type { PlaylistChoice } from './rekordboxBatch'
 import type { EngineBefore } from './verifyEngine'
 import type { FileExpect } from './verifyFile'
 import type { MusicExpect } from './verifyMusic'
@@ -133,16 +132,7 @@ export interface ProcessTrackDeps {
   isAllowed?: (path: string) => boolean
   // Marks a written file as streamable through surco://.
   allowMedia: (path: string) => void
-  attachRekordboxPlaylists?: (
-    to: string,
-    playlists: RekordboxPlaylistTarget[],
-    playlistsBase?: string[],
-  ) => void
-  attachLibraryPlaylists?: (
-    to: string,
-    library: 'traktor' | 'engine',
-    choice: LibraryPlaylistChoice,
-  ) => void
+  attachPlaylists?: (to: string, program: DjProgram, choice: PlaylistChoice) => void
   existsSync: (path: string) => boolean
   // Device+inode identity, so an in-place edit can tell "the target is the source
   // being rewritten" (fine) from "the target is an unrelated file" (a collision).
@@ -510,6 +500,21 @@ const checking = (place: VerifyPlace): PlaceCheck => ({
   detail: { key: 'checking' },
 })
 
+export const JOB_PLAYLISTS: Record<DjProgram, (job: ProcessJob) => PlaylistChoice | undefined> = {
+  rekordbox: (job) =>
+    job.rekordboxPlaylists
+      ? { wanted: job.rekordboxPlaylists, base: job.rekordboxPlaylistsBase }
+      : undefined,
+  traktor: (job) =>
+    job.traktorPlaylists
+      ? { wanted: job.traktorPlaylists, base: job.traktorPlaylistsBase ?? [] }
+      : undefined,
+  engine: (job) =>
+    job.enginePlaylists
+      ? { wanted: job.enginePlaylists, base: job.enginePlaylistsBase ?? [] }
+      : undefined,
+}
+
 export async function runProcessTrack(
   job: ProcessJob,
   deps: ProcessTrackDeps,
@@ -778,18 +783,10 @@ export async function runProcessTrack(
       if (tmpPath) deps.untrackTmp(tmpPath)
     }
     const outputIdentity = musicOnly ? undefined : await deps.fileIdentity(target)
-    if (job.rekordboxPlaylists)
-      deps.attachRekordboxPlaylists?.(target, job.rekordboxPlaylists, job.rekordboxPlaylistsBase)
-    if (job.traktorPlaylists)
-      deps.attachLibraryPlaylists?.(target, 'traktor', {
-        wanted: job.traktorPlaylists,
-        base: job.traktorPlaylistsBase ?? [],
-      })
-    if (job.enginePlaylists)
-      deps.attachLibraryPlaylists?.(target, 'engine', {
-        wanted: job.enginePlaylists,
-        base: job.enginePlaylistsBase ?? [],
-      })
+    for (const program of DJ_PROGRAMS) {
+      const choice = JOB_PLAYLISTS[program](job)
+      if (choice) deps.attachPlaylists?.(target, program, choice)
+    }
     // The new file has landed by now, so failing to retire the old one (a Windows lock
     // on the unlink that ends a copy into the trash) must not fail the job: the user
     // keeps both files and is told so.

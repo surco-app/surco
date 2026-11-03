@@ -162,8 +162,7 @@ import { createQuitGuard } from './quitGuard'
 import { trashRecoverably, trashWithoutRoom } from './recoverableTrash'
 import {
   abandonRekordboxBatch,
-  attachLibraryPlaylists,
-  attachRekordboxPlaylists,
+  attachPlaylists,
   beginRekordboxBatch,
   recordedRekordboxRepoint,
   redirectRekordboxRepoint,
@@ -1812,8 +1811,7 @@ function registerIpc(): void {
         )
       },
       allowMedia: (path) => mediaAccess.allow(path),
-      attachRekordboxPlaylists,
-      attachLibraryPlaylists,
+      attachPlaylists,
       existsSync,
       isSameFile,
       fileIdentity,

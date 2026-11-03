@@ -200,6 +200,21 @@ describe('trackOpsFromRun', () => {
 })
 
 describe('libraryTrackOps', () => {
+  it('reads the choice of the library asked for even when the other library has one too', () => {
+    const repoints: RekordboxRepoint[] = [
+      {
+        from: '/m/a.wav',
+        to: '/m/a.wav',
+        traktorPlaylists: { wanted: [{ name: 'Friday' }], base: ['t'] },
+        enginePlaylists: { wanted: [{ name: 'House' }], base: ['e'] },
+      },
+    ]
+    const [traktor] = libraryTrackOps(repoints, 'traktor', () => 'id1')
+    const [engine] = libraryTrackOps(repoints, 'engine', () => 'id2')
+    expect([traktor.wanted, traktor.known]).toEqual([[{ name: 'Friday' }], ['t']])
+    expect([engine.wanted, engine.known]).toEqual([[{ name: 'House' }], ['e']])
+  })
+
   it('turns the choice made for one library into a track op that finds the file by either path', () => {
     const repoints: RekordboxRepoint[] = [
       {
