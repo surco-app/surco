@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import log from 'electron-log/main'
 import { HOT_KINDS, validWantedSet, type WantedCue } from '../shared/cueRules'
+import { type EditableGrid, GRID_BPM_MAX, GRID_BPM_MIN } from '../shared/gridEdit'
 import { TRAKTOR_HOT_OFFSET, traktorKey } from '../shared/traktorContent'
 import type { RekordboxEditRefusal, RekordboxQueueNotice } from '../shared/types'
 import type { BatchResult, CuesOp, OpOutcome, QueueOp } from './rekordboxQueueOps'
@@ -67,6 +68,44 @@ export function withTraktorCues(block: string, wanted: WantedCue[]): string {
   return `${block.slice(0, first.start)}${all.join(separator)}${block.slice(last.end)}`
 }
 
+const GRID_MARKER_RE = /<CUE_V2\b[^>]*\bTYPE="4"[^>]*>[\s\S]*?<\/CUE_V2>/
+const TEMPO_RE = /<TEMPO\b[^>]*>/
+
+export function withTraktorGrid(block: string, grid: EditableGrid): string {
+  const bar = (4 * 60000) / grid.bpm
+  const start = (((grid.anchorMs % bar) + bar) % bar).toFixed(6)
+  const bpm = grid.bpm.toFixed(6)
+  const eol = block.includes('\r\n') ? '\r\n' : '\n'
+  const marker = block.match(GRID_MARKER_RE)?.[0]
+  let out = marker
+    ? block.replace(marker, () => {
+        const open = marker.match(/<CUE_V2\b[^>]*>/)?.[0] ?? ''
+        return marker
+          .replace(open, withAttr(open, 'START', start))
+          .replace(/<GRID\b[^>]*>/, (tag) => withAttr(tag, 'BPM', bpm))
+      })
+    : block.replace(
+        /(<CUE_V2\b|<\/ENTRY>)/,
+        (at) =>
+          `<CUE_V2 NAME="AutoGrid" DISPL_ORDER="0" TYPE="4" START="${start}" LEN="0.000000" REPEATS="-1" HOTCUE="-1"><GRID BPM="${bpm}"></GRID>${eol}</CUE_V2>${eol}${at}`,
+      )
+  const tempo = out.match(TEMPO_RE)?.[0]
+  out = tempo
+    ? out.replace(tempo, withAttr(tempo, 'BPM', bpm))
+    : out.replace(
+        /<\/INFO>/,
+        (info) => `${info}${eol}<TEMPO BPM="${bpm}" BPM_QUALITY="100.000000"></TEMPO>`,
+      )
+  return out
+}
+
+const saneGrid = (grid: EditableGrid): boolean =>
+  !grid.zones &&
+  Number.isFinite(grid.bpm) &&
+  grid.bpm >= GRID_BPM_MIN &&
+  grid.bpm <= GRID_BPM_MAX &&
+  Number.isFinite(grid.anchorMs)
+
 function refusalOf(reason: string): RekordboxEditRefusal {
   if (reason === 'traktor-running') return 'rekordbox-running'
   if (reason === 'backup-failed' || reason === 'unreadable') return reason
@@ -111,7 +150,11 @@ function planBatch(
     const notices: RekordboxQueueNotice[] = op.wanted.some((w) => w.kind === NO_BUTTON)
       ? [{ code: 'cues-slot-dropped', track: op.label }]
       : []
-    const next = withTraktorCues(entry.block, op.wanted)
+    if (op.grid && !saneGrid(op.grid)) return refused('cues-invalid')
+    if (op.grid && (read.gridLocked || read.gridFingerprint !== op.gridFingerprint))
+      return refused('cues-changed')
+    const cued = withTraktorCues(entry.block, op.wanted)
+    const next = op.grid ? withTraktorGrid(cued, op.grid) : cued
     nml = `${nml.slice(0, entry.start)}${next}${nml.slice(entry.end)}`
     return { id: op.id, applied: true, notices }
   })

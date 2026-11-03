@@ -9,7 +9,7 @@ import { rekordboxMetaFrom } from './rekordboxMetadata'
 import type { CuesOp, EditOp, TrackOp } from './rekordboxQueueOps'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { readTraktorTrackCues, traktorEntryBlock } from './traktorCues'
-import { applyTraktorBatch, withTraktorCues } from './traktorCuesWrite'
+import { applyTraktorBatch, withTraktorCues, withTraktorGrid } from './traktorCuesWrite'
 
 // The write checks for a running Traktor with a real pgrep, so on a machine with Traktor
 // open every write here was refused and the suite failed for a reason outside the code.
@@ -426,5 +426,80 @@ describe('applyTraktorBatch', () => {
     const after = await readFile(file, 'utf8')
     expect(after).toContain('<STEMS STEMS="y">')
     expect(after).not.toContain('START="92674.606740"')
+  })
+})
+
+describe('saving an edited grid to Traktor', () => {
+  const doc = nml([GRID, AUTOGRID, LOAD, BLUE])
+  const write = async (path: string, text: string) => {
+    await writeFile(path, text)
+    return null
+  }
+  const gridOp = (over: Partial<CuesOp> = {}): CuesOp => ({
+    ...op(doc, asWanted(doc)),
+    grid: { bpm: 128.5, anchorMs: 40 },
+    gridFingerprint: read(doc)?.gridFingerprint,
+    ...over,
+  })
+
+  it('moves the grid marker to the first downbeat and writes the tempo on it and on the track', () => {
+    const out = withTraktorGrid(block(doc), { bpm: 128.5, anchorMs: 40 + (4 * 60000) / 128.5 })
+    expect(out).toContain('TYPE="4" START="40.000000"')
+    expect(out).toContain('<GRID BPM="128.500000">')
+    expect(out).toContain('<TEMPO BPM="128.500000"')
+    for (const kept of [AUTOGRID, LOAD, BLUE]) expect(out).toContain(kept)
+  })
+
+  it('adds a grid marker when the track has none', () => {
+    const out = withTraktorGrid(block(nml([LOAD])), { bpm: 120, anchorMs: 500 })
+    expect(out).toContain('TYPE="4" START="500.000000"')
+    expect(out).toContain('<GRID BPM="120.000000">')
+    expect(out).toContain(LOAD)
+  })
+
+  it('writes the grid into the collection on disk, where Traktor reads it', async () => {
+    const file = await onDisk(doc)
+    const result = await applyTraktorBatch(file, [gridOp()], {
+      session,
+      ensureClosed: async () => true,
+      write,
+    })
+    expect(result).toMatchObject({ ok: true, wrote: true, outcomes: [{ applied: true }] })
+    const grid = read(await readFile(file, 'utf8'))?.grid ?? []
+    expect(grid[0]).toMatchObject({ beat: 1 })
+    expect(Math.round(grid[0].ms)).toBe(40)
+  })
+
+  it('refuses the grid when Traktor moved it after Surco read it', async () => {
+    const file = await onDisk(doc)
+    const result = await applyTraktorBatch(file, [gridOp({ gridFingerprint: 'stale' })], {
+      session,
+      ensureClosed: async () => true,
+      write,
+    })
+    expect(result).toMatchObject({ outcomes: [{ applied: false }] })
+    expect(await readFile(file, 'utf8')).toBe(doc)
+  })
+
+  it('refuses a grid the DJ locked in Traktor', async () => {
+    const locked = doc.replace('<ENTRY TITLE', '<ENTRY LOCK="1" TITLE')
+    const file = await onDisk(locked)
+    const result = await applyTraktorBatch(
+      file,
+      [{ ...gridOp(), fingerprint: readTraktorTrackCues(locked, ID)?.fingerprint ?? '' }],
+      { session, ensureClosed: async () => true, write },
+    )
+    expect(result).toMatchObject({ outcomes: [{ applied: false }] })
+    expect(await readFile(file, 'utf8')).toBe(locked)
+  })
+
+  it('refuses an impossible tempo', async () => {
+    const file = await onDisk(doc)
+    const result = await applyTraktorBatch(file, [gridOp({ grid: { bpm: -1, anchorMs: 0 } })], {
+      session,
+      ensureClosed: async () => true,
+      write,
+    })
+    expect(result).toMatchObject({ outcomes: [{ applied: false }] })
   })
 })
