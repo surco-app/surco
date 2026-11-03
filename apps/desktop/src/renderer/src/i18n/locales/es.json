@@ -130,7 +130,9 @@
       "trashSuspects_one": "Mover el archivo dudoso a la papelera",
       "trashSuspects_other": "Mover los {{count}} archivos dudosos a la papelera",
       "current": "Filtro: {{filter}} {{count}}",
-      "reviewIncomplete": "Completarlas en Revisar metadatos"
+      "reviewIncomplete": "Completarlas en Revisar metadatos",
+      "badGrid": "Rejilla mal",
+      "gridMeasuring": "Midiendo {{done}} de {{total}}"
     },
     "search": {
       "placeholder": "Buscar pistas",
@@ -516,7 +518,11 @@
     "progress": "{{percent}} % completado",
     "playlists_one": "En {{count}} playlist de rekordbox: {{names}}",
     "playlists_other": "En {{count}} playlists de rekordbox: {{names}}",
-    "playlistsPending": "Cambios de playlists sin escribir"
+    "playlistsPending": "Cambios de playlists sin escribir",
+    "gridEarly": "Rejilla {{ms}} ms adelantada",
+    "gridLate": "Rejilla {{ms}} ms retrasada",
+    "gridDriftsEarly": "La rejilla se adelanta {{ms}} ms por minuto",
+    "gridDriftsLate": "La rejilla se retrasa {{ms}} ms por minuto"
   },
   "editor": {
     "searchPlaceholder": "Busca en tus fuentes o pega un ID de release de Discogs…",
@@ -1053,7 +1059,8 @@
         "varying": "Rejilla con varios tempos, se ajusta en el programa",
         "surcoDraft": "Estos cues se pusieron sobre la rejilla de Surco. Guárdalos o descártalos para ajustar la rejilla",
         "anchorAdd": "Ancla en el cabezal, empieza una zona",
-        "anchorRemove": "Quitar el ancla del cabezal"
+        "anchorRemove": "Quitar el ancla del cabezal",
+        "locked": "El programa tiene esta rejilla bloqueada"
       },
       "offGrid": {
         "before": "{{ms}} ms antes",

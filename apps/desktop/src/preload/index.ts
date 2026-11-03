@@ -3,6 +3,7 @@ import type { AudioAnalysisIpc, PeekableAnalyses } from '../shared/audioIpcContr
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
 import type { DropInput } from '../shared/dropDetect'
 import type { GridFit } from '../shared/gridEdit'
+import type { GridVerdict } from '../shared/gridVerdict'
 import type {
   ActivityEvent,
   AppleMusicLookupCandidate,
@@ -266,6 +267,8 @@ const api: Api = {
     ipcRenderer.invoke('rekordbox:surcoGrid', contentId),
   rekordboxGridFit: (contentId: string): Promise<GridFit | null> =>
     ipcRenderer.invoke('rekordbox:gridFit', contentId),
+  rekordboxGridVerdict: (contentId: string): Promise<GridVerdict | null> =>
+    ipcRenderer.invoke('rekordbox:gridVerdict', contentId),
   rowWaves: (requests: RowWaveRequest[]): Promise<Record<string, number[]>> =>
     ipcRenderer.invoke('list:rowWaves', requests),
   rekordboxCountCompletable: (): Promise<number> =>

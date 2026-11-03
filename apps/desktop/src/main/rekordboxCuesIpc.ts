@@ -4,6 +4,7 @@ import type { CueFlow } from '../shared/cueFlows'
 import { isWritable, programOf, writableInOrder } from '../shared/djProgram'
 import type { DropInput } from '../shared/dropDetect'
 import type { GridFit } from '../shared/gridEdit'
+import type { GridVerdict } from '../shared/gridVerdict'
 import type {
   CopyReason,
   DjProgram,
@@ -33,7 +34,7 @@ export function registerRekordboxCuesIpc(host: {
   applyQuietly: () => void
   beginMoment?: (reason: CopyReason, programs: WritableProgram[]) => void
   flow: () => CueFlow
-  beatGrid: (file: string) => Promise<BeatGridFit | null>
+  beatGrid: (file: string, priority?: 'high' | 'low') => Promise<BeatGridFit | null>
   words: (file: string) => Promise<Uint16Array | null>
   provisional: Pick<ProvisionalList, 'add'>
   // The same file in each program the editor writes cues to, for a flow to reach them all.
@@ -56,8 +57,8 @@ export function registerRekordboxCuesIpc(host: {
 }): void {
   const writers: Record<WritableProgram, CueSource | null> = {
     rekordbox: rekordboxCueSource(host),
-    traktor: host.traktor ? traktorCueSource(host.traktor, host.collection) : null,
-    engine: host.engine ? engineCueSource(host.engine, host.collection) : null,
+    traktor: host.traktor ? traktorCueSource(host.traktor, host.collection, host.beatGrid) : null,
+    engine: host.engine ? engineCueSource(host.engine, host.collection, host.beatGrid) : null,
   }
   const sources: Record<DjProgram, CueReader | null> = {
     ...writers,
@@ -100,6 +101,13 @@ export function registerRekordboxCuesIpc(host: {
     async (_e, contentId: string): Promise<SurcoGrid | null> => {
       const source = sourceOf(contentId)
       return source ? source.surcoGrid(contentId) : null
+    },
+  )
+  ipcMain.handle(
+    'rekordbox:gridVerdict',
+    async (_e, contentId: string): Promise<GridVerdict | null> => {
+      const source = sourceOf(contentId)
+      return source ? source.gridVerdict(contentId) : null
     },
   )
   ipcMain.handle('rekordbox:gridFit', async (_e, contentId: string): Promise<GridFit | null> => {

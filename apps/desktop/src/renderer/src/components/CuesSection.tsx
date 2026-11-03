@@ -509,16 +509,19 @@ function Editing({
       provisional !== undefined ||
       (keptDraftOn(cue.contentId, read, queued) !== undefined && keptOnSurcoGrid(cue.contentId)),
   )
+  const rekordboxGrid = programOf(cue.contentId) === 'rekordbox'
   const gridOff =
-    programOf(cue.contentId) !== 'rekordbox'
+    !rekordboxGrid && (read.clockLeadMs === undefined || read.clockLeadMs === null)
       ? tr('editor.cues.grid.unmeasured')
       : provisional
         ? tr('editor.cues.grid.provisional')
         : onSurcoGrid
           ? tr('editor.cues.grid.surcoDraft')
-          : state.grid === null
-            ? tr('editor.cues.grid.varying')
-            : null
+          : read.gridLocked
+            ? tr('editor.cues.grid.locked')
+            : state.grid === null || (!rekordboxGrid && state.grid.zones)
+              ? tr('editor.cues.grid.varying')
+              : null
   const gridFit = useGridFit(cue.contentId, maximized && gridOff === null)
   const offsets =
     gridFit && state.grid ? gridOffsets(state.grid, gridFit, playheadMs, read.durationMs) : null
@@ -1814,6 +1817,7 @@ function Editing({
               playheadMs={playheadMs}
               onChange={setGrid}
               onDone={focusEditor}
+              zones={rekordboxGrid}
             />
           }
         />

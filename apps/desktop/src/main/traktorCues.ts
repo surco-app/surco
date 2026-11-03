@@ -107,6 +107,7 @@ export function readTraktorTrackCues(nml: string, contentId: string): TrackCues 
   return {
     contentId,
     analysed: grid.length > 0,
+    gridLocked: attr(entry.block.match(/<ENTRY\b[^>]*>/)?.[0] ?? '', 'LOCK') === '1',
     grid,
     gridFingerprint: gridFingerprint(grid),
     strong: [],

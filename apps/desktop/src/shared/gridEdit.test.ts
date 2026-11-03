@@ -300,3 +300,21 @@ describe('zones', () => {
     })
   })
 })
+
+describe('fitting the tempo from the drift along the track', () => {
+  const drifting = {
+    bpm: 124,
+    firstMs: 0,
+    phases: Array.from({ length: 40 }, (_, i) => {
+      const ms = 3200 + i * 7500
+      return { ms, firstMs: (ms * 15) / 300000 }
+    }),
+  }
+
+  it('corrects the BPM the detector guessed when its beats drift steadily, so Auto never opens the end of the track', () => {
+    const fitted = fitGrid({ bpm: 124, anchorMs: 0 }, drifting, 25000)
+    const { hereMs, endMs } = gridOffsets(fitted, drifting, 25000, 300000)
+    expect(Math.abs(hereMs)).toBeLessThanOrEqual(1)
+    expect(Math.abs(endMs)).toBeLessThanOrEqual(1)
+  })
+})

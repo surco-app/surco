@@ -786,3 +786,78 @@ describe('playlists chosen for a track inside an Engine DJ folder', () => {
     ])
   })
 })
+
+describe('saving an edited grid to Engine DJ', () => {
+  const trackRow = (dir: string) => {
+    const db = new Database(dbFile(dir), { readonly: true })
+    try {
+      return db.prepare('SELECT bpm, bpmAnalyzed FROM Track WHERE id = 1').get() as {
+        bpm: number
+        bpmAnalyzed: number
+      }
+    } finally {
+      db.close()
+    }
+  }
+  const gridOp = (dir: string, over: Partial<CuesOp> = {}) =>
+    op(
+      dir,
+      current(dir).cues.map(({ id, ms, kind, color }) => ({ id, ms, kind, color })),
+      {
+        path: '/m/a.wav',
+        grid: { bpm: 120.5, anchorMs: 40 },
+        gridFingerprint: current(dir).gridFingerprint,
+        ...over,
+      },
+    )
+
+  it('writes the grid Engine shows and the track tempo, keeping the pads as they were', async () => {
+    const dir = await library()
+    const pads = slotsOf(dir)
+    const result = await applyEngineCuesBatch(dir, [gridOp(dir)], deps())
+    expect(result).toMatchObject({ ok: true, outcomes: [{ applied: true }] })
+    const grid = current(dir).grid
+    expect(grid[0].beat).toBe(1)
+    expect(grid[0].ms).toBeCloseTo(40, 3)
+    expect(grid[1].ms - grid[0].ms).toBeCloseTo(60000 / 120.5, 3)
+    expect(trackRow(dir)).toEqual({ bpm: null, bpmAnalyzed: 120.5 })
+    expect(slotsOf(dir).slots.map((s) => s.cue?.sample)).toEqual(
+      pads.slots.map((s) => s.cue?.sample),
+    )
+  })
+
+  it('rounds the tempo into the whole-number BPM only when Engine had filled it', async () => {
+    const dir = await library()
+    const db = new Database(dbFile(dir))
+    db.prepare('UPDATE Track SET bpm = 124 WHERE id = 1').run()
+    db.close()
+    await applyEngineCuesBatch(dir, [gridOp(dir)], deps())
+    expect(trackRow(dir)).toEqual({ bpm: 121, bpmAnalyzed: 120.5 })
+  })
+
+  it('refuses the grid when Engine moved it after Surco read it', async () => {
+    const dir = await library()
+    const result = await applyEngineCuesBatch(
+      dir,
+      [gridOp(dir, { gridFingerprint: 'stale' })],
+      deps(),
+    )
+    expect(result).toMatchObject({ outcomes: [{ applied: false }] })
+    expect(current(dir).grid[0].ms).toBe(0)
+  })
+
+  it('refuses a grid the DJ locked in Engine', async () => {
+    const dir = await library()
+    const db = new Database(dbFile(dir))
+    db.prepare('UPDATE Track SET isBeatGridLocked = 1 WHERE id = 1').run()
+    db.close()
+    const result = await applyEngineCuesBatch(dir, [gridOp(dir)], deps())
+    expect(result).toMatchObject({ outcomes: [{ applied: false }] })
+  })
+
+  it('refuses a grid on a compressed file, whose clock in Engine is not measured', async () => {
+    const dir = await library()
+    const result = await applyEngineCuesBatch(dir, [gridOp(dir, { path: '/m/a.mp3' })], deps())
+    expect(result).toMatchObject({ outcomes: [{ applied: false }] })
+  })
+})

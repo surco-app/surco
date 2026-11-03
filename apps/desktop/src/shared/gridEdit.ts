@@ -16,6 +16,8 @@ export interface GridFit {
   phases?: { ms: number; firstMs: number }[]
 }
 
+export const SAME_CLOCK_FILE = /\.(wav|aif|aiff|flac)$/i
+
 export const GRID_BPM_MIN = 40
 export const GRID_BPM_MAX = 300
 
@@ -214,13 +216,33 @@ function phaseNear(fit: GridFit, ms: number): number {
   return apart > period / 4 ? fit.firstMs : local.firstMs
 }
 
+const MIN_DRIFT_STRETCHES = 8
+
+function driftCorrectedBpm(fit: GridFit): number {
+  const period = periodOf(fit.bpm)
+  const steady = (fit.phases ?? [])
+    .map((p) => ({ ms: p.ms, d: p.firstMs - nearestOn(p.firstMs, fit.firstMs, period) }))
+    .filter((p) => Math.abs(p.d) <= period / 4)
+  if (steady.length < MIN_DRIFT_STRETCHES) return fit.bpm
+  const meanMs = steady.reduce((a, p) => a + p.ms, 0) / steady.length
+  const meanD = steady.reduce((a, p) => a + p.d, 0) / steady.length
+  const den = steady.reduce((a, p) => a + (p.ms - meanMs) ** 2, 0)
+  if (den === 0) return fit.bpm
+  const slope = steady.reduce((a, p) => a + (p.ms - meanMs) * (p.d - meanD), 0) / den
+  return fit.bpm / (1 + slope)
+}
+
 export function fitGrid(grid: EditableGrid, fit: GridFit, atMs?: number): EditableGrid {
   const first = atMs === undefined ? fit.firstMs : phaseNear(fit, atMs)
+  const bpm = driftCorrectedBpm(fit)
   const fitted = editAt(grid, atMs ?? 0, (zone) => {
-    const sameTempo = Math.abs(fit.bpm - zone.bpm) / zone.bpm < SAME_TEMPO_RATIO
+    const sameTempo = Math.abs(bpm - zone.bpm) / zone.bpm < SAME_TEMPO_RATIO
+    const tempo = sameTempo ? bpm : zone.bpm
+    const at = atMs ?? first
+    const beatAt = nearestOn(at, first, periodOf(fit.bpm))
     return {
-      bpm: sameTempo ? fit.bpm : zone.bpm,
-      anchorMs: nearestOn(zone.anchorMs, first, periodOf(fit.bpm)),
+      bpm: tempo,
+      anchorMs: nearestOn(zone.anchorMs, beatAt, periodOf(tempo)),
     }
   })
   return fitted ?? grid

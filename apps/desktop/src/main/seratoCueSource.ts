@@ -47,5 +47,6 @@ export function seratoCueSource(host: {
     auditionLead: async () => 0,
     surcoGrid: async () => null,
     gridFit: async () => null,
+    gridVerdict: async () => null,
   }
 }

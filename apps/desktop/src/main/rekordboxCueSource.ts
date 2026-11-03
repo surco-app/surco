@@ -1,25 +1,19 @@
+import type { GridFit } from '../shared/gridEdit'
+import { gridVerdictOf } from '../shared/gridVerdict'
 import { type BeatGridFit, provisionalGrid, REKORDBOX_BEAT_AFTER_RISE_MS } from './beatGrid'
 import type { CueQueue, CueSource } from './cueSource'
+import { shiftedWords } from './cueWords'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
 import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
 import { queuedWanted } from './rekordboxPlaylistWrite'
 import { rekordboxLeadOfFile, rekordboxShiftOfFile } from './rekordboxTimeline'
 
-const WORDS_PER_SECOND = 150
-
-function shiftedWords(words: Uint16Array, shiftMs: number): Uint16Array {
-  const lead = Math.round((shiftMs * WORDS_PER_SECOND) / 1000)
-  const out = new Uint16Array(lead + words.length)
-  out.set(words, lead)
-  return out
-}
-
 export function rekordboxCueSource(host: {
   collection: () => string
   queue: CueQueue
   applyQuietly: () => void
-  beatGrid: (file: string) => Promise<BeatGridFit | null>
+  beatGrid: (file: string, priority?: 'high' | 'low') => Promise<BeatGridFit | null>
   words: (file: string) => Promise<Uint16Array | null>
 }): CueSource {
   const audioRowOf = async (
@@ -40,6 +34,23 @@ export function rekordboxCueSource(host: {
       undefined,
       await keyOf(path),
     )
+  }
+  const gridFit = async (
+    contentId: string,
+    priority: 'high' | 'low' = 'high',
+  ): Promise<GridFit | null> => {
+    const row = await audioRowOf(contentId)
+    if (!row) return null
+    const fit = await host.beatGrid(row.FolderPath, priority)
+    if (!fit) return null
+    const lead =
+      (await rekordboxShiftOfFile(row.FolderPath, row.SampleRate || 44100)) +
+      REKORDBOX_BEAT_AFTER_RISE_MS
+    return {
+      bpm: fit.bpm,
+      firstMs: fit.firstMs + lead,
+      phases: fit.phases?.map((p) => ({ ms: p.ms + lead, firstMs: p.firstMs + lead })),
+    }
   }
   return {
     trackCues: async (contentId) => {
@@ -91,19 +102,23 @@ export function rekordboxCueSource(host: {
         words: words && shiftedWords(words, shiftMs),
       }
     },
-    gridFit: async (contentId) => {
-      const row = await audioRowOf(contentId)
-      if (!row) return null
-      const fit = await host.beatGrid(row.FolderPath)
+    gridFit: (contentId) => gridFit(contentId),
+    gridVerdict: async (contentId) => {
+      const fit = await gridFit(contentId, 'low')
       if (!fit) return null
-      const lead =
-        (await rekordboxShiftOfFile(row.FolderPath, row.SampleRate || 44100)) +
-        REKORDBOX_BEAT_AFTER_RISE_MS
-      return {
-        bpm: fit.bpm,
-        firstMs: fit.firstMs + lead,
-        phases: fit.phases?.map((p) => ({ ms: p.ms + lead, firstMs: p.firstMs + lead })),
-      }
+      const path = host.collection()
+      const read = withCollection(
+        path,
+        (db) => readTrackCues(db, rekordboxShareDir(path), contentId, { wave: false }),
+        null,
+        await keyOf(path),
+      )
+      return read?.analysed
+        ? gridVerdictOf(
+            read.grid.map((b) => b.ms),
+            fit,
+          )
+        : null
     },
     queuedWanted: async (contentId, op) => {
       const path = host.collection()

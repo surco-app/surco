@@ -130,7 +130,9 @@
       "trashSuspects_one": "Mover o arquivo duvidoso para a Lixeira",
       "trashSuspects_other": "Mover os {{count}} arquivos duvidosos para a Lixeira",
       "current": "Filtro: {{filter}} {{count}}",
-      "reviewIncomplete": "Completar em Revisar metadados"
+      "reviewIncomplete": "Completar em Revisar metadados",
+      "badGrid": "Grade errada",
+      "gridMeasuring": "Medindo {{done}} de {{total}}"
     },
     "search": {
       "placeholder": "Buscar faixas",
@@ -516,7 +518,11 @@
     "progress": "{{percent}}% concluído",
     "playlists_one": "Em {{count}} playlist do rekordbox: {{names}}",
     "playlists_other": "Em {{count}} playlists do rekordbox: {{names}}",
-    "playlistsPending": "Mudanças de playlists ainda não gravadas"
+    "playlistsPending": "Mudanças de playlists ainda não gravadas",
+    "gridEarly": "Grade {{ms}} ms adiantada",
+    "gridLate": "Grade {{ms}} ms atrasada",
+    "gridDriftsEarly": "A grade adianta {{ms}} ms por minuto",
+    "gridDriftsLate": "A grade atrasa {{ms}} ms por minuto"
   },
   "editor": {
     "searchPlaceholder": "Busque nas suas fontes ou cole um release id do Discogs…",
@@ -1053,7 +1059,8 @@
         "varying": "Grade com vários andamentos, ajuste no programa",
         "surcoDraft": "Estes cues foram colocados na grade do Surco. Salve ou descarte-os para ajustar a grade",
         "anchorAdd": "Âncora no cursor, começa uma zona",
-        "anchorRemove": "Remover a âncora do cursor"
+        "anchorRemove": "Remover a âncora do cursor",
+        "locked": "O programa tem esta grade bloqueada"
       },
       "offGrid": {
         "before": "{{ms}} ms antes",

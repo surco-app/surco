@@ -57,6 +57,7 @@ interface Props {
   librarySource: LibrarySource
   // The per-bucket counts and the format list the filter bar offers.
   qualityTally: React.ComponentProps<typeof QualityFilterBar>['tally']
+  gridMeasure?: React.ComponentProps<typeof QualityFilterBar>['gridMeasure']
   formatTally: React.ComponentProps<typeof QualityFilterBar>['formats']
   sortBy: TrackSort
   setSortBy: (v: TrackSort) => void
@@ -169,6 +170,7 @@ export function TrackListHeader({
   setFilterSelection,
   librarySource,
   qualityTally,
+  gridMeasure,
   formatTally,
   sortBy,
   setSortBy,
@@ -272,6 +274,7 @@ export function TrackListHeader({
         value={filterSelection}
         onChange={setFilterSelection}
         tally={qualityTally}
+        gridMeasure={gridMeasure}
         formats={formatTally}
         trackCount={tracks.length}
         visibleCount={visibleTracks.length}

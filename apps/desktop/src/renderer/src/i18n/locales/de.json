@@ -130,7 +130,9 @@
       "trashSuspects_one": "Die zweifelhafte Datei in den Papierkorb legen",
       "trashSuspects_other": "Die {{count}} zweifelhaften Dateien in den Papierkorb legen",
       "current": "Filter: {{filter}} {{count}}",
-      "reviewIncomplete": "In „Metadaten prüfen“ ausfüllen"
+      "reviewIncomplete": "In „Metadaten prüfen“ ausfüllen",
+      "badGrid": "Raster falsch",
+      "gridMeasuring": "Messe {{done}} von {{total}}"
     },
     "search": {
       "placeholder": "Tracks suchen",
@@ -516,7 +518,11 @@
     "progress": "{{percent}} % abgeschlossen",
     "playlists_one": "In {{count}} rekordbox-Playlist: {{names}}",
     "playlists_other": "In {{count}} rekordbox-Playlists: {{names}}",
-    "playlistsPending": "Playlist-Änderungen noch nicht geschrieben"
+    "playlistsPending": "Playlist-Änderungen noch nicht geschrieben",
+    "gridEarly": "Raster {{ms}} ms zu früh",
+    "gridLate": "Raster {{ms}} ms zu spät",
+    "gridDriftsEarly": "Raster läuft {{ms}} ms pro Minute vor",
+    "gridDriftsLate": "Raster läuft {{ms}} ms pro Minute nach"
   },
   "editor": {
     "searchPlaceholder": "Deine Quellen durchsuchen oder eine Discogs-Release-ID einfügen…",
@@ -1053,7 +1059,8 @@
         "varying": "Raster mit mehreren Tempi, im Programm anpassen",
         "surcoDraft": "Diese Cues wurden auf dem Surco-Raster gesetzt. Speichere oder verwirf sie, um das Raster anzupassen",
         "anchorAdd": "Anker am Abspielkopf, beginnt eine Zone",
-        "anchorRemove": "Anker am Abspielkopf entfernen"
+        "anchorRemove": "Anker am Abspielkopf entfernen",
+        "locked": "Das Programm hat dieses Raster gesperrt"
       },
       "offGrid": {
         "before": "{{ms}} ms zu früh",

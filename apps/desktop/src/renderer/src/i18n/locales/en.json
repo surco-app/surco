@@ -130,7 +130,9 @@
       "trashSuspects_one": "Move the doubtful file to Trash",
       "trashSuspects_other": "Move the {{count}} doubtful files to Trash",
       "current": "Filter: {{filter}} {{count}}",
-      "reviewIncomplete": "Fill them in Review metadata"
+      "reviewIncomplete": "Fill them in Review metadata",
+      "badGrid": "Bad grid",
+      "gridMeasuring": "Measuring {{done}} of {{total}}"
     },
     "search": {
       "placeholder": "Search tracks",
@@ -516,7 +518,11 @@
     "progress": "{{percent}}% complete",
     "playlists_one": "In {{count}} rekordbox playlist: {{names}}",
     "playlists_other": "In {{count}} rekordbox playlists: {{names}}",
-    "playlistsPending": "Playlist changes not written yet"
+    "playlistsPending": "Playlist changes not written yet",
+    "gridEarly": "Grid {{ms}} ms early",
+    "gridLate": "Grid {{ms}} ms late",
+    "gridDriftsEarly": "Grid runs {{ms}} ms a minute early",
+    "gridDriftsLate": "Grid runs {{ms}} ms a minute late"
   },
   "editor": {
     "searchPlaceholder": "Search your sources or paste a Discogs release id…",
@@ -1053,7 +1059,8 @@
         "varying": "Grid with several tempos, adjust it in the program",
         "surcoDraft": "These cues were set on the Surco grid. Save or discard them to adjust the grid",
         "anchorAdd": "Anchor at the playhead, starts a zone",
-        "anchorRemove": "Remove the anchor at the playhead"
+        "anchorRemove": "Remove the anchor at the playhead",
+        "locked": "The program has this grid locked"
       },
       "offGrid": {
         "before": "{{ms}} ms early",

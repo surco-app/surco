@@ -189,3 +189,37 @@ export function decodeOverview(raw: Buffer): { entries: EngineBands[]; max: Engi
   }
   return { entries: Array.from({ length: count }, (_, i) => band(i)), max: band(count) }
 }
+
+export function encodeAdjustedGrid(
+  raw: Buffer,
+  grid: { bpm: number; anchorMs: number },
+  durationMs: number,
+): Buffer | null {
+  if (raw.length < 17) return null
+  const sampleRate = raw.readDoubleBE(0)
+  const base = readGrid(raw, 17)
+  if (!base || !(sampleRate > 0)) return null
+  const adjustedAt = base.end
+  const period = 60000 / grid.bpm
+  const first = Math.ceil(-grid.anchorMs / period)
+  const last = Math.ceil((durationMs - grid.anchorMs) / period) - 1
+  if (last <= first) return null
+  const tail =
+    raw.length >= adjustedAt + 8 + MARKER_BYTES ? raw.readInt32LE(adjustedAt + 8 + 20) : 0
+  const marker = (k: number, beats: number): Buffer => {
+    const m = Buffer.alloc(MARKER_BYTES)
+    m.writeDoubleLE(((grid.anchorMs + k * period) / 1000) * sampleRate, 0)
+    m.writeBigInt64LE(BigInt(k), 8)
+    m.writeInt32LE(beats, 16)
+    m.writeInt32LE(tail, 20)
+    return m
+  }
+  const count = Buffer.alloc(8)
+  count.writeBigInt64BE(2n)
+  return Buffer.concat([
+    raw.subarray(0, adjustedAt),
+    count,
+    marker(first, last - first),
+    marker(last, 0),
+  ])
+}

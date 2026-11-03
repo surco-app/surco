@@ -16,6 +16,7 @@ export function FilterOption({
   dot,
   label,
   count,
+  progress,
   selected,
   onClick,
 }: {
@@ -24,6 +25,7 @@ export function FilterOption({
   dot?: string | null
   label: string
   count: number
+  progress?: { text: string; title: string }
   selected: boolean
   onClick: () => void
 }): React.JSX.Element {
@@ -46,6 +48,15 @@ export function FilterOption({
         )}
       </span>
       <span className="flex-1">{label}</span>
+      {progress && (
+        <span
+          data-testid={`${testid}-progress`}
+          title={progress.title}
+          className="tabular-nums text-[11px] text-fg-faint"
+        >
+          {progress.text}
+        </span>
+      )}
       <span className="tabular-nums text-fg-dim">{count}</span>
       <Check aria-hidden="true" className={`size-3 shrink-0 ${selected ? '' : 'invisible'}`} />
     </button>

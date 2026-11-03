@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import type { GridVerdict } from '../../../shared/gridVerdict'
 import type { SpectrumResult, TrackMetadata } from '../../../shared/types'
 import type { Verification } from '../../../shared/verification'
 import type { TrackItem, TrackStatus } from '../types'
@@ -217,6 +218,7 @@ describe('matchesFilter / qualityCounts', () => {
       clipping: 0,
       noCues: 0,
       offGrid: 0,
+      badGrid: 0,
       unanalysedRekordbox: 0,
       unanalysedEngine: 0,
       noCover: 5,
@@ -325,6 +327,31 @@ describe('cues off the grid filter', () => {
   })
 })
 
+describe('bad grid filter', () => {
+  const tracks = ['shifted', 'drifting', 'fine', 'unmeasured'].map(
+    (id) => ({ id, status: 'idle' }) as TrackItem,
+  )
+  const verdicts: Record<string, GridVerdict | null> = {
+    shifted: { kind: 'shifted', ms: -92 },
+    drifting: { kind: 'drifting', msPerMin: -7.5 },
+    fine: null,
+  }
+  const facts: FilterFacts = { ...NO_FACTS, gridVerdict: (t) => verdicts[t.id] }
+
+  it('isolates the tracks whose rekordbox grid Surco measured off the beats, leaving out the ones not measured yet', () => {
+    expect(
+      tracks
+        .filter((t) => matchesFilter(t, { ...EMPTY_FILTER, attention: 'badGrid' }, facts))
+        .map((t) => t.id),
+    ).toEqual(['shifted', 'drifting'])
+    expect(qualityCounts(tracks, facts).badGrid).toBe(2)
+  })
+
+  it('counts none before anything is measured', () => {
+    expect(qualityCounts(tracks).badGrid).toBe(0)
+  })
+})
+
 describe('unanalysed in a DJ library filter', () => {
   const preview = (extra: object) => ({
     title: '',
@@ -408,6 +435,7 @@ describe('filters that read what App knows about a row', () => {
     incomplete: (t) => t.id === 'a',
     unsaved: (t) => t.id !== 'a',
     gridTolerance: 10,
+    gridVerdict: () => undefined,
   }
 
   // Which fields are required is a setting, and unsaved cues live in the cue editor's

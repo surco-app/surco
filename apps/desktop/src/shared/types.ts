@@ -1885,6 +1885,8 @@ export interface TrackCues {
   durationMs: number
   fingerprint: string
   gridFingerprint: string
+  gridLocked?: boolean
+  clockLeadMs?: number | null
 }
 
 export interface SurcoGrid {

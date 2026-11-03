@@ -104,3 +104,14 @@ describe('readTraktorTrackCues', () => {
     expect(readTraktorTrackCues(nml(entry([GRID, odd])), ID)?.cues).toEqual([])
   })
 })
+
+describe('a Traktor grid the DJ locked', () => {
+  it('says so, so Surco leaves it alone', () => {
+    const locked = entry([GRID]).replace(
+      '<ENTRY TITLE="The Power"',
+      '<ENTRY LOCK="1" TITLE="The Power"',
+    )
+    expect(readTraktorTrackCues(nml(locked), ID)?.gridLocked).toBe(true)
+    expect(readTraktorTrackCues(nml(entry([GRID])), ID)?.gridLocked).toBe(false)
+  })
+})

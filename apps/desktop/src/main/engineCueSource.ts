@@ -1,9 +1,13 @@
 import { realpathSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { engineTrackId } from '../shared/engineContent'
+import { SAME_CLOCK_FILE } from '../shared/gridEdit'
 import type { CueQueue, CueSource } from './cueSource'
 import { readEngineTrackCues } from './engineCues'
 import { engineDropInput } from './engineDropInput'
 import { withEngineLibrary } from './enginePlaylistsIpc'
 import { keyOf } from './rekordboxPlaylistsIpc'
+import { type BeatGridOf, sameClockFit, sameClockVerdict } from './sameClockGrid'
 
 export function engineCueSource(
   engine: {
@@ -13,10 +17,35 @@ export function engineCueSource(
     words: (file: string) => Promise<Uint16Array | null>
   },
   collection: () => string,
+  beatGrid: BeatGridOf,
 ): CueSource {
+  const engineFile = (contentId: string): string | null => {
+    const id = engineTrackId(contentId)
+    const dir = engine.libraryDir()
+    if (id === null) return null
+    const path = withEngineLibrary(
+      dir,
+      (db) =>
+        (
+          db.prepare('SELECT path FROM Track WHERE id = ?').get(id) as
+            | { path: string | null }
+            | undefined
+        )?.path ?? null,
+      null,
+    )
+    return path ? resolve(dir, path) : null
+  }
+  const leadOf = (file: string | null): number | null =>
+    file && SAME_CLOCK_FILE.test(file) ? 0 : null
   return {
-    trackCues: async (contentId) =>
-      withEngineLibrary(engine.libraryDir(), (db) => readEngineTrackCues(db, contentId), null),
+    trackCues: async (contentId) => {
+      const read = withEngineLibrary(
+        engine.libraryDir(),
+        (db) => readEngineTrackCues(db, contentId),
+        null,
+      )
+      return read && { ...read, clockLeadMs: leadOf(engineFile(contentId)) }
+    },
     waveDetail: async () => null,
     dropInput: async (contentId) => {
       const path = collection()
@@ -30,7 +59,19 @@ export function engineCueSource(
     },
     auditionLead: async () => 0,
     surcoGrid: async () => null,
-    gridFit: async () => null,
+    gridFit: async (contentId) => {
+      const file = engineFile(contentId)
+      return sameClockFit(file, beatGrid, 'high', leadOf(file))
+    },
+    gridVerdict: async (contentId) =>
+      sameClockVerdict(
+        withEngineLibrary(
+          engine.libraryDir(),
+          (db) => readEngineTrackCues(db, contentId, { wave: false }),
+          null,
+        )?.grid,
+        await sameClockFit(engineFile(contentId), beatGrid, 'low', leadOf(engineFile(contentId))),
+      ),
     queuedWanted: async () => [],
     queue: engine.queue,
     applyQuietly: engine.applyQuietly,
