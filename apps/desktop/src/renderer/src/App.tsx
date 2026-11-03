@@ -18,7 +18,7 @@ import type { CueJumpBars } from '../../shared/cueJump'
 import type { CueQuantize } from '../../shared/cueQuantize'
 import { effectiveMeta } from '../../shared/customFields'
 import { normalizeImportFields } from '../../shared/defaults'
-import { DJ_PROGRAMS, type DjProgram, programsInOrder } from '../../shared/djProgram'
+import { DJ_PROGRAMS, type DjProgram, programOf, programsInOrder } from '../../shared/djProgram'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import { resolveBindings } from '../../shared/shortcutDefaults'
@@ -84,6 +84,7 @@ import { useDuplicateRanks } from './hooks/useDuplicateRanks'
 import { useEditorPicks } from './hooks/useEditorPicks'
 import { editorSectionOpen, useMaximizedSection } from './hooks/useEditorSections'
 import { useExitPresence } from './hooks/useExitPresence'
+import { useGridVerdicts } from './hooks/useGridVerdicts'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useLaunchModals } from './hooks/useLaunchModals'
 import { useListNavigation } from './hooks/useListNavigation'
@@ -148,6 +149,7 @@ import { deriveTagPatches } from './lib/deriveTags'
 import type { Destination } from './lib/destination'
 import { createDragDepth } from './lib/dragDepth'
 import { DEFAULT_REQUIRED_FIELDS, missingRequiredOf } from './lib/fields'
+import { gridNote } from './lib/gridNote'
 import { pushImportNotice } from './lib/importNotices'
 import { mainErrorMessage } from './lib/ipcError'
 import { columnOf, isTypingTarget, nextColumn } from './lib/keymap'
@@ -1830,6 +1832,21 @@ export default function App(): React.JSX.Element {
   })
 
   const unsavedCues = useUnsavedCueTracks()
+  const gridEntries = useMemo(
+    () =>
+      [...(playlistScope?.contentOf ?? new Map<string, string>())].filter(
+        ([, contentId]) => programOf(contentId) === 'rekordbox',
+      ),
+    [playlistScope],
+  )
+  const gridVerdicts = useGridVerdicts(gridEntries, filterSelection.attention === 'badGrid')
+  const gridNoteOf = useMemo(() => {
+    if (filterSelection.attention !== 'badGrid') return undefined
+    return (t: TrackItem) => {
+      const verdict = gridVerdicts.verdictOf(t.id)
+      return verdict ? gridNote(verdict, tr, i18n.language) : undefined
+    }
+  }, [filterSelection.attention, gridVerdicts, tr, i18n.language])
   // What the filter asks about a row that the row does not carry: the fields Settings
   // require (the same rule that keeps Convert all off it) and the open playlist's cue drafts.
   const filterFacts = useMemo<FilterFacts>(
@@ -1845,8 +1862,10 @@ export default function App(): React.JSX.Element {
         return hasStagedEdits(t) || (contentId !== undefined && unsavedCues.has(contentId))
       },
       gridTolerance: settings?.cueGridTolerance ?? DEFAULT_CUE_GRID_TOLERANCE,
+      gridVerdict: (t) => gridVerdicts.verdictOf(t.id),
     }),
     [
+      gridVerdicts,
       settings?.requiredFields,
       settings?.customFields,
       settings?.cueGridTolerance,
@@ -3341,6 +3360,11 @@ export default function App(): React.JSX.Element {
                             setFilterSelection={setFilterSelection}
                             librarySource={librarySource}
                             qualityTally={qualityTally}
+                            gridMeasure={{
+                              offered: gridEntries.length > 0,
+                              done: gridVerdicts.done,
+                              total: gridVerdicts.total,
+                            }}
                             formatTally={formatTally}
                             sortBy={sortBy}
                             setSortBy={setSortBy}
@@ -3432,6 +3456,7 @@ export default function App(): React.JSX.Element {
                               }
                               reorder={reorder}
                               outsideFilter={outsideFilterIds}
+                              noteOf={gridNoteOf}
                               onVisible={onListRowVisible}
                               rowRegistry={rowEls}
                               revealRowRef={revealRowRef}

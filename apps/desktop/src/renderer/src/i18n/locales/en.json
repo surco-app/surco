@@ -130,7 +130,9 @@
       "trashSuspects_one": "Move the doubtful file to Trash",
       "trashSuspects_other": "Move the {{count}} doubtful files to Trash",
       "current": "Filter: {{filter}} {{count}}",
-      "reviewIncomplete": "Fill them in Review metadata"
+      "reviewIncomplete": "Fill them in Review metadata",
+      "badGrid": "Grid off the beat",
+      "gridMeasuring": "measuring {{done}} of {{total}}"
     },
     "search": {
       "placeholder": "Search tracks",
@@ -516,7 +518,11 @@
     "progress": "{{percent}}% complete",
     "playlists_one": "In {{count}} rekordbox playlist: {{names}}",
     "playlists_other": "In {{count}} rekordbox playlists: {{names}}",
-    "playlistsPending": "Playlist changes not written yet"
+    "playlistsPending": "Playlist changes not written yet",
+    "gridEarly": "Grid {{ms}} ms early",
+    "gridLate": "Grid {{ms}} ms late",
+    "gridDriftsEarly": "Grid runs {{ms}} ms a minute early",
+    "gridDriftsLate": "Grid runs {{ms}} ms a minute late"
   },
   "editor": {
     "searchPlaceholder": "Search your sources or paste a Discogs release id…",

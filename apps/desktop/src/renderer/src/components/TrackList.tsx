@@ -112,6 +112,7 @@ interface Props {
   // Rows kept on screen after the active filter stopped matching them (filterWithSticky),
   // drawn dimmed so they read as handled until the next filter refresh drops them.
   outsideFilter?: ReadonlySet<string>
+  noteOf?: (track: TrackItem) => string | undefined
   // Rows a playlist breaks before (lib/playlistView), each separator under its own key and
   // drawn as a dashed line above the row. Only passed while the list shows a playlist in
   // its own order: under any other sort the breaks would land between unrelated rows.
@@ -362,6 +363,7 @@ interface RowProps {
   // This row's own rank, not the map, so only the rows whose rank changed re-render.
   duplicate?: DuplicateRank
   outsideFilter: boolean
+  note?: string
 }
 
 // Memoized so a progress event — which replaces only the updated track's object
@@ -395,6 +397,7 @@ const TrackRow = memo(function TrackRow({
   onOpenBackup,
   duplicate,
   outsideFilter,
+  note,
 }: RowProps): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const quality = trackQuality(t)
@@ -757,6 +760,11 @@ const TrackRow = memo(function TrackRow({
                     {shown.artist || tr('trackList.noArtist')}
                   </span>
                 </span>
+                {note && (
+                  <span data-testid="track-note" className="shrink-0 truncate text-xs text-warn">
+                    {note}
+                  </span>
+                )}
                 {/* A failed tag read leaves the row showing only its file-name parse; the mark
                     tells that apart from a file that genuinely carries no tags. */}
                 {t.metaReadFailed && (
@@ -1066,6 +1074,7 @@ export const TrackList = memo(function TrackList({
   onOpenBackup,
   duplicateRankById,
   outsideFilter,
+  noteOf,
   separatorBefore,
   trailingSeparators,
   reorder,
@@ -1355,6 +1364,7 @@ export const TrackList = memo(function TrackList({
         onOpenBackup={onOpenBackup}
         duplicate={duplicateRankById?.get(t.id)}
         outsideFilter={outsideFilter?.has(t.id) ?? false}
+        note={noteOf?.(t)}
       />
     </Fragment>
   )

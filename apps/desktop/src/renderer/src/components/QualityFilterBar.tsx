@@ -11,6 +11,7 @@ import {
   FileX2,
   FlagOff,
   Gauge,
+  Grid2x2X,
   Hourglass,
   ImageMinus,
   ImageOff,
@@ -59,6 +60,7 @@ type AttentionMode =
   | 'clipping'
   | 'noCues'
   | 'offGrid'
+  | 'badGrid'
   | 'unanalysedRekordbox'
   | 'unanalysedEngine'
 type TagsMode = 'missingRequired' | 'noCover' | 'smallCover' | 'noBpm' | 'noKey'
@@ -85,6 +87,7 @@ const ATTENTION_MODES: AttentionMode[] = [
   'clipping',
   'noCues',
   'offGrid',
+  'badGrid',
   'unanalysedRekordbox',
   'unanalysedEngine',
 ]
@@ -112,6 +115,7 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   clipping: Zap,
   noCues: FlagOff,
   offGrid: Magnet,
+  badGrid: Grid2x2X,
   unanalysedRekordbox: Hourglass,
   unanalysedEngine: Hourglass,
   missingRequired: Asterisk,
@@ -152,6 +156,7 @@ function attentionDot(mode: Mode, tally: Tally): string | null {
   if (mode === 'clipping' && tally.clipping > 0) return 'bg-warn'
   if (mode === 'noCues' && tally.noCues > 0) return 'bg-warn'
   if (mode === 'offGrid' && tally.offGrid > 0) return 'bg-warn'
+  if (mode === 'badGrid' && tally.badGrid > 0) return 'bg-warn'
   if (mode === 'missingRequired' && tally.missingRequired > 0) return 'bg-warn'
   if (mode === 'unsaved' && tally.unsaved > 0) return 'bg-[var(--color-accent)]'
   if (mode === 'mismatch' && tally.mismatch > 0) return 'bg-warn'
@@ -165,6 +170,7 @@ interface Props {
   // Which library the membership buckets read (the conversion destination's), so their
   // labels name the right one — "In Engine DJ" when conversions land there.
   librarySource: LibrarySource
+  gridMeasure?: { offered: boolean; done: number; total: number }
   // The combined selection — one choice per axis (quality / conversion / library / format),
   // all ANDed. The bar toggles a single axis per click and leaves the menu open, so picking
   // one from each section stacks the filters instead of replacing the previous choice.
@@ -218,6 +224,7 @@ export function QualityFilterBar({
   onRevealSelected,
   onTrashSuspects,
   onReviewIncomplete,
+  gridMeasure,
   children,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -237,6 +244,12 @@ export function QualityFilterBar({
     (m) => m === 'unconverted' || tally[m] > 0,
   )
   const conversionSection = shownConversion.filter((m) => !MATCH_MODES.includes(m))
+  const shownAttention = (m: AttentionMode): boolean =>
+    tally[m] > 0 || (m === 'badGrid' && gridMeasure?.offered === true)
+  const measuring =
+    gridMeasure && gridMeasure.total > 0 && gridMeasure.done < gridMeasure.total
+      ? tr('sidebar.filter.gridMeasuring', { done: gridMeasure.done, total: gridMeasure.total })
+      : null
   const matchSection = shownConversion.filter((m) => MATCH_MODES.includes(m))
   // The remaining buckets that follow the format axis, in logical groups rendered with a
   // thin divider between them so the menu reads by dimension. Empty groups drop out, so the
@@ -253,9 +266,7 @@ export function QualityFilterBar({
     // The retouch buckets (silence left to trim, true clipping, cues left to mark), each
     // listed only once some track is actually in it — permanently-empty rows would just
     // pad the menu, and the facts only exist once waves are decoded or a library is read.
-    ...(ATTENTION_MODES.some((m) => tally[m] > 0)
-      ? [ATTENTION_MODES.filter((m) => tally[m] > 0)]
-      : []),
+    ...(ATTENTION_MODES.some(shownAttention) ? [ATTENTION_MODES.filter(shownAttention)] : []),
     // Apple Music library buckets, listed only once the snapshot has resolved a verdict
     // for at least one track — which also keeps them off Windows, where there is no
     // library to read. "Not in library" leads: it's the actionable bucket.
@@ -379,7 +390,9 @@ export function QualityFilterBar({
       testid={`quality-filter-${mode}`}
       Icon={FILTER_ICONS[mode]}
       dot={mode === 'all' ? null : attentionDot(mode, tally)}
-      label={filterLabel(mode)}
+      label={
+        mode === 'badGrid' && measuring ? `${filterLabel(mode)} · ${measuring}` : filterLabel(mode)
+      }
       count={mode === 'all' ? trackCount : countOf(mode)}
       selected={mode === 'all' ? nothingActive : isActive(mode)}
       onClick={mode === 'all' ? () => chooseAll(close) : () => toggle(mode, close)}

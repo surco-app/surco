@@ -1,4 +1,5 @@
 import { DEFAULT_CUE_GRID_TOLERANCE } from '../../../shared/cueGrid'
+import type { GridVerdict } from '../../../shared/gridVerdict'
 import { MAJOR_CAMELOT, MAJOR_NAMES, MINOR_CAMELOT, MINOR_NAMES } from '../../../shared/keyNames'
 import type { TrackItem } from '../types'
 import { foldText } from './normalizeText'
@@ -77,6 +78,7 @@ export type AttentionFilter =
   | 'clipping'
   | 'noCues'
   | 'offGrid'
+  | 'badGrid'
   | 'unanalysedRekordbox'
   | 'unanalysedEngine'
 // The tag work matching a release fixes: no artwork, artwork too small for a CDJ screen
@@ -92,12 +94,14 @@ export interface FilterFacts {
   incomplete: (track: TrackItem) => boolean
   unsaved: (track: TrackItem) => boolean
   gridTolerance: number
+  gridVerdict: (track: TrackItem) => GridVerdict | null | undefined
 }
 
 export const NO_FACTS: FilterFacts = {
   incomplete: () => false,
   unsaved: () => false,
   gridTolerance: DEFAULT_CUE_GRID_TOLERANCE,
+  gridVerdict: () => undefined,
 }
 
 // One selection per dimension, all combined with AND. `format` is the source container
@@ -191,6 +195,7 @@ export function matchesFilter(
   if (sel.attention === 'clipping' && track.audioIssues?.clipping !== true) return false
   if (sel.attention === 'noCues' && !hasNoCues(track)) return false
   if (sel.attention === 'offGrid' && !isOffGrid(track, facts)) return false
+  if (sel.attention === 'badGrid' && !facts.gridVerdict(track)) return false
   if (sel.attention === 'unanalysedRekordbox' && unanalysedIn(track) !== 'rekordbox') return false
   if (sel.attention === 'unanalysedEngine' && unanalysedIn(track) !== 'engine') return false
   if (sel.tags && !matchesTags(track, sel.tags, facts)) return false
@@ -473,6 +478,7 @@ export function qualityCounts(
   clipping: number
   noCues: number
   offGrid: number
+  badGrid: number
   unanalysedRekordbox: number
   unanalysedEngine: number
   noCover: number
@@ -501,6 +507,7 @@ export function qualityCounts(
   let clipping = 0
   let noCues = 0
   let offGrid = 0
+  let badGrid = 0
   let unanalysedRekordbox = 0
   let unanalysedEngine = 0
   let noCover = 0
@@ -530,6 +537,7 @@ export function qualityCounts(
     if (t.audioIssues?.clipping) clipping += 1
     if (hasNoCues(t)) noCues += 1
     if (isOffGrid(t, facts)) offGrid += 1
+    if (facts.gridVerdict(t)) badGrid += 1
     const waitingOn = unanalysedIn(t)
     if (waitingOn === 'rekordbox') unanalysedRekordbox += 1
     else if (waitingOn === 'engine') unanalysedEngine += 1
@@ -560,6 +568,7 @@ export function qualityCounts(
     clipping,
     noCues,
     offGrid,
+    badGrid,
     unanalysedRekordbox,
     unanalysedEngine,
     noCover,

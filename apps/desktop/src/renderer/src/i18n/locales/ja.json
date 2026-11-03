@@ -130,7 +130,9 @@
       "trashSuspects_one": "疑わしいファイルをゴミ箱へ移動",
       "trashSuspects_other": "{{count}} の疑わしいファイルをゴミ箱へ移動",
       "current": "フィルター: {{filter}} {{count}}",
-      "reviewIncomplete": "「メタデータを確認」で入力する"
+      "reviewIncomplete": "「メタデータを確認」で入力する",
+      "badGrid": "ずれたグリッド",
+      "gridMeasuring": "測定中 {{done}} / {{total}}"
     },
     "search": {
       "placeholder": "トラックを検索",
@@ -516,7 +518,11 @@
     "progress": "{{percent}}% 完了",
     "playlists_one": "{{count}} 個の rekordbox プレイリストに含まれています: {{names}}",
     "playlists_other": "{{count}} 個の rekordbox プレイリストに含まれています: {{names}}",
-    "playlistsPending": "プレイリストの変更がまだ書き込まれていません"
+    "playlistsPending": "プレイリストの変更がまだ書き込まれていません",
+    "gridEarly": "グリッドが {{ms}} ms 早い",
+    "gridLate": "グリッドが {{ms}} ms 遅い",
+    "gridDriftsEarly": "グリッドが毎分 {{ms}} ms 早まる",
+    "gridDriftsLate": "グリッドが毎分 {{ms}} ms 遅れる"
   },
   "editor": {
     "searchPlaceholder": "ソースを検索するか Discogs リリース ID を貼り付け…",

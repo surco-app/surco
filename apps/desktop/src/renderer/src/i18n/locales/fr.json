@@ -130,7 +130,9 @@
       "trashSuspects_one": "Mettre le fichier douteux à la corbeille",
       "trashSuspects_other": "Mettre les {{count}} fichiers douteux à la corbeille",
       "current": "Filtre : {{filter}} {{count}}",
-      "reviewIncomplete": "Les compléter dans Vérifier les métadonnées"
+      "reviewIncomplete": "Les compléter dans Vérifier les métadonnées",
+      "badGrid": "Grille décalée",
+      "gridMeasuring": "mesure {{done}} sur {{total}}"
     },
     "search": {
       "placeholder": "Rechercher des morceaux",
@@ -516,7 +518,11 @@
     "progress": "{{percent}} % terminé",
     "playlists_one": "Dans {{count}} playlist rekordbox : {{names}}",
     "playlists_other": "Dans {{count}} playlists rekordbox : {{names}}",
-    "playlistsPending": "Changements de playlists pas encore écrits"
+    "playlistsPending": "Changements de playlists pas encore écrits",
+    "gridEarly": "Grille en avance de {{ms}} ms",
+    "gridLate": "Grille en retard de {{ms}} ms",
+    "gridDriftsEarly": "La grille avance de {{ms}} ms par minute",
+    "gridDriftsLate": "La grille retarde de {{ms}} ms par minute"
   },
   "editor": {
     "searchPlaceholder": "Rechercher dans tes sources ou coller un id de release Discogs…",

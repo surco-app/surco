@@ -27,6 +27,7 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   clipping: 0,
   noCues: 0,
   offGrid: 0,
+  badGrid: 0,
   unanalysedRekordbox: 0,
   unanalysedEngine: 0,
   noCover: 0,
@@ -200,6 +201,30 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('quality-filter-offGrid-dot')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('quality-filter-offGrid'))
     expect(onChange).toHaveBeenCalledWith(sel({ attention: 'offGrid' }))
+  })
+
+  it('offers the bad-grid filter on a rekordbox playlist before anything is measured, since picking it is what starts the measuring', () => {
+    renderBar({ tally: tally() })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.queryByTestId('quality-filter-badGrid')).toBeNull()
+    cleanup()
+    const { onChange } = renderBar({
+      tally: tally(),
+      gridMeasure: { offered: true, done: 0, total: 0 },
+    })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-badGrid'))
+    expect(onChange).toHaveBeenCalledWith(sel({ attention: 'badGrid' }))
+  })
+
+  it('says how far the measuring got beside the bad-grid filter, with the amber nudge once some are found', () => {
+    renderBar({
+      tally: tally({ badGrid: 3 }),
+      gridMeasure: { offered: true, done: 344, total: 2077 },
+    })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByTestId('quality-filter-badGrid')).toHaveTextContent('344 of 2077')
+    expect(screen.getByTestId('quality-filter-badGrid-dot')).toBeInTheDocument()
   })
 
   it('names the DJ program a track is waiting on in its unanalysed bucket', () => {
