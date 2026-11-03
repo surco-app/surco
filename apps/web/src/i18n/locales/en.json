@@ -261,6 +261,11 @@
             "d": "Hot cues A to H and CALLs, on rekordbox's waveform and grid. Drag them, they snap to the bar or the beat, and you can undo. Pick a flow, like Mix in 64, Mix in 32 or one of your own built from blocks or learned from your collection, and hovering over the waveform shows a ghost of what it would place. One click places it and tells you what doesn't fit. Auto mark suggests where each track drops, on several at once too. It learns how you mark from the cues you already placed and the ones you save, and sets what it's sure of apart from what it doubts. And if you mark the CALLs in rekordbox, Surco places your flow's hot cues when you close it. On a track rekordbox hasn't analyzed yet you work on Surco's grid, and once rekordbox analyzes it, your cues move onto its own. Letters follow track order, and if each letter is a fixed pad for you, turn it off in Settings. If the same track is in Traktor or Engine DJ, saving places the flow there too, on its grid and around its cues. Written to rekordbox after a backup."
           },
           {
+            "t": "Cues off the grid",
+            "s": "Pulls out the tracks whose cues don't land on the grid's beat.",
+            "d": "In rekordbox, Traktor and Engine DJ, Surco measures every cue against the track's grid and tells you how many tracks drift. Filter them, open the editor, clear their cues and hit Auto mark. You choose how many ms counts in the cue settings, 5, 10 or 20 ms. 10 by default."
+          },
+          {
             "t": "Your rekordbox collection",
             "s": "After converting, the track stays the same in rekordbox, with its playlists and cues.",
             "d": "After converting, the track is still the same track in rekordbox, with its playlists, cue points and history, and editing its tags never renames the file. Turn it on in Settings. It backs up first, and if rekordbox is open it waits for you to close it."

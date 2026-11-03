@@ -261,6 +261,11 @@
             "d": "Hot cues de A a H e CALLs, sobre a onda e a grade do rekordbox. Arraste-os, eles se encaixam no compasso ou no tempo, e você pode desfazer. Escolha um fluxo, como Mix in 64, Mix in 32 ou um seu, montado com blocos ou aprendido da sua coleção, e passar o mouse sobre a onda mostra uma sombra do que ele colocaria. Um clique o coloca e diz o que não cabe. O Marcar automático sugere onde cada faixa sobe, em várias de uma vez também. Ele aprende seu jeito de marcar com os cues que você já colocou e os que você salva, e separa o que vê como certo do que é duvidoso. E se você marcar os CALLs no rekordbox, o Surco coloca os hot cues do seu fluxo quando você o fecha. Numa faixa que o rekordbox ainda não analisou você trabalha sobre a grade do Surco, e quando o rekordbox a analisa, seus cues passam para a grade dele. As letras seguem a ordem da faixa, e se cada letra for um pad fixo para você, desative isso em Ajustes. Se a mesma faixa estiver no Traktor ou no Engine DJ, salvar coloca o fluxo lá também, sobre a grade dele e em volta dos cues dele. Gravado no rekordbox depois de uma cópia de segurança."
           },
           {
+            "t": "Cues fora da grade",
+            "s": "Separa as faixas cujos cues não caem na batida da grade.",
+            "d": "No rekordbox, no Traktor e no Engine DJ, o Surco mede cada cue contra a grade da faixa e diz quantas faixas passam do ponto. Você filtra, abre o editor, apaga os cues e clica em Marcar automático. A partir de quantos ms conta, você escolhe nos ajustes de cues, 5, 10 ou 20 ms. 10 por padrão."
+          },
+          {
             "t": "Sua coleção do rekordbox",
             "s": "Ao converter, a faixa continua a mesma no rekordbox, com suas playlists e cues.",
             "d": "Depois de converter, a faixa continua sendo a mesma faixa no rekordbox, com suas playlists, cue points e histórico, e editar as tags nunca renomeia o arquivo. Ative em Ajustes. Faz uma cópia de segurança antes, e se o rekordbox estiver aberto espera você fechá-lo."

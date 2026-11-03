@@ -261,6 +261,11 @@
             "d": "Hot cues de la A a la H y CALL, sobre la onda y la rejilla de rekordbox. Los arrastras, se ajustan al compás o al golpe y puedes deshacer. Eliges un flujo, como Mix in 64, Mix in 32 o uno tuyo hecho por bloques o aprendido de tu colección, y al pasar el ratón por la onda ves en transparente lo que pondría. Un clic lo coloca y te dice lo que no cabe. Auto marcar te propone dónde rompe cada pista, también en varias a la vez. Aprende tu forma de marcar de los cues que ya pusiste y de los que guardas, y separa lo que ve seguro de lo dudoso. Y si marcas los CALL en rekordbox, Surco pone los hot cues de tu flujo al cerrarlo. En una pista que rekordbox aún no ha analizado trabajas sobre la rejilla de Surco, y cuando rekordbox la analiza, tus cues se ajustan a la suya. Las letras siguen el orden de la pista, y si cada letra es un pad fijo para ti, lo apagas en Ajustes. Si la misma pista está en Traktor o Engine DJ, al guardar el flujo llega también allí, puesto con su rejilla y sus cues. Se escriben en rekordbox con copia de seguridad antes."
           },
           {
+            "t": "Cues fuera de la rejilla",
+            "s": "Saca las pistas cuyos cues no caen en el golpe de la rejilla.",
+            "d": "En rekordbox, Traktor y Engine DJ, Surco mide cada cue contra la rejilla de la pista y te dice cuántas pistas se pasan. Las filtras, abres el editor, borras sus cues y das a Auto marcar. Desde cuántos ms cuenta lo eliges en los ajustes de cues, entre 5, 10 y 20 ms. Por defecto, 10."
+          },
+          {
             "t": "Tu colección de rekordbox",
             "s": "Al convertir, la pista sigue siendo la misma en rekordbox, con sus playlists y cues.",
             "d": "Al convertir, la pista sigue siendo la misma en rekordbox, con sus playlists, sus cue points y su historial, y cambiar sus etiquetas no le cambia el nombre al archivo. Se activa en Ajustes y hace copia de seguridad antes. Si rekordbox está abierto, espera a que lo cierres."

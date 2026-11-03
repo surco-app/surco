@@ -261,6 +261,11 @@
             "d": "Hot cues de A à H et CALL, sur la forme d'onde et la grille de rekordbox. Fais-les glisser, ils s'aimantent à la mesure ou au temps, et tu peux annuler. Choisis un flux, comme Mix in 64, Mix in 32 ou l'un des tiens, monté à partir de blocs ou appris de ta collection, et en survolant la forme d'onde tu vois un fantôme de ce qu'il placerait. Un clic le place et te dit ce qui ne rentre pas. Le marquage auto suggère où chaque morceau décolle, aussi sur plusieurs à la fois. Il apprend ta façon de marquer à partir des cues que tu as déjà posés et de ceux que tu enregistres, et sépare ce dont il est sûr de ce dont il doute. Et si tu marques les CALL dans rekordbox, Surco place les hot cues de ton flux quand tu le fermes. Sur un morceau que rekordbox n'a pas encore analysé, tu travailles sur la grille de Surco, et une fois que rekordbox l'analyse, tes cues passent sur la sienne. Les lettres suivent l'ordre du morceau, et si chaque lettre est un pad fixe pour toi, désactive-le dans les Réglages. Si le même morceau est dans Traktor ou Engine DJ, l'enregistrement y place aussi le flux, sur sa grille et autour de ses cues. Écrit dans rekordbox après une sauvegarde."
           },
           {
+            "t": "Cues hors de la grille",
+            "s": "Sort les pistes dont les cues ne tombent pas sur le temps de la grille.",
+            "d": "Dans rekordbox, Traktor et Engine DJ, Surco mesure chaque cue par rapport à la grille de la piste et te dit combien de pistes dérivent. Tu les filtres, tu ouvres l'éditeur, tu effaces leurs cues et tu lances Marquage auto. Tu choisis à partir de combien de ms ça compte dans les réglages des cues, 5, 10 ou 20 ms. 10 par défaut."
+          },
+          {
             "t": "Ta collection rekordbox",
             "s": "Après la conversion, le morceau reste le même dans rekordbox, avec ses playlists et ses cues.",
             "d": "Après la conversion, le morceau reste le même morceau dans rekordbox, avec ses playlists, ses cue points et son historique, et modifier ses tags ne renomme jamais le fichier. Active-le dans les Réglages. Il sauvegarde d'abord, et si rekordbox est ouvert, il attend que tu le fermes."

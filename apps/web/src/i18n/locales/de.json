@@ -261,6 +261,11 @@
             "d": "Hot Cues A bis H und CALLs, auf der Wellenform und dem Raster von rekordbox. Zieh sie, sie rasten am Takt oder Beat ein, und du kannst alles rückgängig machen. Wähle einen Ablauf, etwa Mix in 64, Mix in 32 oder einen eigenen, aus Blöcken gebaut oder aus deiner Sammlung gelernt, und fährst du über die Wellenform, zeigt ein Schatten, was er setzen würde. Ein Klick setzt ihn und sagt dir, was nicht passt. Auto-Markieren schlägt vor, wo jeder Track losbricht, auch bei mehreren auf einmal. Es lernt aus den Cues, die du schon gesetzt hast und die du speicherst, wie du markierst, und trennt, was es sicher sieht, von dem, was es bezweifelt. Und markierst du die CALLs in rekordbox, setzt Surco beim Schließen die Hot Cues deines Ablaufs. Bei einem Track, den rekordbox noch nicht analysiert hat, arbeitest du auf dem Raster von Surco, und sobald rekordbox ihn analysiert, wandern deine Cues auf dessen Raster. Die Buchstaben folgen der Reihenfolge im Track, und ist jeder Buchstabe für dich ein festes Pad, schalte das in den Einstellungen aus. Ist derselbe Track in Traktor oder Engine DJ, setzt das Speichern den Ablauf auch dort, auf deren Raster und um deren Cues herum. Geschrieben wird in rekordbox erst nach einer Sicherung."
           },
           {
+            "t": "Cues neben dem Raster",
+            "s": "Zeigt dir die Tracks, deren Cues nicht auf dem Beat des Rasters liegen.",
+            "d": "In rekordbox, Traktor und Engine DJ misst Surco jeden Cue am Raster des Tracks und sagt dir, wie viele Tracks danebenliegen. Du filterst sie, öffnest den Editor, löschst ihre Cues und drückst Auto-Markieren. Ab wie vielen ms es zählt, wählst du in den Cue-Einstellungen, 5, 10 oder 20 ms. Standard ist 10."
+          },
+          {
             "t": "Deine rekordbox-Sammlung",
             "s": "Nach dem Konvertieren bleibt der Track in rekordbox derselbe, mit seinen Playlists und Cues.",
             "d": "Nach dem Konvertieren ist der Track in rekordbox weiterhin derselbe Track, mit seinen Playlists, Cue-Points und seinem Verlauf, und das Bearbeiten seiner Tags benennt die Datei nie um. Schalte es in den Einstellungen ein. Vorher legt es eine Sicherung an, und ist rekordbox offen, wartet es, bis du es schließt."
