@@ -348,6 +348,14 @@ function setApi(over: Record<string, unknown> = {}): void {
     traktorCueQueueReady: vi.fn<Api['traktorCueQueueReady']>().mockResolvedValue(undefined),
     onTraktorCueQueueChanged: vi.fn<Api['onTraktorCueQueueChanged']>(() => () => {}),
     onTraktorCueQueueApplied: vi.fn<Api['onTraktorCueQueueApplied']>(() => () => {}),
+    seratoCueQueue: vi
+      .fn<Api['seratoCueQueue']>()
+      .mockResolvedValue({ tracks: 0, changes: 0, items: [] }),
+    applySeratoCueQueue: vi.fn<Api['applySeratoCueQueue']>().mockResolvedValue(null),
+    discardSeratoCueQueue: vi.fn<Api['discardSeratoCueQueue']>().mockResolvedValue(undefined),
+    seratoCueQueueReady: vi.fn<Api['seratoCueQueueReady']>().mockResolvedValue(undefined),
+    onSeratoCueQueueChanged: vi.fn<Api['onSeratoCueQueueChanged']>(() => () => {}),
+    onSeratoCueQueueApplied: vi.fn<Api['onSeratoCueQueueApplied']>(() => () => {}),
     copiesStatus: vi.fn<Api['copiesStatus']>().mockResolvedValue([]),
     onCopiesChanged: vi.fn<Api['onCopiesChanged']>(() => () => {}),
     traktorCanSave: vi.fn<Api['traktorCanSave']>().mockResolvedValue(true),
@@ -636,22 +644,29 @@ describe('App Engine DJ cues', () => {
     )
   })
 
-  it('lines the waiting queues up as rekordbox, Engine DJ and Traktor, the order of the source rail', async () => {
+  it('lines the waiting queues up as rekordbox, Engine DJ, Traktor and Serato, the order of the source rail', async () => {
     const waiting = { tracks: 1, changes: 0, items: [] }
     openEngine({
       rekordboxQueue: vi.fn<Api['rekordboxQueue']>().mockResolvedValue(waiting),
       engineCueQueue: vi.fn<Api['engineCueQueue']>().mockResolvedValue(waiting),
       traktorCueQueue: vi.fn<Api['traktorCueQueue']>().mockResolvedValue(waiting),
+      seratoCueQueue: vi.fn<Api['seratoCueQueue']>().mockResolvedValue(waiting),
     })
     await renderApp()
+    await screen.findByTestId('serato-queue-pill')
     await screen.findByTestId('traktor-queue-pill')
     await screen.findByTestId('engine-queue-pill')
     await screen.findByTestId('rekordbox-queue-pill')
     expect(
       screen
-        .getAllByTestId(/^(rekordbox|engine|traktor)-queue-pill$/)
+        .getAllByTestId(/^(rekordbox|engine|traktor|serato)-queue-pill$/)
         .map((pill) => pill.dataset.testid),
-    ).toEqual(['rekordbox-queue-pill', 'engine-queue-pill', 'traktor-queue-pill'])
+    ).toEqual([
+      'rekordbox-queue-pill',
+      'engine-queue-pill',
+      'traktor-queue-pill',
+      'serato-queue-pill',
+    ])
   })
 })
 
@@ -779,7 +794,7 @@ describe('App Serato cues', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
   }
 
-  it('opens the cue editor on a row of a Serato crate, read-only, and keeps the track from being converted', async () => {
+  it('opens the cue editor on a row of a Serato crate in Serato’s words, and keeps the track from being converted', async () => {
     const read = vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue({
       contentId: 'serato:/m/b.wav',
       analysed: false,
@@ -792,12 +807,16 @@ describe('App Serato cues', () => {
       fingerprint: 'f0',
       gridFingerprint: '',
     })
-    openSerato({ rekordboxTrackCues: read })
+    openSerato({
+      rekordboxTrackCues: read,
+      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>().mockResolvedValue(null),
+    })
     await openFriday()
     fireEvent.click(screen.getAllByTestId('track-row')[1])
     await waitFor(() => expect(read).toHaveBeenCalledWith('serato:/m/b.wav'))
-    expect(await screen.findByTestId('cues-serato-A')).toBeInTheDocument()
-    expect(screen.getByTestId('cues-read-only')).toBeInTheDocument()
+    expect(await screen.findByTestId('cues-unanalysed')).toHaveTextContent(
+      'Serato has not analysed this track yet',
+    )
     expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
     expect(screen.getByTestId('process-btn')).toHaveAccessibleDescription(
       'Serato would lose the track and its cues',
@@ -844,14 +863,45 @@ describe('App Serato cues', () => {
     expect(screen.queryByTestId('source-tree-notice')).toBeNull()
   })
 
-  it('offers no Auto mark over several Serato rows, since their cues cannot be saved', async () => {
+  it('offers Auto mark over several Serato rows, as over any other program’s', async () => {
     openSerato({ rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue(null) })
     await openFriday()
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    expect(await screen.findByTestId('cues-single-only')).toBeInTheDocument()
-    expect(screen.queryByTestId('cues-auto-mark-all')).toBeNull()
+    expect(await screen.findByTestId('cues-auto-mark-all')).toBeInTheDocument()
+  })
+
+  it('marks a Serato row whose cues wait for Serato to close', async () => {
+    openSerato({
+      seratoCueQueue: vi.fn<Api['seratoCueQueue']>().mockResolvedValue({
+        tracks: 1,
+        changes: 0,
+        items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+      }),
+    })
+    await openFriday()
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-wave')[0]).toHaveAttribute('data-pending', 'true'),
+    )
+    expect(screen.getAllByTestId('track-wave')[1]).not.toHaveAttribute('data-pending')
+  })
+
+  it('watches the Serato queue from the start and shows what waits for Serato to close', async () => {
+    const seratoCueQueueReady = vi.fn<Api['seratoCueQueueReady']>().mockResolvedValue(undefined)
+    openSerato({
+      seratoCueQueueReady,
+      seratoCueQueue: vi.fn<Api['seratoCueQueue']>().mockResolvedValue({
+        tracks: 1,
+        changes: 0,
+        items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+      }),
+    })
+    await renderApp()
+    expect(await screen.findByTestId('serato-queue-pill')).toHaveTextContent(
+      '1 track waits for you to close Serato',
+    )
+    expect(seratoCueQueueReady).toHaveBeenCalled()
   })
 })
 

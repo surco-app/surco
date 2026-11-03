@@ -998,11 +998,17 @@
         "saveAll_other": "{{count}} トラックを Engine DJ に保存"
       },
       "serato": {
-        "readOnly": "Surco では Serato は読み取り専用です",
         "running": "Serato が開いています。閉じるまでキューが最新でない可能性があります。",
         "unreadable": "Serato からキューを読み取れませんでした",
-        "none": "このトラックには Serato のホットキューがありません",
-        "loop": "ループ {{start}}〜{{end}}"
+        "save": "Serato に保存",
+        "unanalysed": "Serato はまだこのトラックを解析していません",
+        "queuedStale": "保留中の保存は Serato でトラックが変更される前のもので、すでに古くなっています。現在 Serato にある内容を表示しています。",
+        "saveFailed": "Serato に保存できませんでした。キューはまだ保存されていません",
+        "autoUnreadable": "Surco はこのトラックの音声を読み取れませんでした",
+        "saveAll_one": "{{count}} トラックを Serato に保存",
+        "saveAll_other": "{{count}} トラックを Serato に保存",
+        "calls": "Serato には CALL がないため、保存されません。Serato に反映されるのはホットキューのみです",
+        "waiting": "Serato が開いています。変更は Serato を閉じたときに保存されます"
       },
       "traktor": {
         "save": "Traktor に保存",
@@ -2893,6 +2899,24 @@
     "pillElsewhere_other": "{{count}} 件が別の Traktor コレクションを待っています",
     "elsewhere_one": "{{count}} 件の変更が別の Traktor コレクションを待っています。そちらに戻ると適用されます",
     "elsewhere_other": "{{count}} 件の変更が別の Traktor コレクションを待っています。そちらに戻ると適用されます"
+  },
+  "seratoQueue": {
+    "pillTracks_one": "{{count}} トラックが Serato の終了を待っています",
+    "pillTracks_other": "{{count}} トラックが Serato の終了を待っています",
+    "pillChanges_one": "{{count}} 件の変更が Serato の終了を待っています",
+    "pillChanges_other": "{{count}} 件の変更が Serato の終了を待っています",
+    "pillHalted": "Serato の変更を保留中",
+    "applied_one": "Serato に反映しました · {{count}} トラック",
+    "applied_other": "Serato に反映しました · {{count}} トラック",
+    "appliedChanges_one": "Serato に反映しました · {{count}} 件の変更",
+    "appliedChanges_other": "Serato に反映しました · {{count}} 件の変更",
+    "writeFailed": "Serato にキューを保存できませんでした。ファイルは元のままです",
+    "discardConfirm": "待機中の内容を破棄しますか？Serato のキューは Serato の状態のままです",
+    "notice": {
+      "cuesChanged": "{{track}} のキューが Serato で変更されました。もう一度マークしてください",
+      "callsDropped_one": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。Serato はホットキューしか保持しません",
+      "callsDropped_other": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。Serato はホットキューしか保持しません"
+    }
   },
   "cueWave": {
     "notAnalysed": "このトラックは rekordbox で分析されていません。キューを設定するには rekordbox で分析してください",

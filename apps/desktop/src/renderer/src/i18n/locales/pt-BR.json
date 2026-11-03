@@ -998,11 +998,17 @@
         "saveAll_other": "Salvar {{count}} faixas no Engine DJ"
       },
       "serato": {
-        "readOnly": "O Serato é somente leitura no Surco",
         "running": "O Serato está aberto. Os cues podem não estar atualizados até você fechá-lo.",
         "unreadable": "Não foi possível ler os cues do Serato",
-        "none": "O Serato não tem hot cues nesta faixa",
-        "loop": "Loop de {{start}} a {{end}}"
+        "save": "Salvar no Serato",
+        "unanalysed": "O Serato ainda não analisou esta faixa",
+        "queuedStale": "O salvamento pendente foi feito antes de a faixa mudar no Serato e não vale mais. Você vê o que o Serato tem agora.",
+        "saveFailed": "Não foi possível salvar no Serato. Os cues continuam sem salvar",
+        "autoUnreadable": "O Surco não conseguiu ler o áudio desta faixa",
+        "saveAll_one": "Salvar {{count}} faixa no Serato",
+        "saveAll_other": "Salvar {{count}} faixas no Serato",
+        "calls": "O Serato não tem CALL, então eles não são salvos. Só os hot cues chegam ao Serato",
+        "waiting": "O Serato está aberto. Suas mudanças serão salvas quando você fechá-lo"
       },
       "traktor": {
         "save": "Salvar no Traktor",
@@ -2893,6 +2899,24 @@
     "pillElsewhere_other": "{{count}} pendentes de outra coleção do Traktor",
     "elsewhere_one": "{{count}} alteração espera outra coleção do Traktor. Ela será aplicada quando você voltar a ela",
     "elsewhere_other": "{{count}} alterações esperam outra coleção do Traktor. Elas serão aplicadas quando você voltar a ela"
+  },
+  "seratoQueue": {
+    "pillTracks_one": "{{count}} faixa espera você fechar o Serato",
+    "pillTracks_other": "{{count}} faixas esperam você fechar o Serato",
+    "pillChanges_one": "{{count}} mudança espera você fechar o Serato",
+    "pillChanges_other": "{{count}} mudanças esperam você fechar o Serato",
+    "pillHalted": "Mudanças do Serato em pausa",
+    "applied_one": "Pronto no Serato · {{count}} faixa",
+    "applied_other": "Pronto no Serato · {{count}} faixas",
+    "appliedChanges_one": "Pronto no Serato · {{count}} mudança",
+    "appliedChanges_other": "Pronto no Serato · {{count}} mudanças",
+    "writeFailed": "Não foi possível salvar os cues no Serato. Os arquivos continuam como estavam",
+    "discardConfirm": "Descartar o que está esperando? Seus cues do Serato ficam como o Serato os tem",
+    "notice": {
+      "cuesChanged": "Os cues de {{track}} mudaram no Serato. Marque-os de novo",
+      "callsDropped_one": "{{count}} CALL de {{track}} não foi salvo ({{times}}). O Serato só guarda hot cues",
+      "callsDropped_other": "{{count}} CALLs de {{track}} não foram salvos ({{times}}). O Serato só guarda hot cues"
+    }
   },
   "cueWave": {
     "notAnalysed": "Esta faixa não foi analisada no rekordbox. Analise lá para colocar cues",

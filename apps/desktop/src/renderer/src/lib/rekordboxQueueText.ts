@@ -108,6 +108,27 @@ export const TRAKTOR_QUEUE_WORDS: QueueWords = {
   },
 }
 
+export const SERATO_QUEUE_WORDS: QueueWords = {
+  pillTracks: 'seratoQueue.pillTracks',
+  pillChanges: 'seratoQueue.pillChanges',
+  pillTracksUnplugged: 'seratoQueue.pillTracks',
+  pillChangesUnplugged: 'seratoQueue.pillChanges',
+  pillHalted: 'seratoQueue.pillHalted',
+  pillElsewhere: 'seratoQueue.pillTracks',
+  halted: 'seratoQueue.writeFailed',
+  elsewhere: 'seratoQueue.pillTracks',
+  discardConfirm: 'seratoQueue.discardConfirm',
+  applied: 'seratoQueue.applied',
+  appliedChanges: 'seratoQueue.appliedChanges',
+  backupFailed: 'seratoQueue.writeFailed',
+  refused: () => 'seratoQueue.writeFailed',
+  notices: {
+    ...REKORDBOX_QUEUE_WORDS.notices,
+    'cues-changed': 'seratoQueue.notice.cuesChanged',
+    'cues-calls-dropped': 'seratoQueue.notice.callsDropped',
+  },
+}
+
 export function noticeText(
   tr: TFunction,
   notice: RekordboxQueueNotice,

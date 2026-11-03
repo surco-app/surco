@@ -998,11 +998,17 @@
         "saveAll_other": "Save {{count}} tracks to Engine DJ"
       },
       "serato": {
-        "readOnly": "Serato is read-only in Surco",
         "running": "Serato is open. The cues may be out of date until you close it.",
         "unreadable": "Could not read the cues from Serato",
-        "none": "Serato has no hot cues on this track",
-        "loop": "Loop {{start}} to {{end}}"
+        "save": "Save to Serato",
+        "unanalysed": "Serato has not analysed this track yet",
+        "queuedStale": "The queued save was made before the track changed in Serato and is out of date. You see what Serato holds now.",
+        "saveFailed": "Could not save to Serato. The cues are still not saved",
+        "autoUnreadable": "Surco could not read the audio of this track",
+        "saveAll_one": "Save {{count}} track to Serato",
+        "saveAll_other": "Save {{count}} tracks to Serato",
+        "calls": "Serato has no CALLs, so they are not saved. Only the hot cues reach Serato",
+        "waiting": "Serato is open. Your changes will be saved when you close it"
       },
       "traktor": {
         "save": "Save to Traktor",
@@ -2893,6 +2899,24 @@
     "pillElsewhere_other": "{{count}} waiting for another Traktor collection",
     "elsewhere_one": "{{count}} change waits for another Traktor collection. It will be applied when you go back to it",
     "elsewhere_other": "{{count}} changes wait for another Traktor collection. They will be applied when you go back to it"
+  },
+  "seratoQueue": {
+    "pillTracks_one": "{{count}} track waits for you to close Serato",
+    "pillTracks_other": "{{count}} tracks wait for you to close Serato",
+    "pillChanges_one": "{{count}} change waits for you to close Serato",
+    "pillChanges_other": "{{count}} changes wait for you to close Serato",
+    "pillHalted": "Serato changes on hold",
+    "applied_one": "Done in Serato · {{count}} track",
+    "applied_other": "Done in Serato · {{count}} tracks",
+    "appliedChanges_one": "Done in Serato · {{count}} change",
+    "appliedChanges_other": "Done in Serato · {{count}} changes",
+    "writeFailed": "Couldn't save the cues to Serato. The files are as they were",
+    "discardConfirm": "Discard what is waiting? Your Serato cues stay as Serato has them",
+    "notice": {
+      "cuesChanged": "The cues of {{track}} changed in Serato. Mark them again",
+      "callsDropped_one": "{{count}} CALL of {{track}} was not saved ({{times}}). Serato only keeps hot cues",
+      "callsDropped_other": "{{count}} CALLs of {{track}} were not saved ({{times}}). Serato only keeps hot cues"
+    }
   },
   "cueWave": {
     "notAnalysed": "This track is not analysed in rekordbox. Analyse it there to set cues",

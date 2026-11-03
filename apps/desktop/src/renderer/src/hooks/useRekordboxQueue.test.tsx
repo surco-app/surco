@@ -7,7 +7,7 @@ import type { Api } from '../../../preload/api'
 import type { RekordboxQueueApplied, RekordboxQueueState } from '../../../shared/types'
 import '../i18n'
 import { installApi } from '../test/api'
-import { ENGINE_CUE_QUEUE, useRekordboxQueue } from './useRekordboxQueue'
+import { ENGINE_CUE_QUEUE, SERATO_CUE_QUEUE, useRekordboxQueue } from './useRekordboxQueue'
 
 afterEach(cleanup)
 
@@ -220,6 +220,71 @@ describe('useRekordboxQueue on the Engine DJ cue queue', () => {
     await act(() => hook.result.current.discard())
     expect(applyEngineCueQueue).toHaveBeenCalled()
     expect(discardEngineCueQueue).toHaveBeenCalled()
+    expect(applyRekordboxQueue).not.toHaveBeenCalled()
+  })
+})
+
+describe('useRekordboxQueue on the Serato cue queue', () => {
+  it('watches a Serato queue left from the last session and tells the DJ which track it could not write', async () => {
+    let applied: (a: RekordboxQueueApplied) => void = () => {}
+    let changed: (s: RekordboxQueueState) => void = () => {}
+    const seratoCueQueueReady = vi.fn<Api['seratoCueQueueReady']>(async () => {})
+    installApi({
+      seratoCueQueue: vi.fn<Api['seratoCueQueue']>(async () => WAITING),
+      onSeratoCueQueueChanged: (cb) => {
+        changed = cb
+        return () => {}
+      },
+      onSeratoCueQueueApplied: (cb) => {
+        applied = cb
+        return () => {}
+      },
+      seratoCueQueueReady,
+    })
+    const client = new QueryClient()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    const notify = vi.fn()
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    )
+    const hook = renderHook(() => useRekordboxQueue(notify, vi.fn(), vi.fn(), SERATO_CUE_QUEUE), {
+      wrapper,
+    })
+    await waitFor(() => expect(hook.result.current.state).toEqual(WAITING))
+    expect(seratoCueQueueReady).toHaveBeenCalled()
+    act(() => changed({ ...WAITING, tracks: 2 }))
+    expect(hook.result.current.state.tracks).toBe(2)
+    act(() =>
+      applied({
+        tracks: 1,
+        changes: 0,
+        notices: [{ code: 'cues-write-failed', track: 'Tengo' }],
+        written: [],
+      }),
+    )
+    expect(notify).toHaveBeenCalledWith(
+      'Done in Serato · 1 track. The cues of Tengo were not saved. Surco could not write the file',
+      'neutral',
+    )
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['rekordbox-track-cues'] })
+  })
+
+  it('applies and discards through the Serato queue, never rekordbox’s', async () => {
+    const applySeratoCueQueue = vi.fn<Api['applySeratoCueQueue']>(async () => null)
+    const discardSeratoCueQueue = vi.fn<Api['discardSeratoCueQueue']>(async () => {})
+    const applyRekordboxQueue = vi.fn<Api['applyRekordboxQueue']>(async () => null)
+    installApi({ applySeratoCueQueue, discardSeratoCueQueue, applyRekordboxQueue })
+    const client = new QueryClient()
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    )
+    const hook = renderHook(() => useRekordboxQueue(vi.fn(), vi.fn(), vi.fn(), SERATO_CUE_QUEUE), {
+      wrapper,
+    })
+    await act(() => hook.result.current.applyNow())
+    await act(() => hook.result.current.discard())
+    expect(applySeratoCueQueue).toHaveBeenCalled()
+    expect(discardSeratoCueQueue).toHaveBeenCalled()
     expect(applyRekordboxQueue).not.toHaveBeenCalled()
   })
 })

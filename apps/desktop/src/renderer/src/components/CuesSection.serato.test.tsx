@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
+import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import { HOT_KINDS } from '../../../shared/cueRules'
-import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import type { TrackCues } from '../../../shared/types'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import '../i18n'
@@ -18,28 +18,39 @@ afterEach(cleanup)
 afterEach(resetCueSession)
 afterEach(resetEditorSections)
 
+beforeEach(() => {
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+    left: 0,
+    top: 0,
+    width: 400,
+    height: 80,
+    right: 400,
+    bottom: 80,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  })
+})
+
 const ID = 'serato:/Music/s.mp3'
+const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32, CALLS_ONLY]
+const GRID = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
+const bar = (n: number) => n * 2000
 const READ: TrackCues = {
   contentId: ID,
-  analysed: false,
-  grid: [],
+  analysed: true,
+  grid: GRID,
   strong: [],
   phrases: [],
-  cues: [
-    { id: '0', ms: 57606, kind: HOT_KINDS[0], color: 2, name: 'Intro' },
-    { id: '1', ms: 71553, kind: HOT_KINDS[1], color: 5 },
-  ],
-  loops: [
-    { id: '0', startMs: 57612, endMs: 71941, name: 'Build' },
-    { id: '1', startMs: 64777, endMs: 79105 },
-  ],
+  cues: [{ id: '0', ms: bar(8), kind: HOT_KINDS[0], color: 2, name: 'Intro' }],
+  loops: [{ id: '0', startMs: bar(16), endMs: bar(24), name: 'Build' }],
   wave: null,
-  durationMs: 300000,
+  durationMs: 400000,
   fingerprint: 'f0',
   gridFingerprint: '',
 }
 
-function setup(read: TrackCues | null | Error = READ, running = false) {
+function setup(read: TrackCues | null | Error = READ, running = false, over: Partial<Api> = {}) {
   const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
   const seratoRunning = vi.fn<Api['seratoRunning']>(async () => running)
   installApi({
@@ -50,11 +61,12 @@ function setup(read: TrackCues | null | Error = READ, running = false) {
     rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
     saveRekordboxCues,
     seratoRunning,
+    ...over,
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
-      <SettingsProvider settings={{}}>
+      <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine' }}>
         <CuesSection
           cue={{ contentId: ID, path: '/Music/s.mp3', label: 'S' }}
           open
@@ -66,60 +78,118 @@ function setup(read: TrackCues | null | Error = READ, running = false) {
   return { saveRekordboxCues, seratoRunning, client }
 }
 
+const ready = () => waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
+const markAt = (ms: number) => {
+  fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: ms / 1000 })
+  fireEvent.mouseUp(window, { clientX: ms / 1000 })
+  fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Enter' })
+}
+
 describe('CuesSection on a Serato track', () => {
-  it('shows the hot cues Serato saved, each on its letter with its colour, time and name', async () => {
-    setup()
-    const a = await screen.findByTestId('cues-serato-A')
-    expect(a).toHaveTextContent('A')
-    expect(a).toHaveTextContent('0:57.6')
-    expect(a).toHaveTextContent('Intro')
-    expect(screen.getByTestId('cues-serato-A-letter')).toHaveStyle({
-      backgroundColor: hotCueColor(2),
+  it('opens the normal cue editor and saves the marks to Serato under the track’s Serato id', async () => {
+    const { saveRekordboxCues } = setup()
+    await ready()
+    expect(screen.getByTestId('cues-save')).toHaveAccessibleName('Save to Serato')
+    markAt(bar(64))
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    expect(saveRekordboxCues.mock.calls[0][0][0]).toMatchObject({
+      contentId: ID,
+      path: '/Music/s.mp3',
+      label: 'S',
+      fingerprint: 'f0',
     })
-    expect(screen.getByTestId('cues-serato-B')).toHaveTextContent('1:11.5')
   })
 
-  it('shows the loops Serato saved with where each starts and ends', async () => {
+  it('lets the DJ pick any colour for a Serato hot cue, since Serato keeps the colour', async () => {
     setup()
-    expect(await screen.findByTestId('cues-serato-loop-0')).toHaveTextContent(
-      'Loop 0:57.6 to 1:11.9',
-    )
-    expect(screen.getByTestId('cues-serato-loop-0')).toHaveTextContent('Build')
-    expect(screen.getByTestId('cues-serato-loop-1')).toHaveTextContent('Loop 1:04.7 to 1:19.1')
+    await ready()
+    fireEvent.click(screen.getAllByTestId(/^cue-wave-hot-/)[0])
+    expect(await screen.findByTestId('cues-colour')).toBeInTheDocument()
   })
 
-  it('offers no way to change or save them, and says Serato is read-only, so nothing is ever written to Serato', async () => {
-    setup()
-    await screen.findByTestId('cues-serato-A')
-    expect(screen.getByTestId('cues-read-only')).toHaveTextContent('Serato is read-only in Surco')
-    expect(screen.queryByTestId('cues-save')).toBeNull()
-    expect(screen.queryByTestId('cues-auto-mark')).toBeNull()
-    expect(screen.queryByTestId('cues-editor')).toBeNull()
-    expect(screen.queryByTestId('cues-clear-all')).toBeNull()
-  })
-
-  it('warns that the cues may be out of date while Serato is open, since Serato writes them when it closes', async () => {
-    setup(READ, true)
-    expect(await screen.findByTestId('cues-serato-running')).toHaveTextContent(
-      'Serato is open. The cues may be out of date until you close it.',
+  it('says while Serato is open that the changes will be saved once it is closed, and still lets them be saved', async () => {
+    const { saveRekordboxCues } = setup(READ, true)
+    await ready()
+    expect(await screen.findByTestId('cues-serato-waiting')).toHaveTextContent(
+      'Serato is open. Your changes will be saved when you close it',
     )
+    markAt(bar(64))
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
   })
 
   it('does not warn when Serato is closed', async () => {
     const { client } = setup(READ, false)
-    await screen.findByTestId('cues-serato-A')
+    await ready()
     await waitFor(() =>
       expect(client.getQueryState(['serato-running', ID])?.status).toBe('success'),
     )
-    expect(screen.queryByTestId('cues-serato-running')).toBeNull()
+    expect(screen.queryByTestId('cues-serato-waiting')).toBeNull()
   })
 
-  it('says the track has no hot cues when Serato marked none', async () => {
-    setup({ ...READ, cues: [], loops: [] })
-    expect(await screen.findByTestId('cues-serato-none')).toHaveTextContent(
-      'Serato has no hot cues on this track',
+  it('offers Auto mark on a track Serato has a beat grid for', async () => {
+    setup()
+    await ready()
+    expect(screen.getByTestId('cues-auto-mark')).toBeInTheDocument()
+  })
+
+  it('offers neither Auto mark nor saving on a track without a Serato beat grid, and says Serato has not analysed it', async () => {
+    setup({ ...READ, analysed: false, grid: [] })
+    expect(await screen.findByTestId('cues-unanalysed')).toHaveTextContent(
+      'Serato has not analysed this track yet',
     )
-    expect(screen.getByTestId('cues-read-only')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-auto-mark')).toBeNull()
+    expect(screen.queryByTestId('cues-save')).toBeNull()
+  })
+
+  it('says the CALLs stay in Surco, since Serato has none', async () => {
+    setup()
+    await ready()
+    markAt(bar(64))
+    expect(await screen.findByTestId('cues-serato-calls')).toHaveTextContent(
+      'Serato has no CALLs, so they are not saved. Only the hot cues reach Serato',
+    )
+  })
+
+  it('says in Serato’s words when the save did not go through', async () => {
+    setup(READ, false, {
+      saveRekordboxCues: vi.fn<Api['saveRekordboxCues']>(async () => {
+        throw new Error('ipc down')
+      }),
+    })
+    await ready()
+    markAt(bar(64))
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('cues-save'))
+    expect(await screen.findByTestId('cues-save-failed')).toHaveTextContent(
+      'Could not save to Serato. The cues are still not saved',
+    )
+  })
+
+  it('says a queued save is out of date once the track changed in Serato', async () => {
+    setup(READ, false, {
+      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => ({
+        wanted: [{ ms: bar(64), kind: HOT_KINDS[1], color: 1 }],
+        fingerprint: 'older',
+      })),
+    })
+    expect(await screen.findByTestId('cues-queued-stale')).toHaveTextContent(
+      'The queued save was made before the track changed in Serato and is out of date. You see what Serato holds now.',
+    )
+  })
+
+  it('says Surco could not read the audio when Auto mark has nothing to detect on', async () => {
+    setup(READ, false, {
+      rekordboxCueDropInput: vi.fn<Api['rekordboxCueDropInput']>(async () => null),
+    })
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-auto-mark'))
+    expect(await screen.findByTestId('cues-auto-unreadable')).toHaveTextContent(
+      'Surco could not read the audio of this track',
+    )
   })
 
   it('says the cues could not be read when the file is gone, without an error', async () => {

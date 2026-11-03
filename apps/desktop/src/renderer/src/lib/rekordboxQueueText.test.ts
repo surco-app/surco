@@ -10,6 +10,7 @@ import {
   noticeText,
   partText,
   pillText,
+  SERATO_QUEUE_WORDS,
   TRAKTOR_QUEUE_WORDS,
 } from './rekordboxQueueText'
 
@@ -277,5 +278,56 @@ describe('playlist notices from the Traktor and Engine DJ queues', () => {
     expect(noticeText(tr, { code: 'not-in-library', track: 'Tengo' }, TRAKTOR_QUEUE_WORDS)).toBe(
       'Tengo is no longer in Traktor. Its playlists were not changed',
     )
+  })
+})
+
+describe('Serato queue text', () => {
+  it('says the tracks wait for Serato to close', () => {
+    expect(pillText(tr, { tracks: 2, changes: 0, items: [] }, SERATO_QUEUE_WORDS)).toBe(
+      '2 tracks wait for you to close Serato',
+    )
+  })
+
+  it('says what landed in Serato and which CALLs it did not keep', () => {
+    expect(
+      appliedMessage(
+        tr,
+        {
+          tracks: 1,
+          changes: 0,
+          notices: [{ code: 'cues-calls-dropped', track: 'Tengo', calls: [4000] }],
+          written: [],
+        },
+        SERATO_QUEUE_WORDS,
+      )?.text,
+    ).toBe(
+      'Done in Serato · 1 track. 1 CALL of Tengo was not saved (0:04). Serato only keeps hot cues',
+    )
+  })
+
+  it('says the cues changed in Serato when a save was refused for it', () => {
+    expect(noticeText(tr, { code: 'cues-changed', track: 'Tengo' }, SERATO_QUEUE_WORDS)).toBe(
+      'The cues of Tengo changed in Serato. Mark them again',
+    )
+  })
+
+  it('speaks of Serato alone in anything the Serato queue can say', () => {
+    const queueLines = [
+      tr(SERATO_QUEUE_WORDS.discardConfirm),
+      tr(SERATO_QUEUE_WORDS.refused('write-failed')),
+      tr(SERATO_QUEUE_WORDS.refused('unreadable')),
+      tr(SERATO_QUEUE_WORDS.backupFailed),
+      tr(SERATO_QUEUE_WORDS.halted),
+      pillText(tr, { tracks: 1, changes: 0, items: [], halted: true }, SERATO_QUEUE_WORDS),
+      pillText(tr, { tracks: 1, changes: 0, items: [], unplugged: true }, SERATO_QUEUE_WORDS),
+      pillText(tr, { tracks: 0, changes: 0, items: [], elsewhere: 1 }, SERATO_QUEUE_WORDS),
+      tr(SERATO_QUEUE_WORDS.elsewhere, { count: 1 }),
+    ]
+    for (const line of queueLines) expect(line).toMatch(/Serato/)
+    const trackLines = (['cues-write-failed', 'cues-invalid', 'cues-too-many'] as const).map(
+      (code) => noticeText(tr, { code, track: 'Tengo' }, SERATO_QUEUE_WORDS),
+    )
+    for (const line of [...queueLines, ...trackLines])
+      expect(line).not.toMatch(/rekordbox|Engine DJ|Traktor/)
   })
 })

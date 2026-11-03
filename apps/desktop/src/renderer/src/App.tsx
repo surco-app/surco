@@ -19,10 +19,11 @@ import type { CueQuantize } from '../../shared/cueQuantize'
 import { effectiveMeta } from '../../shared/customFields'
 import { normalizeImportFields } from '../../shared/defaults'
 import {
+  CUE_PROGRAMS,
+  type CueProgram,
   programOf,
   WRITABLE_PROGRAMS,
   type WritableProgram,
-  writableInOrder,
 } from '../../shared/djProgram'
 import { SAME_CLOCK_FILE } from '../../shared/gridEdit'
 import { emptyMetadata } from '../../shared/metadata'
@@ -144,7 +145,6 @@ import { railAlert } from './lib/copiesView'
 import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
 import { autoMarkTracks } from './lib/cueAutoMark'
 import { forgetStaleDrafts } from './lib/cueDrafts'
-import { CUE_PROGRAMS } from './lib/cuePrograms'
 import {
   type AutoMark,
   focusCue,
@@ -237,7 +237,8 @@ import type { CopiedTags, TrackItem } from './types'
 const NO_HIDDEN_SOURCES: PlaylistSource[] = []
 const PREFETCH_HOVER_MS = 150
 const PLAYER_LEAVE_MS = 200
-const QUEUE_PILL_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
+const QUEUE_PILL_ORDER = CUE_PROGRAMS
+const ignore = () => {}
 const SYNC_ISSUES: Record<
   WritableProgram,
   {
@@ -863,9 +864,11 @@ export default function App(): React.JSX.Element {
     PROGRAM_QUEUES.traktor.source,
   )
   const { applyNow: applyTraktorQueueNow, discard: discardTraktorQueue } = traktorCueQueue
+  const seratoCueQueue = useRekordboxQueue(notifyEdit, ignore, ignore, PROGRAM_QUEUES.serato.source)
+  const { applyNow: applySeratoQueueNow, discard: discardSeratoQueue } = seratoCueQueue
   const queuePill = useMemo(() => {
     const queues: Record<
-      WritableProgram,
+      CueProgram,
       { state: RekordboxQueueState; applyNow: () => Promise<void>; discard: () => Promise<void> }
     > = {
       rekordbox: { state: rekordboxQueue.state, applyNow: applyQueueNow, discard: discardQueue },
@@ -878,6 +881,11 @@ export default function App(): React.JSX.Element {
         state: traktorCueQueue.state,
         applyNow: applyTraktorQueueNow,
         discard: discardTraktorQueue,
+      },
+      serato: {
+        state: seratoCueQueue.state,
+        applyNow: applySeratoQueueNow,
+        discard: discardSeratoQueue,
       },
     }
     return (
@@ -904,6 +912,9 @@ export default function App(): React.JSX.Element {
     traktorCueQueue.state,
     applyTraktorQueueNow,
     discardTraktorQueue,
+    seratoCueQueue.state,
+    applySeratoQueueNow,
+    discardSeratoQueue,
   ])
   // The USB export: macOS and Windows, with a rekordbox collection or from the Engine DJ
   // tree. Its state lives in usbExportStore, outside React; App reads only the phase (for
@@ -2436,7 +2447,7 @@ export default function App(): React.JSX.Element {
     enabled: browser.source === 'serato',
     staleTime: 0,
   })
-  const cuesMarkable = cuesOpen && sourceProgram !== null && !CUE_PROGRAMS[sourceProgram].readOnly
+  const cuesMarkable = cuesOpen && sourceProgram !== null
   const crateOpen =
     editableOpen &&
     browser.playlist?.id !== RECENTLY_ADDED_ID &&
@@ -2448,16 +2459,23 @@ export default function App(): React.JSX.Element {
           ...rekordboxQueue.state.items,
           ...engineCueQueue.state.items,
           ...traktorCueQueue.state.items,
+          ...seratoCueQueue.state.items,
         ]
           .filter((i) => i.parts.some((p) => p.kind === 'cues'))
           .map((i) => i.key.slice('track:'.length)),
       ),
-    [rekordboxQueue.state, engineCueQueue.state, traktorCueQueue.state],
+    [rekordboxQueue.state, engineCueQueue.state, traktorCueQueue.state, seratoCueQueue.state],
   )
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-checks the kept drafts each time either cue queue changes; forgetStaleDrafts reads the queues fresh from main.
   useEffect(() => {
     void forgetStaleDrafts(queryClient)
-  }, [rekordboxQueue.state, engineCueQueue.state, traktorCueQueue.state, queryClient])
+  }, [
+    rekordboxQueue.state,
+    engineCueQueue.state,
+    traktorCueQueue.state,
+    seratoCueQueue.state,
+    queryClient,
+  ])
   useCueSessionFor(settings?.rekordboxDbPath)
   useCueSessionFor(settings?.engineLibraryDir)
   useCueSessionFor(settings?.traktorNmlPath)

@@ -48,7 +48,7 @@ afterEach(() => {
   resetCueSession()
 })
 
-function setup(twins: Record<string, LibraryTracks> = {}) {
+function setup(twins: Record<string, LibraryTracks> = {}, targets = TARGETS) {
   const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
   installApi({
     rekordboxCueTwins: vi.fn<Api['rekordboxCueTwins']>(async (file) => twins[file] ?? {}),
@@ -65,7 +65,7 @@ function setup(twins: Record<string, LibraryTracks> = {}) {
   render(
     <QueryClientProvider client={client}>
       <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine' }}>
-        <CuesBatchSection targets={TARGETS} onMark={onMark} onFlow={onFlow} />
+        <CuesBatchSection targets={targets} onMark={onMark} onFlow={onFlow} />
       </SettingsProvider>
     </QueryClientProvider>,
   )
@@ -271,6 +271,24 @@ describe('Cues over several selected tracks', () => {
     expect(saveRekordboxCues.mock.calls[0][0].map((r) => r.contentId).sort()).toEqual(
       ['103', '104', 'engine:2', T1, T2].sort(),
     )
+  })
+
+  it('counts the Serato tracks of the selection among what each program gets', async () => {
+    const S = 'serato:/m/a.wav'
+    const T1 = 'traktor:M/:m/:a.wav'
+    setup({ '/m/a.wav': { traktor: T1 } }, [{ contentId: S, path: '/m/a.wav', label: 'Maniac' }])
+    act(() =>
+      keepAutoMark(S, {
+        kind: 'proposed',
+        proposals: [bar(64)].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+      }),
+    )
+    fireEvent.click(screen.getByTestId('cues-batch-accept'))
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-batch-twin-traktor')).toHaveTextContent('1'),
+    )
+    expect(screen.getByTestId('cues-batch-twin-serato')).toHaveTextContent('1')
+    expect(screen.getByTestId('cues-batch-twins')).toHaveTextContent('Serato')
   })
 
   it('says how many tracks keep their unsaved changes in the other program', async () => {

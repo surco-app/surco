@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { WritableProgram } from '../../../shared/djProgram'
+import type { CueProgram } from '../../../shared/djProgram'
 import type {
   RekordboxQueueApplied,
   RekordboxQueueState,
@@ -13,6 +13,7 @@ import {
   ENGINE_QUEUE_WORDS,
   type QueueWords,
   REKORDBOX_QUEUE_WORDS,
+  SERATO_QUEUE_WORDS,
   TRAKTOR_QUEUE_WORDS,
 } from '../lib/rekordboxQueueText'
 
@@ -62,10 +63,22 @@ export const TRAKTOR_CUE_QUEUE: QueueSource = {
   words: TRAKTOR_QUEUE_WORDS,
 }
 
-export const PROGRAM_QUEUES: Record<WritableProgram, { source: QueueSource; testid: string }> = {
+export const SERATO_CUE_QUEUE: QueueSource = {
+  name: 'Serato cue queue',
+  read: () => window.api.seratoCueQueue(),
+  onChanged: (cb) => window.api.onSeratoCueQueueChanged(cb),
+  onApplied: (cb) => window.api.onSeratoCueQueueApplied(cb),
+  ready: () => window.api.seratoCueQueueReady(),
+  applyNow: () => window.api.applySeratoCueQueue(),
+  discard: () => window.api.discardSeratoCueQueue(),
+  words: SERATO_QUEUE_WORDS,
+}
+
+export const PROGRAM_QUEUES: Record<CueProgram, { source: QueueSource; testid: string }> = {
   rekordbox: { source: REKORDBOX_QUEUE, testid: 'rekordbox-queue' },
   engine: { source: ENGINE_CUE_QUEUE, testid: 'engine-queue' },
   traktor: { source: TRAKTOR_CUE_QUEUE, testid: 'traktor-queue' },
+  serato: { source: SERATO_CUE_QUEUE, testid: 'serato-queue' },
 }
 
 export function useRekordboxQueue(
