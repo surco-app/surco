@@ -3,7 +3,9 @@ import {
   CUE_GRID_TOLERANCE,
   cueGridDrift,
   DEFAULT_CUE_GRID_TOLERANCE,
+  nearestBeatMs,
   normalizeCueGridTolerance,
+  offGridCues,
 } from './cueGrid'
 
 const beatsAt120 = (from: number, count: number) =>
@@ -52,5 +54,39 @@ describe('normalizeCueGridTolerance', () => {
       expect(normalizeCueGridTolerance(value)).toBe(DEFAULT_CUE_GRID_TOLERANCE)
     }
     expect(DEFAULT_CUE_GRID_TOLERANCE).toBe(10)
+  })
+})
+
+describe('offGridCues', () => {
+  const beats = beatsAt120(100, 10)
+
+  it('names each cue past the tolerance with how far it sits from its beat, signed, so the DJ knows which way to move it', () => {
+    const cues = [
+      { key: 'a', ms: 100 },
+      { key: 'call', ms: 1086 },
+      { key: 'b', ms: 2108 },
+      { key: 'c', ms: 3106 },
+    ]
+    expect(offGridCues(cues, beats, 10)).toEqual([{ cue: { key: 'call', ms: 1086 }, driftMs: -14 }])
+    expect(offGridCues(cues, beats, 5).map((x) => x.driftMs)).toEqual([-14, 8, 6])
+  })
+
+  it('measures a cue past the last beat against the grid extended, like the filter does', () => {
+    expect(offGridCues([{ key: 'end', ms: 5585 }], beats, 10)).toEqual([
+      { cue: { key: 'end', ms: 5585 }, driftMs: -15 },
+    ])
+  })
+
+  it('names nothing when there is no grid to measure against', () => {
+    expect(offGridCues([{ key: 'a', ms: 1 }], [], 10)).toEqual([])
+  })
+})
+
+describe('nearestBeatMs', () => {
+  it('finds the beat a cue belongs to, also past either end of the grid', () => {
+    const beats = beatsAt120(100, 10)
+    expect(nearestBeatMs(1086, beats)).toBe(1100)
+    expect(nearestBeatMs(5585, beats)).toBe(5600)
+    expect(nearestBeatMs(-380, beats)).toBe(-400)
   })
 })
