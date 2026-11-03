@@ -1,5 +1,16 @@
 [
   {
+    "version": "1.21",
+    "date": "November 3, 2026",
+    "title": "Des cues sur le temps",
+    "items": [
+      {
+        "text": "Dans rekordbox, Traktor et Engine DJ, le filtre « Cues hors de la grille » te sort les pistes avec un cue qui ne tombe pas sur le temps de sa grille. Tu les ouvres, tu effaces leurs cues et tu lances « Marquage auto ». Dans Réglages › Cues, « Tolérance de la grille » fixe à partir de combien de ms ça compte, 5, 10 ou 20.",
+        "in": "1.21.0"
+      }
+    ]
+  },
+  {
     "version": "1.20",
     "date": "November 2, 2026",
     "title": "Les cues en un coup d’œil",

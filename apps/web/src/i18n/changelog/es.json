@@ -1,5 +1,16 @@
 [
   {
+    "version": "1.21",
+    "date": "3 de noviembre de 2026",
+    "title": "Cues en el golpe",
+    "items": [
+      {
+        "text": "En rekordbox, Traktor y Engine DJ, el filtro «Cues fuera de la rejilla» te saca las pistas con algún cue que no cae en el golpe de su rejilla. Las abres, borras sus cues y das a «Auto marcar». En Ajustes › Cues, «Tolerancia de la rejilla» decide desde cuántos ms cuenta, 5, 10 o 20.",
+        "in": "1.21.0"
+      }
+    ]
+  },
+  {
     "version": "1.20",
     "date": "2 de noviembre de 2026",
     "title": "Cues a la vista",

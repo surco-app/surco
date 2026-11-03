@@ -1,5 +1,16 @@
 [
   {
+    "version": "1.21",
+    "date": "November 3, 2026",
+    "title": "Cues na batida",
+    "items": [
+      {
+        "text": "No rekordbox, no Traktor e no Engine DJ, o filtro “Cues fora da grade” separa as faixas com algum cue que não cai na batida da grade. Você abre, apaga os cues e clica em “Marcar automático”. Em Ajustes › Cues, “Tolerância da grade” define a partir de quantos ms conta, 5, 10 ou 20.",
+        "in": "1.21.0"
+      }
+    ]
+  },
+  {
     "version": "1.20",
     "date": "November 2, 2026",
     "title": "Cues à vista",
