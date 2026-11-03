@@ -1065,7 +1065,8 @@
         "surcoDraft": "Ces cues ont été posés sur la grille de Surco. Enregistrez-les ou annulez-les pour régler la grille",
         "anchorAdd": "Ancre à la tête de lecture, commence une zone",
         "anchorRemove": "Retirer l'ancre à la tête de lecture",
-        "locked": "Le logiciel a verrouillé cette grille"
+        "locked": "Le logiciel a verrouillé cette grille",
+        "serato": "La grille de Serato vient de Serato et ne peut pas être modifiée ici"
       },
       "offGrid": {
         "before": "{{ms}} ms en avance",

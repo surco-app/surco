@@ -510,8 +510,10 @@ function Editing({
       (keptDraftOn(cue.contentId, read, queued) !== undefined && keptOnSurcoGrid(cue.contentId)),
   )
   const rekordboxGrid = programOf(cue.contentId) === 'rekordbox'
-  const gridOff =
-    !rekordboxGrid && (read.clockLeadMs === undefined || read.clockLeadMs === null)
+  const { fixedGrid } = cueProgramOf(cue.contentId)
+  const gridOff = fixedGrid
+    ? tr(fixedGrid)
+    : !rekordboxGrid && (read.clockLeadMs === undefined || read.clockLeadMs === null)
       ? tr('editor.cues.grid.unmeasured')
       : provisional
         ? tr('editor.cues.grid.provisional')
@@ -587,6 +589,7 @@ function Editing({
     queryFn: () => window.api.seratoRunning(),
     enabled: programOf(cue.contentId) === 'serato',
     staleTime: 0,
+    refetchInterval: 5000,
   })
   const [readingAudio, setReadingAudio] = useState(false)
   const [proposed, setProposed] = useState<DropProposal[] | null>(() => {
@@ -1754,7 +1757,7 @@ function Editing({
           {tr('editor.cues.traktor.noCollection')}
         </p>
       )}
-      {seratoOpen && (
+      {seratoOpen && (!unchanged || queued !== null) && (
         <p data-testid="cues-serato-waiting" className="mt-2 text-xs text-warn">
           {tr('editor.cues.serato.waiting')}
         </p>

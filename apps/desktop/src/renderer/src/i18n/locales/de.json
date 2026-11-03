@@ -1065,7 +1065,8 @@
         "surcoDraft": "Diese Cues wurden auf dem Surco-Raster gesetzt. Speichere oder verwirf sie, um das Raster anzupassen",
         "anchorAdd": "Anker am Abspielkopf, beginnt eine Zone",
         "anchorRemove": "Anker am Abspielkopf entfernen",
-        "locked": "Das Programm hat dieses Raster gesperrt"
+        "locked": "Das Programm hat dieses Raster gesperrt",
+        "serato": "Das Raster von Serato kommt aus Serato und lässt sich hier nicht ändern"
       },
       "offGrid": {
         "before": "{{ms}} ms zu früh",

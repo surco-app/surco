@@ -12,6 +12,7 @@ export interface CueProgram {
   collectionGate: 'traktor' | null
   callsNote: { key: string; testId: string } | null
   saveAllKey: string
+  fixedGrid: string | null
 }
 
 export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
@@ -25,6 +26,7 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     collectionGate: null,
     callsNote: null,
     saveAllKey: 'editor.cues.saveAll',
+    fixedGrid: null,
   },
   traktor: {
     slots: TRAKTOR_SLOTS,
@@ -36,6 +38,7 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     collectionGate: 'traktor',
     callsNote: { key: 'editor.cues.traktor.calls', testId: 'cues-traktor-calls' },
     saveAllKey: 'editor.cues.traktor.saveAll',
+    fixedGrid: null,
   },
   engine: {
     slots: ALL_SLOTS,
@@ -47,6 +50,7 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     collectionGate: null,
     callsNote: { key: 'editor.cues.engine.calls', testId: 'cues-engine-calls' },
     saveAllKey: 'editor.cues.engine.saveAll',
+    fixedGrid: null,
   },
   serato: {
     slots: { kinds: HOT_KINDS, pairCalls: false },
@@ -58,6 +62,7 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     collectionGate: null,
     callsNote: { key: 'editor.cues.serato.calls', testId: 'cues-serato-calls' },
     saveAllKey: 'editor.cues.serato.saveAll',
+    fixedGrid: 'editor.cues.grid.serato',
   },
 }
 

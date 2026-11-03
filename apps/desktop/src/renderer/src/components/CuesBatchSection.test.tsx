@@ -264,6 +264,11 @@ describe('Cues over several selected tracks', () => {
     expect(screen.getByTestId('cues-batch-twin-rekordbox')).toHaveTextContent('2')
     expect(screen.getByTestId('cues-batch-twin-engine')).toHaveTextContent('1')
     expect(twins).toHaveTextContent('Engine DJ')
+    expect(screen.getAllByTestId(/^cues-batch-twin-/).map((row) => row.dataset.testid)).toEqual([
+      'cues-batch-twin-rekordbox',
+      'cues-batch-twin-traktor',
+      'cues-batch-twin-engine',
+    ])
     const save = screen.getByTestId('cues-batch-save')
     expect(save).toHaveTextContent(i18n.t('editor.cues.saveAllMixed', { count: 2 }))
     fireEvent.click(save)
@@ -288,6 +293,10 @@ describe('Cues over several selected tracks', () => {
       expect(screen.getByTestId('cues-batch-twin-traktor')).toHaveTextContent('1'),
     )
     expect(screen.getByTestId('cues-batch-twin-serato')).toHaveTextContent('1')
+    expect(screen.getAllByTestId(/^cues-batch-twin-/).map((row) => row.dataset.testid)).toEqual([
+      'cues-batch-twin-traktor',
+      'cues-batch-twin-serato',
+    ])
     expect(screen.getByTestId('cues-batch-twins')).toHaveTextContent('Serato')
   })
 

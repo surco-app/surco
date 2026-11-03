@@ -4,7 +4,7 @@ import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { activeCueFlow, MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
-import { CUE_PROGRAMS, programOf } from '../../../shared/djProgram'
+import { programOf, programsInOrder } from '../../../shared/djProgram'
 import type { CueLibrary } from '../../../shared/types'
 import { type AutoMarkTarget, acceptAutoMarks } from '../lib/cueAutoMark'
 import { forgetStaleDrafts } from '../lib/cueDrafts'
@@ -24,7 +24,7 @@ import { useAppSettings } from '../lib/settingsContext'
 import { saveAllKey } from './CuesSection'
 import { Select } from './Select'
 
-const LIBRARIES = CUE_PROGRAMS
+const LIBRARIES = programsInOrder(['rekordbox', 'traktor', 'engine', 'serato'])
 const LIBRARY_NAME: Record<CueLibrary, string> = {
   rekordbox: 'rekordbox',
   traktor: 'Traktor',

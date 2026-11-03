@@ -1065,7 +1065,8 @@
         "surcoDraft": "Estos cues se pusieron sobre la rejilla de Surco. Guárdalos o descártalos para ajustar la rejilla",
         "anchorAdd": "Ancla en el cabezal, empieza una zona",
         "anchorRemove": "Quitar el ancla del cabezal",
-        "locked": "El programa tiene esta rejilla bloqueada"
+        "locked": "El programa tiene esta rejilla bloqueada",
+        "serato": "La rejilla de Serato viene de Serato y no se puede cambiar aquí"
       },
       "offGrid": {
         "before": "{{ms}} ms antes",

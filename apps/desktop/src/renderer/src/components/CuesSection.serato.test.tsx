@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
@@ -112,13 +112,66 @@ describe('CuesSection on a Serato track', () => {
   it('says while Serato is open that the changes will be saved once it is closed, and still lets them be saved', async () => {
     const { saveRekordboxCues } = setup(READ, true)
     await ready()
+    markAt(bar(64))
     expect(await screen.findByTestId('cues-serato-waiting')).toHaveTextContent(
       'Serato is open. Your changes will be saved when you close it',
     )
-    markAt(bar(64))
     await waitFor(() => expect(screen.getByTestId('cues-save')).toBeEnabled())
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+  })
+
+  it('keeps quiet while Serato is open but there is nothing to save', async () => {
+    const { client } = setup(READ, true)
+    await ready()
+    await waitFor(() =>
+      expect(client.getQueryState(['serato-running', ID])?.status).toBe('success'),
+    )
+    expect(screen.queryByTestId('cues-serato-waiting')).toBeNull()
+  })
+
+  it('warns while Serato is open over edits already waiting in the queue', async () => {
+    setup(READ, true, {
+      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => ({
+        wanted: [{ ms: bar(64), kind: HOT_KINDS[1], color: 1 }],
+        fingerprint: 'f0',
+      })),
+    })
+    expect(await screen.findByTestId('cues-serato-waiting')).toBeInTheDocument()
+  })
+
+  it('notices Serato being opened while the editor stays open, without reopening the track', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      const seratoRunning = vi
+        .fn<Api['seratoRunning']>()
+        .mockResolvedValueOnce(false)
+        .mockResolvedValue(true)
+      setup(READ, false, { seratoRunning })
+      await ready()
+      markAt(bar(64))
+      await waitFor(() => expect(seratoRunning).toHaveBeenCalledTimes(1))
+      expect(screen.queryByTestId('cues-serato-waiting')).toBeNull()
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5000)
+      })
+      expect(await screen.findByTestId('cues-serato-waiting')).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('keeps Serato’s beat grid as Serato has it and says why', async () => {
+    setup({ ...READ, clockLeadMs: 0 })
+    await ready()
+    fireEvent.click(screen.getByTestId('section-maximize'))
+    await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())
+    expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByTestId('cues-grid')).toHaveAttribute(
+      'title',
+      "Serato's beat grid comes from Serato and can't be changed here",
+    )
+    expect(screen.getByTestId('cues-grid-right')).toBeDisabled()
   })
 
   it('does not warn when Serato is closed', async () => {
