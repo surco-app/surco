@@ -1,7 +1,13 @@
 import type { BrowserWindow } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 import type { DjProgram } from '../shared/djProgram'
-import { createEnsureClosed, type DJ_PROCESSES, QUIT_REASONS, reasonOfDetail } from './djProcesses'
+import {
+  createEnsureClosed,
+  type DJ_PROCESSES,
+  QUIT_REASONS,
+  type QUIT_TEXT,
+  reasonOfDetail,
+} from './djProcesses'
 
 function deferred<T>() {
   let resolve: (v: T) => void = () => {}
@@ -212,4 +218,17 @@ describe('reasonOfDetail', () => {
       expect(reasonOfDetail(program, key)).toBe(reason)
     },
   )
+  it('refuses a wording no reason uses', () => {
+    expect(() => reasonOfDetail('rekordbox', 'rekordboxQuitDetailCues' as never)).toThrow(
+      'No rekordbox quit reason for rekordboxQuitDetailCues',
+    )
+  })
+})
+
+describe('QUIT_TEXT', () => {
+  it('refuses at compile time a wording that belongs to another program', () => {
+    // @ts-expect-error
+    const wrong: (typeof QUIT_TEXT)['engine']['detail']['cues'] = 'traktorQuitDetailCues'
+    expect(wrong).toBe('traktorQuitDetailCues')
+  })
 })

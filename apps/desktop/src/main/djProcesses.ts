@@ -14,7 +14,7 @@ export const QUIT_REASONS = {
   rekordbox: ['convert', 'playlists', 'usb', 'restore'],
   traktor: ['convert', 'cues', 'playlists', 'restore'],
   engine: ['convert', 'cues', 'usb', 'restore'],
-} as const satisfies { [P in DjProgram]: readonly QuitReason[] }
+} as const satisfies { [P in DjProgram]: readonly ['convert', ...QuitReason[]] }
 
 export type ReasonOf<P extends DjProgram> = (typeof QUIT_REASONS)[P][number]
 
@@ -28,10 +28,10 @@ export const DJ_PROCESSES: Record<
 }
 
 export interface QuitText<P extends DjProgram = DjProgram> {
-  message: MenuKey
-  confirm: MenuKey
-  cancel: MenuKey
-  detail: Record<ReasonOf<P>, MenuKey>
+  message: Extract<MenuKey, `${P}QuitMessage`>
+  confirm: Extract<MenuKey, `${P}QuitConfirm`>
+  cancel: Extract<MenuKey, `${P}QuitCancel`>
+  detail: Record<ReasonOf<P>, DetailKeyOf<P>>
 }
 
 export const QUIT_TEXT: { [P in DjProgram]: QuitText<P> } = {
