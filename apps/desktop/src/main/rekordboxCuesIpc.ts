@@ -32,7 +32,7 @@ export function registerRekordboxCuesIpc(host: {
   applyQuietly: () => void
   beginMoment?: (reason: CopyReason, programs: DjProgram[]) => void
   flow: () => CueFlow
-  beatGrid: (file: string) => Promise<BeatGridFit | null>
+  beatGrid: (file: string, priority?: 'high' | 'low') => Promise<BeatGridFit | null>
   words: (file: string) => Promise<Uint16Array | null>
   provisional: Pick<ProvisionalList, 'add'>
   // The same file in each program the editor writes cues to, for a flow to reach them all.

@@ -5,11 +5,14 @@ import { measureBeatGrid } from './ffmpeg'
 
 export const BEAT_GRID_NAMESPACE = 'beat-grid-v2'
 
-export function cachedBeatGrid(file: string): Promise<BeatGridFit | null> {
+export function cachedBeatGrid(
+  file: string,
+  priority: 'high' | 'low' = 'high',
+): Promise<BeatGridFit | null> {
   return cachedAnalysis(
     BEAT_GRID_NAMESPACE,
     file,
-    () => analysisLimiter.run(() => measureBeatGrid(file), 'high'),
+    () => analysisLimiter.run(() => measureBeatGrid(file), priority),
     () => true,
   )
 }

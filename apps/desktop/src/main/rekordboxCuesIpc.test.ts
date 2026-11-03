@@ -515,6 +515,25 @@ describe('registerRekordboxCuesIpc', () => {
     expect(out.firstMs).toBeCloseTo(100 + ((1152 + 576 + 529) / 44100) * 1000 + 2, 3)
   })
 
+  it('measures for the bad-grid filter behind whatever the DJ opens, and for Auto ahead of it', async () => {
+    const path = await completableCollection()
+    const beatGrid = vi.fn(async () => ({ bpm: 120, firstMs: 0 }))
+    registerRekordboxCuesIpc({
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+    })
+    await handler('rekordbox:gridVerdict')({}, '101')
+    expect(beatGrid).toHaveBeenLastCalledWith(expect.any(String), 'low')
+    await handler('rekordbox:gridFit')({}, '101')
+    expect(beatGrid).toHaveBeenLastCalledWith(expect.any(String), 'high')
+  })
+
   it('judges the rekordbox grid of a track against the beats Surco measured, for the filter of bad grids', async () => {
     const path = await completableCollection()
     const phases = Array.from({ length: 40 }, (_, i) => ({ ms: 3200 + i * 6400, firstMs: 90 }))
