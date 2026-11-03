@@ -1,6 +1,6 @@
 # Mapa de Serato: lo que el compilador obliga a decidir
 
-Medido el 03/11 tras el bloque 7 añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
+Medido el 03/11 tras el bloque 8 añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
 
 ## Añadidos a mano (el compilador no los ve)
 
@@ -18,6 +18,7 @@ Medido el 03/11 tras el bloque 7 añadiendo `'serato'` a `DjProgram` (y revirtie
 - Renderer tras convertir (6h-6i), sitios dejados a propósito: las tres secciones de `DestinationTab` (cada una con su maquetación), `librarySourceOf` (ids compartidos con main, p. ej. `'engineDj'`), `unanalysedIn` de `triage.ts` (ids de filtros), los valores por defecto `'rekordbox'` de `PlaylistsField`, la lista de colas de `App.tsx` y la regla de ruta de Traktor en `reachable` del editor. Órdenes por sitio que hoy coinciden con `RAIL_PROGRAMS` pero son independientes a propósito: `FLAG_ORDER`, `QUEUE_PILL_ORDER`, orden de revisión, `LIBRARY_ORDER` del editor, `ORDER` de `djReach`. `SOURCE_PROGRAMS.trackFlag` y `TRACK_PROGRAMS.flag` se solapan (solo difieren en Engine).
 - USB (6j), lo que sigue siendo de un solo programa: la memoria de Engine en `readVolumes` y el campo `UsbVolume.engine`, `usb:pickFolder(from?: 'engine')`, `usbAvailable` (solo rekordbox: píldora y avisos de conexión), los dos exportadores de `usbExportIpc` con sus dependencias, y los textos `USB_QUIT_DETAIL`/`ENGINE_USB_QUIT_DETAIL` en sus módulos. Un programa con USB nuevo entra en `UsbProgram` (y entonces el compilador exige su exportador, su vista del modal y `usb: true`).
 - Comprobación y daños (7), lo que sigue siendo de un programa: el estado de Traktor en `verifyRegistry` (`neverWritten`, `traktorBefore`, `traktorCues`: la comprobación de Traktor se basa en parches, no en filas), la regla de `treeFile` de Traktor en `allowed` de `damageRepair`, y `snapshotLibraries` de `processTrack` (solo rekordbox y Engine). Los escaneos y reparaciones de daños por programa se declaran en tablas cuyo tipo sale de los destinos de `DamageScan`/`DamageRepair`.
+- Ajustes y bienvenida (8), lo que sigue siendo de un programa: el asistente de bienvenida (`OnboardingWizard.tsx`: la ruta de Traktor al activarlo, el selector de carpeta de Engine), las secciones de `DestinationTab` y la migración de sincronización de Traktor (`syncToggleMigration.ts`). La ruta de cada biblioteca debe ser un ajuste local: lo exige un test contra `DJ_COLLECTION_PATH` (`shared/djSettings.ts`). Tres tablas `LIBRARY_NAME` iguales (`reviewLibraries`, `CuesSection`, `CuesBatchSection`), todas `Record` por programa.
 
 ## Errores del compilador
 
@@ -242,6 +243,7 @@ src/renderer/src/components/MusicReview.test.tsx:937 TS2741
 src/renderer/src/components/MusicReview.test.tsx:959 TS2741
 src/renderer/src/components/MusicReview.test.tsx:975 TS2741
 src/renderer/src/components/MusicReview.test.tsx:989 TS2741
+src/renderer/src/components/settings/CuesTab.tsx:77 TS2741
 src/renderer/src/components/settings/GeneralTab.tsx:44 TS2741
 src/renderer/src/components/settings/GeneralTab.tsx:50 TS2741
 src/renderer/src/components/SourceIcons.tsx:73 TS2741
@@ -271,9 +273,7 @@ src/renderer/src/hooks/useSourceBrowser.ts:134 TS2741
 src/renderer/src/lib/cuePrograms.ts:17 TS2741
 src/renderer/src/lib/cueTwins.ts:54 TS2741
 src/renderer/src/lib/djLibraries.ts:18 TS2345
-src/renderer/src/lib/djReach.ts:19 TS2741
-src/renderer/src/lib/djReach.ts:31 TS2345
-src/renderer/src/lib/djReach.ts:7 TS2741
+src/renderer/src/lib/djReach.ts:13 TS2345
 src/renderer/src/lib/fields.ts:147 TS2741
 src/renderer/src/lib/reviewLibraries.ts:3 TS2741
 src/renderer/src/lib/reviewLibraries.ts:9 TS2345
@@ -304,6 +304,8 @@ src/scenarios/matrix/report.ts:72 TS2741
 src/shared/djProgram.test.ts:16 TS2345
 src/shared/djProgram.ts:6 TS2345
 src/shared/djProgram.ts:8 TS2345
+src/shared/djSettings.ts:15 TS2741
+src/shared/djSettings.ts:3 TS2741
 src/shared/keepsReplaced.ts:3 TS2741
 src/shared/verification.ts:93 TS2345
 ```
