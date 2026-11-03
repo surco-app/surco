@@ -19,11 +19,11 @@ function tempoGrid(
   const first = tempoMap.firstBeatMs - leadMs
   const period = 60000 / tempoMap.bpm
   const grid: { ms: number; beat: number }[] = []
-  for (let k = -Math.floor(first / period); first + k * period <= durationMs; k++)
-    grid.push({
-      ms: first + k * period,
-      beat: (((k % BEATS_PER_BAR) + BEATS_PER_BAR) % BEATS_PER_BAR) + 1,
-    })
+  for (let k = -Math.floor(first / period); first + k * period <= durationMs; k++) {
+    const ms = first + k * period
+    if (ms >= 0)
+      grid.push({ ms, beat: (((k % BEATS_PER_BAR) + BEATS_PER_BAR) % BEATS_PER_BAR) + 1 })
+  }
   return grid
 }
 

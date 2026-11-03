@@ -201,6 +201,9 @@ export function seratoArmored(payload: Uint8Array): string {
   return `${encodeBase64Wrapped(concat([bytesOf(ARMOR_HEADER), seratoGeobBody(payload)]))}\n`
 }
 
+const MIN_TEMPO_BPM = 20
+const MAX_TEMPO_BPM = 400
+
 export interface SeratoTempoMap {
   firstBeatMs: number
   bpm: number
@@ -211,7 +214,13 @@ export function readSeratoTempoMap(data: Uint8Array): SeratoTempoMap | null {
   if (((data[2] << 8) | data[3]) !== 1) return null
   const firstBeatMs = f64(data, 4) * 1000
   const bpm = f64(data, 24)
-  if (!Number.isFinite(firstBeatMs) || !Number.isFinite(bpm) || bpm <= 0) return null
+  if (
+    !Number.isFinite(firstBeatMs) ||
+    !Number.isFinite(bpm) ||
+    bpm < MIN_TEMPO_BPM ||
+    bpm > MAX_TEMPO_BPM
+  )
+    return null
   return { firstBeatMs, bpm }
 }
 

@@ -286,6 +286,19 @@ describe('readSeratoTempoMap', () => {
     expect(readSeratoTempoMap(withF64(4, Number.POSITIVE_INFINITY))).toBeNull()
   })
 
+  it('returns null for a BPM outside 20 to 400, so a corrupt tag cannot ask for a huge grid', () => {
+    const withBpm = (bpm: number) => {
+      const data = Uint8Array.from(PRAY_MP3_TEMPO)
+      new DataView(data.buffer).setFloat64(24, bpm)
+      return data
+    }
+    expect(readSeratoTempoMap(withBpm(19.9))).toBeNull()
+    expect(readSeratoTempoMap(withBpm(400.1))).toBeNull()
+    expect(readSeratoTempoMap(withBpm(1e-9))).toBeNull()
+    expect(readSeratoTempoMap(withBpm(20))?.bpm).toBe(20)
+    expect(readSeratoTempoMap(withBpm(400))?.bpm).toBe(400)
+  })
+
   it('returns null for data that is not a tempo map', () => {
     expect(readSeratoTempoMap(new Uint8Array())).toBeNull()
     expect(readSeratoTempoMap(PRAY_MP3_TEMPO.subarray(0, 20))).toBeNull()

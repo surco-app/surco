@@ -187,6 +187,13 @@ describe('seratoCueSource', () => {
     expect(read?.gridFingerprint).toBe(gridFingerprint(grid))
   })
 
+  it('never starts the grid before zero when the first beat sits a float step off a multiple of the period', async () => {
+    const file = audio('wav', 40)
+    geob(file, 'Serato Tempo Map', tempoMap(28.28571428571428, 70))
+    const read = await source().trackCues(`serato:${file}`)
+    expect(Math.min(...(read?.grid ?? []).map((b) => b.ms))).toBeGreaterThanOrEqual(0)
+  })
+
   it('moves M4A cues 1024 samples later onto Surco clock, the opposite way from an MP3', async () => {
     const file = audio('m4a')
     const f = TagFile.createFromPath(file)
