@@ -19,10 +19,11 @@ const LOCALES = [
 
 const lists = (locale: (typeof LOCALES)[number][1]) => ({
   'use case': locale.useCases.cases as Summarised[],
+  'guide section': locale.guide.sections as Summarised[],
 })
 
 describe('one-line summaries that are never cut mid-sentence', () => {
-  it.each(LOCALES)('%s gives every use case a short line', (_, locale, max) => {
+  it.each(LOCALES)('%s gives every use case and guide section a short line', (_, locale, max) => {
     for (const [kind, items] of Object.entries(lists(locale))) {
       for (const item of items) {
         expect(item.s, `${kind}: ${item.title}`).toBeTruthy()
