@@ -1942,6 +1942,20 @@ describe('Editor multi-select', () => {
     )
   })
 
+  it('names both Serato and the fields the other tracks still miss, so neither reason hides the other', () => {
+    renderMulti({ fromSeratoA: true, requiredFields: ['artist'], metaA: { artist: 'Kumara' } })
+    const blocked = screen.getByTestId('batch-plan-blocked')
+    expect(blocked).toHaveTextContent('Serato would lose the track and its cues')
+    expect(blocked).toHaveTextContent(i18n.t('fields.artist'))
+  })
+
+  it('does not name a field only the Serato track misses, since that track is not converted anyway', () => {
+    renderMulti({ fromSeratoA: true, requiredFields: ['artist'], metaB: { artist: 'Cortina' } })
+    expect(screen.getByTestId('batch-plan-blocked')).toHaveTextContent(
+      /^Serato would lose the track and its cues$/,
+    )
+  })
+
   it('names the missing fields in the batch plan', () => {
     renderMulti({ requiredFields: ['artist'], metaA: { artist: 'Kumara' } })
     expect(screen.getByTestId('batch-plan-blocked')).toHaveTextContent(i18n.t('fields.artist'))
@@ -2978,6 +2992,18 @@ describe('Editor on a track opened from Serato', () => {
     renderEditor({ id: 'a', fromSerato: true })
     expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
     expect(screen.getByTestId('process-format-toggle')).toBeDisabled()
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleDescription(
+      'Serato would lose the track and its cues',
+    )
+  })
+
+  it('does not send the DJ to an empty field when the press is blocked by Serato, since filling it would not help', () => {
+    renderEditor({ id: 'a', fromSerato: true, meta: { artist: '' } }, 'wav', {
+      requiredFields: ['artist'],
+      visibleFields: ['artist'],
+    })
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(screen.getByTestId('field-artist')).not.toHaveFocus()
     expect(screen.getByTestId('process-btn')).toHaveAccessibleDescription(
       'Serato would lose the track and its cues',
     )

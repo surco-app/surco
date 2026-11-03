@@ -966,9 +966,18 @@ export const Editor = memo(function Editor({
   // the whole selection (the union of every track's empty fields): "Convert (N)"
   // promises N conversions, and eligibleForBatch would silently drop incomplete
   // tracks — with all N incomplete, the click ran an empty batch that looked dead.
-  const missing = isMulti
-    ? [...new Set(multiTracks.flatMap((t) => missingRequiredOf(t, requiredFields, customFields)))]
-    : missingRequired(resolvedMeta, requiredFields)
+  const convertible = (isMulti ? multiTracks : [item]).filter((t) => !t.fromSerato)
+  const seratoRows = convertible.length < (isMulti ? multiTracks.length : 1)
+  const missing =
+    convertible.length === 0
+      ? []
+      : isMulti
+        ? [
+            ...new Set(
+              convertible.flatMap((t) => missingRequiredOf(t, requiredFields, customFields)),
+            ),
+          ]
+        : missingRequired(resolvedMeta, requiredFields)
   // A multi-select whose tracks disagree about what the convert MEANS: some supersede a
   // copy in the library, others are plain adds. One click cannot honestly do both, so the
   // batch is refused and the button says why rather than silently picking one for all of
@@ -976,17 +985,23 @@ export const Editor = memo(function Editor({
   // hit once). Single-select never mixes, so it is never gated here.
   const replaceMode = isMulti ? selectionReplaceMode(libraryIndex, multiTracks) : 'replace'
   const mixedReplace = replaceMode === 'mixed'
-  const seratoRows = (isMulti ? multiTracks : [item]).some((t) => t.fromSerato)
   const incomplete = seratoRows || missing.length > 0 || mixedReplace
-  const incompleteReason = seratoRows
-    ? tr('editor.seratoBlocked')
-    : missing.length
-      ? tr('editor.missingRequired', {
-          fields: missing.map((key) => tr(`fields.${key}`)).join(', '),
-        })
-      : mixedReplace
-        ? tr('editor.mixedReplaceSelection')
-        : undefined
+  const seratoReason = seratoRows ? [tr('editor.seratoBlocked')] : []
+  const otherReason = missing.length
+    ? tr('editor.missingRequired', {
+        fields: missing.map((key) => tr(`fields.${key}`)).join(', '),
+      })
+    : mixedReplace
+      ? tr('editor.mixedReplaceSelection')
+      : undefined
+  const incompleteReason =
+    [...seratoReason, ...(otherReason ? [otherReason] : [])].join(' · ') || undefined
+  const otherSummary = missing.length
+    ? missingSummary(
+        missing.map((key) => tr(`fields.${key}`)),
+        tr,
+      )
+    : otherReason
   // The user's default genres come first so they're always one click away even when a
   // release isn't matched; the release's own genres/styles follow, deduped case-insensitively
   // so a shared name (the user's "Electronic" vs a provider's "electronic") shows a single
@@ -1850,16 +1865,12 @@ export const Editor = memo(function Editor({
           incomplete={incomplete}
           incompleteReason={incompleteReason}
           incompleteSummary={
-            !seratoRows && missing.length
-              ? missingSummary(
-                  missing.map((key) => tr(`fields.${key}`)),
-                  tr,
-                )
-              : incompleteReason
+            [...seratoReason, ...(otherSummary ? [otherSummary] : [])].join(' · ') || undefined
           }
-          onBlockedPress={() =>
-            document.querySelector<HTMLElement>(`[data-testid="field-${missing[0]}"]`)?.focus()
-          }
+          onBlockedPress={() => {
+            if (missing.length > 0)
+              document.querySelector<HTMLElement>(`[data-testid="field-${missing[0]}"]`)?.focus()
+          }}
           willEditInPlace={willEditInPlace}
           tagsOnly={tagsOnlyExport}
           addToAppleMusic={picked.addToAppleMusic}
