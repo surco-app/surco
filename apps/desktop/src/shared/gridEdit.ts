@@ -208,28 +208,40 @@ export function downbeatAt(grid: EditableGrid, ms: number): EditableGrid {
 const nearestOn = (ms: number, firstMs: number, period: number): number =>
   firstMs + Math.round((ms - firstMs) / period) * period
 
-function phaseNear(fit: GridFit, ms: number): number {
-  if (!fit.phases || fit.phases.length === 0) return fit.firstMs
-  const local = fit.phases.reduce((a, b) => (Math.abs(b.ms - ms) < Math.abs(a.ms - ms) ? b : a))
-  const period = periodOf(fit.bpm)
-  const apart = Math.abs(local.firstMs - nearestOn(local.firstMs, fit.firstMs, period))
-  return apart > period / 4 ? fit.firstMs : local.firstMs
-}
-
+const NEIGHBOUR_STRETCHES = 5
+const MIN_NEIGHBOUR_STRETCHES = 3
 const MIN_DRIFT_STRETCHES = 8
 
-function driftCorrectedBpm(fit: GridFit): number {
+const median = (values: number[]): number => {
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+}
+
+function steadyStretches(fit: GridFit): { ms: number; d: number }[] {
   const period = periodOf(fit.bpm)
-  const steady = (fit.phases ?? [])
+  return (fit.phases ?? [])
     .map((p) => ({ ms: p.ms, d: p.firstMs - nearestOn(p.firstMs, fit.firstMs, period) }))
     .filter((p) => Math.abs(p.d) <= period / 4)
+}
+
+function phaseNear(fit: GridFit, ms: number): number {
+  const near = steadyStretches(fit)
+    .sort((a, b) => Math.abs(a.ms - ms) - Math.abs(b.ms - ms))
+    .slice(0, NEIGHBOUR_STRETCHES)
+  if (near.length < MIN_NEIGHBOUR_STRETCHES) return fit.firstMs
+  return fit.firstMs + median(near.map((p) => p.d))
+}
+
+function driftCorrectedBpm(fit: GridFit): number {
+  const steady = steadyStretches(fit)
   if (steady.length < MIN_DRIFT_STRETCHES) return fit.bpm
-  const meanMs = steady.reduce((a, p) => a + p.ms, 0) / steady.length
-  const meanD = steady.reduce((a, p) => a + p.d, 0) / steady.length
-  const den = steady.reduce((a, p) => a + (p.ms - meanMs) ** 2, 0)
-  if (den === 0) return fit.bpm
-  const slope = steady.reduce((a, p) => a + (p.ms - meanMs) * (p.d - meanD), 0) / den
-  return fit.bpm / (1 + slope)
+  const slopes: number[] = []
+  steady.forEach((a, i) => {
+    for (const b of steady.slice(i + 1)) if (b.ms !== a.ms) slopes.push((b.d - a.d) / (b.ms - a.ms))
+  })
+  if (slopes.length === 0) return fit.bpm
+  return fit.bpm / (1 + median(slopes))
 }
 
 export function fitGrid(grid: EditableGrid, fit: GridFit, atMs?: number): EditableGrid {

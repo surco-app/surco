@@ -196,14 +196,17 @@ describe('gridFingerprint', () => {
   })
 })
 
+const windows = (fromMs: number, toMs: number, firstMs: number) =>
+  Array.from({ length: Math.floor((toMs - fromMs) / 6400) + 1 }, (_, i) => ({
+    ms: fromMs + i * 6400,
+    firstMs,
+  }))
+
 describe('gridOffsets with the phase measured along the track', () => {
   const fit = {
     bpm: 150,
     firstMs: 0,
-    phases: [
-      { ms: 10000, firstMs: 25 },
-      { ms: 200000, firstMs: 0 },
-    ],
+    phases: [...windows(3200, 60000, 25), ...windows(66400, 345000, 0)],
   }
 
   it('compares the grid with the beats near the playhead, not with one fit of the whole track', () => {
@@ -219,9 +222,9 @@ describe('fitting around the playhead', () => {
     bpm: 150,
     firstMs: 0,
     phases: [
-      { ms: 30000, firstMs: 25 },
-      { ms: 200000, firstMs: 0 },
-      { ms: 300000, firstMs: 200 },
+      ...windows(3200, 60000, 25),
+      ...windows(66400, 280000, 0),
+      ...windows(286400, 345000, 200),
     ],
   }
 
@@ -298,6 +301,26 @@ describe('zones', () => {
       hereMs: 0,
       endMs: 25,
     })
+  })
+})
+
+describe('a stretch that disagrees with its neighbours', () => {
+  const fit = {
+    bpm: 150,
+    firstMs: 0,
+    phases: [{ ms: 6900, firstMs: 338 }, ...windows(34300, 345000, 0)],
+  }
+
+  it('does not anchor Auto on one stretch that disagrees with the ones around it, since the detector misreads quiet intros', () => {
+    expect(fitGrid({ bpm: 150, anchorMs: 46 }, fit, 0).anchorMs).toBe(0)
+  })
+
+  it('does not bend the tempo Auto picks because of that stretch, so the end of the track stays on the beat', () => {
+    expect(fitGrid({ bpm: 150, anchorMs: 46 }, fit, 0).bpm).toBe(150)
+  })
+
+  it('reads the offset at the playhead from the stretches around it, not from that one', () => {
+    expect(gridOffsets({ bpm: 150, anchorMs: 46 }, fit, 0, 345000).hereMs).toBe(46)
   })
 })
 
