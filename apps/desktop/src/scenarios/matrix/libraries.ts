@@ -15,6 +15,7 @@ import { engineDbPath, writeEngineLibraryFixture } from '../../main/enginePlayli
 import { toNmlLocation } from '../../main/ffmpeg'
 import { openRekordboxDb } from '../../main/rekordboxDb'
 import { bootVolumeName } from '../../main/traktorNmlLibrary'
+import type { DjProgram } from '../../shared/djProgram'
 import type { Settings } from '../../shared/types'
 import { music } from '../fakeMusic'
 import { makeRekordbox } from '../rekordboxFixture'
@@ -52,13 +53,13 @@ export interface LibrarySet {
   bystander: SeededTrack
   tracks: SeededTrack[]
   settings: Partial<Settings>
-  sha1Before: Record<'rekordbox' | 'engine' | 'traktor', string | null>
-  bystanderRows: Partial<Record<'rekordbox' | 'engine' | 'traktor', string>>
+  sha1Before: Record<DjProgram, string | null>
+  bystanderRows: Partial<Record<DjProgram, string>>
   traktorEntries: Record<string, string>
   knownRekordboxIds?: string[]
 }
 
-export type Program = 'rekordbox' | 'engine' | 'traktor' | 'music'
+export type Program = DjProgram | 'music'
 
 export function syncedPrograms(programs: Programs): Program[] {
   if (programs === 'all') return ['rekordbox', 'engine', 'traktor']

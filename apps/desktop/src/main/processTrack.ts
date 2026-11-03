@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
 import { tagsOnly as tagsOnlyExport } from '../shared/audioProcessing'
+import type { DjProgram } from '../shared/djProgram'
 import {
   type ErrorKey,
   errorKeyOf,
@@ -1150,7 +1151,7 @@ export async function runProcessTrack(
     // Music only with no location: the repoints still name the deleted temp, so what the
     // libraries hold cannot be judged against any file.
     const followed = !musicOnly || finalPath !== ''
-    const library = (place: 'rekordbox' | 'engine' | 'traktor'): PlaceCheck =>
+    const library = (place: DjProgram): PlaceCheck =>
       followed
         ? checking(place)
         : { place, state: 'unreadable', detail: { key: `${place}Unreadable` } }

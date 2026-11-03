@@ -1,3 +1,4 @@
+import type { DjProgram } from '../shared/djProgram'
 import { errorWithKey } from '../shared/errorKeys'
 import {
   type PlaceCheck,
@@ -15,7 +16,7 @@ import type { MusicExpect } from './verifyMusic'
 import type { RekordboxBefore } from './verifyRekordbox'
 import type { TraktorExpect } from './verifyTraktor'
 
-type Library = 'rekordbox' | 'engine' | 'traktor'
+type Library = DjProgram
 
 // One conversion as the job left it: the file and Music already judged in verification, the
 // libraries it will touch still checking. from is the file the libraries followed (the copy

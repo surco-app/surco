@@ -41,6 +41,7 @@ import { libraryBackupRoot } from '../../main/libraryBackups'
 import { openRekordboxDb } from '../../main/rekordboxDb'
 import { defaults } from '../../main/settings'
 import { readTraktorCueStart, storedTree } from '../../main/traktor4Fixture'
+import type { DjProgram } from '../../shared/djProgram'
 import type { OutputFormat } from '../../shared/types'
 import { music } from '../fakeMusic'
 import type { Cell, InvariantName } from './cells'
@@ -1070,16 +1071,13 @@ function programBroken(program: Program, set: LibrarySet, t: SeededTrack, e: Exp
   return set.music ? musicBroken(t, e) : []
 }
 
-const PROGRAM_NAME: Record<'rekordbox' | 'engine' | 'traktor', string> = {
+const PROGRAM_NAME: Record<DjProgram, string> = {
   rekordbox: 'rekordbox',
   engine: 'Engine',
   traktor: 'Traktor',
 }
 
-function libraryFile(
-  set: LibrarySet,
-  program: 'rekordbox' | 'engine' | 'traktor',
-): string | undefined {
+function libraryFile(set: LibrarySet, program: DjProgram): string | undefined {
   if (program === 'rekordbox') return set.rekordboxDb
   if (program === 'engine') return set.engineDir && engineDbPath(set.engineDir)
   return set.traktorNml

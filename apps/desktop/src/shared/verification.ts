@@ -1,4 +1,6 @@
-export type VerifyPlace = 'file' | 'appleMusic' | 'rekordbox' | 'engine' | 'traktor'
+import type { DjProgram } from './djProgram'
+
+export type VerifyPlace = 'file' | 'appleMusic' | DjProgram
 export type CheckState = 'checking' | 'ok' | 'mismatch' | 'pending' | 'unreadable'
 
 // Every detail a check can come back with, each a string under `verify.detail.*` in every

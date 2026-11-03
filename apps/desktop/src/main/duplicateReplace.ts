@@ -1,3 +1,4 @@
+import type { DjProgram } from '../shared/djProgram'
 import type {
   ActivityKind,
   DuplicatePair,
@@ -20,7 +21,7 @@ import { logKeptOpen, TRAKTOR_SYNC_SKIP_KEYS } from './traktorSyncFlush'
 
 export type ReplacePair = DuplicatePair & { shared: boolean }
 
-type Library = 'rekordbox' | 'engine' | 'traktor'
+type Library = DjProgram
 type LibraryStep = (pairs: DuplicatePair[]) => Promise<LibraryReplaceOutcome[]>
 
 export interface ReplaceDuplicatesDeps {

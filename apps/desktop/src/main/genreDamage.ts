@@ -1,6 +1,7 @@
 import { Genres } from 'node-taglib-sharp'
+import type { DjProgram } from '../shared/djProgram'
 
-export type GenreSource = 'rekordbox' | 'traktor' | 'engine' | 'info'
+export type GenreSource = DjProgram | 'info'
 
 export type GenreJudgement = {
   kind: 'genre-number' | 'genre-parens'

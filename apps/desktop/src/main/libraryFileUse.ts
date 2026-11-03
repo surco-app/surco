@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
+import type { DjProgram } from '../shared/djProgram'
 import { engineContentId } from '../shared/engineContent'
 import { traktorContentId } from '../shared/traktorContent'
 import type { LibraryCopyInfo, LibraryCopyPresence, LibraryTracks } from '../shared/types'
@@ -183,7 +184,7 @@ export async function libraryCopyInfo(
 }
 
 export interface LibraryGenre {
-  source: 'rekordbox' | 'traktor' | 'engine'
+  source: DjProgram
   value: string
 }
 

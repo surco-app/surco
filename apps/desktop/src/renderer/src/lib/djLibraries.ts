@@ -1,10 +1,12 @@
+import type { DjProgram } from '../../../shared/djProgram'
+
 // Which collection syncs onboarding should offer, given what was found on this machine.
 //
 // The step exists only for a DJ who actually runs one of these programs. Offering a
 // disabled row to someone who runs neither would be noise in a wizard that promises to
 // take under a minute; finding nothing simply removes the step.
 
-export type DjLibraryId = 'rekordbox' | 'engine' | 'traktor'
+export type DjLibraryId = DjProgram
 
 export interface DetectedDjLibrary {
   id: DjLibraryId

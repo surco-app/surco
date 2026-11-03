@@ -934,11 +934,9 @@ export interface DuplicatePair {
 export type LibraryCopyPresence = { cues?: number; playlists?: number } | null
 
 // Only the libraries with their sync on that could be read.
-export type LibraryCopyInfo = Partial<
-  Record<'rekordbox' | 'engine' | 'traktor', LibraryCopyPresence>
->
+export type LibraryCopyInfo = Partial<Record<DjProgram, LibraryCopyPresence>>
 
-export type CueLibrary = 'rekordbox' | 'engine' | 'traktor'
+export type CueLibrary = DjProgram
 
 export type LibraryTracks = Partial<Record<CueLibrary, string>>
 
@@ -1153,7 +1151,7 @@ export interface AppleMusicPlaylistTracks {
 
 // Where a crate of playlists comes from. Every DJ library hands its playlists over in the
 // same shapes.
-export type PlaylistSource = 'appleMusic' | 'rekordbox' | 'engine' | 'traktor'
+export type PlaylistSource = 'appleMusic' | DjProgram
 
 // One row of a source's playlist tree. A playlist counts its real tracks, separators left
 // out, because that is the number the user sees in the list; a folder counts its direct
@@ -1642,10 +1640,7 @@ export interface RekordboxSyncIssue {
 
 // Per DJ library: whether its sync is on, and whether the collection it points at is
 // there. A library can be on and not found, which the review has to say out loud.
-export type LibraryStatus = Record<
-  'rekordbox' | 'engine' | 'traktor',
-  { enabled: boolean; found: boolean }
->
+export type LibraryStatus = Record<DjProgram, { enabled: boolean; found: boolean }>
 
 // What one library did with a review's tag changes, so the done sheet can say it per
 // library instead of claiming every change landed: how many tracks it updated, or why none.
@@ -1653,7 +1648,7 @@ export type LibraryTagSync =
   | { outcome: 'updated'; count: number }
   | { outcome: 'nothing' | 'open' | 'missing' | 'failed' }
 
-export type LibraryTagSyncReport = Record<'rekordbox' | 'engine' | 'traktor', LibraryTagSync>
+export type LibraryTagSyncReport = Record<DjProgram, LibraryTagSync>
 
 // The USB export (docs/superpowers/specs/2026-10-16-export-usb-design.md). A stick is
 // always named by a stable volume identifier (macOS VolumeUUID, Windows volume GUID), never
@@ -1817,7 +1812,7 @@ export interface RekordboxPlaylistTarget {
   name: string
 }
 
-export type PlaylistLibrary = 'rekordbox' | 'traktor' | 'engine'
+export type PlaylistLibrary = DjProgram
 
 export interface LibraryPlaylistChoice {
   wanted: RekordboxPlaylistTarget[]
