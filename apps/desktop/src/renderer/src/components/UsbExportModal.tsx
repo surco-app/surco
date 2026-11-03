@@ -5,7 +5,9 @@ import { useTranslation } from 'react-i18next'
 import type {
   SourceNode,
   UsbExportRequest,
+  UsbFolderPick,
   UsbHolder,
+  UsbProgram,
   UsbRemembered,
   UsbStartResult,
   UsbTarget,
@@ -26,15 +28,12 @@ import { UsbExportProgress } from './UsbExportProgress'
 function initialVolume(
   list: UsbVolumeList | null,
   preselect: string | null,
-  engine: boolean,
+  view: UsbProgramView,
 ): UsbVolume | null {
   const vols = list?.volumes ?? []
-  const lastEngine = vols
-    .filter((v) => v.engine?.remembered)
-    .sort((a, b) => (b.engine?.remembered?.at ?? 0) - (a.engine?.remembered?.at ?? 0))[0]
   return (
     vols.find((v) => v.uuid === preselect) ??
-    (engine ? lastEngine : vols.find((v) => `volume:${v.uuid}` === list?.lastKey)) ??
+    view.lastUsed(vols, list?.lastKey ?? null) ??
     (vols.length === 1 ? vols[0] : null)
   )
 }
@@ -45,6 +44,58 @@ const tickedFor = (v: UsbVolume | null): string[] | null =>
   v?.stickPlaylists ?? v?.remembered?.playlistIds ?? null
 
 const EMPTY_HOLDER: UsbHolder = { by: 'empty', at: null }
+
+interface UsbProgramView {
+  holder: (v: UsbVolume) => UsbHolder
+  ticks: (v: UsbVolume | null) => string[] | null
+  remembered: (v: UsbVolume | null) => UsbRemembered | null
+  lastUsed: (vols: UsbVolume[], lastKey: string | null) => UsbVolume | undefined
+  request: (
+    playlistIds: string[],
+    target: UsbTarget,
+    boxes: { prune: boolean; settings: boolean },
+  ) => UsbExportRequest
+  pickFolder: () => Promise<UsbFolderPick | null>
+  settingsBox: boolean
+  pruneBox: boolean
+}
+
+const USB_PROGRAM_VIEW: Record<UsbProgram, UsbProgramView> = {
+  rekordbox: {
+    holder: (v) => v.holder,
+    ticks: tickedFor,
+    remembered: (v) => v?.remembered ?? null,
+    lastUsed: (vols, lastKey) => vols.find((v) => `volume:${v.uuid}` === lastKey),
+    request: (playlistIds, target, { prune, settings }) => ({
+      playlistIds,
+      target,
+      prune: target.kind === 'folder' ? false : prune,
+      settings,
+    }),
+    pickFolder: () => window.api.usbPickFolder(),
+    settingsBox: true,
+    pruneBox: true,
+  },
+  engine: {
+    holder: (v) => v.engine?.holder ?? EMPTY_HOLDER,
+    ticks: (v) => v?.engine?.remembered?.playlistIds ?? null,
+    remembered: (v) => v?.engine?.remembered ?? null,
+    lastUsed: (vols) =>
+      vols
+        .filter((v) => v.engine?.remembered)
+        .sort((a, b) => (b.engine?.remembered?.at ?? 0) - (a.engine?.remembered?.at ?? 0))[0],
+    request: (playlistIds, target) => ({
+      playlistIds,
+      target,
+      prune: false,
+      settings: false,
+      source: 'engine',
+    }),
+    pickFolder: () => window.api.usbPickFolder('engine'),
+    settingsBox: false,
+    pruneBox: false,
+  },
+}
 
 // What main refuses to export anyway: Exportar is not offered while one of these shows.
 const BLOCKING: ReadonlySet<UsbWarning['kind']> = new Set([
@@ -57,7 +108,7 @@ export function UsbExportModal({
   nodes,
   volumes,
   preselect,
-  source,
+  program,
   onStart,
   onCancelExport,
   onClose,
@@ -66,7 +117,7 @@ export function UsbExportModal({
   nodes: SourceNode[] | undefined
   volumes: UsbVolumeList | null
   preselect: string | null
-  source?: 'engine'
+  program: UsbProgram
   onStart: (req: UsbExportRequest) => Promise<UsbStartResult>
   onCancelExport: () => void
   onClose: () => void
@@ -76,18 +127,14 @@ export function UsbExportModal({
   const size = (bytes: number): string => formatFileSize(bytes, i18n.language)
   const phase = useUsbExportState((s) => s.phase, store)
   const targetName = useUsbExportState((s) => s.targetName, store)
-  const engine = source === 'engine'
-  const ticksOf = (v: UsbVolume | null): string[] | null =>
-    engine ? (v?.engine?.remembered?.playlistIds ?? null) : tickedFor(v)
-  const rememberedOf = (v: UsbVolume | null): UsbRemembered | null =>
-    (engine ? v?.engine?.remembered : v?.remembered) ?? null
-  const first = initialVolume(volumes, preselect, engine)
+  const view = USB_PROGRAM_VIEW[program]
+  const first = initialVolume(volumes, preselect, view)
   const [target, setTarget] = useState<UsbTarget | null>(
     first ? { kind: 'volume', uuid: first.uuid } : null,
   )
-  const [checked, setChecked] = useState<Set<string>>(new Set(ticksOf(first) ?? []))
-  const [prune, setPrune] = useState(rememberedOf(first)?.prune ?? false)
-  const [settings, setSettings] = useState(rememberedOf(first)?.settings ?? false)
+  const [checked, setChecked] = useState<Set<string>>(new Set(view.ticks(first) ?? []))
+  const [prune, setPrune] = useState(view.remembered(first)?.prune ?? false)
+  const [settings, setSettings] = useState(view.remembered(first)?.settings ?? false)
   const [starting, setStarting] = useState(false)
   const [startError, setStartError] = useState<string | null>(null)
   // Each stick keeps its own boxes: one Surco never wrote starts with both off, whatever
@@ -102,7 +149,7 @@ export function UsbExportModal({
   if (!seeded && first) {
     setSeeded(true)
     setTarget({ kind: 'volume', uuid: first.uuid })
-    seed(ticksOf(first), rememberedOf(first))
+    seed(view.ticks(first), view.remembered(first))
   }
   const folder = target?.kind === 'folder'
   // A playlist deleted in rekordbox can still be listed by the stick's sync file or by
@@ -111,11 +158,7 @@ export function UsbExportModal({
   const inTree = useMemo(() => new Set((nodes ?? []).flatMap(playlistIdsUnder)), [nodes])
   const ticked = [...checked].filter((id) => inTree.has(id)).sort()
   const req: UsbExportRequest | null =
-    target && ticked.length > 0
-      ? engine
-        ? { playlistIds: ticked, target, prune: false, settings: false, source: 'engine' }
-        : { playlistIds: ticked, target, prune: folder ? false : prune, settings }
-      : null
+    target && ticked.length > 0 ? view.request(ticked, target, { prune, settings }) : null
   const { plan, failure, broken, loading } = useUsbPlan(req)
   const chosen =
     target?.kind === 'volume'
@@ -124,11 +167,11 @@ export function UsbExportModal({
 
   const choose = (v: UsbVolume): void => {
     setTarget({ kind: 'volume', uuid: v.uuid })
-    seed(ticksOf(v), rememberedOf(v))
+    seed(view.ticks(v), view.remembered(v))
   }
   // A folder has no sync file to read: only what Surco remembers for it.
   const pickFolder = async (): Promise<void> => {
-    const pick = await (engine ? window.api.usbPickFolder('engine') : window.api.usbPickFolder())
+    const pick = await view.pickFolder()
     if (!pick) return
     setTarget({ kind: 'folder', path: pick.path })
     seed(pick.remembered?.playlistIds ?? null, pick.remembered)
@@ -269,11 +312,7 @@ export function UsbExportModal({
                         ].join(' · ')}
                       </span>
                       <span className="block text-xs text-fg-faint">
-                        {holderText(
-                          engine ? (v.engine?.holder ?? EMPTY_HOLDER) : v.holder,
-                          tr,
-                          new Date(),
-                        )}
+                        {holderText(view.holder(v), tr, new Date())}
                       </span>
                     </span>
                   </label>
@@ -332,7 +371,7 @@ export function UsbExportModal({
                 </>
               )}
             </div>
-            {!engine && (
+            {view.settingsBox && (
               <label className="flex items-center gap-2 text-xs">
                 <input
                   type="checkbox"
@@ -343,7 +382,7 @@ export function UsbExportModal({
                 {tr('usbExport.choose.settings')}
               </label>
             )}
-            {!folder && !engine && (
+            {!folder && view.pruneBox && (
               <label className="flex items-center gap-2 text-xs">
                 <input
                   type="checkbox"

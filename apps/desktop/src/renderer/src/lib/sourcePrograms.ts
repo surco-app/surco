@@ -5,6 +5,7 @@ import type {
   RekordboxPlaylistEdit,
   SourceNode,
   SourcePlaylistEntry,
+  UsbProgram,
 } from '../../../shared/types'
 import type { TrackFlag } from './trackPrograms'
 
@@ -121,4 +122,8 @@ export const SOURCE_PROGRAMS: Record<DjProgram, SourceProgram> = {
     membershipKey: 'engine-membership',
     invalidatesOnEdit: false,
   },
+}
+
+export function isUsbProgram(program: DjProgram): program is UsbProgram {
+  return SOURCE_PROGRAMS[program].usb
 }

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import type {
@@ -85,6 +85,7 @@ async function show(
       nodes={NODES}
       volumes={list}
       preselect={null}
+      program="rekordbox"
       onStart={onStart}
       onCancelExport={() => {}}
       onClose={() => {}}
@@ -330,6 +331,28 @@ describe('UsbExportModal choosing', () => {
     expect(screen.queryByTestId('usb-prune')).toBeNull()
   })
 
+  it('never prunes a folder, even when what Surco remembers there says to', async () => {
+    ;(window as unknown as { api: Api }).api = stubApi({
+      usbPlan,
+      usbPickFolder: async () => ({
+        path: '/Volumes/Vicent/sets',
+        remembered: { ...REMEMBERED, prune: true },
+      }),
+    })
+    await show({ volumes: [vol({ remembered: REMEMBERED })], lastKey: null })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('usb-other'))
+    })
+    await waitFor(() =>
+      expect(usbPlan).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          target: { kind: 'folder', path: '/Volumes/Vicent/sets' },
+          prune: false,
+        }),
+      ),
+    )
+  })
+
   it('shows the progress list once an export runs', async () => {
     const { store } = await show({ volumes: [vol({})], lastKey: null })
     act(() => store.dispatch({ type: 'started', tracks: [], targetName: 'Vicent', startedAt: 0 }))
@@ -377,6 +400,48 @@ describe('UsbExportModal choosing', () => {
   })
 })
 
+describe('UsbExportModal for rekordbox on a drive Engine DJ also uses', () => {
+  const both = (over: Partial<UsbVolume>): UsbVolume =>
+    vol({
+      ...over,
+      engine: {
+        holder: { by: 'surco', at: Date.now() },
+        remembered: { ...REMEMBERED, playlistIds: ['house'], at: 99 },
+      },
+    })
+
+  it("reads rekordbox's holder, ticks and last stick, never what Surco exported there for Engine DJ", async () => {
+    await show({
+      volumes: [
+        both({ holder: { by: 'rekordbox', at: Date.now() } }),
+        both({ uuid: 'U2', holder: { by: 'rekordbox', at: Date.now() }, remembered: REMEMBERED }),
+      ],
+      lastKey: 'volume:U2',
+    })
+    expect(screen.getByTestId('usb-volume-pick-U2')).toBeChecked()
+    expect(screen.getByTestId('usb-volume-U2')).toHaveTextContent('exportado por rekordbox hoy')
+    expect(screen.getByTestId('check-node-mak')).toBeChecked()
+    expect(screen.getByTestId('check-node-house')).not.toBeChecked()
+    expect(screen.getByTestId('usb-settings')).toBeInTheDocument()
+    expect(usbPlan).toHaveBeenCalledWith({
+      playlistIds: ['mak'],
+      target: { kind: 'volume', uuid: 'U2' },
+      prune: false,
+      settings: false,
+    })
+  })
+
+  it('asks for the folder with what Surco remembers for rekordbox there', async () => {
+    const usbPickFolder = vi.fn<Api['usbPickFolder']>(async () => null)
+    ;(window as unknown as { api: Api }).api = stubApi({ usbPlan, usbPickFolder })
+    await show({ volumes: [both({})], lastKey: null })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('usb-other'))
+    })
+    expect(usbPickFolder).toHaveBeenCalledWith()
+  })
+})
+
 describe('UsbExportModal for Engine DJ', () => {
   const engineVol = (over: Partial<UsbVolume>, engine: UsbVolume['engine']): UsbVolume =>
     vol({ ...over, engine })
@@ -387,7 +452,7 @@ describe('UsbExportModal for Engine DJ', () => {
         volumes: [engineVol({}, { holder: { by: 'surco', at: 1 }, remembered: REMEMBERED })],
         lastKey: null,
       },
-      { source: 'engine' },
+      { program: 'engine' },
     )
     expect(usbPlan).toHaveBeenCalledWith({
       playlistIds: ['mak'],
@@ -414,7 +479,7 @@ describe('UsbExportModal for Engine DJ', () => {
         ],
         lastKey: null,
       },
-      { source: 'engine' },
+      { program: 'engine' },
     )
     expect(screen.getByTestId('check-node-mak')).toBeChecked()
     expect(screen.getByTestId('check-node-house')).not.toBeChecked()
@@ -431,7 +496,7 @@ describe('UsbExportModal for Engine DJ', () => {
         ],
         lastKey: null,
       },
-      { source: 'engine' },
+      { program: 'engine' },
     )
     expect(screen.getByTestId('usb-volume-U1')).toHaveTextContent('exportado por Surco hoy')
     expect(screen.getByTestId('usb-volume-U1')).not.toHaveTextContent('rekordbox')
@@ -449,7 +514,7 @@ describe('UsbExportModal for Engine DJ', () => {
         ],
         lastKey: 'volume:U1',
       },
-      { source: 'engine' },
+      { program: 'engine' },
     )
     expect(screen.getByTestId('usb-volume-pick-U2')).toBeChecked()
   })
@@ -457,7 +522,7 @@ describe('UsbExportModal for Engine DJ', () => {
   it('asks for the folder with what Surco remembers for Engine DJ there', async () => {
     const usbPickFolder = vi.fn<Api['usbPickFolder']>(async () => null)
     ;(window as unknown as { api: Api }).api = stubApi({ usbPlan, usbPickFolder })
-    await show({ volumes: [vol({})], lastKey: null }, { source: 'engine' })
+    await show({ volumes: [vol({})], lastKey: null }, { program: 'engine' })
     await act(async () => {
       fireEvent.click(screen.getByTestId('usb-other'))
     })
@@ -471,7 +536,7 @@ describe('UsbExportModal for Engine DJ', () => {
         volumes: [engineVol({}, { holder: { by: 'empty', at: null }, remembered: REMEMBERED })],
         lastKey: null,
       },
-      { source: 'engine' },
+      { program: 'engine' },
     )
     expect(screen.getByTestId('usb-warning-engineOpen')).toHaveTextContent(
       'Engine DJ está abierto. Se te pedirá cerrarlo al exportar.',

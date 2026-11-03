@@ -1,5 +1,5 @@
 import { DJ_PROGRAMS, type DjProgram } from '../shared/djProgram'
-import type { UsbExportRequest, UsbPlanResult, UsbStartResult } from '../shared/types'
+import type { UsbExportRequest, UsbPlanResult, UsbProgram, UsbStartResult } from '../shared/types'
 
 export interface UsbExporter {
   plan: (req: UsbExportRequest) => Promise<UsbPlanResult>
@@ -8,8 +8,6 @@ export interface UsbExporter {
   stop: () => Promise<void>
   busy: () => boolean
 }
-
-export type UsbProgram = Exclude<DjProgram, 'traktor'>
 
 export type UsbExporters = Partial<Record<DjProgram, UsbExporter>> & Record<UsbProgram, UsbExporter>
 
