@@ -6,6 +6,7 @@ import type {
   SourceNode,
   SourcePlaylistEntry,
 } from '../../../shared/types'
+import type { TrackFlag } from './trackPrograms'
 
 export interface SourceRead {
   available(): Promise<boolean>
@@ -59,7 +60,7 @@ export interface SourceProgram {
   fixedNode: ((node: SourceNode, atRoot: boolean) => FixedNode) | null
   usb: boolean
   missingLibraryCheck: boolean
-  trackFlag: 'fromRekordbox' | 'fromTraktor' | 'fromEngine' | null
+  trackFlag: TrackFlag | null
   fillsLoaded: boolean
   addsUncollected: boolean
   fieldTestIdPrefix: string

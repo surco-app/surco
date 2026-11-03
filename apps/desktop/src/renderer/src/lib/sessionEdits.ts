@@ -1,6 +1,7 @@
 import type { SessionEdit } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { trackSignature } from './dirty'
+import { copyFlags, copyPlaylists } from './trackPrograms'
 
 // The editable state worth surviving a crash: everything the user can change in the
 // editor before converting, keyed by the source path (track ids are minted fresh
@@ -40,9 +41,7 @@ function sessionEdit(track: TrackItem): SessionEdit {
   // conversion stops honouring the source's own format.
   if (track.musicPersistentId) edit.musicPersistentId = track.musicPersistentId
   if (track.fromAppleMusic) edit.fromAppleMusic = true
-  if (track.fromRekordbox) edit.fromRekordbox = true
-  if (track.fromEngine) edit.fromEngine = true
-  if (track.fromTraktor) edit.fromTraktor = true
+  copyFlags(track, edit)
   if (track.coverRemoved) edit.coverRemoved = true
   if (track.metaCleared) edit.metaCleared = true
   if (track.foreignRemoved?.length) edit.foreignRemoved = track.foreignRemoved
@@ -54,11 +53,6 @@ function sessionEdit(track: TrackItem): SessionEdit {
   if (track.trim) edit.trim = track.trim
   if (track.normalize) edit.normalize = track.normalize
   if (track.declick) edit.declick = track.declick
-  if (track.rekordboxPlaylists) edit.rekordboxPlaylists = track.rekordboxPlaylists
-  if (track.rekordboxPlaylistsBase) edit.rekordboxPlaylistsBase = track.rekordboxPlaylistsBase
-  if (track.traktorPlaylists) edit.traktorPlaylists = track.traktorPlaylists
-  if (track.traktorPlaylistsBase) edit.traktorPlaylistsBase = track.traktorPlaylistsBase
-  if (track.enginePlaylists) edit.enginePlaylists = track.enginePlaylists
-  if (track.enginePlaylistsBase) edit.enginePlaylistsBase = track.enginePlaylistsBase
+  copyPlaylists(track, edit)
   return edit
 }

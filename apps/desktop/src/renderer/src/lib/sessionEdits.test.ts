@@ -209,6 +209,33 @@ it('keeps the wanted rekordbox playlists of a staged track, so switching source 
   })
 })
 
+it('writes the library flags and the three programs’ playlists in the order the session file has always had, so an unchanged track saves the same bytes', () => {
+  const t = track({
+    diskSignature: 'x',
+    fromTraktor: true,
+    fromEngine: true,
+    fromRekordbox: true,
+    enginePlaylistsBase: ['7'],
+    enginePlaylists: [],
+    traktorPlaylistsBase: ['old'],
+    traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
+    rekordboxPlaylistsBase: ['3000'],
+    rekordboxPlaylists: [{ name: 'Cierre' }],
+  })
+  expect(Object.keys(sessionEdits([t])['/music/a.wav'])).toEqual([
+    'meta',
+    'fromRekordbox',
+    'fromEngine',
+    'fromTraktor',
+    'rekordboxPlaylists',
+    'rekordboxPlaylistsBase',
+    'traktorPlaylists',
+    'traktorPlaylistsBase',
+    'enginePlaylists',
+    'enginePlaylistsBase',
+  ])
+})
+
 // Without it a relaunch between a wrong release and the right one leaves the wrong
 // release's label and Discogs id on the track, the very thing the memory exists to undo.
 it('keeps what the applied release wrote, so the next release can still take it back after a relaunch', () => {

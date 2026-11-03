@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { processesAudio } from '../../../shared/audioProcessing'
 import { effectiveMeta, strayTags } from '../../../shared/customFields'
 import { DEFAULT_FIELDS } from '../../../shared/defaults'
+import { DJ_PROGRAMS } from '../../../shared/djProgram'
 import { splitNameLeftMarked } from '../../../shared/errorKeys'
 import { batchKeepMp3, hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
 import type {
@@ -29,6 +30,8 @@ import { clearHiddenProvenance, sanitizeMeta } from '../lib/hygiene'
 import { cleanIpcError, errorKeyOf, isFileInUseMessage, mainErrorMessage } from '../lib/ipcError'
 import { autoNamesFile, renderOutputName } from '../lib/outputName'
 import { declickFor, declickForJob, jobAudio, normalizeFor, normalizeForJob } from '../lib/reapply'
+import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
+import { jobPlaylists, TRACK_PROGRAMS } from '../lib/trackPrograms'
 import { settleVerification } from '../lib/verificationBuffer'
 import type { TrackItem } from '../types'
 import { withMusicCover } from './useAppleMusicArtwork'
@@ -188,7 +191,9 @@ export function useTrackProcessing({
     if (!movedRef.current) return
     movedRef.current = false
     queryClient.invalidateQueries({ queryKey: ['source-playlist'] })
-    queryClient.invalidateQueries({ queryKey: ['rekordbox-membership'] })
+    for (const program of DJ_PROGRAMS)
+      if (TRACK_PROGRAMS[program].rereadAfterMove)
+        queryClient.invalidateQueries({ queryKey: [SOURCE_PROGRAMS[program].membershipKey] })
   }
   // The convert-all loop and the Apple Music sweep outlive the render that started
   // them, while the list stays editable — each track must be read at the moment it's
@@ -438,12 +443,7 @@ export function useTrackProcessing({
           // has indexed rather than from a download folder it has never seen.
           replacesPath: track.replacesPath,
           replacesLabel: track.replacesLabel,
-          rekordboxPlaylists: track.rekordboxPlaylists,
-          rekordboxPlaylistsBase: track.rekordboxPlaylistsBase,
-          traktorPlaylists: track.traktorPlaylists,
-          traktorPlaylistsBase: track.traktorPlaylistsBase,
-          enginePlaylists: track.enginePlaylists,
-          enginePlaylistsBase: track.enginePlaylistsBase,
+          ...jobPlaylists(track),
         })
         // The user declined to overwrite a conflicting file: nothing was written, so
         // leave the track convertible (idle) rather than marking it done or failed.

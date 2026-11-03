@@ -1,8 +1,10 @@
 import { fieldValue } from '../../../shared/customFields'
+import { DJ_PROGRAMS } from '../../../shared/djProgram'
 import { yearFromDate } from '../../../shared/tagFields'
 import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { cleanName } from './release'
+import { TRACK_PROGRAMS, type TrackFlag } from './trackPrograms'
 
 // Discogs tags same-named labels with a trailing "(8)" disambiguator; like the artist,
 // the label token must shed it or every rendered name/title carries the "(8)" for the
@@ -19,9 +21,9 @@ function tokenValue(meta: TrackMetadata, key: string): string {
 
 export function autoNamesFile(
   autoApplyFilename: boolean,
-  track: Pick<TrackItem, 'fromRekordbox' | 'fromEngine' | 'fromTraktor'>,
+  track: Pick<TrackItem, TrackFlag>,
 ): boolean {
-  return autoApplyFilename && !track.fromRekordbox && !track.fromEngine && !track.fromTraktor
+  return autoApplyFilename && !DJ_PROGRAMS.some((program) => track[TRACK_PROGRAMS[program].flag])
 }
 
 export function renderOutputName(format: string, meta: TrackMetadata): string {
