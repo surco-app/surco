@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 2 de noviembre de 2026** (v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
+**Última revisión: 3 de noviembre de 2026** (v1.21.0, filtro «Cues fuera de la rejilla» en rekordbox, Traktor y Engine DJ con su tolerancia en Ajustes › Cues; antes v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -1762,6 +1762,29 @@ desplaza el cabezal y los saltos ese frame, 26 ms a 44,1 kHz (`rekordboxLeadMs`,
 `rekordboxTimeline.ts:63`). Medido en Electron y contra 142 MP3 LAME de una colección real;
 en M4A, WAV, AIFF y MP3 de ffmpeg ya coincidían. Un MP3 sin cabecera sigue saltando con
 algo de error, porque Chromium no puede buscar en él con exactitud.
+
+### Cues fuera de la rejilla
+
+Nuevo en v1.21.0. En las pestañas rekordbox, Traktor y Engine DJ, el filtro «Cues fuera de
+la rejilla» deja solo las pistas con algún cue (hot cue o CALL) que no cae en un golpe
+(`isOffGrid`, `renderer/src/lib/triage.ts:201`; `QualityFilterBar.tsx:87`). Mide contra el
+golpe, no contra el compás. Para cada pista se toma la distancia del cue más alejado al golpe
+más cercano, alargando la rejilla antes del primer golpe y después del último
+(`cueGridDrift`, `shared/cueGrid.ts:30`). La rejilla sale del análisis de cada programa: el
+PQTZ del ANLZ de rekordbox (`gridDriftOf`, `rekordboxPlaylists.ts:210`), el marcador de
+rejilla del .nml de Traktor (`gridBeatsOf`, `traktorPlaylists.ts:120`) y el beatData de
+Engine DJ (`gridDriftOf`, `enginePlaylists.ts:222`). Una pista sin cues o sin rejilla no
+entra.
+
+**La tolerancia se elige** en Ajustes › Cues, «Tolerancia de la rejilla», entre 5, 10 y
+20 ms, por defecto 10 (`CUE_GRID_TOLERANCE`, `shared/cueGrid.ts:1`; `CuesTab.tsx:444`). Se
+sincroniza como el resto de ajustes de cues. Cambiarla recalcula el filtro sin releer la
+biblioteca.
+
+**No corrige nada.** El filtro solo encuentra las pistas. Para arreglarlas se abren en el
+editor, se borran sus cues y se vuelve a pasar Auto marcar o el flujo. Medido en una
+biblioteca real de rekordbox, 2077 pistas, 1592 con cues: con 10 ms salen 38, y las que
+pasan de 20 ms están claramente mal.
 
 ### Pistas que rekordbox no ha analizado
 
