@@ -1,8 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { CueFlow } from '../../../shared/cueFlows'
-import { ALL_SLOTS, HOT_KINDS, SAME_POSITION_MS, type WantedCue } from '../../../shared/cueRules'
-import { DJ_PROGRAMS, programOf } from '../../../shared/djProgram'
-import { TRAKTOR_SLOTS } from '../../../shared/traktorContent'
+import { HOT_KINDS, SAME_POSITION_MS, type WantedCue } from '../../../shared/cueRules'
+import { DJ_PROGRAMS, type DjProgram, programOf } from '../../../shared/djProgram'
 import type { CueLibrary, LibraryTracks, SaveCuesRequest, TrackCues } from '../../../shared/types'
 import { queuedCuesQuery, trackCuesQuery } from '../hooks/useTrackCues'
 import {
@@ -13,6 +12,7 @@ import {
   startDraft,
   wantedOfDraft,
 } from './cueDraft'
+import { CUE_PROGRAMS } from './cuePrograms'
 import { unsavedCueTracks } from './cueSession'
 import { quantizePoints } from './cueWave'
 
@@ -51,12 +51,13 @@ export type TwinPlan =
 
 const LIBRARIES = DJ_PROGRAMS
 
-const wanted = (library: CueLibrary, settings: TwinSettings): boolean =>
-  library === 'rekordbox'
-    ? settings.cueFlowToRekordbox
-    : library === 'traktor'
-      ? settings.cueFlowToTraktor
-      : settings.cueFlowToEngine
+const FLOW_TO: Record<DjProgram, 'cueFlowToRekordbox' | 'cueFlowToTraktor' | 'cueFlowToEngine'> = {
+  rekordbox: 'cueFlowToRekordbox',
+  traktor: 'cueFlowToTraktor',
+  engine: 'cueFlowToEngine',
+}
+
+const wanted = (library: CueLibrary, settings: TwinSettings): boolean => settings[FLOW_TO[library]]
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
 
@@ -92,7 +93,7 @@ function contextOf(read: TrackCues, library: CueLibrary, settings: TwinSettings)
     phrases: read.phrases,
     flows: settings.cueFlows,
     lettersByTime: settings.cueLettersByTime,
-    slots: library === 'traktor' ? TRAKTOR_SLOTS : ALL_SLOTS,
+    slots: CUE_PROGRAMS[library].slots,
   }
 }
 
