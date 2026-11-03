@@ -1,4 +1,4 @@
-import { ALL_SLOTS, type CueSlots } from '../../../shared/cueRules'
+import { ALL_SLOTS, type CueSlots, HOT_KINDS } from '../../../shared/cueRules'
 import { type DjProgram, programOf } from '../../../shared/djProgram'
 import { TRAKTOR_CUE_COLOR, TRAKTOR_SLOTS } from '../../../shared/traktorContent'
 
@@ -47,6 +47,17 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     collectionGate: null,
     callsNote: { key: 'editor.cues.engine.calls', testId: 'cues-engine-calls' },
     saveAllKey: 'editor.cues.engine.saveAll',
+  },
+  serato: {
+    slots: { kinds: HOT_KINDS, pairCalls: false },
+    readsAudio: true,
+    surcoGrid: false,
+    writesCalls: false,
+    fixedColour: null,
+    colourHelp: null,
+    collectionGate: null,
+    callsNote: null,
+    saveAllKey: 'editor.cues.saveAllMixed',
   },
 }
 

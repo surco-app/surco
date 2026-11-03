@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { processesAudio } from '../../../shared/audioProcessing'
 import { effectiveMeta, strayTags } from '../../../shared/customFields'
 import { DEFAULT_FIELDS } from '../../../shared/defaults'
-import { DJ_PROGRAMS } from '../../../shared/djProgram'
+import { WRITABLE_PROGRAMS } from '../../../shared/djProgram'
 import { splitNameLeftMarked } from '../../../shared/errorKeys'
 import { batchKeepMp3, hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
 import type {
@@ -191,7 +191,7 @@ export function useTrackProcessing({
     if (!movedRef.current) return
     movedRef.current = false
     queryClient.invalidateQueries({ queryKey: ['source-playlist'] })
-    for (const program of DJ_PROGRAMS)
+    for (const program of WRITABLE_PROGRAMS)
       if (TRACK_PROGRAMS[program].rereadAfterMove)
         queryClient.invalidateQueries({ queryKey: [SOURCE_PROGRAMS[program].membershipKey] })
   }

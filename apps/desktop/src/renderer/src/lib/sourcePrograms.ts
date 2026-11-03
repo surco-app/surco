@@ -43,6 +43,14 @@ export const SOURCE_READ: Record<DjProgram, SourceRead> = {
     playlist: (id) => window.api.loadEnginePlaylist(id),
     membership: (paths) => window.api.engineMembership(paths),
   },
+  serato: {
+    available: () => window.api.seratoAvailable(),
+    tree: () => window.api.loadSeratoTree(),
+    recentCount: () => window.api.seratoRecentCount(),
+    trackCount: () => window.api.seratoTrackCount(),
+    playlist: (id) => window.api.loadSeratoPlaylist(id),
+    membership: (paths) => window.api.seratoMembership(paths),
+  },
 }
 
 export type EditMessagePrefix = 'sources.edit.' | 'sources.editTraktor.'
@@ -122,6 +130,19 @@ export const SOURCE_PROGRAMS: {
     addsUncollected: false,
     fieldTestIdPrefix: 'engine-',
     membershipKey: 'engine-membership',
+    invalidatesOnEdit: false,
+  },
+  serato: {
+    separator: null,
+    edit: null,
+    fixedNode: null,
+    usb: false,
+    missingLibraryCheck: false,
+    trackFlag: 'fromSerato',
+    fillsLoaded: false,
+    addsUncollected: false,
+    fieldTestIdPrefix: 'serato-',
+    membershipKey: 'serato-membership',
     invalidatesOnEdit: false,
   },
 }

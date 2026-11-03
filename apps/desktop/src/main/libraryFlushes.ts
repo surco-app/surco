@@ -2,7 +2,7 @@ import { existsSync, realpathSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import log from 'electron-log/main'
-import { type DjProgram, programsInOrder } from '../shared/djProgram'
+import { type WritableProgram, writableInOrder } from '../shared/djProgram'
 import type { LibraryStatus, LibraryTagUpdate, RekordboxSyncIssue } from '../shared/types'
 import { activity } from './activity'
 import {
@@ -50,14 +50,14 @@ import { type FlushOutcome, type TraktorWrite, traktorPatchKey } from './verifyR
 
 export type SyncBlockedKey = 'traktorSyncBlocked' | 'rekordboxSyncBlocked' | 'engineSyncBlocked'
 
-export const SYNC_BLOCKED_KEY: Record<DjProgram, SyncBlockedKey> = {
+export const SYNC_BLOCKED_KEY: Record<WritableProgram, SyncBlockedKey> = {
   rekordbox: 'rekordboxSyncBlocked',
   traktor: 'traktorSyncBlocked',
   engine: 'engineSyncBlocked',
 }
 
 export const SYNC_ISSUE_CHANNEL: Record<
-  DjProgram,
+  WritableProgram,
   'rekordbox:sync-issue' | 'engine:sync-issue' | null
 > = {
   rekordbox: 'rekordbox:sync-issue',
@@ -66,14 +66,14 @@ export const SYNC_ISSUE_CHANNEL: Record<
 }
 
 export interface LibraryHost {
-  ensureClosed: (program: DjProgram) => Promise<boolean>
-  showBlockedDialog: (program: DjProgram) => void
-  reportIssue: (program: DjProgram, issue: RekordboxSyncIssue) => void
+  ensureClosed: (program: WritableProgram) => Promise<boolean>
+  showBlockedDialog: (program: WritableProgram) => void
+  reportIssue: (program: WritableProgram, issue: RekordboxSyncIssue) => void
   rekordboxHeld: () => boolean
 }
 
 type SessionBackup = ReturnType<typeof createSessionBackup>
-export type Sessions = Record<DjProgram, SessionBackup>
+export type Sessions = Record<WritableProgram, SessionBackup>
 
 // A collection can live on an external drive. Gone because that drive is not mounted, it
 // comes back when the drive does, unlike one deleted from a disk that is there.
@@ -223,7 +223,7 @@ export interface ConversionRun {
   addable: boolean
 }
 
-export interface ConversionFlusher<P extends DjProgram> {
+export interface ConversionFlusher<P extends WritableProgram> {
   before(): Promise<void>
   after(run: ConversionRun): Promise<FlushOutcome[P]>
 }
@@ -234,7 +234,7 @@ export type ConversionQueues = {
   engine?: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void }
 }
 
-export const FLUSH_ORDER = programsInOrder(['traktor', 'rekordbox', 'engine'])
+export const FLUSH_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine'])
 
 // A convert-all run ends (however it ended — finished, cancelled, or failed, the
 // renderer calls this from its finally block): flush whatever Traktor cue patches the
@@ -250,7 +250,7 @@ export async function flushConversionBatch(
   sessions: Sessions,
   queues: ConversionQueues,
 ): Promise<FlushOutcome> {
-  const flushers: { [P in DjProgram]: ConversionFlusher<P> } = {
+  const flushers: { [P in WritableProgram]: ConversionFlusher<P> } = {
     traktor: traktorConversionFlusher(host, sessions, queues.traktor),
     rekordbox: rekordboxConversionFlusher(host, sessions, queues.rekordbox),
     engine: engineConversionFlusher(host, sessions, queues.engine),
@@ -269,7 +269,7 @@ export async function flushConversionBatch(
   return outcome as FlushOutcome
 }
 
-async function settle<P extends DjProgram>(
+async function settle<P extends WritableProgram>(
   outcome: Partial<FlushOutcome>,
   program: P,
   flusher: ConversionFlusher<P>,

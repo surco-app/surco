@@ -1385,6 +1385,7 @@
     "sourceRekordboxUnavailable": "rekordbox コレクションが見つかりませんでした",
     "sourceEngineUnavailable": "Engine DJ ライブラリが見つかりませんでした",
     "sourceTraktorUnavailable": "Traktor コレクションが見つかりませんでした",
+    "sourceSeratoUnavailable": "Serato ライブラリが見つかりませんでした",
     "sourcesHint": "ソースを非表示にしてもサイドバーから消えるだけで、変換時の同期には影響しません。",
     "updates": "アップデート",
     "betaUpdates": "ベータ版を取得",
@@ -2207,13 +2208,15 @@
       "appleMusic": "Apple Music を非表示",
       "rekordbox": "rekordbox を非表示",
       "engine": "Engine DJ を非表示",
-      "traktor": "Traktor を非表示"
+      "traktor": "Traktor を非表示",
+      "serato": "Serato を非表示"
     },
     "workingList": "トラック",
     "appleMusic": "Music",
     "rekordbox": "rekordbox",
     "engine": "Engine DJ",
     "traktor": "Traktor",
+    "serato": "Serato",
     "allTracks": "すべてのトラック",
     "recentlyAdded": "最近追加した項目",
     "search": "プレイリストを検索",
@@ -2222,10 +2225,12 @@
       "appleMusic": "プレイリストを読み込めませんでした。Apple Music が開いていて、Surco に操作の許可があるか確認してください。",
       "rekordbox": "コレクションを読み込めませんでした。変更した直後の場合は、数秒後に Surco に戻ってください。",
       "engine": "Engine DJ ライブラリを読み込めませんでした。変更した直後の場合は、数秒後に Surco に戻ってください。",
-      "traktor": "Traktor コレクションを読み込めませんでした。変更した直後の場合は、数秒後に Surco に戻ってください。"
+      "traktor": "Traktor コレクションを読み込めませんでした。変更した直後の場合は、数秒後に Surco に戻ってください。",
+      "serato": "Serato ライブラリを読み込めませんでした。変更した直後の場合は、数秒後に Surco に戻ってください。"
     },
     "notFound": {
-      "engine": "Engine DJ ライブラリが見つかりません。設定 → 出力 の Engine DJ で、Database2 を含むフォルダーを指定してください。"
+      "engine": "Engine DJ ライブラリが見つかりません。設定 → 出力 の Engine DJ で、Database2 を含むフォルダーを指定してください。",
+      "serato": "Serato ライブラリが見つかりません。ミュージックと接続中の各ドライブにある _Serato_ フォルダーを探します。"
     },
     "empty": "プレイリストがありません。",
     "noMatch": "一致するプレイリストがありません。",
@@ -2236,7 +2241,8 @@
       "appleMusic": "「{{name}}」は Music にもうありません",
       "rekordbox": "「{{name}}」は rekordbox にもうありません",
       "engine": "「{{name}}」は Engine DJ にもうありません",
-      "traktor": "「{{name}}」は Traktor にもうありません"
+      "traktor": "「{{name}}」は Traktor にもうありません",
+      "serato": "「{{name}}」は Serato にもうありません"
     },
     "missing_one": "「{{name}}」の {{count}} 件のトラックはディスク上にファイルがありません",
     "missing_other": "「{{name}}」の {{count}} 件のトラックはディスク上にファイルがありません",

@@ -130,9 +130,14 @@ export function useSourceBrowser({
     queryFn: SOURCE_READ.traktor.available,
     staleTime: Number.POSITIVE_INFINITY,
   })
+  const serato = useQuery({
+    queryKey: ['source-available', 'serato'],
+    queryFn: SOURCE_READ.serato.available,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
   const found = useMemo<Record<DjProgram, boolean | undefined>>(
-    () => ({ rekordbox, engine: engine.data, traktor: traktor.data }),
-    [rekordbox, engine.data, traktor.data],
+    () => ({ rekordbox, engine: engine.data, traktor: traktor.data, serato: serato.data }),
+    [rekordbox, engine.data, traktor.data, serato.data],
   )
   const sources = useMemo<PlaylistSource[]>(() => {
     return [

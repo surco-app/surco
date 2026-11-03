@@ -1,7 +1,7 @@
-import type { DjProgram } from './djProgram'
+import type { WritableProgram } from './djProgram'
 
 export const DJ_REACH_SETTINGS: Record<
-  DjProgram,
+  WritableProgram,
   {
     sync: 'syncRekordbox' | 'syncTraktor' | 'syncEngineDj'
     add: 'addToRekordbox' | 'addToTraktor' | 'addToEngineDj'
@@ -13,7 +13,7 @@ export const DJ_REACH_SETTINGS: Record<
 }
 
 export const DJ_COLLECTION_PATH: Record<
-  DjProgram,
+  WritableProgram,
   'rekordboxDbPath' | 'traktorNmlPath' | 'engineLibraryDir'
 > = {
   rekordbox: 'rekordboxDbPath',

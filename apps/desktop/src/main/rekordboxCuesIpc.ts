@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { BrowserWindow, ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
-import { programOf, programsInOrder } from '../shared/djProgram'
+import { programOf, writableInOrder } from '../shared/djProgram'
 import type { DropInput } from '../shared/dropDetect'
 import type { GridFit } from '../shared/gridEdit'
 import type {
@@ -12,6 +12,7 @@ import type {
   SaveCuesRequest,
   SurcoGrid,
   TrackCues,
+  WritableProgram,
 } from '../shared/types'
 import type { BeatGridFit } from './beatGrid'
 import type { CueQueue, CueSource } from './cueSource'
@@ -23,13 +24,13 @@ import { withCollection } from './rekordboxPlaylistsIpc'
 import type { ProvisionalList } from './rekordboxProvisional'
 import { traktorCueSource } from './traktorCueSource'
 
-const CUE_SAVE_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
+const CUE_SAVE_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
 
 export function registerRekordboxCuesIpc(host: {
   collection: () => string
   queue: CueQueue
   applyQuietly: () => void
-  beginMoment?: (reason: CopyReason, programs: DjProgram[]) => void
+  beginMoment?: (reason: CopyReason, programs: WritableProgram[]) => void
   flow: () => CueFlow
   beatGrid: (file: string) => Promise<BeatGridFit | null>
   words: (file: string) => Promise<Uint16Array | null>
@@ -56,6 +57,7 @@ export function registerRekordboxCuesIpc(host: {
     rekordbox: rekordboxCueSource(host),
     traktor: host.traktor ? traktorCueSource(host.traktor, host.collection) : null,
     engine: host.engine ? engineCueSource(host.engine, host.collection) : null,
+    serato: null,
   }
   const sourceOf = (contentId: string) => sources[programOf(contentId)]
   const queueOf = (contentId: string) => sourceOf(contentId)?.queue ?? null

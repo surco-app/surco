@@ -1,13 +1,13 @@
-import { DJ_PROGRAMS } from '../shared/djProgram'
-import type { CopyReason, DjProgram } from '../shared/types'
+import { WRITABLE_PROGRAMS } from '../shared/djProgram'
+import type { CopyReason, WritableProgram } from '../shared/types'
 import type { SessionBackup } from './rekordboxSessionBackup'
 
-const PROGRAMS = DJ_PROGRAMS
+const PROGRAMS = WRITABLE_PROGRAMS
 
 type Serial = <T>(task: () => Promise<T>) => Promise<T>
 
-export function createMoments(sessions: Record<DjProgram, SessionBackup>): {
-  begin: (reason: CopyReason, programs?: readonly DjProgram[]) => void
+export function createMoments(sessions: Record<WritableProgram, SessionBackup>): {
+  begin: (reason: CopyReason, programs?: readonly WritableProgram[]) => void
   beginLoose: (collectionPath: string) => void
   duringRunFlush: <T>(task: () => Promise<T>) => Promise<T>
   runFlush: <T>(

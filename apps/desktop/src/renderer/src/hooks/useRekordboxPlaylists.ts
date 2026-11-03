@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef } from 'react'
-import { DJ_PROGRAMS, type DjProgram } from '../../../shared/djProgram'
+import { WRITABLE_PROGRAMS, type WritableProgram } from '../../../shared/djProgram'
 import type { PlaylistLibrary, Settings, SourceNode } from '../../../shared/types'
 import type { PlaylistsSpec } from '../lib/fieldSpecs'
 import { PLAYLIST_FIELDS, withPlaylistField } from '../lib/fields'
@@ -22,7 +22,7 @@ const OFFERED = {
   rekordbox: 'rekordboxPlaylistsFieldOffered',
   traktor: 'traktorPlaylistsFieldOffered',
   engine: 'enginePlaylistsFieldOffered',
-} as const satisfies Record<DjProgram, keyof Settings>
+} as const satisfies Record<WritableProgram, keyof Settings>
 
 export function useLibraryAvailable(library: PlaylistLibrary): boolean {
   const { data = false } = useQuery({
@@ -83,7 +83,7 @@ export function useOfferPlaylistFields(
     if (!settings) return
     let visibleFields = settings.visibleFields
     const patch: Partial<Settings> = {}
-    for (const library of DJ_PROGRAMS) {
+    for (const library of WRITABLE_PROGRAMS) {
       if (tried.current.has(library)) continue
       const next = withPlaylistField(
         visibleFields,

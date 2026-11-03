@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { CopyReason, DjProgram } from '../shared/types'
+import type { CopyReason, WritableProgram } from '../shared/types'
 import { serialLibraryFlush } from './libraryTagSync'
 import { createMoments } from './moments'
 import { createSessionBackup, type SessionBackup } from './rekordboxSessionBackup'
@@ -16,7 +16,7 @@ function fakeSession(): SessionBackup {
   }
 }
 
-function fakeSessions(): Record<DjProgram, SessionBackup> {
+function fakeSessions(): Record<WritableProgram, SessionBackup> {
   return { rekordbox: fakeSession(), traktor: fakeSession(), engine: fakeSession() }
 }
 

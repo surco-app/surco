@@ -1,4 +1,4 @@
-import { DJ_PROGRAMS, type DjProgram } from '../shared/djProgram'
+import { WRITABLE_PROGRAMS, type WritableProgram } from '../shared/djProgram'
 import type { UsbExportRequest, UsbPlanResult, UsbProgram, UsbStartResult } from '../shared/types'
 
 export interface UsbExporter {
@@ -9,18 +9,19 @@ export interface UsbExporter {
   busy: () => boolean
 }
 
-export type UsbExporters = Partial<Record<DjProgram, UsbExporter>> & Record<UsbProgram, UsbExporter>
+export type UsbExporters = Partial<Record<WritableProgram, UsbExporter>> &
+  Record<UsbProgram, UsbExporter>
 
 export function usbProgramOf(req: UsbExportRequest): UsbProgram {
   return req.source ?? 'rekordbox'
 }
 
 export function routeUsbExports(exporters: UsbExporters): UsbExporter {
-  const registered = DJ_PROGRAMS.flatMap((p) => {
+  const registered = WRITABLE_PROGRAMS.flatMap((p) => {
     const exporter = exporters[p]
     return exporter ? [{ program: p, exporter }] : []
   })
-  const otherBusy = (program: DjProgram): boolean =>
+  const otherBusy = (program: WritableProgram): boolean =>
     registered.some((r) => r.program !== program && r.exporter.busy())
   return {
     plan: (req) => {

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistSource } from '../../../shared/types'
 import { RAIL_WIDTH } from '../lib/columnLayout'
-import { AppleMusicIcon, EngineIcon, RekordboxIcon, TraktorIcon } from './SourceIcons'
+import { AppleMusicIcon, EngineIcon, RekordboxIcon, SeratoIcon, TraktorIcon } from './SourceIcons'
 
 // Each program's own mark, the thing a DJ already recognises from the Dock, with its name
 // in small type under it. Drawn in the rail's colour, not the apps' own.
@@ -13,6 +13,7 @@ export const SOURCE_ICON: Record<PlaylistSource, typeof AppleMusicIcon> = {
   rekordbox: RekordboxIcon,
   engine: EngineIcon,
   traktor: TraktorIcon,
+  serato: SeratoIcon,
 }
 
 // The column of places tracks come from, as rekordbox's own side panel has it, with Copias

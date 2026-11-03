@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import type { DjProgram } from '../shared/djProgram'
-import { programsInOrder } from '../shared/djProgram'
+import type { WritableProgram } from '../shared/djProgram'
+import { writableInOrder } from '../shared/djProgram'
 import { engineContentId } from '../shared/engineContent'
 import { traktorContentId } from '../shared/traktorContent'
 import type { LibraryCopyInfo, LibraryCopyPresence, LibraryTracks } from '../shared/types'
@@ -14,9 +14,9 @@ import { attr, findEntries, nmlCopyInfo } from './traktorNml'
 import { traktorFileOf } from './traktorPlaylists'
 
 // Each library's location, or '' when its sync is off.
-export type SyncedLibraries = Record<DjProgram, string>
+export type SyncedLibraries = Record<WritableProgram, string>
 
-const LIBRARY_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
+const LIBRARY_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
 
 // Read only, and it throws when a library it should look in cannot be read: the caller
 // keeps the file then, since that library may still use it.
@@ -39,7 +39,7 @@ export function djLibraryFileUse(
   let rekordboxKey: Promise<string> | undefined
   let engineRows: ReturnType<typeof readEngineRows> | undefined
   let nmlFiles: Promise<Map<string, string[]>> | undefined
-  const holds: Record<DjProgram, (location: string, path: string) => Promise<boolean>> = {
+  const holds: Record<WritableProgram, (location: string, path: string) => Promise<boolean>> = {
     rekordbox: async (collection, path) => {
       rekordboxKey ??= rekordboxRawKey(collection)
       const db = openRekordboxDb(collection, { readonly: true, key: await rekordboxKey })
@@ -153,7 +153,7 @@ async function engineInfo(
 }
 
 const COPY_INFO: Record<
-  DjProgram,
+  WritableProgram,
   (
     location: string,
     paths: string[],
@@ -190,7 +190,7 @@ export async function libraryCopyInfo(
 }
 
 export interface LibraryGenre {
-  source: DjProgram
+  source: WritableProgram
   value: string
 }
 
@@ -277,7 +277,7 @@ export async function libraryGenresOf(
 }
 
 const TRACK_OF: Record<
-  DjProgram,
+  WritableProgram,
   (location: string, path: string, options: PathMatchOptions) => Promise<string | undefined>
 > = {
   rekordbox: async (collection, path, options) => {

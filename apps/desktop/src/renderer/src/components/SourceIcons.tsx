@@ -70,8 +70,28 @@ export function TraktorIcon({ size, ...rest }: IconProps): React.JSX.Element {
   )
 }
 
+export function SeratoIcon({ size, ...rest }: IconProps): React.JSX.Element {
+  const mask = useId()
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" {...rest}>
+      <mask id={mask}>
+        <circle cx="12" cy="12" r="10" fill="white" />
+        <path
+          d="M15.4 8.4C14.4 7.2 8.9 6.9 8.9 9.6C8.9 12.1 15.1 11.9 15.1 14.4C15.1 17.1 9.6 16.8 8.6 15.6"
+          fill="none"
+          stroke="black"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+        />
+      </mask>
+      <rect width="24" height="24" fill="currentColor" mask={`url(#${mask})`} />
+    </svg>
+  )
+}
+
 export const LIBRARY_ICON: Record<DjProgram, (props: IconProps) => React.JSX.Element> = {
   rekordbox: RekordboxIcon,
   traktor: TraktorIcon,
   engine: EngineIcon,
+  serato: SeratoIcon,
 }

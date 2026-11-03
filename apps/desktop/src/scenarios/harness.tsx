@@ -118,7 +118,7 @@ import { detectTrim } from '../renderer/src/lib/trim'
 import type { TrackItem } from '../renderer/src/types'
 import { trashLimits } from '../shared/backupPolicy'
 import { normalizeImportFields } from '../shared/defaults'
-import type { DjProgram } from '../shared/djProgram'
+import type { WritableProgram } from '../shared/djProgram'
 import { resolveJobFormat } from '../shared/format'
 import type {
   FormatSetting,
@@ -156,7 +156,7 @@ export interface Sabotage {
 
 type QueueChecks = ReturnType<typeof queueVerification>
 
-type Library = DjProgram
+type Library = WritableProgram
 
 interface VerifyWiring {
   registry: ReturnType<typeof appVerifyRegistry>

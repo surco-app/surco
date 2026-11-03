@@ -14,7 +14,7 @@ import {
 import { CUE_GRID_TOLERANCE, normalizeCueGridTolerance } from '../../../../shared/cueGrid'
 import { CUE_JUMP_BARS } from '../../../../shared/cueJump'
 import { CUE_QUANTIZE } from '../../../../shared/cueQuantize'
-import { DJ_PROGRAMS, type DjProgram } from '../../../../shared/djProgram'
+import { WRITABLE_PROGRAMS, type WritableProgram } from '../../../../shared/djProgram'
 import { flowName } from '../../lib/cueFlowName'
 import { FLOW_TO } from '../../lib/cueTwins'
 import { LIBRARY_NAME } from '../../lib/reviewLibraries'
@@ -74,7 +74,7 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
     void window.api.traktorAvailable().then(setTraktorFound, () => {})
     void window.api.engineAvailable().then(setEngineFound, () => {})
   }, [])
-  const foundBy: Record<DjProgram, boolean> = {
+  const foundBy: Record<WritableProgram, boolean> = {
     rekordbox: rekordboxCollection !== '',
     traktor: traktorFound,
     engine: engineFound,
@@ -366,7 +366,7 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
           </span>
         </h3>
         <div data-testid="cue-flow-targets" className={`${GROUP} text-sm`}>
-          {DJ_PROGRAMS.map((library) => {
+          {WRITABLE_PROGRAMS.map((library) => {
             const name = LIBRARY_NAME[library]
             const key = FLOW_TO[library]
             const found = foundBy[library]

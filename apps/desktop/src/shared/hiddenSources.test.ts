@@ -12,7 +12,7 @@ describe('normalizeHiddenSources', () => {
   })
 
   it('drops what a hand-edited or newer file holds, so the rail never waits on a source this version lacks', () => {
-    expect(normalizeHiddenSources(['serato', 3, null, 'appleMusic'])).toEqual(['appleMusic'])
+    expect(normalizeHiddenSources(['virtualdj', 3, null, 'appleMusic'])).toEqual(['appleMusic'])
   })
 
   it('lists a source once however many times it was stored', () => {

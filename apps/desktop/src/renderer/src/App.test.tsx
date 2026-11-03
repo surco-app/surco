@@ -316,6 +316,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(false),
     engineAvailable: vi.fn<Api['engineAvailable']>().mockResolvedValue(false),
     traktorAvailable: vi.fn<Api['traktorAvailable']>().mockResolvedValue(false),
+    seratoAvailable: vi.fn<Api['seratoAvailable']>().mockResolvedValue(false),
     rekordboxHasSeparator: vi.fn<Api['rekordboxHasSeparator']>().mockResolvedValue(true),
     rekordboxMembership: vi.fn<Api['rekordboxMembership']>().mockResolvedValue({}),
     editRekordboxPlaylist: vi

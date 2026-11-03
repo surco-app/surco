@@ -41,8 +41,8 @@ import { libraryBackupRoot } from '../../main/libraryBackups'
 import { openRekordboxDb } from '../../main/rekordboxDb'
 import { defaults } from '../../main/settings'
 import { readTraktorCueStart, storedTree } from '../../main/traktor4Fixture'
-import type { DjProgram } from '../../shared/djProgram'
-import { programsInOrder } from '../../shared/djProgram'
+import type { WritableProgram } from '../../shared/djProgram'
+import { writableInOrder } from '../../shared/djProgram'
 import type { OutputFormat } from '../../shared/types'
 import { music } from '../fakeMusic'
 import type { Cell, InvariantName } from './cells'
@@ -63,7 +63,7 @@ import {
 } from './libraries'
 import { SEEDED_CUES_MS, type SourceTrack, type TrickyTags } from './sources'
 
-const PROGRAM_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
+const PROGRAM_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
 
 const FF = ffmpegStatic as unknown as string
 const PROBE = ffprobeInstaller.path
@@ -1074,13 +1074,13 @@ function programBroken(program: Program, set: LibrarySet, t: SeededTrack, e: Exp
   return set.music ? musicBroken(t, e) : []
 }
 
-const PROGRAM_NAME: Record<DjProgram, string> = {
+const PROGRAM_NAME: Record<WritableProgram, string> = {
   rekordbox: 'rekordbox',
   engine: 'Engine',
   traktor: 'Traktor',
 }
 
-function libraryFile(set: LibrarySet, program: DjProgram): string | undefined {
+function libraryFile(set: LibrarySet, program: WritableProgram): string | undefined {
   if (program === 'rekordbox') return set.rekordboxDb
   if (program === 'engine') return set.engineDir && engineDbPath(set.engineDir)
   return set.traktorNml

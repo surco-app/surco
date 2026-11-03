@@ -46,12 +46,14 @@ export function GeneralTab({
     rekordbox: found.rekordbox !== true,
     engine: found.engine !== true,
     traktor: found.traktor !== true,
+    serato: found.serato !== true,
   }
   const reason: Record<PlaylistSource, string | undefined> = {
     appleMusic: unavailable.appleMusic ? tr('settings.sourceAppleMusicUnavailable') : undefined,
     rekordbox: found.rekordbox === false ? tr('settings.sourceRekordboxUnavailable') : undefined,
     engine: found.engine === false ? tr('settings.sourceEngineUnavailable') : undefined,
     traktor: found.traktor === false ? tr('settings.sourceTraktorUnavailable') : undefined,
+    serato: found.serato === false ? tr('settings.sourceSeratoUnavailable') : undefined,
   }
 
   return (

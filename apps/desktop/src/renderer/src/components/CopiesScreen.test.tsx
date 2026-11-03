@@ -3,11 +3,11 @@ import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
-  DjProgram,
   LibraryCopy,
   ProgramCopies,
   RestoreResult,
   TrashEntry,
+  WritableProgram,
 } from '../../../shared/types'
 import i18n from '../i18n'
 import es from '../i18n/locales/es.json'
@@ -36,7 +36,7 @@ const copy = (over: Partial<LibraryCopy> = {}): LibraryCopy => ({
   ...over,
 })
 
-const program = (name: DjProgram, over: Partial<ProgramCopies> = {}): ProgramCopies => ({
+const program = (name: WritableProgram, over: Partial<ProgramCopies> = {}): ProgramCopies => ({
   program: name,
   collectionPath: `/lib/${name}`,
   copies: [],
@@ -87,7 +87,7 @@ function renderScreen(
   const props = {
     programs,
     trash: musicTrash(),
-    onRestore: vi.fn<(p: DjProgram, id: string) => Promise<RestoreResult>>(async () => ({
+    onRestore: vi.fn<(p: WritableProgram, id: string) => Promise<RestoreResult>>(async () => ({
       ok: true,
     })),
     onReveal: vi.fn(),
@@ -324,7 +324,7 @@ describe('CopiesScreen', () => {
 
   it('a restore that worked says to when, until the next attempt', async () => {
     const onRestore = vi
-      .fn<(p: DjProgram, id: string) => Promise<RestoreResult>>()
+      .fn<(p: WritableProgram, id: string) => Promise<RestoreResult>>()
       .mockResolvedValueOnce({ ok: true })
       .mockResolvedValueOnce({ ok: false, reason: 'running' })
     renderScreen([program('rekordbox', { copies: [latest, older] })], { onRestore })

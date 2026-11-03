@@ -18,6 +18,7 @@ vi.hoisted(() => {
     rekordboxAvailable: async () => false,
     engineAvailable: async () => false,
     traktorAvailable: async () => false,
+    seratoAvailable: async () => false,
     cueProfile: async () => ({ profile: null, edits: { count: 0, sinceLearn: 0 }, marked: 0 }),
     onCueProfileChanged: () => () => {},
   }

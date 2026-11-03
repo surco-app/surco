@@ -18,7 +18,7 @@ import type { CueJumpBars } from '../../shared/cueJump'
 import type { CueQuantize } from '../../shared/cueQuantize'
 import { effectiveMeta } from '../../shared/customFields'
 import { normalizeImportFields } from '../../shared/defaults'
-import { DJ_PROGRAMS, type DjProgram, programsInOrder } from '../../shared/djProgram'
+import { WRITABLE_PROGRAMS, type WritableProgram, writableInOrder } from '../../shared/djProgram'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import { resolveBindings } from '../../shared/shortcutDefaults'
@@ -228,9 +228,9 @@ import type { CopiedTags, TrackItem } from './types'
 const NO_HIDDEN_SOURCES: PlaylistSource[] = []
 const PREFETCH_HOVER_MS = 150
 const PLAYER_LEAVE_MS = 200
-const QUEUE_PILL_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
+const QUEUE_PILL_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
 const SYNC_ISSUES: Record<
-  DjProgram,
+  WritableProgram,
   {
     listen: (cb: (issue: RekordboxSyncIssue) => void) => () => void
     messages: 'rekordboxIssue' | 'engineIssue'
@@ -416,7 +416,7 @@ export default function App(): React.JSX.Element {
     traktor: useLibraryAvailable('traktor'),
     engine: useLibraryAvailable('engine'),
   }
-  const playlistLibraries = DJ_PROGRAMS.filter((l) => playlistLibrariesFound[l])
+  const playlistLibraries = WRITABLE_PROGRAMS.filter((l) => playlistLibrariesFound[l])
   const saveSettingsStable = useStableCallback(saveSettings)
   useOfferPlaylistFields(
     settings?.hasSeenOnboarding && !settingsOpen ? settings : null,
@@ -856,7 +856,7 @@ export default function App(): React.JSX.Element {
   const { applyNow: applyTraktorQueueNow, discard: discardTraktorQueue } = traktorCueQueue
   const queuePill = useMemo(() => {
     const queues: Record<
-      DjProgram,
+      WritableProgram,
       { state: RekordboxQueueState; applyNow: () => Promise<void>; discard: () => Promise<void> }
     > = {
       rekordbox: { state: rekordboxQueue.state, applyNow: applyQueueNow, discard: discardQueue },
@@ -1144,7 +1144,7 @@ export default function App(): React.JSX.Element {
   // What a run's rekordbox or Engine DJ repoint could not do: the library stays on the old
   // file, so the DJ has to hear it now rather than when a track fails to load at the gig.
   useEffect(() => {
-    const stops = DJ_PROGRAMS.flatMap((program) => {
+    const stops = WRITABLE_PROGRAMS.flatMap((program) => {
       const issues = SYNC_ISSUES[program]
       if (!issues) return []
       return [

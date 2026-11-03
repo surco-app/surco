@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { CueFlow } from '../../../shared/cueFlows'
 import { HOT_KINDS, SAME_POSITION_MS, type WantedCue } from '../../../shared/cueRules'
-import { DJ_PROGRAMS, type DjProgram, programOf } from '../../../shared/djProgram'
+import { programOf, WRITABLE_PROGRAMS, type WritableProgram } from '../../../shared/djProgram'
 import type { CueLibrary, LibraryTracks, SaveCuesRequest, TrackCues } from '../../../shared/types'
 import { queuedCuesQuery, trackCuesQuery } from '../hooks/useTrackCues'
 import {
@@ -38,7 +38,7 @@ export interface TwinSettings {
 
 export type TwinPlan =
   | {
-      library: CueLibrary
+      library: WritableProgram
       contentId: string
       status: 'planned'
       hot: number
@@ -46,13 +46,13 @@ export type TwinPlan =
       left: number
       request: SaveCuesRequest
     }
-  | { library: CueLibrary; contentId: string; status: 'full'; left: number }
-  | { library: CueLibrary; contentId: string; status: 'unsaved' }
+  | { library: WritableProgram; contentId: string; status: 'full'; left: number }
+  | { library: WritableProgram; contentId: string; status: 'unsaved' }
 
-const LIBRARIES = DJ_PROGRAMS
+const LIBRARIES = WRITABLE_PROGRAMS
 
 export const FLOW_TO: Record<
-  DjProgram,
+  WritableProgram,
   'cueFlowToRekordbox' | 'cueFlowToTraktor' | 'cueFlowToEngine'
 > = {
   rekordbox: 'cueFlowToRekordbox',
@@ -60,7 +60,8 @@ export const FLOW_TO: Record<
   engine: 'cueFlowToEngine',
 }
 
-const wanted = (library: CueLibrary, settings: TwinSettings): boolean => settings[FLOW_TO[library]]
+const wanted = (library: WritableProgram, settings: TwinSettings): boolean =>
+  settings[FLOW_TO[library]]
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
 
@@ -122,7 +123,7 @@ function onlyAdded(baseline: WantedCue[], placed: WantedCue[], kinds: number[]):
 async function planOne(
   client: QueryClient,
   source: TwinSource,
-  library: CueLibrary,
+  library: WritableProgram,
   contentId: string,
   settings: TwinSettings,
 ): Promise<TwinPlan | null> {

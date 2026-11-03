@@ -1226,7 +1226,7 @@ describe('cue flows', () => {
   it('repairs a hidden-sources value with unknown or repeated entries on every merge', () => {
     writeFileSync(
       join(app.getPath('userData'), 'settings.json'),
-      JSON.stringify({ hiddenSources: ['rekordbox', 'serato', 'rekordbox'] }),
+      JSON.stringify({ hiddenSources: ['rekordbox', 'virtualdj', 'rekordbox'] }),
     )
     expect(getSettings().hiddenSources).toEqual(['rekordbox'])
     saveSettings({ hiddenSources: ['appleMusic', 'appleMusic', 'x'] as never })

@@ -1,4 +1,4 @@
-import { programsInOrder } from '../../../shared/djProgram'
+import { writableInOrder } from '../../../shared/djProgram'
 import { DJ_COLLECTION_PATH, DJ_REACH_SETTINGS } from '../../../shared/djSettings'
 import type { Settings } from '../../../shared/types'
 import type { DjLibraryId } from './djLibraries'
@@ -10,7 +10,7 @@ export type DjReach = 'off' | 'update' | 'add'
 export type DjAddKey = (typeof DJ_REACH_SETTINGS)[DjLibraryId]['add']
 export type DjSyncKey = (typeof DJ_REACH_SETTINGS)[DjLibraryId]['sync']
 
-const ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
+const ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
 
 export function toDjReach(sync: boolean, add: boolean): DjReach {
   if (add) return 'add'

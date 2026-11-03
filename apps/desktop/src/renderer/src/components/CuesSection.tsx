@@ -176,6 +176,7 @@ const COPY: Record<DjProgram, typeof REKORDBOX_COPY> = {
   rekordbox: REKORDBOX_COPY,
   traktor: TRAKTOR_COPY,
   engine: ENGINE_COPY,
+  serato: REKORDBOX_COPY,
 }
 
 const copyOf = (contentId: string) => COPY[programOf(contentId)]

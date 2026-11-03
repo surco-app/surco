@@ -1,5 +1,5 @@
 import { ipcMain, type WebContents } from 'electron'
-import type { DjProgram } from '../shared/djProgram'
+import type { WritableProgram } from '../shared/djProgram'
 import type { DamageFinding, DamageRepair, DamageRepairItem, DamageScan } from '../shared/types'
 import { type DamageRepairDeps, type RepairedProgram, repairDamage } from './damageRepair'
 import { type DamageScanDeps, scanDamage } from './damageScan'
@@ -29,7 +29,7 @@ type QueuedChecks = {
   ) => boolean
 }
 
-const QUEUED_FOR: QueuedChecks & Record<Exclude<DjProgram, RepairedProgram>, null> = {
+const QUEUED_FOR: QueuedChecks & Record<Exclude<WritableProgram, RepairedProgram>, null> = {
   rekordbox: null,
   engine: (r, queued) =>
     queued.engine.some(

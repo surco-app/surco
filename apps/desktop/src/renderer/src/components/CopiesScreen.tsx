@@ -2,14 +2,14 @@ import { ChevronDown, ChevronUp, FileAudio, RotateCcw, Search, X } from 'lucide-
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DJ_PROGRAMS } from '../../../shared/djProgram'
+import { WRITABLE_PROGRAMS } from '../../../shared/djProgram'
 import type {
-  DjProgram,
   LibraryCopy,
   ProgramCopies,
   RestoreRefusal,
   RestoreResult,
   TrashEntry,
+  WritableProgram,
 } from '../../../shared/types'
 import { baseName } from '../lib/baseName'
 import { COPIES_KEEP, type ProgramState, programState } from '../lib/copiesView'
@@ -44,13 +44,13 @@ interface Props {
   programs: ProgramCopies[]
   trash: MusicFilesProps
   openMusic?: boolean
-  onRestore: (program: DjProgram, copyId: string) => Promise<RestoreResult>
+  onRestore: (program: WritableProgram, copyId: string) => Promise<RestoreResult>
   onReveal: () => void
 }
 
 type Outcome = { ok: true; takenAt: number } | { ok: false; reason: RestoreRefusal }
 
-const PROGRAM_ORDER = DJ_PROGRAMS
+const PROGRAM_ORDER = WRITABLE_PROGRAMS
 
 const MUSIC_TOOLS_MIN = 9
 
@@ -619,8 +619,8 @@ export function CopiesScreen({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { whenInSentence } = useWhen()
-  const [asking, setAsking] = useState<{ program: DjProgram; copyId: string } | null>(null)
-  const [outcomes, setOutcomes] = useState<Partial<Record<DjProgram, Outcome>>>({})
+  const [asking, setAsking] = useState<{ program: WritableProgram; copyId: string } | null>(null)
+  const [outcomes, setOutcomes] = useState<Partial<Record<WritableProgram, Outcome>>>({})
   const [restoring, setRestoring] = useState(0)
   const sorted = PROGRAM_ORDER.flatMap((p) => programs.filter((e) => e.program === p))
   const askedEntry = asking && programs.find((e) => e.program === asking.program)
@@ -642,10 +642,10 @@ export function CopiesScreen({
     return () => window.removeEventListener('keydown', onKey, true)
   }, [asking, restoring])
 
-  const settle = (program: DjProgram, outcome: Outcome | undefined): void =>
+  const settle = (program: WritableProgram, outcome: Outcome | undefined): void =>
     setOutcomes((o) => ({ ...o, [program]: outcome }))
 
-  const restore = async (program: DjProgram, copy: LibraryCopy): Promise<void> => {
+  const restore = async (program: WritableProgram, copy: LibraryCopy): Promise<void> => {
     settle(program, undefined)
     setRestoring((n) => n + 1)
     try {

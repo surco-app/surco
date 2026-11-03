@@ -1,8 +1,13 @@
-import { DJ_PROGRAMS, type DjProgram, programsInOrder } from '../../../shared/djProgram'
+import {
+  type DjProgram,
+  programsInOrder,
+  WRITABLE_PROGRAMS,
+  type WritableProgram,
+} from '../../../shared/djProgram'
 import type { TrackItem } from '../types'
 
 export interface TrackProgram {
-  flag: 'fromRekordbox' | 'fromTraktor' | 'fromEngine'
+  flag: 'fromRekordbox' | 'fromTraktor' | 'fromEngine' | 'fromSerato'
   playlists: 'rekordboxPlaylists' | 'traktorPlaylists' | 'enginePlaylists'
   playlistsBase: 'rekordboxPlaylistsBase' | 'traktorPlaylistsBase' | 'enginePlaylistsBase'
   signatureTag: 'traktor' | 'engine' | null
@@ -12,7 +17,9 @@ export interface TrackProgram {
 export type TrackFlag = TrackProgram['flag']
 export type PlaylistKey = TrackProgram['playlists'] | TrackProgram['playlistsBase']
 
-export const TRACK_PROGRAMS: Record<DjProgram, TrackProgram> = {
+export const TRACK_PROGRAMS: {
+  [P in DjProgram]: P extends WritableProgram ? TrackProgram : Pick<TrackProgram, 'flag'>
+} = {
   rekordbox: {
     flag: 'fromRekordbox',
     playlists: 'rekordboxPlaylists',
@@ -34,11 +41,14 @@ export const TRACK_PROGRAMS: Record<DjProgram, TrackProgram> = {
     signatureTag: 'engine',
     rereadAfterMove: false,
   },
+  serato: {
+    flag: 'fromSerato',
+  },
 }
 
 type LibraryFields = Partial<Pick<TrackItem, TrackFlag | PlaylistKey>>
 
-const FLAG_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
+const FLAG_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor', 'serato'])
 
 export function copyFlags(from: LibraryFields, to: LibraryFields): void {
   for (const program of FLAG_ORDER) {
@@ -48,7 +58,7 @@ export function copyFlags(from: LibraryFields, to: LibraryFields): void {
 }
 
 export function copyPlaylists(from: LibraryFields, to: LibraryFields): void {
-  for (const program of DJ_PROGRAMS) {
+  for (const program of WRITABLE_PROGRAMS) {
     const { playlists, playlistsBase } = TRACK_PROGRAMS[program]
     if (from[playlists]) to[playlists] = from[playlists]
     if (from[playlistsBase]) to[playlistsBase] = from[playlistsBase]
@@ -57,7 +67,7 @@ export function copyPlaylists(from: LibraryFields, to: LibraryFields): void {
 
 export function jobPlaylists(track: LibraryFields): Pick<LibraryFields, PlaylistKey> {
   const job: LibraryFields = {}
-  for (const program of DJ_PROGRAMS) {
+  for (const program of WRITABLE_PROGRAMS) {
     const { playlists, playlistsBase } = TRACK_PROGRAMS[program]
     job[playlists] = track[playlists]
     job[playlistsBase] = track[playlistsBase]

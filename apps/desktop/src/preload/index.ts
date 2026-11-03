@@ -10,7 +10,6 @@ import type {
   AppleMusicPlaylistTracks,
   AppleMusicTrackMeta,
   BpmResult,
-  DjProgram,
   DockIconFrames,
   KeyResult,
   LibraryTracks,
@@ -57,6 +56,7 @@ import type {
   UsbVolumeList,
   WaveformResult,
   WaveformScan,
+  WritableProgram,
 } from '../shared/types'
 import type { Verification } from '../shared/verification'
 import type { Api } from './api'
@@ -407,7 +407,7 @@ const api: Api = {
   revealLog: (): Promise<void> => ipcRenderer.invoke('log:reveal'),
   revealBackups: (): Promise<string> => ipcRenderer.invoke('backups:reveal'),
   copiesStatus: (): Promise<ProgramCopies[]> => ipcRenderer.invoke('copies:status'),
-  restoreCopy: (program: DjProgram, copyId: string): Promise<RestoreResult> =>
+  restoreCopy: (program: WritableProgram, copyId: string): Promise<RestoreResult> =>
     ipcRenderer.invoke('copies:restore', program, copyId),
   sourceChanged: (path: string): Promise<boolean> =>
     ipcRenderer.invoke('files:sourceChanged', path),

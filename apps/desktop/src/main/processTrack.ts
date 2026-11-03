@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
 import { tagsOnly as tagsOnlyExport } from '../shared/audioProcessing'
-import { DJ_PROGRAMS, type DjProgram } from '../shared/djProgram'
+import { WRITABLE_PROGRAMS, type WritableProgram } from '../shared/djProgram'
 import {
   type ErrorKey,
   errorKeyOf,
@@ -132,7 +132,7 @@ export interface ProcessTrackDeps {
   isAllowed?: (path: string) => boolean
   // Marks a written file as streamable through surco://.
   allowMedia: (path: string) => void
-  attachPlaylists?: (to: string, program: DjProgram, choice: PlaylistChoice) => void
+  attachPlaylists?: (to: string, program: WritableProgram, choice: PlaylistChoice) => void
   existsSync: (path: string) => boolean
   // Device+inode identity, so an in-place edit can tell "the target is the source
   // being rewritten" (fine) from "the target is an unrelated file" (a collision).
@@ -500,7 +500,10 @@ const checking = (place: VerifyPlace): PlaceCheck => ({
   detail: { key: 'checking' },
 })
 
-export const JOB_PLAYLISTS: Record<DjProgram, (job: ProcessJob) => PlaylistChoice | undefined> = {
+export const JOB_PLAYLISTS: Record<
+  WritableProgram,
+  (job: ProcessJob) => PlaylistChoice | undefined
+> = {
   rekordbox: (job) =>
     job.rekordboxPlaylists
       ? { wanted: job.rekordboxPlaylists, base: job.rekordboxPlaylistsBase }
@@ -783,7 +786,7 @@ export async function runProcessTrack(
       if (tmpPath) deps.untrackTmp(tmpPath)
     }
     const outputIdentity = musicOnly ? undefined : await deps.fileIdentity(target)
-    for (const program of DJ_PROGRAMS) {
+    for (const program of WRITABLE_PROGRAMS) {
       const choice = JOB_PLAYLISTS[program](job)
       if (choice) deps.attachPlaylists?.(target, program, choice)
     }
@@ -1148,7 +1151,7 @@ export async function runProcessTrack(
     // Music only with no location: the repoints still name the deleted temp, so what the
     // libraries hold cannot be judged against any file.
     const followed = !musicOnly || finalPath !== ''
-    const library = (place: DjProgram): PlaceCheck =>
+    const library = (place: WritableProgram): PlaceCheck =>
       followed
         ? checking(place)
         : { place, state: 'unreadable', detail: { key: `${place}Unreadable` } }

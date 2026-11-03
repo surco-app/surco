@@ -1,8 +1,9 @@
 import type { BrowserWindow, MessageBoxOptions } from 'electron'
-import type { DjProgram } from '../shared/djProgram'
+import type { DjProgram, WritableProgram } from '../shared/djProgram'
 import { isEngineDjRunning, quitEngineDj } from './engineProcess'
 import type { createMenuT } from './i18n'
 import { isRekordboxRunning, quitRekordbox } from './rekordboxProcess'
+import { isSeratoRunning } from './seratoProcess'
 import { sharedPrompt } from './sharedPrompt'
 import { isTraktorRunning, quitTraktor } from './traktorProcess'
 
@@ -14,27 +15,32 @@ export const QUIT_REASONS = {
   rekordbox: ['convert', 'playlists', 'usb', 'restore'],
   traktor: ['convert', 'cues', 'playlists', 'restore'],
   engine: ['convert', 'cues', 'usb', 'restore'],
-} as const satisfies { [P in DjProgram]: readonly ['convert', ...QuitReason[]] }
+} as const satisfies { [P in WritableProgram]: readonly ['convert', ...QuitReason[]] }
 
-export type ReasonOf<P extends DjProgram> = (typeof QUIT_REASONS)[P][number]
+export type ReasonOf<P extends WritableProgram> = (typeof QUIT_REASONS)[P][number]
 
-export const DJ_PROCESSES: Record<
-  DjProgram,
-  { isRunning: () => Promise<boolean>; quit: () => Promise<boolean> }
-> = {
+export interface ProgramProcess {
+  isRunning: () => Promise<boolean>
+  quit: () => Promise<boolean>
+}
+
+export const DJ_PROCESSES: {
+  [P in DjProgram]: P extends WritableProgram ? ProgramProcess : Pick<ProgramProcess, 'isRunning'>
+} = {
   rekordbox: { isRunning: isRekordboxRunning, quit: () => quitRekordbox() },
   traktor: { isRunning: isTraktorRunning, quit: quitTraktor },
   engine: { isRunning: isEngineDjRunning, quit: quitEngineDj },
+  serato: { isRunning: isSeratoRunning },
 }
 
-export interface QuitText<P extends DjProgram = DjProgram> {
+export interface QuitText<P extends WritableProgram = WritableProgram> {
   message: Extract<MenuKey, `${P}QuitMessage`>
   confirm: Extract<MenuKey, `${P}QuitConfirm`>
   cancel: Extract<MenuKey, `${P}QuitCancel`>
   detail: Record<ReasonOf<P>, DetailKeyOf<P>>
 }
 
-export const QUIT_TEXT: { [P in DjProgram]: QuitText<P> } = {
+export const QUIT_TEXT: { [P in WritableProgram]: QuitText<P> } = {
   rekordbox: {
     message: 'rekordboxQuitMessage',
     confirm: 'rekordboxQuitConfirm',
@@ -70,31 +76,34 @@ export const QUIT_TEXT: { [P in DjProgram]: QuitText<P> } = {
   },
 }
 
-export type DetailKeyOf<P extends DjProgram> = Extract<MenuKey, `${P}QuitDetail${string}`>
+export type DetailKeyOf<P extends WritableProgram> = Extract<MenuKey, `${P}QuitDetail${string}`>
 
-export function reasonOfDetail<P extends DjProgram>(program: P, key: DetailKeyOf<P>): ReasonOf<P> {
+export function reasonOfDetail<P extends WritableProgram>(
+  program: P,
+  key: DetailKeyOf<P>,
+): ReasonOf<P> {
   const detail: Record<ReasonOf<P>, MenuKey> = QUIT_TEXT[program].detail
   const reason = (QUIT_REASONS[program] as readonly ReasonOf<P>[]).find((r) => detail[r] === key)
   if (reason === undefined) throw new Error(`No ${program} quit reason for ${key}`)
   return reason
 }
 
-export const QUIT_PROMPT_SHARING: Record<DjProgram, 'once' | 'perReason'> = {
+export const QUIT_PROMPT_SHARING: Record<WritableProgram, 'once' | 'perReason'> = {
   rekordbox: 'perReason',
   traktor: 'once',
   engine: 'once',
 }
 
 export function createEnsureClosed(deps: {
-  processes: typeof DJ_PROCESSES
+  processes: Record<WritableProgram, ProgramProcess>
   ask: (win: BrowserWindow | null, opts: MessageBoxOptions) => Promise<number>
   t: (key: MenuKey) => string
-}): <P extends DjProgram>(
+}): <P extends WritableProgram>(
   program: P,
   win: BrowserWindow | null,
   reason?: ReasonOf<P>,
 ) => Promise<boolean> {
-  async function askToClose<P extends DjProgram>(
+  async function askToClose<P extends WritableProgram>(
     program: P,
     win: BrowserWindow | null,
     reason: ReasonOf<P>,
@@ -112,7 +121,7 @@ export function createEnsureClosed(deps: {
     return deps.processes[program].quit()
   }
 
-  function closer<P extends DjProgram>(program: P) {
+  function closer<P extends WritableProgram>(program: P) {
     const { isRunning } = deps.processes[program]
     const perReason = QUIT_PROMPT_SHARING[program] === 'perReason'
     const prompt = sharedPrompt(
@@ -129,14 +138,14 @@ export function createEnsureClosed(deps: {
   }
 
   const closers: {
-    [P in DjProgram]: (win: BrowserWindow | null, reason: ReasonOf<P>) => Promise<boolean>
+    [P in WritableProgram]: (win: BrowserWindow | null, reason: ReasonOf<P>) => Promise<boolean>
   } = {
     rekordbox: closer('rekordbox'),
     traktor: closer('traktor'),
     engine: closer('engine'),
   }
 
-  return <P extends DjProgram>(
+  return <P extends WritableProgram>(
     program: P,
     win: BrowserWindow | null,
     reason: ReasonOf<P> = 'convert',

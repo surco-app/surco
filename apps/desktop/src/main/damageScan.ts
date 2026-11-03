@@ -1,6 +1,6 @@
 import { basename, extname } from 'node:path'
 import { Genres } from 'node-taglib-sharp'
-import { DJ_PROGRAMS, type DjProgram } from '../shared/djProgram'
+import { WRITABLE_PROGRAMS, type WritableProgram } from '../shared/djProgram'
 import type { DamageFinding, DamageNote, DamageScan } from '../shared/types'
 import type { EngineDamage } from './engineDamage'
 import { engineLengthOf } from './engineRepoint'
@@ -220,13 +220,14 @@ type LibraryScan = (
   library: <T>(scan: ((paths: string[]) => Promise<T[]>) | undefined) => Promise<T[]>,
 ) => Promise<DamageFinding[]>
 
-const LIBRARY_SCANS: { [P in DjProgram]: P extends ScannedProgram ? LibraryScan : null } = {
+const LIBRARY_SCANS: { [P in WritableProgram]: P extends ScannedProgram ? LibraryScan : null } = {
   rekordbox: null,
   traktor: async (deps, library) => (await library(deps.traktor)).map(traktorFinding),
   engine: async (deps, library) => (await library(deps.engine)).map(engineFinding),
 }
 
-const scanned = (program: DjProgram): program is ScannedProgram => LIBRARY_SCANS[program] !== null
+const scanned = (program: WritableProgram): program is ScannedProgram =>
+  LIBRARY_SCANS[program] !== null
 
 export async function scanDamage(paths: string[], deps: DamageScanDeps): Promise<DamageScan> {
   const allowed = paths.filter((p) => deps.isAllowed(p))
@@ -245,7 +246,7 @@ export async function scanDamage(paths: string[], deps: DamageScanDeps): Promise
   }
   const [genres, ...libraries] = await Promise.all([
     genreFindings(allowed, deps),
-    ...DJ_PROGRAMS.filter(scanned).map((name) =>
+    ...WRITABLE_PROGRAMS.filter(scanned).map((name) =>
       LIBRARY_SCANS[name](deps, (scan) => library(name, scan)),
     ),
   ])

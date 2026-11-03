@@ -1,5 +1,5 @@
-import type { DjProgram } from '../shared/djProgram'
-import { programsInOrder } from '../shared/djProgram'
+import type { WritableProgram } from '../shared/djProgram'
+import { writableInOrder } from '../shared/djProgram'
 import { KEEPS_REPLACED } from '../shared/keepsReplaced'
 import type {
   ActivityKind,
@@ -15,7 +15,7 @@ import type { NmlLocation } from './traktorNml'
 import type { DuplicateCollectionResult } from './traktorNmlLibrary'
 import { logKeptOpen, TRAKTOR_SYNC_SKIP_KEYS } from './traktorSyncFlush'
 
-const LIBRARY_ORDER = programsInOrder(['traktor', 'rekordbox', 'engine'])
+const LIBRARY_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine'])
 
 // After the review removes duplicate copies from Music, each DJ library with its sync on
 // moves to the copy the user kept, and only then does a removed copy's file go to the
@@ -25,7 +25,7 @@ const LIBRARY_ORDER = programsInOrder(['traktor', 'rekordbox', 'engine'])
 
 export type ReplacePair = DuplicatePair & { shared: boolean }
 
-type Library = DjProgram
+type Library = WritableProgram
 type LibraryStep = (pairs: DuplicatePair[]) => Promise<LibraryReplaceOutcome[]>
 
 export interface ReplaceDuplicatesDeps {
@@ -64,7 +64,7 @@ const FATE: Record<FileFate['fate'], { detailKey: string; status?: 'warn' | 'err
 }
 
 const SETTLED: ReadonlySet<LibraryReplaceOutcome> = new Set(['repointed', 'replaced', 'none'])
-const RUNNING_REASON: Record<DjProgram, string> = {
+const RUNNING_REASON: Record<WritableProgram, string> = {
   rekordbox: 'rekordbox-running',
   engine: 'engine-running',
   traktor: 'traktor-running',

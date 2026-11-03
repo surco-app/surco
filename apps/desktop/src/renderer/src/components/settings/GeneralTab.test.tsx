@@ -13,6 +13,7 @@ import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
   rekordboxAvailable: () => Promise.resolve(true),
   engineAvailable: () => Promise.resolve(true),
   traktorAvailable: () => Promise.resolve(true),
+  seratoAvailable: () => Promise.resolve(false),
 }
 
 import { GeneralTab } from './GeneralTab'
@@ -145,7 +146,14 @@ describe('GeneralTab sources', () => {
       rekordbox,
       engine = true,
       traktor = true,
-    }: { platform: string; rekordbox: boolean; engine?: boolean; traktor?: boolean },
+      serato = false,
+    }: {
+      platform: string
+      rekordbox: boolean
+      engine?: boolean
+      traktor?: boolean
+      serato?: boolean
+    },
     hiddenSources: PlaylistSource[] = [],
   ) {
     Object.assign((window as unknown as { api: object }).api, {
@@ -153,6 +161,7 @@ describe('GeneralTab sources', () => {
       rekordboxAvailable: () => Promise.resolve(rekordbox),
       engineAvailable: () => Promise.resolve(engine),
       traktorAvailable: () => Promise.resolve(traktor),
+      seratoAvailable: () => Promise.resolve(serato),
     })
     const patch = vi.fn<(key: 'hiddenSources', value: PlaylistSource[]) => void>()
     render(
@@ -243,6 +252,20 @@ describe('GeneralTab sources', () => {
     expect(screen.getByTestId('settings-source-traktor')).toBeDisabled()
   })
 
+  it('keeps the Serato switch in view without a Serato library, disabled and saying why, as the rail leaves the source out there', async () => {
+    renderSources({ platform: 'darwin', rekordbox: true, serato: false })
+    await waitFor(() =>
+      expect(screen.getByText(i18n.t('settings.sourceSeratoUnavailable'))).toBeInTheDocument(),
+    )
+    expect(screen.getByTestId('settings-source-serato')).toBeDisabled()
+  })
+
+  it('lets Serato be hidden on a machine that has a Serato library', async () => {
+    renderSources({ platform: 'darwin', rekordbox: true, serato: true })
+    await waitFor(() => expect(screen.getByTestId('settings-source-serato')).toBeEnabled())
+    expect(screen.queryByText(i18n.t('settings.sourceSeratoUnavailable'))).not.toBeInTheDocument()
+  })
+
   it('lists the sources in the order the rail draws them', async () => {
     renderSources({ platform: 'darwin', rekordbox: true })
     await waitFor(() => expect(screen.getByTestId('settings-source-rekordbox')).toBeEnabled())
@@ -251,6 +274,7 @@ describe('GeneralTab sources', () => {
       'settings-source-rekordbox',
       'settings-source-engine',
       'settings-source-traktor',
+      'settings-source-serato',
     ])
   })
 

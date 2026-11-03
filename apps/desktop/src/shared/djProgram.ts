@@ -1,13 +1,24 @@
 import { isEngineContent } from './engineContent'
+import { isSeratoContent } from './seratoContent'
 import { isTraktorContent } from './traktorContent'
 
-export type DjProgram = 'rekordbox' | 'traktor' | 'engine'
+export type DjProgram = 'rekordbox' | 'traktor' | 'engine' | 'serato'
 
-export const DJ_PROGRAMS = programsInOrder(['rekordbox', 'traktor', 'engine'])
+export type WritableProgram = Exclude<DjProgram, 'serato'>
 
-export const RAIL_PROGRAMS = programsInOrder(['rekordbox', 'engine', 'traktor'])
+export const DJ_PROGRAMS = programsInOrder(['rekordbox', 'traktor', 'engine', 'serato'])
+
+export const WRITABLE_PROGRAMS = writableInOrder(['rekordbox', 'traktor', 'engine'])
+
+export const RAIL_PROGRAMS = programsInOrder(['rekordbox', 'engine', 'traktor', 'serato'])
 
 type AllOf<T extends readonly DjProgram[]> = [Exclude<DjProgram, T[number]>] extends [never]
+  ? unknown
+  : never
+
+type AllWritableOf<T extends readonly WritableProgram[]> = [
+  Exclude<WritableProgram, T[number]>,
+] extends [never]
   ? unknown
   : never
 
@@ -17,8 +28,15 @@ export function programsInOrder<const T extends readonly DjProgram[]>(
   return order
 }
 
+export function writableInOrder<const T extends readonly WritableProgram[]>(
+  order: T & AllWritableOf<T>,
+): readonly WritableProgram[] {
+  return order
+}
+
 export function programOf(contentId: string): DjProgram {
   if (isTraktorContent(contentId)) return 'traktor'
   if (isEngineContent(contentId)) return 'engine'
+  if (isSeratoContent(contentId)) return 'serato'
   return 'rekordbox'
 }

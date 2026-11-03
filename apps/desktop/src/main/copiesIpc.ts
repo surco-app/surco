@@ -1,7 +1,7 @@
 import { BrowserWindow, type IpcMainInvokeEvent, ipcMain } from 'electron'
 import log from 'electron-log/main'
-import { DJ_PROGRAMS } from '../shared/djProgram'
-import type { DjProgram, ProgramCopies, RestoreResult } from '../shared/types'
+import { WRITABLE_PROGRAMS } from '../shared/djProgram'
+import type { ProgramCopies, RestoreResult, WritableProgram } from '../shared/types'
 import { listCopies, recoverRestoreSlot, restoreSlot } from './libraryHistory'
 import { restoreCopy } from './libraryRestore'
 import { serialLibraryFlush } from './libraryTagSync'
@@ -23,14 +23,14 @@ export interface CopiesProgram {
   onDiscarded?: () => void
 }
 
-const ORDER = DJ_PROGRAMS
+const ORDER = WRITABLE_PROGRAMS
 
 export function registerCopiesIpc(
-  programs: Record<DjProgram, CopiesProgram>,
+  programs: Record<WritableProgram, CopiesProgram>,
   broadcast: (channel: string, payload: unknown) => void,
   converting: () => boolean,
 ): void {
-  const recover = (program: DjProgram, collectionPath: string) =>
+  const recover = (program: WritableProgram, collectionPath: string) =>
     serialLibraryFlush(() =>
       programs[program].exclusive(collectionPath, () => recoverRestoreSlot(collectionPath)),
     ).catch((err) =>
@@ -64,7 +64,7 @@ export function registerCopiesIpc(
 
   ipcMain.handle(
     'copies:restore',
-    (e: IpcMainInvokeEvent, program: DjProgram, copyId: string): Promise<RestoreResult> =>
+    (e: IpcMainInvokeEvent, program: WritableProgram, copyId: string): Promise<RestoreResult> =>
       serialLibraryFlush(async () => {
         const deps = programs[program]
         const collectionPath = deps?.collectionPath()

@@ -1,4 +1,4 @@
-import { type DjProgram, programsInOrder } from '../shared/djProgram'
+import { type WritableProgram, writableInOrder } from '../shared/djProgram'
 import type { DamageOutcome, DamageRepair, DamageRepairItem, TrashEntry } from '../shared/types'
 import type { EngineRepoint } from './engineRepoint'
 import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
@@ -229,21 +229,21 @@ async function repairEngine(
 const unsupported = (list: DamageRepairItem[]) =>
   list.map(({ id }): DamageOutcome => ({ id, state: 'failed', error: 'libraryOff' }))
 
-export type RepairedProgram = Extract<DamageRepair['target'], DjProgram>
+export type RepairedProgram = Extract<DamageRepair['target'], WritableProgram>
 type LibraryRepairs = {
   [P in RepairedProgram]: (items: Of<P>[], deps: DamageRepairDeps) => Promise<DamageOutcome[]>
 }
 
-const LIBRARY_REPAIRS: LibraryRepairs & Record<Exclude<DjProgram, RepairedProgram>, null> = {
+const LIBRARY_REPAIRS: LibraryRepairs & Record<Exclude<WritableProgram, RepairedProgram>, null> = {
   rekordbox: null,
   engine: async (engine, deps) =>
     deps.engine ? await repairEngine(engine, deps.engine) : unsupported(engine),
   traktor: repairTraktor,
 }
 
-const REPAIR_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
+const REPAIR_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
 
-const repaired = (program: DjProgram): program is RepairedProgram =>
+const repaired = (program: WritableProgram): program is RepairedProgram =>
   LIBRARY_REPAIRS[program] !== null
 
 async function repairLibrary<P extends RepairedProgram>(

@@ -1,9 +1,9 @@
 import type { BrowserWindow } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
-import type { DjProgram } from '../shared/djProgram'
+import type { WritableProgram } from '../shared/djProgram'
 import {
   createEnsureClosed,
-  type DJ_PROCESSES,
+  type ProgramProcess,
   QUIT_REASONS,
   type QUIT_TEXT,
   reasonOfDetail,
@@ -25,14 +25,14 @@ function fakeProcess(running: boolean, closes = true) {
 }
 
 function setup(
-  overrides: Partial<Record<DjProgram, ReturnType<typeof fakeProcess>>> = {},
+  overrides: Partial<Record<WritableProgram, ReturnType<typeof fakeProcess>>> = {},
   ask: (win: unknown, opts: { detail?: string }) => Promise<number> = async () => 0,
 ) {
   const processes = {
     rekordbox: overrides.rekordbox ?? fakeProcess(true),
     traktor: overrides.traktor ?? fakeProcess(true),
     engine: overrides.engine ?? fakeProcess(true),
-  } satisfies typeof DJ_PROCESSES
+  } satisfies Record<WritableProgram, ProgramProcess>
   const askSpy = vi.fn(ask)
   const t = (key: string) => `t:${key}`
   const ensureClosed = createEnsureClosed({ processes, ask: askSpy, t })
@@ -168,7 +168,7 @@ describe('createEnsureClosed', () => {
   })
 
   it.each(
-    (Object.keys(words) as DjProgram[]).flatMap((program) =>
+    (Object.keys(words) as WritableProgram[]).flatMap((program) =>
       Object.entries(words[program]).map(([reason, detail]) => [program, reason, detail] as const),
     ),
   )("uses each program's own words: %s %s", async (program, reason, detail) => {

@@ -49,6 +49,17 @@ function setup(
     loadTraktorPlaylist: vi
       .fn()
       .mockResolvedValue([{ path: '/m/t.wav', separator: false, meta: {} }]),
+    seratoAvailable: vi.fn().mockResolvedValue(false),
+    loadSeratoTree: vi
+      .fn()
+      .mockResolvedValue([{ id: 'Sets', name: 'Sets', kind: 'playlist', count: 1 }]),
+    seratoRecentCount: vi.fn().mockResolvedValue(4),
+    seratoTrackCount: vi.fn().mockResolvedValue(9),
+    loadSeratoPlaylist: vi
+      .fn()
+      .mockResolvedValue([
+        { path: '/m/s.mp3', separator: false, meta: {}, contentId: 'serato:/m/s.mp3' },
+      ]),
     onWindowFocus: vi.fn((cb: (f: boolean) => void) => {
       focus = cb
       return () => {}
@@ -166,6 +177,55 @@ describe('useSourceBrowser', () => {
     await waitFor(() =>
       expect(result.current.sources).toEqual(['appleMusic', 'rekordbox', 'engine', 'traktor']),
     )
+  })
+
+  it('offers Serato after Traktor when a Serato library is found, so its tab comes last on the rail', async () => {
+    const { result } = setup({
+      traktorAvailable: vi.fn().mockResolvedValue(true),
+      seratoAvailable: vi.fn().mockResolvedValue(true),
+    })
+    await waitFor(() =>
+      expect(result.current.sources).toEqual([
+        'appleMusic',
+        'rekordbox',
+        'engine',
+        'traktor',
+        'serato',
+      ]),
+    )
+  })
+
+  it('leaves Serato out on a machine without a Serato library, so no tab shows for an app the DJ does not have', async () => {
+    const seratoAvailable = vi.fn().mockResolvedValue(false)
+    const { result } = setup({ seratoAvailable })
+    await waitFor(() => expect(seratoAvailable).toHaveBeenCalled())
+    await waitFor(() =>
+      expect(result.current.sources).toEqual(['appleMusic', 'rekordbox', 'engine']),
+    )
+  })
+
+  it('reads the Serato tree, its counts and the picked crate from Serato’s own library, never from rekordbox’s', async () => {
+    const rekordboxRecentCount = vi.fn().mockResolvedValue(1)
+    const rekordboxTrackCount = vi.fn().mockResolvedValue(1)
+    const { result } = setup({
+      seratoAvailable: vi.fn().mockResolvedValue(true),
+      rekordboxRecentCount,
+      rekordboxTrackCount,
+    })
+    await waitFor(() => expect(result.current.sources).toContain('serato'))
+    act(() => result.current.selectSource('serato'))
+    await waitFor(() => expect(result.current.tree).toHaveLength(3))
+    expect(result.current.tree?.[0]).toMatchObject({ id: ALL_TRACKS_ID, count: 9 })
+    expect(result.current.tree?.[1]).toMatchObject({ id: RECENTLY_ADDED_ID, count: 4 })
+    expect(result.current.tree?.[2].name).toBe('Sets')
+    act(() =>
+      result.current.selectPlaylist({ id: 'Sets', name: 'Sets', kind: 'playlist', count: 1 }, []),
+    )
+    await waitFor(() => expect(result.current.entries).toHaveLength(1))
+    expect(window.api.loadSeratoPlaylist).toHaveBeenCalledWith('Sets')
+    expect(rekordboxRecentCount).not.toHaveBeenCalled()
+    expect(rekordboxTrackCount).not.toHaveBeenCalled()
+    expect(result.current.canInsertSeparator).toBe(false)
   })
 
   it('reads the Traktor tree, with Recently added first, and the picked playlist from the collection', async () => {

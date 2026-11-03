@@ -1,6 +1,6 @@
-import { type DjProgram, programsInOrder } from './djProgram'
+import { type WritableProgram, writableInOrder } from './djProgram'
 
-export type VerifyPlace = 'file' | 'appleMusic' | DjProgram
+export type VerifyPlace = 'file' | 'appleMusic' | WritableProgram
 export type CheckState = 'checking' | 'ok' | 'mismatch' | 'pending' | 'unreadable'
 
 // Every detail a check can come back with, each a string under `verify.detail.*` in every
@@ -90,7 +90,7 @@ export interface Verification {
   originalHeld?: HeldOriginal
 }
 
-export const PLACE_PROGRAMS = programsInOrder(['rekordbox', 'engine', 'traktor'])
+export const PLACE_PROGRAMS = writableInOrder(['rekordbox', 'engine', 'traktor'])
 
 export const PLACE_ORDER: VerifyPlace[] = ['file', 'appleMusic', ...PLACE_PROGRAMS]
 

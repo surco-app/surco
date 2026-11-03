@@ -20,6 +20,24 @@ Medido el 03/11 tras el bloque 8 añadiendo `'serato'` a `DjProgram` (y revirtie
 - Comprobación y daños (7), lo que sigue siendo de un programa: el estado de Traktor en `verifyRegistry` (`neverWritten`, `traktorBefore`, `traktorCues`: la comprobación de Traktor se basa en parches, no en filas), la regla de `treeFile` de Traktor en `allowed` de `damageRepair`, y `snapshotLibraries` de `processTrack` (solo rekordbox y Engine). Los escaneos y reparaciones de daños por programa se declaran en tablas cuyo tipo sale de los destinos de `DamageScan`/`DamageRepair`.
 - Ajustes y bienvenida (8), lo que sigue siendo de un programa: el asistente de bienvenida (`OnboardingWizard.tsx`: la ruta de Traktor al activarlo, el selector de carpeta de Engine), las secciones de `DestinationTab` y la migración de sincronización de Traktor (`syncToggleMigration.ts`). La ruta de cada biblioteca debe ser un ajuste local: lo exige un test contra `DJ_COLLECTION_PATH` (`shared/djSettings.ts`). Tres tablas `LIBRARY_NAME` iguales (`reviewLibraries`, `CuesSection`, `CuesBatchSection`), todas `Record` por programa.
 
+## Tarea 5: Serato en `DjProgram`, la escritura en `WritableProgram`
+
+`WritableProgram = Exclude<DjProgram, 'serato'>` (`shared/djProgram.ts`), con `WRITABLE_PROGRAMS` y `writableInOrder` (misma comprobación de completitud que `programsInOrder`). Cada tabla, orden o tipo de esta lista pasó de `DjProgram` a `WritableProgram` sin cambiar valores ni órdenes; al quitar el `Exclude` en las fases de escritura, el compilador volverá a exigir a Serato en todos ellos:
+
+- Vaciado tras convertir y colas: `libraryFlushes.ts` (`Sessions`, `SYNC_BLOCKED_KEY`, `SYNC_ISSUE_CHANNEL`, `FLUSH_ORDER`, `flushers`, `ConversionFlusher`), `programQueue.ts`, cola y pastillas de `App.tsx` (`QUEUE_PILL_ORDER`, `SYNC_ISSUES`, `queues`, `playlistLibraries`), `PROGRAM_QUEUES` de `useRekordboxQueue.ts`, `satisfies` de `programQueues` en `index.ts`.
+- Copias y momentos: `copiesIpc.ts`, `moments.ts`, `ProgramCopies.program`, `LibraryCopyInfo`, `restoreCopy` (preload), `CopiesScreen.tsx`.
+- Comprobación y daños: `VerifyPlace`/`PLACE_PROGRAMS` (`shared/verification.ts`), `verifyRegistry.ts`, `verifyIpc.ts`, `processTrack.ts` (`library`), `damageIpc.ts`, `damageRepair.ts`, `damageScan.ts`, `GenreSource` (`genreDamage.ts`).
+- USB: `UsbProgram = Exclude<WritableProgram, 'traktor'>`, `UsbExporters` y `routeUsbExports` (`usbExportRoute.ts`).
+- Etiquetas, duplicados y uso de ficheros: `libraryTagSync.ts`, `LibraryTagSyncReport`, `LibraryStatus`, `duplicateReplace.ts`, `DuplicateReplaceOutcome`, `KEEPS_REPLACED`, `libraryFileUse.ts` (`SyncedLibraries`, `holds`, `COPY_INFO`, `TRACK_OF`), `REVIEW_LIBRARIES` y `ReviewSync`.
+- Playlists al convertir: `PlaylistLibrary`, `JOB_PLAYLISTS` y `attachPlaylists` (`processTrack.ts`, `rekordboxBatch.ts`), `OFFERED` y `useOfferPlaylistFields`, `copyPlaylists`/`jobPlaylists` y la firma de `dirty.ts`, `rereadMovedSources` de `useTrackProcessing.ts`.
+- Ajustes: `DJ_REACH_SETTINGS`, `DJ_COLLECTION_PATH` (`shared/djSettings.ts`), `DjLibraryId` (`djLibraries.ts`), `djReach.ts`, órdenes y consultas de `Editor.tsx` (`LIBRARY_ORDER`, `COLLECTION_PATH_ORDER`).
+- Cierre del programa: `QUIT_REASONS`, `QUIT_TEXT`, `QUIT_PROMPT_SHARING`, `createEnsureClosed` (`djProcesses.ts`). `DJ_PROCESSES` tiene fila de Serato solo con `isRunning`; `quit` existe solo para `WritableProgram`.
+- Cues hacia otros programas: `FLOW_TO`, `TwinPlan.library` y las bibliotecas de `cueTwins.ts`, `foundBy` y la lista de `CuesTab.tsx`, `CUE_SAVE_ORDER` y `beginMoment` (`rekordboxCuesIpc.ts`), `LIBRARIES` de `CuesBatchSection.tsx`. La tabla `LIBRARY_NAME` de `CuesSection.tsx` va por `TwinPlan['library']`, así que tampoco lleva a Serato.
+- Matriz de escenarios: `harness.tsx`, `matrix/cells.ts`, `matrix/libraries.ts`, `matrix/oracle.ts`.
+- `TRACK_PROGRAMS`: la fila de Serato solo tiene `flag` (`fromSerato`); `playlists`, `playlistsBase`, `signatureTag` y `rereadAfterMove` son solo de `WritableProgram`.
+
+Filas provisionales del lado de cues que la Tarea 6 sustituye: `sources.serato: null` en `rekordboxCuesIpc.ts`, `CUE_PROGRAMS.serato` (`saveAllKey` provisional `editor.cues.saveAllMixed`) y `COPY.serato = REKORDBOX_COPY` en `CuesSection.tsx`.
+
 ## Errores del compilador
 
 ```

@@ -22,7 +22,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ipcMain } from 'electron'
-import type { DjProgram, ProgramCopies } from '../shared/types'
+import type { ProgramCopies, WritableProgram } from '../shared/types'
 import { type CopiesProgram, registerCopiesIpc } from './copiesIpc'
 import { withEngineDatabase } from './engineLibrary'
 import { setLibraryBackupRoot } from './libraryBackups'
@@ -59,7 +59,7 @@ function program(over: Partial<CopiesProgram> = {}): CopiesProgram {
   }
 }
 
-function programs(over: Partial<Record<DjProgram, Partial<CopiesProgram>>> = {}) {
+function programs(over: Partial<Record<WritableProgram, Partial<CopiesProgram>>> = {}) {
   return {
     rekordbox: program(over.rekordbox),
     traktor: program(over.traktor),

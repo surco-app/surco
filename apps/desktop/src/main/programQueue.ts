@@ -1,4 +1,4 @@
-import type { DjProgram } from '../shared/djProgram'
+import type { WritableProgram } from '../shared/djProgram'
 import type { CopyReason } from '../shared/types'
 import type { RekordboxRepoint } from './rekordboxBatch'
 import {
@@ -15,7 +15,7 @@ type Serial = <T>(task: () => Promise<T>) => Promise<T>
 
 export interface ProgramQueueSpec<
   R extends QueuedRepoint = RekordboxRepoint,
-  P extends DjProgram = DjProgram,
+  P extends WritableProgram = WritableProgram,
 > {
   program: P
   queue: QueueDeps<R>
@@ -26,15 +26,15 @@ export interface ProgramQueueSpec<
 
 export interface ProgramQueueDeps {
   broadcast: (channel: string, payload: unknown) => void
-  settled: (program: DjProgram, result: QueueApply | 'threw') => void
-  moments: { begin: (reason: CopyReason, programs?: readonly DjProgram[]) => void }
+  settled: (program: WritableProgram, result: QueueApply | 'threw') => void
+  moments: { begin: (reason: CopyReason, programs?: readonly WritableProgram[]) => void }
   serial: Serial
-  processes: Record<DjProgram, { isRunning: () => Promise<boolean> }>
+  processes: Record<WritableProgram, { isRunning: () => Promise<boolean> }>
 }
 
 export interface ProgramQueue<
   R extends QueuedRepoint = RekordboxRepoint,
-  P extends DjProgram = DjProgram,
+  P extends WritableProgram = WritableProgram,
 > {
   program: P
   queue: RekordboxQueue<R>
@@ -45,7 +45,7 @@ export interface ProgramQueue<
 
 export function createProgramQueue<
   R extends QueuedRepoint = RekordboxRepoint,
-  P extends DjProgram = DjProgram,
+  P extends WritableProgram = WritableProgram,
 >(spec: ProgramQueueSpec<R, P>, deps: ProgramQueueDeps): ProgramQueue<R, P> {
   const { program } = spec
   const collection = spec.queue.collection

@@ -1,7 +1,7 @@
 import { access, readFile, stat } from 'node:fs/promises'
 import { ipcMain, type WebContents } from 'electron'
 import log from 'electron-log/main'
-import type { DjProgram } from '../shared/djProgram'
+import type { WritableProgram } from '../shared/djProgram'
 import type { Verification } from '../shared/verification'
 import { type EngineDb, openEngineDb } from './enginePlaylists'
 import type { EngineShift } from './engineRepoint'
@@ -164,7 +164,7 @@ export function libraryReaders(
   }
 }
 
-type Library = DjProgram
+type Library = WritableProgram
 
 interface RequeueTarget<T> {
   enqueue: (ops: [], repoints: T[]) => void

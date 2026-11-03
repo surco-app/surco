@@ -26,6 +26,12 @@ describe('SOURCE_READ reads each DJ program’s tab from that program’s own br
     ['engine', 'trackCount', 'engineTrackCount', []],
     ['engine', 'playlist', 'loadEnginePlaylist', ['7']],
     ['engine', 'membership', 'engineMembership', [['/m/a.wav']]],
+    ['serato', 'available', 'seratoAvailable', []],
+    ['serato', 'tree', 'loadSeratoTree', []],
+    ['serato', 'recentCount', 'seratoRecentCount', []],
+    ['serato', 'trackCount', 'seratoTrackCount', []],
+    ['serato', 'playlist', 'loadSeratoPlaylist', ['Sets%%Friday']],
+    ['serato', 'membership', 'seratoMembership', [['/m/a.wav']]],
   ] as const)(
     'reads %s’s %s through window.api.%s at call time',
     async (program, read, method, args) => {
@@ -40,8 +46,8 @@ describe('SOURCE_READ reads each DJ program’s tab from that program’s own br
 })
 
 describe('RAIL_PROGRAMS', () => {
-  it('draws rekordbox, then Engine DJ, then Traktor, after Music, as the rail always has', () => {
-    expect(RAIL_PROGRAMS).toEqual(['rekordbox', 'engine', 'traktor'])
+  it('draws rekordbox, then Engine DJ, then Traktor, after Music, as the rail always has, and Serato last', () => {
+    expect(RAIL_PROGRAMS).toEqual(['rekordbox', 'engine', 'traktor', 'serato'])
   })
 })
 
@@ -100,6 +106,22 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
       addsUncollected: false,
       fieldTestIdPrefix: 'engine-',
       membershipKey: 'engine-membership',
+      invalidatesOnEdit: false,
+    })
+  })
+
+  it('only reads Serato, with no edit, no USB and no rows filled or added, since Surco writes nothing to it yet', () => {
+    expect(shape('serato')).toEqual({
+      separator: false,
+      edit: null,
+      fixedNode: false,
+      usb: false,
+      missingLibraryCheck: false,
+      trackFlag: 'fromSerato',
+      fillsLoaded: false,
+      addsUncollected: false,
+      fieldTestIdPrefix: 'serato-',
+      membershipKey: 'serato-membership',
       invalidatesOnEdit: false,
     })
   })

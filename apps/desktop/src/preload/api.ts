@@ -21,7 +21,6 @@ import type {
   DamageRepairItem,
   DamageScan,
   DeclickConfig,
-  DjProgram,
   DockIconFrames,
   DuplicatePair,
   DuplicateReplaceOutcome,
@@ -86,6 +85,7 @@ import type {
   UsbVolumeList,
   WaveformResult,
   WaveformScan,
+  WritableProgram,
 } from '../shared/types'
 import type { Verification } from '../shared/verification'
 
@@ -420,7 +420,7 @@ export interface Api {
   revealLog: () => Promise<void>
   revealBackups: () => Promise<string>
   copiesStatus: () => Promise<ProgramCopies[]>
-  restoreCopy: (program: DjProgram, copyId: string) => Promise<RestoreResult>
+  restoreCopy: (program: WritableProgram, copyId: string) => Promise<RestoreResult>
   onCopiesChanged: (cb: () => void) => () => void
   // Opens a prefilled report in the OS mail client. Only the error text crosses the
   // bridge; main stamps version and OS and builds the address itself.

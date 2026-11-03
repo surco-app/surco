@@ -1,7 +1,7 @@
 import { Check, ChevronDown, Copy } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { DjProgram } from '../../../shared/djProgram'
+import type { WritableProgram } from '../../../shared/djProgram'
 import type { LibraryCopyInfo, LibraryStatus, ReviewEntry } from '../../../shared/types'
 import {
   type DuplicateCard,
@@ -38,7 +38,7 @@ import {
   useSplitMenu,
 } from './SplitButton'
 
-export type ReviewSync = Record<DjProgram, boolean>
+export type ReviewSync = Record<WritableProgram, boolean>
 
 type Sections = Record<'options' | 'affected' | 'copies', boolean>
 interface Folding {

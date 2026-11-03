@@ -1,5 +1,5 @@
-import type { DjProgram } from '../../../shared/djProgram'
-import { programsInOrder } from '../../../shared/djProgram'
+import type { WritableProgram } from '../../../shared/djProgram'
+import { writableInOrder } from '../../../shared/djProgram'
 
 // Which collection syncs onboarding should offer, given what was found on this machine.
 //
@@ -7,7 +7,7 @@ import { programsInOrder } from '../../../shared/djProgram'
 // disabled row to someone who runs neither would be noise in a wizard that promises to
 // take under a minute; finding nothing simply removes the step.
 
-export type DjLibraryId = DjProgram
+export type DjLibraryId = WritableProgram
 
 export interface DetectedDjLibrary {
   id: DjLibraryId
@@ -15,7 +15,7 @@ export interface DetectedDjLibrary {
 }
 
 // Fixed order rather than detection order, so the step reads the same on every machine.
-const ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
+const ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
 
 export function detectedDjLibraries(
   found: Partial<Record<DjLibraryId, string>>,

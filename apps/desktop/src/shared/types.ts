@@ -4,7 +4,7 @@ import type { CueGridTolerance } from './cueGrid'
 import type { CueJumpBars } from './cueJump'
 import type { CueQuantize } from './cueQuantize'
 import type { StrongPart, WantedCue } from './cueRules'
-import type { DjProgram } from './djProgram'
+import type { DjProgram, WritableProgram } from './djProgram'
 import type { EditorSectionPref } from './editorSections'
 import type { ErrorKey } from './errorKeys'
 import type { EditableGrid } from './gridEdit'
@@ -606,6 +606,7 @@ export interface SessionEdit {
   fromRekordbox?: boolean
   fromEngine?: boolean
   fromTraktor?: boolean
+  fromSerato?: boolean
   // Rides along so a restored "cleared" track still wipes its rating on convert.
   metaCleared?: boolean
   // The per-tag inspector deletes, so a restored track still drops them on convert.
@@ -935,7 +936,7 @@ export interface DuplicatePair {
 export type LibraryCopyPresence = { cues?: number; playlists?: number } | null
 
 // Only the libraries with their sync on that could be read.
-export type LibraryCopyInfo = Partial<Record<DjProgram, LibraryCopyPresence>>
+export type LibraryCopyInfo = Partial<Record<WritableProgram, LibraryCopyPresence>>
 
 export type CueLibrary = DjProgram
 
@@ -943,7 +944,8 @@ export type LibraryTracks = Partial<Record<CueLibrary, string>>
 
 export type LibraryReplaceOutcome = 'repointed' | 'replaced' | 'none' | 'skipped' | 'failed'
 
-export interface DuplicateReplaceOutcome extends Partial<Record<DjProgram, LibraryReplaceOutcome>> {
+export interface DuplicateReplaceOutcome
+  extends Partial<Record<WritableProgram, LibraryReplaceOutcome>> {
   from: string
   fileTrashed: boolean
   keptForLibrary: boolean
@@ -1638,7 +1640,7 @@ export interface RekordboxSyncIssue {
 
 // Per DJ library: whether its sync is on, and whether the collection it points at is
 // there. A library can be on and not found, which the review has to say out loud.
-export type LibraryStatus = Record<DjProgram, { enabled: boolean; found: boolean }>
+export type LibraryStatus = Record<WritableProgram, { enabled: boolean; found: boolean }>
 
 // What one library did with a review's tag changes, so the done sheet can say it per
 // library instead of claiming every change landed: how many tracks it updated, or why none.
@@ -1646,7 +1648,7 @@ export type LibraryTagSync =
   | { outcome: 'updated'; count: number }
   | { outcome: 'nothing' | 'open' | 'missing' | 'failed' }
 
-export type LibraryTagSyncReport = Record<DjProgram, LibraryTagSync>
+export type LibraryTagSyncReport = Record<WritableProgram, LibraryTagSync>
 
 // The USB export (docs/superpowers/specs/2026-10-16-export-usb-design.md). A stick is
 // always named by a stable volume identifier (macOS VolumeUUID, Windows volume GUID), never
@@ -1732,7 +1734,7 @@ export interface UsbPlan {
   warnings: UsbWarning[]
 }
 
-export type UsbProgram = Exclude<DjProgram, 'traktor'>
+export type UsbProgram = Exclude<WritableProgram, 'traktor'>
 
 export interface UsbExportRequest {
   playlistIds: string[]
@@ -1812,7 +1814,7 @@ export interface RekordboxPlaylistTarget {
   name: string
 }
 
-export type PlaylistLibrary = DjProgram
+export type PlaylistLibrary = WritableProgram
 
 export interface LibraryPlaylistChoice {
   wanted: RekordboxPlaylistTarget[]
@@ -1936,10 +1938,10 @@ export type RestoreRefusal =
 
 export type RestoreResult = { ok: true } | { ok: false; reason: RestoreRefusal }
 
-export type { DjProgram }
+export type { DjProgram, WritableProgram }
 
 export interface ProgramCopies {
-  program: DjProgram
+  program: WritableProgram
   collectionPath: string | null
   copies: LibraryCopy[]
   restore: LibraryCopy | null

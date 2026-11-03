@@ -42,7 +42,7 @@ import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
 import { trashLimits } from '../shared/backupPolicy'
 import { activeCueFlow } from '../shared/cueFlows'
-import type { DjProgram } from '../shared/djProgram'
+import type { WritableProgram } from '../shared/djProgram'
 import type { TunedTaste } from '../shared/dropTaste'
 import { errorWithKey } from '../shared/errorKeys'
 import {
@@ -473,7 +473,7 @@ const programQueues = {
     },
     programQueueDeps,
   ),
-} satisfies { [P in DjProgram]: { program: P } }
+} satisfies { [P in WritableProgram]: { program: P } }
 const rekordboxQueue = programQueues.rekordbox.queue
 const announceApplied = programQueues.rekordbox.announceApplied
 const rekordboxQueueWatch = programQueues.rekordbox.watch

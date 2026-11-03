@@ -19,7 +19,7 @@ import { tagsOnly } from '../../../shared/audioProcessing'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFields'
-import { DJ_PROGRAMS, programsInOrder } from '../../../shared/djProgram'
+import { WRITABLE_PROGRAMS, writableInOrder } from '../../../shared/djProgram'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import type {
@@ -126,8 +126,8 @@ import { SpectrumGlimpse } from './SpectrumGlimpse'
 import { Tooltip } from './Tooltip'
 import { TrimSection } from './TrimSection'
 
-const LIBRARY_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
-const COLLECTION_PATH_ORDER = programsInOrder(['traktor', 'rekordbox', 'engine'])
+const LIBRARY_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
+const COLLECTION_PATH_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine'])
 
 interface Props {
   item: TrackItem
@@ -368,11 +368,11 @@ export const Editor = memo(function Editor({
   const { data: libraries } = useQuery({
     queryKey: [
       'library-status',
-      ...DJ_PROGRAMS.map((program) => appSettings[DJ_REACH_SETTINGS[program].add]),
+      ...WRITABLE_PROGRAMS.map((program) => appSettings[DJ_REACH_SETTINGS[program].add]),
       ...COLLECTION_PATH_ORDER.map((program) => appSettings[DJ_COLLECTION_PATH[program]]),
     ],
     queryFn: () => window.api.libraryStatus(),
-    enabled: DJ_PROGRAMS.some((program) => appSettings[DJ_REACH_SETTINGS[program].add]),
+    enabled: WRITABLE_PROGRAMS.some((program) => appSettings[DJ_REACH_SETTINGS[program].add]),
   })
   const reachable = useMemo(
     () =>

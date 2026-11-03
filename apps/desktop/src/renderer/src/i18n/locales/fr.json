@@ -1385,6 +1385,7 @@
     "sourceRekordboxUnavailable": "Aucune collection rekordbox n'a été trouvée",
     "sourceEngineUnavailable": "Aucune bibliothèque Engine DJ n'a été trouvée",
     "sourceTraktorUnavailable": "Aucune collection Traktor n'a été trouvée",
+    "sourceSeratoUnavailable": "Aucune bibliothèque Serato n'a été trouvée",
     "sourcesHint": "Masquer une source la retire seulement de la barre latérale et ne change pas la synchronisation lors des conversions.",
     "updates": "Mises à jour",
     "betaUpdates": "Recevoir les versions bêta",
@@ -2207,13 +2208,15 @@
       "appleMusic": "Masquer Apple Music",
       "rekordbox": "Masquer rekordbox",
       "engine": "Masquer Engine DJ",
-      "traktor": "Masquer Traktor"
+      "traktor": "Masquer Traktor",
+      "serato": "Masquer Serato"
     },
     "workingList": "Morceaux",
     "appleMusic": "Music",
     "rekordbox": "rekordbox",
     "engine": "Engine DJ",
     "traktor": "Traktor",
+    "serato": "Serato",
     "allTracks": "Tous les morceaux",
     "recentlyAdded": "Ajoutées récemment",
     "search": "Rechercher une playlist",
@@ -2222,10 +2225,12 @@
       "appleMusic": "Impossible de lire tes playlists. Vérifie qu'Apple Music est ouvert et que Surco a le droit de le contrôler.",
       "rekordbox": "Impossible de lire la collection. Si tu viens de modifier quelque chose, reviens dans Surco dans quelques secondes.",
       "engine": "Impossible de lire la bibliothèque Engine DJ. Si tu viens de modifier quelque chose, reviens dans Surco dans quelques secondes.",
-      "traktor": "Impossible de lire la collection Traktor. Si tu viens de modifier quelque chose, reviens dans Surco dans quelques secondes."
+      "traktor": "Impossible de lire la collection Traktor. Si tu viens de modifier quelque chose, reviens dans Surco dans quelques secondes.",
+      "serato": "Impossible de lire la bibliothèque Serato. Si tu viens de modifier quelque chose, reviens dans Surco dans quelques secondes."
     },
     "notFound": {
-      "engine": "Surco ne trouve pas de bibliothèque Engine DJ. Indiquez son dossier, celui qui contient Database2, sous Engine DJ dans Réglages → Sortie."
+      "engine": "Surco ne trouve pas de bibliothèque Engine DJ. Indiquez son dossier, celui qui contient Database2, sous Engine DJ dans Réglages → Sortie.",
+      "serato": "Surco ne trouve pas de bibliothèque Serato. Il cherche le dossier _Serato_ dans Musique et sur chaque disque connecté."
     },
     "empty": "Aucune playlist.",
     "noMatch": "Aucune playlist ne correspond.",
@@ -2236,7 +2241,8 @@
       "appleMusic": "« {{name}} » n’est plus dans Music",
       "rekordbox": "« {{name}} » n’est plus dans rekordbox",
       "engine": "« {{name}} » n’est plus dans Engine DJ",
-      "traktor": "« {{name}} » n’est plus dans Traktor"
+      "traktor": "« {{name}} » n’est plus dans Traktor",
+      "serato": "« {{name}} » n’est plus dans Serato"
     },
     "missing_one": "{{count}} piste de « {{name}} » n’a pas de fichier sur le disque",
     "missing_other": "{{count}} pistes de « {{name}} » n’ont pas de fichier sur le disque",
