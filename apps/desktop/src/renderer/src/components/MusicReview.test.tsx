@@ -2159,6 +2159,18 @@ describe('list review', () => {
     )
   })
 
+  it('says how many Serato tracks it left out, so the DJ knows why they are not reviewed', () => {
+    render(
+      <MusicReview
+        review={listReview({ reviewed: 1, seratoLeftOut: 2, musicConsulted: true })}
+        {...columnProps}
+      />,
+    )
+    expect(screen.getByTestId('list-review-scope')).toHaveTextContent(
+      '1 track in the list · 2 from Serato, left out so Serato keeps them',
+    )
+  })
+
   it('says only the list count when every row was read and Music answered', () => {
     render(
       <MusicReview review={listReview({ reviewed: 1, musicConsulted: true })} {...columnProps} />,

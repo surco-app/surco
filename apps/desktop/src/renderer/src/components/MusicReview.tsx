@@ -1170,6 +1170,9 @@ export function MusicReview({
                 ? t('listReview.scope', { count: review.reviewed })
                 : t('listReview.scopePlaylist', { count: review.reviewed, name: scopeName }),
               ...(review.skipped > 0 ? [t('listReview.skipped', { count: review.skipped })] : []),
+              ...(review.seratoLeftOut
+                ? [t('listReview.seratoLeftOut', { count: review.seratoLeftOut })]
+                : []),
               ...(review.musicConsulted === false ? [t('listReview.musicUnchecked')] : []),
               ...review.damageUnread.map((library) =>
                 t('damage.unread', { library: LIBRARY_NAME[library] }),

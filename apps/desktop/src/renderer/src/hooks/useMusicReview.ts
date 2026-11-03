@@ -136,6 +136,7 @@ export interface MusicReview {
   reviewed: number
   // Rows the list could not review because their file was not read.
   skipped: number
+  seratoLeftOut?: number
   musicConsulted?: boolean
   inMusic: (id: string) => boolean
   facts: (id: string) => TrackItem | undefined
@@ -300,7 +301,11 @@ export function useMusicReview({
   const [allIncomplete, setAllIncomplete] = useState<IncompleteFinding[]>([])
 
   const [libraries, setLibraries] = useState<LibraryStatus | null>(null)
-  const [loaded, setLoaded] = useState<{ skipped: number; musicConsulted?: boolean }>({
+  const [loaded, setLoaded] = useState<{
+    skipped: number
+    seratoLeftOut?: number
+    musicConsulted?: boolean
+  }>({
     skipped: 0,
   })
 
@@ -314,7 +319,11 @@ export function useMusicReview({
     })
     setEntries(result.entries)
     setAllIncomplete(result.incomplete ?? [])
-    setLoaded({ skipped: result.skipped, musicConsulted: consulted(result.musicConsulted) })
+    setLoaded({
+      skipped: result.skipped,
+      seratoLeftOut: result.seratoLeftOut,
+      musicConsulted: consulted(result.musicConsulted),
+    })
     return result.entries
   }, [source])
 
@@ -929,6 +938,7 @@ export function useMusicReview({
       affected,
       reviewed: entries.length,
       skipped: loaded.skipped,
+      seratoLeftOut: loaded.seratoLeftOut,
       musicConsulted: loaded.musicConsulted,
       inMusic,
       facts,

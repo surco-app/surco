@@ -2568,6 +2568,8 @@
     "scope_other": "{{count}} tracks in the list",
     "skipped_one": "{{count}} not read yet, left out",
     "skipped_other": "{{count}} not read yet, left out",
+    "seratoLeftOut_one": "{{count}} from Serato, left out so Serato keeps it",
+    "seratoLeftOut_other": "{{count}} from Serato, left out so Serato keeps them",
     "musicUnchecked": "Apple Music was not checked because it is closed.",
     "where": {
       "music": "Apple Music"

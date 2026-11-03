@@ -511,6 +511,28 @@ describe('listReviewSource damage', () => {
     expect(api.scanDamage).toHaveBeenCalledWith(['/m/a.mp3'])
   })
 
+  describe('a track opened from Serato', () => {
+    const serato = () => row('/m/s.aiff', 'A', { fromSerato: true })
+
+    it('stays out of the review and is counted apart, so no fix or removal can touch a file Serato points at', async () => {
+      const load = await source([row('/m/a.aiff', 'A'), serato()]).load()
+      expect(load.entries.map((e) => e.id)).toEqual(['/m/a.aiff'])
+      expect(load).toMatchObject({ skipped: 0, seratoLeftOut: 1 })
+    })
+
+    it('is never listed as missing a field, whose fill would be written to its file', async () => {
+      const incomplete = { required: () => ['album'], suggest: () => undefined }
+      const loaded = await source([serato()], { incomplete }).load()
+      expect(loaded.incomplete).toEqual([])
+    })
+
+    it('is never scanned for damage, whose repair would rewrite its file', async () => {
+      const s = source([row('/m/a.aiff', 'A'), serato()])
+      await s.loadDamage?.()
+      expect(api.scanDamage).toHaveBeenCalledWith(['/m/a.aiff'])
+    })
+  })
+
   it('hands the staged repairs to main', async () => {
     const items = [
       { id: 'x', repair: { target: 'genre' as const, path: '/m/a.mp3', from: 'a', to: 'b' } },

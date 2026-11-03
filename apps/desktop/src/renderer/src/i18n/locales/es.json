@@ -2568,6 +2568,8 @@
     "scope_other": "{{count}} pistas de la lista",
     "skipped_one": "{{count}} sin leer, fuera de la revisión",
     "skipped_other": "{{count}} sin leer, fuera de la revisión",
+    "seratoLeftOut_one": "{{count}} de Serato, fuera para que Serato la conserve",
+    "seratoLeftOut_other": "{{count}} de Serato, fuera para que Serato las conserve",
     "musicUnchecked": "Apple Music no se ha consultado porque está cerrada.",
     "where": {
       "music": "Apple Music"

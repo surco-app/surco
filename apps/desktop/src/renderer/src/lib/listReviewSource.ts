@@ -35,6 +35,9 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
     for (const key of answered.keys())
       if (paths.some((path) => key.startsWith(answerKey(path, '')))) answered.delete(key)
   }
+  const reviewable = () => deps.rows().filter((row) => !row.fromSerato)
+  const seratoLeftOut = () =>
+    new Set(deps.rows().flatMap((row) => (row.fromSerato ? [row.inputPath] : []))).size
   const music = (id: string) => lookup?.entries[id] ?? []
   const only = (id: string) => (music(id).length === 1 ? music(id)[0] : undefined)
   // An absent ref sends the copy to main's own read of every Music location before the
@@ -54,19 +57,20 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
   return {
     kind: 'list',
     load: async () => {
-      const read = listReviewEntries(deps.rows())
+      const read = { ...listReviewEntries(reviewable()), seratoLeftOut: seratoLeftOut() }
       const entries = withListChanges(read.entries, changes, gone)
       titles = new Map(entries.map((e) => [e.id, e.title]))
       const incomplete =
         deps.incomplete &&
         incompleteOfRows(
-          deps.rows().filter((row) => !gone.has(row.inputPath)),
+          reviewable().filter((row) => !gone.has(row.inputPath)),
           (row) => row.inputPath,
           changes,
           deps.incomplete,
         )
       const found = incomplete ? { incomplete } : {}
-      if (!deps.mac) return { entries, skipped: read.skipped, ...found }
+      if (!deps.mac)
+        return { entries, skipped: read.skipped, seratoLeftOut: read.seratoLeftOut, ...found }
       lookup = { consulted: false, entries: {} }
       // Only a grouped file is ever written or removed, so only those need Music; the rest of
       // a large list would cost about 15 ms each on a NAS library for nothing.
@@ -103,6 +107,7 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
           return dateAdded ? { ...e, dateAdded } : e
         }),
         skipped: read.skipped,
+        seratoLeftOut: read.seratoLeftOut,
         musicConsulted: lookup.consulted,
         ...found,
       }
@@ -170,7 +175,7 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
     },
     loadDamage: () =>
       window.api.scanDamage(
-        listReviewEntries(deps.rows())
+        listReviewEntries(reviewable())
           .entries.map((e) => e.id)
           .filter((path) => !gone.has(path)),
       ),

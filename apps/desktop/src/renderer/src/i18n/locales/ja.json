@@ -2568,6 +2568,8 @@
     "scope_other": "{{count}} トラックがリストにあります",
     "skipped_one": "{{count}} はまだ読み取られていません、除外されました",
     "skipped_other": "{{count}} はまだ読み取られていません、除外されました",
+    "seratoLeftOut_one": "Serato の {{count}} トラックは Serato のために除外",
+    "seratoLeftOut_other": "Serato の {{count}} トラックは Serato のために除外",
     "musicUnchecked": "Apple Music が閉じているため、チェックできませんでした。",
     "where": {
       "music": "Apple Music"
