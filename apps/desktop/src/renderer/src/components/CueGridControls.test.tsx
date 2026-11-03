@@ -47,16 +47,16 @@ describe('CueGridControls', () => {
     expect(screen.getAllByTestId('cues-grid-bpm')[1]).toHaveTextContent('150.00')
   })
 
-  it('nudges the whole grid one millisecond, and ten with shift, for the shifted grid that is the common case', () => {
+  it('nudges the whole grid five milliseconds, a step the eye can see, and one with shift for the fine touch', () => {
     const onChange = setup()
     fireEvent.click(screen.getByTestId('cues-grid-left'))
-    expect(lastGrid(onChange)).toEqual({ bpm: 150, anchorMs: 45 })
+    expect(lastGrid(onChange)).toEqual({ bpm: 150, anchorMs: 41 })
     fireEvent.click(screen.getByTestId('cues-grid-right'))
-    expect(lastGrid(onChange)).toEqual({ bpm: 150, anchorMs: 47 })
+    expect(lastGrid(onChange)).toEqual({ bpm: 150, anchorMs: 51 })
     fireEvent.click(screen.getByTestId('cues-grid-left'), { shiftKey: true })
-    expect(lastGrid(onChange)).toEqual({ bpm: 150, anchorMs: 36 })
+    expect(lastGrid(onChange)).toEqual({ bpm: 150, anchorMs: 45 })
     fireEvent.click(screen.getByTestId('cues-grid-right'), { shiftKey: true })
-    expect(lastGrid(onChange)).toEqual({ bpm: 150, anchorMs: 56 })
+    expect(lastGrid(onChange)).toEqual({ bpm: 150, anchorMs: 47 })
   })
 
   it('opens and closes the grid by a hundredth of a BPM keeping the beat under the playhead still', () => {
@@ -247,7 +247,7 @@ describe('CueGridControls', () => {
     fireEvent.click(screen.getByTestId('cues-grid-right'))
     const beats = gridBeats(lastGrid(onChange) as EditableGrid, 80000)
     expect(beats.some((b) => b.ms === 20046)).toBe(true)
-    expect(beats.some((b) => b.ms === 60047)).toBe(true)
+    expect(beats.some((b) => b.ms === 60051)).toBe(true)
   })
 
   it('doubles only the zone under the playhead and keeps the other zones', () => {

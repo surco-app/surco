@@ -23,7 +23,8 @@ const ICON =
 const MENU_ITEM =
   'press flex h-7 items-center rounded-md px-2 text-left text-xs text-fg hover:bg-[var(--color-hover)] disabled:opacity-40 disabled:hover:bg-transparent'
 const STEP_BPM = 0.01
-const BIG_STEP_MS = 10
+const STEP_MS = 5
+const FINE_STEP_MS = 1
 
 const hundredths = (n: number): number => Math.round(n * 100) / 100
 
@@ -99,7 +100,7 @@ export function CueGridControls({
     if (next) onChange(next)
   }
   const shift = (dir: 1 | -1) => (e: React.MouseEvent) => {
-    apply(inZone((zone) => shiftGrid(zone, dir * (e.shiftKey ? BIG_STEP_MS : 1))))
+    apply(inZone((zone) => shiftGrid(zone, dir * (e.shiftKey ? FINE_STEP_MS : STEP_MS))))
   }
   const toggleMenu = () => {
     if (menu) return closeMenu.current()

@@ -1611,7 +1611,7 @@ describe('CuesSection maximized grid', () => {
     key('m')
     expect(bars()).toContain(32000)
     fireEvent.click(screen.getByTestId('cues-grid-right'))
-    expect(bars()).toContain(32001)
+    expect(bars()).toContain(32005)
     expect(bars()).not.toContain(32000)
     expect(screen.getByTestId('cue-wave-call-32000')).toBeInTheDocument()
     expect(screen.getByTestId('cues-unsaved')).toBeInTheDocument()
@@ -1621,9 +1621,9 @@ describe('CuesSection maximized grid', () => {
     setup()
     await maximize()
     key('ArrowRight', { altKey: true })
-    expect(bars()).toContain(2001)
+    expect(bars()).toContain(2005)
     key('ArrowLeft', { altKey: true, shiftKey: true })
-    expect(bars()).toContain(1991)
+    expect(bars()).toContain(2004)
   })
 
   it('puts a moved grid back with ⌘Z', async () => {
@@ -1725,7 +1725,7 @@ describe('CuesSection maximized grid', () => {
     rerender(tree('104'))
     await waitFor(() => expect(bars()).toContain(2000))
     rerender(tree('103'))
-    await waitFor(() => expect(bars()).toContain(2001))
+    await waitFor(() => expect(bars()).toContain(2005))
     key('z', { metaKey: true })
     expect(bars()).toContain(2000)
   })
@@ -1802,7 +1802,7 @@ describe('CuesSection maximized grid', () => {
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
     expect(saveRekordboxCues.mock.calls[0][0][0]).toMatchObject({
-      grid: { bpm: 120, anchorMs: 1 },
+      grid: { bpm: 120, anchorMs: 5 },
       gridFingerprint: 'g0',
     })
   })
@@ -1936,9 +1936,9 @@ describe('CuesSection maximized grid', () => {
     expect(screen.getByTestId('cue-wave-anchor-32000')).toBeInTheDocument()
     expect(screen.getByTestId('cue-detail-anchor-32000')).toBeInTheDocument()
     key('ArrowRight', { altKey: true })
-    expect(bars()).toContain(32001)
+    expect(bars()).toContain(32005)
     key('ArrowLeft')
     expect(bars()).toContain(2000)
-    expect(bars()).not.toContain(2001)
+    expect(bars()).not.toContain(2005)
   })
 })
