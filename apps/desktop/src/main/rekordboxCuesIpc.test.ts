@@ -332,10 +332,12 @@ describe('registerRekordboxCuesIpc', () => {
 
   it('never queues a Traktor track’s cues on rekordbox when Traktor is not wired', async () => {
     const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
+    const beginMoment = vi.fn()
     registerRekordboxCuesIpc({
       collection: () => '/c/master.db',
       queue: queue({ enqueue }),
       applyQuietly: quietly(),
+      beginMoment,
       flow: () => MY_FLOW,
       beatGrid: async () => null,
       words: async () => null,
@@ -352,6 +354,7 @@ describe('registerRekordboxCuesIpc', () => {
       },
     ])
     expect(enqueue).not.toHaveBeenCalled()
+    expect(beginMoment).not.toHaveBeenCalled()
   })
 
   it('queues several tracks together and applies once, so master.db is written in one batch', async () => {
@@ -852,7 +855,7 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
       const engineWords = vi.fn(async (_file: string) => new Uint16Array([1, 2]))
       const beatGrid = vi.fn(over.beatGrid ?? (async () => ({ bpm: 120, firstMs: 100 })))
       registerRekordboxCuesIpc({
-        collection: () => '',
+        collection: () => '/no/master.db',
         queue: over.rekordbox ?? queue(),
         applyQuietly: quietly(),
         flow: () => MY_FLOW,
