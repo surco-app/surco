@@ -56,6 +56,7 @@ export function SourceTree({
   nodes,
   failed,
   missing = false,
+  notice,
   selectedId,
   onSelect,
   edit,
@@ -69,6 +70,7 @@ export function SourceTree({
   nodes: SourceNode[] | undefined
   failed: boolean
   missing?: boolean
+  notice?: string
   selectedId: string | null
   onSelect: (node: SourceNode, folders: string[]) => void
   // Organising, offered only where the source can be written (rekordbox): creating playlists
@@ -463,6 +465,11 @@ export function SourceTree({
           </span>
         )}
       </div>
+      {notice && (
+        <p data-testid="source-tree-notice" className="px-3 pb-2 text-xs text-warn">
+          {notice}
+        </p>
+      )}
       <label className="mx-2.5 mb-2 flex h-[30px] items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-[13px]">
         <Search size={13} className="text-fg-faint" aria-hidden="true" />
         <input

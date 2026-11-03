@@ -2403,6 +2403,12 @@ export default function App(): React.JSX.Element {
     ((browser.source === 'engine' || browser.source === 'traktor' || browser.source === 'serato') &&
       browser.playlist !== null &&
       playlistScope !== null)
+  const { data: seratoRunning = false } = useQuery({
+    queryKey: ['serato-running'],
+    queryFn: () => window.api.seratoRunning(),
+    enabled: browser.source === 'serato',
+    staleTime: 0,
+  })
   const cuesMarkable = cuesOpen && sourceProgram !== null && !CUE_PROGRAMS[sourceProgram].readOnly
   const crateOpen =
     editableOpen &&
@@ -3265,6 +3271,11 @@ export default function App(): React.JSX.Element {
                     nodes={browser.tree}
                     failed={browser.treeFailed}
                     missing={browser.libraryMissing}
+                    notice={
+                      browser.source === 'serato' && seratoRunning
+                        ? tr('editor.cues.serato.running')
+                        : undefined
+                    }
                     selectedId={browser.playlist?.id ?? null}
                     onSelect={selectPlaylist}
                     edit={editableSource ? treeEdit : undefined}

@@ -804,6 +804,29 @@ describe('App Serato cues', () => {
     )
   })
 
+  it('warns in the Serato tab that the cues may be out of date while Serato is open', async () => {
+    openSerato({ seratoRunning: vi.fn<Api['seratoRunning']>().mockResolvedValue(true) })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-serato'))
+    expect(await screen.findByTestId('source-tree-notice')).toHaveTextContent(
+      'Serato is open. The cues may be out of date until you close it.',
+    )
+  })
+
+  it('shows no warning in the Serato tab once Serato answers it is closed', async () => {
+    let answer: (running: boolean) => void = () => {}
+    const seratoRunning = vi.fn<Api['seratoRunning']>(
+      () => new Promise<boolean>((resolve) => (answer = resolve)),
+    )
+    openSerato({ seratoRunning })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-serato'))
+    await screen.findByTestId('source-node-Friday')
+    await waitFor(() => expect(seratoRunning).toHaveBeenCalled())
+    await act(async () => answer(false))
+    expect(screen.queryByTestId('source-tree-notice')).toBeNull()
+  })
+
   it('offers no Auto mark over several Serato rows, since their cues cannot be saved', async () => {
     openSerato({ rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue(null) })
     await openFriday()
