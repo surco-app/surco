@@ -206,4 +206,18 @@ describe('CueGridControls', () => {
       expect(onDone).toHaveBeenCalled()
     },
   )
+
+  it('fits the grid on the beats around the playhead, not on the whole track', () => {
+    const fit = {
+      bpm: 150,
+      firstMs: 0,
+      phases: [
+        { ms: 4000, firstMs: 25 },
+        { ms: 200000, firstMs: 0 },
+      ],
+    }
+    const onChange = setup({ fit, needsFix: true, playheadMs: 4046 })
+    fireEvent.click(screen.getByTestId('cues-grid-auto'))
+    expect(lastGrid(onChange)).toEqual({ bpm: 150, anchorMs: 25 })
+  })
 })

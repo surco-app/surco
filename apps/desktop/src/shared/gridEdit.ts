@@ -77,11 +77,20 @@ export function downbeatAt(grid: EditableGrid, ms: number): EditableGrid {
 const nearestOn = (ms: number, firstMs: number, period: number): number =>
   firstMs + Math.round((ms - firstMs) / period) * period
 
-export function fitGrid(grid: EditableGrid, fit: GridFit): EditableGrid {
+function phaseNear(fit: GridFit, ms: number): number {
+  if (!fit.phases || fit.phases.length === 0) return fit.firstMs
+  const local = fit.phases.reduce((a, b) => (Math.abs(b.ms - ms) < Math.abs(a.ms - ms) ? b : a))
+  const period = periodOf(fit.bpm)
+  const apart = Math.abs(local.firstMs - nearestOn(local.firstMs, fit.firstMs, period))
+  return apart > period / 4 ? fit.firstMs : local.firstMs
+}
+
+export function fitGrid(grid: EditableGrid, fit: GridFit, atMs?: number): EditableGrid {
   const sameTempo = Math.abs(fit.bpm - grid.bpm) / grid.bpm < SAME_TEMPO_RATIO
+  const first = atMs === undefined ? fit.firstMs : phaseNear(fit, atMs)
   return {
     bpm: sameTempo ? fit.bpm : grid.bpm,
-    anchorMs: nearestOn(grid.anchorMs, fit.firstMs, periodOf(fit.bpm)),
+    anchorMs: nearestOn(grid.anchorMs, first, periodOf(fit.bpm)),
   }
 }
 
@@ -91,13 +100,9 @@ export function gridOffsets(
   playheadMs: number,
   durationMs: number,
 ): { hereMs: number; endMs: number } {
-  const firstNear = (ms: number): number =>
-    fit.phases && fit.phases.length > 0
-      ? fit.phases.reduce((a, b) => (Math.abs(b.ms - ms) < Math.abs(a.ms - ms) ? b : a)).firstMs
-      : fit.firstMs
   const offsetAt = (ms: number): number => {
     const beat = nearestOn(ms, grid.anchorMs, periodOf(grid.bpm))
-    return Math.round(beat - nearestOn(beat, firstNear(ms), periodOf(fit.bpm)))
+    return Math.round(beat - nearestOn(beat, phaseNear(fit, ms), periodOf(fit.bpm)))
   }
   return { hereMs: offsetAt(playheadMs), endMs: offsetAt(durationMs) }
 }

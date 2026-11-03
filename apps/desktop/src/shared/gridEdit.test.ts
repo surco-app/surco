@@ -203,3 +203,28 @@ describe('gridOffsets with the phase measured along the track', () => {
     })
   })
 })
+
+describe('fitting around the playhead', () => {
+  const fit = {
+    bpm: 150,
+    firstMs: 0,
+    phases: [
+      { ms: 30000, firstMs: 25 },
+      { ms: 200000, firstMs: 0 },
+      { ms: 300000, firstMs: 200 },
+    ],
+  }
+
+  it('aligns the grid on the beats near the playhead, so a spliced intro can be fixed where its cues are', () => {
+    expect(fitGrid({ bpm: 150, anchorMs: 46 }, fit, 31000)).toEqual({ bpm: 150, anchorMs: 25 })
+    expect(fitGrid({ bpm: 150, anchorMs: 46 }, fit, 199000)).toEqual({ bpm: 150, anchorMs: 0 })
+  })
+
+  it('ignores a stretch where the detector locked half a beat away, and uses the whole-track fit there', () => {
+    expect(fitGrid({ bpm: 150, anchorMs: 46 }, fit, 300000).anchorMs).toBe(0)
+    expect(gridOffsets({ bpm: 150, anchorMs: 0 }, fit, 300000, 300000)).toEqual({
+      hereMs: 0,
+      endMs: 0,
+    })
+  })
+})
