@@ -43,8 +43,8 @@
   },
   "hero": {
     "latestRelease": "Nouveau dans la {{version}}",
-    "h1a": "Prépare tes morceaux",
-    "h1b": "avant de les jouer.",
+    "h1a": "Du téléchargement",
+    "h1b": "à la cabine, en un clic.",
     "ledeShort": "Convertir, taguer, vérifier la qualité et ranger dans Apple Music ou Engine DJ : ce qui demandait quatre ou cinq applis, Surco le fait dans une seule. De plusieurs minutes par morceau à deux secondes."
   },
   "features": {
@@ -1029,18 +1029,6 @@
   "home": {
     "replay": "Rejouer l'animation",
     "anchorLink": "Lien vers cet exemple",
-    "walkthrough": {
-      "title": "Un morceau, du début à la fin",
-      "lede": "Sept étapes, une seule fenêtre. En chemin, tu découvriras lesquels de tes fichiers sans perte sont en réalité des MP3."
-    },
-    "drop": {
-      "title": "Tu les déposes, ils sont là.",
-      "lede": "Des dossiers entiers. Surco lit les tags, la durée et la pochette à la volée, et n'ajoute jamais deux fois le même morceau.",
-      "emptyTitle": "Dépose tes morceaux ici",
-      "emptySubtitle": "Convertit tes morceaux en AIFF, WAV, FLAC, ALAC ou MP3, les tague depuis Discogs, Bandcamp, Deezer, Beatport et MusicBrainz, et les envoie vers Apple Music ou Engine DJ.",
-      "addTracks": "Ajouter des morceaux",
-      "reading": "Lecture {{read}}/{{total}}"
-    },
     "quality": {
       "title": "Ce fichier sans perte était un MP3.",
       "lede": "Acheter en sans perte ne garantit pas que ça le soit. Si quelqu'un a converti un MP3 en FLAC, WAV ou AIFF, le fichier pèse pareil mais le spectre montre le mur. Surco le signale avant même que le morceau sorte de chez toi.",
@@ -1057,55 +1045,10 @@
       "goodBadge": "● Bonne qualité",
       "fakeBadge": "● Faux sans perte"
     },
-    "audioGroup": {
-      "title": "Et un meilleur son au passage.",
-      "lede": "Trois corrections que Surco apporte au même morceau : il nettoie les clics et le bruit du vinyle, rogne le silence de la fin et met tous les morceaux au même volume."
-    },
     "tag": {
       "title": "Les tags, depuis Discogs, en un clic.",
       "lede": "Discogs pour les labels, Bandcamp pour l'autoproduction, Deezer pour les charts, Beatport pour le club, MusicBrainz pour tout le reste. Un clic remplit tout : artiste, label, année, BPM et pochette.",
       "all": "Toutes ({{count}})"
-    },
-    "declick": {
-      "step": "04 · nettoyés",
-      "title": "Le vinyle, nettoyé.",
-      "lede": "Si tes morceaux viennent d'un disque, ils traînent des clics, un souffle de fond et le grondement de la platine. Surco marque les clics sur l'onde et les enlève, baisse le bruit et coupe le grondement, et tu peux comparer avec l'original pendant la lecture pour vérifier que la réparation n'a rien emporté avec elle.",
-      "short": "Supprime les clics, le bruit de fond et le grondement. Tu entends le résultat avant de convertir.",
-      "section": "Réparation vinyle",
-      "count": "~{{count}} clics",
-      "clicks": "Clics",
-      "off": "Non",
-      "soft": "Doux",
-      "standard": "Standard",
-      "medium": "Moyen",
-      "strong": "Fort",
-      "found": "Clics détectés",
-      "noise": "Bruit de fond",
-      "listen": "Écouter le résultat"
-    },
-    "trim": {
-      "step": "05 · rognés",
-      "title": "Coupe le silence de la fin.",
-      "lede": "Il trouve le silence aux deux extrémités et la coupe s'aimante sur le dernier coup. À la milliseconde, avec sa propre écoute de chaque côté.",
-      "short": "La coupe s'accroche au dernier coup. À la milliseconde, avec une écoute de chaque côté.",
-      "section": "Rognage du silence",
-      "summary": "{{seconds}} s à la fin",
-      "none": "4,6 s de silence à la fin",
-      "start": "Début",
-      "end": "Fin"
-    },
-    "normalize": {
-      "step": "06 · nivelés",
-      "title": "Tout au même volume.",
-      "lede": "Chaque morceau arrive au volume auquel son master a été gravé, et ça s'entend dès que tu enchaînes l'un dans l'autre. Surco les met tous à la même cible avec des préréglages streaming, club ou diffusion, et te dit de combien chacun va bouger avant de toucher à quoi que ce soit.",
-      "short": "Préréglages streaming, club ou diffusion, et il te dit de combien chaque morceau va bouger avant de toucher à quoi que ce soit.",
-      "section": "Normalisation du loudness",
-      "none": "Aucune",
-      "volume": "Loudness",
-      "peak": "Pic",
-      "original": "Original {{lufs}} LUFS · {{peak}} dBTP",
-      "preview": "Aperçu {{lufs}} LUFS · {{peak}} dBTP",
-      "explain": "Il va bouger de {{gain}} dB vers {{target}} LUFS avec un gain constant. Rien n'est limité ni compressé ; la dynamique reste intacte."
     },
     "batch": {
       "title": "Et il atterrit dans ton Apple Music.",
@@ -1128,37 +1071,24 @@
     "closeSafeRest": "Quand tu changes de format, la copie va dans un dossier séparé. Si la copie remplace l'ancienne dans ta bibliothèque, l'ancienne va à la corbeille ou dans Sauvegardes une fois la nouvelle vérifiée. Notarisé par Apple.",
     "allFeatures": "Voir tout ce qu'il fait →",
     "worksWith": "Compatible avec",
-    "heroLede": "Ce qui demandait quatre ou cinq applis, Surco le fait dans une seule.",
+    "heroLede": "Surco convertit tes morceaux, les tague depuis Discogs ou Beatport, vérifie que tes fichiers sans perte le sont vraiment et les dépose dans rekordbox, Traktor, Engine DJ ou Apple Music.",
     "anchors": {
+      "see": "Voir comment",
+      "quality": {
+        "lead": "Démasque le faux sans perte.",
+        "rest": "Le FLAC que tu as acheté peut être un MP3 gonflé."
+      },
       "tag": {
         "title": "Tous les tags, en un clic",
         "note": "Discogs, Bandcamp, Deezer, Beatport et MusicBrainz. Artiste, label, année, BPM et pochette.",
-        "lead": "Tous les tags, en un clic.",
-        "rest": "Discogs, Bandcamp, Deezer, Beatport et MusicBrainz."
-      },
-      "audio": {
-        "title": "Et un meilleur son au passage",
-        "note": "Démasque les fichiers sans perte issus d'un MP3, rogne les silences, nettoie les clics et le bruit du vinyle et nivelle le volume.",
-        "lead": "Et un meilleur son au passage.",
-        "rest": "Démasque les fichiers sans perte issus d'un MP3."
+        "lead": "Les tags en un clic.",
+        "rest": "Artiste, label, année, BPM et pochette depuis cinq sources."
       },
       "export": {
         "title": "Et ils arrivent dans ton logiciel",
         "note": "Apple Music, Engine DJ, rekordbox, Traktor ou Serato. Rien à importer.",
-        "lead": "Et ils arrivent dans ton logiciel.",
-        "rest": "Apple Music, Engine DJ, rekordbox."
-      },
-      "review": {
-        "lead": "Et ta bibliothèque, en ordre.",
-        "rest": "Fautes, graphies et doublons."
-      },
-      "cues": {
-        "lead": "Et tes cues, placés.",
-        "rest": "Marque le drop, ton flux place le reste."
-      },
-      "replace": {
-        "lead": "Et tes playlists, intactes.",
-        "rest": "Remplace le MP3 par un AIFF, il reste partout."
+        "lead": "Direct dans ton logiciel.",
+        "rest": "Il apparaît dans rekordbox, Traktor, Engine DJ ou Apple Music."
       }
     },
     "replace": {

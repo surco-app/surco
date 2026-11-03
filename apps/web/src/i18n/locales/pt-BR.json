@@ -43,8 +43,8 @@
   },
   "hero": {
     "latestRelease": "Novidades da {{version}}",
-    "h1a": "Deixe suas faixas prontas",
-    "h1b": "antes de tocá-las.",
+    "h1a": "Do download",
+    "h1b": "para a cabine, em um clique.",
     "ledeShort": "Converter, etiquetar, checar a qualidade e mandar para o Apple Music ou o Engine DJ: o que antes exigia quatro ou cinco apps, o Surco faz em um só. De minutos por faixa para um par de segundos."
   },
   "features": {
@@ -1029,18 +1029,6 @@
   "home": {
     "replay": "Repetir a animação",
     "anchorLink": "Link para este exemplo",
-    "walkthrough": {
-      "title": "Uma faixa, do início ao fim",
-      "lede": "Sete passos, uma janela. No caminho, você vai descobrir quais dos seus arquivos lossless são na verdade MP3."
-    },
-    "drop": {
-      "title": "Soltou, entrou.",
-      "lede": "Pastas inteiras. O Surco lê tags, duração e capa na hora e nunca adiciona a mesma faixa duas vezes.",
-      "emptyTitle": "Arraste suas faixas para cá",
-      "emptySubtitle": "Converte suas faixas para AIFF, WAV, FLAC, ALAC ou MP3, etiqueta com Discogs, Bandcamp, Deezer, Beatport e MusicBrainz e envia para o Apple Music ou o Engine DJ.",
-      "addTracks": "Adicionar faixas",
-      "reading": "Lendo {{read}}/{{total}}"
-    },
     "quality": {
       "title": "Aquele lossless era um MP3.",
       "lede": "Comprar lossless não garante que seja. Se alguém converteu um MP3 para FLAC, WAV ou AIFF, o arquivo pesa o mesmo, mas o espectro mostra a parede. O Surco avisa antes de a faixa sair de casa.",
@@ -1057,55 +1045,10 @@
       "goodBadge": "● Boa qualidade",
       "fakeBadge": "● Falso lossless"
     },
-    "audioGroup": {
-      "title": "E um áudio melhor de quebra.",
-      "lede": "Três ajustes que o Surco faz na mesma faixa: limpa os clicks e o ruído do vinil, corta o silêncio do final e deixa todas as faixas no mesmo volume."
-    },
     "tag": {
       "title": "As tags do Discogs, em um clique.",
       "lede": "Discogs para os selos, Bandcamp para os lançamentos independentes, Deezer para as paradas, Beatport para a pista, MusicBrainz para todo o resto. Um clique preenche tudo: artista, selo, ano, BPM e capa.",
       "all": "Todas ({{count}})"
-    },
-    "declick": {
-      "step": "04 · limpa",
-      "title": "Vinil, limpinho.",
-      "lede": "Se suas faixas vieram de um disco, elas trazem clicks, chiado de fundo e ronco do prato. O Surco marca os clicks na onda e os remove, baixa o ruído e corta o ronco, e você pode comparar com o original enquanto toca para conferir que o reparo não levou nada junto.",
-      "short": "Remove clicks, ruído de fundo e ronco. Você pode ouvir o resultado antes de converter.",
-      "section": "Reparo de vinil",
-      "count": "~{{count}} clicks",
-      "clicks": "Clicks",
-      "off": "Não",
-      "soft": "Suave",
-      "standard": "Padrão",
-      "medium": "Médio",
-      "strong": "Forte",
-      "found": "Cliques encontrados",
-      "noise": "Ruído de fundo",
-      "listen": "Ouvir o resultado"
-    },
-    "trim": {
-      "step": "05 · cortada",
-      "title": "Corte o silêncio do final.",
-      "lede": "Ele encontra o silêncio nas duas pontas e o corte gruda na última batida. Ao milissegundo, com audição própria de cada lado.",
-      "short": "O corte gruda na última batida. Ao milissegundo, com audição de cada lado.",
-      "section": "Corte de silêncio",
-      "summary": "{{seconds}} s do final",
-      "none": "4,6 s de silêncio no final",
-      "start": "Início",
-      "end": "Fim"
-    },
-    "normalize": {
-      "step": "06 · nivelada",
-      "title": "Todas no mesmo volume.",
-      "lede": "Cada faixa chega no volume em que foi masterizada, e isso aparece assim que você mixa uma na outra. O Surco nivela todas no mesmo alvo com predefinições de streaming, club ou broadcast e diz quanto cada uma vai mudar antes de mexer em qualquer coisa.",
-      "short": "Predefinições de streaming, club ou broadcast, e ele diz quanto cada faixa vai mudar antes de mexer em qualquer coisa.",
-      "section": "Normalização de volume",
-      "none": "Nenhuma",
-      "volume": "Volume",
-      "peak": "Pico",
-      "original": "Original {{lufs}} LUFS · {{peak}} dBTP",
-      "preview": "Prévia {{lufs}} LUFS · {{peak}} dBTP",
-      "explain": "Vai mudar {{gain}} dB até {{target}} LUFS com um ganho constante. Nada é limitado nem comprimido; a dinâmica fica intacta."
     },
     "batch": {
       "title": "E cai direto no seu Apple Music.",
@@ -1128,37 +1071,24 @@
     "closeSafeRest": "Ao mudar de formato, a cópia vai para uma pasta separada. Se a cópia substitui a antiga na sua biblioteca, a antiga vai para a Lixeira ou para Cópias depois de o Surco conferir a nova. Notarizado pela Apple.",
     "allFeatures": "Ver tudo o que ele faz →",
     "worksWith": "Funciona com",
-    "heroLede": "O que antes exigia quatro ou cinco apps, o Surco faz em um só.",
+    "heroLede": "O Surco converte suas faixas, aplica as tags do Discogs ou do Beatport, confere se o lossless é lossless de verdade e as coloca no rekordbox, Traktor, Engine DJ ou Apple Music.",
     "anchors": {
+      "see": "Ver como",
+      "quality": {
+        "lead": "Pega o falso lossless.",
+        "rest": "O FLAC que você comprou pode ser um MP3 inflado."
+      },
       "tag": {
         "title": "Todas as tags, em um clique",
         "note": "Discogs, Bandcamp, Deezer, Beatport e MusicBrainz. Artista, selo, ano, BPM e capa.",
-        "lead": "Todas as tags, em um clique.",
-        "rest": "Discogs, Bandcamp, Deezer, Beatport e MusicBrainz."
-      },
-      "audio": {
-        "title": "E um áudio melhor de quebra",
-        "note": "Descobre os arquivos lossless que vieram de um MP3, corta silêncios, limpa clicks e ruído do vinil e nivela o volume.",
-        "lead": "E um áudio melhor de quebra.",
-        "rest": "Descobre os arquivos lossless que vieram de um MP3."
+        "lead": "Tags em um clique.",
+        "rest": "Artista, selo, ano, BPM e capa de cinco fontes."
       },
       "export": {
         "title": "E elas caem no seu programa",
         "note": "Apple Music, Engine DJ, rekordbox, Traktor ou Serato. Nada para importar.",
-        "lead": "E elas caem no seu programa.",
-        "rest": "Apple Music, Engine DJ, rekordbox."
-      },
-      "review": {
-        "lead": "E sua biblioteca, arrumada.",
-        "rest": "Erros, grafias e duplicados."
-      },
-      "cues": {
-        "lead": "E seus cues, no lugar.",
-        "rest": "Marque o drop e seu fluxo faz o resto."
-      },
-      "replace": {
-        "lead": "E suas playlists, intactas.",
-        "rest": "Troque o MP3 por AIFF e ela continua em todas."
+        "lead": "Direto no seu programa.",
+        "rest": "Aparece no rekordbox, Traktor, Engine DJ ou Apple Music."
       }
     },
     "replace": {

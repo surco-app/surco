@@ -11,12 +11,6 @@ import {
   CUES_POINTS,
   CUES_ZOOM,
   cuesFrame,
-  DROP_TOTAL,
-  DROP_TRACKS,
-  declickFrame,
-  dropFrame,
-  NORMALIZE_GAIN,
-  normalizeFrame,
   qualityFrame,
   REPLACE_PLAYLISTS,
   REVIEW_APPLY_AFTER,
@@ -31,11 +25,9 @@ import {
   TAG_JUNK_ARTIST,
   TAG_MATCHES,
   TAG_QUERY,
-  TRIM_CUT,
   tagFrame,
-  trimFrame,
 } from './scenes'
-import { CUES_TRACK_ENVELOPE, CUES_ZOOM_ENVELOPE, DECLICK_MARKS } from './waveforms'
+import { CUES_TRACK_ENVELOPE, CUES_ZOOM_ENVELOPE } from './waveforms'
 
 // Every scene is frozen mid-action in the static version — "12/40", "Converting
 // 11/40", the cut already placed. These check that each frame function actually
@@ -130,90 +122,6 @@ describe('tagFrame', () => {
   })
 })
 
-describe('declickFrame', () => {
-  const frames = Array.from({ length: 121 }, (_, i) => declickFrame(i / 120))
-  const firstAt = (pred: (f: (typeof frames)[number]) => boolean) => frames.findIndex(pred)
-
-  // The section opens off, as the app ships it: repair is a choice the visitor sees made.
-  it('opens with repair off and turns it on with a click', () => {
-    expect(declickFrame(0).mode).toBe('off')
-    expect(declickFrame(1).mode).toBe('standard')
-    const pointing = firstAt((f) => f.cursor === 'standard')
-    expect(pointing).toBeGreaterThan(-1)
-    expect(pointing).toBeLessThan(firstAt((f) => f.mode === 'standard'))
-  })
-
-  // "Listen to the result" only exists once a strength is chosen, and the copy promises
-  // you can hear it, so the scene presses it and plays.
-  it('offers the result only once repair is on, then plays it', () => {
-    for (const f of frames) if (f.mode === 'off') expect(f.listen).toBe(false)
-    const playing = firstAt((f) => f.playhead > 0)
-    expect(playing).toBeGreaterThan(firstAt((f) => f.listen))
-    expect(firstAt((f) => f.cursor === 'listen')).toBeLessThan(playing)
-  })
-
-  // The section fixes two things; the scene shows each one being chosen, in the order
-  // they sit in the app, each pointed at before it switches.
-  it('picks the background noise after the clicks, pointing at it first', () => {
-    expect(declickFrame(0).noise).toBe('off')
-    expect(declickFrame(1).noise).toBe('medium')
-    const picked = firstAt((f) => f.noise === 'medium')
-    expect(picked).toBeGreaterThan(firstAt((f) => f.mode === 'standard'))
-    const pointing = firstAt((f) => f.cursor === 'noise')
-    expect(pointing).toBeGreaterThan(-1)
-    expect(pointing).toBeLessThan(picked)
-  })
-
-  // What plays is the result of both, so it only starts once they are set.
-  it('plays the result only after every fix is chosen', () => {
-    expect(firstAt((f) => f.playhead > 0)).toBeGreaterThan(firstAt((f) => f.noise === 'medium'))
-  })
-
-  it('plays forward to the end of the strip', () => {
-    const heads = frames.map((f) => f.playhead)
-    for (let i = 1; i < heads.length; i++) expect(heads[i]).toBeGreaterThanOrEqual(heads[i - 1])
-    expect(declickFrame(1).playhead).toBe(1)
-  })
-
-  // The clicks are what Surco found before anything was chosen, so they are on the strip
-  // from the first frame and never disappear.
-  it('marks every click from the start', () => {
-    for (const f of frames) expect(f.marks).toBe(DECLICK_MARKS.length)
-  })
-})
-
-describe('trimFrame', () => {
-  it('starts with nothing trimmed and ends locked on the beat', () => {
-    expect(trimFrame(0).cut).toBeCloseTo(1, 2)
-    expect(trimFrame(1).cut).toBeCloseTo(TRIM_CUT, 2)
-    expect(trimFrame(0).locked).toBe(false)
-    expect(trimFrame(1).locked).toBe(true)
-  })
-
-  // The magnet is the claim: the cut overshoots and settles back onto the last
-  // beat. Without the overshoot it is just a bar sliding, which the copy oversells.
-  // A 60-step sweep of the whole run missed it — the overshoot lives in a narrow
-  // window right after the slide ends, so the check has to sample there.
-  it('overshoots past the final cut before settling', () => {
-    const settling = Array.from({ length: 60 }, (_, i) => trimFrame(0.72 + (i / 60) * 0.28).cut)
-    expect(Math.min(...settling)).toBeLessThan(TRIM_CUT)
-  })
-
-  // ...and comes back. An overshoot that never recovers is a miscalculated cut, not
-  // a magnet snapping onto the beat.
-  it('settles back onto the beat after overshooting', () => {
-    expect(trimFrame(1).cut).toBeCloseTo(TRIM_CUT, 3)
-  })
-
-  it('never lets the cut leave the waveform', () => {
-    for (let i = 0; i <= 60; i++) {
-      const { cut } = trimFrame(i / 60)
-      expect(cut).toBeGreaterThanOrEqual(0)
-      expect(cut).toBeLessThanOrEqual(1)
-    }
-  })
-})
-
 describe('batchFrame', () => {
   const frames = Array.from({ length: 121 }, (_, i) => batchFrame(i / 120))
   const firstAt = (pred: (f: (typeof frames)[number]) => boolean) => frames.findIndex(pred)
@@ -262,59 +170,6 @@ describe('batchFrame', () => {
   })
 })
 
-describe('dropFrame', () => {
-  const frames = Array.from({ length: 121 }, (_, i) => dropFrame(i / 120))
-  const firstAt = (pred: (f: (typeof frames)[number]) => boolean) => frames.findIndex(pred)
-
-  // The step is called "drop them in and they're there". It has to open on the window
-  // the app shows with nothing loaded, or it shows the aftermath of an import.
-  it('opens on the empty window, with no tracks in it', () => {
-    expect(dropFrame(0).stage).toBe('empty')
-    expect(dropFrame(0).rows).toHaveLength(0)
-  })
-
-  it('drags the files in before any track appears', () => {
-    const dragging = firstAt((f) => f.stage === 'dragging')
-    expect(dragging).toBeGreaterThan(0)
-    expect(dragging).toBeLessThan(firstAt((f) => f.rows.length > 0))
-  })
-
-  // The app lists the whole drop at once with placeholder rows, then reads each file.
-  it('lists the whole crate on the drop and reads the tracks one after another', () => {
-    const dropped = frames[firstAt((f) => f.rows.length > 0)]
-    expect(dropped.rows).toHaveLength(DROP_TRACKS.length)
-    expect(dropped.rows.every((r) => r.state === 'loading')).toBe(true)
-
-    const done = frames.map((f) => f.rows.filter((r) => r.state === 'done').length)
-    for (let i = 1; i < done.length; i++) {
-      expect(done[i]).toBeGreaterThanOrEqual(done[i - 1])
-      expect(done[i] - done[i - 1]).toBeLessThanOrEqual(1)
-    }
-    expect(dropFrame(1).rows.every((r) => r.state === 'done')).toBe(true)
-  })
-
-  it('counts the files it reads up to the whole folder, never backwards', () => {
-    const reads = frames.map((f) => f.read)
-    for (let i = 1; i < reads.length; i++) expect(reads[i]).toBeGreaterThanOrEqual(reads[i - 1])
-    expect(dropFrame(1).read).toBe(DROP_TOTAL)
-    for (const f of frames) if (f.rows.length === 0) expect(f.read).toBe(0)
-  })
-
-  // The convert button only offers the whole folder once every file has been read, as
-  // the toolbar does in the app.
-  it('finishes only when every track has been read', () => {
-    for (const f of frames)
-      if (f.stage === 'done') expect(f.rows.every((r) => r.state === 'done')).toBe(true)
-    expect(dropFrame(1).stage).toBe('done')
-  })
-
-  // A real crate is not seven identical FLACs. A single-format queue reads as
-  // placeholder data and undersells taking the folder exactly as it is.
-  it('carries a mix of formats, not one repeated', () => {
-    expect(new Set(DROP_TRACKS.map((tr) => tr.format)).size).toBeGreaterThan(2)
-  })
-})
-
 describe('qualityFrame', () => {
   const frames = Array.from({ length: 121 }, (_, i) => qualityFrame(i / 120))
   const firstAt = (pred: (f: (typeof frames)[number]) => boolean) => frames.findIndex(pred)
@@ -355,37 +210,6 @@ describe('qualityFrame', () => {
   it('ends on the bad verdict, with the pointer gone', () => {
     expect(qualityFrame(1).verdict).toBe('bad')
     expect(qualityFrame(1).cursor).toBe(false)
-  })
-})
-
-describe('normalizeFrame', () => {
-  const frames = Array.from({ length: 121 }, (_, i) => normalizeFrame(i / 120))
-  const firstAt = (pred: (f: (typeof frames)[number]) => boolean) => frames.findIndex(pred)
-
-  it('opens untouched and switches to volume with a click', () => {
-    expect(normalizeFrame(0).mode).toBe('none')
-    expect(normalizeFrame(0).gain).toBe(0)
-    const pointing = firstAt((f) => f.cursor)
-    expect(pointing).toBeGreaterThan(-1)
-    expect(pointing).toBeLessThan(firstAt((f) => f.mode === 'volume'))
-  })
-
-  // A constant gain glides to its value and stays there: overshooting would read as the
-  // gain hunting, which is not what Surco does to the track.
-  it('brings the preview down to the target without overshooting it', () => {
-    for (const f of frames) {
-      expect(f.gain).toBeLessThanOrEqual(0)
-      expect(f.gain).toBeGreaterThanOrEqual(NORMALIZE_GAIN)
-    }
-    expect(normalizeFrame(1).gain).toBe(NORMALIZE_GAIN)
-    for (const f of frames) if (f.mode === 'none') expect(f.gain).toBe(0)
-  })
-
-  // The section tells you what will happen before anything is converted, and that
-  // explanation describes the settled preview, so it waits for it.
-  it('explains the change once the preview has settled', () => {
-    for (const f of frames) if (f.explained) expect(f.gain).toBe(NORMALIZE_GAIN)
-    expect(normalizeFrame(1).explained).toBe(true)
   })
 })
 

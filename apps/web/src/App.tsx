@@ -10,6 +10,7 @@ import LibraryReview from './components/LibraryReview'
 import Reveal from './components/Reveal'
 import ScrollProgress from './components/ScrollProgress'
 import SectionView from './components/SectionView'
+import SpectrumDuotone from './components/SpectrumDuotone'
 import Spotlight from './components/Spotlight'
 import CuesScene from './components/scenes/CuesScene'
 import ReplaceScene from './components/scenes/ReplaceScene'
@@ -77,7 +78,25 @@ export default function App() {
           <Reveal eager delay={220}>
             <div className="relative isolate mx-auto mt-8 max-w-5xl text-left">
               <div className="hero-light pointer-events-none absolute top-0 left-1/2 -z-10 h-[36rem] w-[140%] -translate-x-1/2 -translate-y-1/2" />
-              <HeroApp video />
+              <div className="hidden sm:block">
+                <HeroApp video />
+              </div>
+              <figure data-testid="hero-spectrum" className="rounded-xl bg-spectrum p-3 sm:hidden">
+                <SpectrumDuotone />
+                <figcaption className="mb-2.5 flex items-center justify-between gap-3 font-mono text-[11px]">
+                  <span className="rounded-full bg-red/15 px-2.5 py-0.5 text-red">
+                    {t('home.quality.fakeBadge')}
+                  </span>
+                  <span className="text-subtle">{t('home.quality.highsBad')}</span>
+                </figcaption>
+                <img
+                  src="/spectrum/lossless-fake.jpg"
+                  alt={t('home.quality.fakeAlt')}
+                  width={900}
+                  height={245}
+                  className="spectrum-duotone h-auto w-full rounded-md"
+                />
+              </figure>
             </div>
           </Reveal>
           <Reveal eager delay={280}>
@@ -108,6 +127,7 @@ export default function App() {
             step from a 1152px hero to a 1024px body, and the seam landed exactly on
             the heading that introduces the steps. */}
         <div className="mx-auto max-w-6xl px-6 sm:px-10">
+          <Walkthrough />
           <Spotlight
             id={SCENE_ANCHORS.cues}
             copy="cues"
@@ -120,7 +140,6 @@ export default function App() {
             points={['anyFormat', 'playlists', 'programs']}
             scene={<ReplaceScene />}
           />
-          <Walkthrough />
           <LibraryReview />
         </div>
 
