@@ -28,6 +28,7 @@ import { openRekordboxDb } from './rekordboxDb'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 import type { RekordboxQueue } from './rekordboxQueue'
 import type { CuesOp } from './rekordboxQueueOps'
+import { readTraktorTrackCues } from './traktorCues'
 
 function handler(channel: string): (...args: unknown[]) => unknown {
   const call = [...vi.mocked(ipcMain.handle).mock.calls].reverse().find(([n]) => n === channel)
@@ -300,6 +301,57 @@ describe('registerRekordboxCuesIpc', () => {
       },
     ])
     expect(beginMoment).toHaveBeenCalledWith('cues', ['engine'])
+  })
+
+  it('never queues an Engine track’s cues on rekordbox when Engine is not wired', async () => {
+    const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
+    const beginMoment = vi.fn()
+    registerRekordboxCuesIpc({
+      collection: () => '/c/master.db',
+      queue: queue({ enqueue }),
+      applyQuietly: quietly(),
+      beginMoment,
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+    })
+    await handler('rekordbox:saveCues')({}, [
+      {
+        contentId: 'engine:4',
+        path: '/m/e.mp3',
+        label: 'e',
+        wanted: [{ ms: 1000, kind: 0, color: null }],
+        fingerprint: 'f',
+      },
+    ])
+    expect(enqueue).not.toHaveBeenCalled()
+    expect(beginMoment).not.toHaveBeenCalled()
+  })
+
+  it('never queues a Traktor track’s cues on rekordbox when Traktor is not wired', async () => {
+    const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
+    registerRekordboxCuesIpc({
+      collection: () => '/c/master.db',
+      queue: queue({ enqueue }),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+    })
+    await handler('rekordbox:saveCues')({}, [
+      {
+        contentId: 'traktor:HD/:Music/:t.aiff',
+        path: '/Music/t.aiff',
+        label: 't',
+        wanted: [{ ms: 1000, kind: 0, color: null }],
+        fingerprint: 'f',
+      },
+    ])
+    expect(enqueue).not.toHaveBeenCalled()
   })
 
   it('queues several tracks together and applies once, so master.db is written in one batch', async () => {
@@ -784,6 +836,116 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
     expect(await handler('rekordbox:queuedCues')({}, ID)).toEqual({ wanted, fingerprint: 'F1' })
     handler('rekordbox:undoCues')({}, ID)
     expect(drop).toHaveBeenCalledWith('c1')
+  })
+
+  describe('with every program wired, as the app wires them', () => {
+    async function registerAll(
+      over: {
+        rekordbox?: ReturnType<typeof queue>
+        engine?: ReturnType<typeof queue>
+        traktor?: ReturnType<typeof queue>
+        beatGrid?: (file: string) => Promise<{ bpm: number; firstMs: number } | null>
+      } = {},
+    ) {
+      const nml = await collectionFile()
+      const traktorWords = vi.fn(async (_file: string) => new Uint16Array([4, 8]))
+      const engineWords = vi.fn(async (_file: string) => new Uint16Array([1, 2]))
+      const beatGrid = vi.fn(over.beatGrid ?? (async () => ({ bpm: 120, firstMs: 100 })))
+      registerRekordboxCuesIpc({
+        collection: () => '',
+        queue: over.rekordbox ?? queue(),
+        applyQuietly: quietly(),
+        flow: () => MY_FLOW,
+        beatGrid,
+        words: async () => null,
+        provisional: { add: vi.fn() },
+        twins: async () => ({}),
+        engine: {
+          libraryDir: () => '/no/engine',
+          queue: over.engine ?? queue(),
+          applyQuietly: quietly(),
+          words: engineWords,
+        },
+        traktor: {
+          nml: () => nml,
+          bootVolume: () => 'HD',
+          queue: over.traktor ?? queue(),
+          applyQuietly: quietly(),
+          words: traktorWords,
+        },
+      })
+      return { nml, traktorWords, engineWords, beatGrid }
+    }
+
+    it('reads a Traktor track’s cues from the NML, not from rekordbox', async () => {
+      const { nml } = await registerAll()
+      const read = await handler('rekordbox:trackCues')({}, ID)
+      expect(read).not.toBeNull()
+      expect(read).toEqual(readTraktorTrackCues(readFileSync(nml, 'utf8'), ID))
+    })
+
+    it('draws a Traktor track’s detailed wave from its file', async () => {
+      const { traktorWords, engineWords } = await registerAll()
+      expect([...((await handler('rekordbox:cueWaveDetail')({}, ID)) as Uint16Array)]).toEqual([
+        4, 8,
+      ])
+      expect(traktorWords).toHaveBeenCalledWith('/Music/t.aiff')
+      expect(engineWords).not.toHaveBeenCalled()
+    })
+
+    it('gives a rekordbox track no drop input', async () => {
+      const { traktorWords, engineWords } = await registerAll()
+      expect(await handler('rekordbox:cueDropInput')({}, '123')).toBeNull()
+      expect(traktorWords).not.toHaveBeenCalled()
+      expect(engineWords).not.toHaveBeenCalled()
+    })
+
+    it('leads no audition for a Traktor or Engine track', async () => {
+      await registerAll()
+      expect(await handler('rekordbox:auditionLead')({}, ID)).toBe(0)
+      expect(await handler('rekordbox:auditionLead')({}, 'engine:4')).toBe(0)
+    })
+
+    it('builds no Surco grid for a Traktor or Engine track', async () => {
+      const { beatGrid } = await registerAll()
+      expect(await handler('rekordbox:surcoGrid')({}, ID)).toBeNull()
+      expect(await handler('rekordbox:surcoGrid')({}, 'engine:4')).toBeNull()
+      expect(beatGrid).not.toHaveBeenCalled()
+    })
+
+    it('answers a queued Traktor or Engine op without wanted cues with an empty list', async () => {
+      const traktor = queue({
+        cuesOp: (id) => (id === ID ? savedOp({ contentId: ID, drops: [8000] }) : undefined),
+      })
+      const engine = queue({
+        cuesOp: (id) =>
+          id === 'engine:4'
+            ? savedOp({ contentId: 'engine:4', drops: [8000], fingerprint: 'F2' })
+            : undefined,
+      })
+      await registerAll({ traktor, engine })
+      expect(await handler('rekordbox:queuedCues')({}, ID)).toEqual({
+        wanted: [],
+        fingerprint: 'F1',
+      })
+      expect(await handler('rekordbox:queuedCues')({}, 'engine:4')).toEqual({
+        wanted: [],
+        fingerprint: 'F2',
+      })
+    })
+
+    it('undoes a Traktor track’s cues on the Traktor queue', async () => {
+      const rekordbox = queue({ cuesOp: () => savedOp({ id: 'r1', drops: [1000] }) })
+      const engine = queue({ cuesOp: () => savedOp({ id: 'e1', drops: [1000] }) })
+      const traktor = queue({
+        cuesOp: (id) => (id === ID ? savedOp({ contentId: ID, drops: [1000] }) : undefined),
+      })
+      await registerAll({ rekordbox, engine, traktor })
+      handler('rekordbox:undoCues')({}, ID)
+      expect(traktor.drop).toHaveBeenCalledWith('c1')
+      expect(rekordbox.drop).not.toHaveBeenCalled()
+      expect(engine.drop).not.toHaveBeenCalled()
+    })
   })
 })
 

@@ -2,8 +2,9 @@ import { randomUUID } from 'node:crypto'
 import { readFileSync, realpathSync } from 'node:fs'
 import { BrowserWindow, ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
-import { isEngineContent } from '../shared/engineContent'
-import { isTraktorContent, traktorKey } from '../shared/traktorContent'
+import { programOf, programsInOrder } from '../shared/djProgram'
+import type { DropInput } from '../shared/dropDetect'
+import { traktorKey } from '../shared/traktorContent'
 import type {
   CopyReason,
   DjProgram,
@@ -11,6 +12,7 @@ import type {
   QueuedCues,
   SaveCuesRequest,
   SurcoGrid,
+  TrackCues,
 } from '../shared/types'
 import { type BeatGridFit, provisionalGrid } from './beatGrid'
 import { readEngineTrackCues } from './engineCues'
@@ -32,6 +34,8 @@ import { traktorFileOf } from './traktorPlaylists'
 type CueQueue = Pick<RekordboxQueue, 'cuesOp' | 'drop'> & { enqueue: (ops: QueueOp[]) => void }
 
 const WORDS_PER_SECOND = 150
+
+const CUE_SAVE_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
 
 function shiftedWords(words: Uint16Array, shiftMs: number): Uint16Array {
   const lead = Math.round((shiftMs * WORDS_PER_SECOND) / 1000)
@@ -67,10 +71,19 @@ export function registerRekordboxCuesIpc(host: {
     words: (file: string) => Promise<Uint16Array | null>
   }
 }): void {
-  const engineOf = (contentId: string) => (isEngineContent(contentId) ? host.engine : undefined)
-  const traktorOf = (contentId: string) => (isTraktorContent(contentId) ? host.traktor : undefined)
-  const queueOf = (contentId: string) =>
-    engineOf(contentId)?.queue ?? traktorOf(contentId)?.queue ?? host.queue
+  const cueHostOf = (
+    program: DjProgram,
+  ): { queue: CueQueue; applyQuietly: (win: BrowserWindow | null) => void } | null => {
+    switch (program) {
+      case 'rekordbox':
+        return host
+      case 'engine':
+        return host.engine ?? null
+      case 'traktor':
+        return host.traktor ?? null
+    }
+  }
+  const queueOf = (contentId: string) => cueHostOf(programOf(contentId))?.queue ?? null
   const nmlOf = (traktor: NonNullable<typeof host.traktor>): string => {
     const path = traktor.nml()
     return path ? readFileSync(path, 'utf8') : ''
@@ -79,109 +92,150 @@ export function registerRekordboxCuesIpc(host: {
     const entry = traktorEntryBlock(nmlOf(traktor), traktorKey(contentId) ?? '')
     return entry ? traktorFileOf(entry.block, traktor.bootVolume()) : null
   }
-  ipcMain.handle('rekordbox:trackCues', async (_e, contentId: string) => {
-    const traktor = traktorOf(contentId)
-    if (traktor) return readTraktorTrackCues(nmlOf(traktor), contentId)
-    const engine = engineOf(contentId)
-    if (engine)
-      return withEngineLibrary(
-        engine.libraryDir(),
-        (db) => readEngineTrackCues(db, contentId),
-        null,
-      )
-    const path = host.collection()
-    return withCollection(
-      path,
-      (db) => readTrackCues(db, rekordboxShareDir(path), contentId),
-      null,
-      await keyOf(path),
-    )
-  })
-  ipcMain.handle('rekordbox:cueWaveDetail', async (_e, contentId: string) => {
-    const traktor = traktorOf(contentId)
-    if (traktor) {
-      const file = traktorFile(traktor, contentId)
-      return file ? traktor.words(file) : null
-    }
-    if (engineOf(contentId)) return null
-    const path = host.collection()
-    return withCollection(
-      path,
-      (db) => readCueWaveDetail(db, rekordboxShareDir(path), contentId),
-      null,
-      await keyOf(path),
-    )
-  })
-  ipcMain.handle('rekordbox:cueDropInput', async (_e, contentId: string) => {
-    const traktor = traktorOf(contentId)
-    if (traktor) {
-      const path = host.collection()
-      return traktorDropInput(contentId, {
-        nml: nmlOf(traktor),
-        bootVolume: traktor.bootVolume(),
-        collection: path,
-        key: path ? await keyOf(path) : undefined,
-        realPath: (p) => realpathSync(p),
-        words: traktor.words,
-      })
-    }
-    const engine = engineOf(contentId)
-    if (!engine) return null
-    const path = host.collection()
-    return engineDropInput(contentId, {
-      libraryDir: engine.libraryDir(),
-      collection: path,
-      key: await keyOf(path),
-      realPath: (p) => realpathSync(p),
-      words: engine.words,
-    })
-  })
+  ipcMain.handle(
+    'rekordbox:trackCues',
+    async (_e, contentId: string): Promise<TrackCues | null> => {
+      switch (programOf(contentId)) {
+        case 'traktor':
+          return host.traktor ? readTraktorTrackCues(nmlOf(host.traktor), contentId) : null
+        case 'engine': {
+          const engine = host.engine
+          if (!engine) return null
+          return withEngineLibrary(
+            engine.libraryDir(),
+            (db) => readEngineTrackCues(db, contentId),
+            null,
+          )
+        }
+        case 'rekordbox': {
+          const path = host.collection()
+          return withCollection(
+            path,
+            (db) => readTrackCues(db, rekordboxShareDir(path), contentId),
+            null,
+            await keyOf(path),
+          )
+        }
+      }
+    },
+  )
+  ipcMain.handle(
+    'rekordbox:cueWaveDetail',
+    async (_e, contentId: string): Promise<Uint16Array | null> => {
+      switch (programOf(contentId)) {
+        case 'traktor': {
+          const traktor = host.traktor
+          if (!traktor) return null
+          const file = traktorFile(traktor, contentId)
+          return file ? traktor.words(file) : null
+        }
+        case 'engine':
+          return null
+        case 'rekordbox': {
+          const path = host.collection()
+          return withCollection(
+            path,
+            (db) => readCueWaveDetail(db, rekordboxShareDir(path), contentId),
+            null,
+            await keyOf(path),
+          )
+        }
+      }
+    },
+  )
+  ipcMain.handle(
+    'rekordbox:cueDropInput',
+    async (_e, contentId: string): Promise<DropInput | null> => {
+      switch (programOf(contentId)) {
+        case 'traktor': {
+          const traktor = host.traktor
+          if (!traktor) return null
+          const path = host.collection()
+          return traktorDropInput(contentId, {
+            nml: nmlOf(traktor),
+            bootVolume: traktor.bootVolume(),
+            collection: path,
+            key: path ? await keyOf(path) : undefined,
+            realPath: (p) => realpathSync(p),
+            words: traktor.words,
+          })
+        }
+        case 'engine': {
+          const engine = host.engine
+          if (!engine) return null
+          const path = host.collection()
+          return engineDropInput(contentId, {
+            libraryDir: engine.libraryDir(),
+            collection: path,
+            key: await keyOf(path),
+            realPath: (p) => realpathSync(p),
+            words: engine.words,
+          })
+        }
+        case 'rekordbox':
+          return null
+      }
+    },
+  )
   ipcMain.handle('rekordbox:cueTwins', (_e, file: string) => host.twins(file))
-  ipcMain.handle('rekordbox:auditionLead', async (_e, contentId: string) => {
-    const path = host.collection()
-    const file = withCollection(
-      path,
-      (db) =>
-        (
-          db
-            .prepare(
-              `SELECT FolderPath FROM djmdContent WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0`,
-            )
-            .get(contentId) as { FolderPath: string } | undefined
-        )?.FolderPath ?? null,
-      null,
-      await keyOf(path),
-    )
-    return file ? rekordboxLeadOfFile(file) : 0
+  ipcMain.handle('rekordbox:auditionLead', async (_e, contentId: string): Promise<number> => {
+    switch (programOf(contentId)) {
+      case 'traktor':
+      case 'engine':
+        return 0
+      case 'rekordbox': {
+        const path = host.collection()
+        const file = withCollection(
+          path,
+          (db) =>
+            (
+              db
+                .prepare(
+                  `SELECT FolderPath FROM djmdContent WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0`,
+                )
+                .get(contentId) as { FolderPath: string } | undefined
+            )?.FolderPath ?? null,
+          null,
+          await keyOf(path),
+        )
+        return file ? rekordboxLeadOfFile(file) : 0
+      }
+    }
   })
   ipcMain.handle(
     'rekordbox:surcoGrid',
     async (_e, contentId: string): Promise<SurcoGrid | null> => {
-      if (engineOf(contentId) || traktorOf(contentId)) return null
-      const path = host.collection()
-      const row = withCollection(
-        path,
-        (db) =>
-          db
-            .prepare(
-              `SELECT FolderPath, SampleRate, Length FROM djmdContent
+      switch (programOf(contentId)) {
+        case 'traktor':
+        case 'engine':
+          return null
+        case 'rekordbox': {
+          const path = host.collection()
+          const row = withCollection(
+            path,
+            (db) =>
+              db
+                .prepare(
+                  `SELECT FolderPath, SampleRate, Length FROM djmdContent
                 WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0`,
-            )
-            .get(contentId) as
-            | { FolderPath: string; SampleRate: number | null; Length: number }
-            | undefined,
-        undefined,
-        await keyOf(path),
-      )
-      if (!row) return null
-      const fit = await host.beatGrid(row.FolderPath)
-      if (!fit) return null
-      const shiftMs = await rekordboxShiftOfFile(row.FolderPath, row.SampleRate || 44100)
-      const words = await host.words(row.FolderPath)
-      return {
-        bpm: fit.bpm,
-        grid: provisionalGrid(fit, shiftMs, row.Length * 1000),
-        words: words && shiftedWords(words, shiftMs),
+                )
+                .get(contentId) as
+                | { FolderPath: string; SampleRate: number | null; Length: number }
+                | undefined,
+            undefined,
+            await keyOf(path),
+          )
+          if (!row) return null
+          const fit = await host.beatGrid(row.FolderPath)
+          if (!fit) return null
+          const shiftMs = await rekordboxShiftOfFile(row.FolderPath, row.SampleRate || 44100)
+          const words = await host.words(row.FolderPath)
+          return {
+            bpm: fit.bpm,
+            grid: provisionalGrid(fit, shiftMs, row.Length * 1000),
+            words: words && shiftedWords(words, shiftMs),
+          }
+        }
       }
     },
   )
@@ -196,51 +250,38 @@ export function registerRekordboxCuesIpc(host: {
   ipcMain.handle(
     'rekordbox:queuedCues',
     async (_e, contentId: string): Promise<QueuedCues | null> => {
-      const op = queueOf(contentId).cuesOp(contentId)
+      const op = queueOf(contentId)?.cuesOp(contentId)
       if (!op || (op.wanted === undefined && op.drops === undefined)) return null
       if (op.wanted) return { wanted: op.wanted, fingerprint: op.fingerprint }
-      const path = host.collection()
-      const read = withCollection(
-        path,
-        (db) => readTrackCues(db, rekordboxShareDir(path), contentId, { wave: false }),
-        null,
-        await keyOf(path),
-      )
-      const wanted = read ? (queuedWanted(op, read) ?? read.cues) : []
-      return { wanted, fingerprint: op.fingerprint }
+      switch (programOf(contentId)) {
+        case 'traktor':
+        case 'engine':
+          return { wanted: [], fingerprint: op.fingerprint }
+        case 'rekordbox': {
+          const path = host.collection()
+          const read = withCollection(
+            path,
+            (db) => readTrackCues(db, rekordboxShareDir(path), contentId, { wave: false }),
+            null,
+            await keyOf(path),
+          )
+          const wanted = read ? (queuedWanted(op, read) ?? read.cues) : []
+          return { wanted, fingerprint: op.fingerprint }
+        }
+      }
     },
   )
   ipcMain.handle('rekordbox:undoCues', (_e, contentId: string) => {
     const queue = queueOf(contentId)
-    const op = queue.cuesOp(contentId)
-    if (op) queue.drop(op.id)
+    const op = queue?.cuesOp(contentId)
+    if (queue && op) queue.drop(op.id)
   })
   ipcMain.handle('rekordbox:saveCues', (e, reqs: SaveCuesRequest[]) => {
-    const targets = [
-      {
-        ...host,
-        program: 'rekordbox' as const,
-        mine: reqs.filter((r) => !engineOf(r.contentId) && !traktorOf(r.contentId)),
-      },
-      ...(host.engine
-        ? [
-            {
-              ...host.engine,
-              program: 'engine' as const,
-              mine: reqs.filter((r) => engineOf(r.contentId)),
-            },
-          ]
-        : []),
-      ...(host.traktor
-        ? [
-            {
-              ...host.traktor,
-              program: 'traktor' as const,
-              mine: reqs.filter((r) => traktorOf(r.contentId)),
-            },
-          ]
-        : []),
-    ].filter((t) => t.mine.length > 0)
+    const targets = CUE_SAVE_ORDER.flatMap((program) => {
+      const target = cueHostOf(program)
+      const mine = reqs.filter((r) => programOf(r.contentId) === program)
+      return target && mine.length > 0 ? [{ ...target, program, mine }] : []
+    })
     if (targets.length > 0)
       host.beginMoment?.(
         'cues',
