@@ -1,4 +1,4 @@
-import type { DjProgram } from './djProgram'
+import { type DjProgram, programsInOrder } from './djProgram'
 
 export type VerifyPlace = 'file' | 'appleMusic' | DjProgram
 export type CheckState = 'checking' | 'ok' | 'mismatch' | 'pending' | 'unreadable'
@@ -90,7 +90,9 @@ export interface Verification {
   originalHeld?: HeldOriginal
 }
 
-export const PLACE_ORDER: VerifyPlace[] = ['file', 'appleMusic', 'rekordbox', 'engine', 'traktor']
+export const PLACE_PROGRAMS = programsInOrder(['rekordbox', 'engine', 'traktor'])
+
+export const PLACE_ORDER: VerifyPlace[] = ['file', 'appleMusic', ...PLACE_PROGRAMS]
 
 export function verificationStatus(checks: PlaceCheck[]): Verification['status'] {
   if (checks.length === 0) return 'checking'

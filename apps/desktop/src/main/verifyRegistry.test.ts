@@ -579,6 +579,75 @@ describe('verify registry', () => {
     },
   )
 
+  it('the job writing Engine itself never makes rekordbox or Traktor read after their flush was off', async () => {
+    const { deps, registry } = setup()
+    const p: NmlPatch = { volume: 'HD', dir: '/:M/:', file: 'a.aiff', newFile: 'a.wav' }
+    registry.register(
+      entry('a', {
+        places: new Set(['file', 'rekordbox', 'engine', 'traktor']),
+        engine: 'absent',
+        engineStep: true,
+        traktorPatch: p,
+      }),
+    )
+
+    await registry.afterFlush({ rekordbox: 'off', engine: 'off', traktor: 'off' })
+
+    expect(deps.readRekordbox).not.toHaveBeenCalled()
+    expect(deps.readTraktor).not.toHaveBeenCalled()
+    expect(deps.readEngine).toHaveBeenCalledTimes(1)
+    expect(registry.get('a')?.checks).toEqual([ok('file', 'fileIdentical'), libraryOk('engine')])
+  })
+
+  it('a rekordbox source with no row stays unlisted even when the job wrote Engine', async () => {
+    const { deps, registry } = setup()
+    registry.register(
+      entry('a', {
+        places: new Set(['file', 'rekordbox', 'engine']),
+        rekordbox: 'absent',
+        engine: 'absent',
+        engineStep: true,
+      }),
+    )
+
+    await registry.afterFlush(written)
+
+    expect(deps.readRekordbox).not.toHaveBeenCalled()
+    expect(registry.get('a')?.checks).toEqual([ok('file', 'fileIdentical'), libraryOk('engine')])
+  })
+
+  it('Traktor without a patch is never listed, and each library is read by its own reader', async () => {
+    const { deps, registry } = setup()
+    const p: NmlPatch = { volume: 'HD', dir: '/:M/:', file: 'b.aiff', newFile: 'b.wav' }
+    const all = new Set<VerifyPlace>(['file', 'rekordbox', 'engine', 'traktor'])
+    const engine = { id: 1, quickCues: 'q', beatData: 'b', loops: 'l' }
+    registry.register(entry('a', { places: all, engine }))
+    registry.register(entry('b', { places: all, engine, traktorPatch: p }))
+
+    await registry.afterFlush({
+      rekordbox: 'written',
+      engine: 'written',
+      traktor: { before: new Map([[traktorPatchKey(p), 'b.aiff']]) },
+    })
+
+    expect(deps.readRekordbox.mock.calls.map((c) => c[0].map((e) => e.trackId))).toEqual([
+      ['a', 'b'],
+    ])
+    expect(deps.readEngine.mock.calls.map((c) => c[0].map((e) => e.trackId))).toEqual([['a', 'b']])
+    expect(deps.readTraktor.mock.calls).toEqual([[[{ patch: p, before: 'b.aiff' }]]])
+    expect(registry.get('a')?.checks).toEqual([
+      ok('file', 'fileIdentical'),
+      libraryOk('rekordbox'),
+      libraryOk('engine'),
+    ])
+    expect(registry.get('b')?.checks).toEqual([
+      ok('file', 'fileIdentical'),
+      libraryOk('rekordbox'),
+      libraryOk('engine'),
+      libraryOk('traktor'),
+    ])
+  })
+
   it('retry when the source was deleted only re-reads', async () => {
     const { deps, registry } = setup({
       exists: vi.fn<VerifyRegistryDeps['exists']>(async () => false),

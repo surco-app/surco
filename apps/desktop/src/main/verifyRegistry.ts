@@ -113,18 +113,27 @@ const unreadable = (place: Library): PlaceCheck => ({
   detail: { key: `${place}Unreadable` },
 })
 
+// A source with no row in rekordbox or Engine was never touched there: nothing to list.
+const LISTED: Record<
+  Library,
+  { touches: (e: VerifyEntry) => boolean; byJob: (e: VerifyEntry) => boolean }
+> = {
+  rekordbox: { touches: (e) => e.rekordbox !== 'absent', byJob: () => false },
+  engine: {
+    touches: (e) => e.engine !== 'absent' || e.engineStep === true,
+    byJob: (e) => e.engineStep === true,
+  },
+  traktor: { touches: (e) => e.traktorPatch !== undefined, byJob: () => false },
+}
+
 const without = (v: Verification, place: VerifyPlace): Verification => {
   const checks = v.checks.filter((c) => c.place !== place)
   return { status: verificationStatus(checks), checks }
 }
 
-// A source with no row in rekordbox or Engine was never touched there: nothing to list.
-function touches(e: VerifyEntry, place: VerifyPlace): boolean {
+function touches(e: VerifyEntry, place: Library): boolean {
   if (!e.places.has(place)) return false
-  if (place === 'rekordbox') return e.rekordbox !== 'absent'
-  if (place === 'engine') return e.engine !== 'absent' || e.engineStep === true
-  if (place === 'traktor') return e.traktorPatch !== undefined
-  return true
+  return LISTED[place].touches(e)
 }
 
 const stateOf = (e: VerifyEntry, place: VerifyPlace) =>
@@ -217,15 +226,19 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
   // result null re-reads what is there with the facts already known.
   async function check(place: Library, list: VerifyEntry[], result: QueueApplied | null) {
     for (const e of list) awaiting[place].delete(e)
-    if (place === 'traktor') return checkTraktor(list, result)
-    if (list.length === 0) return
-    if (result === 'failed') {
-      for (const e of list) replace(e, unreadable(place), place)
-      return
-    }
-    const read = place === 'rekordbox' ? deps.readRekordbox : deps.readEngine
-    settle(place, list, await read(list).catch(() => 'unreadable' as const))
+    return CHECKS[place](list, result)
   }
+
+  const checkRow =
+    (place: Library, read: (list: VerifyEntry[]) => Read<PlaceCheck>) =>
+    async (list: VerifyEntry[], result: QueueApplied | null) => {
+      if (list.length === 0) return
+      if (result === 'failed') {
+        for (const e of list) replace(e, unreadable(place), place)
+        return
+      }
+      settle(place, list, await read(list).catch(() => 'unreadable' as const))
+    }
 
   // A reader that answered for some other number of tracks cannot be lined up with them.
   function settle(
@@ -277,6 +290,15 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     )
   }
 
+  const CHECKS: Record<
+    Library,
+    (list: VerifyEntry[], result: QueueApplied | null) => Promise<void>
+  > = {
+    rekordbox: checkRow('rekordbox', (list) => deps.readRekordbox(list)),
+    engine: checkRow('engine', (list) => deps.readEngine(list)),
+    traktor: checkTraktor,
+  }
+
   return {
     // The first track of a new batch clears the tracks already verified: nothing more can
     // happen to them, and the registry stays the size of what is still open.
@@ -324,7 +346,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
           LIBRARIES.map(async (place) => {
             const listed = mine[place].filter((e) => e.places.has(place))
             const touched = listed.filter((e) => touches(e, place))
-            const byJob = touched.filter((e) => place === 'engine' && e.engineStep)
+            const byJob = touched.filter((e) => LISTED[place].byJob(e))
             const byFlush = touched.filter((e) => !byJob.includes(e))
             const result = outcome[place]
             if (result === 'later') return
