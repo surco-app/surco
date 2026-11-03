@@ -1283,6 +1283,12 @@ responde solo a dónde queda el fichero: carpeta de salida, Apple Music, junto a
 sobrescribir (`Destination`, `destination.ts:6`). Engine DJ ya no es una opción de ese
 radio: era «carpeta de salida + registrar en Engine» presentado como un destino.
 
+**Sobrescribir también renombra** (tras v1.22.0). Con «Editar el original», la sección
+«Nombre del archivo» sigue a la vista bajo el aviso: si el usuario escribe otro nombre o lo
+regenera, el original se reescribe y se renombra en su carpeta, y los programas de DJ pasan a
+apuntar al nombre nuevo. El nombre automático por patrón no se aplica en este modo, así que un
+original solo cambia de nombre cuando se pide (`useTrackProcessing.ts:397`).
+
 **Un control por programa** (nuevo tras v1.16.0). En Ajustes › Destino, rekordbox, Engine DJ
 y Traktor tienen cada uno un control de tres estados (`DjReachRow`,
 `DestinationTab.tsx:539`; `settings.djReach.*`), y se pueden activar varios a la vez:
