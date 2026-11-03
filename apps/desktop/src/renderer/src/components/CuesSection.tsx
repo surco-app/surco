@@ -28,7 +28,6 @@ import {
   shiftGrid,
 } from '../../../shared/gridEdit'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
-import { TRAKTOR_CUE_COLOR } from '../../../shared/traktorContent'
 import type { QueuedCues, SaveCuesRequest, SurcoGrid, TrackCues } from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
@@ -72,7 +71,7 @@ import {
   wholeBars,
   zoomStep,
 } from '../lib/cuePlayhead'
-import { cueProgramOf } from '../lib/cuePrograms'
+import { CUE_PROGRAMS, cueProgramOf } from '../lib/cuePrograms'
 import {
   autoMarkOf,
   cueDraftKey,
@@ -176,12 +175,12 @@ const COPY: Record<DjProgram, typeof REKORDBOX_COPY> = {
 const copyOf = (contentId: string) => COPY[programOf(contentId)]
 
 export function saveAllKey(unsaved: ReadonlySet<string>): string {
-  const traktor = [...unsaved].filter((id) => programOf(id) === 'traktor').length
-  if (traktor > 0)
-    return traktor === unsaved.size ? 'editor.cues.traktor.saveAll' : 'editor.cues.saveAllMixed'
-  const engine = [...unsaved].filter((id) => programOf(id) === 'engine').length
-  if (engine === 0) return 'editor.cues.saveAll'
-  return engine === unsaved.size ? 'editor.cues.engine.saveAll' : 'editor.cues.saveAllBoth'
+  const programs = new Set([...unsaved].map(programOf))
+  if (programs.size === 0) return CUE_PROGRAMS.rekordbox.saveAllKey
+  if (programs.size === 1) return CUE_PROGRAMS[[...programs][0]].saveAllKey
+  const rekordboxAndEngine =
+    programs.size === 2 && programs.has('rekordbox') && programs.has('engine')
+  return rekordboxAndEngine ? 'editor.cues.saveAllBoth' : 'editor.cues.saveAllMixed'
 }
 
 const HIDDEN_SECTION_KEYS: Parameters<typeof claimKeys>[0] = {
@@ -544,20 +543,21 @@ function Editing({
   )
   const { data: rekordboxWords } = useCueWaveDetail(cue.contentId, !provisional)
   const words = provisional ? provisional.words : rekordboxWords
-  const traktor = programOf(cue.contentId) === 'traktor'
-  const engine = cueProgramOf(cue.contentId).readsAudio
+  const { readsAudio, fixedColour, collectionGate, callsNote } = cueProgramOf(cue.contentId)
   const unsavedSet = useUnsavedCueTracks()
   const { data: canSave = true } = useQuery({
     queryKey: ['traktor-can-save', settings.traktorNmlPath],
     queryFn: () => window.api.traktorCanSave(),
-    enabled: traktor || [...unsavedSet].some((id) => programOf(id) === 'traktor'),
+    enabled:
+      collectionGate !== null ||
+      [...unsavedSet].some((id) => cueProgramOf(id).collectionGate !== null),
   })
-  const savable = (contentId: string) => canSave || programOf(contentId) !== 'traktor'
-  const blocked = traktor && !canSave
+  const savable = (contentId: string) => canSave || cueProgramOf(contentId).collectionGate === null
+  const blocked = collectionGate === 'traktor' && !canSave
   const { data: otherCollection = null } = useQuery({
     queryKey: ['traktor-collection-in-use', settings.traktorNmlPath],
     queryFn: () => window.api.traktorCollectionInUse(settings.traktorNmlPath),
-    enabled: traktor && settings.traktorNmlPath !== '',
+    enabled: collectionGate === 'traktor' && settings.traktorNmlPath !== '',
   })
   const [readingAudio, setReadingAudio] = useState(false)
   const [proposed, setProposed] = useState<DropProposal[] | null>(() => {
@@ -567,7 +567,7 @@ function Editing({
   const taste = useCueProfile()?.profile?.taste ?? null
   const [autoNote, setAutoNote] = useState<'none' | 'marked' | 'unanalysed' | null>(() => {
     const kept = autoMarkOf(cue.contentId)
-    if (kept?.kind === 'unanalysed' && engine) return 'unanalysed'
+    if (kept?.kind === 'unanalysed' && readsAudio) return 'unanalysed'
     return kept?.kind === 'none' || kept?.kind === 'marked' ? kept.kind : null
   })
   const proposals = useMemo(
@@ -604,7 +604,7 @@ function Editing({
     setProposed(found)
   }
   const autoMark = () => {
-    if (!engine) {
+    if (!readsAudio) {
       if (words) proposeFrom({ grid, phrases: read.phrases, words })
       return
     }
@@ -639,10 +639,10 @@ function Editing({
   // A proposal is drawn as it would land: in Traktor that is the plain cue's blue, whatever
   // colour the flow's rule names.
   const ghost =
-    traktor && anyGhost
+    fixedColour !== null && anyGhost
       ? {
           ...anyGhost,
-          added: anyGhost.added.map((c) => (c.kind !== 0 ? { ...c, color: TRAKTOR_CUE_COLOR } : c)),
+          added: anyGhost.added.map((c) => (c.kind !== 0 ? { ...c, color: fixedColour } : c)),
         }
       : anyGhost
   const place = (ms: number) => dispatch({ type: 'mark-drop', ms, byHand: true })
@@ -890,11 +890,12 @@ function Editing({
         pointMs.some((p) => Math.abs(p - c.ms) <= SAME_POSITION_MS),
     )
     .map((c) => c.key)
-  const shownCues = traktor
-    ? state.cues.map((c) =>
-        c.kind !== 0 && !state.locked.includes(c.key) ? { ...c, color: TRAKTOR_CUE_COLOR } : c,
-      )
-    : state.cues
+  const shownCues =
+    fixedColour !== null
+      ? state.cues.map((c) =>
+          c.kind !== 0 && !state.locked.includes(c.key) ? { ...c, color: fixedColour } : c,
+        )
+      : state.cues
   const waveCues = shownCues.map((c) => ({
     ...c,
     pending: pending(c),
@@ -1083,11 +1084,11 @@ function Editing({
     <button
       type="button"
       data-testid="cues-auto-mark"
-      disabled={provisional || blocked ? true : engine ? readingAudio : !words}
+      disabled={provisional || blocked ? true : readsAudio ? readingAudio : !words}
       title={
         provisional
           ? tr('editor.cues.provisional.auto')
-          : engine || words
+          : readsAudio || words
             ? undefined
             : tr(copy.autoUnanalysed)
       }
@@ -1587,7 +1588,7 @@ function Editing({
               >
                 {tr('editor.cues.delete')}
               </button>
-              {markTarget.kind !== 0 && !traktor && (
+              {markTarget.kind !== 0 && fixedColour === null && (
                 <button
                   type="button"
                   role="menuitem"
@@ -1628,7 +1629,7 @@ function Editing({
               {tr('editor.cues.loop')}
             </span>
           )}
-          {selected.kind !== 0 && !state.locked.includes(selected.key) && !traktor && (
+          {selected.kind !== 0 && !state.locked.includes(selected.key) && fixedColour === null && (
             <div ref={colourRef} className="relative">
               <button
                 type="button"
@@ -1690,14 +1691,9 @@ function Editing({
           {tr('editor.cues.traktor.otherCollection', { path: otherCollection })}
         </p>
       )}
-      {traktor && state.cues.some((c) => c.kind === 0) && (
-        <p data-testid="cues-traktor-calls" className="mt-2 text-xs text-fg-dim">
-          {tr('editor.cues.traktor.calls')}
-        </p>
-      )}
-      {copy === ENGINE_COPY && state.cues.some((c) => c.kind === 0) && (
-        <p data-testid="cues-engine-calls" className="mt-2 text-xs text-fg-dim">
-          {tr('editor.cues.engine.calls')}
+      {callsNote && state.cues.some((c) => c.kind === 0) && (
+        <p data-testid={callsNote.testId} className="mt-2 text-xs text-fg-dim">
+          {tr(callsNote.key)}
         </p>
       )}
       {autoNote === 'none' && (
@@ -1738,7 +1734,9 @@ function Editing({
           onPlay={() => audition.toggle(playheadMs)}
           onPad={pad}
           onRecolour={
-            traktor ? undefined : (key, color) => dispatch({ type: 'recolour', key, color })
+            fixedColour !== null
+              ? undefined
+              : (key, color) => dispatch({ type: 'recolour', key, color })
           }
           onDelete={(key) => dispatch(removeOf(key))}
           onMemory={() => dispatch({ type: 'add-call', ms: playheadMs })}
@@ -1816,6 +1814,7 @@ export function CuesSection({
   const { data: read, isError } = useTrackCues(cue.contentId)
   const { data: queued } = useQueuedCues(cue.contentId)
   const wantsSurcoGrid = !!read && !read.analysed && cueProgramOf(cue.contentId).surcoGrid
+  const { colourHelp } = cueProgramOf(cue.contentId)
   const { data: surco } = useSurcoGrid(cue.contentId, wantsSurcoGrid)
   const provisional = wantsSurcoGrid && surco ? surco : undefined
   const shown = read && provisional ? { ...read, analysed: true, grid: provisional.grid } : read
@@ -1948,7 +1947,7 @@ export function CuesSection({
           help={[
             tr('editor.cues.help'),
             ...(provisional ? [tr('editor.cues.provisional.help')] : []),
-            ...(programOf(cue.contentId) === 'traktor' ? [tr('editor.cues.traktor.colours')] : []),
+            ...(colourHelp ? [tr(colourHelp)] : []),
           ].join(' ')}
           status={
             unsaved || provisional ? (

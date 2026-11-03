@@ -133,6 +133,8 @@ import {
   rekordboxFlushDeps,
   repointEngineQueued,
   repointRekordbox,
+  SYNC_BLOCKED_KEY,
+  SYNC_ISSUE_CHANNEL,
   syncTagsInLibraries,
   traktorFlushDeps,
   traktorWrite,
@@ -160,8 +162,7 @@ import { createQuitGuard } from './quitGuard'
 import { trashRecoverably, trashWithoutRoom } from './recoverableTrash'
 import {
   abandonRekordboxBatch,
-  attachLibraryPlaylists,
-  attachRekordboxPlaylists,
+  attachPlaylists,
   beginRekordboxBatch,
   recordedRekordboxRepoint,
   redirectRekordboxRepoint,
@@ -1495,12 +1496,11 @@ function registerIpc(): void {
   ipcMain.handle('library:status', (): LibraryStatus => currentLibraryStatus())
 
   const hostFor = (win: BrowserWindow | null, sender: WebContents): LibraryHost => ({
-    ensureTraktorClosed: () => ensureClosed('traktor', win),
-    ensureRekordboxClosed: () => ensureClosed('rekordbox', win),
-    ensureEngineDjClosed: () => ensureClosed('engine', win),
-    showBlockedDialog: (key) => showSyncBlockedDialog(win, key),
-    reportIssue: (channel, issue) => {
-      if (!sender.isDestroyed()) sender.send(channel, issue)
+    ensureClosed: (program) => ensureClosed(program, win),
+    showBlockedDialog: (program) => showSyncBlockedDialog(win, SYNC_BLOCKED_KEY[program]),
+    reportIssue: (program, issue) => {
+      const channel = SYNC_ISSUE_CHANNEL[program]
+      if (channel && !sender.isDestroyed()) sender.send(channel, issue)
     },
     rekordboxHeld: () => rekordboxQueue.state().halted === true,
   })
@@ -1520,17 +1520,19 @@ function registerIpc(): void {
           hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
           sessions,
           {
-            enqueue: rekordboxQueue.enqueue,
-            applyQuietly: () => applyRekordboxQueueQuietly(later),
-          },
-          {
-            enqueue: traktorCueQueue.enqueue,
-            state: traktorCueQueue.state,
-            applyQuietly: () => applyTraktorCueQueueQuietly(later),
-          },
-          {
-            enqueue: engineCueQueue.enqueue,
-            applyQuietly: () => applyEngineCueQueueQuietly(later),
+            rekordbox: {
+              enqueue: rekordboxQueue.enqueue,
+              applyQuietly: () => applyRekordboxQueueQuietly(later),
+            },
+            traktor: {
+              enqueue: traktorCueQueue.enqueue,
+              state: traktorCueQueue.state,
+              applyQuietly: () => applyTraktorCueQueueQuietly(later),
+            },
+            engine: {
+              enqueue: engineCueQueue.enqueue,
+              applyQuietly: () => applyEngineCueQueueQuietly(later),
+            },
           },
         )
       } finally {
@@ -1811,8 +1813,7 @@ function registerIpc(): void {
         )
       },
       allowMedia: (path) => mediaAccess.allow(path),
-      attachRekordboxPlaylists,
-      attachLibraryPlaylists,
+      attachPlaylists,
       existsSync,
       isSameFile,
       fileIdentity,

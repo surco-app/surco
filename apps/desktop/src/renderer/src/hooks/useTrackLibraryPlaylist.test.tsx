@@ -740,6 +740,76 @@ describe('a Traktor playlist read again', () => {
   })
 })
 
+describe('an Engine DJ playlist over rows already loaded', () => {
+  const entry = (cues: { ms: number; kind: number; color: number | null }[]) => ({
+    path: '/m/e.aiff',
+    separator: false,
+    meta: { bpm: '124', key: '5A', rating: 80 },
+    contentId: 'engine:7',
+    preview: { title: 'E', artist: 'R', durationSec: 256, cues },
+  })
+  const readA = () =>
+    vi.fn().mockResolvedValue({
+      tags: tags({ title: 'A' }),
+      duration: null,
+      cover: null,
+      foreignTags: [],
+    })
+
+  it('leaves a row loaded from Files unmarked and without Engine’s preview, as Engine DJ is never asked to keep a row’s name', async () => {
+    const { result } = setup({ readMeta: readA() })
+    await act(async () => {
+      await result.current.addPaths(['/m/e.aiff'])
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        [entry([{ ms: 1000, kind: 1, color: null }])],
+        'engine',
+      )
+    })
+    const row = result.current.tracks[0]
+    expect(row.fromEngine).toBeUndefined()
+    expect(row.sourcePreview).toBeUndefined()
+  })
+
+  it('keeps the cues it painted when the Engine DJ playlist is read again', async () => {
+    const read = vi.fn<Api['readMetaLight']>(() => new Promise(() => {}))
+    const { result } = setup({ readMeta: read, readMetaLight: read })
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        [entry([{ ms: 1000, kind: 1, color: null }])],
+        'engine',
+      )
+    })
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        [entry([{ ms: 5000, kind: 1, color: null }])],
+        'engine',
+      )
+    })
+    expect(result.current.tracks[0].sourcePreview?.cues).toEqual([
+      { ms: 1000, kind: 1, color: null },
+    ])
+  })
+
+  it('fills the BPM, key and rating of a loaded row from rekordbox alone, not from Engine DJ or Traktor', async () => {
+    for (const program of ['engine', 'traktor'] as const) {
+      const { result } = setup({ readMeta: readA() })
+      await act(async () => {
+        await result.current.addPaths(['/m/e.aiff'])
+      })
+      await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+      await act(async () => {
+        await result.current.openSourcePlaylist([entry([])], program, { fillLoaded: true })
+      })
+      expect(result.current.tracks[0].meta.bpm).toBe('')
+      expect(result.current.tracks[0].meta.key).toBe('')
+      cleanup()
+    }
+  })
+})
+
 describe('the light read of a rekordbox row', () => {
   const entry = {
     path: '/m/a.aiff',

@@ -11,11 +11,12 @@ import {
   type PlaylistOption,
   targetKey,
 } from '../lib/rekordboxPlaylists'
+import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
 import { foldersHolding, playlistIdsUnder } from './CheckTree'
 import { LIBRARY_ICON } from './SourceIcons'
 
 const fieldTestId = (library: PlaylistLibrary, testId: string): string =>
-  library === 'rekordbox' ? testId : `${library}-${testId}`
+  `${SOURCE_PROGRAMS[library].fieldTestIdPrefix}${testId}`
 
 interface Token {
   target: RekordboxPlaylistTarget

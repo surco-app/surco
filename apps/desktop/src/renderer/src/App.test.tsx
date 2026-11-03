@@ -586,6 +586,40 @@ describe('App Engine DJ cues', () => {
     await waitFor(() => expect(chips()).toEqual([null, '2 proposals']))
   })
 
+  it('offers no playlist editing in Engine DJ, whose library Surco only reads', async () => {
+    openEngine()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-engine'))
+    await screen.findByTestId('source-node-7')
+    expect(screen.queryByTestId('source-tree-new-playlist')).not.toBeInTheDocument()
+    fireEvent.contextMenu(screen.getByTestId('source-node-7'))
+    expect(screen.queryByTestId('source-tree-menu')).not.toBeInTheDocument()
+  })
+
+  it('turns the open Engine DJ tab into the missing-library notice when its database goes, with no USB export from it', async () => {
+    const focusListeners: ((focused: boolean) => void)[] = []
+    openEngine({
+      onWindowFocus: (cb: (focused: boolean) => void) => {
+        focusListeners.push(cb)
+        return () => {}
+      },
+      engineAvailable: vi
+        .fn<Api['engineAvailable']>()
+        .mockResolvedValueOnce(true)
+        .mockResolvedValue(false),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-engine'))
+    await screen.findByTestId('source-node-7')
+    expect(screen.queryByTestId('source-tree-missing')).not.toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-export-usb')).toBeInTheDocument()
+    act(() => {
+      for (const cb of focusListeners) cb(true)
+    })
+    expect(await screen.findByTestId('source-tree-missing')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-export-usb')).not.toBeInTheDocument()
+  })
+
   it('shows what waits for Engine DJ to close beside rekordbox’s queue', async () => {
     openEngine({
       engineCueQueue: vi.fn<Api['engineCueQueue']>().mockResolvedValue({
@@ -639,6 +673,42 @@ describe('App Traktor cues', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-traktor'))
     expect(await screen.findByTestId('source-tree-new-playlist')).toBeInTheDocument()
+  })
+
+  it('keeps Traktor’s HISTORY closed to tracks and its built-in lists to tracks only, so Surco never breaks what Traktor manages', async () => {
+    openTraktor({
+      traktorCanSave: vi.fn<Api['traktorCanSave']>().mockResolvedValue(true),
+      loadTraktorTree: vi.fn<Api['loadTraktorTree']>().mockResolvedValue([
+        { id: 'prep', name: 'Preparation', kind: 'playlist', count: 0 },
+        { id: 'hist', name: 'HISTORY', kind: 'playlist', count: 0 },
+        { id: 'u2', name: 'Sunday', kind: 'playlist', count: 0 },
+        { id: 'u1', name: 'Saturday', kind: 'playlist', count: 2 },
+      ]),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-traktor'))
+    fireEvent.contextMenu(await screen.findByTestId('source-node-prep'))
+    expect(screen.queryByTestId('source-tree-menu')).not.toBeInTheDocument()
+    fireEvent.contextMenu(screen.getByTestId('source-node-hist'))
+    expect(screen.queryByTestId('source-tree-menu')).not.toBeInTheDocument()
+    fireEvent.contextMenu(screen.getByTestId('source-node-u2'))
+    expect(screen.getByTestId('source-tree-menu')).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    fireEvent.click(screen.getByTestId('source-node-u1'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(await screen.findByTestId('track-menu-add-to'))
+    expect(screen.getByTestId('track-menu-playlist-prep')).toBeInTheDocument()
+    expect(screen.getByTestId('track-menu-playlist-u2')).toBeInTheDocument()
+    expect(screen.queryByTestId('track-menu-playlist-hist')).not.toBeInTheDocument()
+  })
+
+  it('offers no USB export from the Traktor tree, as the export writes rekordbox and Engine DJ sticks only', async () => {
+    openTraktor({ traktorCanSave: vi.fn<Api['traktorCanSave']>().mockResolvedValue(true) })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-traktor'))
+    await screen.findByTestId('source-node-u1')
+    expect(screen.queryByTestId('source-tree-export-usb')).not.toBeInTheDocument()
   })
 
   it('offers no playlist editing in Traktor without a confirmed collection', async () => {

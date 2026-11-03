@@ -147,6 +147,20 @@ describe('useSourceBrowser', () => {
     expect(result.current.libraryMissing).toBe(false)
   })
 
+  it('only sends Engine DJ’s tab to the missing-library notice, since rekordbox and Traktor without a collection have no tab to show it in', async () => {
+    const rekordboxAvailable = vi.fn().mockResolvedValue(false)
+    const traktorAvailable = vi.fn().mockResolvedValue(false)
+    const { result } = setup({ rekordboxAvailable, traktorAvailable })
+    await waitFor(() => expect(rekordboxAvailable).toHaveBeenCalled())
+    await waitFor(() => expect(traktorAvailable).toHaveBeenCalled())
+    act(() => result.current.selectSource('traktor'))
+    await waitFor(() => expect(result.current.tree).toBeDefined())
+    expect(result.current.libraryMissing).toBe(false)
+    act(() => result.current.selectSource('rekordbox'))
+    await waitFor(() => expect(result.current.tree).toBeDefined())
+    expect(result.current.libraryMissing).toBe(false)
+  })
+
   it('offers Traktor after the other libraries when its collection is found, so it shows only where Traktor is installed', async () => {
     const { result } = setup({ traktorAvailable: vi.fn().mockResolvedValue(true) })
     await waitFor(() =>
@@ -651,6 +665,73 @@ describe('useSourceBrowser', () => {
     expect(result.current.tree?.[0].count).toBe(5)
   })
 
+  it.each([
+    ['traktor', 'traktorRecentCount', 'traktorTrackCount'],
+    ['engine', 'engineRecentCount', 'engineTrackCount'],
+  ] as const)(
+    'counts %s from its own collection, never from rekordbox’s, so the tab shows the numbers of the library it is on',
+    async (source, recentCount, trackCount) => {
+      const counts = {
+        rekordboxRecentCount: vi.fn().mockResolvedValue(1),
+        rekordboxTrackCount: vi.fn().mockResolvedValue(1),
+        traktorRecentCount: vi.fn().mockResolvedValue(1),
+        traktorTrackCount: vi.fn().mockResolvedValue(1),
+        engineRecentCount: vi.fn().mockResolvedValue(1),
+        engineTrackCount: vi.fn().mockResolvedValue(1),
+      }
+      const { result } = setup({ ...counts, traktorAvailable: vi.fn().mockResolvedValue(true) })
+      act(() => result.current.selectSource(source))
+      await waitFor(() => expect(result.current.tree).toHaveLength(3))
+      expect(counts[recentCount]).toHaveBeenCalled()
+      expect(counts[trackCount]).toHaveBeenCalled()
+      expect(counts.rekordboxRecentCount).not.toHaveBeenCalled()
+      expect(counts.rekordboxTrackCount).not.toHaveBeenCalled()
+    },
+  )
+
+  it('asks no DJ program for a count while Music is open, since Music has no All tracks or Recently added of Surco’s', async () => {
+    const counts = {
+      rekordboxRecentCount: vi.fn().mockResolvedValue(1),
+      rekordboxTrackCount: vi.fn().mockResolvedValue(1),
+      traktorRecentCount: vi.fn().mockResolvedValue(1),
+      traktorTrackCount: vi.fn().mockResolvedValue(1),
+      engineRecentCount: vi.fn().mockResolvedValue(1),
+      engineTrackCount: vi.fn().mockResolvedValue(1),
+    }
+    const loadAppleMusicPlaylists = vi
+      .fn()
+      .mockResolvedValue([{ persistentId: 'P1', name: 'Friday', count: 4 }])
+    const { result } = setup({ ...counts, loadAppleMusicPlaylists })
+    act(() => result.current.selectSource('appleMusic'))
+    await waitFor(() => expect(result.current.tree).toHaveLength(1))
+    for (const count of Object.values(counts)) expect(count).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['traktor', 'traktorMembership'],
+    ['engine', 'engineMembership'],
+  ] as const)(
+    're-reads which %s playlists the tracks are in when Surco gets the focus back',
+    async (library, method) => {
+      const membership = vi.fn().mockResolvedValue({ '/m/a.wav': ['1'] })
+      const { focus } = setup({ [method]: membership })
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      const wrapper = ({ children }: { children: React.ReactNode }) => (
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      )
+      renderHook(
+        () => {
+          useSourceBrowser({ onPlaylistGone: () => {}, hiddenSources: [] })
+          return useRekordboxMembership(['/m/a.wav'], true, library)
+        },
+        { wrapper },
+      )
+      await waitFor(() => expect(membership).toHaveBeenCalledTimes(1))
+      act(() => focus())
+      await waitFor(() => expect(membership).toHaveBeenCalledTimes(2))
+    },
+  )
+
   it('opens Engine DJ’s Recently added through the Engine playlist read', async () => {
     const { result } = setup({ engineRecentCount: vi.fn().mockResolvedValue(1) })
     act(() => result.current.selectSource('engine'))
@@ -685,5 +766,16 @@ describe('useSourceBrowser', () => {
     expect(result.current.canInsertSeparator).toBe(false)
     act(() => result.current.selectSource('rekordbox'))
     await waitFor(() => expect(result.current.canInsertSeparator).toBe(true))
+  })
+
+  it('asks no collection for a separator in Engine DJ, whose playlists have none', async () => {
+    const rekordboxHasSeparator = vi.fn().mockResolvedValue(true)
+    const traktorHasSeparator = vi.fn().mockResolvedValue(true)
+    const { result } = setup({ rekordboxHasSeparator, traktorHasSeparator })
+    act(() => result.current.selectSource('engine'))
+    await waitFor(() => expect(result.current.tree).toBeDefined())
+    expect(rekordboxHasSeparator).not.toHaveBeenCalled()
+    expect(traktorHasSeparator).not.toHaveBeenCalled()
+    expect(result.current.canInsertSeparator).toBe(false)
   })
 })

@@ -6,6 +6,7 @@ import type {
 } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { trackSignature } from './dirty'
+import { SOURCE_PROGRAMS } from './sourcePrograms'
 
 export interface PlaylistOption {
   id: string
@@ -166,7 +167,7 @@ export function withTarget(
 ): ({ id: string } & PlaylistsEdit)[] | undefined {
   if (!membership || !options) return undefined
   return tracks
-    .filter((t) => library === 'rekordbox' || rekordboxPathOf(t) in membership)
+    .filter((t) => SOURCE_PROGRAMS[library].addsUncollected || rekordboxPathOf(t) in membership)
     .map((t) => {
       const rest = (effectivePlaylists(t, membership, options, library) ?? []).filter(
         (x) => targetKey(x) !== targetKey(target),

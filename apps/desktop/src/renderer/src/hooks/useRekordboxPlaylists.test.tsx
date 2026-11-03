@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
@@ -186,11 +186,11 @@ describe('the Traktor and Engine DJ playlists', () => {
 
 describe('usePlaylistsSpec', () => {
   const fresh = { id: 't1', inputPath: '/m/new.flac', meta: {} } as TrackItem
-  function spec(library: 'engine' | 'traktor') {
+  function spec(library: 'engine' | 'traktor', canSave = true) {
     installApi({
       engineAvailable: vi.fn<Api['engineAvailable']>(async () => true),
       traktorAvailable: vi.fn<Api['traktorAvailable']>(async () => true),
-      traktorCanSave: vi.fn<Api['traktorCanSave']>(async () => true),
+      traktorCanSave: vi.fn<Api['traktorCanSave']>(async () => canSave),
       loadEngineTree: vi.fn<Api['loadEngineTree']>(async () => [
         { id: '7', name: 'Friday', kind: 'playlist', count: 1 },
       ]),
@@ -217,5 +217,18 @@ describe('usePlaylistsSpec', () => {
     const hook = spec('traktor')
     await waitFor(() => expect(hook.result.current).toBeDefined())
     expect(hook.result.current?.disabled).toBeUndefined()
+  })
+
+  it('holds Traktor’s playlists until its collection is confirmed, since Surco writes to that one only', async () => {
+    const hook = spec('traktor', false)
+    await waitFor(() => expect(hook.result.current?.disabled).toBe('unconfirmed'))
+  })
+
+  it('never holds Engine DJ’s playlists behind Traktor’s collection check', async () => {
+    const hook = spec('engine', false)
+    await waitFor(() => expect(hook.result.current).toBeDefined())
+    await act(async () => {})
+    expect(hook.result.current?.disabled).toBeUndefined()
+    expect(window.api.traktorCanSave).not.toHaveBeenCalled()
   })
 })

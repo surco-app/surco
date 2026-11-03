@@ -1,10 +1,12 @@
 import type React from 'react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { type DjProgram, RAIL_PROGRAMS } from '../../../../shared/djProgram'
 import type { LanguagePref, PlaylistSource, ThemePref } from '../../../../shared/types'
 import { isMacOS, isStoreBuild } from '../../lib/platform'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchLocal, PatchSynced } from '../../lib/settingsTabs'
+import { SOURCE_READ } from '../../lib/sourcePrograms'
 import { SegmentedControl } from '../SegmentedControl'
 import {
   SettingsCheckboxField,
@@ -15,7 +17,7 @@ import {
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR', 'ja']
-const SOURCES: PlaylistSource[] = ['appleMusic', 'rekordbox', 'engine', 'traktor']
+const SOURCES: PlaylistSource[] = ['appleMusic', ...RAIL_PROGRAMS]
 
 interface Props {
   synced: SyncedDraft
@@ -34,29 +36,22 @@ export function GeneralTab({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
 
-  const [rekordboxFound, setRekordboxFound] = useState<boolean | null>(null)
+  const [found, setFound] = useState<Partial<Record<DjProgram, boolean>>>({})
   useEffect(() => {
-    window.api.rekordboxAvailable().then(setRekordboxFound)
-  }, [])
-  const [engineFound, setEngineFound] = useState<boolean | null>(null)
-  useEffect(() => {
-    window.api.engineAvailable().then(setEngineFound)
-  }, [])
-  const [traktorFound, setTraktorFound] = useState<boolean | null>(null)
-  useEffect(() => {
-    window.api.traktorAvailable().then(setTraktorFound)
+    for (const p of RAIL_PROGRAMS)
+      SOURCE_READ[p].available().then((ok) => setFound((was) => ({ ...was, [p]: ok })))
   }, [])
   const unavailable: Record<PlaylistSource, boolean> = {
     appleMusic: !isMacOS(),
-    rekordbox: rekordboxFound !== true,
-    engine: engineFound !== true,
-    traktor: traktorFound !== true,
+    rekordbox: found.rekordbox !== true,
+    engine: found.engine !== true,
+    traktor: found.traktor !== true,
   }
   const reason: Record<PlaylistSource, string | undefined> = {
     appleMusic: unavailable.appleMusic ? tr('settings.sourceAppleMusicUnavailable') : undefined,
-    rekordbox: rekordboxFound === false ? tr('settings.sourceRekordboxUnavailable') : undefined,
-    engine: engineFound === false ? tr('settings.sourceEngineUnavailable') : undefined,
-    traktor: traktorFound === false ? tr('settings.sourceTraktorUnavailable') : undefined,
+    rekordbox: found.rekordbox === false ? tr('settings.sourceRekordboxUnavailable') : undefined,
+    engine: found.engine === false ? tr('settings.sourceEngineUnavailable') : undefined,
+    traktor: found.traktor === false ? tr('settings.sourceTraktorUnavailable') : undefined,
   }
 
   return (

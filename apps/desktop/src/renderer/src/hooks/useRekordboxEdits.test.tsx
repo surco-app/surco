@@ -188,4 +188,43 @@ describe('useRekordboxEdits on Traktor', () => {
       'neutral',
     )
   })
+
+  function traktorEdits(answer: RekordboxEditResult) {
+    ;(window as unknown as { api: unknown }).api = {
+      editRekordboxPlaylist: vi.fn(),
+      editTraktorPlaylist: vi.fn(async () => answer),
+    }
+    const notify = vi.fn()
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    )
+    const { result } = renderHook(() => useRekordboxEdits(notify, 'traktor'), { wrapper })
+    return { edit: result, notify, client }
+  }
+
+  it('names Traktor, not rekordbox, when Traktor refuses an edit', async () => {
+    const { edit, notify } = traktorEdits({ applied: false, reason: 'read-only' })
+    await act(async () => {
+      await edit.current({ kind: 'rename', playlistId: 'fri', name: 'Sat' }, 'Friday')
+    })
+    expect(notify).toHaveBeenCalledWith(
+      'The Traktor collection is read-only, so nothing changed',
+      'danger',
+    )
+  })
+
+  it('re-reads which rekordbox and Traktor playlists hold each track after an edit, and leaves Engine DJ’s alone since no edit reaches it', async () => {
+    const { edit, client } = traktorEdits({ applied: true })
+    for (const p of ['rekordbox', 'traktor', 'engine'])
+      client.setQueryData([`${p}-membership`, ['/m/a.wav']], {})
+    await act(async () => {
+      await edit.current({ kind: 'rename', playlistId: 'fri', name: 'Sat' }, 'Friday')
+    })
+    const invalidated = (p: string) =>
+      client.getQueryState([`${p}-membership`, ['/m/a.wav']])?.isInvalidated
+    expect(invalidated('rekordbox')).toBe(true)
+    expect(invalidated('traktor')).toBe(true)
+    expect(invalidated('engine')).toBe(false)
+  })
 })

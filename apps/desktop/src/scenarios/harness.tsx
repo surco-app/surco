@@ -30,6 +30,8 @@ import {
   rekordboxCollectionPath,
   repointEngineQueued,
   repointRekordbox,
+  SYNC_BLOCKED_KEY,
+  SYNC_ISSUE_CHANNEL,
   syncTagsInLibraries,
   traktorWrite,
   usedByAnyLibrary,
@@ -387,15 +389,19 @@ const sessions = {
 
 function libraryHost(errors: string[]): LibraryHost {
   return {
-    ensureTraktorClosed: async () => !(await isTraktorRunning()),
-    ensureRekordboxClosed: async () => !(await isRekordboxRunning()),
-    ensureEngineDjClosed: async () => {
+    ensureClosed: async (program) => {
+      if (program === 'traktor') return !(await isTraktorRunning())
+      if (program === 'rekordbox') return !(await isRekordboxRunning())
       if (!(await isEngineDjRunning())) return true
       errors.push('asked to close Engine DJ')
       return false
     },
-    showBlockedDialog: (key) => errors.push(`library sync blocked: ${key}`),
-    reportIssue: (channel, issue) => errors.push(`${channel}: ${JSON.stringify(issue)}`),
+    showBlockedDialog: (program) =>
+      errors.push(`library sync blocked: ${SYNC_BLOCKED_KEY[program]}`),
+    reportIssue: (program, issue) => {
+      const channel = SYNC_ISSUE_CHANNEL[program]
+      if (channel) errors.push(`${channel}: ${JSON.stringify(issue)}`)
+    },
     rekordboxHeld: () => false,
   }
 }
@@ -820,17 +826,15 @@ function scenarioApi(
         else applies[place] = start()
       }
       const flush = () =>
-        flushConversionBatch(
-          libraryHost(errors),
-          sessions,
-          { enqueue: queues.rekordbox.enqueue, applyQuietly: applyLater('rekordbox') },
-          {
+        flushConversionBatch(libraryHost(errors), sessions, {
+          rekordbox: { enqueue: queues.rekordbox.enqueue, applyQuietly: applyLater('rekordbox') },
+          traktor: {
             enqueue: queues.traktor.enqueue,
             state: queues.traktor.state,
             applyQuietly: applyLater('traktor'),
           },
-          { enqueue: queues.engine.enqueue, applyQuietly: applyLater('engine') },
-        )
+          engine: { enqueue: queues.engine.enqueue, applyQuietly: applyLater('engine') },
+        })
       flushes.push(
         verify
           ? judgedFlush(verify, flush, later, options.sabotage)

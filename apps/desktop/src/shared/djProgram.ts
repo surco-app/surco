@@ -5,6 +5,8 @@ export type DjProgram = 'rekordbox' | 'traktor' | 'engine'
 
 export const DJ_PROGRAMS = programsInOrder(['rekordbox', 'traktor', 'engine'])
 
+export const RAIL_PROGRAMS = programsInOrder(['rekordbox', 'engine', 'traktor'])
+
 type AllOf<T extends readonly DjProgram[]> = [Exclude<DjProgram, T[number]>] extends [never]
   ? unknown
   : never

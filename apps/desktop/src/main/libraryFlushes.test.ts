@@ -35,11 +35,27 @@ const STATUS = vi.hoisted(() => ({
   traktor: { enabled: false, found: false },
 }))
 vi.mock('./libraryStatus', () => ({ libraryStatus: () => STATUS }))
-const BATCH = vi.hoisted(() => ({ open: false }))
-vi.mock('./rekordboxBatch', () => ({
-  endRekordboxBatch: () => (BATCH.open ? [] : REPOINTS),
+const BATCH = vi.hoisted(() => ({ open: false, ends: 0 }))
+vi.mock('./rekordboxBatch', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./rekordboxBatch')>()),
+  endRekordboxBatch: () => {
+    BATCH.ends += 1
+    EFFECTS.push('rekordbox take')
+    return BATCH.open ? [] : REPOINTS
+  },
   rekordboxBatchOpen: () => BATCH.open,
 }))
+const EFFECTS = vi.hoisted(() => [] as string[])
+vi.mock('./traktorNmlLibrary', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./traktorNmlLibrary')>()
+  return {
+    ...actual,
+    syncCollection: (...args: Parameters<typeof actual.syncCollection>) => {
+      EFFECTS.push('traktor sync')
+      return actual.syncCollection(...args)
+    },
+  }
+})
 const WRITERS = vi.hoisted(() => ({
   trackOpsFromRun: vi.fn(async () => []),
   repointTracks: vi.fn(async () => [{ written: true }]),
@@ -75,24 +91,50 @@ import { activity } from './activity'
 import { writeEngineLibraryFixture } from './enginePlaylistsFixture'
 import {
   duplicateLibraryDeps,
+  engineFlushDeps,
   flushConversionBatch,
   type LibraryHost,
+  rekordboxFlushDeps,
   repointEngineQueued,
+  SYNC_BLOCKED_KEY,
+  SYNC_ISSUE_CHANNEL,
   syncTagsInLibraries,
+  traktorFlushDeps,
 } from './libraryFlushes'
 import { beginNmlBatch, endNmlBatch, recordNmlPatch } from './nmlBatch'
 import { traktorPatchKey } from './verifyRegistry'
 
-function host(overrides: Partial<LibraryHost> = {}): LibraryHost {
-  return {
+type Closers = {
+  ensureTraktorClosed: () => Promise<boolean>
+  ensureRekordboxClosed: () => Promise<boolean>
+  ensureEngineDjClosed: () => Promise<boolean>
+}
+
+function host(overrides: Partial<Closers & LibraryHost> = {}) {
+  const closers: Closers = {
     ensureTraktorClosed: vi.fn(async () => true),
     ensureRekordboxClosed: vi.fn(async () => false),
     ensureEngineDjClosed: vi.fn(async () => true),
+  }
+  const { ensureTraktorClosed, ensureRekordboxClosed, ensureEngineDjClosed, ...rest } = {
+    ...closers,
+    ...overrides,
+  }
+  const byProgram = {
+    traktor: ensureTraktorClosed,
+    rekordbox: ensureRekordboxClosed,
+    engine: ensureEngineDjClosed,
+  }
+  return {
+    ensureClosed: (program) => byProgram[program](),
     showBlockedDialog: vi.fn(),
     reportIssue: vi.fn(),
     rekordboxHeld: () => false,
-    ...overrides,
-  }
+    ...rest,
+    ensureTraktorClosed,
+    ensureRekordboxClosed,
+    ensureEngineDjClosed,
+  } satisfies LibraryHost & Closers
 }
 
 const fakeSession = () => ({
@@ -131,7 +173,7 @@ describe('flushConversionBatch with rekordbox open', () => {
   it('queues the run instead of showing the blocked dialog, because the queue applies it later', async () => {
     const h = host()
     const queue = { enqueue: vi.fn(), applyQuietly: vi.fn() }
-    await flushConversionBatch(h, sessions, queue)
+    await flushConversionBatch(h, sessions, { rekordbox: queue })
     expect(h.showBlockedDialog).not.toHaveBeenCalled()
     expect(queue.enqueue).toHaveBeenCalledWith([], REPOINTS)
     expect(queue.applyQuietly).toHaveBeenCalled()
@@ -144,7 +186,7 @@ describe('flushConversionBatch with master.db on an unplugged drive', () => {
     STATUS.rekordbox = { enabled: true, found: false }
     try {
       const queue = { enqueue: vi.fn(), applyQuietly: vi.fn() }
-      await flushConversionBatch(host(), sessions, queue)
+      await flushConversionBatch(host(), sessions, { rekordbox: queue })
       expect(queue.enqueue).toHaveBeenCalledWith([], REPOINTS)
     } finally {
       Object.assign(SETTINGS, { rekordboxDbPath: '/c/master.db' })
@@ -158,7 +200,9 @@ describe('flushConversionBatch with master.db on an unplugged drive', () => {
     const events: ActivityEvent[] = []
     const stop = activity.subscribe((event) => events.push(event))
     try {
-      await flushConversionBatch(host(), sessions, { enqueue: vi.fn(), applyQuietly: vi.fn() })
+      await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      })
     } finally {
       stop()
       Object.assign(SETTINGS, { rekordboxDbPath: '/c/master.db' })
@@ -195,13 +239,10 @@ describe('flushConversionBatch with Engine DJ open', () => {
       async () => {
         const h = host({ ensureEngineDjClosed: vi.fn(async () => false) })
         const engine = { enqueue: vi.fn(), applyQuietly: vi.fn() }
-        await flushConversionBatch(
-          h,
-          sessions,
-          { enqueue: vi.fn(), applyQuietly: vi.fn() },
-          undefined,
-          engine,
-        )
+        await flushConversionBatch(h, sessions, {
+          rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+          engine: engine,
+        })
         expect(h.ensureEngineDjClosed).not.toHaveBeenCalled()
         expect(h.showBlockedDialog).not.toHaveBeenCalledWith('engineSyncBlocked')
         expect(engine.enqueue).toHaveBeenCalledWith([], REPOINTS)
@@ -219,13 +260,10 @@ describe('flushConversionBatch with Engine DJ open', () => {
         WRITERS.repointEngineTracks.mockClear()
         const h = host()
         const engine = { enqueue: vi.fn(), applyQuietly: vi.fn() }
-        await flushConversionBatch(
-          h,
-          sessions,
-          { enqueue: vi.fn(), applyQuietly: vi.fn() },
-          undefined,
-          engine,
-        )
+        await flushConversionBatch(h, sessions, {
+          rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+          engine: engine,
+        })
         expect(h.ensureEngineDjClosed).not.toHaveBeenCalled()
         expect(WRITERS.repointEngineTracks).not.toHaveBeenCalled()
         expect(engine.enqueue).toHaveBeenCalledWith([], REPOINTS)
@@ -238,7 +276,9 @@ describe('flushConversionBatch with Engine DJ open', () => {
       async () => true,
       async () => {
         const h = host({ ensureEngineDjClosed: vi.fn(async () => false) })
-        await flushConversionBatch(h, sessions, { enqueue: vi.fn(), applyQuietly: vi.fn() })
+        await flushConversionBatch(h, sessions, {
+          rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        })
         expect(h.ensureEngineDjClosed).toHaveBeenCalled()
       },
     )
@@ -251,13 +291,10 @@ describe('flushConversionBatch with Engine DJ open', () => {
     })
     try {
       const engine = { enqueue: vi.fn(), applyQuietly: vi.fn() }
-      await flushConversionBatch(
-        host(),
-        sessions,
-        { enqueue: vi.fn(), applyQuietly: vi.fn() },
-        undefined,
-        engine,
-      )
+      await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        engine: engine,
+      })
       expect(engine.enqueue).toHaveBeenCalledWith([], REPOINTS)
     } finally {
       Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
@@ -272,13 +309,10 @@ describe('flushConversionBatch with Engine DJ open', () => {
     const events: ActivityEvent[] = []
     const stop = activity.subscribe((event) => events.push(event))
     try {
-      await flushConversionBatch(
-        host(),
-        sessions,
-        { enqueue: vi.fn(), applyQuietly: vi.fn() },
-        undefined,
-        { enqueue: vi.fn(), applyQuietly: vi.fn() },
-      )
+      await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        engine: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      })
     } finally {
       stop()
       Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
@@ -309,14 +343,16 @@ describe('rekordbox writes while the queue is held after a write left the collec
   it('keeps the conversion run in the queue instead of repointing, so master.db.surco-backup stays the good copy', async () => {
     WRITERS.repointTracks.mockClear()
     const queue = { enqueue: vi.fn(), applyQuietly: vi.fn() }
-    await flushConversionBatch(held(), sessions, queue)
+    await flushConversionBatch(held(), sessions, { rekordbox: queue })
     expect(WRITERS.repointTracks).not.toHaveBeenCalled()
     expect(queue.enqueue).toHaveBeenCalledWith([], REPOINTS)
   })
 
   it('reads the run playlists by where each track came from, because its repoint waits in the queue', async () => {
     WRITERS.trackOpsFromRun.mockClear()
-    await flushConversionBatch(held(), sessions, { enqueue: vi.fn(), applyQuietly: vi.fn() })
+    await flushConversionBatch(held(), sessions, {
+      rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+    })
     expect(WRITERS.trackOpsFromRun).toHaveBeenCalledWith(
       '/c/master.db',
       REPOINTS,
@@ -400,13 +436,11 @@ describe('flushConversionBatch with playlists chosen for Traktor and Engine DJ',
         state: () => ({ tracks: 0, changes: 0, items: [] }),
       }
       const engine = { enqueue: vi.fn(), applyQuietly: vi.fn() }
-      await flushConversionBatch(
-        host(),
-        sessions,
-        { enqueue: vi.fn(), applyQuietly: vi.fn() },
-        traktor,
-        engine,
-      )
+      await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        traktor: traktor,
+        engine: engine,
+      })
       expect(traktor.enqueue).toHaveBeenCalledWith([
         expect.objectContaining({
           kind: 'track',
@@ -435,7 +469,10 @@ describe('flushConversionBatch with a converted track Traktor does not have', ()
     state: () => ({ tracks: 0, changes: 0, items: [] }),
   })
   const flush = (traktor: ReturnType<typeof traktorQueue>) =>
-    flushConversionBatch(host(), sessions, { enqueue: vi.fn(), applyQuietly: vi.fn() }, traktor)
+    flushConversionBatch(host(), sessions, {
+      rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      traktor: traktor,
+    })
 
   it('asks Traktor to register it when the DJ chose to add new tracks there', async () => {
     Object.assign(REPOINTS[0], { meta: { artist: 'Jaydee', title: 'Plastic Dreams' } })
@@ -548,13 +585,10 @@ describe('flushConversionBatch with a converted track Traktor does not have', ()
 describe('flushConversionBatch with a converted track Engine DJ does not have', () => {
   const engineQueue = () => ({ enqueue: vi.fn(), applyQuietly: vi.fn() })
   const flush = (engine: ReturnType<typeof engineQueue>) =>
-    flushConversionBatch(
-      host(),
-      sessions,
-      { enqueue: vi.fn(), applyQuietly: vi.fn() },
-      undefined,
-      engine,
-    )
+    flushConversionBatch(host(), sessions, {
+      rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      engine: engine,
+    })
   async function engineLibrary(paths: string[]): Promise<string> {
     const dir = await mkdtemp(join(tmpdir(), 'surco-flush-engine-'))
     writeEngineLibraryFixture(dir, {
@@ -663,13 +697,13 @@ describe('flushConversionBatch outcome', () => {
   })
 
   it('flushConversionBatch says rekordbox was queued when the app is open', async () => {
-    const outcome = await flushConversionBatch(host(), sessions, quiet())
+    const outcome = await flushConversionBatch(host(), sessions, { rekordbox: quiet() })
     expect(outcome.rekordbox).toBe('queued')
   })
 
   it('says rekordbox was written once its repoint ran', async () => {
     const h = host({ ensureRekordboxClosed: vi.fn(async () => true) })
-    const outcome = await flushConversionBatch(h, sessions, quiet())
+    const outcome = await flushConversionBatch(h, sessions, { rekordbox: quiet() })
     expect(outcome.rekordbox).toBe('written')
   })
 
@@ -678,14 +712,14 @@ describe('flushConversionBatch outcome', () => {
       { written: false, reason: 'backup-failed' },
     ] as never)
     const h = host({ ensureRekordboxClosed: vi.fn(async () => true) })
-    const outcome = await flushConversionBatch(h, sessions, quiet())
+    const outcome = await flushConversionBatch(h, sessions, { rekordbox: quiet() })
     expect(outcome.rekordbox).toBe('failed')
   })
 
   it('says rekordbox is off while its sync is', async () => {
     Object.assign(SETTINGS, { syncRekordbox: false })
     try {
-      const outcome = await flushConversionBatch(host(), sessions, quiet())
+      const outcome = await flushConversionBatch(host(), sessions, { rekordbox: quiet() })
       expect(outcome.rekordbox).toBe('off')
     } finally {
       Object.assign(SETTINGS, { syncRekordbox: true })
@@ -697,8 +731,14 @@ describe('flushConversionBatch outcome', () => {
     STATUS.engine = { enabled: true, found: true }
     try {
       ENGINE_PROCESS.isEngineDjRunning.mockResolvedValueOnce(true)
-      const open = await flushConversionBatch(host(), sessions, quiet(), undefined, quiet())
-      const closed = await flushConversionBatch(host(), sessions, quiet(), undefined, quiet())
+      const open = await flushConversionBatch(host(), sessions, {
+        rekordbox: quiet(),
+        engine: quiet(),
+      })
+      const closed = await flushConversionBatch(host(), sessions, {
+        rekordbox: quiet(),
+        engine: quiet(),
+      })
       expect([open.engine, closed.engine]).toEqual(['queued', 'written'])
     } finally {
       Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
@@ -713,7 +753,10 @@ describe('flushConversionBatch outcome', () => {
     const to = REPOINTS[0].to
     REPOINTS[0].to = REPOINTS[0].from
     try {
-      const outcome = await flushConversionBatch(host(), sessions, quiet(), undefined, quiet())
+      const outcome = await flushConversionBatch(host(), sessions, {
+        rekordbox: quiet(),
+        engine: quiet(),
+      })
       expect(outcome.engine).toBe('off')
     } finally {
       REPOINTS[0].to = to
@@ -737,7 +780,10 @@ describe('flushConversionBatch outcome', () => {
     })
     WRITERS.repointEngineTracks.mockClear()
     try {
-      const outcome = await flushConversionBatch(host(), sessions, quiet(), undefined, quiet())
+      const outcome = await flushConversionBatch(host(), sessions, {
+        rekordbox: quiet(),
+        engine: quiet(),
+      })
       expect(outcome.engine).toBe('written')
       expect(WRITERS.repointEngineTracks).toHaveBeenCalledWith(
         '/e/Engine Library',
@@ -761,7 +807,10 @@ describe('flushConversionBatch outcome', () => {
     Object.assign(first, { to: REPOINTS[0].from, fromBytes: 100 })
     WRITERS.repointEngineTracks.mockClear()
     try {
-      const outcome = await flushConversionBatch(host(), sessions, quiet(), undefined, quiet())
+      const outcome = await flushConversionBatch(host(), sessions, {
+        rekordbox: quiet(),
+        engine: quiet(),
+      })
       expect(outcome.engine).toBe('written')
       expect(WRITERS.repointEngineTracks).toHaveBeenCalledWith(
         '/e/Engine Library',
@@ -797,7 +846,7 @@ describe('flushConversionBatch outcome', () => {
     header.writeUInt32LE(4410 * 4, 40)
     await writeFile(wav, Buffer.concat([header, Buffer.alloc(4410 * 4)]))
     try {
-      await flushConversionBatch(host(), sessions, quiet(), undefined, quiet())
+      await flushConversionBatch(host(), sessions, { rekordbox: quiet(), engine: quiet() })
       const [[, , options]] = WRITERS.repointEngineTracks.mock.calls as unknown as [
         [
           unknown,
@@ -823,7 +872,11 @@ describe('flushConversionBatch outcome', () => {
     beginNmlBatch()
     recordNmlPatch({ volume: 'HD', dir: '/:m/:', file: 'a.aiff', newFile: 'a.flac' })
     try {
-      const outcome = await flushConversionBatch(host(), sessions, quiet(), traktorQueue(), quiet())
+      const outcome = await flushConversionBatch(host(), sessions, {
+        rekordbox: quiet(),
+        traktor: traktorQueue(),
+        engine: quiet(),
+      })
       expect([outcome.rekordbox, outcome.engine, outcome.traktor]).toEqual([
         'later',
         'later',
@@ -864,7 +917,10 @@ describe('flushConversionBatch outcome', () => {
         beginNmlBatch()
         recordNmlPatch(patch)
         recordNmlPatch(missing)
-        const outcome = await flushConversionBatch(host(), sessions, quiet(), traktorQueue())
+        const outcome = await flushConversionBatch(host(), sessions, {
+          rekordbox: quiet(),
+          traktor: traktorQueue(),
+        })
         expect(outcome.traktor).toEqual({
           before: new Map([
             [traktorPatchKey(patch), 'a.aiff'],
@@ -883,7 +939,10 @@ describe('flushConversionBatch outcome', () => {
         beginNmlBatch()
         recordNmlPatch(patch)
         const h = host({ ensureTraktorClosed: vi.fn(async () => false) })
-        const outcome = await flushConversionBatch(h, sessions, quiet(), traktorQueue())
+        const outcome = await flushConversionBatch(h, sessions, {
+          rekordbox: quiet(),
+          traktor: traktorQueue(),
+        })
         expect(outcome.traktor).toBe('queued')
       })
     })
@@ -893,16 +952,145 @@ describe('flushConversionBatch outcome', () => {
         STATUS.traktor = { enabled: true, found: false }
         beginNmlBatch()
         recordNmlPatch(patch)
-        const outcome = await flushConversionBatch(host(), sessions, quiet(), traktorQueue())
+        const outcome = await flushConversionBatch(host(), sessions, {
+          rekordbox: quiet(),
+          traktor: traktorQueue(),
+        })
         expect(outcome.traktor).toBe('failed')
       })
     })
 
     it('says Traktor is off when the run recorded nothing for it', async () => {
       await withTraktor(async () => {
-        const outcome = await flushConversionBatch(host(), sessions, quiet(), traktorQueue())
+        const outcome = await flushConversionBatch(host(), sessions, {
+          rekordbox: quiet(),
+          traktor: traktorQueue(),
+        })
         expect(outcome.traktor).toBe('off')
       })
     })
+  })
+})
+
+describe('flushConversionBatch order across the three programs', () => {
+  it('syncs Traktor, then queues its ops, then rekordbox, then repoints and queues Engine DJ, taking the repoints once', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-flush-order-'))
+    const nmlPath = join(dir, 'collection.nml')
+    await writeFile(
+      nmlPath,
+      `<NML VERSION="19"><COLLECTION ENTRIES="1"><ENTRY TITLE="A"><LOCATION DIR="/:m/:" FILE="a.aiff" VOLUME="HD"></LOCATION></ENTRY></COLLECTION></NML>`,
+    )
+    Object.assign(SETTINGS, {
+      syncTraktor: true,
+      traktorNmlPath: nmlPath,
+      syncEngineDj: true,
+      engineLibraryDir: '/e/Engine Library',
+    })
+    STATUS.traktor = { enabled: true, found: true }
+    STATUS.engine = { enabled: true, found: true }
+    Object.assign(REPOINTS[0], {
+      traktorPlaylists: { wanted: [{ id: 'fri', name: 'Friday' }], base: [] },
+      enginePlaylists: { wanted: [], base: ['7'] },
+    })
+    WRITERS.repointEngineTracks.mockImplementationOnce(async () => {
+      EFFECTS.push('engine repoint')
+      return [{ written: true, id: '1' }]
+    })
+    const recording = (label: string) => ({
+      enqueue: vi.fn(() => {
+        EFFECTS.push(label)
+      }),
+      applyQuietly: vi.fn(),
+    })
+    beginNmlBatch()
+    recordNmlPatch({ volume: 'HD', dir: '/:m/:', file: 'a.aiff', newFile: 'a.flac' })
+    EFFECTS.length = 0
+    BATCH.ends = 0
+    try {
+      await flushConversionBatch(host(), sessions, {
+        rekordbox: recording('rekordbox enqueue'),
+        traktor: {
+          ...recording('traktor enqueue'),
+          state: () => ({ tracks: 0, changes: 0, items: [] }),
+        },
+        engine: recording('engine enqueue'),
+      })
+      expect(EFFECTS).toEqual([
+        'traktor sync',
+        'rekordbox take',
+        'traktor enqueue',
+        'rekordbox enqueue',
+        'engine repoint',
+        'engine enqueue',
+      ])
+      expect(BATCH.ends).toBe(1)
+    } finally {
+      WRITERS.repointEngineTracks.mockReset()
+      const first = REPOINTS[0] as Record<string, unknown>
+      delete first.traktorPlaylists
+      delete first.enginePlaylists
+      Object.assign(SETTINGS, {
+        syncTraktor: false,
+        traktorNmlPath: '',
+        syncEngineDj: false,
+        engineLibraryDir: '',
+      })
+      STATUS.traktor = { enabled: false, found: false }
+      STATUS.engine = { enabled: false, found: false }
+    }
+  })
+})
+
+function recordingHost() {
+  const closed: string[] = []
+  const blocked: string[] = []
+  const channels: string[] = []
+  const libraryHost: LibraryHost = {
+    ensureClosed: async (program) => {
+      closed.push(program)
+      return true
+    },
+    showBlockedDialog: (program) => {
+      blocked.push(SYNC_BLOCKED_KEY[program])
+    },
+    reportIssue: (program) => {
+      const channel = SYNC_ISSUE_CHANNEL[program]
+      if (channel) channels.push(channel)
+    },
+    rekordboxHeld: () => false,
+  }
+  return { libraryHost, closed, blocked, channels }
+}
+
+describe('what each program closes, shows and reports through the library host', () => {
+  it('closes Traktor and shows its own blocked message', async () => {
+    const h = recordingHost()
+    const deps = traktorFlushDeps(h.libraryHost, sessions.traktor)
+    await deps.ensureTraktorClosed()
+    deps.showBlockedDialog()
+    expect(h.closed).toEqual(['traktor'])
+    expect(h.blocked).toEqual(['traktorSyncBlocked'])
+  })
+
+  it('closes rekordbox, shows its blocked message and reports on its channel', async () => {
+    const h = recordingHost()
+    const deps = rekordboxFlushDeps(h.libraryHost)
+    await deps.ensureClosed()
+    deps.showBlockedDialog()
+    deps.reportIssue({} as never)
+    expect(h.closed).toEqual(['rekordbox'])
+    expect(h.blocked).toEqual(['rekordboxSyncBlocked'])
+    expect(h.channels).toEqual(['rekordbox:sync-issue'])
+  })
+
+  it('closes Engine DJ, shows its blocked message and reports on its channel', async () => {
+    const h = recordingHost()
+    const deps = engineFlushDeps(h.libraryHost)
+    await deps.ensureClosed()
+    deps.showBlockedDialog()
+    deps.reportIssue({} as never)
+    expect(h.closed).toEqual(['engine'])
+    expect(h.blocked).toEqual(['engineSyncBlocked'])
+    expect(h.channels).toEqual(['engine:sync-issue'])
   })
 })

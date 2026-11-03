@@ -9,6 +9,7 @@ import type { CueLibrary } from '../../../shared/types'
 import { type AutoMarkTarget, acceptAutoMarks } from '../lib/cueAutoMark'
 import { forgetStaleDrafts } from '../lib/cueDrafts'
 import { flowName } from '../lib/cueFlowName'
+import { cueProgramOf } from '../lib/cuePrograms'
 import {
   draftsToSave,
   forgetAutoMark,
@@ -55,13 +56,13 @@ export function CuesBatchSection({
   const [busy, setBusy] = useState(false)
   const [saveFailed, setSaveFailed] = useState(false)
   const ids = targets.map((t) => t.contentId)
-  const traktor = ids.some((id) => programOf(id) === 'traktor')
+  const gated = ids.some((id) => cueProgramOf(id).collectionGate !== null)
   const { data: canSave = true } = useQuery({
     queryKey: ['traktor-can-save', settings.traktorNmlPath],
     queryFn: () => window.api.traktorCanSave(),
-    enabled: traktor,
+    enabled: gated,
   })
-  const savable = (contentId: string) => canSave || programOf(contentId) !== 'traktor'
+  const savable = (contentId: string) => canSave || cueProgramOf(contentId).collectionGate === null
   const unsaved = new Set(ids.filter((id) => unsavedAll.has(id) && savable(id)))
   const drafts = keptDrafts().filter((d) => unsaved.has(d.contentId))
   const { data: plans = [] } = useQuery({

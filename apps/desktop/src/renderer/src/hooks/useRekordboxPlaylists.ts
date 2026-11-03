@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef } from 'react'
-import { DJ_PROGRAMS } from '../../../shared/djProgram'
+import { DJ_PROGRAMS, type DjProgram } from '../../../shared/djProgram'
 import type { PlaylistLibrary, Settings, SourceNode } from '../../../shared/types'
 import type { PlaylistsSpec } from '../lib/fieldSpecs'
 import { PLAYLIST_FIELDS, withPlaylistField } from '../lib/fields'
@@ -15,36 +15,19 @@ import {
   rekordboxPathOf,
   withTarget,
 } from '../lib/rekordboxPlaylists'
+import { SOURCE_PROGRAMS, SOURCE_READ } from '../lib/sourcePrograms'
 import type { TrackItem } from '../types'
-
-const READ = {
-  rekordbox: {
-    available: () => window.api.rekordboxAvailable(),
-    tree: () => window.api.loadRekordboxTree(),
-    membership: (paths: string[]) => window.api.rekordboxMembership(paths),
-  },
-  traktor: {
-    available: () => window.api.traktorAvailable(),
-    tree: () => window.api.loadTraktorTree(),
-    membership: (paths: string[]) => window.api.traktorMembership(paths),
-  },
-  engine: {
-    available: () => window.api.engineAvailable(),
-    tree: () => window.api.loadEngineTree(),
-    membership: (paths: string[]) => window.api.engineMembership(paths),
-  },
-}
 
 const OFFERED = {
   rekordbox: 'rekordboxPlaylistsFieldOffered',
   traktor: 'traktorPlaylistsFieldOffered',
   engine: 'enginePlaylistsFieldOffered',
-} as const
+} as const satisfies Record<DjProgram, keyof Settings>
 
 export function useLibraryAvailable(library: PlaylistLibrary): boolean {
   const { data = false } = useQuery({
     queryKey: ['source-available', library],
-    queryFn: READ[library].available,
+    queryFn: SOURCE_READ[library].available,
     staleTime: Number.POSITIVE_INFINITY,
   })
   return data
@@ -60,7 +43,7 @@ export function useRekordboxPlaylistTree(
 ): SourceNode[] | undefined {
   const { data } = useQuery({
     queryKey: ['source-tree', library],
-    queryFn: READ[library].tree,
+    queryFn: SOURCE_READ[library].tree,
     enabled,
     staleTime: Number.POSITIVE_INFINITY,
   })
@@ -82,8 +65,8 @@ export function useRekordboxMembership(
 ): Membership | undefined {
   const key = [...new Set(paths)].sort()
   const { data } = useQuery({
-    queryKey: [`${library}-membership`, key],
-    queryFn: () => READ[library].membership(key),
+    queryKey: [SOURCE_PROGRAMS[library].membershipKey, key],
+    queryFn: () => SOURCE_READ[library].membership(key),
     enabled: enabled && key.length > 0,
     staleTime: Number.POSITIVE_INFINITY,
   })
@@ -132,16 +115,17 @@ export function usePlaylistsSpec(
   const tree = useRekordboxPlaylistTree(shown, library)
   const options = useRekordboxPlaylistOptions(shown, library)
   const membership = useRekordboxMembership(tracks.map(rekordboxPathOf), shown, library)
+  const gated = SOURCE_PROGRAMS[library].edit?.gate === 'traktorCollection'
   const { data: canSave } = useQuery({
     queryKey: ['traktor-can-save', 'field'],
     queryFn: () => window.api.traktorCanSave(),
-    enabled: shown && library === 'traktor',
+    enabled: shown && gated,
   })
   return useMemo(() => {
     if (!shown || !tree || !options || !membership) return undefined
     return {
       library,
-      disabled: library === 'traktor' && canSave === false ? 'unconfirmed' : undefined,
+      disabled: gated && canSave === false ? 'unconfirmed' : undefined,
       tree,
       options,
       single: {
@@ -156,5 +140,17 @@ export function usePlaylistsSpec(
         },
       },
     }
-  }, [library, shown, tree, options, membership, canSave, item, tracks, onChange, onChangeTracks])
+  }, [
+    library,
+    gated,
+    shown,
+    tree,
+    options,
+    membership,
+    canSave,
+    item,
+    tracks,
+    onChange,
+    onChangeTracks,
+  ])
 }

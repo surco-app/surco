@@ -1,13 +1,19 @@
 # Mapa de Serato: lo que el compilador obliga a decidir
 
-Medido el 03/11 tras el bloque 2 añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
+Medido el 03/11 tras el bloque 6c añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
 
 ## Añadidos a mano (el compilador no los ve)
 
 - `shared/djProgram.ts` `programOf`: el caso por defecto devuelve `'rekordbox'`. Primer cambio de Serato: reconocer `serato:`.
-- `shared/verification.ts` `PLACE_ORDER`, `shared/hiddenSources.ts:3`, `renderer/src/components/settings/GeneralTab.tsx:18` (`SOURCES`): listas que mezclan programas con 'file'/'appleMusic'.
-- `renderer/src/components/CuesSection.tsx`: el booleano `traktor` (guardado bloqueado, color fijo, menús de color, nota de CALL, recolor), `copy === ENGINE_COPY`, `saveAllKey` (etiqueta de rekordbox por defecto), texto de ayuda de colores; `CuesBatchSection.tsx` puerta de guardado de Traktor. Van al bloque 4 (cues).
-- `renderer/src/lib/playlistEdits.ts:81` y comprobaciones `browser.source` de `App.tsx`: bloques 5 (playlists) y 6 (USB).
+- `shared/verification.ts` `PLACE_ORDER`: lista que mezcla programas con 'file'/'appleMusic' (bloque 7).
+- `renderer/src/components/CuesSection.tsx` `saveAllKey`: decide la etiqueta mixta mirando si hay Traktor; una mezcla Serato + rekordbox daría «rekordbox y Engine DJ». Y `collectionGate` usa consultas y ajustes con nombre de Traktor (`traktorCanSave`, `traktorNmlPath`): un segundo programa con colección que confirmar necesita los suyos.
+- USB: `App.tsx` `useUsbVolumes(... === 'engine')` y la fuente del modal eligen el exportador (bloque 6/USB).
+- Campos por programa escritos a mano (bloque 6): banderas `fromRekordbox/fromTraktor/fromEngine` de `TrackItem`/`SessionEdit`, los seis campos `{rekordbox,traktor,engine}Playlists(Base)` del trabajo de conversión, ajustes `*PlaylistsFieldOffered`, `useTrackLibrary` (bandera de filas nuevas), invalidaciones de membership en `useRekordboxQueue` y `useTrackProcessing`, `cuesOpen` en `App.tsx`.
+
+- Claves de traducción por programa que el compilador no ve (se forman con plantillas): `sources.<programa>`, `sources.failed.<programa>`, `sources.notFound.<programa>`, `sources.hide.<programa>`, `settings.source<Programa>Unavailable`, y las de cues `editor.cues.<programa>.*`.
+- Recordatorio para Serato (a): `cuesOpen` en `App.tsx` y la bandera de filas nuevas de `useTrackLibrary` siguen escritos a mano; sin ellos Serato no abriría el editor de cues.
+
+- Vaciado tras convertir: `repointEngineQueued` renombra `engine-running` a `'rekordbox-running'` y `queueConversionRun` compara con `'rekordbox-running'`; el tipo `ConversionQueues` tiene claves fijas (el flusher de Serato exigirá su cola en la práctica).
 
 ## Errores del compilador
 
@@ -28,9 +34,10 @@ src/main/copiesIpc.test.ts:356 TS2741
 src/main/copiesIpc.test.ts:381 TS2741
 src/main/copiesIpc.test.ts:99 TS2741
 src/main/damageScan.ts:19 TS2741
-src/main/djProcesses.test.ts:166 TS7053
-src/main/djProcesses.test.ts:29 TS2741
-src/main/djProcesses.test.ts:32 TS2741
+src/main/damageWiring.ts:63 TS2741
+src/main/djProcesses.test.ts:172 TS7053
+src/main/djProcesses.test.ts:35 TS2741
+src/main/djProcesses.test.ts:38 TS2741
 src/main/djProcesses.ts:131 TS2741
 src/main/djProcesses.ts:142 TS2322
 src/main/djProcesses.ts:17 TS2741
@@ -43,22 +50,104 @@ src/main/djProcesses.ts:77 TS2536
 src/main/djProcesses.ts:82 TS2741
 src/main/duplicateReplace.ts:17 TS2345
 src/main/duplicateReplace.ts:174 TS7053
-src/main/index.ts:2054 TS2741
-src/main/index.ts:322 TS2741
+src/main/index.ts:1382 TS2741
+src/main/index.ts:1521 TS2741
+src/main/index.ts:1552 TS2741
+src/main/index.ts:1563 TS2741
+src/main/index.ts:1577 TS2741
+src/main/index.ts:1609 TS2741
+src/main/index.ts:1622 TS2741
+src/main/index.ts:2055 TS2741
+src/main/index.ts:323 TS2741
+src/main/libraryFileUse.test.ts:104 TS2741
+src/main/libraryFileUse.test.ts:105 TS2741
+src/main/libraryFileUse.test.ts:120 TS2741
+src/main/libraryFileUse.test.ts:123 TS2741
+src/main/libraryFileUse.test.ts:131 TS2741
+src/main/libraryFileUse.test.ts:132 TS2741
+src/main/libraryFileUse.test.ts:139 TS2741
+src/main/libraryFileUse.test.ts:149 TS2741
+src/main/libraryFileUse.test.ts:181 TS2741
+src/main/libraryFileUse.test.ts:189 TS2741
+src/main/libraryFileUse.test.ts:194 TS2741
+src/main/libraryFileUse.test.ts:199 TS2741
+src/main/libraryFileUse.test.ts:212 TS2741
+src/main/libraryFileUse.test.ts:217 TS2741
+src/main/libraryFileUse.test.ts:225 TS2741
+src/main/libraryFileUse.test.ts:227 TS2741
+src/main/libraryFileUse.test.ts:230 TS2741
+src/main/libraryFileUse.test.ts:271 TS2741
+src/main/libraryFileUse.test.ts:297 TS2741
+src/main/libraryFileUse.test.ts:313 TS2741
+src/main/libraryFileUse.test.ts:327 TS2741
+src/main/libraryFileUse.test.ts:340 TS2741
+src/main/libraryFileUse.test.ts:355 TS2741
+src/main/libraryFileUse.test.ts:367 TS2741
+src/main/libraryFileUse.test.ts:378 TS2741
+src/main/libraryFileUse.test.ts:384 TS2741
+src/main/libraryFileUse.test.ts:441 TS2741
+src/main/libraryFileUse.test.ts:456 TS2741
+src/main/libraryFileUse.test.ts:465 TS2741
+src/main/libraryFileUse.test.ts:84 TS2741
+src/main/libraryFileUse.test.ts:89 TS2741
+src/main/libraryFileUse.test.ts:90 TS2741
+src/main/libraryFileUse.test.ts:96 TS2741
+src/main/libraryFlushes.test.ts:1010 TS2741
+src/main/libraryFlushes.test.ts:129 TS7053
+src/main/libraryFlushes.test.ts:176 TS2741
+src/main/libraryFlushes.test.ts:189 TS2741
+src/main/libraryFlushes.test.ts:203 TS2741
+src/main/libraryFlushes.test.ts:242 TS2741
+src/main/libraryFlushes.test.ts:263 TS2741
+src/main/libraryFlushes.test.ts:279 TS2741
+src/main/libraryFlushes.test.ts:294 TS2741
+src/main/libraryFlushes.test.ts:312 TS2741
+src/main/libraryFlushes.test.ts:346 TS2741
+src/main/libraryFlushes.test.ts:353 TS2741
+src/main/libraryFlushes.test.ts:365 TS2741
+src/main/libraryFlushes.test.ts:374 TS2741
+src/main/libraryFlushes.test.ts:381 TS2741
+src/main/libraryFlushes.test.ts:392 TS2741
+src/main/libraryFlushes.test.ts:400 TS2741
+src/main/libraryFlushes.test.ts:416 TS2741
+src/main/libraryFlushes.test.ts:439 TS2741
+src/main/libraryFlushes.test.ts:472 TS2741
+src/main/libraryFlushes.test.ts:588 TS2741
+src/main/libraryFlushes.test.ts:700 TS2741
+src/main/libraryFlushes.test.ts:706 TS2741
+src/main/libraryFlushes.test.ts:715 TS2741
+src/main/libraryFlushes.test.ts:722 TS2741
+src/main/libraryFlushes.test.ts:734 TS2741
+src/main/libraryFlushes.test.ts:738 TS2741
+src/main/libraryFlushes.test.ts:756 TS2741
+src/main/libraryFlushes.test.ts:783 TS2741
+src/main/libraryFlushes.test.ts:810 TS2741
+src/main/libraryFlushes.test.ts:849 TS2741
+src/main/libraryFlushes.test.ts:875 TS2741
+src/main/libraryFlushes.test.ts:920 TS2741
+src/main/libraryFlushes.test.ts:942 TS2741
+src/main/libraryFlushes.test.ts:955 TS2741
+src/main/libraryFlushes.test.ts:965 TS2741
+src/main/libraryFlushes.ts:120 TS2741
+src/main/libraryFlushes.ts:228 TS2536
+src/main/libraryFlushes.ts:237 TS2345
+src/main/libraryFlushes.ts:253 TS2741
+src/main/libraryFlushes.ts:278 TS2536
+src/main/libraryFlushes.ts:53 TS2741
+src/main/libraryFlushes.ts:59 TS2741
+src/main/libraryFlushes.ts:692 TS2741
 src/main/libraryStatus.ts:22 TS2741
 src/main/libraryTagSync.ts:42 TS7053
 src/main/libraryTagSync.ts:5 TS2345
 src/main/moments.test.ts:20 TS2741
 src/main/moments.test.ts:33 TS2741
-src/main/processTrack.ts:1157 TS2322
-src/main/rekordboxCuesIpc.ts:124 TS2366
-src/main/rekordboxCuesIpc.ts:148 TS2366
-src/main/rekordboxCuesIpc.ts:181 TS2366
-src/main/rekordboxCuesIpc.ts:207 TS2366
-src/main/rekordboxCuesIpc.ts:252 TS2366
-src/main/rekordboxCuesIpc.ts:38 TS2345
-src/main/rekordboxCuesIpc.ts:76 TS2366
-src/main/rekordboxCuesIpc.ts:97 TS2366
+src/main/processTrack.ts:1154 TS2322
+src/main/processTrack.ts:503 TS2741
+src/main/rekordboxBatch.ts:157 TS2741
+src/main/rekordboxBatch.ts:166 TS2741
+src/main/rekordboxCuesIpc.ts:25 TS2345
+src/main/rekordboxCuesIpc.ts:54 TS2741
+src/main/retireSuperseded.test.ts:16 TS2741
 src/main/verifyIpc.ts:213 TS7053
 src/main/verifyIpc.ts:214 TS7053
 src/main/verifyIpc.ts:226 TS7053
@@ -72,9 +161,9 @@ src/main/verifyRegistry.ts:93 TS2345
 src/main/verifyRegistry.ts:94 TS2741
 src/renderer/src/App.tsx:404 TS7053
 src/renderer/src/App.tsx:408 TS2741
-src/renderer/src/components/CuesBatchSection.tsx:27 TS2741
-src/renderer/src/components/CuesSection.tsx:159 TS2741
-src/renderer/src/components/CuesSection.tsx:291 TS2741
+src/renderer/src/components/CuesBatchSection.tsx:28 TS2741
+src/renderer/src/components/CuesSection.tsx:158 TS2741
+src/renderer/src/components/CuesSection.tsx:290 TS2741
 src/renderer/src/components/Editor.test.tsx:837 TS2741
 src/renderer/src/components/Editor.test.tsx:883 TS2741
 src/renderer/src/components/Editor.test.tsx:892 TS2741
@@ -108,9 +197,9 @@ src/renderer/src/components/MusicReview.test.tsx:928 TS2741
 src/renderer/src/components/MusicReview.test.tsx:950 TS2741
 src/renderer/src/components/MusicReview.test.tsx:966 TS2741
 src/renderer/src/components/MusicReview.test.tsx:980 TS2741
-src/renderer/src/components/PlaylistsField.tsx:358 TS7053
-src/renderer/src/components/settings/GeneralTab.tsx:49 TS2741
-src/renderer/src/components/settings/GeneralTab.tsx:55 TS2741
+src/renderer/src/components/PlaylistsField.tsx:359 TS7053
+src/renderer/src/components/settings/GeneralTab.tsx:44 TS2741
+src/renderer/src/components/settings/GeneralTab.tsx:50 TS2741
 src/renderer/src/components/SourceRail.tsx:11 TS2741
 src/renderer/src/hooks/useMusicReview.test.tsx:1066 TS2741
 src/renderer/src/hooks/useMusicReview.test.tsx:1067 TS2741
@@ -128,32 +217,36 @@ src/renderer/src/hooks/useRekordboxPlaylists.test.tsx:113 TS2741
 src/renderer/src/hooks/useRekordboxPlaylists.test.tsx:153 TS2741
 src/renderer/src/hooks/useRekordboxPlaylists.test.tsx:173 TS2741
 src/renderer/src/hooks/useRekordboxPlaylists.test.tsx:91 TS2741
-src/renderer/src/hooks/useRekordboxPlaylists.ts:108 TS7053
-src/renderer/src/hooks/useRekordboxPlaylists.ts:114 TS7053
-src/renderer/src/hooks/useRekordboxPlaylists.ts:47 TS7053
-src/renderer/src/hooks/useRekordboxPlaylists.ts:50 TS2322
-src/renderer/src/hooks/useRekordboxPlaylists.ts:63 TS7053
-src/renderer/src/hooks/useRekordboxPlaylists.ts:67 TS2322
-src/renderer/src/hooks/useRekordboxPlaylists.ts:86 TS7053
-src/renderer/src/lib/cuePrograms.ts:12 TS2741
+src/renderer/src/hooks/useRekordboxPlaylists.ts:25 TS2741
+src/renderer/src/hooks/useRekordboxPlaylists.ts:91 TS7053
+src/renderer/src/hooks/useRekordboxPlaylists.ts:97 TS7053
+src/renderer/src/hooks/useSourceBrowser.ts:134 TS2741
+src/renderer/src/lib/cuePrograms.ts:17 TS2741
 src/renderer/src/lib/cueTwins.ts:54 TS2741
 src/renderer/src/lib/djLibraries.ts:18 TS2345
 src/renderer/src/lib/djReach.ts:19 TS2345
 src/renderer/src/lib/djReach.ts:7 TS2741
 src/renderer/src/lib/fields.ts:147 TS2741
-src/renderer/src/lib/rekordboxPlaylists.ts:115 TS7006
-src/renderer/src/lib/rekordboxPlaylists.ts:152 TS7053
-src/renderer/src/lib/rekordboxPlaylists.ts:185 TS7053
+src/renderer/src/lib/rekordboxPlaylists.ts:116 TS7006
+src/renderer/src/lib/rekordboxPlaylists.ts:153 TS7053
 src/renderer/src/lib/rekordboxPlaylists.ts:186 TS7053
-src/renderer/src/lib/rekordboxPlaylists.ts:24 TS2339
-src/renderer/src/lib/rekordboxPlaylists.ts:26 TS7053
+src/renderer/src/lib/rekordboxPlaylists.ts:187 TS7053
+src/renderer/src/lib/rekordboxPlaylists.ts:25 TS2339
 src/renderer/src/lib/rekordboxPlaylists.ts:27 TS7053
+src/renderer/src/lib/rekordboxPlaylists.ts:28 TS7053
+src/renderer/src/lib/sourcePrograms.ts:19 TS2741
+src/renderer/src/lib/sourcePrograms.ts:70 TS2741
 src/renderer/src/test/api.ts:186 TS2322
 src/renderer/src/test/api.ts:191 TS2322
-src/scenarios/harness.tsx:511 TS2741
 src/scenarios/harness.tsx:517 TS2741
-src/scenarios/harness.tsx:524 TS7053
-src/scenarios/harness.tsx:545 TS7053
+src/scenarios/harness.tsx:523 TS2741
+src/scenarios/harness.tsx:530 TS7053
+src/scenarios/harness.tsx:551 TS7053
+src/scenarios/harness.tsx:772 TS2741
+src/scenarios/harness.tsx:801 TS2741
+src/scenarios/harness.tsx:829 TS2741
+src/scenarios/harness.tsx:950 TS2741
+src/scenarios/harness.tsx:959 TS2741
 src/scenarios/matrix/cells.ts:360 TS2741
 src/scenarios/matrix/cells.ts:91 TS2741
 src/scenarios/matrix/libraries.ts:26 TS2345
@@ -165,4 +258,5 @@ src/scenarios/matrix/realLibraries.ts:753 TS2741
 src/scenarios/matrix/report.ts:72 TS2741
 src/shared/djProgram.test.ts:16 TS2345
 src/shared/djProgram.ts:6 TS2345
+src/shared/djProgram.ts:8 TS2345
 ```
