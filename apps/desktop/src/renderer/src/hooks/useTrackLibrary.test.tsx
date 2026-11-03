@@ -499,6 +499,61 @@ describe('useTrackLibrary files changed outside Surco', () => {
 
     expect(result.current.tracks[0].meta).toMatchObject({ title: 'New', album: 'Typed' })
   })
+
+  // Serato analysing a NAS library rewrote 2011 files in half an hour; the next launch's
+  // check reported them all at once and each row was read again on the spot: 1963 ffprobes
+  // stalled the NAS and the window froze. The re-reads share the import's cap.
+  it('reads at most six changed files at once however many the check reports', async () => {
+    const readMeta = vi.fn().mockResolvedValue({
+      tags: emptyMetadata(),
+      duration: 180,
+      cover: null,
+      foreignTags: [],
+    })
+    const { fireChanged } = setApi({ readMeta })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    const paths = Array.from({ length: 20 }, (_, i) => `/m/${i}.wav`)
+    await act(() => result.current.addPaths(paths))
+    const pending: (() => void)[] = []
+    let inFlight = 0
+    let peak = 0
+    readMeta.mockImplementation(() => {
+      inFlight++
+      peak = Math.max(peak, inFlight)
+      return new Promise((resolve) => {
+        pending.push(() => {
+          inFlight--
+          resolve({ tags: emptyMetadata(), duration: 180, cover: null, foreignTags: [] })
+        })
+      })
+    })
+
+    await act(async () => {
+      fireChanged({ changed: paths, gone: [] })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(peak).toBe(6)
+
+    for (let round = 0; round < 5; round++) {
+      await act(async () => {
+        for (const r of pending.splice(0)) r()
+        await new Promise((r) => setTimeout(r, 0))
+      })
+    }
+    expect(peak).toBe(6)
+    expect(readMeta).toHaveBeenCalledTimes(40)
+  })
 })
 
 describe('useTrackLibrary removed tracks vs watcher', () => {
