@@ -15,6 +15,7 @@ import {
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { KEEPS_REPLACED } from '../../../shared/keepsReplaced'
 import type { DamageFinding, DamageOutcome, ListMusicStep } from '../../../shared/types'
 import {
   type DuplicateCard,
@@ -29,6 +30,7 @@ import { damageKey } from '../lib/damageReview'
 import { errorKeyOf } from '../lib/ipcError'
 import { isTypingTarget } from '../lib/keymap'
 import { INVISIBLE } from '../lib/musicSpelling'
+import { LIBRARY_NAME, REVIEW_LIBRARIES } from '../lib/reviewLibraries'
 import { REVIEW_COPY } from '../lib/reviewSource'
 import { DIALOG_BUTTON, DIALOG_CANCEL, DIALOG_OK, DIALOG_PANEL } from './ConfirmDialog'
 import { DamageCertainty, damageKindLabel, damageTitle } from './DamageDetail'
@@ -214,14 +216,8 @@ function Confirm({
   )
 }
 
-const LIBRARIES = [
-  ['rekordbox', 'rekordbox'],
-  ['engine', 'Engine DJ'],
-  ['traktor', 'Traktor'],
-] as const
-
 const missingLibraries = (review: Review) =>
-  LIBRARIES.filter(([library]) => {
+  REVIEW_LIBRARIES.filter(([library]) => {
     const status = review.libraries?.[library]
     return status?.enabled && !status.found
   }).map(([, name]) => name)
@@ -260,12 +256,7 @@ function damageDestinations(t: TFunction, outcomes: DamageOutcome[]): Destinatio
     return [
       {
         id: `damage-${target}`,
-        label:
-          target === 'file'
-            ? t('damage.done.file')
-            : target === 'traktor'
-              ? 'Traktor'
-              : 'Engine DJ',
+        label: target === 'file' ? t('damage.done.file') : LIBRARY_NAME[target],
         state: count('repaired') + count('unchanged') === mine.length ? 'ok' : 'warn',
         detail: joined([
           ...DAMAGE_STATES.map(
@@ -334,13 +325,13 @@ function Done({
   const missing = [
     ...new Set([
       ...missingLibraries(review),
-      ...LIBRARIES.filter(([library]) => run.tagSync?.[library].outcome === 'missing').map(
+      ...REVIEW_LIBRARIES.filter(([library]) => run.tagSync?.[library].outcome === 'missing').map(
         ([, name]) => name,
       ),
     ]),
   ]
   const reachedLibraries = run.librarySync !== 'none' || run.replaced.length > 0
-  const libraryWarnings = LIBRARIES.flatMap(([library, name]) => {
+  const libraryWarnings = REVIEW_LIBRARIES.flatMap(([library, name]) => {
     const count = (o: string) => run.replaced.filter((r) => r[library] === o).length
     const tags = run.tagSync?.[library].outcome
     const open = undone ? 'musicReview.done.undoLibraryOpen' : 'musicReview.done.libraryTagsOpen'
@@ -356,7 +347,7 @@ function Done({
       ...(tags === 'failed' ? [t(tagsFailed, { library: name })] : []),
     ]
   })
-  const libraryLeft = LIBRARIES.some(([library]) => {
+  const libraryLeft = REVIEW_LIBRARIES.some(([library]) => {
     const tags = run.tagSync?.[library].outcome
     return tags === 'open' || tags === 'failed'
   })
@@ -422,8 +413,8 @@ function Done({
   // Every library with its sync on gets a row: a library left out read as one that got
   // the change, which is what hid a rekordbox that got nothing.
   const libraryRow = (
-    library: (typeof LIBRARIES)[number][0],
-    name: (typeof LIBRARIES)[number][1],
+    library: (typeof REVIEW_LIBRARIES)[number][0],
+    name: (typeof REVIEW_LIBRARIES)[number][1],
   ): Destination | null => {
     const status = review.libraries?.[library]
     const row = (state: DestinationState, detail: string) => ({
@@ -446,7 +437,7 @@ function Done({
       return row('warn', t('musicReview.done.where.unconfirmed'))
     if (!status && !outcomes.length && !tags) return null
     const moved = count('replaced') + count('repointed')
-    const held = library === 'traktor' ? 0 : count('replaced')
+    const held = KEEPS_REPLACED[library] ? count('replaced') : 0
     const updated = tags?.outcome === 'updated' ? tags.count : 0
     if (tags?.outcome === 'nothing' && !outcomes.length)
       return row('off', t('musicReview.done.where.noMatch'))
@@ -522,7 +513,7 @@ function Done({
               } as const,
             ]
           : []),
-        ...LIBRARIES.flatMap(([library, name]) => libraryRow(library, name) ?? []),
+        ...REVIEW_LIBRARIES.flatMap(([library, name]) => libraryRow(library, name) ?? []),
         ...(inTrash || keptForLibrary || keptForMusic || heldForEntry
           ? [
               {
@@ -553,10 +544,10 @@ function Done({
       ]
   const warned = warnings.length > 0
   const librariesShort = destinations.some(
-    (d) => d.state === 'warn' && LIBRARIES.some(([library]) => library === d.id),
+    (d) => d.state === 'warn' && REVIEW_LIBRARIES.some(([library]) => library === d.id),
   )
   // "Libraries" only when a DJ library really took something; Music is named on its own.
-  const djReceived = LIBRARIES.some(([library]) => {
+  const djReceived = REVIEW_LIBRARIES.some(([library]) => {
     const tags = run.tagSync?.[library]
     return (
       (tags?.outcome === 'updated' && tags.count > 0) ||
@@ -1181,7 +1172,7 @@ export function MusicReview({
               ...(review.skipped > 0 ? [t('listReview.skipped', { count: review.skipped })] : []),
               ...(review.musicConsulted === false ? [t('listReview.musicUnchecked')] : []),
               ...review.damageUnread.map((library) =>
-                t('damage.unread', { library: library === 'traktor' ? 'Traktor' : 'Engine DJ' }),
+                t('damage.unread', { library: LIBRARY_NAME[library] }),
               ),
             ].join(' · ')}
             {review.damageLoading && (

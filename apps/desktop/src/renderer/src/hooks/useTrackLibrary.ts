@@ -24,6 +24,7 @@ import { searchFromTags } from '../lib/search'
 import { deselect, type Selection } from '../lib/selection'
 import { hasStagedEdits } from '../lib/sessionEdits'
 import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
+import { copyFlags, copyPlaylists, TRACK_PROGRAMS } from '../lib/trackPrograms'
 import type { TrackItem } from '../types'
 import { clearMaximizedSection } from './useEditorSections'
 import { useStableCallback } from './useStableCallback'
@@ -515,9 +516,7 @@ export function useTrackLibrary({
     // and the conversion stops honouring the source's own format.
     if (saved.musicPersistentId) patch.musicPersistentId = saved.musicPersistentId
     if (saved.fromAppleMusic) patch.fromAppleMusic = true
-    if (saved.fromRekordbox) patch.fromRekordbox = true
-    if (saved.fromEngine) patch.fromEngine = true
-    if (saved.fromTraktor) patch.fromTraktor = true
+    copyFlags(saved, patch)
     if (saved.coverRemoved) patch.coverRemoved = true
     if (saved.metaCleared) patch.metaCleared = true
     if (saved.foreignRemoved) patch.foreignRemoved = saved.foreignRemoved
@@ -528,12 +527,7 @@ export function useTrackLibrary({
     if (saved.matchProvider) patch.matchProvider = saved.matchProvider
     if (saved.appliedRelease) patch.appliedRelease = saved.appliedRelease
     if (saved.trim) patch.trim = saved.trim
-    if (saved.rekordboxPlaylists) patch.rekordboxPlaylists = saved.rekordboxPlaylists
-    if (saved.rekordboxPlaylistsBase) patch.rekordboxPlaylistsBase = saved.rekordboxPlaylistsBase
-    if (saved.traktorPlaylists) patch.traktorPlaylists = saved.traktorPlaylists
-    if (saved.traktorPlaylistsBase) patch.traktorPlaylistsBase = saved.traktorPlaylistsBase
-    if (saved.enginePlaylists) patch.enginePlaylists = saved.enginePlaylists
-    if (saved.enginePlaylistsBase) patch.enginePlaylistsBase = saved.enginePlaylistsBase
+    copyPlaylists(saved, patch)
     if (saved.normalize) patch.normalize = saved.normalize
     if (saved.declick) patch.declick = saved.declick
     return patch
@@ -991,19 +985,9 @@ export function useTrackLibrary({
           ...(e.musicPersistentId ? { musicPersistentId: e.musicPersistentId } : {}),
         })
       }
-      if (source === 'rekordbox')
+      if (source !== 'appleMusic')
         pendingSeed.current.set(e.path, {
-          fromRekordbox: true,
-          ...(e.preview && { sourcePreview: e.preview }),
-        })
-      if (source === 'engine')
-        pendingSeed.current.set(e.path, {
-          fromEngine: true,
-          ...(e.preview && { sourcePreview: e.preview }),
-        })
-      if (source === 'traktor')
-        pendingSeed.current.set(e.path, {
-          fromTraktor: true,
+          [TRACK_PROGRAMS[source].flag]: true,
           ...(e.preview && { sourcePreview: e.preview }),
         })
     }

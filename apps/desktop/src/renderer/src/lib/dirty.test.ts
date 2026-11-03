@@ -238,6 +238,27 @@ describe('trackSignature with rekordbox playlists', () => {
       trackSignature(t),
     )
   })
+
+  it('writes rekordbox’s wanted playlists bare and Traktor’s and Engine’s under their names, so every signature saved before still matches its track', () => {
+    const t = converted({
+      rekordboxPlaylists: [{ id: '3000', name: 'Makina' }],
+      traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
+      enginePlaylists: [{ name: 'Cierre' }],
+    })
+    expect(JSON.parse(trackSignature(t)).slice(6)).toEqual([
+      [{ id: '3000', name: 'Makina' }],
+      ['traktor', [{ id: 'fri', name: 'Friday' }]],
+      ['engine', [{ name: 'Cierre' }]],
+    ])
+    expect(
+      JSON.parse(
+        trackSignature({ ...t, rekordboxPlaylists: undefined, traktorPlaylists: [] }),
+      ).slice(6),
+    ).toEqual([
+      ['traktor', []],
+      ['engine', [{ name: 'Cierre' }]],
+    ])
+  })
 })
 
 describe('withSignatureCover', () => {

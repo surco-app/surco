@@ -1,6 +1,6 @@
 # Mapa de Serato: lo que el compilador obliga a decidir
 
-Medido el 03/11 tras el bloque 6g añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
+Medido el 03/11 tras el bloque 6i añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
 
 ## Añadidos a mano (el compilador no los ve)
 
@@ -15,6 +15,7 @@ Medido el 03/11 tras el bloque 6g añadiendo `'serato'` a `DjProgram` (y revirti
 
 - Vaciado tras convertir: `repointEngineQueued` renombra `engine-running` a `'rekordbox-running'` y `queueConversionRun` compara con `'rekordbox-running'`; el tipo `ConversionQueues` tiene claves fijas (el flusher de Serato exigirá su cola en la práctica).
 - Añadir durante el trabajo (6d): solo Engine se añade a su biblioteca durante la conversión (`processTrack.ts` pasos de Engine, adaptador en `index.ts`, `isAppleMusicOnly`, `engineSizeFollow`); un programa que lo necesite añadirá su propio paso. Y `libraryFileUse.ts` `libraryGenresOf`: cadena de `if` por programa; el orden rekordbox, engine, traktor se ve en la lista de géneros.
+- Renderer tras convertir (6h-6i), sitios dejados a propósito: las tres secciones de `DestinationTab` (cada una con su maquetación), `librarySourceOf` (ids compartidos con main, p. ej. `'engineDj'`), `unanalysedIn` de `triage.ts` (ids de filtros), los valores por defecto `'rekordbox'` de `PlaylistsField`, la lista de colas de `App.tsx` y la regla de ruta de Traktor en `reachable` del editor. Órdenes por sitio que hoy coinciden con `RAIL_PROGRAMS` pero son independientes a propósito: `FLAG_ORDER`, `QUEUE_PILL_ORDER`, orden de revisión, `LIBRARY_ORDER` del editor, `ORDER` de `djReach`. `SOURCE_PROGRAMS.trackFlag` y `TRACK_PROGRAMS.flag` se solapan (solo difieren en Engine).
 
 ## Errores del compilador
 
@@ -49,9 +50,8 @@ src/main/djProcesses.ts:37 TS2741
 src/main/djProcesses.ts:76 TS2344
 src/main/djProcesses.ts:77 TS2536
 src/main/djProcesses.ts:82 TS2741
-src/main/duplicateReplace.ts:17 TS2345
-src/main/duplicateReplace.ts:66 TS2741
-src/main/duplicateReplace.ts:71 TS2741
+src/main/duplicateReplace.ts:18 TS2345
+src/main/duplicateReplace.ts:67 TS2741
 src/main/index.ts:1326 TS2741
 src/main/index.ts:1465 TS2741
 src/main/index.ts:1496 TS2741
@@ -176,8 +176,12 @@ src/main/verifyRegistry.ts:315 TS7053
 src/main/verifyRegistry.ts:329 TS7053
 src/main/verifyRegistry.ts:93 TS2345
 src/main/verifyRegistry.ts:94 TS2741
-src/renderer/src/App.tsx:404 TS7053
-src/renderer/src/App.tsx:408 TS2741
+src/renderer/src/App.tsx:230 TS2345
+src/renderer/src/App.tsx:231 TS2741
+src/renderer/src/App.tsx:3482 TS2741
+src/renderer/src/App.tsx:418 TS7053
+src/renderer/src/App.tsx:422 TS2741
+src/renderer/src/App.tsx:857 TS2741
 src/renderer/src/components/CuesBatchSection.tsx:28 TS2741
 src/renderer/src/components/CuesSection.tsx:158 TS2741
 src/renderer/src/components/CuesSection.tsx:290 TS2741
@@ -186,37 +190,50 @@ src/renderer/src/components/Editor.test.tsx:883 TS2741
 src/renderer/src/components/Editor.test.tsx:892 TS2741
 src/renderer/src/components/Editor.test.tsx:898 TS2741
 src/renderer/src/components/Editor.test.tsx:906 TS2741
+src/renderer/src/components/Editor.test.tsx:917 TS2741
+src/renderer/src/components/Editor.test.tsx:926 TS2741
+src/renderer/src/components/Editor.tsx:1127 TS2741
 src/renderer/src/components/Editor.tsx:129 TS2345
-src/renderer/src/components/FieldsEditor.tsx:154 TS7053
-src/renderer/src/components/MusicReview.test.tsx:1091 TS2741
-src/renderer/src/components/MusicReview.test.tsx:1241 TS2741
-src/renderer/src/components/MusicReview.test.tsx:1262 TS2741
-src/renderer/src/components/MusicReview.test.tsx:1289 TS2741
-src/renderer/src/components/MusicReview.test.tsx:1320 TS2741
-src/renderer/src/components/MusicReview.test.tsx:1331 TS2741
-src/renderer/src/components/MusicReview.test.tsx:1394 TS2741
-src/renderer/src/components/MusicReview.test.tsx:2547 TS2741
-src/renderer/src/components/MusicReview.test.tsx:2561 TS2741
-src/renderer/src/components/MusicReview.test.tsx:2573 TS2741
-src/renderer/src/components/MusicReview.test.tsx:2594 TS2741
-src/renderer/src/components/MusicReview.test.tsx:2647 TS2741
+src/renderer/src/components/Editor.tsx:130 TS2345
+src/renderer/src/components/MusicReview.test.tsx:1100 TS2741
+src/renderer/src/components/MusicReview.test.tsx:119 TS2741
+src/renderer/src/components/MusicReview.test.tsx:1250 TS2741
+src/renderer/src/components/MusicReview.test.tsx:1275 TS2741
+src/renderer/src/components/MusicReview.test.tsx:1293 TS2741
+src/renderer/src/components/MusicReview.test.tsx:1300 TS2741
+src/renderer/src/components/MusicReview.test.tsx:1310 TS2741
+src/renderer/src/components/MusicReview.test.tsx:1311 TS2741
+src/renderer/src/components/MusicReview.test.tsx:1338 TS2741
+src/renderer/src/components/MusicReview.test.tsx:1369 TS2741
+src/renderer/src/components/MusicReview.test.tsx:1380 TS2741
+src/renderer/src/components/MusicReview.test.tsx:1443 TS2741
+src/renderer/src/components/MusicReview.test.tsx:1782 TS2741
+src/renderer/src/components/MusicReview.test.tsx:1811 TS2741
+src/renderer/src/components/MusicReview.test.tsx:1834 TS2741
+src/renderer/src/components/MusicReview.test.tsx:1857 TS2741
+src/renderer/src/components/MusicReview.test.tsx:2596 TS2741
+src/renderer/src/components/MusicReview.test.tsx:2610 TS2741
+src/renderer/src/components/MusicReview.test.tsx:2622 TS2741
+src/renderer/src/components/MusicReview.test.tsx:2643 TS2741
+src/renderer/src/components/MusicReview.test.tsx:2696 TS2741
 src/renderer/src/components/MusicReview.test.tsx:677 TS2741
-src/renderer/src/components/MusicReview.test.tsx:690 TS2741
-src/renderer/src/components/MusicReview.test.tsx:707 TS2741
-src/renderer/src/components/MusicReview.test.tsx:732 TS2741
-src/renderer/src/components/MusicReview.test.tsx:806 TS2741
-src/renderer/src/components/MusicReview.test.tsx:822 TS2322
-src/renderer/src/components/MusicReview.test.tsx:849 TS2741
-src/renderer/src/components/MusicReview.test.tsx:870 TS2741
-src/renderer/src/components/MusicReview.test.tsx:891 TS2741
-src/renderer/src/components/MusicReview.test.tsx:914 TS2741
-src/renderer/src/components/MusicReview.test.tsx:928 TS2741
-src/renderer/src/components/MusicReview.test.tsx:950 TS2741
-src/renderer/src/components/MusicReview.test.tsx:966 TS2741
-src/renderer/src/components/MusicReview.test.tsx:980 TS2741
-src/renderer/src/components/PlaylistsField.tsx:359 TS7053
+src/renderer/src/components/MusicReview.test.tsx:688 TS2741
+src/renderer/src/components/MusicReview.test.tsx:699 TS2741
+src/renderer/src/components/MusicReview.test.tsx:716 TS2741
+src/renderer/src/components/MusicReview.test.tsx:741 TS2741
+src/renderer/src/components/MusicReview.test.tsx:815 TS2741
+src/renderer/src/components/MusicReview.test.tsx:831 TS2322
+src/renderer/src/components/MusicReview.test.tsx:858 TS2741
+src/renderer/src/components/MusicReview.test.tsx:879 TS2741
+src/renderer/src/components/MusicReview.test.tsx:900 TS2741
+src/renderer/src/components/MusicReview.test.tsx:923 TS2741
+src/renderer/src/components/MusicReview.test.tsx:937 TS2741
+src/renderer/src/components/MusicReview.test.tsx:959 TS2741
+src/renderer/src/components/MusicReview.test.tsx:975 TS2741
+src/renderer/src/components/MusicReview.test.tsx:989 TS2741
 src/renderer/src/components/settings/GeneralTab.tsx:44 TS2741
 src/renderer/src/components/settings/GeneralTab.tsx:50 TS2741
+src/renderer/src/components/SourceIcons.tsx:73 TS2741
 src/renderer/src/components/SourceRail.tsx:11 TS2741
 src/renderer/src/hooks/useMusicReview.test.tsx:1066 TS2741
 src/renderer/src/hooks/useMusicReview.test.tsx:1067 TS2741
@@ -237,22 +254,21 @@ src/renderer/src/hooks/useRekordboxPlaylists.test.tsx:91 TS2741
 src/renderer/src/hooks/useRekordboxPlaylists.ts:25 TS2741
 src/renderer/src/hooks/useRekordboxPlaylists.ts:91 TS7053
 src/renderer/src/hooks/useRekordboxPlaylists.ts:97 TS7053
+src/renderer/src/hooks/useRekordboxQueue.ts:65 TS2741
 src/renderer/src/hooks/useSourceBrowser.ts:134 TS2741
 src/renderer/src/lib/cuePrograms.ts:17 TS2741
 src/renderer/src/lib/cueTwins.ts:54 TS2741
 src/renderer/src/lib/djLibraries.ts:18 TS2345
-src/renderer/src/lib/djReach.ts:19 TS2345
+src/renderer/src/lib/djReach.ts:19 TS2741
+src/renderer/src/lib/djReach.ts:31 TS2345
 src/renderer/src/lib/djReach.ts:7 TS2741
 src/renderer/src/lib/fields.ts:147 TS2741
-src/renderer/src/lib/rekordboxPlaylists.ts:116 TS7006
-src/renderer/src/lib/rekordboxPlaylists.ts:153 TS7053
-src/renderer/src/lib/rekordboxPlaylists.ts:186 TS7053
-src/renderer/src/lib/rekordboxPlaylists.ts:187 TS7053
-src/renderer/src/lib/rekordboxPlaylists.ts:25 TS2339
-src/renderer/src/lib/rekordboxPlaylists.ts:27 TS7053
-src/renderer/src/lib/rekordboxPlaylists.ts:28 TS7053
-src/renderer/src/lib/sourcePrograms.ts:19 TS2741
-src/renderer/src/lib/sourcePrograms.ts:70 TS2741
+src/renderer/src/lib/reviewLibraries.ts:3 TS2741
+src/renderer/src/lib/reviewLibraries.ts:9 TS2345
+src/renderer/src/lib/sourcePrograms.ts:20 TS2741
+src/renderer/src/lib/sourcePrograms.ts:71 TS2741
+src/renderer/src/lib/trackPrograms.ts:15 TS2741
+src/renderer/src/lib/trackPrograms.ts:41 TS2345
 src/renderer/src/test/api.ts:186 TS2322
 src/renderer/src/test/api.ts:191 TS2322
 src/scenarios/harness.tsx:517 TS2741
@@ -276,4 +292,5 @@ src/scenarios/matrix/report.ts:72 TS2741
 src/shared/djProgram.test.ts:16 TS2345
 src/shared/djProgram.ts:6 TS2345
 src/shared/djProgram.ts:8 TS2345
+src/shared/keepsReplaced.ts:3 TS2741
 ```

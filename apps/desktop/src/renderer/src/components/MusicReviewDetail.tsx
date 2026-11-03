@@ -1,6 +1,7 @@
 import { Check, ChevronDown, Copy } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { DjProgram } from '../../../shared/djProgram'
 import type { LibraryCopyInfo, LibraryStatus, ReviewEntry } from '../../../shared/types'
 import {
   type DuplicateCard,
@@ -14,6 +15,7 @@ import { damageKey } from '../lib/damageReview'
 import { INVISIBLE } from '../lib/musicSpelling'
 import { formatFileSize } from '../lib/properties'
 import { formatKHz, type Verdict } from '../lib/quality'
+import { REVIEW_LIBRARIES } from '../lib/reviewLibraries'
 import { REVIEW_COPY } from '../lib/reviewSource'
 import type { TrackItem } from '../types'
 import { DIALOG_CANCEL } from './ConfirmDialog'
@@ -36,11 +38,7 @@ import {
   useSplitMenu,
 } from './SplitButton'
 
-export interface ReviewSync {
-  rekordbox: boolean
-  engineDj: boolean
-  traktor: boolean
-}
+export type ReviewSync = Record<DjProgram, boolean>
 
 type Sections = Record<'options' | 'affected' | 'copies', boolean>
 interface Folding {
@@ -284,19 +282,11 @@ function Where({
       name: id === 'music' ? musicLabel : t('musicReview.where.file'),
       missing: false,
     })),
-    ...(
-      [
-        [sync.rekordbox, 'rekordbox', 'rekordbox'],
-        [sync.engineDj, 'engine', 'Engine DJ'],
-        [sync.traktor, 'traktor', 'Traktor'],
-      ] as const
-    )
-      .filter(([on]) => on)
-      .map(([, library, name]) => ({
-        id: library,
-        name,
-        missing: libraries?.[library].found === false,
-      })),
+    ...REVIEW_LIBRARIES.filter(([library]) => sync[library]).map(([library, name]) => ({
+      id: library,
+      name,
+      missing: libraries?.[library].found === false,
+    })),
   ]
   return (
     <span className="flex flex-wrap gap-1">
@@ -497,19 +487,13 @@ function SpellingDetail({
   )
 }
 
-const LIBRARIES = [
-  ['rekordbox', 'rekordbox'],
-  ['engine', 'Engine DJ'],
-  ['traktor', 'Traktor'],
-] as const
-
 const pathKey = (path: string) => path.normalize('NFC').toLowerCase()
 const samePath = (a: string, b: string) => pathKey(a) === pathKey(b)
 
 function CopyLibraries({ info }: { info: LibraryCopyInfo | undefined }) {
   const { t } = useTranslation()
   if (!info) return null
-  return LIBRARIES.flatMap(([library, name]) => {
+  return REVIEW_LIBRARIES.flatMap(([library, name]) => {
     const presence = info[library]
     if (presence === undefined) return []
     const text =
@@ -604,7 +588,7 @@ function DuplicateDetail({
   const copiesId = useId()
   const { group, entries, formats, locations } = card
   const info = useCopyInfo(entries.flatMap((e) => locations[e.id] || []))
-  const cuesStay = LIBRARIES.some(([library]) => {
+  const cuesStay = REVIEW_LIBRARIES.some(([library]) => {
     const held = entries.flatMap((e) => {
       const path = locations[e.id]
       return path && info[path]?.[library] ? [pathKey(path)] : []

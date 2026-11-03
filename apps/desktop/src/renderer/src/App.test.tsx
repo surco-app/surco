@@ -634,6 +634,24 @@ describe('App Engine DJ cues', () => {
       '1 track waits for you to close Engine DJ',
     )
   })
+
+  it('lines the waiting queues up as rekordbox, Engine DJ and Traktor, the order of the source rail', async () => {
+    const waiting = { tracks: 1, changes: 0, items: [] }
+    openEngine({
+      rekordboxQueue: vi.fn<Api['rekordboxQueue']>().mockResolvedValue(waiting),
+      engineCueQueue: vi.fn<Api['engineCueQueue']>().mockResolvedValue(waiting),
+      traktorCueQueue: vi.fn<Api['traktorCueQueue']>().mockResolvedValue(waiting),
+    })
+    await renderApp()
+    await screen.findByTestId('traktor-queue-pill')
+    await screen.findByTestId('engine-queue-pill')
+    await screen.findByTestId('rekordbox-queue-pill')
+    expect(
+      screen
+        .getAllByTestId(/^(rekordbox|engine|traktor)-queue-pill$/)
+        .map((pill) => pill.dataset.testid),
+    ).toEqual(['rekordbox-queue-pill', 'engine-queue-pill', 'traktor-queue-pill'])
+  })
 })
 
 describe('App Traktor cues', () => {

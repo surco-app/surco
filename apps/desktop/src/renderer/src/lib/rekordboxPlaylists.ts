@@ -7,6 +7,7 @@ import type {
 import type { TrackItem } from '../types'
 import { trackSignature } from './dirty'
 import { SOURCE_PROGRAMS } from './sourcePrograms'
+import { type PlaylistKey, TRACK_PROGRAMS } from './trackPrograms'
 
 export interface PlaylistOption {
   id: string
@@ -16,16 +17,8 @@ export interface PlaylistOption {
 
 export type Membership = Record<string, string[]>
 
-const EDIT_KEYS = {
-  rekordbox: { wanted: 'rekordboxPlaylists', base: 'rekordboxPlaylistsBase' },
-  traktor: { wanted: 'traktorPlaylists', base: 'traktorPlaylistsBase' },
-  engine: { wanted: 'enginePlaylists', base: 'enginePlaylistsBase' },
-} as const
-
-type EditKey = (typeof EDIT_KEYS)[PlaylistLibrary]['wanted' | 'base']
-
-const wantedOf = (t: TrackItem, library: PlaylistLibrary) => t[EDIT_KEYS[library].wanted]
-const baseOf = (t: TrackItem, library: PlaylistLibrary) => t[EDIT_KEYS[library].base]
+const wantedOf = (t: TrackItem, library: PlaylistLibrary) => t[TRACK_PROGRAMS[library].playlists]
+const baseOf = (t: TrackItem, library: PlaylistLibrary) => t[TRACK_PROGRAMS[library].playlistsBase]
 
 export function playlistOptions(tree: readonly SourceNode[]): PlaylistOption[] {
   const out: PlaylistOption[] = []
@@ -142,7 +135,7 @@ export function bulkPlaylistState(
   }))
 }
 
-export type PlaylistsEdit = Partial<Pick<TrackItem, EditKey>>
+export type PlaylistsEdit = Partial<Pick<TrackItem, PlaylistKey>>
 
 export function playlistsEdit(
   track: TrackItem,
@@ -150,10 +143,10 @@ export function playlistsEdit(
   next: RekordboxPlaylistTarget[],
   library: PlaylistLibrary = 'rekordbox',
 ): PlaylistsEdit {
-  const keys = EDIT_KEYS[library]
+  const { playlists, playlistsBase } = TRACK_PROGRAMS[library]
   return {
-    [keys.wanted]: next,
-    [keys.base]: baseOf(track, library) ?? membership[rekordboxPathOf(track)] ?? [],
+    [playlists]: next,
+    [playlistsBase]: baseOf(track, library) ?? membership[rekordboxPathOf(track)] ?? [],
   }
 }
 
@@ -183,8 +176,8 @@ function withoutPlaylistEdit(t: TrackItem, library: PlaylistLibrary): TrackItem 
   const before = trackSignature(t)
   const cleared: TrackItem = {
     ...t,
-    [EDIT_KEYS[library].wanted]: undefined,
-    [EDIT_KEYS[library].base]: undefined,
+    [TRACK_PROGRAMS[library].playlists]: undefined,
+    [TRACK_PROGRAMS[library].playlistsBase]: undefined,
   }
   const after = trackSignature(cleared)
   return {

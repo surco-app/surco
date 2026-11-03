@@ -7,11 +7,12 @@ import { normalizeImportFields } from '../../../shared/defaults'
 import { normalizeEditorSections } from '../../../shared/editorSections'
 import type { CustomField, PlaylistSource, Settings } from '../../../shared/types'
 import { DEFAULT_SEPARATOR } from './csv'
+import type { DjAddKey, DjSyncKey } from './djReach'
 
 // The synced staged fields in their editable forms (presets as comma text, the cover cap
 // as a string), derived from Settings in one place so the modal's seeding and the
 // config-dir re-seed can never disagree on the field list.
-export interface SyncedDraft {
+export interface SyncedDraft extends Record<DjAddKey | DjSyncKey, boolean> {
   theme: Settings['theme']
   language: Settings['language']
   outputFormat: Settings['outputFormat']
@@ -23,11 +24,6 @@ export interface SyncedDraft {
   backupPolicy: BackupPolicy
   backupRetentionDays: number
   backupMaxGb: number
-  addToEngineDj: boolean
-  addToRekordbox: boolean
-  addToTraktor: boolean
-  syncTraktor: boolean
-  syncRekordbox: boolean
   completeCuesOnClose: boolean
   cueFlows: Settings['cueFlows']
   activeCueFlow: string
@@ -40,7 +36,6 @@ export interface SyncedDraft {
   cueFlowToEngine: boolean
   cueLearnFromEdits: boolean
   hiddenSources: PlaylistSource[]
-  syncEngineDj: boolean
   filenameFormat: string
   titleFormat: string
   autoApplyFilename: boolean

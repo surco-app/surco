@@ -2777,6 +2777,28 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
       }),
     )
   })
+
+  it('re-reads the open playlists and rekordbox’s membership once a conversion moves a file, as only rekordbox lists the moved path', async () => {
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false }),
+    })
+    const client = new QueryClient()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({ tracks: [track({ id: 'a' })], settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient(client) },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(invalidate.mock.calls.map(([filters]) => filters?.queryKey)).toEqual([
+      ['source-playlist'],
+      ['rekordbox-membership'],
+    ])
+  })
 })
 
 describe('useTrackProcessing retryVerification', () => {

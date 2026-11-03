@@ -1,5 +1,6 @@
 import type { DjProgram } from '../shared/djProgram'
 import { programsInOrder } from '../shared/djProgram'
+import { KEEPS_REPLACED } from '../shared/keepsReplaced'
 import type {
   ActivityKind,
   DuplicatePair,
@@ -67,11 +68,6 @@ const RUNNING_REASON: Record<DjProgram, string> = {
   rekordbox: 'rekordbox-running',
   engine: 'engine-running',
   traktor: 'traktor-running',
-}
-const KEEPS_REPLACED: Record<DjProgram, boolean> = {
-  rekordbox: true,
-  engine: true,
-  traktor: false,
 }
 const SKIPPED = new Set([
   ...Object.values(RUNNING_REASON),

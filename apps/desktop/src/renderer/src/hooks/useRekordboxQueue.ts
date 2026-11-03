@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { DjProgram } from '../../../shared/djProgram'
 import type {
   RekordboxQueueApplied,
   RekordboxQueueState,
@@ -59,6 +60,12 @@ export const TRAKTOR_CUE_QUEUE: QueueSource = {
   applyNow: () => window.api.applyTraktorCueQueue(),
   discard: () => window.api.discardTraktorCueQueue(),
   words: TRAKTOR_QUEUE_WORDS,
+}
+
+export const PROGRAM_QUEUES: Record<DjProgram, { source: QueueSource; testid: string }> = {
+  rekordbox: { source: REKORDBOX_QUEUE, testid: 'rekordbox-queue' },
+  engine: { source: ENGINE_CUE_QUEUE, testid: 'engine-queue' },
+  traktor: { source: TRAKTOR_CUE_QUEUE, testid: 'traktor-queue' },
 }
 
 export function useRekordboxQueue(
