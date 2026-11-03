@@ -18,7 +18,7 @@ import type { CueJumpBars } from '../../shared/cueJump'
 import type { CueQuantize } from '../../shared/cueQuantize'
 import { effectiveMeta } from '../../shared/customFields'
 import { normalizeImportFields } from '../../shared/defaults'
-import { DJ_PROGRAMS, type DjProgram } from '../../shared/djProgram'
+import { DJ_PROGRAMS, type DjProgram, programsInOrder } from '../../shared/djProgram'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import { resolveBindings } from '../../shared/shortcutDefaults'
@@ -30,7 +30,9 @@ import type {
   NormalizeConfig,
   PlaylistSource,
   PlaylistTrackRef,
+  RekordboxQueueState,
   RekordboxQueueWritten,
+  RekordboxSyncIssue,
   ReviewedFileUpdate,
   SearchHints,
   SearchProviderId,
@@ -93,7 +95,7 @@ import { usePlaylistReadPriority } from './hooks/usePlaylistReadPriority'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useRekordboxEdits } from './hooks/useRekordboxEdits'
 import { useLibraryAvailable, useOfferPlaylistFields } from './hooks/useRekordboxPlaylists'
-import { ENGINE_CUE_QUEUE, TRAKTOR_CUE_QUEUE, useRekordboxQueue } from './hooks/useRekordboxQueue'
+import { PROGRAM_QUEUES, useRekordboxQueue } from './hooks/useRekordboxQueue'
 import { useRetireSuperseded } from './hooks/useRetireSuperseded'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
 import { useSettings } from './hooks/useSettings'
@@ -164,7 +166,7 @@ import {
   discardPlaylistEdits,
   type PlaylistsEdit,
 } from './lib/rekordboxPlaylists'
-import { type CueSpot, ENGINE_QUEUE_WORDS, TRAKTOR_QUEUE_WORDS } from './lib/rekordboxQueueText'
+import type { CueSpot } from './lib/rekordboxQueueText'
 import type { ReleaseMetaPatch } from './lib/release'
 import {
   clearDraggedRows,
@@ -223,6 +225,18 @@ import type { CopiedTags, TrackItem } from './types'
 // Hovering counts as intent only after the cursor rests briefly, so sweeping the
 // pointer across the list while scrolling doesn't fire a prefetch for every row.
 const NO_HIDDEN_SOURCES: PlaylistSource[] = []
+const QUEUE_PILL_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
+const SYNC_ISSUES: Record<
+  DjProgram,
+  {
+    listen: (cb: (issue: RekordboxSyncIssue) => void) => () => void
+    messages: 'rekordboxIssue' | 'engineIssue'
+  } | null
+> = {
+  rekordbox: { listen: (cb) => window.api.onRekordboxSyncIssue(cb), messages: 'rekordboxIssue' },
+  traktor: null,
+  engine: { listen: (cb) => window.api.onEngineSyncIssue(cb), messages: 'engineIssue' },
+}
 const PREFETCH_HOVER_MS = 150
 const PLAYER_LEAVE_MS = 200
 
@@ -806,7 +820,12 @@ export default function App(): React.JSX.Element {
   const dropWrittenPlaylists = useStableCallback((written: RekordboxQueueWritten[]) =>
     setTracks((prev) => clearWrittenPlaylists(prev, written)),
   )
-  const rekordboxQueue = useRekordboxQueue(notifyEdit, dropDiscardedPlaylists, dropWrittenPlaylists)
+  const rekordboxQueue = useRekordboxQueue(
+    notifyEdit,
+    dropDiscardedPlaylists,
+    dropWrittenPlaylists,
+    PROGRAM_QUEUES.rekordbox.source,
+  )
   const { applyNow: applyQueueNow, discard: discardQueue } = rekordboxQueue
   const dropDiscardedEngine = useStableCallback((paths: string[]) =>
     setTracks((prev) => discardPlaylistEdits(prev, paths, 'engine')),
@@ -818,7 +837,7 @@ export default function App(): React.JSX.Element {
     notifyEdit,
     dropDiscardedEngine,
     dropWrittenEngine,
-    ENGINE_CUE_QUEUE,
+    PROGRAM_QUEUES.engine.source,
   )
   const { applyNow: applyEngineQueueNow, discard: discardEngineQueue } = engineCueQueue
   const dropDiscardedTraktor = useStableCallback((paths: string[]) =>
@@ -831,45 +850,51 @@ export default function App(): React.JSX.Element {
     notifyEdit,
     dropDiscardedTraktor,
     dropWrittenTraktor,
-    TRAKTOR_CUE_QUEUE,
+    PROGRAM_QUEUES.traktor.source,
   )
   const { applyNow: applyTraktorQueueNow, discard: discardTraktorQueue } = traktorCueQueue
-  const queuePill = useMemo(
-    () => (
+  const queuePill = useMemo(() => {
+    const queues: Record<
+      DjProgram,
+      { state: RekordboxQueueState; applyNow: () => Promise<void>; discard: () => Promise<void> }
+    > = {
+      rekordbox: { state: rekordboxQueue.state, applyNow: applyQueueNow, discard: discardQueue },
+      engine: {
+        state: engineCueQueue.state,
+        applyNow: applyEngineQueueNow,
+        discard: discardEngineQueue,
+      },
+      traktor: {
+        state: traktorCueQueue.state,
+        applyNow: applyTraktorQueueNow,
+        discard: discardTraktorQueue,
+      },
+    }
+    return (
       <>
-        <RekordboxQueuePill
-          state={rekordboxQueue.state}
-          onApplyNow={() => void applyQueueNow()}
-          onDiscard={() => void discardQueue()}
-        />
-        <RekordboxQueuePill
-          state={engineCueQueue.state}
-          onApplyNow={() => void applyEngineQueueNow()}
-          onDiscard={() => void discardEngineQueue()}
-          words={ENGINE_QUEUE_WORDS}
-          testid="engine-queue"
-        />
-        <RekordboxQueuePill
-          state={traktorCueQueue.state}
-          onApplyNow={() => void applyTraktorQueueNow()}
-          onDiscard={() => void discardTraktorQueue()}
-          words={TRAKTOR_QUEUE_WORDS}
-          testid="traktor-queue"
-        />
+        {QUEUE_PILL_ORDER.map((program) => (
+          <RekordboxQueuePill
+            key={program}
+            state={queues[program].state}
+            onApplyNow={() => void queues[program].applyNow()}
+            onDiscard={() => void queues[program].discard()}
+            words={PROGRAM_QUEUES[program].source.words}
+            testid={PROGRAM_QUEUES[program].testid}
+          />
+        ))}
       </>
-    ),
-    [
-      rekordboxQueue.state,
-      applyQueueNow,
-      discardQueue,
-      engineCueQueue.state,
-      applyEngineQueueNow,
-      discardEngineQueue,
-      traktorCueQueue.state,
-      applyTraktorQueueNow,
-      discardTraktorQueue,
-    ],
-  )
+    )
+  }, [
+    rekordboxQueue.state,
+    applyQueueNow,
+    discardQueue,
+    engineCueQueue.state,
+    applyEngineQueueNow,
+    discardEngineQueue,
+    traktorCueQueue.state,
+    applyTraktorQueueNow,
+    discardTraktorQueue,
+  ])
   // The USB export: macOS and Windows, with a rekordbox collection or from the Engine DJ
   // tree. Its state lives in usbExportStore, outside React; App reads only the phase (for
   // the notices), so a byte tick never re-renders the app.
@@ -1115,47 +1140,33 @@ export default function App(): React.JSX.Element {
   )
   // What a run's rekordbox repoint could not do: the collection stays on the old file, so
   // the DJ has to hear it now rather than when a track fails to load at the gig.
-  useEffect(
-    () =>
-      window.api.onRekordboxSyncIssue((issue) =>
-        pushToast(store, {
-          key: 'rekordbox-sync-issue',
-          tone: 'danger',
-          testid: 'rekordbox-sync-issue',
-          message: issue.blocked
-            ? { key: `rekordboxIssue.${issue.blocked}` }
-            : {
-                key: 'rekordboxIssue.ambiguous',
-                values: {
-                  count: issue.ambiguous.length,
-                  name: baseName(issue.ambiguous[0] ?? ''),
+  useEffect(() => {
+    const stops = DJ_PROGRAMS.flatMap((program) => {
+      const issues = SYNC_ISSUES[program]
+      if (!issues) return []
+      return [
+        issues.listen((issue) =>
+          pushToast(store, {
+            key: `${program}-sync-issue`,
+            tone: 'danger',
+            testid: `${program}-sync-issue`,
+            message: issue.blocked
+              ? { key: `${issues.messages}.${issue.blocked}` }
+              : {
+                  key: `${issues.messages}.ambiguous`,
+                  values: {
+                    count: issue.ambiguous.length,
+                    name: baseName(issue.ambiguous[0] ?? ''),
+                  },
                 },
-              },
-        }),
-      ),
-    [store],
-  )
-  // The same for the Engine DJ library.
-  useEffect(
-    () =>
-      window.api.onEngineSyncIssue((issue) =>
-        pushToast(store, {
-          key: 'engine-sync-issue',
-          tone: 'danger',
-          testid: 'engine-sync-issue',
-          message: issue.blocked
-            ? { key: `engineIssue.${issue.blocked}` }
-            : {
-                key: 'engineIssue.ambiguous',
-                values: {
-                  count: issue.ambiguous.length,
-                  name: baseName(issue.ambiguous[0] ?? ''),
-                },
-              },
-        }),
-      ),
-    [store],
-  )
+          }),
+        ),
+      ]
+    })
+    return () => {
+      for (const stop of stops) stop()
+    }
+  }, [store])
   useEffect(
     () =>
       window.api.onUpdateError((error) =>
@@ -3470,7 +3481,7 @@ export default function App(): React.JSX.Element {
                       <MusicReviewDetailPane
                         sync={{
                           rekordbox: settings?.syncRekordbox ?? false,
-                          engineDj: settings?.syncEngineDj ?? false,
+                          engine: settings?.syncEngineDj ?? false,
                           traktor: settings?.syncTraktor ?? false,
                         }}
                         onClose={() => setReview(null)}

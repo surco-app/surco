@@ -7,6 +7,7 @@ import '../i18n'
 import type { RekordboxPlaylistTarget, SourceNode } from '../../../shared/types'
 import { playlistOptions } from '../lib/rekordboxPlaylists'
 import { PlaylistsBulkField, PlaylistsField } from './PlaylistsField'
+import { EngineIcon, RekordboxIcon, TraktorIcon } from './SourceIcons'
 
 afterEach(cleanup)
 
@@ -368,4 +369,32 @@ describe('PlaylistsBulkField', () => {
     fireEvent.click(screen.getByTestId('playlists-check-mash'))
     expect(onToggle).toHaveBeenCalledWith(target('mash'), true)
   })
+})
+
+describe('the program mark', () => {
+  const maskOf = (root: Element) => root.querySelector('label svg mask')?.innerHTML
+  it.each([
+    ['rekordbox', 'playlists-field', RekordboxIcon],
+    ['traktor', 'traktor-playlists-field', TraktorIcon],
+    ['engine', 'engine-playlists-field', EngineIcon],
+  ] as const)(
+    'marks the %s field with that program’s own logo, so two programs’ fields never look alike',
+    (library, testId, Icon) => {
+      const { container } = render(<Icon size={12} />)
+      const own = container.querySelector('mask')?.innerHTML
+      cleanup()
+      render(
+        <PlaylistsField
+          library={library}
+          label="playlists"
+          tree={TREE}
+          options={OPTIONS}
+          value={[]}
+          onChange={vi.fn()}
+        />,
+      )
+      expect(own).toBeTruthy()
+      expect(maskOf(screen.getByTestId(testId))).toBe(own)
+    },
+  )
 })

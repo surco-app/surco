@@ -116,7 +116,7 @@ const status = (over: Partial<Record<'rekordbox' | 'engine' | 'traktor', boolean
   }
 }
 
-const NO_SYNC: ReviewSync = { rekordbox: false, engineDj: false, traktor: false }
+const NO_SYNC: ReviewSync = { rekordbox: false, engine: false, traktor: false }
 
 function Panes({
   review: base,
@@ -682,6 +682,15 @@ describe('MusicReview', () => {
         'The changes are already in your files and in Apple Music.',
       )
       expect(screen.queryByTestId('music-review-done-warnings')).toBeNull()
+    })
+
+    it('lists the DJ libraries after the run as rekordbox, Engine DJ and Traktor, in that order', () => {
+      render(<Panes review={{ ...done(run({ outcomes: [written] })), libraries: status() }} />)
+      expect(
+        screen
+          .getAllByTestId(/^music-review-done-dest-(rekordbox|engine|traktor)$/)
+          .map((row) => within(row).getByTestId('music-review-done-dest-label').textContent),
+      ).toEqual(['rekordbox', 'Engine DJ', 'Traktor'])
     })
 
     // No DJ library synced anything: promising "libraries" told the user rekordbox had the
@@ -1252,6 +1261,28 @@ describe('MusicReview', () => {
     expect(detailOf('traktor')).toBe('1 copy replaced by the kept one')
   })
 
+  it('never says a copy Traktor replaced is still in its collection, as Traktor drops the entry it replaces', () => {
+    render(
+      <Panes
+        review={{
+          ...done(
+            run({
+              replaced: [
+                { from: '/a', traktor: 'replaced', fileTrashed: true, keptForLibrary: false },
+              ],
+            }),
+          ),
+          libraries: status(),
+        }}
+      />,
+    )
+    expect(
+      within(screen.getByTestId('music-review-done-dest-traktor')).getByTestId(
+        'music-review-done-dest-detail',
+      ).textContent,
+    ).toBe('1 copy replaced by the kept one')
+  })
+
   // Reported 08/10: rekordbox pointed at a deleted copy, the review applied to Music and
   // files, and the screens still promised rekordbox.
   describe('a library that is on but whose collection is missing', () => {
@@ -1266,11 +1297,29 @@ describe('MusicReview', () => {
       })
 
     it('shows its chip struck and explained instead of promising the sync', () => {
-      render(<Panes review={staged()} sync={{ rekordbox: true, engineDj: true, traktor: false }} />)
+      render(<Panes review={staged()} sync={{ rekordbox: true, engine: true, traktor: false }} />)
       const chip = screen.getByTestId('music-review-where-missing')
       expect(chip).toHaveTextContent('rekordbox')
       expect(chip).toHaveAttribute('title', 'Collection not found')
       expect(screen.getByTestId('music-review-affected')).toHaveTextContent('Engine DJ')
+    })
+
+    it('names every synced library where the change lands, always as rekordbox, Engine DJ and Traktor in that order', () => {
+      render(
+        <Panes
+          review={{ ...staged(), libraries: status() }}
+          sync={{ rekordbox: true, engine: true, traktor: true }}
+        />,
+      )
+      expect(
+        screen
+          .getAllByTestId(/^music-review-where-(rekordbox|engine|traktor)$/)
+          .map((chip) => [chip.dataset.testid, chip.textContent]),
+      ).toEqual([
+        ['music-review-where-rekordbox', 'rekordbox'],
+        ['music-review-where-engine', 'Engine DJ'],
+        ['music-review-where-traktor', 'Traktor'],
+      ])
     })
 
     it('names each missing library on the confirmation sheet', () => {
@@ -1730,7 +1779,7 @@ describe('MusicReview', () => {
       render(
         <Panes
           review={review({ affected })}
-          sync={{ rekordbox: true, engineDj: false, traktor: true }}
+          sync={{ rekordbox: true, engine: false, traktor: true }}
         />,
       )
       expect(affected).toHaveBeenCalledWith(group.key)
@@ -1759,7 +1808,7 @@ describe('MusicReview', () => {
       render(
         <Panes
           review={review({ affected })}
-          sync={{ rekordbox: false, engineDj: false, traktor: false }}
+          sync={{ rekordbox: false, engine: false, traktor: false }}
         />,
       )
       const [first, second] = screen.getAllByTestId('music-review-affected')
@@ -1782,7 +1831,7 @@ describe('MusicReview', () => {
       render(
         <Panes
           review={review({ affected })}
-          sync={{ rekordbox: false, engineDj: false, traktor: false }}
+          sync={{ rekordbox: false, engine: false, traktor: false }}
         />,
       )
       expect(screen.getByTestId('music-review-diff-from')).toHaveTextContent(/^j$/)
@@ -1805,7 +1854,7 @@ describe('MusicReview', () => {
       render(
         <Panes
           review={review({ affected })}
-          sync={{ rekordbox: false, engineDj: false, traktor: false }}
+          sync={{ rekordbox: false, engine: false, traktor: false }}
         />,
       )
       expect(screen.getByTestId('music-review-diff-from')).toHaveTextContent(/^e\u0301$/)

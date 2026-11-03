@@ -49,12 +49,13 @@ import type {
 } from '../../../shared/types'
 import { seedEditorSections } from '../hooks/useEditorSections'
 import { DEFAULT_SEPARATOR } from './csv'
+import type { DjAddKey } from './djReach'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './fields'
 
 // The slice of Settings the editor tree reads, resolved: settings arrive null for the
 // first frames, so every field carries its default here — in ONE place, instead of a
 // `?? fallback` per prop at every consumer (the 17-prop wall App used to pass Editor).
-interface ResolvedSettings {
+interface ResolvedSettings extends Record<DjAddKey, boolean> {
   discogsToken: string
   // Whether the background sweep auto-matches on import. The editor reads it so opening a
   // track only auto-applies a confident match when the user left auto-match on — off means
@@ -69,9 +70,6 @@ interface ResolvedSettings {
   outputBitDepth: OutputBitDepth
   outputSampleRate: OutputSampleRate
   addToAppleMusic: boolean
-  addToEngineDj: boolean
-  addToRekordbox: boolean
-  addToTraktor: boolean
   overwriteOriginal: boolean
   backupPolicy: NonNullable<Settings['backupPolicy']>
   convertBesideOriginal: boolean

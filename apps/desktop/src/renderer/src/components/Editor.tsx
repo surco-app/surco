@@ -19,7 +19,7 @@ import { tagsOnly } from '../../../shared/audioProcessing'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFields'
-import { programsInOrder } from '../../../shared/djProgram'
+import { DJ_PROGRAMS, programsInOrder } from '../../../shared/djProgram'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import type {
@@ -64,9 +64,9 @@ import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
 import type { DjLibraryId } from '../lib/djLibraries'
-import { reachedPrograms } from '../lib/djReach'
+import { DJ_COLLECTION_PATH, DJ_REACH_SETTINGS, reachedPrograms } from '../lib/djReach'
 import { editorPlace } from '../lib/editorPlace'
-import { buildFieldSpecs } from '../lib/fieldSpecs'
+import { buildFieldSpecs, type PlaylistsSpec } from '../lib/fieldSpecs'
 import {
   FIELD_DEFS,
   labeledFields,
@@ -127,6 +127,7 @@ import { Tooltip } from './Tooltip'
 import { TrimSection } from './TrimSection'
 
 const LIBRARY_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
+const COLLECTION_PATH_ORDER = programsInOrder(['traktor', 'rekordbox', 'engine'])
 
 interface Props {
   item: TrackItem
@@ -324,14 +325,13 @@ export const Editor = memo(function Editor({
   useSectionNavigation()
   // settingsContext.tsx). Memoized upstream on the settings identity, so the memo()
   // above keeps the same "only re-render when settings actually change" contract.
+  const appSettings = useAppSettings()
   const {
     discogsToken,
     autoMatch,
     outputFormat,
     addToAppleMusic,
     addToEngineDj,
-    addToRekordbox,
-    addToTraktor,
     keepMp3Sources,
     outputDir,
     overwriteOriginal,
@@ -364,21 +364,15 @@ export const Editor = memo(function Editor({
     outputSampleRate,
     editorSections,
     traktorNmlPath,
-    rekordboxDbPath,
-    engineLibraryDir,
-  } = useAppSettings()
+  } = appSettings
   const { data: libraries } = useQuery({
     queryKey: [
       'library-status',
-      addToRekordbox,
-      addToTraktor,
-      addToEngineDj,
-      traktorNmlPath,
-      rekordboxDbPath,
-      engineLibraryDir,
+      ...DJ_PROGRAMS.map((program) => appSettings[DJ_REACH_SETTINGS[program].add]),
+      ...COLLECTION_PATH_ORDER.map((program) => appSettings[DJ_COLLECTION_PATH[program]]),
     ],
     queryFn: () => window.api.libraryStatus(),
-    enabled: addToRekordbox || addToTraktor || addToEngineDj,
+    enabled: DJ_PROGRAMS.some((program) => appSettings[DJ_REACH_SETTINGS[program].add]),
   })
   const reachable = useMemo(
     () =>
@@ -1130,7 +1124,11 @@ export const Editor = memo(function Editor({
   const traktorPlaylists = usePlaylistsSpec('traktor', playlistsOf('traktor'))
   const enginePlaylists = usePlaylistsSpec('engine', playlistsOf('engine'))
   const playlistsSpec = useMemo(
-    () => ({ rekordbox: rekordboxPlaylists, traktor: traktorPlaylists, engine: enginePlaylists }),
+    (): Record<PlaylistLibrary, PlaylistsSpec | undefined> => ({
+      rekordbox: rekordboxPlaylists,
+      traktor: traktorPlaylists,
+      engine: enginePlaylists,
+    }),
     [rekordboxPlaylists, traktorPlaylists, enginePlaylists],
   )
 
@@ -1862,7 +1860,7 @@ export const Editor = memo(function Editor({
           willEditInPlace={willEditInPlace}
           tagsOnly={tagsOnlyExport}
           addToAppleMusic={picked.addToAppleMusic}
-          djTargets={reachedPrograms({ addToRekordbox, addToTraktor, addToEngineDj }, reachable)}
+          djTargets={reachedPrograms(appSettings, reachable)}
           openSource={openSource}
           destination={destination}
           destinations={destinationChoices}

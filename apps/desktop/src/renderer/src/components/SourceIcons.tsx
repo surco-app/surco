@@ -1,5 +1,6 @@
 import type React from 'react'
 import { useId } from 'react'
+import type { DjProgram } from '../../../shared/djProgram'
 
 type IconProps = { size: number; 'data-testid'?: string }
 
@@ -69,4 +70,8 @@ export function TraktorIcon({ size, ...rest }: IconProps): React.JSX.Element {
   )
 }
 
-export const LIBRARY_ICON = { rekordbox: RekordboxIcon, traktor: TraktorIcon, engine: EngineIcon }
+export const LIBRARY_ICON: Record<DjProgram, (props: IconProps) => React.JSX.Element> = {
+  rekordbox: RekordboxIcon,
+  traktor: TraktorIcon,
+  engine: EngineIcon,
+}
