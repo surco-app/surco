@@ -10,6 +10,9 @@ Medido el 03/11 tras el bloque 5 añadiendo `'serato'` a `DjProgram` (y revirtie
 - USB: `App.tsx` `useUsbVolumes(... === 'engine')` y la fuente del modal eligen el exportador (bloque 6/USB).
 - Campos por programa escritos a mano (bloque 6): banderas `fromRekordbox/fromTraktor/fromEngine` de `TrackItem`/`SessionEdit`, los seis campos `{rekordbox,traktor,engine}Playlists(Base)` del trabajo de conversión, ajustes `*PlaylistsFieldOffered`, `useTrackLibrary` (bandera de filas nuevas), invalidaciones de membership en `useRekordboxQueue` y `useTrackProcessing`, `cuesOpen` en `App.tsx`.
 
+- Claves de traducción por programa que el compilador no ve (se forman con plantillas): `sources.<programa>`, `sources.failed.<programa>`, `sources.notFound.<programa>`, `sources.hide.<programa>`, `settings.source<Programa>Unavailable`, y las de cues `editor.cues.<programa>.*`.
+- Recordatorio para Serato (a): `cuesOpen` en `App.tsx` y la bandera de filas nuevas de `useTrackLibrary` siguen escritos a mano; sin ellos Serato no abriría el editor de cues.
+
 ## Errores del compilador
 
 ```
