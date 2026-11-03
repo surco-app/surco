@@ -1845,4 +1845,30 @@ describe('CuesSection maximized grid', () => {
       gridFingerprint: 'g-queued',
     })
   })
+
+  it('names the cue that misses its beat, jumps to it and brings it onto the beat', async () => {
+    const offBeat = { ...READ, cues: [{ id: 'c1', ms: 31986, kind: 0, color: null }] }
+    setup(null, offBeat)
+    await maximize()
+    expect(screen.getByTestId('cues-offgrid')).toHaveTextContent('14 ms')
+    fireEvent.click(screen.getByTestId('cues-offgrid-go-31986'))
+    expect(position()).toBe('0:31.9')
+    fireEvent.click(screen.getByTestId('cues-offgrid-snap'))
+    expect(screen.getByTestId('cue-wave-call-32000')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-offgrid')).toBeNull()
+    key('z', { metaKey: true })
+    expect(screen.getByTestId('cue-wave-call-31986')).toBeInTheDocument()
+  })
+
+  it('also names it in the small editor, where the filter sends the DJ first', async () => {
+    setup(null, { ...READ, cues: [{ id: 'c1', ms: 31986, kind: 0, color: null }] })
+    await ready()
+    expect(screen.getByTestId('cues-offgrid')).toBeInTheDocument()
+  })
+
+  it('says nothing for a cue inside the tolerance', async () => {
+    setup(null, { ...READ, cues: [{ id: 'c1', ms: 31994, kind: 0, color: null }] })
+    await ready()
+    expect(screen.queryByTestId('cues-offgrid')).toBeNull()
+  })
 })

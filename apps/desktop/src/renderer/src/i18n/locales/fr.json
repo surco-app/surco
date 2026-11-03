@@ -1044,6 +1044,14 @@
         "provisional": "rekordbox n'a pas encore analysé ce morceau, il n'y a pas de grille à régler",
         "varying": "Grille à plusieurs tempos, réglez-la dans le logiciel",
         "surcoDraft": "Ces cues ont été posés sur la grille de Surco. Enregistrez-les ou annulez-les pour régler la grille"
+      },
+      "offGrid": {
+        "count_one": "{{count}} cue ne tombe pas sur le temps",
+        "count_other": "{{count}} cues ne tombent pas sur le temps",
+        "before": "{{ms}} ms en avance",
+        "after": "{{ms}} ms en retard",
+        "go": "Aller au cue",
+        "snap": "Caler sur le temps"
       }
     }
   },

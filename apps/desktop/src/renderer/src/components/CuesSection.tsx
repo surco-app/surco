@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { activeCueFlow, DEFAULT_CUE_FLOW_ID, MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
+import { offGridCues } from '../../../shared/cueGrid'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { BEATS_PER_BAR, nearestBeat, SAME_POSITION_MS } from '../../../shared/cueRules'
@@ -104,6 +105,7 @@ import { formatShortcut } from '../lib/shortcuts'
 import { claimKeys } from '../lib/spaceClaim'
 import { CueDeck } from './CueDeck'
 import { CueGridControls } from './CueGridControls'
+import { CueOffGridBar } from './CueOffGridBar'
 import { CuePalette } from './CuePalette'
 import { CuePhraseBand } from './CuePhraseBand'
 import { CueWave } from './CueWave'
@@ -1034,6 +1036,28 @@ function Editing({
   const acceptLabel = tr('editor.cues.auto.accept', { count: proposals.length })
   const discardLabel = tr('editor.cues.auto.discard', { count: proposals.length })
   const sureCount = proposals.filter((p) => p.sure).length
+  const offGrid = provisional
+    ? []
+    : offGridCues(state.cues, ctx.beats, settings.cueGridTolerance).map(({ cue, driftMs }) => ({
+        key: cue.key,
+        kind: cue.kind,
+        ms: cue.ms,
+        driftMs,
+      }))
+  const offGridBar = (
+    <CueOffGridBar
+      off={offGrid}
+      spaced={!maximized}
+      onGo={(ms) => {
+        seekTo(ms)
+        focusEditor()
+      }}
+      onSnap={() => {
+        dispatch({ type: 'snap-to-beat', keys: offGrid.map((o) => o.key) })
+        focusEditor()
+      }}
+    />
+  )
   const reviewBar = proposals.length > 0 && (
     <div
       data-testid="cues-auto-review"
@@ -1506,6 +1530,7 @@ function Editing({
         <>
           {toolbar}
           {reviewBar}
+          {offGridBar}
           <div className="flex shrink-0 flex-col gap-1">
             {strip}
             <CuePhraseBand sections={read.sections ?? []} durationMs={read.durationMs} />
@@ -1516,6 +1541,7 @@ function Editing({
       ) : (
         <>
           {reviewBar}
+          {offGridBar}
           <div
             data-testid="cues-surface"
             className="overflow-hidden rounded-md bg-[var(--color-panel-2)]"

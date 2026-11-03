@@ -1044,6 +1044,14 @@
         "provisional": "rekordbox hat diesen Titel noch nicht analysiert, es gibt kein Raster",
         "varying": "Raster mit mehreren Tempi, im Programm anpassen",
         "surcoDraft": "Diese Cues wurden auf dem Surco-Raster gesetzt. Speichere oder verwirf sie, um das Raster anzupassen"
+      },
+      "offGrid": {
+        "count_one": "{{count}} Cue liegt nicht auf dem Schlag",
+        "count_other": "{{count}} Cues liegen nicht auf dem Schlag",
+        "before": "{{ms}} ms zu früh",
+        "after": "{{ms}} ms zu spät",
+        "go": "Zum Cue",
+        "snap": "Auf den Schlag setzen"
       }
     }
   },
