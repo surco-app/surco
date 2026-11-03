@@ -35,6 +35,26 @@ describe('syncLibraryTags', () => {
     expect(warn).toHaveBeenCalledWith('traktor', expect.any(Error))
   })
 
+  it('syncs traktor, then rekordbox, then engine, and a failure in the middle stops none', async () => {
+    const calls: string[] = []
+    const flusher =
+      (library: string, fail = false) =>
+      async () => {
+        calls.push(library)
+        if (fail) throw new Error('boom')
+        return NOTHING
+      }
+    const report = await syncLibraryTags({
+      traktor: flusher('traktor'),
+      rekordbox: flusher('rekordbox', true),
+      engine: flusher('engine'),
+      warn: vi.fn(),
+    })
+    expect(calls).toEqual(['traktor', 'rekordbox', 'engine'])
+    expect(Object.keys(report)).toEqual(['traktor', 'rekordbox', 'engine'])
+    expect(report.rekordbox).toEqual({ outcome: 'failed' })
+  })
+
   // A conversion run's flush and a review's sync both rewrite the same databases (Engine's
   // m.db outside its own queue, the same temp names); interleaved, one clobbers the other.
   it('waits for a running library flush before syncing', async () => {

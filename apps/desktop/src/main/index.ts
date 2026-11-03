@@ -42,6 +42,7 @@ import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
 import { trashLimits } from '../shared/backupPolicy'
 import { activeCueFlow } from '../shared/cueFlows'
+import type { DjProgram } from '../shared/djProgram'
 import type { TunedTaste } from '../shared/dropTaste'
 import { errorWithKey } from '../shared/errorKeys'
 import {
@@ -157,6 +158,7 @@ import { configureBackupStore } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
 import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
 import { runProcessTrack } from './processTrack'
+import { createProgramQueue, type ProgramQueueDeps } from './programQueue'
 import { getProvider } from './providers'
 import { createQuitGuard } from './quitGuard'
 import { trashRecoverably, trashWithoutRoom } from './recoverableTrash'
@@ -177,9 +179,9 @@ import { findRekordboxCollection } from './rekordboxPath'
 import { keyOf, registerRekordboxPlaylistsIpc } from './rekordboxPlaylistsIpc'
 import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
 import { adjustProvisional, createProvisionalList } from './rekordboxProvisional'
-import { createRekordboxQueue, fileStore, type QueueApply } from './rekordboxQueue'
-import { appliedNotice, registerRekordboxQueueIpc } from './rekordboxQueueIpc'
-import { stillWaiting, watchRekordboxQueue } from './rekordboxQueueWatch'
+import { fileStore } from './rekordboxQueue'
+import { registerRekordboxQueueIpc } from './rekordboxQueueIpc'
+import { stillWaiting } from './rekordboxQueueWatch'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { loadLastSession, saveLastSession } from './session'
@@ -346,150 +348,8 @@ const fileSignatures = createFileSignatures({
 configureFileSignatures(fileSignatures)
 setInterval(() => fileSignatures.flush(), 5000).unref()
 app.on('will-quit', () => fileSignatures.flush())
-const rekordboxQueue = createRekordboxQueue({
-  store: fileStore(join(app.getPath('userData'), 'rekordbox-queue.json')),
-  collection: rekordboxCollectionPath,
-  configured: () => getSettings().rekordboxDbPath,
-  applyBatch: (collectionPath, ops, ensureClosed, stillQueued) =>
-    applyRekordboxBatch(collectionPath, ops, {
-      ensureClosed,
-      stillQueued,
-      sessionBackup: (path) => sessions.rekordbox.ensure(path),
-      realPath: (p: string) => realpathSync(p),
-    }),
-  repoint: async (collectionPath, list) => {
-    const results = await repointRekordbox(collectionPath, list, sessions)
-    queueChecks.repointed('rekordbox', results)
-    return results
-  },
-  nodeStamps: async (collectionPath) => readNodeStamps(collectionPath),
-  onChange: (state) => broadcast('rekordbox:queueChanged', state),
-})
-const provisionalCues = createProvisionalList(
-  fileStore(join(app.getPath('userData'), 'rekordbox-provisional.json')),
-  () => rekordboxQueueWatch.poke(),
-)
-const cueTaste = createCueTaste(fileStore(join(app.getPath('userData'), 'cue-taste.json')), {
-  readCollection: () => readCollectionMarksAt(rekordboxCollectionPath()),
-  tune: (tracks) => runInWorker<TunedTaste | null>({ type: 'tuneDrops', tracks }),
-  onLearned: () => broadcast('cues:profileChanged', null),
-})
-const adjustProvisionalCues = (): void =>
-  adjustProvisional({
-    list: provisionalCues,
-    collection: rekordboxCollectionPath,
-    queue: rekordboxQueue,
-    newId: randomUUID,
-    unsaved: () => unsavedCueTracks,
-  })
-const announceApplied = (result: QueueApply): void => {
-  const notice = appliedNotice(result)
-  if (notice) broadcast('rekordbox:queueApplied', notice)
-  queueChecks.settled('rekordbox', result)
-}
-const rekordboxQueueWatch = watchRekordboxQueue({
-  queue: {
-    isEmpty: () => rekordboxQueue.isEmpty(),
-    apply: (ensureClosed) =>
-      serialLibraryFlush(() => {
-        moments.begin('queue', ['rekordbox'])
-        return rekordboxQueue.apply(ensureClosed)
-      }),
-  },
-  collection: rekordboxCollectionPath,
-  isRunning: DJ_PROCESSES.rekordbox.isRunning,
-  onApplied: announceApplied,
-  alwaysWatch: () => getSettings().completeCuesOnClose || provisionalCues.all().length > 0,
-  onClosed: () => {
-    completeOnClose({
-      enabled: () => getSettings().completeCuesOnClose,
-      collection: rekordboxCollectionPath,
-      flow: () => activeCueFlow(getSettings()),
-      queue: rekordboxQueue,
-      unsaved: () => unsavedCueTracks,
-    })
-    adjustProvisionalCues()
-  },
-})
-const adjustProvisionalCuesOnLaunch = async (): Promise<void> => {
-  if (provisionalCues.all().length > 0 && !(await DJ_PROCESSES.rekordbox.isRunning()))
-    adjustProvisionalCues()
-  rekordboxQueueWatch.poke()
-}
-const applyRekordboxQueueQuietly = (serial = serialLibraryFlush): void => {
-  if (!rekordboxCollectionPath()) {
-    rekordboxQueueWatch.poke()
-    return
-  }
-  void serial(() =>
-    rekordboxQueue.apply(async () => !(await DJ_PROCESSES.rekordbox.isRunning())),
-  ).then(
-    (result) => {
-      announceApplied(result)
-      if (stillWaiting(result)) rekordboxQueueWatch.poke()
-    },
-    () => queueChecks.settled('rekordbox', 'threw'),
-  )
-}
 const engineLibraryPath = (): string =>
   currentLibraryStatus().engine.found ? getSettings().engineLibraryDir : ''
-const engineCueQueue = createRekordboxQueue({
-  store: fileStore(join(app.getPath('userData'), 'engine-cue-queue.json')),
-  collection: engineLibraryPath,
-  configured: () => getSettings().engineLibraryDir,
-  applyBatch: (libraryDir, ops, ensureClosed) =>
-    applyEngineCuesBatch(libraryDir, ops, {
-      ensureClosed,
-      sessionBackup: (path) => sessions.engine.ensure(path),
-    }),
-  repoint: async (libraryDir, list) => {
-    const results = await repointEngineQueued(libraryDir, list, sessions)
-    queueChecks.repointed('engine', results)
-    return results
-  },
-  nodeStamps: async () => ({}),
-  onChange: (state) => broadcast('engine:cueQueueChanged', state),
-  addsTracks: false,
-  stack: stackRepoint,
-})
-const announceEngineApplied = (result: QueueApply): void => {
-  const notice = appliedNotice(result)
-  if (notice) broadcast('engine:cueQueueApplied', notice)
-  queueChecks.settled('engine', result)
-}
-const engineCueQueueWatch = watchRekordboxQueue({
-  queue: {
-    isEmpty: () => engineCueQueue.isEmpty(),
-    apply: (ensureClosed) =>
-      serialLibraryFlush(() => {
-        moments.begin('queue', ['engine'])
-        return engineCueQueue.apply(ensureClosed)
-      }),
-  },
-  collection: engineLibraryPath,
-  isRunning: DJ_PROCESSES.engine.isRunning,
-  onApplied: announceEngineApplied,
-})
-const followEngineSize = engineSizeFollower({
-  enabled: () => getSettings().syncEngineDj,
-  enqueue: engineCueQueue.enqueue,
-  apply: () => applyEngineCueQueueQuietly(),
-})
-const applyEngineCueQueueQuietly = (serial = serialLibraryFlush): void => {
-  if (!engineLibraryPath()) {
-    engineCueQueueWatch.poke()
-    return
-  }
-  void serial(() =>
-    engineCueQueue.apply(async () => !(await DJ_PROCESSES.engine.isRunning())),
-  ).then(
-    (result) => {
-      announceEngineApplied(result)
-      if (stillWaiting(result)) engineCueQueueWatch.poke()
-    },
-    () => queueChecks.settled('engine', 'threw'),
-  )
-}
 // The tab reads the collection Settings names or, without one, the newest Traktor found;
 // cues are written only to the one the DJ confirmed in Settings (see traktorNmlPath.ts).
 const traktorReadPath = (): string =>
@@ -508,72 +368,156 @@ const traktorWritePath = (): string => {
   const path = getSettings().traktorNmlPath
   return path && existsSync(path) ? path : ''
 }
-const traktorCueQueue = createRekordboxQueue<QueuedNmlPatch>({
-  store: fileStore(join(app.getPath('userData'), 'traktor-cue-queue.json')),
-  collection: traktorWritePath,
-  configured: () => getSettings().traktorNmlPath,
-  applyBatch: (nml, ops, ensureClosed) =>
-    applyTraktorBatch(nml, ops, { ensureClosed, session: sessions.traktor }),
-  repoint: async (nml, patches) => {
-    let write: TraktorWrite = 'failed'
-    const results = await syncQueuedPatches(
-      nml,
-      patches,
-      async (path, list) => {
-        const result = await syncCollection(path, list, sessions.traktor)
-        write = traktorWrite(list, result)
-        return result
-      },
-      bootVolumeName(),
-    )
-    queueChecks.repointed('traktor', results, write)
-    return results
-  },
-  nodeStamps: async () => ({}),
-  onChange: (state) => broadcast('traktor:cueQueueChanged', state),
-  addsTracks: false,
-})
-const announceTraktorApplied = (result: QueueApply): void => {
-  const notice = appliedNotice(result)
-  if (notice) broadcast('traktor:cueQueueApplied', notice)
-  queueChecks.settled('traktor', result)
+const programQueueDeps: ProgramQueueDeps = {
+  broadcast,
+  settled: (program, result) => queueChecks.settled(program, result),
+  moments,
+  serial: serialLibraryFlush,
+  processes: DJ_PROCESSES,
 }
-const traktorCueQueueWatch = watchRekordboxQueue({
-  queue: {
-    isEmpty: () => traktorCueQueue.isEmpty(),
-    apply: (ensureClosed) =>
-      serialLibraryFlush(() => {
-        moments.begin('queue', ['traktor'])
-        return traktorCueQueue.apply(ensureClosed)
-      }),
-  },
-  collection: traktorWritePath,
-  isRunning: DJ_PROCESSES.traktor.isRunning,
-  onApplied: announceTraktorApplied,
+const programQueues = {
+  rekordbox: createProgramQueue(
+    {
+      program: 'rekordbox',
+      queue: {
+        store: fileStore(join(app.getPath('userData'), 'rekordbox-queue.json')),
+        collection: rekordboxCollectionPath,
+        configured: () => getSettings().rekordboxDbPath,
+        applyBatch: (collectionPath, ops, ensureClosed, stillQueued) =>
+          applyRekordboxBatch(collectionPath, ops, {
+            ensureClosed,
+            stillQueued,
+            sessionBackup: (path) => sessions.rekordbox.ensure(path),
+            realPath: (p: string) => realpathSync(p),
+          }),
+        repoint: async (collectionPath, list) => {
+          const results = await repointRekordbox(collectionPath, list, sessions)
+          queueChecks.repointed('rekordbox', results)
+          return results
+        },
+        nodeStamps: async (collectionPath) => readNodeStamps(collectionPath),
+        onChange: (state) => broadcast('rekordbox:queueChanged', state),
+      },
+      appliedChannel: 'rekordbox:queueApplied',
+      alwaysWatch: () => getSettings().completeCuesOnClose || provisionalCues.all().length > 0,
+      onClosed: () => {
+        completeOnClose({
+          enabled: () => getSettings().completeCuesOnClose,
+          collection: rekordboxCollectionPath,
+          flow: () => activeCueFlow(getSettings()),
+          queue: rekordboxQueue,
+          unsaved: () => unsavedCueTracks,
+        })
+        adjustProvisionalCues()
+      },
+    },
+    programQueueDeps,
+  ),
+  engine: createProgramQueue(
+    {
+      program: 'engine',
+      queue: {
+        store: fileStore(join(app.getPath('userData'), 'engine-cue-queue.json')),
+        collection: engineLibraryPath,
+        configured: () => getSettings().engineLibraryDir,
+        applyBatch: (libraryDir, ops, ensureClosed) =>
+          applyEngineCuesBatch(libraryDir, ops, {
+            ensureClosed,
+            sessionBackup: (path) => sessions.engine.ensure(path),
+          }),
+        repoint: async (libraryDir, list) => {
+          const results = await repointEngineQueued(libraryDir, list, sessions)
+          queueChecks.repointed('engine', results)
+          return results
+        },
+        nodeStamps: async () => ({}),
+        onChange: (state) => broadcast('engine:cueQueueChanged', state),
+        addsTracks: false,
+        stack: stackRepoint,
+      },
+      appliedChannel: 'engine:cueQueueApplied',
+    },
+    programQueueDeps,
+  ),
+  traktor: createProgramQueue<QueuedNmlPatch, 'traktor'>(
+    {
+      program: 'traktor',
+      queue: {
+        store: fileStore(join(app.getPath('userData'), 'traktor-cue-queue.json')),
+        collection: traktorWritePath,
+        configured: () => getSettings().traktorNmlPath,
+        applyBatch: (nml, ops, ensureClosed) =>
+          applyTraktorBatch(nml, ops, { ensureClosed, session: sessions.traktor }),
+        repoint: async (nml, patches) => {
+          let write: TraktorWrite = 'failed'
+          const results = await syncQueuedPatches(
+            nml,
+            patches,
+            async (path, list) => {
+              const result = await syncCollection(path, list, sessions.traktor)
+              write = traktorWrite(list, result)
+              return result
+            },
+            bootVolumeName(),
+          )
+          queueChecks.repointed('traktor', results, write)
+          return results
+        },
+        nodeStamps: async () => ({}),
+        onChange: (state) => broadcast('traktor:cueQueueChanged', state),
+        addsTracks: false,
+      },
+      appliedChannel: 'traktor:cueQueueApplied',
+    },
+    programQueueDeps,
+  ),
+} satisfies { [P in DjProgram]: { program: P } }
+const rekordboxQueue = programQueues.rekordbox.queue
+const announceApplied = programQueues.rekordbox.announceApplied
+const rekordboxQueueWatch = programQueues.rekordbox.watch
+const applyRekordboxQueueQuietly = programQueues.rekordbox.applyQuietly
+const engineCueQueue = programQueues.engine.queue
+const engineCueQueueWatch = programQueues.engine.watch
+const applyEngineCueQueueQuietly = programQueues.engine.applyQuietly
+const traktorCueQueue = programQueues.traktor.queue
+const announceTraktorApplied = programQueues.traktor.announceApplied
+const traktorCueQueueWatch = programQueues.traktor.watch
+// A conversion run's collection patches held because Traktor stayed open or the write
+// failed: written as soon as Traktor is closed, without asking again. Held for a drive that
+// is unplugged, nothing is tried: the watch waits for the collection to be back.
+const applyTraktorCueQueueQuietly = programQueues.traktor.applyQuietly
+const provisionalCues = createProvisionalList(
+  fileStore(join(app.getPath('userData'), 'rekordbox-provisional.json')),
+  () => rekordboxQueueWatch.poke(),
+)
+const cueTaste = createCueTaste(fileStore(join(app.getPath('userData'), 'cue-taste.json')), {
+  readCollection: () => readCollectionMarksAt(rekordboxCollectionPath()),
+  tune: (tracks) => runInWorker<TunedTaste | null>({ type: 'tuneDrops', tracks }),
+  onLearned: () => broadcast('cues:profileChanged', null),
+})
+const adjustProvisionalCues = (): void =>
+  adjustProvisional({
+    list: provisionalCues,
+    collection: rekordboxCollectionPath,
+    queue: rekordboxQueue,
+    newId: randomUUID,
+    unsaved: () => unsavedCueTracks,
+  })
+const adjustProvisionalCuesOnLaunch = async (): Promise<void> => {
+  if (provisionalCues.all().length > 0 && !(await DJ_PROCESSES.rekordbox.isRunning()))
+    adjustProvisionalCues()
+  rekordboxQueueWatch.poke()
+}
+const followEngineSize = engineSizeFollower({
+  enabled: () => getSettings().syncEngineDj,
+  enqueue: engineCueQueue.enqueue,
+  apply: () => applyEngineCueQueueQuietly(),
 })
 // A save from the editor asks to close Traktor, as a playlist edit does; declined, it stays
 // queued and lands when Traktor closes.
 const applyTraktorCueQueueAsking = (win: BrowserWindow | null): void => {
   void serialLibraryFlush(() =>
     traktorCueQueue.apply(() => ensureClosed('traktor', win, 'cues')),
-  ).then(
-    (result) => {
-      announceTraktorApplied(result)
-      if (stillWaiting(result)) traktorCueQueueWatch.poke()
-    },
-    () => queueChecks.settled('traktor', 'threw'),
-  )
-}
-// A conversion run's collection patches held because Traktor stayed open or the write
-// failed: written as soon as Traktor is closed, without asking again. Held for a drive that
-// is unplugged, nothing is tried: the watch waits for the collection to be back.
-const applyTraktorCueQueueQuietly = (serial = serialLibraryFlush): void => {
-  if (!traktorWritePath()) {
-    traktorCueQueueWatch.poke()
-    return
-  }
-  void serial(() =>
-    traktorCueQueue.apply(async () => !(await DJ_PROCESSES.traktor.isRunning())),
   ).then(
     (result) => {
       announceTraktorApplied(result)

@@ -1,13 +1,11 @@
+import type { DjProgram } from '../shared/djProgram'
 import { programsInOrder } from '../shared/djProgram'
 import type { LibraryTagSync, LibraryTagSyncReport } from '../shared/types'
 import type { FlushResult } from './libraryRepointFlush'
 
 const LIBRARY_ORDER = programsInOrder(['traktor', 'rekordbox', 'engine'])
 
-export interface LibraryTagFlushers {
-  traktor: () => Promise<LibraryTagSync>
-  rekordbox: () => Promise<LibraryTagSync>
-  engine: () => Promise<LibraryTagSync>
+export interface LibraryTagFlushers extends Record<DjProgram, () => Promise<LibraryTagSync>> {
   warn: (library: string, error: unknown) => void
   begin?: () => void
 }

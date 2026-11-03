@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import type { DjProgram } from '../shared/djProgram'
+import { programsInOrder } from '../shared/djProgram'
 import { engineContentId } from '../shared/engineContent'
 import { traktorContentId } from '../shared/traktorContent'
 import type { LibraryCopyInfo, LibraryCopyPresence, LibraryTracks } from '../shared/types'
@@ -14,6 +15,8 @@ import { traktorFileOf } from './traktorPlaylists'
 
 // Each library's location, or '' when its sync is off.
 export type SyncedLibraries = Record<DjProgram, string>
+
+const LIBRARY_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
 
 // Read only, and it throws when a library it should look in cannot be read: the caller
 // keeps the file then, since that library may still use it.
@@ -36,28 +39,32 @@ export function djLibraryFileUse(
   let rekordboxKey: Promise<string> | undefined
   let engineRows: ReturnType<typeof readEngineRows> | undefined
   let nmlFiles: Promise<Map<string, string[]>> | undefined
-  return async (path) => {
-    if (libraries.rekordbox) {
-      rekordboxKey ??= rekordboxRawKey(libraries.rekordbox)
-      const db = openRekordboxDb(libraries.rekordbox, { readonly: true, key: await rekordboxKey })
-      if (!db) throw new Error(`rekordbox collection unreadable: ${libraries.rekordbox}`)
+  const holds: Record<DjProgram, (location: string, path: string) => Promise<boolean>> = {
+    rekordbox: async (collection, path) => {
+      rekordboxKey ??= rekordboxRawKey(collection)
+      const db = openRekordboxDb(collection, { readonly: true, key: await rekordboxKey })
+      if (!db) throw new Error(`rekordbox collection unreadable: ${collection}`)
       try {
-        if (findTrackByPath(db, path, options) !== null) return true
+        return findTrackByPath(db, path, options) !== null
       } finally {
         db.close()
       }
-    }
-    if (libraries.engine) {
-      engineRows ??= readEngineRows(libraries.engine)
-      if ((await engineRows)(path, key).length > 0) return true
-    }
-    if (libraries.traktor) {
-      nmlFiles ??= readFile(libraries.traktor, 'utf8').then(traktorFiles)
+    },
+    engine: async (libraryDir, path) => {
+      engineRows ??= readEngineRows(libraryDir)
+      return (await engineRows)(path, key).length > 0
+    },
+    traktor: async (nmlPath, path) => {
+      nmlFiles ??= readFile(nmlPath, 'utf8').then(traktorFiles)
       const nfc = path.normalize('NFC')
       const target = key(nfc)
       const sameName = (await nmlFiles).get(basename(nfc).toLowerCase()) ?? []
-      if (sameName.some((file) => key(file) === target)) return true
-    }
+      return sameName.some((file) => key(file) === target)
+    },
+  }
+  return async (path) => {
+    for (const library of LIBRARY_ORDER)
+      if (libraries[library] && (await holds[library](libraries[library], path))) return true
     return false
   }
 }
@@ -145,6 +152,22 @@ async function engineInfo(
   }
 }
 
+const COPY_INFO: Record<
+  DjProgram,
+  (
+    location: string,
+    paths: string[],
+    options: PathMatchOptions,
+  ) => LibraryCopyPresence[] | Promise<LibraryCopyPresence[]>
+> = {
+  rekordbox: rekordboxInfo,
+  engine: engineInfo,
+  traktor: async (nmlPath, paths) => {
+    const nml = await readFile(nmlPath, 'utf8')
+    return paths.map((p) => nmlCopyInfo(nml, toNmlLocation(p)))
+  },
+}
+
 // Read only, for the duplicate detail: what each enabled library holds for each copy. A
 // library that cannot be read is left out rather than reported, since this only informs.
 export async function libraryCopyInfo(
@@ -157,23 +180,10 @@ export async function libraryCopyInfo(
     paths.forEach((p, i) => {
       info[p][library] = found[i]
     })
-  if (libraries.rekordbox) {
+  for (const library of LIBRARY_ORDER) {
+    if (!libraries[library]) continue
     try {
-      fill('rekordbox', rekordboxInfo(libraries.rekordbox, paths, options))
-    } catch {}
-  }
-  if (libraries.engine) {
-    try {
-      fill('engine', await engineInfo(libraries.engine, paths, options))
-    } catch {}
-  }
-  if (libraries.traktor) {
-    try {
-      const nml = await readFile(libraries.traktor, 'utf8')
-      fill(
-        'traktor',
-        paths.map((p) => nmlCopyInfo(nml, toNmlLocation(p))),
-      )
+      fill(library, await COPY_INFO[library](libraries[library], paths, options))
     } catch {}
   }
   return info
@@ -266,6 +276,52 @@ export async function libraryGenresOf(
   return out
 }
 
+const TRACK_OF: Record<
+  DjProgram,
+  (location: string, path: string, options: PathMatchOptions) => Promise<string | undefined>
+> = {
+  rekordbox: async (collection, path, options) => {
+    const db = openRekordboxDb(collection, {
+      readonly: true,
+      key: await rekordboxRawKey(collection),
+    })
+    if (db)
+      try {
+        const match = findTrackByPath(db, path, { ...options, quiet: true })
+        if (match !== null && !isAmbiguous(match)) return match.id
+      } finally {
+        db.close()
+      }
+    return undefined
+  },
+  engine: async (libraryDir, path, options) => {
+    const SQL = await loadSqlJs()
+    const db = new SQL.Database(await readFile(join(libraryDir, 'Database2', 'm.db')))
+    try {
+      const rows = (db.exec('SELECT id, path FROM Track')[0]?.values ?? []).map(([id, stored]) => ({
+        id: Number(id),
+        path: String(stored),
+      }))
+      const found = engineRowFinder(libraryDir, rows)(path, pathKey(options))
+      return found.length === 1 ? engineContentId(found[0].id) : undefined
+    } finally {
+      db.close()
+    }
+  },
+  traktor: async (nmlPath, path) => {
+    const entries = findEntries(await readFile(nmlPath, 'utf8'))
+    const at = toNmlLocation(path)
+    const same = (a: string, b: string) => a.normalize('NFC') === b.normalize('NFC')
+    const found = entries.filter(
+      (e) =>
+        same(e.dir, at.dir) && same(e.file, at.file) && (!at.volume || same(e.volume, at.volume)),
+    )
+    return found.length === 1
+      ? traktorContentId(`${found[0].volume}${found[0].dir}${found[0].file}`)
+      : undefined
+  },
+}
+
 // Read only: the id each library gives the file, for the cue editor to place a flow on the
 // same track everywhere. A library that cannot be read, lacks the file or holds it twice is
 // left out, since there is then no one track to write to.
@@ -275,47 +331,11 @@ export async function libraryTracksOf(
   options: PathMatchOptions = {},
 ): Promise<LibraryTracks> {
   const out: LibraryTracks = {}
-  if (libraries.rekordbox) {
+  for (const library of LIBRARY_ORDER) {
+    if (!libraries[library]) continue
     try {
-      const db = openRekordboxDb(libraries.rekordbox, {
-        readonly: true,
-        key: await rekordboxRawKey(libraries.rekordbox),
-      })
-      if (db)
-        try {
-          const match = findTrackByPath(db, path, { ...options, quiet: true })
-          if (match !== null && !isAmbiguous(match)) out.rekordbox = match.id
-        } finally {
-          db.close()
-        }
-    } catch {}
-  }
-  if (libraries.engine) {
-    try {
-      const SQL = await loadSqlJs()
-      const db = new SQL.Database(await readFile(join(libraries.engine, 'Database2', 'm.db')))
-      try {
-        const rows = (db.exec('SELECT id, path FROM Track')[0]?.values ?? []).map(
-          ([id, stored]) => ({ id: Number(id), path: String(stored) }),
-        )
-        const found = engineRowFinder(libraries.engine, rows)(path, pathKey(options))
-        if (found.length === 1) out.engine = engineContentId(found[0].id)
-      } finally {
-        db.close()
-      }
-    } catch {}
-  }
-  if (libraries.traktor) {
-    try {
-      const entries = findEntries(await readFile(libraries.traktor, 'utf8'))
-      const at = toNmlLocation(path)
-      const same = (a: string, b: string) => a.normalize('NFC') === b.normalize('NFC')
-      const found = entries.filter(
-        (e) =>
-          same(e.dir, at.dir) && same(e.file, at.file) && (!at.volume || same(e.volume, at.volume)),
-      )
-      if (found.length === 1)
-        out.traktor = traktorContentId(`${found[0].volume}${found[0].dir}${found[0].file}`)
+      const track = await TRACK_OF[library](libraries[library], path, options)
+      if (track !== undefined) out[library] = track
     } catch {}
   }
   return out

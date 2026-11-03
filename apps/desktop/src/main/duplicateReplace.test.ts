@@ -95,6 +95,14 @@ describe('replaceDuplicates', () => {
     },
   )
 
+  it('trashes the file when only Traktor replaced the removed copy', async () => {
+    const d = deps({ libraries: { traktor: step('replaced') } })
+    expect(await replaceDuplicates([PAIR], d)).toEqual([
+      { from: PAIR.from, traktor: 'replaced', fileTrashed: true, keptForLibrary: false },
+    ])
+    expect(d.trash).toHaveBeenCalledWith(PAIR.from)
+  })
+
   // A library left on the removed file would show a missing track if the file went.
   it.each(['skipped', 'failed'] as const)('keeps the file when a library step is %s', async (o) => {
     const d = deps({ libraries: { rekordbox: step('replaced'), engine: step(o) } })
@@ -276,6 +284,7 @@ describe('outcomeOf', () => {
     for (const reason of [
       'rekordbox-running',
       'engine-running',
+      'traktor-running',
       'backup-failed',
       'unreadable',
       'read-only',

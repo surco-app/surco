@@ -1,6 +1,6 @@
 # Mapa de Serato: lo que el compilador obliga a decidir
 
-Medido el 03/11 tras el bloque 6c añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
+Medido el 03/11 tras el bloque 6g añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
 
 ## Añadidos a mano (el compilador no los ve)
 
@@ -14,6 +14,7 @@ Medido el 03/11 tras el bloque 6c añadiendo `'serato'` a `DjProgram` (y revirti
 - Recordatorio para Serato (a): `cuesOpen` en `App.tsx` y la bandera de filas nuevas de `useTrackLibrary` siguen escritos a mano; sin ellos Serato no abriría el editor de cues.
 
 - Vaciado tras convertir: `repointEngineQueued` renombra `engine-running` a `'rekordbox-running'` y `queueConversionRun` compara con `'rekordbox-running'`; el tipo `ConversionQueues` tiene claves fijas (el flusher de Serato exigirá su cola en la práctica).
+- Añadir durante el trabajo (6d): solo Engine se añade a su biblioteca durante la conversión (`processTrack.ts` pasos de Engine, adaptador en `index.ts`, `isAppleMusicOnly`, `engineSizeFollow`); un programa que lo necesite añadirá su propio paso. Y `libraryFileUse.ts` `libraryGenresOf`: cadena de `if` por programa; el orden rekordbox, engine, traktor se ve en la lista de géneros.
 
 ## Errores del compilador
 
@@ -49,16 +50,18 @@ src/main/djProcesses.ts:76 TS2344
 src/main/djProcesses.ts:77 TS2536
 src/main/djProcesses.ts:82 TS2741
 src/main/duplicateReplace.ts:17 TS2345
-src/main/duplicateReplace.ts:174 TS7053
-src/main/index.ts:1382 TS2741
+src/main/duplicateReplace.ts:66 TS2741
+src/main/duplicateReplace.ts:71 TS2741
+src/main/index.ts:1326 TS2741
+src/main/index.ts:1465 TS2741
+src/main/index.ts:1496 TS2741
+src/main/index.ts:1507 TS2741
 src/main/index.ts:1521 TS2741
-src/main/index.ts:1552 TS2741
-src/main/index.ts:1563 TS2741
-src/main/index.ts:1577 TS2741
-src/main/index.ts:1609 TS2741
-src/main/index.ts:1622 TS2741
-src/main/index.ts:2055 TS2741
-src/main/index.ts:323 TS2741
+src/main/index.ts:1553 TS2741
+src/main/index.ts:1566 TS2741
+src/main/index.ts:1999 TS2741
+src/main/index.ts:325 TS2741
+src/main/index.ts:474 TS2741
 src/main/libraryFileUse.test.ts:104 TS2741
 src/main/libraryFileUse.test.ts:105 TS2741
 src/main/libraryFileUse.test.ts:120 TS2741
@@ -67,31 +70,39 @@ src/main/libraryFileUse.test.ts:131 TS2741
 src/main/libraryFileUse.test.ts:132 TS2741
 src/main/libraryFileUse.test.ts:139 TS2741
 src/main/libraryFileUse.test.ts:149 TS2741
-src/main/libraryFileUse.test.ts:181 TS2741
-src/main/libraryFileUse.test.ts:189 TS2741
-src/main/libraryFileUse.test.ts:194 TS2741
-src/main/libraryFileUse.test.ts:199 TS2741
-src/main/libraryFileUse.test.ts:212 TS2741
-src/main/libraryFileUse.test.ts:217 TS2741
-src/main/libraryFileUse.test.ts:225 TS2741
-src/main/libraryFileUse.test.ts:227 TS2741
+src/main/libraryFileUse.test.ts:174 TS2345
+src/main/libraryFileUse.test.ts:177 TS2741
+src/main/libraryFileUse.test.ts:183 TS2741
+src/main/libraryFileUse.test.ts:196 TS2741
+src/main/libraryFileUse.test.ts:222 TS2741
 src/main/libraryFileUse.test.ts:230 TS2741
+src/main/libraryFileUse.test.ts:235 TS2741
+src/main/libraryFileUse.test.ts:240 TS2741
+src/main/libraryFileUse.test.ts:253 TS2741
+src/main/libraryFileUse.test.ts:258 TS2741
+src/main/libraryFileUse.test.ts:266 TS2741
+src/main/libraryFileUse.test.ts:268 TS2741
 src/main/libraryFileUse.test.ts:271 TS2741
-src/main/libraryFileUse.test.ts:297 TS2741
-src/main/libraryFileUse.test.ts:313 TS2741
-src/main/libraryFileUse.test.ts:327 TS2741
-src/main/libraryFileUse.test.ts:340 TS2741
-src/main/libraryFileUse.test.ts:355 TS2741
-src/main/libraryFileUse.test.ts:367 TS2741
-src/main/libraryFileUse.test.ts:378 TS2741
-src/main/libraryFileUse.test.ts:384 TS2741
-src/main/libraryFileUse.test.ts:441 TS2741
-src/main/libraryFileUse.test.ts:456 TS2741
-src/main/libraryFileUse.test.ts:465 TS2741
+src/main/libraryFileUse.test.ts:312 TS2741
+src/main/libraryFileUse.test.ts:338 TS2741
+src/main/libraryFileUse.test.ts:354 TS2741
+src/main/libraryFileUse.test.ts:368 TS2741
+src/main/libraryFileUse.test.ts:381 TS2741
+src/main/libraryFileUse.test.ts:396 TS2741
+src/main/libraryFileUse.test.ts:408 TS2741
+src/main/libraryFileUse.test.ts:419 TS2741
+src/main/libraryFileUse.test.ts:425 TS2741
+src/main/libraryFileUse.test.ts:482 TS2741
+src/main/libraryFileUse.test.ts:497 TS2741
+src/main/libraryFileUse.test.ts:506 TS2741
 src/main/libraryFileUse.test.ts:84 TS2741
 src/main/libraryFileUse.test.ts:89 TS2741
 src/main/libraryFileUse.test.ts:90 TS2741
 src/main/libraryFileUse.test.ts:96 TS2741
+src/main/libraryFileUse.ts:155 TS2741
+src/main/libraryFileUse.ts:19 TS2345
+src/main/libraryFileUse.ts:279 TS2741
+src/main/libraryFileUse.ts:42 TS2741
 src/main/libraryFlushes.test.ts:1010 TS2741
 src/main/libraryFlushes.test.ts:129 TS7053
 src/main/libraryFlushes.test.ts:176 TS2741
@@ -134,15 +145,21 @@ src/main/libraryFlushes.ts:237 TS2345
 src/main/libraryFlushes.ts:253 TS2741
 src/main/libraryFlushes.ts:278 TS2536
 src/main/libraryFlushes.ts:53 TS2741
+src/main/libraryFlushes.ts:576 TS2741
 src/main/libraryFlushes.ts:59 TS2741
 src/main/libraryFlushes.ts:692 TS2741
 src/main/libraryStatus.ts:22 TS2741
-src/main/libraryTagSync.ts:42 TS7053
-src/main/libraryTagSync.ts:5 TS2345
+src/main/libraryTagSync.test.ts:16 TS2741
+src/main/libraryTagSync.test.ts:47 TS2741
+src/main/libraryTagSync.test.ts:64 TS2741
+src/main/libraryTagSync.test.ts:81 TS2741
+src/main/libraryTagSync.ts:6 TS2345
 src/main/moments.test.ts:20 TS2741
 src/main/moments.test.ts:33 TS2741
 src/main/processTrack.ts:1154 TS2322
 src/main/processTrack.ts:503 TS2741
+src/main/programQueue.test.ts:42 TS2741
+src/main/programQueue.test.ts:57 TS2345
 src/main/rekordboxBatch.ts:157 TS2741
 src/main/rekordboxBatch.ts:166 TS2741
 src/main/rekordboxCuesIpc.ts:25 TS2345
