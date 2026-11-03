@@ -59,4 +59,19 @@ describe('features page names what the app shows', () => {
       expect(items(locale).map((item) => item.t)).toContain(app.sidebar.filter.offGrid)
     },
   )
+
+  it.each([
+    ['es', es, appEs],
+    ['en', en, appEn],
+    ['de', de, appDe],
+    ['fr', fr, appFr],
+    ['pt-BR', ptBR, appPtBR],
+    ['ja', ja, appJa],
+  ] as const)(
+    '%s points the guide reader preparing cues at the off-grid filter by its app name',
+    (_, locale, app) => {
+      const cues = locale.guide.sections.find((s) => s.id === 'rekordbox')
+      expect(cues?.points.join(' ')).toContain(app.sidebar.filter.offGrid)
+    },
+  )
 })

@@ -968,6 +968,7 @@
           "Se o rekordbox ainda não analisou a faixa, o Surco mede a grade e você pode colocar os cues mesmo assim. Quando o rekordbox a analisar, eles passam para a grade dele.",
           "Marcar automático sugere, não decide. As sugestões nem sempre acertam, então nada é salvo até você aceitá-las. As certas aparecem com linha contínua e as duvidosas tracejadas, e em Ajustes › Cues, “Aprender com minhas faixas” o ajusta ao seu jeito de marcar.",
           "O mesmo funciona com playlists do Engine DJ e do Traktor, que recebem só os hot cues. No Traktor eles aparecem em azul e nos botões de 2 a 8, já que o botão 1 é da grade.",
+          "Para encontrar os cues que não caem na batida, o filtro “Cues fora da grade” do rekordbox, do Traktor e do Engine DJ separa as faixas com algum cue fora da grade. Você abre, apaga os cues e clica em Marcar automático. Em Ajustes › Cues, “Tolerância da grade” define a partir de quantos ms conta, 5, 10 ou 20.",
           "Um fluxo marcado num programa chega à mesma faixa nos outros quando você salva, cada um na sua própria grade e ao redor dos cues que já tinha. Antes de salvar, o editor diz o que cada programa vai receber, e em Ajustes › Cues você escolhe a quais ele chega. Só viaja o que um fluxo coloca: os cues que você põe à mão ficam no programa onde você os marcou. E se em outro programa não sobrarem letras livres, o editor diz quantos não cabem."
         ],
         "shot": "rekordbox-pt-BR.webp",

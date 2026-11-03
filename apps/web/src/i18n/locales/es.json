@@ -968,6 +968,7 @@
           "Si rekordbox aún no ha analizado la pista, Surco calcula la rejilla y puedes poner los cues igual. Cuando rekordbox la analiza, se ajustan a su rejilla.",
           "Auto marcar propone, no decide. Sus propuestas no siempre aciertan, así que no se guarda nada hasta que las aceptas. Las seguras se ven con línea continua y las dudosas discontinuas, y en Ajustes › Cues, «Aprender de mis pistas» lo ajusta a tu forma de marcar.",
           "Lo mismo con las playlists de Engine DJ y Traktor, que reciben solo los hot cues. En Traktor salen en azul y en los botones 2 a 8, porque el 1 es para su rejilla.",
+          "Para encontrar los cues que no caen en el golpe, el filtro «Cues fuera de la rejilla» de rekordbox, Traktor y Engine DJ te saca las pistas con algún cue fuera de la rejilla. Las abres, borras sus cues y das a Auto marcar. En Ajustes › Cues, «Tolerancia de la rejilla» decide desde cuántos ms cuenta, 5, 10 o 20.",
           "Un flujo marcado en un programa llega al guardar a la misma pista en los demás, cada uno con su rejilla y los cues que ya tenía. Antes de guardar, el editor dice qué recibirá cada programa, y en Ajustes › Cues eliges a cuáles llega. Solo viaja lo que pone un flujo: los cues que pones a mano se quedan en el programa donde los marcas. Y si en otro programa no quedan letras libres, el editor te dice cuántas no caben."
         ],
         "shot": "rekordbox-es.webp",
