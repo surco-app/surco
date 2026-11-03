@@ -105,6 +105,7 @@ import { registerCueTasteIpc } from './cueTasteIpc'
 import { cachedCueWaveWords } from './cueWaveWordsCache'
 import { registerDamageIpc } from './damageIpc'
 import { damageDeps } from './damageWiring'
+import { createEnsureClosed, DJ_PROCESSES, reasonOfDetail } from './djProcesses'
 import { parseDockFrames } from './dockFrames'
 import { type ReplacePair, replaceDuplicates } from './duplicateReplace'
 import { registerEngineCueQueueIpc } from './engineCueQueueIpc'
@@ -112,7 +113,6 @@ import { applyEngineCuesBatch } from './engineCuesWrite'
 import { addToEngineLibrary, dumpEngineLibrary, withEngineDatabase } from './engineLibrary'
 import { engineDatabasePath } from './enginePlaylists'
 import { registerEnginePlaylistsIpc } from './enginePlaylistsIpc'
-import { isEngineDjRunning, quitEngineDj } from './engineProcess'
 import { engineSizeFollower } from './engineSizeFollow'
 import { expandPaths } from './expand'
 import { registerExportIpc } from './exportIpc'
@@ -175,7 +175,6 @@ import { playlistXmlPath, readNodeStamps } from './rekordboxMasterXml'
 import { findRekordboxCollection } from './rekordboxPath'
 import { keyOf, registerRekordboxPlaylistsIpc } from './rekordboxPlaylistsIpc'
 import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
-import { isRekordboxRunning, quitRekordbox } from './rekordboxProcess'
 import { adjustProvisional, createProvisionalList } from './rekordboxProvisional'
 import { createRekordboxQueue, fileStore, type QueueApply } from './rekordboxQueue'
 import { appliedNotice, registerRekordboxQueueIpc } from './rekordboxQueueIpc'
@@ -199,7 +198,6 @@ import {
   setConfigDir,
   settingsForRenderer,
 } from './settings'
-import { sharedPrompt } from './sharedPrompt'
 import { registerShellIpc } from './shellIpc'
 import { sourceStat } from './sourceStat'
 import { createStickyConflict } from './stickyConflict'
@@ -219,7 +217,6 @@ import { type QueuedNmlPatch, syncQueuedPatches } from './traktorPatchQueue'
 import { registerTraktorPlaylistEditIpc } from './traktorPlaylistEditIpc'
 import { nmlPath } from './traktorPlaylists'
 import { registerTraktorPlaylistsIpc } from './traktorPlaylistsIpc'
-import { isTraktorRunning, quitTraktor } from './traktorProcess'
 import { registerTrashIpc } from './trashIpc'
 import { wireUpdateDelivery } from './updateDelivery'
 import { classifyUpdateError, isFeedStillUploading, summarizeUpdateError } from './updateErrors'
@@ -399,7 +396,7 @@ const rekordboxQueueWatch = watchRekordboxQueue({
       }),
   },
   collection: rekordboxCollectionPath,
-  isRunning: isRekordboxRunning,
+  isRunning: DJ_PROCESSES.rekordbox.isRunning,
   onApplied: announceApplied,
   alwaysWatch: () => getSettings().completeCuesOnClose || provisionalCues.all().length > 0,
   onClosed: () => {
@@ -414,7 +411,8 @@ const rekordboxQueueWatch = watchRekordboxQueue({
   },
 })
 const adjustProvisionalCuesOnLaunch = async (): Promise<void> => {
-  if (provisionalCues.all().length > 0 && !(await isRekordboxRunning())) adjustProvisionalCues()
+  if (provisionalCues.all().length > 0 && !(await DJ_PROCESSES.rekordbox.isRunning()))
+    adjustProvisionalCues()
   rekordboxQueueWatch.poke()
 }
 const applyRekordboxQueueQuietly = (serial = serialLibraryFlush): void => {
@@ -422,7 +420,9 @@ const applyRekordboxQueueQuietly = (serial = serialLibraryFlush): void => {
     rekordboxQueueWatch.poke()
     return
   }
-  void serial(() => rekordboxQueue.apply(async () => !(await isRekordboxRunning()))).then(
+  void serial(() =>
+    rekordboxQueue.apply(async () => !(await DJ_PROCESSES.rekordbox.isRunning())),
+  ).then(
     (result) => {
       announceApplied(result)
       if (stillWaiting(result)) rekordboxQueueWatch.poke()
@@ -466,7 +466,7 @@ const engineCueQueueWatch = watchRekordboxQueue({
       }),
   },
   collection: engineLibraryPath,
-  isRunning: isEngineDjRunning,
+  isRunning: DJ_PROCESSES.engine.isRunning,
   onApplied: announceEngineApplied,
 })
 const followEngineSize = engineSizeFollower({
@@ -479,7 +479,9 @@ const applyEngineCueQueueQuietly = (serial = serialLibraryFlush): void => {
     engineCueQueueWatch.poke()
     return
   }
-  void serial(() => engineCueQueue.apply(async () => !(await isEngineDjRunning()))).then(
+  void serial(() =>
+    engineCueQueue.apply(async () => !(await DJ_PROCESSES.engine.isRunning())),
+  ).then(
     (result) => {
       announceEngineApplied(result)
       if (stillWaiting(result)) engineCueQueueWatch.poke()
@@ -545,14 +547,14 @@ const traktorCueQueueWatch = watchRekordboxQueue({
       }),
   },
   collection: traktorWritePath,
-  isRunning: isTraktorRunning,
+  isRunning: DJ_PROCESSES.traktor.isRunning,
   onApplied: announceTraktorApplied,
 })
 // A save from the editor asks to close Traktor, as a playlist edit does; declined, it stays
 // queued and lands when Traktor closes.
 const applyTraktorCueQueueAsking = (win: BrowserWindow | null): void => {
   void serialLibraryFlush(() =>
-    traktorCueQueue.apply(() => ensureTraktorClosed(win, 'traktorQuitDetailCues')),
+    traktorCueQueue.apply(() => ensureClosed('traktor', win, 'cues')),
   ).then(
     (result) => {
       announceTraktorApplied(result)
@@ -569,7 +571,9 @@ const applyTraktorCueQueueQuietly = (serial = serialLibraryFlush): void => {
     traktorCueQueueWatch.poke()
     return
   }
-  void serial(() => traktorCueQueue.apply(async () => !(await isTraktorRunning()))).then(
+  void serial(() =>
+    traktorCueQueue.apply(async () => !(await DJ_PROCESSES.traktor.isRunning())),
+  ).then(
     (result) => {
       announceTraktorApplied(result)
       if (stillWaiting(result)) traktorCueQueueWatch.poke()
@@ -686,134 +690,12 @@ function menuLocale(): string {
   return resolveMenuLocale(getSettings().language, app.getLocale())
 }
 
-// The pending "Engine DJ is open — close it?" prompt, shared so parallel writes (a bulk
-// conversion's tracks reaching the Engine add as Engine opens) raise ONE dialog and all
-// wait on the same answer. Conversions that find Engine open leave the add to its queue
-// instead of asking. Cleared once settled: the next write re-checks the process, which by
-// then is either gone (proceed silently) or reopened (ask again).
-let engineQuitPrompt: Promise<boolean> | null = null
-
-// True when Engine DJ is not running (possibly because the user just accepted quitting
-// it here); false when it is running and the user declined — the caller then refuses
-// the library write, since Engine would not see it and could overwrite it on exit.
-async function ensureEngineDjClosed(
-  win: BrowserWindow | null,
-  detail:
-    | 'engineQuitDetail'
-    | 'engineQuitDetailCues'
-    | 'engineQuitDetailUsb'
-    | 'engineQuitDetailRestore' = 'engineQuitDetail',
-): Promise<boolean> {
-  if (!(await isEngineDjRunning())) return true
-  engineQuitPrompt ??= (async () => {
-    const t = createMenuT(menuLocale())
-    const opts = {
-      type: 'warning' as const,
-      message: t('engineQuitMessage'),
-      detail: t(detail),
-      buttons: [t('engineQuitConfirm'), t('engineQuitCancel')],
-      defaultId: 0,
-      cancelId: 1,
-    }
-    const { response } = win
-      ? await dialog.showMessageBox(win, opts)
-      : await dialog.showMessageBox(opts)
-    if (response !== 0) return false
-    return quitEngineDj()
-  })().finally(() => {
-    engineQuitPrompt = null
-  })
-  return engineQuitPrompt
-}
-
-// Twin of engineQuitPrompt above: shared so the one process:batch-end flush raises
-// at most one dialog, never one per patch.
-let traktorQuitPrompt: Promise<boolean> | null = null
-
-// True when Traktor is not running (possibly because the user just accepted quitting
-// it here); false when it is running and the user declined — the caller then refuses
-// to write collection.nml, since Traktor would not see it and overwrites it on exit.
-async function ensureTraktorClosed(
-  win: BrowserWindow | null,
-  detail:
-    | 'traktorQuitDetail'
-    | 'traktorQuitDetailCues'
-    | 'traktorQuitDetailPlaylists'
-    | 'traktorQuitDetailRestore' = 'traktorQuitDetail',
-): Promise<boolean> {
-  if (!(await isTraktorRunning())) return true
-  traktorQuitPrompt ??= (async () => {
-    const t = createMenuT(menuLocale())
-    const opts = {
-      type: 'warning' as const,
-      message: t('traktorQuitMessage'),
-      detail: t(detail),
-      buttons: [t('traktorQuitConfirm'), t('traktorQuitCancel')],
-      defaultId: 0,
-      cancelId: 1,
-    }
-    const { response } = win
-      ? await dialog.showMessageBox(win, opts)
-      : await dialog.showMessageBox(opts)
-    if (response !== 0) return false
-    return quitTraktor()
-  })().finally(() => {
-    traktorQuitPrompt = null
-  })
-  return traktorQuitPrompt
-}
-
-// Twin of traktorQuitPrompt above, for the same reason: one flush must raise at most one
-// dialog, never one per repointed track. Keyed by its wording: a playlist edit arriving
-// while the conversion's dialog is up waits for it and then asks in its own words (the
-// running check is inside, so it asks nothing if the user closed rekordbox meanwhile).
-//
-// True when rekordbox is not running (possibly because the user just accepted closing it
-// here); false when it is running and the user declined — the caller then refuses to touch
-// master.db, which rekordbox holds open through SQLCipher.
-//
-// Asked before the collection is written rather than reported afterwards: by the time a
-// flush fails, the conversion has finished and the repoint is lost, so the user has to
-// convert the whole track again to get another attempt.
-const rekordboxQuitPrompt = sharedPrompt(
-  async (
-    detail:
-      | 'rekordboxQuitDetail'
-      | 'rekordboxQuitDetailPlaylists'
-      | 'rekordboxQuitDetailUsb'
-      | 'rekordboxQuitDetailRestore',
-    win: BrowserWindow | null,
-  ): Promise<boolean> => {
-    if (!(await isRekordboxRunning())) return true
-    const t = createMenuT(menuLocale())
-    const opts = {
-      type: 'warning' as const,
-      message: t('rekordboxQuitMessage'),
-      detail: t(detail),
-      buttons: [t('rekordboxQuitConfirm'), t('rekordboxQuitCancel')],
-      defaultId: 0,
-      cancelId: 1,
-    }
-    const { response } = win
-      ? await dialog.showMessageBox(win, opts)
-      : await dialog.showMessageBox(opts)
-    if (response !== 0) return false
-    return quitRekordbox()
-  },
-)
-
-function ensureRekordboxClosed(
-  win: BrowserWindow | null,
-  // The conversion's wording by default; a playlist edit has nothing to do with a new file,
-  // and a USB export must not invite reopening rekordbox before it finishes.
-  detail:
-    | 'rekordboxQuitDetail'
-    | 'rekordboxQuitDetailPlaylists'
-    | 'rekordboxQuitDetailUsb'
-    | 'rekordboxQuitDetailRestore' = 'rekordboxQuitDetail',
-): Promise<boolean> {
-  return rekordboxQuitPrompt(detail, win)
-}
+const ensureClosed = createEnsureClosed({
+  processes: DJ_PROCESSES,
+  ask: (win, opts) =>
+    (win ? dialog.showMessageBox(win, opts) : dialog.showMessageBox(opts)).then((r) => r.response),
+  t: (key) => createMenuT(menuLocale())(key),
+})
 
 // Set while a user-triggered update check is in flight so the updater's result
 // events surface a dialog or toast; the silent startup check leaves it false and
@@ -1459,7 +1341,7 @@ function registerIpc(): void {
   registerRekordboxPlaylistsIpc(
     () => findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),
     {
-      ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
+      ensureClosed: (win) => ensureClosed('rekordbox', win, 'playlists'),
       queue: rekordboxQueue,
       onApplied: announceApplied,
       onWaiting: rekordboxQueueWatch.poke,
@@ -1477,7 +1359,7 @@ function registerIpc(): void {
   })
   registerRekordboxQueueIpc(rekordboxQueue, {
     collection: rekordboxCollectionPath,
-    ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailPlaylists'),
+    ensureClosed: (win) => ensureClosed('rekordbox', win, 'playlists'),
     onWaiting: rekordboxQueueWatch.poke,
     onReady: () => void adjustProvisionalCuesOnLaunch(),
     beginMoment: (reason) => moments.begin(reason, ['rekordbox']),
@@ -1524,7 +1406,7 @@ function registerIpc(): void {
     learnFromEdits: () => getSettings().cueLearnFromEdits,
   })
   registerEngineCueQueueIpc(engineCueQueue, {
-    ensureClosed: (win) => ensureEngineDjClosed(win, 'engineQuitDetailCues'),
+    ensureClosed: (win) => ensureClosed('engine', win, 'cues'),
     onWaiting: engineCueQueueWatch.poke,
     onReady: engineCueQueueWatch.poke,
     beginMoment: (reason) => moments.begin(reason, ['engine']),
@@ -1532,7 +1414,7 @@ function registerIpc(): void {
     onDiscarded: () => queueChecks.discarded('engine'),
   })
   registerTraktorCueQueueIpc(traktorCueQueue, {
-    ensureClosed: (win) => ensureTraktorClosed(win, 'traktorQuitDetailCues'),
+    ensureClosed: (win) => ensureClosed('traktor', win, 'cues'),
     onWaiting: traktorCueQueueWatch.poke,
     onReady: traktorCueQueueWatch.poke,
     beginMoment: (reason) => moments.begin(reason, ['traktor']),
@@ -1543,7 +1425,7 @@ function registerIpc(): void {
   registerTraktorPlaylistEditIpc({
     collection: traktorWritePath,
     queue: traktorCueQueue,
-    ensureClosed: (win) => ensureTraktorClosed(win, 'traktorQuitDetailPlaylists'),
+    ensureClosed: (win) => ensureClosed('traktor', win, 'playlists'),
     onApplied: announceTraktorApplied,
     onWaiting: traktorCueQueueWatch.poke,
     beginLoose: moments.beginLoose,
@@ -1562,9 +1444,11 @@ function registerIpc(): void {
         appPath: app.getAppPath(),
         exists: existsSync,
       }),
-    ensureRekordboxClosed,
+    ensureRekordboxClosed: (win, detail) =>
+      ensureClosed('rekordbox', win, reasonOfDetail('rekordbox', detail)),
     engineLibrary: engineLibraryPath,
-    ensureEngineDjClosed,
+    ensureEngineDjClosed: (win, detail) =>
+      ensureClosed('engine', win, reasonOfDetail('engine', detail)),
   })
 
   // Reaches an encode already in flight: cancelBatch's own flag only stops jobs
@@ -1611,9 +1495,9 @@ function registerIpc(): void {
   ipcMain.handle('library:status', (): LibraryStatus => currentLibraryStatus())
 
   const hostFor = (win: BrowserWindow | null, sender: WebContents): LibraryHost => ({
-    ensureTraktorClosed: () => ensureTraktorClosed(win),
-    ensureRekordboxClosed: () => ensureRekordboxClosed(win),
-    ensureEngineDjClosed: () => ensureEngineDjClosed(win),
+    ensureTraktorClosed: () => ensureClosed('traktor', win),
+    ensureRekordboxClosed: () => ensureClosed('rekordbox', win),
+    ensureEngineDjClosed: () => ensureClosed('engine', win),
     showBlockedDialog: (key) => showSyncBlockedDialog(win, key),
     reportIssue: (channel, issue) => {
       if (!sender.isDestroyed()) sender.send(channel, issue)
@@ -1897,13 +1781,13 @@ function registerIpc(): void {
         if (titles.length === 0) return undefined
         return appleMusicLimiter.run(() => musicEntryForFile(path, titles))
       },
-      isEngineDjRunning,
+      isEngineDjRunning: DJ_PROCESSES.engine.isRunning,
       // The library folder is read at add time (not captured with the job) so a queue of
       // conversions follows a mid-run settings change; addToEngineLibrary serializes the
       // database writes itself, so no limiter is needed here.
       addToEngineDj: async (target, meta, coverPath, replaces) => {
         const win = BrowserWindow.fromWebContents(e.sender)
-        if (!(await ensureEngineDjClosed(win))) {
+        if (!(await ensureClosed('engine', win))) {
           throw new Error(createMenuT(menuLocale())('engineOpenError'))
         }
         const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
@@ -2173,8 +2057,8 @@ function registerIpc(): void {
         untouched: () => !getSettings().syncRekordbox,
         session: rekordboxSessionBackup,
         queue: rekordboxQueue,
-        ensureClosed: (win) => ensureRekordboxClosed(win, 'rekordboxQuitDetailRestore'),
-        isRunning: isRekordboxRunning,
+        ensureClosed: (win) => ensureClosed('rekordbox', win, 'restore'),
+        isRunning: DJ_PROCESSES.rekordbox.isRunning,
         pendingLog: rekordboxPendingLog,
         exclusive: (_path, task) => task(),
         onDiscarded: () => queueChecks.discarded('rekordbox'),
@@ -2184,8 +2068,8 @@ function registerIpc(): void {
         untouched: () => !getSettings().syncTraktor,
         session: traktorSessionBackup,
         queue: traktorCueQueue,
-        ensureClosed: (win) => ensureTraktorClosed(win, 'traktorQuitDetailRestore'),
-        isRunning: isTraktorRunning,
+        ensureClosed: (win) => ensureClosed('traktor', win, 'restore'),
+        isRunning: DJ_PROCESSES.traktor.isRunning,
         pendingLog: () => false,
         exclusive: (_path, task) => task(),
         onDiscarded: () => queueChecks.discarded('traktor'),
@@ -2198,8 +2082,8 @@ function registerIpc(): void {
         untouched: () => !getSettings().syncEngineDj,
         session: engineSessionBackup,
         queue: engineCueQueue,
-        ensureClosed: (win) => ensureEngineDjClosed(win, 'engineQuitDetailRestore'),
-        isRunning: isEngineDjRunning,
+        ensureClosed: (win) => ensureClosed('engine', win, 'restore'),
+        isRunning: DJ_PROCESSES.engine.isRunning,
         pendingLog: enginePendingLog,
         exclusive: withEngineDatabase,
         onDiscarded: () => queueChecks.discarded('engine'),
