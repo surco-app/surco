@@ -820,10 +820,19 @@ describe('saving an edited grid to Engine DJ', () => {
     expect(grid[0].beat).toBe(1)
     expect(grid[0].ms).toBeCloseTo(40, 3)
     expect(grid[1].ms - grid[0].ms).toBeCloseTo(60000 / 120.5, 3)
-    expect(trackRow(dir)).toEqual({ bpm: 121, bpmAnalyzed: 120.5 })
+    expect(trackRow(dir)).toEqual({ bpm: null, bpmAnalyzed: 120.5 })
     expect(slotsOf(dir).slots.map((s) => s.cue?.sample)).toEqual(
       pads.slots.map((s) => s.cue?.sample),
     )
+  })
+
+  it('rounds the tempo into the whole-number BPM only when Engine had filled it', async () => {
+    const dir = await library()
+    const db = new Database(dbFile(dir))
+    db.prepare('UPDATE Track SET bpm = 124 WHERE id = 1').run()
+    db.close()
+    await applyEngineCuesBatch(dir, [gridOp(dir)], deps())
+    expect(trackRow(dir)).toEqual({ bpm: 121, bpmAnalyzed: 120.5 })
   })
 
   it('refuses the grid when Engine moved it after Surco read it', async () => {

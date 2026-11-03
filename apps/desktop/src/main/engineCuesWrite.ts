@@ -157,11 +157,10 @@ function plan(db: Database, op: QueueOp, libraryDir: string): Plan {
           gridWrite.beatData,
           trackId,
         ])
-        target.run('UPDATE Track SET bpm = ?, bpmAnalyzed = ? WHERE id = ?', [
-          Math.round(gridWrite.bpm),
-          gridWrite.bpm,
-          trackId,
-        ])
+        target.run(
+          'UPDATE Track SET bpm = CASE WHEN bpm IS NULL THEN NULL ELSE ? END, bpmAnalyzed = ? WHERE id = ?',
+          [Math.round(gridWrite.bpm), gridWrite.bpm, trackId],
+        )
       }
     },
     notices,
