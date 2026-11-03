@@ -1893,6 +1893,7 @@ export interface SurcoGrid {
 export interface QueuedCues {
   wanted: WantedCue[]
   fingerprint: string
+  grid?: EditableGrid
 }
 
 export interface SaveCuesRequest {

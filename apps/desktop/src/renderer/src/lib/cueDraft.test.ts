@@ -8,6 +8,7 @@ import {
   type DraftCue,
   draftDrops,
   draftGridChanged,
+  draftGridEdited,
   draftPoints,
   freeLetters,
   ghostOf,
@@ -1191,5 +1192,17 @@ describe('the beat grid in the draft', () => {
     expect(gridRequestOf(start)).toEqual({})
     const moved = run(start, { type: 'set-grid', grid: { bpm: 150, anchorMs: 6 } })
     expect(gridRequestOf(moved)).toEqual({ grid: { bpm: 150, anchorMs: 6 }, gridFingerprint: 'g0' })
+  })
+
+  it('starts from a queued grid as already saved but still writes it, since the queue would lose it otherwise', () => {
+    const program = { bpm: 150, anchorMs: 46 }
+    const queued = { bpm: 150, anchorMs: 6 }
+    const start = startDraft([], 'mine', [], queued, 'g0', program)
+    expect(draftGridEdited(start)).toBe(false)
+    expect(draftGridChanged(start)).toBe(true)
+    expect(gridRequestOf(start)).toEqual({ grid: queued, gridFingerprint: 'g0' })
+    const moved = run(start, { type: 'set-grid', grid: program })
+    expect(draftGridEdited(moved)).toBe(true)
+    expect(gridRequestOf(moved)).toEqual({})
   })
 })

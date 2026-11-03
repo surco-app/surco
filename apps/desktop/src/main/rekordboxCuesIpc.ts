@@ -110,8 +110,13 @@ export function registerRekordboxCuesIpc(host: {
       const source = sourceOf(contentId)
       const op = source?.queue.cuesOp(contentId)
       if (!source || !op || (op.wanted === undefined && op.drops === undefined)) return null
-      if (op.wanted) return { wanted: op.wanted, fingerprint: op.fingerprint }
-      return { wanted: await source.queuedWanted(contentId, op), fingerprint: op.fingerprint }
+      const grid = op.grid ? { grid: op.grid } : {}
+      if (op.wanted) return { wanted: op.wanted, fingerprint: op.fingerprint, ...grid }
+      return {
+        wanted: await source.queuedWanted(contentId, op),
+        fingerprint: op.fingerprint,
+        ...grid,
+      }
     },
   )
   ipcMain.handle('rekordbox:undoCues', (_e, contentId: string) => {

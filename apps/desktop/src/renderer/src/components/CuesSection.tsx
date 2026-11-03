@@ -51,6 +51,7 @@ import {
   type DraftCue,
   type DraftGhost,
   draftGridChanged,
+  draftGridEdited,
   draftPoints,
   ghostOf,
   gridRequestOf,
@@ -462,8 +463,9 @@ function Editing({
         baseline,
         active.id,
         read.cues.filter((c) => c.loop).map((c) => c.id),
-        programGrid,
+        fresh && queued.grid ? queued.grid : programGrid,
         read.gridFingerprint,
+        programGrid,
       ),
   )
   const grid = useMemo(
@@ -664,7 +666,7 @@ function Editing({
   const focusEditor = useCallback(() => editorRef.current?.focus(), [])
   const wanted = wantedOfDraft(state.cues)
   const clearable = state.cues.some((c) => !state.locked.includes(c.key))
-  const unchanged = JSON.stringify(wanted) === JSON.stringify(baseline) && !draftGridChanged(state)
+  const unchanged = JSON.stringify(wanted) === JSON.stringify(baseline) && !draftGridEdited(state)
   const [overwrite, setOverwrite] = useState<ReadonlySet<string>>(new Set())
   const own = { contentId: cue.contentId, path: cue.path, label: cue.label, draft: state }
   const flowMarked = !provisional && !unchanged && Object.keys(state.origin).length > 0

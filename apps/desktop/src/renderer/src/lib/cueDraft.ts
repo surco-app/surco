@@ -53,6 +53,7 @@ export interface CueDraft {
   nextKey: number
   grid: EditableGrid | null
   baseGrid: EditableGrid | null
+  startGrid: EditableGrid | null
   baseGridFingerprint: string
 }
 
@@ -95,6 +96,7 @@ export function startDraft(
   locked: string[] = [],
   grid: EditableGrid | null = null,
   gridFingerprint = '',
+  programGrid: EditableGrid | null = grid,
 ): CueDraft {
   return {
     cues: cues.map((c, i) => ({ ...c, key: c.id ?? `n${i}` })),
@@ -112,13 +114,18 @@ export function startDraft(
     marked: [],
     nextKey: cues.length,
     grid,
-    baseGrid: grid,
+    baseGrid: programGrid,
+    startGrid: grid,
     baseGridFingerprint: gridFingerprint,
   }
 }
 
 export function draftGridChanged(state: CueDraft): boolean {
   return state.grid !== null && !sameGrid(state.grid, state.baseGrid)
+}
+
+export function draftGridEdited(state: CueDraft): boolean {
+  return !sameGrid(state.grid, state.startGrid)
 }
 
 export function gridRequestOf(state: CueDraft): Pick<SaveCuesRequest, 'grid' | 'gridFingerprint'> {

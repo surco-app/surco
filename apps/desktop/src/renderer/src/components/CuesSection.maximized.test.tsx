@@ -75,10 +75,10 @@ function setup(
 ) {
   const rekordboxCueWaveDetail = vi.fn<Api['rekordboxCueWaveDetail']>(async () => null)
   installApi({
-    ...api,
     rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => read),
     rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
     rekordboxCueWaveDetail,
+    ...api,
   })
   const onJumpBars = vi.fn<(bars: CueJumpBars) => void>()
   const onQuantize = vi.fn<(unit: CueQuantize) => void>()
@@ -1805,5 +1805,18 @@ describe('CuesSection maximized grid', () => {
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
     expect(saveRekordboxCues.mock.calls[0][0][0].grid).toBeUndefined()
+  })
+
+  it('shows the grid waiting in the queue for rekordbox to close, as the grid it will write, without calling it unsaved', async () => {
+    setup(null, READ, {
+      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => ({
+        wanted: [],
+        fingerprint: READ.fingerprint,
+        grid: { bpm: 120, anchorMs: 1 },
+      })),
+    })
+    await maximize()
+    await waitFor(() => expect(bars()).toContain(2001))
+    expect(screen.queryByTestId('cues-unsaved')).toBeNull()
   })
 })

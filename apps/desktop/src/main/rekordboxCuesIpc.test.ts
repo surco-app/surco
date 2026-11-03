@@ -628,6 +628,27 @@ describe('registerRekordboxCuesIpc', () => {
     ])
   })
 
+  it('reports the grid queued with the cues, so the editor shows the grid that will be written', async () => {
+    const wanted = [{ ms: 1000, kind: 0, color: null }]
+    const grid = { bpm: 120.5, anchorMs: 40 }
+    const queued = savedOp({ wanted, grid, gridFingerprint: 'g0' })
+    registerRekordboxCuesIpc({
+      collection: () => '/c/master.db',
+      queue: queue({ cuesOp: (id) => (id === '103' ? queued : undefined) }),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+    })
+    expect(await handler('rekordbox:queuedCues')({}, '103')).toEqual({
+      wanted,
+      fingerprint: 'F1',
+      grid,
+    })
+  })
+
   it('shows a save queued before wanted sets as the set it would write, so the section can see and discard it', async () => {
     const path = await completableCollection()
     const host = (cuesOp: RekordboxQueue['cuesOp']) => ({
