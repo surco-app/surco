@@ -167,7 +167,9 @@ export function saveAllKey(unsaved: ReadonlySet<string>): string {
   const programs = new Set([...unsaved].map(programOf))
   if (programs.size === 0) return CUE_PROGRAMS.rekordbox.saveAllKey
   if (programs.size === 1) return CUE_PROGRAMS[[...programs][0]].saveAllKey
-  return programs.has('traktor') ? 'editor.cues.saveAllMixed' : 'editor.cues.saveAllBoth'
+  const rekordboxAndEngine =
+    programs.size === 2 && programs.has('rekordbox') && programs.has('engine')
+  return rekordboxAndEngine ? 'editor.cues.saveAllBoth' : 'editor.cues.saveAllMixed'
 }
 
 const HIDDEN_SECTION_KEYS: Parameters<typeof claimKeys>[0] = {
@@ -504,14 +506,16 @@ function Editing({
   const { data: canSave = true } = useQuery({
     queryKey: ['traktor-can-save', settings.traktorNmlPath],
     queryFn: () => window.api.traktorCanSave(),
-    enabled: collectionGate || [...unsavedSet].some((id) => cueProgramOf(id).collectionGate),
+    enabled:
+      collectionGate !== null ||
+      [...unsavedSet].some((id) => cueProgramOf(id).collectionGate !== null),
   })
-  const savable = (contentId: string) => canSave || !cueProgramOf(contentId).collectionGate
-  const blocked = collectionGate && !canSave
+  const savable = (contentId: string) => canSave || cueProgramOf(contentId).collectionGate === null
+  const blocked = collectionGate === 'traktor' && !canSave
   const { data: otherCollection = null } = useQuery({
     queryKey: ['traktor-collection-in-use', settings.traktorNmlPath],
     queryFn: () => window.api.traktorCollectionInUse(settings.traktorNmlPath),
-    enabled: collectionGate && settings.traktorNmlPath !== '',
+    enabled: collectionGate === 'traktor' && settings.traktorNmlPath !== '',
   })
   const [readingAudio, setReadingAudio] = useState(false)
   const [proposed, setProposed] = useState<DropProposal[] | null>(() => {

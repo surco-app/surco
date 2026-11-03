@@ -14,8 +14,8 @@ import {
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import { TRAKTOR_CUE_COLOR } from '../../../shared/traktorContent'
 import type { TrackCues } from '../../../shared/types'
-import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
+import i18n from '../i18n'
 import { startDraft } from '../lib/cueDraft'
 import { autoMarkOf, keepDraft, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
@@ -248,7 +248,9 @@ describe('CuesSection on an Engine DJ track', () => {
     await waitFor(() => expect(screen.getByTestId('cues-colour')).toBeInTheDocument())
     fireEvent.contextMenu(hot[0])
     expect(screen.getByTestId('cues-menu-colour')).toBeInTheDocument()
-    expect(screen.getByTestId('section-help')).not.toHaveTextContent('Traktor colours each cue')
+    const help = screen.getByTestId('section-help')
+    expect(help).toHaveTextContent(i18n.t('editor.cues.help'))
+    expect(help).not.toHaveTextContent(i18n.t('editor.cues.traktor.colours'))
   })
 
   it('opens the colour palette on an Engine DJ pad when maximized', async () => {

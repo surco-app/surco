@@ -12,7 +12,7 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       writesCalls: true,
       fixedColour: null,
       colourHelp: null,
-      collectionGate: false,
+      collectionGate: null,
       callsNote: null,
       saveAllKey: 'editor.cues.saveAll',
     })
@@ -26,7 +26,7 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       writesCalls: false,
       fixedColour: TRAKTOR_CUE_COLOR,
       colourHelp: 'editor.cues.traktor.colours',
-      collectionGate: true,
+      collectionGate: 'traktor',
       callsNote: { key: 'editor.cues.traktor.calls', testId: 'cues-traktor-calls' },
       saveAllKey: 'editor.cues.traktor.saveAll',
     })
@@ -40,7 +40,7 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       writesCalls: false,
       fixedColour: null,
       colourHelp: null,
-      collectionGate: false,
+      collectionGate: null,
       callsNote: { key: 'editor.cues.engine.calls', testId: 'cues-engine-calls' },
       saveAllKey: 'editor.cues.engine.saveAll',
     })

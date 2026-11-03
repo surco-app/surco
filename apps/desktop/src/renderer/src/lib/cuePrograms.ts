@@ -9,7 +9,7 @@ export interface CueProgram {
   writesCalls: boolean
   fixedColour: number | null
   colourHelp: string | null
-  collectionGate: boolean
+  collectionGate: 'traktor' | null
   callsNote: { key: string; testId: string } | null
   saveAllKey: string
 }
@@ -22,7 +22,7 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     writesCalls: true,
     fixedColour: null,
     colourHelp: null,
-    collectionGate: false,
+    collectionGate: null,
     callsNote: null,
     saveAllKey: 'editor.cues.saveAll',
   },
@@ -33,7 +33,7 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     writesCalls: false,
     fixedColour: TRAKTOR_CUE_COLOR,
     colourHelp: 'editor.cues.traktor.colours',
-    collectionGate: true,
+    collectionGate: 'traktor',
     callsNote: { key: 'editor.cues.traktor.calls', testId: 'cues-traktor-calls' },
     saveAllKey: 'editor.cues.traktor.saveAll',
   },
@@ -44,7 +44,7 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     writesCalls: false,
     fixedColour: null,
     colourHelp: null,
-    collectionGate: false,
+    collectionGate: null,
     callsNote: { key: 'editor.cues.engine.calls', testId: 'cues-engine-calls' },
     saveAllKey: 'editor.cues.engine.saveAll',
   },
