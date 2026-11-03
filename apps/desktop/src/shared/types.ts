@@ -7,6 +7,7 @@ import type { StrongPart, WantedCue } from './cueRules'
 import type { DjProgram } from './djProgram'
 import type { EditorSectionPref } from './editorSections'
 import type { ErrorKey } from './errorKeys'
+import type { EditableGrid } from './gridEdit'
 import type { Chord } from './shortcuts'
 import type { Verification } from './verification'
 
@@ -1901,6 +1902,8 @@ export interface SaveCuesRequest {
   wanted: WantedCue[]
   fingerprint: string
   provisional?: true
+  grid?: EditableGrid
+  gridFingerprint?: string
 }
 
 export type CopyReason =

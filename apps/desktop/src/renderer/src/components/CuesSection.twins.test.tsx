@@ -221,4 +221,20 @@ describe('a flow placed in the cue editor reaches the other DJ programs', () => 
       ['103', '104', TRAKTOR, 'traktor:M/:Music/:h.wav'].sort(),
     )
   })
+
+  it('keeps the moved grid to the track it was moved on and never sends it to the other program', async () => {
+    const { saveRekordboxCues } = setup()
+    await ready()
+    fireEvent.click(screen.getByTestId('section-maximize'))
+    await waitFor(() => expect(screen.getByTestId('cues-grid-right')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('cues-grid-right'))
+    markAt(bar(64))
+    await screen.findByTestId('cues-twin-traktor')
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    const [own, twin] = saveRekordboxCues.mock.calls[0][0]
+    expect(own.grid).toBeDefined()
+    expect(twin.contentId).toBe(TRAKTOR)
+    expect(twin.grid).toBeUndefined()
+  })
 })

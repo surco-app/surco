@@ -53,6 +53,7 @@ import {
   draftGridChanged,
   draftPoints,
   ghostOf,
+  gridRequestOf,
   reduceDraft,
   startDraft,
   wantedOfDraft,
@@ -462,6 +463,7 @@ function Editing({
         active.id,
         read.cues.filter((c) => c.loop).map((c) => c.id),
         programGrid,
+        read.gridFingerprint,
       ),
   )
   const grid = useMemo(
@@ -933,6 +935,7 @@ function Editing({
         wanted,
         fingerprint: read.fingerprint,
         ...(onSurcoGrid ? { provisional: true as const } : {}),
+        ...gridRequestOf(state),
       },
       ...(flowMarked ? await twinRequests([own]) : []),
     ])

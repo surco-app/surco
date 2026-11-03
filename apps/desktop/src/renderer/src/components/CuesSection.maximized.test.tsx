@@ -1783,4 +1783,27 @@ describe('CuesSection maximized grid', () => {
     expect(document.activeElement).toBe(editor())
     expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true')
   })
+
+  it('saves the moved grid with the fingerprint of the grid it was read from', async () => {
+    const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
+    setup(null, { ...READ, gridFingerprint: 'g0' }, { saveRekordboxCues })
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-grid-right'))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    expect(saveRekordboxCues.mock.calls[0][0][0]).toMatchObject({
+      grid: { bpm: 120, anchorMs: 1 },
+      gridFingerprint: 'g0',
+    })
+  })
+
+  it('saves a cue-only change without any grid', async () => {
+    const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
+    setup(null, { ...READ, gridFingerprint: 'g0' }, { saveRekordboxCues })
+    await maximize()
+    key('m')
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    expect(saveRekordboxCues.mock.calls[0][0][0].grid).toBeUndefined()
+  })
 })

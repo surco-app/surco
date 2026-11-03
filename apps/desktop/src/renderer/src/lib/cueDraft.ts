@@ -17,6 +17,7 @@ import {
 } from '../../../shared/cueRules'
 import { type EditableGrid, sameGrid } from '../../../shared/gridEdit'
 import { HOT_CUE_DEFAULT_INDEX } from '../../../shared/rekordboxCueColors'
+import type { SaveCuesRequest } from '../../../shared/types'
 
 export interface DraftCue extends WantedCue {
   key: string
@@ -52,6 +53,7 @@ export interface CueDraft {
   nextKey: number
   grid: EditableGrid | null
   baseGrid: EditableGrid | null
+  baseGridFingerprint: string
 }
 
 export interface DraftContext {
@@ -92,6 +94,7 @@ export function startDraft(
   flowId: string,
   locked: string[] = [],
   grid: EditableGrid | null = null,
+  gridFingerprint = '',
 ): CueDraft {
   return {
     cues: cues.map((c, i) => ({ ...c, key: c.id ?? `n${i}` })),
@@ -110,11 +113,17 @@ export function startDraft(
     nextKey: cues.length,
     grid,
     baseGrid: grid,
+    baseGridFingerprint: gridFingerprint,
   }
 }
 
 export function draftGridChanged(state: CueDraft): boolean {
   return state.grid !== null && !sameGrid(state.grid, state.baseGrid)
+}
+
+export function gridRequestOf(state: CueDraft): Pick<SaveCuesRequest, 'grid' | 'gridFingerprint'> {
+  if (!state.grid || !draftGridChanged(state)) return {}
+  return { grid: state.grid, gridFingerprint: state.baseGridFingerprint }
 }
 
 export function draftDrops(cues: DraftCue[], locked: string[] = []): number[] {

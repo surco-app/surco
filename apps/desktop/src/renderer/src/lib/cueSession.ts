@@ -2,7 +2,7 @@ import { useEffect, useRef, useSyncExternalStore } from 'react'
 import { SAME_POSITION_MS, type WantedCue } from '../../../shared/cueRules'
 import type { DropProposal } from '../../../shared/dropDetect'
 import type { QueuedCues, SaveCuesRequest, TrackCueRow } from '../../../shared/types'
-import { type CueDraft, type DraftCue, wantedOfDraft } from './cueDraft'
+import { type CueDraft, type DraftCue, gridRequestOf, wantedOfDraft } from './cueDraft'
 
 export type AutoMark =
   | { kind: 'proposed'; proposals: DropProposal[] }
@@ -144,6 +144,7 @@ export function draftsToSave(): SaveCuesRequest[] {
     contentId,
     ...target,
     wanted: wantedOfDraft(value.cues),
+    ...gridRequestOf(value),
   }))
 }
 

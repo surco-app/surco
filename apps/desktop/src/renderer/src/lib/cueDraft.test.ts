@@ -11,6 +11,7 @@ import {
   draftPoints,
   freeLetters,
   ghostOf,
+  gridRequestOf,
   reduceDraft,
   startDraft,
   wantedOfDraft,
@@ -1183,5 +1184,12 @@ describe('the beat grid in the draft', () => {
 
   it('never calls a grid changed when there was none to start from', () => {
     expect(draftGridChanged(empty())).toBe(false)
+  })
+
+  it('asks to write the grid only once it moved, together with the fingerprint of the grid it started from', () => {
+    const start = startDraft([], 'mine', [], { bpm: 150, anchorMs: 46 }, 'g0')
+    expect(gridRequestOf(start)).toEqual({})
+    const moved = run(start, { type: 'set-grid', grid: { bpm: 150, anchorMs: 6 } })
+    expect(gridRequestOf(moved)).toEqual({ grid: { bpm: 150, anchorMs: 6 }, gridFingerprint: 'g0' })
   })
 })
