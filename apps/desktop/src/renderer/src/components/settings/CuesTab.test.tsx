@@ -568,4 +568,37 @@ describe('CuesTab', () => {
     expect(last?.cueFlowToTraktor).toBe(false)
     expect(last?.cueFlowToRekordbox).toBe(true)
   })
+
+  it('lists the targets as rekordbox, Traktor and Engine DJ, in that order', () => {
+    installApi()
+    render(<Harness collection="/c/master.db" />)
+    const rows = within(screen.getByTestId('cue-flow-targets')).getAllByRole('checkbox')
+    expect(rows.map((row) => row.getAttribute('data-testid'))).toEqual([
+      'settings-cue-flow-to-rekordbox',
+      'settings-cue-flow-to-traktor',
+      'settings-cue-flow-to-engine',
+    ])
+    expect(screen.getByTestId('cue-flow-targets')).toHaveTextContent(
+      /rekordbox.*Traktor.*Engine DJ/s,
+    )
+  })
+
+  it('leaves the rekordbox box unticked and says so while no collection is set', () => {
+    installApi({ traktorAvailable: async () => false, engineAvailable: async () => false })
+    render(<Harness collection="" />)
+    expect(screen.getByTestId('settings-cue-flow-to-rekordbox')).toBeDisabled()
+    expect(screen.getByTestId('settings-cue-flow-to-rekordbox')).not.toBeChecked()
+    expect(screen.getByTestId('settings-cue-flow-to-rekordbox-missing')).toHaveTextContent(
+      'rekordbox',
+    )
+  })
+
+  it('names Engine DJ and Traktor when they are missing, and ticks each box only where found', async () => {
+    installApi({ traktorAvailable: async () => false, engineAvailable: async () => true })
+    render(<Harness collection="/c/master.db" />)
+    await waitFor(() => expect(screen.getByTestId('settings-cue-flow-to-engine')).toBeEnabled())
+    expect(screen.getByTestId('settings-cue-flow-to-engine')).toBeChecked()
+    expect(screen.getByTestId('settings-cue-flow-to-traktor')).not.toBeChecked()
+    expect(screen.getByTestId('settings-cue-flow-to-traktor-missing')).toHaveTextContent('Traktor')
+  })
 })
