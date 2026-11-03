@@ -1,4 +1,5 @@
 import { type CueFlow, type FlowPhrase, MIX_IN } from '../../../shared/cueFlows'
+import { nearestBeatMs } from '../../../shared/cueGrid'
 import {
   ALL_SLOTS,
   type CueSlots,
@@ -86,6 +87,7 @@ export type DraftAction =
   | { type: 'undo' }
   | { type: 'redo' }
   | { type: 'set-grid'; grid: EditableGrid }
+  | { type: 'snap-to-beat'; keys: string[] }
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
 const isHot = (c: { kind: number }): boolean => c.kind !== 0
@@ -485,6 +487,15 @@ function step(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft
   const generator = flowById(ctx, state.generatedBy)
   if (action.type === 'select') return { ...state, selected: action.key }
   if (action.type === 'use-flow') return { ...state, flowId: action.flowId }
+  if (action.type === 'snap-to-beat') {
+    if (ctx.beats.length < 2) return state
+    const keys = action.keys.filter((k) => !state.locked.includes(k))
+    const moved = state.cues.map((c) =>
+      keys.includes(c.key) ? { ...c, ms: nearestBeatMs(c.ms, ctx.beats) } : c,
+    )
+    if (moved.every((c, i) => c.ms === state.cues[i].ms)) return state
+    return commit(state, moved, { edited: [...state.edited, ...keys] })
+  }
   if (action.type === 'set-grid')
     return { ...state, grid: action.grid, past: [...state.past, snapshot(state)], future: [] }
   if (action.type === 'batch') {

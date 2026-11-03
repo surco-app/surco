@@ -1206,3 +1206,48 @@ describe('the beat grid in the draft', () => {
     expect(gridRequestOf(moved)).toEqual({})
   })
 })
+
+describe('bringing cues onto their beat', () => {
+  const offBeat = (): CueDraft =>
+    startDraft(
+      [
+        { id: 'call', ms: 31986, kind: 0, color: null },
+        { id: 'b', ms: 64008, kind: 2, color: 22 },
+        { id: 'bcall', ms: 64008, kind: 0, color: null },
+        { id: 'loop', ms: 95990, kind: 3, color: 1 },
+      ],
+      'mine',
+      ['loop'],
+    )
+
+  it('puts each named cue on its nearest beat, however close it already was, since a few ms is what the DJ hears', () => {
+    const s = run(offBeat(), { type: 'snap-to-beat', keys: ['call', 'b', 'bcall'] })
+    expect(s.cues.map((c) => [c.key, c.ms])).toEqual([
+      ['call', 32000],
+      ['b', 64000],
+      ['bcall', 64000],
+      ['loop', 95990],
+    ])
+  })
+
+  it('lands on the beat, not on the bar the quantize would pick', () => {
+    const s = run(offBeat(), { type: 'snap-to-beat', keys: ['call'] })
+    expect(s.cues.find((c) => c.key === 'call')?.ms).toBe(32000)
+    const midBar = startDraft([{ id: 'x', ms: bar(8) + 1510, kind: 0, color: null }], 'mine')
+    const onBars = { ...ctx, snapTo: beats.filter((_, i) => i % 4 === 0) }
+    expect(reduceDraft(midBar, { type: 'snap-to-beat', keys: ['x'] }, onBars).cues[0].ms).toBe(
+      bar(8) + 1500,
+    )
+  })
+
+  it('leaves a locked loop where it is', () => {
+    const s = run(offBeat(), { type: 'snap-to-beat', keys: ['loop'] })
+    expect(s.cues.find((c) => c.key === 'loop')?.ms).toBe(95990)
+  })
+
+  it('takes all the moves back in one undo', () => {
+    const start = offBeat()
+    const s = run(start, { type: 'snap-to-beat', keys: ['call', 'b', 'bcall'] }, { type: 'undo' })
+    expect(s.cues).toEqual(start.cues)
+  })
+})
