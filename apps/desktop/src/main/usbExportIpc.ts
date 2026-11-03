@@ -44,7 +44,7 @@ export function registerUsbExportIpc(opts: {
   appData: string
   baken: () => { file: string; prefixArgs: string[] } | null
   // The close dialog the playlist writer uses, with the export's wording; true once
-  // rekordbox is gone.
+  // the program is gone.
   ensureClosed: <P extends UsbProgram>(
     program: P,
     win: BrowserWindow | null,

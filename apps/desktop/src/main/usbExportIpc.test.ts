@@ -99,11 +99,13 @@ describe('registerUsbExportIpc', () => {
   })
 
   it('refuses an export while the other program writes, since both would write the same drive at once', async () => {
-    register(fake(true), fake())
+    const engine = fake()
+    register(fake(true), engine)
     expect(await handlerFor('usb:export')({ sender: {} }, req('engine'))).toEqual({
       ok: false,
       reason: 'busy',
     })
+    expect(engine.start).not.toHaveBeenCalled()
     vi.mocked(ipcMain.handle).mockClear()
     const rekordbox = fake()
     register(rekordbox, fake(true))

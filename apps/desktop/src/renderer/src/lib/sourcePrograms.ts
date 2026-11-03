@@ -69,7 +69,9 @@ export interface SourceProgram {
   invalidatesOnEdit: boolean
 }
 
-export const SOURCE_PROGRAMS: Record<DjProgram, SourceProgram> = {
+export const SOURCE_PROGRAMS: {
+  [P in DjProgram]: SourceProgram & { usb: P extends UsbProgram ? true : false }
+} = {
   rekordbox: {
     separator: () => window.api.rekordboxHasSeparator(),
     edit: {

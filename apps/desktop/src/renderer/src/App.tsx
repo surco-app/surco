@@ -917,7 +917,9 @@ export default function App(): React.JSX.Element {
     preselect: string | null
     source: UsbProgram
   } | null>(null)
-  const { list: usbVolumes } = useUsbVolumes(usbAvailable || usbModal?.source === 'engine')
+  const { list: usbVolumes } = useUsbVolumes(
+    usbAvailable || (usbModal !== null && usbModal.source !== 'rekordbox'),
+  )
   // Opening after a finished background export starts again at the chooser: its result was
   // already announced.
   const openUsbExport = useCallback(

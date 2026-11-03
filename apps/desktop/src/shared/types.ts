@@ -1739,7 +1739,7 @@ export interface UsbExportRequest {
   target: UsbTarget
   prune: boolean
   settings: boolean
-  source?: 'engine'
+  source?: Exclude<UsbProgram, 'rekordbox'>
 }
 
 export type UsbFailure =

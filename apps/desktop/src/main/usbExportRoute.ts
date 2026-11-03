@@ -12,7 +12,7 @@ export interface UsbExporter {
 export type UsbExporters = Partial<Record<DjProgram, UsbExporter>> & Record<UsbProgram, UsbExporter>
 
 export function usbProgramOf(req: UsbExportRequest): UsbProgram {
-  return req.source === 'engine' ? 'engine' : 'rekordbox'
+  return req.source ?? 'rekordbox'
 }
 
 export function routeUsbExports(exporters: UsbExporters): UsbExporter {
