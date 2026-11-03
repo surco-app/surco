@@ -1,5 +1,16 @@
 [
   {
+    "version": "1.21",
+    "date": "November 3, 2026",
+    "title": "Cues on the beat",
+    "items": [
+      {
+        "text": "In rekordbox, Traktor and Engine DJ, the “Cues off the grid” filter pulls out the tracks with a cue that doesn’t land on the beat of its grid. Open them, clear their cues and hit “Auto mark”. In Settings › Cues, “Grid tolerance” sets how many ms counts, 5, 10 or 20.",
+        "in": "1.21.0"
+      }
+    ]
+  },
+  {
     "version": "1.20",
     "date": "November 2, 2026",
     "title": "Cues at a glance",

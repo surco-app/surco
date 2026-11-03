@@ -1,5 +1,16 @@
 [
   {
+    "version": "1.21",
+    "date": "November 3, 2026",
+    "title": "Cues auf dem Beat",
+    "items": [
+      {
+        "text": "In rekordbox, Traktor und Engine DJ zeigt dir der Filter „Cues neben dem Raster“ die Tracks mit einem Cue, der nicht auf dem Beat seines Rasters liegt. Du öffnest sie, löschst ihre Cues und drückst „Auto-Markieren“. Unter Einstellungen › Cues legt „Raster-Toleranz“ fest, ab wie vielen ms es zählt, 5, 10 oder 20.",
+        "in": "1.21.0"
+      }
+    ]
+  },
+  {
     "version": "1.20",
     "date": "November 2, 2026",
     "title": "Cues auf einen Blick",

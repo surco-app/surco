@@ -261,6 +261,11 @@
             "d": "Hot cues de A à H et CALL, sur la forme d'onde et la grille de rekordbox. Fais-les glisser, ils s'aimantent à la mesure ou au temps, et tu peux annuler. Choisis un flux, comme Mix in 64, Mix in 32 ou l'un des tiens, monté à partir de blocs ou appris de ta collection, et en survolant la forme d'onde tu vois un fantôme de ce qu'il placerait. Un clic le place et te dit ce qui ne rentre pas. Le marquage auto suggère où chaque morceau décolle, aussi sur plusieurs à la fois. Il apprend ta façon de marquer à partir des cues que tu as déjà posés et de ceux que tu enregistres, et sépare ce dont il est sûr de ce dont il doute. Et si tu marques les CALL dans rekordbox, Surco place les hot cues de ton flux quand tu le fermes. Sur un morceau que rekordbox n'a pas encore analysé, tu travailles sur la grille de Surco, et une fois que rekordbox l'analyse, tes cues passent sur la sienne. Les lettres suivent l'ordre du morceau, et si chaque lettre est un pad fixe pour toi, désactive-le dans les Réglages. Si le même morceau est dans Traktor ou Engine DJ, l'enregistrement y place aussi le flux, sur sa grille et autour de ses cues. Écrit dans rekordbox après une sauvegarde."
           },
           {
+            "t": "Cues hors de la grille",
+            "s": "Sort les pistes dont les cues ne tombent pas sur le temps de la grille.",
+            "d": "Dans rekordbox, Traktor et Engine DJ, Surco mesure chaque cue par rapport à la grille de la piste et te dit combien de pistes dérivent. Tu les filtres, tu ouvres l'éditeur, tu effaces leurs cues et tu lances Marquage auto. Tu choisis à partir de combien de ms ça compte dans les réglages des cues, 5, 10 ou 20 ms. 10 par défaut."
+          },
+          {
             "t": "Ta collection rekordbox",
             "s": "Après la conversion, le morceau reste le même dans rekordbox, avec ses playlists et ses cues.",
             "d": "Après la conversion, le morceau reste le même morceau dans rekordbox, avec ses playlists, ses cue points et son historique, et modifier ses tags ne renomme jamais le fichier. Active-le dans les Réglages. Il sauvegarde d'abord, et si rekordbox est ouvert, il attend que tu le fermes."
@@ -963,6 +968,7 @@
           "Si rekordbox n'a pas encore analysé le morceau, Surco mesure la grille et tu peux poser les cues quand même. Une fois que rekordbox l'analyse, ils se calent sur sa grille.",
           "Marquage auto suggère, il ne décide pas. Ses suggestions ne sont pas toujours justes, donc rien n'est enregistré tant que tu ne les as pas acceptées. Les sûres ont une ligne continue et les douteuses une ligne pointillée, et dans Réglages › Cues, « Apprendre de mes morceaux » l’adapte à ta façon de marquer.",
           "La même chose marche avec les playlists Engine DJ et Traktor, qui ne reçoivent que les hot cues. Dans Traktor, ils apparaissent en bleu et sur les boutons 2 à 8, car le bouton 1 sert à sa grille.",
+          "Pour trouver les cues qui tombent à côté du temps, le filtre « Cues hors de la grille » de rekordbox, Traktor et Engine DJ te sort les pistes avec un cue hors de la grille. Tu les ouvres, tu effaces leurs cues et tu lances Marquage auto. Dans Réglages › Cues, « Tolérance de la grille » fixe à partir de combien de ms ça compte, 5, 10 ou 20.",
           "Un flux marqué dans un logiciel atteint le même morceau dans les autres à l'enregistrement, chacun sur sa propre grille et autour des cues qu'il avait déjà. Avant d'enregistrer, l'éditeur t'indique ce que chaque logiciel va recevoir, et dans Réglages › Cues tu choisis lesquels il atteint. Seul ce que place un flux voyage : les cues que tu poses à la main restent dans le logiciel où tu les as marqués. Et s'il ne reste plus de lettre libre dans un autre logiciel, l'éditeur t'indique combien ne rentrent pas."
         ],
         "shot": "rekordbox-fr.webp",
@@ -1093,6 +1099,8 @@
     "closeDirect": "Téléchargement direct",
     "closeSafeLead": "Tes originaux, à l'abri.",
     "closeSafeRest": "Quand tu changes de format, la copie va dans un dossier séparé. Si la copie remplace l'ancienne dans ta bibliothèque, l'ancienne va à la corbeille ou dans Sauvegardes une fois la nouvelle vérifiée. Notarisé par Apple.",
+    "closeStatsLead": "Sans télémétrie.",
+    "closeStatsRest": "Surco ne sait pas qui l’utilise ni ce que tu fais de ta musique. Les seuls chiffres publics sont les téléchargements, et tu les trouves dans <stats>Statistiques</stats>.",
     "allFeatures": "Voir tout ce qu'il fait →",
     "worksWith": "Compatible avec",
     "heroLede": "Surco convertit tes morceaux, les tague depuis Discogs ou Beatport, vérifie que tes fichiers sans perte le sont vraiment et les dépose dans rekordbox, Traktor, Engine DJ ou Apple Music.",
@@ -1178,6 +1186,18 @@
         "programs": {
           "title": "Directement dans ton logiciel",
           "text": "rekordbox, Engine DJ et Traktor. Engine DJ et Traktor ne prennent que les hot cues."
+        }
+      },
+      "grid": {
+        "title": "Trouve les cues qui tombent à côté du temps.",
+        "text": "Dans rekordbox, Engine DJ et Traktor, Surco mesure chaque cue par rapport à la grille et te sort les pistes qui dérivent. Tu les effaces et tu lances Marquage auto. Tu choisis à partir de combien de ms ça compte.",
+        "clearAll": "Effacer toutes les cues",
+        "miss": "à {{ms}} ms du temps",
+        "hit": "sur le temps",
+        "filters": {
+          "silence": "Silence à rogner",
+          "noCues": "Sans cues",
+          "offGrid": "Cues hors de la grille"
         }
       }
     },

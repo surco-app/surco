@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import BrewCommand from './components/BrewCommand'
 import DownloadButton from './components/DownloadButton'
 import Footer from './components/Footer'
@@ -13,6 +13,7 @@ import SectionView from './components/SectionView'
 import SpectrumDuotone from './components/SpectrumDuotone'
 import Spotlight from './components/Spotlight'
 import CuesScene from './components/scenes/CuesScene'
+import GridScene from './components/scenes/GridScene'
 import ReplaceScene from './components/scenes/ReplaceScene'
 import Walkthrough from './components/Walkthrough'
 import type { Language } from './i18n'
@@ -39,6 +40,7 @@ const INTEGRATIONS = [
 export default function App() {
   const { t, i18n } = useTranslation()
   const featuresHref = PAGES.features[i18n.language as Language]
+  const statsHref = PAGES.stats[i18n.language as Language]
 
   return (
     <div id="top" className="min-h-screen overflow-x-clip bg-bg text-fg antialiased">
@@ -134,7 +136,9 @@ export default function App() {
             copy="cues"
             points={['oneClick', 'yourFlow', 'programs']}
             scene={<CuesScene />}
-          />
+          >
+            <GridScene />
+          </Spotlight>
           <Spotlight
             id={SCENE_ANCHORS.replace}
             view={SECTION_VIEWS.replace}
@@ -204,6 +208,43 @@ export default function App() {
               <p className="text-sm leading-relaxed text-pretty text-faint">
                 <b className="font-semibold text-muted">{t('home.closeSafeLead')}</b>{' '}
                 {t('home.closeSafeRest')}
+              </p>
+            </div>
+
+            <div className="mx-auto mt-2.5 flex max-w-3xl items-start gap-3 rounded-2xl border border-line bg-surface/25 px-5 py-4">
+              <svg
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className="mt-0.5 flex-none text-green"
+              >
+                <path d="M9.9 4.2A10 10 0 0 1 12 4c5 0 9 4.5 10 8a13 13 0 0 1-2.2 3.7" />
+                <path d="M6.6 6.6C4.4 8 2.8 10.1 2 12c1 3.5 5 8 10 8a10 10 0 0 0 5.4-1.6" />
+                <path d="M14.1 14.1a3 3 0 0 1-4.2-4.2" />
+                <path d="M2 2l20 20" />
+              </svg>
+              <p className="text-sm leading-relaxed text-pretty text-faint">
+                <b className="font-semibold text-muted">{t('home.closeStatsLead')}</b>{' '}
+                <Trans
+                  i18nKey="home.closeStatsRest"
+                  components={{
+                    stats: (
+                      <a
+                        href={statsHref}
+                        data-testid="home-closing-stats"
+                        className="font-medium text-blue transition-colors hover:text-cyan"
+                      >
+                        {t('nav.estadisticas')}
+                      </a>
+                    ),
+                  }}
+                />
               </p>
             </div>
 

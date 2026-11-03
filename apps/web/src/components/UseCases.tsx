@@ -52,7 +52,7 @@ export default function UseCases() {
 
       <Header page="useCases" />
 
-      <main id="main" className="relative mx-auto max-w-3xl px-6 sm:px-10">
+      <main id="main" className="relative mx-auto max-w-6xl px-6 sm:px-10">
         <section className="pt-12 pb-4 sm:pt-16">
           <Reveal eager>
             <Kicker>{t('useCases.kicker')}</Kicker>
@@ -64,69 +64,71 @@ export default function UseCases() {
 
           <Reveal eager delay={120}>
             <nav aria-label={t('useCases.tocLabel')} className="mt-10">
-              <label
-                data-testid="use-case-search"
-                className="flex h-12 items-center gap-3 rounded-xl border border-line bg-surface2 px-4 transition-colors focus-within:border-blue focus-within:ring-1 focus-within:ring-blue"
-              >
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  className="h-5 w-5 flex-none fill-none stroke-faint stroke-2"
-                  strokeLinecap="round"
+              <div className="max-w-2xl">
+                <label
+                  data-testid="use-case-search"
+                  className="flex h-12 items-center gap-3 rounded-xl border border-line bg-surface2 px-4 transition-colors focus-within:border-blue focus-within:ring-1 focus-within:ring-blue"
                 >
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="M20 20l-4-4" />
-                </svg>
-                <span className="sr-only">{t('useCases.searchLabel')}</span>
-                <input
-                  type="search"
-                  value={query}
-                  onChange={(e) => filterBy({ query: e.target.value, source })}
-                  placeholder={t('useCases.searchPlaceholder')}
-                  className="h-full min-w-0 flex-1 bg-transparent text-base text-fg placeholder:text-faint focus-visible:outline-none!"
-                />
-                {filtering && (
-                  <span aria-hidden="true" className="flex-none font-mono text-xs text-faint">
-                    {t('useCases.shownCount', { shown: shown.length, total: cases.length })}
-                  </span>
-                )}
-              </label>
-              <p aria-live="polite" className="sr-only">
-                {shown.length === 0
-                  ? t('useCases.emptyTitle')
-                  : filtering
-                    ? t('useCases.shownCount', { shown: shown.length, total: cases.length })
-                    : ''}
-              </p>
-
-              <fieldset className="-mx-6 mt-3 flex min-w-0 items-center gap-1 overflow-x-auto px-6 [scrollbar-width:none]">
-                <legend className="sr-only">{t('useCases.sourcesLabel')}</legend>
-                <span
-                  aria-hidden="true"
-                  className="mr-1 flex-none text-sm whitespace-nowrap text-faint"
-                >
-                  {t('useCases.sourcesLabel')}
-                </span>
-                {[null, ...USE_CASE_SOURCES].map((s) => (
-                  <button
-                    key={s ?? 'all'}
-                    type="button"
-                    data-testid="use-case-source"
-                    aria-pressed={source === s}
-                    onClick={() => filterBy({ query, source: s })}
-                    className={`h-9 flex-none rounded-full border px-2.5 text-sm whitespace-nowrap transition-colors ${
-                      source === s
-                        ? 'border-blue bg-blue font-semibold text-bg'
-                        : 'border-line text-muted hover:border-blue/50 hover:text-fg'
-                    }`}
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className="h-5 w-5 flex-none fill-none stroke-faint stroke-2"
+                    strokeLinecap="round"
                   >
-                    {s ? t(`useCases.sources.${s}`) : t('useCases.allSources')}
-                  </button>
-                ))}
-              </fieldset>
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="M20 20l-4-4" />
+                  </svg>
+                  <span className="sr-only">{t('useCases.searchLabel')}</span>
+                  <input
+                    type="search"
+                    value={query}
+                    onChange={(e) => filterBy({ query: e.target.value, source })}
+                    placeholder={t('useCases.searchPlaceholder')}
+                    className="h-full min-w-0 flex-1 bg-transparent text-base text-fg placeholder:text-faint focus-visible:outline-none!"
+                  />
+                  {filtering && (
+                    <span aria-hidden="true" className="flex-none font-mono text-xs text-faint">
+                      {t('useCases.shownCount', { shown: shown.length, total: cases.length })}
+                    </span>
+                  )}
+                </label>
+                <p aria-live="polite" className="sr-only">
+                  {shown.length === 0
+                    ? t('useCases.emptyTitle')
+                    : filtering
+                      ? t('useCases.shownCount', { shown: shown.length, total: cases.length })
+                      : ''}
+                </p>
+
+                <fieldset className="-mx-6 mt-3 flex min-w-0 items-center gap-1 overflow-x-auto px-6 [scrollbar-width:none]">
+                  <legend className="sr-only">{t('useCases.sourcesLabel')}</legend>
+                  <span
+                    aria-hidden="true"
+                    className="mr-1 flex-none text-sm whitespace-nowrap text-faint"
+                  >
+                    {t('useCases.sourcesLabel')}
+                  </span>
+                  {[null, ...USE_CASE_SOURCES].map((s) => (
+                    <button
+                      key={s ?? 'all'}
+                      type="button"
+                      data-testid="use-case-source"
+                      aria-pressed={source === s}
+                      onClick={() => filterBy({ query, source: s })}
+                      className={`h-9 flex-none rounded-full border px-2.5 text-sm whitespace-nowrap transition-colors ${
+                        source === s
+                          ? 'border-blue bg-blue font-semibold text-bg'
+                          : 'border-line text-muted hover:border-blue/50 hover:text-fg'
+                      }`}
+                    >
+                      {s ? t(`useCases.sources.${s}`) : t('useCases.allSources')}
+                    </button>
+                  ))}
+                </fieldset>
+              </div>
 
               {shown.length === 0 ? (
-                <div className="mt-8 rounded-xl border border-dashed border-line px-6 py-10 text-center">
+                <div className="mt-8 max-w-2xl rounded-xl border border-dashed border-line px-6 py-10 text-center">
                   <p className="text-fg">{t('useCases.emptyTitle')}</p>
                   <p className="mt-2 text-sm text-muted">{t('useCases.outroLede')}</p>
                   <div className="mt-4 flex flex-col items-center gap-2">
@@ -149,14 +151,19 @@ export default function UseCases() {
                   </div>
                 </div>
               ) : (
-                <div className="mt-8 space-y-8">
+                <div className="mt-6">
                   {groups.map((group) => {
                     const items = casesIn(group)
                     if (items.length === 0) return null
                     return (
-                      <div key={group.id}>
-                        <p className="text-sm font-medium text-faint">{group.title}</p>
-                        <ul className="mt-3 divide-y divide-line overflow-hidden rounded-xl border border-line">
+                      <div
+                        key={group.id}
+                        className="grid gap-x-14 gap-y-3 pt-10 lg:grid-cols-[16rem_minmax(0,1fr)]"
+                      >
+                        <p className="text-2xl font-semibold tracking-tight text-balance text-fg lg:sticky lg:top-24 lg:self-start">
+                          {group.title}
+                        </p>
+                        <ul className="max-w-2xl divide-y divide-line overflow-hidden rounded-xl border border-line">
                           {items.map((c) => (
                             <li key={c.id}>
                               <a

@@ -261,6 +261,11 @@
             "d": "Hot cues de la A a la H y CALL, sobre la onda y la rejilla de rekordbox. Los arrastras, se ajustan al compás o al golpe y puedes deshacer. Eliges un flujo, como Mix in 64, Mix in 32 o uno tuyo hecho por bloques o aprendido de tu colección, y al pasar el ratón por la onda ves en transparente lo que pondría. Un clic lo coloca y te dice lo que no cabe. Auto marcar te propone dónde rompe cada pista, también en varias a la vez. Aprende tu forma de marcar de los cues que ya pusiste y de los que guardas, y separa lo que ve seguro de lo dudoso. Y si marcas los CALL en rekordbox, Surco pone los hot cues de tu flujo al cerrarlo. En una pista que rekordbox aún no ha analizado trabajas sobre la rejilla de Surco, y cuando rekordbox la analiza, tus cues se ajustan a la suya. Las letras siguen el orden de la pista, y si cada letra es un pad fijo para ti, lo apagas en Ajustes. Si la misma pista está en Traktor o Engine DJ, al guardar el flujo llega también allí, puesto con su rejilla y sus cues. Se escriben en rekordbox con copia de seguridad antes."
           },
           {
+            "t": "Cues fuera de la rejilla",
+            "s": "Saca las pistas cuyos cues no caen en el golpe de la rejilla.",
+            "d": "En rekordbox, Traktor y Engine DJ, Surco mide cada cue contra la rejilla de la pista y te dice cuántas pistas se pasan. Las filtras, abres el editor, borras sus cues y das a Auto marcar. Desde cuántos ms cuenta lo eliges en los ajustes de cues, entre 5, 10 y 20 ms. Por defecto, 10."
+          },
+          {
             "t": "Tu colección de rekordbox",
             "s": "Al convertir, la pista sigue siendo la misma en rekordbox, con sus playlists y cues.",
             "d": "Al convertir, la pista sigue siendo la misma en rekordbox, con sus playlists, sus cue points y su historial, y cambiar sus etiquetas no le cambia el nombre al archivo. Se activa en Ajustes y hace copia de seguridad antes. Si rekordbox está abierto, espera a que lo cierres."
@@ -963,6 +968,7 @@
           "Si rekordbox aún no ha analizado la pista, Surco calcula la rejilla y puedes poner los cues igual. Cuando rekordbox la analiza, se ajustan a su rejilla.",
           "Auto marcar propone, no decide. Sus propuestas no siempre aciertan, así que no se guarda nada hasta que las aceptas. Las seguras se ven con línea continua y las dudosas discontinuas, y en Ajustes › Cues, «Aprender de mis pistas» lo ajusta a tu forma de marcar.",
           "Lo mismo con las playlists de Engine DJ y Traktor, que reciben solo los hot cues. En Traktor salen en azul y en los botones 2 a 8, porque el 1 es para su rejilla.",
+          "Para encontrar los cues que no caen en el golpe, el filtro «Cues fuera de la rejilla» de rekordbox, Traktor y Engine DJ te saca las pistas con algún cue fuera de la rejilla. Las abres, borras sus cues y das a Auto marcar. En Ajustes › Cues, «Tolerancia de la rejilla» decide desde cuántos ms cuenta, 5, 10 o 20.",
           "Un flujo marcado en un programa llega al guardar a la misma pista en los demás, cada uno con su rejilla y los cues que ya tenía. Antes de guardar, el editor dice qué recibirá cada programa, y en Ajustes › Cues eliges a cuáles llega. Solo viaja lo que pone un flujo: los cues que pones a mano se quedan en el programa donde los marcas. Y si en otro programa no quedan letras libres, el editor te dice cuántas no caben."
         ],
         "shot": "rekordbox-es.webp",
@@ -1093,6 +1099,8 @@
     "closeDirect": "Descarga directa",
     "closeSafeLead": "Tus originales, a salvo.",
     "closeSafeRest": "Al cambiar de formato, la copia va a una carpeta aparte. Si la copia sustituye a la vieja en tu biblioteca, la vieja va a la papelera o a Copias después de comprobar la nueva. Notarizado por Apple.",
+    "closeStatsLead": "Sin telemetría.",
+    "closeStatsRest": "Surco no sabe quién lo usa ni qué haces con tu música. Lo único público son las descargas, y las tienes en <stats>Estadísticas</stats>.",
     "allFeatures": "Ver todo lo que hace →",
     "worksWith": "Funciona con",
     "heroLede": "Surco convierte tus pistas, las etiqueta desde Discogs o Beatport, comprueba que el lossless lo sea de verdad y las deja en rekordbox, Traktor, Engine DJ o Apple Music.",
@@ -1178,6 +1186,18 @@
         "programs": {
           "title": "Directo a tu programa",
           "text": "rekordbox, Engine DJ y Traktor. Engine DJ y Traktor reciben solo los hot cues."
+        }
+      },
+      "grid": {
+        "title": "Encuentra los cues que no caen en el golpe.",
+        "text": "En rekordbox, Engine DJ y Traktor, Surco mide cada cue contra la rejilla y te saca las pistas que se pasan. Borras y das a Auto marcar. Tú eliges desde cuántos ms cuenta.",
+        "clearAll": "Borrar todos los cues",
+        "miss": "a {{ms}} ms del golpe",
+        "hit": "en el golpe",
+        "filters": {
+          "silence": "Silencio por recortar",
+          "noCues": "Sin cues",
+          "offGrid": "Cues fuera de la rejilla"
         }
       }
     },

@@ -261,6 +261,11 @@
             "d": "Hot Cues A bis H und CALLs, auf der Wellenform und dem Raster von rekordbox. Zieh sie, sie rasten am Takt oder Beat ein, und du kannst alles rückgängig machen. Wähle einen Ablauf, etwa Mix in 64, Mix in 32 oder einen eigenen, aus Blöcken gebaut oder aus deiner Sammlung gelernt, und fährst du über die Wellenform, zeigt ein Schatten, was er setzen würde. Ein Klick setzt ihn und sagt dir, was nicht passt. Auto-Markieren schlägt vor, wo jeder Track losbricht, auch bei mehreren auf einmal. Es lernt aus den Cues, die du schon gesetzt hast und die du speicherst, wie du markierst, und trennt, was es sicher sieht, von dem, was es bezweifelt. Und markierst du die CALLs in rekordbox, setzt Surco beim Schließen die Hot Cues deines Ablaufs. Bei einem Track, den rekordbox noch nicht analysiert hat, arbeitest du auf dem Raster von Surco, und sobald rekordbox ihn analysiert, wandern deine Cues auf dessen Raster. Die Buchstaben folgen der Reihenfolge im Track, und ist jeder Buchstabe für dich ein festes Pad, schalte das in den Einstellungen aus. Ist derselbe Track in Traktor oder Engine DJ, setzt das Speichern den Ablauf auch dort, auf deren Raster und um deren Cues herum. Geschrieben wird in rekordbox erst nach einer Sicherung."
           },
           {
+            "t": "Cues neben dem Raster",
+            "s": "Zeigt dir die Tracks, deren Cues nicht auf dem Beat des Rasters liegen.",
+            "d": "In rekordbox, Traktor und Engine DJ misst Surco jeden Cue am Raster des Tracks und sagt dir, wie viele Tracks danebenliegen. Du filterst sie, öffnest den Editor, löschst ihre Cues und drückst Auto-Markieren. Ab wie vielen ms es zählt, wählst du in den Cue-Einstellungen, 5, 10 oder 20 ms. Standard ist 10."
+          },
+          {
             "t": "Deine rekordbox-Sammlung",
             "s": "Nach dem Konvertieren bleibt der Track in rekordbox derselbe, mit seinen Playlists und Cues.",
             "d": "Nach dem Konvertieren ist der Track in rekordbox weiterhin derselbe Track, mit seinen Playlists, Cue-Points und seinem Verlauf, und das Bearbeiten seiner Tags benennt die Datei nie um. Schalte es in den Einstellungen ein. Vorher legt es eine Sicherung an, und ist rekordbox offen, wartet es, bis du es schließt."
@@ -963,6 +968,7 @@
           "Hat rekordbox den Track noch nicht analysiert, misst Surco das Grid, und du kannst die Cues trotzdem setzen. Sobald rekordbox ihn analysiert, wandern sie auf dessen Grid.",
           "Auto-Markieren schlägt vor, es entscheidet nicht. Seine Vorschläge stimmen nicht immer, deshalb wird nichts gespeichert, bevor du sie annimmst. Sichere zeigen eine durchgehende Linie, unsichere eine gestrichelte, und unter Einstellungen › Cues passt „Aus meinen Tracks lernen“ es an deine Art zu markieren an.",
           "Dasselbe funktioniert mit Playlists von Engine DJ und Traktor, die nur die Hot Cues bekommen. In Traktor erscheinen sie in Blau und auf den Tasten 2 bis 8, weil Taste 1 für sein Grid reserviert ist.",
+          "Um die Cues zu finden, die nicht auf dem Beat sitzen, zeigt dir der Filter „Cues neben dem Raster“ in rekordbox, Traktor und Engine DJ die Tracks mit einem Cue neben dem Raster. Du öffnest sie, löschst ihre Cues und drückst Auto-Markieren. Unter Einstellungen › Cues legt „Raster-Toleranz“ fest, ab wie vielen ms es zählt, 5, 10 oder 20.",
           "Ein Flow, den du in einem Programm markierst, erreicht beim Speichern denselben Track in den anderen, jeweils auf dessen eigenem Grid und rund um die Cues, die er schon hatte. Vor dem Speichern sagt dir der Editor, was jedes Programm bekommt, und unter Einstellungen › Cues wählst du, welche es erreicht. Nur was ein Flow setzt, wandert mit: Cues, die du von Hand setzt, bleiben in dem Programm, in dem du sie markierst. Und sind in einem anderen Programm keine Buchstaben mehr frei, sagt dir der Editor, wie viele nicht passen."
         ],
         "shot": "rekordbox-de.webp",
@@ -1093,6 +1099,8 @@
     "closeDirect": "Direkter Download",
     "closeSafeLead": "Deine Originale sind sicher.",
     "closeSafeRest": "Wechselst du das Format, landet die Kopie in einem separaten Ordner. Ersetzt die Kopie die alte in deiner Bibliothek, kommt die alte in den Papierkorb oder unter Backups, nachdem die neue geprüft ist. Von Apple notarisiert.",
+    "closeStatsLead": "Keine Telemetrie.",
+    "closeStatsRest": "Surco weiß nicht, wer es benutzt oder was du mit deiner Musik machst. Öffentlich sind nur die Downloads, und die findest du unter <stats>Statistiken</stats>.",
     "allFeatures": "Alles sehen, was es kann →",
     "worksWith": "Funktioniert mit",
     "heroLede": "Surco konvertiert deine Tracks, taggt sie aus Discogs oder Beatport, prüft, ob deine verlustfreien Dateien wirklich verlustfrei sind, und legt sie in rekordbox, Traktor, Engine DJ oder Apple Music ab.",
@@ -1178,6 +1186,18 @@
         "programs": {
           "title": "Direkt in dein Programm",
           "text": "rekordbox, Engine DJ und Traktor. Engine DJ und Traktor übernehmen nur die Hot Cues."
+        }
+      },
+      "grid": {
+        "title": "Finde die Cues, die nicht auf dem Beat sitzen.",
+        "text": "In rekordbox, Engine DJ und Traktor misst Surco jeden Cue am Raster und zeigt dir die Tracks, die danebenliegen. Du löschst sie und drückst Auto-Markieren. Ab wie vielen ms es zählt, entscheidest du.",
+        "clearAll": "Alle Cues löschen",
+        "miss": "{{ms}} ms neben dem Beat",
+        "hit": "auf dem Beat",
+        "filters": {
+          "silence": "Stille zum Kürzen",
+          "noCues": "Ohne Cues",
+          "offGrid": "Cues neben dem Raster"
         }
       }
     },

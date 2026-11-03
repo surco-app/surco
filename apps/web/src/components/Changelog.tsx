@@ -35,6 +35,9 @@ function itemText(item: Item): string {
 // so the text is still in the prerendered HTML for crawlers.
 const EXPANDED_RELEASES = 1
 
+const ROW = 'grid gap-x-14 gap-y-4 lg:grid-cols-[16rem_minmax(0,1fr)]'
+const SIDE = 'lg:sticky lg:top-24 lg:self-start'
+
 function ItemList({ items }: { items: Item[] }) {
   return (
     <ul className="mt-5 space-y-2.5">
@@ -72,7 +75,7 @@ export default function Changelog() {
 
       <Header page="changelog" />
 
-      <main id="main" className="relative mx-auto max-w-3xl px-6 sm:px-10">
+      <main id="main" className="relative mx-auto max-w-6xl px-6 sm:px-10">
         <section className="pt-12 pb-4 sm:pt-16">
           <Reveal eager>
             <Kicker>{t('changelog.kicker')}</Kicker>
@@ -86,18 +89,18 @@ export default function Changelog() {
         </section>
 
         {beta.items.length > 0 && (
-          <section className="py-12">
+          <section className={`${ROW} py-12`}>
+            <Reveal className={SIDE}>
+              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 lg:flex-col lg:items-start">
+                <span className="text-sm font-medium text-blue">{beta.kicker}</span>
+                <span className="rounded-full border border-line bg-surface2/40 px-3 py-1 font-mono text-sm text-blue tabular-nums">
+                  v{beta.version}
+                </span>
+              </div>
+            </Reveal>
             <Reveal>
-              <div className="rounded-2xl border border-blue/30 bg-blue/[0.04] p-6 sm:p-8">
-                <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                  <span className="text-sm font-medium text-blue">{beta.kicker}</span>
-                  <span className="rounded-full border border-line bg-surface2/40 px-3 py-1 font-mono text-sm text-blue tabular-nums">
-                    v{beta.version}
-                  </span>
-                </div>
-                <h2 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">
-                  {beta.title}
-                </h2>
+              <div className="max-w-2xl rounded-2xl border border-blue/30 bg-blue/[0.04] p-6 sm:p-8">
+                <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{beta.title}</h2>
                 <ItemList items={beta.items} />
                 <p className="mt-6 text-sm leading-relaxed text-faint">{beta.how}</p>
               </div>
@@ -108,10 +111,10 @@ export default function Changelog() {
         {recent.map((r) => (
           <section
             key={r.version}
-            className="border-t border-line/60 py-12 first-of-type:border-t-0"
+            className={`${ROW} border-t border-line/60 py-12 first-of-type:border-t-0`}
           >
-            <Reveal>
-              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <Reveal className={SIDE}>
+              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 lg:flex-col lg:items-start">
                 <span className="rounded-full border border-line bg-surface2/40 px-3 py-1 font-mono text-sm text-blue tabular-nums">
                   v{r.version}
                 </span>
@@ -119,19 +122,25 @@ export default function Changelog() {
                   {releaseDate(r.date)}
                 </span>
               </div>
-              <h2 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">{r.title}</h2>
-              <ItemList items={r.items} />
+            </Reveal>
+            <Reveal>
+              <div className="max-w-2xl">
+                <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{r.title}</h2>
+                <ItemList items={r.items} />
+              </div>
             </Reveal>
           </section>
         ))}
 
         {older.length > 0 && (
-          <section className="py-16 sm:py-20">
-            <Reveal>
+          <section className={`${ROW} py-16 sm:py-20`}>
+            <Reveal className={SIDE}>
               <h2 className="text-lg font-semibold tracking-tight text-faint">
                 {t('changelog.olderTitle')}
               </h2>
-              <div className="mt-4 border-t border-line/60">
+            </Reveal>
+            <Reveal>
+              <div className="max-w-2xl border-t border-line/60">
                 {older.map((r) => (
                   <details key={r.version} className="group border-b border-line/60 py-4">
                     <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-4 gap-y-1 text-fg transition-colors hover:text-blue [&::-webkit-details-marker]:hidden">

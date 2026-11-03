@@ -113,3 +113,14 @@ describe('guide screenshots', () => {
     )
   })
 })
+
+describe('closing privacy note', () => {
+  it.each([['en', en], ...TRANSLATIONS] as const)(
+    '%s wraps exactly one stretch in the stats link, or the way to the figures silently vanishes',
+    (_, locale) => {
+      const rest = locale.home.closeStatsRest
+      expect([...rest.matchAll(/<stats>[^<]+<\/stats>/g)]).toHaveLength(1)
+      expect(rest.replace(/<stats>[^<]+<\/stats>/, '')).not.toMatch(/[<>]/)
+    },
+  )
+})

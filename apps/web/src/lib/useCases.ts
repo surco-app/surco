@@ -146,3 +146,12 @@ export function settingGroups<S extends { tab: string }>(settings: S[]) {
 
 export const settingShot = (lang: Language, id: string, index: number) =>
   `${id}-${index + 1}-${lang}.webp`
+
+export function recipeIndex<
+  G extends { id: string; title: string },
+  C extends { id: string; group: string; title: string },
+>(groups: G[], cases: C[]) {
+  return groups
+    .map((g) => ({ id: g.id, title: g.title, cases: cases.filter((c) => c.group === g.id) }))
+    .filter((g) => g.cases.length > 0)
+}

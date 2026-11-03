@@ -3,7 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { ISSUES_URL } from '../config'
 import type { Language } from '../i18n'
 import { PAGES } from '../lib/nav'
-import { recipePages, settingGroups, settingShot, USE_CASE_SHOTS } from '../lib/useCases'
+import {
+  recipeIndex,
+  recipePages,
+  recipePathForId,
+  settingGroups,
+  settingShot,
+  USE_CASE_SHOTS,
+} from '../lib/useCases'
 import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
@@ -133,118 +140,158 @@ export default function UseCasePage({ id }: { id: string }) {
 
       <Header page="useCases" alternates={alternates} />
 
-      <main id="main" className="relative mx-auto max-w-3xl px-6 sm:px-10">
-        <article data-testid="use-case" className="pt-12 pb-12 sm:pt-16">
-          <Reveal eager>
+      <main
+        id="main"
+        className="relative mx-auto max-w-3xl px-6 sm:px-10 lg:grid lg:max-w-6xl lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-16"
+      >
+        <aside className="hidden lg:block">
+          <nav
+            data-testid="use-case-side-index"
+            aria-label={t('useCases.kicker')}
+            className="sticky top-24 mt-16 max-h-[calc(100vh-8rem)] overflow-y-auto pr-2"
+          >
             <a
               href={PAGES.useCases[lang]}
-              data-testid="use-case-back"
-              className="text-sm text-muted transition-colors hover:text-fg"
+              className="text-sm font-medium text-faint transition-colors hover:text-fg"
             >
-              ‹ {t('useCases.backLabel')}
+              {t('useCases.kicker')}
             </a>
-            <div className="mt-8">
-              <Kicker>{group?.title}</Kicker>
-            </div>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight text-balance sm:text-5xl">
-              {c.title}
-            </h1>
-            {c.macOnly && (
-              <p className="mt-3">
-                <MacBadge />
-              </p>
-            )}
-            {c.body.map((p) => (
-              <p key={p} className="mt-4 max-w-2xl leading-relaxed text-muted">
-                {p}
-              </p>
-            ))}
-
-            {c.settings.length > 0 && (
-              <div className="mt-8 overflow-hidden rounded-2xl border border-line">
-                <div className="bg-surface2 px-5 py-3">
-                  <p className="text-sm font-medium text-faint">{t('useCases.settingsLabel')}</p>
-                  <p className="mt-1 text-sm text-muted">{t('useCases.settingsHint')}</p>
-                </div>
-                {settingGroups(c.settings).map((group, i) => {
-                  const src = settingShot(lang, c.id, i)
-                  const [width, height] = USE_CASE_SHOTS[src] ?? []
-                  const caption = `${t('useCases.settingsRoot')} › ${group.tab}`
-                  return (
-                    <div key={group.tab} className="border-t border-line/60 px-5 py-5">
-                      <button
-                        type="button"
-                        data-testid="use-case-shot"
-                        onClick={() => {
-                          setShot({ src: `/use-cases/${src}`, caption })
-                          setShotOpen(true)
-                        }}
-                        className="block w-full cursor-zoom-in overflow-hidden rounded-xl border border-line"
+            {recipeIndex(groups, cases).map((g) => (
+              <div key={g.id} className="mt-5">
+                <p className="text-[11px] font-medium tracking-wide text-faint uppercase">
+                  {g.title}
+                </p>
+                <ul className="mt-2 space-y-1.5">
+                  {g.cases.map((o) => (
+                    <li key={o.id}>
+                      <a
+                        href={recipePathForId(lang, o.id)}
+                        aria-current={o.id === id ? 'page' : undefined}
+                        className={`block text-[13px] leading-snug transition-colors ${o.id === id ? 'font-medium text-blue' : 'text-muted hover:text-fg'}`}
                       >
-                        <img
-                          src={`/use-cases/${src}`}
-                          alt={caption}
-                          width={width}
-                          height={height}
-                          loading="lazy"
-                          className="block h-auto w-full"
-                        />
-                      </button>
-                      <ul className="mt-5 divide-y divide-line/60">
-                        {group.settings.map((s) => (
-                          <SettingRow key={`${s.tab}-${s.setting}`} s={s} />
-                        ))}
-                      </ul>
-                    </div>
-                  )
-                })}
+                        {o.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            )}
+            ))}
+          </nav>
+        </aside>
 
-            <p className="mt-10 text-sm font-medium text-faint">{t('useCases.stepsLabel')}</p>
-            <ol className="mt-4 space-y-5">
-              {c.steps.map((step, i) => (
-                <li key={step.title} data-testid="use-case-step" className="flex gap-4">
-                  <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full border border-blue font-mono text-sm text-blue">
-                    {i + 1}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-semibold">{step.title}</p>
-                    <p className="mt-0.5 text-sm leading-relaxed text-muted">{step.text}</p>
+        <div className="min-w-0 max-w-3xl">
+          <article data-testid="use-case" className="pt-12 pb-12 sm:pt-16">
+            <Reveal eager>
+              <a
+                href={PAGES.useCases[lang]}
+                data-testid="use-case-back"
+                className="text-sm text-muted transition-colors hover:text-fg"
+              >
+                ‹ {t('useCases.backLabel')}
+              </a>
+              <div className="mt-8">
+                <Kicker>{group?.title}</Kicker>
+              </div>
+              <h1 className="mt-3 text-3xl font-bold tracking-tight text-balance sm:text-5xl">
+                {c.title}
+              </h1>
+              {c.macOnly && (
+                <p className="mt-3">
+                  <MacBadge />
+                </p>
+              )}
+              {c.body.map((p) => (
+                <p key={p} className="mt-4 max-w-2xl leading-relaxed text-muted">
+                  {p}
+                </p>
+              ))}
+
+              {c.settings.length > 0 && (
+                <div className="mt-8 overflow-hidden rounded-2xl border border-line">
+                  <div className="bg-surface2 px-5 py-3">
+                    <p className="text-sm font-medium text-faint">{t('useCases.settingsLabel')}</p>
+                    <p className="mt-1 text-sm text-muted">{t('useCases.settingsHint')}</p>
                   </div>
-                </li>
-              ))}
-            </ol>
+                  {settingGroups(c.settings).map((group, i) => {
+                    const src = settingShot(lang, c.id, i)
+                    const [width, height] = USE_CASE_SHOTS[src] ?? []
+                    const caption = `${t('useCases.settingsRoot')} › ${group.tab}`
+                    return (
+                      <div key={group.tab} className="border-t border-line/60 px-5 py-5">
+                        <button
+                          type="button"
+                          data-testid="use-case-shot"
+                          onClick={() => {
+                            setShot({ src: `/use-cases/${src}`, caption })
+                            setShotOpen(true)
+                          }}
+                          className="block w-full cursor-zoom-in overflow-hidden rounded-xl border border-line"
+                        >
+                          <img
+                            src={`/use-cases/${src}`}
+                            alt={caption}
+                            width={width}
+                            height={height}
+                            loading="lazy"
+                            className="block h-auto w-full"
+                          />
+                        </button>
+                        <ul className="mt-5 divide-y divide-line/60">
+                          {group.settings.map((s) => (
+                            <SettingRow key={`${s.tab}-${s.setting}`} s={s} />
+                          ))}
+                        </ul>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
 
-            <ul className="mt-8 space-y-2.5">
-              {c.points.map((point) => (
-                <li key={point} className="flex gap-3 text-sm leading-relaxed text-muted">
-                  <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
-                  <span>{point}</span>
-                </li>
-              ))}
-            </ul>
-
-            {c.related.length > 0 && (
-              <p className="mt-8 text-sm text-faint">
-                {t('useCases.relatedLabel')}{' '}
-                {c.related.map((r, i) => (
-                  <span key={r.anchor}>
-                    {i > 0 && ' · '}
-                    <a
-                      href={`${guideHref}#${r.anchor}`}
-                      className="text-blue transition-colors hover:text-cyan"
-                    >
-                      {r.label}
-                    </a>
-                  </span>
+              <p className="mt-10 text-sm font-medium text-faint">{t('useCases.stepsLabel')}</p>
+              <ol className="mt-4 space-y-5">
+                {c.steps.map((step, i) => (
+                  <li key={step.title} data-testid="use-case-step" className="flex gap-4">
+                    <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full border border-blue font-mono text-sm text-blue">
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-semibold">{step.title}</p>
+                      <p className="mt-0.5 text-sm leading-relaxed text-muted">{step.text}</p>
+                    </div>
+                  </li>
                 ))}
-              </p>
-            )}
-          </Reveal>
-        </article>
+              </ol>
 
-        <UseCaseOutro />
+              <ul className="mt-8 space-y-2.5">
+                {c.points.map((point) => (
+                  <li key={point} className="flex gap-3 text-sm leading-relaxed text-muted">
+                    <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {c.related.length > 0 && (
+                <p className="mt-8 text-sm text-faint">
+                  {t('useCases.relatedLabel')}{' '}
+                  {c.related.map((r, i) => (
+                    <span key={r.anchor}>
+                      {i > 0 && ' · '}
+                      <a
+                        href={`${guideHref}#${r.anchor}`}
+                        className="text-blue transition-colors hover:text-cyan"
+                      >
+                        {r.label}
+                      </a>
+                    </span>
+                  ))}
+                </p>
+              )}
+            </Reveal>
+          </article>
+
+          <UseCaseOutro />
+        </div>
       </main>
 
       <Lightbox

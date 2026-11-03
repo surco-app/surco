@@ -11,12 +11,14 @@ export default function Spotlight({
   copy,
   points,
   scene,
+  children,
 }: {
   id: string
   view: SectionLocation
   copy: 'cues' | 'replace'
   points: readonly string[]
   scene: ReactNode
+  children?: ReactNode
 }) {
   const { t } = useTranslation()
 
@@ -51,6 +53,11 @@ export default function Spotlight({
           ))}
         </ul>
       </Reveal>
+      {children && (
+        <Reveal delay={200} className="mt-6">
+          <Replayable>{children}</Replayable>
+        </Reveal>
+      )}
     </section>
   )
 }
