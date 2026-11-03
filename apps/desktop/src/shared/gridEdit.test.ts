@@ -185,3 +185,21 @@ describe('gridFingerprint', () => {
     expect(gridFingerprint([])).toBe('')
   })
 })
+
+describe('gridOffsets with the phase measured along the track', () => {
+  const fit = {
+    bpm: 150,
+    firstMs: 0,
+    phases: [
+      { ms: 10000, firstMs: 25 },
+      { ms: 200000, firstMs: 0 },
+    ],
+  }
+
+  it('compares the grid with the beats near the playhead, not with one fit of the whole track', () => {
+    expect(gridOffsets({ bpm: 150, anchorMs: 0 }, fit, 12000, 345000)).toEqual({
+      hereMs: -25,
+      endMs: 0,
+    })
+  })
+})

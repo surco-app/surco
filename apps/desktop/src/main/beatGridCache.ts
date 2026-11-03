@@ -3,7 +3,7 @@ import { analysisLimiter } from './analysisLimiter'
 import type { BeatGridFit } from './beatGrid'
 import { measureBeatGrid } from './ffmpeg'
 
-export const BEAT_GRID_NAMESPACE = 'beat-grid-v1'
+export const BEAT_GRID_NAMESPACE = 'beat-grid-v2'
 
 export function cachedBeatGrid(file: string): Promise<BeatGridFit | null> {
   return cachedAnalysis(

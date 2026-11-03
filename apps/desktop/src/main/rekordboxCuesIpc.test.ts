@@ -478,6 +478,26 @@ describe('registerRekordboxCuesIpc', () => {
     expect(await handler('rekordbox:gridFit')({}, '101')).toEqual({ bpm: 150, firstMs: 12 })
   })
 
+  it('moves the phases measured along the track onto rekordbox time too, so the offset near the playhead is in its clock', async () => {
+    const path = await collectionWithMp3('LAME')
+    registerRekordboxCuesIpc({
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => ({ bpm: 120, firstMs: 100, phases: [{ ms: 6000, firstMs: 125 }] }),
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+    })
+    const out = (await handler('rekordbox:gridFit')({}, '101')) as {
+      phases: { ms: number; firstMs: number }[]
+    }
+    const lead = ((1152 + 576 + 529) / 44100) * 1000 + 2
+    expect(out.phases[0].ms).toBeCloseTo(6000 + lead, 3)
+    expect(out.phases[0].firstMs).toBeCloseTo(125 + lead, 3)
+  })
+
   it('moves the fit of a LAME MP3 by the frames rekordbox skips, so Auto lands on its beats and not 51 ms early', async () => {
     const path = await collectionWithMp3('LAME')
     registerRekordboxCuesIpc({

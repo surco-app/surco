@@ -96,8 +96,14 @@ export function rekordboxCueSource(host: {
       if (!row) return null
       const fit = await host.beatGrid(row.FolderPath)
       if (!fit) return null
-      const shiftMs = await rekordboxShiftOfFile(row.FolderPath, row.SampleRate || 44100)
-      return { bpm: fit.bpm, firstMs: fit.firstMs + shiftMs + REKORDBOX_BEAT_AFTER_RISE_MS }
+      const lead =
+        (await rekordboxShiftOfFile(row.FolderPath, row.SampleRate || 44100)) +
+        REKORDBOX_BEAT_AFTER_RISE_MS
+      return {
+        bpm: fit.bpm,
+        firstMs: fit.firstMs + lead,
+        phases: fit.phases?.map((p) => ({ ms: p.ms + lead, firstMs: p.firstMs + lead })),
+      }
     },
     queuedWanted: async (contentId, op) => {
       const path = host.collection()

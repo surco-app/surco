@@ -6,6 +6,7 @@ export interface EditableGrid {
 export interface GridFit {
   bpm: number
   firstMs: number
+  phases?: { ms: number; firstMs: number }[]
 }
 
 export const GRID_BPM_MIN = 40
@@ -90,9 +91,13 @@ export function gridOffsets(
   playheadMs: number,
   durationMs: number,
 ): { hereMs: number; endMs: number } {
+  const firstNear = (ms: number): number =>
+    fit.phases && fit.phases.length > 0
+      ? fit.phases.reduce((a, b) => (Math.abs(b.ms - ms) < Math.abs(a.ms - ms) ? b : a)).firstMs
+      : fit.firstMs
   const offsetAt = (ms: number): number => {
     const beat = nearestOn(ms, grid.anchorMs, periodOf(grid.bpm))
-    return Math.round(beat - nearestOn(beat, fit.firstMs, periodOf(fit.bpm)))
+    return Math.round(beat - nearestOn(beat, firstNear(ms), periodOf(fit.bpm)))
   }
   return { hereMs: offsetAt(playheadMs), endMs: offsetAt(durationMs) }
 }
