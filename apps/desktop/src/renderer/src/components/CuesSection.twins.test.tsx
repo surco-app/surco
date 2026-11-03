@@ -32,6 +32,7 @@ const READ: TrackCues = {
   wave: null,
   durationMs: 400000,
   fingerprint: 'f0',
+  gridFingerprint: '',
 }
 const TRAKTOR = 'traktor:M/:Music/:g.wav'
 

@@ -42,6 +42,7 @@ const READ: TrackCues = {
   wave: null,
   durationMs: 400000,
   fingerprint: 'f0',
+  gridFingerprint: '',
 }
 const TRACK = { title: 'Pray', artist: 'Gowan', bpm: '120', key: '6A' }
 

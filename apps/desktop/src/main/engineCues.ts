@@ -1,5 +1,6 @@
 import { HOT_KINDS } from '../shared/cueRules'
 import { engineTrackId } from '../shared/engineContent'
+import { gridFingerprint } from '../shared/gridEdit'
 import { nearestHotCueColor } from '../shared/rekordboxCueColors'
 import type { CueWaveColumn, TrackCueRow, TrackCues } from '../shared/types'
 import {
@@ -93,11 +94,13 @@ export function engineCuesOf(
     durationMs,
     fingerprint: cueFingerprint(cues),
   }
-  if (grid.length === 0) return { ...base, analysed: false, grid: [], wave: null }
+  if (grid.length === 0)
+    return { ...base, analysed: false, grid: [], gridFingerprint: '', wave: null }
   return {
     ...base,
     analysed: true,
     grid,
+    gridFingerprint: gridFingerprint(grid),
     wave: options.wave === false ? null : waveOf(perf.overviewWaveFormData),
   }
 }

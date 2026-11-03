@@ -1,4 +1,5 @@
 import { HOT_KINDS } from '../shared/cueRules'
+import { gridFingerprint } from '../shared/gridEdit'
 import { TRAKTOR_HOT_OFFSET, TRAKTOR_SLOTS, traktorKey } from '../shared/traktorContent'
 import type { TrackCueRow, TrackCues } from '../shared/types'
 import { cueFingerprint } from './rekordboxCues'
@@ -107,6 +108,7 @@ export function readTraktorTrackCues(nml: string, contentId: string): TrackCues 
     contentId,
     analysed: grid.length > 0,
     grid,
+    gridFingerprint: gridFingerprint(grid),
     strong: [],
     phrases: [],
     cues,

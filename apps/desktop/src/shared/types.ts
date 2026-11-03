@@ -1880,6 +1880,7 @@ export interface TrackCues {
   wave: CueWaveColumn[] | null
   durationMs: number
   fingerprint: string
+  gridFingerprint: string
 }
 
 export interface SurcoGrid {

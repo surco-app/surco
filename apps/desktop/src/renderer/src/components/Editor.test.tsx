@@ -345,6 +345,7 @@ describe('Editor cues section', () => {
         wave: null,
         durationMs: 400000,
         fingerprint: 'f0',
+        gridFingerprint: '',
       }),
     })
     renderEditor(
@@ -377,6 +378,7 @@ describe('Editor cues section', () => {
         wave: null,
         durationMs: 400000,
         fingerprint: 'f0',
+        gridFingerprint: '',
       }),
     })
     renderEditor(

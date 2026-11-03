@@ -4,6 +4,7 @@ import {
   editableGridOf,
   fitGrid,
   gridBeats,
+  gridFingerprint,
   gridOffsets,
   retempoGrid,
   sameGrid,
@@ -165,5 +166,22 @@ describe('sameGrid', () => {
     expect(sameGrid({ bpm: 150, anchorMs: 1 }, { bpm: 150, anchorMs: 0 })).toBe(false)
     expect(sameGrid(null, null)).toBe(true)
     expect(sameGrid({ bpm: 150, anchorMs: 0 }, null)).toBe(false)
+  })
+})
+
+describe('gridFingerprint', () => {
+  const beats = [
+    { ms: 46, beat: 1 },
+    { ms: 446, beat: 2 },
+  ]
+
+  it('stays the same for the same grid and changes when a beat moves a millisecond or is renumbered', () => {
+    expect(gridFingerprint(beats)).toBe(gridFingerprint(beats.map((b) => ({ ...b }))))
+    expect(gridFingerprint(beats)).not.toBe(gridFingerprint([beats[0], { ms: 447, beat: 2 }]))
+    expect(gridFingerprint(beats)).not.toBe(gridFingerprint([beats[0], { ms: 446, beat: 3 }]))
+  })
+
+  it('is empty when there is no grid', () => {
+    expect(gridFingerprint([])).toBe('')
   })
 })

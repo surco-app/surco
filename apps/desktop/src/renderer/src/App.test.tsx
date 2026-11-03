@@ -495,6 +495,7 @@ describe('App unsaved cues', () => {
         wave: null,
         durationMs: 1000,
         fingerprint: 'f0',
+        gridFingerprint: '',
       })),
       rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
     })

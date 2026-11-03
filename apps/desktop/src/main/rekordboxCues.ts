@@ -9,6 +9,7 @@ import {
   phraseLabelOf,
 } from '../shared/cueFlows'
 import { type CueChangeSet, type StrongPart, strongParts } from '../shared/cueRules'
+import { gridFingerprint } from '../shared/gridEdit'
 import type { CueWaveColumn, TrackCueRow, TrackCues } from '../shared/types'
 import { beatGrid, colorWave, colorWaveSpanMs, colorWaveWords, phrases, wavePreview } from './anlz'
 import { insideShare } from './rekordboxArtwork'
@@ -141,13 +142,20 @@ export function readTrackCues(
       ...base,
       analysed: false,
       grid: [],
+      gridFingerprint: '',
       strong: [],
       phrases: [],
       sections: [],
       wave: null,
     }
   const { spanMs, ...found } = analysis
-  return { ...base, durationMs: spanMs ?? base.durationMs, analysed: true, ...found }
+  return {
+    ...base,
+    durationMs: spanMs ?? base.durationMs,
+    analysed: true,
+    ...found,
+    gridFingerprint: gridFingerprint(found.grid),
+  }
 }
 
 export function readCueWaveDetail(db: Db, shareDir: string, contentId: string): Uint16Array | null {

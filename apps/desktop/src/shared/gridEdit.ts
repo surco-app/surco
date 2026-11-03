@@ -96,3 +96,7 @@ export function gridOffsets(
   }
   return { hereMs: offsetAt(playheadMs), endMs: offsetAt(durationMs) }
 }
+
+export function gridFingerprint(grid: { ms: number; beat: number }[]): string {
+  return grid.map((b) => `${b.ms}|${b.beat}`).join(';')
+}

@@ -39,6 +39,7 @@ const READ: TrackCues = {
   wave: null,
   durationMs: 400000,
   fingerprint: 'f0',
+  gridFingerprint: '',
 }
 
 describe('CuesSection drops', () => {
