@@ -16,6 +16,9 @@ import {
   toggleAnchor,
 } from './gridEdit'
 
+const drawn = (grid: EditableGrid, durationMs: number) =>
+  gridBeats(grid, durationMs).map((b) => b.ms)
+
 const constantBeats = (bpm: number, from: number, count: number, firstBeat = 1) =>
   Array.from({ length: count }, (_, i) => ({
     ms: Math.round(from + (i * 60000) / bpm),
@@ -132,7 +135,12 @@ describe('fitGrid', () => {
 describe('gridOffsets', () => {
   it('shows the same offset here and at the end for a shifted grid, the common case', () => {
     expect(
-      gridOffsets({ bpm: 150, anchorMs: 46 }, { bpm: 150, firstMs: 0 }, 26500, 345000),
+      gridOffsets(
+        drawn({ bpm: 150, anchorMs: 46 }, 345000),
+        { bpm: 150, firstMs: 0 },
+        26500,
+        345000,
+      ),
     ).toEqual({
       hereMs: 46,
       endMs: 46,
@@ -141,7 +149,7 @@ describe('gridOffsets', () => {
 
   it('shows the offset growing towards the end when the BPM is a hundredth off, so the DJ knows to touch the tempo', () => {
     const { hereMs, endMs } = gridOffsets(
-      { bpm: 150.01, anchorMs: 0 },
+      drawn({ bpm: 150.01, anchorMs: 0 }, 345000),
       { bpm: 150, firstMs: 0 },
       0,
       345000,
@@ -210,7 +218,7 @@ describe('gridOffsets with the phase measured along the track', () => {
   }
 
   it('compares the grid with the beats near the playhead, not with one fit of the whole track', () => {
-    expect(gridOffsets({ bpm: 150, anchorMs: 0 }, fit, 12000, 345000)).toEqual({
+    expect(gridOffsets(drawn({ bpm: 150, anchorMs: 0 }, 345000), fit, 12000, 345000)).toEqual({
       hereMs: -25,
       endMs: 0,
     })
@@ -235,7 +243,7 @@ describe('fitting around the playhead', () => {
 
   it('ignores a stretch where the detector locked half a beat away, and uses the whole-track fit there', () => {
     expect(fitGrid({ bpm: 150, anchorMs: 46 }, fit, 300000).anchorMs).toBe(0)
-    expect(gridOffsets({ bpm: 150, anchorMs: 0 }, fit, 300000, 300000)).toEqual({
+    expect(gridOffsets(drawn({ bpm: 150, anchorMs: 0 }, 300000), fit, 300000, 300000)).toEqual({
       hereMs: 0,
       endMs: 0,
     })
@@ -261,6 +269,24 @@ describe('zones', () => {
     const beats = gridBeats(grid as EditableGrid, 800 * 400).map((b) => b.ms)
     expect(beats.slice(298, 302).map(Math.round)).toEqual([119246, 119646, 120071, 120471])
     expect(beats).toHaveLength(800)
+  })
+
+  it('straightens a grid rekordbox bent a few ms along the track, so a track the bad-grid filter flags can be fixed', () => {
+    const bent = Array.from({ length: 694 }, (_, i) => ({
+      ms: Math.round(425 + i * 457.47 + 14 * Math.cos((i / 693) * 2 * Math.PI)),
+      beat: ((2 + i) % 4) + 1,
+    }))
+    const grid = editableGridOf(bent)
+    expect(grid?.zones).toBeUndefined()
+    expect(grid?.bpm).toBeCloseTo(60000 / 457.47, 2)
+  })
+
+  it('measures the offset against the lines drawn, so a bent grid shows where its beats really are', () => {
+    const bent = Array.from({ length: 694 }, (_, i) =>
+      Math.round(425 + i * 457.47 + 14 * Math.sin((i / 694) * 2 * Math.PI)),
+    )
+    const fit = { bpm: 60000 / 457.47, firstMs: 425 }
+    expect(gridOffsets(bent, fit, 425 + 173 * 457.47, 320000).hereMs).toBe(14)
   })
 
   it('still refuses a grid too irregular to split into a few zones, like a live drummer analysed beat by beat', () => {
@@ -297,7 +323,9 @@ describe('zones', () => {
     const two = editAt(toggleAnchor({ bpm: 150, anchorMs: 0 }, 40000), 60000, (z) =>
       shiftGrid(z, 25),
     )
-    expect(gridOffsets(two as EditableGrid, { bpm: 150, firstMs: 0 }, 10000, 100000)).toEqual({
+    expect(
+      gridOffsets(drawn(two as EditableGrid, 100000), { bpm: 150, firstMs: 0 }, 10000, 100000),
+    ).toEqual({
       hereMs: 0,
       endMs: 25,
     })
@@ -320,7 +348,7 @@ describe('a stretch that disagrees with its neighbours', () => {
   })
 
   it('reads the offset at the playhead from the stretches around it, not from that one', () => {
-    expect(gridOffsets({ bpm: 150, anchorMs: 46 }, fit, 0, 345000).hereMs).toBe(46)
+    expect(gridOffsets(drawn({ bpm: 150, anchorMs: 46 }, 345000), fit, 0, 345000).hereMs).toBe(46)
   })
 })
 
@@ -336,7 +364,7 @@ describe('fitting the tempo from the drift along the track', () => {
 
   it('corrects the BPM the detector guessed when its beats drift steadily, so Auto never opens the end of the track', () => {
     const fitted = fitGrid({ bpm: 124, anchorMs: 0 }, drifting, 25000)
-    const { hereMs, endMs } = gridOffsets(fitted, drifting, 25000, 300000)
+    const { hereMs, endMs } = gridOffsets(drawn(fitted, 300000), drifting, 25000, 300000)
     expect(Math.abs(hereMs)).toBeLessThanOrEqual(1)
     expect(Math.abs(endMs)).toBeLessThanOrEqual(1)
   })

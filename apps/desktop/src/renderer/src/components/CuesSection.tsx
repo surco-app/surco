@@ -524,7 +524,7 @@ function Editing({
               : null
   const gridFit = useGridFit(cue.contentId, maximized && gridOff === null)
   const offsets =
-    gridFit && state.grid ? gridOffsets(state.grid, gridFit, playheadMs, read.durationMs) : null
+    gridFit && state.grid ? gridOffsets(ctx.beats, gridFit, playheadMs, read.durationMs) : null
   const tolerance = settings.cueGridTolerance
   const needsFix =
     offsets !== null && Math.max(Math.abs(offsets.hereMs), Math.abs(offsets.endMs)) > tolerance

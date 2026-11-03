@@ -1,3 +1,5 @@
+import { nearestBeatMs } from './cueGrid'
+
 export interface GridZone {
   fromMs: number
   bpm: number
@@ -30,7 +32,7 @@ const SAME_TEMPO_RATIO = 0.01
 const periodOf = (bpm: number): number => 60000 / bpm
 const barBeat = (k: number): number => (((k % 4) + 4) % 4) + 1
 
-function fitRun(beats: { ms: number; beat: number }[]): EditableGrid | null {
+function fitRun(beats: { ms: number; beat: number }[], tolerance: number): EditableGrid | null {
   const n = beats.length
   const meanI = (n - 1) / 2
   const meanMs = beats.reduce((sum, b) => sum + b.ms, 0) / n
@@ -42,8 +44,7 @@ function fitRun(beats: { ms: number; beat: number }[]): EditableGrid | null {
   })
   const period = num / den
   const start = meanMs - period * meanI
-  if (beats.some((b, i) => Math.abs(b.ms - (start + period * i)) > CONSTANT_TOLERANCE_MS))
-    return null
+  if (beats.some((b, i) => Math.abs(b.ms - (start + period * i)) > tolerance)) return null
   const downbeat = beats.find((b) => b.beat === 1)
   const anchorMs = downbeat ? downbeat.ms : beats[0].ms + ((5 - beats[0].beat) % 4) * period
   if (beats.some((b) => b.beat !== barBeat(Math.round((b.ms - anchorMs) / period)))) return null
@@ -70,7 +71,8 @@ export function editableGridOf(beats: { ms: number; beat: number }[]): EditableG
   const runs = runsOf(beats)
   if (runs.length > MAX_ZONES) return null
   if (runs.length > 1 && runs.some(([a, b]) => b - a < MIN_ZONE_BEATS)) return null
-  const fits = runs.map(([a, b]) => fitRun(beats.slice(a, b)))
+  const tolerance = runs.length === 1 ? Number.POSITIVE_INFINITY : CONSTANT_TOLERANCE_MS
+  const fits = runs.map(([a, b]) => fitRun(beats.slice(a, b), tolerance))
   if (fits.some((f) => f === null)) return null
   const [base, ...rest] = fits as EditableGrid[]
   if (rest.length === 0) return base
@@ -261,14 +263,13 @@ export function fitGrid(grid: EditableGrid, fit: GridFit, atMs?: number): Editab
 }
 
 export function gridOffsets(
-  grid: EditableGrid,
+  beats: number[],
   fit: GridFit,
   playheadMs: number,
   durationMs: number,
 ): { hereMs: number; endMs: number } {
   const offsetAt = (ms: number): number => {
-    const zone = zonesOf(grid)[zoneIndexAt(grid, ms)]
-    const beat = nearestOn(ms, zone.anchorMs, periodOf(zone.bpm))
+    const beat = nearestBeatMs(ms, beats)
     return Math.round(beat - nearestOn(beat, phaseNear(fit, ms), periodOf(fit.bpm)))
   }
   return { hereMs: offsetAt(playheadMs), endMs: offsetAt(durationMs) }
