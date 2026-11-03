@@ -75,24 +75,50 @@ import { activity } from './activity'
 import { writeEngineLibraryFixture } from './enginePlaylistsFixture'
 import {
   duplicateLibraryDeps,
+  engineFlushDeps,
   flushConversionBatch,
   type LibraryHost,
+  rekordboxFlushDeps,
   repointEngineQueued,
+  SYNC_BLOCKED_KEY,
+  SYNC_ISSUE_CHANNEL,
   syncTagsInLibraries,
+  traktorFlushDeps,
 } from './libraryFlushes'
 import { beginNmlBatch, endNmlBatch, recordNmlPatch } from './nmlBatch'
 import { traktorPatchKey } from './verifyRegistry'
 
-function host(overrides: Partial<LibraryHost> = {}): LibraryHost {
-  return {
+type Closers = {
+  ensureTraktorClosed: () => Promise<boolean>
+  ensureRekordboxClosed: () => Promise<boolean>
+  ensureEngineDjClosed: () => Promise<boolean>
+}
+
+function host(overrides: Partial<Closers & LibraryHost> = {}) {
+  const closers: Closers = {
     ensureTraktorClosed: vi.fn(async () => true),
     ensureRekordboxClosed: vi.fn(async () => false),
     ensureEngineDjClosed: vi.fn(async () => true),
+  }
+  const { ensureTraktorClosed, ensureRekordboxClosed, ensureEngineDjClosed, ...rest } = {
+    ...closers,
+    ...overrides,
+  }
+  const byProgram = {
+    traktor: ensureTraktorClosed,
+    rekordbox: ensureRekordboxClosed,
+    engine: ensureEngineDjClosed,
+  }
+  return {
+    ensureClosed: (program) => byProgram[program](),
     showBlockedDialog: vi.fn(),
     reportIssue: vi.fn(),
     rekordboxHeld: () => false,
-    ...overrides,
-  }
+    ...rest,
+    ensureTraktorClosed,
+    ensureRekordboxClosed,
+    ensureEngineDjClosed,
+  } satisfies LibraryHost & Closers
 }
 
 const fakeSession = () => ({
@@ -904,5 +930,59 @@ describe('flushConversionBatch outcome', () => {
         expect(outcome.traktor).toBe('off')
       })
     })
+  })
+})
+
+function recordingHost() {
+  const closed: string[] = []
+  const blocked: string[] = []
+  const channels: string[] = []
+  const libraryHost: LibraryHost = {
+    ensureClosed: async (program) => {
+      closed.push(program)
+      return true
+    },
+    showBlockedDialog: (program) => {
+      blocked.push(SYNC_BLOCKED_KEY[program])
+    },
+    reportIssue: (program) => {
+      const channel = SYNC_ISSUE_CHANNEL[program]
+      if (channel) channels.push(channel)
+    },
+    rekordboxHeld: () => false,
+  }
+  return { libraryHost, closed, blocked, channels }
+}
+
+describe('what each program closes, shows and reports through the library host', () => {
+  it('closes Traktor and shows its own blocked message', async () => {
+    const h = recordingHost()
+    const deps = traktorFlushDeps(h.libraryHost, sessions.traktor)
+    await deps.ensureTraktorClosed()
+    deps.showBlockedDialog()
+    expect(h.closed).toEqual(['traktor'])
+    expect(h.blocked).toEqual(['traktorSyncBlocked'])
+  })
+
+  it('closes rekordbox, shows its blocked message and reports on its channel', async () => {
+    const h = recordingHost()
+    const deps = rekordboxFlushDeps(h.libraryHost)
+    await deps.ensureClosed()
+    deps.showBlockedDialog()
+    deps.reportIssue({} as never)
+    expect(h.closed).toEqual(['rekordbox'])
+    expect(h.blocked).toEqual(['rekordboxSyncBlocked'])
+    expect(h.channels).toEqual(['rekordbox:sync-issue'])
+  })
+
+  it('closes Engine DJ, shows its blocked message and reports on its channel', async () => {
+    const h = recordingHost()
+    const deps = engineFlushDeps(h.libraryHost)
+    await deps.ensureClosed()
+    deps.showBlockedDialog()
+    deps.reportIssue({} as never)
+    expect(h.closed).toEqual(['engine'])
+    expect(h.blocked).toEqual(['engineSyncBlocked'])
+    expect(h.channels).toEqual(['engine:sync-issue'])
   })
 })

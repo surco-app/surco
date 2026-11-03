@@ -13,11 +13,7 @@ import { attr, findEntries, nmlCopyInfo } from './traktorNml'
 import { traktorFileOf } from './traktorPlaylists'
 
 // Each library's location, or '' when its sync is off.
-export interface SyncedLibraries {
-  rekordbox: string
-  engine: string
-  traktor: string
-}
+export type SyncedLibraries = Record<DjProgram, string>
 
 // Read only, and it throws when a library it should look in cannot be read: the caller
 // keeps the file then, since that library may still use it.

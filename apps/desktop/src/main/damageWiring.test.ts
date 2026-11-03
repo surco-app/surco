@@ -5,14 +5,14 @@ vi.mock('./traktorProcess', () => ({ isTraktorRunning: vi.fn().mockResolvedValue
 vi.mock('./libraryFlushes', async (original) => ({
   ...(await original<typeof import('./libraryFlushes')>()),
   traktorFlushDeps: (host: {
-    ensureTraktorClosed: () => Promise<boolean>
-    showBlockedDialog: (k: string) => void
+    ensureClosed: (program: 'traktor') => Promise<boolean>
+    showBlockedDialog: (program: 'traktor') => void
   }) => ({
     traktorNmlPath: '/t/collection.nml',
     collectionMissing: false,
     unplugged: false,
-    ensureTraktorClosed: host.ensureTraktorClosed,
-    showBlockedDialog: () => host.showBlockedDialog('traktorSyncBlocked'),
+    ensureTraktorClosed: () => host.ensureClosed('traktor'),
+    showBlockedDialog: () => host.showBlockedDialog('traktor'),
     syncCollection: vi.fn(),
     track: vi.fn(),
   }),
@@ -28,7 +28,7 @@ import type { LibraryHost } from './libraryFlushes'
 describe('damageDeps with Traktor open', () => {
   it('neither asks to quit Traktor nor shows the blocked dialog', async () => {
     const host = {
-      ensureTraktorClosed: vi.fn(async () => false),
+      ensureClosed: vi.fn(async () => false),
       showBlockedDialog: vi.fn(),
     } as unknown as LibraryHost
     const deps = damageDeps({
@@ -41,7 +41,7 @@ describe('damageDeps with Traktor open', () => {
     }).repairDeps({} as never)
     expect(await deps.traktor?.ensureTraktorClosed()).toBe(false)
     deps.traktor?.showBlockedDialog()
-    expect(host.ensureTraktorClosed).not.toHaveBeenCalled()
+    expect(host.ensureClosed).not.toHaveBeenCalled()
     expect(host.showBlockedDialog).not.toHaveBeenCalled()
   })
 })

@@ -2,6 +2,7 @@ import { existsSync, realpathSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import log from 'electron-log/main'
+import type { DjProgram } from '../shared/djProgram'
 import type { LibraryStatus, LibraryTagUpdate, RekordboxSyncIssue } from '../shared/types'
 import { activity } from './activity'
 import {
@@ -49,20 +50,30 @@ import { type FlushOutcome, type TraktorWrite, traktorPatchKey } from './verifyR
 
 export type SyncBlockedKey = 'traktorSyncBlocked' | 'rekordboxSyncBlocked' | 'engineSyncBlocked'
 
+export const SYNC_BLOCKED_KEY: Record<DjProgram, SyncBlockedKey> = {
+  rekordbox: 'rekordboxSyncBlocked',
+  traktor: 'traktorSyncBlocked',
+  engine: 'engineSyncBlocked',
+}
+
+export const SYNC_ISSUE_CHANNEL: Record<
+  DjProgram,
+  'rekordbox:sync-issue' | 'engine:sync-issue' | null
+> = {
+  rekordbox: 'rekordbox:sync-issue',
+  traktor: null,
+  engine: 'engine:sync-issue',
+}
+
 export interface LibraryHost {
-  ensureTraktorClosed: () => Promise<boolean>
-  ensureRekordboxClosed: () => Promise<boolean>
-  ensureEngineDjClosed: () => Promise<boolean>
-  showBlockedDialog: (key: SyncBlockedKey) => void
-  reportIssue: (
-    channel: 'rekordbox:sync-issue' | 'engine:sync-issue',
-    issue: RekordboxSyncIssue,
-  ) => void
+  ensureClosed: (program: DjProgram) => Promise<boolean>
+  showBlockedDialog: (program: DjProgram) => void
+  reportIssue: (program: DjProgram, issue: RekordboxSyncIssue) => void
   rekordboxHeld: () => boolean
 }
 
 type SessionBackup = ReturnType<typeof createSessionBackup>
-export type Sessions = { rekordbox: SessionBackup; traktor: SessionBackup; engine: SessionBackup }
+export type Sessions = Record<DjProgram, SessionBackup>
 
 // A collection can live on an external drive. Gone because that drive is not mounted, it
 // comes back when the drive does, unlike one deleted from a disk that is there.
@@ -150,8 +161,8 @@ export function traktorFlushDeps(host: LibraryHost, session: SessionBackup) {
         : '',
     collectionMissing: getSettings().syncTraktor && !currentLibraryStatus().traktor.found,
     unplugged: onUnpluggedDrive(getSettings().traktorNmlPath),
-    ensureTraktorClosed: host.ensureTraktorClosed,
-    showBlockedDialog: () => host.showBlockedDialog('traktorSyncBlocked'),
+    ensureTraktorClosed: () => host.ensureClosed('traktor'),
+    showBlockedDialog: () => host.showBlockedDialog('traktor'),
     syncCollection: (nmlPath: string, patches: Parameters<typeof syncCollection>[1]) =>
       syncCollection(nmlPath, patches, session),
     track: activity.track.bind(activity),
@@ -164,10 +175,10 @@ export function rekordboxFlushDeps(host: LibraryHost) {
     // not permission to write to it. An empty path here skips the flush entirely.
     collectionPath: getSettings().syncRekordbox ? rekordboxCollectionPath() : '',
     collectionMissing: getSettings().syncRekordbox && !currentLibraryStatus().rekordbox.found,
-    ensureClosed: host.ensureRekordboxClosed,
+    ensureClosed: () => host.ensureClosed('rekordbox'),
     track: activity.track.bind(activity),
-    showBlockedDialog: () => host.showBlockedDialog('rekordboxSyncBlocked'),
-    reportIssue: (issue: RekordboxSyncIssue) => host.reportIssue('rekordbox:sync-issue', issue),
+    showBlockedDialog: () => host.showBlockedDialog('rekordbox'),
+    reportIssue: (issue: RekordboxSyncIssue) => host.reportIssue('rekordbox', issue),
   }
 }
 
@@ -184,10 +195,10 @@ export function engineFlushDeps(host: LibraryHost) {
     collectionPath:
       getSettings().syncEngineDj && currentLibraryStatus().engine.found ? engineDir : '',
     collectionMissing: getSettings().syncEngineDj && !currentLibraryStatus().engine.found,
-    ensureClosed: host.ensureEngineDjClosed,
+    ensureClosed: () => host.ensureClosed('engine'),
     track: activity.track.bind(activity),
-    showBlockedDialog: () => host.showBlockedDialog('engineSyncBlocked'),
-    reportIssue: (issue: RekordboxSyncIssue) => host.reportIssue('engine:sync-issue', issue),
+    showBlockedDialog: () => host.showBlockedDialog('engine'),
+    reportIssue: (issue: RekordboxSyncIssue) => host.reportIssue('engine', issue),
   }
 }
 

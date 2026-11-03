@@ -133,6 +133,8 @@ import {
   rekordboxFlushDeps,
   repointEngineQueued,
   repointRekordbox,
+  SYNC_BLOCKED_KEY,
+  SYNC_ISSUE_CHANNEL,
   syncTagsInLibraries,
   traktorFlushDeps,
   traktorWrite,
@@ -1495,12 +1497,11 @@ function registerIpc(): void {
   ipcMain.handle('library:status', (): LibraryStatus => currentLibraryStatus())
 
   const hostFor = (win: BrowserWindow | null, sender: WebContents): LibraryHost => ({
-    ensureTraktorClosed: () => ensureClosed('traktor', win),
-    ensureRekordboxClosed: () => ensureClosed('rekordbox', win),
-    ensureEngineDjClosed: () => ensureClosed('engine', win),
-    showBlockedDialog: (key) => showSyncBlockedDialog(win, key),
-    reportIssue: (channel, issue) => {
-      if (!sender.isDestroyed()) sender.send(channel, issue)
+    ensureClosed: (program) => ensureClosed(program, win),
+    showBlockedDialog: (program) => showSyncBlockedDialog(win, SYNC_BLOCKED_KEY[program]),
+    reportIssue: (program, issue) => {
+      const channel = SYNC_ISSUE_CHANNEL[program]
+      if (channel && !sender.isDestroyed()) sender.send(channel, issue)
     },
     rekordboxHeld: () => rekordboxQueue.state().halted === true,
   })
