@@ -1917,6 +1917,7 @@
         "slug": "tag-a-whole-folder",
         "group": "organize",
         "title": "Ajouter tags et pochettes à tout un dossier, sans faire de copies",
+        "s": "Surco complète tags et pochette dans les mêmes fichiers, sans copies ni changement de format.",
         "body": [
           "Tu as un dossier de musique avec des tags manquants ou sans pochette. Tu veux que Surco les complète tout seul, dans les mêmes fichiers, sans copies et sans changer de format.",
           "Tu le configures une fois. Ensuite, chaque dossier se règle en quatre étapes."
@@ -1993,6 +1994,7 @@
         "group": "library",
         "macOnly": true,
         "title": "Remplacer un morceau de ta bibliothèque par une meilleure copie",
+        "s": "La nouvelle copie prend la place de l'ancienne et reste dans toutes ses playlists.",
         "body": [
           "Tu as un morceau en MP3 dans ta bibliothèque et tu mets la main sur l'AIFF ou le WAV. Tu veux que la nouvelle copie prenne la place de l'ancienne, sans te retrouver avec deux et sans la rajouter à chaque playlist.",
           "Ça ne marche que sur Mac, parce que le remplacement passe par Apple Music. L'ancien morceau doit être dans ta bibliothèque Apple Music."
@@ -2074,6 +2076,7 @@
         "group": "library",
         "macOnly": true,
         "title": "Ta musique vit dans Apple Music et tu organises dans rekordbox",
+        "s": "Ce que tu améliores dans Surco arrive tout seul dans rekordbox, sans réimporter.",
         "body": [
           "Tu ajoutes ta musique à Apple Music et tu l'importes dans rekordbox pour monter tes playlists. Quand tu améliores un morceau ou corriges ses infos dans Surco, tu veux que rekordbox le récupère tout seul, sans réimporter et sans perdre playlists ni cue points.",
           "Ça ne marche que sur Mac, parce que ça passe par Apple Music."
@@ -2145,6 +2148,7 @@
         "slug": "convert-to-aiff-keeping-cue-points",
         "group": "library",
         "title": "Passer ta collection en AIFF sans perdre les cue points",
+        "s": "Toute ta collection en AIFF d'un coup, avec les cue points là où ils étaient.",
         "body": [
           "Ta musique est en FLAC ou en WAV et ton logiciel DJ ou tes CDJ préfèrent l'AIFF, qui garde aussi la pochette. Tu veux tout convertir d'un coup et garder tes cue points là où ils étaient.",
           "Le son ne perd rien. Passer du FLAC ou du WAV à l'AIFF se fait sans perte."
@@ -2224,6 +2228,7 @@
         "slug": "convert-m4a-aac-ogg-opus",
         "group": "organize",
         "title": "Convertir tes M4A, AAC, OGG et OPUS",
+        "s": "Passe-les dans un format lisible partout, avec leurs tags et leur pochette.",
         "body": [
           "Tu as des morceaux d'Apple Music, de Bandcamp ou d'autres boutiques en M4A, AAC, OGG ou OPUS, et ton logiciel DJ ou tes CDJ ne les lisent pas. Tu veux les passer dans un format lisible partout, avec leurs tags et leur pochette."
         ],
@@ -2274,6 +2279,7 @@
         "slug": "check-audio-quality",
         "group": "sound",
         "title": "Vérifier la qualité de ce que tu as acheté ou téléchargé",
+        "s": "Découvre si ce FLAC que tu as acheté vient en réalité d'un MP3.",
         "body": [
           "Tu as téléchargé un pack ou acheté de la musique et tu veux savoir si c'est bien ce que ça prétend être. Par exemple, un FLAC qui vient en réalité d'un MP3.",
           "Cette recette ne change rien. Surco se contente de regarder et te dit ce qu'il a trouvé."
@@ -2331,6 +2337,7 @@
         "slug": "digitize-vinyl",
         "group": "sound",
         "title": "Numériser tes vinyles",
+        "s": "Sans clics, sans souffle, sans silences et avec leurs infos Discogs.",
         "body": [
           "Tu as enregistré tes disques sur l'ordinateur et tu veux qu'ils soient prêts à jouer. Sans clics de diamant, sans souffle de fond, sans silence au début et à la fin, et avec leurs infos Discogs.",
           "Surco ne découpe pas une face entière en morceaux. Il te faut un fichier par morceau."
@@ -2410,6 +2417,7 @@
         "slug": "prepare-usb-for-the-club",
         "group": "go",
         "title": "Préparer une clé USB pour le club",
+        "s": "Tes playlists sur une clé USB avec cues, grille et formes d'onde, prêtes pour les lecteurs.",
         "body": [
           "Tu veux emporter tes playlists rekordbox ou Engine DJ sur une clé USB, avec leurs cues, leur grille et leurs formes d'onde, prêtes pour les lecteurs. Tes fichiers à la maison ne bougent pas.",
           "Ça marche sur Mac et Windows."
@@ -2457,6 +2465,7 @@
         "slug": "convert-to-mp3-to-save-space",
         "group": "go",
         "title": "Passer tes morceaux en MP3 pour que tout tienne",
+        "s": "Une copie en MP3 pour la clé USB ou le téléphone, sans toucher aux originaux.",
         "body": [
           "Ta musique est en FLAC, WAV ou AIFF et tu veux une copie en MP3 pour une petite clé USB, ton téléphone ou un appareil qui ne lit pas le FLAC. Tes fichiers sans perte restent tels quels.",
           "Un MP3 320 kbps prend environ quatre fois moins de place qu'un WAV ou un AIFF."
@@ -2514,6 +2523,7 @@
         "group": "organize",
         "macOnly": true,
         "title": "Une seule orthographe dans ta bibliothèque Apple Music",
+        "s": "Le même artiste écrit pareil dans toute la bibliothèque, sans passer morceau par morceau.",
         "body": [
           "Dans ta bibliothèque, le même artiste apparaît en « DJ Lara » et en « Dj Lara », les accents ne collent pas et des espaces invisibles se sont glissés quand tu as copié depuis un site. Tu veux que tout soit cohérent sans passer morceau par morceau."
         ],
@@ -2576,6 +2586,7 @@
         "group": "organize",
         "macOnly": true,
         "title": "Supprimer les morceaux en double d'Apple Music",
+        "s": "Garde la bonne copie sans perdre les playlists de l'autre.",
         "body": [
           "Tu as le même morceau deux fois, peut-être un en MP3 et un en AIFF, chacun dans ses playlists. Tu veux garder le bon sans perdre les playlists de l'autre."
         ],
@@ -2637,6 +2648,7 @@
         "slug": "review-folder-before-import",
         "group": "organize",
         "title": "Vérifier un dossier avant qu'il entre dans ta bibliothèque",
+        "s": "Un pack propre avant qu'il entre, sans orthographes différentes ni doublons.",
         "body": [
           "Tu as téléchargé un pack et tu veux qu'il arrive propre, sans le même artiste écrit de trois façons et sans morceaux en double.",
           "Ça marche sur Mac et Windows."
@@ -2673,6 +2685,7 @@
         "slug": "clean-up-titles-in-bulk",
         "group": "organize",
         "title": "Nettoyer les titres de centaines de morceaux d'un coup",
+        "s": "Retire «(Original Mix)» ou la marque du site de tous les morceaux d'un coup.",
         "body": [
           "Tes titres traînent un « (Original Mix) », la marque du site où tu les as téléchargés ou un tiret bas à la place d'une espace. Tu veux que ça disparaisse de tous les morceaux d'un coup."
         ],
@@ -2713,6 +2726,7 @@
         "slug": "bpm-and-key-from-beatport",
         "group": "organize",
         "title": "Récupérer le BPM et la tonalité depuis Beatport",
+        "s": "Le bon BPM, la bonne tonalité et le nom du mix, sans rien taper.",
         "body": [
           "Tu veux que tes morceaux arrivent avec le bon BPM, la bonne tonalité et le nom du mix, sans rien taper.",
           "Il te faut un compte Beatport. Un compte gratuit suffit."
@@ -2764,6 +2778,7 @@
         "slug": "auto-tag-downloads",
         "group": "organize",
         "title": "Des téléchargements qui arrivent déjà tagués",
+        "s": "Chaque nouveau téléchargement entre dans Surco et se tague tout seul.",
         "body": [
           "Tu as un dossier où atterrissent tes téléchargements. Tu veux que chaque nouveau morceau entre dans Surco et se tague tout seul, sans rien glisser à nouveau."
         ],
@@ -2810,6 +2825,7 @@
         "slug": "even-out-loudness",
         "group": "sound",
         "title": "Égaliser le loudness de tout un dossier",
+        "s": "Tous les morceaux à un niveau proche, d'où qu'ils viennent.",
         "body": [
           "Tes morceaux viennent d'un peu partout et certains sonnent beaucoup plus fort que d'autres. Tu veux qu'ils soient tous à un niveau proche."
         ],
@@ -2862,6 +2878,7 @@
         "slug": "send-tracks-to-engine-dj",
         "group": "library",
         "title": "Emmener tes morceaux dans Engine DJ",
+        "s": "Ce que tu prépares dans Surco apparaît dans Engine DJ avec pochette et playlists.",
         "body": [
           "Tu joues sur du matériel Denon et tu veux que ce que tu prépares dans Surco apparaisse dans ta bibliothèque Engine DJ, avec sa pochette et dans ses playlists.",
           "Ça marche sur Mac et Windows."
@@ -2916,6 +2933,7 @@
         "slug": "set-up-rekordbox-cues-with-your-flow",
         "group": "library",
         "title": "Placer les cues de tes morceaux avec ton propre flux",
+        "s": "Marque l'endroit où le morceau décolle et ton flux place le reste des cues.",
         "body": [
           "Tu prépares tes morceaux rekordbox toujours de la même façon, avec des cues comptés depuis l'endroit où le morceau décolle. Tu veux marquer ce point en un clic, ou que Surco te le suggère, et qu'il place le reste.",
           "Voici comment un DJ s'y prend avec son flux, mais le point peut être ce que tu veux et tu montes ton flux à ta façon. Ça marche sur Mac et Windows."
@@ -2976,6 +2994,7 @@
         "group": "go",
         "macOnly": true,
         "title": "Préparer un set depuis une playlist Apple Music",
+        "s": "Sors une playlist Apple Music en AIFF ou sur clé USB sans chercher les fichiers.",
         "body": [
           "Ta sélection est déjà faite dans une playlist Apple Music. Tu veux la sortir en AIFF, ou sur une clé USB, sans chercher les fichiers un par un."
         ],
@@ -3022,6 +3041,7 @@
         "slug": "music-on-a-nas",
         "group": "go",
         "title": "Ta musique sur un NAS",
+        "s": "Travaille sur la musique de ton disque réseau depuis Mac ou Windows.",
         "body": [
           "Tu gardes ta musique sur un disque réseau et tu travailles dessus depuis Surco, sur Mac ou Windows."
         ],

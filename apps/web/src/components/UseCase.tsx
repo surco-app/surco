@@ -29,6 +29,7 @@ export type UseCase = {
   group: string
   macOnly?: boolean
   title: string
+  s: string
   body: string[]
   keywords: string
   settings: Setting[]

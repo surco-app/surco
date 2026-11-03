@@ -1917,6 +1917,7 @@
         "slug": "tag-a-whole-folder",
         "group": "organize",
         "title": "Add tags and artwork to a whole folder, without making copies",
+        "s": "Surco fills in tags and artwork in the same files, with no copies and no format change.",
         "body": [
           "You have a folder of music with missing tags or no artwork. You want Surco to fill them in on its own, in the same files, with no copies and no format change.",
           "Set it up once. After that, every folder takes four steps."
@@ -1993,6 +1994,7 @@
         "group": "library",
         "macOnly": true,
         "title": "Swap a track in your library for a better copy",
+        "s": "The new copy takes the old one's place and stays in all its playlists.",
         "body": [
           "You have a track as an MP3 in your library and you get hold of the AIFF or the WAV. You want the new copy to take the old one's place, without ending up with two and without adding it to every playlist again.",
           "It only works on a Mac, because the swap goes through Apple Music. The old track has to be in your Apple Music library."
@@ -2074,6 +2076,7 @@
         "group": "library",
         "macOnly": true,
         "title": "Your music lives in Apple Music and you organize in rekordbox",
+        "s": "What you improve in Surco reaches rekordbox on its own, without importing again.",
         "body": [
           "You add your music to Apple Music and import it into rekordbox to build your playlists. When you upgrade a track or fix its details in Surco, you want rekordbox to pick it up on its own, without importing again and without losing playlists or cue points.",
           "It only works on a Mac, because it goes through Apple Music."
@@ -2145,6 +2148,7 @@
         "slug": "convert-to-aiff-keeping-cue-points",
         "group": "library",
         "title": "Move your collection to AIFF without losing cue points",
+        "s": "Your whole collection to AIFF in one go, with the cue points where they were.",
         "body": [
           "Your music is in FLAC or WAV and your DJ software or your CDJs prefer AIFF, which also keeps the artwork. You want to convert everything in one go and keep your cue points where they were.",
           "The sound loses nothing. Going from FLAC or WAV to AIFF is lossless."
@@ -2224,6 +2228,7 @@
         "slug": "convert-m4a-aac-ogg-opus",
         "group": "organize",
         "title": "Convert your M4A, AAC, OGG and OPUS files",
+        "s": "Turn them into a format every app reads, with their tags and artwork.",
         "body": [
           "You have tracks from Apple Music, Bandcamp or other stores in M4A, AAC, OGG or OPUS, and your DJ app or your CDJs won't read them. You want to turn them into a format everything reads, with their tags and artwork."
         ],
@@ -2274,6 +2279,7 @@
         "slug": "check-audio-quality",
         "group": "sound",
         "title": "Check the quality of what you bought or downloaded",
+        "s": "Find out whether that FLAC you bought really comes from an MP3.",
         "body": [
           "You downloaded a pack or bought some music and want to know if it's what it claims to be. For example, a FLAC that really comes from an MP3.",
           "This recipe changes nothing. Surco only looks and tells you what it found."
@@ -2331,6 +2337,7 @@
         "slug": "digitize-vinyl",
         "group": "sound",
         "title": "Digitize your vinyl",
+        "s": "No clicks, no hiss, no silence, and with their Discogs details.",
         "body": [
           "You recorded your records on the computer and want them ready to play. No needle clicks, no background hiss, no silence at the start and end, and with their Discogs details.",
           "Surco doesn't cut a whole side into tracks. You need one file per track."
@@ -2410,6 +2417,7 @@
         "slug": "prepare-usb-for-the-club",
         "group": "go",
         "title": "Get a USB stick ready for the club",
+        "s": "Your playlists on a USB stick with cues, beatgrid and waveforms, ready for the players.",
         "body": [
           "You want to take your rekordbox or Engine DJ playlists on a USB stick, with their cues, beatgrid and waveforms, ready for the players. Your files at home stay untouched.",
           "It works on Mac and Windows."
@@ -2457,6 +2465,7 @@
         "slug": "convert-to-mp3-to-save-space",
         "group": "go",
         "title": "Turn your tracks into MP3s so they fit",
+        "s": "An MP3 copy for your USB stick or phone, with your originals untouched.",
         "body": [
           "Your music is in FLAC, WAV or AIFF and you want an MP3 copy for a small USB stick, your phone or gear that doesn't read FLAC. Your lossless files stay as they are.",
           "A 320 kbps MP3 takes about a quarter of the space of a WAV or an AIFF."
@@ -2514,6 +2523,7 @@
         "group": "organize",
         "macOnly": true,
         "title": "Make your Apple Music library spell things one way",
+        "s": "The same artist spelled the same way across your library, without going track by track.",
         "body": [
           "In your library the same artist shows up as “DJ Lara” and “Dj Lara”, accents don't match and invisible spaces slipped in when you copied from a website. You want it all consistent without going track by track."
         ],
@@ -2576,6 +2586,7 @@
         "group": "organize",
         "macOnly": true,
         "title": "Remove repeated tracks from Apple Music",
+        "s": "Keep the good copy without losing the other one's playlists.",
         "body": [
           "You have the same song twice, maybe one as an MP3 and one as an AIFF, each in its own playlists. You want to keep the good one without losing the other one's playlists."
         ],
@@ -2637,6 +2648,7 @@
         "slug": "review-folder-before-import",
         "group": "organize",
         "title": "Review a folder before it goes into your library",
+        "s": "A clean pack before it goes in, without different spellings or repeated tracks.",
         "body": [
           "You downloaded a pack and want it to arrive clean, without the same artist spelled three ways and without repeated tracks.",
           "It works on Mac and Windows."
@@ -2673,6 +2685,7 @@
         "slug": "clean-up-titles-in-bulk",
         "group": "organize",
         "title": "Clean up the titles of hundreds of tracks at once",
+        "s": "Remove “(Original Mix)” or the site's tag from every track at once.",
         "body": [
           "Your titles carry “(Original Mix)”, the tag of the site you downloaded them from, or an underscore instead of a space. You want it gone from every track in one go."
         ],
@@ -2713,6 +2726,7 @@
         "slug": "bpm-and-key-from-beatport",
         "group": "organize",
         "title": "Get BPM and key from Beatport",
+        "s": "The right BPM, key and mix name, without typing them in.",
         "body": [
           "You want your tracks to arrive with the right BPM, key and mix name, without typing them in.",
           "You need a Beatport account. A free one works."
@@ -2764,6 +2778,7 @@
         "slug": "auto-tag-downloads",
         "group": "organize",
         "title": "Have your downloads arrive already tagged",
+        "s": "Every new download comes into Surco and tags itself.",
         "body": [
           "You have a folder where your downloads land. You want each new track to come into Surco and tag itself, without dragging anything again."
         ],
@@ -2810,6 +2825,7 @@
         "slug": "even-out-loudness",
         "group": "sound",
         "title": "Even out the loudness of a whole folder",
+        "s": "All your tracks at a similar level, wherever they come from.",
         "body": [
           "Your tracks come from different places and some sound much louder than others. You want them all at a similar level."
         ],
@@ -2862,6 +2878,7 @@
         "slug": "send-tracks-to-engine-dj",
         "group": "library",
         "title": "Take your tracks to Engine DJ",
+        "s": "What you prepare in Surco shows up in Engine DJ with its artwork and playlists.",
         "body": [
           "You play on Denon and want what you prepare in Surco to show up in your Engine DJ library, with its artwork and in its playlists.",
           "It works on Mac and Windows."
@@ -2916,6 +2933,7 @@
         "slug": "set-up-rekordbox-cues-with-your-flow",
         "group": "library",
         "title": "Set up your tracks' cues with your own flow",
+        "s": "Mark where the track drops and your flow places the rest of the cues.",
         "body": [
           "You prepare your rekordbox tracks the same way every time, with cues counted from where the track drops. You want to mark that point with one click, or have Surco suggest it, and have it place the rest.",
           "This is how one DJ does it with their flow, but the point can be whatever you like and you build the flow your own way. It works on Mac and Windows."
@@ -2976,6 +2994,7 @@
         "group": "go",
         "macOnly": true,
         "title": "Prepare a set from an Apple Music playlist",
+        "s": "Get an Apple Music playlist out as AIFF or onto a USB stick without hunting for files.",
         "body": [
           "Your selection is already made in an Apple Music playlist. You want it out as AIFF, or on a USB stick, without hunting for the files one by one."
         ],
@@ -3022,6 +3041,7 @@
         "slug": "music-on-a-nas",
         "group": "go",
         "title": "Your music on a NAS",
+        "s": "Work with the music on your network drive from Mac or Windows.",
         "body": [
           "You keep your music on a network drive and work with it from Surco, on Mac or Windows."
         ],

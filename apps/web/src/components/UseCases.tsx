@@ -169,8 +169,8 @@ export default function UseCases() {
                                     <span className="font-medium text-fg">{c.title}</span>
                                     {c.macOnly && <MacBadge />}
                                   </span>
-                                  <span className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted">
-                                    {c.body[0]}
+                                  <span className="mt-1 block text-sm leading-relaxed text-muted">
+                                    {c.s}
                                   </span>
                                 </span>
                                 <span
