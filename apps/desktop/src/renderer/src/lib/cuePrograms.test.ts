@@ -5,7 +5,12 @@ import { CUE_PROGRAMS, cueProgramOf } from './cuePrograms'
 
 describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () => {
   it('gives rekordbox every slot, reads its stored waveform and fills a missing grid with Surco’s', () => {
-    expect(CUE_PROGRAMS.rekordbox).toEqual({ slots: ALL_SLOTS, readsAudio: false, surcoGrid: true })
+    expect(CUE_PROGRAMS.rekordbox).toEqual({
+      slots: ALL_SLOTS,
+      readsAudio: false,
+      surcoGrid: true,
+      writesCalls: true,
+    })
   })
 
   it('gives Traktor only its own slots, reads the audio and fills a missing grid with Surco’s', () => {
@@ -13,11 +18,17 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       slots: TRAKTOR_SLOTS,
       readsAudio: true,
       surcoGrid: true,
+      writesCalls: false,
     })
   })
 
   it('gives Engine DJ every slot, reads the audio and never measures Surco’s grid', () => {
-    expect(CUE_PROGRAMS.engine).toEqual({ slots: ALL_SLOTS, readsAudio: true, surcoGrid: false })
+    expect(CUE_PROGRAMS.engine).toEqual({
+      slots: ALL_SLOTS,
+      readsAudio: true,
+      surcoGrid: false,
+      writesCalls: false,
+    })
   })
 })
 

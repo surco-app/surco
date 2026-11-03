@@ -150,7 +150,7 @@ async function planOne(
   const result = onlyAdded(baseline, wantedOfDraft(placed.cues), ctx.slots?.kinds ?? HOT_KINDS)
   const added = result.slice(baseline.length)
   const hot = added.filter((c) => c.kind !== 0).length
-  const calls = library === 'rekordbox' ? added.length - hot : 0
+  const calls = CUE_PROGRAMS[library].writesCalls ? added.length - hot : 0
   const meant = wantedOfDraft(marked(startDraft([], source.breaks[0].flowId)).cues).filter(
     (c) => c.kind !== 0 && !baseline.some((b) => b.kind !== 0 && near(b.ms, c.ms)),
   ).length
