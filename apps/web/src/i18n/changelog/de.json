@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.22",
+    "date": "November 3, 2026",
+    "title": "Raster auf dem Beat, und Serato",
+    "items": [
+      {
+        "text": "Korrigiere das Beat-Raster eines Tracks, ohne das Programm zu öffnen. Mit maximiertem Cue-Abschnitt bekommst du eine Zeile mit dem BPM, Pfeilen zum Verschieben, Knöpfen zum Strecken oder Stauchen, dem ersten Schlag am Abspielkopf und „Auto“, das es an die Schläge anpasst. Daneben siehst du, wie weit es hier und am Ende des Tracks danebenliegt. Gespeichert wird in rekordbox, Traktor und Engine DJ, und in rekordbox kannst du es für geschnittene Tracks in Abschnitte mit eigenem Tempo teilen. Raster, die du im Programm gesperrt hast, bleiben unangetastet.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "Der Filter „Raster falsch“ zeigt dir die Tracks, deren Raster die Schläge verfehlt, und daneben jeweils, um wie viel, ob es um ein paar Millisekunden verschoben ist oder im Lauf des Tracks wegdriftet. In rekordbox gilt das für alle Tracks. In Traktor und Engine DJ vorerst für WAV, AIFF und FLAC, und in Traktor auch für MP3s, die mit iTunes erstellt wurden.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "Im Cue-Editor werden Cues, die ihren Schlag verfehlen, eigens eingefärbt und über der Wellenform genannt, mit ihrer Abweichung. „Auf den Schlag“ setzt sie in einem Zug auf ihren Schlag, und wenn alle gleich weit danebenliegen, bietet dir Surco an, stattdessen das Raster zu verschieben.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "Serato hat einen eigenen Tab, vorerst nur zum Lesen. Du siehst seine Crates und Tracks mit den Hot Cues und Loops jedes Tracks, und Surco konvertiert diese Tracks nicht, damit ihre Cues nicht verloren gehen.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "Im Traktor-Tab liegen die Cues von MP3s, die mit iTunes erstellt wurden, jetzt an der richtigen Stelle auf der Wellenform und beim Anhören.",
+        "in": "1.22.0"
+      }
+    ]
+  },
+  {
     "version": "1.21",
     "date": "November 3, 2026",
     "title": "Cues auf dem Beat",

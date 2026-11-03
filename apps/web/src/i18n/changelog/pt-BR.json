@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.22",
+    "date": "November 3, 2026",
+    "title": "Grades na batida, e o Serato",
+    "items": [
+      {
+        "text": "Ajuste a grade de uma faixa sem abrir o programa. Com a seção de cues maximizada, você tem uma linha com o BPM, setas para mover a grade, botões para esticar ou encolher, o primeiro tempo no cursor e “Auto”, que a encaixa nas batidas. Ao lado você vê quanto ela se desvia aqui e no fim da faixa. Ela é salva no rekordbox, no Traktor e no Engine DJ, e no rekordbox você pode dividi-la em trechos com tempo próprio para faixas editadas. As grades que você travou no programa não são mexidas.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "O filtro “Grade errada” separa as faixas cuja grade não cai nas batidas e, ao lado de cada uma, diz quanto, se está deslocada alguns milissegundos ou se vai se desviando ao longo da faixa. No rekordbox vale para todas as faixas. No Traktor e no Engine DJ, por enquanto, para WAV, AIFF e FLAC, e no Traktor também para MP3 criados com o iTunes.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "No editor de cues, os cues que não caem na batida são pintados à parte e nomeados acima da onda, com quanto se desviam. “Na batida” leva todos para a batida de uma vez e, quando todos se desviam o mesmo tanto, o Surco oferece mover a grade em vez disso.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "O Serato tem sua própria aba, por enquanto só para leitura. Você vê os crates e as faixas com os hot cues e loops de cada uma, e o Surco não converte essas faixas para não perder os cues.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "Na aba do Traktor, os cues dos MP3 criados com o iTunes agora caem no lugar certo na onda e ao ouvir.",
+        "in": "1.22.0"
+      }
+    ]
+  },
+  {
     "version": "1.21",
     "date": "November 3, 2026",
     "title": "Cues na batida",

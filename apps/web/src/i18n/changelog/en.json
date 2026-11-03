@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.22",
+    "date": "November 3, 2026",
+    "title": "Grids on the beat, and Serato",
+    "items": [
+      {
+        "text": "Fix a track's beat grid without opening the program. With the cues section maximized you get a row with the BPM, arrows to move the grid, buttons to stretch or squeeze it, the downbeat at the playhead and “Auto”, which fits it to the beats. Beside it you see how far it is off here and at the end of the track. It saves to rekordbox, Traktor and Engine DJ, and in rekordbox you can split it into stretches with their own tempo for edited tracks. Grids you locked in the program are left alone.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "The “Bad grid” filter pulls out the tracks whose grid misses the beats, and beside each one tells you by how much, whether it is shifted a few milliseconds or drifts away along the track. In rekordbox it works for every track. In Traktor and Engine DJ, for now, for WAV, AIFF and FLAC, and in Traktor also for MP3s made with iTunes.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "In the cue editor, cues that miss their beat are painted apart and named above the wave, with how far off they are. “Onto the beat” moves them onto their beat in one go, and when they are all off by the same amount, Surco offers to move the grid instead.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "Serato has its own tab, read-only for now. You see its crates and tracks with each one's hot cues and loops, and Surco won't convert those tracks so their cues aren't lost.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "In the Traktor tab, cues on MP3s made with iTunes now land in the right place on the wave and when you listen to them.",
+        "in": "1.22.0"
+      }
+    ]
+  },
+  {
     "version": "1.21",
     "date": "November 3, 2026",
     "title": "Cues on the beat",

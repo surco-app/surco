@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.22",
+    "date": "3 de noviembre de 2026",
+    "title": "Rejillas en su sitio, y Serato",
+    "items": [
+      {
+        "text": "Ajusta la rejilla de una pista sin abrir el programa. Con la sección de cues maximizada tienes una fila con el BPM, flechas para moverla, botones para estirarla o encogerla, el primer tiempo en el cabezal y «Auto», que la cuadra con los golpes. Al lado ves cuánto se desvía aquí y al final de la pista. Se guarda en rekordbox, Traktor y Engine DJ, y en rekordbox puedes partirla en tramos con su propio tempo para las pistas empalmadas. Las rejillas que tienes bloqueadas en el programa no se tocan.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "El filtro «Rejilla mal» saca las pistas cuya rejilla no cae en los golpes, y al lado de cada una te dice cuánto, si está corrida unos milisegundos o si se va desviando a lo largo de la pista. En rekordbox vale para todas las pistas. En Traktor y Engine DJ, de momento, para WAV, AIFF y FLAC, y en Traktor también para los MP3 creados con iTunes.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "En el editor de cues, los cues que no caen en su golpe se pintan aparte y se nombran encima de la onda, con cuánto se desvían. «Al golpe» los lleva a su golpe de una vez, y si todos se desvían lo mismo, Surco te ofrece mover la rejilla en su lugar.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "Serato tiene su propia pestaña, de momento solo para leer. Ves sus crates y sus pistas con los hot cues y loops de cada una, y Surco no convierte esas pistas para no perder sus cues.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "En la pestaña de Traktor, los cues de los MP3 creados con iTunes ya caen en su sitio sobre la onda y al escucharlos.",
+        "in": "1.22.0"
+      }
+    ]
+  },
+  {
     "version": "1.21",
     "date": "3 de noviembre de 2026",
     "title": "Cues en el golpe",

@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.22",
+    "date": "November 3, 2026",
+    "title": "Des grilles sur le temps, et Serato",
+    "items": [
+      {
+        "text": "Corrige la grille d'une piste sans ouvrir le logiciel. Avec la section des cues agrandie, tu as une ligne avec le BPM, des flèches pour la déplacer, des boutons pour l'étirer ou la resserrer, le premier temps sur la tête de lecture et « Auto », qui la cale sur les temps. À côté, tu vois de combien elle s'écarte ici et à la fin de la piste. Elle s'enregistre dans rekordbox, Traktor et Engine DJ, et dans rekordbox tu peux la découper en tronçons avec leur propre tempo pour les pistes montées. Les grilles que tu as verrouillées dans le logiciel ne sont pas touchées.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "Le filtre « Grille fausse » te sort les pistes dont la grille rate les temps, et à côté de chacune te dit de combien, si elle est décalée de quelques millisecondes ou si elle dérive au fil de la piste. Dans rekordbox, ça marche pour toutes les pistes. Dans Traktor et Engine DJ, pour l'instant, pour le WAV, l'AIFF et le FLAC, et dans Traktor aussi pour les MP3 créés avec iTunes.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "Dans l'éditeur de cues, les cues qui ratent leur temps sont peints à part et nommés au-dessus de la forme d'onde, avec leur écart. « Sur le temps » les ramène sur leur temps d'un coup, et quand ils s'écartent tous de la même valeur, Surco te propose plutôt de déplacer la grille.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "Serato a son propre onglet, en lecture seule pour l'instant. Tu vois ses crates et ses pistes avec les hot cues et les boucles de chacune, et Surco ne convertit pas ces pistes pour ne pas perdre leurs cues.",
+        "in": "1.22.0"
+      },
+      {
+        "text": "Dans l'onglet Traktor, les cues des MP3 créés avec iTunes tombent maintenant au bon endroit sur la forme d'onde et à l'écoute.",
+        "in": "1.22.0"
+      }
+    ]
+  },
+  {
     "version": "1.21",
     "date": "November 3, 2026",
     "title": "Des cues sur le temps",
