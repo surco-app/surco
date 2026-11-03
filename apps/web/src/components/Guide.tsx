@@ -11,6 +11,7 @@ import ScrollProgress from './ScrollProgress'
 type Section = {
   id: string
   title: string
+  s: string
   body: string[]
   points: string[]
   shot: string
@@ -89,88 +90,121 @@ export default function Guide() {
 
       <Header page="guide" />
 
-      <main id="main" className="relative mx-auto max-w-3xl px-6 sm:px-10">
-        {/* pb smaller than pt: each section below brings its own py-12, so the
-            index used to sit in about 150px of empty background. */}
-        <section className="pt-12 pb-4 sm:pt-16">
-          <Reveal eager>
-            <Kicker>{t('guide.kicker')}</Kicker>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
-              {t('guide.title')}
-            </h1>
-            <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">{t('guide.lede')}</p>
-          </Reveal>
-
-          <Reveal eager delay={120}>
-            <nav className="mt-10 rounded-2xl border border-line bg-surface2/40 p-6">
-              <p className="text-sm font-medium text-faint">{t('guide.tocLabel')}</p>
-              <ol className="mt-4 grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
-                {sections.map((s, i) => (
-                  <li key={s.id}>
-                    <a
-                      href={`#${s.id}`}
-                      className="group flex items-baseline gap-3 text-sm text-muted transition-colors hover:text-fg"
-                    >
-                      <span className="font-mono text-xs text-blue">
-                        {String(i + 1).padStart(2, '0')}
-                      </span>
-                      <span className="transition-colors group-hover:text-fg">{s.title}</span>
-                    </a>
-                  </li>
-                ))}
-              </ol>
-            </nav>
-          </Reveal>
-        </section>
-
-        {sections.map((s, i) => (
-          <section key={s.id} id={s.id} className="scroll-mt-20 py-14 sm:py-16">
-            <Reveal>
-              <p className="font-mono text-sm text-blue">{String(i + 1).padStart(2, '0')}</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{s.title}</h2>
-              {s.body.map((p) => (
-                <p key={p} className="mt-4 max-w-2xl leading-relaxed text-muted">
-                  {p}
-                </p>
+      <main
+        id="main"
+        className="relative mx-auto max-w-3xl px-6 sm:px-10 lg:grid lg:max-w-6xl lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-16"
+      >
+        <aside className="hidden lg:block">
+          <nav
+            data-testid="guide-side-toc"
+            aria-label={t('guide.tocLabel')}
+            className="sticky top-24 mt-16 max-h-[calc(100vh-8rem)] overflow-y-auto pr-2"
+          >
+            <p className="text-sm font-medium text-faint">{t('guide.tocLabel')}</p>
+            <ol className="mt-3 space-y-1.5">
+              {sections.map((s, i) => (
+                <li key={s.id}>
+                  <a
+                    href={`#${s.id}`}
+                    className="flex items-baseline gap-2.5 text-[13px] leading-snug text-muted transition-colors hover:text-fg"
+                  >
+                    <span className="font-mono text-[11px] text-blue">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <span>{s.title}</span>
+                  </a>
+                </li>
               ))}
-              {s.points.length > 0 && (
-                <ul className="mt-5 space-y-2.5">
-                  {s.points.map((point) => (
-                    <li key={point} className="flex gap-3 text-sm leading-relaxed text-muted">
-                      <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
-                      <span>{point}</span>
+            </ol>
+          </nav>
+        </aside>
+
+        <div className="min-w-0 max-w-3xl">
+          {/* pb smaller than pt: each section below brings its own py-12, so the
+            index used to sit in about 150px of empty background. */}
+          <section className="pt-12 pb-4 sm:pt-16">
+            <Reveal eager>
+              <Kicker>{t('guide.kicker')}</Kicker>
+              <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
+                {t('guide.title')}
+              </h1>
+              <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">{t('guide.lede')}</p>
+            </Reveal>
+
+            <Reveal eager delay={120}>
+              <nav className="mt-10 rounded-2xl border border-line bg-surface2/40 p-6 lg:hidden">
+                <p className="text-sm font-medium text-faint">{t('guide.tocLabel')}</p>
+                <ol className="mt-4 grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
+                  {sections.map((s, i) => (
+                    <li key={s.id}>
+                      <a
+                        href={`#${s.id}`}
+                        className="group flex items-baseline gap-3 text-sm text-muted transition-colors hover:text-fg"
+                      >
+                        <span className="font-mono text-xs text-blue">
+                          {String(i + 1).padStart(2, '0')}
+                        </span>
+                        <span className="transition-colors group-hover:text-fg">{s.title}</span>
+                      </a>
                     </li>
                   ))}
-                </ul>
-              )}
-              {s.shot && (
-                <GuideShot
-                  src={`/guide/${s.shot}`}
-                  caption={s.shotCaption}
-                  placeholder={placeholder}
-                  onZoom={(shot) => {
-                    setLightboxShot(shot)
-                    setLightboxOpen(true)
-                  }}
-                />
-              )}
+                </ol>
+              </nav>
             </Reveal>
           </section>
-        ))}
 
-        <section className="py-20 text-center sm:py-24">
-          <Reveal>
-            <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              {t('guide.outroTitle')}
-            </h2>
-            <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">
-              {t('guide.outroLede')}
-            </p>
-            <div className="mt-2 flex flex-col items-center text-center">
-              <DownloadButton location="guide" />
-            </div>
-          </Reveal>
-        </section>
+          {sections.map((s, i) => (
+            <section key={s.id} id={s.id} className="scroll-mt-20 py-14 sm:py-16">
+              <Reveal>
+                <p className="font-mono text-sm text-blue">{String(i + 1).padStart(2, '0')}</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+                  {s.title}
+                </h2>
+                <p className="mt-3 max-w-2xl text-lg leading-snug text-pretty text-subtle">{s.s}</p>
+                {s.body.map((p) => (
+                  <p key={p} className="mt-4 max-w-2xl leading-relaxed text-muted">
+                    {p}
+                  </p>
+                ))}
+                {s.points.length > 0 && (
+                  <ul className="mt-5 space-y-2.5">
+                    {s.points.map((point) => (
+                      <li key={point} className="flex gap-3 text-sm leading-relaxed text-muted">
+                        <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {s.shot && (
+                  <GuideShot
+                    src={`/guide/${s.shot}`}
+                    caption={s.shotCaption}
+                    placeholder={placeholder}
+                    onZoom={(shot) => {
+                      setLightboxShot(shot)
+                      setLightboxOpen(true)
+                    }}
+                  />
+                )}
+              </Reveal>
+            </section>
+          ))}
+
+          <section className="py-20 text-center sm:py-24">
+            <Reveal>
+              <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+                {t('guide.outroTitle')}
+              </h2>
+              <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">
+                {t('guide.outroLede')}
+              </p>
+              <div className="mt-2 flex flex-col items-center text-center">
+                <DownloadButton location="guide" />
+              </div>
+            </Reveal>
+          </section>
+        </div>
       </main>
 
       <Lightbox

@@ -49,7 +49,7 @@
   },
   "features": {
     "kicker": "Fonctions",
-    "title": "Tout le processus, dans une seule appli",
+    "title": "Chaque étape, du téléchargement à la cabine",
     "lede": "Ce que fait Surco, une ligne par fonction. Ouvre n'importe laquelle pour voir le détail complet.",
     "count_one": "{{count}} fonction",
     "count_other": "{{count}} fonctions",
@@ -572,6 +572,7 @@
       {
         "id": "instalar",
         "title": "Installer et ouvrir Surco",
+        "s": "Télécharge-le, ouvre-le et en une minute l'assistant le règle à ton goût.",
         "body": [
           "Télécharge Surco pour ton système depuis la page d'accueil, ou installe-le avec Homebrew sur macOS. À la première ouverture, un assistant te configure tout en une minute : où chercher les tags et s'il faut associer à l'import, le format et le dossier de sortie, et ce que tu fais de tes morceaux, pour que l'éditeur n'affiche que les sections dont tu te sers.",
           "Pas de compte, pas d'abonnement. Surco se met à jour tout seul, tu as donc toujours la dernière version sans rien retélécharger, et il te montre les nouveautés à la première ouverture après une mise à jour."
@@ -589,6 +590,7 @@
       {
         "id": "importar",
         "title": "Ajouter tes morceaux",
+        "s": "Glisse des fichiers ou des dossiers entiers et Surco lit tout à la volée.",
         "body": [
           "Glisse des fichiers (ou des dossiers entiers) sur la fenêtre de Surco, ou clique sur « Ajouter des fichiers » (⌘O) pour les choisir ; le sélecteur accepte aussi les dossiers. Tu peux également ouvrir un fichier audio avec Surco depuis le Finder ou l'Explorateur.",
           "Surco lit à la volée les tags, la durée et la pochette de chaque fichier et les affiche aussitôt dans la liste. Un même fichier n'est jamais ajouté deux fois."
@@ -607,6 +609,7 @@
       {
         "id": "lista",
         "title": "Découvrir la liste des morceaux",
+        "s": "Ce que te dit chaque ligne de la liste, en un coup d'œil.",
         "body": [
           "La colonne de gauche est ta file de travail. Chaque ligne affiche la pochette, le titre avec sa durée à côté, l'artiste et le format source. Un point au coin de la pochette indique si le morceau est en cours, prêt ou en erreur, et pendant la conversion la pochette devient un disque entouré d'un anneau qui se referme. Une fois la qualité analysée, la pastille du format prend la couleur du verdict : vert pour bon, ambre pour douteux, rouge pour mauvais, et ceux qui demandent ton attention reçoivent aussi une bande sur leur bord.",
           "Appuie sur Espace pour pré-écouter le morceau sélectionné dans le lecteur, logé dans sa propre barre en bas pour ne jamais couvrir ta liste. Double-clique sur une ligne pour la lire, double-clique encore pour arrêter. Tire le bord droit pour élargir la liste, ou double-clique dessus pour l'ajuster au nom de morceau le plus long."
@@ -627,6 +630,7 @@
       {
         "id": "fuentes",
         "title": "Ouvre tes bibliothèques dans Surco",
+        "s": "Travaille sur tes playlists Apple Music, rekordbox, Engine DJ et Traktor.",
         "body": [
           "La barre latérale a un panneau Sources avec ton Apple Music (sur macOS), rekordbox, Engine DJ et Traktor. Ouvre n'importe quelle playlist et ses morceaux entrent dans la liste avec leurs vrais fichiers, pour les taguer, les vérifier ou les convertir comme n'importe quels autres.",
           "Dans rekordbox, la liste commence par « Tous les morceaux », avec toute ta collection, y compris ce qui n'est dans aucune playlist, et continue avec « Ajoutées récemment », ce que tu as ajouté ces 30 derniers jours."
@@ -644,6 +648,7 @@
       {
         "id": "editor",
         "title": "Modifier les métadonnées",
+        "s": "Tous les champs du morceau, modifiables un par un ou en lot.",
         "body": [
           "Sélectionne un morceau et l'éditeur à droite affiche tous les champs : titre, artiste, album, année, genre, label, numéro de catalogue, BPM, tonalité, regroupement, compositeur, ISRC, mix, remixeur, commentaire et d'autres. Modifie ce que tu veux, tes genres et regroupements enregistrés apparaissent comme suggestions en un clic. Entrée valide un champ et passe au suivant, pour remplir tout un disque sans lâcher le clavier.",
           "Ses sections sont réparties en trois phases (Fichier, Audio et Sortie) pour voir d'un coup d'œil si tu corriges des données, nettoies le son ou décides comment le morceau sort. En haut se trouve la pochette, avec la note juste en dessous : dépose-en une (même directement depuis ton navigateur), exporte-la, ou passe avec les flèches de celle du fichier à celles de la release recherchée. Un morceau bien nommé mais sans aucun tag ? Clique sur « Remplir depuis le nom » et Surco déduit le titre et l'artiste."
@@ -668,6 +673,7 @@
       {
         "id": "otros-tags",
         "title": "Nettoyer les tags que le fichier traîne",
+        "s": "Retire les restes que d'autres logiciels ont laissés dans le fichier.",
         "body": [
           "Un fichier passé entre d'autres mains arrive chargé de tags que tu n'as jamais écrits : restes de Serato ou de Traktor, identifiants MusicBrainz, valeurs ReplayGain, notes d'outils de découpe. Ils n'apparaissent pas dans les champs de l'éditeur, mais ils voyagent dans le fichier et ressortent dans le logiciel DJ de la prochaine personne qui l'ouvre.",
           "La section « Autres métadonnées » les liste tous exactement tels qu'ils sont dans le fichier, et tu les retires un par un ou tous d'un coup. Tu changes d'avis ? Décoche-les simplement avant de convertir."
@@ -684,6 +690,7 @@
       {
         "id": "calidad",
         "title": "Vérifier la vraie qualité",
+        "s": "Vois dans le spectre si un fichier sans perte l'est vraiment.",
         "body": [
           "Ouvre la section qualité et Surco dessine le spectre du morceau : les fréquences de bas en haut tout au long du titre. Un fichier vraiment sans perte garde de l'énergie jusqu'en haut ; un MP3 déguisé en WAV coupe net et laisse un vide au sommet. Une ligne pointillée marque l'endroit de la coupure, et le spectre ombre la bande morte pour que tu voies où le son s'arrête.",
           "Le verdict se lit en absolu, comme un DJ le lit : atteindre environ 20 kHz, c'est la pleine qualité, de 18 à 19,5 kHz c'est douteux et sous 18 kHz c'est mauvais, quelle que soit la fréquence d'échantillonnage du fichier. Juste en dessous, un relevé coloré résume les niveaux : LUFS intégré, pic réel, dynamique, équilibre des canaux, DC offset et bruit de fond. Pour analyser toute la file d'un coup, utilise le bouton de la barre d'outils ou ⌘⇧A.",
@@ -706,6 +713,7 @@
       {
         "id": "declick",
         "title": "Nettoyer le vinyle",
+        "s": "Retire les clics de l'aiguille et le bruit de fond de tes rips.",
         "body": [
           "Un rip de vinyle porte les clics et les craquements de l'aiguille gravés dans l'audio. La section de réparation des clics les détecte et les interpole pendant la conversion, avec quatre niveaux : Non, Doux, Standard et Fort. Doux, c'est la touche minimale, pour les morceaux délicats ; Fort attrape aussi les longs craquements, au prix d'adoucir quelques transitoires.",
           "Avant de décider quoi que ce soit, Surco t'indique combien de clics audibles il estime dans le morceau, pour savoir si ça vaut le coup. Il marque chacun de ceux qu'il trouve sur la forme d'onde, et un disque sale se lit d'un coup d'œil plutôt que comme un chiffre. Un clic dure quelques millisecondes et le chercher en faisant glisser est peine perdue : clique sur « Clic suivant » pour les parcourir un par un, clique sur une marque pour écouter celui-là, ou place le curseur où tu veux et appuie sur Espace pour lire depuis là.",
@@ -729,6 +737,7 @@
       {
         "id": "recorte",
         "title": "Rogner le silence",
+        "s": "Adieu la descente de l'aiguille et le sillon vide de la fin.",
         "body": [
           "Les rips commencent souvent par la descente de l'aiguille et finissent par quelques secondes de sillon vide. La section de rognage détecte le silence au début et à la fin et te montre les deux coupes sur la forme d'onde, une par piste : le début et la fin.",
           "Chaque coupe se règle avec des poignées et des pas d'une milliseconde, et chaque piste a son propre zoom et sa pré-écoute, pour entendre exactement comment le morceau entre et sort avant d'appliquer quoi que ce soit. Le zoom va jusqu'au point où un pixel de forme d'onde vaut moins d'une milliseconde, et tu peux défiler horizontalement à deux doigts pour regarder avant ou après la coupe sans la déplacer. Pas convaincu ? Réinitialise-la ; et s'il trouve du silence sur plusieurs morceaux, tu peux rogner toute la sélection d'un coup depuis la palette de commandes."
@@ -746,6 +755,7 @@
       {
         "id": "discogs",
         "title": "Taguer depuis Discogs, Bandcamp, Deezer, Beatport et MusicBrainz",
+        "s": "Cherche la release et applique ses infos et sa pochette en un clic.",
         "body": [
           "Dans l'éditeur, cherche la release par son nom ou colle directement un id de release Discogs, puis lance « Rechercher » (ou la touche /). Surco liste les résultats avec pochette, année, label, numéro de catalogue et format, pour distinguer le pressage exact ; déplie-en un pour voir sa tracklist.",
           "Clique sur le morceau correspondant et Surco applique d'un coup artiste, album, année, genre, label, numéro de catalogue et pochette. Le plus proche est marqué « Suggéré ». La recherche marche sans rien configurer ; ajoute ton propre token Discogs dans les Réglages et tu obtiens une limite plus haute, privée et plus rapide.",
@@ -767,6 +777,7 @@
       {
         "id": "automatch",
         "title": "Auto-association : taguer sans rien toucher",
+        "s": "Chaque morceau que tu déposes est recherché et tagué tout seul.",
         "body": [
           "Avec « Auto-associer à l'import » activé dans les Réglages, chaque fichier déposé est recherché tout seul en arrière-plan dans les sources que tu as activées : Discogs d'abord, avec Bandcamp, Deezer, MusicBrainz et Beatport (une fois ton compte connecté) en renfort. Surco compare le titre, la durée, le numéro de piste et l'artiste à chaque candidat, et n'applique les métadonnées pour toi que si la correspondance est fiable. Artiste, album, année, genre, label et pochette, exactement comme si tu l'avais choisie à la main. Si le fichier porte un ISRC dans ses tags (fréquent sur les téléchargements de streaming), Surco s'en sert pour cibler l'enregistrement exact sur Deezer, et le single original n'est pas confondu avec des remixes au nom proche.",
           "Un titre identique ne suffit pas à lui seul : autre chose doit le confirmer (la durée, l'artiste ou le numéro de catalogue), car un titre d'un seul mot existe sur des dizaines de disques sans aucun rapport. Quand rien ne le confirme, le morceau n'est pas tagué automatiquement : il est marqué « À confirmer » avec son niveau de confiance, et tu l'acceptes en une étape depuis ⌘K sans même ouvrir l'éditeur. Interrupteur coupé (c'est le réglage par défaut), Surco suggère mais ne met jamais rien à jour de lui-même."
@@ -784,6 +795,7 @@
       {
         "id": "album",
         "title": "Associer une release entière",
+        "s": "Applique une release entière à tous ses morceaux d'un coup.",
         "body": [
           "Tu as importé un album ou un EP de plusieurs titres ? Sélectionne-les tous (⌘ + clic un par un, ou Maj + clic pour une plage) et l'éditeur passe en mode multi-morceaux : l'en-tête affiche « Édition de N morceaux » et les champs que tu modifies s'appliquent à toute la sélection d'un coup.",
           "Dans la colonne de recherche, cherche la release une seule fois. Surco la charge et construit une grille : tes fichiers à gauche, un menu déroulant avec la tracklist de la release à droite. Il attribue chaque fichier à son titre d'après la durée, même s'ils portent tous le même nom, et tu réattribues à la main ceux qu'il a ratés. Quand tout est juste, clique sur « Appliquer à N » et tague-les tous d'un coup."
@@ -803,6 +815,7 @@
       {
         "id": "nombres",
         "title": "Nommer et ranger les fichiers",
+        "s": "Des fichiers et des dossiers nommés comme tu veux.",
         "body": [
           "Dans Réglages → Noms, tu construis le modèle de nom de fichier avec des puces : clique sur {artist}, {title}, {album}, {year}… et elles s'insèrent là où se trouve ton curseur. Un aperçu en direct te montre le résultat. Utilise une barre oblique pour créer des sous-dossiers, par exemple {albumArtist}/{album}/{title}.",
           "Par défaut, Surco garde le nom de fichier d'origine et c'est toi qui décides quand renommer : dans l'éditeur, le bouton de régénération applique ton modèle à ce morceau en un clic, et le crayon ouvre un motif ponctuel rien que pour lui. Si tu préfères ne pas y penser, un réglage applique le modèle automatiquement à la conversion."
@@ -822,6 +835,7 @@
       {
         "id": "convertir",
         "title": "Convertir le morceau",
+        "s": "Choisis le format et convertis, en sachant d'avance ce qu'il va écrire.",
         "body": [
           "Le bouton en bas de l'éditeur convertit le morceau sélectionné, et t'indique quel format il va écrire avant que tu cliques. Le menu à sa droite choisit le format, dans tous les sens. AIFF, WAV, FLAC ou ALAC sans perte, ou MP3 pour prendre moins de place, même si le morceau était déjà sans perte. Si le morceau est déjà dans ce format, Surco le copie tel quel, instantanément, sans réencoder, sauf si tes réglages de qualité ou un filtre audio en modifient l'audio.",
           "La qualité se règle dans Réglages → Format, avec le débit MP3 (de 320 à 128 kbps, ou VBR V0/V2), la profondeur de bits, la fréquence d'échantillonnage et la compression FLAC. Par défaut, ceux de l'original sont conservés, sauf la profondeur de bits. « Corrigé » enregistre un fichier 16 bits rembourré en 24 comme un vrai 16 bits, sans perte. Dans Réglages → Sortie, tu décides où il va. Un dossier de sortie, ta bibliothèque Apple Music, à côté de l'original (les exports au même format prennent un nom en « (2) » et la source n'est pas touchée), ou « Modifier l'original », qui réécrit le fichier sur place. Attention, avec « Modifier l'original », changer de format supprime l'original. Au même endroit, tu choisis séparément pour rekordbox, Engine DJ et Traktor si une conversion les laisse tranquilles (« Ne pas toucher »), met à jour les morceaux qu'ils ont déjà (« Mettre à jour ») ou leur ajoute aussi les nouveaux (« Mettre à jour et ajouter »). Si tu veux, active la normalisation (loudness ou pic, avec des préréglages streaming, club ou broadcast) pour égaliser le volume. Une fois fini, « Afficher le fichier » t'amène au résultat dans le Finder ou l'Explorateur."
@@ -843,6 +857,7 @@
       {
         "id": "igual-origen",
         "title": "Taguer sans réencoder",
+        "s": "Mets les métadonnées au propre sans changer le format de tes fichiers.",
         "body": [
           "Parfois, tu ne veux rien convertir : tu veux tes fichiers exactement tels qu'ils sont, juste avec les métadonnées et la pochette bien en place. C'est le rôle de « Comme la source » : chaque fichier sort dans son propre format, et un lot mélangé de WAV, FLAC et MP3 est tagué de bout en bout sans qu'aucun ne change de format.",
           "Avec les filtres audio désactivés, l'audio n'est pas touché : les octets sont copiés tels quels et seuls les tags sont réécrits. C'est instantané quelle que soit la taille du fichier, et aucune perte de qualité n'est possible, puisqu'il n'y a pas de réencodage. La seule exception, c'est un fichier sans perte que tes réglages de qualité modifient : avec « Corrigé », un audio 16 bits gonflé en 24 est réécrit en vrai 16 bits, sans perte là aussi."
@@ -859,6 +874,7 @@
       {
         "id": "lote",
         "title": "Convertir tous les morceaux",
+        "s": "Toute la file d'un coup, en sautant ce qui est déjà fait.",
         "body": [
           "Quand ta file est prête, le bouton « Convertir N pistes » de la barre (⌘⇧Entrée) traite d'un coup tous les morceaux convertibles et ignore ceux qui sont déjà faits. Tu vois la progression dans la barre d'outils et, à la fin, un résumé du nombre de morceaux convertis, ignorés ou en erreur.",
           "À savoir : la conversion de tous les morceaux se contente de convertir et de renommer avec les métadonnées que les morceaux ont déjà, elle ne va jamais d'elle-même chercher dans tes sources. Si tu veux des données fraîches d'abord, lance « Auto-associer tous les morceaux » (⌘⇧D) depuis la barre d'outils."
@@ -876,6 +892,7 @@
       {
         "id": "exportar",
         "title": "Jusqu'à tes platines",
+        "s": "Les morceaux apparaissent dans Apple Music, rekordbox, Engine DJ ou Traktor.",
         "body": [
           "Surco ne s'arrête pas à la conversion. Il envoie les morceaux directement dans Apple Music (sur macOS), et dans rekordbox, Engine DJ ou Traktor si tu les mets sur « Mettre à jour et ajouter » dans Réglages → Sortie, au fil de la conversion. Il exporte aussi la file en collection rekordbox (.xml), Traktor (.nml), Serato (.crate) ou en playlist M3U8. L'export se trouve dans l'éditeur, juste là où se termine la conversion.",
           "Les tags et la pochette voyagent dans le fichier lui-même, ton logiciel DJ les lit donc sans étape supplémentaire. Les fichiers passerelles, c'est autre chose : ils portent les métadonnées et les chemins, mais ni cues, ni note, ni pochette. Chaque logiciel va chercher tout ça dans le fichier ou dans sa propre base de données."
@@ -896,6 +913,7 @@
       {
         "id": "usb",
         "title": "Emporte tes playlists sur une clé USB",
+        "s": "Exporte tes playlists vers une clé USB prête pour les lecteurs.",
         "body": [
           "Surco exporte tes playlists rekordbox ou Engine DJ vers une clé USB, avec la bibliothèque que lisent les lecteurs. Lance l'export depuis l'icône USB à côté du nom du logiciel dans Sources, depuis « Exporter vers USB… » dans ⌘K, ou depuis la notification qui s'affiche quand tu branches une clé USB.",
           "Tu coches les playlists et tu choisis la clé, et avant de copier quoi que ce soit, il te dit combien de morceaux sont nouveaux, combien y étaient déjà, combien ont été retirés depuis la dernière fois et si tout tient."
@@ -914,6 +932,7 @@
       {
         "id": "traktor",
         "title": "Faire enfin voir tes changements à Traktor",
+        "s": "Pourquoi Traktor affiche les anciens cues et comment y remédier.",
         "body": [
           "Si tu mixes sur Traktor, tu connais ce moment : tu convertis un morceau, les cues sont bien écrits dans le fichier, et Traktor affiche toujours les anciens. Ce n'est pas la conversion qui échoue, c'est Traktor qui ne relit pas le fichier : il lit sa propre base de données, le collection.nml.",
           "C'est pourquoi Surco peut mettre à jour ta collection pendant la conversion. Tu lui indiques ton collection.nml dans les Réglages (Surco propose celui qu'il trouve et ne touche à rien tant que tu n'as pas confirmé) et, dès lors, il remet à jour les cues, la grille et la pochette des morceaux que Traktor avait déjà."
@@ -932,6 +951,7 @@
       {
         "id": "rekordbox",
         "title": "Préparer tes cues rekordbox",
+        "s": "Hot cues et CALL sur la forme d'onde rekordbox, avec ton flux.",
         "body": [
           "Ouvre une playlist rekordbox dans la barre latérale de Surco et choisis un morceau. La section Cues affiche sa forme d'onde et sa grille rekordbox, et tu poses les hot cues A à H et les CALL à la souris ou au clavier.",
           "Avec un flux, un clic là où le morceau drope place le reste des cues, en comptant à rebours. Si tu préfères ne pas chercher ce point, Marquage auto le suggère et tu l'acceptes avec Entrée."
@@ -951,6 +971,7 @@
       {
         "id": "revisar",
         "title": "Vérifie ta bibliothèque",
+        "s": "Fautes, orthographes et doublons de ta bibliothèque, au même endroit.",
         "body": [
           "« Vérifier », dans la barre d'outils, passe en revue ton Apple Music, la liste chargée ou une playlist, et rassemble au même endroit ce qui ne va pas. Pour chaque cas, tu vois l'état actuel et le résultat, tu mets dans le lot ce que tu veux corriger et tu l'appliques d'un coup.",
           "Les changements arrivent dans les fichiers, dans Apple Music et, si tu les synchronises, dans rekordbox, Engine DJ et Traktor. Avant d'écrire, Surco garde une copie de chaque fichier et de chaque bibliothèque, et la vérification se défait avec « Annuler »."
@@ -969,6 +990,7 @@
       {
         "id": "atajos",
         "title": "Voler au clavier",
+        "s": "Presque tout a un raccourci, et ⌘K te le trouve.",
         "body": [
           "Surco est pensé pour se passer de la souris. La palette de commandes (⌘K) met tout derrière un seul champ de recherche (classé par thème, insensible aux accents, et qui apprend ce que tu utilises le plus), et presque chaque action a son raccourci : ajouter des fichiers (⌘O), convertir le morceau (⌘Entrée), convertir tous les morceaux (⌘⇧Entrée), analyser la qualité (⌘⇧A), auto-associer (⌘⇧D), chercher dans tes sources (/) et les flèches pour parcourir la liste.",
           "Appuie sur ? à tout moment pour la liste complète, et réassigne ceux que tu veux dans Réglages → Raccourcis. Chaque action affiche son raccourci dans sa propre infobulle, tu les retiens donc au fil de l'eau."
@@ -988,6 +1010,7 @@
       {
         "id": "ajustes",
         "title": "Le faire tien",
+        "s": "Ce qui ne sert pas au quotidien, rangé dans les Réglages.",
         "body": [
           "Les Réglages (⌘ ,) regroupent tout ce qui ne sert pas au quotidien, organisé dans une barre latérale par blocs (Édition, Sortie et App) : Général et Sources en haut, puis Éditeur, Sections, Champs, Pochette et Cues ; ensuite Format, Traitement, Noms et Sortie ; et enfin Raccourcis, Statistiques et Avancé. Si tu ne te souviens plus où est quelque chose, tape-le dans « Rechercher dans les réglages », au-dessus des onglets, et Surco t'amène à ce réglage.",
           "Configure-le une fois et Surco respecte tes choix sur chaque morceau. Et si tu veux l'emmener sur une autre machine, tu peux exporter toute ta configuration dans un fichier et la réimporter quand tu en as besoin."
@@ -1013,7 +1036,8 @@
   "changelog": {
     "metaTitle": "Historique de Surco, les nouveautés de chaque version",
     "metaDescription": "Les nouveautés de chaque version de Surco : association automatique Discogs, export rekordbox et Traktor, analyse du loudness, édition de plusieurs morceaux et plus encore.",
-    "title": "Nouveautés",
+    "kicker": "Nouveautés",
+    "title": "Tout ce qui a changé dans Surco",
     "lede": "L'essentiel de chaque version, sans le bruit. Les fonctions qui changent ta façon de préparer ta musique, version après version.",
     "beta": {
       "kicker": "En test",
@@ -1917,6 +1941,7 @@
         "slug": "tag-a-whole-folder",
         "group": "organize",
         "title": "Ajouter tags et pochettes à tout un dossier, sans faire de copies",
+        "s": "Surco complète tags et pochette dans les mêmes fichiers, sans copies ni changement de format.",
         "body": [
           "Tu as un dossier de musique avec des tags manquants ou sans pochette. Tu veux que Surco les complète tout seul, dans les mêmes fichiers, sans copies et sans changer de format.",
           "Tu le configures une fois. Ensuite, chaque dossier se règle en quatre étapes."
@@ -1993,6 +2018,7 @@
         "group": "library",
         "macOnly": true,
         "title": "Remplacer un morceau de ta bibliothèque par une meilleure copie",
+        "s": "La nouvelle copie prend la place de l'ancienne et reste dans toutes ses playlists.",
         "body": [
           "Tu as un morceau en MP3 dans ta bibliothèque et tu mets la main sur l'AIFF ou le WAV. Tu veux que la nouvelle copie prenne la place de l'ancienne, sans te retrouver avec deux et sans la rajouter à chaque playlist.",
           "Ça ne marche que sur Mac, parce que le remplacement passe par Apple Music. L'ancien morceau doit être dans ta bibliothèque Apple Music."
@@ -2074,6 +2100,7 @@
         "group": "library",
         "macOnly": true,
         "title": "Ta musique vit dans Apple Music et tu organises dans rekordbox",
+        "s": "Ce que tu améliores dans Surco arrive tout seul dans rekordbox, sans réimporter.",
         "body": [
           "Tu ajoutes ta musique à Apple Music et tu l'importes dans rekordbox pour monter tes playlists. Quand tu améliores un morceau ou corriges ses infos dans Surco, tu veux que rekordbox le récupère tout seul, sans réimporter et sans perdre playlists ni cue points.",
           "Ça ne marche que sur Mac, parce que ça passe par Apple Music."
@@ -2145,6 +2172,7 @@
         "slug": "convert-to-aiff-keeping-cue-points",
         "group": "library",
         "title": "Passer ta collection en AIFF sans perdre les cue points",
+        "s": "Toute ta collection en AIFF d'un coup, avec les cue points là où ils étaient.",
         "body": [
           "Ta musique est en FLAC ou en WAV et ton logiciel DJ ou tes CDJ préfèrent l'AIFF, qui garde aussi la pochette. Tu veux tout convertir d'un coup et garder tes cue points là où ils étaient.",
           "Le son ne perd rien. Passer du FLAC ou du WAV à l'AIFF se fait sans perte."
@@ -2224,6 +2252,7 @@
         "slug": "convert-m4a-aac-ogg-opus",
         "group": "organize",
         "title": "Convertir tes M4A, AAC, OGG et OPUS",
+        "s": "Passe-les dans un format lisible partout, avec leurs tags et leur pochette.",
         "body": [
           "Tu as des morceaux d'Apple Music, de Bandcamp ou d'autres boutiques en M4A, AAC, OGG ou OPUS, et ton logiciel DJ ou tes CDJ ne les lisent pas. Tu veux les passer dans un format lisible partout, avec leurs tags et leur pochette."
         ],
@@ -2274,6 +2303,7 @@
         "slug": "check-audio-quality",
         "group": "sound",
         "title": "Vérifier la qualité de ce que tu as acheté ou téléchargé",
+        "s": "Découvre si ce FLAC que tu as acheté vient en réalité d'un MP3.",
         "body": [
           "Tu as téléchargé un pack ou acheté de la musique et tu veux savoir si c'est bien ce que ça prétend être. Par exemple, un FLAC qui vient en réalité d'un MP3.",
           "Cette recette ne change rien. Surco se contente de regarder et te dit ce qu'il a trouvé."
@@ -2331,6 +2361,7 @@
         "slug": "digitize-vinyl",
         "group": "sound",
         "title": "Numériser tes vinyles",
+        "s": "Sans clics, sans souffle, sans silences et avec leurs infos Discogs.",
         "body": [
           "Tu as enregistré tes disques sur l'ordinateur et tu veux qu'ils soient prêts à jouer. Sans clics de diamant, sans souffle de fond, sans silence au début et à la fin, et avec leurs infos Discogs.",
           "Surco ne découpe pas une face entière en morceaux. Il te faut un fichier par morceau."
@@ -2410,6 +2441,7 @@
         "slug": "prepare-usb-for-the-club",
         "group": "go",
         "title": "Préparer une clé USB pour le club",
+        "s": "Tes playlists sur une clé USB avec cues, grille et formes d'onde, prêtes pour les lecteurs.",
         "body": [
           "Tu veux emporter tes playlists rekordbox ou Engine DJ sur une clé USB, avec leurs cues, leur grille et leurs formes d'onde, prêtes pour les lecteurs. Tes fichiers à la maison ne bougent pas.",
           "Ça marche sur Mac et Windows."
@@ -2457,6 +2489,7 @@
         "slug": "convert-to-mp3-to-save-space",
         "group": "go",
         "title": "Passer tes morceaux en MP3 pour que tout tienne",
+        "s": "Une copie en MP3 pour la clé USB ou le téléphone, sans toucher aux originaux.",
         "body": [
           "Ta musique est en FLAC, WAV ou AIFF et tu veux une copie en MP3 pour une petite clé USB, ton téléphone ou un appareil qui ne lit pas le FLAC. Tes fichiers sans perte restent tels quels.",
           "Un MP3 320 kbps prend environ quatre fois moins de place qu'un WAV ou un AIFF."
@@ -2514,6 +2547,7 @@
         "group": "organize",
         "macOnly": true,
         "title": "Une seule orthographe dans ta bibliothèque Apple Music",
+        "s": "Le même artiste écrit pareil dans toute la bibliothèque, sans passer morceau par morceau.",
         "body": [
           "Dans ta bibliothèque, le même artiste apparaît en « DJ Lara » et en « Dj Lara », les accents ne collent pas et des espaces invisibles se sont glissés quand tu as copié depuis un site. Tu veux que tout soit cohérent sans passer morceau par morceau."
         ],
@@ -2576,6 +2610,7 @@
         "group": "organize",
         "macOnly": true,
         "title": "Supprimer les morceaux en double d'Apple Music",
+        "s": "Garde la bonne copie sans perdre les playlists de l'autre.",
         "body": [
           "Tu as le même morceau deux fois, peut-être un en MP3 et un en AIFF, chacun dans ses playlists. Tu veux garder le bon sans perdre les playlists de l'autre."
         ],
@@ -2637,6 +2672,7 @@
         "slug": "review-folder-before-import",
         "group": "organize",
         "title": "Vérifier un dossier avant qu'il entre dans ta bibliothèque",
+        "s": "Un pack propre avant qu'il entre, sans orthographes différentes ni doublons.",
         "body": [
           "Tu as téléchargé un pack et tu veux qu'il arrive propre, sans le même artiste écrit de trois façons et sans morceaux en double.",
           "Ça marche sur Mac et Windows."
@@ -2673,6 +2709,7 @@
         "slug": "clean-up-titles-in-bulk",
         "group": "organize",
         "title": "Nettoyer les titres de centaines de morceaux d'un coup",
+        "s": "Retire «(Original Mix)» ou la marque du site de tous les morceaux d'un coup.",
         "body": [
           "Tes titres traînent un « (Original Mix) », la marque du site où tu les as téléchargés ou un tiret bas à la place d'une espace. Tu veux que ça disparaisse de tous les morceaux d'un coup."
         ],
@@ -2713,6 +2750,7 @@
         "slug": "bpm-and-key-from-beatport",
         "group": "organize",
         "title": "Récupérer le BPM et la tonalité depuis Beatport",
+        "s": "Le bon BPM, la bonne tonalité et le nom du mix, sans rien taper.",
         "body": [
           "Tu veux que tes morceaux arrivent avec le bon BPM, la bonne tonalité et le nom du mix, sans rien taper.",
           "Il te faut un compte Beatport. Un compte gratuit suffit."
@@ -2764,6 +2802,7 @@
         "slug": "auto-tag-downloads",
         "group": "organize",
         "title": "Des téléchargements qui arrivent déjà tagués",
+        "s": "Chaque nouveau téléchargement entre dans Surco et se tague tout seul.",
         "body": [
           "Tu as un dossier où atterrissent tes téléchargements. Tu veux que chaque nouveau morceau entre dans Surco et se tague tout seul, sans rien glisser à nouveau."
         ],
@@ -2810,6 +2849,7 @@
         "slug": "even-out-loudness",
         "group": "sound",
         "title": "Égaliser le loudness de tout un dossier",
+        "s": "Tous les morceaux à un niveau proche, d'où qu'ils viennent.",
         "body": [
           "Tes morceaux viennent d'un peu partout et certains sonnent beaucoup plus fort que d'autres. Tu veux qu'ils soient tous à un niveau proche."
         ],
@@ -2862,6 +2902,7 @@
         "slug": "send-tracks-to-engine-dj",
         "group": "library",
         "title": "Emmener tes morceaux dans Engine DJ",
+        "s": "Ce que tu prépares dans Surco apparaît dans Engine DJ avec pochette et playlists.",
         "body": [
           "Tu joues sur du matériel Denon et tu veux que ce que tu prépares dans Surco apparaisse dans ta bibliothèque Engine DJ, avec sa pochette et dans ses playlists.",
           "Ça marche sur Mac et Windows."
@@ -2916,6 +2957,7 @@
         "slug": "set-up-rekordbox-cues-with-your-flow",
         "group": "library",
         "title": "Placer les cues de tes morceaux avec ton propre flux",
+        "s": "Marque l'endroit où le morceau décolle et ton flux place le reste des cues.",
         "body": [
           "Tu prépares tes morceaux rekordbox toujours de la même façon, avec des cues comptés depuis l'endroit où le morceau décolle. Tu veux marquer ce point en un clic, ou que Surco te le suggère, et qu'il place le reste.",
           "Voici comment un DJ s'y prend avec son flux, mais le point peut être ce que tu veux et tu montes ton flux à ta façon. Ça marche sur Mac et Windows."
@@ -2976,6 +3018,7 @@
         "group": "go",
         "macOnly": true,
         "title": "Préparer un set depuis une playlist Apple Music",
+        "s": "Sors une playlist Apple Music en AIFF ou sur clé USB sans chercher les fichiers.",
         "body": [
           "Ta sélection est déjà faite dans une playlist Apple Music. Tu veux la sortir en AIFF, ou sur une clé USB, sans chercher les fichiers un par un."
         ],
@@ -3022,6 +3065,7 @@
         "slug": "music-on-a-nas",
         "group": "go",
         "title": "Ta musique sur un NAS",
+        "s": "Travaille sur la musique de ton disque réseau depuis Mac ou Windows.",
         "body": [
           "Tu gardes ta musique sur un disque réseau et tu travailles dessus depuis Surco, sur Mac ou Windows."
         ],
