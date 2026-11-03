@@ -127,6 +127,7 @@ export default function App() {
             step from a 1152px hero to a 1024px body, and the seam landed exactly on
             the heading that introduces the steps. */}
         <div className="mx-auto max-w-6xl px-6 sm:px-10">
+          <Walkthrough />
           <Spotlight
             id={SCENE_ANCHORS.cues}
             copy="cues"
@@ -139,7 +140,6 @@ export default function App() {
             points={['anyFormat', 'playlists', 'programs']}
             scene={<ReplaceScene />}
           />
-          <Walkthrough />
           <LibraryReview />
         </div>
 

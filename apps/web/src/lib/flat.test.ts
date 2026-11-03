@@ -16,7 +16,6 @@ const sources = (readdirSync(root, { recursive: true }) as string[])
 const FLOATING: Record<string, number> = {
   'components/Header.tsx': 1,
   'components/scenes/ReplaceScene.tsx': 1,
-  'components/scenes/DropScene.tsx': 1,
 }
 
 describe('flat, like the app', () => {

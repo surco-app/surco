@@ -7,7 +7,7 @@ import ja from '../i18n/locales/ja.json'
 import ptBR from '../i18n/locales/pt-BR.json'
 import { HERO_ANCHORS, SCENE_ANCHORS } from './sceneAnchors'
 
-const OTHER_HOME_IDS = ['top', 'main', 'como', 'mobile-nav']
+const OTHER_HOME_IDS = ['top', 'main', 'mobile-nav']
 const LOCALES = { es, en, de, fr, 'pt-BR': ptBR, ja }
 
 describe('scene anchors', () => {

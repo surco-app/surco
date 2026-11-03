@@ -1029,18 +1029,6 @@
   "home": {
     "replay": "Repetir la animación",
     "anchorLink": "Enlace a este ejemplo",
-    "walkthrough": {
-      "title": "Una pista, de principio a fin",
-      "lede": "Siete pasos, una sola ventana. Por el camino descubrirás cuáles de tus archivos lossless son en realidad MP3."
-    },
-    "drop": {
-      "title": "Suéltalas y ya están dentro.",
-      "lede": "Carpetas enteras. Surco lee etiquetas, duración y carátula al vuelo, y la misma pista nunca entra dos veces.",
-      "emptyTitle": "Suelta tus pistas aquí",
-      "emptySubtitle": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, y las manda a Apple Music o Engine DJ.",
-      "addTracks": "Añadir pistas",
-      "reading": "Leyendo {{read}}/{{total}}"
-    },
     "quality": {
       "title": "Ese lossless era un MP3.",
       "lede": "Comprar lossless no garantiza que lo sea. Si alguien convirtió un MP3 a FLAC, WAV o AIFF, el archivo pesa lo mismo pero en el espectro se ve el muro. Surco te lo marca antes de que la pista salga de casa.",
@@ -1057,55 +1045,10 @@
       "goodBadge": "● Buena calidad",
       "fakeBadge": "● Fake lossless"
     },
-    "audioGroup": {
-      "title": "Y de paso, mejor audio.",
-      "lede": "Tres arreglos que Surco hace sobre la misma pista: limpia el vinilo de clics y ruido, recorta el silencio del final y las deja todas al mismo volumen."
-    },
     "tag": {
       "title": "Las etiquetas, de Discogs, en un clic.",
       "lede": "Discogs para sellos, Bandcamp para autoeditados, Deezer para lo comercial, Beatport para lo que suena en club y MusicBrainz para todo lo demás. Un clic y entra todo: artista, sello, año, BPM y carátula.",
       "all": "Todos ({{count}})"
-    },
-    "declick": {
-      "step": "04 · se limpia",
-      "title": "El vinilo, limpio.",
-      "lede": "Si tus pistas vienen de un disco, traen chasquidos, soplido de fondo y el retumbe del plato. Surco marca los clics sobre la onda y los quita, baja el ruido y corta el rumble, y puedes comparar con el original mientras suena para comprobar que no se ha llevado nada por delante.",
-      "short": "Quita clics, ruido de fondo y rumble. Puedes escuchar el resultado antes de convertir.",
-      "section": "Reparación de vinilo",
-      "count": "~{{count}} clicks",
-      "clicks": "Clicks",
-      "off": "No",
-      "soft": "Suave",
-      "standard": "Estándar",
-      "medium": "Medio",
-      "strong": "Fuerte",
-      "found": "Clics encontrados",
-      "noise": "Ruido de fondo",
-      "listen": "Escuchar el resultado"
-    },
-    "trim": {
-      "step": "05 · se ajusta",
-      "title": "Fuera el silencio del final.",
-      "lede": "Detecta el silencio de entrada y de salida y el corte se engancha solo al último golpe. Al milisegundo, con escucha a cada lado.",
-      "short": "El corte se engancha solo al último golpe. Al milisegundo, con escucha a cada lado.",
-      "section": "Recorte de silencio",
-      "summary": "{{seconds}} s del final",
-      "none": "Hay 4,6 s de silencio al final",
-      "start": "Inicio",
-      "end": "Final"
-    },
-    "normalize": {
-      "step": "06 · se nivela",
-      "title": "Todas al mismo volumen.",
-      "lede": "Cada pista viene con el volumen que le puso su máster, y en cabina se nota al encadenar. Surco las iguala todas al mismo nivel con los presets de streaming, club o broadcast, y te dice antes de tocar nada cuánto va a cambiar cada una.",
-      "short": "Presets de streaming, club o broadcast, y te dice cuánto va a cambiar cada una antes de tocar nada.",
-      "section": "Igualar volumen",
-      "none": "Ninguna",
-      "volume": "Volumen",
-      "peak": "Pico",
-      "original": "Original {{lufs}} LUFS · {{peak}} dBTP",
-      "preview": "Vista previa {{lufs}} LUFS · {{peak}} dBTP",
-      "explain": "Cambiará {{gain}} dB hasta {{target}} LUFS con una ganancia constante. No se limita ni comprime nada; la dinámica queda intacta."
     },
     "batch": {
       "title": "Y aparece sola en tu Apple Music.",

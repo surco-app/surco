@@ -1029,18 +1029,6 @@
   "home": {
     "replay": "Animation wiederholen",
     "anchorLink": "Link zu diesem Beispiel",
-    "walkthrough": {
-      "title": "Ein Track, von Anfang bis Ende",
-      "lede": "Sieben Schritte, ein Fenster. Unterwegs erfährst du, welche deiner verlustfreien Dateien in Wahrheit MP3s sind."
-    },
-    "drop": {
-      "title": "Reinziehen, und sie sind drin.",
-      "lede": "Ganze Ordner. Surco liest Tags, Länge und Cover sofort ein und fügt nie denselben Track zweimal hinzu.",
-      "emptyTitle": "Zieh deine Tracks hierher",
-      "emptySubtitle": "Konvertiert deine Tracks in AIFF, WAV, FLAC, ALAC oder MP3, taggt sie aus Discogs, Bandcamp, Deezer, Beatport und MusicBrainz und schickt sie an Apple Music oder Engine DJ.",
-      "addTracks": "Tracks hinzufügen",
-      "reading": "Lese {{read}}/{{total}}"
-    },
     "quality": {
       "title": "Diese verlustfreie Datei war ein MP3.",
       "lede": "Verlustfrei gekauft heißt nicht, dass es verlustfrei ist. Hat jemand ein MP3 in FLAC, WAV oder AIFF umgewandelt, ist die Datei genauso groß, aber das Spektrum zeigt die Wand. Surco markiert es, bevor der Track das Haus verlässt.",
@@ -1057,55 +1045,10 @@
       "goodBadge": "● Gute Qualität",
       "fakeBadge": "● Falsch verlustfrei"
     },
-    "audioGroup": {
-      "title": "Und nebenbei besserer Sound.",
-      "lede": "Drei Korrekturen, die Surco am selben Track vornimmt: Es entfernt Knackser und Rauschen von Vinyl, schneidet die Stille am Ende ab und bringt jeden Track auf dieselbe Lautstärke."
-    },
     "tag": {
       "title": "Die Tags von Discogs, mit einem Klick.",
       "lede": "Discogs für Labels, Bandcamp für Eigenveröffentlichungen, Deezer für die Charts, Beatport für den Club, MusicBrainz für alles andere. Ein Klick füllt alles aus: Künstler, Label, Jahr, BPM und Cover.",
       "all": "Alle ({{count}})"
-    },
-    "declick": {
-      "step": "04 · gereinigt",
-      "title": "Vinyl, aufgeräumt.",
-      "lede": "Wenn deine Tracks von einer Platte stammen, bringen sie Knackser, Hintergrundrauschen und Rumpeln vom Plattenteller mit. Surco markiert die Knackser auf der Wellenform und entfernt sie, senkt das Rauschen und schneidet das Rumpeln weg. Beim Abspielen kannst du mit dem Original vergleichen und prüfen, dass die Reparatur nichts mitgenommen hat.",
-      "short": "Entfernt Knackser, Hintergrundrauschen und Rumpeln. Das Ergebnis hörst du dir vor dem Konvertieren an.",
-      "section": "Vinyl-Reparatur",
-      "count": "~{{count}} Klicks",
-      "clicks": "Knackser",
-      "off": "Aus",
-      "soft": "Sanft",
-      "standard": "Standard",
-      "medium": "Mittel",
-      "strong": "Stark",
-      "found": "Gefundene Klicks",
-      "noise": "Hintergrundrauschen",
-      "listen": "Ergebnis anhören"
-    },
-    "trim": {
-      "step": "05 · gekürzt",
-      "title": "Schneid die Stille am Ende weg.",
-      "lede": "Surco findet die Stille an beiden Enden, und der Schnitt rastet am letzten Schlag ein. Auf die Millisekunde genau, mit eigenem Vorhören auf jeder Seite.",
-      "short": "Der Schnitt rastet am letzten Schlag ein. Auf die Millisekunde genau, mit Vorhören auf beiden Seiten.",
-      "section": "Stille kürzen",
-      "summary": "{{seconds}} s vom Ende",
-      "none": "4,6 s Stille am Ende",
-      "start": "Anfang",
-      "end": "Ende"
-    },
-    "normalize": {
-      "step": "06 · angeglichen",
-      "title": "Alle gleich laut.",
-      "lede": "Jeder Track kommt mit der Lautstärke, auf die sein Master geschnitten wurde, und das hörst du, sobald du einen in den nächsten mischst. Surco bringt alle auf dasselbe Ziel, mit Vorgaben für Streaming, Club oder Rundfunk, und sagt dir, wie weit sich jeder Track bewegt, bevor es etwas anfasst.",
-      "short": "Vorgaben für Streaming, Club oder Rundfunk, und Surco sagt dir, wie weit sich jeder Track bewegt, bevor es etwas anfasst.",
-      "section": "Lautheitsnormalisierung",
-      "none": "Keine",
-      "volume": "Lautheit",
-      "peak": "Peak",
-      "original": "Original {{lufs}} LUFS · {{peak}} dBTP",
-      "preview": "Vorschau {{lufs}} LUFS · {{peak}} dBTP",
-      "explain": "Der Track bewegt sich um {{gain}} dB auf {{target}} LUFS, mit einer konstanten Verstärkung. Nichts wird limitiert oder komprimiert; die Dynamik bleibt unangetastet."
     },
     "batch": {
       "title": "Und er landet in deinem Apple Music.",

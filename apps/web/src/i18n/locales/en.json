@@ -1029,18 +1029,6 @@
   "home": {
     "replay": "Replay the animation",
     "anchorLink": "Link to this example",
-    "walkthrough": {
-      "title": "One track, start to finish",
-      "lede": "Seven steps, one window. Along the way you'll find out which of your lossless files are really MP3s."
-    },
-    "drop": {
-      "title": "Drop them and they're in.",
-      "lede": "Whole folders. Surco reads tags, length and artwork on the fly, and never adds the same track twice.",
-      "emptyTitle": "Drop your tracks here",
-      "emptySubtitle": "Converts your tracks to AIFF, WAV, FLAC, ALAC or MP3, tags them from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz, and sends them to Apple Music or Engine DJ.",
-      "addTracks": "Add tracks",
-      "reading": "Reading {{read}}/{{total}}"
-    },
     "quality": {
       "title": "That lossless file was an MP3.",
       "lede": "Buying lossless is no guarantee it is. If someone converted an MP3 to FLAC, WAV or AIFF, the file weighs the same but the spectrum shows the wall. Surco flags it before the track ever leaves the house.",
@@ -1057,55 +1045,10 @@
       "goodBadge": "● Good quality",
       "fakeBadge": "● Fake lossless"
     },
-    "audioGroup": {
-      "title": "And better audio while it does.",
-      "lede": "Three fixes Surco makes to the same track: it cleans the clicks and noise off vinyl, trims the silence off the end and levels every track to the same volume."
-    },
     "tag": {
       "title": "The tags, from Discogs, in one click.",
       "lede": "Discogs for labels, Bandcamp for self-released, Deezer for the charts, Beatport for the club, MusicBrainz for everything else. One click fills it all in: artist, label, year, BPM and artwork.",
       "all": "All ({{count}})"
-    },
-    "declick": {
-      "step": "04 · cleaned",
-      "title": "Vinyl, cleaned up.",
-      "lede": "If your tracks came off a record, they carry clicks, background hiss and platter rumble. Surco marks the clicks on the wave and takes them out, lowers the noise and cuts the rumble, and you can compare against the original while it plays to check the repair took nothing with it.",
-      "short": "Removes clicks, background noise and rumble. You can hear the result before you convert.",
-      "section": "Vinyl repair",
-      "count": "~{{count}} clicks",
-      "clicks": "Clicks",
-      "off": "Off",
-      "soft": "Gentle",
-      "standard": "Standard",
-      "medium": "Medium",
-      "strong": "Strong",
-      "found": "Clicks found",
-      "noise": "Background noise",
-      "listen": "Hear the result"
-    },
-    "trim": {
-      "step": "05 · trimmed",
-      "title": "Cut the silence off the end.",
-      "lede": "It finds the silence at both ends and the cut magnets onto the last hit. To the millisecond, with its own audition on each side.",
-      "short": "The cut latches onto the last hit. To the millisecond, with a listen either side.",
-      "section": "Silence trim",
-      "summary": "{{seconds}} s from the end",
-      "none": "4.6 s of silence at the end",
-      "start": "Start",
-      "end": "End"
-    },
-    "normalize": {
-      "step": "06 · levelled",
-      "title": "All at the same volume.",
-      "lede": "Every track arrives at whatever volume its master was cut to, and it shows the moment you mix one into the next. Surco levels them all to the same target with streaming, club or broadcast presets, and tells you how far each one will move before it touches anything.",
-      "short": "Streaming, club or broadcast presets, and it tells you how much each track will move before it touches anything.",
-      "section": "Loudness normalization",
-      "none": "None",
-      "volume": "Loudness",
-      "peak": "Peak",
-      "original": "Original {{lufs}} LUFS · {{peak}} dBTP",
-      "preview": "Preview {{lufs}} LUFS · {{peak}} dBTP",
-      "explain": "It will move {{gain}} dB to {{target}} LUFS with one constant gain. Nothing is limited or compressed; the dynamics stay intact."
     },
     "batch": {
       "title": "And it lands in your Apple Music.",
