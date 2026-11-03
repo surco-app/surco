@@ -4,6 +4,7 @@ import type { CueFlow } from '../shared/cueFlows'
 import { programOf, programsInOrder } from '../shared/djProgram'
 import type { DropInput } from '../shared/dropDetect'
 import type { GridFit } from '../shared/gridEdit'
+import type { GridVerdict } from '../shared/gridVerdict'
 import type {
   CopyReason,
   DjProgram,
@@ -90,6 +91,13 @@ export function registerRekordboxCuesIpc(host: {
     async (_e, contentId: string): Promise<SurcoGrid | null> => {
       const source = sourceOf(contentId)
       return source ? source.surcoGrid(contentId) : null
+    },
+  )
+  ipcMain.handle(
+    'rekordbox:gridVerdict',
+    async (_e, contentId: string): Promise<GridVerdict | null> => {
+      const source = sourceOf(contentId)
+      return source ? source.gridVerdict(contentId) : null
     },
   )
   ipcMain.handle('rekordbox:gridFit', async (_e, contentId: string): Promise<GridFit | null> => {

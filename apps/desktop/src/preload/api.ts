@@ -6,6 +6,7 @@ import type { PeekableAnalyses } from '../shared/audioIpcContract'
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
 import type { DropInput } from '../shared/dropDetect'
 import type { GridFit } from '../shared/gridEdit'
+import type { GridVerdict } from '../shared/gridVerdict'
 import type {
   ActivityEvent,
   AppleMusicAddJob,
@@ -275,6 +276,7 @@ export interface Api {
   rekordboxAuditionLead: (contentId: string) => Promise<number>
   rekordboxSurcoGrid: (contentId: string) => Promise<SurcoGrid | null>
   rekordboxGridFit: (contentId: string) => Promise<GridFit | null>
+  rekordboxGridVerdict: (contentId: string) => Promise<GridVerdict | null>
   rowWaves: (requests: RowWaveRequest[]) => Promise<Record<string, number[]>>
   rekordboxCountCompletable: () => Promise<number>
   cueProfile: () => Promise<CueProfileRead>

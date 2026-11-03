@@ -1,3 +1,5 @@
+import type { GridFit } from '../shared/gridEdit'
+import { gridVerdictOf } from '../shared/gridVerdict'
 import { type BeatGridFit, provisionalGrid, REKORDBOX_BEAT_AFTER_RISE_MS } from './beatGrid'
 import type { CueQueue, CueSource } from './cueSource'
 import { rekordboxShareDir } from './rekordboxArtwork'
@@ -40,6 +42,20 @@ export function rekordboxCueSource(host: {
       undefined,
       await keyOf(path),
     )
+  }
+  const gridFit = async (contentId: string): Promise<GridFit | null> => {
+    const row = await audioRowOf(contentId)
+    if (!row) return null
+    const fit = await host.beatGrid(row.FolderPath)
+    if (!fit) return null
+    const lead =
+      (await rekordboxShiftOfFile(row.FolderPath, row.SampleRate || 44100)) +
+      REKORDBOX_BEAT_AFTER_RISE_MS
+    return {
+      bpm: fit.bpm,
+      firstMs: fit.firstMs + lead,
+      phases: fit.phases?.map((p) => ({ ms: p.ms + lead, firstMs: p.firstMs + lead })),
+    }
   }
   return {
     trackCues: async (contentId) => {
@@ -91,19 +107,23 @@ export function rekordboxCueSource(host: {
         words: words && shiftedWords(words, shiftMs),
       }
     },
-    gridFit: async (contentId) => {
-      const row = await audioRowOf(contentId)
-      if (!row) return null
-      const fit = await host.beatGrid(row.FolderPath)
+    gridFit,
+    gridVerdict: async (contentId) => {
+      const fit = await gridFit(contentId)
       if (!fit) return null
-      const lead =
-        (await rekordboxShiftOfFile(row.FolderPath, row.SampleRate || 44100)) +
-        REKORDBOX_BEAT_AFTER_RISE_MS
-      return {
-        bpm: fit.bpm,
-        firstMs: fit.firstMs + lead,
-        phases: fit.phases?.map((p) => ({ ms: p.ms + lead, firstMs: p.firstMs + lead })),
-      }
+      const path = host.collection()
+      const read = withCollection(
+        path,
+        (db) => readTrackCues(db, rekordboxShareDir(path), contentId, { wave: false }),
+        null,
+        await keyOf(path),
+      )
+      return read?.analysed
+        ? gridVerdictOf(
+            read.grid.map((b) => b.ms),
+            fit,
+          )
+        : null
     },
     queuedWanted: async (contentId, op) => {
       const path = host.collection()

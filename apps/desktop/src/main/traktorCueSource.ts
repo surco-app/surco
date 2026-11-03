@@ -45,6 +45,7 @@ export function traktorCueSource(
     auditionLead: async () => 0,
     surcoGrid: async () => null,
     gridFit: async () => null,
+    gridVerdict: async () => null,
     queuedWanted: async () => [],
     queue: traktor.queue,
     applyQuietly: traktor.applyQuietly,

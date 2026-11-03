@@ -515,6 +515,23 @@ describe('registerRekordboxCuesIpc', () => {
     expect(out.firstMs).toBeCloseTo(100 + ((1152 + 576 + 529) / 44100) * 1000 + 2, 3)
   })
 
+  it('judges the rekordbox grid of a track against the beats Surco measured, for the filter of bad grids', async () => {
+    const path = await completableCollection()
+    const phases = Array.from({ length: 40 }, (_, i) => ({ ms: 3200 + i * 6400, firstMs: 90 }))
+    registerRekordboxCuesIpc({
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => ({ bpm: 120, firstMs: 90, phases }),
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+    })
+    expect(await handler('rekordbox:gridVerdict')({}, '101')).toEqual({ kind: 'shifted', ms: -92 })
+    expect(await handler('rekordbox:gridVerdict')({}, 'engine:4')).toBeNull()
+  })
+
   it('fits nothing when Surco hears no beat or the track is not in the collection', async () => {
     const path = await collectionWithMp3('LAME')
     const beatGrid = vi.fn(async () => null)
