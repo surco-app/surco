@@ -1,13 +1,14 @@
 # Mapa de Serato: lo que el compilador obliga a decidir
 
-Medido el 03/11 tras el bloque 4 añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
+Medido el 03/11 tras el bloque 5 añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
 
 ## Añadidos a mano (el compilador no los ve)
 
 - `shared/djProgram.ts` `programOf`: el caso por defecto devuelve `'rekordbox'`. Primer cambio de Serato: reconocer `serato:`.
-- `shared/verification.ts` `PLACE_ORDER`, `shared/hiddenSources.ts:3`, `renderer/src/components/settings/GeneralTab.tsx:18` (`SOURCES`): listas que mezclan programas con 'file'/'appleMusic'.
+- `shared/verification.ts` `PLACE_ORDER`: lista que mezcla programas con 'file'/'appleMusic' (bloque 7).
 - `renderer/src/components/CuesSection.tsx` `saveAllKey`: decide la etiqueta mixta mirando si hay Traktor; una mezcla Serato + rekordbox daría «rekordbox y Engine DJ». Y `collectionGate` usa consultas y ajustes con nombre de Traktor (`traktorCanSave`, `traktorNmlPath`): un segundo programa con colección que confirmar necesita los suyos.
-- `renderer/src/lib/playlistEdits.ts:81` y comprobaciones `browser.source` de `App.tsx`: bloques 5 (playlists) y 6 (USB).
+- USB: `App.tsx` `useUsbVolumes(... === 'engine')` y la fuente del modal eligen el exportador (bloque 6/USB).
+- Campos por programa escritos a mano (bloque 6): banderas `fromRekordbox/fromTraktor/fromEngine` de `TrackItem`/`SessionEdit`, los seis campos `{rekordbox,traktor,engine}Playlists(Base)` del trabajo de conversión, ajustes `*PlaylistsFieldOffered`, `useTrackLibrary` (bandera de filas nuevas), invalidaciones de membership en `useRekordboxQueue` y `useTrackProcessing`, `cuesOpen` en `App.tsx`.
 
 ## Errores del compilador
 
@@ -68,7 +69,7 @@ src/renderer/src/App.tsx:404 TS7053
 src/renderer/src/App.tsx:408 TS2741
 src/renderer/src/components/CuesBatchSection.tsx:28 TS2741
 src/renderer/src/components/CuesSection.tsx:158 TS2741
-src/renderer/src/components/CuesSection.tsx:288 TS2741
+src/renderer/src/components/CuesSection.tsx:290 TS2741
 src/renderer/src/components/Editor.test.tsx:837 TS2741
 src/renderer/src/components/Editor.test.tsx:883 TS2741
 src/renderer/src/components/Editor.test.tsx:892 TS2741
@@ -102,9 +103,9 @@ src/renderer/src/components/MusicReview.test.tsx:928 TS2741
 src/renderer/src/components/MusicReview.test.tsx:950 TS2741
 src/renderer/src/components/MusicReview.test.tsx:966 TS2741
 src/renderer/src/components/MusicReview.test.tsx:980 TS2741
-src/renderer/src/components/PlaylistsField.tsx:358 TS7053
-src/renderer/src/components/settings/GeneralTab.tsx:49 TS2741
-src/renderer/src/components/settings/GeneralTab.tsx:55 TS2741
+src/renderer/src/components/PlaylistsField.tsx:359 TS7053
+src/renderer/src/components/settings/GeneralTab.tsx:44 TS2741
+src/renderer/src/components/settings/GeneralTab.tsx:50 TS2741
 src/renderer/src/components/SourceRail.tsx:11 TS2741
 src/renderer/src/hooks/useMusicReview.test.tsx:1066 TS2741
 src/renderer/src/hooks/useMusicReview.test.tsx:1067 TS2741
@@ -122,26 +123,26 @@ src/renderer/src/hooks/useRekordboxPlaylists.test.tsx:113 TS2741
 src/renderer/src/hooks/useRekordboxPlaylists.test.tsx:153 TS2741
 src/renderer/src/hooks/useRekordboxPlaylists.test.tsx:173 TS2741
 src/renderer/src/hooks/useRekordboxPlaylists.test.tsx:91 TS2741
-src/renderer/src/hooks/useRekordboxPlaylists.ts:108 TS7053
-src/renderer/src/hooks/useRekordboxPlaylists.ts:114 TS7053
-src/renderer/src/hooks/useRekordboxPlaylists.ts:47 TS7053
-src/renderer/src/hooks/useRekordboxPlaylists.ts:50 TS2322
-src/renderer/src/hooks/useRekordboxPlaylists.ts:63 TS7053
-src/renderer/src/hooks/useRekordboxPlaylists.ts:67 TS2322
-src/renderer/src/hooks/useRekordboxPlaylists.ts:86 TS7053
+src/renderer/src/hooks/useRekordboxPlaylists.ts:25 TS2741
+src/renderer/src/hooks/useRekordboxPlaylists.ts:91 TS7053
+src/renderer/src/hooks/useRekordboxPlaylists.ts:97 TS7053
+src/renderer/src/hooks/useSourceBrowser.ts:134 TS2741
+src/renderer/src/hooks/useSourceBrowser.ts:261 TS2339
 src/renderer/src/lib/cuePrograms.ts:17 TS2741
 src/renderer/src/lib/cueTwins.ts:54 TS2741
 src/renderer/src/lib/djLibraries.ts:18 TS2345
 src/renderer/src/lib/djReach.ts:19 TS2345
 src/renderer/src/lib/djReach.ts:7 TS2741
 src/renderer/src/lib/fields.ts:147 TS2741
-src/renderer/src/lib/rekordboxPlaylists.ts:115 TS7006
-src/renderer/src/lib/rekordboxPlaylists.ts:152 TS7053
-src/renderer/src/lib/rekordboxPlaylists.ts:185 TS7053
+src/renderer/src/lib/rekordboxPlaylists.ts:116 TS7006
+src/renderer/src/lib/rekordboxPlaylists.ts:153 TS7053
 src/renderer/src/lib/rekordboxPlaylists.ts:186 TS7053
-src/renderer/src/lib/rekordboxPlaylists.ts:24 TS2339
-src/renderer/src/lib/rekordboxPlaylists.ts:26 TS7053
+src/renderer/src/lib/rekordboxPlaylists.ts:187 TS7053
+src/renderer/src/lib/rekordboxPlaylists.ts:25 TS2339
 src/renderer/src/lib/rekordboxPlaylists.ts:27 TS7053
+src/renderer/src/lib/rekordboxPlaylists.ts:28 TS7053
+src/renderer/src/lib/sourcePrograms.ts:19 TS2741
+src/renderer/src/lib/sourcePrograms.ts:68 TS2741
 src/renderer/src/test/api.ts:186 TS2322
 src/renderer/src/test/api.ts:191 TS2322
 src/scenarios/harness.tsx:511 TS2741
@@ -159,4 +160,5 @@ src/scenarios/matrix/realLibraries.ts:753 TS2741
 src/scenarios/matrix/report.ts:72 TS2741
 src/shared/djProgram.test.ts:16 TS2345
 src/shared/djProgram.ts:6 TS2345
+src/shared/djProgram.ts:8 TS2345
 ```
