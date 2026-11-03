@@ -2183,6 +2183,18 @@ describe('list review', () => {
     expect(screen.queryByTestId('list-review-scope')).toBeNull()
   })
 
+  it('says the list holds only Serato tracks when that is why nothing is reviewed, not that no tags were read', () => {
+    render(
+      <MusicReview
+        review={listReview({ status: 'empty', reviewed: 0, seratoLeftOut: 2 })}
+        {...columnProps}
+      />,
+    )
+    expect(screen.getByTestId('music-review-empty')).toHaveTextContent(
+      'Every track in the list is from Serato and is left out so Serato keeps it.',
+    )
+  })
+
   it('names the list, not the Music library, while loading, when empty and on error', () => {
     const { rerender } = render(
       <MusicReview review={listReview({ status: 'loading' })} {...columnProps} />,

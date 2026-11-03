@@ -2564,6 +2564,7 @@
   "listReview": {
     "loading": "Leyendo la lista…",
     "empty": "Ninguna pista de la lista tiene sus etiquetas leídas.",
+    "emptySerato": "Todas las pistas de la lista son de Serato y quedan fuera para que Serato las conserve.",
     "error": "No se pudo preparar la revisión de la lista.",
     "scope_one": "{{count}} pista de la lista",
     "scope_other": "{{count}} pistas de la lista",

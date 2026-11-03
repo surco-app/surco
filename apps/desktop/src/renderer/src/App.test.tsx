@@ -813,6 +813,23 @@ describe('App Serato cues', () => {
     )
   })
 
+  it('keeps the Serato warning off another program’s tab, even while Serato is still open', async () => {
+    openSerato({
+      seratoRunning: vi.fn<Api['seratoRunning']>().mockResolvedValue(true),
+      traktorAvailable: vi.fn<Api['traktorAvailable']>().mockResolvedValue(true),
+      loadTraktorTree: vi
+        .fn<Api['loadTraktorTree']>()
+        .mockResolvedValue([{ id: 'u1', name: 'Saturday', kind: 'playlist', count: 0 }]),
+      traktorRecentCount: vi.fn<Api['traktorRecentCount']>().mockResolvedValue(0),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-serato'))
+    await screen.findByTestId('source-tree-notice')
+    fireEvent.click(screen.getByTestId('source-rail-traktor'))
+    await screen.findByTestId('source-node-u1')
+    expect(screen.queryByTestId('source-tree-notice')).toBeNull()
+  })
+
   it('shows no warning in the Serato tab once Serato answers it is closed', async () => {
     let answer: (running: boolean) => void = () => {}
     const seratoRunning = vi.fn<Api['seratoRunning']>(

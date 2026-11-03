@@ -2564,6 +2564,7 @@
   "listReview": {
     "loading": "Lecture de la liste…",
     "empty": "Aucune piste de la liste n’a ses tags lus.",
+    "emptySerato": "Toutes les pistes de la liste viennent de Serato et sont laissées de côté pour que Serato les garde.",
     "error": "Impossible de préparer la vérification de la liste.",
     "scope_one": "{{count}} piste de la liste",
     "scope_other": "{{count}} pistes de la liste",

@@ -2564,6 +2564,7 @@
   "listReview": {
     "loading": "リストを読み取り中…",
     "empty": "リスト内のトラックのタグが読み取れませんでした。",
+    "emptySerato": "リスト内のトラックはすべて Serato のもので、Serato のために除外しています。",
     "error": "リストのレビューを準備できませんでした。",
     "scope_one": "{{count}} トラックがリストにあります",
     "scope_other": "{{count}} トラックがリストにあります",

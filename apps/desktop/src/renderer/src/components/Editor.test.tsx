@@ -1935,7 +1935,7 @@ describe('Editor multi-select', () => {
 
   // The plan must say which fields are still empty somewhere in the selection, the
   // same names the single-track gate gives.
-  it('names Serato as the reason its tracks are left out of the batch, while the others still convert', () => {
+  it('names Serato as the reason in the batch plan when a selected track comes from Serato', () => {
     renderMulti({ fromSeratoA: true })
     expect(screen.getByTestId('batch-plan-blocked')).toHaveTextContent(
       'Serato would lose the track and its cues',

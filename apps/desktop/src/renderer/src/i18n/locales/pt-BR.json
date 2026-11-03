@@ -2564,6 +2564,7 @@
   "listReview": {
     "loading": "Lendo a lista…",
     "empty": "Nenhuma faixa da lista teve as tags lidas.",
+    "emptySerato": "Todas as faixas da lista são do Serato e ficam de fora para o Serato mantê-las.",
     "error": "Não foi possível preparar a revisão da lista.",
     "scope_one": "{{count}} faixa da lista",
     "scope_other": "{{count}} faixas da lista",

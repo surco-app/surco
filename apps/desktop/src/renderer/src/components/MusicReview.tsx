@@ -1201,7 +1201,11 @@ export function MusicReview({
         )}
         {review.status === 'empty' && (
           <p data-testid="music-review-empty" className="p-1.5 text-xs text-fg-faint">
-            {t(copy.empty)}
+            {t(
+              review.kind === 'list' && review.skipped === 0 && review.seratoLeftOut
+                ? 'listReview.emptySerato'
+                : copy.empty,
+            )}
           </p>
         )}
         {review.status === 'error' && (

@@ -2564,6 +2564,7 @@
   "listReview": {
     "loading": "Reading the list…",
     "empty": "No track in the list has its tags read.",
+    "emptySerato": "Every track in the list is from Serato and is left out so Serato keeps it.",
     "error": "Couldn't prepare the list review.",
     "scope_one": "{{count}} track in the list",
     "scope_other": "{{count}} tracks in the list",

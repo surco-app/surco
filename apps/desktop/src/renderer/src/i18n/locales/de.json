@@ -2564,6 +2564,7 @@
   "listReview": {
     "loading": "Liste wird gelesen…",
     "empty": "Bei keinem Titel der Liste wurden die Tags gelesen.",
+    "emptySerato": "Alle Titel der Liste stammen aus Serato und bleiben draußen, damit Serato sie behält.",
     "error": "Die Prüfung der Liste konnte nicht vorbereitet werden.",
     "scope_one": "{{count}} Titel der Liste",
     "scope_other": "{{count}} Titel der Liste",
