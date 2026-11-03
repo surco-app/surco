@@ -281,4 +281,28 @@ describe('scanDamage', () => {
     expect(scan.unread).toEqual(['traktor'])
     expect(scan.findings.map((f) => f.kind)).toEqual(['genre-number'])
   })
+
+  it('reads Traktor and Engine each with its own scanner after the genres, and rekordbox with none', async () => {
+    const traktor = vi.fn(async () => [traktorDamage])
+    const engine = vi.fn(async () => [
+      engineDamage({ kind: 'engine-cues', certainty: 'sure', trimmedMs: 0, sampleRateHz: 44100 }),
+    ])
+    const scan = await scanDamage([MP3, WAV], deps({ traktor, engine }))
+    expect(traktor).toHaveBeenCalledExactlyOnceWith([MP3, WAV])
+    expect(engine).toHaveBeenCalledExactlyOnceWith([MP3, WAV])
+    expect(scan.findings.map((f) => [f.kind, f.repair?.target])).toEqual([
+      ['genre-number', 'genre'],
+      ['traktor-source-cues', 'traktor'],
+      ['engine-cues', 'engine'],
+    ])
+    expect(scan.unread).toEqual([])
+  })
+
+  it('names each library it could not read by its own name', async () => {
+    const fail = async () => Promise.reject(new Error('locked'))
+    expect((await scanDamage([MP3], deps({ engine: vi.fn(fail) }))).unread).toEqual(['engine'])
+    expect(
+      (await scanDamage([MP3], deps({ traktor: vi.fn(fail), engine: vi.fn(fail) }))).unread,
+    ).toEqual(['engine', 'traktor'])
+  })
 })

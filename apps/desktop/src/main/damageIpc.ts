@@ -1,6 +1,7 @@
 import { ipcMain, type WebContents } from 'electron'
-import type { DamageFinding, DamageRepairItem, DamageScan } from '../shared/types'
-import { type DamageRepairDeps, repairDamage } from './damageRepair'
+import type { DjProgram } from '../shared/djProgram'
+import type { DamageFinding, DamageRepair, DamageRepairItem, DamageScan } from '../shared/types'
+import { type DamageRepairDeps, type RepairedProgram, repairDamage } from './damageRepair'
 import { type DamageScanDeps, scanDamage } from './damageScan'
 
 export interface QueuedRepairs {
@@ -21,20 +22,42 @@ export interface DamageIpcDeps {
 
 const nfc = (s: string) => s.normalize('NFC')
 
-function queuedFor(f: DamageFinding, queued: QueuedRepairs): boolean {
-  const r = f.repair
-  if (r?.target === 'engine')
-    return queued.engine.some(
+type QueuedChecks = {
+  [P in RepairedProgram]: (
+    r: Extract<DamageRepair, { target: P }>,
+    queued: QueuedRepairs,
+  ) => boolean
+}
+
+const QUEUED_FOR: QueuedChecks & Record<Exclude<DjProgram, RepairedProgram>, null> = {
+  rekordbox: null,
+  engine: (r, queued) =>
+    queued.engine.some(
       (q) =>
         nfc(q.from) === nfc(r.path) &&
         q.expectTrackData?.sampleRate === r.expectTrackData.sampleRate &&
         q.expectTrackData?.sampleCount === r.expectTrackData.sampleCount,
-    )
-  if (r?.target === 'traktor' && r.entry) {
+    ),
+  traktor: (r, queued) => {
+    if (!r.entry) return false
     const key = [r.entry.volume, r.entry.dir, r.entry.file].map(nfc).join('\0')
     return queued.traktor.some((q) => q.from === key && q.patch.cueShift !== undefined)
-  }
-  return false
+  },
+}
+
+function queuedIn<P extends RepairedProgram>(
+  target: P,
+  r: Extract<DamageRepair, { target: P }>,
+  queued: QueuedRepairs,
+): boolean {
+  const check: QueuedChecks[P] = QUEUED_FOR[target]
+  return check(r, queued)
+}
+
+function queuedFor(f: DamageFinding, queued: QueuedRepairs): boolean {
+  const r = f.repair
+  if (!r || r.target === 'genre') return false
+  return queuedIn(r.target, r, queued)
 }
 
 function markPending(scan: DamageScan, queued?: QueuedRepairs): DamageScan {

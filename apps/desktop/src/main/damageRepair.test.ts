@@ -319,3 +319,36 @@ describe('repairDamage — a file with genre and Engine damage', () => {
     expect(order).toEqual(['engine', 'genre'])
   })
 })
+
+describe('repairDamage — Traktor and Engine in one batch', () => {
+  it('hands each repair to its own library, Engine first, and answers in the order asked', async () => {
+    const order: string[] = []
+    const t = traktorDeps(async () => {
+      order.push('traktor')
+      return { written: true, matched: 1 }
+    })
+    const e = engineDeps([{ written: true }])
+    e.repointTracks.mockImplementation(async () => {
+      order.push('engine')
+      return [{ written: true }]
+    })
+    const out = await repairDamage(
+      [item('t', traktor), item('e', engine)],
+      deps({ traktor: t, engine: e }),
+    )
+    expect(order).toEqual(['engine', 'traktor'])
+    expect(t.syncCollection.mock.calls[0][1]).toHaveLength(1)
+    expect(e.repointTracks.mock.calls[0][1]).toHaveLength(1)
+    expect(out).toEqual([
+      { id: 't', state: 'repaired' },
+      { id: 'e', state: 'repaired' },
+    ])
+  })
+
+  it('fails the repairs of a library that is not there as libraryOff', async () => {
+    expect(await repairDamage([item('t', traktor), item('e', engine)], deps())).toEqual([
+      { id: 't', state: 'failed', error: 'libraryOff' },
+      { id: 'e', state: 'failed', error: 'libraryOff' },
+    ])
+  })
+})
