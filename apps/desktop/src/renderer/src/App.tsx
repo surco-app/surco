@@ -225,6 +225,8 @@ import type { CopiedTags, TrackItem } from './types'
 // Hovering counts as intent only after the cursor rests briefly, so sweeping the
 // pointer across the list while scrolling doesn't fire a prefetch for every row.
 const NO_HIDDEN_SOURCES: PlaylistSource[] = []
+const PREFETCH_HOVER_MS = 150
+const PLAYER_LEAVE_MS = 200
 const QUEUE_PILL_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
 const SYNC_ISSUES: Record<
   DjProgram,
@@ -237,8 +239,6 @@ const SYNC_ISSUES: Record<
   traktor: null,
   engine: { listen: (cb) => window.api.onEngineSyncIssue(cb), messages: 'engineIssue' },
 }
-const PREFETCH_HOVER_MS = 150
-const PLAYER_LEAVE_MS = 200
 
 const inFiles = (t: TrackItem): boolean => !!t.inFiles
 
@@ -1138,8 +1138,8 @@ export default function App(): React.JSX.Element {
       ),
     [store],
   )
-  // What a run's rekordbox repoint could not do: the collection stays on the old file, so
-  // the DJ has to hear it now rather than when a track fails to load at the gig.
+  // What a run's rekordbox or Engine DJ repoint could not do: the library stays on the old
+  // file, so the DJ has to hear it now rather than when a track fails to load at the gig.
   useEffect(() => {
     const stops = DJ_PROGRAMS.flatMap((program) => {
       const issues = SYNC_ISSUES[program]
