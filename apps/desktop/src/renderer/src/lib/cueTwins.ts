@@ -1,6 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { CueFlow } from '../../../shared/cueFlows'
 import { ALL_SLOTS, HOT_KINDS, SAME_POSITION_MS, type WantedCue } from '../../../shared/cueRules'
+import { DJ_PROGRAMS } from '../../../shared/djProgram'
 import { isEngineContent } from '../../../shared/engineContent'
 import { isTraktorContent, TRAKTOR_SLOTS } from '../../../shared/traktorContent'
 import type { CueLibrary, LibraryTracks, SaveCuesRequest, TrackCues } from '../../../shared/types'
@@ -49,7 +50,7 @@ export type TwinPlan =
   | { library: CueLibrary; contentId: string; status: 'full'; left: number }
   | { library: CueLibrary; contentId: string; status: 'unsaved' }
 
-const LIBRARIES: CueLibrary[] = ['rekordbox', 'traktor', 'engine']
+const LIBRARIES = DJ_PROGRAMS
 
 export function libraryOf(contentId: string): CueLibrary {
   if (isTraktorContent(contentId)) return 'traktor'

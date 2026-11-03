@@ -18,6 +18,7 @@ import type { CueJumpBars } from '../../shared/cueJump'
 import type { CueQuantize } from '../../shared/cueQuantize'
 import { effectiveMeta } from '../../shared/customFields'
 import { normalizeImportFields } from '../../shared/defaults'
+import { DJ_PROGRAMS } from '../../shared/djProgram'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import { resolveBindings } from '../../shared/shortcutDefaults'
@@ -400,9 +401,7 @@ export default function App(): React.JSX.Element {
     traktor: useLibraryAvailable('traktor'),
     engine: useLibraryAvailable('engine'),
   }
-  const playlistLibraries = (['rekordbox', 'traktor', 'engine'] as const).filter(
-    (l) => playlistLibrariesFound[l],
-  )
+  const playlistLibraries = DJ_PROGRAMS.filter((l) => playlistLibrariesFound[l])
   const saveSettingsStable = useStableCallback(saveSettings)
   useOfferPlaylistFields(
     settings?.hasSeenOnboarding && !settingsOpen ? settings : null,

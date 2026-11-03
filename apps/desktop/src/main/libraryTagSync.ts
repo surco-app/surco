@@ -1,5 +1,8 @@
+import { programsInOrder } from '../shared/djProgram'
 import type { LibraryTagSync, LibraryTagSyncReport } from '../shared/types'
 import type { FlushResult } from './libraryRepointFlush'
+
+const LIBRARY_ORDER = programsInOrder(['traktor', 'rekordbox', 'engine'])
 
 export interface LibraryTagFlushers {
   traktor: () => Promise<LibraryTagSync>
@@ -34,7 +37,7 @@ export function syncLibraryTags(flushers: LibraryTagFlushers): Promise<LibraryTa
   return serialLibraryFlush(async () => {
     flushers.begin?.()
     const report = {} as LibraryTagSyncReport
-    for (const library of ['traktor', 'rekordbox', 'engine'] as const) {
+    for (const library of LIBRARY_ORDER) {
       try {
         report[library] = await flushers[library]()
       } catch (error) {

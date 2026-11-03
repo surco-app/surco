@@ -1,3 +1,4 @@
+import { programsInOrder } from '../../../shared/djProgram'
 import type { Settings } from '../../../shared/types'
 import type { DjLibraryId } from './djLibraries'
 
@@ -15,7 +16,7 @@ export const DJ_REACH_SETTINGS: Record<
   traktor: { sync: 'syncTraktor', add: 'addToTraktor' },
 }
 
-const ORDER: DjLibraryId[] = ['rekordbox', 'engine', 'traktor']
+const ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
 
 export function toDjReach(sync: boolean, add: boolean): DjReach {
   if (add) return 'add'

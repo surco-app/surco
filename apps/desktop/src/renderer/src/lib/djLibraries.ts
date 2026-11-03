@@ -1,4 +1,5 @@
 import type { DjProgram } from '../../../shared/djProgram'
+import { programsInOrder } from '../../../shared/djProgram'
 
 // Which collection syncs onboarding should offer, given what was found on this machine.
 //
@@ -14,7 +15,7 @@ export interface DetectedDjLibrary {
 }
 
 // Fixed order rather than detection order, so the step reads the same on every machine.
-const ORDER: DjLibraryId[] = ['rekordbox', 'engine', 'traktor']
+const ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
 
 export function detectedDjLibraries(
   found: Partial<Record<DjLibraryId, string>>,

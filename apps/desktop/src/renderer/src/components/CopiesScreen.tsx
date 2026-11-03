@@ -2,6 +2,7 @@ import { ChevronDown, ChevronUp, FileAudio, RotateCcw, Search, X } from 'lucide-
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { DJ_PROGRAMS } from '../../../shared/djProgram'
 import type {
   DjProgram,
   LibraryCopy,
@@ -49,7 +50,7 @@ interface Props {
 
 type Outcome = { ok: true; takenAt: number } | { ok: false; reason: RestoreRefusal }
 
-const PROGRAM_ORDER: DjProgram[] = ['rekordbox', 'traktor', 'engine']
+const PROGRAM_ORDER = DJ_PROGRAMS
 
 const MUSIC_TOOLS_MIN = 9
 

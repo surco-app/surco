@@ -19,6 +19,7 @@ import { tagsOnly } from '../../../shared/audioProcessing'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFields'
+import { programsInOrder } from '../../../shared/djProgram'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import type {
@@ -124,6 +125,8 @@ import { SectionPill } from './SectionPill'
 import { SpectrumGlimpse } from './SpectrumGlimpse'
 import { Tooltip } from './Tooltip'
 import { TrimSection } from './TrimSection'
+
+const LIBRARY_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
 
 interface Props {
   item: TrackItem
@@ -381,7 +384,7 @@ export const Editor = memo(function Editor({
     () =>
       libraries &&
       new Set<DjLibraryId>(
-        (['rekordbox', 'engine', 'traktor'] as const).filter(
+        LIBRARY_ORDER.filter(
           (id) => libraries[id].found && (id !== 'traktor' || traktorNmlPath !== ''),
         ),
       ),

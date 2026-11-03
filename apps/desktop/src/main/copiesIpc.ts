@@ -1,5 +1,6 @@
 import { BrowserWindow, type IpcMainInvokeEvent, ipcMain } from 'electron'
 import log from 'electron-log/main'
+import { DJ_PROGRAMS } from '../shared/djProgram'
 import type { DjProgram, ProgramCopies, RestoreResult } from '../shared/types'
 import { listCopies, recoverRestoreSlot, restoreSlot } from './libraryHistory'
 import { restoreCopy } from './libraryRestore'
@@ -22,7 +23,7 @@ export interface CopiesProgram {
   onDiscarded?: () => void
 }
 
-const ORDER: DjProgram[] = ['rekordbox', 'traktor', 'engine']
+const ORDER = DJ_PROGRAMS
 
 export function registerCopiesIpc(
   programs: Record<DjProgram, CopiesProgram>,

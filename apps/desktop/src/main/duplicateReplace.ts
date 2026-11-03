@@ -1,4 +1,5 @@
 import type { DjProgram } from '../shared/djProgram'
+import { programsInOrder } from '../shared/djProgram'
 import type {
   ActivityKind,
   DuplicatePair,
@@ -12,6 +13,8 @@ import type { DuplicateReplaceResult } from './rekordboxDuplicates'
 import type { NmlLocation } from './traktorNml'
 import type { DuplicateCollectionResult } from './traktorNmlLibrary'
 import { logKeptOpen, TRAKTOR_SYNC_SKIP_KEYS } from './traktorSyncFlush'
+
+const LIBRARY_ORDER = programsInOrder(['traktor', 'rekordbox', 'engine'])
 
 // After the review removes duplicate copies from Music, each DJ library with its sync on
 // moves to the copy the user kept, and only then does a removed copy's file go to the
@@ -147,7 +150,7 @@ export function replaceDuplicates(
   return deps.serial(async () => {
     const active = pairs.filter((p) => !p.shared)
     const byLibrary: Partial<Record<Library, LibraryReplaceOutcome[]>> = {}
-    for (const library of ['traktor', 'rekordbox', 'engine'] as const) {
+    for (const library of LIBRARY_ORDER) {
       const step = deps.libraries[library]
       if (!step || active.length === 0) continue
       try {

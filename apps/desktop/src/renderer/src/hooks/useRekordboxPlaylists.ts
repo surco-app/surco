@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef } from 'react'
+import { DJ_PROGRAMS } from '../../../shared/djProgram'
 import type { PlaylistLibrary, Settings, SourceNode } from '../../../shared/types'
 import type { PlaylistsSpec } from '../lib/fieldSpecs'
 import { PLAYLIST_FIELDS, withPlaylistField } from '../lib/fields'
@@ -99,7 +100,7 @@ export function useOfferPlaylistFields(
     if (!settings) return
     let visibleFields = settings.visibleFields
     const patch: Partial<Settings> = {}
-    for (const library of ['rekordbox', 'traktor', 'engine'] as const) {
+    for (const library of DJ_PROGRAMS) {
       if (tried.current.has(library)) continue
       const next = withPlaylistField(
         visibleFields,

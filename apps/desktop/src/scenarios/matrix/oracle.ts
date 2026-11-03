@@ -42,6 +42,7 @@ import { openRekordboxDb } from '../../main/rekordboxDb'
 import { defaults } from '../../main/settings'
 import { readTraktorCueStart, storedTree } from '../../main/traktor4Fixture'
 import type { DjProgram } from '../../shared/djProgram'
+import { programsInOrder } from '../../shared/djProgram'
 import type { OutputFormat } from '../../shared/types'
 import { music } from '../fakeMusic'
 import type { Cell, InvariantName } from './cells'
@@ -61,6 +62,8 @@ import {
   twinIdOf,
 } from './libraries'
 import { SEEDED_CUES_MS, type SourceTrack, type TrickyTags } from './sources'
+
+const PROGRAM_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
 
 const FF = ffmpegStatic as unknown as string
 const PROBE = ffprobeInstaller.path
@@ -1105,14 +1108,14 @@ function backedUp(path: string, sha1: string): boolean {
 
 function bystanderRowsBroken(set: LibrarySet): Found[] {
   const now = bystanderRows(set, set.bystander)
-  return (['rekordbox', 'engine', 'traktor'] as const)
-    .filter((p) => set.bystanderRows[p] !== undefined && now[p] !== set.bystanderRows[p])
-    .map((p): Found => ['collateral', `otra pista, ${PROGRAM_NAME[p]}: sus filas cambiaron`])
+  return PROGRAM_ORDER.filter(
+    (p) => set.bystanderRows[p] !== undefined && now[p] !== set.bystanderRows[p],
+  ).map((p): Found => ['collateral', `otra pista, ${PROGRAM_NAME[p]}: sus filas cambiaron`])
 }
 
 function collateralBroken(cell: Cell, set: LibrarySet): Found[] {
   const synced = new Set<Program>(syncedPrograms(cell.programs))
-  return (['rekordbox', 'engine', 'traktor'] as const).flatMap((program): Found[] => {
+  return PROGRAM_ORDER.flatMap((program): Found[] => {
     const file = libraryFile(set, program)
     const before = set.sha1Before[program]
     if (!file || before === null || sha1Of(file) === before) return []

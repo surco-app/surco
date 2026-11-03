@@ -16,11 +16,14 @@ import { toNmlLocation } from '../../main/ffmpeg'
 import { openRekordboxDb } from '../../main/rekordboxDb'
 import { bootVolumeName } from '../../main/traktorNmlLibrary'
 import type { DjProgram } from '../../shared/djProgram'
+import { programsInOrder } from '../../shared/djProgram'
 import type { Settings } from '../../shared/types'
 import { music } from '../fakeMusic'
 import { makeRekordbox } from '../rekordboxFixture'
 import type { Programs } from './cells'
 import { makeSource, SEEDED_CUES_MS, type SourceTrack, TRICKY } from './sources'
+
+const ALL_PROGRAMS = programsInOrder(['rekordbox', 'engine', 'traktor'])
 
 export interface EnginePerf {
   trackData: Buffer | null
@@ -62,7 +65,7 @@ export interface LibrarySet {
 export type Program = DjProgram | 'music'
 
 export function syncedPrograms(programs: Programs): Program[] {
-  if (programs === 'all') return ['rekordbox', 'engine', 'traktor']
+  if (programs === 'all') return [...ALL_PROGRAMS]
   return [programs]
 }
 

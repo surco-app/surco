@@ -1,4 +1,5 @@
 import type { DjProgram } from '../shared/djProgram'
+import { programsInOrder } from '../shared/djProgram'
 import { errorWithKey } from '../shared/errorKeys'
 import {
   type PlaceCheck,
@@ -89,7 +90,7 @@ export interface VerifyRegistryDeps {
   samePath?: (a: string, b: string) => boolean
 }
 
-const LIBRARIES: Library[] = ['rekordbox', 'engine', 'traktor']
+const LIBRARIES = programsInOrder(['rekordbox', 'engine', 'traktor'])
 const PROGRAM: Record<Library, string> = {
   rekordbox: 'rekordbox',
   engine: 'Engine DJ',
