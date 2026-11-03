@@ -88,6 +88,9 @@ const sameCues = (a: SeratoCue[], b: SeratoCue[]): boolean => {
   return JSON.stringify(byIndex(a)) === JSON.stringify(byIndex(b))
 }
 
+const onSeratoClock = (cues: SeratoCue[], lead: number): SeratoCue[] =>
+  cues.map((c) => ({ ...c, ms: Math.max(0, Math.round(c.ms + lead)) }))
+
 async function applySeratoOp(
   op: QueueOp,
   deps: SeratoWriteDeps,
@@ -106,6 +109,15 @@ async function applySeratoOp(
   if (!track) return refused('cues-write-failed')
   const lead = await seratoLeadOfFile(file, track.sampleRate)
   const was = track.markers?.cues ?? []
+  const calls = op.wanted.filter((c) => c.kind === 0).map((c) => c.ms)
+  const notices: RekordboxQueueNotice[] =
+    calls.length > 0 ? [{ code: 'cues-calls-dropped', track: op.label, calls }] : []
+  const upper = was
+    .filter((c) => c.index >= HOT_KINDS.length)
+    .map((c) => ({ ...c, ms: c.ms - lead }))
+  const cues = [...op.wanted.filter((c) => c.kind !== 0).map((c) => seratoCueOf(c, was)), ...upper]
+  const applied = { outcome: { id: op.id, applied: true, notices }, wrote: true }
+  if (sameCues(onSeratoClock(cues, lead), was)) return { ...applied, wrote: false }
   const rows = seratoCueRows(was, lead)
   if (cueFingerprint(rows) !== op.fingerprint) return refused('cues-changed')
   const valid = validWantedSet(op.wanted, rows)
@@ -113,15 +125,6 @@ async function applySeratoOp(
     log.warn(`Serato cues: refused the queued set for ${op.contentId} (${valid.reason})`)
     return refused('cues-invalid')
   }
-  const calls = op.wanted.filter((c) => c.kind === 0).map((c) => c.ms)
-  const notices: RekordboxQueueNotice[] =
-    calls.length > 0 ? [{ code: 'cues-calls-dropped', track: op.label, calls }] : []
-  const cues = op.wanted.filter((c) => c.kind !== 0).map((c) => seratoCueOf(c, was))
-  const onSurcoClock = was
-    .filter((c) => c.index < HOT_KINDS.length)
-    .map((c) => ({ ...c, ms: c.ms - lead }))
-  const applied = { outcome: { id: op.id, applied: true, notices }, wrote: true }
-  if (sameCues(cues, onSurcoClock)) return { ...applied, wrote: false }
   const result = await writeSeratoCues(file, cues, op.fingerprint, deps)
   if (result === 'changed') return refused('cues-changed')
   if (result === 'failed') return refused('cues-write-failed')
@@ -130,11 +133,23 @@ async function applySeratoOp(
 
 export async function applySeratoCuesBatch(
   ops: QueueOp[],
-  deps: SeratoWriteDeps & { ensureClosed: () => Promise<boolean> },
+  deps: SeratoWriteDeps & {
+    ensureClosed: () => Promise<boolean>
+    stillQueued?: (id: string) => boolean
+  },
 ): Promise<BatchResult> {
-  if (!(await deps.ensureClosed())) return { ok: false, reason: 'cancelled' }
-  const results = []
-  for (const op of ops) results.push(await applySeratoOp(op, deps))
+  const results: { outcome: OpOutcome; wrote: boolean }[] = []
+  for (const op of ops) {
+    if (deps.stillQueued && !deps.stillQueued(op.id)) {
+      results.push({
+        outcome: { id: op.id, applied: false, reason: 'cancelled', notices: [] },
+        wrote: false,
+      })
+      continue
+    }
+    if (!(await deps.ensureClosed())) return { ok: false, reason: 'cancelled' }
+    results.push(await applySeratoOp(op, deps))
+  }
   return {
     ok: true,
     wrote: results.some((r) => r.wrote),

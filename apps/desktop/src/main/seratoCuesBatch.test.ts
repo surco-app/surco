@@ -20,19 +20,21 @@ vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 import { HOT_KINDS, type WantedCue } from '../shared/cueRules'
 import { hotCueArgb } from '../shared/rekordboxCueColors'
+import { seratoGeobBody, withSeratoCues } from '../shared/seratoMarkers'
 import { SERATO_MP3, SERATO_WAV } from '../shared/seratoMarkersFixture'
 import type { TrackCues } from '../shared/types'
 import { configureOriginalKeeper } from './originalKeeper'
 import { createProgramQueue } from './programQueue'
+import { createRekordboxQueue } from './rekordboxQueue'
 import type { CuesOp, QueueOp } from './rekordboxQueueOps'
 import { seratoLeadOfFile } from './seratoClock'
 import { seratoCueSource } from './seratoCueSource'
 import { applySeratoCuesBatch } from './seratoCuesWrite'
-import { readSeratoMarkers } from './seratoTags'
+import { readSeratoMarkers, readSeratoTrack } from './seratoTags'
 
 const FF = ffmpegStatic as unknown as string
 
-function wav(ext: 'wav' | 'mp3' = 'wav'): string {
+function wav(ext: 'wav' | 'mp3' = 'wav', payload?: Uint8Array): string {
   const file = join(mkdtempSync(join(tmpdir(), 'surco-serato-batch-')), `track.${ext}`)
   execFileSync(FF, [
     '-y',
@@ -49,7 +51,11 @@ function wav(ext: 'wav' | 'mp3' = 'wav'): string {
   const f = TagFile.createFromPath(file)
   try {
     const picture = Picture.fromFullData(
-      ByteVector.fromByteArray(Buffer.from(ext === 'wav' ? SERATO_WAV : SERATO_MP3, 'base64')),
+      ByteVector.fromByteArray(
+        payload
+          ? seratoGeobBody(payload)
+          : Buffer.from(ext === 'wav' ? SERATO_WAV : SERATO_MP3, 'base64'),
+      ),
       PictureType.NotAPicture,
       'application/octet-stream',
       'Serato Markers2',
@@ -192,7 +198,7 @@ describe('applying the queued Serato cue saves', () => {
     const read = await seen(file)
     const before = readFileSync(file)
     const result = await applySeratoCuesBatch(
-      [op(file, read, asWanted(read), { fingerprint: 'stale' })],
+      [op(file, read, moved(read), { fingerprint: 'stale' })],
       { ensureClosed: closed },
     )
     expect(result).toEqual({
@@ -328,7 +334,7 @@ describe('a Serato save whose cues changed meanwhile', () => {
         processes: { rekordbox: idle, engine: idle, traktor: idle, serato: idle },
       },
     )
-    pq.queue.enqueue([op(file, read, asWanted(read), { fingerprint: 'stale' })])
+    pq.queue.enqueue([op(file, read, moved(read), { fingerprint: 'stale' })])
     pq.applyQuietly()
     await vi.waitFor(() =>
       expect(broadcast).toHaveBeenCalledWith('serato:cueQueueApplied', {
@@ -339,5 +345,134 @@ describe('a Serato save whose cues changed meanwhile', () => {
       }),
     )
     expect(pq.queue.isEmpty()).toBe(true)
+  }, 60000)
+})
+
+function cueEntries(file: string): Map<number, string> {
+  const payload = readSeratoTrack(file)?.payload ?? new Uint8Array()
+  const view = Buffer.from(payload)
+  const found = new Map<number, string>()
+  let at = 2
+  while (at < view.length) {
+    const nameEnd = view.indexOf(0, at)
+    if (nameEnd <= at || nameEnd + 5 > view.length) break
+    const end = nameEnd + 5 + view.readUInt32BE(nameEnd + 1)
+    if (view.toString('latin1', at, nameEnd) === 'CUE')
+      found.set(view[nameEnd + 6], view.subarray(at, end).toString('hex'))
+    at = end
+  }
+  return found
+}
+
+function withUpperPads(): string {
+  const base = readSeratoTrack(wav('mp3'))
+  if (!base?.payload || !base.markers) throw new Error('no Serato payload in the fixture')
+  return wav(
+    'mp3',
+    withSeratoCues(base.payload, [
+      ...base.markers.cues,
+      { index: 8, ms: 1203, color: 0x123456, name: 'Nine' },
+      { index: 12, ms: 1777, color: 0xabcdef, name: '' },
+    ]),
+  )
+}
+
+const moved = (read: TrackCues, by = 500.4): WantedCue[] =>
+  asWanted(read).map((c, i) => (i === 0 ? { ...c, ms: c.ms + by } : c))
+
+describe("Serato's pads beyond the eight Surco edits", () => {
+  it('come out of every write byte for byte as Serato left them', async () => {
+    const file = withUpperPads()
+    const before = cueEntries(file)
+    expect([...before.keys()]).toEqual(expect.arrayContaining([8, 12]))
+    const read = await seen(file)
+    const result = await applySeratoCuesBatch([op(file, read, moved(read))], {
+      ensureClosed: closed,
+    })
+    expect(result).toMatchObject({ ok: true, wrote: true })
+    const after = cueEntries(file)
+    expect(after.get(8)).toBe(before.get(8))
+    expect(after.get(12)).toBe(before.get(12))
+    expect(after.get(0)).not.toBe(before.get(0))
+  }, 60000)
+})
+
+describe('applying a Serato save again', () => {
+  it('reports it applied without writing when the file already holds those cues, as after a crash mid-apply', async () => {
+    const file = withUpperPads()
+    const read = await seen(file)
+    const save = op(file, read, moved(read))
+    await applySeratoCuesBatch([save], { ensureClosed: closed })
+    const after = readFileSync(file)
+    const keeper = vi.fn(async () => ({ id: 'b2' }) as never)
+    configureOriginalKeeper(keeper)
+    expect(await applySeratoCuesBatch([save], { ensureClosed: closed })).toEqual({
+      ok: true,
+      wrote: false,
+      outcomes: [{ id: 'op1', applied: true, notices: [] }],
+    })
+    expect(keeper).not.toHaveBeenCalled()
+    expect(readFileSync(file)).toEqual(after)
+  }, 60000)
+})
+
+describe('a save undone while its batch runs', () => {
+  it('is skipped and its file left as it was', async () => {
+    const kept = wav()
+    const undone = wav()
+    const readKept = await seen(kept)
+    const readUndone = await seen(undone)
+    const before = readFileSync(undone)
+    const result = await applySeratoCuesBatch(
+      [op(kept, readKept, moved(readKept)), op(undone, readUndone, moved(readUndone), { id: 'b' })],
+      { ensureClosed: closed, stillQueued: (id) => id !== 'b' },
+    )
+    expect(result).toEqual({
+      ok: true,
+      wrote: true,
+      outcomes: [
+        { id: 'op1', applied: true, notices: [] },
+        { id: 'b', applied: false, reason: 'cancelled', notices: [] },
+      ],
+    })
+    expect(readFileSync(undone)).toEqual(before)
+  }, 60000)
+})
+
+describe('Serato opening in the middle of a batch', () => {
+  it('stops after the first of three files and writes the other two once Serato closes again', async () => {
+    const files = [wav('mp3'), wav('mp3'), wav('mp3')]
+    const reads = await Promise.all(files.map(seen))
+    const queue = createRekordboxQueue({
+      store: { read: () => null, write: () => {}, setAside: () => {} },
+      collection: () => '/Users/dj/Music/_Serato_',
+      applyBatch: (_c, ops, ensureClosed, stillQueued) =>
+        applySeratoCuesBatch(ops, { ensureClosed, stillQueued }),
+      repoint: async () => [],
+      nodeStamps: async () => ({}),
+      onChange: () => {},
+      addsTracks: false,
+    })
+    queue.enqueue(
+      files.map((file, i) => op(file, reads[i], moved(reads[i]), { id: `s${i}`, label: `t${i}` })),
+    )
+    const untouched = files.map((file) => readFileSync(file))
+    let checks = 0
+    const openAfterOne = async () => {
+      checks += 1
+      return checks <= 1
+    }
+    expect(await queue.apply(openAfterOne)).toEqual({ status: 'refused', reason: 'cancelled' })
+    expect(readFileSync(files[0])).not.toEqual(untouched[0])
+    expect(readFileSync(files[1])).toEqual(untouched[1])
+    expect(readFileSync(files[2])).toEqual(untouched[2])
+    expect(queue.state().tracks).toBe(3)
+    const result = await queue.apply(closed)
+    expect(result).toMatchObject({ status: 'applied', tracks: 3, notices: [] })
+    for (const [i, file] of files.entries())
+      expect((await seen(file)).cues.map((c) => c.ms)).toEqual(
+        moved(reads[i]).map((c) => expect.closeTo(c.ms, 0)),
+      )
+    expect(queue.isEmpty()).toBe(true)
   }, 60000)
 })

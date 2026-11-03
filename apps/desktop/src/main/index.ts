@@ -481,9 +481,10 @@ const programQueues = {
       queue: {
         store: fileStore(join(app.getPath('userData'), 'serato-cue-queue.json')),
         collection: () => join(app.getPath('home'), 'Music', '_Serato_'),
-        applyBatch: (_library, ops, ensureClosed) =>
+        applyBatch: (_library, ops, ensureClosed, stillQueued) =>
           applySeratoCuesBatch(ops, {
             ensureClosed,
+            stillQueued,
             tracking: tmpManifest,
             rewritten: followEngineSize,
           }),
