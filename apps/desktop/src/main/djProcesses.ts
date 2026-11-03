@@ -70,6 +70,15 @@ export const QUIT_TEXT: { [P in DjProgram]: QuitText<P> } = {
   },
 }
 
+export type DetailKeyOf<P extends DjProgram> = Extract<MenuKey, `${P}QuitDetail${string}`>
+
+export function reasonOfDetail<P extends DjProgram>(program: P, key: DetailKeyOf<P>): ReasonOf<P> {
+  const detail: Record<ReasonOf<P>, MenuKey> = QUIT_TEXT[program].detail
+  const reason = (QUIT_REASONS[program] as readonly ReasonOf<P>[]).find((r) => detail[r] === key)
+  if (reason === undefined) throw new Error(`No ${program} quit reason for ${key}`)
+  return reason
+}
+
 export const QUIT_PROMPT_SHARING: Record<DjProgram, 'once' | 'perReason'> = {
   rekordbox: 'perReason',
   traktor: 'once',

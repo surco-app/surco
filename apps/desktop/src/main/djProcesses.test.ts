@@ -1,7 +1,7 @@
 import type { BrowserWindow } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 import type { DjProgram } from '../shared/djProgram'
-import { createEnsureClosed, type DJ_PROCESSES, QUIT_REASONS } from './djProcesses'
+import { createEnsureClosed, type DJ_PROCESSES, QUIT_REASONS, reasonOfDetail } from './djProcesses'
 
 function deferred<T>() {
   let resolve: (v: T) => void = () => {}
@@ -196,4 +196,20 @@ describe('createEnsureClosed', () => {
     // @ts-expect-error
     await ensureClosed('rekordbox', null, 'cues')
   })
+})
+
+describe('reasonOfDetail', () => {
+  it.each([
+    ['rekordbox', 'rekordboxQuitDetailUsb', 'usb'],
+    ['rekordbox', 'rekordboxQuitDetail', 'convert'],
+    ['engine', 'engineQuitDetailUsb', 'usb'],
+    ['engine', 'engineQuitDetailRestore', 'restore'],
+    ['traktor', 'traktorQuitDetailCues', 'cues'],
+    ['traktor', 'traktorQuitDetailPlaylists', 'playlists'],
+  ] as const)(
+    'keeps the words a %s caller passes by asking for the reason behind %s',
+    (program, key, reason) => {
+      expect(reasonOfDetail(program, key)).toBe(reason)
+    },
+  )
 })
