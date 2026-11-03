@@ -1,17 +1,21 @@
 import type { ReactNode } from 'react'
+import type { SectionLocation } from '../../lib/analytics'
 import Reveal from '../Reveal'
+import SectionView from '../SectionView'
 import { AnchorLink, Replayable } from './Replay'
 
 // One step of the walkthrough: its heading and caption over a full-width slab of app UI.
 // Every step takes the page's width, so the editor's values have room to read.
 export default function SceneLayout({
   id,
+  view,
   title,
   children,
   app,
   field = false,
 }: {
   id: string
+  view: SectionLocation
   title: ReactNode
   children: ReactNode
   app: ReactNode
@@ -26,6 +30,7 @@ export default function SceneLayout({
           : 'scroll-mt-12 py-16 sm:py-20'
       }
     >
+      <SectionView location={view} />
       <Reveal>
         <div className="lg:grid lg:grid-cols-2 lg:items-end lg:gap-16">
           <h2

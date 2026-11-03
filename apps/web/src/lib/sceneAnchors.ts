@@ -1,3 +1,5 @@
+import type { SectionLocation } from './analytics'
+
 export const SCENE_ANCHORS = {
   tag: 'etiquetar',
   quality: 'calidad',
@@ -6,6 +8,15 @@ export const SCENE_ANCHORS = {
   cues: 'cues',
   review: 'biblioteca',
 } as const
+
+export const SECTION_VIEWS: Record<keyof typeof SCENE_ANCHORS, SectionLocation> = {
+  quality: 'home-quality',
+  tag: 'home-tag',
+  batch: 'home-export',
+  cues: 'home-cues',
+  replace: 'home-replace',
+  review: 'home-review',
+}
 
 export const HERO_ANCHORS = [
   { key: 'quality', target: SCENE_ANCHORS.quality },

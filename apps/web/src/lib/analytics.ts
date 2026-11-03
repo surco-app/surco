@@ -19,9 +19,16 @@ export type DownloadLocation =
 // so it counts recovered donations rather than intent.
 export type DonateLocation = 'footer' | 'donate-retry'
 
-// Sections worth knowing a visitor reached. Deliberately few: a section_view on every
-// band would drown the report and cost a listener per section for questions nobody asks.
-export type SectionLocation = 'home-closing' | 'install'
+// Sections worth knowing a visitor reached.
+export type SectionLocation =
+  | 'home-closing'
+  | 'install'
+  | 'home-quality'
+  | 'home-tag'
+  | 'home-export'
+  | 'home-cues'
+  | 'home-replace'
+  | 'home-review'
 
 // An installer is a file the visitor can run; the releases page is the fallback link
 // shown on a platform with no Surco build. Both are worth counting and they must not be
