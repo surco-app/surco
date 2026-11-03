@@ -11,6 +11,8 @@ import {
   type DropModel,
   type DropProposal,
 } from '../../../shared/dropDetect'
+import { hotCueColor } from '../../../shared/rekordboxCueColors'
+import { TRAKTOR_CUE_COLOR } from '../../../shared/traktorContent'
 import type { TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
@@ -66,6 +68,8 @@ function setup(
   read: TrackCues | null | Error = READ,
   contentId = 'engine:4',
   dropInput: Api['rekordboxCueDropInput'] = async () => null,
+  over: Partial<Api> = {},
+  traktorNmlPath = '',
 ) {
   const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
   installApi({
@@ -76,11 +80,12 @@ function setup(
     rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
     rekordboxCueDropInput: vi.fn(dropInput),
     saveRekordboxCues,
+    ...over,
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
-      <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine' }}>
+      <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine', traktorNmlPath }}>
         <CuesSection
           cue={{ contentId, path: '/m/e.wav', label: 'Tengo' }}
           open
@@ -210,5 +215,68 @@ describe('CuesSection on an Engine DJ track', () => {
     keepDraft('engine:8', 'engine:8|f0|null', startDraft([], 'mine'), target)
     keepDraft('engine:9', 'engine:9|f0|null', startDraft([], 'mine'), target)
     expect(await saveAllItem()).toHaveTextContent('Save 2 tracks to Engine DJ')
+  })
+  it('keeps the CALL note to Engine DJ’s own, never Traktor’s, while the draft holds CALLs', async () => {
+    setup()
+    await ready()
+    markAt(bar(64))
+    await waitFor(() => expect(screen.getByTestId('cues-engine-calls')).toBeInTheDocument())
+    expect(screen.queryByTestId('cues-traktor-calls')).toBeNull()
+  })
+
+  it('says nothing about CALLs on a rekordbox track, neither Engine’s note nor Traktor’s', async () => {
+    setup({ ...READ, contentId: '103' }, '103')
+    await ready()
+    markAt(bar(64))
+    await waitFor(() => expect(screen.getByTestId(`cue-wave-call-${bar(64)}`)).toBeInTheDocument())
+    expect(screen.queryByTestId('cues-traktor-calls')).toBeNull()
+    expect(screen.queryByTestId('cues-engine-calls')).toBeNull()
+  })
+
+  it('offers a colour for an Engine DJ hot cue, from its button and its marker', async () => {
+    setup()
+    await ready()
+    markAt(bar(64))
+    const hot = await screen.findAllByTestId(/^cue-wave-hot-/)
+    const traktorBlue = (() => {
+      const probe = document.createElement('div')
+      probe.style.backgroundColor = hotCueColor(TRAKTOR_CUE_COLOR)
+      return probe.style.backgroundColor
+    })()
+    expect(hot[0].style.backgroundColor).not.toBe(traktorBlue)
+    fireEvent.click(hot[0])
+    await waitFor(() => expect(screen.getByTestId('cues-colour')).toBeInTheDocument())
+    fireEvent.contextMenu(hot[0])
+    expect(screen.getByTestId('cues-menu-colour')).toBeInTheDocument()
+    expect(screen.getByTestId('section-help')).not.toHaveTextContent('Traktor colours each cue')
+  })
+
+  it('opens the colour palette on an Engine DJ pad when maximized', async () => {
+    setup({ ...READ, cues: [{ id: 'h1', ms: bar(10), kind: 1, color: 1 }] })
+    await ready()
+    fireEvent.click(screen.getByTestId('section-maximize'))
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true'),
+    )
+    fireEvent.contextMenu(screen.getByTestId('cues-pad-A'))
+    expect(screen.getByTestId('cues-pad-colours')).toBeInTheDocument()
+  })
+
+  it('never holds an Engine DJ track back on the Traktor collection', async () => {
+    const traktorCollectionInUse = vi.fn<Api['traktorCollectionInUse']>(async () => '/x.nml')
+    setup(
+      READ,
+      'engine:4',
+      async () => null,
+      { traktorCanSave: async () => false, traktorCollectionInUse },
+      '/Users/dj/collection.nml',
+    )
+    await ready()
+    expect(screen.getByTestId('cues-auto-mark')).toBeEnabled()
+    markAt(bar(64))
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeEnabled())
+    expect(screen.queryByTestId('cues-traktor-no-collection')).toBeNull()
+    expect(screen.queryByTestId('cues-traktor-other-collection')).toBeNull()
+    expect(traktorCollectionInUse).not.toHaveBeenCalled()
   })
 })

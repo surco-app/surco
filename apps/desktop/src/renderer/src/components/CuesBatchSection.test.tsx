@@ -298,4 +298,50 @@ describe('Cues over several selected tracks', () => {
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
     expect(saveRekordboxCues.mock.calls[0][0].map((r) => r.contentId)).toEqual(['103'])
   })
+  it('holds only the Traktor tracks back while the Traktor collection is not confirmed', async () => {
+    const T1 = 'traktor:M/:m/:a.wav'
+    const targets = [
+      { contentId: '103', path: '/m/a.wav', label: 'Maniac' },
+      { contentId: T1, path: '/m/b.wav', label: 'Summer Sky' },
+      { contentId: 'engine:2', path: '/m/c.wav', label: 'Tengo' },
+    ]
+    for (const t of targets)
+      keepDraft(
+        t.contentId,
+        cueDraftKey(t.contentId, 'f0', null),
+        startDraft([{ ms: bar(8), kind: 1, color: 1 }], 'mine'),
+        { path: t.path, label: t.label, fingerprint: 'f0' },
+      )
+    const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
+    installApi({
+      rekordboxCueTwins: vi.fn<Api['rekordboxCueTwins']>(async () => ({})),
+      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (id) => ({
+        ...READ,
+        contentId: id,
+      })),
+      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
+      saveRekordboxCues,
+      traktorCanSave: async () => false,
+    })
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine' }}>
+          <CuesBatchSection targets={targets} onMark={vi.fn()} onFlow={vi.fn()} />
+        </SettingsProvider>
+      </QueryClientProvider>,
+    )
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-batch-save')).toHaveTextContent(
+        i18n.t('editor.cues.saveAllBoth', { count: 2 }),
+      ),
+    )
+    fireEvent.click(screen.getByTestId('cues-batch-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
+    expect(saveRekordboxCues.mock.calls[0][0].map((r) => r.contentId).sort()).toEqual([
+      '103',
+      'engine:2',
+    ])
+  })
 })

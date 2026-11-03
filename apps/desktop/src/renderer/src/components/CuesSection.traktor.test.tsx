@@ -300,4 +300,22 @@ describe('CuesSection on a Traktor track', () => {
       'Traktor has no CALLs, so they are not saved. Only the hot cues reach Traktor',
     )
   })
+  it('keeps the CALL note to Traktor’s own, never Engine DJ’s', async () => {
+    setup()
+    await ready()
+    markAt(bar(64))
+    await screen.findByTestId('cues-traktor-calls')
+    expect(screen.queryByTestId('cues-engine-calls')).toBeNull()
+  })
+
+  it('opens no colour palette on a Traktor pad when maximized', async () => {
+    setup({ ...READ, cues: [{ id: 'h1', ms: bar(10), kind: 1, color: 1 }] })
+    await ready()
+    fireEvent.click(screen.getByTestId('section-maximize'))
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true'),
+    )
+    fireEvent.contextMenu(screen.getByTestId('cues-pad-A'))
+    expect(screen.queryByTestId('cues-pad-colours')).toBeNull()
+  })
 })
