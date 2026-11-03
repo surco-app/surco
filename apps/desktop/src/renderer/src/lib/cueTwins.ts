@@ -1,9 +1,8 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { CueFlow } from '../../../shared/cueFlows'
 import { ALL_SLOTS, HOT_KINDS, SAME_POSITION_MS, type WantedCue } from '../../../shared/cueRules'
-import { DJ_PROGRAMS } from '../../../shared/djProgram'
-import { isEngineContent } from '../../../shared/engineContent'
-import { isTraktorContent, TRAKTOR_SLOTS } from '../../../shared/traktorContent'
+import { DJ_PROGRAMS, programOf } from '../../../shared/djProgram'
+import { TRAKTOR_SLOTS } from '../../../shared/traktorContent'
 import type { CueLibrary, LibraryTracks, SaveCuesRequest, TrackCues } from '../../../shared/types'
 import { queuedCuesQuery, trackCuesQuery } from '../hooks/useTrackCues'
 import {
@@ -51,11 +50,6 @@ export type TwinPlan =
   | { library: CueLibrary; contentId: string; status: 'unsaved' }
 
 const LIBRARIES = DJ_PROGRAMS
-
-export function libraryOf(contentId: string): CueLibrary {
-  if (isTraktorContent(contentId)) return 'traktor'
-  return isEngineContent(contentId) ? 'engine' : 'rekordbox'
-}
 
 const wanted = (library: CueLibrary, settings: TwinSettings): boolean =>
   library === 'rekordbox'
@@ -188,7 +182,7 @@ export async function twinPlans(
   overwrite: ReadonlySet<string> = new Set(),
 ): Promise<TwinPlan[]> {
   if (source.breaks.length === 0) return []
-  const own = libraryOf(source.contentId)
+  const own = programOf(source.contentId)
   const twins = await client
     .fetchQuery({
       queryKey: ['cue-twins', source.path],
@@ -231,7 +225,7 @@ export async function twinPlansOf(
   for (const { contentId, path, label, draft } of drafts) {
     const read = await client.fetchQuery(trackCuesQuery(contentId)).catch(() => null)
     if (!read?.analysed || read.grid.length === 0) continue
-    const breaks = carriedBreaks(draft, contextOf(read, libraryOf(contentId), settings))
+    const breaks = carriedBreaks(draft, contextOf(read, programOf(contentId), settings))
     const source = { contentId, path, label, breaks }
     for (const plan of await twinPlans(client, source, settings, overwrite)) {
       if (saving.has(plan.contentId)) continue

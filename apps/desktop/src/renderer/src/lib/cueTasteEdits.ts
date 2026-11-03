@@ -1,14 +1,13 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { DropInput } from '../../../shared/dropDetect'
 import { tasteTrackOf } from '../../../shared/dropTaste'
-import { isEngineContent } from '../../../shared/engineContent'
-import { isTraktorContent } from '../../../shared/traktorContent'
 import type { TrackCues } from '../../../shared/types'
 import { cueDropInputQuery, cueWaveDetailQuery, trackCuesQuery } from '../hooks/useTrackCues'
 import { type CueDraft, draftDrops } from './cueDraft'
+import { cueProgramOf } from './cuePrograms'
 
 function inputOf(client: QueryClient, contentId: string): DropInput | null {
-  if (isEngineContent(contentId) || isTraktorContent(contentId))
+  if (cueProgramOf(contentId).readsAudio)
     return client.getQueryData<DropInput | null>(cueDropInputQuery(contentId).queryKey) ?? null
   const read = client.getQueryData<TrackCues | null>(trackCuesQuery(contentId).queryKey)
   const words = client.getQueryData<Uint16Array | null>(cueWaveDetailQuery(contentId).queryKey)

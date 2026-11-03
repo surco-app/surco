@@ -17,11 +17,11 @@ import { useTranslation } from 'react-i18next'
 import { activeCueFlow, DEFAULT_CUE_FLOW_ID, MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
-import { ALL_SLOTS, BEATS_PER_BAR, nearestBeat, SAME_POSITION_MS } from '../../../shared/cueRules'
+import { BEATS_PER_BAR, nearestBeat, SAME_POSITION_MS } from '../../../shared/cueRules'
+import { type DjProgram, programOf } from '../../../shared/djProgram'
 import type { DropInput, DropProposal } from '../../../shared/dropDetect'
-import { isEngineContent } from '../../../shared/engineContent'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
-import { isTraktorContent, TRAKTOR_CUE_COLOR, TRAKTOR_SLOTS } from '../../../shared/traktorContent'
+import { TRAKTOR_CUE_COLOR } from '../../../shared/traktorContent'
 import type { QueuedCues, SaveCuesRequest, SurcoGrid, TrackCues } from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
@@ -62,6 +62,7 @@ import {
   wholeBars,
   zoomStep,
 } from '../lib/cuePlayhead'
+import { cueProgramOf } from '../lib/cuePrograms'
 import {
   autoMarkOf,
   cueDraftKey,
@@ -155,18 +156,19 @@ const TRAKTOR_COPY: typeof REKORDBOX_COPY = {
   autoUnanalysed: 'editor.cues.traktor.autoUnreadable',
 }
 
-const copyOf = (contentId: string) =>
-  isTraktorContent(contentId)
-    ? TRAKTOR_COPY
-    : isEngineContent(contentId)
-      ? ENGINE_COPY
-      : REKORDBOX_COPY
+const COPY: Record<DjProgram, typeof REKORDBOX_COPY> = {
+  rekordbox: REKORDBOX_COPY,
+  traktor: TRAKTOR_COPY,
+  engine: ENGINE_COPY,
+}
+
+const copyOf = (contentId: string) => COPY[programOf(contentId)]
 
 export function saveAllKey(unsaved: ReadonlySet<string>): string {
-  const traktor = [...unsaved].filter(isTraktorContent).length
+  const traktor = [...unsaved].filter((id) => programOf(id) === 'traktor').length
   if (traktor > 0)
     return traktor === unsaved.size ? 'editor.cues.traktor.saveAll' : 'editor.cues.saveAllMixed'
-  const engine = [...unsaved].filter(isEngineContent).length
+  const engine = [...unsaved].filter((id) => programOf(id) === 'engine').length
   if (engine === 0) return 'editor.cues.saveAll'
   return engine === unsaved.size ? 'editor.cues.engine.saveAll' : 'editor.cues.saveAllBoth'
 }
@@ -435,7 +437,7 @@ function Editing({
       phrases: read.phrases,
       flows,
       lettersByTime: settings.cueLettersByTime,
-      slots: isTraktorContent(cue.contentId) ? TRAKTOR_SLOTS : ALL_SLOTS,
+      slots: cueProgramOf(cue.contentId).slots,
     }),
     [read, flows, quantize, settings.cueLettersByTime, cue.contentId],
   )
@@ -500,15 +502,15 @@ function Editing({
   )
   const { data: rekordboxWords } = useCueWaveDetail(cue.contentId, !provisional)
   const words = provisional ? provisional.words : rekordboxWords
-  const traktor = isTraktorContent(cue.contentId)
-  const engine = isEngineContent(cue.contentId) || traktor
+  const traktor = programOf(cue.contentId) === 'traktor'
+  const engine = cueProgramOf(cue.contentId).readsAudio
   const unsavedSet = useUnsavedCueTracks()
   const { data: canSave = true } = useQuery({
     queryKey: ['traktor-can-save', settings.traktorNmlPath],
     queryFn: () => window.api.traktorCanSave(),
-    enabled: traktor || [...unsavedSet].some(isTraktorContent),
+    enabled: traktor || [...unsavedSet].some((id) => programOf(id) === 'traktor'),
   })
-  const savable = (contentId: string) => canSave || !isTraktorContent(contentId)
+  const savable = (contentId: string) => canSave || programOf(contentId) !== 'traktor'
   const blocked = traktor && !canSave
   const { data: otherCollection = null } = useQuery({
     queryKey: ['traktor-collection-in-use', settings.traktorNmlPath],
@@ -1705,7 +1707,7 @@ export function CuesSection({
   const queryClient = useQueryClient()
   const { data: read, isError } = useTrackCues(cue.contentId)
   const { data: queued } = useQueuedCues(cue.contentId)
-  const wantsSurcoGrid = !!read && !read.analysed && !isEngineContent(cue.contentId)
+  const wantsSurcoGrid = !!read && !read.analysed && cueProgramOf(cue.contentId).surcoGrid
   const { data: surco } = useSurcoGrid(cue.contentId, wantsSurcoGrid)
   const provisional = wantsSurcoGrid && surco ? surco : undefined
   const shown = read && provisional ? { ...read, analysed: true, grid: provisional.grid } : read
@@ -1838,7 +1840,7 @@ export function CuesSection({
           help={[
             tr('editor.cues.help'),
             ...(provisional ? [tr('editor.cues.provisional.help')] : []),
-            ...(isTraktorContent(cue.contentId) ? [tr('editor.cues.traktor.colours')] : []),
+            ...(programOf(cue.contentId) === 'traktor' ? [tr('editor.cues.traktor.colours')] : []),
           ].join(' ')}
           status={
             unsaved || provisional ? (

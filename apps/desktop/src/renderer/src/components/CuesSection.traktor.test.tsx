@@ -64,6 +64,7 @@ function setup(
   contentId = 'traktor:HD/:m/:e.wav',
   dropInput: Api['rekordboxCueDropInput'] = async () => null,
   canSave = true,
+  over: Partial<Api> = {},
 ) {
   const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
   installApi({
@@ -75,6 +76,7 @@ function setup(
     rekordboxCueDropInput: vi.fn(dropInput),
     saveRekordboxCues,
     traktorCanSave: async () => canSave,
+    ...over,
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
@@ -99,6 +101,29 @@ const markAt = (ms: number) => {
 }
 
 describe('CuesSection on a Traktor track', () => {
+  it("measures Surco's own grid when Traktor has not analysed the track, as it does for rekordbox", async () => {
+    const rekordboxSurcoGrid = vi.fn<Api['rekordboxSurcoGrid']>(async () => null)
+    setup({ ...READ, analysed: false, grid: [] }, 'traktor:HD/:m/:e.wav', async () => null, true, {
+      rekordboxSurcoGrid,
+    })
+    await waitFor(() => expect(rekordboxSurcoGrid).toHaveBeenCalledWith('traktor:HD/:m/:e.wav'))
+  })
+
+  it("never measures Surco's grid for an Engine DJ track Engine has not analysed", async () => {
+    const rekordboxSurcoGrid = vi.fn<Api['rekordboxSurcoGrid']>(async () => null)
+    setup(
+      { ...READ, contentId: 'engine:4', analysed: false, grid: [] },
+      'engine:4',
+      async () => null,
+      true,
+      {
+        rekordboxSurcoGrid,
+      },
+    )
+    await waitFor(() => expect(screen.getByTestId('cues-unanalysed')).toBeInTheDocument())
+    expect(rekordboxSurcoGrid).not.toHaveBeenCalled()
+  })
+
   it('saves to Traktor', async () => {
     setup()
     await ready()
@@ -248,6 +273,23 @@ describe('CuesSection on a Traktor track', () => {
     expect(screen.queryByTestId('cues-colour')).not.toBeInTheDocument()
     fireEvent.contextMenu(hot[0])
     expect(screen.queryByTestId('cues-menu-colour')).not.toBeInTheDocument()
+  })
+
+  it('offers no hot cue in the menu once the seven buttons Traktor has are taken', async () => {
+    const seven = [1, 2, 3, 5, 6, 7, 8].map((kind, i) => ({
+      id: `h${kind}`,
+      ms: bar(10 + i * 10),
+      kind,
+      color: 1,
+    }))
+    setup({ ...READ, cues: seven })
+    await ready()
+    fireEvent.click(screen.getByTestId('section-maximize'))
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true'),
+    )
+    fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: bar(5) / 1000, clientY: 30 })
+    expect(screen.getByTestId('cues-menu-add-hot')).toBeDisabled()
   })
 
   it('says the CALLs stay in Surco, since Traktor has none', async () => {

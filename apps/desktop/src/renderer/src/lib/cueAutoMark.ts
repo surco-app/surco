@@ -2,11 +2,9 @@ import type { QueryClient } from '@tanstack/react-query'
 import type { CueFlow } from '../../../shared/cueFlows'
 import { MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
 import type { CueQuantize } from '../../../shared/cueQuantize'
-import { ALL_SLOTS, nearestBeat } from '../../../shared/cueRules'
+import { nearestBeat } from '../../../shared/cueRules'
 import { type DropInput, type DropProposal, dropProposals } from '../../../shared/dropDetect'
 import { modelWithTaste } from '../../../shared/dropTaste'
-import { isEngineContent } from '../../../shared/engineContent'
-import { isTraktorContent, TRAKTOR_SLOTS } from '../../../shared/traktorContent'
 import {
   cueDropInputQuery,
   cueProfileQuery,
@@ -15,6 +13,7 @@ import {
   trackCuesQuery,
 } from '../hooks/useTrackCues'
 import { type DraftAction, reduceDraft, startDraft, wantedOfDraft } from './cueDraft'
+import { cueProgramOf } from './cuePrograms'
 import {
   type AutoMark,
   autoMarkOf,
@@ -60,7 +59,7 @@ async function dropInputOf(
   contentId: string,
   read: { grid: DropInput['grid']; phrases: DropInput['phrases'] },
 ): Promise<DropInput | null> {
-  if (isEngineContent(contentId) || isTraktorContent(contentId))
+  if (cueProgramOf(contentId).readsAudio)
     return client.fetchQuery(cueDropInputQuery(contentId)).catch(() => null)
   const words = await client.fetchQuery(cueWaveDetailQuery(contentId)).catch(() => null)
   return words ? { grid: read.grid, phrases: read.phrases, words } : null
@@ -131,7 +130,7 @@ async function acceptOne(
     phrases: read.phrases,
     flows: settings.cueFlows,
     lettersByTime: settings.cueLettersByTime,
-    slots: isTraktorContent(target.contentId) ? TRAKTOR_SLOTS : ALL_SLOTS,
+    slots: cueProgramOf(target.contentId).slots,
   }
   const kept =
     keptDraftOn(target.contentId, read, queued) ??

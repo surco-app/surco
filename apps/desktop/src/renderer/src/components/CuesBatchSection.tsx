@@ -4,8 +4,7 @@ import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { activeCueFlow, MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
-import { DJ_PROGRAMS } from '../../../shared/djProgram'
-import { isTraktorContent } from '../../../shared/traktorContent'
+import { DJ_PROGRAMS, programOf } from '../../../shared/djProgram'
 import type { CueLibrary } from '../../../shared/types'
 import { type AutoMarkTarget, acceptAutoMarks } from '../lib/cueAutoMark'
 import { forgetStaleDrafts } from '../lib/cueDrafts'
@@ -19,7 +18,7 @@ import {
   useUnsavedCueTracks,
 } from '../lib/cueSession'
 import { recordCueEdits } from '../lib/cueTasteEdits'
-import { libraryOf, twinPlansOf } from '../lib/cueTwins'
+import { twinPlansOf } from '../lib/cueTwins'
 import { useAppSettings } from '../lib/settingsContext'
 import { saveAllKey } from './CuesSection'
 import { Select } from './Select'
@@ -56,13 +55,13 @@ export function CuesBatchSection({
   const [busy, setBusy] = useState(false)
   const [saveFailed, setSaveFailed] = useState(false)
   const ids = targets.map((t) => t.contentId)
-  const traktor = ids.some(isTraktorContent)
+  const traktor = ids.some((id) => programOf(id) === 'traktor')
   const { data: canSave = true } = useQuery({
     queryKey: ['traktor-can-save', settings.traktorNmlPath],
     queryFn: () => window.api.traktorCanSave(),
     enabled: traktor,
   })
-  const savable = (contentId: string) => canSave || !isTraktorContent(contentId)
+  const savable = (contentId: string) => canSave || programOf(contentId) !== 'traktor'
   const unsaved = new Set(ids.filter((id) => unsavedAll.has(id) && savable(id)))
   const drafts = keptDrafts().filter((d) => unsaved.has(d.contentId))
   const { data: plans = [] } = useQuery({
@@ -81,7 +80,7 @@ export function CuesBatchSection({
   const reach = LIBRARIES.map((library) => ({
     library,
     tracks:
-      [...unsaved].filter((id) => libraryOf(id) === library).length +
+      [...unsaved].filter((id) => programOf(id) === library).length +
       twins.filter((p) => p.library === library && p.status === 'planned').length,
     kept: twins.filter((p) => p.library === library && p.status === 'unsaved').length,
   })).filter((r) => r.tracks + r.kept > 0)
