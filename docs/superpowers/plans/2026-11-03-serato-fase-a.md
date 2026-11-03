@@ -151,5 +151,5 @@
 
 - [ ] Matriz completa igual que la base.
 - [ ] Sonda: ya no es una sonda (Serato está en el tipo); quitar `'serato'` de `WritableProgram` temporalmente debe hacer fallar el compilador en las tablas de escritura. Revertir y actualizar el mapa (qué falta para las fases b y c).
-- [ ] Prueba manual con el driver en perfil aislado: la pestaña Serato aparece tras Traktor; el crate `Serato Pruebas` lista sus 4 pistas y All tracks las 5; abrir `Pray.mp3` muestra los 8 cues con sus colores y "A" con nombre; abrir `Pray.flac` y `Pray.m4a` muestra sus 3 cues; convertir está deshabilitado con el motivo; con Serato abierto, sale el aviso. Verificar que ningún fichero de `~/Music/Serato Pruebas` ni de `~/Music/_Serato_` cambia (hashes antes y después).
+- [ ] Prueba manual con el driver en perfil aislado: la pestaña Serato aparece tras Traktor; el crate `Serato Pruebas` y All tracks listan sus 5 pistas; abrir `Pray.mp3` muestra los 8 cues con sus colores y "A" con nombre; abrir `Pray.flac` y `Pray.m4a` muestra sus 3 cues; convertir está deshabilitado con el motivo; con Serato abierto, sale el aviso. Verificar que ningún fichero de `~/Music/Serato Pruebas` ni de `~/Music/_Serato_` cambia (hashes antes y después).
 - [ ] `git merge main`, suite, `git merge --ff-only serato` en el main local (sin push).
