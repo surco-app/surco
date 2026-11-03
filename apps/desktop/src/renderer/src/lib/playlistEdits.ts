@@ -6,6 +6,7 @@ import type {
   SourceNode,
   SourcePlaylistEntry,
 } from '../../../shared/types'
+import type { EditMessagePrefix } from './sourcePrograms'
 
 // The move rule of the writer (rekordboxPlaylistEdit.moveInPlaylist, which applies it in
 // SQL in main), written once for the renderer: the moved items keep their order and land
@@ -78,7 +79,7 @@ export function editMessage(
   edit: RekordboxPlaylistEdit,
   result: RekordboxEditResult,
   playlistName: string,
-  messagePrefix = 'sources.edit.',
+  messagePrefix: EditMessagePrefix = 'sources.edit.',
 ): { text: string; tone: 'neutral' | 'danger' } | null {
   const own = (key: string): string => key.replace('sources.edit.', messagePrefix)
   if (!result.applied && result.reason !== 'nothing-to-add')

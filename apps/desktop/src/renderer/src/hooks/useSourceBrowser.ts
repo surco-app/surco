@@ -130,17 +130,16 @@ export function useSourceBrowser({
     queryFn: SOURCE_READ.traktor.available,
     staleTime: Number.POSITIVE_INFINITY,
   })
+  const found = useMemo<Record<DjProgram, boolean | undefined>>(
+    () => ({ rekordbox, engine: engine.data, traktor: traktor.data }),
+    [rekordbox, engine.data, traktor.data],
+  )
   const sources = useMemo<PlaylistSource[]>(() => {
-    const found: Record<DjProgram, boolean | undefined> = {
-      rekordbox,
-      engine: engine.data,
-      traktor: traktor.data,
-    }
     return [
       ...(isMac ? (['appleMusic'] as const) : []),
       ...RAIL_PROGRAMS.filter((p) => found[p]),
     ].filter((s) => !hiddenSources.includes(s))
-  }, [isMac, rekordbox, engine.data, traktor.data, hiddenSources])
+  }, [isMac, found, hiddenSources])
 
   const treeKey = ['source-tree', source]
   const tree = useQuery({
@@ -256,9 +255,7 @@ export function useSourceBrowser({
         : shownTree,
     treeFailed: tree.isError,
     libraryMissing:
-      program !== null &&
-      SOURCE_PROGRAMS[program].missingLibraryCheck &&
-      { rekordbox, engine: engine.data, traktor: traktor.data }[program] === false,
+      program !== null && SOURCE_PROGRAMS[program].missingLibraryCheck && found[program] === false,
     entries: entries.data,
     entriesLoading: source !== null && playlist !== null && entries.isPending,
     entriesFailed: source !== null && playlist !== null && entries.isError,

@@ -879,7 +879,8 @@ export default function App(): React.JSX.Element {
     usbPlatform &&
     sourceProgram &&
     SOURCE_PROGRAMS[sourceProgram].usb &&
-    browser.sources.includes(sourceProgram) &&
+    (SOURCE_PROGRAMS[sourceProgram].missingLibraryCheck ||
+      browser.sources.includes(sourceProgram)) &&
     !browser.libraryMissing
       ? sourceProgram
       : null

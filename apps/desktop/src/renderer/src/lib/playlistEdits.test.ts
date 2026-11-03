@@ -83,6 +83,11 @@ describe('editMessage', () => {
     })
   })
 
+  it('accepts only the message prefixes the source table declares', () => {
+    // @ts-expect-error a program name is not a message prefix
+    editMessage(tr, add, { applied: false, reason: 'write-unknown' }, 'House', 'traktor')
+  })
+
   it('says nothing went in when nothing could', () => {
     expect(
       editMessage(

@@ -43,9 +43,11 @@ export const SOURCE_READ: Record<DjProgram, SourceRead> = {
   },
 }
 
+export type EditMessagePrefix = 'sources.edit.' | 'sources.editTraktor.'
+
 export interface SourceEdit {
   save(edit: RekordboxPlaylistEdit, label?: string): Promise<RekordboxEditResult>
-  messagePrefix: string
+  messagePrefix: EditMessagePrefix
   gate: 'none' | 'traktorCollection'
 }
 
