@@ -4,6 +4,7 @@ import type { CueGridTolerance } from './cueGrid'
 import type { CueJumpBars } from './cueJump'
 import type { CueQuantize } from './cueQuantize'
 import type { StrongPart, WantedCue } from './cueRules'
+import type { DjProgram } from './djProgram'
 import type { EditorSectionPref } from './editorSections'
 import type { ErrorKey } from './errorKeys'
 import type { Chord } from './shortcuts'
@@ -1935,7 +1936,7 @@ export type RestoreRefusal =
 
 export type RestoreResult = { ok: true } | { ok: false; reason: RestoreRefusal }
 
-export type DjProgram = 'rekordbox' | 'traktor' | 'engine'
+export type { DjProgram }
 
 export interface ProgramCopies {
   program: DjProgram
