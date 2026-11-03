@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 3 de noviembre de 2026** (v1.21.0, filtro «Cues fuera de la rejilla» en rekordbox, Traktor y Engine DJ con su tolerancia en Ajustes › Cues; antes v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
+**Última revisión: 3 de noviembre de 2026** (v1.22.0, ajuste de la rejilla en el editor de cues maximizado con guardado en rekordbox, Traktor y Engine DJ, filtro «Rejilla mal», cues fuera del golpe señalados y «Al golpe», pestaña de Serato de solo lectura, MP3 de iTunes a tiempo en Traktor; antes v1.21.0, filtro «Cues fuera de la rejilla» en rekordbox, Traktor y Engine DJ con su tolerancia en Ajustes › Cues; antes v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -1237,6 +1237,20 @@ barra y no cambia su sincronización al convertir (`settings.sourcesHint`).
 
 ---
 
+### Serato (solo lectura)
+
+Nuevo en v1.22.0. Serato tiene su pestaña, la última del carril. Lee la base `_Serato_` de la
+carpeta personal y de cada disco (`seratoLibraryRoots`, `seratoLibrary.ts:27`), con sus crates
+(los que tienen subcrates salen como carpeta), «Todas» y «Recientes». Los hot cues y loops se
+leen de la etiqueta Markers2 del fichero en MP3, AIFF, WAV, FLAC y M4A (`readSeratoMarkers`,
+`seratoTags.ts:51`) y se ven en el editor de cues como lista de solo lectura, no sobre la onda.
+Con Serato abierto avisa de que los cues pueden no estar al día, porque Serato solo los
+escribe al salir.
+
+**No escribe nada en Serato.** Las filas que vienen de Serato no se convierten
+(`batch.ts:24`) y la revisión de la lista las deja fuera (`listReviewSource.ts:38`). La
+rejilla de Serato (Tempo Map) no se lee.
+
 ## 11. Destinos
 
 ### Apple Music (solo macOS)
@@ -1781,10 +1795,62 @@ entra.
 sincroniza como el resto de ajustes de cues. Cambiarla recalcula el filtro sin releer la
 biblioteca.
 
-**No corrige nada.** El filtro solo encuentra las pistas. Para arreglarlas se abren en el
-editor, se borran sus cues y se vuelve a pasar Auto marcar o el flujo. Medido en una
+**El filtro solo encuentra las pistas.** Desde v1.22.0 el editor señala cuáles son: los cues
+fuera del golpe se pintan aparte en las dos ondas y una barra encima los nombra uno a uno
+con su desvío firmado; «Al golpe» los lleva a su golpe en un paso que se deshace
+(`offGridCues`, `shared/cueGrid.ts:55`; `CueOffGridBar.tsx:44`). Si todos se desvían lo mismo
+(dentro de 5 ms) y el editor está maximizado, la barra ofrece «Mover la rejilla N ms» en su
+lugar. Si la culpa es de la rejilla, ver «Ajustar la rejilla». Medido en una
 biblioteca real de rekordbox, 2077 pistas, 1592 con cues: con 10 ms salen 38, y las que
 pasan de 20 ms están claramente mal.
+
+### Ajustar la rejilla
+
+Nuevo en v1.22.0. Con la sección de cues maximizada aparece, en la misma fila que los pads,
+la fila de la rejilla (`CueGridControls.tsx:46`): el BPM (con menú para escribirlo, ×2 y ½
+conservando el compás), mover a izquierda y derecha 5 ms por pulsación (1 ms con ⇧; ⌥← ⌥→
+desde el teclado), estrechar y ensanchar ±0,01 BPM, primer tiempo en el cabezal, ancla en el
+cabezal (solo rekordbox) y «Auto». Junto al tiempo se ve «Rejilla aquí» y «al final»: cuánto
+se desvían las líneas pintadas de los golpes medidos cerca del cabezal y al final
+(`gridOffsets`, `shared/gridEdit.ts:265`). La rejilla va en el borrador, así que ⌘Z la deshace
+y no se guarda hasta «Guardar».
+
+**Auto** mide los golpes del audio por tramos de 32 golpes y toma la mediana de los tramos
+cercanos al cabezal; un tramo suelto mal medido no decide. El BPM se corrige con la pendiente
+mediana de esos tramos a lo largo de la pista (`fitGrid`, `shared/gridEdit.ts:249`). Si el BPM
+del detector es el doble o la mitad, conserva el del DJ y solo corrige la fase.
+
+**Zonas, solo en rekordbox.** Una rejilla con varios tempos o un compás que se reinicia se lee
+como hasta 8 zonas, cada una con su tempo y su ancla; todo edita la zona bajo el cabezal y
+el ancla abre o cierra una zona (`editableGridOf`, `shared/gridEdit.ts:69`;
+`toggleAnchor`, `:140`). Una rejilla de un solo tramo que rekordbox curva unos ms se endereza
+al tocarla. En Traktor y Engine DJ no hay zonas: una rejilla con varios tempos deshabilita la
+fila.
+
+**Dónde se guarda.** rekordbox: PQTZ del `.DAT`, cabecera de PQT2 del `.EXT` y el BPM de la
+pista, con copia de los ANLZ antes de escribir y la original de la sesión guardada aparte
+(`writeGridFiles`, `rekordboxGridWrite.ts:46`). rekordbox lo acepta sin reanalizar y un CDJ
+lee la rejilla escrita (probado con un USB exportado). Traktor: el marcador de rejilla y el
+tempo de la entrada en `collection.nml` (`withTraktorGrid`, `traktorCuesWrite.ts:75`).
+Engine DJ: la lista ajustada del beatData y el BPM analizado (`encodeAdjustedGrid`,
+`engineBlobs.ts:193`). Una rejilla bloqueada en el programa (Traktor LOCK, Engine
+isBeatGridLocked) deshabilita la fila y nunca se escribe.
+
+**Formatos.** rekordbox, todos. Traktor y Engine DJ, solo donde Surco ha medido que su reloj
+coincide con el del programa: WAV, AIFF y FLAC, y en Traktor también los MP3 hechos con iTunes,
+que Traktor dibuja 27 ms más tarde (`TRAKTOR_ITUNES_MP3_LEAD_MS`, `traktorTimeline.ts:4`; con
+ese desfase se corrigen también la onda, la escucha y Auto marcar de esos MP3 en la pestaña
+de Traktor). El resto sale con el motivo «reloj sin medir».
+
+### Filtro «Rejilla mal»
+
+Nuevo en v1.22.0. En la barra de filtros, «Rejilla mal» deja las pistas cuya rejilla no cae
+en los golpes medidos (`triage.ts:198`). Se mide bajo demanda, a prioridad baja para no
+retrasar la pista abierta, con el progreso en porcentaje. Cada fila lleva al lado el motivo
+corto («−92 ms» corrida, «−4,9 ms/min» deriva) y la frase entera al pasar el ratón. Regla
+(`gridVerdictOf`, `shared/gridVerdict.ts:18`): al menos 8 tramos estables, como mucho un 30 %
+a medio golpe y una dispersión de 5 ms; deriva desde 3 ms/min y corrida desde 15 ms. Mismos
+formatos que «Ajustar la rejilla».
 
 ### Pistas que rekordbox no ha analizado
 
@@ -2400,7 +2466,8 @@ Recopilado de los cinco informes. Cada punto está verificado.
    no tiene ID3 donde escribirlos. Al convertir, Surco los conserva **sin editarlos**. El
    editor de cues escribe en la colección de rekordbox (`master.db`), en la biblioteca de
    Engine DJ (solo hot cues) y en la colección de Traktor (`collection.nml`, solo hot cues,
-   siete botones, en azul), nunca en el fichero ni en Serato.
+   siete botones, en azul), nunca en el fichero ni en Serato. La pestaña de Serato (v1.22.0)
+   solo lee: no escribe cues, crates ni rejilla, y no convierte sus pistas.
 2. **Apple Music:** solo macOS, nunca FLAC. Clave, sello, catálogo y remixer no
    llegan a la biblioteca, ni los campos propios. Al añadir no se transfiere rating
    ni se crean playlists. Al sustituir sí pasan de la entrada vieja a la nueva (punto 6).
@@ -2437,8 +2504,9 @@ Recopilado de los cinco informes. Cada punto está verificado.
     encadenaba hasta décimas de segundo (`clickDetect.ts`).
 12. **Exportar una biblioteca Engine nueva a una carpeta no está expuesto**:
     `buildEngineDatabase` existe y está probado, pero solo lo llaman los tests.
-13. **El beatgrid fue eliminado** de la app y se descarta activamente al leer
-    sesiones antiguas.
+13. **La rejilla al convertir fue eliminada** de la app y se descarta activamente al leer
+    sesiones antiguas. La rejilla solo se edita desde el editor de cues maximizado (v1.22.0),
+    y en Traktor y Engine DJ solo en los formatos medidos (ver «Ajustar la rejilla»).
 14. **En el mismo formato, los ajustes de calidad solo recodifican si cambian el
     audio** (WAV, FLAC, AIFF); si el resultado sería idéntico, solo se actualizan
     las etiquetas. Un MP3 nunca se recodifica a MP3 salvo por un filtro (volumen,
