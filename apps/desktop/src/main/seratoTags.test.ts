@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -121,5 +121,27 @@ describe('readSeratoMarkers', () => {
     expect(readSeratoMarkers(audioFile('mp3'))).toBeNull()
     expect(readSeratoMarkers(audioFile('flac'))).toBeNull()
     expect(readSeratoMarkers(audioFile('m4a'))).toBeNull()
+  })
+
+  it('reads an .mp4 the same way as an .m4a, since both are the same container', () => {
+    const file = withTag(audioFile('mp4'), (f) =>
+      (f.tag as Mpeg4AppleTag).setItunesStrings('com.serato.dj', 'markersv2', SERATO_M4A),
+    )
+    expect(cueTimes(file)).toEqual([7444, 12756, 19019])
+  })
+
+  it('never changes the file it reads, since Surco does not write to Serato in this phase', () => {
+    const mp3 = withTag(audioFile('mp3'), (f) => addGeob(f, 'Serato Markers2', SERATO_MP3))
+    const flac = withTag(audioFile('flac'), (f) =>
+      (f.getTag(TagTypes.Xiph, true) as XiphComment).setFieldAsStrings(
+        'SERATO_MARKERS_V2',
+        SERATO_FLAC,
+      ),
+    )
+    for (const file of [mp3, flac]) {
+      const before = readFileSync(file)
+      expect(readSeratoMarkers(file)?.cues.length).toBeGreaterThan(0)
+      expect(readFileSync(file).equals(before)).toBe(true)
+    }
   })
 })

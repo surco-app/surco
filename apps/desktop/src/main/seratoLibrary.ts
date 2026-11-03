@@ -39,15 +39,20 @@ function readRoot({ dir, root }: SeratoLibraryRoot): SeratoLibrary {
   }))
   const subcrates = join(dir, 'Subcrates')
   const names = existsSync(subcrates) ? readdirSync(subcrates) : []
-  const crates = new Map(
-    names
-      .filter((name) => name.endsWith('.crate'))
-      .map((name) => [
-        name.slice(0, -'.crate'.length),
-        parseSeratoCrate(readFileSync(join(subcrates, name))).map(fileOf),
-      ]),
-  )
+  const crates = new Map<string, string[]>()
+  for (const name of names.filter((n) => n.endsWith('.crate'))) {
+    const files = readCrate(join(subcrates, name))
+    if (files) crates.set(name.slice(0, -'.crate'.length), files.map(fileOf))
+  }
   return { tracks, crates }
+}
+
+function readCrate(file: string): string[] | null {
+  try {
+    return parseSeratoCrate(readFileSync(file))
+  } catch {
+    return null
+  }
 }
 
 export function readSeratoLibrary(roots: SeratoLibraryRoot[]): SeratoLibrary {
@@ -118,8 +123,10 @@ export function seratoPlaylist(
 ): SourcePlaylistEntry[] {
   if (id === RECENTLY_ADDED_ID) return recentTracks(library, now).map((t) => entryOf(t.file, t))
   if (id === ALL_TRACKS_ID) return newestFirst(library.tracks).map((t) => entryOf(t.file, t))
-  const byFile = new Map(library.tracks.map((t) => [t.file, t]))
-  return (library.crates.get(id) ?? []).map((file) => entryOf(file, byFile.get(file)))
+  const byFile = new Map(library.tracks.map((t) => [t.file.normalize('NFC'), t]))
+  return (library.crates.get(id) ?? []).map((file) =>
+    entryOf(file, byFile.get(file.normalize('NFC'))),
+  )
 }
 
 export function seratoMembership(

@@ -210,4 +210,28 @@ describe('the Serato tab', () => {
       },
     )
   })
+
+  it('keeps bpm and key on a crate row whose path is in another Unicode form than the database', () => {
+    const base = mkdtempSync(join(tmpdir(), 'surco-serato-library-'))
+    seratoFolder(
+      join(base, 'Music'),
+      [{ pfil: 'Música/canción.mp3', tbpm: '124.00', tkey: '5A' }],
+      {
+        Latin: ['Música/canción.mp3'.normalize('NFD')],
+      },
+    )
+    const library = readSeratoLibrary(seratoLibraryRoots(base, []))
+    expect(seratoPlaylist(library, 'Latin', NOW).map((e) => e.meta)).toEqual([
+      { bpm: '124', key: '5A' },
+    ])
+  })
+
+  it('skips one crate it cannot read and keeps the rest of that library', () => {
+    const base = mkdtempSync(join(tmpdir(), 'surco-serato-library-'))
+    const dir = seratoFolder(join(base, 'Music'), [{ pfil: 'a.mp3' }], { Good: ['a.mp3'] })
+    mkdirSync(join(dir, 'Subcrates', 'Broken.crate'))
+    const library = readSeratoLibrary(seratoLibraryRoots(base, []))
+    expect(library.tracks.map((t) => t.file)).toEqual(['/a.mp3'])
+    expect(seratoPlaylist(library, 'Good', NOW).map((e) => e.path)).toEqual(['/a.mp3'])
+  })
 })

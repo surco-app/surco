@@ -44,7 +44,7 @@ function m4aMarkers(f: TagFile): SeratoMarkers | null {
 function readerFor(ext: string): ((f: TagFile) => SeratoMarkers | null) | null {
   if (ID3_EXTENSIONS.has(ext)) return id3Markers
   if (ext === '.flac') return flacMarkers
-  if (ext === '.m4a') return m4aMarkers
+  if (ext === '.m4a' || ext === '.mp4') return m4aMarkers
   return null
 }
 
