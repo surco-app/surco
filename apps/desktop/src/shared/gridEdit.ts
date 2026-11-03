@@ -15,7 +15,6 @@ const CONSTANT_TOLERANCE_MS = 2
 const SAME_TEMPO_RATIO = 0.01
 
 const periodOf = (bpm: number): number => 60000 / bpm
-const hundredths = (n: number): number => Math.round(n * 100) / 100
 const barBeat = (k: number): number => (((k % 4) + 4) % 4) + 1
 
 export function editableGridOf(beats: { ms: number; beat: number }[]): EditableGrid | null {
@@ -35,7 +34,8 @@ export function editableGridOf(beats: { ms: number; beat: number }[]): EditableG
     return null
   const downbeat = beats.find((b) => b.beat === 1)
   const anchorMs = downbeat ? downbeat.ms : beats[0].ms + ((5 - beats[0].beat) % 4) * period
-  return { bpm: hundredths(periodOf(period)), anchorMs }
+  if (beats.some((b) => b.beat !== barBeat(Math.round((b.ms - anchorMs) / period)))) return null
+  return { bpm: periodOf(period), anchorMs }
 }
 
 export function gridBeats(grid: EditableGrid, durationMs: number): { ms: number; beat: number }[] {
@@ -55,6 +55,18 @@ export function retempoGrid(grid: EditableGrid, bpm: number, pivotMs: number): E
   const old = periodOf(grid.bpm)
   const k = Math.round((pivotMs - grid.anchorMs) / old)
   return { bpm, anchorMs: grid.anchorMs + k * old - k * periodOf(bpm) }
+}
+
+export function scaleGrid(grid: EditableGrid, factor: 2 | 0.5): EditableGrid | null {
+  const bpm = grid.bpm * factor
+  return bpm < GRID_BPM_MIN || bpm > GRID_BPM_MAX ? null : { bpm, anchorMs: grid.anchorMs }
+}
+
+const SAME_EPSILON = 1e-6
+
+export function sameGrid(a: EditableGrid | null, b: EditableGrid | null): boolean {
+  if (a === null || b === null) return a === b
+  return Math.abs(a.bpm - b.bpm) < SAME_EPSILON && Math.abs(a.anchorMs - b.anchorMs) < SAME_EPSILON
 }
 
 export function downbeatAt(grid: EditableGrid, ms: number): EditableGrid {

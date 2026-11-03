@@ -1042,7 +1042,8 @@
         "end": "al final",
         "unmeasured": "La rejilla de este programa aún no se puede ajustar en Surco",
         "provisional": "rekordbox aún no ha analizado esta pista, no hay rejilla que ajustar",
-        "varying": "Rejilla con varios tempos, se ajusta en el programa"
+        "varying": "Rejilla con varios tempos, se ajusta en el programa",
+        "surcoDraft": "Estos cues se pusieron sobre la rejilla de Surco. Guárdalos o descártalos para ajustar la rejilla"
       }
     }
   },

@@ -7,6 +7,7 @@ import {
   type DraftAction,
   type DraftCue,
   draftDrops,
+  draftGridChanged,
   draftPoints,
   freeLetters,
   ghostOf,
@@ -1169,5 +1170,18 @@ describe('the beat grid in the draft', () => {
     expect(once.grid).toEqual({ bpm: 150, anchorMs: 46 })
     expect(once.cues).toBe(marked.cues)
     expect(run(once, { type: 'undo' }).cues).toHaveLength(0)
+  })
+
+  it('tells a moved grid from the one it started on, and calls a move undone by hand no change', () => {
+    const start = withGrid()
+    expect(draftGridChanged(start)).toBe(false)
+    const moved = run(start, { type: 'set-grid', grid: { bpm: 150, anchorMs: 46.1 } })
+    expect(draftGridChanged(moved)).toBe(true)
+    const back = run(moved, { type: 'set-grid', grid: { bpm: 150, anchorMs: 46.1 - 0.1 } })
+    expect(draftGridChanged(back)).toBe(false)
+  })
+
+  it('never calls a grid changed when there was none to start from', () => {
+    expect(draftGridChanged(empty())).toBe(false)
   })
 })

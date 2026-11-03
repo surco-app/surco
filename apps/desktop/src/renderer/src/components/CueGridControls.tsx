@@ -9,6 +9,7 @@ import {
   GRID_BPM_MIN,
   type GridFit,
   retempoGrid,
+  scaleGrid,
   shiftGrid,
 } from '../../../shared/gridEdit'
 import { formatFixed } from '../lib/numberFormat'
@@ -44,6 +45,7 @@ export function CueGridControls({
   needsFix,
   playheadMs,
   onChange,
+  onDone,
 }: {
   grid: EditableGrid | null
   disabledReason: string | null
@@ -51,30 +53,54 @@ export function CueGridControls({
   needsFix: boolean
   playheadMs: number
   onChange: (grid: EditableGrid) => void
+  onDone?: () => void
 }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const [menu, setMenu] = useState(false)
   const [typed, setTyped] = useState('')
   const input = useRef<HTMLInputElement>(null)
+  const menuRoot = useRef<HTMLDivElement>(null)
+  const closeMenu = useRef(() => {})
+  closeMenu.current = () => {
+    setMenu(false)
+    onDone?.()
+  }
   useEffect(() => {
-    if (menu) input.current?.select()
+    if (!menu) return
+    input.current?.select()
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.stopPropagation()
+      closeMenu.current()
+    }
+    const onDown = (e: MouseEvent) => {
+      if (!menuRoot.current?.contains(e.target as Node)) closeMenu.current()
+    }
+    document.addEventListener('keydown', onKey, true)
+    document.addEventListener('mousedown', onDown)
+    return () => {
+      document.removeEventListener('keydown', onKey, true)
+      document.removeEventListener('mousedown', onDown)
+    }
   }, [menu])
   const off = disabledReason !== null || grid === null
   const bpm = grid?.bpm ?? 0
   const retempo = (next: number): EditableGrid | null =>
-    grid ? retempoGrid(grid, hundredths(next), playheadMs) : null
+    grid ? retempoGrid(grid, next, playheadMs) : null
+  const scale = (factor: 2 | 0.5): EditableGrid | null => (grid ? scaleGrid(grid, factor) : null)
   const apply = (next: EditableGrid | null) => {
     if (next) onChange(next)
   }
   const shift = (dir: 1 | -1) => (e: React.MouseEvent) => {
     if (grid) onChange(shiftGrid(grid, dir * (e.shiftKey ? BIG_STEP_MS : 1)))
   }
-  const openMenu = () => {
+  const toggleMenu = () => {
+    if (menu) return closeMenu.current()
     setTyped(formatFixed(bpm, 2, i18n.language))
     setMenu(true)
   }
   const fromMenu = (next: EditableGrid | null) => {
-    setMenu(false)
+    closeMenu.current()
     apply(next)
   }
 
@@ -85,13 +111,13 @@ export function CueGridControls({
       title={disabledReason ?? undefined}
       className="flex items-center gap-0.5"
     >
-      <div className="relative">
+      <div ref={menuRoot} className="relative">
         <button
           type="button"
           data-testid="cues-grid-bpm"
           aria-label={tr('editor.cues.grid.bpm')}
           disabled={off}
-          onClick={openMenu}
+          onClick={toggleMenu}
           className="press flex h-7 w-[62px] items-center justify-center rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] text-xs font-semibold tabular-nums text-fg disabled:opacity-40"
         >
           {grid ? formatFixed(bpm, 2, i18n.language) : '–'}
@@ -110,8 +136,8 @@ export function CueGridControls({
                 value={typed}
                 onChange={(e) => setTyped(e.target.value)}
                 onKeyDown={(e) => {
+                  if (e.key === 'Escape') return
                   e.stopPropagation()
-                  if (e.key === 'Escape') setMenu(false)
                   if (e.key !== 'Enter') return
                   const value = parseBpm(typed)
                   fromMenu(value === null ? null : retempo(value))
@@ -123,7 +149,7 @@ export function CueGridControls({
               type="button"
               data-testid="cues-grid-double"
               disabled={bpm * 2 > GRID_BPM_MAX}
-              onClick={() => fromMenu(retempo(bpm * 2))}
+              onClick={() => fromMenu(scale(2))}
               className={MENU_ITEM}
             >
               {tr('editor.cues.grid.double')}
@@ -132,7 +158,7 @@ export function CueGridControls({
               type="button"
               data-testid="cues-grid-half"
               disabled={bpm / 2 < GRID_BPM_MIN}
-              onClick={() => fromMenu(retempo(bpm / 2))}
+              onClick={() => fromMenu(scale(0.5))}
               className={MENU_ITEM}
             >
               {tr('editor.cues.grid.half')}

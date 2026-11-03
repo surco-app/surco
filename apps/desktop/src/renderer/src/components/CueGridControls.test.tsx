@@ -13,6 +13,7 @@ beforeEach(async () => {
 
 function setup(over: Partial<React.ComponentProps<typeof CueGridControls>> = {}) {
   const onChange = vi.fn<(grid: EditableGrid) => void>()
+  const onDone = vi.fn<() => void>()
   render(
     <CueGridControls
       grid={{ bpm: 150, anchorMs: 46 }}
@@ -21,10 +22,11 @@ function setup(over: Partial<React.ComponentProps<typeof CueGridControls>> = {})
       needsFix={false}
       playheadMs={4046}
       onChange={onChange}
+      onDone={onDone}
       {...over}
     />,
   )
-  return onChange
+  return Object.assign(onChange, { onDone })
 }
 
 const lastGrid = (onChange: ReturnType<typeof setup>) => onChange.mock.calls.at(-1)?.[0]
@@ -55,10 +57,10 @@ describe('CueGridControls', () => {
     const beatAtPlayhead = (grid: EditableGrid | undefined) =>
       gridBeats(grid as EditableGrid, 20000).some((b) => Math.abs(b.ms - 4046) < 0.5)
     fireEvent.click(screen.getByTestId('cues-grid-widen'))
-    expect(lastGrid(onChange)?.bpm).toBe(149.99)
+    expect(lastGrid(onChange)?.bpm).toBeCloseTo(149.99, 6)
     expect(beatAtPlayhead(lastGrid(onChange))).toBe(true)
     fireEvent.click(screen.getByTestId('cues-grid-narrow'))
-    expect(lastGrid(onChange)?.bpm).toBe(150.01)
+    expect(lastGrid(onChange)?.bpm).toBeCloseTo(150.01, 6)
     expect(beatAtPlayhead(lastGrid(onChange))).toBe(true)
   })
 
@@ -103,10 +105,10 @@ describe('CueGridControls', () => {
     const onChange = setup()
     fireEvent.click(screen.getByTestId('cues-grid-bpm'))
     fireEvent.click(screen.getByTestId('cues-grid-double'))
-    expect(lastGrid(onChange)?.bpm).toBe(300)
+    expect(lastGrid(onChange)).toEqual({ bpm: 300, anchorMs: 46 })
     fireEvent.click(screen.getByTestId('cues-grid-bpm'))
     fireEvent.click(screen.getByTestId('cues-grid-half'))
-    expect(lastGrid(onChange)?.bpm).toBe(75)
+    expect(lastGrid(onChange)).toEqual({ bpm: 75, anchorMs: 46 })
   })
 
   it('disables doubling past 300 BPM and halving below 40', () => {
@@ -158,4 +160,50 @@ describe('CueGridControls', () => {
     expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
     expect(screen.getByTestId('cues-grid-left')).toBeDisabled()
   })
+
+  it('closes the BPM menu on a click outside it, like the other menus of the deck', () => {
+    setup()
+    fireEvent.click(screen.getByTestId('cues-grid-bpm'))
+    fireEvent.mouseDown(document.body)
+    expect(screen.queryByTestId('cues-grid-bpm-menu')).not.toBeInTheDocument()
+  })
+
+  it('closes the BPM menu when its button is pressed again', () => {
+    setup()
+    fireEvent.click(screen.getByTestId('cues-grid-bpm'))
+    fireEvent.click(screen.getByTestId('cues-grid-bpm'))
+    expect(screen.queryByTestId('cues-grid-bpm-menu')).not.toBeInTheDocument()
+  })
+
+  it('closes the BPM menu with Escape from any of its items, not only the field', () => {
+    setup()
+    fireEvent.click(screen.getByTestId('cues-grid-bpm'))
+    fireEvent.keyDown(screen.getByTestId('cues-grid-double'), { key: 'Escape' })
+    expect(screen.queryByTestId('cues-grid-bpm-menu')).not.toBeInTheDocument()
+  })
+
+  it.each([
+    [
+      'Enter',
+      () => {
+        const input = screen.getByTestId('cues-grid-bpm-input')
+        fireEvent.change(input, { target: { value: '151' } })
+        fireEvent.keyDown(input, { key: 'Enter' })
+      },
+    ],
+    [
+      'Escape',
+      () => fireEvent.keyDown(screen.getByTestId('cues-grid-bpm-input'), { key: 'Escape' }),
+    ],
+    ['×2', () => fireEvent.click(screen.getByTestId('cues-grid-double'))],
+    ['a click outside', () => fireEvent.mouseDown(document.body)],
+  ])(
+    'hands the keys back to the editor when the BPM menu closes with %s, so Space and the arrows work at once',
+    (_how, close) => {
+      const { onDone } = setup()
+      fireEvent.click(screen.getByTestId('cues-grid-bpm'))
+      close()
+      expect(onDone).toHaveBeenCalled()
+    },
+  )
 })

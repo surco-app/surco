@@ -1724,4 +1724,62 @@ describe('CuesSection maximized grid', () => {
     await ready()
     expect(screen.queryByTestId('cues-grid')).toBeNull()
   })
+
+  it('draws the program grid exactly as it is on a track nobody touched, not one rebuilt from its tempo', async () => {
+    const jittered = GRID.map((b) => (b.ms === 2000 ? { ...b, ms: 2001 } : b))
+    setup(null, { ...READ, grid: jittered })
+    await maximize()
+    expect(bars()).toContain(2001)
+    expect(bars()).not.toContain(2000)
+  })
+
+  it('shows the grid rekordbox has now when the DJ comes back to a track with only cue changes, never the old one', async () => {
+    const rekordboxTrackCues = vi.fn<Api['rekordboxTrackCues']>(async (id) => ({
+      ...READ,
+      contentId: id,
+    }))
+    installApi({
+      rekordboxTrackCues,
+      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
+      rekordboxCueWaveDetail: vi.fn<Api['rekordboxCueWaveDetail']>(async () => null),
+    })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const tree = (contentId: string) => (
+      <QueryClientProvider client={client}>
+        <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine' }}>
+          <CuesSection
+            cue={{ contentId, path: `/m/${contentId}.wav`, label: contentId }}
+            open
+            onToggle={vi.fn()}
+            track={TRACK}
+          />
+        </SettingsProvider>
+      </QueryClientProvider>
+    )
+    const { rerender } = render(tree('103'))
+    await maximize()
+    key('m')
+    rerender(tree('104'))
+    await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())
+    rekordboxTrackCues.mockImplementation(async (id) => ({
+      ...READ,
+      contentId: id,
+      grid: GRID.map((b) => ({ ...b, ms: b.ms + 100 })),
+    }))
+    client.removeQueries({ queryKey: ['rekordbox-track-cues', '103'] })
+    rerender(tree('103'))
+    await waitFor(() => expect(bars()).toContain(2100))
+    expect(bars()).not.toContain(2000)
+  })
+
+  it('gives the keys back to the editor when the BPM menu closes, so Space plays at once', async () => {
+    setup()
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-grid-bpm'))
+    const input = screen.getByTestId('cues-grid-bpm-input')
+    input.focus()
+    fireEvent.keyDown(input, { key: 'Escape' })
+    expect(document.activeElement).toBe(editor())
+    expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true')
+  })
 })

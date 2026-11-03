@@ -6,6 +6,8 @@ import {
   gridBeats,
   gridOffsets,
   retempoGrid,
+  sameGrid,
+  scaleGrid,
   shiftGrid,
 } from './gridEdit'
 
@@ -17,11 +19,23 @@ const constantBeats = (bpm: number, from: number, count: number, firstBeat = 1) 
 
 describe('editableGridOf', () => {
   it('reads a constant rekordbox grid as its BPM and the first downbeat, so every edit starts from what the DJ has', () => {
-    expect(editableGridOf(constantBeats(150, 46, 400))).toEqual({ bpm: 150, anchorMs: 46 })
+    const grid = editableGridOf(constantBeats(150, 46, 400))
+    expect(grid?.bpm).toBeCloseTo(150, 3)
+    expect(grid?.anchorMs).toBe(46)
   })
 
   it('keeps the hundredth of a BPM that rekordbox stores, because a 0.01 error is the drift the DJ came to fix', () => {
-    expect(editableGridOf(constantBeats(150.04, 46, 400))?.bpm).toBe(150.04)
+    expect(editableGridOf(constantBeats(150.04, 46, 400))?.bpm).toBeCloseTo(150.04, 3)
+  })
+
+  it('keeps the fractions of a BPM that Traktor and Engine store, since rounding them drifts the grid 10 ms over a track', () => {
+    expect(editableGridOf(constantBeats(127.9966, 46, 760))?.bpm).toBeCloseTo(127.9966, 3)
+  })
+
+  it('refuses a constant tempo whose bars restart mid-track, because renumbering it would erase the DJ downbeat', () => {
+    const beats = constantBeats(150, 46, 400)
+    const restarted = beats.map((b, i) => (i < 200 ? b : { ...b, beat: ((i + 1) % 4) + 1 }))
+    expect(editableGridOf(restarted)).toBeNull()
   })
 
   it('anchors on the first downbeat even when the grid starts mid-bar', () => {
@@ -123,5 +137,33 @@ describe('gridOffsets', () => {
     )
     expect(hereMs).toBe(0)
     expect(Math.abs(endMs + 23)).toBeLessThanOrEqual(1)
+  })
+})
+
+describe('scaleGrid', () => {
+  it('keeps the old downbeat a downbeat when doubling, so the bar stays where the DJ had it', () => {
+    expect(scaleGrid({ bpm: 120, anchorMs: 0 }, 2)).toEqual({ bpm: 240, anchorMs: 0 })
+  })
+
+  it('turns the old beats 1 and 3 into the new 1 and 2 when halving', () => {
+    const half = scaleGrid({ bpm: 120, anchorMs: 0 }, 0.5)
+    expect(half).toEqual({ bpm: 60, anchorMs: 0 })
+    expect(gridBeats(half as NonNullable<typeof half>, 4100).map((b) => b.ms)).toEqual([
+      0, 1000, 2000, 3000, 4000,
+    ])
+  })
+
+  it('refuses to leave 40 to 300 BPM', () => {
+    expect(scaleGrid({ bpm: 175, anchorMs: 0 }, 2)).toBeNull()
+    expect(scaleGrid({ bpm: 70, anchorMs: 0 }, 0.5)).toBeNull()
+  })
+})
+
+describe('sameGrid', () => {
+  it('treats a nudge and its reverse as no change, though the float sum is off by a hair', () => {
+    expect(sameGrid({ bpm: 150, anchorMs: 0.1 + 1 - 1 }, { bpm: 150, anchorMs: 0.1 })).toBe(true)
+    expect(sameGrid({ bpm: 150, anchorMs: 1 }, { bpm: 150, anchorMs: 0 })).toBe(false)
+    expect(sameGrid(null, null)).toBe(true)
+    expect(sameGrid({ bpm: 150, anchorMs: 0 }, null)).toBe(false)
   })
 })

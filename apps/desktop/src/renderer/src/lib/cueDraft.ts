@@ -15,7 +15,7 @@ import {
   type StrongPart,
   type WantedCue,
 } from '../../../shared/cueRules'
-import type { EditableGrid } from '../../../shared/gridEdit'
+import { type EditableGrid, sameGrid } from '../../../shared/gridEdit'
 import { HOT_CUE_DEFAULT_INDEX } from '../../../shared/rekordboxCueColors'
 
 export interface DraftCue extends WantedCue {
@@ -51,6 +51,7 @@ export interface CueDraft {
   marked: string[]
   nextKey: number
   grid: EditableGrid | null
+  baseGrid: EditableGrid | null
 }
 
 export interface DraftContext {
@@ -108,7 +109,12 @@ export function startDraft(
     marked: [],
     nextKey: cues.length,
     grid,
+    baseGrid: grid,
   }
+}
+
+export function draftGridChanged(state: CueDraft): boolean {
+  return state.grid !== null && !sameGrid(state.grid, state.baseGrid)
 }
 
 export function draftDrops(cues: DraftCue[], locked: string[] = []): number[] {

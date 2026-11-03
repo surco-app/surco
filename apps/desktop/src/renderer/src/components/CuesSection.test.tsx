@@ -1222,6 +1222,26 @@ describe('CuesSection on a track rekordbox has not analysed', () => {
     expect(reqs[0].provisional).toBe(true)
   })
 
+  it("keeps the grid row off on a draft marked on Surco's grid after rekordbox analysed the track, and says why", async () => {
+    const { rekordboxTrackCues, changeTrack, client } = setup(UNANALYSED, null, undefined, {
+      rekordboxSurcoGrid: surcoGrid(),
+    })
+    await ready()
+    markAt(bar(64))
+    rekordboxTrackCues.mockResolvedValue(READ)
+    changeTrack({ contentId: '104', path: '/m/h.wav', label: 'Other' })
+    await ready()
+    client.removeQueries({ queryKey: ['rekordbox-track-cues', '103'] })
+    changeTrack({ contentId: '103', path: '/m/g.wav', label: 'Gowan' })
+    await ready()
+    await openFull()
+    expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByTestId('cues-grid')).toHaveAttribute(
+      'title',
+      expect.stringMatching(/Surco grid/),
+    )
+  })
+
   it("says the grid is Surco's and shows the tempo it measured", async () => {
     setup(UNANALYSED, null, undefined, { rekordboxSurcoGrid: surcoGrid() })
     await ready()

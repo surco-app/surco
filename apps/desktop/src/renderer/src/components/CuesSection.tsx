@@ -51,6 +51,7 @@ import {
   type DraftContext,
   type DraftCue,
   type DraftGhost,
+  draftGridChanged,
   draftPoints,
   ghostOf,
   reduceDraft,
@@ -465,8 +466,9 @@ function Editing({
       ),
   )
   const grid = useMemo(
-    () => (state.grid ? gridBeats(state.grid, read.durationMs) : read.grid),
-    [state.grid, read],
+    () =>
+      state.grid && draftGridChanged(state) ? gridBeats(state.grid, read.durationMs) : read.grid,
+    [state, read],
   )
   const ctx = useMemo(
     () => ({
@@ -481,21 +483,6 @@ function Editing({
     [grid, read, flows, quantize, settings.cueLettersByTime, cue.contentId],
   )
   ctxRef.current = ctx
-  const gridOff =
-    programOf(cue.contentId) !== 'rekordbox'
-      ? tr('editor.cues.grid.unmeasured')
-      : provisional
-        ? tr('editor.cues.grid.provisional')
-        : state.grid === null
-          ? tr('editor.cues.grid.varying')
-          : null
-  const gridFit = useGridFit(cue.contentId, maximized && gridOff === null)
-  const offsets =
-    gridFit && state.grid ? gridOffsets(state.grid, gridFit, playheadMs, read.durationMs) : null
-  const tolerance = settings.cueGridTolerance
-  const needsFix =
-    offsets !== null && Math.max(Math.abs(offsets.hereMs), Math.abs(offsets.endMs)) > tolerance
-  const setGrid = (next: EditableGrid) => dispatch({ type: 'set-grid', grid: next })
   // A draft set on Surco's grid stays on it when rekordbox analyses the track meanwhile, so
   // its save still asks main to move the cues onto rekordbox's beats.
   const [onSurcoGrid] = useState(
@@ -503,6 +490,23 @@ function Editing({
       provisional !== undefined ||
       (keptDraftOn(cue.contentId, read, queued) !== undefined && keptOnSurcoGrid(cue.contentId)),
   )
+  const gridOff =
+    programOf(cue.contentId) !== 'rekordbox'
+      ? tr('editor.cues.grid.unmeasured')
+      : provisional
+        ? tr('editor.cues.grid.provisional')
+        : onSurcoGrid
+          ? tr('editor.cues.grid.surcoDraft')
+          : state.grid === null
+            ? tr('editor.cues.grid.varying')
+            : null
+  const gridFit = useGridFit(cue.contentId, maximized && gridOff === null)
+  const offsets =
+    gridFit && state.grid ? gridOffsets(state.grid, gridFit, playheadMs, read.durationMs) : null
+  const tolerance = settings.cueGridTolerance
+  const needsFix =
+    offsets !== null && Math.max(Math.abs(offsets.hereMs), Math.abs(offsets.endMs)) > tolerance
+  const setGrid = (next: EditableGrid) => dispatch({ type: 'set-grid', grid: next })
   const [menu, setMenu] = useState<{ ms: number; x: number; y: number } | null>(null)
   const [markMenu, setMarkMenu] = useState<{
     key: string
@@ -658,9 +662,7 @@ function Editing({
   const focusEditor = useCallback(() => editorRef.current?.focus(), [])
   const wanted = wantedOfDraft(state.cues)
   const clearable = state.cues.some((c) => !state.locked.includes(c.key))
-  const unchanged =
-    JSON.stringify(wanted) === JSON.stringify(baseline) &&
-    JSON.stringify(state.grid) === JSON.stringify(programGrid)
+  const unchanged = JSON.stringify(wanted) === JSON.stringify(baseline) && !draftGridChanged(state)
   const [overwrite, setOverwrite] = useState<ReadonlySet<string>>(new Set())
   const own = { contentId: cue.contentId, path: cue.path, label: cue.label, draft: state }
   const flowMarked = !provisional && !unchanged && Object.keys(state.origin).length > 0
@@ -1754,6 +1756,7 @@ function Editing({
               needsFix={needsFix}
               playheadMs={playheadMs}
               onChange={setGrid}
+              onDone={focusEditor}
             />
           }
         />

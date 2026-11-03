@@ -1042,7 +1042,8 @@
         "end": "am Ende",
         "unmeasured": "Das Raster dieses Programms lässt sich in Surco noch nicht anpassen",
         "provisional": "rekordbox hat diesen Titel noch nicht analysiert, es gibt kein Raster",
-        "varying": "Raster mit mehreren Tempi, im Programm anpassen"
+        "varying": "Raster mit mehreren Tempi, im Programm anpassen",
+        "surcoDraft": "Diese Cues wurden auf dem Surco-Raster gesetzt. Speichere oder verwirf sie, um das Raster anzupassen"
       }
     }
   },
