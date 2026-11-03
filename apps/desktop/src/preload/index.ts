@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { AudioAnalysisIpc, PeekableAnalyses } from '../shared/audioIpcContract'
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
 import type { DropInput } from '../shared/dropDetect'
+import type { GridFit } from '../shared/gridEdit'
 import type {
   ActivityEvent,
   AppleMusicLookupCandidate,
@@ -256,6 +257,8 @@ const api: Api = {
     ipcRenderer.invoke('rekordbox:auditionLead', contentId),
   rekordboxSurcoGrid: (contentId: string): Promise<SurcoGrid | null> =>
     ipcRenderer.invoke('rekordbox:surcoGrid', contentId),
+  rekordboxGridFit: (contentId: string): Promise<GridFit | null> =>
+    ipcRenderer.invoke('rekordbox:gridFit', contentId),
   rowWaves: (requests: RowWaveRequest[]): Promise<Record<string, number[]>> =>
     ipcRenderer.invoke('list:rowWaves', requests),
   rekordboxCountCompletable: (): Promise<number> =>

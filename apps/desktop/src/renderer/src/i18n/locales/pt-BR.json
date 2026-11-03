@@ -917,7 +917,8 @@
         "undo": "desfazer",
         "redo": "refazer",
         "zoom": "zoom",
-        "esc": "fechar o menu aberto"
+        "esc": "fechar o menu aberto",
+        "grid": "Mover a grade"
       },
       "resetColour": "Redefinir",
       "saveShort": "Salvar",
@@ -1036,7 +1037,12 @@
         "narrow": "Fechar a grade, sobe o BPM",
         "downbeat": "Tempo 1 do compasso no cursor",
         "auto": "Auto",
-        "autoHint": "Ajustar a grade às batidas"
+        "autoHint": "Ajustar a grade às batidas",
+        "here": "Grade aqui",
+        "end": "no final",
+        "unmeasured": "A grade deste programa ainda não pode ser ajustada no Surco",
+        "provisional": "O rekordbox ainda não analisou esta faixa, não há grade para ajustar",
+        "varying": "Grade com vários andamentos, ajuste no programa"
       }
     }
   },

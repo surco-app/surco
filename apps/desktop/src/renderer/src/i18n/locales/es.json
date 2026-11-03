@@ -917,7 +917,8 @@
         "undo": "deshacer",
         "redo": "rehacer",
         "zoom": "zoom",
-        "esc": "cerrar el menú abierto"
+        "esc": "cerrar el menú abierto",
+        "grid": "Mover la rejilla"
       },
       "resetColour": "Restablecer",
       "saveShort": "Guardar",
@@ -1036,7 +1037,12 @@
         "narrow": "Cerrar la rejilla, sube el BPM",
         "downbeat": "El 1 del compás en el cabezal",
         "auto": "Auto",
-        "autoHint": "Ajustar la rejilla a los golpes"
+        "autoHint": "Ajustar la rejilla a los golpes",
+        "here": "Rejilla aquí",
+        "end": "al final",
+        "unmeasured": "La rejilla de este programa aún no se puede ajustar en Surco",
+        "provisional": "rekordbox aún no ha analizado esta pista, no hay rejilla que ajustar",
+        "varying": "Rejilla con varios tempos, se ajusta en el programa"
       }
     }
   },

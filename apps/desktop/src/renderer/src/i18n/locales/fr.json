@@ -917,7 +917,8 @@
         "undo": "annuler",
         "redo": "rétablir",
         "zoom": "zoom",
-        "esc": "fermer le menu ouvert"
+        "esc": "fermer le menu ouvert",
+        "grid": "Déplacer la grille"
       },
       "resetColour": "Réinitialiser",
       "saveShort": "Enregistrer",
@@ -1036,7 +1037,12 @@
         "narrow": "Resserrer la grille, monte le BPM",
         "downbeat": "Premier temps sur la tête de lecture",
         "auto": "Auto",
-        "autoHint": "Caler la grille sur les temps"
+        "autoHint": "Caler la grille sur les temps",
+        "here": "Grille ici",
+        "end": "à la fin",
+        "unmeasured": "La grille de ce logiciel ne se règle pas encore dans Surco",
+        "provisional": "rekordbox n'a pas encore analysé ce morceau, il n'y a pas de grille à régler",
+        "varying": "Grille à plusieurs tempos, réglez-la dans le logiciel"
       }
     }
   },

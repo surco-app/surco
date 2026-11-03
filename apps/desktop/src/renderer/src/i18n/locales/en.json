@@ -917,7 +917,8 @@
         "undo": "undo",
         "redo": "redo",
         "zoom": "zoom",
-        "esc": "close the open menu"
+        "esc": "close the open menu",
+        "grid": "Move the grid"
       },
       "resetColour": "Reset",
       "saveShort": "Save",
@@ -1036,7 +1037,12 @@
         "narrow": "Narrow the grid, raises the BPM",
         "downbeat": "Downbeat at the playhead",
         "auto": "Auto",
-        "autoHint": "Fit the grid to the beats"
+        "autoHint": "Fit the grid to the beats",
+        "here": "Grid here",
+        "end": "at the end",
+        "unmeasured": "This program's grid can't be adjusted in Surco yet",
+        "provisional": "rekordbox hasn't analysed this track yet, there is no grid to adjust",
+        "varying": "Grid with several tempos, adjust it in the program"
       }
     }
   },

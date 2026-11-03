@@ -917,7 +917,8 @@
         "undo": "rückgängig",
         "redo": "wiederholen",
         "zoom": "Zoom",
-        "esc": "das offene Menü schließen"
+        "esc": "das offene Menü schließen",
+        "grid": "Raster verschieben"
       },
       "resetColour": "Zurücksetzen",
       "saveShort": "Speichern",
@@ -1036,7 +1037,12 @@
         "narrow": "Raster verengen, erhöht die BPM",
         "downbeat": "Taktanfang auf den Abspielkopf",
         "auto": "Auto",
-        "autoHint": "Raster an die Schläge anpassen"
+        "autoHint": "Raster an die Schläge anpassen",
+        "here": "Raster hier",
+        "end": "am Ende",
+        "unmeasured": "Das Raster dieses Programms lässt sich in Surco noch nicht anpassen",
+        "provisional": "rekordbox hat diesen Titel noch nicht analysiert, es gibt kein Raster",
+        "varying": "Raster mit mehreren Tempi, im Programm anpassen"
       }
     }
   },

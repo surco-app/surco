@@ -20,6 +20,13 @@ import type { CueQuantize } from '../../../shared/cueQuantize'
 import { BEATS_PER_BAR, nearestBeat, SAME_POSITION_MS } from '../../../shared/cueRules'
 import { type DjProgram, programOf } from '../../../shared/djProgram'
 import type { DropInput, DropProposal } from '../../../shared/dropDetect'
+import {
+  type EditableGrid,
+  editableGridOf,
+  gridBeats,
+  gridOffsets,
+  shiftGrid,
+} from '../../../shared/gridEdit'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import { TRAKTOR_CUE_COLOR } from '../../../shared/traktorContent'
 import type { QueuedCues, SaveCuesRequest, SurcoGrid, TrackCues } from '../../../shared/types'
@@ -30,6 +37,7 @@ import {
   useAuditionLead,
   useCueProfile,
   useCueWaveDetail,
+  useGridFit,
   useQueuedCues,
   useSurcoGrid,
   useTrackCues,
@@ -40,6 +48,7 @@ import type { DetailSource } from '../lib/cueDetail'
 import {
   type CueDraft,
   type DraftAction,
+  type DraftContext,
   type DraftCue,
   type DraftGhost,
   draftPoints,
@@ -92,6 +101,7 @@ import { useAppSettings } from '../lib/settingsContext'
 import { formatShortcut } from '../lib/shortcuts'
 import { claimKeys } from '../lib/spaceClaim'
 import { CueDeck } from './CueDeck'
+import { CueGridControls } from './CueGridControls'
 import { CuePalette } from './CuePalette'
 import { CuePhraseBand } from './CuePhraseBand'
 import { CueWave } from './CueWave'
@@ -238,6 +248,7 @@ function CueKeys({
   }, [open, onClose])
   const mac = isMacOS()
   const shift = formatShortcut(['shift'], mac)
+  const alt = formatShortcut(['alt'], mac)
   const keys: [string, string][] = [
     [tr('editor.cues.keys.space'), tr('editor.cues.keys.play')],
     ['← →', tr('editor.cues.keys.jump', { count: jumpBars })],
@@ -249,6 +260,7 @@ function CueKeys({
     [formatShortcut(['backspace'], mac), tr('editor.cues.keys.remove')],
     [formatShortcut(['mod', 'z'], mac), tr('editor.cues.keys.undo')],
     [formatShortcut(['shift', 'mod', 'z'], mac), tr('editor.cues.keys.redo')],
+    [`${alt}← ${alt}→`, tr('editor.cues.keys.grid')],
     ['+ −', tr('editor.cues.keys.zoom')],
     ['Esc', tr('editor.cues.keys.esc')],
   ]
@@ -429,18 +441,11 @@ function Editing({
   const flows = settings.cueFlows
   const active = activeCueFlow(settings)
   const quantize: CueQuantize = provisional ? 'beat' : settings.cueQuantize
-  const ctx = useMemo(
-    () => ({
-      beats: read.grid.map((b) => b.ms),
-      snapTo: quantizePoints(read.grid, quantize),
-      strong: read.strong,
-      phrases: read.phrases,
-      flows,
-      lettersByTime: settings.cueLettersByTime,
-      slots: cueProgramOf(cue.contentId).slots,
-    }),
-    [read, flows, quantize, settings.cueLettersByTime, cue.contentId],
+  const programGrid = useMemo(
+    () => (provisional ? null : editableGridOf(read.grid)),
+    [read, provisional],
   )
+  const ctxRef = useRef<DraftContext | null>(null)
   const inRekordbox = useMemo(
     () => read.cues.map(({ id, ms, kind, color }) => ({ id, ms, kind, color })),
     [read],
@@ -448,7 +453,7 @@ function Editing({
   const fresh = queued !== null && queued.fingerprint === read.fingerprint
   const baseline = fresh ? queued.wanted : inRekordbox
   const [state, dispatch] = useReducer(
-    (s: CueDraft, a: DraftAction) => reduceDraft(s, a, ctx),
+    (s: CueDraft, a: DraftAction) => reduceDraft(s, a, ctxRef.current as DraftContext),
     undefined,
     () =>
       keptDraftOn(cue.contentId, read, queued) ??
@@ -456,8 +461,41 @@ function Editing({
         baseline,
         active.id,
         read.cues.filter((c) => c.loop).map((c) => c.id),
+        programGrid,
       ),
   )
+  const grid = useMemo(
+    () => (state.grid ? gridBeats(state.grid, read.durationMs) : read.grid),
+    [state.grid, read],
+  )
+  const ctx = useMemo(
+    () => ({
+      beats: grid.map((b) => b.ms),
+      snapTo: quantizePoints(grid, quantize),
+      strong: read.strong,
+      phrases: read.phrases,
+      flows,
+      lettersByTime: settings.cueLettersByTime,
+      slots: cueProgramOf(cue.contentId).slots,
+    }),
+    [grid, read, flows, quantize, settings.cueLettersByTime, cue.contentId],
+  )
+  ctxRef.current = ctx
+  const gridOff =
+    programOf(cue.contentId) !== 'rekordbox'
+      ? tr('editor.cues.grid.unmeasured')
+      : provisional
+        ? tr('editor.cues.grid.provisional')
+        : state.grid === null
+          ? tr('editor.cues.grid.varying')
+          : null
+  const gridFit = useGridFit(cue.contentId, maximized && gridOff === null)
+  const offsets =
+    gridFit && state.grid ? gridOffsets(state.grid, gridFit, playheadMs, read.durationMs) : null
+  const tolerance = settings.cueGridTolerance
+  const needsFix =
+    offsets !== null && Math.max(Math.abs(offsets.hereMs), Math.abs(offsets.endMs)) > tolerance
+  const setGrid = (next: EditableGrid) => dispatch({ type: 'set-grid', grid: next })
   // A draft set on Surco's grid stays on it when rekordbox analyses the track meanwhile, so
   // its save still asks main to move the cues onto rekordbox's beats.
   const [onSurcoGrid] = useState(
@@ -529,8 +567,8 @@ function Editing({
     return kept?.kind === 'none' || kept?.kind === 'marked' ? kept.kind : null
   })
   const proposals = useMemo(
-    () => withoutCallInBar(proposed ?? [], state.cues, read.grid),
-    [proposed, state.cues, read.grid],
+    () => withoutCallInBar(proposed ?? [], state.cues, grid),
+    [proposed, state.cues, grid],
   )
   useEffect(() => {
     if (proposals.length > 0) keepAutoMark(cue.contentId, { kind: 'proposed', proposals })
@@ -550,11 +588,11 @@ function Editing({
     [proposals, acceptAll, state, ctx],
   )
   const proposeFrom = (input: DropInput) => {
-    const found = dropsOnGrid(input, read.grid, taste)
+    const found = dropsOnGrid(input, grid, taste)
     const note =
       found.length === 0
         ? 'none'
-        : withoutCallInBar(found, state.cues, read.grid).length === 0
+        : withoutCallInBar(found, state.cues, grid).length === 0
           ? 'marked'
           : null
     if (note) keepAutoMark(cue.contentId, { kind: note })
@@ -563,7 +601,7 @@ function Editing({
   }
   const autoMark = () => {
     if (!engine) {
-      if (words) proposeFrom({ grid: read.grid, phrases: read.phrases, words })
+      if (words) proposeFrom({ grid, phrases: read.phrases, words })
       return
     }
     setReadingAudio(true)
@@ -620,7 +658,9 @@ function Editing({
   const focusEditor = useCallback(() => editorRef.current?.focus(), [])
   const wanted = wantedOfDraft(state.cues)
   const clearable = state.cues.some((c) => !state.locked.includes(c.key))
-  const unchanged = JSON.stringify(wanted) === JSON.stringify(baseline)
+  const unchanged =
+    JSON.stringify(wanted) === JSON.stringify(baseline) &&
+    JSON.stringify(state.grid) === JSON.stringify(programGrid)
   const [overwrite, setOverwrite] = useState<ReadonlySet<string>>(new Set())
   const own = { contentId: cue.contentId, path: cue.path, label: cue.label, draft: state }
   const flowMarked = !provisional && !unchanged && Object.keys(state.origin).length > 0
@@ -789,6 +829,8 @@ function Editing({
     else if (key.type === 'undo') dispatch({ type: 'undo' })
     else if (key.type === 'redo') dispatch({ type: 'redo' })
     else if (key.type === 'zoom') setZoom((z) => zoomStep(z, key.dir))
+    else if (key.type === 'grid-shift' && state.grid && gridOff === null)
+      setGrid(shiftGrid(state.grid, key.ms))
   }
   const onKey = (e: React.KeyboardEvent) => {
     if (maximized) {
@@ -1094,7 +1136,7 @@ function Editing({
   const strip = (
     <CueWave
       wave={read.wave}
-      grid={read.grid}
+      grid={grid}
       quantize={quantize}
       durationMs={read.durationMs}
       cues={waveCues}
@@ -1117,7 +1159,7 @@ function Editing({
   const detail = (
     <CueWaveDetail
       source={source}
-      grid={read.grid}
+      grid={grid}
       cues={waveCues}
       selected={state.selected}
       playheadMs={playheadMs}
@@ -1397,6 +1439,25 @@ function Editing({
         {tr('editor.cues.clearAll')}
       </button>
       <span className="flex-1" />
+      {offsets && (
+        <span
+          data-testid="cues-grid-offsets"
+          className="flex shrink-0 items-center gap-3 whitespace-nowrap text-xs text-fg-dim"
+        >
+          <GridOffset
+            testid="cues-grid-here"
+            label={tr('editor.cues.grid.here')}
+            ms={offsets.hereMs}
+            tolerance={tolerance}
+          />
+          <GridOffset
+            testid="cues-grid-end"
+            label={tr('editor.cues.grid.end')}
+            ms={offsets.endMs}
+            tolerance={tolerance}
+          />
+        </span>
+      )}
       <span
         data-testid="cues-position"
         className="shrink-0 text-[13px] font-semibold tabular-nums text-fg"
@@ -1685,9 +1746,46 @@ function Editing({
           onJumpBars={(bars) => onJumpBars?.(bars)}
           onQuantize={(unit) => onQuantize?.(unit)}
           onDone={focusEditor}
+          gridControls={
+            <CueGridControls
+              grid={state.grid}
+              disabledReason={gridOff}
+              fit={gridFit}
+              needsFix={needsFix}
+              playheadMs={playheadMs}
+              onChange={setGrid}
+            />
+          }
         />
       )}
     </fieldset>
+  )
+}
+
+const signedMs = (ms: number): string => `${ms > 0 ? '+' : ms < 0 ? '−' : ''}${Math.abs(ms)} ms`
+
+function GridOffset({
+  testid,
+  label,
+  ms,
+  tolerance,
+}: {
+  testid: string
+  label: string
+  ms: number
+  tolerance: number
+}): React.JSX.Element {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span
+        aria-hidden="true"
+        className={`h-1.5 w-1.5 rounded-full ${Math.abs(ms) > tolerance ? 'bg-warn' : 'bg-good'}`}
+      />
+      {label}
+      <span data-testid={testid} className="font-semibold tabular-nums text-fg">
+        {signedMs(ms)}
+      </span>
+    </span>
   )
 }
 
