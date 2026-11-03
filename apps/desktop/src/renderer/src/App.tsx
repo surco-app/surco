@@ -18,11 +18,10 @@ import type { CueJumpBars } from '../../shared/cueJump'
 import type { CueQuantize } from '../../shared/cueQuantize'
 import { effectiveMeta } from '../../shared/customFields'
 import { normalizeImportFields } from '../../shared/defaults'
-import { DJ_PROGRAMS } from '../../shared/djProgram'
+import { DJ_PROGRAMS, type DjProgram } from '../../shared/djProgram'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import { resolveBindings } from '../../shared/shortcutDefaults'
-import { TRAKTOR_BUILT_IN, TRAKTOR_HISTORY } from '../../shared/traktorContent'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
   DeclickConfig,
@@ -196,6 +195,7 @@ import {
 import { hasStagedEdits } from './lib/sessionEdits'
 import { SettingsProvider } from './lib/settingsContext'
 import { formatShortcut } from './lib/shortcuts'
+import { SOURCE_PROGRAMS, SOURCE_READ } from './lib/sourcePrograms'
 import { matchStatKey } from './lib/stats'
 import { ToastProvider, type ToastReporter } from './lib/toastContext'
 import { dismissToast, dismissToastByExpiry, dismissToastByUser, pushToast } from './lib/toastQueue'
@@ -789,18 +789,16 @@ export default function App(): React.JSX.Element {
   )
   // Traktor's tree is organised like rekordbox's once its collection is confirmed in
   // Settings, the only one Surco writes to.
+  const sourceProgram = browser.source === 'appleMusic' ? null : browser.source
+  const sourceEdit = sourceProgram && SOURCE_PROGRAMS[sourceProgram].edit
   const traktorCanSave =
     useQuery({
       queryKey: ['traktor-can-save', settings?.traktorNmlPath ?? ''],
       queryFn: () => window.api.traktorCanSave(),
-      enabled: browser.source === 'traktor',
+      enabled: sourceEdit?.gate === 'traktorCollection',
     }).data === true
   const editableSource =
-    browser.source === 'rekordbox'
-      ? 'rekordbox'
-      : browser.source === 'traktor' && traktorCanSave
-        ? 'traktor'
-        : null
+    sourceEdit && (sourceEdit.gate === 'none' || traktorCanSave) ? sourceProgram : null
   const editRekordbox = useRekordboxEdits(notifyEdit, editableSource ?? 'rekordbox')
   const dropDiscardedPlaylists = useStableCallback((paths: string[]) =>
     setTracks((prev) => discardPlaylistEdits(prev, paths)),
@@ -877,19 +875,26 @@ export default function App(): React.JSX.Element {
   // the notices), so a byte tick never re-renders the app.
   const usbPlatform = isMac || window.api.platform === 'win32'
   const usbAvailable = usbPlatform && browser.sources.includes('rekordbox')
-  const engineUsbAvailable = usbPlatform && browser.source === 'engine' && !browser.libraryMissing
+  const treeUsbProgram =
+    usbPlatform &&
+    sourceProgram &&
+    SOURCE_PROGRAMS[sourceProgram].usb &&
+    browser.sources.includes(sourceProgram) &&
+    !browser.libraryMissing
+      ? sourceProgram
+      : null
   useEffect(() => connectUsbExportFeed(), [])
   const usbPhase = useUsbExportState((s) => s.phase)
   const usbRunning = useUsbExportState(isRunning)
   const [usbModal, setUsbModal] = useState<{
     preselect: string | null
-    source: 'rekordbox' | 'engine'
+    source: DjProgram
   } | null>(null)
   const { list: usbVolumes } = useUsbVolumes(usbAvailable || usbModal?.source === 'engine')
   // Opening after a finished background export starts again at the chooser: its result was
   // already announced.
   const openUsbExport = useCallback(
-    (preselect: string | null = null, source: 'rekordbox' | 'engine' = 'rekordbox') => {
+    (preselect: string | null = null, source: DjProgram = 'rekordbox') => {
       if (!isRunning(usbExportStore.getState()) && usbExportStore.getState().phase !== 'idle')
         usbExportStore.dispatch({ type: 'reset' })
       setUsbModal({ preselect, source })
@@ -912,8 +917,7 @@ export default function App(): React.JSX.Element {
   const usbSource = usbModal?.source ?? 'rekordbox'
   const usbTree = useQuery({
     queryKey: ['source-tree', usbSource],
-    queryFn: () =>
-      usbSource === 'engine' ? window.api.loadEngineTree() : window.api.loadRekordboxTree(),
+    queryFn: () => SOURCE_READ[usbSource].tree(),
     enabled: usbModal !== null,
     staleTime: Number.POSITIVE_INFINITY,
   })
@@ -2498,15 +2502,11 @@ export default function App(): React.JSX.Element {
   const deleteInRekordbox = useStableCallback((node: SourceNode) => {
     void editRekordbox({ kind: 'delete', playlistId: node.id }, node.name)
   })
-  const traktorTop = useMemo(() => new Set((browser.tree ?? []).map((n) => n.id)), [browser.tree])
-  const traktorFixed = useCallback(
-    (node: SourceNode) =>
-      !traktorTop.has(node.id) || !TRAKTOR_BUILT_IN.has(node.name)
-        ? null
-        : node.name === TRAKTOR_HISTORY
-          ? ('locked' as const)
-          : ('tracks-only' as const),
-    [traktorTop],
+  const treeTop = useMemo(() => new Set((browser.tree ?? []).map((n) => n.id)), [browser.tree])
+  const fixedNode = sourceProgram && SOURCE_PROGRAMS[sourceProgram].fixedNode
+  const fixed = useMemo(
+    () => (fixedNode ? (node: SourceNode) => fixedNode(node, treeTop.has(node.id)) : undefined),
+    [fixedNode, treeTop],
   )
   const treeEdit = useMemo(
     () => ({
@@ -2562,7 +2562,7 @@ export default function App(): React.JSX.Element {
           h.node.id !== playlist?.id &&
           h.node.id !== RECENTLY_ADDED_ID &&
           h.node.id !== ALL_TRACKS_ID &&
-          (browser.source !== 'traktor' || traktorFixed(h.node) !== 'locked'),
+          fixed?.(h.node) !== 'locked',
       ),
       openName: crateOpen && playlist ? playlist.name : null,
       canInsertSeparator: browser.canInsertSeparator,
@@ -3250,13 +3250,9 @@ export default function App(): React.JSX.Element {
                     selectedId={browser.playlist?.id ?? null}
                     onSelect={selectPlaylist}
                     edit={editableSource ? treeEdit : undefined}
-                    fixed={browser.source === 'traktor' ? traktorFixed : undefined}
+                    fixed={fixed}
                     onExportUsb={
-                      usbAvailable && browser.source === 'rekordbox'
-                        ? () => openUsbExport()
-                        : engineUsbAvailable
-                          ? () => openUsbExport(null, 'engine')
-                          : undefined
+                      treeUsbProgram ? () => openUsbExport(null, treeUsbProgram) : undefined
                     }
                     newPlaylistRef={newPlaylistRef}
                   />

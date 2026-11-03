@@ -1,12 +1,14 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { DJ_PROGRAMS, type DjProgram } from '../../../shared/djProgram'
 import type {
   RekordboxEditResult,
   RekordboxPlaylistEdit,
   SourcePlaylistEntry,
 } from '../../../shared/types'
 import { editMessage, movedEntries } from '../lib/playlistEdits'
+import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
 
 // Sends one edit to rekordbox and then re-reads what rekordbox holds: the collection is the
 // only truth, so the tree, the open playlist and the separator check are fetched again
@@ -14,12 +16,13 @@ import { editMessage, movedEntries } from '../lib/playlistEdits'
 // snap back during the write); the re-read corrects it if the write was refused.
 export function useRekordboxEdits(
   notify: (text: string, tone: 'neutral' | 'danger') => void,
-  source: 'rekordbox' | 'traktor' = 'rekordbox',
+  source: DjProgram = 'rekordbox',
 ): (edit: RekordboxPlaylistEdit, playlistName: string) => Promise<RekordboxEditResult> {
   const queryClient = useQueryClient()
   const { t: tr } = useTranslation()
   return useCallback(
     async (edit, playlistName) => {
+      const sourceEdit = SOURCE_PROGRAMS[source].edit
       if (edit.kind === 'move') {
         const key = ['source-playlist', source, edit.playlistId]
         // A re-read already in flight (a refocus) carries the order from before the move
@@ -32,10 +35,9 @@ export function useRekordboxEdits(
       }
       let result: RekordboxEditResult
       try {
-        result =
-          source === 'traktor'
-            ? await window.api.editTraktorPlaylist(edit, playlistName)
-            : await window.api.editRekordboxPlaylist(edit, playlistName)
+        result = sourceEdit
+          ? await sourceEdit.save(edit, playlistName)
+          : { applied: false, reason: 'read-only' }
       } catch {
         result = { applied: false, reason: 'write-failed' }
       }
@@ -43,10 +45,11 @@ export function useRekordboxEdits(
         queryClient.invalidateQueries({ queryKey: ['source-tree'] }),
         queryClient.invalidateQueries({ queryKey: ['source-playlist'] }),
         queryClient.invalidateQueries({ queryKey: ['source-separator'] }),
-        queryClient.invalidateQueries({ queryKey: ['rekordbox-membership'] }),
-        queryClient.invalidateQueries({ queryKey: ['traktor-membership'] }),
+        ...DJ_PROGRAMS.filter((p) => SOURCE_PROGRAMS[p].invalidatesOnEdit).map((p) =>
+          queryClient.invalidateQueries({ queryKey: [SOURCE_PROGRAMS[p].membershipKey] }),
+        ),
       ])
-      const message = editMessage(tr, edit, result, playlistName, source)
+      const message = editMessage(tr, edit, result, playlistName, sourceEdit?.messagePrefix)
       if (message) notify(message.text, message.tone)
       return result
     },

@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../../shared/allTracks'
@@ -12,7 +12,7 @@ import {
   musicTree,
   withReadCounts,
 } from '../lib/appleMusicSource'
-import { SOURCE_READ } from '../lib/sourcePrograms'
+import { SOURCE_PROGRAMS, SOURCE_READ } from '../lib/sourcePrograms'
 import { useRekordboxAvailable } from './useRekordboxPlaylists'
 import { useWindowFocus } from './useWindowFocus'
 
@@ -213,11 +213,10 @@ export function useSourceBrowser({
     staleTime: Number.POSITIVE_INFINITY,
   })
 
+  const hasSeparator = program && SOURCE_PROGRAMS[program].separator
   const separator = useQuery({
     queryKey: ['source-separator', source],
-    queryFn: () =>
-      source === 'traktor' ? window.api.traktorHasSeparator() : window.api.rekordboxHasSeparator(),
-    enabled: source === 'rekordbox' || source === 'traktor',
+    queryFn: hasSeparator || skipToken,
     staleTime: Number.POSITIVE_INFINITY,
   })
 
@@ -238,7 +237,8 @@ export function useSourceBrowser({
     queryClient.invalidateQueries({ queryKey: ['source-tree'], predicate: notMusic })
     queryClient.invalidateQueries({ queryKey: ['source-playlist'], predicate: notMusic })
     queryClient.invalidateQueries({ queryKey: ['source-separator'] })
-    for (const p of DJ_PROGRAMS) queryClient.invalidateQueries({ queryKey: [`${p}-membership`] })
+    for (const p of DJ_PROGRAMS)
+      queryClient.invalidateQueries({ queryKey: [SOURCE_PROGRAMS[p].membershipKey] })
   })
 
   return {
@@ -255,7 +255,10 @@ export function useSourceBrowser({
           })
         : shownTree,
     treeFailed: tree.isError,
-    libraryMissing: source === 'engine' && engine.data === false,
+    libraryMissing:
+      program !== null &&
+      SOURCE_PROGRAMS[program].missingLibraryCheck &&
+      { rekordbox, engine: engine.data, traktor: traktor.data }[program] === false,
     entries: entries.data,
     entriesLoading: source !== null && playlist !== null && entries.isPending,
     entriesFailed: source !== null && playlist !== null && entries.isError,

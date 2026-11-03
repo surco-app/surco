@@ -1,5 +1,11 @@
 import type { DjProgram } from '../../../shared/djProgram'
-import type { SourceNode, SourcePlaylistEntry } from '../../../shared/types'
+import { TRAKTOR_BUILT_IN, TRAKTOR_HISTORY } from '../../../shared/traktorContent'
+import type {
+  RekordboxEditResult,
+  RekordboxPlaylistEdit,
+  SourceNode,
+  SourcePlaylistEntry,
+} from '../../../shared/types'
 
 export interface SourceRead {
   available(): Promise<boolean>
@@ -34,5 +40,82 @@ export const SOURCE_READ: Record<DjProgram, SourceRead> = {
     trackCount: () => window.api.engineTrackCount(),
     playlist: (id) => window.api.loadEnginePlaylist(id),
     membership: (paths) => window.api.engineMembership(paths),
+  },
+}
+
+export interface SourceEdit {
+  save(edit: RekordboxPlaylistEdit, label?: string): Promise<RekordboxEditResult>
+  messagePrefix: string
+  gate: 'none' | 'traktorCollection'
+}
+
+export type FixedNode = 'locked' | 'tracks-only' | null
+
+export interface SourceProgram {
+  separator: (() => Promise<boolean>) | null
+  edit: SourceEdit | null
+  fixedNode: ((node: SourceNode, atRoot: boolean) => FixedNode) | null
+  usb: boolean
+  missingLibraryCheck: boolean
+  trackFlag: 'fromRekordbox' | 'fromTraktor' | 'fromEngine' | null
+  fillsLoaded: boolean
+  addsUncollected: boolean
+  fieldTestIdPrefix: string
+  membershipKey: string
+  invalidatesOnEdit: boolean
+}
+
+export const SOURCE_PROGRAMS: Record<DjProgram, SourceProgram> = {
+  rekordbox: {
+    separator: () => window.api.rekordboxHasSeparator(),
+    edit: {
+      save: (edit, label) => window.api.editRekordboxPlaylist(edit, label),
+      messagePrefix: 'sources.edit.',
+      gate: 'none',
+    },
+    fixedNode: null,
+    usb: true,
+    missingLibraryCheck: false,
+    trackFlag: 'fromRekordbox',
+    fillsLoaded: true,
+    addsUncollected: true,
+    fieldTestIdPrefix: '',
+    membershipKey: 'rekordbox-membership',
+    invalidatesOnEdit: true,
+  },
+  traktor: {
+    separator: () => window.api.traktorHasSeparator(),
+    edit: {
+      save: (edit, label) => window.api.editTraktorPlaylist(edit, label),
+      messagePrefix: 'sources.editTraktor.',
+      gate: 'traktorCollection',
+    },
+    fixedNode: (node, atRoot) =>
+      !atRoot || !TRAKTOR_BUILT_IN.has(node.name)
+        ? null
+        : node.name === TRAKTOR_HISTORY
+          ? 'locked'
+          : 'tracks-only',
+    usb: false,
+    missingLibraryCheck: false,
+    trackFlag: 'fromTraktor',
+    fillsLoaded: false,
+    addsUncollected: false,
+    fieldTestIdPrefix: 'traktor-',
+    membershipKey: 'traktor-membership',
+    invalidatesOnEdit: true,
+  },
+  engine: {
+    separator: null,
+    edit: null,
+    fixedNode: null,
+    usb: true,
+    missingLibraryCheck: true,
+    trackFlag: null,
+    fillsLoaded: false,
+    addsUncollected: false,
+    fieldTestIdPrefix: 'engine-',
+    membershipKey: 'engine-membership',
+    invalidatesOnEdit: false,
   },
 }

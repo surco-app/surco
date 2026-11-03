@@ -23,6 +23,7 @@ import { withReviewedFields } from '../lib/reviewedFields'
 import { searchFromTags } from '../lib/search'
 import { deselect, type Selection } from '../lib/selection'
 import { hasStagedEdits } from '../lib/sessionEdits'
+import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
 import type { TrackItem } from '../types'
 import { clearMaximizedSection } from './useEditorSections'
 import { useStableCallback } from './useStableCallback'
@@ -912,8 +913,8 @@ export function useTrackLibrary({
     for (const e of entries) if (e.path && !e.separator) listedBySource.current.add(same(e.path))
     // The library behind the rows, for the ones that point at the file by path: rows it
     // lists keep their file name, and their preview follows what the library now holds.
-    const libraryFlag =
-      source === 'rekordbox' ? 'fromRekordbox' : source === 'traktor' ? 'fromTraktor' : null
+    const program = source === 'appleMusic' ? null : SOURCE_PROGRAMS[source]
+    const libraryFlag = program?.trackFlag
     if (libraryFlag) {
       const previewOf = new Map(
         entries.flatMap((e) =>
@@ -950,7 +951,7 @@ export function useTrackLibrary({
     // per opening (the caller says which): every edit re-reads the playlist, and a gap the
     // user cleared must not come back on the next reorder. Rows still reading their tags
     // are left to that read.
-    if (source === 'rekordbox' && fillLoaded) {
+    if (program?.fillsLoaded && fillLoaded) {
       const fromEntry = new Map(
         entries.flatMap((e) => (e.path && !e.separator ? [[same(e.path), e.meta] as const] : [])),
       )

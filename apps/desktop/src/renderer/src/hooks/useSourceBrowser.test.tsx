@@ -147,6 +147,20 @@ describe('useSourceBrowser', () => {
     expect(result.current.libraryMissing).toBe(false)
   })
 
+  it('only sends Engine DJ’s tab to the missing-library notice, since rekordbox and Traktor without a collection have no tab to show it in', async () => {
+    const rekordboxAvailable = vi.fn().mockResolvedValue(false)
+    const traktorAvailable = vi.fn().mockResolvedValue(false)
+    const { result } = setup({ rekordboxAvailable, traktorAvailable })
+    await waitFor(() => expect(rekordboxAvailable).toHaveBeenCalled())
+    await waitFor(() => expect(traktorAvailable).toHaveBeenCalled())
+    act(() => result.current.selectSource('traktor'))
+    await waitFor(() => expect(result.current.tree).toBeDefined())
+    expect(result.current.libraryMissing).toBe(false)
+    act(() => result.current.selectSource('rekordbox'))
+    await waitFor(() => expect(result.current.tree).toBeDefined())
+    expect(result.current.libraryMissing).toBe(false)
+  })
+
   it('offers Traktor after the other libraries when its collection is found, so it shows only where Traktor is installed', async () => {
     const { result } = setup({ traktorAvailable: vi.fn().mockResolvedValue(true) })
     await waitFor(() =>
@@ -752,5 +766,16 @@ describe('useSourceBrowser', () => {
     expect(result.current.canInsertSeparator).toBe(false)
     act(() => result.current.selectSource('rekordbox'))
     await waitFor(() => expect(result.current.canInsertSeparator).toBe(true))
+  })
+
+  it('asks no collection for a separator in Engine DJ, whose playlists have none', async () => {
+    const rekordboxHasSeparator = vi.fn().mockResolvedValue(true)
+    const traktorHasSeparator = vi.fn().mockResolvedValue(true)
+    const { result } = setup({ rekordboxHasSeparator, traktorHasSeparator })
+    act(() => result.current.selectSource('engine'))
+    await waitFor(() => expect(result.current.tree).toBeDefined())
+    expect(rekordboxHasSeparator).not.toHaveBeenCalled()
+    expect(traktorHasSeparator).not.toHaveBeenCalled()
+    expect(result.current.canInsertSeparator).toBe(false)
   })
 })
