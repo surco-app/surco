@@ -11,7 +11,7 @@ import {
   validWantedSet,
   type WantedCue,
 } from '../shared/cueRules'
-import { GRID_BPM_MAX, GRID_BPM_MIN, gridBeats } from '../shared/gridEdit'
+import { GRID_BPM_MAX, GRID_BPM_MIN, gridBeats, gridTempos } from '../shared/gridEdit'
 import type {
   PlaylistAddReport,
   RekordboxEditRefusal,
@@ -310,17 +310,20 @@ function planCuesOp(probe: Db, op: CuesOp, shareDir: string): Plan {
       return { outcome: { id: op.id, applied: true, notices: op.notices ?? [] } }
     return { op, cues }
   }
-  const { bpm, anchorMs } = op.grid
-  if (
-    !Number.isFinite(bpm) ||
-    bpm < GRID_BPM_MIN ||
-    bpm > GRID_BPM_MAX ||
-    !Number.isFinite(anchorMs)
-  )
-    return changed('cues-invalid')
-  const beats = gridBeats(op.grid, read.durationMs).map((b) => ({
+  const { bpm } = op.grid
+  const zones = [op.grid, ...(op.grid.zones ?? [])]
+  const sane = (z: { bpm: number; anchorMs: number; fromMs?: number }): boolean =>
+    Number.isFinite(z.bpm) &&
+    z.bpm >= GRID_BPM_MIN &&
+    z.bpm <= GRID_BPM_MAX &&
+    Number.isFinite(z.anchorMs) &&
+    (z.fromMs === undefined || Number.isFinite(z.fromMs))
+  if (!zones.every(sane)) return changed('cues-invalid')
+  const tempos = gridTempos(op.grid, read.durationMs)
+  const beats = gridBeats(op.grid, read.durationMs).map((b, i) => ({
     ms: Math.round(b.ms),
     beat: b.beat,
+    bpm: tempos[i],
   }))
   if (beats.length < 2) return changed('cues-invalid')
   return { op, cues, grid: { beats, bpm }, anlz }

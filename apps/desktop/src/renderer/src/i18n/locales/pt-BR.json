@@ -1043,7 +1043,9 @@
         "unmeasured": "A grade deste programa ainda não pode ser ajustada no Surco",
         "provisional": "O rekordbox ainda não analisou esta faixa, não há grade para ajustar",
         "varying": "Grade com vários andamentos, ajuste no programa",
-        "surcoDraft": "Estes cues foram colocados na grade do Surco. Salve ou descarte-os para ajustar a grade"
+        "surcoDraft": "Estes cues foram colocados na grade do Surco. Salve ou descarte-os para ajustar a grade",
+        "anchorAdd": "Âncora no cursor, começa uma zona",
+        "anchorRemove": "Remover a âncora do cursor"
       },
       "offGrid": {
         "before": "{{ms}} ms antes",

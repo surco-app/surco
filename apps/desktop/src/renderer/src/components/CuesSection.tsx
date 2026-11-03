@@ -23,7 +23,9 @@ import { type DjProgram, programOf } from '../../../shared/djProgram'
 import type { DropInput, DropProposal } from '../../../shared/dropDetect'
 import {
   type EditableGrid,
+  editAt,
   editableGridOf,
+  gridAnchors,
   gridBeats,
   gridOffsets,
   shiftGrid,
@@ -840,7 +842,7 @@ function Editing({
     else if (key.type === 'redo') dispatch({ type: 'redo' })
     else if (key.type === 'zoom') setZoom((z) => zoomStep(z, key.dir))
     else if (key.type === 'grid-shift' && state.grid && gridOff === null)
-      setGrid(shiftGrid(state.grid, key.ms))
+      setGrid(editAt(state.grid, playheadMs, (zone) => shiftGrid(zone, key.ms)) ?? state.grid)
   }
   const onKey = (e: React.KeyboardEvent) => {
     if (maximized) {
@@ -1045,12 +1047,13 @@ function Editing({
         driftMs,
       }))
   const offGridKeys = offGrid.map((o) => o.key)
+  const programAnchors = programGrid ? gridAnchors(programGrid) : []
   const offGridBar = (
     <CueOffGridBar
       off={offGrid}
       spaced={!maximized}
       onShiftGrid={
-        maximized && gridOff === null && state.grid
+        maximized && gridOff === null && state.grid && !state.grid.zones
           ? (ms) => {
               if (state.grid) setGrid(shiftGrid(state.grid, ms))
               focusEditor()
@@ -1179,6 +1182,7 @@ function Editing({
   const strip = (
     <CueWave
       offGrid={offGridKeys}
+      anchors={state.grid && draftGridChanged(state) ? gridAnchors(state.grid) : programAnchors}
       wave={read.wave}
       grid={grid}
       quantize={quantize}
@@ -1203,6 +1207,7 @@ function Editing({
   const detail = (
     <CueWaveDetail
       offGrid={offGridKeys}
+      anchors={state.grid && draftGridChanged(state) ? gridAnchors(state.grid) : programAnchors}
       source={source}
       grid={grid}
       cues={waveCues}

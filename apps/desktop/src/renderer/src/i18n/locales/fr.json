@@ -1043,7 +1043,9 @@
         "unmeasured": "La grille de ce logiciel ne se règle pas encore dans Surco",
         "provisional": "rekordbox n'a pas encore analysé ce morceau, il n'y a pas de grille à régler",
         "varying": "Grille à plusieurs tempos, réglez-la dans le logiciel",
-        "surcoDraft": "Ces cues ont été posés sur la grille de Surco. Enregistrez-les ou annulez-les pour régler la grille"
+        "surcoDraft": "Ces cues ont été posés sur la grille de Surco. Enregistrez-les ou annulez-les pour régler la grille",
+        "anchorAdd": "Ancre à la tête de lecture, commence une zone",
+        "anchorRemove": "Retirer l'ancre à la tête de lecture"
       },
       "offGrid": {
         "before": "{{ms}} ms en avance",

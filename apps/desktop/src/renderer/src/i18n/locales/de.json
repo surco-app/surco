@@ -1043,7 +1043,9 @@
         "unmeasured": "Das Raster dieses Programms lässt sich in Surco noch nicht anpassen",
         "provisional": "rekordbox hat diesen Titel noch nicht analysiert, es gibt kein Raster",
         "varying": "Raster mit mehreren Tempi, im Programm anpassen",
-        "surcoDraft": "Diese Cues wurden auf dem Surco-Raster gesetzt. Speichere oder verwirf sie, um das Raster anzupassen"
+        "surcoDraft": "Diese Cues wurden auf dem Surco-Raster gesetzt. Speichere oder verwirf sie, um das Raster anzupassen",
+        "anchorAdd": "Anker am Abspielkopf, beginnt eine Zone",
+        "anchorRemove": "Anker am Abspielkopf entfernen"
       },
       "offGrid": {
         "before": "{{ms}} ms zu früh",

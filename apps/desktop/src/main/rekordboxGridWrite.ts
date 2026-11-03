@@ -14,7 +14,7 @@ import { replaceFile } from './replaceFile'
 type Db = InstanceType<typeof Database>
 
 export interface GridWrite {
-  beats: { ms: number; beat: number }[]
+  beats: { ms: number; beat: number; bpm?: number }[]
   bpm: number
 }
 

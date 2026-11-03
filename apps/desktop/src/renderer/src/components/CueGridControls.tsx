@@ -2,8 +2,10 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+  anchorNear,
   downbeatAt,
   type EditableGrid,
+  editAt,
   fitGrid,
   GRID_BPM_MAX,
   GRID_BPM_MIN,
@@ -11,6 +13,8 @@ import {
   retempoGrid,
   scaleGrid,
   shiftGrid,
+  toggleAnchor,
+  zoneAt,
 } from '../../../shared/gridEdit'
 import { formatFixed } from '../lib/numberFormat'
 
@@ -84,15 +88,18 @@ export function CueGridControls({
     }
   }, [menu])
   const off = disabledReason !== null || grid === null
-  const bpm = grid?.bpm ?? 0
+  const bpm = grid ? zoneAt(grid, playheadMs).bpm : 0
+  const inZone = (edit: (zone: EditableGrid) => EditableGrid | null): EditableGrid | null =>
+    grid ? editAt(grid, playheadMs, edit) : null
   const retempo = (next: number): EditableGrid | null =>
-    grid ? retempoGrid(grid, next, playheadMs) : null
-  const scale = (factor: 2 | 0.5): EditableGrid | null => (grid ? scaleGrid(grid, factor) : null)
+    inZone((zone) => retempoGrid(zone, next, playheadMs))
+  const scale = (factor: 2 | 0.5): EditableGrid | null => inZone((zone) => scaleGrid(zone, factor))
+  const atAnchor = grid !== null && anchorNear(grid, playheadMs)
   const apply = (next: EditableGrid | null) => {
     if (next) onChange(next)
   }
   const shift = (dir: 1 | -1) => (e: React.MouseEvent) => {
-    if (grid) onChange(shiftGrid(grid, dir * (e.shiftKey ? BIG_STEP_MS : 1)))
+    apply(inZone((zone) => shiftGrid(zone, dir * (e.shiftKey ? BIG_STEP_MS : 1))))
   }
   const toggleMenu = () => {
     if (menu) return closeMenu.current()
@@ -225,13 +232,27 @@ export function CueGridControls({
         aria-label={tr('editor.cues.grid.downbeat')}
         title={tr('editor.cues.grid.downbeat')}
         disabled={off}
-        onClick={() => grid && onChange(downbeatAt(grid, playheadMs))}
+        onClick={() => apply(inZone((zone) => downbeatAt(zone, playheadMs)))}
         className={ICON}
       >
         <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true">
           <path d="M6.5 0h5L9 3z" fill="currentColor" />
           <path d="M3 5v9M15 5v9" stroke="currentColor" strokeWidth="1.4" />
           <path d="M9 5v9" stroke="var(--color-danger)" strokeWidth="1.8" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        data-testid="cues-grid-anchor"
+        aria-label={tr(atAnchor ? 'editor.cues.grid.anchorRemove' : 'editor.cues.grid.anchorAdd')}
+        title={tr(atAnchor ? 'editor.cues.grid.anchorRemove' : 'editor.cues.grid.anchorAdd')}
+        disabled={off}
+        onClick={() => grid && onChange(toggleAnchor(grid, playheadMs))}
+        className={ICON}
+      >
+        <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true">
+          <path d="M3 1v12M15 1v12" stroke="currentColor" strokeWidth="1.4" />
+          <path d="M9 13V2l5 2.5L9 7" fill="none" stroke="var(--color-accent)" strokeWidth="1.6" />
         </svg>
       </button>
       <button

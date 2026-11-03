@@ -1043,7 +1043,9 @@
         "unmeasured": "This program's grid can't be adjusted in Surco yet",
         "provisional": "rekordbox hasn't analysed this track yet, there is no grid to adjust",
         "varying": "Grid with several tempos, adjust it in the program",
-        "surcoDraft": "These cues were set on the Surco grid. Save or discard them to adjust the grid"
+        "surcoDraft": "These cues were set on the Surco grid. Save or discard them to adjust the grid",
+        "anchorAdd": "Anchor at the playhead, starts a zone",
+        "anchorRemove": "Remove the anchor at the playhead"
       },
       "offGrid": {
         "before": "{{ms}} ms early",

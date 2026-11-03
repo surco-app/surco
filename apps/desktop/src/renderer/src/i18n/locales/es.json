@@ -1043,7 +1043,9 @@
         "unmeasured": "La rejilla de este programa aún no se puede ajustar en Surco",
         "provisional": "rekordbox aún no ha analizado esta pista, no hay rejilla que ajustar",
         "varying": "Rejilla con varios tempos, se ajusta en el programa",
-        "surcoDraft": "Estos cues se pusieron sobre la rejilla de Surco. Guárdalos o descártalos para ajustar la rejilla"
+        "surcoDraft": "Estos cues se pusieron sobre la rejilla de Surco. Guárdalos o descártalos para ajustar la rejilla",
+        "anchorAdd": "Ancla en el cabezal, empieza una zona",
+        "anchorRemove": "Quitar el ancla del cabezal"
       },
       "offGrid": {
         "before": "{{ms}} ms antes",
