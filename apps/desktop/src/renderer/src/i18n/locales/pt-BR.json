@@ -1043,15 +1043,19 @@
         "unmeasured": "A grade deste programa ainda não pode ser ajustada no Surco",
         "provisional": "O rekordbox ainda não analisou esta faixa, não há grade para ajustar",
         "varying": "Grade com vários andamentos, ajuste no programa",
-        "surcoDraft": "Estes cues foram colocados na grade do Surco. Salve ou descarte-os para ajustar a grade"
+        "surcoDraft": "Estes cues foram colocados na grade do Surco. Salve ou descarte-os para ajustar a grade",
+        "anchorAdd": "Âncora no cursor, começa uma zona",
+        "anchorRemove": "Remover a âncora do cursor"
       },
       "offGrid": {
-        "count_one": "{{count}} cue fora da batida",
-        "count_other": "{{count}} cues fora da batida",
         "before": "{{ms}} ms antes",
         "after": "{{ms}} ms depois",
         "go": "Ir ao cue",
-        "snap": "Levar para a batida"
+        "snap": "Na batida",
+        "position": "{{at}} de {{total}}",
+        "prev": "Cue anterior fora da batida",
+        "next": "Próximo cue fora da batida",
+        "shiftGrid": "Mover a grade {{ms}} ms"
       }
     }
   },

@@ -234,4 +234,26 @@ describe('saving an edited beat grid to rekordbox', () => {
     }
     expect(bpmOf(path)).not.toBe(12050)
   })
+
+  it('writes each zone with its own tempo, beat by beat, as rekordbox keeps a grid with tempo changes', async () => {
+    const { path, dat } = await collection()
+    const zoned = { bpm: 120, anchorMs: 0, zones: [{ fromMs: 100000, bpm: 125, anchorMs: 100030 }] }
+    const result = await applyRekordboxBatch(path, [op({ grid: zoned })], deps())
+    expect(result.ok && result.outcomes[0]).toMatchObject({ applied: true })
+    const beats = beatGrid(readFileSync(dat))
+    expect(beats.find((b) => b.ms === 50000)?.bpm).toBe(120)
+    expect(beats.find((b) => b.ms === 100030)?.bpm).toBe(125)
+    expect(beats.some((b) => b.ms === 99500)).toBe(true)
+    expect(beats.some((b) => b.ms === 100000)).toBe(false)
+    expect(bpmOf(path)).toBe(12000)
+  })
+
+  it('refuses a zone with an impossible tempo', async () => {
+    const { path, dat } = await collection()
+    const before = readFileSync(dat)
+    const zoned = { bpm: 120, anchorMs: 0, zones: [{ fromMs: 100000, bpm: -3, anchorMs: 100030 }] }
+    const result = await applyRekordboxBatch(path, [op({ grid: zoned })], deps())
+    expect(result.ok && result.outcomes[0]).toMatchObject({ applied: false })
+    expect(readFileSync(dat).equals(before)).toBe(true)
+  })
 })

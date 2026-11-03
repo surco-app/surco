@@ -1043,15 +1043,19 @@
         "unmeasured": "This program's grid can't be adjusted in Surco yet",
         "provisional": "rekordbox hasn't analysed this track yet, there is no grid to adjust",
         "varying": "Grid with several tempos, adjust it in the program",
-        "surcoDraft": "These cues were set on the Surco grid. Save or discard them to adjust the grid"
+        "surcoDraft": "These cues were set on the Surco grid. Save or discard them to adjust the grid",
+        "anchorAdd": "Anchor at the playhead, starts a zone",
+        "anchorRemove": "Remove the anchor at the playhead"
       },
       "offGrid": {
-        "count_one": "{{count}} cue misses its beat",
-        "count_other": "{{count}} cues miss their beat",
         "before": "{{ms}} ms early",
         "after": "{{ms}} ms late",
         "go": "Go to the cue",
-        "snap": "Move onto the beat"
+        "snap": "Onto the beat",
+        "position": "{{at}} of {{total}}",
+        "prev": "Previous cue off the beat",
+        "next": "Next cue off the beat",
+        "shiftGrid": "Move the grid {{ms}} ms"
       }
     }
   },

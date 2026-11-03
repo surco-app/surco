@@ -1634,19 +1634,29 @@ describe('CuesSection maximized grid', () => {
     expect(bars()).toContain(2000)
   })
 
-  it('greys out the grid row with its reason on a grid with two tempos, so the DJ’s work is never flattened', async () => {
+  it('opens a grid with two tempos as two zones, flagging where the second begins, so the DJ work is kept', async () => {
     const twoTempos = [
       ...Array.from({ length: 400 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 })),
       ...Array.from({ length: 400 }, (_, i) => ({ ms: 200000 + i * 450, beat: (i % 4) + 1 })),
     ]
     setup(null, { ...READ, grid: twoTempos })
     await maximize()
+    expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'false')
+    expect(screen.getByTestId('cue-wave-anchor-200450')).toBeInTheDocument()
+  })
+
+  it('greys out the grid row with its reason on a grid too irregular for zones', async () => {
+    const drifting = Array.from({ length: 800 }, (_, i) => ({
+      ms: i * 500 + (i % 2) * 9,
+      beat: (i % 4) + 1,
+    }))
+    setup(null, { ...READ, grid: drifting })
+    await maximize()
     expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
     expect(screen.getByTestId('cues-grid')).toHaveAttribute(
       'title',
       expect.stringMatching(/tempo/i),
     )
-    expect(screen.getByTestId('cues-grid-right')).toBeDisabled()
   })
 
   it('greys out the grid row on a track rekordbox has not analysed, since there is no grid to write yet', async () => {
@@ -1889,5 +1899,46 @@ describe('CuesSection maximized grid', () => {
     expect(screen.getByTestId('cue-detail-call-31986')).toHaveAttribute('data-off-grid', 'true')
     expect(screen.getByTestId('cue-detail-hot-A')).toHaveAttribute('data-off-grid', 'true')
   })
-})
 
+  it('moves the grid instead of the cues when they all miss their beat by the same amount', async () => {
+    setup(null, {
+      ...READ,
+      cues: [
+        { id: 'c1', ms: 32108, kind: 0, color: null },
+        { id: 'c2', ms: 64105, kind: 0, color: null },
+      ],
+    })
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-offgrid-shift-grid'))
+    expect(screen.queryByTestId('cues-offgrid')).toBeNull()
+    expect(screen.getByTestId('cue-wave-call-32108')).toBeInTheDocument()
+    expect(screen.getByTestId('cues-unsaved')).toBeInTheDocument()
+  })
+
+  it('offers only to move the cues in the small editor, where the grid is not edited', async () => {
+    setup(null, {
+      ...READ,
+      cues: [
+        { id: 'c1', ms: 32108, kind: 0, color: null },
+        { id: 'c2', ms: 64105, kind: 0, color: null },
+      ],
+    })
+    await ready()
+    expect(screen.getByTestId('cues-offgrid')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-offgrid-shift-grid')).toBeNull()
+  })
+
+  it('opens a zone at the playhead and moves only that zone, flagging where it starts on both waves', async () => {
+    setup()
+    await maximize()
+    key('ArrowRight')
+    fireEvent.click(screen.getByTestId('cues-grid-anchor'))
+    expect(screen.getByTestId('cue-wave-anchor-32000')).toBeInTheDocument()
+    expect(screen.getByTestId('cue-detail-anchor-32000')).toBeInTheDocument()
+    key('ArrowRight', { altKey: true })
+    expect(bars()).toContain(32001)
+    key('ArrowLeft')
+    expect(bars()).toContain(2000)
+    expect(bars()).not.toContain(2001)
+  })
+})

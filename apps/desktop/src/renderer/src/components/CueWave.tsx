@@ -52,6 +52,7 @@ export function CueWave({
   trimmed,
   readOnly,
   offGrid,
+  anchors,
   onSelect,
   onMenu,
   onMarkMenu,
@@ -74,6 +75,7 @@ export function CueWave({
   trimmed?: number[]
   readOnly?: boolean
   offGrid?: string[]
+  anchors?: number[]
   onSelect?: (key: string | null) => void
   onMenu?: (at: { ms: number; x: number; y: number }) => void
   onMarkMenu?: (at: { key: string; clientX: number; clientY: number }) => void
@@ -280,6 +282,15 @@ export function CueWave({
             className="absolute top-0 bottom-0 w-px bg-[var(--color-fg)]/40"
           />
         )}
+        {(anchors ?? []).map((ms) => (
+          <span
+            key={`anchor${ms}`}
+            data-testid={`cue-wave-anchor-${Math.round(ms)}`}
+            aria-hidden="true"
+            style={{ left: pct(ms) }}
+            className="pointer-events-none absolute top-0 bottom-0 w-0.5 bg-[var(--color-accent)]"
+          />
+        ))}
         {playheadMs !== undefined && (
           <span
             data-testid="cue-wave-playhead"

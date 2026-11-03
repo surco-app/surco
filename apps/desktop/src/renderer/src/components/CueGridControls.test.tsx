@@ -3,7 +3,14 @@ import '@testing-library/jest-dom/vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { downbeatAt, type EditableGrid, fitGrid, gridBeats } from '../../../shared/gridEdit'
+import {
+  downbeatAt,
+  type EditableGrid,
+  fitGrid,
+  gridAnchors,
+  gridBeats,
+  toggleAnchor,
+} from '../../../shared/gridEdit'
 import i18n from '../i18n'
 import { CueGridControls } from './CueGridControls'
 
@@ -206,4 +213,50 @@ describe('CueGridControls', () => {
       expect(onDone).toHaveBeenCalled()
     },
   )
+
+  it('fits the grid on the beats around the playhead, not on the whole track', () => {
+    const fit = {
+      bpm: 150,
+      firstMs: 0,
+      phases: [
+        { ms: 4000, firstMs: 25 },
+        { ms: 200000, firstMs: 0 },
+      ],
+    }
+    const onChange = setup({ fit, needsFix: true, playheadMs: 4046 })
+    fireEvent.click(screen.getByTestId('cues-grid-auto'))
+    expect(lastGrid(onChange)).toEqual({ bpm: 150, anchorMs: 25 })
+  })
+
+  it('opens a zone at the playhead with the anchor button, and closes it when pressed again there', () => {
+    const onChange = setup({ playheadMs: 40010 })
+    fireEvent.click(screen.getByTestId('cues-grid-anchor'))
+    expect(gridAnchors(lastGrid(onChange) as EditableGrid)).toEqual([40046])
+  })
+
+  it('names the anchor button for what it will do at the playhead', () => {
+    setup({ grid: toggleAnchor({ bpm: 150, anchorMs: 46 }, 40046), playheadMs: 40046 })
+    expect(screen.getByTestId('cues-grid-anchor')).toHaveAccessibleName(
+      'Quitar el ancla del cabezal',
+    )
+  })
+
+  it('moves only the zone under the playhead', () => {
+    const two = toggleAnchor({ bpm: 150, anchorMs: 46 }, 40046)
+    const onChange = setup({ grid: two, playheadMs: 60046 })
+    fireEvent.click(screen.getByTestId('cues-grid-right'))
+    const beats = gridBeats(lastGrid(onChange) as EditableGrid, 80000)
+    expect(beats.some((b) => b.ms === 20046)).toBe(true)
+    expect(beats.some((b) => b.ms === 60047)).toBe(true)
+  })
+
+  it('doubles only the zone under the playhead and keeps the other zones', () => {
+    const two = toggleAnchor({ bpm: 150, anchorMs: 46 }, 40046)
+    const onChange = setup({ grid: two, playheadMs: 60046 })
+    fireEvent.click(screen.getByTestId('cues-grid-bpm'))
+    fireEvent.click(screen.getByTestId('cues-grid-double'))
+    const next = lastGrid(onChange) as EditableGrid
+    expect(next.bpm).toBe(150)
+    expect(next.zones?.[0].bpm).toBe(300)
+  })
 })

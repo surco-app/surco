@@ -4,7 +4,10 @@ const PQTZ_HEADER = 24
 const PQTZ_ENTRY = 8
 const PQTZ_FLAGS = 0x80000
 
-export function encodePqtz(beats: { ms: number; beat: number }[], bpm: number): Buffer {
+export function encodePqtz(
+  beats: { ms: number; beat: number; bpm?: number }[],
+  bpm: number,
+): Buffer {
   const out = Buffer.alloc(PQTZ_HEADER + beats.length * PQTZ_ENTRY)
   out.write('PQTZ', 0, 'latin1')
   out.writeUInt32BE(PQTZ_HEADER, 4)
@@ -13,7 +16,12 @@ export function encodePqtz(beats: { ms: number; beat: number }[], bpm: number): 
   out.writeUInt32BE(beats.length, 20)
   const tempo = Math.round(bpm * 100)
   beats.forEach((b, i) => {
-    writeBeat(out, PQTZ_HEADER + i * PQTZ_ENTRY, b, tempo)
+    writeBeat(
+      out,
+      PQTZ_HEADER + i * PQTZ_ENTRY,
+      b,
+      b.bpm === undefined ? tempo : Math.round(b.bpm * 100),
+    )
   })
   return out
 }
@@ -41,13 +49,14 @@ function writeBeat(out: Buffer, at: number, beat: { ms: number; beat: number }, 
 
 export function pqt2WithGrid(
   section: Buffer,
-  beats: { ms: number; beat: number }[],
+  beats: { ms: number; beat: number; bpm?: number }[],
   bpm: number,
 ): Buffer {
   const out = Buffer.from(section)
   if (beats.length === 0) return out
   const tempo = Math.round(bpm * 100)
-  writeBeat(out, PQT2_FIRST, beats[0], tempo)
-  writeBeat(out, PQT2_LAST, beats[beats.length - 1], tempo)
+  const tempoOf = (b: { bpm?: number }) => (b.bpm === undefined ? tempo : Math.round(b.bpm * 100))
+  writeBeat(out, PQT2_FIRST, beats[0], tempoOf(beats[0]))
+  writeBeat(out, PQT2_LAST, beats[beats.length - 1], tempoOf(beats[beats.length - 1]))
   return out
 }

@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   downbeatAt,
+  type EditableGrid,
+  editAt,
   editableGridOf,
   fitGrid,
+  gridAnchors,
   gridBeats,
   gridFingerprint,
   gridOffsets,
@@ -10,6 +13,7 @@ import {
   sameGrid,
   scaleGrid,
   shiftGrid,
+  toggleAnchor,
 } from './gridEdit'
 
 const constantBeats = (bpm: number, from: number, count: number, firstBeat = 1) =>
@@ -33,21 +37,27 @@ describe('editableGridOf', () => {
     expect(editableGridOf(constantBeats(127.9966, 46, 760))?.bpm).toBeCloseTo(127.9966, 3)
   })
 
-  it('refuses a constant tempo whose bars restart mid-track, because renumbering it would erase the DJ downbeat', () => {
+  it('keeps bars that restart mid-track as a second zone, so the DJ downbeat is never renumbered', () => {
     const beats = constantBeats(150, 46, 400)
     const restarted = beats.map((b, i) => (i < 200 ? b : { ...b, beat: ((i + 1) % 4) + 1 }))
-    expect(editableGridOf(restarted)).toBeNull()
+    const grid = editableGridOf(restarted)
+    expect(grid?.zones).toHaveLength(1)
+    expect(gridBeats(grid as EditableGrid, 400 * 400).map((b) => b.beat)).toEqual(
+      restarted.map((b) => b.beat),
+    )
   })
 
   it('anchors on the first downbeat even when the grid starts mid-bar', () => {
     expect(editableGridOf(constantBeats(150, 46, 400, 3))?.anchorMs).toBe(846)
   })
 
-  it('refuses a grid with two tempos, because flattening it would erase work the DJ did by hand', () => {
+  it('keeps a grid with two tempos as two zones, because flattening it would erase work the DJ did by hand', () => {
     const first = constantBeats(150, 46, 200)
     const last = first[first.length - 1].ms
     const second = constantBeats(140, last + 60000 / 140, 200, 1)
-    expect(editableGridOf([...first, ...second])).toBeNull()
+    const grid = editableGridOf([...first, ...second])
+    expect(grid?.bpm).toBeCloseTo(150, 2)
+    expect(grid?.zones?.[0].bpm).toBeCloseTo(140, 2)
   })
 
   it('refuses fewer than two beats, since there is no tempo to read', () => {
@@ -200,6 +210,93 @@ describe('gridOffsets with the phase measured along the track', () => {
     expect(gridOffsets({ bpm: 150, anchorMs: 0 }, fit, 12000, 345000)).toEqual({
       hereMs: -25,
       endMs: 0,
+    })
+  })
+})
+
+describe('fitting around the playhead', () => {
+  const fit = {
+    bpm: 150,
+    firstMs: 0,
+    phases: [
+      { ms: 30000, firstMs: 25 },
+      { ms: 200000, firstMs: 0 },
+      { ms: 300000, firstMs: 200 },
+    ],
+  }
+
+  it('aligns the grid on the beats near the playhead, so a spliced intro can be fixed where its cues are', () => {
+    expect(fitGrid({ bpm: 150, anchorMs: 46 }, fit, 31000)).toEqual({ bpm: 150, anchorMs: 25 })
+    expect(fitGrid({ bpm: 150, anchorMs: 46 }, fit, 199000)).toEqual({ bpm: 150, anchorMs: 0 })
+  })
+
+  it('ignores a stretch where the detector locked half a beat away, and uses the whole-track fit there', () => {
+    expect(fitGrid({ bpm: 150, anchorMs: 46 }, fit, 300000).anchorMs).toBe(0)
+    expect(gridOffsets({ bpm: 150, anchorMs: 0 }, fit, 300000, 300000)).toEqual({
+      hereMs: 0,
+      endMs: 0,
+    })
+  })
+})
+
+describe('zones', () => {
+  const spliced = () => [
+    ...constantBeats(150, 46, 300),
+    ...constantBeats(150, 46 + 300 * 400 + 25, 500),
+  ]
+
+  it('reads a grid spliced in two as two zones instead of refusing it, so an edit with a moved intro can be fixed', () => {
+    const grid = editableGridOf(spliced())
+    expect(grid?.anchorMs).toBe(46)
+    expect(grid?.zones).toHaveLength(1)
+    expect(grid?.zones?.[0].fromMs).toBe(46 + 300 * 400 + 25)
+    expect(grid?.zones?.[0].bpm).toBeCloseTo(150, 2)
+  })
+
+  it('draws each zone from its own anchor and ends a zone where the next begins', () => {
+    const grid = editableGridOf(spliced())
+    const beats = gridBeats(grid as EditableGrid, 800 * 400).map((b) => b.ms)
+    expect(beats.slice(298, 302).map(Math.round)).toEqual([119246, 119646, 120071, 120471])
+    expect(beats).toHaveLength(800)
+  })
+
+  it('still refuses a grid too irregular to split into a few zones, like a live drummer analysed beat by beat', () => {
+    const drifting = Array.from({ length: 200 }, (_, i) => ({
+      ms: i * 400 + (i % 2) * 7,
+      beat: (i % 4) + 1,
+    }))
+    expect(editableGridOf(drifting)).toBeNull()
+  })
+
+  it('opens a zone at the beat nearest the playhead without moving any beat, and closes it again there', () => {
+    const one = { bpm: 150, anchorMs: 46 }
+    const two = toggleAnchor(one, 40010)
+    expect(gridAnchors(two)).toEqual([40046])
+    expect(gridBeats(two, 80000)).toEqual(gridBeats(one, 80000))
+    expect(toggleAnchor(two, 40100)).toEqual(one)
+  })
+
+  it('applies an edit only to the zone under the playhead', () => {
+    const two = toggleAnchor({ bpm: 150, anchorMs: 46 }, 40046)
+    const moved = editAt(two, 60000, (z) => shiftGrid(z, 25))
+    const beats = gridBeats(moved as EditableGrid, 80000)
+    expect(beats.find((b) => b.ms > 20000 && b.ms < 20400)?.ms).toBe(20046)
+    expect(beats.find((b) => b.ms > 60000 && b.ms < 60400)?.ms).toBe(60071)
+  })
+
+  it('compares zones too when deciding whether the grid changed', () => {
+    const two = toggleAnchor({ bpm: 150, anchorMs: 46 }, 40046)
+    expect(sameGrid(two, { bpm: 150, anchorMs: 46 })).toBe(false)
+    expect(sameGrid(two, toggleAnchor({ bpm: 150, anchorMs: 46 }, 40046))).toBe(true)
+  })
+
+  it('measures the offset against the zone under each point', () => {
+    const two = editAt(toggleAnchor({ bpm: 150, anchorMs: 0 }, 40000), 60000, (z) =>
+      shiftGrid(z, 25),
+    )
+    expect(gridOffsets(two as EditableGrid, { bpm: 150, firstMs: 0 }, 10000, 100000)).toEqual({
+      hereMs: 0,
+      endMs: 25,
     })
   })
 })

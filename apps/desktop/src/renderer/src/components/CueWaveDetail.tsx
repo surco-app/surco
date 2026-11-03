@@ -113,6 +113,7 @@ export function CueWaveDetail({
   ghost: rawGhost,
   movable,
   offGrid,
+  anchors,
   onMoveMark,
   onMarkDrag,
   proposals,
@@ -136,6 +137,7 @@ export function CueWaveDetail({
   ghost?: CueGhost
   movable?: string[]
   offGrid?: string[]
+  anchors?: number[]
   onMoveMark?: (key: string, ms: number) => void
   onMarkDrag?: (dragging: boolean) => void
   proposals?: DropProposal[]
@@ -454,6 +456,17 @@ export function CueWaveDetail({
             }}
             className="absolute"
           />
+          {(anchors ?? [])
+            .filter((ms) => ms >= fromMs && ms <= toMs)
+            .map((ms) => (
+              <span
+                key={`anchor${ms}`}
+                data-testid={`cue-detail-anchor-${Math.round(ms)}`}
+                aria-hidden="true"
+                style={{ left: pct(ms), top: 0 }}
+                className="pointer-events-none absolute bottom-0 w-0.5 bg-[var(--color-accent)]"
+              />
+            ))}
           <span
             data-testid="cue-detail-playhead"
             aria-hidden="true"

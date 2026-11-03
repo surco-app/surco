@@ -1043,15 +1043,19 @@
         "unmeasured": "La rejilla de este programa aún no se puede ajustar en Surco",
         "provisional": "rekordbox aún no ha analizado esta pista, no hay rejilla que ajustar",
         "varying": "Rejilla con varios tempos, se ajusta en el programa",
-        "surcoDraft": "Estos cues se pusieron sobre la rejilla de Surco. Guárdalos o descártalos para ajustar la rejilla"
+        "surcoDraft": "Estos cues se pusieron sobre la rejilla de Surco. Guárdalos o descártalos para ajustar la rejilla",
+        "anchorAdd": "Ancla en el cabezal, empieza una zona",
+        "anchorRemove": "Quitar el ancla del cabezal"
       },
       "offGrid": {
-        "count_one": "{{count}} cue no cae en el golpe",
-        "count_other": "{{count}} cues no caen en el golpe",
         "before": "{{ms}} ms antes",
         "after": "{{ms}} ms después",
         "go": "Ir al cue",
-        "snap": "Llevar al golpe"
+        "snap": "Al golpe",
+        "position": "{{at}} de {{total}}",
+        "prev": "Cue anterior fuera del golpe",
+        "next": "Siguiente cue fuera del golpe",
+        "shiftGrid": "Mover la rejilla {{ms}} ms"
       }
     }
   },
