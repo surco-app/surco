@@ -23,6 +23,10 @@
       {
         "text": "Dans l'onglet Traktor, les cues des MP3 créés avec iTunes tombent maintenant au bon endroit sur la forme d'onde et à l'écoute.",
         "in": "1.22.0"
+      },
+      {
+        "text": "Avec « Modifier l'original », tu peux maintenant changer le nom du fichier. Tape-le dans « Nom du fichier » ou régénère-le, et l'original est réécrit et renommé dans son dossier, sans laisser de seconde copie. rekordbox, Traktor et Music retrouvent toujours la piste. Le modèle de nom ne renomme rien tout seul dans ce mode.",
+        "in": "1.22.1"
       }
     ]
   },

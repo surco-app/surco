@@ -23,6 +23,10 @@
       {
         "text": "In the Traktor tab, cues on MP3s made with iTunes now land in the right place on the wave and when you listen to them.",
         "in": "1.22.0"
+      },
+      {
+        "text": "With “Edit the original” you can now change the file's name. Type it in “File name” or regenerate it, and the original is rewritten and renamed in its folder, without leaving a second copy. rekordbox, Traktor and Music still find the track. The naming pattern never renames anything on its own in this mode.",
+        "in": "1.22.1"
       }
     ]
   },

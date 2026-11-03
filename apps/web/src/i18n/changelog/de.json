@@ -23,6 +23,10 @@
       {
         "text": "Im Traktor-Tab liegen die Cues von MP3s, die mit iTunes erstellt wurden, jetzt an der richtigen Stelle auf der Wellenform und beim Anhören.",
         "in": "1.22.0"
+      },
+      {
+        "text": "Mit „Original bearbeiten“ kannst du jetzt den Dateinamen ändern. Gib ihn unter „Dateiname“ ein oder lass ihn neu erzeugen, und das Original wird in seinem Ordner überschrieben und umbenannt, ohne eine zweite Kopie. rekordbox, Traktor und Music finden den Track weiterhin. Das Namensmuster benennt in diesem Modus nichts von selbst um.",
+        "in": "1.22.1"
       }
     ]
   },
