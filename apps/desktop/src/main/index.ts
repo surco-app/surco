@@ -184,6 +184,8 @@ import { registerRekordboxQueueIpc } from './rekordboxQueueIpc'
 import { stillWaiting } from './rekordboxQueueWatch'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
+import { seratoLibraryRoots } from './seratoLibrary'
+import { registerSeratoPlaylistsIpc } from './seratoPlaylistsIpc'
 import { loadLastSession, saveLastSession } from './session'
 import {
   defaultConfigDir,
@@ -1300,6 +1302,17 @@ function registerIpc(): void {
   })
   registerTraktorPlaylistsIpc(traktorReadPath, {
     bootVolume: () => bootVolumeName(),
+    allowMedia: (paths) => mediaAccess.allowAll(paths),
+  })
+  registerSeratoPlaylistsIpc({
+    roots: () => {
+      try {
+        const volumes = readdirSync('/Volumes').map((name) => join('/Volumes', name))
+        return seratoLibraryRoots(app.getPath('home'), volumes)
+      } catch {
+        return seratoLibraryRoots(app.getPath('home'), [])
+      }
+    },
     allowMedia: (paths) => mediaAccess.allowAll(paths),
   })
   registerRekordboxQueueIpc(rekordboxQueue, {

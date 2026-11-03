@@ -236,6 +236,12 @@ const api: Api = {
   traktorTrackCount: (): Promise<number> => ipcRenderer.invoke('traktor:trackCount'),
   loadTraktorPlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
     ipcRenderer.invoke('traktor:playlist', id),
+  seratoAvailable: (): Promise<boolean> => ipcRenderer.invoke('serato:available'),
+  loadSeratoTree: (): Promise<SourceNode[]> => ipcRenderer.invoke('serato:tree'),
+  seratoRecentCount: (): Promise<number> => ipcRenderer.invoke('serato:recentCount'),
+  seratoTrackCount: (): Promise<number> => ipcRenderer.invoke('serato:trackCount'),
+  loadSeratoPlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
+    ipcRenderer.invoke('serato:playlist', id),
   editRekordboxPlaylist: (
     edit: RekordboxPlaylistEdit,
     label?: string,
@@ -281,6 +287,8 @@ const api: Api = {
     ipcRenderer.invoke('rekordbox:membership', paths),
   traktorMembership: (paths: string[]): Promise<Record<string, string[]>> =>
     ipcRenderer.invoke('traktor:membership', paths),
+  seratoMembership: (paths: string[]): Promise<Record<string, string[]>> =>
+    ipcRenderer.invoke('serato:membership', paths),
   engineMembership: (paths: string[]): Promise<Record<string, string[]>> =>
     ipcRenderer.invoke('engine:membership', paths),
   onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => {

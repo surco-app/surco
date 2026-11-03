@@ -192,7 +192,7 @@ export function traktorSeparatorKey(nml: string): string | null {
   return [...uses].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
 }
 
-function recentSince(now: Date): number {
+export function recentSince(now: Date): number {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate() - RECENT_DAYS).getTime()
 }
 

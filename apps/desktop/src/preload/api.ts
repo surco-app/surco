@@ -258,6 +258,11 @@ export interface Api {
   traktorRecentCount: () => Promise<number>
   traktorTrackCount: () => Promise<number>
   loadTraktorPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
+  seratoAvailable: () => Promise<boolean>
+  loadSeratoTree: () => Promise<SourceNode[]>
+  seratoRecentCount: () => Promise<number>
+  seratoTrackCount: () => Promise<number>
+  loadSeratoPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
   // Applies one organising edit to a rekordbox playlist. Asks to close rekordbox when it is
   // open; the result says whether the edit was written, and why not.
   editRekordboxPlaylist: (
@@ -286,6 +291,7 @@ export interface Api {
   undoRekordboxCues: (contentId: string) => Promise<void>
   rekordboxMembership: (paths: string[]) => Promise<Record<string, string[]>>
   traktorMembership: (paths: string[]) => Promise<Record<string, string[]>>
+  seratoMembership: (paths: string[]) => Promise<Record<string, string[]>>
   engineMembership: (paths: string[]) => Promise<Record<string, string[]>>
   onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
   onRekordboxQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
