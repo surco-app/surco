@@ -1036,7 +1036,8 @@
   "changelog": {
     "metaTitle": "Surco changelog, What's new in each release",
     "metaDescription": "What's new in each Surco release: Discogs auto-match, rekordbox and Traktor export, loudness analysis, multi-track editing and more.",
-    "title": "What's new",
+    "kicker": "What's new",
+    "title": "Everything that has changed in Surco",
     "lede": "The highlights of every release, without the noise. The features that change how you prep your music, version by version.",
     "beta": {
       "kicker": "In testing",

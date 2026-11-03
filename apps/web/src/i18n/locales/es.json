@@ -1036,7 +1036,8 @@
   "changelog": {
     "metaTitle": "Novedades de Surco, Historial de versiones",
     "metaDescription": "Qué hay de nuevo en cada versión de Surco: auto-match de Discogs, export a rekordbox y Traktor, análisis de sonoridad, edición multi-pista y más.",
-    "title": "Novedades",
+    "kicker": "Novedades",
+    "title": "Todo lo que ha cambiado en Surco",
     "lede": "Lo importante de cada versión, sin ruido. Las funciones que cambian cómo preparas tu música, versión a versión.",
     "beta": {
       "kicker": "En pruebas",

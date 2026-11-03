@@ -1036,7 +1036,8 @@
   "changelog": {
     "metaTitle": "Surco-Änderungsprotokoll: Was ist neu in jeder Version",
     "metaDescription": "Was in jeder Surco-Version neu ist: automatischer Discogs-Abgleich, Export nach rekordbox und Traktor, Lautheitsanalyse, Bearbeitung mehrerer Tracks und mehr.",
-    "title": "Neuigkeiten",
+    "kicker": "Neuigkeiten",
+    "title": "Alles, was sich in Surco geändert hat",
     "lede": "Das Wichtigste jeder Version, ohne Rauschen. Die Funktionen, die verändern, wie du deine Musik vorbereitest, Version für Version.",
     "beta": {
       "kicker": "Im Test",

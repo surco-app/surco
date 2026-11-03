@@ -1036,7 +1036,8 @@
   "changelog": {
     "metaTitle": "Historique de Surco, les nouveautés de chaque version",
     "metaDescription": "Les nouveautés de chaque version de Surco : association automatique Discogs, export rekordbox et Traktor, analyse du loudness, édition de plusieurs morceaux et plus encore.",
-    "title": "Nouveautés",
+    "kicker": "Nouveautés",
+    "title": "Tout ce qui a changé dans Surco",
     "lede": "L'essentiel de chaque version, sans le bruit. Les fonctions qui changent ta façon de préparer ta musique, version après version.",
     "beta": {
       "kicker": "En test",

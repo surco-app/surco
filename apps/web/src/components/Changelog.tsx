@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
+import Kicker from './Kicker'
 import Reveal from './Reveal'
 import ScrollProgress from './ScrollProgress'
 
@@ -29,10 +30,10 @@ function itemText(item: Item): string {
   return typeof item === 'string' ? item : item.text
 }
 
-// With 40+ releases the full history made the page endless; only the newest few
-// stay expanded and the rest collapse to one row each behind native <details>,
+// With 40+ releases the full history made the page endless; only the newest
+// stays expanded and the rest collapse to one row each behind native <details>,
 // so the text is still in the prerendered HTML for crawlers.
-const EXPANDED_RELEASES = 5
+const EXPANDED_RELEASES = 1
 
 function ItemList({ items }: { items: Item[] }) {
   return (
@@ -74,7 +75,8 @@ export default function Changelog() {
       <main id="main" className="relative mx-auto max-w-3xl px-6 sm:px-10">
         <section className="pt-12 pb-4 sm:pt-16">
           <Reveal eager>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
+            <Kicker>{t('changelog.kicker')}</Kicker>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight text-balance sm:text-5xl">
               {t('changelog.title')}
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
