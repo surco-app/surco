@@ -38,6 +38,17 @@ Medido el 03/11 tras el bloque 8 añadiendo `'serato'` a `DjProgram` (y revirtie
 
 Filas provisionales del lado de cues que la Tarea 6 sustituye: `sources.serato: null` en `rekordboxCuesIpc.ts`, `CUE_PROGRAMS.serato` (`saveAllKey` provisional `editor.cues.saveAllMixed`) y `COPY.serato = REKORDBOX_COPY` en `CuesSection.tsx`.
 
+## Pendiente para la fase (b) de Serato (revisión final de la fase (a), 03/11)
+
+- Marcar `fromSerato` de forma determinista con `serato:membership` (hoy se marca al abrir un crate de Serato que lista la pista y se queda en la sesión).
+- Rechazo en el proceso principal de ids `serato:` en `runProcessTrack` (hoy lo bloquea el renderer en tres capas).
+- Serato en `usedByLibrary` (lectura) para que la retirada automática y la oferta de limpieza no manden a la papelera un fichero que un crate de Serato usa.
+- Convertir un fichero abierto desde una carpeta u otra pestaña que Serato también lista reescribe el audio y puede perder `Serato Markers2`: llevar los cues al convertir.
+- Caché por mtime de las lecturas de `_Serato_` (cada llamada `serato:*` relee todo, incluidos los discos de red).
+- `isSeratoRunning` cuenta como abierto cualquier error de `pgrep`; nombre del proceso en Windows sin medir.
+- Rejilla (`Serato Tempo Map`) sin medir: los cues se muestran en lista, no sobre la onda.
+- Un crate con subcrates se ve como carpeta; sus pistas propias solo por All tracks. Una pista en dos bases de datos cuenta doble.
+
 ## Errores del compilador
 
 ```
