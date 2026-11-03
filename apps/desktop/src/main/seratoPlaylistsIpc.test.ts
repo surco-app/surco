@@ -78,4 +78,12 @@ describe('registerSeratoPlaylistsIpc', () => {
     expect(entries.map((e) => e.path)).toEqual(['/Music/a.mp3', '/Music/b.mp3'])
     expect(allowMedia).toHaveBeenCalledWith(['/Music/a.mp3', '/Music/b.mp3'])
   })
+
+  it('says whether Serato is open, so the editor can warn its cues may be out of date', async () => {
+    let open = true
+    registerSeratoPlaylistsIpc({ roots: () => [], running: async () => open })
+    expect(await handler('serato:running')({})).toBe(true)
+    open = false
+    expect(await handler('serato:running')({})).toBe(false)
+  })
 })

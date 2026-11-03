@@ -263,6 +263,7 @@ export interface Api {
   seratoRecentCount: () => Promise<number>
   seratoTrackCount: () => Promise<number>
   loadSeratoPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
+  seratoRunning: () => Promise<boolean>
   // Applies one organising edit to a rekordbox playlist. Asks to close rekordbox when it is
   // open; the result says whether the edit was written, and why not.
   editRekordboxPlaylist: (

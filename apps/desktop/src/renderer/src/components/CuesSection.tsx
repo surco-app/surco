@@ -172,11 +172,20 @@ const TRAKTOR_COPY: typeof REKORDBOX_COPY = {
   autoUnanalysed: 'editor.cues.traktor.autoUnreadable',
 }
 
+const SERATO_COPY: typeof REKORDBOX_COPY = {
+  save: 'editor.cues.serato.readOnly',
+  unanalysed: 'editor.cues.serato.none',
+  unreadable: 'editor.cues.serato.unreadable',
+  queuedStale: 'editor.cues.serato.readOnly',
+  saveFailed: 'editor.cues.serato.readOnly',
+  autoUnanalysed: 'editor.cues.serato.readOnly',
+}
+
 const COPY: Record<DjProgram, typeof REKORDBOX_COPY> = {
   rekordbox: REKORDBOX_COPY,
   traktor: TRAKTOR_COPY,
   engine: ENGINE_COPY,
-  serato: REKORDBOX_COPY,
+  serato: SERATO_COPY,
 }
 
 const copyOf = (contentId: string) => COPY[programOf(contentId)]
@@ -1813,6 +1822,68 @@ function Editing({
   )
 }
 
+function SeratoCues({
+  contentId,
+  read,
+}: {
+  contentId: string
+  read: TrackCues | null | undefined
+}): React.JSX.Element | null {
+  const { t: tr } = useTranslation()
+  const { data: running = false } = useQuery({
+    queryKey: ['serato-running', contentId],
+    queryFn: () => window.api.seratoRunning(),
+    staleTime: 0,
+  })
+  if (read === undefined) return null
+  if (read === null)
+    return (
+      <p data-testid="cues-unreadable" className="text-xs text-fg-dim">
+        {tr(copyOf(contentId).unreadable)}
+      </p>
+    )
+  return (
+    <div className="grid gap-2">
+      {read.cues.length === 0 ? (
+        <p data-testid="cues-serato-none" className="text-xs text-fg-dim">
+          {tr(copyOf(contentId).unanalysed)}
+        </p>
+      ) : (
+        <ul className="grid gap-1 text-xs">
+          {read.cues.map((c) => {
+            const letter = cueLetter(c.kind)
+            return (
+              <li
+                key={c.id}
+                data-testid={`cues-serato-${letter}`}
+                className="flex min-w-0 items-center gap-2"
+              >
+                <span
+                  data-testid={`cues-serato-${letter}-letter`}
+                  style={{ backgroundColor: hotCueColor(c.color), color: '#000' }}
+                  className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] text-[11px] font-semibold"
+                >
+                  {letter}
+                </span>
+                <span className="shrink-0 tabular-nums text-fg">{cueClock(c.ms)}</span>
+                {c.name && <span className="min-w-0 truncate text-fg-dim">{c.name}</span>}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+      <p data-testid="cues-read-only" className="text-xs text-fg-dim">
+        {tr('editor.cues.serato.readOnly')}
+      </p>
+      {running && (
+        <p data-testid="cues-serato-running" className="text-xs text-warn">
+          {tr('editor.cues.serato.running')}
+        </p>
+      )}
+    </div>
+  )
+}
+
 const signedMs = (ms: number): string => `${ms > 0 ? '+' : ms < 0 ? '−' : ''}${Math.abs(ms)} ms`
 
 function GridOffset({
@@ -1864,7 +1935,7 @@ export function CuesSection({
   const { data: read, isError } = useTrackCues(cue.contentId)
   const { data: queued } = useQueuedCues(cue.contentId)
   const wantsSurcoGrid = !!read && !read.analysed && cueProgramOf(cue.contentId).surcoGrid
-  const { colourHelp } = cueProgramOf(cue.contentId)
+  const { colourHelp, readOnly } = cueProgramOf(cue.contentId)
   const { data: surco } = useSurcoGrid(cue.contentId, wantsSurcoGrid)
   const provisional = wantsSurcoGrid && surco ? surco : undefined
   const shown = read && provisional ? { ...read, analysed: true, grid: provisional.grid } : read
@@ -1938,7 +2009,7 @@ export function CuesSection({
     shown.analysed &&
     shown.grid.length > 0
   const full = maximized && editable
-  const body =
+  const editingBody =
     isError || shown === null ? (
       <p data-testid="cues-unreadable" className="text-xs text-fg-dim">
         {tr(copyOf(cue.contentId).unreadable)}
@@ -1981,6 +2052,11 @@ export function CuesSection({
         }}
       />
     )
+  const body = readOnly ? (
+    <SeratoCues contentId={cue.contentId} read={isError ? null : read} />
+  ) : (
+    editingBody
+  )
   return (
     <div
       data-testid="cues-section"

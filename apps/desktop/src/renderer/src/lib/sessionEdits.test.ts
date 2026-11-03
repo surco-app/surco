@@ -168,6 +168,11 @@ describe('sessionEdits', () => {
     expect(edits['/music/a.wav'].fromTraktor).toBe(true)
   })
 
+  it('remembers that a track came from Serato, so a reopened row stays out of a convert that would lose it', () => {
+    const edits = sessionEdits([track({ fromSerato: true })])
+    expect(edits['/music/a.wav'].fromSerato).toBe(true)
+  })
+
   // A loose file has neither, and storing absent flags would only bloat the file.
   it('stores nothing about the library for a track that has no copy', () => {
     const edits = sessionEdits([track({})])

@@ -12,6 +12,7 @@ import {
 export interface SeratoPlaylistsHost {
   roots: () => SeratoLibraryRoot[]
   allowMedia?: (paths: string[]) => void
+  running?: () => Promise<boolean>
 }
 
 export function registerSeratoPlaylistsIpc(host: SeratoPlaylistsHost): void {
@@ -25,5 +26,6 @@ export function registerSeratoPlaylistsIpc(host: SeratoPlaylistsHost): void {
     host.allowMedia?.(entries.flatMap((e) => (e.path ? [e.path] : [])))
     return entries
   })
+  ipcMain.handle('serato:running', async () => (await host.running?.()) ?? false)
   ipcMain.handle('serato:membership', (_e, paths: string[]) => seratoMembership(library(), paths))
 }

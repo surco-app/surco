@@ -228,6 +228,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     seratoRecentCount: async () => 0,
     seratoTrackCount: async () => 0,
     loadSeratoPlaylist: async () => [],
+    seratoRunning: async () => false,
     editRekordboxPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
     rekordboxQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
     applyRekordboxQueue: async () => null,

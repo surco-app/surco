@@ -62,3 +62,19 @@ export function readSeratoMarkers(file: string): SeratoMarkers | null {
     return null
   }
 }
+
+export function readSeratoTrack(
+  file: string,
+): { markers: SeratoMarkers | null; durationMs: number } | null {
+  const read = readerFor(extname(file).toLowerCase())
+  try {
+    const f = TagFile.createFromPath(file)
+    try {
+      return { markers: read ? read(f) : null, durationMs: f.properties?.durationMilliseconds ?? 0 }
+    } finally {
+      f.dispose()
+    }
+  } catch {
+    return null
+  }
+}

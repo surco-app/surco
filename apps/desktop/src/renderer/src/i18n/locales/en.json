@@ -741,6 +741,7 @@
     "missingCount_one": "{{count}} required field missing",
     "missingCount_other": "{{count}} required fields missing",
     "mixedReplaceSelection": "The selection mixes tracks that replace a copy in your library with tracks that are added. Separate them to convert.",
+    "seratoBlocked": "Serato would lose the track and its cues",
     "reportError": "Report",
     "inLibrary": "In Apple Music",
     "inLibraryEngine": "In Engine DJ",
@@ -990,6 +991,12 @@
         "calls": "Engine DJ only keeps hot cues. The CALLs will not be saved",
         "saveAll_one": "Save {{count}} track to Engine DJ",
         "saveAll_other": "Save {{count}} tracks to Engine DJ"
+      },
+      "serato": {
+        "readOnly": "Serato is read-only in Surco",
+        "running": "Serato is open. The cues may be out of date until you close it.",
+        "unreadable": "Could not read the cues from Serato",
+        "none": "Serato has no hot cues on this track"
       },
       "traktor": {
         "save": "Save to Traktor",

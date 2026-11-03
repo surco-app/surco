@@ -1078,3 +1078,75 @@ describe('rekordbox:cueTwins', () => {
     expect(twins).toHaveBeenCalledWith('/m/a.aiff')
   })
 })
+
+describe('registerRekordboxCuesIpc for Serato tracks', () => {
+  const ID = 'serato:/Music/gone/s.mp3'
+
+  function register() {
+    const queues = {
+      rekordbox: queue({ cuesOp: () => savedOp() }),
+      engine: queue(),
+      traktor: queue(),
+    }
+    const beginMoment = vi.fn()
+    const words = vi.fn(async () => new Uint16Array([5, 6]))
+    registerRekordboxCuesIpc({
+      collection: () => '/c/master.db',
+      queue: queues.rekordbox,
+      applyQuietly: quietly(),
+      beginMoment,
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+      engine: {
+        libraryDir: () => '/e',
+        queue: queues.engine,
+        applyQuietly: quietly(),
+        words: async () => null,
+      },
+      traktor: {
+        nml: () => '',
+        bootVolume: () => 'HD',
+        queue: queues.traktor,
+        applyQuietly: quietly(),
+        words: async () => null,
+      },
+    })
+    return { queues, beginMoment, words }
+  }
+
+  it('reads a Serato row from its own file, answering nothing when the file is gone', async () => {
+    register()
+    expect(await handler('rekordbox:trackCues')({}, ID)).toBeNull()
+  })
+
+  it('draws a Serato track’s zoomed wave from the audio of its file', async () => {
+    const { words } = register()
+    expect([...((await handler('rekordbox:cueWaveDetail')({}, ID)) as Uint16Array)]).toEqual([5, 6])
+    expect(words).toHaveBeenCalledWith('/Music/gone/s.mp3')
+  })
+
+  it('never queues a Serato track’s cues anywhere, since Surco does not write to Serato yet', async () => {
+    const { queues, beginMoment } = register()
+    await handler('rekordbox:saveCues')({ sender: {} }, [
+      {
+        contentId: ID,
+        path: '/Music/gone/s.mp3',
+        label: 's',
+        wanted: [{ ms: 1000, kind: 1, color: null }],
+        fingerprint: 'f',
+      },
+    ])
+    for (const q of Object.values(queues)) expect(q.enqueue).not.toHaveBeenCalled()
+    expect(beginMoment).not.toHaveBeenCalled()
+  })
+
+  it('has nothing queued or to take back for a Serato track, even when rekordbox holds a save', async () => {
+    const { queues } = register()
+    expect(await handler('rekordbox:queuedCues')({}, ID)).toBeNull()
+    await handler('rekordbox:undoCues')({}, ID)
+    for (const q of Object.values(queues)) expect(q.drop).not.toHaveBeenCalled()
+  })
+})

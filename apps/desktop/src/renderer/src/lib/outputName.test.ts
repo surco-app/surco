@@ -386,4 +386,8 @@ describe('autoNamesFile', () => {
   it('never renames a Traktor track, whose collection points at the file by its path', () => {
     expect(autoNamesFile(true, { fromTraktor: true })).toBe(false)
   })
+
+  it('never renames a Serato track, whose crates point at the file by its path', () => {
+    expect(autoNamesFile(true, { fromSerato: true })).toBe(false)
+  })
 })

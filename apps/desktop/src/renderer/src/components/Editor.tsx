@@ -976,14 +976,17 @@ export const Editor = memo(function Editor({
   // hit once). Single-select never mixes, so it is never gated here.
   const replaceMode = isMulti ? selectionReplaceMode(libraryIndex, multiTracks) : 'replace'
   const mixedReplace = replaceMode === 'mixed'
-  const incomplete = missing.length > 0 || mixedReplace
-  const incompleteReason = missing.length
-    ? tr('editor.missingRequired', {
-        fields: missing.map((key) => tr(`fields.${key}`)).join(', '),
-      })
-    : mixedReplace
-      ? tr('editor.mixedReplaceSelection')
-      : undefined
+  const seratoRows = (isMulti ? multiTracks : [item]).some((t) => t.fromSerato)
+  const incomplete = seratoRows || missing.length > 0 || mixedReplace
+  const incompleteReason = seratoRows
+    ? tr('editor.seratoBlocked')
+    : missing.length
+      ? tr('editor.missingRequired', {
+          fields: missing.map((key) => tr(`fields.${key}`)).join(', '),
+        })
+      : mixedReplace
+        ? tr('editor.mixedReplaceSelection')
+        : undefined
   // The user's default genres come first so they're always one click away even when a
   // release isn't matched; the release's own genres/styles follow, deduped case-insensitively
   // so a shared name (the user's "Electronic" vs a provider's "electronic") shows a single
@@ -1847,7 +1850,7 @@ export const Editor = memo(function Editor({
           incomplete={incomplete}
           incompleteReason={incompleteReason}
           incompleteSummary={
-            missing.length
+            !seratoRows && missing.length
               ? missingSummary(
                   missing.map((key) => tr(`fields.${key}`)),
                   tr,

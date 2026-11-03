@@ -1869,6 +1869,7 @@ export interface TrackCueRow {
   kind: number
   color: number | null
   loop?: boolean
+  name?: string
 }
 
 export interface TrackCues {

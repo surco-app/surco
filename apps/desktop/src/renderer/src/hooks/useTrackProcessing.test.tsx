@@ -664,6 +664,26 @@ describe('useTrackProcessing', () => {
     expect(updateTrack).not.toHaveBeenCalled()
   })
 
+  it('never converts a track opened from Serato, whichever path asks, since Serato would lose it and its cues', async () => {
+    const processTrack = vi.fn()
+    setApi({ processTrack })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', fromSerato: true })],
+          settings: null,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.processOne('a')
+    })
+    expect(outcome).toBe('skipped')
+    expect(processTrack).not.toHaveBeenCalled()
+  })
+
   // A main-process failure surfaces on the row rather than throwing, so one bad file
   // never takes the app down mid-convert.
   it('surfaces a conversion error on the track', async () => {

@@ -19,7 +19,11 @@ export function canProcessTrack(
   requiredFields: string[],
   customFields: readonly CustomField[] = [],
 ): boolean {
-  return isConvertible(track) && missingRequiredOf(track, requiredFields, customFields).length === 0
+  return (
+    isConvertible(track) &&
+    !track.fromSerato &&
+    missingRequiredOf(track, requiredFields, customFields).length === 0
+  )
 }
 
 // The tracks "Convert all"/"Convert (N)" will actually process: convertible by state and

@@ -242,6 +242,7 @@ const api: Api = {
   seratoTrackCount: (): Promise<number> => ipcRenderer.invoke('serato:trackCount'),
   loadSeratoPlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
     ipcRenderer.invoke('serato:playlist', id),
+  seratoRunning: (): Promise<boolean> => ipcRenderer.invoke('serato:running'),
   editRekordboxPlaylist: (
     edit: RekordboxPlaylistEdit,
     label?: string,

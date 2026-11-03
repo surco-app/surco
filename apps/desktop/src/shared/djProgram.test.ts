@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   DJ_PROGRAMS,
+  isWritable,
   programOf,
   programsInOrder,
   RAIL_PROGRAMS,
@@ -60,5 +61,11 @@ describe('writableInOrder', () => {
 describe('RAIL_PROGRAMS', () => {
   it('ends with Serato, the last program added to the rail', () => {
     expect(RAIL_PROGRAMS.at(-1)).toBe('serato')
+  })
+})
+
+describe('isWritable', () => {
+  it('answers yes for the programs Surco writes to and no for Serato', () => {
+    expect(DJ_PROGRAMS.filter(isWritable)).toEqual(['rekordbox', 'traktor', 'engine'])
   })
 })

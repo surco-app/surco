@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ALL_SLOTS } from '../../../shared/cueRules'
+import { ALL_SLOTS, HOT_KINDS } from '../../../shared/cueRules'
 import { TRAKTOR_CUE_COLOR, TRAKTOR_SLOTS } from '../../../shared/traktorContent'
 import { CUE_PROGRAMS, cueProgramOf } from './cuePrograms'
 
@@ -15,6 +15,7 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       collectionGate: null,
       callsNote: null,
       saveAllKey: 'editor.cues.saveAll',
+      readOnly: false,
     })
   })
 
@@ -29,6 +30,7 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       collectionGate: 'traktor',
       callsNote: { key: 'editor.cues.traktor.calls', testId: 'cues-traktor-calls' },
       saveAllKey: 'editor.cues.traktor.saveAll',
+      readOnly: false,
     })
   })
 
@@ -43,7 +45,24 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       collectionGate: null,
       callsNote: { key: 'editor.cues.engine.calls', testId: 'cues-engine-calls' },
       saveAllKey: 'editor.cues.engine.saveAll',
+      readOnly: false,
     })
+  })
+
+  it('gives Serato its eight hot cues and nothing to write, so its cues are shown but never saved', () => {
+    expect(CUE_PROGRAMS.serato).toEqual({
+      slots: { kinds: HOT_KINDS, pairCalls: false },
+      readsAudio: true,
+      surcoGrid: false,
+      writesCalls: false,
+      fixedColour: null,
+      colourHelp: null,
+      collectionGate: null,
+      callsNote: null,
+      saveAllKey: 'editor.cues.serato.readOnly',
+      readOnly: true,
+    })
+    expect(cueProgramOf('serato:/Music/s.mp3').readOnly).toBe(true)
   })
 })
 

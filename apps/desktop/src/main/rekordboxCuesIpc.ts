@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { BrowserWindow, ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
-import { programOf, writableInOrder } from '../shared/djProgram'
+import { isWritable, programOf, writableInOrder } from '../shared/djProgram'
 import type { DropInput } from '../shared/dropDetect'
 import type { GridFit } from '../shared/gridEdit'
 import type {
@@ -15,13 +15,14 @@ import type {
   WritableProgram,
 } from '../shared/types'
 import type { BeatGridFit } from './beatGrid'
-import type { CueQueue, CueSource } from './cueSource'
+import type { CueQueue, CueReader, CueSource } from './cueSource'
 import { engineCueSource } from './engineCueSource'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { completableOps } from './rekordboxCompleteOnClose'
 import { rekordboxCueSource } from './rekordboxCueSource'
 import { withCollection } from './rekordboxPlaylistsIpc'
 import type { ProvisionalList } from './rekordboxProvisional'
+import { seratoCueSource } from './seratoCueSource'
 import { traktorCueSource } from './traktorCueSource'
 
 const CUE_SAVE_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
@@ -53,14 +54,21 @@ export function registerRekordboxCuesIpc(host: {
     words: (file: string) => Promise<Uint16Array | null>
   }
 }): void {
-  const sources: Record<DjProgram, CueSource | null> = {
+  const writers: Record<WritableProgram, CueSource | null> = {
     rekordbox: rekordboxCueSource(host),
     traktor: host.traktor ? traktorCueSource(host.traktor, host.collection) : null,
     engine: host.engine ? engineCueSource(host.engine, host.collection) : null,
-    serato: null,
+  }
+  const sources: Record<DjProgram, CueReader | null> = {
+    ...writers,
+    serato: seratoCueSource(host),
   }
   const sourceOf = (contentId: string) => sources[programOf(contentId)]
-  const queueOf = (contentId: string) => sourceOf(contentId)?.queue ?? null
+  const writerOf = (contentId: string) => {
+    const program = programOf(contentId)
+    return isWritable(program) ? writers[program] : null
+  }
+  const queueOf = (contentId: string) => writerOf(contentId)?.queue ?? null
   ipcMain.handle(
     'rekordbox:trackCues',
     async (_e, contentId: string): Promise<TrackCues | null> => {
@@ -109,7 +117,7 @@ export function registerRekordboxCuesIpc(host: {
   ipcMain.handle(
     'rekordbox:queuedCues',
     async (_e, contentId: string): Promise<QueuedCues | null> => {
-      const source = sourceOf(contentId)
+      const source = writerOf(contentId)
       const op = source?.queue.cuesOp(contentId)
       if (!source || !op || (op.wanted === undefined && op.drops === undefined)) return null
       const grid = op.grid ? { grid: op.grid, gridFingerprint: op.gridFingerprint } : {}
@@ -128,7 +136,7 @@ export function registerRekordboxCuesIpc(host: {
   })
   ipcMain.handle('rekordbox:saveCues', (e, reqs: SaveCuesRequest[]) => {
     const targets = CUE_SAVE_ORDER.flatMap((program) => {
-      const target = sources[program]
+      const target = writers[program]
       const mine = reqs.filter((r) => programOf(r.contentId) === program)
       return target && mine.length > 0 ? [{ ...target, program, mine }] : []
     })

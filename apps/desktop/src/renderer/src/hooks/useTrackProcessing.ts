@@ -243,6 +243,7 @@ export function useTrackProcessing({
       // running batch had queued, or vice versa. A second job would write the same
       // output path at the same time — whoever started first owns the conversion.
       if (track.status === 'processing') return 'skipped'
+      if (track.fromSerato) return 'skipped'
       // A read that failed must never become a write (see Params.rereadTrackMeta). The row
       // is re-resolved after the read because the library patches it in place; a row still
       // flagged afterwards, or with no re-read available, is refused rather than written.

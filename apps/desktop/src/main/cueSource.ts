@@ -10,13 +10,16 @@ export type CueQueue = Pick<RekordboxQueue, 'cuesOp' | 'drop'> & {
   enqueue: (ops: QueueOp[]) => void
 }
 
-export interface CueSource {
+export interface CueReader {
   trackCues(contentId: string): Promise<TrackCues | null>
   waveDetail(contentId: string): Promise<Uint16Array | null>
   dropInput(contentId: string): Promise<DropInput | null>
   auditionLead(contentId: string): Promise<number>
   surcoGrid(contentId: string): Promise<SurcoGrid | null>
   gridFit(contentId: string): Promise<GridFit | null>
+}
+
+export interface CueSource extends CueReader {
   queuedWanted(contentId: string, op: CuesOp): Promise<WantedCue[]>
   queue: CueQueue
   applyQuietly: (win: BrowserWindow | null) => void

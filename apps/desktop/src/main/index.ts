@@ -1314,6 +1314,7 @@ function registerIpc(): void {
       }
     },
     allowMedia: (paths) => mediaAccess.allowAll(paths),
+    running: DJ_PROCESSES.serato.isRunning,
   })
   registerRekordboxQueueIpc(rekordboxQueue, {
     collection: rekordboxCollectionPath,

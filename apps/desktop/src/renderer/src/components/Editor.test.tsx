@@ -1659,6 +1659,7 @@ describe('Editor multi-select', () => {
       rekordboxCue?: React.ComponentProps<typeof Editor>['rekordboxCue']
       onCueAutoMarkAll?: () => void
       cueTargets?: React.ComponentProps<typeof Editor>['cueTargets']
+      fromSeratoA?: boolean
     } = {},
   ) {
     if (opts.platform)
@@ -1678,6 +1679,7 @@ describe('Editor multi-select', () => {
       outputPath: opts.done ? '/out/a.aiff' : undefined,
       meta: { title: 'A', album: 'Shared', ...opts.metaA },
       spectrum: { cutoffHz: null, sampleRateHz: 44100, processed: false },
+      ...(opts.fromSeratoA && { fromSerato: true }),
     })
     const b = item({
       id: 'b',
@@ -1933,6 +1935,13 @@ describe('Editor multi-select', () => {
 
   // The plan must say which fields are still empty somewhere in the selection, the
   // same names the single-track gate gives.
+  it('names Serato as the reason its tracks are left out of the batch, while the others still convert', () => {
+    renderMulti({ fromSeratoA: true })
+    expect(screen.getByTestId('batch-plan-blocked')).toHaveTextContent(
+      'Serato would lose the track and its cues',
+    )
+  })
+
   it('names the missing fields in the batch plan', () => {
     renderMulti({ requiredFields: ['artist'], metaA: { artist: 'Kumara' } })
     expect(screen.getByTestId('batch-plan-blocked')).toHaveTextContent(i18n.t('fields.artist'))
@@ -2961,6 +2970,23 @@ describe('Editor metadata section wiring', () => {
     const header = document.querySelector(`[aria-controls="${body?.id}"]`)
     expect(header).toHaveAttribute('aria-expanded', 'true')
     expect(header).toHaveAccessibleName('Metadata')
+  })
+})
+
+describe('Editor on a track opened from Serato', () => {
+  it('blocks converting it, in place or not, and says Serato would lose the track and its cues', () => {
+    renderEditor({ id: 'a', fromSerato: true })
+    expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByTestId('process-format-toggle')).toBeDisabled()
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleDescription(
+      'Serato would lose the track and its cues',
+    )
+  })
+
+  it('leaves converting a rekordbox track as it was', () => {
+    renderEditor({ id: 'a', fromRekordbox: true })
+    expect(screen.getByTestId('process-btn')).not.toHaveAttribute('aria-disabled')
+    expect(screen.getByTestId('process-format-toggle')).toBeEnabled()
   })
 })
 

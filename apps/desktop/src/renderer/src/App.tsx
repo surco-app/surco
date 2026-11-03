@@ -137,6 +137,7 @@ import { railAlert } from './lib/copiesView'
 import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
 import { autoMarkTracks } from './lib/cueAutoMark'
 import { forgetStaleDrafts } from './lib/cueDrafts'
+import { CUE_PROGRAMS } from './lib/cuePrograms'
 import {
   type AutoMark,
   focusCue,
@@ -2399,9 +2400,10 @@ export default function App(): React.JSX.Element {
     editableSource !== null && browser.playlist !== null && playlistScope !== null
   const cuesOpen =
     editableOpen ||
-    ((browser.source === 'engine' || browser.source === 'traktor') &&
+    ((browser.source === 'engine' || browser.source === 'traktor' || browser.source === 'serato') &&
       browser.playlist !== null &&
       playlistScope !== null)
+  const cuesMarkable = cuesOpen && sourceProgram !== null && !CUE_PROGRAMS[sourceProgram].readOnly
   const crateOpen =
     editableOpen &&
     browser.playlist?.id !== RECENTLY_ADDED_ID &&
@@ -2882,6 +2884,7 @@ export default function App(): React.JSX.Element {
       autoMarkSelected:
         rekordboxCue &&
         selectedTracks.length > 1 &&
+        cuesMarkable &&
         !settings?.editorSections.some((s) => s.id === 'cues' && s.hidden)
           ? autoMarkSelected
           : undefined,
@@ -3512,7 +3515,7 @@ export default function App(): React.JSX.Element {
                             onCueJumpBars={onCueJumpBars}
                             onCueQuantize={onCueQuantize}
                             onCueFlow={onCueFlow}
-                            onCueAutoMarkAll={cuesOpen ? autoMarkSelected : undefined}
+                            onCueAutoMarkAll={cuesMarkable ? autoMarkSelected : undefined}
                             cueTargets={cueTargets}
                             cueActionsRef={cueActionsRef}
                             libraryIndex={libraryIndex}

@@ -754,6 +754,67 @@ describe('App Traktor cues', () => {
   })
 })
 
+describe('App Serato cues', () => {
+  afterEach(resetCueSession)
+
+  function openSerato(over: Partial<Api> = {}) {
+    setApi({
+      seratoAvailable: vi.fn<Api['seratoAvailable']>().mockResolvedValue(true),
+      loadSeratoTree: vi
+        .fn<Api['loadSeratoTree']>()
+        .mockResolvedValue([{ id: 'Friday', name: 'Friday', kind: 'playlist', count: 2 }]),
+      seratoRecentCount: vi.fn<Api['seratoRecentCount']>().mockResolvedValue(0),
+      loadSeratoPlaylist: vi.fn<Api['loadSeratoPlaylist']>().mockResolvedValue([
+        { path: '/m/a.wav', separator: false, meta: {}, contentId: 'serato:/m/a.wav' },
+        { path: '/m/b.wav', separator: false, meta: {}, contentId: 'serato:/m/b.wav' },
+      ]),
+      ...over,
+    })
+  }
+
+  async function openFriday() {
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-serato'))
+    fireEvent.click(await screen.findByTestId('source-node-Friday'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+  }
+
+  it('opens the cue editor on a row of a Serato crate, read-only, and keeps the track from being converted', async () => {
+    const read = vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue({
+      contentId: 'serato:/m/b.wav',
+      analysed: false,
+      grid: [],
+      strong: [],
+      phrases: [],
+      cues: [{ id: '0', ms: 1000, kind: 1, color: 1 }],
+      wave: null,
+      durationMs: 60000,
+      fingerprint: 'f0',
+      gridFingerprint: '',
+    })
+    openSerato({ rekordboxTrackCues: read })
+    await openFriday()
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() => expect(read).toHaveBeenCalledWith('serato:/m/b.wav'))
+    expect(await screen.findByTestId('cues-serato-A')).toBeInTheDocument()
+    expect(screen.getByTestId('cues-read-only')).toBeInTheDocument()
+    expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleDescription(
+      'Serato would lose the track and its cues',
+    )
+  })
+
+  it('offers no Auto mark over several Serato rows, since their cues cannot be saved', async () => {
+    openSerato({ rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue(null) })
+    await openFriday()
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    expect(await screen.findByTestId('cues-single-only')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-auto-mark-all')).toBeNull()
+  })
+})
+
 describe('App sidebar clipping', () => {
   it('clips the sidebar so the player cannot animate into page scroll', async () => {
     await renderApp()

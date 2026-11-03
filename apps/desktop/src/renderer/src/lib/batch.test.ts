@@ -138,3 +138,19 @@ describe('summarizeBatch', () => {
     })
   })
 })
+
+describe('a Serato track', () => {
+  it('is never converted, since Serato would lose the track and its cues', () => {
+    const serato = { ...track('s', 'idle'), fromSerato: true }
+    expect(canProcessTrack(serato, [])).toBe(false)
+  })
+
+  it('is left out of a batch while the other tracks of the selection still convert', () => {
+    const tracks = [{ ...track('s', 'idle'), fromSerato: true }, track('a', 'idle')]
+    expect(eligibleForBatch(tracks, [])).toEqual(['a'])
+  })
+
+  it('leaves a rekordbox track converting as before', () => {
+    expect(canProcessTrack({ ...track('r', 'idle'), fromRekordbox: true }, [])).toBe(true)
+  })
+})

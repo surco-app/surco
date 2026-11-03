@@ -34,6 +34,10 @@ export function writableInOrder<const T extends readonly WritableProgram[]>(
   return order
 }
 
+export function isWritable(program: DjProgram): program is WritableProgram {
+  return (WRITABLE_PROGRAMS as readonly DjProgram[]).includes(program)
+}
+
 export function programOf(contentId: string): DjProgram {
   if (isTraktorContent(contentId)) return 'traktor'
   if (isEngineContent(contentId)) return 'engine'

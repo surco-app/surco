@@ -741,6 +741,7 @@
     "missingCount_one": "{{count}} Pflichtfeld fehlt",
     "missingCount_other": "{{count}} Pflichtfelder fehlen",
     "mixedReplaceSelection": "Die Auswahl mischt Titel, die eine Kopie in deiner Mediathek ersetzen, mit Titeln, die hinzugefügt werden. Trenne sie zum Konvertieren.",
+    "seratoBlocked": "Serato würde den Titel und seine Cues verlieren",
     "reportError": "Melden",
     "inLibrary": "In Apple Music",
     "inLibraryEngine": "In Engine DJ",
@@ -990,6 +991,12 @@
         "calls": "Engine DJ speichert nur Hot Cues. Die CALLs werden nicht gespeichert",
         "saveAll_one": "{{count}} Titel in Engine DJ speichern",
         "saveAll_other": "{{count}} Titel in Engine DJ speichern"
+      },
+      "serato": {
+        "readOnly": "Serato ist in Surco schreibgeschützt",
+        "running": "Serato ist geöffnet. Die Cues sind vielleicht nicht aktuell, bis du es schließt.",
+        "unreadable": "Die Cues aus Serato konnten nicht gelesen werden",
+        "none": "Serato hat keine Hot Cues auf diesem Titel"
       },
       "traktor": {
         "save": "In Traktor speichern",

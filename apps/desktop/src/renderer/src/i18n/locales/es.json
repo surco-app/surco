@@ -741,6 +741,7 @@
     "missingCount_one": "Falta {{count}} campo obligatorio",
     "missingCount_other": "Faltan {{count}} campos obligatorios",
     "mixedReplaceSelection": "La selección mezcla pistas que sustituyen a una copia de tu biblioteca y pistas que se añaden. Sepáralas para convertirlas.",
+    "seratoBlocked": "Serato perdería la pista y sus cues",
     "reportError": "Reportar",
     "inLibrary": "En Apple Music",
     "inLibraryEngine": "En Engine DJ",
@@ -990,6 +991,12 @@
         "calls": "Engine DJ solo guarda hot cues. Los CALL no se guardarán",
         "saveAll_one": "Guardar {{count}} pista en Engine DJ",
         "saveAll_other": "Guardar {{count}} pistas en Engine DJ"
+      },
+      "serato": {
+        "readOnly": "Serato es de solo lectura en Surco",
+        "running": "Serato está abierto. Los cues pueden no estar al día hasta que lo cierres.",
+        "unreadable": "No se pudieron leer los cues de Serato",
+        "none": "Serato no tiene hot cues en esta pista"
       },
       "traktor": {
         "save": "Guardar en Traktor",

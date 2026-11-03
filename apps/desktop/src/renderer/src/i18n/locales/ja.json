@@ -741,6 +741,7 @@
     "missingCount_one": "{{count}} 必須フィールドが不足しています",
     "missingCount_other": "{{count}} 必須フィールドが不足しています",
     "mixedReplaceSelection": "選択されたトラックは、ライブラリ内のコピーを置き換えるものと追加するものが混在しています。変換するには別々にしてください。",
+    "seratoBlocked": "Serato でトラックとそのキューが失われます",
     "reportError": "レポート",
     "inLibrary": "Apple Music に登録済み",
     "inLibraryEngine": "Engine DJ に登録済み",
@@ -990,6 +991,12 @@
         "calls": "Engine DJ はホットキューのみを保存します。CALL は保存されません",
         "saveAll_one": "{{count}} トラックを Engine DJ に保存",
         "saveAll_other": "{{count}} トラックを Engine DJ に保存"
+      },
+      "serato": {
+        "readOnly": "Surco では Serato は読み取り専用です",
+        "running": "Serato が開いています。閉じるまでキューが最新でない可能性があります。",
+        "unreadable": "Serato からキューを読み取れませんでした",
+        "none": "このトラックには Serato のホットキューがありません"
       },
       "traktor": {
         "save": "Traktor に保存",
