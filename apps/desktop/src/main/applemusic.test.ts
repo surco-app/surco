@@ -34,6 +34,7 @@ import {
   carryOverToAppleMusicCopy,
   entriesForPaths,
   isAppleMusicOnly,
+  libraryCacheHoldsTitle,
   markAppleMusicReplacing,
   musicEntryForFile,
   musicFileEntries,
@@ -1359,7 +1360,7 @@ describe('Music entries for loaded files', () => {
       .fn()
       .mockResolvedValueOnce([row(PID, 'A', 'Old Name', ''), row(OTHER, 'B', 'X', '')].join(RS))
       .mockResolvedValueOnce(row(PID, '/m/a.aiff'))
-    expect(await musicEntryForFile('/m/a.aiff', ['New Name', 'Old Name'], run)).toEqual({
+    expect(await musicEntryForFile('/m/a.aiff', ['New Name', 'Old Name'], true, run)).toEqual({
       persistentId: PID,
       label: 'A - Old Name',
     })
@@ -1370,7 +1371,18 @@ describe('Music entries for loaded files', () => {
       .fn()
       .mockResolvedValueOnce([row(PID, 'A', 'T', ''), row(OTHER, 'A', 'T', '')].join(RS))
       .mockResolvedValueOnce([row(PID, '/m/a.aiff'), row(OTHER, '/m/a.aiff')].join(RS))
-    expect(await musicEntryForFile('/m/a.aiff', ['T'], run)).toBeUndefined()
+    expect(await musicEntryForFile('/m/a.aiff', ['T'], true, run)).toBeUndefined()
+  })
+
+  it('opens a closed Music for a title its saved library holds, so a renamed file is followed even with Music shut', () => {
+    const cache = [{ title: 'Dust In The Wind (Electricstomp Mix)', artist: 'Interface' }]
+    expect(libraryCacheHoldsTitle(cache, [' dust in the wind (electricstomp mix) '])).toBe(true)
+  })
+
+  it('leaves Music shut for a title it does not hold or when Surco never read the library', () => {
+    const cache = [{ title: 'Other', artist: 'A' }]
+    expect(libraryCacheHoldsTitle(cache, ['Dust In The Wind'])).toBe(false)
+    expect(libraryCacheHoldsTitle(null, ['Dust In The Wind'])).toBe(false)
   })
 })
 

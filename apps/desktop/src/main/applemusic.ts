@@ -1106,6 +1106,14 @@ export function entriesForPaths(
 
 const nameKey = (text: string) => text.normalize('NFC').trim().toLowerCase()
 
+export function libraryCacheHoldsTitle(
+  cache: { title: string }[] | null,
+  titles: string[],
+): boolean {
+  const wanted = new Set(titles.map(nameKey))
+  return !!cache?.some((entry) => wanted.has(nameKey(entry.title)))
+}
+
 // A Music track whose name differs from the file's title tag (beyond case and surrounding
 // spaces, which is what the review fixes) is not found, so the file counts as not in Music.
 // That fails safe: nothing in Music is updated or removed for it. A caller about to trash
@@ -1185,11 +1193,12 @@ export async function appleMusicHoldsFile(
 export async function musicEntryForFile(
   path: string,
   titles: string[],
+  launch = true,
   run: typeof runOsascript = runOsascript,
 ): Promise<{ persistentId: string; label: string } | undefined> {
   const { entries } = await musicFileEntries(
     titles.map((title) => ({ path, title })),
-    true,
+    launch,
     run,
   )
   const found = entries[path]

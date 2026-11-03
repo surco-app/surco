@@ -117,6 +117,7 @@ export interface ProcessTrackDeps {
   findAppleMusicEntry?: (
     path: string,
     meta: TrackMetadata,
+    launch?: boolean,
   ) => Promise<{ persistentId: string; label: string } | undefined>
   // Registers the written file in the user's Engine DJ library database, storing the
   // cover (when there is one) as the row's artwork.
@@ -812,7 +813,24 @@ export async function runProcessTrack(
       !outputIsInput &&
       shouldAddToAppleMusic(addToAppleMusic, deps.platform, format) &&
       (!!existingMusicEntry || (!!job.musicPersistentId && !job.replacesPath))
-    if (inPlace && !retireAfterMusic) await retireOriginal()
+    let renameFollowFailed = false
+    if (
+      inPlace &&
+      !outputIsInput &&
+      deps.platform === 'darwin' &&
+      !shouldAddToAppleMusic(addToAppleMusic, deps.platform, format)
+    ) {
+      const entry = await deps
+        .findAppleMusicEntry?.(job.inputPath, job.meta, false)
+        .catch(() => undefined)
+      if (entry)
+        await deps.relinkAppleMusicEntry(entry.persistentId, target).catch((e) => {
+          log.warn('process:track Music could not follow the rename', job.inputPath, e)
+          renameFollowFailed = true
+        })
+    }
+    if (renameFollowFailed) originalKept = true
+    else if (inPlace && !retireAfterMusic) await retireOriginal()
     // The file has landed and the original may be gone: a stats write that fails (a locked
     // or synced settings file) must not turn a finished conversion into a failed one.
     try {
@@ -830,7 +848,7 @@ export async function runProcessTrack(
     let oldMusicCopyKept: ProcessResult['oldMusicCopyKept']
     let supersededPath: string | undefined
     let musicLandedPath: string | undefined
-    let appleMusicFailed: true | undefined
+    let appleMusicFailed: true | undefined = renameFollowFailed || undefined
     let appleMusicErrorKey: ErrorKey | undefined
     let musicNameLeftMarked: true | undefined
     let musicReplaced: MusicExpect['replaced']

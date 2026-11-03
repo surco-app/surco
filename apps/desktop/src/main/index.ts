@@ -72,6 +72,7 @@ import {
   pruneAnalysisCache,
 } from './analysisCache'
 import { registerAppleMusicIpc } from './appleMusicIpc'
+import { loadLibraryCache } from './appleMusicLibraryCache'
 import {
   addToAppleMusic,
   appleMusicEntry,
@@ -81,6 +82,7 @@ import {
   appleMusicMediaFolder,
   carryOverToAppleMusicCopy,
   deleteFromAppleMusic,
+  libraryCacheHoldsTitle,
   markAppleMusicReplacing,
   musicEntryForFile,
   readMusicEntryFacts,
@@ -1733,11 +1735,12 @@ function registerIpc(): void {
             throw err
           }),
         ),
-      findAppleMusicEntry: async (path, meta) => {
+      findAppleMusicEntry: async (path, meta, launch) => {
         const own = await readMeta(path)
         const titles = [...new Set([meta.title, own.tags.title].filter(Boolean))]
         if (titles.length === 0) return undefined
-        return appleMusicLimiter.run(() => musicEntryForFile(path, titles))
+        const open = launch !== false || libraryCacheHoldsTitle(loadLibraryCache(), titles)
+        return appleMusicLimiter.run(() => musicEntryForFile(path, titles, open))
       },
       isEngineDjRunning: DJ_PROCESSES.engine.isRunning,
       // The library folder is read at add time (not captured with the job) so a queue of
