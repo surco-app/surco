@@ -55,8 +55,8 @@ export function registerRekordboxCuesIpc(host: {
 }): void {
   const sources: Record<DjProgram, CueSource | null> = {
     rekordbox: rekordboxCueSource(host),
-    traktor: host.traktor ? traktorCueSource(host.traktor, host.collection) : null,
-    engine: host.engine ? engineCueSource(host.engine, host.collection) : null,
+    traktor: host.traktor ? traktorCueSource(host.traktor, host.collection, host.beatGrid) : null,
+    engine: host.engine ? engineCueSource(host.engine, host.collection, host.beatGrid) : null,
   }
   const sourceOf = (contentId: string) => sources[programOf(contentId)]
   const queueOf = (contentId: string) => sourceOf(contentId)?.queue ?? null

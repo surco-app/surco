@@ -3,6 +3,7 @@ import type { BrowserWindow } from 'electron'
 import { traktorKey } from '../shared/traktorContent'
 import type { CueQueue, CueSource } from './cueSource'
 import { keyOf } from './rekordboxPlaylistsIpc'
+import { type BeatGridOf, sameClockFit, sameClockVerdict } from './sameClockGrid'
 import { readTraktorTrackCues, traktorEntryBlock } from './traktorCues'
 import { traktorDropInput } from './traktorDropInput'
 import { traktorFileOf } from './traktorPlaylists'
@@ -16,6 +17,7 @@ export function traktorCueSource(
     words: (file: string) => Promise<Uint16Array | null>
   },
   collection: () => string,
+  beatGrid: BeatGridOf,
 ): CueSource {
   const nmlOf = (): string => {
     const path = traktor.nml()
@@ -44,8 +46,12 @@ export function traktorCueSource(
     },
     auditionLead: async () => 0,
     surcoGrid: async () => null,
-    gridFit: async () => null,
-    gridVerdict: async () => null,
+    gridFit: async (contentId) => sameClockFit(traktorFile(contentId), beatGrid),
+    gridVerdict: async (contentId) =>
+      sameClockVerdict(
+        readTraktorTrackCues(nmlOf(), contentId)?.grid,
+        await sameClockFit(traktorFile(contentId), beatGrid, 'low'),
+      ),
     queuedWanted: async () => [],
     queue: traktor.queue,
     applyQuietly: traktor.applyQuietly,

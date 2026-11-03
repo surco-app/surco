@@ -28,6 +28,7 @@ import {
   gridAnchors,
   gridBeats,
   gridOffsets,
+  SAME_CLOCK_FILE,
   shiftGrid,
 } from '../../../shared/gridEdit'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
@@ -179,8 +180,6 @@ const COPY: Record<DjProgram, typeof REKORDBOX_COPY> = {
 }
 
 const copyOf = (contentId: string) => COPY[programOf(contentId)]
-
-const SAME_CLOCK_FILE = /\.(wav|aif|aiff|flac)$/i
 
 export function saveAllKey(unsaved: ReadonlySet<string>): string {
   const programs = new Set([...unsaved].map(programOf))

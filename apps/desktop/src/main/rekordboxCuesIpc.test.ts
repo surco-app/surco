@@ -982,7 +982,13 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
         rekordbox?: ReturnType<typeof queue>
         engine?: ReturnType<typeof queue>
         traktor?: ReturnType<typeof queue>
-        beatGrid?: (file: string) => Promise<{ bpm: number; firstMs: number } | null>
+        beatGrid?: (
+          file: string,
+        ) => Promise<{
+          bpm: number
+          firstMs: number
+          phases?: { ms: number; firstMs: number }[]
+        } | null>
       } = {},
     ) {
       const nml = await collectionFile()
@@ -1044,11 +1050,20 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
       expect(await handler('rekordbox:auditionLead')({}, 'engine:4')).toBe(0)
     })
 
-    it('fits no grid for a Traktor or Engine track, whose waveform clock is not measured yet', async () => {
+    it('fits the grid of an uncompressed Traktor file on the clock Surco draws, as rekordbox does for PCM', async () => {
       const { beatGrid } = await registerAll()
-      expect(await handler('rekordbox:gridFit')({}, ID)).toBeNull()
+      expect(await handler('rekordbox:gridFit')({}, ID)).toMatchObject({ bpm: 120, firstMs: 102 })
+      expect(beatGrid).toHaveBeenLastCalledWith(expect.stringMatching(/t\.aiff$/), 'high')
       expect(await handler('rekordbox:gridFit')({}, 'engine:4')).toBeNull()
-      expect(beatGrid).not.toHaveBeenCalled()
+    })
+
+    it('judges the grid of an uncompressed Traktor file for the bad-grid filter, measuring at low priority', async () => {
+      const phases = Array.from({ length: 40 }, (_, i) => ({ ms: 3200 + i * 6400, firstMs: 0 }))
+      const { beatGrid } = await registerAll({
+        beatGrid: async () => ({ bpm: 120, firstMs: 0, phases }),
+      })
+      await handler('rekordbox:gridVerdict')({}, ID)
+      expect(beatGrid).toHaveBeenLastCalledWith(expect.stringMatching(/t\.aiff$/), 'low')
     })
 
     it('builds no Surco grid for a Traktor or Engine track', async () => {
