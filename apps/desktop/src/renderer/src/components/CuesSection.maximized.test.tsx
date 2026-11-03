@@ -1871,4 +1871,23 @@ describe('CuesSection maximized grid', () => {
     await ready()
     expect(screen.queryByTestId('cues-offgrid')).toBeNull()
   })
+
+  it('paints the cues that miss their beat apart on both waves, so they are found at a glance', async () => {
+    setup(null, {
+      ...READ,
+      cues: [
+        { id: 'c1', ms: 31986, kind: 0, color: null },
+        { id: 'h1', ms: 31986, kind: 1, color: 42 },
+        { id: 'c2', ms: 64000, kind: 0, color: null },
+      ],
+    })
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-offgrid-go-31986'))
+    expect(screen.getByTestId('cue-wave-call-31986')).toHaveAttribute('data-off-grid', 'true')
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-off-grid', 'true')
+    expect(screen.getByTestId('cue-wave-call-64000')).toHaveAttribute('data-off-grid', 'false')
+    expect(screen.getByTestId('cue-detail-call-31986')).toHaveAttribute('data-off-grid', 'true')
+    expect(screen.getByTestId('cue-detail-hot-A')).toHaveAttribute('data-off-grid', 'true')
+  })
 })
+

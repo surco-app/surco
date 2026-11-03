@@ -1044,6 +1044,7 @@ function Editing({
         ms: cue.ms,
         driftMs,
       }))
+  const offGridKeys = offGrid.map((o) => o.key)
   const offGridBar = (
     <CueOffGridBar
       off={offGrid}
@@ -1169,6 +1170,7 @@ function Editing({
       : ghost
   const strip = (
     <CueWave
+      offGrid={offGridKeys}
       wave={read.wave}
       grid={grid}
       quantize={quantize}
@@ -1192,6 +1194,7 @@ function Editing({
   )
   const detail = (
     <CueWaveDetail
+      offGrid={offGridKeys}
       source={source}
       grid={grid}
       cues={waveCues}

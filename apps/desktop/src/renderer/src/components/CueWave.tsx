@@ -51,6 +51,7 @@ export function CueWave({
   onDropProposal,
   trimmed,
   readOnly,
+  offGrid,
   onSelect,
   onMenu,
   onMarkMenu,
@@ -72,6 +73,7 @@ export function CueWave({
   onDropProposal?: (ms: number) => void
   trimmed?: number[]
   readOnly?: boolean
+  offGrid?: string[]
   onSelect?: (key: string | null) => void
   onMenu?: (at: { ms: number; x: number; y: number }) => void
   onMarkMenu?: (at: { key: string; clientX: number; clientY: number }) => void
@@ -340,13 +342,14 @@ export function CueWave({
         const isSelected = selected === c.key
         const common = {
           'data-testid': `cue-wave-call-${c.ms}`,
+          'data-off-grid': offGrid?.includes(c.key) ? 'true' : 'false',
           'data-gone': gone.has(c.key) ? 'true' : 'false',
           'data-paired': c.paired ? 'true' : 'false',
           'data-pending': pending ? 'true' : 'false',
           'data-selected': isSelected ? 'true' : 'false',
           style: {
             ...markStyle(c.at),
-            borderTopColor: MEMORY_CUE_COLOR,
+            borderTopColor: offGrid?.includes(c.key) ? 'var(--color-warn)' : MEMORY_CUE_COLOR,
             ...(gone.has(c.key) ? { opacity: GONE_OPACITY } : {}),
           },
           className: `absolute z-10 h-0 w-0 border-x-4 border-x-transparent ${
@@ -371,6 +374,7 @@ export function CueWave({
         const isSelected = selected === h.key
         const common = {
           'data-testid': `cue-wave-hot-${h.letter}`,
+          'data-off-grid': offGrid?.includes(h.key) ? 'true' : 'false',
           'data-gone': gone.has(h.key) ? 'true' : 'false',
           'data-pending': pending ? 'true' : 'false',
           'data-selected': isSelected ? 'true' : 'false',
@@ -381,7 +385,11 @@ export function CueWave({
             ...(gone.has(h.key) ? { opacity: GONE_OPACITY } : {}),
           },
           className: `absolute z-10 h-3 w-3 rounded-[3px] text-center text-[11px] font-semibold leading-3 ${
-            isSelected ? 'ring-2 ring-[var(--color-fg)]' : ''
+            isSelected
+              ? 'ring-2 ring-[var(--color-fg)]'
+              : offGrid?.includes(h.key)
+                ? 'ring-2 ring-[var(--color-warn)]'
+                : ''
           }`,
         }
         return readOnly ? (
