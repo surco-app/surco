@@ -1,6 +1,6 @@
 # Mapa de Serato: lo que el compilador obliga a decidir
 
-Medido el 03/11 tras el bloque 1 añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
+Medido el 03/11 tras el bloque 2 añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
 
 ## Añadidos a mano (el compilador no los ve)
 
@@ -28,10 +28,23 @@ src/main/copiesIpc.test.ts:356 TS2741
 src/main/copiesIpc.test.ts:381 TS2741
 src/main/copiesIpc.test.ts:99 TS2741
 src/main/damageScan.ts:19 TS2741
+src/main/djProcesses.test.ts:166 TS7053
+src/main/djProcesses.test.ts:29 TS2741
+src/main/djProcesses.test.ts:32 TS2741
+src/main/djProcesses.ts:131 TS2741
+src/main/djProcesses.ts:142 TS2322
+src/main/djProcesses.ts:17 TS2741
+src/main/djProcesses.ts:19 TS2536
+src/main/djProcesses.ts:21 TS2741
+src/main/djProcesses.ts:34 TS2344
+src/main/djProcesses.ts:37 TS2741
+src/main/djProcesses.ts:76 TS2344
+src/main/djProcesses.ts:77 TS2536
+src/main/djProcesses.ts:82 TS2741
 src/main/duplicateReplace.ts:17 TS2345
 src/main/duplicateReplace.ts:174 TS7053
-src/main/index.ts:2170 TS2741
-src/main/index.ts:325 TS2741
+src/main/index.ts:2054 TS2741
+src/main/index.ts:322 TS2741
 src/main/libraryStatus.ts:22 TS2741
 src/main/libraryTagSync.ts:42 TS7053
 src/main/libraryTagSync.ts:5 TS2345
