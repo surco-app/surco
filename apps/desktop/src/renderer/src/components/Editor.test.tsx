@@ -2906,16 +2906,16 @@ describe('Editor output file name', () => {
     expect(screen.queryByTestId('output-name-hint')).toBeNull()
   })
 
-  it('keeps the File Name section beside the overwrite notice, so the original can be renamed while it is rewritten', () => {
+  it('shows only the File Name section when overwriting without loss, since the DJ chose that mode and the convert confirmation already warns', () => {
     renderEditor({ id: 'a', fileName: 'original track 01' }, 'wav', { overwriteOriginal: true })
     expect(screen.getByTestId('output-name')).toBeInTheDocument()
-    expect(screen.getByTestId('overwrite-notice')).toBeInTheDocument()
+    expect(screen.queryByTestId('overwrite-notice')).toBeNull()
   })
 
   // Overwrite is a one-shot pick in the menu, so a track the user sent there by hand
   // keeps going there after a visit to another track, even with Settings saying otherwise.
   it('keeps a remembered Overwrite pick with overwrite off in Settings', () => {
-    renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'aiff', {
+    renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'mp3', {
       overwriteOriginal: false,
       rememberedPick: { destination: 'overwrite' },
     })
@@ -2941,11 +2941,9 @@ describe('Editor output file name', () => {
     expect(screen.getByTestId('overwrite-hint')).toHaveTextContent(/backup/i)
   })
 
-  // Overwriting MP3 with MP3, or any lossless target, is recoverable enough to skip the
-  // sharper wording — the plain notice is shown.
-  it('shows the plain notice when overwriting without losing quality', () => {
+  it('shows no notice when overwriting without losing quality', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'aiff', { overwriteOriginal: true })
-    expect(screen.getByTestId('overwrite-hint')).not.toHaveTextContent(/master is lost/i)
+    expect(screen.queryByTestId('overwrite-notice')).toBeNull()
   })
 
   // Overwrite never forces ALAC over another format's file: the export renders a fresh

@@ -1666,7 +1666,9 @@ export const Editor = memo(function Editor({
                       )
                     case 'output': {
                       const notice =
-                        !isMulti && picked.overwriteOriginal ? (
+                        !isMulti &&
+                        picked.overwriteOriginal &&
+                        (lossyOverwrite || !willEditInPlace) ? (
                           <OverwriteNotice
                             title={tr('editor.overwriteTitle')}
                             lossy={lossyOverwrite}
@@ -1677,9 +1679,7 @@ export const Editor = memo(function Editor({
                                       ? 'editor.overwriteLossyHint'
                                       : 'editor.overwriteLossyHintBackup',
                                   )
-                                : willEditInPlace
-                                  ? tr('editor.overwriteHint')
-                                  : tr('editor.overwriteAlacHint')
+                                : tr('editor.overwriteAlacHint')
                             }
                           />
                         ) : null
