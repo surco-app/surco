@@ -1520,17 +1520,19 @@ function registerIpc(): void {
           hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
           sessions,
           {
-            enqueue: rekordboxQueue.enqueue,
-            applyQuietly: () => applyRekordboxQueueQuietly(later),
-          },
-          {
-            enqueue: traktorCueQueue.enqueue,
-            state: traktorCueQueue.state,
-            applyQuietly: () => applyTraktorCueQueueQuietly(later),
-          },
-          {
-            enqueue: engineCueQueue.enqueue,
-            applyQuietly: () => applyEngineCueQueueQuietly(later),
+            rekordbox: {
+              enqueue: rekordboxQueue.enqueue,
+              applyQuietly: () => applyRekordboxQueueQuietly(later),
+            },
+            traktor: {
+              enqueue: traktorCueQueue.enqueue,
+              state: traktorCueQueue.state,
+              applyQuietly: () => applyTraktorCueQueueQuietly(later),
+            },
+            engine: {
+              enqueue: engineCueQueue.enqueue,
+              applyQuietly: () => applyEngineCueQueueQuietly(later),
+            },
           },
         )
       } finally {

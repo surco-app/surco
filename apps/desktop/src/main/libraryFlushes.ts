@@ -2,7 +2,7 @@ import { existsSync, realpathSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import log from 'electron-log/main'
-import type { DjProgram } from '../shared/djProgram'
+import { type DjProgram, programsInOrder } from '../shared/djProgram'
 import type { LibraryStatus, LibraryTagUpdate, RekordboxSyncIssue } from '../shared/types'
 import { activity } from './activity'
 import {
@@ -217,6 +217,25 @@ export function logLibraryFlush(label: string, result: FlushResult): void {
   }
 }
 
+export interface ConversionRun {
+  repoints: RekordboxRepoint[]
+  later: boolean
+  addable: boolean
+}
+
+export interface ConversionFlusher<P extends DjProgram> {
+  before(): Promise<void>
+  after(run: ConversionRun): Promise<FlushOutcome[P]>
+}
+
+export type ConversionQueues = {
+  rekordbox: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void }
+  traktor?: Parameters<typeof holdInQueue>[0]
+  engine?: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void }
+}
+
+export const FLUSH_ORDER = programsInOrder(['traktor', 'rekordbox', 'engine'])
+
 // A convert-all run ends (however it ended — finished, cancelled, or failed, the
 // renderer calls this from its finally block): flush whatever Traktor cue patches the
 // batch recorded into collection.nml in one write. A failure here must never surface as
@@ -229,160 +248,216 @@ export function logLibraryFlush(label: string, result: FlushResult): void {
 export async function flushConversionBatch(
   host: LibraryHost,
   sessions: Sessions,
-  queue: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void },
-  traktorQueue?: Parameters<typeof holdInQueue>[0],
-  engineQueue?: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void },
+  queues: ConversionQueues,
 ): Promise<FlushOutcome> {
-  const traktorDeps = traktorFlushDeps(host, sessions.traktor)
-  const traktorHold = traktorQueue && holdInQueue(traktorQueue, bootVolumeName)
-  let patches: NmlPatch[] = []
-  let synced: { patches: NmlPatch[]; result: SyncResult } | undefined
-  let traktorHeld = false
-  // An end nested in a batch still open takes nothing: the outer end flushes, and judges.
-  let traktorLater = false
-  await flushTraktorSync({
-    ...traktorDeps,
-    endNmlBatch: () => {
-      patches = endNmlBatch()
-      traktorLater = nmlBatchOpen()
-      return patches
-    },
-    syncCollection: async (path, list) => {
-      const result = await traktorDeps.syncCollection(path, list)
-      synced = { patches: list, result }
-      return result
-    },
-    queue: traktorHold && {
-      waiting: traktorHold.waiting,
-      hold: (list, path) => {
-        traktorHeld = true
-        return traktorHold.hold(list, path)
-      },
-    },
-  })
-  const traktor: FlushOutcome['traktor'] = traktorLater
-    ? 'later'
-    : patches.length === 0
-      ? 'off'
-      : traktorHeld
-        ? 'queued'
-        : synced
-          ? traktorWrite(synced.patches, synced.result)
-          : traktorDeps.collectionMissing
-            ? 'failed'
-            : 'off'
+  const flushers: { [P in DjProgram]: ConversionFlusher<P> } = {
+    traktor: traktorConversionFlusher(host, sessions, queues.traktor),
+    rekordbox: rekordboxConversionFlusher(host, sessions, queues.rekordbox),
+    engine: engineConversionFlusher(host, sessions, queues.engine),
+  }
+  for (const program of FLUSH_ORDER) await flushers[program].before()
   // The run's repoints, taken once: rekordbox and Engine DJ each apply the same list to
   // their own library, and closing the batch twice would hand the second one nothing.
   const repoints = endRekordboxBatch()
-  const repointsLater = rekordboxBatchOpen()
-  const addable = repoints.some((repoint) => repoint.meta)
-  const addToTraktor = getSettings().addToTraktor
-  const traktorOps = libraryTrackOps(
+  const run: ConversionRun = {
     repoints,
-    'traktor',
-    undefined,
-    addToTraktor,
-    addToTraktor && addable
-      ? await traktorCollectionHas(getSettings().traktorNmlPath, getSettings().syncTraktor)
-      : undefined,
-  )
-  if (traktorQueue && traktorOps.length > 0) {
-    traktorQueue.enqueue(traktorOps)
-    traktorQueue.applyQuietly()
+    later: rekordboxBatchOpen(),
+    addable: repoints.some((repoint) => repoint.meta),
   }
-  // rekordbox next, and independently: the two collections are separate libraries, so
-  // one being open or unwritable must not stop the other from being updated.
-  const rekordbox = rekordboxWriteDeps(host)
-  const collectionPath = rekordboxCollectionPath()
-  const rekordboxUnplugged = onUnpluggedDrive(getSettings().rekordboxDbPath)
-  let rekordboxResult: FlushResult | undefined
-  let rekordboxQueued = false
-  await queueConversionRun(repoints, {
-    collectionPath,
-    held: rekordbox.held,
-    unplugged: rekordboxUnplugged,
-    flushRepoints: async (list) => {
-      const result = await flushRekordboxSync({
-        ...rekordbox,
-        unplugged: rekordboxUnplugged,
-        showBlockedDialog: () => {},
-        endBatch: () => list,
-        repointTracks: (path, items) => repointRekordbox(path, items, sessions),
-      })
-      logLibraryFlush('rekordbox repoint', result)
-      rekordboxResult = result
-      return result
-    },
-    readOps: (list) =>
-      trackOpsFromRun(collectionPath, list, {
-        repointing: rekordbox.collectionPath !== '' || rekordbox.held,
-        probe: { properties: probeProperties, duration: (p) => probeDuration(p) },
-        find: { realPath: (p: string) => realpathSync(p) },
-        addNew: getSettings().addToRekordbox,
-      }),
-    enqueue: (ops, waiting) => {
-      if (waiting && waiting.length > 0) rekordboxQueued = true
-      queue.enqueue(ops, waiting)
-    },
-    apply: queue.applyQuietly,
-  })
-  // Engine DJ last, again independently. Its library is the one the Engine destination
-  // writes to. With Engine open the run waits in its queue without asking to close it, as
-  // rekordbox's does: the dialog asked to convert again, which an in-place conversion
-  // cannot, its source being gone. A check that cannot tell counts as Engine being open.
-  const engineRepoints = repoints.filter(
-    (repoint) => repoint.from !== repoint.to || repoint.fromBytes !== undefined,
-  )
-  const engineUnplugged = onUnpluggedDrive(getSettings().engineLibraryDir)
-  const engineDeps = engineFlushDeps(host)
-  const engineResult = await flushEngineSync({
-    ...engineDeps,
-    ...(engineQueue && {
-      ensureClosed: async () => !(await isEngineDjRunning().catch(() => true)),
-      showBlockedDialog: () => {},
-      unplugged: engineUnplugged,
-    }),
-    endBatch: () => engineRepoints,
-    repointTracks: (libraryDir, list) => repointEngine(libraryDir, list, sessions),
-  })
-  logLibraryFlush('Engine DJ repoint', engineResult)
-  const unplugged = engineResult.blocked === 'collection-missing' && engineUnplugged
-  const engineQueued =
-    engineQueue !== undefined && (engineResult.blocked === ENGINE_KEYS.runningReason || unplugged)
-  if (engineQueued) {
-    engineQueue.enqueue([], engineRepoints)
-    engineQueue.applyQuietly()
-  }
-  const addToEngineDj = getSettings().addToEngineDj
-  const engineOps = libraryTrackOps(
-    repoints,
-    'engine',
-    undefined,
-    addToEngineDj,
-    addToEngineDj && addable
-      ? await engineLibraryHas(getSettings().engineLibraryDir, getSettings().syncEngineDj)
-      : undefined,
-  )
-  if (engineQueue && engineOps.length > 0) {
-    engineQueue.enqueue(engineOps)
-    engineQueue.applyQuietly()
-  }
+  const outcome: Partial<FlushOutcome> = {}
+  for (const program of FLUSH_ORDER) await settle(outcome, program, flushers[program], run)
+  return outcome as FlushOutcome
+}
+
+async function settle<P extends DjProgram>(
+  outcome: Partial<FlushOutcome>,
+  program: P,
+  flusher: ConversionFlusher<P>,
+  run: ConversionRun,
+): Promise<void> {
+  outcome[program] = await flusher.after(run)
+}
+
+function traktorConversionFlusher(
+  host: LibraryHost,
+  sessions: Sessions,
+  traktorQueue: ConversionQueues['traktor'],
+): ConversionFlusher<'traktor'> {
+  let traktor: FlushOutcome['traktor'] = 'off'
   return {
-    rekordbox: repointOutcome(
-      repointsLater,
-      repoints.length,
-      rekordboxQueued,
-      rekordboxResult,
-      rekordbox.collectionPath,
-    ),
-    engine: repointOutcome(
-      repointsLater,
-      engineRepoints.length,
-      engineQueued,
-      engineResult,
-      engineDeps.collectionPath,
-    ),
-    traktor,
+    before: async () => {
+      const traktorDeps = traktorFlushDeps(host, sessions.traktor)
+      const traktorHold = traktorQueue && holdInQueue(traktorQueue, bootVolumeName)
+      let patches: NmlPatch[] = []
+      let synced: { patches: NmlPatch[]; result: SyncResult } | undefined
+      let traktorHeld = false
+      // An end nested in a batch still open takes nothing: the outer end flushes, and judges.
+      let traktorLater = false
+      await flushTraktorSync({
+        ...traktorDeps,
+        endNmlBatch: () => {
+          patches = endNmlBatch()
+          traktorLater = nmlBatchOpen()
+          return patches
+        },
+        syncCollection: async (path, list) => {
+          const result = await traktorDeps.syncCollection(path, list)
+          synced = { patches: list, result }
+          return result
+        },
+        queue: traktorHold && {
+          waiting: traktorHold.waiting,
+          hold: (list, path) => {
+            traktorHeld = true
+            return traktorHold.hold(list, path)
+          },
+        },
+      })
+      traktor = traktorLater
+        ? 'later'
+        : patches.length === 0
+          ? 'off'
+          : traktorHeld
+            ? 'queued'
+            : synced
+              ? traktorWrite(synced.patches, synced.result)
+              : traktorDeps.collectionMissing
+                ? 'failed'
+                : 'off'
+    },
+    after: async ({ repoints, addable }) => {
+      const addToTraktor = getSettings().addToTraktor
+      const traktorOps = libraryTrackOps(
+        repoints,
+        'traktor',
+        undefined,
+        addToTraktor,
+        addToTraktor && addable
+          ? await traktorCollectionHas(getSettings().traktorNmlPath, getSettings().syncTraktor)
+          : undefined,
+      )
+      if (traktorQueue && traktorOps.length > 0) {
+        traktorQueue.enqueue(traktorOps)
+        traktorQueue.applyQuietly()
+      }
+      return traktor
+    },
+  }
+}
+
+function rekordboxConversionFlusher(
+  host: LibraryHost,
+  sessions: Sessions,
+  queue: ConversionQueues['rekordbox'],
+): ConversionFlusher<'rekordbox'> {
+  return {
+    before: async () => {},
+    after: async ({ repoints, later: repointsLater }) => {
+      // rekordbox next, and independently: the two collections are separate libraries, so
+      // one being open or unwritable must not stop the other from being updated.
+      const rekordbox = rekordboxWriteDeps(host)
+      const collectionPath = rekordboxCollectionPath()
+      const rekordboxUnplugged = onUnpluggedDrive(getSettings().rekordboxDbPath)
+      let rekordboxResult: FlushResult | undefined
+      let rekordboxQueued = false
+      await queueConversionRun(repoints, {
+        collectionPath,
+        held: rekordbox.held,
+        unplugged: rekordboxUnplugged,
+        flushRepoints: async (list) => {
+          const result = await flushRekordboxSync({
+            ...rekordbox,
+            unplugged: rekordboxUnplugged,
+            showBlockedDialog: () => {},
+            endBatch: () => list,
+            repointTracks: (path, items) => repointRekordbox(path, items, sessions),
+          })
+          logLibraryFlush('rekordbox repoint', result)
+          rekordboxResult = result
+          return result
+        },
+        readOps: (list) =>
+          trackOpsFromRun(collectionPath, list, {
+            repointing: rekordbox.collectionPath !== '' || rekordbox.held,
+            probe: { properties: probeProperties, duration: (p) => probeDuration(p) },
+            find: { realPath: (p: string) => realpathSync(p) },
+            addNew: getSettings().addToRekordbox,
+          }),
+        enqueue: (ops, waiting) => {
+          if (waiting && waiting.length > 0) rekordboxQueued = true
+          queue.enqueue(ops, waiting)
+        },
+        apply: queue.applyQuietly,
+      })
+      return repointOutcome(
+        repointsLater,
+        repoints.length,
+        rekordboxQueued,
+        rekordboxResult,
+        rekordbox.collectionPath,
+      )
+    },
+  }
+}
+
+function engineConversionFlusher(
+  host: LibraryHost,
+  sessions: Sessions,
+  engineQueue: ConversionQueues['engine'],
+): ConversionFlusher<'engine'> {
+  return {
+    before: async () => {},
+    after: async ({ repoints, later: repointsLater, addable }) => {
+      // Engine DJ last, again independently. Its library is the one the Engine destination
+      // writes to. With Engine open the run waits in its queue without asking to close it, as
+      // rekordbox's does: the dialog asked to convert again, which an in-place conversion
+      // cannot, its source being gone. A check that cannot tell counts as Engine being open.
+      const engineRepoints = repoints.filter(
+        (repoint) => repoint.from !== repoint.to || repoint.fromBytes !== undefined,
+      )
+      const engineUnplugged = onUnpluggedDrive(getSettings().engineLibraryDir)
+      const engineDeps = engineFlushDeps(host)
+      const engineResult = await flushEngineSync({
+        ...engineDeps,
+        ...(engineQueue && {
+          ensureClosed: async () => !(await isEngineDjRunning().catch(() => true)),
+          showBlockedDialog: () => {},
+          unplugged: engineUnplugged,
+        }),
+        endBatch: () => engineRepoints,
+        repointTracks: (libraryDir, list) => repointEngine(libraryDir, list, sessions),
+      })
+      logLibraryFlush('Engine DJ repoint', engineResult)
+      const unplugged = engineResult.blocked === 'collection-missing' && engineUnplugged
+      const engineQueued =
+        engineQueue !== undefined &&
+        (engineResult.blocked === ENGINE_KEYS.runningReason || unplugged)
+      if (engineQueued) {
+        engineQueue.enqueue([], engineRepoints)
+        engineQueue.applyQuietly()
+      }
+      const addToEngineDj = getSettings().addToEngineDj
+      const engineOps = libraryTrackOps(
+        repoints,
+        'engine',
+        undefined,
+        addToEngineDj,
+        addToEngineDj && addable
+          ? await engineLibraryHas(getSettings().engineLibraryDir, getSettings().syncEngineDj)
+          : undefined,
+      )
+      if (engineQueue && engineOps.length > 0) {
+        engineQueue.enqueue(engineOps)
+        engineQueue.applyQuietly()
+      }
+      return repointOutcome(
+        repointsLater,
+        engineRepoints.length,
+        engineQueued,
+        engineResult,
+        engineDeps.collectionPath,
+      )
+    },
   }
 }
 

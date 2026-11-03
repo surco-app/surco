@@ -826,17 +826,15 @@ function scenarioApi(
         else applies[place] = start()
       }
       const flush = () =>
-        flushConversionBatch(
-          libraryHost(errors),
-          sessions,
-          { enqueue: queues.rekordbox.enqueue, applyQuietly: applyLater('rekordbox') },
-          {
+        flushConversionBatch(libraryHost(errors), sessions, {
+          rekordbox: { enqueue: queues.rekordbox.enqueue, applyQuietly: applyLater('rekordbox') },
+          traktor: {
             enqueue: queues.traktor.enqueue,
             state: queues.traktor.state,
             applyQuietly: applyLater('traktor'),
           },
-          { enqueue: queues.engine.enqueue, applyQuietly: applyLater('engine') },
-        )
+          engine: { enqueue: queues.engine.enqueue, applyQuietly: applyLater('engine') },
+        })
       flushes.push(
         verify
           ? judgedFlush(verify, flush, later, options.sabotage)
