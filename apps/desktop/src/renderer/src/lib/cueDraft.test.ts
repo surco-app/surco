@@ -1139,3 +1139,35 @@ describe('reduceDraft on a Traktor deck', () => {
     expect(reduceDraft(s, { type: 'add-hot', ms: bar(8), kind: HOT_KINDS[7] }, tk)).toBe(s)
   })
 })
+
+describe('the beat grid in the draft', () => {
+  const withGrid = () => startDraft([], 'mine', [], { bpm: 150, anchorMs: 46 })
+
+  it('starts with the grid the program has', () => {
+    expect(withGrid().grid).toEqual({ bpm: 150, anchorMs: 46 })
+    expect(empty().grid).toBeNull()
+  })
+
+  it('moves the grid without moving a single cue, because the cue was right and the grid wrong', () => {
+    const marked = run(withGrid(), { type: 'mark-drop', ms: bar(32) })
+    const moved = run(marked, { type: 'set-grid', grid: { bpm: 150, anchorMs: 6 } })
+    expect(moved.grid).toEqual({ bpm: 150, anchorMs: 6 })
+    expect(moved.cues).toBe(marked.cues)
+  })
+
+  it('undoes and redoes a grid change like a cue change', () => {
+    const moved = run(withGrid(), { type: 'set-grid', grid: { bpm: 150, anchorMs: 6 } })
+    const undone = run(moved, { type: 'undo' })
+    expect(undone.grid).toEqual({ bpm: 150, anchorMs: 46 })
+    expect(run(undone, { type: 'redo' }).grid).toEqual({ bpm: 150, anchorMs: 6 })
+  })
+
+  it('undoes the grid first and the cue after when the cue moved before the grid', () => {
+    const marked = run(withGrid(), { type: 'mark-drop', ms: bar(32) })
+    const both = run(marked, { type: 'set-grid', grid: { bpm: 150, anchorMs: 6 } })
+    const once = run(both, { type: 'undo' })
+    expect(once.grid).toEqual({ bpm: 150, anchorMs: 46 })
+    expect(once.cues).toBe(marked.cues)
+    expect(run(once, { type: 'undo' }).cues).toHaveLength(0)
+  })
+})

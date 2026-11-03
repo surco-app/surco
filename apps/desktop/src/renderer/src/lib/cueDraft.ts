@@ -15,6 +15,7 @@ import {
   type StrongPart,
   type WantedCue,
 } from '../../../shared/cueRules'
+import type { EditableGrid } from '../../../shared/gridEdit'
 import { HOT_CUE_DEFAULT_INDEX } from '../../../shared/rekordboxCueColors'
 
 export interface DraftCue extends WantedCue {
@@ -31,6 +32,7 @@ export interface DraftSnapshot {
   edited: string[]
   placed: string[]
   origin: Record<string, string>
+  grid: EditableGrid | null
 }
 
 export interface CueDraft {
@@ -48,6 +50,7 @@ export interface CueDraft {
   locked: string[]
   marked: string[]
   nextKey: number
+  grid: EditableGrid | null
 }
 
 export interface DraftContext {
@@ -78,11 +81,17 @@ export type DraftAction =
   | { type: 'batch'; actions: DraftAction[] }
   | { type: 'undo' }
   | { type: 'redo' }
+  | { type: 'set-grid'; grid: EditableGrid }
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
 const isHot = (c: { kind: number }): boolean => c.kind !== 0
 
-export function startDraft(cues: WantedCue[], flowId: string, locked: string[] = []): CueDraft {
+export function startDraft(
+  cues: WantedCue[],
+  flowId: string,
+  locked: string[] = [],
+  grid: EditableGrid | null = null,
+): CueDraft {
   return {
     cues: cues.map((c, i) => ({ ...c, key: c.id ?? `n${i}` })),
     flowId,
@@ -98,6 +107,7 @@ export function startDraft(cues: WantedCue[], flowId: string, locked: string[] =
     locked,
     marked: [],
     nextKey: cues.length,
+    grid,
   }
 }
 
@@ -159,6 +169,7 @@ function snapshot(state: CueDraft): DraftSnapshot {
     edited: state.edited,
     placed: state.placed,
     origin: state.origin,
+    grid: state.grid,
   }
 }
 
@@ -172,6 +183,7 @@ function restore(state: CueDraft, at: DraftSnapshot): CueDraft {
     edited: at.edited,
     placed: at.placed,
     origin: at.origin,
+    grid: at.grid,
     selected: null,
     notice: null,
   }
@@ -451,6 +463,8 @@ function step(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft
   const generator = flowById(ctx, state.generatedBy)
   if (action.type === 'select') return { ...state, selected: action.key }
   if (action.type === 'use-flow') return { ...state, flowId: action.flowId }
+  if (action.type === 'set-grid')
+    return { ...state, grid: action.grid, past: [...state.past, snapshot(state)], future: [] }
   if (action.type === 'batch') {
     const next = action.actions.reduce((s, a) => reduceDraft(s, a, ctx), state)
     if (next.cues === state.cues) return { ...next, past: state.past, future: state.future }
