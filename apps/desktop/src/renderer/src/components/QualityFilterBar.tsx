@@ -248,8 +248,14 @@ export function QualityFilterBar({
     tally[m] > 0 || (m === 'badGrid' && gridMeasure?.offered === true)
   const measuring =
     gridMeasure && gridMeasure.total > 0 && gridMeasure.done < gridMeasure.total
-      ? tr('sidebar.filter.gridMeasuring', { done: gridMeasure.done, total: gridMeasure.total })
-      : null
+      ? {
+          text: `${Math.floor((gridMeasure.done / gridMeasure.total) * 100)} %`,
+          title: tr('sidebar.filter.gridMeasuring', {
+            done: gridMeasure.done,
+            total: gridMeasure.total,
+          }),
+        }
+      : undefined
   const matchSection = shownConversion.filter((m) => MATCH_MODES.includes(m))
   // The remaining buckets that follow the format axis, in logical groups rendered with a
   // thin divider between them so the menu reads by dimension. Empty groups drop out, so the
@@ -390,9 +396,8 @@ export function QualityFilterBar({
       testid={`quality-filter-${mode}`}
       Icon={FILTER_ICONS[mode]}
       dot={mode === 'all' ? null : attentionDot(mode, tally)}
-      label={
-        mode === 'badGrid' && measuring ? `${filterLabel(mode)} · ${measuring}` : filterLabel(mode)
-      }
+      label={filterLabel(mode)}
+      progress={mode === 'badGrid' ? measuring : undefined}
       count={mode === 'all' ? trackCount : countOf(mode)}
       selected={mode === 'all' ? nothingActive : isActive(mode)}
       onClick={mode === 'all' ? () => chooseAll(close) : () => toggle(mode, close)}

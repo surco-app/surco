@@ -131,7 +131,7 @@
       "trashSuspects_other": "{{count}} の疑わしいファイルをゴミ箱へ移動",
       "current": "フィルター: {{filter}} {{count}}",
       "reviewIncomplete": "「メタデータを確認」で入力する",
-      "badGrid": "ずれたグリッド",
+      "badGrid": "グリッド不良",
       "gridMeasuring": "測定中 {{done}} / {{total}}"
     },
     "search": {

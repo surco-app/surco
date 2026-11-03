@@ -131,8 +131,8 @@
       "trashSuspects_other": "Mover los {{count}} archivos dudosos a la papelera",
       "current": "Filtro: {{filter}} {{count}}",
       "reviewIncomplete": "Completarlas en Revisar metadatos",
-      "badGrid": "Rejilla descuadrada",
-      "gridMeasuring": "midiendo {{done}} de {{total}}"
+      "badGrid": "Rejilla mal",
+      "gridMeasuring": "Midiendo {{done}} de {{total}}"
     },
     "search": {
       "placeholder": "Buscar pistas",

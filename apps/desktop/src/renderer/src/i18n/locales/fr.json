@@ -131,8 +131,8 @@
       "trashSuspects_other": "Mettre les {{count}} fichiers douteux à la corbeille",
       "current": "Filtre : {{filter}} {{count}}",
       "reviewIncomplete": "Les compléter dans Vérifier les métadonnées",
-      "badGrid": "Grille décalée",
-      "gridMeasuring": "mesure {{done}} sur {{total}}"
+      "badGrid": "Grille fausse",
+      "gridMeasuring": "Mesure {{done}} sur {{total}}"
     },
     "search": {
       "placeholder": "Rechercher des morceaux",

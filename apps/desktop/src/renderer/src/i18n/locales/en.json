@@ -131,8 +131,8 @@
       "trashSuspects_other": "Move the {{count}} doubtful files to Trash",
       "current": "Filter: {{filter}} {{count}}",
       "reviewIncomplete": "Fill them in Review metadata",
-      "badGrid": "Grid off the beat",
-      "gridMeasuring": "measuring {{done}} of {{total}}"
+      "badGrid": "Bad grid",
+      "gridMeasuring": "Measuring {{done}} of {{total}}"
     },
     "search": {
       "placeholder": "Search tracks",

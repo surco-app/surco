@@ -131,8 +131,8 @@
       "trashSuspects_other": "Die {{count}} zweifelhaften Dateien in den Papierkorb legen",
       "current": "Filter: {{filter}} {{count}}",
       "reviewIncomplete": "In „Metadaten prüfen“ ausfüllen",
-      "badGrid": "Raster daneben",
-      "gridMeasuring": "messe {{done}} von {{total}}"
+      "badGrid": "Raster falsch",
+      "gridMeasuring": "Messe {{done}} von {{total}}"
     },
     "search": {
       "placeholder": "Tracks suchen",

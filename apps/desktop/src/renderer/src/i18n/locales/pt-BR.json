@@ -131,8 +131,8 @@
       "trashSuspects_other": "Mover os {{count}} arquivos duvidosos para a Lixeira",
       "current": "Filtro: {{filter}} {{count}}",
       "reviewIncomplete": "Completar em Revisar metadados",
-      "badGrid": "Grade desalinhada",
-      "gridMeasuring": "medindo {{done}} de {{total}}"
+      "badGrid": "Grade errada",
+      "gridMeasuring": "Medindo {{done}} de {{total}}"
     },
     "search": {
       "placeholder": "Buscar faixas",

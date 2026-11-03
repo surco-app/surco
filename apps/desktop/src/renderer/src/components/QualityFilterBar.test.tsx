@@ -223,7 +223,12 @@ describe('QualityFilterBar', () => {
       gridMeasure: { offered: true, done: 344, total: 2077 },
     })
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
-    expect(screen.getByTestId('quality-filter-badGrid')).toHaveTextContent('344 of 2077')
+    const option = screen.getByTestId('quality-filter-badGrid')
+    expect(option).toHaveTextContent(/^Bad grid16 %3$/)
+    expect(screen.getByTestId('quality-filter-badGrid-progress')).toHaveAttribute(
+      'title',
+      'Measuring 344 of 2077',
+    )
     expect(screen.getByTestId('quality-filter-badGrid-dot')).toBeInTheDocument()
   })
 
