@@ -63,10 +63,18 @@ const FATE: Record<FileFate['fate'], { detailKey: string; status?: 'warn' | 'err
 }
 
 const SETTLED: ReadonlySet<LibraryReplaceOutcome> = new Set(['repointed', 'replaced', 'none'])
+const RUNNING_REASON: Record<DjProgram, string> = {
+  rekordbox: 'rekordbox-running',
+  engine: 'engine-running',
+  traktor: 'traktor-running',
+}
+const KEEPS_REPLACED: Record<DjProgram, boolean> = {
+  rekordbox: true,
+  engine: true,
+  traktor: false,
+}
 const SKIPPED = new Set([
-  'rekordbox-running',
-  'engine-running',
-  'traktor-running',
+  ...Object.values(RUNNING_REASON),
   'backup-failed',
   'unreadable',
   'read-only',
@@ -222,8 +230,9 @@ async function keptFate(
   if (pair.shared) return { fate: 'shared' }
   const settled = Object.values(byLibrary).every((o) => SETTLED.has(o[index]))
   if (!settled) return { fate: 'unsettled' }
-  const stillHeld =
-    byLibrary.rekordbox?.[index] === 'replaced' || byLibrary.engine?.[index] === 'replaced'
+  const stillHeld = LIBRARY_ORDER.some(
+    (library) => KEEPS_REPLACED[library] && byLibrary[library]?.[index] === 'replaced',
+  )
   // Fails closed: a library that cannot be read may still use the file, and a trashed
   // file shows there as a missing track with its cues out of reach.
   if (stillHeld || (await deps.usedByLibrary(pair.from).catch(() => true))) return { fate: 'used' }

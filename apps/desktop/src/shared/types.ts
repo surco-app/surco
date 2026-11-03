@@ -942,11 +942,8 @@ export type LibraryTracks = Partial<Record<CueLibrary, string>>
 
 export type LibraryReplaceOutcome = 'repointed' | 'replaced' | 'none' | 'skipped' | 'failed'
 
-export interface DuplicateReplaceOutcome {
+export interface DuplicateReplaceOutcome extends Partial<Record<DjProgram, LibraryReplaceOutcome>> {
   from: string
-  rekordbox?: LibraryReplaceOutcome
-  engine?: LibraryReplaceOutcome
-  traktor?: LibraryReplaceOutcome
   fileTrashed: boolean
   keptForLibrary: boolean
   music?: ListMusicStep
