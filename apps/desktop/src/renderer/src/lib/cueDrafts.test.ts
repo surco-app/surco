@@ -24,6 +24,7 @@ const READ: TrackCues = {
   wave: null,
   durationMs: 400000,
   fingerprint: 'f0',
+  gridFingerprint: '',
 }
 const Q1: QueuedCues = { wanted: [{ ms: 1000, kind: 0, color: null }], fingerprint: 'f0' }
 const TARGET = { path: '/m/g.wav', label: 'Gowan', fingerprint: 'f0' }

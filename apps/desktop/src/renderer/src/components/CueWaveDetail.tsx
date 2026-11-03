@@ -112,6 +112,7 @@ export function CueWaveDetail({
   onDeleteMark,
   ghost: rawGhost,
   movable,
+  offGrid,
   onMoveMark,
   onMarkDrag,
   proposals,
@@ -134,6 +135,7 @@ export function CueWaveDetail({
   onDeleteMark?: (key: string) => void
   ghost?: CueGhost
   movable?: string[]
+  offGrid?: string[]
   onMoveMark?: (key: string, ms: number) => void
   onMarkDrag?: (dragging: boolean) => void
   proposals?: DropProposal[]
@@ -464,6 +466,7 @@ export function CueWaveDetail({
                 role="img"
                 data-testid={`cue-detail-call-${c.ms + fromMs}`}
                 data-mark="true"
+                data-off-grid={offGrid?.includes(c.key) ? 'true' : 'false'}
                 data-gone={gone.has(c.key) ? 'true' : 'false'}
                 data-pending={pendingOf.get(c.key) ? 'true' : 'false'}
                 aria-hidden="true"
@@ -472,7 +475,7 @@ export function CueWaveDetail({
                 {...grab(c.key)}
                 style={{
                   ...markStyle(c.at),
-                  borderTopColor: MEMORY_CUE_COLOR,
+                  borderTopColor: offGrid?.includes(c.key) ? 'var(--color-warn)' : MEMORY_CUE_COLOR,
                   ...(movable?.includes(c.key) && onMoveMark ? { cursor: 'ew-resize' } : {}),
                   ...(gone.has(c.key) ? { opacity: GONE_OPACITY } : {}),
                 }}
@@ -488,6 +491,7 @@ export function CueWaveDetail({
                   role="img"
                   data-testid={`cue-detail-hot-${h.letter}`}
                   data-mark="true"
+                  data-off-grid={offGrid?.includes(h.key) ? 'true' : 'false'}
                   data-gone={gone.has(h.key) ? 'true' : 'false'}
                   data-pending={pendingOf.get(h.key) ? 'true' : 'false'}
                   data-selected={selected === h.key ? 'true' : 'false'}
@@ -503,7 +507,11 @@ export function CueWaveDetail({
                     ...(movable?.includes(h.key) && onMoveMark ? { cursor: 'ew-resize' } : {}),
                   }}
                   className={`absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-[11px] font-bold leading-[14px] ${
-                    selected === h.key ? 'ring-2 ring-[var(--color-fg)]' : ''
+                    selected === h.key
+                      ? 'ring-2 ring-[var(--color-fg)]'
+                      : offGrid?.includes(h.key)
+                        ? 'ring-2 ring-[var(--color-warn)]'
+                        : ''
                   }`}
                 >
                   {h.letter}

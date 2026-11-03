@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { startDraft } from './cueDraft'
+import { reduceDraft, startDraft } from './cueDraft'
 import {
   autoMarkOf,
   autoMarks,
@@ -180,5 +180,30 @@ describe('cue session', () => {
     keepDraft('103', '103|f0|null', startDraft([], 'mine'), TARGET)
     rerender({ at: '/a/master.db' })
     expect([...unsavedCueTracks()]).toEqual(['103'])
+  })
+
+  it('sends the edited grid only with the track whose grid moved, when saving every track at once', () => {
+    const grid = { bpm: 150, anchorMs: 46 }
+    const ctx = { beats: [], snapTo: [], strong: [], phrases: [], flows: [] }
+    const moved = reduceDraft(
+      startDraft([], 'mine', [], grid, 'g0'),
+      { type: 'set-grid', grid: { bpm: 150, anchorMs: 6 } },
+      ctx,
+    )
+    keepDraft('103', '103|f0|null', moved, TARGET)
+    keepDraft(
+      '104',
+      '104|f1|null',
+      startDraft([{ ms: 1000, kind: 0, color: null }], 'mine', [], grid, 'g1'),
+      {
+        path: '/m/h.wav',
+        label: 'Other',
+        fingerprint: 'f1',
+      },
+    )
+    const [first, second] = draftsToSave()
+    expect(first).toMatchObject({ grid: { bpm: 150, anchorMs: 6 }, gridFingerprint: 'g0' })
+    expect(second.grid).toBeUndefined()
+    expect(second.gridFingerprint).toBeUndefined()
   })
 })

@@ -917,7 +917,8 @@
         "undo": "annuler",
         "redo": "rétablir",
         "zoom": "zoom",
-        "esc": "fermer le menu ouvert"
+        "esc": "fermer le menu ouvert",
+        "grid": "Déplacer la grille"
       },
       "resetColour": "Réinitialiser",
       "saveShort": "Enregistrer",
@@ -1024,6 +1025,33 @@
         "left_other": "{{count}} ne rentrent pas : plus de lettre libre",
         "full_one": "Le hot cue ne rentre pas : toutes les lettres ont déjà un cue",
         "full_other": "Les {{count}} hot cues ne rentrent pas : toutes les lettres ont déjà un cue"
+      },
+      "grid": {
+        "bpm": "BPM de la grille",
+        "bpmHint": "Tapez le BPM ou",
+        "double": "×2 Double",
+        "half": "½ Moitié",
+        "left": "Déplacer la grille à gauche (⌥←)",
+        "right": "Déplacer la grille à droite (⌥→)",
+        "widen": "Élargir la grille, baisse le BPM",
+        "narrow": "Resserrer la grille, monte le BPM",
+        "downbeat": "Premier temps sur la tête de lecture",
+        "auto": "Auto",
+        "autoHint": "Caler la grille sur les temps",
+        "here": "Grille ici",
+        "end": "à la fin",
+        "unmeasured": "La grille de ce logiciel ne se règle pas encore dans Surco",
+        "provisional": "rekordbox n'a pas encore analysé ce morceau, il n'y a pas de grille à régler",
+        "varying": "Grille à plusieurs tempos, réglez-la dans le logiciel",
+        "surcoDraft": "Ces cues ont été posés sur la grille de Surco. Enregistrez-les ou annulez-les pour régler la grille"
+      },
+      "offGrid": {
+        "count_one": "{{count}} cue ne tombe pas sur le temps",
+        "count_other": "{{count}} cues ne tombent pas sur le temps",
+        "before": "{{ms}} ms en avance",
+        "after": "{{ms}} ms en retard",
+        "go": "Aller au cue",
+        "snap": "Caler sur le temps"
       }
     }
   },

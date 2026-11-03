@@ -3,6 +3,7 @@ import { BrowserWindow, ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
 import { programOf, programsInOrder } from '../shared/djProgram'
 import type { DropInput } from '../shared/dropDetect'
+import type { GridFit } from '../shared/gridEdit'
 import type {
   CopyReason,
   DjProgram,
@@ -91,6 +92,10 @@ export function registerRekordboxCuesIpc(host: {
       return source ? source.surcoGrid(contentId) : null
     },
   )
+  ipcMain.handle('rekordbox:gridFit', async (_e, contentId: string): Promise<GridFit | null> => {
+    const source = sourceOf(contentId)
+    return source ? source.gridFit(contentId) : null
+  })
   ipcMain.handle('rekordbox:countCompletable', () => {
     const path = host.collection()
     return withCollection(
@@ -105,8 +110,13 @@ export function registerRekordboxCuesIpc(host: {
       const source = sourceOf(contentId)
       const op = source?.queue.cuesOp(contentId)
       if (!source || !op || (op.wanted === undefined && op.drops === undefined)) return null
-      if (op.wanted) return { wanted: op.wanted, fingerprint: op.fingerprint }
-      return { wanted: await source.queuedWanted(contentId, op), fingerprint: op.fingerprint }
+      const grid = op.grid ? { grid: op.grid, gridFingerprint: op.gridFingerprint } : {}
+      if (op.wanted) return { wanted: op.wanted, fingerprint: op.fingerprint, ...grid }
+      return {
+        wanted: await source.queuedWanted(contentId, op),
+        fingerprint: op.fingerprint,
+        ...grid,
+      }
     },
   )
   ipcMain.handle('rekordbox:undoCues', (_e, contentId: string) => {

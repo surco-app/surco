@@ -7,9 +7,12 @@ import {
   type DraftAction,
   type DraftCue,
   draftDrops,
+  draftGridChanged,
+  draftGridEdited,
   draftPoints,
   freeLetters,
   ghostOf,
+  gridRequestOf,
   reduceDraft,
   startDraft,
   wantedOfDraft,
@@ -1137,5 +1140,114 @@ describe('reduceDraft on a Traktor deck', () => {
   it('refuses cue H by hand', () => {
     const s = startDraft([], 'mine')
     expect(reduceDraft(s, { type: 'add-hot', ms: bar(8), kind: HOT_KINDS[7] }, tk)).toBe(s)
+  })
+})
+
+describe('the beat grid in the draft', () => {
+  const withGrid = () => startDraft([], 'mine', [], { bpm: 150, anchorMs: 46 })
+
+  it('starts with the grid the program has', () => {
+    expect(withGrid().grid).toEqual({ bpm: 150, anchorMs: 46 })
+    expect(empty().grid).toBeNull()
+  })
+
+  it('moves the grid without moving a single cue, because the cue was right and the grid wrong', () => {
+    const marked = run(withGrid(), { type: 'mark-drop', ms: bar(32) })
+    const moved = run(marked, { type: 'set-grid', grid: { bpm: 150, anchorMs: 6 } })
+    expect(moved.grid).toEqual({ bpm: 150, anchorMs: 6 })
+    expect(moved.cues).toBe(marked.cues)
+  })
+
+  it('undoes and redoes a grid change like a cue change', () => {
+    const moved = run(withGrid(), { type: 'set-grid', grid: { bpm: 150, anchorMs: 6 } })
+    const undone = run(moved, { type: 'undo' })
+    expect(undone.grid).toEqual({ bpm: 150, anchorMs: 46 })
+    expect(run(undone, { type: 'redo' }).grid).toEqual({ bpm: 150, anchorMs: 6 })
+  })
+
+  it('undoes the grid first and the cue after when the cue moved before the grid', () => {
+    const marked = run(withGrid(), { type: 'mark-drop', ms: bar(32) })
+    const both = run(marked, { type: 'set-grid', grid: { bpm: 150, anchorMs: 6 } })
+    const once = run(both, { type: 'undo' })
+    expect(once.grid).toEqual({ bpm: 150, anchorMs: 46 })
+    expect(once.cues).toBe(marked.cues)
+    expect(run(once, { type: 'undo' }).cues).toHaveLength(0)
+  })
+
+  it('tells a moved grid from the one it started on, and calls a move undone by hand no change', () => {
+    const start = withGrid()
+    expect(draftGridChanged(start)).toBe(false)
+    const moved = run(start, { type: 'set-grid', grid: { bpm: 150, anchorMs: 46.1 } })
+    expect(draftGridChanged(moved)).toBe(true)
+    const back = run(moved, { type: 'set-grid', grid: { bpm: 150, anchorMs: 46.1 - 0.1 } })
+    expect(draftGridChanged(back)).toBe(false)
+  })
+
+  it('never calls a grid changed when there was none to start from', () => {
+    expect(draftGridChanged(empty())).toBe(false)
+  })
+
+  it('asks to write the grid only once it moved, together with the fingerprint of the grid it started from', () => {
+    const start = startDraft([], 'mine', [], { bpm: 150, anchorMs: 46 }, 'g0')
+    expect(gridRequestOf(start)).toEqual({})
+    const moved = run(start, { type: 'set-grid', grid: { bpm: 150, anchorMs: 6 } })
+    expect(gridRequestOf(moved)).toEqual({ grid: { bpm: 150, anchorMs: 6 }, gridFingerprint: 'g0' })
+  })
+
+  it('starts from a queued grid as already saved but still writes it, since the queue would lose it otherwise', () => {
+    const program = { bpm: 150, anchorMs: 46 }
+    const queued = { bpm: 150, anchorMs: 6 }
+    const start = startDraft([], 'mine', [], queued, 'g0', program)
+    expect(draftGridEdited(start)).toBe(false)
+    expect(draftGridChanged(start)).toBe(true)
+    expect(gridRequestOf(start)).toEqual({ grid: queued, gridFingerprint: 'g0' })
+    const moved = run(start, { type: 'set-grid', grid: program })
+    expect(draftGridEdited(moved)).toBe(true)
+    expect(gridRequestOf(moved)).toEqual({})
+  })
+})
+
+describe('bringing cues onto their beat', () => {
+  const offBeat = (): CueDraft =>
+    startDraft(
+      [
+        { id: 'call', ms: 31986, kind: 0, color: null },
+        { id: 'b', ms: 64008, kind: 2, color: 22 },
+        { id: 'bcall', ms: 64008, kind: 0, color: null },
+        { id: 'loop', ms: 95990, kind: 3, color: 1 },
+      ],
+      'mine',
+      ['loop'],
+    )
+
+  it('puts each named cue on its nearest beat, however close it already was, since a few ms is what the DJ hears', () => {
+    const s = run(offBeat(), { type: 'snap-to-beat', keys: ['call', 'b', 'bcall'] })
+    expect(s.cues.map((c) => [c.key, c.ms])).toEqual([
+      ['call', 32000],
+      ['b', 64000],
+      ['bcall', 64000],
+      ['loop', 95990],
+    ])
+  })
+
+  it('lands on the beat, not on the bar the quantize would pick', () => {
+    const s = run(offBeat(), { type: 'snap-to-beat', keys: ['call'] })
+    expect(s.cues.find((c) => c.key === 'call')?.ms).toBe(32000)
+    const midBar = startDraft([{ id: 'x', ms: bar(8) + 1510, kind: 0, color: null }], 'mine')
+    const onBars = { ...ctx, snapTo: beats.filter((_, i) => i % 4 === 0) }
+    expect(reduceDraft(midBar, { type: 'snap-to-beat', keys: ['x'] }, onBars).cues[0].ms).toBe(
+      bar(8) + 1500,
+    )
+  })
+
+  it('leaves a locked loop where it is', () => {
+    const s = run(offBeat(), { type: 'snap-to-beat', keys: ['loop'] })
+    expect(s.cues.find((c) => c.key === 'loop')?.ms).toBe(95990)
+  })
+
+  it('takes all the moves back in one undo', () => {
+    const start = offBeat()
+    const s = run(start, { type: 'snap-to-beat', keys: ['call', 'b', 'bcall'] }, { type: 'undo' })
+    expect(s.cues).toEqual(start.cues)
   })
 })

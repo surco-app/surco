@@ -7,6 +7,7 @@ import type { StrongPart, WantedCue } from './cueRules'
 import type { DjProgram } from './djProgram'
 import type { EditorSectionPref } from './editorSections'
 import type { ErrorKey } from './errorKeys'
+import type { EditableGrid } from './gridEdit'
 import type { Chord } from './shortcuts'
 import type { Verification } from './verification'
 
@@ -1877,6 +1878,7 @@ export interface TrackCues {
   wave: CueWaveColumn[] | null
   durationMs: number
   fingerprint: string
+  gridFingerprint: string
 }
 
 export interface SurcoGrid {
@@ -1888,6 +1890,8 @@ export interface SurcoGrid {
 export interface QueuedCues {
   wanted: WantedCue[]
   fingerprint: string
+  grid?: EditableGrid
+  gridFingerprint?: string
 }
 
 export interface SaveCuesRequest {
@@ -1897,6 +1901,8 @@ export interface SaveCuesRequest {
   wanted: WantedCue[]
   fingerprint: string
   provisional?: true
+  grid?: EditableGrid
+  gridFingerprint?: string
 }
 
 export type CopyReason =

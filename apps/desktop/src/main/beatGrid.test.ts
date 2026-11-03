@@ -55,6 +55,33 @@ describe('fitBeatGrid', () => {
     expect(fit.firstMs).toBeLessThan(60000 / fit.bpm)
   })
 
+  it('measures where the beat falls in each stretch of the track, so a spliced intro shows up even when the rest dominates the fit', () => {
+    const intro = danceTrack(150, 250, 60)
+    const rest = danceTrack(150, 275, 180)
+    const pcm = new Float32Array(SR * 180)
+    pcm.set(intro)
+    pcm.set(rest.subarray(SR * 60), SR * 60)
+    const fit = fitBeatGrid(pcm, SR)
+    if (!fit?.phases) throw new Error('a steady kick must fit a grid with phases')
+    const missAt = (ms: number, trueFirst: number) => {
+      const phases = fit.phases ?? []
+      const near = phases.reduce((a, b) => (Math.abs(b.ms - ms) < Math.abs(a.ms - ms) ? b : a))
+      const truth = trueFirst + Math.round((ms - trueFirst) / 400) * 400
+      const period = 60000 / fit.bpm
+      const detected = near.firstMs + Math.round((truth - near.firstMs) / period) * period
+      return Math.abs(detected - truth)
+    }
+    expect(missAt(20000, 250)).toBeLessThan(6)
+    expect(missAt(150000, 275)).toBeLessThan(6)
+  })
+
+  it('leaves the silent stretches out of the phases, where there is no beat to place', () => {
+    const pcm = new Float32Array(SR * 120)
+    pcm.set(danceTrack(150, 250, 60).subarray(0, SR * 60), SR * 60)
+    const fit = fitBeatGrid(pcm, SR)
+    expect(fit?.phases?.every((p) => p.ms > 55000)).toBe(true)
+  })
+
   it('fits nothing on silence rather than a confident-looking grid', () => {
     expect(fitBeatGrid(new Float32Array(SR * 30), SR)).toBeNull()
   })

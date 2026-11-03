@@ -133,6 +133,7 @@ describe('readEngineTrackCues', () => {
       wave: null,
       durationMs: 200000,
       fingerprint: '',
+      gridFingerprint: '',
     })
   })
 

@@ -76,4 +76,19 @@ describe('cueKeyAction', () => {
     expect(press('Z', { metaKey: true, shiftKey: true })).toEqual({ type: 'redo' })
     expect(press('m', { altKey: true })).toBeNull()
   })
+
+  it('moves the grid with option and the arrows, leaving the plain arrows for the playhead', () => {
+    expect(press('ArrowLeft', { altKey: true })).toEqual({ type: 'grid-shift', ms: -1 })
+    expect(press('ArrowRight', { altKey: true })).toEqual({ type: 'grid-shift', ms: 1 })
+    expect(press('ArrowLeft', { altKey: true, shiftKey: true })).toEqual({
+      type: 'grid-shift',
+      ms: -10,
+    })
+    expect(press('ArrowRight', { altKey: true, shiftKey: true })).toEqual({
+      type: 'grid-shift',
+      ms: 10,
+    })
+    expect(press('ArrowRight')).toEqual({ type: 'jump', dir: 1 })
+    expect(press('m', { altKey: true })).toBeNull()
+  })
 })

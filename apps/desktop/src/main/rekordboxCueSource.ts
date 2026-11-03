@@ -1,4 +1,4 @@
-import { type BeatGridFit, provisionalGrid } from './beatGrid'
+import { type BeatGridFit, provisionalGrid, REKORDBOX_BEAT_AFTER_RISE_MS } from './beatGrid'
 import type { CueQueue, CueSource } from './cueSource'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
@@ -22,6 +22,25 @@ export function rekordboxCueSource(host: {
   beatGrid: (file: string) => Promise<BeatGridFit | null>
   words: (file: string) => Promise<Uint16Array | null>
 }): CueSource {
+  const audioRowOf = async (
+    contentId: string,
+  ): Promise<{ FolderPath: string; SampleRate: number | null; Length: number } | undefined> => {
+    const path = host.collection()
+    return withCollection(
+      path,
+      (db) =>
+        db
+          .prepare(
+            `SELECT FolderPath, SampleRate, Length FROM djmdContent
+                WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0`,
+          )
+          .get(contentId) as
+          | { FolderPath: string; SampleRate: number | null; Length: number }
+          | undefined,
+      undefined,
+      await keyOf(path),
+    )
+  }
   return {
     trackCues: async (contentId) => {
       const path = host.collection()
@@ -60,21 +79,7 @@ export function rekordboxCueSource(host: {
       return file ? rekordboxLeadOfFile(file) : 0
     },
     surcoGrid: async (contentId) => {
-      const path = host.collection()
-      const row = withCollection(
-        path,
-        (db) =>
-          db
-            .prepare(
-              `SELECT FolderPath, SampleRate, Length FROM djmdContent
-                WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0`,
-            )
-            .get(contentId) as
-            | { FolderPath: string; SampleRate: number | null; Length: number }
-            | undefined,
-        undefined,
-        await keyOf(path),
-      )
+      const row = await audioRowOf(contentId)
       if (!row) return null
       const fit = await host.beatGrid(row.FolderPath)
       if (!fit) return null
@@ -84,6 +89,20 @@ export function rekordboxCueSource(host: {
         bpm: fit.bpm,
         grid: provisionalGrid(fit, shiftMs, row.Length * 1000),
         words: words && shiftedWords(words, shiftMs),
+      }
+    },
+    gridFit: async (contentId) => {
+      const row = await audioRowOf(contentId)
+      if (!row) return null
+      const fit = await host.beatGrid(row.FolderPath)
+      if (!fit) return null
+      const lead =
+        (await rekordboxShiftOfFile(row.FolderPath, row.SampleRate || 44100)) +
+        REKORDBOX_BEAT_AFTER_RISE_MS
+      return {
+        bpm: fit.bpm,
+        firstMs: fit.firstMs + lead,
+        phases: fit.phases?.map((p) => ({ ms: p.ms + lead, firstMs: p.firstMs + lead })),
       }
     },
     queuedWanted: async (contentId, op) => {

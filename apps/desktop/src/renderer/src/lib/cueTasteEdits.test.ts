@@ -22,6 +22,7 @@ const READ = {
   wave: null,
   durationMs: 200000,
   fingerprint: 'f0',
+  gridFingerprint: '',
 } as TrackCues
 
 const drafted = (cues: { ms: number; kind: number }[]) =>

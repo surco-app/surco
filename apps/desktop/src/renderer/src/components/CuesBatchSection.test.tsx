@@ -36,6 +36,7 @@ const READ: TrackCues = {
   wave: null,
   durationMs: 400000,
   fingerprint: 'f0',
+  gridFingerprint: '',
 }
 const TARGETS = [
   { contentId: '103', path: '/m/a.wav', label: 'Maniac' },

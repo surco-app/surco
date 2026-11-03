@@ -42,6 +42,7 @@ const READ: TrackCues = {
   wave: null,
   durationMs: 400000,
   fingerprint: 'f0',
+  gridFingerprint: '',
 }
 const TRACK = { title: 'Pray', artist: 'Gowan', bpm: '120', key: '6A' }
 
@@ -74,10 +75,10 @@ function setup(
 ) {
   const rekordboxCueWaveDetail = vi.fn<Api['rekordboxCueWaveDetail']>(async () => null)
   installApi({
-    ...api,
     rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => read),
     rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
     rekordboxCueWaveDetail,
+    ...api,
   })
   const onJumpBars = vi.fn<(bars: CueJumpBars) => void>()
   const onQuantize = vi.fn<(unit: CueQuantize) => void>()
@@ -1597,3 +1598,296 @@ describe("CuesSection maximized on Surco's grid", () => {
     ).toHaveTextContent('Surco grid · 140.00 BPM')
   })
 })
+
+describe('CuesSection maximized grid', () => {
+  const bars = () => screen.getAllByTestId('cue-detail-bar').map((b) => Number(b.dataset.ms))
+  const fitAt = (firstMs: number) =>
+    vi.fn<Api['rekordboxGridFit']>(async () => ({ bpm: 120, firstMs }))
+
+  it('moves the drawn grid with the grid row and leaves the cues where they were', async () => {
+    setup({ cueLettersByTime: false })
+    await maximize()
+    key('ArrowRight')
+    key('m')
+    expect(bars()).toContain(32000)
+    fireEvent.click(screen.getByTestId('cues-grid-right'))
+    expect(bars()).toContain(32001)
+    expect(bars()).not.toContain(32000)
+    expect(screen.getByTestId('cue-wave-call-32000')).toBeInTheDocument()
+    expect(screen.getByTestId('cues-unsaved')).toBeInTheDocument()
+  })
+
+  it('moves the grid with option and the arrows, like the buttons', async () => {
+    setup()
+    await maximize()
+    key('ArrowRight', { altKey: true })
+    expect(bars()).toContain(2001)
+    key('ArrowLeft', { altKey: true, shiftKey: true })
+    expect(bars()).toContain(1991)
+  })
+
+  it('puts a moved grid back with ⌘Z', async () => {
+    setup()
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-grid-right'))
+    key('z', { metaKey: true })
+    expect(bars()).toContain(2000)
+  })
+
+  it('greys out the grid row with its reason on a grid with two tempos, so the DJ’s work is never flattened', async () => {
+    const twoTempos = [
+      ...Array.from({ length: 400 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 })),
+      ...Array.from({ length: 400 }, (_, i) => ({ ms: 200000 + i * 450, beat: (i % 4) + 1 })),
+    ]
+    setup(null, { ...READ, grid: twoTempos })
+    await maximize()
+    expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByTestId('cues-grid')).toHaveAttribute(
+      'title',
+      expect.stringMatching(/tempo/i),
+    )
+    expect(screen.getByTestId('cues-grid-right')).toBeDisabled()
+  })
+
+  it('greys out the grid row on a track rekordbox has not analysed, since there is no grid to write yet', async () => {
+    setup(
+      null,
+      { ...READ, analysed: false, grid: [] },
+      {
+        rekordboxSurcoGrid: vi.fn<Api['rekordboxSurcoGrid']>(async () => ({
+          bpm: 120,
+          grid: GRID.map((b) => ({ ...b, beat: 0 })),
+          words: null,
+        })),
+      },
+    )
+    await maximize()
+    expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByTestId('cues-grid')).toHaveAttribute(
+      'title',
+      expect.stringMatching(/analy/i),
+    )
+  })
+
+  it('shows how far the grid is from the beats here and at the end, and Auto fits it', async () => {
+    setup(null, READ, { rekordboxGridFit: fitAt(454) })
+    await maximize()
+    await waitFor(() => expect(screen.getByTestId('cues-grid-here')).toHaveTextContent('+46 ms'))
+    expect(screen.getByTestId('cues-grid-end')).toHaveTextContent('+46 ms')
+    expect(screen.getByTestId('cues-grid-auto')).toHaveAttribute('data-needs-fix', 'true')
+    fireEvent.click(screen.getByTestId('cues-grid-auto'))
+    expect(screen.getByTestId('cues-grid-here')).toHaveTextContent('0 ms')
+    expect(screen.getByTestId('cues-grid-auto')).not.toHaveAttribute('data-needs-fix')
+  })
+
+  it('keeps Auto calm when the grid already sits within the tolerance', async () => {
+    setup(null, READ, { rekordboxGridFit: fitAt(5) })
+    await maximize()
+    await waitFor(() => expect(screen.getByTestId('cues-grid-here')).toHaveTextContent('−5 ms'))
+    expect(screen.getByTestId('cues-grid-auto')).not.toHaveAttribute('data-needs-fix')
+  })
+
+  it('keeps a moved grid while another track is open and undoes it on return', async () => {
+    installApi({
+      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (id) => ({
+        ...READ,
+        contentId: id,
+      })),
+      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
+      rekordboxCueWaveDetail: vi.fn<Api['rekordboxCueWaveDetail']>(async () => null),
+    })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const tree = (contentId: string) => (
+      <QueryClientProvider client={client}>
+        <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine' }}>
+          <CuesSection
+            cue={{ contentId, path: `/m/${contentId}.wav`, label: contentId }}
+            open
+            onToggle={vi.fn()}
+            track={TRACK}
+          />
+        </SettingsProvider>
+      </QueryClientProvider>
+    )
+    const { rerender } = render(tree('103'))
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-grid-right'))
+    rerender(tree('104'))
+    await waitFor(() => expect(bars()).toContain(2000))
+    rerender(tree('103'))
+    await waitFor(() => expect(bars()).toContain(2001))
+    key('z', { metaKey: true })
+    expect(bars()).toContain(2000)
+  })
+
+  it('has no grid row in the small editor', async () => {
+    setup()
+    await ready()
+    expect(screen.queryByTestId('cues-grid')).toBeNull()
+  })
+
+  it('draws the program grid exactly as it is on a track nobody touched, not one rebuilt from its tempo', async () => {
+    const jittered = GRID.map((b) => (b.ms === 2000 ? { ...b, ms: 2001 } : b))
+    setup(null, { ...READ, grid: jittered })
+    await maximize()
+    expect(bars()).toContain(2001)
+    expect(bars()).not.toContain(2000)
+  })
+
+  it('shows the grid rekordbox has now when the DJ comes back to a track with only cue changes, never the old one', async () => {
+    const rekordboxTrackCues = vi.fn<Api['rekordboxTrackCues']>(async (id) => ({
+      ...READ,
+      contentId: id,
+    }))
+    installApi({
+      rekordboxTrackCues,
+      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
+      rekordboxCueWaveDetail: vi.fn<Api['rekordboxCueWaveDetail']>(async () => null),
+    })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const tree = (contentId: string) => (
+      <QueryClientProvider client={client}>
+        <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine' }}>
+          <CuesSection
+            cue={{ contentId, path: `/m/${contentId}.wav`, label: contentId }}
+            open
+            onToggle={vi.fn()}
+            track={TRACK}
+          />
+        </SettingsProvider>
+      </QueryClientProvider>
+    )
+    const { rerender } = render(tree('103'))
+    await maximize()
+    key('m')
+    rerender(tree('104'))
+    await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())
+    rekordboxTrackCues.mockImplementation(async (id) => ({
+      ...READ,
+      contentId: id,
+      grid: GRID.map((b) => ({ ...b, ms: b.ms + 100 })),
+    }))
+    client.removeQueries({ queryKey: ['rekordbox-track-cues', '103'] })
+    rerender(tree('103'))
+    await waitFor(() => expect(bars()).toContain(2100))
+    expect(bars()).not.toContain(2000)
+  })
+
+  it('gives the keys back to the editor when the BPM menu closes, so Space plays at once', async () => {
+    setup()
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-grid-bpm'))
+    const input = screen.getByTestId('cues-grid-bpm-input')
+    input.focus()
+    fireEvent.keyDown(input, { key: 'Escape' })
+    expect(document.activeElement).toBe(editor())
+    expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true')
+  })
+
+  it('saves the moved grid with the fingerprint of the grid it was read from', async () => {
+    const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
+    setup(null, { ...READ, gridFingerprint: 'g0' }, { saveRekordboxCues })
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-grid-right'))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    expect(saveRekordboxCues.mock.calls[0][0][0]).toMatchObject({
+      grid: { bpm: 120, anchorMs: 1 },
+      gridFingerprint: 'g0',
+    })
+  })
+
+  it('saves a cue-only change without any grid', async () => {
+    const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
+    setup(null, { ...READ, gridFingerprint: 'g0' }, { saveRekordboxCues })
+    await maximize()
+    key('m')
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    expect(saveRekordboxCues.mock.calls[0][0][0].grid).toBeUndefined()
+  })
+
+  it('shows the grid waiting in the queue for rekordbox to close, as the grid it will write, without calling it unsaved', async () => {
+    setup(null, READ, {
+      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => ({
+        wanted: [],
+        fingerprint: READ.fingerprint,
+        grid: { bpm: 120, anchorMs: 1 },
+      })),
+    })
+    await maximize()
+    await waitFor(() => expect(bars()).toContain(2001))
+    expect(screen.queryByTestId('cues-unsaved')).toBeNull()
+  })
+
+  it('re-sends a queued grid with the fingerprint it was queued on, so a grid moved in rekordbox since is still refused', async () => {
+    const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
+    setup(
+      null,
+      { ...READ, gridFingerprint: 'g-now' },
+      {
+        saveRekordboxCues,
+        rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => ({
+          wanted: [],
+          fingerprint: READ.fingerprint,
+          grid: { bpm: 120, anchorMs: 1 },
+          gridFingerprint: 'g-queued',
+        })),
+      },
+    )
+    await maximize()
+    await waitFor(() => expect(bars()).toContain(2001))
+    key('m')
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    expect(saveRekordboxCues.mock.calls[0][0][0]).toMatchObject({
+      grid: { bpm: 120, anchorMs: 1 },
+      gridFingerprint: 'g-queued',
+    })
+  })
+
+  it('names the cue that misses its beat, jumps to it and brings it onto the beat', async () => {
+    const offBeat = { ...READ, cues: [{ id: 'c1', ms: 31986, kind: 0, color: null }] }
+    setup(null, offBeat)
+    await maximize()
+    expect(screen.getByTestId('cues-offgrid')).toHaveTextContent('14 ms')
+    fireEvent.click(screen.getByTestId('cues-offgrid-go-31986'))
+    expect(position()).toBe('0:31.9')
+    fireEvent.click(screen.getByTestId('cues-offgrid-snap'))
+    expect(screen.getByTestId('cue-wave-call-32000')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-offgrid')).toBeNull()
+    key('z', { metaKey: true })
+    expect(screen.getByTestId('cue-wave-call-31986')).toBeInTheDocument()
+  })
+
+  it('also names it in the small editor, where the filter sends the DJ first', async () => {
+    setup(null, { ...READ, cues: [{ id: 'c1', ms: 31986, kind: 0, color: null }] })
+    await ready()
+    expect(screen.getByTestId('cues-offgrid')).toBeInTheDocument()
+  })
+
+  it('says nothing for a cue inside the tolerance', async () => {
+    setup(null, { ...READ, cues: [{ id: 'c1', ms: 31994, kind: 0, color: null }] })
+    await ready()
+    expect(screen.queryByTestId('cues-offgrid')).toBeNull()
+  })
+
+  it('paints the cues that miss their beat apart on both waves, so they are found at a glance', async () => {
+    setup(null, {
+      ...READ,
+      cues: [
+        { id: 'c1', ms: 31986, kind: 0, color: null },
+        { id: 'h1', ms: 31986, kind: 1, color: 42 },
+        { id: 'c2', ms: 64000, kind: 0, color: null },
+      ],
+    })
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-offgrid-go-31986'))
+    expect(screen.getByTestId('cue-wave-call-31986')).toHaveAttribute('data-off-grid', 'true')
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-off-grid', 'true')
+    expect(screen.getByTestId('cue-wave-call-64000')).toHaveAttribute('data-off-grid', 'false')
+    expect(screen.getByTestId('cue-detail-call-31986')).toHaveAttribute('data-off-grid', 'true')
+    expect(screen.getByTestId('cue-detail-hot-A')).toHaveAttribute('data-off-grid', 'true')
+  })
+})
+

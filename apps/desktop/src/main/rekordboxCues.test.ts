@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { ExistingCue } from '../shared/cueRules'
+import { gridFingerprint } from '../shared/gridEdit'
 import {
   anlzFile,
   pqtzSection,
@@ -69,6 +70,13 @@ async function collection(
 }
 
 describe('readTrackCues', () => {
+  it('fingerprints the grid it read, so a save can tell rekordbox moved the grid since', async () => {
+    const { db, share } = await collection()
+    const read = readTrackCues(db, share, '103')
+    expect(read?.gridFingerprint).toBe(gridFingerprint(read?.grid ?? []))
+    expect(read?.gridFingerprint).not.toBe('')
+  })
+
   it('reads the grid, the strong parts, the cues and the colour waveform', async () => {
     const { db, share } = await collection()
     const read = readTrackCues(db, share, '103')

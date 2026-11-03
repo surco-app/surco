@@ -1,4 +1,5 @@
 import { type CueFlow, type FlowPhrase, MIX_IN } from '../../../shared/cueFlows'
+import { nearestBeatMs } from '../../../shared/cueGrid'
 import {
   ALL_SLOTS,
   type CueSlots,
@@ -15,7 +16,9 @@ import {
   type StrongPart,
   type WantedCue,
 } from '../../../shared/cueRules'
+import { type EditableGrid, sameGrid } from '../../../shared/gridEdit'
 import { HOT_CUE_DEFAULT_INDEX } from '../../../shared/rekordboxCueColors'
+import type { SaveCuesRequest } from '../../../shared/types'
 
 export interface DraftCue extends WantedCue {
   key: string
@@ -31,6 +34,7 @@ export interface DraftSnapshot {
   edited: string[]
   placed: string[]
   origin: Record<string, string>
+  grid: EditableGrid | null
 }
 
 export interface CueDraft {
@@ -48,6 +52,10 @@ export interface CueDraft {
   locked: string[]
   marked: string[]
   nextKey: number
+  grid: EditableGrid | null
+  baseGrid: EditableGrid | null
+  startGrid: EditableGrid | null
+  baseGridFingerprint: string
 }
 
 export interface DraftContext {
@@ -78,11 +86,20 @@ export type DraftAction =
   | { type: 'batch'; actions: DraftAction[] }
   | { type: 'undo' }
   | { type: 'redo' }
+  | { type: 'set-grid'; grid: EditableGrid }
+  | { type: 'snap-to-beat'; keys: string[] }
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
 const isHot = (c: { kind: number }): boolean => c.kind !== 0
 
-export function startDraft(cues: WantedCue[], flowId: string, locked: string[] = []): CueDraft {
+export function startDraft(
+  cues: WantedCue[],
+  flowId: string,
+  locked: string[] = [],
+  grid: EditableGrid | null = null,
+  gridFingerprint = '',
+  programGrid: EditableGrid | null = grid,
+): CueDraft {
   return {
     cues: cues.map((c, i) => ({ ...c, key: c.id ?? `n${i}` })),
     flowId,
@@ -98,7 +115,24 @@ export function startDraft(cues: WantedCue[], flowId: string, locked: string[] =
     locked,
     marked: [],
     nextKey: cues.length,
+    grid,
+    baseGrid: programGrid,
+    startGrid: grid,
+    baseGridFingerprint: gridFingerprint,
   }
+}
+
+export function draftGridChanged(state: CueDraft): boolean {
+  return state.grid !== null && !sameGrid(state.grid, state.baseGrid)
+}
+
+export function draftGridEdited(state: CueDraft): boolean {
+  return !sameGrid(state.grid, state.startGrid)
+}
+
+export function gridRequestOf(state: CueDraft): Pick<SaveCuesRequest, 'grid' | 'gridFingerprint'> {
+  if (!state.grid || !draftGridChanged(state)) return {}
+  return { grid: state.grid, gridFingerprint: state.baseGridFingerprint }
 }
 
 export function draftDrops(cues: DraftCue[], locked: string[] = []): number[] {
@@ -159,6 +193,7 @@ function snapshot(state: CueDraft): DraftSnapshot {
     edited: state.edited,
     placed: state.placed,
     origin: state.origin,
+    grid: state.grid,
   }
 }
 
@@ -172,6 +207,7 @@ function restore(state: CueDraft, at: DraftSnapshot): CueDraft {
     edited: at.edited,
     placed: at.placed,
     origin: at.origin,
+    grid: at.grid,
     selected: null,
     notice: null,
   }
@@ -451,6 +487,17 @@ function step(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft
   const generator = flowById(ctx, state.generatedBy)
   if (action.type === 'select') return { ...state, selected: action.key }
   if (action.type === 'use-flow') return { ...state, flowId: action.flowId }
+  if (action.type === 'snap-to-beat') {
+    if (ctx.beats.length < 2) return state
+    const keys = action.keys.filter((k) => !state.locked.includes(k))
+    const moved = state.cues.map((c) =>
+      keys.includes(c.key) ? { ...c, ms: nearestBeatMs(c.ms, ctx.beats) } : c,
+    )
+    if (moved.every((c, i) => c.ms === state.cues[i].ms)) return state
+    return commit(state, moved, { edited: [...state.edited, ...keys] })
+  }
+  if (action.type === 'set-grid')
+    return { ...state, grid: action.grid, past: [...state.past, snapshot(state)], future: [] }
   if (action.type === 'batch') {
     const next = action.actions.reduce((s, a) => reduceDraft(s, a, ctx), state)
     if (next.cues === state.cues) return { ...next, past: state.past, future: state.future }

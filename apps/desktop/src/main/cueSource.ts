@@ -1,6 +1,7 @@
 import type { BrowserWindow } from 'electron'
 import type { WantedCue } from '../shared/cueRules'
 import type { DropInput } from '../shared/dropDetect'
+import type { GridFit } from '../shared/gridEdit'
 import type { SurcoGrid, TrackCues } from '../shared/types'
 import type { RekordboxQueue } from './rekordboxQueue'
 import type { CuesOp, QueueOp } from './rekordboxQueueOps'
@@ -15,6 +16,7 @@ export interface CueSource {
   dropInput(contentId: string): Promise<DropInput | null>
   auditionLead(contentId: string): Promise<number>
   surcoGrid(contentId: string): Promise<SurcoGrid | null>
+  gridFit(contentId: string): Promise<GridFit | null>
   queuedWanted(contentId: string, op: CuesOp): Promise<WantedCue[]>
   queue: CueQueue
   applyQuietly: (win: BrowserWindow | null) => void

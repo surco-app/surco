@@ -30,6 +30,7 @@ export function engineCueSource(
     },
     auditionLead: async () => 0,
     surcoGrid: async () => null,
+    gridFit: async () => null,
     queuedWanted: async () => [],
     queue: engine.queue,
     applyQuietly: engine.applyQuietly,

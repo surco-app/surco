@@ -11,6 +11,7 @@ import {
   validWantedSet,
   type WantedCue,
 } from '../shared/cueRules'
+import { GRID_BPM_MAX, GRID_BPM_MIN, gridBeats } from '../shared/gridEdit'
 import type {
   PlaylistAddReport,
   RekordboxEditRefusal,
@@ -24,6 +25,14 @@ import { rekordboxShareDir } from './rekordboxArtwork'
 import { type ContentFacts, insertContent } from './rekordboxContentAdd'
 import { applyCueChanges, readTrackCues } from './rekordboxCues'
 import { type FindOptions, openRekordboxDb } from './rekordboxDb'
+import {
+  type AnlzPaths,
+  anlzPathsOf,
+  applyGridBpm,
+  type GridWrite,
+  restoreGridFiles,
+  writeGridFiles,
+} from './rekordboxGridWrite'
 import {
   hexId,
   nodeTimestamp,
@@ -64,6 +73,7 @@ import {
   type XmlDraft,
 } from './rekordboxQueueOps'
 import { checkpointCollection, restoreCollection, writeBackup } from './rekordboxSessionBackup'
+import { replaceFile } from './replaceFile'
 
 // Writes a batch of organising operations into the user's rekordbox collection, the one
 // library they cannot rebuild. Same bargain as the repoint (rekordboxLibrary.ts): the
@@ -88,22 +98,7 @@ export interface PlaylistWriteDeps extends FindOptions {
   stillQueued?: (id: string) => boolean
 }
 
-// Written beside and renamed over, so rekordbox never finds a half-written file. The temp
-// file is born with the default mode; given the original's before the rename, so the
-// replacement does not quietly change permissions set on the user's file.
-export async function replaceFile(path: string, text: string): Promise<void> {
-  const temp = `${path}.surco-tmp`
-  try {
-    const { mode } = await stat(path)
-    await writeFile(temp, text, 'utf8')
-    await chmod(temp, mode)
-    await rename(temp, path)
-  } catch (err) {
-    // A half step left in rekordbox's folder would stay there for good.
-    await rm(temp, { force: true })
-    throw err
-  }
-}
+export { replaceFile }
 
 const isReadOnly = (err: unknown): boolean =>
   String((err as { code?: unknown })?.code).startsWith('SQLITE_READONLY')
@@ -167,6 +162,8 @@ interface Planned {
     notices: RekordboxQueueNotice[]
   }
   cues?: CueChangeSet
+  grid?: GridWrite
+  anlz?: AnlzPaths
 }
 
 type Plan = Planned | { outcome: OpOutcome }
@@ -294,6 +291,9 @@ function planCuesOp(probe: Db, op: CuesOp, shareDir: string): Plan {
   })
   const read = readTrackCues(probe, shareDir, op.contentId, { wave: false })
   if (!read || read.fingerprint !== op.fingerprint) return changed('cues-changed')
+  const anlz = op.grid ? anlzPathsOf(probe, shareDir, op.contentId) : null
+  if (op.grid && (!read.analysed || read.gridFingerprint !== op.gridFingerprint || !anlz))
+    return changed('cues-changed')
   if (!read.analysed && op.wanted === undefined) return changed('cues-changed')
   if (op.wanted === undefined && op.drops === undefined) return changed('cues-invalid')
   const wanted = queuedWanted(op, read)
@@ -305,9 +305,25 @@ function planCuesOp(probe: Db, op: CuesOp, shareDir: string): Plan {
   }
   if (wanted.filter((c) => c.kind !== 0).length > MAX_HOT_CUES) return changed('cues-too-many')
   const cues = diffCues(read.cues, wanted)
-  if (isEmptyChange(cues))
-    return { outcome: { id: op.id, applied: true, notices: op.notices ?? [] } }
-  return { op, cues }
+  if (!op.grid || !anlz) {
+    if (isEmptyChange(cues))
+      return { outcome: { id: op.id, applied: true, notices: op.notices ?? [] } }
+    return { op, cues }
+  }
+  const { bpm, anchorMs } = op.grid
+  if (
+    !Number.isFinite(bpm) ||
+    bpm < GRID_BPM_MIN ||
+    bpm > GRID_BPM_MAX ||
+    !Number.isFinite(anchorMs)
+  )
+    return changed('cues-invalid')
+  const beats = gridBeats(op.grid, read.durationMs).map((b) => ({
+    ms: Math.round(b.ms),
+    beat: b.beat,
+  }))
+  if (beats.length < 2) return changed('cues-invalid')
+  return { op, cues, grid: { beats, bpm }, anlz }
 }
 
 function planOp(
@@ -428,6 +444,7 @@ function writeOp(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutcom
   if (planned.op.kind === 'track') return writeTrack(db, draft, planned, now)
   if (planned.op.kind === 'cues') {
     applyCueChanges(db, planned.op.contentId, planned.cues as CueChangeSet, { now })
+    if (planned.grid) applyGridBpm(db, planned.op.contentId, planned.grid.bpm, { now })
     return { id: planned.op.id, applied: true, notices: planned.op.notices ?? [] }
   }
   return writeEdit(db, draft, planned, now)
@@ -516,7 +533,10 @@ export async function applyRekordboxBatch(
   }
   let xmlWritten = false
   let anyApplied = false
+  const gridFiles: string[] = []
   try {
+    for (const p of stillPlanned)
+      if (p.grid && p.anlz) await writeGridFiles(p.anlz, p.grid, gridFiles)
     db.exec('BEGIN')
     for (const p of [...stillPlanned].sort((a, b) => opRank(a.op) - opRank(b.op))) {
       const saved = {
@@ -550,6 +570,7 @@ export async function applyRekordboxBatch(
     if (xmlWritten) await restoreFile(xmlPath)
     if (!known && !(await restoreCollection(collectionPath)))
       return { ok: false, reason: 'write-unknown' }
+    if (!(await restoreGridFiles(gridFiles))) return { ok: false, reason: 'write-unknown' }
     if (isReadOnly(err)) return { ok: false, reason: 'read-only' }
     log.warn(`rekordbox batch failed: ${String(err)}`)
     return { ok: false, reason: 'write-failed' }

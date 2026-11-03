@@ -48,6 +48,7 @@ const READ: TrackCues = {
   wave: null,
   durationMs: 400000,
   fingerprint: 'f0',
+  gridFingerprint: '',
 }
 
 beforeEach(() => {
@@ -280,5 +281,19 @@ describe('CuesSection on an Engine DJ track', () => {
     expect(screen.queryByTestId('cues-traktor-no-collection')).toBeNull()
     expect(screen.queryByTestId('cues-traktor-other-collection')).toBeNull()
     expect(traktorCollectionInUse).not.toHaveBeenCalled()
+  })
+
+  it('shows the grid row greyed out with its reason, because the waveform clock is not measured for this program yet', async () => {
+    const getGridFit = vi.fn<Api['rekordboxGridFit']>(async () => ({ bpm: 120, firstMs: 0 }))
+    setup()
+    window.api.rekordboxGridFit = getGridFit
+    await ready()
+    fireEvent.click(screen.getByTestId('section-maximize'))
+    await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())
+    expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByTestId('cues-grid')).toHaveAttribute('title', expect.stringMatching(/Surco/))
+    expect(screen.getByTestId('cues-grid-right')).toBeDisabled()
+    expect(screen.queryByTestId('cues-grid-offsets')).toBeNull()
+    expect(getGridFit).not.toHaveBeenCalled()
   })
 })
