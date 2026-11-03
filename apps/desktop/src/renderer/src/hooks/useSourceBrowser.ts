@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../../shared/allTracks'
+import { DJ_PROGRAMS, type DjProgram, RAIL_PROGRAMS } from '../../../shared/djProgram'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { PlaylistSource, SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import {
@@ -11,6 +12,7 @@ import {
   musicTree,
   withReadCounts,
 } from '../lib/appleMusicSource'
+import { SOURCE_READ } from '../lib/sourcePrograms'
 import { useRekordboxAvailable } from './useRekordboxPlaylists'
 import { useWindowFocus } from './useWindowFocus'
 
@@ -35,11 +37,9 @@ function containsNode(nodes: SourceNode[], id: string): boolean {
 }
 
 function readTree(source: PlaylistSource, allTracksName: string): Promise<SourceNode[]> {
-  if (source === 'engine') return window.api.loadEngineTree()
-  if (source === 'traktor') return window.api.loadTraktorTree()
-  return source === 'rekordbox'
-    ? window.api.loadRekordboxTree()
-    : window.api.loadAppleMusicPlaylists().then((lists) => musicTree(lists, allTracksName))
+  return source === 'appleMusic'
+    ? window.api.loadAppleMusicPlaylists().then((lists) => musicTree(lists, allTracksName))
+    : SOURCE_READ[source].tree()
 }
 
 // Music lists its playlists in 1.8 s on a good day; the list kept from last time shows at
@@ -59,16 +59,6 @@ async function readMusicTree(
 // the window getting the focus back leaves them alone.
 const notMusic = (query: { queryKey: readonly unknown[] }): boolean =>
   query.queryKey[1] !== 'appleMusic'
-
-function readRecentCount(source: PlaylistSource): Promise<number> {
-  if (source === 'traktor') return window.api.traktorRecentCount()
-  return source === 'engine' ? window.api.engineRecentCount() : window.api.rekordboxRecentCount()
-}
-
-function readTrackCount(source: PlaylistSource): Promise<number> {
-  if (source === 'traktor') return window.api.traktorTrackCount()
-  return source === 'engine' ? window.api.engineTrackCount() : window.api.rekordboxTrackCount()
-}
 
 const MUSIC_STRETCH = 200
 
@@ -99,11 +89,9 @@ async function readMusicPlaylist(
 }
 
 export function readPlaylist(source: PlaylistSource, id: string): Promise<SourcePlaylistEntry[]> {
-  if (source === 'engine') return window.api.loadEnginePlaylist(id)
-  if (source === 'traktor') return window.api.loadTraktorPlaylist(id)
-  return source === 'rekordbox'
-    ? window.api.loadRekordboxPlaylist(id)
-    : window.api.loadAppleMusicPlaylistTracks(id).then(musicEntries)
+  return source === 'appleMusic'
+    ? window.api.loadAppleMusicPlaylistTracks(id).then(musicEntries)
+    : SOURCE_READ[source].playlist(id)
 }
 
 // Which source and playlist the list is showing, and their data. The DJ library is the
@@ -134,24 +122,25 @@ export function useSourceBrowser({
   const rekordbox = useRekordboxAvailable()
   const engine = useQuery({
     queryKey: ['source-available', 'engine'],
-    queryFn: () => window.api.engineAvailable(),
+    queryFn: SOURCE_READ.engine.available,
     staleTime: Number.POSITIVE_INFINITY,
   })
   const traktor = useQuery({
     queryKey: ['source-available', 'traktor'],
-    queryFn: () => window.api.traktorAvailable(),
+    queryFn: SOURCE_READ.traktor.available,
     staleTime: Number.POSITIVE_INFINITY,
   })
-  const sources = useMemo<PlaylistSource[]>(
-    () =>
-      [
-        ...(isMac ? (['appleMusic'] as const) : []),
-        ...(rekordbox ? (['rekordbox'] as const) : []),
-        ...(engine.data ? (['engine'] as const) : []),
-        ...(traktor.data ? (['traktor'] as const) : []),
-      ].filter((s) => !hiddenSources.includes(s)),
-    [isMac, rekordbox, engine.data, traktor.data, hiddenSources],
-  )
+  const sources = useMemo<PlaylistSource[]>(() => {
+    const found: Record<DjProgram, boolean | undefined> = {
+      rekordbox,
+      engine: engine.data,
+      traktor: traktor.data,
+    }
+    return [
+      ...(isMac ? (['appleMusic'] as const) : []),
+      ...RAIL_PROGRAMS.filter((p) => found[p]),
+    ].filter((s) => !hiddenSources.includes(s))
+  }, [isMac, rekordbox, engine.data, traktor.data, hiddenSources])
 
   const treeKey = ['source-tree', source]
   const tree = useQuery({
@@ -166,16 +155,17 @@ export function useSourceBrowser({
     enabled: source !== null,
     staleTime: Number.POSITIVE_INFINITY,
   })
-  const hasRecent = source === 'rekordbox' || source === 'engine' || source === 'traktor'
+  const program = source === 'appleMusic' ? null : source
+  const hasRecent = program !== null
   const recent = useQuery({
     queryKey: ['source-tree', source, 'recent'],
-    queryFn: () => readRecentCount(source as PlaylistSource),
+    queryFn: () => SOURCE_READ[program as DjProgram].recentCount(),
     enabled: hasRecent,
     staleTime: Number.POSITIVE_INFINITY,
   })
   const all = useQuery({
     queryKey: ['source-tree', source, 'all'],
-    queryFn: () => readTrackCount(source as PlaylistSource),
+    queryFn: () => SOURCE_READ[program as DjProgram].trackCount(),
     enabled: hasRecent,
     staleTime: Number.POSITIVE_INFINITY,
   })
@@ -248,9 +238,7 @@ export function useSourceBrowser({
     queryClient.invalidateQueries({ queryKey: ['source-tree'], predicate: notMusic })
     queryClient.invalidateQueries({ queryKey: ['source-playlist'], predicate: notMusic })
     queryClient.invalidateQueries({ queryKey: ['source-separator'] })
-    queryClient.invalidateQueries({ queryKey: ['rekordbox-membership'] })
-    queryClient.invalidateQueries({ queryKey: ['traktor-membership'] })
-    queryClient.invalidateQueries({ queryKey: ['engine-membership'] })
+    for (const p of DJ_PROGRAMS) queryClient.invalidateQueries({ queryKey: [`${p}-membership`] })
   })
 
   return {

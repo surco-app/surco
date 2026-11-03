@@ -243,6 +243,17 @@ describe('GeneralTab sources', () => {
     expect(screen.getByTestId('settings-source-traktor')).toBeDisabled()
   })
 
+  it('lists the sources in the order the rail draws them', async () => {
+    renderSources({ platform: 'darwin', rekordbox: true })
+    await waitFor(() => expect(screen.getByTestId('settings-source-rekordbox')).toBeEnabled())
+    expect(screen.getAllByTestId(/^settings-source-/).map((el) => el.dataset.testid)).toEqual([
+      'settings-source-appleMusic',
+      'settings-source-rekordbox',
+      'settings-source-engine',
+      'settings-source-traktor',
+    ])
+  })
+
   it('says that hiding a source leaves its sync alone', async () => {
     renderSources({ platform: 'darwin', rekordbox: true })
     expect(screen.getByTestId('settings-sources-hint')).toHaveTextContent(

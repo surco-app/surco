@@ -1,6 +1,7 @@
+import { RAIL_PROGRAMS } from './djProgram'
 import type { PlaylistSource } from './types'
 
-const PLAYLIST_SOURCES: readonly PlaylistSource[] = ['appleMusic', 'rekordbox', 'engine', 'traktor']
+const PLAYLIST_SOURCES: readonly PlaylistSource[] = ['appleMusic', ...RAIL_PROGRAMS]
 
 export function normalizeHiddenSources(value: unknown): PlaylistSource[] {
   if (!Array.isArray(value)) return []
