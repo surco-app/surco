@@ -219,8 +219,8 @@ describe('CueGridControls', () => {
       bpm: 150,
       firstMs: 0,
       phases: [
-        { ms: 4000, firstMs: 25 },
-        { ms: 200000, firstMs: 0 },
+        ...Array.from({ length: 19 }, (_, i) => ({ ms: 4000 + i * 6400, firstMs: 25 })),
+        ...Array.from({ length: 35 }, (_, i) => ({ ms: 126400 + i * 6400, firstMs: 0 })),
       ],
     }
     const onChange = setup({ fit, needsFix: true, playheadMs: 4046 })
