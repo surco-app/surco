@@ -978,20 +978,21 @@ function Editing({
   )
   const autoHeight = maximized ? 'h-8 rounded-lg px-3' : 'h-6 rounded-md px-2'
   const acceptLabel = tr('editor.cues.auto.accept', { count: proposals.length })
+  const discardLabel = tr('editor.cues.auto.discard', { count: proposals.length })
   const sureCount = proposals.filter((p) => p.sure).length
   const reviewBar = proposals.length > 0 && (
     <div
       data-testid="cues-auto-review"
-      className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 rounded-lg border border-[var(--color-accent)]/35 bg-[var(--color-accent)]/10 px-3 py-1.5 text-xs ${
+      className={`flex items-center justify-between gap-3 rounded-lg border border-[var(--color-accent)]/35 bg-[var(--color-accent)]/10 px-3 py-1.5 text-xs ${
         maximized ? 'shrink-0' : 'mb-2'
       }`}
     >
-      <span className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        <span className="font-semibold text-fg">
+      <span className="flex min-w-0 items-center gap-3">
+        <span className="shrink-0 whitespace-nowrap font-semibold text-fg">
           {tr('editor.cues.auto.count', { count: proposals.length })}
         </span>
         {sureCount > 0 && sureCount < proposals.length && (
-          <span className="text-fg-dim">
+          <span className="truncate text-fg-dim">
             {tr('editor.cues.batch.confidence', {
               sure: tr('editor.cues.batch.sure', { count: sureCount }),
               doubtful: tr('editor.cues.batch.doubtful', { count: proposals.length - sureCount }),
@@ -999,17 +1000,19 @@ function Editing({
           </span>
         )}
       </span>
-      <span className="flex items-center gap-3">
+      <span className="flex shrink-0 items-center gap-3">
         <button
           type="button"
           data-testid="cues-auto-accept"
+          aria-label={acceptLabel}
+          title={acceptLabel}
           onClick={() => {
             acceptProposals()
             focusEditor()
           }}
           className="press flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md bg-[var(--color-accent)] px-2.5 font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
         >
-          {acceptLabel}
+          {tr('editor.cues.auto.acceptOne')}
           <kbd className="rounded border border-[var(--color-on-accent)]/40 px-1 font-sans text-[11px]">
             ↵
           </kbd>
@@ -1017,13 +1020,15 @@ function Editing({
         <button
           type="button"
           data-testid="cues-auto-discard"
+          aria-label={discardLabel}
+          title={discardLabel}
           onClick={() => {
             setProposed(null)
             focusEditor()
           }}
           className="press shrink-0 whitespace-nowrap rounded px-1 text-fg-dim hover:text-fg"
         >
-          {tr('editor.cues.auto.discard', { count: proposals.length })}
+          {tr('editor.cues.auto.drop')}
         </button>
       </span>
     </div>

@@ -267,8 +267,14 @@ describe('Auto marcar', () => {
     await autoMark()
     const review = screen.getByTestId('cues-auto-review')
     expect(review).toHaveTextContent('2 suggestions')
-    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent('Accept the 2 suggestions↵')
-    expect(screen.getByTestId('cues-auto-discard')).toHaveTextContent('Remove suggestions')
+    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent(/^Accept↵$/)
+    expect(screen.getByTestId('cues-auto-discard')).toHaveTextContent(/^Remove$/)
+    expect(screen.getByRole('button', { name: 'Accept the 2 suggestions' })).toBe(
+      screen.getByTestId('cues-auto-accept'),
+    )
+    expect(screen.getByRole('button', { name: 'Remove suggestions' })).toBe(
+      screen.getByTestId('cues-auto-discard'),
+    )
     expect(review).toContainElement(screen.getByTestId('cues-auto-accept'))
     expect(review).toContainElement(screen.getByTestId('cues-auto-discard'))
     expect(
@@ -278,8 +284,6 @@ describe('Auto marcar', () => {
     expect(autoButton()).toBeInTheDocument()
   })
 
-  // In a narrow panel the bar wraps; the two answers stay side by side on the line they wrap
-  // to, and with one suggestion both speak of one, as Accept already did.
   it('keeps accept and remove together and in the singular for a single suggestion', async () => {
     dropProposals.mockReturnValue([sure(bar(64))])
     setup()
@@ -290,7 +294,8 @@ describe('Auto marcar', () => {
     const remove = screen.getByTestId('cues-auto-discard')
     expect(accept.parentElement).toBe(remove.parentElement)
     expect(accept.parentElement).not.toBe(review)
-    expect(remove).toHaveTextContent('Remove the suggestion')
+    expect(remove).toHaveAccessibleName('Remove the suggestion')
+    expect(accept).toHaveAccessibleName('Accept the suggestion')
   })
 
   it('removes one suggestion from the overview without moving the playhead to it', async () => {
@@ -345,7 +350,7 @@ describe('Auto marcar', () => {
     seekStrip(bar(64))
     fireEvent.click(screen.getByTestId(`cue-proposal-drop-${bar(64)}`))
     expect(proposals()).toEqual([`cue-wave-proposal-${bar(128)}`])
-    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent('Accept the suggestion↵')
+    expect(screen.getByTestId('cues-auto-accept')).toHaveAccessibleName('Accept the suggestion')
     expect(realMarks()).toHaveLength(0)
   })
 
