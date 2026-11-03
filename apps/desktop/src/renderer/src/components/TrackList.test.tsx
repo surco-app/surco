@@ -2334,11 +2334,16 @@ describe('TrackList row notes', () => {
         onAcceptReview={vi.fn()}
         onPrefetch={vi.fn()}
         renderMenu={() => null}
-        noteOf={(t) => (t.id === 'a' ? 'Rejilla 92 ms adelantada' : undefined)}
+        noteOf={(t) =>
+          t.id === 'a' ? { text: '−92 ms', title: 'Rejilla 92 ms adelantada' } : undefined
+        }
       />,
     )
     const [first, second] = screen.getAllByTestId('track-row')
-    expect(within(first).getByTestId('track-note')).toHaveTextContent('Rejilla 92 ms adelantada')
+    const note = within(first).getByTestId('track-note')
+    expect(note).toHaveTextContent('−92 ms')
+    expect(note).toHaveAttribute('title', 'Rejilla 92 ms adelantada')
+    expect(within(first).getByTestId('track-artist')).toBeInTheDocument()
     expect(within(second).queryByTestId('track-note')).toBeNull()
   })
 })
