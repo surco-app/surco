@@ -646,6 +646,7 @@ describe('registerRekordboxCuesIpc', () => {
       wanted,
       fingerprint: 'F1',
       grid,
+      gridFingerprint: 'g0',
     })
   })
 

@@ -1,13 +1,15 @@
 import { existsSync } from 'node:fs'
-import { copyFile, readFile, rename, writeFile } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import type Database from 'better-sqlite3-multiple-ciphers'
+import log from 'electron-log/main'
 import { anlzSections } from './anlz'
 import { encodePqtz, pqt2WithGrid, replaceSection } from './anlzWrite'
 import { backupOf } from './libraryBackups'
 import { insideShare } from './rekordboxArtwork'
 import { rekordboxStamp, takeLocalUsn } from './rekordboxRows'
 import { writeBackup } from './rekordboxSessionBackup'
+import { replaceFile } from './replaceFile'
 
 type Db = InstanceType<typeof Database>
 
@@ -35,10 +37,10 @@ export function anlzPathsOf(db: Db, shareDir: string, contentId: string): AnlzPa
 }
 
 async function replaceAtomically(path: string, bytes: Buffer): Promise<void> {
+  const original = backupOf(path, 'session')
+  if (!existsSync(original)) await writeBackup(path, original)
   await writeBackup(path, backupOf(path, 'backup'))
-  const temporary = `${path}.surco-tmp`
-  await writeFile(temporary, bytes)
-  await rename(temporary, path)
+  await replaceFile(path, bytes)
 }
 
 export async function writeGridFiles(
@@ -61,8 +63,17 @@ export async function writeGridFiles(
   written.push(paths.ext)
 }
 
-export async function restoreGridFiles(written: string[]): Promise<void> {
-  for (const path of written) await copyFile(backupOf(path, 'backup'), path)
+export async function restoreGridFiles(written: string[]): Promise<boolean> {
+  let restored = true
+  for (const path of written) {
+    try {
+      await replaceFile(path, await readFile(backupOf(path, 'backup')))
+    } catch (err) {
+      log.error(`rekordbox ${path} could not be restored: ${String(err)}`)
+      restored = false
+    }
+  }
+  return restored
 }
 
 export function applyGridBpm(db: Db, contentId: string, bpm: number, ctx: { now: Date }): void {

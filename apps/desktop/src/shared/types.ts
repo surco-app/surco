@@ -1894,6 +1894,7 @@ export interface QueuedCues {
   wanted: WantedCue[]
   fingerprint: string
   grid?: EditableGrid
+  gridFingerprint?: string
 }
 
 export interface SaveCuesRequest {

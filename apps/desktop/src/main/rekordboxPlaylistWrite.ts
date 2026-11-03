@@ -11,7 +11,7 @@ import {
   validWantedSet,
   type WantedCue,
 } from '../shared/cueRules'
-import { gridBeats } from '../shared/gridEdit'
+import { GRID_BPM_MAX, GRID_BPM_MIN, gridBeats } from '../shared/gridEdit'
 import type {
   PlaylistAddReport,
   RekordboxEditRefusal,
@@ -73,6 +73,7 @@ import {
   type XmlDraft,
 } from './rekordboxQueueOps'
 import { checkpointCollection, restoreCollection, writeBackup } from './rekordboxSessionBackup'
+import { replaceFile } from './replaceFile'
 
 // Writes a batch of organising operations into the user's rekordbox collection, the one
 // library they cannot rebuild. Same bargain as the repoint (rekordboxLibrary.ts): the
@@ -97,22 +98,7 @@ export interface PlaylistWriteDeps extends FindOptions {
   stillQueued?: (id: string) => boolean
 }
 
-// Written beside and renamed over, so rekordbox never finds a half-written file. The temp
-// file is born with the default mode; given the original's before the rename, so the
-// replacement does not quietly change permissions set on the user's file.
-export async function replaceFile(path: string, text: string): Promise<void> {
-  const temp = `${path}.surco-tmp`
-  try {
-    const { mode } = await stat(path)
-    await writeFile(temp, text, 'utf8')
-    await chmod(temp, mode)
-    await rename(temp, path)
-  } catch (err) {
-    // A half step left in rekordbox's folder would stay there for good.
-    await rm(temp, { force: true })
-    throw err
-  }
-}
+export { replaceFile }
 
 const isReadOnly = (err: unknown): boolean =>
   String((err as { code?: unknown })?.code).startsWith('SQLITE_READONLY')
@@ -324,11 +310,20 @@ function planCuesOp(probe: Db, op: CuesOp, shareDir: string): Plan {
       return { outcome: { id: op.id, applied: true, notices: op.notices ?? [] } }
     return { op, cues }
   }
+  const { bpm, anchorMs } = op.grid
+  if (
+    !Number.isFinite(bpm) ||
+    bpm < GRID_BPM_MIN ||
+    bpm > GRID_BPM_MAX ||
+    !Number.isFinite(anchorMs)
+  )
+    return changed('cues-invalid')
   const beats = gridBeats(op.grid, read.durationMs).map((b) => ({
     ms: Math.round(b.ms),
     beat: b.beat,
   }))
-  return { op, cues, grid: { beats, bpm: op.grid.bpm }, anlz }
+  if (beats.length < 2) return changed('cues-invalid')
+  return { op, cues, grid: { beats, bpm }, anlz }
 }
 
 function planOp(
@@ -573,9 +568,9 @@ export async function applyRekordboxBatch(
     const known = rollback(db, deps.onRollback)
     db.close()
     if (xmlWritten) await restoreFile(xmlPath)
-    await restoreGridFiles(gridFiles)
     if (!known && !(await restoreCollection(collectionPath)))
       return { ok: false, reason: 'write-unknown' }
+    if (!(await restoreGridFiles(gridFiles))) return { ok: false, reason: 'write-unknown' }
     if (isReadOnly(err)) return { ok: false, reason: 'read-only' }
     log.warn(`rekordbox batch failed: ${String(err)}`)
     return { ok: false, reason: 'write-failed' }

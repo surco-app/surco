@@ -464,7 +464,9 @@ function Editing({
         active.id,
         read.cues.filter((c) => c.loop).map((c) => c.id),
         fresh && queued.grid ? queued.grid : programGrid,
-        read.gridFingerprint,
+        fresh && queued.grid
+          ? (queued.gridFingerprint ?? read.gridFingerprint)
+          : read.gridFingerprint,
         programGrid,
       ),
   )

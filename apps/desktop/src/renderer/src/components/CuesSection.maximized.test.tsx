@@ -1819,4 +1819,30 @@ describe('CuesSection maximized grid', () => {
     await waitFor(() => expect(bars()).toContain(2001))
     expect(screen.queryByTestId('cues-unsaved')).toBeNull()
   })
+
+  it('re-sends a queued grid with the fingerprint it was queued on, so a grid moved in rekordbox since is still refused', async () => {
+    const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
+    setup(
+      null,
+      { ...READ, gridFingerprint: 'g-now' },
+      {
+        saveRekordboxCues,
+        rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => ({
+          wanted: [],
+          fingerprint: READ.fingerprint,
+          grid: { bpm: 120, anchorMs: 1 },
+          gridFingerprint: 'g-queued',
+        })),
+      },
+    )
+    await maximize()
+    await waitFor(() => expect(bars()).toContain(2001))
+    key('m')
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    expect(saveRekordboxCues.mock.calls[0][0][0]).toMatchObject({
+      grid: { bpm: 120, anchorMs: 1 },
+      gridFingerprint: 'g-queued',
+    })
+  })
 })

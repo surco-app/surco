@@ -110,7 +110,7 @@ export function registerRekordboxCuesIpc(host: {
       const source = sourceOf(contentId)
       const op = source?.queue.cuesOp(contentId)
       if (!source || !op || (op.wanted === undefined && op.drops === undefined)) return null
-      const grid = op.grid ? { grid: op.grid } : {}
+      const grid = op.grid ? { grid: op.grid, gridFingerprint: op.gridFingerprint } : {}
       if (op.wanted) return { wanted: op.wanted, fingerprint: op.fingerprint, ...grid }
       return {
         wanted: await source.queuedWanted(contentId, op),

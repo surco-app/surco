@@ -1,7 +1,7 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { gridBeats, gridFingerprint } from '../shared/gridEdit'
 import { anlzSections, beatGrid } from './anlz'
@@ -186,6 +186,52 @@ describe('saving an edited beat grid to rekordbox', () => {
     const result = await applyRekordboxBatch(path, [op()], deps())
     expect(result.ok).toBe(false)
     expect(readFileSync(dat).equals(datBefore)).toBe(true)
+    expect(bpmOf(path)).not.toBe(12050)
+  })
+
+  it('keeps the grid the DJ had before Surco first touched it, through any later save', async () => {
+    const { path, dat } = await collection()
+    const original = readFileSync(dat)
+    await applyRekordboxBatch(path, [op()], deps())
+    const { gridFingerprint: _, ...rest } = op()
+    const second = { ...rest, id: 'h', grid: { bpm: 121, anchorMs: 10 } }
+    const fingerprintNow = gridFingerprint(
+      beatGrid(readFileSync(dat)).map(({ ms, beat }) => ({ ms, beat })),
+    )
+    await applyRekordboxBatch(path, [{ ...second, gridFingerprint: fingerprintNow }], deps())
+    expect(beatGrid(readFileSync(dat))[0].bpm).toBe(121)
+    expect(readFileSync(backupOf(dat, 'session')).equals(original)).toBe(true)
+  })
+
+  it.each([Number.NaN, -5, 0, 1000])(
+    'refuses a grid of %s BPM instead of wiping or hanging on it',
+    async (bpm) => {
+      const { path, dat } = await collection()
+      const before = readFileSync(dat)
+      const result = await applyRekordboxBatch(path, [op({ grid: { bpm, anchorMs: 40 } })], deps())
+      expect(result.ok && result.outcomes[0]).toMatchObject({ applied: false })
+      expect(readFileSync(dat).equals(before)).toBe(true)
+    },
+  )
+
+  it('says the outcome is unknown, without throwing, when an analysis file cannot be put back', async () => {
+    const { path, dat } = await collection()
+    const folder = dirname(dat)
+    try {
+      const result = await applyRekordboxBatch(
+        path,
+        [op()],
+        deps({
+          onWrite: () => {
+            chmodSync(folder, 0o555)
+            throw new Error('disk full')
+          },
+        }),
+      )
+      expect(result).toEqual({ ok: false, reason: 'write-unknown' })
+    } finally {
+      chmodSync(folder, 0o755)
+    }
     expect(bpmOf(path)).not.toBe(12050)
   })
 })
