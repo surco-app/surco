@@ -68,18 +68,20 @@ function setup(
     saveRekordboxCues,
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  render(
+  const tree = (over: Partial<Settings>) => (
     <QueryClientProvider client={client}>
-      <SettingsProvider settings={{ cueFlows: [MY_FLOW], activeCueFlow: 'mine', ...settings }}>
+      <SettingsProvider settings={{ cueFlows: [MY_FLOW], activeCueFlow: 'mine', ...over }}>
         <CuesSection
           cue={{ contentId: '103', path: '/m/g.wav', label: 'Gowan' }}
           open
           onToggle={vi.fn()}
         />
       </SettingsProvider>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   )
-  return { saveRekordboxCues, rekordboxCueTwins }
+  const { rerender } = render(tree(settings))
+  const changeSettings = (over: Partial<Settings>) => rerender(tree({ ...settings, ...over }))
+  return { saveRekordboxCues, rekordboxCueTwins, changeSettings }
 }
 
 const ready = () => waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
@@ -236,5 +238,44 @@ describe('a flow placed in the cue editor reaches the other DJ programs', () => 
     expect(own.grid).toBeDefined()
     expect(twin.contentId).toBe(TRAKTOR)
     expect(twin.grid).toBeUndefined()
+  })
+})
+
+describe('a flow placed in the cue editor reaches Serato', () => {
+  const SERATO = 'serato:/m/g.wav'
+  const SERATO_GRID = GRID.map((b) => ({ ...b, ms: b.ms + 20 }))
+  const withSerato = (settings: Partial<Settings> = {}) =>
+    setup(settings, { '/m/g.wav': { serato: SERATO } }, { [SERATO]: { grid: SERATO_GRID } })
+
+  it('saves the flow to the same file in Serato, on Serato’s beats', async () => {
+    const { saveRekordboxCues } = withSerato()
+    await ready()
+    markAt(bar(64))
+    expect(await screen.findByTestId('cues-twin-serato')).toHaveTextContent('Serato')
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    expect(savedIds(saveRekordboxCues)).toEqual(['103', SERATO])
+    const hot = saveRekordboxCues.mock.calls[0][0][1].wanted.filter((c) => c.kind !== 0)
+    expect(hot).toHaveLength(3)
+    expect(hot.every((c) => c.ms % 500 === 20)).toBe(true)
+  })
+
+  it('stops showing Serato as soon as the DJ takes it out of the flows', async () => {
+    const { changeSettings } = withSerato()
+    await ready()
+    markAt(bar(64))
+    await screen.findByTestId('cues-twin-serato')
+    changeSettings({ cueFlowToSerato: false })
+    await waitFor(() => expect(screen.queryByTestId('cues-twins')).toBeNull())
+  })
+
+  it('keeps the flow out of Serato when the DJ took Serato out of the flows', async () => {
+    const { saveRekordboxCues } = withSerato({ cueFlowToSerato: false })
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    expect(savedIds(saveRekordboxCues)).toEqual(['103'])
+    expect(screen.queryByTestId('cues-twins')).toBeNull()
   })
 })

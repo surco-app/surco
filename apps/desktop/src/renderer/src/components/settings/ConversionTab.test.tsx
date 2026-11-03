@@ -25,6 +25,7 @@ const synced: SyncedDraft = {
   cueFlowToRekordbox: true,
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
+  cueFlowToSerato: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
   language: 'system',

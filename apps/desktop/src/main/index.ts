@@ -1335,15 +1335,16 @@ function registerIpc(): void {
     bootVolume: () => bootVolumeName(),
     allowMedia: (paths) => mediaAccess.allowAll(paths),
   })
+  const seratoRoots = () => {
+    try {
+      const volumes = readdirSync('/Volumes').map((name) => join('/Volumes', name))
+      return seratoLibraryRoots(app.getPath('home'), volumes)
+    } catch {
+      return seratoLibraryRoots(app.getPath('home'), [])
+    }
+  }
   registerSeratoPlaylistsIpc({
-    roots: () => {
-      try {
-        const volumes = readdirSync('/Volumes').map((name) => join('/Volumes', name))
-        return seratoLibraryRoots(app.getPath('home'), volumes)
-      } catch {
-        return seratoLibraryRoots(app.getPath('home'), [])
-      }
-    },
+    roots: seratoRoots,
     allowMedia: (paths) => mediaAccess.allowAll(paths),
     running: DJ_PROCESSES.serato.isRunning,
   })
@@ -1372,6 +1373,7 @@ function registerIpc(): void {
           rekordbox: rekordboxCollectionPath(),
           engine: getSettings().engineLibraryDir,
           traktor: traktorReadPath(),
+          serato: seratoRoots(),
         },
         { realPath: (p: string) => realpathSync(p) },
       ),

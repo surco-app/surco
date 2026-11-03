@@ -1,3 +1,4 @@
+import { realpathSync } from 'node:fs'
 import { HOT_KINDS } from '../shared/cueRules'
 import { gridFingerprint } from '../shared/gridEdit'
 import { nearestHotCueColor } from '../shared/rekordboxCueColors'
@@ -5,7 +6,9 @@ import { seratoFileOf } from '../shared/seratoContent'
 import type { SeratoCue, SeratoTempoMap } from '../shared/seratoMarkers'
 import type { TrackCueRow } from '../shared/types'
 import type { CueQueue, CueSource } from './cueSource'
+import { rekordboxInput } from './engineDropInput'
 import { cueFingerprint } from './rekordboxCues'
+import { keyOf } from './rekordboxPlaylistsIpc'
 import { seratoLeadOfFile } from './seratoClock'
 import { readSeratoTrack } from './seratoTags'
 
@@ -39,12 +42,15 @@ export function seratoCueRows(cues: SeratoCue[], leadMs: number): TrackCueRow[] 
     }))
 }
 
-export function seratoCueSource(host: {
-  words: (file: string) => Promise<Uint16Array | null>
-  queue: CueQueue
-  applyQuietly: () => void
-}): CueSource {
-  return {
+export function seratoCueSource(
+  host: {
+    words: (file: string) => Promise<Uint16Array | null>
+    queue: CueQueue
+    applyQuietly: () => void
+  },
+  collection: () => string,
+): CueSource {
+  const source: CueSource = {
     trackCues: async (contentId) => {
       const file = seratoFileOf(contentId)
       const track = readSeratoTrack(file)
@@ -72,7 +78,20 @@ export function seratoCueSource(host: {
       }
     },
     waveDetail: async (contentId) => host.words(seratoFileOf(contentId)),
-    dropInput: async () => null,
+    dropInput: async (contentId) => {
+      const read = await source.trackCues(contentId)
+      if (!read?.analysed) return null
+      const file = seratoFileOf(contentId)
+      const path = collection()
+      const fromRekordbox = rekordboxInput(file, {
+        collection: path,
+        key: path ? await keyOf(path) : undefined,
+        realPath: (p) => realpathSync(p),
+      })
+      if (fromRekordbox) return fromRekordbox
+      const words = await host.words(file)
+      return words ? { grid: read.grid, phrases: [], words } : null
+    },
     auditionLead: async () => 0,
     surcoGrid: async () => null,
     gridFit: async () => null,
@@ -81,4 +100,5 @@ export function seratoCueSource(host: {
     queue: host.queue,
     applyQuietly: host.applyQuietly,
   }
+  return source
 }

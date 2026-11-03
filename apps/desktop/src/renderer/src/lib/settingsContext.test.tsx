@@ -70,7 +70,9 @@ function FlowTargets(): React.JSX.Element {
   const s = useAppSettings()
   return (
     <p data-testid="targets">
-      {[s.cueFlowToRekordbox, s.cueFlowToTraktor, s.cueFlowToEngine].map(String).join(',')}
+      {[s.cueFlowToRekordbox, s.cueFlowToTraktor, s.cueFlowToEngine, s.cueFlowToSerato]
+        .map(String)
+        .join(',')}
     </p>
   )
 }
@@ -82,13 +84,20 @@ describe('the programs a flow reaches as the renderer resolves them', () => {
         <FlowTargets />
       </SettingsProvider>,
     )
-    expect(screen.getByTestId('targets').textContent).toBe('true,true,true')
+    expect(screen.getByTestId('targets').textContent).toBe('true,true,true,true')
     cleanup()
     render(
       <SettingsProvider settings={{ cueFlowToTraktor: false }}>
         <FlowTargets />
       </SettingsProvider>,
     )
-    expect(screen.getByTestId('targets').textContent).toBe('true,false,true')
+    expect(screen.getByTestId('targets').textContent).toBe('true,false,true,true')
+    cleanup()
+    render(
+      <SettingsProvider settings={{ cueFlowToSerato: false }}>
+        <FlowTargets />
+      </SettingsProvider>,
+    )
+    expect(screen.getByTestId('targets').textContent).toBe('true,true,true,false')
   })
 })

@@ -14,7 +14,7 @@ import {
 import { CUE_GRID_TOLERANCE, normalizeCueGridTolerance } from '../../../../shared/cueGrid'
 import { CUE_JUMP_BARS } from '../../../../shared/cueJump'
 import { CUE_QUANTIZE } from '../../../../shared/cueQuantize'
-import { WRITABLE_PROGRAMS, type WritableProgram } from '../../../../shared/djProgram'
+import { DJ_PROGRAMS, type DjProgram } from '../../../../shared/djProgram'
 import { flowName } from '../../lib/cueFlowName'
 import { FLOW_TO } from '../../lib/cueTwins'
 import { LIBRARY_NAME } from '../../lib/reviewLibraries'
@@ -70,14 +70,17 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
   // cue by its type: where Engine DJ or Traktor is installed, the tab says what reaches them.
   const [traktorFound, setTraktorFound] = useState(false)
   const [engineFound, setEngineFound] = useState(false)
+  const [seratoFound, setSeratoFound] = useState(false)
   useEffect(() => {
     void window.api.traktorAvailable().then(setTraktorFound, () => {})
     void window.api.engineAvailable().then(setEngineFound, () => {})
+    void window.api.seratoAvailable().then(setSeratoFound, () => {})
   }, [])
-  const foundBy: Record<WritableProgram, boolean> = {
+  const foundBy: Record<DjProgram, boolean> = {
     rekordbox: rekordboxCollection !== '',
     traktor: traktorFound,
     engine: engineFound,
+    serato: seratoFound,
   }
   const flows = synced.cueFlows
   const flow = flows.find((f) => f.id === current) ?? activeCueFlow(synced)
@@ -366,7 +369,7 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
           </span>
         </h3>
         <div data-testid="cue-flow-targets" className={`${GROUP} text-sm`}>
-          {WRITABLE_PROGRAMS.map((library) => {
+          {DJ_PROGRAMS.map((library) => {
             const name = LIBRARY_NAME[library]
             const key = FLOW_TO[library]
             const found = foundBy[library]

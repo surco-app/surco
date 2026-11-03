@@ -320,6 +320,7 @@ const LIBRARY_NAME: Record<TwinPlan['library'], string> = {
   rekordbox: 'rekordbox',
   traktor: 'Traktor',
   engine: 'Engine DJ',
+  serato: 'Serato',
 }
 
 // Where saving also places the flow: one line per other program holding the same file,
@@ -710,6 +711,7 @@ function Editing({
       settings.cueFlowToRekordbox,
       settings.cueFlowToTraktor,
       settings.cueFlowToEngine,
+      settings.cueFlowToSerato,
     ],
     queryFn: () => twinPlansOf(queryClient, [own], settings, overwrite),
     enabled: flowMarked,

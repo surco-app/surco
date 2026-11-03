@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
 import {
   ByteVector,
@@ -20,6 +20,8 @@ import { HOT_KINDS } from '../shared/cueRules'
 import { gridFingerprint } from '../shared/gridEdit'
 import { nearestHotCueColor } from '../shared/rekordboxCueColors'
 import { SERATO_M4A, SERATO_MP3, SERATO_WAV } from '../shared/seratoMarkersFixture'
+import { anlzFile, pqtzSection, pssiSection, pwv5Section } from './anlzFixture'
+import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 import { seratoCueSource } from './seratoCueSource'
 
 function mp3(): string {
@@ -121,12 +123,47 @@ function lameMp3(): string {
   return file
 }
 
-const source = (words = vi.fn(async (_file: string) => new Uint16Array([3, 9]))) =>
-  seratoCueSource({
-    words,
-    queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
-    applyQuietly: vi.fn(),
+const source = (
+  words: (file: string) => Promise<Uint16Array | null> = vi.fn(
+    async (_file: string) => new Uint16Array([3, 9]),
+  ),
+  collection = '',
+) =>
+  seratoCueSource(
+    {
+      words,
+      queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
+      applyQuietly: vi.fn(),
+    },
+    () => collection,
+  )
+
+const ANLZ = '/PIONEER/USBANLZ/1/a/ANLZ0000.DAT'
+const RB_BEATS = Array.from({ length: 200 }, (_, i) => 20 + i * 500)
+
+function rekordboxWith(file: string): string {
+  const dir = mkdtempSync(join(tmpdir(), 'surco-seratodrop-rb-'))
+  const path = join(dir, 'master.db')
+  writeRekordboxPlaylistFixture(path, {
+    ...ORGANISE_FIXTURE,
+    content: [
+      { ...ORGANISE_FIXTURE.content[0], ID: '201', FolderPath: file, AnalysisDataPath: ANLZ },
+    ],
   })
+  mkdirSync(join(dir, 'share', dirname(ANLZ)), { recursive: true })
+  writeFileSync(join(dir, 'share', ANLZ), anlzFile(pqtzSection(RB_BEATS)))
+  writeFileSync(
+    join(dir, 'share', ANLZ.replace(/\.DAT$/, '.EXT')),
+    anlzFile(
+      pssiSection(1, [
+        { beat: 1, kind: 1 },
+        { beat: 33, kind: 2 },
+      ]),
+      pwv5Section([{ r: 7, g: 0, b: 0, h: 31 }]),
+    ),
+  )
+  return path
+}
 
 describe('seratoCueSource', () => {
   it('shows the eight hot cues Serato saved in the file, on the A to H buttons with their colours', async () => {
@@ -260,10 +297,57 @@ describe('seratoCueSource', () => {
   it('saves through the Serato queue it is given, so a save waits for Serato to close', () => {
     const queue = { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() }
     const applyQuietly = vi.fn()
-    const writer = seratoCueSource({ words: async () => null, queue, applyQuietly })
+    const writer = seratoCueSource({ words: async () => null, queue, applyQuietly }, () => '')
     expect(writer.queue).toBe(queue)
     writer.applyQuietly(null)
     expect(applyQuietly).toHaveBeenCalled()
+  })
+
+  it('detects on rekordbox’s analysis of the same file when rekordbox has it', async () => {
+    const file = audio('wav')
+    geob(file, 'Serato Tempo Map', tempoMap(1, 120))
+    const words = vi.fn(async (_file: string) => new Uint16Array([3, 9]))
+    const input = await source(words, rekordboxWith(file)).dropInput(`serato:${file}`)
+    expect(input?.grid.map((b) => b.ms)).toEqual(RB_BEATS)
+    expect(input?.phrases.length).toBeGreaterThan(0)
+    expect(words).not.toHaveBeenCalled()
+  })
+
+  it('reads Surco’s own words over Serato’s grid, with no phrases, when rekordbox lacks the file', async () => {
+    const file = audio('wav')
+    geob(file, 'Serato Tempo Map', tempoMap(1, 120))
+    const surco = new Uint16Array([3, 9])
+    const words = vi.fn(async (_file: string) => surco)
+    const input = await source(words).dropInput(`serato:${file}`)
+    expect(words).toHaveBeenCalledWith(file)
+    expect(input?.grid.slice(0, 3)).toEqual([
+      { ms: 0, beat: 3 },
+      { ms: 500, beat: 4 },
+      { ms: 1000, beat: 1 },
+    ])
+    expect(input?.phrases).toEqual([])
+    expect(input?.words).toBe(surco)
+  })
+
+  it('keeps Surco’s words as read and Serato’s grid on Surco’s clock for an MP3 Serato plays later', async () => {
+    const file = lameMp3()
+    geob(file, 'Serato Tempo Map', tempoMap(1, 120))
+    const surco = new Uint16Array([3, 9])
+    const input = await source(vi.fn(async () => surco)).dropInput(`serato:${file}`)
+    expect(input?.words).toBe(surco)
+    expect(input?.grid.find((b) => b.beat === 1)?.ms).toBeCloseTo(1000 - 51.18, 1)
+  })
+
+  it('has nothing to detect on before Serato has a beat grid, and decodes nothing for it', async () => {
+    const words = vi.fn(async (_file: string) => new Uint16Array([3, 9]))
+    expect(await source(words).dropInput(`serato:${audio('wav')}`)).toBeNull()
+    expect(words).not.toHaveBeenCalled()
+  })
+
+  it('has nothing to detect on when Surco cannot read the audio', async () => {
+    const file = audio('wav')
+    geob(file, 'Serato Tempo Map', tempoMap(1, 120))
+    expect(await source(vi.fn(async () => null)).dropInput(`serato:${file}`)).toBeNull()
   })
 
   it('never changes the file it reads', async () => {

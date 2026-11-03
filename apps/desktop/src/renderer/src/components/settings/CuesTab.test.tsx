@@ -41,6 +41,7 @@ let last: Pick<
   | 'cueFlowToRekordbox'
   | 'cueFlowToTraktor'
   | 'cueFlowToEngine'
+  | 'cueFlowToSerato'
 > | null = null
 
 const KEPT: CueFlow[] = [MIX_IN, MY_FLOW, ONE_AT_32, CALLS_ONLY]
@@ -64,6 +65,7 @@ function Harness({
     cueFlowToRekordbox: true,
     cueFlowToTraktor: true,
     cueFlowToEngine: true,
+    cueFlowToSerato: true,
     cueLearnFromEdits: true,
   })
   last = draft
@@ -569,7 +571,7 @@ describe('CuesTab', () => {
     expect(last?.cueFlowToRekordbox).toBe(true)
   })
 
-  it('lists the targets as rekordbox, Traktor and Engine DJ, in that order', () => {
+  it('lists the targets as rekordbox, Traktor, Engine DJ and Serato, in that order', () => {
     installApi()
     render(<Harness collection="/c/master.db" />)
     const rows = within(screen.getByTestId('cue-flow-targets')).getAllByRole('checkbox')
@@ -577,10 +579,33 @@ describe('CuesTab', () => {
       'settings-cue-flow-to-rekordbox',
       'settings-cue-flow-to-traktor',
       'settings-cue-flow-to-engine',
+      'settings-cue-flow-to-serato',
     ])
     expect(screen.getByTestId('cue-flow-targets')).toHaveTextContent(
-      /rekordbox.*Traktor.*Engine DJ/s,
+      /rekordbox.*Traktor.*Engine DJ.*Serato/s,
     )
+  })
+
+  it('lets the DJ take Serato out of the flows once its library is found', async () => {
+    installApi({ seratoAvailable: vi.fn<Api['seratoAvailable']>(async () => true) })
+    render(<Harness collection="/c/master.db" />)
+    const serato = screen.getByTestId('settings-cue-flow-to-serato')
+    await waitFor(() => expect(serato).toBeEnabled())
+    expect(serato).toBeChecked()
+    expect(screen.getByTestId('cue-flow-targets')).toHaveTextContent(
+      i18n.t('settings.cueFlows.targets.serato'),
+    )
+    fireEvent.click(serato)
+    expect(last?.cueFlowToSerato).toBe(false)
+    expect(last?.cueFlowToEngine).toBe(true)
+  })
+
+  it('names Serato when its library is not on this computer and leaves its box unticked', () => {
+    installApi({ seratoAvailable: vi.fn<Api['seratoAvailable']>(async () => false) })
+    render(<Harness collection="/c/master.db" />)
+    expect(screen.getByTestId('settings-cue-flow-to-serato')).toBeDisabled()
+    expect(screen.getByTestId('settings-cue-flow-to-serato')).not.toBeChecked()
+    expect(screen.getByTestId('settings-cue-flow-to-serato-missing')).toHaveTextContent('Serato')
   })
 
   it('leaves the rekordbox box unticked and says so while no collection is set', () => {

@@ -90,6 +90,7 @@ export const defaults: Settings = {
   cueFlowToRekordbox: true,
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
+  cueFlowToSerato: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
   rekordboxPlaylistsFieldOffered: false,
@@ -364,6 +365,7 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
     cueFlowToRekordbox: (patch.cueFlowToRekordbox ?? base.cueFlowToRekordbox) !== false,
     cueFlowToTraktor: (patch.cueFlowToTraktor ?? base.cueFlowToTraktor) !== false,
     cueFlowToEngine: (patch.cueFlowToEngine ?? base.cueFlowToEngine) !== false,
+    cueFlowToSerato: (patch.cueFlowToSerato ?? base.cueFlowToSerato) !== false,
     cueLearnFromEdits: (patch.cueLearnFromEdits ?? base.cueLearnFromEdits) !== false,
     hiddenSources: normalizeHiddenSources(patch.hiddenSources ?? base.hiddenSources),
   }

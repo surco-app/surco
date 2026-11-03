@@ -29,6 +29,8 @@ import {
 } from './libraryFileUse'
 import * as rekordboxDb from './rekordboxDb'
 import { REKORDBOX_KEY } from './rekordboxDb'
+import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
+import { type SeratoLibraryRoot, seratoLibraryRoots } from './seratoLibrary'
 
 const OFF = { rekordbox: '', engine: '', traktor: '' }
 let root: string
@@ -428,6 +430,62 @@ describe('libraryTracksOf', () => {
         traktor: join(root, 'missing.nml'),
       }),
     ).toEqual({ rekordbox: '1' })
+  })
+})
+
+describe('libraryTracksOf in Serato', () => {
+  const seratoDatabase = (files: string[]) =>
+    concat([
+      frame('vrsn', utf16be('2.0/Serato Scratch LIVE Database')),
+      ...files.map((pfil) => track({ pfil })),
+    ])
+
+  async function serato(files: string[]): Promise<SeratoLibraryRoot[]> {
+    const home = await mkdtemp(join(root, 'serato-home-'))
+    await mkdir(join(home, 'Music', '_Serato_'), { recursive: true })
+    await writeFile(join(home, 'Music', '_Serato_', 'database V2'), seratoDatabase(files))
+    return seratoLibraryRoots(home, [])
+  }
+
+  it('names the file Serato lists in its database, as Serato spells it', async () => {
+    const collection = await rekordbox('/Volumes/M/Music/a.mp3')
+    expect(
+      await libraryTracksOf('/Volumes/M/Music/a.mp3', {
+        ...OFF,
+        rekordbox: collection,
+        serato: await serato(['Volumes/M/Music/b.mp3', 'Volumes/M/Music/a.mp3']),
+      }),
+    ).toEqual({ rekordbox: '1', serato: 'serato:/Volumes/M/Music/a.mp3' })
+  })
+
+  it('finds the file Serato listed through the music folder link', async () => {
+    const home = '/Users/v/Music/Music'
+    const options = {
+      homeMusicDir: home,
+      realPath: (p: string) => (p === home ? '/Volumes/Public/Music' : p),
+    }
+    expect(
+      await libraryTracksOf(
+        '/Volumes/Public/Music/T/Café.mp3',
+        { ...OFF, serato: await serato(['Users/v/Music/Music/T/Cafe\u0301.mp3']) },
+        options,
+      ),
+    ).toEqual({ serato: 'serato:/Users/v/Music/Music/T/Cafe\u0301.mp3' })
+  })
+
+  it('leaves Serato out when it lacks the file or lists it twice', async () => {
+    expect(
+      await libraryTracksOf('/Volumes/M/Music/a.mp3', {
+        ...OFF,
+        serato: await serato(['Volumes/M/Music/b.mp3']),
+      }),
+    ).toEqual({})
+    expect(
+      await libraryTracksOf('/Volumes/M/Music/a.mp3', {
+        ...OFF,
+        serato: await serato(['Volumes/M/Music/a.mp3', 'Volumes/M/Music/a.mp3']),
+      }),
+    ).toEqual({})
   })
 })
 

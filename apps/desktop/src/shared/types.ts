@@ -244,6 +244,7 @@ export interface Settings {
   cueFlowToRekordbox: boolean
   cueFlowToTraktor: boolean
   cueFlowToEngine: boolean
+  cueFlowToSerato: boolean
   cueLearnFromEdits: boolean
   hiddenSources: PlaylistSource[]
   rekordboxPlaylistsFieldOffered: boolean

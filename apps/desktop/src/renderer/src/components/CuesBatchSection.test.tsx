@@ -5,7 +5,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
-import type { LibraryTracks, TrackCues } from '../../../shared/types'
+import type { LibraryTracks, Settings, TrackCues } from '../../../shared/types'
 import i18n from '../i18n'
 import { startDraft } from '../lib/cueDraft'
 import {
@@ -62,14 +62,16 @@ function setup(twins: Record<string, LibraryTracks> = {}, targets = TARGETS) {
   const onMark = vi.fn()
   const onFlow = vi.fn()
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  render(
+  const tree = (over: Partial<Settings>) => (
     <QueryClientProvider client={client}>
-      <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine' }}>
+      <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine', ...over }}>
         <CuesBatchSection targets={targets} onMark={onMark} onFlow={onFlow} />
       </SettingsProvider>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   )
-  return { saveRekordboxCues, onMark, onFlow }
+  const { rerender } = render(tree({}))
+  const changeSettings = (over: Partial<Settings>) => rerender(tree(over))
+  return { saveRekordboxCues, onMark, onFlow, changeSettings }
 }
 
 describe('Cues over several selected tracks', () => {
@@ -298,6 +300,26 @@ describe('Cues over several selected tracks', () => {
       'cues-batch-twin-serato',
     ])
     expect(screen.getByTestId('cues-batch-twins')).toHaveTextContent('Serato')
+  })
+
+  it('counts and saves the same files in Serato, until the DJ takes Serato out of the flows', async () => {
+    const S = 'serato:/m/a.wav'
+    const { saveRekordboxCues, changeSettings } = setup({ '/m/a.wav': { serato: S } }, [TARGETS[0]])
+    act(() =>
+      keepAutoMark('103', {
+        kind: 'proposed',
+        proposals: [bar(64)].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+      }),
+    )
+    fireEvent.click(screen.getByTestId('cues-batch-accept'))
+    await waitFor(() => expect(screen.getByTestId('cues-batch-twin-serato')).toHaveTextContent('1'))
+    changeSettings({ cueFlowToSerato: false })
+    await waitFor(() => expect(screen.queryByTestId('cues-batch-twin-serato')).toBeNull())
+    changeSettings({})
+    await waitFor(() => expect(screen.getByTestId('cues-batch-twin-serato')).toHaveTextContent('1'))
+    fireEvent.click(screen.getByTestId('cues-batch-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
+    expect(saveRekordboxCues.mock.calls[0][0].map((r) => r.contentId)).toEqual(['103', S])
   })
 
   it('says how many tracks keep their unsaved changes in the other program', async () => {

@@ -36,6 +36,7 @@ const settings = (over: Partial<Record<string, boolean>> = {}) => ({
   cueFlowToRekordbox: true,
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
+  cueFlowToSerato: true,
   cueLearnFromEdits: true,
   ...over,
 })
@@ -199,6 +200,49 @@ describe('placing a flow in the other DJ programs', () => {
     const { api, client } = setup()
     expect(await twinPlans(client, { ...SOURCE, breaks: [] }, settings())).toEqual([])
     expect(api.rekordboxCueTwins).not.toHaveBeenCalled()
+  })
+})
+
+describe('placing a flow in Serato and from it', () => {
+  const SERATO = 'serato:/m/a.wav'
+  const SERATO_GRID = GRID.map((b) => ({ ...b, ms: b.ms + 20 }))
+  const withSerato = (read: Partial<TrackCues> = {}) =>
+    setup({ ...ALL, serato: SERATO }, { [SERATO]: { ...READ, contentId: SERATO, ...read } })
+
+  it('plans the flow marked in rekordbox on the same file in Serato, on Serato’s own beats', async () => {
+    const { client } = withSerato({ grid: SERATO_GRID })
+    const plans = await twinPlans(client, SOURCE, settings())
+    const serato = plans.find((p) => p.contentId === SERATO)
+    expect(serato?.library).toBe('serato')
+    const wanted = serato?.status === 'planned' ? serato.request.wanted : []
+    expect(wanted.filter((c) => c.kind !== 0).map((c) => c.ms)).toEqual(
+      wantedOfDraft(placed([bar(64)]).cues)
+        .filter((c) => c.kind !== 0)
+        .map((c) => c.ms + 20),
+    )
+    expect(serato?.status === 'planned' && serato.calls).toBe(0)
+  })
+
+  it('carries a flow marked in Serato to the same file in Engine DJ', async () => {
+    const { client } = withSerato()
+    const plans = await twinPlans(client, { ...SOURCE, contentId: SERATO }, settings())
+    expect(plans.map((p) => p.library)).toEqual(['rekordbox', 'traktor', 'engine'])
+    const engine = plans.find((p) => p.contentId === ENGINE)
+    expect(engine?.status === 'planned' && engine.request.wanted).toEqual(
+      wantedOfDraft(placed([bar(64)]).cues),
+    )
+  })
+
+  it('leaves Serato out when the DJ took it out of the flows', async () => {
+    const { client } = withSerato()
+    const plans = await twinPlans(client, SOURCE, settings({ cueFlowToSerato: false }))
+    expect(plans.map((p) => p.contentId)).toEqual([TRAKTOR, ENGINE])
+  })
+
+  it('skips a Serato track with no beat grid, as one not analysed', async () => {
+    const { client } = withSerato({ analysed: false, grid: [] })
+    const plans = await twinPlans(client, SOURCE, settings())
+    expect(plans.map((p) => p.contentId)).toEqual([TRAKTOR, ENGINE])
   })
 })
 

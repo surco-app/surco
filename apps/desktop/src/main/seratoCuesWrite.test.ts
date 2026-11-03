@@ -238,11 +238,14 @@ function replaceMarkers(file: string, ext: string, payload: Uint8Array): void {
 }
 
 async function fingerprintOf(file: string): Promise<string> {
-  const seen = await seratoCueSource({
-    words: async () => null,
-    queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
-    applyQuietly: vi.fn(),
-  }).trackCues(`serato:${file}`)
+  const seen = await seratoCueSource(
+    {
+      words: async () => null,
+      queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
+      applyQuietly: vi.fn(),
+    },
+    () => '',
+  ).trackCues(`serato:${file}`)
   if (!seen) throw new Error(`no Serato cues read from ${file}`)
   return seen.fingerprint
 }

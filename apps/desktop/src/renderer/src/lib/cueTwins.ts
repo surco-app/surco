@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { CueFlow } from '../../../shared/cueFlows'
 import { HOT_KINDS, SAME_POSITION_MS, type WantedCue } from '../../../shared/cueRules'
-import { programOf, WRITABLE_PROGRAMS, type WritableProgram } from '../../../shared/djProgram'
+import { DJ_PROGRAMS, type DjProgram, programOf } from '../../../shared/djProgram'
 import type { CueLibrary, LibraryTracks, SaveCuesRequest, TrackCues } from '../../../shared/types'
 import { queuedCuesQuery, trackCuesQuery } from '../hooks/useTrackCues'
 import {
@@ -34,11 +34,12 @@ export interface TwinSettings {
   cueFlowToRekordbox: boolean
   cueFlowToTraktor: boolean
   cueFlowToEngine: boolean
+  cueFlowToSerato: boolean
 }
 
 export type TwinPlan =
   | {
-      library: WritableProgram
+      library: DjProgram
       contentId: string
       status: 'planned'
       hot: number
@@ -46,22 +47,22 @@ export type TwinPlan =
       left: number
       request: SaveCuesRequest
     }
-  | { library: WritableProgram; contentId: string; status: 'full'; left: number }
-  | { library: WritableProgram; contentId: string; status: 'unsaved' }
+  | { library: DjProgram; contentId: string; status: 'full'; left: number }
+  | { library: DjProgram; contentId: string; status: 'unsaved' }
 
-const LIBRARIES = WRITABLE_PROGRAMS
+const LIBRARIES = DJ_PROGRAMS
 
 export const FLOW_TO: Record<
-  WritableProgram,
-  'cueFlowToRekordbox' | 'cueFlowToTraktor' | 'cueFlowToEngine'
+  DjProgram,
+  'cueFlowToRekordbox' | 'cueFlowToTraktor' | 'cueFlowToEngine' | 'cueFlowToSerato'
 > = {
   rekordbox: 'cueFlowToRekordbox',
   traktor: 'cueFlowToTraktor',
   engine: 'cueFlowToEngine',
+  serato: 'cueFlowToSerato',
 }
 
-const wanted = (library: WritableProgram, settings: TwinSettings): boolean =>
-  settings[FLOW_TO[library]]
+const wanted = (library: DjProgram, settings: TwinSettings): boolean => settings[FLOW_TO[library]]
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
 
@@ -123,7 +124,7 @@ function onlyAdded(baseline: WantedCue[], placed: WantedCue[], kinds: number[]):
 async function planOne(
   client: QueryClient,
   source: TwinSource,
-  library: WritableProgram,
+  library: DjProgram,
   contentId: string,
   settings: TwinSettings,
 ): Promise<TwinPlan | null> {

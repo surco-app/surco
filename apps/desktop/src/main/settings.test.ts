@@ -1178,20 +1178,27 @@ describe('cue flows', () => {
   it('places a flow in every DJ program for a settings file from before the choice', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
     const s = getSettings()
-    expect([s.cueFlowToRekordbox, s.cueFlowToTraktor, s.cueFlowToEngine]).toEqual([
-      true,
-      true,
-      true,
-    ])
+    expect([
+      s.cueFlowToRekordbox,
+      s.cueFlowToTraktor,
+      s.cueFlowToEngine,
+      s.cueFlowToSerato,
+    ]).toEqual([true, true, true, true])
   })
 
   it('keeps a program the DJ took out of the flows, and repairs a value that is not a boolean', () => {
     writeFileSync(
       join(app.getPath('userData'), 'settings.json'),
-      JSON.stringify({ cueFlowToTraktor: false, cueFlowToEngine: 'no' }),
+      JSON.stringify({ cueFlowToTraktor: false, cueFlowToEngine: 'no', cueFlowToSerato: 'no' }),
     )
     expect(getSettings().cueFlowToTraktor).toBe(false)
     expect(getSettings().cueFlowToEngine).toBe(true)
+    expect(getSettings().cueFlowToSerato).toBe(true)
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ cueFlowToSerato: false }),
+    )
+    expect(getSettings().cueFlowToSerato).toBe(false)
   })
 
   it('carries which programs get the flows to another Mac with the flows', () => {

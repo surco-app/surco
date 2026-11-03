@@ -34,6 +34,7 @@ export interface SyncedDraft extends Record<DjAddKey | DjSyncKey, boolean> {
   cueFlowToRekordbox: boolean
   cueFlowToTraktor: boolean
   cueFlowToEngine: boolean
+  cueFlowToSerato: boolean
   cueLearnFromEdits: boolean
   hiddenSources: PlaylistSource[]
   filenameFormat: string
@@ -143,6 +144,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     cueFlowToRekordbox: s.cueFlowToRekordbox,
     cueFlowToTraktor: s.cueFlowToTraktor,
     cueFlowToEngine: s.cueFlowToEngine,
+    cueFlowToSerato: s.cueFlowToSerato,
     cueLearnFromEdits: s.cueLearnFromEdits,
     hiddenSources: s.hiddenSources,
     syncEngineDj: s.syncEngineDj,

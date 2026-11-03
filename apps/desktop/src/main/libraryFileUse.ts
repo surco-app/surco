@@ -10,6 +10,7 @@ import { engineRowFinder } from './engineRepoint'
 import { toNmlLocation } from './ffmpeg'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
 import { findTrackByPath, isAmbiguous, openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
+import { readSeratoLibrary, type SeratoLibraryRoot } from './seratoLibrary'
 import { attr, findEntries, nmlCopyInfo } from './traktorNml'
 import { traktorFileOf } from './traktorPlaylists'
 
@@ -322,12 +323,23 @@ const TRACK_OF: Record<
   },
 }
 
+function seratoTrackOf(
+  roots: SeratoLibraryRoot[],
+  path: string,
+  options: PathMatchOptions,
+): string | undefined {
+  const key = pathKey(options)
+  const wanted = key(path)
+  const found = readSeratoLibrary(roots).tracks.filter((t) => key(t.file) === wanted)
+  return found.length === 1 ? `serato:${found[0].file}` : undefined
+}
+
 // Read only: the id each library gives the file, for the cue editor to place a flow on the
 // same track everywhere. A library that cannot be read, lacks the file or holds it twice is
 // left out, since there is then no one track to write to.
 export async function libraryTracksOf(
   path: string,
-  libraries: SyncedLibraries,
+  libraries: SyncedLibraries & { serato?: SeratoLibraryRoot[] },
   options: PathMatchOptions = {},
 ): Promise<LibraryTracks> {
   const out: LibraryTracks = {}
@@ -338,5 +350,7 @@ export async function libraryTracksOf(
       if (track !== undefined) out[library] = track
     } catch {}
   }
+  const serato = seratoTrackOf(libraries.serato ?? [], path, options)
+  if (serato !== undefined) out.serato = serato
   return out
 }

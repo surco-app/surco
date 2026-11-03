@@ -90,6 +90,7 @@ const settings: Settings = {
   cueFlowToRekordbox: true,
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
+  cueFlowToSerato: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
   hasSeenOnboarding: true,
@@ -293,6 +294,11 @@ describe('cue flows in the draft', () => {
   it('saves the letter order the Cues tab staged', () => {
     const synced = { ...pickSynced(settings), cueLettersByTime: false }
     expect(buildSettingsPatch(synced, local).cueLettersByTime).toBe(false)
+  })
+
+  it('keeps Serato out of the flows across a Settings save once the DJ took it out', () => {
+    const synced = pickSynced({ ...settings, cueFlowToSerato: false })
+    expect(buildSettingsPatch(synced, local).cueFlowToSerato).toBe(false)
   })
 
   it('saves the hidden sources the General tab staged', () => {

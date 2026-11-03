@@ -71,11 +71,14 @@ function wav(ext: 'wav' | 'mp3' = 'wav', payload?: Uint8Array): string {
   return file
 }
 
-const reader = seratoCueSource({
-  words: async () => null,
-  queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
-  applyQuietly: vi.fn(),
-})
+const reader = seratoCueSource(
+  {
+    words: async () => null,
+    queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
+    applyQuietly: vi.fn(),
+  },
+  () => '',
+)
 
 async function seen(file: string): Promise<TrackCues> {
   const read = await reader.trackCues(`serato:${file}`)

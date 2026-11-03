@@ -60,7 +60,9 @@ export function registerRekordboxCuesIpc(host: {
     rekordbox: rekordboxCueSource(host),
     traktor: host.traktor ? traktorCueSource(host.traktor, host.collection, host.beatGrid) : null,
     engine: host.engine ? engineCueSource(host.engine, host.collection, host.beatGrid) : null,
-    serato: host.serato ? seratoCueSource({ ...host.serato, words: host.words }) : null,
+    serato: host.serato
+      ? seratoCueSource({ ...host.serato, words: host.words }, host.collection)
+      : null,
   }
   const sourceOf = (contentId: string) => writers[programOf(contentId)]
   const queueOf = (contentId: string) => sourceOf(contentId)?.queue ?? null

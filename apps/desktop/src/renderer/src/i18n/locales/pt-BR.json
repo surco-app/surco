@@ -1788,6 +1788,7 @@
         "rekordbox": "Hot cues e CALL",
         "traktor": "Só hot cues, em azul, de A a G. O Traktor lê a coleção ao abrir, então ao salvar o Surco vai pedir que você o feche.",
         "engine": "Só hot cues. O Engine DJ não tem CALL.",
+        "serato": "Só hot cues, de A a H. O Serato não tem CALL. Se o Serato estiver aberto, o Surco os salva quando você fechá-lo.",
         "missing": "O Surco não encontra o {{program}} neste computador"
       }
     },

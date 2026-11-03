@@ -1788,6 +1788,7 @@
         "rekordbox": "ホットキューと CALL",
         "traktor": "ホットキューのみ（青、A から G まで）。Traktor は起動時にコレクションを読み込むため、保存時に Surco が Traktor を閉じるよう求めます。",
         "engine": "ホットキューのみ。Engine DJ には CALL がありません。",
+        "serato": "ホットキューのみ（A から H）。Serato には CALL がありません。Serato が開いている場合は、閉じたときに Surco が保存します。",
         "missing": "このコンピュータで {{program}} が見つかりません"
       }
     },
