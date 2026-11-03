@@ -1024,6 +1024,19 @@
         "left_other": "{{count}} não cabem: não há letras livres",
         "full_one": "O hot cue não cabe: todas as letras já têm cue",
         "full_other": "Os {{count}} hot cues não cabem: todas as letras já têm cue"
+      },
+      "grid": {
+        "bpm": "BPM da grade",
+        "bpmHint": "Digite o BPM ou",
+        "double": "×2 Dobro",
+        "half": "½ Metade",
+        "left": "Mover a grade para a esquerda (⌥←)",
+        "right": "Mover a grade para a direita (⌥→)",
+        "widen": "Abrir a grade, baixa o BPM",
+        "narrow": "Fechar a grade, sobe o BPM",
+        "downbeat": "Tempo 1 do compasso no cursor",
+        "auto": "Auto",
+        "autoHint": "Ajustar a grade às batidas"
       }
     }
   },

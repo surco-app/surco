@@ -1024,6 +1024,19 @@
         "left_other": "{{count}} won't fit: no free letters left",
         "full_one": "The hot cue won't fit: every letter already has a cue",
         "full_other": "The {{count}} hot cues won't fit: every letter already has a cue"
+      },
+      "grid": {
+        "bpm": "Grid BPM",
+        "bpmHint": "Type the BPM or",
+        "double": "×2 Double",
+        "half": "½ Half",
+        "left": "Move the grid left (⌥←)",
+        "right": "Move the grid right (⌥→)",
+        "widen": "Widen the grid, lowers the BPM",
+        "narrow": "Narrow the grid, raises the BPM",
+        "downbeat": "Downbeat at the playhead",
+        "auto": "Auto",
+        "autoHint": "Fit the grid to the beats"
       }
     }
   },

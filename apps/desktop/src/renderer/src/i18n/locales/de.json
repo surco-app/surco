@@ -1024,6 +1024,19 @@
         "left_other": "{{count}} passen nicht: keine Buchstaben mehr frei",
         "full_one": "Der Hot Cue passt nicht: Jeder Buchstabe hat schon einen Cue",
         "full_other": "Die {{count}} Hot Cues passen nicht: Jeder Buchstabe hat schon einen Cue"
+      },
+      "grid": {
+        "bpm": "BPM des Rasters",
+        "bpmHint": "BPM eingeben oder",
+        "double": "×2 Doppelt",
+        "half": "½ Halb",
+        "left": "Raster nach links (⌥←)",
+        "right": "Raster nach rechts (⌥→)",
+        "widen": "Raster weiten, senkt die BPM",
+        "narrow": "Raster verengen, erhöht die BPM",
+        "downbeat": "Taktanfang auf den Abspielkopf",
+        "auto": "Auto",
+        "autoHint": "Raster an die Schläge anpassen"
       }
     }
   },
