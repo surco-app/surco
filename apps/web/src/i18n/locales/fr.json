@@ -263,7 +263,12 @@
           {
             "t": "Cues hors de la grille",
             "s": "Sort les pistes dont les cues ne tombent pas sur le temps de la grille.",
-            "d": "Dans rekordbox, Traktor et Engine DJ, Surco mesure chaque cue par rapport à la grille de la piste et te dit combien de pistes dérivent. Tu les filtres, tu ouvres l'éditeur, tu effaces leurs cues et tu lances Marquage auto. Tu choisis à partir de combien de ms ça compte dans les réglages des cues, 5, 10 ou 20 ms. 10 par défaut."
+            "d": "Quand tu les ouvres, l'éditeur te dit quels cues sont à côté et de combien, et « Sur le temps » les ramène sur leur temps d'un coup. Dans rekordbox, Traktor et Engine DJ, Surco mesure chaque cue par rapport à la grille de la piste et te dit combien de pistes s'en écartent. À partir de combien de ms ça compte, tu le choisis dans les réglages des cues, 5, 10 ou 20 ms. 10 par défaut."
+          },
+          {
+            "t": "La grille, à sa place",
+            "s": "Corrige la grille d'une piste à la main ou avec Auto, et le filtre « Grille fausse » te dit lesquelles.",
+            "d": "Avec la section des cues agrandie, tu déplaces la grille, tu changes le BPM, tu mets le premier temps sur la tête de lecture ou tu lances « Auto », qui la cale sur les temps, et tu vois de combien elle s'écarte ici et à la fin de la piste. Elle s'enregistre dans rekordbox, Traktor et Engine DJ, et dans rekordbox aussi par tronçons avec leur propre tempo. Le filtre « Grille fausse » te sort les pistes dont la grille rate les temps. Dans Traktor et Engine DJ, pour l'instant, pour le WAV, l'AIFF et le FLAC, et dans Traktor aussi pour les MP3 créés avec iTunes. Les grilles que tu as verrouillées dans le logiciel ne sont pas touchées."
           },
           {
             "t": "Ta collection rekordbox",

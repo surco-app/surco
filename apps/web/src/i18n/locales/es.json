@@ -263,7 +263,12 @@
           {
             "t": "Cues fuera de la rejilla",
             "s": "Saca las pistas cuyos cues no caen en el golpe de la rejilla.",
-            "d": "En rekordbox, Traktor y Engine DJ, Surco mide cada cue contra la rejilla de la pista y te dice cuántas pistas se pasan. Las filtras, abres el editor, borras sus cues y das a Auto marcar. Desde cuántos ms cuenta lo eliges en los ajustes de cues, entre 5, 10 y 20 ms. Por defecto, 10."
+            "d": "Al abrirlas, el editor te dice qué cues se salen y cuánto, y «Al golpe» los lleva a su golpe de una vez. En rekordbox, Traktor y Engine DJ, Surco mide cada cue contra la rejilla de la pista y te dice cuántas pistas se pasan. Desde cuántos ms cuenta lo eliges en los ajustes de cues, entre 5, 10 y 20 ms. Por defecto, 10."
+          },
+          {
+            "t": "La rejilla, en su sitio",
+            "s": "Corrige la rejilla de una pista a mano o con Auto, y el filtro «Rejilla mal» te dice cuáles.",
+            "d": "Con la sección de cues maximizada mueves la rejilla, cambias el BPM, pones el primer tiempo en el cabezal o das a «Auto», que la cuadra con los golpes, y ves cuánto se desvía aquí y al final de la pista. Se guarda en rekordbox, Traktor y Engine DJ, y en rekordbox también por tramos con su propio tempo. El filtro «Rejilla mal» saca las pistas cuya rejilla no cae en los golpes. En Traktor y Engine DJ, de momento, para WAV, AIFF y FLAC, y en Traktor también para los MP3 creados con iTunes. Las rejillas que bloqueaste en el programa no se tocan."
           },
           {
             "t": "Tu colección de rekordbox",

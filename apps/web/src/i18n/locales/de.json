@@ -263,7 +263,12 @@
           {
             "t": "Cues neben dem Raster",
             "s": "Zeigt dir die Tracks, deren Cues nicht auf dem Beat des Rasters liegen.",
-            "d": "In rekordbox, Traktor und Engine DJ misst Surco jeden Cue am Raster des Tracks und sagt dir, wie viele Tracks danebenliegen. Du filterst sie, öffnest den Editor, löschst ihre Cues und drückst Auto-Markieren. Ab wie vielen ms es zählt, wählst du in den Cue-Einstellungen, 5, 10 oder 20 ms. Standard ist 10."
+            "d": "Wenn du sie öffnest, zeigt dir der Editor, welche Cues danebenliegen und um wie viel, und „Auf den Schlag“ setzt sie in einem Zug auf ihren Schlag. In rekordbox, Traktor und Engine DJ misst Surco jeden Cue am Raster des Tracks und sagt dir, wie viele Tracks abweichen. Ab wie vielen ms es zählt, wählst du in den Cue-Einstellungen, 5, 10 oder 20 ms. Standard ist 10."
+          },
+          {
+            "t": "Das Raster, wo es hingehört",
+            "s": "Korrigiere das Beat-Raster von Hand oder mit Auto, der Filter „Raster falsch“ zeigt dir, welche.",
+            "d": "Mit maximiertem Cue-Abschnitt verschiebst du das Raster, änderst das BPM, setzt den ersten Schlag an den Abspielkopf oder drückst „Auto“, das es an die Schläge anpasst, und siehst, wie weit es hier und am Ende des Tracks danebenliegt. Gespeichert wird in rekordbox, Traktor und Engine DJ, in rekordbox auch in Abschnitten mit eigenem Tempo. Der Filter „Raster falsch“ zeigt dir die Tracks, deren Raster die Schläge verfehlt. In Traktor und Engine DJ vorerst für WAV, AIFF und FLAC, in Traktor auch für MP3s, die mit iTunes erstellt wurden. Raster, die du im Programm gesperrt hast, bleiben unangetastet."
           },
           {
             "t": "Deine rekordbox-Sammlung",
