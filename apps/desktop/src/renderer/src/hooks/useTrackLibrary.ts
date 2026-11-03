@@ -1171,7 +1171,7 @@ export function useTrackLibrary({
         for (const t of tracksRef.current) {
           if (t.status === 'processing' || !touched.has(same(t.inputPath))) continue
           if (went.has(same(t.inputPath)) && !t.inFiles) dropped.push(t.id)
-          else void refreshChangedTrack(t.id)
+          else void readSlot.current.run(t.id, () => refreshChangedTrack(t.id))
         }
         if (dropped.length === 0) return
         for (const p of went) listedBySource.current.delete(p)
