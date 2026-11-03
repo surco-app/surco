@@ -17,7 +17,7 @@ import ReplaceScene from './components/scenes/ReplaceScene'
 import Walkthrough from './components/Walkthrough'
 import type { Language } from './i18n'
 import { PAGES } from './lib/nav'
-import { SCENE_ANCHORS } from './lib/sceneAnchors'
+import { SCENE_ANCHORS, SECTION_VIEWS } from './lib/sceneAnchors'
 
 // The home page is three things: what this is, what it does to a track, and how to
 // get it. Everything that used to sit below — the feature lists, the five-app
@@ -130,12 +130,14 @@ export default function App() {
           <Walkthrough />
           <Spotlight
             id={SCENE_ANCHORS.cues}
+            view={SECTION_VIEWS.cues}
             copy="cues"
             points={['oneClick', 'yourFlow', 'programs']}
             scene={<CuesScene />}
           />
           <Spotlight
             id={SCENE_ANCHORS.replace}
+            view={SECTION_VIEWS.replace}
             copy="replace"
             points={['anyFormat', 'playlists', 'programs']}
             scene={<ReplaceScene />}

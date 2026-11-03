@@ -1,15 +1,19 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { SectionLocation } from '../lib/analytics'
 import Reveal from './Reveal'
+import SectionView from './SectionView'
 import { AnchorLink, Replayable } from './scenes/Replay'
 
 export default function Spotlight({
   id,
+  view,
   copy,
   points,
   scene,
 }: {
   id: string
+  view: SectionLocation
   copy: 'cues' | 'replace'
   points: readonly string[]
   scene: ReactNode
@@ -18,6 +22,7 @@ export default function Spotlight({
 
   return (
     <section data-testid={`spotlight-${copy}`} className="pt-24">
+      <SectionView location={view} />
       <Reveal>
         <div id={id} className="scroll-mt-8 text-center">
           <h2 className="group/title mx-auto max-w-3xl text-[min(1.875rem,6.15vw)] font-semibold tracking-tight text-balance sm:text-5xl">

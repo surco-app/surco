@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
-import { SCENE_ANCHORS } from '../lib/sceneAnchors'
+import { SCENE_ANCHORS, SECTION_VIEWS } from '../lib/sceneAnchors'
 import Reveal from './Reveal'
+import SectionView from './SectionView'
 import { AnchorLink, Replayable } from './scenes/Replay'
 import ReviewScene from './scenes/ReviewScene'
 
@@ -11,6 +12,7 @@ export default function LibraryReview() {
 
   return (
     <section className="pt-24">
+      <SectionView location={SECTION_VIEWS.review} />
       <Reveal>
         <div id={SCENE_ANCHORS.review} className="scroll-mt-8 text-center">
           <h2 className="group/title mx-auto max-w-2xl text-[min(1.875rem,6.15vw)] font-semibold tracking-tight text-balance sm:text-5xl">

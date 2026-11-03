@@ -5,7 +5,7 @@ import es from '../i18n/locales/es.json'
 import fr from '../i18n/locales/fr.json'
 import ja from '../i18n/locales/ja.json'
 import ptBR from '../i18n/locales/pt-BR.json'
-import { HERO_ANCHORS, SCENE_ANCHORS } from './sceneAnchors'
+import { HERO_ANCHORS, SCENE_ANCHORS, SECTION_VIEWS } from './sceneAnchors'
 
 const OTHER_HOME_IDS = ['top', 'main', 'mobile-nav']
 const LOCALES = { es, en, de, fr, 'pt-BR': ptBR, ja }
@@ -44,5 +44,16 @@ describe('hero anchors', () => {
       expect(anchors[key]?.lead, key).toBeTruthy()
       expect(anchors[key]?.rest, key).toBeTruthy()
     }
+  })
+})
+
+describe('section views', () => {
+  it('measures every section of the home, so a new one cannot ship without telling us who reaches it', () => {
+    expect(Object.keys(SECTION_VIEWS).sort()).toEqual(Object.keys(SCENE_ANCHORS).sort())
+  })
+
+  it('reports each section under its own name, or two sections would add up as one', () => {
+    const names = Object.values(SECTION_VIEWS)
+    expect(new Set(names).size).toBe(names.length)
   })
 })
