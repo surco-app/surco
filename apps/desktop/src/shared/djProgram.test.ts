@@ -22,6 +22,8 @@ describe('programsInOrder', () => {
   it('refuses at compile time an order that leaves a program out', () => {
     // @ts-expect-error
     programsInOrder(['rekordbox', 'traktor'])
+  })
+  it('keeps rekordbox, Traktor and Engine as the canonical order', () => {
     expect(DJ_PROGRAMS).toEqual(['rekordbox', 'traktor', 'engine'])
   })
 })
