@@ -1732,12 +1732,14 @@ export interface UsbPlan {
   warnings: UsbWarning[]
 }
 
+export type UsbProgram = Exclude<DjProgram, 'traktor'>
+
 export interface UsbExportRequest {
   playlistIds: string[]
   target: UsbTarget
   prune: boolean
   settings: boolean
-  source?: 'engine'
+  source?: Exclude<UsbProgram, 'rekordbox'>
 }
 
 export type UsbFailure =

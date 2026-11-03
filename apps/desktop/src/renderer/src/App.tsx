@@ -41,6 +41,7 @@ import type {
   ThemePref,
   TrackMetadata,
   TrashEntry,
+  UsbProgram,
   UsbVolume,
 } from '../../shared/types'
 import { LiveActivityPanel } from './components/ActivityPanel'
@@ -197,7 +198,7 @@ import {
 import { hasStagedEdits } from './lib/sessionEdits'
 import { SettingsProvider } from './lib/settingsContext'
 import { formatShortcut } from './lib/shortcuts'
-import { SOURCE_PROGRAMS, SOURCE_READ } from './lib/sourcePrograms'
+import { isUsbProgram, SOURCE_PROGRAMS, SOURCE_READ } from './lib/sourcePrograms'
 import { matchStatKey } from './lib/stats'
 import { ToastProvider, type ToastReporter } from './lib/toastContext'
 import { dismissToast, dismissToastByExpiry, dismissToastByUser, pushToast } from './lib/toastQueue'
@@ -903,7 +904,7 @@ export default function App(): React.JSX.Element {
   const treeUsbProgram =
     usbPlatform &&
     sourceProgram &&
-    SOURCE_PROGRAMS[sourceProgram].usb &&
+    isUsbProgram(sourceProgram) &&
     (SOURCE_PROGRAMS[sourceProgram].missingLibraryCheck ||
       browser.sources.includes(sourceProgram)) &&
     !browser.libraryMissing
@@ -914,13 +915,15 @@ export default function App(): React.JSX.Element {
   const usbRunning = useUsbExportState(isRunning)
   const [usbModal, setUsbModal] = useState<{
     preselect: string | null
-    source: DjProgram
+    source: UsbProgram
   } | null>(null)
-  const { list: usbVolumes } = useUsbVolumes(usbAvailable || usbModal?.source === 'engine')
+  const { list: usbVolumes } = useUsbVolumes(
+    usbAvailable || (usbModal !== null && usbModal.source !== 'rekordbox'),
+  )
   // Opening after a finished background export starts again at the chooser: its result was
   // already announced.
   const openUsbExport = useCallback(
-    (preselect: string | null = null, source: DjProgram = 'rekordbox') => {
+    (preselect: string | null = null, source: UsbProgram = 'rekordbox') => {
       if (!isRunning(usbExportStore.getState()) && usbExportStore.getState().phase !== 'idle')
         usbExportStore.dispatch({ type: 'reset' })
       setUsbModal({ preselect, source })
@@ -3682,7 +3685,7 @@ export default function App(): React.JSX.Element {
                   nodes={usbTree.data}
                   volumes={usbVolumes}
                   preselect={usbModal.preselect}
-                  source={usbModal.source === 'engine' ? 'engine' : undefined}
+                  program={usbModal.source}
                   onStart={(req) => window.api.usbExport(req)}
                   onCancelExport={() => void window.api.usbCancel()}
                   onClose={closeUsbExport}

@@ -14,7 +14,8 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import log from 'electron-log/main'
-import type { UsbExportRequest, UsbFolderPick, UsbVolumeList } from '../shared/types'
+import type { UsbExportRequest, UsbFolderPick, UsbProgram, UsbVolumeList } from '../shared/types'
+import type { DetailKeyOf } from './djProcesses'
 import { isEngineDjRunning } from './engineProcess'
 import {
   createEngineUsbExporter,
@@ -43,16 +44,13 @@ export function registerUsbExportIpc(opts: {
   appData: string
   baken: () => { file: string; prefixArgs: string[] } | null
   // The close dialog the playlist writer uses, with the export's wording; true once
-  // rekordbox is gone.
-  ensureRekordboxClosed: (
+  // the program is gone.
+  ensureClosed: <P extends UsbProgram>(
+    program: P,
     win: BrowserWindow | null,
-    detail: typeof USB_QUIT_DETAIL,
+    detail: DetailKeyOf<P>,
   ) => Promise<boolean>
   engineLibrary: () => string
-  ensureEngineDjClosed: (
-    win: BrowserWindow | null,
-    detail: typeof ENGINE_USB_QUIT_DETAIL,
-  ) => Promise<boolean>
 }): { busy: () => boolean; stop: () => Promise<void> } | null {
   const platform = process.platform
   const source = systemVolumeSource(platform)
@@ -136,7 +134,7 @@ export function registerUsbExportIpc(opts: {
         .catch(() => null),
     log: (m) => log.info(m),
     rekordboxRunning: isRekordboxRunning,
-    ensureRekordboxClosed: () => opts.ensureRekordboxClosed(asking, USB_QUIT_DETAIL),
+    ensureRekordboxClosed: () => opts.ensureClosed('rekordbox', asking, USB_QUIT_DETAIL),
     exists: (path) =>
       access(path).then(
         () => true,
@@ -186,13 +184,13 @@ export function registerUsbExportIpc(opts: {
         .then((s) => s.bavail * s.bsize)
         .catch(() => null),
     engineRunning: isEngineDjRunning,
-    ensureEngineClosed: () => opts.ensureEngineDjClosed(asking, ENGINE_USB_QUIT_DETAIL),
+    ensureEngineClosed: () => opts.ensureClosed('engine', asking, ENGINE_USB_QUIT_DETAIL),
     memory: engineMemory,
     send: (e) => broadcast('usb:event', e),
     now: () => Date.now(),
     log: (m) => log.info(m),
   })
-  const route = routeUsbExports(exporter, engineExporter)
+  const route = routeUsbExports({ rekordbox: exporter, engine: engineExporter })
   // Watching starts with the first request for the list (the rail offers the export only
   // with a rekordbox collection), not at launch for every user.
   let watching = false

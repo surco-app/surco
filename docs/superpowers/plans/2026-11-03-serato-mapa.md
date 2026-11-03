@@ -1,6 +1,6 @@
 # Mapa de Serato: lo que el compilador obliga a decidir
 
-Medido el 03/11 tras el bloque 6i añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
+Medido el 03/11 tras el bloque 6j añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
 
 ## Añadidos a mano (el compilador no los ve)
 
@@ -16,6 +16,7 @@ Medido el 03/11 tras el bloque 6i añadiendo `'serato'` a `DjProgram` (y revirti
 - Vaciado tras convertir: `repointEngineQueued` renombra `engine-running` a `'rekordbox-running'` y `queueConversionRun` compara con `'rekordbox-running'`; el tipo `ConversionQueues` tiene claves fijas (el flusher de Serato exigirá su cola en la práctica).
 - Añadir durante el trabajo (6d): solo Engine se añade a su biblioteca durante la conversión (`processTrack.ts` pasos de Engine, adaptador en `index.ts`, `isAppleMusicOnly`, `engineSizeFollow`); un programa que lo necesite añadirá su propio paso. Y `libraryFileUse.ts` `libraryGenresOf`: cadena de `if` por programa; el orden rekordbox, engine, traktor se ve en la lista de géneros.
 - Renderer tras convertir (6h-6i), sitios dejados a propósito: las tres secciones de `DestinationTab` (cada una con su maquetación), `librarySourceOf` (ids compartidos con main, p. ej. `'engineDj'`), `unanalysedIn` de `triage.ts` (ids de filtros), los valores por defecto `'rekordbox'` de `PlaylistsField`, la lista de colas de `App.tsx` y la regla de ruta de Traktor en `reachable` del editor. Órdenes por sitio que hoy coinciden con `RAIL_PROGRAMS` pero son independientes a propósito: `FLAG_ORDER`, `QUEUE_PILL_ORDER`, orden de revisión, `LIBRARY_ORDER` del editor, `ORDER` de `djReach`. `SOURCE_PROGRAMS.trackFlag` y `TRACK_PROGRAMS.flag` se solapan (solo difieren en Engine).
+- USB (6j), lo que sigue siendo de un solo programa: la memoria de Engine en `readVolumes` y el campo `UsbVolume.engine`, `usb:pickFolder(from?: 'engine')`, `usbAvailable` (solo rekordbox: píldora y avisos de conexión), los dos exportadores de `usbExportIpc` con sus dependencias, y los textos `USB_QUIT_DETAIL`/`ENGINE_USB_QUIT_DETAIL` en sus módulos. Un programa con USB nuevo entra en `UsbProgram` (y entonces el compilador exige su exportador, su vista del modal y `usb: true`).
 
 ## Errores del compilador
 
@@ -53,13 +54,13 @@ src/main/djProcesses.ts:82 TS2741
 src/main/duplicateReplace.ts:18 TS2345
 src/main/duplicateReplace.ts:67 TS2741
 src/main/index.ts:1326 TS2741
-src/main/index.ts:1465 TS2741
-src/main/index.ts:1496 TS2741
-src/main/index.ts:1507 TS2741
-src/main/index.ts:1521 TS2741
-src/main/index.ts:1553 TS2741
-src/main/index.ts:1566 TS2741
-src/main/index.ts:1999 TS2741
+src/main/index.ts:1463 TS2741
+src/main/index.ts:1494 TS2741
+src/main/index.ts:1505 TS2741
+src/main/index.ts:1519 TS2741
+src/main/index.ts:1551 TS2741
+src/main/index.ts:1564 TS2741
+src/main/index.ts:1997 TS2741
 src/main/index.ts:325 TS2741
 src/main/index.ts:474 TS2741
 src/main/libraryFileUse.test.ts:104 TS2741
@@ -162,9 +163,14 @@ src/main/programQueue.test.ts:42 TS2741
 src/main/programQueue.test.ts:57 TS2345
 src/main/rekordboxBatch.ts:157 TS2741
 src/main/rekordboxBatch.ts:166 TS2741
-src/main/rekordboxCuesIpc.ts:25 TS2345
-src/main/rekordboxCuesIpc.ts:54 TS2741
+src/main/rekordboxCuesIpc.ts:26 TS2345
+src/main/rekordboxCuesIpc.ts:55 TS2741
 src/main/retireSuperseded.test.ts:16 TS2741
+src/main/usbExportIpc.ts:193 TS2345
+src/main/usbExportRoute.test.ts:25 TS2345
+src/main/usbExportRoute.test.ts:35 TS2345
+src/main/usbExportRoute.test.ts:39 TS2345
+src/main/usbExportRoute.test.ts:46 TS2345
 src/main/verifyIpc.ts:213 TS7053
 src/main/verifyIpc.ts:214 TS7053
 src/main/verifyIpc.ts:226 TS7053
@@ -176,22 +182,22 @@ src/main/verifyRegistry.ts:315 TS7053
 src/main/verifyRegistry.ts:329 TS7053
 src/main/verifyRegistry.ts:93 TS2345
 src/main/verifyRegistry.ts:94 TS2741
-src/renderer/src/App.tsx:230 TS2345
-src/renderer/src/App.tsx:231 TS2741
-src/renderer/src/App.tsx:3482 TS2741
-src/renderer/src/App.tsx:418 TS7053
-src/renderer/src/App.tsx:422 TS2741
-src/renderer/src/App.tsx:857 TS2741
+src/renderer/src/App.tsx:231 TS2345
+src/renderer/src/App.tsx:232 TS2741
+src/renderer/src/App.tsx:3485 TS2741
+src/renderer/src/App.tsx:419 TS7053
+src/renderer/src/App.tsx:423 TS2741
+src/renderer/src/App.tsx:858 TS2741
 src/renderer/src/components/CuesBatchSection.tsx:28 TS2741
-src/renderer/src/components/CuesSection.tsx:158 TS2741
-src/renderer/src/components/CuesSection.tsx:290 TS2741
-src/renderer/src/components/Editor.test.tsx:837 TS2741
-src/renderer/src/components/Editor.test.tsx:883 TS2741
-src/renderer/src/components/Editor.test.tsx:892 TS2741
-src/renderer/src/components/Editor.test.tsx:898 TS2741
-src/renderer/src/components/Editor.test.tsx:906 TS2741
-src/renderer/src/components/Editor.test.tsx:917 TS2741
-src/renderer/src/components/Editor.test.tsx:926 TS2741
+src/renderer/src/components/CuesSection.tsx:173 TS2741
+src/renderer/src/components/CuesSection.tsx:307 TS2741
+src/renderer/src/components/Editor.test.tsx:839 TS2741
+src/renderer/src/components/Editor.test.tsx:885 TS2741
+src/renderer/src/components/Editor.test.tsx:894 TS2741
+src/renderer/src/components/Editor.test.tsx:900 TS2741
+src/renderer/src/components/Editor.test.tsx:908 TS2741
+src/renderer/src/components/Editor.test.tsx:919 TS2741
+src/renderer/src/components/Editor.test.tsx:928 TS2741
 src/renderer/src/components/Editor.tsx:1127 TS2741
 src/renderer/src/components/Editor.tsx:129 TS2345
 src/renderer/src/components/Editor.tsx:130 TS2345
@@ -235,6 +241,7 @@ src/renderer/src/components/settings/GeneralTab.tsx:44 TS2741
 src/renderer/src/components/settings/GeneralTab.tsx:50 TS2741
 src/renderer/src/components/SourceIcons.tsx:73 TS2741
 src/renderer/src/components/SourceRail.tsx:11 TS2741
+src/renderer/src/components/UsbExportModal.tsx:63 TS2741
 src/renderer/src/hooks/useMusicReview.test.tsx:1066 TS2741
 src/renderer/src/hooks/useMusicReview.test.tsx:1067 TS2741
 src/renderer/src/hooks/useMusicReview.test.tsx:1080 TS2741
@@ -265,8 +272,8 @@ src/renderer/src/lib/djReach.ts:7 TS2741
 src/renderer/src/lib/fields.ts:147 TS2741
 src/renderer/src/lib/reviewLibraries.ts:3 TS2741
 src/renderer/src/lib/reviewLibraries.ts:9 TS2345
-src/renderer/src/lib/sourcePrograms.ts:20 TS2741
-src/renderer/src/lib/sourcePrograms.ts:71 TS2741
+src/renderer/src/lib/sourcePrograms.ts:21 TS2741
+src/renderer/src/lib/sourcePrograms.ts:72 TS2741
 src/renderer/src/lib/trackPrograms.ts:15 TS2741
 src/renderer/src/lib/trackPrograms.ts:41 TS2345
 src/renderer/src/test/api.ts:186 TS2322

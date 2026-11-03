@@ -5,6 +5,7 @@ import type {
   RekordboxPlaylistEdit,
   SourceNode,
   SourcePlaylistEntry,
+  UsbProgram,
 } from '../../../shared/types'
 import type { TrackFlag } from './trackPrograms'
 
@@ -68,7 +69,9 @@ export interface SourceProgram {
   invalidatesOnEdit: boolean
 }
 
-export const SOURCE_PROGRAMS: Record<DjProgram, SourceProgram> = {
+export const SOURCE_PROGRAMS: {
+  [P in DjProgram]: SourceProgram & { usb: P extends UsbProgram ? true : false }
+} = {
   rekordbox: {
     separator: () => window.api.rekordboxHasSeparator(),
     edit: {
@@ -121,4 +124,8 @@ export const SOURCE_PROGRAMS: Record<DjProgram, SourceProgram> = {
     membershipKey: 'engine-membership',
     invalidatesOnEdit: false,
   },
+}
+
+export function isUsbProgram(program: DjProgram): program is UsbProgram {
+  return SOURCE_PROGRAMS[program].usb
 }
