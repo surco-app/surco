@@ -53,11 +53,13 @@ import {
   MY_FLOW,
   ONE_AT_32,
 } from '../shared/cueFlows'
+import { DJ_COLLECTION_PATH } from '../shared/djSettings'
 import type { Settings } from '../shared/types'
 import {
   defaults,
   getConfigDir,
   getSettings,
+  LOCAL_KEYS,
   migrateBackupLimits,
   migrateBackupPolicy,
   migrateImportFields,
@@ -1402,5 +1404,13 @@ describe('cue flows', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
     saveSettings({ activeCueFlow: 'manual' })
     expect(getSettings().activeCueFlow).toBe('manual')
+  })
+})
+
+describe('the collection path of each DJ program', () => {
+  it('never travels between machines, since the library lives on this Mac only', () => {
+    for (const key of Object.values(DJ_COLLECTION_PATH)) {
+      expect(LOCAL_KEYS).toContain(key)
+    }
   })
 })
