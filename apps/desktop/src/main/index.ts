@@ -439,7 +439,7 @@ const programQueues = {
     },
     programQueueDeps,
   ),
-  traktor: createProgramQueue<QueuedNmlPatch>(
+  traktor: createProgramQueue<QueuedNmlPatch, 'traktor'>(
     {
       program: 'traktor',
       queue: {
@@ -471,7 +471,7 @@ const programQueues = {
     },
     programQueueDeps,
   ),
-} satisfies Record<DjProgram, unknown>
+} satisfies { [P in DjProgram]: { program: P } }
 const rekordboxQueue = programQueues.rekordbox.queue
 const announceApplied = programQueues.rekordbox.announceApplied
 const rekordboxQueueWatch = programQueues.rekordbox.watch

@@ -13,8 +13,11 @@ import { stillWaiting, watchRekordboxQueue } from './rekordboxQueueWatch'
 
 type Serial = <T>(task: () => Promise<T>) => Promise<T>
 
-export interface ProgramQueueSpec<R extends QueuedRepoint = RekordboxRepoint> {
-  program: DjProgram
+export interface ProgramQueueSpec<
+  R extends QueuedRepoint = RekordboxRepoint,
+  P extends DjProgram = DjProgram,
+> {
+  program: P
   queue: QueueDeps<R>
   appliedChannel: string
   alwaysWatch?: () => boolean
@@ -29,17 +32,21 @@ export interface ProgramQueueDeps {
   processes: Record<DjProgram, { isRunning: () => Promise<boolean> }>
 }
 
-export interface ProgramQueue<R extends QueuedRepoint = RekordboxRepoint> {
+export interface ProgramQueue<
+  R extends QueuedRepoint = RekordboxRepoint,
+  P extends DjProgram = DjProgram,
+> {
+  program: P
   queue: RekordboxQueue<R>
   watch: { poke: () => void; stop: () => void }
   applyQuietly: (serial?: Serial) => void
   announceApplied: (result: QueueApply) => void
 }
 
-export function createProgramQueue<R extends QueuedRepoint = RekordboxRepoint>(
-  spec: ProgramQueueSpec<R>,
-  deps: ProgramQueueDeps,
-): ProgramQueue<R> {
+export function createProgramQueue<
+  R extends QueuedRepoint = RekordboxRepoint,
+  P extends DjProgram = DjProgram,
+>(spec: ProgramQueueSpec<R, P>, deps: ProgramQueueDeps): ProgramQueue<R, P> {
   const { program } = spec
   const collection = spec.queue.collection
   const queue = createRekordboxQueue<R>(spec.queue)
@@ -76,5 +83,5 @@ export function createProgramQueue<R extends QueuedRepoint = RekordboxRepoint>(
       () => deps.settled(program, 'threw'),
     )
   }
-  return { queue, watch, applyQuietly, announceApplied }
+  return { program, queue, watch, applyQuietly, announceApplied }
 }

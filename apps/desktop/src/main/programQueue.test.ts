@@ -172,6 +172,28 @@ describe('createProgramQueue', () => {
     pq.watch.stop()
   })
 
+  it('files everything under the program its spec names, so one queue never answers for another', async () => {
+    const { pq, deps } = setup({ program: 'traktor', appliedChannel: 'traktor:cueQueueApplied' })
+    expect(pq.program).toBe('traktor')
+    pq.queue.enqueue([], [REPOINT])
+    pq.watch.poke()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(deps.moments.begin).toHaveBeenCalledWith('queue', ['traktor'])
+    expect(deps.broadcast).toHaveBeenCalledWith('traktor:cueQueueApplied', expect.anything())
+    expect(deps.settled).toHaveBeenCalledWith(
+      'traktor',
+      expect.objectContaining({ status: 'applied' }),
+    )
+    pq.queue.enqueue([], [REPOINT])
+    pq.applyQuietly()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(pq.queue.isEmpty()).toBe(true)
+    expect(deps.settled).toHaveBeenCalledTimes(2)
+    expect(deps.settled.mock.calls.map(([program]) => program)).toEqual(['traktor', 'traktor'])
+    expect(deps.processes.engine.isRunning).not.toHaveBeenCalled()
+    pq.watch.stop()
+  })
+
   it('does not watch an empty queue without that, so idle programs are never polled', async () => {
     const { pq, deps } = setup()
     pq.watch.poke()
