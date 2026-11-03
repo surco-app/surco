@@ -14,7 +14,10 @@ import {
 import { CUE_GRID_TOLERANCE, normalizeCueGridTolerance } from '../../../../shared/cueGrid'
 import { CUE_JUMP_BARS } from '../../../../shared/cueJump'
 import { CUE_QUANTIZE } from '../../../../shared/cueQuantize'
+import { DJ_PROGRAMS, type DjProgram } from '../../../../shared/djProgram'
 import { flowName } from '../../lib/cueFlowName'
+import { FLOW_TO } from '../../lib/cueTwins'
+import { LIBRARY_NAME } from '../../lib/reviewLibraries'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { CueFlowPreview } from '../CueFlowPreview'
@@ -71,6 +74,11 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
     void window.api.traktorAvailable().then(setTraktorFound, () => {})
     void window.api.engineAvailable().then(setEngineFound, () => {})
   }, [])
+  const foundBy: Record<DjProgram, boolean> = {
+    rekordbox: rekordboxCollection !== '',
+    traktor: traktorFound,
+    engine: engineFound,
+  }
   const flows = synced.cueFlows
   const flow = flows.find((f) => f.id === current) ?? activeCueFlow(synced)
   const put = (next: CueFlow) =>
@@ -358,31 +366,30 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
           </span>
         </h3>
         <div data-testid="cue-flow-targets" className={`${GROUP} text-sm`}>
-          {(
-            [
-              ['rekordbox', 'rekordbox', 'cueFlowToRekordbox', rekordboxCollection !== ''],
-              ['traktor', 'Traktor', 'cueFlowToTraktor', traktorFound],
-              ['engine', 'Engine DJ', 'cueFlowToEngine', engineFound],
-            ] as const
-          ).map(([library, name, key, found]) => (
-            <div key={library} className="px-3.5 py-2.5">
-              <CheckboxRow
-                testid={`settings-cue-flow-to-${library}`}
-                checked={found && synced[key]}
-                onChange={(v) => patch(key, v)}
-                label={name}
-                disabled={!found}
-              />
-              <SettingsHint
-                data-testid={found ? undefined : `settings-cue-flow-to-${library}-missing`}
-                className="mt-1 pl-7"
-              >
-                {found
-                  ? tr(`settings.cueFlows.targets.${library}`)
-                  : tr('settings.cueFlows.targets.missing', { program: name })}
-              </SettingsHint>
-            </div>
-          ))}
+          {DJ_PROGRAMS.map((library) => {
+            const name = LIBRARY_NAME[library]
+            const key = FLOW_TO[library]
+            const found = foundBy[library]
+            return (
+              <div key={library} className="px-3.5 py-2.5">
+                <CheckboxRow
+                  testid={`settings-cue-flow-to-${library}`}
+                  checked={found && synced[key]}
+                  onChange={(v) => patch(key, v)}
+                  label={name}
+                  disabled={!found}
+                />
+                <SettingsHint
+                  data-testid={found ? undefined : `settings-cue-flow-to-${library}-missing`}
+                  className="mt-1 pl-7"
+                >
+                  {found
+                    ? tr(`settings.cueFlows.targets.${library}`)
+                    : tr('settings.cueFlows.targets.missing', { program: name })}
+                </SettingsHint>
+              </div>
+            )
+          })}
         </div>
       </div>
       <div className="flex flex-col gap-2">

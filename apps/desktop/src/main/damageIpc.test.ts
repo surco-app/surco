@@ -143,3 +143,79 @@ describe('damage:scan pending state', () => {
     expect(scan.findings[0].pending).toBeUndefined()
   })
 })
+
+describe('damage:scan pending by target', () => {
+  const entry = { volume: 'HD', dir: '/:m/:', file: 'e.wav', entryState: 'S' }
+  const scanDeps = () => ({
+    isAllowed: () => true,
+    readGenre: async () => null,
+    libraryGenres: async () => ({}),
+    traktor: async () => [
+      {
+        path: '/m/e.wav',
+        sibling: '/m/e.aiff',
+        judgement: {
+          kind: 'traktor-source-cues' as const,
+          certainty: 'sure' as const,
+          addMs: 51.18,
+          fixEntry: 'source' as const,
+          fixTree: false,
+          provenance: true,
+        },
+        before: [{ type: 0, hotcue: 0, ms: 9948.82 }],
+        entry,
+      },
+    ],
+    engine: async () => [
+      {
+        path: '/m/e.wav',
+        judgement: {
+          kind: 'engine-cues' as const,
+          certainty: 'sure' as const,
+          trimmedMs: 0,
+          sampleRateHz: 44100,
+        },
+        fileBytes: 1,
+        length: 10,
+        trackData: { sampleRate: 48000, sampleCount: 480000 },
+      },
+    ],
+  })
+  const scanWith = async (queued: Parameters<typeof registerDamageIpc>[0]['queued']) => {
+    registerDamageIpc({ scanDeps, repairDeps: () => ({}) as never, queued })
+    const scan = (await handlerFor('damage:scan')({ sender: {} }, ['/m/e.wav'])) as {
+      findings: { kind: string; pending?: true }[]
+    }
+    return scan.findings.map((f) => [f.kind, f.pending ?? false])
+  }
+
+  it('reads an Engine finding pending only from the Engine queue', async () => {
+    expect(
+      await scanWith(() => ({
+        engine: [
+          {
+            from: '/m/e.wav',
+            to: '/m/e.wav',
+            expectTrackData: { sampleRate: 48000, sampleCount: 480000 },
+          },
+        ],
+        traktor: [],
+      })),
+    ).toEqual([
+      ['traktor-source-cues', false],
+      ['engine-cues', true],
+    ])
+  })
+
+  it('reads a Traktor finding pending only from the Traktor queue', async () => {
+    expect(
+      await scanWith(() => ({
+        engine: [],
+        traktor: [{ from: ['HD', '/:m/:', 'e.wav'].join('\0'), patch: { cueShift: {} } }],
+      })),
+    ).toEqual([
+      ['traktor-source-cues', true],
+      ['engine-cues', false],
+    ])
+  })
+})

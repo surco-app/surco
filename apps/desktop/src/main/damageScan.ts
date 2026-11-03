@@ -1,5 +1,6 @@
 import { basename, extname } from 'node:path'
 import { Genres } from 'node-taglib-sharp'
+import { DJ_PROGRAMS, type DjProgram } from '../shared/djProgram'
 import type { DamageFinding, DamageNote, DamageScan } from '../shared/types'
 import type { EngineDamage } from './engineDamage'
 import { engineLengthOf } from './engineRepoint'
@@ -213,11 +214,25 @@ function engineFinding(d: EngineDamage): DamageFinding {
   }
 }
 
+type ScannedProgram = DamageScan['unread'][number]
+type LibraryScan = (
+  deps: DamageScanDeps,
+  library: <T>(scan: ((paths: string[]) => Promise<T[]>) | undefined) => Promise<T[]>,
+) => Promise<DamageFinding[]>
+
+const LIBRARY_SCANS: { [P in DjProgram]: P extends ScannedProgram ? LibraryScan : null } = {
+  rekordbox: null,
+  traktor: async (deps, library) => (await library(deps.traktor)).map(traktorFinding),
+  engine: async (deps, library) => (await library(deps.engine)).map(engineFinding),
+}
+
+const scanned = (program: DjProgram): program is ScannedProgram => LIBRARY_SCANS[program] !== null
+
 export async function scanDamage(paths: string[], deps: DamageScanDeps): Promise<DamageScan> {
   const allowed = paths.filter((p) => deps.isAllowed(p))
   const unread: DamageScan['unread'] = []
   const library = async <T>(
-    name: 'traktor' | 'engine',
+    name: ScannedProgram,
     scan: ((paths: string[]) => Promise<T[]>) | undefined,
   ): Promise<T[]> => {
     if (!scan || allowed.length === 0) return []
@@ -228,13 +243,14 @@ export async function scanDamage(paths: string[], deps: DamageScanDeps): Promise
       return []
     }
   }
-  const [genres, traktor, engine] = await Promise.all([
+  const [genres, ...libraries] = await Promise.all([
     genreFindings(allowed, deps),
-    library('traktor', deps.traktor),
-    library('engine', deps.engine),
+    ...DJ_PROGRAMS.filter(scanned).map((name) =>
+      LIBRARY_SCANS[name](deps, (scan) => library(name, scan)),
+    ),
   ])
   return {
-    findings: [...genres, ...traktor.map(traktorFinding), ...engine.map(engineFinding)],
+    findings: [...genres, ...libraries.flat()],
     unread: unread.sort(),
   }
 }

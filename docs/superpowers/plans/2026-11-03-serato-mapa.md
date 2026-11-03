@@ -1,6 +1,6 @@
 # Mapa de Serato: lo que el compilador obliga a decidir
 
-Medido el 03/11 tras el bloque 6j añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
+Medido el 03/11 tras el bloque 8 añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
 
 ## Añadidos a mano (el compilador no los ve)
 
@@ -17,6 +17,8 @@ Medido el 03/11 tras el bloque 6j añadiendo `'serato'` a `DjProgram` (y revirti
 - Añadir durante el trabajo (6d): solo Engine se añade a su biblioteca durante la conversión (`processTrack.ts` pasos de Engine, adaptador en `index.ts`, `isAppleMusicOnly`, `engineSizeFollow`); un programa que lo necesite añadirá su propio paso. Y `libraryFileUse.ts` `libraryGenresOf`: cadena de `if` por programa; el orden rekordbox, engine, traktor se ve en la lista de géneros.
 - Renderer tras convertir (6h-6i), sitios dejados a propósito: las tres secciones de `DestinationTab` (cada una con su maquetación), `librarySourceOf` (ids compartidos con main, p. ej. `'engineDj'`), `unanalysedIn` de `triage.ts` (ids de filtros), los valores por defecto `'rekordbox'` de `PlaylistsField`, la lista de colas de `App.tsx` y la regla de ruta de Traktor en `reachable` del editor. Órdenes por sitio que hoy coinciden con `RAIL_PROGRAMS` pero son independientes a propósito: `FLAG_ORDER`, `QUEUE_PILL_ORDER`, orden de revisión, `LIBRARY_ORDER` del editor, `ORDER` de `djReach`. `SOURCE_PROGRAMS.trackFlag` y `TRACK_PROGRAMS.flag` se solapan (solo difieren en Engine).
 - USB (6j), lo que sigue siendo de un solo programa: la memoria de Engine en `readVolumes` y el campo `UsbVolume.engine`, `usb:pickFolder(from?: 'engine')`, `usbAvailable` (solo rekordbox: píldora y avisos de conexión), los dos exportadores de `usbExportIpc` con sus dependencias, y los textos `USB_QUIT_DETAIL`/`ENGINE_USB_QUIT_DETAIL` en sus módulos. Un programa con USB nuevo entra en `UsbProgram` (y entonces el compilador exige su exportador, su vista del modal y `usb: true`).
+- Comprobación y daños (7), lo que sigue siendo de un programa: el estado de Traktor en `verifyRegistry` (`neverWritten`, `traktorBefore`, `traktorCues`: la comprobación de Traktor se basa en parches, no en filas), la regla de `treeFile` de Traktor en `allowed` de `damageRepair`, y `snapshotLibraries` de `processTrack` (solo rekordbox y Engine). Los escaneos y reparaciones de daños por programa se declaran en tablas cuyo tipo sale de los destinos de `DamageScan`/`DamageRepair`.
+- Ajustes y bienvenida (8), lo que sigue siendo de un programa: el asistente de bienvenida (`OnboardingWizard.tsx`: la ruta de Traktor al activarlo, el selector de carpeta de Engine), las secciones de `DestinationTab` y la migración de sincronización de Traktor (`syncToggleMigration.ts`). La ruta de cada biblioteca debe ser un ajuste local: lo exige un test contra `DJ_COLLECTION_PATH` (`shared/djSettings.ts`). Tres tablas `LIBRARY_NAME` iguales (`reviewLibraries`, `CuesSection`, `CuesBatchSection`), todas `Record` por programa.
 
 ## Errores del compilador
 
@@ -36,7 +38,11 @@ src/main/copiesIpc.test.ts:342 TS2741
 src/main/copiesIpc.test.ts:356 TS2741
 src/main/copiesIpc.test.ts:381 TS2741
 src/main/copiesIpc.test.ts:99 TS2741
-src/main/damageScan.ts:19 TS2741
+src/main/damageIpc.ts:32 TS2322
+src/main/damageRepair.ts:237 TS2322
+src/main/damageRepair.ts:244 TS2345
+src/main/damageScan.ts:20 TS2741
+src/main/damageScan.ts:223 TS2741
 src/main/damageWiring.ts:63 TS2741
 src/main/djProcesses.test.ts:172 TS7053
 src/main/djProcesses.test.ts:35 TS2741
@@ -171,17 +177,17 @@ src/main/usbExportRoute.test.ts:25 TS2345
 src/main/usbExportRoute.test.ts:35 TS2345
 src/main/usbExportRoute.test.ts:39 TS2345
 src/main/usbExportRoute.test.ts:46 TS2345
-src/main/verifyIpc.ts:213 TS7053
-src/main/verifyIpc.ts:214 TS7053
-src/main/verifyIpc.ts:226 TS7053
-src/main/verifyIpc.ts:227 TS7053
-src/main/verifyRegistry.ts:113 TS2322
-src/main/verifyRegistry.ts:155 TS2741
+src/main/verifyIpc.ts:210 TS2741
+src/main/verifyIpc.ts:234 TS7053
+src/main/verifyIpc.ts:235 TS7053
+src/main/verifyRegistry.ts:112 TS2322
+src/main/verifyRegistry.ts:116 TS2741
 src/main/verifyRegistry.ts:163 TS2741
-src/main/verifyRegistry.ts:315 TS7053
-src/main/verifyRegistry.ts:329 TS7053
-src/main/verifyRegistry.ts:93 TS2345
-src/main/verifyRegistry.ts:94 TS2741
+src/main/verifyRegistry.ts:171 TS2741
+src/main/verifyRegistry.ts:292 TS2741
+src/main/verifyRegistry.ts:336 TS7053
+src/main/verifyRegistry.ts:350 TS7053
+src/main/verifyRegistry.ts:93 TS2741
 src/renderer/src/App.tsx:231 TS2345
 src/renderer/src/App.tsx:232 TS2741
 src/renderer/src/App.tsx:3485 TS2741
@@ -189,8 +195,8 @@ src/renderer/src/App.tsx:419 TS7053
 src/renderer/src/App.tsx:423 TS2741
 src/renderer/src/App.tsx:858 TS2741
 src/renderer/src/components/CuesBatchSection.tsx:28 TS2741
-src/renderer/src/components/CuesSection.tsx:173 TS2741
-src/renderer/src/components/CuesSection.tsx:307 TS2741
+src/renderer/src/components/CuesSection.tsx:175 TS2741
+src/renderer/src/components/CuesSection.tsx:309 TS2741
 src/renderer/src/components/Editor.test.tsx:839 TS2741
 src/renderer/src/components/Editor.test.tsx:885 TS2741
 src/renderer/src/components/Editor.test.tsx:894 TS2741
@@ -237,6 +243,7 @@ src/renderer/src/components/MusicReview.test.tsx:937 TS2741
 src/renderer/src/components/MusicReview.test.tsx:959 TS2741
 src/renderer/src/components/MusicReview.test.tsx:975 TS2741
 src/renderer/src/components/MusicReview.test.tsx:989 TS2741
+src/renderer/src/components/settings/CuesTab.tsx:77 TS2741
 src/renderer/src/components/settings/GeneralTab.tsx:44 TS2741
 src/renderer/src/components/settings/GeneralTab.tsx:50 TS2741
 src/renderer/src/components/SourceIcons.tsx:73 TS2741
@@ -266,9 +273,7 @@ src/renderer/src/hooks/useSourceBrowser.ts:134 TS2741
 src/renderer/src/lib/cuePrograms.ts:17 TS2741
 src/renderer/src/lib/cueTwins.ts:54 TS2741
 src/renderer/src/lib/djLibraries.ts:18 TS2345
-src/renderer/src/lib/djReach.ts:19 TS2741
-src/renderer/src/lib/djReach.ts:31 TS2345
-src/renderer/src/lib/djReach.ts:7 TS2741
+src/renderer/src/lib/djReach.ts:13 TS2345
 src/renderer/src/lib/fields.ts:147 TS2741
 src/renderer/src/lib/reviewLibraries.ts:3 TS2741
 src/renderer/src/lib/reviewLibraries.ts:9 TS2345
@@ -299,5 +304,8 @@ src/scenarios/matrix/report.ts:72 TS2741
 src/shared/djProgram.test.ts:16 TS2345
 src/shared/djProgram.ts:6 TS2345
 src/shared/djProgram.ts:8 TS2345
+src/shared/djSettings.ts:15 TS2741
+src/shared/djSettings.ts:3 TS2741
 src/shared/keepsReplaced.ts:3 TS2741
+src/shared/verification.ts:93 TS2345
 ```

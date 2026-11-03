@@ -51,7 +51,10 @@ export type TwinPlan =
 
 const LIBRARIES = DJ_PROGRAMS
 
-const FLOW_TO: Record<DjProgram, 'cueFlowToRekordbox' | 'cueFlowToTraktor' | 'cueFlowToEngine'> = {
+export const FLOW_TO: Record<
+  DjProgram,
+  'cueFlowToRekordbox' | 'cueFlowToTraktor' | 'cueFlowToEngine'
+> = {
   rekordbox: 'cueFlowToRekordbox',
   traktor: 'cueFlowToTraktor',
   engine: 'cueFlowToEngine',

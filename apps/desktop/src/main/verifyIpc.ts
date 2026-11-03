@@ -192,8 +192,25 @@ export function libraryRequeue(queues: {
   engine: RequeueTarget<Move>
   traktor: RequeueTarget<ReturnType<typeof queuedNmlPatch>>
 }): VerifyRegistryDeps['requeue'] {
-  return (place, e) => {
-    if (place === 'traktor') {
+  const move = (queue: RequeueTarget<Move>) => (e: VerifyEntry) => {
+    if (!queue.holds(e.from))
+      queue.enqueue(
+        [],
+        [
+          {
+            from: e.from,
+            to: e.to,
+            ...(e.cueShiftMs === undefined ? {} : { audio: { cueShiftMs: e.cueShiftMs } }),
+            ...(e.engineShift ? { engineShift: e.engineShift } : {}),
+            ...(e.fromBytes === undefined ? {} : { fromBytes: e.fromBytes }),
+          },
+        ],
+      )
+  }
+  const handAgain: Record<Library, (e: VerifyEntry) => void> = {
+    rekordbox: move(queues.rekordbox),
+    engine: move(queues.engine),
+    traktor: (e) => {
       const p = e.traktorPatch
       const queued =
         p &&
@@ -210,19 +227,10 @@ export function libraryRequeue(queues: {
           outputFile: p.outputFile,
         })
       if (queued && !queues.traktor.holds(queued.from)) queues.traktor.enqueue([], [queued])
-    } else if (!queues[place].holds(e.from))
-      queues[place].enqueue(
-        [],
-        [
-          {
-            from: e.from,
-            to: e.to,
-            ...(e.cueShiftMs === undefined ? {} : { audio: { cueShiftMs: e.cueShiftMs } }),
-            ...(e.engineShift ? { engineShift: e.engineShift } : {}),
-            ...(e.fromBytes === undefined ? {} : { fromBytes: e.fromBytes }),
-          },
-        ],
-      )
+    },
+  }
+  return (place, e) => {
+    handAgain[place](e)
     queues[place].apply()
     return !queues[place].at()
   }

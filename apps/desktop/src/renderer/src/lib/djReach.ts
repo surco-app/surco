@@ -1,29 +1,11 @@
 import { programsInOrder } from '../../../shared/djProgram'
+import { DJ_COLLECTION_PATH, DJ_REACH_SETTINGS } from '../../../shared/djSettings'
 import type { Settings } from '../../../shared/types'
 import type { DjLibraryId } from './djLibraries'
 
+export { DJ_COLLECTION_PATH, DJ_REACH_SETTINGS }
+
 export type DjReach = 'off' | 'update' | 'add'
-
-export const DJ_REACH_SETTINGS: Record<
-  DjLibraryId,
-  {
-    sync: 'syncRekordbox' | 'syncTraktor' | 'syncEngineDj'
-    add: 'addToRekordbox' | 'addToTraktor' | 'addToEngineDj'
-  }
-> = {
-  rekordbox: { sync: 'syncRekordbox', add: 'addToRekordbox' },
-  engine: { sync: 'syncEngineDj', add: 'addToEngineDj' },
-  traktor: { sync: 'syncTraktor', add: 'addToTraktor' },
-}
-
-export const DJ_COLLECTION_PATH: Record<
-  DjLibraryId,
-  'rekordboxDbPath' | 'traktorNmlPath' | 'engineLibraryDir'
-> = {
-  rekordbox: 'rekordboxDbPath',
-  engine: 'engineLibraryDir',
-  traktor: 'traktorNmlPath',
-}
 
 export type DjAddKey = (typeof DJ_REACH_SETTINGS)[DjLibraryId]['add']
 export type DjSyncKey = (typeof DJ_REACH_SETTINGS)[DjLibraryId]['sync']

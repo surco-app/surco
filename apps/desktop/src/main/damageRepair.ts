@@ -1,3 +1,4 @@
+import { type DjProgram, programsInOrder } from '../shared/djProgram'
 import type { DamageOutcome, DamageRepair, DamageRepairItem, TrashEntry } from '../shared/types'
 import type { EngineRepoint } from './engineRepoint'
 import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
@@ -225,6 +226,35 @@ async function repairEngine(
   ]
 }
 
+const unsupported = (list: DamageRepairItem[]) =>
+  list.map(({ id }): DamageOutcome => ({ id, state: 'failed', error: 'libraryOff' }))
+
+export type RepairedProgram = Extract<DamageRepair['target'], DjProgram>
+type LibraryRepairs = {
+  [P in RepairedProgram]: (items: Of<P>[], deps: DamageRepairDeps) => Promise<DamageOutcome[]>
+}
+
+const LIBRARY_REPAIRS: LibraryRepairs & Record<Exclude<DjProgram, RepairedProgram>, null> = {
+  rekordbox: null,
+  engine: async (engine, deps) =>
+    deps.engine ? await repairEngine(engine, deps.engine) : unsupported(engine),
+  traktor: repairTraktor,
+}
+
+const REPAIR_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor'])
+
+const repaired = (program: DjProgram): program is RepairedProgram =>
+  LIBRARY_REPAIRS[program] !== null
+
+async function repairLibrary<P extends RepairedProgram>(
+  program: P,
+  items: Of<P>[],
+  deps: DamageRepairDeps,
+): Promise<DamageOutcome[]> {
+  const repair: LibraryRepairs[P] = LIBRARY_REPAIRS[program]
+  return items.length === 0 ? [] : repair(items, deps)
+}
+
 export async function repairDamage(
   items: DamageRepairItem[],
   deps: DamageRepairDeps,
@@ -240,20 +270,11 @@ export async function repairDamage(
     .map(({ id }): DamageOutcome => ({ id, state: 'failed', error: 'pathNotAllowed' }))
   const of = <T extends DamageRepair['target']>(target: T) =>
     items.filter((i): i is Of<T> => i.repair.target === target && allowed(i))
-  const unsupported = (list: DamageRepairItem[]) =>
-    list.map(({ id }): DamageOutcome => ({ id, state: 'failed', error: 'libraryOff' }))
   const genres = of('genre')
-  const traktor = of('traktor')
-  const engine = of('engine')
-  const outcomes = [
-    ...refused,
-    ...(engine.length === 0
-      ? []
-      : deps.engine
-        ? await repairEngine(engine, deps.engine)
-        : unsupported(engine)),
-    ...(traktor.length === 0 ? [] : await repairTraktor(traktor, deps)),
-    ...(genres.length > 0 ? await repairGenres(genres, deps.genre) : []),
-  ]
+  const libraries = REPAIR_ORDER.filter(repaired).map((program) => ({ program, list: of(program) }))
+  const outcomes = [...refused]
+  for (const { program, list } of libraries)
+    outcomes.push(...(await repairLibrary(program, list, deps)))
+  outcomes.push(...(genres.length > 0 ? await repairGenres(genres, deps.genre) : []))
   return items.map(({ id }) => outcomes.find((o) => o.id === id) ?? { id, state: 'unchanged' })
 }

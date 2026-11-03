@@ -187,7 +187,7 @@ export const defaults: Settings = {
 // the same file, and onboarding/changelog/pixel state is meaningful only locally.
 // (The Discogs token DOES sync now — it's identical across the user's Macs, and the
 // user accepts it living in their own cloud in plain text.)
-const LOCAL_KEYS = [
+export const LOCAL_KEYS = [
   'outputDir',
   'engineLibraryDir',
   // Traktor collection path is machine-specific: the folder doesn't exist on another Mac.
