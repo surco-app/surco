@@ -45,6 +45,7 @@ export function pqt2WithGrid(
   bpm: number,
 ): Buffer {
   const out = Buffer.from(section)
+  if (beats.length === 0) return out
   const tempo = Math.round(bpm * 100)
   writeBeat(out, PQT2_FIRST, beats[0], tempo)
   writeBeat(out, PQT2_LAST, beats[beats.length - 1], tempo)

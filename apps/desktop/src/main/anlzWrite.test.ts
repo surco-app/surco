@@ -86,4 +86,8 @@ describe('pqt2WithGrid', () => {
     pqt2WithGrid(WHATS_UP_PQT2, [{ ms: 10, beat: 1 }], 150)
     expect(WHATS_UP_PQT2.equals(copy)).toBe(true)
   })
+
+  it('leaves the section as it was when there are no beats to point at', () => {
+    expect(pqt2WithGrid(WHATS_UP_PQT2, [], 150).equals(WHATS_UP_PQT2)).toBe(true)
+  })
 })

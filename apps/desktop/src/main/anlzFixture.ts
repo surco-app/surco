@@ -82,3 +82,29 @@ export function pwv5Section(entries: { r: number; g: number; b: number; h: numbe
   )
   return section('PWV5', Buffer.concat([u32(2), u32(entries.length), u32(0x00960305)]), body)
 }
+
+export function pqt2Section(beatsMs: number[], bpm: number): Buffer {
+  const beat = (i: number) => {
+    const e = Buffer.alloc(8)
+    e.writeUInt16BE((i % 4) + 1, 0)
+    e.writeUInt16BE(Math.round(bpm * 100), 2)
+    e.writeUInt32BE(beatsMs[i], 4)
+    return e
+  }
+  const body = Buffer.alloc(beatsMs.length * 2, 0x5a)
+  return section(
+    'PQT2',
+    Buffer.concat([
+      u32(0),
+      u32(0x01000002),
+      u32(0),
+      beat(0),
+      beat(beatsMs.length - 1),
+      u32(beatsMs.length),
+      u32(0x09abd75f),
+      u32(0),
+      u32(0),
+    ]),
+    body,
+  )
+}

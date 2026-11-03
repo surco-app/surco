@@ -11,6 +11,7 @@ import {
   validWantedSet,
   type WantedCue,
 } from '../shared/cueRules'
+import { gridBeats } from '../shared/gridEdit'
 import type {
   PlaylistAddReport,
   RekordboxEditRefusal,
@@ -24,6 +25,14 @@ import { rekordboxShareDir } from './rekordboxArtwork'
 import { type ContentFacts, insertContent } from './rekordboxContentAdd'
 import { applyCueChanges, readTrackCues } from './rekordboxCues'
 import { type FindOptions, openRekordboxDb } from './rekordboxDb'
+import {
+  type AnlzPaths,
+  anlzPathsOf,
+  applyGridBpm,
+  type GridWrite,
+  restoreGridFiles,
+  writeGridFiles,
+} from './rekordboxGridWrite'
 import {
   hexId,
   nodeTimestamp,
@@ -167,6 +176,8 @@ interface Planned {
     notices: RekordboxQueueNotice[]
   }
   cues?: CueChangeSet
+  grid?: GridWrite
+  anlz?: AnlzPaths
 }
 
 type Plan = Planned | { outcome: OpOutcome }
@@ -294,6 +305,9 @@ function planCuesOp(probe: Db, op: CuesOp, shareDir: string): Plan {
   })
   const read = readTrackCues(probe, shareDir, op.contentId, { wave: false })
   if (!read || read.fingerprint !== op.fingerprint) return changed('cues-changed')
+  const anlz = op.grid ? anlzPathsOf(probe, shareDir, op.contentId) : null
+  if (op.grid && (!read.analysed || read.gridFingerprint !== op.gridFingerprint || !anlz))
+    return changed('cues-changed')
   if (!read.analysed && op.wanted === undefined) return changed('cues-changed')
   if (op.wanted === undefined && op.drops === undefined) return changed('cues-invalid')
   const wanted = queuedWanted(op, read)
@@ -305,9 +319,16 @@ function planCuesOp(probe: Db, op: CuesOp, shareDir: string): Plan {
   }
   if (wanted.filter((c) => c.kind !== 0).length > MAX_HOT_CUES) return changed('cues-too-many')
   const cues = diffCues(read.cues, wanted)
-  if (isEmptyChange(cues))
-    return { outcome: { id: op.id, applied: true, notices: op.notices ?? [] } }
-  return { op, cues }
+  if (!op.grid || !anlz) {
+    if (isEmptyChange(cues))
+      return { outcome: { id: op.id, applied: true, notices: op.notices ?? [] } }
+    return { op, cues }
+  }
+  const beats = gridBeats(op.grid, read.durationMs).map((b) => ({
+    ms: Math.round(b.ms),
+    beat: b.beat,
+  }))
+  return { op, cues, grid: { beats, bpm: op.grid.bpm }, anlz }
 }
 
 function planOp(
@@ -428,6 +449,7 @@ function writeOp(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutcom
   if (planned.op.kind === 'track') return writeTrack(db, draft, planned, now)
   if (planned.op.kind === 'cues') {
     applyCueChanges(db, planned.op.contentId, planned.cues as CueChangeSet, { now })
+    if (planned.grid) applyGridBpm(db, planned.op.contentId, planned.grid.bpm, { now })
     return { id: planned.op.id, applied: true, notices: planned.op.notices ?? [] }
   }
   return writeEdit(db, draft, planned, now)
@@ -516,7 +538,10 @@ export async function applyRekordboxBatch(
   }
   let xmlWritten = false
   let anyApplied = false
+  const gridFiles: string[] = []
   try {
+    for (const p of stillPlanned)
+      if (p.grid && p.anlz) await writeGridFiles(p.anlz, p.grid, gridFiles)
     db.exec('BEGIN')
     for (const p of [...stillPlanned].sort((a, b) => opRank(a.op) - opRank(b.op))) {
       const saved = {
@@ -548,6 +573,7 @@ export async function applyRekordboxBatch(
     const known = rollback(db, deps.onRollback)
     db.close()
     if (xmlWritten) await restoreFile(xmlPath)
+    await restoreGridFiles(gridFiles)
     if (!known && !(await restoreCollection(collectionPath)))
       return { ok: false, reason: 'write-unknown' }
     if (isReadOnly(err)) return { ok: false, reason: 'read-only' }
