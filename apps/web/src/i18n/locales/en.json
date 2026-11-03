@@ -49,7 +49,7 @@
   },
   "features": {
     "kicker": "Features",
-    "title": "The whole flow, in one app",
+    "title": "Every step, from download to the booth",
     "lede": "What Surco does, one line per feature. Open any of them for the full detail.",
     "count_one": "{{count}} feature",
     "count_other": "{{count}} features",

@@ -49,7 +49,7 @@
   },
   "features": {
     "kicker": "Fonctions",
-    "title": "Tout le processus, dans une seule appli",
+    "title": "Chaque étape, du téléchargement à la cabine",
     "lede": "Ce que fait Surco, une ligne par fonction. Ouvre n'importe laquelle pour voir le détail complet.",
     "count_one": "{{count}} fonction",
     "count_other": "{{count}} fonctions",
