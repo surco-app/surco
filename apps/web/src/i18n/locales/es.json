@@ -1179,6 +1179,18 @@
           "title": "Directo a tu programa",
           "text": "rekordbox, Engine DJ y Traktor. Engine DJ y Traktor reciben solo los hot cues."
         }
+      },
+      "grid": {
+        "title": "Encuentra los cues que no caen en el golpe.",
+        "text": "En rekordbox, Engine DJ y Traktor, Surco mide cada cue contra la rejilla y te saca las pistas que se pasan. Borras y das a Auto marcar. Tú eliges desde cuántos ms cuenta.",
+        "clearAll": "Borrar todos los cues",
+        "miss": "a {{ms}} ms del golpe",
+        "hit": "en el golpe",
+        "filters": {
+          "silence": "Silencio por recortar",
+          "noCues": "Sin cues",
+          "offGrid": "Cues fuera de la rejilla"
+        }
       }
     },
     "app": {

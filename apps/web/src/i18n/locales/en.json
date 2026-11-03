@@ -1179,6 +1179,18 @@
           "title": "Straight to your program",
           "text": "rekordbox, Engine DJ and Traktor. Engine DJ and Traktor take the hot cues only."
         }
+      },
+      "grid": {
+        "title": "Find the cues that miss the beat.",
+        "text": "In rekordbox, Engine DJ and Traktor, Surco measures every cue against the grid and pulls out the tracks that drift. Clear them and hit Auto mark. You choose how many ms counts.",
+        "clearAll": "Clear all cues",
+        "miss": "{{ms}} ms off the beat",
+        "hit": "on the beat",
+        "filters": {
+          "silence": "Silence to trim",
+          "noCues": "No cues",
+          "offGrid": "Cues off the grid"
+        }
       }
     },
     "app": {

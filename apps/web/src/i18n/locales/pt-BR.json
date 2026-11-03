@@ -1179,6 +1179,18 @@
           "title": "Direto no seu programa",
           "text": "rekordbox, Engine DJ e Traktor. O Engine DJ e o Traktor recebem só os hot cues."
         }
+      },
+      "grid": {
+        "title": "Encontre os cues que não caem na batida.",
+        "text": "No rekordbox, no Engine DJ e no Traktor, o Surco mede cada cue contra a grade e separa as faixas que passam do ponto. Você apaga e clica em Marcar automático. Você escolhe a partir de quantos ms conta.",
+        "clearAll": "Apagar todas as cues",
+        "miss": "a {{ms}} ms da batida",
+        "hit": "na batida",
+        "filters": {
+          "silence": "Silêncio a cortar",
+          "noCues": "Sem cues",
+          "offGrid": "Cues fora da grade"
+        }
       }
     },
     "app": {

@@ -1179,6 +1179,18 @@
           "title": "いつものアプリへ直接",
           "text": "rekordbox、Engine DJ、Traktor。Engine DJとTraktorにはホットキューのみが保存されます。"
         }
+      },
+      "grid": {
+        "title": "拍からずれたキューを見つける。",
+        "text": "rekordbox、Engine DJ、Traktor のすべてのキューを Surco がグリッドと照らし合わせ、ずれているトラックを抜き出します。削除して自動マークを押すだけ。何 ms からずれとみなすかは自分で決められます。",
+        "clearAll": "すべてのキューを削除",
+        "miss": "拍から {{ms}} ms",
+        "hit": "拍ぴったり",
+        "filters": {
+          "silence": "トリミングする無音部分",
+          "noCues": "キューなし",
+          "offGrid": "グリッドからずれたキュー"
+        }
       }
     },
     "app": {

@@ -1179,6 +1179,18 @@
           "title": "Direkt in dein Programm",
           "text": "rekordbox, Engine DJ und Traktor. Engine DJ und Traktor übernehmen nur die Hot Cues."
         }
+      },
+      "grid": {
+        "title": "Finde die Cues, die nicht auf dem Beat sitzen.",
+        "text": "In rekordbox, Engine DJ und Traktor misst Surco jeden Cue am Raster und zeigt dir die Tracks, die danebenliegen. Du löschst sie und drückst Auto-Markieren. Ab wie vielen ms es zählt, entscheidest du.",
+        "clearAll": "Alle Cues löschen",
+        "miss": "{{ms}} ms neben dem Beat",
+        "hit": "auf dem Beat",
+        "filters": {
+          "silence": "Stille zum Kürzen",
+          "noCues": "Ohne Cues",
+          "offGrid": "Cues neben dem Raster"
+        }
       }
     },
     "app": {

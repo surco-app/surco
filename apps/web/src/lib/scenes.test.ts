@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MY_FLOW } from '../../../desktop/src/shared/cueFlows'
+import { cueGridDrift, DEFAULT_CUE_GRID_TOLERANCE } from '../../../desktop/src/shared/cueGrid'
 import { flowOutcome, HOT_KINDS } from '../../../desktop/src/shared/cueRules'
 import {
   BATCH_QUEUE,
@@ -11,6 +12,10 @@ import {
   CUES_POINTS,
   CUES_ZOOM,
   cuesFrame,
+  GRID_BEAT_MS,
+  GRID_ENVELOPE,
+  GRID_WINDOW,
+  gridFrame,
   qualityFrame,
   REPLACE_PLAYLISTS,
   REVIEW_APPLY_AFTER,
@@ -536,5 +541,71 @@ describe('cuesFrame', () => {
     expect(end.saved).toBe(true)
     expect(end.savePressed).toBe(false)
     expect(end.cursor).toBe('hidden')
+  })
+})
+
+describe('gridFrame', () => {
+  const frames = Array.from({ length: 801 }, (_, i) => gridFrame(i / 800))
+  const firstAt = (pred: (f: (typeof frames)[number]) => boolean) => frames.findIndex(pred)
+  const beats = [0, GRID_BEAT_MS, 2 * GRID_BEAT_MS]
+  const driftOf = (cueMs: number) => cueGridDrift([GRID_BEAT_MS + cueMs], beats)
+
+  it('opens on a cue the app filter flags at its default tolerance, so the scene shows a real catch', () => {
+    const start = gridFrame(0)
+    expect(start.cueMs).not.toBe(null)
+    expect(driftOf(start.cueMs ?? 0)).toBeGreaterThan(DEFAULT_CUE_GRID_TOLERANCE)
+  })
+
+  it('ends with the cue the app would no longer flag, on the beat itself', () => {
+    const end = gridFrame(1)
+    expect(end.cueMs).toBe(0)
+    expect(driftOf(end.cueMs ?? 1)).toBe(0)
+  })
+
+  it('keeps the cue inside the zoom the whole time, or the miss would be off screen', () => {
+    for (const f of frames) {
+      if (f.cueMs === null) continue
+      expect(f.cueMs).toBeGreaterThan(GRID_WINDOW.from)
+      expect(f.cueMs).toBeLessThan(GRID_WINDOW.to)
+    }
+  })
+
+  it('draws the hit where the grid line is, quiet before it and loud right after', () => {
+    const column = (ms: number) =>
+      Math.round(
+        ((ms - GRID_WINDOW.from) / (GRID_WINDOW.to - GRID_WINDOW.from)) * GRID_ENVELOPE.length,
+      )
+    const mean = (from: number, to: number) =>
+      GRID_ENVELOPE.slice(from, to).reduce((sum, v) => sum + v, 0) / (to - from)
+    const before = mean(column(-20), column(0))
+    const after = mean(column(0), column(10))
+    expect(after).toBeGreaterThan(0.6)
+    expect(before).toBeLessThan(after / 3)
+  })
+
+  it('follows the flow the user described, filter, clear the cues, then Auto mark', () => {
+    const selected = firstAt((f) => f.selected)
+    const cleared = firstAt((f) => f.clearPressed)
+    const gone = firstAt((f) => f.cueMs === null)
+    const auto = firstAt((f) => f.autoPressed)
+    const onBeat = firstAt((f) => f.cueMs === 0)
+    expect(selected).toBeGreaterThan(0)
+    expect(cleared).toBeGreaterThan(selected)
+    expect(gone).toBeGreaterThan(cleared)
+    expect(auto).toBeGreaterThan(gone)
+    expect(onBeat).toBeGreaterThan(auto)
+  })
+
+  it('drops the track from the filter count only once its cue sits on the beat', () => {
+    const start = gridFrame(0).count
+    const drop = firstAt((f) => f.count < start)
+    expect(drop).toBeGreaterThan(firstAt((f) => f.cueMs === 0))
+    expect(gridFrame(1).count).toBe(start - 1)
+  })
+
+  it('keeps the filter on at the end, the state a reduced-motion visitor lands on', () => {
+    expect(gridFrame(1).selected).toBe(true)
+    expect(gridFrame(1).autoPressed).toBe(false)
+    expect(gridFrame(1).clearPressed).toBe(false)
   })
 })

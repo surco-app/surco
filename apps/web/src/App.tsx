@@ -13,6 +13,7 @@ import SectionView from './components/SectionView'
 import SpectrumDuotone from './components/SpectrumDuotone'
 import Spotlight from './components/Spotlight'
 import CuesScene from './components/scenes/CuesScene'
+import GridScene from './components/scenes/GridScene'
 import ReplaceScene from './components/scenes/ReplaceScene'
 import Walkthrough from './components/Walkthrough'
 import type { Language } from './i18n'
@@ -134,7 +135,9 @@ export default function App() {
             copy="cues"
             points={['oneClick', 'yourFlow', 'programs']}
             scene={<CuesScene />}
-          />
+          >
+            <GridScene />
+          </Spotlight>
           <Spotlight
             id={SCENE_ANCHORS.replace}
             view={SECTION_VIEWS.replace}

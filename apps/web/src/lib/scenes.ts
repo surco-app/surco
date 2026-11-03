@@ -350,3 +350,39 @@ export function cuesFrame(t: number): CuesFrame {
     saved: s >= 13.2,
   }
 }
+
+export const GRID_TRACK = CRATE.sash
+export const GRID_BEAT_MS = 60000 / 136
+export const GRID_DRIFT_MS = -11
+export const GRID_WINDOW = { from: -70, to: 50 } as const
+export const GRID_COUNT = 12
+export const GRID_SECONDS = 7
+
+const GRID_COLUMNS = 60
+const GRID_JITTER = [0.82, 1, 0.9, 0.76, 0.95, 0.86, 1, 0.8, 0.92, 0.88]
+
+export const GRID_ENVELOPE = Array.from({ length: GRID_COLUMNS }, (_, i) => {
+  const ms = GRID_WINDOW.from + ((i + 0.5) / GRID_COLUMNS) * (GRID_WINDOW.to - GRID_WINDOW.from)
+  const jitter = GRID_JITTER[i % GRID_JITTER.length]
+  const level = ms < 0 ? 0.1 : 0.35 + 0.6 * Math.exp(-ms / 40)
+  return Math.round(level * jitter * 100) / 100
+})
+
+export interface GridFrame {
+  selected: boolean
+  count: number
+  clearPressed: boolean
+  autoPressed: boolean
+  cueMs: number | null
+}
+
+export function gridFrame(t: number): GridFrame {
+  const s = clamp(t) * GRID_SECONDS
+  return {
+    selected: s >= 1,
+    count: s >= 5.2 ? GRID_COUNT - 1 : GRID_COUNT,
+    clearPressed: s >= 2.6 && s < 2.8,
+    autoPressed: s >= 3.8 && s < 4,
+    cueMs: s < 2.8 ? GRID_DRIFT_MS : s < 4.4 ? null : 0,
+  }
+}

@@ -1179,6 +1179,18 @@
           "title": "Directement dans ton logiciel",
           "text": "rekordbox, Engine DJ et Traktor. Engine DJ et Traktor ne prennent que les hot cues."
         }
+      },
+      "grid": {
+        "title": "Trouve les cues qui tombent à côté du temps.",
+        "text": "Dans rekordbox, Engine DJ et Traktor, Surco mesure chaque cue par rapport à la grille et te sort les pistes qui dérivent. Tu les effaces et tu lances Marquage auto. Tu choisis à partir de combien de ms ça compte.",
+        "clearAll": "Effacer toutes les cues",
+        "miss": "à {{ms}} ms du temps",
+        "hit": "sur le temps",
+        "filters": {
+          "silence": "Silence à rogner",
+          "noCues": "Sans cues",
+          "offGrid": "Cues hors de la grille"
+        }
       }
     },
     "app": {
