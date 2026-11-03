@@ -12,7 +12,7 @@ import {
   Type,
 } from 'lucide-react'
 import type React from 'react'
-import { memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { tagsOnly } from '../../../shared/audioProcessing'
@@ -1664,13 +1664,10 @@ export const Editor = memo(function Editor({
                           />
                         )
                       )
-                    case 'output':
-                      // Overwrite mode pins the name to the original, so the File Name
-                      // section is replaced by a notice of what the export will do.
-                      if (!isMulti && picked.overwriteOriginal) {
-                        return (
+                    case 'output': {
+                      const notice =
+                        !isMulti && picked.overwriteOriginal ? (
                           <OverwriteNotice
-                            key={id}
                             title={tr('editor.overwriteTitle')}
                             lossy={lossyOverwrite}
                             hint={
@@ -1685,14 +1682,12 @@ export const Editor = memo(function Editor({
                                   : tr('editor.overwriteAlacHint')
                             }
                           />
-                        )
-                      }
+                        ) : null
                       // Multi-select has no single name to edit, but the bulk rename is
                       // exactly the flow a selection wants: retag a crate, then stamp
                       // every file name from the pattern at once (djotas's ask). One
                       // button in the section's slot instead of hiding it entirely.
                       if (isMulti) {
-                        if (picked.overwriteOriginal) return null
                         return (
                           <BulkActionSection
                             key={id}
@@ -1706,20 +1701,25 @@ export const Editor = memo(function Editor({
                         )
                       }
                       return (
-                        <OutputNameSection
-                          key={id}
-                          item={item}
-                          format={format}
-                          defaultOutputName={defaultOutputName}
-                          autoApply={autoNamesFile(autoApplyFilename, item)}
-                          willEditInPlace={willEditInPlace}
-                          open={outputOpen}
-                          onToggle={() => setSectionOpen('output', !outputOpen)}
-                          onChangeName={(outputName) => onChange({ outputName })}
-                          onRegenerateName={onRegenerateName}
-                          onOpenRename={onOpenRename}
-                        />
+                        <Fragment key={id}>
+                          {notice}
+                          <OutputNameSection
+                            item={item}
+                            format={format}
+                            defaultOutputName={defaultOutputName}
+                            autoApply={
+                              !picked.overwriteOriginal && autoNamesFile(autoApplyFilename, item)
+                            }
+                            willEditInPlace={willEditInPlace && !picked.overwriteOriginal}
+                            open={outputOpen}
+                            onToggle={() => setSectionOpen('output', !outputOpen)}
+                            onChangeName={(outputName) => onChange({ outputName })}
+                            onRegenerateName={onRegenerateName}
+                            onOpenRename={onOpenRename}
+                          />
+                        </Fragment>
                       )
+                    }
                     case 'trim':
                       // The per-track handles have no multi-select story (the anchor's
                       // wave would misrepresent the rest), but the detection does: one

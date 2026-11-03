@@ -2900,11 +2900,15 @@ describe('Editor output file name', () => {
     expect(onRegenerateName).not.toHaveBeenCalled()
   })
 
-  // Overwrite mode pins the name to the original, so editing it would be a lie — the
-  // whole File Name section is replaced by a notice of what the export does instead.
-  it('hides the File Name section and shows the overwrite notice in overwrite mode', () => {
+  it('leaves the same-format note out of an overwrite into another format, since the notice above already says what happens', () => {
+    renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'aiff', { overwriteOriginal: true })
+    expect(screen.getByTestId('output-name')).toBeInTheDocument()
+    expect(screen.queryByTestId('output-name-hint')).toBeNull()
+  })
+
+  it('keeps the File Name section beside the overwrite notice, so the original can be renamed while it is rewritten', () => {
     renderEditor({ id: 'a', fileName: 'original track 01' }, 'wav', { overwriteOriginal: true })
-    expect(screen.queryByTestId('output-name')).toBeNull()
+    expect(screen.getByTestId('output-name')).toBeInTheDocument()
     expect(screen.getByTestId('overwrite-notice')).toBeInTheDocument()
   })
 

@@ -1034,17 +1034,40 @@ describe('useTrackProcessing', () => {
     )
   })
 
-  // Overwrite rewrites the source itself, so the export must target the original file
-  // name even if a stale custom outputName lingers from before the setting was enabled —
-  // otherwise the rewrite would land on a differently-named file, not the source.
-  it('pins the export name to the original file name in overwrite mode', async () => {
-    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true })
+  it('renames the original in overwrite mode when the DJ typed a new name, since rewriting the file is the moment to fix it', async () => {
+    const processTrack = vi
+      .fn()
+      .mockResolvedValue({ outputPath: '/m/custom name.wav', inPlace: true })
     setApi({ processTrack })
     const { result } = renderHook(
       () =>
         useTrackProcessing({
           tracks: [track({ id: 'a', outputName: 'custom name' })],
           settings: { overwriteOriginal: true } as unknown as Settings,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ outputName: 'custom name' }),
+    )
+  })
+
+  it('keeps the original name in overwrite mode when the DJ named nothing, even with the name pattern applied automatically', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true })
+    setApi({ processTrack })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: {
+            overwriteOriginal: true,
+            autoApplyFilename: true,
+            filenameFormat: '{artist} - {title}',
+          } as unknown as Settings,
           updateTrack: vi.fn(),
         }),
       { wrapper: withClient() },
@@ -1155,10 +1178,10 @@ describe('useTrackProcessing', () => {
     expect(processTrack.mock.calls[0][0]).not.toHaveProperty('addToEngineDj')
   })
 
-  // Overriding to overwrite must behave exactly like the setting: the export lands
-  // back on the source's own name, not on a lingering custom outputName.
-  it('pins the export name to the original when the destination override is overwrite', async () => {
-    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true })
+  it('renames the original with the typed name when the destination override is overwrite, like the setting', async () => {
+    const processTrack = vi
+      .fn()
+      .mockResolvedValue({ outputPath: '/m/custom name.wav', inPlace: true })
     setApi({ processTrack })
     const { result } = renderHook(
       () =>
@@ -1173,7 +1196,7 @@ describe('useTrackProcessing', () => {
       await result.current.processOne('a', undefined, undefined, undefined, 'overwrite')
     })
     expect(processTrack).toHaveBeenCalledWith(
-      expect.objectContaining({ outputName: 'a.wav', overwriteOriginal: true }),
+      expect.objectContaining({ outputName: 'custom name', overwriteOriginal: true }),
     )
   })
 

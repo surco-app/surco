@@ -923,23 +923,22 @@ export function buildCommands(deps: CommandDeps): Command[] {
     {
       // Builds the output name from a pattern. Only one track has a File name section
       // (multi-select hides it), so the command follows the same single-track rule.
-      // Overwrite mode pins the name to the original, so renaming is disabled there too.
       id: 'rename',
       group: 'convert',
       title: tr('commands.rename'),
       hint: hintFor('rename'),
-      enabled: !!selected && selectedTracksCount <= 1 && !settings?.overwriteOriginal,
+      enabled: !!selected && selectedTracksCount <= 1,
       run: openRename,
     },
     {
       // Rebuilds file names from the Settings pattern over the whole selection — the
       // bulk twin of the File name section's Regenerate button, which multi-select
-      // hides. Overwrite mode pins names to the originals, so it is disabled there.
+      // hides.
       id: 'regenerate-names',
       group: 'convert',
       title: tr('commands.regenerateNames'),
       hint: hintFor('regenerate-names'),
-      enabled: !!selected && !settings?.overwriteOriginal,
+      enabled: !!selected,
       run: regenerateNames,
     },
     {

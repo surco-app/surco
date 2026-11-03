@@ -388,15 +388,13 @@ export function useTrackProcessing({
       // their filename. A metadata-derived name is used when the editor's "Regenerate from
       // metadata" button (or a manual edit) set track.outputName, or — with auto-apply on —
       // derived live from the pattern when no manual name was set. A manual edit still wins.
-      // Overwrite mode pins the name to the original regardless of any stale outputName,
-      // so the rewrite lands back on the source file the user means to replace.
+      // Overwrite mode renames the original only to a name the user typed or regenerated;
+      // the pattern never renames a file being rewritten in place on its own.
       const autoName =
-        settings && autoNamesFile(settings.autoApplyFilename, track)
+        !overwriteOriginal && settings && autoNamesFile(settings.autoApplyFilename, track)
           ? renderOutputName(settings.filenameFormat, meta)
           : ''
-      const outputName = overwriteOriginal
-        ? track.fileName
-        : track.outputName?.trim() || autoName || track.fileName
+      const outputName = track.outputName?.trim() || autoName || track.fileName
       // Before the job, not after: an in-place export renames over this very file, and
       // Windows refuses that while the player's surco:// stream still holds it open —
       // the conversion failed with "another program is using this file", the other

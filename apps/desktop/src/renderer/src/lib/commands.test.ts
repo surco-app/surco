@@ -752,7 +752,7 @@ describe('buildCommands editor + theme entries', () => {
   // The bulk rename djotas asked for: it acts on the selection (the File name
   // section's button is single-track and hidden in multi), and overwrite mode pins
   // every name to the original, so the command greys out there instead of lying.
-  it('gates regenerate-names on a selection and not-overwrite, and runs it', () => {
+  it('gates regenerate-names on a selection, overwrite included since it renames the originals, and runs it', () => {
     const regenerateNames = vi.fn()
     const noSelection = makeDeps({ regenerateNames, selected: null })
     expect(commandById(noSelection, 'regenerate-names').enabled).toBe(false)
@@ -766,7 +766,8 @@ describe('buildCommands editor + theme entries', () => {
         discogsToken: '',
       } as Settings,
     })
-    expect(commandById(overwrite, 'regenerate-names').enabled).toBe(false)
+    expect(commandById(overwrite, 'regenerate-names').enabled).toBe(true)
+    expect(commandById(overwrite, 'rename').enabled).toBe(true)
 
     const ready = makeDeps({ regenerateNames, selected: track() })
     const cmd = commandById(ready, 'regenerate-names')
