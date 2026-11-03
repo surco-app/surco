@@ -11,6 +11,7 @@ import {
   migrateBundledFlow,
   normalizeCueFlows,
 } from '../shared/cueFlows'
+import { DEFAULT_CUE_GRID_TOLERANCE, normalizeCueGridTolerance } from '../shared/cueGrid'
 import { DEFAULT_CUE_JUMP_BARS, normalizeCueJumpBars } from '../shared/cueJump'
 import { DEFAULT_CUE_QUANTIZE, normalizeCueQuantize } from '../shared/cueQuantize'
 import { DEFAULT_DECLICK, normalizeDeclick } from '../shared/declick'
@@ -84,6 +85,7 @@ export const defaults: Settings = {
   activeCueFlow: DEFAULT_CUE_FLOW_ID,
   cueJumpBars: DEFAULT_CUE_JUMP_BARS,
   cueQuantize: DEFAULT_CUE_QUANTIZE,
+  cueGridTolerance: DEFAULT_CUE_GRID_TOLERANCE,
   cueLettersByTime: true,
   cueFlowToRekordbox: true,
   cueFlowToTraktor: true,
@@ -357,6 +359,7 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
     activeCueFlow: flows.active,
     cueJumpBars: normalizeCueJumpBars(patch.cueJumpBars ?? base.cueJumpBars),
     cueQuantize: normalizeCueQuantize(patch.cueQuantize ?? base.cueQuantize),
+    cueGridTolerance: normalizeCueGridTolerance(patch.cueGridTolerance ?? base.cueGridTolerance),
     cueLettersByTime: (patch.cueLettersByTime ?? base.cueLettersByTime) !== false,
     cueFlowToRekordbox: (patch.cueFlowToRekordbox ?? base.cueFlowToRekordbox) !== false,
     cueFlowToTraktor: (patch.cueFlowToTraktor ?? base.cueFlowToTraktor) !== false,

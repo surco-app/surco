@@ -1,3 +1,4 @@
+import { DEFAULT_CUE_GRID_TOLERANCE } from '../../../shared/cueGrid'
 import { MAJOR_CAMELOT, MAJOR_NAMES, MINOR_CAMELOT, MINOR_NAMES } from '../../../shared/keyNames'
 import type { TrackItem } from '../types'
 import { foldText } from './normalizeText'
@@ -90,9 +91,14 @@ export type TagsFilter = 'missingRequired' | 'noCover' | 'smallCover' | 'noBpm' 
 export interface FilterFacts {
   incomplete: (track: TrackItem) => boolean
   unsaved: (track: TrackItem) => boolean
+  gridTolerance: number
 }
 
-export const NO_FACTS: FilterFacts = { incomplete: () => false, unsaved: () => false }
+export const NO_FACTS: FilterFacts = {
+  incomplete: () => false,
+  unsaved: () => false,
+  gridTolerance: DEFAULT_CUE_GRID_TOLERANCE,
+}
 
 // One selection per dimension, all combined with AND. `format` is the source container
 // ('WAV', 'FLAC'…, see formatBuckets / sourceFormat); like the rest, null means "any".
@@ -184,12 +190,17 @@ export function matchesFilter(
   if (sel.attention === 'silence' && track.audioIssues?.silence !== true) return false
   if (sel.attention === 'clipping' && track.audioIssues?.clipping !== true) return false
   if (sel.attention === 'noCues' && !hasNoCues(track)) return false
-  if (sel.attention === 'offGrid' && track.sourcePreview?.offGrid !== true) return false
+  if (sel.attention === 'offGrid' && !isOffGrid(track, facts)) return false
   if (sel.attention === 'unanalysedRekordbox' && unanalysedIn(track) !== 'rekordbox') return false
   if (sel.attention === 'unanalysedEngine' && unanalysedIn(track) !== 'engine') return false
   if (sel.tags && !matchesTags(track, sel.tags, facts)) return false
   if (sel.format && sourceFormat(track) !== sel.format) return false
   return true
+}
+
+function isOffGrid(track: TrackItem, facts: FilterFacts): boolean {
+  const drift = track.sourcePreview?.gridDriftMs
+  return drift !== undefined && drift > facts.gridTolerance
 }
 
 function hasNoCues(track: TrackItem): boolean {
@@ -518,7 +529,7 @@ export function qualityCounts(
     if (t.audioIssues?.silence) silence += 1
     if (t.audioIssues?.clipping) clipping += 1
     if (hasNoCues(t)) noCues += 1
-    if (t.sourcePreview?.offGrid) offGrid += 1
+    if (isOffGrid(t, facts)) offGrid += 1
     const waitingOn = unanalysedIn(t)
     if (waitingOn === 'rekordbox') unanalysedRekordbox += 1
     else if (waitingOn === 'engine') unanalysedEngine += 1

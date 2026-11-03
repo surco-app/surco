@@ -1,47 +1,56 @@
 import { describe, expect, it } from 'vitest'
-import { cuesOffGrid, OFF_GRID_TOLERANCE_MS } from './cueGrid'
+import {
+  CUE_GRID_TOLERANCE,
+  cueGridDrift,
+  DEFAULT_CUE_GRID_TOLERANCE,
+  normalizeCueGridTolerance,
+} from './cueGrid'
 
 const beatsAt120 = (from: number, count: number) =>
   Array.from({ length: count }, (_, i) => from + i * 500)
 
-describe('cuesOffGrid', () => {
-  it('passes cues sitting on a beat, because those are the ones a quantized DJ app placed', () => {
-    expect(cuesOffGrid([100, 1100, 3100], beatsAt120(100, 10))).toBe(false)
+describe('cueGridDrift', () => {
+  it('measures nothing for cues sitting on a beat, because those are the ones a quantized DJ app placed', () => {
+    expect(cueGridDrift([100, 1100, 3100], beatsAt120(100, 10))).toBe(0)
   })
 
-  it('flags a track when one cue lands between beats, since that cue will fire off the beat', () => {
-    expect(cuesOffGrid([100, 1350], beatsAt120(100, 10))).toBe(true)
+  it('reports the cue furthest from its beat, since that is the one that fires off the beat', () => {
+    expect(cueGridDrift([111, 1350, 2095], beatsAt120(100, 10))).toBe(250)
+    expect(cueGridDrift([111, 2095], beatsAt120(100, 10))).toBe(11)
   })
 
-  it('forgives drift up to the tolerance, because stored positions round to the millisecond', () => {
-    const beats = beatsAt120(100, 10)
-    expect(cuesOffGrid([600 + OFF_GRID_TOLERANCE_MS], beats)).toBe(false)
-    expect(cuesOffGrid([600 - OFF_GRID_TOLERANCE_MS], beats)).toBe(false)
-    expect(cuesOffGrid([600 + OFF_GRID_TOLERANCE_MS + 1], beats)).toBe(true)
+  it('measures a cue before the first beat against where the grid would continue backwards', () => {
+    expect(cueGridDrift([0], beatsAt120(500, 10))).toBe(0)
+    expect(cueGridDrift([0], beatsAt120(250, 10))).toBe(250)
   })
 
-  it('accepts a cue before the first beat when it falls where the grid would continue backwards', () => {
-    expect(cuesOffGrid([0], beatsAt120(500, 10))).toBe(false)
-    expect(cuesOffGrid([0], beatsAt120(250, 10))).toBe(true)
-  })
-
-  it('accepts a cue past the last beat when it falls where the grid would continue forwards', () => {
-    expect(cuesOffGrid([100 + 12 * 500], beatsAt120(100, 10))).toBe(false)
-    expect(cuesOffGrid([100 + 12 * 500 + 250], beatsAt120(100, 10))).toBe(true)
+  it('measures a cue past the last beat against where the grid would continue forwards', () => {
+    expect(cueGridDrift([100 + 12 * 500], beatsAt120(100, 10))).toBe(0)
+    expect(cueGridDrift([100 + 12 * 500 + 30], beatsAt120(100, 10))).toBe(30)
   })
 
   it('follows a grid whose tempo changes, as rekordbox writes each beat on its own', () => {
     const beats = [0, 500, 1000, 1400, 1800, 2200]
-    expect(cuesOffGrid([1400, 2200], beats)).toBe(false)
-    expect(cuesOffGrid([1200], beats)).toBe(true)
+    expect(cueGridDrift([1400, 2200], beats)).toBe(0)
+    expect(cueGridDrift([1200], beats)).toBe(200)
   })
 
-  it('never flags a track without a grid, because there is nothing to measure the cues against', () => {
-    expect(cuesOffGrid([1234], [])).toBe(false)
-    expect(cuesOffGrid([1234], [500])).toBe(false)
+  it('measures nothing without a grid or without cues, because there is nothing to compare', () => {
+    expect(cueGridDrift([1234], [])).toBeNull()
+    expect(cueGridDrift([1234], [500])).toBeNull()
+    expect(cueGridDrift([], beatsAt120(0, 10))).toBeNull()
+  })
+})
+
+describe('normalizeCueGridTolerance', () => {
+  it('keeps each tolerance the Cues tab offers', () => {
+    for (const ms of CUE_GRID_TOLERANCE) expect(normalizeCueGridTolerance(ms)).toBe(ms)
   })
 
-  it('never flags a track without cues', () => {
-    expect(cuesOffGrid([], beatsAt120(0, 10))).toBe(false)
+  it('falls back to 10 ms, the drift a DJ already sees on the wave, for anything else a file holds', () => {
+    for (const value of [undefined, null, 0, 7, '10', {}]) {
+      expect(normalizeCueGridTolerance(value)).toBe(DEFAULT_CUE_GRID_TOLERANCE)
+    }
+    expect(DEFAULT_CUE_GRID_TOLERANCE).toBe(10)
   })
 })

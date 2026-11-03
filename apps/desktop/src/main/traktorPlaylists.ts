@@ -1,5 +1,5 @@
 import { ALL_TRACKS_ID } from '../shared/allTracks'
-import { cuesOffGrid } from '../shared/cueGrid'
+import { cueGridDrift } from '../shared/cueGrid'
 import { HOT_KINDS } from '../shared/cueRules'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import {
@@ -132,7 +132,7 @@ function entryOf(track: Track | undefined, bootVolume: string): SourcePlaylistEn
   const head = track.block.match(/<ENTRY\b[^>]*>/)?.[0] ?? ''
   const info = track.block.match(/<INFO\b[^>]*>/)?.[0] ?? ''
   const cues = cuesOf(track.block)
-  const offGrid = cuesOffGrid(
+  const drift = cueGridDrift(
     cues.map((c) => c.ms),
     gridBeatsOf(track.block),
   )
@@ -145,7 +145,7 @@ function entryOf(track: Track | undefined, bootVolume: string): SourcePlaylistEn
       title: attr(head, 'TITLE').trim(),
       artist: attr(head, 'ARTIST').trim(),
       durationSec: Number(attr(info, 'PLAYTIME_FLOAT') || attr(info, 'PLAYTIME')) || 0,
-      ...(offGrid ? { offGrid: true } : {}),
+      ...(drift === null ? {} : { gridDriftMs: drift }),
       cues,
     },
   }

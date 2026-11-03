@@ -40,6 +40,7 @@ export const testSettings: Settings = {
   activeCueFlow: 'mix-in',
   cueJumpBars: 16,
   cueQuantize: 'bar',
+  cueGridTolerance: 10,
   cueLettersByTime: true,
   cueFlowToRekordbox: true,
   cueFlowToTraktor: true,

@@ -1719,7 +1719,9 @@
         "title": "Manual editor",
         "jump": "Arrow jump ← →",
         "unit": "In bars",
-        "quantize": "Quantize"
+        "quantize": "Quantize",
+        "gridTolerance": "Grid tolerance",
+        "gridToleranceUnit": "For the Cues off the grid filter"
       },
       "lettersByTime": "Letters in track order",
       "lettersByTimeHint": "A is always the first cue of the track. Turn it off if each letter is a fixed pad for you.",

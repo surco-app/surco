@@ -1,5 +1,6 @@
 import { autoMatchAvailable } from '../../../shared/autoMatch'
 import type { BackupPolicy } from '../../../shared/backupPolicy'
+import type { CueGridTolerance } from '../../../shared/cueGrid'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { normalizeImportFields } from '../../../shared/defaults'
@@ -32,6 +33,7 @@ export interface SyncedDraft {
   activeCueFlow: string
   cueJumpBars: CueJumpBars
   cueQuantize: CueQuantize
+  cueGridTolerance: CueGridTolerance
   cueLettersByTime: boolean
   cueFlowToRekordbox: boolean
   cueFlowToTraktor: boolean
@@ -141,6 +143,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     activeCueFlow: s.activeCueFlow,
     cueJumpBars: s.cueJumpBars,
     cueQuantize: s.cueQuantize,
+    cueGridTolerance: s.cueGridTolerance,
     cueLettersByTime: s.cueLettersByTime,
     cueFlowToRekordbox: s.cueFlowToRekordbox,
     cueFlowToTraktor: s.cueFlowToTraktor,

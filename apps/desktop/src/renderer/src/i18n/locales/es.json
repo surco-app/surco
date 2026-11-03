@@ -1719,7 +1719,9 @@
         "title": "Editor manual",
         "jump": "Salto de las flechas ← →",
         "unit": "En compases",
-        "quantize": "Cuantizar"
+        "quantize": "Cuantizar",
+        "gridTolerance": "Tolerancia de la rejilla",
+        "gridToleranceUnit": "Para el filtro Cues fuera de la rejilla"
       },
       "lettersByTime": "Letras en orden de la pista",
       "lettersByTimeHint": "La A siempre es el primer cue de la pista. Apágalo si cada letra es un pad fijo para ti.",

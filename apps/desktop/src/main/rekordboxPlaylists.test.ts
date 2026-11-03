@@ -289,7 +289,7 @@ describe('readRekordboxPlaylistWithPreview', () => {
 })
 
 describe('readRekordboxPlaylistWithPreview off-grid cues', () => {
-  it('marks the rows whose cues miss the grid rekordbox analysed, so they can be fixed before they fire off the beat', async () => {
+  it('measures how far each row’s cues sit from the grid rekordbox analysed, so the list can show the ones that fire off the beat', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'surco-rbgrid-'))
     const share = join(dir, 'share')
     const beats = Array.from({ length: 400 }, (_, i) => 120 + i * 500)
@@ -332,7 +332,7 @@ describe('readRekordboxPlaylistWithPreview off-grid cues', () => {
     if (!db) throw new Error('fixture did not open')
     const rows = readRekordboxPlaylistWithPreview(db, share, 'p')
     db.close()
-    expect(rows.map((r) => r.preview?.offGrid)).toEqual([undefined, true, undefined])
+    expect(rows.map((r) => r.preview?.gridDriftMs)).toEqual([0, 250, undefined])
   })
 })
 

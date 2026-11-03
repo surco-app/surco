@@ -11,6 +11,7 @@ import {
   MANUAL_CUE_FLOW,
   restoreDefaultFlow,
 } from '../../../../shared/cueFlows'
+import { CUE_GRID_TOLERANCE, normalizeCueGridTolerance } from '../../../../shared/cueGrid'
 import { CUE_JUMP_BARS } from '../../../../shared/cueJump'
 import { CUE_QUANTIZE } from '../../../../shared/cueQuantize'
 import { flowName } from '../../lib/cueFlowName'
@@ -425,6 +426,26 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
                 unit === 'bar' ? tr('editor.cues.quantizeBar') : tr('editor.cues.quantizeBeat')
               }
               label={tr('settings.cueFlows.manual.quantize')}
+            />
+          </div>
+          <div
+            data-search-id="cueFlows.manual.gridTolerance"
+            className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3.5 py-2.5"
+          >
+            <div className="min-w-0">
+              <p className="text-fg">{tr('settings.cueFlows.manual.gridTolerance')}</p>
+              <p className="text-xs text-fg-dim">
+                {tr('settings.cueFlows.manual.gridToleranceUnit')}
+              </p>
+            </div>
+            <SegmentedControl
+              compact
+              options={CUE_GRID_TOLERANCE.map(String)}
+              value={String(synced.cueGridTolerance)}
+              onChange={(ms) => patch('cueGridTolerance', normalizeCueGridTolerance(Number(ms)))}
+              testidPrefix="cue-grid-tolerance"
+              labelFor={(ms) => `${ms} ms`}
+              label={tr('settings.cueFlows.manual.gridTolerance')}
             />
           </div>
           <div

@@ -1,4 +1,12 @@
-export const OFF_GRID_TOLERANCE_MS = 10
+export const CUE_GRID_TOLERANCE = [5, 10, 20] as const
+
+export type CueGridTolerance = (typeof CUE_GRID_TOLERANCE)[number]
+
+export const DEFAULT_CUE_GRID_TOLERANCE: CueGridTolerance = 10
+
+export function normalizeCueGridTolerance(value: unknown): CueGridTolerance {
+  return CUE_GRID_TOLERANCE.find((ms) => ms === value) ?? DEFAULT_CUE_GRID_TOLERANCE
+}
 
 function distanceToBeat(ms: number, beats: number[]): number {
   const last = beats.length - 1
@@ -19,11 +27,7 @@ function distanceToExtended(beyond: number, period: number): number {
   return Math.min(into, period - into)
 }
 
-export function cuesOffGrid(
-  cues: number[],
-  beats: number[],
-  toleranceMs: number = OFF_GRID_TOLERANCE_MS,
-): boolean {
-  if (beats.length < 2) return false
-  return cues.some((ms) => distanceToBeat(ms, beats) > toleranceMs)
+export function cueGridDrift(cues: number[], beats: number[]): number | null {
+  if (beats.length < 2 || cues.length === 0) return null
+  return Math.max(...cues.map((ms) => distanceToBeat(ms, beats)))
 }

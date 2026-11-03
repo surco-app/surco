@@ -243,7 +243,7 @@ describe('readEnginePlaylist', () => {
     db.close()
   })
 
-  it('marks the rows whose hot cues miss Engine’s own beat grid, so they can be fixed before they fire off the beat', async () => {
+  it('measures how far each row’s hot cues sit from Engine’s own beat grid, so the list can show the ones that fire off the beat', async () => {
     const dir = await library({
       tracks: TRACKS,
       playlists: [{ id: 1, title: 'P', parentListId: 0, nextListId: 0 }],
@@ -259,7 +259,7 @@ describe('readEnginePlaylist', () => {
     })
     const db = opened(dir)
     const rows = readEnginePlaylist(db, dir, '1', join(dir, 'art'))
-    expect(rows.map((r) => r.preview?.offGrid)).toEqual([undefined, undefined, true])
+    expect(rows.map((r) => r.preview?.gridDriftMs)).toEqual([undefined, 0, 250])
     db.close()
   })
 

@@ -13,6 +13,7 @@ import {
   MY_FLOW,
   ONE_AT_32,
 } from '../../../../shared/cueFlows'
+import type { CueGridTolerance } from '../../../../shared/cueGrid'
 import type { CueJumpBars } from '../../../../shared/cueJump'
 import type { CueQuantize } from '../../../../shared/cueQuantize'
 import i18n from '../../i18n'
@@ -35,6 +36,7 @@ let last: Pick<
   | 'activeCueFlow'
   | 'cueJumpBars'
   | 'cueQuantize'
+  | 'cueGridTolerance'
   | 'cueLettersByTime'
   | 'cueFlowToRekordbox'
   | 'cueFlowToTraktor'
@@ -57,6 +59,7 @@ function Harness({
     activeCueFlow: active,
     cueJumpBars: 16 as CueJumpBars,
     cueQuantize: 'bar' as CueQuantize,
+    cueGridTolerance: 10 as CueGridTolerance,
     cueLettersByTime: true,
     cueFlowToRekordbox: true,
     cueFlowToTraktor: true,
@@ -481,6 +484,22 @@ describe('CuesTab', () => {
     expect(last?.cueQuantize).toBe('beat')
     expect(screen.getByTestId('cue-quantize-beat')).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByTestId('cue-quantize-beat')).toHaveTextContent('Golpe')
+  })
+
+  it('sets how far a cue may sit from its beat before the list filter calls it off the grid, 10 ms by default', async () => {
+    await i18n.changeLanguage('es')
+    afterTest = () => i18n.changeLanguage('en')
+    render(<Harness />)
+    const card = screen.getByTestId('cue-manual')
+    expect(within(card).getByTestId('cue-grid-tolerance-10')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(within(card).getByTestId('cue-grid-tolerance-20')).toHaveTextContent('20 ms')
+    fireEvent.click(within(card).getByTestId('cue-grid-tolerance-20'))
+    expect(last?.cueGridTolerance).toBe(20)
+    expect(screen.getByTestId('cue-grid-tolerance-20')).toHaveAttribute('aria-pressed', 'true')
+    expect(card).toHaveTextContent('Cues fuera de la rejilla')
   })
 
   it('opens with what Surco learned of the DJ’s marking above the flows, and + only makes a new flow', async () => {

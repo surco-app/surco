@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import { ALL_TRACKS_ID } from '../shared/allTracks'
-import { cuesOffGrid } from '../shared/cueGrid'
+import { cueGridDrift } from '../shared/cueGrid'
 import { engineContentId } from '../shared/engineContent'
 import { mediaUrl } from '../shared/media'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
@@ -12,6 +12,7 @@ import type {
   SourceNode,
   SourcePlaylistEntry,
   SourcePreview,
+  TrackCues,
 } from '../shared/types'
 import { engineCuesOf, readEnginePerformance } from './engineCues'
 import { engineRowFinder } from './engineRepoint'
@@ -218,6 +219,16 @@ function readPlaylistRows(db: EngineDb, id: string): EntityRow[] {
   )
 }
 
+function gridDriftOf(read: TrackCues | null): { gridDriftMs?: number } {
+  const drift = read
+    ? cueGridDrift(
+        read.cues.map((c) => c.ms),
+        read.grid.map((b) => b.ms),
+      )
+    : null
+  return drift === null ? {} : { gridDriftMs: drift }
+}
+
 export function readEnginePlaylist(
   db: EngineDb,
   libraryDir: string,
@@ -249,13 +260,7 @@ export function readEnginePlaylist(
       durationSec: r.length ?? 0,
       ...(cover ? { coverUrl: mediaUrl(cover) } : {}),
       ...(read?.analysed ? {} : { unanalysed: true }),
-      ...(read &&
-      cuesOffGrid(
-        read.cues.map((c) => c.ms),
-        read.grid.map((b) => b.ms),
-      )
-        ? { offGrid: true }
-        : {}),
+      ...gridDriftOf(read),
       cues: (read?.cues ?? []).map(({ ms, kind, color }) => ({ ms, kind, color })),
     }
     return {

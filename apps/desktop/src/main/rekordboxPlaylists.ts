@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path, { resolve } from 'node:path'
 import { ALL_TRACKS_ID } from '../shared/allTracks'
-import { cuesOffGrid } from '../shared/cueGrid'
+import { cueGridDrift } from '../shared/cueGrid'
 import { mediaUrl } from '../shared/media'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import type {
@@ -207,6 +207,15 @@ function gridOf(analysisPath: string): number[] {
   }
 }
 
+function gridDriftOf(analysis: string | null, cues: RowCue[]): { gridDriftMs?: number } {
+  if (!analysis || cues.length === 0) return {}
+  const drift = cueGridDrift(
+    cues.map((c) => c.ms),
+    gridOf(analysis),
+  )
+  return drift === null ? {} : { gridDriftMs: drift }
+}
+
 export function readRekordboxPlaylistWithPreview(
   db: RekordboxDb,
   share: string,
@@ -258,14 +267,7 @@ export function readRekordboxPlaylistWithPreview(
       durationSec: r.Length ?? 0,
       ...(cover ? { coverUrl: mediaUrl(cover) } : {}),
       ...(analysis ? { analysisPath: analysis } : {}),
-      ...(analysis &&
-      rowCues.length > 0 &&
-      cuesOffGrid(
-        rowCues.map((c) => c.ms),
-        gridOf(analysis),
-      )
-        ? { offGrid: true }
-        : {}),
+      ...gridDriftOf(analysis, rowCues),
       cues: rowCues,
     })
   }

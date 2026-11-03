@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../shared/allTracks'
 import { autoMatchAvailable, usableProviders } from '../../shared/autoMatch'
 import { trashLimits } from '../../shared/backupPolicy'
+import { DEFAULT_CUE_GRID_TOLERANCE } from '../../shared/cueGrid'
 import type { CueJumpBars } from '../../shared/cueJump'
 import type { CueQuantize } from '../../shared/cueQuantize'
 import { effectiveMeta } from '../../shared/customFields'
@@ -1825,8 +1826,15 @@ export default function App(): React.JSX.Element {
         const contentId = playlistScope?.contentOf.get(t.id)
         return hasStagedEdits(t) || (contentId !== undefined && unsavedCues.has(contentId))
       },
+      gridTolerance: settings?.cueGridTolerance ?? DEFAULT_CUE_GRID_TOLERANCE,
     }),
-    [settings?.requiredFields, settings?.customFields, playlistScope, unsavedCues],
+    [
+      settings?.requiredFields,
+      settings?.customFields,
+      settings?.cueGridTolerance,
+      playlistScope,
+      unsavedCues,
+    ],
   )
   const filterFactsRef = useRef(filterFacts)
   filterFactsRef.current = filterFacts

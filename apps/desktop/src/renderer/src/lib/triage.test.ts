@@ -13,6 +13,7 @@ import {
   holdOrder,
   matchesFilter,
   matchesSearch,
+  NO_FACTS,
   outsideFilter,
   qualityCounts,
   searchMatcher,
@@ -287,7 +288,7 @@ describe('no cues filter', () => {
 })
 
 describe('cues off the grid filter', () => {
-  const row = (id: string, offGrid: boolean): TrackItem =>
+  const row = (id: string, gridDriftMs?: number): TrackItem =>
     ({
       id,
       status: 'idle',
@@ -296,18 +297,31 @@ describe('cues off the grid filter', () => {
         artist: '',
         durationSec: 300,
         cues: [{ ms: 1000, kind: 1, color: null }],
-        ...(offGrid && { offGrid: true }),
+        ...(gridDriftMs !== undefined && { gridDriftMs }),
       },
     }) as TrackItem
   const tracks = [
-    row('snapped', false),
-    row('drifted', true),
+    row('snapped', 0.4),
+    row('slightly', 11),
+    row('badly', 208),
+    row('gridless'),
     { id: 'loose', status: 'idle' } as TrackItem,
   ]
+  const tolerance = (gridTolerance: number): FilterFacts => ({ ...NO_FACTS, gridTolerance })
+  const off = (facts: FilterFacts) =>
+    tracks
+      .filter((t) => matchesFilter(t, { ...EMPTY_FILTER, attention: 'offGrid' }, facts))
+      .map((t) => t.id)
 
-  it('isolates the library tracks whose cues the DJ app would not fire on the beat', () => {
-    expect(by(tracks, { attention: 'offGrid' }).map((x) => x.id)).toEqual(['drifted'])
-    expect(qualityCounts(tracks).offGrid).toBe(1)
+  it('isolates the library tracks whose cues the DJ app would not fire on the beat, 10 ms out by default', () => {
+    expect(off(NO_FACTS)).toEqual(['slightly', 'badly'])
+    expect(qualityCounts(tracks).offGrid).toBe(2)
+  })
+
+  it('follows the tolerance chosen in the Cues tab, so a DJ who does not hear 11 ms can leave those out', () => {
+    expect(off(tolerance(20))).toEqual(['badly'])
+    expect(qualityCounts(tracks, tolerance(20)).offGrid).toBe(1)
+    expect(off(tolerance(5))).toEqual(['slightly', 'badly'])
   })
 })
 
@@ -393,6 +407,7 @@ describe('filters that read what App knows about a row', () => {
   const facts: FilterFacts = {
     incomplete: (t) => t.id === 'a',
     unsaved: (t) => t.id !== 'a',
+    gridTolerance: 10,
   }
 
   // Which fields are required is a setting, and unsaved cues live in the cue editor's

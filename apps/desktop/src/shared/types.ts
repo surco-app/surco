@@ -1,5 +1,6 @@
 import type { BackupPolicy } from './backupPolicy'
 import type { CueFlow, FlowPhrase, PhraseSection } from './cueFlows'
+import type { CueGridTolerance } from './cueGrid'
 import type { CueJumpBars } from './cueJump'
 import type { CueQuantize } from './cueQuantize'
 import type { StrongPart, WantedCue } from './cueRules'
@@ -235,6 +236,7 @@ export interface Settings {
   activeCueFlow: string
   cueJumpBars: CueJumpBars
   cueQuantize: CueQuantize
+  cueGridTolerance: CueGridTolerance
   cueLettersByTime: boolean
   // Where a flow placed in one program's cue editor is placed too, on the same file.
   cueFlowToRekordbox: boolean
@@ -1176,7 +1178,7 @@ export interface SourcePreview {
   coverUrl?: string
   analysisPath?: string
   unanalysed?: true
-  offGrid?: true
+  gridDriftMs?: number
   cues: RowCue[]
 }
 

@@ -1106,6 +1106,31 @@ describe('cue flows', () => {
     expect(getSettings().cueQuantize).toBe('bar')
   })
 
+  it('flags cues 10 ms off the beat for a settings file from before the tolerance choice, the drift a DJ already sees on the wave', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    expect(getSettings().cueGridTolerance).toBe(10)
+  })
+
+  it('repairs a tolerance the Cues tab does not offer instead of hiding or flooding the off-grid filter', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ cueGridTolerance: 0 }),
+    )
+    expect(getSettings().cueGridTolerance).toBe(10)
+  })
+
+  it('carries the grid tolerance to another Mac with the rest of the cue settings', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({}))
+    setConfigDir(dir)
+    saveSettings({ cueGridTolerance: 20 })
+    const synced = JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf-8'))
+    expect(synced.cueGridTolerance).toBe(20)
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   it('carries the quantize value to another Mac with the flows', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
     const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))

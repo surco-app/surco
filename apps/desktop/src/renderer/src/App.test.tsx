@@ -127,6 +127,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     activeCueFlow: 'mine',
     cueJumpBars: 16,
     cueQuantize: 'bar',
+    cueGridTolerance: 10,
     cueLettersByTime: true,
     cueFlowToRekordbox: true,
     cueFlowToTraktor: true,

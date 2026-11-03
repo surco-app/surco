@@ -1719,7 +1719,9 @@
         "title": "手動エディタ",
         "jump": "矢印キーのジャンプ ← →",
         "unit": "小節単位",
-        "quantize": "クオンタイズ"
+        "quantize": "クオンタイズ",
+        "gridTolerance": "グリッドの許容範囲",
+        "gridToleranceUnit": "「グリッドからずれたキュー」フィルター用"
       },
       "lettersByTime": "文字をトラック順に割り当て",
       "lettersByTimeHint": "A は常にトラックの最初のキューになります。各文字を固定のパッドとして使っている場合はオフにしてください。",

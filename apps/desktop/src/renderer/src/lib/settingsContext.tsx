@@ -8,6 +8,11 @@ import {
   normalizeCueFlows,
 } from '../../../shared/cueFlows'
 import {
+  type CueGridTolerance,
+  DEFAULT_CUE_GRID_TOLERANCE,
+  normalizeCueGridTolerance,
+} from '../../../shared/cueGrid'
+import {
   type CueJumpBars,
   DEFAULT_CUE_JUMP_BARS,
   normalizeCueJumpBars,
@@ -100,6 +105,7 @@ interface ResolvedSettings {
   activeCueFlow: string
   cueJumpBars: CueJumpBars
   cueQuantize: CueQuantize
+  cueGridTolerance: CueGridTolerance
   cueLettersByTime: boolean
   cueFlowToRekordbox: boolean
   cueFlowToTraktor: boolean
@@ -158,6 +164,7 @@ const DEFAULTS: ResolvedSettings = {
   activeCueFlow: DEFAULT_CUE_FLOW_ID,
   cueJumpBars: DEFAULT_CUE_JUMP_BARS,
   cueQuantize: DEFAULT_CUE_QUANTIZE,
+  cueGridTolerance: DEFAULT_CUE_GRID_TOLERANCE,
   cueLettersByTime: true,
   cueFlowToRekordbox: true,
   cueFlowToTraktor: true,
@@ -216,6 +223,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     activeCueFlow,
     cueJumpBars: normalizeCueJumpBars(settings.cueJumpBars),
     cueQuantize: normalizeCueQuantize(settings.cueQuantize),
+    cueGridTolerance: normalizeCueGridTolerance(settings.cueGridTolerance),
     cueLettersByTime: settings.cueLettersByTime !== false,
     cueFlowToRekordbox: settings.cueFlowToRekordbox !== false,
     cueFlowToTraktor: settings.cueFlowToTraktor !== false,

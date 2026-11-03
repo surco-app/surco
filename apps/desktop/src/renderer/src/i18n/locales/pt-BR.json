@@ -1719,7 +1719,9 @@
         "title": "Editor manual",
         "jump": "Salto das setas ← →",
         "unit": "Em compassos",
-        "quantize": "Quantizar"
+        "quantize": "Quantizar",
+        "gridTolerance": "Tolerância da grade",
+        "gridToleranceUnit": "Para o filtro Cues fora da grade"
       },
       "lettersByTime": "Letras na ordem da faixa",
       "lettersByTimeHint": "A é sempre o primeiro cue da faixa. Desligue se cada letra for um pad fixo para você.",

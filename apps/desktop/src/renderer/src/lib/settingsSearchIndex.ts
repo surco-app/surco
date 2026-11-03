@@ -42,6 +42,7 @@ const SETTINGS_IDS: [SettingsTab, string[]][] = [
       'cueFlows.flows',
       'cueFlows.manual.jump',
       'cueFlows.manual.quantize',
+      'cueFlows.manual.gridTolerance',
       'cueFlows.lettersByTime',
     ],
   ],
