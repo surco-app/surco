@@ -642,7 +642,9 @@ export function readCueTree(file: string): Uint8Array | null {
 // Splits a rendered GEOB frame into the three NUL-terminated strings that describe the
 // stored object and the payload itself: past the 10-byte frame header and the encoding
 // byte come MIME type, filename and description.
-function geobParts(rendered: Uint8Array): { description: string; payload: Uint8Array } | null {
+export function geobParts(
+  rendered: Uint8Array,
+): { description: string; payload: Uint8Array } | null {
   let at = 11
   const fields: string[] = []
   for (let field = 0; field < 3; field++) {
