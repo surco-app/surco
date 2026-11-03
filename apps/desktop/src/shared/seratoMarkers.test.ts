@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { markersFromArmored, markersFromGeob } from './seratoMarkers'
+import {
+  markersFromArmored,
+  markersFromGeob,
+  readSeratoTempoMap,
+  readSeratoTempoMapArmored,
+  seratoArmored,
+  seratoGeobBody,
+  seratoPayloadOf,
+  withSeratoCues,
+} from './seratoMarkers'
 import {
   SERATO_AIFF as AIFF,
   SERATO_FLAC as FLAC,
@@ -82,5 +91,175 @@ describe('markersFromArmored', () => {
   it('does not throw on a truncated value', () => {
     for (let n = 0; n < FLAC.length; n += 7)
       expect(() => markersFromArmored(FLAC.slice(0, n))).not.toThrow()
+  })
+})
+
+const hex = (h: string) => Uint8Array.from(h.match(/../g) ?? [], (b) => Number.parseInt(b, 16))
+const PRAY_MP3_TEMPO = hex(
+  '02000001404689a229cf79f60000000100000000000000004060bfefabfa4db03fd0000000000000010000000000000000',
+)
+const PRAY_AIFF_TEMPO = hex(
+  '0200000140468314ec81fdea0000000100000000000000004060bfefe42a9f173fd0000000000000010000000000000000',
+)
+const ascii = (t: string) => Uint8Array.from(t, (c) => c.charCodeAt(0))
+const entry = (name: string, body: number[]) =>
+  Uint8Array.from([...ascii(`${name}\0`), 0, 0, 0, body.length, ...body])
+const concat = (...parts: Uint8Array[]) => Uint8Array.from(parts.flatMap((p) => [...p]))
+const entriesOf = (payload: Uint8Array) => {
+  const out: { name: string; body: Uint8Array }[] = []
+  let at = 2
+  while (at < payload.length) {
+    const end = payload.indexOf(0, at)
+    if (end === at || end === -1) break
+    const len = new DataView(payload.buffer, payload.byteOffset).getUint32(end + 1)
+    out.push({
+      name: String.fromCharCode(...payload.subarray(at, end)),
+      body: payload.subarray(end + 5, end + 5 + len),
+    })
+    at = end + 5 + len
+  }
+  return out
+}
+const cue = (index: number, ms: number, color: number, name = '') => ({ index, ms, color, name })
+
+describe('seratoPayloadOf', () => {
+  it('returns the raw payload from a GEOB body and from an armored value', () => {
+    const fromGeob = seratoPayloadOf(bytes(MP3))
+    const fromArmored = seratoPayloadOf(FLAC)
+    expect(fromGeob?.slice(0, 2)).toEqual(Uint8Array.from([1, 1]))
+    expect(entriesOf(fromGeob as Uint8Array).map((e) => e.name)).toContain('CUE')
+    expect(entriesOf(fromArmored as Uint8Array).map((e) => e.name)).toContain('CUE')
+  })
+
+  it('returns null when the data is not a Markers2 tag', () => {
+    expect(seratoPayloadOf(new Uint8Array())).toBeNull()
+    expect(seratoPayloadOf('not base64 at all ***')).toBeNull()
+  })
+})
+
+describe('withSeratoCues', () => {
+  const cues = [
+    cue(0, 1234, 0xcc0000, 'Intro'),
+    cue(1, 90000, 0x00cc00),
+    cue(2, 4000000000, 0x0000cc, 'Ñandú'),
+  ]
+
+  it('round-trips the cues through the GEOB body Serato reads', () => {
+    const payload = seratoPayloadOf(bytes(MP3))
+    const back = markersFromGeob(seratoGeobBody(withSeratoCues(payload, cues)))
+    expect(back?.cues).toEqual(cues)
+    expect(back?.loops).toEqual(markersFromGeob(bytes(MP3))?.loops)
+  })
+
+  it('keeps every entry that is not a cue byte for byte and in order, so Serato data we do not understand survives', () => {
+    const odd = [
+      entry('FLIP', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
+      entry('BPMLOCK', [1]),
+      entry(
+        'LOOP',
+        [
+          0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0x6e, 0x61, 0x6d,
+          0x65, 0,
+        ],
+      ),
+    ]
+    const payload = concat(
+      Uint8Array.from([1, 1]),
+      entry('COLOR', [0, 1, 2, 3]),
+      entry('CUE', [0, 0, 0, 0, 0, 5, 0, 9, 9, 9, 0, 0, 0]),
+      odd[0],
+      entry('CUE', [0, 1, 0, 0, 0, 6, 0, 9, 9, 9, 0, 0, 0]),
+      odd[2],
+      odd[1],
+      Uint8Array.from([0]),
+    )
+    const result = withSeratoCues(payload, [cue(3, 10, 0xff0000)])
+    const kept = entriesOf(result).filter((e) => e.name !== 'CUE')
+    const original = entriesOf(payload).filter((e) => e.name !== 'CUE')
+    expect(kept).toEqual(original)
+    expect(entriesOf(result).filter((e) => e.name === 'CUE')).toHaveLength(1)
+    expect(result[result.length - 1]).toBe(0)
+  })
+
+  it('removes all cues when given none', () => {
+    const result = withSeratoCues(seratoPayloadOf(bytes(MP3)), [])
+    expect(entriesOf(result).some((e) => e.name === 'CUE')).toBe(false)
+    expect(entriesOf(result).some((e) => e.name === 'LOOP')).toBe(true)
+  })
+
+  it('builds a fresh payload with a white COLOR, the cues and an unlocked BPMLOCK when the file had none', () => {
+    const result = withSeratoCues(null, [cue(0, 500, 0xcc0000, 'A')])
+    expect(entriesOf(result).map((e) => e.name)).toEqual(['COLOR', 'CUE', 'BPMLOCK'])
+    expect(entriesOf(result)[0].body).toEqual(Uint8Array.from([0, 255, 255, 255]))
+    expect(entriesOf(result)[2].body).toEqual(Uint8Array.from([0]))
+    expect(Array.from(entriesOf(result)[1].body)).toEqual([
+      0, 0, 0, 0, 1, 244, 0, 204, 0, 0, 0, 0, 65, 0,
+    ])
+    expect(result[result.length - 1]).toBe(0)
+  })
+})
+
+describe('seratoGeobBody', () => {
+  it('pads to at least 470 bytes with NUL and wraps the base64 in lines of 72 without padding', () => {
+    const body = seratoGeobBody(
+      withSeratoCues(null, [cue(0, 500, 0xcc0000), cue(1, 900, 0x00cc00), cue(2, 1300, 0x0000cc)]),
+    )
+    expect(body.length).toBeGreaterThanOrEqual(470)
+    expect(body.slice(0, 2)).toEqual(Uint8Array.from([1, 1]))
+    const text = String.fromCharCode(...body.subarray(2)).split('\0')[0]
+    expect(text).not.toContain('=')
+    for (const line of text.split('\n')) expect(line.length).toBeLessThanOrEqual(72)
+    expect(text.split('\n').length).toBeGreaterThan(1)
+    expect(String.fromCharCode(...body.subarray(2 + text.length))).toMatch(/^\0+$/)
+  })
+
+  it('grows past 470 when the payload needs it', () => {
+    const many = Array.from({ length: 40 }, (_, i) => cue(i, i * 1000, 0xcc0000, 'name'))
+    const body = seratoGeobBody(withSeratoCues(null, many))
+    expect(body.length).toBeGreaterThan(470)
+    expect(markersFromGeob(body)?.cues).toHaveLength(40)
+  })
+})
+
+describe('seratoArmored', () => {
+  it('produces the FLAC and M4A value that markersFromArmored reads back, wrapped at 72 characters', () => {
+    const cues = [cue(0, 1234, 0xcc0000, 'A'), cue(1, 5678, 0x00cc00)]
+    const value = seratoArmored(withSeratoCues(null, cues))
+    expect(markersFromArmored(value)?.cues).toEqual(cues)
+    expect(value).not.toContain('=')
+    for (const line of value.split('\n')) expect(line.length).toBeLessThanOrEqual(72)
+  })
+})
+
+describe('readSeratoTempoMap', () => {
+  it('reads the first beat and the BPM from a one-marker grid', () => {
+    const mp3 = readSeratoTempoMap(PRAY_MP3_TEMPO)
+    expect(mp3?.firstBeatMs).toBeCloseTo(45075.26, 1)
+    expect(mp3?.bpm).toBeCloseTo(133.998, 3)
+    expect(readSeratoTempoMap(PRAY_AIFF_TEMPO)?.firstBeatMs).toBeCloseTo(45024.08, 1)
+  })
+
+  it('returns null for a grid with several markers because a constant tempo cannot describe it', () => {
+    const two = Uint8Array.from(PRAY_MP3_TEMPO)
+    two[3] = 2
+    expect(readSeratoTempoMap(two)).toBeNull()
+  })
+
+  it('returns null for data that is not a tempo map', () => {
+    expect(readSeratoTempoMap(new Uint8Array())).toBeNull()
+    expect(readSeratoTempoMap(PRAY_MP3_TEMPO.subarray(0, 20))).toBeNull()
+    expect(
+      readSeratoTempoMap(Uint8Array.from([1, 0, 0, 1, ...PRAY_MP3_TEMPO.subarray(4)])),
+    ).toBeNull()
+  })
+})
+
+describe('readSeratoTempoMapArmored', () => {
+  it('reads the tempo map from the FLAC and M4A form', () => {
+    const raw = concat(ascii('application/octet-stream\0\0Serato Tempo Map\0'), PRAY_MP3_TEMPO)
+    const value = btoa(String.fromCharCode(...raw))
+    expect(readSeratoTempoMapArmored(value)?.bpm).toBeCloseTo(133.998, 3)
+    expect(readSeratoTempoMapArmored(FLAC)).toBeNull()
+    expect(readSeratoTempoMapArmored('')).toBeNull()
   })
 })
