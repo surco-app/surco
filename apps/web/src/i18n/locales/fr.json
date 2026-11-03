@@ -1099,6 +1099,8 @@
     "closeDirect": "Téléchargement direct",
     "closeSafeLead": "Tes originaux, à l'abri.",
     "closeSafeRest": "Quand tu changes de format, la copie va dans un dossier séparé. Si la copie remplace l'ancienne dans ta bibliothèque, l'ancienne va à la corbeille ou dans Sauvegardes une fois la nouvelle vérifiée. Notarisé par Apple.",
+    "closeStatsLead": "Sans télémétrie.",
+    "closeStatsRest": "Surco ne sait pas qui l’utilise ni ce que tu fais de ta musique. Les seuls chiffres publics sont les téléchargements, et tu les trouves dans <stats>Statistiques</stats>.",
     "allFeatures": "Voir tout ce qu'il fait →",
     "worksWith": "Compatible avec",
     "heroLede": "Surco convertit tes morceaux, les tague depuis Discogs ou Beatport, vérifie que tes fichiers sans perte le sont vraiment et les dépose dans rekordbox, Traktor, Engine DJ ou Apple Music.",

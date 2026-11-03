@@ -1099,6 +1099,8 @@
     "closeDirect": "Descarga directa",
     "closeSafeLead": "Tus originales, a salvo.",
     "closeSafeRest": "Al cambiar de formato, la copia va a una carpeta aparte. Si la copia sustituye a la vieja en tu biblioteca, la vieja va a la papelera o a Copias después de comprobar la nueva. Notarizado por Apple.",
+    "closeStatsLead": "Sin telemetría.",
+    "closeStatsRest": "Surco no sabe quién lo usa ni qué haces con tu música. Lo único público son las descargas, y las tienes en <stats>Estadísticas</stats>.",
     "allFeatures": "Ver todo lo que hace →",
     "worksWith": "Funciona con",
     "heroLede": "Surco convierte tus pistas, las etiqueta desde Discogs o Beatport, comprueba que el lossless lo sea de verdad y las deja en rekordbox, Traktor, Engine DJ o Apple Music.",

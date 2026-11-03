@@ -1099,6 +1099,8 @@
     "closeDirect": "直接ダウンロード",
     "closeSafeLead": "元のファイルは安全です。",
     "closeSafeRest": "フォーマットを変更するとコピーは別のフォルダに保存されます。コピーがライブラリ内の古いものを置き換える場合、古いファイルは新しいファイルを確認した後でゴミ箱またはバックアップに移されます。Appleによる公証済み。",
+    "closeStatsLead": "テレメトリーなし。",
+    "closeStatsRest": "Surco は誰が使っているかも、あなたが音楽で何をしているかも知りません。公開しているのはダウンロード数だけで、<stats>統計</stats>で確認できます。",
     "allFeatures": "すべての機能を見る →",
     "worksWith": "連携するアプリ",
     "heroLede": "Surcoはトラックを変換し、DiscogsやBeatportからタグを付け、ロスレスが本物か確かめて、rekordbox、Traktor、Engine DJ、Apple Musicに届けます。",
@@ -3084,7 +3086,9 @@
         "group": "go",
         "title": "NAS上の音楽",
         "s": "Mac や Windows から、ネットワークドライブ上の音楽を扱えます。",
-        "body": ["ネットワークドライブに音楽を保存し、SurcoでMacまたはWindowsから操作します。"],
+        "body": [
+          "ネットワークドライブに音楽を保存し、SurcoでMacまたはWindowsから操作します。"
+        ],
         "keywords": "ネットワークSMBサーバードライブWindows",
         "settings": [
           {

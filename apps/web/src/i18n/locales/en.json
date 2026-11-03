@@ -1099,6 +1099,8 @@
     "closeDirect": "Direct download",
     "closeSafeLead": "Your originals, safe.",
     "closeSafeRest": "When you change format, the copy goes to a separate folder. If the copy replaces the old one in your library, the old one goes to the Trash or to Backups once the new one has been checked. Notarized by Apple.",
+    "closeStatsLead": "No telemetry.",
+    "closeStatsRest": "Surco doesn’t know who uses it or what you do with your music. The only public figures are the downloads, and they’re in <stats>Stats</stats>.",
     "allFeatures": "See everything it does →",
     "worksWith": "Works with",
     "heroLede": "Surco converts your tracks, tags them from Discogs or Beatport, checks that your lossless files really are lossless and drops them into rekordbox, Traktor, Engine DJ or Apple Music.",

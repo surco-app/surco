@@ -1099,6 +1099,8 @@
     "closeDirect": "Download direto",
     "closeSafeLead": "Seus originais, em segurança.",
     "closeSafeRest": "Ao mudar de formato, a cópia vai para uma pasta separada. Se a cópia substitui a antiga na sua biblioteca, a antiga vai para a Lixeira ou para Cópias depois de o Surco conferir a nova. Notarizado pela Apple.",
+    "closeStatsLead": "Sem telemetria.",
+    "closeStatsRest": "O Surco não sabe quem o usa nem o que você faz com a sua música. Os únicos números públicos são os downloads, e eles estão em <stats>Estatísticas</stats>.",
     "allFeatures": "Ver tudo o que ele faz →",
     "worksWith": "Funciona com",
     "heroLede": "O Surco converte suas faixas, aplica as tags do Discogs ou do Beatport, confere se o lossless é lossless de verdade e as coloca no rekordbox, Traktor, Engine DJ ou Apple Music.",

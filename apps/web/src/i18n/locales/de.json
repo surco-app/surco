@@ -1099,6 +1099,8 @@
     "closeDirect": "Direkter Download",
     "closeSafeLead": "Deine Originale sind sicher.",
     "closeSafeRest": "Wechselst du das Format, landet die Kopie in einem separaten Ordner. Ersetzt die Kopie die alte in deiner Bibliothek, kommt die alte in den Papierkorb oder unter Backups, nachdem die neue geprüft ist. Von Apple notarisiert.",
+    "closeStatsLead": "Keine Telemetrie.",
+    "closeStatsRest": "Surco weiß nicht, wer es benutzt oder was du mit deiner Musik machst. Öffentlich sind nur die Downloads, und die findest du unter <stats>Statistiken</stats>.",
     "allFeatures": "Alles sehen, was es kann →",
     "worksWith": "Funktioniert mit",
     "heroLede": "Surco konvertiert deine Tracks, taggt sie aus Discogs oder Beatport, prüft, ob deine verlustfreien Dateien wirklich verlustfrei sind, und legt sie in rekordbox, Traktor, Engine DJ oder Apple Music ab.",
