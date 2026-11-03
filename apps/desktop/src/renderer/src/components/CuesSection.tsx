@@ -982,22 +982,24 @@ function Editing({
   const reviewBar = proposals.length > 0 && (
     <div
       data-testid="cues-auto-review"
-      className={`flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border border-[var(--color-accent)]/35 bg-[var(--color-accent)]/10 px-3 py-1.5 text-xs ${
+      className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 rounded-lg border border-[var(--color-accent)]/35 bg-[var(--color-accent)]/10 px-3 py-1.5 text-xs ${
         maximized ? 'shrink-0' : 'mb-2'
       }`}
     >
-      <span className="font-semibold text-fg">
-        {tr('editor.cues.auto.count', { count: proposals.length })}
-      </span>
-      {sureCount > 0 && sureCount < proposals.length && (
-        <span className="text-fg-dim">
-          {tr('editor.cues.batch.confidence', {
-            sure: tr('editor.cues.batch.sure', { count: sureCount }),
-            doubtful: tr('editor.cues.batch.doubtful', { count: proposals.length - sureCount }),
-          })}
+      <span className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <span className="font-semibold text-fg">
+          {tr('editor.cues.auto.count', { count: proposals.length })}
         </span>
-      )}
-      <span className="ml-auto flex items-center gap-3">
+        {sureCount > 0 && sureCount < proposals.length && (
+          <span className="text-fg-dim">
+            {tr('editor.cues.batch.confidence', {
+              sure: tr('editor.cues.batch.sure', { count: sureCount }),
+              doubtful: tr('editor.cues.batch.doubtful', { count: proposals.length - sureCount }),
+            })}
+          </span>
+        )}
+      </span>
+      <span className="flex items-center gap-3">
         <button
           type="button"
           data-testid="cues-auto-accept"
