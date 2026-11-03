@@ -1,6 +1,6 @@
 # Mapa de Serato: lo que el compilador obliga a decidir
 
-Medido el 03/11 tras el bloque 6f añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
+Medido el 03/11 tras el bloque 6g añadiendo `'serato'` a `DjProgram` (y revirtiendo): errores de los tres `tsc`, `fichero:línea código`.
 
 ## Añadidos a mano (el compilador no los ve)
 
@@ -52,15 +52,16 @@ src/main/djProcesses.ts:82 TS2741
 src/main/duplicateReplace.ts:17 TS2345
 src/main/duplicateReplace.ts:66 TS2741
 src/main/duplicateReplace.ts:71 TS2741
-src/main/index.ts:1382 TS2741
+src/main/index.ts:1326 TS2741
+src/main/index.ts:1465 TS2741
+src/main/index.ts:1496 TS2741
+src/main/index.ts:1507 TS2741
 src/main/index.ts:1521 TS2741
-src/main/index.ts:1552 TS2741
-src/main/index.ts:1563 TS2741
-src/main/index.ts:1577 TS2741
-src/main/index.ts:1609 TS2741
-src/main/index.ts:1622 TS2741
-src/main/index.ts:2055 TS2741
-src/main/index.ts:323 TS2741
+src/main/index.ts:1553 TS2741
+src/main/index.ts:1566 TS2741
+src/main/index.ts:1999 TS2741
+src/main/index.ts:325 TS2741
+src/main/index.ts:474 TS2741
 src/main/libraryFileUse.test.ts:104 TS2741
 src/main/libraryFileUse.test.ts:105 TS2741
 src/main/libraryFileUse.test.ts:120 TS2741
@@ -157,6 +158,8 @@ src/main/moments.test.ts:20 TS2741
 src/main/moments.test.ts:33 TS2741
 src/main/processTrack.ts:1154 TS2322
 src/main/processTrack.ts:503 TS2741
+src/main/programQueue.test.ts:42 TS2741
+src/main/programQueue.test.ts:57 TS2345
 src/main/rekordboxBatch.ts:157 TS2741
 src/main/rekordboxBatch.ts:166 TS2741
 src/main/rekordboxCuesIpc.ts:25 TS2345
