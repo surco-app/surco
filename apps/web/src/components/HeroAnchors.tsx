@@ -1,46 +1,39 @@
 import { useTranslation } from 'react-i18next'
+import { HERO_ANCHORS } from '../lib/sceneAnchors'
 import Icon, { type GlyphName } from './Icon'
 
-// The three things Surco does to a track, in the order a visitor needs them: put the
-// metadata on it, improve the audio, hand it to the program they play with. It
-// replaces a forty-word lede that stacked four ideas into one sentence — a paragraph
-// nobody parses in the seconds they spend deciding whether to keep reading. Three
-// rows with one idea each scan without being read.
-//
-// The weighting is the point: tagging is the headline job and carries the accent,
-// the audio work is the "and it also" and stays muted. Flattening them into three
-// equal bullets would say Surco is three tools, which is the confusion this fixes.
-//
-// One line each, not a titled block with its own paragraph: the rows sit under the app
-// window now, three across, so their job is to confirm what the picture just showed
-// rather than to compete with the headline. The full sentences still live in `note`,
-// on the features page.
-const ANCHORS: { key: string; icon: GlyphName; lead?: boolean }[] = [
-  { key: 'tag', icon: 'tag', lead: true },
-  { key: 'audio', icon: 'spectrum' },
-  { key: 'cues', icon: 'cue' },
-  { key: 'export', icon: 'upload' },
-  { key: 'replace', icon: 'convert' },
-  { key: 'review', icon: 'check' },
-]
+const ICONS: Record<(typeof HERO_ANCHORS)[number]['key'], GlyphName> = {
+  quality: 'spectrum',
+  tag: 'tag',
+  export: 'upload',
+}
 
 export default function HeroAnchors() {
   const { t } = useTranslation()
 
   return (
-    <ul className="mx-auto mt-10 grid max-w-5xl gap-4 text-left sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
-      {ANCHORS.map(({ key, icon, lead }) => (
-        <li key={key} className="flex items-start gap-3">
-          <Icon
-            name={icon}
-            className={`mt-0.5 size-[17px] flex-none ${lead ? 'text-blue' : 'text-faint'}`}
-          />
-          <p className="text-[0.9rem] leading-snug">
-            <b className="font-semibold tracking-[-0.005em]">{t(`home.anchors.${key}.lead`)}</b>{' '}
-            <span className="text-faint">{t(`home.anchors.${key}.rest`)}</span>
-          </p>
-        </li>
+    <nav
+      data-testid="hero-anchors"
+      aria-label={t('home.anchors.see')}
+      className="mx-auto mt-8 grid max-w-5xl gap-3 text-left sm:grid-cols-3"
+    >
+      {HERO_ANCHORS.map(({ key, target }) => (
+        <a
+          key={key}
+          href={`#${target}`}
+          data-testid={`hero-anchor-${key}`}
+          className="group flex gap-3 rounded-xl border border-line bg-surface2/60 px-4 py-4 transition-colors hover:border-blue focus-visible:outline-2 focus-visible:outline-blue"
+        >
+          <Icon name={ICONS[key]} className="mt-0.5 size-[17px] flex-none text-blue" />
+          <span className="flex flex-col gap-1">
+            <b className="font-semibold tracking-[-0.005em]">{t(`home.anchors.${key}.lead`)}</b>
+            <span className="text-sm leading-snug text-muted">{t(`home.anchors.${key}.rest`)}</span>
+            <span className="mt-1 text-sm text-blue">
+              {t('home.anchors.see')} <span aria-hidden="true">↓</span>
+            </span>
+          </span>
+        </a>
       ))}
-    </ul>
+    </nav>
   )
 }

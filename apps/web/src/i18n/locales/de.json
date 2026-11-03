@@ -43,8 +43,8 @@
   },
   "hero": {
     "latestRelease": "Neu in {{version}}",
-    "h1a": "Mach deine Tracks bereit,",
-    "h1b": "bevor du sie spielst.",
+    "h1a": "Vom Download",
+    "h1b": "in die Booth, mit einem Klick.",
     "ledeShort": "Konvertieren, taggen, Qualität prüfen und in Apple Music oder Engine DJ ablegen: Wofür du früher vier oder fünf Apps gebraucht hast, erledigt Surco in einer. Statt Minuten pro Track nur noch ein paar Sekunden."
   },
   "features": {
@@ -1128,37 +1128,24 @@
     "closeSafeRest": "Wechselst du das Format, landet die Kopie in einem separaten Ordner. Ersetzt die Kopie die alte in deiner Bibliothek, kommt die alte in den Papierkorb oder unter Backups, nachdem die neue geprüft ist. Von Apple notarisiert.",
     "allFeatures": "Alles sehen, was es kann →",
     "worksWith": "Funktioniert mit",
-    "heroLede": "Wofür du früher vier oder fünf Apps gebraucht hast, erledigt Surco in einer.",
+    "heroLede": "Surco konvertiert deine Tracks, taggt sie aus Discogs oder Beatport, prüft, ob deine verlustfreien Dateien wirklich verlustfrei sind, und legt sie in rekordbox, Traktor, Engine DJ oder Apple Music ab.",
     "anchors": {
+      "see": "So geht’s",
+      "quality": {
+        "lead": "Entlarvt falsches Lossless.",
+        "rest": "Das FLAC, das du gekauft hast, kann ein aufgeblähtes MP3 sein."
+      },
       "tag": {
         "title": "Alle Tags mit einem Klick",
         "note": "Discogs, Bandcamp, Deezer, Beatport und MusicBrainz. Künstler, Label, Jahr, BPM und Cover.",
-        "lead": "Alle Tags mit einem Klick.",
-        "rest": "Discogs, Bandcamp, Deezer, Beatport und MusicBrainz."
-      },
-      "audio": {
-        "title": "Und nebenbei besserer Sound",
-        "note": "Erkennt verlustfreie Dateien, die aus einem MP3 stammen, kürzt Stille, entfernt Knackser und Rauschen von Vinyl und gleicht die Lautstärke an.",
-        "lead": "Und nebenbei besserer Sound.",
-        "rest": "Erkennt verlustfreie Dateien, die aus einem MP3 stammen."
+        "lead": "Tags mit einem Klick.",
+        "rest": "Artist, Label, Jahr, BPM und Cover aus fünf Quellen."
       },
       "export": {
         "title": "Und sie landen in deinem Programm",
         "note": "Apple Music, Engine DJ, rekordbox, Traktor oder Serato. Nichts zu importieren.",
-        "lead": "Und sie landen in deinem Programm.",
-        "rest": "Apple Music, Engine DJ, rekordbox."
-      },
-      "review": {
-        "lead": "Und deine Bibliothek, aufgeräumt.",
-        "rest": "Tippfehler, Schreibweisen und Duplikate."
-      },
-      "cues": {
-        "lead": "Und deine Cues, gesetzt.",
-        "rest": "Markier den Drop, dein Ablauf macht den Rest."
-      },
-      "replace": {
-        "lead": "Und deine Playlists, unberührt.",
-        "rest": "Tausch das MP3 gegen ein AIFF, der Track bleibt drin."
+        "lead": "Direkt in dein Programm.",
+        "rest": "Erscheint in rekordbox, Traktor, Engine DJ oder Apple Music."
       }
     },
     "replace": {

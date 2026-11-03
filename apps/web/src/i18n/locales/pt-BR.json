@@ -43,8 +43,8 @@
   },
   "hero": {
     "latestRelease": "Novidades da {{version}}",
-    "h1a": "Deixe suas faixas prontas",
-    "h1b": "antes de tocá-las.",
+    "h1a": "Do download",
+    "h1b": "para a cabine, em um clique.",
     "ledeShort": "Converter, etiquetar, checar a qualidade e mandar para o Apple Music ou o Engine DJ: o que antes exigia quatro ou cinco apps, o Surco faz em um só. De minutos por faixa para um par de segundos."
   },
   "features": {
@@ -1128,37 +1128,24 @@
     "closeSafeRest": "Ao mudar de formato, a cópia vai para uma pasta separada. Se a cópia substitui a antiga na sua biblioteca, a antiga vai para a Lixeira ou para Cópias depois de o Surco conferir a nova. Notarizado pela Apple.",
     "allFeatures": "Ver tudo o que ele faz →",
     "worksWith": "Funciona com",
-    "heroLede": "O que antes exigia quatro ou cinco apps, o Surco faz em um só.",
+    "heroLede": "O Surco converte suas faixas, aplica as tags do Discogs ou do Beatport, confere se o lossless é lossless de verdade e as coloca no rekordbox, Traktor, Engine DJ ou Apple Music.",
     "anchors": {
+      "see": "Ver como",
+      "quality": {
+        "lead": "Pega o falso lossless.",
+        "rest": "O FLAC que você comprou pode ser um MP3 inflado."
+      },
       "tag": {
         "title": "Todas as tags, em um clique",
         "note": "Discogs, Bandcamp, Deezer, Beatport e MusicBrainz. Artista, selo, ano, BPM e capa.",
-        "lead": "Todas as tags, em um clique.",
-        "rest": "Discogs, Bandcamp, Deezer, Beatport e MusicBrainz."
-      },
-      "audio": {
-        "title": "E um áudio melhor de quebra",
-        "note": "Descobre os arquivos lossless que vieram de um MP3, corta silêncios, limpa clicks e ruído do vinil e nivela o volume.",
-        "lead": "E um áudio melhor de quebra.",
-        "rest": "Descobre os arquivos lossless que vieram de um MP3."
+        "lead": "Tags em um clique.",
+        "rest": "Artista, selo, ano, BPM e capa de cinco fontes."
       },
       "export": {
         "title": "E elas caem no seu programa",
         "note": "Apple Music, Engine DJ, rekordbox, Traktor ou Serato. Nada para importar.",
-        "lead": "E elas caem no seu programa.",
-        "rest": "Apple Music, Engine DJ, rekordbox."
-      },
-      "review": {
-        "lead": "E sua biblioteca, arrumada.",
-        "rest": "Erros, grafias e duplicados."
-      },
-      "cues": {
-        "lead": "E seus cues, no lugar.",
-        "rest": "Marque o drop e seu fluxo faz o resto."
-      },
-      "replace": {
-        "lead": "E suas playlists, intactas.",
-        "rest": "Troque o MP3 por AIFF e ela continua em todas."
+        "lead": "Direto no seu programa.",
+        "rest": "Aparece no rekordbox, Traktor, Engine DJ ou Apple Music."
       }
     },
     "replace": {

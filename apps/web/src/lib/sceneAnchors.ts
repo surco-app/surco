@@ -11,3 +11,9 @@ export const SCENE_ANCHORS = {
   cues: 'cues',
   review: 'biblioteca',
 } as const
+
+export const HERO_ANCHORS = [
+  { key: 'quality', target: SCENE_ANCHORS.quality },
+  { key: 'tag', target: SCENE_ANCHORS.tag },
+  { key: 'export', target: SCENE_ANCHORS.batch },
+] as const

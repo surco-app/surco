@@ -43,8 +43,8 @@
   },
   "hero": {
     "latestRelease": "{{version}} の新機能",
-    "h1a": "トラックの準備を、",
-    "h1b": "プレイの前に。",
+    "h1a": "ダウンロードから",
+    "h1b": "ブースまで、ワンクリック。",
     "ledeShort": "変換、タグ付け、音質チェックから、Apple MusicやEngine DJへの取り込みまで。従来は4〜5つのアプリが必要だった作業を、Surcoなら1つで完了。1トラックあたり数分の作業が、数秒に短縮されます。"
   },
   "features": {
@@ -1128,37 +1128,24 @@
     "closeSafeRest": "フォーマットを変更するとコピーは別のフォルダに保存されます。コピーがライブラリ内の古いものを置き換える場合、古いファイルは新しいファイルを確認した後でゴミ箱またはバックアップに移されます。Appleによる公証済み。",
     "allFeatures": "すべての機能を見る →",
     "worksWith": "連携するアプリ",
-    "heroLede": "4〜5つのアプリが必要だったことを、Surcoは1つで実現します。",
+    "heroLede": "Surcoはトラックを変換し、DiscogsやBeatportからタグを付け、ロスレスが本物か確かめて、rekordbox、Traktor、Engine DJ、Apple Musicに届けます。",
     "anchors": {
+      "see": "詳しく見る",
+      "quality": {
+        "lead": "偽ロスレスを見抜く。",
+        "rest": "買ったFLACが、水増ししたMP3かもしれません。"
+      },
       "tag": {
         "title": "すべてのタグをワンクリックで",
         "note": "Discogs、Bandcamp、Deezer、Beatport、MusicBrainz。アーティスト、レーベル、年、BPM、アートワーク。",
-        "lead": "すべてのタグをワンクリックで。",
-        "rest": "Discogs、Bandcamp、Deezer、Beatport と MusicBrainz。"
-      },
-      "audio": {
-        "title": "音も、まとめて整える",
-        "note": "MP3 からの偽ロスレス音源を検出し、無音部分をトリミングし、レコードのクリックやノイズを除去し、音量を均一化します。",
-        "lead": "音も、まとめて整える。",
-        "rest": "MP3 からの偽ロスレス音源を検出します。"
+        "lead": "タグはワンクリック。",
+        "rest": "アーティスト、レーベル、年、BPM、アートワークを5つのソースから。"
       },
       "export": {
         "title": "いつものアプリへ、そのまま取り込み",
         "note": "Apple Music、Engine DJ、rekordbox、Traktor、Serato へ。インポートは不要です。",
-        "lead": "いつものアプリへ、そのまま取り込み。",
-        "rest": "Apple Music, Engine DJ, rekordbox."
-      },
-      "review": {
-        "lead": "ライブラリも、すっきり整理。",
-        "rest": "誤字、表記ゆれ、重複をまとめて確認。"
-      },
-      "cues": {
-        "lead": "キューも、自動で配置。",
-        "rest": "ドロップを指定すれば、残りはフローが置きます。"
-      },
-      "replace": {
-        "lead": "プレイリストは、そのまま。",
-        "rest": "MP3をAIFFに替えても、すべてのプレイリストに残ります。"
+        "lead": "いつものアプリへ直接。",
+        "rest": "rekordbox、Traktor、Engine DJ、Apple Musicに表示されます。"
       }
     },
     "replace": {
