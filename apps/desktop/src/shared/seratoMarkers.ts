@@ -201,7 +201,12 @@ export function seratoArmored(payload: Uint8Array): string {
   return `${encodeBase64Wrapped(concat([bytesOf(ARMOR_HEADER), seratoGeobBody(payload)]))}\n`
 }
 
-export function readSeratoTempoMap(data: Uint8Array): { firstBeatMs: number; bpm: number } | null {
+export interface SeratoTempoMap {
+  firstBeatMs: number
+  bpm: number
+}
+
+export function readSeratoTempoMap(data: Uint8Array): SeratoTempoMap | null {
   if (data.length < 32 || data[0] !== 2 || data[1] !== 0) return null
   if (((data[2] << 8) | data[3]) !== 1) return null
   const firstBeatMs = f64(data, 4) * 1000
@@ -210,9 +215,7 @@ export function readSeratoTempoMap(data: Uint8Array): { firstBeatMs: number; bpm
   return { firstBeatMs, bpm }
 }
 
-export function readSeratoTempoMapArmored(
-  value: string,
-): { firstBeatMs: number; bpm: number } | null {
+export function readSeratoTempoMapArmored(value: string): SeratoTempoMap | null {
   const armored = decodeBase64(value.replace(/\s/g, ''))
   if (
     !armored ||
