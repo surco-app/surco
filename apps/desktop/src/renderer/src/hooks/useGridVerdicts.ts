@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 import type { GridVerdict } from '../../../shared/gridVerdict'
 
 const WORKERS = 2
 
 const known = new Map<string, GridVerdict | null>()
+const pending = new Set<string>()
 const listeners = new Set<() => void>()
 let version = 0
 
@@ -19,6 +20,7 @@ function subscribe(listener: () => void): () => void {
 
 export function resetGridVerdicts(): void {
   known.clear()
+  pending.clear()
   notify()
 }
 
@@ -31,16 +33,24 @@ export interface GridVerdicts {
 
 export function useGridVerdicts(entries: [string, string][], active: boolean): GridVerdicts {
   const seen = useSyncExternalStore(subscribe, () => version)
+  const ids = useMemo(() => entries.map(([, contentId]) => contentId).join('\n'), [entries])
+  const latest = useRef(entries)
+  latest.current = entries
   useEffect(() => {
-    if (!active) return
+    if (!active || ids === '') return
     let stopped = false
-    const queue = entries.map(([, contentId]) => contentId).filter((id) => !known.has(id))
+    const next = (): string | undefined =>
+      latest.current
+        .map(([, contentId]) => contentId)
+        .find((id) => !known.has(id) && !pending.has(id))
     const work = async (): Promise<void> => {
       for (;;) {
-        const contentId = queue.shift()
-        if (contentId === undefined || stopped) return
-        const verdict = await window.api.rekordboxGridVerdict(contentId).catch(() => null)
         if (stopped) return
+        const contentId = next()
+        if (contentId === undefined) return
+        pending.add(contentId)
+        const verdict = await window.api.rekordboxGridVerdict(contentId).catch(() => null)
+        pending.delete(contentId)
         known.set(contentId, verdict)
         notify()
       }
@@ -49,7 +59,7 @@ export function useGridVerdicts(entries: [string, string][], active: boolean): G
     return () => {
       stopped = true
     }
-  }, [entries, active])
+  }, [ids, active])
   return useMemo(() => {
     const byTrack = new Map(entries)
     return {

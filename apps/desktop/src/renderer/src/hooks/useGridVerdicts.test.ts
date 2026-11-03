@@ -67,4 +67,30 @@ describe('useGridVerdicts', () => {
     await act(async () => release())
     expect(rekordboxGridVerdict).toHaveBeenCalledTimes(asked)
   })
+
+  it('keeps measuring while the list is re-read around it, as rekordbox rows arrive, without losing or repeating a track', async () => {
+    let release: (() => void)[] = []
+    const rekordboxGridVerdict = vi.fn<Api['rekordboxGridVerdict']>(
+      () =>
+        new Promise((resolve) => {
+          release.push(() => resolve(null))
+        }),
+    )
+    installApi({ rekordboxGridVerdict })
+    const { result, rerender } = renderHook(({ list }) => useGridVerdicts(list, true), {
+      initialProps: { list: ENTRIES.map((e) => [...e] as [string, string]) },
+    })
+    await waitFor(() => expect(rekordboxGridVerdict).toHaveBeenCalledTimes(2))
+    rerender({ list: ENTRIES.map((e) => [...e] as [string, string]) })
+    await act(async () => {
+      for (const r of release) r()
+      release = []
+    })
+    await waitFor(() => expect(rekordboxGridVerdict).toHaveBeenCalledTimes(3))
+    await act(async () => {
+      for (const r of release) r()
+    })
+    await waitFor(() => expect(result.current.done).toBe(3))
+    expect(rekordboxGridVerdict).toHaveBeenCalledTimes(3)
+  })
 })
