@@ -314,6 +314,12 @@ export interface Api {
   traktorCueQueueReady: () => Promise<void>
   onTraktorCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
   onTraktorCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
+  seratoCueQueue: () => Promise<RekordboxQueueState>
+  applySeratoCueQueue: () => Promise<RekordboxQueueApplied | null>
+  discardSeratoCueQueue: () => Promise<void>
+  seratoCueQueueReady: () => Promise<void>
+  onSeratoCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
+  onSeratoCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
   traktorCanSave: () => Promise<boolean>
   // The USB export (macOS and Windows). Volumes come by stable identifier; the event feeds
   // the progress list and the toolbar pill, also with the modal closed.

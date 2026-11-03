@@ -2794,6 +2794,7 @@
       "cuesChanged": "Die Cues von {{track}} haben sich in rekordbox geändert. Markiere sie erneut",
       "cuesTooMany": "{{track}} bräuchte mehr als 8 Hot Cues. Entferne eine Markierung",
       "cuesInvalid": "Die Cues von {{track}} wurden nicht gespeichert. Surco konnte sie nicht als Cues lesen",
+      "cuesWriteFailed": "Die Cues von {{track}} wurden nicht gespeichert. Surco konnte die Datei nicht schreiben",
       "cuesAdjusted_one": "rekordbox hat {{track}} analysiert. {{count}} Cue auf sein Raster gerückt, {{maxMs}} ms",
       "cuesAdjusted_other": "rekordbox hat {{track}} analysiert. {{count}} Cues auf sein Raster gerückt, der weiteste {{maxMs}} ms",
       "cuesUnfit_one": "Ein Cue von {{track}} liegt weit von den Schlägen in rekordbox und blieb, wo er war. Prüf ihn",

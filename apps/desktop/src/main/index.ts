@@ -42,7 +42,7 @@ import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
 import { trashLimits } from '../shared/backupPolicy'
 import { activeCueFlow } from '../shared/cueFlows'
-import type { WritableProgram } from '../shared/djProgram'
+import type { CueProgram } from '../shared/djProgram'
 import type { TunedTaste } from '../shared/dropTaste'
 import { errorWithKey } from '../shared/errorKeys'
 import {
@@ -184,6 +184,8 @@ import { registerRekordboxQueueIpc } from './rekordboxQueueIpc'
 import { stillWaiting } from './rekordboxQueueWatch'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
+import { registerSeratoCueQueueIpc } from './seratoCueQueueIpc'
+import { applySeratoCuesBatch } from './seratoCuesWrite'
 import { seratoLibraryRoots } from './seratoLibrary'
 import { registerSeratoPlaylistsIpc } from './seratoPlaylistsIpc'
 import { loadLastSession, saveLastSession } from './session'
@@ -473,7 +475,28 @@ const programQueues = {
     },
     programQueueDeps,
   ),
-} satisfies { [P in WritableProgram]: { program: P } }
+  serato: createProgramQueue(
+    {
+      program: 'serato',
+      queue: {
+        store: fileStore(join(app.getPath('userData'), 'serato-cue-queue.json')),
+        collection: () => join(app.getPath('home'), 'Music', '_Serato_'),
+        applyBatch: (_library, ops, ensureClosed) =>
+          applySeratoCuesBatch(ops, {
+            ensureClosed,
+            tracking: tmpManifest,
+            rewritten: followEngineSize,
+          }),
+        repoint: async () => [],
+        nodeStamps: async () => ({}),
+        onChange: (state) => broadcast('serato:cueQueueChanged', state),
+        addsTracks: false,
+      },
+      appliedChannel: 'serato:cueQueueApplied',
+    },
+    programQueueDeps,
+  ),
+} satisfies { [P in CueProgram]: { program: P } }
 const rekordboxQueue = programQueues.rekordbox.queue
 const announceApplied = programQueues.rekordbox.announceApplied
 const rekordboxQueueWatch = programQueues.rekordbox.watch
@@ -488,6 +511,8 @@ const traktorCueQueueWatch = programQueues.traktor.watch
 // failed: written as soon as Traktor is closed, without asking again. Held for a drive that
 // is unplugged, nothing is tried: the watch waits for the collection to be back.
 const applyTraktorCueQueueQuietly = programQueues.traktor.applyQuietly
+const seratoCueQueue = programQueues.serato.queue
+const seratoCueQueueWatch = programQueues.serato.watch
 const provisionalCues = createProvisionalList(
   fileStore(join(app.getPath('userData'), 'rekordbox-provisional.json')),
   () => rekordboxQueueWatch.poke(),
@@ -785,12 +810,17 @@ function createWindow(): BrowserWindow {
     batchOpen: rekordboxBatchOpen,
     exporting: () => usbExport?.busy() ?? false,
     settle: () => usbExport?.stop() ?? Promise.resolve(),
-    writing: () => rekordboxQueue.busy() || engineCueQueue.busy() || traktorCueQueue.busy(),
+    writing: () =>
+      rekordboxQueue.busy() ||
+      engineCueQueue.busy() ||
+      traktorCueQueue.busy() ||
+      seratoCueQueue.busy(),
     finishWriting: () =>
       Promise.all([
         rekordboxQueue.settled(),
         engineCueQueue.settled(),
         traktorCueQueue.settled(),
+        seratoCueQueue.settled(),
       ]).then(() => undefined),
     unsavedCues: () => unsavedCueTracks.size,
     confirm: async (running, exporting, unsavedCues) => {
@@ -1357,6 +1387,10 @@ function registerIpc(): void {
       applyQuietly: applyTraktorCueQueueAsking,
       words: cachedCueWaveWords,
     },
+    serato: {
+      queue: seratoCueQueue,
+      applyQuietly: () => programQueues.serato.applyQuietly(),
+    },
   })
   registerCueTasteIpc({
     taste: cueTaste,
@@ -1379,6 +1413,11 @@ function registerIpc(): void {
     beginMoment: (reason) => moments.begin(reason, ['traktor']),
     onSettled: (result) => queueChecks.settled('traktor', result),
     onDiscarded: () => queueChecks.discarded('traktor'),
+  })
+  registerSeratoCueQueueIpc(seratoCueQueue, {
+    isRunning: DJ_PROCESSES.serato.isRunning,
+    onWaiting: seratoCueQueueWatch.poke,
+    onReady: seratoCueQueueWatch.poke,
   })
   ipcMain.handle('traktor:canSave', () => traktorWritePath() !== '')
   registerTraktorPlaylistEditIpc({

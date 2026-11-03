@@ -341,6 +341,21 @@ const api: Api = {
     ipcRenderer.on('traktor:cueQueueApplied', listener)
     return () => ipcRenderer.removeListener('traktor:cueQueueApplied', listener)
   },
+  seratoCueQueue: (): Promise<RekordboxQueueState> => ipcRenderer.invoke('serato:cueQueue'),
+  applySeratoCueQueue: (): Promise<RekordboxQueueApplied | null> =>
+    ipcRenderer.invoke('serato:applyCueQueue'),
+  discardSeratoCueQueue: (): Promise<void> => ipcRenderer.invoke('serato:discardCueQueue'),
+  seratoCueQueueReady: (): Promise<void> => ipcRenderer.invoke('serato:cueQueueReady'),
+  onSeratoCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => {
+    const listener = (_e: unknown, state: RekordboxQueueState): void => cb(state)
+    ipcRenderer.on('serato:cueQueueChanged', listener)
+    return () => ipcRenderer.removeListener('serato:cueQueueChanged', listener)
+  },
+  onSeratoCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => {
+    const listener = (_e: unknown, applied: RekordboxQueueApplied): void => cb(applied)
+    ipcRenderer.on('serato:cueQueueApplied', listener)
+    return () => ipcRenderer.removeListener('serato:cueQueueApplied', listener)
+  },
   traktorCanSave: (): Promise<boolean> => ipcRenderer.invoke('traktor:canSave'),
   usbVolumes: (): Promise<UsbVolumeList> => ipcRenderer.invoke('usb:volumes'),
   onUsbVolumesChanged: (cb: (list: UsbVolumeList) => void) => {

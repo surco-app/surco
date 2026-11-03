@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CUE_PROGRAMS,
   DJ_PROGRAMS,
   isWritable,
   programOf,
@@ -67,5 +68,11 @@ describe('RAIL_PROGRAMS', () => {
 describe('isWritable', () => {
   it('answers yes for the programs Surco writes to and no for Serato', () => {
     expect(DJ_PROGRAMS.filter(isWritable)).toEqual(['rekordbox', 'traktor', 'engine'])
+  })
+})
+
+describe('CUE_PROGRAMS', () => {
+  it('saves cues to rekordbox, Engine, Traktor and then Serato, the four Surco writes cues to', () => {
+    expect(CUE_PROGRAMS).toEqual(['rekordbox', 'engine', 'traktor', 'serato'])
   })
 })

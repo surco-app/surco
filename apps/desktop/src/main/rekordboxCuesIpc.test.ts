@@ -1133,14 +1133,28 @@ describe('rekordbox:cueTwins', () => {
 
 describe('registerRekordboxCuesIpc for Serato tracks', () => {
   const ID = 'serato:/Music/gone/s.mp3'
+  const saveOf = (contentId: string) => ({
+    contentId,
+    path: '/Music/gone/s.mp3',
+    label: 's',
+    wanted: [{ ms: 1000, kind: 1, color: null }],
+    fingerprint: 'f',
+  })
 
-  function register() {
+  function register(serato = queue()) {
+    const order: string[] = []
+    const track = (name: string) =>
+      vi.fn<RekordboxQueue['enqueue']>(() => {
+        order.push(name)
+      })
     const queues = {
-      rekordbox: queue({ cuesOp: () => savedOp() }),
+      rekordbox: queue({ cuesOp: () => savedOp(), enqueue: track('rekordbox') }),
       engine: queue(),
       traktor: queue(),
+      serato: { ...serato, enqueue: track('serato') },
     }
     const beginMoment = vi.fn()
+    const applySerato = quietly()
     const words = vi.fn(async () => new Uint16Array([5, 6]))
     registerRekordboxCuesIpc({
       collection: () => '/c/master.db',
@@ -1165,8 +1179,9 @@ describe('registerRekordboxCuesIpc for Serato tracks', () => {
         applyQuietly: quietly(),
         words: async () => null,
       },
+      serato: { queue: queues.serato, applyQuietly: applySerato },
     })
-    return { queues, beginMoment, words }
+    return { queues, beginMoment, words, applySerato, order }
   }
 
   it('reads a Serato row from its own file, answering nothing when the file is gone', async () => {
@@ -1180,25 +1195,37 @@ describe('registerRekordboxCuesIpc for Serato tracks', () => {
     expect(words).toHaveBeenCalledWith('/Music/gone/s.mp3')
   })
 
-  it('never queues a Serato track’s cues anywhere, since Surco does not write to Serato yet', async () => {
-    const { queues, beginMoment } = register()
-    await handler('rekordbox:saveCues')({ sender: {} }, [
-      {
-        contentId: ID,
-        path: '/Music/gone/s.mp3',
-        label: 's',
-        wanted: [{ ms: 1000, kind: 1, color: null }],
-        fingerprint: 'f',
-      },
-    ])
-    for (const q of Object.values(queues)) expect(q.enqueue).not.toHaveBeenCalled()
+  it('queues a Serato track’s cues on the Serato queue and writes them quietly, with no library copy moment, since the file keeps its own original', async () => {
+    const { queues, beginMoment, applySerato } = register()
+    await handler('rekordbox:saveCues')({ sender: {} }, [saveOf(ID)])
+    expect(
+      vi.mocked(queues.serato.enqueue).mock.calls[0][0].map((o) => (o as CuesOp).contentId),
+    ).toEqual([ID])
+    for (const q of [queues.rekordbox, queues.engine, queues.traktor])
+      expect(q.enqueue).not.toHaveBeenCalled()
+    expect(applySerato).toHaveBeenCalled()
     expect(beginMoment).not.toHaveBeenCalled()
   })
 
-  it('has nothing queued or to take back for a Serato track, even when rekordbox holds a save', async () => {
-    const { queues } = register()
-    expect(await handler('rekordbox:queuedCues')({}, ID)).toBeNull()
+  it('saves Serato after the other programs in one Save all, and opens the copy moment only for those with a library', async () => {
+    const { order, beginMoment } = register()
+    await handler('rekordbox:saveCues')({ sender: {} }, [saveOf(ID), saveOf('103')])
+    expect(order).toEqual(['rekordbox', 'serato'])
+    expect(beginMoment).toHaveBeenCalledWith('cues', ['rekordbox'])
+  })
+
+  it('shows and takes back a Serato save from the Serato queue, and never the rekordbox one', async () => {
+    const wanted = [{ id: '0', ms: 8000, kind: 1, color: 22 }]
+    const drop = vi.fn<RekordboxQueue['drop']>()
+    const { queues } = register(
+      queue({
+        cuesOp: (id) => (id === ID ? savedOp({ id: 's1', contentId: ID, wanted }) : undefined),
+        drop,
+      }),
+    )
+    expect(await handler('rekordbox:queuedCues')({}, ID)).toEqual({ wanted, fingerprint: 'F1' })
     await handler('rekordbox:undoCues')({}, ID)
-    for (const q of Object.values(queues)) expect(q.drop).not.toHaveBeenCalled()
+    expect(drop).toHaveBeenCalledWith('s1')
+    expect(queues.rekordbox.drop).not.toHaveBeenCalled()
   })
 })

@@ -2794,6 +2794,7 @@
       "cuesChanged": "Los cues de {{track}} cambiaron en rekordbox. Vuelve a marcarlos",
       "cuesTooMany": "{{track}} necesitaría más de 8 hot cues. Quita una marca",
       "cuesInvalid": "No se guardaron los cues de {{track}}. Surco no pudo leerlos como cues",
+      "cuesWriteFailed": "No se guardaron los cues de {{track}}. Surco no pudo escribir el fichero",
       "cuesAdjusted_one": "rekordbox ya ha analizado {{track}}. {{count}} cue ajustado a su rejilla, {{maxMs}} ms",
       "cuesAdjusted_other": "rekordbox ya ha analizado {{track}}. {{count}} cues ajustados a su rejilla, el que más {{maxMs}} ms",
       "cuesUnfit_one": "Un cue de {{track}} cae lejos de los golpes de rekordbox y se ha dejado donde estaba. Revísalo",

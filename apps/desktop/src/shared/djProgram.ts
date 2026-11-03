@@ -6,11 +6,20 @@ export type DjProgram = 'rekordbox' | 'traktor' | 'engine' | 'serato'
 
 export type WritableProgram = Exclude<DjProgram, 'serato'>
 
+export type CueProgram = DjProgram
+
 export const DJ_PROGRAMS = programsInOrder(['rekordbox', 'traktor', 'engine', 'serato'])
 
 export const WRITABLE_PROGRAMS = writableInOrder(['rekordbox', 'traktor', 'engine'])
 
 export const RAIL_PROGRAMS = programsInOrder(['rekordbox', 'engine', 'traktor', 'serato'])
+
+export const CUE_PROGRAMS: readonly CueProgram[] = programsInOrder([
+  'rekordbox',
+  'engine',
+  'traktor',
+  'serato',
+])
 
 type AllOf<T extends readonly DjProgram[]> = [Exclude<DjProgram, T[number]>] extends [never]
   ? unknown

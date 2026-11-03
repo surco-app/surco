@@ -1,4 +1,4 @@
-import type { WritableProgram } from '../shared/djProgram'
+import { type CueProgram, isWritable, type WritableProgram } from '../shared/djProgram'
 import type { CopyReason } from '../shared/types'
 import type { RekordboxRepoint } from './rekordboxBatch'
 import {
@@ -15,7 +15,7 @@ type Serial = <T>(task: () => Promise<T>) => Promise<T>
 
 export interface ProgramQueueSpec<
   R extends QueuedRepoint = RekordboxRepoint,
-  P extends WritableProgram = WritableProgram,
+  P extends CueProgram = CueProgram,
 > {
   program: P
   queue: QueueDeps<R>
@@ -29,12 +29,12 @@ export interface ProgramQueueDeps {
   settled: (program: WritableProgram, result: QueueApply | 'threw') => void
   moments: { begin: (reason: CopyReason, programs?: readonly WritableProgram[]) => void }
   serial: Serial
-  processes: Record<WritableProgram, { isRunning: () => Promise<boolean> }>
+  processes: Record<CueProgram, { isRunning: () => Promise<boolean> }>
 }
 
 export interface ProgramQueue<
   R extends QueuedRepoint = RekordboxRepoint,
-  P extends WritableProgram = WritableProgram,
+  P extends CueProgram = CueProgram,
 > {
   program: P
   queue: RekordboxQueue<R>
@@ -45,22 +45,25 @@ export interface ProgramQueue<
 
 export function createProgramQueue<
   R extends QueuedRepoint = RekordboxRepoint,
-  P extends WritableProgram = WritableProgram,
+  P extends CueProgram = CueProgram,
 >(spec: ProgramQueueSpec<R, P>, deps: ProgramQueueDeps): ProgramQueue<R, P> {
   const { program } = spec
   const collection = spec.queue.collection
   const queue = createRekordboxQueue<R>(spec.queue)
+  const settled = (result: QueueApply | 'threw'): void => {
+    if (isWritable(program)) deps.settled(program, result)
+  }
   const announceApplied = (result: QueueApply): void => {
     const notice = appliedNotice(result)
     if (notice) deps.broadcast(spec.appliedChannel, notice)
-    deps.settled(program, result)
+    settled(result)
   }
   const watch = watchRekordboxQueue({
     queue: {
       isEmpty: () => queue.isEmpty(),
       apply: (ensureClosed) =>
         deps.serial(() => {
-          deps.moments.begin('queue', [program])
+          if (isWritable(program)) deps.moments.begin('queue', [program])
           return queue.apply(ensureClosed)
         }),
     },
@@ -80,7 +83,7 @@ export function createProgramQueue<
         announceApplied(result)
         if (stillWaiting(result)) watch.poke()
       },
-      () => deps.settled(program, 'threw'),
+      () => settled('threw'),
     )
   }
   return { program, queue, watch, applyQuietly, announceApplied }

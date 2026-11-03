@@ -2794,6 +2794,7 @@
       "cuesChanged": "Les cues de {{track}} ont changé dans rekordbox. Marque-les à nouveau",
       "cuesTooMany": "{{track}} aurait besoin de plus de 8 hot cues. Retirez une marque",
       "cuesInvalid": "Les cues de {{track}} n'ont pas été enregistrés. Surco n'a pas pu les lire comme des cues",
+      "cuesWriteFailed": "Les cues de {{track}} n'ont pas été enregistrés. Surco n'a pas pu écrire le fichier",
       "cuesAdjusted_one": "rekordbox a analysé {{track}}. {{count}} cue calé sur sa grille, {{maxMs}} ms",
       "cuesAdjusted_other": "rekordbox a analysé {{track}}. {{count}} cues calés sur sa grille, le plus éloigné de {{maxMs}} ms",
       "cuesUnfit_one": "Un cue de {{track}} tombe loin des temps de rekordbox et a été laissé en place. Vérifiez-le",

@@ -3,6 +3,7 @@ import type { LibraryRepointResult } from './libraryRepointFlush'
 import { createProgramQueue, type ProgramQueueDeps, type ProgramQueueSpec } from './programQueue'
 import type { RekordboxRepoint } from './rekordboxBatch'
 import type { QueueDeps } from './rekordboxQueue'
+import type { CuesOp } from './rekordboxQueueOps'
 
 vi.mock('electron-log/main', () => ({ default: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }))
 
@@ -39,6 +40,7 @@ function setup(over: Partial<ProgramQueueSpec<RekordboxRepoint>> = {}) {
       rekordbox: { isRunning: async () => false },
       traktor: { isRunning: async () => false },
       engine: { isRunning: vi.fn(async () => running.now) },
+      serato: { isRunning: vi.fn(async () => running.now) },
     } satisfies ProgramQueueDeps['processes'],
   }
   const spec: ProgramQueueSpec<RekordboxRepoint> = {
@@ -199,5 +201,54 @@ describe('createProgramQueue', () => {
     pq.watch.poke()
     await vi.advanceTimersByTimeAsync(10000)
     expect(deps.processes.engine.isRunning).not.toHaveBeenCalled()
+  })
+
+  it('writes Serato saves only once Serato is closed, without asking it to quit, and outside the library copy moments and checks', async () => {
+    const applyBatch = vi.fn<QueueDeps['applyBatch']>(async (_c, ops, ensureClosed) => {
+      if (!(await ensureClosed())) return { ok: false, reason: 'cancelled' }
+      return {
+        ok: true,
+        wrote: true,
+        outcomes: ops.map((o) => ({ id: o.id, applied: true, notices: [] })),
+      }
+    })
+    const { pq, deps, running } = setup({
+      program: 'serato',
+      appliedChannel: 'serato:cueQueueApplied',
+      queue: {
+        store: { read: () => null, write: () => {}, setAside: () => {} },
+        collection: () => '/Users/dj/Music/_Serato_',
+        applyBatch,
+        repoint: async () => [],
+        nodeStamps: async () => ({}),
+        onChange: () => {},
+        addsTracks: false,
+      },
+    })
+    const save: CuesOp = {
+      id: 'c1',
+      kind: 'cues',
+      contentId: 'serato:/m/a.wav',
+      path: '/m/a.wav',
+      label: 'a',
+      wanted: [],
+      fingerprint: 'F',
+    }
+    pq.queue.enqueue([save])
+    pq.applyQuietly()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(pq.queue.isEmpty()).toBe(false)
+    expect(deps.processes.serato.isRunning).toHaveBeenCalled()
+    running.now = false
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(pq.queue.isEmpty()).toBe(true)
+    expect(deps.broadcast).toHaveBeenCalledWith(
+      'serato:cueQueueApplied',
+      expect.objectContaining({ tracks: 1 }),
+    )
+    expect(deps.moments.begin).not.toHaveBeenCalled()
+    expect(deps.settled).not.toHaveBeenCalled()
+    expect(deps.processes.engine.isRunning).not.toHaveBeenCalled()
+    pq.watch.stop()
   })
 })

@@ -1263,6 +1263,7 @@ export type RekordboxQueueNotice =
         | 'cues-changed'
         | 'cues-too-many'
         | 'cues-invalid'
+        | 'cues-write-failed'
         | 'cues-slot-dropped'
         | 'not-in-library'
       track: string

@@ -2794,6 +2794,7 @@
       "cuesChanged": "{{track}} のキューが rekordbox で変更されました。もう一度マークしてください",
       "cuesTooMany": "{{track}} はホットキューが 8 個を超えてしまいます。マークを 1 つ削除してください",
       "cuesInvalid": "{{track}} のキューは保存されませんでした。Surco がキューとして読み取れませんでした",
+      "cuesWriteFailed": "{{track}} のキューは保存されませんでした。Surco がファイルに書き込めませんでした",
       "cuesAdjusted_one": "rekordbox が {{track}} を解析しました。{{count}} 個のキューをグリッドに合わせて移動しました（{{maxMs}} ms）",
       "cuesAdjusted_other": "rekordbox が {{track}} を解析しました。{{count}} 個のキューをグリッドに合わせて移動しました（最大 {{maxMs}} ms）",
       "cuesUnfit_one": "{{track}} のキュー 1 個が rekordbox のビートから離れているため、そのままにしました。確認してください",

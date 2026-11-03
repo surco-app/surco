@@ -122,7 +122,11 @@ function lameMp3(): string {
 }
 
 const source = (words = vi.fn(async (_file: string) => new Uint16Array([3, 9]))) =>
-  seratoCueSource({ words })
+  seratoCueSource({
+    words,
+    queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
+    applyQuietly: vi.fn(),
+  })
 
 describe('seratoCueSource', () => {
   it('shows the eight hot cues Serato saved in the file, on the A to H buttons with their colours', async () => {
@@ -253,10 +257,13 @@ describe('seratoCueSource', () => {
     expect(words).toHaveBeenCalledWith('/Music/a.mp3')
   })
 
-  it('has nothing to save to, so a Serato track can never be written', () => {
-    const reader = source()
-    expect('queue' in reader).toBe(false)
-    expect('applyQuietly' in reader).toBe(false)
+  it('saves through the Serato queue it is given, so a save waits for Serato to close', () => {
+    const queue = { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() }
+    const applyQuietly = vi.fn()
+    const writer = seratoCueSource({ words: async () => null, queue, applyQuietly })
+    expect(writer.queue).toBe(queue)
+    writer.applyQuietly(null)
+    expect(applyQuietly).toHaveBeenCalled()
   })
 
   it('never changes the file it reads', async () => {

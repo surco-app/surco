@@ -4,7 +4,7 @@ import { nearestHotCueColor } from '../shared/rekordboxCueColors'
 import { seratoFileOf } from '../shared/seratoContent'
 import type { SeratoCue, SeratoTempoMap } from '../shared/seratoMarkers'
 import type { TrackCueRow } from '../shared/types'
-import type { CueReader } from './cueSource'
+import type { CueQueue, CueSource } from './cueSource'
 import { cueFingerprint } from './rekordboxCues'
 import { seratoLeadOfFile } from './seratoClock'
 import { readSeratoTrack } from './seratoTags'
@@ -41,7 +41,9 @@ export function seratoCueRows(cues: SeratoCue[], leadMs: number): TrackCueRow[] 
 
 export function seratoCueSource(host: {
   words: (file: string) => Promise<Uint16Array | null>
-}): CueReader {
+  queue: CueQueue
+  applyQuietly: () => void
+}): CueSource {
   return {
     trackCues: async (contentId) => {
       const file = seratoFileOf(contentId)
@@ -75,5 +77,8 @@ export function seratoCueSource(host: {
     surcoGrid: async () => null,
     gridFit: async () => null,
     gridVerdict: async () => null,
+    queuedWanted: async () => [],
+    queue: host.queue,
+    applyQuietly: host.applyQuietly,
   }
 }

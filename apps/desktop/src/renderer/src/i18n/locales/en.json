@@ -2794,6 +2794,7 @@
       "cuesChanged": "The cues of {{track}} changed in rekordbox. Mark them again",
       "cuesTooMany": "{{track}} would need more than 8 hot cues. Remove a mark",
       "cuesInvalid": "The cues of {{track}} were not saved. Surco could not read them as cues",
+      "cuesWriteFailed": "The cues of {{track}} were not saved. Surco could not write the file",
       "cuesAdjusted_one": "rekordbox has analysed {{track}}. {{count}} cue moved onto its grid, {{maxMs}} ms",
       "cuesAdjusted_other": "rekordbox has analysed {{track}}. {{count}} cues moved onto its grid, the furthest {{maxMs}} ms",
       "cuesUnfit_one": "One cue of {{track}} sits far from rekordbox’s beats and was left where it was. Check it",

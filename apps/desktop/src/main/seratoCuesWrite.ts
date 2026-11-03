@@ -2,12 +2,16 @@ import { constants as fsConstants } from 'node:fs'
 import { copyFile, stat } from 'node:fs/promises'
 import { extname } from 'node:path'
 import log from 'electron-log/main'
+import { HOT_KINDS, validWantedSet, type WantedCue } from '../shared/cueRules'
+import { hotCueArgb, nearestHotCueColor } from '../shared/rekordboxCueColors'
+import { seratoFileOf } from '../shared/seratoContent'
 import { type SeratoCue, withSeratoCues } from '../shared/seratoMarkers'
-import type { TrashEntry } from '../shared/types'
+import type { RekordboxQueueNotice, TrashEntry } from '../shared/types'
 import { assertDecodable, convertTmpPath } from './ffmpeg'
 import { dropTemp, type Rewritten, type TmpTracking } from './musicFieldWrite'
 import { discardBackup, hasOriginalKeeper, keepOriginal } from './originalKeeper'
 import { cueFingerprint } from './rekordboxCues'
+import type { BatchResult, OpOutcome, QueueOp } from './rekordboxQueueOps'
 import { renameWithRetry } from './renameRetry'
 import { seratoLeadOfFile } from './seratoClock'
 import { seratoCueRows } from './seratoCueSource'
@@ -63,5 +67,77 @@ export async function writeSeratoCues(
     if (archived) await discardBackup(archived).catch(() => undefined)
     await dropTemp(tmp, tracking)
     return 'failed'
+  }
+}
+
+const surcoColorOf = (rgb: number): number => nearestHotCueColor((0xff000000 | rgb) >>> 0)
+
+function seratoCueOf(wanted: WantedCue, was: SeratoCue[]): SeratoCue {
+  const before = was.find((c) => String(c.index) === wanted.id)
+  const kept = before && wanted.color !== null && surcoColorOf(before.color) === wanted.color
+  return {
+    index: HOT_KINDS.indexOf(wanted.kind),
+    ms: wanted.ms,
+    color: kept ? before.color : hotCueArgb(wanted.color) & 0xffffff,
+    name: before?.name ?? '',
+  }
+}
+
+const sameCues = (a: SeratoCue[], b: SeratoCue[]): boolean => {
+  const byIndex = (cues: SeratoCue[]) => [...cues].sort((x, y) => x.index - y.index)
+  return JSON.stringify(byIndex(a)) === JSON.stringify(byIndex(b))
+}
+
+async function applySeratoOp(
+  op: QueueOp,
+  deps: SeratoWriteDeps,
+): Promise<{ outcome: OpOutcome; wrote: boolean }> {
+  const refused = (code: 'cues-changed' | 'cues-invalid' | 'cues-write-failed') => ({
+    outcome: {
+      id: op.id,
+      applied: false,
+      notices: [{ code, track: op.kind === 'edit' ? '' : op.label }],
+    },
+    wrote: false,
+  })
+  if (op.kind !== 'cues' || op.wanted === undefined || op.grid) return refused('cues-invalid')
+  const file = seratoFileOf(op.contentId)
+  const track = readSeratoTrack(file)
+  if (!track) return refused('cues-write-failed')
+  const lead = await seratoLeadOfFile(file, track.sampleRate)
+  const was = track.markers?.cues ?? []
+  const rows = seratoCueRows(was, lead)
+  if (cueFingerprint(rows) !== op.fingerprint) return refused('cues-changed')
+  const valid = validWantedSet(op.wanted, rows)
+  if (!valid.ok) {
+    log.warn(`Serato cues: refused the queued set for ${op.contentId} (${valid.reason})`)
+    return refused('cues-invalid')
+  }
+  const calls = op.wanted.filter((c) => c.kind === 0).map((c) => c.ms)
+  const notices: RekordboxQueueNotice[] =
+    calls.length > 0 ? [{ code: 'cues-calls-dropped', track: op.label, calls }] : []
+  const cues = op.wanted.filter((c) => c.kind !== 0).map((c) => seratoCueOf(c, was))
+  const onSurcoClock = was
+    .filter((c) => c.index < HOT_KINDS.length)
+    .map((c) => ({ ...c, ms: c.ms - lead }))
+  const applied = { outcome: { id: op.id, applied: true, notices }, wrote: true }
+  if (sameCues(cues, onSurcoClock)) return { ...applied, wrote: false }
+  const result = await writeSeratoCues(file, cues, op.fingerprint, deps)
+  if (result === 'changed') return refused('cues-changed')
+  if (result === 'failed') return refused('cues-write-failed')
+  return applied
+}
+
+export async function applySeratoCuesBatch(
+  ops: QueueOp[],
+  deps: SeratoWriteDeps & { ensureClosed: () => Promise<boolean> },
+): Promise<BatchResult> {
+  if (!(await deps.ensureClosed())) return { ok: false, reason: 'cancelled' }
+  const results = []
+  for (const op of ops) results.push(await applySeratoOp(op, deps))
+  return {
+    ok: true,
+    wrote: results.some((r) => r.wrote),
+    outcomes: results.map((r) => r.outcome),
   }
 }

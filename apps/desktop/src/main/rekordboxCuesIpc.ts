@@ -1,13 +1,12 @@
 import { randomUUID } from 'node:crypto'
 import { BrowserWindow, ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
-import { isWritable, programOf, writableInOrder } from '../shared/djProgram'
+import { CUE_PROGRAMS, type CueProgram, isWritable, programOf } from '../shared/djProgram'
 import type { DropInput } from '../shared/dropDetect'
 import type { GridFit } from '../shared/gridEdit'
 import type { GridVerdict } from '../shared/gridVerdict'
 import type {
   CopyReason,
-  DjProgram,
   LibraryTracks,
   QueuedCues,
   SaveCuesRequest,
@@ -16,7 +15,7 @@ import type {
   WritableProgram,
 } from '../shared/types'
 import type { BeatGridFit } from './beatGrid'
-import type { CueQueue, CueReader, CueSource } from './cueSource'
+import type { CueQueue, CueSource } from './cueSource'
 import { engineCueSource } from './engineCueSource'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { completableOps } from './rekordboxCompleteOnClose'
@@ -25,8 +24,6 @@ import { withCollection } from './rekordboxPlaylistsIpc'
 import type { ProvisionalList } from './rekordboxProvisional'
 import { seratoCueSource } from './seratoCueSource'
 import { traktorCueSource } from './traktorCueSource'
-
-const CUE_SAVE_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
 
 export function registerRekordboxCuesIpc(host: {
   collection: () => string
@@ -54,22 +51,19 @@ export function registerRekordboxCuesIpc(host: {
     applyQuietly: (win: BrowserWindow | null) => void
     words: (file: string) => Promise<Uint16Array | null>
   }
+  serato?: {
+    queue: CueQueue
+    applyQuietly: () => void
+  }
 }): void {
-  const writers: Record<WritableProgram, CueSource | null> = {
+  const writers: Record<CueProgram, CueSource | null> = {
     rekordbox: rekordboxCueSource(host),
     traktor: host.traktor ? traktorCueSource(host.traktor, host.collection, host.beatGrid) : null,
     engine: host.engine ? engineCueSource(host.engine, host.collection, host.beatGrid) : null,
+    serato: host.serato ? seratoCueSource({ ...host.serato, words: host.words }) : null,
   }
-  const sources: Record<DjProgram, CueReader | null> = {
-    ...writers,
-    serato: seratoCueSource(host),
-  }
-  const sourceOf = (contentId: string) => sources[programOf(contentId)]
-  const writerOf = (contentId: string) => {
-    const program = programOf(contentId)
-    return isWritable(program) ? writers[program] : null
-  }
-  const queueOf = (contentId: string) => writerOf(contentId)?.queue ?? null
+  const sourceOf = (contentId: string) => writers[programOf(contentId)]
+  const queueOf = (contentId: string) => sourceOf(contentId)?.queue ?? null
   ipcMain.handle(
     'rekordbox:trackCues',
     async (_e, contentId: string): Promise<TrackCues | null> => {
@@ -125,7 +119,7 @@ export function registerRekordboxCuesIpc(host: {
   ipcMain.handle(
     'rekordbox:queuedCues',
     async (_e, contentId: string): Promise<QueuedCues | null> => {
-      const source = writerOf(contentId)
+      const source = sourceOf(contentId)
       const op = source?.queue.cuesOp(contentId)
       if (!source || !op || (op.wanted === undefined && op.drops === undefined)) return null
       const grid = op.grid ? { grid: op.grid, gridFingerprint: op.gridFingerprint } : {}
@@ -143,16 +137,13 @@ export function registerRekordboxCuesIpc(host: {
     if (queue && op) queue.drop(op.id)
   })
   ipcMain.handle('rekordbox:saveCues', (e, reqs: SaveCuesRequest[]) => {
-    const targets = CUE_SAVE_ORDER.flatMap((program) => {
+    const targets = CUE_PROGRAMS.flatMap((program) => {
       const target = writers[program]
       const mine = reqs.filter((r) => programOf(r.contentId) === program)
       return target && mine.length > 0 ? [{ ...target, program, mine }] : []
     })
-    if (targets.length > 0)
-      host.beginMoment?.(
-        'cues',
-        targets.map((t) => t.program),
-      )
+    const withLibrary = targets.map((t) => t.program).filter(isWritable)
+    if (withLibrary.length > 0) host.beginMoment?.('cues', withLibrary)
     for (const t of targets) {
       t.queue.enqueue(t.mine.map((req) => ({ ...req, id: randomUUID(), kind: 'cues' })))
       for (const req of t.mine)
