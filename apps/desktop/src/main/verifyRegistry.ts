@@ -1,7 +1,7 @@
 import type { DjProgram } from '../shared/djProgram'
-import { programsInOrder } from '../shared/djProgram'
 import { errorWithKey } from '../shared/errorKeys'
 import {
+  PLACE_PROGRAMS,
   type PlaceCheck,
   type Verification,
   type VerifyPlace,
@@ -90,7 +90,6 @@ export interface VerifyRegistryDeps {
   samePath?: (a: string, b: string) => boolean
 }
 
-const LIBRARIES = programsInOrder(['rekordbox', 'engine', 'traktor'])
 const PROGRAM: Record<Library, string> = {
   rekordbox: 'rekordbox',
   engine: 'Engine DJ',
@@ -303,7 +302,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     // The first track of a new batch clears the tracks already verified: nothing more can
     // happen to them, and the registry stays the size of what is still open.
     register(e: VerifyEntry): void {
-      if (LIBRARIES.every((place) => unflushed[place].size === 0))
+      if (PLACE_PROGRAMS.every((place) => unflushed[place].size === 0))
         for (const [id, old] of entries)
           if (old.verification.status === 'ok' && !working.has(old)) {
             entries.delete(id)
@@ -312,7 +311,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
           }
       const previous = entries.get(e.trackId)
       if (previous)
-        for (const place of LIBRARIES) {
+        for (const place of PLACE_PROGRAMS) {
           awaiting[place].delete(previous)
           unflushed[place].delete(previous)
         }
@@ -322,7 +321,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
       traktorCues.delete(e.trackId)
       registered += 1
       order.set(e, registered)
-      for (const place of LIBRARIES) unflushed[place].add(e)
+      for (const place of PLACE_PROGRAMS) unflushed[place].add(e)
     },
 
     // Where a batch ends: its flush judges the tracks registered up to here.
@@ -332,7 +331,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
 
     async afterFlush(outcome: FlushOutcome, upTo = registered): Promise<void> {
       const mine = {} as Record<Library, VerifyEntry[]>
-      for (const place of LIBRARIES) {
+      for (const place of PLACE_PROGRAMS) {
         mine[place] =
           outcome[place] === 'later'
             ? []
@@ -340,10 +339,10 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
         for (const e of mine[place]) unflushed[place].delete(e)
         mine[place] = mine[place].filter(live)
       }
-      const flushed = [...new Set(LIBRARIES.flatMap((place) => mine[place]))]
+      const flushed = [...new Set(PLACE_PROGRAMS.flatMap((place) => mine[place]))]
       await during(flushed, async () => {
         await Promise.all(
-          LIBRARIES.map(async (place) => {
+          PLACE_PROGRAMS.map(async (place) => {
             const listed = mine[place].filter((e) => e.places.has(place))
             const touched = listed.filter((e) => touches(e, place))
             const byJob = touched.filter((e) => LISTED[place].byJob(e))
@@ -439,7 +438,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
         },
         'file',
       )
-    for (const place of LIBRARIES) {
+    for (const place of PLACE_PROGRAMS) {
       const state = stateOf(e, place)
       // Only a library still on the old file is handed its repoint again: one that already
       // names the file would move its cues a second time.
