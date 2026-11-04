@@ -192,10 +192,45 @@ describe('CuesSection maximized', () => {
     expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
     expect(document.activeElement).toBe(editor())
     expect(actionsRef.current?.clearAll?.enabled).toBe(false)
+    fireEvent.click(screen.getByTestId('cues-more'))
     expect(screen.getByTestId('cues-clear-all')).toBeDisabled()
   })
 
-  it('clears every hot cue and CALL but the loops from Clear all in the toolbar, and ⌘Z brings them back', async () => {
+  it('keeps Clear all out of the toolbar behind ⋯, so a slip beside Auto mark never wipes the marks', async () => {
+    setup(null, { ...READ, cues: [{ id: 'h', ms: 64000, kind: 2, color: 1 }] })
+    await maximize()
+    const toolbar = screen.getByTestId('cues-toolbar')
+    expect(within(toolbar).queryByTestId('cues-clear-all')).toBeNull()
+    const more = within(toolbar).getByTestId('cues-more')
+    expect(more).toHaveAttribute('aria-haspopup', 'menu')
+    expect(more).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(more)
+    expect(more).toHaveAttribute('aria-expanded', 'true')
+    expect(within(screen.getByRole('menu')).getByTestId('cues-clear-all')).toHaveTextContent(
+      'Clear all cues',
+    )
+  })
+
+  it('closes the ⋯ menu on Escape without clearing or restoring the full editor', async () => {
+    setup(null, { ...READ, cues: [{ id: 'h', ms: 64000, kind: 2, color: 1 }] })
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-more'))
+    fireEvent.keyDown(screen.getByTestId('cues-clear-all'), { key: 'Escape' })
+    expect(screen.queryByTestId('cues-clear-all')).toBeNull()
+    expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true')
+    expect(screen.getByTestId('cue-wave-hot-B')).toBeInTheDocument()
+  })
+
+  it('leaves the editor keys alone while the ⋯ menu has the focus, so M never puts a CALL under it', async () => {
+    setup()
+    await maximize()
+    seek(64600)
+    fireEvent.click(screen.getByTestId('cues-more'))
+    fireEvent.keyDown(screen.getByTestId('cues-clear-all'), { key: 'm' })
+    expect(screen.queryByTestId('cue-wave-call-64000')).toBeNull()
+  })
+
+  it('clears every hot cue and CALL but the loops from Clear all in the ⋯ menu, and ⌘Z brings them back', async () => {
     const loop = { id: 'l', ms: 32000, kind: 1, color: 1, loop: true }
     setup(null, {
       ...READ,
@@ -206,14 +241,14 @@ describe('CuesSection maximized', () => {
       ],
     })
     await maximize()
-    const clear = within(screen.getByTestId('cues-toolbar')).getByTestId('cues-clear-all')
-    expect(clear).toHaveTextContent('Clear all cues')
+    fireEvent.click(screen.getByTestId('cues-more'))
+    const clear = screen.getByTestId('cues-clear-all')
     clear.focus()
     fireEvent.click(clear)
     expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
     expect(screen.queryByTestId('cue-wave-call-96000')).toBeNull()
     expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
-    expect(screen.getByTestId('cues-clear-all')).toBeDisabled()
+    expect(screen.queryByRole('menu')).toBeNull()
     expect(document.activeElement).toBe(editor())
     key('z', { metaKey: true })
     expect(screen.getByTestId('cue-wave-hot-B')).toBeInTheDocument()
@@ -1757,6 +1792,25 @@ describe('CuesSection maximized grid', () => {
     await waitFor(() => expect(bars()).toContain(2005))
     key('z', { metaKey: true })
     expect(bars()).toContain(2000)
+  })
+
+  it('gives the grid a row of its own between the zoomed wave and the deck, with how far it sits from the beats beside its BPM', async () => {
+    setup(null, READ, { rekordboxGridFit: fitAt(454) })
+    await maximize()
+    await waitFor(() => expect(screen.getByTestId('cues-grid-here')).toBeInTheDocument())
+    const row = screen.getByTestId('cues-grid-strip')
+    expect(row).toHaveTextContent('Grid')
+    for (const id of ['cues-grid', 'cues-grid-bpm', 'cues-grid-here', 'cues-grid-end'])
+      expect(row).toContainElement(screen.getByTestId(id))
+    expect(screen.getByTestId('cues-toolbar')).not.toContainElement(
+      screen.getByTestId('cues-grid-here'),
+    )
+    expect(screen.getByTestId('cues-deck')).not.toContainElement(screen.getByTestId('cues-grid'))
+    const follows = (a: string, b: string) =>
+      screen.getByTestId(a).compareDocumentPosition(screen.getByTestId(b)) &
+      Node.DOCUMENT_POSITION_FOLLOWING
+    expect(follows('cue-detail', 'cues-grid-strip')).toBeTruthy()
+    expect(follows('cues-grid-strip', 'cues-deck')).toBeTruthy()
   })
 
   it('has no grid row in the small editor', async () => {

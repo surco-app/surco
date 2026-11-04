@@ -18,8 +18,10 @@ import {
 } from '../../../shared/gridEdit'
 import { formatFixed } from '../lib/numberFormat'
 
-const ICON =
-  'press flex h-7 w-7 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg disabled:opacity-40 disabled:hover:bg-transparent'
+const PAIR =
+  'flex shrink-0 divide-x divide-[var(--color-line-strong)] overflow-hidden rounded-md border border-[var(--color-line-strong)]'
+const PAIR_BUTTON =
+  'press h-7 whitespace-nowrap px-2.5 text-xs text-fg-muted transition-colors hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40 disabled:hover:bg-transparent'
 const MENU_ITEM =
   'press flex h-7 items-center rounded-md px-2 text-left text-xs text-fg hover:bg-[var(--color-hover)] disabled:opacity-40 disabled:hover:bg-transparent'
 const STEP_BPM = 0.01
@@ -34,15 +36,6 @@ function parseBpm(typed: string): number | null {
   return value >= GRID_BPM_MIN && value <= GRID_BPM_MAX ? hundredths(value) : null
 }
 
-function Bars({ children }: { children?: React.ReactNode }): React.JSX.Element {
-  return (
-    <svg width="20" height="12" viewBox="0 0 20 12" aria-hidden="true">
-      <path d="M7 1v10M10 1v10M13 1v10" stroke="currentColor" strokeWidth="1.4" />
-      {children}
-    </svg>
-  )
-}
-
 export function CueGridControls({
   grid,
   disabledReason,
@@ -53,6 +46,7 @@ export function CueGridControls({
   onFit,
   onDone,
   zones = true,
+  status,
 }: {
   grid: EditableGrid | null
   disabledReason: string | null
@@ -63,6 +57,7 @@ export function CueGridControls({
   onFit: (grid: EditableGrid) => void
   onDone?: () => void
   zones?: boolean
+  status?: React.ReactNode
 }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const [menu, setMenu] = useState(false)
@@ -121,7 +116,7 @@ export function CueGridControls({
       data-testid="cues-grid"
       aria-disabled={off}
       title={disabledReason ?? undefined}
-      className="flex items-center gap-0.5"
+      className="flex flex-wrap items-center gap-2"
     >
       <div ref={menuRoot} className="relative">
         <button
@@ -178,88 +173,74 @@ export function CueGridControls({
           </div>
         )}
       </div>
+      {status}
       <span aria-hidden="true" className="mx-1 h-5 w-px bg-[var(--color-line)]" />
-      <button
-        type="button"
-        data-testid="cues-grid-left"
-        aria-label={tr('editor.cues.grid.left')}
-        title={tr('editor.cues.grid.left')}
-        disabled={off}
-        onClick={shift(-1)}
-        className={ICON}
-      >
-        <Bars>
-          <path d="M1 6l4-4v8z" fill="currentColor" />
-        </Bars>
-      </button>
-      <button
-        type="button"
-        data-testid="cues-grid-right"
-        aria-label={tr('editor.cues.grid.right')}
-        title={tr('editor.cues.grid.right')}
-        disabled={off}
-        onClick={shift(1)}
-        className={ICON}
-      >
-        <Bars>
-          <path d="M19 6l-4-4v8z" fill="currentColor" />
-        </Bars>
-      </button>
-      <button
-        type="button"
-        data-testid="cues-grid-widen"
-        aria-label={tr('editor.cues.grid.widen')}
-        title={tr('editor.cues.grid.widen')}
-        disabled={off}
-        onClick={() => apply(retempo(bpm - STEP_BPM))}
-        className={ICON}
-      >
-        <Bars>
-          <path d="M1 6l3.5-3.5v7zM19 6l-3.5-3.5v7z" fill="currentColor" />
-        </Bars>
-      </button>
-      <button
-        type="button"
-        data-testid="cues-grid-narrow"
-        aria-label={tr('editor.cues.grid.narrow')}
-        title={tr('editor.cues.grid.narrow')}
-        disabled={off}
-        onClick={() => apply(retempo(bpm + STEP_BPM))}
-        className={ICON}
-      >
-        <Bars>
-          <path d="M5 6L1.5 2.5v7zM15 6l3.5-3.5v7z" fill="currentColor" />
-        </Bars>
-      </button>
-      <button
-        type="button"
-        data-testid="cues-grid-downbeat"
-        aria-label={tr('editor.cues.grid.downbeat')}
-        title={tr('editor.cues.grid.downbeat')}
-        disabled={off}
-        onClick={() => apply(inZone((zone) => downbeatAt(zone, playheadMs)))}
-        className={ICON}
-      >
-        <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true">
-          <path d="M6.5 0h5L9 3z" fill="currentColor" />
-          <path d="M3 5v9M15 5v9" stroke="currentColor" strokeWidth="1.4" />
-          <path d="M9 5v9" stroke="var(--color-danger)" strokeWidth="1.8" />
-        </svg>
-      </button>
-      <button
-        type="button"
-        data-testid="cues-grid-anchor"
-        aria-label={tr(atAnchor ? 'editor.cues.grid.anchorRemove' : 'editor.cues.grid.anchorAdd')}
-        title={tr(atAnchor ? 'editor.cues.grid.anchorRemove' : 'editor.cues.grid.anchorAdd')}
-        disabled={off || !zones}
-        onClick={() => grid && onChange(toggleAnchor(grid, playheadMs))}
-        className={ICON}
-      >
-        <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true">
-          <path d="M3 1v12M15 1v12" stroke="currentColor" strokeWidth="1.4" />
-          <path d="M9 13V2l5 2.5L9 7" fill="none" stroke="var(--color-accent)" strokeWidth="1.6" />
-        </svg>
-      </button>
+      <div data-testid="cues-grid-move" className={PAIR}>
+        <button
+          type="button"
+          data-testid="cues-grid-left"
+          title={tr('editor.cues.grid.left')}
+          disabled={off}
+          onClick={shift(-1)}
+          className={PAIR_BUTTON}
+        >
+          ← {STEP_MS} ms
+        </button>
+        <button
+          type="button"
+          data-testid="cues-grid-right"
+          title={tr('editor.cues.grid.right')}
+          disabled={off}
+          onClick={shift(1)}
+          className={PAIR_BUTTON}
+        >
+          {STEP_MS} ms →
+        </button>
+      </div>
+      <div data-testid="cues-grid-width" className={PAIR}>
+        <button
+          type="button"
+          data-testid="cues-grid-widen"
+          title={tr('editor.cues.grid.widen')}
+          disabled={off}
+          onClick={() => apply(retempo(bpm - STEP_BPM))}
+          className={PAIR_BUTTON}
+        >
+          {tr('editor.cues.grid.widenShort')}
+        </button>
+        <button
+          type="button"
+          data-testid="cues-grid-narrow"
+          title={tr('editor.cues.grid.narrow')}
+          disabled={off}
+          onClick={() => apply(retempo(bpm + STEP_BPM))}
+          className={PAIR_BUTTON}
+        >
+          {tr('editor.cues.grid.narrowShort')}
+        </button>
+      </div>
+      <div data-testid="cues-grid-mark" className={PAIR}>
+        <button
+          type="button"
+          data-testid="cues-grid-downbeat"
+          title={tr('editor.cues.grid.downbeat')}
+          disabled={off}
+          onClick={() => apply(inZone((zone) => downbeatAt(zone, playheadMs)))}
+          className={PAIR_BUTTON}
+        >
+          {tr('editor.cues.grid.downbeatShort')}
+        </button>
+        <button
+          type="button"
+          data-testid="cues-grid-anchor"
+          title={tr(atAnchor ? 'editor.cues.grid.anchorRemove' : 'editor.cues.grid.anchorAdd')}
+          disabled={off || !zones}
+          onClick={() => grid && onChange(toggleAnchor(grid, playheadMs))}
+          className={PAIR_BUTTON}
+        >
+          {tr(atAnchor ? 'editor.cues.grid.anchorRemoveShort' : 'editor.cues.grid.anchorAddShort')}
+        </button>
+      </div>
       <button
         type="button"
         data-testid="cues-grid-auto"

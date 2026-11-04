@@ -79,7 +79,7 @@ describe('CueWaveDetail', () => {
     expect(screen.queryAllByTestId('cue-detail-beat')).toHaveLength(0)
   })
 
-  it('draws every bar downbeat as a red line like rekordbox, where the grid itself says beat 1 and not counted from its first beat, with nothing that reads as a CALL triangle', () => {
+  it('draws every bar downbeat as a faint ink line, where the grid itself says beat 1 and not counted from its first beat, and leaves red to the CALLs alone', () => {
     const probe = document.createElement('i')
     probe.style.color = MEMORY_CUE_COLOR
     const red = probe.style.color
@@ -94,9 +94,9 @@ describe('CueWaveDetail', () => {
       const downbeats = shifted.filter((b) => b.beat === 1).map((b) => b.ms)
       for (const line of lines) {
         expect(downbeats).toContain(Number(line.dataset.ms))
-        expect(line.style.backgroundColor).toBe(red)
-        expect(Number(line.style.opacity)).toBeGreaterThanOrEqual(0.25)
-        expect(Number(line.style.opacity)).toBeLessThanOrEqual(0.35)
+        expect(line.style.backgroundColor).toBe('var(--color-fg-dim)')
+        expect(Number(line.style.opacity)).toBeGreaterThanOrEqual(0.3)
+        expect(Number(line.style.opacity)).toBeLessThanOrEqual(0.45)
         expect(line.style.width).toBe('1px')
         expect(line.childElementCount).toBe(0)
       }
@@ -108,7 +108,7 @@ describe('CueWaveDetail', () => {
           red,
         ),
       )
-      expect(tinted).toEqual(lines)
+      expect(tinted).toEqual([])
       view.unmount()
     }
   })
@@ -625,10 +625,18 @@ describe('CueWaveDetail', () => {
     expect(onZoom).toHaveBeenCalledTimes(2)
   })
 
-  it('keeps the zoomed wave a calm 280px however tall the window, since a wave filling the screen read as coarse rather than clean', () => {
+  it('grows the zoomed wave into the free height of the full editor from 280px, so the window goes to the wave and not to empty space under the deck', () => {
     setup()
     const stage = screen.getByTestId('cue-detail')
-    expect(stage.style.height).toBe('280px')
+    expect(stage.style.flexGrow).toBe('1')
+    expect(stage.style.minHeight).toBe('280px')
+    expect(stage.style.height).toBe('')
+  })
+
+  it('keeps the folded zoomed wave its short fixed height, since the folded section shares the editor with the rest', () => {
+    setup({ compact: true })
+    const stage = screen.getByTestId('cue-detail')
+    expect(stage.style.height).toBe('96px')
     expect(stage.style.flexGrow).not.toBe('1')
   })
 

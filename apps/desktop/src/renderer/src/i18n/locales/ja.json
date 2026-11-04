@@ -1083,7 +1083,13 @@
         "anchorAdd": "再生位置にアンカー（ゾーンを開始）",
         "anchorRemove": "再生位置のアンカーを削除",
         "locked": "このグリッドはソフト側でロックされています",
-        "serato": "Serato のビートグリッドは Serato のもので、ここでは変更できません"
+        "serato": "Serato のビートグリッドは Serato のもので、ここでは変更できません",
+        "title": "グリッド",
+        "widenShort": "広げる",
+        "narrowShort": "狭める",
+        "downbeatShort": "1拍目",
+        "anchorAddShort": "アンカー",
+        "anchorRemoveShort": "アンカー削除"
       },
       "offGrid": {
         "before": "{{ms}} ms 早い",

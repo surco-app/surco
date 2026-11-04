@@ -240,9 +240,54 @@ describe('CueGridControls', () => {
 
   it('names the anchor button for what it will do at the playhead', () => {
     setup({ grid: toggleAnchor({ bpm: 150, anchorMs: 46 }, 40046), playheadMs: 40046 })
-    expect(screen.getByTestId('cues-grid-anchor')).toHaveAccessibleName(
-      'Quitar el ancla del cabezal',
+    const anchor = screen.getByTestId('cues-grid-anchor')
+    expect(anchor).toHaveAccessibleName('Quitar ancla')
+    expect(anchor).toHaveAttribute('title', 'Quitar el ancla del cabezal')
+  })
+
+  it('says on each button what it does, since six look-alike bar icons could not be told apart without hovering each', () => {
+    setup()
+    const words = {
+      left: '← 5 ms',
+      right: '5 ms →',
+      widen: 'Abrir',
+      narrow: 'Cerrar',
+      downbeat: 'El 1 aquí',
+      anchor: 'Ancla',
+    }
+    for (const [id, text] of Object.entries(words))
+      expect(screen.getByTestId(`cues-grid-${id}`)).toHaveAccessibleName(text)
+    expect(screen.getByTestId('cues-grid-widen')).toHaveAttribute(
+      'title',
+      'Abrir la rejilla, baja el BPM',
     )
+  })
+
+  it('pairs the buttons by what they change, moving, opening and closing, or marking', () => {
+    setup()
+    const pairs = {
+      move: ['left', 'right'],
+      width: ['widen', 'narrow'],
+      mark: ['downbeat', 'anchor'],
+    }
+    for (const [group, ids] of Object.entries(pairs))
+      for (const id of ids)
+        expect(screen.getByTestId(`cues-grid-${group}`)).toContainElement(
+          screen.getByTestId(`cues-grid-${id}`),
+        )
+  })
+
+  it('shows the status it is handed between the BPM and the buttons', () => {
+    setup({ status: <span data-testid="grid-status" /> })
+    const status = screen.getByTestId('grid-status')
+    expect(
+      screen.getByTestId('cues-grid-bpm').compareDocumentPosition(status) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      status.compareDocumentPosition(screen.getByTestId('cues-grid-left')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   })
 
   it('moves only the zone under the playhead', () => {

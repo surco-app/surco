@@ -1083,7 +1083,13 @@
         "anchorAdd": "Anker am Abspielkopf, beginnt eine Zone",
         "anchorRemove": "Anker am Abspielkopf entfernen",
         "locked": "Das Programm hat dieses Raster gesperrt",
-        "serato": "Das Raster von Serato kommt aus Serato und lässt sich hier nicht ändern"
+        "serato": "Das Raster von Serato kommt aus Serato und lässt sich hier nicht ändern",
+        "title": "Raster",
+        "widenShort": "Weiten",
+        "narrowShort": "Verengen",
+        "downbeatShort": "Taktanfang",
+        "anchorAddShort": "Anker",
+        "anchorRemoveShort": "Anker weg"
       },
       "offGrid": {
         "before": "{{ms}} ms zu früh",

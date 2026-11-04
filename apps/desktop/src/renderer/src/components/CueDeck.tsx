@@ -40,7 +40,6 @@ export function CueDeck({
   onJumpBars,
   onQuantize,
   onDone,
-  gridControls,
 }: {
   cues: DeckCue[]
   kinds?: number[]
@@ -62,7 +61,6 @@ export function CueDeck({
   onJumpBars: (bars: CueJumpBars) => void
   onQuantize: (unit: CueQuantize) => void
   onDone?: () => void
-  gridControls?: React.ReactNode
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [colouring, setColouring] = useState<string | null>(null)
@@ -217,12 +215,6 @@ export function CueDeck({
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
-      {gridControls && (
-        <div data-testid="cues-deck-grid" className="flex items-center">
-          <span aria-hidden="true" className="mx-2 h-5 w-px bg-[var(--color-line)]" />
-          {gridControls}
-        </div>
-      )}
       <span className="flex-1" />
       <div className="flex items-center gap-1 text-xs">
         <span className="text-fg-dim">{tr('editor.cues.jump')}</span>

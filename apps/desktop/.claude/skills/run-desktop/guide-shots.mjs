@@ -273,6 +273,8 @@ export const REKORDBOX_SCENE = {
     await wait(page, 4000)
     await page.click('[data-testid="cues-section"] [data-testid="section-maximize"]')
     await wait(page, 1500)
+    await page.click('[data-testid="cues-more"]')
+    await wait(page, 300)
     await page.click('[data-testid="cues-clear-all"]')
     await wait(page, 800)
     await page.click('[data-testid="cues-auto-mark"]')

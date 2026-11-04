@@ -3,6 +3,7 @@ import {
   Check,
   ChevronDown,
   CircleAlert,
+  Ellipsis,
   Keyboard,
   Minimize2,
   Pause,
@@ -876,7 +877,12 @@ function Editing({
   const onKey = (e: React.KeyboardEvent) => {
     if (maximized) {
       const target = e.target as HTMLElement
-      if (isTypingTarget(target) || target.closest('[aria-haspopup="listbox"]')) return
+      if (
+        isTypingTarget(target) ||
+        target.closest('[aria-haspopup="listbox"]') ||
+        target.closest('[role="menu"]')
+      )
+        return
       const key = cueKeyAction(e)
       if (!key) return
       e.preventDefault()
@@ -1014,6 +1020,7 @@ function Editing({
     }
   })
   const saveMenu = useSplitMenu()
+  const moreMenu = useSplitMenu()
   const discardable = !unchanged || queued !== null
   const saveAllButton = unsavedTracks > 1 && (
     <button
@@ -1501,36 +1508,7 @@ function Editing({
         options={flowOptions}
       />
       {autoControl}
-      <button
-        type="button"
-        data-testid="cues-clear-all"
-        disabled={!clearable}
-        onClick={clearAll}
-        className="press flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:pointer-events-none disabled:opacity-40"
-      >
-        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-        {tr('editor.cues.clearAll')}
-      </button>
       <span className="flex-1" />
-      {offsets && (
-        <span
-          data-testid="cues-grid-offsets"
-          className="flex shrink-0 items-center gap-3 whitespace-nowrap text-xs text-fg-dim"
-        >
-          <GridOffset
-            testid="cues-grid-here"
-            label={tr('editor.cues.grid.here')}
-            ms={offsets.hereMs}
-            tolerance={tolerance}
-          />
-          <GridOffset
-            testid="cues-grid-end"
-            label={tr('editor.cues.grid.end')}
-            ms={offsets.endMs}
-            tolerance={tolerance}
-          />
-        </span>
-      )}
       <span
         data-testid="cues-position"
         className="shrink-0 text-[13px] font-semibold tabular-nums text-fg"
@@ -1552,6 +1530,45 @@ function Editing({
         onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
         onReset={() => setZoom(DEFAULT_ZOOM_BARS)}
       />
+      <div ref={moreMenu.ref} className="relative flex shrink-0">
+        <button
+          type="button"
+          data-testid="cues-more"
+          ref={moreMenu.toggleRef}
+          aria-label={tr('editor.moreActions')}
+          title={tr('editor.moreActions')}
+          aria-haspopup="menu"
+          aria-expanded={moreMenu.open}
+          onClick={() => moreMenu.setOpen((v) => !v)}
+          className="press flex h-8 w-8 items-center justify-center rounded-lg text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
+        >
+          <Ellipsis className="h-4 w-4" aria-hidden="true" />
+        </button>
+        {moreMenu.open && (
+          <div
+            ref={moreMenu.menuRef}
+            role="menu"
+            aria-label={tr('editor.moreActions')}
+            onKeyDown={moreMenu.onMenuKeyDown}
+            className="animate-pop-flat absolute top-full right-0 z-50 mt-1 w-max origin-top-right overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]"
+          >
+            <button
+              type="button"
+              data-testid="cues-clear-all"
+              role="menuitem"
+              disabled={!clearable}
+              onClick={() => {
+                moreMenu.setOpen(false)
+                clearAll()
+              }}
+              className={`${SPLIT_ITEM} justify-start gap-2 whitespace-nowrap disabled:opacity-40`}
+            >
+              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+              {tr('editor.cues.clearAll')}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
   return (
@@ -1799,6 +1816,48 @@ function Editing({
         </p>
       )}
       {maximized && (
+        <div
+          data-testid="cues-grid-strip"
+          className="flex shrink-0 items-center gap-3 border-t border-[var(--color-line)] pt-3"
+        >
+          <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-fg-faint">
+            {tr('editor.cues.grid.title')}
+          </span>
+          <CueGridControls
+            grid={state.grid}
+            disabledReason={gridOff}
+            fit={gridFit}
+            needsFix={needsFix}
+            playheadMs={playheadMs}
+            onChange={setGrid}
+            onFit={fitGridTo}
+            onDone={focusEditor}
+            zones={rekordboxGrid}
+            status={
+              offsets && (
+                <span
+                  data-testid="cues-grid-offsets"
+                  className="flex shrink-0 items-center gap-3 whitespace-nowrap text-xs text-fg-dim"
+                >
+                  <GridOffset
+                    testid="cues-grid-here"
+                    label={tr('editor.cues.grid.here')}
+                    ms={offsets.hereMs}
+                    tolerance={tolerance}
+                  />
+                  <GridOffset
+                    testid="cues-grid-end"
+                    label={tr('editor.cues.grid.end')}
+                    ms={offsets.endMs}
+                    tolerance={tolerance}
+                  />
+                </span>
+              )
+            }
+          />
+        </div>
+      )}
+      {maximized && (
         <CueDeck
           cues={shownCues}
           kinds={ctx.slots.kinds}
@@ -1823,19 +1882,6 @@ function Editing({
           onJumpBars={(bars) => onJumpBars?.(bars)}
           onQuantize={(unit) => onQuantize?.(unit)}
           onDone={focusEditor}
-          gridControls={
-            <CueGridControls
-              grid={state.grid}
-              disabledReason={gridOff}
-              fit={gridFit}
-              needsFix={needsFix}
-              playheadMs={playheadMs}
-              onChange={setGrid}
-              onFit={fitGridTo}
-              onDone={focusEditor}
-              zones={rekordboxGrid}
-            />
-          }
         />
       )}
     </fieldset>
