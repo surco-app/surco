@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs'
 import {
   access,
   mkdtemp,
@@ -233,8 +232,8 @@ export function registerUsbExportIpc(opts: {
   const traktorExporter =
     traktor &&
     sourceMemories.traktor &&
-    pioneerFrom(sourceMemories.traktor, traktor.nml, (path, ids) =>
-      readTraktorExportSelection(readFileSync(path, 'utf8'), ids, {
+    pioneerFrom(sourceMemories.traktor, traktor.nml, async (path, ids) =>
+      readTraktorExportSelection(await readFile(path, 'utf8'), ids, {
         bootVolume: traktor.bootVolume(),
         deltaOf: traktorExportDelta,
       }),
