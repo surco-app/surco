@@ -570,10 +570,10 @@
   },
   "guide": {
     "metaTitle": "Como usar o Surco: guia passo a passo",
-    "metaDescription": "O guia completo do Surco: importe faixas, etiquete com Discogs, Bandcamp, Deezer, Beatport e MusicBrainz, associe um lançamento inteiro, analise o espectro, converta e exporte para Apple Music, Engine DJ, rekordbox ou Traktor.",
+    "metaDescription": "Surco passo a passo: importar faixas, etiquetar pelo Discogs, Bandcamp, Deezer, Beatport e MusicBrainz, analisar o espectro, converter, marcar cues e levar tudo para Apple Music, rekordbox, Engine DJ, Traktor ou Serato.",
     "kicker": "Guia",
     "title": "Como usar o Surco",
-    "lede": "De soltar suas faixas até deixá-las prontas para tocar. Este guia percorre o fluxo inteiro, passo a passo. Sem pressa e sem pular nada.",
+    "lede": "De soltar suas faixas até deixá-las prontas para tocar, em dezesseis passos curtos.",
     "tocLabel": "Neste guia",
     "shotPlaceholder": "Captura de tela em breve",
     "outroTitle": "Pronto para experimentar",
@@ -584,15 +584,25 @@
         "title": "Instale e abra o Surco",
         "s": "Baixe, abra e em um minuto o assistente deixa tudo do seu jeito.",
         "body": [
-          "Baixe o Surco para o seu sistema na página inicial, ou instale com o Homebrew no macOS. Na primeira vez que você abre, um assistente deixa tudo pronto em um minuto: onde buscar as tags e se quer associar ao importar, o formato e a pasta de saída, e o que você faz com as suas faixas, para que o editor mostre só as seções que você usa.",
-          "Sem conta, sem assinatura. O Surco se atualiza sozinho, então você sempre tem a versão mais recente sem baixar de novo, e na primeira vez que você abre depois de uma atualização ele mostra o que mudou."
+          "Tem versão para macOS, Windows e Linux, em seis idiomas. Não precisa de conta, e o Surco se atualiza sozinho."
+        ],
+        "steps": [
+          {
+            "lead": "Baixe.",
+            "text": "Pela página inicial, ou com Homebrew no macOS."
+          },
+          {
+            "lead": "Siga o assistente.",
+            "text": "Em quatro passos você escolhe onde buscar as tags, o formato e a pasta de saída, e o que faz com suas faixas. Assim o editor mostra só o que você usa."
+          },
+          {
+            "lead": "Ajuste o resto quando quiser.",
+            "text": "Está tudo em Ajustes (⌘ ,), e o assistente reabre pelo menu Ajuda ou ⌘K."
+          }
         ],
         "points": [
-          "Disponível para macOS (Apple Silicon e Intel, notarizado pela Apple), Windows e Linux (como AppImage), em seis idiomas.",
-          "O assistente de boas-vindas tem só quatro passos (cinco se o Surco encontrar a sua coleção do rekordbox, Engine DJ ou Traktor); nomes, gêneros e campos do editor esperam por você em Ajustes.",
-          "Passou correndo? Você pode reabri-lo quando quiser pelo menu Ajuda ou com ⌘K: ele parte dos seus ajustes atuais e só muda o que você mexer.",
-          "Já vem com o importante ligado. Analisa tudo ao importar e busca no Discogs, Bandcamp, Deezer e MusicBrainz sem você configurar nada.",
-          "Você pode mudar qualquer ajuste depois em Ajustes (⌘ ,)."
+          "De fábrica ele já analisa tudo ao importar e busca no Discogs, Bandcamp, Deezer e MusicBrainz sem configurar nada.",
+          "Se o Surco encontrar sua coleção do rekordbox, Engine DJ ou Traktor, o assistente ganha um quinto passo."
         ],
         "shot": "instalar-pt-BR.webp",
         "shotCaption": "O assistente de boas-vindas na primeira abertura."
@@ -602,16 +612,22 @@
         "title": "Adicione as suas faixas",
         "s": "Arraste arquivos ou pastas inteiras e o Surco lê tudo na hora.",
         "body": [
-          "Arraste arquivos (ou pastas inteiras) para a janela do Surco, ou clique em “Adicionar arquivos” (⌘O) para escolhê-los; o seletor também aceita pastas. Você também pode abrir um arquivo de áudio com o Surco pelo Finder ou pelo Explorer.",
-          "O Surco lê na hora as tags, a duração e a capa de cada arquivo e mostra tudo na lista no mesmo instante. O mesmo arquivo nunca é adicionado duas vezes."
+          "Ele lê WAV, FLAC, AIFF, ALAC, MP3, M4A, AAC, OGG e OPUS. O mesmo arquivo nunca entra duas vezes."
+        ],
+        "steps": [
+          {
+            "lead": "Solte arquivos ou pastas.",
+            "text": "Na janela, ou clique em “Adicionar arquivos” (⌘O). O Surco percorre as pastas e adiciona todo o áudio que encontrar."
+          },
+          {
+            "lead": "Veja a lista se encher.",
+            "text": "As faixas aparecem conforme são lidas, com tags, duração e capa, então uma pasta em rede começa a aparecer na hora."
+          }
         ],
         "points": [
-          "Formatos: WAV, FLAC, AIFF, ALAC, MP3, M4A, AAC, OGG e OPUS.",
-          "Solte pastas inteiras: o Surco percorre tudo, adiciona cada arquivo de áudio que encontra e avisa quando aparecem arquivos novos nelas depois.",
-          "As faixas aparecem conforme são encontradas, então uma pasta grande ou de rede começa a encher a lista logo, em vez de deixar você olhando para uma tela vazia.",
-          "Um contador ao vivo e uma barra de progresso mostram quanto da leitura já foi feito.",
-          "Um arquivo danificado não trava o app nem interrompe a importação: ele é marcado e pulado, e um WAV com o cabeçalho quebrado é reparado na hora para que você ainda possa tocá-lo.",
-          "Fechou o app? Ao abrir, ele oferece reabrir a sua última sessão, com as edições não aplicadas intactas, mesmo depois de um fechamento inesperado."
+          "Um arquivo danificado é marcado e pulado sem interromper a importação.",
+          "Se você fechar o app, ao abrir ele oferece reabrir a última sessão com as edições não aplicadas.",
+          "O Surco avisa quando surgem arquivos novos nas pastas que você soltou."
         ],
         "shot": "importar-pt-BR.webp",
         "shotCaption": "Arrastando e soltando faixas na lista."
@@ -621,183 +637,114 @@
         "title": "Conheça a lista de faixas",
         "s": "O que cada linha da lista diz, de relance.",
         "body": [
-          "A coluna da esquerda é a sua fila de trabalho. Cada linha mostra a capa, o título com a duração ao lado, o artista e o formato de origem. Um ponto no canto da capa indica se a faixa está processando, pronta ou com erro, e durante a conversão a capa vira um disco com um anel que vai se fechando ao redor. Depois que você analisa a qualidade, a etiqueta do formato ganha a cor do veredito: verde para boa, âmbar para duvidosa, vermelho para ruim, e as que pedem atenção também ganham uma faixa na borda.",
-          "Aperte Espaço para ouvir a faixa selecionada no player, fixo numa barra própria embaixo para nunca cobrir a sua lista. Clique duas vezes numa linha para tocar, e mais duas vezes para parar. Arraste a borda direita para alargar a lista, ou clique duas vezes nela para ajustar ao nome de faixa mais longo."
+          "Cada linha mostra capa, título, artista e formato. Depois de analisar a qualidade, a pílula do formato fica verde, âmbar ou vermelha."
+        ],
+        "steps": [
+          {
+            "lead": "Ouça.",
+            "text": "Espaço toca a faixa selecionada no player de baixo, com a forma de onda para pular para qualquer ponto."
+          },
+          {
+            "lead": "Filtre.",
+            "text": "Os filtros de cima (“Duvidosas”, “Sem converter”, “Duplicadas”, “Silêncio a cortar”…) só aparecem quando há faixas que os justifiquem. O que você fizer depois age só sobre o que está à vista."
+          },
+          {
+            "lead": "Selecione.",
+            "text": "⌘ + clique soma faixas e Shift + clique marca um intervalo. Delete tira a seleção da lista."
+          }
         ],
         "points": [
-          "Filtros rápidos no topo: Duvidosas, Boas, Sem análise, Sem converter, Auto-associadas (também por fonte), Duplicadas, Clipping, Silêncio a cortar, e o que está (ou falta) na sua biblioteca do Apple Music ou do Engine DJ. Cada um só aparece quando há faixas que o justifiquem.",
-          "Uma caixa de busca filtra a lista por texto, e você pode ordená-la por nome, artista, duração ou formato, nos dois sentidos.",
-          "Clique para selecionar uma faixa; ⌘ (ou Ctrl) + clique para somar várias, e Shift + clique para um intervalo, ou Shift + as setas. Para remover uma faixa, deslize dois dedos sobre ela no trackpad, como no Mail; Delete remove a seleção, e o Surco pergunta antes se for uma seleção inteira.",
-          "Filtrar restringe de verdade: filtre, mande converter, e só o que você vê é convertido. O mesmo vale para selecionar tudo, preencher tags, localizar e substituir ou analisar. Nunca agem em silêncio sobre o resto da fila.",
-          "O ícone ✦ marca as faixas que o Surco preencheu sozinho, um ponto âmbar as que você editou depois de converter, e uma seta de desfazer as que têm cópia de segurança: clique nela para voltar ao original.",
-          "O player desenha a forma de onda para você pular direto para qualquer parte (com o trecho ainda não tocado esmaecido e uma prévia ao passar o mouse), a capa gira como um disco enquanto toca, e a reprodução contínua emenda a lista sozinha.",
-          "Arraste faixas para fora do Surco, uma ou várias, para qualquer outro app sem precisar exportar antes.",
-          "Perdeu de vista o que está tocando? Um botão leva você até lá, e a paleta de comandos (⌘K) pula para qualquer faixa enquanto você digita o título ou o artista."
+          "O ícone ✦ marca o que o Surco preencheu sozinho, um ponto âmbar o que você editou depois de converter e uma seta de desfazer as faixas com backup.",
+          "Você pode arrastar faixas para fora do Surco, para qualquer outro app.",
+          "⌘K pula para qualquer faixa enquanto você digita o título ou o artista."
         ],
         "shot": "lista-pt-BR.webp",
         "shotCaption": "A lista de faixas com filtros e estados."
       },
       {
-        "id": "fuentes",
-        "title": "Abra suas bibliotecas no Surco",
-        "s": "Trabalhe sobre suas playlists do Apple Music, rekordbox, Engine DJ e Traktor.",
-        "body": [
-          "A barra lateral tem um painel Fontes com o seu Apple Music (no macOS), rekordbox, Engine DJ e Traktor. Abra qualquer playlist e as faixas entram na lista com os arquivos de verdade, para você etiquetar, revisar ou converter como qualquer outra.",
-          "No rekordbox a lista começa por “Adicionadas recentemente”, o que você colocou nos últimos 30 dias, e segue com “Todas as faixas”, com a sua coleção inteira, inclusive o que não está em nenhuma playlist."
-        ],
-        "points": [
-          "As playlists do rekordbox e do Traktor se organizam daqui. Você cria, renomeia e apaga playlists e pastas, e adiciona, remove e reordena faixas.",
-          "Se o programa estiver aberto, a mudança espera você fechá-lo, e antes de gravar o Surco guarda uma cópia em Cópias.",
-          "As faixas de uma playlist que não têm arquivo no disco, como as de streaming, são contadas à parte.",
-          "Se você não usa algum desses programas, oculte-o e o painel fica mais limpo.",
-          "Ao lado do nome do rekordbox, do Engine DJ, do Serato ou do Traktor, o ícone de USB exporta as playlists dele para um USB."
-        ],
-        "shot": "fuentes-pt-BR.webp",
-        "shotCaption": "rekordbox aberto em Fontes, com uma das playlists carregada na lista."
-      },
-      {
         "id": "editor",
         "title": "Edite os metadados",
-        "s": "Todos os campos da faixa, editáveis faixa por faixa ou em bloco.",
+        "s": "Todos os campos da faixa, sem os restos que outros programas deixaram.",
         "body": [
-          "Selecione uma faixa e o editor à direita mostra todos os campos: título, artista, álbum, ano, gênero, selo, número de catálogo, BPM, tom, agrupamento, compositor, ISRC, mix, remixer, comentário e mais. Edite o que quiser e os seus gêneros e agrupamentos salvos aparecem como sugestões a um clique. Enter confirma um campo e pula para o próximo, então dá para preencher um disco inteiro sem tirar as mãos do teclado.",
-          "As seções ficam agrupadas em três fases (Arquivo, Áudio e Saída) para você ver de relance se está corrigindo dados, limpando o som ou decidindo como a faixa vai sair. No topo fica a capa, com a avaliação em estrelas logo abaixo: solte uma imagem (até direto do navegador), exporte, ou alterne com as setas entre a do próprio arquivo e as do release que você buscou. Faixa com nome certinho mas sem nenhuma tag? Clique em “Preencher do nome” e o Surco deduz o título e o artista."
+          "Ao selecionar uma faixa, o editor à direita mostra os campos, a capa e a avaliação dela."
+        ],
+        "steps": [
+          {
+            "lead": "Preencha os campos.",
+            "text": "Enter confirma e pula para o próximo, e seus gêneros e groupings salvos aparecem como sugestões de um clique."
+          },
+          {
+            "lead": "Aproveite o que o Surco detecta.",
+            "text": "Abaixo de BPM e tom aparece o que foi medido no próprio áudio, pronto para aplicar. Se a faixa não tem tags, “Preencher do nome” tira o título e o artista."
+          },
+          {
+            "lead": "Limpe o que o arquivo arrasta.",
+            "text": "“Outros metadados” mostra as tags que outros programas deixaram, como restos do Serato ou do ReplayGain, e você tira uma a uma ou todas de uma vez."
+          }
         ],
         "points": [
-          "Abaixo do BPM e do tom você vê o que o Surco detecta no próprio áudio (em Camelot ou notação musical, como preferir em Ajustes), pronto para aplicar com um clique. São sugestões: nada é gravado sem a sua confirmação.",
-          "Só aparecem os campos que você escolhe em Ajustes → Campos, numa lista única, na ordem que você definir.",
-          "Os campos obrigatórios ficam vermelhos se você deixá-los vazios, e ao converter uma seleção o botão diz exatamente o que está faltando.",
-          "Com “Ano com data completa” ligado em Ajustes → Nomes, o Ano guarda a data inteira (2020-12-01) quando o arquivo ou a fonte a tem, e o campo se alarga para caber.",
-          "A capa mostra as dimensões reais para você julgar se tem nitidez suficiente, e clicar nela abre em tamanho real, passando por todas as imagens da faixa.",
-          "Copie e cole metadados, capa incluída, de uma faixa para outra pelo menu de contexto; ⌘Z desfaz tudo, até vinte passos atrás.",
-          "O menu { } de qualquer campo de texto insere o valor de outro campo bem onde está o cursor, e muda a caixa: Title Case, minúsculas ou MAIÚSCULAS.",
-          "Um clique tira a numeração de um título (“05 Nome”, “05. Nome”, “05 - Nome”) sem mexer em 2 Unlimited ou 3 Heads.",
-          "Faixa misteriosa? Um botão busca no Google com o nome do arquivo já preenchido (também no menu de contexto da lista), e um comando numera a seleção na ordem da lista (1, 2, 3…).",
-          "Arraste o divisor entre resultados e editor para repartir o espaço como preferir; cada máquina lembra o seu.",
-          "A seção Propriedades mostra os detalhes técnicos do arquivo (codec, taxa de amostragem, bits, canais, bitrate, caminho e tamanho) e avisa quando o arquivo não bate com a qualidade que você pediu em Ajustes, caso queira reconvertê-lo.",
-          "As seções do editor se recolhem, se reordenam e se ocultam do seu jeito em Ajustes → Seções; recolhidas, resumem o seu estado, e qualquer uma se expande em tela cheia (Esc para voltar)."
+          "Copie e cole metadados entre faixas pelo menu de contexto. ⌘Z desfaz até vinte passos.",
+          "Os campos obrigatórios ficam vermelhos quando estão vazios.",
+          "As seções do editor se recolhem, se reordenam e se ocultam em Ajustes → Seções."
         ],
         "shot": "editor-pt-BR.webp",
         "shotCaption": "O editor de metadados com sugestões do Discogs."
       },
       {
-        "id": "otros-tags",
-        "title": "Limpe as tags que o arquivo traz de carona",
-        "s": "Tire os restos que outros programas deixaram no arquivo.",
-        "body": [
-          "Um arquivo que passou por outras mãos chega com tags que você nunca escreveu: restos do Serato ou do Traktor, identificadores do MusicBrainz, valores de ReplayGain, notas de ferramentas de corte. Elas não aparecem nos campos do editor, mas viajam dentro do arquivo e surgem no software de DJ de quem abrir em seguida.",
-          "A seção “Outros metadados” lista todas exatamente como estão no arquivo, e você as remove uma a uma ou todas de uma vez. Mudou de ideia? É só desmarcá-las antes de converter."
-        ],
-        "points": [
-          "Você vê as tags reais do arquivo, não só os campos que o Surco entende, inclusive em WAV.",
-          "Apague uma por uma, ou use “Limpar todos os metadados” para deixar a faixa limpa, avaliação e capa incluídas.",
-          "Na conversão, o Surco unifica as variantes do mesmo campo e não carimba a sua própria assinatura de encoder, então não adiciona bagunça nova.",
-          "As tags de clima e energia escritas por outras ferramentas de DJ são preservadas na conversão."
-        ],
-        "shot": "otros-tags-pt-BR.webp",
-        "shotCaption": "A seção “Outros metadados” com tags de terceiros."
-      },
-      {
-        "id": "calidad",
-        "title": "Confira a qualidade real",
-        "s": "Veja no espectro se um arquivo sem perdas é mesmo sem perdas.",
-        "body": [
-          "Abra a seção de qualidade e o Surco desenha o espectro da faixa: as frequências de cima a baixo ao longo da música. Um arquivo realmente lossless mantém energia até o topo; um MP3 disfarçado de WAV corta de repente e deixa um vazio lá em cima. Uma linha pontilhada marca onde ele corta, e o espectro sombreia a faixa morta para você ver onde o som termina.",
-          "O veredito lê em termos absolutos, como um DJ lê: chegar a uns 20 kHz é qualidade plena, de 18 a 19,5 kHz é duvidoso e abaixo de 18 kHz é ruim, seja qual for a taxa de amostragem do arquivo. Abaixo dele, um painel com cores resume os níveis: LUFS integrado, true peak, dinâmica, equilíbrio entre canais, DC offset e ruído de fundo. Para analisar a fila inteira de uma vez, use o botão da barra de ferramentas ou ⌘⇧A.",
-          "Cada faixa exibe o seu veredito na própria lista, e você pode filtrar por “Duvidosas”, “Boas” ou “Sem análise” para fazer a triagem de uma pasta que acabou de soltar. A passada vale a pena: um corte que você nunca notaria no fone fica óbvio no instante em que a faixa toca num sistema grande."
-        ],
-        "points": [
-          "Verde “Boa qualidade”: o som chega até o topo, sem faltar nada. Âmbar “Duvidosa”: corta antes da hora. Vermelho: “Má qualidade”, ou “Fonte com perdas” quando um arquivo lossless traz dentro o corte de um codec.",
-          "Um MP3 não é medido com a régua do lossless: o corte dele é o formato, não um defeito, então ele sai limpo quando é o caso. O que é apontado é um FLAC, um WAV ou um AIFF com o corte de um codec dentro.",
-          "“Possível reprocessamento” é outro aviso, em âmbar: o espectro mostra agudos que parecem regenerados sobre um corte anterior. É uma suspeita medida, não uma prova; agudos apenas planos aparecem como observação, sem veredito.",
-          "Também pega o falso lossless, um FLAC, WAV ou AIFF que na verdade é um MP3 reempacotado. E todo arquivo que diz ter mais de 44,1 kHz sempre recebe uma resposta sobre a sua taxa: hi-res genuíno, esticado a partir de 44,1, ou um honesto \"não foi possível verificar\" quando não há nada lá em cima para medir.",
-          "Uma mira sobre o espectro mostra a frequência exata sob o cursor.",
-          "A seção Normalização de volume desenha a forma de onda com o clipping marcado em vermelho, amplia até o detalhe da amostra, separa os dois canais e mostra como vai ficar ao normalizar. E, depois de convertida, compara o antes e o depois lado a lado ou sobrepostos.",
-          "Salve um relatório do espectro em PNG, com o veredito e a linha de corte, para compartilhar quando alguém perguntar sobre aquela faixa.",
-          "Com “Analisar tudo ao importar” ligado (Ajustes → Editor), cada arquivo que você soltar é analisado inteiro em segundo plano e tudo está pronto quando você abre a faixa.",
-          "A análise fica em cache para não se repetir; você pode esvaziar o cache em Ajustes para recalcular tudo do zero."
-        ],
-        "shot": "calidad-pt-BR.webp",
-        "shotCaption": "O espectro de uma faixa com o seu veredito de qualidade."
-      },
-      {
-        "id": "declick",
-        "title": "Limpe o vinil",
-        "s": "Tire os cliques da agulha e o chiado de fundo dos seus rips.",
-        "body": [
-          "Um rip de vinil traz os cliques e estalos da agulha gravados no áudio. A seção de reparo de cliques os detecta e interpola durante a conversão, com quatro níveis: desativado, suave, padrão e forte. Suave é o toque mínimo, para material delicado; forte pega também os estalos longos, ao custo de amaciar um ou outro transiente.",
-          "Antes de você decidir qualquer coisa, o Surco diz quantos cliques audíveis estima que a faixa tem, para você saber se vale a pena. Ele marca na forma de onda cada um que encontra, então um disco sujo se lê de relance em vez de virar um número. Um clique dura milissegundos e caçá-lo arrastando é inútil: clique em “Próximo clique” para passar por eles um a um, clique numa marca para ouvir aquele, ou ponha o cursor onde quiser e aperte Espaço para tocar dali.",
-          "Além dos cliques, a seção reduz o ruído de fundo do disco numa outra escala de quatro passos: desativado, suave, médio e forte. Ela tira o chiado constante que você mais ouve nos breakdowns e, em qualquer passo, também o rumble, o ronco do motor e do prato abaixo de 20 Hz. Combine os dois como quiser e eles entram juntos em “Ouvir o resultado”.",
-          "O que importa é “Ouvir o resultado”: o Surco renderiza a faixa reparada inteira e deixa você alternar entre ela e o original enquanto toca, sem nenhum corte no áudio. Essa troca instantânea é exatamente o que faz falta. Se o reparo comeu o ataque de uma caixa, a diferença é sutil, e diferenças sutis só aparecem trocando na hora."
-        ],
-        "points": [
-          "Vem desligado: você decide se a faixa precisa.",
-          "Cada clique detectado fica marcado na forma de onda, e você pode pular de um para o outro.",
-          "É uma estimativa de cliques audíveis: os que ficam enterrados sob uma passagem densa escapam, do mesmo jeito que escapam do seu ouvido.",
-          "O ruído de fundo é estimado a partir da própria faixa enquanto toca. Não é preciso uma amostra de silêncio, então funciona com rips já cortados que começam direto na música.",
-          "Numa faixa sem ruído, como um master digital, a redução de ruído não muda nada mesmo que você a ligue.",
-          "Qualquer passo de ruído de fundo também corta o rumble abaixo de 20 Hz. Ele tira 0,2 dB de um bumbo (50 Hz) e deixa intacto tudo o que está acima.",
-          "O A/B compara a faixa reparada com o original sem corte, para você ouvir se o reparo levou um pouco da música junto.",
-          "Se você também está cortando silêncio, o trecho que será cortado aparece esmaecido na forma de onda, para você não ajustar contra um áudio que não vai sair.",
-          "Ele repara o áudio na conversão, então recodifica: confira a nota sobre cue points antes de aplicá-lo a um ALAC com cues."
-        ],
-        "shot": "declick-pt-BR.webp",
-        "shotCaption": "Cliques marcados na forma de onda e ruído de fundo numa só seção."
-      },
-      {
-        "id": "recorte",
-        "title": "Corte o silêncio",
-        "s": "Fora a agulha descendo e o sulco vazio do final.",
-        "body": [
-          "Os rips costumam começar com a agulha descendo e terminar com alguns segundos de sulco vazio. A seção de corte detecta o silêncio do início e do fim e mostra os dois cortes na forma de onda, um em cada trilha: o início e o fim.",
-          "Cada corte se ajusta com alças e passos de um milissegundo, e cada trilha tem o seu próprio zoom e prévia, para você ouvir exatamente como a faixa entra e sai antes de aplicar qualquer coisa. O zoom chega ao ponto em que um pixel de forma de onda vale menos de um milissegundo, e você pode rolar na horizontal com dois dedos para olhar antes ou depois do corte sem movê-lo. Não ficou convencido? Redefina; e se ele encontrar silêncio em várias faixas, você pode cortar a seleção inteira de uma vez pela paleta de comandos."
-        ],
-        "points": [
-          "Duas trilhas: uma para o corte do início e outra para o do fim, cada uma com o seu zoom e prévia.",
-          "Ajuste ao milissegundo com as alças ou os passos, mais um ímã que gruda no primeiro golpe real da música. A detecção mede o ruído de fundo de cada faixa antes de decidir o que conta como silêncio, então um rip com chiado ou zumbido na entrada não leva mais um corte frouxo.",
-          "A forma de onda é desenhada exatamente onde está e se recentraliza no corte conforme você dá zoom, então você ajusta contra o que vai realmente cortar.",
-          "O filtro “Silêncio a cortar” da lista reúne as faixas que precisam.",
-          "Cortar recodifica o áudio e move os cues do Traktor para acompanhar o corte, mantendo a fase da grade; só o ALAC os perde. O Surco avisa na seção."
-        ],
-        "shot": "recorte-pt-BR.webp",
-        "shotCaption": "Os cortes do início e do fim na forma de onda."
-      },
-      {
         "id": "discogs",
-        "title": "Tags do Discogs, Bandcamp, Deezer, Beatport e MusicBrainz",
-        "s": "Busque o release e aplique os dados e a capa dele com um clique.",
+        "title": "Encontre o disco nas suas fontes",
+        "s": "Discogs, Bandcamp, Deezer, Beatport e MusicBrainz, com dados e capa em um clique.",
         "body": [
-          "No editor, busque o release pelo nome ou cole direto um id de release do Discogs e clique em “Buscar” (ou na tecla /). O Surco lista os resultados com capa, ano, selo, número de catálogo e formato, para você distinguir a prensagem exata; expanda um para ver a tracklist.",
-          "Clique na faixa correspondente e o Surco aplica artista, álbum, ano, gênero, selo, número de catálogo e capa de uma vez. A mais próxima vem marcada como “Sugerida”. A busca funciona sem configurar nada; adicione o seu próprio token do Discogs em Ajustes e você ganha um limite maior, privado e mais rápido.",
-          "Atrás de lançamentos independentes ou exclusivos? Ligue também o Bandcamp em Ajustes → Fontes: os resultados dele ficam junto aos do Discogs na mesma lista, cada um marcado com a sua fonte, e você escolhe do mesmo jeito. O Bandcamp não pede conta nem token. E o material comercial (pop, urbano, sucessos de rádio) que não está em nenhum dos dois? É para isso que o Deezer vem ligado por padrão: também sem conta nem token, e cobre exatamente o catálogo que falta no Discogs e no Bandcamp. E se você toca o que o Beatport vende, conecte a sua conta em Ajustes → Fontes (uma gratuita serve): cada faixa traz o BPM, o tom na sua notação, o mix e o ISRC, e entre versões com o mesmo título o Surco escolhe a que o nome do seu arquivo indica. E o MusicBrainz, o catálogo aberto mantido pela comunidade, também vem ligado por padrão, sem conta nem token: ele completa releases e créditos que faltam nos outros, a uma busca por segundo como as regras dele exigem, então os resultados dele podem chegar um pouco depois dos demais."
+          "Discogs, Bandcamp, Deezer e MusicBrainz vêm ativados e não pedem conta. O Beatport se ativa em Ajustes → Fontes."
+        ],
+        "steps": [
+          {
+            "lead": "Busque.",
+            "text": "Digite o nome do disco ou cole um release id do Discogs, e aperte “Buscar” ou a tecla /."
+          },
+          {
+            "lead": "Escolha a edição.",
+            "text": "Cada resultado traz capa, ano, selo, catálogo e formato. Abra um para ver o tracklist. O mais parecido vem marcado como “Sugerida”."
+          },
+          {
+            "lead": "Aplique.",
+            "text": "Clique na faixa e o Surco preenche artista, álbum, ano, gênero, selo, catálogo e capa de uma vez."
+          }
         ],
         "points": [
-          "Busque por texto ou cole um id de release se já sabe qual é. Se o arquivo já traz um, o Surco abre esse registro direto.",
-          "Se a primeira busca não encontra nada, o Surco tenta de novo sozinho: tirando o prefixo do DJ, tentando o artista principal, ou buscando só pelo número de catálogo ou pelo título.",
-          "Com a opção ligada (mais o seu token se o Discogs for uma das suas fontes, ou a sua conta se for o Beatport; Bandcamp, Deezer e MusicBrainz não precisam de nada), o Surco auto-associa as faixas no momento em que você as importa.",
-          "A sua própria capa é mantida se você já tiver uma; a do release fica como alternativa, e você pode fazer com que ela substitua só as de baixa resolução.",
-          "Assinaturas de rip ou marcas d'água sujando os seus títulos? Liste-as em Ajustes → Fontes, “vinyl” e “rip” já vêm de fábrica, e elas são ignoradas na busca e na associação; as suas tags não são tocadas.",
-          "Com várias fontes ligadas, um filtro reduz os resultados a uma só, e você pode limitar os do Discogs a vinil, CD, arquivo ou cassete.",
-          "Escolha o release com as setas; uma faixa indica quantas músicas ele tem antes de você expandir.",
-          "Se você já renomeou com o seu próprio formato de título, o Surco desfaz isso antes de buscar para que o seu modelo não vaze para a consulta."
+          "O Bandcamp serve para independentes e exclusivos, e o Deezer para a música comercial que não está no Discogs.",
+          "O Beatport pede que você conecte sua conta (uma gratuita serve) e traz BPM, tom, mix e ISRC.",
+          "O MusicBrainz aceita uma busca por segundo, então os resultados dele podem chegar um pouco depois.",
+          "Com seu próprio token do Discogs em Ajustes, você tem um limite maior e mais rápido."
         ],
         "shot": "discogs-pt-BR.webp",
         "shotCaption": "Buscando um release e escolhendo a faixa no Discogs."
       },
       {
         "id": "automatch",
-        "title": "Auto-associar: tags sem mexer em nada",
-        "s": "Cada faixa que você solta é buscada e etiquetada sozinha.",
+        "title": "Deixe o Surco etiquetar sozinho",
+        "s": "Cada faixa que você solta é buscada e etiquetada sozinha quando a correspondência é confiável.",
         "body": [
-          "Com “Auto-associar ao importar” ligado em Ajustes, cada arquivo que você solta é buscado sozinho em segundo plano nas fontes que você tem ativas: primeiro o Discogs, com Bandcamp, Deezer, MusicBrainz e Beatport (depois de conectar a sua conta) como reserva. O Surco compara título, duração, número da faixa e artista com cada candidato, e só aplica os metadados por você quando a correspondência é confiável. Artista, álbum, ano, gênero, selo e capa, exatamente como se você tivesse escolhido à mão. Se o arquivo traz um ISRC nas tags (comum em downloads de streaming), o Surco o usa para fixar a gravação exata no Deezer, e assim o single original não se confunde com remixes de nome parecido.",
-          "Um título idêntico não basta sozinho: algo mais precisa confirmá-lo (a duração, o artista ou o número de catálogo), porque um título de uma palavra existe em dezenas de discos sem nenhuma relação. Quando nada o confirma, a faixa não recebe tags automaticamente: fica marcada como “A confirmar” com o seu grau de confiança, e você a aceita num passo pelo ⌘K sem nem abrir o editor. Com a chave desligada (é assim que vem) o Surco sugere, mas nunca atualiza sozinho."
+          "O Surco compara título, duração, número da faixa e artista com cada candidato. Um título igual não basta, algo mais tem que confirmar."
+        ],
+        "steps": [
+          {
+            "lead": "Ative.",
+            "text": "Ligue “Auto-associar ao importar” em Ajustes. Vem desligado."
+          },
+          {
+            "lead": "Solte suas faixas.",
+            "text": "Cada uma é buscada em segundo plano nas suas fontes e, se a correspondência for confiável, recebe os dados e a capa."
+          },
+          {
+            "lead": "Confirme as duvidosas.",
+            "text": "As que nada confirma ficam em “A confirmar”, e você aceita pelo ⌘K sem abrir o editor."
+          }
         ],
         "points": [
-          "Nunca sobrescreve o seu trabalho: pula as faixas já associadas, mantém as suas capas, e rodar de novo só preenche as lacunas.",
-          "Ele trabalha as linhas conforme aparecem na tela, espera você parar de rolar, e a sua busca manual sempre passa na frente, para não gastar o limite de requisições.",
-          "O número de catálogo confirma a prensagem exata; entre duas, o Surco prefere a que bate com o ano do seu arquivo.",
-          "Filtre a lista por “Auto-associadas” para revisar o que ele fez, ou rode sob demanda com “Auto-associar todas as faixas”.",
-          "O painel Atividade mostra o trabalho em segundo plano e explica cada veredito: quais sinais bateram e quais candidatos foram descartados. Um botão copia o log inteiro caso você precise relatar algo."
+          "Ele nunca pisa no seu trabalho. Pula as faixas já associadas e mantém sua capa.",
+          "Nas playlists das suas bibliotecas ele não busca sozinho. Ali o botão Associar age sobre as faixas que você selecionar.",
+          "O filtro “Auto-associadas” junta o que ele fez, e o painel de Atividade explica cada veredito."
         ],
         "shot": "automatch-pt-BR.webp",
         "shotCaption": "O painel Atividade com as buscas rodando em segundo plano."
@@ -806,243 +753,294 @@
         "id": "album",
         "title": "Associe um release inteiro",
         "s": "Aplique um release inteiro a todas as faixas dele de uma vez.",
-        "body": [
-          "Importou um álbum ou um EP de várias faixas? Selecione todas (⌘ + clique uma a uma, ou Shift + clique para um intervalo) e o editor passa para o modo multifaixa: o cabeçalho diz “Editando N faixas” e os campos que você edita valem para a seleção inteira de uma vez.",
-          "Na coluna de busca, busque o release uma única vez. O Surco o carrega e monta uma grade: os seus arquivos à esquerda, um menu com a tracklist do release à direita. Ele atribui cada arquivo à sua música pela duração, mesmo quando todos têm o mesmo nome, e você reatribui à mão os que ele errou. Quando estiver certo, clique em “Aplicar a N” e coloque as tags em todas de uma vez."
+        "body": ["Serve para um álbum ou EP que você importou inteiro."],
+        "steps": [
+          {
+            "lead": "Selecione as faixas.",
+            "text": "Com ⌘ + clique ou Shift + clique. O cabeçalho do editor passa a dizer “Editando N faixas”."
+          },
+          {
+            "lead": "Busque o disco uma vez.",
+            "text": "O Surco monta uma grade com seus arquivos à esquerda e o tracklist à direita, e associa cada um pela duração."
+          },
+          {
+            "lead": "Corrija e aplique.",
+            "text": "Troque pelo menu a que não acertou e aperte “Aplicar a N”."
+          }
         ],
         "points": [
-          "Cabeçalho “Editando N faixas”: edite título, artista, álbum ou gênero uma vez para todas.",
-          "Agrupamento e gênero são a exceção: cada tag é um chip que diz se está em todas, em algumas ou em nenhuma, e uma dobra “Por faixa” deixa você afinar cada faixa sem sobrescrever o resto.",
-          "A grade emparelha cada arquivo com uma música da tracklist; mude qualquer atribuição pelo menu dela.",
-          "Um arquivo que não cabe em lugar nenhum fica sem atribuição, em vez de ser forçado na música errada.",
-          "Duplicados são permitidos: dois arquivos podem apontar para a mesma música se for isso que você precisa.",
-          "No modo multifaixa o espectro e o nome do arquivo ficam ocultos, porque pertencem a faixas individuais.",
-          "O release não está em nenhuma das suas fontes? Numere a seleção na ordem da lista com um único comando."
+          "Um arquivo que não encaixa em nenhuma música fica sem associação em vez de cair na errada.",
+          "No grouping e no gênero, cada tag diz se está em todas, em algumas ou em nenhuma.",
+          "Se o disco não está nas suas fontes, um comando numera a seleção na ordem da lista."
         ],
         "shot": "album-pt-BR.webp",
         "shotCaption": "Atribuindo cada arquivo à sua música e aplicando a todas."
       },
       {
-        "id": "nombres",
-        "title": "Nomeie e organize os arquivos",
-        "s": "Arquivos e pastas com o nome que você quiser.",
+        "id": "calidad",
+        "title": "Confira a qualidade real",
+        "s": "Veja no espectro se um arquivo sem perdas é mesmo sem perdas.",
         "body": [
-          "Em Ajustes → Nomes você monta o modelo de nome de arquivo com chips: clique em {artist}, {title}, {album}, {year}… e eles entram onde está o cursor. Uma prévia ao vivo mostra o resultado. Use uma barra para criar subpastas, por exemplo {albumArtist}/{album}/{title}.",
-          "Por padrão o Surco mantém o nome original do arquivo e você decide quando renomear: no editor, o botão de regenerar aplica o seu modelo àquela faixa com um clique, e o lápis abre um padrão avulso só para ela. Se preferir não pensar nisso, um ajuste aplica o modelo automaticamente na conversão."
+          "Um arquivo sem perdas de verdade tem som até o alto do espectro. Um MP3 disfarçado de WAV corta de repente, e o Surco marca onde."
+        ],
+        "steps": [
+          {
+            "lead": "Analise.",
+            "text": "Abra a seção de qualidade de uma faixa, ou analise a fila toda com o botão da barra ou ⌘⇧A."
+          },
+          {
+            "lead": "Leia o veredito.",
+            "text": "Até uns 20 kHz é qualidade completa (verde), de 18 a 19,5 kHz é duvidosa (âmbar) e abaixo disso é ruim (vermelho)."
+          },
+          {
+            "lead": "Faça a triagem.",
+            "text": "Filtre a lista por “Duvidosas”, “Boas” ou “Sem análise” e decida quais faixas ficam de fora."
+          }
         ],
         "points": [
-          "Chips para todos os campos: título, artista, álbum, ano, gênero, número da faixa, avaliação…",
-          "O separador / cria subpastas ao exportar.",
-          "Opcional: aparar espaços e completar com zeros o número da faixa (03 em vez de 3).",
-          "“Nomes de arquivo sem acentos” grava “Royksopp” em vez de “Röyksopp”, útil para buscar num NAS ou em equipamentos que tropeçam em acentos. As tags mantêm os acentos.",
-          "As posições de vinil do Discogs (A1, B2…) ficam como número da faixa, nas tags e no nome do arquivo.",
-          "Os títulos também têm o seu formato, no estilo colecionador: defina um padrão como ({trackNumber}) {title} ({year}) e aplique quando quiser (a uma faixa ou à seleção inteira), nunca automaticamente. Aplicar duas vezes não duplica o prefixo, e o Surco diz quantos títulos mudaram e quais pulou.",
-          "Você pode regenerar de uma vez os nomes de arquivo de uma seleção inteira a partir dos metadados."
+          "Um MP3 não é julgado como um lossless. O corte dele é o formato, não um defeito.",
+          "“Possível reprocessamento” avisa de agudos que parecem regenerados sobre um corte anterior. É uma suspeita medida, não uma prova.",
+          "Abaixo do espectro você tem LUFS, true peak, dinâmica e ruído de fundo, e pode salvar o relatório em PNG."
         ],
-        "shot": "nombres-pt-BR.webp",
-        "shotCaption": "O construtor do modelo de nome de arquivo em Ajustes."
+        "shot": "calidad-pt-BR.webp",
+        "shotCaption": "O espectro de uma faixa com o seu veredito de qualidade."
+      },
+      {
+        "id": "declick",
+        "title": "Limpe seus rips de vinil",
+        "s": "Tire cliques, ruído de fundo e o silêncio da agulha no começo e no fim.",
+        "body": [
+          "As duas seções vêm desligadas e se aplicam ao converter. Você decide qual faixa precisa."
+        ],
+        "steps": [
+          {
+            "lead": "Veja quantos cliques ela tem.",
+            "text": "O Surco estima e marca cada um na forma de onda, e “Próximo clique” percorre um por um."
+          },
+          {
+            "lead": "Escolha os níveis.",
+            "text": "Cliques e ruído de fundo têm quatro níveis cada, de desligado a forte."
+          },
+          {
+            "lead": "Ouça o resultado.",
+            "text": "“Ouvir o resultado” alterna sem cortes entre a faixa reparada e a original, para você ouvir se a reparação levou um pouco de música junto."
+          },
+          {
+            "lead": "Corte o silêncio.",
+            "text": "A seção de corte detecta a entrada e a saída, e você ajusta cada corte no milissegundo com zoom e escuta próprios."
+          }
+        ],
+        "points": [
+          "Reparar e cortar recodificam o áudio. Os cues do Traktor são mantidos, menos em ALAC.",
+          "O filtro “Silêncio a cortar” junta as faixas que precisam.",
+          "O ruído é estimado na própria faixa, então funciona em rips que já começam direto na música."
+        ],
+        "shot": "declick-pt-BR.webp",
+        "shotCaption": "Cliques marcados na forma de onda e ruído de fundo numa só seção."
       },
       {
         "id": "convertir",
-        "title": "Converta a faixa",
-        "s": "Escolha o formato e converta, sabendo antes para qual formato vai gravar.",
+        "title": "Converta suas faixas",
+        "s": "Uma faixa ou a fila toda, no formato que você escolher ou no dela.",
         "body": [
-          "O botão na parte de baixo do editor converte a faixa selecionada e diz para qual formato vai gravar antes de você clicar. O menu à direita dele escolhe o formato, em qualquer direção. AIFF, WAV, FLAC ou ALAC sem perdas, ou MP3 para ocupar menos, também se a faixa já era lossless. Se a faixa já está nesse formato, o Surco a copia como está na hora, sem recodificar, a não ser que os seus ajustes de qualidade ou um filtro de áudio mudem o áudio.",
-          "A qualidade se define em Ajustes → Formato, com o bitrate do MP3 (de 320 a 128 kbps, ou VBR V0/V2), a profundidade de bits, a taxa de amostragem e a compressão do FLAC. Por padrão, são mantidos os valores do original, menos a profundidade de bits. “Corrigido” salva um arquivo de 16 bits preenchido até 24 como 16 bits reais, sem perda. Em Ajustes → Saída você decide para onde vai, seja uma pasta de saída, a sua biblioteca do Apple Music, ao lado do original (exportações no mesmo formato levam um nome com “(2)” e a origem fica intacta) ou “Editar o original”, que regrava o arquivo no lugar. Atenção, com “Editar o original” mudar de formato elimina o original. Ali mesmo você escolhe, separadamente para o rekordbox, o Engine DJ e o Traktor, se a conversão não mexe neles (“Não mexer”), deixa em dia as faixas que eles já têm (“Atualizar”) ou também adiciona as novas (“Atualizar e adicionar”). Se quiser, ligue a normalização (volume ou pico, com predefinições para streaming, clube ou broadcast) para igualar o volume. Quando terminar, “Mostrar arquivo” leva você ao resultado no Finder ou no Explorer."
+          "⌘Enter converte a faixa selecionada e ⌘⇧Enter a fila toda, pulando o que já está pronto. Se você filtrou a lista, só se converte o que está à vista."
+        ],
+        "steps": [
+          {
+            "lead": "Escolha o formato.",
+            "text": "No menu do botão. AIFF, WAV, FLAC, ALAC ou MP3. Com “Igual à origem” cada arquivo fica no seu formato e só as tags são reescritas, na hora."
+          },
+          {
+            "lead": "Escolha para onde vai.",
+            "text": "Em Ajustes → Saída. Uma pasta, seu Apple Music, ao lado do original ou “Editar o original”."
+          },
+          {
+            "lead": "Converta.",
+            "text": "No fim você vê quantas foram convertidas, puladas ou falharam, e “Mostrar arquivo” leva você ao resultado."
+          }
         ],
         "points": [
-          "Formatos: AIFF, WAV, FLAC e ALAC (sem perdas) e MP3, de qualquer um para qualquer um. M4A, AAC, OGG e OPUS são lidos e convertidos para qualquer um deles. MP3 de 320 a 128 kbps, ou VBR V0/V2.",
-          "Reexportar para o mesmo formato, sem mexer no áudio, mantém os cue points do Traktor.",
-          "Normalização, corte e reparo de cliques recodificam o áudio: os cues do Traktor sobrevivem entre MP3, AIFF, FLAC e WAV em qualquer combinação; só se perdem no ALAC, que não tem onde guardá-los. Vêm desligados e o Surco avisa antes de converter.",
-          "Reexportar uma faixa sobre si mesma não reaplica a normalização nem o declick já embutidos: mudar só os metadados não reprocessa o áudio, então você nunca empilha ganho nem perde uma geração.",
-          "Descer para 16 bits aplica dither; e o Surco mantém a profundidade do original em vez de aumentá-la sem você saber.",
-          "“Manter arquivos MP3 e M4A como estão” evita que os seus MP3 e M4A engordem sem ganhar nada quando o formato de saída é sem perdas. Eles ficam como estão e só as tags são atualizadas, a não ser que você iguale o volume, repare cliques ou corte, o que recodifica o áudio.",
-          "Você pode cancelar uma conversão no meio, e aplicar a mesma decisão ao resto do lote de uma vez quando um arquivo já existe.",
-          "Se a conversão muda o áudio de um original, o Surco guarda antes uma cópia de segurança; a marca na linha (ou ⌘K) leva você de volta ao original. Em Ajustes → Saída você decide se quer guardar uma sempre, só quando o áudio muda (o padrão) ou nunca, por quantos dias e até quanto espaço.",
-          "Depois de converter, você pode mandar os originais para a Lixeira numa única ação. Se a faixa nova substitui outra de outro formato na sua biblioteca, o Surco retira a antiga sozinho, assim que confere a nova e nenhum programa continua usando a antiga. Tudo vai para a Lixeira, ou para Cópias › Arquivos de música num disco sem Lixeira. Só com “Nunca” em Ajustes → Saída é apagado de vez."
+          "Se a conversão muda o áudio de um original, o Surco guarda antes um backup. A marca na linha leva você de volta a ele.",
+          "Com “Editar o original”, mudar de formato apaga o original.",
+          "Converter não busca nas suas fontes. Se quiser dados novos, rode antes Associar (⌘⇧D)."
         ],
         "shot": "convertir-pt-BR.webp",
         "shotCaption": "O botão de converter com o seletor de formato."
       },
       {
-        "id": "igual-origen",
-        "title": "Tags sem recodificar",
-        "s": "Acerte os metadados sem mudar o formato dos seus arquivos.",
-        "body": [
-          "Às vezes você não quer converter nada: quer os seus arquivos exatamente como estão, só com os metadados e a capa bem preenchidos. É para isso que existe “Igual à origem”: cada arquivo sai no seu próprio formato, então um lote misto de WAV, FLAC e MP3 recebe tags de ponta a ponta sem que nenhum mude de formato.",
-          "Com os filtros de áudio desligados, o áudio não é tocado: os bytes são copiados direto e só as tags são reescritas. É instantâneo, seja qual for o tamanho do arquivo, e não há perda de qualidade possível, porque não há recodificação. A única exceção é um arquivo lossless que os seus ajustes de qualidade alteram: com “Corrigido”, um áudio de 16 bits preenchido até 24 é regravado como 16 bits reais, também sem perda."
+        "id": "nombres",
+        "title": "Nomeie e organize os arquivos",
+        "s": "Arquivos e pastas com o nome que você quiser.",
+        "body": ["Por padrão o Surco mantém o nome original e você decide quando renomear."],
+        "steps": [
+          {
+            "lead": "Monte o modelo.",
+            "text": "Em Ajustes → Nomes clique em fichas como {artist}, {title} ou {year}, e uma prévia mostra o resultado."
+          },
+          {
+            "lead": "Crie pastas se quiser.",
+            "text": "Uma barra cria subpastas, por exemplo {albumArtist}/{album}/{title}."
+          },
+          {
+            "lead": "Aplique.",
+            "text": "O botão de regenerar do editor aplica o modelo a uma faixa ou à seleção toda. Se preferir não pensar nisso, um ajuste aplica sozinho ao converter."
+          }
         ],
         "points": [
-          "Escolha em Ajustes → Formato ou no assistente de boas-vindas, e também no menu do botão de converter quando você tem várias faixas selecionadas.",
-          "Funciona com qualquer destino, inclusive “Editar o original”.",
-          "OGG, OPUS, AAC e MP4 não têm formato de saída equivalente, então são pulados com um aviso em vez de virarem outra coisa sem você saber. Um M4A sai como ALAC.",
-          "Se você liga um filtro que obrigaria a recodificar um MP3 sobre si mesmo, o Surco pergunta antes."
+          "“Nomes de arquivo sem acentos” escreve “Royksopp” em vez de “Röyksopp”. As tags mantêm os acentos.",
+          "O título também pode ter formato próprio, como ({trackNumber}) {title} ({year}), e ele nunca é aplicado sozinho."
         ],
-        "shot": "igual-origen-pt-BR.webp",
-        "shotCaption": "“Igual à origem” no seletor de formato."
-      },
-      {
-        "id": "lote",
-        "title": "Converta todas as faixas",
-        "s": "A fila inteira de uma vez, pulando o que já está feito.",
-        "body": [
-          "Quando a fila estiver pronta, o botão “Converter N faixas” da barra (⌘⇧Enter) processa de uma vez todas as faixas conversíveis e pula as que já estão feitas. Você vê o progresso na barra de ferramentas e, no fim, um resumo de quantas foram convertidas, puladas ou deram erro.",
-          "Um detalhe: converter tudo só converte e renomeia com os metadados que as faixas já têm, nunca vai às suas fontes por conta própria. Se quiser dados frescos antes, rode “Auto-associar todas as faixas” (⌘⇧D) pela barra de ferramentas."
-        ],
-        "points": [
-          "Converte a fila inteira de uma vez; cancele pelo progresso na barra de ferramentas ou pela paleta de comandos.",
-          "Se você filtrou a lista, o lote converte só o que você vê.",
-          "As conversões rodam em paralelo nos núcleos da sua máquina; as de mesmo formato são quase instantâneas.",
-          "Usa só os metadados atuais: nada é baixado das suas fontes durante o lote.",
-          "“Formato e destino”, no rodapé do editor, muda o formato e o destino só para esse lote. Os seus ajustes padrão ficam como estavam."
-        ],
-        "shot": "lote-pt-BR.webp",
-        "shotCaption": "Três faixas selecionadas, prontas para converter de uma vez."
+        "shot": "nombres-pt-BR.webp",
+        "shotCaption": "O construtor do modelo de nome de arquivo em Ajustes."
       },
       {
         "id": "exportar",
-        "title": "Leve tudo para os seus decks",
-        "s": "As faixas aparecem no Apple Music, rekordbox, Engine DJ ou Traktor.",
+        "title": "Leve suas faixas para o seu software de DJ",
+        "s": "Apple Music, rekordbox, Engine DJ, Traktor e Serato, ao converter ou pelas playlists deles.",
         "body": [
-          "O Surco não para na conversão. Ele manda as faixas direto para o Apple Music (no macOS), e para o rekordbox, Engine DJ, Traktor ou Serato se em Ajustes → Saída você os colocar em “Atualizar e adicionar”, enquanto converte. Também exporta a fila como coleção do rekordbox (.xml), Traktor (.nml), Serato (.crate) ou lista M3U8. A exportação fica no editor, bem onde a conversão termina.",
-          "As tags e a capa viajam dentro do próprio arquivo, então o seu software de DJ as lê sem passos extras. Os arquivos de ponte são outra história: levam os metadados e os caminhos, mas nem cue points, nem avaliação, nem capa. Cada programa puxa isso do arquivo ou do seu próprio banco de dados."
+          "A barra lateral mostra suas bibliotecas. Abra qualquer playlist e as faixas entram na lista com os arquivos de verdade."
+        ],
+        "steps": [
+          {
+            "lead": "Escolha o que a conversão faz.",
+            "text": "Em Ajustes → Saída você decide, para cada programa, se ele fica como está, se as faixas que ele já tem são atualizadas ou se as novas também entram."
+          },
+          {
+            "lead": "Converta.",
+            "text": "As faixas chegam com tags e capa. Você também pode exportar a fila como coleção .xml, .nml ou .crate, ou como playlist M3U8."
+          },
+          {
+            "lead": "Organize suas playlists.",
+            "text": "Pela barra lateral você cria, renomeia e reordena playlists e pastas sem abrir o programa."
+          }
         ],
         "points": [
-          "Para o Apple Music, rekordbox, Engine DJ ou Traktor com um clique, durante a conversão.",
-          "O Engine DJ recebe também a avaliação e a capa, e a faixa entra nas playlists que você escolher no editor. Uma faixa nova entra sem análise e o Engine a analisa quando você a abre. Uma que já estava lá mantém os cue points, e os hot cues que você colocar no Surco são salvos no Engine.",
-          "O Traktor precisa estar fechado para gravar na coleção dele; o Surco se oferece para fechá-lo e faz uma cópia de segurança antes de mexer em qualquer coisa. Com o Engine DJ aberto, o que o Surco precisa gravar espera a vez e entra quando você o fecha, também com cópia de segurança.",
-          "O Surco avisa quando uma faixa já está na sua biblioteca, conferindo a que corresponde ao seu destino. É uma dica bem afinada, não uma garantia.",
-          "Edite uma faixa depois e o Surco atualiza a cópia dela no Apple Music em vez de duplicá-la, e se já havia uma cópia mais antiga ele oferece removê-la.",
-          "Você pode substituir uma faixa que já tem. Carregue outra cópia de algo da sua biblioteca, em qualquer formato, inclusive o mesmo (um MP3 por um AIFF, ou um MP3 de 128 por um de 320), e o botão vira “Substituir”. A entrada do Apple Music e a linha do rekordbox passam a seguir o arquivo novo, mantendo as playlists e os cue points, e no Apple Music também o número de reproduções, a sua avaliação e o favorito. O rekordbox pode recalcular o beatgrid quando vê um arquivo diferente, então confira a grade. Se o formato muda, o Surco retira o arquivo antigo assim que confere o novo.",
-          "Com “Atualizar a coleção do rekordbox ao converter” em “Atualizar” ou “Atualizar e adicionar” (Ajustes › Saída), a entrada do rekordbox também recebe título, artista, álbum, gênero, selo, remixer, comentário, ano, números de faixa e disco e capa, quer você converta, quer só atualize as tags. BPM, tom e cue points ficam como o rekordbox os tem, e um campo que você deixa vazio no Surco não apaga o do rekordbox. O rekordbox precisa estar fechado, e o Surco se oferece para fechá-lo.",
-          "Tom, selo, número de catálogo e remixer não chegam ao Apple Music (vivem só nas tags do arquivo) e o FLAC nunca é enviado, porque o Music não sabe lidar com ele."
+          "Se o programa está aberto, o Surco espera você fechar ou se oferece para fechar, e sempre faz backup antes de escrever.",
+          "O Traktor não relê o arquivo, ele lê o collection.nml. Para ele ver seus cues novos, indique sua coleção ao Surco em Ajustes.",
+          "Os cues do Traktor sobrevivem à conversão entre MP3, AIFF, FLAC e WAV e só se perdem em ALAC.",
+          "Carregue outra cópia de uma faixa que você já tem e o botão vira “Substituir”, mantendo playlists e cues."
         ],
         "shot": "exportar-pt-BR.webp",
         "shotCaption": "Mandando a faixa para o Apple Music ou exportando a coleção."
+      },
+      {
+        "id": "rekordbox",
+        "title": "Marque seus cues",
+        "s": "Hot cues na forma de onda do rekordbox, Engine DJ ou Traktor, com o seu fluxo.",
+        "body": [
+          "Abra uma playlist de qualquer um dos três na barra lateral e escolha uma faixa. A seção Cues mostra a forma de onda e a grade."
+        ],
+        "steps": [
+          {
+            "lead": "Escolha um fluxo.",
+            "text": "Dois já vêm prontos, Mix in 64 e Mix in 32, e em Ajustes › Cues o Surco aprende o seu a partir dos cues que você já tem."
+          },
+          {
+            "lead": "Clique no drop.",
+            "text": "O fluxo coloca o resto contando para trás. Se não quiser procurar esse ponto, Marcar automático sugere e você aceita com Return."
+          },
+          {
+            "lead": "Salve.",
+            "text": "O Surco faz um backup e escreve na sua coleção. Se o programa estiver aberto, ele espera você fechar."
+          }
+        ],
+        "points": [
+          "Marcar automático sugere, não decide. As sugestões seguras têm linha contínua e as duvidosas, tracejada.",
+          "Com várias faixas selecionadas, você marca e salva todas de uma vez.",
+          "Engine DJ e Traktor recebem só os hot cues. No Traktor eles vão nos botões 2 a 8, porque o 1 é da grade.",
+          "O filtro “Cues fora da grade” mostra as faixas com algum cue fora da batida."
+        ],
+        "shot": "rekordbox-pt-BR.webp",
+        "shotCaption": "Marcar automático sugere onde a faixa entra, com o seu fluxo pronto para aceitar."
       },
       {
         "id": "usb",
         "title": "Leve suas playlists para um USB",
         "s": "Exporte suas playlists para um USB pronto para os players.",
         "body": [
-          "O Surco exporta as suas playlists do rekordbox, do Engine DJ, do Serato ou do Traktor para um USB, com a biblioteca que os players leem. Abra pelo ícone de USB ao lado do nome do programa em Fontes, por “Exportar para USB…” no ⌘K ou pelo aviso que aparece ao conectar um USB.",
-          "Você marca as playlists e escolhe o USB, e antes de copiar qualquer coisa ele diz quantas faixas são novas, quantas já estavam lá, quantas saíram desde a última vez e se tudo cabe."
+          "Funciona com playlists do rekordbox, Engine DJ, Serato e Traktor, no macOS e no Windows."
+        ],
+        "steps": [
+          {
+            "lead": "Abra.",
+            "text": "Pelo ícone de USB ao lado do programa na barra lateral, por “Exportar para USB…” no ⌘K ou pelo aviso que aparece ao conectar um pendrive."
+          },
+          {
+            "lead": "Marque as playlists e o pendrive.",
+            "text": "Antes de copiar, o Surco diz quantas faixas são novas, quantas já estavam e se tudo cabe."
+          },
+          {
+            "lead": "Exporte.",
+            "text": "O pendrive leva a biblioteca que os players leem, com cues e grade."
+          }
         ],
         "points": [
-          "Do rekordbox, o USB leva os cues, a grade e as formas de onda, e o rekordbox pode continuar sincronizando. Do Engine DJ, leva a biblioteca do Engine. Do Serato ou do Traktor, é um USB Pioneer com cues, loops e grade, sem passar pelo rekordbox.",
-          "A música é copiada como está. Se o seu CDJ é antigo, converta antes para AIFF o que for FLAC ou passar de 24 bits ou 48 kHz.",
-          "Avisa de um USB em exFAT, NTFS ou GPT, que alguns CDJs não leem, e das faixas que podem não tocar num CDJ-2000.",
-          "“Apagar do USB a música que não é mais exportada” remove o que você tirou das suas playlists.",
-          "O rekordbox ou o Engine DJ precisam estar fechados. Se você cancelar ou o USB se desconectar, ele fica com a biblioteca anterior.",
-          "Só no macOS e no Windows."
+          "A música é copiada como está. Se seu CDJ é antigo, converta antes para AIFF o que for FLAC ou passar de 24 bits ou 48 kHz.",
+          "Ele avisa se o pendrive está em exFAT, NTFS ou GPT, que alguns CDJs não leem.",
+          "O rekordbox ou o Engine DJ precisa estar fechado."
         ],
         "shot": "usb-pt-BR.webp",
         "shotCaption": "Exportar para USB com as playlists do rekordbox."
-      },
-      {
-        "id": "traktor",
-        "title": "Faça o Traktor enxergar de verdade as suas mudanças",
-        "s": "Por que o Traktor mostra os cues antigos e como resolver.",
-        "body": [
-          "Se você toca com Traktor, conhece a sensação: você converte uma faixa, os cue points estão gravados certinho dentro do arquivo, e o Traktor continua mostrando os antigos. Não é a conversão que falha, é que o Traktor não relê o arquivo: ele lê o seu próprio banco de dados, o collection.nml.",
-          "Por isso o Surco pode atualizar a sua coleção enquanto converte. Você indica o seu collection.nml em Ajustes (o Surco propõe o que encontrar e não toca em nada até você confirmar) e a partir daí ele mantém em dia os cues, a grade e a capa das faixas que o Traktor já tinha."
-        ],
-        "points": [
-          "Vem desligado: até você escolher o seu collection.nml, o Surco não grava na coleção.",
-          "Sempre guarda uma cópia com data antes de gravar e mantém as últimas 5; você as vê e restaura em Cópias.",
-          "O Traktor precisa estar fechado: ele regrava a coleção inteira ao sair, então as suas mudanças se perderiam. O Surco detecta isso e se oferece para fechá-lo.",
-          "Um lote de trezentas faixas gera uma única gravação, não trezentas.",
-          "Se a árvore de cues de uma faixa não puder ser lida, o Surco não apaga os que você já tinha.",
-          "Funciona com o Traktor Pro e com o Traktor Play."
-        ],
-        "shot": "traktor-pt-BR.webp",
-        "shotCaption": "A sincronização com a coleção do Traktor em Ajustes."
-      },
-      {
-        "id": "rekordbox",
-        "title": "Prepare os seus cues do rekordbox",
-        "s": "Hot cues e CALLs sobre a forma de onda do rekordbox, com o seu fluxo.",
-        "body": [
-          "Abra uma playlist do rekordbox na barra lateral do Surco e escolha uma faixa. A seção Cues mostra a forma de onda e a grade do rekordbox, e você coloca os hot cues de A a H e os CALLs com o mouse ou o teclado.",
-          "Com um fluxo, um clique onde a faixa entra coloca o resto dos cues, contando para trás. Se preferir não procurar esse ponto, Marcar automático o sugere e você o aceita com Return."
-        ],
-        "points": [
-          "«Salvar no rekordbox» grava na sua coleção com o rekordbox fechado, depois de fazer uma cópia de segurança. Se ele estiver aberto, o Surco espera você fechá-lo.",
-          "Os fluxos se criam em Ajustes › Cues. Dois já vêm prontos, Mix in 64 e Mix in 32, e o Surco pode aprender os seus a partir dos cues que você já tem.",
-          "Com várias faixas selecionadas, «Marcar automático nas selecionadas» prepara todas e «Salvar N faixas no rekordbox» as salva de uma vez.",
-          "Se o rekordbox ainda não analisou a faixa, o Surco mede a grade e você pode colocar os cues mesmo assim. Quando o rekordbox a analisar, eles passam para a grade dele.",
-          "Marcar automático sugere, não decide. As sugestões nem sempre acertam, então nada é salvo até você aceitá-las. As certas aparecem com linha contínua e as duvidosas tracejadas, e em Ajustes › Cues, “Aprender com minhas faixas” o ajusta ao seu jeito de marcar.",
-          "O mesmo funciona com playlists do Engine DJ e do Traktor, que recebem só os hot cues. No Traktor eles aparecem em azul e nos botões de 2 a 8, já que o botão 1 é da grade.",
-          "Para encontrar os cues que não caem na batida, o filtro “Cues fora da grade” do rekordbox, do Traktor e do Engine DJ separa as faixas com algum cue fora da grade. Você abre, apaga os cues e clica em Marcar automático. Em Ajustes › Cues, “Tolerância da grade” define a partir de quantos ms conta, 5, 10 ou 20.",
-          "Um fluxo marcado num programa chega à mesma faixa nos outros quando você salva, cada um na sua própria grade e ao redor dos cues que já tinha. Antes de salvar, o editor diz o que cada programa vai receber, e em Ajustes › Cues você escolhe a quais ele chega. Só viaja o que um fluxo coloca: os cues que você põe à mão ficam no programa onde você os marcou. E se em outro programa não sobrarem letras livres, o editor diz quantos não cabem."
-        ],
-        "shot": "rekordbox-pt-BR.webp",
-        "shotCaption": "Marcar automático sugere onde a faixa entra, com o seu fluxo pronto para aceitar."
       },
       {
         "id": "revisar",
         "title": "Revise sua biblioteca",
         "s": "Erros de digitação, grafias e duplicados da sua biblioteca, num só lugar.",
         "body": [
-          "“Revisar”, na barra de ferramentas, passa pelo seu Apple Music, pela lista que você tem carregada ou por uma playlist e junta num só lugar o que está errado. Para cada caso você vê como está e como fica, coloca no lote o que quer corrigir e aplica tudo de uma vez.",
-          "As mudanças chegam aos arquivos, ao Apple Music e, se você sincroniza, ao rekordbox, Engine DJ e Traktor. Antes de gravar, o Surco guarda uma cópia de cada arquivo e de cada biblioteca, e a revisão tem Desfazer."
+          "As mudanças chegam aos arquivos, ao Apple Music e às bibliotecas que você sincroniza. Antes de escrever o Surco faz um backup, e a revisão tem Desfazer."
+        ],
+        "steps": [
+          {
+            "lead": "Abra “Revisar”.",
+            "text": "Fica na barra de ferramentas e passa pelo seu Apple Music, pela lista carregada ou por uma playlist."
+          },
+          {
+            "lead": "Escolha o que corrigir.",
+            "text": "Para cada caso você vê como está e como fica, e põe no lote o que quiser."
+          },
+          {
+            "lead": "Aplique.",
+            "text": "Tudo é escrito de uma vez."
+          }
         ],
         "points": [
-          "Grafias junta o que está escrito de várias formas, como DJ Lara e Dj Lara, os acentos que não batem e os espaços ou caracteres invisíveis. Um possível erro de digitação nunca entra no lote sozinho.",
-          "Duplicados encontra a mesma faixa duas vezes. Você escolhe qual fica, e ela entra nas playlists da que você remove. Os arquivos da que você remove vão para a Lixeira, menos os que outro programa ainda usa.",
-          "Danos detecta problemas nos cues do Traktor e do Engine DJ, na duração que o Engine DJ guarda e no gênero, e os repara com uma cópia antes.",
-          "Incompletas lista as faixas que não têm um campo obrigatório e propõe como preenchê-lo, pelo app, por uma busca ou pelo nome do arquivo. “Pôr N propostas no lote” adiciona todas de uma vez.",
-          "Se o que falta é um campo que a revisão não grava, como o BPM ou o tom, “Abrir no editor” leva você à faixa.",
-          "BPM, tom, cues e avaliação ficam intactos ao aplicar."
+          "Grafias junta o que está escrito de várias formas, como DJ Lara e Dj Lara.",
+          "Duplicados deixa você escolher qual fica, e ela herda as playlists da outra.",
+          "Danos repara cues e durações quebradas do Traktor e do Engine DJ, e Incompletas propõe como preencher os campos obrigatórios.",
+          "BPM, tom, cues e avaliação não são tocados."
         ],
         "shot": "revisar-pt-BR.webp",
         "shotCaption": "Revisão de uma playlist do rekordbox, com um espaço sobrando no nome de um álbum."
       },
       {
         "id": "atajos",
-        "title": "Voe pelo teclado",
-        "s": "Quase tudo tem atalho, e o ⌘K encontra para você.",
-        "body": [
-          "O Surco foi feito para trabalhar sem mouse. A paleta de comandos (⌘K) põe tudo atrás de uma única caixa de busca (agrupada por tema, sem se importar com acentos e aprendendo quais você usa mais), e quase toda ação tem o seu atalho: adicionar arquivos (⌘O), converter a faixa (⌘Enter), converter todas (⌘⇧Enter), analisar a qualidade (⌘⇧A), auto-associar (⌘⇧D), buscar nas suas fontes (/) e as setas para se mover pela lista.",
-          "Aperte ? a qualquer momento para ver a lista completa, e reatribua o que quiser em Ajustes → Atalhos. Cada ação mostra o seu atalho na própria dica, então você vai aprendendo pelo caminho."
+        "title": "Atalhos e ajustes",
+        "s": "Quase tudo tem atalho, o ⌘K encontra e os Ajustes guardam o resto.",
+        "body": ["O Surco foi feito para trabalhar sem mouse."],
+        "steps": [
+          {
+            "lead": "Abra a paleta.",
+            "text": "O ⌘K encontra qualquer ação ou faixa, sem ligar para acentos."
+          },
+          {
+            "lead": "Aprenda os atalhos.",
+            "text": "Aperte ? para ver todos. Cada botão mostra o seu na dica, e você os redefine em Ajustes → Atalhos."
+          },
+          {
+            "lead": "Encontre um ajuste.",
+            "text": "Em Ajustes (⌘ ,) digite em “Buscar ajustes” e o Surco leva você até ele."
+          }
         ],
         "points": [
-          "⌘K abre a paleta de comandos; ? mostra todos os atalhos.",
-          "Espaço toca ou pausa; as setas movem a seleção e ← → pulam cinco segundos dentro da faixa.",
-          "Enter confirma um campo e passa para o próximo; Esc limpa a busca e os filtros; Delete remove a faixa.",
-          "⌘1, ⌘2 e ⌘3 alternam entre a lista, os resultados da busca e o editor sem tocar no mouse.",
-          "⌘F localiza e substitui em todas as faixas, com regex se precisar, e diz quantas vai alterar antes de fazer. Fica aberto para a próxima passada.",
-          "Pela paleta você pula para qualquer faixa por título ou artista, troca o tema, aceita uma associação marcada ou reabre o assistente.",
-          "Todos os atalhos são reatribuíveis em Ajustes, e o Surco não deixa você salvar dois que conflitem."
+          "⌘F busca e substitui em todas as faixas, e avisa antes quantas vai mudar.",
+          "Exporte sua configuração para um arquivo, ou aponte a pasta dela para o iCloud Drive ou o Dropbox para compartilhar entre Macs.",
+          "Nada passa por um servidor do Surco. Sem conta, sem nuvem, sem telemetria."
         ],
         "shot": "atajos-pt-BR.webp",
         "shotCaption": "A paleta de comandos com a busca aberta."
-      },
-      {
-        "id": "ajustes",
-        "title": "Deixe do seu jeito",
-        "s": "O que não é do dia a dia, organizado em Ajustes.",
-        "body": [
-          "Ajustes (⌘ ,) reúne tudo o que não é do dia a dia, organizado numa barra lateral por blocos (Edição, Saída e App): Geral e Fontes no topo, depois Editor, Seções, Campos, Capa e Cues; em seguida Formato, Processamento, Nomes e Saída; e por fim Atalhos, Estatísticas e Avançado. Se não lembrar onde fica algo, digite em “Buscar ajustes”, acima das abas, e o Surco leva você a esse ajuste.",
-          "Configure uma vez e o Surco respeita as suas decisões em cada faixa. E se quiser levá-lo para outra máquina, você pode exportar a configuração inteira para um arquivo e importá-la de volta quando precisar."
-        ],
-        "points": [
-          "Defina gêneros e agrupamentos recorrentes para que apareçam como sugestões.",
-          "Gênero e Agrupamento escolhem cada um o seu separador (vírgula, ponto e vírgula, barra ou um seu) num pequeno menu ao lado do nome do campo em Ajustes → Campos.",
-          "Escolha quais campos ver e quais exigir, crie os seus próprios com um nome e uma chave, e reordene arrastando ou clique em “Auto-organizar” para colocá-los numa ordem sensata com um clique.",
-          "A aba Estatísticas acompanha os seus números de sempre (faixas carregadas, convertidas, analisadas, encontradas em cada fonte…) e gera uma imagem pronta para compartilhar.",
-          "Em Capa, as capas pequenas podem ser ampliadas até o seu tamanho mínimo e recortadas em quadrado, e uma opção do macOS faz o Finder mostrar a capa dos FLAC quando você os converte ou atualiza. Para isso, ela coloca na frente do FLAC uma pequena tag ID3 com a capa. O áudio não muda, e o Traktor continua aceitando-os mesmo com a sincronização ligada.",
-          "Em Fontes você pode limitar os resultados do Discogs a vinil, CD, arquivo ou cassete, e decidir quantos ver.",
-          "Em Editor você pode desligar as explicações em linha quando já as souber de cor, e religá-las quando quiser.",
-          "A análise fica em cache para não se repetir; você pode esvaziá-lo, e abrir o log de erros, em Ajustes → Avançado.",
-          "Exporte a sua configuração como cópia de segurança, ou aponte a pasta de configuração para o iCloud Drive ou o Dropbox para compartilhar as suas preferências entre Macs. O seu token do Discogs vai junto, então você não precisa configurá-lo de novo em cada máquina. Nada disso passa por nenhum servidor do Surco: sem conta, sem nuvem, sem telemetria.",
-          "Tudo funciona pelo teclado e com leitor de tela: cada controle diz o que é e em que estado está, e conversões, análises e avisos são anunciados sozinhos.",
-          "Ligue o ajuste de movimento reduzido do seu sistema e as animações se simplificam em vez de desaparecer."
-        ],
-        "shot": "ajustes-pt-BR.webp",
-        "shotCaption": "A janela de Ajustes com as suas seções."
       }
-    ]
+    ],
+    "notesLabel": "Bom saber"
   },
   "changelog": {
     "metaTitle": "Histórico de versões do Surco, as novidades de cada versão",
@@ -2050,16 +2048,12 @@
         ],
         "related": [
           {
-            "label": "Auto-associar",
+            "label": "Deixe o Surco etiquetar sozinho",
             "anchor": "automatch"
           },
           {
-            "label": "Tags sem recodificar",
-            "anchor": "igual-origen"
-          },
-          {
-            "label": "Converta todas as faixas",
-            "anchor": "lote"
+            "label": "Converta suas faixas",
+            "anchor": "convertir"
           }
         ]
       },
@@ -2136,11 +2130,11 @@
         ],
         "related": [
           {
-            "label": "Leve tudo para os seus decks",
+            "label": "Leve suas faixas para o seu software de DJ",
             "anchor": "exportar"
           },
           {
-            "label": "Converta a faixa",
+            "label": "Converta suas faixas",
             "anchor": "convertir"
           }
         ]
@@ -2209,7 +2203,7 @@
         ],
         "related": [
           {
-            "label": "Leve tudo para os seus decks",
+            "label": "Leve suas faixas para o seu software de DJ",
             "anchor": "exportar"
           },
           {
@@ -2289,12 +2283,12 @@
         ],
         "related": [
           {
-            "label": "Converta a faixa",
+            "label": "Converta suas faixas",
             "anchor": "convertir"
           },
           {
-            "label": "Faça o Traktor enxergar de verdade as suas mudanças",
-            "anchor": "traktor"
+            "label": "Leve suas faixas para o seu software de DJ",
+            "anchor": "exportar"
           }
         ]
       },
@@ -2340,12 +2334,8 @@
         ],
         "related": [
           {
-            "label": "Converta a faixa",
+            "label": "Converta suas faixas",
             "anchor": "convertir"
-          },
-          {
-            "label": "Tags sem recodificar",
-            "anchor": "igual-origen"
           }
         ]
       },
@@ -2474,12 +2464,8 @@
         ],
         "related": [
           {
-            "label": "Limpe o vinil",
+            "label": "Limpe seus rips de vinil",
             "anchor": "declick"
-          },
-          {
-            "label": "Corte o silêncio",
-            "anchor": "recorte"
           },
           {
             "label": "Associe um release inteiro",
@@ -2530,8 +2516,8 @@
             "anchor": "usb"
           },
           {
-            "label": "Abra suas bibliotecas no Surco",
-            "anchor": "fuentes"
+            "label": "Leve suas faixas para o seu software de DJ",
+            "anchor": "exportar"
           }
         ]
       },
@@ -2583,7 +2569,7 @@
         ],
         "related": [
           {
-            "label": "Converta a faixa",
+            "label": "Converta suas faixas",
             "anchor": "convertir"
           },
           {
@@ -2791,7 +2777,7 @@
         ],
         "related": [
           {
-            "label": "Voe pelo teclado",
+            "label": "Atalhos e ajustes",
             "anchor": "atajos"
           }
         ]
@@ -2843,7 +2829,7 @@
         ],
         "related": [
           {
-            "label": "Tags do Discogs, Bandcamp, Deezer, Beatport e MusicBrainz",
+            "label": "Encontre o disco nas suas fontes",
             "anchor": "discogs"
           }
         ]
@@ -2890,7 +2876,7 @@
         ],
         "related": [
           {
-            "label": "Auto-associar",
+            "label": "Deixe o Surco etiquetar sozinho",
             "anchor": "automatch"
           }
         ]
@@ -2943,7 +2929,7 @@
         ],
         "related": [
           {
-            "label": "Converta a faixa",
+            "label": "Converta suas faixas",
             "anchor": "convertir"
           }
         ]
@@ -2998,7 +2984,7 @@
         ],
         "related": [
           {
-            "label": "Leve tudo para os seus decks",
+            "label": "Leve suas faixas para o seu software de DJ",
             "anchor": "exportar"
           }
         ]
@@ -3106,8 +3092,8 @@
         ],
         "related": [
           {
-            "label": "Converta todas as faixas",
-            "anchor": "lote"
+            "label": "Converta suas faixas",
+            "anchor": "convertir"
           }
         ]
       },
