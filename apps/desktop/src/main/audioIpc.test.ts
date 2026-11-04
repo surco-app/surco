@@ -60,7 +60,7 @@ import { writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app, ipcMain } from 'electron'
-import { cachedAnalysis } from './analysisCache'
+import { cachedAnalysis, pruneAnalysisCache } from './analysisCache'
 import { registerAudioIpc } from './audioIpc'
 import {
   buildSpectrum,
@@ -267,6 +267,37 @@ describe('audio:cached-batch', () => {
     >
 
     expect(result[file]?.waveform).toBeUndefined()
+  })
+
+  // A long sweep over a library bigger than the cache evicts what it measured first before
+  // the list ever reopens. The verdict has to exist from the moment the track is measured,
+  // or those tracks read as unanalysed again and the sweep never finishes.
+  it('still serves both verdicts of a just-measured track after its entries are pruned', async () => {
+    const file = await makeFile()
+    vi.mocked(buildSpectrum).mockResolvedValue({
+      image: 'data:image/png;base64,CCCC',
+      cutoffHz: 19000,
+      sampleRateHz: 44100,
+      processed: false,
+    } as Awaited<ReturnType<typeof buildSpectrum>>)
+    vi.mocked(cacheableSpectrum).mockImplementation(
+      (b) => ({ ...b, cutoffFailed: false }) as ReturnType<typeof cacheableSpectrum>,
+    )
+    vi.mocked(measureChannelScan).mockResolvedValue({
+      clipped: [true],
+      channels: [],
+    } as unknown as Awaited<ReturnType<typeof measureChannelScan>>)
+    await handlerFor('audio:spectrogram')({}, file)
+    await handlerFor('audio:waveform-scan')({}, file)
+
+    await pruneAnalysisCache(0)
+
+    const result = (await handlerFor('audio:cached-batch')({}, [file])) as Record<
+      string,
+      { spectrogram?: { cutoffHz?: number }; scanVerdict?: unknown }
+    >
+    expect(result[file]?.spectrogram?.cutoffHz).toBe(19000)
+    expect(result[file]?.scanVerdict).toEqual({ clipping: true })
   })
 
   // One IPC round trip serves many paths at once — the whole point versus a probe

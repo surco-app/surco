@@ -107,6 +107,15 @@ function spectrogramNamespace(inputPath: string): string {
 // Bumped when what a verdict means changes, so verdicts reached before are probed again.
 const AUTO_MATCH_NAMESPACE = 'automatch-v1'
 
+const spectrumVerdictOf = ({
+  cutoffFailed: _cutoffFailed,
+  image: _image,
+  ...entry
+}: SpectrumResult & { cutoffFailed?: boolean }): SpectrumVerdict => entry
+const scanVerdictOf = (scan: WaveformScan): ScanVerdict => ({
+  clipping: scan.clipped.some(Boolean),
+})
+
 const PEEK_NAMESPACES: Record<keyof PeekableAnalyses, string> = {
   spectrogram: SPECTROGRAM_NAMESPACE,
   loudness: LOUDNESS_NAMESPACE,
@@ -291,6 +300,9 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
               }),
             ),
           (b) => !b.cutoffFailed,
+        )
+        await peekVerdict(spectrogramNamespace(inputPath), inputPath, spectrumVerdictOf).catch(
+          () => null,
         )
         return spectrum
       } catch (err) {
@@ -488,7 +500,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   // and this is never served a wave with no scan.
   handleAudio('audio:waveform-scan', async (_e, inputPath: string) => {
     try {
-      return await cachedAnalysis(CHANNELSCAN_NAMESPACE, inputPath, () =>
+      const scan = await cachedAnalysis(CHANNELSCAN_NAMESPACE, inputPath, () =>
         probe('activity.probeWaveform', inputPath, () =>
           // Registered for cancellation like audio:waveform: the two probes now share one
           // native decode, and it is only stopped once BOTH have gone away — so the scan
@@ -498,6 +510,8 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
           ),
         ),
       )
+      await peekVerdict(CHANNELSCAN_NAMESPACE, inputPath, scanVerdictOf).catch(() => null)
+      return scan
     } catch (err) {
       if (!isAbortError(err)) log.error('audio:waveform-scan failed', err)
       return null
@@ -525,14 +539,8 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       paths.map(async (path) => {
         // Through peekVerdict: the whole entry is parsed once, then only its projection.
         const [spectrogram, scanVerdict] = await Promise.all([
-          peekVerdict<SpectrumResult & { cutoffFailed?: boolean }, SpectrumVerdict>(
-            spectrogramNamespace(path),
-            path,
-            ({ cutoffFailed: _cutoffFailed, image: _image, ...entry }) => entry,
-          ),
-          peekVerdict<WaveformScan, ScanVerdict>(CHANNELSCAN_NAMESPACE, path, (scan) => ({
-            clipping: scan.clipped.some(Boolean),
-          })),
+          peekVerdict(spectrogramNamespace(path), path, spectrumVerdictOf),
+          peekVerdict(CHANNELSCAN_NAMESPACE, path, scanVerdictOf),
         ])
         const hit: { spectrogram?: SpectrumVerdict; scanVerdict?: ScanVerdict } = {}
         if (spectrogram) hit.spectrogram = spectrogram
