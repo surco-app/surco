@@ -75,7 +75,7 @@ export function traktorCueRows(block: string): TraktorCueRow[] {
 
 // Traktor keeps one grid marker per track: the first beat of a bar and the tempo from
 // there on. The beats run both ways from it to fill the track.
-function gridOf(block: string, durationMs: number): { ms: number; beat: number }[] {
+export function traktorGridOf(block: string, durationMs: number): { ms: number; beat: number }[] {
   const marker = traktorCueElements(block)
     .map((el) => el.element)
     .find((el) => Number(attr(el, 'TYPE')) === GRID_TYPE)
@@ -103,7 +103,7 @@ export function readTraktorTrackCues(nml: string, contentId: string): TrackCues 
     color,
     ...(loop && { loop }),
   }))
-  const grid = gridOf(entry.block, durationMs)
+  const grid = traktorGridOf(entry.block, durationMs)
   return {
     contentId,
     analysed: grid.length > 0,
