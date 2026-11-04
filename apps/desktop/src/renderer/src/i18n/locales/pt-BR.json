@@ -651,6 +651,7 @@
     "qualityEvidenceHump": "Vale em ~{{cutoff}} e subida até {{peak}}: possíveis agudos regenerados.",
     "qualityEvidenceShelf": "Agudos planos entre 17 e 22 kHz, típico de um limitador ou de uma restauração; inconclusivo.",
     "loudnessLufsLabel": "Volume",
+    "loudnessIntegratedLabel": "Integrado",
     "loudnessPeakLabel": "Pico",
     "loudnessRangeLabel": "Variação",
     "loudnessLufsHint": "Volume integrado (LUFS): o quão alto a faixa soa no conjunto",
@@ -1259,7 +1260,7 @@
     "editorHint": "Iguala cada faixa a um volume ou pico alvo.",
     "fadeValue": "Depois em {{pct}}%",
     "mode": {
-      "none": "Nenhuma",
+      "none": "Não",
       "loudness": "Volume",
       "peak": "Pico"
     },

@@ -651,6 +651,7 @@
     "qualityEvidenceHump": "Tal bei ~{{cutoff}} und Anstieg bis {{peak}}: möglicherweise regenerierte Höhen.",
     "qualityEvidenceShelf": "Flache Höhen zwischen 17 und 22 kHz, typisch für einen Limiter oder eine Restaurierung; nicht eindeutig.",
     "loudnessLufsLabel": "Lautheit",
+    "loudnessIntegratedLabel": "Integriert",
     "loudnessPeakLabel": "Peak",
     "loudnessRangeLabel": "Range",
     "loudnessLufsHint": "Integrierte Lautheit (LUFS): wie laut der Track insgesamt klingt",
@@ -1259,7 +1260,7 @@
     "editorHint": "Gleicht jeden Track an eine Ziel-Lautheit oder einen Ziel-Peak an.",
     "fadeValue": "Nachher bei {{pct}} %",
     "mode": {
-      "none": "Keine",
+      "none": "Aus",
       "loudness": "Lautheit",
       "peak": "Peak"
     },

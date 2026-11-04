@@ -650,13 +650,14 @@
     "qualityEvidenceTeeth": "{{teeth}} subidas entre {{from}} y {{to}}: posibles agudos regenerados.",
     "qualityEvidenceHump": "Valle en ~{{cutoff}} y subida hasta {{peak}}: posibles agudos regenerados.",
     "qualityEvidenceShelf": "Agudos planos entre 17 y 22 kHz, típico de un limitador o de una restauración; no concluyente.",
-    "loudnessLufsLabel": "Volumen",
+    "loudnessLufsLabel": "Sonoridad",
+    "loudnessIntegratedLabel": "Integrada",
     "loudnessPeakLabel": "Pico",
     "loudnessRangeLabel": "Rango",
-    "loudnessLufsHint": "Volumen integrado (LUFS): lo fuerte que suena la pista en conjunto",
+    "loudnessLufsHint": "Sonoridad integrada (LUFS): lo fuerte que suena la pista en conjunto",
     "loudnessPeakHint": "Pico real (dBTP): el instante más alto de la señal",
     "loudnessRangeHint": "Rango de volumen (LU): la diferencia entre las partes suaves y las fuertes",
-    "loudnessGroupLoudness": "Volumen",
+    "loudnessGroupLoudness": "Sonoridad",
     "loudnessGroupSignal": "Señal",
     "loudnessCrestLabel": "Dinámica",
     "loudnessCrestHint": "Factor de cresta (dB): la pegada entre los picos y el nivel medio",
@@ -1259,8 +1260,8 @@
     "editorHint": "Iguala cada pista a un volumen o pico objetivo.",
     "fadeValue": "Después al {{pct}} %",
     "mode": {
-      "none": "Ninguna",
-      "loudness": "Volumen",
+      "none": "No",
+      "loudness": "Sonoridad",
       "peak": "Pico"
     },
     "preset": {

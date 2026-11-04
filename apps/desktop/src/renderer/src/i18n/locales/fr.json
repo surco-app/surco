@@ -651,6 +651,7 @@
     "qualityEvidenceHump": "Creux à ~{{cutoff}} puis remontée jusqu'à {{peak}} : aigus possiblement régénérés.",
     "qualityEvidenceShelf": "Aigus plats entre 17 et 22 kHz, typique d'un limiteur ou d'une restauration ; non concluant.",
     "loudnessLufsLabel": "Loudness",
+    "loudnessIntegratedLabel": "Intégré",
     "loudnessPeakLabel": "Pic",
     "loudnessRangeLabel": "Plage",
     "loudnessLufsHint": "Loudness intégré (LUFS) : le niveau global perçu du morceau",
@@ -1259,7 +1260,7 @@
     "editorHint": "Aligne chaque morceau sur un loudness ou un pic cible.",
     "fadeValue": "Après à {{pct}} %",
     "mode": {
-      "none": "Aucune",
+      "none": "Non",
       "loudness": "Loudness",
       "peak": "Pic"
     },

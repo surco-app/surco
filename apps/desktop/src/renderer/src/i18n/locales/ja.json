@@ -651,6 +651,7 @@
     "qualityEvidenceHump": "約 {{cutoff}} の谷と {{peak}} までの上昇：再生成された高音の可能性があります。",
     "qualityEvidenceShelf": "17 と 22 kHz の間で平坦な高音、リミッターまたはレストアの典型、結論は出せません。",
     "loudnessLufsLabel": "ラウドネス",
+    "loudnessIntegratedLabel": "統合",
     "loudnessPeakLabel": "ピーク",
     "loudnessRangeLabel": "レンジ",
     "loudnessLufsHint": "統合ラウドネス（LUFS）。トラック全体の音量感",
@@ -1259,7 +1260,7 @@
     "editorHint": "すべてのトラックを目標音量またはピークに合わせます。",
     "fadeValue": "{{pct}}% 後",
     "mode": {
-      "none": "なし",
+      "none": "オフ",
       "loudness": "ラウドネス",
       "peak": "ピーク"
     },

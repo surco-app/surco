@@ -19,4 +19,14 @@ describe.each(Object.entries(locales))('editor labels in %s', (_, t) => {
     expect(t.editor.propFileName).not.toBe(t.editor.outputName)
     expect(t.settings.sections.output).toBe(t.editor.outputName)
   })
+
+  it('names the integrated reading apart from its loudness subhead, so one word does not label both the group and a row inside it', () => {
+    expect(t.editor.loudnessIntegratedLabel).toEqual(expect.any(String))
+    expect(t.editor.loudnessIntegratedLabel).not.toBe(t.editor.loudnessGroupLoudness)
+    expect(t.normalize.mode.loudness).toBe(t.editor.loudnessGroupLoudness)
+  })
+
+  it('says «off» for normalization the way vinyl repair says it, two segmented controls a few rows apart', () => {
+    expect(t.normalize.mode.none).toBe(t.declick.mode.off)
+  })
 })

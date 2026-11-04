@@ -651,6 +651,7 @@
     "qualityEvidenceHump": "Valley at ~{{cutoff}} and a rise up to {{peak}}: possibly regenerated highs.",
     "qualityEvidenceShelf": "Flat highs between 17 and 22 kHz, typical of a limiter or a restoration; inconclusive.",
     "loudnessLufsLabel": "Loudness",
+    "loudnessIntegratedLabel": "Integrated",
     "loudnessPeakLabel": "Peak",
     "loudnessRangeLabel": "Range",
     "loudnessLufsHint": "Integrated loudness (LUFS). How loud the track sounds overall",
@@ -1259,7 +1260,7 @@
     "editorHint": "Match every track to a target loudness or peak.",
     "fadeValue": "After at {{pct}}%",
     "mode": {
-      "none": "None",
+      "none": "Off",
       "loudness": "Loudness",
       "peak": "Peak"
     },
