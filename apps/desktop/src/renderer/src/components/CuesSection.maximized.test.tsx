@@ -1727,6 +1727,17 @@ describe('CuesSection maximized grid', () => {
     )
   })
 
+  it('gives each grid offset a fixed width, so a value going from +1 ms to −12 ms never shoves the grid buttons sideways', async () => {
+    setup(null, READ, { rekordboxGridFit: fitAt(454) })
+    await maximize()
+    await waitFor(() => expect(screen.getByTestId('cues-grid-here')).toBeInTheDocument())
+    for (const id of ['cues-grid-here', 'cues-grid-end']) {
+      const value = screen.getByTestId(id)
+      expect(value.style.minWidth).toBe('7ch')
+      expect(value.style.display).toBe('inline-block')
+    }
+  })
+
   it('shows how far the grid is from the beats here and at the end, and Auto fits it', async () => {
     setup(null, READ, { rekordboxGridFit: fitAt(454) })
     await maximize()

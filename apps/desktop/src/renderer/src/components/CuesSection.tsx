@@ -1908,7 +1908,11 @@ function GridOffset({
         className={`h-1.5 w-1.5 rounded-full ${Math.abs(ms) > tolerance ? 'bg-warn' : 'bg-good'}`}
       />
       {label}
-      <span data-testid={testid} className="font-semibold tabular-nums text-fg">
+      <span
+        data-testid={testid}
+        style={{ display: 'inline-block', minWidth: '7ch' }}
+        className="font-semibold tabular-nums text-fg"
+      >
         {signedMs(ms)}
       </span>
     </span>
