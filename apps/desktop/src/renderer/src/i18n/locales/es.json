@@ -1408,7 +1408,8 @@
       "appleMusic": "Apple Music",
       "rekordbox": "rekordbox",
       "engine": "Engine DJ",
-      "traktor": "Traktor"
+      "traktor": "Traktor",
+      "serato": "Serato"
     },
     "sourceAppleMusicUnavailable": "Solo existe en macOS",
     "sourceRekordboxUnavailable": "No se ha encontrado una colección de rekordbox",

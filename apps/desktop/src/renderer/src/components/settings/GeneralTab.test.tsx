@@ -278,6 +278,18 @@ describe('GeneralTab sources', () => {
     ])
   })
 
+  it('names every source by its program, so no switch shows a raw translation key', async () => {
+    renderSources({ platform: 'darwin', rekordbox: true })
+    await waitFor(() => expect(screen.getByTestId('settings-source-rekordbox')).toBeEnabled())
+    const labels = screen
+      .getAllByTestId(/^settings-source-/)
+      .map((el) => el.closest('label')?.textContent ?? '')
+    expect(labels.filter((text) => text.includes('settings.source.'))).toEqual([])
+    expect(screen.getByTestId('settings-source-serato').closest('label')).toHaveTextContent(
+      'Serato',
+    )
+  })
+
   it('says that hiding a source leaves its sync alone', async () => {
     renderSources({ platform: 'darwin', rekordbox: true })
     expect(screen.getByTestId('settings-sources-hint')).toHaveTextContent(
