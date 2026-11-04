@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 3 de noviembre de 2026** (v1.22.0, ajuste de la rejilla en el editor de cues maximizado con guardado en rekordbox, Traktor y Engine DJ, filtro «Rejilla mal», cues fuera del golpe señalados y «Al golpe», pestaña de Serato de solo lectura, MP3 de iTunes a tiempo en Traktor; antes v1.21.0, filtro «Cues fuera de la rejilla» en rekordbox, Traktor y Engine DJ con su tolerancia en Ajustes › Cues; antes v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
+**Última revisión: 4 de noviembre de 2026** (v1.23.0, cues de Serato escritos en el fichero con Serato cerrado, editor y flujos de cues en Serato, cues de Serato conservados al convertir, rejilla de Serato leída, Music relee una pista reescrita en su sitio, original renombrado que se queda si otro programa lo usa, título, artista, álbum y género cambiados al convertir que llegan a Traktor y Engine DJ, cambios de biblioteca que sobreviven a una recarga; antes v1.22.0, ajuste de la rejilla en el editor de cues maximizado con guardado en rekordbox, Traktor y Engine DJ, filtro «Rejilla mal», cues fuera del golpe señalados y «Al golpe», pestaña de Serato de solo lectura, MP3 de iTunes a tiempo en Traktor; antes v1.21.0, filtro «Cues fuera de la rejilla» en rekordbox, Traktor y Engine DJ con su tolerancia en Ajustes › Cues; antes v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -877,7 +877,8 @@ Actualizada 2026-09-02: dos celdas daban por perdido lo que hoy se escribe.
 Revisada el 2026-09-23 para v1.0: `tags.ts` y `tagFields.ts` no cambiaron desde
 v0.100.0, así que la tabla sigue en vigor. Revisada el 2026-10-21 para v1.9.0. `tags.ts`
 solo cambió en la lectura (pasa al worker), las celdas siguen igual y se añade la fila de
-rekordbox, cuyos cues y playlists no viven en el fichero.
+rekordbox, cuyos cues y playlists no viven en el fichero. Revisada el 2026-11-04 para v1.23.0.
+Se añade la fila de los cues de Serato, que sí viven en el fichero.
 
 | Campo | MP3 | AIFF | WAV | FLAC | M4A/ALAC |
 |---|---|---|---|---|---|
@@ -893,12 +894,23 @@ rekordbox, cuyos cues y playlists no viven en el fichero.
 | Posición vinilo «A2» | Sí | Sí | Sí | Sí | **No** (solo dígitos) |
 | Cues de Traktor | Sí | Sí | **Sí** | Sí | **No** |
 | Cues y playlists de rekordbox | Sí | Sí | Sí | Sí | Sí |
+| Cues de Serato | Sí | Sí | Sí | Sí | Sí |
 
 Los cues y las playlists de rekordbox viven en su colección (`master.db`), no en el
 fichero, así que ningún formato los pierde. Los conserva el repunte de §11, que da de alta
 los cinco formatos (`FILE_TYPES`, `rekordboxDb.ts:51-58`). Sin la opción «Actualizar la
 colección de rekordbox al convertir», apagada por defecto, la entrada sigue apuntando al
 fichero antiguo.
+
+Los cues de Serato (hot cues y bucles) pasan del origen a la salida en cualquier cruce de los
+cinco formatos, ALAC incluido, movidos al reloj de Serato de la salida y adelantados lo que
+corte un recorte del inicio; lo que caía dentro del corte se pierde (`carrySeratoCues`,
+`seratoTags.ts:298`, enganchado en `ffmpeg.ts:2537`; matriz en `cueMatrix.test.ts:359`). Al
+recodificar no se arrastra el resto de lo que Serato guarda en el fichero (onda, rejilla,
+bloque antiguo) (`dropSeratoAnalysis`, `seratoTags.ts:248`); una copia en el mismo formato lo
+deja tal cual. No pasan con «limpiar metadatos», si se quitó su etiqueta, ni si el bloque antiguo de Serato
+del origen no coincide con Markers2, porque Serato leería ese. La biblioteca de Serato no se
+repunta (ver §13).
 
 ---
 
@@ -1237,19 +1249,66 @@ barra y no cambia su sincronización al convertir (`settings.sourcesHint`).
 
 ---
 
-### Serato (solo lectura)
+### Serato
 
 Nuevo en v1.22.0. Serato tiene su pestaña, la última del carril. Lee la base `_Serato_` de la
 carpeta personal y de cada disco (`seratoLibraryRoots`, `seratoLibrary.ts:27`), con sus crates
 (los que tienen subcrates salen como carpeta), «Todas» y «Recientes». Los hot cues y loops se
-leen de la etiqueta Markers2 del fichero en MP3, AIFF, WAV, FLAC y M4A (`readSeratoMarkers`,
-`seratoTags.ts:51`) y se ven en el editor de cues como lista de solo lectura, no sobre la onda.
-Con Serato abierto avisa de que los cues pueden no estar al día, porque Serato solo los
-escribe al salir.
+leen de la etiqueta Markers2 del fichero en MP3, AIFF, WAV, FLAC y M4A (`readSeratoTrack`,
+`seratoTags.ts:137`). Con Serato abierto avisa de que los cues pueden no estar al día, porque
+Serato solo los escribe al salir (`editor.cues.serato.running`).
 
-**No escribe nada en Serato.** Las filas que vienen de Serato no se convierten
-(`batch.ts:24`) y la revisión de la lista las deja fuera (`listReviewSource.ts:38`). La
-rejilla de Serato (Tempo Map) no se lee.
+**La rejilla es el Tempo Map de Serato** (v1.23.0). Se lee un Tempo Map de un solo tramo, con
+el BPM entre 20 y 400 (`readSeratoTempoMap`, `shared/seratoMarkers.ts:238`), y se extiende a
+toda la pista desde el primer golpe (`tempoGrid`, `seratoCueSource.ts:17`). Con ella los cues
+se ven sobre la onda, se ajustan al golpe y Auto marcar funciona. Si el mismo fichero está en
+rekordbox, Auto marcar usa el análisis de rekordbox, y si no, el audio de Surco sobre la
+rejilla de Serato (`dropInput`, `seratoCueSource.ts:81`). La rejilla no se edita desde Surco
+(`fixedGrid`, `renderer/src/lib/cuePrograms.ts:65`). Una pista sin Tempo Map cuenta como no
+analizada y no ofrece Auto marcar ni guardar.
+
+**El editor de cues escribe en el fichero** (v1.23.0). Serato guarda los cues dentro del
+audio, así que «Guardar en Serato» reescribe la etiqueta Markers2 del fichero
+(`writeSeratoCues`, `seratoCuesWrite.ts:31`). Solo hot cues de la A a la H, con cualquier
+color. Serato no tiene CALL, así que no se guardan y el aviso dice cuáles
+(`cues-calls-dropped`, `seratoCuesWrite.ts:124`). Las hot cues de Serato por encima de la H,
+los bucles y el resto de la etiqueta se conservan (`seratoCuesWrite.ts:125`;
+`withSeratoCues`, `shared/seratoMarkers.ts:154`). En MP3 y M4A se quita a la vez el bloque
+antiguo de Serato (Markers_), que ganaría al nuevo (`setId3Markers`, `seratoTags.ts:193`;
+`applyMarkers`, `:207`). Si ese bloque antiguo no coincide con Markers2, no se escribe y se
+pide mover un cue en Serato antes (`seratoQueue.notice.oldBlock`, `seratoCuesWrite.ts:134`).
+
+**Solo con Serato cerrado.** Los guardados van a una cola propia que espera a que Serato se
+cierre, como las de rekordbox, Traktor y Engine DJ (`programQueues.serato`, `index.ts:496`;
+`seratoCueQueueIpc.ts:7`). Cada escritura trabaja sobre una copia del fichero, la relee, la
+decodifica entera, guarda antes el original en Copias sea cual sea la política, y comprueba
+otra vez que Serato sigue cerrado justo antes de sustituirlo (`seratoCuesWrite.ts:42-68`). Si
+la pista cambió en Serato mientras esperaba, el guardado se descarta
+(`editor.cues.serato.queuedStale`). Una conversión y una escritura de Serato nunca tocan a la
+vez el mismo fichero. La conversión espera a que acabe la escritura (`processTrack.ts:561`) y
+un fichero que se está convirtiendo cancela la tanda de Serato (`seratoCuesWrite.ts:169`).
+
+**Al reloj de Serato.** Serato coloca los milisegundos de un M4A 1024 muestras antes y los de
+un MP3 MPEG-1 detrás de la trama de cabecera, más el retardo del encoder si la cabecera lleva
+firma LAME, Lavc o Lavf; WAV, AIFF y FLAC no se mueven (`seratoLeadMs`, `seratoClock.ts:20`).
+Surco pasa los cues a su propio reloj al leerlos y los devuelve al de Serato al escribirlos.
+
+**Los flujos llegan a Serato** (v1.23.0). Un punto marcado con un flujo en otro programa
+también se aplica en Serato, y uno marcado en Serato llega a los otros, igual que entre
+rekordbox, Traktor y Engine DJ (ver «Flujos de cues»). Surco busca el mismo fichero en la
+biblioteca de Serato (`libraryTracksOf`, `libraryFileUse.ts:360`). Se apaga en Ajustes → Cues
+(`cueFlowToSerato`, encendido por defecto, `settings.ts:93`), y la casilla solo sale si Surco
+encuentra Serato (`CuesTab.tsx:348`).
+
+**No convierte pistas de Serato.** Las filas que vienen de Serato no se convierten
+(`batch.ts:24`, y otra vez en `processTrack.ts:533` con el error `seratoBlocked`) y la
+revisión de la lista las deja fuera (`listReviewSource.ts:38`). Un fichero de Serato sí se
+convierte si se abre desde otra fuente, y sus cues de Serato viajan con él (ver §8.5).
+
+**Límites conocidos.** El reloj de Serato no se ha medido en Serato con AAC de Apple ni con
+MP3 MPEG-2. Un fichero ocupado por una conversión cancela el resto de su tanda, que espera a
+la siguiente. Los bucles de Serato no se ven en el editor. Conservar los cues al convertir y
+los flujos hacia Serato solo están probados en tests, no comprobados a mano en Serato.
 
 ## 11. Destinos
 
@@ -1276,6 +1335,15 @@ importar nada y no devolver nada. Surco lo detecta sondeando la biblioteca
 acotado a entradas añadidas después de arrancar, para no adoptar una copia
 antigua (`applemusic.ts:97-108`).
 
+**Reescribir en su sitio sin pasar por Music** (v1.23.0). Cuando una conversión reescribe el
+fichero en su sitio y no lo añade a Music, Surco busca la entrada de Music que lo reproduce,
+la apunta al nombre nuevo si se renombró (`relinkAppleMusicEntry`, `applemusic.ts:1358`) y le
+pide a Music que relea el fichero para que enseñe las etiquetas nuevas (`buildRefreshScript`,
+`applemusic.ts:476`; `processTrack.ts:846-860`). Con Music cerrado solo lo abre si la biblioteca
+de Music que Surco tiene guardada lleva ese título o si el fichero está dentro de la carpeta
+multimedia de Music (`insideFolder`, `index.ts:1801-1806`). Si Music no puede decir qué entrada
+lo reproduce, el original renombrado se queda en su carpeta.
+
 ### Añadir a rekordbox, Traktor y Engine DJ al convertir
 
 El destino de los archivos y los programas de DJ son dos preguntas distintas. El destino
@@ -1287,7 +1355,30 @@ radio: era «carpeta de salida + registrar en Engine» presentado como un destin
 «Nombre del archivo» sigue a la vista bajo el aviso: si el usuario escribe otro nombre o lo
 regenera, el original se reescribe y se renombra en su carpeta, y los programas de DJ pasan a
 apuntar al nombre nuevo. El nombre automático por patrón no se aplica en este modo, así que un
-original solo cambia de nombre cuando se pide (`useTrackProcessing.ts:397`).
+original solo cambia de nombre cuando se pide (`useTrackProcessing.ts:397`). Serato no sigue
+el cambio de nombre (ver abajo).
+
+**El original renombrado se queda si otro programa lo usa** (v1.23.0). Antes de retirar el
+original de una pista que cambió de nombre, Surco mira quién lo reproduce todavía
+(`librariesKeepingOriginal`, `libraryFlushes.ts:101`; `retireOriginal`, `processTrack.ts:808`).
+Se queda si lo tiene una biblioteca de rekordbox, Engine DJ o Traktor encontrada pero sin
+«Actualizar», si Traktor ya tenía una entrada con el nombre nuevo y dejaría atrás la vieja, si
+lo tiene Serato, o si Music no ha podido responder. El aviso nombra el programa
+(`notices.originalHeld`, `App.tsx:1532`). Si no se puede leer una biblioteca, también se queda.
+
+**Los nombres cambiados llegan a Traktor y Engine DJ** (v1.23.0). Si una conversión cambia el
+título, el artista, el álbum o el género, el cambio llega a la entrada de Traktor
+(`changedNames`, `ffmpeg.ts:1960`; `NmlPatch.tags`, `traktorNml.ts:98`) y a la fila de Engine DJ
+después de repuntarla (`updateEngineTags`, `libraryFlushes.ts:481`), solo con el «Actualizar» de
+ese programa encendido (`ffmpeg.ts:2161`). Cada campo solo se cambia si el programa aún tiene
+el valor que tenía el fichero, así que un nombre editado a mano en el programa se respeta
+(`replaceTags`, `traktorNml.ts:547`). Con Engine DJ abierto, el repunte que queda en cola no
+lleva los nombres.
+
+**Una recarga a mitad no pierde los cambios** (v1.23.0). Si la ventana se recarga en mitad de
+una tanda, los cambios de biblioteca que llevaba se escriben en vez de tirarse
+(`foldRekordboxBatch`, `rekordboxBatch.ts:115`; `foldNmlBatch`, `nmlBatch.ts:70`;
+`did-start-loading`, `index.ts:914`).
 
 **Un control por programa** (nuevo tras v1.16.0). En Ajustes › Destino, rekordbox, Engine DJ
 y Traktor tienen cada uno un control de tres estados (`DjReachRow`,
@@ -1524,7 +1615,8 @@ Apagado por defecto (`syncTraktor: false`, `settings.ts:80`). Con el control de 
 Ajustes › Destino en «Actualizar» o «Actualizar y añadir» y la ruta de la colección
 configurada, actualiza el `.nml` real: repunta la ruta si cambió la extensión, reescribe las miniaturas que
 Traktor tiene cacheadas para que redibuje la carátula, y escribe los `CUE_V2`
-del fichero convertido.
+del fichero convertido. Desde v1.23.0 también el título, artista, álbum y género que la
+conversión cambió (ver «Añadir a rekordbox, Traktor y Engine DJ al convertir»).
 
 **Los cues que solo tiene la colección se conservan** (actualizado para v1.0). La
 entrada recibe los cues del fichero y, detrás, los suyos propios que el fichero no
@@ -1762,7 +1854,7 @@ siguen los botones de siempre en la cabecera y la barra.
 **Se escribe solo en la colección de rekordbox.** «Guardar en rekordbox» escribe
 `djmdCue`, actualiza `contentCue` y sube `CueUpdated` de la pista (`applyCueChanges`,
 `rekordboxCues.ts:216`), como hace rekordbox al poner un cue a mano. No se escriben en el
-fichero ni en Traktor o Serato. El guardado pasa por la misma cola que las
+fichero ni en los otros programas, salvo los puntos de un flujo (ver «Flujos de cues»). El guardado pasa por la misma cola que las
 playlists (`rekordboxCuesIpc.ts:75-78`). Con rekordbox cerrado se aplica al momento, con copia
 de seguridad, y con rekordbox abierto espera a que se cierre. Si la pista cambió en rekordbox
 mientras esperaba, el guardado se descarta y se muestra lo que tiene rekordbox
@@ -1775,6 +1867,10 @@ de Engine. Engine solo guarda hot cues: los CALL no se escriben y el aviso dice 
 (`engineCuesWrite.ts:112-115`, `editor.cues.engine.calls`). Igual que con rekordbox, espera a
 que Engine DJ esté cerrado, hace copia antes de escribir y descarta el guardado si la pista
 cambió en Engine mientras esperaba (`engineCuesWrite.ts:105`).
+
+**También para Serato** (nuevo en v1.23.0). Una pista abierta desde la pestaña Serato usa el
+mismo editor, con la rejilla de Serato, y «Guardar en Serato» escribe los hot cues en el
+fichero con Serato cerrado (ver «Serato» en §10).
 
 **La escucha va en el tiempo de rekordbox** (v1.10.0). Chromium reproduce un MP3 con
 cabecera LAME un frame antes de donde rekordbox coloca los milisegundos, así que el editor
@@ -1960,7 +2056,7 @@ Surco. «Aprender mientras corriges» (activado por defecto) suma cada pista gua
 (`RELEARN_EVERY`, `main/cueTaste.ts:8`). Todo se queda en el Mac del usuario.
 
 **En todos los programas** (nuevo en v1.13.0). Al guardar, los puntos marcados con un flujo
-llegan también a la misma pista en rekordbox, Traktor y Engine DJ. Surco busca el mismo
+llegan también a la misma pista en rekordbox, Traktor y Engine DJ, y desde v1.23.0 en Serato. Surco busca el mismo
 fichero en cada colección (`libraryTracksOf`, `libraryFileUse.ts:180`) y vuelve a ejecutar el
 flujo allí, con la rejilla y las cues de ese programa (`twinPlans`, `lib/cueTwins.ts:135`). No
 se copian los cues resultantes, así que cada programa puede quedarse con algo distinto. Por
@@ -1975,7 +2071,8 @@ allí no se mueven, ni cambian de letra o color, y lo nuevo ocupa las letras lib
 ponen, y quitar un punto no se propaga. Una pista con cambios sin guardar en el otro programa no se toca, salvo que se
 pida con «Ponerlo también ahí y perder esos cambios». Si la colección no tiene la pista, o la
 tiene dos veces, se omite sin decir nada. Se elige a qué programas llega en Ajustes → Cues
-(`cueFlowToRekordbox`, `cueFlowToTraktor`, `cueFlowToEngine`, encendidos, `settings.ts:86`).
+(`cueFlowToRekordbox`, `cueFlowToTraktor`, `cueFlowToEngine`, `cueFlowToSerato`, encendidos,
+`settings.ts:90-93`).
 El punto se ajusta al golpe más cercano del otro programa, nunca a su compás
 (`contextOf`, `lib/cueTwins.ts`). Medido sobre 19 pistas que una colección real tiene en
 rekordbox y en Engine DJ (AIFF): las rejillas coinciden a menos de 13 ms en 16 de ellas y a
@@ -2472,8 +2569,19 @@ Recopilado de los cinco informes. Cada punto está verificado.
    no tiene ID3 donde escribirlos. Al convertir, Surco los conserva **sin editarlos**. El
    editor de cues escribe en la colección de rekordbox (`master.db`), en la biblioteca de
    Engine DJ (solo hot cues) y en la colección de Traktor (`collection.nml`, solo hot cues,
-   siete botones, en azul), nunca en el fichero ni en Serato. La pestaña de Serato (v1.22.0)
-   solo lee: no escribe cues, crates ni rejilla, y no convierte sus pistas.
+   siete botones, en azul), nunca en el fichero de esos programas.
+   **Serato** (v1.23.0) es el único cuyos cues se escriben en el fichero, y solo hot cues de la A
+   a la H, solo con Serato cerrado y con copia del original antes. No escribe crates ni
+   rejilla, no muestra sus bucles en el editor y no convierte sus pistas. El reloj de Serato no
+   está medido en AAC de Apple ni en MP3 MPEG-2. Conservar sus cues al convertir y los flujos
+   hacia Serato solo están probados en tests, no en un Serato real.
+   **La biblioteca de Serato no se repunta.** Una conversión que renombra o cambia de formato
+   no mueve la pista en Serato, así que el original se queda en su carpeta mientras Serato lo
+   use (`librariesKeepingOriginal`, `libraryFlushes.ts:101`). Surco solo lee `database V2`
+   (`seratoLibrary.ts:49`) y no escribe ningún fichero de la biblioteca de Serato. Se intentó y
+   se retiró (`99597884a`), porque reescribir `database V2` hacía que Serato 5 perdiera la pista
+   y su valoración (medido el 4 de noviembre de 2026 en Serato 5, que guarda la biblioteca en
+   `master.sqlite`).
 2. **Apple Music:** solo macOS, nunca FLAC. Clave, sello, catálogo y remixer no
    llegan a la biblioteca, ni los campos propios. Al añadir no se transfiere rating
    ni se crean playlists. Al sustituir sí pasan de la entrada vieja a la nueva (punto 6).
