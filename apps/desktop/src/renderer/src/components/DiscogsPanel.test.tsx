@@ -967,3 +967,12 @@ describe('DiscogsPanel source menu count', () => {
     expect(screen.getByTestId('provider-filter-count')).toHaveTextContent('2')
   })
 })
+
+describe('DiscogsPanel search scope', () => {
+  // The track list's search and this one sit side by side and look alike; with a query
+  // typed, only the scope tells that this field searches the catalogs.
+  it('names the catalogs in front of the query', () => {
+    renderPanel(browser({ query: 'DJ Roy', results: [] }))
+    expect(screen.getByTestId('discogs-query-scope')).toHaveTextContent('Catalogs')
+  })
+})

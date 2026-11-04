@@ -580,6 +580,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
               ariaLabel={tr('editor.searchPlaceholder')}
               placeholder={tr('editor.searchPlaceholder')}
               clearLabel={tr('editor.searchClear')}
+              scope={tr('editor.searchScope')}
             />
             <button
               type="button"
