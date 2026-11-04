@@ -379,7 +379,10 @@ export interface CueShift {
 // conversion. Only meaningful for ID3 containers.
 export function copyCueFrames(source: string, dest: string, shift?: CueShift): void {
   try {
-    const cues = applyCueShift(readCueFrames(source), shift)
+    const cues = applyCueShift(
+      readCueFrames(source).filter((frame) => !isSeratoGeob(frame)),
+      shift,
+    )
     if (cues.length === 0) return
 
     const out = TagFile.createFromPath(dest)
@@ -708,6 +711,15 @@ function isSafeCue(frame: Id3v2Frame): boolean {
   try {
     const parts = geobParts(frame.render(4).toByteArray())
     return parts !== null && isTraktorGeob(parts.description)
+  } catch {
+    return false
+  }
+}
+
+function isSeratoGeob(frame: Id3v2Frame): boolean {
+  if (frame.frameId.toString() !== 'GEOB') return false
+  try {
+    return geobParts(frame.render(4).toByteArray())?.description.startsWith('Serato ') === true
   } catch {
     return false
   }

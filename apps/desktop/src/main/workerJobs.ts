@@ -8,7 +8,7 @@ import { prependFlacId3 } from './flacFinderCover'
 import { readGenreFrame, setGenreFrame } from './genreFrame'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
-import { setSeratoMarkers } from './seratoTags'
+import { carrySeratoCues, setSeratoMarkers } from './seratoTags'
 import { type FieldWrite, setTagFields, type TagFieldChange, tagFieldsHeld } from './tagFieldSet'
 import { snapshotTagsOrNull } from './tagSnapshot'
 import {
@@ -93,6 +93,7 @@ export type WorkerJob =
     }
   | { type: 'setTagFields'; file: string; changes: TagFieldChange[] }
   | { type: 'setSeratoMarkers'; file: string; payload: Uint8Array }
+  | { type: 'carrySeratoCues'; source: string; dest: string; trimMs: number }
   | { type: 'genreFrame'; file: string }
   | { type: 'setGenreFrame'; file: string; changes: TagFieldChange[] }
   | { type: 'tagFieldsHeld'; file: string; changes: TagFieldChange[] }
@@ -173,6 +174,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
     case 'setSeratoMarkers':
       setSeratoMarkers(job.file, job.payload)
       return null
+    case 'carrySeratoCues':
+      return carrySeratoCues(job.source, job.dest, job.trimMs).then(() => null)
     case 'genreFrame':
       return readGenreFrame(job.file)
     case 'setGenreFrame':

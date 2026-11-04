@@ -2095,6 +2095,8 @@ export interface DecodeProof {
   pcm?: PcmDigest
 }
 
+const SERATO_FLAC_MARKERS = 'SERATO_MARKERS_V2'
+
 export async function convertAudio(
   input: string,
   output: string,
@@ -2509,6 +2511,13 @@ export async function convertAudio(
       if (codec === 'copy' && !clearExtras && ext === '.flac' && FLAC_INPUT.test(input))
         await carryFlacBlocks(input, tmp)
     }
+    if (!clearExtras && !foreignRemoved?.some((name) => name.toUpperCase() === SERATO_FLAC_MARKERS))
+      await runInWorker({
+        type: 'carrySeratoCues',
+        source: input,
+        dest: tmp,
+        trimMs: trimAf !== undefined ? Math.round((trim?.startSec ?? 0) * 1000) : 0,
+      }).catch((err) => log.warn(`Serato cues not carried to ${basename(output)}: ${err}`))
     // Last touch before the rename so the header rides the same atomic landing.
     // Only when there's a cover to show — the header exists solely for Finder's
     // thumbnail, so a coverless (or cover-removed) FLAC stays fully standard.

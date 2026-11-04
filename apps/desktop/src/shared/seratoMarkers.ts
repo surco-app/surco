@@ -188,6 +188,29 @@ export function withSeratoCues(payload: Uint8Array | null, cues: SeratoCue[]): U
   ])
 }
 
+const TIMED_FIELDS: Record<string, number[]> = { CUE: [2], LOOP: [2, 6] }
+
+export function retimedSeratoPayload(payload: Uint8Array, shiftMs: number): Uint8Array {
+  const out = payload.slice()
+  const view = new DataView(out.buffer)
+  let at = 2
+  while (at < out.length) {
+    const nameEnd = out.indexOf(0, at)
+    if (nameEnd === -1 || nameEnd === at || nameEnd + 5 > out.length) break
+    const start = nameEnd + 5
+    const end = start + u32(out, nameEnd + 1)
+    if (end > out.length) break
+    for (const field of TIMED_FIELDS[latin1(out.subarray(at, nameEnd))] ?? [])
+      if (start + field + 4 <= end)
+        view.setUint32(
+          start + field,
+          Math.max(0, Math.round(view.getUint32(start + field) + shiftMs)),
+        )
+    at = end
+  }
+  return out
+}
+
 export function seratoGeobBody(payload: Uint8Array): Uint8Array {
   const text = bytesOf(encodeBase64Wrapped(payload))
   const body = new Uint8Array(Math.max(GEOB_MIN_LENGTH, 2 + text.length))

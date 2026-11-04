@@ -4,6 +4,7 @@ import {
   markersFromGeob,
   readSeratoTempoMap,
   readSeratoTempoMapArmored,
+  retimedSeratoPayload,
   seratoArmored,
   seratoGeobBody,
   seratoPayloadOf,
@@ -197,6 +198,46 @@ describe('withSeratoCues', () => {
       0, 0, 0, 0, 1, 244, 0, 204, 0, 0, 0, 0, 65, 0,
     ])
     expect(result[result.length - 1]).toBe(0)
+  })
+})
+
+describe('retimedSeratoPayload', () => {
+  const payload = concat(
+    Uint8Array.from([1, 1]),
+    entry('COLOR', [0, 1, 2, 3]),
+    entry('CUE', [0, 0, 0, 0, 0, 5, 0, 9, 9, 9, 0, 0, 0x41, 0]),
+    entry('FLIP', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
+    entry(
+      'LOOP',
+      [
+        0, 2, 0, 0, 0, 40, 0, 0, 1, 44, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0x6e, 0x61, 0x6d,
+        0x65, 0,
+      ],
+    ),
+    entry('BPMLOCK', [1]),
+    Uint8Array.from([0]),
+  )
+
+  it('moves every cue and loop by the shift so they stay on the same audio in the new file', () => {
+    const moved = retimedSeratoPayload(payload, 100.6)
+    const read = markersFromGeob(seratoGeobBody(moved))
+    expect(read?.cues.map((c) => c.ms)).toEqual([106])
+    expect(read?.loops.map((l) => [l.startMs, l.endMs])).toEqual([[141, 401]])
+  })
+
+  it('keeps every other byte as Serato wrote it, names, colors and entries it does not know included', () => {
+    const moved = retimedSeratoPayload(payload, 100)
+    const changed = [...moved].flatMap((b, at) => (b === payload[at] ? [] : [at]))
+    expect(moved).toHaveLength(payload.length)
+    expect(entriesOf(moved).map((e) => e.name)).toEqual(entriesOf(payload).map((e) => e.name))
+    expect(changed.length).toBeLessThanOrEqual(4)
+    expect(entriesOf(moved)[2].body).toEqual(entriesOf(payload)[2].body)
+  })
+
+  it('clamps a marker that would land before the start of the file at zero', () => {
+    const read = markersFromGeob(seratoGeobBody(retimedSeratoPayload(payload, -100)))
+    expect(read?.cues.map((c) => c.ms)).toEqual([0])
+    expect(read?.loops.map((l) => [l.startMs, l.endMs])).toEqual([[0, 200]])
   })
 })
 

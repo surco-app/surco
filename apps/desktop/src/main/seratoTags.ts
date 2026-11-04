@@ -4,6 +4,7 @@ import {
   Id3v2AttachmentFrame,
   type Id3v2Frame,
   type Id3v2Tag,
+  Id3v2UserTextInformationFrame,
   type Mpeg4AppleTag,
   Picture,
   PictureType,
@@ -17,12 +18,14 @@ import {
   markersFromGeob,
   readSeratoTempoMap,
   readSeratoTempoMapArmored,
+  retimedSeratoPayload,
   type SeratoMarkers,
   type SeratoTempoMap,
   seratoArmored,
   seratoGeobBody,
   seratoPayloadOf,
 } from '../shared/seratoMarkers'
+import { seratoLeadOfFile } from './seratoClock'
 import { dropBrokenUfids, geobParts, keepGenreParentheses } from './tags'
 
 const DEFAULT_SAMPLE_RATE = 44100
@@ -183,22 +186,64 @@ function setId3Markers(f: TagFile, payload: Uint8Array): void {
   keepGenreParentheses(tag)
 }
 
+function applyMarkers(f: TagFile, ext: string, payload: Uint8Array): void {
+  if (ID3_EXTENSIONS.has(ext)) setId3Markers(f, payload)
+  else if (ext === '.flac')
+    (f.getTag(TagTypes.Xiph, true) as XiphComment).setFieldAsStrings(
+      FLAC_MARKERS2,
+      seratoArmored(payload),
+    )
+  else if (ext === '.m4a' || ext === '.mp4') {
+    const apple = f.tag as Mpeg4AppleTag
+    apple.setItunesStrings(SERATO_MEAN, 'markersv2', seratoArmored(payload))
+    apple.setItunesStrings(SERATO_MEAN, 'markers')
+  } else throw new Error(`no Serato tag for ${ext}`)
+}
+
 export function setSeratoMarkers(file: string, payload: Uint8Array): void {
   const ext = extname(file).toLowerCase()
   const f = TagFile.createFromPath(file)
   try {
-    if (ID3_EXTENSIONS.has(ext)) setId3Markers(f, payload)
-    else if (ext === '.flac')
-      (f.getTag(TagTypes.Xiph, true) as XiphComment).setFieldAsStrings(
-        FLAC_MARKERS2,
-        seratoArmored(payload),
-      )
-    else if (ext === '.m4a' || ext === '.mp4') {
-      const apple = f.tag as Mpeg4AppleTag
-      apple.setItunesStrings(SERATO_MEAN, 'markersv2', seratoArmored(payload))
-      apple.setItunesStrings(SERATO_MEAN, 'markers')
-    } else throw new Error(`no Serato tag for ${ext}`)
+    applyMarkers(f, ext, payload)
     f.save()
+  } finally {
+    f.dispose()
+  }
+}
+
+function dropSeratoTextMirrors(f: TagFile): boolean {
+  const tag = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+  const mirrors = (tag?.frames ?? []).filter(
+    (frame) =>
+      frame instanceof Id3v2UserTextInformationFrame && /^serato_/i.test(frame.description),
+  )
+  for (const frame of mirrors) tag?.removeFrame(frame)
+  return mirrors.length > 0
+}
+
+function sameBytes(a: Uint8Array | null, b: Uint8Array): boolean {
+  return a !== null && a.length === b.length && a.every((byte, at) => byte === b[at])
+}
+
+export async function carrySeratoCues(source: string, dest: string, trimMs: number): Promise<void> {
+  const ext = extname(dest).toLowerCase()
+  const from = readSeratoTrack(source)
+  const to = readSeratoTrack(dest)
+  if (!to) return
+  const payload = from?.payload
+    ? retimedSeratoPayload(
+        from.payload,
+        (await seratoLeadOfFile(dest, to.sampleRate)) -
+          (await seratoLeadOfFile(source, from.sampleRate)) -
+          trimMs,
+      )
+    : null
+  const fresh = payload && !sameBytes(to.payload, payload) ? payload : null
+  const f = TagFile.createFromPath(dest)
+  try {
+    const mirrored = ID3_EXTENSIONS.has(ext) && dropSeratoTextMirrors(f)
+    if (fresh) applyMarkers(f, ext, fresh)
+    if (fresh || mirrored) f.save()
   } finally {
     f.dispose()
   }
