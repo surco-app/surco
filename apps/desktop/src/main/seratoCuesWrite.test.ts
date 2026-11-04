@@ -47,6 +47,7 @@ import { seratoLeadOfFile } from './seratoClock'
 import { seratoCueSource } from './seratoCueSource'
 import { writeSeratoCues } from './seratoCuesWrite'
 import { readSeratoMarkers } from './seratoTags'
+import { diffSnapshots, snapshotTags } from './tagSnapshot'
 import { geobParts, readCueTree, setId3Date } from './tags'
 import { runInWorker } from './worker'
 
@@ -530,6 +531,26 @@ describe('the ID3 tag Serato reads', () => {
       WANTED.map((c) => Math.round(c.ms + lead)),
     )
   }, 60000)
+})
+
+describe('the tags a Serato write leaves on disk', () => {
+  it.each(['mp3', 'wav', 'aiff'])(
+    'adds only the Markers2 frame to a %s, never an ID3v1 or a RIFF tag it did not have',
+    async (ext) => {
+      const file = join(mkdtempSync(join(tmpdir(), 'surco-serato-kinds-')), `plain.${ext}`)
+      execFileSync(FF, ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'anoisesrc=d=2', file])
+      configureOriginalKeeper(async () => ({ id: 'b1' }) as never)
+      const before = snapshotTags(file)
+      const kinds = read(file, (f) => f.tagTypesOnDisk)
+      expect(await writeSeratoCues(file, WANTED, await fingerprintOf(file))).toBe('written')
+      const { added, removed } = diffSnapshots(before, snapshotTags(file))
+      expect(removed).toEqual([])
+      expect(added).toContainEqual(expect.stringMatching(/^id3 GEOB.*Serato Markers2/))
+      expect(added.filter((l) => !/Serato Markers2|^picture type=255/.test(l))).toEqual([])
+      expect(read(file, (f) => f.tagTypesOnDisk)).toBe(kinds | TagTypes.Id3v2)
+    },
+    60000,
+  )
 })
 
 describe('a cue on the first sample of an m4a', () => {

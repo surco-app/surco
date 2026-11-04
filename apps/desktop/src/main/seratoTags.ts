@@ -200,12 +200,24 @@ function applyMarkers(f: TagFile, ext: string, payload: Uint8Array): void {
   } else throw new Error(`no Serato tag for ${ext}`)
 }
 
+function markersTag(ext: string): TagTypes {
+  if (ID3_EXTENSIONS.has(ext)) return TagTypes.Id3v2
+  if (ext === '.flac') return TagTypes.Xiph
+  return TagTypes.Apple
+}
+
+function saveKeeping(f: TagFile, keep: number): void {
+  f.removeTags(f.tagTypes & ~keep)
+  f.save()
+}
+
 export function setSeratoMarkers(file: string, payload: Uint8Array): void {
   const ext = extname(file).toLowerCase()
   const f = TagFile.createFromPath(file)
   try {
+    const keep = f.tagTypesOnDisk | markersTag(ext)
     applyMarkers(f, ext, payload)
-    f.save()
+    saveKeeping(f, keep)
   } finally {
     f.dispose()
   }
@@ -260,9 +272,10 @@ export async function carrySeratoCues(
   const fresh = payload && !sameBytes(to.payload, payload) ? payload : null
   const f = TagFile.createFromPath(dest)
   try {
+    const keep = f.tagTypesOnDisk | (fresh ? markersTag(ext) : 0)
     const stripped = strip && dropSeratoAnalysis(f, ext)
     if (fresh) applyMarkers(f, ext, fresh)
-    if (fresh || stripped) f.save()
+    if (fresh || stripped) saveKeeping(f, keep)
   } finally {
     f.dispose()
   }

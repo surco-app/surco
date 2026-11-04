@@ -25,6 +25,7 @@ import { automaticCueOffsetOfFiles } from './cueCalibration'
 import { convertAudio } from './ffmpeg'
 import { seratoLeadOfFile } from './seratoClock'
 import { readSeratoTrack, setSeratoMarkers } from './seratoTags'
+import { snapshotTags } from './tagSnapshot'
 import { geobParts } from './tags'
 import {
   buildTraktorTree,
@@ -427,6 +428,46 @@ describe('the Serato cue carry-over matrix', () => {
       SERATO_CUE_MS + Math.round((1152 / 44100) * 1000),
     )
   })
+
+  it.each([['.m4a', '.mp3', 'mp3']] as const)(
+    'gives a %s converted to %s no tag beyond the ones the same conversion writes without Serato',
+    async (src, ext, format) => {
+      const dir = mkdtempSync(join(tmpdir(), 'surco-serato-ghosts-'))
+      const input = makeSeratoSource(dir, src, false)
+      const plain = join(dir, `plain${src}`)
+      execFileSync(FF, [
+        '-y',
+        '-loglevel',
+        'error',
+        '-f',
+        'lavfi',
+        '-i',
+        'sine=d=4',
+        '-c:a',
+        src === '.m4a' ? 'aac' : 'libmp3lame',
+        plain,
+      ])
+      const out = join(dir, `out${ext}`)
+      const control = join(dir, `control${ext}`)
+
+      await convertAudio(input, out, format, meta)
+      await convertAudio(plain, control, format, meta)
+
+      expect(readSeratoTrack(out)?.markers?.cues).toHaveLength(1)
+      const kinds = (file: string) => {
+        const f = TagFile.createFromPath(file)
+        try {
+          return f.tagTypesOnDisk
+        } finally {
+          f.dispose()
+        }
+      }
+      expect(kinds(out)).toBe(kinds(control))
+      expect(snapshotTags(out).includes('id3v1 present')).toBe(
+        snapshotTags(control).includes('id3v1 present'),
+      )
+    },
+  )
 
   it('carries nothing when the DJ empties every tag', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-serato-clear-'))
