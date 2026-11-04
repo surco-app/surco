@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -715,6 +715,23 @@ describe('flushConversionBatch with a converted track Serato does not have', () 
     serato.enqueue.mockClear()
     await withRun(false, async () => {
       await flush(serato)
+      expect(serato.enqueue).not.toHaveBeenCalled()
+    })
+  })
+
+  it('leaves the outcome of the other libraries alone when the Serato database cannot be read', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-flush-serato-'))
+    mkdirSync(join(dir, 'database V2'))
+    const serato = {
+      enqueue: vi.fn(),
+      applyQuietly: vi.fn(),
+      roots: () => [{ dir, root: '/' }],
+    }
+    await withRun(true, async () => {
+      const without = await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      })
+      await expect(flush(serato)).resolves.toEqual(without)
       expect(serato.enqueue).not.toHaveBeenCalled()
     })
   })

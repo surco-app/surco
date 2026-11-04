@@ -381,7 +381,10 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
     const appliedOps = outcomes.filter((o) => o.applied).map((o) => byId.get(o.id))
     const tracks = new Set([
       ...repointedTo,
-      ...appliedOps.flatMap((op) => (op && op.kind !== 'edit' ? [op.path] : [])),
+      ...outcomes
+        .filter((o) => o.applied && !o.uncounted)
+        .map((o) => byId.get(o.id))
+        .flatMap((op) => (op && op.kind !== 'edit' ? [op.path] : [])),
     ]).size
     const changes = appliedOps.filter((op) => op?.kind === 'edit').length
     const written = appliedOps.flatMap((op) =>

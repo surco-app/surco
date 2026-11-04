@@ -322,7 +322,12 @@ export async function flushConversionBatch(
   }
   const outcome: Partial<FlushOutcome> = {}
   for (const program of FLUSH_ORDER) await settle(outcome, program, flushers[program], run)
-  if (queues.serato) queueSeratoRun(queues.serato, run)
+  if (queues.serato)
+    try {
+      queueSeratoRun(queues.serato, run)
+    } catch (err) {
+      log.warn(`serato: queueing the converted tracks failed: ${String(err)}`)
+    }
   return outcome as FlushOutcome
 }
 

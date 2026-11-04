@@ -700,6 +700,24 @@ describe('rekordbox queue', () => {
     ])
   })
 
+  it('clears the picks of a track the library handled without writing it, and does not count it as a track done', async () => {
+    const d = deps({
+      applyBatch: vi.fn<QueueDeps['applyBatch']>(async () => ({
+        ok: true,
+        wrote: false,
+        outcomes: [{ id: 'a', applied: true, uncounted: true, notices: [] }],
+      })),
+    })
+    const q = createRekordboxQueue(d)
+    q.enqueue([track('a', '/m/a.wav', { wanted: [{ name: 'Crate' }] })])
+    const result = await q.apply(closed)
+    expect(result).toMatchObject({
+      status: 'applied',
+      tracks: 0,
+      written: [{ path: '/m/a.wav', wanted: [{ name: 'Crate' }] }],
+    })
+  })
+
   it('keeps everything when the batch is refused because nothing written means nothing lost', async () => {
     const d = deps({
       applyBatch: vi.fn<QueueDeps['applyBatch']>(async () => ({

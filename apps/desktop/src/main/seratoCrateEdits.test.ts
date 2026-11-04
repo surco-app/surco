@@ -592,18 +592,22 @@ const dbOf = (root: SeratoLibraryRoot): string => join(root.dir, 'database V2')
 
 function seratoWith(
   paths: string[],
-  crates: { internal?: (string | [string, string[]])[]; gig?: string[] } = {
+  crates: {
+    internal?: (string | [string, string[]])[]
+    gig?: string[]
+    truncated?: string[]
+  } = {
     internal: ['A'],
     gig: ['OnlyGig'],
   },
 ) {
-  const { roots, deps } = twoRoots(crates)
+  const { roots, deps, bytes } = twoRoots(crates)
   for (const r of roots)
     writeFileSync(
       dbOf(r),
       concat([VRSN, ...(r === roots[0] ? paths : []).map((pfil) => track({ ttyp: 'mp3', pfil }))]),
     )
-  return { roots, deps, draft: createSeratoDraft() }
+  return { roots, deps, bytes, draft: createSeratoDraft() }
 }
 
 let nextTrack = 0
@@ -660,7 +664,7 @@ describe('a converted track in Serato', () => {
   })
 
   it('warns instead of adding to a crate on another drive', () => {
-    const { roots, draft } = seratoWith(['Users/dj/a.mp3'])
+    const { roots, draft, bytes } = seratoWith(['Users/dj/a.mp3'])
     expect(
       applySeratoTrack(
         draft,
@@ -669,6 +673,53 @@ describe('a converted track in Serato', () => {
         NOW,
       ).notices,
     ).toEqual([{ code: 'other-volume', track: 'a.mp3', playlist: 'OnlyGig' }])
+    expect(Buffer.from(draft.read(crateFileOf(roots[1], 'OnlyGig')) ?? [])).toEqual(
+      bytes.gig.OnlyGig,
+    )
+    expect(draft.changes().writes).toEqual([])
+  })
+
+  it('does not add a file whose crate picks all live on another drive, since the user asked only for a crate it cannot get', () => {
+    const { roots, draft } = seratoWith([])
+    const outcome = applySeratoTrack(
+      draft,
+      trackOp({
+        path: '/Users/dj/a.mp3',
+        meta: META,
+        wanted: [{ id: 'OnlyGig', name: 'OnlyGig' }],
+      }),
+      roots,
+      NOW,
+    )
+    expect(outcome).toMatchObject({
+      applied: true,
+      uncounted: true,
+      notices: [{ code: 'other-volume', track: 'a.mp3', playlist: 'OnlyGig' }],
+    })
+    expect(draft.changes().writes).toEqual([])
+  })
+
+  it('adds a new file without touching crates that already list it when the conversion only asked to add it', () => {
+    const { roots, draft } = seratoWith([], { internal: [['Old', ['Users/dj/new.mp3']]] })
+    const outcome = applySeratoTrack(
+      draft,
+      trackOp({ path: '/Users/dj/new.mp3', add: true, meta: META }),
+      roots,
+      NOW,
+    )
+    expect(outcome).toEqual({ id: outcome.id, applied: true, notices: [] })
+  })
+
+  it('says a chosen crate changed in Serato when Surco cannot read it back', () => {
+    const { roots, draft } = seratoWith(['Users/dj/a.mp3'], { internal: ['A'], truncated: ['A'] })
+    expect(
+      applySeratoTrack(
+        draft,
+        trackOp({ path: '/Users/dj/a.mp3', wanted: [{ id: 'A', name: 'A' }] }),
+        roots,
+        NOW,
+      ).notices,
+    ).toEqual([{ code: 'playlist-changed', track: 'a.mp3', playlist: 'A' }])
   })
 
   it('does not list the file twice in a crate that already holds it', () => {
@@ -752,6 +803,7 @@ describe('a converted track in Serato', () => {
     expect(tracksIn(draft, crateFileOf(roots[0], 'A'))).toEqual(['Users/dj/internal/A.mp3'])
     expect(outcome).toMatchObject({
       applied: true,
+      uncounted: true,
       notices: [{ code: 'source-in-serato', track: 'a.aiff', playlist: 'A' }],
     })
   })

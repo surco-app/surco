@@ -382,24 +382,24 @@ export function seratoLibraryHas(
 
 const crateName = (id: string): string => id.split('%%').pop() ?? id
 
-function wantedCrate(
+type Pick = { file: string } | { missing: 'other-volume' | 'playlist-gone' }
+
+function pickedCrate(
   draft: SeratoDraft,
   target: TrackOp['wanted'][number],
   root: SeratoLibraryRoot,
   roots: SeratoLibraryRoot[],
-): string | 'other-volume' | 'playlist-gone' {
+): Pick {
   if (target.id) {
     const file = crateFileOf(root, target.id)
-    if (draft.read(whereIs(draft, file))) return file
+    if (draft.read(whereIs(draft, file))) return { file }
     const elsewhere = roots.some((r) => r !== root && draft.exists(crateFileOf(r, target.id ?? '')))
-    return draft.original(file) || !elsewhere ? 'playlist-gone' : 'other-volume'
+    return { missing: draft.original(file) || !elsewhere ? 'playlist-gone' : 'other-volume' }
   }
   const name = target.name.trim()
-  if (!validCrateName(name)) return 'playlist-gone'
+  if (!validCrateName(name)) return { missing: 'playlist-gone' }
   const id = crateIds(draft, root).find((c) => lower(c) === lower(name)) ?? name
-  const file = crateFileOf(root, id)
-  if (!draft.exists(file)) draft.write(file, buildSeratoCrate([], file))
-  return file
+  return { file: crateFileOf(root, id) }
 }
 
 function fileInCrates(
@@ -415,15 +415,17 @@ function fileInCrates(
     crate.rows.some((row) => pathOfRow(crate, row).normalize('NFC') === key)
   const wanted = new Set<string>()
   for (const target of op.wanted) {
-    const file = wantedCrate(draft, target, root, roots)
-    if (file === 'other-volume' || file === 'playlist-gone') {
-      notices.push({ code: file, track: op.label, playlist: target.name })
+    const pick = pickedCrate(draft, target, root, roots)
+    if ('missing' in pick) {
+      notices.push({ code: pick.missing, track: op.label, playlist: target.name })
       continue
     }
+    const { file } = pick
+    if (!draft.exists(file)) draft.write(file, buildSeratoCrate([], file))
     wanted.add(whereIs(draft, file))
     const crate = workingCrate(draft, file)
     if (typeof crate === 'string') {
-      notices.push({ code: 'playlist-gone', track: op.label, playlist: target.name })
+      notices.push({ code: 'playlist-changed', track: op.label, playlist: target.name })
       continue
     }
     if (!holds(crate)) writeRows(draft, file, crate, [...crate.rows, { path }])
@@ -469,11 +471,25 @@ export function applySeratoTrack(
       return {
         id: op.id,
         applied: op.wanted.length > 0,
+        uncounted: true,
         notices: op.wanted.map((target) => ({
           code: 'source-in-serato',
           track: op.label,
           playlist: target.name,
         })),
+      }
+    const picks = op.wanted.map((target) => ({
+      target,
+      pick: pickedCrate(draft, target, root, roots),
+    }))
+    if (!op.add && picks.every(({ pick }) => 'missing' in pick))
+      return {
+        id: op.id,
+        applied: true,
+        uncounted: true,
+        notices: picks.flatMap(({ target, pick }) =>
+          'missing' in pick ? [{ code: pick.missing, track: op.label, playlist: target.name }] : [],
+        ),
       }
     const type = seratoFileType(op.path)
     const added =
@@ -490,6 +506,7 @@ export function applySeratoTrack(
       })
     if (!added) return notAdded
     draft.write(database, added)
+    if (op.wanted.length === 0) return { id: op.id, applied: true, notices: [] }
   }
   return { id: op.id, applied: true, notices: fileInCrates(draft, op, root, roots, path) }
 }

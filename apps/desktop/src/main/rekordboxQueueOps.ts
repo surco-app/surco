@@ -63,6 +63,7 @@ export interface OpOutcome {
   report?: PlaylistAddReport
   createdId?: string
   contentId?: string
+  uncounted?: true
   notices: RekordboxQueueNotice[]
 }
 
