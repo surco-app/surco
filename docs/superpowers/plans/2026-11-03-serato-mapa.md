@@ -40,13 +40,19 @@ Filas provisionales del lado de cues que la Tarea 6 sustituye: `sources.serato: 
 
 ## Pendiente para la fase (b) de Serato (revisión final de la fase (a), 03/11)
 
+Hecho en la fase (b) (04/11):
+
+- Rechazo en el proceso principal de ids `serato:` en `runProcessTrack`.
+- Serato en `usedByLibrary`, y si no se puede leer `_Serato_` cuenta como usado.
+- Convertir lleva los cues de Serato (`carrySeratoCues`) en el reloj de salida y con el desplazamiento de la conversión.
+- Caché por mtime y tamaño de las lecturas de `_Serato_`.
+- `isSeratoRunning`: `pgrep` con salida 1 es cerrado; cualquier otro error cuenta como abierto a propósito (nunca escribir con Serato abierto).
+- Rejilla leída del `Serato Tempo Map`: cues sobre la onda, pegar al golpe y Auto mark.
+
+Sigue pendiente (fase c):
+
 - Marcar `fromSerato` de forma determinista con `serato:membership` (hoy se marca al abrir un crate de Serato que lista la pista y se queda en la sesión).
-- Rechazo en el proceso principal de ids `serato:` en `runProcessTrack` (hoy lo bloquea el renderer en tres capas).
-- Serato en `usedByLibrary` (lectura) para que la retirada automática y la oferta de limpieza no manden a la papelera un fichero que un crate de Serato usa.
-- Convertir un fichero abierto desde una carpeta u otra pestaña que Serato también lista reescribe el audio y puede perder `Serato Markers2`: llevar los cues al convertir.
-- Caché por mtime de las lecturas de `_Serato_` (cada llamada `serato:*` relee todo, incluidos los discos de red).
-- `isSeratoRunning` cuenta como abierto cualquier error de `pgrep`; nombre del proceso en Windows sin medir.
-- Rejilla (`Serato Tempo Map`) sin medir: los cues se muestran en lista, no sobre la onda.
+- Nombre del proceso de Serato en Windows sin medir.
 - Un crate con subcrates se ve como carpeta; sus pistas propias solo por All tracks. Una pista en dos bases de datos cuenta doble.
 
 ## Errores del compilador
