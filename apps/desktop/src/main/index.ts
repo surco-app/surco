@@ -192,9 +192,8 @@ import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { registerSeratoCueQueueIpc } from './seratoCueQueueIpc'
 import { applySeratoCuesBatch } from './seratoCuesWrite'
-import { readSeratoLibrary, seratoLibraryRoots } from './seratoLibrary'
+import { seratoLibraryRoots } from './seratoLibrary'
 import { registerSeratoPlaylistsIpc } from './seratoPlaylistsIpc'
-import { repointSerato } from './seratoRepoint'
 import { loadLastSession, saveLastSession } from './session'
 import {
   defaultConfigDir,
@@ -335,20 +334,6 @@ function seratoRoots() {
     return seratoLibraryRoots(app.getPath('home'), volumes)
   } catch {
     return seratoLibraryRoots(app.getPath('home'), [])
-  }
-}
-
-function seratoHolds(): (path: string) => boolean {
-  let files: Set<string> | undefined
-  return (path) => {
-    if (!files)
-      try {
-        files = new Set(readSeratoLibrary(seratoRoots()).tracks.map((t) => t.file.normalize('NFC')))
-      } catch (err) {
-        log.warn('serato: could not read the library to follow a conversion', err)
-        files = new Set()
-      }
-    return files.has(path.normalize('NFC'))
   }
 }
 
@@ -525,12 +510,7 @@ const programQueues = {
             rewritten: followEngineSize,
             seratoOpen: DJ_PROCESSES.serato.isRunning,
           }),
-        repoint: (_library, list) =>
-          repointSerato(list, {
-            roots: seratoRoots,
-            backupDir: join(app.getPath('userData'), 'serato-backups'),
-            seratoOpen: DJ_PROCESSES.serato.isRunning,
-          }),
+        repoint: async () => [],
         nodeStamps: async () => ({}),
         onChange: (state) => broadcast('serato:cueQueueChanged', state),
         addsTracks: false,
@@ -1562,11 +1542,6 @@ function registerIpc(): void {
             engine: {
               enqueue: engineCueQueue.enqueue,
               applyQuietly: () => applyEngineCueQueueQuietly(later),
-            },
-            serato: {
-              enqueue: seratoCueQueue.enqueue,
-              applyQuietly: () => programQueues.serato.applyQuietly(),
-              holds: seratoHolds(),
             },
           },
         )

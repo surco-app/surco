@@ -3,8 +3,6 @@ import {
   crateTree,
   parseSeratoCrate,
   parseSeratoDatabase,
-  repointSeratoCrate,
-  repointSeratoDatabase,
   seratoDatabaseTruncated,
 } from './seratoDatabase'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
@@ -147,81 +145,5 @@ describe('crateTree', () => {
 
   it('ignores files that are not crates', () => {
     expect(crateTree(['.DS_Store', 'A.crate'])).toEqual([{ id: 'A', name: 'A', children: [] }])
-  })
-})
-
-const PRUEBAS = 'Users/vicent/Music/Serato Pruebas'
-const move = (from: string, to: string) => ({ from: `${PRUEBAS}/${from}`, to: `${PRUEBAS}/${to}` })
-const occurrences = (haystack: Uint8Array, needle: Uint8Array) => {
-  let n = 0
-  for (let i = 0; i + needle.length <= haystack.length; i++)
-    if (needle.every((b, j) => haystack[i + j] === b)) n++
-  return n
-}
-
-describe('repointSeratoDatabase', () => {
-  it('moves a renamed track to its new file and keeps every other track and field as Serato wrote it', () => {
-    const before = bytes(DATABASE_V2)
-    const { bytes: after, moved } = repointSeratoDatabase(before, [
-      move('Pray.mp3', 'Tina Cousins - Pray.mp3'),
-    ])
-
-    expect(moved).toEqual([`${PRUEBAS}/Pray.mp3`])
-    expect(parseSeratoDatabase(after).map((t) => t.path)).toEqual([
-      `${PRUEBAS}/Tina Cousins - Pray.mp3`,
-      ...parseSeratoDatabase(before)
-        .slice(1)
-        .map((t) => t.path),
-    ])
-    expect(
-      repointSeratoDatabase(after, [move('Tina Cousins - Pray.mp3', 'Pray.mp3')]).bytes,
-    ).toEqual(before)
-  })
-
-  it('names the new file type when a conversion changes the format, so Serato does not treat an AIFF as a WAV', () => {
-    const before = bytes(DATABASE_V2)
-    const { bytes: after } = repointSeratoDatabase(before, [
-      move('Pray.wav', 'Pray converted.aiff'),
-    ])
-
-    expect(occurrences(after, frame('ttyp', utf16be('aiff')))).toBe(
-      occurrences(before, frame('ttyp', utf16be('aiff'))) + 1,
-    )
-    expect(repointSeratoDatabase(after, [move('Pray converted.aiff', 'Pray.wav')]).bytes).toEqual(
-      before,
-    )
-  })
-
-  it('leaves the database untouched for a file Serato does not hold', () => {
-    const before = bytes(DATABASE_V2)
-    const { bytes: after, moved } = repointSeratoDatabase(before, [move('Other.mp3', 'New.mp3')])
-
-    expect(moved).toEqual([])
-    expect(after).toEqual(before)
-  })
-
-  it('finds the track whichever Unicode form the file name comes in and keeps the form Serato stored', () => {
-    const nfc = 'Música/Uno.mp3'
-    const db = concat([VERSION, track({ ttyp: 'mp3', pfil: nfc })])
-    const { bytes: after, moved } = repointSeratoDatabase(db, [
-      { from: nfc.normalize('NFD'), to: 'Música/Dos.mp3'.normalize('NFD') },
-    ])
-
-    expect(moved).toEqual([nfc.normalize('NFD')])
-    expect(parseSeratoDatabase(after)[0].path).toBe('Música/Dos.mp3'.normalize('NFC'))
-  })
-})
-
-describe('repointSeratoCrate', () => {
-  it('moves the renamed track inside the crate and nothing else', () => {
-    const before = bytes(PRUEBAS_CRATE)
-    const after = repointSeratoCrate(before, [move('Pray.aiff', 'Pray (renamed).aiff')])
-
-    expect(parseSeratoCrate(after)).toEqual(
-      parseSeratoCrate(before).map((p) =>
-        p === `${PRUEBAS}/Pray.aiff` ? `${PRUEBAS}/Pray (renamed).aiff` : p,
-      ),
-    )
-    expect(repointSeratoCrate(after, [move('Pray (renamed).aiff', 'Pray.aiff')])).toEqual(before)
   })
 })

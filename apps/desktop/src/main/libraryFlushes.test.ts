@@ -483,29 +483,6 @@ describe('duplicateLibraryDeps', () => {
 
 // Los campos de playlists de Traktor y Engine DJ escriben por la cola de cada programa, que
 // espera a que esté cerrado, tenga o no activado el reapuntado de esa biblioteca.
-describe('flushConversionBatch with a converted track Serato holds', () => {
-  it('queues the new file for Serato and applies it quietly, so Serato never keeps a track whose file is gone', async () => {
-    const serato = { enqueue: vi.fn(), applyQuietly: vi.fn(), holds: vi.fn(() => true) }
-    await flushConversionBatch(host(), sessions, {
-      rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
-      serato,
-    })
-    expect(serato.holds).toHaveBeenCalledWith('/m/a.mp3')
-    expect(serato.enqueue).toHaveBeenCalledWith([], [{ from: '/m/a.mp3', to: '/m/a.flac' }])
-    expect(serato.applyQuietly).toHaveBeenCalled()
-  })
-
-  it('queues nothing for Serato when it does not hold the converted file', async () => {
-    const serato = { enqueue: vi.fn(), applyQuietly: vi.fn(), holds: vi.fn(() => false) }
-    await flushConversionBatch(host(), sessions, {
-      rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
-      serato,
-    })
-    expect(serato.enqueue).not.toHaveBeenCalled()
-    expect(serato.applyQuietly).not.toHaveBeenCalled()
-  })
-})
-
 describe('flushConversionBatch with playlists chosen for Traktor and Engine DJ', () => {
   it('queues each library its own track ops and applies them quietly', async () => {
     Object.assign(REPOINTS[0], {

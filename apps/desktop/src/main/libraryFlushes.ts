@@ -29,7 +29,7 @@ import { replaceRekordboxDuplicates } from './rekordboxDuplicates'
 import { type FlushResult, flushRekordboxSync, REKORDBOX_KEYS } from './rekordboxFlush'
 import { repointTracks } from './rekordboxLibrary'
 import { findRekordboxCollection } from './rekordboxPath'
-import type { QueuedRepoint, RekordboxQueue } from './rekordboxQueue'
+import type { RekordboxQueue } from './rekordboxQueue'
 import { libraryTrackOps, queueConversionRun, trackOpsFromRun } from './rekordboxQueueFromRun'
 import type { createSessionBackup } from './rekordboxSessionBackup'
 import { updateRekordboxTags } from './rekordboxTags'
@@ -268,11 +268,6 @@ export type ConversionQueues = {
   rekordbox: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void }
   traktor?: Parameters<typeof holdInQueue>[0]
   engine?: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void }
-  serato?: {
-    enqueue: (ops: [], repoints: QueuedRepoint[]) => void
-    applyQuietly: () => void
-    holds: (path: string) => boolean
-  }
 }
 
 export const FLUSH_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine'])
@@ -307,16 +302,6 @@ export async function flushConversionBatch(
   }
   const outcome: Partial<FlushOutcome> = {}
   for (const program of FLUSH_ORDER) await settle(outcome, program, flushers[program], run)
-  const serato = queues.serato
-  const seratoRepoints = serato
-    ? repoints
-        .filter((r) => r.from !== r.to && serato.holds(r.from))
-        .map(({ from, to }) => ({ from, to }))
-    : []
-  if (serato && seratoRepoints.length > 0) {
-    serato.enqueue([], seratoRepoints)
-    serato.applyQuietly()
-  }
   return outcome as FlushOutcome
 }
 
