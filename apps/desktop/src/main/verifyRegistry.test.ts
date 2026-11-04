@@ -218,6 +218,78 @@ describe('verify registry', () => {
     expect(registry.get('b')).toEqual({ status: 'ok', checks: [ok('file', 'fileIdentical')] })
   })
 
+  describe('a track the job asked to put in playlists', () => {
+    const house = [{ id: 'p1', name: 'House' }]
+    const added = (trackId: string) =>
+      entry(trackId, { rekordbox: 'absent', playlists: { rekordbox: house } })
+
+    // The flush only moves rows; the playlists (and a row for a track rekordbox never had)
+    // are written by the queue apply right after. Read now, a new track would read missing.
+    it('waits for the queue apply after a written flush, still checking', async () => {
+      const { deps, registry } = setup()
+      registry.register(added('a'))
+
+      await registry.afterFlush(written)
+
+      expect(deps.readRekordbox).not.toHaveBeenCalled()
+      expect(stateOf(registry.get('a'), 'rekordbox')).toBe('checking')
+    })
+
+    it('is read once the track ops apply, though rekordbox never had the source', async () => {
+      const { deps, registry } = setup()
+      registry.register(added('a'))
+      registry.register(entry('moved'))
+      await registry.afterFlush(written)
+      deps.readRekordbox.mockClear()
+
+      await registry.afterTrackOps('rekordbox')
+
+      expect(deps.readRekordbox.mock.calls[0][0].map((e) => e.trackId)).toEqual(['a'])
+      expect(registry.get('a')?.status).toBe('ok')
+    })
+
+    it('waits for rekordbox to close when the flush found it open', async () => {
+      const { deps, registry } = setup()
+      registry.register(added('a'))
+
+      await registry.afterFlush({ ...written, rekordbox: 'queued' })
+
+      expect(deps.readRekordbox).not.toHaveBeenCalled()
+      expect(stateOf(registry.get('a'), 'rekordbox')).toBe('pending')
+    })
+
+    it('reads pending when the apply that follows finds rekordbox open', async () => {
+      const { registry } = setup()
+      registry.register(added('a'))
+      await registry.afterFlush(written)
+
+      await registry.afterQueueWaits('rekordbox')
+
+      expect(stateOf(registry.get('a'), 'rekordbox')).toBe('pending')
+    })
+
+    it('reads unreadable when the flush failed, so the retry can read it again', async () => {
+      const { deps, registry } = setup()
+      registry.register(added('a'))
+
+      await registry.afterFlush({ ...written, rekordbox: 'failed' })
+
+      expect(deps.readRekordbox).not.toHaveBeenCalled()
+      expect(stateOf(registry.get('a'), 'rekordbox')).toBe('unreadable')
+    })
+
+    it('a track with no playlists is not re-read by the track ops', async () => {
+      const { deps, registry } = setup()
+      registry.register(entry('moved'))
+      await registry.afterFlush(written)
+      deps.readRekordbox.mockClear()
+
+      await registry.afterTrackOps('rekordbox')
+
+      expect(deps.readRekordbox).not.toHaveBeenCalled()
+    })
+  })
+
   it('a library switched off at flush time is not listed', async () => {
     const { registry } = setup()
     registry.register(entry('a'))

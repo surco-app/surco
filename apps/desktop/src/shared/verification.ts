@@ -41,6 +41,7 @@ export const VERIFY_DETAIL_KEYS = [
   'rekordboxCuesLost',
   'rekordboxCuesChanged',
   'rekordboxAnalysisEmptied',
+  'rekordboxPlaylistMissing',
   'rekordboxUnreadable',
   'engineOk',
   'engineStillOld',

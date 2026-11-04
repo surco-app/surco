@@ -91,6 +91,19 @@ describe('VerifiedPopover', () => {
     expect(music).toHaveTextContent('Una sola entrada · en 24, All y Warm up')
   })
 
+  it('names the rekordbox playlists the same way, after the cues', () => {
+    const [rekordbox] = open([
+      {
+        ...rekordboxOk,
+        detail: {
+          key: 'rekordboxOk',
+          params: { format: 'WAV', cues: 13, playlists: ['House', 'Peak time'] },
+        },
+      },
+    ])
+    expect(rekordbox).toHaveTextContent('Apunta al WAV · 13 cues · en House y Peak time')
+  })
+
   it('says only the single entry when the track is in no playlist', () => {
     const [music] = open([
       { place: 'appleMusic', state: 'ok', detail: { key: 'musicOneNoPlaylists' } },

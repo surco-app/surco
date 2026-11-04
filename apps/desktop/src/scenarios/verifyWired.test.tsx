@@ -236,3 +236,75 @@ describe('The self-check reads back what each library ended up pointing at', () 
     expect(rekordboxRow(db, '900001').cuesMs).toEqual([2000])
   }, 60_000)
 })
+
+// The 04/11 report: a download added to two rekordbox playlists showed the file and Apple
+// Music on the shield, and nothing about rekordbox, which had never had the track.
+describe('The self-check reads back the rekordbox playlists the DJ asked for', () => {
+  async function convertIntoPlaylists(name: string) {
+    const root = scenarioDir(name)
+    makeTrack(join(root, 'Downloads', 'x.flac'), { title: 'Plastic Dreams', artist: 'Jaydee' })
+    const db = makeRekordbox(join(root, 'rekordbox'), [
+      {
+        id: '900001',
+        path: join(root, 'Elsewhere', 'Show Me Love.mp3'),
+        title: 'Show Me Love',
+        artist: 'Robin S',
+        fileType: 1,
+      },
+    ])
+    const opened = openRekordboxDb(db)
+    for (const [id, title] of [
+      ['p1', 'House'],
+      ['p2', 'Peak time'],
+    ])
+      opened
+        ?.prepare(
+          `INSERT INTO djmdPlaylist (ID, Seq, Name, Attribute, ParentID, rb_local_deleted)
+           VALUES (?, 1, ?, 0, 'root', 0)`,
+        )
+        .run(id, title)
+    opened?.close()
+    const surco = await openSurco({
+      verify: true,
+      settings: { outputFormat: 'aiff', syncRekordbox: true, rekordboxDbPath: db },
+      destination: 'beside',
+    })
+    await surco.drop(join(root, 'Downloads'))
+    surco.patchTrack('x.flac', {
+      rekordboxPlaylists: [
+        { id: 'p1', name: 'House' },
+        { id: 'p2', name: 'Peak time' },
+      ],
+    })
+    await surco.convertAll()
+    await surco.settled()
+    return surco
+  }
+
+  const rekordboxLine = (surco: Awaited<ReturnType<typeof convertIntoPlaylists>>) =>
+    surco.verification('x.flac')?.checks.find((c) => c.place === 'rekordbox')
+
+  it('lists rekordbox and says the new track is in both playlists', async () => {
+    const surco = await convertIntoPlaylists('verify-rekordbox-playlists')
+    expect(rekordboxLine(surco)).toEqual({
+      place: 'rekordbox',
+      state: 'ok',
+      detail: {
+        key: 'rekordboxOk',
+        params: { format: 'AIFF', cues: 0, playlists: ['House', 'Peak time'] },
+      },
+    })
+    expect(surco.verification('x.flac')?.status).toBe('ok')
+  }, 60_000)
+
+  it('says it waits for rekordbox to close, and ok once it lands', async () => {
+    vi.mocked(isRekordboxRunning).mockResolvedValue(true)
+    const surco = await convertIntoPlaylists('verify-rekordbox-playlists-open')
+    expect(rekordboxLine(surco)?.state).toBe('pending')
+    vi.mocked(isRekordboxRunning).mockResolvedValue(false)
+    await surco.rekordboxClosed()
+    await surco.settled()
+    expect(rekordboxLine(surco)?.state).toBe('ok')
+    expect(surco.statuses('x.flac')).not.toContain('mismatch')
+  }, 60_000)
+})

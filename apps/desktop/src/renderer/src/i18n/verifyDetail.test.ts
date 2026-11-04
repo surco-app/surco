@@ -68,6 +68,8 @@ const SENT: Record<VerifyDetailKey, CheckDetail['params'][]> = {
   rekordboxOk: [
     { format: 'WAV', cues: 1 },
     { format: 'WAV', cues: 13 },
+    { format: 'WAV', cues: 1, playlists: ['House'] },
+    { format: 'WAV', cues: 13, playlists: ['House', 'Peak time'] },
   ],
   rekordboxStillOld: [{ format: 'AIFF' }],
   rekordboxMissing: [undefined],
@@ -83,6 +85,7 @@ const SENT: Record<VerifyDetailKey, CheckDetail['params'][]> = {
     { before: 3, after: 8 },
   ],
   rekordboxAnalysisEmptied: [undefined],
+  rekordboxPlaylistMissing: [{ playlist: 'Peak time' }],
   rekordboxUnreadable: [undefined],
   engineOk: [{ format: 'WAV' }],
   engineStillOld: [{ format: 'AIFF' }],

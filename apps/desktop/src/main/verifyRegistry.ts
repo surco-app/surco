@@ -1,5 +1,6 @@
 import type { WritableProgram } from '../shared/djProgram'
 import { errorWithKey } from '../shared/errorKeys'
+import type { RekordboxPlaylistTarget } from '../shared/types'
 import {
   PLACE_PROGRAMS,
   type PlaceCheck,
@@ -37,6 +38,9 @@ export interface VerifyEntry {
   engine?: EngineBefore
   traktorPatch?: NmlPatch
   engineStep?: boolean
+  // The playlists the job asked each library to put the track in, written by the queue apply
+  // that follows the flush, along with a row for a track the library never had.
+  playlists?: Partial<Record<Library, RekordboxPlaylistTarget[]>>
   // How the conversion moved the cues in rekordbox's timeline (the repoint's audio), handed
   // again with a repoint the library never applied.
   cueShiftMs?: number
@@ -113,12 +117,17 @@ const unreadable = (place: Library): PlaceCheck => ({
   detail: { key: `${place}Unreadable` },
 })
 
+const inPlaylists = (e: VerifyEntry, place: Library) => (e.playlists?.[place]?.length ?? 0) > 0
+
 // A source with no row in rekordbox or Engine was never touched there: nothing to list.
 const LISTED: Record<
   Library,
   { touches: (e: VerifyEntry) => boolean; byJob: (e: VerifyEntry) => boolean }
 > = {
-  rekordbox: { touches: (e) => e.rekordbox !== 'absent', byJob: () => false },
+  rekordbox: {
+    touches: (e) => e.rekordbox !== 'absent' || inPlaylists(e, 'rekordbox'),
+    byJob: () => false,
+  },
   engine: {
     touches: (e) => e.engine !== 'absent' || e.engineStep === true,
     byJob: (e) => e.engineStep === true,
@@ -355,9 +364,17 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
               if (!touched.includes(e) || (result === 'off' && byFlush.includes(e)))
                 replace(e, null, place)
             if (result === 'queued') for (const e of byFlush) hold(place, e)
+            const byOps = result === 'written' ? byFlush.filter((e) => inPlaylists(e, place)) : []
+            for (const e of byOps) awaiting[place].add(e)
             await Promise.all([
               check(place, byJob, null),
-              result === 'off' || result === 'queued' ? undefined : check(place, byFlush, result),
+              result === 'off' || result === 'queued'
+                ? undefined
+                : check(
+                    place,
+                    byFlush.filter((e) => !byOps.includes(e)),
+                    result,
+                  ),
             ])
           }),
         )
@@ -376,6 +393,16 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
       await during(held, async () => {
         await check(place, held, result)
         if (result === 'failed' && stillQueued) for (const e of held) awaiting[place].add(e)
+        for (const e of held) emit(e)
+      })
+    },
+
+    // An apply that wrote the track ops: the tracks waiting on their playlists are read.
+    async afterTrackOps(place: Library): Promise<void> {
+      const held = [...awaiting[place]].filter((e) => inPlaylists(e, place))
+      if (held.length === 0) return
+      await during(held, async () => {
+        await check(place, held, 'written')
         for (const e of held) emit(e)
       })
     },

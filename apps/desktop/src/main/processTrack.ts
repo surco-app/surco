@@ -1222,16 +1222,19 @@ export async function runProcessTrack(
       followed
         ? checking(place)
         : { place, state: 'unreadable', detail: { key: `${place}Unreadable` } }
+    const rekordboxPlaylists = job.rekordboxPlaylists?.length ? job.rekordboxPlaylists : undefined
+    const rekordboxListed =
+      (before.rekordbox && before.rekordbox !== 'absent') || !!rekordboxPlaylists
     const places = new Set<VerifyPlace>(['file'])
     if (musicCheck) places.add('appleMusic')
-    if (followed && before.rekordbox) places.add('rekordbox')
+    if (followed && (before.rekordbox || rekordboxPlaylists)) places.add('rekordbox')
     if (followed && (before.engine || addedToEngineDj)) places.add('engine')
     if (followed && traktor) places.add('traktor')
     // Named per conversion, not per track: a track converted again starts its own count.
     const checked = withChecks({ status: 'checking', checks: [] }, [
       fileCheck,
       ...(musicCheck ? [musicCheck] : []),
-      ...(before.rekordbox && before.rekordbox !== 'absent' ? [library('rekordbox')] : []),
+      ...(rekordboxListed ? [library('rekordbox')] : []),
       ...(engineListed ? [library('engine')] : []),
       ...(traktor ? [library('traktor')] : []),
     ])
@@ -1256,6 +1259,7 @@ export async function runProcessTrack(
       rekordbox: before.rekordbox,
       engine: before.engine,
       engineStep: addedToEngineDj,
+      ...(rekordboxPlaylists ? { playlists: { rekordbox: rekordboxPlaylists } } : {}),
       heldOriginal,
       verification,
     })

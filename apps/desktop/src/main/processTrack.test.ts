@@ -3757,6 +3757,29 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect(registerVerification.mock.calls[0][0].engine).toBe('unreadable')
   })
 
+  // The 04/11 report: a track added to Apple Music and to two rekordbox playlists showed only
+  // the file and Music. rekordbox never had it, but the job asked it to take it in.
+  it('lists rekordbox for a track it never had when the job asked for its playlists', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const deps = makeDeps({
+      snapshotLibraries: vi.fn<NonNullable<ProcessTrackDeps['snapshotLibraries']>>(async () => ({
+        rekordbox: 'absent',
+      })),
+      registerVerification,
+    })
+    const wanted = [{ id: '3000', name: 'Makina' }, { name: 'Peak time' }]
+
+    const result = await runProcessTrack(job({ rekordboxPlaylists: wanted }), deps)
+
+    expect(result.verification?.checks.map((c) => [c.place, c.state])).toEqual([
+      ['file', 'ok'],
+      ['rekordbox', 'checking'],
+    ])
+    const entry = registerVerification.mock.calls[0][0]
+    expect(entry.playlists).toEqual({ rekordbox: wanted })
+    expect([...entry.places]).toContain('rekordbox')
+  })
+
   // The renderer keeps an update only for the conversion it holds and only when newer than
   // the result: converting the same track again must not inherit the last one's count.
   it('each conversion names its own job and starts its count at 0', async () => {

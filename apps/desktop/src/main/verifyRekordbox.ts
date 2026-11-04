@@ -1,5 +1,6 @@
 import { extname } from 'node:path'
 import type Database from 'better-sqlite3-multiple-ciphers'
+import type { RekordboxPlaylistTarget } from '../shared/types'
 import type { PlaceCheck, VerifyDetailKey } from '../shared/verification'
 import {
   FILE_TYPES,
@@ -39,6 +40,7 @@ export interface RekordboxExpect {
   before: RekordboxBefore
   added: boolean
   size: number
+  playlists?: RekordboxPlaylistTarget[]
 }
 
 interface Row {
@@ -104,7 +106,7 @@ export function snapshotRekordboxRow(
 const check = (
   state: PlaceCheck['state'],
   key: VerifyDetailKey,
-  params?: Record<string, string | number>,
+  params?: Record<string, string | number | string[]>,
 ): PlaceCheck => ({ place: 'rekordbox', state, detail: params ? { key, params } : { key } })
 
 // Without the row as it was before the write, no later read can judge it.
@@ -200,5 +202,24 @@ function judgeRow(
     )
       return check('mismatch', 'rekordboxAnalysisEmptied')
   }
-  return check('ok', 'rekordboxOk', { format: formatOf(extname(e.to)), cues })
+  const ok = { format: formatOf(extname(e.to)), cues }
+  if (!e.playlists?.length) return check('ok', 'rekordboxOk', ok)
+  const missing = e.playlists.find((t) => !holds(db, t, id))
+  if (missing) return check('mismatch', 'rekordboxPlaylistMissing', { playlist: missing.name })
+  return check('ok', 'rekordboxOk', { ...ok, playlists: e.playlists.map((t) => t.name) })
+}
+
+// A playlist typed in the picker had no id: the write made it at the root under that name.
+function holds(db: RekordboxDb, target: RekordboxPlaylistTarget, contentId: string): boolean {
+  const where = target.id ? 'p.ID = ?' : `p.Name = ? AND p.ParentID = 'root'`
+  return (
+    db
+      .prepare(
+        `SELECT 1 FROM djmdSongPlaylist s JOIN djmdPlaylist p ON p.ID = s.PlaylistID
+          WHERE ${where} AND s.ContentID = ? AND p.Attribute = 0
+            AND coalesce(s.rb_local_deleted, 0) = 0 AND coalesce(p.rb_local_deleted, 0) = 0
+          LIMIT 1`,
+      )
+      .get(target.id ?? target.name.trim(), contentId) !== undefined
+  )
 }

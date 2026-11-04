@@ -46,7 +46,12 @@ import { configureBackupStore } from '../main/originalKeeper'
 import { createOutputReservations } from '../main/outputReservations'
 import { runProcessTrack } from '../main/processTrack'
 import { trashRecoverably } from '../main/recoverableTrash'
-import { beginRekordboxBatch, redirectRekordboxRepoint, stackRepoint } from '../main/rekordboxBatch'
+import {
+  attachPlaylists,
+  beginRekordboxBatch,
+  redirectRekordboxRepoint,
+  stackRepoint,
+} from '../main/rekordboxBatch'
 import { readNodeStamps } from '../main/rekordboxMasterXml'
 import { applyRekordboxBatch } from '../main/rekordboxPlaylistWrite'
 import { isRekordboxRunning } from '../main/rekordboxProcess'
@@ -356,6 +361,7 @@ function processTrackInMain(
         () => undefined,
       ),
     followEngineSize,
+    attachPlaylists,
     verifyFile: (expect, signal) => checkFile(expect, fileReaders, { signal }),
     verifyMusic: async (expect, signal) => {
       await options.sabotage?.beforeMusicCheck?.()
@@ -607,6 +613,7 @@ function verifyWiring(queues: Queues, checks: { current?: QueueChecks }): Verify
     afterQueueApplied: (place, result, stillQueued) =>
       tracked(inFlight, registry.afterQueueApplied(place, result, stillQueued)),
     afterQueueWaits: (place) => tracked(inFlight, registry.afterQueueWaits(place)),
+    afterTrackOps: (place) => tracked(inFlight, registry.afterTrackOps(place)),
   })
   checks.current = wired
   const verify: VerifyWiring = { registry, checks: wired, statuses, retries: new Map(), inFlight }

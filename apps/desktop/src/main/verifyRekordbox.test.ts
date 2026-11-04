@@ -396,6 +396,91 @@ describe('checkRekordbox', () => {
     })
   })
 
+  describe('the playlists the conversion asked for', () => {
+    const playlist = (path: string, id: string, name: string, over = '') =>
+      write(
+        path,
+        `INSERT INTO djmdPlaylist (ID, Seq, Name, Attribute, ParentID, rb_local_deleted)
+         VALUES (?, 1, ?, 0, 'root', 0) ${over}`,
+        id,
+        name,
+      )
+    const added = (seed: Partial<RekordboxSeed> = {}) => {
+      const db = collection([{ path: TO, fileType: 11, cuesMs: [], fileSize: SIZE, ...seed }])
+      playlist(db, 'p1', 'House')
+      playlist(db, 'p2', 'Peak time')
+      return db
+    }
+    const asked = [
+      { id: 'p1', name: 'House' },
+      { id: 'p2', name: 'Peak time' },
+    ]
+
+    // The DJ asked for these playlists: the shield says the track is in them, by name, so
+    // a DJ who picked two sees both named, as Apple Music's line does.
+    it('a new row in both playlists asked for is ok and names them', () => {
+      const db = added({ playlists: ['p1', 'p2'] })
+      expect(checkOne(db, expectFor('absent', { added: true, playlists: asked }))[0]).toEqual({
+        place: 'rekordbox',
+        state: 'ok',
+        detail: {
+          key: 'rekordboxOk',
+          params: { format: 'WAV', cues: 0, playlists: ['House', 'Peak time'] },
+        },
+      })
+    })
+
+    // A row on the file says nothing about the playlists: a track left out of one is what the
+    // DJ would only find on stage, looking for it there.
+    it('a row missing from one playlist asked for is a mismatch naming that playlist', () => {
+      const db = added({ playlists: ['p1'] })
+      expect(checkOne(db, expectFor('absent', { added: true, playlists: asked }))[0]).toEqual({
+        place: 'rekordbox',
+        state: 'mismatch',
+        detail: { key: 'rekordboxPlaylistMissing', params: { playlist: 'Peak time' } },
+      })
+    })
+
+    // A playlist typed in the picker has no id until the write creates it at the root.
+    it('a playlist asked for by name is found by its name at the root', () => {
+      const db = added({ playlists: ['p2'] })
+      const byName = [{ name: 'Peak time' }]
+      expect(checkOne(db, expectFor('absent', { added: true, playlists: byName }))[0].state).toBe(
+        'ok',
+      )
+    })
+
+    it('a playlist rekordbox deleted does not count as holding the track', () => {
+      const db = added({ playlists: ['p1', 'p2'] })
+      write(db, `UPDATE djmdPlaylist SET rb_local_deleted = 1 WHERE ID = 'p2'`)
+      expect(
+        checkOne(db, expectFor('absent', { added: true, playlists: asked }))[0].detail,
+      ).toEqual({ key: 'rekordboxPlaylistMissing', params: { playlist: 'Peak time' } })
+    })
+
+    // A track that was already in rekordbox is checked the same way: the repoint kept its
+    // row, and the playlists asked for are still what the DJ expects to find.
+    it('a repointed row is checked for the playlists too', () => {
+      const db = collection([{ playlists: ['p1'] }])
+      playlist(db, 'p1', 'House')
+      playlist(db, 'p2', 'Peak time')
+      analyse(db, '100')
+      const before = snapshot(db)
+      repoint(db, '100')
+      expect(checkOne(db, expectFor(before, { playlists: asked }))[0].detail).toEqual({
+        key: 'rekordboxPlaylistMissing',
+        params: { playlist: 'Peak time' },
+      })
+    })
+
+    it('a track not in rekordbox at all is rekordboxMissing, before any playlist', () => {
+      const db = collection([{ path: '/Volumes/Music/Other.wav' }])
+      expect(
+        checkOne(db, expectFor('absent', { added: true, playlists: asked }))[0].detail,
+      ).toEqual({ key: 'rekordboxMissing' })
+    })
+  })
+
   it('a database that fails to read is unreadable', () => {
     const db = collection([{}])
     const handle = readOnly(db)
