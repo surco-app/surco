@@ -2,13 +2,16 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import type React from 'react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import { SectionGroupHeading } from './SectionGroupHeading'
 import { SectionHeader } from './SectionHeader'
 import { SectionSubhead } from './SectionSubhead'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+})
 
 describe('SectionHeader folded summary', () => {
   // A section that's switched off ("Off"/"None") is noise while scanning: the eye wants
@@ -105,6 +108,68 @@ describe('SectionHeader folded row', () => {
     header({ open: true })
     expect(screen.getByTestId('pill')).toBeInTheDocument()
     expect(screen.getByTestId('section-help')).toBeInTheDocument()
+  })
+})
+
+// The metadata's library status ("Apple Music · WAV 16/48 · better than this one") is wider
+// than the room a narrow panel leaves beside the title, and it painted over the toolbar
+// icons. It now drops onto its own line under the title, the full width of the header, but
+// only when it does not fit: on a wide panel it stays beside the title where it reads best.
+describe('SectionHeader status placement', () => {
+  function mockWidths(lead: number, title: number, status: number): void {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      const width =
+        this.dataset.testid === 'section-header-lead'
+          ? lead
+          : this.dataset.testid === 'section-title'
+            ? title
+            : this.parentElement?.dataset.testid === 'section-status'
+              ? status
+              : 0
+      return {
+        width,
+        height: 0,
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: width,
+        bottom: 0,
+        toJSON: () => ({}),
+      } as DOMRect
+    })
+  }
+
+  function header(): void {
+    render(
+      <SectionHeader
+        title="Metadata"
+        open
+        onToggle={() => {}}
+        status={<span>Apple Music · WAV 16/48 · better than this one</span>}
+      />,
+    )
+  }
+
+  it('keeps the status beside the title when it fits', () => {
+    mockWidths(400, 70, 294)
+    header()
+    expect(screen.getByRole('heading', { level: 3 })).toContainElement(
+      screen.getByTestId('section-status'),
+    )
+  })
+
+  it('moves the status under the title when it would run into the toolbar', () => {
+    mockWidths(225, 70, 294)
+    header()
+    const status = screen.getByTestId('section-status')
+    expect(screen.getByRole('heading', { level: 3 })).not.toContainElement(status)
+    expect(screen.getByTestId('section-header-lead')).not.toContainElement(status)
+    expect(screen.getByRole('button', { name: 'Metadata' })).toHaveAccessibleDescription(
+      'Apple Music · WAV 16/48 · better than this one',
+    )
   })
 })
 
