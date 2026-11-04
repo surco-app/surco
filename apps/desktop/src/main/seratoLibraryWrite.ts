@@ -11,8 +11,12 @@ import {
 } from 'node:fs'
 import { basename, dirname, join, relative } from 'node:path'
 import log from 'electron-log/main'
-import type { FileStamp } from './rekordboxQueueOps'
 import type { SeratoLibraryRoot } from './seratoLibrary'
+
+export interface FileStamp {
+  mtimeMs: number
+  size: number
+}
 
 export function fileStampOf(file: string): FileStamp | null {
   const stat = statSync(file, { throwIfNoEntry: false })

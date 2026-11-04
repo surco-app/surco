@@ -13,11 +13,6 @@ import { withNodeTimestamp } from './rekordboxMasterXml'
 import type { RekordboxMeta } from './rekordboxMetadata'
 import type { SeratoTagField } from './seratoDatabaseWrite'
 
-export interface FileStamp {
-  mtimeMs: number
-  size: number
-}
-
 export interface CrateStamp {
   tracks: string[]
 }
