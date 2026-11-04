@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.25",
+    "date": "November 4, 2026",
+    "title": "Ein Qualitätsfeld, und Suchen nach deinen Regeln in den DJ-Tabs",
+    "items": [
+      {
+        "text": "Neues Feld „Qualität“, das du unter „Felder“ in den Einstellungen einblendest. Mit „Auto“ schreibt Surco das Urteil der Analyse in die Datei, immer auf Englisch (Good, Reprocessed, Lossy…), damit du in den Smart-Playlists deines DJ-Programms danach filtern oder es in den Dateinamen übernehmen kannst.",
+        "in": "1.25.0"
+      },
+      {
+        "text": "Nach dem Konvertieren zeigt dir die Prüfung des Tracks, in welchen Playlists von rekordbox, Traktor und Engine DJ er gelandet ist, und warnt dich, wenn er in einer gewünschten fehlt.",
+        "in": "1.25.0"
+      },
+      {
+        "text": "In Apple Music und in den Tabs deiner DJ-Programme startet die Metadatensuche nicht mehr von selbst und sucht nur die Tracks, die du auswählst. Außerdem kannst du die Ergebnisspalte in jedem Tab mit „Ergebnisse ausblenden“ einklappen, und solange sie eingeklappt ist, wird nicht gesucht.",
+        "in": "1.25.0"
+      },
+      {
+        "text": "In den Filtern der Liste sagt jede Zahl, wie viele Tracks du siehst, wenn du sie zusammen mit dem bereits Gewählten auswählst, und die farbigen Punkte markieren nur Probleme, nicht das, was du noch konvertieren oder speichern musst.",
+        "in": "1.25.0"
+      },
+      {
+        "text": "Die Qualitätsanalyse beginnt mit der geöffneten Playlist und macht danach mit den übrigen weiter, ohne eine liegen zu lassen. Und eine Apple-Music-Playlist, die du noch nie geöffnet hattest, öffnet sich sofort.",
+        "in": "1.25.0"
+      },
+      {
+        "text": "Im großen Cue-Editor wächst die gezoomte Wellenform mit dem Fenster, und das Raster stellst du in derselben Zeile wie den Player ein, mit den rekordbox-Symbolen und ×2 und ½ griffbereit.",
+        "in": "1.25.0"
+      }
+    ]
+  },
+  {
     "version": "1.24",
     "date": "November 4, 2026",
     "title": "Serato und Traktor auf einen Pioneer-USB, und Serato-Crates",

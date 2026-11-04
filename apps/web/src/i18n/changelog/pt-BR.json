@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.25",
+    "date": "November 4, 2026",
+    "title": "Um campo de Qualidade, e buscas do seu jeito nas abas de DJ",
+    "items": [
+      {
+        "text": "Novo campo “Qualidade”, que você mostra em “Campos” nas configurações. Com “Auto” ligado, o Surco grava no arquivo o veredito da análise, sempre em inglês (Good, Reprocessed, Lossy…), para você filtrar por ele nas playlists inteligentes do seu programa de DJ ou levá-lo para o nome do arquivo.",
+        "in": "1.25.0"
+      },
+      {
+        "text": "Depois de converter, a verificação da faixa diz em quais playlists do rekordbox, Traktor e Engine DJ ela ficou, e avisa se falta em alguma das que você pediu.",
+        "in": "1.25.0"
+      },
+      {
+        "text": "No Apple Music e nas abas dos seus programas de DJ, a busca de metadados não começa mais sozinha e só busca as faixas que você selecionar. Você também pode recolher a coluna de resultados em cada aba com “Ocultar resultados”, e enquanto está recolhida ela não busca.",
+        "in": "1.25.0"
+      },
+      {
+        "text": "Nos filtros da lista, cada número diz quantas faixas você verá ao escolhê-lo junto com o que já escolheu, e os pontos coloridos marcam só problemas, não o que ainda falta converter ou salvar.",
+        "in": "1.25.0"
+      },
+      {
+        "text": "A análise de qualidade começa pela playlist que você tem aberta e depois segue com as outras, sem deixar nenhuma de lado. E uma playlist do Apple Music que você nunca tinha aberto abre na hora.",
+        "in": "1.25.0"
+      },
+      {
+        "text": "No editor de cues completo, a onda ampliada cresce com a janela, e a grade é ajustada na mesma linha do player, com os ícones do rekordbox e ×2 e ½ à mão.",
+        "in": "1.25.0"
+      }
+    ]
+  },
+  {
     "version": "1.24",
     "date": "November 4, 2026",
     "title": "Serato e Traktor para um USB Pioneer, e crates do Serato",

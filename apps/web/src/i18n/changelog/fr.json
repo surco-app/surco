@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.25",
+    "date": "November 4, 2026",
+    "title": "Un champ Qualité, et des recherches à ta façon dans les onglets DJ",
+    "items": [
+      {
+        "text": "Nouveau champ « Qualité », que tu affiches depuis « Champs » dans les réglages. Avec « Auto » activé, Surco écrit dans le fichier le verdict de l’analyse, toujours en anglais (Good, Reprocessed, Lossy…), pour que tu filtres dessus dans les playlists intelligentes de ton logiciel DJ ou que tu le mettes dans le nom du fichier.",
+        "in": "1.25.0"
+      },
+      {
+        "text": "Après une conversion, la vérification du morceau te dit dans quelles playlists de rekordbox, Traktor et Engine DJ il a atterri, et te prévient s’il manque dans l’une de celles que tu avais demandées.",
+        "in": "1.25.0"
+      },
+      {
+        "text": "Dans Apple Music et dans les onglets de tes logiciels DJ, la recherche de métadonnées ne se lance plus toute seule et ne cherche que les morceaux que tu sélectionnes. Tu peux aussi replier la colonne des résultats dans chaque onglet avec « Masquer les résultats », et tant qu’elle est repliée, elle ne cherche pas.",
+        "in": "1.25.0"
+      },
+      {
+        "text": "Dans les filtres de la liste, chaque nombre indique combien de morceaux tu verras en le choisissant avec ce que tu as déjà choisi, et les points de couleur ne signalent que des problèmes, pas ce qu’il te reste à convertir ou à enregistrer.",
+        "in": "1.25.0"
+      },
+      {
+        "text": "L’analyse de qualité commence par la playlist ouverte puis continue avec les autres, sans en laisser de côté. Et une playlist Apple Music que tu n’avais jamais ouverte s’ouvre aussitôt.",
+        "in": "1.25.0"
+      },
+      {
+        "text": "Dans le grand éditeur de cues, la forme d’onde zoomée grandit avec la fenêtre, et la grille se règle depuis la même ligne que le lecteur, avec les icônes de rekordbox et ×2 et ½ sous la main.",
+        "in": "1.25.0"
+      }
+    ]
+  },
+  {
     "version": "1.24",
     "date": "November 4, 2026",
     "title": "Serato et Traktor vers une clé USB Pioneer, et les crates Serato",
