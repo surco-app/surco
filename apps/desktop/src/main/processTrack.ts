@@ -1214,7 +1214,13 @@ export async function runProcessTrack(
       deps.unregisterActiveConversion(job.id)
     }
     const traktor = settings.syncTraktor && !!settings.traktorNmlPath
-    const engineListed = (before.engine && before.engine !== 'absent') || !!addedToEngineDj
+    const playlists: VerifyEntry['playlists'] = {}
+    for (const program of ['rekordbox', 'engine'] as const) {
+      const wanted = JOB_PLAYLISTS[program](job)?.wanted
+      if (wanted?.length) playlists[program] = wanted
+    }
+    const engineListed =
+      (before.engine && before.engine !== 'absent') || !!addedToEngineDj || !!playlists.engine
     // Music only with no location: the repoints still name the deleted temp, so what the
     // libraries hold cannot be judged against any file.
     const followed = !musicOnly || finalPath !== ''
@@ -1222,13 +1228,12 @@ export async function runProcessTrack(
       followed
         ? checking(place)
         : { place, state: 'unreadable', detail: { key: `${place}Unreadable` } }
-    const rekordboxPlaylists = job.rekordboxPlaylists?.length ? job.rekordboxPlaylists : undefined
     const rekordboxListed =
-      (before.rekordbox && before.rekordbox !== 'absent') || !!rekordboxPlaylists
+      (before.rekordbox && before.rekordbox !== 'absent') || !!playlists.rekordbox
     const places = new Set<VerifyPlace>(['file'])
     if (musicCheck) places.add('appleMusic')
-    if (followed && (before.rekordbox || rekordboxPlaylists)) places.add('rekordbox')
-    if (followed && (before.engine || addedToEngineDj)) places.add('engine')
+    if (followed && (before.rekordbox || playlists.rekordbox)) places.add('rekordbox')
+    if (followed && (before.engine || addedToEngineDj || playlists.engine)) places.add('engine')
     if (followed && traktor) places.add('traktor')
     // Named per conversion, not per track: a track converted again starts its own count.
     const checked = withChecks({ status: 'checking', checks: [] }, [
@@ -1259,7 +1264,7 @@ export async function runProcessTrack(
       rekordbox: before.rekordbox,
       engine: before.engine,
       engineStep: addedToEngineDj,
-      ...(rekordboxPlaylists ? { playlists: { rekordbox: rekordboxPlaylists } } : {}),
+      ...(Object.keys(playlists).length > 0 ? { playlists } : {}),
       heldOriginal,
       verification,
     })

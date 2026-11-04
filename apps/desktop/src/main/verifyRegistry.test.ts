@@ -278,6 +278,53 @@ describe('verify registry', () => {
       expect(stateOf(registry.get('a'), 'rekordbox')).toBe('unreadable')
     })
 
+    describe('in Engine DJ', () => {
+      const engineEntry = (trackId: string, over: Partial<VerifyEntry> = {}) =>
+        entry(trackId, {
+          places: new Set(['file', 'engine']),
+          rekordbox: undefined,
+          engine: 'absent',
+          playlists: { engine: house },
+          ...over,
+        })
+
+      it('a track Engine never had waits for the track ops, then is read', async () => {
+        const { deps, registry } = setup()
+        registry.register(engineEntry('a'))
+
+        await registry.afterFlush(written)
+        expect(deps.readEngine).not.toHaveBeenCalled()
+        expect(stateOf(registry.get('a'), 'engine')).toBe('checking')
+
+        await registry.afterTrackOps('engine')
+        expect(deps.readEngine.mock.calls[0][0].map((e) => e.trackId)).toEqual(['a'])
+        expect(registry.get('a')?.status).toBe('ok')
+      })
+
+      // The Engine DJ step wrote the row during the job, but the playlists come with the
+      // queue apply: read at the flush, the row would not be in them yet.
+      it('a row the job wrote itself still waits for its playlists', async () => {
+        const { deps, registry } = setup()
+        registry.register(engineEntry('a', { engineStep: true }))
+
+        await registry.afterFlush(written)
+        expect(deps.readEngine).not.toHaveBeenCalled()
+
+        await registry.afterTrackOps('engine')
+        expect(deps.readEngine).toHaveBeenCalledTimes(1)
+      })
+
+      it('waits for Engine DJ to close when the flush found it open', async () => {
+        const { deps, registry } = setup()
+        registry.register(engineEntry('a', { engineStep: true }))
+
+        await registry.afterFlush({ ...written, engine: 'queued' })
+
+        expect(deps.readEngine).not.toHaveBeenCalled()
+        expect(stateOf(registry.get('a'), 'engine')).toBe('pending')
+      })
+    })
+
     it('a track with no playlists is not re-read by the track ops', async () => {
       const { deps, registry } = setup()
       registry.register(entry('moved'))

@@ -206,6 +206,30 @@ describe('library readers', () => {
 
     expect(seen.map((e) => (e as { added: boolean }).added)).toEqual([true, false, false])
   })
+
+  // A track Engine never had gets its row from the queue apply with the playlists the job
+  // asked for, the same as from the Engine DJ step.
+  it('an Engine row the job put in playlists is checked as added, with them', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-verifyipc-engine-'))
+    const seen: unknown[] = []
+    const readers = libraryReaders(
+      { rekordbox: () => '', engine: () => dir, traktor: () => '' },
+      {
+        realPath,
+        bootVolume: () => 'Macintosh HD',
+        openEngine: () => ({ close: () => {} }) as never,
+        checkEngine: (_db, _dir, list) => {
+          seen.push(...list)
+          return list.map(() => ({ place: 'engine', state: 'ok', detail: { key: 'engineOk' } }))
+        },
+      },
+    )
+    const house = [{ id: '10', name: 'House' }]
+
+    await readers.readEngine([entry({ engine: 'absent', playlists: { engine: house } })])
+
+    expect(seen).toEqual([expect.objectContaining({ added: true, playlists: house })])
+  })
   // A track rekordbox never had gets its row from the queue apply: it is checked as added,
   // and in the playlists the job asked for.
   it('a rekordbox row the job added to playlists is checked as added, with them', async () => {

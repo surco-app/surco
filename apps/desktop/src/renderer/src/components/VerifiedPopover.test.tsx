@@ -104,6 +104,17 @@ describe('VerifiedPopover', () => {
     expect(rekordbox).toHaveTextContent('Apunta al WAV · 13 cues · en House y Peak time')
   })
 
+  it('names the Engine DJ playlists the same way', () => {
+    const [engine] = open([
+      {
+        place: 'engine',
+        state: 'ok',
+        detail: { key: 'engineOk', params: { format: 'WAV', playlists: ['House', 'Peak time'] } },
+      },
+    ])
+    expect(engine).toHaveTextContent('Apunta al WAV · en House y Peak time')
+  })
+
   it('says only the single entry when the track is in no playlist', () => {
     const [music] = open([
       { place: 'appleMusic', state: 'ok', detail: { key: 'musicOneNoPlaylists' } },

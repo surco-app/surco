@@ -308,3 +308,44 @@ describe('The self-check reads back the rekordbox playlists the DJ asked for', (
     expect(surco.statuses('x.flac')).not.toContain('mismatch')
   }, 60_000)
 })
+
+describe('The self-check reads back the Engine DJ playlists the DJ asked for', () => {
+  async function convertIntoEnginePlaylists(name: string) {
+    const root = scenarioDir(name)
+    makeTrack(join(root, 'Downloads', 'x.flac'), { title: 'Plastic Dreams', artist: 'Jaydee' })
+    const engineLibraryDir = join(root, 'Engine Library')
+    writeEngineLibraryFixture(engineLibraryDir, {
+      tracks: [],
+      playlists: [
+        { id: 10, title: 'House', parentListId: 0, nextListId: 11 },
+        { id: 11, title: 'Peak time', parentListId: 0, nextListId: 0 },
+      ],
+      entities: [],
+    }).close()
+    const surco = await openSurco({
+      verify: true,
+      settings: { outputFormat: 'aiff', syncEngineDj: true, engineLibraryDir },
+      destination: 'beside',
+    })
+    await surco.drop(join(root, 'Downloads'))
+    surco.patchTrack('x.flac', {
+      enginePlaylists: [
+        { id: '10', name: 'House' },
+        { id: '11', name: 'Peak time' },
+      ],
+    })
+    await surco.convertAll()
+    await surco.settled()
+    return surco
+  }
+
+  it('lists Engine DJ and says the new track is in both playlists', async () => {
+    const surco = await convertIntoEnginePlaylists('verify-engine-playlists')
+    expect(surco.verification('x.flac')?.checks.find((c) => c.place === 'engine')).toEqual({
+      place: 'engine',
+      state: 'ok',
+      detail: { key: 'engineOk', params: { format: 'AIFF', playlists: ['House', 'Peak time'] } },
+    })
+    expect(surco.verification('x.flac')?.status).toBe('ok')
+  }, 60_000)
+})

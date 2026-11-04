@@ -129,7 +129,7 @@ const LISTED: Record<
     byJob: () => false,
   },
   engine: {
-    touches: (e) => e.engine !== 'absent' || e.engineStep === true,
+    touches: (e) => e.engine !== 'absent' || e.engineStep === true || inPlaylists(e, 'engine'),
     byJob: (e) => e.engineStep === true,
   },
   traktor: { touches: (e) => e.traktorPatch !== undefined, byJob: () => false },
@@ -364,10 +364,19 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
               if (!touched.includes(e) || (result === 'off' && byFlush.includes(e)))
                 replace(e, null, place)
             if (result === 'queued') for (const e of byFlush) hold(place, e)
-            const byOps = result === 'written' ? byFlush.filter((e) => inPlaylists(e, place)) : []
-            for (const e of byOps) awaiting[place].add(e)
+            const byOps =
+              result === 'written' || result === 'queued'
+                ? touched.filter((e) => inPlaylists(e, place))
+                : []
+            for (const e of byOps)
+              if (result === 'queued') hold(place, e)
+              else awaiting[place].add(e)
             await Promise.all([
-              check(place, byJob, null),
+              check(
+                place,
+                byJob.filter((e) => !byOps.includes(e)),
+                null,
+              ),
               result === 'off' || result === 'queued'
                 ? undefined
                 : check(

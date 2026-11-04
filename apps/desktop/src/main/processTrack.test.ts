@@ -3780,6 +3780,27 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect([...entry.places]).toContain('rekordbox')
   })
 
+  it('lists Engine DJ for a track it never had when the job asked for its playlists', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const deps = makeDeps({
+      snapshotLibraries: vi.fn<NonNullable<ProcessTrackDeps['snapshotLibraries']>>(async () => ({
+        engine: 'absent',
+      })),
+      registerVerification,
+    })
+    const wanted = [{ id: '10', name: 'House' }]
+
+    const result = await runProcessTrack(job({ enginePlaylists: wanted }), deps)
+
+    expect(result.verification?.checks.map((c) => [c.place, c.state])).toEqual([
+      ['file', 'ok'],
+      ['engine', 'checking'],
+    ])
+    const entry = registerVerification.mock.calls[0][0]
+    expect(entry.playlists).toEqual({ engine: wanted })
+    expect([...entry.places]).toContain('engine')
+  })
+
   // The renderer keeps an update only for the conversion it holds and only when newer than
   // the result: converting the same track again must not inherit the last one's count.
   it('each conversion names its own job and starts its count at 0', async () => {

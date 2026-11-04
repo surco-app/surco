@@ -55,6 +55,7 @@ export const VERIFY_DETAIL_KEYS = [
   'enginePerformanceChanged',
   'engineCuesMisplaced',
   'engineNameStale',
+  'enginePlaylistMissing',
   'engineUnreadable',
   'traktorOk',
   'traktorStillOld',

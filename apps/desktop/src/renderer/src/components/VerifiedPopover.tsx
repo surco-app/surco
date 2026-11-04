@@ -37,14 +37,12 @@ export function detailText(
     const names = Array.isArray(params.playlists) ? params.playlists : []
     return tr('verify.detail.musicOne', { playlists: spoken(names) })
   }
-  if (key === 'rekordboxOk')
+  if (key === 'rekordboxOk' || key === 'engineOk') {
+    const counted = key === 'rekordboxOk' ? { ...params, count: params.cues } : params
     return Array.isArray(params.playlists)
-      ? tr('verify.detail.rekordboxOkPlaylists', {
-          ...params,
-          count: params.cues,
-          playlists: spoken(params.playlists),
-        })
-      : tr('verify.detail.rekordboxOk', { ...params, count: params.cues })
+      ? tr(`verify.detail.${key}Playlists`, { ...counted, playlists: spoken(params.playlists) })
+      : tr(`verify.detail.${key}`, counted)
+  }
   if (key === 'fileTagDiffers' || key === 'musicTagDiffers')
     return tr(`verify.detail.${key}`, { field: tr(`fields.${params.field}`) })
   if (
