@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.24",
+    "date": "November 4, 2026",
+    "title": "Serato e Traktor para um USB Pioneer, e crates do Serato",
+    "items": [
+      {
+        "text": "Leve seus crates do Serato ou suas playlists do Traktor para um USB Pioneer sem passar pelo rekordbox. “Exportar para USB”, na árvore da aba deles, copia a música com cues, loops e grade no lugar, tom e BPM, e deixa os ajustes do seu player como estavam. Se não dá para saber onde os cues de uma faixa cairiam no CDJ, ela vai sem eles e você fica sabendo antes.",
+        "in": "1.24.0"
+      },
+      {
+        "text": "Na aba do Serato agora você pode criar, renomear e apagar crates e subcrates, e adicionar, tirar e reordenar as faixas deles, como no rekordbox e no Traktor. Com o Serato aberto, as mudanças esperam até você fechá-lo.",
+        "in": "1.24.0"
+      },
+      {
+        "text": "Novo ajuste “Biblioteca do Serato”. Com “Atualizar”, o título, o artista, o álbum e o gênero que você corrige na revisão de metadados chegam ao Serato, e a faixa mantém a avaliação. Com “Atualizar e adicionar”, o que você converte também entra no Serato, nos crates que você escolhe no editor.",
+        "in": "1.24.0"
+      },
+      {
+        "text": "O “Auto” da grade leva cada cue à sua batida na grade nova, e desfazer uma vez traz as duas coisas de volta.",
+        "in": "1.24.0"
+      },
+      {
+        "text": "O “Marcar automático” agora também sugere em faixas que o rekordbox não analisou, porque o Surco deduz pelo grave onde começa cada compasso.",
+        "in": "1.24.0"
+      }
+    ]
+  },
+  {
     "version": "1.23",
     "date": "November 4, 2026",
     "title": "Cues no Serato, e mudanças que chegam a todos os seus programas",

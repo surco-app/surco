@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.24",
+    "date": "November 4, 2026",
+    "title": "Serato und Traktor auf einen Pioneer-USB, und Serato-Crates",
+    "items": [
+      {
+        "text": "Bring deine Serato-Crates oder Traktor-Playlists auf einen Pioneer-USB, ohne Umweg über rekordbox. „Auf USB exportieren“ im Baum ihres Tabs kopiert die Musik mit Cues, Loops und Grid an ihrem Platz, mit Tonart und BPM, und lässt die Einstellungen deines Players, wie sie waren. Lässt sich nicht sagen, wo die Cues eines Titels auf dem CDJ landen würden, geht er ohne sie, und du erfährst es vorher.",
+        "in": "1.24.0"
+      },
+      {
+        "text": "Im Serato-Tab kannst du jetzt Crates und Subcrates anlegen, umbenennen und löschen und ihre Titel hinzufügen, entfernen und neu ordnen, wie in rekordbox und Traktor. Ist Serato offen, warten die Änderungen, bis du es schließt.",
+        "in": "1.24.0"
+      },
+      {
+        "text": "Neue Einstellung „Serato-Bibliothek“. Mit „Aktualisieren“ kommen Titel, Künstler, Album und Genre, die du in der Metadatenprüfung korrigierst, in Serato an, und der Track behält seine Bewertung. Mit „Aktualisieren und hinzufügen“ kommt das, was du konvertierst, auch in Serato an, in den Crates, die du im Editor wählst.",
+        "in": "1.24.0"
+      },
+      {
+        "text": "„Auto“ beim Grid setzt jeden Cue auf seinen Beat im neuen Grid, und einmal Rückgängig holt beides zurück.",
+        "in": "1.24.0"
+      },
+      {
+        "text": "„Auto-Markieren“ macht jetzt auch Vorschläge bei Titeln, die rekordbox nicht analysiert hat, denn Surco leitet aus dem Bass ab, wo jeder Takt beginnt.",
+        "in": "1.24.0"
+      }
+    ]
+  },
+  {
     "version": "1.23",
     "date": "November 4, 2026",
     "title": "Cues in Serato, und Änderungen, die jedes Programm erreichen",

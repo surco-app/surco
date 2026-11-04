@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.24",
+    "date": "November 4, 2026",
+    "title": "Serato et Traktor vers une clé USB Pioneer, et les crates Serato",
+    "items": [
+      {
+        "text": "Emporte tes crates Serato ou tes playlists Traktor sur une clé USB Pioneer sans passer par rekordbox. « Exporter vers USB », dans l'arborescence de leur onglet, copie la musique avec ses cues, ses boucles et sa grille à leur place, sa tonalité et son BPM, et laisse les réglages de ton lecteur comme ils étaient. Si on ne sait pas où les cues d'une piste tomberaient sur le CDJ, elle part sans eux et tu es prévenu avant.",
+        "in": "1.24.0"
+      },
+      {
+        "text": "Dans l'onglet Serato, tu peux maintenant créer, renommer et supprimer des crates et des sous-crates, et ajouter, retirer et réordonner leurs morceaux, comme dans rekordbox et Traktor. Si Serato est ouvert, les changements attendent que tu le fermes.",
+        "in": "1.24.0"
+      },
+      {
+        "text": "Nouveau réglage « Bibliothèque Serato ». Avec « Mettre à jour », le titre, l'artiste, l'album et le genre que tu corriges dans la vérification des métadonnées arrivent dans Serato, et le morceau garde sa note. Avec « Mettre à jour et ajouter », ce que tu convertis entre aussi dans Serato, dans les crates que tu choisis dans l'éditeur.",
+        "in": "1.24.0"
+      },
+      {
+        "text": "« Auto » de la grille amène chaque cue sur son temps dans la nouvelle grille, et annuler une fois rétablit les deux.",
+        "in": "1.24.0"
+      },
+      {
+        "text": "Le « Marquage auto » fait maintenant aussi des propositions sur les pistes que rekordbox n'a pas analysées, car Surco déduit de la basse où commence chaque mesure.",
+        "in": "1.24.0"
+      }
+    ]
+  },
+  {
     "version": "1.23",
     "date": "November 4, 2026",
     "title": "Les cues dans Serato, et des changements qui arrivent dans tous tes logiciels",
