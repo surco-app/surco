@@ -35,7 +35,7 @@ const COMPACT_HEIGHT = '96px'
 const WAVE_SPAN = 0.8
 const STRIP_WINDOWS = 3
 const DRAG_PX = 3
-const BAR_LINE_OPACITY = 0.3
+const BAR_LINE_OPACITY = 0.4
 const ZOOM_BUTTON =
   'press flex h-6 w-6 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg disabled:pointer-events-none disabled:opacity-40'
 
@@ -442,7 +442,7 @@ export function CueWaveDetail({
                   top: `${WAVE_MARK_LANE_PX}px`,
                   width: '1px',
                   transform: 'translateX(-50%)',
-                  backgroundColor: MEMORY_CUE_COLOR,
+                  backgroundColor: 'var(--color-fg-dim)',
                   opacity: BAR_LINE_OPACITY,
                 }}
                 className="absolute bottom-0"

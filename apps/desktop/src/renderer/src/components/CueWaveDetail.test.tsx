@@ -79,7 +79,7 @@ describe('CueWaveDetail', () => {
     expect(screen.queryAllByTestId('cue-detail-beat')).toHaveLength(0)
   })
 
-  it('draws every bar downbeat as a red line like rekordbox, where the grid itself says beat 1 and not counted from its first beat, with nothing that reads as a CALL triangle', () => {
+  it('draws every bar downbeat as a faint ink line, where the grid itself says beat 1 and not counted from its first beat, and leaves red to the CALLs alone', () => {
     const probe = document.createElement('i')
     probe.style.color = MEMORY_CUE_COLOR
     const red = probe.style.color
@@ -94,9 +94,9 @@ describe('CueWaveDetail', () => {
       const downbeats = shifted.filter((b) => b.beat === 1).map((b) => b.ms)
       for (const line of lines) {
         expect(downbeats).toContain(Number(line.dataset.ms))
-        expect(line.style.backgroundColor).toBe(red)
-        expect(Number(line.style.opacity)).toBeGreaterThanOrEqual(0.25)
-        expect(Number(line.style.opacity)).toBeLessThanOrEqual(0.35)
+        expect(line.style.backgroundColor).toBe('var(--color-fg-dim)')
+        expect(Number(line.style.opacity)).toBeGreaterThanOrEqual(0.3)
+        expect(Number(line.style.opacity)).toBeLessThanOrEqual(0.45)
         expect(line.style.width).toBe('1px')
         expect(line.childElementCount).toBe(0)
       }
@@ -108,7 +108,7 @@ describe('CueWaveDetail', () => {
           red,
         ),
       )
-      expect(tinted).toEqual(lines)
+      expect(tinted).toEqual([])
       view.unmount()
     }
   })
