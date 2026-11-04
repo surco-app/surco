@@ -38,6 +38,7 @@ function renderHeader(over: Partial<Parameters<typeof TrackListHeader>[0]> = {})
       librarySource="appleMusic"
       qualityTally={{} as never}
       formatTally={[]}
+      filterFacets={{ tally: {} as never, formats: {} }}
       sortBy="import"
       setSortBy={() => {}}
       sortDir="asc"

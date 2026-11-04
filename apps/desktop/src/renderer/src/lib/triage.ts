@@ -581,6 +581,75 @@ export function qualityCounts(
   }
 }
 
+type Tally = ReturnType<typeof qualityCounts>
+
+const TALLY_AXIS: Record<keyof Tally, keyof FilterSelection> = {
+  suspect: 'quality',
+  good: 'quality',
+  unanalyzed: 'quality',
+  damaged: 'quality',
+  unconverted: 'conversion',
+  failed: 'conversion',
+  skipped: 'conversion',
+  automatched: 'conversion',
+  matchReview: 'conversion',
+  matchedDiscogs: 'conversion',
+  matchedBandcamp: 'conversion',
+  unsaved: 'conversion',
+  mismatch: 'conversion',
+  inLibrary: 'library',
+  notInLibrary: 'library',
+  duplicates: 'duplicates',
+  silence: 'attention',
+  clipping: 'attention',
+  noCues: 'attention',
+  offGrid: 'attention',
+  badGrid: 'attention',
+  unanalysedRekordbox: 'attention',
+  unanalysedEngine: 'attention',
+  noCover: 'tags',
+  smallCover: 'tags',
+  noBpm: 'tags',
+  noKey: 'tags',
+  missingRequired: 'tags',
+}
+
+export function facetCounts(
+  tracks: TrackItem[],
+  sel: FilterSelection,
+  facts: FilterFacts = NO_FACTS,
+): { tally: Tally; formats: Record<string, number> } {
+  const subsets = new Map<string, TrackItem[]>()
+  const within = (axis: keyof FilterSelection): TrackItem[] => {
+    const others = { ...sel, [axis]: null }
+    const key = filterSessionKey(others)
+    let subset = subsets.get(key)
+    if (!subset) {
+      subset = tracks.filter((t) => matchesFilter(t, others, facts))
+      subsets.set(key, subset)
+    }
+    return subset
+  }
+  const counted = new Map<TrackItem[], Tally>()
+  const countsOf = (subset: TrackItem[]): Tally => {
+    let counts = counted.get(subset)
+    if (!counts) {
+      counts = qualityCounts(subset, facts)
+      counted.set(subset, counts)
+    }
+    return counts
+  }
+  const tally = { ...countsOf(within('quality')) }
+  for (const key of Object.keys(TALLY_AXIS) as (keyof Tally)[])
+    tally[key] = countsOf(within(TALLY_AXIS[key]))[key]
+  const formats: Record<string, number> = {}
+  for (const t of within('format')) {
+    const fmt = sourceFormat(t)
+    if (fmt) formats[fmt] = (formats[fmt] ?? 0) + 1
+  }
+  return { tally, formats }
+}
+
 // The distinct source formats present, each with its count, for the per-format filter
 // chips. Returns nothing for a single-format crate (or an empty list): one format needs
 // no filter, so the menu only grows the extra buckets once the crate is actually mixed.

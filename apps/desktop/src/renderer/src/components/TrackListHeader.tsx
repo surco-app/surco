@@ -59,6 +59,7 @@ interface Props {
   qualityTally: React.ComponentProps<typeof QualityFilterBar>['tally']
   gridMeasure?: React.ComponentProps<typeof QualityFilterBar>['gridMeasure']
   formatTally: React.ComponentProps<typeof QualityFilterBar>['formats']
+  filterFacets: React.ComponentProps<typeof QualityFilterBar>['facets']
   sortBy: TrackSort
   setSortBy: (v: TrackSort) => void
   sortDir: 'asc' | 'desc'
@@ -172,6 +173,7 @@ export function TrackListHeader({
   qualityTally,
   gridMeasure,
   formatTally,
+  filterFacets,
   sortBy,
   setSortBy,
   sortDir,
@@ -310,6 +312,7 @@ export function TrackListHeader({
             tally={qualityTally}
             gridMeasure={gridMeasure}
             formats={formatTally}
+            facets={filterFacets}
             trackCount={tracks.length}
             visibleCount={visibleTracks.length}
             selectedPosition={selectedPosition}

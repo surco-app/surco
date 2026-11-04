@@ -53,8 +53,12 @@ function renderBar(over: Partial<Parameters<typeof QualityFilterBar>[0]> = {}) {
       librarySource="appleMusic"
       value={sel()}
       onChange={onChange}
-      tally={tally()}
-      formats={[]}
+      tally={over.tally ?? tally()}
+      formats={over.formats ?? []}
+      facets={{
+        tally: over.tally ?? tally(),
+        formats: Object.fromEntries((over.formats ?? []).map((f) => [f.format, f.count])),
+      }}
       trackCount={498}
       visibleCount={498}
       selectedPosition={null}
@@ -415,6 +419,32 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('quality-filter-ext:MP3')).toHaveTextContent('MP3')
     expect(screen.getByTestId('quality-filter-ext:MP3')).toHaveTextContent('27')
     expect(screen.getByTestId('quality-filter-ext:FLAC')).toHaveTextContent('12')
+  })
+
+  it('counts each bucket within the sections already picked, so a number says what picking it shows', () => {
+    renderBar({
+      value: sel({ quality: 'good' }),
+      tally: tally({ good: 15, unsaved: 1040 }),
+      formats: [
+        { format: 'AIFF', count: 565 },
+        { format: 'WAV', count: 1224 },
+      ],
+      facets: { tally: tally({ good: 15, unsaved: 3 }), formats: { AIFF: 0, WAV: 2 } },
+    })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByTestId('quality-filter-unsaved')).toHaveTextContent(/3$/)
+    expect(screen.getByTestId('quality-filter-ext:WAV')).toHaveTextContent(/2$/)
+    expect(screen.getByTestId('quality-filter-ext:AIFF')).toHaveTextContent(/0$/)
+  })
+
+  it('keeps a bucket in its place when the picked sections leave it empty, so the rows never jump', () => {
+    renderBar({
+      value: sel({ quality: 'good' }),
+      tally: tally({ good: 15, noBpm: 5 }),
+      facets: { tally: tally({ good: 15 }), formats: {} },
+    })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByTestId('quality-filter-noBpm')).toHaveTextContent(/0$/)
   })
 
   // Format is its own axis: picking it reports a selection with format set and closes the

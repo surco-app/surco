@@ -180,6 +180,7 @@ interface Props {
   // The distinct source formats present, each with its count — only populated for a mixed
   // crate so a single-format list grows no format section.
   formats: { format: string; count: number }[]
+  facets: { tally: Tally; formats: Record<string, number> }
   trackCount: number
   visibleCount: number
   // 1-based position of the selected row within the current view, or null.
@@ -217,6 +218,7 @@ export function QualityFilterBar({
   onChange,
   tally,
   formats,
+  facets,
   trackCount,
   visibleCount,
   selectedPosition,
@@ -281,7 +283,7 @@ export function QualityFilterBar({
   // Only once the crate actually holds the same song twice — a permanently-empty
   // duplicates bucket would just pad the menu.
   const duplicatesSection: Mode[] = tally.duplicates > 0 ? DUPLICATES_MODES : []
-  const countOf = (mode: Mode): number => tally[mode as keyof Tally]
+  const countOf = (mode: Mode): number => facets.tally[mode as keyof Tally]
   const isActive = (mode: Mode): boolean => value[axisOf(mode)] === mode
   // "All" reads as selected only when nothing is filtered on any axis, so picking a bucket
   // or a format visibly clears its tick.
@@ -371,7 +373,7 @@ export function QualityFilterBar({
     activeChips.push({
       Icon: FileAudio,
       label: value.format,
-      count: formats.find((f) => f.format === value.format)?.count ?? 0,
+      count: facets.formats[value.format] ?? 0,
     })
 
   const trigger =
@@ -395,7 +397,7 @@ export function QualityFilterBar({
       key={mode}
       testid={`quality-filter-${mode}`}
       Icon={FILTER_ICONS[mode]}
-      dot={mode === 'all' ? null : attentionDot(mode, tally)}
+      dot={mode === 'all' ? null : attentionDot(mode, facets.tally)}
       label={filterLabel(mode)}
       progress={mode === 'badGrid' ? measuring : undefined}
       count={mode === 'all' ? trackCount : countOf(mode)}
@@ -411,7 +413,7 @@ export function QualityFilterBar({
       testid={`quality-filter-ext:${f.format}`}
       Icon={FileAudio}
       label={f.format}
-      count={f.count}
+      count={facets.formats[f.format] ?? 0}
       selected={value.format === f.format}
       onClick={() => toggleFormat(f.format, close)}
     />

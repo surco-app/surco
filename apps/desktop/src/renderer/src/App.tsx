@@ -218,6 +218,7 @@ import { latestBackupByPath } from './lib/trashView'
 import {
   EMPTY_FILTER,
   type FilterFacts,
+  facetCounts,
   filterSessionKey,
   filterWithSticky,
   formatBuckets,
@@ -1950,6 +1951,10 @@ export default function App(): React.JSX.Element {
     [scopeTracks, filterFacts],
   )
   const formatTally = useMemo(() => formatBuckets(scopeTracks), [scopeTracks])
+  const filterFacets = useMemo(
+    () => facetCounts(scopeTracks, filterSelection, filterFacts),
+    [scopeTracks, filterSelection, filterFacts],
+  )
   // The format filter is tied to the crate's contents (unlike the deliberately-sticky
   // Apple Music buckets): once its format is no longer present — the last MP3 removed, or
   // the crate gone single-format — fall back to every format so the user is never stranded
@@ -3469,6 +3474,7 @@ export default function App(): React.JSX.Element {
                               total: gridVerdicts.total,
                             }}
                             formatTally={formatTally}
+                            filterFacets={filterFacets}
                             sortBy={sortBy}
                             setSortBy={setSortBy}
                             sortDir={sortDir}

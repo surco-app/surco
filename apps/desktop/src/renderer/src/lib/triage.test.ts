@@ -8,6 +8,7 @@ import {
   EMPTY_FILTER,
   type FilterFacts,
   type FilterSelection,
+  facetCounts,
   filterSessionKey,
   filterWithSticky,
   formatBuckets,
@@ -1120,5 +1121,47 @@ describe('holdOrder', () => {
     expect(holdOrder([r('a'), r('b')], fresh)).toBe(fresh)
     const swapped = [r('a'), r('c')]
     expect(holdOrder([r('a'), r('b')], swapped)).toBe(swapped)
+  })
+})
+
+describe('facetCounts', () => {
+  const t = (id: string, inputPath: string, cutoffHz: number | null): TrackItem =>
+    ({ ...withSpectrum({ cutoffHz }), id, inputPath, status: 'idle' }) as TrackItem
+  const tracks = [
+    t('a', '/m/a.wav', 21000),
+    t('b', '/m/b.wav', null),
+    t('c', '/m/c.mp3', 21000),
+    t('d', '/m/d.mp3', null),
+    t('e', '/m/e.mp3', null),
+  ]
+
+  it('counts the whole crate while nothing is filtered', () => {
+    const { tally, formats } = facetCounts(tracks, EMPTY_FILTER)
+    expect(tally).toEqual(qualityCounts(tracks))
+    expect(formats).toEqual({ MP3: 3, WAV: 2 })
+  })
+
+  it('counts every other section within the active filter, so a number says what picking it shows', () => {
+    const { tally, formats } = facetCounts(tracks, { ...EMPTY_FILTER, quality: 'good' })
+    expect(formats).toEqual({ MP3: 1, WAV: 1 })
+    expect(tally.unconverted).toBe(2)
+  })
+
+  it('leaves the filtered section counted on its own, so its alternatives stay visible', () => {
+    const { tally, formats } = facetCounts(tracks, { ...EMPTY_FILTER, format: 'WAV' })
+    expect(formats).toEqual({ MP3: 3, WAV: 2 })
+    expect(tally.good).toBe(1)
+    expect(tally.unanalyzed).toBe(1)
+  })
+
+  it('combines every other active section when several are on', () => {
+    const { tally, formats } = facetCounts(tracks, {
+      ...EMPTY_FILTER,
+      quality: 'unanalyzed',
+      format: 'MP3',
+    })
+    expect(formats).toEqual({ MP3: 2, WAV: 1 })
+    expect(tally.good).toBe(1)
+    expect(tally.unanalyzed).toBe(2)
   })
 })
