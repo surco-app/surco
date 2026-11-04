@@ -189,8 +189,9 @@ import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { registerSeratoCueQueueIpc } from './seratoCueQueueIpc'
 import { applySeratoCuesBatch } from './seratoCuesWrite'
-import { seratoLibraryRoots } from './seratoLibrary'
+import { readSeratoLibrary, seratoLibraryRoots } from './seratoLibrary'
 import { registerSeratoPlaylistsIpc } from './seratoPlaylistsIpc'
+import { repointSerato } from './seratoRepoint'
 import { loadLastSession, saveLastSession } from './session'
 import {
   defaultConfigDir,
@@ -325,6 +326,29 @@ const rekordboxSessionBackup = createSessionBackup({
 // The same for the Engine DJ library, which a run can repoint as well.
 const engineSessionBackup = createSessionBackup({ take: takeCopyAndAnnounce })
 const traktorSessionBackup = createSessionBackup({ take: takeCopyAndAnnounce })
+function seratoRoots() {
+  try {
+    const volumes = readdirSync('/Volumes').map((name) => join('/Volumes', name))
+    return seratoLibraryRoots(app.getPath('home'), volumes)
+  } catch {
+    return seratoLibraryRoots(app.getPath('home'), [])
+  }
+}
+
+function seratoHolds(): (path: string) => boolean {
+  let files: Set<string> | undefined
+  return (path) => {
+    if (!files)
+      try {
+        files = new Set(readSeratoLibrary(seratoRoots()).tracks.map((t) => t.file.normalize('NFC')))
+      } catch (err) {
+        log.warn('serato: could not read the library to follow a conversion', err)
+        files = new Set()
+      }
+    return files.has(path.normalize('NFC'))
+  }
+}
+
 const sessions = {
   rekordbox: rekordboxSessionBackup,
   traktor: traktorSessionBackup,
@@ -496,7 +520,12 @@ const programQueues = {
             rewritten: followEngineSize,
             seratoOpen: DJ_PROCESSES.serato.isRunning,
           }),
-        repoint: async () => [],
+        repoint: (_library, list) =>
+          repointSerato(list, {
+            roots: seratoRoots,
+            backupDir: join(app.getPath('userData'), 'serato-backups'),
+            seratoOpen: DJ_PROCESSES.serato.isRunning,
+          }),
         nodeStamps: async () => ({}),
         onChange: (state) => broadcast('serato:cueQueueChanged', state),
         addsTracks: false,
@@ -1343,14 +1372,6 @@ function registerIpc(): void {
     bootVolume: () => bootVolumeName(),
     allowMedia: (paths) => mediaAccess.allowAll(paths),
   })
-  const seratoRoots = () => {
-    try {
-      const volumes = readdirSync('/Volumes').map((name) => join('/Volumes', name))
-      return seratoLibraryRoots(app.getPath('home'), volumes)
-    } catch {
-      return seratoLibraryRoots(app.getPath('home'), [])
-    }
-  }
   registerSeratoPlaylistsIpc({
     roots: seratoRoots,
     allowMedia: (paths) => mediaAccess.allowAll(paths),
@@ -1538,6 +1559,11 @@ function registerIpc(): void {
             engine: {
               enqueue: engineCueQueue.enqueue,
               applyQuietly: () => applyEngineCueQueueQuietly(later),
+            },
+            serato: {
+              enqueue: seratoCueQueue.enqueue,
+              applyQuietly: () => programQueues.serato.applyQuietly(),
+              holds: seratoHolds(),
             },
           },
         )
