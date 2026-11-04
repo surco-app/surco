@@ -24,6 +24,7 @@ import {
   buildLocationScript,
   buildMusicRunningScript,
   buildPlaylistTransferScript,
+  buildRefreshScript,
   buildRelinkScript,
   buildReplacingMarkScript,
   buildRevealScript,
@@ -385,6 +386,17 @@ describe('buildRevealScript', () => {
     expect(script).toContain('if (count of theMatches) is 0 then error')
     expect(script).toContain('reveal item 1 of theMatches')
     expect(script).toContain('activate')
+  })
+})
+
+describe('buildRefreshScript', () => {
+  it('has Music reread the entry from its file by persistent ID, which leaves the file as it is', () => {
+    const script = buildRefreshScript('ABCD1234')
+    expect(script).toContain(
+      'set theMatches to (every track of library playlist 1 whose persistent ID is "ABCD1234")',
+    )
+    expect(script).toContain('if (count of theMatches) is 0 then error')
+    expect(script).toContain('refresh item 1 of theMatches')
   })
 })
 

@@ -116,11 +116,12 @@ export interface ProcessTrackDeps {
     coverPath?: string,
   ) => Promise<string | null>
   relinkAppleMusicEntry: (persistentId: string, path: string) => Promise<void>
+  refreshAppleMusicEntry?: (persistentId: string) => Promise<void>
   librariesKeepingOriginal?: (path: string, target: string) => Promise<WritableProgram[]>
   findAppleMusicEntry?: (
     path: string,
     meta: TrackMetadata,
-    launch?: boolean,
+    launch?: boolean | 'ifHeld',
   ) => Promise<{ persistentId: string; label: string } | undefined>
   // Registers the written file in the user's Engine DJ library database, storing the
   // cover (when there is one) as the row's artwork.
@@ -838,19 +839,24 @@ export async function runProcessTrack(
     let renameFollowFailed = false
     if (
       inPlace &&
-      !outputIsInput &&
       deps.platform === 'darwin' &&
       !shouldAddToAppleMusic(addToAppleMusic, deps.platform, format)
     ) {
-      const entry = await deps.findAppleMusicEntry?.(job.inputPath, job.meta, false).catch((e) => {
-        log.warn('process:track Music could not say whether it plays the original', e)
-        renameFollowFailed = true
-        return undefined
-      })
-      if (entry)
+      const entry = await deps
+        .findAppleMusicEntry?.(job.inputPath, job.meta, outputIsInput ? false : 'ifHeld')
+        .catch((e) => {
+          log.warn('process:track Music could not say whether it plays the original', e)
+          if (!outputIsInput) renameFollowFailed = true
+          return undefined
+        })
+      if (entry && !outputIsInput)
         await deps.relinkAppleMusicEntry(entry.persistentId, target).catch((e) => {
           log.warn('process:track Music could not follow the rename', job.inputPath, e)
           renameFollowFailed = true
+        })
+      if (entry && !renameFollowFailed)
+        await deps.refreshAppleMusicEntry?.(entry.persistentId).catch((e) => {
+          log.warn('process:track Music could not reread the rewritten file', target, e)
         })
     }
     if (renameFollowFailed) originalKept = true

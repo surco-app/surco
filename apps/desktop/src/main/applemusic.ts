@@ -473,6 +473,16 @@ export function buildRevealScript(persistentId: string): string {
 
 // Points an entry at another file, keeping its persistent ID, playlists and history. Music
 // never follows a file renamed on disk (measured 30/10), so a rename has to tell it.
+export function buildRefreshScript(persistentId: string): string {
+  return [
+    'tell application "Music"',
+    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${appleScriptString(persistentId)})`,
+    '  if (count of theMatches) is 0 then error "La pista ya no está en tu biblioteca de Apple Music."',
+    '  refresh item 1 of theMatches',
+    'end tell',
+  ].join('\n')
+}
+
 export function buildRelinkScript(persistentId: string, path: string): string {
   return [
     'tell application "Music"',
@@ -1347,6 +1357,10 @@ export async function updateInAppleMusic(
 
 export async function relinkAppleMusicEntry(persistentId: string, path: string): Promise<void> {
   await runOsascript(buildRelinkScript(persistentId, path))
+}
+
+export async function refreshAppleMusicEntry(persistentId: string): Promise<void> {
+  await runOsascript(buildRefreshScript(persistentId))
 }
 
 export async function revealInAppleMusic(persistentId: string): Promise<void> {

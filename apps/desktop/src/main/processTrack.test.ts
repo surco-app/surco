@@ -1729,7 +1729,7 @@ describe('runProcessTrack — Apple Music', () => {
     deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
     await runProcessTrack(job(), deps)
 
-    expect(deps.findAppleMusicEntry).toHaveBeenCalledWith('/in/song.wav', {}, false)
+    expect(deps.findAppleMusicEntry).toHaveBeenCalledWith('/in/song.wav', {}, 'ifHeld')
     expect(deps.relinkAppleMusicEntry).toHaveBeenCalledWith('lib-9', '/in/Artist - Title.aiff')
     expect(vi.mocked(deps.relinkAppleMusicEntry).mock.invocationCallOrder[0]).toBeLessThan(
       vi.mocked(deps.removeRenamedOriginal).mock.invocationCallOrder[0],
@@ -1761,14 +1761,42 @@ describe('runProcessTrack — Apple Music', () => {
     expect(result).toMatchObject({ appleMusicFailed: true, originalKept: true })
   })
 
-  it('asks Music nothing when the in-place rewrite keeps the file its name', async () => {
+  it('has an open Music reread a file rewritten under its own name, so Music shows the new tags without touching the file', async () => {
     const deps = mac({ overwriteOriginal: true, addToAppleMusic: false })
     deps.isSameFile = vi.fn(async () => true)
     deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    deps.refreshAppleMusicEntry = vi.fn(async () => {})
     await runProcessTrack(job({ outputName: 'song', format: 'wav' }), deps)
 
-    expect(deps.findAppleMusicEntry).not.toHaveBeenCalled()
+    expect(deps.findAppleMusicEntry).toHaveBeenCalledWith('/in/song.wav', {}, false)
     expect(deps.relinkAppleMusicEntry).not.toHaveBeenCalled()
+    expect(deps.refreshAppleMusicEntry).toHaveBeenCalledWith('lib-9')
+  })
+
+  it('has Music reread a renamed file after pointing its entry at it', async () => {
+    const deps = mac({ overwriteOriginal: true, addToAppleMusic: false })
+    deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    deps.refreshAppleMusicEntry = vi.fn(async () => {})
+    await runProcessTrack(job(), deps)
+
+    expect(deps.refreshAppleMusicEntry).toHaveBeenCalledWith('lib-9')
+    expect(vi.mocked(deps.relinkAppleMusicEntry).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(deps.refreshAppleMusicEntry as ReturnType<typeof vi.fn>).mock
+        .invocationCallOrder[0],
+    )
+  })
+
+  it('still counts the rewrite done when Music cannot reread the tags, since the file is right', async () => {
+    const deps = mac({ overwriteOriginal: true, addToAppleMusic: false })
+    deps.isSameFile = vi.fn(async () => true)
+    deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    deps.refreshAppleMusicEntry = vi.fn(async () => {
+      throw new Error('Music got an error (-1728)')
+    })
+    const result = await runProcessTrack(job({ outputName: 'song', format: 'wav' }), deps)
+
+    expect(result.appleMusicFailed).toBeUndefined()
+    expect(result.originalKept).toBeUndefined()
   })
 })
 

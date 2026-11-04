@@ -87,6 +87,7 @@ import {
   markAppleMusicReplacing,
   musicEntryForFile,
   readMusicEntryFacts,
+  refreshAppleMusicEntry,
   relinkAppleMusicEntry,
   updateInAppleMusic,
 } from './applemusic'
@@ -1809,6 +1810,8 @@ function registerIpc(): void {
       },
       librariesKeepingOriginal: (path, target) =>
         librariesKeepingOriginal(path, target, { traktorRead: traktorReadPath }),
+      refreshAppleMusicEntry: (persistentId) =>
+        appleMusicLimiter.run(() => refreshAppleMusicEntry(persistentId)),
       relinkAppleMusicEntry: (persistentId, path) =>
         appleMusicLimiter.run(() =>
           relinkAppleMusicEntry(persistentId, path).catch((err) => {
@@ -1821,9 +1824,11 @@ function registerIpc(): void {
         const titles = [...new Set([meta.title, own.tags.title].filter(Boolean))]
         if (titles.length === 0) return undefined
         const open =
-          launch !== false ||
-          libraryCacheHoldsTitle(loadLibraryCache(), titles) ||
-          insideFolder(path, await appleMusicMediaFolder())
+          launch === undefined ||
+          launch === true ||
+          (launch === 'ifHeld' &&
+            (libraryCacheHoldsTitle(loadLibraryCache(), titles) ||
+              insideFolder(path, await appleMusicMediaFolder())))
         return appleMusicLimiter.run(() => musicEntryForFile(path, titles, open))
       },
       isEngineDjRunning: DJ_PROCESSES.engine.isRunning,
