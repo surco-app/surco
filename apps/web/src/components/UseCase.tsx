@@ -12,6 +12,7 @@ import {
   stepLead,
   USE_CASE_SHOTS,
 } from '../lib/useCases'
+import { NotesFold, StepList } from './Blocks'
 import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
@@ -255,44 +256,14 @@ export default function UseCasePage({ id }: { id: string }) {
               )}
 
               <p className="mt-10 text-sm font-medium text-faint">{t('useCases.stepsLabel')}</p>
-              <ol className="mt-4 space-y-3">
-                {c.steps.map((step, i) => (
-                  <li
-                    key={step.title}
-                    data-testid="use-case-step"
-                    className="flex gap-3.5 leading-relaxed text-muted"
-                  >
-                    <span className="mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-full border border-line font-mono text-xs text-blue">
-                      {i + 1}
-                    </span>
-                    <span>
-                      <strong className="font-semibold text-fg">
-                        {stepLead(step.title, lang)}
-                      </strong>{' '}
-                      {step.text}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-
-              {c.points.length > 0 && (
-                <details
-                  data-testid="use-case-notes"
-                  className="mt-6 rounded-xl border border-line bg-surface2/40"
-                >
-                  <summary className="cursor-pointer px-4 py-3 text-sm text-subtle">
-                    {t('guide.notesLabel')}
-                  </summary>
-                  <ul className="space-y-2.5 px-4 pb-4">
-                    {c.points.map((point) => (
-                      <li key={point} className="flex gap-3 text-sm leading-relaxed text-muted">
-                        <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
-                        <span>{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              )}
+              <StepList
+                steps={c.steps.map((step) => ({
+                  lead: stepLead(step.title, lang),
+                  text: step.text,
+                }))}
+                itemTestid="use-case-step"
+              />
+              <NotesFold label={t('guide.notesLabel')} points={c.points} testid="use-case-notes" />
 
               {c.related.length > 0 && (
                 <p className="mt-8 text-sm text-faint">
