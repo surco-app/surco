@@ -466,7 +466,15 @@ export function applySeratoTrack(
   const path = seratoPathOn(op.path, root)
   if (!seratoDatabaseHas(bytes, path) && (op.add || op.wanted.length > 0)) {
     if (op.from && databaseHolds((file) => draft.read(file), roots, op.from))
-      return { id: op.id, applied: false, notices: [] }
+      return {
+        id: op.id,
+        applied: op.wanted.length > 0,
+        notices: op.wanted.map((target) => ({
+          code: 'source-in-serato',
+          track: op.label,
+          playlist: target.name,
+        })),
+      }
     const type = seratoFileType(op.path)
     const added =
       op.meta &&

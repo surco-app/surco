@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
+import type { RekordboxQueueNotice } from '../../../shared/types'
 import i18n from '../i18n'
 import de from '../i18n/locales/de.json'
+import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
 import fr from '../i18n/locales/fr.json'
+import ja from '../i18n/locales/ja.json'
 import ptBR from '../i18n/locales/pt-BR.json'
 import {
   appliedMessage,
@@ -309,6 +312,44 @@ describe('Serato queue text', () => {
     expect(
       noticeText(tr, { code: 'other-volume', track: 'Tengo', playlist: 'Gig' }, SERATO_QUEUE_WORDS),
     ).toBe('Tengo is on another drive and cannot go in the crate “Gig”')
+  })
+
+  it('names Serato, never rekordbox, in every notice about a converted track the Serato queue gives', () => {
+    const notices: RekordboxQueueNotice[] = [
+      { code: 'not-added', track: 'Tengo' },
+      { code: 'not-in-library', track: 'Tengo' },
+      { code: 'playlist-changed', track: 'Tengo', playlist: 'Gig' },
+      { code: 'playlist-gone', track: 'Tengo', playlist: 'Gig' },
+      { code: 'other-volume', track: 'Tengo', playlist: 'Gig' },
+      { code: 'source-in-serato', track: 'Tengo', playlist: 'Gig' },
+    ]
+    for (const [lng, bundle] of Object.entries({ en, es, de, fr, 'pt-BR': ptBR, ja })) {
+      if (!i18n.hasResourceBundle(lng, 'translation'))
+        i18n.addResourceBundle(lng, 'translation', bundle)
+      const t = i18n.getFixedT(lng)
+      for (const notice of notices) {
+        const text = noticeText(t, notice, SERATO_QUEUE_WORDS)
+        if (notice.code !== 'other-volume')
+          expect(text, `${lng} ${notice.code}`).toContain('Serato')
+        expect(text, `${lng} ${notice.code}`).not.toMatch(/rekordbox/i)
+      }
+    }
+  })
+
+  it('keeps the rekordbox wording for rekordbox while Serato gets its own', () => {
+    expect(noticeText(tr, { code: 'not-in-library', track: 'Tengo' })).toContain('rekordbox')
+  })
+
+  it('says a converted track whose original Serato keeps stays out of the crate the user chose', () => {
+    if (!i18n.hasResourceBundle('es', 'translation'))
+      i18n.addResourceBundle('es', 'translation', es)
+    expect(
+      noticeText(
+        i18n.getFixedT('es'),
+        { code: 'source-in-serato', track: 'Tengo', playlist: 'Gig' },
+        SERATO_QUEUE_WORDS,
+      ),
+    ).toBe('Tengo sigue en Serato con el fichero original y no entra en el crate «Gig»')
   })
 
   it('says why Surco left a track whose older Serato cues say something else, and how to clear it', () => {

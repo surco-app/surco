@@ -53,6 +53,7 @@ export const REKORDBOX_QUEUE_WORDS: QueueWords = {
     'cues-write-failed': 'rekordboxQueue.notice.cuesWriteFailed',
     'cues-old-block': 'seratoQueue.notice.oldBlock',
     'other-volume': 'seratoQueue.notice.otherVolume',
+    'source-in-serato': 'seratoQueue.notice.sourceInSerato',
     'cues-calls-dropped': 'engineQueue.notice.callsDropped',
     'cues-slot-dropped': 'traktorQueue.notice.slotDropped',
     'cues-adjusted': 'rekordboxQueue.notice.cuesAdjusted',
@@ -129,6 +130,10 @@ export const SERATO_QUEUE_WORDS: QueueWords = {
     'cues-changed': 'seratoQueue.notice.cuesChanged',
     'cues-calls-dropped': 'seratoQueue.notice.callsDropped',
     'edit-changed': 'seratoQueue.notice.editChanged',
+    'not-added': 'seratoQueue.notice.notAdded',
+    'not-in-library': 'seratoQueue.notice.notInLibrary',
+    'playlist-changed': 'seratoQueue.notice.playlistChanged',
+    'playlist-gone': 'seratoQueue.notice.playlistGone',
   },
 }
 

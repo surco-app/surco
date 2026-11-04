@@ -1280,7 +1280,7 @@ export type RekordboxQueueNotice =
       track: string
     }
   | {
-      code: 'playlist-changed' | 'playlist-gone' | 'other-volume'
+      code: 'playlist-changed' | 'playlist-gone' | 'other-volume' | 'source-in-serato'
       track: string
       playlist: string
     }

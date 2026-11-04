@@ -736,7 +736,7 @@ describe('a converted track in Serato', () => {
 
   it('does not add the output when Serato already has the source', () => {
     const { roots, draft } = seratoWith(['Users/dj/a.mp3'])
-    applySeratoTrack(
+    const outcome = applySeratoTrack(
       draft,
       trackOp({
         path: '/Users/dj/a.aiff',
@@ -750,6 +750,25 @@ describe('a converted track in Serato', () => {
     )
     expect(parseSeratoDatabase(draft.read(dbOf(roots[0])) ?? new Uint8Array())).toHaveLength(1)
     expect(tracksIn(draft, crateFileOf(roots[0], 'A'))).toEqual(['Users/dj/internal/A.mp3'])
+    expect(outcome).toMatchObject({
+      applied: true,
+      notices: [{ code: 'source-in-serato', track: 'a.aiff', playlist: 'A' }],
+    })
+  })
+
+  it('clears the crate picks of a conversion whose source Serato keeps, once the queue applies it', async () => {
+    const { deps } = seratoWith(['Users/dj/a.mp3'])
+    const queued = trackOp({
+      path: '/Users/dj/a.aiff',
+      from: '/Users/dj/a.mp3',
+      meta: META,
+      wanted: [{ id: 'A', name: 'A' }],
+    })
+    const result = await applySeratoLibraryOps([queued], {
+      ...deps,
+      ensureClosed: async () => true,
+    })
+    expect(result).toMatchObject({ ok: true, outcomes: [{ applied: true }] })
   })
 
   it('takes the file out of a crate the user deselected, and leaves one Serato filled since', () => {
