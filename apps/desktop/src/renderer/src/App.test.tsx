@@ -674,6 +674,19 @@ describe('App Engine DJ cues', () => {
   })
 })
 
+const stick = (uuid: string, by: UsbVolume['holder']['by']): UsbVolume => ({
+  uuid,
+  name: `Stick ${uuid}`,
+  mountPoint: `E:\\`,
+  filesystem: 'fat32',
+  partitionScheme: 'mbr',
+  totalBytes: 32e9,
+  freeBytes: 20e9,
+  holder: { by, at: by === 'empty' ? null : 1 },
+  remembered: null,
+  stickPlaylists: null,
+})
+
 describe('App Traktor cues', () => {
   afterEach(resetCueSession)
 
@@ -742,12 +755,25 @@ describe('App Traktor cues', () => {
     expect(screen.queryByTestId('track-menu-playlist-hist')).not.toBeInTheDocument()
   })
 
-  it('offers no USB export from the Traktor tree, as the export writes rekordbox and Engine DJ sticks only', async () => {
-    openTraktor({ traktorCanSave: vi.fn<Api['traktorCanSave']>().mockResolvedValue(true) })
+  it('opens the USB export from the Traktor tree on its playlists and asks for a Traktor export', async () => {
+    const usbPlan = vi
+      .fn<Api['usbPlan']>()
+      .mockResolvedValue({ ok: false, reason: 'nothing-selected' })
+    openTraktor({
+      usbVolumes: vi
+        .fn<Api['usbVolumes']>()
+        .mockResolvedValue({ volumes: [stick('A', 'empty')], lastKey: null }),
+      usbPlan,
+    })
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-traktor'))
-    await screen.findByTestId('source-node-u1')
-    expect(screen.queryByTestId('source-tree-export-usb')).not.toBeInTheDocument()
+    fireEvent.click(await screen.findByTestId('source-tree-export-usb'))
+    fireEvent.click(await screen.findByTestId('check-node-u1'))
+    await waitFor(() =>
+      expect(usbPlan).toHaveBeenCalledWith(
+        expect.objectContaining({ playlistIds: ['u1'], source: 'traktor' }),
+      ),
+    )
   })
 
   it('offers no playlist editing in Traktor without a confirmed collection', async () => {
@@ -824,6 +850,27 @@ describe('App Serato cues', () => {
     expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
     expect(screen.getByTestId('process-btn')).toHaveAccessibleDescription(
       'Serato would lose the track and its cues',
+    )
+  })
+
+  it('opens the USB export from the Serato tree on its crates and asks for a Serato export', async () => {
+    const usbPlan = vi
+      .fn<Api['usbPlan']>()
+      .mockResolvedValue({ ok: false, reason: 'nothing-selected' })
+    openSerato({
+      usbVolumes: vi
+        .fn<Api['usbVolumes']>()
+        .mockResolvedValue({ volumes: [stick('A', 'empty')], lastKey: null }),
+      usbPlan,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-serato'))
+    fireEvent.click(await screen.findByTestId('source-tree-export-usb'))
+    fireEvent.click(await screen.findByTestId('check-node-Friday'))
+    await waitFor(() =>
+      expect(usbPlan).toHaveBeenCalledWith(
+        expect.objectContaining({ playlistIds: ['Friday'], source: 'serato' }),
+      ),
     )
   })
 
@@ -1477,18 +1524,6 @@ describe('App USB export', () => {
   // The export's state lives outside React for the whole renderer; a run one test ends must
   // not leak into the next.
   afterEach(() => usbExportStore.dispatch({ type: 'reset' }))
-  const stick = (uuid: string, by: UsbVolume['holder']['by']): UsbVolume => ({
-    uuid,
-    name: `Stick ${uuid}`,
-    mountPoint: `E:\\`,
-    filesystem: 'fat32',
-    partitionScheme: 'mbr',
-    totalBytes: 32e9,
-    freeBytes: 20e9,
-    holder: { by, at: by === 'empty' ? null : 1 },
-    remembered: null,
-    stickPlaylists: null,
-  })
   function usbApi() {
     const feed: {
       volumes?: (l: UsbVolumeList) => void

@@ -2751,6 +2751,16 @@
       "engine-foreign": "この USB には Surco 以外で作成された Engine DJ ライブラリがすでにあります。何も変更していません。",
       "engine-schema": "この USB の Engine DJ ライブラリは別のバージョンの Engine DJ のものです。何も変更していません。"
     },
+    "errorsFrom": {
+      "serato": {
+        "no-collection": "Serato のライブラリが見つかりませんでした。",
+        "unreadable": "Serato のライブラリを読み取れませんでした。"
+      },
+      "traktor": {
+        "no-collection": "Traktor のコレクションが見つかりませんでした。",
+        "unreadable": "Traktor のコレクションを読み取れませんでした。"
+      }
+    },
     "trackFailure": {
       "missing-file": "ファイルが見つかりません",
       "unreadable": "読み取れませんでした",
@@ -2799,6 +2809,8 @@
       "notVolumeRoot": "プレイヤーは USB のルートしか読み取りません。",
       "cdj2000_one": "{{count}} トラックは CDJ-2000 で再生できない可能性があります",
       "cdj2000_other": "{{count}} トラックは CDJ-2000 で再生できない可能性があります",
+      "cuesLeftOut_one": "{{count}} トラックはキューとグリッドなしで書き出されます。その形式では CDJ 上の位置が分からないためです",
+      "cuesLeftOut_other": "{{count}} トラックはキューとグリッドなしで書き出されます。その形式では CDJ 上の位置が分からないためです",
       "noSpace": "収まりません。必要 {{needed}}、空き {{free}}。",
       "ntfs": "NTFS です。プレイヤーでは読み取れません。",
       "unexportable_one": "{{count}} トラックはエクスポートできません",

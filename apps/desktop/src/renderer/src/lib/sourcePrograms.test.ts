@@ -79,12 +79,12 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
     })
   })
 
-  it('lets Traktor be edited once its collection is confirmed, with its own built-in lists fixed', () => {
+  it('lets Traktor be edited once its collection is confirmed, with its own built-in lists fixed, and export to USB', () => {
     expect(shape('traktor')).toEqual({
       separator: true,
       edit: { messagePrefix: 'sources.editTraktor.', gate: 'traktorCollection' },
       fixedNode: true,
-      usb: false,
+      usb: true,
       missingLibraryCheck: false,
       trackFlag: 'fromTraktor',
       fillsLoaded: false,
@@ -113,12 +113,12 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
     })
   })
 
-  it('lets the Serato tab edit crates with no separator, no folders and no gate', () => {
+  it('lets the Serato tab edit crates with no separator, no folders and no gate, and export to USB', () => {
     expect(shape('serato')).toEqual({
       separator: false,
       edit: { messagePrefix: 'sources.editSerato.', gate: 'none' },
       fixedNode: false,
-      usb: false,
+      usb: true,
       missingLibraryCheck: false,
       trackFlag: 'fromSerato',
       fillsLoaded: false,

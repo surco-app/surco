@@ -111,4 +111,22 @@ describe('CheckTree', () => {
     expect(screen.getByTestId('check-node-todas')).toBeInTheDocument()
     expect(screen.queryByTestId('check-node-house')).toBeNull()
   })
+
+  it('opens a Serato crate that has subcrates, and ticks it with them', () => {
+    const onChange = vi.fn()
+    const nodes: SourceNode[] = [
+      {
+        id: 'Sets',
+        name: 'Sets',
+        kind: 'playlist',
+        count: 2,
+        children: [{ id: 'Sets%%Warm', name: 'Warm', kind: 'playlist', count: 2 }],
+      },
+    ]
+    render(<CheckTree nodes={nodes} checked={new Set()} onChange={onChange} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Sets' }))
+    expect(screen.getByTestId('check-node-Sets%%Warm')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('check-node-Sets'))
+    expect(onChange).toHaveBeenCalledWith(new Set(['Sets', 'Sets%%Warm']))
+  })
 })

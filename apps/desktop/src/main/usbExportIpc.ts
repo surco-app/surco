@@ -15,7 +15,7 @@ import { dirname, join } from 'node:path'
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import log from 'electron-log/main'
 import type { DjProgram } from '../shared/djProgram'
-import type { UsbExportRequest, UsbFolderPick, UsbProgram, UsbVolumeList } from '../shared/types'
+import type { UsbExportRequest, UsbFolderPick, UsbVolumeList } from '../shared/types'
 import type { DetailKeyOf } from './djProcesses'
 import { isEngineDjRunning } from './engineProcess'
 import {
@@ -49,7 +49,7 @@ export function registerUsbExportIpc(opts: {
   baken: () => { file: string; prefixArgs: string[] } | null
   // The close dialog the playlist writer uses, with the export's wording; true once
   // the program is gone.
-  ensureClosed: <P extends UsbProgram>(
+  ensureClosed: <P extends 'rekordbox' | 'engine'>(
     program: P,
     win: BrowserWindow | null,
     detail: DetailKeyOf<P>,

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type {
   SourceNode,
   UsbExportRequest,
+  UsbFailure,
   UsbFolderPick,
   UsbHolder,
   UsbProgram,
@@ -58,6 +59,36 @@ interface UsbProgramView {
   pickFolder: () => Promise<UsbFolderPick | null>
   settingsBox: boolean
   pruneBox: boolean
+  failureKey: (reason: UsbFailure) => string
+}
+
+const failureKey = (reason: UsbFailure): string => `usbExport.errors.${reason}`
+
+function pioneerViewFrom(source: 'serato' | 'traktor'): UsbProgramView {
+  const memory = (v: UsbVolume | null) => v?.bySource?.[source] ?? null
+  return {
+    holder: (v) => memory(v)?.holder ?? v.holder,
+    ticks: (v) => memory(v)?.remembered?.playlistIds ?? null,
+    remembered: (v) => memory(v)?.remembered ?? null,
+    lastUsed: (vols) =>
+      vols
+        .filter((v) => memory(v)?.remembered)
+        .sort((a, b) => (memory(b)?.remembered?.at ?? 0) - (memory(a)?.remembered?.at ?? 0))[0],
+    request: (playlistIds, target) => ({
+      playlistIds,
+      target,
+      prune: false,
+      settings: false,
+      source,
+    }),
+    pickFolder: () => window.api.usbPickFolder(source),
+    settingsBox: false,
+    pruneBox: false,
+    failureKey: (reason) =>
+      reason === 'no-collection' || reason === 'unreadable'
+        ? `usbExport.errorsFrom.${source}.${reason}`
+        : failureKey(reason),
+  }
 }
 
 const USB_PROGRAM_VIEW: Record<UsbProgram, UsbProgramView> = {
@@ -75,6 +106,7 @@ const USB_PROGRAM_VIEW: Record<UsbProgram, UsbProgramView> = {
     pickFolder: () => window.api.usbPickFolder(),
     settingsBox: true,
     pruneBox: true,
+    failureKey,
   },
   engine: {
     holder: (v) => v.engine?.holder ?? EMPTY_HOLDER,
@@ -94,7 +126,10 @@ const USB_PROGRAM_VIEW: Record<UsbProgram, UsbProgramView> = {
     pickFolder: () => window.api.usbPickFolder('engine'),
     settingsBox: false,
     pruneBox: false,
+    failureKey,
   },
+  serato: pioneerViewFrom('serato'),
+  traktor: pioneerViewFrom('traktor'),
 }
 
 // What main refuses to export anyway: Exportar is not offered while one of these shows.
@@ -192,7 +227,7 @@ export function UsbExportModal({
               needed: size(r.neededBytes),
               free: size(r.freeBytes),
             })
-          : tr(`usbExport.errors.${r.reason}`),
+          : tr(view.failureKey(r.reason)),
       )
     })
   }
@@ -200,9 +235,10 @@ export function UsbExportModal({
   const warning = (w: UsbWarning): React.ReactNode => {
     switch (w.kind) {
       case 'cdj2000':
+      case 'cuesLeftOut':
         return (
           <details>
-            <summary>{tr('usbExport.warnings.cdj2000', { count: w.titles.length })}</summary>
+            <summary>{tr(`usbExport.warnings.${w.kind}`, { count: w.titles.length })}</summary>
             <ul className="mt-1 list-disc pl-5">
               {w.titles.map((t) => (
                 <li key={t}>{t}</li>
@@ -340,7 +376,7 @@ export function UsbExportModal({
                 <p className="text-danger">{tr('usbExport.choose.planFailed')}</p>
               )}
               {req && !loading && failure && (
-                <p className="text-danger">{tr(`usbExport.errors.${failure}`)}</p>
+                <p className="text-danger">{tr(view.failureKey(failure))}</p>
               )}
               {req && !loading && plan && (
                 <>

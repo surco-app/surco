@@ -1757,7 +1757,7 @@ export interface UsbPlan {
   warnings: UsbWarning[]
 }
 
-export type UsbProgram = Exclude<WritableProgram, 'traktor'>
+export type UsbProgram = DjProgram
 
 export interface UsbExportRequest {
   playlistIds: string[]

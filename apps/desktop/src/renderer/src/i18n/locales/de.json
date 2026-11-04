@@ -2751,6 +2751,16 @@
       "engine-foreign": "Dieser USB-Stick hat schon eine Engine-DJ-Bibliothek, die nicht von Surco stammt. Es wurde nichts verändert.",
       "engine-schema": "Die Engine-DJ-Bibliothek auf diesem USB-Stick stammt von einer anderen Engine-DJ-Version. Es wurde nichts verändert."
     },
+    "errorsFrom": {
+      "serato": {
+        "no-collection": "Die Serato-Bibliothek wurde nicht gefunden.",
+        "unreadable": "Die Serato-Bibliothek konnte nicht gelesen werden."
+      },
+      "traktor": {
+        "no-collection": "Die Traktor-Sammlung wurde nicht gefunden.",
+        "unreadable": "Die Traktor-Sammlung konnte nicht gelesen werden."
+      }
+    },
     "trackFailure": {
       "missing-file": "Datei nicht gefunden",
       "unreadable": "konnte nicht gelesen werden",
@@ -2799,6 +2809,8 @@
       "notVolumeRoot": "Player lesen nur das Hauptverzeichnis eines USB-Sticks.",
       "cdj2000_one": "{{count}} Track läuft eventuell nicht auf einem CDJ-2000",
       "cdj2000_other": "{{count}} Tracks laufen eventuell nicht auf einem CDJ-2000",
+      "cuesLeftOut_one": "{{count}} Track kommt ohne Cues und Beatgrid, da bei seinem Format nicht bekannt ist, wo sie auf dem CDJ landen würden",
+      "cuesLeftOut_other": "{{count}} Tracks kommen ohne Cues und Beatgrid, da bei ihrem Format nicht bekannt ist, wo sie auf dem CDJ landen würden",
       "noSpace": "Passt nicht. Nötig sind {{needed}}, frei sind {{free}}.",
       "ntfs": "NTFS. Player lesen das nicht.",
       "unexportable_one": "{{count}} Track kann nicht exportiert werden",

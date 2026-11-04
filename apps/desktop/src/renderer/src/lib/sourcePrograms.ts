@@ -112,7 +112,7 @@ export const SOURCE_PROGRAMS: {
         : node.name === TRAKTOR_HISTORY
           ? 'locked'
           : 'tracks-only',
-    usb: false,
+    usb: true,
     missingLibraryCheck: false,
     trackFlag: 'fromTraktor',
     fillsLoaded: false,
@@ -144,7 +144,7 @@ export const SOURCE_PROGRAMS: {
       gate: 'none',
     },
     fixedNode: null,
-    usb: false,
+    usb: true,
     missingLibraryCheck: false,
     trackFlag: 'fromSerato',
     fillsLoaded: false,

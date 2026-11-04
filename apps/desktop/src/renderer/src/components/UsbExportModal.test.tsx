@@ -543,3 +543,80 @@ describe('UsbExportModal for Engine DJ', () => {
     )
   })
 })
+
+describe('UsbExportModal for Serato and Traktor', () => {
+  const SERATO_MEMORY = {
+    holder: { by: 'surco' as const, at: 1 },
+    remembered: { playlistIds: ['house'], prune: false, settings: false, at: 2 },
+  }
+
+  it('asks main for a Serato export with none of the rekordbox options, ticking what Surco last sent there from Serato', async () => {
+    await show(
+      {
+        volumes: [
+          vol({
+            stickPlaylists: ['mak'],
+            remembered: REMEMBERED,
+            bySource: { serato: SERATO_MEMORY },
+          }),
+        ],
+        lastKey: null,
+      },
+      { program: 'serato' },
+    )
+    expect(screen.queryByTestId('usb-settings')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('usb-prune')).not.toBeInTheDocument()
+    await waitFor(() =>
+      expect(usbPlan).toHaveBeenLastCalledWith({
+        playlistIds: ['house'],
+        target: { kind: 'volume', uuid: 'U1' },
+        prune: false,
+        settings: false,
+        source: 'serato',
+      }),
+    )
+  })
+
+  it('says the Serato library is missing in Serato words, not rekordbox ones', async () => {
+    usbPlan.mockResolvedValue({ ok: false, reason: 'no-collection' })
+    await show(
+      { volumes: [vol({ bySource: { serato: SERATO_MEMORY } })], lastKey: null },
+      { program: 'serato' },
+    )
+    expect(await screen.findByTestId('usb-summary')).toHaveTextContent(
+      'No encuentro la biblioteca de Serato.',
+    )
+  })
+
+  it('lists the tracks that go without cues or grid, and never ticks what Surco sent there from rekordbox', async () => {
+    usbPlan.mockResolvedValue({
+      ok: true,
+      plan: { ...PLAN, warnings: [{ kind: 'cuesLeftOut', titles: ['Clicks'] }] },
+    })
+    await show(
+      {
+        volumes: [
+          vol({ remembered: { ...REMEMBERED, playlistIds: ['house'] }, stickPlaylists: ['house'] }),
+        ],
+        lastKey: null,
+      },
+      { program: 'traktor' },
+    )
+    expect(screen.getByTestId('check-node-house')).not.toBeChecked()
+    fireEvent.click(screen.getByTestId('check-node-house'))
+    expect(await screen.findByTestId('usb-warning-cuesLeftOut')).toHaveTextContent(
+      '1 pista va sin cues ni rejilla',
+    )
+    expect(screen.getByTestId('usb-warning-cuesLeftOut')).toHaveTextContent('Clicks')
+  })
+
+  it('asks for the folder with what Surco remembers for Traktor there', async () => {
+    const usbPickFolder = vi.fn<Api['usbPickFolder']>(async () => null)
+    ;(window as unknown as { api: Api }).api = stubApi({ usbPlan, usbPickFolder })
+    await show({ volumes: [], lastKey: null }, { program: 'traktor' })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('usb-other'))
+    })
+    expect(usbPickFolder).toHaveBeenCalledWith('traktor')
+  })
+})

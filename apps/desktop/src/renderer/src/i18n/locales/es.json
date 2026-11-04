@@ -2751,6 +2751,16 @@
       "engine-foreign": "Este USB ya tiene una biblioteca de Engine DJ que no hizo Surco. No se ha tocado nada.",
       "engine-schema": "La biblioteca de Engine DJ de este USB es de otra versión de Engine DJ. No se ha tocado nada."
     },
+    "errorsFrom": {
+      "serato": {
+        "no-collection": "No encuentro la biblioteca de Serato.",
+        "unreadable": "No se pudo leer la biblioteca de Serato."
+      },
+      "traktor": {
+        "no-collection": "No encuentro la colección de Traktor.",
+        "unreadable": "No se pudo leer la colección de Traktor."
+      }
+    },
     "trackFailure": {
       "missing-file": "no se encuentra el fichero",
       "unreadable": "no se pudo leer",
@@ -2799,6 +2809,8 @@
       "notVolumeRoot": "Los reproductores solo leen la raíz de un USB.",
       "cdj2000_one": "{{count}} pista puede que no suene en un CDJ-2000",
       "cdj2000_other": "{{count}} pistas puede que no suenen en un CDJ-2000",
+      "cuesLeftOut_one": "{{count}} pista va sin cues ni rejilla, porque en su formato no se sabe dónde caerían en el CDJ",
+      "cuesLeftOut_other": "{{count}} pistas van sin cues ni rejilla, porque en su formato no se sabe dónde caerían en el CDJ",
       "noSpace": "No cabe. Hace falta {{needed}} y hay {{free}} libres.",
       "ntfs": "NTFS. Los reproductores no lo leen.",
       "unexportable_one": "{{count}} pista no se puede exportar",

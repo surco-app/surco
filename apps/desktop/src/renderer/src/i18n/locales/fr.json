@@ -2751,6 +2751,16 @@
       "engine-foreign": "Cette clé USB a déjà une bibliothèque Engine DJ que Surco n’a pas créée. Rien n’a été modifié.",
       "engine-schema": "La bibliothèque Engine DJ de cette clé USB vient d’une autre version d’Engine DJ. Rien n’a été modifié."
     },
+    "errorsFrom": {
+      "serato": {
+        "no-collection": "La bibliothèque Serato est introuvable.",
+        "unreadable": "La bibliothèque Serato n’a pas pu être lue."
+      },
+      "traktor": {
+        "no-collection": "La collection Traktor est introuvable.",
+        "unreadable": "La collection Traktor n’a pas pu être lue."
+      }
+    },
     "trackFailure": {
       "missing-file": "fichier introuvable",
       "unreadable": "lecture impossible",
@@ -2799,6 +2809,8 @@
       "notVolumeRoot": "Les lecteurs ne lisent que la racine d’une clé USB.",
       "cdj2000_one": "{{count}} piste risque de ne pas jouer sur un CDJ-2000",
       "cdj2000_other": "{{count}} pistes risquent de ne pas jouer sur un CDJ-2000",
+      "cuesLeftOut_one": "{{count}} piste part sans cues ni grille, car pour son format on ne sait pas où ils tomberaient sur le CDJ",
+      "cuesLeftOut_other": "{{count}} pistes partent sans cues ni grille, car pour leur format on ne sait pas où ils tomberaient sur le CDJ",
       "noSpace": "Ça ne tient pas. Il faut {{needed}} et il reste {{free}}.",
       "ntfs": "NTFS. Les lecteurs ne le lisent pas.",
       "unexportable_one": "{{count}} piste ne peut pas être exportée",

@@ -16,6 +16,9 @@ export function playlistIdsUnder(node: SourceNode): string[] {
   ]
 }
 
+const hasFamily = (node: SourceNode): boolean =>
+  node.kind === 'folder' || (node.children?.length ?? 0) > 0
+
 export function folderState(
   node: SourceNode,
   checked: ReadonlySet<string>,
@@ -68,8 +71,7 @@ export function CheckTree({
 
   const toggle = (node: SourceNode): void => {
     const next = new Set(checked)
-    const clear =
-      node.kind === 'folder' ? folderState(node, checked) === 'all' : checked.has(node.id)
+    const clear = hasFamily(node) ? folderState(node, checked) === 'all' : checked.has(node.id)
     for (const id of playlistIdsUnder(node)) {
       if (clear) next.delete(id)
       else next.add(id)
@@ -78,7 +80,7 @@ export function CheckTree({
   }
 
   const row = (node: SourceNode, depth: number, trail?: string): React.JSX.Element => {
-    const isFolder = node.kind === 'folder'
+    const isFolder = hasFamily(node)
     const state = isFolder ? folderState(node, checked) : checked.has(node.id) ? 'all' : 'none'
     const open = opened.has(node.id)
     const Chevron = open ? ChevronDown : ChevronRight
