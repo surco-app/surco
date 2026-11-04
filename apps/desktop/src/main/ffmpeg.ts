@@ -235,6 +235,9 @@ function withTotal(number: string, total: string): string {
 
 // The containers whose tags ffprobe reads from ID3, where a TagField's id3Aliases apply.
 const ID3_CONTAINER = /^(mp3|aiff|wav)$/
+// ffprobe names the iTunes content advisory atom (rtng: 0 none, 1/4 Explicit, 2 Clean)
+// `rating`. Surco writes no star rating to MP4, so that value is never stars.
+const MP4_CONTAINER = /\bmp4\b/
 
 // Skip the attached-picture stream: FLAC stores the cover's "Cover (front)"
 // description as a comment tag on that video stream, which would otherwise be read
@@ -308,6 +311,7 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
       totalPart(pick(...(TAG_FIELDS.find((f) => f.withTotal === field.key)?.aliases ?? [])))
     meta[field.key] = field.parse ? field.parse(raw) : raw
   }
+  if (MP4_CONTAINER.test(data.format?.format_name ?? '')) meta.rating = ''
   return meta
 }
 
@@ -604,8 +608,8 @@ export async function extractCover(
   }
 }
 
-const READMETA_NAMESPACE = 'readmeta-v6'
-const READMETA_LIGHT_NAMESPACE = 'readmeta-light-v1'
+const READMETA_NAMESPACE = 'readmeta-v7'
+const READMETA_LIGHT_NAMESPACE = 'readmeta-light-v2'
 
 const FAILED_READ: MetaRead = {
   tags: {} as TrackMetadata,
@@ -1056,6 +1060,9 @@ export function convertArgs(
   // distinguir mayúsculas, y el VinylCondition que se limpia por ser la otra grafía de un
   // campo propio borraba el VINYLCONDITION recién escrito.
   for (const name of foreignRemoved ?? []) args.push('-metadata', `${name}=`)
+  // The M4A's content advisory rides -map_metadata 0 as `rating`, which every target
+  // format reads back as stars.
+  if (M4A_INPUT.test(input)) args.push('-metadata', 'rating=')
   args.push(...metadataArgs(meta, FLAC_INPUT.test(output)))
   // FLAC carries the rating as a Vorbis RATING comment (POPM is ID3-only, written
   // by the TagLib pass for the other formats). Steps of 51, matching Traktor.

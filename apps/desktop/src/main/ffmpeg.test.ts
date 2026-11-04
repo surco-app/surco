@@ -338,6 +338,15 @@ describe('convertArgs', () => {
     expect(cleared).toContain('RATING WMP=')
   })
 
+  // Feedback 04/11/2026, "Surco adds a 'clean' label to the Rating": an M4A bought as
+  // the clean version carries iTunes' content advisory (rtng, 2 = Clean), ffprobe names
+  // it `rating`, and the default -map_metadata 0 carried that 2 into the converted file,
+  // where every reader of a plain RATING/TXXX value took it for two stars.
+  it('does not carry an M4A content advisory into the converted file as a rating', () => {
+    expect(convertArgs('/in.m4a', '/o.mp3', { codec: 'libmp3lame' }, meta)).toContain('rating=')
+    expect(convertArgs('/in.mp3', '/o.mp3', { codec: 'copy' }, meta)).not.toContain('rating=')
+  })
+
   it('clears the FLAC RATING comment when the rating field is empty', () => {
     // FLAC is the one format whose rating round-trips through ffprobe, so an empty
     // field at convert time means the file had none or the user erased it — either
@@ -1447,6 +1456,16 @@ describe('tagsFromProbe', () => {
       format: { tags: { date: '2020-12-01T00:00:00+01:00' } },
     })
     expect(m.year).toBe('2020-12-01')
+  })
+
+  // An M4A has no star rating Surco reads: its `rating` is the iTunes content advisory
+  // (0 none, 1/4 Explicit, 2 Clean). Read as stars, every clean track came up 2 stars
+  // and every explicit one 1 or 4, ratings the user never gave.
+  it('does not read an M4A content advisory as stars', () => {
+    const m = tagsFromProbe({
+      format: { format_name: 'mov,mp4,m4a,3gp,3g2,mj2', tags: { rating: '2' } },
+    })
+    expect(m.rating).toBe('')
   })
 
   it('keeps a plain full date whole', () => {
