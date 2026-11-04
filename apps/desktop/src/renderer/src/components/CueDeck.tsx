@@ -25,9 +25,6 @@ export function CueDeck({
   kinds = HOT_KINDS,
   selected,
   locked,
-  jumpBars,
-  quantize,
-  barQuantize = true,
   playing,
   onPlay,
   onPad,
@@ -37,8 +34,6 @@ export function CueDeck({
   onMemoryStep,
   onMemoryRemove,
   canRemoveMemory,
-  onJumpBars,
-  onQuantize,
   onDone,
   gridControls,
 }: {
@@ -46,9 +41,6 @@ export function CueDeck({
   kinds?: number[]
   selected: string | null
   locked: string[]
-  jumpBars: CueJumpBars
-  quantize: CueQuantize
-  barQuantize?: boolean
   playing: boolean
   onPlay: () => void
   onPad: (kind: number) => void
@@ -59,8 +51,6 @@ export function CueDeck({
   onMemoryStep: (dir: 1 | -1) => void
   onMemoryRemove: () => void
   canRemoveMemory: boolean
-  onJumpBars: (bars: CueJumpBars) => void
-  onQuantize: (unit: CueQuantize) => void
   onDone?: () => void
   gridControls?: React.ReactNode
 }): React.JSX.Element {
@@ -223,7 +213,28 @@ export function CueDeck({
           {gridControls}
         </div>
       )}
-      <span className="flex-1" />
+    </div>
+  )
+}
+
+export function CueMoves({
+  jumpBars,
+  quantize,
+  barQuantize = true,
+  onJumpBars,
+  onQuantize,
+  onDone,
+}: {
+  jumpBars: CueJumpBars
+  quantize: CueQuantize
+  barQuantize?: boolean
+  onJumpBars: (bars: CueJumpBars) => void
+  onQuantize: (unit: CueQuantize) => void
+  onDone?: () => void
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  return (
+    <div data-testid="cues-moves" className="flex shrink-0 items-center gap-3">
       <div className="flex items-center gap-1 text-xs">
         <span className="text-fg-dim">{tr('editor.cues.jump')}</span>
         <Select

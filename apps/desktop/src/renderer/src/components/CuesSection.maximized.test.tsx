@@ -181,6 +181,23 @@ describe('CuesSection maximized', () => {
     ).toBeTruthy()
   })
 
+  it('puts Jump and Q in the toolbar beside the zoom, since all three set how the playhead moves, so the deck fits one line', async () => {
+    setup()
+    await maximize()
+    const toolbar = screen.getByTestId('cues-toolbar')
+    const deck = screen.getByTestId('cues-deck')
+    for (const id of ['cues-jump', 'cues-quantize']) {
+      expect(toolbar).toContainElement(screen.getByTestId(id))
+      expect(deck).not.toContainElement(screen.getByTestId(id))
+    }
+    expect(
+      screen
+        .getByTestId('cues-quantize')
+        .compareDocumentPosition(screen.getByTestId('cue-zoom-out')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
   it('hands the command palette Clear all only while the editor is full screen', async () => {
     const actionsRef: { current: CueActions | null } = { current: null }
     setup(null, { ...READ, cues: [{ id: 'h', ms: 64000, kind: 2, color: 1 }] }, {}, actionsRef)
