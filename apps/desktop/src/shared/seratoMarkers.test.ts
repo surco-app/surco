@@ -419,7 +419,7 @@ describe('seratoV1CueTimes', () => {
       seratoV1CueTimesArmored(seratoV1M4aArmored([SERATO_V1_M4A_PRAY[0].slice(0, 20)])),
     ).toBeNull()
     expect(
-      seratoV1CueTimesArmored(seratoV1M4aArmored(['01' + SERATO_V1_M4A_PRAY[0].slice(2)])),
+      seratoV1CueTimesArmored(seratoV1M4aArmored([`01${SERATO_V1_M4A_PRAY[0].slice(2)}`])),
     ).toEqual([0x01001d14])
     expect(
       seratoV1CueTimesArmored(
