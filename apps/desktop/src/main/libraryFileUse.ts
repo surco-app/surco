@@ -68,7 +68,12 @@ export function djLibraryFileUse(
     for (const library of LIBRARY_ORDER)
       if (libraries[library] && (await holds[library](libraries[library], path))) return true
     if (!libraries.serato?.length) return false
-    seratoFile ??= seratoFileFinder(readSeratoLibrary(libraries.serato), options)
+    if (!seratoFile) {
+      const library = readSeratoLibrary(libraries.serato)
+      if (library.unreadable.length > 0)
+        throw new Error(`Serato library unreadable: ${library.unreadable.join(', ')}`)
+      seratoFile = seratoFileFinder(library, options)
+    }
     return seratoFile(path) !== undefined
   }
 }

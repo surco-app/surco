@@ -7,6 +7,7 @@ import { errorKeyOf, errorWithKey, splitNameLeftMarked } from '../shared/errorKe
 import type { ProcessJob, Settings, TrackMetadata, TrashEntry } from '../shared/types'
 import type { PlaceCheck } from '../shared/verification'
 import { createActiveConversions } from './activeConversions'
+import { createBusyPaths } from './busyPaths'
 import type { ConversionWritten } from './ffmpeg'
 import {
   configureBackupDiscarder,
@@ -307,6 +308,34 @@ describe('runProcessTrack — metadata that never came from the file', () => {
     expect(errorKeyOf((err as Error).message)).toBe('sourceTagsUnread')
     expect(deps.convertAudio).not.toHaveBeenCalled()
     expect(deps.prepareProcessedCover).not.toHaveBeenCalled()
+  })
+})
+
+describe('runProcessTrack — a file Serato cues are being written to', () => {
+  it('waits for the write to end before it starts, so neither rename eats the other', async () => {
+    const seratoWriting = createBusyPaths(true)
+    seratoWriting.mark('/in/song.wav')
+    const deps = makeDeps({ seratoWriting })
+    const running = runProcessTrack(job(), deps)
+    await new Promise((r) => setTimeout(r, 20))
+    expect(deps.beginJob).not.toHaveBeenCalled()
+    expect(deps.convertAudio).not.toHaveBeenCalled()
+    seratoWriting.clear('/in/song.wav')
+    await running
+    expect(deps.beginJob).toHaveBeenCalledWith('job1', ['/in/song.wav'])
+    expect(deps.convertAudio).toHaveBeenCalled()
+  })
+
+  it('waits for a write on the copy the job replaces too, and counts that copy as worked on', async () => {
+    const seratoWriting = createBusyPaths(true)
+    seratoWriting.mark('/Volumes/M/song.mp3')
+    const deps = makeDeps({ seratoWriting })
+    const running = runProcessTrack(job({ replacesPath: '/Volumes/M/song.mp3' }), deps)
+    await new Promise((r) => setTimeout(r, 20))
+    expect(deps.beginJob).not.toHaveBeenCalled()
+    seratoWriting.clear('/Volumes/M/song.mp3')
+    await running
+    expect(deps.beginJob).toHaveBeenCalledWith('job1', ['/in/song.wav', '/Volumes/M/song.mp3'])
   })
 })
 
@@ -808,7 +837,7 @@ describe('runProcessTrack — cancel reaches the running encode', () => {
 
     await runProcessTrack(job(), deps)
 
-    expect(deps.beginJob).toHaveBeenCalledWith('job1', job().inputPath)
+    expect(deps.beginJob).toHaveBeenCalledWith('job1', [job().inputPath])
     expect(deps.endJob).toHaveBeenCalledWith('job1')
     const begun = (deps.beginJob as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0]
     const ended = (deps.endJob as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0]

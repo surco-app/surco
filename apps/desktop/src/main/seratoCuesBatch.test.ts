@@ -23,6 +23,7 @@ import { hotCueArgb } from '../shared/rekordboxCueColors'
 import { seratoGeobBody, withSeratoCues } from '../shared/seratoMarkers'
 import { SERATO_MP3, SERATO_WAV } from '../shared/seratoMarkersFixture'
 import type { TrackCues } from '../shared/types'
+import { createBusyPaths } from './busyPaths'
 import { configureOriginalKeeper } from './originalKeeper'
 import { createProgramQueue } from './programQueue'
 import { createRekordboxQueue } from './rekordboxQueue'
@@ -398,6 +399,62 @@ describe('a Serato save for a file Surco is converting', () => {
     expect(await pq.queue.apply(closed)).toMatchObject({ status: 'applied', tracks: 1 })
     expect(pq.queue.isEmpty()).toBe(true)
     expect(readFileSync(file)).not.toEqual(before)
+  }, 60000)
+
+  it('leaves a file a conversion took while Serato was being closed', async () => {
+    const file = wav()
+    const read = await seen(file)
+    const before = readFileSync(file)
+    const converting = new Set<string>()
+    const result = await applySeratoCuesBatch([op(file, read, moved(read))], {
+      ensureClosed: async () => {
+        converting.add(file)
+        return true
+      },
+      converting: (f) => converting.has(f),
+    })
+    expect(result).toEqual({ ok: false, reason: 'cancelled' })
+    expect(readFileSync(file)).toEqual(before)
+  }, 60000)
+
+  it('writes the saves before a file that became busy, leaves that one and the rest queued, and finishes them once it is free', async () => {
+    const first = wav()
+    const second = wav()
+    const readFirst = await seen(first)
+    const readSecond = await seen(second)
+    const secondBefore = readFileSync(second)
+    const converting = new Set<string>()
+    const writing = createBusyPaths(true)
+    const heldWhileWriting: boolean[] = []
+    const batch = (ops: QueueOp[]) =>
+      applySeratoCuesBatch(ops, {
+        ensureClosed: closed,
+        converting: (f) => converting.has(f),
+        writing,
+        rewritten: (f) => {
+          heldWhileWriting.push(writing.has(f))
+          converting.add(second)
+        },
+      })
+    const ops = [
+      op(first, readFirst, moved(readFirst)),
+      op(second, readSecond, moved(readSecond), { id: 'op2' }),
+    ]
+    expect(await batch(ops)).toEqual({ ok: false, reason: 'cancelled' })
+    expect(heldWhileWriting).toEqual([true])
+    expect(writing.has(first)).toBe(false)
+    expect(readFileSync(second)).toEqual(secondBefore)
+    expect((await seen(first)).cues[0].ms).not.toBe(readFirst.cues[0].ms)
+    converting.clear()
+    expect(await batch(ops)).toEqual({
+      ok: true,
+      wrote: true,
+      outcomes: [
+        { id: 'op1', applied: true, notices: [] },
+        { id: 'op2', applied: true, notices: [] },
+      ],
+    })
+    expect(readFileSync(second)).not.toEqual(secondBefore)
   }, 60000)
 })
 

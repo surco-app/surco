@@ -15,6 +15,15 @@ describe('createOutputReservations', () => {
     expect(reservations.isReserved('/out/Artist - Title.aiff')).toBe(false)
   })
 
+  it('sees a held path from a file spelled in the other Unicode form, as a Serato database may', () => {
+    const reservations = createOutputReservations(true)
+    reservations.reserve('/out/Cafe\u0301.aiff')
+    expect(reservations.holds('/OUT/café.aiff')).toBe(true)
+    expect(reservations.holds('/out/other.aiff')).toBe(false)
+    reservations.release('/out/Cafe\u0301.aiff')
+    expect(reservations.holds('/out/café.aiff')).toBe(false)
+  })
+
   it('tracks reservations per path independently', () => {
     const reservations = createOutputReservations()
     reservations.reserve('/out/a.aiff')

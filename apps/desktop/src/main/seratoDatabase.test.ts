@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { crateTree, parseSeratoCrate, parseSeratoDatabase } from './seratoDatabase'
+import {
+  crateTree,
+  parseSeratoCrate,
+  parseSeratoDatabase,
+  seratoDatabaseTruncated,
+} from './seratoDatabase'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
 
 const DATABASE_V2 =
@@ -81,6 +86,14 @@ describe('parseSeratoDatabase', () => {
     const real = bytes(DATABASE_V2)
     for (let n = 0; n <= real.length; n += 13)
       expect(() => parseSeratoDatabase(real.subarray(0, n))).not.toThrow()
+  })
+
+  it('says when the bytes end inside a frame, so a half-written database is not read as the whole library', () => {
+    const db = concat([VERSION, track(FULL), track({ pfil: 'Users/dj/Solo.wav' })])
+    expect(seratoDatabaseTruncated(db)).toBe(false)
+    expect(seratoDatabaseTruncated(db.subarray(0, db.length - 3))).toBe(true)
+    expect(seratoDatabaseTruncated(concat([db, Uint8Array.from([0x6f, 0x74])]))).toBe(true)
+    expect(seratoDatabaseTruncated(bytes(DATABASE_V2))).toBe(false)
   })
 
   it('ignores a track without a path, which Serato could not open either', () => {

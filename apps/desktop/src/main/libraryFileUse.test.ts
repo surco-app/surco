@@ -563,6 +563,31 @@ describe('libraryTracksOf in Serato', () => {
     expect(await used('/Volumes/M/Music/b.mp3')).toBe(false)
   })
 
+  it('refuses to say a file is unused while a Serato database is cut short or unreadable, so it is kept', async () => {
+    const [cut] = await serato(['Volumes/M/Music/b.mp3', 'Volumes/M/Music/a.mp3'])
+    const bytes = await readFile(join(cut.dir, 'database V2'))
+    await writeFile(join(cut.dir, 'database V2'), bytes.subarray(0, bytes.length - 3))
+    await expect(
+      usedByDjLibrary('/Volumes/M/Music/a.mp3', { ...OFF, serato: [cut] }),
+    ).rejects.toThrow()
+    const home = await mkdtemp(join(root, 'serato-unreadable-'))
+    await mkdir(join(home, 'Music', '_Serato_', 'database V2'), { recursive: true })
+    await expect(
+      usedByDjLibrary('/Volumes/M/Music/a.mp3', { ...OFF, serato: seratoLibraryRoots(home, []) }),
+    ).rejects.toThrow()
+  })
+
+  it('reads a Serato folder with no database as a library without the file', async () => {
+    const home = await mkdtemp(join(root, 'serato-empty-'))
+    await mkdir(join(home, 'Music', '_Serato_'), { recursive: true })
+    expect(
+      await usedByDjLibrary('/Volumes/M/Music/a.mp3', {
+        ...OFF,
+        serato: seratoLibraryRoots(home, []),
+      }),
+    ).toBe(false)
+  })
+
   it('resolves only the Serato rows with the same file name when counting use', async () => {
     const others = Array.from({ length: 50 }, (_, i) => `Volumes/M/Music/other ${i}.mp3`)
     const roots = await serato([...others, 'Volumes/M/Music/A.mp3'])

@@ -22,7 +22,7 @@ interface Frame {
 
 const utf16 = new TextDecoder('utf-16be')
 
-function framesOf(bytes: Uint8Array): Frame[] {
+function framesOf(bytes: Uint8Array): { frames: Frame[]; truncated: boolean } {
   const frames: Frame[] = []
   let at = 0
   while (at + 8 <= bytes.length) {
@@ -34,11 +34,11 @@ function framesOf(bytes: Uint8Array): Frame[] {
     frames.push({ tag, body: bytes.subarray(at + 8, end) })
     at = end
   }
-  return frames
+  return { frames, truncated: at !== bytes.length }
 }
 
 function textsOf(body: Uint8Array): Map<string, string> {
-  return new Map(framesOf(body).map((f) => [f.tag, utf16.decode(f.body)]))
+  return new Map(framesOf(body).frames.map((f) => [f.tag, utf16.decode(f.body)]))
 }
 
 function addedAtOf(text: string | undefined): number | null {
@@ -47,7 +47,7 @@ function addedAtOf(text: string | undefined): number | null {
 
 export function parseSeratoDatabase(bytes: Uint8Array): SeratoTrack[] {
   const tracks: SeratoTrack[] = []
-  for (const frame of framesOf(bytes)) {
+  for (const frame of framesOf(bytes).frames) {
     if (frame.tag !== 'otrk') continue
     const texts = textsOf(frame.body)
     const path = texts.get('pfil')
@@ -66,9 +66,13 @@ export function parseSeratoDatabase(bytes: Uint8Array): SeratoTrack[] {
   return tracks
 }
 
+export function seratoDatabaseTruncated(bytes: Uint8Array): boolean {
+  return framesOf(bytes).truncated
+}
+
 export function parseSeratoCrate(bytes: Uint8Array): string[] {
   return framesOf(bytes)
-    .filter((f) => f.tag === 'otrk')
+    .frames.filter((f) => f.tag === 'otrk')
     .map((f) => textsOf(f.body).get('ptrk'))
     .filter((path): path is string => !!path)
 }

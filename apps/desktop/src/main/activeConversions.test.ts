@@ -6,7 +6,7 @@ import { createActiveConversions } from './activeConversions'
 describe('createActiveConversions', () => {
   it('says which files a job is working on until it ends, so a Serato cue write waits for it', () => {
     const conversions = createActiveConversions(true)
-    conversions.beginJob('job1', '/Volumes/M/Cafe\u0301.mp3')
+    conversions.beginJob('job1', ['/Volumes/M/Cafe\u0301.mp3'])
     expect(conversions.isConverting('/Volumes/M/Café.mp3')).toBe(true)
     expect(conversions.isConverting('/volumes/m/CAFÉ.mp3')).toBe(true)
     expect(conversions.isConverting('/Volumes/M/other.mp3')).toBe(false)
@@ -14,17 +14,44 @@ describe('createActiveConversions', () => {
     expect(conversions.isConverting('/Volumes/M/Café.mp3')).toBe(false)
   })
 
+  it('counts the copy a job replaces as worked on too', () => {
+    const conversions = createActiveConversions(true)
+    conversions.beginJob('job1', ['/in/a.flac', '/Volumes/M/a.mp3'])
+    expect(conversions.isConverting('/Volumes/M/a.mp3')).toBe(true)
+    conversions.endJob('job1')
+    expect(conversions.isConverting('/Volumes/M/a.mp3')).toBe(false)
+  })
+
+  it('stops the Serato cue writes from meeting a conversion, both ways', () => {
+    const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
+    expect(source).toMatch(
+      /converting: \(file\) =>\s+activeConversions\.isConverting\(file\) \|\| outputReservations\.holds\(file\),\s+writing: seratoWriting,/,
+    )
+    expect(source).toMatch(/runProcessTrack\(job, \{[\s\S]*?seratoWriting,[\s\S]*?\}\)/)
+  })
+
+  it('hands every check of library use the Serato libraries', () => {
+    const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
+    expect(source).toMatch(
+      /usedByAnyLibrary\(path, titles, \{\s+traktorRead: traktorReadPath,\s+seratoRoots,/,
+    )
+    expect(source).toMatch(
+      /duplicateLibraryDeps\(\s+hostFor\([^)]*\), e\.sender\),\s+sessions,\s+seratoRoots,\s+\)/,
+    )
+    expect(source).toMatch(/listReviewDeps\(\{[^}]*seratoRoots,\s+\}\)/)
+  })
+
   it('keeps the case apart where the disk does', () => {
     const conversions = createActiveConversions(false)
-    conversions.beginJob('job1', '/m/A.mp3')
+    conversions.beginJob('job1', ['/m/A.mp3'])
     expect(conversions.isConverting('/m/a.mp3')).toBe(false)
     expect(conversions.isConverting('/m/A.mp3')).toBe(true)
   })
 
   it('still sees a file while another job on it runs', () => {
     const conversions = createActiveConversions(true)
-    conversions.beginJob('job1', '/m/a.mp3')
-    conversions.beginJob('job2', '/m/a.mp3')
+    conversions.beginJob('job1', ['/m/a.mp3'])
+    conversions.beginJob('job2', ['/m/a.mp3'])
     conversions.endJob('job1')
     expect(conversions.isConverting('/m/a.mp3')).toBe(true)
   })
@@ -92,8 +119,8 @@ describe('createActiveConversions', () => {
   it('reports how many jobs are still running', () => {
     const conversions = createActiveConversions()
     expect(conversions.count()).toBe(0)
-    conversions.beginJob('a', '/m/a.mp3')
-    conversions.beginJob('b', '/m/b.mp3')
+    conversions.beginJob('a', ['/m/a.mp3'])
+    conversions.beginJob('b', ['/m/b.mp3'])
     expect(conversions.count()).toBe(2)
     conversions.endJob('a')
     expect(conversions.count()).toBe(1)
@@ -108,7 +135,7 @@ describe('createActiveConversions', () => {
   // window shut and the queue went with it.
   it('counts a job that never registers a child process', () => {
     const conversions = createActiveConversions()
-    conversions.beginJob('copy-only', '/m/copy-only.mp3')
+    conversions.beginJob('copy-only', ['/m/copy-only.mp3'])
     expect(conversions.count()).toBe(1)
     conversions.endJob('copy-only')
     expect(conversions.count()).toBe(0)
@@ -119,7 +146,7 @@ describe('createActiveConversions', () => {
   // Dropping the count on the kill would reopen the window mid-teardown.
   it('keeps a killed job counted until it actually finishes unwinding', () => {
     const conversions = createActiveConversions()
-    conversions.beginJob('a', '/m/a.mp3')
+    conversions.beginJob('a', ['/m/a.mp3'])
     conversions.register('a', vi.fn())
     conversions.cancel('a')
     expect(conversions.count()).toBe(1)
@@ -131,7 +158,7 @@ describe('createActiveConversions', () => {
 
   it('remembers a cancel for a running job with no process to kill, until the job ends', () => {
     const conversions = createActiveConversions()
-    conversions.beginJob('measuring', '/m/measuring.mp3')
+    conversions.beginJob('measuring', ['/m/measuring.mp3'])
     conversions.cancel('measuring')
     expect(conversions.isCancelled('measuring')).toBe(true)
     conversions.endJob('measuring')
@@ -143,7 +170,7 @@ describe('createActiveConversions', () => {
   // Every ceiling re-encode registers again, so each must die the moment it appears.
   it('kills a child registered after its job was cancelled', () => {
     const conversions = createActiveConversions()
-    conversions.beginJob('measuring', '/m/measuring.mp3')
+    conversions.beginJob('measuring', ['/m/measuring.mp3'])
     conversions.cancel('measuring')
     const kill = vi.fn()
     conversions.register('measuring', kill)
@@ -156,13 +183,13 @@ describe('createActiveConversions', () => {
   it('ignores a cancel for a job that is not running', () => {
     const conversions = createActiveConversions()
     conversions.cancel('done')
-    conversions.beginJob('done', '/m/done.mp3')
+    conversions.beginJob('done', ['/m/done.mp3'])
     expect(conversions.isCancelled('done')).toBe(false)
   })
 
   it('marks every running job cancelled on killAll, so the ones with no child do not publish', () => {
     const conversions = createActiveConversions()
-    conversions.beginJob('measuring', '/m/measuring.mp3')
+    conversions.beginJob('measuring', ['/m/measuring.mp3'])
     conversions.killAll()
     expect(conversions.isCancelled('measuring')).toBe(true)
   })

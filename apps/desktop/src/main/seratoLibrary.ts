@@ -9,6 +9,7 @@ import {
   parseSeratoDatabase,
   type SeratoCrateNode,
   type SeratoTrack,
+  seratoDatabaseTruncated,
 } from './seratoDatabase'
 import { recentSince } from './traktorPlaylists'
 
@@ -22,6 +23,7 @@ export type SeratoLibraryTrack = SeratoTrack & { file: string }
 export interface SeratoLibrary {
   tracks: SeratoLibraryTrack[]
   crates: Map<string, string[]>
+  unreadable: string[]
 }
 
 export function seratoLibraryRoots(home: string, volumes: string[]): SeratoLibraryRoot[] {
@@ -44,10 +46,11 @@ function parsedFile<T>(file: string, parse: (bytes: Buffer) => T): T {
 
 function readRoot({ dir, root }: SeratoLibraryRoot): SeratoLibrary {
   const fileOf = (path: string) => posix.join(root, path)
-  const tracks = parsedFile(join(dir, 'database V2'), parseSeratoDatabase).map((t) => ({
-    ...t,
-    file: fileOf(t.path),
+  const database = parsedFile(join(dir, 'database V2'), (bytes) => ({
+    tracks: parseSeratoDatabase(bytes),
+    truncated: seratoDatabaseTruncated(bytes),
   }))
+  const tracks = database.tracks.map((t) => ({ ...t, file: fileOf(t.path) }))
   const subcrates = join(dir, 'Subcrates')
   const names = existsSync(subcrates) ? readdirSync(subcrates) : []
   const crates = new Map<string, string[]>()
@@ -55,7 +58,7 @@ function readRoot({ dir, root }: SeratoLibraryRoot): SeratoLibrary {
     const files = readCrate(join(subcrates, name))
     if (files) crates.set(name.slice(0, -'.crate'.length), files.map(fileOf))
   }
-  return { tracks, crates }
+  return { tracks, crates, unreadable: database.truncated ? [dir] : [] }
 }
 
 function readCrate(file: string): string[] | null {
@@ -67,15 +70,17 @@ function readCrate(file: string): string[] | null {
 }
 
 export function readSeratoLibrary(roots: SeratoLibraryRoot[]): SeratoLibrary {
-  const library: SeratoLibrary = { tracks: [], crates: new Map() }
+  const library: SeratoLibrary = { tracks: [], crates: new Map(), unreadable: [] }
   for (const root of roots) {
     let part: SeratoLibrary
     try {
       part = readRoot(root)
-    } catch {
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== 'ENOENT') library.unreadable.push(root.dir)
       continue
     }
     library.tracks.push(...part.tracks)
+    library.unreadable.push(...part.unreadable)
     for (const [id, files] of part.crates)
       library.crates.set(id, [...(library.crates.get(id) ?? []), ...files])
   }

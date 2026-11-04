@@ -34,6 +34,7 @@ import {
 } from '../shared/verification'
 import { createConcurrencyLimiter } from './analysisLimiter'
 import { isAppleMusicOnly, shouldAddToAppleMusic } from './applemusic'
+import type { BusyPaths } from './busyPaths'
 import type { CoverSource, PreparedCover } from './cover'
 import type { ConversionWritten } from './ffmpeg'
 import {
@@ -97,8 +98,9 @@ export interface ProcessTrackDeps {
   // question registerActiveConversion cannot answer, since the stream-copy shortcut
   // spawns no child and so never registers one. Bracketed around everything below,
   // released in finally however the job ends.
-  beginJob: (jobId: string, path: string) => void
+  beginJob: (jobId: string, paths: string[]) => void
   endJob: (jobId: string) => void
+  seratoWriting?: Pick<BusyPaths, 'has' | 'idle'>
   // The trail a crash or force-quit mid-encode leaves for the next launch to
   // sweep — trackTmp fires the instant convertAudio picks its temp path, untrackTmp
   // once the job settles normally (convertAudio's own catch already deleted the
@@ -551,7 +553,10 @@ export async function runProcessTrack(
   // The path reserved via deps.reservePath, if any — released in finally regardless
   // of how the job ends.
   let reserved: string | undefined
-  deps.beginJob(job.id, job.inputPath)
+  const touched = [job.inputPath, ...(job.replacesPath ? [job.replacesPath] : [])]
+  const seratoBusy = () => touched.find((path) => deps.seratoWriting?.has(path))
+  for (let busy = seratoBusy(); busy; busy = seratoBusy()) await deps.seratoWriting?.idle(busy)
+  deps.beginJob(job.id, touched)
   try {
     if (deps.hasCoverSource(job)) {
       stage('cover')

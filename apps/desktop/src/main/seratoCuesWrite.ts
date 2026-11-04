@@ -7,6 +7,7 @@ import { hotCueArgb, nearestHotCueColor } from '../shared/rekordboxCueColors'
 import { seratoFileOf } from '../shared/seratoContent'
 import { type SeratoCue, withSeratoCues } from '../shared/seratoMarkers'
 import type { RekordboxQueueNotice, TrashEntry } from '../shared/types'
+import type { BusyPaths } from './busyPaths'
 import { assertDecodable, convertTmpPath } from './ffmpeg'
 import { dropTemp, type Rewritten, type TmpTracking } from './musicFieldWrite'
 import { discardBackup, hasOriginalKeeper, keepOriginal } from './originalKeeper'
@@ -137,11 +138,11 @@ export async function applySeratoCuesBatch(
     ensureClosed: () => Promise<boolean>
     stillQueued?: (id: string) => boolean
     converting?: (file: string) => boolean
+    writing?: Pick<BusyPaths, 'mark' | 'clear'>
   },
 ): Promise<BatchResult> {
-  const { converting } = deps
-  if (converting && ops.some((op) => op.kind === 'cues' && converting(seratoFileOf(op.contentId))))
-    return { ok: false, reason: 'cancelled' }
+  const busy = (op: QueueOp) =>
+    op.kind === 'cues' && (deps.converting?.(seratoFileOf(op.contentId)) ?? false)
   const results: { outcome: OpOutcome; wrote: boolean }[] = []
   for (const op of ops) {
     if (deps.stillQueued && !deps.stillQueued(op.id)) {
@@ -151,8 +152,16 @@ export async function applySeratoCuesBatch(
       })
       continue
     }
+    if (busy(op)) return { ok: false, reason: 'cancelled' }
     if (!(await deps.ensureClosed())) return { ok: false, reason: 'cancelled' }
-    results.push(await applySeratoOp(op, deps))
+    if (busy(op)) return { ok: false, reason: 'cancelled' }
+    const file = op.kind === 'cues' ? seratoFileOf(op.contentId) : null
+    if (file) deps.writing?.mark(file)
+    try {
+      results.push(await applySeratoOp(op, deps))
+    } finally {
+      if (file) deps.writing?.clear(file)
+    }
   }
   return {
     ok: true,

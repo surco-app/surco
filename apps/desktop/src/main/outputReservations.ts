@@ -11,6 +11,7 @@
 // retry) doesn't have its own release evict a still-active claim.
 export interface OutputReservations {
   isReserved: (path: string) => boolean
+  holds: (path: string) => boolean
   reserve: (path: string) => void
   release: (path: string) => void
 }
@@ -42,6 +43,10 @@ export function createOutputReservations(
   const key = (path: string): string => (caseInsensitive ? path.toLowerCase() : path)
   return {
     isReserved: (path) => (counts.get(key(path)) ?? 0) > 0,
+    holds: (path) => {
+      const wanted = key(path).normalize('NFC')
+      return [...counts.keys()].some((held) => held.normalize('NFC') === wanted)
+    },
     reserve: (path) => counts.set(key(path), (counts.get(key(path)) ?? 0) + 1),
     release: (path) => {
       const next = (counts.get(key(path)) ?? 0) - 1

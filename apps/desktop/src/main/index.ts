@@ -93,6 +93,7 @@ import { bakenCommand } from './bakenPath'
 import { cachedBeatGrid } from './beatGridCache'
 import { setBeatportSession } from './beatport'
 import { beatportSession, connectBeatport, disconnectBeatport } from './beatportCredentials'
+import { createBusyPaths } from './busyPaths'
 import { clipboardHasImage, readClipboardImage, writeClipboardImage } from './clipboardImage'
 import { createQuitIntent, handleGuardedClose } from './closeToQuit'
 import { registerCopiesIpc } from './copiesIpc'
@@ -294,6 +295,7 @@ const outputReservations = createOutputReservations()
 // Lets process:cancel reach an encode already in flight, not just ones not yet
 // started — module-scoped for the same reason as outputReservations above.
 const activeConversions = createActiveConversions()
+const seratoWriting = createBusyPaths()
 const quitIntent = createQuitIntent()
 let unsavedCueTracks: ReadonlySet<string> = new Set()
 // A file-name conflict prompts once per collision, so a batch of similarly-named rips used
@@ -486,7 +488,8 @@ const programQueues = {
             ensureClosed,
             stillQueued,
             converting: (file) =>
-              activeConversions.isConverting(file) || outputReservations.isReserved(file),
+              activeConversions.isConverting(file) || outputReservations.holds(file),
+            writing: seratoWriting,
             tracking: tmpManifest,
             rewritten: followEngineSize,
           }),
@@ -1651,6 +1654,7 @@ function registerIpc(): void {
       unregisterActiveConversion: activeConversions.unregister,
       beginJob: activeConversions.beginJob,
       endJob: activeConversions.endJob,
+      seratoWriting,
       trackTmp: tmpManifest.track,
       untrackTmp: tmpManifest.untrack,
       convertAudio: async (

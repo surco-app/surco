@@ -1,3 +1,4 @@
+import { busyPathKey } from './busyPaths'
 import { foldsCase } from './outputReservations'
 
 // cancelBatch only breaks the renderer's between-track loop: an already-running
@@ -14,7 +15,7 @@ export interface ActiveConversions {
   // the stream-copy shortcut (same-format retag: copyFile plus an in-place tag edit)
   // is real work that spawns nothing, so it has a kill function to offer but must
   // still hold the close guard.
-  beginJob: (jobId: string, path: string) => void
+  beginJob: (jobId: string, paths: string[]) => void
   endJob: (jobId: string) => void
   // Returns whether a process was actually killed, so the caller can tell a
   // real cancel from a no-op (job already done, or never started).
@@ -35,11 +36,8 @@ export interface ActiveConversions {
 
 export function createActiveConversions(caseInsensitive: boolean = foldsCase()): ActiveConversions {
   const kills = new Map<string, (signal: string) => void>()
-  const running = new Map<string, string>()
-  const key = (path: string): string => {
-    const nfc = path.normalize('NFC')
-    return caseInsensitive ? nfc.toLowerCase() : nfc
-  }
+  const running = new Map<string, string[]>()
+  const key = (path: string): string => busyPathKey(path, caseInsensitive)
   const cancelled = new Set<string>()
   return {
     // A child that appears after the cancel (the encode after a measure, a ceiling
@@ -49,8 +47,8 @@ export function createActiveConversions(caseInsensitive: boolean = foldsCase()):
       else kills.set(jobId, kill)
     },
     unregister: (jobId) => kills.delete(jobId),
-    beginJob: (jobId, path) => {
-      running.set(jobId, key(path))
+    beginJob: (jobId, paths) => {
+      running.set(jobId, paths.map(key))
     },
     endJob: (jobId) => {
       running.delete(jobId)
@@ -71,6 +69,6 @@ export function createActiveConversions(caseInsensitive: boolean = foldsCase()):
       kills.clear()
     },
     count: () => running.size,
-    isConverting: (path) => [...running.values()].includes(key(path)),
+    isConverting: (path) => [...running.values()].some((paths) => paths.includes(key(path))),
   }
 }

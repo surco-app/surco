@@ -350,6 +350,7 @@ type OptionalDepKey = {
 // someone decides whether the verification this test runs needs it, as index.ts wires it.
 const optionalDeps: Record<OptionalDepKey, 'wired' | 'notNeeded'> = {
   findAppleMusicEntry: 'notNeeded',
+  seratoWriting: 'notNeeded',
   isEngineDjRunning: 'notNeeded',
   isAllowed: 'notNeeded',
   attachPlaylists: 'notNeeded',

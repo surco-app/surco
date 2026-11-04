@@ -23,6 +23,7 @@ vi.mock('./libraryStatus', () => ({ libraryStatus: () => STATUS }))
 vi.mock('./rekordboxPath', () => ({ findRekordboxCollection: () => '' }))
 
 import { usedByAnyLibrary } from './libraryFlushes'
+import { retireSuperseded } from './retireSuperseded'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
 import { seratoLibraryRoots } from './seratoLibrary'
 
@@ -99,6 +100,35 @@ describe('usedByAnyLibrary', () => {
         seratoRoots,
       }),
     ).toBe(false)
+  })
+
+  it('keeps the file when the Serato database is cut short, since the part not read may list it', async () => {
+    const home = await mkdtemp(join(root, 'serato-cut-'))
+    await mkdir(join(home, 'Music', '_Serato_'), { recursive: true })
+    const whole = concat([
+      frame('vrsn', utf16be('2.0/Serato Scratch LIVE Database')),
+      track({ pfil: 'Volumes/Public/Music/T/B.mp3' }),
+      track({ pfil: FILE.slice(1) }),
+    ])
+    await writeFile(
+      join(home, 'Music', '_Serato_', 'database V2'),
+      whole.subarray(0, whole.length - 5),
+    )
+    const trash = vi.fn(async () => undefined)
+    expect(
+      await retireSuperseded(FILE, {
+        usedByLibrary: (p) =>
+          usedByAnyLibrary(p, [], {
+            traktorRead: noTraktor,
+            seratoRoots: () => seratoLibraryRoots(home, []),
+          }),
+        exists: () => true,
+        keepsTrash: () => true,
+        policy: () => 'always',
+        trash,
+      }),
+    ).toBe('used')
+    expect(trash).not.toHaveBeenCalled()
   })
 
   it('says no when no library is found and none has its sync on', async () => {

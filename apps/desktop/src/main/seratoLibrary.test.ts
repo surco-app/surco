@@ -290,3 +290,30 @@ describe('reading the same Serato library again', () => {
     expect(readSeratoLibrary(roots).tracks.map((t) => t.file)).toEqual(['/a.mp3', '/b.mp3'])
   })
 })
+
+describe('a Serato library that cannot be read whole', () => {
+  it('names the library whose database was cut short and still shows the tab what it could read', () => {
+    const base = mkdtempSync(join(tmpdir(), 'surco-serato-library-'))
+    const dir = seratoFolder(join(base, 'Music'), [{ pfil: 'a.mp3' }, { pfil: 'b.mp3' }])
+    const whole = database([{ pfil: 'a.mp3' }, { pfil: 'b.mp3' }])
+    writeFileSync(join(dir, 'database V2'), whole.subarray(0, whole.length - 3))
+    const library = readSeratoLibrary(seratoLibraryRoots(base, []))
+    expect(library.unreadable).toEqual([dir])
+    expect(library.tracks.map((t) => t.file)).toEqual(['/a.mp3'])
+  })
+
+  it('names the library whose database is there but cannot be read', () => {
+    const base = mkdtempSync(join(tmpdir(), 'surco-serato-library-'))
+    const dir = join(base, 'Music', '_Serato_')
+    mkdirSync(join(dir, 'database V2'), { recursive: true })
+    expect(readSeratoLibrary(seratoLibraryRoots(base, [])).unreadable).toEqual([dir])
+  })
+
+  it('reads a folder with no database, or a drive unplugged since, as no library at all', () => {
+    const { drive, roots } = twoLibraries()
+    rmSync(drive, { recursive: true })
+    const base = mkdtempSync(join(tmpdir(), 'surco-serato-library-'))
+    mkdirSync(join(base, 'Music', '_Serato_'), { recursive: true })
+    expect(readSeratoLibrary([...roots, ...seratoLibraryRoots(base, [])]).unreadable).toEqual([])
+  })
+})
