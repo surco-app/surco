@@ -30,11 +30,9 @@ export function DeclickControls({ value, onChange }: Props): React.JSX.Element {
         label={tr('declick.clicksLabel')}
         labelFor={(id) => tr(`declick.mode.${id}`)}
       />
-      {value !== 'off' && (
-        <p data-testid="declick-mode-hint" className="mt-2 w-0 min-w-full text-xs text-fg-dim">
-          {tr(`declick.modeHint.${value}`)}
-        </p>
-      )}
+      <p data-testid="declick-mode-hint" className="mt-2 w-0 min-w-full text-xs text-fg-dim">
+        {tr(`declick.modeHint.${value}`)}
+      </p>
     </div>
   )
 }

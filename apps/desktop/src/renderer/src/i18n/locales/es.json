@@ -1152,6 +1152,7 @@
       "strong": "Fuerte"
     },
     "modeHint": {
+      "off": "Los chasquidos cortos de la aguja por el polvo y las rayas del disco.",
       "soft": "El toque mínimo, para material delicado.",
       "standard": "Repara los clicks cortos de la aguja.",
       "strong": "Atrapa también pops largos; puede suavizar transitorios."
@@ -1404,19 +1405,20 @@
     "configDirHint": "Elige una carpeta en iCloud Drive o Dropbox para compartir estas preferencias entre tus Macs. Se aplica al momento; las estadísticas y rutas de este Mac se quedan en local.",
     "backup": "Copia de seguridad",
     "backupHint": "Exporta toda tu configuración a un fichero (incluido el token de Discogs) o restáurala desde uno.",
-    "sourcesTitle": "Fuentes",
+    "sourcesTitle": "Barra lateral",
     "source": {
       "appleMusic": "Apple Music",
       "rekordbox": "rekordbox",
       "engine": "Engine DJ",
-      "traktor": "Traktor"
+      "traktor": "Traktor",
+      "serato": "Serato"
     },
     "sourceAppleMusicUnavailable": "Solo existe en macOS",
     "sourceRekordboxUnavailable": "No se ha encontrado una colección de rekordbox",
     "sourceEngineUnavailable": "No se ha encontrado una biblioteca de Engine DJ",
     "sourceTraktorUnavailable": "No se ha encontrado una colección de Traktor",
     "sourceSeratoUnavailable": "No se ha encontrado una biblioteca de Serato",
-    "sourcesHint": "Ocultar una fuente solo la quita de la barra lateral y no cambia su sincronización al convertir.",
+    "sourcesHint": "Ocultar una biblioteca solo la quita de la barra lateral y no cambia su sincronización al convertir.",
     "updates": "Actualizaciones",
     "betaUpdates": "Recibir versiones beta",
     "betaUpdatesHint": "Las betas llegan antes que las versiones estables y sirven para probar lo nuevo, pero traen errores que aún no se han encontrado. Solo afecta a este equipo, y el cambio se aplica al reiniciar Surco.",
@@ -1534,7 +1536,7 @@
       "source": "Igual que el origen",
       "corrected": "Corregido"
     },
-    "sampleRateHint": "«Igual que el origen» nunca remuestrea. Fija una frecuencia para unificar tu biblioteca. “Corregido” reescribe a 44,1 los ficheros medidos como upsampleados desde 44,1 kHz; los hi-res confirmados y los no verificados conservan su frecuencia (solo recodificaciones).",
+    "sampleRateHint": "«Igual que el origen» nunca remuestrea. Fija una frecuencia para unificar tu biblioteca. «Corregido» reescribe a 44,1 los ficheros medidos como upsampleados desde 44,1 kHz; los hi-res confirmados y los no verificados conservan su frecuencia (solo recodificaciones).",
     "flacCompression": "Compresión FLAC",
     "flacCompressions": {
       "0": "Rápida",
@@ -1552,7 +1554,7 @@
     },
     "destinationAppleMusicHint": "Lo añade a Apple Music, sin copia en la carpeta.",
     "destinationAppleMusicKeepCopyHint": "Lo añade a Apple Music y guarda una copia en la carpeta.",
-    "destinationBesideHint": "Escribe la conversión junto al archivo original, sin tocarlo nunca; con el mismo formato la copia toma un nombre “(2)”.",
+    "destinationBesideHint": "Escribe la conversión junto al archivo original, sin tocarlo nunca; con el mismo formato la copia toma un nombre «(2)».",
     "destinationOverwriteHint": "Reescribe cada archivo en su sitio; sin copia de salida. Cambiar de formato elimina el original.",
     "engineLibraryDir": "Biblioteca de Engine DJ",
     "engineLibraryDirHint": "Surco escribe en la base de datos de esta biblioteca. Cierra Engine DJ mientras conviertes.",
@@ -1581,7 +1583,7 @@
     "titleFormat": "Formato del título",
     "autoApplyFilename": "Aplicar el patrón automáticamente",
     "autoApplyFilenameHint": "Genera el nombre desde los metadatos al exportar, sin pulsar «Regenerar». Una edición manual siempre tiene prioridad.",
-    "filenameFolderHint": "Usa \"/\" para organizar los archivos en carpetas, p. ej.",
+    "filenameFolderHint": "Usa «/» para organizar los archivos en carpetas, p. ej.",
     "insertToken": "Insertar un campo:",
     "preview": "Vista previa:",
     "grouping": "Agrupación (separadas por comas)",

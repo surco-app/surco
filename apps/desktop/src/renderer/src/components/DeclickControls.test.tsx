@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import '../i18n'
+import i18n from '../i18n'
 import { DeclickControls, NoiseControls } from './DeclickControls'
 
 afterEach(cleanup)
@@ -16,13 +16,18 @@ describe('DeclickControls', () => {
     expect(onChange).toHaveBeenCalledWith('standard')
   })
 
-  // Each active step explains its trade-off right under the control — off needs
-  // no caveat.
-  it('shows the active step’s hint and none while off', () => {
+  // Every step explains itself under the control, off included, like the noise ladder
+  // beside it: off says what clicks are, the moment someone is deciding whether they have
+  // them, and a hint that only exists once a step is picked leaves the two ladders unaligned.
+  it('explains every step, off included, the way the noise ladder beside it does', () => {
     const { rerender } = render(<DeclickControls value="off" onChange={() => {}} />)
-    expect(screen.queryByTestId('declick-mode-hint')).not.toBeInTheDocument()
+    expect(screen.getByTestId('declick-mode-hint')).toHaveTextContent(
+      i18n.t('declick.modeHint.off'),
+    )
     rerender(<DeclickControls value="strong" onChange={() => {}} />)
-    expect(screen.getByTestId('declick-mode-hint')).toBeInTheDocument()
+    expect(screen.getByTestId('declick-mode-hint')).toHaveTextContent(
+      i18n.t('declick.modeHint.strong'),
+    )
   })
 
   // No raw ffmpeg strings in the UI — the ladder labels are the whole vocabulary a

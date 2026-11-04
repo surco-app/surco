@@ -1152,6 +1152,7 @@
       "strong": "Strong"
     },
     "modeHint": {
+      "off": "The stylus's short clicks and pops from dust and scratches on the record.",
       "soft": "The lightest touch, for delicate material.",
       "standard": "Repairs short stylus clicks.",
       "strong": "Also catches long pops; may soften sharp transients."
@@ -1404,19 +1405,20 @@
     "configDirHint": "Pick a folder in iCloud Drive or Dropbox to share these preferences across your Macs. Applies immediately; this Mac's stats and paths stay local.",
     "backup": "Backup",
     "backupHint": "Export all your settings to a file (Discogs token included) or restore from one.",
-    "sourcesTitle": "Sources",
+    "sourcesTitle": "Sidebar",
     "source": {
       "appleMusic": "Apple Music",
       "rekordbox": "rekordbox",
       "engine": "Engine DJ",
-      "traktor": "Traktor"
+      "traktor": "Traktor",
+      "serato": "Serato"
     },
     "sourceAppleMusicUnavailable": "Only available on macOS",
     "sourceRekordboxUnavailable": "No rekordbox collection was found",
     "sourceEngineUnavailable": "No Engine DJ library was found",
     "sourceTraktorUnavailable": "No Traktor collection was found",
     "sourceSeratoUnavailable": "No Serato library was found",
-    "sourcesHint": "Hiding a source only removes it from the sidebar and does not change whether conversions sync with it.",
+    "sourcesHint": "Hiding a library only removes it from the sidebar and does not change whether conversions sync with it.",
     "updates": "Updates",
     "betaUpdates": "Get beta versions",
     "betaUpdatesHint": "Betas arrive before stable releases and are there to try what is new, but they carry bugs nobody has found yet. It only affects this machine, and the change takes effect when you restart Surco.",

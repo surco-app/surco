@@ -1152,6 +1152,7 @@
       "strong": "Stark"
     },
     "modeHint": {
+      "off": "Die kurzen Knackser der Nadel durch Staub und Kratzer auf der Platte.",
       "soft": "Der leichteste Eingriff, für empfindliches Material.",
       "standard": "Repariert kurze Nadel-Klicks.",
       "strong": "Erfasst auch lange Knackser; kann harte Transienten abschwächen."
@@ -1404,19 +1405,20 @@
     "configDirHint": "Wähl einen Ordner in iCloud Drive oder Dropbox, um diese Einstellungen zwischen deinen Macs zu teilen. Gilt sofort; die Statistiken dieses Macs verlassen den Rechner nie.",
     "backup": "Sicherung",
     "backupHint": "Exportiere all deine Einstellungen in eine Datei (inklusive Discogs-Token) oder stelle sie aus einer wieder her.",
-    "sourcesTitle": "Quellen",
+    "sourcesTitle": "Seitenleiste",
     "source": {
       "appleMusic": "Apple Music",
       "rekordbox": "rekordbox",
       "engine": "Engine DJ",
-      "traktor": "Traktor"
+      "traktor": "Traktor",
+      "serato": "Serato"
     },
     "sourceAppleMusicUnavailable": "Nur unter macOS verfügbar",
     "sourceRekordboxUnavailable": "Es wurde keine rekordbox-Sammlung gefunden",
     "sourceEngineUnavailable": "Es wurde keine Engine DJ-Bibliothek gefunden",
     "sourceTraktorUnavailable": "Es wurde keine Traktor-Collection gefunden",
     "sourceSeratoUnavailable": "Es wurde keine Serato-Bibliothek gefunden",
-    "sourcesHint": "Das Ausblenden einer Quelle entfernt sie nur aus der Seitenleiste und ändert nichts daran, ob Konvertierungen mit ihr synchronisiert werden.",
+    "sourcesHint": "Das Ausblenden einer Bibliothek entfernt sie nur aus der Seitenleiste und ändert nichts daran, ob Konvertierungen mit ihr synchronisiert werden.",
     "updates": "Aktualisierungen",
     "betaUpdates": "Beta-Versionen erhalten",
     "betaUpdatesHint": "Betas kommen vor den stabilen Versionen und sind zum Ausprobieren von Neuem da, enthalten aber Fehler, die noch niemand gefunden hat. Betrifft nur diesen Rechner; die Änderung greift beim Neustart von Surco.",

@@ -1152,6 +1152,7 @@
       "strong": "Forte"
     },
     "modeHint": {
+      "off": "Os estalos curtos da agulha por poeira e riscos no disco.",
       "soft": "O toque mais leve, para material delicado.",
       "standard": "Repara os clicks curtos da agulha.",
       "strong": "Captura também estalos longos; pode suavizar transientes."
@@ -1404,19 +1405,20 @@
     "configDirHint": "Escolha uma pasta no iCloud Drive ou Dropbox para compartilhar essas preferências entre seus Macs. Aplica na hora; as estatísticas deste Mac nunca saem desta máquina.",
     "backup": "Backup",
     "backupHint": "Exporte toda a sua configuração para um arquivo (incluindo o token do Discogs) ou restaure a partir de um.",
-    "sourcesTitle": "Fontes",
+    "sourcesTitle": "Barra lateral",
     "source": {
       "appleMusic": "Apple Music",
       "rekordbox": "rekordbox",
       "engine": "Engine DJ",
-      "traktor": "Traktor"
+      "traktor": "Traktor",
+      "serato": "Serato"
     },
     "sourceAppleMusicUnavailable": "Disponível apenas no macOS",
     "sourceRekordboxUnavailable": "Nenhuma coleção do rekordbox foi encontrada",
     "sourceEngineUnavailable": "Nenhuma biblioteca do Engine DJ foi encontrada",
     "sourceTraktorUnavailable": "Nenhuma coleção do Traktor foi encontrada",
     "sourceSeratoUnavailable": "Nenhuma biblioteca do Serato foi encontrada",
-    "sourcesHint": "Ocultar uma fonte apenas a remove da barra lateral e não muda se as conversões sincronizam com ela.",
+    "sourcesHint": "Ocultar uma biblioteca apenas a remove da barra lateral e não muda se as conversões sincronizam com ela.",
     "updates": "Atualizações",
     "betaUpdates": "Receber versões beta",
     "betaUpdatesHint": "As betas chegam antes das versões estáveis e servem para testar as novidades, mas trazem erros que ninguém encontrou ainda. Afeta apenas este computador, e a mudança vale ao reiniciar o Surco.",
