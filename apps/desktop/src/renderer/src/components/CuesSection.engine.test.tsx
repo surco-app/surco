@@ -302,6 +302,20 @@ describe('CuesSection on an Engine DJ track', () => {
     expect(getGridFit).not.toHaveBeenCalled()
   })
 
+  it('saves to Engine DJ the cues Auto carried onto the fitted beats, as in rekordbox', async () => {
+    const cues = [{ id: 'h1', ms: bar(16), kind: 1, color: 1 }]
+    const rekordboxGridFit = vi.fn<Api['rekordboxGridFit']>(async () => ({ bpm: 120, firstMs: 454 }))
+    const { saveRekordboxCues } = setup({ ...READ, clockLeadMs: 0, cues }, READ.contentId, async () => null, { rekordboxGridFit })
+    await ready()
+    fireEvent.click(screen.getByTestId('section-maximize'))
+    await waitFor(() => expect(screen.getByTestId('cues-grid-auto')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('cues-grid-auto'))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    const [[req]] = saveRekordboxCues.mock.calls[0]
+    expect(req.wanted?.map((c) => c.ms)).toEqual([bar(16) - 46])
+  })
+
   it('leaves a grid the DJ locked in the program alone, and says so', async () => {
     setup({ ...READ, clockLeadMs: 0, gridLocked: true })
     await ready()
