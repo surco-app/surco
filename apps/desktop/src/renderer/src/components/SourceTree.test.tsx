@@ -852,6 +852,25 @@ describe('SourceTree on Serato crates', () => {
     )
   })
 
+  it('lists each hit once while searching, with no subcrates unfolded under a matching parent crate', () => {
+    setupCrates(PARENT)
+    fireEvent.click(screen.getByTestId('source-node-expand-P'))
+    fireEvent.change(screen.getByTestId('source-tree-search'), { target: { value: 'r' } })
+    expect(screen.getAllByTestId('source-node-P%%R')).toHaveLength(1)
+    expect(screen.queryByTestId('source-node-expand-P')).toBeNull()
+    expect(screen.queryByTestId('source-node-P%%Q')).toBeNull()
+  })
+
+  it('takes tracks dropped on the chevron of a crate that holds subcrates into that crate', () => {
+    const edit = setupCrates(PARENT)
+    const chevron = screen.getByTestId('source-node-expand-P')
+    const dt = files('a.mp3')
+    fireEvent.dragOver(chevron, { dataTransfer: dt })
+    expect(screen.getByTestId('source-node-P')).toHaveAttribute('data-drop-target', 'true')
+    fireEvent.drop(chevron, { dataTransfer: dt })
+    expect(edit.onDropTracks).toHaveBeenCalledWith(PARENT[0], expect.any(Array))
+  })
+
   it('finds a subcrate of a crate that holds tracks, and the crate itself, in the search', () => {
     setupCrates(PARENT)
     fireEvent.change(screen.getByTestId('source-tree-search'), { target: { value: 'sub' } })

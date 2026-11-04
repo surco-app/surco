@@ -250,7 +250,8 @@ export function SourceTree({
     trail?: string,
   ): React.JSX.Element => {
     const isFolder = node.kind === 'folder'
-    const parentCrate = Boolean(edit?.crates) && !isFolder && (node.children?.length ?? 0) > 0
+    const parentCrate =
+      !hits && Boolean(edit?.crates) && !isFolder && (node.children?.length ?? 0) > 0
     const expandable = isFolder || parentCrate
     const recent = node.id === RECENTLY_ADDED_ID
     const all = node.id === ALL_TRACKS_ID
@@ -261,6 +262,18 @@ export function SourceTree({
     const open = opened.has(node.id)
     const selected = node.id === selectedId
     const Chevron = open ? ChevronDown : ChevronRight
+    const dragOver = (e: React.DragEvent): void => {
+      if (!dropEdit || isFolder || !carriesTracks(e)) return
+      e.preventDefault()
+      setDropOn({ id: node.id, count: dropCount(e) })
+    }
+    const drop = (e: React.DragEvent): void => {
+      if (!dropEdit || isFolder || !carriesTracks(e)) return
+      e.preventDefault()
+      e.stopPropagation()
+      setDropOn(null)
+      dropEdit.onDropTracks(node, Array.from(e.dataTransfer.files))
+    }
     return (
       <li key={node.id} className={parentCrate ? 'relative' : undefined}>
         {renaming === node.id ? (
@@ -294,23 +307,13 @@ export function SourceTree({
               setMenu({ node, x: e.clientX, y: e.clientY })
             }}
             data-drop-target={dropOn?.id === node.id || undefined}
-            onDragOver={(e) => {
-              if (!dropEdit || isFolder || !carriesTracks(e)) return
-              e.preventDefault()
-              setDropOn({ id: node.id, count: dropCount(e) })
-            }}
+            onDragOver={dragOver}
             onDragLeave={(e) => {
               // Moving onto the row's own name or count fires a leave on the row itself.
               if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
               setDropOn((d) => (d?.id === node.id ? null : d))
             }}
-            onDrop={(e) => {
-              if (!dropEdit || isFolder || !carriesTracks(e)) return
-              e.preventDefault()
-              e.stopPropagation()
-              setDropOn(null)
-              dropEdit.onDropTracks(node, Array.from(e.dataTransfer.files))
-            }}
+            onDrop={drop}
             style={{ paddingLeft: 10 + depth * 18 }}
             className={`flex h-[28px] w-full items-center gap-1.5 rounded-md pr-2.5 text-left text-[13px] ${
               selected
@@ -365,6 +368,8 @@ export function SourceTree({
             aria-label={tr('sources.tree.subcrates', { name: node.name })}
             aria-expanded={open}
             onClick={() => toggle(node.id)}
+            onDragOver={dragOver}
+            onDrop={drop}
             style={{ left: 8 + depth * 18 }}
             className="absolute top-[6px] flex h-4 w-4 items-center justify-center rounded text-fg-faint hover:text-fg"
           >
