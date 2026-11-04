@@ -10,7 +10,7 @@ import { engineRowFinder } from './engineRepoint'
 import { toNmlLocation } from './ffmpeg'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
 import { findTrackByPath, isAmbiguous, openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
-import { readSeratoLibrary, type SeratoLibraryRoot } from './seratoLibrary'
+import { readSeratoLibrary, type SeratoLibrary, type SeratoLibraryRoot } from './seratoLibrary'
 import { attr, findEntries, nmlCopyInfo } from './traktorNml'
 import { traktorFileOf } from './traktorPlaylists'
 
@@ -23,7 +23,7 @@ const LIBRARY_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
 // keeps the file then, since that library may still use it.
 export function usedByDjLibrary(
   path: string,
-  libraries: SyncedLibraries,
+  libraries: SyncedLibraries & { serato?: SeratoLibraryRoot[] },
   options: PathMatchOptions = {},
 ): Promise<boolean> {
   return djLibraryFileUse(libraries, options)(path)
@@ -33,13 +33,14 @@ export function usedByDjLibrary(
 // reaches it, and the rekordbox key is derived once: a duplicate replace asks per removed
 // copy, after it has settled every library, so nothing changes them between two files.
 export function djLibraryFileUse(
-  libraries: SyncedLibraries,
+  libraries: SyncedLibraries & { serato?: SeratoLibraryRoot[] },
   options: PathMatchOptions = {},
 ): (path: string) => Promise<boolean> {
   const key = pathKey(options)
   let rekordboxKey: Promise<string> | undefined
   let engineRows: ReturnType<typeof readEngineRows> | undefined
   let nmlFiles: Promise<Map<string, string[]>> | undefined
+  let seratoFile: ((path: string) => string | undefined) | undefined
   const holds: Record<WritableProgram, (location: string, path: string) => Promise<boolean>> = {
     rekordbox: async (collection, path) => {
       rekordboxKey ??= rekordboxRawKey(collection)
@@ -66,7 +67,9 @@ export function djLibraryFileUse(
   return async (path) => {
     for (const library of LIBRARY_ORDER)
       if (libraries[library] && (await holds[library](libraries[library], path))) return true
-    return false
+    if (!libraries.serato?.length) return false
+    seratoFile ??= seratoFileFinder(readSeratoLibrary(libraries.serato), options)
+    return seratoFile(path) !== undefined
   }
 }
 
@@ -323,18 +326,27 @@ const TRACK_OF: Record<
   },
 }
 
+function seratoFileFinder(
+  library: SeratoLibrary,
+  options: PathMatchOptions,
+): (path: string) => string | undefined {
+  const key = pathKey(options)
+  return (path) => {
+    const wanted = key(path)
+    const name = basename(path.normalize('NFC')).toLowerCase()
+    return library.tracks.find(
+      (t) => basename(t.file.normalize('NFC')).toLowerCase() === name && key(t.file) === wanted,
+    )?.file
+  }
+}
+
 function seratoTrackOf(
   roots: SeratoLibraryRoot[],
   path: string,
   options: PathMatchOptions,
 ): string | undefined {
-  const key = pathKey(options)
-  const wanted = key(path)
-  const name = basename(path.normalize('NFC')).toLowerCase()
-  const found = readSeratoLibrary(roots).tracks.find(
-    (t) => basename(t.file.normalize('NFC')).toLowerCase() === name && key(t.file) === wanted,
-  )
-  return found ? `serato:${found.file}` : undefined
+  const found = seratoFileFinder(readSeratoLibrary(roots), options)(path)
+  return found ? `serato:${found}` : undefined
 }
 
 // Read only: the id each library gives the file, for the cue editor to place a flow on the

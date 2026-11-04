@@ -1,4 +1,4 @@
-import { mkdtemp, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
@@ -23,6 +23,8 @@ vi.mock('./libraryStatus', () => ({ libraryStatus: () => STATUS }))
 vi.mock('./rekordboxPath', () => ({ findRekordboxCollection: () => '' }))
 
 import { usedByAnyLibrary } from './libraryFlushes'
+import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
+import { seratoLibraryRoots } from './seratoLibrary'
 
 const FILE = '/Volumes/Public/Music/T/A.mp3'
 const settingsBefore = { ...SETTINGS }
@@ -77,6 +79,26 @@ describe('usedByAnyLibrary', () => {
     SETTINGS.syncEngineDj = true
     SETTINGS.engineLibraryDir = join(root, 'gone')
     await expect(usedByAnyLibrary(FILE, [], { traktorRead: noTraktor })).rejects.toThrow()
+  })
+
+  it('asks Serato, which Surco only reads, so a file a crate still plays stays', async () => {
+    const home = await mkdtemp(join(root, 'serato-'))
+    await mkdir(join(home, 'Music', '_Serato_'), { recursive: true })
+    await writeFile(
+      join(home, 'Music', '_Serato_', 'database V2'),
+      concat([
+        frame('vrsn', utf16be('2.0/Serato Scratch LIVE Database')),
+        track({ pfil: FILE.slice(1) }),
+      ]),
+    )
+    const seratoRoots = () => seratoLibraryRoots(home, [])
+    expect(await usedByAnyLibrary(FILE, [], { traktorRead: noTraktor, seratoRoots })).toBe(true)
+    expect(
+      await usedByAnyLibrary('/Volumes/Public/Music/T/B.mp3', [], {
+        traktorRead: noTraktor,
+        seratoRoots,
+      }),
+    ).toBe(false)
   })
 
   it('says no when no library is found and none has its sync on', async () => {

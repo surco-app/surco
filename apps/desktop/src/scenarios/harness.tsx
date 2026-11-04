@@ -804,7 +804,7 @@ function scenarioApi(
       removeMusicDuplicate: (request) => invokeMain('applemusic:removeDuplicate', request),
       replaceDuplicatesInLibraries: (pairs) =>
         replaceDuplicates(pairs, {
-          ...duplicateLibraryDeps(libraryHost(errors), sessions),
+          ...duplicateLibraryDeps(libraryHost(errors), sessions, () => []),
           trash: (path) => trashRecoverably(path),
           log: { track: activity.track, copyOf: musicReviewLog.copyOf },
         }),
@@ -955,6 +955,7 @@ export function bootMain(options: ScenarioOptions): MainBoot {
         hostFor: () => libraryHost(errors),
         sessions,
         followEngineSize,
+        seratoRoots: () => [],
       }),
     )
     registerDamageIpc(

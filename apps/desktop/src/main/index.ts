@@ -485,6 +485,8 @@ const programQueues = {
           applySeratoCuesBatch(ops, {
             ensureClosed,
             stillQueued,
+            converting: (file) =>
+              activeConversions.isConverting(file) || outputReservations.isReserved(file),
             tracking: tmpManifest,
             rewritten: followEngineSize,
           }),
@@ -1605,6 +1607,7 @@ function registerIpc(): void {
         ...duplicateLibraryDeps(
           hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
           sessions,
+          seratoRoots,
         ),
         trash: (path) => trashRecoverably(path),
         log: { track: activity.track, copyOf: musicReviewLog.copyOf },
@@ -1619,6 +1622,7 @@ function registerIpc(): void {
       hostFor: (sender) => hostFor(BrowserWindow.fromWebContents(sender), sender),
       sessions,
       followEngineSize,
+      seratoRoots,
     }),
     beginMoment: moments.begin,
   })
@@ -2043,6 +2047,7 @@ function registerIpc(): void {
   registerShellIpc(mediaAccess, (path, titles) =>
     usedByAnyLibrary(path, titles, {
       traktorRead: traktorReadPath,
+      seratoRoots,
       ...(process.platform === 'darwin' && { musicEntries: musicReaders.entriesForFile }),
       fileTitle: async (file) => (await readTags(file)).title,
       fileLike: fileLikeForMusic,

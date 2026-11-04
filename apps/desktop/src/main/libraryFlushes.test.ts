@@ -397,7 +397,7 @@ describe('rekordbox writes while the queue is held after a write left the collec
 
   it('hands the duplicate writer the hold, and keeps rekordbox in the step so the removed copy is not trashed', async () => {
     WRITERS.replaceRekordboxDuplicates.mockClear()
-    const deps = duplicateLibraryDeps(held(), sessions)
+    const deps = duplicateLibraryDeps(held(), sessions, () => [])
     await deps.libraries.rekordbox?.([{ from: '/m/a.mp3', to: '/m/b.mp3' }])
     const [, , options] = WRITERS.replaceRekordboxDuplicates.mock.calls[0] as unknown as [
       string,
@@ -413,11 +413,21 @@ describe('duplicateLibraryDeps', () => {
   // re-read Engine's database and the whole collection.nml every time.
   it('checks every removed copy against the libraries loaded once for the run', async () => {
     FILE_USE.open.mockClear()
-    const deps = duplicateLibraryDeps(host(), sessions)
+    const deps = duplicateLibraryDeps(host(), sessions, () => [])
     await deps.usedByLibrary('/m/a.mp3')
     await deps.usedByLibrary('/m/b.mp3')
     expect(FILE_USE.open).toHaveBeenCalledTimes(1)
     expect(FILE_USE.check.mock.calls).toEqual([['/m/a.mp3'], ['/m/b.mp3']])
+  })
+
+  it('asks Serato too, so a removed copy a crate still plays is not trashed', () => {
+    FILE_USE.open.mockClear()
+    const roots = [{ dir: '/Users/v/Music/_Serato_', root: '/' }]
+    duplicateLibraryDeps(host(), sessions, () => roots)
+    expect(FILE_USE.open).toHaveBeenCalledWith(
+      expect.objectContaining({ serato: roots }),
+      expect.anything(),
+    )
   })
 })
 

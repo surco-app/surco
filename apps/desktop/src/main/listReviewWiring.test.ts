@@ -20,6 +20,7 @@ describe('listReviewDeps', () => {
       hostFor: vi.fn(),
       sessions: {} as never,
       followEngineSize,
+      seratoRoots: () => [],
     })
     const changes = [{ field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara' }]
     await deps.apply.rewrite('/m/c.aiff', changes)

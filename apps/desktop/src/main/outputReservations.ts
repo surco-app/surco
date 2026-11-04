@@ -27,7 +27,7 @@ export interface OutputReservations {
 // A parameter rather than a read of process.platform inside the key function so the
 // behaviour is testable on either kind of host, not only on whichever one CI happens to
 // run — the case-folding tests would otherwise pass on a Mac and vanish on Linux.
-function foldsCase(): boolean {
+export function foldsCase(): boolean {
   return process.platform === 'darwin' || process.platform === 'win32'
 }
 

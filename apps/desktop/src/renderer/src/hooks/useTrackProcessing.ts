@@ -443,6 +443,7 @@ export function useTrackProcessing({
           replacesPath: track.replacesPath,
           replacesLabel: track.replacesLabel,
           ...jobPlaylists(track),
+          fromSerato: track.fromSerato,
         })
         // The user declined to overwrite a conflicting file: nothing was written, so
         // leave the track convertible (idle) rather than marking it done or failed.

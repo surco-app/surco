@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, posix } from 'node:path'
 import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
@@ -31,9 +31,20 @@ export function seratoLibraryRoots(home: string, volumes: string[]): SeratoLibra
   ].filter((r) => existsSync(r.dir))
 }
 
+const parsed = new Map<string, { mtimeMs: number; size: number; value: unknown }>()
+
+function parsedFile<T>(file: string, parse: (bytes: Buffer) => T): T {
+  const { mtimeMs, size } = statSync(file)
+  const hit = parsed.get(file)
+  if (hit && hit.mtimeMs === mtimeMs && hit.size === size) return hit.value as T
+  const value = parse(readFileSync(file))
+  parsed.set(file, { mtimeMs, size, value })
+  return value
+}
+
 function readRoot({ dir, root }: SeratoLibraryRoot): SeratoLibrary {
   const fileOf = (path: string) => posix.join(root, path)
-  const tracks = parseSeratoDatabase(readFileSync(join(dir, 'database V2'))).map((t) => ({
+  const tracks = parsedFile(join(dir, 'database V2'), parseSeratoDatabase).map((t) => ({
     ...t,
     file: fileOf(t.path),
   }))
@@ -49,7 +60,7 @@ function readRoot({ dir, root }: SeratoLibraryRoot): SeratoLibrary {
 
 function readCrate(file: string): string[] | null {
   try {
-    return parseSeratoCrate(readFileSync(file))
+    return parsedFile(file, parseSeratoCrate)
   } catch {
     return null
   }

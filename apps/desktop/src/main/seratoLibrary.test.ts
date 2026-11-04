@@ -1,7 +1,18 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+const { reads } = vi.hoisted(() => ({ reads: [] as string[] }))
+vi.mock('node:fs', async (importOriginal) => {
+  const real = await importOriginal<typeof import('node:fs')>()
+  const readFileSync = ((...args: Parameters<typeof real.readFileSync>) => {
+    reads.push(String(args[0]))
+    return real.readFileSync(...args)
+  }) as typeof real.readFileSync
+  return { ...real, readFileSync }
+})
+
 import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
@@ -233,5 +244,49 @@ describe('the Serato tab', () => {
     const library = readSeratoLibrary(seratoLibraryRoots(base, []))
     expect(library.tracks.map((t) => t.file)).toEqual(['/a.mp3'])
     expect(seratoPlaylist(library, 'Good', NOW).map((e) => e.path)).toEqual(['/a.mp3'])
+  })
+})
+
+describe('reading the same Serato library again', () => {
+  const readsOf = (dir: string) => reads.filter((r) => r.startsWith(dir))
+
+  it('parses the database and each crate once while their files stay the same, since a NAS pays for every read', () => {
+    const base = mkdtempSync(join(tmpdir(), 'surco-serato-library-'))
+    const dir = seratoFolder(join(base, 'Music'), [{ pfil: 'a.mp3' }], { Good: ['a.mp3'] })
+    const roots = seratoLibraryRoots(base, [])
+    const first = readSeratoLibrary(roots)
+    const second = readSeratoLibrary(roots)
+    expect(second.tracks.map((t) => t.file)).toEqual(first.tracks.map((t) => t.file))
+    expect(seratoPlaylist(second, 'Good', NOW).map((e) => e.path)).toEqual(['/a.mp3'])
+    expect(readsOf(dir).sort()).toEqual(
+      [join(dir, 'Subcrates', 'Good.crate'), join(dir, 'database V2')].sort(),
+    )
+  })
+
+  it('parses a file again once Serato rewrote it', () => {
+    const base = mkdtempSync(join(tmpdir(), 'surco-serato-library-'))
+    const dir = seratoFolder(join(base, 'Music'), [{ pfil: 'a.mp3' }], { Good: ['a.mp3'] })
+    const roots = seratoLibraryRoots(base, [])
+    readSeratoLibrary(roots)
+    writeFileSync(join(dir, 'database V2'), database([{ pfil: 'a.mp3' }, { pfil: 'b.mp3' }]))
+    writeFileSync(join(dir, 'Subcrates', 'Good.crate'), crate(['b.mp3']))
+    const later = new Date(Date.now() + 60_000)
+    utimesSync(join(dir, 'database V2'), later, later)
+    utimesSync(join(dir, 'Subcrates', 'Good.crate'), later, later)
+    const library = readSeratoLibrary(roots)
+    expect(library.tracks.map((t) => t.file)).toEqual(['/a.mp3', '/b.mp3'])
+    expect(seratoPlaylist(library, 'Good', NOW).map((e) => e.path)).toEqual(['/b.mp3'])
+  })
+
+  it('parses a file again when only its size changed, as a copy that keeps the time does', () => {
+    const base = mkdtempSync(join(tmpdir(), 'surco-serato-library-'))
+    const dir = seratoFolder(join(base, 'Music'), [{ pfil: 'a.mp3' }])
+    const roots = seratoLibraryRoots(base, [])
+    const at = new Date(2026, 0, 1)
+    utimesSync(join(dir, 'database V2'), at, at)
+    readSeratoLibrary(roots)
+    writeFileSync(join(dir, 'database V2'), database([{ pfil: 'a.mp3' }, { pfil: 'b.mp3' }]))
+    utimesSync(join(dir, 'database V2'), at, at)
+    expect(readSeratoLibrary(roots).tracks.map((t) => t.file)).toEqual(['/a.mp3', '/b.mp3'])
   })
 })

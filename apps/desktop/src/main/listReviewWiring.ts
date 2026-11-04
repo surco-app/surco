@@ -14,6 +14,7 @@ import type { MediaAccess } from './mediaAccess'
 import { type Rewritten, rewriteTagFields } from './musicFieldWrite'
 import { musicReviewLog } from './musicReviewLog'
 import { trashRecoverably } from './recoverableTrash'
+import type { SeratoLibraryRoot } from './seratoLibrary'
 import { volumeKeepsTrash } from './trashSupport'
 
 export interface ListReviewEnv {
@@ -22,6 +23,7 @@ export interface ListReviewEnv {
   hostFor: (sender: WebContents) => LibraryHost
   sessions: Sessions
   followEngineSize?: Rewritten
+  seratoRoots: () => SeratoLibraryRoot[]
 }
 
 export function listReviewDeps(env: ListReviewEnv): ListReviewIpcDeps {
@@ -41,7 +43,7 @@ export function listReviewDeps(env: ListReviewEnv): ListReviewIpcDeps {
     },
     isAllowed: (path) => env.mediaAccess.isAllowed(path),
     removal: (sender) => ({
-      replace: duplicateLibraryDeps(env.hostFor(sender), env.sessions),
+      replace: duplicateLibraryDeps(env.hostFor(sender), env.sessions, env.seratoRoots),
       realpath: (path) => realpath(path).catch(() => null),
       identity: (path) =>
         stat(path, { bigint: true }).then(

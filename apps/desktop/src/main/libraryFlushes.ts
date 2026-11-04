@@ -33,6 +33,7 @@ import type { RekordboxQueue } from './rekordboxQueue'
 import { libraryTrackOps, queueConversionRun, trackOpsFromRun } from './rekordboxQueueFromRun'
 import type { createSessionBackup } from './rekordboxSessionBackup'
 import { updateRekordboxTags } from './rekordboxTags'
+import type { SeratoLibraryRoot } from './seratoLibrary'
 import { getSettings } from './settings'
 import { readEmbeddedCover } from './tags'
 import type { NmlPatch } from './traktorNml'
@@ -103,6 +104,7 @@ export async function usedByAnyLibrary(
   titles: string[],
   deps: {
     traktorRead: () => string
+    seratoRoots?: () => SeratoLibraryRoot[]
     musicEntries?: (
       path: string,
       titles: string[],
@@ -124,6 +126,7 @@ export async function usedByAnyLibrary(
           : '',
       engine: settings.syncEngineDj || status.engine.found ? settings.engineLibraryDir : '',
       traktor: (settings.syncTraktor && settings.traktorNmlPath) || deps.traktorRead(),
+      serato: deps.seratoRoots?.(),
     },
     { realPath: (p: string) => realpathSync(p) },
   )
@@ -622,6 +625,7 @@ export function syncTagsInLibraries(
 export function duplicateLibraryDeps(
   host: LibraryHost,
   sessions: Sessions,
+  seratoRoots: () => SeratoLibraryRoot[],
 ): Omit<ReplaceDuplicatesDeps, 'trash' | 'musicStep' | 'log'> {
   const realPath = (p: string) => realpathSync(p)
   const rekordbox = rekordboxFlushDeps(host)
@@ -693,6 +697,7 @@ export function duplicateLibraryDeps(
         rekordbox: rekordbox.collectionPath,
         engine: engine.collectionPath,
         traktor: traktor.traktorNmlPath,
+        serato: seratoRoots(),
       },
       { realPath },
     ),

@@ -842,6 +842,7 @@ export interface ProcessJob {
   traktorPlaylistsBase?: string[]
   enginePlaylists?: RekordboxPlaylistTarget[]
   enginePlaylistsBase?: string[]
+  fromSerato?: boolean
 }
 
 export interface CoverExportJob {

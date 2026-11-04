@@ -547,6 +547,39 @@ describe('libraryTracksOf in Serato', () => {
     expect(resolved.filter((p) => p.includes('other'))).toEqual([])
     expect(resolved).toContain('/Volumes/M/Music/A.mp3')
   })
+
+  it('counts a file Serato lists as used, so Surco never trashes a track a crate still plays', async () => {
+    const roots = await serato(['Volumes/M/Music/b.mp3', 'Volumes/M/Music/a.mp3'])
+    expect(await usedByDjLibrary('/Volumes/M/Music/a.mp3', { ...OFF, serato: roots })).toBe(true)
+    expect(await usedByDjLibrary('/Volumes/M/Music/c.mp3', { ...OFF, serato: roots })).toBe(false)
+  })
+
+  it('counts it the same way for each file of a run', async () => {
+    const used = djLibraryFileUse({
+      ...OFF,
+      serato: await serato(['Volumes/M/Music/a.mp3']),
+    })
+    expect(await used('/Volumes/M/Music/a.mp3')).toBe(true)
+    expect(await used('/Volumes/M/Music/b.mp3')).toBe(false)
+  })
+
+  it('resolves only the Serato rows with the same file name when counting use', async () => {
+    const others = Array.from({ length: 50 }, (_, i) => `Volumes/M/Music/other ${i}.mp3`)
+    const roots = await serato([...others, 'Volumes/M/Music/A.mp3'])
+    const resolved: string[] = []
+    const realPath = (p: string) => {
+      resolved.push(p)
+      return p
+    }
+    expect(
+      await usedByDjLibrary(
+        '/Volumes/M/Music/a.mp3',
+        { ...OFF, serato: roots },
+        { realPath, homeMusicDir: '/Users/v/Music/Music' },
+      ),
+    ).toBe(true)
+    expect(resolved.filter((p) => p.includes('other'))).toEqual([])
+  })
 })
 
 describe('libraryGenresOf', () => {

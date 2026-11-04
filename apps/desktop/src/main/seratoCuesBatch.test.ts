@@ -351,6 +351,56 @@ describe('a Serato save whose cues changed meanwhile', () => {
   }, 60000)
 })
 
+describe('a Serato save for a file Surco is converting', () => {
+  it('stays queued without touching the file and is written once the conversion is done, so neither rename eats the other', async () => {
+    const file = wav()
+    const read = await seen(file)
+    const before = readFileSync(file)
+    const converting = new Set([file])
+    const ensureClosed = vi.fn(closed)
+    const idle = { isRunning: async () => false }
+    const broadcast = vi.fn()
+    const pq = createProgramQueue(
+      {
+        program: 'serato',
+        appliedChannel: 'serato:cueQueueApplied',
+        queue: {
+          store: { read: () => null, write: () => {}, setAside: () => {} },
+          collection: () => '/Users/dj/Music/_Serato_',
+          applyBatch: (_c, ops, ensure) =>
+            applySeratoCuesBatch(ops, {
+              ensureClosed: async () => {
+                ensureClosed()
+                return ensure()
+              },
+              converting: (f) => converting.has(f),
+            }),
+          repoint: async () => [],
+          nodeStamps: async () => ({}),
+          onChange: () => {},
+          addsTracks: false,
+        },
+      },
+      {
+        broadcast,
+        settled: vi.fn(),
+        moments: { begin: vi.fn() },
+        serial: (task) => task(),
+        processes: { rekordbox: idle, engine: idle, traktor: idle, serato: idle },
+      },
+    )
+    pq.queue.enqueue([op(file, read, moved(read))])
+    expect(await pq.queue.apply(closed)).toEqual({ status: 'refused', reason: 'cancelled' })
+    expect(pq.queue.isEmpty()).toBe(false)
+    expect(ensureClosed).not.toHaveBeenCalled()
+    expect(readFileSync(file)).toEqual(before)
+    converting.delete(file)
+    expect(await pq.queue.apply(closed)).toMatchObject({ status: 'applied', tracks: 1 })
+    expect(pq.queue.isEmpty()).toBe(true)
+    expect(readFileSync(file)).not.toEqual(before)
+  }, 60000)
+})
+
 function cueEntries(file: string): Map<number, string> {
   const payload = readSeratoTrack(file)?.payload ?? new Uint8Array()
   const view = Buffer.from(payload)

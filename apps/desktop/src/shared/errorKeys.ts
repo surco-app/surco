@@ -50,6 +50,7 @@ export const ERROR_KEYS = [
   'appleMusicEntryUnread',
   'conversionCancelled',
   'verifyUnknownTrack',
+  'seratoBlocked',
 ] as const
 
 export type ErrorKey = (typeof ERROR_KEYS)[number]

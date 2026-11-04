@@ -136,8 +136,12 @@ export async function applySeratoCuesBatch(
   deps: SeratoWriteDeps & {
     ensureClosed: () => Promise<boolean>
     stillQueued?: (id: string) => boolean
+    converting?: (file: string) => boolean
   },
 ): Promise<BatchResult> {
+  const { converting } = deps
+  if (converting && ops.some((op) => op.kind === 'cues' && converting(seratoFileOf(op.contentId))))
+    return { ok: false, reason: 'cancelled' }
   const results: { outcome: OpOutcome; wrote: boolean }[] = []
   for (const op of ops) {
     if (deps.stillQueued && !deps.stillQueued(op.id)) {

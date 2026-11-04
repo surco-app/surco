@@ -97,7 +97,7 @@ export interface ProcessTrackDeps {
   // question registerActiveConversion cannot answer, since the stream-copy shortcut
   // spawns no child and so never registers one. Bracketed around everything below,
   // released in finally however the job ends.
-  beginJob: (jobId: string) => void
+  beginJob: (jobId: string, path: string) => void
   endJob: (jobId: string) => void
   // The trail a crash or force-quit mid-encode leaves for the next launch to
   // sweep — trackTmp fires the instant convertAudio picks its temp path, untrackTmp
@@ -525,6 +525,7 @@ export async function runProcessTrack(
   // Before any side effect: metadata that never came from the file (see ProcessJob.metaUnread)
   // would be written empty over whatever the file still carries.
   if (job.metaUnread) throw errorWithKey('sourceTagsUnread', job.inputPath)
+  if (job.fromSerato) throw errorWithKey('seratoBlocked', job.inputPath)
   const { settings } = deps
   const stage = (s: ProcessStage): void => deps.sendProgress(s)
   if (deps.isAllowed && !deps.isAllowed(job.inputPath)) throw errorWithKey('pathNotAllowed')
@@ -550,7 +551,7 @@ export async function runProcessTrack(
   // The path reserved via deps.reservePath, if any — released in finally regardless
   // of how the job ends.
   let reserved: string | undefined
-  deps.beginJob(job.id)
+  deps.beginJob(job.id, job.inputPath)
   try {
     if (deps.hasCoverSource(job)) {
       stage('cover')

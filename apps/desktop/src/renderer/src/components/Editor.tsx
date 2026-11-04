@@ -986,7 +986,7 @@ export const Editor = memo(function Editor({
   const replaceMode = isMulti ? selectionReplaceMode(libraryIndex, multiTracks) : 'replace'
   const mixedReplace = replaceMode === 'mixed'
   const incomplete = seratoRows || missing.length > 0 || mixedReplace
-  const seratoReason = seratoRows ? [tr('editor.seratoBlocked')] : []
+  const seratoReason = seratoRows ? [tr('errors.seratoBlocked')] : []
   const otherReason = missing.length
     ? tr('editor.missingRequired', {
         fields: missing.map((key) => tr(`fields.${key}`)).join(', '),

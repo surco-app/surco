@@ -310,6 +310,18 @@ describe('runProcessTrack — metadata that never came from the file', () => {
   })
 })
 
+describe('runProcessTrack — a row opened from Serato', () => {
+  it('refuses it before touching anything, with the reason the editor gives, since Serato would lose the track and its cues', async () => {
+    const deps = makeDeps()
+    const err = await runProcessTrack(job({ fromSerato: true }), deps).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(Error)
+    expect(errorKeyOf((err as Error).message)).toBe('seratoBlocked')
+    expect(deps.beginJob).not.toHaveBeenCalled()
+    expect(deps.convertAudio).not.toHaveBeenCalled()
+    expect(deps.prepareProcessedCover).not.toHaveBeenCalled()
+  })
+})
+
 // A failed conversion reached the user only as a toast: nothing in main.log, so a report
 // of "-83 on rename" from an external disk arrived with no evidence beyond a screenshot,
 // and the "Send feedback" report, which attaches the log's error lines, carried none.
@@ -796,7 +808,7 @@ describe('runProcessTrack — cancel reaches the running encode', () => {
 
     await runProcessTrack(job(), deps)
 
-    expect(deps.beginJob).toHaveBeenCalledWith('job1')
+    expect(deps.beginJob).toHaveBeenCalledWith('job1', job().inputPath)
     expect(deps.endJob).toHaveBeenCalledWith('job1')
     const begun = (deps.beginJob as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0]
     const ended = (deps.endJob as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0]
