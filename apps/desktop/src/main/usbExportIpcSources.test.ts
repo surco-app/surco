@@ -239,4 +239,19 @@ describe('registerUsbExportIpc with Serato and Traktor', () => {
         traktor: traktor.memory,
       })
   })
+
+  it('never asks baken to prune or copy My Settings from Serato or Traktor, whatever the request says, since deleting music from the stick is not theirs to do', async () => {
+    const { exporters } = register({
+      serato: { roots: () => [ROOT] },
+      traktor: { nml: () => '/t/c.nml', bootVolume: () => 'HD' },
+    })
+    const [serato, traktor, rekordbox] = exporters
+    const loud = { ...req(), prune: true, settings: true }
+    await handlerFor('usb:plan')({}, { ...loud, source: 'serato' })
+    await handlerFor('usb:export')({ sender: {} }, { ...loud, source: 'traktor' })
+    await handlerFor('usb:plan')({}, loud)
+    expect(serato.plan).toHaveBeenCalledWith({ ...req(), source: 'serato' })
+    expect(traktor.start).toHaveBeenCalledWith({ ...req(), source: 'traktor' })
+    expect(rekordbox.plan).toHaveBeenCalledWith(loud)
+  })
 })

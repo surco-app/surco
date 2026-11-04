@@ -231,7 +231,16 @@ export function registerUsbExportIpc(opts: {
       identity: () => null,
       masterPlaylistsXml: async () => null,
     })
-    return { ...exporter, plan: latestPlanOnly((req) => exporter.plan(req)) }
+    const quiet = (req: UsbExportRequest): UsbExportRequest => ({
+      ...req,
+      prune: false,
+      settings: false,
+    })
+    return {
+      ...exporter,
+      plan: latestPlanOnly((req) => exporter.plan(quiet(req))),
+      start: (req) => exporter.start(quiet(req)),
+    }
   }
   const factsOf = (file: string) =>
     stat(file)
