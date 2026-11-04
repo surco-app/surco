@@ -152,6 +152,28 @@ describe('readTraktorExportSelection', () => {
     expect(sel.playlists[0].trackIds).toHaveLength(1)
     expect(sel.tracks).toHaveLength(1)
   })
+
+  it('gives one id and one entry to the same file written in NFD and in NFC, as macOS may hand either', async () => {
+    const nfc: Track = { file: 'Canción.wav'.normalize('NFC'), title: 'Composed' }
+    const nfd: Track = { file: 'Canción.wav'.normalize('NFD'), title: 'Decomposed' }
+    const sel = await readTraktorExportSelection(
+      nml([nfd, nfc], [playlist('One', 'p5', [nfd]), playlist('Two', 'p6', [nfc])]),
+      ['p5', 'p6'],
+      deps,
+    )
+    expect(sel.tracks).toHaveLength(1)
+    expect(sel.playlists[1].trackIds).toEqual(sel.playlists[0].trackIds)
+  })
+
+  it('reads a track on a Windows drive as a Windows path', async () => {
+    const win: Track = { file: 'w.wav', volume: 'C:', dir: '/:Users/:dj/:Music/:' }
+    const sel = await readTraktorExportSelection(
+      nml([win], [playlist('Win', 'p7', [win])]),
+      ['p7'],
+      deps,
+    )
+    expect(sel.tracks[0].path).toBe('C:\\Users\\dj\\Music\\w.wav')
+  })
 })
 
 describe('traktorExportDelta', () => {

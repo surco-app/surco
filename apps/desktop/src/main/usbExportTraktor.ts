@@ -1,7 +1,5 @@
-import { HOT_KINDS } from '../shared/cueRules'
-import { TRAKTOR_HOT_OFFSET, TRAKTOR_SLOTS } from '../shared/traktorContent'
 import { rekordboxShiftOfFile } from './rekordboxTimeline'
-import { traktorCueElements, traktorGridOf } from './traktorCues'
+import { traktorCueElements, traktorGridOf, traktorHotKind } from './traktorCues'
 import { attr, findEntries } from './traktorNml'
 import { nodeById, parsePlaylists } from './traktorPlaylistModel'
 import { readTraktorTree, traktorFileOf } from './traktorPlaylists'
@@ -30,11 +28,6 @@ export async function traktorExportDelta(file: string): Promise<number | null> {
   return (await rekordboxShiftOfFile(file, 44100)) - lead
 }
 
-function kindOf(hotcue: number): number {
-  if (hotcue < 1 || hotcue > TRAKTOR_SLOTS.kinds.length) return 0
-  return HOT_KINDS[hotcue - TRAKTOR_HOT_OFFSET]
-}
-
 function cuesOf(block: string): ForeignCue[] {
   return traktorCueElements(block).flatMap(({ element }): ForeignCue[] => {
     const type = Number(attr(element, 'TYPE'))
@@ -45,7 +38,7 @@ function cuesOf(block: string): ForeignCue[] {
     return [
       {
         ms,
-        kind: kindOf(Number(attr(element, 'HOTCUE') || '-1')),
+        kind: traktorHotKind(Number(attr(element, 'HOTCUE') || '-1')) ?? 0,
         name: name === EMPTY_NAME ? '' : name,
         ...(type === LOOP_TYPE && len > 0 && { endMs: ms + len }),
       },

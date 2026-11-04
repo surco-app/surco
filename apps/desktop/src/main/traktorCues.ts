@@ -48,6 +48,11 @@ export function traktorCuesIntact(block: string): boolean {
   )
 }
 
+export function traktorHotKind(hotcue: number): number | null {
+  if (hotcue <= 0 || hotcue > TRAKTOR_SLOTS.kinds.length) return null
+  return HOT_KINDS[hotcue - TRAKTOR_HOT_OFFSET] ?? null
+}
+
 // Each CUE_V2 is named by its place in the ENTRY, which stays unique where the button
 // would not (every cue without one shares HOTCUE="-1"). Button 1 and the grid marker are Traktor's
 // and stay out. A cue the DJ typed as fade, load or loop is marked loop, the flag the cue
@@ -57,9 +62,8 @@ export function traktorCueRows(block: string): TraktorCueRow[] {
     const type = Number(attr(el.element, 'TYPE'))
     const hotcue = Number(attr(el.element, 'HOTCUE') || '-1')
     // Traktor has no CALL: a cue without a button is the DJ's own marker, left untouched.
-    if (hotcue <= 0 || hotcue > TRAKTOR_SLOTS.kinds.length) return []
-    const kind = HOT_KINDS[hotcue - TRAKTOR_HOT_OFFSET]
-    if (kind === undefined) return []
+    const kind = traktorHotKind(hotcue)
+    if (kind === null) return []
     return [
       {
         ...el,
