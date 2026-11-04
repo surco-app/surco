@@ -527,6 +527,12 @@ function Editing({
   const needsFix =
     offsets !== null && Math.max(Math.abs(offsets.hereMs), Math.abs(offsets.endMs)) > tolerance
   const setGrid = (next: EditableGrid) => dispatch({ type: 'set-grid', grid: next })
+  const fitGridTo = (next: EditableGrid) =>
+    dispatch({
+      type: 'fit-grid',
+      grid: next,
+      beats: gridBeats(next, read.durationMs).map((b) => b.ms),
+    })
   const [menu, setMenu] = useState<{ ms: number; x: number; y: number } | null>(null)
   const [markMenu, setMarkMenu] = useState<{
     key: string
@@ -1825,6 +1831,7 @@ function Editing({
               needsFix={needsFix}
               playheadMs={playheadMs}
               onChange={setGrid}
+              onFit={fitGridTo}
               onDone={focusEditor}
               zones={rekordboxGrid}
             />

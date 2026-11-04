@@ -1920,7 +1920,10 @@ y no se guarda hasta «Guardar».
 **Auto** mide los golpes del audio por tramos de 32 golpes y toma la mediana de los tramos
 cercanos al cabezal; un tramo suelto mal medido no decide. El BPM se corrige con la pendiente
 mediana de esos tramos a lo largo de la pista (`fitGrid`, `shared/gridEdit.ts:249`). Si el BPM
-del detector es el doble o la mitad, conserva el del DJ y solo corrige la fase.
+del detector es el doble o la mitad, conserva el del DJ y solo corrige la fase. Auto lleva
+además cada cue a su golpe más cercano de la rejilla nueva, salvo los loops bloqueados; mover
+la rejilla a mano deja los cues donde están. Rejilla y cues se deshacen juntos con un ⌘Z
+(`fit-grid`, `lib/cueDraft.ts`).
 
 **Zonas, solo en rekordbox.** Una rejilla con varios tempos o un compás que se reinicia se lee
 como hasta 8 zonas, cada una con su tempo y su ancla; todo edita la zona bajo el cabezal y

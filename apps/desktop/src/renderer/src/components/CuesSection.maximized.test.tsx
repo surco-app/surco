@@ -1703,6 +1703,22 @@ describe('CuesSection maximized grid', () => {
     expect(screen.getByTestId('cues-grid-auto')).not.toHaveAttribute('data-needs-fix')
   })
 
+  it('carries the cues onto the beats Auto fits, since cues set on a late grid fire late in the booth', async () => {
+    setup({ cueLettersByTime: false }, READ, { rekordboxGridFit: fitAt(454) })
+    await maximize()
+    key('ArrowRight')
+    key('m')
+    expect(screen.getByTestId('cue-wave-call-32000')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByTestId('cues-grid-auto')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('cues-grid-auto'))
+    expect(bars()).toContain(31954)
+    expect(screen.getByTestId('cue-wave-call-31954')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-offgrid')).not.toBeInTheDocument()
+    key('z', { metaKey: true })
+    expect(bars()).toContain(32000)
+    expect(screen.getByTestId('cue-wave-call-32000')).toBeInTheDocument()
+  })
+
   it('keeps Auto calm when the grid already sits within the tolerance', async () => {
     setup(null, READ, { rekordboxGridFit: fitAt(5) })
     await maximize()

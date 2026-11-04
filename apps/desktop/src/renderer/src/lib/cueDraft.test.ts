@@ -1306,3 +1306,36 @@ describe('bringing cues onto their beat', () => {
     expect(s.cues).toEqual(start.cues)
   })
 })
+
+describe('fitting the grid to the beats', () => {
+  const onOldGrid = (): CueDraft =>
+    startDraft(
+      [
+        { id: 'call', ms: 32000, kind: 0, color: null },
+        { id: 'b', ms: 64000, kind: 2, color: 22 },
+        { id: 'loop', ms: 96000, kind: 3, color: 1 },
+      ],
+      'mine',
+      ['loop'],
+      { bpm: 120, anchorMs: 0 },
+    )
+  const fitted = { bpm: 120, anchorMs: 46 }
+  const fittedBeats = beats.map((ms) => ms + 46)
+
+  it('carries the cues onto the fitted beats, since a cue set on the old grid misses the beat the DJ now hears', () => {
+    const s = run(onOldGrid(), { type: 'fit-grid', grid: fitted, beats: fittedBeats })
+    expect(s.grid).toEqual(fitted)
+    expect(s.cues.map((c) => [c.key, c.ms])).toEqual([
+      ['call', 32046],
+      ['b', 64046],
+      ['loop', 96000],
+    ])
+  })
+
+  it('takes the grid and the cues back in one undo', () => {
+    const start = onOldGrid()
+    const s = run(start, { type: 'fit-grid', grid: fitted, beats: fittedBeats }, { type: 'undo' })
+    expect(s.grid).toEqual(start.grid)
+    expect(s.cues).toEqual(start.cues)
+  })
+})

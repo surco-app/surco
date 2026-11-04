@@ -21,6 +21,7 @@ beforeEach(async () => {
 function setup(over: Partial<React.ComponentProps<typeof CueGridControls>> = {}) {
   const onChange = vi.fn<(grid: EditableGrid) => void>()
   const onDone = vi.fn<() => void>()
+  const onFit = vi.fn<(grid: EditableGrid) => void>()
   render(
     <CueGridControls
       grid={{ bpm: 150, anchorMs: 46 }}
@@ -29,11 +30,12 @@ function setup(over: Partial<React.ComponentProps<typeof CueGridControls>> = {})
       needsFix={false}
       playheadMs={4046}
       onChange={onChange}
+      onFit={onFit}
       onDone={onDone}
       {...over}
     />,
   )
-  return Object.assign(onChange, { onDone })
+  return Object.assign(onChange, { onDone, onFit })
 }
 
 const lastGrid = (onChange: ReturnType<typeof setup>) => onChange.mock.calls.at(-1)?.[0]
@@ -137,13 +139,14 @@ describe('CueGridControls', () => {
     expect(screen.getByTestId('cues-grid-auto')).toBeDisabled()
   })
 
-  it('lights Auto when the grid misses the beats and fits it on click', () => {
+  it('lights Auto when the grid misses the beats and fits it on click, as a fit and not a plain move, so the cues follow it', () => {
     const fit = { bpm: 150, firstMs: 10 }
     const onChange = setup({ fit, needsFix: true })
     const auto = screen.getByTestId('cues-grid-auto')
     expect(auto).toHaveAttribute('data-needs-fix', 'true')
     fireEvent.click(auto)
-    expect(lastGrid(onChange)).toEqual(fitGrid({ bpm: 150, anchorMs: 46 }, fit))
+    expect(onChange.onFit).toHaveBeenCalledWith(fitGrid({ bpm: 150, anchorMs: 46 }, fit))
+    expect(onChange).not.toHaveBeenCalled()
   })
 
   it('stays visible but greyed out with the reason when the grid cannot be edited, never vanishing', () => {
@@ -160,6 +163,7 @@ describe('CueGridControls', () => {
       fireEvent.click(button)
     }
     expect(onChange).not.toHaveBeenCalled()
+    expect(onChange.onFit).not.toHaveBeenCalled()
   })
 
   it('treats a missing grid like a disabled one', () => {
@@ -225,7 +229,7 @@ describe('CueGridControls', () => {
     }
     const onChange = setup({ fit, needsFix: true, playheadMs: 4046 })
     fireEvent.click(screen.getByTestId('cues-grid-auto'))
-    expect(lastGrid(onChange)).toEqual({ bpm: 150, anchorMs: 25 })
+    expect(onChange.onFit).toHaveBeenCalledWith({ bpm: 150, anchorMs: 25 })
   })
 
   it('opens a zone at the playhead with the anchor button, and closes it when pressed again there', () => {

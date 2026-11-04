@@ -88,6 +88,7 @@ export type DraftAction =
   | { type: 'redo' }
   | { type: 'set-grid'; grid: EditableGrid }
   | { type: 'snap-to-beat'; keys: string[] }
+  | { type: 'fit-grid'; grid: EditableGrid; beats: number[] }
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
 const isHot = (c: { kind: number }): boolean => c.kind !== 0
@@ -533,6 +534,13 @@ function step(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft
     )
     if (moved.every((c, i) => c.ms === state.cues[i].ms)) return state
     return commit(state, moved, { edited: [...state.edited, ...keys] })
+  }
+  if (action.type === 'fit-grid') {
+    const moved = state.cues.map((c) =>
+      state.locked.includes(c.key) ? c : { ...c, ms: nearestBeatMs(c.ms, action.beats) },
+    )
+    const keys = moved.filter((c, i) => c.ms !== state.cues[i].ms).map((c) => c.key)
+    return commit(state, moved, { grid: action.grid, edited: [...state.edited, ...keys] })
   }
   if (action.type === 'set-grid')
     return { ...state, grid: action.grid, past: [...state.past, snapshot(state)], future: [] }

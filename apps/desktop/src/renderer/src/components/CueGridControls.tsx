@@ -50,6 +50,7 @@ export function CueGridControls({
   needsFix,
   playheadMs,
   onChange,
+  onFit,
   onDone,
   zones = true,
 }: {
@@ -59,6 +60,7 @@ export function CueGridControls({
   needsFix: boolean
   playheadMs: number
   onChange: (grid: EditableGrid) => void
+  onFit: (grid: EditableGrid) => void
   onDone?: () => void
   zones?: boolean
 }): React.JSX.Element {
@@ -264,7 +266,7 @@ export function CueGridControls({
         data-needs-fix={needsFix && !off ? 'true' : undefined}
         title={tr('editor.cues.grid.autoHint')}
         disabled={off || fit === null}
-        onClick={() => grid && fit && onChange(fitGrid(grid, fit, playheadMs))}
+        onClick={() => grid && fit && onFit(fitGrid(grid, fit, playheadMs))}
         className="press ml-1 flex h-7 items-center rounded-md border border-[var(--color-line-strong)] px-2 text-xs font-medium text-fg-muted transition-colors hover:bg-[var(--color-hover)] disabled:opacity-40 data-[needs-fix=true]:border-[var(--color-accent)] data-[needs-fix=true]:bg-[var(--color-accent)] data-[needs-fix=true]:font-semibold data-[needs-fix=true]:text-[var(--color-on-accent)]"
       >
         {tr('editor.cues.grid.auto')}
