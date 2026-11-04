@@ -2590,8 +2590,9 @@ export default function App(): React.JSX.Element {
       onDropTracks: dropOnRekordbox,
       onRename: renameInRekordbox,
       onDelete: deleteInRekordbox,
+      ...(sourceProgram && SOURCE_PROGRAMS[sourceProgram].crates && { crates: true as const }),
     }),
-    [createInRekordbox, dropOnRekordbox, renameInRekordbox, deleteInRekordbox],
+    [createInRekordbox, dropOnRekordbox, renameInRekordbox, deleteInRekordbox, sourceProgram],
   )
   // Read at drop time, so a re-read landing mid-drag still names the dragged rows. A track
   // row stands for every row it has in the playlist (the list shows it once), so all of them
@@ -3326,7 +3327,7 @@ export default function App(): React.JSX.Element {
                     missing={browser.libraryMissing}
                     notice={
                       browser.source === 'serato' && seratoRunning
-                        ? tr('editor.cues.serato.running')
+                        ? tr('editor.cues.serato.waiting')
                         : undefined
                     }
                     selectedId={browser.playlist?.id ?? null}

@@ -999,7 +999,6 @@
         "saveAll_other": "{{count}} Titel in Engine DJ speichern"
       },
       "serato": {
-        "running": "Serato ist geöffnet. Die Cues sind vielleicht nicht aktuell, bis du es schließt.",
         "unreadable": "Die Cues aus Serato konnten nicht gelesen werden",
         "save": "In Serato speichern",
         "unanalysed": "Serato hat diesen Titel noch nicht analysiert",
@@ -2288,7 +2287,8 @@
         "readOnly": "Die rekordbox-Sammlung ist schreibgeschützt, nichts geändert",
         "stale": "Die Playlist hat sich in rekordbox geändert. Prüfe sie und versuche es erneut",
         "noSeparator": "Deine Sammlung hat keinen Trenner zum Kopieren",
-        "writeUnknown": "Die Änderung ließ sich weder speichern noch rückgängig machen, die Sammlung kann sich also geändert haben. Verschiebe vor dem Öffnen von rekordbox master.db-wal und master.db-shm aus dem Ordner und ersetze dann master.db durch die Kopie master.db.surco-backup unter Einstellungen → Erweitert → Sicherungen der Sammlungen"
+        "writeUnknown": "Die Änderung ließ sich weder speichern noch rückgängig machen, die Sammlung kann sich also geändert haben. Verschiebe vor dem Öffnen von rekordbox master.db-wal und master.db-shm aus dem Ordner und ersetze dann master.db durch die Kopie master.db.surco-backup unter Einstellungen → Erweitert → Sicherungen der Sammlungen",
+        "badName": "Dieser Name ist für eine Playlist nicht zulässig. Er darf nicht leer sein und nicht doppelt vorkommen"
       }
     },
     "editTraktor": {
@@ -2310,7 +2310,8 @@
         "readOnly": "Die Traktor-Sammlung ist schreibgeschützt, nichts geändert",
         "stale": "Die Playlist hat sich in Traktor geändert. Prüfe sie und versuche es erneut",
         "noSeparator": "Deine Sammlung hat keinen Trenner zum Kopieren",
-        "writeUnknown": "Die Änderung konnte weder gespeichert noch rückgängig gemacht werden, die Collection könnte sich also geändert haben. Ersetze vor dem Öffnen von Traktor collection.nml durch die Kopie collection.nml.surco-backup unter Einstellungen → Erweitert → Sicherungen der Sammlungen"
+        "writeUnknown": "Die Änderung konnte weder gespeichert noch rückgängig gemacht werden, die Collection könnte sich also geändert haben. Ersetze vor dem Öffnen von Traktor collection.nml durch die Kopie collection.nml.surco-backup unter Einstellungen → Erweitert → Sicherungen der Sammlungen",
+        "badName": "Dieser Name ist für eine Playlist nicht zulässig. Er darf nicht leer sein und nicht doppelt vorkommen"
       }
     },
     "tree": {
@@ -2333,7 +2334,13 @@
       "playlists_other": "{{count}} Playlists",
       "folders_one": "{{count}} Ordner",
       "folders_other": "{{count}} Ordner",
-      "and": " und "
+      "and": " und ",
+      "newCrate": "Neues Crate",
+      "newCrateInside": "Neues Crate darin",
+      "deleteCrateTitle": "Aus Serato löschen",
+      "deleteCrate": "Crate „{{name}}“ löschen? Die Titel bleiben in Serato.",
+      "deleteCrateWithSubcrates_one": "Crate „{{name}}“ und sein Subcrate löschen? Die Titel bleiben in Serato.",
+      "deleteCrateWithSubcrates_other": "Crate „{{name}}“ und seine {{count}} Subcrates löschen? Die Titel bleiben in Serato."
     },
     "reorder": {
       "removeSeparator": "Trenner entfernen",
@@ -2344,6 +2351,29 @@
       "insertSeparator": "Trenner darüber einfügen",
       "removeFrom": "Aus „{{name}}“ entfernen",
       "removeSeparatorAbove": "Trenner darüber entfernen"
+    },
+    "editSerato": {
+      "added_one": "{{count}} Titel zu „{{name}}“ hinzugefügt",
+      "added_other": "{{count}} Titel zu „{{name}}“ hinzugefügt",
+      "noneAdded": "Keine Titel zu „{{name}}“ hinzugefügt",
+      "already_one": "{{count}} war schon im Crate",
+      "already_other": "{{count}} waren schon im Crate",
+      "notInCollection_one": "{{count}} liegt auf einem anderen Laufwerk oder existiert nicht mehr",
+      "notInCollection_other": "{{count}} liegen auf einem anderen Laufwerk oder existieren nicht mehr",
+      "ambiguous_one": "{{count}} ist doppelt in der Bibliothek und Surco weiß nicht, welcher gilt",
+      "ambiguous_other": "{{count}} sind doppelt in der Bibliothek und Surco weiß nicht, welche gelten",
+      "refused": {
+        "cancelled": "Serato ist noch geöffnet. Die Änderung wird beim Schließen angewendet",
+        "running": "Serato wurde vor dem Speichern geöffnet. Die Änderung wird beim Schließen angewendet",
+        "unreadable": "Surco kann die Dateien der Serato-Bibliothek gerade nicht ändern, nichts geändert",
+        "backupFailed": "Die Bibliothek konnte vorher nicht gesichert werden, nichts geändert",
+        "writeFailed": "Die Änderung konnte nicht gespeichert werden. Die Bibliothek ist unverändert",
+        "readOnly": "Die Serato-Bibliothek ist schreibgeschützt, nichts geändert",
+        "stale": "Das Crate hat sich in Serato geändert. Prüfe es und versuche es erneut",
+        "noSeparator": "Deine Bibliothek hat keinen Trenner zum Kopieren",
+        "writeUnknown": "Die Änderung ließ sich weder speichern noch rückgängig machen, die Bibliothek kann sich also geändert haben. Ersetze vor dem Öffnen von Serato die Crate-Dateien durch die Kopien unter Einstellungen → Erweitert → Sammlungs-Backups",
+        "badName": "Dieser Name ist für ein Crate nicht zulässig. Er darf nicht leer sein, nicht doppelt vorkommen und weder / noch %% enthalten"
+      }
     }
   },
   "engineIssue": {
@@ -2913,8 +2943,8 @@
     "applied_other": "Fertig in Serato · {{count}} Titel",
     "appliedChanges_one": "Fertig in Serato · {{count}} Änderung",
     "appliedChanges_other": "Fertig in Serato · {{count}} Änderungen",
-    "writeFailed": "Die Cues konnten nicht in Serato gespeichert werden. Die Dateien sind unverändert",
-    "discardConfirm": "Wartendes verwerfen? Deine Serato-Cues bleiben, wie Serato sie hat",
+    "writeFailed": "Die Änderungen konnten nicht in Serato gespeichert werden. Die Dateien sind unverändert",
+    "discardConfirm": "Wartendes verwerfen? Serato bleibt, wie es ist",
     "notice": {
       "cuesChanged": "Die Cues von {{track}} haben sich in Serato geändert. Markiere sie erneut",
       "callsDropped_one": "{{count}} CALL von {{track}} wurde nicht gespeichert ({{times}}). Serato speichert nur Hot Cues",

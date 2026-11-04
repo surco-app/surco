@@ -81,6 +81,7 @@ export function SourceTree({
     onDropTracks: (node: SourceNode, files: File[]) => void
     onRename: (node: SourceNode, name: string) => void
     onDelete: (node: SourceNode) => void
+    crates?: true
   }
   // Playlists the library keeps for itself (Traktor's Preparation, HISTORY…): 'tracks-only'
   // takes tracks but is never renamed or deleted; 'locked' takes nothing.
@@ -168,6 +169,13 @@ export function SourceTree({
     setRenaming(null)
   }
   const deleteMessage = (node: SourceNode): string => {
+    if (edit?.crates) {
+      const { playlists, folders } = subtreeCounts(node)
+      const subcrates = playlists + folders
+      return subcrates > 0
+        ? tr('sources.tree.deleteCrateWithSubcrates', { name: node.name, count: subcrates })
+        : tr('sources.tree.deleteCrate', { name: node.name })
+    }
     if (node.kind === 'playlist') return tr('sources.tree.deletePlaylist', { name: node.name })
     const { playlists, folders } = subtreeCounts(node)
     const contents = [
@@ -348,7 +356,7 @@ export function SourceTree({
             )}
           </button>
         )}
-        {isFolder && open && (
+        {((isFolder && open) || creating?.parentId === node.id) && (
           <ul>
             {(node.children ?? []).map((c) => row(c, depth + 1, [...folders, node.name]))}
             {nameField(node.id, depth + 1)}
@@ -443,23 +451,29 @@ export function SourceTree({
                 <button
                   type="button"
                   data-testid="source-tree-new-playlist"
-                  aria-label={tr('sources.tree.newPlaylist')}
+                  aria-label={tr(
+                    edit.crates ? 'sources.tree.newCrate' : 'sources.tree.newPlaylist',
+                  )}
                   onClick={() => startCreating('root', false)}
                   className="rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
                 >
                   <ListPlus size={14} aria-hidden="true" />
-                  <Tooltip label={tr('sources.tree.newPlaylist')} />
+                  <Tooltip
+                    label={tr(edit.crates ? 'sources.tree.newCrate' : 'sources.tree.newPlaylist')}
+                  />
                 </button>
-                <button
-                  type="button"
-                  data-testid="source-tree-new-folder"
-                  aria-label={tr('sources.tree.newFolder')}
-                  onClick={() => startCreating('root', true)}
-                  className="rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
-                >
-                  <FolderPlus size={14} aria-hidden="true" />
-                  <Tooltip label={tr('sources.tree.newFolder')} />
-                </button>
+                {!edit.crates && (
+                  <button
+                    type="button"
+                    data-testid="source-tree-new-folder"
+                    aria-label={tr('sources.tree.newFolder')}
+                    onClick={() => startCreating('root', true)}
+                    className="rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
+                  >
+                    <FolderPlus size={14} aria-hidden="true" />
+                    <Tooltip label={tr('sources.tree.newFolder')} />
+                  </button>
+                )}
               </>
             )}
           </span>
@@ -506,7 +520,7 @@ export function SourceTree({
             style={{ top: menuAt.y, left: menuAt.x }}
             className="absolute min-w-[190px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
           >
-            {menu.node.kind === 'folder' && (
+            {(menu.node.kind === 'folder' || edit?.crates) && (
               <>
                 <button
                   type="button"
@@ -515,17 +529,21 @@ export function SourceTree({
                   onClick={() => createInside(menu.node, false)}
                   className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
                 >
-                  {tr('sources.tree.newPlaylistInside')}
+                  {tr(
+                    edit?.crates ? 'sources.tree.newCrateInside' : 'sources.tree.newPlaylistInside',
+                  )}
                 </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  data-testid="source-tree-new-folder-inside"
-                  onClick={() => createInside(menu.node, true)}
-                  className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
-                >
-                  {tr('sources.tree.newFolderInside')}
-                </button>
+                {!edit?.crates && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    data-testid="source-tree-new-folder-inside"
+                    onClick={() => createInside(menu.node, true)}
+                    className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+                  >
+                    {tr('sources.tree.newFolderInside')}
+                  </button>
+                )}
               </>
             )}
             <button
@@ -555,7 +573,7 @@ export function SourceTree({
       <ModalExit>
         {deleting && (
           <ConfirmDialog
-            title={tr('sources.tree.deleteTitle')}
+            title={tr(edit?.crates ? 'sources.tree.deleteCrateTitle' : 'sources.tree.deleteTitle')}
             message={deleteMessage(deleting)}
             confirmLabel={tr('sources.tree.delete')}
             destructive

@@ -999,7 +999,6 @@
         "saveAll_other": "{{count}} トラックを Engine DJ に保存"
       },
       "serato": {
-        "running": "Serato が開いています。閉じるまでキューが最新でない可能性があります。",
         "unreadable": "Serato からキューを読み取れませんでした",
         "save": "Serato に保存",
         "unanalysed": "Serato はまだこのトラックを解析していません",
@@ -2288,7 +2287,8 @@
         "readOnly": "rekordbox コレクションは読み取り専用のため、何も変更されていません",
         "stale": "rekordbox でプレイリストが変更されました。確認してもう一度お試しください",
         "noSeparator": "コレクションにコピーできる区切り線がありません",
-        "writeUnknown": "変更を保存も取り消しもできなかったため、コレクションが変更されている可能性があります。rekordbox を開く前に、master.db-wal と master.db-shm をそのフォルダーの外へ移動し、設定 → 詳細 → コレクションのバックアップ にあるコピー master.db.surco-backup で master.db を置き換えてください"
+        "writeUnknown": "変更を保存も取り消しもできなかったため、コレクションが変更されている可能性があります。rekordbox を開く前に、master.db-wal と master.db-shm をそのフォルダーの外へ移動し、設定 → 詳細 → コレクションのバックアップ にあるコピー master.db.surco-backup で master.db を置き換えてください",
+        "badName": "この名前はプレイリストには使えません。空にすることも、重複させることもできません"
       }
     },
     "editTraktor": {
@@ -2310,7 +2310,8 @@
         "readOnly": "Traktor コレクションは読み取り専用のため、何も変更されていません",
         "stale": "Traktor でプレイリストが変更されました。確認してもう一度お試しください",
         "noSeparator": "コレクションにコピーできる区切り線がありません",
-        "writeUnknown": "変更を保存も取り消しもできなかったため、コレクションが変更されている可能性があります。Traktor を開く前に、設定 → 詳細 → コレクションのバックアップ にあるコピー collection.nml.surco-backup で collection.nml を置き換えてください"
+        "writeUnknown": "変更を保存も取り消しもできなかったため、コレクションが変更されている可能性があります。Traktor を開く前に、設定 → 詳細 → コレクションのバックアップ にあるコピー collection.nml.surco-backup で collection.nml を置き換えてください",
+        "badName": "この名前はプレイリストには使えません。空にすることも、重複させることもできません"
       }
     },
     "tree": {
@@ -2333,7 +2334,13 @@
       "playlists_other": "{{count}} 個のプレイリスト",
       "folders_one": "{{count}} 個のフォルダー",
       "folders_other": "{{count}} 個のフォルダー",
-      "and": "と"
+      "and": "と",
+      "newCrate": "新規クレート",
+      "newCrateInside": "中に新規クレート",
+      "deleteCrateTitle": "Serato から削除",
+      "deleteCrate": "クレート「{{name}}」を削除しますか？トラックは Serato に残ります。",
+      "deleteCrateWithSubcrates_one": "クレート「{{name}}」とそのサブクレートを削除しますか？トラックは Serato に残ります。",
+      "deleteCrateWithSubcrates_other": "クレート「{{name}}」とその {{count}} 個のサブクレートを削除しますか？トラックは Serato に残ります。"
     },
     "reorder": {
       "removeSeparator": "区切り線を削除",
@@ -2344,6 +2351,29 @@
       "insertSeparator": "上に区切り線を挿入",
       "removeFrom": "「{{name}}」から削除",
       "removeSeparatorAbove": "上の区切り線を削除"
+    },
+    "editSerato": {
+      "added_one": "「{{name}}」に {{count}} 件のトラックを追加しました",
+      "added_other": "「{{name}}」に {{count}} 件のトラックを追加しました",
+      "noneAdded": "「{{name}}」にトラックは追加されませんでした",
+      "already_one": "{{count}} 件はすでにクレートにありました",
+      "already_other": "{{count}} 件はすでにクレートにありました",
+      "notInCollection_one": "{{count}} 件は別のディスクにあるか、すでに存在しません",
+      "notInCollection_other": "{{count}} 件は別のディスクにあるか、すでに存在しません",
+      "ambiguous_one": "{{count}} 件はライブラリに重複して存在し、Surco はどちらを使うか判断できません",
+      "ambiguous_other": "{{count}} 件はライブラリに重複して存在し、Surco はどちらを使うか判断できません",
+      "refused": {
+        "cancelled": "Serato がまだ開いています。閉じたときに変更が適用されます",
+        "running": "保存前に Serato が開かれました。閉じたときに変更が適用されます",
+        "unreadable": "現在 Surco は Serato のライブラリファイルを変更できないため、何も変更されていません",
+        "backupFailed": "先にライブラリをバックアップできなかったため、何も変更されていません",
+        "writeFailed": "変更を保存できませんでした。ライブラリは元のままです",
+        "readOnly": "Serato のライブラリは読み取り専用のため、何も変更されていません",
+        "stale": "Serato でクレートが変更されました。確認してもう一度お試しください",
+        "noSeparator": "ライブラリにコピーできる区切り線がありません",
+        "writeUnknown": "変更を保存も取り消しもできなかったため、ライブラリが変更されている可能性があります。Serato を開く前に、クレートのファイルを、設定 → 詳細 → コレクションのバックアップ にあるコピーで置き換えてください",
+        "badName": "この名前はクレートには使えません。空にすることも、重複させることも、/ や %% を含めることもできません"
+      }
     }
   },
   "engineIssue": {
@@ -2913,8 +2943,8 @@
     "applied_other": "Serato に反映しました · {{count}} トラック",
     "appliedChanges_one": "Serato に反映しました · {{count}} 件の変更",
     "appliedChanges_other": "Serato に反映しました · {{count}} 件の変更",
-    "writeFailed": "Serato にキューを保存できませんでした。ファイルは元のままです",
-    "discardConfirm": "待機中の内容を破棄しますか？Serato のキューは Serato の状態のままです",
+    "writeFailed": "Serato に変更を保存できませんでした。ファイルは元のままです",
+    "discardConfirm": "待機中の内容を破棄しますか？Serato は今の状態のままです",
     "notice": {
       "cuesChanged": "{{track}} のキューが Serato で変更されました。もう一度マークしてください",
       "callsDropped_one": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。Serato はホットキューしか保持しません",

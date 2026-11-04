@@ -754,3 +754,87 @@ describe('SourceTree All tracks', () => {
     expect(onOuterDrop).not.toHaveBeenCalled()
   })
 })
+
+describe('SourceTree on Serato crates', () => {
+  const CRATES: SourceNode[] = [
+    {
+      id: 'A',
+      name: 'A',
+      kind: 'folder',
+      count: 2,
+      children: [
+        {
+          id: 'A%%B',
+          name: 'B',
+          kind: 'folder',
+          count: 1,
+          children: [{ id: 'A%%B%%C', name: 'C', kind: 'playlist', count: 1 }],
+        },
+      ],
+    },
+    { id: 'Z', name: 'Z', kind: 'playlist', count: 0 },
+  ]
+
+  function setupCrates() {
+    const edit = {
+      onCreate: vi.fn(),
+      onDropTracks: vi.fn(),
+      onRename: vi.fn(),
+      onDelete: vi.fn(),
+      crates: true as const,
+    }
+    render(
+      <SourceTree
+        width={236}
+        title="Serato"
+        source="serato"
+        nodes={CRATES}
+        failed={false}
+        selectedId={null}
+        onSelect={vi.fn()}
+        edit={edit}
+      />,
+    )
+    return edit
+  }
+
+  it('offers a new crate in the header and never a folder', () => {
+    setupCrates()
+    expect(screen.getByTestId('source-tree-new-playlist')).toHaveAttribute(
+      'aria-label',
+      'New crate',
+    )
+    expect(screen.queryByTestId('source-tree-new-folder')).toBeNull()
+  })
+
+  it('offers a new crate inside any crate, not a folder, since a crate can hold crates', () => {
+    const edit = setupCrates()
+    fireEvent.contextMenu(screen.getByTestId('source-node-Z'))
+    expect(screen.getByTestId('source-tree-new-playlist-inside')).toHaveTextContent(
+      'New crate inside',
+    )
+    expect(screen.queryByTestId('source-tree-new-folder-inside')).toBeNull()
+    fireEvent.click(screen.getByTestId('source-tree-new-playlist-inside'))
+    fireEvent.change(screen.getByTestId('source-tree-name'), { target: { value: 'Sub' } })
+    fireEvent.keyDown(screen.getByTestId('source-tree-name'), { key: 'Enter' })
+    expect(edit.onCreate).toHaveBeenCalledWith('Z', 'Sub', false)
+  })
+
+  it('confirms a delete in crate words, counting every descendant subcrate', () => {
+    setupCrates()
+    fireEvent.contextMenu(screen.getByTestId('source-node-A'))
+    fireEvent.click(screen.getByTestId('source-tree-delete'))
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      'Delete the crate “A” and its 2 subcrates? The tracks stay in Serato.',
+    )
+  })
+
+  it('confirms a delete of a crate with no subcrates in short words', () => {
+    setupCrates()
+    fireEvent.contextMenu(screen.getByTestId('source-node-Z'))
+    fireEvent.click(screen.getByTestId('source-tree-delete'))
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      'Delete the crate “Z”? The tracks stay in Serato.',
+    )
+  })
+})

@@ -999,7 +999,6 @@
         "saveAll_other": "Enregistrer {{count}} morceaux dans Engine DJ"
       },
       "serato": {
-        "running": "Serato est ouvert. Les cues peuvent ne pas être à jour tant que tu ne le fermes pas.",
         "unreadable": "Impossible de lire les cues de Serato",
         "save": "Enregistrer dans Serato",
         "unanalysed": "Serato n’a pas encore analysé ce morceau",
@@ -2288,7 +2287,8 @@
         "readOnly": "La collection rekordbox est en lecture seule, rien n’a changé",
         "stale": "La playlist a changé dans rekordbox. Vérifie-la et réessaie",
         "noSeparator": "Ta collection n’a aucun séparateur à copier",
-        "writeUnknown": "Le changement n'a pu être ni enregistré ni annulé, la collection a donc pu changer. Avant d'ouvrir rekordbox, sors master.db-wal et master.db-shm de son dossier, puis remplace master.db par la copie master.db.surco-backup que tu trouveras dans Réglages → Avancé → Sauvegardes des collections"
+        "writeUnknown": "Le changement n'a pu être ni enregistré ni annulé, la collection a donc pu changer. Avant d'ouvrir rekordbox, sors master.db-wal et master.db-shm de son dossier, puis remplace master.db par la copie master.db.surco-backup que tu trouveras dans Réglages → Avancé → Sauvegardes des collections",
+        "badName": "Ce nom ne convient pas pour une playlist. Il ne peut pas être vide ni en double"
       }
     },
     "editTraktor": {
@@ -2310,7 +2310,8 @@
         "readOnly": "La collection Traktor est en lecture seule, rien n’a changé",
         "stale": "La playlist a changé dans Traktor. Vérifie-la et réessaie",
         "noSeparator": "Ta collection n’a aucun séparateur à copier",
-        "writeUnknown": "La modification n’a pu être ni enregistrée ni annulée, la collection a donc peut-être changé. Avant d’ouvrir Traktor, remplace collection.nml par la copie collection.nml.surco-backup que tu trouveras dans Réglages → Avancé → Sauvegardes des collections"
+        "writeUnknown": "La modification n’a pu être ni enregistrée ni annulée, la collection a donc peut-être changé. Avant d’ouvrir Traktor, remplace collection.nml par la copie collection.nml.surco-backup que tu trouveras dans Réglages → Avancé → Sauvegardes des collections",
+        "badName": "Ce nom ne convient pas pour une playlist. Il ne peut pas être vide ni en double"
       }
     },
     "tree": {
@@ -2333,7 +2334,13 @@
       "playlists_other": "{{count}} playlists",
       "folders_one": "{{count}} dossier",
       "folders_other": "{{count}} dossiers",
-      "and": " et "
+      "and": " et ",
+      "newCrate": "Nouveau crate",
+      "newCrateInside": "Nouveau crate dedans",
+      "deleteCrateTitle": "Supprimer de Serato",
+      "deleteCrate": "Supprimer le crate « {{name}} » ? Les morceaux restent dans Serato.",
+      "deleteCrateWithSubcrates_one": "Supprimer le crate « {{name}} » et son sous-crate ? Les morceaux restent dans Serato.",
+      "deleteCrateWithSubcrates_other": "Supprimer le crate « {{name}} » et ses {{count}} sous-crates ? Les morceaux restent dans Serato."
     },
     "reorder": {
       "removeSeparator": "Retirer le séparateur",
@@ -2344,6 +2351,29 @@
       "insertSeparator": "Insérer un séparateur au-dessus",
       "removeFrom": "Retirer de « {{name}} »",
       "removeSeparatorAbove": "Retirer le séparateur au-dessus"
+    },
+    "editSerato": {
+      "added_one": "{{count}} piste ajoutée à « {{name}} »",
+      "added_other": "{{count}} pistes ajoutées à « {{name}} »",
+      "noneAdded": "Aucune piste ajoutée à « {{name}} »",
+      "already_one": "{{count}} était déjà dans le crate",
+      "already_other": "{{count}} étaient déjà dans le crate",
+      "notInCollection_one": "{{count}} est sur un autre disque ou n’existe plus",
+      "notInCollection_other": "{{count}} sont sur un autre disque ou n’existent plus",
+      "ambiguous_one": "{{count}} est deux fois dans la bibliothèque et Surco ne sait pas laquelle utiliser",
+      "ambiguous_other": "{{count}} sont deux fois dans la bibliothèque et Surco ne sait pas lesquelles utiliser",
+      "refused": {
+        "cancelled": "Serato est encore ouvert. Le changement s’appliquera à sa fermeture",
+        "running": "Serato s’est ouvert avant l’enregistrement. Le changement s’appliquera à sa fermeture",
+        "unreadable": "Surco ne peut pas modifier les fichiers de la bibliothèque Serato pour le moment, rien n’a changé",
+        "backupFailed": "Impossible de sauvegarder la bibliothèque avant, rien n’a changé",
+        "writeFailed": "Impossible d’enregistrer la modification. La bibliothèque est restée telle quelle",
+        "readOnly": "La bibliothèque Serato est en lecture seule, rien n’a changé",
+        "stale": "Le crate a changé dans Serato. Vérifie-le et réessaie",
+        "noSeparator": "Ta bibliothèque n’a aucun séparateur à copier",
+        "writeUnknown": "Le changement n’a pu être ni enregistré ni annulé, la bibliothèque a donc pu changer. Avant d’ouvrir Serato, remplace les fichiers de crates par les copies que tu trouveras dans Réglages → Avancé → Sauvegardes des collections",
+        "badName": "Ce nom ne convient pas pour un crate. Il ne peut pas être vide, en double ni contenir / ou %%"
+      }
     }
   },
   "engineIssue": {
@@ -2913,8 +2943,8 @@
     "applied_other": "Fait dans Serato · {{count}} morceaux",
     "appliedChanges_one": "Fait dans Serato · {{count}} changement",
     "appliedChanges_other": "Fait dans Serato · {{count}} changements",
-    "writeFailed": "Impossible d’enregistrer les cues dans Serato. Les fichiers sont restés tels quels",
-    "discardConfirm": "Abandonner ce qui attend ? Tes cues Serato restent comme Serato les a",
+    "writeFailed": "Impossible d’enregistrer les changements dans Serato. Les fichiers sont restés tels quels",
+    "discardConfirm": "Abandonner ce qui attend ? Serato reste comme il est",
     "notice": {
       "cuesChanged": "Les cues de {{track}} ont changé dans Serato. Marque-les à nouveau",
       "callsDropped_one": "{{count}} CALL de {{track}} n’a pas été enregistré ({{times}}). Serato ne garde que les hot cues",

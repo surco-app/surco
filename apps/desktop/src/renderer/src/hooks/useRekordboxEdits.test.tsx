@@ -228,3 +228,47 @@ describe('useRekordboxEdits on Traktor', () => {
     expect(invalidated('engine')).toBe(false)
   })
 })
+
+describe('useRekordboxEdits on Serato', () => {
+  function seratoEdits(answer: RekordboxEditResult) {
+    ;(window as unknown as { api: unknown }).api = {
+      editRekordboxPlaylist: vi.fn(),
+      editSeratoPlaylist: vi.fn(async () => answer),
+    }
+    const notify = vi.fn()
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    )
+    const { result } = renderHook(() => useRekordboxEdits(notify, 'serato'), { wrapper })
+    return { edit: result, notify, client }
+  }
+
+  it('sends the edit to Serato and names Serato and its crate in what it reports', async () => {
+    const { edit, notify } = seratoEdits({
+      applied: true,
+      report: { added: 1, already: 0, notInCollection: 1, ambiguous: 0 },
+    })
+    await act(async () => {
+      await edit.current(
+        { kind: 'add', playlistId: 'fri', tracks: [{ paths: ['/m/a.wav'] }] },
+        'Friday',
+      )
+    })
+    expect(window.api.editSeratoPlaylist).toHaveBeenCalled()
+    expect(window.api.editRekordboxPlaylist).not.toHaveBeenCalled()
+    expect(notify).toHaveBeenCalledWith(
+      '1 track added to “Friday”. 1 is on another drive or no longer exists',
+      'neutral',
+    )
+  })
+
+  it('re-reads which Serato crates hold each track after an edit', async () => {
+    const { edit, client } = seratoEdits({ applied: true })
+    client.setQueryData(['serato-membership', ['/m/a.wav']], {})
+    await act(async () => {
+      await edit.current({ kind: 'rename', playlistId: 'fri', name: 'Sat' }, 'Friday')
+    })
+    expect(client.getQueryState(['serato-membership', ['/m/a.wav']])?.isInvalidated).toBe(true)
+  })
+})

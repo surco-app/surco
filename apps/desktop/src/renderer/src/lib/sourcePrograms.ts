@@ -53,7 +53,7 @@ export const SOURCE_READ: Record<DjProgram, SourceRead> = {
   },
 }
 
-export type EditMessagePrefix = 'sources.edit.' | 'sources.editTraktor.'
+export type EditMessagePrefix = 'sources.edit.' | 'sources.editTraktor.' | 'sources.editSerato.'
 
 export interface SourceEdit {
   save(edit: RekordboxPlaylistEdit, label?: string): Promise<RekordboxEditResult>
@@ -75,6 +75,7 @@ export interface SourceProgram {
   fieldTestIdPrefix: string
   membershipKey: string
   invalidatesOnEdit: boolean
+  crates: boolean
 }
 
 export const SOURCE_PROGRAMS: {
@@ -96,6 +97,7 @@ export const SOURCE_PROGRAMS: {
     fieldTestIdPrefix: '',
     membershipKey: 'rekordbox-membership',
     invalidatesOnEdit: true,
+    crates: false,
   },
   traktor: {
     separator: () => window.api.traktorHasSeparator(),
@@ -118,6 +120,7 @@ export const SOURCE_PROGRAMS: {
     fieldTestIdPrefix: 'traktor-',
     membershipKey: 'traktor-membership',
     invalidatesOnEdit: true,
+    crates: false,
   },
   engine: {
     separator: null,
@@ -131,10 +134,15 @@ export const SOURCE_PROGRAMS: {
     fieldTestIdPrefix: 'engine-',
     membershipKey: 'engine-membership',
     invalidatesOnEdit: false,
+    crates: false,
   },
   serato: {
     separator: null,
-    edit: null,
+    edit: {
+      save: (edit, label) => window.api.editSeratoPlaylist(edit, label),
+      messagePrefix: 'sources.editSerato.',
+      gate: 'none',
+    },
     fixedNode: null,
     usb: false,
     missingLibraryCheck: false,
@@ -143,7 +151,8 @@ export const SOURCE_PROGRAMS: {
     addsUncollected: false,
     fieldTestIdPrefix: 'serato-',
     membershipKey: 'serato-membership',
-    invalidatesOnEdit: false,
+    invalidatesOnEdit: true,
+    crates: true,
   },
 }
 

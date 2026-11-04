@@ -75,6 +75,7 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
       fieldTestIdPrefix: '',
       membershipKey: 'rekordbox-membership',
       invalidatesOnEdit: true,
+      crates: false,
     })
   })
 
@@ -91,6 +92,7 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
       fieldTestIdPrefix: 'traktor-',
       membershipKey: 'traktor-membership',
       invalidatesOnEdit: true,
+      crates: false,
     })
   })
 
@@ -107,13 +109,14 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
       fieldTestIdPrefix: 'engine-',
       membershipKey: 'engine-membership',
       invalidatesOnEdit: false,
+      crates: false,
     })
   })
 
-  it('only reads Serato, with no edit, no USB and no rows filled or added, since Surco writes nothing to it yet', () => {
+  it('lets the Serato tab edit crates with no separator, no folders and no gate', () => {
     expect(shape('serato')).toEqual({
       separator: false,
-      edit: null,
+      edit: { messagePrefix: 'sources.editSerato.', gate: 'none' },
       fixedNode: false,
       usb: false,
       missingLibraryCheck: false,
@@ -122,8 +125,21 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
       addsUncollected: false,
       fieldTestIdPrefix: 'serato-',
       membershipKey: 'serato-membership',
-      invalidatesOnEdit: false,
+      invalidatesOnEdit: true,
+      crates: true,
     })
+  })
+
+  it('saves a Serato edit through editSeratoPlaylist with the crate name for the queue', async () => {
+    const editSeratoPlaylist = vi
+      .fn<Api['editSeratoPlaylist']>()
+      .mockResolvedValue({ applied: true })
+    installApi({ editSeratoPlaylist })
+    await SOURCE_PROGRAMS.serato.edit?.save({ kind: 'rename', playlistId: 'A', name: 'B' }, 'A')
+    expect(editSeratoPlaylist).toHaveBeenCalledWith(
+      { kind: 'rename', playlistId: 'A', name: 'B' },
+      'A',
+    )
   })
 
   it.each([

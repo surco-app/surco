@@ -88,6 +88,14 @@ describe('editMessage', () => {
     editMessage(tr, add, { applied: false, reason: 'write-unknown' }, 'House', 'traktor')
   })
 
+  it('says a bad crate name in Serato words', () => {
+    const rename: RekordboxPlaylistEdit = { kind: 'rename', playlistId: 'A', name: 'a/b' }
+    expect(
+      editMessage(tr, rename, { applied: false, reason: 'bad-name' }, 'A', 'sources.editSerato.')
+        ?.text,
+    ).toMatch(/crate/)
+  })
+
   it('says nothing went in when nothing could', () => {
     expect(
       editMessage(

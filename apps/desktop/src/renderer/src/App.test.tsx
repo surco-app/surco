@@ -824,12 +824,12 @@ describe('App Serato cues', () => {
     )
   })
 
-  it('warns in the Serato tab that the cues may be out of date while Serato is open', async () => {
+  it('tells the DJ in the Serato tab that the changes wait for Serato to close', async () => {
     openSerato({ seratoRunning: vi.fn<Api['seratoRunning']>().mockResolvedValue(true) })
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-serato'))
     expect(await screen.findByTestId('source-tree-notice')).toHaveTextContent(
-      'Serato is open. The cues may be out of date until you close it.',
+      'Serato is open. Your changes will be saved when you close it',
     )
   })
 

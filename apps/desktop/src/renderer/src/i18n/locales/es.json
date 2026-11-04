@@ -999,7 +999,6 @@
         "saveAll_other": "Guardar {{count}} pistas en Engine DJ"
       },
       "serato": {
-        "running": "Serato está abierto. Los cues pueden no estar al día hasta que lo cierres.",
         "unreadable": "No se pudieron leer los cues de Serato",
         "save": "Guardar en Serato",
         "unanalysed": "Serato aún no ha analizado esta pista",
@@ -2288,7 +2287,8 @@
         "readOnly": "La colección de rekordbox es de solo lectura y no se cambió nada",
         "stale": "La playlist cambió en rekordbox. Revísala y vuelve a intentarlo",
         "noSeparator": "Tu colección no tiene ningún separador que copiar",
-        "writeUnknown": "No se pudo guardar el cambio ni deshacerlo, así que la colección puede haber cambiado. Antes de abrir rekordbox, saca master.db-wal y master.db-shm de su carpeta y después sustituye master.db por la copia master.db.surco-backup que tienes en Ajustes → Avanzado → Copias de las colecciones"
+        "writeUnknown": "No se pudo guardar el cambio ni deshacerlo, así que la colección puede haber cambiado. Antes de abrir rekordbox, saca master.db-wal y master.db-shm de su carpeta y después sustituye master.db por la copia master.db.surco-backup que tienes en Ajustes → Avanzado → Copias de las colecciones",
+        "badName": "Ese nombre no vale para una playlist. No puede estar vacío ni repetirse"
       }
     },
     "editTraktor": {
@@ -2310,7 +2310,8 @@
         "readOnly": "La colección de Traktor es de solo lectura y no se cambió nada",
         "stale": "La playlist cambió en Traktor. Revísala y vuelve a intentarlo",
         "noSeparator": "Tu colección no tiene ningún separador que copiar",
-        "writeUnknown": "No se pudo guardar ni deshacer el cambio, así que la colección puede haber cambiado. Antes de abrir Traktor, sustituye collection.nml por la copia collection.nml.surco-backup que tienes en Ajustes → Avanzado → Copias de las colecciones"
+        "writeUnknown": "No se pudo guardar ni deshacer el cambio, así que la colección puede haber cambiado. Antes de abrir Traktor, sustituye collection.nml por la copia collection.nml.surco-backup que tienes en Ajustes → Avanzado → Copias de las colecciones",
+        "badName": "Ese nombre no vale para una playlist. No puede estar vacío ni repetirse"
       }
     },
     "tree": {
@@ -2333,7 +2334,13 @@
       "playlists_other": "{{count}} playlists",
       "folders_one": "{{count}} carpeta",
       "folders_other": "{{count}} carpetas",
-      "and": " y "
+      "and": " y ",
+      "newCrate": "Nuevo crate",
+      "newCrateInside": "Nuevo crate dentro",
+      "deleteCrateTitle": "Borrar de Serato",
+      "deleteCrate": "¿Borrar el crate «{{name}}»? Las pistas siguen en Serato.",
+      "deleteCrateWithSubcrates_one": "¿Borrar el crate «{{name}}» y su subcrate? Las pistas siguen en Serato.",
+      "deleteCrateWithSubcrates_other": "¿Borrar el crate «{{name}}» y sus {{count}} subcrates? Las pistas siguen en Serato."
     },
     "reorder": {
       "removeSeparator": "Quitar separador",
@@ -2344,6 +2351,29 @@
       "insertSeparator": "Insertar separador encima",
       "removeFrom": "Quitar de «{{name}}»",
       "removeSeparatorAbove": "Quitar el separador de encima"
+    },
+    "editSerato": {
+      "added_one": "{{count}} pista añadida a «{{name}}»",
+      "added_other": "{{count}} pistas añadidas a «{{name}}»",
+      "noneAdded": "Ninguna pista añadida a «{{name}}»",
+      "already_one": "{{count}} ya estaba en el crate",
+      "already_other": "{{count}} ya estaban en el crate",
+      "notInCollection_one": "{{count}} está en otro disco o ya no existe",
+      "notInCollection_other": "{{count}} están en otro disco o ya no existen",
+      "ambiguous_one": "{{count}} está dos veces en la biblioteca y no se sabe cuál usar",
+      "ambiguous_other": "{{count}} están dos veces en la biblioteca y no se sabe cuáles usar",
+      "refused": {
+        "cancelled": "Serato sigue abierto. El cambio se aplicará al cerrarlo",
+        "running": "Serato se abrió antes de guardar. El cambio se aplicará al cerrarlo",
+        "unreadable": "Surco no puede cambiar los ficheros de la biblioteca de Serato ahora y no se cambió nada",
+        "backupFailed": "No se pudo copiar la biblioteca antes de cambiarla y no se cambió nada",
+        "writeFailed": "No se pudo guardar el cambio. La biblioteca sigue como estaba",
+        "readOnly": "La biblioteca de Serato es de solo lectura y no se cambió nada",
+        "stale": "El crate cambió en Serato. Revísalo y vuelve a intentarlo",
+        "noSeparator": "Tu biblioteca no tiene ningún separador que copiar",
+        "writeUnknown": "No se pudo guardar el cambio ni deshacerlo, así que la biblioteca puede haber cambiado. Antes de abrir Serato, sustituye los ficheros de crates por las copias que tienes en Ajustes → Avanzado → Copias de las colecciones",
+        "badName": "Ese nombre no vale para un crate. No puede estar vacío, repetirse ni llevar / o %%"
+      }
     }
   },
   "engineIssue": {
@@ -2913,8 +2943,8 @@
     "applied_other": "Listo en Serato · {{count}} pistas",
     "appliedChanges_one": "Listo en Serato · {{count}} cambio",
     "appliedChanges_other": "Listo en Serato · {{count}} cambios",
-    "writeFailed": "No se pudieron guardar los cues en Serato. Los ficheros siguen como estaban",
-    "discardConfirm": "¿Descartar lo que espera? Tus cues de Serato se quedan como los tiene Serato",
+    "writeFailed": "No se pudieron guardar los cambios en Serato. Los ficheros siguen como estaban",
+    "discardConfirm": "¿Descartar lo que espera? Serato se queda como está",
     "notice": {
       "cuesChanged": "Los cues de {{track}} cambiaron en Serato. Vuelve a marcarlos",
       "callsDropped_one": "No se guardó el CALL de {{track}} ({{times}}). Serato solo guarda hot cues",

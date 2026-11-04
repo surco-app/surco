@@ -999,7 +999,6 @@
         "saveAll_other": "Save {{count}} tracks to Engine DJ"
       },
       "serato": {
-        "running": "Serato is open. The cues may be out of date until you close it.",
         "unreadable": "Could not read the cues from Serato",
         "save": "Save to Serato",
         "unanalysed": "Serato has not analysed this track yet",
@@ -2288,7 +2287,8 @@
         "readOnly": "The rekordbox collection is read-only, so nothing changed",
         "stale": "The playlist changed in rekordbox. Check it and try again",
         "noSeparator": "Your collection has no separator to copy",
-        "writeUnknown": "The change could not be saved or undone, so the collection may have changed. Before opening rekordbox, move master.db-wal and master.db-shm out of its folder and then replace master.db with the copy master.db.surco-backup you will find in Settings → Advanced → Collection backups"
+        "writeUnknown": "The change could not be saved or undone, so the collection may have changed. Before opening rekordbox, move master.db-wal and master.db-shm out of its folder and then replace master.db with the copy master.db.surco-backup you will find in Settings → Advanced → Collection backups",
+        "badName": "That name won't work for a playlist. It can't be empty or repeated"
       }
     },
     "editTraktor": {
@@ -2310,7 +2310,8 @@
         "readOnly": "The Traktor collection is read-only, so nothing changed",
         "stale": "The playlist changed in Traktor. Check it and try again",
         "noSeparator": "Your collection has no separator to copy",
-        "writeUnknown": "The change could not be saved or undone, so the collection may have changed. Before opening Traktor, replace collection.nml with the copy collection.nml.surco-backup you will find in Settings → Advanced → Collection backups"
+        "writeUnknown": "The change could not be saved or undone, so the collection may have changed. Before opening Traktor, replace collection.nml with the copy collection.nml.surco-backup you will find in Settings → Advanced → Collection backups",
+        "badName": "That name won't work for a playlist. It can't be empty or repeated"
       }
     },
     "tree": {
@@ -2333,7 +2334,13 @@
       "playlists_other": "{{count}} playlists",
       "folders_one": "{{count}} folder",
       "folders_other": "{{count}} folders",
-      "and": " and "
+      "and": " and ",
+      "newCrate": "New crate",
+      "newCrateInside": "New crate inside",
+      "deleteCrateTitle": "Delete from Serato",
+      "deleteCrate": "Delete the crate “{{name}}”? The tracks stay in Serato.",
+      "deleteCrateWithSubcrates_one": "Delete the crate “{{name}}” and its subcrate? The tracks stay in Serato.",
+      "deleteCrateWithSubcrates_other": "Delete the crate “{{name}}” and its {{count}} subcrates? The tracks stay in Serato."
     },
     "reorder": {
       "removeSeparator": "Remove separator",
@@ -2344,6 +2351,29 @@
       "insertSeparator": "Insert separator above",
       "removeFrom": "Remove from “{{name}}”",
       "removeSeparatorAbove": "Remove separator above"
+    },
+    "editSerato": {
+      "added_one": "{{count}} track added to “{{name}}”",
+      "added_other": "{{count}} tracks added to “{{name}}”",
+      "noneAdded": "No tracks added to “{{name}}”",
+      "already_one": "{{count}} was already in the crate",
+      "already_other": "{{count}} were already in the crate",
+      "notInCollection_one": "{{count}} is on another drive or no longer exists",
+      "notInCollection_other": "{{count}} are on another drive or no longer exist",
+      "ambiguous_one": "{{count}} is in the library twice and Surco can't tell which to use",
+      "ambiguous_other": "{{count}} are in the library twice and Surco can't tell which to use",
+      "refused": {
+        "cancelled": "Serato is still open. The change will apply when you close it",
+        "running": "Serato opened before saving. The change will apply when you close it",
+        "unreadable": "Surco can't change the Serato library files right now, so nothing changed",
+        "backupFailed": "Couldn't back up the library first, so nothing changed",
+        "writeFailed": "Couldn't save the change. The library is as it was",
+        "readOnly": "The Serato library is read-only, so nothing changed",
+        "stale": "The crate changed in Serato. Check it and try again",
+        "noSeparator": "Your library has no separator to copy",
+        "writeUnknown": "The change could not be saved or undone, so the library may have changed. Before opening Serato, replace the crate files with the copies you will find in Settings → Advanced → Collection backups",
+        "badName": "That name won't work for a crate. It can't be empty, repeated or contain / or %%"
+      }
     }
   },
   "engineIssue": {
@@ -2913,8 +2943,8 @@
     "applied_other": "Done in Serato · {{count}} tracks",
     "appliedChanges_one": "Done in Serato · {{count}} change",
     "appliedChanges_other": "Done in Serato · {{count}} changes",
-    "writeFailed": "Couldn't save the cues to Serato. The files are as they were",
-    "discardConfirm": "Discard what is waiting? Your Serato cues stay as Serato has them",
+    "writeFailed": "Couldn't save the changes to Serato. The files are as they were",
+    "discardConfirm": "Discard what is waiting? Serato stays as it is",
     "notice": {
       "cuesChanged": "The cues of {{track}} changed in Serato. Mark them again",
       "callsDropped_one": "{{count}} CALL of {{track}} was not saved ({{times}}). Serato only keeps hot cues",
