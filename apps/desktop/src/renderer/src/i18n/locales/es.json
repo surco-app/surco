@@ -260,7 +260,7 @@
     "normalizeSkipped": "No se pudo medir el volumen de «{{name}}»: convertida sin normalizar.",
     "keptAsIs": "«{{name}}» se queda como está porque «Mantener MP3 y M4A como están» está activo con «Junto al original».",
     "originalKept": "«{{name}}» se convirtió, pero no se pudo quitar el original y sigue en su carpeta.",
-    "originalHeld": "«{{name}}» tiene ya el nombre nuevo, pero el original sigue en su carpeta porque {{programs}} lo usa y no sincronizas ese programa con Surco.",
+    "originalHeld": "«{{name}}» tiene ya el nombre nuevo, pero el original sigue en su carpeta porque {{programs}} lo usa y no puede pasar al fichero nuevo.",
     "musicNameLeftMarked": "En Música, la entrada anterior de «{{name}}» sigue con «[surco-replacing]» al final del nombre. Quítalo a mano en Música.",
     "formatSkipped": "«{{name}}» no tiene formato de salida equivalente para Igual que el origen, así que se ha saltado.",
     "appleMusicFailedAfterConvert": "«{{name}}» se convirtió, pero no se pudo actualizar Apple Music. Prueba a añadirla de nuevo a Apple Music.",

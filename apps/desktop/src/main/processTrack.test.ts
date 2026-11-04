@@ -4391,14 +4391,17 @@ describe('runProcessTrack — checking what it wrote', () => {
 })
 
 describe('runProcessTrack — a library that does not follow the rename', () => {
-  const renaming = (held: ProcessTrackDeps['heldByUnsyncedLibrary']) =>
-    makeDeps({ settings: settings({ overwriteOriginal: true }), heldByUnsyncedLibrary: held })
+  const renaming = (held: ProcessTrackDeps['librariesKeepingOriginal']) =>
+    makeDeps({ settings: settings({ overwriteOriginal: true }), librariesKeepingOriginal: held })
 
   it('keeps the renamed original while a program whose sync is off still plays it, and names that program', async () => {
     const deps = renaming(vi.fn(async () => ['rekordbox' as const]))
     const result = await runProcessTrack(job(), deps)
 
-    expect(deps.heldByUnsyncedLibrary).toHaveBeenCalledWith('/in/song.wav')
+    expect(deps.librariesKeepingOriginal).toHaveBeenCalledWith(
+      '/in/song.wav',
+      '/in/Artist - Title.aiff',
+    )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
     expect(result.originalHeldBy).toEqual(['rekordbox'])
   })
@@ -4431,6 +4434,6 @@ describe('runProcessTrack — a library that does not follow the rename', () => 
     deps.isSameFile = vi.fn(async () => true)
     await runProcessTrack(job({ outputName: 'song', format: 'wav' }), deps)
 
-    expect(deps.heldByUnsyncedLibrary).not.toHaveBeenCalled()
+    expect(deps.librariesKeepingOriginal).not.toHaveBeenCalled()
   })
 })

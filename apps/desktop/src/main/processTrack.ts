@@ -116,7 +116,7 @@ export interface ProcessTrackDeps {
     coverPath?: string,
   ) => Promise<string | null>
   relinkAppleMusicEntry: (persistentId: string, path: string) => Promise<void>
-  heldByUnsyncedLibrary?: (path: string) => Promise<WritableProgram[]>
+  librariesKeepingOriginal?: (path: string, target: string) => Promise<WritableProgram[]>
   findAppleMusicEntry?: (
     path: string,
     meta: TrackMetadata,
@@ -805,8 +805,8 @@ export async function runProcessTrack(
     let keptBeforeMusic = false
     let originalHeldBy: WritableProgram[] | undefined
     const retireOriginal = async (): Promise<void> => {
-      if (!outputIsInput && deps.heldByUnsyncedLibrary) {
-        const held = await deps.heldByUnsyncedLibrary(job.inputPath).catch((e) => {
+      if (!outputIsInput && deps.librariesKeepingOriginal) {
+        const held = await deps.librariesKeepingOriginal(job.inputPath, target).catch((e) => {
           log.warn('process:track could not read a library before retiring', job.inputPath, e)
           originalKept = true
           return undefined

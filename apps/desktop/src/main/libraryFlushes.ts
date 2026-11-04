@@ -93,8 +93,9 @@ export function rekordboxCollectionPath(): string {
     : ''
 }
 
-export async function unsyncedLibrariesHolding(
+export async function librariesKeepingOriginal(
   path: string,
+  target: string,
   deps: { traktorRead: () => string },
 ): Promise<WritableProgram[]> {
   const settings = getSettings()
@@ -113,6 +114,14 @@ export async function unsyncedLibrariesHolding(
     const only = { rekordbox: '', engine: '', traktor: '', [program]: locations[program] }
     if (await djLibraryFileUse(only, { realPath: (p: string) => realpathSync(p) })(path))
       held.push(program)
+  }
+  const nml = settings.syncTraktor ? deps.traktorRead() : ''
+  if (nml) {
+    const traktor = djLibraryFileUse(
+      { rekordbox: '', engine: '', traktor: nml },
+      { realPath: (p: string) => realpathSync(p) },
+    )
+    if ((await traktor(path)) && (await traktor(target))) held.push('traktor')
   }
   return held
 }

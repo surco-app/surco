@@ -260,7 +260,7 @@
     "normalizeSkipped": "Die Lautheit von „{{name}}“ konnte nicht gemessen werden: ohne Normalisierung konvertiert.",
     "keptAsIs": "„{{name}}“ bleibt, wie es ist, weil „MP3- und M4A-Dateien behalten“ mit „Neben dem Original“ aktiv ist.",
     "originalKept": "„{{name}}“ wurde konvertiert, aber das Original konnte nicht entfernt werden und liegt noch in seinem Ordner.",
-    "originalHeld": "„{{name}}“ hat den neuen Namen, aber das Original liegt noch in seinem Ordner, weil {{programs}} es verwendet und du dieses Programm nicht mit Surco synchronisierst.",
+    "originalHeld": "„{{name}}“ hat den neuen Namen, aber das Original liegt noch in seinem Ordner, weil {{programs}} es verwendet und nicht zur neuen Datei wechseln kann.",
     "musicNameLeftMarked": "In Musik trägt der bisherige Eintrag von „{{name}}“ noch „[surco-replacing]“ am Ende des Namens. Entferne es von Hand in Musik.",
     "formatSkipped": "„{{name}}“ hat kein passendes Ausgabeformat für Wie die Quelle und wurde übersprungen.",
     "appleMusicFailedAfterConvert": "„{{name}}“ wurde konvertiert, aber Apple Music konnte nicht aktualisiert werden. Versuche, den Titel erneut zu Apple Music hinzuzufügen.",

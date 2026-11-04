@@ -134,6 +134,7 @@ import {
   engineFlushDeps,
   flushConversionBatch,
   type LibraryHost,
+  librariesKeepingOriginal,
   rekordboxCollectionPath,
   rekordboxFlushDeps,
   repointEngineQueued,
@@ -143,7 +144,6 @@ import {
   syncTagsInLibraries,
   traktorFlushDeps,
   traktorWrite,
-  unsyncedLibrariesHolding,
   usedByAnyLibrary,
 } from './libraryFlushes'
 import { takeCopy } from './libraryHistory'
@@ -1807,8 +1807,8 @@ function registerIpc(): void {
           ),
         )
       },
-      heldByUnsyncedLibrary: (path) =>
-        unsyncedLibrariesHolding(path, { traktorRead: traktorReadPath }),
+      librariesKeepingOriginal: (path, target) =>
+        librariesKeepingOriginal(path, target, { traktorRead: traktorReadPath }),
       relinkAppleMusicEntry: (persistentId, path) =>
         appleMusicLimiter.run(() =>
           relinkAppleMusicEntry(persistentId, path).catch((err) => {

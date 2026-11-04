@@ -94,13 +94,13 @@ import {
   engineFlushDeps,
   flushConversionBatch,
   type LibraryHost,
+  librariesKeepingOriginal,
   rekordboxFlushDeps,
   repointEngineQueued,
   SYNC_BLOCKED_KEY,
   SYNC_ISSUE_CHANNEL,
   syncTagsInLibraries,
   traktorFlushDeps,
-  unsyncedLibrariesHolding,
 } from './libraryFlushes'
 import { beginNmlBatch, endNmlBatch, recordNmlPatch } from './nmlBatch'
 import { traktorPatchKey } from './verifyRegistry'
@@ -1129,14 +1129,14 @@ describe('what each program closes, shows and reports through the library host',
   })
 })
 
-describe('unsyncedLibrariesHolding', () => {
+describe('librariesKeepingOriginal', () => {
   it('asks only the libraries Surco found but may not write to, one at a time, and names those holding the file', async () => {
     const before = { ...SETTINGS }
     Object.assign(SETTINGS, { syncRekordbox: false, syncTraktor: false })
     FILE_USE.open.mockClear()
     FILE_USE.check.mockImplementation(async () => true)
     try {
-      const held = await unsyncedLibrariesHolding('/m/a.mp3', {
+      const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {
         traktorRead: () => '/t/collection.nml',
       })
 
@@ -1155,9 +1155,44 @@ describe('unsyncedLibrariesHolding', () => {
     }
   })
 
+  it('keeps the original for Traktor when its collection already has an entry under the new name, since Traktor then leaves the old entry where it was', async () => {
+    const before = { ...SETTINGS }
+    Object.assign(SETTINGS, { syncRekordbox: true, syncTraktor: true })
+    FILE_USE.open.mockClear()
+    FILE_USE.check.mockImplementation(async () => true)
+    try {
+      const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {
+        traktorRead: () => '/t/collection.nml',
+      })
+
+      expect(held).toEqual(['traktor'])
+      expect(FILE_USE.check).toHaveBeenCalledWith('/m/a.mp3')
+      expect(FILE_USE.check).toHaveBeenCalledWith('/m/b.mp3')
+    } finally {
+      Object.assign(SETTINGS, before)
+      FILE_USE.check.mockImplementation(async () => false)
+    }
+  })
+
+  it('lets a synced Traktor follow the rename when no entry holds the new name', async () => {
+    const before = { ...SETTINGS }
+    Object.assign(SETTINGS, { syncRekordbox: true, syncTraktor: true })
+    FILE_USE.check.mockImplementation(async (path: string) => path === '/m/a.mp3')
+    try {
+      const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {
+        traktorRead: () => '/t/collection.nml',
+      })
+
+      expect(held).toEqual([])
+    } finally {
+      Object.assign(SETTINGS, before)
+      FILE_USE.check.mockImplementation(async () => false)
+    }
+  })
+
   it('asks nothing of a library whose sync is on, since it follows the rename itself', async () => {
     FILE_USE.open.mockClear()
-    const held = await unsyncedLibrariesHolding('/m/a.mp3', { traktorRead: () => '' })
+    const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', { traktorRead: () => '' })
 
     expect(held).toEqual([])
     expect(FILE_USE.open).not.toHaveBeenCalled()
