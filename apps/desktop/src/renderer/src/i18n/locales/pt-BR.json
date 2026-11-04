@@ -2953,7 +2953,8 @@
       "callsDropped_one": "{{count}} CALL de {{track}} não foi salvo ({{times}}). O Serato só guarda hot cues",
       "callsDropped_other": "{{count}} CALLs de {{track}} não foram salvos ({{times}}). O Serato só guarda hot cues",
       "oldBlock": "Os cues de {{track}} não foram salvos. O Serato guarda uma cópia antiga deles que não confere. Mova qualquer cue da faixa no Serato e salve de novo",
-      "editChanged": "{{playlist}} não foi alterado. Mudou no Serato"
+      "editChanged": "{{playlist}} não foi alterado. Mudou no Serato",
+      "otherVolume": "{{track}} está em outro disco e não pode ir para o crate “{{playlist}}”"
     }
   },
   "cueWave": {

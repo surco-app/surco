@@ -305,6 +305,12 @@ describe('Serato queue text', () => {
     )
   })
 
+  it('says a converted track stayed out of a crate that lives on another drive', () => {
+    expect(
+      noticeText(tr, { code: 'other-volume', track: 'Tengo', playlist: 'Gig' }, SERATO_QUEUE_WORDS),
+    ).toBe('Tengo is on another drive and cannot go in the crate “Gig”')
+  })
+
   it('says why Surco left a track whose older Serato cues say something else, and how to clear it', () => {
     expect(noticeText(tr, { code: 'cues-old-block', track: 'Tengo' }, SERATO_QUEUE_WORDS)).toBe(
       'The cues of Tengo were not saved. Serato keeps an older copy of them that does not match. Move any cue of the track in Serato and save again',

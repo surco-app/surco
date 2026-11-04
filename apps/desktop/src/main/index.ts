@@ -1557,6 +1557,11 @@ function registerIpc(): void {
               enqueue: engineCueQueue.enqueue,
               applyQuietly: () => applyEngineCueQueueQuietly(later),
             },
+            serato: {
+              enqueue: seratoCueQueue.enqueue,
+              applyQuietly: () => programQueues.serato.applyQuietly(later),
+              roots: seratoRoots,
+            },
           },
         )
       } finally {

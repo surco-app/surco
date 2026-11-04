@@ -637,6 +637,8 @@ export interface SessionEdit {
   traktorPlaylistsBase?: string[]
   enginePlaylists?: RekordboxPlaylistTarget[]
   enginePlaylistsBase?: string[]
+  seratoPlaylists?: RekordboxPlaylistTarget[]
+  seratoPlaylistsBase?: string[]
 }
 
 // What the session store round-trips: the loaded source paths (the reopen offer)
@@ -845,6 +847,8 @@ export interface ProcessJob {
   traktorPlaylistsBase?: string[]
   enginePlaylists?: RekordboxPlaylistTarget[]
   enginePlaylistsBase?: string[]
+  seratoPlaylists?: RekordboxPlaylistTarget[]
+  seratoPlaylistsBase?: string[]
   fromSerato?: boolean
 }
 
@@ -1275,7 +1279,11 @@ export type RekordboxQueueNotice =
         | 'not-in-library'
       track: string
     }
-  | { code: 'playlist-changed' | 'playlist-gone'; track: string; playlist: string }
+  | {
+      code: 'playlist-changed' | 'playlist-gone' | 'other-volume'
+      track: string
+      playlist: string
+    }
   | { code: 'edit-changed'; playlist: string }
   | { code: 'cues-calls-dropped'; track: string; calls: number[] }
   | { code: 'cues-adjusted'; track: string; moved: number; maxMs: number }

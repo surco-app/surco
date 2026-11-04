@@ -1,12 +1,13 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { buildSeratoCrate } from '../shared/serato'
 import type {
   PlaylistAddReport,
   RekordboxEditRefusal,
   RekordboxPlaylistEdit,
+  RekordboxQueueNotice,
 } from '../shared/types'
-import type { CrateStamp, EditOp, OpOutcome } from './rekordboxQueueOps'
+import type { CrateStamp, EditOp, OpOutcome, TrackOp } from './rekordboxQueueOps'
 import {
   type CrateTrack,
   crateFamily,
@@ -20,6 +21,7 @@ import {
   validCrateName,
   withCrateTracks,
 } from './seratoCrateFile'
+import { seratoDatabaseHas, seratoFileType, withSeratoTrackAdded } from './seratoDatabaseWrite'
 import type { SeratoLibraryRoot } from './seratoLibrary'
 import { createSeratoDraft, type SeratoDraft } from './seratoLibraryWrite'
 
@@ -352,4 +354,134 @@ export function applySeratoEdit(
         recordRename(draft, crateFileOf(r, f), crateFileOf(r, renamed(f)))
       }
   return done()
+}
+
+const DATABASE = 'database V2'
+
+type Read = (file: string) => Uint8Array | null
+
+function databaseHolds(read: Read, roots: SeratoLibraryRoot[], path: string): boolean {
+  const root = seratoRootOf(path, roots)
+  const bytes = root && read(join(root.dir, DATABASE))
+  return !!root && !!bytes && seratoDatabaseHas(bytes, seratoPathOn(path, root))
+}
+
+export function seratoLibraryHas(
+  roots: SeratoLibraryRoot[],
+): (path: string, from?: string) => boolean {
+  const cache = new Map<string, Uint8Array | null>()
+  const read: Read = (file) => {
+    if (!cache.has(file)) cache.set(file, existsSync(file) ? readFileSync(file) : null)
+    return cache.get(file) ?? null
+  }
+  return (path, from) =>
+    !seratoRootOf(path, roots) ||
+    databaseHolds(read, roots, path) ||
+    (!!from && databaseHolds(read, roots, from))
+}
+
+const crateName = (id: string): string => id.split('%%').pop() ?? id
+
+function wantedCrate(
+  draft: SeratoDraft,
+  target: TrackOp['wanted'][number],
+  root: SeratoLibraryRoot,
+  roots: SeratoLibraryRoot[],
+): string | 'other-volume' | 'playlist-gone' {
+  if (target.id) {
+    const file = crateFileOf(root, target.id)
+    if (draft.read(whereIs(draft, file))) return file
+    const elsewhere = roots.some((r) => r !== root && draft.exists(crateFileOf(r, target.id ?? '')))
+    return draft.original(file) || !elsewhere ? 'playlist-gone' : 'other-volume'
+  }
+  const name = target.name.trim()
+  if (!validCrateName(name)) return 'playlist-gone'
+  const id = crateIds(draft, root).find((c) => lower(c) === lower(name)) ?? name
+  const file = crateFileOf(root, id)
+  if (!draft.exists(file)) draft.write(file, buildSeratoCrate([], file))
+  return file
+}
+
+function fileInCrates(
+  draft: SeratoDraft,
+  op: TrackOp,
+  root: SeratoLibraryRoot,
+  roots: SeratoLibraryRoot[],
+  path: string,
+): RekordboxQueueNotice[] {
+  const notices: RekordboxQueueNotice[] = []
+  const key = path.normalize('NFC')
+  const holds = (crate: Working): boolean =>
+    crate.rows.some((row) => pathOfRow(crate, row).normalize('NFC') === key)
+  const wanted = new Set<string>()
+  for (const target of op.wanted) {
+    const file = wantedCrate(draft, target, root, roots)
+    if (file === 'other-volume' || file === 'playlist-gone') {
+      notices.push({ code: file, track: op.label, playlist: target.name })
+      continue
+    }
+    wanted.add(whereIs(draft, file))
+    const crate = workingCrate(draft, file)
+    if (typeof crate === 'string') {
+      notices.push({ code: 'playlist-gone', track: op.label, playlist: target.name })
+      continue
+    }
+    if (!holds(crate)) writeRows(draft, file, crate, [...crate.rows, { path }])
+  }
+  const known = new Set(op.known.map((id) => whereIs(draft, crateFileOf(root, id))))
+  for (const id of crateIds(draft, root)) {
+    const file = crateFileOf(root, id)
+    if (wanted.has(file)) continue
+    const crate = workingCrate(draft, file)
+    if (typeof crate === 'string' || !holds(crate)) continue
+    if (!known.has(file)) {
+      notices.push({ code: 'playlist-changed', track: op.label, playlist: crateName(id) })
+      continue
+    }
+    writeRows(
+      draft,
+      file,
+      crate,
+      crate.rows.filter((row) => pathOfRow(crate, row).normalize('NFC') !== key),
+    )
+  }
+  return notices
+}
+
+export function applySeratoTrack(
+  draft: SeratoDraft,
+  op: TrackOp,
+  roots: SeratoLibraryRoot[],
+  now: Date,
+): OpOutcome {
+  const notAdded: OpOutcome = {
+    id: op.id,
+    applied: false,
+    notices: [{ code: 'not-added', track: op.label }],
+  }
+  const root = seratoRootOf(op.path, roots)
+  const database = root && join(root.dir, DATABASE)
+  const bytes = database && draft.read(database)
+  if (!root || !database || !bytes) return notAdded
+  const path = seratoPathOn(op.path, root)
+  if (!seratoDatabaseHas(bytes, path) && (op.add || op.wanted.length > 0)) {
+    if (op.from && databaseHolds((file) => draft.read(file), roots, op.from))
+      return { id: op.id, applied: false, notices: [] }
+    const type = seratoFileType(op.path)
+    const added =
+      op.meta &&
+      type &&
+      withSeratoTrackAdded(bytes, {
+        pfil: path,
+        type,
+        title: op.meta.title,
+        artist: op.meta.artist,
+        album: op.meta.album,
+        genre: op.meta.genre,
+        addedAt: Math.floor(now.getTime() / 1000),
+      })
+    if (!added) return notAdded
+    draft.write(database, added)
+  }
+  return { id: op.id, applied: true, notices: fileInCrates(draft, op, root, roots, path) }
 }

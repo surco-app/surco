@@ -289,6 +289,18 @@ describe('runProcessTrack — plain conversion', () => {
     })
   })
 
+  it('attaches the Serato crates the conversion chose, so the Serato queue can file the new file there', async () => {
+    const attachPlaylists = vi.fn()
+    const result = await runProcessTrack(
+      job({ seratoPlaylists: [{ id: 'A', name: 'A' }], seratoPlaylistsBase: [] }),
+      makeDeps({ attachPlaylists }),
+    )
+    expect(attachPlaylists).toHaveBeenCalledWith(result.outputPath, 'serato', {
+      wanted: [{ id: 'A', name: 'A' }],
+      base: [],
+    })
+  })
+
   it('attaches nothing when the field was never touched', async () => {
     const attachPlaylists = vi.fn()
     await runProcessTrack(job(), makeDeps({ attachPlaylists }))

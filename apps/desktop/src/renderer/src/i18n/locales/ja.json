@@ -2953,7 +2953,8 @@
       "callsDropped_one": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。Serato はホットキューしか保持しません",
       "callsDropped_other": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。Serato はホットキューしか保持しません",
       "oldBlock": "{{track}} のキューは保存されませんでした。Serato に一致しない古いコピーが残っています。Serato でこのトラックのキューをどれか動かしてから、もう一度保存してください",
-      "editChanged": "{{playlist}} は変更されませんでした。Serato で変更されています"
+      "editChanged": "{{playlist}} は変更されませんでした。Serato で変更されています",
+      "otherVolume": "{{track}} は別のドライブにあるため、クレート「{{playlist}}」に入れられません"
     }
   },
   "cueWave": {

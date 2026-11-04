@@ -81,7 +81,7 @@ export async function trackOpsFromRun(
 
 export function libraryTrackOps(
   repoints: RekordboxRepoint[],
-  library: 'traktor' | 'engine',
+  library: 'traktor' | 'engine' | 'serato',
   newId: () => string = randomUUID,
   addNew = false,
   known?: (path: string, from?: string) => boolean,

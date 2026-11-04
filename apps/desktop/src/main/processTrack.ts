@@ -3,7 +3,12 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
 import { tagsOnly as tagsOnlyExport } from '../shared/audioProcessing'
-import { type DjProgram, WRITABLE_PROGRAMS, type WritableProgram } from '../shared/djProgram'
+import {
+  type DjProgram,
+  LIBRARY_PROGRAMS,
+  type LibraryProgram,
+  type WritableProgram,
+} from '../shared/djProgram'
 import {
   type ErrorKey,
   errorKeyOf,
@@ -137,7 +142,7 @@ export interface ProcessTrackDeps {
   isAllowed?: (path: string) => boolean
   // Marks a written file as streamable through surco://.
   allowMedia: (path: string) => void
-  attachPlaylists?: (to: string, program: WritableProgram, choice: PlaylistChoice) => void
+  attachPlaylists?: (to: string, program: LibraryProgram, choice: PlaylistChoice) => void
   existsSync: (path: string) => boolean
   // Device+inode identity, so an in-place edit can tell "the target is the source
   // being rewritten" (fine) from "the target is an unrelated file" (a collision).
@@ -506,7 +511,7 @@ const checking = (place: VerifyPlace): PlaceCheck => ({
 })
 
 export const JOB_PLAYLISTS: Record<
-  WritableProgram,
+  LibraryProgram,
   (job: ProcessJob) => PlaylistChoice | undefined
 > = {
   rekordbox: (job) =>
@@ -520,6 +525,10 @@ export const JOB_PLAYLISTS: Record<
   engine: (job) =>
     job.enginePlaylists
       ? { wanted: job.enginePlaylists, base: job.enginePlaylistsBase ?? [] }
+      : undefined,
+  serato: (job) =>
+    job.seratoPlaylists
+      ? { wanted: job.seratoPlaylists, base: job.seratoPlaylistsBase ?? [] }
       : undefined,
 }
 
@@ -795,7 +804,7 @@ export async function runProcessTrack(
       if (tmpPath) deps.untrackTmp(tmpPath)
     }
     const outputIdentity = musicOnly ? undefined : await deps.fileIdentity(target)
-    for (const program of WRITABLE_PROGRAMS) {
+    for (const program of LIBRARY_PROGRAMS) {
       const choice = JOB_PLAYLISTS[program](job)
       if (choice) deps.attachPlaylists?.(target, program, choice)
     }

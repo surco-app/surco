@@ -331,6 +331,17 @@ describe('playlists on a repoint', () => {
     ])
   })
 
+  it('carries the Serato crates chosen for a conversion to its repoint, for the Serato queue', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint(a)
+    attachPlaylists('/m/one.wav', 'serato', { wanted: [{ id: 'A', name: 'A' }], base: [] })
+    expect(recordedRekordboxRepoint('/m/one.wav')?.seratoPlaylists).toEqual({
+      wanted: [{ id: 'A', name: 'A' }],
+      base: [],
+    })
+    endRekordboxBatch()
+  })
+
   it('writes no membership base for rekordbox when the job had none, and the base when it had one', () => {
     beginRekordboxBatch()
     recordRekordboxRepoint(a)

@@ -52,6 +52,7 @@ export const REKORDBOX_QUEUE_WORDS: QueueWords = {
     'cues-invalid': 'rekordboxQueue.notice.cuesInvalid',
     'cues-write-failed': 'rekordboxQueue.notice.cuesWriteFailed',
     'cues-old-block': 'seratoQueue.notice.oldBlock',
+    'other-volume': 'seratoQueue.notice.otherVolume',
     'cues-calls-dropped': 'engineQueue.notice.callsDropped',
     'cues-slot-dropped': 'traktorQueue.notice.slotDropped',
     'cues-adjusted': 'rekordboxQueue.notice.cuesAdjusted',

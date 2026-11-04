@@ -1,3 +1,4 @@
+import { mkdtempSync, writeFileSync } from 'node:fs'
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -22,6 +23,7 @@ const SETTINGS = vi.hoisted(() => ({
   traktorNmlPath: '',
   addToTraktor: false,
   addToEngineDj: false,
+  addToSerato: false,
 }))
 const REPOINTS = vi.hoisted(() => [
   { from: '/m/a.mp3', to: '/m/a.flac', playlists: [{ name: 'House' }] },
@@ -105,6 +107,8 @@ import {
   traktorFlushDeps,
 } from './libraryFlushes'
 import { beginNmlBatch, endNmlBatch, recordNmlPatch } from './nmlBatch'
+import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
+import type { SeratoLibraryRoot } from './seratoLibrary'
 import { traktorPatchKey } from './verifyRegistry'
 
 type Closers = {
@@ -665,6 +669,72 @@ describe('flushConversionBatch with a converted track Traktor does not have', ()
     } finally {
       delete (REPOINTS[0] as Record<string, unknown>).meta
     }
+  })
+})
+
+describe('flushConversionBatch with a converted track Serato does not have', () => {
+  function seratoHome(paths: string[]): SeratoLibraryRoot[] {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-flush-serato-'))
+    const vrsn = frame('vrsn', utf16be('2.0/Serato Scratch LIVE Database'))
+    writeFileSync(
+      join(dir, 'database V2'),
+      concat([vrsn, ...paths.map((pfil) => track({ ttyp: 'mp3', pfil }))]),
+    )
+    return [{ dir, root: '/' }]
+  }
+  async function withRun(addToSerato: boolean, run: () => Promise<void>) {
+    Object.assign(REPOINTS[0], { meta: { artist: 'Jaydee', title: 'Plastic Dreams' } })
+    Object.assign(SETTINGS, { addToSerato })
+    try {
+      await run()
+    } finally {
+      delete (REPOINTS[0] as Record<string, unknown>).meta
+      Object.assign(SETTINGS, { addToSerato: false })
+    }
+  }
+  const flush = (serato: {
+    enqueue: () => void
+    applyQuietly: () => void
+    roots: () => SeratoLibraryRoot[]
+  }) =>
+    flushConversionBatch(host(), sessions, {
+      rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      serato,
+    })
+
+  it('queues Serato adds after the three libraries of today, only with addToSerato on', async () => {
+    const roots = seratoHome([])
+    const serato = { enqueue: vi.fn(), applyQuietly: vi.fn(), roots: () => roots }
+    await withRun(true, async () => {
+      await flush(serato)
+      expect(serato.enqueue).toHaveBeenCalledWith([
+        expect.objectContaining({ kind: 'track', add: true, path: '/m/a.flac' }),
+      ])
+      expect(serato.applyQuietly).toHaveBeenCalled()
+    })
+    serato.enqueue.mockClear()
+    await withRun(false, async () => {
+      await flush(serato)
+      expect(serato.enqueue).not.toHaveBeenCalled()
+    })
+  })
+
+  it('does not queue a file the Serato database already holds', async () => {
+    const roots = seratoHome(['m/a.flac'])
+    const serato = { enqueue: vi.fn(), applyQuietly: vi.fn(), roots: () => roots }
+    await withRun(true, async () => {
+      await flush(serato)
+      expect(serato.enqueue).not.toHaveBeenCalled()
+    })
+  })
+
+  it('does not queue the output of a conversion whose source Serato holds, since Serato keeps the original and would list the track twice', async () => {
+    const roots = seratoHome(['m/a.mp3'])
+    const serato = { enqueue: vi.fn(), applyQuietly: vi.fn(), roots: () => roots }
+    await withRun(true, async () => {
+      await flush(serato)
+      expect(serato.enqueue).not.toHaveBeenCalled()
+    })
   })
 })
 

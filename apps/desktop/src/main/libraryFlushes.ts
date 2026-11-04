@@ -38,6 +38,7 @@ import type { RekordboxQueue } from './rekordboxQueue'
 import { libraryTrackOps, queueConversionRun, trackOpsFromRun } from './rekordboxQueueFromRun'
 import type { createSessionBackup } from './rekordboxSessionBackup'
 import { updateRekordboxTags } from './rekordboxTags'
+import { seratoLibraryHas } from './seratoCrateEdits'
 import type { SeratoLibraryRoot } from './seratoLibrary'
 import { getSettings } from './settings'
 import { readEmbeddedCover } from './tags'
@@ -282,6 +283,11 @@ export type ConversionQueues = {
   rekordbox: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void }
   traktor?: Parameters<typeof holdInQueue>[0]
   engine?: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void }
+  serato?: {
+    enqueue: RekordboxQueue['enqueue']
+    applyQuietly: () => void
+    roots: () => SeratoLibraryRoot[]
+  }
 }
 
 export const FLUSH_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine'])
@@ -316,7 +322,22 @@ export async function flushConversionBatch(
   }
   const outcome: Partial<FlushOutcome> = {}
   for (const program of FLUSH_ORDER) await settle(outcome, program, flushers[program], run)
+  if (queues.serato) queueSeratoRun(queues.serato, run)
   return outcome as FlushOutcome
+}
+
+function queueSeratoRun(queue: NonNullable<ConversionQueues['serato']>, run: ConversionRun): void {
+  const addToSerato = getSettings().addToSerato
+  const ops = libraryTrackOps(
+    run.repoints,
+    'serato',
+    undefined,
+    addToSerato,
+    addToSerato && run.addable ? seratoLibraryHas(queue.roots()) : undefined,
+  )
+  if (ops.length === 0) return
+  queue.enqueue(ops)
+  queue.applyQuietly()
 }
 
 async function settle<P extends WritableProgram>(
