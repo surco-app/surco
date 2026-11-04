@@ -419,6 +419,25 @@ describe('PlaylistsField on a Serato crate that holds subcrates', () => {
     expect(visiblePlaylists()).toEqual(['playlists-check-House', 'playlists-check-House%%Tech'])
   })
 
+  it('ticks the parent crate when its name is clicked, keeping the name on its checkbox, and leaves it folded', () => {
+    const spy = vi.fn()
+    render(<Crates initial={[]} spy={spy} />)
+    open()
+    fireEvent.click(within(screen.getByTestId('playlists-row-House')).getByText('House'))
+    expect(spy).toHaveBeenLastCalledWith([crate('House')])
+    expect(screen.getByRole('checkbox', { name: 'House 12' })).toBeChecked()
+    expect(screen.getByTestId('playlists-expand-House')).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('ticks the one subcrate a search finds with Enter, since its parent only shows where it lives', () => {
+    const spy = vi.fn()
+    render(<Crates initial={[]} spy={spy} />)
+    open()
+    fireEvent.change(search(), { target: { value: 'tech' } })
+    fireEvent.keyDown(search(), { key: 'Enter' })
+    expect(spy).toHaveBeenLastCalledWith([crate('House%%Tech')])
+  })
+
   it('names the parent crate once in the summary, counting the subcrates chosen in it', () => {
     render(<Crates initial={[crate('House'), crate('House%%Deep'), crate('Friday')]} />)
     expect(screen.getByTestId('playlists-where').textContent).toBe('House (2) · Friday')

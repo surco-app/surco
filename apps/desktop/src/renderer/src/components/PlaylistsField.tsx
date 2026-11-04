@@ -31,6 +31,7 @@ type Row =
       depth: number
       count?: number
       open?: boolean
+      context?: true
     }
   | { kind: 'create'; name: string }
 
@@ -66,7 +67,10 @@ function treeRows(
         }
         if (!node.children?.length) return own ? [row] : []
         const inner = walk(node.children, depth + 1)
-        if (hits) return own || inner.length > 0 ? [{ ...row, open: true }, ...inner] : []
+        if (hits)
+          return own || inner.length > 0
+            ? [{ ...row, open: true, ...(!own && { context: true as const }) }, ...inner]
+            : []
         const open = opened.has(node.id)
         return [{ ...row, open }, ...(open ? inner : [])]
       }
@@ -204,7 +208,7 @@ function TreePopover({
       e.preventDefault()
       toggle(row.target)
     } else if (at === 0 && hits && e.key === 'Enter') {
-      const found = rows.flatMap((r) => (r.kind === 'playlist' ? [r.target] : []))
+      const found = rows.flatMap((r) => (r.kind === 'playlist' && !r.context ? [r.target] : []))
       const offer = rows.find((r) => r.kind === 'create')
       if (found.length === 1) toggle(found[0])
       else if (found.length === 0 && offer?.kind === 'create') create(offer.name)
@@ -263,7 +267,7 @@ function TreePopover({
     }
     const state = stateOf(row.target)
     const pending = !row.target.id
-    return (
+    const label = (
       <label
         key={targetKey(row.target)}
         data-testid={`playlists-row-${targetKey(row.target)}`}
@@ -277,28 +281,7 @@ function TreePopover({
         style={{ paddingLeft: 8 + row.depth * 18 }}
         className={`${ROW} cursor-pointer focus-within:bg-[var(--color-hover)] ${state === 'none' ? 'text-fg-muted' : 'text-fg'}`}
       >
-        {row.open === undefined ? (
-          <span className="w-3 shrink-0" />
-        ) : (
-          <button
-            type="button"
-            tabIndex={-1}
-            data-testid={`playlists-expand-${targetKey(row.target)}`}
-            aria-label={tr('sources.tree.subcrates', { name: row.target.name })}
-            aria-expanded={row.open}
-            onClick={(e) => {
-              e.preventDefault()
-              if (row.target.id) setFolder(row.target.id, !row.open)
-            }}
-            className="w-3 shrink-0 text-fg-faint"
-          >
-            {row.open ? (
-              <ChevronDown size={12} aria-hidden="true" />
-            ) : (
-              <ChevronRight size={12} aria-hidden="true" />
-            )}
-          </button>
-        )}
+        <span className="w-3 shrink-0" />
         <input
           ref={(el) => {
             rowRefs.current[i] = el
@@ -318,6 +301,30 @@ function TreePopover({
           <span className="shrink-0 text-[11px] tabular-nums text-fg-faint">{row.count}</span>
         )}
       </label>
+    )
+    if (row.open === undefined) return label
+    return (
+      <div key={targetKey(row.target)} className="relative">
+        {label}
+        <button
+          type="button"
+          tabIndex={-1}
+          data-testid={`playlists-expand-${targetKey(row.target)}`}
+          aria-label={tr('sources.tree.subcrates', { name: row.target.name })}
+          aria-expanded={row.open}
+          onClick={() => {
+            if (row.target.id) setFolder(row.target.id, !row.open)
+          }}
+          style={{ left: 8 + row.depth * 18 }}
+          className="absolute top-0 flex h-7 w-3 items-center text-fg-faint"
+        >
+          {row.open ? (
+            <ChevronDown size={12} aria-hidden="true" />
+          ) : (
+            <ChevronRight size={12} aria-hidden="true" />
+          )}
+        </button>
+      </div>
     )
   }
 
