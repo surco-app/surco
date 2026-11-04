@@ -837,6 +837,7 @@ export async function runProcessTrack(
       shouldAddToAppleMusic(addToAppleMusic, deps.platform, format) &&
       (!!existingMusicEntry || (!!job.musicPersistentId && !job.replacesPath))
     let renameFollowFailed = false
+    let followedMusic: string | undefined
     if (
       inPlace &&
       deps.platform === 'darwin' &&
@@ -854,6 +855,7 @@ export async function runProcessTrack(
           log.warn('process:track Music could not follow the rename', job.inputPath, e)
           renameFollowFailed = true
         })
+      if (entry && !renameFollowFailed) followedMusic = entry.persistentId
       if (entry && !renameFollowFailed)
         await deps.refreshAppleMusicEntry?.(entry.persistentId).catch((e) => {
           log.warn('process:track Music could not reread the rewritten file', target, e)
@@ -1176,7 +1178,15 @@ export async function runProcessTrack(
               coverSet: coverPath !== undefined,
               ...(musicReplaced ? { replaced: musicReplaced } : {}),
             }
-          : undefined
+          : followedMusic
+            ? {
+                pid: followedMusic,
+                file: target,
+                ext: written.plan.ext,
+                meta: { title: job.meta.title, artist: job.meta.artist, album: job.meta.album },
+                coverSet: false,
+              }
+            : undefined
       ;[fileCheck, musicCheck] = await Promise.all([
         finalPath
           ? settled(deps.verifyFile(fileExpect, verifying.signal), 'file', 'fileUnreadable')
