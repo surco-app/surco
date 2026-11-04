@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 4 de noviembre de 2026** (v1.24.0, USB de Pioneer desde Serato y Traktor, crates de Serato editables, ajuste «Biblioteca de Serato» con Actualizar y Actualizar y añadir, crates de Serato elegidos en el editor, «Auto» de la rejilla que lleva los cues al golpe, Auto marcar en pistas que rekordbox no ha analizado; antes v1.23.0, cues de Serato escritos en el fichero con Serato cerrado, editor y flujos de cues en Serato, cues de Serato conservados al convertir, rejilla de Serato leída, Music relee una pista reescrita en su sitio, original renombrado que se queda si otro programa lo usa, título, artista, álbum y género cambiados al convertir que llegan a Traktor y Engine DJ, cambios de biblioteca que sobreviven a una recarga; antes v1.22.0, ajuste de la rejilla en el editor de cues maximizado con guardado en rekordbox, Traktor y Engine DJ, filtro «Rejilla mal», cues fuera del golpe señalados y «Al golpe», pestaña de Serato de solo lectura, MP3 de iTunes a tiempo en Traktor; antes v1.21.0, filtro «Cues fuera de la rejilla» en rekordbox, Traktor y Engine DJ con su tolerancia en Ajustes › Cues; antes v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
+**Última revisión: 4 de noviembre de 2026** (v1.25.0, campo «Calidad» con el veredicto del análisis, autocomprobación de las playlists de rekordbox, Traktor y Engine DJ, búsqueda solo de lo seleccionado fuera de la pestaña de ficheros y columna de resultados plegable, recuentos de los filtros combinados, la playlist abierta se analiza primero; antes v1.24.0, USB de Pioneer desde Serato y Traktor, crates de Serato editables, ajuste «Biblioteca de Serato» con Actualizar y Actualizar y añadir, crates de Serato elegidos en el editor, «Auto» de la rejilla que lleva los cues al golpe, Auto marcar en pistas que rekordbox no ha analizado; antes v1.23.0, cues de Serato escritos en el fichero con Serato cerrado, editor y flujos de cues en Serato, cues de Serato conservados al convertir, rejilla de Serato leída, Music relee una pista reescrita en su sitio, original renombrado que se queda si otro programa lo usa, título, artista, álbum y género cambiados al convertir que llegan a Traktor y Engine DJ, cambios de biblioteca que sobreviven a una recarga; antes v1.22.0, ajuste de la rejilla en el editor de cues maximizado con guardado en rekordbox, Traktor y Engine DJ, filtro «Rejilla mal», cues fuera del golpe señalados y «Al golpe», pestaña de Serato de solo lectura, MP3 de iTunes a tiempo en Traktor; antes v1.21.0, filtro «Cues fuera de la rejilla» en rekordbox, Traktor y Engine DJ con su tolerancia en Ajustes › Cues; antes v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -692,7 +692,7 @@ que es exactamente por qué el resultado solo se ofrece como sugerencia»*
 
 ## 8. Metadatos
 
-35 campos, con una única definición por campo que declara de dónde se lee y con
+36 campos, con una única definición por campo que declara de dónde se lee y con
 qué nombre se escribe en cada contenedor (`shared/tagFields.ts:52-231`). Un test
 impide que un campo nuevo quede ilegible o inescribible. A esos se suman los
 campos propios del usuario (abajo).
@@ -742,6 +742,14 @@ como pista 3 de 12, nunca 312, y un disco «1/2» como disco 1 de 2 (`tags.ts:78
 quien hizo el fichero antes que el usuario: mientras sigan ocultos, convertir los
 vacía (`lib/hygiene.ts:97-101`), para que el estudio y el ripeador del dueño
 anterior no viajen con la pista. Discogs no rellena ninguno de estos campos.
+
+**Calidad** (v1.25.0). Campo oculto por defecto que se escribe como `QUALITY` (TXXX en ID3 y
+comentario Vorbis; `shared/tagFields.ts:229`, `tags.ts:306`, `tags.ts:843`). Con su «Auto» encendido en
+Ajustes → Campos, Surco lo rellena con el veredicto de la lista, siempre en inglés para que
+una regla escrita en una máquina case con la etiqueta de otra: Good, Doubtful, Low quality,
+Reprocessed, Lossy o Damaged (`lib/qualityTag.ts:11-27`). Una pista sin analizar no lo
+cambia. En el editor se ve con borde discontinuo y no se escribe a mano mientras «Auto»
+esté encendido (`Field.tsx`). Sirve también en el nombre del fichero como `{quality}`.
 
 **Campos propios.** En Ajustes → Campos el usuario añade campos con nombre y clave,
 que se editan como los demás: editor, varias pistas, buscar y reemplazar, `{clave}`
@@ -1217,7 +1225,11 @@ de «Añadir a playlist». **Solo se analiza y se busca lo que el usuario ve**: 
 autoanálisis y el auto-match se limitan a las filas por las que ha pasado
 (`sweepScope`, `App.tsx:1707`), porque abrir la colección es mirar, no importar, y
 lanzaría miles de análisis. Las playlists normales siguen analizándose enteras, las
-visibles primero.
+visibles primero. Desde v1.25.0 se analiza antes la playlist abierta y después se sigue con
+las que quedaron atrás, sin apartarlas (`useQualityAnalysis.ts`). El auto-match solo arranca
+solo en la pestaña de ficheros: en Apple Music y en los programas de DJ, «Auto-match» busca
+las filas seleccionadas (`App.tsx:742`, `App.tsx:2106`). La columna de resultados se pliega
+por pestaña y, plegada, no busca (`Editor.tsx:420`).
 
 **Independiente de la sincronización.** Ver las playlists no necesita la opción de
 sincronizar rekordbox al convertir.
@@ -2265,7 +2277,10 @@ Desde v1.18.0, al acabar cada pista Surco relee lo que acaba de tocar y solo ent
 - **rekordbox, Engine DJ y Traktor** (`verifyRekordbox.ts`, `verifyEngine.ts`,
   `verifyTraktor.ts`): la entrada apunta al fichero nuevo y conserva cues y análisis respecto a
   la foto de antes de escribir. Con el programa abierto el cambio queda en cola y la pista
-  sale **pendiente**, sin ✓, hasta que se aplica.
+  sale **pendiente**, sin ✓, hasta que se aplica. Desde v1.25.0, si la conversión pedía
+  playlists, comprueba que la pista está en cada una y dice cuál falta
+  (`verifyRekordbox.ts:208`, `verifyTraktor.ts:78-101`, `verifyEngine.ts:270`). Una pista
+  que el programa no tenía antes también se lista.
 
 Si algo no cuadra la pista sale en ámbar, sin ✓, dice qué y dónde, y ofrece **Reintentar**. El
 fichero viejo no se ofrece a la papelera mientras algo lo siga usando (`supersededFile.ts`). Si
@@ -2280,7 +2295,7 @@ así una pista recortada en su sitio cuyos cues Engine no dejó mover, aunque lo
 no cuadre sea el tamaño.
 
 **Lo que no mira:** la posición exacta de cada cue de rekordbox (cuenta los cues, no dónde
-caen) ni las playlists de los programas de DJ.
+caen).
 
 ### Exportación a rekordbox, Serato, Traktor y M3U8
 
@@ -2762,8 +2777,9 @@ Recopilado de los cinco informes. Cada punto está verificado.
     cues siguen en su sitio» tras recortar una pista de rekordbox.
 38. **Las listas inteligentes de rekordbox no se leen** ni se pueden organizar desde Surco
     (`rekordboxPlaylists.ts:45`).
-39. **Exportar a USB es solo para playlists de rekordbox**, en macOS y Windows (no en Linux),
-    y exige rekordbox cerrado. Lo escrito coincide con un export de rekordbox 7.2.19, pero en
+39. **Exportar a USB sale de playlists de rekordbox, crates de Serato y playlists de Traktor**
+    (estas dos desde v1.24.0, sin probar en un CDJ, punto 1), en macOS y Windows (no en Linux).
+    Desde rekordbox exige rekordbox cerrado. Lo escrito coincide con un export de rekordbox 7.2.19, pero en
     reproductores reales solo consta una prueba en CDJ-3000X y XDJ-AZ
     (`docs/export-usb-medidas.md` §9). Un USB en exFAT no lo lee el CDJ-2000. No prometer
     compatibilidad con todos los CDJ.
