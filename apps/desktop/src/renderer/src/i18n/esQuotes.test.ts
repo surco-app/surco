@@ -8,7 +8,7 @@ function leaves(obj: unknown, prefix = ''): [string, string][] {
   return [[prefix, String(obj)]]
 }
 
-it('quotes the Spanish settings copy with «» throughout, so one hint never mixes two quote styles', () => {
-  const mixed = leaves(es.settings, 'settings').filter(([, text]) => /[“”"]/.test(text))
+it('quotes the Spanish copy with «» throughout, so no screen or dialog mixes two quote styles', () => {
+  const mixed = leaves(es).filter(([, text]) => /[“”"]/.test(text))
   expect(mixed).toEqual([])
 })

@@ -22,7 +22,7 @@
   "export": {
     "title": "Exportar colección",
     "subtitle": "Surco guarda un fichero de colección. Tu software DJ lo lee como fuente de importación. No se añade nada a su biblioteca automáticamente; importas las pistas desde ahí.",
-    "rekordboxHint": "En rekordbox: Preferencias → Avanzado → rekordbox xml → elige este fichero, y luego importa desde el nodo “rekordbox xml”.",
+    "rekordboxHint": "En rekordbox: Preferencias → Avanzado → rekordbox xml → elige este fichero, y luego importa desde el nodo «rekordbox xml».",
     "traktorHint": "En Traktor: File → Import Collection → elige este fichero.",
     "seratoHint": "En Serato: pon el fichero guardado en tu carpeta _Serato_/Subcrates y reinicia Serato. Tus pistas aparecen en la barra lateral.",
     "m3uHint": "Una lista de reproducción estándar para todo lo demás (reproductores, equipos de coche, otras herramientas).",
@@ -191,8 +191,8 @@
     "offline": "Sin conexión. Revisa tu internet y vuelve a intentarlo.",
     "outputPathEscapes": "Ese nombre de archivo escribiría fuera de la carpeta de destino.",
     "settingsFileNotSurco": "Ese archivo no contiene una configuración de Surco.",
-    "appleMusicNoMediaCopy": "Música no ha copiado el archivo a su carpeta multimedia, así que “Solo Apple Music” lo dejaría sin audio. Activa “Copiar archivos a la carpeta multimedia” en Música, o desactiva “Solo Apple Music”.",
-    "appleMusicNoMediaCopyKept": "Música no ha copiado el archivo a su carpeta multimedia, así que “Solo Apple Music” lo dejaría sin audio. Tu copia anterior sigue en Música tal cual y no se ha perdido nada. Activa “Copiar archivos a la carpeta multimedia” en Música, o desactiva “Solo Apple Music”.",
+    "appleMusicNoMediaCopy": "Música no ha copiado el archivo a su carpeta multimedia, así que «Solo Apple Music» lo dejaría sin audio. Activa «Copiar archivos a la carpeta multimedia» en Música, o desactiva «Solo Apple Music».",
+    "appleMusicNoMediaCopyKept": "Música no ha copiado el archivo a su carpeta multimedia, así que «Solo Apple Music» lo dejaría sin audio. Tu copia anterior sigue en Música tal cual y no se ha perdido nada. Activa «Copiar archivos a la carpeta multimedia» en Música, o desactiva «Solo Apple Music».",
     "appleMusicAddReturnedOld": "Música ha devuelto una pista que ya estaba en tu biblioteca en vez de importar el archivo nuevo, así que no se ha añadido. No se ha borrado ninguna pista de tu biblioteca. Si vuelve a pasar, busca en Música otra pista con el mismo título y artista, o con el nombre del archivo.",
     "convertedOutputUnreadable": "El archivo convertido salió ilegible, así que se descartó y el original quedó intacto. Prueba con otros ajustes de conversión.",
     "convertedOutputTruncated": "El archivo convertido salió más corto que el original, así que se descartó y el original quedó intacto. Prueba con otros ajustes de conversión.",
@@ -697,7 +697,7 @@
     "spectrumHighsCap": "agudos ≥ {{cutoff}}",
     "outputName": "Nombre del archivo",
     "outputNameHintInPlace": "Mismo formato que el original: actualiza el archivo original y lo renombra. No se crea ninguna copia en la carpeta de salida.",
-    "outputNameFolder": "Se guardará dentro de la carpeta “{{folder}}”, porque la barra separa carpetas.",
+    "outputNameFolder": "Se guardará dentro de la carpeta «{{folder}}», porque la barra separa carpetas.",
     "overwriteTitle": "Sobrescribe el original",
     "overwriteAlacHint": "ALAC no reemplaza el original: se crea un archivo nuevo en la carpeta de salida y el original se conserva.",
     "overwriteLossyHint": "Sustituye el original sin pérdida por un MP3 de 320 kbps en su sitio. El máster se pierde y no se puede recuperar. Desactívalo en Ajustes → Destino.",
@@ -1935,18 +1935,18 @@
     "items": {
       "token": {
         "q": "¿Necesito un token de Discogs?",
-        "a": "No. Surco busca en Discogs sin configurar nada, usando sus propias credenciales de app, así que puedes empezar a etiquetar al momento.\n\nEsas credenciales compartidas tienen un límite común (60 peticiones por minuto entre todos los usuarios de Surco), por lo que en momentos de mucho uso una búsqueda puede fallar con un aviso de “límite alcanzado”: espera unos segundos y vuelve a intentarlo.\n\nSi etiquetas mucho, genera gratis tu propio token personal en discogs.com/settings/developers y pégalo en Ajustes → Búsqueda. Tu token tiene su propio límite privado, así que las búsquedas van rápidas sin importar cuánta gente esté usando Surco."
+        "a": "No. Surco busca en Discogs sin configurar nada, usando sus propias credenciales de app, así que puedes empezar a etiquetar al momento.\n\nEsas credenciales compartidas tienen un límite común (60 peticiones por minuto entre todos los usuarios de Surco), por lo que en momentos de mucho uso una búsqueda puede fallar con un aviso de «límite alcanzado»: espera unos segundos y vuelve a intentarlo.\n\nSi etiquetas mucho, genera gratis tu propio token personal en discogs.com/settings/developers y pégalo en Ajustes → Búsqueda. Tu token tiene su propio límite privado, así que las búsquedas van rápidas sin importar cuánta gente esté usando Surco."
       },
       "quality": {
-        "q": "¿Por qué una pista sale marcada como “Dudosa”?",
-        "a": "Surco analiza el espectro de audio y mira hasta qué frecuencia llega. Los archivos sin pérdida reales (WAV, FLAC, AIFF) usan todo el rango hasta la frecuencia de Nyquist. Un corte brusco muy por debajo es la huella de un MP3 con pérdida que se reconvirtió a un contenedor sin pérdida: parece lossless por la extensión, pero los agudos ya se perdieron para siempre.\n\n“Dudosa” significa que se detectó esa huella y conviene escucharla: el archivo no está roto, pero su calidad puede estar limitada por un MP3 original (o ser simplemente un máster apagado). “Buena calidad” significa que el espectro llega donde debería en un archivo sin pérdida de verdad."
+        "q": "¿Por qué una pista sale marcada como «Dudosa»?",
+        "a": "Surco analiza el espectro de audio y mira hasta qué frecuencia llega. Los archivos sin pérdida reales (WAV, FLAC, AIFF) usan todo el rango hasta la frecuencia de Nyquist. Un corte brusco muy por debajo es la huella de un MP3 con pérdida que se reconvirtió a un contenedor sin pérdida: parece lossless por la extensión, pero los agudos ya se perdieron para siempre.\n\n«Dudosa» significa que se detectó esa huella y conviene escucharla: el archivo no está roto, pero su calidad puede estar limitada por un MP3 original (o ser simplemente un máster apagado). «Buena calidad» significa que el espectro llega donde debería en un archivo sin pérdida de verdad."
       },
       "format": {
         "q": "¿Qué formato de salida elijo?",
         "a": "AIFF y WAV son sin pérdida: conservan la calidad original exacta y llevan las etiquetas limpias, ideal para pinchar. AIFF suele manejar mejor los metadatos y la carátula en plataformas Apple.\n\nMP3 (320 kbps) tiene pérdida pero ocupa mucho menos, útil cuando el espacio o el tamaño del USB importa.\n\nElijas lo que elijas, un archivo que ya esté en ese formato se copia sin reconvertir, así que nunca pierdes calidad por una conversión innecesaria."
       },
       "appleMusic": {
-        "q": "¿Qué hace “Añadir a Apple Music”?",
+        "q": "¿Qué hace «Añadir a Apple Music»?",
         "a": "Cuando está activado (solo en macOS), Surco importa automáticamente cada pista convertida a tu biblioteca de Apple Music justo después de convertirla, así tus archivos recién etiquetados llegan ahí sin arrastrarlos a mano.\n\nMientras editas, Surco también comprueba si una pista ya está en tu biblioteca y muestra una pequeña insignia, para que no acabes con duplicados. Puedes desactivar el añadido automático cuando quieras en Ajustes → Destino."
       },
       "windows": {
@@ -2036,12 +2036,12 @@
     "cleanUpSuperseded": "Archivo sustituido: «{{name}}»",
     "cleanUpMusicCopy": "Copia antigua en Apple Music: «{{copy}}» (sale de la biblioteca)",
     "convertInPlaceTitle": "¿Sobrescribir los archivos originales?",
-    "convertInPlaceMessage_one": "Con “Editar el original”, esto reescribe el archivo de origen en su sitio. El original se reemplaza y no se puede recuperar.",
-    "convertInPlaceMessage_other": "Con “Editar el original”, esto reescribe {{count}} archivos de origen en su sitio. Los originales se reemplazan y no se pueden recuperar.",
-    "convertInPlaceMessageBackup_one": "Con “Editar el original”, esto reescribe el archivo de origen en su sitio. Antes, Surco guarda una copia de seguridad del original, que puedes restaurar desde la pista.",
-    "convertInPlaceMessageBackup_other": "Con “Editar el original”, esto reescribe {{count}} archivos de origen en su sitio. Antes, Surco guarda una copia de seguridad de cada original, que puedes restaurar desde su pista.",
-    "convertInPlaceMessageAudioBackup_one": "Con “Editar el original”, esto reescribe el archivo de origen en su sitio. Si cambia el audio, Surco guarda antes una copia de seguridad del original; si solo cambian las etiquetas, no.",
-    "convertInPlaceMessageAudioBackup_other": "Con “Editar el original”, esto reescribe {{count}} archivos de origen en su sitio. Si cambia el audio, Surco guarda antes una copia de seguridad de cada original; si solo cambian las etiquetas, no.",
+    "convertInPlaceMessage_one": "Con «Editar el original», esto reescribe el archivo de origen en su sitio. El original se reemplaza y no se puede recuperar.",
+    "convertInPlaceMessage_other": "Con «Editar el original», esto reescribe {{count}} archivos de origen en su sitio. Los originales se reemplazan y no se pueden recuperar.",
+    "convertInPlaceMessageBackup_one": "Con «Editar el original», esto reescribe el archivo de origen en su sitio. Antes, Surco guarda una copia de seguridad del original, que puedes restaurar desde la pista.",
+    "convertInPlaceMessageBackup_other": "Con «Editar el original», esto reescribe {{count}} archivos de origen en su sitio. Antes, Surco guarda una copia de seguridad de cada original, que puedes restaurar desde su pista.",
+    "convertInPlaceMessageAudioBackup_one": "Con «Editar el original», esto reescribe el archivo de origen en su sitio. Si cambia el audio, Surco guarda antes una copia de seguridad del original; si solo cambian las etiquetas, no.",
+    "convertInPlaceMessageAudioBackup_other": "Con «Editar el original», esto reescribe {{count}} archivos de origen en su sitio. Si cambia el audio, Surco guarda antes una copia de seguridad de cada original; si solo cambian las etiquetas, no.",
     "convertInPlaceConfirm": "Sobrescribir y convertir",
     "convertLossyReencodeTitle": "¿Recodificar el original con pérdida?",
     "convertLossyReencodeMessage_one": "Este filtro recodifica en su sitio un archivo con pérdida (MP3 o AAC). Recodificarlo sobre sí mismo degrada su calidad y no se puede deshacer.",
