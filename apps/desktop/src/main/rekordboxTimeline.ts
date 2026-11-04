@@ -241,3 +241,12 @@ export async function rekordboxShiftOfFile(file: string, sampleRate: number): Pr
   const head = await mp3Head(file)
   return head ? rekordboxShiftMs(ext, head, sampleRate) : 0
 }
+
+export async function rekordboxShiftOfFileIfKnown(
+  file: string,
+  sampleRate: number,
+): Promise<number | null> {
+  if (extname(file).toLowerCase() !== '.mp3') return rekordboxShiftOfFile(file, sampleRate)
+  const head = await mp3Head(file)
+  return head && firstFrame(head) !== null ? rekordboxShiftMs('.mp3', head, sampleRate) : null
+}

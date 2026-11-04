@@ -1,6 +1,6 @@
 import { basename, extname } from 'node:path'
 import type { SourceNode } from '../shared/types'
-import { rekordboxShiftOfFile } from './rekordboxTimeline'
+import { rekordboxShiftOfFileIfKnown } from './rekordboxTimeline'
 import { seratoTrackCuesOf } from './seratoCueSource'
 import { type SeratoLibrary, seratoTree } from './seratoLibrary'
 import { readSeratoTrack } from './seratoTags'
@@ -15,6 +15,7 @@ import type { ExportPlaylist, ExportSelection, ExportTrack } from './usbExportSo
 export interface SeratoMarks extends ExportMarks {
   lengthSec: number
   sampleRate: number
+  cuesLeftOut?: boolean
 }
 
 export async function seratoExportMarks(file: string): Promise<SeratoMarks | null> {
@@ -30,12 +31,16 @@ export async function seratoExportMarks(file: string): Promise<SeratoMarks | nul
       endMs: l.endMs,
     })),
   ]
-  const delta = await rekordboxShiftOfFile(file, track.sampleRate)
-  return {
-    ...marksOnRekordboxClock(cues, read.grid, delta),
-    lengthSec: Math.round(track.durationMs / 1000),
-    sampleRate: track.sampleRate,
-  }
+  const delta = await rekordboxShiftOfFileIfKnown(file, track.sampleRate)
+  const facts = { lengthSec: Math.round(track.durationMs / 1000), sampleRate: track.sampleRate }
+  if (delta === null)
+    return {
+      cues: [],
+      grid: [],
+      ...(cues.length + read.grid.length > 0 && { cuesLeftOut: true }),
+      ...facts,
+    }
+  return { ...marksOnRekordboxClock(cues, read.grid, delta), ...facts }
 }
 
 interface PickedCrate {
@@ -103,6 +108,7 @@ export async function readSeratoExportSelection(
         sampleRate: marks?.sampleRate ?? 0,
         cues: marks?.cues ?? [],
         grid: marks?.grid ?? [],
+        ...(marks?.cuesLeftOut && { cuesLeftOut: true }),
       }),
     )
   }

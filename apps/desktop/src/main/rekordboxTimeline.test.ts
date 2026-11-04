@@ -9,6 +9,7 @@ import {
   rekordboxLeadOfFile,
   rekordboxShiftMs,
   rekordboxShiftOfFile,
+  rekordboxShiftOfFileIfKnown,
 } from './rekordboxTimeline'
 
 const FF = ffmpegStatic as unknown as string
@@ -387,5 +388,34 @@ describe('rekordboxShiftOfFile', () => {
     ])
     writeFileSync(file, Buffer.concat([id3(3 << 20), readFileSync(file)]))
     expect(await rekordboxShiftOfFile(file, 44100)).toBeCloseTo((1152 / 44100) * 1000, 3)
+  })
+})
+
+describe('rekordboxShiftOfFileIfKnown', () => {
+  const written = (name: string, head: Buffer): string => {
+    const file = join(dir, name)
+    writeFileSync(file, Buffer.concat([head, Buffer.alloc(2048)]))
+    return file
+  }
+
+  it('knows the shift of an MPEG-1 head, including the headerless one measured in step', async () => {
+    const lame = written('known-lame.mp3', infoFrame(MPEG1_44K_STEREO, 32, 'LAME3.100'))
+    expect(await rekordboxShiftOfFileIfKnown(lame, 44100)).toBeCloseTo(
+      ((1152 + 576 + 529) / 44100) * 1000,
+      3,
+    )
+    const plain = Buffer.alloc(417)
+    Buffer.from(MPEG1_44K_STEREO).copy(plain, 0)
+    expect(await rekordboxShiftOfFileIfKnown(written('known-plain.mp3', plain), 44100)).toBe(0)
+  })
+
+  it('does not know the shift of an MP3 whose first frame it cannot read, where a cue at 0 would be a guess', async () => {
+    const mpeg2 = written('unknown-mpeg2.mp3', infoFrame(MPEG2_22K_STEREO, 17, 'LAME3.100'))
+    expect(await rekordboxShiftOfFileIfKnown(mpeg2, 22050)).toBeNull()
+    expect(await rekordboxShiftOfFileIfKnown(join(dir, 'gone-known.mp3'), 44100)).toBeNull()
+  })
+
+  it('knows the shift of the formats that never read a head the same way as before', async () => {
+    expect(await rekordboxShiftOfFileIfKnown(join(dir, 'a.wav'), 44100)).toBe(0)
   })
 })

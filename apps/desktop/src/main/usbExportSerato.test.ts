@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { buildBakenXml } from './bakenXml'
-import { rekordboxShiftOfFile } from './rekordboxTimeline'
+import { rekordboxShiftOfFileIfKnown } from './rekordboxTimeline'
 import { seratoLeadOfFile } from './seratoClock'
 import type { SeratoLibrary, SeratoLibraryTrack } from './seratoLibrary'
 import { readSeratoTrack } from './seratoTags'
@@ -16,7 +16,7 @@ vi.mock('./seratoClock', async (importOriginal) => ({
 }))
 vi.mock('./rekordboxTimeline', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./rekordboxTimeline')>()),
-  rekordboxShiftOfFile: vi.fn(),
+  rekordboxShiftOfFileIfKnown: vi.fn(),
 }))
 
 const A = '/Users/dj/Música/a.mp3'.normalize('NFC')
@@ -152,6 +152,13 @@ describe('readSeratoExportSelection', () => {
     expect(sel.tracks[0].cuesLeftOut).toBeFalsy()
   })
 
+  it('marks a track whose cues were left out, so the plan names it', async () => {
+    const sel = await readSeratoExportSelection(LIB, ['Gig%%Fri'], {
+      marks: async () => ({ cues: [], grid: [], cuesLeftOut: true, lengthSec: 1, sampleRate: 1 }),
+    })
+    expect(sel.tracks[0].cuesLeftOut).toBe(true)
+  })
+
   it('writes the nested folder, a hot cue and a memory loop into baken XML', async () => {
     const sel = await readSeratoExportSelection(LIB, ['Sets', 'Sets%%Warm'], { marks })
     const xml = buildBakenXml(
@@ -181,7 +188,7 @@ describe('seratoExportMarks', () => {
       tempoMap: { firstBeatMs: 500, bpm: 120 },
     })
     vi.mocked(seratoLeadOfFile).mockResolvedValue(51.18)
-    vi.mocked(rekordboxShiftOfFile).mockResolvedValue(26.12)
+    vi.mocked(rekordboxShiftOfFileIfKnown).mockResolvedValue(26.12)
     const m = await seratoExportMarks('/m/a.mp3')
     expect(m?.cues[0]).toMatchObject({ kind: 1, comment: 'Drop', outMs: -1 })
     expect(m?.cues[0].inMs).toBeCloseTo(974.94, 6)
@@ -189,6 +196,40 @@ describe('seratoExportMarks', () => {
     expect(m?.grid[0]).toMatchObject({ beat: 1, bpm: 120 })
     expect(m?.grid[0].ms).toBeCloseTo(474.94, 6)
     expect(m).toMatchObject({ lengthSec: 10, sampleRate: 44100 })
+  })
+
+  it('leaves out the cues and grid of a file whose rekordbox shift is unknown, and counts it, since a guessed shift puts cues off the beat on a CDJ', async () => {
+    vi.mocked(readSeratoTrack).mockReturnValue({
+      payload: null,
+      oldBlockDisagrees: false,
+      durationMs: 10000,
+      sampleRate: 22050,
+      markers: { cues: [{ index: 0, ms: 1000, color: 0xcc0000, name: 'Drop' }], loops: [] },
+      tempoMap: { firstBeatMs: 500, bpm: 120 },
+    })
+    vi.mocked(seratoLeadOfFile).mockResolvedValue(0)
+    vi.mocked(rekordboxShiftOfFileIfKnown).mockResolvedValue(null)
+    expect(await seratoExportMarks('/m/mpeg2.mp3')).toEqual({
+      cues: [],
+      grid: [],
+      cuesLeftOut: true,
+      lengthSec: 10,
+      sampleRate: 22050,
+    })
+  })
+
+  it('does not count a file with no cues or grid as left out, whatever its shift', async () => {
+    vi.mocked(readSeratoTrack).mockReturnValue({
+      payload: null,
+      oldBlockDisagrees: false,
+      durationMs: 10000,
+      sampleRate: 22050,
+      markers: { cues: [], loops: [] },
+      tempoMap: null,
+    })
+    vi.mocked(seratoLeadOfFile).mockResolvedValue(0)
+    vi.mocked(rekordboxShiftOfFileIfKnown).mockResolvedValue(null)
+    expect((await seratoExportMarks('/m/mpeg2.mp3'))?.cuesLeftOut).toBeFalsy()
   })
 
   it('has nothing to give for a file whose tags cannot be read', async () => {
