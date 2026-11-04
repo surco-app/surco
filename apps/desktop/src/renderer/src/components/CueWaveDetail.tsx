@@ -384,8 +384,8 @@ export function CueWaveDetail({
     onMarkMenu?.({ key, clientX: e.clientX, clientY: e.clientY })
   }
   return (
-    <div className="flex shrink-0 flex-col">
-      <div className="relative">
+    <div className={compact ? 'flex shrink-0 flex-col' : 'flex min-h-0 flex-1 flex-col'}>
+      <div className={compact ? 'relative' : 'relative flex min-h-0 flex-1 flex-col'}>
         <div
           ref={stageRef}
           data-testid="cue-detail"
@@ -413,7 +413,7 @@ export function CueWaveDetail({
           onMouseLeave={() => onHover?.(null)}
           style={{
             cursor: onPlace ? 'crosshair' : 'grab',
-            height: compact ? COMPACT_HEIGHT : STAGE_HEIGHT,
+            ...(compact ? { height: COMPACT_HEIGHT } : { flexGrow: 1, minHeight: STAGE_HEIGHT }),
           }}
           className="relative w-full shrink-0 select-none overflow-hidden"
         >

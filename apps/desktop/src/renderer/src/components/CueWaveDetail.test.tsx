@@ -625,10 +625,18 @@ describe('CueWaveDetail', () => {
     expect(onZoom).toHaveBeenCalledTimes(2)
   })
 
-  it('keeps the zoomed wave a calm 280px however tall the window, since a wave filling the screen read as coarse rather than clean', () => {
+  it('grows the zoomed wave into the free height of the full editor from 280px, so the window goes to the wave and not to empty space under the deck', () => {
     setup()
     const stage = screen.getByTestId('cue-detail')
-    expect(stage.style.height).toBe('280px')
+    expect(stage.style.flexGrow).toBe('1')
+    expect(stage.style.minHeight).toBe('280px')
+    expect(stage.style.height).toBe('')
+  })
+
+  it('keeps the folded zoomed wave its short fixed height, since the folded section shares the editor with the rest', () => {
+    setup({ compact: true })
+    const stage = screen.getByTestId('cue-detail')
+    expect(stage.style.height).toBe('96px')
     expect(stage.style.flexGrow).not.toBe('1')
   })
 
