@@ -10,7 +10,7 @@ const fake = (busy = false): UsbExporter => ({
   busy: () => busy,
 })
 
-const req = (source?: 'engine'): UsbExportRequest => ({
+const req = (source?: UsbExportRequest['source']): UsbExportRequest => ({
   playlistIds: ['1'],
   target: { kind: 'volume', uuid: 'U' },
   prune: false,
@@ -48,6 +48,41 @@ describe('routeUsbExports', () => {
     await route.stop()
     expect(engine.stop).toHaveBeenCalledOnce()
     expect(rekordbox.stop).toHaveBeenCalledOnce()
+  })
+
+  it('sends a Serato and a Traktor export to their own exporters, never to rekordbox', async () => {
+    const rekordbox = fake()
+    const serato = fake()
+    const traktor = fake()
+    const route = routeUsbExports({ rekordbox, engine: fake(), serato, traktor })
+    await route.plan(req('serato'))
+    await route.start(req('traktor'))
+    expect(serato.plan).toHaveBeenCalledWith(req('serato'))
+    expect(traktor.start).toHaveBeenCalledWith(req('traktor'))
+    expect(rekordbox.plan).not.toHaveBeenCalled()
+    expect(rekordbox.start).not.toHaveBeenCalled()
+  })
+
+  it('refuses a Serato export while rekordbox writes, and rekordbox while Traktor writes, as a stick takes one export at a time', async () => {
+    const route = routeUsbExports({ rekordbox: fake(true), engine: fake(), serato: fake() })
+    expect(await route.start(req('serato'))).toEqual({ ok: false, reason: 'busy' })
+    const other = routeUsbExports({ rekordbox: fake(), engine: fake(), traktor: fake(true) })
+    expect(await other.plan(req())).toEqual({ ok: false, reason: 'busy' })
+    expect(other.busy()).toBe(true)
+  })
+
+  it('answers unsupported for a source with no exporter here, rather than reading another library', async () => {
+    const route = routeUsbExports({ rekordbox: fake(), engine: fake() })
+    expect(await route.plan(req('serato'))).toEqual({ ok: false, reason: 'unsupported' })
+    expect(await route.start(req('traktor'))).toEqual({ ok: false, reason: 'unsupported' })
+  })
+
+  it('cancels and stops a Traktor export like the others', async () => {
+    const traktor = fake(true)
+    const route = routeUsbExports({ rekordbox: fake(), engine: fake(), traktor })
+    expect(route.cancel()).toBe(true)
+    await route.stop()
+    expect(traktor.stop).toHaveBeenCalledOnce()
   })
 })
 
