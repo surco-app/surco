@@ -12,7 +12,7 @@ const VERSION = '1.0/Serato ScratchLive Crate'
 // the fields a DJ actually scans; widths are left at "0" so Serato uses its own defaults.
 const COLUMNS = ['song', 'playCount', 'artist', 'bpm', 'key', 'album', 'length', 'comment', 'added']
 
-function utf16be(value: string): Uint8Array {
+export function utf16be(value: string): Uint8Array {
   const bytes = new Uint8Array(value.length * 2)
   for (let i = 0; i < value.length; i++) {
     const code = value.charCodeAt(i)
@@ -22,7 +22,7 @@ function utf16be(value: string): Uint8Array {
   return bytes
 }
 
-function concat(parts: Uint8Array[]): Uint8Array {
+export function concat(parts: Uint8Array[]): Uint8Array {
   const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0))
   let offset = 0
   for (const part of parts) {
@@ -33,7 +33,7 @@ function concat(parts: Uint8Array[]): Uint8Array {
 }
 
 // One frame: tag + big-endian uint32 body length + body.
-function frame(tag: string, body: Uint8Array): Uint8Array {
+export function frame(tag: string, body: Uint8Array): Uint8Array {
   const out = new Uint8Array(8 + body.length)
   for (let i = 0; i < 4; i++) out[i] = tag.charCodeAt(i)
   const len = body.length
@@ -45,8 +45,31 @@ function frame(tag: string, body: Uint8Array): Uint8Array {
   return out
 }
 
-function textFrame(tag: string, value: string): Uint8Array {
+export function textFrame(tag: string, value: string): Uint8Array {
   return frame(tag, utf16be(value))
+}
+
+export interface RawFrame {
+  tag: string
+  body: Uint8Array
+  raw: Uint8Array
+}
+
+export function rawFramesOf(bytes: Uint8Array): RawFrame[] | null {
+  const frames: RawFrame[] = []
+  let at = 0
+  while (at + 8 <= bytes.length) {
+    const length = new DataView(bytes.buffer, bytes.byteOffset + at + 4, 4).getUint32(0)
+    const end = at + 8 + length
+    if (end > bytes.length) return null
+    frames.push({
+      tag: String.fromCharCode(...bytes.subarray(at, at + 4)),
+      body: bytes.subarray(at + 8, end),
+      raw: bytes.subarray(at, end),
+    })
+    at = end
+  }
+  return at === bytes.length ? frames : null
 }
 
 function columnFrame(name: string): Uint8Array {

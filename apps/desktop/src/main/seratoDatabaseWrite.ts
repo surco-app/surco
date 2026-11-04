@@ -1,3 +1,5 @@
+import { concat, frame, type RawFrame, rawFramesOf, textFrame } from '../shared/serato'
+
 export type SeratoTagField = 'tsng' | 'tart' | 'talb' | 'tgen'
 
 export interface NewSeratoTrack {
@@ -8,12 +10,6 @@ export interface NewSeratoTrack {
   album: string
   genre: string
   addedAt: number
-}
-
-interface RawFrame {
-  tag: string
-  body: Uint8Array
-  raw: Uint8Array
 }
 
 const utf16 = new TextDecoder('utf-16be')
@@ -34,51 +30,10 @@ export function seratoFileType(path: string): string | null {
   return FILE_TYPES[path.slice(dot).toLowerCase()] ?? null
 }
 
-function rawFramesOf(bytes: Uint8Array): RawFrame[] | null {
-  const frames: RawFrame[] = []
-  let at = 0
-  while (at + 8 <= bytes.length) {
-    const length = new DataView(bytes.buffer, bytes.byteOffset + at + 4, 4).getUint32(0)
-    const end = at + 8 + length
-    if (end > bytes.length) return null
-    frames.push({
-      tag: String.fromCharCode(...bytes.subarray(at, at + 4)),
-      body: bytes.subarray(at + 8, end),
-      raw: bytes.subarray(at, end),
-    })
-    at = end
-  }
-  return at === bytes.length ? frames : null
-}
-
-function concatBytes(parts: Uint8Array[]): Uint8Array {
-  const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0))
-  let at = 0
-  for (const part of parts) {
-    out.set(part, at)
-    at += part.length
-  }
-  return out
-}
-
-function frameOf(tag: string, body: Uint8Array): Uint8Array {
-  const head = new Uint8Array(8)
-  for (let i = 0; i < 4; i++) head[i] = tag.charCodeAt(i)
-  new DataView(head.buffer).setUint32(4, body.length)
-  return concatBytes([head, body])
-}
-
-function textFrame(tag: string, value: string): Uint8Array {
-  const body = new Uint8Array(value.length * 2)
-  const view = new DataView(body.buffer)
-  for (let i = 0; i < value.length; i++) view.setUint16(i * 2, value.charCodeAt(i))
-  return frameOf(tag, body)
-}
-
 function u32Frame(tag: string, value: number): Uint8Array {
   const body = new Uint8Array(4)
   new DataView(body.buffer).setUint32(0, value)
-  return frameOf(tag, body)
+  return frame(tag, body)
 }
 
 function pfilOf(inner: RawFrame[]): string | null {
@@ -120,9 +75,9 @@ export function withSeratoTrackFields(
       return textFrame(sub.tag, value)
     })
     for (const [tag, value] of pending) body.push(textFrame(tag, value))
-    return frameOf('otrk', concatBytes(body))
+    return frame('otrk', concat(body))
   })
-  return found ? concatBytes(parts) : null
+  return found ? concat(parts) : null
 }
 
 export function withSeratoTrackAdded(bytes: Uint8Array, track: NewSeratoTrack): Uint8Array | null {
@@ -142,5 +97,5 @@ export function withSeratoTrackAdded(bytes: Uint8Array, track: NewSeratoTrack): 
     textFrame('tadd', String(track.addedAt)),
     u32Frame('uadd', track.addedAt),
   ]
-  return concatBytes([bytes, frameOf('otrk', concatBytes(body))])
+  return concat([bytes, frame('otrk', concat(body))])
 }

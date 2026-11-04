@@ -10,7 +10,12 @@ import {
 } from './seratoDatabaseWrite'
 
 const PRAY_PFIL = 'Users/vicent/Music/Serato Pruebas/Pray.aiff'
-const raw = (hex: string) => Uint8Array.from(hex.match(/../g)!.map((h) => Number.parseInt(h, 16)))
+const present = <T>(value: T | null | undefined): T => {
+  if (value === null || value === undefined) throw new Error('expected a value')
+  return value
+}
+const raw = (hex: string) =>
+  Uint8Array.from(present(hex.match(/../g)).map((h) => Number.parseInt(h, 16)))
 const rawFrame = (tag: string, hex: string) => frame(tag, raw(hex))
 
 const VRSN = frame('vrsn', utf16be('2.0/Serato Scratch LIVE Database'))
@@ -86,14 +91,15 @@ function entries(db: Uint8Array) {
   return entryFrames(db).filter((f) => f.tag === 'otrk')
 }
 
-const subframeTags = (db: Uint8Array) => entryFrames(entries(db).at(-1)!.body).map((f) => f.tag)
+const subframeTags = (db: Uint8Array) =>
+  entryFrames(present(entries(db).at(-1)).body).map((f) => f.tag)
 const lastEntryField = (db: Uint8Array, tag: string) =>
-  entryFrames(entries(db).at(-1)!.body).find((f) => f.tag === tag)!.body
+  entryFrames(present(entries(db).at(-1)).body).find((f) => f.tag === tag)?.body
 
 describe('withSeratoTrackFields', () => {
   it('changes only the title of the entry with that pfil, byte for byte elsewhere', () => {
     const db = concat([VRSN, REAL_ENTRY, OTHER_ENTRY])
-    const out = withSeratoTrackFields(db, PRAY_PFIL, { tsng: 'Pray (Edit)' })!
+    const out = present(withSeratoTrackFields(db, PRAY_PFIL, { tsng: 'Pray (Edit)' }))
     expect(parseSeratoDatabase(out)[0].title).toBe('Pray (Edit)')
     expect(out.subarray(-OTHER_ENTRY.length)).toEqual(OTHER_ENTRY)
     expect(
@@ -102,13 +108,15 @@ describe('withSeratoTrackFields', () => {
   })
 
   it('keeps every unknown field of the entry, in its order', () => {
-    const out = withSeratoTrackFields(concat([VRSN, REAL_ENTRY]), PRAY_PFIL, { tgen: 'House' })!
+    const out = present(
+      withSeratoTrackFields(concat([VRSN, REAL_ENTRY]), PRAY_PFIL, { tgen: 'House' }),
+    )
     expect(subframeTags(out)).toEqual(subframeTags(concat([VRSN, REAL_ENTRY])))
   })
 
   it('adds a field the entry lacked at the end of the entry', () => {
     const db = concat([VRSN, track({ ttyp: 'mp3', pfil: 'a.mp3' })])
-    expect(subframeTags(withSeratoTrackFields(db, 'a.mp3', { talb: 'X' })!)).toEqual([
+    expect(subframeTags(present(withSeratoTrackFields(db, 'a.mp3', { talb: 'X' })))).toEqual([
       'ttyp',
       'pfil',
       'talb',
@@ -116,7 +124,7 @@ describe('withSeratoTrackFields', () => {
   })
 
   it('writes an empty string as a zero length frame', () => {
-    const out = withSeratoTrackFields(concat([VRSN, REAL_ENTRY]), PRAY_PFIL, { talb: '' })!
+    const out = present(withSeratoTrackFields(concat([VRSN, REAL_ENTRY]), PRAY_PFIL, { talb: '' }))
     expect(parseSeratoDatabase(out)[0].album).toBe('')
     expect(subframeTags(out)).toContain('talb')
   })
@@ -128,12 +136,14 @@ describe('withSeratoTrackFields', () => {
   })
 
   it('never touches pfil', () => {
-    const out = withSeratoTrackFields(concat([VRSN, REAL_ENTRY]), PRAY_PFIL, {
-      tsng: 'x',
-      tart: 'y',
-      talb: 'z',
-      tgen: 'w',
-    })!
+    const out = present(
+      withSeratoTrackFields(concat([VRSN, REAL_ENTRY]), PRAY_PFIL, {
+        tsng: 'x',
+        tart: 'y',
+        talb: 'z',
+        tgen: 'w',
+      }),
+    )
     expect(parseSeratoDatabase(out)[0].path).toBe(PRAY_PFIL)
   })
 
@@ -147,7 +157,7 @@ describe('withSeratoTrackFields', () => {
 
 describe('withSeratoTrackAdded', () => {
   it('appends a new entry Serato reads, with the added time as text and as u32', () => {
-    const out = withSeratoTrackAdded(concat([VRSN, REAL_ENTRY]), NEW)!
+    const out = present(withSeratoTrackAdded(concat([VRSN, REAL_ENTRY]), NEW))
     expect(out.subarray(0, VRSN.length + REAL_ENTRY.length)).toEqual(concat([VRSN, REAL_ENTRY]))
     expect(parseSeratoDatabase(out)[1]).toMatchObject({
       path: NEW.pfil,
@@ -168,14 +178,9 @@ describe('withSeratoTrackAdded', () => {
   })
 
   it('leaves out empty text fields of a new entry', () => {
-    expect(subframeTags(withSeratoTrackAdded(VRSN, { ...NEW, album: '', genre: '' })!)).toEqual([
-      'ttyp',
-      'pfil',
-      'tsng',
-      'tart',
-      'tadd',
-      'uadd',
-    ])
+    expect(
+      subframeTags(present(withSeratoTrackAdded(VRSN, { ...NEW, album: '', genre: '' }))),
+    ).toEqual(['ttyp', 'pfil', 'tsng', 'tart', 'tadd', 'uadd'])
   })
 })
 

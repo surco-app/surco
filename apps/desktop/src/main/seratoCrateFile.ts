@@ -1,56 +1,10 @@
 import { join } from 'node:path'
+import { concat, frame, type RawFrame, rawFramesOf, utf16be } from '../shared/serato'
 import type { SeratoLibraryRoot } from './seratoLibrary'
 
 export type CrateTrack = { keep: number } | { path: string }
 
-interface RawFrame {
-  tag: string
-  body: Uint8Array
-  raw: Uint8Array
-}
-
 const utf16 = new TextDecoder('utf-16be')
-
-function rawFramesOf(bytes: Uint8Array): RawFrame[] | null {
-  const frames: RawFrame[] = []
-  let at = 0
-  while (at + 8 <= bytes.length) {
-    const length = new DataView(bytes.buffer, bytes.byteOffset + at + 4, 4).getUint32(0)
-    const end = at + 8 + length
-    if (end > bytes.length) return null
-    frames.push({
-      tag: String.fromCharCode(...bytes.subarray(at, at + 4)),
-      body: bytes.subarray(at + 8, end),
-      raw: bytes.subarray(at, end),
-    })
-    at = end
-  }
-  return at === bytes.length ? frames : null
-}
-
-function concatBytes(parts: Uint8Array[]): Uint8Array {
-  const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0))
-  let at = 0
-  for (const part of parts) {
-    out.set(part, at)
-    at += part.length
-  }
-  return out
-}
-
-function frameOf(tag: string, body: Uint8Array): Uint8Array {
-  const head = new Uint8Array(8)
-  for (let i = 0; i < 4; i++) head[i] = tag.charCodeAt(i)
-  new DataView(head.buffer).setUint32(4, body.length)
-  return concatBytes([head, body])
-}
-
-function utf16beOf(value: string): Uint8Array {
-  const out = new Uint8Array(value.length * 2)
-  const view = new DataView(out.buffer)
-  for (let i = 0; i < value.length; i++) view.setUint16(i * 2, value.charCodeAt(i))
-  return out
-}
 
 function pathOf(track: RawFrame): string {
   const inner = rawFramesOf(track.body)
@@ -75,7 +29,7 @@ export function withCrateTracks(bytes: Uint8Array, tracks: CrateTrack[]): Uint8A
       if (!kept) return null
       block.push(kept.raw)
     } else {
-      block.push(frameOf('otrk', frameOf('ptrk', utf16beOf(track.path))))
+      block.push(frame('otrk', frame('ptrk', utf16be(track.path))))
     }
   }
   const first = frames.findIndex((f) => f.tag === 'otrk')
@@ -85,7 +39,7 @@ export function withCrateTracks(bytes: Uint8Array, tracks: CrateTrack[]): Uint8A
     if (f.tag !== 'otrk') out.push(f.raw)
   })
   if (first === -1) out.push(...block)
-  return concatBytes(out)
+  return concat(out)
 }
 
 export function validCrateName(name: string): boolean {
