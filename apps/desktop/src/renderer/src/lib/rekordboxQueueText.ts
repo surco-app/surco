@@ -59,6 +59,8 @@ export const REKORDBOX_QUEUE_WORDS: QueueWords = {
     'cues-adjusted': 'rekordboxQueue.notice.cuesAdjusted',
     'cues-unfit': 'rekordboxQueue.notice.cuesUnfit',
     'not-in-library': 'rekordboxQueue.notice.notInLibrary',
+    'tags-not-in-library': 'seratoQueue.notice.tagsNotInLibrary',
+    'tags-changed': 'seratoQueue.notice.tagsChanged',
   },
 }
 

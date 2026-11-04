@@ -65,6 +65,7 @@ function depsWith({ running }: { running: boolean }) {
       queue,
       isRunning: async () => running,
       onWaiting: vi.fn(),
+      onApplied: vi.fn(),
     },
   }
 }
@@ -98,6 +99,7 @@ describe('seratoTagOps', () => {
         path: PRAY,
         label: 'Pray.aiff',
         fields: { tsng: 'Pray', tart: 'Tina', talb: 'P', tgen: 'House' },
+        from: { tsng: 'a', tart: 'a', talb: 'a', tgen: 'a' },
       },
     ])
   })
@@ -143,6 +145,63 @@ describe('syncSeratoTags', () => {
     await syncSeratoTags(UPDATES, sync)
     expect(await queue.apply(async () => true)).toMatchObject({ status: 'applied', tracks: 1 })
     expect(titleOfPray(roots)).toBe('Pray')
+  })
+
+  it('leaves Serato as the user left it when Undo comes after they changed the title in Serato', async () => {
+    const { roots, sync } = depsWith({ running: false })
+    await syncSeratoTags(UPDATES, sync)
+    writeFileSync(
+      dbOf(roots[0]),
+      concat([VRSN, track({ ttyp: 'aiff', pfil: PRAY_PFIL, tsng: 'Pray (mine)', tart: 'Tina' })]),
+    )
+    const undo: LibraryTagUpdate[] = [
+      { path: PRAY, fields: { title: { from: 'Pray', to: 'Pray (old)' } } },
+    ]
+    expect(await syncSeratoTags(undo, sync)).toEqual({ outcome: 'nothing' })
+    expect(titleOfPray(roots)).toBe('Pray (mine)')
+  })
+
+  it('announces what else in the Serato queue it wrote, and keeps its own tags for the review', async () => {
+    const { sync } = depsWith({ running: false })
+    const other = { id: 'other', applied: true, notices: [] }
+    const queue = {
+      enqueue: vi.fn(),
+      apply: vi.fn(async () => ({
+        status: 'applied' as const,
+        tracks: 2,
+        changes: 1,
+        notices: [],
+        written: [],
+        outcomes: [{ id: queue.enqueue.mock.calls[0][0][0].id, applied: true, notices: [] }, other],
+      })),
+      drop: vi.fn(),
+    }
+    expect(await syncSeratoTags(UPDATES, { ...sync, queue })).toEqual({
+      outcome: 'updated',
+      count: 1,
+    })
+    expect(sync.onApplied).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'applied', changes: 1, outcomes: [other] }),
+    )
+  })
+
+  it('announces nothing when only its own tags were written', async () => {
+    const { sync } = depsWith({ running: false })
+    await syncSeratoTags(UPDATES, sync)
+    expect(sync.onApplied).not.toHaveBeenCalled()
+  })
+
+  it('takes its changes back out of the queue when the write throws, so the sheet saying failed stays true', async () => {
+    const { sync } = depsWith({ running: false })
+    const queue = {
+      enqueue: vi.fn(),
+      apply: vi.fn(async () => {
+        throw new Error('boom')
+      }),
+      drop: vi.fn(),
+    }
+    await expect(syncSeratoTags(UPDATES, { ...sync, queue })).rejects.toThrow('boom')
+    expect(queue.drop).toHaveBeenCalledWith(queue.enqueue.mock.calls[0][0][0].id)
   })
 
   it('runs inside the shared library flush without waiting on it', async () => {

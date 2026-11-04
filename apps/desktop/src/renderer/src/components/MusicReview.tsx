@@ -350,6 +350,9 @@ function Done({
       ...(tags === 'failed' ? [t(tagsFailed, { library: name })] : []),
     ]
   })
+  const libraryQueued = TAG_LIBRARIES.some(
+    ([library]) => run.tagSync?.[library].outcome === 'queued',
+  )
   const libraryLeft = TAG_LIBRARIES.some(([library]) => {
     const tags = run.tagSync?.[library].outcome
     return tags === 'open' || tags === 'failed'
@@ -618,7 +621,7 @@ function Done({
                   ? t('musicReview.done.subtitleLibraries')
                   : nothing
                     ? t('musicReview.done.subtitleNothing')
-                    : djReceived
+                    : djReceived && !libraryQueued
                       ? t('musicReview.done.subtitle')
                       : musicReceived
                         ? t('musicReview.done.subtitleFilesMusic')

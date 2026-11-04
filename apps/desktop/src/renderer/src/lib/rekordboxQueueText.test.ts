@@ -322,6 +322,8 @@ describe('Serato queue text', () => {
       { code: 'playlist-gone', track: 'Tengo', playlist: 'Gig' },
       { code: 'other-volume', track: 'Tengo', playlist: 'Gig' },
       { code: 'source-in-serato', track: 'Tengo', playlist: 'Gig' },
+      { code: 'tags-not-in-library', track: 'Tengo' },
+      { code: 'tags-changed', track: 'Tengo' },
     ]
     for (const [lng, bundle] of Object.entries({ en, es, de, fr, 'pt-BR': ptBR, ja })) {
       if (!i18n.hasResourceBundle(lng, 'translation'))
@@ -334,6 +336,27 @@ describe('Serato queue text', () => {
         expect(text, `${lng} ${notice.code}`).not.toMatch(/rekordbox/i)
       }
     }
+  })
+
+  it('says a review tag change left a track Serato no longer has, without talking about crates', () => {
+    expect(
+      noticeText(tr, { code: 'tags-not-in-library', track: 'Tengo' }, SERATO_QUEUE_WORDS),
+    ).toBe('Tengo is no longer in Serato and its tags were not changed')
+    if (!i18n.hasResourceBundle('es', 'translation'))
+      i18n.addResourceBundle('es', 'translation', es)
+    expect(
+      noticeText(
+        i18n.getFixedT('es'),
+        { code: 'tags-not-in-library', track: 'Tengo' },
+        SERATO_QUEUE_WORDS,
+      ),
+    ).toBe('Tengo ya no está en Serato y sus etiquetas no se cambiaron')
+  })
+
+  it('says a review tag change left a track the user changed in Serato meanwhile', () => {
+    expect(noticeText(tr, { code: 'tags-changed', track: 'Tengo' }, SERATO_QUEUE_WORDS)).toBe(
+      'Tengo changed in Serato and its tags were not changed',
+    )
   })
 
   it('keeps the rekordbox wording for rekordbox while Serato gets its own', () => {

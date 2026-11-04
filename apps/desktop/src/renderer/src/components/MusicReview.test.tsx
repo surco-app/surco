@@ -886,7 +886,25 @@ describe('MusicReview', () => {
       )
       expect(dest('serato')).toHaveAttribute('data-state', 'ok')
       expect(detailOf('serato')).toBe('will save when Serato closes')
-      expect(screen.getByTestId('music-review-done-subtitle')).toHaveTextContent(
+      expect(screen.queryByTestId('music-review-done-warnings')).toBeNull()
+    })
+
+    it('never says the changes are already in every library while Serato still waits to close', () => {
+      render(
+        <Panes
+          review={{
+            ...done(
+              run({
+                outcomes: [written],
+                librarySync: 'ok',
+                tagSync: synced({ serato: { outcome: 'queued' } }),
+              }),
+            ),
+            libraries: { ...status(), serato: { enabled: true, found: true } },
+          }}
+        />,
+      )
+      expect(screen.getByTestId('music-review-done-subtitle')).not.toHaveTextContent(
         'The changes are already in your files and libraries.',
       )
     })

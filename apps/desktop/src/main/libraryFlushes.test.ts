@@ -454,6 +454,7 @@ describe('rekordbox writes while the queue is held after a write left the collec
       queue: { enqueue: vi.fn(), apply: vi.fn(), drop: vi.fn() },
       isRunning: async () => false,
       onWaiting: vi.fn(),
+      onApplied: vi.fn(),
     }
     expect((await syncTagsInLibraries(update, held(), sessions, vi.fn())).serato).toEqual({
       outcome: 'nothing',

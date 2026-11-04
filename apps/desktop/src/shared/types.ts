@@ -1277,6 +1277,8 @@ export type RekordboxQueueNotice =
         | 'cues-old-block'
         | 'cues-slot-dropped'
         | 'not-in-library'
+        | 'tags-not-in-library'
+        | 'tags-changed'
       track: string
     }
   | {

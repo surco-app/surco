@@ -2962,7 +2962,9 @@
       "notInLibrary": "{{track}} はもう Serato にありません。クレートは変更されていません",
       "playlistChanged": "{{playlist}} の {{track}} は変更されませんでした。Serato で変更されています",
       "playlistGone": "{{playlist}} はもう Serato にありません。{{track}} は追加されませんでした",
-      "sourceInSerato": "{{track}} は元のファイルのまま Serato に残り、クレート「{{playlist}}」には入りません"
+      "sourceInSerato": "{{track}} は元のファイルのまま Serato に残り、クレート「{{playlist}}」には入りません",
+      "tagsNotInLibrary": "{{track}} はもう Serato にないため、タグは変更されませんでした",
+      "tagsChanged": "{{track}} は Serato で変更されたため、タグは変更されませんでした"
     }
   },
   "cueWave": {

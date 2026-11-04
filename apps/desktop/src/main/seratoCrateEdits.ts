@@ -21,7 +21,9 @@ import {
   validCrateName,
   withCrateTracks,
 } from './seratoCrateFile'
+import { parseSeratoDatabase, type SeratoTrack } from './seratoDatabase'
 import {
+  type SeratoTagField,
   seratoDatabaseHas,
   seratoFileType,
   withSeratoTrackAdded,
@@ -516,18 +518,37 @@ export function applySeratoTrack(
   return { id: op.id, applied: true, notices: fileInCrates(draft, op, root, roots, path) }
 }
 
+const HELD: Record<SeratoTagField, keyof SeratoTrack> = {
+  tsng: 'title',
+  tart: 'artist',
+  talb: 'album',
+  tgen: 'genre',
+}
+
+const sameText = (a: string, b: string): boolean => a.normalize('NFC') === b.normalize('NFC')
+
 export function applySeratoTags(
   draft: SeratoDraft,
   op: TagsOp,
   roots: SeratoLibraryRoot[],
 ): OpOutcome {
+  const refused = (code: 'tags-not-in-library' | 'tags-changed'): OpOutcome => ({
+    id: op.id,
+    applied: false,
+    notices: [{ code, track: op.label }],
+  })
   const root = seratoRootOf(op.path, roots)
   const database = root && join(root.dir, DATABASE)
   const bytes = database && draft.read(database)
-  const tagged =
-    root && bytes && withSeratoTrackFields(bytes, seratoPathOn(op.path, root), op.fields)
-  if (!database || !tagged)
-    return { id: op.id, applied: false, notices: [{ code: 'not-in-library', track: op.label }] }
+  if (!root || !database || !bytes) return refused('tags-not-in-library')
+  const pfil = seratoPathOn(op.path, root)
+  const held = parseSeratoDatabase(bytes).find((t) => sameText(t.path, pfil))
+  if (!held) return refused('tags-not-in-library')
+  const from = Object.entries(op.from ?? {}) as [SeratoTagField, string][]
+  if (!from.every(([tag, was]) => sameText(String(held[HELD[tag]] ?? ''), was)))
+    return refused('tags-changed')
+  const tagged = withSeratoTrackFields(bytes, pfil, op.fields)
+  if (!tagged) return refused('tags-not-in-library')
   draft.write(database, tagged)
   return { id: op.id, applied: true, notices: [] }
 }

@@ -61,6 +61,7 @@ export interface TagsOp {
   path: string
   label: string
   fields: Partial<Record<SeratoTagField, string>>
+  from?: Partial<Record<SeratoTagField, string>>
 }
 
 export type QueueOp = EditOp | TrackOp | CuesOp | TagsOp

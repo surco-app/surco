@@ -1585,6 +1585,7 @@ function registerIpc(): void {
         queue: seratoCueQueue,
         isRunning: DJ_PROCESSES.serato.isRunning,
         onWaiting: seratoCueQueueWatch.poke,
+        onApplied: programQueues.serato.announceApplied,
       },
     ),
   )

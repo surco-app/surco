@@ -2962,7 +2962,9 @@
       "notInLibrary": "{{track}} ist nicht mehr in Serato. Seine Crates wurden nicht geändert",
       "playlistChanged": "{{track}} wurde in {{playlist}} nicht geändert. Es hat sich in Serato geändert",
       "playlistGone": "{{playlist}} ist nicht mehr in Serato. {{track}} wurde nicht hinzugefügt",
-      "sourceInSerato": "{{track}} bleibt mit der Originaldatei in Serato und kommt nicht in das Crate „{{playlist}}“"
+      "sourceInSerato": "{{track}} bleibt mit der Originaldatei in Serato und kommt nicht in das Crate „{{playlist}}“",
+      "tagsNotInLibrary": "{{track}} ist nicht mehr in Serato und seine Tags wurden nicht geändert",
+      "tagsChanged": "{{track}} wurde in Serato geändert und seine Tags wurden nicht geändert"
     }
   },
   "cueWave": {

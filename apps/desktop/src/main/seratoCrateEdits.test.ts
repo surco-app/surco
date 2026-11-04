@@ -862,12 +862,13 @@ describe('a converted track in Serato', () => {
 describe('review tags in Serato', () => {
   const PRAY = '/Users/vicent/Music/Serato Pruebas/Pray.aiff'
   const PRAY_PFIL = 'Users/vicent/Music/Serato Pruebas/Pray.aiff'
-  const tagsOp = (path: string, fields: TagsOp['fields']): TagsOp => ({
+  const tagsOp = (path: string, fields: TagsOp['fields'], from?: TagsOp['from']): TagsOp => ({
     id: 't',
     kind: 'tags',
     path,
     label: basename(path),
     fields,
+    ...(from ? { from } : {}),
   })
 
   function prayInSerato() {
@@ -886,7 +887,11 @@ describe('review tags in Serato', () => {
 
   it('changes title, artist, album and genre of the track Serato has at that path, and nothing else', () => {
     const { roots, draft, other } = prayInSerato()
-    const op = tagsOp(PRAY, { tsng: 'Pray', tart: 'Tina', talb: 'P', tgen: 'House' })
+    const op = tagsOp(
+      PRAY,
+      { tsng: 'Pray', tart: 'Tina', talb: 'P', tgen: 'House' },
+      { tsng: 'Pray (old)', tart: '', talb: '', tgen: '' },
+    )
     expect(applySeratoTags(draft, op, roots).applied).toBe(true)
     const tracks = parseSeratoDatabase(draft.read(dbOf(roots[0])) ?? new Uint8Array())
     expect(tracks[0]).toMatchObject({
@@ -907,7 +912,7 @@ describe('review tags in Serato', () => {
     expect(applySeratoTags(draft, tagsOp('/Users/dj/x.mp3', { tsng: 'X' }), roots)).toEqual({
       id: 't',
       applied: false,
-      notices: [{ code: 'not-in-library', track: 'x.mp3' }],
+      notices: [{ code: 'tags-not-in-library', track: 'x.mp3' }],
     })
     expect(draft.changes().writes).toEqual([])
   })
@@ -915,8 +920,46 @@ describe('review tags in Serato', () => {
   it('says Serato does not have a track outside every Serato library', () => {
     const { draft } = prayInSerato()
     expect(applySeratoTags(draft, tagsOp(PRAY, { tsng: 'X' }), []).notices).toEqual([
-      { code: 'not-in-library', track: 'Pray.aiff' },
+      { code: 'tags-not-in-library', track: 'Pray.aiff' },
     ])
+  })
+
+  it('leaves a track whose title the user changed in Serato since the review, so their edit stays', () => {
+    const { roots, draft } = prayInSerato()
+    const before = Buffer.from(readFileSync(dbOf(roots[0])))
+    const op = tagsOp(PRAY, { tsng: 'Pray', tart: 'Tina' }, { tsng: 'Pray (radio)', tart: '' })
+    expect(applySeratoTags(draft, op, roots)).toEqual({
+      id: 't',
+      applied: false,
+      notices: [{ code: 'tags-changed', track: 'Pray.aiff' }],
+    })
+    expect(draft.changes().writes).toEqual([])
+    expect(Buffer.from(draft.read(dbOf(roots[0])) ?? [])).toEqual(before)
+  })
+
+  it('leaves the whole track when any one field changed in Serato, as rekordbox does', () => {
+    const { roots, draft } = prayInSerato()
+    const op = tagsOp(PRAY, { tsng: 'Pray', tgen: 'House' }, { tsng: 'Pray (old)', tgen: 'Trance' })
+    expect(applySeratoTags(draft, op, roots).applied).toBe(false)
+    expect(draft.changes().writes).toEqual([])
+  })
+
+  it('takes the old value in either Unicode form as the same', () => {
+    const { roots, draft } = seratoWith([])
+    writeFileSync(
+      dbOf(roots[0]),
+      concat([VRSN, track({ ttyp: 'aiff', pfil: PRAY_PFIL, tsng: 'Canción'.normalize('NFC') })]),
+    )
+    const op = tagsOp(PRAY, { tsng: 'Pray' }, { tsng: 'Canción'.normalize('NFD') })
+    expect(applySeratoTags(draft, op, roots).applied).toBe(true)
+  })
+
+  it('writes a change queued before the old value was kept, since that queue has nothing to compare', () => {
+    const { roots, draft } = prayInSerato()
+    expect(applySeratoTags(draft, tagsOp(PRAY, { tsng: 'Pray' }), roots).applied).toBe(true)
+    expect(parseSeratoDatabase(draft.read(dbOf(roots[0])) ?? new Uint8Array())[0].title).toBe(
+      'Pray',
+    )
   })
 
   it('tags a track through the queue after the converted track of the same batch was added', async () => {
