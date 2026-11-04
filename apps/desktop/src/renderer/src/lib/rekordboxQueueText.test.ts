@@ -295,6 +295,17 @@ describe('Serato queue text', () => {
     )
   })
 
+  it('names what happens to each track in Serato words, library and crates', () => {
+    expect(partText(tr, { kind: 'collection' }, SERATO_QUEUE_WORDS)).toBe('added to the library')
+    expect(partText(tr, { kind: 'playlists', names: [] }, SERATO_QUEUE_WORDS)).toBe(
+      'out of its crates',
+    )
+    expect(partText(tr, { kind: 'playlists', names: ['Gig'] }, SERATO_QUEUE_WORDS)).toBe('to Gig')
+    expect(partText(tr, { kind: 'collection' }, TRAKTOR_QUEUE_WORDS)).toBe(
+      'added to the collection',
+    )
+  })
+
   it('words the Serato backups warning in every language', () => {
     expect(es.seratoQueue.writeUnknown).toBe(
       'No se pudieron guardar los cambios ni deshacerlos, así que la biblioteca puede haber cambiado. Antes de abrir Serato, recupera los crates de la copia más reciente en la carpeta serato-backups de los datos de Surco',
@@ -337,7 +348,6 @@ describe('Serato queue text', () => {
   it('names Serato, never rekordbox, in every notice about a converted track the Serato queue gives', () => {
     const notices: RekordboxQueueNotice[] = [
       { code: 'not-added', track: 'Tengo' },
-      { code: 'not-in-library', track: 'Tengo' },
       { code: 'playlist-changed', track: 'Tengo', playlist: 'Gig' },
       { code: 'playlist-gone', track: 'Tengo', playlist: 'Gig' },
       { code: 'other-volume', track: 'Tengo', playlist: 'Gig' },

@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { RekordboxQueueState } from '../../../shared/types'
+import { SERATO_QUEUE_WORDS } from '../lib/rekordboxQueueText'
 import { RekordboxQueuePill } from './RekordboxQueuePill'
 
 afterEach(cleanup)
@@ -85,6 +86,30 @@ describe('RekordboxQueuePill', () => {
       'added to the collection, to Makina, Cierre',
     )
     expect(screen.getByTestId('rekordbox-queue-item-edit:e1')).toHaveTextContent('House')
+  })
+
+  it('words what waits for Serato in library and crates', () => {
+    render(
+      <RekordboxQueuePill
+        state={{
+          ...STATE,
+          items: [
+            { key: 'track:/m/a.wav', label: 'Bam Bam', parts: [{ kind: 'collection' }] },
+            { key: 'track:/m/b.wav', label: 'Tengo', parts: [{ kind: 'playlists', names: [] }] },
+          ],
+        }}
+        onApplyNow={vi.fn()}
+        onDiscard={vi.fn()}
+        words={SERATO_QUEUE_WORDS}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('rekordbox-queue-pill'))
+    expect(screen.getByTestId('rekordbox-queue-item-track:/m/a.wav')).toHaveTextContent(
+      'added to the library',
+    )
+    expect(screen.getByTestId('rekordbox-queue-item-track:/m/b.wav')).toHaveTextContent(
+      'out of its crates',
+    )
   })
 
   it('applies now from the menu', () => {

@@ -2953,6 +2953,10 @@
     "writeFailed": "Impossible d’enregistrer les changements dans Serato. Les fichiers sont restés tels quels",
     "writeUnknown": "Les changements n’ont pu être ni enregistrés ni annulés, la bibliothèque a donc pu changer. Avant d’ouvrir Serato, restaure les crates depuis la copie la plus récente dans le dossier serato-backups des données de Surco",
     "discardConfirm": "Abandonner ce qui attend ? Serato reste comme il est",
+    "part": {
+      "collection": "ajout à la bibliothèque",
+      "noPlaylists": "hors de ses crates"
+    },
     "notice": {
       "cuesChanged": "Les cues de {{track}} ont changé dans Serato. Marque-les à nouveau",
       "callsDropped_one": "{{count}} CALL de {{track}} n’a pas été enregistré ({{times}}). Serato ne garde que les hot cues",
@@ -2961,7 +2965,6 @@
       "editChanged": "{{playlist}} n’a pas été modifié. Il a changé dans Serato",
       "otherVolume": "{{track}} est sur un autre disque et ne peut pas aller dans le crate « {{playlist}} »",
       "notAdded": "{{track}} n’a pas été ajouté à Serato",
-      "notInLibrary": "{{track}} n’est plus dans Serato. Ses crates n’ont pas été modifiés",
       "playlistChanged": "{{track}} n’a pas été modifié dans {{playlist}}. Il a changé dans Serato",
       "playlistGone": "{{playlist}} n’est plus dans Serato. {{track}} n’a pas été ajouté",
       "sourceInSerato": "{{track}} reste dans Serato avec le fichier d’origine et ne va pas dans le crate « {{playlist}} »",

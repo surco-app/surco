@@ -2953,6 +2953,10 @@
     "writeFailed": "Couldn't save the changes to Serato. The files are as they were",
     "writeUnknown": "Couldn't save the changes or undo them, so the library may have changed. Before opening Serato, restore the crates from the most recent copy in the serato-backups folder in Surco's data",
     "discardConfirm": "Discard what is waiting? Serato stays as it is",
+    "part": {
+      "collection": "added to the library",
+      "noPlaylists": "out of its crates"
+    },
     "notice": {
       "cuesChanged": "The cues of {{track}} changed in Serato. Mark them again",
       "callsDropped_one": "{{count}} CALL of {{track}} was not saved ({{times}}). Serato only keeps hot cues",
@@ -2961,7 +2965,6 @@
       "editChanged": "{{playlist}} was not changed. It changed in Serato",
       "otherVolume": "{{track}} is on another drive and cannot go in the crate “{{playlist}}”",
       "notAdded": "{{track}} was not added to Serato",
-      "notInLibrary": "{{track}} is no longer in Serato. Its crates were not changed",
       "playlistChanged": "{{track}} was not changed in {{playlist}}. It changed in Serato",
       "playlistGone": "{{playlist}} is no longer in Serato. {{track}} was not added",
       "sourceInSerato": "{{track}} stays in Serato with the original file and does not go in the crate “{{playlist}}”",

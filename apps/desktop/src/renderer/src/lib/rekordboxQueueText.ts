@@ -24,6 +24,7 @@ export interface QueueWords {
   backupFailed: string
   refused: (reason: Exclude<RekordboxEditRefusal, 'nothing-to-add'>) => string
   notices: Record<RekordboxQueueNotice['code'], string>
+  parts?: { collection: string; noPlaylists: string }
 }
 
 export const REKORDBOX_QUEUE_WORDS: QueueWords = {
@@ -134,9 +135,12 @@ export const SERATO_QUEUE_WORDS: QueueWords = {
     'cues-calls-dropped': 'seratoQueue.notice.callsDropped',
     'edit-changed': 'seratoQueue.notice.editChanged',
     'not-added': 'seratoQueue.notice.notAdded',
-    'not-in-library': 'seratoQueue.notice.notInLibrary',
     'playlist-changed': 'seratoQueue.notice.playlistChanged',
     'playlist-gone': 'seratoQueue.notice.playlistGone',
+  },
+  parts: {
+    collection: 'seratoQueue.part.collection',
+    noPlaylists: 'seratoQueue.part.noPlaylists',
   },
 }
 
@@ -170,11 +174,16 @@ export function pillText(
   return null
 }
 
-export function partText(tr: TFunction, part: RekordboxQueuePart): string {
+export function partText(
+  tr: TFunction,
+  part: RekordboxQueuePart,
+  words: QueueWords = REKORDBOX_QUEUE_WORDS,
+): string {
   if (part.kind === 'playlists')
     return part.names.length > 0
       ? tr('rekordboxQueue.part.playlists', { names: part.names.join(', ') })
-      : tr('rekordboxQueue.part.noPlaylists')
+      : tr(words.parts?.noPlaylists ?? 'rekordboxQueue.part.noPlaylists')
+  if (part.kind === 'collection' && words.parts) return tr(words.parts.collection)
   if (part.kind === 'tree') return tr(`rekordboxQueue.part.tree.${part.edit}`)
   return tr(`rekordboxQueue.part.${part.kind}`)
 }

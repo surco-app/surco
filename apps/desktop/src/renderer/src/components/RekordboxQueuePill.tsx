@@ -93,7 +93,7 @@ export function RekordboxQueuePill({
               >
                 <span className="block truncate text-fg">{item.label}</span>
                 <span className="block truncate text-fg-faint">
-                  {item.parts.map((p) => partText(tr, p)).join(', ')}
+                  {item.parts.map((p) => partText(tr, p, words)).join(', ')}
                 </span>
               </li>
             ))}

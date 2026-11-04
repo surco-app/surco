@@ -2953,6 +2953,10 @@
     "writeFailed": "Die Änderungen konnten nicht in Serato gespeichert werden. Die Dateien sind unverändert",
     "writeUnknown": "Die Änderungen ließen sich weder speichern noch rückgängig machen, die Bibliothek kann sich also geändert haben. Stelle vor dem Öffnen von Serato die Crates aus der neuesten Kopie im Ordner serato-backups in den Surco-Daten wieder her",
     "discardConfirm": "Wartendes verwerfen? Serato bleibt, wie es ist",
+    "part": {
+      "collection": "in die Bibliothek",
+      "noPlaylists": "aus seinen Crates"
+    },
     "notice": {
       "cuesChanged": "Die Cues von {{track}} haben sich in Serato geändert. Markiere sie erneut",
       "callsDropped_one": "{{count}} CALL von {{track}} wurde nicht gespeichert ({{times}}). Serato speichert nur Hot Cues",
@@ -2961,7 +2965,6 @@
       "editChanged": "{{playlist}} wurde nicht geändert. Es hat sich in Serato geändert",
       "otherVolume": "{{track}} liegt auf einem anderen Laufwerk und kann nicht in das Crate „{{playlist}}“ aufgenommen werden",
       "notAdded": "{{track}} wurde nicht zu Serato hinzugefügt",
-      "notInLibrary": "{{track}} ist nicht mehr in Serato. Seine Crates wurden nicht geändert",
       "playlistChanged": "{{track}} wurde in {{playlist}} nicht geändert. Es hat sich in Serato geändert",
       "playlistGone": "{{playlist}} ist nicht mehr in Serato. {{track}} wurde nicht hinzugefügt",
       "sourceInSerato": "{{track}} bleibt mit der Originaldatei in Serato und kommt nicht in das Crate „{{playlist}}“",

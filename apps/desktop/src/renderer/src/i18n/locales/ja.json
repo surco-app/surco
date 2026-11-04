@@ -2953,6 +2953,10 @@
     "writeFailed": "Serato に変更を保存できませんでした。ファイルは元のままです",
     "writeUnknown": "変更を保存も取り消しもできなかったため、ライブラリが変更されている可能性があります。Serato を開く前に、Surco のデータ内の serato-backups フォルダーにある最新のコピーからクレートを復元してください",
     "discardConfirm": "待機中の内容を破棄しますか？Serato は今の状態のままです",
+    "part": {
+      "collection": "ライブラリに追加",
+      "noPlaylists": "クレートから外す"
+    },
     "notice": {
       "cuesChanged": "{{track}} のキューが Serato で変更されました。もう一度マークしてください",
       "callsDropped_one": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。Serato はホットキューしか保持しません",
@@ -2961,7 +2965,6 @@
       "editChanged": "{{playlist}} は変更されませんでした。Serato で変更されています",
       "otherVolume": "{{track}} は別のドライブにあるため、クレート「{{playlist}}」に入れられません",
       "notAdded": "{{track}} は Serato に追加されませんでした",
-      "notInLibrary": "{{track}} はもう Serato にありません。クレートは変更されていません",
       "playlistChanged": "{{playlist}} の {{track}} は変更されませんでした。Serato で変更されています",
       "playlistGone": "{{playlist}} はもう Serato にありません。{{track}} は追加されませんでした",
       "sourceInSerato": "{{track}} は元のファイルのまま Serato に残り、クレート「{{playlist}}」には入りません",
