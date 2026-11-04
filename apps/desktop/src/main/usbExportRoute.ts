@@ -47,3 +47,29 @@ export function routeUsbExports(exporters: UsbExporters): UsbExporter {
     busy: () => registered.some((r) => r.exporter.busy()),
   }
 }
+
+const SUPERSEDED: UsbPlanResult = { ok: false, reason: 'busy' }
+
+export function latestPlanOnly(plan: UsbExporter['plan']): UsbExporter['plan'] {
+  let running = false
+  let waiting: {
+    req: UsbExportRequest
+    resolve: (answer: Promise<UsbPlanResult>) => void
+  } | null = null
+  const run = (req: UsbExportRequest): Promise<UsbPlanResult> => {
+    running = true
+    return plan(req).finally(() => {
+      running = false
+      const next = waiting
+      waiting = null
+      if (next) next.resolve(run(next.req))
+    })
+  }
+  return (req) => {
+    if (!running) return run(req)
+    waiting?.resolve(Promise.resolve(SUPERSEDED))
+    return new Promise((resolve) => {
+      waiting = { req, resolve }
+    })
+  }
+}

@@ -29,13 +29,16 @@ import { isRekordboxRunning } from './rekordboxProcess'
 import { readMasterIdentity } from './rekordboxStickSync'
 import { readSeratoLibrary, type SeratoLibraryRoot } from './seratoLibrary'
 import { createUsbExporter, USB_QUIT_DETAIL, type UsbExporterDeps } from './usbExport'
+import { fileMemo } from './usbExportForeign'
 import { createUsbMemory, targetKey, type UsbMemory } from './usbExportMemory'
-import { routeUsbExports, type UsbExporter } from './usbExportRoute'
+import { latestPlanOnly, routeUsbExports, type UsbExporter } from './usbExportRoute'
 import { readSeratoExportSelection, seratoExportMarks } from './usbExportSerato'
 import { readExportSelection } from './usbExportSource'
 import { stageExport } from './usbExportStage'
 import { readTraktorExportSelection, traktorExportDelta } from './usbExportTraktor'
 import { readVolumes, stickHolder, systemVolumeSource, watchVolumes } from './usbVolumes'
+
+const REMEMBERED_TRACKS = 2000
 
 // The USB export's IPC, macOS and Windows. Elsewhere every call answers "unsupported" and
 // nothing is watched; the renderer does not offer the feature there at all.
@@ -194,8 +197,8 @@ export function registerUsbExportIpc(opts: {
     sourceMemory: UsbMemory,
     collection: () => string,
     readSelection: UsbExporterDeps['readSelection'],
-  ): UsbExporter =>
-    createUsbExporter({
+  ): UsbExporter => {
+    const exporter = createUsbExporter({
       ...rekordboxDeps,
       collection,
       readSelection,
@@ -216,6 +219,14 @@ export function registerUsbExportIpc(opts: {
       identity: () => null,
       masterPlaylistsXml: async () => null,
     })
+    return { ...exporter, plan: latestPlanOnly((req) => exporter.plan(req)) }
+  }
+  const factsOf = (file: string) =>
+    stat(file)
+      .then((s) => ({ size: s.size, mtimeMs: s.mtimeMs }))
+      .catch(() => null)
+  const seratoMarks = fileMemo(seratoExportMarks, factsOf, REMEMBERED_TRACKS)
+  const traktorDeltas = fileMemo(traktorExportDelta, factsOf, REMEMBERED_TRACKS)
   const serato = opts.serato
   const seratoExporter =
     serato &&
@@ -225,7 +236,7 @@ export function registerUsbExportIpc(opts: {
       () => serato.roots()[0]?.dir ?? '',
       (_path, ids) =>
         readSeratoExportSelection(readSeratoLibrary(serato.roots()), ids, {
-          marks: seratoExportMarks,
+          marks: seratoMarks(),
         }),
     )
   const traktor = opts.traktor
@@ -235,7 +246,7 @@ export function registerUsbExportIpc(opts: {
     pioneerFrom(sourceMemories.traktor, traktor.nml, async (path, ids) =>
       readTraktorExportSelection(await readFile(path, 'utf8'), ids, {
         bootVolume: traktor.bootVolume(),
-        deltaOf: traktorExportDelta,
+        deltaOf: traktorDeltas(),
       }),
     )
   const exporter = createUsbExporter(rekordboxDeps)

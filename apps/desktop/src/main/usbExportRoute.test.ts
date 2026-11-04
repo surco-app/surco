@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { UsbExportRequest } from '../shared/types'
-import { routeUsbExports, type UsbExporter, usbProgramOf } from './usbExportRoute'
+import type { UsbExportRequest, UsbPlanResult } from '../shared/types'
+import { latestPlanOnly, routeUsbExports, type UsbExporter, usbProgramOf } from './usbExportRoute'
 
 const fake = (busy = false): UsbExporter => ({
   plan: vi.fn(async () => ({ ok: false as const, reason: 'unsupported' as const })),
@@ -90,5 +90,43 @@ describe('usbProgramOf', () => {
   it('reads Engine DJ from the request and rekordbox from a request without a source, the format the renderer sends', () => {
     expect(usbProgramOf(req('engine'))).toBe('engine')
     expect(usbProgramOf(req())).toBe('rekordbox')
+  })
+})
+
+describe('latestPlanOnly', () => {
+  const asked = (id: string): UsbExportRequest => ({ ...req('serato'), playlistIds: [id] })
+  const done: UsbPlanResult = { ok: false, reason: 'nothing-selected' }
+
+  it('computes only the newest of the plans asked while one runs, so ticking crate by crate never queues one summary per pause on the main process', async () => {
+    let release = (): void => {}
+    const plan = vi.fn((r: UsbExportRequest) =>
+      r.playlistIds[0] === 'a'
+        ? new Promise<UsbPlanResult>((resolve) => {
+            release = () => resolve(done)
+          })
+        : Promise.resolve(done),
+    )
+    const only = latestPlanOnly(plan)
+    const a = only(asked('a'))
+    const b = only(asked('b'))
+    const c = only(asked('c'))
+    expect(await b).toEqual({ ok: false, reason: 'busy' })
+    release()
+    expect(await a).toEqual(done)
+    expect(await c).toEqual(done)
+    expect(plan.mock.calls.map(([r]) => r.playlistIds[0])).toEqual(['a', 'c'])
+  })
+
+  it('runs the next plan after one that failed, so a broken summary never blocks the ones after it', async () => {
+    const plan = vi
+      .fn<(r: UsbExportRequest) => Promise<UsbPlanResult>>()
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValue(done)
+    const only = latestPlanOnly(plan)
+    const a = only(asked('a'))
+    const b = only(asked('b'))
+    await expect(a).rejects.toThrow('boom')
+    expect(await b).toEqual(done)
+    expect(await only(asked('c'))).toEqual(done)
   })
 })

@@ -1,6 +1,6 @@
-import { existsSync, mkdtempSync } from 'node:fs'
+import { existsSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { UsbExportRequest } from '../shared/types'
 import type { UsbExporterDeps } from './usbExport'
@@ -17,6 +17,19 @@ vi.mock('./usbVolumes', () => ({
   readVolumes: async () => [],
   watchVolumes: vi.fn(),
   stickHolder: vi.fn(),
+}))
+
+vi.mock('./seratoLibrary', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./seratoLibrary')>()),
+  readSeratoLibrary: vi.fn(),
+}))
+vi.mock('./usbExportSerato', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./usbExportSerato')>()),
+  seratoExportMarks: vi.fn(async () => null),
+}))
+vi.mock('./usbExportTraktor', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./usbExportTraktor')>()),
+  traktorExportDelta: vi.fn(async () => null),
 }))
 
 const made = vi.hoisted(() => ({
@@ -40,7 +53,10 @@ vi.mock('./engineUsbExport', async (importOriginal) => ({
 }))
 
 import { dialog, ipcMain } from 'electron'
+import { readSeratoLibrary } from './seratoLibrary'
 import { registerUsbExportIpc } from './usbExportIpc'
+import { seratoExportMarks } from './usbExportSerato'
+import { traktorExportDelta } from './usbExportTraktor'
 
 function handlerFor(channel: string): (e: unknown, ...args: unknown[]) => unknown {
   const call = vi.mocked(ipcMain.handle).mock.calls.find(([ch]) => ch === channel)
@@ -147,5 +163,61 @@ describe('registerUsbExportIpc with Serato and Traktor', () => {
     await expect(
       Promise.resolve().then(() => pioneer[0].readSelection(nml, ['1'])),
     ).rejects.toThrow(/ENOENT/)
+  })
+
+  it('computes only the newest Serato summary asked while one runs, and leaves rekordbox summaries as they were', async () => {
+    const { exporters } = register({ serato: { roots: () => [ROOT] } })
+    const [serato, rekordbox] = [exporters[0], exporters.at(-1) as UsbExporter]
+    let release = (): void => {}
+    vi.mocked(serato.plan).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = () => resolve({ ok: false, reason: 'unsupported' })
+        }),
+    )
+    const plan = handlerFor('usb:plan')
+    const first = plan({}, { ...req(), source: 'serato' })
+    const second = plan({}, { ...req(), playlistIds: ['2'], source: 'serato' })
+    const third = plan({}, { ...req(), playlistIds: ['3'], source: 'serato' })
+    expect(await second).toEqual({ ok: false, reason: 'busy' })
+    release()
+    await first
+    await third
+    expect(vi.mocked(serato.plan).mock.calls.map(([r]) => r.playlistIds)).toEqual([['1'], ['3']])
+    vi.mocked(rekordbox.plan).mockImplementation(() => new Promise(() => {}))
+    void plan({}, req())
+    void plan({}, req())
+    expect(rekordbox.plan).toHaveBeenCalledTimes(2)
+  })
+
+  it('reads the tags of an unchanged Serato track once across summaries', async () => {
+    const file = join(userData, 'a.mp3')
+    writeFileSync(file, 'x')
+    vi.mocked(readSeratoLibrary).mockReturnValue({
+      tracks: [],
+      crates: new Map([['Sets', [file]]]),
+      links: new Map(),
+      unreadable: [],
+    })
+    const { pioneer } = register({ serato: { roots: () => [ROOT] } })
+    await pioneer[0].readSelection('', ['Sets'])
+    await pioneer[0].readSelection('', ['Sets'])
+    expect(seratoExportMarks).toHaveBeenCalledOnce()
+  })
+
+  it('reads the clock of an unchanged Traktor track once across summaries', async () => {
+    const file = join(userData, 'a.mp3')
+    writeFileSync(file, 'x')
+    const dir = `${dirname(file).split('/').join('/:')}/:`
+    const nml = join(userData, 'collection.nml')
+    writeFileSync(
+      nml,
+      `<NML VERSION="20"><COLLECTION ENTRIES="1"><ENTRY TITLE="A"><LOCATION DIR="${dir}" FILE="${basename(file)}" VOLUME="HD"></LOCATION></ENTRY></COLLECTION><PLAYLISTS><NODE TYPE="FOLDER" NAME="$ROOT"><SUBNODES COUNT="1"><NODE TYPE="PLAYLIST" NAME="Fri"><PLAYLIST ENTRIES="1" TYPE="LIST" UUID="p1"><ENTRY><PRIMARYKEY TYPE="TRACK" KEY="HD${dir}${basename(file)}"></PRIMARYKEY></ENTRY></PLAYLIST></NODE></SUBNODES></NODE></PLAYLISTS></NML>`,
+    )
+    const { pioneer } = register({ traktor: { nml: () => nml, bootVolume: () => 'HD' } })
+    const first = await pioneer[0].readSelection(nml, ['p1'])
+    await pioneer[0].readSelection(nml, ['p1'])
+    expect(first).toMatchObject({ tracks: [{ path: file }] })
+    expect(traktorExportDelta).toHaveBeenCalledOnce()
   })
 })

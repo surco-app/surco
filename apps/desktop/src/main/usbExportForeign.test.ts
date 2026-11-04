@@ -1,7 +1,7 @@
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { buildBakenXml } from './bakenXml'
 import { shiftCues } from './rekordboxCues'
 import { openRekordboxDb } from './rekordboxDb'
@@ -9,6 +9,7 @@ import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlay
 import {
   exportFileType,
   exportTrackIds,
+  fileMemo,
   foreignExportTrack,
   marksOnRekordboxClock,
 } from './usbExportForeign'
@@ -143,5 +144,57 @@ describe('exportFileType', () => {
     ['a.ogg', 0],
   ])('types %s as %i', (path, type) => {
     expect(exportFileType(path)).toBe(type)
+  })
+})
+
+describe('fileMemo', () => {
+  const facts = new Map([
+    ['/m/a.mp3', { size: 10, mtimeMs: 1 }],
+    ['/m/b.mp3', { size: 20, mtimeMs: 2 }],
+  ])
+  const factsOf = async (file: string) => facts.get(file) ?? null
+
+  it('reads an unchanged file once across plans, so a repeated summary never opens its tags again', async () => {
+    const read = vi.fn(async (file: string) => `${file}#${read.mock.calls.length}`)
+    const memo = fileMemo(read, factsOf, 10)
+    expect(await memo()('/m/a.mp3')).toBe('/m/a.mp3#1')
+    expect(await memo()('/m/a.mp3')).toBe('/m/a.mp3#1')
+    expect(read).toHaveBeenCalledOnce()
+  })
+
+  it('reads a file again once its size or modification time changed, since its cues may have moved', async () => {
+    const read = vi.fn(async (file: string) => `${file}#${read.mock.calls.length}`)
+    const memo = fileMemo(read, factsOf, 10)
+    await memo()('/m/a.mp3')
+    facts.set('/m/a.mp3', { size: 10, mtimeMs: 5 })
+    expect(await memo()('/m/a.mp3')).toBe('/m/a.mp3#2')
+    facts.set('/m/a.mp3', { size: 11, mtimeMs: 5 })
+    expect(await memo()('/m/a.mp3')).toBe('/m/a.mp3#3')
+    facts.set('/m/a.mp3', { size: 10, mtimeMs: 1 })
+  })
+
+  it('reads a file that cannot be stated every time, as nothing tells a later read it is the same', async () => {
+    const read = vi.fn(async () => 'x')
+    const memo = fileMemo(read, factsOf, 10)
+    await memo()('/m/gone.mp3')
+    await memo()('/m/gone.mp3')
+    expect(read).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps only what the last plan read, and no more than its limit, so the memory follows the selection', async () => {
+    const read = vi.fn(async (file: string) => file)
+    const memo = fileMemo(read, factsOf, 1)
+    const first = memo()
+    await first('/m/a.mp3')
+    await first('/m/b.mp3')
+    const second = memo()
+    await second('/m/b.mp3')
+    await memo()('/m/a.mp3')
+    expect(read.mock.calls.map(([f]) => f)).toEqual([
+      '/m/a.mp3',
+      '/m/b.mp3',
+      '/m/b.mp3',
+      '/m/a.mp3',
+    ])
   })
 })

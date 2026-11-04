@@ -109,3 +109,30 @@ export function foreignExportTrack(
     ...over,
   }
 }
+
+export interface FileFacts {
+  size: number
+  mtimeMs: number
+}
+
+export function fileMemo<T>(
+  read: (file: string) => Promise<T>,
+  factsOf: (file: string) => Promise<FileFacts | null>,
+  limit: number,
+): () => (file: string) => Promise<T> {
+  let kept = new Map<string, { facts: FileFacts; value: T }>()
+  return () => {
+    const before = kept
+    const now = new Map<string, { facts: FileFacts; value: T }>()
+    kept = now
+    return async (file) => {
+      const facts = await factsOf(file)
+      if (!facts) return read(file)
+      const hit = now.get(file) ?? before.get(file)
+      const same = hit?.facts.size === facts.size && hit.facts.mtimeMs === facts.mtimeMs
+      const value = hit && same ? hit.value : await read(file)
+      if (now.size < limit) now.set(file, { facts, value })
+      return value
+    }
+  }
+}
