@@ -60,7 +60,9 @@ export function withSeratoTrackFields(
   const frames = rawFramesOf(bytes)
   if (!frames) return null
   const wanted = pfil.normalize('NFC')
-  const changes = Object.entries(fields) as [SeratoTagField, string][]
+  const changes = (Object.entries(fields) as [SeratoTagField, string | undefined][]).filter(
+    (entry): entry is [SeratoTagField, string] => entry[1] !== undefined,
+  )
   let found = false
   const parts = frames.map((f) => {
     if (f.tag !== 'otrk') return f.raw

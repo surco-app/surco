@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { rawFramesOf } from '../shared/serato'
 import { parseSeratoDatabase } from './seratoDatabase'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
 import {
@@ -73,19 +74,7 @@ const NEW: NewSeratoTrack = {
   addedAt: 1793688116,
 }
 
-function entryFrames(body: Uint8Array) {
-  const out: { tag: string; body: Uint8Array }[] = []
-  let at = 0
-  while (at < body.length) {
-    const length = new DataView(body.buffer, body.byteOffset + at + 4, 4).getUint32(0)
-    out.push({
-      tag: String.fromCharCode(...body.subarray(at, at + 4)),
-      body: body.subarray(at + 8, at + 8 + length),
-    })
-    at += 8 + length
-  }
-  return out
-}
+const entryFrames = (body: Uint8Array) => present(rawFramesOf(body))
 
 function entries(db: Uint8Array) {
   return entryFrames(db).filter((f) => f.tag === 'otrk')
@@ -123,6 +112,13 @@ describe('withSeratoTrackFields', () => {
     ])
   })
 
+  it('ignores a field passed as undefined', () => {
+    const db = concat([VRSN, track({ ttyp: 'mp3', pfil: 'a.mp3', tsng: 'Old' })])
+    const out = present(withSeratoTrackFields(db, 'a.mp3', { tsng: 'X', tart: undefined }))
+    expect(subframeTags(out)).toEqual(['ttyp', 'pfil', 'tsng'])
+    expect(parseSeratoDatabase(out)[0].title).toBe('X')
+  })
+
   it('writes an empty string as a zero length frame', () => {
     const out = present(withSeratoTrackFields(concat([VRSN, REAL_ENTRY]), PRAY_PFIL, { talb: '' }))
     expect(parseSeratoDatabase(out)[0].album).toBe('')
@@ -132,7 +128,8 @@ describe('withSeratoTrackFields', () => {
   it('matches a pfil written in NFD with one asked in NFC', () => {
     const db = concat([VRSN, track({ ttyp: 'mp3', pfil: 'Música/a.mp3'.normalize('NFD') })])
     expect(seratoDatabaseHas(db, 'Música/a.mp3'.normalize('NFC'))).toBe(true)
-    expect(withSeratoTrackFields(db, 'Música/a.mp3', { tsng: 'T' })).not.toBeNull()
+    const out = present(withSeratoTrackFields(db, 'Música/a.mp3', { tsng: 'T' }))
+    expect(lastEntryField(out, 'pfil')).toEqual(utf16be('Música/a.mp3'.normalize('NFD')))
   })
 
   it('never touches pfil', () => {
