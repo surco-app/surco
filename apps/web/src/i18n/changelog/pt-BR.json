@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.23",
+    "date": "November 4, 2026",
+    "title": "Cues no Serato, e mudanças que chegam a todos os seus programas",
+    "items": [
+      {
+        "text": "O Surco agora grava seus cues no Serato. Edite-os no editor de cues, traga-os do rekordbox, do Traktor ou do Engine DJ com seus “Fluxos” e mantenha-os ao converter uma faixa. Ele só grava com o Serato fechado, espera você fechá-lo se estiver aberto e guarda o original antes.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "Na aba do Serato, os cues caem na batida na forma de onda, e o encaixe na batida e o “Marcar automático” seguem a grade do próprio Serato.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "Corrija o título, o artista, o álbum ou o gênero no Surco e o Traktor e o Engine DJ também mostram o nome novo, como o rekordbox já fazia. Se você mudou à mão dentro do Traktor ou do Engine DJ, isso é mantido.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "Quando você edita uma faixa no lugar, o Apple Music mostra as etiquetas novas na hora, e uma faixa cujo arquivo você renomeia continua sendo encontrada no Music.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "Nenhum programa fica apontando para um arquivo que não existe mais. Se algum não consegue acompanhar a renomeação, como o Serato ou um programa que você não sincroniza, o original fica na pasta e o Surco diz qual programa ainda o usa.",
+        "in": "1.23.0"
+      }
+    ]
+  },
+  {
     "version": "1.22",
     "date": "November 3, 2026",
     "title": "Grades na batida, e o Serato",

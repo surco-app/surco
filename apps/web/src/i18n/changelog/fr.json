@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.23",
+    "date": "November 4, 2026",
+    "title": "Les cues dans Serato, et des changements qui arrivent dans tous tes logiciels",
+    "items": [
+      {
+        "text": "Surco écrit maintenant tes cues dans Serato. Modifie-les dans l'éditeur de cues, apporte-les depuis rekordbox, Traktor ou Engine DJ avec tes « Flux » et garde-les quand tu convertis un morceau. Surco n'écrit qu'avec Serato fermé, attend que tu le fermes s'il est ouvert et garde d'abord l'original.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "Dans l'onglet Serato, les cues tombent sur le temps dans la forme d'onde, et l'aimantation au temps et le « Marquage auto » suivent la grille de Serato.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "Corrige le titre, l'artiste, l'album ou le genre dans Surco et Traktor et Engine DJ affichent aussi le nouveau nom, comme le faisait déjà rekordbox. Si tu l'as changé à la main dans Traktor ou Engine DJ, il reste tel quel.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "Quand tu modifies un morceau sur place, Apple Music affiche tout de suite les nouvelles étiquettes, et un morceau dont tu renommes le fichier est toujours trouvé dans Music.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "Aucun logiciel ne pointe plus vers un fichier qui n'existe plus. Si l'un d'eux ne peut pas suivre un renommage, comme Serato ou un logiciel que tu ne synchronises pas, l'original reste dans son dossier et Surco te dit quel logiciel l'utilise encore.",
+        "in": "1.23.0"
+      }
+    ]
+  },
+  {
     "version": "1.22",
     "date": "November 3, 2026",
     "title": "Des grilles sur le temps, et Serato",

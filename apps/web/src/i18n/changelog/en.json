@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.23",
+    "date": "November 4, 2026",
+    "title": "Serato cues, and changes that reach every program",
+    "items": [
+      {
+        "text": "Surco now writes your cues into Serato. Edit them in the cue editor, bring them over from rekordbox, Traktor or Engine DJ with your “Flows”, and keep them when you convert a track. It only writes with Serato closed, waits for you to close it if it's open, and keeps the original first.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "In the Serato tab, cues sit on the beat on the wave, and snapping to the beat and “Auto mark” follow Serato's own grid.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "Fix the title, artist, album or genre in Surco and Traktor and Engine DJ show the new name too, as rekordbox already did. If you changed it by hand inside Traktor or Engine DJ, that is left as it is.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "When you edit a track in place, Apple Music shows the new tags right away, and a track whose file you rename is still found in Music.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "No program is left pointing at a file that is gone. If one can't follow a rename, like Serato or a program you don't sync, the original stays in its folder and Surco tells you which program still uses it.",
+        "in": "1.23.0"
+      }
+    ]
+  },
+  {
     "version": "1.22",
     "date": "November 3, 2026",
     "title": "Grids on the beat, and Serato",

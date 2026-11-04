@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.23",
+    "date": "November 4, 2026",
+    "title": "Cues in Serato, und Änderungen, die jedes Programm erreichen",
+    "items": [
+      {
+        "text": "Surco schreibt deine Cues jetzt in Serato. Bearbeite sie im Cue-Editor, hol sie mit deinen „Abläufen“ aus rekordbox, Traktor oder Engine DJ und behalte sie beim Konvertieren eines Tracks. Geschrieben wird nur bei geschlossenem Serato, ist es offen, wartet Surco, bis du es schließt, und sichert vorher das Original.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "Im Serato-Tab liegen die Cues in der Wellenform auf dem Beat, und Einrasten auf den Beat sowie „Auto-Markieren“ folgen Seratos eigenem Grid.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "Korrigiere Titel, Interpret, Album oder Genre in Surco, und Traktor und Engine DJ zeigen den neuen Namen ebenfalls, wie rekordbox schon bisher. Hast du ihn in Traktor oder Engine DJ von Hand geändert, bleibt er so.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "Bearbeitest du einen Track an Ort und Stelle, zeigt Apple Music die neuen Tags sofort, und ein Track, dessen Datei du umbenennst, wird in Music weiterhin gefunden.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "Kein Programm zeigt mehr auf eine Datei, die es nicht mehr gibt. Kann eines einer Umbenennung nicht folgen, etwa Serato oder ein Programm, das du nicht synchronisierst, bleibt das Original in seinem Ordner und Surco sagt dir, welches Programm es noch verwendet.",
+        "in": "1.23.0"
+      }
+    ]
+  },
+  {
     "version": "1.22",
     "date": "November 3, 2026",
     "title": "Raster auf dem Beat, und Serato",
