@@ -6,8 +6,10 @@ import ffmpegStatic from 'ffmpeg-static'
 import {
   ByteVector,
   Id3v2AttachmentFrame,
+  Id3v2PrivateFrame,
   type Id3v2Tag,
   Id3v2UserTextInformationFrame,
+  type Mpeg4AppleTag,
   Picture,
   PictureType,
   StringType,
@@ -247,13 +249,20 @@ function seratoGeob(description: string): Id3v2AttachmentFrame {
   return frame
 }
 
-function makeSeratoSource(dir: string, ext: string): string {
+function makeSeratoSource(dir: string, ext: string, withTraktor = true): string {
   const path =
-    ext === '.m4a'
-      ? join(dir, 'in.m4a')
-      : ext === '.flac'
-        ? join(dir, 'in.flac')
-        : makeSource(dir, ext)
+    ext === '.m4a' || ext === '.flac' || !withTraktor ? join(dir, `in${ext}`) : makeSource(dir, ext)
+  if (ext === '.mp3' && !withTraktor)
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=4',
+      path,
+    ])
   if (ext === '.m4a')
     execFileSync(FF, [
       '-y',
@@ -283,14 +292,16 @@ function makeSeratoSource(dir: string, ext: string): string {
       path,
     ])
   setSeratoMarkers(path, seratoPayload())
+  const f = TagFile.createFromPath(path)
+  if (ext === '.m4a')
+    (f.tag as Mpeg4AppleTag).setItunesStrings('com.serato.dj', 'overview', 'AQFBQUFB')
   if (ext !== '.m4a' && ext !== '.flac') {
-    const f = TagFile.createFromPath(path)
     const tag = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
     tag.addFrame(seratoGeob('Serato Overview'))
     tag.addFrame(seratoGeob('Serato Markers_'))
-    f.save()
-    f.dispose()
   }
+  f.save()
+  f.dispose()
   return path
 }
 
@@ -308,6 +319,10 @@ function seratoLeftovers(file: string): string[] {
             : '',
       ),
       ...(xiph?.fieldNames ?? []).filter((name) => name !== 'SERATO_MARKERS_V2'),
+      ...(/\.m4a$/.test(file) &&
+      (f.tag as Mpeg4AppleTag).getItunesStrings('com.serato.dj', 'overview').length > 0
+        ? ['serato overview atom']
+        : []),
     ]
     return names.filter((name) => /serato/i.test(name) && name !== 'Serato Markers2')
   } finally {
@@ -341,14 +356,14 @@ describe('the Serato cue carry-over matrix', () => {
 
         const after = await surcoMs(out)
         expect(after, `${src} → ${target.ext} lost the Serato cues`).not.toBeNull()
-        expect(after?.cue[0]).toBeCloseTo(before?.cue[0] ?? Number.NaN, -0.5)
-        expect(after?.loop[0][0]).toBeCloseTo(before?.loop[0][0] ?? Number.NaN, -0.5)
-        expect(after?.loop[0][1]).toBeCloseTo(before?.loop[0][1] ?? Number.NaN, -0.5)
+        expect(after?.cue[0]).toBeCloseTo(before?.cue[0] ?? Number.NaN, 0)
+        expect(after?.loop[0][0]).toBeCloseTo(before?.loop[0][0] ?? Number.NaN, 0)
+        expect(after?.loop[0][1]).toBeCloseTo(before?.loop[0][1] ?? Number.NaN, 0)
         if (src !== '.m4a' && target.ext !== '.m4a')
           expect(storedTree(out), `${src} → ${target.ext} lost Traktor's cues`).not.toBeNull()
-        if (src !== target.ext)
+        if (src !== target.ext || !(src === '.mp3' || src === '.aiff'))
           expect(seratoLeftovers(out), `${src} → ${target.ext} carried raw Serato data`).toEqual([])
-        if (src === target.ext && (src === '.mp3' || src === '.aiff'))
+        else
           expect(seratoLeftovers(out), `${src} copy rewrote Serato's tag`).toEqual([
             'Serato Overview',
             'Serato Markers_',
@@ -379,10 +394,10 @@ describe('the Serato cue carry-over matrix', () => {
     )
 
     const after = await surcoMs(out)
-    expect(after?.cue[0]).toBeCloseTo(SERATO_CUE_MS - 500, -0.5)
+    expect(after?.cue[0]).toBeCloseTo(SERATO_CUE_MS - 500, 0)
     expect(after?.loop[0]).toEqual([
-      expect.closeTo(SERATO_LOOP[0] - 500, -0.5),
-      expect.closeTo(SERATO_LOOP[1] - 500, -0.5),
+      expect.closeTo(SERATO_LOOP[0] - 500, 0),
+      expect.closeTo(SERATO_LOOP[1] - 500, 0),
     ])
   })
 
@@ -398,7 +413,7 @@ describe('the Serato cue carry-over matrix', () => {
       traktorCueOffsetMs = 0
     }
 
-    expect((await surcoMs(out))?.cue[0]).toBeCloseTo(SERATO_CUE_MS, -0.5)
+    expect((await surcoMs(out))?.cue[0]).toBeCloseTo(SERATO_CUE_MS, 0)
   })
 
   it('writes a WAV cue one header frame later in the MP3, where Serato plays that audio', async () => {
@@ -477,5 +492,142 @@ describe('the Serato cue carry-over matrix', () => {
     }
 
     expect(storedTree(out)).not.toBeNull()
+  })
+
+  it('drops what a FLAC re-encode carried of Serato analysis when a trim moves the audio', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-flactrim-'))
+    const input = makeSeratoSource(dir, '.flac')
+    const out = join(dir, 'out.flac')
+
+    await convertAudio(
+      input,
+      out,
+      'flac',
+      meta,
+      undefined,
+      undefined,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { startSec: 0.5 },
+    )
+
+    expect(seratoLeftovers(out)).toEqual([])
+    expect((await surcoMs(out))?.cue[0]).toBeCloseTo(SERATO_CUE_MS - 500, 0)
+  })
+
+  for (const [format, ext] of [
+    ['mp3', '.mp3'],
+    ['aiff', '.aiff'],
+  ] as const)
+    it(`strips Serato analysis from a ${ext} copy whose Traktor cues the offset moved`, async () => {
+      const dir = mkdtempSync(join(tmpdir(), 'surco-serato-copyoffset-'))
+      const input = makeSeratoSource(dir, ext)
+      const out = join(dir, `out${ext}`)
+
+      traktorCueOffsetMs = OFFSET_MS
+      try {
+        await convertAudio(input, out, format, meta)
+      } finally {
+        traktorCueOffsetMs = 0
+      }
+
+      expect(seratoLeftovers(out)).toEqual([])
+      expect((await surcoMs(out))?.cue[0]).toBeCloseTo((await surcoMs(input))?.cue[0] ?? 0, 0)
+      expect(storedTree(out)).not.toBeNull()
+    })
+
+  it('strips Serato analysis from an MP3 copy the offset touched even with no Traktor cues', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-copyonly-'))
+    const input = makeSeratoSource(dir, '.mp3', false)
+    const out = join(dir, 'out.mp3')
+
+    traktorCueOffsetMs = OFFSET_MS
+    try {
+      await convertAudio(input, out, 'mp3', meta)
+    } finally {
+      traktorCueOffsetMs = 0
+    }
+
+    expect(seratoLeftovers(out)).toEqual([])
+    expect((await surcoMs(out))?.cue[0]).toBeCloseTo((await surcoMs(input))?.cue[0] ?? 0, 0)
+  })
+
+  it('moves Traktor cues in an MP3 copy whose ID3 v2.3 tag also holds Serato objects', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-v23-'))
+    const input = makeSeratoSource(dir, '.mp3', false)
+    const f = TagFile.createFromPath(input)
+    const priv = Id3v2PrivateFrame.fromOwner('TRAKTOR4')
+    priv.privateData = ByteVector.fromByteArray(cueTree())
+    ;(f.getTag(TagTypes.Id3v2, true) as Id3v2Tag).addFrame(priv)
+    f.save()
+    f.dispose()
+    const out = join(dir, 'out.mp3')
+
+    traktorCueOffsetMs = OFFSET_MS
+    try {
+      await convertAudio(input, out, 'mp3', meta)
+    } finally {
+      traktorCueOffsetMs = 0
+    }
+
+    expect(readTraktorCueStart(storedTree(out) as Uint8Array, 1)).toBeCloseTo(
+      DROP_MS + OFFSET_MS,
+      0,
+    )
+  })
+
+  it('still cleans Serato data off the output when the DJ deleted the markers', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-removedmp3-'))
+    const input = makeSeratoSource(dir, '.flac')
+    const out = join(dir, 'out.mp3')
+
+    await convertAudio(
+      input,
+      out,
+      'mp3',
+      meta,
+      undefined,
+      undefined,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      false,
+      ['serato_markers_v2'],
+    )
+
+    expect(seratoLeftovers(out)).toEqual([])
+    expect(readSeratoTrack(out)?.markers).toBeNull()
+  })
+
+  it('drops the cues and loops a trim cut away instead of piling them at the start', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-cut-'))
+    const input = makeSeratoSource(dir, '.wav')
+    const out = join(dir, 'out.wav')
+
+    await convertAudio(
+      input,
+      out,
+      'wav',
+      meta,
+      undefined,
+      undefined,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { startSec: 1.5 },
+    )
+
+    expect(await surcoMs(out)).toEqual({ cue: [SERATO_CUE_MS - 1500], loop: [] })
   })
 })

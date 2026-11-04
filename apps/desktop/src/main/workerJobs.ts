@@ -93,7 +93,14 @@ export type WorkerJob =
     }
   | { type: 'setTagFields'; file: string; changes: TagFieldChange[] }
   | { type: 'setSeratoMarkers'; file: string; payload: Uint8Array }
-  | { type: 'carrySeratoCues'; source: string; dest: string; trimMs: number }
+  | {
+      type: 'carrySeratoCues'
+      source: string
+      dest: string
+      trimMs: number
+      carry: boolean
+      strip: boolean
+    }
   | { type: 'genreFrame'; file: string }
   | { type: 'setGenreFrame'; file: string; changes: TagFieldChange[] }
   | { type: 'tagFieldsHeld'; file: string; changes: TagFieldChange[] }
@@ -175,7 +182,7 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       setSeratoMarkers(job.file, job.payload)
       return null
     case 'carrySeratoCues':
-      return carrySeratoCues(job.source, job.dest, job.trimMs).then(() => null)
+      return carrySeratoCues(job.source, job.dest, job).then(() => null)
     case 'genreFrame':
       return readGenreFrame(job.file)
     case 'setGenreFrame':

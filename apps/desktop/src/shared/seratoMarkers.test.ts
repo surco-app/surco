@@ -234,6 +234,17 @@ describe('retimedSeratoPayload', () => {
     expect(entriesOf(moved)[2].body).toEqual(entriesOf(payload)[2].body)
   })
 
+  it('drops a cue or loop that starts before the cut, keeping every other entry', () => {
+    const moved = retimedSeratoPayload(payload, -30, 30)
+    const read = markersFromGeob(seratoGeobBody(moved))
+    expect(read?.cues).toEqual([])
+    expect(read?.loops.map((l) => [l.startMs, l.endMs])).toEqual([[10, 270]])
+    expect(entriesOf(moved).map((e) => e.name)).toEqual(['COLOR', 'FLIP', 'LOOP', 'BPMLOCK'])
+    const cut = retimedSeratoPayload(payload, -50, 50)
+    expect(markersFromGeob(seratoGeobBody(cut))?.loops).toEqual([])
+    expect(cut[cut.length - 1]).toBe(0)
+  })
+
   it('clamps a marker that would land before the start of the file at zero', () => {
     const read = markersFromGeob(seratoGeobBody(retimedSeratoPayload(payload, -100)))
     expect(read?.cues.map((c) => c.ms)).toEqual([0])

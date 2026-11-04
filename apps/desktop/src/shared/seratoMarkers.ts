@@ -190,25 +190,28 @@ export function withSeratoCues(payload: Uint8Array | null, cues: SeratoCue[]): U
 
 const TIMED_FIELDS: Record<string, number[]> = { CUE: [2], LOOP: [2, 6] }
 
-export function retimedSeratoPayload(payload: Uint8Array, shiftMs: number): Uint8Array {
-  const out = payload.slice()
-  const view = new DataView(out.buffer)
+export function retimedSeratoPayload(payload: Uint8Array, shiftMs: number, fromMs = 0): Uint8Array {
+  const parts: Uint8Array[] = [payload.subarray(0, 2)]
   let at = 2
-  while (at < out.length) {
-    const nameEnd = out.indexOf(0, at)
-    if (nameEnd === -1 || nameEnd === at || nameEnd + 5 > out.length) break
-    const start = nameEnd + 5
-    const end = start + u32(out, nameEnd + 1)
-    if (end > out.length) break
-    for (const field of TIMED_FIELDS[latin1(out.subarray(at, nameEnd))] ?? [])
-      if (start + field + 4 <= end)
-        view.setUint32(
-          start + field,
-          Math.max(0, Math.round(view.getUint32(start + field) + shiftMs)),
-        )
+  while (at < payload.length) {
+    const nameEnd = payload.indexOf(0, at)
+    if (nameEnd === -1 || nameEnd === at || nameEnd + 5 > payload.length) break
+    const end = nameEnd + 5 + u32(payload, nameEnd + 1)
+    if (end > payload.length) break
+    const entry = payload.slice(at, end)
+    const view = new DataView(entry.buffer)
+    const fields = (TIMED_FIELDS[latin1(payload.subarray(at, nameEnd))] ?? [])
+      .map((field) => nameEnd + 5 - at + field)
+      .filter((offset) => offset + 4 <= entry.length)
+    if (fields.every((offset) => view.getUint32(offset) >= fromMs)) {
+      for (const offset of fields)
+        view.setUint32(offset, Math.max(0, Math.round(view.getUint32(offset) + shiftMs)))
+      parts.push(entry)
+    }
     at = end
   }
-  return out
+  parts.push(payload.subarray(at))
+  return concat(parts)
 }
 
 export function seratoGeobBody(payload: Uint8Array): Uint8Array {

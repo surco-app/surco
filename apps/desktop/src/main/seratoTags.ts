@@ -211,39 +211,58 @@ export function setSeratoMarkers(file: string, payload: Uint8Array): void {
   }
 }
 
-function dropSeratoTextMirrors(f: TagFile): boolean {
+function isSeratoAnalysis(description: string | undefined): boolean {
+  return description?.startsWith('Serato ') === true && description !== MARKERS2
+}
+
+function dropSeratoAnalysis(f: TagFile, ext: string): boolean {
+  if (ext === '.flac') {
+    const xiph = f.getTag(TagTypes.Xiph, false) as XiphComment | null
+    const fields = (xiph?.fieldNames ?? []).filter(
+      (name) => /^serato_/i.test(name) && name.toUpperCase() !== FLAC_MARKERS2,
+    )
+    for (const name of fields) xiph?.removeField(name)
+    return fields.length > 0
+  }
+  if (!ID3_EXTENSIONS.has(ext)) return false
   const tag = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
-  const mirrors = (tag?.frames ?? []).filter(
-    (frame) =>
-      frame instanceof Id3v2UserTextInformationFrame && /^serato_/i.test(frame.description),
+  const frames = (tag?.frames ?? []).filter((frame) =>
+    frame instanceof Id3v2UserTextInformationFrame
+      ? /^serato_/i.test(frame.description)
+      : frame.frameId.toString() === 'GEOB' &&
+        isSeratoAnalysis(descriptionAndPayload(frame)?.description),
   )
-  for (const frame of mirrors) tag?.removeFrame(frame)
-  return mirrors.length > 0
+  for (const frame of frames) tag?.removeFrame(frame)
+  return frames.length > 0
 }
 
 function sameBytes(a: Uint8Array | null, b: Uint8Array): boolean {
   return a !== null && a.length === b.length && a.every((byte, at) => byte === b[at])
 }
 
-export async function carrySeratoCues(source: string, dest: string, trimMs: number): Promise<void> {
+export async function carrySeratoCues(
+  source: string,
+  dest: string,
+  { trimMs, carry, strip }: { trimMs: number; carry: boolean; strip: boolean },
+): Promise<void> {
   const ext = extname(dest).toLowerCase()
-  const from = readSeratoTrack(source)
+  const from = carry ? readSeratoTrack(source) : null
   const to = readSeratoTrack(dest)
   if (!to) return
+  const sourceLead = from?.payload ? await seratoLeadOfFile(source, from.sampleRate) : 0
   const payload = from?.payload
     ? retimedSeratoPayload(
         from.payload,
-        (await seratoLeadOfFile(dest, to.sampleRate)) -
-          (await seratoLeadOfFile(source, from.sampleRate)) -
-          trimMs,
+        (await seratoLeadOfFile(dest, to.sampleRate)) - sourceLead - trimMs,
+        trimMs > 0 ? sourceLead + trimMs : 0,
       )
     : null
   const fresh = payload && !sameBytes(to.payload, payload) ? payload : null
   const f = TagFile.createFromPath(dest)
   try {
-    const mirrored = ID3_EXTENSIONS.has(ext) && dropSeratoTextMirrors(f)
+    const stripped = strip && dropSeratoAnalysis(f, ext)
     if (fresh) applyMarkers(f, ext, fresh)
-    if (fresh || mirrored) f.save()
+    if (fresh || stripped) f.save()
   } finally {
     f.dispose()
   }

@@ -380,7 +380,7 @@ export interface CueShift {
 export function copyCueFrames(source: string, dest: string, shift?: CueShift): void {
   try {
     const cues = applyCueShift(
-      readCueFrames(source).filter((frame) => !isSeratoGeob(frame)),
+      readCueFrames(source, (frame) => isTraktorCue(frame) && !isSeratoGeob(frame)),
       shift,
     )
     if (cues.length === 0) return
@@ -743,12 +743,12 @@ export function dropsForeignCues(source: string): boolean {
   return readCueFrames(source).some((frame) => !isSafeCue(frame))
 }
 
-function readCueFrames(source: string): Id3v2Frame[] {
+function readCueFrames(source: string, keep = isTraktorCue): Id3v2Frame[] {
   try {
     const src = TagFile.createFromPath(source)
     try {
       const tag = src.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
-      const cues = tag?.frames.filter(isTraktorCue) ?? []
+      const cues = tag?.frames.filter(keep) ?? []
       return cues.map((fr) => fr.clone())
     } finally {
       src.dispose()

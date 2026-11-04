@@ -2229,6 +2229,7 @@ export async function convertAudio(
   let sampleCount: number | undefined
   let originalKept = false
   let codecCueOffsetMs = 0
+  let seratoAnalysisKept = false
 
   try {
     // A cancel during the measures and probes above has no child to kill yet.
@@ -2277,6 +2278,7 @@ export async function convertAudio(
       const copyShift = cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs)
       if (copyShift && !clearExtras)
         await runInWorker({ type: 'copyCueFrames', source: input, dest: tmp, shift: copyShift })
+      else seratoAnalysisKept = true
     } else {
       const encode = (filter: string | undefined) =>
         run(
@@ -2511,12 +2513,16 @@ export async function convertAudio(
       if (codec === 'copy' && !clearExtras && ext === '.flac' && FLAC_INPUT.test(input))
         await carryFlacBlocks(input, tmp)
     }
-    if (!clearExtras && !foreignRemoved?.some((name) => name.toUpperCase() === SERATO_FLAC_MARKERS))
+    const carrySerato =
+      !clearExtras && !foreignRemoved?.some((name) => name.toUpperCase() === SERATO_FLAC_MARKERS)
+    if (carrySerato || !seratoAnalysisKept)
       await runInWorker({
         type: 'carrySeratoCues',
         source: input,
         dest: tmp,
         trimMs: trimAf !== undefined ? Math.round((trim?.startSec ?? 0) * 1000) : 0,
+        carry: carrySerato,
+        strip: !seratoAnalysisKept,
       }).catch((err) => log.warn(`Serato cues not carried to ${basename(output)}: ${err}`))
     // Last touch before the rename so the header rides the same atomic landing.
     // Only when there's a cover to show — the header exists solely for Finder's
