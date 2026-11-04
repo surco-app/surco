@@ -21,6 +21,7 @@ import { normalizeImportFields } from '../../shared/defaults'
 import {
   CUE_PROGRAMS,
   type CueProgram,
+  LIBRARY_PROGRAMS,
   programOf,
   WRITABLE_PROGRAMS,
   type WritableProgram,
@@ -239,7 +240,6 @@ const NO_HIDDEN_SOURCES: PlaylistSource[] = []
 const PREFETCH_HOVER_MS = 150
 const PLAYER_LEAVE_MS = 200
 const QUEUE_PILL_ORDER = CUE_PROGRAMS
-const ignore = () => {}
 const SYNC_ISSUES: Record<
   WritableProgram,
   {
@@ -426,8 +426,9 @@ export default function App(): React.JSX.Element {
     rekordbox: useLibraryAvailable('rekordbox'),
     traktor: useLibraryAvailable('traktor'),
     engine: useLibraryAvailable('engine'),
+    serato: useLibraryAvailable('serato'),
   }
-  const playlistLibraries = WRITABLE_PROGRAMS.filter((l) => playlistLibrariesFound[l])
+  const playlistLibraries = LIBRARY_PROGRAMS.filter((l) => playlistLibrariesFound[l])
   const saveSettingsStable = useStableCallback(saveSettings)
   useOfferPlaylistFields(
     settings?.hasSeenOnboarding && !settingsOpen ? settings : null,
@@ -865,7 +866,18 @@ export default function App(): React.JSX.Element {
     PROGRAM_QUEUES.traktor.source,
   )
   const { applyNow: applyTraktorQueueNow, discard: discardTraktorQueue } = traktorCueQueue
-  const seratoCueQueue = useRekordboxQueue(notifyEdit, ignore, ignore, PROGRAM_QUEUES.serato.source)
+  const dropDiscardedSerato = useStableCallback((paths: string[]) =>
+    setTracks((prev) => discardPlaylistEdits(prev, paths, 'serato')),
+  )
+  const dropWrittenSerato = useStableCallback((written: RekordboxQueueWritten[]) =>
+    setTracks((prev) => clearWrittenPlaylists(prev, written, 'serato')),
+  )
+  const seratoCueQueue = useRekordboxQueue(
+    notifyEdit,
+    dropDiscardedSerato,
+    dropWrittenSerato,
+    PROGRAM_QUEUES.serato.source,
+  )
   const { applyNow: applySeratoQueueNow, discard: discardSeratoQueue } = seratoCueQueue
   const queuePill = useMemo(() => {
     const queues: Record<

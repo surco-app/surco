@@ -813,6 +813,26 @@ describe('Editor Traktor and Engine DJ Playlists fields', () => {
   })
 })
 
+describe('Editor Serato crates field', () => {
+  it('picks a crate for a track Serato does not have yet', async () => {
+    Object.assign(window.api, {
+      seratoAvailable: vi.fn<Api['seratoAvailable']>().mockResolvedValue(true),
+      loadSeratoTree: vi
+        .fn<Api['loadSeratoTree']>()
+        .mockResolvedValue([{ id: 'A', name: 'A', kind: 'playlist', count: 0 }]),
+      seratoMembership: vi.fn<Api['seratoMembership']>().mockResolvedValue({}),
+    })
+    const { onChange } = renderEditor({ id: 'a' }, 'wav', { visibleFields: ['seratoPlaylists'] })
+    const field = await screen.findByTestId('serato-playlists-field')
+    await waitFor(() => expect(within(field).getByTestId('playlists-summary')).not.toBeDisabled())
+    fireEvent.click(within(field).getByTestId('playlists-summary'))
+    fireEvent.click(screen.getByTestId('playlists-check-A'))
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ seratoPlaylists: [{ id: 'A', name: 'A' }] }),
+    )
+  })
+})
+
 describe('Editor Traktor Playlists field without a confirmed collection', () => {
   it('stays disabled and says where to choose the collection, since Surco writes only to that one', async () => {
     Object.assign(window.api, {

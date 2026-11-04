@@ -1129,7 +1129,8 @@
     "rowToken": "Nome interno {{token}}",
     "rekordboxPlaylists": "Playlists rekordbox",
     "traktorPlaylists": "Playlists Traktor",
-    "enginePlaylists": "Playlists Engine DJ"
+    "enginePlaylists": "Playlists Engine DJ",
+    "seratoPlaylists": "Crates do Serato"
   },
   "declick": {
     "cueWarning": "ALAC não guarda os cues nem o beatgrid do Traktor: eles se perdem ao converter.",

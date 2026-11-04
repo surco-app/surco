@@ -148,7 +148,7 @@ export const SOURCE_PROGRAMS: {
     missingLibraryCheck: false,
     trackFlag: 'fromSerato',
     fillsLoaded: false,
-    addsUncollected: false,
+    addsUncollected: true,
     fieldTestIdPrefix: 'serato-',
     membershipKey: 'serato-membership',
     invalidatesOnEdit: true,

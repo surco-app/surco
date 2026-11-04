@@ -88,7 +88,11 @@ describe('useRekordboxPlaylists', () => {
     const save = vi.fn()
     const settings = { visibleFields: ['title'], rekordboxPlaylistsFieldOffered: false } as Settings
     renderHook(() =>
-      useOfferPlaylistFields(settings, { rekordbox: true, traktor: false, engine: false }, save),
+      useOfferPlaylistFields(
+        settings,
+        { rekordbox: true, traktor: false, engine: false, serato: false },
+        save,
+      ),
     )
     expect(save).toHaveBeenCalledWith({
       visibleFields: ['title', 'rekordboxPlaylists'],
@@ -98,7 +102,7 @@ describe('useRekordboxPlaylists', () => {
     renderHook(() =>
       useOfferPlaylistFields(
         { ...settings, rekordboxPlaylistsFieldOffered: true },
-        { rekordbox: true, traktor: false, engine: false },
+        { rekordbox: true, traktor: false, engine: false, serato: false },
         save,
       ),
     )
@@ -110,7 +114,11 @@ describe('useRekordboxPlaylists', () => {
     const settings = { visibleFields: ['title'], rekordboxPlaylistsFieldOffered: false } as Settings
     const { rerender } = renderHook(
       ({ current }) =>
-        useOfferPlaylistFields(current, { rekordbox: true, traktor: false, engine: false }, save),
+        useOfferPlaylistFields(
+          current,
+          { rekordbox: true, traktor: false, engine: false, serato: false },
+          save,
+        ),
       {
         initialProps: { current: settings },
       },
@@ -150,7 +158,11 @@ describe('the Traktor and Engine DJ playlists', () => {
       enginePlaylistsFieldOffered: false,
     } as Settings
     renderHook(() =>
-      useOfferPlaylistFields(settings, { rekordbox: true, traktor: true, engine: true }, save),
+      useOfferPlaylistFields(
+        settings,
+        { rekordbox: true, traktor: true, engine: true, serato: false },
+        save,
+      ),
     )
     expect(save).toHaveBeenCalledTimes(1)
     expect(save).toHaveBeenCalledWith({
@@ -170,17 +182,47 @@ describe('the Traktor and Engine DJ playlists', () => {
     } as Settings
     const { rerender } = renderHook(
       ({ engine }) =>
-        useOfferPlaylistFields(settings, { rekordbox: false, traktor: false, engine }, save),
-      { initialProps: { engine: false } },
+        useOfferPlaylistFields(
+          settings,
+          { rekordbox: false, traktor: false, engine, serato: false },
+          save,
+        ),
+      { initialProps: { engine: false, serato: false } },
     )
     expect(save).not.toHaveBeenCalled()
-    rerender({ engine: true })
-    rerender({ engine: true })
+    rerender({ engine: true, serato: false })
+    rerender({ engine: true, serato: false })
     expect(save).toHaveBeenCalledTimes(1)
     expect(save).toHaveBeenCalledWith({
       visibleFields: ['title', 'enginePlaylists'],
       enginePlaylistsFieldOffered: true,
     })
+  })
+})
+
+describe('the Serato crates field', () => {
+  it('is offered once a Serato library is there', () => {
+    const save = vi.fn()
+    const settings = {
+      visibleFields: ['title'],
+      rekordboxPlaylistsFieldOffered: true,
+      traktorPlaylistsFieldOffered: true,
+      enginePlaylistsFieldOffered: true,
+      seratoPlaylistsFieldOffered: false,
+    } as Settings
+    renderHook(() =>
+      useOfferPlaylistFields(
+        settings,
+        { rekordbox: false, traktor: false, engine: false, serato: true },
+        save,
+      ),
+    )
+    expect(save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        seratoPlaylistsFieldOffered: true,
+        visibleFields: expect.arrayContaining(['seratoPlaylists']),
+      }),
+    )
   })
 })
 

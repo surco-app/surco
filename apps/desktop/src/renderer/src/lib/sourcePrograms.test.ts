@@ -122,7 +122,7 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
       missingLibraryCheck: false,
       trackFlag: 'fromSerato',
       fillsLoaded: false,
-      addsUncollected: false,
+      addsUncollected: true,
       fieldTestIdPrefix: 'serato-',
       membershipKey: 'serato-membership',
       invalidatesOnEdit: true,

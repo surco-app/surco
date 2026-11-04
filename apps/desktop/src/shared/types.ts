@@ -1831,7 +1831,7 @@ export interface RekordboxPlaylistTarget {
   name: string
 }
 
-export type PlaylistLibrary = WritableProgram
+export type PlaylistLibrary = LibraryProgram
 
 export interface LibraryPlaylistChoice {
   wanted: RekordboxPlaylistTarget[]

@@ -1129,7 +1129,8 @@
     "rowToken": "内部名 {{token}}",
     "rekordboxPlaylists": "rekordbox プレイリスト",
     "traktorPlaylists": "Traktor プレイリスト",
-    "enginePlaylists": "Engine DJ プレイリスト"
+    "enginePlaylists": "Engine DJ プレイリスト",
+    "seratoPlaylists": "Serato クレート"
   },
   "declick": {
     "cueWarning": "ALACはTraktorのキューやビートグリッドを保持しません：変換すると失われます。",
