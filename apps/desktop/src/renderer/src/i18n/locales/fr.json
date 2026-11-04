@@ -1083,13 +1083,7 @@
         "anchorAdd": "Ancre à la tête de lecture, commence une zone",
         "anchorRemove": "Retirer l'ancre à la tête de lecture",
         "locked": "Le logiciel a verrouillé cette grille",
-        "serato": "La grille de Serato vient de Serato et ne peut pas être modifiée ici",
-        "title": "Grille",
-        "widenShort": "Élargir",
-        "narrowShort": "Resserrer",
-        "downbeatShort": "1er temps",
-        "anchorAddShort": "Ancre",
-        "anchorRemoveShort": "Retirer l'ancre"
+        "serato": "La grille de Serato vient de Serato et ne peut pas être modifiée ici"
       },
       "offGrid": {
         "before": "{{ms}} ms en avance",

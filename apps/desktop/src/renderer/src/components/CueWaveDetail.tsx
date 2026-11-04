@@ -30,7 +30,7 @@ import { formatTime } from '../lib/duration'
 import { CueDeleteBadge } from './CueDeleteBadge'
 import type { WaveCue } from './CueWave'
 
-const STAGE_HEIGHT = '280px'
+const STAGE_MIN_HEIGHT = '160px'
 const STAGE_MAX_HEIGHT = '360px'
 const COMPACT_HEIGHT = '96px'
 const WAVE_SPAN = 0.8
@@ -417,7 +417,9 @@ export function CueWaveDetail({
           onMouseLeave={() => onHover?.(null)}
           style={{
             cursor: onPlace ? 'crosshair' : 'grab',
-            ...(compact ? { height: COMPACT_HEIGHT } : { flexGrow: 1, minHeight: STAGE_HEIGHT }),
+            ...(compact
+              ? { height: COMPACT_HEIGHT }
+              : { flexGrow: 1, minHeight: STAGE_MIN_HEIGHT }),
           }}
           className="relative w-full shrink-0 select-none overflow-hidden"
         >

@@ -1083,13 +1083,7 @@
         "anchorAdd": "Âncora no cursor, começa uma zona",
         "anchorRemove": "Remover a âncora do cursor",
         "locked": "O programa tem esta grade bloqueada",
-        "serato": "A grade do Serato vem do Serato e não pode ser alterada aqui",
-        "title": "Grade",
-        "widenShort": "Abrir",
-        "narrowShort": "Fechar",
-        "downbeatShort": "Tempo 1",
-        "anchorAddShort": "Âncora",
-        "anchorRemoveShort": "Tirar âncora"
+        "serato": "A grade do Serato vem do Serato e não pode ser alterada aqui"
       },
       "offGrid": {
         "before": "{{ms}} ms antes",
