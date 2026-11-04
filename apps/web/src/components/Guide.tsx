@@ -10,6 +10,7 @@ import ScrollProgress from './ScrollProgress'
 
 type Section = {
   id: string
+  group: string
   title: string
   s: string
   body: string[]
@@ -81,6 +82,13 @@ export default function Guide() {
   const { t } = useTranslation()
 
   const sections = t('guide.sections', { returnObjects: true }) as Section[]
+  const groups = t('guide.groups', { returnObjects: true }) as { id: string; title: string }[]
+  const blocks = groups.map((g) => ({
+    ...g,
+    items: sections
+      .map((s, i) => ({ s, n: String(i + 1).padStart(2, '0') }))
+      .filter(({ s }) => s.group === g.id),
+  }))
   const placeholder = t('guide.shotPlaceholder')
   const [lightboxShot, setLightboxShot] = useState<{ src: string; caption: string } | null>(null)
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -102,18 +110,23 @@ export default function Guide() {
             className="sticky top-24 mt-16 max-h-[calc(100vh-8rem)] overflow-y-auto pr-2"
           >
             <p className="text-sm font-medium text-faint">{t('guide.tocLabel')}</p>
-            <ol className="mt-3 space-y-1.5">
-              {sections.map((s, i) => (
-                <li key={s.id}>
-                  <a
-                    href={`#${s.id}`}
-                    className="flex items-baseline gap-2.5 text-[13px] leading-snug text-muted transition-colors hover:text-fg"
-                  >
-                    <span className="font-mono text-[11px] text-blue">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <span>{s.title}</span>
-                  </a>
+            <ol className="mt-3 space-y-4">
+              {blocks.map((b) => (
+                <li key={b.id}>
+                  <p className="text-xs font-medium text-subtle">{b.title}</p>
+                  <ol className="mt-1.5 space-y-1.5">
+                    {b.items.map(({ s, n }) => (
+                      <li key={s.id}>
+                        <a
+                          href={`#${s.id}`}
+                          className="flex items-baseline gap-2.5 text-[13px] leading-snug text-muted transition-colors hover:text-fg"
+                        >
+                          <span className="font-mono text-[11px] text-blue">{n}</span>
+                          <span>{s.title}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ol>
                 </li>
               ))}
             </ol>
@@ -135,18 +148,25 @@ export default function Guide() {
             <Reveal eager delay={120}>
               <nav className="mt-10 rounded-2xl border border-line bg-surface2/40 p-6 lg:hidden">
                 <p className="text-sm font-medium text-faint">{t('guide.tocLabel')}</p>
-                <ol className="mt-4 grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
-                  {sections.map((s, i) => (
-                    <li key={s.id}>
-                      <a
-                        href={`#${s.id}`}
-                        className="group flex items-baseline gap-3 text-sm text-muted transition-colors hover:text-fg"
-                      >
-                        <span className="font-mono text-xs text-blue">
-                          {String(i + 1).padStart(2, '0')}
-                        </span>
-                        <span className="transition-colors group-hover:text-fg">{s.title}</span>
-                      </a>
+                <ol className="mt-4 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+                  {blocks.map((b) => (
+                    <li key={b.id}>
+                      <p className="text-xs font-medium text-subtle">{b.title}</p>
+                      <ol className="mt-2 space-y-2.5">
+                        {b.items.map(({ s, n }) => (
+                          <li key={s.id}>
+                            <a
+                              href={`#${s.id}`}
+                              className="group flex items-baseline gap-3 text-sm text-muted transition-colors hover:text-fg"
+                            >
+                              <span className="font-mono text-xs text-blue">{n}</span>
+                              <span className="transition-colors group-hover:text-fg">
+                                {s.title}
+                              </span>
+                            </a>
+                          </li>
+                        ))}
+                      </ol>
                     </li>
                   ))}
                 </ol>
@@ -154,62 +174,75 @@ export default function Guide() {
             </Reveal>
           </section>
 
-          {sections.map((s, i) => (
-            <section key={s.id} id={s.id} className="scroll-mt-20 py-14 sm:py-16">
-              <Reveal>
-                <p className="font-mono text-sm text-blue">{String(i + 1).padStart(2, '0')}</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-                  {s.title}
-                </h2>
-                <p className="mt-3 max-w-2xl text-lg leading-snug text-pretty text-subtle">{s.s}</p>
-                {s.body.map((p) => (
-                  <p key={p} className="mt-4 max-w-2xl leading-relaxed text-muted">
-                    {p}
-                  </p>
-                ))}
-                <ol data-testid="guide-steps" className="mt-6 space-y-3">
-                  {s.steps.map((step, n) => (
-                    <li key={step.lead} className="flex gap-3.5 leading-relaxed text-muted">
-                      <span className="mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-full border border-line font-mono text-xs text-blue">
-                        {n + 1}
-                      </span>
-                      <span>
-                        <strong className="font-semibold text-fg">{step.lead}</strong> {step.text}
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-                {s.points.length > 0 && (
-                  <details
-                    data-testid="guide-notes"
-                    className="mt-6 rounded-xl border border-line bg-surface2/40"
-                  >
-                    <summary className="cursor-pointer px-4 py-3 text-sm text-subtle">
-                      {t('guide.notesLabel')}
-                    </summary>
-                    <ul className="space-y-2.5 px-4 pb-4">
-                      {s.points.map((point) => (
-                        <li key={point} className="flex gap-3 text-sm leading-relaxed text-muted">
-                          <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
-                          <span>{point}</span>
+          {blocks.map((b) => (
+            <div key={b.id} data-testid="guide-block">
+              <h2 className="mt-12 border-t border-line pt-6 text-lg font-semibold text-fg">
+                {b.title}
+              </h2>
+              {b.items.map(({ s, n }) => (
+                <section key={s.id} id={s.id} className="scroll-mt-20 py-14 sm:py-16">
+                  <Reveal>
+                    <p className="font-mono text-sm text-blue">{n}</p>
+                    <h3 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+                      {s.title}
+                    </h3>
+                    <p className="mt-3 max-w-2xl text-lg leading-snug text-pretty text-subtle">
+                      {s.s}
+                    </p>
+                    {s.body.map((p) => (
+                      <p key={p} className="mt-4 max-w-2xl leading-relaxed text-muted">
+                        {p}
+                      </p>
+                    ))}
+                    <ol data-testid="guide-steps" className="mt-6 space-y-3">
+                      {s.steps.map((step, n) => (
+                        <li key={step.lead} className="flex gap-3.5 leading-relaxed text-muted">
+                          <span className="mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-full border border-line font-mono text-xs text-blue">
+                            {n + 1}
+                          </span>
+                          <span>
+                            <strong className="font-semibold text-fg">{step.lead}</strong>{' '}
+                            {step.text}
+                          </span>
                         </li>
                       ))}
-                    </ul>
-                  </details>
-                )}
-                {s.shot && (
-                  <GuideShot
-                    src={`/guide/${s.shot}`}
-                    caption={s.shotCaption}
-                    placeholder={placeholder}
-                    onZoom={(shot) => {
-                      setLightboxShot(shot)
-                      setLightboxOpen(true)
-                    }}
-                  />
-                )}
-              </Reveal>
-            </section>
+                    </ol>
+                    {s.points.length > 0 && (
+                      <details
+                        data-testid="guide-notes"
+                        className="mt-6 rounded-xl border border-line bg-surface2/40"
+                      >
+                        <summary className="cursor-pointer px-4 py-3 text-sm text-subtle">
+                          {t('guide.notesLabel')}
+                        </summary>
+                        <ul className="space-y-2.5 px-4 pb-4">
+                          {s.points.map((point) => (
+                            <li
+                              key={point}
+                              className="flex gap-3 text-sm leading-relaxed text-muted"
+                            >
+                              <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
+                              <span>{point}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
+                    {s.shot && (
+                      <GuideShot
+                        src={`/guide/${s.shot}`}
+                        caption={s.shotCaption}
+                        placeholder={placeholder}
+                        onZoom={(shot) => {
+                          setLightboxShot(shot)
+                          setLightboxOpen(true)
+                        }}
+                      />
+                    )}
+                  </Reveal>
+                </section>
+              ))}
+            </div>
           ))}
 
           <section className="py-20 text-center sm:py-24">

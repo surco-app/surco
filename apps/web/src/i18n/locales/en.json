@@ -578,9 +578,32 @@
     "shotPlaceholder": "Screenshot coming soon",
     "outroTitle": "Ready to try it",
     "outroLede": "Download Surco and get your first tracks ready in a couple of minutes.",
+    "groups": [
+      {
+        "id": "start",
+        "title": "Get started"
+      },
+      {
+        "id": "tag",
+        "title": "Tag"
+      },
+      {
+        "id": "sound",
+        "title": "Sound"
+      },
+      {
+        "id": "out",
+        "title": "Get your tracks out"
+      },
+      {
+        "id": "keep",
+        "title": "Keep it tidy"
+      }
+    ],
     "sections": [
       {
         "id": "instalar",
+        "group": "start",
         "title": "Install and open Surco",
         "s": "Download it, open it, and in a minute the wizard sets it up your way.",
         "body": [
@@ -609,6 +632,7 @@
       },
       {
         "id": "importar",
+        "group": "start",
         "title": "Add your tracks",
         "s": "Drag in files or whole folders and Surco reads everything on the fly.",
         "body": [
@@ -634,6 +658,7 @@
       },
       {
         "id": "lista",
+        "group": "start",
         "title": "Get to know the track list",
         "s": "What each row in the list tells you, at a glance.",
         "body": [
@@ -663,6 +688,7 @@
       },
       {
         "id": "editor",
+        "group": "tag",
         "title": "Edit the metadata",
         "s": "Every field of the track, minus the leftovers other programs left behind.",
         "body": [
@@ -692,6 +718,7 @@
       },
       {
         "id": "discogs",
+        "group": "tag",
         "title": "Find the release in your sources",
         "s": "Discogs, Bandcamp, Deezer, Beatport and MusicBrainz, with details and artwork in one click.",
         "body": [
@@ -722,6 +749,7 @@
       },
       {
         "id": "automatch",
+        "group": "tag",
         "title": "Let Surco tag on its own",
         "s": "Every track you drop is looked up and tagged on its own when the match is reliable.",
         "body": [
@@ -751,6 +779,7 @@
       },
       {
         "id": "album",
+        "group": "tag",
         "title": "Match a whole release",
         "s": "Apply a whole release to all its tracks at once.",
         "body": ["It's for an album or an EP you imported whole."],
@@ -778,6 +807,7 @@
       },
       {
         "id": "calidad",
+        "group": "sound",
         "title": "Check the real quality",
         "s": "See in the spectrum whether a lossless file really is lossless.",
         "body": [
@@ -807,6 +837,7 @@
       },
       {
         "id": "declick",
+        "group": "sound",
         "title": "Clean up your vinyl rips",
         "s": "Remove clicks, background noise and the needle's silence at the start and the end.",
         "body": [
@@ -840,6 +871,7 @@
       },
       {
         "id": "convertir",
+        "group": "out",
         "title": "Convert your tracks",
         "s": "One track or the whole queue, to the format you pick or in its own.",
         "body": [
@@ -869,6 +901,7 @@
       },
       {
         "id": "nombres",
+        "group": "out",
         "title": "Name and organize the files",
         "s": "Files and folders named the way you want.",
         "body": ["By default Surco keeps the original filename and you decide when to rename."],
@@ -895,6 +928,7 @@
       },
       {
         "id": "exportar",
+        "group": "out",
         "title": "Take your tracks to your DJ software",
         "s": "Apple Music, rekordbox, Engine DJ, Traktor and Serato, while converting or from their playlists.",
         "body": [
@@ -925,6 +959,7 @@
       },
       {
         "id": "rekordbox",
+        "group": "out",
         "title": "Mark your cues",
         "s": "Hot cues on the rekordbox, Engine DJ or Traktor waveform, with your flow.",
         "body": [
@@ -955,6 +990,7 @@
       },
       {
         "id": "usb",
+        "group": "out",
         "title": "Take your playlists on a USB stick",
         "s": "Export your playlists to a USB stick ready for the players.",
         "body": [
@@ -984,6 +1020,7 @@
       },
       {
         "id": "revisar",
+        "group": "keep",
         "title": "Review your library",
         "s": "Typos, spellings and duplicates in your library, all in one place.",
         "body": [
@@ -1014,6 +1051,7 @@
       },
       {
         "id": "atajos",
+        "group": "keep",
         "title": "Shortcuts and settings",
         "s": "Nearly everything has a shortcut, ⌘K finds it and Settings holds the rest.",
         "body": ["Surco is built to work without a mouse."],

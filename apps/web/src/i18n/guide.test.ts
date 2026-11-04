@@ -9,6 +9,7 @@ import ptBR from './locales/pt-BR.json'
 type Step = { lead: string; text: string }
 type Section = {
   id: string
+  group?: string
   title: string
   s: string
   body: string[]
@@ -75,5 +76,24 @@ describe('links into the guide', () => {
       locale as { useCases: { cases: { related?: Related[] }[] } }
     ).useCases.cases.flatMap((c) => (c.related ?? []).map((r) => r.anchor))
     expect(anchors.filter((a) => !ids.has(a))).toEqual([])
+  })
+})
+
+type Group = { id: string; title: string }
+
+const groups = (locale: unknown) => (locale as { guide: { groups?: Group[] } }).guide.groups ?? []
+
+describe('the guide is read in blocks, in the order Surco is used', () => {
+  it.each(LOCALES)('%s puts every section in a block, one block after another', (_, locale) => {
+    const order = groups(locale).map((g) => g.id)
+    const seen = sections(locale).map((s) => s.group ?? '')
+    const runs = seen.filter((g, i) => g !== seen[i - 1])
+    expect(runs).toEqual(order)
+    expect(groups(locale).every((g) => g.title.trim() !== '')).toBe(true)
+  })
+
+  it.each(LOCALES)('%s groups the sections the same way as en', (_, locale) => {
+    expect(sections(locale).map((s) => s.group)).toEqual(sections(en).map((s) => s.group))
+    expect(groups(locale).map((g) => g.id)).toEqual(groups(en).map((g) => g.id))
   })
 })
