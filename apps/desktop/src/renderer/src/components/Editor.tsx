@@ -80,6 +80,7 @@ import { genreChips as buildGenreChips } from '../lib/genre'
 import { isTypingTarget } from '../lib/keymap'
 import { librarySourceOf } from '../lib/librarySource'
 import { missingSummary } from '../lib/missingSummary'
+import { scrollBehavior } from '../lib/motion'
 import { autoNamesFile, renderOutputName, titleFormatPatches } from '../lib/outputName'
 import { isMacOS } from '../lib/platform'
 import { splitPosition } from '../lib/position'
@@ -1421,6 +1422,52 @@ export const Editor = memo(function Editor({
         )}
       </>
     ) : undefined
+  const revealCopy = useRef(false)
+  useEffect(() => {
+    if (!copyOpen || !revealCopy.current) return
+    revealCopy.current = false
+    document
+      .getElementById(copyCardId)
+      ?.scrollIntoView?.({ block: 'nearest', behavior: scrollBehavior() })
+  }, [copyOpen, copyCardId])
+  // The library's copy being the better one is read before the swap, at the top of the tags,
+  // as a sentence naming that copy. The header line keeps only the amber library mark: the
+  // sentence spelled out there outgrew a narrow panel and ran under the toolbar. Once the
+  // copies are measured, Compare goes to the numbers in Audio quality.
+  const canCompareCopies = copyVerdict?.winner === 'b' && !isMulti && (showSpectrum || showLoudness)
+  const libraryCopyBetterNote = !isMulti && inLibrary === 'yes' && libraryCopyBetter && (
+    <div
+      data-testid="library-copy-better-note"
+      className="mb-4 flex items-start gap-2 rounded-md bg-[var(--color-warn)]/10 px-2.5 py-2 text-xs text-fg-muted"
+    >
+      <TriangleAlert
+        className="mt-px h-3.5 w-3.5 shrink-0 text-[var(--color-warn)]"
+        aria-hidden="true"
+      />
+      <span className="min-w-0 flex-1">
+        {replacedCopyFormat
+          ? tr('editor.libraryCopyBetterNote', {
+              library: libraryName,
+              format: replacedCopyFormat,
+            })
+          : tr('editor.libraryCopyBetterNoteBare', { library: libraryName })}
+      </span>
+      {canCompareCopies && (
+        <button
+          type="button"
+          data-testid="library-copy-compare"
+          onClick={() => {
+            revealCopy.current = true
+            setSectionOpen('quality', true)
+            setCopyOpenFor(`${item.inputPath}\n${replacedCopyPath}`)
+          }}
+          className="press shrink-0 rounded font-medium text-[var(--color-warn)] hover:underline"
+        >
+          {tr('editor.libraryCopyCompare')}
+        </button>
+      )}
+    </div>
+  )
   const libraryMarks = (
     <>
       {!isMulti && inLibrary === 'yes' && (
@@ -1439,11 +1486,8 @@ export const Editor = memo(function Editor({
           <span className="sr-only">
             {tr(librarySource === 'engineDj' ? 'editor.inLibraryEngine' : 'editor.inLibrary')}
           </span>
-          {replacedCopyFormat && (
+          {replacedCopyFormat && !libraryCopyBetter && (
             <span data-testid="apple-music-copy-format">· {replacedCopyFormat}</span>
-          )}
-          {libraryCopyBetter && !copyVerdict && (
-            <span data-testid="apple-music-copy-better">· {tr('editor.libraryCopyBetter')}</span>
           )}
         </SectionPill>
       )}
@@ -1588,6 +1632,7 @@ export const Editor = memo(function Editor({
             }
           />
           <SectionBody open={formOpen} id={formBodyId}>
+            {libraryCopyBetterNote}
             {/* Capture focus entering/leaving the field grid so the sweep knows which row is
                 under edit. Blur only clears when focus leaves the grid entirely (relatedTarget
                 outside) — moving between two fields must not flash the guard off, which would

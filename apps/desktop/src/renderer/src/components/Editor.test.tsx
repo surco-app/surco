@@ -4108,7 +4108,9 @@ describe('Editor Apple Music library badge', () => {
 
   // The swap recipe promises a warning when the file in hand is worse than the library copy.
   // The commonest case is a "lossless" download made from an MP3: the swap would trade the
-  // copy for one no better, so the badge that names that copy says it is the better one.
+  // copy for one no better. The warning is a sentence at the top of the tags, naming the copy;
+  // spelled out on the header line it outgrew a narrow panel and ran under the toolbar, so the
+  // header keeps only the amber library mark.
   it('says the library copy is better when the file in hand was made from a lossy source', async () => {
     setApi('darwin')
     const api = window.api as unknown as Record<string, unknown>
@@ -4127,10 +4129,12 @@ describe('Editor Apple Music library badge', () => {
       showSpectrum: true,
     })
     await waitFor(() =>
-      expect(screen.getByTestId('apple-music-copy-better')).toHaveTextContent(
-        'better than this one',
+      expect(screen.getByTestId('library-copy-better-note')).toHaveTextContent(
+        'The copy in Apple Music (MP3 320) is better than this file.',
       ),
     )
+    expect(screen.getByTestId('apple-music-status')).toHaveAttribute('data-tone', 'warn')
+    expect(screen.queryByTestId('apple-music-copy-format')).toBeNull()
   })
 
   it('says nothing about quality when the file in hand is a real upgrade', async () => {
@@ -4154,7 +4158,7 @@ describe('Editor Apple Music library badge', () => {
       expect(screen.getByTestId('apple-music-copy-format')).toHaveTextContent('MP3 320'),
     )
     await waitFor(() => expect(api.spectrogram).toHaveBeenCalled())
-    expect(screen.queryByTestId('apple-music-copy-better')).toBeNull()
+    expect(screen.queryByTestId('library-copy-better-note')).toBeNull()
   })
 
   // A copy that lives only in iCloud has no file to read, so there is no format to name;
@@ -4259,7 +4263,7 @@ describe('Editor Apple Music library badge', () => {
     expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
       'The Apple Music copy is 2.2 dB louder, with 1978 samples pinned at its ceiling, the mark of a limiter.',
     )
-    expect(screen.queryByTestId('apple-music-copy-better')).toBeNull()
+    expect(screen.queryByTestId('library-copy-better-note')).toBeNull()
   })
 
   // The pill sat inside the header's fold button: a click on it folded Metadata, and a
@@ -4333,7 +4337,26 @@ describe('Editor Apple Music library badge', () => {
       'Worse copy than the Apple Music one',
     )
     expect(screen.getByTestId('copy-line')).toHaveAttribute('data-tone', 'warn')
-    expect(screen.queryByTestId('apple-music-copy-better')).toBeNull()
+    expect(screen.getByTestId('library-copy-better-note')).toHaveTextContent(
+      'The copy in Apple Music',
+    )
+  })
+
+  // The warning at the top of the tags is read far from Audio quality, where the numbers
+  // behind it live, so it carries the way there: Compare opens that section on the comparison.
+  it('opens the comparison in Audio quality from the warning above the tags', async () => {
+    renderWithLibraryCopy({ here: wavLoudness, library: aifLoudness })
+    await waitFor(() =>
+      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'library'),
+    )
+    const quality = screen.getByRole('button', { name: 'Audio quality' })
+    if (quality.getAttribute('aria-expanded') === 'true') fireEvent.click(quality)
+    expect(quality).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByTestId('copy-sentence')).toBeNull()
+    fireEvent.click(screen.getByTestId('library-copy-compare'))
+    expect(quality).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByTestId('copy-verdict')).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByTestId('copy-sentence')).toBeInTheDocument()
   })
 
   // "Pinned at its ceiling" is a claim the user has to take on trust; the glimpse shows it.
@@ -4432,10 +4455,11 @@ describe('Editor Apple Music library badge', () => {
       hereLossy: true,
     })
     await waitFor(() =>
-      expect(screen.getByTestId('apple-music-copy-better')).toHaveTextContent(
-        'better than this one',
+      expect(screen.getByTestId('library-copy-better-note')).toHaveTextContent(
+        'is better than this file.',
       ),
     )
+    expect(screen.queryByTestId('library-copy-compare')).toBeNull()
     expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'measuring')
   })
 
