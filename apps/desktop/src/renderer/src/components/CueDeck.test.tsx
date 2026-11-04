@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import i18n from '../i18n'
-import { CueDeck } from './CueDeck'
+import { CueDeck, CueMoves } from './CueDeck'
 
 function setup(over: Partial<React.ComponentProps<typeof CueDeck>> = {}) {
   const handlers = {
@@ -16,8 +16,6 @@ function setup(over: Partial<React.ComponentProps<typeof CueDeck>> = {}) {
     onMemory: vi.fn<() => void>(),
     onMemoryStep: vi.fn<(dir: 1 | -1) => void>(),
     onMemoryRemove: vi.fn<() => void>(),
-    onJumpBars: vi.fn<(bars: CueJumpBars) => void>(),
-    onQuantize: vi.fn<(unit: CueQuantize) => void>(),
   }
   render(
     <CueDeck
@@ -27,14 +25,21 @@ function setup(over: Partial<React.ComponentProps<typeof CueDeck>> = {}) {
       ]}
       selected="a"
       locked={[]}
-      jumpBars={16}
-      quantize="bar"
       playing={false}
       canRemoveMemory
       {...handlers}
       {...over}
     />,
   )
+  return handlers
+}
+
+function setupMoves(over: Partial<React.ComponentProps<typeof CueMoves>> = {}) {
+  const handlers = {
+    onJumpBars: vi.fn<(bars: CueJumpBars) => void>(),
+    onQuantize: vi.fn<(unit: CueQuantize) => void>(),
+  }
+  render(<CueMoves jumpBars={16} quantize="bar" {...handlers} {...over} />)
   return handlers
 }
 
@@ -154,7 +159,7 @@ describe('CueDeck', () => {
   })
 
   it('picks the jump from a menu of 8, 16, 32 and 64 bars', () => {
-    const { onJumpBars } = setup()
+    const { onJumpBars } = setupMoves()
     expect(screen.getByTestId('cues-jump')).toHaveTextContent('16 bars')
     fireEvent.click(screen.getByTestId('cues-jump'))
     const names = within(screen.getByTestId('cues-jump-listbox'))
@@ -166,7 +171,7 @@ describe('CueDeck', () => {
   })
 
   it('shows the quantize as Q and the unit beside the jump, and picks the beat from its menu', () => {
-    const { onQuantize } = setup()
+    const { onQuantize } = setupMoves()
     expect(screen.getByTestId('cues-quantize-group')).toHaveTextContent('QBar')
     fireEvent.click(screen.getByTestId('cues-quantize'))
     const names = within(screen.getByTestId('cues-quantize-listbox'))
@@ -180,7 +185,7 @@ describe('CueDeck', () => {
   it('says Q Compás and Q Golpe in Spanish, as Vicent counts', async () => {
     await i18n.changeLanguage('es')
     try {
-      setup({ quantize: 'beat' })
+      setupMoves({ quantize: 'beat' })
       expect(screen.getByTestId('cues-quantize-group')).toHaveTextContent('QGolpe')
       expect(screen.getByTestId('cues-quantize')).toHaveAccessibleName(/Cuantizar/)
     } finally {
@@ -198,13 +203,12 @@ describe('CueDeck', () => {
     expect(play.querySelector('svg')).toHaveAttribute('fill', 'currentColor')
   })
 
-  it('puts the grid row in the same line as the cue pads, between the CALL controls and the jump size', () => {
+  it('puts the grid row in the same line as the cue pads, after the CALL controls', () => {
     setup({ gridControls: <span data-testid="grid-slot" /> })
     const slot = screen.getByTestId('grid-slot')
     const remove = screen.getByTestId('cues-memory-remove')
-    const jump = screen.getByTestId('cues-jump')
     expect(remove.compareDocumentPosition(slot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(slot.compareDocumentPosition(jump) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByTestId('cues-deck')).toContainElement(slot)
   })
 
   it('leaves the line as it was when there is no grid row, as in the small editor', () => {

@@ -108,7 +108,7 @@ import { cueLetter } from '../lib/rowCues'
 import { useAppSettings } from '../lib/settingsContext'
 import { formatShortcut } from '../lib/shortcuts'
 import { claimKeys } from '../lib/spaceClaim'
-import { CueDeck } from './CueDeck'
+import { CueDeck, CueMoves } from './CueDeck'
 import { CueGridControls } from './CueGridControls'
 import { CueOffGridBar } from './CueOffGridBar'
 import { CuePalette } from './CuePalette'
@@ -1543,6 +1543,14 @@ function Editing({
         </span>
       )}
       <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-[var(--color-line-strong)]" />
+      <CueMoves
+        jumpBars={settings.cueJumpBars}
+        quantize={quantize}
+        barQuantize={!provisional}
+        onJumpBars={(bars) => onJumpBars?.(bars)}
+        onQuantize={(unit) => onQuantize?.(unit)}
+        onDone={focusEditor}
+      />
       <CueZoom
         row
         bars={zoom}
@@ -1846,9 +1854,6 @@ function Editing({
           kinds={ctx.slots.kinds}
           selected={state.selected}
           locked={state.locked}
-          jumpBars={settings.cueJumpBars}
-          quantize={quantize}
-          barQuantize={!provisional}
           playing={audition.playing}
           onPlay={() => audition.toggle(playheadMs)}
           onPad={pad}
@@ -1862,8 +1867,6 @@ function Editing({
           onMemoryStep={memoryStep}
           onMemoryRemove={memoryRemove}
           canRemoveMemory={removableCall !== undefined && !state.locked.includes(removableCall.key)}
-          onJumpBars={(bars) => onJumpBars?.(bars)}
-          onQuantize={(unit) => onQuantize?.(unit)}
           onDone={focusEditor}
           gridControls={
             <CueGridControls
