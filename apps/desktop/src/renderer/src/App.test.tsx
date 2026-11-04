@@ -3310,13 +3310,6 @@ describe('App source playlists', () => {
 
     describe('background work', () => {
       const PATHS = ['/m/w.wav', '/m/x.wav', '/m/y.wav', '/m/z.wav']
-      const matching: Release = {
-        provider: 'discogs',
-        id: 1,
-        title: 'Album',
-        artists: [{ name: 'Artist' }],
-        tracklist: [{ position: '1', title: 'My Song', duration: '3:00' }],
-      }
       const ENTRIES = PATHS.map((path, i) => ({
         path,
         separator: false,
