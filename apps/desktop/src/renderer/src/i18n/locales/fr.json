@@ -2951,6 +2951,7 @@
     "appliedChanges_one": "Fait dans Serato · {{count}} changement",
     "appliedChanges_other": "Fait dans Serato · {{count}} changements",
     "writeFailed": "Impossible d’enregistrer les changements dans Serato. Les fichiers sont restés tels quels",
+    "writeUnknown": "Les changements n’ont pu être ni enregistrés ni annulés, la bibliothèque a donc pu changer. Avant d’ouvrir Serato, restaure les crates depuis la copie la plus récente dans le dossier serato-backups des données de Surco",
     "discardConfirm": "Abandonner ce qui attend ? Serato reste comme il est",
     "notice": {
       "cuesChanged": "Les cues de {{track}} ont changé dans Serato. Marque-les à nouveau",

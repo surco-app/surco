@@ -2951,6 +2951,7 @@
     "appliedChanges_one": "Serato に反映しました · {{count}} 件の変更",
     "appliedChanges_other": "Serato に反映しました · {{count}} 件の変更",
     "writeFailed": "Serato に変更を保存できませんでした。ファイルは元のままです",
+    "writeUnknown": "変更を保存も取り消しもできなかったため、ライブラリが変更されている可能性があります。Serato を開く前に、Surco のデータ内の serato-backups フォルダーにある最新のコピーからクレートを復元してください",
     "discardConfirm": "待機中の内容を破棄しますか？Serato は今の状態のままです",
     "notice": {
       "cuesChanged": "{{track}} のキューが Serato で変更されました。もう一度マークしてください",

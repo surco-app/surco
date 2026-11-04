@@ -285,6 +285,26 @@ describe('playlist notices from the Traktor and Engine DJ queues', () => {
 })
 
 describe('Serato queue text', () => {
+  it('sends the DJ to the Serato backups before opening Serato when a write could be neither saved nor undone, never saying the files are intact', () => {
+    const backups =
+      "Couldn't save the changes or undo them, so the library may have changed. Before opening Serato, restore the crates from the most recent copy in the serato-backups folder in Surco's data"
+    expect(tr(SERATO_QUEUE_WORDS.halted)).toBe(backups)
+    expect(appliedMessage(tr, { refused: 'write-unknown' }, SERATO_QUEUE_WORDS)?.text).toBe(backups)
+    expect(appliedMessage(tr, { refused: 'write-failed' }, SERATO_QUEUE_WORDS)?.text).toBe(
+      "Couldn't save the changes to Serato. The files are as they were",
+    )
+  })
+
+  it('words the Serato backups warning in every language', () => {
+    expect(es.seratoQueue.writeUnknown).toBe(
+      'No se pudieron guardar los cambios ni deshacerlos, así que la biblioteca puede haber cambiado. Antes de abrir Serato, recupera los crates de la copia más reciente en la carpeta serato-backups de los datos de Surco',
+    )
+    for (const locale of [en, es, de, fr, ja, ptBR]) {
+      expect(locale.seratoQueue.writeUnknown).toContain('serato-backups')
+      expect(locale.seratoQueue.writeUnknown).not.toMatch(/—|: /)
+    }
+  })
+
   it('says the tracks wait for Serato to close', () => {
     expect(pillText(tr, { tracks: 2, changes: 0, items: [] }, SERATO_QUEUE_WORDS)).toBe(
       '2 tracks wait for you to close Serato',

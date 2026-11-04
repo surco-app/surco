@@ -120,13 +120,14 @@ export const SERATO_QUEUE_WORDS: QueueWords = {
   pillChangesUnplugged: 'seratoQueue.pillChanges',
   pillHalted: 'seratoQueue.pillHalted',
   pillElsewhere: 'seratoQueue.pillTracks',
-  halted: 'seratoQueue.writeFailed',
+  halted: 'seratoQueue.writeUnknown',
   elsewhere: 'seratoQueue.pillTracks',
   discardConfirm: 'seratoQueue.discardConfirm',
   applied: 'seratoQueue.applied',
   appliedChanges: 'seratoQueue.appliedChanges',
   backupFailed: 'seratoQueue.writeFailed',
-  refused: () => 'seratoQueue.writeFailed',
+  refused: (reason) =>
+    reason === 'write-unknown' ? 'seratoQueue.writeUnknown' : 'seratoQueue.writeFailed',
   notices: {
     ...REKORDBOX_QUEUE_WORDS.notices,
     'cues-changed': 'seratoQueue.notice.cuesChanged',

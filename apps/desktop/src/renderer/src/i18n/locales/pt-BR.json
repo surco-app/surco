@@ -2951,6 +2951,7 @@
     "appliedChanges_one": "Pronto no Serato · {{count}} mudança",
     "appliedChanges_other": "Pronto no Serato · {{count}} mudanças",
     "writeFailed": "Não foi possível salvar as mudanças no Serato. Os arquivos continuam como estavam",
+    "writeUnknown": "Não foi possível salvar nem desfazer as mudanças, então a biblioteca pode ter mudado. Antes de abrir o Serato, recupere os crates da cópia mais recente na pasta serato-backups dos dados do Surco",
     "discardConfirm": "Descartar o que está esperando? O Serato fica como está",
     "notice": {
       "cuesChanged": "Os cues de {{track}} mudaram no Serato. Marque-os de novo",

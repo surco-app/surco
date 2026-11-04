@@ -2951,6 +2951,7 @@
     "appliedChanges_one": "Fertig in Serato · {{count}} Änderung",
     "appliedChanges_other": "Fertig in Serato · {{count}} Änderungen",
     "writeFailed": "Die Änderungen konnten nicht in Serato gespeichert werden. Die Dateien sind unverändert",
+    "writeUnknown": "Die Änderungen ließen sich weder speichern noch rückgängig machen, die Bibliothek kann sich also geändert haben. Stelle vor dem Öffnen von Serato die Crates aus der neuesten Kopie im Ordner serato-backups in den Surco-Daten wieder her",
     "discardConfirm": "Wartendes verwerfen? Serato bleibt, wie es ist",
     "notice": {
       "cuesChanged": "Die Cues von {{track}} haben sich in Serato geändert. Markiere sie erneut",
