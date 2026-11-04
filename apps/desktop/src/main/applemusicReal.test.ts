@@ -362,6 +362,7 @@ const optionalDeps: Record<OptionalDepKey, 'wired' | 'notNeeded'> = {
   registerVerification: 'notNeeded',
   fileBytes: 'notNeeded',
   followEngineSize: 'notNeeded',
+  heldByUnsyncedLibrary: 'notNeeded',
 }
 
 describe('the opt-in Music test deps', () => {

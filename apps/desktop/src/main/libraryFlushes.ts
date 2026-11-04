@@ -2,7 +2,7 @@ import { existsSync, realpathSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import log from 'electron-log/main'
-import { type WritableProgram, writableInOrder } from '../shared/djProgram'
+import { WRITABLE_PROGRAMS, type WritableProgram, writableInOrder } from '../shared/djProgram'
 import type { LibraryStatus, LibraryTagUpdate, RekordboxSyncIssue } from '../shared/types'
 import { activity } from './activity'
 import {
@@ -17,7 +17,7 @@ import { engineBitrateKbps, engineRowFinder, repointEngineTracks } from './engin
 import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
 import { updateEngineTags } from './engineTags'
 import { probeAudio, probeDuration, probeProperties, toNmlLocation } from './ffmpeg'
-import { djLibraryFileUse, usedByDjLibrary } from './libraryFileUse'
+import { djLibraryFileUse, type SyncedLibraries, usedByDjLibrary } from './libraryFileUse'
 import { pathKey } from './libraryPathKey'
 import { flushLibraryRepoints, type LibraryRepointResult } from './libraryRepointFlush'
 import { libraryStatus } from './libraryStatus'
@@ -91,6 +91,30 @@ export function rekordboxCollectionPath(): string {
   return currentLibraryStatus().rekordbox.found
     ? findRekordboxCollection({ configured: getSettings().rekordboxDbPath })
     : ''
+}
+
+export async function unsyncedLibrariesHolding(
+  path: string,
+  deps: { traktorRead: () => string },
+): Promise<WritableProgram[]> {
+  const settings = getSettings()
+  const status = currentLibraryStatus()
+  const locations: SyncedLibraries = {
+    rekordbox:
+      !settings.syncRekordbox && status.rekordbox.found
+        ? findRekordboxCollection({ configured: settings.rekordboxDbPath })
+        : '',
+    engine: !settings.syncEngineDj && status.engine.found ? settings.engineLibraryDir : '',
+    traktor: settings.syncTraktor ? '' : deps.traktorRead(),
+  }
+  const held: WritableProgram[] = []
+  for (const program of WRITABLE_PROGRAMS) {
+    if (!locations[program]) continue
+    const only = { rekordbox: '', engine: '', traktor: '', [program]: locations[program] }
+    if (await djLibraryFileUse(only, { realPath: (p: string) => realpathSync(p) })(path))
+      held.push(program)
+  }
+  return held
 }
 
 // Whether any library may still use the file, before Surco retires it on its own. Every

@@ -187,6 +187,7 @@ import {
 } from './lib/reorderDrag'
 import { contentDeficit } from './lib/resize'
 import { revealStep, revealTrackStep } from './lib/revealCue'
+import { LIBRARY_NAME } from './lib/reviewLibraries'
 import { scopedMusicSource } from './lib/reviewSource'
 import {
   duplicatesDetail,
@@ -1526,6 +1527,13 @@ export default function App(): React.JSX.Element {
     onFormatSkipped: (name) => setNotice(tr('notices.formatSkipped', { name })),
     onKeptAsIs: (name) => setNotice(tr('notices.keptAsIs', { name })),
     onOriginalKept: (name) => setNotice(tr('notices.originalKept', { name })),
+    onOriginalHeld: (name, programs) =>
+      setNotice(
+        tr('notices.originalHeld', {
+          name,
+          programs: programs.map((p) => LIBRARY_NAME[p]).join(', '),
+        }),
+      ),
     onMusicNameLeftMarked: (name) => setNotice(tr('notices.musicNameLeftMarked', { name })),
     rereadTrackMeta,
     refreshChangedTrack,

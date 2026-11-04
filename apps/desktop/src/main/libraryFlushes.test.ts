@@ -100,6 +100,7 @@ import {
   SYNC_ISSUE_CHANNEL,
   syncTagsInLibraries,
   traktorFlushDeps,
+  unsyncedLibrariesHolding,
 } from './libraryFlushes'
 import { beginNmlBatch, endNmlBatch, recordNmlPatch } from './nmlBatch'
 import { traktorPatchKey } from './verifyRegistry'
@@ -1125,5 +1126,40 @@ describe('what each program closes, shows and reports through the library host',
     expect(h.closed).toEqual(['engine'])
     expect(h.blocked).toEqual(['engineSyncBlocked'])
     expect(h.channels).toEqual(['engine:sync-issue'])
+  })
+})
+
+describe('unsyncedLibrariesHolding', () => {
+  it('asks only the libraries Surco found but may not write to, one at a time, and names those holding the file', async () => {
+    const before = { ...SETTINGS }
+    Object.assign(SETTINGS, { syncRekordbox: false, syncTraktor: false })
+    FILE_USE.open.mockClear()
+    FILE_USE.check.mockImplementation(async () => true)
+    try {
+      const held = await unsyncedLibrariesHolding('/m/a.mp3', {
+        traktorRead: () => '/t/collection.nml',
+      })
+
+      expect(held).toEqual(['rekordbox', 'traktor'])
+      expect(FILE_USE.open).toHaveBeenCalledWith(
+        { rekordbox: '/c/master.db', engine: '', traktor: '' },
+        expect.anything(),
+      )
+      expect(FILE_USE.open).toHaveBeenCalledWith(
+        { rekordbox: '', engine: '', traktor: '/t/collection.nml' },
+        expect.anything(),
+      )
+    } finally {
+      Object.assign(SETTINGS, before)
+      FILE_USE.check.mockImplementation(async () => false)
+    }
+  })
+
+  it('asks nothing of a library whose sync is on, since it follows the rename itself', async () => {
+    FILE_USE.open.mockClear()
+    const held = await unsyncedLibrariesHolding('/m/a.mp3', { traktorRead: () => '' })
+
+    expect(held).toEqual([])
+    expect(FILE_USE.open).not.toHaveBeenCalled()
   })
 })

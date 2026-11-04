@@ -4389,3 +4389,48 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect(deps.verifyFile).not.toHaveBeenCalled()
   })
 })
+
+describe('runProcessTrack — a library that does not follow the rename', () => {
+  const renaming = (held: ProcessTrackDeps['heldByUnsyncedLibrary']) =>
+    makeDeps({ settings: settings({ overwriteOriginal: true }), heldByUnsyncedLibrary: held })
+
+  it('keeps the renamed original while a program whose sync is off still plays it, and names that program', async () => {
+    const deps = renaming(vi.fn(async () => ['rekordbox' as const]))
+    const result = await runProcessTrack(job(), deps)
+
+    expect(deps.heldByUnsyncedLibrary).toHaveBeenCalledWith('/in/song.wav')
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result.originalHeldBy).toEqual(['rekordbox'])
+  })
+
+  it('retires the renamed original when no program left out of sync holds it', async () => {
+    const deps = renaming(vi.fn(async () => []))
+    const result = await runProcessTrack(job(), deps)
+
+    expect(deps.removeRenamedOriginal).toHaveBeenCalledWith(
+      '/in/song.wav',
+      '/in/Artist - Title.aiff',
+    )
+    expect(result.originalHeldBy).toBeUndefined()
+  })
+
+  it('keeps the renamed original when a library it should look in cannot be read', async () => {
+    const deps = renaming(
+      vi.fn(async () => {
+        throw new Error('rekordbox collection unreadable')
+      }),
+    )
+    const result = await runProcessTrack(job(), deps)
+
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result.originalKept).toBe(true)
+  })
+
+  it('asks no library when the rewrite keeps the file its name', async () => {
+    const deps = renaming(vi.fn(async () => ['rekordbox' as const]))
+    deps.isSameFile = vi.fn(async () => true)
+    await runProcessTrack(job({ outputName: 'song', format: 'wav' }), deps)
+
+    expect(deps.heldByUnsyncedLibrary).not.toHaveBeenCalled()
+  })
+})

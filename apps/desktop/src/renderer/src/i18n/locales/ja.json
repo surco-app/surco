@@ -260,6 +260,7 @@
     "normalizeSkipped": "“{{name}}”のラウドネスを測定できなかったため、正規化せずに変換しました。",
     "keptAsIs": "“{{name}}”は「MP3 と M4A ファイルはそのまま保持」に設定され、元の横にあるためそのままです。",
     "originalKept": "「{{name}}」は変換されましたが、元ファイルを削除できず、元のフォルダーに残っています。",
+    "originalHeld": "「{{name}}」は新しい名前になりましたが、{{programs}} が使用中で、そのプログラムを Surco と同期していないため、元ファイルはフォルダーに残っています。",
     "musicNameLeftMarked": "Music で「{{name}}」の以前の項目の名前の末尾に「[surco-replacing]」が残っています。Music で手動で削除してください。",
     "formatSkipped": "“{{name}}”には「ソースと同じ」に相当する出力形式がないため、スキップされました。",
     "appleMusicFailedAfterConvert": "「{{name}}」は変換されましたが、Apple Music を更新できませんでした。もう一度 Apple Music に追加してください。",

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { processesAudio } from '../../../shared/audioProcessing'
 import { effectiveMeta, strayTags } from '../../../shared/customFields'
 import { DEFAULT_FIELDS } from '../../../shared/defaults'
-import { WRITABLE_PROGRAMS } from '../../../shared/djProgram'
+import { WRITABLE_PROGRAMS, type WritableProgram } from '../../../shared/djProgram'
 import { splitNameLeftMarked } from '../../../shared/errorKeys'
 import { batchKeepMp3, hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
 import type {
@@ -73,6 +73,7 @@ interface Params {
   // Surfaced when the converted file landed but the original it replaced in a format
   // change could not be removed, so both are in the folder.
   onOriginalKept?: (name: string) => void
+  onOriginalHeld?: (name: string, programs: WritableProgram[]) => void
   // The replaced Music entry kept the replacing mark in its name (ProcessResult.musicNameLeftMarked).
   onMusicNameLeftMarked?: (name: string) => void
   // Surfaced when 'source' skipped a track for having no output format equivalent
@@ -159,6 +160,7 @@ export function useTrackProcessing({
   onOldMusicCopyKept,
   onAppleMusicFailed,
   onOriginalKept,
+  onOriginalHeld,
   onMusicNameLeftMarked,
   onFormatSkipped,
   onKeptAsIs,
@@ -463,6 +465,7 @@ export function useTrackProcessing({
         if (result.declickedSamples) onDeclicked?.(track.listLabel, result.declickedSamples)
         if (result.oldMusicCopyKept) onOldMusicCopyKept?.(result.oldMusicCopyKept)
         if (result.originalKept) onOriginalKept?.(track.listLabel)
+        if (result.originalHeldBy?.length) onOriginalHeld?.(track.listLabel, result.originalHeldBy)
         if (result.musicNameLeftMarked) onMusicNameLeftMarked?.(track.listLabel)
         // Record the config main actually applied — same fallback processTrack uses
         // when the job carries none — so the stale check compares against reality.

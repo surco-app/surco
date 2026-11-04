@@ -1304,6 +1304,31 @@ describe('useTrackProcessing', () => {
     expect(onOriginalKept).toHaveBeenCalledWith('a.wav')
   })
 
+  it('tells the DJ which program kept the original, so a second copy in the folder is not a mystery', async () => {
+    setApi({
+      processTrack: vi.fn<Api['processTrack']>().mockResolvedValue({
+        outputPath: '/m/Artist - Title.wav',
+        inPlace: true,
+        originalHeldBy: ['rekordbox', 'traktor'],
+      }),
+    })
+    const onOriginalHeld = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: null,
+          updateTrack: vi.fn(),
+          onOriginalHeld,
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(onOriginalHeld).toHaveBeenCalledWith('a.wav', ['rekordbox', 'traktor'])
+  })
+
   // The old Music entry kept " [surco-replacing]" in its name: only the DJ can take it off.
   it('tells the user when an old Music entry kept the replacing mark in its name', async () => {
     setApi({

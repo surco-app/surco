@@ -116,6 +116,7 @@ export interface ProcessTrackDeps {
     coverPath?: string,
   ) => Promise<string | null>
   relinkAppleMusicEntry: (persistentId: string, path: string) => Promise<void>
+  heldByUnsyncedLibrary?: (path: string) => Promise<WritableProgram[]>
   findAppleMusicEntry?: (
     path: string,
     meta: TrackMetadata,
@@ -802,14 +803,29 @@ export async function runProcessTrack(
     // keeps both files and is told so.
     let originalKept: true | undefined
     let keptBeforeMusic = false
-    const retireOriginal = (): Promise<void> =>
-      (keptBeforeMusic
+    let originalHeldBy: WritableProgram[] | undefined
+    const retireOriginal = async (): Promise<void> => {
+      if (!outputIsInput && deps.heldByUnsyncedLibrary) {
+        const held = await deps.heldByUnsyncedLibrary(job.inputPath).catch((e) => {
+          log.warn('process:track could not read a library before retiring', job.inputPath, e)
+          originalKept = true
+          return undefined
+        })
+        if (!held) return
+        if (held.length > 0) {
+          log.info(`retire: kept ${job.inputPath}: ${held.join(', ')} still play it`)
+          originalHeldBy = held
+          return
+        }
+      }
+      await (keptBeforeMusic
         ? deps.removeRenamedOriginal(job.inputPath, target, true)
         : deps.removeRenamedOriginal(job.inputPath, target)
       ).catch((e) => {
         log.warn('process:track kept the original it could not retire', job.inputPath, e)
         originalKept = true
       })
+    }
     // A Music entry that plays the original may be replaced below, and until then the original
     // is the file it plays: retired first, a replacement that failed or kept the old entry
     // left that entry playing a file that was gone. So it waits for the Music step, whether
@@ -1242,6 +1258,7 @@ export async function runProcessTrack(
         supersededPath,
         musicLandedPath,
         originalKept,
+        originalHeldBy,
         musicNameLeftMarked,
         verification,
       }
@@ -1266,6 +1283,7 @@ export async function runProcessTrack(
       appleMusicFailed,
       appleMusicErrorKey,
       originalKept,
+      originalHeldBy,
       musicNameLeftMarked,
       verification,
     }
