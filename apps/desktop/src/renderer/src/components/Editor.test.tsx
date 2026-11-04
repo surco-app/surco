@@ -2721,28 +2721,6 @@ describe('Editor clean up previous files', () => {
     })
   })
 
-  // Three separate delete links read as three decisions after every convert. One link
-  // carries everything that applies, and says how many files it covers.
-  it('offers the original and the replaced file through one link with its count', () => {
-    const { onCleanUp } = renderEditor({
-      id: 'a',
-      status: 'done',
-      inputPath: '/music/a.wav',
-      outputPath: '/out/a.aiff',
-      replacesPath: '/old/a.mp3',
-      verification: { status: 'ok', checks: [] },
-      supersededKept: true,
-    })
-    expect(screen.getAllByTestId('clean-up-previous')).toHaveLength(1)
-    expect(screen.getByTestId('clean-up-previous')).toHaveAccessibleName(/2/)
-    fireEvent.click(screen.getByTestId('clean-up-previous'))
-    expect(onCleanUp).toHaveBeenCalledWith({
-      originalPath: '/music/a.wav',
-      superseded: [{ trackId: 'a', path: '/old/a.mp3' }],
-      staleMusicCopy: null,
-    })
-  })
-
   // An in-place export rewrites and renames the original, so inputPath now points at
   // the output: there is no separate original to delete, and offering it would trash
   // the only copy the user has.

@@ -216,7 +216,7 @@ export function ConvertFooter({
         ? staleMusicCopy
         : null,
   }
-  const cleanupFiles = cleanupCount(cleanup)
+  const cleanupFiles = !isMulti && item.replacesPath ? 0 : cleanupCount(cleanup)
   // A single track's re-read gates its done line: "Comprobando…" from the job's last stage
   // until every check is back, the line of always (with its ✓) only once all are ok, and
   // the programs still to apply a queued write named in place of the ✓. A mismatch keeps

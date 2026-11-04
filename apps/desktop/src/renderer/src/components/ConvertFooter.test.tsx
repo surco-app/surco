@@ -213,8 +213,8 @@ describe('ConvertFooter done footer stays on one line', () => {
     expect(screen.getByTestId('process-btn')).toBeInTheDocument()
   })
 
-  // A file left behind is the step most often forgotten after a replace, so its button says
-  // what it removes instead of hiding behind a trash can.
+  // A file left behind is the step most often forgotten after a conversion, so its button
+  // says what it removes instead of hiding behind a trash can.
   it('names the clean-up of the previous file on its button', () => {
     render(
       <ConvertFooter
@@ -223,6 +223,20 @@ describe('ConvertFooter done footer stays on one line', () => {
       />,
     )
     expect(screen.getByTestId('clean-up-previous')).toHaveTextContent('Clean up the previous file')
+  })
+
+  // A replacement retires the file it replaced on its own, so a trash can beside it read as
+  // that file still waiting to be removed.
+  it('offers no clean-up once a track replaced another', () => {
+    const { props } = footer(true)
+    render(
+      <ConvertFooter
+        {...props}
+        item={{ ...props.item, replacesPath: '/old/song.wav', outputPath: '/new/song.aiff' }}
+        status={{ ...status(true), canDeleteOriginal: true }}
+      />,
+    )
+    expect(screen.queryByTestId('clean-up-previous')).toBeNull()
   })
 })
 
