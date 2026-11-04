@@ -11,6 +11,7 @@ import {
   recordRekordboxRepoint,
   redirectRekordboxRepoint,
   rekordboxBatchOpen,
+  stackRepoint,
 } from './rekordboxBatch'
 import { rekordboxMetaFrom } from './rekordboxMetadata'
 
@@ -425,5 +426,30 @@ describe('beginRekordboxBatch', () => {
   it('lets the close guard see an open batch', () => {
     const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
     expect(source).toContain('batchOpen: rekordboxBatchOpen,')
+  })
+})
+
+describe('stackRepoint names', () => {
+  it('carries a name changed twice while the library waits from its first value to its last, so the row still matches', () => {
+    const stacked = stackRepoint(
+      { from: '/m/a.mp3', to: '/m/a.mp3', names: { title: { from: 'Old', to: 'A' } } },
+      {
+        from: '/m/a.mp3',
+        to: '/m/a.mp3',
+        names: { title: { from: 'A', to: 'B' }, genre: { from: 'House', to: 'Trance' } },
+      },
+    )
+    expect(stacked.names).toEqual({
+      title: { from: 'Old', to: 'B' },
+      genre: { from: 'House', to: 'Trance' },
+    })
+  })
+
+  it('keeps the first change when the later conversion changed no name', () => {
+    const stacked = stackRepoint(
+      { from: '/m/a.mp3', to: '/m/a.mp3', names: { title: { from: 'Old', to: 'A' } } },
+      { from: '/m/a.mp3', to: '/m/a.mp3' },
+    )
+    expect(stacked.names).toEqual({ title: { from: 'Old', to: 'A' } })
   })
 })

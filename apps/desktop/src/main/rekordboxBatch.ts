@@ -61,6 +61,19 @@ const sameTrackData = (
 // A later conversion of a file whose repoint is still waiting. Only a second conversion of
 // the first one's output stacks its move on top; one that read the original again already
 // measured from the file the cues were set on.
+function stackNames(
+  earlier: RekordboxRepoint['names'],
+  later: RekordboxRepoint['names'],
+): NonNullable<RekordboxRepoint['names']> {
+  const out: NonNullable<RekordboxRepoint['names']> = { ...earlier }
+  for (const [field, change] of Object.entries(later ?? {}) as [
+    keyof NonNullable<RekordboxRepoint['names']>,
+    TagChange,
+  ][])
+    out[field] = { from: earlier?.[field]?.from ?? change.from, to: change.to }
+  return out
+}
+
 export function stackRepoint(
   earlier: RekordboxRepoint,
   repoint: RekordboxRepoint,
@@ -86,6 +99,7 @@ export function stackRepoint(
       ? { expectTrackData: earlier.expectTrackData }
       : {}),
     ...(earlier.fixLength ? { fixLength: true } : {}),
+    ...(earlier.names || repoint.names ? { names: stackNames(earlier.names, repoint.names) } : {}),
   }
 }
 
