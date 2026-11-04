@@ -533,7 +533,7 @@
     "resultsUnfold": "Mostrar resultados",
     "resultsUnfoldSearch": "Buscar",
     "resultsColumn": "Resultados",
-    "tokenTip": "A busca funciona sem configurar nada. Adicione seu próprio token do Discogs em <0>Ajustes</0> para ter um limite maior e privado.",
+    "tokenTip": "Com seu próprio token do Discogs em <0>Ajustes</0> você tem um limite privado e não precisa esperar.",
     "matchSuggested": "Sugerida",
     "lengthMismatch": "A duração é diferente do seu arquivo ({{length}})",
     "chooseAlbumHint": "Escolha um álbum da lista para ver as faixas dele.",

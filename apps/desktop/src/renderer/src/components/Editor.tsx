@@ -391,7 +391,7 @@ export const Editor = memo(function Editor({
       ),
     [libraries, traktorNmlPath],
   )
-  const showTokenTip = discogsToken === '' && searchProviders.includes('discogs')
+  const discogsTokenMissing = discogsToken === '' && searchProviders.includes('discogs')
   const isMulti = (selectedTracks?.length ?? 0) > 1
   const revealIn = useLibraryReveals(item, isMulti ? [] : librarySources)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -1503,7 +1503,7 @@ export const Editor = memo(function Editor({
           matchTier={matchTier}
           appliedTrack={appliedTrack}
           fileDurationSec={item.duration}
-          showTokenTip={showTokenTip}
+          discogsTokenMissing={discogsTokenMissing}
           isMulti={isMulti}
           selectedTracks={selectedTracks}
           onApplyMatches={onApplyMatches}

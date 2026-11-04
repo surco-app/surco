@@ -66,7 +66,7 @@ interface Props {
   // duration), while the badge stays the matcher's own verdict.
   appliedTrack: ReleaseTrack | undefined
   fileDurationSec: number | undefined
-  showTokenTip: boolean
+  discogsTokenMissing: boolean
   isMulti: boolean
   selectedTracks: TrackItem[] | undefined
   onApplyMatches:
@@ -97,7 +97,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   matchTier,
   appliedTrack,
   fileDurationSec,
-  showTokenTip,
+  discogsTokenMissing,
   isMulti,
   selectedTracks,
   onApplyMatches,
@@ -133,6 +133,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     noResults,
     error,
     failedSources,
+    discogsRateLimited,
     retrySearch,
     previewRelease: livePreviewRelease,
   } = browser
@@ -591,21 +592,6 @@ export const DiscogsPanel = memo(function DiscogsPanel({
               <Tooltip label={tr('editor.resultsFold')} />
             </button>
           </div>
-          {showTokenTip && (
-            <p data-testid="discogs-token-tip" className="px-1.5 pt-2 text-xs text-fg-muted">
-              <Trans
-                i18nKey="editor.tokenTip"
-                components={[
-                  <button
-                    key="settings"
-                    type="button"
-                    onClick={() => onOpenSettings('search')}
-                    className="underline underline-offset-2 hover:no-underline"
-                  />,
-                ]}
-              />
-            </p>
-          )}
           {/* Nothing about a search is audible otherwise: the spinner is an icon, the
               skeleton is hidden and rows just appear. Mounted empty from the start so
               assistive tech is already listening when the first search runs. Opening a
@@ -650,6 +636,21 @@ export const DiscogsPanel = memo(function DiscogsPanel({
               >
                 {tr('editor.retry')}
               </button>
+            </p>
+          )}
+          {discogsTokenMissing && discogsRateLimited && (
+            <p data-testid="discogs-token-tip" className="px-1.5 pt-2 text-xs text-fg-muted">
+              <Trans
+                i18nKey="editor.tokenTip"
+                components={[
+                  <button
+                    key="settings"
+                    type="button"
+                    onClick={() => onOpenSettings('search')}
+                    className="underline underline-offset-2 hover:no-underline"
+                  />,
+                ]}
+              />
             </p>
           )}
           {(showProviderFilter || formatFilter.length > 0) && (

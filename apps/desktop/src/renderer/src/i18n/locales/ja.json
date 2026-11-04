@@ -533,7 +533,7 @@
     "resultsUnfold": "結果を表示",
     "resultsUnfoldSearch": "検索",
     "resultsColumn": "結果",
-    "tokenTip": "検索はデフォルトで動作します。より高いプライベートレートリミットをご希望の場合は、<0>Settings</0>に Discogs トークンを入力してください。",
+    "tokenTip": "<0>設定</0>で自分の Discogs トークンを追加すると、専用の上限になり待つ必要がなくなります。",
     "matchSuggested": "提案",
     "lengthMismatch": "ファイルと長さが異なります（{{length}}）",
     "chooseAlbumHint": "リストからアルバムを選択してトラックを表示",

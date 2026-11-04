@@ -533,7 +533,7 @@
     "resultsUnfold": "Show results",
     "resultsUnfoldSearch": "Search",
     "resultsColumn": "Results",
-    "tokenTip": "Search works out of the box. Add your own Discogs token in <0>Settings</0> for a higher, private rate limit.",
+    "tokenTip": "Add your own Discogs token in <0>Settings</0> for a private limit, so you never have to wait.",
     "matchSuggested": "Suggested",
     "lengthMismatch": "Length differs from your file ({{length}})",
     "chooseAlbumHint": "Choose an album from the list to see its tracks.",

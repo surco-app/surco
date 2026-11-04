@@ -36,13 +36,14 @@ function browser(overrides: Partial<DiscogsBrowser>): DiscogsBrowser {
     noResults: false,
     error: '',
     failedSources: [],
+    discogsRateLimited: false,
     retrySearch: vi.fn(),
     previewRelease: vi.fn(),
     ...overrides,
   }
 }
 
-function panel(b: DiscogsBrowser, fileDurationSec?: number) {
+function panel(b: DiscogsBrowser, fileDurationSec?: number, discogsTokenMissing = false) {
   return (
     <DiscogsPanel
       browser={b}
@@ -50,7 +51,7 @@ function panel(b: DiscogsBrowser, fileDurationSec?: number) {
       matchTier={undefined}
       appliedTrack={undefined}
       fileDurationSec={fileDurationSec}
-      showTokenTip={false}
+      discogsTokenMissing={discogsTokenMissing}
       isMulti={false}
       selectedTracks={undefined}
       onApplyMatches={undefined}
@@ -78,7 +79,7 @@ describe('DiscogsPanel column width', () => {
         matchTier={undefined}
         appliedTrack={undefined}
         fileDurationSec={undefined}
-        showTokenTip={false}
+        discogsTokenMissing={false}
         isMulti={false}
         selectedTracks={undefined}
         onApplyMatches={undefined}
@@ -255,6 +256,33 @@ describe('DiscogsPanel search announcements', () => {
     expect(retrySearch).toHaveBeenCalledTimes(1)
   })
 
+  it('offers a personal Discogs token when the shared limit is what stopped the search', () => {
+    render(
+      panel(
+        browser({ query: 'uno', results, failedSources: ['discogs'], discogsRateLimited: true }),
+        undefined,
+        true,
+      ),
+    )
+    expect(screen.getByTestId('discogs-token-tip')).toHaveTextContent(/token/)
+  })
+
+  it('keeps the token out of the way while the shared limit is not in the way', () => {
+    render(panel(browser({ query: 'uno', results }), undefined, true))
+    expect(screen.queryByTestId('discogs-token-tip')).toBeNull()
+  })
+
+  it('does not offer a token to someone who already has one', () => {
+    render(
+      panel(
+        browser({ query: 'uno', results, failedSources: ['discogs'], discogsRateLimited: true }),
+        undefined,
+        false,
+      ),
+    )
+    expect(screen.queryByTestId('discogs-token-tip')).toBeNull()
+  })
+
   it('shows no failure line when every source answered', () => {
     renderPanel(browser({ query: 'uno', results }))
     expect(screen.queryByTestId('discogs-failed-sources')).toBeNull()
@@ -294,7 +322,7 @@ describe('DiscogsPanel suggestion marks', () => {
         matchTier={matchTier}
         appliedTrack={undefined}
         fileDurationSec={undefined}
-        showTokenTip={false}
+        discogsTokenMissing={false}
         isMulti={false}
         selectedTracks={undefined}
         onApplyMatches={undefined}

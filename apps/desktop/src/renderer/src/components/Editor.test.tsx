@@ -4903,12 +4903,17 @@ describe('Editor section groups', () => {
 })
 
 describe('Discogs token tip', () => {
-  it('asks for a Discogs token only while Discogs is one of the sources', () => {
-    renderEditor({ id: 'a' }, 'wav', { discogsToken: '', searchProviders: ['beatport'] })
+  it('asks for a Discogs token once the shared limit stops a search, and only without one', async () => {
+    const api = (window as unknown as { api: Record<string, unknown> }).api
+    api.search = vi.fn(async () => {
+      throw new Error("Error invoking remote method 'search': Error: SURCO_ERR:discogsRateLimit")
+    })
+    renderEditor({ id: 'a', query: 'artist song' }, 'wav', { discogsToken: 'mine' })
+    await screen.findByRole('alert')
     expect(screen.queryByTestId('discogs-token-tip')).not.toBeInTheDocument()
     cleanup()
-    renderEditor({ id: 'a' }, 'wav', { discogsToken: '', searchProviders: ['discogs'] })
-    expect(screen.getByTestId('discogs-token-tip')).toBeInTheDocument()
+    renderEditor({ id: 'a', query: 'artist song' }, 'wav', { discogsToken: '' })
+    expect(await screen.findByTestId('discogs-token-tip')).toBeInTheDocument()
   })
 })
 

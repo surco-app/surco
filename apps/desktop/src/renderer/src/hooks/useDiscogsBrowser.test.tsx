@@ -1243,6 +1243,41 @@ describe('stable search', () => {
       expect(search.mock.calls.filter(([, source]) => source === 'discogs')).toHaveLength(2)
     })
 
+    it('flags a Discogs rate limit, the one failure a personal token cures, while others answer', async () => {
+      setApi({ search: searchWhere(() => Promise.reject(rateLimited)) })
+      const { result } = renderHook(
+        () =>
+          useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, ['discogs', 'bandcamp']),
+        { wrapper: wrapper() },
+      )
+      act(() => result.current.doSearch())
+      await waitFor(() => expect(result.current.failedSources).toEqual(['discogs']))
+      expect(result.current.discogsRateLimited).toBe(true)
+    })
+
+    it('flags a Discogs rate limit when it was the only source', async () => {
+      setApi({ search: vi.fn(() => Promise.reject(rateLimited)) })
+      const { result } = renderHook(
+        () => useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, ['discogs']),
+        { wrapper: wrapper() },
+      )
+      act(() => result.current.doSearch())
+      await waitFor(() => expect(result.current.error).not.toBe(''))
+      expect(result.current.discogsRateLimited).toBe(true)
+    })
+
+    it('does not blame the rate limit for a Discogs failure a token would not fix', async () => {
+      setApi({ search: searchWhere(() => Promise.reject(new Error('network down'))) })
+      const { result } = renderHook(
+        () =>
+          useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, ['discogs', 'bandcamp']),
+        { wrapper: wrapper() },
+      )
+      act(() => result.current.doSearch())
+      await waitFor(() => expect(result.current.failedSources).toEqual(['discogs']))
+      expect(result.current.discogsRateLimited).toBe(false)
+    })
+
     it('stays quiet about a source that is not connected', async () => {
       const notConnected = new Error('SURCO_ERR:beatportNotConnected')
       setApi({

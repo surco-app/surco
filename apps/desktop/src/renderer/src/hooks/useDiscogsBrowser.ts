@@ -100,6 +100,7 @@ export interface DiscogsBrowser {
   noResults: boolean
   error: string
   failedSources: SearchProviderId[]
+  discogsRateLimited: boolean
   retrySearch: () => void
   previewRelease: (result: SearchResult) => void
 }
@@ -544,6 +545,12 @@ export function useDiscogsBrowser(
     [settled, allFailed, sources, errors],
   )
 
+  const discogsFailure = errors[sources.indexOf('discogs')]
+  const discogsRateLimited =
+    settled &&
+    discogsFailure instanceof Error &&
+    errorKeyOf(cleanIpcError(discogsFailure.message)) === 'discogsRateLimit'
+
   // Memoized so the hook's own consumers (DiscogsPanel, wrapped in memo — see
   // DiscogsPanel.tsx) don't reconcile on every Editor render: without this the
   // return value is a fresh object literal every time, defeating that memo even
@@ -571,6 +578,7 @@ export function useDiscogsBrowser(
       noResults,
       error,
       failedSources,
+      discogsRateLimited,
       retrySearch,
       previewRelease,
     }),
@@ -595,6 +603,7 @@ export function useDiscogsBrowser(
       noResults,
       error,
       failedSources,
+      discogsRateLimited,
       retrySearch,
       previewRelease,
     ],
