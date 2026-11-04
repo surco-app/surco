@@ -1176,7 +1176,7 @@ function reachableBroken(cell: Cell, set: LibrarySet, t: SeededTrack): Found[] {
   const synced = new Set<Program>(syncedPrograms(cell.programs))
   return PROGRAM_ORDER.filter((p) => !synced.has(p)).flatMap((program): Found[] => {
     const path = libraryPathOf(program, set, t)
-    return path !== null && !existsSync(path)
+    return path !== null && located(path) === null
       ? [
           [
             'points',
