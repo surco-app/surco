@@ -1534,7 +1534,7 @@
       "source": "Igual que el origen",
       "corrected": "Corregido"
     },
-    "sampleRateHint": "«Igual que el origen» nunca remuestrea. Fija una frecuencia para unificar tu biblioteca. “Corregido” reescribe a 44,1 los ficheros medidos como upsampleados desde 44,1 kHz; los hi-res confirmados y los no verificados conservan su frecuencia (solo recodificaciones).",
+    "sampleRateHint": "«Igual que el origen» nunca remuestrea. Fija una frecuencia para unificar tu biblioteca. «Corregido» reescribe a 44,1 los ficheros medidos como upsampleados desde 44,1 kHz; los hi-res confirmados y los no verificados conservan su frecuencia (solo recodificaciones).",
     "flacCompression": "Compresión FLAC",
     "flacCompressions": {
       "0": "Rápida",
@@ -1552,7 +1552,7 @@
     },
     "destinationAppleMusicHint": "Lo añade a Apple Music, sin copia en la carpeta.",
     "destinationAppleMusicKeepCopyHint": "Lo añade a Apple Music y guarda una copia en la carpeta.",
-    "destinationBesideHint": "Escribe la conversión junto al archivo original, sin tocarlo nunca; con el mismo formato la copia toma un nombre “(2)”.",
+    "destinationBesideHint": "Escribe la conversión junto al archivo original, sin tocarlo nunca; con el mismo formato la copia toma un nombre «(2)».",
     "destinationOverwriteHint": "Reescribe cada archivo en su sitio; sin copia de salida. Cambiar de formato elimina el original.",
     "engineLibraryDir": "Biblioteca de Engine DJ",
     "engineLibraryDirHint": "Surco escribe en la base de datos de esta biblioteca. Cierra Engine DJ mientras conviertes.",
@@ -1581,7 +1581,7 @@
     "titleFormat": "Formato del título",
     "autoApplyFilename": "Aplicar el patrón automáticamente",
     "autoApplyFilenameHint": "Genera el nombre desde los metadatos al exportar, sin pulsar «Regenerar». Una edición manual siempre tiene prioridad.",
-    "filenameFolderHint": "Usa \"/\" para organizar los archivos en carpetas, p. ej.",
+    "filenameFolderHint": "Usa «/» para organizar los archivos en carpetas, p. ej.",
     "insertToken": "Insertar un campo:",
     "preview": "Vista previa:",
     "grouping": "Agrupación (separadas por comas)",
