@@ -458,3 +458,27 @@ describe('Select portaled menu', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 })
+
+describe('Select counts', () => {
+  // The track list's filter reads "All 4", its count set apart in the digits' own tone; the
+  // source menu beside it said "All (5)", so two columns of one toolbar spoke two formats.
+  it("sets an option's count apart from its label, on the trigger and in the menu", () => {
+    render(
+      <Select
+        value="all"
+        options={[
+          { value: 'all', label: 'All', count: 5 },
+          { value: 'discogs', label: 'Discogs', count: 3 },
+        ]}
+        onChange={vi.fn()}
+        label="Source"
+        testid="source"
+      />,
+    )
+    expect(screen.getByTestId('source-count')).toHaveTextContent('5')
+    expect(screen.getByTestId('source')).not.toHaveTextContent('(')
+    expect(screen.getByTestId('source')).toHaveAccessibleName('Source: All 5')
+    fireEvent.click(screen.getByTestId('source'))
+    expect(screen.getByTestId('source-option-discogs-count')).toHaveTextContent('3')
+  })
+})

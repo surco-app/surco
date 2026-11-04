@@ -17,6 +17,7 @@ interface SelectOption {
   // What the trigger shows instead of the label, for a menu in a row too narrow for it;
   // empty leaves the chevron alone. The accessible name keeps the full label.
   short?: string
+  count?: number
   divided?: boolean
   disabled?: boolean
 }
@@ -232,6 +233,14 @@ export function Select({
             ) : (
               <span className="flex-1">{o.label}</span>
             )}
+            {o.count !== undefined && (
+              <span
+                data-testid={`${testid}-option-${o.value}-count`}
+                className="tabular-nums text-fg-dim"
+              >
+                {o.count}
+              </span>
+            )}
             <Check
               aria-hidden="true"
               className={`size-3 shrink-0 ${o.value === value ? '' : 'invisible'}`}
@@ -267,7 +276,11 @@ export function Select({
         aria-expanded={open}
         // The label alone hid the visible value from VoiceOver; a native select announces
         // both, so this one does too.
-        aria-label={selected ? `${label}: ${selected.label}` : label}
+        aria-label={
+          selected
+            ? `${label}: ${selected.label}${selected.count !== undefined ? ` ${selected.count}` : ''}`
+            : label
+        }
         onClick={toggle}
         // ↑/↓ open a closed select like a native one, and stay here: left to bubble, they
         // drove the keyboard roving of whatever list the select sits in.
@@ -286,6 +299,11 @@ export function Select({
             className={`min-w-0 flex-1 truncate text-left ${lead ? 'font-semibold text-fg' : ''}`}
           >
             {selected?.short ?? selected?.label}
+          </span>
+        )}
+        {selected?.count !== undefined && (
+          <span data-testid={`${testid}-count`} className="shrink-0 tabular-nums opacity-70">
+            {selected.count}
           </span>
         )}
         <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />

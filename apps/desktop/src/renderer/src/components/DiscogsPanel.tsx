@@ -665,11 +665,13 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                   options={[
                     {
                       value: 'all',
-                      label: `${tr('editor.providerFilterAll')} (${providerTotal})`,
+                      label: tr('editor.providerFilterAll'),
+                      count: providerTotal,
                     },
                     ...providerCounts.map((p) => ({
                       value: p.provider,
-                      label: `${tr(`settings.provider.${p.provider}`)} (${p.count})`,
+                      label: tr(`settings.provider.${p.provider}`),
+                      count: p.count,
                     })),
                   ]}
                 />

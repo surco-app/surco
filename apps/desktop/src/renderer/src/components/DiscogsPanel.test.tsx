@@ -945,3 +945,25 @@ describe('DiscogsPanel source menu stacking', () => {
     }
   })
 })
+
+// Beside the track list's "All 4", the source menu said "All (5)": the same toolbar row
+// counted in two formats.
+describe('DiscogsPanel source menu count', () => {
+  it('counts the results the way the track list counts its tracks', () => {
+    renderPanel(
+      browser({
+        query: 'x',
+        results: [
+          { provider: 'discogs', id: 1, title: 'Album' },
+          { provider: 'musicbrainz', id: 2, title: 'Other' },
+        ],
+        providerCounts: [
+          { provider: 'discogs', count: 1 },
+          { provider: 'musicbrainz', count: 1 },
+        ],
+      }),
+    )
+    expect(screen.getByTestId('provider-filter')).not.toHaveTextContent('(')
+    expect(screen.getByTestId('provider-filter-count')).toHaveTextContent('2')
+  })
+})
