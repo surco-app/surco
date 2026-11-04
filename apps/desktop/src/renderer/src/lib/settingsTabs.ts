@@ -3,13 +3,13 @@ import {
   ChartColumn,
   Flag,
   FolderOutput,
+  Globe,
   Image,
   Keyboard,
   LayoutList,
   List,
   type LucideIcon,
   RefreshCw,
-  Search,
   SlidersHorizontal,
   SquarePen,
   Tag,
@@ -55,7 +55,7 @@ export const SETTINGS_TABS: SettingsTab[] = SETTINGS_TAB_GROUPS.flatMap((g) => g
 
 export const SETTINGS_TAB_ICONS: Record<SettingsTab, LucideIcon> = {
   general: SlidersHorizontal,
-  search: Search,
+  search: Globe,
   conversion: RefreshCw,
   processing: AudioWaveform,
   destination: FolderOutput,
