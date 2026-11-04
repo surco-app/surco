@@ -117,6 +117,7 @@ import {
 } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
+import type { NmlPatch } from './traktorNml'
 import { digestCodec, type PcmDigest, pcmDigest, pcmTimeoutMs } from './verifyPcm'
 import { WAVEFORM_BUCKETS, WAVEFORM_SAMPLE_RATE } from './waveform'
 import { isMalformedInputError, repairWav } from './wavRepair'
@@ -1954,6 +1955,18 @@ export async function holdUnderCeiling(
 // ENTRY pointed at the file Traktor still knows, with that file's own cues: the
 // output location below is what lets applyPatches send the shifted tree only to
 // an ENTRY that describes the converted file.
+const NML_NAMES = ['title', 'artist', 'album', 'genre'] as const
+
+function changedNames(before: TrackMetadata, after: TrackMetadata): NmlPatch['tags'] {
+  const changes: NonNullable<NmlPatch['tags']> = {}
+  for (const field of NML_NAMES) {
+    const from = (before[field] ?? '').trim()
+    const to = (after[field] ?? '').trim()
+    if (from.normalize('NFC') !== to.normalize('NFC')) changes[field] = { from, to }
+  }
+  return Object.keys(changes).length > 0 ? changes : undefined
+}
+
 function recordConversionPatch(
   input: string,
   output: string,
@@ -1961,6 +1974,7 @@ function recordConversionPatch(
   keptArtwork: boolean,
   clearedExtras: boolean,
   cueShift: CueShift | undefined,
+  namesBefore: TrackMetadata | undefined,
 ): void {
   // Both have to hold: the toggle is the permission and the path is the address. Checking
   // only the path would keep recording patches for a sync the user has switched off, and
@@ -2007,6 +2021,7 @@ function recordConversionPatch(
         // belongs to the old one. Scoping this to a fresh coverPath is what left the
         // reported case — convert, and Traktor keeps showing the previous artwork —
         // unfixed. Only an explicit removeCover leaves nothing to redraw.
+        tags: namesBefore && changedNames(namesBefore, meta),
         refreshCoverArt: keptArtwork || undefined,
         outputPath: keptArtwork ? output : undefined,
         outputVolume: outputLocation.volume,
@@ -2143,6 +2158,12 @@ export async function convertAudio(
   written: ConversionWritten
 }> {
   const meta = composeMeta(sourceMeta)
+  const namesBefore =
+    getSettings().syncTraktor && getSettings().traktorNmlPath
+      ? await readMeta(input)
+          .then((read) => (read.failed ? undefined : read.tags))
+          .catch(() => undefined)
+      : undefined
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
   // output path) overwrites it atomically instead of failing with ffmpeg's
@@ -2684,6 +2705,7 @@ export async function convertAudio(
       !removeCover,
       clearExtras ?? false,
       cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+      namesBefore,
     )
     // rekordbox indexes by path too, and unlike Traktor it stores the whole path in one
     // column, so the entry can follow the file even into another folder. Recorded here

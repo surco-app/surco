@@ -541,6 +541,67 @@ describe('convertAudio cue preservation', () => {
     expect(patches[0].cueTree).toBeDefined()
   })
 
+  it('carries the title, artist, album and genre a conversion changed, from what the file said before, so Traktor shows the new names', async () => {
+    traktorNmlPath = '/Users/dj/collection.nml'
+    const tagged = join(dir, 'tagged.aiff')
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-i',
+      src,
+      '-c',
+      'copy',
+      '-write_id3v2',
+      '1',
+      '-metadata',
+      'title=Old Title',
+      '-metadata',
+      'artist=ATB',
+      '-metadata',
+      'album=Old Album',
+      '-metadata',
+      'genre=Trance',
+      tagged,
+    ])
+    beginNmlBatch()
+    await convertAudio(tagged, join(dir, 'tagged-out.flac'), 'flac', meta)
+
+    expect(endNmlBatch()[0].tags).toEqual({
+      title: { from: 'Old Title', to: 'Till I Come' },
+      album: { from: 'Old Album', to: 'Movin Melodies' },
+    })
+  })
+
+  it('carries no names when the conversion left them as the file had them', async () => {
+    traktorNmlPath = '/Users/dj/collection.nml'
+    const same = join(dir, 'same.aiff')
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-i',
+      src,
+      '-c',
+      'copy',
+      '-write_id3v2',
+      '1',
+      '-metadata',
+      'title=Till I Come',
+      '-metadata',
+      'artist=ATB',
+      '-metadata',
+      'album=Movin Melodies',
+      '-metadata',
+      'genre=Trance',
+      same,
+    ])
+    beginNmlBatch()
+    await convertAudio(same, join(dir, 'same-out.flac'), 'flac', meta)
+
+    expect(endNmlBatch()[0].tags).toBeUndefined()
+  })
+
   // meta.bpm es un string: una pista sin BPM tiene que llegar como undefined, nunca
   // como NaN. Un NaN parece un valor y se cuela hasta el filtro de cuesToXml, donde
   // descarta el ancla de rejilla sin decir nada — el fallo silencioso que esta guarda
