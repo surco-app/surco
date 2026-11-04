@@ -6,11 +6,11 @@ import { type SeratoLibrary, seratoTree } from './seratoLibrary'
 import { readSeratoTrack } from './seratoTags'
 import {
   type ExportMarks,
-  exportTrackIds,
   foreignExportTrack,
+  foreignSelection,
   marksOnRekordboxClock,
 } from './usbExportForeign'
-import type { ExportPlaylist, ExportSelection, ExportTrack } from './usbExportSource'
+import type { ExportSelection } from './usbExportSource'
 
 export interface SeratoMarks extends ExportMarks {
   lengthSec: number
@@ -74,7 +74,7 @@ function pickedCrates(library: SeratoLibrary, ids: ReadonlySet<string>): PickedC
   return out
 }
 
-function dateOf(addedAt: number | null): string {
+function seratoDate(addedAt: number | null): string {
   return addedAt === null ? '' : new Date(addedAt * 1000).toISOString().slice(0, 10)
 }
 
@@ -85,40 +85,29 @@ export async function readSeratoExportSelection(
 ): Promise<ExportSelection> {
   const picked = pickedCrates(library, new Set(ids))
   const rows = picked.map((p) => library.crates.get(p.node.id) ?? [])
-  const trackIds = exportTrackIds(rows.flat())
   const known = new Map(library.tracks.map((t) => [t.file.normalize('NFC'), t]))
-  const tracks = new Map<string, ExportTrack>()
-  for (const file of rows.flat()) {
-    const key = file.normalize('NFC')
-    if (tracks.has(key)) continue
-    const row = known.get(key)
-    const path = row?.file ?? file
-    const marks = await deps.marks(path)
-    tracks.set(
-      key,
-      foreignExportTrack(trackIds.get(key) ?? '', path, {
+  return foreignSelection(
+    picked,
+    rows,
+    (file) => file,
+    async (id, file) => {
+      const row = known.get(file.normalize('NFC'))
+      const path = row?.file ?? file
+      const marks = await deps.marks(path)
+      return foreignExportTrack(id, path, {
         title: row ? row.title : basename(path, extname(path)),
         artist: row?.artist ?? '',
         album: row?.album ?? '',
         genre: row?.genre ?? '',
         key: row?.key ?? '',
         bpm: Number(row?.bpm) || 0,
-        dateAdded: dateOf(row?.addedAt ?? null),
+        dateAdded: seratoDate(row?.addedAt ?? null),
         lengthSec: marks?.lengthSec ?? 0,
         sampleRate: marks?.sampleRate ?? 0,
         cues: marks?.cues ?? [],
         grid: marks?.grid ?? [],
         ...(marks?.cuesLeftOut && { cuesLeftOut: true }),
-      }),
-    )
-  }
-  const playlists: ExportPlaylist[] = picked.map(({ node, folders, folderIds }, i) => ({
-    id: node.id,
-    name: node.name,
-    folders,
-    folderIds,
-    updatedAt: 0,
-    trackIds: rows[i].map((file) => trackIds.get(file.normalize('NFC')) ?? ''),
-  }))
-  return { playlists, tracks: [...tracks.values()] }
+      })
+    },
+  )
 }

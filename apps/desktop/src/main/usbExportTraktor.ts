@@ -5,17 +5,12 @@ import { nodeById, parsePlaylists } from './traktorPlaylistModel'
 import { readTraktorTree, traktorFileOf } from './traktorPlaylists'
 import { traktorLeadOfFile } from './traktorTimeline'
 import {
-  exportTrackIds,
   type ForeignCue,
   foreignExportTrack,
+  foreignSelection,
   marksOnRekordboxClock,
 } from './usbExportForeign'
-import {
-  type ExportPlaylist,
-  type ExportSelection,
-  type ExportTrack,
-  selectedPlaylists,
-} from './usbExportSource'
+import { type ExportSelection, type ExportTrack, selectedPlaylists } from './usbExportSource'
 
 const GRID_TYPE = 4
 const LOOP_TYPE = 5
@@ -47,7 +42,7 @@ function cuesOf(block: string): ForeignCue[] {
   })
 }
 
-function dateOf(imported: string): string {
+function traktorDate(imported: string): string {
   const [y, m, d] = imported.split('/')
   return y && m && d ? `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}` : ''
 }
@@ -84,7 +79,7 @@ async function trackOf(
     bitRate: Math.round((Number(attr(info, 'BITRATE')) || 0) / 1000),
     rating: Math.round((Number(attr(info, 'RANKING')) || 0) / RATING_STEP),
     year: Number(attr(info, 'RELEASE_DATE').split('/')[0]) || 0,
-    dateAdded: dateOf(attr(info, 'IMPORT_DATE')),
+    dateAdded: traktorDate(attr(info, 'IMPORT_DATE')),
     bpm: Number(attr(tempo, 'BPM')) || 0,
     cues: marks.cues,
     grid: marks.grid,
@@ -110,20 +105,10 @@ export async function readTraktorExportSelection(
   const rows = picked.map(({ node }) =>
     (nodeById(model, node.id)?.rows ?? []).flatMap((row) => entries.get(row.key) ?? []),
   )
-  const trackIds = exportTrackIds(rows.flat().map((r) => r.path))
-  const tracks = new Map<string, ExportTrack>()
-  for (const { path, block } of rows.flat()) {
-    const key = path.normalize('NFC')
-    if (tracks.has(key)) continue
-    tracks.set(key, await trackOf(trackIds.get(key) ?? '', path, block, deps.deltaOf))
-  }
-  const playlists: ExportPlaylist[] = picked.map(({ node, folders, folderIds }, i) => ({
-    id: node.id,
-    name: node.name,
-    folders,
-    folderIds,
-    updatedAt: 0,
-    trackIds: rows[i].map((r) => trackIds.get(r.path.normalize('NFC')) ?? ''),
-  }))
-  return { playlists, tracks: [...tracks.values()] }
+  return foreignSelection(
+    picked,
+    rows,
+    (r) => r.path,
+    (id, { path, block }) => trackOf(id, path, block, deps.deltaOf),
+  )
 }

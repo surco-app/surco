@@ -1,6 +1,6 @@
 import { extname } from 'node:path'
 import type { Beat } from './anlz'
-import type { ExportCue, ExportTrack } from './usbExportSource'
+import type { ExportCue, ExportPlaylist, ExportSelection, ExportTrack } from './usbExportSource'
 
 export interface ForeignCue {
   ms: number
@@ -65,6 +65,36 @@ export function exportTrackIds(paths: readonly string[]): Map<string, string> {
     ids.set(key, String(id))
   }
   return ids
+}
+
+export interface PickedPlaylist {
+  node: { id: string; name: string }
+  folders: string[]
+  folderIds: string[]
+}
+
+export async function foreignSelection<R>(
+  picked: PickedPlaylist[],
+  rows: R[][],
+  pathOf: (row: R) => string,
+  build: (id: string, row: R) => Promise<ExportTrack>,
+): Promise<ExportSelection> {
+  const trackIds = exportTrackIds(rows.flat().map(pathOf))
+  const tracks = new Map<string, ExportTrack>()
+  for (const row of rows.flat()) {
+    const key = pathOf(row).normalize('NFC')
+    if (tracks.has(key)) continue
+    tracks.set(key, await build(trackIds.get(key) ?? '', row))
+  }
+  const playlists: ExportPlaylist[] = picked.map(({ node, folders, folderIds }, i) => ({
+    id: node.id,
+    name: node.name,
+    folders,
+    folderIds,
+    updatedAt: 0,
+    trackIds: rows[i].map((row) => trackIds.get(pathOf(row).normalize('NFC')) ?? ''),
+  }))
+  return { playlists, tracks: [...tracks.values()] }
 }
 
 export function exportFileType(path: string): number {
