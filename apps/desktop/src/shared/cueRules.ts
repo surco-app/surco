@@ -219,9 +219,8 @@ function walkFlow(
     const origins = originsOf(rule, track, drops)
     origins.forEach((origin, i) => {
       const start = nearestBeat(beats, origin)
-      const fits =
-        rule.when === 'fits' &&
-        !(rule.from === 'drop' && (track.byHand ?? []).some((p) => near(p, origin)))
+      const hand = rule.from === 'drop' && (track.byHand ?? []).some((p) => near(p, origin))
+      const fits = rule.when === 'fits' && !hand
       if (rule.bars === 0) {
         if (allowed(rule, beats[start], placed, drops, beats)) add(beats[start], 1)
         return
@@ -238,7 +237,8 @@ function walkFlow(
           break
         }
         const ms = beats[at]
-        const reason = fits ? misfit(ms, rule, previous, next, track.strong) : null
+        const reason =
+          rule.when !== 'fits' ? null : misfit(ms, rule, previous, next, hand ? [] : track.strong)
         if (reason) {
           reject(start, step, k, last ?? k, reason)
           break

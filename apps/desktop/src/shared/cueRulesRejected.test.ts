@@ -94,9 +94,21 @@ describe('points marked by hand', () => {
     expect(rejectedCues(mixIn, forced)).toEqual([])
   })
 
-  it('places the cue past the previous point too', () => {
+  it('stops its countdown at the previous point, so the next drop never stacks a cue on the drop before it', () => {
+    const countdown = flow(rule({ repeat: 3, color: { each: [1, 22, 42] } }))
+    const t = track({ drops: [beat(64), beat(112)], byHand: [beat(64), beat(112)] })
+    expect(evaluateFlow(countdown, t).cues.map((c) => c.ms)).toEqual([
+      beat(16),
+      beat(32),
+      beat(48),
+      beat(80),
+      beat(96),
+    ])
+  })
+
+  it('stops its countdown before a previous point it would run past', () => {
     const t = track({ drops: [beat(100), beat(108)], byHand: [beat(108)] })
-    expect(evaluateFlow(mixIn, t).cues.map((c) => c.ms)).toEqual([beat(84), beat(92)])
+    expect(evaluateFlow(mixIn, t).cues.map((c) => c.ms)).toEqual([beat(84)])
   })
 
   it('still leaves out a cue that falls off the start of the track, where there is nowhere to put it', () => {

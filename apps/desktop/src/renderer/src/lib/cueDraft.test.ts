@@ -840,6 +840,61 @@ describe('a point marked by hand', () => {
   })
 })
 
+describe('a cue the DJ deleted', () => {
+  const subidon: CueFlow = {
+    id: 'subidon',
+    name: 'Subidón',
+    markPoint: true,
+    rules: [
+      { ...MY_FLOW.rules[0] },
+      {
+        from: 'first-beat',
+        direction: 'back',
+        bars: 0,
+        repeat: 1,
+        when: 'always',
+        place: 'both',
+        color: { fixed: 32 },
+      },
+    ],
+  }
+  const own = { ...ctx, flows: [...KEPT, subidon] }
+  const hand = (ms: number): DraftAction => ({ type: 'mark-drop', ms, byHand: true })
+  const go = (s: CueDraft, ...actions: DraftAction[]) =>
+    actions.reduce((d, a) => reduceDraft(d, a, own), s)
+  const first = () => go(startDraft([], 'subidon'), hand(bar(64)))
+
+  it('stays deleted when the next point is marked, since the DJ took it out on purpose', () => {
+    const marked = first()
+    expect(hotOf(marked).map(([ms]) => ms)).toEqual([0, bar(16), bar(32), bar(48)])
+    const start = at(marked, 0, true)?.key as string
+    const s = go(marked, { type: 'remove', key: start }, hand(bar(160)))
+    expect(hotOf(s).map(([ms]) => ms)).toEqual([
+      bar(16),
+      bar(32),
+      bar(48),
+      bar(112),
+      bar(128),
+      bar(144),
+    ])
+    expect(at(s, 0, false)).toBeUndefined()
+  })
+
+  it('leaves no gap in the letters where the deleted cue was', () => {
+    const marked = first()
+    const start = at(marked, 0, true)?.key as string
+    const s = go(marked, { type: 'remove', key: start }, hand(bar(160)))
+    expect(hotOf(s).map(([, kind]) => kind)).toEqual(HOT_KINDS.slice(0, 6))
+  })
+
+  it('comes back when the point it came from is marked again after clearing', () => {
+    const marked = first()
+    const start = at(marked, 0, true)?.key as string
+    const s = go(marked, { type: 'remove', key: start }, { type: 'clear' }, hand(bar(64)))
+    expect(hotOf(s).map(([ms]) => ms)).toEqual([0, bar(16), bar(32), bar(48)])
+  })
+})
+
 describe('correcting a point', () => {
   const shape = (s: CueDraft) =>
     s.cues

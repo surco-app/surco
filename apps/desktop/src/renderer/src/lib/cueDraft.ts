@@ -291,10 +291,19 @@ function regenerate(
   })
   if (out.status === 'too-many') return { ...state, notice: 'too-many' }
   if (out.status === 'manual') return fillMissing(state, ctx, drops, flow, point, byHand)
+  const gone = deletedFlowCues(state, ctx, flow)
+  const wanted = out.wanted.filter(
+    (w) =>
+      w.id !== undefined ||
+      drops.some((d) => near(d, w.ms)) ||
+      !gone.some((g) => g.hot === isHot(w) && near(g.ms, w.ms)),
+  )
   const byKey = new Map(state.cues.map((c) => [c.key, c]))
   let nextKey = state.nextKey
   const origin = { ...state.origin }
-  const generated = out.wanted.map((w): DraftCue => {
+  const relettered =
+    wanted.length === out.wanted.length ? wanted : inPlanOrder(wanted, kindsOf(ctx))
+  const generated = relettered.map((w): DraftCue => {
     const was = w.id === undefined ? undefined : byKey.get(w.id)
     if (was) {
       if (origin[was.key]) origin[was.key] = flow.id
@@ -315,6 +324,35 @@ function regenerate(
     notice: null,
     trimmed: out.trimmed,
   })
+}
+
+function deletedFlowCues(
+  state: CueDraft,
+  ctx: DraftContext,
+  flow: CueFlow,
+): { ms: number; hot: boolean }[] {
+  const track = {
+    beats: ctx.beats,
+    strong: ctx.strong,
+    phrases: ctx.phrases,
+    byHand: handPoints(state),
+  }
+  const drops = flowDrops(flow, { ...track, drops: draftDrops(state.cues, state.locked) })
+  if (drops.length === 0) return []
+  const pairCalls = (ctx.slots ?? ALL_SLOTS).pairCalls
+  const there = (ms: number, hot: boolean): boolean =>
+    state.cues.some((c) => isHot(c) === hot && near(c.ms, ms))
+  return evaluateFlow(flow, { ...track, drops }, kindsOf(ctx).length).cues.flatMap((c) => [
+    ...(c.place !== 'call' && !there(c.ms, true) ? [{ ms: c.ms, hot: true }] : []),
+    ...((c.place === 'call' || (c.place === 'both' && pairCalls)) && !there(c.ms, false)
+      ? [{ ms: c.ms, hot: false }]
+      : []),
+  ])
+}
+
+function inPlanOrder(wanted: WantedCue[], kinds: number[]): WantedCue[] {
+  const order = wanted.filter(isHot).sort((a, b) => a.ms - b.ms)
+  return wanted.map((w) => (isHot(w) ? { ...w, kind: kinds[order.indexOf(w)] } : w))
 }
 
 function fillMissing(
