@@ -51,6 +51,7 @@ export const FIELD_DEFS: FieldDef[] = [
   { key: 'mediaType' },
   { key: 'mood' },
   { key: 'energy', width: 'short' },
+  { key: 'quality' },
 ]
 
 // Which section a field belongs to in the grouped form. The four groups sort the
@@ -88,7 +89,10 @@ export const FIELD_GROUPS: FieldGroup[] = [
       'encodedBy',
     ],
   },
-  { id: 'dj', fields: ['bpm', 'key', 'mood', 'energy', 'mixName', 'remixArtist', 'originalYear'] },
+  {
+    id: 'dj',
+    fields: ['bpm', 'key', 'mood', 'energy', 'quality', 'mixName', 'remixArtist', 'originalYear'],
+  },
   {
     id: 'order',
     fields: ['trackNumber', 'trackTotal', 'discNumber', 'discTotal', 'compilation', 'comment'],

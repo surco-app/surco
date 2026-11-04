@@ -199,6 +199,7 @@ describe.each([
       lyricist: 'A. Lyricist',
       conductor: 'B. Conductor',
       encodedBy: 'Surco',
+      quality: 'Doubtful',
     }
     await convertAudio(src, src, 'alac', { ...(await readTags(src)), ...extras })
 

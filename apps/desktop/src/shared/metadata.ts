@@ -42,6 +42,7 @@ const FIELD_PRESENCE: Record<MetaTextKey, true> = {
   country: true,
   mediaType: true,
   discogsUrl: true,
+  quality: true,
 }
 
 // Every metadata field name, derived from the presence map above so the two can't drift.

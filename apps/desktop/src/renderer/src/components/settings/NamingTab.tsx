@@ -59,6 +59,7 @@ const SAMPLE_META: TrackMetadata = {
   // choice: the separators are stripped by the same sanitiser every token goes through,
   // so it degrades to an unreadable run of text rather than breaking the path.
   discogsUrl: 'discogs.com/release/2406512',
+  quality: 'Good',
 }
 
 // One pattern editor — label, format input with the editor-style ⋯ token menu, and

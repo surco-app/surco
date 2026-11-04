@@ -1121,6 +1121,7 @@
     "country": "国",
     "mediaType": "メディアタイプ",
     "discogsUrl": "Discogs URL",
+    "quality": "品質",
     "suggestionsMore": "{{count}} を表示",
     "suggestionDetected": "音声から検出: {{value}}",
     "rowAutoFill": "{{name}} を自動入力",

@@ -573,6 +573,9 @@ export interface TrackMetadata {
   // The release page the track was matched against — the way to re-check a doubtful
   // match months later without searching for it again.
   discogsUrl?: string
+  // Surco's own quality verdict as a word ("Good", "Doubtful"…), filled from the analysis
+  // when the user turns its Auto on. No standard frame: TXXX/Vorbis/freeform QUALITY.
+  quality?: string
 }
 
 // The metadata fields that hold one text value each: every field but the user's own,

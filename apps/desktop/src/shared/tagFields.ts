@@ -226,6 +226,7 @@ export const TAG_FIELDS: TagField[] = [
   // hand, and a library tagged with both has to agree rather than grow duplicates.
   { key: 'style', aliases: ['style', 'styles'], id3: 'STYLE', vorbis: 'STYLE' },
   { key: 'country', aliases: ['country', 'releasecountry'], id3: 'COUNTRY', vorbis: 'COUNTRY' },
+  { key: 'quality', aliases: ['quality'], id3: 'QUALITY', vorbis: 'QUALITY' },
   {
     key: 'mediaType',
     aliases: ['mediatype', 'media', 'media_type'],

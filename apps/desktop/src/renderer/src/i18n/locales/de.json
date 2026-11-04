@@ -1121,6 +1121,7 @@
     "country": "Land",
     "mediaType": "Medientyp",
     "discogsUrl": "Discogs-URL",
+    "quality": "Qualität",
     "suggestionsMore": "{{count}} weitere anzeigen",
     "suggestionDetected": "Im Audio erkannt: {{value}}",
     "rowAutoFill": "{{name}} automatisch füllen",

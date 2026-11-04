@@ -1121,6 +1121,7 @@
     "country": "País",
     "mediaType": "Tipo de mídia",
     "discogsUrl": "URL do Discogs",
+    "quality": "Qualidade",
     "suggestionsMore": "Mostrar mais {{count}}",
     "suggestionDetected": "Detectado no áudio: {{value}}",
     "rowAutoFill": "Preencher {{name}} automaticamente",

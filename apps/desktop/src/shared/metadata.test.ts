@@ -42,6 +42,7 @@ const FULLY_TAGGED: TrackMetadata = {
   country: 'Spain',
   mediaType: 'Vinyl, 12"',
   discogsUrl: 'https://www.discogs.com/release/6294',
+  quality: 'Good',
 }
 
 describe('emptyMetadata', () => {

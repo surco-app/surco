@@ -670,6 +670,7 @@ describe('Editor clear metadata', () => {
         country: '',
         mediaType: '',
         discogsUrl: '',
+        quality: '',
       },
       matched: false,
       // The sweep's own flag too, or an auto-matched track never re-entered it.

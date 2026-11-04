@@ -303,6 +303,7 @@ function tagLibFieldsOf(f: TagFile): Partial<TrackMetadata> {
     country: userText('COUNTRY'),
     mediaType: userText('MEDIATYPE'),
     mood: userText('MOOD'),
+    quality: userText('QUALITY'),
   }
 }
 
@@ -839,6 +840,7 @@ function extendedFields(meta: TrackMetadata): Array<[string, string]> {
     ['COUNTRY', meta.country ?? ''],
     ['MEDIATYPE', meta.mediaType ?? ''],
     ['DISCOGS_RELEASE_URL', meta.discogsUrl ?? ''],
+    ['QUALITY', meta.quality ?? ''],
     // The user's own fields, under the upper-case key (see shared/customFields).
     ...Object.entries(meta.custom ?? {}).map(([key, value]): [string, string] => [
       customTagName(key),

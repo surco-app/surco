@@ -1525,6 +1525,7 @@ describe('tagsFromProbe', () => {
           COUNTRY: 'Germany',
           MEDIATYPE: 'Vinyl, 12"',
           DISCOGS_RELEASE_URL: 'https://www.discogs.com/release/123456',
+          QUALITY: 'Doubtful',
         },
       },
     })
@@ -1564,6 +1565,7 @@ describe('tagsFromProbe', () => {
       country: 'Germany',
       mediaType: 'Vinyl, 12"',
       discogsUrl: 'https://www.discogs.com/release/123456',
+      quality: 'Doubtful',
     })
   })
 
@@ -1753,6 +1755,7 @@ describe('tagsFromProbe', () => {
       country: '',
       mediaType: '',
       discogsUrl: '',
+      quality: '',
     })
   })
 })

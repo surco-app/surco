@@ -153,6 +153,7 @@ describe('readTagLibExtras', () => {
         ['COUNTRY', 'Spain'],
         ['MEDIATYPE', 'File'],
         ['MOOD', 'Dark'],
+        ['QUALITY', 'Doubtful'],
       ]) {
         const frame = Id3v2UserTextInformationFrame.fromDescription(desc)
         frame.text = [value]
@@ -195,6 +196,7 @@ describe('readTagLibExtras', () => {
       country: 'Spain',
       mediaType: 'File',
       mood: 'Dark',
+      quality: 'Doubtful',
     })
   })
 
@@ -258,6 +260,7 @@ describe('readTags on the extras an m4a keeps in freeform atoms', () => {
     lyricist: 'A. Lyricist',
     conductor: 'B. Conductor',
     encodedBy: 'Surco',
+    quality: 'Doubtful',
   }
 
   it.each([
