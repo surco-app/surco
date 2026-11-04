@@ -41,6 +41,7 @@ export const VERIFY_DETAIL_KEYS = [
   'rekordboxCuesLost',
   'rekordboxCuesChanged',
   'rekordboxAnalysisEmptied',
+  'rekordboxPlaylistMissing',
   'rekordboxUnreadable',
   'engineOk',
   'engineStillOld',
@@ -54,6 +55,7 @@ export const VERIFY_DETAIL_KEYS = [
   'enginePerformanceChanged',
   'engineCuesMisplaced',
   'engineNameStale',
+  'enginePlaylistMissing',
   'engineUnreadable',
   'traktorOk',
   'traktorStillOld',
@@ -61,6 +63,7 @@ export const VERIFY_DETAIL_KEYS = [
   'traktorAmbiguous',
   'traktorCuesChanged',
   'traktorNameStale',
+  'traktorPlaylistMissing',
   'traktorUnreadable',
 ] as const
 

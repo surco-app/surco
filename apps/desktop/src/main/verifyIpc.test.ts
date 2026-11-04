@@ -206,6 +206,61 @@ describe('library readers', () => {
 
     expect(seen.map((e) => (e as { added: boolean }).added)).toEqual([true, false, false])
   })
+
+  // A track Engine never had gets its row from the queue apply with the playlists the job
+  // asked for, the same as from the Engine DJ step.
+  it('an Engine row the job put in playlists is checked as added, with them', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-verifyipc-engine-'))
+    const seen: unknown[] = []
+    const readers = libraryReaders(
+      { rekordbox: () => '', engine: () => dir, traktor: () => '' },
+      {
+        realPath,
+        bootVolume: () => 'Macintosh HD',
+        openEngine: () => ({ close: () => {} }) as never,
+        checkEngine: (_db, _dir, list) => {
+          seen.push(...list)
+          return list.map(() => ({ place: 'engine', state: 'ok', detail: { key: 'engineOk' } }))
+        },
+      },
+    )
+    const house = [{ id: '10', name: 'House' }]
+
+    await readers.readEngine([entry({ engine: 'absent', playlists: { engine: house } })])
+
+    expect(seen).toEqual([expect.objectContaining({ added: true, playlists: house })])
+  })
+  // A track rekordbox never had gets its row from the queue apply: it is checked as added,
+  // and in the playlists the job asked for.
+  it('a rekordbox row the job added to playlists is checked as added, with them', async () => {
+    const path = collection()
+    const seen: unknown[] = []
+    const readers = libraryReaders(
+      { rekordbox: () => path, engine: () => '', traktor: () => '' },
+      {
+        realPath,
+        bootVolume: () => 'Macintosh HD',
+        checkRekordbox: (_db, list) => {
+          seen.push(...list)
+          return list.map(() => ({
+            place: 'rekordbox',
+            state: 'ok',
+            detail: { key: 'rekordboxOk' },
+          }))
+        },
+      },
+    )
+    const house = [{ id: 'p1', name: 'House' }]
+
+    await readers.readRekordbox([
+      entry({ rekordbox: 'absent', playlists: { rekordbox: house } }),
+      entry({ rekordbox: { id: '100', cues: 2, analysisDataPath: '', analysed: 0 } }),
+    ])
+
+    expect(seen.map((e) => (e as { added: boolean }).added)).toEqual([true, false])
+    expect(seen.map((e) => (e as { playlists?: unknown }).playlists)).toEqual([house, undefined])
+  })
+
   // The check has to know the cut to tell cues that followed it from cues left behind.
   it('hands the Engine check the cut the conversion made', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-verifyipc-engine-'))
@@ -485,10 +540,12 @@ describe('queueVerification', () => {
       async (_place: string, _result: unknown, _stillQueued?: boolean) => {},
     )
     const afterQueueWaits = vi.fn(async (_place: string) => {})
+    const afterTrackOps = vi.fn(async (_place: string) => {})
     return {
       afterQueueApplied,
       afterQueueWaits,
-      q: queueVerification({ afterQueueApplied, afterQueueWaits }),
+      afterTrackOps,
+      q: queueVerification({ afterQueueApplied, afterQueueWaits, afterTrackOps }),
     }
   }
 
@@ -586,10 +643,31 @@ describe('queueVerification', () => {
     const afterQueueApplied = vi.fn(async () => {
       throw new Error('boom')
     })
-    const q = queueVerification({ afterQueueApplied, afterQueueWaits: vi.fn(async () => {}) })
+    const q = queueVerification({
+      afterQueueApplied,
+      afterQueueWaits: vi.fn(async () => {}),
+      afterTrackOps: vi.fn(async () => {}),
+    })
     q.discarded('rekordbox')
     await vi.waitFor(() => expect(warn).toHaveBeenCalledWith(expect.stringContaining('boom')))
     warn.mockRestore()
+  })
+
+  // The playlists and a new row are written by the apply after the flush, with no repoint
+  // in the queue: the tracks waiting on them are read once it lands.
+  it('an apply with no repoint reads the tracks waiting on their playlists', () => {
+    const { afterQueueApplied, afterTrackOps, q } = setup()
+    q.settled('rekordbox', applied)
+    expect(afterTrackOps).toHaveBeenCalledWith('rekordbox')
+    expect(afterQueueApplied).not.toHaveBeenCalled()
+  })
+
+  it('an apply that never wrote reads no playlists', () => {
+    const { afterTrackOps, q } = setup()
+    q.settled('rekordbox', { status: 'refused', reason: 'rekordbox-running' })
+    q.settled('rekordbox', { status: 'refused', reason: 'backup-failed' })
+    q.settled('rekordbox', 'threw')
+    expect(afterTrackOps).not.toHaveBeenCalled()
   })
 
   it('what one apply repointed is not reported again by the next', () => {

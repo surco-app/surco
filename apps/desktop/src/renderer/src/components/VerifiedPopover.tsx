@@ -31,13 +31,18 @@ export function detailText(
       ? tr('verify.detail.fileReencoded', { ...params, rate })
       : tr('verify.detail.fileReencodedLossy', { ...params, rate })
   }
+  const spoken = (names: string[]) =>
+    new Intl.ListFormat(language, { type: 'conjunction' }).format(names)
   if (key === 'musicOne') {
     const names = Array.isArray(params.playlists) ? params.playlists : []
-    const playlists = new Intl.ListFormat(language, { type: 'conjunction' }).format(names)
-    return tr('verify.detail.musicOne', { playlists })
+    return tr('verify.detail.musicOne', { playlists: spoken(names) })
   }
-  if (key === 'rekordboxOk')
-    return tr('verify.detail.rekordboxOk', { ...params, count: params.cues })
+  if (key === 'rekordboxOk' || key === 'engineOk' || key === 'traktorOk') {
+    const counted = key === 'rekordboxOk' ? { ...params, count: params.cues } : params
+    return Array.isArray(params.playlists)
+      ? tr(`verify.detail.${key}Playlists`, { ...counted, playlists: spoken(params.playlists) })
+      : tr(`verify.detail.${key}`, counted)
+  }
   if (key === 'fileTagDiffers' || key === 'musicTagDiffers')
     return tr(`verify.detail.${key}`, { field: tr(`fields.${params.field}`) })
   if (

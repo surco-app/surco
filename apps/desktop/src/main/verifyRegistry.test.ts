@@ -218,6 +218,168 @@ describe('verify registry', () => {
     expect(registry.get('b')).toEqual({ status: 'ok', checks: [ok('file', 'fileIdentical')] })
   })
 
+  describe('a track the job asked to put in playlists', () => {
+    const house = [{ id: 'p1', name: 'House' }]
+    const added = (trackId: string) =>
+      entry(trackId, { rekordbox: 'absent', playlists: { rekordbox: house } })
+
+    // The flush only moves rows; the playlists (and a row for a track rekordbox never had)
+    // are written by the queue apply right after. Read now, a new track would read missing.
+    it('waits for the queue apply after a written flush, still checking', async () => {
+      const { deps, registry } = setup()
+      registry.register(added('a'))
+
+      await registry.afterFlush(written)
+
+      expect(deps.readRekordbox).not.toHaveBeenCalled()
+      expect(stateOf(registry.get('a'), 'rekordbox')).toBe('checking')
+    })
+
+    it('is read once the track ops apply, though rekordbox never had the source', async () => {
+      const { deps, registry } = setup()
+      registry.register(added('a'))
+      registry.register(entry('moved'))
+      await registry.afterFlush(written)
+      deps.readRekordbox.mockClear()
+
+      await registry.afterTrackOps('rekordbox')
+
+      expect(deps.readRekordbox.mock.calls[0][0].map((e) => e.trackId)).toEqual(['a'])
+      expect(registry.get('a')?.status).toBe('ok')
+    })
+
+    it('waits for rekordbox to close when the flush found it open', async () => {
+      const { deps, registry } = setup()
+      registry.register(added('a'))
+
+      await registry.afterFlush({ ...written, rekordbox: 'queued' })
+
+      expect(deps.readRekordbox).not.toHaveBeenCalled()
+      expect(stateOf(registry.get('a'), 'rekordbox')).toBe('pending')
+    })
+
+    it('reads pending when the apply that follows finds rekordbox open', async () => {
+      const { registry } = setup()
+      registry.register(added('a'))
+      await registry.afterFlush(written)
+
+      await registry.afterQueueWaits('rekordbox')
+
+      expect(stateOf(registry.get('a'), 'rekordbox')).toBe('pending')
+    })
+
+    it('reads unreadable when the flush failed, so the retry can read it again', async () => {
+      const { deps, registry } = setup()
+      registry.register(added('a'))
+
+      await registry.afterFlush({ ...written, rekordbox: 'failed' })
+
+      expect(deps.readRekordbox).not.toHaveBeenCalled()
+      expect(stateOf(registry.get('a'), 'rekordbox')).toBe('unreadable')
+    })
+
+    describe('in Engine DJ', () => {
+      const engineEntry = (trackId: string, over: Partial<VerifyEntry> = {}) =>
+        entry(trackId, {
+          places: new Set(['file', 'engine']),
+          rekordbox: undefined,
+          engine: 'absent',
+          playlists: { engine: house },
+          ...over,
+        })
+
+      it('a track Engine never had waits for the track ops, then is read', async () => {
+        const { deps, registry } = setup()
+        registry.register(engineEntry('a'))
+
+        await registry.afterFlush(written)
+        expect(deps.readEngine).not.toHaveBeenCalled()
+        expect(stateOf(registry.get('a'), 'engine')).toBe('checking')
+
+        await registry.afterTrackOps('engine')
+        expect(deps.readEngine.mock.calls[0][0].map((e) => e.trackId)).toEqual(['a'])
+        expect(registry.get('a')?.status).toBe('ok')
+      })
+
+      // The Engine DJ step wrote the row during the job, but the playlists come with the
+      // queue apply: read at the flush, the row would not be in them yet.
+      it('a row the job wrote itself still waits for its playlists', async () => {
+        const { deps, registry } = setup()
+        registry.register(engineEntry('a', { engineStep: true }))
+
+        await registry.afterFlush(written)
+        expect(deps.readEngine).not.toHaveBeenCalled()
+
+        await registry.afterTrackOps('engine')
+        expect(deps.readEngine).toHaveBeenCalledTimes(1)
+      })
+
+      it('waits for Engine DJ to close when the flush found it open', async () => {
+        const { deps, registry } = setup()
+        registry.register(engineEntry('a', { engineStep: true }))
+
+        await registry.afterFlush({ ...written, engine: 'queued' })
+
+        expect(deps.readEngine).not.toHaveBeenCalled()
+        expect(stateOf(registry.get('a'), 'engine')).toBe('pending')
+      })
+    })
+
+    describe('in Traktor', () => {
+      const p: NmlPatch = { volume: 'HD', dir: '/:M/:', file: 'a.aiff', newFile: 'a.wav' }
+      const traktorEntry = (trackId: string) =>
+        entry(trackId, {
+          places: new Set(['file', 'traktor']),
+          rekordbox: undefined,
+          traktorPatch: p,
+          playlists: { traktor: house },
+        })
+      // The write read the collection and found no entry for the track.
+      const noEntry = {
+        ...written,
+        traktor: { before: new Map([[traktorPatchKey(p), null]]) },
+      }
+
+      // The write's facts are taken at the flush: read only after the apply, the check
+      // still knows Traktor had no entry, and holds the new one to the playlists.
+      it('a track Traktor never had waits for the track ops, and keeps what the write found', async () => {
+        const { deps, registry } = setup()
+        registry.register(traktorEntry('a'))
+
+        await registry.afterFlush(noEntry)
+        expect(deps.readTraktor).not.toHaveBeenCalled()
+        expect(stateOf(registry.get('a'), 'traktor')).toBe('checking')
+
+        await registry.afterTrackOps('traktor')
+        expect(deps.readTraktor.mock.calls[0][0]).toEqual([
+          expect.objectContaining({ before: null, to: '/Music/a.wav', playlists: house }),
+        ])
+        expect(registry.get('a')?.status).toBe('ok')
+      })
+
+      it('waits for Traktor to close when the flush found it open', async () => {
+        const { deps, registry } = setup()
+        registry.register(traktorEntry('a'))
+
+        await registry.afterFlush({ ...written, traktor: 'queued' })
+
+        expect(deps.readTraktor).not.toHaveBeenCalled()
+        expect(stateOf(registry.get('a'), 'traktor')).toBe('pending')
+      })
+    })
+
+    it('a track with no playlists is not re-read by the track ops', async () => {
+      const { deps, registry } = setup()
+      registry.register(entry('moved'))
+      await registry.afterFlush(written)
+      deps.readRekordbox.mockClear()
+
+      await registry.afterTrackOps('rekordbox')
+
+      expect(deps.readRekordbox).not.toHaveBeenCalled()
+    })
+  })
+
   it('a library switched off at flush time is not listed', async () => {
     const { registry } = setup()
     registry.register(entry('a'))

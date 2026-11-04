@@ -1,5 +1,5 @@
 import { extname } from 'node:path'
-import type { TagChange } from '../shared/types'
+import type { RekordboxPlaylistTarget, TagChange } from '../shared/types'
 import type { PlaceCheck, VerifyDetailKey } from '../shared/verification'
 import {
   attr,
@@ -10,6 +10,8 @@ import {
   type NmlEntry,
   type NmlPatch,
 } from './traktorNml'
+import { type ModelNode, parsePlaylists } from './traktorPlaylistModel'
+import { traktorCollectionIndex } from './traktorPlaylists'
 import { formatOf } from './verifyFile'
 
 // before is the FILE of the entry the patch matched in the collection read ahead of the
@@ -20,12 +22,14 @@ export interface TraktorExpect {
   before: string | null
   cues?: string | null
   names?: NmlPatch['tags']
+  to?: string
+  playlists?: RekordboxPlaylistTarget[]
 }
 
 const check = (
   state: PlaceCheck['state'],
   detailKey: VerifyDetailKey,
-  params?: Record<string, string | number>,
+  params?: Record<string, string | number | string[]>,
 ): PlaceCheck => ({
   place: 'traktor',
   state,
@@ -64,7 +68,40 @@ export function checkTraktor(
     const names = e.names ?? e.patch.tags
     const stale = staleName(blockAt(entryKey(e, bootVolume)), names)
     if (stale !== null) return check('mismatch', 'traktorNameStale', { value: stale })
+    if (e.to && e.playlists?.length) return inPlaylists(nml, e.to, e.playlists, bootVolume)
     return result ?? (names && e.before !== null ? sameNameOk(e) : null)
+  })
+}
+
+// The written file's one entry, filed in every playlist asked for. A playlist typed in the
+// picker had no id: the write made it at the top under that name.
+function inPlaylists(
+  nml: string,
+  to: string,
+  wanted: RekordboxPlaylistTarget[],
+  bootVolume: string,
+): PlaceCheck {
+  const keys = traktorCollectionIndex(nml, bootVolume).byPath.get(to.normalize('NFC')) ?? []
+  if (keys.length === 0) return check('mismatch', 'traktorMissing')
+  if (keys.length > 1) return check('mismatch', 'traktorAmbiguous', { count: keys.length })
+  const lists: ModelNode[] = []
+  const walk = (node: ModelNode): void => {
+    if (node.kind === 'playlist') lists.push(node)
+    node.children.forEach(walk)
+  }
+  const model = parsePlaylists(nml)
+  if (model) walk(model.root)
+  const holds = (t: RekordboxPlaylistTarget) =>
+    lists.some(
+      (l) =>
+        (t.id ? l.id === t.id : l.parent === model?.root && l.name === t.name.trim()) &&
+        l.rows.some((r) => r.key === keys[0]),
+    )
+  const missing = wanted.find((t) => !holds(t))
+  if (missing) return check('mismatch', 'traktorPlaylistMissing', { playlist: missing.name })
+  return check('ok', 'traktorOk', {
+    format: formatOf(extname(to)),
+    playlists: wanted.map((t) => t.name),
   })
 }
 

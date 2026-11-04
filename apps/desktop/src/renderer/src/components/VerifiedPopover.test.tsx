@@ -91,6 +91,41 @@ describe('VerifiedPopover', () => {
     expect(music).toHaveTextContent('Una sola entrada · en 24, All y Warm up')
   })
 
+  it('names the rekordbox playlists the same way, after the cues', () => {
+    const [rekordbox] = open([
+      {
+        ...rekordboxOk,
+        detail: {
+          key: 'rekordboxOk',
+          params: { format: 'WAV', cues: 13, playlists: ['House', 'Peak time'] },
+        },
+      },
+    ])
+    expect(rekordbox).toHaveTextContent('Apunta al WAV · 13 cues · en House y Peak time')
+  })
+
+  it('names the Engine DJ playlists the same way', () => {
+    const [engine] = open([
+      {
+        place: 'engine',
+        state: 'ok',
+        detail: { key: 'engineOk', params: { format: 'WAV', playlists: ['House', 'Peak time'] } },
+      },
+    ])
+    expect(engine).toHaveTextContent('Apunta al WAV · en House y Peak time')
+  })
+
+  it('names the Traktor playlists the same way', () => {
+    const [traktor] = open([
+      {
+        place: 'traktor',
+        state: 'ok',
+        detail: { key: 'traktorOk', params: { format: 'WAV', playlists: ['House'] } },
+      },
+    ])
+    expect(traktor).toHaveTextContent('Apunta al WAV · en House')
+  })
+
   it('says only the single entry when the track is in no playlist', () => {
     const [music] = open([
       { place: 'appleMusic', state: 'ok', detail: { key: 'musicOneNoPlaylists' } },

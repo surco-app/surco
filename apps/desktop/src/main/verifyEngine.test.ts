@@ -412,6 +412,65 @@ describe('checkEngine', () => {
     })
   })
 
+  describe('the playlists the conversion asked for', () => {
+    const asked = [
+      { id: '10', name: 'House' },
+      { id: '11', name: 'Peak time' },
+    ]
+    function withLists(holding: number[]): string {
+      const dir = join(mkdtempSync(join(tmpdir(), 'surco-verifyengine-')), 'Engine Library')
+      writeEngineLibraryFixture(dir, {
+        tracks: [{ id: 1, path: relative(dir, TO) }],
+        playlists: [
+          { id: 10, title: 'House', parentListId: 0, nextListId: 11 },
+          { id: 11, title: 'Peak time', parentListId: 0, nextListId: 0 },
+        ],
+        entities: holding.map((listId, i) => ({ id: i + 1, listId, trackId: 1, nextEntityId: 0 })),
+      }).close()
+      write(dir, "UPDATE Track SET fileType = 'wav', fileBytes = ?", SIZE)
+      return dir
+    }
+
+    it('a new row in both playlists asked for is ok and names them', () => {
+      const dir = withLists([10, 11])
+      expect(checkOne(dir, expectFor('absent', { added: true, playlists: asked }))[0]).toEqual({
+        place: 'engine',
+        state: 'ok',
+        detail: { key: 'engineOk', params: { format: 'WAV', playlists: ['House', 'Peak time'] } },
+      })
+    })
+
+    it('a row missing from one playlist asked for is a mismatch naming that playlist', () => {
+      const dir = withLists([10])
+      expect(
+        checkOne(dir, expectFor('absent', { added: true, playlists: asked }))[0].detail,
+      ).toEqual({ key: 'enginePlaylistMissing', params: { playlist: 'Peak time' } })
+    })
+
+    // A playlist typed in the picker has no id until the write creates it at the top.
+    it('a playlist asked for by name is found by its title at the top', () => {
+      const dir = withLists([11])
+      const byName = [{ name: 'Peak time' }]
+      expect(checkOne(dir, expectFor('absent', { added: true, playlists: byName }))[0].state).toBe(
+        'ok',
+      )
+    })
+
+    // Engine files the track in every folder above its lists too, counted: that row is the
+    // folder's tally, not the DJ's playlist.
+    it('a folder count does not stand in for the playlist', () => {
+      const dir = withLists([])
+      write(
+        dir,
+        `INSERT INTO PlaylistEntity (id, listId, trackId, databaseUuid, nextEntityId,
+         membershipReference) VALUES (9, 11, 1, 'fixture-uuid', 0, 1)`,
+      )
+      expect(
+        checkOne(dir, expectFor('absent', { added: true, playlists: [asked[1]] }))[0].state,
+      ).toBe('mismatch')
+    })
+  })
+
   it('an add whose library could not be read before is still unreadable', () => {
     const dir = library([FROM, '/Volumes/Public/Musica/Other.aiff'])
     repoint(dir, 2)

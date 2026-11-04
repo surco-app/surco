@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { extname } from 'node:path'
-import type { TagChange } from '../shared/types'
+import type { RekordboxPlaylistTarget, TagChange } from '../shared/types'
 import type { PlaceCheck, VerifyDetailKey } from '../shared/verification'
 import {
   decodeBeatGrid,
@@ -45,6 +45,7 @@ export interface EngineExpect {
   // The size the write expected the row to hold, for a rewrite in place.
   fromBytes?: number
   names?: Partial<Record<'title' | 'artist' | 'album' | 'genre', TagChange>>
+  playlists?: RekordboxPlaylistTarget[]
 }
 
 interface Row {
@@ -182,7 +183,7 @@ function misplacedField(
 const check = (
   state: PlaceCheck['state'],
   detailKey: VerifyDetailKey,
-  params?: Record<string, string | number>,
+  params?: Record<string, string | number | string[]>,
 ): PlaceCheck => ({
   place: 'engine',
   state,
@@ -262,9 +263,12 @@ function judge(
   }
   const ok = (): PlaceCheck => {
     const stale = staleName(db, row.id, e.names)
-    return stale === null
-      ? check('ok', 'engineOk', { format: formatOf(extname(e.to)) })
-      : check('mismatch', 'engineNameStale', { value: stale })
+    if (stale !== null) return check('mismatch', 'engineNameStale', { value: stale })
+    const format = formatOf(extname(e.to))
+    if (!e.playlists?.length) return check('ok', 'engineOk', { format })
+    const missing = e.playlists.find((t) => !listHolds(db, t, row.id))
+    if (missing) return check('mismatch', 'enginePlaylistMissing', { playlist: missing.name })
+    return check('ok', 'engineOk', { format, playlists: e.playlists.map((t) => t.name) })
   }
   if (typeof before !== 'object') return ok()
 
@@ -279,6 +283,22 @@ function judge(
   const misplaced = misplacedField(db, row.id, before, e.shift, now)
   if (misplaced) return check('mismatch', 'engineCuesMisplaced', { field: misplaced })
   return ok()
+}
+
+// A playlist typed in the picker had no id: the write made it at the top under that title. A
+// folder's counted row (membershipReference above 0) is its tally, not the DJ's list.
+function listHolds(db: EngineDb, target: RekordboxPlaylistTarget, trackId: number): boolean {
+  const where = target.id ? 'p.id = ?' : 'p.title = ? AND p.parentListId = 0'
+  return (
+    db
+      .prepare(
+        `SELECT 1 FROM PlaylistEntity e JOIN Playlist p ON p.id = e.listId
+          WHERE ${where} AND e.trackId = ? AND e.membershipReference = 0
+            AND coalesce(p.isPersisted, 1) = 1
+          LIMIT 1`,
+      )
+      .get(target.id ? Number(target.id) : target.name.trim(), trackId) !== undefined
+  )
 }
 
 function staleName(db: EngineDb, id: number, names: EngineExpect['names']): string | null {

@@ -104,6 +104,7 @@ interface ReaderOptions {
   bootVolume: () => string
   openEngine?: (dir: string) => EngineDb | null
   checkEngine?: typeof checkEngine
+  checkRekordbox?: typeof checkRekordbox
 }
 
 // One read of each library for a whole batch, after its flush or its queue applied.
@@ -115,21 +116,23 @@ export function libraryReaders(
   const key = pathKey({ realPath: options.realPath })
   const openEngine = options.openEngine ?? openEngineDb
   const judgeEngine = options.checkEngine ?? checkEngine
+  const judgeRekordbox = options.checkRekordbox ?? checkRekordbox
   const sizes = (list: VerifyEntry[]) => Promise.all(list.map((e) => sizeOf(e.to)))
   return {
     readRekordbox: async (list) => {
       const size = await sizes(list)
       const path = paths.rekordbox()
       return withDb(path, openRekordboxReadOnly(await rekordboxKey(path)), (db) =>
-        checkRekordbox(
+        judgeRekordbox(
           db,
           list.map((e, i) => ({
             from: e.from,
             to: e.to,
             samplesKept: e.samplesKept,
             before: e.rekordbox ?? 'unreadable',
-            added: false,
+            added: e.rekordbox === 'absent',
             size: size[i],
+            ...(e.playlists?.rekordbox ? { playlists: e.playlists.rekordbox } : {}),
           })),
           find,
         ),
@@ -148,10 +151,11 @@ export function libraryReaders(
             samplesKept: e.samplesKept,
             before: e.engine ?? 'unreadable',
             size: size[i],
-            added: e.engineStep === true && typeof e.engine !== 'object',
+            added: (e.engineStep === true || !!e.playlists?.engine) && typeof e.engine !== 'object',
             shift: e.engineShift,
             ...(e.fromBytes === undefined ? {} : { fromBytes: e.fromBytes }),
             ...(e.names ? { names: e.names } : {}),
+            ...(e.playlists?.engine ? { playlists: e.playlists.engine } : {}),
           })),
           key,
         ),
@@ -245,6 +249,7 @@ export function libraryRequeue(queues: {
 export function queueVerification(registry: {
   afterQueueApplied: (place: Library, result: QueueApplied, stillQueued?: boolean) => Promise<void>
   afterQueueWaits: (place: Library) => Promise<void>
+  afterTrackOps: (place: Library) => Promise<void>
 }) {
   const repointed: Partial<Record<Library, QueueApplied>> = {}
   const logged = (work: Promise<void>): void => {
@@ -259,6 +264,8 @@ export function queueVerification(registry: {
       const written = repointed[place]
       delete repointed[place]
       if (written) logged(registry.afterQueueApplied(place, written))
+      else if (result !== 'threw' && result.status === 'applied')
+        logged(registry.afterTrackOps(place))
       else if (result !== 'threw' && stillWaiting(result)) logged(registry.afterQueueWaits(place))
       else if (result === 'threw' || (result.status === 'refused' && !stillWaiting(result)))
         logged(registry.afterQueueApplied(place, 'failed', true))
