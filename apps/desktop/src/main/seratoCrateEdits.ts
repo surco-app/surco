@@ -136,10 +136,13 @@ function recordRename(draft: SeratoDraft, from: string, to: string): void {
 
 const whereIs = (draft: SeratoDraft, file: string): string => renames.get(draft)?.get(file) ?? file
 
-function workingCrate(draft: SeratoDraft, file: string): Working | RekordboxEditRefusal | 'gone' {
+function workingCrate(
+  draft: SeratoDraft,
+  file: string,
+): Working | RekordboxEditRefusal | 'gone' | 'missing' {
   const original = draft.original(file)
   const bytes = draft.read(whereIs(draft, file))
-  if (!bytes) return original ? 'gone' : 'stale'
+  if (!bytes) return original ? 'gone' : 'missing'
   const seen = working.get(draft)?.get(file)
   if (seen) return seen.current === bytes ? seen : 'stale'
   const source = original ?? bytes
@@ -184,7 +187,7 @@ function addTracks(
     let list = crateFile ? lists.get(crateFile) : undefined
     if (root && crateFile && !list) {
       const crate = workingCrate(draft, crateFile)
-      if (crate === 'unreadable') return { refused: crate }
+      if (crate === 'stale' || crate === 'unreadable') return { refused: crate }
       if (crate === 'gone') gone = true
       if (typeof crate !== 'string') {
         const there = new Set(crate.rows.map((row) => pathOfRow(crate, row).normalize('NFC')))
@@ -227,6 +230,7 @@ function rowsByCrate(
     if (!entry) {
       const crate = workingCrate(draft, link.crateFile)
       if (crate === 'gone') return crate
+      if (crate === 'missing') return { refused: 'stale' }
       if (typeof crate === 'string') return { refused: crate }
       entry = { crate, positions: [] }
       crates.set(link.crateFile, entry)

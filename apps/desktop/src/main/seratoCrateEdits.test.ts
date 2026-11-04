@@ -479,6 +479,41 @@ describe('crate and track edits queued together while Serato was open', () => {
     expect(listCrates(roots[0])).toEqual([])
   })
 
+  it('refuses a remove or a move on a crate Serato deleted before the batch, and says so', async () => {
+    const { roots, deps } = twoRoots({ internal: [['A', ['a', 'b']]] })
+    const file = crateFileOf(roots[0], 'A')
+    rmSync(file)
+    const changed = { applied: false, reason: 'stale', notices: [{ code: 'edit-changed' }] }
+    expect(await apply(roots, deps, remove('A', [seratoLinkId(0, file, 'a')]))).toMatchObject(
+      changed,
+    )
+    expect(await apply(roots, deps, move('A', [seratoLinkId(0, file, 'a')], null))).toMatchObject(
+      changed,
+    )
+  })
+
+  it('counts an add to a crate deleted earlier in the batch as done, without a notice', async () => {
+    const { base, roots, deps } = twoRoots({ internal: [['A', ['a']]] })
+    const track = join(base, 'home', 'dj', 'new.mp3')
+    onDisk(track)
+    const result = await queuedTogether(roots, deps, del('A'), addTo('A', track))
+    expect(result).toMatchObject(allApplied(2))
+    expect(listCrates(roots[0])).toEqual([])
+  })
+
+  it('refuses an add to a crate replaced at the same name earlier in the batch', async () => {
+    const { base, roots, deps } = twoRoots({ internal: [['A', ['a']]] })
+    const track = join(base, 'home', 'dj', 'new.mp3')
+    onDisk(track)
+    const ops = [editOp(del('A')), editOp(create('root', 'A')), editOp(addTo('A', track))]
+    const result = await applySeratoLibraryOps(ops, { ...deps, ensureClosed: async () => true })
+    expect(result).toMatchObject({
+      ok: true,
+      outcomes: [{ applied: true }, { applied: true }, { applied: false, reason: 'stale' }],
+    })
+    expect(crateTrackPaths(readFileSync(crateFileOf(roots[0], 'A')))).toEqual([])
+  })
+
   it('still refuses a queued rename when Serato changed the crate before the batch', async () => {
     const { roots, deps } = twoRoots({ internal: [['A', ['a', 'b']]] })
     const file = crateFileOf(roots[0], 'A')
