@@ -113,7 +113,7 @@ export async function stageExport(input: StageInput): Promise<Stage> {
         }
       }
     } catch {
-      grid = []
+      grid = t.grid ?? []
       waves.delete(t.id)
     }
     if (t.imagePath) {

@@ -1201,7 +1201,10 @@ describe('without a rekordbox collection', () => {
     expect(stage.mock.calls[0][3]).toEqual({ identity: null, deviceIds: new Map() })
   })
   it('removes the sync files rekordbox reads before a run without identity, and writes none', async () => {
-    await createUsbExporter(deps(happy, { identity: () => null })).start(REQ)
+    const exp = createUsbExporter(deps(happy, { identity: () => null }))
+    await exp.plan(REQ)
+    expect(removed).toEqual([])
+    await exp.start(REQ)
     expect(await finished()).toMatchObject({ outcome: 'done', syncFiles: true })
     expect(removed).toEqual(
       [...STALE_STICK_FILES, 'playlists3.sync', 'playlists3Plus.sync'].map(
@@ -1209,6 +1212,18 @@ describe('without a rekordbox collection', () => {
       ),
     )
     expect(writes).toEqual([])
+  })
+  it('answers unreadable when the selection cannot be read in the background', async () => {
+    const exp = createUsbExporter(
+      deps(happy, {
+        readSelection: async () => {
+          throw new Error('database V2 is gone')
+        },
+      }),
+    )
+    expect(await exp.plan(REQ)).toEqual({ ok: false, reason: 'unreadable' })
+    expect(await exp.start(REQ)).toEqual({ ok: false, reason: 'unreadable' })
+    expect(calls).toEqual([])
   })
   it('waits for a selection that is read in the background', async () => {
     const r = await createUsbExporter(deps(happy, { readSelection: async () => SEL })).plan(REQ)

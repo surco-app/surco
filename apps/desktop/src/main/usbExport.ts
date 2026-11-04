@@ -217,7 +217,12 @@ async function prepare(
   if (!deps.baken()) return 'no-baken'
   const target = await resolveTarget(deps, req.target)
   if (typeof target === 'string') return target
-  const sel = await deps.readSelection(db, req.playlistIds)
+  const sel = await Promise.resolve()
+    .then(() => deps.readSelection(db, req.playlistIds))
+    .catch((err) => {
+      deps.log(`usb export could not read the selection: ${String(err)}`)
+      return 'unreadable' as const
+    })
   if (sel === 'unreadable') return 'unreadable'
   if (sel.tracks.length === 0) return 'nothing-selected'
   const identity = deps.identity(
