@@ -26,12 +26,14 @@ function setup(
   const logInfo = vi.fn<Api['logInfo']>()
   ;(window as unknown as { api: unknown }).api = { retireSuperseded, platform, logInfo }
   const updateTrack = vi.fn()
+  const removeTracks = vi.fn()
   const reportTrashFailure = vi.fn()
   const hook = renderHook(
-    ({ list }) => useRetireSuperseded({ tracks: list, updateTrack, reportTrashFailure }),
+    ({ list }) =>
+      useRetireSuperseded({ tracks: list, updateTrack, removeTracks, reportTrashFailure }),
     { initialProps: { list: tracks } },
   )
-  return { retireSuperseded, updateTrack, reportTrashFailure, logInfo, hook }
+  return { retireSuperseded, updateTrack, removeTracks, reportTrashFailure, logInfo, hook }
 }
 
 afterEach(() => vi.restoreAllMocks())
@@ -80,7 +82,7 @@ describe('useRetireSuperseded', () => {
     expect(reportTrashFailure).not.toHaveBeenCalled()
   })
 
-  it('leaves a file another row of the list still loads to the manual offer, since retiring it would break that row', async () => {
+  it('retires the old file even when another row of the list loads it, and takes that row off the list, since replacing is one track for another', async () => {
     const loaded = { ...replaced, id: 't2', inputPath: replaced.supersededPath } as TrackItem
     const converted = {
       ...replaced,
@@ -90,13 +92,34 @@ describe('useRetireSuperseded', () => {
       supersededPath: undefined,
     } as TrackItem
     for (const other of [loaded, converted]) {
-      const { retireSuperseded, updateTrack } = setup([replaced, other])
-      await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('t1', { supersededKept: true }))
-      expect(retireSuperseded).not.toHaveBeenCalledWith(replaced.supersededPath, expect.anything())
+      const { retireSuperseded, updateTrack, removeTracks } = setup([replaced, other])
+      await waitFor(() => expect(removeTracks).toHaveBeenCalledWith([other.id], true))
+      expect(retireSuperseded).toHaveBeenCalledWith(replaced.supersededPath, ['03 A'])
+      expect(updateTrack).toHaveBeenCalledWith('t1', { supersededTrashed: true })
     }
   })
 
-  it('sees another row on the old file however its path is spelled, since macOS and Windows open it under any case or Unicode form', async () => {
+  it('keeps the rows on the old file when a DJ library still uses it, since the file stays', async () => {
+    const loaded = { ...replaced, id: 't2', inputPath: replaced.supersededPath } as TrackItem
+    const { updateTrack, removeTracks } = setup([replaced, loaded], { answer: 'used' })
+    await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('t1', { supersededKept: true }))
+    expect(removeTracks).not.toHaveBeenCalled()
+  })
+
+  it('leaves the old file to the manual offer while another row is converting it, since retiring it would pull the file from under that job', async () => {
+    const busy = {
+      ...replaced,
+      id: 't2',
+      status: 'processing',
+      inputPath: replaced.supersededPath,
+    } as TrackItem
+    const { retireSuperseded, updateTrack, removeTracks } = setup([replaced, busy])
+    await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('t1', { supersededKept: true }))
+    expect(retireSuperseded).not.toHaveBeenCalled()
+    expect(removeTracks).not.toHaveBeenCalled()
+  })
+
+  it('takes the row on the old file off the list however its path is spelled, since macOS and Windows open it under any case or Unicode form', async () => {
     const accented = '/Volumes/Public/Music/T/Café/03 Olé.aiff'
     const old = { ...replaced, supersededPath: accented } as TrackItem
     const loaded = {
@@ -106,9 +129,8 @@ describe('useRetireSuperseded', () => {
       supersededPath: undefined,
     } as TrackItem
     for (const platform of ['darwin', 'win32']) {
-      const { retireSuperseded, updateTrack } = setup([old, loaded], { platform })
-      await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('t1', { supersededKept: true }))
-      expect(retireSuperseded).not.toHaveBeenCalled()
+      const { removeTracks } = setup([old, loaded], { platform })
+      await waitFor(() => expect(removeTracks).toHaveBeenCalledWith(['t2'], true))
     }
   })
 
@@ -119,10 +141,9 @@ describe('useRetireSuperseded', () => {
       inputPath: replaced.supersededPath?.toUpperCase(),
       supersededPath: undefined,
     } as TrackItem
-    const { retireSuperseded } = setup([replaced, loaded], { platform: 'linux' })
-    await waitFor(() =>
-      expect(retireSuperseded).toHaveBeenCalledWith(replaced.supersededPath, ['03 A']),
-    )
+    const { updateTrack, removeTracks } = setup([replaced, loaded], { platform: 'linux' })
+    await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('t1', { supersededTrashed: true }))
+    expect(removeTracks).not.toHaveBeenCalled()
   })
 
   it('marks the source trashed too when the retired file is the row’s own source', async () => {
@@ -181,12 +202,17 @@ describe('useRetireSuperseded', () => {
       )
     })
 
-    it('says another row loads the file', async () => {
-      const loaded = { ...replaced, id: 't2', inputPath: replaced.supersededPath } as TrackItem
-      const { logInfo } = setup([replaced, loaded])
+    it('says another row is converting the file', async () => {
+      const busy = {
+        ...replaced,
+        id: 't2',
+        status: 'processing',
+        inputPath: replaced.supersededPath,
+      } as TrackItem
+      const { logInfo } = setup([replaced, busy])
       await waitFor(() =>
         expect(logInfo).toHaveBeenCalledWith(
-          `retire: kept ${replaced.supersededPath}: another row of the list loads it`,
+          `retire: kept ${replaced.supersededPath}: another row of the list is converting it`,
         ),
       )
     })
