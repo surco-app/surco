@@ -1,4 +1,5 @@
 import type { SourceNode } from '../shared/types'
+import type { Beat } from './anlz'
 import { type openRekordboxDb, STREAMING_FILE_TYPE } from './rekordboxDb'
 import { IS_SEPARATOR, LIVE_LINK, readRekordboxTree } from './rekordboxPlaylists'
 
@@ -46,6 +47,8 @@ export interface ExportTrack {
   separator: boolean
   streaming: boolean
   cues: ExportCue[]
+  grid?: Beat[]
+  cuesLeftOut?: boolean
 }
 
 export interface ExportPlaylist {

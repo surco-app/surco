@@ -1,7 +1,7 @@
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { UsbExportEvent, UsbExportRequest, UsbVolume } from '../shared/types'
 import type { BakenEvent, BakenHandle } from './bakenRun'
 import { createMenuT } from './i18n'
@@ -1179,6 +1179,50 @@ describe('sharing the stick with rekordbox', () => {
     expect(await ex.start(REQ)).toEqual({ ok: false, reason: 'unreadable' })
     expect(await ex.plan(REQ)).toEqual({ ok: false, reason: 'unreadable' })
     expect(calls).toEqual([])
+  })
+})
+
+describe('without a rekordbox collection', () => {
+  it('exports without a collection identity, reading no sync file and giving baken no stick ids', async () => {
+    const read: string[] = []
+    const stage = vi.fn(deps(happy).stage)
+    const exp = createUsbExporter(
+      deps(happy, {
+        identity: () => null,
+        stage,
+        readText: async (p) => {
+          read.push(p)
+          return null
+        },
+      }),
+    )
+    expect((await exp.plan(REQ)).ok).toBe(true)
+    expect(read).toEqual([])
+    expect(stage.mock.calls[0][3]).toEqual({ identity: null, deviceIds: new Map() })
+  })
+  it('removes the sync files rekordbox reads before a run without identity, and writes none', async () => {
+    await createUsbExporter(deps(happy, { identity: () => null })).start(REQ)
+    expect(await finished()).toMatchObject({ outcome: 'done', syncFiles: true })
+    expect(removed).toEqual(
+      [...STALE_STICK_FILES, 'playlists3.sync', 'playlists3Plus.sync'].map(
+        (n) => `/Volumes/Surco/PIONEER/rekordbox/${n}`,
+      ),
+    )
+    expect(writes).toEqual([])
+  })
+  it('waits for a selection that is read in the background', async () => {
+    const r = await createUsbExporter(deps(happy, { readSelection: async () => SEL })).plan(REQ)
+    expect(r.ok && r.plan.trackCount).toBe(2)
+  })
+  it('lists the tracks that go without cues or grid, only those that reach the stick', async () => {
+    const sel = {
+      ...SEL,
+      tracks: SEL.tracks.map((t) =>
+        ['101', '103'].includes(t.id) ? { ...t, cuesLeftOut: true } : t,
+      ),
+    }
+    const r = await createUsbExporter(deps(happy, { readSelection: () => sel })).plan(REQ)
+    expect(r.ok && r.plan.warnings).toContainEqual({ kind: 'cuesLeftOut', titles: ['T101'] })
   })
 })
 

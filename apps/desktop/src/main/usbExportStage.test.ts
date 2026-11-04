@@ -343,6 +343,30 @@ describe('stageExport', () => {
     expect(existsSync(join(root, 'stage-none', 'master-ids.json'))).toBe(false)
   })
 
+  it('writes the beat grid a track brings when rekordbox has no analysis of it', async () => {
+    const sel = SEL()
+    sel.tracks[0] = {
+      ...sel.tracks[0],
+      analysisPath: '',
+      grid: [
+        { ms: 474.94, beat: 1, bpm: 120 },
+        { ms: 974.94, beat: 2, bpm: 120 },
+      ],
+    }
+    const s = await stageExport({
+      stickHas: [],
+      identity: null,
+      deviceIds: new Map(),
+      sel,
+      shareDir: share,
+      settingsSource: null,
+      dir: join(root, 'stage'),
+    })
+    expect(readFileSync(s.xml, 'utf8')).toContain(
+      '<TEMPO Inizio="0.475" Bpm="120.00" Metro="4/4" Battito="1"/>',
+    )
+  })
+
   it('finds rekordbox small thumbnail beside the cover', () => {
     expect(smallCoverPath('/PIONEER/Artwork/00a/b1/artwork.jpg')).toBe(
       '/PIONEER/Artwork/00a/b1/artwork_s.jpg',

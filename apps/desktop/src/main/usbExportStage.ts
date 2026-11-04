@@ -91,7 +91,7 @@ export async function stageExport(input: StageInput): Promise<Stage> {
       missing.push(t.id)
       continue
     }
-    let grid: XmlTrackFacts['grid'] = []
+    let grid: XmlTrackFacts['grid'] = t.grid ?? []
     const analysisPath = posix.normalize(t.analysisPath)
     try {
       if (analysisPath.startsWith(ANLZ_ROOT)) {

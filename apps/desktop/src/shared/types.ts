@@ -1733,6 +1733,7 @@ export type UsbWarning =
   | { kind: 'ntfs' }
   | { kind: 'notVolumeRoot' }
   | { kind: 'cdj2000'; titles: string[] }
+  | { kind: 'cuesLeftOut'; titles: string[] }
   | { kind: 'unexportable'; tracks: { title: string; reason: UsbUnexportableReason }[] }
   | { kind: 'noSpace'; neededBytes: number; freeBytes: number }
   // The volume's name (/Volumes/<name>, or E: and \\server\share on Windows) and how many

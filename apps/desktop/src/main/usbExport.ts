@@ -42,7 +42,10 @@ import { volumeContaining } from './usbVolumes'
 export interface UsbExporterDeps {
   platform: NodeJS.Platform
   collection: () => string
-  readSelection: (dbPath: string, ids: string[]) => ExportSelection | 'unreadable'
+  readSelection: (
+    dbPath: string,
+    ids: string[],
+  ) => ExportSelection | 'unreadable' | Promise<ExportSelection | 'unreadable'>
   volumes: () => Promise<UsbVolume[]>
   idAt: (root: string) => Promise<string | null>
   devOf: (root: string) => Promise<number | null>
@@ -54,7 +57,7 @@ export interface UsbExporterDeps {
     sel: ExportSelection,
     dir: string,
     targetRoot: string,
-    stick: { identity: MasterIdentity; deviceIds: ReadonlyMap<string, number> },
+    stick: { identity: MasterIdentity | null; deviceIds: ReadonlyMap<string, number> },
   ) => Promise<Stage>
   makeStageDir: () => Promise<string>
   removeDir: (dir: string) => Promise<void>
@@ -76,7 +79,7 @@ export interface UsbExporterDeps {
   writeAtomic: (path: string, text: string) => Promise<void>
   // A missing file is fine.
   removeFile: (path: string) => Promise<void>
-  identity: (dbPath: string, trackIds: string[]) => MasterIdentity | 'unreadable'
+  identity: (dbPath: string, trackIds: string[]) => MasterIdentity | null | 'unreadable'
   masterPlaylistsXml: () => Promise<string | null>
   pollMs?: number
   devPollMs?: number
@@ -94,7 +97,7 @@ interface Prepared {
   target: Target
   sel: ExportSelection
   stage: Stage
-  identity: MasterIdentity
+  identity: MasterIdentity | null
   nodes: StickNode[]
   deviceIds: Map<string, number>
   // The roots of the volumes holding the selected music, all mounted when it was prepared.
@@ -214,7 +217,7 @@ async function prepare(
   if (!deps.baken()) return 'no-baken'
   const target = await resolveTarget(deps, req.target)
   if (typeof target === 'string') return target
-  const sel = deps.readSelection(db, req.playlistIds)
+  const sel = await deps.readSelection(db, req.playlistIds)
   if (sel === 'unreadable') return 'unreadable'
   if (sel.tracks.length === 0) return 'nothing-selected'
   const identity = deps.identity(
@@ -233,16 +236,17 @@ async function prepare(
   if (unreachable && strict) return 'sources-unreachable'
   const join = joinFor(deps.platform)
   const nodes = stickNodes(sel)
-  let deviceIds: Map<string, number>
-  try {
-    deviceIds = stickDeviceIds(
-      nodes,
-      await deps.readText(join(target.root, 'PIONEER', 'rekordbox', 'playlists3.sync')),
-    )
-  } catch (err) {
-    deps.log(`usb export has no stick playlist id left: ${String(err)}`)
-    return 'stick-ids-full'
-  }
+  let deviceIds = new Map<string, number>()
+  if (identity)
+    try {
+      deviceIds = stickDeviceIds(
+        nodes,
+        await deps.readText(join(target.root, 'PIONEER', 'rekordbox', 'playlists3.sync')),
+      )
+    } catch (err) {
+      deps.log(`usb export has no stick playlist id left: ${String(err)}`)
+      return 'stick-ids-full'
+    }
   const dir = await deps.makeStageDir()
   try {
     const stage = await deps.stage(sel, dir, target.root, { identity, deviceIds })
@@ -305,6 +309,8 @@ function warningsOf(
       (t.fileType === CDJ2000_FLAC || t.bitDepth > 24 || t.sampleRate > 48000),
   )
   if (old.length) out.push({ kind: 'cdj2000', titles: old.map((t) => t.title) })
+  const bare = p.sel.tracks.filter((t) => included.has(t.id) && t.cuesLeftOut)
+  if (bare.length) out.push({ kind: 'cuesLeftOut', titles: bare.map((t) => t.title) })
   const missing = new Set(p.stage.missing)
   for (const s of plan?.skipped ?? []) deps.log(`baken skipped ${s.name}: ${s.reason}`)
   const unexportable = [
@@ -372,6 +378,7 @@ export function createUsbExporter(deps: UsbExporterDeps) {
   // sync. They describe the library baken just wrote, so they come only after its success;
   // failing them leaves that library intact, which is not a failed export.
   async function writeSyncFiles(p: Prepared): Promise<boolean> {
+    if (!p.identity) return true
     let file = 'masterPlaylists6.xml'
     try {
       const text = syncFileText(
@@ -540,8 +547,9 @@ export function createUsbExporter(deps: UsbExporterDeps) {
       // The dry run takes a while: a stick swapped meanwhile must not get the real run.
       const still = await volumeAt(p, req, dev)
       if (typeof still === 'string') return refuse(still)
-      // Only now, on the stick just checked. These two names and nothing else.
-      for (const name of STALE_STICK_FILES) await deps.removeFile(stickFile(p, name))
+      // Only now, on the stick just checked. These names and nothing else.
+      for (const name of p.identity ? STALE_STICK_FILES : [...STALE_STICK_FILES, ...SYNC_FILES])
+        await deps.removeFile(stickFile(p, name))
       return launch(p, req, args, dev, state)
     } catch (err) {
       deps.log(`usb export did not start: ${String(err)}`)
