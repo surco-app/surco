@@ -1805,23 +1805,17 @@ describe('CuesSection maximized grid', () => {
     expect(bars()).toContain(2000)
   })
 
-  it('gives the grid a row of its own between the zoomed wave and the deck, with how far it sits from the beats beside its BPM', async () => {
+  it('keeps the grid on the deck line beside the pads and how far it sits from the beats beside the time, so the deck fits one line', async () => {
     setup(null, READ, { rekordboxGridFit: fitAt(454) })
     await maximize()
     await waitFor(() => expect(screen.getByTestId('cues-grid-here')).toBeInTheDocument())
-    const row = screen.getByTestId('cues-grid-strip')
-    expect(row).toHaveTextContent('Grid')
-    for (const id of ['cues-grid', 'cues-grid-bpm', 'cues-grid-here', 'cues-grid-end'])
-      expect(row).toContainElement(screen.getByTestId(id))
-    expect(screen.getByTestId('cues-toolbar')).not.toContainElement(
-      screen.getByTestId('cues-grid-here'),
-    )
-    expect(screen.getByTestId('cues-deck')).not.toContainElement(screen.getByTestId('cues-grid'))
-    const follows = (a: string, b: string) =>
-      screen.getByTestId(a).compareDocumentPosition(screen.getByTestId(b)) &
-      Node.DOCUMENT_POSITION_FOLLOWING
-    expect(follows('cue-detail', 'cues-grid-strip')).toBeTruthy()
-    expect(follows('cues-grid-strip', 'cues-deck')).toBeTruthy()
+    const deck = screen.getByTestId('cues-deck')
+    for (const id of ['cues-grid', 'cues-grid-bpm', 'cues-pad-A'])
+      expect(deck).toContainElement(screen.getByTestId(id))
+    const toolbar = screen.getByTestId('cues-toolbar')
+    for (const id of ['cues-grid-here', 'cues-grid-end'])
+      expect(toolbar).toContainElement(screen.getByTestId(id))
+    expect(screen.queryByTestId('cues-grid-strip')).toBeNull()
   })
 
   it('has no grid row in the small editor', async () => {
@@ -1948,6 +1942,18 @@ describe('CuesSection maximized grid', () => {
       grid: { bpm: 120, anchorMs: 1 },
       gridFingerprint: 'g-queued',
     })
+  })
+
+  it('keeps a fixed slot over the overview for the off-grid and Auto mark bars, so one showing or going never shoves the waves', async () => {
+    const offBeat = { ...READ, cues: [{ id: 'c1', ms: 31986, kind: 0, color: null }] }
+    setup(null, offBeat)
+    await maximize()
+    const slot = screen.getByTestId('cues-notices')
+    expect(slot.style.minHeight).toBe('36px')
+    expect(slot).toContainElement(screen.getByTestId('cues-offgrid'))
+    fireEvent.click(screen.getByTestId('cues-offgrid-snap'))
+    expect(screen.queryByTestId('cues-offgrid')).toBeNull()
+    expect(screen.getByTestId('cues-notices').style.minHeight).toBe('36px')
   })
 
   it('names the cue that misses its beat, jumps to it and brings it onto the beat', async () => {

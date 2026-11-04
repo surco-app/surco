@@ -1509,6 +1509,25 @@ function Editing({
       />
       {autoControl}
       <span className="flex-1" />
+      {offsets && (
+        <span
+          data-testid="cues-grid-offsets"
+          className="flex shrink-0 items-center gap-3 whitespace-nowrap text-xs text-fg-dim"
+        >
+          <GridOffset
+            testid="cues-grid-here"
+            label={tr('editor.cues.grid.here')}
+            ms={offsets.hereMs}
+            tolerance={tolerance}
+          />
+          <GridOffset
+            testid="cues-grid-end"
+            label={tr('editor.cues.grid.end')}
+            ms={offsets.endMs}
+            tolerance={tolerance}
+          />
+        </span>
+      )}
       <span
         data-testid="cues-position"
         className="shrink-0 text-[13px] font-semibold tabular-nums text-fg"
@@ -1585,8 +1604,14 @@ function Editing({
       {maximized ? (
         <>
           {toolbar}
-          {reviewBar}
-          {offGridBar}
+          <div
+            data-testid="cues-notices"
+            style={{ minHeight: '36px' }}
+            className="flex shrink-0 flex-col justify-center gap-1"
+          >
+            {reviewBar}
+            {offGridBar}
+          </div>
           <div className="flex shrink-0 flex-col gap-1">
             {strip}
             <CuePhraseBand sections={read.sections ?? []} durationMs={read.durationMs} />
@@ -1816,48 +1841,6 @@ function Editing({
         </p>
       )}
       {maximized && (
-        <div
-          data-testid="cues-grid-strip"
-          className="flex shrink-0 items-center gap-3 border-t border-[var(--color-line)] pt-3"
-        >
-          <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-fg-faint">
-            {tr('editor.cues.grid.title')}
-          </span>
-          <CueGridControls
-            grid={state.grid}
-            disabledReason={gridOff}
-            fit={gridFit}
-            needsFix={needsFix}
-            playheadMs={playheadMs}
-            onChange={setGrid}
-            onFit={fitGridTo}
-            onDone={focusEditor}
-            zones={rekordboxGrid}
-            status={
-              offsets && (
-                <span
-                  data-testid="cues-grid-offsets"
-                  className="flex shrink-0 items-center gap-3 whitespace-nowrap text-xs text-fg-dim"
-                >
-                  <GridOffset
-                    testid="cues-grid-here"
-                    label={tr('editor.cues.grid.here')}
-                    ms={offsets.hereMs}
-                    tolerance={tolerance}
-                  />
-                  <GridOffset
-                    testid="cues-grid-end"
-                    label={tr('editor.cues.grid.end')}
-                    ms={offsets.endMs}
-                    tolerance={tolerance}
-                  />
-                </span>
-              )
-            }
-          />
-        </div>
-      )}
-      {maximized && (
         <CueDeck
           cues={shownCues}
           kinds={ctx.slots.kinds}
@@ -1882,6 +1865,19 @@ function Editing({
           onJumpBars={(bars) => onJumpBars?.(bars)}
           onQuantize={(unit) => onQuantize?.(unit)}
           onDone={focusEditor}
+          gridControls={
+            <CueGridControls
+              grid={state.grid}
+              disabledReason={gridOff}
+              fit={gridFit}
+              needsFix={needsFix}
+              playheadMs={playheadMs}
+              onChange={setGrid}
+              onFit={fitGridTo}
+              onDone={focusEditor}
+              zones={rekordboxGrid}
+            />
+          }
         />
       )}
     </fieldset>

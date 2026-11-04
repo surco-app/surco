@@ -1083,13 +1083,7 @@
         "anchorAdd": "Ancla en el cabezal, empieza una zona",
         "anchorRemove": "Quitar el ancla del cabezal",
         "locked": "El programa tiene esta rejilla bloqueada",
-        "serato": "La rejilla de Serato viene de Serato y no se puede cambiar aquí",
-        "title": "Rejilla",
-        "widenShort": "Abrir",
-        "narrowShort": "Cerrar",
-        "downbeatShort": "El 1 aquí",
-        "anchorAddShort": "Ancla",
-        "anchorRemoveShort": "Quitar ancla"
+        "serato": "La rejilla de Serato viene de Serato y no se puede cambiar aquí"
       },
       "offGrid": {
         "before": "{{ms}} ms antes",
