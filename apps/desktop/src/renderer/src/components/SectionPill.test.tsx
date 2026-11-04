@@ -7,16 +7,16 @@ import { SectionPill } from './SectionPill'
 afterEach(cleanup)
 
 describe('SectionPill', () => {
-  // Green means "nothing to do here", so the dot says it alone: "Good quality" and "In
-  // library" beside it repeated the colour in words. The words stay for a screen reader.
-  it('shows a good status as its dot alone and keeps the words for assistive tech', () => {
+  // The dot alone left the Quality header as the one folded header with no words, beside
+  // Trim's "3.6 s from the end" and Vinyl repair's "~19 clicks": reading down the editor,
+  // a good track's verdict was the only one that had to be decoded from a colour.
+  it('shows a good status in words beside its dot, like every other header summary', () => {
     render(
       <SectionPill tone="good" testid="pill">
         Good quality
       </SectionPill>,
     )
-    expect(screen.getByTestId('pill')).toHaveTextContent('Good quality')
-    expect(screen.getByText('Good quality')).toHaveClass('sr-only')
+    expect(screen.getByText('Good quality')).not.toHaveClass('sr-only')
   })
 
   // A status that asks for a look has to read before the eye finds the dot.
