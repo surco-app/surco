@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { BlockHeading, NotesFold, StepList } from './Blocks'
 import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
@@ -176,14 +177,12 @@ export default function Guide() {
 
           {blocks.map((b) => (
             <div key={b.id} data-testid="guide-block">
-              <h2 className="mt-12 border-t border-line pt-6 text-lg font-semibold text-fg">
-                {b.title}
-              </h2>
+              <BlockHeading title={b.title} />
               {b.items.map(({ s, n }) => (
                 <section key={s.id} id={s.id} className="scroll-mt-20 py-14 sm:py-16">
                   <Reveal>
                     <p className="font-mono text-sm text-blue">{n}</p>
-                    <h3 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+                    <h3 className="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">
                       {s.title}
                     </h3>
                     <p className="mt-3 max-w-2xl text-lg leading-snug text-pretty text-subtle">
@@ -194,40 +193,12 @@ export default function Guide() {
                         {p}
                       </p>
                     ))}
-                    <ol data-testid="guide-steps" className="mt-6 space-y-3">
-                      {s.steps.map((step, n) => (
-                        <li key={step.lead} className="flex gap-3.5 leading-relaxed text-muted">
-                          <span className="mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-full border border-line font-mono text-xs text-blue">
-                            {n + 1}
-                          </span>
-                          <span>
-                            <strong className="font-semibold text-fg">{step.lead}</strong>{' '}
-                            {step.text}
-                          </span>
-                        </li>
-                      ))}
-                    </ol>
-                    {s.points.length > 0 && (
-                      <details
-                        data-testid="guide-notes"
-                        className="mt-6 rounded-xl border border-line bg-surface2/40"
-                      >
-                        <summary className="cursor-pointer px-4 py-3 text-sm text-subtle">
-                          {t('guide.notesLabel')}
-                        </summary>
-                        <ul className="space-y-2.5 px-4 pb-4">
-                          {s.points.map((point) => (
-                            <li
-                              key={point}
-                              className="flex gap-3 text-sm leading-relaxed text-muted"
-                            >
-                              <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
-                              <span>{point}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </details>
-                    )}
+                    <StepList steps={s.steps} testid="guide-steps" />
+                    <NotesFold
+                      label={t('guide.notesLabel')}
+                      points={s.points}
+                      testid="guide-notes"
+                    />
                     {s.shot && (
                       <GuideShot
                         src={`/guide/${s.shot}`}

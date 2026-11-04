@@ -12,6 +12,7 @@ import {
   USE_CASE_SOURCES,
   type UseCaseFilters,
 } from '../lib/useCases'
+import { BlockHeading } from './Blocks'
 import Footer from './Footer'
 import Header from './Header'
 import Kicker from './Kicker'
@@ -157,10 +158,7 @@ export default function UseCases() {
                     if (items.length === 0) return null
                     return (
                       <div key={group.id} data-testid="use-case-block">
-                        <h2 className="mt-14 border-t border-line pt-8 text-2xl font-semibold tracking-tight text-balance text-fg">
-                          {group.title}
-                        </h2>
-                        <p className="mt-2 text-muted">{group.lede}</p>
+                        <BlockHeading title={group.title} lede={group.lede} />
                         <ul className="mt-4 divide-y divide-line">
                           {items.map((c) => (
                             <li key={c.id}>
