@@ -737,7 +737,8 @@ export default function App(): React.JSX.Element {
     onMetaLoaded: (t) => {
       // With auto-match on, every imported track is probed whether or not its row is on
       // screen; already-matched ones are never re-probed.
-      if (settings?.autoMatch && autoMatchAvailable(settings)) enqueueAutoMatch([t], true)
+      if (browser.source === null && settings?.autoMatch && autoMatchAvailable(settings))
+        enqueueAutoMatch([t], true)
       // Auto-analyze runs the full background sweep so a reopened crate has every heavy
       // analysis already on disk — the sweep reads bulkTracksRef (the visible rows) and
       // skips any already measured, so this stays a cheap re-trigger per import. Passing t
@@ -1406,13 +1407,20 @@ export default function App(): React.JSX.Element {
   // arrowing through a crate doesn't fire a Discogs probe per row.
   // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the exact settings fields autoMatchAvailable reads (autoMatch/discogsToken/searchProviders), not settings' identity — depending on the whole object would re-run the debounce on unrelated settings changes; tracksRef is read fresh.
   useEffect(() => {
-    if (!selectedId || !settings?.autoMatch || !autoMatchAvailable(settings)) return
+    if (
+      browser.source !== null ||
+      !selectedId ||
+      !settings?.autoMatch ||
+      !autoMatchAvailable(settings)
+    )
+      return
     const id = setTimeout(() => {
       const track = tracksRef.current.find((t) => t.id === selectedId)
       if (track) enqueueAutoMatch([track])
     }, 500)
     return () => clearTimeout(id)
   }, [
+    browser.source,
     selectedId,
     settings?.autoMatch,
     settings?.discogsToken,
@@ -2087,7 +2095,11 @@ export default function App(): React.JSX.Element {
   // Drives the toolbar auto-match button: how many visible tracks are still worth a probe, so
   // it disables once every shown track is matched, and changing the filter to reveal unmatched
   // rows re-enables it. Scoped to the visible set because the sweep matches only those.
-  const autoMatchable = useMemo(() => tracksToAutoMatch(visibleTracks).length, [visibleTracks])
+  const autoMatchButtonTracks = browser.source === null ? visibleTracks : selectedTracks
+  const autoMatchable = useMemo(
+    () => tracksToAutoMatch(autoMatchButtonTracks).length,
+    [autoMatchButtonTracks],
+  )
   // Auto-match is on but the provider can't run (no Discogs token): the sweep silently does
   // nothing, so the toolbar button turns into a live "add a token" fix instead of a greyed
   // dead end. Only with tracks loaded — nothing to match on an empty list.
@@ -2128,7 +2140,9 @@ export default function App(): React.JSX.Element {
     allowAutoMatch(targets.map((t) => t.id))
     enqueueAutoMatch(targets)
   })
-  const onAutoMatchAll = useStableCallback(() => autoMatchTracks(bulkTracks))
+  const onAutoMatchAll = useStableCallback(() =>
+    autoMatchTracks(browser.source === null ? bulkTracks : selectedTracks),
+  )
   const onOpenExport = useStableCallback(overlays.openExport)
   const onClearAll = useStableCallback(() => askClearAll(visibleTracksRef.current))
   // The one-click "trash the fakes": collect the flagged rips out of the visible rows and route
@@ -3112,7 +3126,7 @@ export default function App(): React.JSX.Element {
     if (fixes.length === 0) return
     mapTracks(cleanupPatcher(tracksRef.current, fixes))
     const cleaned = new Set(fixes.map((f) => f.id))
-    if (s.autoMatch && autoMatchAvailable(s))
+    if (browser.source === null && s.autoMatch && autoMatchAvailable(s))
       enqueueAutoMatch(
         tracksRef.current.filter((t) => cleaned.has(t.id)),
         true,

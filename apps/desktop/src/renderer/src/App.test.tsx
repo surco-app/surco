@@ -1137,6 +1137,84 @@ describe('App results column fold', () => {
   })
 })
 
+describe('App auto-match in a DJ library tab', () => {
+  const release: Release = {
+    provider: 'discogs',
+    id: 1,
+    title: 'Album',
+    artists: [{ name: 'Artist' }],
+    tracklist: [
+      { position: '1', title: 'Alpha', duration: '3:00' },
+      { position: '2', title: 'Bravo', duration: '3:00' },
+    ],
+  }
+
+  function withEngine(search: Api['search']): void {
+    setApi({
+      getSettings: vi
+        .fn<Api['getSettings']>()
+        .mockResolvedValue(
+          settings({ discogsToken: 'tok', autoMatch: true, foldedResults: { engine: true } }),
+        ),
+      readTags: vi.fn((path: string) =>
+        Promise.resolve({ title: path === '/m/a.wav' ? 'Alpha' : 'Bravo', artist: 'Artist' }),
+      ),
+      readDuration: vi.fn().mockResolvedValue(180),
+      search,
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(release),
+      engineAvailable: vi.fn<Api['engineAvailable']>().mockResolvedValue(true),
+      loadEngineTree: vi
+        .fn<Api['loadEngineTree']>()
+        .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 2 }]),
+      engineRecentCount: vi.fn<Api['engineRecentCount']>().mockResolvedValue(0),
+      loadEnginePlaylist: vi.fn<Api['loadEnginePlaylist']>().mockResolvedValue([
+        { path: '/m/a.wav', separator: false, meta: {}, contentId: 'engine:11' },
+        { path: '/m/b.wav', separator: false, meta: {}, contentId: 'engine:12' },
+      ]),
+    })
+  }
+
+  async function openFriday(): Promise<void> {
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-engine'))
+    fireEvent.click(await screen.findByTestId('source-node-7'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+  }
+
+  // A DJ's playlist is already tagged by hand. Probing every row of a library on open spent
+  // the Discogs rate limit and CPU on tracks nobody wanted matched, so only a press does.
+  it('sends no Discogs search when a library playlist opens and a row is selected', async () => {
+    const search = vi
+      .fn<Api['search']>()
+      .mockResolvedValue([{ provider: 'discogs', id: 1, title: 'Artist - Album' }])
+    withEngine(search)
+    await openFriday()
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 900))
+    })
+
+    expect(search).not.toHaveBeenCalled()
+    expect(screen.queryAllByTestId('track-automatched')).toHaveLength(0)
+  })
+
+  // With one row picked, the button means that row: matching the whole playlist instead
+  // would rewrite tags the DJ never pointed at.
+  it('matches only the selected row when the button is pressed in a library tab', async () => {
+    const search = vi
+      .fn<Api['search']>()
+      .mockResolvedValue([{ provider: 'discogs', id: 1, title: 'Artist - Album' }])
+    withEngine(search)
+    await openFriday()
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(screen.getByTestId('auto-match'))
+
+    await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(1))
+    expect(JSON.stringify(search.mock.calls)).toContain('Alpha')
+    expect(JSON.stringify(search.mock.calls)).not.toContain('Bravo')
+  })
+})
+
 describe('App quality triage', () => {
   // The "analyze quality" sweep exists to triage a whole dropped crate for fake-lossless
   // rips at once: every track gets measured and flagged with a verdict dot, so the user
@@ -2525,159 +2603,6 @@ describe('App source playlists', () => {
     ).toBeTruthy()
   })
 
-  // Every playlist passed through adds its files to the working list, and the auto-match
-  // sweep used to keep all of them queued: the pill grew with each playlist and Discogs kept
-  // being spent on sets the user had already left. The open playlist is the work; what was
-  // still waiting from the one left behind waits for the user to come back to it.
-  describe('background auto-match', () => {
-    const entry = (path: string) => ({ path, separator: false, meta: {} })
-    const playlists: Record<string, ReturnType<typeof entry>[]> = {
-      a: [entry('/m/a1.wav'), entry('/m/a2.wav'), entry('/m/a3.wav')],
-      b: [entry('/m/b1.wav'), entry('/m/b2.wav')],
-    }
-    function setupPlaylists(noArtist: string[] = []): { probed: string[]; release: () => void } {
-      const probed: string[] = []
-      let release: () => void = () => {}
-      const gate = new Promise<void>((r) => {
-        release = r
-      })
-      setApi({
-        getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok', autoMatch: true })),
-        readTags: vi.fn(async (path: string) => {
-          const title = path.replace(/^\/m\/|\.wav$/g, '')
-          return { title, artist: noArtist.includes(title) ? '' : 'DJ' }
-        }),
-        search: vi.fn(async (_q: string, _p: unknown, _pr: unknown, hints?: { title?: string }) => {
-          if (hints?.title && !probed.includes(hints.title)) probed.push(hints.title)
-          await gate
-          return []
-        }),
-        rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-        loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue([
-          { id: 'a', name: 'Warm up', kind: 'playlist', count: 3 },
-          { id: 'b', name: 'Peak', kind: 'playlist', count: 2 },
-        ]),
-        loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>(async (id) => playlists[id]),
-      })
-      return { probed, release: () => release() }
-    }
-
-    it('drops the left playlist’s waiting tracks and counts only the open one', async () => {
-      const { probed, release } = setupPlaylists()
-      await renderApp()
-      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
-      fireEvent.click(await screen.findByTestId('source-node-a'))
-      await waitFor(() => expect(probed).toEqual(['a1']))
-
-      fireEvent.click(screen.getByTestId('source-node-b'))
-      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
-      await waitFor(() =>
-        expect(screen.getByTestId('auto-match-progress')).toHaveTextContent('0/2'),
-      )
-      release()
-      await waitFor(() => expect(probed).toEqual(expect.arrayContaining(['b1', 'b2'])))
-      await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
-
-      expect(probed).not.toContain('a2')
-      expect(probed).not.toContain('a3')
-    })
-
-    it('picks the left playlist’s waiting tracks back up when it is opened again', async () => {
-      const { probed, release } = setupPlaylists()
-      await renderApp()
-      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
-      fireEvent.click(await screen.findByTestId('source-node-a'))
-      await waitFor(() => expect(probed).toEqual(['a1']))
-      fireEvent.click(screen.getByTestId('source-node-b'))
-      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
-      release()
-      await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
-
-      fireEvent.click(screen.getByTestId('source-node-a'))
-
-      await waitFor(() => expect(probed).toEqual(expect.arrayContaining(['a2', 'a3'])))
-    })
-
-    it('matches only the filtered rows while a filter is on, and the hidden ones once it is off', async () => {
-      const { probed, release } = setupPlaylists(['a3'])
-      await renderApp()
-      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
-      fireEvent.click(await screen.findByTestId('source-node-a'))
-      await waitFor(() => expect(probed).toEqual(['a1']))
-
-      fireEvent.click(screen.getByTestId('quality-filter-trigger'))
-      fireEvent.click(await screen.findByTestId('quality-filter-missingRequired'))
-      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
-      await waitFor(() =>
-        expect(screen.getByTestId('auto-match-progress')).toHaveTextContent('0/1'),
-      )
-      release()
-      await waitFor(() => expect(probed).toContain('a3'))
-      await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
-      expect(probed).not.toContain('a2')
-
-      fireEvent.click(screen.getByTestId('quality-filter-trigger'))
-      fireEvent.click(await screen.findByTestId('quality-filter-all'))
-
-      await waitFor(() => expect(probed).toContain('a2'))
-    })
-
-    it('matches only the rows the search leaves on screen', async () => {
-      const { probed, release } = setupPlaylists()
-      await renderApp()
-      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
-      fireEvent.click(await screen.findByTestId('source-node-a'))
-      await waitFor(() => expect(probed).toEqual(['a1']))
-
-      fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'a3' } })
-      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
-      release()
-      await waitFor(() => expect(probed).toContain('a3'))
-      await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
-
-      expect(probed).not.toContain('a2')
-    })
-
-    // Tracks holds only what the user put there: the rows a playlist set aside are not on
-    // screen in Tracks either, so going there spends nothing on them.
-    it('matches nothing a playlist set aside once Tracks is back on screen', async () => {
-      const { probed, release } = setupPlaylists()
-      await renderApp()
-      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
-      fireEvent.click(await screen.findByTestId('source-node-a'))
-      await waitFor(() => expect(probed).toEqual(['a1']))
-      fireEvent.click(screen.getByTestId('source-node-b'))
-      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
-      release()
-      await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
-
-      fireEvent.click(screen.getByTestId('source-rail-tracks'))
-      await act(async () => {})
-      await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
-
-      expect(probed).not.toContain('a2')
-      expect(probed).not.toContain('a3')
-    })
-
-    // Music with nothing picked shows no rows, so it has no work either: falling back to the
-    // whole working list there spent Discogs on sets the user was not looking at.
-    it('matches nothing while a source has no playlist open', async () => {
-      const { probed, release } = setupPlaylists()
-      Object.assign(window.api, { platform: 'darwin' })
-      await renderApp()
-      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
-      fireEvent.click(await screen.findByTestId('source-node-a'))
-      await waitFor(() => expect(probed).toEqual(['a1']))
-
-      fireEvent.click(screen.getByTestId('source-rail-appleMusic'))
-      expect(await screen.findByTestId('source-pick-playlist')).toBeInTheDocument()
-      release()
-      await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
-
-      expect(probed).toEqual(['a1'])
-    })
-  })
-
   // A picked playlist whose entries have not arrived is still that source's list, not the
   // working list: the toolbar sweeps have nothing in view to act on, so they stay disabled
   // instead of running over Tracks' rows from a rekordbox view.
@@ -3451,31 +3376,6 @@ describe('App source playlists', () => {
         await waitFor(() => expect([...analyzed].sort()).toEqual(['/m/x.wav', '/m/y.wav']))
         await waitFor(() => expect(screen.queryByTestId('analyze-progress')).toBeNull())
         expect([...analyzed].sort()).toEqual(['/m/x.wav', '/m/y.wav'])
-      })
-
-      it('auto-matches only the rows scrolled past, with auto-match on', async () => {
-        const search = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
-        setApi({
-          ...collection,
-          getSettings: vi
-            .fn()
-            .mockResolvedValue(settings({ discogsToken: 'tok', autoMatch: true })),
-          readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
-          readDuration: vi.fn().mockResolvedValue(180),
-          search,
-          getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(matching),
-        })
-        const rows = await openAll()
-        await new Promise((r) => setTimeout(r, 400))
-        expect(within(rows[2]).queryByTestId('track-automatched')).toBeNull()
-
-        scrollPast([rows[2]])
-
-        await waitFor(() =>
-          expect(within(rows[2]).getByTestId('track-automatched')).toBeInTheDocument(),
-        )
-        await new Promise((r) => setTimeout(r, 400))
-        expect(within(rows[3]).queryByTestId('track-automatched')).toBeNull()
       })
     })
   })
