@@ -371,7 +371,7 @@ describe('The self-check reads back the Traktor playlists the DJ asked for', () 
       `<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <NML VERSION="19"><HEAD COMPANY="www.native-instruments.com" PROGRAM="Traktor"></HEAD>
 <COLLECTION ENTRIES="1">
-<ENTRY TITLE="Show Me Love" ARTIST="Robin S"><LOCATION DIR="${elsewhere.dir}" FILE="${elsewhere.file}" VOLUME="${volume}" VOLUMEID="${volume}"></LOCATION></ENTRY>
+<ENTRY TITLE="Show Me Love" ARTIST="Robin S"><LOCATION DIR="${elsewhere.dir}" FILE="${elsewhere.file}" VOLUME="${volume}" VOLUMEID="5f3a9c2e"></LOCATION></ENTRY>
 </COLLECTION>
 <PLAYLISTS><NODE TYPE="FOLDER" NAME="$ROOT"><SUBNODES COUNT="2">${list('House', 'u1')}${list('Peak time', 'u2')}</SUBNODES></NODE></PLAYLISTS>
 </NML>
