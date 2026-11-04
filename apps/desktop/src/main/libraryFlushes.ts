@@ -479,6 +479,22 @@ function engineConversionFlusher(
         repointTracks: (libraryDir, list) => repointEngine(libraryDir, list, sessions),
       })
       logLibraryFlush('Engine DJ repoint', engineResult)
+      const named = repoints.filter((repoint) => repoint.names)
+      if (engineDeps.collectionPath && !engineResult.blocked && named.length > 0) {
+        const tags = await updateEngineTags(
+          engineDeps.collectionPath,
+          named.map((repoint) => ({
+            path: repoint.to,
+            fields: repoint.names ?? {},
+            realPath: (p: string) => realpathSync(p),
+          })),
+          { sessionBackup: (path) => sessions.engine.ensure(path) },
+        ).catch((e) => {
+          log.warn('Engine DJ names after a conversion failed', e)
+          return []
+        })
+        if (tags.some((r) => !r.written)) log.info(`Engine DJ names: ${JSON.stringify(tags)}`)
+      }
       const unplugged = engineResult.blocked === 'collection-missing' && engineUnplugged
       const engineQueued =
         engineQueue !== undefined &&

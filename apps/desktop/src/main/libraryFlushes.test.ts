@@ -62,7 +62,9 @@ const WRITERS = vi.hoisted(() => ({
   updateRekordboxTags: vi.fn(async () => [{ written: true }]),
   replaceRekordboxDuplicates: vi.fn(async () => [{ written: true, outcome: 'replaced' }]),
   repointEngineTracks: vi.fn(async () => [{ written: true, id: '1' }]),
+  updateEngineTags: vi.fn(async () => [{ written: true }]),
 }))
+vi.mock('./engineTags', () => ({ updateEngineTags: WRITERS.updateEngineTags }))
 vi.mock('./engineRepoint', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./engineRepoint')>()),
   repointEngineTracks: WRITERS.repointEngineTracks,
@@ -270,6 +272,53 @@ describe('flushConversionBatch with Engine DJ open', () => {
         expect(engine.enqueue).toHaveBeenCalledWith([], REPOINTS)
       },
     )
+  })
+
+  it('writes the names a conversion changed into Engine DJ after moving the row, so Engine shows the new title', async () => {
+    Object.assign(REPOINTS[0], { names: { title: { from: 'Old', to: 'New' } } })
+    try {
+      await withEngineOpen(
+        async () => false,
+        async () => {
+          WRITERS.updateEngineTags.mockClear()
+          await flushConversionBatch(host(), sessions, {
+            rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+            engine: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+          })
+          expect(WRITERS.updateEngineTags).toHaveBeenCalledWith(
+            '/e/Engine Library',
+            [
+              expect.objectContaining({
+                path: '/m/a.flac',
+                fields: { title: { from: 'Old', to: 'New' } },
+              }),
+            ],
+            expect.anything(),
+          )
+        },
+      )
+    } finally {
+      delete (REPOINTS[0] as Record<string, unknown>).names
+    }
+  })
+
+  it('writes no names into Engine DJ while it waits for Engine to close', async () => {
+    Object.assign(REPOINTS[0], { names: { title: { from: 'Old', to: 'New' } } })
+    try {
+      await withEngineOpen(
+        async () => true,
+        async () => {
+          WRITERS.updateEngineTags.mockClear()
+          await flushConversionBatch(host(), sessions, {
+            rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+            engine: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+          })
+          expect(WRITERS.updateEngineTags).not.toHaveBeenCalled()
+        },
+      )
+    } finally {
+      delete (REPOINTS[0] as Record<string, unknown>).names
+    }
   })
 
   it('still asks to close Engine DJ when there is no queue to leave the repoints in', async () => {

@@ -2159,7 +2159,7 @@ export async function convertAudio(
 }> {
   const meta = composeMeta(sourceMeta)
   const namesBefore =
-    getSettings().syncTraktor && getSettings().traktorNmlPath
+    (getSettings().syncTraktor && getSettings().traktorNmlPath) || getSettings().syncEngineDj
       ? await readMeta(input)
           .then((read) => (read.failed ? undefined : read.tags))
           .catch(() => undefined)
@@ -2715,6 +2715,7 @@ export async function convertAudio(
       meta: rekordboxMetaFrom(meta),
       audio: rekordboxAudio,
       fromBytes,
+      names: namesBefore && changedNames(namesBefore, meta),
     })
     if (repoint) recordRekordboxRepoint(repoint)
   } catch (e) {

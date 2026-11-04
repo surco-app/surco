@@ -14,6 +14,7 @@ export interface RekordboxRepoint {
   engineShift?: EngineShift
   // The source's size before a conversion rewrote it in place (see EngineRepoint).
   fromBytes?: number
+  names?: Partial<Record<'title' | 'artist' | 'album' | 'genre', TagChange>>
   // A damage repair's guard and length fix (see EngineRepoint).
   expectTrackData?: { sampleRate: number; sampleCount: number }
   fixLength?: boolean
@@ -24,7 +25,7 @@ export interface RekordboxRepoint {
 }
 
 import type { WritableProgram } from '../shared/djProgram'
-import type { LibraryPlaylistChoice, RekordboxPlaylistTarget } from '../shared/types'
+import type { LibraryPlaylistChoice, RekordboxPlaylistTarget, TagChange } from '../shared/types'
 import type { EngineShift } from './engineRepoint'
 import type { RekordboxMeta } from './rekordboxMetadata'
 

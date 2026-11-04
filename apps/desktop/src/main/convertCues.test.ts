@@ -20,12 +20,16 @@ let traktorNmlPath = ''
 // The path says WHERE the collection is; the toggle says whether to touch it. Both have
 // to hold, so every case here that expects a patch sets both.
 let syncTraktor = true
-vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath, syncTraktor }) }))
+let syncEngineDj = false
+vi.mock('./settings', () => ({
+  getSettings: () => ({ traktorNmlPath, syncTraktor, syncEngineDj }),
+}))
 
 import type { TrackMetadata } from '../shared/types'
 import { decodeBase91, encodeBase91 } from './base91'
 import { convertAudio, toNmlLocation } from './ffmpeg'
 import { beginNmlBatch, endNmlBatch } from './nmlBatch'
+import { beginRekordboxBatch, endRekordboxBatch } from './rekordboxBatch'
 import { readCueTree } from './tags'
 import { buildTraktorTree, readTraktorCueStart, traktorCue } from './traktor4Fixture'
 
@@ -570,6 +574,42 @@ describe('convertAudio cue preservation', () => {
     expect(endNmlBatch()[0].tags).toEqual({
       title: { from: 'Old Title', to: 'Till I Come' },
       album: { from: 'Old Album', to: 'Movin Melodies' },
+    })
+  })
+
+  it('hands Engine DJ the names a conversion changed with the move, from what the file said before', async () => {
+    traktorNmlPath = ''
+    syncEngineDj = true
+    const tagged = join(dir, 'engine-tagged.aiff')
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-i',
+      src,
+      '-c',
+      'copy',
+      '-write_id3v2',
+      '1',
+      '-metadata',
+      'title=Old Title',
+      '-metadata',
+      'artist=ATB',
+      '-metadata',
+      'album=Movin Melodies',
+      '-metadata',
+      'genre=Trance',
+      tagged,
+    ])
+    beginRekordboxBatch()
+    try {
+      await convertAudio(tagged, join(dir, 'engine-out.flac'), 'flac', meta)
+    } finally {
+      syncEngineDj = false
+    }
+
+    expect(endRekordboxBatch()[0].names).toEqual({
+      title: { from: 'Old Title', to: 'Till I Come' },
     })
   })
 

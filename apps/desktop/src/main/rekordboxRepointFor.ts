@@ -32,6 +32,7 @@ export function rekordboxRepointFor(
     }
     // The source's size before the conversion rewrote it on its own path.
     fromBytes?: number
+    names?: RekordboxRepoint['names']
   } = {},
 ): RekordboxRepoint | null {
   const from = options.replaces ?? input
@@ -59,6 +60,7 @@ export function rekordboxRepointFor(
     ...(!options.replaces && options.fromBytes !== undefined
       ? { fromBytes: options.fromBytes }
       : {}),
+    ...(options.names ? { names: options.names } : {}),
   }
   if (from === output && !options.meta && !audio) return null
   return { from, to: output, ...extra }
