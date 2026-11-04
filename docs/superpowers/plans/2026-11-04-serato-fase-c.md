@@ -672,3 +672,11 @@ it('shows Serato in the done sheet when its sync is on', () => {
 - [ ] Abrir Serato: los crates y subcrates tienen el nombre, el orden y las pistas esperados; la conversión está en la biblioteca y en `Prueba D`; el título nuevo sale y Pray conserva sus estrellas. Anotar si el crate nuevo cae al final o por orden alfabético (`neworder.pref`, pregunta abierta de la spec).
 - [ ] Las sumas de `neworder.pref`, `SmartCrates/*` y `*.sqlite` siguen iguales. Las copias están en `serato-backups`.
 - [ ] Matriz completa igual a la base, suite, tres tsc y biome. `git merge main`, otra vez la suite, y `git merge --ff-only serato-c` en el main local (sin push).
+
+## Prueba manual (04/11, Serato DJ Pro 5.0.0.1278, `~/Music/Serato Pruebas`)
+
+- Con Serato cerrado, Surco crea `Surco C` y el subcrate `Hijo`, añade pistas a los dos, reordena, crea y borra un crate y renombra el subcrate. Rechaza `a%%b` y `medida q` (ya existe `Medida Q`). Serato lo muestra todo al abrir, en el orden de Surco, sin errores en su log.
+- Con Serato abierto, añadir una pista, renombrar el subcrate y cambiar un título desde la revisión quedan en cola sin tocar ningún fichero. Tras cerrar Serato (que reescribe sus `.crate` al salir), Surco aplica los tres al arrancar.
+- Serato muestra el título nuevo sobre la misma pista de `master.sqlite` (mismo id, mismos datos y valoración).
+- Un crate nuevo no cae por orden alfabético en el panel: `Surco C` salió antes que `Medida Q`. `neworder.pref` no se tocó.
+- Sin probar a mano: convertir con "Añadir a Serato" y un crate elegido (cubierto por tests).
