@@ -27,11 +27,12 @@ export type InvariantName =
   | 'cover'
   | 'unique'
   | 'collateral'
+  | 'names'
 export type SabotageId = string
 
 export interface Cell {
   id: string
-  layer: 'C' | 'D' | 'Q' | 'K' | 'S'
+  layer: 'C' | 'D' | 'Q' | 'K' | 'S' | 'R'
   name: string
   origin: Origin
   target: OutputFormat
@@ -43,6 +44,7 @@ export interface Cell {
   sabotage?: SabotageId
   expectedKey?: VerifyDetailKey
   expectBroken?: { invariant: InvariantName; why: string }[]
+  edit?: { rename?: string; title?: string }
   core: boolean
 }
 
@@ -487,7 +489,63 @@ const LAYER_S: Cell[] = [
   ),
 ]
 
-export const CELLS: Cell[] = [...LAYER_C, ...LAYER_D, ...LAYER_Q, ...LAYER_K, ...LAYER_S]
+const R_ROWS: Row[] = [
+  {
+    id: 'R01',
+    name: 'Renombrar un MP3 en su sitio con todos los programas sincronizados, todos siguen al nombre nuevo',
+    origin: 'mp3n',
+    target: 'mp3',
+    dest: 'overwrite',
+    programs: 'all',
+    state: 'closed',
+    quality: 'source',
+    edit: { rename: 'Artista - Café Olé renombrada' },
+  },
+  {
+    id: 'R02',
+    name: 'Cambiar el título de un AIFF en su sitio con todos los programas sincronizados, todos muestran el título nuevo',
+    origin: 'aiff',
+    target: 'aiff',
+    dest: 'overwrite',
+    programs: 'all',
+    state: 'closed',
+    quality: 'source',
+    edit: { title: 'Café Olé (Título nuevo)' },
+  },
+  {
+    id: 'R03',
+    name: 'Renombrar un MP3 en su sitio sincronizando solo rekordbox, ningún programa queda en un archivo que no existe',
+    origin: 'mp3n',
+    target: 'mp3',
+    dest: 'overwrite',
+    programs: 'rekordbox',
+    state: 'closed',
+    quality: 'source',
+    edit: { rename: 'Artista - Café Olé solo rekordbox' },
+  },
+  {
+    id: 'R04',
+    name: 'Renombrar y retitular un AIFF en su sitio con los programas abiertos, todos lo siguen al cerrarse',
+    origin: 'aiff',
+    target: 'aiff',
+    dest: 'overwrite',
+    programs: 'all',
+    state: 'open',
+    quality: 'source',
+    edit: { rename: 'Artista - Café Olé con todo abierto', title: 'Café Olé (Abierto)' },
+  },
+]
+
+const LAYER_R: Cell[] = R_ROWS.map((row) => cell('R', row))
+
+export const CELLS: Cell[] = [
+  ...LAYER_C,
+  ...LAYER_D,
+  ...LAYER_Q,
+  ...LAYER_K,
+  ...LAYER_S,
+  ...LAYER_R,
+]
 
 export interface CellGroup {
   key: string
@@ -495,7 +553,7 @@ export interface CellGroup {
 }
 
 function batchKey(cell: Cell): string {
-  if (cell.sabotage || cell.layer === 'K') return cell.id
+  if (cell.sabotage || cell.layer === 'K' || cell.layer === 'R') return cell.id
   const base = `${cell.target} ${cell.dest} ${cell.programs} ${cell.state} ${cell.quality}`
   return cell.settings ? `${base} ${JSON.stringify(cell.settings)}` : base
 }

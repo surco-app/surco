@@ -436,7 +436,8 @@ function paddedTrack(t: TrickyTags): TrickyTags {
 
 function writtenTags(cell: Cell, t: TrickyTags): TrickyTags {
   const zeroPad = cell.settings?.zeroPadTrack ?? defaults.zeroPadTrack
-  return zeroPad && cell.target !== 'alac' ? paddedTrack(t) : t
+  const edited = cell.edit?.title ? { ...t, title: cell.edit.title } : t
+  return zeroPad && cell.target !== 'alac' ? paddedTrack(edited) : edited
 }
 
 function tagsBroken(target: OutputFormat, t: TrickyTags, path: string, out: Probe): string[] {
@@ -1138,6 +1139,100 @@ function diskBroken(e: Expected): Found[] {
   return found
 }
 
+function libraryPathOf(program: WritableProgram, set: LibrarySet, t: SeededTrack): string | null {
+  if (program === 'rekordbox' && set.rekordboxDb && t.rekordboxId) {
+    const db = openRekordboxDb(set.rekordboxDb, { readonly: true })
+    if (!db) return null
+    try {
+      const row = db
+        .prepare('SELECT FolderPath FROM djmdContent WHERE ID = ? AND rb_local_deleted = 0')
+        .get(t.rekordboxId) as { FolderPath: string } | undefined
+      return row?.FolderPath ?? null
+    } finally {
+      db.close()
+    }
+  }
+  if (program === 'engine' && set.engineDir && t.engineId) {
+    const db = new Database(engineDbPath(set.engineDir), { readonly: true, fileMustExist: true })
+    try {
+      const row = db.prepare('SELECT path FROM Track WHERE id = ?').get(t.engineId) as
+        | { path: string }
+        | undefined
+      return row ? resolve(set.engineDir, row.path) : null
+    } finally {
+      db.close()
+    }
+  }
+  if (program === 'traktor' && set.traktorNml && t.traktorAudioId) {
+    const entry = nmlCollection(readFileSync(set.traktorNml, 'utf8')).find(
+      (x) => x.audioId === t.traktorAudioId,
+    )
+    return entry?.path ?? null
+  }
+  return null
+}
+
+function reachableBroken(cell: Cell, set: LibrarySet, t: SeededTrack): Found[] {
+  const synced = new Set<Program>(syncedPrograms(cell.programs))
+  return PROGRAM_ORDER.filter((p) => !synced.has(p)).flatMap((program): Found[] => {
+    const path = libraryPathOf(program, set, t)
+    return path !== null && !existsSync(path)
+      ? [
+          [
+            'points',
+            `${PROGRAM_NAME[program]} sin sincronizar: apunta a '${path}', que ya no existe`,
+          ],
+        ]
+      : []
+  })
+}
+
+function libraryTitleOf(program: WritableProgram, set: LibrarySet, t: SeededTrack): string | null {
+  if (program === 'rekordbox' && set.rekordboxDb && t.rekordboxId) {
+    const db = openRekordboxDb(set.rekordboxDb, { readonly: true })
+    if (!db) return null
+    try {
+      const row = db
+        .prepare('SELECT Title FROM djmdContent WHERE ID = ? AND rb_local_deleted = 0')
+        .get(t.rekordboxId) as { Title: string } | undefined
+      return row?.Title ?? null
+    } finally {
+      db.close()
+    }
+  }
+  if (program === 'engine' && set.engineDir && t.engineId) {
+    const db = new Database(engineDbPath(set.engineDir), { readonly: true, fileMustExist: true })
+    try {
+      const row = db.prepare('SELECT title FROM Track WHERE id = ?').get(t.engineId) as
+        | { title: string | null }
+        | undefined
+      return row?.title ?? null
+    } finally {
+      db.close()
+    }
+  }
+  if (program === 'traktor' && set.traktorNml && t.traktorAudioId) {
+    const entry = nmlCollection(readFileSync(set.traktorNml, 'utf8')).find(
+      (x) => x.audioId === t.traktorAudioId,
+    )
+    return entry?.title ?? null
+  }
+  return null
+}
+
+function namesBroken(cell: Cell, set: LibrarySet, t: SeededTrack): Found[] {
+  const title = cell.edit?.title
+  if (!title) return []
+  return syncedPrograms(cell.programs)
+    .filter((p): p is WritableProgram => p !== 'music')
+    .flatMap((program): Found[] => {
+      const got = libraryTitleOf(program, set, t)
+      return got !== null && got.normalize('NFC') !== title.normalize('NFC')
+        ? [['names', `${PROGRAM_NAME[program]}: muestra '${got}', se esperaba '${title}'`]]
+        : []
+    })
+}
+
 export function libraryInvariants(
   cell: Cell,
   set: LibrarySet,
@@ -1162,6 +1257,8 @@ export function libraryInvariants(
       : []),
     ...(set.music ? musicNewEntries(set) : []),
     ...diskBroken(expected),
+    ...reachableBroken(cell, set, track),
+    ...namesBroken(cell, set, track),
     ...collateralBroken(cell, set),
     ...bystanderRowsBroken(set),
     ...programs

@@ -19,13 +19,26 @@ const toMusic = (dest: string) => dest.startsWith('appleMusic')
 // the 131 combinations it claims are the ones it runs. These are fixed data, so the proof
 // that they cover what the spec promises can be pure.
 describe('the results matrix cells', () => {
-  it('has 131 cells with unique ids', () => {
-    expect(CELLS).toHaveLength(131)
-    expect(new Set(CELLS.map((cell) => cell.id)).size).toBe(131)
+  // A change made in Surco has to reach every library holding the track, and the bug that
+  // started this layer was a rename only one program followed. Each edit is judged alone,
+  // in place, with programs synced, left out of sync, and open.
+  it('renames and retitles in place in layer R, with libraries synced, unsynced and open', () => {
+    const r = layer('R')
+    expect(r.every((cell) => cell.dest === 'overwrite' && cell.edit)).toBe(true)
+    expect(r.some((cell) => cell.edit?.rename && cell.programs === 'all')).toBe(true)
+    expect(r.some((cell) => cell.edit?.title && !cell.edit.rename)).toBe(true)
+    expect(r.some((cell) => cell.edit?.rename && cell.programs !== 'all')).toBe(true)
+    expect(r.some((cell) => cell.edit?.rename && cell.state === 'open')).toBe(true)
+    expect(new Set(groupsOf(r).map((g) => g.cells.length))).toEqual(new Set([1]))
+  })
+
+  it('has 135 cells with unique ids', () => {
+    expect(CELLS).toHaveLength(135)
+    expect(new Set(CELLS.map((cell) => cell.id)).size).toBe(135)
     const counts = Object.fromEntries(
-      (['C', 'D', 'Q', 'K', 'S'] as const).map((name) => [name, layer(name).length]),
+      (['C', 'D', 'Q', 'K', 'S', 'R'] as const).map((name) => [name, layer(name).length]),
     )
-    expect(counts).toEqual({ C: 50, D: 28, Q: 12, K: 14, S: 27 })
+    expect(counts).toEqual({ C: 50, D: 28, Q: 12, K: 14, S: 27, R: 4 })
     expect(layer('K').map((cell) => cell.id)).toEqual(
       Array.from({ length: 14 }, (_, i) => `K${String(i + 1).padStart(2, '0')}`),
     )
@@ -154,11 +167,11 @@ describe('the results matrix cells', () => {
   // were not built for.
   it('runs every sabotaged and every regression cell on its own', () => {
     const groups = groupsOf(CELLS)
-    for (const cell of CELLS.filter((c) => c.sabotage || c.layer === 'K')) {
+    for (const cell of CELLS.filter((c) => c.sabotage || c.layer === 'K' || c.layer === 'R')) {
       const group = groups.find((g) => g.cells.includes(cell))
       expect(group?.cells, cell.id).toEqual([cell])
     }
-    expect(groups.flatMap((g) => g.cells)).toHaveLength(131)
+    expect(groups.flatMap((g) => g.cells)).toHaveLength(135)
     expect(new Set(groups.map((g) => g.key)).size).toBe(groups.length)
   })
 
@@ -223,6 +236,6 @@ describe('the results matrix cells', () => {
       expect(cell.name, cell.id).not.toMatch(/[—:]/)
       expect(cell.name.length, cell.id).toBeGreaterThan(0)
     }
-    expect(new Set(CELLS.map((cell) => cell.name)).size).toBe(131)
+    expect(new Set(CELLS.map((cell) => cell.name)).size).toBe(135)
   })
 })

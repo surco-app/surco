@@ -76,7 +76,7 @@ const inPlace = (cell: Cell, source: string): boolean =>
 
 function writtenPath(cell: Cell, source: string, outputDir: string): string {
   const ext = EXTENSION[cell.target]
-  const stem = basename(source, extname(source))
+  const stem = cell.edit?.rename ?? basename(source, extname(source))
   if (cell.dest === 'beside') {
     const beside = join(dirname(source), `${stem}${ext}`)
     return existsSync(beside) ? join(dirname(source), `${stem} (2)${ext}`) : beside
@@ -247,6 +247,10 @@ export async function runFixture(
   try {
     if (first.state === 'open') programsOpen(true)
     await surco.drop(...sources.map((s) => s.path))
+    for (const [i, cell] of group.cells.entries()) {
+      if (cell.edit?.title) surco.editMeta(names[i], { title: cell.edit.title })
+      if (cell.edit?.rename) surco.patchTrack(names[i], { outputName: cell.edit.rename })
+    }
     if (first.quality === 'trim') await surco.trimDetectedSilence()
     if (toMusic(first)) for (const name of names) await surco.convertInEditor(name)
     else await surco.convertAll('confirm', first.target)
