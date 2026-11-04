@@ -78,3 +78,12 @@ export function seratoPathOn(file: string, root: SeratoLibraryRoot): string {
   const rest = root.root !== '/' && under(file, root.root) ? file.slice(root.root.length) : file
   return rest.replace(/^\/+/, '')
 }
+
+export function seratoLinkId(index: number, crateFile: string): string {
+  return `${index}:${crateFile}`
+}
+
+export function parseSeratoLinkId(linkId: string): { index: number; crateFile: string } | null {
+  const match = linkId.match(/^(\d+):(.+)$/)
+  return match ? { index: Number(match[1]), crateFile: match[2] } : null
+}

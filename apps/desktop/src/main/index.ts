@@ -193,6 +193,7 @@ import { applySeratoBatch } from './seratoBatch'
 import { registerSeratoCueQueueIpc } from './seratoCueQueueIpc'
 import { seratoLibraryRoots } from './seratoLibrary'
 import { recoverSeratoTemps } from './seratoLibraryWrite'
+import { registerSeratoPlaylistEditIpc } from './seratoPlaylistEditIpc'
 import { registerSeratoPlaylistsIpc } from './seratoPlaylistsIpc'
 import { loadLastSession, saveLastSession } from './session'
 import {
@@ -1435,6 +1436,13 @@ function registerIpc(): void {
     isRunning: DJ_PROCESSES.serato.isRunning,
     onWaiting: seratoCueQueueWatch.poke,
     onReady: seratoCueQueueWatch.poke,
+  })
+  registerSeratoPlaylistEditIpc({
+    roots: seratoRoots,
+    queue: seratoCueQueue,
+    isRunning: DJ_PROCESSES.serato.isRunning,
+    onApplied: programQueues.serato.announceApplied,
+    onWaiting: seratoCueQueueWatch.poke,
   })
   ipcMain.handle('traktor:canSave', () => traktorWritePath() !== '')
   registerTraktorPlaylistEditIpc({

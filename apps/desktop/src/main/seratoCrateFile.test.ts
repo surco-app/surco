@@ -4,7 +4,9 @@ import {
   crateFamily,
   crateIdOf,
   crateTrackPaths,
+  parseSeratoLinkId,
   renamedCrateId,
+  seratoLinkId,
   seratoPathOn,
   seratoRootOf,
   validCrateName,
@@ -125,5 +127,13 @@ describe('serato crate files', () => {
     expect(seratoPathOn('/Volumes/Gig/Tracks/t.mp3', roots[1])).toBe('Tracks/t.mp3')
     expect(seratoPathOn('/Users/dj/t.mp3', roots[0])).toBe('Users/dj/t.mp3')
     expect(seratoRootOf('/Volumes/Other/t.mp3', roots)).toBeNull()
+  })
+
+  it('reads back a link id with the crate file it names, and nothing from anything else', () => {
+    const file = '/Volumes/Gig: B/_Serato_/Subcrates/A%%B.crate'
+    expect(parseSeratoLinkId(seratoLinkId(3, file))).toEqual({ index: 3, crateFile: file })
+    expect(parseSeratoLinkId('fri:0:HD/:m/:a.mp3')).toBeNull()
+    expect(parseSeratoLinkId('-1:/a.crate')).toBeNull()
+    expect(parseSeratoLinkId('7')).toBeNull()
   })
 })

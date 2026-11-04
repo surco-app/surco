@@ -3,6 +3,7 @@ import { join, posix } from 'node:path'
 import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import type { AppleMusicTrackMeta, SourceNode, SourcePlaylistEntry } from '../shared/types'
+import { crateTrackPaths, seratoLinkId } from './seratoCrateFile'
 import {
   crateTree,
   parseSeratoCrate,
@@ -23,6 +24,7 @@ export type SeratoLibraryTrack = SeratoTrack & { file: string }
 export interface SeratoLibrary {
   tracks: SeratoLibraryTrack[]
   crates: Map<string, string[]>
+  links: Map<string, string[]>
   unreadable: string[]
 }
 
@@ -54,23 +56,38 @@ function readRoot({ dir, root }: SeratoLibraryRoot): SeratoLibrary {
   const subcrates = join(dir, 'Subcrates')
   const names = existsSync(subcrates) ? readdirSync(subcrates) : []
   const crates = new Map<string, string[]>()
+  const links = new Map<string, string[]>()
   for (const name of names.filter((n) => n.endsWith('.crate'))) {
-    const files = readCrate(join(subcrates, name))
-    if (files) crates.set(name.slice(0, -'.crate'.length), files.map(fileOf))
+    const file = join(subcrates, name)
+    const rows = readCrate(file)
+    if (!rows) continue
+    const id = name.slice(0, -'.crate'.length)
+    crates.set(id, rows.files.map(fileOf))
+    links.set(
+      id,
+      rows.indexes.map((i) => seratoLinkId(i, file)),
+    )
   }
-  return { tracks, crates, unreadable: database.truncated ? [dir] : [] }
+  return { tracks, crates, links, unreadable: database.truncated ? [dir] : [] }
 }
 
-function readCrate(file: string): string[] | null {
+function crateRows(bytes: Uint8Array): { files: string[]; indexes: number[] } {
+  const files = parseSeratoCrate(bytes)
+  const paths = crateTrackPaths(bytes)
+  const indexes = paths ? paths.flatMap((path, i) => (path ? [i] : [])) : files.map((_, i) => i)
+  return { files, indexes }
+}
+
+function readCrate(file: string): { files: string[]; indexes: number[] } | null {
   try {
-    return parsedFile(file, parseSeratoCrate)
+    return parsedFile(file, crateRows)
   } catch {
     return null
   }
 }
 
 export function readSeratoLibrary(roots: SeratoLibraryRoot[]): SeratoLibrary {
-  const library: SeratoLibrary = { tracks: [], crates: new Map(), unreadable: [] }
+  const library: SeratoLibrary = { tracks: [], crates: new Map(), links: new Map(), unreadable: [] }
   for (const root of roots) {
     let part: SeratoLibrary
     try {
@@ -81,8 +98,10 @@ export function readSeratoLibrary(roots: SeratoLibraryRoot[]): SeratoLibrary {
     }
     library.tracks.push(...part.tracks)
     library.unreadable.push(...part.unreadable)
-    for (const [id, files] of part.crates)
+    for (const [id, files] of part.crates) {
       library.crates.set(id, [...(library.crates.get(id) ?? []), ...files])
+      library.links.set(id, [...(library.links.get(id) ?? []), ...(part.links.get(id) ?? [])])
+    }
   }
   return library
 }
@@ -140,9 +159,11 @@ export function seratoPlaylist(
   if (id === RECENTLY_ADDED_ID) return recentTracks(library, now).map((t) => entryOf(t.file, t))
   if (id === ALL_TRACKS_ID) return newestFirst(library.tracks).map((t) => entryOf(t.file, t))
   const byFile = new Map(library.tracks.map((t) => [t.file.normalize('NFC'), t]))
-  return (library.crates.get(id) ?? []).map((file) =>
-    entryOf(file, byFile.get(file.normalize('NFC'))),
-  )
+  const links = library.links.get(id) ?? []
+  return (library.crates.get(id) ?? []).map((file, i) => ({
+    ...entryOf(file, byFile.get(file.normalize('NFC'))),
+    linkId: links[i],
+  }))
 }
 
 export function seratoMembership(

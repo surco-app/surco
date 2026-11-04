@@ -15,6 +15,7 @@ vi.mock('node:fs', async (importOriginal) => {
 
 import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
+import { parseSeratoLinkId, seratoLinkId } from './seratoCrateFile'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
 import {
   readSeratoLibrary,
@@ -170,7 +171,9 @@ describe('the Serato tab', () => {
   })
 
   it('gives a crate its tracks in the order the DJ arranged, each one marked as a Serato track', () => {
-    const { drive, roots } = twoLibraries()
+    const { home, drive, roots } = twoLibraries()
+    const homeHouse = join(home, 'Music', '_Serato_', 'Subcrates', 'House.crate')
+    const driveHouse = join(drive, '_Serato_', 'Subcrates', 'House.crate')
     const entries = seratoPlaylist(readSeratoLibrary(roots), 'House', NOW)
     expect(entries).toEqual([
       {
@@ -178,20 +181,53 @@ describe('the Serato tab', () => {
         separator: false,
         meta: {},
         contentId: 'serato:/Users/dj/Music/old.mp3',
+        linkId: seratoLinkId(0, homeHouse),
       },
       {
         path: '/Users/dj/Music/new.mp3',
         separator: false,
         meta: { bpm: '128', key: '8A' },
         contentId: 'serato:/Users/dj/Music/new.mp3',
+        linkId: seratoLinkId(1, homeHouse),
       },
       {
         path: join(drive, 'Tracks/gig.flac'),
         separator: false,
         meta: {},
         contentId: `serato:${join(drive, 'Tracks/gig.flac')}`,
+        linkId: seratoLinkId(0, driveHouse),
       },
     ])
+  })
+
+  it('gives every crate row a link id the edit can resolve', () => {
+    const base = mkdtempSync(join(tmpdir(), 'surco-serato-library-'))
+    const dir = seratoFolder(join(base, 'Music'), [{ pfil: 'a.mp3' }])
+    const file = join(dir, 'Subcrates', 'A.crate')
+    writeFileSync(
+      file,
+      concat([
+        frame('otrk', frame('ptrk', utf16be('a.mp3'))),
+        frame('otrk', frame('tvcn', utf16be('no path'))),
+        frame('otrk', frame('ptrk', utf16be('b.mp3'))),
+      ]),
+    )
+    const entries = seratoPlaylist(readSeratoLibrary(seratoLibraryRoots(base, [])), 'A', NOW)
+    expect(entries.map((e) => parseSeratoLinkId(e.linkId ?? ''))).toEqual([
+      { index: 0, crateFile: file },
+      { index: 2, crateFile: file },
+    ])
+  })
+
+  it('gives no link id in Recently added or All tracks, which are no crate', () => {
+    const { roots } = twoLibraries()
+    const library = readSeratoLibrary(roots)
+    const rows = [
+      ...seratoPlaylist(library, RECENTLY_ADDED_ID, NOW),
+      ...seratoPlaylist(library, ALL_TRACKS_ID, NOW),
+    ]
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows.every((e) => !('linkId' in e))).toBe(true)
   })
 
   it('says which crates hold each file, so the playlists field can fill in', () => {

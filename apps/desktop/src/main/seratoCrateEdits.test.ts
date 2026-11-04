@@ -1,11 +1,13 @@
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('./seratoCuesWrite', () => ({ applySeratoCuesBatch: vi.fn() }))
 
 import { seratoEditFiles } from './seratoCrateEdits'
-import { crateFileOf, crateTrackPaths } from './seratoCrateFile'
+import { crateFileOf, crateTrackPaths, seratoLinkId } from './seratoCrateFile'
 import {
+  addTo,
   apply,
   applyOne,
   crateBytes,
@@ -13,7 +15,9 @@ import {
   del,
   editOp,
   listCrates,
+  move,
   onlyBackupOf,
+  remove,
   rename,
   rewrittenBySerato,
   touch,
@@ -143,6 +147,127 @@ describe('deleting a crate', () => {
     expect(readFileSync(onlyBackupOf(deps.backupDir, 'Music/Subcrates/A.crate'))).toEqual(
       bytes.internal.A,
     )
+  })
+})
+
+function onDisk(...files: string[]): void {
+  for (const file of files) {
+    mkdirSync(join(file, '..'), { recursive: true })
+    writeFileSync(file, 'audio')
+  }
+}
+
+describe('tracks in a crate', () => {
+  it('adds tracks to the crate file on their own volume and counts the rest', async () => {
+    const { base, roots, deps } = twoRoots({ internal: [['A', []]], gig: [['A', []]] })
+    const a = join(base, 'home', 'dj', 'a.mp3')
+    const b = join(roots[1].root, 'b.mp3')
+    onDisk(a, b)
+    const outcome = await apply(
+      roots,
+      deps,
+      addTo('A', a, b, '/Volumes/Other/c.mp3', join(base, 'home', 'dj', 'missing.mp3')),
+    )
+    expect(outcome.report).toEqual({ added: 2, already: 0, notInCollection: 2, ambiguous: 0 })
+    expect(crateTrackPaths(readFileSync(crateFileOf(roots[1], 'A')))).toEqual(['b.mp3'])
+    expect(crateTrackPaths(readFileSync(crateFileOf(roots[0], 'A')))).toEqual([a.slice(1)])
+  })
+
+  it('takes the last path of a track as the file to add', async () => {
+    const { base, roots, deps } = twoRoots({ internal: [['A', []]] })
+    const now = join(base, 'home', 'dj', 'now.mp3')
+    onDisk(now)
+    await apply(roots, deps, {
+      kind: 'add',
+      playlistId: 'A',
+      tracks: [{ paths: [join(base, 'home', 'dj', 'before.mp3'), now] }],
+    })
+    expect(crateTrackPaths(readFileSync(crateFileOf(roots[0], 'A')))).toEqual([now.slice(1)])
+  })
+
+  it('counts a track already in the crate under another normalization as already there', async () => {
+    const { roots, deps } = twoRoots({
+      internal: [['A', ['Users/dj/Música/a.mp3'.normalize('NFD')]]],
+    })
+    const outcome = await apply(roots, deps, addTo('A', '/Users/dj/Música/a.mp3'.normalize('NFC')))
+    expect(outcome.report).toMatchObject({ added: 0, already: 1 })
+  })
+
+  it('refuses a track for a crate that only lives on another drive', async () => {
+    const { roots, deps } = twoRoots({ gig: ['OnlyGig'] })
+    expect((await apply(roots, deps, addTo('OnlyGig', '/Users/dj/a.mp3'))).report).toMatchObject({
+      added: 0,
+      notInCollection: 1,
+    })
+  })
+
+  it('moves and removes rows by link id, keeping the crate columns', async () => {
+    const { roots, deps } = twoRoots({ internal: [['A', ['a', 'b', 'c']]] })
+    const file = crateFileOf(roots[0], 'A')
+    const columns = (): Buffer => {
+      const bytes = readFileSync(file)
+      return bytes.subarray(0, bytes.indexOf('otrk'))
+    }
+    const before = columns()
+    await apply(roots, deps, move('A', [seratoLinkId(2, file)], seratoLinkId(0, file)))
+    expect(crateTrackPaths(readFileSync(file))).toEqual(['c', 'a', 'b'])
+    await apply(roots, deps, remove('A', [seratoLinkId(1, file)]))
+    expect(crateTrackPaths(readFileSync(file))).toEqual(['c', 'b'])
+    expect(columns()).toEqual(before)
+  })
+
+  it('moves rows to the end when there is nothing to land before', async () => {
+    const { roots, deps } = twoRoots({ internal: [['A', ['a', 'b', 'c']]] })
+    const file = crateFileOf(roots[0], 'A')
+    await apply(roots, deps, move('A', [seratoLinkId(0, file)], null))
+    expect(crateTrackPaths(readFileSync(file))).toEqual(['b', 'c', 'a'])
+  })
+
+  it('refuses to remove a row the crate no longer has', async () => {
+    const { roots, deps } = twoRoots({ internal: [['A', ['a']]] })
+    const file = crateFileOf(roots[0], 'A')
+    expect(await apply(roots, deps, remove('A', [seratoLinkId(1, file)]))).toMatchObject({
+      applied: false,
+      reason: 'stale',
+    })
+    expect(crateTrackPaths(readFileSync(file))).toEqual(['a'])
+  })
+
+  it('never touches a row of another crate, whatever link id it is given', async () => {
+    const { roots, deps } = twoRoots({
+      internal: [
+        ['A', ['a']],
+        ['B', ['b']],
+      ],
+    })
+    const other = crateFileOf(roots[0], 'B')
+    expect(await apply(roots, deps, remove('A', [seratoLinkId(0, other)]))).toMatchObject({
+      applied: false,
+      reason: 'stale',
+    })
+    expect(crateTrackPaths(readFileSync(other))).toEqual(['b'])
+  })
+
+  it('refuses a move across the crate files of two drives', async () => {
+    const { roots, deps } = twoRoots({ internal: [['A', ['a', 'b']]], gig: [['A', ['c']]] })
+    const internal = crateFileOf(roots[0], 'A')
+    const gig = crateFileOf(roots[1], 'A')
+    expect(
+      await apply(roots, deps, move('A', [seratoLinkId(0, gig)], seratoLinkId(0, internal))),
+    ).toMatchObject({ applied: false, reason: 'stale' })
+    expect(
+      await apply(roots, deps, move('A', [seratoLinkId(0, internal), seratoLinkId(0, gig)], null)),
+    ).toMatchObject({ applied: false, reason: 'stale' })
+    expect(crateTrackPaths(readFileSync(internal))).toEqual(['a', 'b'])
+  })
+
+  it('never rewrites a truncated crate', async () => {
+    const { roots, deps, bytes } = twoRoots({ internal: ['A'], truncated: ['A'] })
+    expect(await apply(roots, deps, addTo('A', '/Users/dj/a.mp3'))).toMatchObject({
+      applied: false,
+      reason: 'unreadable',
+    })
+    expect(readFileSync(crateFileOf(roots[0], 'A'))).toEqual(bytes.internal.A)
   })
 })
 

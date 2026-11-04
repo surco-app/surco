@@ -22,7 +22,13 @@ export const crateBytes = (tracks: string[]): Buffer =>
 
 export type TestDeps = SeratoCommitDeps & { roots: () => SeratoLibraryRoot[] }
 
-export function twoRoots(crates: { internal?: string[]; gig?: string[] }) {
+type CrateSpec = string | [string, string[]]
+
+export function twoRoots(crates: {
+  internal?: CrateSpec[]
+  gig?: CrateSpec[]
+  truncated?: string[]
+}) {
   const base = mkdtempSync(join(tmpdir(), 'surco-serato-lib-'))
   const roots: SeratoLibraryRoot[] = [
     { dir: join(base, 'home', 'Music', '_Serato_'), root: '/' },
@@ -31,8 +37,11 @@ export function twoRoots(crates: { internal?: string[]; gig?: string[] }) {
   const bytes: Record<'internal' | 'gig', Record<string, Buffer>> = { internal: {}, gig: {} }
   for (const [i, side] of (['internal', 'gig'] as const).entries()) {
     mkdirSync(join(roots[i].dir, 'Subcrates'), { recursive: true })
-    for (const id of crates[side] ?? []) {
-      const b = crateBytes([`Users/dj/${side}/${id}.mp3`])
+    for (const spec of crates[side] ?? []) {
+      const [id, tracks] =
+        typeof spec === 'string' ? [spec, [`Users/dj/${side}/${spec}.mp3`]] : spec
+      const whole = crateBytes(tracks)
+      const b = crates.truncated?.includes(id) ? whole.subarray(0, whole.length - 3) : whole
       writeFileSync(crateFileOf(roots[i], id), b)
       bytes[side][id] = b
     }
@@ -42,7 +51,7 @@ export function twoRoots(crates: { internal?: string[]; gig?: string[] }) {
     roots: () => roots,
     seratoOpen: async () => false,
   }
-  return { roots, deps, bytes }
+  return { base, roots, deps, bytes }
 }
 
 export const create = (parentId: string, name: string): RekordboxPlaylistEdit => ({
@@ -57,6 +66,21 @@ export const rename = (playlistId: string, name: string): RekordboxPlaylistEdit 
   name,
 })
 export const del = (playlistId: string): RekordboxPlaylistEdit => ({ kind: 'delete', playlistId })
+export const addTo = (playlistId: string, ...paths: string[]): RekordboxPlaylistEdit => ({
+  kind: 'add',
+  playlistId,
+  tracks: paths.map((p) => ({ paths: [p] })),
+})
+export const move = (
+  playlistId: string,
+  linkIds: string[],
+  beforeLinkId: string | null,
+): RekordboxPlaylistEdit => ({ kind: 'move', playlistId, linkIds, beforeLinkId })
+export const remove = (playlistId: string, linkIds: string[]): RekordboxPlaylistEdit => ({
+  kind: 'remove',
+  playlistId,
+  linkIds,
+})
 
 let next = 0
 export const editOp = (

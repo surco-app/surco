@@ -214,6 +214,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     rekordboxHasSeparator: async () => false,
     traktorHasSeparator: async () => false,
     editTraktorPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
+    editSeratoPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
     engineAvailable: async () => false,
     loadEngineTree: async () => [],
     engineRecentCount: async () => 0,

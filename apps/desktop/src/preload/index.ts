@@ -310,6 +310,8 @@ const api: Api = {
     edit: RekordboxPlaylistEdit,
     label?: string,
   ): Promise<RekordboxEditResult> => ipcRenderer.invoke('traktor:edit', edit, label),
+  editSeratoPlaylist: (edit: RekordboxPlaylistEdit, label?: string): Promise<RekordboxEditResult> =>
+    ipcRenderer.invoke('serato:edit', edit, label),
   traktorHasSeparator: (): Promise<boolean> => ipcRenderer.invoke('traktor:hasSeparator'),
   engineCueQueue: (): Promise<RekordboxQueueState> => ipcRenderer.invoke('engine:cueQueue'),
   applyEngineCueQueue: (): Promise<RekordboxQueueApplied | null> =>
