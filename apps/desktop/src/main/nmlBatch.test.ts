@@ -1,9 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import {
-  abandonNmlBatch,
   beginNmlBatch,
   endNmlBatch,
+  foldNmlBatch,
+  nmlBatchOpen,
   recordedNmlPatch,
   recordNmlPatch,
   redirectNmlPatch,
@@ -91,11 +92,14 @@ describe('nmlBatch', () => {
   // encima de cero: a partir de ahí ningún lote volvería a volcar y la colección se
   // quedaría sin actualizar en silencio hasta reiniciar la app. Abandonar el lote en
   // vuelo al recargar devuelve el acumulador a un estado limpio.
-  it('recovers after a batch whose end never arrives', () => {
+  it('hands a reloaded run its patches at the next end, so Traktor still follows what was converted', () => {
     beginNmlBatch()
-    recordNmlPatch(patch('lost.aiff'))
+    beginNmlBatch()
+    recordNmlPatch(patch('before-reload.aiff'))
 
-    abandonNmlBatch()
+    expect(foldNmlBatch()).toBe(true)
+    expect(endNmlBatch()).toEqual([patch('before-reload.aiff')])
+    expect(nmlBatchOpen()).toBe(false)
 
     beginNmlBatch()
     recordNmlPatch(patch('after-reload.aiff'))
@@ -192,9 +196,10 @@ describe('nmlBatch', () => {
       expect(endNmlBatch()[0].outputPath).toBeUndefined()
     })
 
-    it('does not redirect a patch from an abandoned batch', () => {
+    it('does not redirect a patch from a batch that already ended', () => {
       recorded()
-      abandonNmlBatch()
+      foldNmlBatch()
+      endNmlBatch()
       beginNmlBatch()
       recordNmlPatch(patch('x.aiff'))
       redirectNmlPatch('/tmp/surco-1/x.wav', '/m/A/x.wav')

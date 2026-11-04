@@ -111,15 +111,10 @@ export function redirectRekordboxRepoint(currentTo: string, landedAt: string): v
   repoints[index] = { ...repoints[index], to: landedAt }
 }
 
-// The renderer can vanish between a begin and its end (a reload, or the crash-and-reload
-// this app has seen in the wild). Without a way back, depth would stay above zero and no
-// later batch would ever flush: the collection would quietly stop being updated until the
-// app restarted. Dropping the in-flight batch loses those repoints — their conversions
-// are done and the collection merely misses them, which the user can redo — and returns
-// the accumulator to a working state.
-export function abandonRekordboxBatch(): void {
-  repoints = []
-  depth = 0
+export function foldRekordboxBatch(): boolean {
+  if (depth === 0) return false
+  depth = 1
+  return true
 }
 
 export function rekordboxBatchOpen(): boolean {

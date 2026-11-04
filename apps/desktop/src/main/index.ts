@@ -157,7 +157,7 @@ import { createMoments } from './moments'
 import { isIssuedPair } from './musicDuplicates'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
-import { abandonNmlBatch, beginNmlBatch, recordedNmlPatch, redirectNmlPatch } from './nmlBatch'
+import { beginNmlBatch, foldNmlBatch, recordedNmlPatch, redirectNmlPatch } from './nmlBatch'
 import { filesFromArgv, routeOpenedFile } from './openedFiles'
 import { configureBackupStore } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
@@ -168,9 +168,9 @@ import { getProvider } from './providers'
 import { createQuitGuard } from './quitGuard'
 import { trashRecoverably, trashWithoutRoom } from './recoverableTrash'
 import {
-  abandonRekordboxBatch,
   attachPlaylists,
   beginRekordboxBatch,
+  foldRekordboxBatch,
   recordedRekordboxRepoint,
   redirectRekordboxRepoint,
   rekordboxBatchOpen,
@@ -350,6 +350,8 @@ function seratoHolds(): (path: string) => boolean {
     return files.has(path.normalize('NFC'))
   }
 }
+
+let endConversionBatch: ((sender: WebContents) => Promise<void>) | undefined
 
 const sessions = {
   rekordbox: rekordboxSessionBackup,
@@ -928,13 +930,10 @@ function createWindow(): BrowserWindow {
     if (isWebUrl(url)) shell.openExternal(url)
   })
 
-  // A reload wipes the renderer mid-conversion, so the end that would have closed an
-  // open batch never arrives. Left alone the accumulator's depth stays above zero and
-  // no later batch ever flushes again — the collection would quietly stop updating
-  // until the app restarted. Abandon whatever was in flight instead.
   win.webContents.on('did-start-loading', () => {
-    abandonNmlBatch()
-    abandonRekordboxBatch()
+    const rekordbox = foldRekordboxBatch()
+    const nml = foldNmlBatch()
+    if (rekordbox || nml) endConversionBatch?.(win.webContents)
   })
 
   if (process.env.ELECTRON_RENDERER_URL) {
@@ -1540,13 +1539,14 @@ function registerIpc(): void {
   // pending when it lands. The flush judges the tracks registered before this end arrived,
   // so a batch begun meanwhile waits for its own; a library a nested end took nothing from
   // is left for the end that does.
-  ipcMain.on('process:batch-end', (e) => {
+  ipcMain.on('process:batch-end', (e) => endConversionBatch?.(e.sender))
+  endConversionBatch = (sender) => {
     const upTo = verifyRegistry.cut()
     return moments.runFlush(serialLibraryFlush, rekordboxBatchOpen, async (later) => {
       let outcome: FlushOutcome = { rekordbox: 'failed', engine: 'failed', traktor: 'failed' }
       try {
         outcome = await flushConversionBatch(
-          hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
+          hostFor(BrowserWindow.fromWebContents(sender), sender),
           sessions,
           {
             rekordbox: {
@@ -1575,7 +1575,7 @@ function registerIpc(): void {
           .catch((err) => log.warn(`verification after the batch failed: ${String(err)}`))
       }
     })
-  })
+  }
 
   registerVerifyIpc(verifyRegistry)
 

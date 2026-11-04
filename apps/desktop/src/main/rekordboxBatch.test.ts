@@ -3,10 +3,10 @@ import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { emptyMetadata } from '../shared/metadata'
 import {
-  abandonRekordboxBatch,
   attachPlaylists,
   beginRekordboxBatch,
   endRekordboxBatch,
+  foldRekordboxBatch,
   recordedRekordboxRepoint,
   recordRekordboxRepoint,
   redirectRekordboxRepoint,
@@ -18,7 +18,7 @@ const a = { from: '/m/one.mp3', to: '/m/one.wav' }
 const b = { from: '/m/two.mp3', to: '/m/two.wav' }
 
 beforeEach(() => {
-  abandonRekordboxBatch()
+  while (rekordboxBatchOpen()) endRekordboxBatch()
 })
 
 describe('rekordbox batch', () => {
@@ -88,14 +88,23 @@ describe('rekordbox batch', () => {
   // reload this app has seen in the wild. Without a way back, the depth would stay above
   // zero and no later batch would ever flush again: the collection would quietly stop
   // being updated until the app restarted.
-  it('recovers when a batch is abandoned mid-flight', () => {
+  it('hands a reloaded run its repoints at the next end, so files already renamed are still followed', () => {
+    beginRekordboxBatch()
     beginRekordboxBatch()
     recordRekordboxRepoint(a)
-    abandonRekordboxBatch()
+
+    expect(foldRekordboxBatch()).toBe(true)
+    expect(endRekordboxBatch()).toEqual([a])
+    expect(rekordboxBatchOpen()).toBe(false)
 
     beginRekordboxBatch()
     recordRekordboxRepoint(b)
     expect(endRekordboxBatch()).toEqual([b])
+  })
+
+  it('folds nothing when no batch is open', () => {
+    expect(foldRekordboxBatch()).toBe(false)
+    expect(rekordboxBatchOpen()).toBe(false)
   })
 
   // A conversion that lands on the same path it started from changes nothing rekordbox
@@ -367,11 +376,12 @@ describe('playlists on a repoint', () => {
 })
 
 describe('a renderer reload', () => {
-  it('abandons the rekordbox batch along with the NML one, so later batches still flush', () => {
+  it('ends the open rekordbox and NML batches the way their own end would, so a reload loses no repoint', () => {
     const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
     const handler = source.match(/on\('did-start-loading', \(\) => \{([^}]*)\}\)/)?.[1] ?? ''
-    expect(handler).toContain('abandonNmlBatch()')
-    expect(handler).toContain('abandonRekordboxBatch()')
+    expect(handler).toContain('foldNmlBatch()')
+    expect(handler).toContain('foldRekordboxBatch()')
+    expect(handler).toContain('endConversionBatch?.(win.webContents)')
   })
 
   it('starts a fresh pre-run copy only when the outermost batch opens', () => {
@@ -394,7 +404,6 @@ describe('a renderer reload', () => {
 
 describe('beginRekordboxBatch', () => {
   it('says whether it opened a new run, so a convert started mid-run is told apart', () => {
-    abandonRekordboxBatch()
     expect(beginRekordboxBatch()).toBe(true)
     expect(beginRekordboxBatch()).toBe(false)
     endRekordboxBatch()
@@ -404,7 +413,6 @@ describe('beginRekordboxBatch', () => {
   })
 
   it('reports a batch as open from its first begin until its last end', () => {
-    abandonRekordboxBatch()
     expect(rekordboxBatchOpen()).toBe(false)
     beginRekordboxBatch()
     beginRekordboxBatch()
