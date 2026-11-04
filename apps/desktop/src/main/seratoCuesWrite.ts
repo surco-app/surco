@@ -73,12 +73,13 @@ export async function writeSeratoCues(
 
 const surcoColorOf = (rgb: number): number => nearestHotCueColor((0xff000000 | rgb) >>> 0)
 
-function seratoCueOf(wanted: WantedCue, was: SeratoCue[]): SeratoCue {
+function seratoCueOf(wanted: WantedCue, was: SeratoCue[], lead: number): SeratoCue {
   const before = was.find((c) => String(c.index) === wanted.id)
   const kept = before && wanted.color !== null && surcoColorOf(before.color) === wanted.color
+  const unmoved = before && seratoCueRows([before], lead)[0]?.ms === wanted.ms
   return {
     index: HOT_KINDS.indexOf(wanted.kind),
-    ms: wanted.ms,
+    ms: unmoved ? before.ms - lead : wanted.ms,
     color: kept ? before.color : hotCueArgb(wanted.color) & 0xffffff,
     name: before?.name ?? '',
   }
@@ -116,7 +117,10 @@ async function applySeratoOp(
   const upper = was
     .filter((c) => c.index >= HOT_KINDS.length)
     .map((c) => ({ ...c, ms: c.ms - lead }))
-  const cues = [...op.wanted.filter((c) => c.kind !== 0).map((c) => seratoCueOf(c, was)), ...upper]
+  const cues = [
+    ...op.wanted.filter((c) => c.kind !== 0).map((c) => seratoCueOf(c, was, lead)),
+    ...upper,
+  ]
   const applied = { outcome: { id: op.id, applied: true, notices }, wrote: true }
   if (sameCues(onSeratoClock(cues, lead), was)) return { ...applied, wrote: false }
   const rows = seratoCueRows(was, lead)

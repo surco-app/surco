@@ -35,7 +35,7 @@ export function seratoCueRows(cues: SeratoCue[], leadMs: number): TrackCueRow[] 
     .filter((c) => c.index < HOT_KINDS.length)
     .map((c) => ({
       id: String(c.index),
-      ms: c.ms - leadMs,
+      ms: Math.max(0, c.ms - leadMs),
       kind: HOT_KINDS[c.index],
       color: nearestHotCueColor((0xff000000 | c.color) >>> 0),
       ...(c.name && { name: c.name }),

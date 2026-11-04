@@ -109,6 +109,35 @@ beforeEach(() => configureOriginalKeeper(async () => ({ id: 'b1' }) as never))
 afterEach(() => configureOriginalKeeper(null))
 
 describe('applying the queued Serato cue saves', () => {
+  it('shows a cue Serato keeps before the MP3 lead at the start and saves past it untouched', async () => {
+    const payload = withSeratoCues(null, [
+      { index: 0, ms: 0, color: 0xcc0000, name: 'Intro' },
+      { index: 1, ms: 1500, color: 0x00cc00, name: '' },
+    ])
+    const file = wav('mp3', payload)
+    expect(await seratoLeadOfFile(file, 44100)).toBeGreaterThan(0)
+    const read = await seen(file)
+    expect(read.cues.map((c) => c.ms)[0]).toBe(0)
+    const taken = new Set(read.cues.map((c) => c.kind))
+    const free = HOT_KINDS.findIndex((kind) => !taken.has(kind))
+    const wanted = [...asWanted(read), { ms: 1000, kind: HOT_KINDS[free], color: null }]
+    const result = await applySeratoCuesBatch([op(file, read, wanted)], { ensureClosed: closed })
+    expect(result).toEqual({
+      ok: true,
+      wrote: true,
+      outcomes: [{ id: 'op1', applied: true, notices: [] }],
+    })
+    const alone = Buffer.from(
+      withSeratoCues(null, [readSeratoMarkers(file)?.cues[0] ?? (null as never)]),
+    )
+    const original = Buffer.from(
+      withSeratoCues(null, [{ index: 0, ms: 0, color: 0xcc0000, name: 'Intro' }]),
+    )
+    const entry = original.subarray(original.indexOf('CUE'), original.indexOf('BPMLOCK'))
+    expect(alone.subarray(alone.indexOf('CUE'), alone.indexOf('BPMLOCK'))).toEqual(entry)
+    expect(Buffer.from(readSeratoTrack(file)?.payload ?? []).indexOf(entry)).toBeGreaterThan(0)
+  }, 60000)
+
   it('waits without touching a file while Serato is open, since Serato rewrites its tags on the way out', async () => {
     const file = wav()
     const read = await seen(file)
