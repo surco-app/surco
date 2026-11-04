@@ -123,7 +123,7 @@ export function readSeratoMarkers(file: string): SeratoMarkers | null {
 }
 
 function oldBlockDisagrees(f: TagFile, ext: string, markers: SeratoMarkers | null): boolean {
-  if (ID3_EXTENSIONS.has(ext)) {
+  if (ext === '.mp3') {
     const block = id3Geob(f, MARKERS_V1)
     return block !== null && !seratoV1Agrees(seratoV1CueTimes(block), markers)
   }

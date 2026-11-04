@@ -18,8 +18,11 @@ import {
   SERATO_FLAC as FLAC,
   SERATO_M4A as M4A,
   SERATO_MP3 as MP3,
+  SERATO_V1_M4A_PRAY,
+  SERATO_V1_M4A_UNSET,
   seratoV1Armored,
   seratoV1Block,
+  seratoV1M4aArmored,
   SERATO_WAV as WAV,
 } from './seratoMarkersFixture'
 
@@ -404,15 +407,37 @@ describe('seratoV1CueTimes', () => {
     expect(seratoV1CueTimes(garbled)).toBeNull()
   })
 
-  it('reads the same block out of the armored value an M4A keeps', () => {
-    expect(seratoV1CueTimesArmored(seratoV1Armored([7444, 12756]))).toEqual([
-      7444,
-      12756,
-      null,
-      null,
-      null,
-    ])
+  it('reads the plain 32-bit times of the old block a real M4A keeps, 19 bytes to a slot', () => {
+    const pray = seratoV1M4aArmored([...SERATO_V1_M4A_PRAY, ...Array(11).fill(SERATO_V1_M4A_UNSET)])
+    expect(seratoV1CueTimesArmored(pray)).toEqual([7444, 12756, 19019, null, null])
+    expect(seratoV1Agrees(seratoV1CueTimesArmored(pray), markersFromArmored(M4A))).toBe(true)
+  })
+
+  it('cannot read an M4A old block that is cut short, garbled or not armored', () => {
     expect(seratoV1CueTimesArmored('djEgYmxvY2s=')).toBeNull()
+    expect(
+      seratoV1CueTimesArmored(seratoV1M4aArmored([SERATO_V1_M4A_PRAY[0].slice(0, 20)])),
+    ).toBeNull()
+    expect(
+      seratoV1CueTimesArmored(seratoV1M4aArmored(['01' + SERATO_V1_M4A_PRAY[0].slice(2)])),
+    ).toEqual([0x01001d14])
+    expect(
+      seratoV1CueTimesArmored(
+        seratoV1M4aArmored([
+          `${SERATO_V1_M4A_PRAY[0].slice(0, 16)}07${SERATO_V1_M4A_PRAY[0].slice(18)}`,
+        ]),
+      ),
+    ).toBeNull()
+  })
+
+  it('tells apart an M4A whose old block holds other cues than the new one, as Clicks.m4a did', () => {
+    const clicks = {
+      cues: [2950, 3000, 3050].map((ms, index) => ({ index, ms, color: 0xcc0000, name: '' })),
+      loops: [],
+    }
+    expect(
+      seratoV1Agrees(seratoV1CueTimesArmored(seratoV1Armored([3000, 6000, 9000])), clicks),
+    ).toBe(false)
   })
 })
 

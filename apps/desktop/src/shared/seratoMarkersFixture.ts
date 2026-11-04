@@ -90,8 +90,29 @@ export function seratoV1Block(cues: (number | null)[], loops = 0): Uint8Array {
   ])
 }
 
-export function seratoV1Armored(cues: (number | null)[]): string {
+export const SERATO_V1_M4A_UNSET = 'ffffffffffffffff00ffffffff000000000000'
+
+export const SERATO_V1_M4A_PRAY = [
+  '00001d14ffffffff00ffffffff00cc00000100',
+  '000031d4ffffffff00ffffffff00cc88000100',
+  '00004a4bffffffff00ffffffff000000cc0100',
+]
+
+function m4aCueEntry(ms: number): string {
+  return `${ms.toString(16).padStart(8, '0')}ffffffff00ffffffff00cc00000100`
+}
+
+export function seratoV1M4aArmored(entries: string[]): string {
   const head = 'application/octet-stream\0\0Serato Markers_\0'
-  const block = seratoV1Block(cues)
+  const count = entries.length.toString(16).padStart(8, '0')
+  const block = Buffer.from(`0205${count}${entries.join('')}`, 'hex')
   return btoa(head + String.fromCharCode(...block))
+}
+
+export function seratoV1Armored(cues: (number | null)[], loops = 9): string {
+  const slots = Array.from({ length: 5 }, (_, at) => {
+    const ms = cues[at] ?? null
+    return ms === null ? SERATO_V1_M4A_UNSET : m4aCueEntry(ms)
+  })
+  return seratoV1M4aArmored([...slots, ...Array(loops).fill(SERATO_V1_M4A_UNSET)])
 }

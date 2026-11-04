@@ -661,7 +661,11 @@ describe('Serato opening in the middle of a batch', () => {
   }, 60000)
 })
 
-function withOldBlock(ext: 'mp3' | 'm4a', markers: number[] | null, old: number[]): string {
+function withOldBlock(
+  ext: 'mp3' | 'm4a' | 'aiff',
+  markers: number[] | null,
+  old: number[],
+): string {
   const file = join(mkdtempSync(join(tmpdir(), 'surco-serato-v1-')), `track.${ext}`)
   execFileSync(FF, [
     '-y',
@@ -672,7 +676,7 @@ function withOldBlock(ext: 'mp3' | 'm4a', markers: number[] | null, old: number[
     '-i',
     'sine=frequency=440:duration=2',
     '-c:a',
-    ext === 'mp3' ? 'libmp3lame' : 'aac',
+    { mp3: 'libmp3lame', m4a: 'aac', aiff: 'pcm_s16be' }[ext],
     file,
   ])
   if (markers)
@@ -768,5 +772,22 @@ describe.each(['mp3', 'm4a'] as const)("Serato's older cue block in an %s", (ext
       ],
     })
     expect(readFileSync(file)).toEqual(before)
+  }, 60000)
+})
+
+describe("Serato's older cue block in an AIFF", () => {
+  it('writes over it, since Serato plays the new block of an AIFF as Pray.aiff showed', async () => {
+    const file = withOldBlock('aiff', [30000], [45012, 49974, 54874])
+    expect(readSeratoTrack(file)?.oldBlockDisagrees).toBe(false)
+    const read = await seen(file)
+    const wanted = asWanted(read).map((c) => ({ ...c, ms: c.ms + 300 }))
+    const result = await applySeratoCuesBatch([op(file, read, wanted)], { ensureClosed: closed })
+    expect(result).toEqual({
+      ok: true,
+      wrote: true,
+      outcomes: [{ id: 'op1', applied: true, notices: [] }],
+    })
+    expect(readSeratoMarkers(file)?.cues.map((c) => c.ms)).toEqual([30300])
+    expect(hasOldBlock(file)).toBe(false)
   }, 60000)
 })

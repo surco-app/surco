@@ -162,6 +162,12 @@ describe('carrySeratoCues from a track whose older cue block disagrees', () => {
     await carrySeratoCues(source, dest, { trimMs: 0, carry: true, strip: false })
 
     expect(readSeratoMarkers(dest)).toBeNull()
-    expect(readSeratoTrack(dest)?.oldBlockDisagrees).toBe(false)
+    const f = TagFile.createFromPath(dest)
+    try {
+      const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+      expect((id3?.frames ?? []).filter((frame) => frame.frameId.toString() === 'GEOB')).toEqual([])
+    } finally {
+      f.dispose()
+    }
   })
 })

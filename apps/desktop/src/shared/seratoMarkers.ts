@@ -262,6 +262,8 @@ export function readSeratoTempoMapArmored(value: string): SeratoTempoMap | null 
 
 const V1_ARMOR_HEADER = 'application/octet-stream\0\0Serato Markers_\0'
 const V1_ENTRY_BYTES = 22
+const V1_M4A_ENTRY_BYTES = 19
+const V1_M4A_UNSET = 0xffffffff
 const V1_CUE_SLOTS = 5
 const V1_SET = 0x00
 const V1_UNSET = 0x7f
@@ -295,7 +297,21 @@ export function seratoV1CueTimesArmored(value: string): (number | null)[] | null
   const armored = decodeBase64(value.replace(/\s/g, ''))
   if (!armored || !latin1(armored.subarray(0, V1_ARMOR_HEADER.length)).startsWith(V1_ARMOR_HEADER))
     return null
-  return seratoV1CueTimes(armored.subarray(V1_ARMOR_HEADER.length))
+  return m4aV1CueTimes(armored.subarray(V1_ARMOR_HEADER.length))
+}
+
+function m4aV1CueTimes(block: Uint8Array): (number | null)[] | null {
+  if (block.length < 6 || block[0] !== 2 || block[1] !== 5) return null
+  const count = u32(block, 2)
+  if (block.length < 6 + count * V1_M4A_ENTRY_BYTES) return null
+  const times: (number | null)[] = []
+  for (let slot = 0; slot < Math.min(count, V1_CUE_SLOTS); slot++) {
+    const at = 6 + slot * V1_M4A_ENTRY_BYTES
+    if (block[at + 8] !== 0) return null
+    const ms = u32(block, at)
+    times.push(ms === V1_M4A_UNSET ? null : ms)
+  }
+  return times
 }
 
 export function seratoV1Agrees(
