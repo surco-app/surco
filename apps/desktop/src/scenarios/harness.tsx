@@ -27,6 +27,7 @@ import {
   duplicateLibraryDeps,
   flushConversionBatch,
   type LibraryHost,
+  librariesKeepingOriginal,
   rekordboxCollectionPath,
   repointEngineQueued,
   repointRekordbox,
@@ -291,6 +292,8 @@ function processTrackInMain(
       withMusic ? appleMusic.updateInAppleMusic(pid, meta, coverPath) : noMusic(),
     relinkAppleMusicEntry: (pid, path) =>
       withMusic ? appleMusic.relinkAppleMusicEntry(pid, path) : noMusic(),
+    librariesKeepingOriginal: (path, target) =>
+      librariesKeepingOriginal(path, target, { traktorRead: traktorWritePath }),
     isEngineDjRunning,
     addToEngineDj: (target, meta, coverPath, replaces) => {
       const s = getSettings()
