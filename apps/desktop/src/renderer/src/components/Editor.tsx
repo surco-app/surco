@@ -391,7 +391,7 @@ export const Editor = memo(function Editor({
       ),
     [libraries, traktorNmlPath],
   )
-  const discogsTokenMissing = discogsToken === '' && searchProviders.includes('discogs')
+  const discogsTokenMissing = discogsToken === ''
   const isMulti = (selectedTracks?.length ?? 0) > 1
   const revealIn = useLibraryReveals(item, isMulti ? [] : librarySources)
   const scrollRef = useRef<HTMLDivElement>(null)
