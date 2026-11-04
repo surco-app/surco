@@ -74,6 +74,7 @@ function freshState() {
     transfers: [] as { from: string; to: string; answer: string }[],
     fieldsSet: [] as { persistentId: string; field: ReviewWriteField; from: string; to: string }[],
     revealed: [] as string[],
+    refreshed: [] as string[],
   }
 }
 
@@ -151,6 +152,14 @@ const sameTags = (a: MusicEntry, b: Pick<MusicEntry, 'title' | 'artist' | 'album
   sameIgnoringCase(a.title, b.title) &&
   sameIgnoringCase(a.artist, b.artist) &&
   sameIgnoringCase(a.album, b.album)
+
+function canonicalFile(path: string): string {
+  try {
+    return realpathSync(path).normalize('NFC')
+  } catch {
+    return path.normalize('NFC')
+  }
+}
 
 function importFile(filePath: string, meta: TrackMetadata): MusicEntry {
   if (!existsSync(filePath) || filePath.toLowerCase().endsWith('.flac'))
@@ -439,6 +448,35 @@ export function appleMusicModule(real: AppleMusic): AppleMusic {
     },
     relinkAppleMusicEntry: async (persistentId, path) => {
       music.relocate(persistentId, path)
+    },
+    musicEntryForFile: async (path, titles, launch = true) => {
+      if (!state.running && !launch) return undefined
+      const file = canonicalFile(path)
+      const found = fileTracks().filter(
+        (e) =>
+          e.location !== null &&
+          canonicalFile(e.location) === file &&
+          titles.some((t) => sameIgnoringCase(e.title, t)),
+      )
+      return found.length === 1
+        ? { persistentId: found[0].persistentId, label: label(found[0]) }
+        : undefined
+    },
+    refreshAppleMusicEntry: async (persistentId) => {
+      const entry = live(persistentId)
+      if (!entry) throw new Error(REVEAL_GONE)
+      state.refreshed.push(persistentId)
+      const path = fileOf(entry)
+      if (!path || isWav(path)) return
+      const file = TagFile.createFromPath(path)
+      try {
+        entry.title = file.tag.title ?? ''
+        entry.artist = file.tag.performers.join('/')
+        entry.album = file.tag.album ?? ''
+        entry.genre = file.tag.genres.join('/')
+      } finally {
+        file.dispose()
+      }
     },
     appleMusicEntryLocation: async (persistentId) => {
       const entry = live(persistentId)

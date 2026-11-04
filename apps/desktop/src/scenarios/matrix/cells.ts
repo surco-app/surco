@@ -534,6 +534,17 @@ const R_ROWS: Row[] = [
     quality: 'source',
     edit: { rename: 'Artista - Café Olé con todo abierto', title: 'Café Olé (Abierto)' },
   },
+  {
+    id: 'R05',
+    name: 'Renombrar y retitular en su sitio una pista que está en Apple Music sin añadirla a Music, Music la sigue y muestra el título nuevo',
+    origin: 'mp3n',
+    target: 'mp3',
+    dest: 'overwrite',
+    programs: 'music',
+    state: 'closed',
+    quality: 'source',
+    edit: { rename: 'Artista - Café Olé en Music', title: 'Café Olé (En Music)' },
+  },
 ]
 
 const LAYER_R: Cell[] = R_ROWS.map((row) => cell('R', row))

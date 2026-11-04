@@ -1250,8 +1250,11 @@ export function libraryInvariants(
     samplesKept: true,
     destGone: false,
   }
+  const edited = cell.edit?.title
+    ? { ...track, tags: { ...track.tags, title: cell.edit.title } }
+    : track
   const found: Found[] = [
-    ...programs.flatMap((p) => programBroken(p, set, track, expected)),
+    ...programs.flatMap((p) => programBroken(p, set, p === 'music' ? edited : track, expected)),
     ...(programs.includes('rekordbox') && set.rekordboxDb
       ? rekordboxNewRows(set.rekordboxDb, set)
       : []),

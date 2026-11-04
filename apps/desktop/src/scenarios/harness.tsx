@@ -125,6 +125,7 @@ import type {
   Release,
   SearchResult,
   Settings,
+  TrackMetadata,
 } from '../shared/types'
 import type { Verification } from '../shared/verification'
 import { ipcHandlers } from './electronFake'
@@ -288,6 +289,18 @@ function processTrackInMain(
       withMusic ? appleMusic.updateInAppleMusic(pid, meta, coverPath) : noMusic(),
     relinkAppleMusicEntry: (pid, path) =>
       withMusic ? appleMusic.relinkAppleMusicEntry(pid, path) : noMusic(),
+    ...(withMusic && {
+      findAppleMusicEntry: async (
+        path: string,
+        meta: TrackMetadata,
+        launch?: boolean | 'ifHeld',
+      ) => {
+        const own = (await readTags(path)).title
+        const titles = [...new Set([meta.title, own].filter(Boolean))]
+        return appleMusic.musicEntryForFile(path, titles, launch !== false)
+      },
+      refreshAppleMusicEntry: (pid: string) => appleMusic.refreshAppleMusicEntry(pid),
+    }),
     librariesKeepingOriginal: (path, target) =>
       librariesKeepingOriginal(path, target, { traktorRead: traktorWritePath }),
     isEngineDjRunning,

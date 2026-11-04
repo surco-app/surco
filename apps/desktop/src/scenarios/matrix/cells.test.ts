@@ -29,16 +29,17 @@ describe('the results matrix cells', () => {
     expect(r.some((cell) => cell.edit?.title && !cell.edit.rename)).toBe(true)
     expect(r.some((cell) => cell.edit?.rename && cell.programs !== 'all')).toBe(true)
     expect(r.some((cell) => cell.edit?.rename && cell.state === 'open')).toBe(true)
+    expect(r.some((cell) => cell.edit?.rename && cell.programs === 'music')).toBe(true)
     expect(new Set(groupsOf(r).map((g) => g.cells.length))).toEqual(new Set([1]))
   })
 
-  it('has 135 cells with unique ids', () => {
-    expect(CELLS).toHaveLength(135)
-    expect(new Set(CELLS.map((cell) => cell.id)).size).toBe(135)
+  it('has 136 cells with unique ids', () => {
+    expect(CELLS).toHaveLength(136)
+    expect(new Set(CELLS.map((cell) => cell.id)).size).toBe(136)
     const counts = Object.fromEntries(
       (['C', 'D', 'Q', 'K', 'S', 'R'] as const).map((name) => [name, layer(name).length]),
     )
-    expect(counts).toEqual({ C: 50, D: 28, Q: 12, K: 14, S: 27, R: 4 })
+    expect(counts).toEqual({ C: 50, D: 28, Q: 12, K: 14, S: 27, R: 5 })
     expect(layer('K').map((cell) => cell.id)).toEqual(
       Array.from({ length: 14 }, (_, i) => `K${String(i + 1).padStart(2, '0')}`),
     )
@@ -90,10 +91,13 @@ describe('the results matrix cells', () => {
     expect(closedKeep('beside')).toBeDefined()
   })
 
-  it('never sends FLAC to Music or Music to a non-Music destination', () => {
+  // Music with another destination is only meaningful as a track already in Music that a
+  // rewrite in place renames without adding it there, which is what layer R checks.
+  it('never sends FLAC to Music, and pairs Music with another destination only to rewrite in place', () => {
     for (const cell of CELLS) {
       if (toMusic(cell.dest)) expect(cell.target, cell.id).not.toBe('flac')
-      if (cell.programs === 'music') expect(toMusic(cell.dest), cell.id).toBe(true)
+      if (cell.programs === 'music' && !toMusic(cell.dest))
+        expect([cell.layer, cell.dest], cell.id).toEqual(['R', 'overwrite'])
     }
   })
 
@@ -171,7 +175,7 @@ describe('the results matrix cells', () => {
       const group = groups.find((g) => g.cells.includes(cell))
       expect(group?.cells, cell.id).toEqual([cell])
     }
-    expect(groups.flatMap((g) => g.cells)).toHaveLength(135)
+    expect(groups.flatMap((g) => g.cells)).toHaveLength(136)
     expect(new Set(groups.map((g) => g.key)).size).toBe(groups.length)
   })
 
@@ -236,6 +240,6 @@ describe('the results matrix cells', () => {
       expect(cell.name, cell.id).not.toMatch(/[—:]/)
       expect(cell.name.length, cell.id).toBeGreaterThan(0)
     }
-    expect(new Set(CELLS.map((cell) => cell.name)).size).toBe(135)
+    expect(new Set(CELLS.map((cell) => cell.name)).size).toBe(136)
   })
 })
