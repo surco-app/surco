@@ -349,3 +349,25 @@ describe('TrackListHeader menus', () => {
     expect(handlers.onFillAll).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('TrackListHeader layout', () => {
+  it('keeps the list actions on the filter and sort row so the header spends one line, not two, above the tracks', () => {
+    renderHeader()
+    const row = screen.getByTestId('track-list-toolbar')
+    for (const id of [
+      'add-files',
+      'select-all',
+      'quality-filter',
+      'track-sort',
+      'remove-selected',
+      'list-actions-more',
+    ]) {
+      expect(row).toContainElement(screen.getByTestId(id))
+    }
+  })
+
+  it('names the sort by its short labels so the trigger fits beside the filter and the actions', () => {
+    renderHeader()
+    expect(screen.getByTestId('track-sort')).toHaveTextContent(/^Order$/)
+  })
+})

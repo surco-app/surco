@@ -2832,7 +2832,7 @@ describe('App source playlists', () => {
     await screen.findByTestId('reorder-hint')
     expectNoReorderLine()
     expect(screen.getByTestId('reorder-hint')).toHaveTextContent(
-      'To reorder, sort by “Import order” and clear the search and filters',
+      'To reorder, sort by “Order” and clear the search and filters',
     )
   })
 

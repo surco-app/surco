@@ -142,12 +142,12 @@
     },
     "sort": {
       "label": "Ordenar faixas",
-      "import": "Ordem de importação",
+      "import": "Ordem",
       "name": "Nome",
       "artist": "Artista",
       "duration": "Duração",
       "format": "Formato",
-      "trackNumber": "Número da faixa",
+      "trackNumber": "Nº da faixa",
       "bpm": "BPM",
       "key": "Tom",
       "year": "Ano",
@@ -2355,7 +2355,7 @@
     },
     "reorder": {
       "removeSeparator": "Remover separador",
-      "hint": "Para reordenar, ordene por “Ordem de importação” e limpe a busca e os filtros"
+      "hint": "Para reordenar, ordene por “Ordem” e limpe a busca e os filtros"
     },
     "menu": {
       "addTo": "Adicionar à playlist",

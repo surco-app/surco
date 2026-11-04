@@ -142,12 +142,12 @@
     },
     "sort": {
       "label": "Trier les morceaux",
-      "import": "Ordre d'import",
+      "import": "Ordre",
       "name": "Nom",
       "artist": "Artiste",
       "duration": "Durée",
       "format": "Format",
-      "trackNumber": "Numéro de piste",
+      "trackNumber": "N° piste",
       "bpm": "BPM",
       "key": "Tonalité",
       "year": "Année",
@@ -2355,7 +2355,7 @@
     },
     "reorder": {
       "removeSeparator": "Retirer le séparateur",
-      "hint": "Pour réordonner, trie par « Ordre d'import » et efface la recherche et les filtres"
+      "hint": "Pour réordonner, trie par « Ordre » et efface la recherche et les filtres"
     },
     "menu": {
       "addTo": "Ajouter à une playlist",

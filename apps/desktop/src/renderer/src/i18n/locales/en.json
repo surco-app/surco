@@ -142,12 +142,12 @@
     },
     "sort": {
       "label": "Sort tracks",
-      "import": "Import order",
+      "import": "Order",
       "name": "Name",
       "artist": "Artist",
       "duration": "Time",
       "format": "Format",
-      "trackNumber": "Track number",
+      "trackNumber": "Track No.",
       "bpm": "BPM",
       "key": "Key",
       "year": "Year",
@@ -2355,7 +2355,7 @@
     },
     "reorder": {
       "removeSeparator": "Remove separator",
-      "hint": "To reorder, sort by “Import order” and clear the search and filters"
+      "hint": "To reorder, sort by “Order” and clear the search and filters"
     },
     "menu": {
       "addTo": "Add to playlist",

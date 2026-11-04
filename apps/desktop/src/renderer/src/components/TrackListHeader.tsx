@@ -243,7 +243,7 @@ export function TrackListHeader({
     <div
       ref={qualityFilterRef}
       data-testid="track-list-header"
-      className="sticky top-0 z-10 border-b border-[var(--color-line)] bg-[var(--color-ink)]"
+      className="@container sticky top-0 z-10 border-b border-[var(--color-line)] bg-[var(--color-ink)]"
     >
       <div className="flex items-center gap-1.5 px-1.5 pt-2">
         <SearchInput
@@ -269,72 +269,10 @@ export function TrackListHeader({
           clearLabel={tr('sidebar.search.clear')}
         />
       </div>
-      <QualityFilterBar
-        librarySource={librarySource}
-        value={filterSelection}
-        onChange={setFilterSelection}
-        tally={qualityTally}
-        gridMeasure={gridMeasure}
-        formats={formatTally}
-        trackCount={tracks.length}
-        visibleCount={visibleTracks.length}
-        selectedPosition={selectedPosition}
-        selectedCount={selectedIds.length}
-        onRevealSelected={scrollToSelected}
-        onTrashSuspects={onTrashSuspects}
-        onReviewIncomplete={onReviewIncomplete}
+      <div
+        data-testid="track-list-toolbar"
+        className="relative flex flex-wrap items-center gap-0.5 px-1.5 pb-1.5 @[27rem]:flex-nowrap @[27rem]:pb-0"
       >
-        <Select
-          testid="track-sort"
-          bare
-          portal
-          value={sortBy}
-          onChange={(v) => setSortBy(v as TrackSort)}
-          label={tr('sidebar.sort.label')}
-          options={[
-            { value: 'import', label: tr('sidebar.sort.import'), icon: ArrowDownUp },
-            { value: 'name', label: tr('sidebar.sort.name'), icon: CaseSensitive },
-            { value: 'artist', label: tr('sidebar.sort.artist'), icon: User },
-            { value: 'duration', label: tr('sidebar.sort.duration'), icon: Clock },
-            { value: 'format', label: tr('sidebar.sort.format'), icon: FileAudio },
-            { value: 'trackNumber', label: tr('sidebar.sort.trackNumber'), icon: ListOrdered },
-            { value: 'bpm', label: tr('sidebar.sort.bpm'), icon: Activity },
-            { value: 'key', label: tr('sidebar.sort.key'), icon: KeyRound },
-            { value: 'year', label: tr('sidebar.sort.year'), icon: Calendar },
-            { value: 'quality', label: tr('sidebar.sort.quality'), icon: Gauge },
-          ]}
-        />
-        {sortBy !== 'import' && (
-          <button
-            type="button"
-            data-testid="track-sort-direction"
-            // A toggle: the name holds still and aria-pressed says whether it's on. A label
-            // that swapped with the state read back as the opposite of the order shown.
-            aria-pressed={sortDir === 'desc'}
-            aria-label={tr('sidebar.sort.descending')}
-            onClick={toggleSortDir}
-            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-dim outline-none hover:bg-[var(--color-hover)] hover:text-fg"
-          >
-            {sortDir === 'asc' ? (
-              <ArrowDownNarrowWide className="h-4 w-4" aria-hidden="true" />
-            ) : (
-              <ArrowUpNarrowWide className="h-4 w-4" aria-hidden="true" />
-            )}
-            <Tooltip
-              label={tr(sortDir === 'asc' ? 'sidebar.sort.ascending' : 'sidebar.sort.descending')}
-            />
-          </button>
-        )}
-      </QualityFilterBar>
-      {/* List actions get their own row under the filter/sort, not squeezed into
-          it — crammed beside the filter they pushed the "All" quality dropdown out
-          of sight. They operate on these rows, so they live in the list header (not
-          the global toolbar where it wasn't clear which column they touched). */}
-      {/* Quieter than the tracks they act on: faint 14px glyphs, so the eye lands on the
-          list first and finds the tools when it looks for them. */}
-      <div className="relative flex items-center gap-0.5 px-1.5 pb-1.5">
-        {/* Add files leads the list's own action row: it's what fills this column,
-            so it belongs with the list rather than the global toolbar. */}
         <button
           type="button"
           data-testid="add-files"
@@ -361,7 +299,72 @@ export function TrackListHeader({
               <SquareCheckBig className="h-3.5 w-3.5" aria-hidden="true" />
               <Tooltip label={tr('header.selectAll')} hint={hintFor('select-all')} />
             </button>
-            <span className="flex-1" />
+            <span className="flex-1 @[27rem]:hidden" />
+          </>
+        )}
+        <div className="order-first -mx-1.5 min-w-0 basis-full @[27rem]:order-none @[27rem]:mx-0 @[27rem]:flex-1 @[27rem]:basis-0">
+          <QualityFilterBar
+            librarySource={librarySource}
+            value={filterSelection}
+            onChange={setFilterSelection}
+            tally={qualityTally}
+            gridMeasure={gridMeasure}
+            formats={formatTally}
+            trackCount={tracks.length}
+            visibleCount={visibleTracks.length}
+            selectedPosition={selectedPosition}
+            selectedCount={selectedIds.length}
+            onRevealSelected={scrollToSelected}
+            onTrashSuspects={onTrashSuspects}
+            onReviewIncomplete={onReviewIncomplete}
+          >
+            <Select
+              testid="track-sort"
+              bare
+              portal
+              value={sortBy}
+              onChange={(v) => setSortBy(v as TrackSort)}
+              label={tr('sidebar.sort.label')}
+              options={[
+                { value: 'import', label: tr('sidebar.sort.import'), icon: ArrowDownUp },
+                { value: 'name', label: tr('sidebar.sort.name'), icon: CaseSensitive },
+                { value: 'artist', label: tr('sidebar.sort.artist'), icon: User },
+                { value: 'duration', label: tr('sidebar.sort.duration'), icon: Clock },
+                { value: 'format', label: tr('sidebar.sort.format'), icon: FileAudio },
+                { value: 'trackNumber', label: tr('sidebar.sort.trackNumber'), icon: ListOrdered },
+                { value: 'bpm', label: tr('sidebar.sort.bpm'), icon: Activity },
+                { value: 'key', label: tr('sidebar.sort.key'), icon: KeyRound },
+                { value: 'year', label: tr('sidebar.sort.year'), icon: Calendar },
+                { value: 'quality', label: tr('sidebar.sort.quality'), icon: Gauge },
+              ]}
+            />
+            {sortBy !== 'import' && (
+              <button
+                type="button"
+                data-testid="track-sort-direction"
+                // A toggle: the name holds still and aria-pressed says whether it's on. A label
+                // that swapped with the state read back as the opposite of the order shown.
+                aria-pressed={sortDir === 'desc'}
+                aria-label={tr('sidebar.sort.descending')}
+                onClick={toggleSortDir}
+                className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-dim outline-none hover:bg-[var(--color-hover)] hover:text-fg"
+              >
+                {sortDir === 'asc' ? (
+                  <ArrowDownNarrowWide className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <ArrowUpNarrowWide className="h-4 w-4" aria-hidden="true" />
+                )}
+                <Tooltip
+                  label={tr(
+                    sortDir === 'asc' ? 'sidebar.sort.ascending' : 'sidebar.sort.descending',
+                  )}
+                />
+              </button>
+            )}
+          </QualityFilterBar>
+        </div>
+        {tracks.length > 0 && (
+          <>
             <button
               type="button"
               data-testid="remove-selected"

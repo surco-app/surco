@@ -142,12 +142,12 @@
     },
     "sort": {
       "label": "Tracks sortieren",
-      "import": "Importreihenfolge",
+      "import": "Reihenfolge",
       "name": "Name",
       "artist": "Künstler",
       "duration": "Dauer",
       "format": "Format",
-      "trackNumber": "Titelnummer",
+      "trackNumber": "Track-Nr.",
       "bpm": "BPM",
       "key": "Tonart",
       "year": "Jahr",
@@ -2355,7 +2355,7 @@
     },
     "reorder": {
       "removeSeparator": "Trenner entfernen",
-      "hint": "Zum Umsortieren nach „Importreihenfolge“ sortieren und Suche und Filter leeren"
+      "hint": "Zum Umsortieren nach „Reihenfolge“ sortieren und Suche und Filter leeren"
     },
     "menu": {
       "addTo": "Zu Playlist hinzufügen",
