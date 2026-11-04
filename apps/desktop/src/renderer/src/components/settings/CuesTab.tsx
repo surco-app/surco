@@ -345,7 +345,7 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
             />
           </div>
         </div>
-        {(engineFound || traktorFound) && (
+        {(engineFound || traktorFound || seratoFound) && (
           <SettingsHint data-testid="cue-flow-library-note">
             {[
               tr('settings.cueFlows.callsOnlyRekordbox'),

@@ -473,19 +473,79 @@ describe('libraryTracksOf in Serato', () => {
     ).toEqual({ serato: 'serato:/Users/v/Music/Music/T/Cafe\u0301.mp3' })
   })
 
-  it('leaves Serato out when it lacks the file or lists it twice', async () => {
+  it('finds the file when Surco spells the accent decomposed and Serato composed', async () => {
+    expect(
+      await libraryTracksOf('/Volumes/M/Music/Cafe\u0301.mp3', {
+        ...OFF,
+        serato: await serato(['Volumes/M/Music/Café.mp3']),
+      }),
+    ).toEqual({ serato: 'serato:/Volumes/M/Music/Café.mp3' })
+  })
+
+  it('leaves Serato out when it lacks the file', async () => {
     expect(
       await libraryTracksOf('/Volumes/M/Music/a.mp3', {
         ...OFF,
         serato: await serato(['Volumes/M/Music/b.mp3']),
       }),
     ).toEqual({})
+  })
+
+  it('names the file once when Serato lists it twice, since both rows are the one file', async () => {
     expect(
       await libraryTracksOf('/Volumes/M/Music/a.mp3', {
         ...OFF,
         serato: await serato(['Volumes/M/Music/a.mp3', 'Volumes/M/Music/a.mp3']),
       }),
-    ).toEqual({})
+    ).toEqual({ serato: 'serato:/Volumes/M/Music/a.mp3' })
+  })
+
+  it('names the file once when the home library and a drive library both list it', async () => {
+    const home = await mkdtemp(join(root, 'serato-both-'))
+    const drive = join(home, 'Volumes', 'Gigs')
+    await mkdir(join(home, 'Music', '_Serato_'), { recursive: true })
+    await mkdir(join(drive, '_Serato_'), { recursive: true })
+    const file = join(drive, 'Tracks', 'gig.flac')
+    await writeFile(join(home, 'Music', '_Serato_', 'database V2'), seratoDatabase([file.slice(1)]))
+    await writeFile(join(drive, '_Serato_', 'database V2'), seratoDatabase(['Tracks/gig.flac']))
+    expect(
+      await libraryTracksOf(file, { ...OFF, serato: seratoLibraryRoots(home, [drive]) }),
+    ).toEqual({ serato: `serato:${file}` })
+  })
+
+  it('finds the file a drive library lists relative to the drive', async () => {
+    const drive = await mkdtemp(join(root, 'serato-drive-'))
+    await mkdir(join(drive, '_Serato_'), { recursive: true })
+    await writeFile(
+      join(drive, '_Serato_', 'database V2'),
+      seratoDatabase(['Tracks/other.flac', 'Tracks/gig.flac']),
+    )
+    const file = join(drive, 'Tracks', 'gig.flac')
+    expect(
+      await libraryTracksOf(file, {
+        ...OFF,
+        serato: [{ dir: join(drive, '_Serato_'), root: drive }],
+      }),
+    ).toEqual({ serato: `serato:${file}` })
+  })
+
+  it('resolves only the rows with the same file name, so a big library on a NAS stays quick', async () => {
+    const others = Array.from({ length: 50 }, (_, i) => `Volumes/M/Music/other ${i}.mp3`)
+    const roots = await serato([...others, 'Volumes/M/Music/A.mp3'])
+    const resolved: string[] = []
+    const realPath = (p: string) => {
+      resolved.push(p)
+      return p
+    }
+    expect(
+      await libraryTracksOf(
+        '/Volumes/M/Music/a.mp3',
+        { ...OFF, serato: roots },
+        { realPath, homeMusicDir: '/Users/v/Music/Music' },
+      ),
+    ).toEqual({ serato: 'serato:/Volumes/M/Music/A.mp3' })
+    expect(resolved.filter((p) => p.includes('other'))).toEqual([])
+    expect(resolved).toContain('/Volumes/M/Music/A.mp3')
   })
 })
 

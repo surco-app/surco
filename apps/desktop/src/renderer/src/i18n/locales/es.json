@@ -1781,7 +1781,7 @@
       "lettersByTimeHint": "La A siempre es el primer cue de la pista. Apágalo si cada letra es un pad fijo para ti.",
       "markPoint": "Poner un CALL donde marcas",
       "traktorColours": "En Traktor estos cues salen en azul, porque Traktor pinta cada cue según su tipo",
-      "callsOnlyRekordbox": "Los CALL solo existen en rekordbox. Engine DJ y Traktor reciben solo los hot cues",
+      "callsOnlyRekordbox": "Los CALL solo existen en rekordbox. Engine DJ, Traktor y Serato reciben solo los hot cues",
       "targets": {
         "title": "Aplicar los flujos también en",
         "hint": "El programa desde el que marcas siempre recibe los cues. Surco busca la misma pista en los demás por su fichero y pone el flujo con la rejilla y los cues que ya tiene allí. Los cues que pones a mano se quedan en el programa donde los marcas.",

@@ -101,6 +101,7 @@ import { formatTime } from '../lib/duration'
 import { isTypingTarget } from '../lib/keymap'
 import { formatFixed } from '../lib/numberFormat'
 import { isMacOS } from '../lib/platform'
+import { LIBRARY_NAME } from '../lib/reviewLibraries'
 import { cueLetter } from '../lib/rowCues'
 import { useAppSettings } from '../lib/settingsContext'
 import { formatShortcut } from '../lib/shortcuts'
@@ -314,13 +315,6 @@ function CueKeys({
       )}
     </div>
   )
-}
-
-const LIBRARY_NAME: Record<TwinPlan['library'], string> = {
-  rekordbox: 'rekordbox',
-  traktor: 'Traktor',
-  engine: 'Engine DJ',
-  serato: 'Serato',
 }
 
 // Where saving also places the flow: one line per other program holding the same file,

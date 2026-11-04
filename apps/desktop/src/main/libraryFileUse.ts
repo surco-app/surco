@@ -330,8 +330,11 @@ function seratoTrackOf(
 ): string | undefined {
   const key = pathKey(options)
   const wanted = key(path)
-  const found = readSeratoLibrary(roots).tracks.filter((t) => key(t.file) === wanted)
-  return found.length === 1 ? `serato:${found[0].file}` : undefined
+  const name = basename(path.normalize('NFC')).toLowerCase()
+  const found = readSeratoLibrary(roots).tracks.find(
+    (t) => basename(t.file.normalize('NFC')).toLowerCase() === name && key(t.file) === wanted,
+  )
+  return found ? `serato:${found.file}` : undefined
 }
 
 // Read only: the id each library gives the file, for the cue editor to place a flow on the
