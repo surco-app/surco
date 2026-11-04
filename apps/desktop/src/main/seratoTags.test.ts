@@ -16,14 +16,16 @@ import {
   type XiphComment,
 } from 'node-taglib-sharp'
 import { describe, expect, it } from 'vitest'
+import { withSeratoCues } from '../shared/seratoMarkers'
 import {
   SERATO_AIFF,
   SERATO_FLAC,
   SERATO_M4A,
   SERATO_MP3,
   SERATO_WAV,
+  seratoV1Block,
 } from '../shared/seratoMarkersFixture'
-import { readSeratoMarkers } from './seratoTags'
+import { carrySeratoCues, readSeratoMarkers, readSeratoTrack, setSeratoMarkers } from './seratoTags'
 
 const FFMPEG = ffmpegStatic as unknown as string
 
@@ -143,5 +145,23 @@ describe('readSeratoMarkers', () => {
       expect(readSeratoMarkers(file)?.cues.length).toBeGreaterThan(0)
       expect(readFileSync(file).equals(before)).toBe(true)
     }
+  })
+})
+
+describe('carrySeratoCues from a track whose older cue block disagrees', () => {
+  it('takes both cue blocks off a copy whose clock moved, instead of leaving them at the wrong time', async () => {
+    const payload = withSeratoCues(null, [{ index: 0, ms: 2000, color: 0xcc0000, name: '' }])
+    const old = Buffer.from(seratoV1Block([2400])).toString('base64')
+    const [source, dest] = ['mp3', 'wav'].map((ext) => {
+      const file = audioFile(ext)
+      setSeratoMarkers(file, payload)
+      return withTag(file, (f) => addGeob(f, 'Serato Markers_', old))
+    })
+    expect(readSeratoTrack(source)?.oldBlockDisagrees).toBe(true)
+
+    await carrySeratoCues(source, dest, { trimMs: 0, carry: true, strip: false })
+
+    expect(readSeratoMarkers(dest)).toBeNull()
+    expect(readSeratoTrack(dest)?.oldBlockDisagrees).toBe(false)
   })
 })

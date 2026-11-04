@@ -19,6 +19,7 @@ import {
 } from 'node-taglib-sharp'
 import { describe, expect, it, vi } from 'vitest'
 import { withSeratoCues } from '../shared/seratoMarkers'
+import { seratoV1Armored, seratoV1Block } from '../shared/seratoMarkersFixture'
 import type { TrackMetadata } from '../shared/types'
 import { encodeBase91 } from './base91'
 import { automaticCueOffsetOfFiles } from './cueCalibration'
@@ -237,9 +238,12 @@ function seratoPayload(): Uint8Array {
   return Uint8Array.from([...withCue, ...head, ...size, ...loop, 0])
 }
 
-function seratoGeob(description: string): Id3v2AttachmentFrame {
+function seratoGeob(
+  description: string,
+  body: Uint8Array = Uint8Array.from([1, 1, 65, 65, 65, 65]),
+): Id3v2AttachmentFrame {
   const picture = Picture.fromFullData(
-    ByteVector.fromByteArray(Uint8Array.from([1, 1, 65, 65, 65, 65])),
+    ByteVector.fromByteArray(body),
     PictureType.NotAPicture,
     'application/octet-stream',
     description,
@@ -250,7 +254,12 @@ function seratoGeob(description: string): Id3v2AttachmentFrame {
   return frame
 }
 
-function makeSeratoSource(dir: string, ext: string, withTraktor = true): string {
+function makeSeratoSource(
+  dir: string,
+  ext: string,
+  withTraktor = true,
+  oldCues: number[] = [SERATO_CUE_MS],
+): string {
   const path =
     ext === '.m4a' || ext === '.flac' || !withTraktor ? join(dir, `in${ext}`) : makeSource(dir, ext)
   if (ext === '.mp3' && !withTraktor)
@@ -294,12 +303,15 @@ function makeSeratoSource(dir: string, ext: string, withTraktor = true): string 
     ])
   setSeratoMarkers(path, seratoPayload())
   const f = TagFile.createFromPath(path)
-  if (ext === '.m4a')
-    (f.tag as Mpeg4AppleTag).setItunesStrings('com.serato.dj', 'overview', 'AQFBQUFB')
+  if (ext === '.m4a') {
+    const apple = f.tag as Mpeg4AppleTag
+    apple.setItunesStrings('com.serato.dj', 'overview', 'AQFBQUFB')
+    apple.setItunesStrings('com.serato.dj', 'markers', seratoV1Armored(oldCues))
+  }
   if (ext !== '.m4a' && ext !== '.flac') {
     const tag = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
     tag.addFrame(seratoGeob('Serato Overview'))
-    tag.addFrame(seratoGeob('Serato Markers_'))
+    tag.addFrame(seratoGeob('Serato Markers_', seratoV1Block(oldCues)))
   }
   f.save()
   f.dispose()
@@ -468,6 +480,49 @@ describe('the Serato cue carry-over matrix', () => {
       )
     },
   )
+
+  it.each([
+    ['.mp3', '.flac', 'flac'],
+    ['.m4a', '.mp3', 'mp3'],
+    ['.mp3', '.mp3', 'mp3'],
+  ] as const)(
+    'carries no Serato cue from a %s whose older cue block disagrees, converting to %s',
+    async (src, ext, format) => {
+      const dir = mkdtempSync(join(tmpdir(), 'surco-serato-old-'))
+      const input = makeSeratoSource(dir, src, src !== '.mp3', [SERATO_CUE_MS + 400])
+      const out = join(dir, `out${ext}`)
+
+      await convertAudio(
+        input,
+        out,
+        format,
+        meta,
+        undefined,
+        undefined,
+        false,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        { startSec: 0.5 },
+      )
+
+      expect(readSeratoTrack(out)?.markers ?? null).toBeNull()
+      expect(seratoLeftovers(out)).not.toContain('Serato Markers_')
+    },
+  )
+
+  it('leaves an MP3 copied as it is with both of the Serato blocks it came with', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-oldcopy-'))
+    const input = makeSeratoSource(dir, '.mp3', false, [SERATO_CUE_MS + 400])
+    const out = join(dir, 'out.mp3')
+
+    await convertAudio(input, out, 'mp3', meta)
+
+    expect(readSeratoTrack(out)?.payload).toEqual(readSeratoTrack(input)?.payload)
+    expect(readSeratoTrack(out)?.oldBlockDisagrees).toBe(true)
+  })
 
   it('carries nothing when the DJ empties every tag', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-serato-clear-'))

@@ -97,7 +97,9 @@ async function applySeratoOp(
   op: QueueOp,
   deps: SeratoWriteDeps,
 ): Promise<{ outcome: OpOutcome; wrote: boolean }> {
-  const refused = (code: 'cues-changed' | 'cues-invalid' | 'cues-write-failed') => ({
+  const refused = (
+    code: 'cues-changed' | 'cues-invalid' | 'cues-write-failed' | 'cues-old-block',
+  ) => ({
     outcome: {
       id: op.id,
       applied: false,
@@ -123,6 +125,7 @@ async function applySeratoOp(
   ]
   const applied = { outcome: { id: op.id, applied: true, notices }, wrote: true }
   if (sameCues(onSeratoClock(cues, lead), was)) return { ...applied, wrote: false }
+  if (track.oldBlockDisagrees) return refused('cues-old-block')
   const rows = seratoCueRows(was, lead)
   if (cueFingerprint(rows) !== op.fingerprint) return refused('cues-changed')
   const valid = validWantedSet(op.wanted, rows)

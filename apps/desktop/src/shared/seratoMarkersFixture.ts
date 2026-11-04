@@ -34,3 +34,64 @@ export const SERATO_AIFF =
 
 export const SERATO_WAV =
   'AQFBUUZEVDB4UFVnQUFBQUFFQVAvLy8wTlZSUUFBQUFBTkFBQUFBQTc2QU13QUFBQUFBRU5WUlFBQUFBQU5BQUVBQUNQb0FNeUkKQUFBQUFFTlZSUUFBQUFBTkFBSUFBRC92QUFBQXpBQUFBRUpRVFV4UFEwc0FBQUFBQVFBPQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+
+const V1_EMPTY_ENTRY = [
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x00, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+]
+
+function v1CueEntry(ms: number): number[] {
+  return [
+    0x00,
+    (ms >> 21) & 0x7f,
+    (ms >> 14) & 0x7f,
+    (ms >> 7) & 0x7f,
+    ms & 0x7f,
+    0x7f,
+    0x7f,
+    0x7f,
+    0x7f,
+    0x7f,
+    0x00,
+    0x7f,
+    0x7f,
+    0x7f,
+    0x7f,
+    0x7f,
+    0x06,
+    0x30,
+    0x00,
+    0x00,
+    0x01,
+    0x00,
+  ]
+}
+
+export function seratoV1Block(cues: (number | null)[], loops = 0): Uint8Array {
+  const entries = [
+    ...Array.from({ length: 5 }, (_, at) => {
+      const ms = cues[at] ?? null
+      return ms === null ? V1_EMPTY_ENTRY : v1CueEntry(ms)
+    }),
+    ...Array.from({ length: loops }, () => [...V1_EMPTY_ENTRY.slice(0, 20), 0x03, 0x00]),
+  ]
+  return Uint8Array.from([
+    0x02,
+    0x05,
+    0,
+    0,
+    0,
+    entries.length,
+    ...entries.flat(),
+    0x07,
+    0x7f,
+    0x7f,
+    0x7f,
+  ])
+}
+
+export function seratoV1Armored(cues: (number | null)[]): string {
+  const head = 'application/octet-stream\0\0Serato Markers_\0'
+  const block = seratoV1Block(cues)
+  return btoa(head + String.fromCharCode(...block))
+}

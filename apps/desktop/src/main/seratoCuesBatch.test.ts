@@ -7,6 +7,7 @@ import {
   ByteVector,
   Id3v2AttachmentFrame,
   type Id3v2Tag,
+  type Mpeg4AppleTag,
   Picture,
   PictureType,
   StringType,
@@ -21,7 +22,12 @@ vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 import { HOT_KINDS, type WantedCue } from '../shared/cueRules'
 import { hotCueArgb } from '../shared/rekordboxCueColors'
 import { seratoGeobBody, withSeratoCues } from '../shared/seratoMarkers'
-import { SERATO_MP3, SERATO_WAV } from '../shared/seratoMarkersFixture'
+import {
+  SERATO_MP3,
+  SERATO_WAV,
+  seratoV1Armored,
+  seratoV1Block,
+} from '../shared/seratoMarkersFixture'
 import type { TrackCues } from '../shared/types'
 import { createBusyPaths } from './busyPaths'
 import { configureOriginalKeeper } from './originalKeeper'
@@ -31,7 +37,8 @@ import type { CuesOp, QueueOp } from './rekordboxQueueOps'
 import { seratoLeadOfFile } from './seratoClock'
 import { seratoCueSource } from './seratoCueSource'
 import { applySeratoCuesBatch } from './seratoCuesWrite'
-import { readSeratoMarkers, readSeratoTrack } from './seratoTags'
+import { readSeratoMarkers, readSeratoTrack, setSeratoMarkers } from './seratoTags'
+import { geobParts } from './tags'
 
 const FF = ffmpegStatic as unknown as string
 
@@ -613,5 +620,115 @@ describe('Serato opening in the middle of a batch', () => {
         moved(reads[i]).map((c) => expect.closeTo(c.ms, 0)),
       )
     expect(queue.isEmpty()).toBe(true)
+  }, 60000)
+})
+
+function withOldBlock(ext: 'mp3' | 'm4a', markers: number[] | null, old: number[]): string {
+  const file = join(mkdtempSync(join(tmpdir(), 'surco-serato-v1-')), `track.${ext}`)
+  execFileSync(FF, [
+    '-y',
+    '-loglevel',
+    'error',
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=440:duration=2',
+    '-c:a',
+    ext === 'mp3' ? 'libmp3lame' : 'aac',
+    file,
+  ])
+  if (markers)
+    setSeratoMarkers(
+      file,
+      withSeratoCues(
+        null,
+        markers.map((ms, index) => ({ index, ms, color: 0xcc0000, name: '' })),
+      ),
+    )
+  const f = TagFile.createFromPath(file)
+  try {
+    if (ext === 'm4a')
+      (f.tag as Mpeg4AppleTag).setItunesStrings('com.serato.dj', 'markers', seratoV1Armored(old))
+    else {
+      const picture = Picture.fromFullData(
+        ByteVector.fromByteArray(seratoV1Block(old)),
+        PictureType.NotAPicture,
+        'application/octet-stream',
+        'Serato Markers_',
+      )
+      picture.filename = ''
+      const frame = Id3v2AttachmentFrame.fromPicture(picture)
+      frame.textEncoding = StringType.Latin1
+      ;(f.getTag(TagTypes.Id3v2, true) as Id3v2Tag).addFrame(frame)
+    }
+    f.save()
+  } finally {
+    f.dispose()
+  }
+  return file
+}
+
+function hasOldBlock(file: string): boolean {
+  const f = TagFile.createFromPath(file)
+  try {
+    if (file.endsWith('.m4a'))
+      return (f.tag as Mpeg4AppleTag).getItunesStrings('com.serato.dj', 'markers').length > 0
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+    return (id3?.frames ?? []).some(
+      (frame) =>
+        frame.frameId.toString() === 'GEOB' &&
+        geobParts(frame.render(4).toByteArray())?.description === 'Serato Markers_',
+    )
+  } finally {
+    f.dispose()
+  }
+}
+
+describe.each(['mp3', 'm4a'] as const)("Serato's older cue block in an %s", (ext) => {
+  it('writes the cues and drops the old block when it says what the new one says', async () => {
+    const file = withOldBlock(ext, [500, 1500], [500, 1500])
+    const read = await seen(file)
+    const wanted = asWanted(read).map((c, i) => (i === 0 ? { ...c, ms: c.ms + 300 } : c))
+    const result = await applySeratoCuesBatch([op(file, read, wanted)], { ensureClosed: closed })
+    expect(result).toEqual({
+      ok: true,
+      wrote: true,
+      outcomes: [{ id: 'op1', applied: true, notices: [] }],
+    })
+    expect(readSeratoMarkers(file)?.cues.map((c) => c.ms)).toEqual([800, 1500])
+    expect(hasOldBlock(file)).toBe(false)
+  }, 60000)
+
+  it('shows the cues but writes nothing when the old block puts a cue somewhere else', async () => {
+    const file = withOldBlock(ext, [500, 1500], [500, 1700])
+    const read = await seen(file)
+    expect(read.cues).toHaveLength(2)
+    const before = readFileSync(file)
+    const wanted = asWanted(read).map((c, i) => (i === 0 ? { ...c, ms: c.ms + 300 } : c))
+    const result = await applySeratoCuesBatch([op(file, read, wanted)], { ensureClosed: closed })
+    expect(result).toEqual({
+      ok: true,
+      wrote: false,
+      outcomes: [
+        { id: 'op1', applied: false, notices: [{ code: 'cues-old-block', track: 'Pray' }] },
+      ],
+    })
+    expect(readFileSync(file)).toEqual(before)
+  }, 60000)
+
+  it('writes nothing when only the old block holds the cues', async () => {
+    const file = withOldBlock(ext, null, [500])
+    const read = await seen(file)
+    const before = readFileSync(file)
+    const wanted = [{ ms: 1000, kind: HOT_KINDS[0], color: null }]
+    const result = await applySeratoCuesBatch([op(file, read, wanted)], { ensureClosed: closed })
+    expect(result).toEqual({
+      ok: true,
+      wrote: false,
+      outcomes: [
+        { id: 'op1', applied: false, notices: [{ code: 'cues-old-block', track: 'Pray' }] },
+      ],
+    })
+    expect(readFileSync(file)).toEqual(before)
   }, 60000)
 })

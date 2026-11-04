@@ -8,6 +8,9 @@ import {
   seratoArmored,
   seratoGeobBody,
   seratoPayloadOf,
+  seratoV1Agrees,
+  seratoV1CueTimes,
+  seratoV1CueTimesArmored,
   withSeratoCues,
 } from './seratoMarkers'
 import {
@@ -15,6 +18,8 @@ import {
   SERATO_FLAC as FLAC,
   SERATO_M4A as M4A,
   SERATO_MP3 as MP3,
+  seratoV1Armored,
+  seratoV1Block,
   SERATO_WAV as WAV,
 } from './seratoMarkersFixture'
 
@@ -367,5 +372,63 @@ describe('readSeratoTempoMapArmored', () => {
     expect(readSeratoTempoMapArmored(value)?.bpm).toBeCloseTo(133.998, 3)
     expect(readSeratoTempoMapArmored(FLAC)).toBeNull()
     expect(readSeratoTempoMapArmored('')).toBeNull()
+  })
+})
+
+const REAL_V1_ENTRY = '00000342067f7f7f7f7f007f7f7f7f7f063000000100'
+
+describe('seratoV1CueTimes', () => {
+  it('reads the hot cue Serato saved in the old block of a real MP3, 7 bits to a byte', () => {
+    const block = Uint8Array.from(Buffer.from(`020500000001${REAL_V1_ENTRY}077f7f7f`, 'hex'))
+    expect(seratoV1CueTimes(block)).toEqual([57606])
+  })
+
+  it('reads the five cue slots in order, empty ones as no cue, and leaves the loops after them', () => {
+    expect(seratoV1CueTimes(seratoV1Block([57606, null, 1000, null, 0], 9))).toEqual([
+      57606,
+      null,
+      1000,
+      null,
+      0,
+    ])
+  })
+
+  it('cannot read a block that is not the old cue layout or is cut short', () => {
+    expect(seratoV1CueTimes(Uint8Array.from([2, 5, 0, 0, 0, 1, 2, 3]))).toBeNull()
+    expect(seratoV1CueTimes(Uint8Array.from([1, 1, 65, 65, 65, 65]))).toBeNull()
+    expect(
+      seratoV1CueTimes(Buffer.from(`020500000001${REAL_V1_ENTRY.slice(0, 8)}`, 'hex')),
+    ).toBeNull()
+    const garbled = seratoV1Block([57606])
+    garbled[7] = 0x80
+    expect(seratoV1CueTimes(garbled)).toBeNull()
+  })
+
+  it('reads the same block out of the armored value an M4A keeps', () => {
+    expect(seratoV1CueTimesArmored(seratoV1Armored([7444, 12756]))).toEqual([
+      7444,
+      12756,
+      null,
+      null,
+      null,
+    ])
+    expect(seratoV1CueTimesArmored('djEgYmxvY2s=')).toBeNull()
+  })
+})
+
+describe('seratoV1Agrees', () => {
+  const markers = markersFromGeob(bytes(MP3))
+
+  it('agrees when every old cue sits within a millisecond of the new cue on the same pad', () => {
+    expect(seratoV1Agrees([57606, 71553, 77329, 82467, 88003], markers)).toBe(true)
+    expect(seratoV1Agrees([57607, 71552, 77329, 82467, 88003], markers)).toBe(true)
+  })
+
+  it('disagrees when an old cue is elsewhere, missing from the new block or the new block is gone', () => {
+    expect(seratoV1Agrees([57606, 71553, 77329, 82467, 90000], markers)).toBe(false)
+    expect(seratoV1Agrees([57606, 71553, 77329, 82467, null], markers)).toBe(false)
+    expect(seratoV1Agrees([57606], { cues: [], loops: [] })).toBe(false)
+    expect(seratoV1Agrees([57606], null)).toBe(false)
+    expect(seratoV1Agrees(null, markers)).toBe(false)
   })
 })

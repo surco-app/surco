@@ -24,6 +24,9 @@ import {
   seratoArmored,
   seratoGeobBody,
   seratoPayloadOf,
+  seratoV1Agrees,
+  seratoV1CueTimes,
+  seratoV1CueTimesArmored,
 } from '../shared/seratoMarkers'
 import { seratoLeadOfFile } from './seratoClock'
 import { dropBrokenUfids, geobParts, keepGenreParentheses } from './tags'
@@ -119,9 +122,22 @@ export function readSeratoMarkers(file: string): SeratoMarkers | null {
   }
 }
 
+function oldBlockDisagrees(f: TagFile, ext: string, markers: SeratoMarkers | null): boolean {
+  if (ID3_EXTENSIONS.has(ext)) {
+    const block = id3Geob(f, MARKERS_V1)
+    return block !== null && !seratoV1Agrees(seratoV1CueTimes(block), markers)
+  }
+  if (ext === '.m4a' || ext === '.mp4') {
+    const value = (f.tag as Mpeg4AppleTag).getItunesStrings(SERATO_MEAN, 'markers')[0]
+    return value !== undefined && !seratoV1Agrees(seratoV1CueTimesArmored(value), markers)
+  }
+  return false
+}
+
 export function readSeratoTrack(file: string): {
   payload: Uint8Array | null
   markers: SeratoMarkers | null
+  oldBlockDisagrees: boolean
   tempoMap: SeratoTempoMap | null
   durationMs: number
   sampleRate: number
@@ -133,9 +149,11 @@ export function readSeratoTrack(file: string): {
     const f = TagFile.createFromPath(file)
     try {
       const source = markersSource(f, ext)
+      const markers = read ? read(f) : null
       return {
         payload: source ? seratoPayloadOf(source) : null,
-        markers: read ? read(f) : null,
+        markers,
+        oldBlockDisagrees: oldBlockDisagrees(f, ext, markers),
         tempoMap: readTempo ? readTempo(f) : null,
         durationMs: f.properties?.durationMilliseconds ?? 0,
         sampleRate: f.properties?.audioSampleRate || DEFAULT_SAMPLE_RATE,
@@ -248,6 +266,31 @@ function dropSeratoAnalysis(f: TagFile, ext: string): boolean {
   return frames.length > 0
 }
 
+function dropSeratoCues(f: TagFile, ext: string): boolean {
+  if (ext === '.m4a' || ext === '.mp4') {
+    const apple = f.tag as Mpeg4AppleTag
+    const held = ['markersv2', 'markers'].filter(
+      (name) => apple.getItunesStrings(SERATO_MEAN, name).length > 0,
+    )
+    for (const name of held) apple.setItunesStrings(SERATO_MEAN, name)
+    return held.length > 0
+  }
+  if (ext === '.flac') {
+    const xiph = f.getTag(TagTypes.Xiph, false) as XiphComment | null
+    const held = (xiph?.getField(FLAC_MARKERS2) ?? []).length > 0
+    if (held) xiph?.removeField(FLAC_MARKERS2)
+    return held
+  }
+  const tag = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+  const frames = (tag?.frames ?? []).filter((frame) => {
+    if (frame.frameId.toString() !== 'GEOB') return false
+    const description = descriptionAndPayload(frame)?.description
+    return description === MARKERS2 || description === MARKERS_V1
+  })
+  for (const frame of frames) tag?.removeFrame(frame)
+  return frames.length > 0
+}
+
 function sameBytes(a: Uint8Array | null, b: Uint8Array): boolean {
   return a !== null && a.length === b.length && a.every((byte, at) => byte === b[at])
 }
@@ -269,13 +312,15 @@ export async function carrySeratoCues(
         trimMs > 0 ? sourceLead + trimMs : 0,
       )
     : null
-  const fresh = payload && !sameBytes(to.payload, payload) ? payload : null
+  const changed = payload && !sameBytes(to.payload, payload) ? payload : null
+  const fresh = from?.oldBlockDisagrees ? null : changed
   const f = TagFile.createFromPath(dest)
   try {
     const keep = f.tagTypesOnDisk | (fresh ? markersTag(ext) : 0)
     const stripped = strip && dropSeratoAnalysis(f, ext)
+    const dropped = changed !== null && fresh === null && dropSeratoCues(f, ext)
     if (fresh) applyMarkers(f, ext, fresh)
-    if (fresh || stripped) saveKeeping(f, keep)
+    if (fresh || stripped || dropped) saveKeeping(f, keep)
   } finally {
     f.dispose()
   }

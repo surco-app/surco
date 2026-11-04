@@ -305,6 +305,12 @@ describe('Serato queue text', () => {
     )
   })
 
+  it('says why Surco left a track whose older Serato cues say something else, and how to clear it', () => {
+    expect(noticeText(tr, { code: 'cues-old-block', track: 'Tengo' }, SERATO_QUEUE_WORDS)).toBe(
+      'The cues of Tengo were not saved. Serato keeps an older copy of them that does not match. Move any cue of the track in Serato and save again',
+    )
+  })
+
   it('says the cues changed in Serato when a save was refused for it', () => {
     expect(noticeText(tr, { code: 'cues-changed', track: 'Tengo' }, SERATO_QUEUE_WORDS)).toBe(
       'The cues of Tengo changed in Serato. Mark them again',

@@ -2917,7 +2917,8 @@
     "notice": {
       "cuesChanged": "Die Cues von {{track}} haben sich in Serato geändert. Markiere sie erneut",
       "callsDropped_one": "{{count}} CALL von {{track}} wurde nicht gespeichert ({{times}}). Serato speichert nur Hot Cues",
-      "callsDropped_other": "{{count}} CALLs von {{track}} wurden nicht gespeichert ({{times}}). Serato speichert nur Hot Cues"
+      "callsDropped_other": "{{count}} CALLs von {{track}} wurden nicht gespeichert ({{times}}). Serato speichert nur Hot Cues",
+      "oldBlock": "Die Cues von {{track}} wurden nicht gespeichert. Serato hat eine ältere Kopie davon, die nicht übereinstimmt. Verschiebe in Serato einen beliebigen Cue des Tracks und speichere erneut"
     }
   },
   "cueWave": {

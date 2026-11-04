@@ -259,3 +259,54 @@ export function readSeratoTempoMapArmored(value: string): SeratoTempoMap | null 
     return null
   return readSeratoTempoMap(armored.subarray(TEMPO_ARMOR_HEADER.length))
 }
+
+const V1_ARMOR_HEADER = 'application/octet-stream\0\0Serato Markers_\0'
+const V1_ENTRY_BYTES = 22
+const V1_CUE_SLOTS = 5
+const V1_SET = 0x00
+const V1_UNSET = 0x7f
+const V1_SAME_MS = 1
+
+function sevenBit(bytes: Uint8Array, at: number): number | null {
+  const groups = bytes.subarray(at, at + 4)
+  if (groups.some((b) => b > 0x7f)) return null
+  return ((groups[0] << 21) | (groups[1] << 14) | (groups[2] << 7) | groups[3]) >>> 0
+}
+
+export function seratoV1CueTimes(block: Uint8Array): (number | null)[] | null {
+  if (block.length < 6 || block[0] !== 2 || block[1] !== 5) return null
+  const count = u32(block, 2)
+  if (block.length < 6 + count * V1_ENTRY_BYTES) return null
+  const times: (number | null)[] = []
+  for (let slot = 0; slot < Math.min(count, V1_CUE_SLOTS); slot++) {
+    const at = 6 + slot * V1_ENTRY_BYTES
+    if (block[at] === V1_UNSET) times.push(null)
+    else if (block[at] !== V1_SET) return null
+    else {
+      const ms = sevenBit(block, at + 1)
+      if (ms === null) return null
+      times.push(ms)
+    }
+  }
+  return times
+}
+
+export function seratoV1CueTimesArmored(value: string): (number | null)[] | null {
+  const armored = decodeBase64(value.replace(/\s/g, ''))
+  if (!armored || !latin1(armored.subarray(0, V1_ARMOR_HEADER.length)).startsWith(V1_ARMOR_HEADER))
+    return null
+  return seratoV1CueTimes(armored.subarray(V1_ARMOR_HEADER.length))
+}
+
+export function seratoV1Agrees(
+  times: (number | null)[] | null,
+  markers: SeratoMarkers | null,
+): boolean {
+  if (!times || !markers) return false
+  return times.every((ms, slot) => {
+    const cue = markers.cues.find((c) => c.index === slot)
+    return ms === null
+      ? cue === undefined
+      : cue !== undefined && Math.abs(cue.ms - ms) <= V1_SAME_MS
+  })
+}
