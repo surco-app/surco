@@ -302,6 +302,24 @@ describe('SettingsModal tablist', () => {
     fireEvent.keyDown(search, { key: 'ArrowDown' })
     expect(screen.getByTestId('settings-tab-editor')).toHaveFocus()
   })
+
+  it('heads the panel with the open tab, the level above the sections inside it, and follows tab switches', () => {
+    open()
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
+      i18n.t('settings.tabs.general'),
+    )
+    fireEvent.click(screen.getByTestId('settings-tab-cues'))
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
+      i18n.t('settings.tabs.cues'),
+    )
+  })
+
+  it('keeps the close button in the panel heading, outside the scrolling tab body, so no tab content can run under it', () => {
+    open()
+    const close = screen.getByTestId('settings-close')
+    expect(screen.getByRole('tabpanel')).not.toContainElement(close)
+    expect(close.parentElement).toContainElement(screen.getByRole('heading', { level: 2 }))
+  })
 })
 
 describe('SettingsModal Traktor collection', () => {

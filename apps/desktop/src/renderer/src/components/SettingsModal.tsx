@@ -449,16 +449,21 @@ export function SettingsModal({
         </div>
       </div>
 
-      <div className="relative flex min-w-0 flex-1 flex-col p-6">
-        <button
-          type="button"
-          data-testid="settings-close"
-          aria-label={tr('common.close')}
-          onClick={close}
-          className="press absolute top-3 right-3 z-10 flex h-7 w-7 items-center justify-center rounded-md text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
-        >
-          <X className="h-4 w-4" aria-hidden="true" />
-        </button>
+      <div className="flex min-w-0 flex-1 flex-col px-6 pb-6">
+        <div className="-mr-3 flex h-13 shrink-0 items-center justify-between gap-3">
+          <h2 className="truncate text-[15px] font-semibold text-fg">
+            {tr(`settings.tabs.${tab}`)}
+          </h2>
+          <button
+            type="button"
+            data-testid="settings-close"
+            aria-label={tr('common.close')}
+            onClick={close}
+            className="press flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
         <div className="relative flex min-h-[280px] flex-1 flex-col">
           <div
             ref={bodyRef}
