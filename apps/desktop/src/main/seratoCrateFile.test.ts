@@ -131,9 +131,15 @@ describe('serato crate files', () => {
 
   it('reads back a link id with the crate file it names, and nothing from anything else', () => {
     const file = '/Volumes/Gig: B/_Serato_/Subcrates/A%%B.crate'
-    expect(parseSeratoLinkId(seratoLinkId(3, file))).toEqual({ index: 3, crateFile: file })
+    const path = 'Volumes/x:y/100% %E9 träck.mp3'
+    expect(parseSeratoLinkId(seratoLinkId(3, file, path))).toEqual({
+      index: 3,
+      crateFile: file,
+      path,
+    })
     expect(parseSeratoLinkId('fri:0:HD/:m/:a.mp3')).toBeNull()
-    expect(parseSeratoLinkId('-1:/a.crate')).toBeNull()
+    expect(parseSeratoLinkId('-1:/a.crate:a.mp3')).toBeNull()
+    expect(parseSeratoLinkId('1:%E0%A4%A:a.mp3')).toBeNull()
     expect(parseSeratoLinkId('7')).toBeNull()
   })
 })

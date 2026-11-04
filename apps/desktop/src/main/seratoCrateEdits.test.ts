@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('./seratoCuesWrite', () => ({ applySeratoCuesBatch: vi.fn() }))
 
+import { applySeratoLibraryOps } from './seratoBatch'
 import { seratoEditFiles } from './seratoCrateEdits'
 import { crateFileOf, crateTrackPaths, seratoLinkId } from './seratoCrateFile'
 import {
@@ -209,9 +210,9 @@ describe('tracks in a crate', () => {
       return bytes.subarray(0, bytes.indexOf('otrk'))
     }
     const before = columns()
-    await apply(roots, deps, move('A', [seratoLinkId(2, file)], seratoLinkId(0, file)))
+    await apply(roots, deps, move('A', [seratoLinkId(2, file, 'c')], seratoLinkId(0, file, 'a')))
     expect(crateTrackPaths(readFileSync(file))).toEqual(['c', 'a', 'b'])
-    await apply(roots, deps, remove('A', [seratoLinkId(1, file)]))
+    await apply(roots, deps, remove('A', [seratoLinkId(1, file, 'a')]))
     expect(crateTrackPaths(readFileSync(file))).toEqual(['c', 'b'])
     expect(columns()).toEqual(before)
   })
@@ -219,14 +220,14 @@ describe('tracks in a crate', () => {
   it('moves rows to the end when there is nothing to land before', async () => {
     const { roots, deps } = twoRoots({ internal: [['A', ['a', 'b', 'c']]] })
     const file = crateFileOf(roots[0], 'A')
-    await apply(roots, deps, move('A', [seratoLinkId(0, file)], null))
+    await apply(roots, deps, move('A', [seratoLinkId(0, file, 'a')], null))
     expect(crateTrackPaths(readFileSync(file))).toEqual(['b', 'c', 'a'])
   })
 
   it('refuses to remove a row the crate no longer has', async () => {
     const { roots, deps } = twoRoots({ internal: [['A', ['a']]] })
     const file = crateFileOf(roots[0], 'A')
-    expect(await apply(roots, deps, remove('A', [seratoLinkId(1, file)]))).toMatchObject({
+    expect(await apply(roots, deps, remove('A', [seratoLinkId(1, file, 'b')]))).toMatchObject({
       applied: false,
       reason: 'stale',
     })
@@ -241,7 +242,7 @@ describe('tracks in a crate', () => {
       ],
     })
     const other = crateFileOf(roots[0], 'B')
-    expect(await apply(roots, deps, remove('A', [seratoLinkId(0, other)]))).toMatchObject({
+    expect(await apply(roots, deps, remove('A', [seratoLinkId(0, other, 'b')]))).toMatchObject({
       applied: false,
       reason: 'stale',
     })
@@ -253,12 +254,81 @@ describe('tracks in a crate', () => {
     const internal = crateFileOf(roots[0], 'A')
     const gig = crateFileOf(roots[1], 'A')
     expect(
-      await apply(roots, deps, move('A', [seratoLinkId(0, gig)], seratoLinkId(0, internal))),
+      await apply(
+        roots,
+        deps,
+        move('A', [seratoLinkId(0, gig, 'c')], seratoLinkId(0, internal, 'a')),
+      ),
     ).toMatchObject({ applied: false, reason: 'stale' })
     expect(
-      await apply(roots, deps, move('A', [seratoLinkId(0, internal), seratoLinkId(0, gig)], null)),
+      await apply(
+        roots,
+        deps,
+        move('A', [seratoLinkId(0, internal, 'a'), seratoLinkId(0, gig, 'c')], null),
+      ),
     ).toMatchObject({ applied: false, reason: 'stale' })
     expect(crateTrackPaths(readFileSync(internal))).toEqual(['a', 'b'])
+  })
+
+  it('refuses a remove named from a list that a prior remove already shifted, and leaves the crate as it is', async () => {
+    const { roots, deps } = twoRoots({ internal: [['A', ['a', 'b', 'c']]] })
+    const file = crateFileOf(roots[0], 'A')
+    await apply(roots, deps, remove('A', [seratoLinkId(0, file, 'a')]))
+    const shifted = readFileSync(file)
+    expect(await apply(roots, deps, remove('A', [seratoLinkId(1, file, 'b')]))).toMatchObject({
+      applied: false,
+      reason: 'stale',
+    })
+    expect(readFileSync(file)).toEqual(shifted)
+  })
+
+  it('refuses a move named from a list that a prior remove already shifted, and leaves the crate as it is', async () => {
+    const { roots, deps } = twoRoots({ internal: [['A', ['a', 'b', 'c']]] })
+    const file = crateFileOf(roots[0], 'A')
+    await apply(roots, deps, remove('A', [seratoLinkId(0, file, 'a')]))
+    const shifted = readFileSync(file)
+    expect(await apply(roots, deps, move('A', [seratoLinkId(1, file, 'b')], null))).toMatchObject({
+      applied: false,
+      reason: 'stale',
+    })
+    expect(
+      await apply(roots, deps, move('A', [seratoLinkId(0, file, 'b')], seratoLinkId(1, file, 'b'))),
+    ).toMatchObject({ applied: false, reason: 'stale' })
+    expect(readFileSync(file)).toEqual(shifted)
+  })
+
+  it('applies two moves queued on one crate while Serato was open, in order, once it closes', async () => {
+    const { roots, deps } = twoRoots({ internal: [['A', ['a', 'b', 'c']]] })
+    const file = crateFileOf(roots[0], 'A')
+    const first = move('A', [seratoLinkId(2, file, 'c')], seratoLinkId(0, file, 'a'))
+    const second = move('A', [seratoLinkId(0, file, 'a')], null)
+    const ops = [
+      editOp(first, seratoEditFiles(first, roots)),
+      editOp(second, seratoEditFiles(second, roots)),
+    ]
+    const result = await applySeratoLibraryOps(ops, { ...deps, ensureClosed: async () => true })
+    expect(result).toMatchObject({
+      ok: true,
+      outcomes: [{ applied: true }, { applied: true }],
+    })
+    expect(crateTrackPaths(readFileSync(file))).toEqual(['c', 'b', 'a'])
+  })
+
+  it('finds a row whose path the crate keeps in another Unicode form than the link id', async () => {
+    const nfd = 'Música/a.mp3'.normalize('NFD')
+    const { roots, deps } = twoRoots({ internal: [['A', [nfd, 'b']]] })
+    const file = crateFileOf(roots[0], 'A')
+    await apply(roots, deps, remove('A', [seratoLinkId(0, file, nfd.normalize('NFC'))]))
+    expect(crateTrackPaths(readFileSync(file))).toEqual(['b'])
+  })
+
+  it('reads no file a link id names unless it belongs to the crate', async () => {
+    const { roots, deps } = twoRoots({ internal: [['A', ['a']], 'B'], truncated: ['B'] })
+    const other = crateFileOf(roots[0], 'B')
+    expect(await apply(roots, deps, remove('A', [seratoLinkId(0, other, 'b')]))).toMatchObject({
+      applied: false,
+      reason: 'stale',
+    })
   })
 
   it('never rewrites a truncated crate', async () => {
@@ -347,10 +417,9 @@ describe('seratoEditFiles', () => {
     ])
   })
 
-  it('stamps the crate files of a track edit in every library', () => {
+  it('stamps no crate for a track edit, whose link ids carry the rows the user saw', () => {
     const { roots } = twoRoots({ internal: ['A'], gig: ['A'] })
-    expect(
-      Object.keys(seratoEditFiles({ kind: 'remove', playlistId: 'A', linkIds: [] }, roots)),
-    ).toEqual([crateFileOf(roots[0], 'A'), crateFileOf(roots[1], 'A')])
+    expect(seratoEditFiles({ kind: 'remove', playlistId: 'A', linkIds: [] }, roots)).toEqual({})
+    expect(seratoEditFiles({ kind: 'add', playlistId: 'A', tracks: [] }, roots)).toEqual({})
   })
 })

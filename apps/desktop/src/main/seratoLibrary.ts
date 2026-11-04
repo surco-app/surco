@@ -65,20 +65,24 @@ function readRoot({ dir, root }: SeratoLibraryRoot): SeratoLibrary {
     crates.set(id, rows.files.map(fileOf))
     links.set(
       id,
-      rows.indexes.map((i) => seratoLinkId(i, file)),
+      rows.links.map(({ index, path }) => seratoLinkId(index, file, path)),
     )
   }
   return { tracks, crates, links, unreadable: database.truncated ? [dir] : [] }
 }
 
-function crateRows(bytes: Uint8Array): { files: string[]; indexes: number[] } {
+type CrateRows = { files: string[]; links: { index: number; path: string }[] }
+
+function crateRows(bytes: Uint8Array): CrateRows {
   const files = parseSeratoCrate(bytes)
   const paths = crateTrackPaths(bytes)
-  const indexes = paths ? paths.flatMap((path, i) => (path ? [i] : [])) : files.map((_, i) => i)
-  return { files, indexes }
+  const links = paths
+    ? paths.flatMap((path, index) => (path ? [{ index, path }] : []))
+    : files.map((path, index) => ({ index, path }))
+  return { files, links }
 }
 
-function readCrate(file: string): { files: string[]; indexes: number[] } | null {
+function readCrate(file: string): CrateRows | null {
   try {
     return parsedFile(file, crateRows)
   } catch {

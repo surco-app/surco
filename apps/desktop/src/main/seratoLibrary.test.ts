@@ -181,21 +181,21 @@ describe('the Serato tab', () => {
         separator: false,
         meta: {},
         contentId: 'serato:/Users/dj/Music/old.mp3',
-        linkId: seratoLinkId(0, homeHouse),
+        linkId: seratoLinkId(0, homeHouse, 'Users/dj/Music/old.mp3'),
       },
       {
         path: '/Users/dj/Music/new.mp3',
         separator: false,
         meta: { bpm: '128', key: '8A' },
         contentId: 'serato:/Users/dj/Music/new.mp3',
-        linkId: seratoLinkId(1, homeHouse),
+        linkId: seratoLinkId(1, homeHouse, 'Users/dj/Music/new.mp3'),
       },
       {
         path: join(drive, 'Tracks/gig.flac'),
         separator: false,
         meta: {},
         contentId: `serato:${join(drive, 'Tracks/gig.flac')}`,
-        linkId: seratoLinkId(0, driveHouse),
+        linkId: seratoLinkId(0, driveHouse, 'Tracks/gig.flac'),
       },
     ])
   })
@@ -214,8 +214,8 @@ describe('the Serato tab', () => {
     )
     const entries = seratoPlaylist(readSeratoLibrary(seratoLibraryRoots(base, [])), 'A', NOW)
     expect(entries.map((e) => parseSeratoLinkId(e.linkId ?? ''))).toEqual([
-      { index: 0, crateFile: file },
-      { index: 2, crateFile: file },
+      { index: 0, crateFile: file, path: 'a.mp3' },
+      { index: 2, crateFile: file, path: 'b.mp3' },
     ])
   })
 

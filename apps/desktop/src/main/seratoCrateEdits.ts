@@ -105,10 +105,7 @@ export function seratoEditFiles(
     return files
   }
   const id = edit.playlistId
-  if (edit.kind !== 'rename' && edit.kind !== 'delete') {
-    for (const r of roots) if (draft.exists(crateFileOf(r, id))) stamp(crateFileOf(r, id))
-    return files
-  }
+  if (edit.kind !== 'rename' && edit.kind !== 'delete') return files
   const families = familyByRoot(draft, id, roots)
   for (const [r, family] of families) for (const f of family) stamp(crateFileOf(r, f))
   if (edit.kind === 'rename' && !caseOnly(id, edit.name.trim()))
@@ -119,61 +116,107 @@ export function seratoEditFiles(
 
 type TrackEdit = Extract<RekordboxPlaylistEdit, { kind: 'add' | 'move' | 'remove' }>
 
-function addTracks(
+interface Working {
+  source: Uint8Array
+  current: Uint8Array
+  base: string[]
+  rows: CrateTrack[]
+}
+
+const working = new WeakMap<SeratoDraft, Map<string, Working>>()
+
+function workingCrate(draft: SeratoDraft, file: string): Working | RekordboxEditRefusal {
+  const bytes = draft.read(file)
+  if (!bytes) return 'stale'
+  const seen = working.get(draft)?.get(file)
+  if (seen && seen.current === bytes) return seen
+  const base = crateTrackPaths(bytes)
+  if (!base) return 'unreadable'
+  return { source: bytes, current: bytes, base, rows: base.map((_, keep) => ({ keep })) }
+}
+
+const pathOfRow = (crate: Working, row: CrateTrack): string =>
+  'keep' in row ? (crate.base[row.keep] ?? '') : row.path
+
+function writeRows(
   draft: SeratoDraft,
-  edit: Extract<TrackEdit, { kind: 'add' }>,
-  roots: SeratoLibraryRoot[],
-): { report: PlaylistAddReport; lists: Map<string, CrateTrack[]> } | 'unreadable' {
-  const report: PlaylistAddReport = { added: 0, already: 0, notInCollection: 0, ambiguous: 0 }
-  const lists = new Map<string, CrateTrack[]>()
-  const present = new Map<string, Set<string>>()
-  for (const track of edit.tracks) {
-    const file = track.paths[track.paths.length - 1] ?? ''
-    const root = seratoRootOf(file, roots)
-    const crate = root ? crateFileOf(root, edit.playlistId) : null
-    const bytes = crate ? draft.read(crate) : null
-    if (!root || !crate || !bytes) {
-      report.notInCollection++
-      continue
-    }
-    const tracks = crateTrackPaths(bytes)
-    if (!tracks) return 'unreadable'
-    const path = seratoPathOn(file, root)
-    const there = present.get(crate) ?? new Set(tracks.map((t) => t.normalize('NFC')))
-    present.set(crate, there)
-    if (there.has(path.normalize('NFC'))) report.already++
-    else if (!existsSync(file)) report.notInCollection++
-    else {
-      there.add(path.normalize('NFC'))
-      const list = lists.get(crate) ?? tracks.map((_, keep): CrateTrack => ({ keep }))
-      lists.set(crate, [...list, { path }])
-      report.added++
-    }
-  }
-  return { report, lists }
+  file: string,
+  crate: Working,
+  rows: CrateTrack[],
+): RekordboxEditRefusal | null {
+  const bytes = withCrateTracks(crate.source, rows)
+  if (!bytes) return 'unreadable'
+  draft.write(file, bytes)
+  const crates = working.get(draft) ?? new Map<string, Working>()
+  crates.set(file, { ...crate, current: bytes, rows })
+  working.set(draft, crates)
+  return null
 }
 
 type Refused = { refused: RekordboxEditRefusal; report?: PlaylistAddReport }
 
+function addTracks(
+  draft: SeratoDraft,
+  edit: Extract<TrackEdit, { kind: 'add' }>,
+  roots: SeratoLibraryRoot[],
+): { report: PlaylistAddReport } | Refused {
+  const report: PlaylistAddReport = { added: 0, already: 0, notInCollection: 0, ambiguous: 0 }
+  const lists = new Map<string, { crate: Working; rows: CrateTrack[]; there: Set<string> }>()
+  for (const track of edit.tracks) {
+    const file = track.paths[track.paths.length - 1] ?? ''
+    const root = seratoRootOf(file, roots)
+    const crateFile = root ? crateFileOf(root, edit.playlistId) : null
+    if (!root || !crateFile || !draft.exists(crateFile)) {
+      report.notInCollection++
+      continue
+    }
+    let list = lists.get(crateFile)
+    if (!list) {
+      const crate = workingCrate(draft, crateFile)
+      if (typeof crate === 'string') return { refused: crate }
+      const there = new Set(crate.rows.map((row) => pathOfRow(crate, row).normalize('NFC')))
+      list = { crate, rows: [...crate.rows], there }
+      lists.set(crateFile, list)
+    }
+    const path = seratoPathOn(file, root)
+    if (list.there.has(path.normalize('NFC'))) report.already++
+    else if (!existsSync(file)) report.notInCollection++
+    else {
+      list.there.add(path.normalize('NFC'))
+      list.rows.push({ path })
+      report.added++
+    }
+  }
+  if (report.added === 0) return { refused: 'nothing-to-add', report }
+  for (const [crateFile, { crate, rows }] of lists) {
+    if (rows.length === crate.rows.length) continue
+    const failed = writeRows(draft, crateFile, crate, rows)
+    if (failed) return { refused: failed }
+  }
+  return { report }
+}
+
 function rowsByCrate(
   draft: SeratoDraft,
   linkIds: string[],
-): Map<string, { moving: Set<number>; tracks: string[] }> | Refused {
-  const crates = new Map<string, { moving: Set<number>; tracks: string[] }>()
+  own: Set<string>,
+): Map<string, { crate: Working; positions: number[] }> | Refused {
+  const crates = new Map<string, { crate: Working; positions: number[] }>()
   for (const linkId of linkIds) {
     const link = parseSeratoLinkId(linkId)
-    if (!link) return { refused: 'stale' }
-    let crate = crates.get(link.crateFile)
-    if (!crate) {
-      const bytes = draft.read(link.crateFile)
-      if (!bytes) return { refused: 'stale' }
-      const tracks = crateTrackPaths(bytes)
-      if (!tracks) return { refused: 'unreadable' }
-      crate = { moving: new Set(), tracks }
-      crates.set(link.crateFile, crate)
+    if (!link || !own.has(link.crateFile)) return { refused: 'stale' }
+    let entry = crates.get(link.crateFile)
+    if (!entry) {
+      const crate = workingCrate(draft, link.crateFile)
+      if (typeof crate === 'string') return { refused: crate }
+      entry = { crate, positions: [] }
+      crates.set(link.crateFile, entry)
     }
-    if (link.index >= crate.tracks.length) return { refused: 'stale' }
-    crate.moving.add(link.index)
+    const seen = entry.crate.base[link.index]
+    const at = entry.crate.rows.findIndex((row) => 'keep' in row && row.keep === link.index)
+    if (seen?.normalize('NFC') !== link.path.normalize('NFC') || at === -1)
+      return { refused: 'stale' }
+    entry.positions.push(at)
   }
   return crates
 }
@@ -183,49 +226,35 @@ function editTracks(
   edit: TrackEdit,
   roots: SeratoLibraryRoot[],
 ): { report?: PlaylistAddReport } | Refused {
-  let lists: Map<string, CrateTrack[]>
-  let report: PlaylistAddReport | undefined
-  if (edit.kind === 'add') {
-    const added = addTracks(draft, edit, roots)
-    if (added === 'unreadable') return { refused: added }
-    if (added.lists.size === 0) return { refused: 'nothing-to-add', report: added.report }
-    lists = added.lists
-    report = added.report
-  } else {
-    const crates = rowsByCrate(draft, edit.linkIds)
-    if (!(crates instanceof Map)) return crates
-    const own = new Set(roots.map((r) => crateFileOf(r, edit.playlistId)))
-    if ([...crates.keys()].some((crate) => !own.has(crate))) return { refused: 'stale' }
-    const beforeId = edit.kind === 'move' ? edit.beforeLinkId : null
-    const before = beforeId === null ? null : parseSeratoLinkId(beforeId)
-    if (beforeId !== null && !(before && crates.has(before.crateFile))) return { refused: 'stale' }
-    if (edit.kind === 'move' && crates.size > 1) return { refused: 'stale' }
-    lists = new Map()
-    for (const [crate, { moving, tracks }] of crates) {
-      const rows = tracks.map((_, keep) => keep)
-      const rest = rows.filter((i) => !moving.has(i))
-      if (edit.kind === 'remove') {
-        lists.set(
-          crate,
-          rest.map((keep) => ({ keep })),
-        )
-        continue
-      }
-      const at = before ? rest.indexOf(before.index) : rest.length
+  if (edit.kind === 'add') return addTracks(draft, edit, roots)
+  const own = new Set(roots.map((r) => crateFileOf(r, edit.playlistId)))
+  const beforeId = edit.kind === 'move' ? edit.beforeLinkId : null
+  const crates = rowsByCrate(
+    draft,
+    beforeId === null ? edit.linkIds : [...edit.linkIds, beforeId],
+    own,
+  )
+  if (!(crates instanceof Map)) return crates
+  if (edit.kind === 'move' && crates.size > 1) return { refused: 'stale' }
+  const writes: [string, Working, CrateTrack[]][] = []
+  for (const [file, { crate, positions }] of crates) {
+    const before = beforeId === null ? undefined : positions.pop()
+    const moving = new Set(positions)
+    const rows = crate.rows.map((_, i) => i)
+    const rest = rows.filter((i) => !moving.has(i))
+    let next = rest
+    if (edit.kind === 'move') {
+      const at = before === undefined ? rest.length : rest.indexOf(before)
       if (at === -1) return { refused: 'stale' }
-      const next = [...rest.slice(0, at), ...rows.filter((i) => moving.has(i)), ...rest.slice(at)]
-      lists.set(
-        crate,
-        next.map((keep) => ({ keep })),
-      )
+      next = [...rest.slice(0, at), ...rows.filter((i) => moving.has(i)), ...rest.slice(at)]
     }
+    writes.push([file, crate, next.map((i) => crate.rows[i])])
   }
-  for (const [crate, list] of lists) {
-    const bytes = withCrateTracks(draft.read(crate) as Uint8Array, list)
-    if (!bytes) return { refused: 'unreadable' }
-    draft.write(crate, bytes)
+  for (const [file, crate, rows] of writes) {
+    const failed = writeRows(draft, file, crate, rows)
+    if (failed) return { refused: failed }
   }
-  return report ? { report } : {}
+  return {}
 }
 
 function staleOrUnreadable(draft: SeratoDraft, op: EditOp): RekordboxEditRefusal | null {
