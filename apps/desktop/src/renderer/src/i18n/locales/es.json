@@ -1403,7 +1403,7 @@
     "configDirHint": "Elige una carpeta en iCloud Drive o Dropbox para compartir estas preferencias entre tus Macs. Se aplica al momento; las estadísticas y rutas de este Mac se quedan en local.",
     "backup": "Copia de seguridad",
     "backupHint": "Exporta toda tu configuración a un fichero (incluido el token de Discogs) o restáurala desde uno.",
-    "sourcesTitle": "Fuentes",
+    "sourcesTitle": "Barra lateral",
     "source": {
       "appleMusic": "Apple Music",
       "rekordbox": "rekordbox",
@@ -1416,7 +1416,7 @@
     "sourceEngineUnavailable": "No se ha encontrado una biblioteca de Engine DJ",
     "sourceTraktorUnavailable": "No se ha encontrado una colección de Traktor",
     "sourceSeratoUnavailable": "No se ha encontrado una biblioteca de Serato",
-    "sourcesHint": "Ocultar una fuente solo la quita de la barra lateral y no cambia su sincronización al convertir.",
+    "sourcesHint": "Ocultar una biblioteca solo la quita de la barra lateral y no cambia su sincronización al convertir.",
     "updates": "Actualizaciones",
     "betaUpdates": "Recibir versiones beta",
     "betaUpdatesHint": "Las betas llegan antes que las versiones estables y sirven para probar lo nuevo, pero traen errores que aún no se han encontrado. Solo afecta a este equipo, y el cambio se aplica al reiniciar Surco.",

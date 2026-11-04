@@ -1403,7 +1403,7 @@
     "configDirHint": "iCloud Drive または Dropbox のフォルダーを選択して、これらの設定を Mac 間で共有します。即時適用され、この Mac の統計とパスはローカルに残ります。",
     "backup": "バックアップ",
     "backupHint": "すべての設定をファイルにエクスポート（Discogs トークン含む）または復元します。",
-    "sourcesTitle": "ソース",
+    "sourcesTitle": "サイドバー",
     "source": {
       "appleMusic": "Apple Music",
       "rekordbox": "rekordbox",
@@ -1416,7 +1416,7 @@
     "sourceEngineUnavailable": "Engine DJ ライブラリが見つかりませんでした",
     "sourceTraktorUnavailable": "Traktor コレクションが見つかりませんでした",
     "sourceSeratoUnavailable": "Serato ライブラリが見つかりませんでした",
-    "sourcesHint": "ソースを非表示にしてもサイドバーから消えるだけで、変換時の同期には影響しません。",
+    "sourcesHint": "ライブラリを非表示にしてもサイドバーから消えるだけで、変換時の同期には影響しません。",
     "updates": "アップデート",
     "betaUpdates": "ベータ版を取得",
     "betaUpdatesHint": "ベータ版は安定版リリース前に提供され、新機能を試すためのものですが、まだ見つかっていないバグが含まれる可能性があります。このマシンのみに影響し、Surco を再起動すると変更が反映されます。",

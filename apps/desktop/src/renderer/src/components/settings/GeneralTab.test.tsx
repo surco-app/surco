@@ -4,6 +4,12 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PlaylistSource } from '../../../../shared/types'
 import i18n from '../../i18n'
+import de from '../../i18n/locales/de.json'
+import en from '../../i18n/locales/en.json'
+import es from '../../i18n/locales/es.json'
+import fr from '../../i18n/locales/fr.json'
+import ja from '../../i18n/locales/ja.json'
+import ptBR from '../../i18n/locales/pt-BR.json'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 
 // The tab asks which sources this machine has on mount, so the bridge has to exist
@@ -289,6 +295,21 @@ describe('GeneralTab sources', () => {
       'Serato',
     )
   })
+
+  it.each([
+    ['en', en],
+    ['es', es],
+    ['de', de],
+    ['fr', fr],
+    ['pt-BR', ptBR],
+    ['ja', ja],
+  ])(
+    'titles the source switches in %s apart from the Sources tab of search catalogs, so two different settings never share a name',
+    (_lng, catalog) => {
+      expect(catalog.settings.sourcesTitle).not.toBe(catalog.settings.tabs.search)
+      expect(catalog.settings.sourcesHint).not.toContain(catalog.settings.tabs.search.toLowerCase())
+    },
+  )
 
   it('says that hiding a source leaves its sync alone', async () => {
     renderSources({ platform: 'darwin', rekordbox: true })
