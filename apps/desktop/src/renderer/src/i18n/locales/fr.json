@@ -529,6 +529,7 @@
   "editor": {
     "searchPlaceholder": "Rechercher dans tes sources ou coller un id de release Discogs…",
     "searchClear": "Effacer la recherche",
+    "searchScope": "Catalogues",
     "resultsFold": "Masquer les résultats",
     "resultsUnfold": "Afficher les résultats",
     "resultsUnfoldSearch": "Rechercher",

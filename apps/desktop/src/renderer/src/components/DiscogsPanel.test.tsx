@@ -945,3 +945,34 @@ describe('DiscogsPanel source menu stacking', () => {
     }
   })
 })
+
+// Beside the track list's "All 4", the source menu said "All (5)": the same toolbar row
+// counted in two formats.
+describe('DiscogsPanel source menu count', () => {
+  it('counts the results the way the track list counts its tracks', () => {
+    renderPanel(
+      browser({
+        query: 'x',
+        results: [
+          { provider: 'discogs', id: 1, title: 'Album' },
+          { provider: 'musicbrainz', id: 2, title: 'Other' },
+        ],
+        providerCounts: [
+          { provider: 'discogs', count: 1 },
+          { provider: 'musicbrainz', count: 1 },
+        ],
+      }),
+    )
+    expect(screen.getByTestId('provider-filter')).not.toHaveTextContent('(')
+    expect(screen.getByTestId('provider-filter-count')).toHaveTextContent('2')
+  })
+})
+
+describe('DiscogsPanel search scope', () => {
+  // The track list's search and this one sit side by side and look alike; with a query
+  // typed, only the scope tells that this field searches the catalogs.
+  it('names the catalogs in front of the query', () => {
+    renderPanel(browser({ query: 'DJ Roy', results: [] }))
+    expect(screen.getByTestId('discogs-query-scope')).toHaveTextContent('Catalogs')
+  })
+})

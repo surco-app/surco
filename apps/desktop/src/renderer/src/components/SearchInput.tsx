@@ -16,6 +16,7 @@ interface Props {
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
   // Lets the caller stretch the field in a flex row (the Discogs column wants flex-1).
   className?: string
+  scope?: string
 }
 
 // The shared search field used by both the track-list filter and the Discogs box, so the
@@ -33,21 +34,44 @@ export function SearchInput({
   inputRef,
   onKeyDown,
   className = '',
+  scope,
 }: Props): React.JSX.Element {
+  const iconPlace = scope
+    ? 'h-3 w-3 shrink-0'
+    : 'pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2'
+  const icon = busy ? (
+    <Loader2
+      data-testid={`${testid}-spinner`}
+      className={`${iconPlace} animate-spin text-fg-faint`}
+      aria-hidden="true"
+    />
+  ) : (
+    <Search
+      data-testid={`${testid}-icon`}
+      className={`${iconPlace} text-fg-faint`}
+      aria-hidden="true"
+    />
+  )
+  const Frame = scope ? 'label' : 'div'
   return (
-    <div className={`relative ${className}`}>
-      {busy ? (
-        <Loader2
-          data-testid={`${testid}-spinner`}
-          className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-fg-faint"
+    <Frame
+      className={
+        scope
+          ? `relative flex items-center rounded-lg bg-[var(--color-panel-2)]/60 focus-within:outline-2 focus-within:outline-[var(--color-accent)] ${className}`
+          : `relative ${className}`
+      }
+    >
+      {scope ? (
+        <span
+          data-testid={`${testid}-scope`}
           aria-hidden="true"
-        />
+          className="ml-1 flex h-6 shrink-0 items-center gap-1 rounded-md bg-[var(--color-panel)] px-1.5 text-[11px] font-medium text-fg-dim"
+        >
+          {icon}
+          {scope}
+        </span>
       ) : (
-        <Search
-          data-testid={`${testid}-icon`}
-          className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-fg-faint"
-          aria-hidden="true"
-        />
+        icon
       )}
       <input
         ref={inputRef}
@@ -59,7 +83,11 @@ export function SearchInput({
         placeholder={placeholder}
         // A soft fill and no border, like a macOS search field: the header is chrome around the
         // list, and a bordered box read as one more form control to fill in.
-        className="h-8 w-full rounded-lg bg-[var(--color-panel-2)]/60 pl-7 pr-7 text-xs outline-none placeholder:text-fg-faint"
+        className={
+          scope
+            ? 'h-8 min-w-0 flex-1 bg-transparent pl-2 pr-7 text-xs outline-none placeholder:text-fg-faint focus-visible:shadow-none'
+            : 'h-8 w-full rounded-lg bg-[var(--color-panel-2)]/60 pl-7 pr-7 text-xs outline-none placeholder:text-fg-faint'
+        }
       />
       {value && (
         <button
@@ -72,6 +100,6 @@ export function SearchInput({
           <X className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
       )}
-    </div>
+    </Frame>
   )
 }
