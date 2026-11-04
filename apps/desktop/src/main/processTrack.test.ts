@@ -1723,6 +1723,42 @@ describe('runProcessTrack — Apple Music', () => {
     await runProcessTrack(job(), deps)
     expect(deps.addToAppleMusic).not.toHaveBeenCalled()
   })
+
+  it('points the Music entry of a renamed original at the new name even without adding to Music, so Music never loses the file', async () => {
+    const deps = mac({ overwriteOriginal: true, addToAppleMusic: false })
+    deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    await runProcessTrack(job(), deps)
+
+    expect(deps.findAppleMusicEntry).toHaveBeenCalledWith('/in/song.wav', {}, false)
+    expect(deps.relinkAppleMusicEntry).toHaveBeenCalledWith('lib-9', '/in/Artist - Title.aiff')
+    expect(vi.mocked(deps.relinkAppleMusicEntry).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(deps.removeRenamedOriginal).mock.invocationCallOrder[0],
+    )
+    expect(deps.addToAppleMusic).not.toHaveBeenCalled()
+    expect(deps.updateInAppleMusic).not.toHaveBeenCalled()
+  })
+
+  it('keeps the renamed original when Music cannot follow the rename, so its entry still plays', async () => {
+    const deps = mac({ overwriteOriginal: true, addToAppleMusic: false })
+    deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    deps.relinkAppleMusicEntry = vi.fn(async () => {
+      throw new Error('Music got an error (-1728)')
+    })
+    const result = await runProcessTrack(job(), deps)
+
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result).toMatchObject({ appleMusicFailed: true, originalKept: true })
+  })
+
+  it('asks Music nothing when the in-place rewrite keeps the file its name', async () => {
+    const deps = mac({ overwriteOriginal: true, addToAppleMusic: false })
+    deps.isSameFile = vi.fn(async () => true)
+    deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    await runProcessTrack(job({ outputName: 'song', format: 'wav' }), deps)
+
+    expect(deps.findAppleMusicEntry).not.toHaveBeenCalled()
+    expect(deps.relinkAppleMusicEntry).not.toHaveBeenCalled()
+  })
 })
 
 describe('runProcessTrack — naming what it did', () => {
