@@ -13,6 +13,7 @@ type Section = {
   title: string
   s: string
   body: string[]
+  steps: { lead: string; text: string }[]
   points: string[]
   shot: string
   shotCaption: string
@@ -166,15 +167,35 @@ export default function Guide() {
                     {p}
                   </p>
                 ))}
+                <ol data-testid="guide-steps" className="mt-6 space-y-3">
+                  {s.steps.map((step, n) => (
+                    <li key={step.lead} className="flex gap-3.5 leading-relaxed text-muted">
+                      <span className="mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-full border border-line font-mono text-xs text-blue">
+                        {n + 1}
+                      </span>
+                      <span>
+                        <strong className="font-semibold text-fg">{step.lead}</strong> {step.text}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
                 {s.points.length > 0 && (
-                  <ul className="mt-5 space-y-2.5">
-                    {s.points.map((point) => (
-                      <li key={point} className="flex gap-3 text-sm leading-relaxed text-muted">
-                        <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
-                        <span>{point}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <details
+                    data-testid="guide-notes"
+                    className="mt-6 rounded-xl border border-line bg-surface2/40"
+                  >
+                    <summary className="cursor-pointer px-4 py-3 text-sm text-subtle">
+                      {t('guide.notesLabel')}
+                    </summary>
+                    <ul className="space-y-2.5 px-4 pb-4">
+                      {s.points.map((point) => (
+                        <li key={point} className="flex gap-3 text-sm leading-relaxed text-muted">
+                          <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
+                          <span>{point}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
                 )}
                 {s.shot && (
                   <GuideShot
