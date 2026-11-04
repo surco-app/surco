@@ -1122,6 +1122,7 @@
     "mediaType": "Type de support",
     "discogsUrl": "URL Discogs",
     "quality": "Qualité",
+    "qualityFromAnalysis": "Rempli à partir de l’analyse de qualité",
     "suggestionsMore": "Afficher {{count}} de plus",
     "suggestionDetected": "Détecté dans l'audio : {{value}}",
     "rowAutoFill": "Remplir {{name}} automatiquement",

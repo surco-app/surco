@@ -1122,6 +1122,7 @@
     "mediaType": "Medientyp",
     "discogsUrl": "Discogs-URL",
     "quality": "Qualität",
+    "qualityFromAnalysis": "Aus der Qualitätsanalyse übernommen",
     "suggestionsMore": "{{count}} weitere anzeigen",
     "suggestionDetected": "Im Audio erkannt: {{value}}",
     "rowAutoFill": "{{name}} automatisch füllen",

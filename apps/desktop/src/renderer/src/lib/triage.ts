@@ -13,7 +13,7 @@ import { gradedExt, isLowResCover, isTranscode, qualityVerdict, type Verdict } f
 // to the row so the deception is spottable without opening the track.
 export type TrackQuality = Verdict | 'unanalyzed' | 'transcoded' | 'damaged'
 
-export function trackQuality(track: TrackItem): TrackQuality {
+export function trackQuality(track: Pick<TrackItem, 'inputPath' | 'spectrum'>): TrackQuality {
   const s = track.spectrum
   if (s?.damaged) return 'damaged'
   if (!s || s.cutoffHz === null) return 'unanalyzed'

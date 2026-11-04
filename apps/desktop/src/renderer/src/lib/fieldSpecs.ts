@@ -78,6 +78,7 @@ export interface FieldSpec {
   formatResult?: string
   cleaned?: FieldCleanedNote
   previous?: FieldPreviousNote
+  readOnly?: boolean
   perTrack?: {
     list: TagList
     tracks: TrackItem[]
@@ -158,6 +159,8 @@ export interface BuildFieldSpecsParams {
   cleanedNotes?: Partial<Record<string, FieldCleanedNote>>
   previousNotes?: Partial<Record<string, FieldPreviousNote>>
   playlists?: Partial<Record<PlaylistLibrary, PlaylistsSpec>>
+  // Quality as the next save writes it, set only while its Auto is on.
+  analyzedQuality?: string
 }
 
 // The fields whose chips add a tag rather than replace the value.
@@ -227,6 +230,7 @@ export function buildFieldSpecs({
   cleanedNotes,
   previousNotes,
   playlists,
+  analyzedQuality,
 }: BuildFieldSpecsParams): FieldSpec[] {
   const widthOf = (key: MetaTextKey): FieldWidth | undefined =>
     key === 'year' && fullReleaseDate ? 'medium' : FIELD_DEFS.find((d) => d.key === key)?.width
@@ -316,11 +320,13 @@ export function buildFieldSpecs({
             },
           ]
         }
+        const analyzed = def.key === 'quality' ? analyzedQuality : undefined
         return [
           {
             key: def.key,
             label: tr(`fields.${def.key}`),
-            value: item.meta[def.key] ?? '',
+            value: analyzed ?? item.meta[def.key] ?? '',
+            readOnly: analyzed !== undefined,
             onChange: singleOnChange.get(def.key) ?? (() => {}),
             // Only the free-text fields host the { } menu (see INSERT_TARGET_FIELDS);
             // the Field itself filters out the empty and the self entry.

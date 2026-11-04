@@ -1,4 +1,4 @@
-import { skipToken, type UseQueryResult, useQuery } from '@tanstack/react-query'
+import { type QueryClient, skipToken, type UseQueryResult, useQuery } from '@tanstack/react-query'
 import type { SpectrumResult, SpectrumVerdict } from '../../../shared/types'
 import { analysisOptions, cancellableAnalysisOptions } from '../lib/analysisQueries'
 
@@ -36,6 +36,16 @@ export function useSpectrogram(
   // The editor mounts this only for the selected track — the one the user is waiting on —
   // so it asks 'high' to preempt a background auto-match sweep's 'low' decodes.
   return useQuery({ ...spectrogramOptions(inputPath, 'high'), enabled })
+}
+
+export function cachedSpectrumOf(
+  client: QueryClient,
+  inputPath: string,
+): SpectrumVerdict | undefined {
+  return (
+    client.getQueryData<SpectrumResult>(spectrogramOptions(inputPath).queryKey) ??
+    client.getQueryData<SpectrumVerdict>(spectrumVerdictKey(inputPath))
+  )
 }
 
 export function useCachedSpectrum(inputPath: string): SpectrumVerdict | undefined {

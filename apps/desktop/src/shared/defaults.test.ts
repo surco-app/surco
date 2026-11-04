@@ -29,6 +29,16 @@ describe('normalizeImportFields', () => {
     expect(normalizeImportFields(undefined)).toEqual(DEFAULT_IMPORT_FIELDS)
   })
 
+  // Surco's quality verdict is the one auto field nobody had before: an upgrade that found
+  // it on would start writing a QUALITY tag into every user's files unasked.
+  it('leaves the quality verdict off when the preference is missing', () => {
+    expect(normalizeImportFields(undefined)).not.toContain('quality')
+  })
+
+  it('keeps the quality verdict on once the user turns it on', () => {
+    expect(normalizeImportFields(['album', 'quality'])).toEqual(['album', 'quality'])
+  })
+
   // An empty list is a real choice — "let Discogs fill nothing" — and must survive rather
   // than being mistaken for "unset" and reset to importing everything.
   it('keeps an empty selection empty rather than treating it as unset', () => {

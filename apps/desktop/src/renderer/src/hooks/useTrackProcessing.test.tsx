@@ -1012,6 +1012,42 @@ describe('useTrackProcessing', () => {
     expect(await run(['title', 'copyright'])).toBe('(P) Label')
   })
 
+  // The feedback asked for the verdict in the file and, later, in the file name: both come
+  // from the analysis the list already shows, and only for a user who turned its Auto on.
+  it('writes the analyzed verdict into the tag and the file name once its Auto is on', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' })
+    setApi({ processTrack })
+    const client = new QueryClient()
+    client.setQueryData(['spectrumVerdict', '/m/a.wav'], {
+      cutoffHz: 16000,
+      sampleRateHz: 44100,
+      processed: false,
+      hasKnee: true,
+    })
+    const run = async (importFields: string[]) => {
+      const { result } = renderHook(
+        () =>
+          useTrackProcessing({
+            tracks: [track({ id: 'a', meta: meta({ quality: '' }) })],
+            settings: {
+              importFields,
+              autoApplyFilename: true,
+              filenameFormat: '{title} [{quality}]',
+            } as unknown as Settings,
+            updateTrack: vi.fn(),
+          }),
+        { wrapper: withClient(client) },
+      )
+      await act(async () => {
+        await result.current.processOne('a')
+      })
+      const job = processTrack.mock.lastCall?.[0]
+      return [job.meta.quality, job.outputName]
+    }
+    expect(await run(['quality'])).toEqual(['Lossy', 'Title [Lossy]'])
+    expect(await run([])).toEqual(['', 'Title'])
+  })
+
   // A per-track custom name (set via rename/regenerate) is normally honored, so the
   // export lands under the user's chosen file name rather than the source's.
   it('honors a custom output name when not overwriting', async () => {

@@ -172,6 +172,7 @@ import { isMacOS } from './lib/platform'
 import { playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { topBarProgress } from './lib/progress'
+import { withCachedQualityTag } from './lib/qualityTag'
 import {
   clearWrittenPlaylists,
   discardPlaylistEdits,
@@ -2404,7 +2405,15 @@ export default function App(): React.JSX.Element {
     const targets = editScope(selectedTracks, selected)
     const patches = outputNamePatches(
       settings?.filenameFormat ?? '{artist} - {title}',
-      targets.map((t) => ({ ...t, meta: effectiveMeta(t, settings?.customFields ?? []) })),
+      targets.map((t) => ({
+        ...t,
+        meta: withCachedQualityTag(
+          effectiveMeta(t, settings?.customFields ?? []),
+          t,
+          queryClient,
+          settings?.importFields,
+        ),
+      })),
     )
     for (const p of patches) updateTrack(p.id, { outputName: p.outputName })
     if (targets.length > 1) setNotice(tr('notices.regeneratedNames', { count: patches.length }))

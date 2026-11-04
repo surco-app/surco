@@ -29,6 +29,7 @@ import { DEFAULT_REQUIRED_FIELDS, missingRequiredOf } from '../lib/fields'
 import { clearHiddenProvenance, sanitizeMeta } from '../lib/hygiene'
 import { cleanIpcError, errorKeyOf, isFileInUseMessage, mainErrorMessage } from '../lib/ipcError'
 import { autoNamesFile, renderOutputName } from '../lib/outputName'
+import { withCachedQualityTag } from '../lib/qualityTag'
 import { declickFor, declickForJob, jobAudio, normalizeFor, normalizeForJob } from '../lib/reapply'
 import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
 import { jobPlaylists, TRACK_PROGRAMS } from '../lib/trackPrograms'
@@ -379,12 +380,17 @@ export function useTrackProcessing({
       })
       const customFields = settings?.customFields ?? []
       const stray = strayTags(track, customFields)
-      const meta = clearHiddenProvenance(
-        sanitizeMeta(effectiveMeta(track, customFields), {
-          trim: settings?.trimWhitespace ?? true,
-          zeroPad: settings?.zeroPadTrack ?? true,
-        }),
-        settings?.visibleFields ?? DEFAULT_FIELDS,
+      const meta = withCachedQualityTag(
+        clearHiddenProvenance(
+          sanitizeMeta(effectiveMeta(track, customFields), {
+            trim: settings?.trimWhitespace ?? true,
+            zeroPad: settings?.zeroPadTrack ?? true,
+          }),
+          settings?.visibleFields ?? DEFAULT_FIELDS,
+        ),
+        track,
+        queryClient,
+        settings?.importFields,
       )
       // Default to the source file's own name: users expect "load and convert" to keep
       // their filename. A metadata-derived name is used when the editor's "Regenerate from

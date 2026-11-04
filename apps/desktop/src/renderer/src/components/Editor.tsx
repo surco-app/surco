@@ -85,6 +85,7 @@ import { isMacOS } from '../lib/platform'
 import { splitPosition } from '../lib/position'
 import { fileExtension, libraryCopyFormat } from '../lib/properties'
 import { isLowResCover } from '../lib/quality'
+import { withQualityTag } from '../lib/qualityTag'
 import { jobAudio } from '../lib/reapply'
 import type { PlaylistsEdit } from '../lib/rekordboxPlaylists'
 import {
@@ -857,7 +858,16 @@ export const Editor = memo(function Editor({
   )
 
   // The open track's metadata with its custom fields resolved, once, for every reader below.
-  const resolvedMeta = useMemo(() => effectiveMeta(item, customFields), [item, customFields])
+  const qualityAuto = importFields.includes('quality')
+  const resolvedMeta = useMemo(
+    () =>
+      withQualityTag(
+        effectiveMeta(item, customFields),
+        { inputPath: item.inputPath, spectrum: spectrumInHand },
+        qualityAuto,
+      ),
+    [item, customFields, spectrumInHand, qualityAuto],
+  )
 
   // What the per-field insert menu can offer: every visible text field of THIS
   // track. Bulk edits hold no single per-field value to insert, and compilation
@@ -1193,6 +1203,7 @@ export const Editor = memo(function Editor({
         cleanedNotes,
         previousNotes,
         playlists: playlistsSpec,
+        analyzedQuality: qualityAuto ? (resolvedMeta.quality ?? '') : undefined,
       }),
     [
       isMulti,
@@ -1222,6 +1233,8 @@ export const Editor = memo(function Editor({
       cleanedNotes,
       previousNotes,
       playlistsSpec,
+      qualityAuto,
+      resolvedMeta.quality,
     ],
   )
 

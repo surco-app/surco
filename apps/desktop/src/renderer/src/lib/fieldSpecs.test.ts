@@ -141,6 +141,19 @@ describe('buildFieldSpecs (single mode)', () => {
     expect(setField).toHaveBeenCalledWith('title', 'New')
   })
 
+  // With its Auto on, Quality shows what the next save writes, the analysis' word, and
+  // typing over it would be lost to that same save. Off, it is a plain field like any other.
+  it('shows Quality as the analysis fills it, read-only, while its Auto is on', () => {
+    const item = track('a', { title: 'Song', quality: 'Doubtful' })
+    const auto = buildFieldSpecs(
+      params({ visibleFields: ['quality'], item, analyzedQuality: 'Good' }),
+    )[0]
+    expect(auto).toMatchObject({ value: 'Good', readOnly: true })
+    const off = buildFieldSpecs(params({ visibleFields: ['quality'], item }))[0]
+    expect(off).toMatchObject({ value: 'Doubtful' })
+    expect(off.readOnly).toBeFalsy()
+  })
+
   it('flags a required field that is empty as invalid', () => {
     const specs = buildFieldSpecs(
       params({

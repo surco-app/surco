@@ -1122,6 +1122,7 @@
     "mediaType": "メディアタイプ",
     "discogsUrl": "Discogs URL",
     "quality": "品質",
+    "qualityFromAnalysis": "品質分析から入力",
     "suggestionsMore": "{{count}} を表示",
     "suggestionDetected": "音声から検出: {{value}}",
     "rowAutoFill": "{{name}} を自動入力",

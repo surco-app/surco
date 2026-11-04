@@ -20,7 +20,7 @@ import {
 } from '../../../shared/customFields'
 import type { CustomField, MetaTextKey, PlaylistLibrary } from '../../../shared/types'
 import {
-  IMPORTABLE_FIELDS,
+  AUTO_FIELDS,
   isPlaylistField,
   labeledFields,
   moveItem,
@@ -214,7 +214,7 @@ export function FieldsEditor({
     // A field no provider fills gets an empty slot of the same width rather than nothing,
     // so Required/Hide stay on one vertical line down the list instead of jumping left on
     // every row without a toggle.
-    if (!IMPORTABLE_FIELDS.includes(key as MetaTextKey)) return <span aria-hidden="true" />
+    if (!AUTO_FIELDS.includes(key as MetaTextKey)) return <span aria-hidden="true" />
     const on = importFields.includes(key)
     return (
       <button

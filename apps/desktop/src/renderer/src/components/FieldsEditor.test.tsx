@@ -325,6 +325,14 @@ describe('auto-fill toggle', () => {
     expect(within(row).getByTestId('field-auto-country')).toHaveAttribute('aria-pressed', 'true')
   })
 
+  // The feedback that asked for it wanted the verdict written while the field stays out of
+  // the form, so Quality carries the switch on its hidden row like Country does.
+  it('lets the hidden Quality field be filled from the analysis', () => {
+    setup({ visibleFields: ['title'], requiredFields: [], importFields: [] })
+    const row = screen.getByTestId('hidden-field-quality')
+    expect(within(row).getByTestId('field-auto-quality')).toHaveAttribute('aria-pressed', 'false')
+  })
+
   // Both lists sit under one set of column headings, so a hidden row has to resolve its
   // Auto mark to the same track as a visible one. It used to run on a three-column grid of
   // its own, which put its tick under the *Required* column — reading as if hidden fields

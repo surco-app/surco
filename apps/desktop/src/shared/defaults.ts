@@ -50,6 +50,10 @@ export const IMPORTABLE_FIELDS: MetaTextKey[] = [
   'discogsUrl',
 ]
 
+// Every field with an Auto switch in Settings → Fields: what a release fills, plus Surco's
+// own quality verdict, filled from the analysis instead.
+export const AUTO_FIELDS: MetaTextKey[] = [...IMPORTABLE_FIELDS, 'quality']
+
 // Every importable field starts enabled, so applying a release keeps behaving exactly as it
 // did before this preference existed until the user opts something out.
 export const DEFAULT_IMPORT_FIELDS: MetaTextKey[] = [...IMPORTABLE_FIELDS]
@@ -61,7 +65,7 @@ export const DEFAULT_IMPORT_FIELDS: MetaTextKey[] = [...IMPORTABLE_FIELDS]
 // empty. Casting instead of filtering would let a stale name through as if it were a field.
 export function normalizeImportFields(stored: string[] | undefined): MetaTextKey[] {
   if (!Array.isArray(stored)) return DEFAULT_IMPORT_FIELDS
-  const offered = new Set<string>(IMPORTABLE_FIELDS)
+  const offered = new Set<string>(AUTO_FIELDS)
   return stored.filter((f): f is MetaTextKey => offered.has(f))
 }
 

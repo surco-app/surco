@@ -53,6 +53,8 @@ interface FieldProps {
   formatResult?: string
   cleaned?: FieldCleanedNote
   previous?: FieldPreviousNote
+  // Filled by Surco from the analysis (Quality with its Auto on): shown, not typed into.
+  readOnly?: boolean
 }
 
 // Memoized so a keystroke in one field doesn't re-render every other visible field:
@@ -80,14 +82,18 @@ export const Field = memo(function Field({
   formatResult,
   cleaned,
   previous,
+  readOnly,
 }: FieldProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
   const { t: tr } = useTranslation()
   const inputId = useId()
   const requiredNoteId = useId()
   const mixedNoteId = useId()
+  const readOnlyNoteId = useId()
   const describedBy =
-    [invalid && requiredNoteId, mixed && mixedNoteId].filter(Boolean).join(' ') || undefined
+    [invalid && requiredNoteId, mixed && mixedNoteId, readOnly && readOnlyNoteId]
+      .filter(Boolean)
+      .join(' ') || undefined
   // The text the input shows while the user types, kept local so a keystroke doesn't
   // touch the global track array (and its O(n) pipeline) until they pause or leave.
   const [draft, setDraft] = useState(value)
@@ -212,6 +218,7 @@ export const Field = memo(function Field({
           aria-required={required || undefined}
           aria-describedby={describedBy}
           value={draft}
+          readOnly={readOnly}
           placeholder={placeholder}
           onChange={(e) => onType(e.target.value)}
           onKeyDown={onKeyDown}
@@ -223,7 +230,7 @@ export const Field = memo(function Field({
           // border defines the input, and focus brings the accent ring + surface up.
           // A column of empty Album/Year/Genre boxes used to read as heavy black slabs
           // that dominated the form; now they wait quietly until you engage one.
-          className={`w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)]/30 px-2.5 py-1.5 text-sm outline-none transition-colors placeholder:text-fg-faint hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)]/50 focus:border-[var(--color-accent)] focus:bg-[var(--color-field)] ${
+          className={`w-full rounded-lg border ${readOnly ? 'border-dashed' : ''} border-[var(--color-line-strong)] bg-[var(--color-panel-2)]/30 px-2.5 py-1.5 text-sm outline-none transition-colors placeholder:text-fg-faint hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)]/50 focus:border-[var(--color-accent)] focus:bg-[var(--color-field)] ${
             hasMenu || listsValues ? 'pr-8' : ''
           }`}
         />
@@ -314,6 +321,11 @@ export const Field = memo(function Field({
       {mixed && (
         <span id={mixedNoteId} className="sr-only">
           {tr('editor.multipleValues')}
+        </span>
+      )}
+      {readOnly && (
+        <span id={readOnlyNoteId} className="sr-only">
+          {tr('fields.qualityFromAnalysis')}
         </span>
       )}
       {/* Detecting the audio suggestion (BPM/Key): a placeholder chip in the exact shape

@@ -519,3 +519,16 @@ describe('Field mixed values', () => {
     expect(screen.queryByTestId('field-values-artist')).toBeNull()
   })
 })
+
+describe('Field read-only', () => {
+  afterEach(cleanup)
+
+  // Quality with its Auto on shows what the next save writes; the field says so instead of
+  // letting the user type a value that save would replace.
+  it('cannot be typed over and says where its value comes from', () => {
+    render(<Field name="quality" label="Quality" value="Good" onChange={vi.fn()} readOnly />)
+    const input = screen.getByTestId('field-quality')
+    expect(input).toHaveAttribute('readonly')
+    expect(input).toHaveAccessibleDescription('Filled from the quality analysis')
+  })
+})

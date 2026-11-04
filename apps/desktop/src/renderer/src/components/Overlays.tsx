@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import type React from 'react'
 import { Suspense } from 'react'
 import { effectiveMeta } from '../../../shared/customFields'
@@ -12,6 +13,7 @@ import type {
 import type { ActiveModal } from '../hooks/useOverlays'
 import type { Command } from '../lib/commands'
 import { lazyChunk } from '../lib/lazyChunk'
+import { withCachedQualityTag } from '../lib/qualityTag'
 import type { TrackItem } from '../types'
 import { ConfirmDialog } from './ConfirmDialog'
 import { ModalExit } from './ModalShell'
@@ -106,6 +108,7 @@ export function Overlays({
   revealSelection,
   playlistLibraries,
 }: Props): React.JSX.Element {
+  const queryClient = useQueryClient()
   // App hands over the visible list itself when nothing is multi-selected.
   const bulkScope = bulkTracks === visibleTracks ? 'visible' : 'selected'
   // Each run bumps its command's counter, so the palette can float the user's habits up the
@@ -179,7 +182,12 @@ export function Overlays({
       <ModalExit>
         {activeModal?.type === 'rename' && selected && (
           <RenameModal
-            meta={effectiveMeta(selected, settings?.customFields ?? [])}
+            meta={withCachedQualityTag(
+              effectiveMeta(selected, settings?.customFields ?? []),
+              selected,
+              queryClient,
+              settings?.importFields,
+            )}
             customFields={settings?.customFields ?? []}
             initialFormat={settings?.filenameFormat ?? '{artist} - {title}'}
             extension={formatExtension(
