@@ -1225,3 +1225,13 @@ button:hover > .process-fill {
     transform: none;
   }
 }
+
+:is([data-menu] [role="option"], [role="menu"] [role^="menuitem"]):focus-visible {
+  outline: none;
+  box-shadow: none;
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+:is([data-menu] [role="option"], [role="menu"] [role^="menuitem"]):focus-visible * {
+  color: var(--color-on-accent);
+}

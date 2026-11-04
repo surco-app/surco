@@ -253,6 +253,7 @@ export const Field = memo(function Field({
             {valuesOpen && (
               <div
                 role="listbox"
+                data-menu
                 aria-label={label}
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') setValuesOpen(false)

@@ -670,3 +670,22 @@ describe('player arrival and exit', () => {
     )
   })
 })
+
+describe('dropdown menu keyboard focus', () => {
+  const at = css.indexOf(
+    ':is([data-menu] [role="option"], [role="menu"] [role^="menuitem"]):focus-visible',
+  )
+  const block = at < 0 ? '' : css.slice(at, css.indexOf('}', at))
+
+  it('fills the focused item in the accent like a native menu instead of ringing it', () => {
+    expect(block).toContain('background-color: var(--color-accent)')
+    expect(block).toContain('box-shadow: none')
+  })
+
+  it('turns every label in the focused item to the on-accent colour so dim counts stay legible', () => {
+    expect(block).toContain('color: var(--color-on-accent)')
+    expect(css).toMatch(
+      /:is\(\[data-menu\] \[role="option"\], \[role="menu"\] \[role\^="menuitem"\]\):focus-visible \*\s*\{[^}]*color: var\(--color-on-accent\)/,
+    )
+  })
+})

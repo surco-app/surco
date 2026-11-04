@@ -235,6 +235,7 @@ export function FilterBar({
               <div
                 ref={listRef}
                 role="listbox"
+                data-menu
                 aria-multiselectable={multiselectable || undefined}
                 data-testid={`${testid}-listbox`}
                 aria-label={listLabel}

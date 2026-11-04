@@ -665,6 +665,12 @@ describe('QualityFilterBar', () => {
   // listbox that doesn't declare itself multi-select tells assistive tech only one can be.
   // The dividers are decoration, and a listbox may hold only options, so they stay out
   // of the accessibility tree.
+  it('marks the bucket menu as a dropdown menu so keyboard focus fills the row like a native menu', () => {
+    renderBar()
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByRole('listbox')).toHaveAttribute('data-menu')
+  })
+
   it('declares the bucket menu multi-select and keeps its dividers out of it', () => {
     renderBar()
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))

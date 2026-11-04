@@ -65,6 +65,12 @@ describe('Select', () => {
     expect(screen.getByTestId('sort-option-import')).toHaveAttribute('aria-selected', 'false')
   })
 
+  it('marks its listbox as a dropdown menu so keyboard focus fills the row like a native menu', () => {
+    renderSelect('name')
+    fireEvent.click(screen.getByTestId('sort'))
+    expect(screen.getByTestId('sort-listbox')).toHaveAttribute('data-menu')
+  })
+
   // Options can carry a leading glyph so the sort menu reads at a glance, like the
   // quality filter's buckets — an option without one stays text-only.
   it('renders an option icon when the option carries one', () => {

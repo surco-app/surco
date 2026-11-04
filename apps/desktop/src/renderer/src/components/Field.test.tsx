@@ -513,6 +513,14 @@ describe('Field mixed values', () => {
     expect(options.map((o) => o.textContent)).toEqual(['Oliver Gil3', 'Aaron Sevilla1'])
   })
 
+  it('marks the values list as a dropdown menu so keyboard focus fills the row like a native menu', () => {
+    render(
+      <Field name="artist" label="Artist" value="" mixed mixedValues={values} onChange={vi.fn()} />,
+    )
+    fireEvent.click(screen.getByTestId('field-values-artist'))
+    expect(screen.getByRole('listbox')).toHaveAttribute('data-menu')
+  })
+
   it('writes the picked value and closes the list', () => {
     const onChange = vi.fn()
     render(

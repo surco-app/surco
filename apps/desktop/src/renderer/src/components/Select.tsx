@@ -165,6 +165,7 @@ export function Select({
     <div
       ref={listRef}
       role="listbox"
+      data-menu
       data-testid={`${testid}-listbox`}
       aria-label={label}
       onKeyDown={onListKeyDown}
