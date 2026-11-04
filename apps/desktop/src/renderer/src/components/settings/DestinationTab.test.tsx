@@ -1011,4 +1011,18 @@ describe('DestinationTab Serato', () => {
       restore()
     }
   })
+
+  it('keeps the Serato row usable while it is on and the library is gone, so it can be switched off', async () => {
+    const restore = withSerato(false)
+    try {
+      const patch = renderTab({ syncSerato: true, addToSerato: true })
+      await waitFor(() => expect(window.api.seratoAvailable).toBeDefined())
+      expect(screen.getByTestId('settings-reach-serato')).toBeEnabled()
+      fireEvent.click(screen.getByTestId('settings-reach-serato-off'))
+      expect(patch).toHaveBeenCalledWith('syncSerato', false)
+      expect(patch).toHaveBeenCalledWith('addToSerato', false)
+    } finally {
+      restore()
+    }
+  })
 })

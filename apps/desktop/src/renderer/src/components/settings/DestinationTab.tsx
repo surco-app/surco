@@ -556,7 +556,7 @@ function SeratoSection({
         label={tr('settings.syncSerato')}
         synced={synced}
         patch={patch}
-        disabled={!found}
+        disabled={!found && !synced.syncSerato && !synced.addToSerato}
       />
       <SettingsHint className="mt-2">
         {found ? tr('settings.syncSeratoHint') : tr('settings.syncSeratoIdle')}

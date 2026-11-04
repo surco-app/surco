@@ -1185,6 +1185,14 @@ describe('cue flows', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
+  it('leaves Serato off for a settings file from before it existed', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ syncEngineDj: true, addToEngineDj: true }),
+    )
+    expect(getSettings()).toMatchObject({ addToSerato: false, syncSerato: false })
+  })
+
   it('places a flow in every DJ program for a settings file from before the choice', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
     const s = getSettings()
