@@ -105,3 +105,16 @@ export function exportedPatch(
     cleaned: undefined,
   }
 }
+
+// The row's source went to the Trash: with a converted copy elsewhere the row follows it, as an
+// in-place export follows its rewritten file, so nothing keeps asking for the file that is gone.
+export function sourceTrashedPatch(track: TrackItem): Partial<TrackItem> {
+  const output = track.outputPath
+  if (!output || output === track.inputPath) return { originalTrashed: true }
+  return {
+    originalTrashed: true,
+    inputPath: output,
+    fileName: parseFileName(output).fileName,
+    movedFrom: [...(track.movedFrom ?? []), track.inputPath],
+  }
+}

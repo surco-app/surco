@@ -14,6 +14,7 @@ import { baseName } from '../lib/baseName'
 import { eligibleForBatch } from '../lib/batch'
 import { deriveTagPatches } from '../lib/deriveTags'
 import type { Destination } from '../lib/destination'
+import { sourceTrashedPatch } from '../lib/export'
 import { DEFAULT_REQUIRED_FIELDS } from '../lib/fields'
 import { jobAudio } from '../lib/reapply'
 import type { SupersededFile } from '../lib/selectionStatus'
@@ -340,7 +341,7 @@ export function useConfirmFlows({
     }
     const trashFiles = (alreadyGone: string | undefined): void => {
       if (originalPath && originalPath !== alreadyGone)
-        trash(originalPath, { originalTrashed: true }, track.id)
+        trash(originalPath, sourceTrashedPatch(track), track.id)
       for (const { path, trackId } of superseded) {
         if (path === alreadyGone) continue
         trash(path, { supersededTrashed: true }, trackId)
@@ -361,7 +362,7 @@ export function useConfirmFlows({
           (res) => {
             if (res?.location) {
               for (const t of tracksRef.current) {
-                if (t.inputPath === res.location) updateTrack(t.id, { originalTrashed: true })
+                if (t.inputPath === res.location) updateTrack(t.id, sourceTrashedPatch(t))
               }
             }
             onOldMusicCopyRemoved()

@@ -535,6 +535,49 @@ describe('useConfirmFlows clean up previous files', () => {
     await waitFor(() => expect(reportOldCopyRemoveFailure).toHaveBeenCalledWith(true))
   })
 
+  // Trashing the original of a conversion left the row on it, and the editor, the player and
+  // every probe kept asking for a file that is gone. It follows the converted copy.
+  it('moves the row to its converted copy once its original is trashed', async () => {
+    installApi({
+      trashFile: vi.fn<Api['trashFile']>().mockResolvedValue(undefined),
+      keepsTrash: vi.fn().mockResolvedValue(true),
+    })
+    const updateTrack = vi.fn()
+    const a = track('a', { status: 'done', outputPath: '/out/Artist - a.aiff' })
+    const { flows, opened } = setup([a], { updateTrack })
+    await flows.askCleanUp(a, { originalPath: '/a.wav', superseded: [], staleMusicCopy: null })
+    opened[0].onConfirm()
+    await waitFor(() =>
+      expect(updateTrack).toHaveBeenCalledWith('a', {
+        originalTrashed: true,
+        inputPath: '/out/Artist - a.aiff',
+        fileName: 'Artist - a',
+        movedFrom: ['/a.wav'],
+      }),
+    )
+  })
+
+  it('moves a row whose file the old library copy took with it to its converted copy', async () => {
+    installApi({
+      trashFile: vi.fn<Api['trashFile']>().mockResolvedValue(undefined),
+      keepsTrash: vi.fn().mockResolvedValue(true),
+      deleteAppleMusic: vi
+        .fn<Api['deleteAppleMusic']>()
+        .mockResolvedValue({ outcome: 'deleted', location: '/a.wav' }),
+    })
+    const updateTrack = vi.fn()
+    const a = track('a', { status: 'done', outputPath: '/out/Artist - a.aiff' })
+    const { flows, opened } = setup([a], { updateTrack })
+    await flows.askCleanUp(a, { originalPath: null, superseded: [], staleMusicCopy: stale })
+    opened[0].onConfirm()
+    await waitFor(() =>
+      expect(updateTrack).toHaveBeenCalledWith(
+        'a',
+        expect.objectContaining({ inputPath: '/out/Artist - a.aiff' }),
+      ),
+    )
+  })
+
   // With Music's "copy files to the Media folder" off, the old entry's file can BE the
   // original listed beside it. Removing the entry already sent that file to the Trash,
   // so trashing it again would fail on a missing file and report a false error.

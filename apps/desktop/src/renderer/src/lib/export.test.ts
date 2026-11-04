@@ -3,7 +3,7 @@ import type { Verification } from '../../../shared/verification'
 import type { TrackItem } from '../types'
 import { autoRetiredFile } from './autoRetiredFile'
 import { trackSignature } from './dirty'
-import { exportedPatch } from './export'
+import { exportedPatch, sourceTrashedPatch } from './export'
 
 function track(over: Partial<TrackItem> = {}): TrackItem {
   return {
@@ -322,5 +322,28 @@ describe('exportedPatch', () => {
     expect(patch.fileName).toBe('Till I Come')
     expect(patch.movedFrom).toEqual(['/lib/Till I Come.aiff'])
     expect(autoRetiredFile({ ...t, ...patch, status: 'done' })).toBe('/lib/Till I Come.aiff')
+  })
+})
+
+// A row left on a source that went to the Trash keeps the editor, the player and every probe
+// asking for a file that is gone. With a converted copy it follows that copy; without one
+// there is nothing to follow and it only learns its source is gone.
+describe('sourceTrashedPatch', () => {
+  it('moves the row to its converted copy', () => {
+    expect(
+      sourceTrashedPatch(track({ status: 'done', outputPath: '/out/Till I Come.aiff' })),
+    ).toEqual({
+      originalTrashed: true,
+      inputPath: '/out/Till I Come.aiff',
+      fileName: 'Till I Come',
+      movedFrom: ['/music/old name.wav'],
+    })
+  })
+
+  it('only marks the source gone when there is no copy elsewhere', () => {
+    expect(sourceTrashedPatch(track({ status: 'done' }))).toEqual({ originalTrashed: true })
+    expect(
+      sourceTrashedPatch(track({ status: 'done', outputPath: '/music/old name.wav' })),
+    ).toEqual({ originalTrashed: true })
   })
 })
