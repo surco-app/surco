@@ -267,7 +267,8 @@ describe.each(FORMATS)('writing Serato cues into a $ext', (format) => {
     const file = track(format)
     configureOriginalKeeper(async () => ({ id: 'b1' }) as never)
     const lead = await seratoLeadOfFile(file, 44100)
-    if (ext === 'mp3' || ext === 'm4a') expect(lead).not.toBe(0)
+    if (ext === 'mp3') expect(lead).not.toBe(0)
+    if (ext === 'm4a') expect(lead).toBe(0)
     expect(await writeSeratoCues(file, WANTED, await fingerprintOf(file))).toBe('written')
     expect(readSeratoMarkers(file)?.cues).toEqual(
       WANTED.map((c) => ({ ...c, ms: Math.round(c.ms + lead) })),

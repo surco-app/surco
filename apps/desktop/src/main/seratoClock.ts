@@ -1,5 +1,5 @@
 import { extname } from 'node:path'
-import { mp3Head, mpeg1Info } from './rekordboxTimeline'
+import { m4aIsAlac, m4aMoov, mp3Head, mpeg1Info } from './rekordboxTimeline'
 
 const M4A_LEAD_SAMPLES = 1024
 const MP3_FRAME_SAMPLES = 1152
@@ -26,6 +26,7 @@ export function seratoLeadMs(ext: string, head: Buffer, sampleRate: number): num
 
 export async function seratoLeadOfFile(file: string, sampleRate: number): Promise<number> {
   const ext = extname(file).toLowerCase()
+  if (isM4a(ext) && m4aIsAlac(await m4aMoov(file))) return 0
   if (ext !== '.mp3') return seratoLeadMs(ext, Buffer.alloc(0), sampleRate)
   const head = await mp3Head(file)
   return head ? seratoLeadMs(ext, head, sampleRate) : 0
