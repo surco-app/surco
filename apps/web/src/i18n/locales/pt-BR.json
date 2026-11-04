@@ -3054,7 +3054,7 @@
         "points": [
           "O Marcar automático sugere, não decide. As sugestões nem sempre acertam, por isso nada é salvo até você aceitar.",
           "Para preparar várias de uma vez, selecione-as na lista e escolha “Marcar automático nas selecionadas”. Cada linha diz quantas sugestões tem, e você as vê ao abrir.",
-          "Se o rekordbox ainda não analisou a faixa, o Surco mede o tempo e a grade por conta própria e você pode colocar os cues sem abrir o rekordbox. Quando o rekordbox a analisar, o Surco os passa para a grade dele. Já o Marcar automático precisa dessa análise.",
+          "Se o rekordbox ainda não analisou a faixa, o Surco mede o tempo e a grade por conta própria e você pode colocar os cues sem abrir o rekordbox. Quando o rekordbox a analisar, o Surco os passa para a grade dele. O Marcar automático também funciona, deduzindo onde começa cada compasso pelas mudanças do grave.",
           "Quando o rekordbox fecha, o Surco só completa faixas que o rekordbox já analisou, com um CALL e sem hot cues, então uma faixa que já tem hot cues fica como está. O Surco precisa estar aberto quando você fecha o rekordbox.",
           "O rekordbox aceita no máximo 8 hot cues, de A a H. Se algum não couber, o Surco avisa.",
           "Se um cue basta, dois fluxos já vêm prontos. Mix in 64 coloca um hot cue 16 compassos antes do ponto, e Mix in 32, 8 compassos antes.",

@@ -3054,7 +3054,7 @@
         "points": [
           "Auto marcar propone, no decide. Sus propuestas no siempre aciertan, así que no se guarda nada hasta que las aceptas.",
           "Para preparar varias de golpe, selecciónalas en la lista y elige «Auto marcar las seleccionadas». Cada fila te dice cuántas propuestas tiene y las ves al abrirla.",
-          "Si rekordbox aún no ha analizado la pista, Surco calcula el tempo y la rejilla él mismo y puedes poner los cues sin abrir rekordbox. Cuando rekordbox la analice, Surco los ajusta a su rejilla. Auto marcar sí necesita ese análisis.",
+          "Si rekordbox aún no ha analizado la pista, Surco calcula el tempo y la rejilla él mismo y puedes poner los cues sin abrir rekordbox. Cuando rekordbox la analice, Surco los ajusta a su rejilla. Auto marcar también funciona, deduciendo dónde empieza el compás por los cambios del bajo.",
           "Al cerrar rekordbox, Surco solo completa pistas que rekordbox ya ha analizado, con algún CALL y ningún hot cue, así que una pista que ya tiene hot cues se queda como está. Surco tiene que estar abierto cuando cierras rekordbox.",
           "rekordbox admite como mucho 8 hot cues, de la A a la H. Si uno no cabe, Surco te lo dice.",
           "Si te basta un cue, vienen dos flujos hechos. Mix in 64 pone un hot cue 16 compases antes del punto y Mix in 32, 8 compases antes.",

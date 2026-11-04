@@ -23,7 +23,7 @@ import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import type { Command, CueActions } from '../lib/commands'
-import { resetCueSession } from '../lib/cueSession'
+import { autoMarkOf, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { claimKeys, runKeyClaim } from '../lib/spaceClaim'
 import { installApi } from '../test/api'
@@ -1580,14 +1580,27 @@ describe("CuesSection maximized on Surco's grid", () => {
     expect(screen.getByTestId('cues-quantize-option-bar')).toHaveAttribute('aria-disabled', 'true')
   })
 
-  it("turns Auto mark off and says it needs rekordbox's analysis", async () => {
-    onSurcoGrid()
-    await maximize()
-    expect(screen.getByTestId('cues-auto-mark')).toBeDisabled()
-    expect(screen.getByTestId('cues-auto-mark')).toHaveAttribute(
-      'title',
-      'Auto mark needs rekordbox’s analysis',
+  it('proposes drops on the bars Surco hears in the bass, so Auto mark works before rekordbox analyses the track', async () => {
+    const beatAt = (i: number) => 37 + i * 500
+    const bassIn = (i: number) => i >= 130
+    const words = Uint16Array.from({ length: 60000 }, (_, k) => {
+      const beat = Math.floor((k / 0.15 - 37) / 500)
+      return ((bassIn(beat) ? 7 : 1) << 13) | (20 << 2)
+    })
+    setup(
+      null,
+      { ...READ, analysed: false, grid: [] },
+      {
+        rekordboxSurcoGrid: vi.fn<Api['rekordboxSurcoGrid']>(async () => ({ ...SURCO, words })),
+      },
     )
+    await maximize()
+    expect(screen.getByTestId('cues-auto-mark')).toBeEnabled()
+    expect(screen.getByTestId('cues-auto-mark')).not.toHaveAttribute('title')
+    fireEvent.click(screen.getByTestId('cues-auto-mark'))
+    await waitFor(() => expect(autoMarkOf('103')?.kind).toBe('proposed'))
+    const kept = autoMarkOf('103')
+    expect(kept?.kind === 'proposed' && kept.proposals.map((p) => p.ms)).toEqual([beatAt(130)])
   })
 
   it("names Surco's grid in the editor header too", async () => {

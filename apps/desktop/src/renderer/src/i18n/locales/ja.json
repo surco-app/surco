@@ -1028,8 +1028,7 @@
       "provisional": {
         "chip": "Surco のグリッド · {{bpm}} BPM",
         "help": "rekordbox はまだこのトラックを解析していません。Surco がテンポとグリッドを計測したので、今すぐキューを設定できます。rekordbox が解析すると、Surco がキューを rekordbox のグリッドに合わせて移動します。",
-        "measuring": "ビートグリッドを計測中…",
-        "auto": "自動マークには rekordbox の解析が必要です"
+        "measuring": "ビートグリッドを計測中…"
       },
       "twins": {
         "title": "保存すると、フローは次にも配置されます",

@@ -14,6 +14,7 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { withBars } from '../../../shared/barPhase'
 import { activeCueFlow, DEFAULT_CUE_FLOW_ID, MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
 import { offGridCues } from '../../../shared/cueGrid'
 import type { CueJumpBars } from '../../../shared/cueJump'
@@ -597,9 +598,13 @@ function Editing({
     if (kept?.kind === 'unanalysed' && readsAudio) return 'unanalysed'
     return kept?.kind === 'none' || kept?.kind === 'marked' ? kept.kind : null
   })
+  const barGrid = useMemo(
+    () => (provisional ? withBars(grid, words ?? null) : grid),
+    [provisional, grid, words],
+  )
   const proposals = useMemo(
-    () => withoutCallInBar(proposed ?? [], state.cues, grid),
-    [proposed, state.cues, grid],
+    () => withoutCallInBar(proposed ?? [], state.cues, barGrid),
+    [proposed, state.cues, barGrid],
   )
   useEffect(() => {
     if (proposals.length > 0) keepAutoMark(cue.contentId, { kind: 'proposed', proposals })
@@ -619,11 +624,11 @@ function Editing({
     [proposals, acceptAll, state, ctx],
   )
   const proposeFrom = (input: DropInput) => {
-    const found = dropsOnGrid(input, grid, taste)
+    const found = dropsOnGrid(input, barGrid, taste)
     const note =
       found.length === 0
         ? 'none'
-        : withoutCallInBar(found, state.cues, grid).length === 0
+        : withoutCallInBar(found, state.cues, barGrid).length === 0
           ? 'marked'
           : null
     if (note) keepAutoMark(cue.contentId, { kind: note })
@@ -632,7 +637,7 @@ function Editing({
   }
   const autoMark = () => {
     if (!readsAudio) {
-      if (words) proposeFrom({ grid, phrases: read.phrases, words })
+      if (words) proposeFrom({ grid: barGrid, phrases: read.phrases, words })
       return
     }
     setReadingAudio(true)
@@ -1145,14 +1150,8 @@ function Editing({
     <button
       type="button"
       data-testid="cues-auto-mark"
-      disabled={provisional || blocked ? true : readsAudio ? readingAudio : !words}
-      title={
-        provisional
-          ? tr('editor.cues.provisional.auto')
-          : readsAudio || words
-            ? undefined
-            : tr(copy.autoUnanalysed)
-      }
+      disabled={blocked ? true : readsAudio ? readingAudio : !words}
+      title={readsAudio || words ? undefined : tr(copy.autoUnanalysed)}
       onClick={autoMark}
       className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-accent)] text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] disabled:opacity-40 ${autoHeight}`}
     >

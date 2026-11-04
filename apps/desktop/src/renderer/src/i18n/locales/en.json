@@ -1028,8 +1028,7 @@
       "provisional": {
         "chip": "Surco grid · {{bpm}} BPM",
         "help": "rekordbox has not analysed this track yet. Surco measured the tempo and the grid, so you can set the cues now. Once rekordbox analyses it, Surco moves them onto its grid.",
-        "measuring": "Measuring the beat grid…",
-        "auto": "Auto mark needs rekordbox’s analysis"
+        "measuring": "Measuring the beat grid…"
       },
       "twins": {
         "title": "Saving also places the flow in",

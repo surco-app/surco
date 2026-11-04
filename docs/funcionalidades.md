@@ -1967,8 +1967,16 @@ colección real: la BPM coincide a ±0,02 en el 93 % y el golpe cae a 10 ms o me
 83 %. **El compás no se sabe**: todos los golpes van sin número (`provisionalGrid`,
 `beatGrid.ts:57`), así que no hay líneas de compás y «Cuantizar a compás» se ve pero queda
 apagado (`CuesSection.tsx:1276`). La cuenta atrás de los flujos funciona porque solo cuenta
-golpes. Auto marcar queda apagado porque necesita el análisis de rekordbox. La onda es la de
-Surco en el formato de rekordbox (`rekordbox:surcoGrid`, `rekordboxCuesIpc.ts:105`).
+golpes. La onda es la de Surco en el formato de rekordbox (`rekordbox:surcoGrid`, `rekordboxCuesIpc.ts:105`).
+
+**Auto marcar deduce el compás** (desde el 4 de noviembre de 2026). Solo para proponer, Surco
+numera los golpes buscando dónde cambia el bajo: compara la energía grave de los 8 golpes
+siguientes con la de los 8 anteriores y elige, de los cuatro golpes posibles, el que suma los
+cambios más grandes (`withBars`, `shared/barPhase.ts`). Medido en 281 pistas de una colección
+real contra el compás de rekordbox: acierta el 92 %, y cuando falla casi siempre es por un
+golpe. Las propuestas coinciden con las que saldrían con el compás de rekordbox en el 92 % de
+las pistas. «Cuantizar a compás» sigue apagado, porque ahí un compás mal deducido movería sin
+avisar los cues puestos a mano.
 
 **Se guarda igual.** La cola escribe en una pista sin analizar el conjunto de cues que montó
 el editor, pero no un guardado antiguo que solo trae los puntos, que necesita la rejilla de

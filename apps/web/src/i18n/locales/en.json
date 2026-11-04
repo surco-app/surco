@@ -3054,7 +3054,7 @@
         "points": [
           "Auto mark suggests, it doesn't decide. Its suggestions aren't always right, so nothing is saved until you accept them.",
           "To prepare several at once, select them in the list and choose “Auto mark the selected”. Each row tells you how many suggestions it has, and you see them when you open it.",
-          "If rekordbox hasn't analyzed the track yet, Surco measures the tempo and the grid itself and you can set the cues without opening rekordbox. Once rekordbox analyzes it, Surco moves them onto its grid. Auto mark does need that analysis.",
+          "If rekordbox hasn't analyzed the track yet, Surco measures the tempo and the grid itself and you can set the cues without opening rekordbox. Once rekordbox analyzes it, Surco moves them onto its grid. Auto mark works too, working out where each bar starts from the changes in the bass.",
           "When rekordbox closes, Surco only completes tracks rekordbox has already analyzed, with a CALL and no hot cues, so a track that already has hot cues stays as it is. Surco has to be open when you close rekordbox.",
           "rekordbox takes at most 8 hot cues, A to H. If one doesn't fit, Surco tells you.",
           "If one cue is enough, two flows come ready-made. Mix in 64 places a hot cue 16 bars before the point and Mix in 32, 8 bars before.",

@@ -3054,7 +3054,7 @@
         "points": [
           "Auto-Markieren schlägt vor, es entscheidet nicht. Seine Vorschläge stimmen nicht immer, deshalb wird nichts gespeichert, bis du sie übernimmst.",
           "Um mehrere auf einmal vorzubereiten, wähle sie in der Liste aus und nimm „Auswahl auto-markieren“. Jede Zeile zeigt, wie viele Vorschläge sie hat, und du siehst sie, wenn du sie öffnest.",
-          "Hat rekordbox den Track noch nicht analysiert, misst Surco Tempo und Raster selbst, und du kannst die Cues setzen, ohne rekordbox zu öffnen. Sobald rekordbox ihn analysiert, verschiebt Surco sie auf dessen Raster. Auto-Markieren braucht diese Analyse allerdings.",
+          "Hat rekordbox den Track noch nicht analysiert, misst Surco Tempo und Raster selbst, und du kannst die Cues setzen, ohne rekordbox zu öffnen. Sobald rekordbox ihn analysiert, verschiebt Surco sie auf dessen Raster. Auto-Markieren funktioniert auch und erkennt den Taktanfang an den Wechseln im Bass.",
           "Wenn rekordbox schließt, ergänzt Surco nur Tracks, die rekordbox schon analysiert hat, mit einem CALL und ohne Hot Cues. Ein Track, der schon Hot Cues hat, bleibt also, wie er ist. Surco muss offen sein, wenn du rekordbox schließt.",
           "rekordbox nimmt höchstens 8 Hot Cues, A bis H. Passt einer nicht, sagt Surco es dir.",
           "Reicht dir ein Cue, gibt es zwei fertige Abläufe. Mix in 64 setzt einen Hot Cue 16 Takte vor dem Punkt und Mix in 32 einen 8 Takte davor.",

@@ -1028,8 +1028,7 @@
       "provisional": {
         "chip": "Rejilla de Surco · {{bpm}} BPM",
         "help": "rekordbox aún no ha analizado esta pista. Surco ha calculado el tempo y la rejilla, así que puedes poner los cues ya. Cuando rekordbox la analice, Surco los ajustará a su rejilla.",
-        "measuring": "Calculando la rejilla…",
-        "auto": "Auto marcar necesita el análisis de rekordbox"
+        "measuring": "Calculando la rejilla…"
       },
       "twins": {
         "title": "Al guardar, el flujo también se pone en",

@@ -3054,7 +3054,7 @@
         "points": [
           "Le marquage auto suggère, il ne décide pas. Ses suggestions ne sont pas toujours justes, donc rien n'est enregistré tant que tu ne les acceptes pas.",
           "Pour en préparer plusieurs d'un coup, sélectionne-les dans la liste et choisis « Marquage auto de la sélection ». Chaque ligne indique combien de suggestions elle a, et tu les vois en l'ouvrant.",
-          "Si rekordbox n'a pas encore analysé le morceau, Surco mesure lui-même le tempo et la grille, et tu peux placer les cues sans ouvrir rekordbox. Une fois que rekordbox l'analyse, Surco les déplace sur sa grille. Le marquage auto, lui, a besoin de cette analyse.",
+          "Si rekordbox n'a pas encore analysé le morceau, Surco mesure lui-même le tempo et la grille, et tu peux placer les cues sans ouvrir rekordbox. Une fois que rekordbox l'analyse, Surco les déplace sur sa grille. Le marquage auto fonctionne aussi, en déduisant où commence chaque mesure grâce aux changements de basse.",
           "À la fermeture de rekordbox, Surco ne complète que les morceaux déjà analysés par rekordbox, avec un CALL et sans hot cues, donc un morceau qui a déjà des hot cues reste tel quel. Surco doit être ouvert quand tu fermes rekordbox.",
           "rekordbox accepte au plus 8 hot cues, de A à H. Si l'un ne rentre pas, Surco te le dit.",
           "Si un seul cue te suffit, deux flux sont prêts à l'emploi. Mix in 64 place un hot cue 16 mesures avant le point et Mix in 32, 8 mesures avant.",
