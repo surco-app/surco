@@ -2804,6 +2804,7 @@
     },
     "warnings": {
       "rekordboxExport": "rekordbox a synchronisé cette clé en dernier. Surco la refait avec ces playlists et réutilise la musique déjà présente.",
+      "surcoExport": "Surco a exporté cette clé depuis {{source}} la dernière fois. L’exportation refait ses playlists avec celles-ci",
       "exfat": "exFAT. Le CDJ-2000 ne le lit pas.",
       "gpt": "GPT. Le CDJ-2000 et les NXS2 ne le lisent pas.",
       "notVolumeRoot": "Les lecteurs ne lisent que la racine d’une clé USB.",

@@ -93,6 +93,7 @@ export function registerUsbExportIpc(opts: {
       traktor: createUsbMemory(join(opts.userData, 'usb-traktor-exports.json')),
     }),
   }
+  const surcoMemories = { rekordbox: memory, ...sourceMemories }
   const list = async (): Promise<UsbVolumeList> => ({
     volumes: await readVolumes(
       source,
@@ -104,6 +105,7 @@ export function registerUsbExportIpc(opts: {
         holder: engineLibraryHolder,
       },
       sourceMemories,
+      surcoMemories,
     ),
     lastKey: memory.last(),
   })
@@ -121,7 +123,8 @@ export function registerUsbExportIpc(opts: {
         db.close()
       }
     },
-    volumes: () => readVolumes(source, memory),
+    volumes: () =>
+      readVolumes(source, memory, stickHolder, undefined, undefined, undefined, surcoMemories),
     idAt: (root) => source.idAt(root),
     devOf: (root) =>
       stat(root)
@@ -202,7 +205,16 @@ export function registerUsbExportIpc(opts: {
       ...rekordboxDeps,
       collection,
       readSelection,
-      volumes: () => readVolumes(source, sourceMemory),
+      volumes: () =>
+        readVolumes(
+          source,
+          sourceMemory,
+          stickHolder,
+          undefined,
+          undefined,
+          undefined,
+          surcoMemories,
+        ),
       stage: (sel, dir) =>
         stageExport({
           sel,

@@ -2804,6 +2804,7 @@
     },
     "warnings": {
       "rekordboxExport": "この USB を最後に同期したのは rekordbox です。Surco はこれらのプレイリストで作り直し、USB 上の既存の音楽を再利用します。",
+      "surcoExport": "前回この USB には Surco が {{source}} から書き出しました。書き出すとプレイリストがこれらで作り直されます",
       "exfat": "exFAT です。CDJ-2000 では読み取れません。",
       "gpt": "GPT です。CDJ-2000 と NXS2 では読み取れません。",
       "notVolumeRoot": "プレイヤーは USB のルートしか読み取りません。",

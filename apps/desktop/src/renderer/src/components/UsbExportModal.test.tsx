@@ -610,6 +610,17 @@ describe('UsbExportModal for Serato and Traktor', () => {
     expect(screen.getByTestId('usb-warning-cuesLeftOut')).toHaveTextContent('Clicks')
   })
 
+  it('says which Surco tab wrote the stick last and that its playlists get rebuilt, naming the program the way the app does', async () => {
+    withWarnings([{ kind: 'surcoExport', from: 'serato' }])
+    await show(
+      { volumes: [vol({ bySource: { traktor: SERATO_MEMORY } })], lastKey: null },
+      { program: 'traktor' },
+    )
+    expect(await screen.findByTestId('usb-warning-surcoExport')).toHaveTextContent(
+      'Surco exportó este USB desde Serato la última vez. Al exportar se rehacen sus playlists con estas',
+    )
+  })
+
   it('asks for the folder with what Surco remembers for Traktor there', async () => {
     const usbPickFolder = vi.fn<Api['usbPickFolder']>(async () => null)
     ;(window as unknown as { api: Api }).api = stubApi({ usbPlan, usbPickFolder })

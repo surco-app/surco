@@ -303,6 +303,8 @@ function warningsOf(
   const v = p.target.volume
   if (v?.holder.by === 'rekordbox' && p.target.kind === 'volume')
     out.push({ kind: 'rekordboxExport' })
+  if (v?.holder.from && p.target.kind === 'volume')
+    out.push({ kind: 'surcoExport', from: v.holder.from })
   if (v?.filesystem === 'exfat') out.push({ kind: 'exfat' })
   if (v?.filesystem === 'ntfs') out.push({ kind: 'ntfs' })
   if (v?.partitionScheme === 'gpt') out.push({ kind: 'gpt' })
@@ -341,7 +343,8 @@ function summary(
 ): UsbPlan {
   const real = tracks.filter((t) => !t.separator)
   const entry = deps.memory.get(targetKey(req.target))
-  const ours = p.target.kind === 'folder' || p.target.volume?.holder.by === 'surco'
+  const holder = p.target.volume?.holder
+  const ours = p.target.kind === 'folder' || (holder?.by === 'surco' && !holder.from)
   const ids = new Set(tracks.map((t) => t.id))
   return {
     tracks,

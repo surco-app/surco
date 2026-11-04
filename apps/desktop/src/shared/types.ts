@@ -1674,10 +1674,13 @@ export type LibraryTagSyncReport = Record<LibraryProgram, LibraryTagSync>
 // by its name or drive letter: two sticks may share a name ("Vicent" and "Vicent").
 export type UsbFilesystem = 'fat32' | 'exfat' | 'hfs' | 'apfs' | 'ntfs' | 'other'
 
+export type UsbPioneerProgram = Exclude<DjProgram, 'engine'>
+
 export interface UsbHolder {
   by: 'rekordbox' | 'surco' | 'other' | 'empty'
   // export.pdb's modification time, when there is one.
   at: number | null
+  from?: UsbPioneerProgram
 }
 
 // What Surco exported to this stick last time, so the next time is one press of Exportar.
@@ -1731,6 +1734,7 @@ export type UsbUnexportableReason = 'missing-file' | 'streaming' | 'skipped'
 
 export type UsbWarning =
   | { kind: 'rekordboxExport' }
+  | { kind: 'surcoExport'; from: UsbPioneerProgram }
   | { kind: 'exfat' }
   | { kind: 'gpt' }
   | { kind: 'ntfs' }

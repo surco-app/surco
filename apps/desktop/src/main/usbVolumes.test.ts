@@ -216,6 +216,72 @@ describe('macOS: darwinSource and readVolumes', () => {
     })
   })
 
+  it('names the Surco tab that wrote a stick in every other Pioneer tab, so a Serato export never reads as rekordbox or as unknown', async () => {
+    const source = {
+      list: async () => [{ ...RAW, uuid: 'A', mountPoint: '/Volumes/A' }],
+      idAt: async () => null,
+    }
+    const written = { size: 7, mtimeMs: 70 }
+    const entry = (pdb: { size: number; mtimeMs: number } | null) => ({
+      playlistIds: ['Sets'],
+      trackIds: ['9'],
+      at: 3,
+      pdb,
+      prune: false,
+      settings: false,
+    })
+    const rekordbox = await memory()
+    const serato = await memory()
+    const traktor = await memory()
+    rekordbox.remember('volume:A', entry({ size: 1, mtimeMs: 1 }))
+    serato.remember('volume:A', entry(written))
+    const holder = vi.fn(async (_root: string, pdb: { size: number; mtimeMs: number } | null) => ({
+      by: pdb?.size === written.size ? ('surco' as const) : ('other' as const),
+      at: 70,
+    }))
+    const vols = await readVolumes(
+      source,
+      rekordbox,
+      holder,
+      noSync,
+      undefined,
+      { serato, traktor },
+      { rekordbox, serato, traktor },
+    )
+    expect(vols[0].holder).toEqual({ by: 'surco', at: 70, from: 'serato' })
+    expect(vols[0].bySource?.traktor?.holder).toEqual({ by: 'surco', at: 70, from: 'serato' })
+    expect(vols[0].bySource?.serato?.holder).toEqual({ by: 'surco', at: 70 })
+    const own = await readVolumes(source, serato, holder, noSync, undefined, undefined, {
+      rekordbox,
+      serato,
+      traktor,
+    })
+    expect(own[0].holder).toEqual({ by: 'surco', at: 70 })
+  })
+
+  it('keeps the holder of a stick no Surco tab wrote, so rekordbox reads every stick it read before the same way', async () => {
+    const source = {
+      list: async () => [{ ...RAW, uuid: 'A', mountPoint: '/Volumes/A' }],
+      idAt: async () => null,
+    }
+    const rekordbox = await memory()
+    const serato = await memory()
+    serato.remember('volume:A', {
+      playlistIds: ['Sets'],
+      trackIds: ['9'],
+      at: 3,
+      pdb: { size: 2, mtimeMs: 2 },
+      prune: false,
+      settings: false,
+    })
+    const holder = vi.fn(async () => ({ by: 'rekordbox' as const, at: 4 }))
+    const vols = await readVolumes(source, rekordbox, holder, noSync, undefined, undefined, {
+      rekordbox,
+      serato,
+    })
+    expect(vols[0].holder).toEqual({ by: 'rekordbox', at: 4 })
+  })
+
   it('reads the UUID at a mount point right now', async () => {
     expect(await darwinSource(deps({ '/Volumes/Surco': STICK })).idAt('/Volumes/Surco')).toBe(
       'B10C96EF-51C2-344E-B78D-DAFC319D973E',

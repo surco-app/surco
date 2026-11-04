@@ -2804,6 +2804,7 @@
     },
     "warnings": {
       "rekordboxExport": "Diesen USB-Stick hat zuletzt rekordbox synchronisiert. Surco baut ihn mit diesen Playlists neu auf und verwendet die vorhandene Musik weiter.",
+      "surcoExport": "Surco hat diesen USB-Stick zuletzt aus {{source}} exportiert. Beim Exportieren werden seine Playlists mit diesen neu aufgebaut",
       "exfat": "exFAT. Der CDJ-2000 liest das nicht.",
       "gpt": "GPT. Der CDJ-2000 und die NXS2 lesen das nicht.",
       "notVolumeRoot": "Player lesen nur das Hauptverzeichnis eines USB-Sticks.",

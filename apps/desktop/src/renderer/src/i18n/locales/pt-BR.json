@@ -2804,6 +2804,7 @@
     },
     "warnings": {
       "rekordboxExport": "O rekordbox sincronizou este USB por último. O Surco o refaz com estas playlists e aproveita a música que já está.",
+      "surcoExport": "O Surco exportou este USB do {{source}} da última vez. Ao exportar, as playlists dele são refeitas com estas",
       "exfat": "exFAT. O CDJ-2000 não lê.",
       "gpt": "GPT. O CDJ-2000 e os NXS2 não leem.",
       "notVolumeRoot": "Os players só leem a raiz de um USB.",

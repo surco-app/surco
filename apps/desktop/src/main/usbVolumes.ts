@@ -3,7 +3,7 @@ import { watch } from 'node:fs'
 import { access, readdir, readFile, stat } from 'node:fs/promises'
 import { join, posix, win32 } from 'node:path'
 import { promisify } from 'node:util'
-import type { UsbFilesystem, UsbHolder, UsbVolume } from '../shared/types'
+import type { UsbFilesystem, UsbHolder, UsbPioneerProgram, UsbVolume } from '../shared/types'
 import { syncedPlaylists } from './rekordboxStickSync'
 import { targetKey, type UsbMemory } from './usbExportMemory'
 import windowsVolumesScript from './windowsVolumes.ps1?raw'
@@ -265,16 +265,27 @@ export async function readVolumes(
     readFile(join(root, 'PIONEER', 'rekordbox', 'playlists3.sync'), 'utf8').catch(() => null),
   engine?: { memory: UsbMemory; holder: (root: string) => Promise<UsbHolder> },
   bySource?: Partial<Record<'serato' | 'traktor', UsbMemory>>,
+  surco?: Partial<Record<UsbPioneerProgram, UsbMemory>>,
 ): Promise<UsbVolume[]> {
   const out: UsbVolume[] = []
   for (const v of await source.list()) {
     const key = targetKey({ kind: 'volume', uuid: v.uuid })
+    const holderFor = async (own: UsbMemory): Promise<UsbHolder> => {
+      const h = await holder(v.mountPoint, own.get(key)?.pdb ?? null)
+      if (h.by === 'surco' || h.by === 'empty') return h
+      for (const [from, other] of Object.entries(surco ?? {}) as [UsbPioneerProgram, UsbMemory][]) {
+        const pdb = other === own ? null : (other.get(key)?.pdb ?? null)
+        if (pdb && (await holder(v.mountPoint, pdb)).by === 'surco')
+          return { by: 'surco', at: h.at, from }
+      }
+      return h
+    }
     const entry = memory.get(key)
     const sync = await syncText(v.mountPoint)
     const engineEntry = engine?.memory.get(key) ?? null
     out.push({
       ...v,
-      holder: await holder(v.mountPoint, entry?.pdb ?? null),
+      holder: await holderFor(memory),
       stickPlaylists: sync === null ? null : syncedPlaylists(sync),
       remembered: entry
         ? {
@@ -305,7 +316,7 @@ export async function readVolumes(
               return [
                 name,
                 {
-                  holder: await holder(v.mountPoint, sourceEntry?.pdb ?? null),
+                  holder: await holderFor(sourceMemory),
                   remembered: sourceEntry
                     ? {
                         playlistIds: sourceEntry.playlistIds,

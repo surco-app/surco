@@ -18,6 +18,7 @@ import type {
 } from '../../../shared/types'
 import { useUsbPlan } from '../hooks/useUsbPlan'
 import { formatFileSize } from '../lib/properties'
+import { LIBRARY_NAME } from '../lib/reviewLibraries'
 import { holderText } from '../lib/usbExport'
 import { type UsbExportStore, usbExportStore, useUsbExportState } from '../lib/usbExportStore'
 import { CheckTree, playlistIdsUnder } from './CheckTree'
@@ -268,6 +269,8 @@ export function UsbExportModal({
         return tr('usbExport.warnings.sourcesUnreachable', { volume: w.volume, count: w.tracks })
       case 'emptyPlaylist':
         return tr('usbExport.warnings.emptyPlaylist', { names: w.names.join(', ') })
+      case 'surcoExport':
+        return tr('usbExport.warnings.surcoExport', { source: LIBRARY_NAME[w.from] })
       default:
         return tr(`usbExport.warnings.${w.kind}`)
     }

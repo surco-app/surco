@@ -14,7 +14,7 @@ vi.mock('electron', () => ({
 vi.mock('electron-log/main', () => ({ default: { info: vi.fn() } }))
 vi.mock('./usbVolumes', () => ({
   systemVolumeSource: () => ({ idAt: async () => null }),
-  readVolumes: async () => [],
+  readVolumes: vi.fn(async () => []),
   watchVolumes: vi.fn(),
   stickHolder: vi.fn(),
 }))
@@ -57,6 +57,7 @@ import { readSeratoLibrary } from './seratoLibrary'
 import { registerUsbExportIpc } from './usbExportIpc'
 import { seratoExportMarks } from './usbExportSerato'
 import { traktorExportDelta } from './usbExportTraktor'
+import { readVolumes } from './usbVolumes'
 
 function handlerFor(channel: string): (e: unknown, ...args: unknown[]) => unknown {
   const call = vi.mocked(ipcMain.handle).mock.calls.find(([ch]) => ch === channel)
@@ -219,5 +220,23 @@ describe('registerUsbExportIpc with Serato and Traktor', () => {
     await pioneer[0].readSelection(nml, ['p1'])
     expect(first).toMatchObject({ tracks: [{ path: file }] })
     expect(traktorExportDelta).toHaveBeenCalledOnce()
+  })
+
+  it('lets every Pioneer tab, rekordbox included, see the memories of the other Surco tabs, so a stick one wrote never reads as unknown in another', async () => {
+    const { pioneer } = register({
+      serato: { roots: () => [ROOT] },
+      traktor: { nml: () => '/t/c.nml', bootVolume: () => 'HD' },
+    })
+    const [serato, traktor, rekordbox] = pioneer
+    await handlerFor('usb:volumes')({})
+    for (const d of [serato, traktor, rekordbox]) await d.volumes()
+    const surcos = vi.mocked(readVolumes).mock.calls.map((c) => c[6])
+    expect(surcos).toHaveLength(4)
+    for (const surco of surcos)
+      expect(surco).toEqual({
+        rekordbox: rekordbox.memory,
+        serato: serato.memory,
+        traktor: traktor.memory,
+      })
   })
 })

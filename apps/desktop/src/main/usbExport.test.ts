@@ -338,6 +338,27 @@ describe('plan', () => {
     expect(r.ok && r.plan.removedSinceLast).toBe(1)
   })
 
+  it('says another Surco tab wrote the stick, and counts nothing as removed, since this tab memory is not what the stick holds', async () => {
+    memory.remember(`volume:${UUID}`, {
+      playlistIds: ['1000'],
+      trackIds: ['101', '999'],
+      at: 1,
+      pdb: null,
+      prune: false,
+      settings: false,
+    })
+    const ex = createUsbExporter(
+      deps(async () => {}, {
+        volumes: async () => [volume({ holder: { by: 'surco', at: 1, from: 'serato' } })],
+      }),
+    )
+    const r = await ex.plan(REQ)
+    if (!r.ok) throw new Error(r.reason)
+    expect(r.plan.warnings).toContainEqual({ kind: 'surcoExport', from: 'serato' })
+    expect(r.plan.warnings).not.toContainEqual({ kind: 'rekordboxExport' })
+    expect(r.plan.removedSinceLast).toBeNull()
+  })
+
   it('answers why when it cannot summarise', async () => {
     const none = async () => {}
     expect(await createUsbExporter(deps(none)).plan({ ...REQ, playlistIds: [] })).toEqual({
