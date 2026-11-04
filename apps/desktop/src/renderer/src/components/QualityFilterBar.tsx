@@ -139,8 +139,8 @@ function axisOf(mode: Mode): keyof Omit<FilterSelection, 'format'> {
   return 'library'
 }
 
-// The attention dot draws the eye to buckets that need action: amber for suspect (likely
-// fake rips), accent for the still-to-convert backlog. Null for the rest.
+// The attention dot draws the eye to buckets that hold a problem, always in amber. Null for
+// the rest.
 //
 // Deliberately unlabelled, and not a colour-only signal despite looking like one: the dot
 // appears exactly when the bucket's count is above zero, and that count is rendered as
@@ -149,7 +149,6 @@ function axisOf(mode: Mode): keyof Omit<FilterSelection, 'format'> {
 function attentionDot(mode: Mode, tally: Tally): string | null {
   if (mode === 'suspect' && tally.suspect > 0) return 'bg-warn'
   if (mode === 'damaged' && tally.damaged > 0) return 'bg-warn'
-  if (mode === 'unconverted' && tally.unconverted > 0) return 'bg-[var(--color-accent)]'
   // The retouch buckets exist to be worked through, so they carry the same amber
   // nudge as suspect while anything is left in them.
   if (mode === 'silence' && tally.silence > 0) return 'bg-warn'
@@ -158,7 +157,6 @@ function attentionDot(mode: Mode, tally: Tally): string | null {
   if (mode === 'offGrid' && tally.offGrid > 0) return 'bg-warn'
   if (mode === 'badGrid' && tally.badGrid > 0) return 'bg-warn'
   if (mode === 'missingRequired' && tally.missingRequired > 0) return 'bg-warn'
-  if (mode === 'unsaved' && tally.unsaved > 0) return 'bg-[var(--color-accent)]'
   if (mode === 'mismatch' && tally.mismatch > 0) return 'bg-warn'
   return null
 }
@@ -395,10 +393,7 @@ export function QualityFilterBar({
         : { Icon: SlidersHorizontal, label: tr('sidebar.filter.multiple'), count: visibleCount }
   // Keep the suspect nudge on the trigger even when another filter is active, so a crate
   // full of likely-fake rips still flags itself now that the buckets are hidden in a menu.
-  const triggerDot =
-    (value.conversion === 'unconverted' && tally.unconverted > 0
-      ? 'bg-[var(--color-accent)]'
-      : null) ?? (tally.suspect > 0 ? 'bg-warn' : null)
+  const triggerDot = tally.suspect > 0 ? 'bg-warn' : null
 
   // A primary bucket row. "All" is the odd one out: it reads as selected only when nothing
   // is filtered and clears every axis, so it gets nothingActive/chooseAll instead of the

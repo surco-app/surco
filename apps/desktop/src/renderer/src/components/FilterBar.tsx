@@ -213,6 +213,7 @@ export function FilterBar({
             <trigger.Icon className="h-4 w-4" aria-hidden="true" />
             {trigger.dot && (
               <span
+                data-testid={`${testid}-trigger-dot`}
                 className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${trigger.dot}`}
               />
             )}

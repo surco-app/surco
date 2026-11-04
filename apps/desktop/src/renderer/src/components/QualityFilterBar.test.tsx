@@ -266,6 +266,18 @@ describe('QualityFilterBar', () => {
   // The batch line counts "2 no cuadran"; this is the way to those two rows. It carries the
   // amber nudge because they are work to do, and like "Sin guardar" it stays out of the menu
   // while nothing is in it, so a crate that converted cleanly grows no empty row.
+  it('keeps the dot for problems, so a backlog to convert or save never reads as one', () => {
+    renderBar({
+      value: sel({ conversion: 'unconverted' }),
+      tally: tally({ unconverted: 2044, unsaved: 1040, missingRequired: 77 }),
+    })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByTestId('quality-filter-missingRequired-dot')).toBeInTheDocument()
+    expect(screen.queryByTestId('quality-filter-unconverted-dot')).toBeNull()
+    expect(screen.queryByTestId('quality-filter-unsaved-dot')).toBeNull()
+    expect(screen.queryByTestId('quality-filter-trigger-dot')).toBeNull()
+  })
+
   it('offers the tracks that do not add up, with their count and the amber dot', () => {
     const { onChange } = renderBar({ tally: tally({ mismatch: 2 }) })
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
