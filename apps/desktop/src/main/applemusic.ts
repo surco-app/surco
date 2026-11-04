@@ -1106,6 +1106,12 @@ export function entriesForPaths(
 
 const nameKey = (text: string) => text.normalize('NFC').trim().toLowerCase()
 
+export function insideFolder(path: string, folder: string | undefined): boolean {
+  if (!folder) return false
+  const key = (p: string) => p.normalize('NFC').toLowerCase().replace(/\/+$/, '')
+  return key(path).startsWith(`${key(folder)}/`)
+}
+
 export function libraryCacheHoldsTitle(
   cache: { title: string }[] | null,
   titles: string[],
@@ -1196,11 +1202,13 @@ export async function musicEntryForFile(
   launch = true,
   run: typeof runOsascript = runOsascript,
 ): Promise<{ persistentId: string; label: string } | undefined> {
-  const { entries } = await musicFileEntries(
+  const { consulted, entries } = await musicFileEntries(
     titles.map((title) => ({ path, title })),
     launch,
     run,
   )
+  if (!consulted && (launch || (await run(buildMusicRunningScript())).trim() === 'true'))
+    throw new Error('Music could not say which entries play the file')
   const found = entries[path]
   return found?.length === 1
     ? { persistentId: found[0].persistentId, label: found[0].label }

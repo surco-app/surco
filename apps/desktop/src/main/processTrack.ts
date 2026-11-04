@@ -826,9 +826,11 @@ export async function runProcessTrack(
       deps.platform === 'darwin' &&
       !shouldAddToAppleMusic(addToAppleMusic, deps.platform, format)
     ) {
-      const entry = await deps
-        .findAppleMusicEntry?.(job.inputPath, job.meta, false)
-        .catch(() => undefined)
+      const entry = await deps.findAppleMusicEntry?.(job.inputPath, job.meta, false).catch((e) => {
+        log.warn('process:track Music could not say whether it plays the original', e)
+        renameFollowFailed = true
+        return undefined
+      })
       if (entry)
         await deps.relinkAppleMusicEntry(entry.persistentId, target).catch((e) => {
           log.warn('process:track Music could not follow the rename', job.inputPath, e)

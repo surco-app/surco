@@ -1750,6 +1750,17 @@ describe('runProcessTrack — Apple Music', () => {
     expect(result).toMatchObject({ appleMusicFailed: true, originalKept: true })
   })
 
+  it('keeps the renamed original when Music could not say whether it plays it', async () => {
+    const deps = mac({ overwriteOriginal: true, addToAppleMusic: false })
+    deps.findAppleMusicEntry = vi.fn(async () => {
+      throw new Error('Music got an error (-1712)')
+    })
+    const result = await runProcessTrack(job(), deps)
+
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result).toMatchObject({ appleMusicFailed: true, originalKept: true })
+  })
+
   it('asks Music nothing when the in-place rewrite keeps the file its name', async () => {
     const deps = mac({ overwriteOriginal: true, addToAppleMusic: false })
     deps.isSameFile = vi.fn(async () => true)

@@ -33,6 +33,7 @@ import {
   buildVerifyEntryScript,
   carryOverToAppleMusicCopy,
   entriesForPaths,
+  insideFolder,
   isAppleMusicOnly,
   libraryCacheHoldsTitle,
   markAppleMusicReplacing,
@@ -1377,6 +1378,21 @@ describe('Music entries for loaded files', () => {
   it('opens a closed Music for a title its saved library holds, so a renamed file is followed even with Music shut', () => {
     const cache = [{ title: 'Dust In The Wind (Electricstomp Mix)', artist: 'Interface' }]
     expect(libraryCacheHoldsTitle(cache, [' dust in the wind (electricstomp mix) '])).toBe(true)
+  })
+
+  it('tells a Music that could not answer apart from one without the file, so a rename never retires a file Music may still play', async () => {
+    const run = vi.fn().mockRejectedValue(new Error('Music got an error (-1712)'))
+    await expect(musicEntryForFile('/m/a.aiff', ['T'], true, run)).rejects.toThrow()
+  })
+
+  it('opens a closed Music for a file inside its media folder, which Music filed itself', () => {
+    const folder = '/Volumes/Public/Music/Music/Media.localized'
+    expect(insideFolder(`${folder}/Music/Interface/Dust In The Wind/a.mp3`, folder)).toBe(true)
+    expect(insideFolder('/volumes/public/music/music/media.localized/Music/a.mp3', folder)).toBe(
+      true,
+    )
+    expect(insideFolder('/Volumes/Public/Music/Media.localized2/a.mp3', folder)).toBe(false)
+    expect(insideFolder('/Users/dj/Music/a.mp3', undefined)).toBe(false)
   })
 
   it('leaves Music shut for a title it does not hold or when Surco never read the library', () => {
