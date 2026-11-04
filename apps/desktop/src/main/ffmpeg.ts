@@ -608,8 +608,14 @@ export async function extractCover(
   }
 }
 
-const READMETA_NAMESPACE = 'readmeta-v7'
-const READMETA_LIGHT_NAMESPACE = 'readmeta-light-v2'
+// A fix that changes how one container reads bumps that container alone: a bump for every
+// format sends a whole NAS library back to disk. v7 / light-v2: an MP4's content advisory
+// was read as a star rating.
+const MP4_FILE = /\.(m4a|m4b|mp4)$/i
+const readMetaNamespace = (input: string): string =>
+  MP4_FILE.test(input) ? 'readmeta-v7' : 'readmeta-v6'
+const readMetaLightNamespace = (input: string): string =>
+  MP4_FILE.test(input) ? 'readmeta-light-v2' : 'readmeta-light-v1'
 
 const FAILED_READ: MetaRead = {
   tags: {} as TrackMetadata,
@@ -641,7 +647,9 @@ export async function readMeta(input: string): Promise<MetaRead> {
   // review fields; a v4 entry would leave the list review blind to stray spaces. v6: TagLib
   // reads an ID3v2.3 genre whole instead of splitting it on ';' and '/' (see tags.ts), and a
   // v5 entry would keep serving the genre it read split.
-  const result = await cachedAnalysis(READMETA_NAMESPACE, input, () => readMetaUncached(input))
+  const result = await cachedAnalysis(readMetaNamespace(input), input, () =>
+    readMetaUncached(input),
+  )
   if (result) return composed(result)
   // Flagged, not just empty: the caller cannot otherwise tell this fallback from a file
   // that carries no tags, and the row would show a bare file name with no explanation.
@@ -649,9 +657,9 @@ export async function readMeta(input: string): Promise<MetaRead> {
 }
 
 export async function readMetaLight(input: string): Promise<MetaRead & { partial: boolean }> {
-  const full = await peekAnalysis<MetaRead>(READMETA_NAMESPACE, input, { urgent: true })
+  const full = await peekAnalysis<MetaRead>(readMetaNamespace(input), input, { urgent: true })
   if (full) return { ...composed(full), partial: false }
-  const light = await cachedAnalysis(READMETA_LIGHT_NAMESPACE, input, () =>
+  const light = await cachedAnalysis(readMetaLightNamespace(input), input, () =>
     readMetaUncached(input, false),
   )
   return light ? { ...composed(light), partial: true } : { ...FAILED_READ, partial: false }

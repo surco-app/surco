@@ -83,9 +83,17 @@ describe('readMeta keeps the untrimmed review fields beside the trimmed tags', (
     expect((await readMeta(file)).reviewRaw).toBeUndefined()
   })
 
-  it('reads under a new cache namespace, so a read cached trimmed, with a split genre or with an M4A advisory as stars is not served again', async () => {
+  it('reads under a new cache namespace, so a read cached trimmed or with a split genre is not served again', async () => {
     namespaces.length = 0
     await readMeta(encoded('ns.mp3', ['-c:a', 'libmp3lame'], { album: 'X' }))
+    expect(namespaces).toEqual(['readmeta-v6'])
+  })
+
+  // The advisory fix changed what an M4A reads and nothing else: bumping every format sent a
+  // NAS library of thousands back to disk for a handful of M4As.
+  it('reads an M4A under its own newer namespace, so its advisory cached as stars is read again', async () => {
+    namespaces.length = 0
+    await readMeta(encoded('ns.m4a', ['-c:a', 'aac'], { album: 'X' }))
     expect(namespaces).toEqual(['readmeta-v7'])
   })
 })
