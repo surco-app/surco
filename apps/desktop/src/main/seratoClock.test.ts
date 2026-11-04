@@ -1,7 +1,10 @@
+import { execFileSync } from 'node:child_process'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import ffmpegStatic from 'ffmpeg-static'
 import { describe, expect, it } from 'vitest'
+import { mp3Head, mpeg1Info, rekordboxShiftMs } from './rekordboxTimeline'
 import { seratoLeadMs, seratoLeadOfFile } from './seratoClock'
 
 const MPEG1_44K_STEREO = [0xff, 0xfb, 0x90, 0x44]
@@ -22,11 +25,17 @@ describe('seratoLeadMs', () => {
     expect(seratoLeadMs('.mp3', infoFrame('LAME3.100'), 44100)).toBeCloseTo(51.18, 2)
   })
 
-  it('skips only the Info frame of a non LAME MP3, one frame of 1152 samples', () => {
-    expect(seratoLeadMs('.mp3', infoFrame('Lavf58.76'), 44100)).toBeCloseTo(
-      (1152 / 44100) * 1000,
+  it('counts the encoder delay ffmpeg writes into its own Info frame, as it does for LAME', () => {
+    expect(seratoLeadMs('.mp3', infoFrame('Lavf58.76'), 44100)).toBeCloseTo(51.18, 2)
+    expect(seratoLeadMs('.mp3', infoFrame('Lavc60.3.'), 44100)).toBeCloseTo(51.18, 2)
+    expect(seratoLeadMs('.mp3', infoFrame('Lavc60.3.', 1105), 44100)).toBeCloseTo(
+      ((1152 + 1105 + 529) / 44100) * 1000,
       3,
     )
+  })
+
+  it('skips only the Info frame of an MP3 another encoder wrote, one frame of 1152 samples', () => {
+    expect(seratoLeadMs('.mp3', infoFrame('GOGO'), 44100)).toBeCloseTo((1152 / 44100) * 1000, 3)
   })
 
   it('agrees with Surco on an MP3 with no Xing or Info frame', () => {
@@ -54,6 +63,26 @@ describe('seratoLeadOfFile', () => {
     const file = join(dir, 'a.mp3')
     writeFileSync(file, infoFrame('LAME3.100'))
     expect(await seratoLeadOfFile(file, 44100)).toBeCloseTo(51.18, 2)
+  })
+
+  it('gives an MP3 the bundled ffmpeg encoded the same lead as a LAME one', async () => {
+    const file = join(dir, 'ffmpeg.mp3')
+    execFileSync(ffmpegStatic as unknown as string, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=2',
+      '-c:a',
+      'libmp3lame',
+      file,
+    ])
+    const head = await mp3Head(file)
+    expect(head && mpeg1Info(head)?.encoder).toBe('Lavc')
+    expect(await seratoLeadOfFile(file, 44100)).toBeCloseTo(51.18, 2)
+    expect(head && rekordboxShiftMs('.mp3', head, 44100)).toBeCloseTo((1152 / 44100) * 1000, 3)
   })
 
   it('is zero for a missing MP3 and fixed for an M4A without reading it', async () => {

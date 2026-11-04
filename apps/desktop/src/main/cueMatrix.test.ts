@@ -429,7 +429,7 @@ describe('the Serato cue carry-over matrix', () => {
     expect((await surcoMs(out))?.cue[0]).toBeCloseTo(SERATO_CUE_MS, 0)
   })
 
-  it('writes a WAV cue one header frame later in the MP3, where Serato plays that audio', async () => {
+  it('writes a WAV cue past the header frame and the encoder delay in the MP3, where Serato plays that audio', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-serato-lead-'))
     const input = makeSeratoSource(dir, '.wav')
     const out = join(dir, 'out.mp3')
@@ -437,7 +437,7 @@ describe('the Serato cue carry-over matrix', () => {
     await convertAudio(input, out, 'mp3', meta)
 
     expect(readSeratoTrack(out)?.markers?.cues[0].ms).toBe(
-      SERATO_CUE_MS + Math.round((1152 / 44100) * 1000),
+      SERATO_CUE_MS + Math.round(((1152 + 576 + 529) / 44100) * 1000),
     )
   })
 
