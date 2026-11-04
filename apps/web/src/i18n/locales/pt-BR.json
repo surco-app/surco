@@ -253,7 +253,7 @@
           {
             "t": "Suas playlists do rekordbox",
             "s": "Abra e organize suas playlists do rekordbox sem sair do Surco.",
-            "d": "Abra-as no Surco com suas pastas e na sua ordem, com a onda e os cues do rekordbox em cada faixa. E organize-as daqui. Crie, renomeie e apague playlists e pastas, adicione, remova e reordene faixas, e escolha no editor em quais playlists cada faixa está. Se o rekordbox estiver aberto, as mudanças esperam você fechá-lo. «Todas as faixas» vem primeiro, com a sua coleção inteira, inclusive o que não está em nenhuma playlist, e depois «Adicionadas recentemente», com o que você adicionou à coleção nos últimos 30 dias. Se você não usa rekordbox ou Apple Music, oculte essa fonte."
+            "d": "Abra-as no Surco com suas pastas e na sua ordem, com a onda e os cues do rekordbox em cada faixa. E organize-as daqui. Crie, renomeie e apague playlists e pastas, adicione, remova e reordene faixas, e escolha no editor em quais playlists cada faixa está. Se o rekordbox estiver aberto, as mudanças esperam você fechá-lo. «Adicionadas recentemente» vem primeiro, com o que você adicionou à coleção nos últimos 30 dias, e depois «Todas as faixas», com a sua coleção inteira, inclusive o que não está em nenhuma playlist. Se você não usa rekordbox ou Apple Music, oculte essa fonte."
           },
           {
             "t": "Cues do rekordbox",
@@ -643,7 +643,7 @@
         "s": "Trabalhe sobre suas playlists do Apple Music, rekordbox, Engine DJ e Traktor.",
         "body": [
           "A barra lateral tem um painel Fontes com o seu Apple Music (no macOS), rekordbox, Engine DJ e Traktor. Abra qualquer playlist e as faixas entram na lista com os arquivos de verdade, para você etiquetar, revisar ou converter como qualquer outra.",
-          "No rekordbox a lista começa por “Todas as faixas”, com a sua coleção inteira, inclusive o que não está em nenhuma playlist, e segue com “Adicionadas recentemente”, o que você colocou nos últimos 30 dias."
+          "No rekordbox a lista começa por “Adicionadas recentemente”, o que você colocou nos últimos 30 dias, e segue com “Todas as faixas”, com a sua coleção inteira, inclusive o que não está em nenhuma playlist."
         ],
         "points": [
           "As playlists do rekordbox e do Traktor se organizam daqui. Você cria, renomeia e apaga playlists e pastas, e adiciona, remove e reordena faixas.",
