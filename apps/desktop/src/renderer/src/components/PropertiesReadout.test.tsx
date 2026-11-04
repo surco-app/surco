@@ -4,7 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { Api } from '../../../preload/api'
 import type { TrackProperties } from '../../../shared/types'
-import '../i18n'
+import i18n from '../i18n'
 import { stubApi } from '../test/api'
 import { PropertiesReadout } from './PropertiesReadout'
 
@@ -103,5 +103,26 @@ describe('PropertiesReadout path', () => {
     expect(screen.getByTestId('property-reveal')).toHaveAccessibleName(
       'Show in File Explorer: Music',
     )
+  })
+})
+
+describe('PropertiesReadout dates', () => {
+  afterEach(() => void i18n.changeLanguage('en'))
+
+  // The dates followed the OS locale instead of the app's language, so a Spanish UI on
+  // an English macOS printed "Jan 25, 2026, 1:47 PM" amid Spanish labels.
+  it('formats the file dates in the app language, not the system one', async () => {
+    await i18n.changeLanguage('es')
+    const ms = Date.UTC(2026, 0, 25, 13, 47)
+    render(
+      <PropertiesReadout
+        properties={{ ...props, createdMs: ms }}
+        fileName="Pray"
+        inputPath="/music/Pray.wav"
+        duration={428}
+      />,
+    )
+    const spanish = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' })
+    expect(screen.getByTestId('property-created')).toHaveTextContent(spanish.format(ms))
   })
 })

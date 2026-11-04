@@ -276,7 +276,7 @@
     "appleMusicFailedAfterConvert": "«{{name}}» se convirtió, pero no se pudo actualizar Apple Music. Prueba a añadirla de nuevo a Apple Music.",
     "convertFailed": "No se pudo convertir «{{name}}»: {{reason}}",
     "convertFailedMany": "No se pudo convertir «{{name}}» y {{count}} más: {{reason}}",
-    "declicked": "Reparados clicks en {{count}} muestras de «{{name}}».",
+    "declicked": "Reparados clics en {{count}} muestras de «{{name}}».",
     "qualityErrors": "No se pudieron analizar {{count}} archivo(s), se quedan sin medir.",
     "copiedMeta": "Metadatos copiados",
     "pastedMeta": "Metadatos pegados",
@@ -1153,8 +1153,8 @@
   "declick": {
     "cueWarning": "ALAC no guarda los cues ni el beatgrid de Traktor: se pierden al convertir.",
     "title": "Reparación de vinilo",
-    "clicksLabel": "Clicks",
-    "hint": "Quita los clicks y pops de la aguja y el ruido de fondo del disco al convertir.",
+    "clicksLabel": "Clics",
+    "hint": "Quita los clics y pops de la aguja y el ruido de fondo del disco al convertir.",
     "mode": {
       "off": "No",
       "soft": "Suave",
@@ -1164,7 +1164,7 @@
     "modeHint": {
       "off": "Los chasquidos cortos de la aguja por el polvo y las rayas del disco.",
       "soft": "El toque mínimo, para material delicado.",
-      "standard": "Repara los clicks cortos de la aguja.",
+      "standard": "Repara los clics cortos de la aguja.",
       "strong": "Atrapa también pops largos; puede suavizar transitorios."
     },
     "noiseLabel": "Ruido de fondo",
@@ -1180,8 +1180,8 @@
       "medium": "Baja el soplido claramente. Para la mayoría de discos usados.",
       "strong": "Lo baja al máximo. Para discos muy gastados."
     },
-    "estimatePill": "~{{count}} clicks",
-    "estimateNonePill": "Sin clicks",
+    "estimatePill": "~{{count}} clics",
+    "estimateNonePill": "Sin clics",
     "waveTitle": "Clics encontrados",
     "markLabel": "Saltar al clic del segundo {{sec}}",
     "playheadLabel": "Posición de reproducción",
@@ -1638,7 +1638,7 @@
       "cuesOnly": "Solo en rekordbox",
       "output": "Nombre del archivo",
       "trim": "Recorte de silencio",
-      "declick": "Reparación de clicks de vinilo",
+      "declick": "Reparación de clics de vinilo",
       "normalize": "Igualar volumen",
       "open": "Abierta",
       "show": "Mostrar la sección en el editor",
@@ -2134,7 +2134,7 @@
     "autoMatchReviewUncuratedDetail": "{{release}} → {{track}}\nConfianza: {{confidence}} % · duración {{duration}} · artista {{artist}} · nº de catálogo {{catno}}\nPor confirmar: viene de {{source}}, que no está curado, y para aplicarse sola necesita un {{bar}} %.\nCandidatos sondeados:\n{{candidates}}",
     "autoMatchNoneDetail": "Ningún candidato alcanzó la confianza mínima.\nCandidatos sondeados:\n{{candidates}}",
     "autoMatchNoCandidates": "La búsqueda no devolvió candidatos que sondear.",
-    "probeClicks": "Contando clicks",
+    "probeClicks": "Contando clics",
     "traktorSync": "Actualizando la colección de Traktor",
     "traktorSyncWritten_one": "{{count}} pista actualizada en collection.nml",
     "traktorSyncWritten_other": "{{count}} pistas actualizadas en collection.nml",
