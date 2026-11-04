@@ -218,8 +218,8 @@ describe('useSourceBrowser', () => {
     await waitFor(() => expect(result.current.sources).toContain('serato'))
     act(() => result.current.selectSource('serato'))
     await waitFor(() => expect(result.current.tree).toHaveLength(3))
-    expect(result.current.tree?.[0]).toMatchObject({ id: ALL_TRACKS_ID, count: 9 })
-    expect(result.current.tree?.[1]).toMatchObject({ id: RECENTLY_ADDED_ID, count: 4 })
+    expect(result.current.tree?.[0]).toMatchObject({ id: RECENTLY_ADDED_ID, count: 4 })
+    expect(result.current.tree?.[1]).toMatchObject({ id: ALL_TRACKS_ID, count: 9 })
     expect(result.current.tree?.[2].name).toBe('Sets')
     act(() =>
       result.current.selectPlaylist({ id: 'Sets', name: 'Sets', kind: 'playlist', count: 1 }, []),
@@ -614,14 +614,12 @@ describe('useSourceBrowser', () => {
     expect(result.current.tree?.[1].id).toBe('house')
   })
 
-  // A track in no playlist has no other way into the tab, so the whole collection sits on
-  // top, counted in full like the library's own All Tracks.
   it.each([
     ['rekordbox', 'rekordboxTrackCount', 'loadRekordboxPlaylist'],
     ['engine', 'engineTrackCount', 'loadEnginePlaylist'],
     ['traktor', 'traktorTrackCount', 'loadTraktorPlaylist'],
   ] as const)(
-    'puts All tracks first in %s, above Recently added, with the whole collection counted',
+    'puts Recently added first in %s, the list reached for most, with All tracks right below counting the whole collection',
     async (source, count, load) => {
       const { result } = setup({
         traktorAvailable: vi.fn().mockResolvedValue(true),
@@ -631,14 +629,14 @@ describe('useSourceBrowser', () => {
       })
       act(() => result.current.selectSource(source))
       await waitFor(() => expect(result.current.tree).toHaveLength(3))
-      expect(result.current.tree?.[0]).toEqual({
+      expect(result.current.tree?.[0].id).toBe(RECENTLY_ADDED_ID)
+      expect(result.current.tree?.[1]).toEqual({
         id: ALL_TRACKS_ID,
         name: 'sources.allTracks',
         kind: 'playlist',
         count: 2078,
       })
-      expect(result.current.tree?.[1].id).toBe(RECENTLY_ADDED_ID)
-      act(() => result.current.selectPlaylist(result.current.tree?.[0] as SourceNode, []))
+      act(() => result.current.selectPlaylist(result.current.tree?.[1] as SourceNode, []))
       await waitFor(() => expect(result.current.entries).toHaveLength(1))
       expect(window.api[load]).toHaveBeenCalledWith(ALL_TRACKS_ID)
     },

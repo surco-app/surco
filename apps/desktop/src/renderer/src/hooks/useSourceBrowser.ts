@@ -177,16 +177,6 @@ export function useSourceBrowser({
     () =>
       hasRecent && tree.data
         ? [
-            ...(all.data !== undefined
-              ? [
-                  {
-                    id: ALL_TRACKS_ID,
-                    name: tr('sources.allTracks'),
-                    kind: 'playlist' as const,
-                    count: all.data,
-                  },
-                ]
-              : []),
             ...(recent.data !== undefined
               ? [
                   {
@@ -194,6 +184,16 @@ export function useSourceBrowser({
                     name: tr('sources.recentlyAdded'),
                     kind: 'playlist' as const,
                     count: recent.data,
+                  },
+                ]
+              : []),
+            ...(all.data !== undefined
+              ? [
+                  {
+                    id: ALL_TRACKS_ID,
+                    name: tr('sources.allTracks'),
+                    kind: 'playlist' as const,
+                    count: all.data,
                   },
                 ]
               : []),
