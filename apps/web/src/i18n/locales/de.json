@@ -278,7 +278,7 @@
           {
             "t": "Ein USB-Stick für deine CDJs",
             "s": "Bereitet einen USB-Stick für deine CDJs vor, mit Cues, Raster und Wellenformen.",
-            "d": "Exportiere deine rekordbox-Playlists mit Cues, Raster und Wellenformen auf einen USB-Stick, und rekordbox kann ihn weiter synchronisieren. rekordbox muss geschlossen sein. Unter macOS und Windows."
+            "d": "Exportiere deine rekordbox-Playlists mit Cues, Raster und Wellenformen auf einen USB-Stick, und rekordbox kann ihn weiter synchronisieren. rekordbox muss geschlossen sein. Unter macOS und Windows. Auch aus deinen Serato-Crates und Traktor-Playlists, mit Cues, Loops und Raster, ohne Umweg über rekordbox."
           },
           {
             "t": "Deine Traktor-Playlists",
@@ -650,7 +650,7 @@
           "Ist das Programm offen, wartet die Änderung, bis du es schließt, und vor dem Schreiben legt Surco eine Kopie unter Backups an.",
           "Tracks einer Playlist ohne Datei auf der Festplatte, etwa Streaming-Tracks, werden getrennt gezählt.",
           "Nutzt du eines dieser Programme nicht, blende es aus, dann bleibt die Spalte aufgeräumter.",
-          "Das USB-Symbol neben dem Namen von rekordbox oder Engine DJ exportiert deren Playlists auf einen USB-Stick."
+          "Das USB-Symbol neben dem Namen von rekordbox, Engine DJ, Serato oder Traktor exportiert deren Playlists auf einen USB-Stick."
         ],
         "shot": "fuentes-de.webp",
         "shotCaption": "rekordbox in den Quellen geöffnet, mit einer Playlist in der Liste."
@@ -904,7 +904,7 @@
         "title": "Ab an die Decks",
         "s": "Die Tracks erscheinen in Apple Music, rekordbox, Engine DJ oder Traktor.",
         "body": [
-          "Surco hört nicht beim Konvertieren auf. Es schickt die Tracks direkt an Apple Music (unter macOS) und an rekordbox, Engine DJ oder Traktor, wenn du sie unter Einstellungen → Ausgabe auf „Aktualisieren und hinzufügen“ stellst, während du sie konvertierst. Es exportiert die Warteschlange auch als rekordbox-Sammlung (.xml), Traktor (.nml), Serato (.crate) oder M3U8-Liste. Der Export sitzt im Editor, genau dort, wo die Konvertierung endet.",
+          "Surco hört nicht beim Konvertieren auf. Es schickt die Tracks direkt an Apple Music (unter macOS) und an rekordbox, Engine DJ, Traktor oder Serato, wenn du sie unter Einstellungen → Ausgabe auf „Aktualisieren und hinzufügen“ stellst, während du sie konvertierst. Es exportiert die Warteschlange auch als rekordbox-Sammlung (.xml), Traktor (.nml), Serato (.crate) oder M3U8-Liste. Der Export sitzt im Editor, genau dort, wo die Konvertierung endet.",
           "Tags und Cover reisen in der Datei selbst mit, deine DJ-Software liest sie also ohne zusätzliche Schritte. Mit den Brückendateien ist es anders: Sie enthalten die Metadaten und die Pfade, aber keine Cue-Punkte, keine Bewertung und kein Cover. Das holt sich jedes Programm aus der Datei oder aus seiner eigenen Datenbank."
         ],
         "points": [
@@ -925,11 +925,11 @@
         "title": "Deine Playlists auf einen USB-Stick bringen",
         "s": "Exportiere deine Playlists auf einen USB-Stick, bereit für die Player.",
         "body": [
-          "Surco exportiert deine Playlists aus rekordbox oder Engine DJ auf einen USB-Stick, mit der Bibliothek, die die Player lesen. Du öffnest es über das USB-Symbol neben dem Namen des Programms in „Quellen“, über „Auf USB exportieren…“ in ⌘K oder über den Hinweis, der erscheint, wenn du einen USB-Stick ansteckst.",
+          "Surco exportiert deine Playlists aus rekordbox, Engine DJ, Serato oder Traktor auf einen USB-Stick, mit der Bibliothek, die die Player lesen. Du öffnest es über das USB-Symbol neben dem Namen des Programms in „Quellen“, über „Auf USB exportieren…“ in ⌘K oder über den Hinweis, der erscheint, wenn du einen USB-Stick ansteckst.",
           "Du markierst die Playlists und wählst den USB-Stick, und bevor etwas kopiert wird, sagt dir Surco, wie viele Tracks neu sind, wie viele schon drauf waren, wie viele seit dem letzten Mal entfernt wurden und ob alles passt."
         ],
         "points": [
-          "Beim Export aus rekordbox bekommt der USB-Stick Cues, Raster und Wellenformen, und rekordbox kann ihn weiter synchronisieren. Beim Export aus Engine DJ bekommt er die Engine-Bibliothek.",
+          "Beim Export aus rekordbox bekommt der USB-Stick Cues, Raster und Wellenformen, und rekordbox kann ihn weiter synchronisieren. Beim Export aus Engine DJ bekommt er die Engine-Bibliothek. Beim Export aus Serato oder Traktor wird er ein Pioneer-USB-Stick mit Cues, Loops und Raster, ohne Umweg über rekordbox.",
           "Die Musik wird so kopiert, wie sie ist. Ist dein CDJ älter, konvertiere vorher in AIFF, was FLAC ist oder über 24 Bit oder 48 kHz liegt.",
           "Surco warnt dich bei einem USB-Stick in exFAT, NTFS oder GPT, den manche CDJs nicht lesen, und bei Tracks, die auf einem CDJ-2000 vielleicht nicht laufen.",
           "„Musik vom USB-Stick löschen, die nicht mehr exportiert wird“ entfernt, was du aus deinen Playlists genommen hast.",

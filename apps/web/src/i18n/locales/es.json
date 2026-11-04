@@ -278,7 +278,7 @@
           {
             "t": "Un USB para tus CDJ",
             "s": "Prepara un USB para tus CDJ con cues, rejilla y ondas.",
-            "d": "Exportas tus playlists de rekordbox a un USB con sus cues, su rejilla y sus ondas, y rekordbox lo puede seguir sincronizando. Necesita rekordbox cerrado. En macOS y Windows."
+            "d": "Exportas tus playlists de rekordbox a un USB con sus cues, su rejilla y sus ondas, y rekordbox lo puede seguir sincronizando. Necesita rekordbox cerrado. En macOS y Windows. También desde tus crates de Serato y tus playlists de Traktor, con sus cues, bucles y rejilla, sin pasar por rekordbox."
           },
           {
             "t": "Tus playlists de Traktor",
@@ -650,7 +650,7 @@
           "Si el programa está abierto, el cambio espera a que lo cierres, y antes de escribir Surco guarda una copia en Copias.",
           "Las pistas de una playlist que no tienen fichero en el disco, como las de streaming, se cuentan aparte.",
           "Si no usas alguno de esos programas, ocúltalo y el panel queda más limpio.",
-          "Junto al nombre de rekordbox o de Engine DJ, el icono de USB exporta sus playlists a un USB."
+          "Junto al nombre de rekordbox, Engine DJ, Serato o Traktor, el icono de USB exporta sus playlists a un USB."
         ],
         "shot": "fuentes-es.webp",
         "shotCaption": "rekordbox abierto en Fuentes, con una de sus playlists cargada en la lista."
@@ -904,7 +904,7 @@
         "title": "Llévala a tus platos",
         "s": "Las pistas aparecen en Apple Music, rekordbox, Engine DJ o Traktor.",
         "body": [
-          "Surco no se queda en convertir. Manda las pistas directas a Apple Music (en macOS), y a rekordbox, Engine DJ o Traktor si en Ajustes → Destino los pones en «Actualizar y añadir», mientras las conviertes. También exporta la cola como colección de rekordbox (.xml), Traktor (.nml), Serato (.crate) o lista M3U8. La exportación vive en el editor, justo donde acaba la conversión.",
+          "Surco no se queda en convertir. Manda las pistas directas a Apple Music (en macOS), y a rekordbox, Engine DJ, Traktor o Serato si en Ajustes → Destino los pones en «Actualizar y añadir», mientras las conviertes. También exporta la cola como colección de rekordbox (.xml), Traktor (.nml), Serato (.crate) o lista M3U8. La exportación vive en el editor, justo donde acaba la conversión.",
           "Los tags y la carátula viajan dentro del propio archivo, así que tu software de DJ los lee sin pasos extra. Los archivos puente son otra cosa: llevan los metadatos y las rutas, pero ni cue points, ni valoración, ni carátula. Eso lo saca cada programa del archivo o de su propia base de datos."
         ],
         "points": [
@@ -925,11 +925,11 @@
         "title": "Lleva tus playlists a un USB",
         "s": "Exporta tus playlists a un USB listo para los reproductores.",
         "body": [
-          "Surco exporta tus playlists de rekordbox o de Engine DJ a un USB, con la biblioteca que leen los reproductores. Ábrelo desde el icono de USB junto al nombre del programa en Fuentes, desde «Exportar a USB…» en ⌘K, o desde el aviso que sale al conectar un USB.",
+          "Surco exporta tus playlists de rekordbox, Engine DJ, Serato o Traktor a un USB, con la biblioteca que leen los reproductores. Ábrelo desde el icono de USB junto al nombre del programa en Fuentes, desde «Exportar a USB…» en ⌘K, o desde el aviso que sale al conectar un USB.",
           "Marcas las playlists y eliges el USB, y antes de copiar nada te dice cuántas pistas son nuevas, cuántas ya estaban, cuántas se quitaron desde la última vez y si cabe todo."
         ],
         "points": [
-          "Desde rekordbox, el USB lleva los cues, la rejilla y las ondas, y rekordbox lo puede seguir sincronizando. Desde Engine DJ, lleva su biblioteca de Engine.",
+          "Desde rekordbox, el USB lleva los cues, la rejilla y las ondas, y rekordbox lo puede seguir sincronizando. Desde Engine DJ, lleva su biblioteca de Engine. Desde Serato o Traktor, es un USB de Pioneer con sus cues, bucles y rejilla, sin pasar por rekordbox.",
           "La música se copia tal como está. Si tu CDJ es antiguo, convierte antes a AIFF lo que sea FLAC o pase de 24 bits o 48 kHz.",
           "Te avisa de un USB en exFAT, NTFS o GPT, que algunos CDJ no leen, y de las pistas que puede que no suenen en un CDJ-2000.",
           "«Borrar del USB la música que ya no se exporta» quita lo que sacaste de tus playlists.",

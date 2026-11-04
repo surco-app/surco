@@ -278,7 +278,7 @@
           {
             "t": "A USB stick for your CDJs",
             "s": "Prepares a USB stick for your CDJs with cues, grid and waveforms.",
-            "d": "Export your rekordbox playlists to a USB stick with their cues, grid and waveforms, and rekordbox can keep syncing it. Needs rekordbox closed. On macOS and Windows."
+            "d": "Export your rekordbox playlists to a USB stick with their cues, grid and waveforms, and rekordbox can keep syncing it. Needs rekordbox closed. On macOS and Windows. Also from your Serato crates and Traktor playlists, with their cues, loops and grid, without going through rekordbox."
           },
           {
             "t": "Your Traktor playlists",
@@ -650,7 +650,7 @@
           "If the program is open, the change waits until you close it, and before writing, Surco keeps a copy in Backups.",
           "Playlist tracks with no file on disk, like streaming ones, are counted separately.",
           "If you don't use one of those programs, hide it and the panel stays cleaner.",
-          "Next to the rekordbox or Engine DJ name, the USB icon exports its playlists to a USB stick."
+          "Next to the rekordbox, Engine DJ, Serato or Traktor name, the USB icon exports its playlists to a USB stick."
         ],
         "shot": "fuentes-en.webp",
         "shotCaption": "rekordbox open in Sources, with one of its playlists loaded in the list."
@@ -904,7 +904,7 @@
         "title": "Take it to your decks",
         "s": "Your tracks show up in Apple Music, rekordbox, Engine DJ or Traktor.",
         "body": [
-          "Surco doesn't stop at converting. It sends tracks straight to Apple Music (on macOS), and to rekordbox, Engine DJ or Traktor if you set them to “Update and add” in Settings → Output, while it converts them. It also exports the queue as a rekordbox (.xml), Traktor (.nml) or Serato (.crate) collection, or an M3U8 playlist. Exporting lives in the editor, right where converting ends.",
+          "Surco doesn't stop at converting. It sends tracks straight to Apple Music (on macOS), and to rekordbox, Engine DJ, Traktor or Serato if you set them to “Update and add” in Settings → Output, while it converts them. It also exports the queue as a rekordbox (.xml), Traktor (.nml) or Serato (.crate) collection, or an M3U8 playlist. Exporting lives in the editor, right where converting ends.",
           "Tags and cover art travel inside the file itself, so your DJ software reads them with no extra steps. The bridge files are a different matter: they carry the metadata and the paths, but no cue points, no rating and no cover art. Each program pulls that from the file or from its own database."
         ],
         "points": [
@@ -925,11 +925,11 @@
         "title": "Take your playlists on a USB stick",
         "s": "Export your playlists to a USB stick ready for the players.",
         "body": [
-          "Surco exports your rekordbox or Engine DJ playlists to a USB stick, with the library the players read. Open it from the USB icon next to the program's name in Sources, from “Export to USB…” in ⌘K, or from the notice that shows up when you plug in a USB stick.",
+          "Surco exports your rekordbox, Engine DJ, Serato or Traktor playlists to a USB stick, with the library the players read. Open it from the USB icon next to the program's name in Sources, from “Export to USB…” in ⌘K, or from the notice that shows up when you plug in a USB stick.",
           "You tick the playlists and pick the USB stick, and before copying anything it tells you how many tracks are new, how many were already there, how many were removed since last time and whether it all fits."
         ],
         "points": [
-          "From rekordbox, the USB stick carries the cues, the beatgrid and the waveforms, and rekordbox can keep syncing it. From Engine DJ, it carries its Engine library.",
+          "From rekordbox, the USB stick carries the cues, the beatgrid and the waveforms, and rekordbox can keep syncing it. From Engine DJ, it carries its Engine library. From Serato or Traktor, it is a Pioneer USB stick with their cues, loops and grid, without going through rekordbox.",
           "The music is copied as it is. If your CDJ is an older one, convert anything that's FLAC or above 24 bits or 48 kHz to AIFF first.",
           "It warns you about a USB stick in exFAT, NTFS or GPT, which some CDJs can't read, and about tracks that might not play on a CDJ-2000.",
           "“Delete music from the USB that is no longer exported” removes what you took out of your playlists.",

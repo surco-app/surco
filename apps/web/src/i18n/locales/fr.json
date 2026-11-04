@@ -278,7 +278,7 @@
           {
             "t": "Une clé USB pour tes CDJ",
             "s": "Prépare une clé USB pour tes CDJ avec cues, grille et formes d'onde.",
-            "d": "Exporte tes playlists rekordbox sur une clé USB avec leurs cues, leur grille et leurs formes d'onde, et rekordbox peut continuer à la synchroniser. rekordbox doit être fermé. Sur macOS et Windows."
+            "d": "Exporte tes playlists rekordbox sur une clé USB avec leurs cues, leur grille et leurs formes d'onde, et rekordbox peut continuer à la synchroniser. rekordbox doit être fermé. Sur macOS et Windows. Aussi depuis tes crates Serato et tes playlists Traktor, avec leurs cues, leurs boucles et leur grille, sans passer par rekordbox."
           },
           {
             "t": "Tes playlists Traktor",
@@ -650,7 +650,7 @@
           "Si le logiciel est ouvert, le changement attend que tu le fermes, et avant d'écrire, Surco garde une copie dans Sauvegardes.",
           "Les morceaux d'une playlist qui n'ont pas de fichier sur le disque, comme ceux en streaming, sont comptés à part.",
           "Si tu n'utilises pas l'un de ces logiciels, masque-le et le panneau est plus dégagé.",
-          "À côté du nom de rekordbox ou d'Engine DJ, l'icône USB exporte ses playlists vers une clé USB."
+          "À côté du nom de rekordbox, d'Engine DJ, de Serato ou de Traktor, l'icône USB exporte ses playlists vers une clé USB."
         ],
         "shot": "fuentes-fr.webp",
         "shotCaption": "rekordbox ouvert dans Sources, avec une de ses playlists chargée dans la liste."
@@ -904,7 +904,7 @@
         "title": "Jusqu'à tes platines",
         "s": "Les morceaux apparaissent dans Apple Music, rekordbox, Engine DJ ou Traktor.",
         "body": [
-          "Surco ne s'arrête pas à la conversion. Il envoie les morceaux directement dans Apple Music (sur macOS), et dans rekordbox, Engine DJ ou Traktor si tu les mets sur « Mettre à jour et ajouter » dans Réglages → Sortie, au fil de la conversion. Il exporte aussi la file en collection rekordbox (.xml), Traktor (.nml), Serato (.crate) ou en playlist M3U8. L'export se trouve dans l'éditeur, juste là où se termine la conversion.",
+          "Surco ne s'arrête pas à la conversion. Il envoie les morceaux directement dans Apple Music (sur macOS), et dans rekordbox, Engine DJ, Traktor ou Serato si tu les mets sur « Mettre à jour et ajouter » dans Réglages → Sortie, au fil de la conversion. Il exporte aussi la file en collection rekordbox (.xml), Traktor (.nml), Serato (.crate) ou en playlist M3U8. L'export se trouve dans l'éditeur, juste là où se termine la conversion.",
           "Les tags et la pochette voyagent dans le fichier lui-même, ton logiciel DJ les lit donc sans étape supplémentaire. Les fichiers passerelles, c'est autre chose : ils portent les métadonnées et les chemins, mais ni cues, ni note, ni pochette. Chaque logiciel va chercher tout ça dans le fichier ou dans sa propre base de données."
         ],
         "points": [
@@ -925,11 +925,11 @@
         "title": "Emporte tes playlists sur une clé USB",
         "s": "Exporte tes playlists vers une clé USB prête pour les lecteurs.",
         "body": [
-          "Surco exporte tes playlists rekordbox ou Engine DJ vers une clé USB, avec la bibliothèque que lisent les lecteurs. Lance l'export depuis l'icône USB à côté du nom du logiciel dans Sources, depuis « Exporter vers USB… » dans ⌘K, ou depuis la notification qui s'affiche quand tu branches une clé USB.",
+          "Surco exporte tes playlists rekordbox, Engine DJ, Serato ou Traktor vers une clé USB, avec la bibliothèque que lisent les lecteurs. Lance l'export depuis l'icône USB à côté du nom du logiciel dans Sources, depuis « Exporter vers USB… » dans ⌘K, ou depuis la notification qui s'affiche quand tu branches une clé USB.",
           "Tu coches les playlists et tu choisis la clé, et avant de copier quoi que ce soit, il te dit combien de morceaux sont nouveaux, combien y étaient déjà, combien ont été retirés depuis la dernière fois et si tout tient."
         ],
         "points": [
-          "Depuis rekordbox, la clé emporte les cues, la grille et les formes d'onde, et rekordbox peut continuer à la synchroniser. Depuis Engine DJ, elle emporte sa bibliothèque Engine.",
+          "Depuis rekordbox, la clé emporte les cues, la grille et les formes d'onde, et rekordbox peut continuer à la synchroniser. Depuis Engine DJ, elle emporte sa bibliothèque Engine. Depuis Serato ou Traktor, c'est une clé USB Pioneer avec leurs cues, leurs boucles et leur grille, sans passer par rekordbox.",
           "La musique est copiée telle quelle. Si ton CDJ est ancien, convertis d'abord en AIFF ce qui est en FLAC ou dépasse 24 bits ou 48 kHz.",
           "Il te prévient si la clé est en exFAT, NTFS ou GPT, que certains CDJ ne lisent pas, et signale les morceaux qui risquent de ne pas passer sur un CDJ-2000.",
           "« Supprimer de la clé la musique qui n’est plus exportée » retire ce que tu as sorti de tes playlists.",
