@@ -101,6 +101,7 @@ export interface RekordboxQueue<R extends QueuedRepoint = RekordboxRepoint> {
   // A repoint by this source waits for the collection in use.
   holdsRepoint: (from: string) => boolean
   queuedRepoints: () => R[]
+  queuedOps: () => QueueOp[]
   busy: () => boolean
   settled: () => Promise<void>
   apply: (ensureClosed: () => Promise<boolean>, opts?: { manual?: boolean }) => Promise<QueueApply>
@@ -437,6 +438,7 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
       shown()?.ops.find((o): o is CuesOp => o.kind === 'cues' && o.contentId === contentId),
     holdsRepoint: (from) => queueFor(here())?.repoints.some((r) => r.from === from) ?? false,
     queuedRepoints: () => [...(queueFor(here())?.repoints ?? [])],
+    queuedOps: () => [...(queueFor(here())?.ops ?? [])],
     busy: () => pending > 0,
     settled: () => chain.then(() => undefined),
     apply(ensureClosed, opts) {

@@ -451,7 +451,7 @@ describe('rekordbox writes while the queue is held after a write left the collec
     const update = [{ path: '/m/a.flac', fields: { title: { from: 'a', to: 'b' } } }]
     const serato = {
       roots: () => [],
-      queue: { enqueue: vi.fn(), apply: vi.fn(), drop: vi.fn() },
+      queue: { enqueue: vi.fn(), apply: vi.fn(), drop: vi.fn(), queuedOps: vi.fn(() => []) },
       isRunning: async () => false,
       onWaiting: vi.fn(),
       onApplied: vi.fn(),

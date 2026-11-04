@@ -8,7 +8,9 @@ vi.mock('./seratoCuesWrite', () => ({ applySeratoCuesBatch: vi.fn() }))
 import type { LibraryTagUpdate } from '../shared/types'
 import { serialLibraryFlush } from './libraryTagSync'
 import { createRekordboxQueue, type QueueStore } from './rekordboxQueue'
+import type { TrackOp } from './rekordboxQueueOps'
 import { applySeratoBatch } from './seratoBatch'
+import { crateFileOf, crateTrackPaths } from './seratoCrateFile'
 import { parseSeratoDatabase } from './seratoDatabase'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
 import type { SeratoLibraryRoot } from './seratoLibrary'
@@ -36,7 +38,7 @@ const memoryStore = (): QueueStore => {
 }
 
 function prayInSerato() {
-  const { roots, deps } = twoRoots({ internal: [] })
+  const { roots, deps } = twoRoots({ internal: ['A'] })
   writeFileSync(
     dbOf(roots[0]),
     concat([VRSN, track({ ttyp: 'aiff', pfil: PRAY_PFIL, tsng: 'Pray (old)', tart: 'Tina' })]),
@@ -175,6 +177,7 @@ describe('syncSeratoTags', () => {
         outcomes: [{ id: queue.enqueue.mock.calls[0][0][0].id, applied: true, notices: [] }, other],
       })),
       drop: vi.fn(),
+      queuedOps: () => [],
     }
     expect(await syncSeratoTags(UPDATES, { ...sync, queue })).toEqual({
       outcome: 'updated',
@@ -183,6 +186,27 @@ describe('syncSeratoTags', () => {
     expect(sync.onApplied).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'applied', changes: 1, outcomes: [other] }),
     )
+  })
+
+  it('announces crate picks queued for the same track it wrote, so the editor clears them', async () => {
+    const { roots, queue, sync } = depsWith({ running: false })
+    const wanted = [{ id: 'A', name: 'A' }]
+    const picks: TrackOp = {
+      id: 'picks',
+      kind: 'track',
+      path: PRAY,
+      label: 'Pray.aiff',
+      facts: null,
+      wanted,
+      known: [],
+      stamps: {},
+    }
+    queue.enqueue([picks])
+    expect(await syncSeratoTags(UPDATES, sync)).toEqual({ outcome: 'updated', count: 1 })
+    expect(sync.onApplied).toHaveBeenCalledWith(
+      expect.objectContaining({ tracks: 1, written: [{ path: PRAY, wanted }] }),
+    )
+    expect(crateTrackPaths(readFileSync(crateFileOf(roots[0], 'A')))).toContain(PRAY_PFIL)
   })
 
   it('announces nothing when only its own tags were written', async () => {
@@ -199,6 +223,7 @@ describe('syncSeratoTags', () => {
         throw new Error('boom')
       }),
       drop: vi.fn(),
+      queuedOps: () => [],
     }
     await expect(syncSeratoTags(UPDATES, { ...sync, queue })).rejects.toThrow('boom')
     expect(queue.drop).toHaveBeenCalledWith(queue.enqueue.mock.calls[0][0][0].id)
@@ -218,6 +243,7 @@ describe('syncSeratoTags', () => {
       enqueue: vi.fn(),
       apply: vi.fn(async () => ({ status: 'refused' as const, reason: 'backup-failed' as const })),
       drop: vi.fn(),
+      queuedOps: () => [],
     }
     expect(await syncSeratoTags(UPDATES, { ...sync, queue })).toEqual({ outcome: 'failed' })
     expect(queue.drop).toHaveBeenCalledWith(queue.enqueue.mock.calls[0][0][0].id)

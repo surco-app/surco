@@ -50,7 +50,7 @@ export async function syncSeratoTags(
   deps: {
     enabled: boolean
     roots: () => SeratoLibraryRoot[]
-    queue: Pick<RekordboxQueue, 'enqueue' | 'apply' | 'drop'>
+    queue: Pick<RekordboxQueue, 'enqueue' | 'apply' | 'drop' | 'queuedOps'>
     isRunning: () => Promise<boolean>
     onWaiting: () => void
     onApplied: (result: QueueApply) => void
@@ -62,6 +62,9 @@ export async function syncSeratoTags(
   const ops = seratoTagOps(updates, roots)
   if (ops.length === 0) return { outcome: 'nothing' }
   deps.queue.enqueue(ops)
+  const pathOf = new Map(
+    deps.queue.queuedOps().flatMap((op) => (op.kind === 'edit' ? [] : [[op.id, op.path] as const])),
+  )
   let result: QueueApply
   try {
     result = await deps.queue.apply(async () => !(await deps.isRunning()))
@@ -81,12 +84,18 @@ export async function syncSeratoTags(
   const own = new Set(ops.map((op) => op.id))
   const count = result.outcomes.filter((o) => o.applied && own.has(o.id)).length
   const mine = result.outcomes.filter((o) => own.has(o.id))
+  const outcomes = result.outcomes.filter((o) => !own.has(o.id))
   const others: QueueApply = {
     ...result,
-    tracks: Math.max(0, result.tracks - count),
+    tracks: new Set(
+      outcomes.flatMap((o) => {
+        const path = pathOf.get(o.id)
+        return o.applied && !o.uncounted && path ? [path] : []
+      }),
+    ).size,
     notices: result.notices.filter((n) => !mine.some((o) => o.notices.includes(n))),
-    outcomes: result.outcomes.filter((o) => !own.has(o.id)),
+    outcomes,
   }
-  if (others.tracks > 0 || others.changes > 0 || others.notices.length > 0) deps.onApplied(others)
+  if (outcomes.some((o) => o.applied) || others.notices.length > 0) deps.onApplied(others)
   return count > 0 ? { outcome: 'updated', count } : { outcome: 'nothing' }
 }
