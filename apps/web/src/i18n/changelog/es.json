@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.23",
+    "date": "4 de noviembre de 2026",
+    "title": "Cues en Serato, y cambios que llegan a todos tus programas",
+    "items": [
+      {
+        "text": "Surco ya escribe tus cues en Serato. Edítalos en el editor de cues, tráelos desde rekordbox, Traktor o Engine DJ con tus «Flujos» y consérvalos al convertir una pista. Solo escribe con Serato cerrado, espera a que lo cierres si está abierto y guarda antes el original.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "En la pestaña de Serato los cues caen sobre el golpe en la onda, y pegar al golpe y «Auto marcar» siguen la rejilla del propio Serato.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "Corrige el título, el artista, el álbum o el género en Surco y Traktor y Engine DJ también muestran el nombre nuevo, como ya hacía rekordbox. Si lo cambiaste a mano dentro de Traktor o Engine DJ, se respeta.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "Cuando editas una pista en su sitio, Apple Music muestra las etiquetas nuevas al momento, y una pista a la que cambias el nombre del archivo sigue encontrándose en Music.",
+        "in": "1.23.0"
+      },
+      {
+        "text": "Ningún programa se queda apuntando a un archivo que ya no está. Si uno no puede seguir el cambio de nombre, como Serato o un programa que no sincronizas, el original se queda en su carpeta y Surco te dice qué programa lo usa todavía.",
+        "in": "1.23.0"
+      }
+    ]
+  },
+  {
     "version": "1.22",
     "date": "3 de noviembre de 2026",
     "title": "Rejillas en su sitio, y Serato",
