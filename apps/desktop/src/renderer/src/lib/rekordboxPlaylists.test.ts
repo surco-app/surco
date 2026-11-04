@@ -61,6 +61,42 @@ describe('playlistOptions', () => {
   })
 })
 
+describe('a Serato crate that also holds subcrates', () => {
+  const tree: SourceNode[] = [
+    {
+      id: 'House',
+      name: 'House',
+      kind: 'playlist',
+      count: 2,
+      children: [{ id: 'House%%Deep', name: 'Deep', kind: 'playlist', count: 1 }],
+    },
+  ]
+  const options = playlistOptions(tree)
+
+  it('is a pick of its own, next to its subcrates, because Serato keeps tracks in it', () => {
+    expect(options).toEqual([
+      { id: 'House', name: 'House', path: '' },
+      { id: 'House%%Deep', name: 'Deep', path: 'House' },
+    ])
+  })
+
+  it('stays among the picks when another crate is added, so applying them never takes the track out of it', () => {
+    const t = track({ id: 'a', inputPath: '/m/a.wav' })
+    const membership = { '/m/a.wav': ['House', 'House%%Deep'] }
+    expect(withTarget([t], membership, options, { name: 'Techno' }, true, 'serato')).toEqual([
+      {
+        id: 'a',
+        seratoPlaylists: [
+          { id: 'House', name: 'House' },
+          { id: 'House%%Deep', name: 'Deep' },
+          { name: 'Techno' },
+        ],
+        seratoPlaylistsBase: ['House', 'House%%Deep'],
+      },
+    ])
+  })
+})
+
 describe('matchingOptions', () => {
   it('filters by name ignoring case and accents, without the chosen ones', () => {
     expect(matchingOptions(OPTIONS, 'MAKÍNA', []).map((o) => o.id)).toEqual(['3000'])

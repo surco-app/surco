@@ -843,6 +843,55 @@ describe('a converted track in Serato', () => {
     ])
   })
 
+  it('keeps a parent crate byte for byte when the picks add a crate elsewhere, since the field lists the parent as a pick', () => {
+    const { roots, draft } = seratoWith(['Users/dj/a.mp3'], {
+      internal: [
+        ['House', ['Users/dj/a.mp3']],
+        ['House%%Deep', ['Users/dj/a.mp3']],
+      ],
+    })
+    const house = crateFileOf(roots[0], 'House')
+    const before = Buffer.from(draft.read(house) ?? [])
+    const outcome = applySeratoTrack(
+      draft,
+      trackOp({
+        path: '/Users/dj/a.mp3',
+        known: ['House', 'House%%Deep'],
+        wanted: [
+          { id: 'House', name: 'House' },
+          { id: 'House%%Deep', name: 'Deep' },
+          { name: 'Techno' },
+        ],
+      }),
+      roots,
+      NOW,
+    )
+    expect(Buffer.from(draft.read(house) ?? [])).toEqual(before)
+    expect(tracksIn(draft, crateFileOf(roots[0], 'Techno'))).toEqual(['Users/dj/a.mp3'])
+    expect(outcome.notices).toEqual([])
+  })
+
+  it('takes the file out of a parent crate the user deselected, like any other crate', () => {
+    const { roots, draft } = seratoWith(['Users/dj/a.mp3'], {
+      internal: [
+        ['House', ['Users/dj/a.mp3']],
+        ['House%%Deep', ['Users/dj/a.mp3']],
+      ],
+    })
+    applySeratoTrack(
+      draft,
+      trackOp({
+        path: '/Users/dj/a.mp3',
+        known: ['House', 'House%%Deep'],
+        wanted: [{ id: 'House%%Deep', name: 'Deep' }],
+      }),
+      roots,
+      NOW,
+    )
+    expect(tracksIn(draft, crateFileOf(roots[0], 'House'))).toEqual([])
+    expect(tracksIn(draft, crateFileOf(roots[0], 'House%%Deep'))).toEqual(['Users/dj/a.mp3'])
+  })
+
   it('adds the converted file through the queue after the crate edits of the same batch', async () => {
     const { roots, deps } = seratoWith(['Users/dj/a.mp3'], { internal: [] })
     const result = await applySeratoLibraryOps(

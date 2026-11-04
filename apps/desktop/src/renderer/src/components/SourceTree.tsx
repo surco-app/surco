@@ -42,11 +42,10 @@ export function flattenPlaylists(
   nodes: SourceNode[],
   folders: string[] = [],
 ): { node: SourceNode; folders: string[] }[] {
-  return nodes.flatMap((n) =>
-    n.kind === 'folder'
-      ? flattenPlaylists(n.children ?? [], [...folders, n.name])
-      : [{ node: n, folders }],
-  )
+  return nodes.flatMap((n) => [
+    ...(n.kind === 'folder' ? [] : [{ node: n, folders }]),
+    ...flattenPlaylists(n.children ?? [], [...folders, n.name]),
+  ])
 }
 
 export function SourceTree({
@@ -251,6 +250,8 @@ export function SourceTree({
     trail?: string,
   ): React.JSX.Element => {
     const isFolder = node.kind === 'folder'
+    const parentCrate = Boolean(edit?.crates) && !isFolder && (node.children?.length ?? 0) > 0
+    const expandable = isFolder || parentCrate
     const recent = node.id === RECENTLY_ADDED_ID
     const all = node.id === ALL_TRACKS_ID
     const nodeEdit = recent || all ? undefined : edit
@@ -261,7 +262,7 @@ export function SourceTree({
     const selected = node.id === selectedId
     const Chevron = open ? ChevronDown : ChevronRight
     return (
-      <li key={node.id}>
+      <li key={node.id} className={parentCrate ? 'relative' : undefined}>
         {renaming === node.id ? (
           <div style={{ paddingLeft: 10 + depth * 18 }} className="pr-2.5">
             <input
@@ -324,6 +325,7 @@ export function SourceTree({
             {isFolder && (
               <Chevron size={12} className="shrink-0 text-fg-faint" aria-hidden="true" />
             )}
+            {parentCrate && <span className="w-3 shrink-0" />}
             {recent && (
               <Clock
                 size={13}
@@ -356,7 +358,20 @@ export function SourceTree({
             )}
           </button>
         )}
-        {((isFolder && open) || creating?.parentId === node.id) && (
+        {parentCrate && renaming !== node.id && (
+          <button
+            type="button"
+            data-testid={`source-node-expand-${node.id}`}
+            aria-label={tr('sources.tree.subcrates', { name: node.name })}
+            aria-expanded={open}
+            onClick={() => toggle(node.id)}
+            style={{ left: 8 + depth * 18 }}
+            className="absolute top-[6px] flex h-4 w-4 items-center justify-center rounded text-fg-faint hover:text-fg"
+          >
+            <Chevron size={12} aria-hidden="true" />
+          </button>
+        )}
+        {((expandable && open) || creating?.parentId === node.id) && (
           <ul>
             {(node.children ?? []).map((c) => row(c, depth + 1, [...folders, node.name]))}
             {nameField(node.id, depth + 1)}

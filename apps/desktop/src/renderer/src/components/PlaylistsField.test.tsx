@@ -330,6 +330,101 @@ describe('PlaylistsField keyboard', () => {
   })
 })
 
+describe('PlaylistsField on a Serato crate that holds subcrates', () => {
+  const CRATES: SourceNode[] = [
+    {
+      ...playlist('House', 'House', 12),
+      children: [playlist('House%%Deep', 'Deep', 4), playlist('House%%Tech', 'Tech', 3)],
+    },
+    playlist('Friday', 'Friday', 2),
+  ]
+  const crateOptions = playlistOptions(CRATES)
+  const crate = (id: string): RekordboxPlaylistTarget => {
+    const o = crateOptions.find((x) => x.id === id)
+    if (!o) throw new Error(id)
+    return { id: o.id, name: o.name }
+  }
+
+  function Crates({
+    initial,
+    spy = vi.fn(),
+  }: {
+    initial: RekordboxPlaylistTarget[]
+    spy?: (next: RekordboxPlaylistTarget[]) => void
+  }) {
+    const [value, setValue] = useState(initial)
+    return (
+      <PlaylistsField
+        library="serato"
+        label="Serato crates"
+        tree={CRATES}
+        options={crateOptions}
+        value={value}
+        onChange={(next) => {
+          spy(next)
+          setValue(next)
+        }}
+      />
+    )
+  }
+
+  it('ticks the parent crate itself, since Serato keeps tracks in it', () => {
+    const spy = vi.fn()
+    render(<Crates initial={[]} spy={spy} />)
+    open()
+    expect(screen.getByTestId('playlists-row-House')).toHaveTextContent('12')
+    fireEvent.click(screen.getByTestId('playlists-check-House'))
+    expect(spy).toHaveBeenLastCalledWith([crate('House')])
+  })
+
+  it('shows the parent crate ticked when the track is in it, with its subcrates folded away', () => {
+    render(<Crates initial={[crate('House')]} />)
+    open()
+    expect(screen.getByTestId('playlists-check-House')).toBeChecked()
+    expect(screen.getByTestId('playlists-expand-House')).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByTestId('playlists-check-House%%Deep')).toBeNull()
+  })
+
+  it('opens the subcrates from the chevron without ticking the parent', () => {
+    const spy = vi.fn()
+    render(<Crates initial={[]} spy={spy} />)
+    open()
+    fireEvent.click(screen.getByTestId('playlists-expand-House'))
+    expect(screen.getByTestId('playlists-expand-House')).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByTestId('playlists-check-House%%Deep')).toBeInTheDocument()
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  it('opens the parent crate when the track is in one of its subcrates', () => {
+    render(<Crates initial={[crate('House%%Deep')]} />)
+    open()
+    expect(screen.getByTestId('playlists-check-House%%Deep')).toBeChecked()
+  })
+
+  it('opens and closes the subcrates with the right and left arrows', () => {
+    render(<Crates initial={[]} />)
+    open()
+    fireEvent.keyDown(search(), { key: 'ArrowDown' })
+    const house = screen.getByTestId('playlists-check-House')
+    fireEvent.keyDown(house, { key: 'ArrowRight' })
+    expect(screen.getByTestId('playlists-check-House%%Tech')).toBeInTheDocument()
+    fireEvent.keyDown(house, { key: 'ArrowLeft' })
+    expect(screen.queryByTestId('playlists-check-House%%Tech')).toBeNull()
+  })
+
+  it('finds a subcrate by name with its parent crate above it', () => {
+    render(<Crates initial={[]} />)
+    open()
+    fireEvent.change(search(), { target: { value: 'tech' } })
+    expect(visiblePlaylists()).toEqual(['playlists-check-House', 'playlists-check-House%%Tech'])
+  })
+
+  it('names the parent crate once in the summary, counting the subcrates chosen in it', () => {
+    render(<Crates initial={[crate('House'), crate('House%%Deep'), crate('Friday')]} />)
+    expect(screen.getByTestId('playlists-where').textContent).toBe('House (2) · Friday')
+  })
+})
+
 describe('PlaylistsBulkField', () => {
   const states = [
     { target: target('house'), state: 'all' as const },

@@ -2345,7 +2345,8 @@
       "deleteCrateTitle": "Apagar do Serato",
       "deleteCrate": "Apagar o crate “{{name}}”? As faixas continuam no Serato.",
       "deleteCrateWithSubcrates_one": "Apagar o crate “{{name}}” e seu subcrate? As faixas continuam no Serato.",
-      "deleteCrateWithSubcrates_other": "Apagar o crate “{{name}}” e seus {{count}} subcrates? As faixas continuam no Serato."
+      "deleteCrateWithSubcrates_other": "Apagar o crate “{{name}}” e seus {{count}} subcrates? As faixas continuam no Serato.",
+      "subcrates": "Subcrates de {{name}}"
     },
     "reorder": {
       "removeSeparator": "Remover separador",

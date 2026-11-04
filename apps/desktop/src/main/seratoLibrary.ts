@@ -112,9 +112,11 @@ export function readSeratoLibrary(roots: SeratoLibraryRoot[]): SeratoLibrary {
 
 function toSource(nodes: SeratoCrateNode[], crates: Map<string, string[]>): SourceNode[] {
   return nodes.map((n): SourceNode => {
+    const own = crates.get(n.id)
     if (n.children.length === 0)
-      return { id: n.id, name: n.name, kind: 'playlist', count: crates.get(n.id)?.length ?? 0 }
+      return { id: n.id, name: n.name, kind: 'playlist', count: own?.length ?? 0 }
     const children = toSource(n.children, crates)
+    if (own) return { id: n.id, name: n.name, kind: 'playlist', count: own.length, children }
     return { id: n.id, name: n.name, kind: 'folder', count: children.length, children }
   })
 }

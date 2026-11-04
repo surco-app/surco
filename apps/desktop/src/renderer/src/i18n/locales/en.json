@@ -2345,7 +2345,8 @@
       "deleteCrateTitle": "Delete from Serato",
       "deleteCrate": "Delete the crate “{{name}}”? The tracks stay in Serato.",
       "deleteCrateWithSubcrates_one": "Delete the crate “{{name}}” and its subcrate? The tracks stay in Serato.",
-      "deleteCrateWithSubcrates_other": "Delete the crate “{{name}}” and its {{count}} subcrates? The tracks stay in Serato."
+      "deleteCrateWithSubcrates_other": "Delete the crate “{{name}}” and its {{count}} subcrates? The tracks stay in Serato.",
+      "subcrates": "Subcrates of {{name}}"
     },
     "reorder": {
       "removeSeparator": "Remove separator",

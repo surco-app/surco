@@ -58,10 +58,9 @@ export function subtreeCounts(node: SourceNode): { playlists: number; folders: n
   let folders = 0
   const walk = (nodes: readonly SourceNode[]): void => {
     for (const n of nodes) {
-      if (n.kind === 'folder') {
-        folders += 1
-        walk(n.children ?? [])
-      } else playlists += 1
+      if (n.kind === 'folder') folders += 1
+      else playlists += 1
+      walk(n.children ?? [])
     }
   }
   walk(node.children ?? [])

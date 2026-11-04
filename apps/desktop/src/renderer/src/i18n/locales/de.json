@@ -2345,7 +2345,8 @@
       "deleteCrateTitle": "Aus Serato löschen",
       "deleteCrate": "Crate „{{name}}“ löschen? Die Titel bleiben in Serato.",
       "deleteCrateWithSubcrates_one": "Crate „{{name}}“ und sein Subcrate löschen? Die Titel bleiben in Serato.",
-      "deleteCrateWithSubcrates_other": "Crate „{{name}}“ und seine {{count}} Subcrates löschen? Die Titel bleiben in Serato."
+      "deleteCrateWithSubcrates_other": "Crate „{{name}}“ und seine {{count}} Subcrates löschen? Die Titel bleiben in Serato.",
+      "subcrates": "Subcrates von {{name}}"
     },
     "reorder": {
       "removeSeparator": "Trenner entfernen",

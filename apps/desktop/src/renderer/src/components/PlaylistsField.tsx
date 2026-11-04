@@ -25,7 +25,13 @@ interface Token {
 
 type Row =
   | { kind: 'folder'; node: SourceNode; depth: number; open: boolean }
-  | { kind: 'playlist'; target: RekordboxPlaylistTarget; depth: number; count?: number }
+  | {
+      kind: 'playlist'
+      target: RekordboxPlaylistTarget
+      depth: number
+      count?: number
+      open?: boolean
+    }
   | { kind: 'create'; name: string }
 
 const ROW =
@@ -50,17 +56,20 @@ function treeRows(
 ): Row[] {
   const walk = (nodes: readonly SourceNode[], depth: number): Row[] =>
     nodes.flatMap((node): Row[] => {
-      if (node.kind === 'playlist')
-        return !hits || hits.has(node.id)
-          ? [
-              {
-                kind: 'playlist',
-                target: { id: node.id, name: node.name },
-                depth,
-                count: node.count,
-              },
-            ]
-          : []
+      if (node.kind === 'playlist') {
+        const own = !hits || hits.has(node.id)
+        const row: Row = {
+          kind: 'playlist',
+          target: { id: node.id, name: node.name },
+          depth,
+          count: node.count,
+        }
+        if (!node.children?.length) return own ? [row] : []
+        const inner = walk(node.children, depth + 1)
+        if (hits) return own || inner.length > 0 ? [{ ...row, open: true }, ...inner] : []
+        const open = opened.has(node.id)
+        return [{ ...row, open }, ...(open ? inner : [])]
+      }
       const inner = walk(node.children ?? [], depth + 1)
       if (hits)
         return inner.length > 0 ? [{ kind: 'folder', node, depth, open: true }, ...inner] : []
@@ -76,13 +85,13 @@ function whereParts(
 ): { key: string; text: string; pending: boolean }[] {
   const ids = chosenIdsOf(tokens)
   const folders = tree.flatMap((node) => {
-    if (node.kind !== 'folder') return []
+    if (!node.children?.length) return []
     const k = playlistIdsUnder(node).filter((id) => ids.has(id)).length
     if (k === 0) return []
     return [{ key: node.id, text: k > 1 ? `${node.name} (${k})` : node.name, pending: false }]
   })
   const roots = tree.flatMap((node) =>
-    node.kind === 'playlist' && ids.has(node.id)
+    node.kind === 'playlist' && !node.children?.length && ids.has(node.id)
       ? [{ key: node.id, text: node.name, pending: false }]
       : [],
   )
@@ -183,6 +192,14 @@ function TreePopover({
     } else if (row?.kind === 'folder' && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
       e.preventDefault()
       setFolder(row.node.id, e.key === 'ArrowRight')
+    } else if (
+      row?.kind === 'playlist' &&
+      row.open !== undefined &&
+      row.target.id &&
+      (e.key === 'ArrowRight' || e.key === 'ArrowLeft')
+    ) {
+      e.preventDefault()
+      setFolder(row.target.id, e.key === 'ArrowRight')
     } else if (row?.kind === 'playlist' && e.key === ' ') {
       e.preventDefault()
       toggle(row.target)
@@ -260,7 +277,28 @@ function TreePopover({
         style={{ paddingLeft: 8 + row.depth * 18 }}
         className={`${ROW} cursor-pointer focus-within:bg-[var(--color-hover)] ${state === 'none' ? 'text-fg-muted' : 'text-fg'}`}
       >
-        <span className="w-3 shrink-0" />
+        {row.open === undefined ? (
+          <span className="w-3 shrink-0" />
+        ) : (
+          <button
+            type="button"
+            tabIndex={-1}
+            data-testid={`playlists-expand-${targetKey(row.target)}`}
+            aria-label={tr('sources.tree.subcrates', { name: row.target.name })}
+            aria-expanded={row.open}
+            onClick={(e) => {
+              e.preventDefault()
+              if (row.target.id) setFolder(row.target.id, !row.open)
+            }}
+            className="w-3 shrink-0 text-fg-faint"
+          >
+            {row.open ? (
+              <ChevronDown size={12} aria-hidden="true" />
+            ) : (
+              <ChevronRight size={12} aria-hidden="true" />
+            )}
+          </button>
+        )}
         <input
           ref={(el) => {
             rowRefs.current[i] = el

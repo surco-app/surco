@@ -131,18 +131,19 @@ describe('readSeratoLibrary', () => {
 })
 
 describe('the Serato tab', () => {
-  it('nests subcrates under their parent and merges same-named crates across drives', () => {
+  it('nests subcrates under a parent crate that still lists its own tracks, merged across drives', () => {
     const library = readSeratoLibrary(twoLibraries().roots)
     expect(seratoTree(library)).toEqual([
       { id: 'Friday', name: 'Friday', kind: 'playlist', count: 1 },
       {
         id: 'House',
         name: 'House',
-        kind: 'folder',
-        count: 1,
+        kind: 'playlist',
+        count: 3,
         children: [{ id: 'House%%Deep', name: 'Deep', kind: 'playlist', count: 1 }],
       },
     ])
+    expect(seratoPlaylist(library, 'House', NOW).map((e) => e.linkId)).toHaveLength(3)
   })
 
   it('opens a parent crate that has no file of its own as an empty list, not an error', () => {

@@ -10,7 +10,10 @@ import { flattenPlaylists } from './SourceTree'
 // a playlist later added to the folder in rekordbox is never exported without being ticked.
 
 export function playlistIdsUnder(node: SourceNode): string[] {
-  return node.kind === 'playlist' ? [node.id] : (node.children ?? []).flatMap(playlistIdsUnder)
+  return [
+    ...(node.kind === 'playlist' ? [node.id] : []),
+    ...(node.children ?? []).flatMap(playlistIdsUnder),
+  ]
 }
 
 export function folderState(
@@ -23,11 +26,12 @@ export function folderState(
 }
 
 export function foldersHolding(nodes: SourceNode[], checked: ReadonlySet<string>): string[] {
-  return nodes.flatMap((n) =>
-    n.kind === 'folder' && folderState(n, checked) !== 'none'
-      ? [n.id, ...foldersHolding(n.children ?? [], checked)]
-      : [],
-  )
+  return nodes.flatMap((n) => {
+    const children = n.children ?? []
+    return children.flatMap(playlistIdsUnder).some((id) => checked.has(id))
+      ? [n.id, ...foldersHolding(children, checked)]
+      : []
+  })
 }
 
 export function CheckTree({

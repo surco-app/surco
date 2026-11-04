@@ -2345,7 +2345,8 @@
       "deleteCrateTitle": "Borrar de Serato",
       "deleteCrate": "¿Borrar el crate «{{name}}»? Las pistas siguen en Serato.",
       "deleteCrateWithSubcrates_one": "¿Borrar el crate «{{name}}» y su subcrate? Las pistas siguen en Serato.",
-      "deleteCrateWithSubcrates_other": "¿Borrar el crate «{{name}}» y sus {{count}} subcrates? Las pistas siguen en Serato."
+      "deleteCrateWithSubcrates_other": "¿Borrar el crate «{{name}}» y sus {{count}} subcrates? Las pistas siguen en Serato.",
+      "subcrates": "Subcrates de {{name}}"
     },
     "reorder": {
       "removeSeparator": "Quitar separador",

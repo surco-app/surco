@@ -775,7 +775,8 @@ describe('SourceTree on Serato crates', () => {
     { id: 'Z', name: 'Z', kind: 'playlist', count: 0 },
   ]
 
-  function setupCrates() {
+  function setupCrates(nodes: SourceNode[] = CRATES) {
+    const onSelect = vi.fn()
     const edit = {
       onCreate: vi.fn(),
       onDropTracks: vi.fn(),
@@ -788,15 +789,76 @@ describe('SourceTree on Serato crates', () => {
         width={236}
         title="Serato"
         source="serato"
-        nodes={CRATES}
+        nodes={nodes}
         failed={false}
         selectedId={null}
-        onSelect={vi.fn()}
+        onSelect={onSelect}
         edit={edit}
       />,
     )
-    return edit
+    return Object.assign(edit, { onSelect })
   }
+
+  const PARENT: SourceNode[] = [
+    {
+      id: 'P',
+      name: 'Parent',
+      kind: 'playlist',
+      count: 5,
+      children: [
+        { id: 'P%%Q', name: 'Q', kind: 'playlist', count: 1 },
+        {
+          id: 'P%%R',
+          name: 'R',
+          kind: 'playlist',
+          count: 2,
+          children: [{ id: 'P%%R%%S', name: 'Sub', kind: 'playlist', count: 1 }],
+        },
+      ],
+    },
+  ]
+
+  it('opens a crate that holds subcrates on a click, listing its own tracks, and expands it from the chevron', () => {
+    const { onSelect } = setupCrates(PARENT)
+    const parent = screen.getByTestId('source-node-P')
+    expect(parent).toHaveTextContent('5')
+    fireEvent.click(parent)
+    expect(onSelect).toHaveBeenCalledWith(PARENT[0], [])
+    expect(screen.queryByTestId('source-node-P%%Q')).toBeNull()
+    const chevron = screen.getByTestId('source-node-expand-P')
+    expect(chevron).toHaveAttribute('aria-expanded', 'false')
+    expect(chevron).toHaveAccessibleName('Subcrates of Parent')
+    fireEvent.click(chevron)
+    expect(chevron).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByTestId('source-node-P%%Q')).toBeInTheDocument()
+    expect(onSelect).toHaveBeenCalledTimes(1)
+  })
+
+  it('takes tracks dropped on a crate that holds subcrates', () => {
+    const edit = setupCrates(PARENT)
+    const parent = screen.getByTestId('source-node-P')
+    const dt = files('a.mp3')
+    fireEvent.dragOver(parent, { dataTransfer: dt })
+    fireEvent.drop(parent, { dataTransfer: dt })
+    expect(edit.onDropTracks).toHaveBeenCalledWith(PARENT[0], expect.any(Array))
+  })
+
+  it('counts the subcrates nested under a crate that holds tracks when confirming its delete', () => {
+    setupCrates(PARENT)
+    fireEvent.contextMenu(screen.getByTestId('source-node-P'))
+    fireEvent.click(screen.getByTestId('source-tree-delete'))
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      'Delete the crate “Parent” and its 3 subcrates? The tracks stay in Serato.',
+    )
+  })
+
+  it('finds a subcrate of a crate that holds tracks, and the crate itself, in the search', () => {
+    setupCrates(PARENT)
+    fireEvent.change(screen.getByTestId('source-tree-search'), { target: { value: 'sub' } })
+    expect(screen.getByTestId('source-node-P%%R%%S')).toBeInTheDocument()
+    fireEvent.change(screen.getByTestId('source-tree-search'), { target: { value: 'parent' } })
+    expect(screen.getByTestId('source-node-P')).toBeInTheDocument()
+  })
 
   it('offers a new crate in the header and never a folder', () => {
     setupCrates()

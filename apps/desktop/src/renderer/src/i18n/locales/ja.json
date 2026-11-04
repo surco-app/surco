@@ -2345,7 +2345,8 @@
       "deleteCrateTitle": "Serato から削除",
       "deleteCrate": "クレート「{{name}}」を削除しますか？トラックは Serato に残ります。",
       "deleteCrateWithSubcrates_one": "クレート「{{name}}」とそのサブクレートを削除しますか？トラックは Serato に残ります。",
-      "deleteCrateWithSubcrates_other": "クレート「{{name}}」とその {{count}} 個のサブクレートを削除しますか？トラックは Serato に残ります。"
+      "deleteCrateWithSubcrates_other": "クレート「{{name}}」とその {{count}} 個のサブクレートを削除しますか？トラックは Serato に残ります。",
+      "subcrates": "{{name}} のサブクレート"
     },
     "reorder": {
       "removeSeparator": "区切り線を削除",
