@@ -1976,6 +1976,7 @@
     "backLabel": "Todos los casos de uso",
     "settingsLabel": "Ajustes, una sola vez",
     "settingsHint": "Abre los Ajustes de Surco (⌘ , en Mac) y busca cada opción por su nombre.",
+    "showShot": "Ver dónde está en {{place}}",
     "settingsRoot": "Ajustes",
     "on": "Activado",
     "optional": "Opcional",

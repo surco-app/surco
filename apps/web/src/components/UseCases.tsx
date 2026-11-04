@@ -151,29 +151,29 @@ export default function UseCases() {
                   </div>
                 </div>
               ) : (
-                <div className="mt-6">
+                <div className="mt-6 max-w-3xl">
                   {groups.map((group) => {
                     const items = casesIn(group)
                     if (items.length === 0) return null
                     return (
-                      <div
-                        key={group.id}
-                        className="grid gap-x-14 gap-y-3 pt-10 lg:grid-cols-[16rem_minmax(0,1fr)]"
-                      >
-                        <p className="text-2xl font-semibold tracking-tight text-balance text-fg lg:sticky lg:top-24 lg:self-start">
+                      <div key={group.id} data-testid="use-case-block">
+                        <h2 className="mt-12 border-t border-line pt-6 text-lg font-semibold text-fg">
                           {group.title}
-                        </p>
-                        <ul className="max-w-2xl divide-y divide-line overflow-hidden rounded-xl border border-line">
+                        </h2>
+                        <p className="mt-1 text-sm text-muted">{group.lede}</p>
+                        <ul className="mt-4 divide-y divide-line">
                           {items.map((c) => (
                             <li key={c.id}>
                               <a
                                 href={recipePathForId(lang, c.id)}
                                 data-testid="use-case-toc-item"
-                                className="group flex items-start gap-4 bg-surface2/40 px-4 py-3.5 transition-colors hover:bg-surface2"
+                                className="group flex items-start gap-4 py-3.5"
                               >
                                 <span className="min-w-0 flex-1">
                                   <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                    <span className="font-medium text-fg">{c.title}</span>
+                                    <span className="font-medium text-fg transition-colors group-hover:text-blue">
+                                      {c.title}
+                                    </span>
                                     {c.macOnly && <MacBadge />}
                                   </span>
                                   <span className="mt-1 block text-sm leading-relaxed text-muted">

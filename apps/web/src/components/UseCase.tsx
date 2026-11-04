@@ -9,6 +9,7 @@ import {
   recipePathForId,
   settingGroups,
   settingShot,
+  stepLead,
   USE_CASE_SHOTS,
 } from '../lib/useCases'
 import DownloadButton from './DownloadButton'
@@ -158,9 +159,7 @@ export default function UseCasePage({ id }: { id: string }) {
             </a>
             {recipeIndex(groups, cases).map((g) => (
               <div key={g.id} className="mt-5">
-                <p className="text-[11px] font-medium tracking-wide text-faint uppercase">
-                  {g.title}
-                </p>
+                <p className="text-xs font-medium text-subtle">{g.title}</p>
                 <ul className="mt-2 space-y-1.5">
                   {g.cases.map((o) => (
                     <li key={o.id}>
@@ -207,69 +206,93 @@ export default function UseCasePage({ id }: { id: string }) {
               ))}
 
               {c.settings.length > 0 && (
-                <div className="mt-8 overflow-hidden rounded-2xl border border-line">
-                  <div className="bg-surface2 px-5 py-3">
-                    <p className="text-sm font-medium text-faint">{t('useCases.settingsLabel')}</p>
-                    <p className="mt-1 text-sm text-muted">{t('useCases.settingsHint')}</p>
-                  </div>
+                <>
+                  <p className="mt-10 text-sm font-medium text-faint">
+                    {t('useCases.settingsLabel')}
+                  </p>
+                  <p className="mt-1 text-sm text-muted">{t('useCases.settingsHint')}</p>
                   {settingGroups(c.settings).map((group, i) => {
                     const src = settingShot(lang, c.id, i)
                     const [width, height] = USE_CASE_SHOTS[src] ?? []
                     const caption = `${t('useCases.settingsRoot')} › ${group.tab}`
                     return (
-                      <div key={group.tab} className="border-t border-line/60 px-5 py-5">
-                        <button
-                          type="button"
-                          data-testid="use-case-shot"
-                          onClick={() => {
-                            setShot({ src: `/use-cases/${src}`, caption })
-                            setShotOpen(true)
-                          }}
-                          className="block w-full cursor-zoom-in overflow-hidden rounded-xl border border-line"
-                        >
-                          <img
-                            src={`/use-cases/${src}`}
-                            alt={caption}
-                            width={width}
-                            height={height}
-                            loading="lazy"
-                            className="block h-auto w-full"
-                          />
-                        </button>
-                        <ul className="mt-5 divide-y divide-line/60">
+                      <div key={group.tab} className="mt-5 border-t border-line pt-5">
+                        <ul className="divide-y divide-line/60">
                           {group.settings.map((s) => (
                             <SettingRow key={`${s.tab}-${s.setting}`} s={s} />
                           ))}
                         </ul>
+                        <details
+                          data-testid="use-case-shot-fold"
+                          className="mt-4 rounded-xl border border-line bg-surface2/40"
+                        >
+                          <summary className="cursor-pointer px-4 py-3 text-sm text-subtle">
+                            {t('useCases.showShot', { place: caption })}
+                          </summary>
+                          <button
+                            type="button"
+                            data-testid="use-case-shot"
+                            onClick={() => {
+                              setShot({ src: `/use-cases/${src}`, caption })
+                              setShotOpen(true)
+                            }}
+                            className="block w-full cursor-zoom-in overflow-hidden rounded-b-xl border-t border-line"
+                          >
+                            <img
+                              src={`/use-cases/${src}`}
+                              alt={caption}
+                              width={width}
+                              height={height}
+                              loading="lazy"
+                              className="block h-auto w-full"
+                            />
+                          </button>
+                        </details>
                       </div>
                     )
                   })}
-                </div>
+                </>
               )}
 
               <p className="mt-10 text-sm font-medium text-faint">{t('useCases.stepsLabel')}</p>
-              <ol className="mt-4 space-y-5">
+              <ol className="mt-4 space-y-3">
                 {c.steps.map((step, i) => (
-                  <li key={step.title} data-testid="use-case-step" className="flex gap-4">
-                    <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full border border-blue font-mono text-sm text-blue">
+                  <li
+                    key={step.title}
+                    data-testid="use-case-step"
+                    className="flex gap-3.5 leading-relaxed text-muted"
+                  >
+                    <span className="mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-full border border-line font-mono text-xs text-blue">
                       {i + 1}
                     </span>
-                    <div className="min-w-0">
-                      <p className="font-semibold">{step.title}</p>
-                      <p className="mt-0.5 text-sm leading-relaxed text-muted">{step.text}</p>
-                    </div>
+                    <span>
+                      <strong className="font-semibold text-fg">
+                        {stepLead(step.title, lang)}
+                      </strong>{' '}
+                      {step.text}
+                    </span>
                   </li>
                 ))}
               </ol>
 
-              <ul className="mt-8 space-y-2.5">
-                {c.points.map((point) => (
-                  <li key={point} className="flex gap-3 text-sm leading-relaxed text-muted">
-                    <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
-                    <span>{point}</span>
-                  </li>
-                ))}
-              </ul>
+              {c.points.length > 0 && (
+                <details
+                  data-testid="use-case-notes"
+                  className="mt-6 rounded-xl border border-line bg-surface2/40"
+                >
+                  <summary className="cursor-pointer px-4 py-3 text-sm text-subtle">
+                    {t('guide.notesLabel')}
+                  </summary>
+                  <ul className="space-y-2.5 px-4 pb-4">
+                    {c.points.map((point) => (
+                      <li key={point} className="flex gap-3 text-sm leading-relaxed text-muted">
+                        <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
 
               {c.related.length > 0 && (
                 <p className="mt-8 text-sm text-faint">
