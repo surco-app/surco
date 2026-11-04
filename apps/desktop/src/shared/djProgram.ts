@@ -8,7 +8,16 @@ export type WritableProgram = Exclude<DjProgram, 'serato'>
 
 export type CueProgram = DjProgram
 
+export type LibraryProgram = DjProgram
+
 export const DJ_PROGRAMS = programsInOrder(['rekordbox', 'traktor', 'engine', 'serato'])
+
+export const LIBRARY_PROGRAMS: readonly LibraryProgram[] = programsInOrder([
+  'rekordbox',
+  'traktor',
+  'engine',
+  'serato',
+])
 
 export const WRITABLE_PROGRAMS = writableInOrder(['rekordbox', 'traktor', 'engine'])
 

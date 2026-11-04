@@ -1685,6 +1685,10 @@
     "engineSync": "Biblioteca do Engine DJ",
     "syncEngineDj": "Atualizar a biblioteca do Engine DJ ao converter",
     "syncEngineDjHint": "Ao converter uma faixa que está na sua biblioteca do Engine DJ, a entrada dela passa a apontar para o arquivo novo e mantém as playlists e os cue points. Usa a biblioteca escolhida logo acima. Antes de gravar, o Surco guarda na pasta de cópias dele (Ajustes → Avançado) uma cópia de segurança da leva inteira, mais uma de cada gravação, e nunca grava com o Engine DJ aberto.",
+    "seratoSync": "Serato",
+    "syncSerato": "Biblioteca do Serato",
+    "syncSeratoHint": "O Surco escreve no Serato quando você o fecha. Atualizar leva as mudanças de tags da revisão, e Adicionar coloca também o que você converte",
+    "syncSeratoIdle": "O Surco não encontra uma biblioteca do Serato",
     "djReach": {
       "off": "Não mexer",
       "update": "Atualizar",

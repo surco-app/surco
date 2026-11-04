@@ -30,6 +30,7 @@ export const testSettings: Settings = {
   addToEngineDj: false,
   addToRekordbox: false,
   addToTraktor: false,
+  addToSerato: false,
   engineLibraryDir: '/music/Engine Library',
   traktorNmlPath: '',
   rekordboxDbPath: '',
@@ -51,7 +52,9 @@ export const testSettings: Settings = {
   rekordboxPlaylistsFieldOffered: false,
   traktorPlaylistsFieldOffered: false,
   enginePlaylistsFieldOffered: false,
+  seratoPlaylistsFieldOffered: false,
   syncEngineDj: false,
+  syncSerato: false,
   betaUpdates: false,
   traktorCueOffsetMs: 0,
   filenameFormat: '',
@@ -191,7 +194,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     replaceDuplicatesInLibraries: async () => [],
     libraryStatus: async () => {
       const off = { enabled: false, found: false }
-      return { rekordbox: off, engine: off, traktor: off }
+      return { rekordbox: off, engine: off, traktor: off, serato: off }
     },
     libraryCopyInfo: async () => ({}),
     scanDamage: async () => ({ findings: [], unread: [] }),

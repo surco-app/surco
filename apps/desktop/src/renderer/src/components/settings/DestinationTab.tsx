@@ -1,10 +1,10 @@
 import { AlertTriangle } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BACKUP_POLICIES, type BackupPolicy } from '../../../../shared/backupPolicy'
+import type { LibraryProgram } from '../../../../shared/djProgram'
 import { DESTINATIONS, fromDestination, toDestination } from '../../lib/destination'
-import type { DjLibraryId } from '../../lib/djLibraries'
 import { DJ_REACH_SETTINGS, type DjReach, fromDjReach, toDjReach } from '../../lib/djReach'
 import { isMacOS } from '../../lib/platform'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
@@ -439,6 +439,7 @@ export function DestinationTab({
         />
         <SettingsHint className="mt-2">{tr('settings.syncEngineDjHint')}</SettingsHint>
       </SettingsSection>
+      <SeratoSection synced={synced} patch={patch} />
       {/* Not a detail of the overwrite radio, which is where this started: Originals also
           fills from a format change and from a delete on a volume with no OS Trash, and
           hanging the setting off one destination left the other two paths ignoring it
@@ -536,6 +537,34 @@ export function DestinationTab({
   )
 }
 
+function SeratoSection({
+  synced,
+  patch,
+}: {
+  synced: SyncedDraft
+  patch: PatchSynced
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const [found, setFound] = useState(false)
+  useEffect(() => {
+    void window.api.seratoAvailable().then(setFound, () => {})
+  }, [])
+  return (
+    <SettingsSection eyebrow={tr('settings.seratoSync')} searchId="seratoSync">
+      <DjReachRow
+        program="serato"
+        label={tr('settings.syncSerato')}
+        synced={synced}
+        patch={patch}
+        disabled={!found}
+      />
+      <SettingsHint className="mt-2">
+        {found ? tr('settings.syncSeratoHint') : tr('settings.syncSeratoIdle')}
+      </SettingsHint>
+    </SettingsSection>
+  )
+}
+
 const DJ_REACHES: readonly DjReach[] = ['off', 'update', 'add']
 
 function DjReachRow({
@@ -545,7 +574,7 @@ function DjReachRow({
   patch,
   disabled = false,
 }: {
-  program: DjLibraryId
+  program: LibraryProgram
   label: string
   synced: SyncedDraft
   patch: PatchSynced

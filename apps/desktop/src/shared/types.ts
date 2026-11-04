@@ -4,7 +4,7 @@ import type { CueGridTolerance } from './cueGrid'
 import type { CueJumpBars } from './cueJump'
 import type { CueQuantize } from './cueQuantize'
 import type { StrongPart, WantedCue } from './cueRules'
-import type { DjProgram, WritableProgram } from './djProgram'
+import type { DjProgram, LibraryProgram, WritableProgram } from './djProgram'
 import type { EditorSectionPref } from './editorSections'
 import type { ErrorKey } from './errorKeys'
 import type { EditableGrid } from './gridEdit'
@@ -223,6 +223,7 @@ export interface Settings {
   addToEngineDj: boolean
   addToRekordbox: boolean
   addToTraktor: boolean
+  addToSerato: boolean
   // The Engine DJ library folder whose Database2/m.db conversions are registered in.
   // Machine-local like outputDir — a filesystem path means nothing on another machine.
   engineLibraryDir: string
@@ -250,7 +251,9 @@ export interface Settings {
   rekordboxPlaylistsFieldOffered: boolean
   traktorPlaylistsFieldOffered: boolean
   enginePlaylistsFieldOffered: boolean
+  seratoPlaylistsFieldOffered: boolean
   syncEngineDj: boolean
+  syncSerato: boolean
   // Override for the rekordbox collection; empty means the standard location is used.
   rekordboxDbPath: string
   // Milliseconds every carried cue is nudged by, on top of the route calibration
@@ -1646,7 +1649,7 @@ export interface RekordboxSyncIssue {
 
 // Per DJ library: whether its sync is on, and whether the collection it points at is
 // there. A library can be on and not found, which the review has to say out loud.
-export type LibraryStatus = Record<WritableProgram, { enabled: boolean; found: boolean }>
+export type LibraryStatus = Record<LibraryProgram, { enabled: boolean; found: boolean }>
 
 // What one library did with a review's tag changes, so the done sheet can say it per
 // library instead of claiming every change landed: how many tracks it updated, or why none.

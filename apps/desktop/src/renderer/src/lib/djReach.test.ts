@@ -37,6 +37,7 @@ describe('DJ_REACH_SETTINGS', () => {
       rekordbox: { sync: 'syncRekordbox', add: 'addToRekordbox' },
       engine: { sync: 'syncEngineDj', add: 'addToEngineDj' },
       traktor: { sync: 'syncTraktor', add: 'addToTraktor' },
+      serato: { sync: 'syncSerato', add: 'addToSerato' },
     })
   })
 })
@@ -48,6 +49,7 @@ describe('reachedPrograms', () => {
         addToRekordbox: true,
         addToTraktor: true,
         addToEngineDj: true,
+        addToSerato: false,
       }),
     ).toEqual(['rekordbox', 'engine', 'traktor'])
     expect(
@@ -55,6 +57,7 @@ describe('reachedPrograms', () => {
         addToRekordbox: false,
         addToTraktor: true,
         addToEngineDj: false,
+        addToSerato: false,
       }),
     ).toEqual(['traktor'])
     expect(
@@ -62,12 +65,18 @@ describe('reachedPrograms', () => {
         addToRekordbox: false,
         addToTraktor: false,
         addToEngineDj: false,
+        addToSerato: false,
       }),
     ).toEqual([])
   })
 
   it('leaves out a program Surco cannot reach, so the button never promises adding to it', () => {
-    const s = { addToRekordbox: false, addToTraktor: true, addToEngineDj: false }
+    const s = {
+      addToRekordbox: false,
+      addToTraktor: true,
+      addToEngineDj: false,
+      addToSerato: false,
+    }
     expect(reachedPrograms(s, new Set(['rekordbox']))).toEqual([])
     expect(reachedPrograms(s)).toEqual(['traktor'])
   })

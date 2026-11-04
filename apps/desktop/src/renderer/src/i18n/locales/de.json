@@ -1685,6 +1685,10 @@
     "engineSync": "Engine-DJ-Bibliothek",
     "syncEngineDj": "Engine-DJ-Bibliothek beim Konvertieren aktualisieren",
     "syncEngineDjHint": "Wenn du einen Titel konvertierst, der in deiner Engine-DJ-Bibliothek liegt, folgt sein Eintrag der neuen Datei und behält Playlists und Cue-Punkte. Verwendet wird die direkt darüber gewählte Bibliothek. Vor dem Schreiben legt Surco in seinem Sicherungsordner (Einstellungen → Erweitert) eine Sicherung des gesamten Durchlaufs an, dazu eine je Schreibvorgang, und schreibt nie, während Engine DJ geöffnet ist.",
+    "seratoSync": "Serato",
+    "syncSerato": "Serato-Bibliothek",
+    "syncSeratoHint": "Surco schreibt in Serato, wenn du es schließt. Aktualisieren übernimmt die Tag-Änderungen der Prüfung, und Hinzufügen nimmt zusätzlich auf, was du konvertierst",
+    "syncSeratoIdle": "Surco findet keine Serato-Bibliothek",
     "djReach": {
       "off": "Nicht anfassen",
       "update": "Aktualisieren",

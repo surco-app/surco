@@ -88,8 +88,8 @@ function onUnpluggedDrive(path: string): boolean {
   return root !== null && !existsSync(root)
 }
 
-export function currentLibraryStatus(): LibraryStatus {
-  return libraryStatus(getSettings(), existsSync)
+export function currentLibraryStatus(seratoFound = false): LibraryStatus {
+  return libraryStatus(getSettings(), existsSync, seratoFound)
 }
 
 export function rekordboxCollectionPath(): string {

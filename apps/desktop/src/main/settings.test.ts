@@ -121,6 +121,16 @@ describe('defaults for a fresh install', () => {
   })
 })
 
+describe('Serato defaults', () => {
+  it('keeps Serato off like Engine DJ, since writing into a library the user cannot rebuild is opted into', () => {
+    expect(defaults).toMatchObject({
+      addToSerato: false,
+      syncSerato: false,
+      seratoPlaylistsFieldOffered: false,
+    })
+  })
+})
+
 describe('the update channel default', () => {
   // Nobody who has not asked for betas should ever be offered one.
   it('is stable on a fresh install', () => {

@@ -39,7 +39,10 @@ const settings: Settings = {
   rekordboxPlaylistsFieldOffered: false,
   traktorPlaylistsFieldOffered: false,
   enginePlaylistsFieldOffered: false,
+  seratoPlaylistsFieldOffered: false,
   syncEngineDj: false,
+  addToSerato: false,
+  syncSerato: false,
   betaUpdates: false,
   traktorCueOffsetMs: 0,
   filenameFormat: '{artist} - {title}',
@@ -145,6 +148,15 @@ describe('buildSettingsPatch', () => {
     )
     expect(patch.addToRekordbox).toBe(true)
     expect(patch.addToTraktor).toBe(true)
+  })
+
+  it('round-trips the Serato switches', () => {
+    const patch = buildSettingsPatch(
+      pickSynced({ ...settings, addToSerato: true, syncSerato: true }),
+      local,
+    )
+    expect(patch.addToSerato).toBe(true)
+    expect(patch.syncSerato).toBe(true)
   })
 
   it('keeps auto-match for a Beatport-only setup with a connected account', () => {

@@ -41,6 +41,8 @@ const synced: SyncedDraft = {
   syncRekordbox: false,
   completeCuesOnClose: false,
   syncEngineDj: false,
+  addToSerato: false,
+  syncSerato: false,
   traktorCueOffsetMs: '0',
   filenameFormat: '{artist} - {title}',
   titleFormat: '',

@@ -1685,6 +1685,10 @@
     "engineSync": "Engine DJ library",
     "syncEngineDj": "Update the Engine DJ library when converting",
     "syncEngineDjHint": "When you convert a track that is in your Engine DJ library, its entry follows the new file and keeps its playlists and cue points. It uses the library chosen just above. Before writing, Surco saves a backup of the whole run in its backups folder (Settings → Advanced), plus one of each write, and it never writes while Engine DJ is open.",
+    "seratoSync": "Serato",
+    "syncSerato": "Serato library",
+    "syncSeratoHint": "Surco writes to Serato when you close it. Update carries the tag changes from the review, and Add also puts in what you convert",
+    "syncSeratoIdle": "Surco cannot find a Serato library",
     "djReach": {
       "off": "Leave alone",
       "update": "Update",

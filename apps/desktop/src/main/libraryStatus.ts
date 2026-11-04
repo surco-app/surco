@@ -11,12 +11,17 @@ interface StatusSettings {
   traktorNmlPath: string
 }
 
+interface SeratoStatusSettings {
+  syncSerato: boolean
+}
+
 // A toggle only grants permission; whether the library can be written is a separate
 // question, because a configured path outlives the folder it pointed at. Told apart so
 // the review can say "not found" instead of promising a sync that cannot happen.
 export function libraryStatus(
-  settings: StatusSettings,
+  settings: StatusSettings & SeratoStatusSettings,
   exists: (path: string) => boolean,
+  seratoFound: boolean,
 ): LibraryStatus {
   const rekordboxPath = findRekordboxCollection({ configured: settings.rekordboxDbPath })
   return {
@@ -32,5 +37,6 @@ export function libraryStatus(
       enabled: settings.syncTraktor,
       found: settings.traktorNmlPath !== '' && exists(settings.traktorNmlPath),
     },
+    serato: { enabled: settings.syncSerato, found: seratoFound },
   }
 }

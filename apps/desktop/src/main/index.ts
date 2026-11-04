@@ -1513,7 +1513,10 @@ function registerIpc(): void {
     else dialog.showMessageBox(opts)
   }
 
-  ipcMain.handle('library:status', (): LibraryStatus => currentLibraryStatus())
+  ipcMain.handle(
+    'library:status',
+    (): LibraryStatus => currentLibraryStatus(seratoRoots().length > 0),
+  )
 
   const hostFor = (win: BrowserWindow | null, sender: WebContents): LibraryHost => ({
     ensureClosed: (program) => ensureClosed(program, win),

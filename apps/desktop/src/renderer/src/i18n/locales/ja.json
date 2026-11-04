@@ -1685,6 +1685,10 @@
     "engineSync": "Engine DJ ライブラリ",
     "syncEngineDj": "変換時にEngine DJライブラリを更新する",
     "syncEngineDjHint": "Engine DJライブラリにあるトラックを変換すると、そのエントリは新しいファイルに従い、プレイリストやキューポイントを保持します。すぐ上で選択したライブラリを使用します。書き込み前にSurcoは実行全体のバックアップと各書き込みのバックアップをバックアップフォルダー（設定 → 詳細）に保存し、Engine DJが開いている間は書き込みを行いません。",
+    "seratoSync": "Serato",
+    "syncSerato": "Serato ライブラリ",
+    "syncSeratoHint": "Serato を閉じたときに Surco が書き込みます。更新はレビューのタグ変更を反映し、追加は変換したトラックも加えます",
+    "syncSeratoIdle": "Surco は Serato ライブラリを見つけられません",
     "djReach": {
       "off": "触らない",
       "update": "更新",

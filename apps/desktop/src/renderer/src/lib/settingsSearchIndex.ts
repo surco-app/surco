@@ -73,6 +73,7 @@ const SETTINGS_IDS: [SettingsTab, string[]][] = [
       'rekordboxDbPath',
       'completeCues',
       'engineSync',
+      'seratoSync',
       'originals',
       'originalBackup',
     ],

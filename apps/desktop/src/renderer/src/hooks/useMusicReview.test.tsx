@@ -67,6 +67,7 @@ function setApi(over: Partial<Record<keyof Api, unknown>> = {}) {
       rekordbox: { enabled: true, found: false },
       engine: { enabled: false, found: false },
       traktor: { enabled: false, found: false },
+      serato: { enabled: false, found: false },
     }),
     ...over,
   }

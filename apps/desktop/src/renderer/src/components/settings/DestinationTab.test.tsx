@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { BUNDLED_FLOWS } from '../../../../shared/cueFlows'
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../../preload/api'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../../shared/editorSections'
@@ -11,7 +11,10 @@ import i18n from '../../i18n'
 // must exist before the module loads — hence the dynamic import below.
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
-;(window as unknown as { api: unknown }).api = { platform: 'darwin' }
+;(window as unknown as { api: unknown }).api = {
+  platform: 'darwin',
+  seratoAvailable: async () => false,
+}
 const { DestinationTab } = await import('./DestinationTab')
 
 afterEach(cleanup)
@@ -47,6 +50,8 @@ const synced: SyncedDraft = {
   syncRekordbox: false,
   completeCuesOnClose: false,
   syncEngineDj: false,
+  addToSerato: false,
+  syncSerato: false,
   filenameFormat: '{artist} - {title}',
   titleFormat: '',
   autoApplyFilename: false,
@@ -155,7 +160,10 @@ describe('DestinationTab FLAC restriction', () => {
 describe('DestinationTab on Windows', () => {
   it('offers no Apple Music destination on Windows, whichever platform the tab was first loaded under, since Windows has no Music to add to', () => {
     const mac = window.api
-    ;(window as unknown as { api: Partial<Api> }).api = { platform: 'win32' }
+    ;(window as unknown as { api: Partial<Api> }).api = {
+      platform: 'win32',
+      seratoAvailable: async () => false,
+    }
     try {
       renderTab()
       expect(screen.getByTestId('settings-destination-folder')).toBeInTheDocument()
@@ -845,6 +853,7 @@ describe('complete on close', () => {
     const rekordboxCountCompletable = vi.fn<Api['rekordboxCountCompletable']>(async () => count)
     ;(window as unknown as { api: Partial<Api> }).api = {
       platform: 'darwin',
+      seratoAvailable: async () => false,
       rekordboxCountCompletable,
     }
     const patch = vi.fn()
@@ -899,6 +908,7 @@ describe('complete on close', () => {
     const logError = vi.fn<Api['logError']>()
     ;(window as unknown as { api: Partial<Api> }).api = {
       platform: 'darwin',
+      seratoAvailable: async () => false,
       rekordboxCountCompletable,
       logError,
     }
@@ -964,5 +974,41 @@ describe('complete on close', () => {
       />,
     )
     expect(screen.getByTestId('settings-complete-cues')).toBeDisabled()
+  })
+})
+
+describe('DestinationTab Serato', () => {
+  function withSerato(available: boolean): () => void {
+    const before = window.api
+    ;(window as unknown as { api: Partial<Api> }).api = {
+      platform: 'darwin',
+      seratoAvailable: async () => available,
+    }
+    return () => {
+      ;(window as unknown as { api: Api }).api = before
+    }
+  }
+
+  it('turns Serato to add from Settings', async () => {
+    const restore = withSerato(true)
+    try {
+      const patch = renderTab()
+      await waitFor(() => expect(screen.getByTestId('settings-reach-serato')).toBeEnabled())
+      fireEvent.click(screen.getByTestId('settings-reach-serato-add'))
+      expect(patch).toHaveBeenCalledWith('syncSerato', true)
+      expect(patch).toHaveBeenCalledWith('addToSerato', true)
+    } finally {
+      restore()
+    }
+  })
+
+  it('disables the Serato row without a Serato library', async () => {
+    const restore = withSerato(false)
+    try {
+      renderTab()
+      expect(await screen.findByTestId('settings-reach-serato')).toBeDisabled()
+    } finally {
+      restore()
+    }
   })
 })

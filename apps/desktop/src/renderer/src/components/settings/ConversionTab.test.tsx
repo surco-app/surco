@@ -44,6 +44,8 @@ const synced: SyncedDraft = {
   syncRekordbox: false,
   completeCuesOnClose: false,
   syncEngineDj: false,
+  addToSerato: false,
+  syncSerato: false,
   filenameFormat: '{artist} - {title}',
   titleFormat: '',
   autoApplyFilename: false,

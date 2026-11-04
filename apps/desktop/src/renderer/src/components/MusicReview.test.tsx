@@ -113,6 +113,7 @@ const status = (over: Partial<Record<'rekordbox' | 'engine' | 'traktor', boolean
     rekordbox: lib(over.rekordbox),
     engine: lib(over.engine),
     traktor: lib(over.traktor),
+    serato: { enabled: false, found: false },
   }
 }
 

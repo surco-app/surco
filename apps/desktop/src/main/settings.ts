@@ -68,6 +68,7 @@ export const defaults: Settings = {
   addToEngineDj: false,
   addToRekordbox: false,
   addToTraktor: false,
+  addToSerato: false,
   // Engine DJ's default library location on both macOS and Windows.
   engineLibraryDir: join(app.getPath('music'), 'Engine Library'),
   // Traktor's collection folder varies by version and user preference (Traktor 4.4.1, 4.5.0, …
@@ -96,7 +97,9 @@ export const defaults: Settings = {
   rekordboxPlaylistsFieldOffered: false,
   traktorPlaylistsFieldOffered: false,
   enginePlaylistsFieldOffered: false,
+  seratoPlaylistsFieldOffered: false,
   syncEngineDj: false,
+  syncSerato: false,
   // Empty means "look where rekordbox keeps it", which is one fixed place per platform —
   // unlike Traktor's collection, whose folder varies by version and user preference and
   // so has to be pointed at by hand. This is only an override for a collection kept
