@@ -107,7 +107,7 @@ export function LoudnessReadout({
   const cells = [
     cell(
       'lufs',
-      tr('editor.loudnessLufsLabel'),
+      tr('editor.loudnessIntegratedLabel'),
       `${formatDb(loud.integratedLufs, i18n.language)} LUFS`,
       gradeLufs(loud.integratedLufs),
       tr('editor.loudnessLufsHint'),

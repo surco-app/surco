@@ -2373,7 +2373,7 @@ describe('Editor export control', () => {
       screen.getByTestId('editor-normalize'),
       screen.getByText('Audio quality'),
       screen.getByText('Properties'),
-      screen.getByText('File name'),
+      screen.getByText('Output name'),
     ]
     for (let i = 0; i < rendered.length - 1; i++) {
       expect(

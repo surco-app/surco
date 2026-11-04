@@ -148,3 +148,15 @@ describe('LoudnessReadout verdict without colour', () => {
     expect(new Set(shapes).size).toBe(3)
   })
 })
+
+// The subhead above this table already says Loudness; a row under it labelled
+// Loudness too read as the group naming itself (in Spanish, «Volumen» twice in a
+// row). The integrated figure is named for what it is.
+describe('LoudnessReadout integrated row', () => {
+  it('labels the integrated figure as integrated, not with the subhead word', () => {
+    render(<LoudnessReadout loudness={loud} normalize={off} onShowHelp={vi.fn()} />)
+    expect(
+      within(screen.getByTestId('loudness-pill-lufs')).getByText('Integrated'),
+    ).toBeInTheDocument()
+  })
+})
