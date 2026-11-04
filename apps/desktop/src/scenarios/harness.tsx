@@ -1052,6 +1052,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
       useRetireSuperseded({
         tracks: library.tracks,
         updateTrack: library.updateTrack,
+        removeTracks: library.removeTracks,
         reportTrashFailure: (fileName) => errors.push(`retire failed: ${fileName}`),
       })
       const quality = useQualityAnalysis({
