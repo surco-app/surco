@@ -22,6 +22,7 @@ import type {
   DamageRepairItem,
   DamageScan,
   DeclickConfig,
+  DjProgram,
   DockIconFrames,
   DuplicatePair,
   DuplicateReplaceOutcome,
@@ -326,7 +327,7 @@ export interface Api {
   // the progress list and the toolbar pill, also with the modal closed.
   usbVolumes: () => Promise<UsbVolumeList>
   onUsbVolumesChanged: (cb: (list: UsbVolumeList) => void) => () => void
-  usbPickFolder: (source?: 'engine') => Promise<UsbFolderPick | null>
+  usbPickFolder: (source?: Exclude<DjProgram, 'rekordbox'>) => Promise<UsbFolderPick | null>
   usbPlan: (req: UsbExportRequest) => Promise<UsbPlanResult>
   usbExport: (req: UsbExportRequest) => Promise<UsbStartResult>
   usbCancel: () => Promise<boolean>

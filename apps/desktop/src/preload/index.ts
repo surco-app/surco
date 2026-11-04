@@ -11,6 +11,7 @@ import type {
   AppleMusicPlaylistTracks,
   AppleMusicTrackMeta,
   BpmResult,
+  DjProgram,
   DockIconFrames,
   KeyResult,
   LibraryTracks,
@@ -365,7 +366,7 @@ const api: Api = {
     ipcRenderer.on('usb:volumesChanged', listener)
     return () => ipcRenderer.removeListener('usb:volumesChanged', listener)
   },
-  usbPickFolder: (source?: 'engine'): Promise<UsbFolderPick | null> =>
+  usbPickFolder: (source?: Exclude<DjProgram, 'rekordbox'>): Promise<UsbFolderPick | null> =>
     ipcRenderer.invoke('usb:pickFolder', source),
   usbPlan: (req: UsbExportRequest): Promise<UsbPlanResult> => ipcRenderer.invoke('usb:plan', req),
   usbExport: (req: UsbExportRequest): Promise<UsbStartResult> =>

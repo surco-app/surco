@@ -1702,6 +1702,9 @@ export interface UsbVolume {
   // Master IDs of the playlists the stick's playlists3.sync ticks; null without one.
   stickPlaylists: string[] | null
   engine?: { holder: UsbHolder; remembered: UsbRemembered | null }
+  bySource?: Partial<
+    Record<'serato' | 'traktor', { holder: UsbHolder; remembered: UsbRemembered | null }>
+  >
 }
 
 export type UsbTarget = { kind: 'volume'; uuid: string } | { kind: 'folder'; path: string }

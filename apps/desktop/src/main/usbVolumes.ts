@@ -264,6 +264,7 @@ export async function readVolumes(
   syncText: (root: string) => Promise<string | null> = (root) =>
     readFile(join(root, 'PIONEER', 'rekordbox', 'playlists3.sync'), 'utf8').catch(() => null),
   engine?: { memory: UsbMemory; holder: (root: string) => Promise<UsbHolder> },
+  bySource?: Partial<Record<'serato' | 'traktor', UsbMemory>>,
 ): Promise<UsbVolume[]> {
   const out: UsbVolume[] = []
   for (const v of await source.list()) {
@@ -295,6 +296,29 @@ export async function readVolumes(
               }
             : null,
         },
+      }),
+      ...(bySource && {
+        bySource: Object.fromEntries(
+          await Promise.all(
+            Object.entries(bySource).map(async ([name, sourceMemory]) => {
+              const sourceEntry = sourceMemory.get(key)
+              return [
+                name,
+                {
+                  holder: await holder(v.mountPoint, sourceEntry?.pdb ?? null),
+                  remembered: sourceEntry
+                    ? {
+                        playlistIds: sourceEntry.playlistIds,
+                        prune: false,
+                        settings: false,
+                        at: sourceEntry.at,
+                      }
+                    : null,
+                },
+              ] as const
+            }),
+          ),
+        ),
       }),
     })
   }

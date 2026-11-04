@@ -189,6 +189,33 @@ describe('macOS: darwinSource and readVolumes', () => {
     })
   })
 
+  it('reads per drive what Surco last exported there from Serato, apart from rekordbox and Engine DJ', async () => {
+    const source = {
+      list: async () => [{ ...RAW, uuid: 'A', mountPoint: '/Volumes/A' }],
+      idAt: async () => null,
+    }
+    const serato = await memory()
+    serato.remember('volume:A', {
+      playlistIds: ['Sets'],
+      trackIds: ['9'],
+      at: 3,
+      pdb: { size: 1, mtimeMs: 2 },
+      prune: false,
+      settings: false,
+    })
+    const holder = vi.fn(async (_root: string, pdb: { size: number; mtimeMs: number } | null) => ({
+      by: pdb ? ('surco' as const) : ('empty' as const),
+      at: null,
+    }))
+    const vols = await readVolumes(source, await memory(), holder, noSync, undefined, { serato })
+    expect(vols[0].remembered).toBeNull()
+    expect(vols[0].holder.by).toBe('empty')
+    expect(vols[0].bySource?.serato).toEqual({
+      holder: { by: 'surco', at: null },
+      remembered: { playlistIds: ['Sets'], prune: false, settings: false, at: 3 },
+    })
+  })
+
   it('reads the UUID at a mount point right now', async () => {
     expect(await darwinSource(deps({ '/Volumes/Surco': STICK })).idAt('/Volumes/Surco')).toBe(
       'B10C96EF-51C2-344E-B78D-DAFC319D973E',

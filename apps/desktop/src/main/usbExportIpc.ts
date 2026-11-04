@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import {
   access,
   mkdtemp,
@@ -14,6 +15,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import log from 'electron-log/main'
+import type { DjProgram } from '../shared/djProgram'
 import type { UsbExportRequest, UsbFolderPick, UsbProgram, UsbVolumeList } from '../shared/types'
 import type { DetailKeyOf } from './djProcesses'
 import { isEngineDjRunning } from './engineProcess'
@@ -26,11 +28,14 @@ import { openRekordboxDb } from './rekordboxDb'
 import { playlistXmlPath } from './rekordboxMasterXml'
 import { isRekordboxRunning } from './rekordboxProcess'
 import { readMasterIdentity } from './rekordboxStickSync'
-import { createUsbExporter, USB_QUIT_DETAIL } from './usbExport'
-import { createUsbMemory, targetKey } from './usbExportMemory'
-import { routeUsbExports } from './usbExportRoute'
+import { readSeratoLibrary, type SeratoLibraryRoot } from './seratoLibrary'
+import { createUsbExporter, USB_QUIT_DETAIL, type UsbExporterDeps } from './usbExport'
+import { createUsbMemory, targetKey, type UsbMemory } from './usbExportMemory'
+import { routeUsbExports, type UsbExporter } from './usbExportRoute'
+import { readSeratoExportSelection, seratoExportMarks } from './usbExportSerato'
 import { readExportSelection } from './usbExportSource'
 import { stageExport } from './usbExportStage'
+import { readTraktorExportSelection, traktorExportDelta } from './usbExportTraktor'
 import { readVolumes, stickHolder, systemVolumeSource, watchVolumes } from './usbVolumes'
 
 // The USB export's IPC, macOS and Windows. Elsewhere every call answers "unsupported" and
@@ -51,6 +56,8 @@ export function registerUsbExportIpc(opts: {
     detail: DetailKeyOf<P>,
   ) => Promise<boolean>
   engineLibrary: () => string
+  serato?: { roots: () => SeratoLibraryRoot[] }
+  traktor?: { nml: () => string; bootVolume: () => string }
 }): { busy: () => boolean; stop: () => Promise<void> } | null {
   const platform = process.platform
   const source = systemVolumeSource(platform)
@@ -76,14 +83,29 @@ export function registerUsbExportIpc(opts: {
   }
   // The window that pressed Exportar, for the close dialog: one export at a time.
   let asking: BrowserWindow | null = null
-  const list = async (): Promise<UsbVolumeList> => ({
-    volumes: await readVolumes(source, memory, stickHolder, undefined, {
-      memory: engineMemory,
-      holder: engineLibraryHolder,
+  const sourceMemories: Partial<Record<'serato' | 'traktor', UsbMemory>> = {
+    ...(opts.serato && {
+      serato: createUsbMemory(join(opts.userData, 'usb-serato-exports.json')),
     }),
+    ...(opts.traktor && {
+      traktor: createUsbMemory(join(opts.userData, 'usb-traktor-exports.json')),
+    }),
+  }
+  const list = async (): Promise<UsbVolumeList> => ({
+    volumes: await readVolumes(
+      source,
+      memory,
+      stickHolder,
+      undefined,
+      {
+        memory: engineMemory,
+        holder: engineLibraryHolder,
+      },
+      sourceMemories,
+    ),
     lastKey: memory.last(),
   })
-  const exporter = createUsbExporter({
+  const rekordboxDeps: UsbExporterDeps = {
     platform,
     collection: opts.collection,
     readSelection: (path, ids) => {
@@ -168,7 +190,56 @@ export function registerUsbExportIpc(opts: {
     },
     masterPlaylistsXml: () =>
       readFile(playlistXmlPath(opts.collection()), 'utf8').catch(() => null),
-  })
+  }
+  const pioneerFrom = (
+    sourceMemory: UsbMemory,
+    collection: () => string,
+    readSelection: UsbExporterDeps['readSelection'],
+  ): UsbExporter =>
+    createUsbExporter({
+      ...rekordboxDeps,
+      collection,
+      readSelection,
+      volumes: () => readVolumes(source, sourceMemory),
+      stage: (sel, dir) =>
+        stageExport({
+          sel,
+          shareDir: '',
+          settingsSource: null,
+          dir,
+          identity: null,
+          deviceIds: new Map(),
+          stickHas: [],
+        }),
+      memory: sourceMemory,
+      rekordboxRunning: async () => false,
+      ensureRekordboxClosed: async () => true,
+      identity: () => null,
+      masterPlaylistsXml: async () => null,
+    })
+  const serato = opts.serato
+  const seratoExporter =
+    serato &&
+    sourceMemories.serato &&
+    pioneerFrom(
+      sourceMemories.serato,
+      () => serato.roots()[0]?.dir ?? '',
+      (_path, ids) =>
+        readSeratoExportSelection(readSeratoLibrary(serato.roots()), ids, {
+          marks: seratoExportMarks,
+        }),
+    )
+  const traktor = opts.traktor
+  const traktorExporter =
+    traktor &&
+    sourceMemories.traktor &&
+    pioneerFrom(sourceMemories.traktor, traktor.nml, (path, ids) =>
+      readTraktorExportSelection(readFileSync(path, 'utf8'), ids, {
+        bootVolume: traktor.bootVolume(),
+        deltaOf: traktorExportDelta,
+      }),
+    )
+  const exporter = createUsbExporter(rekordboxDeps)
   const engineExporter = createEngineUsbExporter({
     platform,
     libraryDir: opts.engineLibrary,
@@ -190,7 +261,12 @@ export function registerUsbExportIpc(opts: {
     now: () => Date.now(),
     log: (m) => log.info(m),
   })
-  const route = routeUsbExports({ rekordbox: exporter, engine: engineExporter })
+  const route = routeUsbExports({
+    rekordbox: exporter,
+    engine: engineExporter,
+    ...(seratoExporter && { serato: seratoExporter }),
+    ...(traktorExporter && { traktor: traktorExporter }),
+  })
   // Watching starts with the first request for the list (the rail offers the export only
   // with a rekordbox collection), not at launch for every user.
   let watching = false
@@ -201,34 +277,38 @@ export function registerUsbExportIpc(opts: {
     }
     return list()
   })
-  ipcMain.handle('usb:pickFolder', async (e, from?: 'engine'): Promise<UsbFolderPick | null> => {
-    const w = BrowserWindow.fromWebContents(e.sender)
-    const options = {
-      properties: ['openDirectory', 'createDirectory'] as Array<
-        'openDirectory' | 'createDirectory'
-      >,
-    }
-    const { canceled, filePaths } = w
-      ? await dialog.showOpenDialog(w, options)
-      : await dialog.showOpenDialog(options)
-    if (canceled || !filePaths[0]) return null
-    // The real path: one folder reached through a symlink or directly is one memory.
-    const path = await realpath(filePaths[0]).catch(() => filePaths[0])
-    const entry = (from === 'engine' ? engineMemory : memory).get(
-      targetKey({ kind: 'folder', path }),
-    )
-    return {
-      path,
-      remembered: entry
-        ? {
-            playlistIds: entry.playlistIds,
-            prune: false,
-            settings: entry.settings ?? false,
-            at: entry.at,
-          }
-        : null,
-    }
-  })
+  ipcMain.handle(
+    'usb:pickFolder',
+    async (e, from?: Exclude<DjProgram, 'rekordbox'>): Promise<UsbFolderPick | null> => {
+      const w = BrowserWindow.fromWebContents(e.sender)
+      const options = {
+        properties: ['openDirectory', 'createDirectory'] as Array<
+          'openDirectory' | 'createDirectory'
+        >,
+      }
+      const { canceled, filePaths } = w
+        ? await dialog.showOpenDialog(w, options)
+        : await dialog.showOpenDialog(options)
+      if (canceled || !filePaths[0]) return null
+      // The real path: one folder reached through a symlink or directly is one memory.
+      const path = await realpath(filePaths[0]).catch(() => filePaths[0])
+      const entry =
+        (from === 'engine' ? engineMemory : from ? sourceMemories[from] : memory)?.get(
+          targetKey({ kind: 'folder', path }),
+        ) ?? null
+      return {
+        path,
+        remembered: entry
+          ? {
+              playlistIds: entry.playlistIds,
+              prune: false,
+              settings: entry.settings ?? false,
+              at: entry.at,
+            }
+          : null,
+      }
+    },
+  )
   ipcMain.handle('usb:plan', (_e, req: UsbExportRequest) => route.plan(req))
   ipcMain.handle('usb:export', (e, req: UsbExportRequest) => {
     asking = BrowserWindow.fromWebContents(e.sender)
