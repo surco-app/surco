@@ -1151,6 +1151,7 @@
       "strong": "Fuerte"
     },
     "modeHint": {
+      "off": "Los chasquidos cortos de la aguja por el polvo y las rayas del disco.",
       "soft": "El toque mínimo, para material delicado.",
       "standard": "Repara los clicks cortos de la aguja.",
       "strong": "Atrapa también pops largos; puede suavizar transitorios."

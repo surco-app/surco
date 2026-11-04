@@ -1151,6 +1151,7 @@
       "strong": "Strong"
     },
     "modeHint": {
+      "off": "The stylus's short clicks and pops from dust and scratches on the record.",
       "soft": "The lightest touch, for delicate material.",
       "standard": "Repairs short stylus clicks.",
       "strong": "Also catches long pops; may soften sharp transients."

@@ -1151,6 +1151,7 @@
       "strong": "Stark"
     },
     "modeHint": {
+      "off": "Die kurzen Knackser der Nadel durch Staub und Kratzer auf der Platte.",
       "soft": "Der leichteste Eingriff, für empfindliches Material.",
       "standard": "Repariert kurze Nadel-Klicks.",
       "strong": "Erfasst auch lange Knackser; kann harte Transienten abschwächen."

@@ -1151,6 +1151,7 @@
       "strong": "Forte"
     },
     "modeHint": {
+      "off": "Os estalos curtos da agulha por poeira e riscos no disco.",
       "soft": "O toque mais leve, para material delicado.",
       "standard": "Repara os clicks curtos da agulha.",
       "strong": "Captura também estalos longos; pode suavizar transientes."

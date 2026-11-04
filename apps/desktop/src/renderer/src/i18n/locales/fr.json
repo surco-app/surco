@@ -1151,6 +1151,7 @@
       "strong": "Fort"
     },
     "modeHint": {
+      "off": "Les clics courts de la pointe dus à la poussière et aux rayures du disque.",
       "soft": "La touche la plus légère, pour les morceaux délicats.",
       "standard": "Répare les clics courts de la pointe.",
       "strong": "Capte aussi les craquements longs ; peut adoucir les transitoires."
