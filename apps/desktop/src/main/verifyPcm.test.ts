@@ -33,6 +33,7 @@ const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-verifypcm-'))
 const kick = 'aevalsrc=0.95*sin(2*PI*55*t)*exp(-4*mod(t\\,0.5)):s=44100:d=3'
 const at = (name: string) => join(dir, name)
+const LONG_FIXTURE_DECODE_MS = 30_000
 
 function ff(...args: string[]): void {
   execFileSync(FF, ['-y', '-v', 'error', ...args])
@@ -233,7 +234,7 @@ describe('pcmTimeoutMs', () => {
     const timeout = digests()[0]?.timeout ?? 0
     expect(timeout).toBeGreaterThanOrEqual(360_000)
     expect(timeout).toBeLessThan(362_000)
-  })
+  }, LONG_FIXTURE_DECODE_MS)
 
   // Asking for the duration of a file without one decodes it a second time under the
   // very timeout that is too short, so the size alone must carry the scaling.
@@ -247,5 +248,5 @@ describe('pcmTimeoutMs', () => {
     expect(bySize).toBeGreaterThan(450 * 100)
     expect(spawned.filter((o) => o.args.includes('format=duration'))).toHaveLength(0)
     expect(digests()).toHaveLength(1)
-  })
+  }, LONG_FIXTURE_DECODE_MS)
 })
