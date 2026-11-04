@@ -141,12 +141,6 @@ async function openSection(page, testid) {
   await wait(page, 600)
 }
 
-async function settingsTab(page, tab) {
-  await page.click('[data-testid="open-settings"]')
-  await page.click(`[data-testid="settings-tab-${tab}"]`)
-  await wait(page, 700)
-}
-
 async function close(_app, page) {
   await page.keyboard.press('Escape')
   await wait(page, 500)
@@ -158,25 +152,10 @@ export const SCENES = {
   importar: { run: async (_app, page) => editorTop(page) },
   lista: { run: async (_app, page) => editorTop(page) },
   editor: { run: async (_app, page) => editorTop(page) },
-  'otros-tags': {
-    run: async (_app, page) => {
-      await openSection(page, 'foreign-tags-toggle')
-      await page.locator('[data-testid="foreign-tags-toggle"]').click().catch(() => {})
-      await scrollEditorTo(page, '[data-testid="foreign-tags-toggle"]')
-    },
-    after: async (_app, page) => page.locator('[data-testid="foreign-tags-toggle"]').click().catch(() => {}),
-  },
   calidad: {
     run: async (_app, page) => {
       await page.locator('[data-testid="spectrogram"]').waitFor({ timeout: 60000 })
       await scrollEditorTo(page, '[data-testid="quality-status"]')
-    },
-  },
-  recorte: {
-    run: async (_app, page) => {
-      await openSection(page, 'editor-trim')
-      await wait(page, 6000)
-      await scrollEditorTo(page, '[data-testid="editor-trim"]')
     },
   },
   declick: {
@@ -224,40 +203,10 @@ export const SCENES = {
     },
     after: close,
   },
-  'igual-origen': { run: async (_app, page) => settingsTab(page, 'conversion'), after: close },
-  traktor: {
-    run: async (_app, page) => {
-      await settingsTab(page, 'destination')
-      await page.evaluate(() => {
-        const h = [...document.querySelectorAll('[role="dialog"] h3, [role="dialog"] p')].find((e) =>
-          /Traktor/.test(e.textContent) && e.closest('[data-testid="settings-section"]'),
-        )
-        h?.closest('[data-testid="settings-section"]')?.scrollIntoView({ block: 'center' })
-      })
-      await wait(page, 500)
-    },
-    after: close,
-  },
   atajos: {
     run: async (_app, page) => {
       await page.click('[data-testid="open-palette"]')
       await wait(page, 800)
-    },
-    after: close,
-  },
-  ajustes: {
-    run: async (_app, page) => {
-      await settingsTab(page, 'general')
-      await page.evaluate(() => {
-        const home = '/Users/dj/Library/Application Support/Surco'
-        const dialog = document.querySelector('[role="dialog"]')
-        const walker = document.createTreeWalker(dialog, NodeFilter.SHOW_TEXT)
-        while (walker.nextNode())
-          if (walker.currentNode.textContent.includes('surco-guide-shots'))
-            walker.currentNode.textContent = home
-        for (const input of dialog.querySelectorAll('input'))
-          if (input.value.includes('surco-guide-shots')) input.value = home
-      })
     },
     after: close,
   },
@@ -281,7 +230,6 @@ export const ALBUM_SCENES = {
       await wait(page, 1500)
     },
   },
-  lote: { run: async (_app, page) => editorTop(page) },
 }
 
 // The rekordbox scene edits cues, so it runs on an APFS clone of this Mac's collection
@@ -337,18 +285,17 @@ export const REKORDBOX_SCENE = {
   },
 }
 
-// Fuentes, USB and Revisar read the same rekordbox clone and never write: the USB dialog
-// is closed before exporting and the review before applying.
+async function loadRekordboxPlaylist(page) {
+  await openFromRekordbox(page)
+  await page
+    .locator('[data-testid="import-progress"]')
+    .waitFor({ state: 'detached', timeout: 900000 })
+  await wait(page, 3000)
+}
+
+// USB and Revisar read the same rekordbox clone and never write: the USB dialog is closed
+// before exporting and the review before applying.
 export const LIBRARY_SCENES = {
-  fuentes: {
-    run: async (_app, page) => {
-      await openFromRekordbox(page)
-      await page
-        .locator('[data-testid="import-progress"]')
-        .waitFor({ state: 'detached', timeout: 900000 })
-      await wait(page, 3000)
-    },
-  },
   usb: {
     run: async (_app, page) => {
       await page.click('[data-testid="source-tree-export-usb"]')
@@ -402,6 +349,7 @@ async function main() {
     const library = Object.entries(LIBRARY_SCENES).filter(([id]) => want(id))
     if (library.length) {
       const { app, page } = await launch(lang, { rekordboxDbPath: rekordboxClone() })
+      await loadRekordboxPlaylist(page)
       for (const [id, scene] of library) await shoot(app, page, lang, id, scene)
       app.process().kill('SIGKILL')
     }
