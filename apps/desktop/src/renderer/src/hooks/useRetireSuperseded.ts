@@ -12,10 +12,16 @@ const sameFileKey = (path: string) => {
 interface Params {
   tracks: TrackItem[]
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
+  removeTracks: (ids: string[], everywhere?: boolean) => void
   reportTrashFailure: (fileName: string) => void
 }
 
-export function useRetireSuperseded({ tracks, updateTrack, reportTrashFailure }: Params): void {
+export function useRetireSuperseded({
+  tracks,
+  updateTrack,
+  removeTracks,
+  reportTrashFailure,
+}: Params): void {
   const started = useRef(new Set<string>())
   // Logged once per row and reason: a check run again can still clear the original.
   const told = useRef(new Set<string>())
@@ -37,14 +43,13 @@ export function useRetireSuperseded({ tracks, updateTrack, reportTrashFailure }:
       if (started.current.has(key)) continue
       started.current.add(key)
       const old = sameFileKey(path)
-      if (
-        tracks.some(
-          (t) =>
-            t.id !== track.id &&
-            [t.inputPath, t.outputPath].some((p) => !!p && sameFileKey(p) === old),
-        )
-      ) {
-        kept('another row of the list loads it')
+      const onOldFile = tracks.filter(
+        (t) =>
+          t.id !== track.id &&
+          [t.inputPath, t.outputPath].some((p) => !!p && sameFileKey(p) === old),
+      )
+      if (onOldFile.some((t) => t.status === 'processing')) {
+        kept('another row of the list is converting it')
         updateTrack(track.id, { supersededKept: true })
         continue
       }
@@ -63,11 +68,16 @@ export function useRetireSuperseded({ tracks, updateTrack, reportTrashFailure }:
         .then((done) => {
           if (done !== 'retired') kept('a DJ library or Apple Music uses it, or could not be asked')
           updateTrack(track.id, done === 'retired' ? patch : { supersededKept: true })
+          if (done === 'retired' && onOldFile.length > 0)
+            removeTracks(
+              onOldFile.map((t) => t.id),
+              true,
+            )
         })
         .catch(() => {
           updateTrack(track.id, { supersededKept: true })
           reportTrashFailure(baseName(path))
         })
     }
-  }, [tracks, updateTrack, reportTrashFailure])
+  }, [tracks, updateTrack, removeTracks, reportTrashFailure])
 }

@@ -1206,8 +1206,8 @@ lista las pistas que entraron en la colección en los últimos 30 días, de la m
 más antigua (`StockDate`, `rekordboxPlaylists.ts:128-141`). Es de solo lectura: no se
 renombra, no se borra, no se reordena y no se le añaden pistas.
 
-**Todas las pistas** (nuevo en v1.16.0). En rekordbox, Engine DJ y Traktor va encima de
-«Añadidas recientemente» y lista la colección entera, la pista más reciente primero, con el
+**Todas las pistas** (nuevo en v1.16.0). En rekordbox, Engine DJ, Traktor y Serato va justo
+debajo de «Añadidas recientemente» y lista la colección entera, la pista más reciente primero, con el
 total en el árbol (`ALL_TRACKS_ID`, `useSourceBrowser.ts:156`; `readRekordboxTrackCount`,
 `rekordboxPlaylists.ts:156`; `readEngineTrackCount`, `enginePlaylists.ts:203`;
 `readTraktorTrackCount`, `traktorPlaylists.ts:204`). Existe para encontrar las pistas que

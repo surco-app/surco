@@ -3244,7 +3244,7 @@ describe('App source playlists', () => {
           .getAllByTestId(/^source-node-/)
           .filter((n) => n.tagName === 'BUTTON')
           .slice(0, 2),
-      ).toEqual([all, recent])
+      ).toEqual([recent, all])
       expect(within(recent).getByTestId('source-node-recent-icon')).toBeInTheDocument()
       fireEvent.click(recent)
       await waitFor(() =>

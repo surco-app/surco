@@ -1488,7 +1488,12 @@ export default function App(): React.JSX.Element {
   const reportRetireFailure = useStableCallback((fileName: string) =>
     setAppError({ kind: 'trash', detail: fileName }),
   )
-  useRetireSuperseded({ tracks, updateTrack, reportTrashFailure: reportRetireFailure })
+  useRetireSuperseded({
+    tracks,
+    updateTrack,
+    removeTracks,
+    reportTrashFailure: reportRetireFailure,
+  })
 
   const {
     processOne,

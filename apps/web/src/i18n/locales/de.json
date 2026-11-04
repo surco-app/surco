@@ -253,7 +253,7 @@
           {
             "t": "Deine rekordbox-Playlists",
             "s": "Öffne und organisiere deine rekordbox-Playlists, ohne Surco zu verlassen.",
-            "d": "Öffne sie in Surco mit ihren Ordnern und in ihrer Reihenfolge, mit der Wellenform und den Cues von rekordbox bei jedem Track. Und organisiere sie von hier aus. Leg Playlists und Ordner an, benenne sie um und lösche sie, füge Tracks hinzu, entferne und sortiere sie, und wähle im Editor, in welchen Playlists jeder Track steckt. Ist rekordbox offen, warten die Änderungen, bis du es schließt. „Alle Titel“ steht ganz oben, mit deiner ganzen Sammlung, auch dem, was in keiner Playlist ist, danach „Zuletzt hinzugefügt“, mit dem, was du in den letzten 30 Tagen zur Sammlung hinzugefügt hast. Nutzt du rekordbox oder Apple Music nicht, blende diese Quelle aus."
+            "d": "Öffne sie in Surco mit ihren Ordnern und in ihrer Reihenfolge, mit der Wellenform und den Cues von rekordbox bei jedem Track. Und organisiere sie von hier aus. Leg Playlists und Ordner an, benenne sie um und lösche sie, füge Tracks hinzu, entferne und sortiere sie, und wähle im Editor, in welchen Playlists jeder Track steckt. Ist rekordbox offen, warten die Änderungen, bis du es schließt. „Zuletzt hinzugefügt“ steht ganz oben, mit dem, was du in den letzten 30 Tagen zur Sammlung hinzugefügt hast, danach „Alle Titel“, mit deiner ganzen Sammlung, auch dem, was in keiner Playlist ist. Nutzt du rekordbox oder Apple Music nicht, blende diese Quelle aus."
           },
           {
             "t": "rekordbox-Cues",
@@ -643,7 +643,7 @@
         "s": "Arbeite mit deinen Playlists aus Apple Music, rekordbox, Engine DJ und Traktor.",
         "body": [
           "Die Seitenleiste hat eine Spalte „Quellen“ mit deinem Apple Music (unter macOS), rekordbox, Engine DJ und Traktor. Öffne eine beliebige Playlist, und ihre Tracks kommen mit ihren echten Dateien in die Liste, damit du sie wie jeden anderen Track taggen, prüfen oder konvertieren kannst.",
-          "Bei rekordbox beginnt die Liste mit „Alle Titel“, deiner gesamten Sammlung samt allem, was in keiner Playlist steckt, und geht weiter mit „Zuletzt hinzugefügt“, also dem, was du in den letzten 30 Tagen hinzugefügt hast."
+          "Bei rekordbox beginnt die Liste mit „Zuletzt hinzugefügt“, also dem, was du in den letzten 30 Tagen hinzugefügt hast, und geht weiter mit „Alle Titel“, deiner gesamten Sammlung samt allem, was in keiner Playlist steckt."
         ],
         "points": [
           "Die Playlists von rekordbox und Traktor organisierst du direkt hier. Du legst Playlists und Ordner an, benennst sie um und löschst sie, und du fügst Tracks hinzu, entfernst sie und sortierst sie um.",
