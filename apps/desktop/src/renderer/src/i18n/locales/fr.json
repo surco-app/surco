@@ -2370,8 +2370,7 @@
         "writeFailed": "Impossible d’enregistrer la modification. La bibliothèque est restée telle quelle",
         "readOnly": "La bibliothèque Serato est en lecture seule, rien n’a changé",
         "stale": "Le crate a changé dans Serato. Vérifie-le et réessaie",
-        "noSeparator": "Ta bibliothèque n’a aucun séparateur à copier",
-        "writeUnknown": "Le changement n’a pu être ni enregistré ni annulé, la bibliothèque a donc pu changer. Avant d’ouvrir Serato, remplace les fichiers de crates par les copies que tu trouveras dans Réglages → Avancé → Sauvegardes des collections",
+        "writeUnknown": "Le changement n’a pu être ni enregistré ni annulé, la bibliothèque a donc pu changer. Avant d’ouvrir Serato, restaure les crates depuis la copie la plus récente dans le dossier serato-backups des données de Surco",
         "badName": "Ce nom ne convient pas pour un crate. Il ne peut pas être vide, en double ni contenir / ou %%"
       }
     }
@@ -2949,7 +2948,8 @@
       "cuesChanged": "Les cues de {{track}} ont changé dans Serato. Marque-les à nouveau",
       "callsDropped_one": "{{count}} CALL de {{track}} n’a pas été enregistré ({{times}}). Serato ne garde que les hot cues",
       "callsDropped_other": "{{count}} CALL de {{track}} n’ont pas été enregistrés ({{times}}). Serato ne garde que les hot cues",
-      "oldBlock": "Les cues de {{track}} n'ont pas été enregistrés. Serato en garde une ancienne copie qui ne correspond pas. Déplace un cue du morceau dans Serato et enregistre à nouveau"
+      "oldBlock": "Les cues de {{track}} n'ont pas été enregistrés. Serato en garde une ancienne copie qui ne correspond pas. Déplace un cue du morceau dans Serato et enregistre à nouveau",
+      "editChanged": "{{playlist}} n’a pas été modifié. Il a changé dans Serato"
     }
   },
   "cueWave": {

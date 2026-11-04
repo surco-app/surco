@@ -2370,8 +2370,7 @@
         "writeFailed": "Não foi possível salvar a mudança. A biblioteca continua como estava",
         "readOnly": "A biblioteca do Serato é somente leitura e nada mudou",
         "stale": "O crate mudou no Serato. Confira e tente de novo",
-        "noSeparator": "Sua biblioteca não tem nenhum separador para copiar",
-        "writeUnknown": "Não foi possível salvar nem desfazer a mudança, então a biblioteca pode ter mudado. Antes de abrir o Serato, substitua os arquivos de crates pelas cópias que estão em Ajustes → Avançado → Cópias das coleções",
+        "writeUnknown": "Não foi possível salvar nem desfazer a mudança, então a biblioteca pode ter mudado. Antes de abrir o Serato, recupere os crates da cópia mais recente na pasta serato-backups dos dados do Surco",
         "badName": "Esse nome não serve para um crate. Não pode ficar vazio, repetido nem conter / ou %%"
       }
     }
@@ -2949,7 +2948,8 @@
       "cuesChanged": "Os cues de {{track}} mudaram no Serato. Marque-os de novo",
       "callsDropped_one": "{{count}} CALL de {{track}} não foi salvo ({{times}}). O Serato só guarda hot cues",
       "callsDropped_other": "{{count}} CALLs de {{track}} não foram salvos ({{times}}). O Serato só guarda hot cues",
-      "oldBlock": "Os cues de {{track}} não foram salvos. O Serato guarda uma cópia antiga deles que não confere. Mova qualquer cue da faixa no Serato e salve de novo"
+      "oldBlock": "Os cues de {{track}} não foram salvos. O Serato guarda uma cópia antiga deles que não confere. Mova qualquer cue da faixa no Serato e salve de novo",
+      "editChanged": "{{playlist}} não foi alterado. Mudou no Serato"
     }
   },
   "cueWave": {

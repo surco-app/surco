@@ -127,6 +127,7 @@ export const SERATO_QUEUE_WORDS: QueueWords = {
     ...REKORDBOX_QUEUE_WORDS.notices,
     'cues-changed': 'seratoQueue.notice.cuesChanged',
     'cues-calls-dropped': 'seratoQueue.notice.callsDropped',
+    'edit-changed': 'seratoQueue.notice.editChanged',
   },
 }
 

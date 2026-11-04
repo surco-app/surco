@@ -317,6 +317,12 @@ describe('Serato queue text', () => {
     )
   })
 
+  it('says a queued crate edit that Serato changed under it in Serato words, not rekordbox', () => {
+    expect(noticeText(tr, { code: 'edit-changed', playlist: 'Friday' }, SERATO_QUEUE_WORDS)).toBe(
+      'Friday was not changed. It changed in Serato',
+    )
+  })
+
   it('speaks of Serato alone in anything the Serato queue can say', () => {
     const queueLines = [
       tr(SERATO_QUEUE_WORDS.discardConfirm),

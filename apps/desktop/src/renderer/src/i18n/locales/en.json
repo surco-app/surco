@@ -2370,8 +2370,7 @@
         "writeFailed": "Couldn't save the change. The library is as it was",
         "readOnly": "The Serato library is read-only, so nothing changed",
         "stale": "The crate changed in Serato. Check it and try again",
-        "noSeparator": "Your library has no separator to copy",
-        "writeUnknown": "The change could not be saved or undone, so the library may have changed. Before opening Serato, replace the crate files with the copies you will find in Settings → Advanced → Collection backups",
+        "writeUnknown": "The change could not be saved or undone, so the library may have changed. Before opening Serato, restore the crates from the most recent copy in the serato-backups folder in Surco's data",
         "badName": "That name won't work for a crate. It can't be empty, repeated or contain / or %%"
       }
     }
@@ -2949,7 +2948,8 @@
       "cuesChanged": "The cues of {{track}} changed in Serato. Mark them again",
       "callsDropped_one": "{{count}} CALL of {{track}} was not saved ({{times}}). Serato only keeps hot cues",
       "callsDropped_other": "{{count}} CALLs of {{track}} were not saved ({{times}}). Serato only keeps hot cues",
-      "oldBlock": "The cues of {{track}} were not saved. Serato keeps an older copy of them that does not match. Move any cue of the track in Serato and save again"
+      "oldBlock": "The cues of {{track}} were not saved. Serato keeps an older copy of them that does not match. Move any cue of the track in Serato and save again",
+      "editChanged": "{{playlist}} was not changed. It changed in Serato"
     }
   },
   "cueWave": {
