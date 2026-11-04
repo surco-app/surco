@@ -4,7 +4,7 @@ import { gridFingerprint } from '../shared/gridEdit'
 import { nearestHotCueColor } from '../shared/rekordboxCueColors'
 import { seratoFileOf } from '../shared/seratoContent'
 import type { SeratoCue, SeratoTempoMap } from '../shared/seratoMarkers'
-import type { TrackCueRow } from '../shared/types'
+import type { TrackCueRow, TrackCues } from '../shared/types'
 import type { CueQueue, CueSource } from './cueSource'
 import { rekordboxInput } from './engineDropInput'
 import { cueFingerprint } from './rekordboxCues'
@@ -42,6 +42,34 @@ export function seratoCueRows(cues: SeratoCue[], leadMs: number): TrackCueRow[] 
     }))
 }
 
+export async function seratoTrackCuesOf(
+  contentId: string,
+  track: NonNullable<ReturnType<typeof readSeratoTrack>>,
+): Promise<TrackCues> {
+  const file = seratoFileOf(contentId)
+  const lead = await seratoLeadOfFile(file, track.sampleRate)
+  const grid = track.tempoMap ? tempoGrid(track.tempoMap, lead, track.durationMs) : []
+  const cues = seratoCueRows(track.markers?.cues ?? [], lead)
+  return {
+    contentId,
+    analysed: track.tempoMap !== null,
+    grid,
+    gridFingerprint: gridFingerprint(grid),
+    strong: [],
+    phrases: [],
+    cues,
+    loops: (track.markers?.loops ?? []).map((l) => ({
+      id: String(l.index),
+      startMs: l.startMs - lead,
+      endMs: l.endMs - lead,
+      ...(l.name && { name: l.name }),
+    })),
+    wave: null,
+    durationMs: track.durationMs,
+    fingerprint: cueFingerprint(cues),
+  }
+}
+
 export function seratoCueSource(
   host: {
     words: (file: string) => Promise<Uint16Array | null>
@@ -52,30 +80,8 @@ export function seratoCueSource(
 ): CueSource {
   const source: CueSource = {
     trackCues: async (contentId) => {
-      const file = seratoFileOf(contentId)
-      const track = readSeratoTrack(file)
-      if (!track) return null
-      const lead = await seratoLeadOfFile(file, track.sampleRate)
-      const grid = track.tempoMap ? tempoGrid(track.tempoMap, lead, track.durationMs) : []
-      const cues = seratoCueRows(track.markers?.cues ?? [], lead)
-      return {
-        contentId,
-        analysed: track.tempoMap !== null,
-        grid,
-        gridFingerprint: gridFingerprint(grid),
-        strong: [],
-        phrases: [],
-        cues,
-        loops: (track.markers?.loops ?? []).map((l) => ({
-          id: String(l.index),
-          startMs: l.startMs - lead,
-          endMs: l.endMs - lead,
-          ...(l.name && { name: l.name }),
-        })),
-        wave: null,
-        durationMs: track.durationMs,
-        fingerprint: cueFingerprint(cues),
-      }
+      const track = readSeratoTrack(seratoFileOf(contentId))
+      return track ? seratoTrackCuesOf(contentId, track) : null
     },
     waveDetail: async (contentId) => host.words(seratoFileOf(contentId)),
     dropInput: async (contentId) => {
