@@ -1414,7 +1414,7 @@ export interface ProcessResult {
   // Set when the converted file landed but the original it replaced in a format change
   // could not be retired, so both are in the folder.
   originalKept?: true
-  originalHeldBy?: WritableProgram[]
+  originalHeldBy?: DjProgram[]
   // The replaced Apple Music entry kept the " [surco-replacing]" mark in its name: Music
   // could not be asked to take it off, so the DJ has to.
   musicNameLeftMarked?: true

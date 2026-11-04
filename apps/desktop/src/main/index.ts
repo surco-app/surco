@@ -1784,7 +1784,7 @@ function registerIpc(): void {
         )
       },
       librariesKeepingOriginal: (path, target) =>
-        librariesKeepingOriginal(path, target, { traktorRead: traktorReadPath }),
+        librariesKeepingOriginal(path, target, { traktorRead: traktorReadPath, seratoRoots }),
       refreshAppleMusicEntry: (persistentId) =>
         appleMusicLimiter.run(() => refreshAppleMusicEntry(persistentId)),
       relinkAppleMusicEntry: (persistentId, path) =>

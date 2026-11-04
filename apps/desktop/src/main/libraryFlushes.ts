@@ -2,7 +2,12 @@ import { existsSync, realpathSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import log from 'electron-log/main'
-import { WRITABLE_PROGRAMS, type WritableProgram, writableInOrder } from '../shared/djProgram'
+import {
+  type DjProgram,
+  WRITABLE_PROGRAMS,
+  type WritableProgram,
+  writableInOrder,
+} from '../shared/djProgram'
 import type { LibraryStatus, LibraryTagUpdate, RekordboxSyncIssue } from '../shared/types'
 import { activity } from './activity'
 import {
@@ -96,8 +101,8 @@ export function rekordboxCollectionPath(): string {
 export async function librariesKeepingOriginal(
   path: string,
   target: string,
-  deps: { traktorRead: () => string },
-): Promise<WritableProgram[]> {
+  deps: { traktorRead: () => string; seratoRoots?: () => SeratoLibraryRoot[] },
+): Promise<DjProgram[]> {
   const settings = getSettings()
   const status = currentLibraryStatus()
   const locations: SyncedLibraries = {
@@ -108,7 +113,7 @@ export async function librariesKeepingOriginal(
     engine: !settings.syncEngineDj && status.engine.found ? settings.engineLibraryDir : '',
     traktor: settings.syncTraktor ? '' : deps.traktorRead(),
   }
-  const held: WritableProgram[] = []
+  const held: DjProgram[] = []
   for (const program of WRITABLE_PROGRAMS) {
     if (!locations[program]) continue
     const only = { rekordbox: '', engine: '', traktor: '', [program]: locations[program] }
@@ -123,6 +128,15 @@ export async function librariesKeepingOriginal(
     )
     if ((await traktor(path)) && (await traktor(target))) held.push('traktor')
   }
+  const serato = deps.seratoRoots?.() ?? []
+  if (
+    serato.length > 0 &&
+    (await djLibraryFileUse(
+      { rekordbox: '', engine: '', traktor: '', serato },
+      { realPath: (p: string) => realpathSync(p) },
+    )(path))
+  )
+    held.push('serato')
   return held
 }
 

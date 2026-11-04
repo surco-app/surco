@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
 import { tagsOnly as tagsOnlyExport } from '../shared/audioProcessing'
-import { WRITABLE_PROGRAMS, type WritableProgram } from '../shared/djProgram'
+import { type DjProgram, WRITABLE_PROGRAMS, type WritableProgram } from '../shared/djProgram'
 import {
   type ErrorKey,
   errorKeyOf,
@@ -117,7 +117,7 @@ export interface ProcessTrackDeps {
   ) => Promise<string | null>
   relinkAppleMusicEntry: (persistentId: string, path: string) => Promise<void>
   refreshAppleMusicEntry?: (persistentId: string) => Promise<void>
-  librariesKeepingOriginal?: (path: string, target: string) => Promise<WritableProgram[]>
+  librariesKeepingOriginal?: (path: string, target: string) => Promise<DjProgram[]>
   findAppleMusicEntry?: (
     path: string,
     meta: TrackMetadata,
@@ -804,7 +804,7 @@ export async function runProcessTrack(
     // keeps both files and is told so.
     let originalKept: true | undefined
     let keptBeforeMusic = false
-    let originalHeldBy: WritableProgram[] | undefined
+    let originalHeldBy: DjProgram[] | undefined
     const retireOriginal = async (): Promise<void> => {
       if (!outputIsInput && deps.librariesKeepingOriginal) {
         const held = await deps.librariesKeepingOriginal(job.inputPath, target).catch((e) => {

@@ -1216,6 +1216,26 @@ describe('librariesKeepingOriginal', () => {
     }
   })
 
+  it('keeps the original for Serato, which Surco cannot point at the new file without Serato dropping the track and its rating', async () => {
+    const roots = [{ dir: '/Users/dj/Music/_Serato_', root: '/' }]
+    FILE_USE.open.mockClear()
+    FILE_USE.check.mockImplementation(async () => true)
+    try {
+      const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {
+        traktorRead: () => '',
+        seratoRoots: () => roots,
+      })
+
+      expect(held).toContain('serato')
+      expect(FILE_USE.open).toHaveBeenCalledWith(
+        { rekordbox: '', engine: '', traktor: '', serato: roots },
+        expect.anything(),
+      )
+    } finally {
+      FILE_USE.check.mockImplementation(async () => false)
+    }
+  })
+
   it('asks nothing of a library whose sync is on, since it follows the rename itself', async () => {
     FILE_USE.open.mockClear()
     const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', { traktorRead: () => '' })
