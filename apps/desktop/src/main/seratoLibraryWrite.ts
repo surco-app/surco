@@ -131,6 +131,7 @@ export type SeratoCommit =
 
 const KEPT_BACKUPS = 20
 const TMP = '.surco-tmp'
+const WRITING = '.surco-write'
 
 export function backupFolderName(now: Date): string {
   return now.toISOString().replace(/[:.]/g, '-')
@@ -179,12 +180,12 @@ export function recoverSeratoTemps(roots: SeratoLibraryRoot[]): void {
     } catch {
       continue
     }
-    for (const name of names.filter((n) => n.endsWith(TMP))) {
+    for (const name of names.filter((n) => n.endsWith(TMP) || n.endsWith(WRITING))) {
       const tmp = join(dir, name)
-      const file = tmp.slice(0, -TMP.length)
+      const hop = name.endsWith(TMP) ? tmp.slice(0, -TMP.length) : null
       try {
-        if (existsSync(file)) rmSync(tmp, { force: true })
-        else renameSync(tmp, file)
+        if (hop === null || existsSync(hop)) rmSync(tmp, { force: true })
+        else renameSync(tmp, hop)
       } catch (e) {
         log.warn(`Serato temp ${tmp} not recovered`, e)
       }
@@ -251,10 +252,10 @@ export async function commitSeratoDraft(
         .map(({ file, bytes }): [() => void, Undo, string[]] => [
           () => {
             mkdirSync(dirname(file), { recursive: true })
-            temps.add(`${file}${TMP}`)
-            writeFileSync(`${file}${TMP}`, bytes)
-            renameSync(`${file}${TMP}`, file)
-            temps.delete(`${file}${TMP}`)
+            temps.add(`${file}${WRITING}`)
+            writeFileSync(`${file}${WRITING}`, bytes)
+            renameSync(`${file}${WRITING}`, file)
+            temps.delete(`${file}${WRITING}`)
           },
           undoOf(file),
           [file],

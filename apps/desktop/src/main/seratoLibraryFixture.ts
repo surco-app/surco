@@ -115,7 +115,7 @@ export function tempsUnder(dir: string): string[] {
   const walk = (d: string): void => {
     for (const name of readdirSync(d, { withFileTypes: true })) {
       if (name.isDirectory()) walk(join(d, name.name))
-      else if (name.name.endsWith('.surco-tmp')) out.push(join(d, name.name))
+      else if (/\.surco-(tmp|write)$/.test(name.name)) out.push(join(d, name.name))
     }
   }
   if (existsSync(dir)) walk(dir)

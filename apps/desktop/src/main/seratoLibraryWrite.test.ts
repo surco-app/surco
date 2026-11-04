@@ -230,6 +230,15 @@ describe('recoverSeratoTemps', () => {
     expect(tempsUnder(roots[0].dir)).toEqual([])
   })
 
+  it('drops a half-written temp of a new crate instead of turning it into a corrupt crate', () => {
+    const { roots } = twoRoots({ internal: [] })
+    const n = crateFileOf(roots[0], 'New')
+    writeFileSync(`${n}.surco-write`, crateBytes(['Users/dj/new.mp3']).subarray(0, 20))
+    recoverSeratoTemps(roots)
+    expect(existsSync(n)).toBe(false)
+    expect(tempsUnder(roots[0].dir)).toEqual([])
+  })
+
   it('drops a temp a crash left before it replaced the crate, keeping the crate as it was', () => {
     const { roots, bytes } = twoRoots({ gig: ['A'] })
     const a = crateFileOf(roots[1], 'A')
