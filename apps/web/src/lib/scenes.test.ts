@@ -25,6 +25,11 @@ import {
   replaceFrame,
   reviewFrame,
   SPECTRUM_WALL,
+  SYNC_ACT1,
+  SYNC_ACT2,
+  SYNC_LIBRARIES,
+  SYNC_START,
+  syncFrame,
   TAG_ARTIST,
   TAG_FIELDS,
   TAG_JUNK_ARTIST,
@@ -607,5 +612,50 @@ describe('gridFrame', () => {
     expect(gridFrame(1).selected).toBe(true)
     expect(gridFrame(1).autoPressed).toBe(false)
     expect(gridFrame(1).clearPressed).toBe(false)
+  })
+})
+
+describe('syncFrame', () => {
+  const frames = Array.from({ length: 401 }, (_, i) => syncFrame(i / 400))
+
+  it('opens on the track from the Apple Music tab, with every program still showing the old names', () => {
+    const start = syncFrame(0)
+    expect(start.origin).toBe('appleMusic')
+    expect(start.updated).toBe(0)
+    expect(start.fields).toEqual(SYNC_START)
+    expect(start.libraries).toEqual(SYNC_LIBRARIES.map(() => SYNC_START))
+  })
+
+  it('reaches no program before the update is pressed, since the change starts in Surco', () => {
+    for (const f of frames) if (!f.saved) expect(f.updated).toBe(0)
+    const firstPress = frames.findIndex((f) => f.pressed)
+    const firstUpdate = frames.findIndex((f) => f.updated > 0)
+    expect(firstPress).toBeGreaterThan(0)
+    expect(firstUpdate).toBeGreaterThan(firstPress)
+  })
+
+  it('reaches every program with the first change before the second starts from rekordbox', () => {
+    const switchAt = frames.findIndex((f) => f.origin === 'rekordbox')
+    expect(frames[switchAt - 1].updated).toBe(SYNC_LIBRARIES.length)
+    expect(frames[switchAt - 1].libraries).toEqual(SYNC_LIBRARIES.map(() => SYNC_ACT1))
+    expect(frames[switchAt].fields).toEqual(SYNC_ACT1)
+    expect(frames[switchAt].updated).toBe(0)
+  })
+
+  it('ends with every program showing the genre changed from rekordbox and the names from Apple Music', () => {
+    const end = syncFrame(1)
+    expect(end.origin).toBe('rekordbox')
+    expect(end.saved).toBe(true)
+    expect(end.libraries).toEqual(SYNC_LIBRARIES.map(() => SYNC_ACT2))
+    expect(SYNC_ACT2.genre).not.toBe(SYNC_ACT1.genre)
+    expect(SYNC_ACT1.title).not.toBe(SYNC_START.title)
+  })
+
+  it('types each edit one letter at a time, never past what the field ends with', () => {
+    for (const f of frames)
+      for (const key of ['title', 'genre', 'file'] as const)
+        expect(SYNC_ACT2[key].length + SYNC_START[key].length).toBeGreaterThanOrEqual(
+          f.fields[key].length,
+        )
   })
 })

@@ -1168,6 +1168,32 @@
         }
       }
     },
+    "sync": {
+      "title": "一度変えれば、すべてのアプリに届く。",
+      "lede": "Apple Musicかrekordboxのタブからトラックを開き、タイトル、ジャンル、ファイル名を直して「タグを更新」を押します。SurcoがApple Music、rekordbox、Traktor、Engine DJに変更を届け、どのアプリでも同じトラックのままです。",
+      "tabAppleMusic": "Apple Musicタブ",
+      "tabRekordbox": "rekordboxタブ",
+      "fieldTitle": "タイトル",
+      "fieldGenre": "ジャンル",
+      "fieldFile": "ファイル名",
+      "button": "タグを更新",
+      "saved": "タグを更新",
+      "origin": "元",
+      "points": {
+        "anyTab": {
+          "title": "どのタブからでも",
+          "text": "どのアプリからトラックを開いても、変更はSurcoから他のアプリへ届きます。"
+        },
+        "sameTrack": {
+          "title": "どのアプリでも同じトラック",
+          "text": "ファイル名を変えても、各アプリはプレイリストとキューを保ったまま新しいファイルを参照します。"
+        },
+        "waits": {
+          "title": "開いていれば待つ",
+          "text": "開いているアプリには、閉じた時点で変更が届きます。同期をオンにしたアプリが対象です。"
+        }
+      }
+    },
     "cues": {
       "title": "ドロップを指定するだけ。残りのキューは自動で配置。",
       "lede": "トラックのドロップ位置をクリックするか、自動マークに探させましょう。残りのキューはフローがどのトラックにも同じように配置し、Surcoがrekordbox、Engine DJ、Traktorに保存します。",
@@ -3091,9 +3117,7 @@
         "group": "go",
         "title": "NAS上の音楽",
         "s": "Mac や Windows から、ネットワークドライブ上の音楽を扱えます。",
-        "body": [
-          "ネットワークドライブに音楽を保存し、SurcoでMacまたはWindowsから操作します。"
-        ],
+        "body": ["ネットワークドライブに音楽を保存し、SurcoでMacまたはWindowsから操作します。"],
         "keywords": "ネットワークSMBサーバードライブWindows",
         "settings": [
           {

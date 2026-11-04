@@ -1168,6 +1168,32 @@
         }
       }
     },
+    "sync": {
+      "title": "Você muda uma vez. Todos os seus programas veem.",
+      "lede": "Abra a faixa pela aba do Apple Music ou do rekordbox, corrija o título, o gênero ou o nome do arquivo e clique em Atualizar etiquetas. O Surco leva a mudança ao Apple Music, ao rekordbox, ao Traktor e ao Engine DJ, e em cada um continua sendo a mesma faixa.",
+      "tabAppleMusic": "Aba Apple Music",
+      "tabRekordbox": "Aba rekordbox",
+      "fieldTitle": "Título",
+      "fieldGenre": "Gênero",
+      "fieldFile": "Nome do arquivo",
+      "button": "Atualizar etiquetas",
+      "saved": "Etiquetas atualizadas",
+      "origin": "origem",
+      "points": {
+        "anyTab": {
+          "title": "De qualquer aba",
+          "text": "Não importa de qual programa você abre a faixa. A mudança sai do Surco e chega aos outros."
+        },
+        "sameTrack": {
+          "title": "A mesma faixa em todos",
+          "text": "Renomeie o arquivo e cada programa aponta para o novo, com suas playlists e cues."
+        },
+        "waits": {
+          "title": "Se estiver aberto, espera",
+          "text": "Um programa aberto recebe a mudança assim que você o fecha. Cada um com a sincronização ativada."
+        }
+      }
+    },
     "cues": {
       "title": "Marque o drop. O resto dos cues se posiciona sozinho.",
       "lede": "Clique onde a faixa explode ou deixe o Marcar automático encontrar. Seu fluxo posiciona os outros cues do mesmo jeito em cada faixa e o Surco os salva no rekordbox, Engine DJ ou Traktor.",

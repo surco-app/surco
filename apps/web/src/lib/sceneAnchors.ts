@@ -5,6 +5,7 @@ export const SCENE_ANCHORS = {
   quality: 'calidad',
   batch: 'exportar',
   replace: 'sustituir',
+  sync: 'sincronizar',
   cues: 'cues',
   review: 'biblioteca',
 } as const
@@ -15,6 +16,7 @@ export const SECTION_VIEWS: Record<keyof typeof SCENE_ANCHORS, SectionLocation> 
   batch: 'home-export',
   cues: 'home-cues',
   replace: 'home-replace',
+  sync: 'home-sync',
   review: 'home-review',
 }
 

@@ -386,3 +386,81 @@ export function gridFrame(t: number): GridFrame {
     cueMs: s < 2.8 ? GRID_DRIFT_MS : s < 4.4 ? null : 0,
   }
 }
+
+/* ---------------------------------------------------------------- 10 · sync */
+
+export interface SyncValues {
+  title: string
+  genre: string
+  file: string
+}
+
+export const SYNC_LIBRARIES = ['Apple Music', 'rekordbox', 'Traktor', 'Engine DJ'] as const
+
+export const SYNC_START: SyncValues = {
+  title: 'The Sun Always Shines (orig ext)',
+  genre: 'Electronic',
+  file: '07 sun always shines.mp3',
+}
+
+export const SYNC_ACT1: SyncValues = {
+  title: 'The Sun Always Shines On TV (Original Extended)',
+  genre: 'Electronic',
+  file: 'Milk Inc. - The Sun Always Shines On TV (Original Extended).mp3',
+}
+
+export const SYNC_ACT2: SyncValues = { ...SYNC_ACT1, genre: 'Trance' }
+
+export const SYNC_SECONDS = 15
+
+export interface SyncFrame {
+  origin: 'appleMusic' | 'rekordbox'
+  fields: SyncValues
+  typing: keyof SyncValues | null
+  pressed: boolean
+  saved: boolean
+  updated: number
+  libraries: SyncValues[]
+}
+
+const typed = (from: string, to: string, start: number, end: number, s: number): string =>
+  s < start ? from : to.slice(0, Math.ceil(clamp((s - start) / (end - start)) * to.length))
+
+const LIBRARY_GAP = 0.45
+
+// The edit happens in Surco on a track opened from one program's tab, and reaches every
+// program only once Update is pressed, one after another as each library is written.
+export function syncFrame(t: number): SyncFrame {
+  const s = clamp(t) * SYNC_SECONDS
+  const second = s >= 7.5
+  const from = second ? SYNC_ACT1 : SYNC_START
+  const to = second ? SYNC_ACT2 : SYNC_ACT1
+  const at = second ? s - 7.5 : s
+  const fields: SyncValues = second
+    ? { ...from, genre: typed(from.genre, to.genre, 0.8, 1.5, at) }
+    : {
+        ...from,
+        title: typed(from.title, to.title, 0.8, 2.4, at),
+        file: typed(from.file, to.file, 2.6, 3.8, at),
+      }
+  const typing: SyncFrame['typing'] = second
+    ? at >= 0.8 && at < 1.5
+      ? 'genre'
+      : null
+    : at >= 0.8 && at < 2.4
+      ? 'title'
+      : at >= 2.6 && at < 3.8
+        ? 'file'
+        : null
+  const pressAt = second ? 2 : 4.2
+  const updated = SYNC_LIBRARIES.filter((_, i) => at >= pressAt + 0.6 + i * LIBRARY_GAP).length
+  return {
+    origin: second ? 'rekordbox' : 'appleMusic',
+    fields,
+    typing,
+    pressed: at >= pressAt && at < pressAt + 0.2,
+    saved: at >= pressAt + 0.2,
+    updated,
+    libraries: SYNC_LIBRARIES.map((_, i) => (i < updated ? to : from)),
+  }
+}

@@ -1168,6 +1168,32 @@
         }
       }
     },
+    "sync": {
+      "title": "Lo cambias una vez. Lo ven todos tus programas.",
+      "lede": "Abre la pista desde la pestaña de Apple Music o de rekordbox, corrige el título, el género o el nombre del archivo y pulsa Actualizar etiquetas. Surco lleva el cambio a Apple Music, rekordbox, Traktor y Engine DJ, y en cada uno sigue siendo la misma pista.",
+      "tabAppleMusic": "Pestaña Apple Music",
+      "tabRekordbox": "Pestaña rekordbox",
+      "fieldTitle": "Título",
+      "fieldGenre": "Género",
+      "fieldFile": "Nombre del archivo",
+      "button": "Actualizar etiquetas",
+      "saved": "Etiquetas actualizadas",
+      "origin": "origen",
+      "points": {
+        "anyTab": {
+          "title": "Desde cualquier pestaña",
+          "text": "Da igual de qué programa abras la pista. El cambio sale de Surco y llega a los demás."
+        },
+        "sameTrack": {
+          "title": "La misma pista en todos",
+          "text": "Cambia el nombre del archivo y cada programa apunta al nuevo, con sus playlists y sus cues."
+        },
+        "waits": {
+          "title": "Si está abierto, espera",
+          "text": "Un programa abierto recibe el cambio en cuanto lo cierras. Cada uno con su sincronización activada."
+        }
+      }
+    },
     "cues": {
       "title": "Marca el drop. El resto de cues se pone solo.",
       "lede": "Haz clic donde rompe la pista, o deja que Auto marcar lo encuentre. Tu flujo coloca los demás cues igual en cada pista y Surco los guarda en rekordbox, Engine DJ o Traktor.",

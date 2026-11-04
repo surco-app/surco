@@ -15,6 +15,7 @@ import Spotlight from './components/Spotlight'
 import CuesScene from './components/scenes/CuesScene'
 import GridScene from './components/scenes/GridScene'
 import ReplaceScene from './components/scenes/ReplaceScene'
+import SyncScene from './components/scenes/SyncScene'
 import Walkthrough from './components/Walkthrough'
 import type { Language } from './i18n'
 import { PAGES } from './lib/nav'
@@ -145,6 +146,13 @@ export default function App() {
             copy="replace"
             points={['anyFormat', 'playlists', 'programs']}
             scene={<ReplaceScene />}
+          />
+          <Spotlight
+            id={SCENE_ANCHORS.sync}
+            view={SECTION_VIEWS.sync}
+            copy="sync"
+            points={['anyTab', 'sameTrack', 'waits']}
+            scene={<SyncScene />}
           />
           <LibraryReview />
         </div>

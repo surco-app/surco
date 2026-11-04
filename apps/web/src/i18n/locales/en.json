@@ -1168,6 +1168,32 @@
         }
       }
     },
+    "sync": {
+      "title": "Change it once. Every program sees it.",
+      "lede": "Open the track from the Apple Music or rekordbox tab, fix the title, the genre or the file name and press Update tags. Surco carries the change to Apple Music, rekordbox, Traktor and Engine DJ, and it stays the same track in each one.",
+      "tabAppleMusic": "Apple Music tab",
+      "tabRekordbox": "rekordbox tab",
+      "fieldTitle": "Title",
+      "fieldGenre": "Genre",
+      "fieldFile": "File name",
+      "button": "Update tags",
+      "saved": "Tags updated",
+      "origin": "source",
+      "points": {
+        "anyTab": {
+          "title": "From any tab",
+          "text": "Whichever program you open the track from, the change leaves Surco and reaches the others."
+        },
+        "sameTrack": {
+          "title": "The same track everywhere",
+          "text": "Rename the file and every program points to the new one, with its playlists and cues."
+        },
+        "waits": {
+          "title": "If it's open, it waits",
+          "text": "A program that is open gets the change as soon as you close it. Each one with its sync turned on."
+        }
+      }
+    },
     "cues": {
       "title": "Mark the drop. The rest of the cues place themselves.",
       "lede": "Click where the track drops, or let Auto mark find it. Your flow places the other cues the same way on every track and Surco saves them to rekordbox, Engine DJ or Traktor.",

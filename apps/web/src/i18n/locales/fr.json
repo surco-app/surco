@@ -1168,6 +1168,32 @@
         }
       }
     },
+    "sync": {
+      "title": "Tu le changes une fois. Tous tes logiciels le voient.",
+      "lede": "Ouvre le morceau depuis l'onglet Apple Music ou rekordbox, corrige le titre, le genre ou le nom du fichier et appuie sur Mettre à jour les étiquettes. Surco porte le changement dans Apple Music, rekordbox, Traktor et Engine DJ, et c'est le même morceau dans chacun.",
+      "tabAppleMusic": "Onglet Apple Music",
+      "tabRekordbox": "Onglet rekordbox",
+      "fieldTitle": "Titre",
+      "fieldGenre": "Genre",
+      "fieldFile": "Nom du fichier",
+      "button": "Mettre à jour les étiquettes",
+      "saved": "Étiquettes mises à jour",
+      "origin": "source",
+      "points": {
+        "anyTab": {
+          "title": "Depuis n'importe quel onglet",
+          "text": "Peu importe le logiciel d'où tu ouvres le morceau. Le changement part de Surco et arrive dans les autres."
+        },
+        "sameTrack": {
+          "title": "Le même morceau partout",
+          "text": "Renomme le fichier et chaque logiciel pointe vers le nouveau, avec ses playlists et ses cues."
+        },
+        "waits": {
+          "title": "S'il est ouvert, il attend",
+          "text": "Un logiciel ouvert reçoit le changement dès que tu le fermes. Chacun avec sa synchronisation activée."
+        }
+      }
+    },
     "cues": {
       "title": "Marque le drop. Le reste des cues se place tout seul.",
       "lede": "Clique là où le morceau décolle, ou laisse Marquage auto le trouver. Ton flux place les autres cues de la même façon sur chaque morceau et Surco les enregistre dans rekordbox, Engine DJ ou Traktor.",
