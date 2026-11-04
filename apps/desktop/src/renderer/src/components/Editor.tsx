@@ -49,6 +49,7 @@ import { useLatest } from '../hooks/useLatest'
 import { useLibraryReveals } from '../hooks/useLibraryReveals'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
 import { usePlaylistsSpec } from '../hooks/useRekordboxPlaylists'
+import { useScrollAffordance } from '../hooks/useScrollAffordance'
 import { useSectionNavigation } from '../hooks/useSectionNavigation'
 import { useCachedSpectrum } from '../hooks/useSpectrogram'
 import { useStableCallback } from '../hooks/useStableCallback'
@@ -394,10 +395,10 @@ export const Editor = memo(function Editor({
   const discogsTokenMissing = discogsToken === '' && searchProviders.includes('discogs')
   const isMulti = (selectedTracks?.length ?? 0) > 1
   const revealIn = useLibraryReveals(item, isMulti ? [] : librarySources)
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const { ref: scrollRef, moreBelow } = useScrollAffordance()
   useLayoutEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = editorPlace.scrollTop
-  }, [])
+  }, [scrollRef])
   const { t: tr, i18n } = useTranslation()
   // A refined search is persisted on the track, so flipping away and back re-seeds
   // the box (and its cached results) instead of reverting to the filename guess.
@@ -1521,10 +1522,11 @@ export const Editor = memo(function Editor({
         <div
           ref={scrollRef}
           data-testid="editor-scroll"
+          data-edge={moreBelow}
           onScroll={(e) => {
             editorPlace.scrollTop = e.currentTarget.scrollTop
           }}
-          className="min-h-0 flex-1 overflow-y-auto p-7"
+          className="min-h-0 flex-1 overflow-y-auto p-7 data-[edge=true]:[mask-image:linear-gradient(to_bottom,black_calc(100%-2.5rem),transparent)]"
         >
           {/* The pinned metadata form opens the "File" phase; the mapped sections
               below label "Audio" and "Output" as the group changes down the list. */}

@@ -2123,6 +2123,29 @@ describe('Editor place across tracks', () => {
   })
 })
 
+describe('Editor scroll edge', () => {
+  function scrolledTo(scroller: HTMLElement, scrollTop: number): void {
+    Object.defineProperty(scroller, 'clientHeight', { configurable: true, value: 300 })
+    Object.defineProperty(scroller, 'scrollHeight', { configurable: true, value: 900 })
+    scroller.scrollTop = scrollTop
+    fireEvent.scroll(scroller)
+  }
+
+  // A hairline over the footer cut the spectrogram off mid-band, as if it ended there. The
+  // content fading into the footer says it carries on below, and only while it does.
+  it('fades the content into the footer while there is more below', () => {
+    renderEditor({ id: 'a' })
+    scrolledTo(screen.getByTestId('editor-scroll'), 0)
+    expect(screen.getByTestId('editor-scroll')).toHaveAttribute('data-edge', 'true')
+  })
+
+  it('clears the fade once the last section is in view', () => {
+    renderEditor({ id: 'a' })
+    scrolledTo(screen.getByTestId('editor-scroll'), 600)
+    expect(screen.getByTestId('editor-scroll')).toHaveAttribute('data-edge', 'false')
+  })
+})
+
 describe('Editor export control', () => {
   // "Output folder", "Beside the original" and "Overwrite" all read "Convert to WAV", so
   // where the file lands showed only once it failed on an unplugged NAS.
