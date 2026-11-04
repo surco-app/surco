@@ -146,7 +146,10 @@ describe('useRetireSuperseded', () => {
     expect(removeTracks).not.toHaveBeenCalled()
   })
 
-  it('marks the source trashed too when the retired file is the row’s own source', async () => {
+  // The row stayed on the file just retired, so the editor, the player and every probe kept
+  // asking for a file that is gone (fileMissing on The Inside, 04/11). It follows the copy
+  // that replaced it, as an in-place export follows its rewritten file.
+  it('moves the row to its converted copy when the retired file is the row’s own source', async () => {
     const source = {
       ...replaced,
       inputPath: replaced.supersededPath,
@@ -157,6 +160,9 @@ describe('useRetireSuperseded', () => {
       expect(updateTrack).toHaveBeenCalledWith('t1', {
         supersededTrashed: true,
         originalTrashed: true,
+        inputPath: '/Users/v/Music/Surco/T - A.wav',
+        fileName: 'T - A',
+        movedFrom: [replaced.supersededPath],
       }),
     )
   })

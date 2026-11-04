@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { retireDecision } from '../lib/autoRetiredFile'
 import { baseName } from '../lib/baseName'
+import { parseFileName } from '../lib/filename'
 import { isMacOS, isWindows } from '../lib/platform'
 import type { TrackItem } from '../types'
 
@@ -53,9 +54,19 @@ export function useRetireSuperseded({
         updateTrack(track.id, { supersededKept: true })
         continue
       }
+      const output = track.outputPath
+      const follows = path === track.inputPath && !!output && output !== path
       const patch: Partial<TrackItem> =
         path === track.inputPath
-          ? { supersededTrashed: true, originalTrashed: true }
+          ? {
+              supersededTrashed: true,
+              originalTrashed: true,
+              ...(follows && {
+                inputPath: output,
+                fileName: parseFileName(output).fileName,
+                movedFrom: [...(track.movedFrom ?? []), path],
+              }),
+            }
           : { supersededTrashed: true }
       const name = baseName(path).replace(/\.[^.]+$/, '')
       const label = track.replacesLabel ?? ''
