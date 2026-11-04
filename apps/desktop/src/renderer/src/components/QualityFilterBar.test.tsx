@@ -615,6 +615,17 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('quality-filter-section-library')).toHaveTextContent('Apple Music')
   })
 
+  it('draws the library buckets with their own glyph, so the selection tick is never mistaken for one', () => {
+    renderBar({ tally: tally({ notInLibrary: 6, inLibrary: 4 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    const paths = (svg: Element): string =>
+      Array.from(svg.querySelectorAll('path'), (p) => p.getAttribute('d')).join(' ')
+    for (const id of ['inLibrary', 'notInLibrary']) {
+      const glyphs = screen.getByTestId(`quality-filter-${id}`).querySelectorAll('svg')
+      expect(paths(glyphs[0])).not.toBe(paths(glyphs[glyphs.length - 1]))
+    }
+  })
+
   it('names the library section after the library the buckets read', () => {
     renderBar({ librarySource: 'engineDj', tally: tally({ notInLibrary: 6, inLibrary: 4 }) })
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
