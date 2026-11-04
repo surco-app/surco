@@ -492,6 +492,7 @@ const programQueues = {
             writing: seratoWriting,
             tracking: tmpManifest,
             rewritten: followEngineSize,
+            seratoOpen: DJ_PROCESSES.serato.isRunning,
           }),
         repoint: async () => [],
         nodeStamps: async () => ({}),

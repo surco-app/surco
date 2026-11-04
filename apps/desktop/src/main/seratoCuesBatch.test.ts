@@ -437,6 +437,44 @@ describe('a Serato save for a file Surco is converting', () => {
     expect(readFileSync(file)).not.toEqual(before)
   }, 60000)
 
+  it('stays queued without touching the file when Serato opens while the file is being written', async () => {
+    const file = wav()
+    const read = await seen(file)
+    const before = readFileSync(file)
+    let open = true
+    const idle = { isRunning: async () => false }
+    const pq = createProgramQueue(
+      {
+        program: 'serato',
+        appliedChannel: 'serato:cueQueueApplied',
+        queue: {
+          store: { read: () => null, write: () => {}, setAside: () => {} },
+          collection: () => '/Users/dj/Music/_Serato_',
+          applyBatch: (_c, ops, ensure) =>
+            applySeratoCuesBatch(ops, { ensureClosed: ensure, seratoOpen: async () => open }),
+          repoint: async () => [],
+          nodeStamps: async () => ({}),
+          onChange: () => {},
+          addsTracks: false,
+        },
+      },
+      {
+        broadcast: vi.fn(),
+        settled: vi.fn(),
+        moments: { begin: vi.fn() },
+        serial: (task) => task(),
+        processes: { rekordbox: idle, engine: idle, traktor: idle, serato: idle },
+      },
+    )
+    pq.queue.enqueue([op(file, read, moved(read))])
+    expect(await pq.queue.apply(closed)).toEqual({ status: 'refused', reason: 'cancelled' })
+    expect(pq.queue.isEmpty()).toBe(false)
+    expect(readFileSync(file)).toEqual(before)
+    open = false
+    expect(await pq.queue.apply(closed)).toMatchObject({ status: 'applied', tracks: 1 })
+    expect(readFileSync(file)).not.toEqual(before)
+  }, 60000)
+
   it('leaves a file a conversion took while Serato was being closed', async () => {
     const file = wav()
     const read = await seen(file)

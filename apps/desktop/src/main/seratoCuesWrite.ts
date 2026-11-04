@@ -22,6 +22,7 @@ import { runInWorker } from './worker'
 export interface SeratoWriteDeps {
   tracking?: TmpTracking
   rewritten?: Rewritten
+  seratoOpen?: () => Promise<boolean>
 }
 
 const sameBytes = (a: Uint8Array | null, b: Uint8Array): boolean =>
@@ -31,8 +32,8 @@ export async function writeSeratoCues(
   file: string,
   wanted: SeratoCue[],
   expectedFingerprint: string,
-  { tracking, rewritten }: SeratoWriteDeps = {},
-): Promise<'written' | 'changed' | 'failed'> {
+  { tracking, rewritten, seratoOpen }: SeratoWriteDeps = {},
+): Promise<'written' | 'changed' | 'failed' | 'cancelled'> {
   const tmp = convertTmpPath(file, extname(file))
   tracking?.track(tmp)
   let archived: TrashEntry | null = null
@@ -59,6 +60,11 @@ export async function writeSeratoCues(
       regardlessOfPolicy: true,
     })
     if (!archived && hasOriginalKeeper()) throw new Error(`no backup of ${file}`)
+    if (await seratoOpen?.()) {
+      if (archived) await discardBackup(archived).catch(() => undefined)
+      await dropTemp(tmp, tracking)
+      return 'cancelled'
+    }
     await renameWithRetry(tmp, file)
     tracking?.untrack(tmp)
     rewritten?.(file, fromBytes)
@@ -96,7 +102,7 @@ const onSeratoClock = (cues: SeratoCue[], lead: number): SeratoCue[] =>
 async function applySeratoOp(
   op: QueueOp,
   deps: SeratoWriteDeps,
-): Promise<{ outcome: OpOutcome; wrote: boolean }> {
+): Promise<{ outcome: OpOutcome; wrote: boolean } | 'cancelled'> {
   const refused = (
     code: 'cues-changed' | 'cues-invalid' | 'cues-write-failed' | 'cues-old-block',
   ) => ({
@@ -134,6 +140,7 @@ async function applySeratoOp(
     return refused('cues-invalid')
   }
   const result = await writeSeratoCues(file, cues, op.fingerprint, deps)
+  if (result === 'cancelled') return result
   if (result === 'changed') return refused('cues-changed')
   if (result === 'failed') return refused('cues-write-failed')
   return applied
@@ -165,7 +172,9 @@ export async function applySeratoCuesBatch(
     const file = op.kind === 'cues' ? seratoFileOf(op.contentId) : null
     if (file) deps.writing?.mark(file)
     try {
-      results.push(await applySeratoOp(op, deps))
+      const result = await applySeratoOp(op, deps)
+      if (result === 'cancelled') return { ok: false, reason: 'cancelled' }
+      results.push(result)
     } finally {
       if (file) deps.writing?.clear(file)
     }

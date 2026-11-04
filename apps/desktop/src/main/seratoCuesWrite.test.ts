@@ -42,7 +42,7 @@ import {
   SERATO_WAV,
 } from '../shared/seratoMarkersFixture'
 import { encodeBase91 } from './base91'
-import { configureOriginalKeeper } from './originalKeeper'
+import { configureBackupDiscarder, configureOriginalKeeper } from './originalKeeper'
 import { seratoLeadOfFile } from './seratoClock'
 import { seratoCueSource } from './seratoCueSource'
 import { writeSeratoCues } from './seratoCuesWrite'
@@ -585,6 +585,28 @@ describe('a write that cannot keep a way back', () => {
       regardlessOfPolicy: true,
     })
     expect(rewritten).toHaveBeenCalledWith(file, size)
+  }, 60000)
+
+  it('leaves the file, its temp copy and its backup alone when Serato opens before the file is replaced', async () => {
+    const file = track(FORMATS[0])
+    const before = readFileSync(file)
+    configureOriginalKeeper(async () => ({ id: 'b1' }) as never)
+    const discarder = vi.fn(async () => undefined)
+    configureBackupDiscarder(discarder)
+    const tracking = { track: vi.fn(), untrack: vi.fn() }
+    const seratoOpen = vi.fn(async () => true)
+    try {
+      expect(
+        await writeSeratoCues(file, WANTED, await fingerprintOf(file), { tracking, seratoOpen }),
+      ).toBe('cancelled')
+    } finally {
+      configureBackupDiscarder(null)
+    }
+    const [tmp] = tracking.track.mock.calls[0]
+    expect(existsSync(tmp)).toBe(false)
+    expect(readFileSync(file)).toEqual(before)
+    expect(discarder).toHaveBeenCalledWith({ id: 'b1' })
+    expect(seratoOpen).toHaveBeenCalledTimes(1)
   }, 60000)
 
   it('fails and leaves the file as it was when the backup was refused', async () => {
