@@ -1794,6 +1794,25 @@ describe('CuesSection maximized grid', () => {
     expect(bars()).toContain(2000)
   })
 
+  it('gives the grid a row of its own between the zoomed wave and the deck, with how far it sits from the beats beside its BPM', async () => {
+    setup(null, READ, { rekordboxGridFit: fitAt(454) })
+    await maximize()
+    await waitFor(() => expect(screen.getByTestId('cues-grid-here')).toBeInTheDocument())
+    const row = screen.getByTestId('cues-grid-strip')
+    expect(row).toHaveTextContent('Grid')
+    for (const id of ['cues-grid', 'cues-grid-bpm', 'cues-grid-here', 'cues-grid-end'])
+      expect(row).toContainElement(screen.getByTestId(id))
+    expect(screen.getByTestId('cues-toolbar')).not.toContainElement(
+      screen.getByTestId('cues-grid-here'),
+    )
+    expect(screen.getByTestId('cues-deck')).not.toContainElement(screen.getByTestId('cues-grid'))
+    const follows = (a: string, b: string) =>
+      screen.getByTestId(a).compareDocumentPosition(screen.getByTestId(b)) &
+      Node.DOCUMENT_POSITION_FOLLOWING
+    expect(follows('cue-detail', 'cues-grid-strip')).toBeTruthy()
+    expect(follows('cues-grid-strip', 'cues-deck')).toBeTruthy()
+  })
+
   it('has no grid row in the small editor', async () => {
     setup()
     await ready()

@@ -197,18 +197,4 @@ describe('CueDeck', () => {
     expect(play.className).toContain('hover:bg-[var(--color-line-strong)]')
     expect(play.querySelector('svg')).toHaveAttribute('fill', 'currentColor')
   })
-
-  it('puts the grid row in the same line as the cue pads, between the CALL controls and the jump size', () => {
-    setup({ gridControls: <span data-testid="grid-slot" /> })
-    const slot = screen.getByTestId('grid-slot')
-    const remove = screen.getByTestId('cues-memory-remove')
-    const jump = screen.getByTestId('cues-jump')
-    expect(remove.compareDocumentPosition(slot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(slot.compareDocumentPosition(jump) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-  })
-
-  it('leaves the line as it was when there is no grid row, as in the small editor', () => {
-    setup()
-    expect(screen.queryByTestId('cues-deck-grid')).not.toBeInTheDocument()
-  })
 })
