@@ -27,6 +27,7 @@ import {
   duplicateLibraryDeps,
   flushConversionBatch,
   type LibraryHost,
+  librariesKeepingOriginal,
   rekordboxCollectionPath,
   repointEngineQueued,
   repointRekordbox,
@@ -40,17 +41,12 @@ import { registerListReviewIpc } from '../main/listReviewIpc'
 import { listReviewDeps } from '../main/listReviewWiring'
 import { createMediaAccess } from '../main/mediaAccess'
 import { musicReviewLog } from '../main/musicReviewLog'
-import { beginNmlBatch, recordedNmlPatch, redirectNmlPatch } from '../main/nmlBatch'
+import { beginNmlBatch, redirectNmlPatch } from '../main/nmlBatch'
 import { configureBackupStore } from '../main/originalKeeper'
 import { createOutputReservations } from '../main/outputReservations'
 import { runProcessTrack } from '../main/processTrack'
 import { trashRecoverably } from '../main/recoverableTrash'
-import {
-  beginRekordboxBatch,
-  recordedRekordboxRepoint,
-  redirectRekordboxRepoint,
-  stackRepoint,
-} from '../main/rekordboxBatch'
+import { beginRekordboxBatch, redirectRekordboxRepoint, stackRepoint } from '../main/rekordboxBatch'
 import { readNodeStamps } from '../main/rekordboxMasterXml'
 import { applyRekordboxBatch } from '../main/rekordboxPlaylistWrite'
 import { isRekordboxRunning } from '../main/rekordboxProcess'
@@ -75,6 +71,7 @@ import {
   musicReaders,
 } from '../main/verifyMusic'
 import type { FlushOutcome, TraktorWrite } from '../main/verifyRegistry'
+import { withRecordedRun } from '../main/verifyRun'
 import { onWatchedFilesChanged } from '../main/watchedFiles'
 import { dirRoots, FolderWatcher } from '../main/watcher'
 import type { Api } from '../preload/api'
@@ -128,6 +125,7 @@ import type {
   Release,
   SearchResult,
   Settings,
+  TrackMetadata,
 } from '../shared/types'
 import type { Verification } from '../shared/verification'
 import { ipcHandlers } from './electronFake'
@@ -291,6 +289,20 @@ function processTrackInMain(
       withMusic ? appleMusic.updateInAppleMusic(pid, meta, coverPath) : noMusic(),
     relinkAppleMusicEntry: (pid, path) =>
       withMusic ? appleMusic.relinkAppleMusicEntry(pid, path) : noMusic(),
+    ...(withMusic && {
+      findAppleMusicEntry: async (
+        path: string,
+        meta: TrackMetadata,
+        launch?: boolean | 'ifHeld',
+      ) => {
+        const own = (await readTags(path)).title
+        const titles = [...new Set([meta.title, own].filter(Boolean))]
+        return appleMusic.musicEntryForFile(path, titles, launch !== false)
+      },
+      refreshAppleMusicEntry: (pid: string) => appleMusic.refreshAppleMusicEntry(pid),
+    }),
+    librariesKeepingOriginal: (path, target) =>
+      librariesKeepingOriginal(path, target, { traktorRead: traktorWritePath }),
     isEngineDjRunning,
     addToEngineDj: (target, meta, coverPath, replaces) => {
       const s = getSettings()
@@ -367,12 +379,7 @@ function processTrackInMain(
           (p) => realpathSync(p),
         )
       },
-      registerVerification: (entry) =>
-        verify.registry.register({
-          ...entry,
-          traktorPatch: recordedNmlPatch(entry.source),
-          cueShiftMs: recordedRekordboxRepoint(entry.to)?.audio?.cueShiftMs,
-        }),
+      registerVerification: (entry) => verify.registry.register(withRecordedRun(entry)),
       realPath: (p: string) => realpathSync(p),
     }),
   })

@@ -377,6 +377,32 @@ describe('flushConversionBatch with Engine DJ open', () => {
 
   // La cola solo guarda los cambios cuando la razón es la suya de "app abierta". Con la de
   // Engine tal cual, un Engine abierto justo antes de escribir tiraba la cola entera.
+  it('writes the names a conversion changed once the queued move lands, so a run made while Engine was open still renames the track', async () => {
+    WRITERS.updateEngineTags.mockClear()
+    const named = [{ ...REPOINTS[0], names: { title: { from: 'Old', to: 'New' } } }]
+    await repointEngineQueued('/e/Engine Library', named, sessions)
+    expect(WRITERS.updateEngineTags).toHaveBeenCalledWith(
+      '/e/Engine Library',
+      [
+        expect.objectContaining({
+          path: '/m/a.flac',
+          fields: { title: { from: 'Old', to: 'New' } },
+        }),
+      ],
+      expect.anything(),
+    )
+  })
+
+  it('writes no names for a move that is still waiting', async () => {
+    WRITERS.updateEngineTags.mockClear()
+    WRITERS.repointEngineTracks.mockResolvedValueOnce([
+      { written: false, reason: 'engine-running' },
+    ] as never)
+    const named = [{ ...REPOINTS[0], names: { title: { from: 'Old', to: 'New' } } }]
+    await repointEngineQueued('/e/Engine Library', named, sessions)
+    expect(WRITERS.updateEngineTags).not.toHaveBeenCalled()
+  })
+
   it('names Engine DJ being open the way the queue keeps waiting on', async () => {
     WRITERS.repointEngineTracks.mockResolvedValueOnce([
       { written: false, reason: 'engine-running' },

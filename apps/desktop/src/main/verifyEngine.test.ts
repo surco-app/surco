@@ -135,6 +135,35 @@ describe('snapshotEngineRow', () => {
 })
 
 describe('checkEngine', () => {
+  // A conversion that changed the title reaches Engine only if its row took the new one: a row
+  // still on the old title is a library showing the DJ a name the file no longer has.
+  it('a moved row still showing the title the conversion changed is a mismatch', () => {
+    const dir = library()
+    write(dir, "UPDATE Track SET title = 'Old Title'")
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    expect(
+      checkOne(dir, { ...expectFor(before), names: { title: { from: 'Old Title', to: 'New' } } }),
+    ).toEqual([
+      {
+        place: 'engine',
+        state: 'mismatch',
+        detail: { key: 'engineNameStale', params: { value: 'Old Title' } },
+      },
+    ])
+  })
+
+  it('a row the DJ retitled by hand in Engine is left as theirs, not a mismatch', () => {
+    const dir = library()
+    write(dir, "UPDATE Track SET title = 'My Own Edit'")
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    expect(
+      checkOne(dir, { ...expectFor(before), names: { title: { from: 'Old Title', to: 'New' } } })[0]
+        .state,
+    ).toBe('ok')
+  })
+
   // The whole point of a repoint: the same row, now on the WAV, with every cue, beat and
   // loop the DJ set still there.
   it('a moved row with identical performance blobs is ok', () => {

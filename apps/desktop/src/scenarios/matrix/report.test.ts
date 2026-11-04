@@ -211,11 +211,11 @@ describe('the matrix report', () => {
       '| C-aiff-wav',
     ])
     expect(rows[0]).toBe(
-      '| C-flac-aiff | FLAC→AIFF | carpeta | todos | cerrado | ✓ | ✓ | ✓ | ✗¹ | ✓ | ✓ | ✓ | ✓ | ✓ | ok | ✗ |',
+      '| C-flac-aiff | FLAC→AIFF | carpeta | todos | cerrado | ✓ | ✓ | ✓ | ✗¹ | ✓ | ✓ | ✓ | ✓ | ✓ | – | ok | ✗ |',
     )
     expect(rows[2]).toContain('| ✗² |')
-    expect(rows[2]).toContain('| ✗³ | mismatch | ✓ |')
-    expect(rows[3]).toContain('| mismatch | ✗ |')
+    expect(rows[2]).toContain('| ✗³ | – | mismatch | ✓ |')
+    expect(rows[3]).toContain('| – | mismatch | ✗ |')
     const notes = lines.filter((line) => /^[¹²³⁴⁵⁶⁷⁸⁹⁰]+ /.test(line))
     expect(notes).toEqual([
       `¹ ${cuesMoved.detail}`,
@@ -247,7 +247,7 @@ describe('the matrix report', () => {
       .split('\n')
       .find((line) => line.startsWith('| C-flac-aiff'))
     expect(row).toBe(
-      '| C-flac-aiff | FLAC→AIFF | carpeta | todos | cerrado | ✗¹ | – | ✓ | ✓ | ✓ | – | – | ✓ | ✓ | mismatch | ✓ |',
+      '| C-flac-aiff | FLAC→AIFF | carpeta | todos | cerrado | ✗¹ | – | ✓ | ✓ | ✓ | – | – | ✓ | ✓ | – | mismatch | ✓ |',
     )
   })
 
@@ -258,7 +258,7 @@ describe('the matrix report', () => {
       .split('\n')
       .find((line) => line.startsWith('| D16'))
     expect(row).toBe(
-      '| D16 | AIFF→WAV | Music | Music | cerrado | ✓ | ✓ | ✓ | – | ✓ | ✓ | ✓ | ✓ | ✓ | ok | ✓ |',
+      '| D16 | AIFF→WAV | Music | Music | cerrado | ✓ | ✓ | ✓ | – | ✓ | ✓ | ✓ | ✓ | ✓ | – | ok | ✓ |',
     )
   })
 

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { extname } from 'node:path'
+import type { TagChange } from '../shared/types'
 import type { PlaceCheck, VerifyDetailKey } from '../shared/verification'
 import {
   decodeBeatGrid,
@@ -43,6 +44,7 @@ export interface EngineExpect {
   shift?: EngineShift
   // The size the write expected the row to hold, for a rewrite in place.
   fromBytes?: number
+  names?: Partial<Record<'title' | 'artist' | 'album' | 'genre', TagChange>>
 }
 
 interface Row {
@@ -258,8 +260,13 @@ function judge(
       ? check('mismatch', 'engineCuesMisplaced', { field: late })
       : check('mismatch', 'engineSizeDiffers')
   }
-  if (typeof before !== 'object')
-    return check('ok', 'engineOk', { format: formatOf(extname(e.to)) })
+  const ok = (): PlaceCheck => {
+    const stale = staleName(db, row.id, e.names)
+    return stale === null
+      ? check('ok', 'engineOk', { format: formatOf(extname(e.to)) })
+      : check('mismatch', 'engineNameStale', { value: stale })
+  }
+  if (typeof before !== 'object') return ok()
 
   // With the samples kept, Engine's repoint moves only the file columns, so a cue, beat or
   // loop that changed is one the DJ set and lost. A trim or a resample moves them, checked
@@ -271,5 +278,19 @@ function judge(
   if (changed) return check('mismatch', 'enginePerformanceChanged', { field: changed })
   const misplaced = misplacedField(db, row.id, before, e.shift, now)
   if (misplaced) return check('mismatch', 'engineCuesMisplaced', { field: misplaced })
-  return check('ok', 'engineOk', { format: formatOf(extname(e.to)) })
+  return ok()
+}
+
+function staleName(db: EngineDb, id: number, names: EngineExpect['names']): string | null {
+  const changed = Object.entries(names ?? {}).filter(([, c]) => c && c.from !== c.to)
+  if (changed.length === 0) return null
+  const row = db.prepare('SELECT title, artist, album, genre FROM Track WHERE id = ?').get(id) as
+    | Record<string, string | null>
+    | undefined
+  for (const [field, change] of changed) {
+    const now = String(row?.[field] ?? '').normalize('NFC')
+    if (change && now === change.from.normalize('NFC') && now !== change.to.normalize('NFC'))
+      return now
+  }
+  return null
 }

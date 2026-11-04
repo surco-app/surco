@@ -3122,11 +3122,13 @@
       "engineCuesMisplaced_quickCues": "Os cues do Engine DJ não acompanharam o áudio",
       "engineCuesMisplaced_beatData": "O grid do Engine DJ não acompanhou o áudio",
       "engineCuesMisplaced_loops": "Os loops do Engine DJ não acompanharam o áudio",
+      "engineNameStale": "O Engine DJ ainda mostra “{{value}}”",
       "engineUnreadable": "Não foi possível verificar o Engine DJ",
       "traktorStillOld": "O Traktor continua apontando para o {{format}}",
       "traktorMissing": "A faixa não está no Traktor",
       "traktorAmbiguous": "O Traktor tem {{count}} entradas desta faixa",
       "traktorCuesChanged": "Os cues mudaram no Traktor",
+      "traktorNameStale": "O Traktor ainda mostra “{{value}}”",
       "traktorUnreadable": "Não foi possível verificar o Traktor"
     },
     "retry": "Tentar de novo",

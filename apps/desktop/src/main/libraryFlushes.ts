@@ -619,6 +619,17 @@ export async function repointEngineQueued(
   sessions: Pick<Sessions, 'engine'>,
 ): Promise<LibraryRepointResult[]> {
   const results = await repointEngine(libraryDir, list, sessions)
+  const named = list.filter((repoint, i) => repoint.names && results[i]?.written)
+  if (named.length > 0)
+    await updateEngineTags(
+      libraryDir,
+      named.map((repoint) => ({
+        path: repoint.to,
+        fields: repoint.names ?? {},
+        realPath: (p: string) => realpathSync(p),
+      })),
+      { sessionBackup: (path) => sessions.engine.ensure(path) },
+    ).catch((e) => log.warn('Engine DJ names after a queued move failed', e))
   return results.map((result) =>
     !result.written && result.reason === ENGINE_KEYS.runningReason
       ? { written: false, reason: 'rekordbox-running' }

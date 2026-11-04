@@ -1,6 +1,8 @@
 import { extname } from 'node:path'
+import type { TagChange } from '../shared/types'
 import type { PlaceCheck, VerifyDetailKey } from '../shared/verification'
 import {
+  attr,
   cuePlaces,
   entryCues,
   findEntries,
@@ -17,6 +19,7 @@ export interface TraktorExpect {
   patch: NmlPatch
   before: string | null
   cues?: string | null
+  names?: NmlPatch['tags']
 }
 
 const check = (
@@ -51,7 +54,47 @@ export function checkTraktor(
     const e = last.get(k)
     return e && entryCues(nml.slice(e.start, e.end))
   }
-  return list.map((e) => judge(at, atAnyCase, cuesAt, e, bootVolume))
+  const blockAt = (k: string) => {
+    const e = last.get(k)
+    return e && nml.slice(e.start, e.end)
+  }
+  return list.map((e) => {
+    const result = judge(at, atAnyCase, cuesAt, e, bootVolume)
+    if (result?.state !== 'ok' && result !== null) return result
+    const names = e.names ?? e.patch.tags
+    const stale = staleName(blockAt(entryKey(e, bootVolume)), names)
+    if (stale !== null) return check('mismatch', 'traktorNameStale', { value: stale })
+    return result ?? (names && e.before !== null ? sameNameOk(e) : null)
+  })
+}
+
+const NAME_SPOTS: Record<'title' | 'artist' | 'album' | 'genre', [RegExp, string]> = {
+  title: [/<ENTRY\b[^>]*>/, 'TITLE'],
+  artist: [/<ENTRY\b[^>]*>/, 'ARTIST'],
+  album: [/<ALBUM\b[^>]*>/, 'TITLE'],
+  genre: [/<INFO\b[^>]*>/, 'GENRE'],
+}
+
+function entryKey(e: TraktorExpect, bootVolume: string): string {
+  const { patch, before } = e
+  return locationKey(patch.volume || bootVolume, patch.dir, patch.newFile ?? before ?? patch.file)
+}
+
+function staleName(block: string | undefined, tags: NmlPatch['tags']): string | null {
+  if (!block || !tags) return null
+  for (const [field, change] of Object.entries(tags) as [keyof typeof NAME_SPOTS, TagChange][]) {
+    if (!change || change.from === change.to) continue
+    const [spot, name] = NAME_SPOTS[field]
+    const tag = block.match(spot)?.[0]
+    if (!tag) continue
+    const now = attr(tag, name).normalize('NFC')
+    if (now === change.from.normalize('NFC') && now !== change.to.normalize('NFC')) return now
+  }
+  return null
+}
+
+function sameNameOk(e: TraktorExpect): PlaceCheck {
+  return check('ok', 'traktorOk', { format: formatOf(extname(e.before ?? e.patch.file)) })
 }
 
 function judge(

@@ -95,12 +95,14 @@ const SENT: Record<VerifyDetailKey, CheckDetail['params'][]> = {
   engineSizeStaleCues: [{ field: 'quickCues' }, { field: 'beatData' }, { field: 'loops' }],
   enginePerformanceChanged: [{ field: 'quickCues' }, { field: 'beatData' }, { field: 'loops' }],
   engineCuesMisplaced: [{ field: 'quickCues' }, { field: 'beatData' }, { field: 'loops' }],
+  engineNameStale: [{ value: 'Old Title' }],
   engineUnreadable: [undefined],
   traktorOk: [{ format: 'WAV' }],
   traktorStillOld: [{ format: 'AIFF' }],
   traktorMissing: [undefined],
   traktorAmbiguous: [{ count: 2 }],
   traktorCuesChanged: [undefined],
+  traktorNameStale: [{ value: 'Old Title' }],
   traktorUnreadable: [undefined],
 }
 

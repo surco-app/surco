@@ -29,6 +29,7 @@ const INVARIANTS: InvariantName[] = [
   'cover',
   'unique',
   'collateral',
+  'names',
 ]
 
 const INVARIANT_NAME: Record<InvariantName, string> = {
@@ -41,6 +42,7 @@ const INVARIANT_NAME: Record<InvariantName, string> = {
   cover: 'carátula',
   unique: 'únicos',
   collateral: 'colateral',
+  names: 'nombres',
 }
 
 const ORIGIN_SHORT: Record<Origin, string> = {
@@ -167,6 +169,7 @@ const superscript = (n: number): string =>
 
 const applies = (o: CellOutcome, invariant: InvariantName): boolean =>
   !(invariant === 'cues' && o.cell.programs === 'music') &&
+  !(invariant === 'names' && !o.cell.edit?.title) &&
   !(FILE_JUDGED.includes(invariant) && !o.fileExists)
 
 const pad = (n: number): string => String(n).padStart(2, '0')

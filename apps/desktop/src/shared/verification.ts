@@ -53,12 +53,14 @@ export const VERIFY_DETAIL_KEYS = [
   'engineSizeStaleCues',
   'enginePerformanceChanged',
   'engineCuesMisplaced',
+  'engineNameStale',
   'engineUnreadable',
   'traktorOk',
   'traktorStillOld',
   'traktorMissing',
   'traktorAmbiguous',
   'traktorCuesChanged',
+  'traktorNameStale',
   'traktorUnreadable',
 ] as const
 

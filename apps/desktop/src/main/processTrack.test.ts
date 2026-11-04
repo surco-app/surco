@@ -1773,6 +1773,36 @@ describe('runProcessTrack — Apple Music', () => {
     expect(deps.refreshAppleMusicEntry).toHaveBeenCalledWith('lib-9')
   })
 
+  // The entry the rewrite moved is judged like any Music entry: one that never followed the
+  // file read as done, since only a Music step was ever checked.
+  it('checks that the Music entry it followed now plays the renamed file with the new tags', async () => {
+    const deps = mac({ overwriteOriginal: true, addToAppleMusic: false })
+    deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))
+    deps.refreshAppleMusicEntry = vi.fn(async () => {})
+    const result = await runProcessTrack(
+      job({ meta: { title: 'New', artist: 'A' } as TrackMetadata }),
+      deps,
+    )
+
+    expect(deps.verifyMusic).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pid: 'lib-9',
+        file: '/in/Artist - Title.aiff',
+        meta: expect.objectContaining({ title: 'New', artist: 'A' }),
+      }),
+      expect.anything(),
+    )
+    expect(result.verification?.checks.some((c) => c.place === 'appleMusic')).toBe(true)
+  })
+
+  it('checks no Music entry when the rewrite found none to follow', async () => {
+    const deps = mac({ overwriteOriginal: true, addToAppleMusic: false })
+    deps.findAppleMusicEntry = vi.fn(async () => undefined)
+    await runProcessTrack(job(), deps)
+
+    expect(deps.verifyMusic).not.toHaveBeenCalled()
+  })
+
   it('has Music reread a renamed file after pointing its entry at it', async () => {
     const deps = mac({ overwriteOriginal: true, addToAppleMusic: false })
     deps.findAppleMusicEntry = vi.fn(async () => ({ persistentId: 'lib-9', label: 'A - Old' }))

@@ -158,7 +158,7 @@ import { createMoments } from './moments'
 import { isIssuedPair } from './musicDuplicates'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
-import { beginNmlBatch, foldNmlBatch, recordedNmlPatch, redirectNmlPatch } from './nmlBatch'
+import { beginNmlBatch, foldNmlBatch, redirectNmlPatch } from './nmlBatch'
 import { filesFromArgv, routeOpenedFile } from './openedFiles'
 import { configureBackupStore } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
@@ -172,7 +172,6 @@ import {
   attachPlaylists,
   beginRekordboxBatch,
   foldRekordboxBatch,
-  recordedRekordboxRepoint,
   redirectRekordboxRepoint,
   rekordboxBatchOpen,
   stackRepoint,
@@ -254,6 +253,7 @@ import {
   musicReaders,
 } from './verifyMusic'
 import type { FlushOutcome, TraktorWrite } from './verifyRegistry'
+import { withRecordedRun } from './verifyRun'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
 import { loadWindowState, resolveWindowBounds, saveWindowState } from './windowState'
@@ -1911,14 +1911,7 @@ function registerIpc(): void {
         )
       },
       // The Traktor patch is recorded inside the conversion; the job never sees it.
-      registerVerification: (entry) =>
-        verifyRegistry.register({
-          ...entry,
-          traktorPatch: recordedNmlPatch(entry.source),
-          cueShiftMs: recordedRekordboxRepoint(entry.to)?.audio?.cueShiftMs,
-          engineShift: recordedRekordboxRepoint(entry.to)?.engineShift,
-          fromBytes: recordedRekordboxRepoint(entry.to)?.fromBytes,
-        }),
+      registerVerification: (entry) => verifyRegistry.register(withRecordedRun(entry)),
       realPath: (p) => realpathSync(p),
       // Music exists only on macOS, where the Music step is the only caller.
       verifyMusic:
