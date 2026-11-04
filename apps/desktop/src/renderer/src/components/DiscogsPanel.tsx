@@ -342,7 +342,10 @@ export const DiscogsPanel = memo(function DiscogsPanel({
           >
             <ResultThumb src={r.thumb} />
             <span className="min-w-0 flex-1">
-              <span data-fit className="block truncate text-sm leading-snug">
+              <span
+                data-fit
+                className="block truncate text-sm font-semibold leading-snug tracking-[-0.01em]"
+              >
                 {r.title}
               </span>
               {/* Origin, suggestion and release facts share one line under the title.
@@ -464,13 +467,11 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                         <span
                           data-fit
                           title={fullTitle}
-                          className="min-w-0 flex-1 truncate text-sm font-medium text-fg"
+                          className="min-w-0 flex-1 truncate text-sm text-fg"
                         >
                           {trackDisplayTitle(t)}
                           {ownArtist && (
-                            <span className="block truncate text-xs font-normal text-fg-dim">
-                              {ownArtist}
-                            </span>
+                            <span className="block truncate text-xs text-fg-dim">{ownArtist}</span>
                           )}
                         </span>
                         {/* The suggestion mark mirrors the track list's match sparkle
