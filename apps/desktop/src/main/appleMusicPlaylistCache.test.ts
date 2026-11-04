@@ -13,10 +13,12 @@ import { join } from 'node:path'
 import { app } from 'electron'
 import type { AppleMusicPlaylistTracks } from '../shared/types'
 import {
+  derivedPlaylistCache,
   loadPlaylistCache,
   loadPlaylistListCache,
   savePlaylistCache,
   savePlaylistListCache,
+  savePlaylistMembers,
 } from './appleMusicPlaylistCache'
 
 afterAll(() => rmSync(app.getPath('userData'), { recursive: true, force: true }))
@@ -73,5 +75,59 @@ describe('the playlist list', () => {
     mkdirSync(join(file, '..'), { recursive: true })
     writeFileSync(file, '{"not":"a list"}')
     expect(loadPlaylistListCache()).toBeNull()
+  })
+})
+
+// A playlist opened for the first time had nothing to show until Music resolved each of its
+// files on the NAS: 2.5-4 s of an empty column while another playlist was loading (measured
+// 04/11). Which tracks it holds is cheap to know; the rest is already in the library's read.
+describe('a playlist never read whole', () => {
+  const LIBRARY = 'AAAAAAAAAAAAAAA1'
+  const library: AppleMusicPlaylistTracks = {
+    paths: ['/m/a.wav', '/m/b.wav', '/m/c.wav'],
+    persistentIds: {
+      '/m/a.wav': '000000000000000A',
+      '/m/b.wav': '000000000000000B',
+      '/m/c.wav': '000000000000000C',
+    },
+    meta: { '/m/a.wav': { grouping: 'Bases' }, '/m/c.wav': { year: '1999' } },
+    missing: 0,
+    total: 3,
+  }
+
+  function withLibrary(): void {
+    savePlaylistListCache([{ persistentId: LIBRARY, name: 'Music', count: 3, library: true }])
+    savePlaylistCache(LIBRARY, library)
+  }
+
+  it('is built from the tracks it holds, in its own order, out of the library read', () => {
+    withLibrary()
+    savePlaylistMembers({ BBBBBBBBBBBBBBB2: ['000000000000000C', '000000000000000A'] })
+
+    expect(derivedPlaylistCache('BBBBBBBBBBBBBBB2')).toEqual({
+      paths: ['/m/c.wav', '/m/a.wav'],
+      persistentIds: { '/m/c.wav': '000000000000000C', '/m/a.wav': '000000000000000A' },
+      meta: { '/m/c.wav': { year: '1999' }, '/m/a.wav': { grouping: 'Bases' } },
+      missing: 0,
+      total: 2,
+    })
+  })
+
+  // A streaming row has no file in the library read; it is counted, as a whole read counts it,
+  // so the "22 of 24" the column shows is right from the first paint.
+  it('counts a track the library read holds no file for as missing', () => {
+    withLibrary()
+    savePlaylistMembers({ BBBBBBBBBBBBBBB2: ['000000000000000B', 'FFFFFFFFFFFFFFFF'] })
+
+    expect(derivedPlaylistCache('BBBBBBBBBBBBBBB2')).toMatchObject({
+      paths: ['/m/b.wav'],
+      missing: 1,
+      total: 2,
+    })
+  })
+
+  it('is nothing when the membership or the library read is not known', () => {
+    savePlaylistMembers({})
+    expect(derivedPlaylistCache('CCCCCCCCCCCCCCC3')).toBeNull()
   })
 })

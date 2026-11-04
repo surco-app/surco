@@ -300,6 +300,41 @@ export async function readLibraryPlaylist(persistentId: string): Promise<AppleMu
   return parsePlaylistTracks(stdout)
 }
 
+// Which tracks every playlist holds, by persistent ID, from the library database: no file is
+// resolved, which is what made reading a playlist off a NAS slow.
+export function buildPlaylistMembersScript(): string {
+  return [
+    "ObjC.import('iTunesLibrary')",
+    "const hex = (n) => BigInt(n).toString(16).toUpperCase().padStart(16, '0')",
+    "const lib = $.ITLibrary.libraryWithAPIVersionError('1.0', null)",
+    'const lists = lib.allPlaylists',
+    'const rows = []',
+    'for (let i = 0; i < lists.count; i++) {',
+    '  const p = lists.objectAtIndex(i)',
+    "  const ids = ObjC.deepUnwrap(p.items.valueForKeyPath('persistentID.description')) || []",
+    "  rows.push(hex(p.persistentID.description.js) + '\\u001f' + ids.map(hex).join(','))",
+    '}',
+    "rows.join('\\u001e')",
+  ].join('\n')
+}
+
+export function parsePlaylistMembers(stdout: string): Record<string, string[]> {
+  const members: Record<string, string[]> = {}
+  for (const row of stdout.replace(/\n$/, '').split(RS)) {
+    const [id, list] = row.split(US)
+    if (id?.trim()) members[id.trim()] = list?.trim() ? list.trim().split(',') : []
+  }
+  return members
+}
+
+export async function readPlaylistMembers(): Promise<Record<string, string[]>> {
+  const stdout = await runOsascript(buildPlaylistMembersScript(), {
+    maxBuffer: 16 * 1024 * 1024,
+    language: 'JavaScript',
+  })
+  return parsePlaylistMembers(stdout)
+}
+
 // The same row shape as buildPlaylistTracksScript, for a handful of library entries named
 // by persistent ID rather than a whole playlist: a file loaded on its own, not imported from
 // Music, still gets what Music knows about it. Measured on a real library: its WAVs carry

@@ -3,9 +3,11 @@ import {
   buildEntriesScript,
   buildLibraryPlaylistScript,
   buildPlaylistDumpScript,
+  buildPlaylistMembersScript,
   buildPlaylistTracksScript,
   entryForFile,
   parsePlaylistDump,
+  parsePlaylistMembers,
   parsePlaylistTracks,
 } from './appleMusicPlaylists'
 
@@ -439,5 +441,26 @@ describe('entryForFile', () => {
       composed,
     )
     expect(out.meta[composed]).toEqual({ grouping: 'Bases' })
+  })
+})
+
+describe('buildPlaylistMembersScript', () => {
+  // Resolving each track's file on a NAS is what made reading a playlist slow; which tracks
+  // every playlist holds comes from the database alone, in about 0.2 s for 35 playlists.
+  it('reads which tracks each playlist holds from the library database, never their files', () => {
+    const script = buildPlaylistMembersScript()
+    expect(script).toContain("ObjC.import('iTunesLibrary')")
+    expect(script).not.toContain('location')
+    expect(script).not.toContain('Application("Music")')
+  })
+})
+
+describe('parsePlaylistMembers', () => {
+  it('reads each playlist with the tracks it holds, in order', () => {
+    const out = `AAAAAAAAAAAAAAA1${US}000000000000000B,000000000000000A${RS}BBBBBBBBBBBBBBB2${US}\n`
+    expect(parsePlaylistMembers(out)).toEqual({
+      AAAAAAAAAAAAAAA1: ['000000000000000B', '000000000000000A'],
+      BBBBBBBBBBBBBBB2: [],
+    })
   })
 })

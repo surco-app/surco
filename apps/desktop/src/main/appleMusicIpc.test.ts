@@ -75,6 +75,7 @@ vi.mock('./appleMusicPlaylists', () => ({
   dumpAppleMusicPlaylists: (...args: unknown[]) => dumpAppleMusicPlaylists(...args),
   readAppleMusicEntry: vi.fn(),
   readAppleMusicPlaylist: (...args: unknown[]) => readAppleMusicPlaylist(...args),
+  readPlaylistMembers: vi.fn().mockResolvedValue({}),
 }))
 
 const JOB = {

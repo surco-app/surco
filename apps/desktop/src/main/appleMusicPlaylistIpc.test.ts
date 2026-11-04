@@ -20,8 +20,10 @@ const dumpAppleMusicPlaylists = vi.fn()
 const readAppleMusicPlaylist = vi.fn()
 const readAppleMusicEntry = vi.fn()
 const readLibraryPlaylist = vi.fn()
+const readPlaylistMembers = vi.fn()
 vi.mock('./appleMusicPlaylists', () => ({
   readLibraryPlaylist: (...a: unknown[]) => readLibraryPlaylist(...a),
+  readPlaylistMembers: (...a: unknown[]) => readPlaylistMembers(...a),
   dumpAppleMusicPlaylists: (...a: unknown[]) => dumpAppleMusicPlaylists(...a),
   readAppleMusicPlaylist: (...a: unknown[]) => readAppleMusicPlaylist(...a),
   readAppleMusicEntry: (...a: unknown[]) => readAppleMusicEntry(...a),
@@ -44,9 +46,13 @@ vi.mock('./appleMusicLibraryCache', () => ({
 }))
 const savePlaylistCache = vi.fn()
 const loadPlaylistCache = vi.fn()
+const savePlaylistMembers = vi.fn()
+const derivedPlaylistCache = vi.fn()
 vi.mock('./appleMusicPlaylistCache', () => ({
   savePlaylistCache: (...a: unknown[]) => savePlaylistCache(...a),
   loadPlaylistCache: (...a: unknown[]) => loadPlaylistCache(...a),
+  savePlaylistMembers: (...a: unknown[]) => savePlaylistMembers(...a),
+  derivedPlaylistCache: (...a: unknown[]) => derivedPlaylistCache(...a),
   savePlaylistListCache: () => {},
   loadPlaylistListCache: () => null,
 }))
@@ -79,6 +85,9 @@ beforeEach(() => {
   readLibraryPlaylist.mockReset()
   savePlaylistCache.mockReset()
   loadPlaylistCache.mockReset()
+  readPlaylistMembers.mockReset().mockResolvedValue({})
+  savePlaylistMembers.mockReset()
+  derivedPlaylistCache.mockReset().mockReturnValue(null)
   setPlatform('darwin')
 })
 
@@ -94,6 +103,18 @@ describe('applemusic:playlists', () => {
     await register()
     const rows = await handlers.get('applemusic:playlists')?.({})
     expect(rows).toEqual([{ name: 'Sesión sábado', count: 128, persistentId: 'A1B2C3D4E5F60718' }])
+  })
+
+  // Opening the Music tab is when its playlists are read again, and knowing which tracks each
+  // holds is what lets one never read whole open at once.
+  it('keeps which tracks every playlist holds each time the playlists are listed', async () => {
+    dumpAppleMusicPlaylists.mockResolvedValue([])
+    readPlaylistMembers.mockResolvedValue({ A1B2C3D4E5F60718: ['000000000000000A'] })
+    await register()
+    await handlers.get('applemusic:playlists')?.({})
+    await vi.waitFor(() =>
+      expect(savePlaylistMembers).toHaveBeenCalledWith({ A1B2C3D4E5F60718: ['000000000000000A'] }),
+    )
   })
 
   it('returns nothing off macOS without spawning osascript, which does not exist there', async () => {
@@ -178,6 +199,15 @@ describe('applemusic:playlistCached', () => {
     const out = await handlers.get('applemusic:playlistCached')?.({}, 'A1B2C3D4E5F60718')
     expect(loadPlaylistCache).toHaveBeenCalledWith('A1B2C3D4E5F60718')
     expect(out).toEqual({ paths: ['/m/a.aiff'], missing: 0 })
+  })
+
+  it('puts a playlist never read whole together from the library read', async () => {
+    loadPlaylistCache.mockReturnValue(null)
+    derivedPlaylistCache.mockReturnValue({ paths: ['/m/b.aiff'], missing: 0 })
+    await register()
+    const out = await handlers.get('applemusic:playlistCached')?.({}, 'A1B2C3D4E5F60718')
+    expect(derivedPlaylistCache).toHaveBeenCalledWith('A1B2C3D4E5F60718')
+    expect(out).toEqual({ paths: ['/m/b.aiff'], missing: 0 })
   })
 
   it('returns null off macOS', async () => {

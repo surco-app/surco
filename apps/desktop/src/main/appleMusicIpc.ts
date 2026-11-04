@@ -17,16 +17,19 @@ import { artworkDir, fetchAppleMusicArtwork, keptArtwork } from './appleMusicArt
 import { loadLibraryCache, saveLibraryCache } from './appleMusicLibraryCache'
 import { attachMissingArtwork } from './appleMusicPlaylistArt'
 import {
+  derivedPlaylistCache,
   loadPlaylistCache,
   loadPlaylistListCache,
   savePlaylistCache,
   savePlaylistListCache,
+  savePlaylistMembers,
 } from './appleMusicPlaylistCache'
 import {
   dumpAppleMusicPlaylists,
   readAppleMusicEntry,
   readAppleMusicPlaylist,
   readLibraryPlaylist,
+  readPlaylistMembers,
 } from './appleMusicPlaylists'
 import {
   addToAppleMusic,
@@ -201,6 +204,9 @@ export function registerAppleMusicIpc(
         async () => {
           const lists = await musicReads.run(dumpAppleMusicPlaylists, 'high')
           savePlaylistListCache(lists)
+          void readPlaylistMembers()
+            .then(savePlaylistMembers)
+            .catch((err: unknown) => log.warn('playlist members read failed', err))
           return lists
         },
         {
@@ -281,7 +287,9 @@ export function registerAppleMusicIpc(
   )
   // The playlist as last read whole, to show while it is read again. A plain file read.
   ipcMain.handle('applemusic:playlistCached', (_e, persistentId: string) =>
-    process.platform === 'darwin' ? loadPlaylistCache(persistentId) : null,
+    process.platform === 'darwin'
+      ? (loadPlaylistCache(persistentId) ?? derivedPlaylistCache(persistentId))
+      : null,
   )
 
   ipcMain.handle('applemusic:artwork', async (_e, persistentIds: string[]) => {

@@ -81,3 +81,58 @@ export function loadPlaylistListCache(): AppleMusicPlaylist[] | null {
     return null
   }
 }
+
+// Which tracks each playlist holds, by persistent ID, as the library database last gave them.
+const membersFile = (): string =>
+  join(app.getPath('userData'), 'apple-music-playlists', 'members.json')
+
+export function savePlaylistMembers(members: Record<string, string[]>): void {
+  try {
+    const file = membersFile()
+    mkdirSync(join(file, '..'), { recursive: true })
+    writeFileSync(`${file}.tmp`, JSON.stringify(members))
+    renameSync(`${file}.tmp`, file)
+  } catch {
+    return
+  }
+}
+
+function loadPlaylistMembers(persistentId: string): string[] | null {
+  try {
+    const raw: unknown = JSON.parse(readFileSync(membersFile(), 'utf-8'))
+    const ids = isRecord(raw) ? raw[persistentId] : null
+    return Array.isArray(ids) && ids.every((id) => typeof id === 'string') ? ids : null
+  } catch {
+    return null
+  }
+}
+
+// A playlist never read whole, put together from the tracks it holds and the library's own
+// last read, so it shows at once while Music reads it.
+export function derivedPlaylistCache(persistentId: string): AppleMusicPlaylistTracks | null {
+  const members = loadPlaylistMembers(persistentId)
+  const libraryId = loadPlaylistListCache()?.find((l) => l.library)?.persistentId
+  const library = libraryId ? loadPlaylistCache(libraryId) : null
+  if (!members || !library) return null
+  const pathOf = new Map(Object.entries(library.persistentIds).map(([path, id]) => [id, path]))
+  const tracks: AppleMusicPlaylistTracks = {
+    paths: [],
+    persistentIds: {},
+    meta: {},
+    missing: 0,
+    total: members.length,
+  }
+  for (const id of members) {
+    const path = pathOf.get(id)
+    if (!path) {
+      tracks.missing += 1
+      continue
+    }
+    if (path in tracks.persistentIds) continue
+    tracks.paths.push(path)
+    tracks.persistentIds[path] = id
+    const meta = library.meta[path]
+    if (meta) tracks.meta[path] = meta
+  }
+  return tracks
+}
