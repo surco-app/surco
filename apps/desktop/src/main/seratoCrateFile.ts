@@ -86,7 +86,7 @@ export function seratoLinkId(index: number, crateFile: string, path: string): st
 export function parseSeratoLinkId(
   linkId: string,
 ): { index: number; crateFile: string; path: string } | null {
-  const match = linkId.match(/^(\d+):([^:]+):([^:]*)$/)
+  const match = linkId.match(/^(\d+):([^:]+):([^:]+)$/)
   if (!match) return null
   try {
     return {

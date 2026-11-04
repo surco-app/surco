@@ -141,5 +141,6 @@ describe('serato crate files', () => {
     expect(parseSeratoLinkId('-1:/a.crate:a.mp3')).toBeNull()
     expect(parseSeratoLinkId('1:%E0%A4%A:a.mp3')).toBeNull()
     expect(parseSeratoLinkId('7')).toBeNull()
+    expect(parseSeratoLinkId(`0:${encodeURIComponent(file)}:`)).toBeNull()
   })
 })

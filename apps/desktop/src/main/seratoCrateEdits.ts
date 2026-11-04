@@ -124,15 +124,29 @@ interface Working {
 }
 
 const working = new WeakMap<SeratoDraft, Map<string, Working>>()
+const renames = new WeakMap<SeratoDraft, Map<string, string>>()
 
-function workingCrate(draft: SeratoDraft, file: string): Working | RekordboxEditRefusal {
-  const bytes = draft.read(file)
-  if (!bytes) return 'stale'
+function recordRename(draft: SeratoDraft, from: string, to: string): void {
+  const moved = renames.get(draft) ?? new Map<string, string>()
+  const origins = [...moved].filter(([, at]) => at === from).map(([origin]) => origin)
+  if (!moved.has(from)) origins.push(from)
+  for (const origin of origins) moved.set(origin, to)
+  renames.set(draft, moved)
+}
+
+const whereIs = (draft: SeratoDraft, file: string): string => renames.get(draft)?.get(file) ?? file
+
+function workingCrate(draft: SeratoDraft, file: string): Working | RekordboxEditRefusal | 'gone' {
+  const original = draft.original(file)
+  const bytes = draft.read(whereIs(draft, file))
+  if (!bytes) return original ? 'gone' : 'stale'
   const seen = working.get(draft)?.get(file)
-  if (seen && seen.current === bytes) return seen
-  const base = crateTrackPaths(bytes)
+  if (seen) return seen.current === bytes ? seen : 'stale'
+  const source = original ?? bytes
+  if (bytes !== source) return 'stale'
+  const base = crateTrackPaths(source)
   if (!base) return 'unreadable'
-  return { source: bytes, current: bytes, base, rows: base.map((_, keep) => ({ keep })) }
+  return { source, current: source, base, rows: base.map((_, keep) => ({ keep })) }
 }
 
 const pathOfRow = (crate: Working, row: CrateTrack): string =>
@@ -146,7 +160,7 @@ function writeRows(
 ): RekordboxEditRefusal | null {
   const bytes = withCrateTracks(crate.source, rows)
   if (!bytes) return 'unreadable'
-  draft.write(file, bytes)
+  draft.write(whereIs(draft, file), bytes)
   const crates = working.get(draft) ?? new Map<string, Working>()
   crates.set(file, { ...crate, current: bytes, rows })
   working.set(draft, crates)
@@ -159,24 +173,28 @@ function addTracks(
   draft: SeratoDraft,
   edit: Extract<TrackEdit, { kind: 'add' }>,
   roots: SeratoLibraryRoot[],
-): { report: PlaylistAddReport } | Refused {
+): { report?: PlaylistAddReport } | Refused {
   const report: PlaylistAddReport = { added: 0, already: 0, notInCollection: 0, ambiguous: 0 }
   const lists = new Map<string, { crate: Working; rows: CrateTrack[]; there: Set<string> }>()
+  let gone = false
   for (const track of edit.tracks) {
     const file = track.paths[track.paths.length - 1] ?? ''
     const root = seratoRootOf(file, roots)
     const crateFile = root ? crateFileOf(root, edit.playlistId) : null
-    if (!root || !crateFile || !draft.exists(crateFile)) {
+    let list = crateFile ? lists.get(crateFile) : undefined
+    if (root && crateFile && !list) {
+      const crate = workingCrate(draft, crateFile)
+      if (crate === 'unreadable') return { refused: crate }
+      if (crate === 'gone') gone = true
+      if (typeof crate !== 'string') {
+        const there = new Set(crate.rows.map((row) => pathOfRow(crate, row).normalize('NFC')))
+        list = { crate, rows: [...crate.rows], there }
+        lists.set(crateFile, list)
+      }
+    }
+    if (!root || !list) {
       report.notInCollection++
       continue
-    }
-    let list = lists.get(crateFile)
-    if (!list) {
-      const crate = workingCrate(draft, crateFile)
-      if (typeof crate === 'string') return { refused: crate }
-      const there = new Set(crate.rows.map((row) => pathOfRow(crate, row).normalize('NFC')))
-      list = { crate, rows: [...crate.rows], there }
-      lists.set(crateFile, list)
     }
     const path = seratoPathOn(file, root)
     if (list.there.has(path.normalize('NFC'))) report.already++
@@ -187,7 +205,7 @@ function addTracks(
       report.added++
     }
   }
-  if (report.added === 0) return { refused: 'nothing-to-add', report }
+  if (report.added === 0) return gone ? {} : { refused: 'nothing-to-add', report }
   for (const [crateFile, { crate, rows }] of lists) {
     if (rows.length === crate.rows.length) continue
     const failed = writeRows(draft, crateFile, crate, rows)
@@ -200,7 +218,7 @@ function rowsByCrate(
   draft: SeratoDraft,
   linkIds: string[],
   own: Set<string>,
-): Map<string, { crate: Working; positions: number[] }> | Refused {
+): Map<string, { crate: Working; positions: number[] }> | Refused | 'gone' {
   const crates = new Map<string, { crate: Working; positions: number[] }>()
   for (const linkId of linkIds) {
     const link = parseSeratoLinkId(linkId)
@@ -208,6 +226,7 @@ function rowsByCrate(
     let entry = crates.get(link.crateFile)
     if (!entry) {
       const crate = workingCrate(draft, link.crateFile)
+      if (crate === 'gone') return crate
       if (typeof crate === 'string') return { refused: crate }
       entry = { crate, positions: [] }
       crates.set(link.crateFile, entry)
@@ -234,6 +253,7 @@ function editTracks(
     beforeId === null ? edit.linkIds : [...edit.linkIds, beforeId],
     own,
   )
+  if (crates === 'gone') return {}
   if (!(crates instanceof Map)) return crates
   if (edit.kind === 'move' && crates.size > 1) return { refused: 'stale' }
   const writes: [string, Working, CrateTrack[]][] = []
@@ -259,7 +279,7 @@ function editTracks(
 
 function staleOrUnreadable(draft: SeratoDraft, op: EditOp): RekordboxEditRefusal | null {
   for (const [file, seen] of Object.entries(op.files ?? {})) {
-    const bytes = draft.read(file)
+    const bytes = draft.original(file)
     if (seen === null && bytes === null) continue
     if (seen === null || bytes === null) return 'stale'
     const tracks = crateTrackPaths(bytes)
@@ -323,6 +343,9 @@ export function applySeratoEdit(
   const renamed = (f: string): string => renamedCrateId(f, id, name)
   for (const [r, family] of families)
     for (const f of family)
-      if (renamed(f) !== f) draft.rename(crateFileOf(r, f), crateFileOf(r, renamed(f)))
+      if (renamed(f) !== f) {
+        draft.rename(crateFileOf(r, f), crateFileOf(r, renamed(f)))
+        recordRename(draft, crateFileOf(r, f), crateFileOf(r, renamed(f)))
+      }
   return done()
 }

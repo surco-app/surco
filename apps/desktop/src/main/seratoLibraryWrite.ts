@@ -36,6 +36,7 @@ export interface DraftChanges {
 
 export interface SeratoDraft {
   read(file: string): Uint8Array | null
+  original(file: string): Uint8Array | null
   exists(file: string): boolean
   write(file: string, bytes: Uint8Array): void
   rename(from: string, to: string): void
@@ -66,6 +67,7 @@ export function createSeratoDraft(): SeratoDraft {
 
   return {
     read: (file) => entryOf(file)?.bytes ?? null,
+    original: fromDisk,
     exists: (file) => entryOf(file) !== null,
     write(file, bytes) {
       layer.set(file, { bytes, origin: entryOf(file)?.origin ?? null, written: true })
