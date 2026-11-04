@@ -12,12 +12,22 @@ import type { ContentFacts } from './rekordboxContentAdd'
 import { withNodeTimestamp } from './rekordboxMasterXml'
 import type { RekordboxMeta } from './rekordboxMetadata'
 
+export interface FileStamp {
+  mtimeMs: number
+  size: number
+}
+
+export interface CrateStamp {
+  tracks: string[]
+}
+
 export interface EditOp {
   id: string
   kind: 'edit'
   edit: RekordboxPlaylistEdit
   stamps: Record<string, number>
   label?: string
+  files?: Record<string, CrateStamp | null>
 }
 
 export interface TrackOp {

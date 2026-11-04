@@ -1243,6 +1243,7 @@ export type RekordboxEditRefusal =
   | 'stale'
   | 'no-separator'
   | 'nothing-to-add'
+  | 'bad-name'
 
 // What an add did with each track it was given.
 export interface PlaylistAddReport {

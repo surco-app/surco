@@ -190,8 +190,8 @@ import { registerRekordboxQueueIpc } from './rekordboxQueueIpc'
 import { stillWaiting } from './rekordboxQueueWatch'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
+import { applySeratoBatch } from './seratoBatch'
 import { registerSeratoCueQueueIpc } from './seratoCueQueueIpc'
-import { applySeratoCuesBatch } from './seratoCuesWrite'
 import { seratoLibraryRoots } from './seratoLibrary'
 import { registerSeratoPlaylistsIpc } from './seratoPlaylistsIpc'
 import { loadLastSession, saveLastSession } from './session'
@@ -500,7 +500,9 @@ const programQueues = {
         store: fileStore(join(app.getPath('userData'), 'serato-cue-queue.json')),
         collection: () => join(app.getPath('home'), 'Music', '_Serato_'),
         applyBatch: (_library, ops, ensureClosed, stillQueued) =>
-          applySeratoCuesBatch(ops, {
+          applySeratoBatch(ops, {
+            roots: seratoRoots,
+            backupDir: join(app.getPath('userData'), 'serato-backups'),
             ensureClosed,
             stillQueued,
             converting: (file) =>
