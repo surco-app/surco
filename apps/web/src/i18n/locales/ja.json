@@ -1978,6 +1978,7 @@
     "backLabel": "すべてのユースケース",
     "settingsLabel": "設定は一度だけ",
     "settingsHint": "Surcoの設定（Macでは⌘ ,）を開き、各オプションを名前で探してください。",
+    "showShot": "{{place}} での場所を見る",
     "settingsRoot": "設定",
     "on": "オン",
     "optional": "オプション",

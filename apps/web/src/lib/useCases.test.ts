@@ -21,6 +21,7 @@ import {
   searchForFilters,
   settingGroups,
   settingShot,
+  stepLead,
   USE_CASE_SHOTS,
   USE_CASE_SOURCES,
   USE_CASE_SOURCES_BY_CASE,
@@ -379,5 +380,25 @@ describe('recipeIndex', () => {
   it('leaves out a group with no recipes rather than show an empty heading', () => {
     const extra = [...groups, { id: 'empty', title: 'Empty', lede: '' }]
     expect(recipeIndex(extra, cases).map((g) => g.id)).not.toContain('empty')
+  })
+})
+
+// A recipe step reads like a guide step: its title in bold runs into the text on the same
+// line. The titles are written without a full stop, so without one the two run together
+// as if they were a single sentence.
+describe('stepLead', () => {
+  it('closes the title with a full stop so it reads apart from the text', () => {
+    expect(stepLead('Arrastra la carpeta a Surco', 'es')).toBe('Arrastra la carpeta a Surco.')
+    expect(stepLead('Pulsa «Convertir»', 'es')).toBe('Pulsa «Convertir».')
+  })
+
+  it('uses the Japanese full stop in Japanese', () => {
+    expect(stepLead('フォルダーをドロップ', 'ja')).toBe('フォルダーをドロップ。')
+  })
+
+  it('leaves a title that already ends a sentence as it is', () => {
+    expect(stepLead('¿Ya está?', 'es')).toBe('¿Ya está?')
+    expect(stepLead('Listo.', 'en')).toBe('Listo.')
+    expect(stepLead('完了。', 'ja')).toBe('完了。')
   })
 })

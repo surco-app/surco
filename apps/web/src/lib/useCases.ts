@@ -155,3 +155,6 @@ export function recipeIndex<
     .map((g) => ({ id: g.id, title: g.title, cases: cases.filter((c) => c.group === g.id) }))
     .filter((g) => g.cases.length > 0)
 }
+
+export const stepLead = (title: string, lang: Language) =>
+  /[.!?。！？]$/.test(title) ? title : `${title}${lang === 'ja' ? '。' : '.'}`
