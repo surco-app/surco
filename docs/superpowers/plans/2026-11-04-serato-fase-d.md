@@ -614,3 +614,10 @@ y el mismo para Serato con `openSerato` y un crate de su fixture, esperando `sou
 - [ ] Volver a exportar desde Serato al mismo USB: el resumen dice "ya está" para la música y el USB sale como escrito por Surco. La pestaña rekordbox, sobre ese USB, no marca playlists de Serato.
 - [ ] Sumas iguales. Matriz completa igual a la base, suite, tres tsc y biome. `git merge main`, otra vez la suite, y `git merge --ff-only serato-d` en el main local (sin push).
 - [ ] Anotar el resultado al final de este plan. Sin CDJ a mano, lo que diga un CDJ queda pendiente y se dice en el resumen. Commit `Record the Serato and Traktor USB export manual test`.
+
+## Prueba manual (04/11, baken 4.6.1 de Surco 1.x, imagen FAT32 de 300 MB montada como USB)
+
+- Surco no admite una imagen de disco como destino (a propósito), así que se lanzó el exportador real con una lista de volúmenes que la incluía, desde una prueba temporal que no está en el repo.
+- **Serato** (`~/Music/Serato Pruebas`, crates `Medida Q` y uno temporal con las cinco Pray): 9 pistas en 0,9 s, plan en 0,1 s, aviso CDJ-2000 del FLAC. `export.pdb`, `exportLibrary.db` y `ANLZ` generados por baken. Cues y rejilla en el reloj de rekordbox: el cue de Serato en bruto 30 000 del MP3 (51,18 ms de lead de Serato, 26,12 de desfase de rekordbox) sale en 29,975 s; el del AIFF y FLAC en 30,000; los del M4A (lead −23,22, desfase +23,22) en 7,490, 12,802 y 19,065. La rejilla cae en el mismo punto del audio en los cinco formatos.
+- **Traktor** (colección de pruebas, playlists `Native Instruments` y `Preparation`): 13 pistas en 0,9 s; hot cues con su letra, bucles con final, el cue de carga como memoria; 2 MP3 sin desfase medido salen sin cues y con su aviso; 5 pistas que no están en disco salen como faltan. Con una playlist vacía marcada el exportador no empieza (igual que desde rekordbox).
+- Sin probar: abrir el USB en rekordbox (no tenía ventana a la vista) y en un CDJ.
