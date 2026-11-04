@@ -31,6 +31,7 @@ import { CueDeleteBadge } from './CueDeleteBadge'
 import type { WaveCue } from './CueWave'
 
 const STAGE_HEIGHT = '280px'
+const STAGE_MAX_HEIGHT = '360px'
 const COMPACT_HEIGHT = '96px'
 const WAVE_SPAN = 0.8
 const STRIP_WINDOWS = 3
@@ -384,7 +385,10 @@ export function CueWaveDetail({
     onMarkMenu?.({ key, clientX: e.clientX, clientY: e.clientY })
   }
   return (
-    <div className={compact ? 'flex shrink-0 flex-col' : 'flex min-h-0 flex-1 flex-col'}>
+    <div
+      className={compact ? 'flex shrink-0 flex-col' : 'flex min-h-0 flex-1 flex-col'}
+      style={compact ? undefined : { maxHeight: STAGE_MAX_HEIGHT }}
+    >
       <div className={compact ? 'relative' : 'relative flex min-h-0 flex-1 flex-col'}>
         <div
           ref={stageRef}
