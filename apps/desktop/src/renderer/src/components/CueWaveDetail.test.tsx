@@ -625,12 +625,14 @@ describe('CueWaveDetail', () => {
     expect(onZoom).toHaveBeenCalledTimes(2)
   })
 
-  it('grows the zoomed wave into the free height of the full editor from 280px, so the window goes to the wave and not to empty space under the deck', () => {
+  it('grows the zoomed wave from 280px into the free height of the full editor, but no further than 360px, since rekordbox gives the wave only 32 levels and taller shows them as steps', () => {
     setup()
     const stage = screen.getByTestId('cue-detail')
     expect(stage.style.flexGrow).toBe('1')
     expect(stage.style.minHeight).toBe('280px')
     expect(stage.style.height).toBe('')
+    const box = stage.parentElement?.parentElement as HTMLElement
+    expect(box.style.maxHeight).toBe('360px')
   })
 
   it('keeps the folded zoomed wave its short fixed height, since the folded section shares the editor with the rest', () => {
